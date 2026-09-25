@@ -6,6 +6,7 @@ import {
   initialState,
   lanesTotal,
   other,
+  phaseOf,
   playableLanes,
   playableSlots,
   playSlot,
@@ -16,129 +17,147 @@ import {
   type KizState,
 } from './engine'
 
-describe('Kız Tavlası — başlangıç', () => {
-  it('her oyuncuda 15 pul, doğru diziliş (6:3,5:3,4:3,3:2,2:2,1:2)', () => {
+describe('Kız Tavlası (iki fazlı) — başlangıç', () => {
+  it('15 pul kapalı, doğru diziliş, açma fazı', () => {
     const s = initialState()
-    expect(s.lanes.white).toEqual([2, 2, 2, 3, 3, 3]) // 1..6
-    expect(s.lanes.black).toEqual([2, 2, 2, 3, 3, 3])
-    expect(lanesTotal(s.lanes.white)).toBe(15)
-    expect(lanesTotal(s.lanes.black)).toBe(15)
+    expect(s.closed.white).toEqual([2, 2, 2, 3, 3, 3])
+    expect(s.open.white).toEqual([0, 0, 0, 0, 0, 0])
     expect(s.off.white).toBe(0)
-    expect(s.off.black).toBe(0)
+    expect(lanesTotal(s.closed.white)).toBe(15)
+    expect(phaseOf(s, 'white')).toBe('acma')
+    expect(phaseOf(s, 'black')).toBe('acma')
     expect(checkersConserved(s)).toBe(true)
   })
 })
 
-describe('Kız Tavlası — normal zar', () => {
-  it('zar d, d hanesinden BİR pul toplar; pul oluşup kaybolmaz', () => {
+describe('Kız Tavlası — AÇMA fazı (indirme)', () => {
+  it('zar d, d hanesinden BİR pulu kapalı->açık indirir', () => {
     let s = initialState('white')
     s = applyRoll(s, [6, 4], false)
     expect(playableLanes(s)).toEqual([4, 6])
-    // 6 hanesini oyna (index 5, değer 6) -> slot 0
-    s = playSlot(s, 0)
-    expect(s.lanes.white[5]).toBe(2) // 6.hane 3 -> 2
-    expect(s.off.white).toBe(1)
+    s = playSlot(s, 0) // 6 hanesi
+    expect(s.closed.white[5]).toBe(2) // 3 -> 2 kapalı
+    expect(s.open.white[5]).toBe(1) // 1 açık
+    expect(s.off.white).toBe(0) // açma fazında off ARTMAZ
     expect(checkersConserved(s)).toBe(true)
-    // 4 hanesini oyna (slot 1, değer 4)
-    s = playSlot(s, 1)
-    expect(s.lanes.white[3]).toBe(2) // 4.hane 3 -> 2
-    expect(s.off.white).toBe(2)
+    s = playSlot(s, 1) // 4 hanesi
+    expect(s.closed.white[3]).toBe(2)
+    expect(s.open.white[3]).toBe(1)
     expect(turnComplete(s)).toBe(true)
+  })
+
+  it('çift zar açma fazında o hanenin TÜM kapalılarını indirir', () => {
+    let s = initialState('white')
+    s = applyRoll(s, [6, 6], true)
+    s = playSlot(s, 0)
+    expect(s.closed.white[5]).toBe(0)
+    expect(s.open.white[5]).toBe(3) // 3 kapalı -> 3 açık
+    expect(s.off.white).toBe(0)
     expect(checkersConserved(s)).toBe(true)
   })
 
-  it('boş hane zarı OYNANAMAZ (overflow yok)', () => {
+  it('kapalı pul yoksa o zar açma fazında oynanamaz', () => {
     let s = initialState('white')
-    // 1.haneyi boşalt: elle iki pul topla
-    s = applyRoll(s, [1, 1], true) // çift 1 -> tüm 1.hane
-    s = playSlot(s, 0)
-    expect(s.lanes.white[0]).toBe(0)
-    s = endTurn(s) // siyah
-    s = endTurn(s) // tekrar beyaz (siyah pas gibi; test için elle)
-    // Not: endTurn iki kez -> beyaza döner (rakip turu boş geçildi)
-    s = applyRoll(s, [1, 5], false)
-    // 1.hane boş -> yalnız 5 oynanabilir
-    expect(playableLanes(s)).toEqual([5])
-    const slots = playableSlots(s)
-    expect(slots.length).toBe(1)
-    expect(s.dice[slots[0]]).toBe(5)
-  })
-
-  it('her iki hane de boşsa hamlesiz tur (turnComplete=true, off değişmez)', () => {
-    let s = initialState('white')
-    // 2 ve 3 hanelerini boşalt (her biri 2 pul -> çift ile temizle)
-    s = applyRoll(s, [2, 2], true)
-    s = playSlot(s, 0)
+    s = applyRoll(s, [6, 6], true)
+    s = playSlot(s, 0) // 6 hanesi tamamen açıldı (kapalı[6]=0)
     s = endTurn(s)
     s = endTurn(s)
-    s = applyRoll(s, [3, 3], true)
-    s = playSlot(s, 0)
-    s = endTurn(s)
-    s = endTurn(s)
-    // Şimdi 2 ve 3 boş. [2,3] at -> ikisi de boş -> hamle yok
-    s = applyRoll(s, [2, 3], false)
-    expect(playableSlots(s)).toEqual([])
-    expect(playableLanes(s)).toEqual([])
-    expect(turnComplete(s)).toBe(true)
-    const offBefore = s.off.white
-    s = playSlot(s, 0) // boş haneyi oynamayı dene -> değişmez
-    expect(s.off.white).toBe(offBefore)
+    s = applyRoll(s, [6, 3], false)
+    // 6 hanesinde kapalı yok -> yalnız 3 oynanabilir
+    expect(playableLanes(s)).toEqual([3])
   })
 })
 
-describe('Kız Tavlası — çift zar', () => {
-  it('çift (d,d) o hanedeki TÜM pulları toplar (tek kullanım)', () => {
+describe('Kız Tavlası — faz geçişi', () => {
+  it('tüm pullar indirilince toplama fazına geçilir', () => {
     let s = initialState('white')
-    s = applyRoll(s, [6, 6], true)
-    expect(s.isDouble).toBe(true)
-    expect(s.diceUsed).toEqual([false]) // çiftte tek slot
-    s = playSlot(s, 0)
-    expect(s.lanes.white[5]).toBe(0) // 6.hane (3 pul) tamamen boşaldı
-    expect(s.off.white).toBe(3)
-    expect(turnComplete(s)).toBe(true)
+    // Beyazın tüm kapalılarını elle açık yap (faz geçişini test et)
+    s = { ...s, closed: { ...s.closed, white: [0, 0, 0, 0, 0, 0] }, open: { ...s.open, white: [2, 2, 2, 3, 3, 3] } }
+    expect(phaseOf(s, 'white')).toBe('toplama')
     expect(checkersConserved(s)).toBe(true)
   })
 
-  it('çift ama hane boşsa oynanamaz (hamlesiz)', () => {
+  it('son kapalı indirilince İKİNCİ zar aynı turda toplama fazında oynanır', () => {
     let s = initialState('white')
+    // Beyazda yalnız 6 hanesinde 1 kapalı kalsın; 5 hanesinde 2 açık olsun
+    s = {
+      ...s,
+      closed: { ...s.closed, white: [0, 0, 0, 0, 0, 1] },
+      open: { ...s.open, white: [0, 0, 0, 0, 2, 0] },
+      off: { ...s.off, white: 12 },
+    }
+    expect(phaseOf(s, 'white')).toBe('acma')
+    s = applyRoll(s, [6, 5], false)
+    // 6: açma (kapalı indir), 5: henüz açma fazında ama kapalı[5]=0 -> başta oynanamaz
+    expect(playableLanes(s)).toEqual([6])
+    s = playSlot(s, 0) // 6 kapalı indirildi -> kapalı=0 -> TOPLAMA fazı
+    expect(phaseOf(s, 'white')).toBe('toplama')
+    // Artık 5 zarı toplama fazında oynanabilir (5 hanesinde 3 açık: 2 eski + 1 yeni indirilen)
+    expect(s.open.white[4]).toBe(2)
+    expect(s.open.white[5]).toBe(1)
+    expect(playableLanes(s)).toEqual([5]) // yalnız 5 (6 zarı kullanıldı)
+    s = playSlot(s, 1) // 5 hanesinden bir açık topla
+    expect(s.open.white[4]).toBe(1)
+    expect(s.off.white).toBe(13)
+    expect(checkersConserved(s)).toBe(true)
+  })
+})
+
+describe('Kız Tavlası — TOPLAMA fazı', () => {
+  function allOpen(turn: KizPlayer, off: number): KizState {
+    const s = initialState(turn)
+    return {
+      ...s,
+      closed: { white: [0, 0, 0, 0, 0, 0], black: [0, 0, 0, 0, 0, 0] },
+      open: { ...s.open, [turn]: [2, 2, 2, 3, 3, 3], [other(turn)]: [2, 2, 2, 3, 3, 3] },
+      off: { ...s.off, [turn]: off },
+    }
+  }
+
+  it('toplama fazında zar d, d hanesinden açık pulu off yapar', () => {
+    let s = allOpen('white', 0)
+    expect(phaseOf(s, 'white')).toBe('toplama')
+    s = applyRoll(s, [6, 4], false)
+    s = playSlot(s, 0)
+    expect(s.open.white[5]).toBe(2) // 3 -> 2 açık
+    expect(s.off.white).toBe(1)
+    expect(checkersConserved(s)).toBe(true)
+  })
+
+  it('çift toplama fazında o hanenin tüm açıklarını toplar', () => {
+    let s = allOpen('white', 0)
     s = applyRoll(s, [6, 6], true)
-    s = playSlot(s, 0) // 6.hane temizlendi
-    s = endTurn(s)
-    s = endTurn(s)
-    s = applyRoll(s, [6, 6], true) // 6.hane artık boş
+    s = playSlot(s, 0)
+    expect(s.open.white[5]).toBe(0)
+    expect(s.off.white).toBe(3)
+  })
+
+  it('açık pul yoksa o zar toplama fazında oynanamaz; ikisi de yoksa hamlesiz', () => {
+    let s = allOpen('white', 0)
+    // 5 ve 6 hanelerini boşalt (çiftlerle)
+    s = applyRoll(s, [6, 6], true); s = playSlot(s, 0); s = endTurn(s); s = endTurn(s)
+    s = applyRoll(s, [5, 5], true); s = playSlot(s, 0); s = endTurn(s); s = endTurn(s)
+    s = applyRoll(s, [5, 6], false)
     expect(playableSlots(s)).toEqual([])
     expect(turnComplete(s)).toBe(true)
   })
 })
 
 describe('Kız Tavlası — galibiyet ve mars', () => {
-  // lanes'ten n pul çıkar (yüksek haneden başlayarak) -> bütünlük korunur (test yardımcı).
-  function drain(lanes: [number, number, number, number, number, number], n: number) {
-    const l = lanes.slice() as [number, number, number, number, number, number]
-    let rem = n
-    for (let i = 5; i >= 0 && rem > 0; i--) {
-      const take = Math.min(l[i], rem)
-      l[i] -= take
-      rem -= take
-    }
-    return l
-  }
-
-  // Bir oyuncuyu neredeyse bitmiş konuma getir (yardımcı). Rakip oppOff kadar toplamış olsun.
   function nearWin(turn: KizPlayer, oppOff: number): KizState {
     const s = initialState(turn)
-    // turn oyuncusunun 6.hanesi hariç hepsini boşalt -> off = 12, 6.hanede 3 pul kalsın
-    const lanes = [0, 0, 0, 0, 0, 3] as [number, number, number, number, number, number]
+    const oppOpen: [number, number, number, number, number, number] = [0, 0, 0, 0, 0, Math.max(0, 15 - oppOff)]
     return {
       ...s,
-      lanes: { ...s.lanes, [turn]: lanes, [other(turn)]: drain(s.lanes[other(turn)], oppOff) },
+      closed: { white: [0, 0, 0, 0, 0, 0], black: [0, 0, 0, 0, 0, 0] },
+      open: { ...s.open, [turn]: [0, 0, 0, 0, 0, 3], [other(turn)]: oppOpen },
       off: { ...s.off, [turn]: 12, [other(turn)]: oppOff },
     }
   }
 
-  it('tüm pulları toplayan KAZANIR', () => {
-    let s = nearWin('white', 5) // rakip 5 pul toplamış -> mars değil
-    s = applyRoll(s, [6, 6], true) // 6.hane (3) temizlenir -> off 15
+  it('tüm pulları toplayan kazanır (mars değil)', () => {
+    let s = nearWin('white', 5)
+    s = applyRoll(s, [6, 6], true)
     s = playSlot(s, 0)
     expect(s.off.white).toBe(15)
     expect(s.winner).toBe('white')
@@ -146,7 +165,7 @@ describe('Kız Tavlası — galibiyet ve mars', () => {
     expect(checkersConserved(s)).toBe(true)
   })
 
-  it('rakip 0 pul topladıysa MARS', () => {
+  it('rakip 0 topladıysa MARS', () => {
     let s = nearWin('white', 0)
     s = applyRoll(s, [6, 6], true)
     s = playSlot(s, 0)
@@ -154,21 +173,20 @@ describe('Kız Tavlası — galibiyet ve mars', () => {
     expect(s.mars).toBe(true)
   })
 
-  it('oyun bittikten sonra hamle/roll değişiklik yapmaz', () => {
+  it('oyun bitince mutasyon yok', () => {
     let s = nearWin('white', 3)
     s = applyRoll(s, [6, 6], true)
     s = playSlot(s, 0)
-    const snapshot = JSON.stringify(s)
+    const snap = JSON.stringify(s)
     s = applyRoll(s, [5, 5], true)
     s = playSlot(s, 0)
     s = endTurn(s)
-    expect(JSON.stringify(s)).toBe(snapshot) // winner set -> tüm mutasyonlar no-op
+    expect(JSON.stringify(s)).toBe(snap)
   })
 })
 
-describe('Kız Tavlası — bütünlük (rastgele tam oyunlar)', () => {
-  it('100 rastgele oyunda pul sayısı DAİMA korunur ve oyun biter', () => {
-    // Deterministik PRNG (mulberry32) — testler tekrarlanabilir olsun.
+describe('Kız Tavlası — bütünlük (100 rastgele tam oyun)', () => {
+  it('pul DAİMA korunur, iki faz işler ve oyun biter', () => {
     function makeRng(seed: number) {
       let a = seed >>> 0
       return () => {
@@ -183,10 +201,9 @@ describe('Kız Tavlası — bütünlük (rastgele tam oyunlar)', () => {
       const rng = makeRng(game + 1)
       let s = initialState(game % 2 === 0 ? 'white' : 'black')
       let guard = 0
-      while (!s.winner && guard++ < 5000) {
+      while (!s.winner && guard++ < 20000) {
         const { dice, isDouble } = rollDice(rng)
         s = applyRoll(s, dice, isDouble)
-        // Oynanabilecek her slot'u oyna (sıra: playableSlots baştan hesaplanır)
         let slots = playableSlots(s)
         while (slots.length > 0 && !s.winner) {
           s = playSlot(s, slots[0])
