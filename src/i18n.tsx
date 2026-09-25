@@ -311,6 +311,7 @@ const TR: Dict = {
   'menu.group.fun': 'EĞLENCE',
   // Bahane Makinesi (salt eğlence — arayüz metinleri; bahane içerikleri data/excuses.ts'te)
   'exc.menu': 'Bahane Makinesi',
+  'kiz.menu': 'Kız Tavlası',
   'exc.title': 'Bahane mi Lazım?',
   'exc.subtitle': 'Kaybetmenin bahanesi olmaz derler. Biz yine de hazırladık.',
   'exc.spin': 'BAHANE BUL',
