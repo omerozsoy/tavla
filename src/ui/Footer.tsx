@@ -1,14 +1,6 @@
-import { useEffect, useState } from 'react'
 import './footer.css'
 import { useT } from '../i18n'
 import { TavlaTvLogo } from './TavlaTvLogo'
-import { listContents, type Content } from '../api'
-
-// Medya yolu: tam URL / mutlak ise oldugu gibi; ciplak ise panelden yuklenmis -> /uploads/
-function mediaSrc(img?: string | null): string | undefined {
-  if (!img) return undefined
-  return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
-}
 
 export interface FooterItem {
   key: string
@@ -27,17 +19,6 @@ interface Props {
 export default function Footer({ columns }: Props) {
   const { t } = useT()
   const year = new Date().getFullYear()
-  // Kurumlar listesindeki ILK 3 kurum (sira: sort) -> logolari markanin altinda goster.
-  const [partners, setPartners] = useState<Content[]>([])
-  useEffect(() => {
-    let alive = true
-    listContents('kurum')
-      .then((ks) => alive && setPartners(ks.filter((k) => k.image).slice(0, 3)))
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [])
   return (
     <footer className="site-footer">
       <div className="foot-inner">
@@ -49,37 +30,6 @@ export default function Footer({ columns }: Props) {
             {/* Slogan: duz HTML metin (SVG textLength=%100 Firefox'ta bozuluyordu). */}
             <span className="foot-tag">{t('foot.tag')}</span>
           </div>
-          {/* Ilk 3 kurumun logosu — beyaz yuvarlak cip (koyu footer'da okunur). Web
-              sitesi varsa yeni sekmede acilir. */}
-          {partners.length > 0 && (
-            <div className="foot-partners" aria-label={t('menu.clubs')}>
-              {partners.map((k) => {
-                const logo = mediaSrc(k.image)
-                // Kurumun web sitesi 'contact' alaninda tutulur (KurumResource "Web sitesi");
-                // eski links.website'e de geriye-donuk bakilir.
-                const site = (k.contact || k.links?.website || '').trim() || null
-                const inner = (
-                  <img className="foot-partner-logo" src={logo} alt={k.title} loading="lazy" />
-                )
-                return site ? (
-                  <a
-                    key={k.id}
-                    href={/^https?:/.test(site) ? site : `https://${site}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="foot-partner"
-                    title={k.title}
-                  >
-                    {inner}
-                  </a>
-                ) : (
-                  <span key={k.id} className="foot-partner" title={k.title}>
-                    {inner}
-                  </span>
-                )
-              })}
-            </div>
-          )}
         </div>
         <nav className="foot-cols">
           {columns
