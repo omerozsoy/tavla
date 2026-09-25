@@ -5358,6 +5358,19 @@ export default function App() {
             const r = sourceRect(st.from) // güncel gösterilen tahtada kaynağı yakala
             if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r }
           }
+          // Ses: rakibin bu adımı vuruş mu (rakip=benim taşım blot) yoksa normal hamle mi?
+          // pre = bu adımdan ÖNCEKİ tahta (turnStart + o ana dek oynatılan base). Spectate deseni.
+          if (!resultShowingRef.current && !inLobbyRef.current) {
+            const pre = applyPlayed(turnStart, base)
+            const moverSign = turnStart.turn === 'white' ? 1 : -1
+            const hit =
+              typeof st.to === 'number' &&
+              pre.points[st.to] !== 0 &&
+              Math.sign(pre.points[st.to]) !== moverSign &&
+              Math.abs(pre.points[st.to]) === 1
+            if (hit) Sound.hit()
+            else Sound.move()
+          }
           base.push(st)
           oppLiveShownRef.current = base.slice()
           setOppLive(base.slice())
@@ -5380,6 +5393,35 @@ export default function App() {
     if (el) flyChecker(el, f.srcRect, moveStyle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oppLive])
+
+  // Ses: RAKİBİN zar atışı (online insan/kılıç maçı). Kendi atışım doRoll -> playDice() ile çalar;
+  // rakibin zarı yalnız poll/applyServerBoard ile geldiğinden buraya kadar sessizdi (kullanıcı raporu:
+  // "rakibin zarını duymuyorum"). Yeni dolu dice + rakip turu -> bir kez çal. Maça rakip turunda
+  // GİRİLDİĞİNDE ilk zarı ÇALMA (firstDiceRef); home/sonuç ekranında bastır (playDice ile aynı kapı).
+  const oppDiceKeyRef = useRef('')
+  const oppFirstDiceRef = useRef(true)
+  // Yeni maça (oda kodu değişince) girişte "ilk rakip zarını çalma" korumasını sıfırla:
+  // "Maça Dön" ile rakip turunun ortasına girince o anki zar hayalet ses çıkarmasın.
+  useEffect(() => {
+    oppFirstDiceRef.current = true
+    oppDiceKeyRef.current = ''
+  }, [room?.code])
+  useEffect(() => {
+    if (!online || myTurn || !turnStart.dice || turnStart.dice.length === 0) {
+      oppDiceKeyRef.current = ''
+      return
+    }
+    const key = `${turnStart.turn}|${turnStart.dice.join(',')}`
+    if (key === oppDiceKeyRef.current) return
+    oppDiceKeyRef.current = key
+    if (oppFirstDiceRef.current) {
+      oppFirstDiceRef.current = false // maça rakip turunda girişte ilk zarı çalma
+      return
+    }
+    if (resultShowingRef.current || inLobbyRef.current) return
+    Sound.dice()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, myTurn, turnStart.turn, turnStart.dice])
 
   // Otomatik zar: insanin sirasi gelince zar otomatik atilir (kucuk gecikme).
   // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyorsa

@@ -101,3 +101,21 @@ Kod tarafında rota ailesi ayrıca doğrulandı: `src/App.tsx:1173-1440` deep-li
 - 768/1024 px: footer `.foot-cols` dört kolonlu düzene geçiyor; 620 px altında üç kolonlu mobil düzen korunuyor.
 - `http://127.0.0.1:5199/api/site-tags`: Vite proxy üzerinden HTTP 200 doğrulandı; frontend artık dev ortamında mutlak `localhost:8000` API URL’sine bağımlı değil.
 - `npm run typecheck`, `npm run build` ve `npm run lint` başarılı. Lint yalnızca mevcut, hata seviyesine yükseltilmemiş uyarılar verdi.
+
+## Oturum devri — bilgisayar kapatılmadan önceki durum
+
+Son durum: Doğrulanmış responsive bulgular düzeltildi; çalışma burada güvenle durdurulabilir.
+
+Değiştirilen uygulama dosyaları:
+
+- `src/App.css` — 320 px üst bar düzeni
+- `src/ui/bugReport.css` — 320 px misafir hata bildirimi FAB erişimi
+- `src/ui/footer.css` — footer hit area ve tablet kolon düzeni
+- `src/api.ts` — dev ortamında göreli `/api` kullanımı
+- `vite.config.ts` — `/api` için localhost backend proxy’si
+
+Geçen kontroller: `npm run typecheck`, `npm run build`, `npm run lint`, `git diff --check`; ayrıca 320/390/768/1024 px tarayıcı ölçümleri ve `/api/site-tags` proxy HTTP 200 kontrolü.
+
+Devam edilecek işler: auth/profil formları, ödeme/sipariş, gerçek online maç-tahta etkileşimi, canlı chat ve dolu turnuva akışlarını backend/oturum ile uçtan uca test etmek. Bunlar bug olarak doğrulanmadı; yalnızca audit sırasında test kapsamı dışında kaldı.
+
+Not: Çalışma ağacında mevcut ve bu görevden bağımsız kullanıcı değişiklikleri korunmuştur; kapatmadan önce `git status --short` ile gözden geçirilebilir.
