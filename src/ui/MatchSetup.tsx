@@ -148,7 +148,7 @@ export default function MatchSetup({
             />
             <div className="level-grid">
               {AI_LEVELS.map((name, i) => {
-                const persona = botPersona(i + 1) // 11/12: karakter (Oklavalı Naciye / Şeşbeş Şevket)
+                const persona = botPersona(i + 1) // 11/12: karakter (Oklavalı Teyze / Kahvedeki Dayı)
                 return (
                   <button
                     key={`${i}-${name}`}
