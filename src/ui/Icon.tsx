@@ -31,6 +31,8 @@ import {
   IconSun,
   IconMoon,
   IconBook,
+  IconBooks,
+  IconZoomQuestion,
   IconLogout,
   IconHome,
   IconStar,
@@ -137,6 +139,8 @@ export type IconName =
   | 'sun'
   | 'moon'
   | 'book'
+  | 'books'
+  | 'zoom-question'
   | 'logout'
   | 'home'
   | 'star'
@@ -242,6 +246,8 @@ const MAP: Record<IconName, TablerIcon> = {
   sun: IconSun,
   moon: IconMoon,
   book: IconBook,
+  books: IconBooks,
+  'zoom-question': IconZoomQuestion,
   logout: IconLogout,
   home: IconHome,
   star: IconStar,
