@@ -55,6 +55,7 @@ import {
   nextSubmittedKey,
 } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
+import { botPersona } from './botPersonas'
 import Board from './ui/Board'
 import { useBoardDir } from './ui/boardDirection'
 import { useSwapStones } from './ui/pieceColors'
@@ -6759,15 +6760,20 @@ export default function App() {
       : t('player.white')
   // Kendi premium'um (const `premium` daha ASAGIDA tanimli -> burada yerel turet).
   const isMePremium = user?.plan_active === 'star'
+  // YZ KARAKTERİ: bota karşı (yerel pvb VEYA online bot odası) + üst seviyelerde (11/12) botun
+  // adı + avatar görseli persona'dan gelir (robot ikonu yerine gerçek karakter). Bot DAİMA
+  // siyah/üst oyuncudur (insan bot maçlarında hep beyaz). Persona yoksa eski davranış (jenerik
+  // ad + robot ikonu) korunur. Bkz. [[src/botPersonas.ts]].
+  const botPersonaActive = botMatch && myColor !== 'black' ? botPersona(difficulty) : undefined
   const topInfo = {
-    name: blackName,
+    name: botPersonaActive ? botPersonaActive.name : blackName,
     avatar: '🐱',
-    sub: online
-      ? myColor === 'black'
-        ? t('player.you')
-        : t('mp.title')
-      : mode === 'pvb'
-        ? `${t('solo.level', { n: difficulty })} · ${AI_LEVELS[difficulty - 1]}`
+    sub: botMatch
+      ? `${t('solo.level', { n: difficulty })} · ${AI_LEVELS[difficulty - 1]}`
+      : online
+        ? myColor === 'black'
+          ? t('player.you')
+          : t('mp.title')
         : t('player.p2'),
     off: working.off.black,
     active: turnStart.turn === 'black' && !gameWon && !gameEnd,
@@ -6775,9 +6781,13 @@ export default function App() {
     score: match.score.black,
     target: match.target,
     rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
-    avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
+    avatarUrl: botPersonaActive
+      ? botPersonaActive.avatar
+      : online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
-    isBot: !online && mode === 'pvb', // PvB'de siyah/ust oyuncu = YZ -> robot ikonu
+    // Bot ise (persona dahil) isBot=true -> avatar yoksa robot ikonu + seviye alt-satiri (Sidebar
+    // seviye 'sub'unu yalniz isBot'ta cizer). Persona'da avatarUrl dolu -> gorsel gosterilir.
+    isBot: botMatch, // bota karsi (yerel pvb + online bot odasi)
     premium: online ? (myColor === 'black' ? isMePremium : (room?.oppPremium ?? false)) : false,
     // Rakip (siyah/ust, ben beyazsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:
@@ -9392,8 +9402,8 @@ export default function App() {
 
       {gameEnd && matchOver && mWinner && (
         <MatchResult
-          winnerName={mWinner === 'white' ? whiteName : blackName}
-          loserName={mWinner === 'white' ? blackName : whiteName}
+          winnerName={mWinner === 'white' ? bottomInfo.name : topInfo.name}
+          loserName={mWinner === 'white' ? topInfo.name : bottomInfo.name}
           winnerAvatar={mWinner === 'white' ? bottomInfo.avatarUrl : topInfo.avatarUrl}
           loserAvatar={mWinner === 'white' ? topInfo.avatarUrl : bottomInfo.avatarUrl}
           winnerColor={mWinner}

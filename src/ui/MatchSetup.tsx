@@ -5,6 +5,7 @@ import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 import { PR_TARGET_LABELS } from '../botPr'
+import { botPersona } from '../botPersonas'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
 export type SetupMode = 'pvb' | 'online'
@@ -134,7 +135,7 @@ export default function MatchSetup({
         {mode === 'pvb' && (
           <div className="setup-row">
             <div className="setup-label">
-              {t('setup.difficulty')}: <b>{AI_LEVELS[difficulty - 1]}</b> ({difficulty}/{AI_LEVELS.length})
+              {t('setup.difficulty')}: <b>{botPersona(difficulty)?.name ?? AI_LEVELS[difficulty - 1]}</b> ({difficulty}/{AI_LEVELS.length})
             </div>
             <input
               type="range"
@@ -146,16 +147,23 @@ export default function MatchSetup({
               onChange={(e) => setDifficulty(Number(e.target.value))}
             />
             <div className="level-grid">
-              {AI_LEVELS.map((name, i) => (
-                <button
-                  key={`${i}-${name}`}
-                  className={`level-chip ${difficulty === i + 1 ? 'active' : ''}`}
-                  onClick={() => setDifficulty(i + 1)}
-                >
-                  <span className="level-chip-name">{i + 1}. {name}</span>
-                  <span className="level-chip-pr">~PR {PR_TARGET_LABELS[i] ?? '0–0.3'}</span>
-                </button>
-              ))}
+              {AI_LEVELS.map((name, i) => {
+                const persona = botPersona(i + 1) // 11/12: karakter (Oklavalı Naciye / Şeşbeş Şevket)
+                return (
+                  <button
+                    key={`${i}-${name}`}
+                    className={`level-chip ${persona ? 'has-persona' : ''} ${difficulty === i + 1 ? 'active' : ''}`}
+                    onClick={() => setDifficulty(i + 1)}
+                  >
+                    {persona && <img className="level-chip-ava" src={persona.avatar} alt="" />}
+                    <span className="level-chip-name">
+                      {i + 1}. {persona ? persona.name : name}
+                    </span>
+                    {persona && <span className="level-chip-tier">{name}</span>}
+                    <span className="level-chip-pr">~PR {PR_TARGET_LABELS[i] ?? '0–0.3'}</span>
+                  </button>
+                )
+              })}
             </div>
             {DEEP_LEVEL_NOTE[difficulty] && (
               <div className="pa-depth-note">{DEEP_LEVEL_NOTE[difficulty]}</div>
