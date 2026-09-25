@@ -9314,7 +9314,7 @@ export default function App() {
         {/* AFK son-15sn uyarisi (sunucu-otoriter): yalniz sirasi gelen YEREL oyuncuya */}
         {online && afkLeft != null && srvActive === myColor && !gameEnd && !matchOver && (
           <div className="afk-warn" role="alert" aria-live="assertive">
-            <Icon name="warning-circle" size={22} />
+            <Icon name="warning-circle" size={15} />
             <span>{t('afk.warn', { n: afkLeft })}</span>
           </div>
         )}
