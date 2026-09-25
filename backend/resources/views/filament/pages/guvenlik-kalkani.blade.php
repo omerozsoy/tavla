@@ -60,7 +60,7 @@
                     <thead class="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5">
                         <tr>
                             <th class="text-left font-medium px-3 py-2">Kim</th>
-                            <th class="text-left font-medium px-3 py-2">Ne yapıyor</th>
+                            <th class="text-left font-medium px-3 py-2">Hangi sayfa</th>
                             <th class="text-left font-medium px-3 py-2">Süre</th>
                             <th class="text-right font-medium px-3 py-2">İstek</th>
                             <th class="text-right font-medium px-3 py-2">Tepe/dk</th>
@@ -93,8 +93,12 @@
                                     <div class="text-xs text-gray-400 font-mono">{{ $r->ip }}</div>
                                 </td>
                                 <td class="px-3 py-2">
-                                    <div>{{ $this->activityLabel($r->last_path) }}</div>
-                                    <div class="text-xs text-gray-400 font-mono truncate max-w-[220px]">{{ $r->last_method }} /{{ $r->last_path }} · {{ $r->last_status }}</div>
+                                    @php $pg = $this->pageLabel($r->last_page ?? null); @endphp
+                                    <div class="font-medium">{{ $pg ?? $this->activityLabel($r->last_path) }}</div>
+                                    @if (! empty($r->last_page))
+                                        <div class="text-xs text-sky-600 dark:text-sky-400 font-mono truncate max-w-[240px]">/{{ ltrim($r->last_page, '/') }}</div>
+                                    @endif
+                                    <div class="text-[11px] text-gray-400 font-mono truncate max-w-[240px]">{{ $r->last_method }} /{{ $r->last_path }} · {{ $r->last_status }}</div>
                                 </td>
                                 <td class="px-3 py-2 whitespace-nowrap">{{ $this->human($r->session_started_at) }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums">{{ number_format($r->req_count) }}</td>
@@ -128,8 +132,16 @@
 
         {{-- Güvenlik olayları --}}
         <div class="rounded-xl bg-white dark:bg-white/5 ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-950/5 dark:border-white/10 font-medium">
-                Güvenlik Olayları <span class="text-gray-400 text-sm">(son {{ count($events) }})</span>
+            <div class="px-4 py-3 border-b border-gray-950/5 dark:border-white/10 font-medium flex items-center justify-between gap-3">
+                <span>
+                    Güvenlik Olayları <span class="text-gray-400 text-sm">(son {{ count($events) }})</span>
+                    @if ($onlyImportant)
+                        <span class="ml-1 text-xs text-gray-400">— yalnızca önemli</span>
+                    @endif
+                </span>
+                <x-filament::button size="xs" :color="$onlyImportant ? 'gray' : 'warning'" wire:click="toggleImportant">
+                    {{ $onlyImportant ? 'Tümünü göster' : 'Sadece önemli' }}
+                </x-filament::button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">

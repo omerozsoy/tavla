@@ -32,9 +32,17 @@ class GuvenlikKalkani extends Page
     /** Yalnızca riskli (risk ≥ 30) özneleri göster. */
     public bool $onlyRisky = false;
 
+    /** Olaylar tablosu: yalnızca gerçekten önemli (tehlike) olayları göster; kazıma gürültüsünü ele. */
+    public bool $onlyImportant = true;
+
     public function toggleRisky(): void
     {
         $this->onlyRisky = ! $this->onlyRisky;
+    }
+
+    public function toggleImportant(): void
+    {
+        $this->onlyImportant = ! $this->onlyImportant;
     }
 
     public static function getNavigationBadge(): ?string
@@ -84,6 +92,18 @@ class GuvenlikKalkani extends Page
             return [];
         }
 
+        // last_page kolonu deploy migrate'inden sonra gelir; yoksa seçme (500 önle).
+        $cols = [
+            'p.subject', 'p.user_id', 'p.ip', 'p.last_path', 'p.last_method', 'p.last_status',
+            'p.last_seen_at', 'p.session_started_at', 'p.req_count', 'p.err_count',
+            'p.spin_count', 'p.susp_count', 'p.rate_max', 'p.risk', 'p.user_agent',
+            'u.nickname', 'u.first_name', 'u.last_name', 'u.email', 'u.avatar',
+            'u.banned_at', 'u.is_admin',
+        ];
+        if (Schema::hasColumn('shield_presence', 'last_page')) {
+            $cols[] = 'p.last_page';
+        }
+
         return DB::table('shield_presence as p')
             ->leftJoin('users as u', 'u.id', '=', 'p.user_id')
             ->where('p.last_seen_at', '>', now()->subMinutes(15))
@@ -91,13 +111,7 @@ class GuvenlikKalkani extends Page
             ->orderByDesc('p.risk')
             ->orderByDesc('p.last_seen_at')
             ->limit(200)
-            ->get([
-                'p.subject', 'p.user_id', 'p.ip', 'p.last_path', 'p.last_method', 'p.last_status',
-                'p.last_seen_at', 'p.session_started_at', 'p.req_count', 'p.err_count',
-                'p.spin_count', 'p.susp_count', 'p.rate_max', 'p.risk', 'p.user_agent',
-                'u.nickname', 'u.first_name', 'u.last_name', 'u.email', 'u.avatar',
-                'u.banned_at', 'u.is_admin',
-            ])
+            ->get($cols)
             ->all();
     }
 
@@ -110,6 +124,16 @@ class GuvenlikKalkani extends Page
 
         return DB::table('shield_events as e')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
+            ->when($this->onlyImportant, function ($q) {
+                // Yalnızca gerçekten önemli olaylar: tehlike (severity ≥ 3) VE zararsız
+                // salt-okunur GET aşırı-istek gürültüsünü (kazıma) dışla.
+                $q->where('e.severity', '>=', 3)
+                    ->where(function ($w) {
+                        $w->where('e.type', '!=', 'rate_burst')
+                            ->orWhere('e.method', '!=', 'GET')
+                            ->orWhere('e.status', '>=', 400);
+                    });
+            })
             ->orderByDesc('e.created_at')
             ->limit(150)
             ->get([
@@ -180,6 +204,43 @@ class GuvenlikKalkani extends Page
             str_contains($p, 'admin') => 'Panel isteği',
             str_contains($p, 'ping') => 'Beklemede',
             $p === 'api' || $p === '' => 'Ana sayfa',
+            default => '/'.$p,
+        };
+    }
+
+    /** SPA rotası (X-Page) → insan-okunur sayfa adı. Boşsa null döner (API'den tahmine düşülür). */
+    public function pageLabel(?string $page): ?string
+    {
+        $p = trim((string) $page, '/');
+        if ($p === '') {
+            return null;
+        }
+        // Tam eşleşmeler (pages.ts slug'larıyla hizalı).
+        $map = [
+            '' => 'Ana sayfa',
+            'tek-oyun' => 'Tek Oyun', 'yeni-oyun' => 'Yeni Oyun (eşleşme)',
+            'yz-ile-oyna' => 'YZ ile Oyna', 'arkadasinla-oyna' => 'Arkadaşınla Oyna',
+            'online-turnuvalar' => 'Turnuvalar', 'lider-tablosu' => 'Lider Tablosu',
+            'arkadaslar' => 'Arkadaşlar', 'mesajlar' => 'Mesajlar',
+            'sans-carki' => 'Şans Çarkı', 'zar-slotu' => 'Zar Slotu', 'bahane-makinesi' => 'Bahane Makinesi',
+            'kiz-tavlasi' => 'Kız Tavlası', 'makaleler' => 'Makaleler', 'turnuva-takvimi' => 'Turnuva Takvimi',
+            'kulupler' => 'Kulüpler', 'haberler' => 'Haberler', 'tavla-magazin' => 'Tavla Magazin',
+            'urunler' => 'Ürünler', 'pozisyon-analizi' => 'Pozisyon Analizi', 'mat-analiz' => 'MAT Analizi',
+            'basarimlar' => 'Başarımlar', 'hata-gunlugu' => 'Hata Günlüğü', 'mac-analizleri' => 'Maç Analizleri',
+            'uyelik' => 'Üyelik', 'magaza' => 'Mağaza', 'pul-tasarimlari' => 'Pul Tasarımları',
+            'siparislerim' => 'Siparişlerim', 'online-tavla' => 'Online Tavla', 'tavla-oyna' => 'Tavla Oyna',
+        ];
+        if (isset($map[$p])) {
+            return $map[$p];
+        }
+        // Ön ek eşleşmeleri (derin/dinamik yollar: /makaleler/<slug>, /bilgi/<sekme>, /oda/<kod> vb.).
+        return match (true) {
+            str_starts_with($p, 'makaleler/') => 'Makale okuyor',
+            str_starts_with($p, 'haberler/') => 'Haber okuyor',
+            str_starts_with($p, 'tavla-magazin/') => 'Magazin izliyor',
+            str_starts_with($p, 'bilgi') => 'Bilgi sayfaları',
+            str_starts_with($p, 'oda/') || str_starts_with($p, 'oyun') => 'Oyun / oda',
+            str_starts_with($p, 'profil') => 'Profil',
             default => '/'.$p,
         };
     }
