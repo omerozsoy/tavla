@@ -704,7 +704,7 @@ function Showcase() {
                 <span className="sc-rank-th">{r.min}+</span>
                 <code className="sc-rank-icon">
                   {r.iconName}
-                  <span className="sc-rank-weight">{r.weight}</span>
+                  <span className="sc-rank-weight">stroke {r.stroke}</span>
                 </code>
                 <span className="sc-rank-cell">
                   <RankBadge rank={r.family} level={r.code} variant="compact" />

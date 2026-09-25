@@ -80,7 +80,7 @@ export function RankBadge({
       aria-label={label}
     >
       <span className="rank-badge__icon" aria-hidden="true">
-        <Icon size={iconSize} weight={tier.weight} />
+        <Icon size={iconSize} stroke={tier.stroke} />
       </span>
 
       {variant === 'compact' ? (
