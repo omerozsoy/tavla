@@ -123,6 +123,67 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertEqualsWithDelta(4.0, (float) $mr->opponent_pr, 1e-6);
     }
 
+    /** gnubg HİÇBİR pozisyon değerlendiremeyen (evaluated=0) sahte orkestrator -> pr 0.0 fallback. */
+    private function emptyOrch(): AnalysisOrchestrator
+    {
+        return new class($this->app->make(GnuBgClient::class)) extends AnalysisOrchestrator
+        {
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            {
+                return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
+                    'strictPr' => null, 'loosePr' => null, 'skipReasons' => [], 'firstSkip' => null, 'perDecision' => []];
+            }
+
+            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            {
+                return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
+                    'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
+            }
+        };
+    }
+
+    /**
+     * KÖK FIX: gnubg log'dan hiçbir kararı skorlayamazsa (evaluated=0) checkerPr/cubePr "PR asla null
+     * olmasın" direktifi gereği 0.0 döner. Bu SAHTE 0.0 kolonlara YAZILMAMALI — aksi halde sonuç
+     * ekranında kaybeden "0.00 + Super Grandmaster" (divisionOfPR(0)=en üst seviye) görünüyordu.
+     */
+    public function test_sentinel_zero_pr_not_persisted(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $u = User::factory()->create();
+        $mr = MatchResult::create([
+            'user_id' => $u->id, 'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+            'match_length' => 3, 'match_type' => 'match', 'pr' => null,
+            'room_code' => 'ZEROZ', // ONLINE (rakip reconstruction denenecek)
+            'log' => json_encode(['hc' => 'white', 'log' => [
+                ['player' => 'white', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [3, 1], 'playedSteps' => [[8, 5]]],
+            ]]),
+        ]);
+
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->emptyOrch());
+
+        $mr->refresh();
+        $this->assertNull($mr->gnubg_pr, 'değerlendirme yoksa sahte 0.0 gnubg_pr YAZILMAMALI');
+        $this->assertNull($mr->gnubg_checker_pr, 'değerlendirme yoksa sahte 0.0 gnubg_checker_pr YAZILMAMALI');
+        $this->assertNull($mr->gnubg_opponent_pr, 'rakip skorlanamadıysa gnubg_opponent_pr YAZILMAMALI (0.00+Super GM bug)');
+        $this->assertNull($mr->opponent_pr, 'rakip opponent_pr fallback da yazılmamalı');
+    }
+
+    /** Küpü hiç olmayan maçta (cube evaluated=0) gnubg_cube_pr sahte 0.00 yerine NULL kalmalı -> "—". */
+    public function test_cube_pr_null_when_no_cube_positions(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $mr = $this->matchWithLog(clientPr: 12.0);
+
+        // fakeOrch: checker evaluated=6 (dolu), cube evaluated=0 (küp kararı yok).
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
+
+        $mr->refresh();
+        $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_checker_pr, 1e-6, 'pul PR yazılmalı');
+        $this->assertNull($mr->gnubg_cube_pr, 'küp kararı yoksa gnubg_cube_pr sahte 0.00 değil NULL olmalı');
+    }
+
     public function test_shadow_does_not_touch_authoritative_pr(): void
     {
         config(['gnubg.pr_mode' => 'shadow']);
