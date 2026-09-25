@@ -91,7 +91,7 @@ class PaymentController extends Controller
     public function subscribe(Request $request, GarantiService $garanti)
     {
         $data = $request->validate([
-            'plan'   => ['required', 'in:star,starpro'],
+            'plan'   => ['required', 'in:star'],
             'period' => ['required', 'in:yearly'], // yalnız yıllık üyelik (aylık kaldırıldı)
             'method' => ['nullable', 'in:card,bank_transfer'],
         ]);

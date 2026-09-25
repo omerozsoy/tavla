@@ -1099,7 +1099,7 @@ export default function App() {
   // NOT: bu hook ust hook bolgesinde (erken-return'lerden ONCE) durmali — sabit sira;
   // premium'u user'dan inline turetir ki gec tanimlanan `premium` const'una baglanmasin.
   useEffect(() => {
-    const isPrem = user?.plan_active === 'star' || user?.plan_active === 'starpro'
+    const isPrem = user?.plan_active === 'star'
     if (blunderOpen && user && !isPrem) {
       setBlunderOpen(false)
       setMemOpen(true)
@@ -1688,7 +1688,13 @@ export default function App() {
   // Komisyon (rake): kazananin aldigi (won) vs kaybedenin odedigi (lost) ASIMETRIK olabilir
   // (kazanan stake x (1-komisyon)). MatchResult iki tarafi ayri gosterir. null -> simetrik fallback.
   const [coinPair, setCoinPair] = useState<{ won: number; lost: number } | null>(null)
-  const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
+  // reason/limit: maç PUANSIZ ise (kılıç casual / günlük limit / bot) sonuç ekranında açıklayıcı not.
+  const [ratingChange, setRatingChange] = useState<{
+    before: number
+    after: number
+    reason?: 'bot' | 'friendly_cap' | 'friendly' | 'casual' | null
+    limit?: number
+  } | null>(null)
   // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
   // log'undan hesaplanir -> iki oyuncu AYNI degerleri gorur. null ise lokal prOf'a duser.
   // KIRILIM (checker/cube) da sunucudan gelir -> "Pul Oyunu PR" / "Kup PR" satirlari da iki
@@ -4078,7 +4084,9 @@ export default function App() {
           null, // .mat: backend stored log'dan kurar; istemci .mat'i kullanılmaz
         ])
       } else {
-        setRatingChange({ before, after: r.rating })
+        // Not YALNIZ sunucu AÇIKÇA rated:false derse (eski backend rated göndermez -> undefined ->
+        // not gösterme; puanlı maçlar yanlışlıkla "puansız" etiketi almasın).
+        setRatingChange({ before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
@@ -4344,7 +4352,9 @@ export default function App() {
       if (!r) {
         savePendingReport(args as unknown[]) // sonra (acilis/online) tekrar denenir (idempotent)
       } else {
-        setRatingChange({ before, after: r.rating })
+        // Not YALNIZ sunucu AÇIKÇA rated:false derse (eski backend rated göndermez -> undefined ->
+        // not gösterme; puanlı maçlar yanlışlıkla "puansız" etiketi almasın).
+        setRatingChange({ before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // pvb: kendi PR + BOT PR ikisi de gnubg (authoritative) -> pollGnubgPr doldurur. Başlangıçta
@@ -6732,7 +6742,7 @@ export default function App() {
       ? myName
       : t('player.white')
   // Kendi premium'um (const `premium` daha ASAGIDA tanimli -> burada yerel turet).
-  const isMePremium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
+  const isMePremium = user?.plan_active === 'star'
   const topInfo = {
     name: blackName,
     avatar: '🐱',
@@ -6882,7 +6892,7 @@ export default function App() {
     <Auth key="auth" page initialForgot={authForgot} onForgotChange={setAuthForgot} {...authProps} />
   ) : null
   // Ucretli plan aktif mi (premium ozellik kilidi)
-  const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
+  const premium = user?.plan_active === 'star'
 
   // Tahta tema listesi: nadirlik bazli COIN fiyati + sahiplik (unlocks). Ucretsiz: standart/tavla/galaxy + kulup.
   const boardUnlocks = user?.unlocks ?? []
@@ -9383,6 +9393,10 @@ export default function App() {
           ratingBefore={ratingChange?.before ?? null}
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
+          // Puansız maç açıklaması (kılıç casual / günlük limit / bot). Bot maçında not gösterme
+          // (rakip AI olduğu zaten belli) -> yalnız insan maçında.
+          ratingReason={botMatch ? null : (ratingChange?.reason ?? null)}
+          friendlyLimit={ratingChange?.limit ?? null}
           oppRating={mode === 'pvb' ? 900 + difficulty * 100 : (room?.oppRating ?? null)}
           // Rakip rating değişimi: online PUANLI maçta Elo sıfır-toplamlı -> -(kendi delta). Bot
           // maçında (pvb veya online-bot) AI'nın kalıcı rating'i yok -> null. Arkadaş/kılıç + turnuva

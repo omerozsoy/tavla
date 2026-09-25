@@ -85,7 +85,7 @@ class PresenceController extends Controller
         $rewardReady = $elapsed >= 6 * 3600;
         $rewardSeconds = $rewardReady ? 0 : (6 * 3600 - $elapsed);
         // 6 saatlik ödül MİKTARI (plana + admin ayarına göre): premium 50, normal 25 (Site Ayarları).
-        $rewardCoins = in_array($me->plan_active, ['star', 'starpro'], true)
+        $rewardCoins = $me->plan_active === 'star'
             ? \App\Models\Setting::int('reward_premium', 50)
             : \App\Models\Setting::int('reward_normal', 25);
 

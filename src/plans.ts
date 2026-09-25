@@ -1,5 +1,5 @@
-// Uyelik kademeleri (Ucretsiz / Star / StarPRO). Backend plan id'leriyle ayni.
-export type PlanId = 'free' | 'star' | 'starpro'
+// Uyelik kademeleri (Ucretsiz / Star). Backend plan id'leriyle ayni.
+export type PlanId = 'free' | 'star'
 
 export interface Feature {
   key: string // i18n anahtari

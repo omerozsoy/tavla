@@ -221,9 +221,9 @@ class ShopController extends Controller
                     'next_in' => self::REWARD_COOLDOWN - $elapsed,
                 ];
             }
-            // 6 saatlik bonus (admin ayarı): normal kullanıcı reward_normal (25), premium (star/starpro)
+            // 6 saatlik bonus (admin ayarı): normal kullanıcı reward_normal (25), premium (star)
             // reward_premium (50). Ayarlar Site Ayarları'ndan yönetilir.
-            $premium = in_array($u->plan_active, ['star', 'starpro'], true);
+            $premium = $u->plan_active === 'star';
             $amount = $premium
                 ? \App\Models\Setting::int('reward_premium', 50)
                 : \App\Models\Setting::int('reward_normal', 25);

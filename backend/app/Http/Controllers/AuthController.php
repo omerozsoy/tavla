@@ -727,10 +727,21 @@ class AuthController extends Controller
         }
 
         $releaseResultLock();
+        // Sonuç ekranı "puansız maç" etiketi için: bu maç PUANLI mı + değilse SEBEP. Kullanıcı,
+        // kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu -> açıklayıcı not göster.
+        $ratingReason = null;
+        if (! $ranked) {
+            $ratingReason = $room->bot
+                ? 'bot'
+                : ($friendlyOverCap ? 'friendly_cap' : ($room->mode === 'friendly' ? 'friendly' : 'casual'));
+        }
         return response()->json([
             'rating' => $newRating,
             'user' => $user,
             'achievements' => $unlocked,
+            'rated' => $ranked,               // maç Elo/PR ürettiyse true; casual/kılıç-limit -> false
+            'rating_reason' => $ratingReason, // false ise sebep: bot|friendly_cap|friendly|casual
+            'friendly_rating_limit' => \App\Support\RatingPolicy::friendlyDailyLimit(), // "limit doldu (N)" metni için
             'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
             // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı
             // yalnız fallback; ekran "analiz ediliyor" gösterip gnubg gelince yerine koyar.

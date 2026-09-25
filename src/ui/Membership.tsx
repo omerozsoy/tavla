@@ -36,7 +36,7 @@ export default function Membership({
     }
   }, [])
 
-  async function pay(plan: 'star' | 'starpro') {
+  async function pay(plan: 'star') {
     setErr('')
     setBusy(plan)
     try {
@@ -127,7 +127,7 @@ export default function Membership({
                       variant="secondary"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => (onExtend ? onExtend() : pay(p.id as 'star' | 'starpro'))}
+                      onClick={() => (onExtend ? onExtend() : pay(p.id as 'star'))}
                     >
                       {t('mem.status.renew')}
                     </Button>
@@ -144,7 +144,7 @@ export default function Membership({
                       variant="default"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => pay(p.id as 'star' | 'starpro')}
+                      onClick={() => pay(p.id as 'star')}
                     >
                       {busy === p.id ? <span className="btn-spinner" aria-hidden="true" /> : t('mem.subscribe')}
                     </Button>
