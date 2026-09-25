@@ -26,11 +26,10 @@ class GnuBgClient
     }
 
     /**
-     * /analyze FAILOVER tabanları (birincil + yedek[ler]), sırayla. url_backup virgülle ayrılmış olabilir.
-     * Boşları eler, sondaki '/'i kırpar. Tek eleman -> eski tek-instance davranışı (geriye dönük uyum).
-     * PUBLIC: admin "Servis Durumu" paneli + services:watch her instance'ı ayrı gösterir/izler.
+     * ÖN PLAN (CANLI BOT) instance havuzu: GNUBG_URL + GNUBG_URL_BACKUP, sırayla. Maç sırasında botun
+     * hamlesi bu havuzdan hesaplanır -> arka plan PR/heal analiziyle ÇAKIŞMAZ ("onayla" takılmaz).
      */
-    public function analyzeBases(): array
+    public function foregroundBases(): array
     {
         $primary = rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/');
         $backups = array_map(
@@ -39,6 +38,25 @@ class GnuBgClient
         );
 
         return array_values(array_filter(array_merge([$primary], $backups), fn ($u) => $u !== ''));
+    }
+
+    /** ARKA PLAN (PR/heal) instance havuzu: GNUBG_ANALYSIS_URLS. Boşsa [] -> izolasyon yok (ön plan kullanılır). */
+    public function backgroundBases(): array
+    {
+        return array_values(array_filter(array_map(
+            fn ($u) => rtrim(trim((string) $u), '/'),
+            explode(',', (string) config('gnubg.analysis_urls', '')),
+        ), fn ($u) => $u !== ''));
+    }
+
+    /**
+     * TÜM instance'lar (ön plan + arka plan, dedup, sıra korunur). Admin "Servis Durumu" paneli +
+     * services:watch her instance'ı ayrı gösterir/izler + analyzeHealthy any-up kontrolü. Tek eleman ->
+     * eski tek-instance davranışı (geriye dönük uyum).
+     */
+    public function analyzeBases(): array
+    {
+        return array_values(array_unique(array_merge($this->foregroundBases(), $this->backgroundBases())));
     }
 
     /** Instance→systemd birim adları (bases ile hizalı). config('gnubg.units') virgüllü. */
@@ -114,19 +132,41 @@ class GnuBgClient
      */
     public function analyze(array $position): ?array
     {
-        // FAILOVER: tabanları SIRAYLA dener, ilk 2xx yanıtı döndürür. Birincil (canlı bot :8092)
-        // down/yavaş/restart ise yedek instance (:8093 vb.) devreye girer -> PR "—" kalmaz + canlı bot
-        // da hamle üretmeye devam eder (ikisi de analyze() kullanır). HEPSİ düşükse null -> AnalyzeMatchPrJob
-        // fırlatır (retry) + heal cron gnubg dönünce yeniden dener. Tek instance -> eski davranış.
-        $bases = $this->analyzeBases();
-        // YÜK DENGELEME: her çağrı RASTGELE bir instance'tan başlasın. Aksi halde tüm çağrılar (PR heal +
-        // canlı bot) hep birincil (8092) listede ilk olduğu için oraya yığılır -> gnubg tek kilitle
-        // serileştirdiğinden üst üste biner (panel "peak 3"), yedekler boş durur. Karıştırınca yük 4
-        // instance'a yayılır -> her biri ~1 eşzamanlı -> kuyruk/gecikme yok. Failover KORUNUR (seçilen
-        // instance düşükse sıradakine geçilir; hepsi denenir). Tek instance -> etkisiz.
-        if (count($bases) > 1) {
-            shuffle($bases);
+        // ÖN PLAN (CANLI BOT): ön plan havuzunu yük-dengeli (shuffle) + failover kullanır. Maç sırasında
+        // botun hamlesi buradan hesaplanır. Ön plan tümü düşükse arka plan havuzuna düşer (redundans ->
+        // oyun durmaz). Arka plan PR/heal AYRI havuzda olduğundan "onayla" heal yükünün ARKASINDA BEKLEMEZ.
+        $fg = $this->foregroundBases();
+        if (count($fg) > 1) {
+            shuffle($fg);
         }
+        $fallback = array_values(array_diff($this->backgroundBases(), $fg));
+
+        return $this->tryAnalyze(array_merge($fg, $fallback), $position);
+    }
+
+    /**
+     * ARKA PLAN analiz (PR/heal): arka plan havuzunu (GNUBG_ANALYSIS_URLS) yük-dengeli + failover kullanır
+     * ki CANLI botun ön plan instance'larını MEŞGUL ETMESİN (maç sırasında "onayla" takılmasın). Arka plan
+     * havuzu tanımsızsa ön planı kullanır (izolasyon yok = geriye dönük). Arka plan tümü düşükse ön plana
+     * düşer (PR yine hesaplanır). AnalysisOrchestrator (checkerPr/cubePr) BUNU kullanır.
+     */
+    public function analyzeBackground(array $position): ?array
+    {
+        $bg = $this->backgroundBases();
+        if ($bg === []) {
+            $bg = $this->foregroundBases(); // izolasyon yapılandırılmamış -> ön planı kullan
+        }
+        if (count($bg) > 1) {
+            shuffle($bg);
+        }
+        $fallback = array_values(array_diff($this->foregroundBases(), $bg));
+
+        return $this->tryAnalyze(array_merge($bg, $fallback), $position);
+    }
+
+    /** Verilen tabanları SIRAYLA /analyze dener, ilk 2xx'i döndürür; hepsi düşükse null (failover). */
+    private function tryAnalyze(array $bases, array $position): ?array
+    {
         $last = count($bases) - 1;
         foreach ($bases as $i => $base) {
             try {
@@ -140,7 +180,7 @@ class GnuBgClient
                 Log::warning('gnubg analyze non-ok', ['idx' => $i, 'base' => $base, 'status' => $resp->status()]);
             } catch (\Throwable $e) {
                 Log::warning(
-                    $i < $last ? 'gnubg analyze erisilemez, yedege geciliyor' : 'gnubg analyze erisilemez (tum instance dustu)',
+                    $i < $last ? 'gnubg analyze erisilemez, sonrakine geciliyor' : 'gnubg analyze erisilemez (tum instance dustu)',
                     ['idx' => $i, 'base' => $base, 'msg' => $e->getMessage()],
                 );
             }

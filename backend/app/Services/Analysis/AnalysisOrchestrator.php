@@ -80,7 +80,7 @@ class AnalysisOrchestrator
                 $structured['cube'] = ['value' => (int) ($mctx['cube'] ?? 1), 'owner' => $mctx['cubeOwner'] ?? null];
                 $structured['crawford'] = (bool) ($mctx['crawford'] ?? false);
             }
-            $res = $this->gnubg->analyze($structured);
+            $res = $this->gnubg->analyzeBackground($structured);
             if ($res === null) {
                 $skipped++;
                 $reasons['gnubg_null']++;
@@ -193,7 +193,7 @@ class AnalysisOrchestrator
                 $structured['cube'] = ['value' => (int) ($mctx['cube'] ?? 1), 'owner' => $mctx['cubeOwner'] ?? null];
                 $structured['crawford'] = (bool) ($mctx['crawford'] ?? false);
             }
-            $res = $this->gnubg->analyze($structured);
+            $res = $this->gnubg->analyzeBackground($structured);
             $eq = $res['cube']['equities'] ?? null;
             if (! is_array($eq) || ! isset($eq['noDouble'], $eq['doubleTake'], $eq['doublePass'])) {
                 $skipped++;
