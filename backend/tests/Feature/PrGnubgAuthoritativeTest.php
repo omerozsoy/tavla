@@ -195,4 +195,111 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertEqualsWithDelta(12.0, (float) $mr->pr, 1e-6, 'shadow: otoriter PR degismemeli');
         $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6, 'shadow: gnubg_pr yine dolmali');
     }
+
+    /** gnubg mid-run erişilemez (skorlanacak içerik VAR ama hepsi gnubg_null): eval=0, skip=gnubg_null. */
+    private function downOrch(): AnalysisOrchestrator
+    {
+        return new class($this->app->make(GnuBgClient::class)) extends AnalysisOrchestrator
+        {
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            {
+                return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 1,
+                    'strictPr' => null, 'loosePr' => null,
+                    'skipReasons' => ['no_content' => 0, 'gnubg_null' => 1, 'no_match' => 0],
+                    'firstSkip' => ['why' => 'gnubg_null'], 'perDecision' => []];
+            }
+
+            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            {
+                return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
+                    'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
+            }
+        };
+    }
+
+    /**
+     * KÖK FIX (kalıcı "—"): gnubg mid-run düşüp SELF kararları skorlayamazsa (gnubg_null>0, eval=0) job
+     * FIRLATMALI ki $tries/backoff retry + heal cron yeniden denesin. Ayrıca gnubg_pr_at YAZILMAMALI
+     * (mezar taşı KONMAMALI) -> heal komutu bu maçı "gnubg'ye ulaşılamadı" olarak yakalayıp yeniden dener.
+     */
+    public function test_job_throws_and_leaves_no_tombstone_when_gnubg_unavailable(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $mr = $this->matchWithLog(clientPr: 12.0);
+
+        $threw = false;
+        try {
+            (new AnalyzeMatchPrJob($mr->id))->handle($this->downOrch());
+        } catch (\RuntimeException $e) {
+            $threw = true;
+        }
+
+        $this->assertTrue($threw, 'gnubg erisilemezken job FIRLATMALI (retry + heal tetiklensin)');
+        $mr->refresh();
+        $this->assertNull($mr->gnubg_pr, 'gnubg down -> PR yazilmamali');
+        $this->assertNull($mr->gnubg_pr_at, 'gnubg down -> mezar tasi KONMAMALI (heal yeniden denesin)');
+    }
+
+    /**
+     * gnubg'ye ULAŞILDI ama log gerçekten analiz-dışı (evaluated=0, gnubg_null=0): PR null kalır ("—")
+     * AMA gnubg_pr_at mezar taşı KONMALI ki tavla:gnubg-pr-heal bu maçı sonsuza dek yeniden denemesin.
+     */
+    public function test_unscoreable_match_gets_tombstone_so_heal_skips_it(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $mr = $this->matchWithLog(clientPr: 12.0);
+
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->emptyOrch());
+
+        $mr->refresh();
+        $this->assertNull($mr->gnubg_pr, 'skorlanamadi -> PR null (ekran "—")');
+        $this->assertNotNull($mr->gnubg_pr_at, 'gnubg ulasildi ama bos -> mezar tasi konmali (heal loop olmasin)');
+    }
+
+    /** heal komutu: gnubg'ye HİÇ ulaşılamamış (gnubg_pr_at NULL) maçları yeniden kuyruğa alır; dolmuşları atlar. */
+    public function test_heal_requeues_matches_never_reached_by_gnubg(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        // gnubg health=true mock (gerçek HTTP yok) -> heal komutu ilerlesin.
+        $this->app->instance(GnuBgClient::class, new class extends GnuBgClient
+        {
+            public function health(): bool
+            {
+                return true;
+            }
+        });
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $scarred = $this->matchWithLog(clientPr: 12.0); // gnubg_pr_at NULL + log dolu -> heal hedefi
+        $done = $this->matchWithLog(clientPr: 5.0);      // zaten dolmuş -> heal ATLAMALI
+        MatchResult::where('id', $done->id)->update(['gnubg_pr' => 3.0, 'gnubg_pr_at' => now()]);
+
+        $this->artisan('tavla:gnubg-pr-heal')->assertExitCode(0);
+
+        \Illuminate\Support\Facades\Queue::assertPushed(AnalyzeMatchPrJob::class, 1);
+        \Illuminate\Support\Facades\Queue::assertPushed(
+            AnalyzeMatchPrJob::class,
+            fn (AnalyzeMatchPrJob $job) => $job->matchResultId === $scarred->id
+        );
+    }
+
+    /** heal komutu: gnubg down iken kendini erteler (boşa iş / failed_jobs birikmesi yok). */
+    public function test_heal_defers_when_gnubg_down(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $this->app->instance(GnuBgClient::class, new class extends GnuBgClient
+        {
+            public function health(): bool
+            {
+                return false;
+            }
+        });
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $this->matchWithLog(clientPr: 12.0); // yaralı maç var ama gnubg down -> dispatch YOK
+
+        $this->artisan('tavla:gnubg-pr-heal')->assertExitCode(0);
+
+        \Illuminate\Support\Facades\Queue::assertNothingPushed();
+    }
 }

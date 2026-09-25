@@ -99,5 +99,15 @@ Schedule::command('jobs:auto-retry')
     ->name('auto-retry-failed-jobs')
     ->withoutOverlapping();
 
+// gnubg PR SELF-HEAL (kalıcı "—" kalkanı): gnubg servisi KISA süre down/yavaş/restart iken analiz
+// edilen maçlar KALICI "—" ile yaralanıyordu (job o an analyze()=null alıp evaluated=0 -> hiçbir kolon
+// yazmadan "tamamlandı" -> bir daha çalışmaz). Job artık gnubg down iken FIRLATIR (retry) + reachable-
+// ama-boş'ta gnubg_pr_at mezar taşı koyar; bu komut gnubg'ye HİÇ ulaşılamamış (gnubg_pr_at NULL) son
+// maçları gnubg dönünce yeniden kuyruğa alır -> PR dolar. gnubg down iken kendini erteler (boşa iş yok).
+Schedule::command('tavla:gnubg-pr-heal')
+    ->everyFifteenMinutes()
+    ->name('gnubg-pr-heal')
+    ->withoutOverlapping();
+
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
