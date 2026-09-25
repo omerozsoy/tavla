@@ -1094,17 +1094,23 @@ export default function App() {
                                         ? 'izle/' + spectate.code
                                         : ''
 
-  // Hata Gunlugu PREMIUM-only: URL/deep-link ile (/hata-gunlugu) premium OLMAYAN giren
-  // kullaniciyi uyelik ekranina yonlendir (menu zaten gate'li; bu URL bypass'ini kapatir).
+  // PREMIUM-only araclar: URL/deep-link VEYA profil-tiklamasi ile giren premium OLMAYAN
+  // kullaniciyi (misafir dahil) uyelik ekranina yonlendir (menu zaten gate'li; bu, o
+  // yollarin bypass'ini kapatir). Kapsam: Hata Gunlugu, Pozisyon Analizi, Mat Analiz,
+  // Mac Analizleri, Online Turnuvalar.
   // NOT: bu hook ust hook bolgesinde (erken-return'lerden ONCE) durmali — sabit sira;
   // premium'u user'dan inline turetir ki gec tanimlanan `premium` const'una baglanmasin.
   useEffect(() => {
     const isPrem = user?.plan_active === 'star'
-    if (blunderOpen && user && !isPrem) {
-      setBlunderOpen(false)
-      setMemOpen(true)
-    }
-  }, [blunderOpen, user])
+    if (isPrem) return
+    let redirect = false
+    if (blunderOpen) { setBlunderOpen(false); redirect = true }
+    if (analyzerOpen) { setAnalyzerOpen(false); redirect = true }
+    if (matAnalyzerOpen) { setMatAnalyzerOpen(false); redirect = true }
+    if (matchHistOpen) { setMatchHistOpen(false); redirect = true }
+    if (tournOpen) { setTournOpen(false); redirect = true }
+    if (redirect) setMemOpen(true)
+  }, [blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, tournOpen, user])
 
   // Sol menu yapilandirmasini (admin panelden sira/ad/gorunurluk) acilista bir kez cek.
   useEffect(() => {
@@ -7610,19 +7616,25 @@ export default function App() {
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
     onAchievements: () => goPage(() => setAchOpen(true)),
+    // Online Turnuvalar PREMIUM-only: free/misafir -> uyelik ekrani.
     onTournaments: () =>
-      goPage(() => {
-        setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
-        setTournDetailSlug(null)
-        setTournOpen(true)
-      }),
+      premium
+        ? goPage(() => {
+            setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
+            setTournDetailSlug(null)
+            setTournOpen(true)
+          })
+        : setMemOpen(true),
     // Ana sayfa reklamindan: dogrudan ilgili turnuvanin detayini ac (slug detay yuklenince yukselir)
+    // PREMIUM-only: free/misafir -> uyelik ekrani.
     onTournamentAd: (id: number) =>
-      goPage(() => {
-        setTournDetailId(id)
-        setTournDetailSlug(String(id))
-        setTournOpen(true)
-      }),
+      premium
+        ? goPage(() => {
+            setTournDetailId(id)
+            setTournDetailSlug(String(id))
+            setTournOpen(true)
+          })
+        : setMemOpen(true),
     onShop: () => goPage(() => setShopOpen(true)),
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
@@ -7642,11 +7654,11 @@ export default function App() {
         : setShowAuth(true),
     onFriends: () => goPage(() => setFriendsOpen(true)),
     onMessages: () => goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) }),
-    onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
-    onMatAnalyzer: () => (user ? goPage(() => setMatAnalyzerOpen(true)) : setShowAuth(true)),
-    // Premium arac: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir
+    // Premium araclar: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir.
+    onAnalyzer: () => (premium ? goPage(() => setAnalyzerOpen(true)) : setMemOpen(true)),
+    onMatAnalyzer: () => (premium ? goPage(() => setMatAnalyzerOpen(true)) : setMemOpen(true)),
     onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
-    onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
+    onMatchHistory: () => (premium ? goPage(() => setMatchHistOpen(true)) : setMemOpen(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onCalendar: () => goPage(() => setContentView('event')),
@@ -8377,7 +8389,7 @@ export default function App() {
           onClose={() => setFrameGalleryOpen(false)}
         />
       )}
-      {tournOpen && (
+      {tournOpen && premium && (
         <Suspense fallback={null}>
         <Tournaments
           myId={user?.id ?? null}
@@ -8464,7 +8476,7 @@ export default function App() {
           <ErrorJournal onClose={() => setBlunderOpen(false)} />
         </Suspense>
       )}
-      {matchHistOpen && user && (
+      {matchHistOpen && user && premium && (
         <Suspense fallback={null}>
         <MatchAnalytics
           myName={profile.nickname}
@@ -8525,7 +8537,7 @@ export default function App() {
           <Rules onClose={() => setRulesOpen(false)} />
         </Suspense>
       )}
-      {analyzerOpen && (
+      {analyzerOpen && premium && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <Suspense fallback={null}>
           <PositionAnalyzer
@@ -8546,7 +8558,7 @@ export default function App() {
           </Suspense>
         </div>
       )}
-      {matAnalyzerOpen && (
+      {matAnalyzerOpen && premium && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <MatAnalyzer onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
         </div>
