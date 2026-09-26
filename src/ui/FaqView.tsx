@@ -241,7 +241,7 @@ const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
   trictrac: { kind: 'image', src: sourceFaqImage('faq/gif/trictrac.gif'), alt: 'Trictrac görseli' },
   'rus-tavlasi': { kind: 'image', src: sourceFaqImage('variants/gif/russian-start.gif'), alt: 'Russian backgammon başlangıç konumu' },
   'snake-tavla': { kind: 'image', src: sourceFaqImage('variants/gif/snake-start.gif'), alt: 'Snake tavla başlangıç konumu' },
-  'para-oyunu-mac-oyunu': { kind: 'images', src: [sourceFaqImage('faq/gif/cube2.gif'), sourceFaqImage('faq/gif/cube4.gif'), sourceFaqImage('faq/gif/cube8.gif'), sourceFaqImage('faq/gif/cube16.gif')], alt: 'Küp değerleri' },
+  'para-oyunu-mac-oyunu': { kind: 'image', src: sourceFaqImage('faq/gif/cube-values.png'), alt: 'Küp değerleri: 2, 4, 8 ve 16' },
   chouette: { kind: 'image', src: sourceFaqImage('variants/gif/chouette-order.gif'), alt: 'Chouette sıra düzeni' },
   'mac-esitlik-tablosu': { kind: 'image', src: sourceFaqImage('faq/gif/MET-example.gif'), alt: 'Maç eşitlik tablosu örneği' },
   'janowski-formulu': { kind: 'images', src: [sourceFaqImage('faq/gif/JanowskiFormula.gif'), sourceFaqImage('faq/gif/JanowskiExample.gif')], alt: 'Janowski formülü ve örneği' },
