@@ -211,5 +211,6 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
 }
 
 function svgWrap(_p: string, _s: number, body: string, defs: string): string {
-  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>${body}</svg>`
+  // width/height: <img>/canvas'a raster'lanırken intrinsic boyut belirsizliğini önler (Firefox).
+  return `<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>${body}</svg>`
 }
