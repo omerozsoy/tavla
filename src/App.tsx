@@ -3226,10 +3226,15 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code && !cubeBusyRef.current) {
         cubeBusyRef.current = true
-        // ANINDA: küpü kabul der demez kutuyu kapat + "düşünüyor" göster (sıra botta, zar atıp
-        // oynayacak). gnubg hamlesi arkada gelir. Yoksa "Kabul/Pas" kutusu 2-3sn asılı kalır.
-        if (botMatch) setBotThinking(true)
         const srvTaker = opponent(cubePending) // karar anındaki alan taraf (= ben)
+        // İYİMSER + ANINDA: kabul edilen teklifi HEMEN kaldır. Sunucu zaten cube.pending=null yapar;
+        // yerelde beklemezsek "Kabul/Pas" kutusu 2-3sn asılı kalmaz. KÖK FIX (kutu GERİ GELİYOR):
+        // eskiden kutu yalnız botThinking ile gizleniyordu; botThinking .finally'de (yanıt gelince)
+        // temizlenirken cubePending henüz null olmuyordu (bot hamlesi animasyonla geç uygular) ->
+        // arada humanRespond tekrar true olup AYNI teklif ekranı bir daha geliyordu. cubePending'i
+        // burada null yaparak pencereyi kapat (server not_turn/409'da poll zaten null'a senkronlar).
+        setCubePending(null)
+        if (botMatch) setBotThinking(true)
         const code = room.code
         void serverCubeRespond(code, 'take', room.server_version ?? 0)
           .then((r) => {
@@ -3273,6 +3278,7 @@ export default function App() {
       if (room?.code && !cubeBusyRef.current) {
         cubeBusyRef.current = true
         const srvDropper = opponent(cubePending) // pas geçen taraf (= ben)
+        setCubePending(null) // iyimser: pas edilen teklifi ANINDA kaldır (take ile aynı; kutu geri gelmez)
         void serverCubeRespond(room.code, 'drop', room.server_version ?? 0)
           .then((r) => {
             // BEKLEYEN TEKLİF YOK (yarış): not_turn -> sessizce senkronla, PR/olay kaydetme.
@@ -6557,8 +6563,10 @@ export default function App() {
   const humanCanDouble =
     showRoll && turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
   // Kup teklifine yanit: pvp (ayni ekran), bota karsi, veya online'da rakip teklif ettiyse
+  // Kutu görünürlüğü YALNIZ cubePending'e bağlı (tek kaynak). Kabul edince handleTake cubePending'i
+  // ANINDA null yapar -> kutu hemen kapanır ve GERİ GELMEZ. (botThinking ile GATE ETME: botThinking
+  // cubePending'den önce temizlenip "aynı teklif ekranı tekrar geldi" bug'ına yol açmıştı.)
   const humanRespond =
-    !botThinking && // kabul edilir edilmez kutu kapansın -> "düşünüyor" görünsün (2-3sn asılı kalmasın)
     cubePending !== null &&
     (mode === 'pvp' ||
       (mode === 'pvb' && cubePending === BOT_PLAYER) ||
