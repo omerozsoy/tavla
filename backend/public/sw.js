@@ -5,7 +5,7 @@
 // ONEMLI: respondWith'e HER ZAMAN gecerli bir Response donmeli; undefined donersen
 // tarayici "Failed to convert value to 'Response'" atar (fetch VEYA cache.put reddettiginde
 // eski surumde iki caches.match da bos olunca bu oluyordu -> asagida her yol Response garanti).
-const CACHE = 'tavla-cache-v7'
+const CACHE = 'tavla-cache-v8'
 
 // Son care cevrimdisi yaniti (tek-kullanimlik body -> her cagride YENI uret).
 function offlineResponse() {
