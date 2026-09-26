@@ -217,7 +217,7 @@ const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
   'ic-dis-tahta': { kind: 'board', state: faqBoard({ 0: 2, 5: 2, 11: 5, 12: -5, 18: -3, 23: -2 }), caption: 'İç ve dış tahta bölgeleri, standart tahta üzerinde.' },
   'orta-nokta': { kind: 'board', state: faqBoard({ 12: 5, 18: -3, 23: -2 }), caption: '13. hane, yani orta nokta.' },
   'ace-point': { kind: 'board', state: faqBoard({ 0: 2 }), caption: '1. hane, yani ace point.' },
-  'zarlar-nasil-oynanir': { kind: 'image', src: sourceFaqImage('faq/gif/die-w6.gif'), alt: 'Altı gösteren tavla zarı' },
+  'zarlar-nasil-oynanir': { kind: 'image', src: sourceFaqImage('faq/gif/die-w6.png'), alt: 'Altı gösteren tavla zarı' },
   'tek-sayi-oynanirsa': { kind: 'image', src: sourceFaqImage('faq/gif/onenumber.gif'), alt: 'Tek zarın oynandığı hamle örneği' },
   'dusuk-zar-once': { kind: 'images', src: [sourceFaqImage('faq/gif/bearoff1.gif'), sourceFaqImage('faq/gif/bearoff2.gif')], alt: 'Taş toplama sırası örnekleri' },
   'pat-stalemate': { kind: 'image', src: sourceFaqImage('faq/gif/stalemate.gif'), alt: 'Stalemate örneği' },
