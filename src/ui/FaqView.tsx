@@ -229,7 +229,7 @@ const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
   'katlama-kupu-nedir': { kind: 'image', src: sourceFaqImage('gloss/pics/doubling_cube.jpg'), alt: 'Katlama küpü' },
   'kupu-ne-zaman-kullanilir': { kind: 'images', src: [sourceFaqImage('faq/gif/cube-example1.gif'), sourceFaqImage('faq/gif/cube-example2.gif'), sourceFaqImage('faq/gif/cube-example3.gif')], alt: 'Katlama küpü karar örnekleri' },
   '24-hane-numarasi': { kind: 'images', src: [sourceFaqImage('faq/gif/24points-new.gif'), sourceFaqImage('faq/gif/24backwards-new.gif')], alt: '24 haneli numaralandırma şeması' },
-  'oyun-transkripti': { kind: 'image', src: sourceFaqImage('faq/gif/transcript.gif'), alt: 'Tavla oyun transkripti örneği' },
+  'oyun-transkripti': { kind: 'image', src: sourceFaqImage('faq/gif/transcript-new.gif'), alt: 'Tavla oyun transkripti örneği' },
   nackgammon: { kind: 'image', src: sourceFaqImage('variants/gif/nackgammon-start.gif'), alt: 'Nackgammon başlangıç konumu' },
   'hyper-backgammon': { kind: 'image', src: sourceFaqImage('variants/gif/hyper-start.gif'), alt: 'Hyper-backgammon başlangıç konumu' },
   'long-gammon': { kind: 'image', src: sourceFaqImage('variants/gif/longgammon-start.gif'), alt: 'Long-gammon başlangıç konumu' },
