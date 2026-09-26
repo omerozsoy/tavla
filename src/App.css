@@ -3098,6 +3098,7 @@ button[aria-disabled='true'],
 .faq-image-button { display: block; width: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
 .faq-image-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-sm); }
 .faq-source-visual img { display: block; width: 100%; max-height: 220px; object-fit: contain; }
+.faq-source-visual img[src*='rating-curve.gif'] { max-height: 340px; }
 .faq-source-visual figcaption, .faq-source-visuals span { display: block; margin-top: 6px; color: var(--muted); font-size: .68rem; line-height: 1.35; }
 .faq-source-visuals { display: flex; flex-wrap: wrap; align-items: start; gap: 6px; }
 .faq-source-visuals img { width: min(100%, 180px); max-height: 150px; object-fit: contain; }
