@@ -199,7 +199,7 @@ const COMPLETE_FAQ_SECTIONS = FAQ_SECTIONS.map((section) => ({
   items: [...section.items, ...(SOURCE_COVERAGE[section.id] ?? [])],
 }))
 
-const sourceFaqImage = (path: string) => `/assets/faq-source/${path}`
+const sourceFaqImage = (path: string) => `/assets/faq-source/${path}?v=faq-20260927`
 const faqBoard = (points: Record<number, number>, bar: Partial<GameState['bar']> = {}): GameState => {
   const state: GameState = { points: new Array(24).fill(0), bar: { white: 0, black: 0, ...bar }, off: { white: 0, black: 0 }, turn: 'white', dice: [], diceUsed: [] }
   for (const [point, count] of Object.entries(points)) state.points[Number(point)] = count
