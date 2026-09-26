@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import ArticleBoard from './ArticleBoard'
 import type { GameState } from '../engine/types'
@@ -258,9 +258,9 @@ const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
   'rating-dogrulugu': { kind: 'images', src: [sourceFaqImage('faq/gif/variation1.gif'), sourceFaqImage('faq/gif/variation2.gif'), sourceFaqImage('faq/gif/variation3.gif')], alt: 'Rating dalgalanması örnekleri' },
 }
 
-function FaqVisualBlock({ visual }: { visual: FaqVisual | FaqVisual[] }) {
+function FaqVisualBlock({ visual, onOpen }: { visual: FaqVisual | FaqVisual[]; onOpen: (src: string, alt: string) => void }) {
   const list = Array.isArray(visual) ? visual : [visual]
-  return <div className="faq-visuals">{list.map((item, index) => item.kind === 'board' ? <ArticleBoard key={index} state={item.state} steps={[]} caption={item.caption} /> : item.kind === 'image' ? <figure key={index} className="faq-source-visual"><img src={item.src} alt={item.alt} /><figcaption>{item.caption ?? 'Kaynak FAQ görseli'}</figcaption></figure> : <div key={index} className="faq-source-visuals">{item.src.map((src) => <img key={src} src={src} alt={item.alt} />)}<span>{item.caption ?? 'Kaynak FAQ görselleri'}</span></div>)}</div>
+  return <div className="faq-visuals">{list.map((item, index) => item.kind === 'board' ? <ArticleBoard key={index} state={item.state} steps={[]} caption={item.caption} /> : item.kind === 'image' ? <figure key={index} className="faq-source-visual"><button type="button" className="faq-image-button" onClick={() => onOpen(item.src, item.alt)} aria-label={`${item.alt} görselini büyüt`}><img src={item.src} alt={item.alt} /></button><figcaption>{item.caption ?? 'Kaynak FAQ görseli'}</figcaption></figure> : <div key={index} className="faq-source-visuals">{item.src.map((src) => <button type="button" className="faq-image-button" key={src} onClick={() => onOpen(src, item.alt)} aria-label={`${item.alt} görselini büyüt`}><img src={src} alt={item.alt} /></button>)}<span>{item.caption ?? 'Kaynak FAQ görselleri'}</span></div>)}</div>
 }
 
 const ALL_FAQ_ITEMS = COMPLETE_FAQ_SECTIONS.flatMap((section) => section.items)
@@ -269,15 +269,68 @@ function normalize(value: string): string {
   return value.toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
+// Refresh'te scroll konumunu koru (sessionStorage; oturum boyu, kalıcı değil).
+const FAQ_SCROLL_KEY = 'faq:scroll'
+
 export default function FaqView({ onClose }: { onClose?: () => void }) {
   const { t } = useT()
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (!lightbox) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLightbox(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [lightbox])
+
+  // REFRESH'te KALINAN YERE DÖN: body overflow:hidden -> içerik WINDOW değil bir CONTAINER'da
+  // scroll eder, o yüzden tarayıcının otomatik scroll geri-yüklemesi çalışmaz (hep tepede başlar).
+  // Scroll konumunu (throttled) sessionStorage'a yaz; refresh'te içerik render olunca geri yükle.
+  // #anchor (paylaşılan link) önceliklidir. X ile kapatınca konum SIFIRLANIR -> menüden yeniden
+  // açılınca tepeden başlar (yalnız refresh kaldığın yeri korur).
+  useEffect(() => {
+    // .faq-page'in gerçekte scroll eden en yakın atası (auto/scroll + taşan içerik); yoksa window.
+    const findScroller = (el: HTMLElement | null): HTMLElement | null => {
+      let node = el?.parentElement ?? null
+      while (node) {
+        const oy = getComputedStyle(node).overflowY
+        if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) return node
+        node = node.parentElement
+      }
+      return null
+    }
+    const scroller = findScroller(rootRef.current)
+    const getTop = () => (scroller ? scroller.scrollTop : window.scrollY)
+    const setTop = (v: number) => (scroller ? (scroller.scrollTop = v) : window.scrollTo(0, v))
+
     const hash = window.location.hash.slice(1)
-    if (!hash) return
-    window.setTimeout(() => document.getElementById(hash)?.scrollIntoView({ block: 'start' }), 50)
+    if (hash) {
+      window.setTimeout(() => document.getElementById(hash)?.scrollIntoView({ block: 'start' }), 50)
+    } else {
+      const saved = Number(sessionStorage.getItem(FAQ_SCROLL_KEY) || '0')
+      if (saved > 0) {
+        // App.tsx'in olası tepeye-kaydırmasından SONRA çalışsın diye rAF + geç retry (görseller geç gelir).
+        requestAnimationFrame(() => requestAnimationFrame(() => setTop(saved)))
+        window.setTimeout(() => { if (Math.abs(getTop() - saved) > 4) setTop(saved) }, 250)
+      }
+    }
+
+    const target: HTMLElement | Window = scroller ?? window
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => { raf = 0; sessionStorage.setItem(FAQ_SCROLL_KEY, String(getTop())) })
+    }
+    target.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      target.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
   }, [])
 
   const filteredSections = useMemo(() => {
@@ -304,8 +357,8 @@ export default function FaqView({ onClose }: { onClose?: () => void }) {
   const visibleCount = filteredSections.reduce((total, section) => total + section.items.length, 0)
 
   return (
-    <div className="faq-page" onClick={(event) => event.stopPropagation()}>
-      {onClose && <button type="button" className="faq-close" onClick={onClose} aria-label="Sayfayı kapat"><Icon name="x" size={17} /></button>}
+    <div ref={rootRef} className="faq-page" onClick={(event) => event.stopPropagation()}>
+      {onClose && <button type="button" className="faq-close" onClick={() => { try { sessionStorage.removeItem(FAQ_SCROLL_KEY) } catch { /* yoksay */ } onClose() }} aria-label="Sayfayı kapat"><Icon name="x" size={17} /></button>}
       <Breadcrumb items={[homeCrumb(t), { name: 'Sıkça Sorulan Sorular' }]} />
       <header className="faq-hero">
         <div>
@@ -340,7 +393,7 @@ export default function FaqView({ onClose }: { onClose?: () => void }) {
                 <article key={item.id} id={item.id} className="faq-item">
                   <div className="faq-item-heading"><h3>{item.question}</h3><button type="button" className="faq-share" onClick={() => copyLink(item.id)} aria-label={`${item.question} bağlantısını kopyala`} title="Paylaşılabilir bağlantıyı kopyala"><Icon name={copied === item.id ? 'check' : 'copy'} size={15} /></button></div>
                   <p>{item.answer}</p>
-                  {FAQ_VISUALS[item.id] && <FaqVisualBlock visual={FAQ_VISUALS[item.id]} />}
+                  {FAQ_VISUALS[item.id] && <FaqVisualBlock visual={FAQ_VISUALS[item.id]} onOpen={(src, alt) => setLightbox({ src, alt })} />}
                 </article>
               ))}
             </div>
@@ -356,6 +409,7 @@ export default function FaqView({ onClose }: { onClose?: () => void }) {
       </aside>
 
       <footer className="faq-source">Bu sayfadaki konu başlıkları ve genel kural karşılaştırmaları <a href="https://www.bkgm.com/faq/" target="_blank" rel="noreferrer">Backgammon Galore FAQ</a> ve bağlantılı alt sayfalar incelenerek hazırlanmıştır. Açıklamalar TavlaTV için özgün olarak yazılmıştır.</footer>
+      {lightbox && <div className="faq-lightbox" role="dialog" aria-modal="true" aria-label={lightbox.alt} onClick={() => setLightbox(null)}><div className="faq-lightbox-panel" onClick={(event) => event.stopPropagation()}><button type="button" className="faq-lightbox-close" onClick={() => setLightbox(null)} aria-label="Görseli kapat"><Icon name="x" size={20} /></button><img src={lightbox.src} alt={lightbox.alt} /></div></div>}
     </div>
   )
 }
