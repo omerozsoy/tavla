@@ -108,6 +108,7 @@ interface BoardProps {
   // Kız Tavlası: nokta index -> o hanenin UST kac tasinin "acik/indirilmis" (halka) gosterilecegi.
   // Verilmezse hicbir tasa dokunulmaz (klasik oyun davranisi degismez).
   openMark?: Map<number, number>
+  showStackCount?: boolean // Kız Tavlası: 2+ pulluk stack'te kalan toplamı göster
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -163,6 +164,7 @@ function Point({
   onCheckerDown,
   checkerSkin,
   openCount = 0,
+  showStackCount = false,
 }: {
   index: number
   top: boolean
@@ -176,6 +178,7 @@ function Point({
   onCheckerDown?: (e: ReactPointerEvent, from: number, player: Player, label?: number) => void
   checkerSkin?: CheckerSkinDef | null
   openCount?: number // Kız Tavlası: bu hanedeki UST 'openCount' tas "acik/indirilmis" gosterilir
+  showStackCount?: boolean
 }) {
   const stack = checkersOf(state, index)
   const shade = index % 2 === 0 ? 'a' : 'b'
@@ -201,9 +204,17 @@ function Point({
       <div className="checkers">
         {Array.from({ length: visible }).map((_, i) => {
           const isTop = i === visible - 1 // sourceRect() ile ayni: ust/secilebilir tas = son cocuk
-          const label = stack!.count > 5 && isTop ? stack!.count : undefined
-          // Kız Tavlası: hanenin UST 'openCount' tasi acik (indirilmis) -> halka isareti.
           const isOpen = openCount > 0 && i >= visible - openCount
+          const closedCount = stack!.count - openCount
+          const isClosedTop = !isOpen && i === visible - openCount - 1
+          const label = stack!.count > 5 && isTop
+            ? stack!.count
+            : showStackCount && closedCount > 1 && isClosedTop
+              ? closedCount
+              : showStackCount && closedCount === 0 && stack!.count > 1 && isTop
+                ? stack!.count
+                : undefined
+          // Kız Tavlası: hanenin UST 'openCount' tasi acik (indirilmis) -> halka isareti.
           return (
             <Checker
               key={i}
@@ -251,6 +262,7 @@ function Board({
   showLogo = true,
   checkerSkin = null,
   openMark,
+  showStackCount,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -576,6 +588,7 @@ function Board({
       onCheckerDown={dragEnabled ? startDrag : undefined}
       checkerSkin={checkerSkin}
       openCount={openMark?.get(index) ?? 0}
+      showStackCount={showStackCount}
     />
   )
 

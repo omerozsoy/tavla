@@ -2,11 +2,11 @@
 // KIZ TAVLASI — İKİ FAZLI, YALNIZ YZ'ye karşı. GERÇEK tavla tahtası (klasik Board) üzerinde.
 // Kural motoru klasik tavladan AYRIDIR (src/kiz/engine, iki fazlı: açma/indirme -> toplama).
 //
-// Board eşlemesi — kapalı pullar sağdaki ev bölgesinde, açık pullar karşı bölgededir:
-//   beyaz 1..6 kapalı -> tahta index 0..5, açık -> 6..11 (alt yarı)
-//   siyah 1..6 kapalı -> tahta index 18..23, açık -> 12..17 (üst yarı)
-//   Açma: kapalı pul kendi hanesinden karşı bölgedeki eş haneye iner. Toplama:
-//   açık pul karşı bölgeden tepsiye kalkar (off).
+// Board eşlemesi — her pul kendi hanesinde ve kendi tarafında kalır:
+//   beyaz 1..6 -> tahta index 0..5 (sağ-alt ev)
+//   siyah 1..6 -> tahta index 18..23 (sağ-üst ev)
+//   Açma: kapalı pul aynı hanede stack'in içine doğru iner. Toplama: açık pul
+//   aynı haneden tepsiye kalkar (off).
 // Kurallar: bkz docs/kiz-tavlasi-kurallari.md + "Nasıl Oynanır?" (birebir aynı).
 // ============================================================================
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -38,18 +38,14 @@ import './KizTavlasi.css'
 // laneNo (1..6) -> tahta üçgen index'i (her oyuncunun kendi EV hanesi; kapalı+açık AYNI yerde).
 const idx = {
   white: (d: number) => d - 1, // 0..5  (sağ-alt ev)
-  whiteOpen: (d: number) => d + 5, // 6..11 (karşı-alt bölge)
   black: (d: number) => d + 17, // 18..23 (sağ-üst ev)
-  blackOpen: (d: number) => d + 11, // 12..17 (karşı-üst bölge)
 }
 
 function kizToBoard(s: KizState): GameState {
   const points = new Array(24).fill(0)
   for (let d = 1; d <= 6; d++) {
-    points[idx.white(d)] += s.closed.white[d - 1]
-    points[idx.whiteOpen(d)] += s.open.white[d - 1]
-    points[idx.black(d)] -= s.closed.black[d - 1]
-    points[idx.blackOpen(d)] -= s.open.black[d - 1]
+    points[idx.white(d)] += s.closed.white[d - 1] + s.open.white[d - 1]
+    points[idx.black(d)] -= s.closed.black[d - 1] + s.open.black[d - 1]
   }
   return {
     points,
@@ -153,18 +149,23 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
   // aynı yerde olduğundan tek eşleme yeter (playSlot fazı kendisi belirler).
   const selectableFroms = new Set<number>()
   if (humanTurn && state.rolled) {
-    const target = phaseOf(state, 'white') === 'acma' ? idx.white : idx.whiteOpen
-    for (const d of playableLanes(state)) selectableFroms.add(target(d))
+    for (const d of playableLanes(state)) selectableFroms.add(idx.white(d))
   }
   const onSelectFrom = (from: number | 'bar') => {
     if (typeof from !== 'number' || !humanTurn || !state.rolled) return
-    if (from >= 0 && from <= 11) playLane((from % 6) + 1)
+    if (from >= 0 && from <= 5) playLane(from + 1)
   }
 
   const faces = state.rolled
     ? state.dice.map((v, i) => ({ value: v, used: state.isDouble ? state.diceUsed[0] : state.diceUsed[i] }))
     : []
   const board = kizToBoard(state)
+  // Açık pullar aynı hanede kalır; Board bunları stack'in üstünden işaretler.
+  const openMark = new Map<number, number>()
+  for (let d = 1; d <= 6; d++) {
+    if (state.open.white[d - 1] > 0) openMark.set(idx.white(d), state.open.white[d - 1])
+    if (state.open.black[d - 1] > 0) openMark.set(idx.black(d), state.open.black[d - 1])
+  }
   const activeBottom = state.turn === 'white'
   const diceRow = faces.length > 0 ? <DiceRow faces={faces} owner={state.turn as Player} /> : null
 
@@ -222,6 +223,8 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             cube={{ value: 1, owner: null }}
             flip={false}
             showPip={false}
+            openMark={openMark}
+            showStackCount
             centerLeft={activeBottom ? null : diceRow}
             centerRight={activeBottom ? diceRow : null}
           />
