@@ -3099,6 +3099,8 @@ button[aria-disabled='true'],
 .faq-source-visual figcaption, .faq-source-visuals span { display: block; margin-top: 6px; color: var(--muted); font-size: .68rem; line-height: 1.35; }
 .faq-source-visuals { display: flex; flex-wrap: wrap; align-items: start; gap: 6px; }
 .faq-source-visuals img { width: min(100%, 180px); max-height: 150px; object-fit: contain; }
+.faq-source-visuals img[src$='24points-new.gif'],
+.faq-source-visuals img[src$='24backwards-new.gif'] { width: min(100%, 340px); max-height: 240px; }
 .faq-share { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
 .faq-share:hover, .faq-share:focus-visible { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .faq-empty { margin: 42px auto; padding: 36px 24px; border: 1px dashed var(--border); border-radius: var(--radius-lg); text-align: center; color: var(--muted); }
