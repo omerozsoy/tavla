@@ -122,6 +122,7 @@
   .kiz-view .game-scene { justify-content: center; } /* masaüstünde tahta yüksekliği neredeyse dolu -> ortala */
 }
 .kiz-view .game-area { width: auto; max-width: 100%; }
+.kiz-view .point .checkers { gap: calc(var(--checker) * -0.22); }
 /* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
 .kiz-view .cube { display: none !important; }
 
