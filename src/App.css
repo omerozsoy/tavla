@@ -3095,12 +3095,19 @@ button[aria-disabled='true'],
 .faq-visuals .article-board { min-width: 0; margin: 0; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--card-bg) 92%, var(--accent)); }
 .faq-visuals .article-board-caption { margin-top: 5px; font-size: .68rem; line-height: 1.35; }
 .faq-source-visual, .faq-source-visuals { min-width: 0; margin: 0; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--card-bg) 92%, var(--accent)); }
+.faq-image-button { display: block; width: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+.faq-image-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-sm); }
 .faq-source-visual img { display: block; width: 100%; max-height: 220px; object-fit: contain; }
 .faq-source-visual figcaption, .faq-source-visuals span { display: block; margin-top: 6px; color: var(--muted); font-size: .68rem; line-height: 1.35; }
 .faq-source-visuals { display: flex; flex-wrap: wrap; align-items: start; gap: 6px; }
 .faq-source-visuals img { width: min(100%, 180px); max-height: 150px; object-fit: contain; }
 .faq-source-visuals img[src$='24points-new.gif'],
 .faq-source-visuals img[src$='24backwards-new.gif'] { width: min(100%, 340px); max-height: 240px; }
+.faq-lightbox { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: clamp(18px, 4vw, 56px); background: rgb(20 16 12 / 78%); backdrop-filter: blur(8px); cursor: zoom-out; }
+.faq-lightbox-panel { position: relative; display: grid; max-width: min(1100px, 94vw); max-height: 92vh; padding: 12px; border: 1px solid color-mix(in srgb, var(--border) 70%, #fff); border-radius: var(--radius-lg); background: var(--card-bg); box-shadow: 0 24px 80px rgb(0 0 0 / 35%); cursor: default; }
+.faq-lightbox-panel img { display: block; width: auto; max-width: calc(94vw - 24px); max-height: calc(92vh - 24px); object-fit: contain; }
+.faq-lightbox-close { position: absolute; top: 8px; right: 8px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid color-mix(in srgb, var(--border) 80%, #fff); border-radius: 50%; background: color-mix(in srgb, var(--card-bg) 82%, transparent); color: var(--text); cursor: pointer; }
+.faq-lightbox-close:hover, .faq-lightbox-close:focus-visible { border-color: var(--accent); color: var(--accent); }
 .faq-share { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
 .faq-share:hover, .faq-share:focus-visible { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .faq-empty { margin: 42px auto; padding: 36px 24px; border: 1px dashed var(--border); border-radius: var(--radius-lg); text-align: center; color: var(--muted); }
