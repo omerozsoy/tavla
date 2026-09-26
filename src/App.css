@@ -3048,8 +3048,12 @@ button[aria-disabled='true'],
    aynı renk değişkenlerini kullanır; soru kartları taramayı kolaylaştırır. */
 .faq-page {
   position: relative;
-  max-width: 1120px;
-  margin: 0 auto;
+  /* STANDART SAYFA GENİŞLİĞİ + SOLA DAYALI: .page-host .seo-landing-card ile birebir
+     (max-width:1400px, margin:0 = margin:auto YOK). Eskiden 1120px + margin:0 auto ile
+     ORTALI ve dar görünüyordu, diğer içerik sayfalarıyla tutarsızdı. */
+  width: 100%;
+  max-width: 1400px;
+  margin: 0;
   padding: 20px clamp(16px, 3vw, 42px) 58px;
   color: var(--text);
 }
