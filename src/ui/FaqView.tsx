@@ -219,7 +219,7 @@ const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
   'ace-point': { kind: 'board', state: faqBoard({ 0: 2 }), caption: '1. hane, yani ace point.' },
   'zarlar-nasil-oynanir': { kind: 'image', src: sourceFaqImage('faq/gif/die-w6.png'), alt: 'Altı gösteren tavla zarı' },
   'tek-sayi-oynanirsa': { kind: 'image', src: sourceFaqImage('faq/gif/onenumber.png'), alt: 'Tek zarın oynandığı hamle örneği' },
-  'dusuk-zar-once': { kind: 'images', src: [sourceFaqImage('faq/gif/bearoff1.gif'), sourceFaqImage('faq/gif/bearoff2.gif')], alt: 'Taş toplama sırası örnekleri' },
+  'dusuk-zar-once': { kind: 'images', src: [sourceFaqImage('faq/gif/bearoff1-new.gif'), sourceFaqImage('faq/gif/bearoff2-new.gif')], alt: 'Taş toplama sırası örnekleri' },
   'pat-stalemate': { kind: 'image', src: sourceFaqImage('faq/gif/stalemate.gif'), alt: 'Stalemate örneği' },
   'acik-tas-blot': { kind: 'board', state: faqBoard({ 7: 1 }), caption: 'Bir hanede tek başına kalan açık taş.' },
   'prime-nedir': { kind: 'board', state: faqBoard({ 5: 2, 7: 2, 9: 2 }), caption: 'Aralıklı değil, ardışık kapılarla kurulan prime fikri.' },
