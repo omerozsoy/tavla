@@ -1513,10 +1513,19 @@ export default function App() {
   // (Playwright repro: scroll 384'te takili kaldi). Ilk mount'u atla (tarayici scroll geri-yukleme
   // / deep-link'e karisma); sonraki HER gecelte (home dahil) olasi tum scroll kaplarini tepeye al.
   const scrolledFirstRef = useRef(false)
+  const hydratedScrollRef = useRef(false)
   useEffect(() => {
     if (!scrolledFirstRef.current) {
       scrolledFirstRef.current = true
       return
+    }
+    // DEEP-LINK REFRESH FIX ("/sikca-sorulan-sorular refresh edince en başa dönüyor"): ilk mount'ta
+    // currentSlug='' idi; applyFromPath deep-link state'ini kurunca currentSlug URL'deki başlangıç
+    // slug'ına OTURUR -> bu HİDRASYON geçişinde EN ÜSTE KAYDIRMA (tarayıcı scroll geri-yükleme +
+    // #anchor korunur). Yalnız yüklemeden SONRAKİ gerçek kullanıcı gezinmelerinde tepeye al.
+    if (!hydratedScrollRef.current) {
+      hydratedScrollRef.current = true
+      if ((currentSlug || '') === initialPathRef.current) return
     }
     for (const sel of ['.app.lobby', '.lobby-main', '.page-host', '.main', '.register-card']) {
       const el = document.querySelector(sel) as HTMLElement | null
@@ -8000,7 +8009,9 @@ export default function App() {
         key: o.key,
         labelKey: '',
         label: o.labels?.[lang] || o.labels?.tr || o.href,
-        icon: matchedPage?.icon || 'arrow-right',
+        // pages.ts'te sayfası olmayan bilinen özel slug'lar için ikon (SSS -> soru işareti);
+        // eşleşen sayfa yoksa ve bilinen slug değilse genel 'arrow-right'.
+        icon: matchedPage?.icon || (hrefSlug === 'sikca-sorulan-sorular' ? 'question-mark' : 'arrow-right'),
         onClick: () => openCustomMenuHref(o.href!),
         hideInGame: true,
       },
