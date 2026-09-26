@@ -226,7 +226,7 @@ const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
   'ev-tahtasi': { kind: 'image', src: sourceFaqImage('faq/gif/homeboard-new.gif'), alt: 'İç veya ev tahtasını gösteren şema' },
   'kapali-tahta': { kind: 'image', src: sourceFaqImage('gloss/pics/close_out-new.gif'), alt: 'Kapalı tahta örneği' },
   'vur-ve-kac': { kind: 'image', src: sourceFaqImage('faq/gif/pickandpass-new.gif'), alt: 'Vurup güvenli haneye kaçma örneği' },
-  'katlama-kupu-nedir': { kind: 'image', src: sourceFaqImage('gloss/pics/doubling_cube.jpg'), alt: 'Katlama küpü' },
+  'katlama-kupu-nedir': { kind: 'image', src: sourceFaqImage('gloss/pics/doubling_cube.webp'), alt: 'Katlama küpü' },
   'kupu-ne-zaman-kullanilir': { kind: 'images', src: [sourceFaqImage('faq/gif/cube-example1.gif'), sourceFaqImage('faq/gif/cube-example2.gif'), sourceFaqImage('faq/gif/cube-example3.gif')], alt: 'Katlama küpü karar örnekleri' },
   '24-hane-numarasi': { kind: 'images', src: [sourceFaqImage('faq/gif/24points-new.gif'), sourceFaqImage('faq/gif/24backwards-new.gif')], alt: '24 haneli numaralandırma şeması' },
   'oyun-transkripti': { kind: 'image', src: sourceFaqImage('faq/gif/transcript-new.gif'), alt: 'Tavla oyun transkripti örneği' },
