@@ -211,7 +211,7 @@ const faqBoard = (points: Record<number, number>, bar: Partial<GameState['bar']>
 // gösterilir; kaynak dosyaları sayfaya doğrudan hotlink edilmez, proje varlıkları
 // olarak servis edilir ve sayfanın sonunda kaynak bağlantısı verilir.
 const FAQ_VISUALS: Record<string, FaqVisual | FaqVisual[]> = {
-  'tavla-nedir': { kind: 'image', src: sourceFaqImage('faq/gif/backgammonset.gif'), alt: 'Tavla setinin genel görünümü' },
+  'tavla-nedir': { kind: 'image', src: sourceFaqImage('faq/gif/backgammonset.png'), alt: 'Tavla setinin genel görünümü' },
   'tavla-taslari-nasil-dizilir': { kind: 'board', state: faqBoard({ 0: 2, 5: 5, 7: 3, 11: 5, 12: -5, 16: -3, 18: -5, 23: -2 }), caption: 'Standart başlangıç dizilişi, TavlaTV tahtasıyla yeniden oluşturuldu.' },
   'bar-nedir': { kind: 'board', state: faqBoard({ 0: 2, 23: -2 }, { white: 1 }), caption: 'Vurulan taş bar üzerinde bekler.' },
   'ic-dis-tahta': { kind: 'board', state: faqBoard({ 0: 2, 5: 2, 11: 5, 12: -5, 18: -3, 23: -2 }), caption: 'İç ve dış tahta bölgeleri, standart tahta üzerinde.' },
