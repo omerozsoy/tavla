@@ -122,7 +122,21 @@
   .kiz-view .game-scene { justify-content: center; } /* masaüstünde tahta yüksekliği neredeyse dolu -> ortala */
 }
 .kiz-view .game-area { width: auto; max-width: 100%; }
-.kiz-view .point .checkers { gap: calc(var(--checker) * -0.22); }
+.kiz-view .point .checkers {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+.kiz-view .point .checkers .checker {
+  position: absolute;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+}
+.kiz-view .point.top .checkers .checker { top: 2px; }
+.kiz-view .point.bottom .checkers .checker { bottom: 2px; }
 /* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
 .kiz-view .cube { display: none !important; }
 
