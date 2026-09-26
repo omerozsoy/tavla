@@ -3104,8 +3104,8 @@ button[aria-disabled='true'],
 .faq-source-visuals img[src$='24points-new.gif'],
 .faq-source-visuals img[src$='24backwards-new.gif'] { width: min(100%, 340px); max-height: 240px; }
 .faq-lightbox { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: clamp(18px, 4vw, 56px); background: rgb(20 16 12 / 78%); backdrop-filter: blur(8px); cursor: zoom-out; }
-.faq-lightbox-panel { position: relative; display: grid; max-width: min(1100px, 94vw); max-height: 92vh; padding: 12px; border: 1px solid color-mix(in srgb, var(--border) 70%, #fff); border-radius: var(--radius-lg); background: var(--card-bg); box-shadow: 0 24px 80px rgb(0 0 0 / 35%); cursor: default; }
-.faq-lightbox-panel img { display: block; width: auto; max-width: calc(94vw - 24px); max-height: calc(92vh - 24px); object-fit: contain; }
+.faq-lightbox-panel { position: relative; display: grid; width: min(760px, 86vw); max-height: 78vh; padding: 10px; border: 1px solid color-mix(in srgb, var(--border) 70%, #fff); border-radius: var(--radius-lg); background: var(--card-bg); box-shadow: 0 24px 80px rgb(0 0 0 / 35%); cursor: default; }
+.faq-lightbox-panel img { display: block; width: 100%; max-width: calc(86vw - 20px); max-height: calc(78vh - 20px); object-fit: contain; }
 .faq-lightbox-close { position: absolute; top: 8px; right: 8px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid color-mix(in srgb, var(--border) 80%, #fff); border-radius: 50%; background: color-mix(in srgb, var(--card-bg) 82%, transparent); color: var(--text); cursor: pointer; }
 .faq-lightbox-close:hover, .faq-lightbox-close:focus-visible { border-color: var(--accent); color: var(--accent); }
 .faq-share { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
