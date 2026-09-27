@@ -11,6 +11,7 @@ import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
+import playerPlayIcon from '../assets/player-play.svg'
 
 // Canli mac tipi: Arkadaslik (puansiz) | Puan Maci (N-puan) | Tek Mac (1 oyun)
 type LiveCat = 'single' | 'match' | 'friendly'
@@ -451,7 +452,7 @@ export function OnlinePlayersPanel({
                         aria-label={t('online.invite')}
                         onClick={() => onInvite({ id: p.id, name: p.name, avatar: p.avatar })}
                       >
-                        <Icon name="sword" size={15} />
+                        <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
                       </Button>
                     </span>
                   )}
