@@ -11382,6 +11382,20 @@ button.acct-row-logout:hover:not(:disabled) {
   display: block;
   filter: brightness(0) invert(1);
 }
+/* AKTİF MAÇTA göstergesi: "Oyna" butonuyla AYNI 32px footprint (satır hizası bozulmasın),
+   ortada dönen zar GIF'i. Buton değil (tıklanmaz) — yalnız "oyunda" işareti. */
+.online-ingame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+.online-ingame-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
 .online-pdot {
   width: 8px;
   height: 8px;

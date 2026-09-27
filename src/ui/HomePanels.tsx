@@ -12,6 +12,7 @@ import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
 import playerPlayIcon from '../assets/player-play.svg'
+import diceSpinIcon from '../assets/dice-spin.gif'
 
 // Canli mac tipi: Arkadaslik (puansiz) | Puan Maci (N-puan) | Tek Mac (1 oyun)
 type LiveCat = 'single' | 'match' | 'friendly'
@@ -454,9 +455,15 @@ export function OnlinePlayersPanel({
                     <CountryFlag code={p.country} size={16} rounded={false} />
                   </span>
                   <span className="rank-val">{p.rating}</span>
-                  {/* "Oyna" (davet) butonu: oyuncu AKTİF MAÇTA (YZ/normal) veya "Oyun Kabul Etmiyor"
-                      (busy) ise GİZLENİR — davet edilemez. Yalnız müsait/hazır oyuncularda çıkar. */}
-                  {!self && onInvite && !p.in_game && p.status !== 'busy' && (
+                  {/* AKTİF MAÇTA (YZ/normal) -> "Oyna" yerine dönen zar ikonu (oyunda göstergesi).
+                      "Oyun Kabul Etmiyor" (busy) -> hiçbir şey (davet edilemez). Müsait/hazır -> Oyna. */}
+                  {!self && p.in_game ? (
+                    <span className="online-actions">
+                      <span className="online-ingame" title={t('online.inGame')} aria-label={t('online.inGame')}>
+                        <img className="online-ingame-icon" src={diceSpinIcon} alt="" aria-hidden="true" />
+                      </span>
+                    </span>
+                  ) : !self && onInvite && p.status !== 'busy' ? (
                     <span className="online-actions">
                       <Button
                         variant="default"
@@ -469,7 +476,7 @@ export function OnlinePlayersPanel({
                         <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
                       </Button>
                     </span>
-                  )}
+                  ) : null}
                 </div>
               )
             })}
