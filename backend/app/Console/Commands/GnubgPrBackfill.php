@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class GnubgPrBackfill extends Command
 {
-    protected $signature = 'tavla:gnubg-pr-backfill {--rerun : gnubg ile yeniden analiz (havuz totalleri dahil)} {--limit=0 : en fazla N mac (0=hepsi)} {--dry : yaz.}';
+    protected $signature = 'tavla:gnubg-pr-backfill {--rerun : gnubg ile yeniden analiz (havuz totalleri dahil)} {--limit=0 : en fazla N mac (0=hepsi)} {--room= : yalnizca bu room_code (tek mac hedefli yeniden analiz)} {--dry : yaz.}';
 
     protected $description = 'Gecmis maclarin gosterilen PR’ini gnubg degerine ceker (hizli kopya veya --rerun yeniden analiz).';
 
@@ -35,7 +35,11 @@ class GnubgPrBackfill extends Command
 
                 return self::FAILURE;
             }
-            $q = MatchResult::whereNotNull('log');
+            $room = trim((string) $this->option('room'));
+            // room_code'lu maçlar match_moves'tan (sunucu) analiz edilir; client log şart değil.
+            $q = $room !== ''
+                ? MatchResult::where('room_code', strtoupper($room))
+                : MatchResult::whereNotNull('log');
             if ($limit > 0) {
                 $q->limit($limit);
             }
