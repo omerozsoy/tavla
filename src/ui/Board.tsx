@@ -6,6 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type CSSProperties,
 } from 'react'
 import { createPortal } from 'react-dom'
 import type { GameState, Player } from '../engine/types'
@@ -127,8 +128,10 @@ function Checker({
   lifted,
   skin,
   open,
+  style,
 }: {
   player: Player
+  style?: CSSProperties
   draggable?: boolean
   onPointerDown?: (e: ReactPointerEvent) => void
   label?: number // 5'ten fazla tasta ustteki tasa toplam sayi yazilir
@@ -141,6 +144,7 @@ function Checker({
       className={`checker ${player} ${draggable ? 'draggable' : ''} ${lifted ? 'lifted' : ''}${skin ? ' skinned' : ''}${open ? ' open' : ''}`}
       draggable={false}
       onPointerDown={onPointerDown}
+      style={style}
     >
       {skin && (
         // Materyal SVG kabı doldurur; beyaz oyuncu=ivory(light), siyah=birincil(dark).
@@ -227,6 +231,7 @@ function Point({
               label={label}
               skin={checkerSkin}
               open={isOpen}
+              style={isOpen ? ({ '--kiz-open-index': i - (visible - openCount) } as CSSProperties) : undefined}
             />
           )
         })}

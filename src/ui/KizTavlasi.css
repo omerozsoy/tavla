@@ -137,25 +137,17 @@
 }
 .kiz-view .point.top .checkers .checker { top: 2px; }
 .kiz-view .point.bottom .checkers .checker { bottom: 2px; }
-.kiz-view .point.top .checkers .checker:nth-child(2) { top: calc(2px + var(--checker) * .22); }
-.kiz-view .point.top .checkers .checker:nth-child(3) { top: calc(2px + var(--checker) * .44); }
-.kiz-view .point.top .checkers .checker:nth-child(4) { top: calc(2px + var(--checker) * .66); }
-.kiz-view .point.top .checkers .checker:nth-child(5) { top: calc(2px + var(--checker) * .88); }
-.kiz-view .point.bottom .checkers .checker:nth-child(2) { bottom: calc(2px + var(--checker) * .22); }
-.kiz-view .point.bottom .checkers .checker:nth-child(3) { bottom: calc(2px + var(--checker) * .44); }
-.kiz-view .point.bottom .checkers .checker:nth-child(4) { bottom: calc(2px + var(--checker) * .66); }
-.kiz-view .point.bottom .checkers .checker:nth-child(5) { bottom: calc(2px + var(--checker) * .88); }
 /* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
 .kiz-view .cube { display: none !important; }
 
 /* "Açık" (indirilmiş) pul aynı hanede kalır; çember yerine stack'in içine iner.
    Yalnız .kiz-view içinde etkin -> klasik oyun taşları etkilenmez. */
 .kiz-view .point.top .checkers .checker.open {
-  transform: translate(-50%, calc(var(--checker) * 1.08));
+  transform: translate(-50%, calc(var(--checker) * (1.08 + var(--kiz-open-index, 0) * .86)));
   z-index: 3;
 }
 .kiz-view .point.bottom .checkers .checker.open {
-  transform: translate(-50%, calc(var(--checker) * -1.08));
+  transform: translate(-50%, calc(-1 * var(--checker) * (1.08 + var(--kiz-open-index, 0) * .86)));
   z-index: 3;
 }
 .kiz-view .point .checkers .checker:not(.open) { z-index: 2; }
