@@ -143,7 +143,12 @@ export function playSlot(s: KizState, slotIndex: number): KizState {
 
   if (phase === 'acma') {
     if (s.closed[p][idx] <= 0) return s
-    const take = s.isDouble ? s.closed[p][idx] : 1
+    // 1-3 hanelerinde iki pul tek indirmede birlikte zemine iner.
+    // 4-6 hanelerinde üç pul iki indirmede iner: ilkinde bir pul,
+    // ikinci indirmede kalan iki pul.
+    const take = s.isDouble || idx <= 2 || s.closed[p][idx] <= 2
+      ? s.closed[p][idx]
+      : 1
     const closed = s.closed[p].slice() as KizLanes
     const open = s.open[p].slice() as KizLanes
     closed[idx] -= take

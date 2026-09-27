@@ -31,18 +31,27 @@ describe('Kız Tavlası (iki fazlı) — başlangıç', () => {
 })
 
 describe('Kız Tavlası — AÇMA fazı (indirme)', () => {
-  it('6/5/4 hanelerinde üç, 3/2/1 hanelerinde iki pul indirilebilir', () => {
+  it('1/2/3 tek, 4/5/6 iki indirmede tamamlanır', () => {
     let s = initialState('white')
 
-    // Aynı haneye gelen zarlar farklı turlarda da kullanılabilmelidir.
-    for (let i = 0; i < 3; i++) {
-      s = applyRoll(s, [6, 1], false)
-      s = playSlot(s, 0)
-      expect(s.closed.white[5]).toBe(2 - i)
-      s = endTurn(s)
-      s = endTurn(s)
-    }
+    // 1-3: iki fiziksel pul tek tıklamada birlikte zemine iner.
+    s = applyRoll(s, [1, 6], false)
+    s = playSlot(s, 0)
+    expect(s.closed.white[0]).toBe(0)
+    expect(s.open.white[0]).toBe(2)
+    expect(playableLanes(s)).toEqual([6])
+
+    // 4-6: üç pul önce bir, sonra kalan iki pul olarak iner.
+    s = playSlot(s, 1)
+    expect(s.closed.white[5]).toBe(2)
+    expect(s.open.white[5]).toBe(1)
+    expect(playableLanes(s)).toEqual([])
+    s = endTurn(s)
+    s = endTurn(s)
+    s = applyRoll(s, [6, 1], false)
+    s = playSlot(s, 0)
     expect(s.closed.white[5]).toBe(0)
+    expect(s.open.white[5]).toBe(3)
 
     // 6 hanesi açık olsa da bütün pullar inmeden yeni 6 ile toplama yapılamaz.
     s = applyRoll(s, [6, 1], false)
@@ -50,13 +59,8 @@ describe('Kız Tavlası — AÇMA fazı (indirme)', () => {
     s = endTurn(s)
     s = endTurn(s)
 
-    for (let i = 0; i < 2; i++) {
-      s = applyRoll(s, [2, 1], false)
-      s = playSlot(s, 0)
-      expect(s.closed.white[1]).toBe(1 - i)
-      s = endTurn(s)
-      s = endTurn(s)
-    }
+    s = applyRoll(s, [2, 1], false)
+    s = playSlot(s, 0)
     expect(s.closed.white[1]).toBe(0)
   })
 
