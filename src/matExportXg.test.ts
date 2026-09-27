@@ -382,10 +382,13 @@ describe('buildMatXg — fill (zar korunur) + mükerrer-tur dedup; native buildM
     expect(mat).toMatch(/^\s*\d+\) 54: {2,}42: 6\/2 7\/5/m)
     // forced: sol kolonda "31: 2/1"; sağ zar [3,6] KANONİK "63" (yüksek önce; hamleler değişmez)
     expect(mat).toMatch(/^\s*\d+\) 31: 2\/1 {2,}63: 19\/16 16\/10/m)
-    // native buildMat fill'i SÜZER -> luck yolu değişmez (dance "54:" satırı native'de YOK)
+    // native buildMat: KÖK NEDEN DÜZELTMESİ (2026-09-27) -> ZORUNLU hamle (fill, notation dolu)
+    // artık DAHİL (bardan giriş/zorunlu bear-off gibi gerçek tahta değişikliği silinmesin;
+    // yoksa sonraki hamle "boş haneden" görünür + oyun yarım kalır). Yalnız PURE-DANCE (notation
+    // boş, "54:") HARİÇ -> tahta değişmez, luck baseline korunur.
     const native = buildMat(log, { matchLength: 3, whiteName: 'A', blackName: 'B' })
-    expect(native).not.toContain('54:')
-    expect(native).not.toContain('31: 2/1')
+    expect(native).not.toContain('54:') // pure-dance hâlâ hariç
+    expect(native).toContain('31: 2/1') // zorunlu hamle artık DAHİL
   })
 
   it('mükerrer tur (aynı oyuncu+seq) TEK satıra iner (online çift-yazım / fill örtüşmesi)', () => {
