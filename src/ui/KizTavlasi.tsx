@@ -168,7 +168,6 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
     if (state.open.white[d - 1] > 0) openMark.set(idx.white(d), state.open.white[d - 1])
     if (state.open.black[d - 1] > 0) openMark.set(idx.black(d), state.open.black[d - 1])
   }
-  const activeBottom = state.turn === 'white'
   const diceRow = faces.length > 0 ? <DiceRow faces={faces} owner={state.turn as Player} /> : null
 
   // Skor şeridi: her oyuncunun fazı + ilerlemesi.
@@ -235,8 +234,8 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             showPip={false}
             openMark={openMark}
             showStackCount
-            centerLeft={activeBottom ? null : diceRow}
-            centerRight={activeBottom ? diceRow : null}
+            centerLeft={null}
+            centerRight={diceRow}
           />
         </div>
       </main>
