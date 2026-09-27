@@ -198,7 +198,7 @@ export function LiveMatchesPanel({
         .then((m) => alive && setMatches(m))
         .catch(() => alive && setMatches([]))
     load()
-    const id = window.setInterval(load, 10000)
+    const id = window.setInterval(load, 30000)
     return () => {
       alive = false
       window.clearInterval(id)
