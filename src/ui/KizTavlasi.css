@@ -204,6 +204,13 @@
 }
 .kiz-score { margin: 10px 0 16px; color: #cbbf9f; }
 .kiz-result-actions { display: flex; gap: 10px; justify-content: center; }
+.kiz-result-actions button:last-child {
+  color: #f3ede1 !important;
+  border-color: rgba(243, 237, 225, 0.7) !important;
+}
+.kiz-result-actions button:last-child:hover {
+  background: rgba(243, 237, 225, 0.12) !important;
+}
 
 @media (max-width: 560px) {
   .kiz-topbar { gap: 8px; padding: 10px 12px; }
