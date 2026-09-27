@@ -31,6 +31,35 @@ describe('Kız Tavlası (iki fazlı) — başlangıç', () => {
 })
 
 describe('Kız Tavlası — AÇMA fazı (indirme)', () => {
+  it('6/5/4 hanelerinde üç, 3/2/1 hanelerinde iki pul indirilebilir', () => {
+    let s = initialState('white')
+
+    // Aynı haneye gelen zarlar farklı turlarda da kullanılabilmelidir.
+    for (let i = 0; i < 3; i++) {
+      s = applyRoll(s, [6, 1], false)
+      s = playSlot(s, 0)
+      expect(s.closed.white[5]).toBe(2 - i)
+      s = endTurn(s)
+      s = endTurn(s)
+    }
+    expect(s.closed.white[5]).toBe(0)
+
+    // 6 hanesi artık tamamen açık; dördüncü 6 oynanamaz.
+    s = applyRoll(s, [6, 1], false)
+    expect(playableLanes(s)).not.toContain(6)
+    s = endTurn(s)
+    s = endTurn(s)
+
+    for (let i = 0; i < 2; i++) {
+      s = applyRoll(s, [2, 1], false)
+      s = playSlot(s, 0)
+      expect(s.closed.white[1]).toBe(1 - i)
+      s = endTurn(s)
+      s = endTurn(s)
+    }
+    expect(s.closed.white[1]).toBe(0)
+  })
+
   it('zar d, d hanesinden BİR pulu kapalı->açık indirir', () => {
     let s = initialState('white')
     s = applyRoll(s, [6, 4], false)
