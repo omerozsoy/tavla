@@ -147,7 +147,7 @@
   opacity: 1;
 }
 .kiz-decor-lip-balm {
-  left: 18%;
+  left: 20%;
   top: 35%;
   width: clamp(42px, calc(var(--checker) * 1.12), 70px);
   transform: rotate(-14deg);
@@ -166,7 +166,7 @@
 }
 .kiz-decor-hair {
   left: 22%;
-  top: 59%;
+  top: 47%;
   width: clamp(68px, calc(var(--checker) * 1.95), 122px);
   transform: rotate(12deg);
   filter: saturate(1.15) contrast(1.06) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
