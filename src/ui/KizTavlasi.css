@@ -144,6 +144,12 @@
   width: clamp(42px, calc(var(--checker) * 1.2), 76px);
   transform: rotate(-10deg);
 }
+.kiz-decor-lip-balm {
+  left: 45%;
+  top: 35%;
+  width: clamp(34px, calc(var(--checker) * .9), 58px);
+  transform: rotate(-14deg);
+}
 .kiz-decor-wipes {
   left: 47%;
   top: 9%;
