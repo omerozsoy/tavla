@@ -147,7 +147,7 @@
   opacity: 1;
 }
 .kiz-decor-lip-balm {
-  left: 26%;
+  left: 18%;
   top: 35%;
   width: clamp(42px, calc(var(--checker) * 1.12), 70px);
   transform: rotate(-14deg);
