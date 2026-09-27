@@ -73,6 +73,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
       const { dice, isDouble } = rollDice()
       const next = applyRoll(s, dice, isDouble)
       if (isDouble) Sound.double()
+      else Sound.dice()
       return next
     })
   }, [])
@@ -209,33 +210,42 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
       </div>
 
       <main className="main game-scene">
-        <div className="game-area">
-          <div className="kiz-board-joke-items" aria-hidden="true">
-            <img className="kiz-decor-item kiz-decor-lip-balm" src="/assets/lip-balm-realistic.png" alt="" />
-            <img className="kiz-decor-item kiz-decor-phone" src="/assets/decor-phone-case-with-phone.png" alt="" />
-            <img className="kiz-decor-item kiz-decor-hair" src="/assets/kiz-hair-option-3.png" alt="" />
+        <div className="kiz-board-layout">
+          <div className="game-area">
+            <div className="kiz-board-joke-items" aria-hidden="true">
+              <img className="kiz-decor-item kiz-decor-lip-balm" src="/assets/lip-balm-realistic.png" alt="" />
+              <img className="kiz-decor-item kiz-decor-phone" src="/assets/decor-phone-case-with-phone.png" alt="" />
+              <img className="kiz-decor-item kiz-decor-hair" src="/assets/kiz-hair-option-3.png" alt="" />
+            </div>
+            <Board
+              state={board}
+              selectableFroms={selectableFroms}
+              clickableFroms={clickableFroms}
+              targets={new Set()}
+              selectedFrom={null}
+              onSelectFrom={onSelectFrom}
+              selectOnPointerDown
+              onSelectTarget={() => {}}
+              onDragFrom={() => {}}
+              pipTop={lanesTotal(state.closed.black) + lanesTotal(state.open.black)}
+              pipBottom={lanesTotal(state.closed.white) + lanesTotal(state.open.white)}
+              pointNumberFor={(index) => index < 6 ? index + 1 : index >= 18 ? 24 - index : null}
+              cube={{ value: 1, owner: null }}
+              flip={false}
+              showPip={false}
+              openMark={openMark}
+              showStackCount
+              centerLeft={null}
+              centerRight={diceRow}
+            />
           </div>
-          <Board
-            state={board}
-            selectableFroms={selectableFroms}
-            clickableFroms={clickableFroms}
-            targets={new Set()}
-            selectedFrom={null}
-            onSelectFrom={onSelectFrom}
-            selectOnPointerDown
-            onSelectTarget={() => {}}
-            onDragFrom={() => {}}
-            pipTop={lanesTotal(state.closed.black) + lanesTotal(state.open.black)}
-            pipBottom={lanesTotal(state.closed.white) + lanesTotal(state.open.white)}
-            pointNumberFor={(index) => index < 6 ? index + 1 : index >= 18 ? 24 - index : null}
-            cube={{ value: 1, owner: null }}
-            flip={false}
-            showPip={false}
-            openMark={openMark}
-            showStackCount
-            centerLeft={null}
-            centerRight={diceRow}
-          />
+          <aside className="kiz-bored-panel" aria-label="Çok Sıkıldım bağlantıları">
+            <h2>Çok Sıkıldım</h2>
+            <a href="https://www.trendyol.com/" target="_blank" rel="noreferrer">1&nbsp; Trendyol</a>
+            <a href="https://www.watsons.com.tr/" target="_blank" rel="noreferrer">2&nbsp; Watsons</a>
+            <a href="https://www.gratis.com/" target="_blank" rel="noreferrer">3&nbsp; Gratis</a>
+            <a href="https://www.instagram.com/" target="_blank" rel="noreferrer">4&nbsp; Instagram</a>
+          </aside>
         </div>
       </main>
 
