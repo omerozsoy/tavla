@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TournamentAdResource\Pages;
 use App\Models\TournamentAd;
+use App\Support\ImageOptimizer;
 use Filament\Forms;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -38,8 +40,13 @@ class TournamentAdResource extends Resource
             // Banner gorseli: bilgisayardan resim sec (public/uploads/banner altina yuklenir)
             Forms\Components\FileUpload::make('image')->label('Banner görseli')
                 ->image()->disk('uploads')->directory('banner')->visibility('public')
-                ->imageEditor()->maxSize(5120)
-                ->helperText('Sol panelde yazı varsa görsel SAĞ yarıda; yoksa tam genişlikte gösterilir. Dikey ortaya önemli öğe koy (kırpılabilir). Yüksek çözünürlük önerilir. En fazla 5 MB.')
+                ->imageEditor()->maxSize(8192)
+                // YÜKLEME-ANI OPTİMİZASYON: görsel en fazla 1920px'e küçültülür + WebP'ye (kalite 82)
+                // sıkıştırılır -> 2 MB banner tipik ~100-200 KB olur (ana sayfa slider hızlanır).
+                // GD yoksa/hata olursa orijinal saklanır (yükleme kırılmaz). Bkz App\Support\ImageOptimizer.
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'banner', 1920, 82))
+                ->helperText('Yüklerken otomatik optimize edilir (≤1920px, WebP). Sol panelde yazı varsa görsel SAĞ yarıda; yoksa tam genişlikte. Dikey ortaya önemli öğe koy (kırpılabilir).')
                 ->required()
                 ->columnSpanFull(),
             // Düzenleyen kurum: Kurumlar (İçerik › Kurumlar) listesinden seçilir; sol panelde
