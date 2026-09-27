@@ -151,7 +151,6 @@
   top: 35%;
   width: clamp(42px, calc(var(--checker) * 1.12), 70px);
   transform: rotate(-14deg);
-  filter: hue-rotate(285deg) saturate(1.18) contrast(1.06) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
 }
 .kiz-decor-wipes {
   left: 31%;
@@ -166,7 +165,7 @@
   transform: rotate(-7deg);
 }
 .kiz-decor-hair {
-  left: 20%;
+  left: 16%;
   top: 49%;
   width: clamp(76px, calc(var(--checker) * 2.15), 138px);
   transform: rotate(12deg);
