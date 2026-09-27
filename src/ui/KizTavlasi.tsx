@@ -214,7 +214,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
           <div className="kiz-board-joke-items" aria-hidden="true">
             <img className="kiz-decor-item kiz-decor-lip-balm" src="/assets/lip-balm-realistic.png" alt="" />
             <img className="kiz-decor-item kiz-decor-phone" src="/assets/decor-phone-case-with-phone.png" alt="" />
-            <img className="kiz-decor-item kiz-decor-hair" src="/assets/decor-hair-clip.png" alt="" />
+            <img className="kiz-decor-item kiz-decor-hair" src="/assets/kiz-hair-option-4.png" alt="" />
           </div>
           <Board
             state={board}
