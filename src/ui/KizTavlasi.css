@@ -151,13 +151,11 @@
 /* "Açık" (indirilmiş) pul aynı hanede kalır; çember yerine stack'in içine iner.
    Yalnız .kiz-view içinde etkin -> klasik oyun taşları etkilenmez. */
 .kiz-view .point.top .checkers .checker.open {
-  top: calc(2px + var(--checker) * 1.08);
-  transform: translateX(-50%);
+  transform: translate(-50%, calc(var(--checker) * 1.08));
   z-index: 3;
 }
 .kiz-view .point.bottom .checkers .checker.open {
-  bottom: calc(2px + var(--checker) * 1.08);
-  transform: translateX(-50%);
+  transform: translate(-50%, calc(var(--checker) * -1.08));
   z-index: 3;
 }
 .kiz-view .point .checkers .checker:not(.open) { z-index: 2; }
