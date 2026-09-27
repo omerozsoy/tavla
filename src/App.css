@@ -11802,6 +11802,21 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   font-size: 0.7rem;
 }
+/* Orta sütun: skor/vs üstte, kaçlık maç minik altta. */
+.lm-mid {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.1;
+}
+.lm-len {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #c9563f;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
 .lm-avatar {
   width: 26px;
   height: 26px;

@@ -256,16 +256,19 @@ export function LiveMatchesPanel({
                 {m.p1_premium && <PremiumCrown />}
                 <TopRankBadge userId={m.p1_id} />
               </span>
-              {/* Skor (kaç kaç): vs'nin SOL/SAĞında p1/p2 puanı. Skor yoksa (eski/başlamamış) düz "vs". */}
-              {m.p1_score != null && m.p2_score != null ? (
-                <span className="lm-vs lm-vs-score">
-                  <span className="lm-score">{m.p1_score}</span>
-                  <span className="lm-vs-sep">vs</span>
-                  <span className="lm-score">{m.p2_score}</span>
-                </span>
-              ) : (
-                <span className="lm-vs">vs</span>
-              )}
+              {/* Orta: skor (kaç kaç) vs'nin sol/sağında + hemen ALTINDA minik maç uzunluğu (kaçlık maç). */}
+              <span className="lm-mid">
+                {m.p1_score != null && m.p2_score != null ? (
+                  <span className="lm-vs lm-vs-score">
+                    <span className="lm-score">{m.p1_score}</span>
+                    <span className="lm-vs-sep">vs</span>
+                    <span className="lm-score">{m.p2_score}</span>
+                  </span>
+                ) : (
+                  <span className="lm-vs">vs</span>
+                )}
+                <span className="lm-len">{t('resume.point', { n: m.target ?? 1 })}</span>
+              </span>
               <span className="lm-side lm-p2">
                 <TopRankBadge userId={m.p2_id} />
                 {m.p2_premium && <PremiumCrown />}
