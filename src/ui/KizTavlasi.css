@@ -134,6 +134,7 @@
   left: 50%;
   z-index: 1;
   transform: translateX(-50%);
+  animation: none;
 }
 .kiz-view .point.top .checkers .checker { top: 2px; }
 .kiz-view .point.bottom .checkers .checker { bottom: 2px; }
