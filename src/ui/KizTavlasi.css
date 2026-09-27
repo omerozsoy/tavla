@@ -123,22 +123,44 @@
 }
 .kiz-view .game-area { width: auto; max-width: 100%; }
 .kiz-view .game-area { position: relative; }
-.kiz-board-joke {
+.kiz-board-joke-items {
   position: absolute;
-  left: 12%;
-  top: 45%;
+  inset: 0;
   z-index: 6;
   pointer-events: none;
-  transform: rotate(-14deg) perspective(180px) rotateY(-7deg);
-  filter: drop-shadow(0 10px 8px rgba(36, 20, 10, 0.38));
 }
-.kiz-lip-balm-photo {
+.kiz-decor-item {
+  position: absolute;
   display: block;
-  width: clamp(42px, calc(var(--checker) * 1.25), 72px);
+  width: clamp(36px, calc(var(--checker) * 1.05), 66px);
   height: auto;
   mix-blend-mode: screen;
-  opacity: .92;
-  filter: saturate(.9) contrast(1.04);
+  opacity: .9;
+  filter: saturate(.96) contrast(1.06) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
+}
+.kiz-decor-phone {
+  left: 10%;
+  top: 12%;
+  width: clamp(42px, calc(var(--checker) * 1.2), 76px);
+  transform: rotate(-10deg);
+}
+.kiz-decor-wipes {
+  left: 47%;
+  top: 9%;
+  width: clamp(44px, calc(var(--checker) * 1.25), 80px);
+  transform: rotate(8deg);
+}
+.kiz-decor-keychain {
+  left: 13%;
+  top: 64%;
+  width: clamp(38px, calc(var(--checker) * 1.1), 70px);
+  transform: rotate(-7deg);
+}
+.kiz-decor-hair {
+  left: 49%;
+  top: 59%;
+  width: clamp(42px, calc(var(--checker) * 1.18), 74px);
+  transform: rotate(12deg);
 }
 .kiz-lip-balm {
   position: relative;
