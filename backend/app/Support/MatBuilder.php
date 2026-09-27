@@ -40,7 +40,7 @@ class MatBuilder
     {
         $model = [];
         foreach (self::segment($log) as $game) {
-            $acts = MatSerializer::pairCube(self::rawActs($game));
+            $acts = MatSerializer::pairCube(self::rawActs(self::dedupeTurns($game)));
             $model[] = ['acts' => $acts, 'outcome' => self::outcomeOf($acts)];
         }
 
@@ -89,13 +89,23 @@ class MatBuilder
             return true;
         };
 
-        // fill = yalnız XG dışa aktarımı için tur-sırası dolgusu (zorunlu/dance turlar). gnubg
-        // NATIVE .mat + luck bunları İÇERMEZ -> luck bugüne kadarki değerle BİREBİR aynı kalır.
+        // fill = PR-ANALİZ DIŞI tur (zorunlu tek-yasal-hamle veya dance). KÖK NEDEN DÜZELTMESİ
+        // (VFE5U/LW3ZZ .mat regresyonu 2026-09-27): fill'i KOŞULSUZ süzmek, ZORUNLU hamleleri
+        // (bardan tek-yasal giriş, zorunlu bear-off) siliyordu — bunlar recordPR tarafından
+        // atlandığından rich log'da TEK kaydı fill girdisidir. Silinince taşın geldiği hane boş
+        // görünür (sonraki hamle "boş haneden"/dayanaksız bar), oyun 15 taş toplanmadan yarım kalır
+        // ve kazandıran son hamle düşünce sonuç NULL olur. GERÇEK tahta değişikliği (notation dolu)
+        // .mat'e GİRMELİ. Yalnız PURE-DANCE (hamlesiz, notation boş) atlanır: tahtayı değiştirmez,
+        // atlanması replay'i bozmaz ve gnubg luck baseline'ı korunur.
         $entries = [];
         foreach ($log as $e) {
-            if (! empty($e['player']) && empty($e['fill'])) {
-                $entries[] = $e;
+            if (empty($e['player'])) {
+                continue;
             }
+            if (! empty($e['fill']) && trim((string) ($e['notation'] ?? '')) === '') {
+                continue; // pure-dance dolgusu (tahta değişmez) — atla
+            }
+            $entries[] = $e;
         }
         $gameNoOf = [];
         $lastSeq = [];
@@ -144,6 +154,38 @@ class MatBuilder
         }
 
         return $games;
+    }
+
+    /**
+     * Aynı turun (player+seq) MÜKERRER hamle girdisini ele: online senkron çift-yazımı ya da
+     * fill/recordPR örtüşmesi aynı hamleyi iki kez matchLog'a düşürebilir (gnubg .mat'te aynı hamle
+     * iki satır -> replay bozulur). BİLGİ taşıyanı (notation dolu) korunur. Küp girdileri hamle ile
+     * AYNI seq'i taşıyabildiğinden dedup DIŞIDIR. src/matExport.ts dedupeTurns'ün BİREBİR portu;
+     * oyun-içi çağrılır (seq oyun başında sıfırlanır). fill'i .mat'e dahil ettiğimizden ŞART oldu.
+     *
+     * @return list<array>
+     */
+    private static function dedupeTurns(array $game): array
+    {
+        $at = [];
+        $out = [];
+        $info = static fn ($s): int => (trim((string) $s) !== '' && $s !== 'pas' && $s !== 'pass') ? 1 : 0;
+        foreach ($game as $e) {
+            if (! empty($e['cube']) || ($e['seq'] ?? null) === null || empty($e['player'])) {
+                $out[] = $e;
+
+                continue;
+            }
+            $key = $e['player'].':'.$e['seq'];
+            if (! isset($at[$key])) {
+                $at[$key] = count($out);
+                $out[] = $e;
+            } elseif ($info($e['notation'] ?? '') > $info($out[$at[$key]]['notation'] ?? '')) {
+                $out[$at[$key]] = $e; // daha bilgili kaydı tut, mükerreri düşür
+            }
+        }
+
+        return $out;
     }
 
     /**

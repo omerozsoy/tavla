@@ -317,14 +317,22 @@ function dedupeTurns(game: MoveLogEntry[]): MoveLogEntry[] {
 export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
   const { matchLength = 1, whiteName = 'White', blackName = 'Black' } = opts
   const COLW = 34
-  // gnubg NATIVE .mat: yalnız analiz-değeri taşıyan girdiler (fill = XG tur-sırası dolgusu HARİÇ).
-  // Böylece luck kaynağı bugüne kadarki .mat ile BİREBİR aynı kalır (fill eklenmesi luck'ı bozmaz).
-  const games = splitGames(log.filter((e) => !e.fill))
+  // KÖK NEDEN DÜZELTMESİ (VFE5U/LW3ZZ .mat regresyonu 2026-09-27): fill = PR-analiz DIŞI tur
+  // (zorunlu tek-yasal-hamle veya dance). Eskiden TÜM fill'i süzüyorduk; ama ZORUNLU hamleler
+  // (bardan tek-yasal giriş, zorunlu bear-off) rich log'da YALNIZ fill girdisi olarak durur ->
+  // silinince taşın geldiği hane boş görünür (sonraki hamle "boş haneden"), oyun yarım kalır,
+  // kazandıran son hamle düşünce sonuç NULL olur. GERÇEK hamle (notation dolu) .mat'e GİRMELİ;
+  // yalnız PURE-DANCE (hamlesiz) atlanır (tahta değişmez -> replay + luck baseline korunur).
+  const games = splitGames(log.filter((e) => !e.fill || (e.notation ?? '').trim() !== ''))
 
   const out: string[] = [`${matchLength} point match`]
   let sw = 0
   let sb = 0
-  games.forEach((game, gi) => {
+  games.forEach((rawGame, gi) => {
+    // fill DAHİL edildiğinden (bkz. yukarı), aynı turun (player+seq) MÜKERRER girdisini ele:
+    // online senkron çift-yazımı aynı zorunlu hamleyi iki kez düşürebilir -> gnubg .mat'te aynı
+    // hamle iki satır (replay bozulur). buildMatXg ile AYNI dedupeTurns.
+    const game = dedupeTurns(rawGame)
     out.push('')
     out.push(` Game ${gi + 1}`)
     out.push(` ${`${whiteName} : ${sw}`.padEnd(COLW + 4)}${blackName} : ${sb}`)
