@@ -140,9 +140,9 @@
 }
 .kiz-decor-phone {
   left: 6%;
-  top: 8%;
-  width: clamp(84px, calc(var(--checker) * 2.4), 152px);
-  transform: rotate(-2deg);
+  top: 15%;
+  width: clamp(100px, calc(var(--checker) * 3), 190px);
+  transform: none;
   mix-blend-mode: normal;
   opacity: 1;
 }
