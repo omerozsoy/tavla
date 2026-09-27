@@ -247,6 +247,7 @@ function Point({
                       // Açılan pul kapalı yığının arkasında kalmasın; ilk açık pul
                       // tam bir pul yüksekliği kadar önde görünür.
                       '--kiz-open-base': closedCount > 0 ? 1.05 : 0,
+                      '--kiz-open-step': closedCount > 0 ? 0.5 : 1,
                     } as CSSProperties)
                   : undefined
               }
