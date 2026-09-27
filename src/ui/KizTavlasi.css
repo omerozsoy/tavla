@@ -134,11 +134,11 @@
 }
 .kiz-lip-balm-photo {
   display: block;
-  width: clamp(42px, calc(var(--checker) * 1.25), 72px);
+  width: clamp(48px, calc(var(--checker) * 1.55), 86px);
   height: auto;
-  mix-blend-mode: screen;
-  opacity: .92;
-  filter: saturate(.9) contrast(1.04);
+  mix-blend-mode: multiply;
+  opacity: .96;
+  filter: saturate(1.08) contrast(1.03) drop-shadow(0 8px 6px rgba(47, 25, 18, .28));
 }
 .kiz-lip-balm {
   position: relative;
