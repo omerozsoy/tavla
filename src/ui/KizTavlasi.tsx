@@ -150,8 +150,8 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
   const selectableFroms = new Set<number>()
   const clickableFroms = new Set<number>()
   if (humanTurn && state.rolled) {
-    for (let d = 1; d <= 6; d++) clickableFroms.add(idx.white(d))
     for (const d of playableLanes(state)) selectableFroms.add(idx.white(d))
+    for (const from of selectableFroms) clickableFroms.add(from)
   }
   const onSelectFrom = (from: number | 'bar') => {
     if (typeof from !== 'number' || !humanTurn || !state.rolled) return
