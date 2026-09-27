@@ -16,7 +16,6 @@ import { Icon } from './Icon'
 import Board from './Board'
 import DiceRow from './Dice'
 import { useEscape } from './useEscape'
-import { Sound } from '../sound'
 import type { GameState, Player } from '../engine/types'
 import {
   applyRoll,
@@ -33,6 +32,7 @@ import {
   type KizState,
 } from '../kiz/engine'
 import { aiNextSlot } from '../kiz/ai'
+import { Sound } from '../sound'
 import './KizTavlasi.css'
 
 // laneNo (1..6) -> tahta üçgen index'i (her oyuncunun kendi EV hanesi; kapalı+açık AYNI yerde).
@@ -72,7 +72,6 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
       if (s.rolled || s.winner) return s
       const { dice, isDouble } = rollDice()
       const next = applyRoll(s, dice, isDouble)
-      Sound.dice()
       if (isDouble) Sound.double()
       return next
     })
