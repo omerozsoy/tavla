@@ -165,7 +165,7 @@
   transform: rotate(-7deg);
 }
 .kiz-decor-hair {
-  left: 29%;
+  left: 22%;
   top: 59%;
   width: clamp(68px, calc(var(--checker) * 1.95), 122px);
   transform: rotate(12deg);
