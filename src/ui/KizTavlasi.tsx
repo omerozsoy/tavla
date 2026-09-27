@@ -214,7 +214,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
           <div className="kiz-board-joke-items" aria-hidden="true">
             <img className="kiz-decor-item kiz-decor-lip-balm" src="/assets/lip-balm-realistic.png" alt="" />
             <img className="kiz-decor-item kiz-decor-phone" src="/assets/decor-phone-case-with-phone.png" alt="" />
-            <img className="kiz-decor-item kiz-decor-hair" src="/assets/kiz-hair-option-4.png" alt="" />
+            <img className="kiz-decor-item kiz-decor-hair" src="/assets/kiz-hair-option-3.png" alt="" />
           </div>
           <Board
             state={board}
@@ -237,21 +237,6 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             centerLeft={null}
             centerRight={diceRow}
           />
-        </div>
-        <div className="kiz-hair-picker" aria-label="Toka seçenekleri">
-          <span className="kiz-hair-picker-title">Toka seçimi</span>
-          {[
-            ['/assets/decor-hair-clip.png', 'Mevcut çiçek toka'],
-            ['/assets/kiz-hair-option-2.png', 'Kelebek toka'],
-            ['/assets/kiz-hair-option-3.png', 'Kadife fiyonk'],
-            ['/assets/kiz-hair-option-4.png', 'İnci barrette'],
-            ['/assets/kiz-hair-option-5.png', 'Çiçek toka'],
-          ].map(([src, label], index) => (
-            <div className="kiz-hair-option" key={src} title={label}>
-              <span className="kiz-hair-option-number">{index + 1}</span>
-              <img src={src} alt={`${index + 1} numaralı ${label}`} />
-            </div>
-          ))}
         </div>
       </main>
 
