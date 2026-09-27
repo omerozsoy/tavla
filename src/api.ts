@@ -1717,11 +1717,13 @@ export interface LiveMatch {
   p1_rating?: number | null
   p1_avatar?: string | null
   p1_premium?: boolean
+  p1_score?: number | null // maç skoru (server_match.score.white) — "kaç kaç"
   p2_id?: number | null
   p2_name: string
   p2_rating?: number | null
   p2_avatar?: string | null
   p2_premium?: boolean
+  p2_score?: number | null // maç skoru (server_match.score.black)
   stake: number
   bet_pct: number
   target?: number | null
@@ -1745,6 +1747,7 @@ export interface OnlinePlayer {
   rating: number
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
   status?: PresenceStatus // durum noktasi rengi (offline olanlar listede gelmez)
+  in_game?: boolean // aktif maçta (YZ/normal) -> "Oyna" (davet) butonu gizlenir
 }
 export async function onlinePlayers(): Promise<OnlinePlayer[]> {
   const data = await req<{ players: OnlinePlayer[] }>('/online-players')

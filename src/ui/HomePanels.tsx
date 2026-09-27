@@ -256,7 +256,16 @@ export function LiveMatchesPanel({
                 {m.p1_premium && <PremiumCrown />}
                 <TopRankBadge userId={m.p1_id} />
               </span>
-              <span className="lm-vs">vs</span>
+              {/* Skor (kaç kaç): vs'nin SOL/SAĞında p1/p2 puanı. Skor yoksa (eski/başlamamış) düz "vs". */}
+              {m.p1_score != null && m.p2_score != null ? (
+                <span className="lm-vs lm-vs-score">
+                  <span className="lm-score">{m.p1_score}</span>
+                  <span className="lm-vs-sep">vs</span>
+                  <span className="lm-score">{m.p2_score}</span>
+                </span>
+              ) : (
+                <span className="lm-vs">vs</span>
+              )}
               <span className="lm-side lm-p2">
                 <TopRankBadge userId={m.p2_id} />
                 {m.p2_premium && <PremiumCrown />}
@@ -442,7 +451,9 @@ export function OnlinePlayersPanel({
                     <CountryFlag code={p.country} size={16} rounded={false} />
                   </span>
                   <span className="rank-val">{p.rating}</span>
-                  {!self && onInvite && (
+                  {/* "Oyna" (davet) butonu: oyuncu AKTİF MAÇTA (YZ/normal) veya "Oyun Kabul Etmiyor"
+                      (busy) ise GİZLENİR — davet edilemez. Yalnız müsait/hazır oyuncularda çıkar. */}
+                  {!self && onInvite && !p.in_game && p.status !== 'busy' && (
                     <span className="online-actions">
                       <Button
                         variant="default"

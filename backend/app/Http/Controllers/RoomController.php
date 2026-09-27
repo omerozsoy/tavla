@@ -698,31 +698,39 @@ class RoomController extends Controller
             ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
             ->orderByDesc('updated_at')
             ->limit(30)
-            ->get(['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode']);
+            ->get(['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match']);
 
         // Premium: iki oyuncunun user_id'lerinden TEK sorguyla plan lookup (süresi geçerli ücretli).
         $uids = $rooms->flatMap(fn ($r) => [$r->p1_user_id, $r->p2_user_id])->filter()->unique()->values();
         $premiumMap = $uids->isEmpty() ? [] : User::whereIn('id', $uids)->get(['id', 'plan', 'plan_until'])
             ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
 
-        $list = $rooms->map(fn ($r) => [
-            'code' => $r->code,
-            'p1_id' => $r->p1_user_id !== null ? (int) $r->p1_user_id : null, // top-3 rozeti için
-            'p1_name' => $r->p1_name,
-            'p1_rating' => $r->p1_rating,
-            'p1_avatar' => $r->p1_avatar,
-            'p1_premium' => $premiumMap[$r->p1_user_id] ?? false,
-            'p2_id' => $r->p2_user_id !== null ? (int) $r->p2_user_id : null,
-            'p2_name' => $r->p2_name,
-            'p2_rating' => $r->p2_rating,
-            'p2_avatar' => $r->p2_avatar,
-            'p2_premium' => $premiumMap[$r->p2_user_id] ?? false,
-            'stake' => (int) $r->stake,
-            'bet_pct' => (int) $r->bet_pct,
-            'target' => $r->target !== null ? (int) $r->target : null,
-            // Etiket icin tip: eski (null) kayitlar 'ranked' varsayilir (cogu online mac hizli eslesme)
-            'mode' => $r->mode ?: 'ranked',
-        ]);
+        $list = $rooms->map(function ($r) use ($premiumMap) {
+            // MAÇ SKORU (kaç kaç): server_match.score (p1=beyaz, p2=siyah). Otoriter tek kaynak.
+            $sm = is_array($r->server_match) ? $r->server_match : null;
+            $score = is_array($sm['score'] ?? null) ? $sm['score'] : null;
+
+            return [
+                'code' => $r->code,
+                'p1_id' => $r->p1_user_id !== null ? (int) $r->p1_user_id : null, // top-3 rozeti için
+                'p1_name' => $r->p1_name,
+                'p1_rating' => $r->p1_rating,
+                'p1_avatar' => $r->p1_avatar,
+                'p1_premium' => $premiumMap[$r->p1_user_id] ?? false,
+                'p1_score' => $score !== null ? (int) ($score['white'] ?? 0) : null,
+                'p2_id' => $r->p2_user_id !== null ? (int) $r->p2_user_id : null,
+                'p2_name' => $r->p2_name,
+                'p2_rating' => $r->p2_rating,
+                'p2_avatar' => $r->p2_avatar,
+                'p2_premium' => $premiumMap[$r->p2_user_id] ?? false,
+                'p2_score' => $score !== null ? (int) ($score['black'] ?? 0) : null,
+                'stake' => (int) $r->stake,
+                'bet_pct' => (int) $r->bet_pct,
+                'target' => $r->target !== null ? (int) $r->target : null,
+                // Etiket icin tip: eski (null) kayitlar 'ranked' varsayilir (cogu online mac hizli eslesme)
+                'mode' => $r->mode ?: 'ranked',
+            ];
+        });
 
         return response()->json(['matches' => $list]);
     }
@@ -755,6 +763,27 @@ class RoomController extends Controller
             ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
             ->get($cols);
 
+        // AKTİF MAÇTA MI: p1/p2 olduğu 'playing' bir oda varsa (BOT dahil — YZ maçı da sayılır).
+        // Bu oyuncularda "Oyna" (davet) butonu gizlenir (zaten oyunda). Tek sorgu, id kümesi.
+        $userIds = $users->pluck('id');
+        $inGameSet = [];
+        if ($userIds->isNotEmpty()) {
+            Room::where('status', 'playing')
+                ->where('updated_at', '>', now()->subMinutes(5))
+                ->where(function ($q) use ($userIds) {
+                    $q->whereIn('p1_user_id', $userIds)->orWhereIn('p2_user_id', $userIds);
+                })
+                ->get(['p1_user_id', 'p2_user_id'])
+                ->each(function ($r) use (&$inGameSet) {
+                    if ($r->p1_user_id) {
+                        $inGameSet[(int) $r->p1_user_id] = true;
+                    }
+                    if ($r->p2_user_id) {
+                        $inGameSet[(int) $r->p2_user_id] = true;
+                    }
+                });
+        }
+
         $list = $users->map(fn ($u) => [
             'id'      => $u->id,
             'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
@@ -764,6 +793,7 @@ class RoomController extends Controller
             'rating'  => $u->rating ?? 1500,
             'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'status'  => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
+            'in_game' => isset($inGameSet[(int) $u->id]), // aktif maçta -> "Oyna" butonu gizlenir
         ]);
 
         return response()->json(['players' => $list, 'count' => $list->count()]);
