@@ -142,7 +142,7 @@
   left: 6%;
   top: 15%;
   width: clamp(100px, calc(var(--checker) * 3), 190px);
-  transform: none;
+  transform: rotate(18deg);
   mix-blend-mode: normal;
   opacity: 1;
 }
@@ -167,9 +167,9 @@
 .kiz-decor-hair {
   left: 29%;
   top: 59%;
-  width: clamp(42px, calc(var(--checker) * 1.18), 74px);
+  width: clamp(58px, calc(var(--checker) * 1.6), 100px);
   transform: rotate(12deg);
-  filter: hue-rotate(320deg) saturate(2.2) brightness(.82) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
+  filter: saturate(1.15) contrast(1.06) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
 }
 .kiz-lip-balm {
   position: relative;
