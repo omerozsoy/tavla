@@ -51,7 +51,12 @@ class AnalyzeMatchPrJob implements ShouldQueue
     public function handle(AnalysisOrchestrator $orch, ?\App\Services\GnuBg\GnuBgClient $gnubg = null): void
     {
         $mr = MatchResult::find($this->matchResultId);
-        if (! $mr || empty($mr->log)) {
+        if (! $mr) {
+            return;
+        }
+        // SUNUCU-OTORİTER kaynak varsa client log boş olsa bile analiz edilir.
+        $hasServer = ! empty($mr->room_code) && \App\Models\MatchMove::existsForRoom($mr->room_code);
+        if (! $hasServer && empty($mr->log)) {
             return;
         }
         // KÖK FIX (2026-09-25 — kalıcı "—" sorunu): gnubg servisi analiz ANINDA down/yavaş/restart
@@ -64,15 +69,14 @@ class AnalyzeMatchPrJob implements ShouldQueue
         if ($gnubg !== null && ! $gnubg->analyzeHealthy()) {
             throw new \App\Exceptions\TransientAnalysisException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
         }
-        $decoded = json_decode($mr->log, true);
-        if (! is_array($decoded) || empty($decoded['log'])) {
+        $player = $mr->analysisHc() ?? 'white';
+        // SUNUCU-OTORİTER analiz logu (match_moves varsa ORADAN; yoksa client). checkerPr + Hata
+        // Günlüğü (ErrorJournalService) AYNI kaynağı kullanır -> perDecision.logIndex hizası korunur.
+        // Filtreleyip reindex ETMİYORUZ (gnubg loss doğru karara eşlensin).
+        $log = $mr->analysisLog();
+        if (empty($log)) {
             return;
         }
-        $player = $decoded['hc'] ?? 'white';
-        // HAM log (fill DAHİL) — orchestrator fill/cube'u kendisi eler (PR sonucu değişmez). Filtreleyip
-        // reindex ETMİYORUZ ki perDecision.logIndex, mr->log indeksleriyle HİZALI kalsın (Hata Günlüğü
-        // Adım 2: gnubg loss'unu doğru karara eşler).
-        $log = is_array($decoded['log']) ? $decoded['log'] : [];
         $ml = (int) ($mr->match_length ?? 0);
 
         try {

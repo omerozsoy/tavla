@@ -85,7 +85,7 @@ class MatchMove extends Model
      * game_no ile bölünür; sonuç 'end' satırından (winner+points+cube) — bear-off/drop/resign/timeout
      * HEPSİ applyGameResult'ta 'end' yazdığından her oyun sonuçlanır (yarım-oyun sınırı YOK).
      *
-     * @param  array{matchLength?:int,whiteName?:string,blackName?:string}  $opts
+     * @param  array{dialect?:string,matchLength?:int,whiteName?:string,blackName?:string,matchId?:string,eventDate?:string,eventTime?:string,site?:string,crawford?:bool}  $opts
      */
     public static function buildMat(string $roomCode, array $opts = []): string
     {
@@ -113,11 +113,11 @@ class MatchMove extends Model
             $model[] = ['acts' => MatSerializer::pairCube($raw), 'outcome' => $outcome];
         }
 
-        return MatSerializer::render($model, [
-            'dialect' => 'gnubg',
+        return MatSerializer::render($model, array_merge([
+            'dialect' => $opts['dialect'] ?? 'gnubg',
             'matchLength' => max(1, (int) ($opts['matchLength'] ?? 1)),
             'whiteName' => $opts['whiteName'] ?? 'White',
             'blackName' => $opts['blackName'] ?? 'Black',
-        ]);
+        ], array_intersect_key($opts, array_flip(['matchId', 'eventDate', 'eventTime', 'site', 'crawford']))));
     }
 }

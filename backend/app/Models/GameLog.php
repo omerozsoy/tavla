@@ -103,6 +103,24 @@ class GameLog extends Model
      */
     public function matText(): string
     {
+        // SUNUCU-OTORİTER kaynak (yeni maçlar): uid=oda kodu match_moves'ta varsa .mat ORADAN
+        // (istemci game_logs olaylarına bağımlı DEĞİL). XG lehçesi + başlık korunur. Eski maçlar
+        // (kayıt yok) aşağıdaki game_logs yoluna düşer.
+        $uid = trim((string) ($this->uid ?? ''));
+        if ($uid !== '' && \App\Models\MatchMove::existsForRoom($uid)) {
+            $srv = \App\Models\MatchMove::buildMat($uid, [
+                'dialect' => 'xg',
+                'whiteName' => $this->p1_name ?: 'Player1',
+                'blackName' => $this->p2_name ?: 'Player2',
+                'matchLength' => max(1, (int) ($this->target ?? 1)),
+                'matchId' => $this->matchIdForMat(),
+                'eventDate' => optional($this->created_at)->format('Y.m.d') ?? '',
+                'eventTime' => optional($this->created_at)->format('H.i') ?? '',
+            ]);
+            if (trim($srv) !== '') {
+                return $srv;
+            }
+        }
         // Segmentasyon `g`'ye GÜVENMEZ: iki istemcinin HAM (append-sıralı) dizisinden gerçek oyun
         // sınırları YENİDEN türetilir (bkz. MatFromLog sınıf başı — DROP'ta kazananın gameEnd'i
         // tetiklenmeyip `g` kaydığı için mergedTurns() birleştirmesi oyunları iç içe geçiriyordu).

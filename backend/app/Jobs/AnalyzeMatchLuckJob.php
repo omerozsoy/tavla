@@ -246,6 +246,17 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         if (! in_array($hc, ['white', 'black'], true)) {
             return;
         }
+        // SUNUCU-OTORİTER: match_moves varsa .mat TAM -> game_logs (istemci-toplanır) GEREKMEZ.
+        if (\App\Models\MatchMove::existsForRoom($mr->room_code)) {
+            $mat = \App\Models\MatchMove::buildMat($mr->room_code, [
+                'matchLength' => max(1, (int) ($mr->match_length ?? 1)), 'whiteName' => 'White', 'blackName' => 'Black',
+            ]);
+            if (trim($mat) !== '') {
+                $this->writeLuckFromMat($gnubg, $mr, $hc, $mat);
+
+                return;
+            }
+        }
         $gl = GameLog::where('uid', $mr->room_code)->first();
         if (! $gl) {
             return; // canlı hamle kaydı yok (eski maç / hiç yazılmamış) -> çık
@@ -292,13 +303,22 @@ class AnalyzeMatchLuckJob implements ShouldQueue
 
             return;
         }
-        if ($mat === '') {
+        $this->writeLuckFromMat($gnubg, $mr, $hc, $mat);
+    }
+
+    /**
+     * .mat'i gnubg matchluck ile skorla + self/opp şansını raporlayanın satırına self-contained yaz.
+     * SUNUCU-OTORİTER (match_moves) ve game_logs fallback yolları ORTAK kullanır (tek kaynak).
+     */
+    private function writeLuckFromMat(GnuBgClient $gnubg, MatchResult $mr, ?string $hc, string $mat): void
+    {
+        if ($mat === '' || ! in_array($hc, ['white', 'black'], true)) {
             return;
         }
         $res = $gnubg->matchluck($mat);
         $luck = is_array($res) ? ($res['luck'] ?? null) : null;
         if (! is_array($luck) || ! isset($luck['p0'], $luck['p1'])) {
-            Log::warning('gnubg luck (game_logs): parse yok', ['id' => $mr->id, 'room' => $mr->room_code, 'mat_len' => strlen($mat)]);
+            Log::warning('gnubg luck: parse yok', ['id' => $mr->id, 'room' => $mr->room_code, 'mat_len' => strlen($mat)]);
 
             return;
         }
@@ -306,9 +326,7 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         $black = $luck['p1'];
         $suspicious = fn ($l) => ! is_array($l) || ! isset($l['emg_total']) || abs((float) $l['emg_total']) < 1e-9;
         if ($suspicious($white) || $suspicious($black)) {
-            Log::warning('gnubg luck (game_logs) ŞÜPHELİ 0', [
-                'id' => $mr->id, 'room' => $mr->room_code, 'p1' => count($p1), 'p2' => count($p2),
-            ]);
+            Log::warning('gnubg luck ŞÜPHELİ 0', ['id' => $mr->id, 'room' => $mr->room_code]);
 
             return;
         }
@@ -316,7 +334,7 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         [$selfLuck, $oppLuck] = $hc === 'white' ? [$white, $black] : [$black, $white];
         $this->write($mr->id, $selfLuck);
         $this->writeOpponent($mr->id, $oppLuck);
-        Log::info('gnubg luck V1 (game_logs fallback)', [
+        Log::info('gnubg luck V1', [
             'room' => $mr->room_code, 'hc' => $hc,
             'self_mwc' => $selfLuck['mwc_total'] ?? null, 'opp_mwc' => $oppLuck['mwc_total'] ?? null,
         ]);
