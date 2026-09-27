@@ -149,7 +149,7 @@
 .kiz-decor-lip-balm {
   left: 26%;
   top: 35%;
-  width: clamp(34px, calc(var(--checker) * .9), 58px);
+  width: clamp(42px, calc(var(--checker) * 1.12), 70px);
   transform: rotate(-14deg);
 }
 .kiz-decor-wipes {
@@ -169,6 +169,7 @@
   top: 59%;
   width: clamp(42px, calc(var(--checker) * 1.18), 74px);
   transform: rotate(12deg);
+  filter: hue-rotate(320deg) saturate(2.2) brightness(.82) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
 }
 .kiz-lip-balm {
   position: relative;
