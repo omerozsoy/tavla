@@ -167,7 +167,7 @@
 .kiz-decor-hair {
   left: 16%;
   top: 49%;
-  width: clamp(76px, calc(var(--checker) * 2.15), 138px);
+  width: clamp(82px, calc(var(--checker) * 2.3), 148px);
   transform: rotate(12deg);
   filter: saturate(1.15) contrast(1.06) drop-shadow(0 7px 6px rgba(36, 20, 10, .32));
 }
