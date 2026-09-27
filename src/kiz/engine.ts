@@ -70,6 +70,10 @@ export function phaseOf(s: KizState, p: KizPlayer): KizPhase {
   return lanesTotal(s.closed[p]) > 0 ? 'acma' : 'toplama'
 }
 
+// Aktif fazın kaynak haneleri: açma -> kapalı, toplama -> açık.
+const sourceLanes = (s: KizState, p: KizPlayer): KizLanes =>
+  phaseOf(s, p) === 'acma' ? s.closed[p] : s.open[p]
+
 export function rollDice(rng: () => number = Math.random): { dice: number[]; isDouble: boolean } {
   const d1 = 1 + Math.floor(rng() * 6)
   const d2 = 1 + Math.floor(rng() * 6)
@@ -89,20 +93,18 @@ export function applyRoll(s: KizState, dice: number[], isDouble: boolean): KizSt
 
 /**
  * Bu turda oynanabilecek zar-slot index'leri: kullanılmamış + o zarın hanesinde (aktif faza göre
- * kapalı veya açık pulu olan zarlar. Her zar kendi hanesinde bağımsız değerlendirilir:
- * kapalı pul varsa indirme, kapalı pul yoksa açık pul toplama hamlesi yapılır.
+ * aktif fazda kapalı/açık pulu olan zarlar. Tüm kapalı pullar inmeden toplama başlamaz.
  */
 export function playableSlots(s: KizState): number[] {
   if (!s.rolled || s.winner) return []
+  const src = sourceLanes(s, s.turn)
   const out: number[] = []
   if (s.isDouble) {
-    const idx = laneIndex(s.dice[0])
-    if (!s.diceUsed[0] && (s.closed[s.turn][idx] > 0 || s.open[s.turn][idx] > 0)) out.push(0)
+    if (!s.diceUsed[0] && src[laneIndex(s.dice[0])] > 0) out.push(0)
     return out
   }
   for (let i = 0; i < s.dice.length; i++) {
-    const idx = laneIndex(s.dice[i])
-    if (!s.diceUsed[i] && (s.closed[s.turn][idx] > 0 || s.open[s.turn][idx] > 0)) out.push(i)
+    if (!s.diceUsed[i] && src[laneIndex(s.dice[i])] > 0) out.push(i)
   }
   return out
 }
@@ -133,13 +135,14 @@ export function playSlot(s: KizState, slotIndex: number): KizState {
   const d = s.dice[slotIndex]
   if (d === undefined) return s
   const idx = laneIndex(d)
+  const phase = phaseOf(s, s.turn)
   const p = s.turn
 
   const newUsed = s.diceUsed.slice()
   newUsed[slotIndex] = true
 
-  // Her hane bağımsızdır: kapalı varsa indir, yoksa o hanedeki açık pulu topla.
-  if (s.closed[p][idx] > 0) {
+  if (phase === 'acma') {
+    if (s.closed[p][idx] <= 0) return s
     const take = s.isDouble ? s.closed[p][idx] : 1
     const closed = s.closed[p].slice() as KizLanes
     const open = s.open[p].slice() as KizLanes
