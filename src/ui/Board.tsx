@@ -83,6 +83,7 @@ interface BoardProps {
   targets: Set<number | 'off'>
   selectedFrom: number | 'bar' | null
   onSelectFrom: (from: number | 'bar') => void
+  selectOnPointerDown?: boolean
   onSelectTarget: (to: number | 'off') => void
   onDragFrom: (from: number | 'bar') => void
   // Pointer-tabanli surukle-birak YALNIZCA bu prop verilirse etkin olur (ana oyun).
@@ -166,6 +167,7 @@ function Point({
   selected,
   lift,
   onSelectFrom,
+  selectOnPointerDown,
   onSelectTarget,
   onCheckerDown,
   checkerSkin,
@@ -181,6 +183,7 @@ function Point({
   selected: boolean
   lift: boolean // bu noktadan tas suruklenirken ust tas gizlensin
   onSelectFrom: (from: number) => void
+  selectOnPointerDown?: boolean
   onSelectTarget: (to: number) => void
   onCheckerDown?: (e: ReactPointerEvent, from: number, player: Player, label?: number) => void
   checkerSkin?: CheckerSkinDef | null
@@ -204,10 +207,13 @@ function Point({
     if (isTarget) onSelectTarget(index)
     else if (selectable || clickable) onSelectFrom(index)
   }
+  const handlePointerDown = () => {
+    if (selectOnPointerDown && !isTarget && (selectable || clickable)) onSelectFrom(index)
+  }
 
   const visible = stack ? Math.min(stack.count, 5) : 0
   return (
-    <div className={classes} data-point={index} onClick={handleClick}>
+    <div className={classes} data-point={index} onClick={selectOnPointerDown ? undefined : handleClick} onPointerDown={handlePointerDown}>
       <div className="checkers">
         {Array.from({ length: visible }).map((_, i) => {
           const isTop = i === visible - 1 // sourceRect() ile ayni: ust/secilebilir tas = son cocuk
@@ -250,6 +256,7 @@ function Board({
   targets,
   selectedFrom,
   onSelectFrom,
+  selectOnPointerDown,
   onSelectTarget,
   onDragFrom,
   onDragDrop,
@@ -592,6 +599,7 @@ function Board({
       selected={selectedFrom === index}
       lift={drag?.from === index}
       onSelectFrom={onSelectFrom}
+      selectOnPointerDown={selectOnPointerDown}
       onSelectTarget={onSelectTarget}
       onCheckerDown={dragEnabled ? startDrag : undefined}
       checkerSkin={checkerSkin}
