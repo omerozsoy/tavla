@@ -244,7 +244,7 @@ function Point({
                 isOpen
                   ? ({
                       '--kiz-open-index': i - (visible - openCount),
-                      '--kiz-open-base': closedCount > 0 ? 0.55 : 0,
+                      '--kiz-open-base': 0.55,
                     } as CSSProperties)
                   : undefined
               }
