@@ -219,6 +219,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             targets={new Set()}
             selectedFrom={null}
             onSelectFrom={onSelectFrom}
+            selectOnPointerDown
             onSelectTarget={() => {}}
             onDragFrom={() => {}}
             pipTop={lanesTotal(state.closed.black) + lanesTotal(state.open.black)}
