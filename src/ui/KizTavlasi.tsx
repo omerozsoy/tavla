@@ -4,7 +4,7 @@
 //
 // Board eşlemesi — her pul kendi hanesinde ve kendi tarafında kalır:
 //   beyaz 1..6 -> tahta index 0..5 (sağ-alt ev)
-//   siyah 1..6 -> tahta index 18..23 (sağ-üst ev)
+//   siyah 1..6 -> tahta index 23..18 (beyazın 1..6'sının tam karşısı)
 //   Açma: kapalı pul aynı hanede stack'in içine doğru iner. Toplama: açık pul
 //   aynı haneden tepsiye kalkar (off).
 // Kurallar: bkz docs/kiz-tavlasi-kurallari.md + "Nasıl Oynanır?" (birebir aynı).
@@ -38,7 +38,7 @@ import './KizTavlasi.css'
 // laneNo (1..6) -> tahta üçgen index'i (her oyuncunun kendi EV hanesi; kapalı+açık AYNI yerde).
 const idx = {
   white: (d: number) => d - 1, // 0..5  (sağ-alt ev)
-  black: (d: number) => d + 17, // 18..23 (sağ-üst ev)
+  black: (d: number) => 24 - d, // 23..18 (beyazın aynı hanesinin karşısı)
 }
 
 function kizToBoard(s: KizState): GameState {
@@ -224,7 +224,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             onDragFrom={() => {}}
             pipTop={lanesTotal(state.closed.black) + lanesTotal(state.open.black)}
             pipBottom={lanesTotal(state.closed.white) + lanesTotal(state.open.white)}
-            pointNumberFor={(index) => index < 6 ? index + 1 : index >= 18 ? index - 17 : null}
+            pointNumberFor={(index) => index < 6 ? index + 1 : index >= 18 ? 24 - index : null}
             cube={{ value: 1, owner: null }}
             flip={false}
             showPip={false}
