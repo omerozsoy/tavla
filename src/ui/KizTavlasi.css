@@ -122,6 +122,45 @@
   .kiz-view .game-scene { justify-content: center; } /* masaüstünde tahta yüksekliği neredeyse dolu -> ortala */
 }
 .kiz-view .game-area { width: auto; max-width: 100%; }
+.kiz-view .game-area { position: relative; }
+.kiz-board-joke {
+  position: absolute;
+  left: 12%;
+  top: 45%;
+  z-index: 6;
+  pointer-events: none;
+  transform: rotate(-14deg);
+  filter: drop-shadow(0 8px 7px rgba(36, 20, 10, 0.35));
+}
+.kiz-lip-balm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: clamp(28px, calc(var(--checker) * 0.9), 54px);
+}
+.kiz-lip-balm-cap {
+  width: 82%;
+  height: calc(var(--checker) * 0.28);
+  border-radius: 7px 7px 3px 3px;
+  background: #f4e5e0;
+  border: 1px solid #b78e8d;
+}
+.kiz-lip-balm-body {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: .72;
+  padding-top: 4px;
+  border-radius: 5px 5px 10px 10px;
+  background: linear-gradient(90deg, #b72e4e, #ef7891 48%, #a92343);
+  border: 1px solid #792238;
+  color: #fff5ee;
+  font-size: clamp(5px, calc(var(--checker) * 0.14), 9px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: .3px;
+  text-align: center;
+}
 .kiz-view .point .checkers {
   position: relative;
   display: block;
