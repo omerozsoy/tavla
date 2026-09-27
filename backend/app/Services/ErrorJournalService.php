@@ -40,14 +40,26 @@ class ErrorJournalService
             return 0;
         }
 
-        $entries = $this->parseLog($mr->log);
-        if ($entries === null) {
-            $this->markAnalyzed($mr, 0);
+        // SUNUCU-OTORİTER kaynak (match_moves) varsa ORADAN — PR job (AnalyzeMatchPrJob) da AYNI
+        // kaynağı kullandığından perDecision.logIndex ile $i HİZALI kalır (gnubg loss doğru karara
+        // eşlenir). Yoksa eski maçlar için client match_results.log parse edilir.
+        if (! empty($mr->room_code) && \App\Models\MatchMove::existsForRoom($mr->room_code)) {
+            $rows = \App\Models\MatchMove::buildLog($mr->room_code);
+            $hc = $mr->analysisHc();
+            if (empty($rows)) {
+                $this->markAnalyzed($mr, 0);
 
-            return 0;
+                return 0;
+            }
+        } else {
+            $entries = $this->parseLog($mr->log);
+            if ($entries === null) {
+                $this->markAnalyzed($mr, 0);
+
+                return 0;
+            }
+            [$hc, $rows] = $entries;
         }
-
-        [$hc, $rows] = $entries;
         $playedAt = $mr->created_at ?? Carbon::now();
 
         $count = DB::transaction(function () use ($mr, $hc, $rows, $playedAt, $gnubgLoss) {

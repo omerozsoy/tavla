@@ -67,4 +67,28 @@ class MatchMoveMatTest extends TestCase
         $this->seedGame('TST03');
         $this->assertTrue(MatchMove::existsForRoom('TST03'));
     }
+
+    public function test_matchresult_prefers_server_source_over_client_log(): void
+    {
+        $this->seedGame('SRV01');
+        $user = \App\Models\User::factory()->create();
+        // İstemci logu KASITLI BOZUK ("CROT") — sunucu kaynağı (match_moves) tercih edilmeli.
+        $mr = \App\Models\MatchResult::create([
+            'user_id' => $user->id, 'won' => true, 'opponent_rating' => 1000, 'rating_before' => 1000,
+            'rating_after' => 1016, 'delta' => 16, 'room_code' => 'SRV01', 'match_length' => 5,
+            'log' => json_encode(['hc' => 'white', 'log' => [['player' => 'white', 'notation' => 'CROT', 'seq' => 0]]]),
+        ]);
+
+        // analysisLog: sunucu buildLog (CROT DEĞİL, gerçek hamleler).
+        $log = $mr->analysisLog();
+        $notations = array_column(array_filter($log, fn ($e) => ! isset($e['cube'])), 'notation');
+        $this->assertContains('8/5 6/5', $notations);
+        $this->assertNotContains('CROT', $notations);
+
+        // matText: sunucu .mat (gnubg), Wins satırı + hamleler; bozuk client logu KULLANILMAZ.
+        $mat = $mr->matText();
+        $this->assertStringContainsString('8/5 6/5', $mat);
+        $this->assertStringContainsString('Wins 2 points', $mat);
+        $this->assertStringNotContainsString('CROT', $mat);
+    }
 }

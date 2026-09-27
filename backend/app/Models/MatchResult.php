@@ -56,6 +56,34 @@ class MatchResult extends Model
      * logunda tamdır). Rakip henüz raporlamadıysa / pvb-yerel'de tek logdan üretir.
      * Üretilecek hamle yoksa boş döner (UI "hamle yok" gösterir).
      */
+    /**
+     * KANONİK analiz logu (PR/Hata Günlüğü/analiz) — SUNUCU-OTORİTER kaynak. match_moves varsa
+     * ORADAN (istemci logu YOK); yoksa eski maçlar için client match_results.log'a düşer.
+     * PR job + ErrorJournalService AYNI bu kaynağı kullanır -> logIndex hizası korunur.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function analysisLog(): array
+    {
+        if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
+            $srv = \App\Models\MatchMove::buildLog($this->room_code);
+            if (! empty($srv)) {
+                return $srv;
+            }
+        }
+        $decoded = json_decode((string) $this->log, true);
+
+        return is_array($decoded['log'] ?? null) ? $decoded['log'] : [];
+    }
+
+    /** İzleyenin (bu satırın) rengi — client log'un hc'sinden (renk sınıflandırması için). */
+    public function analysisHc(): ?string
+    {
+        $decoded = json_decode((string) $this->log, true);
+
+        return is_array($decoded) ? ($decoded['hc'] ?? null) : null;
+    }
+
     public function matText(): string
     {
         $mine = json_decode((string) $this->log, true);
