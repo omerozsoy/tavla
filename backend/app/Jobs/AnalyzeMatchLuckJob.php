@@ -130,7 +130,10 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         }
         $matchLen = max(1, (int) ($mr->match_length ?? 1));
         try {
-            $mat = MatBuilder::build($merged, $matchLen, 'White', 'Black');
+            // SUNUCU-OTORİTER kaynak (yeni maçlar): match_moves varsa .mat ORADAN (istemci logu YOK).
+            $mat = \App\Models\MatchMove::existsForRoom($mr->room_code)
+                ? \App\Models\MatchMove::buildMat($mr->room_code, ['matchLength' => $matchLen, 'whiteName' => 'White', 'blackName' => 'Black'])
+                : MatBuilder::build($merged, $matchLen, 'White', 'Black');
         } catch (\RuntimeException $e) {
             $this->markUnavailable($mr, 'merged');
 

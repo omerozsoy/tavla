@@ -2084,6 +2084,48 @@ class RoomController extends Controller
         return $match;
     }
 
+    /**
+     * SUNUCU-OTORİTER HAMLE KAYDI (match_moves): her doğrulanan hamle/küp/oyun-sonu append edilir.
+     * .mat/luck/PR bu TEK GERÇEK kaynaktan kurulur (istemci logu YOK -> reload/disconnect'te veri
+     * kaybı = "olmayan hamle"/yarım oyun/sonuçsuz maç KÖKTEN biter). Çağıran zaman-hassas alanları
+     * (game_no/seq/pos/mctx) DOĞRU ANDA yakalayıp geçirir. Best-effort: kayıt patlarsa oyun akışı
+     * BOZULMAZ (log'la geç; otorite server_state'te, .mat türetilebilir kalır).
+     */
+    private function recordAction(Room $room, array $fields): void
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('match_moves')) {
+            return;
+        }
+        try {
+            \App\Models\MatchMove::create(array_merge([
+                'room_id' => $room->id,
+                'room_code' => $room->code,
+                'ord' => 0,
+                'cube_value' => 1,
+                'created_at' => now(),
+            ], $fields));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('match_moves kayıt hatası', [
+                'room' => $room->code, 'kind' => $fields['kind'] ?? '?', 'err' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /** Eylem anındaki maç bağlamı (PR match-aware eval için): skor/küp/crawford/matchLen. */
+    private function moveMctx(Room $room): array
+    {
+        $sm = is_array($room->server_match) ? $room->server_match : [];
+        $cube = $this->cubeOf($room);
+
+        return [
+            'score' => $sm['score'] ?? ['white' => 0, 'black' => 0],
+            'cube' => (int) $cube['value'],
+            'cubeOwner' => $cube['owner'] ?? null,
+            'crawford' => (bool) ($sm['crawford'] ?? false),
+            'matchLen' => (int) ($sm['target'] ?? $room->target ?? 1),
+        ];
+    }
+
     /** server_match.cube (yoksa varsayılan: 1/ortada). */
     private function cubeOf(Room $room): array
     {
@@ -2196,6 +2238,14 @@ class RoomController extends Controller
     private function applyGameResult(Room $room, string $winner, int $points): bool
     {
         $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+        // SUNUCU-OTORİTER 'end' kaydı: her oyun bitişi (bear-off/drop/resign/timeout hepsi buradan
+        // geçer) match_moves'a yazılır -> .mat/luck her oyunda sonuç bulur (yarım-oyun sınırı YOK).
+        // MUTASYONDAN ÖNCE: game_no/turns/cube henüz sıfırlanmadan yakala.
+        $this->recordAction($room, [
+            'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => 9,
+            'player' => $winner, 'kind' => 'end', 'winner' => $winner, 'points' => $points,
+            'cube_value' => (int) ($sm['cube']['value'] ?? 1), 'mctx' => $this->moveMctx($room),
+        ]);
         $wasCrawford = ! empty($sm['crawford']);
         $prevTurns = (int) ($sm['turns'] ?? 0); // done olursa opened/turns'ü geri yazmak için (aşağıda)
         $sm['score'][$winner] = (int) ($sm['score'][$winner] ?? 0) + $points;
@@ -2553,6 +2603,20 @@ class RoomController extends Controller
             $new = $result['state'];
             $winner = \App\Support\Backgammon::winner($new);
 
+            // SUNUCU-OTORİTER HAMLE KAYDI (tur sayacı ARTMADAN önce -> seq = bu turun indeksi;
+            // pos = hamle ÖNCESİ tahta). İstemci logundan bağımsız tek gerçek kaynak.
+            $moverColor = $this->slotColor($slot);
+            $this->recordAction($room, [
+                'game_no' => (int) (($room->server_match['gameNo'] ?? 1)),
+                'seq' => (int) (($room->server_match['turns'] ?? 0)),
+                'ord' => 0, 'player' => $moverColor, 'kind' => 'move',
+                'dice' => array_values($state['dice'] ?? []),
+                'steps' => array_values($data['steps']),
+                'notation' => \App\Support\MoveNotation::render(array_values($data['steps']), $moverColor),
+                'pos' => $state, 'mctx' => $this->moveMctx($room),
+                'cube_value' => (int) $this->cubeOf($room)['value'],
+            ]);
+
             // TUR SAYACI: geçerli hamle sırayı devretti -> bu oyunda bir tur daha tamamlandı.
             // İstemci küp hakkını (ilk elden sonra) ve otomatik-zar kararını BUNDAN okur;
             // otoriter modda yerel sayaç artmadığı için sunucu saymazsa küp HİÇ açılmaz.
@@ -2650,6 +2714,12 @@ class RoomController extends Controller
             $cube = $this->cubeOf($room);
             $sm['cube'] = ['value' => $cube['value'], 'owner' => $cube['owner'], 'pending' => $color];
             $room->server_match = $sm;
+            // SUNUCU-OTORİTER küp KAYDI: teklif (double).
+            $this->recordAction($room, [
+                'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => -3,
+                'player' => $color, 'kind' => 'double', 'pos' => $room->server_state,
+                'cube_value' => (int) $cube['value'], 'mctx' => $this->moveMctx($room),
+            ]);
             $room->server_version = (int) $room->server_version + 1;
             // Teklif anini saate isle: teklif edenin harcadigi sure bankasindan dusulur,
             // yeni segment YANITLAYANIN uzerinde baslar (bkz. MatchClock::turnSlotFromState).
@@ -2674,6 +2744,11 @@ class RoomController extends Controller
                     // Bot PES: teklif eden insan (white) MEVCUT küp değerinde oyunu kazanır.
                     $sm['cube']['pending'] = null;
                     $room->server_match = $sm;
+                    $this->recordAction($room, [
+                        'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => -2,
+                        'player' => 'black', 'kind' => 'drop', 'pos' => $room->server_state,
+                        'cube_value' => (int) $cube['value'], 'mctx' => $this->moveMctx($room),
+                    ]);
                     $matchDone = $this->applyGameResult($room, 'white', (int) $cube['value']);
                     $room->server_version = (int) $room->server_version + 1;
                     $room->save();
@@ -2685,6 +2760,11 @@ class RoomController extends Controller
                 }
 
                 // TAKE: ikiye katla, küp bota (black) geçer, teklif temizlenir. Sıra insanda (zarını atar).
+                $this->recordAction($room, [
+                    'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => -2,
+                    'player' => 'black', 'kind' => 'take', 'pos' => $room->server_state,
+                    'cube_value' => (int) $cube['value'], 'mctx' => $this->moveMctx($room),
+                ]);
                 $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => 'black', 'pending' => null];
                 $room->server_match = $sm;
                 $room->server_version = (int) $room->server_version + 1;
@@ -2758,6 +2838,11 @@ class RoomController extends Controller
 
             if ($data['action'] === 'take') {
                 // İkiye katla, küp yanıtlayanın (take eden) eline geçer, teklif temizlenir.
+                $this->recordAction($room, [
+                    'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => -2,
+                    'player' => $color, 'kind' => 'take', 'pos' => $room->server_state,
+                    'cube_value' => (int) $cube['value'], 'mctx' => $this->moveMctx($room),
+                ]);
                 $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => $color, 'pending' => null];
                 $room->server_match = $sm;
                 $room->server_version = (int) $room->server_version + 1;
@@ -2773,6 +2858,11 @@ class RoomController extends Controller
             }
 
             // drop: teklif eden MEVCUT küp değerinde oyunu kazanır (gammon/backgammon çarpanı YOK).
+            $this->recordAction($room, [
+                'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => -2,
+                'player' => $color, 'kind' => 'drop', 'pos' => $room->server_state,
+                'cube_value' => (int) $cube['value'], 'mctx' => $this->moveMctx($room),
+            ]);
             $sm['cube']['pending'] = null; // teklifi temizle (applyGameResult zaten küpü sıfırlar)
             $room->server_match = $sm;
             $matchDone = $this->applyGameResult($room, $offerer, $cube['value']);
@@ -3089,6 +3179,11 @@ class RoomController extends Controller
                     if ($cubeDecision === 'double') {
                         $sm['cube']['pending'] = 'black';
                         $room->server_match = $sm;
+                        $this->recordAction($room, [
+                            'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => -3,
+                            'player' => 'black', 'kind' => 'double', 'pos' => $state,
+                            'cube_value' => (int) $this->cubeOf($room)['value'], 'mctx' => $this->moveMctx($room),
+                        ]);
                         $room->server_version = (int) $room->server_version + 1;
                         // SAAT: bot küp teklif etti -> take/drop karar sırası (ve saat) insana geçsin.
                         $this->driveAuthoritativeClock($room, 'p2', microtime(true));
@@ -3132,6 +3227,16 @@ class RoomController extends Controller
 
                 $new = $result['state'];
                 $winner = Backgammon::winner($new);
+                // SUNUCU-OTORİTER BOT HAMLE KAYDI (tur sayacı ARTMADAN; pos = tur-başı zar-dolu tahta).
+                $this->recordAction($room, [
+                    'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0),
+                    'ord' => 0, 'player' => 'black', 'kind' => 'move',
+                    'dice' => array_values($rollState['dice'] ?? []),
+                    'steps' => array_values($steps),
+                    'notation' => \App\Support\MoveNotation::render(array_values($steps), 'black'),
+                    'pos' => $rollState, 'mctx' => $this->moveMctx($room),
+                    'cube_value' => (int) $this->cubeOf($room)['value'],
+                ]);
                 $sm['turns'] = (int) ($sm['turns'] ?? 0) + 1;
                 $room->server_match = $sm;
                 $matchDone = false;
