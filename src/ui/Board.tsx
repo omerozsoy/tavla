@@ -240,7 +240,14 @@ function Point({
               label={label}
               skin={checkerSkin}
               open={isOpen}
-              style={isOpen ? ({ '--kiz-open-index': i - (visible - openCount) } as CSSProperties) : undefined}
+              style={
+                isOpen
+                  ? ({
+                      '--kiz-open-index': i - (visible - openCount),
+                      '--kiz-open-base': closedCount > 0 ? 0.55 : 0,
+                    } as CSSProperties)
+                  : undefined
+              }
             />
           )
         })}
