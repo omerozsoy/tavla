@@ -144,11 +144,11 @@
 /* "Açık" (indirilmiş) pul aynı hanede kalır; kapalı yığının tamamen önüne çıkar.
    Yalnız .kiz-view içinde etkin -> klasik oyun taşları etkilenmez. */
 .kiz-view .point.top .checkers .checker.open {
-  transform: translate(-50%, calc(var(--checker) * var(--kiz-open-base, 0)));
+  transform: translate(-50%, calc(var(--checker) * (var(--kiz-open-base, 0) + var(--kiz-open-index, 0) * .5)));
   z-index: 3;
 }
 .kiz-view .point.bottom .checkers .checker.open {
-  transform: translate(-50%, calc(-1 * var(--checker) * var(--kiz-open-base, 0)));
+  transform: translate(-50%, calc(-1 * var(--checker) * (var(--kiz-open-base, 0) + var(--kiz-open-index, 0) * .5)));
   z-index: 3;
 }
 .kiz-view .point .checkers .checker:not(.open) { z-index: 4; }
