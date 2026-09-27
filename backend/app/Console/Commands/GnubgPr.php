@@ -19,31 +19,39 @@ use Illuminate\Console\Command;
  */
 class GnubgPr extends Command
 {
-    protected $signature = 'tavla:gnubg-pr {id? : match_results id (boş = log dolu son maç)} {--player= : white|black (boş = ikisi)} {--full : tüm kararları göster}';
+    protected $signature = 'tavla:gnubg-pr {id? : match_results id VEYA room_code (boş = son maç)} {--player= : white|black (boş = ikisi)} {--full : tüm kararları göster}';
 
-    protected $description = 'Bir maçı gnubg ile pozisyon-pozisyon analiz eder; XG-benzeri karar tablosu + PR (client PR ile karşılaştırır).';
+    protected $description = 'Bir maçı gnubg ile pozisyon-pozisyon analiz eder; XG-benzeri karar tablosu + PR. SUNUCU-OTORİTER kaynak (match_moves) kullanılır (PR job ile aynı).';
 
     public function handle(AnalysisOrchestrator $orch): int
     {
-        $mr = $this->argument('id')
-            ? MatchResult::find($this->argument('id'))
-            : MatchResult::whereNotNull('log')->latest('id')->first();
+        // Argüman: sayısal -> match_results id; değilse -> room_code; boş -> son maç.
+        $arg = $this->argument('id');
+        if ($arg === null) {
+            $mr = MatchResult::whereNotNull('log')->latest('id')->first();
+        } elseif (ctype_digit((string) $arg)) {
+            $mr = MatchResult::find((int) $arg);
+        } else {
+            $mr = MatchResult::where('room_code', strtoupper((string) $arg))->latest('id')->first();
+        }
 
-        if (! $mr || empty($mr->log)) {
-            $this->error('Log dolu maç bulunamadı (önce bir maç oyna veya geçerli id ver).');
+        if (! $mr) {
+            $this->error('Maç bulunamadı (geçerli id veya room_code ver).');
 
             return self::FAILURE;
         }
-        $decoded = json_decode($mr->log, true);
-        if (! is_array($decoded) || empty($decoded['log'])) {
-            $this->error('Log parse edilemedi veya boş.');
+        // SUNUCU-OTORİTER analiz logu (match_moves varsa ORADAN; yoksa client) — PR job ile AYNI kaynak.
+        $log = $mr->analysisLog();
+        $hc = $mr->analysisHc() ?? 'white';
+        if (empty($log)) {
+            $this->error('Analiz logu boş (match_moves + client log yok).');
 
             return self::FAILURE;
         }
-        $log = $decoded['log'];
         $ml = (int) ($mr->match_length ?? 0); // mctx varsa karar-başı match-aware kullanılır
+        $src = (! empty($mr->room_code) && \App\Models\MatchMove::existsForRoom($mr->room_code)) ? 'match_moves(sunucu)' : 'client-log';
 
-        $this->line("Maç #{$mr->id}  log-sahibi={$decoded['hc']}  match_length=$ml  log-entry=".count($log)
+        $this->line("Maç #{$mr->id}  room={$mr->room_code}  kaynak=$src  hc=$hc  match_length=$ml  log-entry=".count($log)
             .'  client_pr='.($mr->pr ?? 'null'));
 
         $players = $this->option('player') ? [$this->option('player')] : ['white', 'black'];
@@ -90,6 +98,14 @@ class GnubgPr extends Command
         $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : ($r['pr'] ?: $c['pr']);
         $avg = $r['decisions'] > 0 ? $r['loss'] / $r['decisions'] : 0.0;
 
+        // TEŞHİS: atlanan hamleler (no_match = gnubg aday listesiyle eşleşmedi) -> hatalar DÜŞÜYOR.
+        // Bu sayı yüksekse (ve XG'den düşük PR çıkıyorsa) played-move eşleme bug'ı (bkz. gnubg_service).
+        $reasons = $r['skipReasons'] ?? [];
+        $this->line(sprintf('  ATLANAN hamle (skipped)              : %d  [no_match=%d, gnubg_null=%d, no_content=%d]',
+            $r['skipped'] ?? 0, $reasons['no_match'] ?? 0, $reasons['gnubg_null'] ?? 0, $reasons['no_content'] ?? 0));
+        if (! empty($r['firstSkip'])) {
+            $this->line('  İlk atlama örneği                    : '.json_encode($r['firstSkip'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        }
         $this->line(sprintf('  Toplam roll (checker değerlendirilen): %d', $r['evaluated']));
         $this->line(sprintf('  Sayılan karar (forced/obvious HARİÇ) : %d', $r['decisions']));
         $this->line(sprintf('  Toplam equity kaybı                  : %.4f', $r['loss']));
