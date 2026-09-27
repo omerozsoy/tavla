@@ -79,6 +79,7 @@ type DragDrop = (to: DropKey, srcRect: DOMRect) => void
 interface BoardProps {
   state: GameState
   selectableFroms: Set<number | 'bar'>
+  clickableFroms?: Set<number | 'bar'>
   targets: Set<number | 'off'>
   selectedFrom: number | 'bar' | null
   onSelectFrom: (from: number | 'bar') => void
@@ -160,6 +161,7 @@ function Point({
   top,
   state,
   selectable,
+  clickable,
   isTarget,
   selected,
   lift,
@@ -174,6 +176,7 @@ function Point({
   top: boolean
   state: GameState
   selectable: boolean
+  clickable?: boolean
   isTarget: boolean
   selected: boolean
   lift: boolean // bu noktadan tas suruklenirken ust tas gizlensin
@@ -199,7 +202,7 @@ function Point({
 
   const handleClick = () => {
     if (isTarget) onSelectTarget(index)
-    else if (selectable) onSelectFrom(index)
+    else if (selectable || clickable) onSelectFrom(index)
   }
 
   const visible = stack ? Math.min(stack.count, 5) : 0
@@ -243,6 +246,7 @@ function Point({
 function Board({
   state,
   selectableFroms,
+  clickableFroms,
   targets,
   selectedFrom,
   onSelectFrom,
@@ -583,6 +587,7 @@ function Board({
       top={top}
       state={state}
       selectable={selectableFroms.has(index)}
+      clickable={clickableFroms?.has(index)}
       isTarget={targets.has(index)}
       selected={selectedFrom === index}
       lift={drag?.from === index}

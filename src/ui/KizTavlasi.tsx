@@ -148,7 +148,9 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
   // Board tıklama: insan (beyaz) sırasında oynanabilir haneyi (aynı üçgen) oyna — açma da toplama da
   // aynı yerde olduğundan tek eşleme yeter (playSlot fazı kendisi belirler).
   const selectableFroms = new Set<number>()
+  const clickableFroms = new Set<number>()
   if (humanTurn && state.rolled) {
+    for (let d = 1; d <= 6; d++) clickableFroms.add(idx.white(d))
     for (const d of playableLanes(state)) selectableFroms.add(idx.white(d))
   }
   const onSelectFrom = (from: number | 'bar') => {
@@ -213,6 +215,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
           <Board
             state={board}
             selectableFroms={selectableFroms}
+            clickableFroms={clickableFroms}
             targets={new Set()}
             selectedFrom={null}
             onSelectFrom={onSelectFrom}
