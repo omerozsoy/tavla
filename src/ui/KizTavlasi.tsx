@@ -213,7 +213,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
       <main className="main game-scene">
         <div className="game-area">
           <div className="kiz-board-joke" aria-hidden="true">
-            <img className="kiz-lip-balm-photo" src="/assets/nivea-lip-balm-cherry.webp" alt="" />
+            <img className="kiz-lip-balm-photo" src="/assets/lip-balm-realistic.png" alt="" />
           </div>
           <Board
             state={board}
