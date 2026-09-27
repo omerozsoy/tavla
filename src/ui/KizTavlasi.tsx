@@ -224,6 +224,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             onDragFrom={() => {}}
             pipTop={lanesTotal(state.closed.black) + lanesTotal(state.open.black)}
             pipBottom={lanesTotal(state.closed.white) + lanesTotal(state.open.white)}
+            pointNumberFor={(index) => index < 6 ? index + 1 : index >= 18 ? index - 17 : null}
             cube={{ value: 1, owner: null }}
             flip={false}
             showPip={false}
