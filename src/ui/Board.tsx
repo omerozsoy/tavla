@@ -102,6 +102,7 @@ interface BoardProps {
   // canli oyun davranisi degismez). 'black' = 24-index (rakibin kendi 1-24'u). TASLARI OYNATMAZ,
   // yalniz etiketleri degistirir (analiz: rakip hamlesinde tahta ayni kalir, sadece rakamlar rakibin).
   numberFrom?: Player
+  pointNumberFor?: (index: number) => number | null // özel tahta hane etiketleri
   mirror?: boolean // true: oyun yonu "sola topla" (tahta yatay aynalanir, tepsi solda)
   swapStones?: boolean // true: pul renkleri takas (oyuncu siyah/beyaz secer) — gorsel, motor etkilenmez
   showPip?: boolean // pip sayilari gorunur mu
@@ -279,6 +280,7 @@ function Board({
   centerMain,
   flip = false,
   numberFrom = 'white',
+  pointNumberFor,
   mirror = false,
   swapStones = false,
   showPip = true,
@@ -301,6 +303,7 @@ function Board({
   // 'black' -> 24-index (rakibin kendi numaralaması). L'nin KONUM dizilerinden (TL/TR/BL/BR)
   // türetilir -> flip/mirror'dan BAĞIMSIZ doğru hizalanır ve TAŞLARI OYNATMAZ (yalnız etiket).
   const numFor = (i: number): number => (numberFrom === 'black' ? 24 - i : i + 1)
+  const pointNumber = (i: number): number | null => pointNumberFor ? pointNumberFor(i) : numFor(i)
 
   // ---------------------------------------------------------------------------
   // Pointer-tabanli surukle-birak (native HTML5 DnD DEGIL).
@@ -641,11 +644,11 @@ function Board({
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
         {L.TL.map((i) => (
-          <span key={i}>{numFor(i)}</span>
+          <span key={i}>{pointNumber(i)}</span>
         ))}
         <span className="num-gap" />
         {L.TR.map((i) => (
-          <span key={i}>{numFor(i)}</span>
+          <span key={i}>{pointNumber(i)}</span>
         ))}
       </div>
 
@@ -750,11 +753,11 @@ function Board({
       {/* Alt ucgen numaralari */}
       <div className="pt-numbers bottom">
         {L.BL.map((i) => (
-          <span key={i}>{numFor(i)}</span>
+          <span key={i}>{pointNumber(i)}</span>
         ))}
         <span className="num-gap" />
         {L.BR.map((i) => (
-          <span key={i}>{numFor(i)}</span>
+          <span key={i}>{pointNumber(i)}</span>
         ))}
       </div>
 
