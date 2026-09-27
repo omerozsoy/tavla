@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class GnubgPrBackfill extends Command
 {
-    protected $signature = 'tavla:gnubg-pr-backfill {--rerun : gnubg ile yeniden analiz (havuz totalleri dahil)} {--limit=0 : en fazla N mac (0=hepsi)} {--room= : yalnizca bu room_code (tek mac hedefli yeniden analiz)} {--dry : yaz.}';
+    protected $signature = 'tavla:gnubg-pr-backfill {--rerun : gnubg ile yeniden analiz (havuz totalleri dahil)} {--limit=0 : en fazla N mac (0=hepsi)} {--room= : yalnizca bu room_code (tek mac hedefli yeniden analiz)} {--sync : job\'u worker YERINE bu artisan surecinde CALISTIR (worker eski kodda takiliysa bypass)} {--dry : yaz.}';
 
     protected $description = 'Gecmis maclarin gosterilen PR’ini gnubg degerine ceker (hizli kopya veya --rerun yeniden analiz).';
 
@@ -44,9 +44,27 @@ class GnubgPrBackfill extends Command
                 $q->limit($limit);
             }
             $ids = $q->orderByDesc('id')->pluck('id');
-            $this->line($ids->count().' mac gnubg ile yeniden analiz edilecek (worker isler).');
+            $sync = (bool) $this->option('sync');
+            $this->line($ids->count().' mac gnubg ile yeniden analiz edilecek ('.($sync ? 'SYNC: bu surecte' : 'worker isler').').');
             if ($dry) {
                 $this->warn('--dry: dispatch YOK.');
+
+                return self::SUCCESS;
+            }
+            if ($sync) {
+                // Worker eski kodda takiliysa BYPASS: job'u artisan surecinde (guncel kod) calistir.
+                // Agir (karar basi gnubg cagrisi) ama kesin: worker'a bagli degil.
+                $ok = 0;
+                foreach ($ids as $id) {
+                    try {
+                        AnalyzeMatchPrJob::dispatchSync($id);
+                        $ok++;
+                        $this->line("  #$id analiz edildi (sync).");
+                    } catch (\Throwable $e) {
+                        $this->warn("  #$id hata: ".$e->getMessage());
+                    }
+                }
+                $this->info("$ok/{$ids->count()} mac SYNC analiz edildi (yeni kod).");
 
                 return self::SUCCESS;
             }
