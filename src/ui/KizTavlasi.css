@@ -132,6 +132,14 @@
   transform: rotate(-14deg) perspective(180px) rotateY(-7deg);
   filter: drop-shadow(0 10px 8px rgba(36, 20, 10, 0.38));
 }
+.kiz-lip-balm-photo {
+  display: block;
+  width: clamp(42px, calc(var(--checker) * 1.25), 72px);
+  height: auto;
+  mix-blend-mode: screen;
+  opacity: .92;
+  filter: saturate(.9) contrast(1.04);
+}
 .kiz-lip-balm {
   position: relative;
   display: flex;
