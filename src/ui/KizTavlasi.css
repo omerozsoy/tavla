@@ -130,9 +130,9 @@
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   transform: translateX(-50%);
-  padding: 7px 10px;
+  padding: 10px 13px;
   border: 1px solid rgba(255, 231, 168, .35);
   border-radius: 14px;
   background: rgba(21, 28, 21, .92);
@@ -141,7 +141,7 @@
 }
 .kiz-hair-picker-title {
   color: #ffe9a8;
-  font-size: .74rem;
+  font-size: .82rem;
   font-weight: 800;
   white-space: nowrap;
   margin-right: 2px;
@@ -150,8 +150,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 46px;
+  width: 92px;
+  height: 72px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.22);
   border-radius: 9px;
@@ -165,23 +165,23 @@
 }
 .kiz-hair-option-number {
   position: absolute;
-  top: 3px;
-  left: 4px;
+  top: 5px;
+  left: 6px;
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 17px;
-  height: 17px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #d8b25a;
   color: #23180a;
-  font-size: .7rem;
+  font-size: .9rem;
   font-weight: 900;
 }
 @media (max-width: 620px) {
-  .kiz-hair-picker { gap: 4px; padding: 5px; }
+  .kiz-hair-picker { gap: 5px; padding: 6px; }
   .kiz-hair-picker-title { display: none; }
-  .kiz-hair-option { width: 48px; height: 38px; }
+  .kiz-hair-option { width: 68px; height: 54px; }
 }
 .kiz-board-joke-items {
   position: absolute;
