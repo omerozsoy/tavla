@@ -11780,6 +11780,28 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.75rem;
   font-weight: 400;
 }
+/* Skorlu vs: vs'nin sol/sağında maç puanları (kaç kaç). */
+.lm-vs-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.lm-vs-score .lm-score {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.06));
+  color: var(--fg, inherit);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.lm-vs-score .lm-vs-sep {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
 .lm-avatar {
   width: 26px;
   height: 26px;
