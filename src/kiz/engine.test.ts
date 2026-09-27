@@ -44,9 +44,9 @@ describe('Kız Tavlası — AÇMA fazı (indirme)', () => {
     }
     expect(s.closed.white[5]).toBe(0)
 
-    // 6 hanesi artık tamamen açık; dördüncü 6 oynanamaz.
+    // 6 hanesi artık tamamen açık; yeni 6, açık pulu toplamak için oynanabilir.
     s = applyRoll(s, [6, 1], false)
-    expect(playableLanes(s)).not.toContain(6)
+    expect(playableLanes(s)).toContain(6)
     s = endTurn(s)
     s = endTurn(s)
 
@@ -92,8 +92,24 @@ describe('Kız Tavlası — AÇMA fazı (indirme)', () => {
     s = endTurn(s)
     s = endTurn(s)
     s = applyRoll(s, [6, 3], false)
-    // 6 hanesinde kapalı yok -> yalnız 3 oynanabilir
-    expect(playableLanes(s)).toEqual([3])
+    // 6 hanesinde kapalı yoksa 6 artık açık pulu toplamak için de oynanabilir.
+    expect(playableLanes(s)).toEqual([3, 6])
+  })
+
+  it('kapalı pulu olmayan hane, diğer kapalı haneler dururken toplanabilir', () => {
+    let s = initialState('white')
+    s = {
+      ...s,
+      closed: { ...s.closed, white: [2, 0, 2, 3, 0, 3] },
+      open: { ...s.open, white: [0, 1, 0, 0, 1, 0] },
+    }
+    s = applyRoll(s, [5, 2], false)
+    expect(playableLanes(s)).toEqual([2, 5])
+    s = playSlot(s, 0)
+    s = playSlot(s, 1)
+    expect(s.open.white[4]).toBe(0)
+    expect(s.open.white[1]).toBe(0)
+    expect(s.off.white).toBe(2)
   })
 })
 
@@ -117,8 +133,8 @@ describe('Kız Tavlası — faz geçişi', () => {
     }
     expect(phaseOf(s, 'white')).toBe('acma')
     s = applyRoll(s, [6, 5], false)
-    // 6: açma (kapalı indir), 5: henüz açma fazında ama kapalı[5]=0 -> başta oynanamaz
-    expect(playableLanes(s)).toEqual([6])
+    // 6 indirir, 5 ise kapalı pulu olmadığı için açık pulu toplar.
+    expect(playableLanes(s)).toEqual([5, 6])
     s = playSlot(s, 0) // 6 kapalı indirildi -> kapalı=0 -> TOPLAMA fazı
     expect(phaseOf(s, 'white')).toBe('toplama')
     // Artık 5 zarı toplama fazında oynanabilir (5 hanesinde 3 açık: 2 eski + 1 yeni indirilen)
