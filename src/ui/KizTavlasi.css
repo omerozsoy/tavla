@@ -147,7 +147,7 @@
   z-index: 3;
 }
 .kiz-view .point.bottom .checkers .checker.open {
-  transform: translate(-50%, calc(-1 * var(--checker) * (var(--kiz-open-base, 0) + var(--kiz-open-index, 0) * .5)));
+  transform: translate(-50%, calc(var(--checker) * (var(--kiz-open-base, 0) + var(--kiz-open-index, 0) * .5)));
   z-index: 3;
 }
 .kiz-view .point .checkers .checker:not(.open) { z-index: 4; }
