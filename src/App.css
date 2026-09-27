@@ -11376,6 +11376,12 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 32px;
   min-height: 32px;
 }
+.online-act-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+  filter: brightness(0) invert(1);
+}
 .online-pdot {
   width: 8px;
   height: 8px;
