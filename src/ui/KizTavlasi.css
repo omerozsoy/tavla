@@ -129,37 +129,75 @@
   top: 45%;
   z-index: 6;
   pointer-events: none;
-  transform: rotate(-14deg);
-  filter: drop-shadow(0 8px 7px rgba(36, 20, 10, 0.35));
+  transform: rotate(-14deg) perspective(180px) rotateY(-7deg);
+  filter: drop-shadow(0 10px 8px rgba(36, 20, 10, 0.38));
 }
 .kiz-lip-balm {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: clamp(28px, calc(var(--checker) * 0.9), 54px);
 }
 .kiz-lip-balm-cap {
-  width: 82%;
-  height: calc(var(--checker) * 0.28);
-  border-radius: 7px 7px 3px 3px;
-  background: #f4e5e0;
-  border: 1px solid #b78e8d;
+  position: relative;
+  z-index: 2;
+  width: 86%;
+  height: calc(var(--checker) * 0.34);
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(105deg, #fff9f4 0%, #f2deda 42%, #c99999 100%);
+  border: 1px solid #a87578;
+  box-shadow: inset 2px 1px 2px rgba(255, 255, 255, .8), inset -2px -2px 3px rgba(115, 54, 62, .2);
+}
+.kiz-lip-balm-cap::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(112, 48, 57, .45);
 }
 .kiz-lip-balm-body {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
   aspect-ratio: .72;
-  padding-top: 4px;
-  border-radius: 5px 5px 10px 10px;
-  background: linear-gradient(90deg, #b72e4e, #ef7891 48%, #a92343);
-  border: 1px solid #792238;
+  padding-top: 6px;
+  border-radius: 5px 5px 9px 9px;
+  background: linear-gradient(90deg, rgba(97, 20, 40, .42), transparent 18%, transparent 72%, rgba(82, 15, 31, .35)), linear-gradient(105deg, #9e173b 0%, #e85878 45%, #b5274e 78%, #77132f 100%);
+  border: 1px solid #71142f;
+  box-shadow: inset 3px 0 4px rgba(255, 185, 195, .24), inset -3px -2px 4px rgba(63, 8, 22, .3);
   color: #fff5ee;
   font-size: clamp(5px, calc(var(--checker) * 0.14), 9px);
   line-height: 1.05;
   font-weight: 800;
   letter-spacing: .3px;
   text-align: center;
+}
+.kiz-lip-balm-body::before {
+  content: '';
+  position: absolute;
+  top: 35%;
+  left: 9%;
+  width: 7%;
+  height: 28%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .55);
+  filter: blur(.5px);
+}
+.kiz-lip-balm-body::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 8%;
+  right: 8%;
+  height: 4px;
+  border-radius: 50%;
+  background: #681029;
+  box-shadow: 0 1px 0 rgba(255, 165, 177, .35);
 }
 .kiz-view .point .checkers {
   position: relative;
