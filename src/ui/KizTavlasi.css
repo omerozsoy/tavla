@@ -141,7 +141,7 @@
 /* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
 .kiz-view .cube { display: none !important; }
 
-/* "Açık" (indirilmiş) pul aynı hanede kalır; çember yerine stack'in içine iner.
+/* "Açık" (indirilmiş) pul aynı hanede kalır; kapalı yığının tamamen önüne çıkar.
    Yalnız .kiz-view içinde etkin -> klasik oyun taşları etkilenmez. */
 .kiz-view .point.top .checkers .checker.open {
   transform: translate(-50%, calc(var(--checker) * (var(--kiz-open-base, 0) + var(--kiz-open-index, 0) * .5)));
