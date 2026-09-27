@@ -211,8 +211,6 @@ function Point({
             ? stack!.count
             : showStackCount && closedCount > 1 && isClosedTop
               ? closedCount
-              : showStackCount && closedCount === 0 && stack!.count > 1 && isTop
-                ? stack!.count
                 : undefined
           // Kız Tavlası: hanenin UST 'openCount' tasi acik (indirilmis) -> halka isareti.
           return (
