@@ -256,6 +256,7 @@ const TR: Dict = {
   'online.st.available': 'Müsait',
   'online.st.ready': 'Oyuna Hazır',
   'online.st.busy': 'Oyun Kabul Etmiyor',
+  'online.inGame': 'Oyunda',
   'online.st.offline': 'Çevrimdışı Görün',
   'online.busyBlocked': 'Bu oyuncu şu anda oyun kabul etmiyor.',
   // Maç Özeti (Match Summary)
@@ -1876,6 +1877,7 @@ const EN: Dict = {
   'online.st.available': 'Available',
   'online.st.ready': 'Ready to play',
   'online.st.busy': 'Not accepting games',
+  'online.inGame': 'In game',
   'online.st.offline': 'Appear offline',
   'online.busyBlocked': "This player isn't accepting games right now.",
   // Match Summary
