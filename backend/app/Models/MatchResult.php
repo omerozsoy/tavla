@@ -69,6 +69,19 @@ class MatchResult extends Model
         $selfName = $this->user?->nickname ?: 'Oyuncu';
         $oppName = $this->opponent_name ?: 'Rakip';
 
+        // SUNUCU-OTORİTER KAYNAK (yeni maçlar): match_moves varsa .mat ORADAN kurulur — istemci
+        // loguna bağımlı DEĞİL. İstemci reload/disconnect'te log kaybı ("olmayan hamle"/yarım
+        // oyun/sonuçsuz maç) KÖKTEN biter. Eski maçlar (kayıt yok) aşağıdaki client-log yoluna düşer.
+        if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
+            [$whiteName, $blackName] = $myHc === 'black' ? [$oppName, $selfName] : [$selfName, $oppName];
+            $mat = \App\Models\MatchMove::buildMat($this->room_code, [
+                'matchLength' => $matchLen, 'whiteName' => $whiteName, 'blackName' => $blackName,
+            ]);
+            if (trim($mat) !== '') {
+                return $mat;
+            }
+        }
+
         // Online: rakip satırını birleştir -> TAM .mat (her renk kendi logunda tam).
         if (! empty($this->room_code) && in_array($myHc, ['white', 'black'], true)) {
             $oppRow = static::where('room_code', $this->room_code)
