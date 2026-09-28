@@ -493,7 +493,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                                 </button>
                               )}
                               <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${m.winner && m.winner !== m.p1?.id ? 'lose' : ''}`}>
-                                {ri === 0 && !m.p1 && m.p2 ? (
+                                {m.p2 && !m.p1 && (ri === 0 || !!m.winner) ? (
                                   <span className="tm-name tm-bye">{t('tourn.bye')}</span>
                                 ) : (
                                   <span className="tm-name">{m.p1?.name ?? '—'}</span>
@@ -501,8 +501,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                                 {scoreOf('p1')}
                               </div>
                               <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${m.winner && m.winner !== m.p2?.id ? 'lose' : ''}`}>
-                                {/* Ilk turda rakipsiz (bye): cizgi yerine yesil "Bye" */}
-                                {ri === 0 && !m.p2 && m.p1 ? (
+                                {/* Rakipsiz gecis (ilk tur bye / olu daldan otomatik ilerleme): cizgi yerine yesil "Bye" */}
+                                {m.p1 && !m.p2 && (ri === 0 || !!m.winner) ? (
                                   <span className="tm-name tm-bye">{t('tourn.bye')}</span>
                                 ) : (
                                   <span className="tm-name">{m.p2?.name ?? '—'}</span>

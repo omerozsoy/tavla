@@ -94,14 +94,13 @@ class Tournament extends Model
         $players = $this->players ?? [];
         $players = array_values(array_filter($players)); // onceki bye (null) kalintilarini at
         shuffle($players); // kura
-        $size = (int) $this->size;
-        // Sinirsiz (0): oyuncu sayisina gore bir sonraki 2'nin kuvvetine yuvarla
-        if ($size < 4) {
-            $n = max(2, count($players));
-            $size = 1;
-            while ($size < $n) {
-                $size *= 2;
-            }
+        // Agac KAYITLI OYUNCU sayisina gore kurulur (bir sonraki 2'nin kuvveti), turnuva kapasitesine
+        // (size) gore DEGIL: 16'lik turnuvada 6 oyuncu -> 8'lik agac, 2 bye. Eskiden kapasiteye gore
+        // kuruluyordu -> ilk turda "— vs —" maclari, kazanani hic cikmayan olu dallar, turnuva takiliyordu.
+        $n = max(2, count($players));
+        $size = 1;
+        while ($size < $n) {
+            $size *= 2;
         }
         while (count($players) < $size) {
             $players[] = null; // bye
