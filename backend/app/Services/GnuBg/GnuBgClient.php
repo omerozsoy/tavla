@@ -285,16 +285,8 @@ class GnuBgClient
      */
     public function analyzeMatch(string $mat, int $plies = 2): ?array
     {
-        try {
-            $resp = Http::timeout(240) // import + analyse match (uzun sürebilir)
-                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
-                ->acceptJson()
-                ->post($this->heavyUrl('/analyzematch'), ['mat' => $mat, 'plies' => $plies]);
-
-            return $resp->ok() ? $resp->json() : ['ok' => false, 'http_status' => $resp->status(), 'body' => $resp->body()];
-        } catch (\Throwable $e) {
-            return ['ok' => false, 'exception' => $e->getMessage()];
-        }
+        return $this->tryHeavy('/analyzematch', ['mat' => $mat, 'plies' => $plies], 240)
+            ?? ['ok' => false, 'error' => 'heavy-unavailable'];
     }
 
     /**
@@ -303,16 +295,43 @@ class GnuBgClient
      */
     public function reviewMatch(string $mat, int $plies = 2): ?array
     {
-        try {
-            $resp = Http::timeout(600) // hamle-hamle hint çok uzun sürebilir (maç boyu × oyuncu)
-                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
-                ->acceptJson()
-                ->post($this->heavyUrl('/reviewmatch'), ['mat' => $mat, 'plies' => $plies]);
+        return $this->tryHeavy('/reviewmatch', ['mat' => $mat, 'plies' => $plies], 600)
+            ?? ['ok' => false, 'error' => 'heavy-unavailable'];
+    }
 
-            return $resp->ok() ? $resp->json() : ['ok' => false, 'http_status' => $resp->status(), 'body' => $resp->body()];
-        } catch (\Throwable $e) {
-            return ['ok' => false, 'exception' => $e->getMessage()];
+    /**
+     * AĞIR uçları (reviewmatch/analyzematch) SIRAYLA dener: adanmış heavy_url ÖNCE, sonra ARKA PLAN
+     * havuzu (GNUBG_ANALYSIS_URLS, 8094/8095) FALLBACK -> adanmış heavy instance (8098) düşse/restart
+     * olsa bile Mat Analiz çalışmaya devam eder. Canlı foreground (bot) listede DEĞİL -> ağır analiz
+     * botu ASLA bloklamaz. İlk 2xx json'u döner; hepsi düşükse null.
+     * NOT: heavy instance MEŞGULse (mid-review, kilit tutuluyor) POST failover ETMEZ, kilitte bekler
+     * -> eşzamanlı iki review yine serileşir (kabul edilen tavan; nadir premium işi). Failover yalnız
+     * DOWN/erişilemez instance içindir (SPOF kalkanı).
+     */
+    private function tryHeavy(string $path, array $payload, int $timeout): ?array
+    {
+        $heavy = rtrim((string) config('gnubg.heavy_url') ?: (string) config('gnubg.url', 'http://127.0.0.1:8092'), '/');
+        $bases = array_values(array_unique(array_merge([$heavy], $this->backgroundBases())));
+        $last = count($bases) - 1;
+        foreach ($bases as $i => $base) {
+            try {
+                $resp = Http::timeout($timeout)
+                    ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                    ->acceptJson()
+                    ->post($base.$path, $payload);
+                if ($resp->ok()) {
+                    return $resp->json();
+                }
+                Log::warning('gnubg heavy non-ok', ['path' => $path, 'idx' => $i, 'base' => $base, 'status' => $resp->status()]);
+            } catch (\Throwable $e) {
+                Log::warning(
+                    $i < $last ? 'gnubg heavy erisilemez, sonrakine geciliyor' : 'gnubg heavy erisilemez (tum instance dustu)',
+                    ['path' => $path, 'base' => $base, 'msg' => $e->getMessage()],
+                );
+            }
         }
+
+        return null;
     }
 
     private function url(string $path): string
