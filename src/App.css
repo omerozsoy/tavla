@@ -22345,6 +22345,35 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-match.mine {
   border-color: var(--accent);
 }
+/* Suren turnuva macini izle (goz): kartin sag ortasi; isimler butonun altina girmesin */
+.tourn-match.watchable .tm-p {
+  padding-right: 36px;
+}
+.tm-watch {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+.tm-watch:hover {
+  filter: brightness(1.1);
+  border-color: var(--accent);
+}
+.tm-watch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .tm-p {
   padding: 6px 8px;
   font-size: 0.85rem;

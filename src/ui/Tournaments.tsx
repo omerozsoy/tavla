@@ -59,10 +59,12 @@ interface Props {
   onRequireLogin?: () => void
   /** Normal uye Premium'a ozel turnuvaya "Katil"a basti -> uyelik ekrani. */
   onRequirePremium?: () => void
+  /** Suren bir turnuva macini izle (goz butonu) -> App'in izleme ekrani. */
+  onSpectate?: (code: string, p1: string, p2: string) => void
 }
 
 
-export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium }: Props) {
+export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
@@ -424,8 +426,22 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   {round.map((m) => {
                     const mine = m.p1?.id === myId || m.p2?.id === myId
                     const playable = mine && m.p1 && m.p2 && !m.winner
+                    // Izlenebilir: oda acilmis (biri "Oyna"ya basmis) ve mac bitmemis. Kendi macimda
+                    // "Oyna" var; goz yalniz baskalarinin maclarinda.
+                    const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
                     return (
-                      <div key={m.key} className={`tourn-match ${mine ? 'mine' : ''}`}>
+                      <div key={m.key} className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''}`}>
+                        {watchable && (
+                          <button
+                            type="button"
+                            className="tm-watch"
+                            title={t('tourn.watch')}
+                            aria-label={t('tourn.watch')}
+                            onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)}
+                          >
+                            <Icon name="eye" size={16} />
+                          </button>
+                        )}
                         <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''}`}>
                           {m.p1?.name ?? '—'}
                         </div>

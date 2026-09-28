@@ -8669,6 +8669,7 @@ export default function App() {
           onRequireLogin={() => setShowAuth(true)}
           onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
+          onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)
