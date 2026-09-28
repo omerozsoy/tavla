@@ -27844,3 +27844,23 @@ select:-webkit-autofill {
 .checker .checker-skin-fill { position: absolute; inset: 0; pointer-events: none; }
 .checker .checker-skin-fill svg,
 .checker .checker-skin-fill img { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* Turnuva katilim kosulu rozeti (Premium'a ozel / Tum uyeler) */
+.tourn-access {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tourn-access-premium {
+  color: var(--coin-gold);
+  background: color-mix(in srgb, var(--coin-gold) 14%, transparent);
+}
+.tourn-access-all {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}

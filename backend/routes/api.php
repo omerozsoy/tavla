@@ -229,8 +229,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/clubs/leave', [ClubController::class, 'leave']);
 
     Route::post('/tournaments', [TournamentController::class, 'create']);
-    // Online Turnuvalara KATILIM PREMIUM-only (liste/teaser herkese acik kalir).
-    Route::middleware(\App\Http\Middleware\EnsurePremium::class)->post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
+    // Online Turnuvalar: liste/detay herkese acik (misafir dahil). Katilim kapisi turnuva basina (premium_only) -> TournamentController::join. Misafir: auth:sanctum.
+    Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/leave', [TournamentController::class, 'leave']);
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/no-show', [TournamentController::class, 'noShow']); // rakip gelmedi -> hukmen

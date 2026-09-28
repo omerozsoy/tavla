@@ -1117,7 +1117,7 @@ export default function App() {
   // PREMIUM-only araclar: URL/deep-link VEYA profil-tiklamasi ile giren premium OLMAYAN
   // kullaniciyi (misafir dahil) uyelik ekranina yonlendir (menu zaten gate'li; bu, o
   // yollarin bypass'ini kapatir). Kapsam: Hata Gunlugu, Pozisyon Analizi, Mat Analiz,
-  // Mac Analizleri, Online Turnuvalar.
+  // Mac Analizleri. (Online Turnuvalar artik herkese acik; katilim turnuva basina premium_only.)
   // NOT: bu hook ust hook bolgesinde (erken-return'lerden ONCE) durmali — sabit sira;
   // premium'u user'dan inline turetir ki gec tanimlanan `premium` const'una baglanmasin.
   useEffect(() => {
@@ -1132,9 +1132,8 @@ export default function App() {
     if (analyzerOpen) { setAnalyzerOpen(false); redirect = true }
     if (matAnalyzerOpen) { setMatAnalyzerOpen(false); redirect = true }
     if (matchHistOpen) { setMatchHistOpen(false); redirect = true }
-    if (tournOpen) { setTournOpen(false); redirect = true }
     if (redirect) setMemOpen(true)
-  }, [authChecked, blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, tournOpen, user])
+  }, [authChecked, blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, user])
 
   // Sol menu yapilandirmasini (admin panelden sira/ad/gorunurluk) acilista bir kez cek.
   useEffect(() => {
@@ -7859,25 +7858,20 @@ export default function App() {
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
     onAchievements: () => goPage(() => setAchOpen(true)),
-    // Online Turnuvalar PREMIUM-only: free/misafir -> uyelik ekrani.
+    // Online Turnuvalar HERKESE acik (misafir dahil gorur); katilim turnuva basina (premium_only).
     onTournaments: () =>
-      premium
-        ? goPage(() => {
-            setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
-            setTournDetailSlug(null)
-            setTournOpen(true)
-          })
-        : setMemOpen(true),
+      goPage(() => {
+        setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
+        setTournDetailSlug(null)
+        setTournOpen(true)
+      }),
     // Ana sayfa reklamindan: dogrudan ilgili turnuvanin detayini ac (slug detay yuklenince yukselir)
-    // PREMIUM-only: free/misafir -> uyelik ekrani.
     onTournamentAd: (id: number) =>
-      premium
-        ? goPage(() => {
-            setTournDetailId(id)
-            setTournDetailSlug(String(id))
-            setTournOpen(true)
-          })
-        : setMemOpen(true),
+      goPage(() => {
+        setTournDetailId(id)
+        setTournDetailSlug(String(id))
+        setTournOpen(true)
+      }),
     onShop: () => goPage(() => setShopOpen(true)),
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
@@ -8660,10 +8654,13 @@ export default function App() {
           onClose={() => setFrameGalleryOpen(false)}
         />
       )}
-      {tournOpen && premium && (
+      {tournOpen && (
         <Suspense fallback={null}>
         <Tournaments
           myId={user?.id ?? null}
+          premium={premium}
+          onRequireLogin={() => setShowAuth(true)}
+          onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
