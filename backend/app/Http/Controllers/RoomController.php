@@ -2864,6 +2864,9 @@ class RoomController extends Controller
                         'cube_value' => (int) $cube['value'], 'mctx' => $this->moveMctx($room),
                     ]);
                     $matchDone = $this->applyGameResult($room, 'white', (int) $cube['value']);
+                    if ($matchDone) {
+                        $this->markDropFinished($room, 'white');
+                    }
                     $room->server_version = (int) $room->server_version + 1;
                     $room->save();
 
@@ -2901,6 +2904,20 @@ class RoomController extends Controller
      * KÜP YANITI (Faz 2): teklifin rakibi take (ikiye katla + küp bana geçsin, oyun sürer)
      * ya da drop (pes et) der. drop → teklif eden oyunu MEVCUT küp değerinde kazanır (gammon YOK).
      */
+    /**
+     * Kup reddiyle (drop) MAC bittiyse oda da terminal olmali (move()'daki NORMAL_WIN ile ayni).
+     * Eskiden yalniz server_match.done yaziliyordu, status 'playing' kaliyordu -> turnuva report /
+     * rating hasVerifiedServerResult=false ile 409; oda ancak reaper (>=3 dk) ile kapaniyordu.
+     */
+    private function markDropFinished(Room $room, string $winnerColor): void
+    {
+        $room->status = 'finished';
+        $room->end_reason = $room->end_reason ?? 'NORMAL_WIN';
+        $winnerSlot = $winnerColor === 'white' ? 'p1' : 'p2';
+        $room->p1_result = $room->p1_result ?? ($winnerSlot === 'p1' ? 'won' : 'lost');
+        $room->p2_result = $room->p2_result ?? ($winnerSlot === 'p2' ? 'won' : 'lost');
+    }
+
     public function cubeRespond(Request $request, string $code)
     {
         $data = $request->validate([
@@ -2980,6 +2997,9 @@ class RoomController extends Controller
             $sm['cube']['pending'] = null; // teklifi temizle (applyGameResult zaten küpü sıfırlar)
             $room->server_match = $sm;
             $matchDone = $this->applyGameResult($room, $offerer, $cube['value']);
+            if ($matchDone) {
+                $this->markDropFinished($room, $offerer);
+            }
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // karar suresi + oyun sonu
             $room->save();
