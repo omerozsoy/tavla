@@ -69,6 +69,7 @@ import { botPersona } from './botPersonas'
 import Board from './ui/Board'
 import { useBoardDir } from './ui/boardDirection'
 import { DivisionChip } from './ui/Badges'
+import coinsIcon from './assets/coins.svg' // ust menu coin rozeti ikonu
 import { useSwapStones } from './ui/pieceColors'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -7342,7 +7343,7 @@ export default function App() {
               onClick={() => goPage(() => setShopOpen(true))}
               title={t('shop.title')}
             >
-              <span className="stat-chip-ic"><Icon name="coin" size={18} /></span>
+              <span className="stat-chip-ic"><img src={coinsIcon} alt="" width={18} height={18} /></span>
               <span className="stat-chip-body">
                 <span className="stat-chip-val">{(user.coins ?? 0).toLocaleString('tr-TR')}</span>
                 <span className="stat-chip-bar" aria-hidden="true">
