@@ -48,6 +48,18 @@ class MoveValidatorService
         return $this->urls;
     }
 
+    /** Bir tabanın /health'ini oku (ör. worker sayısı). Erişilemezse null. Panel gösterimi için. */
+    public function healthAt(string $base): ?array
+    {
+        try {
+            $res = $this->client()->timeout(2)->get(rtrim($base, '/').'/health');
+
+            return $res->successful() ? (array) $res->json() : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     /** TEK bir tabanı DOĞRUDAN yokla (failover'sız): admin panelinde her örneğin ayrı lambası için. */
     public function probeBase(string $base, array $state, array $steps): bool
     {

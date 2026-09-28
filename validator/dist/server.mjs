@@ -602,7 +602,7 @@ var server = createServer(async (req, res) => {
     console.log(`[validator] ${req.method} ${req.url} from=${req.socket.remoteAddress} xff=${xff}`);
   }
   if (req.method === "GET" && req.url === "/health") {
-    return send(res, 200, { ok: true, service: "tavla-validator" });
+    return send(res, 200, { ok: true, service: "tavla-validator", workers: CLUSTER ? WORKERS : 1 });
   }
   if (!SECRET) {
     return send(res, 503, { error: "validator-misconfigured" });
