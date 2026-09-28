@@ -26,6 +26,8 @@ class OptimizeUploads extends Command
         {--dir= : public/uploads altında yalnız bu alt dizin (örn: bilgi)}
         {--max-width=1920 : Bu genişliği aşan görseller küçültülür}
         {--quality=82 : JPEG/WebP yeniden kodlama kalitesi (1-100)}
+        {--memory=512M : Bu koşu için PHP bellek limiti; büyük görseller GD tarafında çok RAM ister}
+        {--max-megapixels=40 : Bundan büyük görseller (çözülünce bellek taşırır) uyarılıp atlanır}
         {--dry-run : Yazmadan ne kazanılacağını raporla}';
 
     protected $description = 'Mevcut yüklenmiş görselleri (banner + bilgi sayfaları) yerinde optimize eder; dosya adı/format değişmez, referanslar kırılmaz.';
@@ -37,6 +39,14 @@ class OptimizeUploads extends Command
 
             return self::FAILURE;
         }
+
+        // GD, PNG/JPEG'i tam truecolor bitmap'e açar (~4 bayt/piksel) -> varsayılan 128MB CLI
+        // limiti tek bir yüksek çözünürlüklü görselde bile taşar. Bu koşu için limiti yükselt.
+        $mem = trim((string) $this->option('memory'));
+        if ($mem !== '') {
+            @ini_set('memory_limit', $mem);
+        }
+        $maxPx = max(1, (int) $this->option('max-megapixels')) * 1_000_000;
 
         $root = public_path('uploads');
         $sub = trim((string) $this->option('dir'), '/');
@@ -57,6 +67,7 @@ class OptimizeUploads extends Command
 
         $seen = 0;
         $changed = 0;
+        $skippedLarge = 0;
         $before = 0;
         $after = 0;
 
@@ -74,6 +85,16 @@ class OptimizeUploads extends Command
                 continue; // GIF/SVG/BMP -> dokunma
             }
             $seen++;
+
+            // Çözülünce belleği taşıracak devasa görseli işleme (fatal yerine uyar+atla).
+            $px = (int) ($info[0] ?? 0) * (int) ($info[1] ?? 0);
+            if ($px > $maxPx) {
+                $skippedLarge++;
+                $rel = ltrim(str_replace($root, '', $abs), '/\\');
+                $this->warn(sprintf('  [atla] %d MP (>%d MP): %s', (int) round($px / 1_000_000), (int) round($maxPx / 1_000_000), $rel));
+
+                continue;
+            }
 
             $origSize = (int) filesize($abs);
             $optimized = $this->recompress($abs, $type, $maxW, $quality);
@@ -100,10 +121,11 @@ class OptimizeUploads extends Command
 
         $saved = $before - $after;
         $this->info(sprintf(
-            '%d görsel tarandı, %d optimize %s. Kazanç: %s -> %s (%s daha az).',
+            '%d görsel tarandı, %d optimize %s%s. Kazanç: %s -> %s (%s daha az).',
             $seen,
             $changed,
             $dry ? 'EDİLECEK (dry-run)' : 'edildi',
+            $skippedLarge > 0 ? ", {$skippedLarge} çok büyük atlandı" : '',
             $this->human($before),
             $this->human($after),
             $this->human($saved),
