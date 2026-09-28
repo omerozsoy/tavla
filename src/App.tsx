@@ -190,7 +190,7 @@ const DEFAULT_DESC =
 // Logo sürüm rozeti: TEK KAYNAK package.json. "3.1.0" -> "3.1" (sondaki .0 kırpılır).
 // (Beta aşaması bitti: artık "BETA" öneki yok; yalnız sürüm numarası gösterilir.)
 declare const __APP_VERSION__: string
-const VERSION_LABEL = __APP_VERSION__.replace(/\.0$/, '')
+const VERSION_LABEL = `BETA ${__APP_VERSION__.replace(/\.0$/, '')}`
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
