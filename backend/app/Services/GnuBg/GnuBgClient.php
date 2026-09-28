@@ -50,6 +50,28 @@ class GnuBgClient
     }
 
     /**
+     * AĞIR analiz (reviewmatch/analyzematch/matchluck) taban listesi: dedike heavy havuzu (GNUBG_HEAVY_URLS)
+     * YÜK-DENGELİ (shuffle), sonra SON ÇARE arka plan havuzu (PR/heal) fallback. heavy_urls boşsa tekil
+     * heavy_url'e (o da boşsa url'e) düşer -> geriye dönük uyum. Canlı foreground (bot) listede DEĞİL ->
+     * ağır analiz botu ASLA bloklamaz. Shuffle sayesinde eşzamanlı iki review farklı heavy instance'ına düşer.
+     */
+    public function heavyBases(): array
+    {
+        $pool = array_values(array_filter(array_map(
+            fn ($u) => rtrim(trim((string) $u), '/'),
+            explode(',', (string) config('gnubg.heavy_urls', '')),
+        ), fn ($u) => $u !== ''));
+        if ($pool === []) {
+            $pool = [rtrim((string) config('gnubg.heavy_url') ?: (string) config('gnubg.url', 'http://127.0.0.1:8092'), '/')];
+        }
+        if (count($pool) > 1) {
+            shuffle($pool);
+        }
+
+        return array_values(array_unique(array_merge($pool, $this->backgroundBases())));
+    }
+
+    /**
      * TÜM instance'lar (ön plan + arka plan, dedup, sıra korunur). Admin "Servis Durumu" paneli +
      * services:watch her instance'ı ayrı gösterir/izler + analyzeHealthy any-up kontrolü. Tek eleman ->
      * eski tek-instance davranışı (geriye dönük uyum).
@@ -300,18 +322,16 @@ class GnuBgClient
     }
 
     /**
-     * AĞIR uçları (reviewmatch/analyzematch) SIRAYLA dener: adanmış heavy_url ÖNCE, sonra ARKA PLAN
-     * havuzu (GNUBG_ANALYSIS_URLS, 8094/8095) FALLBACK -> adanmış heavy instance (8098) düşse/restart
-     * olsa bile Mat Analiz çalışmaya devam eder. Canlı foreground (bot) listede DEĞİL -> ağır analiz
-     * botu ASLA bloklamaz. İlk 2xx json'u döner; hepsi düşükse null.
-     * NOT: heavy instance MEŞGULse (mid-review, kilit tutuluyor) POST failover ETMEZ, kilitte bekler
-     * -> eşzamanlı iki review yine serileşir (kabul edilen tavan; nadir premium işi). Failover yalnız
-     * DOWN/erişilemez instance içindir (SPOF kalkanı).
+     * AĞIR uçları (reviewmatch/analyzematch) heavyBases() sırasıyla dener: dedike heavy havuzu (shuffle)
+     * -> son çare arka plan havuzu. İlk 2xx json'u döner; hepsi düşükse null. Bir heavy instance düşse
+     * de eşzamanlı iki review gelse de Mat Analiz çalışır (shuffle farklı instance'a dağıtır; SPOF yok).
+     * NOT: bir heavy instance MEŞGULse (mid-review, kilit tutuluyor) POST failover ETMEZ, kilitte bekler.
+     * Shuffle'la yük dağılır ama 3. eşzamanlı review 2 instance'lı havuzda birine kuyruklanabilir (kabul
+     * edilen tavan; havuzu büyüterek azaltılır). Failover yalnız DOWN/erişilemez instance içindir.
      */
     private function tryHeavy(string $path, array $payload, int $timeout): ?array
     {
-        $heavy = rtrim((string) config('gnubg.heavy_url') ?: (string) config('gnubg.url', 'http://127.0.0.1:8092'), '/');
-        $bases = array_values(array_unique(array_merge([$heavy], $this->backgroundBases())));
+        $bases = $this->heavyBases();
         $last = count($bases) - 1;
         foreach ($bases as $i => $base) {
             try {
