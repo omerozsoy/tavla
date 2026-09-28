@@ -57,9 +57,11 @@ class TournamentResource extends Resource
                     ->searchable()
                     ->preload()
                     ->nullable(),
-                Forms\Components\TextInput::make('size')
+                Forms\Components\Select::make('size')
+                    ->label('Kapasite (kişi)')
+                    ->helperText('Sınırsız: kaç kişi katılırsa ağaç ona göre kurulur (ör. 6 kişi -> 8 kişilik ağaç, 2 Bye). Sayı seçilirse en fazla o kadar kişi katılabilir; ağaç yine katılan sayısına göre kurulur.')
+                    ->options([0 => 'Sınırsız (katılana göre)', 4 => '4', 8 => '8', 16 => '16', 32 => '32', 64 => '64', 128 => '128', 256 => '256'])
                     ->required()
-                    ->numeric()
                     ->default(8),
                 Forms\Components\Select::make('status')
                     ->label('Durum')
