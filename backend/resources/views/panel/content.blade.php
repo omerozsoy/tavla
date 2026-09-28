@@ -32,7 +32,7 @@
         <div class="grid">
           <div><label>Düzenleyen / Otel</label><input name="organizer" value="{{ $editing->organizer ?? '' }}"></div>
           <div><label>Yer</label><input name="place" value="{{ $editing->place ?? '' }}"></div>
-          <div><label>Tarih &amp; Saat</label><input type="datetime-local" name="event_at" value="{{ $editing && $editing->event_at ? $editing->event_at->format('Y-m-d\TH:i') : '' }}"></div>
+          <div><label>Tarih &amp; Saat</label><input type="datetime-local" name="event_at" value="{{ $editing && $editing->event_at ? $editing->event_at->copy()->tz('Europe/Istanbul')->format('Y-m-d\TH:i') : '' }}"></div>
           <div><label>İletişim</label><input name="contact" value="{{ $editing->contact ?? '' }}"></div>
         </div>
       @elseif($type==='club')

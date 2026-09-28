@@ -91,7 +91,7 @@ class ContactController extends Controller
             ."Etkinlik tarihi: ".($contact->event_date ?: '—')."\n"
             ."Katılımcı sayısı: ".($contact->participants ?: '—')."\n"
             ."Gönderilen sayfa: ".($contact->source_page ?: '—')."\n"
-            ."Tarih: ".$contact->created_at->toDateTimeString()."\n\n"
+            ."Tarih: ".$contact->created_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').' (TSİ)'."\n\n"
             ."Mesaj:\n{$contact->message}\n\n"
             ."Yönetim panelinde görüntüle:\n{$adminUrl}\n";
 

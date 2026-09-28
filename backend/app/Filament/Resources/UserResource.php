@@ -125,7 +125,7 @@ class UserResource extends Resource
                     $record->save();
                     \Filament\Notifications\Notification::make()
                         ->title('Süre eklendi')
-                        ->body('Yeni bitiş: '.$new->format('d.m.Y H:i'))
+                        ->body('Yeni bitiş: '.$new->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i'))
                         ->success()
                         ->send();
                 }
@@ -144,7 +144,7 @@ class UserResource extends Resource
                     ->boolean()->trueColor('success')->falseColor('danger')
                     ->getStateUsing(fn ($record) => $record->email_verified_at !== null)
                     ->tooltip(fn ($record) => $record->email_verified_at
-                        ? 'Doğrulandı: '.$record->email_verified_at->format('d.m.Y H:i')
+                        ? 'Doğrulandı: '.$record->email_verified_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i')
                         : 'Doğrulanmadı'),
                 Tables\Columns\TextColumn::make('rating')->label('Puan')->sortable(),
                 Tables\Columns\TextColumn::make('rating')->label('Ünvan')
@@ -306,7 +306,7 @@ class UserResource extends Resource
                                 $label .= ' — '.($admin?->nickname ?? ('#'.$r->plan_source_by));
                             }
                             if ($r->plan_source_at) {
-                                $label .= ' · '.$r->plan_source_at->format('d.m.Y H:i');
+                                $label .= ' · '.$r->plan_source_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
                             }
 
                             return $label;
