@@ -193,7 +193,7 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
                           aria-label={t('friends.invite')}
                           onClick={() => onInvite({ id: f.id, name: f.name, avatar: f.avatar, rating: f.rating })}
                         >
-                          <Icon name="sword" size={16} />
+                          <Icon name="play" size={16} />
                         </Button>
                       )}
                       <Button
