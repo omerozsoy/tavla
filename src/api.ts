@@ -315,6 +315,7 @@ export interface PrLeaderRow {
   avatar?: string | null
   frame?: string | null
   country?: string | null
+  rating?: number // isim altindaki rutbe icin (site geneli rutbe = rating)
   career_pr: number // TAM hassasiyet (UI 2 ondalik gosterir)
   matches: number
   decisions: number

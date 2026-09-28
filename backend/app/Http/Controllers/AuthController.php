@@ -1279,7 +1279,7 @@ class AuthController extends Controller
             ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
             ->orderByDesc('career_pr_matches')            // sonra daha cok maç
             ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until']);
 
         $rows = $users->values()->map(fn ($u, $i) => [
             'rank' => $i + 1,
@@ -1288,6 +1288,7 @@ class AuthController extends Controller
             'avatar' => $u->avatar,
             'frame' => $u->avatar_frame,
             'country' => $u->country,
+            'rating' => (int) $u->rating, // isim altindaki rutbe: site geneli TEK kaynak rating'dir (PR degil)
             'career_pr' => $u->career_pr, // TAM hassasiyet (UI 2 ondalik gosterir; siralama full)
             'matches' => (int) $u->career_pr_matches,
             'decisions' => (int) $u->career_pr_decisions,
