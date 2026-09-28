@@ -99,6 +99,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     } | null
   >(null)
   const [reportBusy, setReportBusy] = useState(false)
+  // Yükleme ~1.2sn'yi geçerse (= önbellek YOK, ilk analiz) loader'a "ilk kez hazırlanıyor" notu ekle.
+  // Önbellekli açılışlar anında döndüğü için bu not yalnız gerçekten ilk (yavaş) açılışta görünür.
+  const [slowNote, setSlowNote] = useState(false)
   // Rapor hazır olunca hangi ekran açılsın: tam analiz mi (MatchReport) yoksa yalnız Maç Özeti mi.
   const [view, setView] = useState<'report' | 'summary'>('report')
   // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi.
@@ -184,6 +187,16 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
         setLoadingMore(false)
       })
   }
+
+  // "İlk kez hazırlanıyor" notunu geciktir: kısa (önbellekli) açılışlarda hiç görünmesin.
+  useEffect(() => {
+    if (!reportBusy) {
+      setSlowNote(false)
+      return
+    }
+    const id = setTimeout(() => setSlowNote(true), 1200)
+    return () => clearTimeout(id)
+  }, [reportBusy])
 
   // Rakip aramasini debounce et (her tusa istek atma)
   useEffect(() => {
@@ -456,7 +469,10 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
         <div className="register-overlay modal mh-loading" role="status" aria-live="polite">
           <div className="mh-loading-box">
             <span className="mr-pr-loader" aria-hidden="true" />
-            <span>{t('ma.analyzing')}</span>
+            <span className="mh-loading-txt">
+              {t('ma.analyzing')}
+              {slowNote && <em className="mh-loading-note">{t('mh.firstAnalyze')}</em>}
+            </span>
           </div>
         </div>
       )}
