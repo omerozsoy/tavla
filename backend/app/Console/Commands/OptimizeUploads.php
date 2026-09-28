@@ -46,6 +46,13 @@ class OptimizeUploads extends Command
         if ($mem !== '') {
             @ini_set('memory_limit', $mem);
         }
+        // Plesk/bazı hostlar ini_set('memory_limit')'i kilitler -> sessizce 128M'de kalır ve
+        // büyük görselde fatal olur. Yükselemediyse önden uyar (fatal yerine eylem öner).
+        $eff = $this->bytes((string) ini_get('memory_limit'));
+        if ($eff > 0 && $eff < 256 * 1024 * 1024) {
+            $this->warn('Bellek limiti düşük ('.ini_get('memory_limit').') ve yükseltilemedi (host kilitli olabilir).');
+            $this->warn('Büyük görsellerde fatal olabilir. Şununla çalıştır: php -d memory_limit=1024M artisan '.$this->getName().' ...');
+        }
         $maxPx = max(1, (int) $this->option('max-megapixels')) * 1_000_000;
 
         $root = public_path('uploads');
@@ -170,6 +177,24 @@ class OptimizeUploads extends Command
         imagedestroy($src);
 
         return ($ok && $bytes !== '' && $bytes !== false) ? $bytes : null;
+    }
+
+    /** "512M" / "1G" / "-1" gibi ini değerini bayta çevirir (-1 sınırsız -> PHP_INT_MAX). */
+    private function bytes(string $val): int
+    {
+        $val = trim($val);
+        if ($val === '' || $val === '-1') {
+            return PHP_INT_MAX;
+        }
+        $n = (int) $val;
+        $unit = strtolower(substr($val, -1));
+
+        return match ($unit) {
+            'g' => $n * 1024 * 1024 * 1024,
+            'm' => $n * 1024 * 1024,
+            'k' => $n * 1024,
+            default => $n,
+        };
     }
 
     private function human(int $bytes): string
