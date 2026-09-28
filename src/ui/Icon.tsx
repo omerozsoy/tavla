@@ -9,7 +9,6 @@
  */
 
 import { type Icon as TablerIcon } from '@tabler/icons-react'
-import chartBarPopularIcon from '../assets/chart-bar-popular.svg'
 import {
   IconPlayerPlay,
   IconBroadcast,
@@ -394,26 +393,30 @@ export function Icon({
 }) {
   if (name === 'chart-bar-popular') {
     return (
-      <span
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
         className={className}
         aria-hidden="true"
         style={{
           flex: 'none',
           display: 'inline-block',
           verticalAlign: '-0.15em',
-          width: size,
-          height: size,
-          backgroundColor: 'currentColor',
-          maskImage: `url(${chartBarPopularIcon})`,
-          maskRepeat: 'no-repeat',
-          maskPosition: 'center',
-          maskSize: 'contain',
-          WebkitMaskImage: `url(${chartBarPopularIcon})`,
-          WebkitMaskRepeat: 'no-repeat',
-          WebkitMaskPosition: 'center',
-          WebkitMaskSize: 'contain',
         }}
-      />
+        width={size}
+        height={size}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+        <path d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -6" />
+        <path d="M9 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -10" />
+        <path d="M15 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -14" />
+        <path d="M4 20h14" />
+      </svg>
     )
   }
   const Cmp = (weight === 'fill' && FILLED[name]) || MAP[name]
