@@ -22696,6 +22696,10 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.invite-wait-stakes {
+  justify-content: center;
+  margin-bottom: 12px;
+}
 .invite-stake-win {
   color: var(--success-fg);
 }

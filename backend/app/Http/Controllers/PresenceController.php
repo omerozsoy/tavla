@@ -51,7 +51,7 @@ class PresenceController extends Controller
                 'timeControl' => $r->time_control,
                 'unrated' => (bool) ($r->unrated ?? false),
                 // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
-                'ratingPreview' => $this->ratingPreview($me, $r),
+                'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated)),
             ]);
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
@@ -192,23 +192,24 @@ class PresenceController extends Controller
 
     // Bir arkadasi oyuna davet et -> paylasimli oda kodu uret, davet olustur
     /**
-     * Davet kartı rating önizlemesi: davetli ($me) davet edene karşı kazanırsa/kaybederse. Maç sonunda
+     * Davet rating önizlemesi: $self, $oppId'ye ($oppRating) karşı kazanırsa/kaybederse. İki yönde
+     * kullanılır: davetli kartı (/ping) + davet edenin bekleme ekranı (invite yanıtı). Maç sonunda
      * işlenecek kuralın AYNISI (RatingPolicy): puansız davet veya aynı-rakip 24h limiti dolmuşsa null
-     * (maç puansız oynanacak). Rakip rating'i odaya kuruluşta davet edenin güncel rating'i yazılır.
+     * (maç puansız oynanacak). Oda kuruluşta iki tarafın güncel rating'i yazılır.
      *
      * @return array{win:int, loss:int}|null
      */
-    private function ratingPreview(User $me, object $inv): ?array
+    private function ratingPreview(User $self, int $oppId, int $oppRating, bool $unrated): ?array
     {
-        if (! empty($inv->unrated)) {
+        if ($unrated) {
             return null;
         }
         $room = new Room(['mode' => 'friendly', 'unrated' => false]); // davet odası = friendly (enter())
-        if (! RatingPolicy::isRanked($room, (int) $me->id, (int) $inv->from_user_id)) {
+        if (! RatingPolicy::isRanked($room, (int) $self->id, $oppId)) {
             return null;
         }
 
-        return RatingPolicy::eloPreview((int) ($me->rating ?? 1500), (int) ($inv->rating ?? 1500));
+        return RatingPolicy::eloPreview((int) ($self->rating ?? 1500), $oppRating);
     }
 
     public function invite(Request $request, int $userId)
@@ -274,7 +275,11 @@ class PresenceController extends Controller
             'updated_at' => now(),
         ]);
 
-        return response()->json(['code' => $code]);
+        return response()->json([
+            'code' => $code,
+            // Davet eden bekleme ekraninda: davetliye karsi kazanirsa/kaybederse (null = puansiz).
+            'ratingPreview' => $this->ratingPreview($me, (int) $target->id, (int) ($target->rating ?? 1500), (bool) ($settings['unrated'] ?? false)),
+        ]);
     }
 
     public function respond(Request $request, int $inviteId)

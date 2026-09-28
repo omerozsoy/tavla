@@ -928,7 +928,7 @@ export async function deleteNotifications(ids?: number[]): Promise<void> {
 export async function inviteFriend(
   userId: number,
   opts?: { target?: number; timeControl?: string; unrated?: boolean },
-): Promise<{ code: string }> {
+): Promise<{ code: string; ratingPreview?: { win: number; loss: number } | null }> {
   return req(`/friends/${userId}/invite`, {
     method: 'POST',
     body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated }),
