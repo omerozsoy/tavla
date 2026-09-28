@@ -176,7 +176,6 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // NOT: dışa aktarılır — ServiceLanding (turnuva organizasyonu sayfaları) da aynı galeri
 // enjeksiyonunu kullanır (aksi halde <resimgalerisi> düz metin kalır, galeri görünmez).
 export function InfoPane({ page }: { page?: InfoPage }) {
-  const { t } = useT()
   if (!page) return <Loading />
 
   const body = page.body ?? ''

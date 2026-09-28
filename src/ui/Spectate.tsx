@@ -466,12 +466,10 @@ export default function Spectate({
                 centerRight={activeBottom ? diceRow : null}
               />
             </>
+          ) : gone ? (
+            <div className="spectate-status">{t('live.ended')}</div>
           ) : (
-            {gone ? (
-              <div className="spectate-status">{t('live.ended')}</div>
-            ) : (
-              <Loading />
-            )}
+            <Loading />
           )}
         </div>
       </main>
