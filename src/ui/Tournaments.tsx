@@ -11,6 +11,7 @@ import { TavlaTvLogo } from './TavlaTvLogo'
 import {
   listTournaments,
   showTournament,
+  pollTournament,
   joinTournament,
   leaveTournament,
   reportTournament,
@@ -75,6 +76,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
   const busyRef = useRef(false)
   busyRef.current = busy
+  const revRef = useRef<string | undefined>(undefined) // acik detayin sunucu surumu (poll 204 anahtari)
+  revRef.current = active?.rev
   const mutSeq = useRef(0)
 
   async function refreshList() {
@@ -109,18 +112,20 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     }
   }, [detailId])
 
-  // CANLI GUNCELLEME: baskalari katildikca/ciktikca (ve bracket ilerledikce) acik detay 8sn'de,
-  // liste (kart sayaclari) 15sn'de bir tazelenir. Sekme arka plandayken durur, one gelince hemen
-  // tazeler. Biten turnuva artik degismez -> detay poll'u kapanir.
+  // CANLI GUNCELLEME: acik detay 8sn'de bir sunucuya elindeki rev'i sorar; yalniz degistiyse tam
+  // veri gelir (aksi 204). rev kayit acikken katilimcilara, turnuva BASLADIKTAN SONRA yalniz mac
+  // sonuclarina bagli -> baslamis turnuvada sayfa yalniz bir mac bitince guncellenir. Liste (kart
+  // sayaclari, ~1KB) 15sn'de bir. Sekme gizliyken durur, one gelince hemen tazeler. Biten turnuva
+  // artik degismez -> detay poll'u kapanir.
   useEffect(() => {
     if (detailId == null || active?.status === 'finished') return
     let alive = true
     const tick = () => {
       if (document.visibilityState !== 'visible' || busyRef.current) return
       const seq = mutSeq.current
-      showTournament(detailId)
+      pollTournament(detailId, revRef.current)
         .then((tt) => {
-          if (alive && seq === mutSeq.current && !busyRef.current) setActive(tt)
+          if (tt && alive && seq === mutSeq.current && !busyRef.current) setActive(tt)
         })
         .catch(() => {
           /* gecici ag hatasi: sonraki tick dener */

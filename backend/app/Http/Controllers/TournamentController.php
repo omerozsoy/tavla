@@ -27,10 +27,40 @@ class TournamentController extends Controller
         return response()->json(['tournaments' => $list]);
     }
 
-    public function show(Tournament $tournament)
+    public function show(Request $request, Tournament $tournament)
     {
         $this->autoStartDue(); // acilan turnuva zamani gectiyse burada da baslasin
-        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+        $t = $tournament->fresh();
+        // CANLI POLL: istemci elindeki rev'i yollar; degismediyse 204 (detay ~80KB: avatarlar gomulu).
+        if ((string) $request->query('rev', '') === self::rev($t)) {
+            return response()->noContent();
+        }
+
+        return response()->json(['tournament' => $this->full($t)]);
+    }
+
+    /**
+     * Turnuva sayfasi CANLI guncelleme surumu. Kayit acikken katilimcilara (katil/cik) bagli;
+     * basladiktan sonra YALNIZ mac sonuclarina (kazananlar + sampiyon) -> mac odasi acilmasi /
+     * tur uzunlugu yazimi gibi ara bracket degisiklikleri poll'u tetiklemez. Durum degisimi
+     * (open -> running -> finished) her zaman yeni surumdur.
+     */
+    private static function rev(Tournament $t): string
+    {
+        $parts = [$t->status, (int) ($t->champion_id ?? 0)];
+        if ($t->status === 'open') {
+            $parts[] = collect($t->players ?? [])->filter()->pluck('id')->sort()->values()->all();
+        } else {
+            $winners = [];
+            foreach (is_array($t->bracket) ? $t->bracket : [] as $round) {
+                foreach (is_array($round) ? $round : [] as $m) {
+                    $winners[] = ($m['key'] ?? '').':'.($m['winner'] ?? '');
+                }
+            }
+            $parts[] = $winners;
+        }
+
+        return substr(md5(json_encode($parts)), 0, 12);
     }
 
     public function create(Request $request)
@@ -684,6 +714,7 @@ class TournamentController extends Controller
             'players' => array_values(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'bracket' => $t->bracket,
             'champion_id' => $t->champion_id,
+            'rev' => self::rev($t), // canli poll: ?rev= ayniysa show() 204 doner
         ]);
     }
 }

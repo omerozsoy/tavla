@@ -1060,6 +1060,7 @@ export interface Tournament {
   prizes?: { coins: number; desc?: string | null }[]
   entry_fee?: number
   premium_only?: boolean // katilim: true = yalniz Premium, false = tum uyeler (misafir asla)
+  rev?: string // canli guncelleme surumu (kayitta katilimcilar, basladiktan sonra yalniz mac sonuclari)
   /** Son katilim tarihi (ISO); turnuva tam bu anda otomatik baslar. */
   register_until?: string | null
   /** Otomatik baslama zamani (ISO) = register_until. Geri sayim bunu kullanir. */
@@ -1461,6 +1462,12 @@ export async function deleteTournament(id: number): Promise<void> {
 export async function showTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}`)
   return d.tournament
+}
+// Canli poll: rev degismediyse sunucu 204 doner -> null (tam detay ~80KB yeniden inmez).
+export async function pollTournament(id: number, rev?: string): Promise<Tournament | null> {
+  const q = rev ? `?rev=${encodeURIComponent(rev)}` : ''
+  const d = await req<{ tournament?: Tournament }>(`/tournaments/${id}${q}`)
+  return d.tournament ?? null
 }
 export async function createTournament(
   name: string,
