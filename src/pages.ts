@@ -27,7 +27,7 @@ export interface PageDef {
 export const PAGES: PageDef[] = [
   // --- OYNA: oyun baslatma ---
   { key: 'solo', slug: 'tek-oyun', labelKey: 'menu.solo', icon: 'coins', group: 'play', hideInGame: true },
-  { key: 'match', slug: 'yeni-oyun', labelKey: 'menu.match', icon: 'ranking', group: 'play', hideInGame: true },
+  { key: 'match', slug: 'yeni-oyun', labelKey: 'menu.match', icon: 'chart-bar-popular', group: 'play', hideInGame: true },
   { key: 'aiGame', slug: 'yz-ile-oyna', labelKey: 'menu.aiGame', icon: 'robot-face', group: 'play', hideInGame: true },
   { key: 'playFriend', slug: 'arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'play', hideInGame: true },
 
