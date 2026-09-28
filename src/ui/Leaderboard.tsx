@@ -145,7 +145,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           />
         </span>
         <span className="lb-flag">
-          <CountryFlag code={r.country} size={16} rounded={false} />
+          <CountryFlag code={r.country} size={16} />
         </span>
         <span className="lb-games">
           {r.games} <small>{t('lb.gamesUnit')}</small>
@@ -351,7 +351,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
                           <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated />
                         </span>
                         <span className="lb-flag">
-                          <CountryFlag code={r.country} size={16} rounded={false} />
+                          <CountryFlag code={r.country} size={16} />
                         </span>
                         <span className="lb-games">
                           {r.matches} <small>{t('lb.gamesUnit')}</small>
