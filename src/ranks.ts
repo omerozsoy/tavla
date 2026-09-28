@@ -103,9 +103,17 @@ const META: Record<string, Meta> = {
 }
 
 // 20 kademe, düşükten yükseğe. Eşik (min) DIVISIONS'tan; meta META'dan.
+// NOT: `min` bir GETTER -> DIVISIONS girdisine canli baglidir. Esikler yonetim panelinden
+// degisip applyRankThresholds() ile yerinde guncellendiginde RANKS da bayatlamaz (bkz badges.ts).
 export const RANKS: RankTier[] = DIVISIONS.map((d) => {
   const m = META[d.key]
-  return { divKey: d.key, min: d.min, ...m }
+  return {
+    divKey: d.key,
+    ...m,
+    get min() {
+      return d.min
+    },
+  }
 })
 
 const BY_DIVKEY: Record<string, RankTier> = Object.fromEntries(RANKS.map((r) => [r.divKey, r]))

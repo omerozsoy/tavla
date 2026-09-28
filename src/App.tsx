@@ -1,4 +1,13 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import './App.css'
 import './ui/landscapePhone.css'
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
@@ -31,6 +40,7 @@ import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { divisionOfPR } from './badges'
+import { subscribeRankThresholds, rankThresholdsVersion } from './rankConfig'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
@@ -702,6 +712,9 @@ const OVER_TOTAL = CLOCK_PRESETS.normal.over
 
 export default function App() {
   const { t, lang, setLang } = useT()
+  // Rutbe esikleri (admin: Ayarlar > Rating Ayar) boot'ta sunucudan tazelenir; degisirse bu
+  // abonelik agaci yeniden render eder -> rozetler/rutbeler yenilenmeyi beklemeden guncellenir.
+  useSyncExternalStore(subscribeRankThresholds, rankThresholdsVersion, rankThresholdsVersion)
   const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
   const [saved] = useState(() => loadGame())
   const [user, setUser] = useState<ServerUser | null>(null)

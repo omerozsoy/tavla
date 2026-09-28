@@ -12,6 +12,11 @@ import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
 import { initGoogleTag } from './analytics.ts'
+import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
+
+// Rutbe esikleri (admin: Ayarlar > Rating Ayar) onbellekten SENKRON uygulanir -> ilk boyamada
+// dogru rutbe gorunur, esik degisiminde "yanlis rozet" flash'i olmaz.
+applyCachedRankThresholds()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -41,6 +46,9 @@ createRoot(document.getElementById('root')!).render(
 // Google Etiketi (gtag.js): admin panelden yönetilen ID ile dinamik yükle (aktifse). Ana sayfa
 // statik servis edildiğinden server-side enjeksiyon home'a ulaşmaz -> client-side tek kaynak.
 void initGoogleTag()
+
+// Rutbe esiklerini sunucudan tazele (degisirse acik ekranlar yeniden render olur).
+void initRankThresholds()
 
 // PWA: service worker'i kaydet (yuklenebilir + cevrimdisi). Sadece prod'da.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

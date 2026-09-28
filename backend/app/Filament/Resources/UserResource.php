@@ -60,7 +60,7 @@ class UserResource extends Resource
                     ->minValue(100)->maxValue(4000)->default(1500)
                     ->helperText(fn ($state) => 'Seviye: '.PanelController::levelLabel((int) ($state ?: 1500))),
                 Forms\Components\Select::make('level_min')->label('Ünvan Ata (kısayol)')
-                    ->options(array_flip(PanelController::LEVELS))
+                    ->options(array_flip(PanelController::levels()))
                     ->dehydrated(false)
                     ->helperText('Seçince rating o kademenin alt eşiğine ayarlanır')
                     ->live()

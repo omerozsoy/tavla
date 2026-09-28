@@ -396,6 +396,13 @@ export async function getSiteTags(): Promise<{ gtag: { enabled: boolean; id: str
   return req<{ gtag: { enabled: boolean; id: string | null } }>('/site-tags')
 }
 
+// Rutbe rating esikleri (admin: Ayarlar > Rating Ayar). Anahtarlar badges.ts DIVISIONS
+// key'leri ('div.i3' vb.) -> deger rating alt esigi. Hata/bos ise cagiran varsayilanda kalir.
+export async function getRankDivisions(): Promise<Record<string, number>> {
+  const d = await req<{ divisions?: Record<string, number> }>('/rank-divisions')
+  return d.divisions || {}
+}
+
 // ---- Kulupler & Lig ----
 export interface ClubSummary {
   id: number
