@@ -84,7 +84,8 @@ const server = createServer(async (req, res) => {
   }
   // Sağlık kontrolü (secret'siz)
   if (req.method === 'GET' && req.url === '/health') {
-    return send(res, 200, { ok: true, service: 'tavla-validator' })
+    // workers: bu örneğin paralel işçi sayısı (cluster). Admin paneli "6 işçi" diye gösterir.
+    return send(res, 200, { ok: true, service: 'tavla-validator', workers: CLUSTER ? WORKERS : 1 })
   }
   // Paylaşılan sır (backend dışına kapalı). Secret yoksa fail-open yapılmaz.
   if (!SECRET) {

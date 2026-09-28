@@ -86,8 +86,17 @@ class ServiceStatus extends Widget
             $label = $i === 0
                 ? 'Sunucu Hakem (Validator) — Birincil'
                 : 'Sunucu Hakem (Validator) — Yedek #'.$i;
+            // İŞÇİ SAYISI: cluster örneği kaç paralel işçiyle koşuyor (8091 = 6). /health'ten oku,
+            // >1 ise adrese "· N işçi" ekle -> panelde kapasite net görünür (kullanıcı "6 tane" sordu).
+            $detail = $base;
+            if ($up) {
+                $w = (int) (($validator->healthAt($base)['workers'] ?? 0));
+                if ($w > 1) {
+                    $detail .= ' · '.$w.' işçi (paralel)';
+                }
+            }
             // Restart butonu yalnız BİRİNCİL satırda (restartValidator() zaten TÜM tabanlara /restart yollar).
-            $rows[] = $this->svc('validator'.($i === 0 ? '' : '-'.$i), $label, true, $up, $base, $i === 0);
+            $rows[] = $this->svc('validator'.($i === 0 ? '' : '-'.$i), $label, true, $up, $detail, $i === 0);
         }
 
         return ['rows' => $rows, 'up' => $anyUp];
