@@ -1628,10 +1628,29 @@ button[aria-disabled='true'],
 .mh-stat-v.bad {
   color: var(--tv-brick, #c9563f);
 }
-.mh-analyze {
+.mh-actions {
   grid-column: 1 / -1;
-  justify-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 4px;
+}
+/* Tam ekran analiz loader: mh-card modalının üzerinde ortalı kutu. */
+.mh-loading {
+  z-index: 3100;
+  display: grid;
+  place-items: center;
+}
+.mh-loading-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  color: var(--text);
 }
 .mh-item.win {
   border-left-color: var(--success-fg, #4caf7d);
@@ -16771,13 +16790,6 @@ button.acct-row-logout:hover:not(:disabled) {
   margin: 30px 0;
   border: 0;
   border-top: 1px solid var(--border);
-}
-.info-rich.rich figure[data-trix-attributes*='wide'] img,
-.info-rich.rich figure.info-image-wide img {
-  display: block;
-  width: 100%;
-  max-width: none;
-  height: auto;
 }
 .info-body h3 {
   margin: 10px 0 0;

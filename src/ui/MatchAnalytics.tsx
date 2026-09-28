@@ -5,6 +5,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { myMatches, matchLogById, matchGnubgReview, type MyMatch, type EJPeriod } from '../api'
 import MatchReport, { type LogEntry } from './MatchReport'
+import MatchSummary from './MatchSummary'
 import type { MoveLogEntry } from '../storage'
 import type { Player } from '../engine/types'
 
@@ -98,14 +99,18 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     } | null
   >(null)
   const [reportBusy, setReportBusy] = useState(false)
+  // Rapor hazır olunca hangi ekran açılsın: tam analiz mi (MatchReport) yoksa yalnız Maç Özeti mi.
+  const [view, setView] = useState<'report' | 'summary'>('report')
   // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi.
   const [period, setPeriod] = useState<EJPeriod>('all')
   const [q, setQ] = useState('') // rakip arama (ham input)
   const [qDeb, setQDeb] = useState('') // debounce sonrasi (sunucuya giden)
   const offsetRef = useRef(0)
 
-  // Bir macin tam analizini (log) cek -> MatchReport ac
-  async function openReport(m: MyMatch) {
+  // Bir macin tam analizini (log) cek -> v='report' ise MatchReport, v='summary' ise Maç Özeti ac.
+  // İki ekran AYNI ağır gnubg review'ini (per-karar loss) kullanır; ayrım yalnız hangi görünüm.
+  async function openReport(m: MyMatch, v: 'report' | 'summary' = 'report') {
+    setView(v)
     setReportBusy(true)
     try {
       const raw = await matchLogById(m.id)
@@ -411,14 +416,24 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                         </div>
                       )}
                       {m.has_log && (
-                        <Button
-                          variant="outline"
-                          className="mh-analyze"
-                          disabled={reportBusy}
-                          onClick={() => openReport(m)}
-                        >
-                          <Icon name="search" size={15} /> {t('mh.analyze')}
-                        </Button>
+                        <div className="mh-actions">
+                          <Button
+                            variant="outline"
+                            className="mh-summary"
+                            disabled={reportBusy}
+                            onClick={() => openReport(m, 'summary')}
+                          >
+                            <Icon name="chart" size={15} /> {t('ms.btn')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="mh-analyze"
+                            disabled={reportBusy}
+                            onClick={() => openReport(m, 'report')}
+                          >
+                            <Icon name="search" size={15} /> {t('mh.analyze')}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -436,7 +451,16 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           </>
         )}
       </div>
-      {report && (
+      {/* Ağır gnubg review çekilirken (~saniyeler) tam ekran loader — "hiçbir şey olmuyor" hissini keser. */}
+      {reportBusy && (
+        <div className="register-overlay modal mh-loading" role="status" aria-live="polite">
+          <div className="mh-loading-box">
+            <span className="mr-pr-loader" aria-hidden="true" />
+            <span>{t('ma.analyzing')}</span>
+          </div>
+        </div>
+      )}
+      {report && view === 'report' && (
         <MatchReport
           mode="analysis"
           log={report.log}
@@ -447,6 +471,16 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           blackName={report.blackName}
           matchResult={report.matchResult}
           matchDbId={report.id}
+          luck={report.luck}
+          authPr={report.authPr}
+          onClose={() => setReport(null)}
+        />
+      )}
+      {report && view === 'summary' && (
+        <MatchSummary
+          log={report.log}
+          names={[report.whiteName ?? '', report.blackName ?? '']}
+          matchLength={report.matchLength ?? null}
           luck={report.luck}
           authPr={report.authPr}
           onClose={() => setReport(null)}
