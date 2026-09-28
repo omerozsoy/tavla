@@ -13,6 +13,7 @@ import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
+import { installAutoUpdate } from './autoUpdate.ts'
 
 // Rutbe esikleri (admin: Ayarlar > Rating Ayar) onbellekten SENKRON uygulanir -> ilk boyamada
 // dogru rutbe gorunur, esik degisiminde "yanlis rozet" flash'i olmaz.
@@ -38,10 +39,11 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// BAYAT BUNDLE KALICI ÇÖZÜM: yeni deploy'u algılayıp GÜVENLİ anda (aktif maç/ödeme DIŞINDA)
-// otomatik yenile. Açık kalan sekmeler eski kodda (maç-sonu desync vb.) takılı kalmasın.
-// Otomatik bundle yenileme kapali: sayfa okunurken/referans metni seciliyken
-// location.reload() calisip kullanicinin secimini ve okuma konumunu silmemeli.
+// BAYAT BUNDLE KALICI ÇÖZÜM: yeni deploy'u algılayıp GÜVENLİ anda (aktif maç/ödeme DIŞINDA,
+// metin seçiliyken ve /bilgi/ okuma sayfalarında DEĞİL, yalnız boşta/arka planda) TEK SEFER
+// otomatik yenile. Açık kalan sekmeler eski kodda (ör. "resim önizleme kapanmıyor") takılı
+// kalmasın. Okuma/seçim koruması artık autoUpdate.ts unsafeToReload() içinde -> güvenle açık.
+installAutoUpdate()
 
 // Google Etiketi (gtag.js): admin panelden yönetilen ID ile dinamik yükle (aktifse). Ana sayfa
 // statik servis edildiğinden server-side enjeksiyon home'a ulaşmaz -> client-side tek kaynak.
