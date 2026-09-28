@@ -15,6 +15,7 @@ import {
   tournamentViewers,
   joinTournament,
   leaveTournament,
+  tournamentRoundMinutes,
   tournamentRoundTarget,
   type Tournament,
   type TMatch,
@@ -340,15 +341,24 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <Icon name="target" size={14} />
             <span>
               {t('tourn.lengthLabel')}: <b>{lenLabel(active.match_length || 1)}</b>
+              {!!active.round_minutes && <b>{` · ${t('tourn.minutes', { n: active.round_minutes })}`}</b>}
             </span>
-            {!!active.semi_length && active.semi_length !== (active.match_length || 1) && (
+            {((!!active.semi_length && active.semi_length !== (active.match_length || 1)) ||
+              (!!active.semi_minutes && active.semi_minutes !== active.round_minutes)) && (
               <span>
-                · {t('tourn.semi')}: <b>{lenLabel(active.semi_length)}</b>
+                · {t('tourn.semi')}: <b>{lenLabel(active.semi_length || active.match_length || 1)}</b>
+                {!!(active.semi_minutes || active.round_minutes) && (
+                  <b>{` · ${t('tourn.minutes', { n: (active.semi_minutes || active.round_minutes)! })}`}</b>
+                )}
               </span>
             )}
-            {!!active.final_length && active.final_length !== (active.match_length || 1) && (
+            {((!!active.final_length && active.final_length !== (active.match_length || 1)) ||
+              (!!active.final_minutes && active.final_minutes !== active.round_minutes)) && (
               <span>
-                · {t('tourn.final')}: <b>{lenLabel(active.final_length)}</b>
+                · {t('tourn.final')}: <b>{lenLabel(active.final_length || active.match_length || 1)}</b>
+                {!!(active.final_minutes || active.round_minutes) && (
+                  <b>{` · ${t('tourn.minutes', { n: (active.final_minutes || active.round_minutes)! })}`}</b>
+                )}
               </span>
             )}
           </div>
@@ -439,6 +449,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                       <span className="tourn-round-len">
                         {' · '}
                         {lenLabel(tournamentRoundTarget(active, ri, rounds))}
+                        {tournamentRoundMinutes(active, ri, rounds) != null &&
+                          ` · ${t('tourn.minutes', { n: tournamentRoundMinutes(active, ri, rounds)! })}`}
                       </span>
                     </div>
                     <div className="tourn-round-body">
@@ -481,11 +493,20 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                                 </button>
                               )}
                               <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${m.winner && m.winner !== m.p1?.id ? 'lose' : ''}`}>
-                                <span className="tm-name">{m.p1?.name ?? '—'}</span>
+                                {ri === 0 && !m.p1 && m.p2 ? (
+                                  <span className="tm-name tm-bye">{t('tourn.bye')}</span>
+                                ) : (
+                                  <span className="tm-name">{m.p1?.name ?? '—'}</span>
+                                )}
                                 {scoreOf('p1')}
                               </div>
                               <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${m.winner && m.winner !== m.p2?.id ? 'lose' : ''}`}>
-                                <span className="tm-name">{m.p2?.name ?? '—'}</span>
+                                {/* Ilk turda rakipsiz (bye): cizgi yerine yesil "Bye" */}
+                                {ri === 0 && !m.p2 && m.p1 ? (
+                                  <span className="tm-name tm-bye">{t('tourn.bye')}</span>
+                                ) : (
+                                  <span className="tm-name">{m.p2?.name ?? '—'}</span>
+                                )}
                                 {scoreOf('p2')}
                               </div>
                               {playable && (

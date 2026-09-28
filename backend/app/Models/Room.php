@@ -34,6 +34,7 @@ class Room extends Model
         // PUANSIZ arkadaş maçı: rating yok + PR kariyer/sıralamaya işlenmez (bkz RatingPolicy).
         'unrated',
         'time_control',
+        'clock_bank', // oyuncu basina ana sure (sn); turnuva turunun elle girilen suresi (NULL = mod varsayilani)
         'clock',
         'end_reason',
         'settled',
@@ -235,6 +236,7 @@ class Room extends Model
             'stake' => (int) $this->stake,
             'bet_pct' => (int) $this->bet_pct,
             'target' => $this->target !== null ? (int) $this->target : null,
+            'clock_bank' => $this->clock_bank !== null ? (int) $this->clock_bank : null, // ozel saat (sn)
             // Sunucu-otoriter mod (Faz 2c). false ise istemci eski akisi kullanir (degisiklik yok).
             'authoritative' => (bool) $this->authoritative,
             // SUNUCU-OTORİTER BOT: istemci bunu görünce yerel motoru kullanmaz; roll/move'u sunucuya

@@ -58,11 +58,15 @@ class MatchClock
         return isset(self::PER_POINT[$mode]) ? $mode : 'normal';
     }
 
-    /** Yeni mac icin baslangic saat durumu (henuz calismaz; ilk gercek hamlede baslar). */
-    public static function init(?string $mode, int $target, float $now): array
+    /**
+     * Yeni mac icin baslangic saat durumu (henuz calismaz; ilk gercek hamlede baslar).
+     * $bankOverride (sn): verilirse oyuncu basina ana sure budur (turnuva turunun elle girilen
+     * dakikasi); yoksa mod x mac uzunlugu.
+     */
+    public static function init(?string $mode, int $target, float $now, ?int $bankOverride = null): array
     {
         $mode = self::normalizeMode($mode);
-        $bank = self::PER_POINT[$mode] * max(1, $target);
+        $bank = $bankOverride !== null && $bankOverride > 0 ? $bankOverride : self::PER_POINT[$mode] * max(1, $target);
 
         return [
             'mode' => $mode,

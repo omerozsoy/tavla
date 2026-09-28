@@ -115,6 +115,9 @@ class TournamentController extends Controller
             'match_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
             'semi_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
             'final_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
+            'round_minutes' => ['nullable', 'integer', 'min:1', 'max:180'],
+            'semi_minutes' => ['nullable', 'integer', 'min:1', 'max:180'],
+            'final_minutes' => ['nullable', 'integer', 'min:1', 'max:180'],
         ]);
         $t = Tournament::create([
             'name' => $data['name'],
@@ -130,6 +133,9 @@ class TournamentController extends Controller
             'match_length' => $data['match_length'] ?? 1,
             'semi_length' => $data['semi_length'] ?? null,
             'final_length' => $data['final_length'] ?? null,
+            'round_minutes' => $data['round_minutes'] ?? null,
+            'semi_minutes' => $data['semi_minutes'] ?? null,
+            'final_minutes' => $data['final_minutes'] ?? null,
             'players' => [],
         ]);
         // Olusturan otomatik katilir
@@ -504,6 +510,8 @@ class TournamentController extends Controller
                 // + oda kodu icin cache'e -> odayi ilk kuran enter() istemci degerine GUVENMEZ.
                 $target = $tournament->roundTarget($ri, count($bracket));
                 $bracket[$ri][$mi]['target'] = $target;
+                $minutes = $tournament->roundMinutes($ri, count($bracket));
+                $bracket[$ri][$mi]['minutes'] = $minutes;
                 // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
                 // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
                 if (! empty($m['room'])) {
@@ -528,6 +536,9 @@ class TournamentController extends Controller
                     $tournament->save();
                 }
                 Cache::put(self::roomTargetKey($bracket[$ri][$mi]['room']), $target, now()->addDays(2));
+                if ($minutes) {
+                    Cache::put(self::roomClockKey($bracket[$ri][$mi]['room']), $minutes, now()->addDays(2));
+                }
                 return response()->json(['code' => $bracket[$ri][$mi]['room'], 'target' => $target]);
             }
         }
@@ -737,6 +748,12 @@ class TournamentController extends Controller
         return 'tourn_room_target:'.strtoupper($code);
     }
 
+    /** Turnuva mac odasinin suresi (dk) icin cache anahtari (RoomController::enter okur). */
+    public static function roomClockKey(string $code): string
+    {
+        return 'tourn_room_clock:'.strtoupper($code);
+    }
+
     private function summary(Tournament $t): array
     {
         return [
@@ -767,6 +784,10 @@ class TournamentController extends Controller
             'match_length' => (int) ($t->match_length ?: 1),
             'semi_length' => $t->semi_length ? (int) $t->semi_length : null,
             'final_length' => $t->final_length ? (int) $t->final_length : null,
+            // Mac sureleri (dk, oyuncu basina). null -> saat modunun varsayilani / normal tur suresi.
+            'round_minutes' => $t->round_minutes ? (int) $t->round_minutes : null,
+            'semi_minutes' => $t->semi_minutes ? (int) $t->semi_minutes : null,
+            'final_minutes' => $t->final_minutes ? (int) $t->final_minutes : null,
         ];
     }
 

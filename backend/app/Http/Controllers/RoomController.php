@@ -1120,6 +1120,12 @@ class RoomController extends Controller
             $createAttrs['unrated'] = (bool) ($invite->unrated ?? false);
         }
 
+        // Turnuva turunun elle girilen suresi (dk -> sn): matchRoom cache'e yazar.
+        $tournMinutes = Cache::get(TournamentController::roomClockKey($code));
+        if ($tournMinutes && Schema::hasColumn('rooms', 'clock_bank')) {
+            $createAttrs['clock_bank'] = (int) $tournMinutes * 60;
+        }
+
         $room = Room::firstOrCreate(['code' => $code], $createAttrs);
 
         $slot = $this->slotOf($room, $data['token'], $request);
@@ -1588,7 +1594,7 @@ class RoomController extends Controller
                 // Ilk gercek guncelleme: state.match.target biliniyorsa saati kur.
                 $target = (int) ($data['state']['match']['target'] ?? $room->target ?? 0);
                 if ($target > 0) {
-                    $clock = MatchClock::init($room->time_control, $target, $now);
+                    $clock = MatchClock::init($room->time_control, $target, $now, $room->clock_bank ? (int) $room->clock_bank : null);
                 }
             }
             if (! empty($clock)) {
@@ -1732,7 +1738,7 @@ class RoomController extends Controller
         $clock = is_array($room->clock) ? $room->clock : [];
         if (empty($clock)) {
             $target = (int) (($room->server_match['target'] ?? null) ?? $room->target ?? 1);
-            $clock = MatchClock::init($room->time_control, max(1, $target), $now);
+            $clock = MatchClock::init($room->time_control, max(1, $target), $now, $room->clock_bank ? (int) $room->clock_bank : null);
         }
         $ss = is_array($room->server_state) ? $room->server_state : [];
         $sm = is_array($room->server_match) ? $room->server_match : [];

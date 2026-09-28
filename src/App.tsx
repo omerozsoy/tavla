@@ -1636,8 +1636,10 @@ export default function App() {
   const [afkLeft, setAfkLeft] = useState<number | null>(null)
   const [srvActive, setSrvActive] = useState<Player | null>(null)
   // Mac basi taze saat: rezerv bankasi = puan-basi sure x mac uzunlugu (her oyuncuya)
+  // Turnuva turunun elle girilen suresi (sn, oyuncu basina); null = saat modunun varsayilani.
+  const clockBankRef = useRef<number | null>(null)
   const freshMatchClock = (target: number) => {
-    const bank = clockRef.current.over * Math.max(1, target)
+    const bank = clockBankRef.current ?? clockRef.current.over * Math.max(1, target)
     return { delay: clockRef.current.move, white: bank, black: bank }
   }
   const appliedVersionRef = useRef(-1)
@@ -6068,6 +6070,7 @@ export default function App() {
       const { code, target } = await tournamentMatchRoom(tid, m.key)
       const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl, target)
       setTournRoom({ code: res.room.code, tid })
+      clockBankRef.current = res.room.clock_bank ?? null // turun elle girilen suresi (varsa)
       // Tur uzunlugu (normal / yari final / final): odanin sunucudaki degeri esas.
       const tgt = res.room.target ?? target
       onlineTargetRef.current = tgt
@@ -6336,6 +6339,7 @@ export default function App() {
     setOppStarted(false)
     setChat([])
     tournMatchRef.current = null
+    clockBankRef.current = null // turnuva ozel suresi yalniz o macta
     // Biten macin sonuc state'ini de temizle -> odadan cikinca matchOver/gameEnd STALE kalmasin.
     // Aksi halde sonraki Mac Oyunu/Basla gecisinde early-return'ler (!matchOver'a bagli arama/
     // board) atlanip eski MatchResult (sonuc ekrani) bir kare FLASH ediyordu.
