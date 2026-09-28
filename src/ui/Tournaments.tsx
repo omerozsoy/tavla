@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Icon } from './Icon'
@@ -71,6 +71,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState<null | 'join' | 'leave'>(null) // katıl/çık onay dialogu
+  // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
+  // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
+  const busyRef = useRef(false)
+  busyRef.current = busy
+  const mutSeq = useRef(0)
 
   async function refreshList() {
     try {
@@ -104,6 +109,48 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     }
   }, [detailId])
 
+  // CANLI GUNCELLEME: baskalari katildikca/ciktikca (ve bracket ilerledikce) acik detay 8sn'de,
+  // liste (kart sayaclari) 15sn'de bir tazelenir. Sekme arka plandayken durur, one gelince hemen
+  // tazeler. Biten turnuva artik degismez -> detay poll'u kapanir.
+  useEffect(() => {
+    if (detailId == null || active?.status === 'finished') return
+    let alive = true
+    const tick = () => {
+      if (document.visibilityState !== 'visible' || busyRef.current) return
+      const seq = mutSeq.current
+      showTournament(detailId)
+        .then((tt) => {
+          if (alive && seq === mutSeq.current && !busyRef.current) setActive(tt)
+        })
+        .catch(() => {
+          /* gecici ag hatasi: sonraki tick dener */
+        })
+    }
+    const id = window.setInterval(tick, 8000)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') tick()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [detailId, active?.status])
+  useEffect(() => {
+    if (detailId != null) return // detay acikken liste gorunmez
+    const tick = () => {
+      if (document.visibilityState === 'visible') refreshList()
+    }
+    const id = window.setInterval(tick, 15000)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailId])
+
   // Detay yuklendiginde URL'i SEO-dostu slug'a yukselt (banner/eski-id ile acildiysa da).
   useEffect(() => {
     if (active) onOpenDetail?.(active.id, tournUrlSlug(active))
@@ -113,6 +160,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
 
 
   async function join(id: number) {
+    mutSeq.current++
     setBusy(true)
     try {
       setActive(await joinTournament(id))
@@ -128,6 +176,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   }
 
   async function leave(id: number) {
+    mutSeq.current++
     setBusy(true)
     try {
       setActive(await leaveTournament(id))
@@ -140,6 +189,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
 
   async function report(matchKey: string, winnerId: number) {
     if (!active) return
+    mutSeq.current++
     setBusy(true)
     try {
       setActive(await reportTournament(active.id, matchKey, winnerId))
