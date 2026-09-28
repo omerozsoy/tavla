@@ -732,8 +732,11 @@ class RoomController extends Controller
                 'stake' => (int) $r->stake,
                 'bet_pct' => (int) $r->bet_pct,
                 'target' => $r->target !== null ? (int) $r->target : null,
-                // Etiket icin tip: eski (null) kayitlar 'ranked' varsayilir (cogu online mac hizli eslesme)
-                'mode' => $r->mode ?: 'ranked',
+                // Etiket icin tip. TURNUVA: turnuva mac odasi mode=NULL kurulur (enter(), davetsiz) ve
+                // TournamentController::matchRoom oda koduna tur-uzunlugu cache anahtari yazar -> ikisi
+                // birden = turnuva maci. Yalniz NULL'a guvenilmez (davetsiz enter ile kurulan baska oda).
+                // Diger eski (null) kayitlar 'ranked' varsayilir.
+                'mode' => $r->mode ?: (Cache::has(TournamentController::roomTargetKey($r->code)) ? 'tournament' : 'ranked'),
             ];
         });
 

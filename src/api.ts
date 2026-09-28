@@ -1787,7 +1787,7 @@ export interface LiveMatch {
   stake: number
   bet_pct: number
   target?: number | null
-  mode?: 'ranked' | 'friendly'
+  mode?: 'ranked' | 'friendly' | 'tournament'
 }
 export async function liveMatches(): Promise<LiveMatch[]> {
   const data = await req<{ matches: LiveMatch[] }>('/live-matches')
