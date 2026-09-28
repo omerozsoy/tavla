@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { useEscape } from './useEscape'
 import { listContents, type Content } from '../api'
 
@@ -84,7 +85,7 @@ export default function QuizPlay({ onClose }: { onClose: () => void }) {
         </h2>
 
         {loading ? (
-          <div className="admin-empty">{t('admin.loading')}</div>
+          <Loading />
         ) : questions.length === 0 ? (
           <div className="admin-empty">{t('quiz.empty')}</div>
         ) : done ? (

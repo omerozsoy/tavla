@@ -5,6 +5,7 @@ import type { GnuMove } from '../api'
 import { equityFrom } from '../engine/encoding'
 import { moveNotation } from '../engine/notation'
 import { useT } from '../i18n'
+import Loading from './Loading'
 import MiniBoard from './MiniBoard'
 
 export interface MoveError {
@@ -63,7 +64,7 @@ export default function AnalysisPanel({
         </div>
       )}
 
-      {loading && <div className="analysis-loading">{t('an.loading')}</div>}
+      {loading && <Loading />}
 
       {!loading && currentProbs && (
         <div className="pos-eval">

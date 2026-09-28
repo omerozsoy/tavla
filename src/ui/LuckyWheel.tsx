@@ -17,6 +17,7 @@ import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
 import { TavlaTvMark } from './TavlaTvLogo'
 import { Button } from '@/components/ui/button'
+import Loading from './Loading'
 import AvatarFrame from './AvatarFrame'
 import { FRAME_BY_ID, framePrice } from './avatarFrames'
 import SetupBoard from './SetupBoard'
@@ -248,7 +249,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
         </header>
 
         {loading ? (
-          <p className="lw-note">{t('common.loading')}</p>
+          <Loading />
         ) : !data || !data.enabled ? (
           <p className="lw-note">{t('lw.disabled')}</p>
         ) : n < 2 || !ready ? (

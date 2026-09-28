@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
+import Loading from './Loading'
 import { useToast } from './Toast'
 import { getAddresses, createAddress, updateAddress, deleteAddress, type Address, type AddressInput } from '../api'
 import { PROVINCES } from '../provinces'
@@ -109,7 +110,7 @@ export default function AddressBook() {
   return (
     <section className="prof-ov-col ab-wrap">
       {loading ? (
-        <p className="prof-ov-empty">Yükleniyor…</p>
+        <Loading />
       ) : (
         <>
           {group('Teslimat Adresleri', 'shipping', shipping)}

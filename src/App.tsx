@@ -67,6 +67,7 @@ import {
 import { liveMoveDelta } from './online/liveMoves'
 import { botPersona } from './botPersonas'
 import Board from './ui/Board'
+import Loading from './ui/Loading'
 import { useBoardDir } from './ui/boardDirection'
 import { DivisionChip } from './ui/Badges'
 import { useSwapStones } from './ui/pieceColors'
@@ -7094,7 +7095,7 @@ export default function App() {
   if (!authChecked) {
     return (
       <div className="register-overlay">
-        <div className="register-card">{t('common.loading')}</div>
+        <Loading size={80} />
       </div>
     )
   }

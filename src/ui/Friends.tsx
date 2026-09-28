@@ -10,6 +10,7 @@ import {
   removeFriend,
   type Friend,
 } from '../api'
+import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import PublicProfile from './PublicProfile'
 import { CountryFlag } from './Flag'
@@ -133,7 +134,7 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
         {msg && <div className="friends-msg">{msg}</div>}
 
         {loading ? (
-          <div className="lb-empty">{t('an.loading')}</div>
+          <Loading />
         ) : (
           <>
             {incoming.length > 0 && (

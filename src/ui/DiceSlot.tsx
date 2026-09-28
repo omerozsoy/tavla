@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
+import Loading from './Loading'
 import Coins from './Coins'
 import { useToast } from './Toast'
 import { useEscape } from './useEscape'
@@ -155,7 +156,7 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
         </Button>
 
         {loading ? (
-          <p className="ds-note">{t('common.loading')}</p>
+          <Loading />
         ) : !data || !data.enabled ? (
           <p className="ds-note">{t('ds.disabled')}</p>
         ) : (

@@ -15,6 +15,7 @@ import {
   type ContentType,
   type ContentComment,
 } from '../api'
+import Loading from './Loading'
 import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
 import ArticleBoard, { parseBoardFigure, type ParsedBoard } from './ArticleBoard'
 import AvatarFrame from './AvatarFrame'
@@ -390,7 +391,7 @@ export default function ContentView({
     return (
       <div className="content-embed">
         {loading ? (
-          <div className="admin-empty">{t('admin.loading')}</div>
+          <Loading />
         ) : error ? (
           <div className="admin-empty">
             {t('common.loadError')}{' '}
@@ -429,7 +430,7 @@ export default function ContentView({
         </h2>
 
         {loading ? (
-          <div className="admin-empty">{t('admin.loading')}</div>
+          <Loading />
         ) : error ? (
           <div className="admin-empty">
             {t('common.loadError')}{' '}
@@ -1000,7 +1001,7 @@ function CommentSection({
 
       {/* Onaylanmis yorumlar */}
       {loading ? (
-        <div className="news-comments-empty">{t('admin.loading')}</div>
+        <Loading />
       ) : comments.length === 0 ? (
         <div className="news-comments-empty">{t('comments.empty')}</div>
       ) : (

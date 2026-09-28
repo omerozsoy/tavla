@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './achievements.css'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { Coins } from './Coins'
 import type { IconName } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -222,7 +223,7 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
 
       {/* Grid */}
       {items === null ? (
-        <div className="ach-loading">{t('common.loading')}</div>
+        <Loading />
       ) : shown.length === 0 ? (
         <div className="ach-empty">{t('ach.empty')}</div>
       ) : (

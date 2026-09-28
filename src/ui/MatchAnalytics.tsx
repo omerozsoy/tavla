@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { useEscape } from './useEscape'
 import { myMatches, matchLogById, matchGnubgReview, type MyMatch, type EJPeriod } from '../api'
 import MatchReport, { type LogEntry } from './MatchReport'
@@ -280,7 +281,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
         </div>
 
         {loading ? (
-          <div className="admin-empty">{t('admin.loading')}</div>
+          <Loading />
         ) : error ? (
           <div className="admin-empty">
             {t('common.loadError')}{' '}

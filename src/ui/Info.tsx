@@ -10,6 +10,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -176,7 +177,7 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // enjeksiyonunu kullanır (aksi halde <resimgalerisi> düz metin kalır, galeri görünmez).
 export function InfoPane({ page }: { page?: InfoPage }) {
   const { t } = useT()
-  if (!page) return <div className="admin-empty">{t('admin.loading')}</div>
+  if (!page) return <Loading />
 
   const body = page.body ?? ''
   const named = (page.galleries ?? [])

@@ -5,6 +5,7 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
 import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type PresenceStatus, type Tournament, type Content } from '../api'
+import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
@@ -241,7 +242,7 @@ export function LiveMatchesPanel({
         </Button>
       </div>
       {shown === null ? (
-        <div className="home-panel-empty">{t('common.loading')}</div>
+        <Loading />
       ) : shown.length === 0 ? (
         <div className="home-panel-empty">{t('live.empty')}</div>
       ) : (
@@ -438,7 +439,7 @@ export function OnlinePlayersPanel({
         {players && players.length > 0 && <span className="online-count">{players.length}</span>}
       </div>
       {ordered === null ? (
-        <div className="home-panel-empty">{t('common.loading')}</div>
+        <Loading />
       ) : ordered.length === 0 ? (
         <div className="home-panel-empty">{t('online.empty')}</div>
       ) : (
@@ -574,7 +575,7 @@ export function RankingPanel({
       </div>
       {by === 'pr' ? (
         prRows === null ? (
-          <div className="home-panel-empty">{t('common.loading')}</div>
+          <Loading />
         ) : prRows.length === 0 ? (
           <div className="home-panel-empty">{t('lb.prEmpty')}</div>
         ) : (
@@ -602,7 +603,7 @@ export function RankingPanel({
           </>
         )
       ) : rows === null ? (
-        <div className="home-panel-empty">{t('common.loading')}</div>
+        <Loading />
       ) : rows.length === 0 ? (
         <div className="home-panel-empty">{t('lb.empty')}</div>
       ) : (
@@ -789,7 +790,7 @@ export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNe
         {items && items.length > 0 && <span className="panel-count">{items.length}</span>}
       </button>
       {items === null ? (
-        <div className="home-panel-empty">{t('common.loading')}</div>
+        <Loading />
       ) : items.length === 0 ? (
         <div className="home-panel-empty">{t('home.news.empty')}</div>
       ) : (
