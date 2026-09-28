@@ -9856,14 +9856,15 @@ button.acct-row-logout:hover:not(:disabled) {
 .acct-langs {
   margin-left: auto;
   display: inline-flex;
+  flex-wrap: wrap; /* 8 dil x 32px daire dar ekranda sarar */
   align-items: center;
   gap: 4px;
 }
 .acct-lang {
   display: inline-flex;
-  padding: 3px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm, 6px);
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: 50%; /* yuvarlak dil bayragini halka ile sarar */
   background: none;
   cursor: pointer;
   opacity: 0.5;
@@ -10306,8 +10307,6 @@ button.acct-row-logout:hover:not(:disabled) {
 /* ---- Bayrakli dil secici (LangMenu) ---- */
 .flag {
   display: block;
-  border-radius: 3px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
 }
 .lang-menu {
   position: relative;

@@ -7,7 +7,7 @@ import Achievements from './Achievements'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
 import './profileShopLink.css'
-import { Flag } from './Flag'
+import { CountryFlag } from './Flag'
 import SetupBoard from './SetupBoard'
 import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
@@ -150,7 +150,7 @@ export default function ProfileOverview({
                 {premium && <PremiumCrown style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
               </div>
               <div className="prof-ov-meta">
-                {cc && <Flag code={cc} size={22} />}
+                {cc && <CountryFlag code={cc} size={32} />}
                 {country && <span>{country}</span>}
                 {age != null && (
                   <>
