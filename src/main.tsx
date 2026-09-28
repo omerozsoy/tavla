@@ -11,7 +11,6 @@ import { TopRanksProvider } from './topRanks.tsx'
 import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
-import { installAutoUpdate } from './autoUpdate.ts'
 import { initGoogleTag } from './analytics.ts'
 
 createRoot(document.getElementById('root')!).render(
@@ -36,7 +35,8 @@ createRoot(document.getElementById('root')!).render(
 
 // BAYAT BUNDLE KALICI ÇÖZÜM: yeni deploy'u algılayıp GÜVENLİ anda (aktif maç/ödeme DIŞINDA)
 // otomatik yenile. Açık kalan sekmeler eski kodda (maç-sonu desync vb.) takılı kalmasın.
-installAutoUpdate()
+// Otomatik bundle yenileme kapali: sayfa okunurken/referans metni seciliyken
+// location.reload() calisip kullanicinin secimini ve okuma konumunu silmemeli.
 
 // Google Etiketi (gtag.js): admin panelden yönetilen ID ile dinamik yükle (aktifse). Ana sayfa
 // statik servis edildiğinden server-side enjeksiyon home'a ulaşmaz -> client-side tek kaynak.
