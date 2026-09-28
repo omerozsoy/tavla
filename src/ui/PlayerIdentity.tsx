@@ -83,7 +83,7 @@ export default function PlayerIdentity({
           {flagInline && country && (
             <CountryFlag
               code={country}
-              size={lg ? 20 : 16}
+              size={lg ? 40 : 32}
               className="player-id-name-flag"
             />
           )}

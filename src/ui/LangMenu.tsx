@@ -43,12 +43,11 @@ export default function LangMenu() {
         variant="ghost"
         size="icon"
         type="button"
-        className="[&_svg]:w-[24px]! [&_svg]:h-[17px]!"
         onClick={toggle}
         title={current.label}
         aria-label={current.label}
       >
-        <Flag code={current.code} size={24} />
+        <Flag code={current.code} size={28} />
       </Button>
       {open && (
         <div className="lang-pop" style={{ position: 'fixed', top: pos.top, right: pos.right }}>
@@ -63,7 +62,7 @@ export default function LangMenu() {
                 setOpen(false)
               }}
             >
-              <Flag code={l.code} size={20} /> <span>{l.label}</span>
+              <Flag code={l.code} size={32} /> <span>{l.label}</span>
             </Button>
           ))}
         </div>
