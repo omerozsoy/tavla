@@ -22706,6 +22706,20 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-content: center;
   margin-block: 4px 12px;
 }
+.invite-stakes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.invite-stake-win {
+  color: var(--success-fg);
+}
+.invite-stake-loss {
+  color: var(--danger-fg);
+}
 .invite-rating {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
