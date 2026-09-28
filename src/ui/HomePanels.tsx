@@ -6,6 +6,7 @@ import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
 import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type PresenceStatus, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import { divisionOfPR } from '../badges'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
@@ -572,7 +573,9 @@ export function RankingPanel({
               >
                 <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>{r.rank}</span>
                 <span className="rank-name">
-                  <PlayerIdentity userId={r.id} name={r.name} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
+                  {/* PR seviyesi isim altinda: PR bandinin rating tabanini verip ayni rutbe rozetini ciz.
+                      PR 0 = veri yok (divisionOfPR(0) yanlislikla S1 derdi) -> rozet yok. */}
+                  <PlayerIdentity userId={r.id} name={r.name} rating={r.career_pr > 0 ? divisionOfPR(r.career_pr).min : null} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
                 </span>
                 <span className="rank-flag">
                   <CountryFlag code={r.country} size={16} rounded={false} />

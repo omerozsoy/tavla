@@ -5,6 +5,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { leaderboard, prLeaderboard, wxpBreakdown, type LeaderRow, type PrLeaderRow, type WxpBreakdown } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import { divisionOfPR } from '../badges'
 import { CountryFlag } from './Flag'
 import PublicProfile from './PublicProfile'
 import { Skeleton } from './Skeleton'
@@ -347,7 +348,8 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
                       >
                         <span className="lb-rank">{medal(r.rank) || r.rank}</span>
                         <span className="lb-name">
-                          <PlayerIdentity userId={r.id} name={r.name} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated />
+                          {/* PR seviyesi isim altinda (bkz HomePanels RankingPanel); PR 0 = veri yok -> rozet yok. */}
+                          <PlayerIdentity userId={r.id} name={r.name} rating={r.career_pr > 0 ? divisionOfPR(r.career_pr).min : null} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated />
                         </span>
                         <span className="lb-flag">
                           <CountryFlag code={r.country} size={16} rounded={false} />
