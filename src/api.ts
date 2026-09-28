@@ -849,6 +849,7 @@ export interface GameInvite {
   code: string
   from: string
   avatar?: string | null
+  rating?: number | null // davet edenin rating'i (sayı + rütbe gösterilir)
   target: number // 1 = Tek Oyun; >1 = Maç uzunluğu (puan)
   timeControl?: string | null // casual | normal | speed
 }
@@ -1595,6 +1596,8 @@ export interface RoomView {
   mode?: string | null // 'ranked' | 'friendly' — rovans sonrasi puanli/puansiz ayrimi korunur
   // ROVANS: iki tarafin cevabi (null|'yes'|'no') + anlasma saglandiysa YENI odanin kodu.
   rematch?: { p1: string | null; p2: string | null; code: string | null } | null
+  // Hedefli davet bekleme odasi: davet edilen reddetti (yalniz p1'e, oda 'waiting' iken).
+  invite_declined?: boolean
 }
 
 export async function createRoom(

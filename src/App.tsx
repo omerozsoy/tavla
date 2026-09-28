@@ -68,6 +68,7 @@ import { liveMoveDelta } from './online/liveMoves'
 import { botPersona } from './botPersonas'
 import Board from './ui/Board'
 import { useBoardDir } from './ui/boardDirection'
+import { DivisionChip } from './ui/Badges'
 import { useSwapStones } from './ui/pieceColors'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -1558,6 +1559,10 @@ export default function App() {
   // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
   // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
   const [inviteWaitName, setInviteWaitName] = useState<string | null>(null)
+  // Oda poll'u (deps: room.code) bayat closure'dan okur -> reddeden adini ref'ten al.
+  const inviteWaitNameRef = useRef<string | null>(null)
+  inviteWaitNameRef.current = inviteWaitName
+  const inviteDeclinedRef = useRef<string | null>(null) // bu oda kodu icin red bir kez islensin
   // Daveti reddedince "Oyun Kabul Etmiyor / Cevrimdisi Gorun" diye soran mini modal
   const [declineAsk, setDeclineAsk] = useState(false)
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
@@ -4838,6 +4843,14 @@ export default function App() {
         const since = rematchWaiting ? undefined : appliedVersion >= 0 ? appliedVersion : undefined
         const rv = await showRoom(room.code, since)
         if (cancelled || !rv) return
+        // DAVET REDDEDILDI: hedefli davetin bekleme ekranindayiz ve rakip reddetti -> bildir +
+        // lobiye don. (Eskiden red davet edene hic ulasmiyor, "{ad} bekleniyor"da kaliyordu.)
+        if (rv.invite_declined && inviteDeclinedRef.current !== room.code) {
+          inviteDeclinedRef.current = room.code
+          notify.info(t('friends.inviteDeclined', { name: inviteWaitNameRef.current || t('mh.opponentFb') }))
+          handleLeaveRoom()
+          return
+        }
         setRoom((r) =>
           r
             ? {
@@ -8135,7 +8148,16 @@ export default function App() {
                 {inv.avatar ? <img src={inv.avatar} alt="" /> : <Icon name="user" size={18} />}
               </span>
               <span className="invite-who">
-                <b>{inv.from}</b> {t('friends.invitedYou')}
+                <span>
+                  <b>{inv.from}</b> {t('friends.invitedYou')}
+                </span>
+                {/* Davet edenin gucu: rating sayisi + ana sayfadaki gibi isim altinda rutbe. */}
+                {inv.rating != null && (
+                  <span className="invite-rank">
+                    <span className="invite-rating">{inv.rating}</span>
+                    <DivisionChip rating={inv.rating} size="md" />
+                  </span>
+                )}
               </span>
             </div>
             <div className="invite-meta">

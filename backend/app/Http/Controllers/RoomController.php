@@ -1180,6 +1180,23 @@ class RoomController extends Controller
         }
         $this->tickClock($room, $slot);
 
+        // DAVET REDDİ: hedefli davetle açılmış ve hâlâ rakip bekleyen odada davet eden (p1) poll'unda
+        // reddi öğrenir. Eskiden respond() yalnız game_invites.status='declined' yazıyordu; bekleyen
+        // oda değişmediği için show() 204 dönüyor, davet eden "{ad} bekleniyor"da sonsuza dek kalıyordu.
+        // 204 kısayolundan ÖNCE: bekleyen odada saat çalışmaz -> aksi halde bayrak hiç ulaşmaz.
+        if ($slot === 'p1' && $room->status === 'waiting' && ! $room->p2_token) {
+            $declined = DB::table('game_invites')
+                ->where('room_code', $room->code)
+                ->where('status', 'declined')
+                ->exists();
+            if ($declined) {
+                $payload = $room->toClient();
+                $payload['invite_declined'] = true;
+
+                return response()->json(['room' => $payload]);
+            }
+        }
+
         $since = (int) $request->query('since', -1);
         // KÖK FIX (KAYBEDEN KİLİDİ #29ZZT): "değişti mi" kıyası, istemcinin `since` olarak
         // GÖNDERDİĞİ sayaçla AYNI sayaca bakmalı. Otoriter oda istemcisi `since`=server_version

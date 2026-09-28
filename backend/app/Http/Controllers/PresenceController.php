@@ -36,12 +36,14 @@ class PresenceController extends Controller
                 'users.first_name',
                 'users.nickname',
                 'users.avatar',
+                'users.rating', // davetli, davet edenin rating'ini + rütbesini görsün
             ])
             ->map(fn ($r) => [
                 'id' => $r->id,
                 'code' => $r->code,
                 'from' => $r->nickname ?: $r->first_name ?: 'Oyuncu',
                 'avatar' => $r->avatar,
+                'rating' => $r->rating !== null ? (int) $r->rating : null,
                 'target' => (int) ($r->target ?? 1),
                 'timeControl' => $r->time_control,
             ]);
