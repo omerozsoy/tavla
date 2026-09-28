@@ -6038,8 +6038,13 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const code = await tournamentMatchRoom(tid, m.key)
-      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
+      const { code, target } = await tournamentMatchRoom(tid, m.key)
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl, target)
+      // Tur uzunlugu (normal / yari final / final): odanin sunucudaki degeri esas.
+      const tgt = res.room.target ?? target
+      onlineTargetRef.current = tgt
+      targetsRef.current = [tgt]
+      matchTargetSyncedRef.current = true
       tournMatchRef.current = { tid, matchKey: m.key, oppId }
       resetRoomSync()
       lastSyncRef.current = ''
@@ -6055,10 +6060,8 @@ export default function App() {
       setMatchLog([])
     oppLoggedRef.current = ''
       setRatingChange(null)
-      setClock(freshMatchClock(onlineTargetRef.current))
-      onlineTargetRef.current = 1 // turnuva maci: tek oyun
-      targetsRef.current = [1]
-      setMatch(newMatch(1))
+      setClock(freshMatchClock(tgt))
+      setMatch(newMatch(tgt))
       setStarter('white')
       setTurnsPlayed(0)
       setTurnStart(freshBoard('white'))

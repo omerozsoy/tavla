@@ -14,6 +14,7 @@ import {
   joinTournament,
   leaveTournament,
   reportTournament,
+  tournamentRoundTarget,
   type Tournament,
   type TMatch,
   ApiError,
@@ -63,6 +64,8 @@ interface Props {
 export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
+  const lenLabel = (n: number) => (n <= 1 ? t('friend.single') : t('invite.points', { n }))
   const [list, setList] = useState<Tournament[]>([])
   const [active, setActive] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
@@ -256,6 +259,24 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             </div>
           </div>
 
+          {/* Mac uzunluklari: normal turlar + (farkliysa) yari final / final */}
+          <div className="tourn-lengths">
+            <Icon name="target" size={14} />
+            <span>
+              {t('tourn.lengthLabel')}: <b>{lenLabel(active.match_length || 1)}</b>
+            </span>
+            {!!active.semi_length && active.semi_length !== (active.match_length || 1) && (
+              <span>
+                · {t('tourn.semi')}: <b>{lenLabel(active.semi_length)}</b>
+              </span>
+            )}
+            {!!active.final_length && active.final_length !== (active.match_length || 1) && (
+              <span>
+                · {t('tourn.final')}: <b>{lenLabel(active.final_length)}</b>
+              </span>
+            )}
+          </div>
+
           {/* Birincil aksiyon: Katil / Kaydi iptal (hero'nun hemen altinda, belirgin) */}
           {(canJoin || (joined && active.status === 'open')) && (
             <div className="tourn-actions tourn-actions-hero">
@@ -334,7 +355,17 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <div className="tourn-bracket">
               {active.bracket?.map((round, ri) => (
                 <div key={ri} className="tourn-round">
-                  <div className="tourn-round-title">{t('tourn.round', { n: ri + 1 })}</div>
+                  <div className="tourn-round-title">
+                    {ri === active.bracket!.length - 1
+                      ? t('tourn.final')
+                      : ri === active.bracket!.length - 2
+                        ? t('tourn.semi')
+                        : t('tourn.round', { n: ri + 1 })}
+                    <span className="tourn-round-len">
+                      {' · '}
+                      {lenLabel(tournamentRoundTarget(active, ri, active.bracket!.length))}
+                    </span>
+                  </div>
                   {round.map((m) => {
                     const mine = m.p1?.id === myId || m.p2?.id === myId
                     const playable = mine && m.p1 && m.p2 && !m.winner

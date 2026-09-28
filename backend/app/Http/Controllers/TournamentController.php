@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class TournamentController extends Controller
@@ -12,7 +13,7 @@ class TournamentController extends Controller
     // Acik + devam eden turnuvalar
     public function index()
     {
-        $this->autoStartDue(); // son katilim tarihi + 1dk gecenleri baslat
+        $this->autoStartDue(); // son katilim tarihi gelenleri baslat
         // Aktif (open/running) + BİTEN (finished) turnuvalar; biten GİZLENMEZ, frontend'de
         // "Geçmiş" başlığı altında gösterilir. Aktifler önce, biten sonra (her biri yeni->eski).
         $list = Tournament::whereIn('status', ['open', 'running', 'finished'])
@@ -49,6 +50,9 @@ class TournamentController extends Controller
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'register_until' => ['nullable', 'date'],
             'premium_only' => ['nullable', 'boolean'], // varsayilan true (Premium'a ozel)
+            'match_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
+            'semi_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
+            'final_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
         ]);
         $t = Tournament::create([
             'name' => $data['name'],
@@ -61,6 +65,9 @@ class TournamentController extends Controller
             'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
             'premium_only' => (bool) ($data['premium_only'] ?? true),
+            'match_length' => $data['match_length'] ?? 1,
+            'semi_length' => $data['semi_length'] ?? null,
+            'final_length' => $data['final_length'] ?? null,
             'players' => [],
         ]);
         // Olusturan otomatik katilir
@@ -409,6 +416,10 @@ class TournamentController extends Controller
                 if (! empty($m['winner'])) {
                     return $this->fail('Maç bitti.', 422);
                 }
+                // Bu turun mac uzunlugu (normal / yari final / final). Bracket'e yazilir (UI gosterir)
+                // + oda kodu icin cache'e -> odayi ilk kuran enter() istemci degerine GUVENMEZ.
+                $target = $tournament->roundTarget($ri, count($bracket));
+                $bracket[$ri][$mi]['target'] = $target;
                 if (empty($m['room'])) {
                     // Benzersiz kod uret
                     $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -419,10 +430,13 @@ class TournamentController extends Controller
                         }
                     } while (\App\Models\Room::where('code', $code)->exists());
                     $bracket[$ri][$mi]['room'] = $code;
+                }
+                if ($bracket !== $tournament->bracket) {
                     $tournament->bracket = $bracket;
                     $tournament->save();
                 }
-                return response()->json(['code' => $bracket[$ri][$mi]['room']]);
+                Cache::put(self::roomTargetKey($bracket[$ri][$mi]['room']), $target, now()->addDays(2));
+                return response()->json(['code' => $bracket[$ri][$mi]['room'], 'target' => $target]);
             }
         }
         return $this->fail('Maç bulunamadı.', 404);
@@ -595,14 +609,14 @@ class TournamentController extends Controller
         $t->startBracket();
     }
 
-    // Son katilim tarihi + 1dk gecen ACIK turnuvalari otomatik baslat (>=2 oyuncu).
+    // Son katilim tarihi gelen ACIK turnuvalari otomatik baslat (>=2 oyuncu).
     // Cron gerektirmez: liste/detay her cekildiginde tembel calisir. Kilit altinda
     // status yeniden okunur -> es zamanli iki istek ayni turnuvayi iki kez baslatamaz.
     private function autoStartDue(): void
     {
         $ids = Tournament::where('status', 'open')
             ->whereNotNull('register_until')
-            ->where('register_until', '<=', now()->subSeconds(60)) // register_until + 60sn <= simdi
+            ->where('register_until', '<=', now()) // tam son katilim saatinde baslar
             ->pluck('id');
         foreach ($ids as $id) {
             DB::transaction(function () use ($id) {
@@ -619,10 +633,16 @@ class TournamentController extends Controller
         }
     }
 
-    // register_until Carbon'unu ISO'ya cevir; baslama zamani = +60sn.
+    // Baslama zamani = son katilim tarihi (ISO). Geri sayim bunu kullanir.
     private function startsAt(Tournament $t): ?string
     {
-        return $t->register_until ? $t->register_until->copy()->addSeconds(60)->toIso8601String() : null;
+        return $t->register_until?->toIso8601String();
+    }
+
+    /** Turnuva mac odasinin uzunlugu icin cache anahtari (RoomController::enter okur). */
+    public static function roomTargetKey(string $code): string
+    {
+        return 'tourn_room_target:'.strtoupper($code);
     }
 
     private function summary(Tournament $t): array
@@ -651,6 +671,10 @@ class TournamentController extends Controller
             'premium_only' => (bool) ($t->premium_only ?? true), // katilim: true=Premium, false=tum uyeler
             'register_until' => $t->register_until?->toIso8601String(),
             'starts_at' => $this->startsAt($t),
+            // Mac uzunluklari (puan). semi/final null -> normal tur uzunlugu.
+            'match_length' => (int) ($t->match_length ?: 1),
+            'semi_length' => $t->semi_length ? (int) $t->semi_length : null,
+            'final_length' => $t->final_length ? (int) $t->final_length : null,
         ];
     }
 

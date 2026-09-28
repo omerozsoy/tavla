@@ -1043,6 +1043,8 @@ export interface TMatch {
   p1: TPlayer | null
   p2: TPlayer | null
   winner: number | null
+  /** Bu macin uzunlugu (puan); oda ilk kez alininca sunucu yazar. */
+  target?: number
 }
 export interface Tournament {
   id: number
@@ -1060,10 +1062,14 @@ export interface Tournament {
   prizes?: { coins: number; desc?: string | null }[]
   entry_fee?: number
   premium_only?: boolean // katilim: true = yalniz Premium, false = tum uyeler (misafir asla)
-  /** Son katilim tarihi (ISO); bu andan 1dk sonra otomatik baslar. */
+  /** Son katilim tarihi (ISO); turnuva tam bu anda otomatik baslar. */
   register_until?: string | null
-  /** Otomatik baslama zamani (ISO) = register_until + 1dk. Geri sayim bunu kullanir. */
+  /** Otomatik baslama zamani (ISO) = register_until. Geri sayim bunu kullanir. */
   starts_at?: string | null
+  /** Mac uzunluklari (puan). semi/final null -> normal tur uzunlugu (match_length). */
+  match_length?: number
+  semi_length?: number | null
+  final_length?: number | null
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null
@@ -1507,13 +1513,21 @@ export async function tournamentNoShow(id: number, matchKey: string): Promise<To
   return d.tournament
 }
 
-// Turnuva maci icin paylasimli oda kodu al (iki oyuncu ayni koda girer)
-export async function tournamentMatchRoom(id: number, matchKey: string): Promise<string> {
-  const d = await req<{ code: string }>(`/tournaments/${id}/match-room`, {
+// Turnuva maci icin paylasimli oda kodu + bu turun mac uzunlugu (iki oyuncu ayni koda girer)
+export async function tournamentMatchRoom(id: number, matchKey: string): Promise<{ code: string; target: number }> {
+  const d = await req<{ code: string; target?: number }>(`/tournaments/${id}/match-room`, {
     method: 'POST',
     body: JSON.stringify({ match: matchKey }),
   })
-  return d.code
+  return { code: d.code, target: d.target ?? 1 }
+}
+
+/** Turnuvanin ri. turunun mac uzunlugu (sunucudaki Tournament::roundTarget ile ayni kural). */
+export function tournamentRoundTarget(tr: Tournament, ri: number, rounds: number): number {
+  const base = tr.match_length || 1
+  if (ri === rounds - 1) return tr.final_length || base
+  if (ri === rounds - 2) return tr.semi_length || base
+  return base
 }
 
 export async function loadServerGame(): Promise<unknown | null> {
