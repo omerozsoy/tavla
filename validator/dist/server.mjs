@@ -1,4 +1,6 @@
 // validator/server.ts
+import cluster from "node:cluster";
+import { availableParallelism } from "node:os";
 import { createServer } from "node:http";
 
 // src/engine/board.ts
@@ -337,8 +339,8 @@ function equityFrom(p) {
 
 // src/analysis/pr.ts
 var XG_OBVIOUS_CHECKER_EQUITY_SPREAD = 1e-3;
-function onePointFactor(matchLength, isMoney = false) {
-  return !isMoney && matchLength === 1 ? 1.5 : 1;
+function onePointFactor(_matchLength, _isMoney = false) {
+  return 1;
 }
 function prValue(equityLost, decisions) {
   if (decisions <= 0) return null;
@@ -555,7 +557,16 @@ async function analyzePr(hc, log, matchLength = 1, isMoney = false) {
 
 // validator/server.ts
 var SECRET = process.env.VALIDATOR_SECRET || "";
+var HOST = process.env.VALIDATOR_HOST || "127.0.0.1";
 var PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090);
+var UNDER_PASSENGER = !!(process.env.PASSENGER_BASE_URI || process.env.PASSENGER_APP_ENV || process.env.PHUSION_PASSENGER);
+var WORKERS = (() => {
+  const raw = (process.env.VALIDATOR_WORKERS || "").trim();
+  if (raw === "auto") return Math.max(1, availableParallelism() - 1);
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 1 ? Math.floor(n) : 1;
+})();
+var CLUSTER = WORKERS > 1 && !UNDER_PASSENGER;
 function send(res, code, body) {
   const s = JSON.stringify(body);
   res.writeHead(code, { "content-type": "application/json" });
@@ -593,7 +604,10 @@ var server = createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/health") {
     return send(res, 200, { ok: true, service: "tavla-validator" });
   }
-  if (SECRET && req.headers["x-validator-secret"] !== SECRET) {
+  if (!SECRET) {
+    return send(res, 503, { error: "validator-misconfigured" });
+  }
+  if (req.headers["x-validator-secret"] !== SECRET) {
     return send(res, 401, { error: "unauthorized" });
   }
   if (req.method === "POST" && req.url === "/restart") {
@@ -624,6 +638,15 @@ var server = createServer(async (req, res) => {
     return send(res, 400, { error: "bad-request", detail: String(e?.message ?? e) });
   }
 });
-server.listen(PORT, () => {
-  console.log(`[tavla-validator] listening on :${PORT}${SECRET ? " (secret on)" : ""}`);
-});
+if (CLUSTER && cluster.isPrimary) {
+  console.log(`[tavla-validator] cluster primary: ${WORKERS} i\u015F\xE7i do\u011Furuluyor (${HOST}:${PORT})`);
+  for (let i = 0; i < WORKERS; i++) cluster.fork();
+  cluster.on("exit", (worker) => {
+    console.log(`[tavla-validator] i\u015F\xE7i ${worker.process.pid} \xE7\u0131kt\u0131 -> yeniden do\u011Furuluyor`);
+    cluster.fork();
+  });
+} else {
+  server.listen(PORT, HOST, () => {
+    console.log(`[tavla-validator] listening on ${HOST}:${PORT} (secret on)`);
+  });
+}

@@ -67,8 +67,18 @@ class MoveValidatorService
      */
     private function postFailover(string $path, array $payload, ?float $timeout = null): ?\Illuminate\Http\Client\Response
     {
-        $last = count($this->urls) - 1;
-        foreach ($this->urls as $i => $base) {
+        $n = count($this->urls);
+        if ($n === 0) {
+            return null;
+        }
+        // YÜK DAĞITIMI: birden çok örnek varsa hep birinciyi vurmak yerine RASTGELE bir tabandan
+        // başla, sonra sırayla kalanları dene. Böylece turnuva gibi eşzamanlı yükte istekler tüm
+        // validator örneklerine yayılır (tek süreç darboğazı) — failover yine korunur (hepsi denenir).
+        // PHP shared-nothing olduğu için kalıcı round-robin sayacı tutamayız; rastgele başlangıç yeter.
+        $start = $n > 1 ? random_int(0, $n - 1) : 0;
+        for ($k = 0; $k < $n; $k++) {
+            $i = ($start + $k) % $n;
+            $base = $this->urls[$i];
             try {
                 $req = $this->client();
                 if ($timeout !== null) {
@@ -80,9 +90,9 @@ class MoveValidatorService
                 }
                 Log::warning('validator non-2xx', ['idx' => $i, 'path' => $path, 'status' => $res->status()]);
             } catch (\Throwable $e) {
-                // Bu taban erişilemez -> sıradaki yedeği dene; sonuncuda da olmazsa null.
+                // Bu taban erişilemez -> sıradaki yedeği dene; hepsi tükenirse null.
                 Log::warning(
-                    $i < $last ? 'validator unreachable, yedeğe geçiliyor' : 'validator unreachable (tüm tabanlar düştü)',
+                    $k < $n - 1 ? 'validator unreachable, yedeğe geçiliyor' : 'validator unreachable (tüm tabanlar düştü)',
                     ['idx' => $i, 'path' => $path, 'err' => $e->getMessage()],
                 );
             }

@@ -1663,6 +1663,12 @@ export default function App() {
   // kapanır ve "sıra botta, düşünüyor" gösterilir; gnubg hamlesi arkada hesaplanır. Yoksa buton
   // ~1.5sn ekranda takılı kalıp yanıt gelince kaybolur (kullanıcı "donuyor/akıcı değil" dedi).
   const [botThinking, setBotThinking] = useState(false)
+  // ONLINE AKICILIK: insan maçında (bot değil) aksiyon SUNUCU yanıtını bekler; optimistik yerel
+  // uygulama yoktur. Yanıt gelene kadar butonu "Gönderiliyor…/Atılıyor…"a çevirip DISABLE ederek
+  // (a) donuk his yerine ilerleme göster, (b) sabırsız tekrar-basışı (moveInFlightRef zaten yutar
+  // ama görsel de kilitli) engelle. botThinking bot maçına özel; bu ikisi insan maçları içindir.
+  const [moveSending, setMoveSending] = useState(false)
+  const [rollSending, setRollSending] = useState(false)
   // API GERİ-ÇEKİLME (429 "Too Many Attempts"): bir istek rate-limit yerse bu zaman damgasına
   // kadar YENİ istek ATMA (roll + poll). Aksi halde takılı auto-roll/poll döngüsü kotayı doldurup
   // tüm hesabı kilitliyor (bir maçın spam'i diğer maçı da bloke ediyordu). Date.now() > ref -> serbest.
@@ -2693,6 +2699,7 @@ export default function App() {
       // ANINDA geri bildirim: bot maçında Onayla'ya basılır basılmaz butonu kapat + "düşünüyor"
       // göster (sunucu/gnubg yanıtı beklenmeden). Sıra botta -> onun düşünmesi doğaldır.
       if (botMatch) setBotThinking(true)
+      else setMoveSending(true) // insan maçı: buton "Gönderiliyor…" + disabled (yanıt gelene kadar)
       setSelectedFrom(null)
       setRanked(null)
       setCurrentProbs(null)
@@ -2707,6 +2714,7 @@ export default function App() {
       // tüketir; ikinci istek gereksiz "Önce zar at" 409'u üretir.
       if (isDuplicateSubmit(lastSubmittedMoveRef.current, moveKey)) {
         moveInFlightRef.current = false
+        setMoveSending(false)
         return
       }
       lastSubmittedMoveRef.current = nextSubmittedKey(lastSubmittedMoveRef.current, { type: 'submit', moveKey })
@@ -2761,6 +2769,7 @@ export default function App() {
           // Yanıt geldi (state + bot[] uygulandı / hata resync): "düşünüyor"u kaldır. Bot hamlesi
           // varsa applyBotTurns .then'de zaten animasyona başladı (tahtada görsel hareket sürer).
           setBotThinking(false)
+          setMoveSending(false)
         })
       return
     }
@@ -3078,6 +3087,7 @@ export default function App() {
     if (rollConflictRef.current) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
+    setRollSending(true) // "Atılıyor…" + disabled: zar sunucudan gelene kadar (algı + çift-tık kalkanı)
     try {
       // NOT: try'in İÇİNDE — dışarıda atarsa uçuş kilidi (rollInFlightRef) asla açılmaz ve
       // o istemci bir daha ZAR ATAMAZ (açılışta: overlay'de kalıcı takılma).
@@ -3194,6 +3204,7 @@ export default function App() {
       }
     } finally {
       rollInFlightRef.current = false // uçuş kilidi her durumda serbest bırakılır
+      setRollSending(false)
     }
   }
 
@@ -6950,12 +6961,12 @@ export default function App() {
   // Kabul dedi) ana buton ANINDA kaybolur ve HİÇBİR ŞEY yazılmaz — bot henüz zar atmadı, "düşünüyor"
   // yanıltıcı olur. Kullanıcı 1-2sn sessizce bekler, sonra botun zarı/hamlesi gelir (applyBotTurns).
   const primary = centerMain || botThinking ? null : turnComplete ? (
-    <Button variant="default" onClick={handleConfirm}>
-      {t('btn.confirm')}
+    <Button variant="default" onClick={handleConfirm} disabled={moveSending}>
+      {moveSending ? t('btn.sending') : t('btn.confirm')}
     </Button>
   ) : showRoll && !autoRollPending ? (
-    <Button variant="default" onClick={doRoll}>
-      {t('btn.roll')}
+    <Button variant="default" onClick={doRoll} disabled={rollSending}>
+      {rollSending ? t('btn.rolling') : t('btn.roll')}
     </Button>
   ) : diceRolled && diceFaces.length > 0 ? (
     <DiceRow
