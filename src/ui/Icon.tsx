@@ -9,6 +9,7 @@
  */
 
 import { type Icon as TablerIcon } from '@tabler/icons-react'
+import chartBarPopularIcon from '../assets/chart-bar-popular.svg'
 import {
   IconPlayerPlay,
   IconBroadcast,
@@ -233,6 +234,7 @@ export type IconName =
   | 'megaphone'
   | 'sword'
   | 'heart'
+  | 'chart-bar-popular'
 
 // Isim -> Tabler outline bileseni (currentColor + stroke; weight -> stroke'a cevrilir).
 const MAP: Record<IconName, TablerIcon> = {
@@ -343,6 +345,7 @@ const MAP: Record<IconName, TablerIcon> = {
   megaphone: IconSpeakerphone,
   sword: IconSword,
   heart: IconHeart,
+  'chart-bar-popular': IconChartBar,
 }
 
 // weight="fill" istenince DOLU varyant (yalniz karsiligi olan + dolu kullanilan ikonlar).
@@ -389,6 +392,30 @@ export function Icon({
   // dolu gorunum icin 'fill' (karsiligi olan ikonlarda DOLU varyant kullanilir).
   weight?: IconWeight
 }) {
+  if (name === 'chart-bar-popular') {
+    return (
+      <span
+        className={className}
+        aria-hidden="true"
+        style={{
+          flex: 'none',
+          display: 'inline-block',
+          verticalAlign: '-0.15em',
+          width: size,
+          height: size,
+          backgroundColor: 'currentColor',
+          maskImage: `url(${chartBarPopularIcon})`,
+          maskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          maskSize: 'contain',
+          WebkitMaskImage: `url(${chartBarPopularIcon})`,
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          WebkitMaskSize: 'contain',
+        }}
+      />
+    )
+  }
   const Cmp = (weight === 'fill' && FILLED[name]) || MAP[name]
   return (
     <Cmp
