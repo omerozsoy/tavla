@@ -66,6 +66,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // TipTap editör içerik alanına belirgin scroll: varsayılan 40rem çok uzun (scroll
+            // görünmüyor). ~420px'e indir + dikey kaydır; fullscreen modda dokunma (tam yükseklik).
+            ->renderHook(
+                'panels::head.end',
+                fn (): string => '<style>.tiptap-editor:not(.tiptap-fullscreen) .tiptap-prosemirror-wrapper{max-height:420px;overflow-y:auto}</style>',
+            );
     }
 }
