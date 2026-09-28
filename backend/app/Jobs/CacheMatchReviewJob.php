@@ -58,21 +58,35 @@ class CacheMatchReviewJob implements ShouldQueue
         }
         $client = $gnubg ?? app(GnuBgClient::class);
         if (! $client->analyzeHealthy()) {
-            return; // gnubg down -> best-effort: vazgeç (fırlatma; failed_jobs yok). On-demand ısıtır.
+            return; // gnubg DOWN -> mezar taşı KOYMA; warmup/on-demand gnubg dönünce tekrar dener.
         }
+        // MEZAR TAŞI (warmup döngü kalkanı): gnubg ERİŞİLEBİLİRKEN review üretilemezse (bozuk log /
+        // boş mat / gnubg non-ok) gnubg_review_at'i set et ki tavla:review-warmup imleci İLERLESİN
+        // (aynı analiz-dışı maçları sonsuza dek yeniden denemesin). gnubg_review NULL kalır -> on-demand
+        // yol (controller gnubg_review'e bakar, _at'e DEĞİL) kullanıcı tıklarsa yine dener. gnubg DOWN
+        // durumu yukarıda ele alındı (mezar taşı yok) -> outage'da yanlışlıkla gömülmez.
+        $tombstone = function () use ($mr) {
+            if ($this->plies === 2 && Schema::hasColumn('match_results', 'gnubg_review_at')) {
+                MatchResult::where('id', $mr->id)->update(['gnubg_review_at' => now()]);
+            }
+        };
         try {
             $mat = $mr->matText();
         } catch (\Throwable $e) {
             Log::warning('review önbellek mat-build hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
+            $tombstone();
 
             return;
         }
         if (trim((string) $mat) === '') {
+            $tombstone();
+
             return;
         }
         $res = $client->reviewMatch($mat, $this->plies);
         if (! is_array($res) || empty($res['ok'])) {
             Log::warning('review önbellek: gnubg review başarısız (yok sayildi)', ['id' => $mr->id]);
+            $tombstone();
 
             return; // best-effort: on-demand yol tekrar dener
         }

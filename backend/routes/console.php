@@ -109,5 +109,13 @@ Schedule::command('tavla:gnubg-pr-heal')
     ->name('gnubg-pr-heal')
     ->withoutOverlapping();
 
+// GEÇMİŞ maçların Analiz review'ini BOŞ ZAMANDA önden önbelleğe al (backfill). Küçük parti + seyrek
+// aralık = trickle: canlı analiz yüküyle yarışmadan zamanla tüm eski maçları "anında açılır" yapar.
+// gnubg down iken kendini erteler; mezar taşı (gnubg_review_at) sayesinde imleç hep ilerler (döngü yok).
+Schedule::command('tavla:review-warmup')
+    ->everyFifteenMinutes()
+    ->name('review-warmup')
+    ->withoutOverlapping();
+
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
