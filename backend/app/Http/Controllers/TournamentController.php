@@ -734,6 +734,74 @@ class TournamentController extends Controller
                 // <2 oyuncu: baslatma; acik kalir (yonetici karar verir/siler)
             });
         }
+
+        // Suren turnuvalarda OLU DAL onarimi (bkz resolveDeadByes). Eski (kapasiteye gore kurulmus)
+        // agaclarda takili kalan oyuncular da boylece kendiliginden ilerler.
+        foreach (Tournament::where('status', 'running')->pluck('id') as $id) {
+            $done = DB::transaction(function () use ($id) {
+                $t = Tournament::lockForUpdate()->find($id);
+
+                return $t && $t->status === 'running' && $this->resolveDeadByes($t) ? $t : null;
+            });
+            if ($done) {
+                $this->awardChampionIfFinished($done);
+            }
+        }
+    }
+
+    /** Mac, hic oyuncu gelmeyecek OLU bir dal mi? (bos + kazanansiz; ilk tur ya da iki besleyeni de olu) */
+    private function isDeadMatch(array $bracket, int $ri, int $mi): bool
+    {
+        $m = $bracket[$ri][$mi] ?? null;
+        if (! is_array($m) || ! empty($m['winner']) || ! empty($m['p1']['id']) || ! empty($m['p2']['id'])) {
+            return false;
+        }
+        if ($ri === 0) {
+            return true;
+        }
+
+        return $this->isDeadMatch($bracket, $ri - 1, $mi * 2) && $this->isDeadMatch($bracket, $ri - 1, $mi * 2 + 1);
+    }
+
+    /**
+     * Rakibi HIC gelemeyecek oyuncuyu (karsi taraftaki besleyen dal olu) bye ile ilerlet; zincirleme
+     * (final dahil -> sampiyon + odul applyWinnerToBracket'te). Cagiran turnuva satirini KILITLER.
+     * Degisiklik olduysa true.
+     */
+    private function resolveDeadByes(Tournament $t): bool
+    {
+        $changed = false;
+        for ($guard = 0; $guard < 64 && $t->status === 'running'; $guard++) {
+            $bracket = is_array($t->bracket) ? $t->bracket : [];
+            $found = null;
+            foreach ($bracket as $ri => $round) {
+                if ($ri === 0) {
+                    continue; // ilk tur bye'lari startBracket'te islenir
+                }
+                foreach ($round as $mi => $m) {
+                    if (! empty($m['winner'])) {
+                        continue;
+                    }
+                    $has1 = ! empty($m['p1']['id']);
+                    $has2 = ! empty($m['p2']['id']);
+                    if ($has1 === $has2) {
+                        continue; // iki taraf da dolu (oynansin) ya da ikisi de bos
+                    }
+                    $emptyFeeder = $has1 ? $mi * 2 + 1 : $mi * 2; // bos koltugu besleyen onceki tur maci
+                    if ($this->isDeadMatch($bracket, $ri - 1, $emptyFeeder)) {
+                        $found = [$ri, $mi, (int) ($has1 ? $m['p1']['id'] : $m['p2']['id'])];
+                        break 2;
+                    }
+                }
+            }
+            if (! $found) {
+                break;
+            }
+            $this->applyWinnerToBracket($t, $found[0], $found[1], $found[2], ['bye' => true]);
+            $changed = true;
+        }
+
+        return $changed;
     }
 
     // Baslama zamani = son katilim tarihi (ISO). Geri sayim bunu kullanir.
