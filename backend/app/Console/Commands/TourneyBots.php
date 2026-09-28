@@ -97,7 +97,12 @@ class TourneyBots extends Command
                 Cache::forget('tourney-bots:active');
                 if (self::hasActiveBotTournament()) {
                     try {
-                        Http::timeout(8)->acceptJson()->get(rtrim((string) config('app.url'), '/').'/api/tournaments');
+                        // SITE_PASSWORD doluysa SiteGate basliksiz istegi 401'ler (controller'a
+                        // girmez -> kick() hic calismaz, zincir kopar). Botlarin API'si gibi basligi ekle.
+                        $gate = (string) config('app.site_password', '');
+                        Http::timeout(8)->acceptJson()
+                            ->withHeaders($gate !== '' ? ['X-Site-Gate' => $gate] : [])
+                            ->get(rtrim((string) config('app.url'), '/').'/api/tournaments');
                     } catch (\Throwable) {
                         // sonraki site istegi zaten tetikler
                     }

@@ -17,6 +17,7 @@ class PresenceController extends Controller
         $me = $request->user();
         $me->last_seen = now();
         $me->save();
+        \App\Console\Commands\TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
 
         // BAYAT DAVET KALKANI: davet YALNIZCA davet edenin odası HÂLÂ 'waiting' iken canlıdır.
         // Oda silinmiş/başlamış/bitmiş (davet eden iptal etti, ayrıldı ya da başka maça geçti) ise
