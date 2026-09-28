@@ -65,7 +65,7 @@ export default function Membership({
         <Button type="button" variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2 className="mem-title">{premium ? t('mem.status.renew') : t('mem.title')}</h2>
+        <h2 className="mem-title"><Icon name="star" size={20} /> {premium ? t('mem.status.renew') : t('mem.title')}</h2>
 
         {err && <div className="register-error mem-err">{err}</div>}
 

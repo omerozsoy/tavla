@@ -26,12 +26,12 @@ const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
   blog: { icon: 'book', titleKey: 'menu.blog' },
   makale: { icon: 'article', titleKey: 'menu.makale' }, // Makaleler — haber (editoryal liste+detay) düzeninde
-  news: { icon: 'chat', titleKey: 'menu.news' },
-  event: { icon: 'calendar', titleKey: 'menu.calendar' },
-  club: { icon: 'pin', titleKey: 'menu.clubs' },
+  news: { icon: 'newspaper', titleKey: 'menu.news' },
+  event: { icon: 'calendar-dots', titleKey: 'menu.calendar' },
+  club: { icon: 'building-community', titleKey: 'menu.clubs' },
   ad: { icon: 'star', titleKey: 'menu.services' }, // reklamlar ContentView'de gosterilmez
   quiz: { icon: 'book', titleKey: 'menu.quiz' }, // quiz QuizPlay ile oynatilir
-  magazine: { icon: 'play', titleKey: 'menu.magazine' }, // Tavla Magazin (YouTube videolari)
+  magazine: { icon: 'monitor-play', titleKey: 'menu.magazine' }, // Tavla Magazin (YouTube videolari)
   kurum: { icon: 'pin', titleKey: 'menu.clubs' }, // Kurumlar ContentView'de gosterilmez (turnuva duzenleyeni)
   otel: { icon: 'building-office', titleKey: 'menu.calendar' }, // Oteller ContentView'de gosterilmez (etkinlik mekani)
 }

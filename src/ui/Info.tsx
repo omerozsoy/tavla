@@ -35,6 +35,16 @@ const TABS: { slug: InfoTab; labelKey: string }[] = [
   { slug: 'fair', labelKey: 'fair.title' },
 ]
 
+const TAB_ICONS: Record<InfoTab, import('./Icon').IconName> = {
+  about: 'info',
+  services: 'briefcase',
+  glossary: 'books',
+  ranks: 'ranking',
+  scoring: 'chart-line',
+  badges: 'medal',
+  fair: 'dice',
+}
+
 // Admin panelden düzenlenen (info_pages) rich-text sekmeler. Diğerleri canlı bileşen.
 const EDITABLE: InfoTab[] = ['about', 'services']
 
@@ -77,7 +87,7 @@ export default function Info({ onClose, tab, currentRating, loggedIn = false }: 
         <Breadcrumb items={[homeCrumb(t), { name: activeTitle }]} />
         {/* Sözlük kendi editoryal hero'sunu (seo-hero: eyebrow + başlık + alt metin) çizer;
             burada info-title'ı çizmeyip ÇİFT başlığı önle. Diğer sekmeler info-title kullanır. */}
-        {tab !== 'glossary' && <h2 className="info-title">{activeTitle}</h2>}
+        {tab !== 'glossary' && <h2 className="info-title"><Icon name={TAB_ICONS[tab]} size={20} /> {activeTitle}</h2>}
 
         {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}
         {EDITABLE.includes(tab) && (

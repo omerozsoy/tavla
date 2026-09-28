@@ -177,7 +177,7 @@ export default function BlunderLog({
             <Icon name="x" size={16} />
           </Button>
           <h2>
-            <Icon name="alert" size={20} /> {t('blunder.title')}
+            <Icon name="warning-circle" size={20} /> {t('blunder.title')}
           </h2>
           <p className="register-sub">{t('blunder.sub')}</p>
         </>

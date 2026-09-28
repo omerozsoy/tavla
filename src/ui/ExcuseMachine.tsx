@@ -221,7 +221,7 @@ export default function ExcuseMachine({ onClose }: Props) {
 
         <div className="em-stage">
           <header className="em-head">
-            <h2 className="em-title">{t('exc.title')}</h2>
+            <h2 className="em-title"><Icon name="megaphone" size={22} /> {t('exc.title')}</h2>
             <p className="em-subtitle">{t('exc.subtitle')}</p>
           </header>
 
