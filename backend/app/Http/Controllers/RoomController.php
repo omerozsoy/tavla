@@ -1179,6 +1179,7 @@ class RoomController extends Controller
     // Oda durumunu getir (polling). ?since=version verilirse degismediyse 204.
     public function show(Request $request, string $code)
     {
+        \App\Console\Commands\TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);

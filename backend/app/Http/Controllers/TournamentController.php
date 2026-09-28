@@ -13,6 +13,7 @@ class TournamentController extends Controller
     // Acik + devam eden turnuvalar
     public function index()
     {
+        \App\Console\Commands\TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
         $this->autoStartDue(); // son katilim tarihi gelenleri baslat
         // Aktif (open/running) + BİTEN (finished) turnuvalar; biten GİZLENMEZ, frontend'de
         // "Geçmiş" başlığı altında gösterilir. Aktifler önce, biten sonra (her biri yeni->eski).
@@ -29,6 +30,7 @@ class TournamentController extends Controller
 
     public function show(Request $request, Tournament $tournament)
     {
+        \App\Console\Commands\TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
         $this->autoStartDue(); // acilan turnuva zamani gectiyse burada da baslasin
         $t = $tournament->fresh();
         // CANLI POLL: istemci elindeki rev'i yollar; degismediyse 204 (detay ~80KB: avatarlar gomulu).
