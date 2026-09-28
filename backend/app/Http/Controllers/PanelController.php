@@ -77,7 +77,9 @@ class PanelController extends Controller
 
     /* ---------- Uyeler ---------- */
 
-    // Seviye kisayolu: unvan => rating alt esigi (frontend badges.ts ile ayni). Yuksekten dusuge.
+    // Seviye kisayolu: unvan => rating alt esigi. ESIKLER ARTIK KODDA SABIT DEGIL -> yonetim
+    // paneli > Ayarlar > "Rating Ayar" sayfasindan duzenlenir (App\Support\RankDivisions).
+    // LEVELS yalniz VARSAYILAN tabloyu (geriye donuk uyum) tutar; CANLI deger icin levels().
     public const LEVELS = [
         'Super Grandmaster S1' => 2500,
         'Super Grandmaster S2' => 2400,
@@ -101,10 +103,17 @@ class PanelController extends Controller
         'Rookie' => 0,
     ];
 
+    // Yururlukteki seviye tablosu (unvan => esik, yuksekten dusuge). Admin "Rating Ayar"da
+    // degistirilmisse onu, degilse LEVELS varsayilanini dondurur.
+    public static function levels(): array
+    {
+        return \App\Support\RankDivisions::levels();
+    }
+
     // Rating -> mevcut unvan (rating'in ulastigi en yuksek kademe).
     public static function levelLabel(int $rating): string
     {
-        foreach (self::LEVELS as $label => $min) { // yuksekten dusuge
+        foreach (self::levels() as $label => $min) { // yuksekten dusuge
             if ($rating >= $min) {
                 return $label;
             }
@@ -124,7 +133,7 @@ class PanelController extends Controller
             });
         }
         $users = $query->paginate(30)->withQueryString();
-        return view('panel.users', ['users' => $users, 'q' => $q, 'levels' => self::LEVELS]);
+        return view('panel.users', ['users' => $users, 'q' => $q, 'levels' => self::levels()]);
     }
 
     public function userUpdate(Request $request, User $user)

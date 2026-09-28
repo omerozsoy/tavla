@@ -62,6 +62,51 @@ export const DIVISIONS: Division[] = [
   { min: 2500, prMax: 2.0, key: 'div.sgm1', icon: 'crown', color: '#ffcf40' },
 ]
 
+// ---- Rating esiklerinin CALISMA ZAMANI hidrasyonu ----
+// Esikler artik yonetim panelinden (Ayarlar > Rating Ayar) duzenlenir ve /api/rank-divisions
+// ucundan gelir. Yukaridaki tablolar VARSAYILAN'dir; applyRankThresholds() yalniz `min`
+// alanlarini YERINDE gunceller (dizi/obje kimligi korunur) -> `ranks.ts` RANKS girdileri
+// bu objelere baglidir (getter) ve otomatik senkron kalir. prMax/renk/ikon DEGISMEZ.
+// MAIN_DIVISIONS satirlari ailenin TABAN kademesini izler (Lig sekmesi gruplamasi).
+const MAIN_TO_TIER: Record<string, string> = {
+  'div.rookie': 'div.rookie',
+  'div.novice': 'div.novice',
+  'div.beginner': 'div.beginner',
+  'div.developing': 'div.developing',
+  'div.intermediate': 'div.i3',
+  'div.advanced': 'div.a3',
+  'div.master': 'div.m3',
+  'div.grandmaster': 'div.g3',
+  'div.superGrandmaster': 'div.sgm3',
+}
+
+/**
+ * Sunucudan gelen esikleri uygula. Yalniz BILINEN anahtarlar ve SAYI degerler kabul edilir;
+ * sonuc KESIN ARTAN degilse tumuyle REDDEDILIR (bozuk ayar rutbeleri erisilemez yapmasin).
+ * @returns uygulandi mi
+ */
+export function applyRankThresholds(mins: Record<string, unknown>): boolean {
+  const next = DIVISIONS.map((d) => {
+    const v = mins[d.key]
+    return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : d.min
+  })
+  for (let i = 1; i < next.length; i++) if (next[i] <= next[i - 1]) return false
+  DIVISIONS.forEach((d, i) => {
+    d.min = next[i]
+  })
+  const byKey = Object.fromEntries(DIVISIONS.map((d) => [d.key, d.min]))
+  for (const m of MAIN_DIVISIONS) {
+    const tier = MAIN_TO_TIER[m.key]
+    if (tier !== undefined && byKey[tier] !== undefined) m.min = byKey[tier]
+  }
+  return true
+}
+
+/** Yururlukteki esikler (anahtar => min) — onbellege yazmak icin. */
+export function rankThresholds(): Record<string, number> {
+  return Object.fromEntries(DIVISIONS.map((d) => [d.key, d.min]))
+}
+
 // Rating -> seviye: rating'in ulastigi en yuksek kademe.
 export function divisionOf(rating: number): Division {
   let d = DIVISIONS[0]
