@@ -12,7 +12,6 @@ import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
 import { buildMatXg, type GameResultInput } from '../matExport'
 import { fetchGameLogMat, fetchMatchMat } from '../api'
-import MatchSummary from './MatchSummary'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -90,13 +89,10 @@ export default function MatchReport({
   gameResults,
   matchUid,
   matchDbId,
-  luck,
-  authPr,
   onClose,
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const [summaryOpen, setSummaryOpen] = useState(false)
   // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri, 'all' = iki taraf.
   // 'all' + "Sirala gore" -> hamleler seq'e gore ic ice (karsilikli) listelenir; oyunun
   // gidisatini iki taraftan sirayla takip edersin.
@@ -308,11 +304,6 @@ export default function MatchReport({
             {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
           </h2>
           <div className="report-head-actions">
-            {log.length > 0 && (
-              <Button variant="outline" className="rep-summary-btn" onClick={() => setSummaryOpen(true)}>
-                <Icon name="chart" size={15} /> {t('ms.btn')}
-              </Button>
-            )}
             <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
               <Icon name="x" size={18} />
             </Button>
@@ -575,16 +566,6 @@ export default function MatchReport({
           )}
         </div>
       </div>
-      {summaryOpen && (
-        <MatchSummary
-          log={log}
-          names={[whiteName, blackName]}
-          matchLength={matchLength}
-          luck={luck}
-          authPr={authPr}
-          onClose={() => setSummaryOpen(false)}
-        />
-      )}
     </div>
   )
 }
