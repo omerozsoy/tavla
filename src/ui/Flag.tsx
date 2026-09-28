@@ -141,18 +141,22 @@ export function Flag({ code, size = 20 }: { code: string; size?: number }) {
 // gorunmedigi icin gorsel. rounded=true: yuvarlak kirpilmis (mini-avatar rozeti).
 // rounded=false: dogal en-boy oranli normal bayrak (yukseklik=size, genislik otomatik).
 // Kod yok/gecersizse hicbir sey render etmez (graceful).
+// Ulke bayragi. Varsayilan: DAIRE icin cizilmis bayrak (circle-flags, MIT, public/flags/ altinda
+// kendi sunucumuzdan) -> her ulke AYNI capta; dikdortgeni daireye kirpmadigimiz icin amblem
+// kaymaz, Nepal gibi kare olmayan bayraklar kesilmez. shape="rect": dikdortgen (flagcdn) —
+// yalniz tam bayrak gereken yerler (etkinlik afisi kurdelesi).
 export function CountryFlag({
   code,
   size = 16,
   className = '',
   title,
-  rounded = true,
+  shape = 'circle',
 }: {
   code?: string | null
   size?: number
   className?: string
   title?: string
-  rounded?: boolean
+  shape?: 'circle' | 'rect'
 }) {
   // Kayitli deger kod ('TR') veya eski isim ('Türkiye') olabilir -> koda normalize et.
   const norm = normalizeCountry(code).trim()
@@ -160,8 +164,10 @@ export function CountryFlag({
   const c = norm.toLowerCase()
   if (!isTrnc && c.length !== 2) return null
   const label = title ?? (isTrnc ? 'KKTC' : c.toUpperCase())
-  const src = isTrnc ? TRNC_SRC : `https://flagcdn.com/${c}.svg`
-  const style: CSSProperties = rounded
+  const circle = shape === 'circle'
+  // KKTC circle-flags'te yok -> gomulu dikdortgen SVG, daireye kirpilir (objectFit cover).
+  const src = isTrnc ? TRNC_SRC : circle ? `/flags/${c}.svg` : `https://flagcdn.com/${c}.svg`
+  const style: CSSProperties = circle
     ? {
         width: size,
         height: size,
@@ -169,20 +175,21 @@ export function CountryFlag({
         objectFit: 'cover',
         display: 'block',
         flex: '0 0 auto',
+        // Ince halka: beyaz agirlikli bayraklar (Japonya vb.) acik zeminde kaybolmasin.
+        boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.12)',
       }
     : {
         height: size,
         width: 'auto',
-        borderRadius: 2,
         display: 'block',
         flex: '0 0 auto',
-        boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.12)',
       }
   return (
     <img
       src={src}
       alt={label}
       title={label}
+      width={circle ? size : undefined}
       height={size}
       loading="lazy"
       draggable={false}

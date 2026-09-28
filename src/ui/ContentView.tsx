@@ -1215,7 +1215,7 @@ function EventRow({
       {ev.country && (
         <span className="event-ribbon" aria-hidden="true">
           <span className="event-ribbon-band">
-            <CountryFlag code={ev.country} size={15} className="event-ribbon-flag" />
+            <CountryFlag code={ev.country} size={15} shape="rect" className="event-ribbon-flag" />
           </span>
         </span>
       )}
