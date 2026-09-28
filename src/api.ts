@@ -103,6 +103,9 @@ class ApiError extends Error {
   status: number
   errors?: Record<string, string[]>
   gate = false // 401 site-kapisindan geldiyse (token gecersiz DEGIL)
+  // Govde JSON degil (nginx/PHP-FPM HTML hata sayfasi: deploy'da FPM reload, 502/504 vb.).
+  // Uygulamanin kendi cevabi DEGIL -> gecici sayilir; oturumu dusurmez, komut tekrar denenir.
+  nonJson = false
   constructor(status: number, message: string, errors?: Record<string, string[]>) {
     super(message)
     this.status = status
@@ -114,7 +117,15 @@ class ApiError extends Error {
 // (fetch TypeError), 5xx/502 (sunucu/proxy), JSON olmayan hata sayfasi veya site-kapisi
 // 401'i oturumu DUSURMEMELI: token saklanir, baglanti gelince tekrar denenir.
 export function isAuthRejected(e: unknown): boolean {
-  return e instanceof ApiError && e.status === 401 && !e.gate
+  return e instanceof ApiError && e.status === 401 && !e.gate && !e.nonJson
+}
+
+// Gecici (tekrar denenebilir) hata mi? Ag kopuklugu (fetch TypeError), proxy'nin 502/504'u
+// veya JSON olmayan hata sayfasi. Uygulamanin JSON cevaplari (409/422/429, bilincli 503
+// "dogrulama servisi yok" vb.) gecici DEGIL -> anlamli mesajlari aynen gosterilir.
+export function isTransientError(e: unknown): boolean {
+  if (e instanceof TypeError) return true
+  return e instanceof ApiError && (e.nonJson || e.status === 502 || e.status === 504)
 }
 
 async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -133,7 +144,16 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   })
   const text = await res.text()
-  const data = text ? JSON.parse(text) : {}
+  let data
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    // Onceden burada ham SyntaxError firliyordu (status'suz) -> ekranda genel "Sunucuya
+    // ulasilamadi" ciktiyor, gecici oldugu anlasilmiyordu.
+    const err = new ApiError(res.status, 'Sunucu gecersiz yanit verdi')
+    err.nonJson = true
+    throw err
+  }
   if (!res.ok) {
     // Site kapisi: yanlis/eksik sifre -> sifre ekranini ac, saklanan yanlis sifreyi temizle.
     if (res.status === 401 && (data as { gate?: boolean }).gate) {
@@ -2341,6 +2361,25 @@ export async function botNudge(
   })
 }
 
+// Otoriter oda komutu (zar/hamle/küp/pes). Gecici hatada (ağ kopması, deploy sırasında
+// PHP-FPM reload -> 502/HTML sayfa) AYNI gövdeyle (aynı command_id) 1s/2s/4s geri çekilerek
+// tekrar dener. Güvenli: sunucu command_id'yi tekil alır; ilk istek aslında işlendiyse tekrar
+// deneme kayıtlı cevabı (ya da 409 "command-replayed" -> istemcinin olağan resync'i) alır,
+// komut İKİ KEZ uygulanmaz.
+const COMMAND_RETRY_DELAYS_MS = [1000, 2000, 4000]
+
+async function roomCommand<T>(code: string, action: string, fields: Record<string, unknown>): Promise<T> {
+  const body = JSON.stringify({ token: playerToken(), command_id: newCommandId(), ...fields })
+  for (let i = 0; ; i++) {
+    try {
+      return await req<T>(`/rooms/${encodeURIComponent(code)}/${action}`, { method: 'POST', body })
+    } catch (e) {
+      if (!isTransientError(e) || i >= COMMAND_RETRY_DELAYS_MS.length) throw e
+      await new Promise((r) => setTimeout(r, COMMAND_RETRY_DELAYS_MS[i]))
+    }
+  }
+}
+
 // Sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal) üretilir; istemci seçemez.
 // RE-ROLL ENGELİ: zar zaten verildiyse aynısı döner (reused=true). Oyunun İLK eli = adil
 // AÇILIŞ (opening=true, starter=başlayan renk; iki farklı zar, yüksek başlar).
@@ -2350,10 +2389,7 @@ export async function serverRoll(
   clientSeed?: string,
   expectedVersion?: number,
 ): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState; match?: ServerMatch }> {
-  return req(`/rooms/${encodeURIComponent(code)}/roll`, {
-    method: 'POST',
-    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null }),
-  })
+  return roomCommand(code, 'roll', { client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null })
 }
 
 // İstemci tam-tur step dizisini gönderir; sunucu (Node validator=TS motoru) yasallığı doğrular.
@@ -2364,10 +2400,7 @@ export async function serverMove(
   steps: Step[],
   expectedVersion?: number,
 ): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean; bot?: BotTurn[]; bot_status?: BotStatus }> {
-  return req(`/rooms/${encodeURIComponent(code)}/move`, {
-    method: 'POST',
-    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), steps, expected_version: expectedVersion ?? null }),
-  })
+  return roomCommand(code, 'move', { steps, expected_version: expectedVersion ?? null })
 }
 
 // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncu her adım/geri-almada o anki tam-tur step
@@ -2386,10 +2419,7 @@ export async function postLive(code: string, steps: Step[], turn: Player, seq: n
 
 // Küp teklifi (sıra sahibi, zar atmadan önce). Sunucu kuralları doğrular (sıra/sahiplik/Crawford).
 export async function serverCubeOffer(code: string, expectedVersion?: number): Promise<{ match: ServerMatch; version: number }> {
-  return req(`/rooms/${encodeURIComponent(code)}/cube/offer`, {
-    method: 'POST',
-    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), expected_version: expectedVersion ?? null }),
-  })
+  return roomCommand(code, 'cube/offer', { expected_version: expectedVersion ?? null })
 }
 
 // Küp yanıtı: take (×2 + küp bana) veya drop (pes). Sunucu skoru/küpü günceller.
@@ -2398,10 +2428,7 @@ export async function serverCubeRespond(
   action: 'take' | 'drop',
   expectedVersion?: number,
 ): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState }> {
-  return req(`/rooms/${encodeURIComponent(code)}/cube/respond`, {
-    method: 'POST',
-      body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), action, expected_version: expectedVersion ?? null }),
-  })
+  return roomCommand(code, 'cube/respond', { action, expected_version: expectedVersion ?? null })
 }
 
 // Pes et (resign): rakip mevcut küp değerinde kazanır. Sunucu maç bitişini yönetir.
@@ -2411,10 +2438,7 @@ export async function serverResign(
   resignType: 'single' | 'gammon' | 'backgammon' = 'single',
   expectedVersion?: number,
 ): Promise<{ state: GameState; match: ServerMatch; winner: string; version: number; match_done: boolean }> {
-  return req(`/rooms/${encodeURIComponent(code)}/resign`, {
-    method: 'POST',
-    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), resign_type: resignType, expected_version: expectedVersion ?? null }),
-  })
+  return roomCommand(code, 'resign', { resign_type: resignType, expected_version: expectedVersion ?? null })
 }
 
 // ---- Maç kaydı (hamle+zar logu) ----

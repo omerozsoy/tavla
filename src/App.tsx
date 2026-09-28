@@ -128,6 +128,7 @@ import {
   type UnlockedAchievement,
   resendVerification,
   ApiError as ApiErr,
+  isTransientError,
   type Slot,
   type ChatMsg,
   submitGameLog,
@@ -3146,7 +3147,7 @@ export default function App() {
         return
       }
       if (err?.status !== 409) {
-        notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
+        notify.error(srvErr(e))
       }
       // Açılış/sıra yarışı (409) VEYA bitmiş maçta "Oyun aktif değil": sunucunun kanonik durumunu
       // çek + uygula. Maç bittiyse gameEnd kurulur -> matchOver -> auto-roll KALICI durur (döngü
@@ -3276,8 +3277,11 @@ export default function App() {
 
   // Sunucu (authoritative) çağrısı hatasını okunur mesaja çevir: HTTP hatasında sunucunun
   // gerçek mesajını (ör. "Crawford oyununda küp kullanılamaz"), ağ kopukluğunda genel uyarı.
+  // Sunucu tarafı geçici arıza (502/504/HTML hata sayfası; api.ts tekrar denemeyi zaten tüketti)
+  // "ulaşılamadı" DEĞİL -> ayrı, doğru mesaj.
   function srvErr(e: unknown): string {
     const err = e as { status?: number; message?: string }
+    if (err?.status && isTransientError(e)) return t('mp.serverBusy')
     return err?.status ? err.message || t('mp.connError') : t('mp.connError')
   }
 
