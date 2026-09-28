@@ -1063,6 +1063,8 @@ export interface TMatch {
   winner: number | null
   /** Bu macin uzunlugu (puan); oda ilk kez alininca sunucu yazar. */
   target?: number
+  /** Mac odasinin kodu; bir oyuncu "Oyna"ya ilk bastiginda sunucu yazar (izleme icin). */
+  room?: string | null
 }
 export interface Tournament {
   id: number
