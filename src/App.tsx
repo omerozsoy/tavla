@@ -475,6 +475,8 @@ import {
   logout as apiLogout,
   deleteAccount as apiDeleteAccount,
   me as apiMe,
+  meWithRetry,
+  isAuthRejected,
   saveServerGame,
   setAutoRenew as apiSetAutoRenew,
   toProfile,
@@ -2026,8 +2028,18 @@ export default function App() {
     }
     let cancelled = false
     ;(async () => {
+      let u: ServerUser
       try {
-        const u = await apiMe()
+        u = await meWithRetry(() => cancelled)
+      } catch (e) {
+        // YALNIZ 401 (gecersiz/suresi dolmus token) oturumu kapatir. Eskiden HER hata token'i
+        // siliyordu -> internet kopukken/502'de acilan sayfa kullaniciyi login'e atiyordu.
+        // Ag/sunucu hatasinda token KORUNUR; asagidaki effect baglanti gelince oturumu getirir.
+        if (isAuthRejected(e)) await apiLogout()
+        if (!cancelled) finish()
+        return
+      }
+      try {
         if (cancelled) return
         setUser(u)
         // Online oyundayken F5: lobiye düşürme; sunucuda HÂLÂ aktif olan odaya OTOMATİK dön
@@ -2073,7 +2085,7 @@ export default function App() {
         if (g) applySavedGame(g as SavedGame)
         else if (local) applySavedGame(local) // sunucuda yoksa yerele dus
       } catch {
-        await apiLogout() // gecersiz token -> temizle
+        /* oyun geri yukleme hatasi oturumu DUSURMEZ (kullanici zaten dogrulandi) */
       } finally {
         if (!cancelled) finish()
       }
@@ -2083,6 +2095,33 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Acilista ag yoktu/sunucu cevap vermedi (token duruyor ama user cozulmedi): baglanti
+  // gelince ('online') ve periyodik olarak oturumu sessizce geri yukle. 401 -> token temizlenir.
+  useEffect(() => {
+    if (!authChecked || user || !getToken()) return
+    let stop = false
+    const retry = () => {
+      if (stop || !getToken()) return
+      apiMe()
+        .then((u) => {
+          if (!stop && getToken()) setUser(u)
+        })
+        .catch((e) => {
+          if (isAuthRejected(e)) {
+            stop = true
+            void apiLogout()
+          }
+        })
+    }
+    window.addEventListener('online', retry)
+    const id = window.setInterval(retry, 15000)
+    return () => {
+      stop = true
+      window.removeEventListener('online', retry)
+      window.clearInterval(id)
+    }
+  }, [authChecked, user])
 
   // Giris yapmissa oyunu sunucuya da kaydet (debounce)
   useEffect(() => {
