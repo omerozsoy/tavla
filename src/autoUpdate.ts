@@ -54,6 +54,10 @@ async function deployedEntry(): Promise<string | null> {
 function unsafeToReload(): boolean {
   if (document.querySelector('.app.game-view')) return true // maç/oyun görünümü -> bölme
   const p = (window.location.pathname || '').toLowerCase()
+  // Bilgi/icerik sayfalarinda kullanici metin okuyup secebilir; arka planda
+  // bundle yenilemek sayfayi bastan kurar ve tarayici secimini siler.
+  if (p.startsWith('/bilgi/')) return true
+  if (window.getSelection()?.toString()) return true
   return SENSITIVE.some((s) => p.includes(s))
 }
 
