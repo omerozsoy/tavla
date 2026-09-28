@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { useEscape } from './useEscape'
 import type { GameState, Player, Step } from '../engine/types'
 import { initialState } from '../engine/game'
@@ -860,7 +861,7 @@ export default function PositionAnalyzer({
             onClick={analyze}
           >
             {busy ? (
-              t('an.loading')
+              <Loading inline size={18} />
             ) : premium ? (
               <>
                 <Icon name="search" size={16} /> {t('pa.analyze')}

@@ -28112,3 +28112,15 @@ select:-webkit-autofill {
 @media (prefers-reduced-motion: reduce) {
   .app-loading__text { animation: none; }
 }
+/* Buton/satir icinde: yatay, dolgusuz, rengi devralir. */
+.app-loading--inline {
+  flex-direction: row;
+  gap: 8px;
+  padding: 0;
+  color: inherit;
+}
+.app-loading--inline .app-loading__text {
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}

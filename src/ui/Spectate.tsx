@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import Board from './Board'
@@ -466,7 +467,11 @@ export default function Spectate({
               />
             </>
           ) : (
-            <div className="spectate-status">{gone ? t('live.ended') : t('an.loading')}</div>
+            {gone ? (
+              <div className="spectate-status">{t('live.ended')}</div>
+            ) : (
+              <Loading />
+            )}
           )}
         </div>
       </main>
