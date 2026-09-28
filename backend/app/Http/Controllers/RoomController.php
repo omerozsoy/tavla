@@ -113,7 +113,10 @@ class RoomController extends Controller
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
-            'target' => ['nullable', 'integer', 'in:1,3,5,7,9,11'],
+            // Arkadas odasi/davet: FriendGameSetup 3-25 sunar, davet (PresenceController) 1-25 kabul
+            // eder. Eskiden burada 1-11 kaldigi icin 13+ davet "The selected target is invalid" ile
+            // oda kuramiyordu. (Eslestirme havuzu 1-11'de kalir: create'in targets.* kurali ayri.)
+            'target' => ['nullable', 'integer', 'min:1', 'max:25'],
         ]);
 
         $room = Room::create([
@@ -1072,7 +1075,10 @@ class RoomController extends Controller
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
             // Davet/turnuva maç uzunluğu (Tek Oyun=1 / Maç). Oda İLK KEZ burada kurulursa
             // server_match init'i bu target'ı kullanır; verilmezse davetten (aşağıda) alınır.
-            'target' => ['nullable', 'integer', 'in:1,3,5,7,9,11'],
+            // Arkadas odasi/davet: FriendGameSetup 3-25 sunar, davet (PresenceController) 1-25 kabul
+            // eder. Eskiden burada 1-11 kaldigi icin 13+ davet "The selected target is invalid" ile
+            // oda kuramiyordu. (Eslestirme havuzu 1-11'de kalir: create'in targets.* kurali ayri.)
+            'target' => ['nullable', 'integer', 'min:1', 'max:25'],
         ]);
         $authUser = $request->user('sanctum');
         if ($authUser) {
