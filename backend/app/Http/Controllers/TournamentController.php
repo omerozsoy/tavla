@@ -307,7 +307,7 @@ class TournamentController extends Controller
                 return ['err' => 'Tamamlanmış sunucu maçı bulunamadı.', 'code' => 409];
             }
 
-            $this->applyWinnerToBracket($t, $ri, $mi, $winnerId);
+            $this->applyWinnerToBracket($t, $ri, $mi, $winnerId, $this->scoreFromRoom($m));
             return ['t' => $t];
         });
 
@@ -320,11 +320,33 @@ class TournamentController extends Controller
 
     // Kazanani bracket'e yaz + bir ust tura tasiy VEYA final ise sampiyonu belirle + odul ode.
     // (report ve noShow ortak kullanir; cagiran ATOMIK transaction + lockForUpdate saglamali.)
-    private function applyWinnerToBracket(Tournament $t, int $ri, int $mi, int $winnerId): void
+    /**
+     * Bitmis mac odasinin skoru, BRACKET oyuncu sirasina gore: ['p1' => x, 'p2' => y]. Oda koltugu
+     * (p1=beyaz) ile bracket p1'i ayni kisi olmayabilir -> user_id ile eslenir.
+     */
+    private function scoreFromRoom(array $m): ?array
+    {
+        $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
+        $score = $room && is_array($room->server_match) ? ($room->server_match['score'] ?? null) : null;
+        if (! is_array($score)) {
+            return null;
+        }
+        $colorOf = fn ($uid) => (int) $uid === (int) $room->p1_user_id ? 'white' : 'black';
+
+        return [
+            'p1' => (int) ($score[$colorOf($m['p1']['id'] ?? 0)] ?? 0),
+            'p2' => (int) ($score[$colorOf($m['p2']['id'] ?? 0)] ?? 0),
+        ];
+    }
+
+    private function applyWinnerToBracket(Tournament $t, int $ri, int $mi, int $winnerId, ?array $score = null): void
     {
         $bracket = $t->bracket;
         $m = $bracket[$ri][$mi];
         $bracket[$ri][$mi]['winner'] = $winnerId;
+        if ($score !== null) {
+            $bracket[$ri][$mi]['score'] = $score; // {p1,p2} veya {walkover:true} (bracket gosterir)
+        }
         $winner = ($m['p1']['id'] ?? null) === $winnerId ? $m['p1'] : $m['p2'];
 
         if (isset($bracket[$ri + 1])) {
@@ -430,7 +452,7 @@ class TournamentController extends Controller
                 return ['err' => 'Rakip odaya girdi; hükmen kazanamazsın.', 'code' => 422];
             }
 
-            $this->applyWinnerToBracket($t, $ri, $mi, $me);
+            $this->applyWinnerToBracket($t, $ri, $mi, $me, ['walkover' => true]);
             // Odayi da kapat (temiz sonuc).
             $room->status = 'finished';
             $room->end_reason = 'NO_SHOW';

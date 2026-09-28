@@ -904,6 +904,9 @@ export interface TournNotice {
   match: string
   oppId: number
   oppName: string
+  /** Tur (0 = ilk tur -> kura animasyonu) ve toplam tur sayisi (son = final). */
+  round?: number
+  rounds?: number
 }
 export interface AppNotification {
   id: number
@@ -1065,6 +1068,8 @@ export interface TMatch {
   target?: number
   /** Mac odasinin kodu; bir oyuncu "Oyna"ya ilk bastiginda sunucu yazar (izleme icin). */
   room?: string | null
+  /** Biten macin skoru (bracket oyuncu sirasiyla) veya hukmen (rakip gelmedi). */
+  score?: { p1?: number; p2?: number; walkover?: boolean } | null
 }
 export interface Tournament {
   id: number
