@@ -10,6 +10,8 @@
 // Çalıştırma (Plesk/Node): `node validator/server.ts` (Node 24 type-stripping) veya
 //   bundle: `node validator/dist/server.mjs`. Port: VALIDATOR_PORT (vars. 8090).
 
+import cluster from 'node:cluster'
+import { availableParallelism } from 'node:os'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { validateTurn } from '../src/engine/validateTurn.ts'
 import { generateMoves } from '../src/engine/moves.ts'
@@ -19,6 +21,24 @@ const SECRET = process.env.VALIDATOR_SECRET || ''
 const HOST = process.env.VALIDATOR_HOST || '127.0.0.1'
 // Plesk/Passenger PORT env'i enjekte eder; SSH/PM2'de VALIDATOR_PORT kullanılır; yoksa 8090.
 const PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090)
+
+// ÇOK ÇEKİRDEK (yük darboğazı fix): /validate CPU işi TEK event-loop'ta seri koşar; turnuvada
+// eşzamanlı tüm maçların hamleleri tek sürece yığılıp saniyelerce bekler. cluster ile N işçi AYNI
+// portu dinler (OS accept'i dağıtır) -> paralel doğrulama. Opt-in: VALIDATOR_WORKERS=<n>|auto
+// (varsayılan 1 = eski davranış). Passenger altında ÇALIŞTIRMA (Passenger süreç modelini yönetir;
+// kendi ölçeklemesini passenger_max_pool_size ile yapar) -> orada tek işçi kalır.
+const UNDER_PASSENGER = !!(
+  process.env.PASSENGER_BASE_URI ||
+  process.env.PASSENGER_APP_ENV ||
+  process.env.PHUSION_PASSENGER
+)
+const WORKERS = (() => {
+  const raw = (process.env.VALIDATOR_WORKERS || '').trim()
+  if (raw === 'auto') return Math.max(1, availableParallelism() - 1)
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 1 ? Math.floor(n) : 1
+})()
+const CLUSTER = WORKERS > 1 && !UNDER_PASSENGER
 
 function send(res: ServerResponse, code: number, body: unknown): void {
   const s = JSON.stringify(body)
@@ -116,7 +136,21 @@ const server = createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, HOST, () => {
+if (CLUSTER && cluster.isPrimary) {
+  // PRIMARY: dinlemez, yalnız işçileri doğurur ve ölürse yeniden doğurur (süreç sürekli ayakta;
+  // /restart bir işçiyi kapatınca da burada respawn edilir -> yeni işçi taze koddan başlar).
   // eslint-disable-next-line no-console
-  console.log(`[tavla-validator] listening on ${HOST}:${PORT} (secret on)`)
-})
+  console.log(`[tavla-validator] cluster primary: ${WORKERS} işçi doğuruluyor (${HOST}:${PORT})`)
+  for (let i = 0; i < WORKERS; i++) cluster.fork()
+  cluster.on('exit', (worker) => {
+    // eslint-disable-next-line no-console
+    console.log(`[tavla-validator] işçi ${worker.process.pid} çıktı -> yeniden doğuruluyor`)
+    cluster.fork()
+  })
+} else {
+  // İşçi (cluster) VEYA tek süreç (VALIDATOR_WORKERS ayarsız / Passenger): portu dinle.
+  server.listen(PORT, HOST, () => {
+    // eslint-disable-next-line no-console
+    console.log(`[tavla-validator] listening on ${HOST}:${PORT} (secret on)`)
+  })
+}
