@@ -22261,6 +22261,23 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.85rem;
   margin: 8px 0 6px;
 }
+.tourn-round-len {
+  opacity: 0.8;
+}
+/* Turnuva detayi: mac uzunluklari satiri (hero altinda) */
+.tourn-lengths {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 10px 0 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.tourn-lengths b {
+  color: var(--text);
+  font-weight: 500;
+}
 /* Detay katilimci listesi DIKEY olmali. .tourn-players list-kartinda yatay avatar seridi
    (flex row) olarak da kullaniliyor -> base flex row'u YALNIZ .tourn-card detay baglaminda
    kolona cevir. Aksi halde 8 oyuncu (h3 + prow'lar) yatay dizilip mobilde ~1337px tasiyordu. */

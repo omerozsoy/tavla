@@ -29,6 +29,17 @@ class TournamentResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    /** Maç uzunluğu seçenekleri: 1 => 'Tek oyun', 7 => '7 puan' ... */
+    private static function lengthOptions(): array
+    {
+        $out = [];
+        foreach (Tournament::LENGTHS as $n) {
+            $out[$n] = $n === 1 ? 'Tek oyun (1 puan)' : $n.' puan';
+        }
+
+        return $out;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -65,9 +76,26 @@ class TournamentResource extends Resource
                     ->default(true),
                 Forms\Components\DateTimePicker::make('register_until')
                     ->label('Son katılım tarihi')
-                    ->helperText('Bu tarih-saatten 1 dakika sonra turnuva otomatik başlar (en az 2 oyuncu varsa). Boş bırakırsan otomatik başlama olmaz.')
+                    ->helperText('Turnuva bu tarih-saatte (Türkiye saati) otomatik başlar (en az 2 oyuncu varsa). Boş bırakırsan otomatik başlama olmaz.')
                     ->seconds(false)
                     ->native(false)
+                    ->nullable(),
+                // ---- Maç uzunlukları (puan) ----
+                Forms\Components\Select::make('match_length')
+                    ->label('Maçlar kaç puanlık')
+                    ->helperText('Normal turların maç uzunluğu. Yarı final / final için ayrıca seçilmezse bu kullanılır.')
+                    ->options(self::lengthOptions())
+                    ->required()
+                    ->default(1),
+                Forms\Components\Select::make('semi_length')
+                    ->label('Yarı final kaç puanlık')
+                    ->options(self::lengthOptions())
+                    ->placeholder('Normal turlarla aynı')
+                    ->nullable(),
+                Forms\Components\Select::make('final_length')
+                    ->label('Final kaç puanlık')
+                    ->options(self::lengthOptions())
+                    ->placeholder('Normal turlarla aynı')
                     ->nullable(),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')

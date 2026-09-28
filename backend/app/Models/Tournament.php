@@ -11,6 +11,7 @@ class Tournament extends Model
         'name', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
+        'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
     ];
 
     protected $casts = [
@@ -20,7 +21,31 @@ class Tournament extends Model
         'active' => 'boolean',
         'premium_only' => 'boolean',
         'register_until' => 'datetime',
+        'match_length' => 'integer',
+        'semi_length' => 'integer',
+        'final_length' => 'integer',
     ];
+
+    /** Secilebilir mac uzunluklari (puan). 1 = tek oyun. */
+    public const LENGTHS = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25];
+
+    /**
+     * Bracket'in $ri. turundaki maclarin uzunlugu (puan). Son tur = final, sondan bir onceki =
+     * yari final. Ozel uzunluk secilmediyse (NULL) normal tur uzunlugu (match_length) kullanilir.
+     * Yalniz 2 kisilik bracket'ta tek tur hem ilk tur hem final -> final uzunlugu gecerli.
+     */
+    public function roundTarget(int $ri, int $rounds): int
+    {
+        $base = max(1, (int) ($this->match_length ?: 1));
+        if ($ri === $rounds - 1) {
+            return max(1, (int) ($this->final_length ?: $base));
+        }
+        if ($ri === $rounds - 2) {
+            return max(1, (int) ($this->semi_length ?: $base));
+        }
+
+        return $base;
+    }
 
     // Turnuvayi olusturan kullanici (admin panelde isimle secilir/gosterilir)
     public function creator(): BelongsTo

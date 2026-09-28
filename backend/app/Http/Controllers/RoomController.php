@@ -1103,7 +1103,9 @@ class RoomController extends Controller
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'waiting',
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? ($invite->time_control ?? null)),
-            'target' => (int) ($data['target'] ?? $invite->target ?? 1),
+            // Turnuva maci: uzunluk sunucuda (matchRoom cache'e yazar; tur/yari final/final) ->
+            // istemcinin gonderdigi degere guvenilmez.
+            'target' => (int) (Cache::get(TournamentController::roomTargetKey($code)) ?? $data['target'] ?? $invite->target ?? 1),
             'version' => 0,
         ];
         // Davetle kurulan oda = arkadaşlık maçı (create() ile aynı). Böylece show() özel-maç
