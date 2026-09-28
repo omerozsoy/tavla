@@ -16726,6 +16726,11 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 14px;
   line-height: 1.65;
 }
+.info-rich.rich hr {
+  margin: 30px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
 .info-body h3 {
   margin: 10px 0 0;
   font-size: 1.05rem;
