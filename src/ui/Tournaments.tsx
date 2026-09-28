@@ -325,7 +325,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             </div>
             <div className="th-stat">
               <span className="th-lbl">{t('tourn.participation')}</span>
-              <span className="th-val tnum">{active.count}/{active.size}</span>
+              <span className="th-val tnum">{active.count}/{active.size > 0 ? active.size : '∞'}</span>
               <span className="th-fill"><i style={{ width: `${fillPct}%` }} /></span>
             </div>
             <div className="th-stat">
@@ -422,7 +422,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
           <div className="tourn-players">
             <h3>
               <Icon name="users" size={16} /> {t('tourn.players')}{' '}
-              <span className="tourn-players-count">{active.count}/{active.size}</span>
+              <span className="tourn-players-count">{active.count}/{active.size > 0 ? active.size : '∞'}</span>
             </h3>
             {active.players && active.players.length > 0 ? (
               active.players.map((p) => (
@@ -599,7 +599,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   // kurum logosu; ORTA: tarih rozeti + baslik + kurum/mekan + istatistik + doluluk.
   // Etkinlik satirindan farki: OTEL ve HARITA sutunu YOK (online turnuvada mekan yok).
   const renderCard = (tr: Tournament) => {
-    const full = tr.count >= tr.size
+    // size 0 = sinirsiz kapasite (bracket katilan sayisina gore kurulur) -> hic dolmaz
+    const full = tr.size > 0 && tr.count >= tr.size
     const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
     const pool =
       tr.prizes && tr.prizes.length > 0
@@ -656,7 +657,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               </span>
               <span className="tourn-pcount" data-full={full || undefined}>
                 {tr.count}
-                <small>/{tr.size}</small>
+                <small>/{tr.size > 0 ? tr.size : '∞'}</small>
               </span>
               <span className="tourn-plabel">{t('tourn.players')}</span>
               <span className="tourn-pbar" aria-hidden="true">
