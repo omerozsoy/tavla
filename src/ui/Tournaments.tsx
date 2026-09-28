@@ -14,7 +14,6 @@ import {
   pollTournament,
   joinTournament,
   leaveTournament,
-  reportTournament,
   tournamentRoundTarget,
   type Tournament,
   type TMatch,
@@ -191,17 +190,6 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     } finally {
       setBusy(false)
       setConfirm(null)
-    }
-  }
-
-  async function report(matchKey: string, winnerId: number) {
-    if (!active) return
-    mutSeq.current++
-    setBusy(true)
-    try {
-      setActive(await reportTournament(active.id, matchKey, winnerId))
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -459,20 +447,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                             >
                               <Icon name="play" size={16} /> {t('tourn.play')}
                             </Button>
-                            <div className="tm-actions">
-                              <Button variant="outline" disabled={busy} onClick={() => report(m.key, myId!)}>
-                                {t('tourn.iWon')}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                disabled={busy}
-                                onClick={() =>
-                                  report(m.key, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
-                                }
-                              >
-                                {t('tourn.iLost')}
-                              </Button>
-                            </div>
+                            {/* Elle "Kazandim/Kaybettim" KALDIRILDI: sonuc yalniz sunucudaki gercek mac
+                                sonucundan gelir (App mac bitince otomatik bildirir, sunucu dogrular). */}
                           </>
                         )}
                       </div>
