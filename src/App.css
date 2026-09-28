@@ -17296,6 +17296,29 @@ button.acct-row-logout:hover:not(:disabled) {
   .pp-actions {
     flex-direction: column;
   }
+  .pp-card {
+    padding: 24px 18px 20px;
+  }
+  /* Baslik: puan sutunu sagda ismi ~100px'e sikistiriyordu -> puan+coin kimligin
+     ALTINA yatay satir olarak iner, isim tum genisligi kullanir. */
+  .pp-head {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .pp-head > .player-id {
+    flex-basis: 100%;
+  }
+  .pp-head .player-id {
+    gap: 12px;
+  }
+  .pp-rating {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 1.35rem;
+    text-align: left;
+  }
 }
 
 /* Kapali test sifre kapisi (GatePrompt) — tum ekrani kaplar, en ustte */
@@ -17367,12 +17390,17 @@ button.acct-row-logout:hover:not(:disabled) {
    ellipsis dogru ama burada tam gorunmeli). Uzun isim gerekirse iki satira sarar. */
 .pp-head .player-id-name {
   white-space: normal;
+  /* Tac/rozet/bayrak sigmazsa ismi ezmek yerine alt satira dusur. */
+  flex-wrap: wrap;
+  row-gap: 4px;
 }
+/* Isim yalniz KELIME sinirinda sarar ("Caner / ÇELİK"); harf ortasindan kirilma
+   (eski overflow-wrap:anywhere -> "Cane/r") yalniz tek kelime satira sigmazsa. */
 .pp-head .player-id-name-text {
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   line-height: 1.2;
 }
 .pp-avatar {
