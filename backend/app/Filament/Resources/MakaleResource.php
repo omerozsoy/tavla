@@ -44,19 +44,12 @@ class MakaleResource extends Resource
                 ->helperText('SEO adresi: /makaleler/<slug>. Kısa ve anahtar-kelimeli olsun (ör. tavla-nasil-oynanir). Boş bırakılırsa başlıktan üretilir.')
                 ->maxLength(200)->columnSpanFull(),
             Forms\Components\DateTimePicker::make('event_at')->label('Yayın tarihi'),
-            Forms\Components\RichEditor::make('body')->label('İçerik')
-                ->toolbarButtons([
-                    'bold', 'italic', 'underline', 'strike',
-                    'h2', 'h3',
-                    'bulletList', 'orderedList',
-                    'link', 'blockquote',
-                    'attachFiles', // metin içine resim ekle
-                    'redo', 'undo',
-                ])
-                ->fileAttachmentsDisk('uploads')
-                ->fileAttachmentsDirectory('makale')
-                ->fileAttachmentsVisibility('public')
-                ->helperText('Makale metni — kalın/başlık/liste/link ile biçimlendirebilir, ataç ikonu ile metnin içine resim ekleyebilirsin.')
+            \FilamentTiptapEditor\TiptapEditor::make('body')->label('İçerik')
+                ->profile('default') // gelişmiş: tablo, renk, hizalama, medya, kaynak kodu
+                ->disk('uploads')
+                ->directory('makale')
+                ->visibility('public')
+                ->helperText('Makale metni — başlık/liste/link/tablo/renk ile biçimlendirebilir, medya butonu ile metnin içine resim ekleyebilirsin.')
                 ->columnSpanFull(),
             Forms\Components\FileUpload::make('image')->label('Kapak fotoğrafı')
                 ->image()->disk('uploads')->directory('makale')->visibility('public')

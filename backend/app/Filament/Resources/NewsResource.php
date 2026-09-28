@@ -41,19 +41,12 @@ class NewsResource extends Resource
             Forms\Components\Hidden::make('type')->default('news'),
             Forms\Components\TextInput::make('title')->label('Başlık')->required()->columnSpanFull(),
             Forms\Components\DateTimePicker::make('event_at')->label('Yayın tarihi'),
-            Forms\Components\RichEditor::make('body')->label('İçerik')
-                ->toolbarButtons([
-                    'bold', 'italic', 'underline', 'strike',
-                    'h2', 'h3',
-                    'bulletList', 'orderedList',
-                    'link', 'blockquote',
-                    'attachFiles', // metin içine resim ekle
-                    'redo', 'undo',
-                ])
-                ->fileAttachmentsDisk('uploads')
-                ->fileAttachmentsDirectory('haber')
-                ->fileAttachmentsVisibility('public')
-                ->helperText('Haber metni — kalın/başlık/liste/link ile biçimlendirebilir, ataç ikonu ile metnin içine resim ekleyebilirsin. Eski düz metin haberler biçimsiz gösterilmeye devam eder.')
+            \FilamentTiptapEditor\TiptapEditor::make('body')->label('İçerik')
+                ->profile('default') // gelişmiş: tablo, renk, hizalama, medya, kaynak kodu
+                ->disk('uploads')
+                ->directory('haber')
+                ->visibility('public')
+                ->helperText('Haber metni — başlık/liste/link/tablo/renk ile biçimlendirebilir, medya butonu ile metnin içine resim ekleyebilirsin. Eski düz metin haberler biçimsiz gösterilmeye devam eder.')
                 ->columnSpanFull(),
             Forms\Components\FileUpload::make('image')->label('Kapak fotoğrafı')
                 ->image()->disk('uploads')->directory('haber')->visibility('public')

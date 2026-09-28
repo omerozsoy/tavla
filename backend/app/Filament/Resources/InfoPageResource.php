@@ -63,21 +63,14 @@ class InfoPageResource extends Resource
                 ->maxLength(320)->rows(2)
                 ->helperText('Arama sonuçlarındaki kısa açıklama (meta description).')
                 ->columnSpanFull(),
-            Forms\Components\RichEditor::make('body')
+            \FilamentTiptapEditor\TiptapEditor::make('body')
                 ->label('İçerik')
-                ->toolbarButtons([
-                    'bold', 'italic', 'underline', 'strike',
-                    'h2', 'h3',
-                    'bulletList', 'orderedList',
-                    'link', 'blockquote',
-                    'attachFiles', // metin içine resim ekle
-                    'redo', 'undo',
-                ])
+                ->profile('default') // gelişmiş: tablo, renk, hizalama, medya, kaynak kodu
                 // Satır içi resimler public/uploads/bilgi altına -> <img src="/uploads/bilgi/..">
-                ->fileAttachmentsDisk('uploads')
-                ->fileAttachmentsDirectory('bilgi')
-                ->fileAttachmentsVisibility('public')
-                ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir. Ataç ikonu ile metnin içine resim ekleyebilirsin.')
+                ->disk('uploads')
+                ->directory('bilgi')
+                ->visibility('public')
+                ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir. Medya butonu ile metnin içine resim/tablo ekleyebilirsin.')
                 ->columnSpanFull(),
             Forms\Components\ViewField::make('divider_action')
                 ->label('')
