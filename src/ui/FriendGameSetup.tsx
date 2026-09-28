@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import type { TimeControl } from './MatchSetup'
@@ -28,7 +29,7 @@ interface BoardColors {
 }
 
 interface Props {
-  onCreate: (opts: { target: number; timeControl: TimeControl }) => void
+  onCreate: (opts: { target: number; timeControl: TimeControl; unrated: boolean }) => void
   onJoin: (code: string) => void // arkadasin verdigi kodla odaya katil
   onCancel: () => void
   board: BoardColors
@@ -36,7 +37,7 @@ interface Props {
   // Belirli bir oyuncuyu DAVET etme modu (cevrimici listeden kilic ikonu): secili rakip
   // gosterilir, "Oda Oluştur" yerine "Davet Gönder" -> onInvite; kod-ile-katil kutusu gizlenir.
   invitee?: { id: number; name: string; avatar?: string | null } | null
-  onInvite?: (opts: { target: number; timeControl: TimeControl }) => void
+  onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean }) => void
 }
 
 export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite }: Props) {
@@ -46,6 +47,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
+  // PUANSIZ mac: rating degismez, PR hesaplanir (mac analizinde) ama genel PR/siralamaya girmez.
+  const [unrated, setUnrated] = useState(false)
   const target = tab === 'single' ? 1 : length
   const inviting = !!invitee // davet modu mu?
 
@@ -124,16 +127,25 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
+          {/* Puansiz mac secenegi */}
+          <label className="setup-unrated">
+            <Checkbox checked={unrated} onCheckedChange={(v) => setUnrated(v === true)} />
+            <span className="setup-unrated-txt">
+              <span>{t('friend.unrated')}</span>
+              <small>{t('friend.unratedHint')}</small>
+            </span>
+          </label>
+
           <div className="setup-actions">
             <Button variant="secondary" onClick={onCancel}>
               {t('setup.cancel')}
             </Button>
             {inviting ? (
-              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc })}>
+              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated })}>
                 <Icon name="sword" size={18} /> {t('friend.inviteBtn')}
               </Button>
             ) : (
-              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc })}>
+              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc, unrated })}>
                 <Icon name="play" size={18} /> {t('friend.create')}
               </Button>
             )}

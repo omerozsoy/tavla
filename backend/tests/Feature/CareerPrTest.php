@@ -68,6 +68,21 @@ class CareerPrTest extends TestCase
         $this->assertSame(120, $u->fresh()->career_pr_decisions);
     }
 
+    // PUANSIZ maç (rated=false: puansız arkadaş odası): PR satırda durur (maç analizi) ama kariyer
+    // PR havuzuna / sıralamaya GİRMEZ.
+    public function test_unrated_match_excluded_from_career_pr(): void
+    {
+        $u = $this->user('unr');
+        $this->mr($u, 2.0, 100);
+        $unrated = $this->mr($u, 20.0, 100, ['rated' => false]);
+        $this->svc()->recalc($u->refresh());
+
+        $this->assertEqualsWithDelta(2.00, $u->fresh()->career_pr, 0.0001);
+        $this->assertSame(1, $u->fresh()->career_pr_matches);
+        $this->assertSame(100, $u->fresh()->career_pr_decisions);
+        $this->assertEqualsWithDelta(20.0, (float) $unrated->fresh()->pr, 0.0001); // maç PR'ı korunur
+    }
+
     // TEST 2: 10 maç ama 400 karar -> leaderboard'a GIREMEZ.
     public function test_10_matches_400_decisions_not_eligible(): void
     {

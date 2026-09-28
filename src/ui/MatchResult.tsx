@@ -47,7 +47,7 @@ interface Props {
   // gösterme (pvb/AI kalıcı rating yok, veya puansız). Her iki ekranda TUTARLI (deterministik).
   oppRatingDelta?: number | null
   // Puansız maç açıklaması: neden rating/PR değişmedi. null -> puanlı (not gösterilmez).
-  ratingReason?: 'bot' | 'friendly_cap' | 'friendly' | 'casual' | null
+  ratingReason?: 'bot' | 'unrated' | 'friendly_cap' | 'friendly' | 'casual' | null
   friendlyLimit?: number | null // 'friendly_cap' metninde "limit (N)" göstermek için
   onNewMatch: () => void
   onRematch: () => void
@@ -280,7 +280,9 @@ export default function MatchResult({
               <Icon name="info" size={14} aria-hidden="true" />{' '}
               {ratingReason === 'friendly_cap'
                 ? t('mr.unratedCap', { n: friendlyLimit ?? 3 })
-                : t('mr.unratedFriendly')}
+                : ratingReason === 'unrated'
+                  ? t('mr.unratedChosen')
+                  : t('mr.unratedFriendly')}
             </div>
           )}
           {(coinAmount != null || asymCoin) && (

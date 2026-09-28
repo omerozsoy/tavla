@@ -42,6 +42,9 @@ class RatingPolicy
         if ($room->bot) {
             return false; // PvB puansız
         }
+        if ($room->unrated) {
+            return false; // oda kurucusu "puansız" seçti (Arkadaşınla Oyna) -> rating yok, PR kariyere girmez
+        }
         if ($room->mode !== 'friendly') {
             return true; // eşleşme (ranked) + turnuva (NULL) -> limitsiz puanlı
         }

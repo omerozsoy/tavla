@@ -31,6 +31,8 @@ class Room extends Model
         'target',
         'targets',
         'mode',
+        // PUANSIZ arkadaş maçı: rating yok + PR kariyer/sıralamaya işlenmez (bkz RatingPolicy).
+        'unrated',
         'time_control',
         'clock',
         'end_reason',
@@ -167,6 +169,7 @@ class Room extends Model
             'authoritative' => 'boolean',
             'dice_authority' => 'boolean',
             'bot' => 'boolean',
+            'unrated' => 'boolean',
             'bot_level' => 'integer',
             'live' => 'array',
         ];
@@ -237,6 +240,7 @@ class Room extends Model
             // SUNUCU-OTORİTER BOT: istemci bunu görünce yerel motoru kullanmaz; roll/move'u sunucuya
             // yollar, botun cevabı server_state'ten gelir. bot_level = zorluk (HUD + rating için).
             'bot' => (bool) $this->bot,
+            'unrated' => (bool) $this->unrated, // puansız arkadaş maçı (HUD/sonuç notu)
             'bot_level' => $this->bot_level !== null ? (int) $this->bot_level : null,
             'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
             'server_version' => (int) $this->server_version,
