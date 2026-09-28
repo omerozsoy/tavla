@@ -1730,7 +1730,7 @@ class AuthController extends Controller
         $rows = \App\Models\MatchResult::where('user_id', $me->id)
             ->real() // yapay zeka maclari performans/rating/WXP istatistiklerine girmez
             ->orderBy('id')
-            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'created_at']);
+            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'rated', 'created_at']);
 
         $ratingHistory = $rows->map(fn ($r) => (int) $r->rating_after)->values();
         $ratingDates = $rows->map(fn ($r) => optional($r->created_at)?->toDateString())->values();
@@ -1757,7 +1757,8 @@ class AuthController extends Controller
             if ($r->won) {
                 $byLen[$len]['wins']++;
             }
-            if ($r->pr !== null) {
+            // Puansiz mac (rated=false) mac/galibiyet sayisina girer ama PR ortalamasina GIRMEZ.
+            if ($r->pr !== null && $r->rated !== false) {
                 $byLen[$len]['pr_sum'] += (float) $r->pr;
                 $byLen[$len]['pr_n']++;
             }
