@@ -50,6 +50,27 @@ class MatchInspect extends Command
             if ($sm) {
                 $this->line('  server_match  : '.(is_string($sm) ? $sm : json_encode($sm, JSON_UNESCAPED_UNICODE)));
             }
+
+            // Saat (MatchClock): banka/segment/son görülme. ts'ler epoch sn -> UTC saat + oda
+            // bitişine (updated_at) göre fark, "son anda bağlı mıydı?" sorusu için.
+            $clock = is_array($room->clock) ? $room->clock : [];
+            $this->line('');
+            $this->line('--- SAAT (clock) ---');
+            if (! $clock) {
+                $this->line('  yok');
+            } else {
+                $ref = $room->updated_at?->getTimestamp();
+                $ts = fn ($v) => $v === null ? 'null' : gmdate('H:i:s', (int) $v).' UTC'
+                    .($ref ? sprintf('  (bitişten %+.1f sn)', (float) $v - $ref) : '');
+                $this->line("  mod / delay   : ".($clock['mode'] ?? '?')." / ".($clock['delay'] ?? '?').' sn   hedef='.($clock['target'] ?? '?'));
+                $this->line(sprintf('  p1_bank (b)   : %.1f sn', (float) ($clock['p1_bank'] ?? 0)));
+                $this->line(sprintf('  p2_bank (s)   : %.1f sn', (float) ($clock['p2_bank'] ?? 0)));
+                $this->line('  turn_slot     : '.($clock['turn_slot'] ?? 'null').'   running='.(! empty($clock['running']) ? 'true' : 'false'));
+                $this->line('  started_at    : '.$ts($clock['started_at'] ?? null));
+                $this->line('  p1_seen (b)   : '.$ts($clock['p1_seen'] ?? null));
+                $this->line('  p2_seen (s)   : '.$ts($clock['p2_seen'] ?? null));
+                $this->line('  end           : '.json_encode($clock['end'] ?? null));
+            }
         }
 
         // 2) Sonuç satırları
