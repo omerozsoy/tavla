@@ -1,0 +1,21 @@
+[Unit]
+Description=GNU Backgammon ADANMIS AGIR analiz servisi (:8098 — reviewmatch/analyzematch/matchluck/selfplay)
+After=network.target
+# AGIR isler (Mat Analiz 600s review, 240s analyzematch, luck, selfplay) YALNIZ buraya gelir:
+# backend/.env GNUBG_HEAVY_URL=http://127.0.0.1:8098. Boylece uzun analiz canli bot havuzunu
+# (:8092,:8093,:8096,:8097) ASLA bloklamaz. Heavy TEK instance (heavy_url pool degil) -> ayni anda
+# iki review serilesir; nadir premium ozelligi icin kabul (ceiling; gerekirse ileride havuza cevir).
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# GNUBG_SECRET diger instance'lar + backend .env ile AYNI olmali. SADECE port farkli.
+Environment=GNUBG_PORT=8098
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
