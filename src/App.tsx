@@ -1556,11 +1556,13 @@ export default function App() {
 
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   // Cevrimici listeden "kilic" ile secilen rakip -> FriendGameSetup davet modu (oyun turu/sure sec)
-  const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null } | null>(null)
+  const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
   // Hedefli davetle acilan bekleme odasinda rakip adi: doluysa Lobby bekleme ekrani "kod
   // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
   // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
   const [inviteWaitName, setInviteWaitName] = useState<string | null>(null)
+  // Davet edilenin rating'i (bekleme ekraninda isim altinda). Yalniz inviteWaitName varken gorunur.
+  const [inviteWaitRating, setInviteWaitRating] = useState<number | null>(null)
   // Oda poll'u (deps: room.code) bayat closure'dan okur -> reddeden adini ref'ten al.
   const inviteWaitNameRef = useRef<string | null>(null)
   inviteWaitNameRef.current = inviteWaitName
@@ -6186,7 +6188,7 @@ export default function App() {
 
   // Arkadasi oyuna davet et (kilic ikonu): ONCE oyun turu/uzunluk/sure sec (FriendGameSetup
   // davet modu). Secili rakip orada gorunur; "Davet Gönder" -> handleSendInvite.
-  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null }) {
+  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null; rating?: number | null }) {
     setFriendsOpen(false)
     setInviteTarget(p)
     setHome(false)
@@ -6200,6 +6202,7 @@ export default function App() {
     setFriendSetupOpen(false)
     setInviteTarget(null)
     setInviteWaitName(tgt.name) // bekleme ekrani "kod paylas" yerine "{ad} bekleniyor" gostersin
+    setInviteWaitRating(tgt.rating ?? null)
     setTimeControl(opts.timeControl)
     clockRef.current = CLOCK_PRESETS[opts.timeControl]
     onlineTargetRef.current = opts.target
@@ -9353,6 +9356,7 @@ export default function App() {
           busy={roomBusy}
           error={roomError}
           inviteWaitName={inviteWaitName}
+          inviteWaitRating={inviteWaitRating}
           myAvatar={profile.avatar}
           onCreate={() => handleCreateRoom(onlineTargetRef.current)}
           onJoin={handleJoinRoom}

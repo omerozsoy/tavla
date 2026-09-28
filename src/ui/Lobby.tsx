@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { DivisionChip } from './Badges'
 import { Button } from '@/components/ui/button'
 import { listContents, type Content } from '../api'
 
@@ -18,6 +19,7 @@ interface Props {
   /** Hedefli davetle acilan bekleme odasinda rakip adi (doluysa "kod paylas" yerine
    *  "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterilir). */
   inviteWaitName?: string | null
+  inviteWaitRating?: number | null // davet edilenin rating'i -> isim altinda sayi + rutbe
   myAvatar?: string | null
   onCreate: () => void
   onJoin: (code: string) => void
@@ -34,6 +36,7 @@ export default function Lobby({
   busy,
   error,
   inviteWaitName,
+  inviteWaitRating,
   myAvatar,
   onCreate,
   onJoin,
@@ -134,6 +137,12 @@ export default function Lobby({
           {inviteWaitName ? (
             <>
               <p className="register-sub">{t('mp.waitingFor', { name: inviteWaitName })}</p>
+              {inviteWaitRating != null && (
+                <div className="invite-rank invite-wait-rank">
+                  <span className="invite-rating">{inviteWaitRating}</span>
+                  <DivisionChip rating={inviteWaitRating} size="md" />
+                </div>
+              )}
               <div className="register-actions">
                 <Button variant="outline" onClick={onLeave}>
                   {t('mp.cancelGame')}
