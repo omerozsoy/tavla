@@ -242,7 +242,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
 
         <header className="lw-head">
           <h2>
-            <Icon name="gift" size={22} /> {t('lw.title')}
+            <Icon name="spinner-ball" size={22} /> {t('lw.title')}
           </h2>
           <p className="lw-sub">{t('lw.freeInfo')}</p>
         </header>

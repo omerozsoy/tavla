@@ -121,12 +121,12 @@ export default function MatchSetup({
         <h2>
           {mode === 'online' ? (
             <>
-              <Icon name="ranking" size={24} /> {t('menu.match')}
+              <Icon name="chart-bar-popular" size={24} /> {t('menu.match')}
             </>
           ) : (
             <>
               {/* Sayfa basligi menuden farkli: menu "YZ ile Oyna", sayfa "Yapay Zeka ile Oyna" */}
-              <Icon name="robot" size={24} /> {t('home.vsBot')}
+              <Icon name="robot-face" size={24} /> {t('home.vsBot')}
             </>
           )}
         </h2>

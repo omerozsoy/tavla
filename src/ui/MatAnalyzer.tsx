@@ -115,7 +115,7 @@ export default function MatAnalyzer({ onClose, currentName }: { onClose: () => v
     <div className="ma-page">
       <div className="ma-head">
         <h1 className="ma-title">
-          <Icon name="analyze" size={22} /> {t('ma.title')}
+          <Icon name="file-magnifying-glass" size={22} /> {t('ma.title')}
         </h1>
         <p className="ma-sub">{t('ma.sub')}</p>
       </div>

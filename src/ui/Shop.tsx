@@ -155,7 +155,7 @@ export default function Shop({
           <div className="shop-head-text">
             {landing ? (
               <>
-                <h2 className="shop-title">{t('shop.title')}</h2>
+                <h2 className="shop-title"><Icon name="shop" size={24} /> {t('shop.title')}</h2>
                 <p className="shop-sub">{t('shop.subtitle')}</p>
               </>
             ) : (
