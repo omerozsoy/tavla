@@ -102,11 +102,19 @@ export function toProfile(u: ServerUser): Profile {
 class ApiError extends Error {
   status: number
   errors?: Record<string, string[]>
+  gate = false // 401 site-kapisindan geldiyse (token gecersiz DEGIL)
   constructor(status: number, message: string, errors?: Record<string, string[]>) {
     super(message)
     this.status = status
     this.errors = errors
   }
+}
+
+// Oturum GERCEKTEN reddedildi mi (gecersiz/suresi dolmus token -> 401)? Ag kopuklugu
+// (fetch TypeError), 5xx/502 (sunucu/proxy), JSON olmayan hata sayfasi veya site-kapisi
+// 401'i oturumu DUSURMEMELI: token saklanir, baglanti gelince tekrar denenir.
+export function isAuthRejected(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 401 && !e.gate
 }
 
 async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -131,6 +139,9 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (res.status === 401 && (data as { gate?: boolean }).gate) {
       setGate(null)
       gateHandler?.()
+      const err = new ApiError(res.status, data.message || 'Hata', data.errors)
+      err.gate = true
+      throw err
     }
     throw new ApiError(res.status, data.message || 'Hata', data.errors)
   }
@@ -211,6 +222,19 @@ export async function resetPassword(
 export async function me(): Promise<ServerUser> {
   const data = await req<{ user: ServerUser }>('/me')
   return data.user
+}
+
+// Acilista oturumu coz: gecici hatada (ag kopuk, 5xx) kisa geri-cekilmeyle tekrar dene
+// (1s, 2s, 4s). 401 (gecersiz token) aninda firlar; deneme bitince son hata firlar.
+export async function meWithRetry(isCancelled: () => boolean, tries = 4): Promise<ServerUser> {
+  for (let i = 0; ; i++) {
+    try {
+      return await me()
+    } catch (e) {
+      if (isAuthRejected(e) || i >= tries - 1 || isCancelled()) throw e
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** i))
+    }
+  }
 }
 
 export interface MyStats {
