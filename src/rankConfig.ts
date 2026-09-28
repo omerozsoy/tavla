@@ -1,8 +1,10 @@
 /**
- * Rutbe rating esiklerinin sunucudan hidrasyonu.
+ * Rutbe esiklerinin (rating + PR) sunucudan hidrasyonu.
  *
- * Esikler yonetim panelinden (Ayarlar > Rating Ayar) duzenlenir; SPA bunlari
- * /api/rank-divisions ucundan okur -> esik degisikligi YENI FRONTEND BUILD GEREKTIRMEZ.
+ * IKI esik de yonetim panelinden (Ayarlar > Rating Ayar) duzenlenir ve /api/rank-divisions
+ * ucundan gelir -> esik degisikligi YENI FRONTEND BUILD GEREKTIRMEZ:
+ *   - divisions : rating ALT esigi (kesin artan)
+ *   - prMax     : PR UST esigi (kesin azalan; PR dusuk = iyi)
  *
  * IKI ASAMA (ilk boyamada yanlis rutbe gosterilmesin diye):
  *  1) applyCachedRankThresholds(): localStorage'daki son bilinen degerleri SENKRON uygular
@@ -10,12 +12,12 @@
  *  2) initRankThresholds(): arkaplanda ucu cagirir; deger DEGISMISSE onbellege yazar ve
  *     abonelere haber verir -> acik sayfa yeniden render olur (useRankThresholdsVersion).
  *
- * Bozuk/artan-olmayan ayar applyRankThresholds() tarafindan reddedilir -> site varsayilanda kalir.
+ * Bozuk siralanmis ayar apply*Thresholds() tarafindan REDDEDILIR -> o taraf varsayilanda kalir.
  */
-import { applyRankThresholds, rankThresholds } from './badges'
-import { getRankDivisions } from './api'
+import { applyPrThresholds, applyRankThresholds, prThresholds, rankThresholds } from './badges'
+import { getRankDivisions, type RankDivisionCfg } from './api'
 
-const CACHE_KEY = 'tavla.rankDivisions.v1'
+const CACHE_KEY = 'tavla.rankDivisions.v2' // v2: PR ust esikleri de onbellekte
 
 let version = 0
 const listeners = new Set<() => void>()
@@ -25,13 +27,27 @@ function emit(): void {
   for (const fn of listeners) fn()
 }
 
+// Onbellek bicimi: { divisions, prMax }. Ikisi BAGIMSIZ uygulanir -> biri bozuksa digeri
+// yine de gecerli olur (kismi bozulma tum tabloyu varsayilana dusurmesin).
+interface CachedCfg {
+  divisions?: Record<string, unknown>
+  prMax?: Record<string, unknown>
+}
+
+function snapshot(): string {
+  return JSON.stringify({ divisions: rankThresholds(), prMax: prThresholds() })
+}
+
 /** Onbellekteki esikleri SENKRON uygula (render oncesi; sessizce basarisiz olur). */
 export function applyCachedRankThresholds(): void {
   try {
     const raw = localStorage.getItem(CACHE_KEY)
     if (!raw) return
     const parsed: unknown = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object') applyRankThresholds(parsed as Record<string, unknown>)
+    if (!parsed || typeof parsed !== 'object') return
+    const cfg = parsed as CachedCfg
+    if (cfg.divisions) applyRankThresholds(cfg.divisions)
+    if (cfg.prMax) applyPrThresholds(cfg.prMax)
   } catch {
     /* localStorage kapali / bozuk JSON -> varsayilan esikler kalir */
   }
@@ -39,16 +55,17 @@ export function applyCachedRankThresholds(): void {
 
 /** Sunucudaki esikleri cek, uygula, onbellege yaz. Hata olursa sessizce mevcut degerlerde kalir. */
 export async function initRankThresholds(): Promise<void> {
-  let mins: Record<string, unknown>
+  let cfg: RankDivisionCfg
   try {
-    mins = await getRankDivisions()
+    cfg = await getRankDivisions()
   } catch {
     return // uc erisilemez -> onbellek/varsayilan gecerli
   }
-  if (!mins || typeof mins !== 'object') return
-  const before = JSON.stringify(rankThresholds())
-  if (!applyRankThresholds(mins)) return // bozuk (artan degil) ayar -> yok say
-  const after = JSON.stringify(rankThresholds())
+  const before = snapshot()
+  // Bozuk (artan/azalan olmayan) taraf yok sayilir; digeri yine de uygulanir.
+  applyRankThresholds(cfg.divisions)
+  applyPrThresholds(cfg.prMax)
+  const after = snapshot()
   try {
     localStorage.setItem(CACHE_KEY, after)
   } catch {

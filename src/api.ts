@@ -396,11 +396,18 @@ export async function getSiteTags(): Promise<{ gtag: { enabled: boolean; id: str
   return req<{ gtag: { enabled: boolean; id: string | null } }>('/site-tags')
 }
 
-// Rutbe rating esikleri (admin: Ayarlar > Rating Ayar). Anahtarlar badges.ts DIVISIONS
-// key'leri ('div.i3' vb.) -> deger rating alt esigi. Hata/bos ise cagiran varsayilanda kalir.
-export async function getRankDivisions(): Promise<Record<string, number>> {
-  const d = await req<{ divisions?: Record<string, number> }>('/rank-divisions')
-  return d.divisions || {}
+// Rutbe esikleri (admin: Ayarlar > Rating Ayar). Anahtarlar badges.ts DIVISIONS key'leri
+// ('div.i3' vb.). divisions = rating ALT esigi (artan), prMax = PR UST esigi (azalan).
+// Rookie prMax GELMEZ (sonsuz, JSON'da temsil edilemez). Hata/bos ise cagiran varsayilanda kalir.
+export interface RankDivisionCfg {
+  divisions: Record<string, number>
+  prMax: Record<string, number>
+}
+export async function getRankDivisions(): Promise<RankDivisionCfg> {
+  const d = await req<{ divisions?: Record<string, number>; prMax?: Record<string, number> }>(
+    '/rank-divisions',
+  )
+  return { divisions: d.divisions || {}, prMax: d.prMax || {} }
 }
 
 // ---- Kulupler & Lig ----

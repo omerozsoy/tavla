@@ -102,9 +102,40 @@ export function applyRankThresholds(mins: Record<string, unknown>): boolean {
   return true
 }
 
+/**
+ * Sunucudan gelen PR UST esiklerini uygula. PR dusuk = iyi -> esikler kademe yukseldikce
+ * KESIN AZALAN olmali; degilse tumuyle REDDEDILIR. Rookie SONSUZ kalir (JSON'da temsil
+ * edilemez; sunucu da gondermez) -> her PR en kotu ihtimalle Rookie bandina duser.
+ * @returns uygulandi mi
+ */
+export function applyPrThresholds(prMax: Record<string, unknown>): boolean {
+  const next = DIVISIONS.map((d) => {
+    if (d.key === 'div.rookie') return Infinity // taban band: daima sonsuz
+    const v = prMax[d.key]
+    return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : d.prMax
+  })
+  for (let i = 1; i < next.length; i++) if (!(next[i] < next[i - 1])) return false
+  DIVISIONS.forEach((d, i) => {
+    d.prMax = next[i]
+  })
+  const byKey = Object.fromEntries(DIVISIONS.map((d) => [d.key, d.prMax]))
+  for (const m of MAIN_DIVISIONS) {
+    const tier = MAIN_TO_TIER[m.key]
+    if (tier !== undefined && byKey[tier] !== undefined) m.prMax = byKey[tier]
+  }
+  return true
+}
+
 /** Yururlukteki esikler (anahtar => min) — onbellege yazmak icin. */
 export function rankThresholds(): Record<string, number> {
   return Object.fromEntries(DIVISIONS.map((d) => [d.key, d.min]))
+}
+
+/** Yururlukteki PR ust esikleri (anahtar => prMax; rookie=Infinity HARIC — JSON'a yazilamaz). */
+export function prThresholds(): Record<string, number> {
+  return Object.fromEntries(
+    DIVISIONS.filter((d) => Number.isFinite(d.prMax)).map((d) => [d.key, d.prMax]),
+  )
 }
 
 // Rating -> seviye: rating'in ulastigi en yuksek kademe.
