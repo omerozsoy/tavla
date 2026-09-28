@@ -2984,6 +2984,24 @@ class RoomController extends Controller
             $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
             $value = \App\Support\Backgammon::resignationValue($state, $winner); // 1/2/3
             $points = $value * (int) $this->cubeOf($room)['value'];
+            // ZAR ATILDI AMA OYNANMADAN PES: pes eden zarını atıp (ör. 6-2) oyunu kaybettiğini görüp
+            // hamle YAPMADAN pes ederse, o zar match_moves'a HİÇ yazılmıyordu (yalnız server_state'te).
+            // Sonuç: .mat/gnubg/XG pesi "Roll or Double" (zar-öncesi) kararında sanır -> hâlâ kazanma
+            // şansı olan konumu bıraktın diye AĞIR ceza. Zarı boş-notasyonlu move satırı olarak
+            // kaydet ("62:") -> analiz pesi zar-SONRASI (umutsuz) konumda değerlendirir, ceza gerçekçi.
+            $resignerColor = $this->slotColor($slot);
+            if (($state['turn'] ?? null) === $resignerColor && ! empty($state['dice'])) {
+                $sm2 = is_array($room->server_match) ? $room->server_match : [];
+                $this->recordAction($room, [
+                    'game_no' => (int) ($sm2['gameNo'] ?? 1),
+                    'seq' => (int) ($sm2['turns'] ?? 0),
+                    'ord' => 0, 'player' => $resignerColor, 'kind' => 'move',
+                    'dice' => array_values($state['dice']),
+                    'steps' => [], 'notation' => '',
+                    'pos' => $state, 'mctx' => $this->moveMctx($room),
+                    'cube_value' => (int) $this->cubeOf($room)['value'],
+                ]);
+            }
             $matchDone = $this->applyGameResult($room, $winner, $points);
             if ($matchDone) {
                 // MOVE yoluyla AYNI terminal kapanış: server_match.done ile oda status'ü birlikte
