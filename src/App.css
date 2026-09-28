@@ -22347,7 +22347,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Suren turnuva macini izle (goz): kartin sag ortasi; isimler butonun altina girmesin */
 .tourn-match.watchable .tm-p {
-  padding-right: 36px;
+  padding-right: 52px;
 }
 .tm-watch {
   position: absolute;
@@ -22358,13 +22358,20 @@ button.acct-row-logout:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  gap: 3px;
+  min-width: 28px;
   height: 28px;
+  padding: 0 7px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card-bg);
   color: var(--accent);
   cursor: pointer;
+}
+.tm-watch-n {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 .tm-watch:hover {
   filter: brightness(1.1);

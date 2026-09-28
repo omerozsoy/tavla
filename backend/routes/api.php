@@ -63,6 +63,7 @@ Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [\App\Http\Con
 Route::middleware('throttle:5,1,contact')->post('/contact', [\App\Http\Controllers\ContactController::class, 'store']);
 Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
+Route::get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
 

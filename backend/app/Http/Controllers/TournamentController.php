@@ -40,6 +40,36 @@ class TournamentController extends Controller
     }
 
     /**
+     * Suren maclarin CANLI izleyici sayilari: { counts: { ODA_KODU: n } }. Detay poll'u (rev)
+     * izleyici degisimiyle tetiklenmez (~80KB tam veri) -> sayilar bu hafif ucla ayri cekilir.
+     * Sayim RoomController::viewers ile ayni: son 15sn'de gorunen, oyuncu olmayan izleyiciler.
+     */
+    public function viewers(Tournament $tournament)
+    {
+        $codes = [];
+        foreach (is_array($tournament->bracket) ? $tournament->bracket : [] as $round) {
+            foreach (is_array($round) ? $round : [] as $m) {
+                if (! empty($m['room']) && empty($m['winner'])) {
+                    $codes[] = strtoupper((string) $m['room']);
+                }
+            }
+        }
+        if (! $codes || $tournament->status !== 'running' || ! \Illuminate\Support\Facades\Schema::hasTable('room_viewers')) {
+            return response()->json(['counts' => (object) []]);
+        }
+        $counts = DB::table('room_viewers')
+            ->whereIn('room_code', $codes)
+            ->where('last_seen', '>=', microtime(true) - 15)
+            ->groupBy('room_code')
+            ->selectRaw('room_code, COUNT(*) as n')
+            ->pluck('n', 'room_code')
+            ->map(fn ($n) => (int) $n)
+            ->all();
+
+        return response()->json(['counts' => (object) $counts]);
+    }
+
+    /**
      * Turnuva sayfasi CANLI guncelleme surumu. Kayit acikken katilimcilara (katil/cik) bagli;
      * basladiktan sonra YALNIZ mac sonuclarina (kazananlar + sampiyon) -> mac odasi acilmasi /
      * tur uzunlugu yazimi gibi ara bracket degisiklikleri poll'u tetiklemez. Durum degisimi
