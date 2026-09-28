@@ -22677,6 +22677,10 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 8px;
   min-width: 0;
 }
+.invite-wait-rank {
+  justify-content: center;
+  margin-block: 4px 12px;
+}
 .invite-rating {
   font-weight: 700;
   font-variant-numeric: tabular-nums;

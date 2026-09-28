@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import SocialTabs, { type SocialTab } from './SocialTabs'
 
 interface Props {
-  onInvite: (p: { id: number; name: string; avatar?: string | null }) => void
+  onInvite: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void
   onMessage?: (userId: number) => void
   onClose: () => void
   currentId?: number // giris yapan kullanici -> profil kartinda "kendini ekleme" gizlensin
@@ -191,7 +191,7 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
                           size="icon"
                           title={t('friends.invite')}
                           aria-label={t('friends.invite')}
-                          onClick={() => onInvite({ id: f.id, name: f.name, avatar: f.avatar })}
+                          onClick={() => onInvite({ id: f.id, name: f.name, avatar: f.avatar, rating: f.rating })}
                         >
                           <Icon name="sword" size={16} />
                         </Button>
