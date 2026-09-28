@@ -1589,6 +1589,15 @@ export default function App() {
   // ref'ten okunur -> save yalniz hamle/tur degisiminde olur, saat degeri o an gunceldir.
   const clockStateRef = useRef(clock)
   clockStateRef.current = clock
+  // Sunucu-otoriter saat demiri: poll bunu tazeler, ekran YEREL olarak buradan turetilir.
+  // Boylece 1.2sn poll'un 1sn'lik sayaci ornekleme aliasing'i (10->8->7->6->4 atlama) biter.
+  const clockAnchorRef = useRef<{
+    delay: number
+    white: number
+    black: number
+    active: Player | null
+    at: number
+  } | null>(null)
   // AFK (sunucu-otoriter): kayba kalan saniye (yalniz son 15sn'de dolu) + sirasi gelen renk.
   const [afkLeft, setAfkLeft] = useState<number | null>(null)
   const [srvActive, setSrvActive] = useState<Player | null>(null)
@@ -3967,6 +3976,28 @@ export default function App() {
     if (!clockOn || gameEnd || matchOver || opening || gameWon) return
     if (online && !onlineReady) return
     const active: Player = cubePending ? opponent(cubePending) : turnStart.turn
+
+    if (online) {
+      // ONLINE: ekranı sunucu demirinden (clockAnchorRef) yerel olarak türet. Poll (1.2sn)
+      // sadece demiri tazeler; rakamı burada ~250ms'de yeniden hesaplarız -> her tam saniye
+      // gösterilir, atlama olmaz. Kayıp kararı yine sunucuda (offline timeout efekti online'da devre dışı).
+      const id = window.setInterval(() => {
+        const a = clockAnchorRef.current
+        if (!a) return
+        const elapsed = (Date.now() - a.at) / 1000
+        const delay = Math.max(0, a.delay - elapsed)
+        const over = Math.max(0, elapsed - a.delay) // gecikme bittikten sonra bankayı yer
+        const white = a.active === 'white' ? Math.max(0, a.white - over) : a.white
+        const black = a.active === 'black' ? Math.max(0, a.black - over) : a.black
+        const next = { delay: Math.ceil(delay), white: Math.ceil(white), black: Math.ceil(black) }
+        const cur = clockStateRef.current
+        if (next.delay === cur.delay && next.white === cur.white && next.black === cur.black) return
+        setClock(next)
+      }, 250)
+      return () => window.clearInterval(id)
+    }
+
+    // OFFLINE (pvb): poll yok -> yerel saniye sayacı zaten pürüzsüz.
     const id = window.setInterval(() => {
       setClock((c) => {
         if (c.delay > 0) return { ...c, delay: c.delay - 1 }
@@ -4942,8 +4973,10 @@ export default function App() {
         // ama beyaz sayim eriyor" desync'ini uretir. Animasyon bitip serverFinal uygulaninca (bir
         // sonraki poll) gercek saat (reveal-grace'li) yazilir; o ana kadar yerel saat (aktif=siyah).
         if (sc && !botAnimRef.current) {
-          setClock({ delay: sc.delay, white: sc.white, black: sc.black })
-          setSrvActive(sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null)
+          const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
+          // Demiri tazele (ekrandaki rakamı DEĞİL): interpolasyon tick'i buradan pürüzsüz sayar.
+          clockAnchorRef.current = { delay: sc.delay, white: sc.white, black: sc.black, active: act, at: Date.now() }
+          setSrvActive(act)
           setAfkLeft(sc.afk)
         } else if (srvDone) {
           setSrvActive(null) // aktif taraf vurgusu + AFK geri sayimi da dursun
