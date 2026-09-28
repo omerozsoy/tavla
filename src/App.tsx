@@ -822,7 +822,7 @@ export default function App() {
   // CANLI rakip önizlemesi (cosmetic): rakibin o an oynadığı adımlar; ekranda adım adım gösterilir.
   const [oppLive, setOppLive] = useState<Step[]>([])
   const oppLiveShownRef = useRef<Step[]>([]) // ekranda gösterilen rakip adımları (delta hesabı)
-  const pendingOppFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
+  const pendingOppFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect; offColor?: Player } | null>(null)
   const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
@@ -5458,7 +5458,7 @@ export default function App() {
   })
   // FLIP: playSteps state'i guncellemeden ONCE kaynak dikdortgenini buraya yazar;
   // render sonrasi useLayoutEffect hedef tasi kaynaktan ucurur.
-  const pendingFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
+  const pendingFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect; offColor?: Player } | null>(null)
 
   // ---- CANLI hamle önizlemesi: GÖNDER (kendi turum) ----
   // Kendi turumda her adım/geri-almada güncel `played`'i odaya yaz -> rakip adım adım görür.
@@ -5520,7 +5520,7 @@ export default function App() {
         window.setTimeout(() => {
           if (flip) {
             const r = sourceRect(st.from) // güncel gösterilen tahtada kaynağı yakala
-            if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r }
+            if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r, offColor: turnStart.turn }
           }
           // Ses: rakibin bu adımı vuruş mu (rakip=benim taşım blot) yoksa normal hamle mi?
           // pre = bu adımdan ÖNCEKİ tahta (turnStart + o ana dek oynatılan base). Spectate deseni.
@@ -5553,7 +5553,7 @@ export default function App() {
       return
     }
     pendingOppFlightRef.current = null
-    const el = destEl(f.to)
+    const el = destEl(f.to, f.offColor)
     if (el) flyChecker(el, f.srcRect, moveStyle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oppLive])
@@ -6571,7 +6571,7 @@ export default function App() {
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       const r = srcRectOverride !== undefined ? srcRectOverride : sourceRect(seq[0].from)
-      if (r) pendingFlightRef.current = { to: seq[seq.length - 1].to, srcRect: r }
+      if (r) pendingFlightRef.current = { to: seq[seq.length - 1].to, srcRect: r, offColor: turnStart.turn }
     }
     setPlayed([...played, ...seq])
     setSelectedFrom(null)
@@ -6585,7 +6585,7 @@ export default function App() {
       return
     }
     pendingFlightRef.current = null
-    const el = destEl(f.to)
+    const el = destEl(f.to, f.offColor)
     if (el) flyChecker(el, f.srcRect, moveStyle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [played])

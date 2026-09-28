@@ -32,12 +32,18 @@ export function sourceRect(from: number | 'bar'): DOMRect | null {
   return pt?.getBoundingClientRect() ?? null
 }
 
-/** Hedefte yeni olusan tas ogesi (nokta -> en ust tas; 'off' -> son bear-off tasi). */
-export function destEl(to: number | 'off'): HTMLElement | null {
+/**
+ * Hedefte yeni olusan tas ogesi (nokta -> en ust tas; 'off' -> son bear-off tasi).
+ * Bear-off tepsisinde iki slot var (ust=rakip, alt=izleyen); `offColor` verilmezse
+ * TUM off-checker'larin sonuncusu secilir ki bu HEP alt (izleyenin kendi) tarafidir.
+ * Rakip topladiginda kendi tarafimizda ucus oynanmasin diye HAMLE SAHIBININ rengini gecir.
+ */
+export function destEl(to: number | 'off', offColor?: 'white' | 'black'): HTMLElement | null {
   const b = gameBoard()
   if (!b) return null
   if (to === 'off') {
-    const offs = b.querySelectorAll<HTMLElement>('.bearoff .off-checker')
+    const sel = offColor ? `.bearoff .off-checker.${offColor}` : '.bearoff .off-checker'
+    const offs = b.querySelectorAll<HTMLElement>(sel)
     return offs[offs.length - 1] ?? b.querySelector<HTMLElement>('.bearoff')
   }
   return b.querySelector<HTMLElement>(`.point[data-point="${to}"] .checker:last-child`)
