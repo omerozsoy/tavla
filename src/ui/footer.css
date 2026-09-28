@@ -142,7 +142,7 @@ a.foot-partner:hover {
   font-size: 0.82rem;
   letter-spacing: 0.01em;
   color: var(--foot-cream);
-  margin-bottom: 13px;
+  margin-bottom: 9px;
 }
 /* Baslik onunde kucuk altin "tavla ucu" (yukari ucgen) — board point nişanesi. */
 .foot-col-title::before {
@@ -161,16 +161,16 @@ a.foot-partner:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 3px;
 }
 .foot-link {
   position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 28px;
   background: none;
   border: 0;
-  padding: 6px 0;
+  padding: 3px 0;
   cursor: pointer;
   color: var(--foot-cream-soft);
   font-size: 0.82rem;
