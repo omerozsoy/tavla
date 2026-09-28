@@ -407,7 +407,7 @@ export function Icon({
         height={size}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth={STROKE[weight]}
         strokeLinecap="round"
         strokeLinejoin="round"
       >
