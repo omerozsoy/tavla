@@ -22666,6 +22666,23 @@ button.acct-row-logout:hover:not(:disabled) {
 .invite-who b {
   font-weight: 700;
 }
+.invite-who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.invite-rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.invite-rating {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
 .invite-meta {
   display: flex;
   flex-wrap: wrap;

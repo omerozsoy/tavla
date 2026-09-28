@@ -866,6 +866,7 @@ const TR: Dict = {
   'friends.accept': 'Kabul',
   'friends.decline': 'Reddet',
   'friends.inviteExpired': 'Davet artık geçerli değil (davet eden ayrıldı). Tekrar davet iste.',
+  'friends.inviteDeclined': '{name} davetini reddetti.',
   'fair.title': 'Adil Zar',
   'fair.intro':
     'Zarlar maç başında belirlenen gizli bir tohumdan üretilir. Tohumun özeti (commitment) baştan gösterilir; maç bitince tohum açıklanır. Böylece zarların sonradan değiştirilmediğini kendin doğrulayabilirsin.',
@@ -2486,6 +2487,7 @@ const EN: Dict = {
   'friends.accept': 'Accept',
   'friends.decline': 'Decline',
   'friends.inviteExpired': 'This invite is no longer valid (the inviter left). Ask for a new invite.',
+  'friends.inviteDeclined': '{name} declined your invite.',
   'fair.title': 'Fair Dice',
   'fair.intro':
     'Dice come from a secret seed fixed at the start of the match. Its hash (commitment) is shown up front; the seed is revealed when the match ends. So you can verify yourself that the dice were not altered afterwards.',
