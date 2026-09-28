@@ -1818,16 +1818,6 @@ button[aria-disabled='true'],
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Takma adin altinda gercek AD SOYAD (tanimliysa) — sonuk, kucuk. */
-.mh-card .mh-full {
-  font-size: 0.82rem;
-  color: var(--text-dim, #9aa0a6);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 1px;
-}
 /* Rozetler ALT ALTA (PR · sans · rating) — her oyuncunun kendi tarafinda, buyutuldu. */
 .mh-card .mh-tags {
   display: flex;
