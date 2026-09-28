@@ -1105,6 +1105,10 @@ export default function App() {
   // NOT: bu hook ust hook bolgesinde (erken-return'lerden ONCE) durmali — sabit sira;
   // premium'u user'dan inline turetir ki gec tanimlanan `premium` const'una baglanmasin.
   useEffect(() => {
+    // KRITIK (refresh yonlendirme bug'i): auth HENUZ cozulmeden (apiMe donmeden) `user` null'dir;
+    // bu asamada premium'u "false" sayip deep-link'le acilan araci kapatmak PREMIUM uyeyi bile
+    // /uyelik'e atardi. authChecked olana kadar BEKLE -> premium bilinince dogru karar verilir.
+    if (!authChecked) return
     const isPrem = user?.plan_active === 'star'
     if (isPrem) return
     let redirect = false
@@ -1114,7 +1118,7 @@ export default function App() {
     if (matchHistOpen) { setMatchHistOpen(false); redirect = true }
     if (tournOpen) { setTournOpen(false); redirect = true }
     if (redirect) setMemOpen(true)
-  }, [blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, tournOpen, user])
+  }, [authChecked, blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, tournOpen, user])
 
   // Sol menu yapilandirmasini (admin panelden sira/ad/gorunurluk) acilista bir kez cek.
   useEffect(() => {
