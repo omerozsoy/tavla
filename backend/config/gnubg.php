@@ -46,6 +46,14 @@ return [
     // işler AYRI instance'a gider -> canlı bot (8092) bloklanmaz. Bkz gnubg-service/README.md.
     'heavy_url' => env('GNUBG_HEAVY_URL'),
 
+    // AĞIR ANALİZ HAVUZU (çoğul): dedike heavy instance listesi, virgülle ayrılmış (or. 8098,8099).
+    // reviewMatch/analyzeMatch/matchluck bu havuzu YÜK-DENGELİ (shuffle) + failover kullanır -> biri
+    // düşse/restart olsa VE eşzamanlı iki review gelse bile Mat Analiz çalışır (heavy artık SPOF değil).
+    // Boşsa tekil `heavy_url`e (o da boşsa `url`e) düşer -> geriye dönük uyum. Tüm dedike heavy düşerse
+    // SON ÇARE arka plan havuzuna (analysis_urls) failover eder. Diagnostik uçlar (selfplay/cubetest/
+    // rollouttest/lucktest) tekil `heavy_url`de kalır (idari; havuz gerekmez).
+    'heavy_urls' => env('GNUBG_HEAVY_URLS', ''),
+
     // --- BOT SEVİYE SİSTEMİ (feature flag'ler; deploy'suz kapatma) ------------------------------
     // Level 11 (TavlaTV Grandmaster, 3-ply) ve Level 12 (TavlaTV Ultimate, adaptive 3->4-ply).
     // Kapalıysa istenen seviye 10'a kırpılır (bot yine oynar, sadece 2-ply). Sorun çıkarsa env ile

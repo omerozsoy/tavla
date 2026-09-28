@@ -1,0 +1,21 @@
+[Unit]
+Description=GNU Backgammon ADANMIS AGIR analiz YEDEGI (:8099 — heavy havuzu #2)
+After=network.target
+# Adanmis heavy #1 (:8098) ile AYNI kod, AYRI instance (:8099). Amac: heavy artik HAVUZ ->
+# 8098 down/restart olsa VE es-zamanli iki Mat Analiz review gelse bile calisir (SPOF yok).
+# backend/.env: GNUBG_HEAVY_URLS=http://127.0.0.1:8098,http://127.0.0.1:8099 + GNUBG_UNITS'e ekle.
+# GnuBgClient heavyBases() shuffle ile es-zamanli review'lari 8098/8099 arasinda dagitir.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# GNUBG_SECRET diger instance'lar + backend .env ile AYNI olmali. SADECE port farkli.
+Environment=GNUBG_PORT=8099
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
