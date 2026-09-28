@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import type { TimeControl } from './MatchSetup'
@@ -127,14 +126,27 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
-          {/* Puansiz mac secenegi */}
-          <label className="setup-unrated">
-            <Checkbox checked={unrated} onCheckedChange={(v) => setUnrated(v === true)} />
-            <span className="setup-unrated-txt">
-              <span>{t('friend.unrated')}</span>
-              <small>{t('friend.unratedHint')}</small>
-            </span>
-          </label>
+          {/* Puanli / Puansiz: diger satirlarla ayni karo secici (checkbox gozden kaciyordu). */}
+          <div className="setup-row">
+            <div className="setup-label">{t('friend.ratingMode')}</div>
+            <div className="setup-tiles">
+              <button
+                className={`setup-tile ${!unrated ? 'active' : ''}`}
+                onClick={() => setUnrated(false)}
+                aria-pressed={!unrated}
+              >
+                {t('friend.ratedChip')}
+              </button>
+              <button
+                className={`setup-tile ${unrated ? 'active' : ''}`}
+                onClick={() => setUnrated(true)}
+                aria-pressed={unrated}
+              >
+                {t('friend.unratedChip')}
+              </button>
+            </div>
+            {unrated && <p className="setup-unrated-hint">{t('friend.unratedHint')}</p>}
+          </div>
 
           <div className="setup-actions">
             <Button variant="secondary" onClick={onCancel}>
