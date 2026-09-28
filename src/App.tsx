@@ -1563,6 +1563,8 @@ export default function App() {
   const [inviteWaitName, setInviteWaitName] = useState<string | null>(null)
   // Davet edilenin rating'i (bekleme ekraninda isim altinda). Yalniz inviteWaitName varken gorunur.
   const [inviteWaitRating, setInviteWaitRating] = useState<number | null>(null)
+  // Davet edenin bu macta rating riski (sunucu Elo'su, davet yanitindan). null = puansiz.
+  const [inviteWaitPreview, setInviteWaitPreview] = useState<{ win: number; loss: number } | null>(null)
   // Oda poll'u (deps: room.code) bayat closure'dan okur -> reddeden adini ref'ten al.
   const inviteWaitNameRef = useRef<string | null>(null)
   inviteWaitNameRef.current = inviteWaitName
@@ -6203,6 +6205,7 @@ export default function App() {
     setInviteTarget(null)
     setInviteWaitName(tgt.name) // bekleme ekrani "kod paylas" yerine "{ad} bekleniyor" gostersin
     setInviteWaitRating(tgt.rating ?? null)
+    setInviteWaitPreview(null) // onceki davetin tahmini kalmasin; yanit gelince set edilir
     setTimeControl(opts.timeControl)
     clockRef.current = CLOCK_PRESETS[opts.timeControl]
     onlineTargetRef.current = opts.target
@@ -6219,7 +6222,8 @@ export default function App() {
     setTurnsPlayed(0)
     setMatch(newMatch(opts.target))
     try {
-      const { code } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated })
+      const { code, ratingPreview } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated })
+      setInviteWaitPreview(ratingPreview ?? null)
       const ok = await enterOnlineByCode(code, opts.target, opts.timeControl)
       if (!ok) {
         // Davet GÖNDERİLDİ ama davet edenin odası kurulamadı (enterOnlineByCode false) -> gönderilen
@@ -9369,6 +9373,7 @@ export default function App() {
           error={roomError}
           inviteWaitName={inviteWaitName}
           inviteWaitRating={inviteWaitRating}
+          inviteWaitPreview={inviteWaitPreview}
           myAvatar={profile.avatar}
           onCreate={() => handleCreateRoom(onlineTargetRef.current)}
           onJoin={handleJoinRoom}
