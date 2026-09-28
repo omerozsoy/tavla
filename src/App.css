@@ -16600,6 +16600,12 @@ button.acct-row-logout:hover:not(:disabled) {
   box-shadow: none;
 }
 
+/* Bilgi alt sayfalari standart genislikte akar; genel makale kuralindaki
+   68ch limiti bu sayfalarda metni tekrar daraltmamali. */
+.info-card .info-rich.rich p {
+  max-width: none;
+}
+
 @media (max-width: 900px) {
   .info-card {
     padding: 6px clamp(12px, 4vw, 20px) 32px;
