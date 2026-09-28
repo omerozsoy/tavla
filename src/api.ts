@@ -877,6 +877,8 @@ export interface GameInvite {
   target: number // 1 = Tek Oyun; >1 = Maç uzunluğu (puan)
   timeControl?: string | null // casual | normal | speed
   unrated?: boolean // puansiz arkadas maci (rating yok, PR genel siralamaya girmez)
+  // Davetli bu macta kazanirsa/kaybederse rating degisimi (sunucu Elo'su). null = mac puansiz.
+  ratingPreview?: { win: number; loss: number } | null
 }
 export interface TournNotice {
   tid: number

@@ -426,11 +426,7 @@ class AuthController extends Controller
 
         if ($ranked) {
             // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
-            $k = 32;
-            $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
-            $score = $won ? 1 : 0;
-            $newRating = (int) round($ra + $k * ($score - $expected));
-            $newRating = max(100, $newRating); // taban
+            $newRating = \App\Support\RatingPolicy::eloNewRating((int) $ra, $rb, $won); // K=32, taban 100
 
             $user->rating = $newRating;
             $user->games_played = ($user->games_played ?? 0) + 1;

@@ -24,6 +24,37 @@ class RatingPolicy
     public const SETTING_KEY = 'friendly_rating_daily_limit';
     public const DEFAULT_LIMIT = 3;
 
+    /** Elo K katsayısı (maç uzunluğundan bağımsız). */
+    public const ELO_K = 32;
+
+    /** Rating tabanı: hiçbir oyuncu bunun altına düşmez. */
+    public const RATING_FLOOR = 100;
+
+    /**
+     * Elo sonrası yeni rating — TEK formül. reportRating bunu uygular; davet kartı önizlemesi
+     * (eloPreview) de bunu kullanır -> gösterilen +/- ile gerçekte işlenen AYNI.
+     */
+    public static function eloNewRating(int $ra, int $rb, bool $won): int
+    {
+        $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
+        $new = (int) round($ra + self::ELO_K * (($won ? 1 : 0) - $expected));
+
+        return max(self::RATING_FLOOR, $new);
+    }
+
+    /**
+     * $ra rating'li oyuncunun $rb'ye karşı kazanırsa/kaybederse rating değişimi.
+     *
+     * @return array{win:int, loss:int}  win >= 0, loss <= 0
+     */
+    public static function eloPreview(int $ra, int $rb): array
+    {
+        return [
+            'win' => self::eloNewRating($ra, $rb, true) - $ra,
+            'loss' => self::eloNewRating($ra, $rb, false) - $ra,
+        ];
+    }
+
     /** Site Ayarları'ndaki 24 saatlik aynı-rakip limiti (>=0). */
     public static function friendlyDailyLimit(): int
     {

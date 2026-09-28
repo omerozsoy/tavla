@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\User;
+use App\Support\RatingPolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,6 +31,7 @@ class PresenceController extends Controller
             ->where('game_invites.created_at', '>', now()->subMinutes(2))
             ->get([
                 'game_invites.id',
+                'game_invites.from_user_id',
                 'game_invites.room_code as code',
                 'game_invites.target',
                 'game_invites.time_control',
@@ -48,6 +50,8 @@ class PresenceController extends Controller
                 'target' => (int) ($r->target ?? 1),
                 'timeControl' => $r->time_control,
                 'unrated' => (bool) ($r->unrated ?? false),
+                // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
+                'ratingPreview' => $this->ratingPreview($me, $r),
             ]);
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
@@ -187,6 +191,26 @@ class PresenceController extends Controller
     }
 
     // Bir arkadasi oyuna davet et -> paylasimli oda kodu uret, davet olustur
+    /**
+     * Davet kartı rating önizlemesi: davetli ($me) davet edene karşı kazanırsa/kaybederse. Maç sonunda
+     * işlenecek kuralın AYNISI (RatingPolicy): puansız davet veya aynı-rakip 24h limiti dolmuşsa null
+     * (maç puansız oynanacak). Rakip rating'i odaya kuruluşta davet edenin güncel rating'i yazılır.
+     *
+     * @return array{win:int, loss:int}|null
+     */
+    private function ratingPreview(User $me, object $inv): ?array
+    {
+        if (! empty($inv->unrated)) {
+            return null;
+        }
+        $room = new Room(['mode' => 'friendly', 'unrated' => false]); // davet odası = friendly (enter())
+        if (! RatingPolicy::isRanked($room, (int) $me->id, (int) $inv->from_user_id)) {
+            return null;
+        }
+
+        return RatingPolicy::eloPreview((int) ($me->rating ?? 1500), (int) ($inv->rating ?? 1500));
+    }
+
     public function invite(Request $request, int $userId)
     {
         $me = $request->user();

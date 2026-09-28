@@ -8200,6 +8200,13 @@ export default function App() {
                     <DivisionChip rating={inv.rating} size="md" />
                   </span>
                 )}
+                {/* Bu macta davetlinin rating riski: kazanirsa +N / kaybederse -N (puansizsa gizli). */}
+                {inv.ratingPreview && (
+                  <span className="invite-stakes">
+                    <span className="invite-stake-win">{t('invite.ratingWin', { n: inv.ratingPreview.win })}</span>
+                    <span className="invite-stake-loss">{t('invite.ratingLoss', { n: Math.abs(inv.ratingPreview.loss) })}</span>
+                  </span>
+                )}
               </span>
             </div>
             <div className="invite-meta">
