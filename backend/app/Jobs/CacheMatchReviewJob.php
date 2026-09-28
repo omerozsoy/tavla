@@ -32,7 +32,13 @@ class CacheMatchReviewJob implements ShouldQueue
 
     public int $timeout = 600; // reviewMatch ağır (~saniyeler)
 
-    public function __construct(public int $matchResultId, public int $plies = 2) {}
+    public function __construct(public int $matchResultId, public int $plies = 2)
+    {
+        // AYRI kuyruk: canlı PR/luck worker'ı ('default') ile yarışmasın; adanmış tavla-review-queue
+        // worker'ı YALNIZ bunu işler (bkz deploy/tavla-review-queue.service). Tüm dispatch site'ları
+        // (maç-sonu + tavla:review-warmup) otomatik buraya yönlenir.
+        $this->onQueue('reviews');
+    }
 
     /** Aynı maçın review'ini worker'lar arasında seri çalıştır; çakışırsa TEKRAR KUYRUĞA ALMA (drop). */
     public function middleware(): array

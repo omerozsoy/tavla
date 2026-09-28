@@ -109,11 +109,13 @@ Schedule::command('tavla:gnubg-pr-heal')
     ->name('gnubg-pr-heal')
     ->withoutOverlapping();
 
-// GEÇMİŞ maçların Analiz review'ini BOŞ ZAMANDA önden önbelleğe al (backfill). Küçük parti + seyrek
-// aralık = trickle: canlı analiz yüküyle yarışmadan zamanla tüm eski maçları "anında açılır" yapar.
-// gnubg down iken kendini erteler; mezar taşı (gnubg_review_at) sayesinde imleç hep ilerler (döngü yok).
-Schedule::command('tavla:review-warmup')
-    ->everyFifteenMinutes()
+// GEÇMİŞ maçların Analiz review'ini BOŞ ZAMANDA önden önbelleğe al (backfill). ADANMIŞ worker
+// (tavla-review-queue, 'reviews' kuyruğu) işlediği için canlı PR/luck ile YARIŞMAZ -> dispatch hızını
+// worker drenaj hızına (~15/5dk ≈ 180/saat, tek worker ~20sn/review) eşitliyoruz: 1172 maç ≈ ~6-7 saat.
+// gnubg down iken erteler; mezar taşı (gnubg_review_at) sayesinde imleç ilerler (döngü yok). Dispatch
+// ≈ drenaj olduğundan kuyrukta re-dispatch edilebilir birikim oluşmaz (mükerrer minimum; job zaten atlar).
+Schedule::command('tavla:review-warmup --limit=15 --days=7')
+    ->everyFiveMinutes()
     ->name('review-warmup')
     ->withoutOverlapping();
 

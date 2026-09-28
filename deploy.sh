@@ -126,6 +126,12 @@ else
     && echo "queue:restart sinyali gonderildi (worker sonraki job'da yeni kodu alir)." \
     || echo "UYARI: tavla-queue yenilenemedi -> ELLE: sudo systemctl restart tavla-queue"
 fi
+# Adanmis review-warmup worker'i (Analiz onbellek backfill, 'reviews' kuyrugu) — kuruluysa yenile.
+if systemctl list-unit-files 2>/dev/null | grep -q '^tavla-review-queue\.service'; then
+  sudo -n systemctl restart tavla-review-queue 2>/dev/null \
+    && echo "tavla-review-queue yeniden baslatildi." \
+    || echo "UYARI: tavla-review-queue yenilenemedi -> ELLE: sudo systemctl restart tavla-review-queue"
+fi
 # -----------------------------------------------------------------------------
 
 echo "Deploy tamam: migrate + cache + haber importu + gnubg/queue restart."
