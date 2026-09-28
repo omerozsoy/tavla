@@ -123,20 +123,13 @@ class EventResource extends Resource
                 ->addActionLabel('Kişi ekle')
                 ->reorderable(false)
                 ->columnSpanFull(),
-            Forms\Components\RichEditor::make('body')
+            \FilamentTiptapEditor\TiptapEditor::make('body')
                 ->label('Açıklama')
-                ->toolbarButtons([
-                    'bold', 'italic', 'underline', 'strike',
-                    'h2', 'h3',
-                    'bulletList', 'orderedList',
-                    'link', 'blockquote',
-                    'attachFiles', // metin içine resim ekle
-                    'redo', 'undo',
-                ])
-                ->fileAttachmentsDisk('uploads')
-                ->fileAttachmentsDirectory('etkinlik')
-                ->fileAttachmentsVisibility('public')
-                ->helperText('Turnuva açıklaması — ön yüzde "Detaylı Bilgi" penceresinde biçimlendirilmiş gösterilir. Ataç ikonu ile metnin içine resim ekleyebilirsin.')
+                ->profile('default') // gelişmiş: tablo, renk, hizalama, medya, kaynak kodu
+                ->disk('uploads')
+                ->directory('etkinlik')
+                ->visibility('public')
+                ->helperText('Turnuva açıklaması — ön yüzde "Detaylı Bilgi" penceresinde biçimlendirilmiş gösterilir. Medya butonu ile metnin içine resim/tablo ekleyebilirsin.')
                 ->columnSpanFull(),
             // Görsel etkinlikte yok: takvimde seçilen OTELİN görseli gösterilir (Oteller sayfasına yüklenir).
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
