@@ -389,6 +389,14 @@ class TourneyBots extends Command
         }
 
         if ($room['status'] === 'finished') {
+            if (! in_array($room['server_match']['winner'] ?? null, ['white', 'black'], true)) {
+                // Sonucsuz kapandi: sunucu match-room'da yeni oda verir -> yeniden gir.
+                $st['code'] = null;
+                $st['entered'] = false;
+                $this->line("  [{$m['key']}] {$me->nickname} oda sonucsuz kapandi, yeni oda istenecek");
+
+                return;
+            }
             $this->report($tid, $m, $bot, $room, $st);
 
             return;

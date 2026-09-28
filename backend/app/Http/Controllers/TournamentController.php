@@ -482,6 +482,14 @@ class TournamentController extends Controller
                 // + oda kodu icin cache'e -> odayi ilk kuran enter() istemci degerine GUVENMEZ.
                 $target = $tournament->roundTarget($ri, count($bracket));
                 $bracket[$ri][$mi]['target'] = $target;
+                // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
+                // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
+                if (! empty($m['room'])) {
+                    $old = \App\Models\Room::where('code', $m['room'])->first();
+                    if ($old && $old->status === 'finished' && ! $old->hasVerifiedServerResult()) {
+                        $m['room'] = null;
+                    }
+                }
                 if (empty($m['room'])) {
                     // Benzersiz kod uret
                     $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
