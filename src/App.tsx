@@ -6273,6 +6273,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, matchOver, room?.status, rematch.code, rematch.mine, rematch.theirs])
 
+  // Reload sonrasi TEK aktif odaya bir kez otomatik don (asagidaki activeRooms effect'i kullanir).
+  const autoResumedRef = useRef(false)
+
   // Devam eden online maca GERI DON: odayi kur; poll (room.code'a bagli) sunucudaki
   // guncel state'i applyOnlineState ile geri yukler ve senkronu acar.
   function rejoinRoom(r: ActiveRoom) {
@@ -6342,7 +6345,19 @@ export default function App() {
     let alive = true
     const load = () =>
       myActiveRooms()
-        .then((rs) => alive && setActiveRooms(rs))
+        .then((rs) => {
+          if (!alive) return
+          setActiveRooms(rs)
+          // OTOMATIK GERI GIRIS (terk-kaybi kok fix, #V2RDM): reload sonrasi kullanici lobiye
+          // duser ve "Maca Don" banner'ina ELLE tiklayana kadar oda poll'u BASLAMAZ -> presence
+          // damgasi (_seen) tazelenmez -> 45sn'de haksiz ABANDON (oyuncunun OYUN saati doluyken).
+          // Boot'ta TEK aktif oda varsa ve henuz bir odada degilsek banner'i beklemeden bir kez
+          // otomatik don -> oda poll'u aninda baslar, presence 45sn dolmadan tazelenir.
+          if (!autoResumedRef.current && !room && rs.length === 1) {
+            autoResumedRef.current = true
+            rejoinRoom(rs[0])
+          }
+        })
         .catch(() => alive && setActiveRooms([]))
     load()
     const id = window.setInterval(load, 10000)

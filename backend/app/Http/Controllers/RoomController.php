@@ -864,6 +864,27 @@ class RoomController extends Controller
             return true;
         })->values();
 
+        // LOBI PRESENCE TAZELEME (terk-kaybi kok fix, #V2RDM): kullanici ana sayfada bu sorguyu
+        // ~10sn'de bir atar. Reload sonrasi odaya elle "Maca don"la girene kadar oda poll'u
+        // BASLAMAZ ve presence damgasi (_seen) tazelenmez -> 45sn'de haksiz ABANDON (oyuncunun
+        // OYUN saati doluyken). Sitede (lobide) oldugu KANITLI oyuncunun _seen'ini burada da
+        // tazele; donus penceresinde "terk etti" sayilmasin. Yalniz DAMGA vurulur, saat
+        // TICK'lenmez (tickClock gibi finalize ETMEZ): donmeye calistigi maci kapatmayalim.
+        // Sira-bazli AFK/TIMEOUT started_at'tan bagimsiz isler; bu yalniz "gercekten gitti mi".
+        $nowSeen = microtime(true);
+        foreach ($rooms as $r) {
+            $clock = $r->clock;
+            if (! is_array($clock) || empty($clock) || ! empty($clock['end'])) {
+                continue;
+            }
+            $slot = ((int) $r->p1_user_id === (int) $me->id) ? 'p1' : 'p2';
+            $prev = (float) ($clock[$slot.'_seen'] ?? 0);
+            if ($nowSeen - $prev >= 4.0) { // en fazla ~4sn'de bir yaz (gereksiz DB yazma yok)
+                $r->clock = MatchClock::seen($clock, $slot, $nowSeen);
+                $r->save();
+            }
+        }
+
         // Rakip premium: rakip user_id'lerinden TEK sorguyla plan lookup.
         $oppIds = $rooms->map(fn ($r) => (int) $r->p1_user_id === (int) $me->id ? $r->p2_user_id : $r->p1_user_id)
             ->filter()->unique()->values();

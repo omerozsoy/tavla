@@ -385,6 +385,31 @@ class RoomClockTest extends TestCase
         $this->assertSame('playing', $room->status); // caller kendi sorgusuyla forfeit OLMADI
     }
 
+    // ---- FIX #V2RDM: lobi presence tazeleme — myActiveRooms caller'in _seen'ini yeniler ----
+    // Reload sonrasi kullanici lobide banner beklerken oda poll'u baslamamis olsa da, ana sayfa
+    // myActiveRooms sorgusu caller'in presence damgasini tazeler -> 45sn'lik haksiz ABANDON
+    // penceresi donus sirasinda dolmaz (V2RDM: Ozan doner iken terk sayilip kaybetmisti).
+    public function test_active_rooms_refreshes_caller_presence_seen(): void
+    {
+        $me = $this->user('me3@t.co');
+        $opp = $this->user('opp3@t.co');
+        $room = $this->playingRoom('AR3', 'casual', 5);
+        $room->p1_user_id = $me->id;
+        $room->p2_user_id = $opp->id;
+        $now = microtime(true);
+        // Ben (p1) 30sn once gorundum (henuz terk degil ama bayatliyor); rakip present.
+        $room->clock = ['running' => true, 'turn_slot' => 'p1', 'p1_seen' => $now - 30, 'p2_seen' => $now - 1];
+        $room->save();
+
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $this->getJson('/api/me/active-rooms')->assertOk();
+
+        $room->refresh();
+        // p1_seen ~now'a tazelenmis olmali (eski -30 degil) -> presence sayaci sifirlandi.
+        $this->assertGreaterThan($now - 5, (float) $room->clock['p1_seen']);
+        $this->assertSame('playing', $room->status);
+    }
+
     // ---- BOT MAÇI: rakip(bot) HİÇ poll etmez -> tick-bots insanın süresini SUNUCUDA bitirir ----
     // "Süre bitmemiş" bug'ı: bot maçında saati soracak kimse (rakip poll'ü) yok; insan sekmeyi
     // arka plana alınca süre gerçekte bitse de timeout ilan edilmiyordu. matches:tick-bots
