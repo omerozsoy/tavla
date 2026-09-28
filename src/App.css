@@ -9856,7 +9856,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .acct-langs {
   margin-left: auto;
   display: inline-flex;
-  flex-wrap: wrap; /* 8 dil x 32px daire dar ekranda sarar */
+  flex-wrap: wrap; /* 8 dil x 26px daire dar ekranda sarar */
   align-items: center;
   gap: 4px;
 }
