@@ -29,7 +29,8 @@ class MedianPerformanceService
 
         $q = MatchResult::query()
             ->where('user_id', $userId)
-            ->whereNotNull('pr');
+            ->whereNotNull('pr')
+            ->where('rated', true); // puansiz maclar (puansiz arkadas odasi / friendly limiti) PR istatistigine girmez
 
         if ($days !== null) {
             // Bitis zamani = match_results.created_at (satir mac bitince olusur).
@@ -88,7 +89,8 @@ class MedianPerformanceService
             ->join('match_results as mr', 'mr.id', '=', 'da.match_result_id')
             ->where('da.user_id', $userId)
             ->where('da.decision_type', 'checker')
-            ->where('da.is_opponent', false); // yalniz oyuncunun kendi kararlari
+            ->where('da.is_opponent', false) // yalniz oyuncunun kendi kararlari
+            ->where('mr.rated', true);       // puansiz maclarin kararlari haric
 
         if ($days !== null) {
             $q->where('da.played_at', '>=', now()->subDays($days));
@@ -142,7 +144,8 @@ class MedianPerformanceService
         $q = MatchResult::query()
             ->where('user_id', $userId)
             ->whereNotNull('pr_decisions')
-            ->where('pr_decisions', '>', 0);
+            ->where('pr_decisions', '>', 0)
+            ->where('rated', true); // puansiz maclar havuza girmez (kariyer PR ile ayni kural)
 
         if ($days !== null) {
             $q->where('created_at', '>=', now()->subDays($days));

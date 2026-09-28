@@ -107,6 +107,18 @@ class PerformanceStatsTest extends TestCase
         $this->assertSame(1, $cats['1']['sample_count']); // coin karismadi
     }
 
+    // PUANSIZ mac (rated=false): mac PR'i satirda durur ama profil PR istatistiklerine girmez.
+    public function test_unrated_match_excluded_from_pr_stats(): void
+    {
+        $u = $this->makeUser('unr');
+        $this->mr($u, true, 5, 'match', 4.00);
+        $this->mr($u, true, 5, 'match', 30.00)->forceFill(['rated' => false])->saveQuietly();
+
+        $cats = app(MedianPerformanceService::class)->categoriesFor($u->id, 'all');
+        $this->assertSame(1, $cats['5']['sample_count']);
+        $this->assertSame(4.00, $cats['5']['median_pr']);
+    }
+
     public function test_opponent_pr_not_mixed_into_user(): void
     {
         $u = $this->makeUser('me');
