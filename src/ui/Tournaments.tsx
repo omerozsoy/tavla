@@ -429,66 +429,103 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
 
           {active.status !== 'open' && (
             <div className="tourn-bracket">
-              {active.bracket?.map((round, ri) => (
-                <div key={ri} className="tourn-round">
-                  <div className="tourn-round-title">
-                    {ri === active.bracket!.length - 1
-                      ? t('tourn.final')
-                      : ri === active.bracket!.length - 2
-                        ? t('tourn.semi')
-                        : t('tourn.round', { n: ri + 1 })}
-                    <span className="tourn-round-len">
-                      {' · '}
-                      {lenLabel(tournamentRoundTarget(active, ri, active.bracket!.length))}
-                    </span>
+              {active.bracket?.map((round, ri) => {
+                const rounds = active.bracket!.length
+                const isFinal = ri === rounds - 1
+                return (
+                  <div key={ri} className="tourn-round">
+                    <div className="tourn-round-title">
+                      {isFinal ? t('tourn.final') : ri === rounds - 2 ? t('tourn.semi') : t('tourn.round', { n: ri + 1 })}
+                      <span className="tourn-round-len">
+                        {' · '}
+                        {lenLabel(tournamentRoundTarget(active, ri, rounds))}
+                      </span>
+                    </div>
+                    <div className="tourn-round-body">
+                      {round.map((m, mi) => {
+                        const mine = m.p1?.id === myId || m.p2?.id === myId
+                        const playable = mine && m.p1 && m.p2 && !m.winner
+                        // Izlenebilir: oda acilmis (biri "Oyna"ya basmis) ve mac bitmemis. Kendi macimda
+                        // "Oyna" var; goz yalniz baskalarinin maclarinda.
+                        const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
+                        const viewers = watchable ? viewerCounts[m.room!.toUpperCase()] ?? 0 : 0
+                        // Skor / hukmen: yalniz biten macta (bye'da skor yok).
+                        const sc = m.winner && m.p1 && m.p2 ? m.score : null
+                        const scoreOf = (side: 'p1' | 'p2') => {
+                          if (!sc) return null
+                          if (sc.walkover) {
+                            return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
+                          }
+                          return <span className="tm-score tnum">{sc[side] ?? 0}</span>
+                        }
+                        return (
+                          <div key={m.key} className="tb-slot">
+                            {/* Onceki turdan gelen ok (kazanan yol yesil) */}
+                            {ri > 0 && <span className={`tb-in${m.p1 || m.p2 ? ' on' : ''}`} aria-hidden="true" />}
+                            {/* Sonraki tura giden cizgi: cift eslesme ortasinda birlesir; final -> sampiyon */}
+                            <span
+                              className={`tb-out ${isFinal ? 'straight' : mi % 2 === 0 ? 'down' : 'up'}${m.winner ? ' on' : ''}`}
+                              aria-hidden="true"
+                            />
+                            <div className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''}`}>
+                              {watchable && (
+                                <button
+                                  type="button"
+                                  className="tm-watch"
+                                  title={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
+                                  aria-label={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
+                                  onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)}
+                                >
+                                  <Icon name="eye" size={16} />
+                                  {viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
+                                </button>
+                              )}
+                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${m.winner && m.winner !== m.p1?.id ? 'lose' : ''}`}>
+                                <span className="tm-name">{m.p1?.name ?? '—'}</span>
+                                {scoreOf('p1')}
+                              </div>
+                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${m.winner && m.winner !== m.p2?.id ? 'lose' : ''}`}>
+                                <span className="tm-name">{m.p2?.name ?? '—'}</span>
+                                {scoreOf('p2')}
+                              </div>
+                              {playable && (
+                                <>
+                                  <Button
+                                    variant="default"
+                                    className="tm-play"
+                                    onClick={() =>
+                                      onPlayMatch(active.id, m, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
+                                    }
+                                  >
+                                    <Icon name="play" size={16} /> {t('tourn.play')}
+                                  </Button>
+                                  {/* Elle "Kazandim/Kaybettim" KALDIRILDI: sonuc yalniz sunucudaki gercek mac
+                                      sonucundan gelir (App mac bitince otomatik bildirir, sunucu dogrular). */}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
-                  {round.map((m) => {
-                    const mine = m.p1?.id === myId || m.p2?.id === myId
-                    const playable = mine && m.p1 && m.p2 && !m.winner
-                    // Izlenebilir: oda acilmis (biri "Oyna"ya basmis) ve mac bitmemis. Kendi macimda
-                    // "Oyna" var; goz yalniz baskalarinin maclarinda.
-                    const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
-                    const viewers = watchable ? viewerCounts[m.room!.toUpperCase()] ?? 0 : 0
-                    return (
-                      <div key={m.key} className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''}`}>
-                        {watchable && (
-                          <button
-                            type="button"
-                            className="tm-watch"
-                            title={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
-                            aria-label={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
-                            onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)}
-                          >
-                            <Icon name="eye" size={16} />
-                            {viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
-                          </button>
-                        )}
-                        <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''}`}>
-                          {m.p1?.name ?? '—'}
-                        </div>
-                        <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''}`}>
-                          {m.p2?.name ?? '—'}
-                        </div>
-                        {playable && (
-                          <>
-                            <Button
-                              variant="default"
-                              className="tm-play"
-                              onClick={() =>
-                                onPlayMatch(active.id, m, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
-                              }
-                            >
-                              <Icon name="play" size={16} /> {t('tourn.play')}
-                            </Button>
-                            {/* Elle "Kazandim/Kaybettim" KALDIRILDI: sonuc yalniz sunucudaki gercek mac
-                                sonucundan gelir (App mac bitince otomatik bildirir, sunucu dogrular). */}
-                          </>
-                        )}
+                )
+              })}
+              {/* Sampiyon: finalin sagi, tac ile */}
+              {!!active.bracket?.length && (
+                <div className="tourn-round tourn-champ-col">
+                  <div className="tourn-round-title">{t('tourn.champion')}</div>
+                  <div className="tourn-round-body">
+                    <div className="tb-slot">
+                      <span className={`tb-in${champ ? ' on' : ''}`} aria-hidden="true" />
+                      <div className={`tourn-champ${champ ? ' done' : ''}`}>
+                        <Icon name="crown" size={18} />
+                        <span className="tm-name">{champ ? champ.name : '?'}</span>
                       </div>
-                    )
-                  })}
+                    </div>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

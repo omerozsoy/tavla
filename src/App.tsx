@@ -439,6 +439,7 @@ import AvatarFrame from './ui/AvatarFrame'
 import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
+import TournMatchReady from './ui/TournMatchReady'
 import ScrollTop from './ui/ScrollTop'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
@@ -1572,6 +1573,11 @@ export default function App() {
   // Daveti reddedince "Oyun Kabul Etmiyor / Cevrimdisi Gorun" diye soran mini modal
   const [declineAsk, setDeclineAsk] = useState(false)
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
+  // Turnuva maci hazir penceresi (kura + 20sn geri sayim -> otomatik giris). Ayni mac icin bir kez.
+  const [readyNotice, setReadyNotice] = useState<TournNoticeT | null>(null)
+  const readySeenRef = useRef(new Set<string>())
+  // Su anki oda bir turnuva maci mi (sonuc ekrani: rovans yok, "Turnuva Lobisi" var)
+  const [tournRoom, setTournRoom] = useState<{ code: string; tid: number } | null>(null)
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
   const seenNotifRef = useRef<Set<number>>(new Set()) // toast'landi mi (yeni bildirim tespiti)
@@ -2253,6 +2259,23 @@ export default function App() {
   // room.bot). Canlı PR / analiz gösterimi ikisinde de açık olmalı; SERVER_BOT geçişinden önce
   // yalnız `mode==='pvb'` kontrol ediliyordu -> otoriter bot maçında canlı PR "—" kalıyordu.
   const botMatch = mode === 'pvb' || (online && !!room?.bot)
+
+  // TURNUVA MACI HAZIR: ping'te yeni (gorulmemis) mac varsa pencereyi ac. Aktif online oyunda
+  // (turnuva maci dahil, bitmemis) BOLME; biten macin sonuc ekranindayken acilir (sonraki tur).
+  useEffect(() => {
+    if (readyNotice) return
+    if (online && !matchOver) return
+    const tm = tournMatchRef.current
+    const n = tournNotices.find(
+      (x) =>
+        !readySeenRef.current.has(`${x.tid}-${x.match}`) &&
+        !(tm && tm.tid === x.tid && tm.matchKey === x.match),
+    )
+    if (!n) return
+    readySeenRef.current.add(`${n.tid}-${n.match}`)
+    setReadyNotice(n)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournNotices, online, matchOver, readyNotice])
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
@@ -6044,6 +6067,7 @@ export default function App() {
     try {
       const { code, target } = await tournamentMatchRoom(tid, m.key)
       const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl, target)
+      setTournRoom({ code: res.room.code, tid })
       // Tur uzunlugu (normal / yari final / final): odanin sunucudaki degeri esas.
       const tgt = res.room.target ?? target
       onlineTargetRef.current = tgt
@@ -8985,6 +9009,17 @@ export default function App() {
     <>
       {menuPages}
       {authModal}
+      {readyNotice && (
+        <TournMatchReady
+          key={`${readyNotice.tid}-${readyNotice.match}`}
+          notice={readyNotice}
+          onEnter={() => {
+            const n = readyNotice
+            setReadyNotice(null)
+            void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
+          }}
+        />
+      )}
       {menuOverlays}
       {bugReport}
     </>
@@ -9375,6 +9410,17 @@ export default function App() {
         trailing={
           <>
             {authModal}
+            {readyNotice && (
+              <TournMatchReady
+                key={`${readyNotice.tid}-${readyNotice.match}`}
+                notice={readyNotice}
+                onEnter={() => {
+                  const n = readyNotice
+                  setReadyNotice(null)
+                  void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
+                }}
+              />
+            )}
             {menuOverlays}
             {bugReport}
           </>
@@ -9649,6 +9695,17 @@ export default function App() {
         />
       )}
       {authModal}
+      {readyNotice && (
+        <TournMatchReady
+          key={`${readyNotice.tid}-${readyNotice.match}`}
+          notice={readyNotice}
+          onEnter={() => {
+            const n = readyNotice
+            setReadyNotice(null)
+            void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
+          }}
+        />
+      )}
       {menuPages}
       {menuOverlays}
 
@@ -9699,6 +9756,19 @@ export default function App() {
           // demez -> "Rakip bekleniyor…" sonsuza dek takılır. Bot maçında null geçip basit "Rövanş"
           // butonunu göster (idle) -> onRematch anında yeni bot odası açar (bot her zaman kabul).
           rematchState={online && !room?.bot ? rematch : null}
+          // TURNUVA MACI: rovans yok; "Turnuva Lobisi" -> turnuva detay sayfasi.
+          onTournamentLobby={
+            online && tournRoom && room?.code === tournRoom.code
+              ? () => {
+                  const tid = tournRoom.tid
+                  handleLeaveRoom()
+                  setMode('pvb')
+                  setTournDetailId(tid)
+                  setTournDetailSlug(String(tid))
+                  setTournOpen(true)
+                }
+              : undefined
+          }
           onRematch={() => {
             // BOT RÖVANŞI: bot "kabul" akışı YOK (openRematchRoom iki doğrulanmış user ID ister ->
             // bot odasında açılmaz). Rövanş = AYNI seviye/uzunlukla ANINDA yeni bot odası.

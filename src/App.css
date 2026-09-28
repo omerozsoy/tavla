@@ -22302,10 +22302,13 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.82rem;
   margin-top: 8px;
 }
-/* Klasik eslesme agaci (bracket): turlar saga daralir, maclar dikeyde ortalanir */
+/* Klasik eslesme agaci (bracket). Her tur: sabit baslik + govde; govdede her mac kendi YUVASINDA
+   (esit yukseklik) dikey ortalanir -> sonraki turun maci besleyen iki macin TAM ortasina denk gelir.
+   Baglantilar: .tb-out (sag: cift eslesmenin ortasinda birlesir) + .tb-in (sol: okla girer). Kazanan
+   yol (.on) yesil. Turlar arasi bosluk = 2 x 20px cizgi. */
 .tourn-bracket {
   display: flex;
-  gap: 28px;
+  gap: 40px;
   overflow-x: auto;
   padding: 8px 6px 10px;
   align-items: stretch;
@@ -22314,33 +22317,114 @@ button.acct-row-logout:hover:not(:disabled) {
   min-width: 158px;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+}
+.tourn-bracket .tourn-round-title {
+  height: 20px;
+  margin: 0 0 4px;
+  white-space: nowrap;
+}
+.tourn-round-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.tb-slot {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 7px 0;
+}
+.tb-slot > .tourn-match,
+.tb-slot > .tourn-champ {
+  width: 100%;
+}
+.tb-out,
+.tb-in {
+  position: absolute;
+  width: 20px;
+  border: 0 solid var(--border);
+  pointer-events: none;
+}
+.tb-out {
+  left: 100%;
+}
+.tb-out.down {
+  top: 50%;
+  height: 50%;
+  border-top-width: 2px;
+  border-right-width: 2px;
+}
+.tb-out.up {
+  bottom: 50%;
+  height: 50%;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+}
+.tb-out.straight {
+  top: 50%;
+  height: 0;
+  border-top-width: 2px;
+}
+.tb-in {
+  right: 100%;
+  top: 50%;
+  height: 0;
+  border-top-width: 2px;
+}
+/* Ok ucu (sonraki tura giris) */
+.tb-in::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -7px;
+  border: 5px solid transparent;
+  border-left: 7px solid var(--border);
+  border-right: 0;
+}
+.tb-out.on,
+.tb-in.on {
+  border-color: var(--success-fg);
+}
+.tb-in.on::after {
+  border-left-color: var(--success-fg);
 }
 .tourn-match {
   position: relative;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  margin: 7px 0;
   background: var(--card-bg);
 }
-.tourn-round:not(:last-child) .tourn-match::after {
-  content: '';
-  position: absolute;
-  right: -28px;
-  top: 50%;
-  width: 28px;
-  height: 2px;
-  background: var(--border);
+/* Sampiyon sutunu (finalin sagi, tac) */
+.tourn-champ-col {
+  min-width: 140px;
 }
-.tourn-round:not(:first-child) .tourn-match::before {
-  content: '';
-  position: absolute;
-  left: -28px;
-  top: 50%;
-  width: 28px;
-  height: 2px;
-  background: var(--border);
+.tourn-champ {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-size: 0.9rem;
+  min-width: 0;
+}
+.tourn-champ.done {
+  border: 1px solid var(--tv-gold, #c9a227);
+  color: var(--text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tv-gold, #c9a227) 18%, transparent);
+}
+.tourn-champ .tm-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tourn-champ > svg {
+  flex: none;
+  color: var(--tv-gold, #c9a227);
 }
 .tourn-match.mine {
   border-color: var(--accent);
@@ -22382,12 +22466,35 @@ button.acct-row-logout:hover:not(:disabled) {
   outline-offset: 2px;
 }
 .tm-p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 6px 8px;
   font-size: 0.85rem;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+}
+.tm-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Biten macin skoru (sag) / hukmen etiketi */
+.tm-score {
+  flex: none;
+  min-width: 1.4em;
+  text-align: right;
+  color: var(--muted);
+}
+.tm-p.win .tm-score {
+  color: var(--success-fg);
+}
+.tm-score.wo {
+  font-size: 0.72rem;
+}
+.tm-p.lose {
+  color: var(--muted);
 }
 .tm-p:last-child {
   border-bottom: none;
@@ -27911,4 +28018,62 @@ select:-webkit-autofill {
 .tourn-access-all {
   color: var(--muted);
   background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+/* Turnuva maci hazir penceresi (kura + 20sn geri sayim -> otomatik giris) */
+.tmr-card {
+  max-width: 380px;
+  text-align: center;
+  align-items: center;
+  gap: 6px;
+}
+.tmr-tname {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.tmr-tname > svg {
+  color: var(--tv-gold, #c9a227);
+}
+.tmr-title {
+  margin: 4px 0 8px;
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+.tmr-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.tmr-opp {
+  min-height: 1.6em;
+  font-size: 1.35rem;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.tmr-opp.spinning {
+  color: var(--muted);
+  filter: blur(0.4px);
+}
+.tmr-count {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  margin: 12px auto 4px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+}
+.tmr-count-n {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+.tmr-hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+}
+.tmr-go {
+  min-width: 180px;
 }

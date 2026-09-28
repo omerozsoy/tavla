@@ -65,12 +65,14 @@ class Tournament extends Model
         return $this->belongsTo(Content::class, 'organizer_id');
     }
 
-    // Rating'e gore seed'leyip 1. tur eslesmelerini uret (bye'lar otomatik ilerler).
+    // KURA: oyuncular rastgele cekilip 1. tur eslesmeleri uretilir (bye'lar otomatik ilerler).
+    // Eskiden rating'e gore seed'leniyordu (1 vs son); kullanici istegi: turnuva basinda kura.
     // Hem API (elle/otomatik baslat) hem admin panel bu tek kaynagi kullanir.
     public function startBracket(): void
     {
         $players = $this->players ?? [];
-        usort($players, fn ($a, $b) => ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0));
+        $players = array_values(array_filter($players)); // onceki bye (null) kalintilarini at
+        shuffle($players); // kura
         $size = (int) $this->size;
         // Sinirsiz (0): oyuncu sayisina gore bir sonraki 2'nin kuvvetine yuvarla
         if ($size < 4) {

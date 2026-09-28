@@ -55,6 +55,8 @@ interface Props {
   rematchState?: { mine: string | null; theirs: string | null; code: string | null } | null
   onRematchDecline?: () => void
   onHome: () => void
+  /** Turnuva maci: verilirse rovans/yeni mac gizlenir, "Turnuva Lobisi" gosterilir. */
+  onTournamentLobby?: () => void
   onStats: () => void
   onAnalysis: () => void
   hasReport: boolean
@@ -107,6 +109,7 @@ export default function MatchResult({
   rematchState,
   onRematchDecline,
   onHome,
+  onTournamentLobby,
   onStats,
   onAnalysis,
   hasReport,
@@ -324,7 +327,11 @@ export default function MatchResult({
           <div className="mr-rematch-note declined">{t('mr.rematchDeclined')}</div>
         )}
         <div className="mr-actions">
-          {rmPhase === 'waiting' ? (
+          {onTournamentLobby ? (
+            <Button variant="default" onClick={onTournamentLobby}>
+              <Icon name="trophy" /> {t('tourn.lobby')}
+            </Button>
+          ) : rmPhase === 'waiting' ? (
             <Button variant="default" disabled>
               <Icon name="refresh" /> {t('mr.rematchWait')}
             </Button>
@@ -342,9 +349,11 @@ export default function MatchResult({
               <Icon name="refresh" /> {t('mr.rematch')}
             </Button>
           )}
-          <Button variant="outline" onClick={onNewMatch}>
-            {t('mr.newMatch')}
-          </Button>
+          {!onTournamentLobby && (
+            <Button variant="outline" onClick={onNewMatch}>
+              {t('mr.newMatch')}
+            </Button>
+          )}
           <Button variant="outline" onClick={onHome}>
             <Icon name="home" /> {t('home.title')}
           </Button>

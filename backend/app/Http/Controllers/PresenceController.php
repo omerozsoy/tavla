@@ -69,7 +69,8 @@ class PresenceController extends Controller
             if (! $inThis) {
                 continue;
             }
-            foreach (($tr->bracket ?? []) as $round) {
+            $rounds = count($tr->bracket ?? []);
+            foreach (($tr->bracket ?? []) as $ri => $round) {
                 foreach ($round as $m) {
                     $p1 = $m['p1']['id'] ?? null;
                     $p2 = $m['p2']['id'] ?? null;
@@ -81,6 +82,9 @@ class PresenceController extends Controller
                             'match' => $m['key'],
                             'oppId' => $opp['id'],
                             'oppName' => $opp['name'] ?? 'Rakip',
+                            // Tur bilgisi: 0 = ilk tur (kura animasyonu), son = final.
+                            'round' => (int) $ri,
+                            'rounds' => $rounds,
                         ];
                     }
                 }
