@@ -33,7 +33,11 @@ class CareerPrService
             ->real()                          // yapay zeka (match_type='ai') HARIÇ
             ->whereNotNull('room_code')       // insan/online maç -> tüm bot (pvb) maçlari HARIÇ
             ->where('pr_decisions', '>', 0)   // analiz edilmis + sayilan karar var
-            ->whereNotNull('pr_equity_lost');
+            ->whereNotNull('pr_equity_lost')
+            // PUANSIZ maçlar (rated=false: puansız arkadaş odası / friendly 24h limiti aşımı) kariyer PR'a
+            // ve PR sıralamasına GİRMEZ; PR'ları yalnız o maçın analizinde görünür. Eski satırlar
+            // migration varsayılanıyla rated=true -> geçmiş havuz değişmez.
+            ->where('rated', true);
     }
 
     /** Bir oyuncunun aggregate Career PR degerlerini maçlarindan YENIDEN hesapla + kaydet. */

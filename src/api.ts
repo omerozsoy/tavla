@@ -876,6 +876,7 @@ export interface GameInvite {
   rating?: number | null // davet edenin rating'i (sayı + rütbe gösterilir)
   target: number // 1 = Tek Oyun; >1 = Maç uzunluğu (puan)
   timeControl?: string | null // casual | normal | speed
+  unrated?: boolean // puansiz arkadas maci (rating yok, PR genel siralamaya girmez)
 }
 export interface TournNotice {
   tid: number
@@ -924,11 +925,11 @@ export async function deleteNotifications(ids?: number[]): Promise<void> {
 }
 export async function inviteFriend(
   userId: number,
-  opts?: { target?: number; timeControl?: string },
+  opts?: { target?: number; timeControl?: string; unrated?: boolean },
 ): Promise<{ code: string }> {
   return req(`/friends/${userId}/invite`, {
     method: 'POST',
-    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null }),
+    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated }),
   })
 }
 export async function respondInvite(
@@ -1630,6 +1631,7 @@ export async function createRoom(
   avatar?: string,
   timeControl?: string,
   target = 1,
+  unrated = false, // puansiz arkadas maci
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
@@ -1640,6 +1642,7 @@ export async function createRoom(
       avatar: avatar ?? null,
       time_control: timeControl ?? null,
       target,
+      unrated,
     }),
   })
 }
@@ -1847,7 +1850,7 @@ export async function reportRating(
   achievements?: UnlockedAchievement[]
   // Maç PUANLI mı (Elo/PR üretti mi) + değilse SEBEP -> sonuç ekranı "puansız maç" etiketi.
   rated?: boolean
-  rating_reason?: 'bot' | 'friendly_cap' | 'friendly' | 'casual' | null
+  rating_reason?: 'bot' | 'unrated' | 'friendly_cap' | 'friendly' | 'casual' | null
   friendly_rating_limit?: number // "günlük limit doldu (N)" metni için
   match_result_id?: number // canlı ekran gnubg PR'ını bununla poll'lar (matchGnubgPr)
   gnubg_authoritative?: boolean // true -> gösterilen PR gnubg olacak (async); ekran "analiz ediliyor" gösterir

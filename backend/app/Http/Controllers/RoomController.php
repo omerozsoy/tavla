@@ -117,6 +117,7 @@ class RoomController extends Controller
             // eder. Eskiden burada 1-11 kaldigi icin 13+ davet "The selected target is invalid" ile
             // oda kuramiyordu. (Eslestirme havuzu 1-11'de kalir: create'in targets.* kurali ayri.)
             'target' => ['nullable', 'integer', 'min:1', 'max:25'],
+            'unrated' => ['nullable', 'boolean'], // puansız arkadaş maçı
         ]);
 
         $room = Room::create([
@@ -128,6 +129,7 @@ class RoomController extends Controller
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'waiting',
             'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
+            'unrated' => (bool) ($data['unrated'] ?? false),
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
             'target' => (int) ($data['target'] ?? 1),
             'version' => 0,
@@ -1109,6 +1111,8 @@ class RoomController extends Controller
         // yoktur -> mode dokunulmaz (mevcut davranış korunur).
         if ($invite) {
             $createAttrs['mode'] = 'friendly';
+            // Puansız bayrağı davetten (davet eden seçti). Oda zaten varsa firstOrCreate dokunmaz.
+            $createAttrs['unrated'] = (bool) ($invite->unrated ?? false);
         }
 
         $room = Room::firstOrCreate(['code' => $code], $createAttrs);
@@ -1421,6 +1425,7 @@ class RoomController extends Controller
                 'target' => $locked->target,
                 'targets' => $locked->targets,
                 'mode' => $locked->mode,
+                'unrated' => (bool) $locked->unrated, // puansız maçın rövanşı da puansız
                 'time_control' => $locked->time_control,
                 'version' => 0,
             ];

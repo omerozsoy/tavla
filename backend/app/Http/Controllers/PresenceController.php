@@ -33,6 +33,7 @@ class PresenceController extends Controller
                 'game_invites.room_code as code',
                 'game_invites.target',
                 'game_invites.time_control',
+                'game_invites.unrated',
                 'users.first_name',
                 'users.nickname',
                 'users.avatar',
@@ -46,6 +47,7 @@ class PresenceController extends Controller
                 'rating' => $r->rating !== null ? (int) $r->rating : null,
                 'target' => (int) ($r->target ?? 1),
                 'timeControl' => $r->time_control,
+                'unrated' => (bool) ($r->unrated ?? false),
             ]);
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
@@ -196,6 +198,7 @@ class PresenceController extends Controller
         $settings = $request->validate([
             'target' => ['nullable', 'integer', 'min:1', 'max:25'],
             'time_control' => ['nullable', 'in:casual,normal,speed'],
+            'unrated' => ['nullable', 'boolean'], // puansız arkadaş maçı (rating yok, PR kariyere girmez)
         ]);
         $target = User::find($userId);
         if (! $target) {
@@ -241,6 +244,7 @@ class PresenceController extends Controller
             'room_code' => $code,
             'target' => $settings['target'] ?? 1,
             'time_control' => $settings['time_control'] ?? null,
+            'unrated' => (bool) ($settings['unrated'] ?? false),
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),

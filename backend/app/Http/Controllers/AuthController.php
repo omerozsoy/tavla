@@ -308,7 +308,9 @@ class AuthController extends Controller
         // varsayılan 3) — sonrası casual. (Eski kural mode!=='friendly' idi; friendly artık puanlı.)
         $ranked = \App\Support\RatingPolicy::isRanked($room, (int) $user->id, $opponentId);
         // Friendly + 24h limit AŞILDI -> casual: rating YOK + PR/istatistik KREDİLENMEZ (analiz job'ı atlanır).
-        $friendlyOverCap = ! $room->bot && $room->mode === 'friendly' && ! $ranked;
+        // Puansız oda (unrated) limit aşımı DEĞİL: PR/luck analizi yine çalışır (maç analizinde görünür),
+        // yalnız rated=false yazıldığından kariyer PR/sıralamaya girmez (CareerPrService).
+        $friendlyOverCap = ! $room->bot && ! $room->unrated && $room->mode === 'friendly' && ! $ranked;
         $ra = $user->rating ?? 1500;
         $rb = (int) ($room->{$opponentSlot.'_rating'} ?? $ra);
         if ($rb <= 0) {
@@ -748,14 +750,14 @@ class AuthController extends Controller
         if (! $ranked) {
             $ratingReason = $room->bot
                 ? 'bot'
-                : ($friendlyOverCap ? 'friendly_cap' : ($room->mode === 'friendly' ? 'friendly' : 'casual'));
+                : ($room->unrated ? 'unrated' : ($friendlyOverCap ? 'friendly_cap' : ($room->mode === 'friendly' ? 'friendly' : 'casual')));
         }
         return response()->json([
             'rating' => $newRating,
             'user' => $user,
             'achievements' => $unlocked,
             'rated' => $ranked,               // maç Elo/PR ürettiyse true; casual/kılıç-limit -> false
-            'rating_reason' => $ratingReason, // false ise sebep: bot|friendly_cap|friendly|casual
+            'rating_reason' => $ratingReason, // false ise sebep: bot|unrated|friendly_cap|friendly|casual
             'friendly_rating_limit' => \App\Support\RatingPolicy::friendlyDailyLimit(), // "limit doldu (N)" metni için
             'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
             // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı

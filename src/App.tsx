@@ -1750,7 +1750,7 @@ export default function App() {
   const [ratingChange, setRatingChange] = useState<{
     before: number
     after: number
-    reason?: 'bot' | 'friendly_cap' | 'friendly' | 'casual' | null
+    reason?: 'bot' | 'unrated' | 'friendly_cap' | 'friendly' | 'casual' | null
     limit?: number
   } | null>(null)
   // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
@@ -5656,7 +5656,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.slot, room?.status])
 
-  async function handleCreateRoom(target = 1, tc?: TimeControl) {
+  async function handleCreateRoom(target = 1, tc?: TimeControl, unrated = false) {
     roomLeavingRef.current = null
     rollConflictRef.current = false
     setRoomBusy(true)
@@ -5672,7 +5672,7 @@ export default function App() {
       stakeRef.current = 0
       betPctRef.current = 0
       const tcUse = tc ?? timeControl // FriendGameSetup'tan gelen saat (state stale olmasin)
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target, unrated)
       resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -6196,7 +6196,7 @@ export default function App() {
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
-  async function handleSendInvite(opts: { target: number; timeControl: TimeControl }) {
+  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean }) {
     const tgt = inviteTarget
     if (!tgt) return
     setFriendSetupOpen(false)
@@ -6219,7 +6219,7 @@ export default function App() {
     setTurnsPlayed(0)
     setMatch(newMatch(opts.target))
     try {
-      const { code } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl })
+      const { code } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated })
       const ok = await enterOnlineByCode(code, opts.target, opts.timeControl)
       if (!ok) {
         // Davet GÖNDERİLDİ ama davet edenin odası kurulamadı (enterOnlineByCode false) -> gönderilen
@@ -8211,6 +8211,11 @@ export default function App() {
                   <Icon name="clock" size={14} /> {t(clockKey)}
                 </span>
               )}
+              {inv.unrated && (
+                <span className="invite-chip">
+                  <Icon name="info" size={14} /> {t('friend.unratedChip')}
+                </span>
+              )}
             </div>
             <div className="invite-btns">
               <Button variant="default" aria-label={t('friends.accept')} onClick={() => handleAcceptInvite(inv)}>
@@ -9008,7 +9013,7 @@ export default function App() {
               setFriendSetupOpen(false)
               setInviteTarget(null)
             }}
-            onCreate={({ target, timeControl }) => {
+            onCreate={({ target, timeControl, unrated }) => {
               setFriendSetupOpen(false)
               setTimeControl(timeControl)
               clockRef.current = CLOCK_PRESETS[timeControl]
@@ -9016,7 +9021,7 @@ export default function App() {
               targetsRef.current = [target]
               setMode('online')
               setHome(false)
-              handleCreateRoom(target, timeControl)
+              handleCreateRoom(target, timeControl, unrated)
             }}
             onJoin={(code) => {
               // Arkadasin kodu: navigasyonu ERKEN yapma. Kod gecerliyse handleJoinRoom

@@ -22677,6 +22677,31 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 8px;
   min-width: 0;
 }
+/* Arkadasinla Oyna: puansiz mac secenegi */
+.setup-unrated {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  cursor: pointer;
+}
+.setup-unrated > button {
+  margin-top: 2px;
+}
+.setup-unrated-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.95rem;
+}
+.setup-unrated-txt small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
 .invite-wait-rank {
   justify-content: center;
   margin-block: 4px 12px;
