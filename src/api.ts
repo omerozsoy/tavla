@@ -495,12 +495,10 @@ export interface MyMatch {
   id: number
   has_log?: boolean
   won: boolean
-  // Oyuncuların ad soyad'ı (tanımlıysa): kendim + rakip. Yoksa null -> yalnız takma ad gösterilir.
+  // Yalniz TAKMA AD (gizlilik: ad soyad API'den donmez).
   self_name?: string | null
-  self_full_name?: string | null
   opponent_rating: number
   opponent_name?: string | null
-  opponent_full_name?: string | null
   opponent_pr?: number | null
   rating_before: number
   rating_after: number
