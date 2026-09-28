@@ -3416,6 +3416,19 @@ button[aria-disabled='true'],
   width: auto;
   display: block;
 }
+.service-gallery-single {
+  display: block;
+  width: 100%;
+}
+.service-gallery-single .service-gallery-thumb {
+  width: 100%;
+  height: auto;
+}
+.service-gallery-single .service-gallery-thumb img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
 .news-gallery-thumb {
   padding: 0;
   border: 1px solid var(--border);
