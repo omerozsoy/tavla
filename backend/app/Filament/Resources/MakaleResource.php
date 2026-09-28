@@ -59,7 +59,7 @@ class MakaleResource extends Resource
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('makale')->visibility('public')
-                ->maxSize(4096)->panelLayout('grid')
+                ->maxSize(4096)->panelLayout('grid')->imagePreviewHeight('120')
                 ->helperText('Birden fazla fotoğraf ekleyebilirsin. Makale detayında galeri olarak gösterilir.')
                 ->columnSpanFull(),
             Forms\Components\TextInput::make('views')->label('Okunma sayısı')->numeric()->minValue(0)
