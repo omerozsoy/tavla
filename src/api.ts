@@ -1852,7 +1852,7 @@ export async function reportRating(
   achievements?: UnlockedAchievement[]
   // Maç PUANLI mı (Elo/PR üretti mi) + değilse SEBEP -> sonuç ekranı "puansız maç" etiketi.
   rated?: boolean
-  rating_reason?: 'bot' | 'unrated' | 'friendly_cap' | 'friendly' | 'casual' | null
+  rating_reason?: 'bot' | 'unrated' | 'guest' | 'friendly_cap' | 'friendly' | 'casual' | null
   friendly_rating_limit?: number // "günlük limit doldu (N)" metni için
   match_result_id?: number // canlı ekran gnubg PR'ını bununla poll'lar (matchGnubgPr)
   gnubg_authoritative?: boolean // true -> gösterilen PR gnubg olacak (async); ekran "analiz ediliyor" gösterir

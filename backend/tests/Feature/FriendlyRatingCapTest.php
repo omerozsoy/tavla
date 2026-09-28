@@ -58,6 +58,19 @@ class FriendlyRatingCapTest extends TestCase
         $this->assertFalse(RatingPolicy::isRanked($bot, $a->id, 0));
     }
 
+    // Misafir (hesapsız) rakip: her modda PUANSIZ (anti-farm; limit sayılamadığı için eskiden puanlıydı).
+    public function test_guest_opponent_is_unranked(): void
+    {
+        $a = User::factory()->create();
+        $room = Room::create([
+            'code' => 'GST1', 'mode' => 'friendly', 'status' => 'finished',
+            'p1_token' => 'tga', 'p1_user_id' => $a->id, 'p1_name' => 'A', 'p1_rating' => 1500,
+            'p2_token' => 'tgb', 'p2_user_id' => null, 'p2_name' => 'Misafir', 'p2_rating' => 4000,
+        ]);
+        $this->assertFalse(RatingPolicy::isRanked($room, $a->id, 0));
+        $this->assertFalse(RatingPolicy::isRanked($room, 0, $a->id));
+    }
+
     public function test_friendly_rated_until_cap_then_casual(): void
     {
         Setting::put('friendly_rating_daily_limit', 3);

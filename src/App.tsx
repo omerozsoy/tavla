@@ -1752,7 +1752,7 @@ export default function App() {
   const [ratingChange, setRatingChange] = useState<{
     before: number
     after: number
-    reason?: 'bot' | 'unrated' | 'friendly_cap' | 'friendly' | 'casual' | null
+    reason?: 'bot' | 'unrated' | 'guest' | 'friendly_cap' | 'friendly' | 'casual' | null
     limit?: number
   } | null>(null)
   // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
