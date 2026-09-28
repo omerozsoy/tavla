@@ -9,6 +9,7 @@ use App\Services\WalletService;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -24,17 +25,22 @@ use Illuminate\Support\Str;
  *   php artisan tavla:tourney-bots join "Test Turnuvası 2"        # botlar turnuvaya katilir
  *   php artisan tavla:tourney-bots run  "Test Turnuvası 2"        # turnuva bitene kadar maclari oynar
  *   php artisan tavla:tourney-bots status "Test Turnuvası 2"
+ *   php artisan tavla:tourney-bots tick                          # ZAMANLAYICI: ~55sn oynat, cik
  *
- * `run` uzun surer (turnuva bitene kadar); sunucuda screen/tmux/nohup ile calistirin.
+ * `run` uzun surer (turnuva bitene kadar; SSH + screen gerekir). SSH yoksa `tick` her dakika
+ * zamanlayicidan (routes/console.php) calisir: botlarin katildigi acik/suren TUM turnuvalari
+ * ~55sn oynatir ve cikar. Mac durumu sunucuda (oda/bracket) tutuldugu icin dakikalar arasi
+ * kopukluk sorun degil (match-room/enter idempotent). Bot turnuvasi yoksa aninda cikar.
  */
 class TourneyBots extends Command
 {
     protected $signature = 'tavla:tourney-bots
-        {action : setup | join | run | status}
+        {action : setup | join | run | status | tick}
         {tournament? : Turnuva adi (tam) veya id}
         {--count=4 : Bot sayisi}
         {--level=12 : Bot gucu (12 = Kahvedeki Dayi)}
-        {--base-url= : API koku (varsayilan APP_URL)}';
+        {--base-url= : API koku (varsayilan APP_URL)}
+        {--seconds=55 : tick: bu kadar saniye oynat}';
 
     protected $description = 'Turnuva test botlari: hesaplari kur, turnuvaya kat, maclari Dayi (seviye 12) gucunde oyna.';
 
@@ -47,11 +53,17 @@ class TourneyBots extends Command
     /** Ayni el icin kup teklifi bir kez degerlendirilsin: "code:gameNo:turns" */
     private array $cubeChecked = [];
 
+    /** Turnuva basina son yazilan durum (log'u her turda tekrar etmesin) */
+    private array $lastStatus = [];
+
     public function handle(BotMoveService $engine, WalletService $wallet): int
     {
         $action = (string) $this->argument('action');
         if ($action === 'setup') {
             return $this->setup($wallet);
+        }
+        if ($action === 'tick') {
+            return $this->tick($engine);
         }
 
         $t = $this->findTournament();
@@ -128,10 +140,14 @@ class TourneyBots extends Command
             if (! $u) {
                 continue;
             }
-            // Eski tokenlari temizle (yalniz 1 gunden eski: ayni anda calisan run/join/status
-            // birbirinin tokenini gecersiz kilmasin).
-            $u->tokens()->where('name', 'tourney-bot')->where('created_at', '<', now()->subDay())->delete();
-            $plain = $u->createToken('tourney-bot')->plainTextToken;
+            // Token onbellekte (tick her dakika calisir -> her seferinde yeni token uretilmesin).
+            // Eski tokenlar (onbellek suresinden uzun) temizlenir.
+            $plain = Cache::get('tourney-bot-token:'.$u->id);
+            if (! $plain || ! $u->tokens()->where('name', 'tourney-bot')->exists()) {
+                $u->tokens()->where('name', 'tourney-bot')->where('created_at', '<', now()->subDays(8))->delete();
+                $plain = $u->createToken('tourney-bot')->plainTextToken;
+                Cache::put('tourney-bot-token:'.$u->id, $plain, now()->addDays(7));
+            }
             $api = Http::baseUrl($base)->withToken($plain)->acceptJson()->timeout(40);
             if ($gate !== '') {
                 $api = $api->withHeaders(['X-Site-Gate' => $gate]);
@@ -190,13 +206,39 @@ class TourneyBots extends Command
 
     // ---------------------------------------------------------------- oyun dongusu
 
-    private function runBots(Tournament $t, BotMoveService $engine): int
+    /** Zamanlayici: botlarin katildigi acik/suren turnuvalari --seconds boyunca oynat, cik. */
+    private function tick(BotMoveService $engine): int
+    {
+        $botIds = User::where('email', 'like', 'dayibot%@bots.tavlatv.invalid')->pluck('id')->map(fn ($id) => (int) $id)->all();
+        if (! $botIds) {
+            return self::SUCCESS;
+        }
+        $has = fn (Tournament $t) => collect($t->players ?? [])->contains(fn ($p) => in_array((int) ($p['id'] ?? 0), $botIds, true));
+        $tours = Tournament::whereIn('status', ['open', 'running'])->get()->filter($has)->values();
+        if ($tours->isEmpty()) {
+            return self::SUCCESS; // bot turnuvasi yok -> maliyetsiz cikis
+        }
+        $this->loadBots();
+        $deadline = time() + max(5, (int) $this->option('seconds'));
+        $this->line('['.now('Europe/Istanbul')->format('H:i:s').'] tick: '.$tours->pluck('id')->implode(','));
+        while (time() < $deadline) {
+            foreach ($tours as $t) {
+                $this->runBots($t, $engine, $deadline, true);
+            }
+            usleep(1_200_000);
+        }
+
+        return self::SUCCESS;
+    }
+
+    private function runBots(Tournament $t, BotMoveService $engine, ?int $deadline = null, bool $once = false): int
     {
         $level = max(1, min(12, (int) $this->option('level')));
-        $this->info("Botlar calisiyor (seviye {$level}). Durdurmak icin Ctrl+C.");
+        if (! $once) {
+            $this->info("Botlar calisiyor (seviye {$level}). Durdurmak icin Ctrl+C.");
+        }
         $first = reset($this->bots);
-        $lastStatus = null;
-        while (true) {
+        while ($deadline === null || time() < $deadline) {
             // Turnuva detayini cek (autoStartDue tetiklenir: son katilim gecince baslar)
             $r = $first['api']->get("/tournaments/{$t->id}");
             $tour = $r->json('tournament');
@@ -206,12 +248,12 @@ class TourneyBots extends Command
 
                 continue;
             }
-            if ($tour['status'] !== $lastStatus) {
-                $this->info('Turnuva durumu: '.$tour['status']);
-                $lastStatus = $tour['status'];
+            if ($tour['status'] !== ($this->lastStatus[$t->id] ?? null)) {
+                $this->info("#{$t->id} turnuva durumu: ".$tour['status']);
+                $this->lastStatus[$t->id] = $tour['status'];
             }
             if ($tour['status'] === 'finished') {
-                $this->info('Turnuva bitti. Sampiyon id: '.($tour['champion_id'] ?? '—'));
+                $this->info("#{$t->id} turnuva bitti. Sampiyon id: ".($tour['champion_id'] ?? '—'));
 
                 return self::SUCCESS;
             }
@@ -233,8 +275,13 @@ class TourneyBots extends Command
                     }
                 }
             }
+            if ($once) {
+                return self::SUCCESS; // tick: tek tur; dongu tick() icinde
+            }
             usleep(1_200_000);
         }
+
+        return self::SUCCESS;
     }
 
     private function playMatch(int $tid, array $m, array $bot, BotMoveService $engine, int $level): void
