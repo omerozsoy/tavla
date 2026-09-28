@@ -1,0 +1,19 @@
+[Unit]
+Description=GNU Backgammon analiz servisi #6 (CANLI bot havuzu genisletme :8097)
+After=network.target
+# CANLI bot (:8092,:8093,:8096) ile AYNI kod, AYRI instance (:8097). Canli havuzun 4. instance'i.
+# backend/.env: GNUBG_URL_BACKUP listesine http://127.0.0.1:8097 ekle + GNUBG_UNITS'e ekle.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# GNUBG_SECRET diger instance'lar + backend .env ile AYNI olmali. SADECE port farkli.
+Environment=GNUBG_PORT=8097
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
