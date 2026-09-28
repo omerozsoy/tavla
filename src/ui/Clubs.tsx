@@ -13,6 +13,7 @@ import {
   type ClubSummary,
   type ClubFull,
 } from '../api'
+import Loading from './Loading'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
 import PublicProfile from './PublicProfile'
@@ -182,7 +183,7 @@ export default function Clubs({ onClose, currentId, onAddFriend, onMessage }: Pr
         </h2>
 
         {loading ? (
-          <div className="club-empty">{t('clubs.loading')}</div>
+          <Loading />
         ) : mine ? (
           // ---- Kendi kulubum ----
           <div className="club-mine">

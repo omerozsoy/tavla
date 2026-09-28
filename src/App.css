@@ -28083,3 +28083,32 @@ select:-webkit-autofill {
 .tmr-go {
   min-width: 180px;
 }
+
+/* Merkezi yukleme gostergesi (src/ui/Loading.tsx): donen zar + metin. */
+.app-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 16px;
+  color: var(--muted);
+  text-align: center;
+}
+.app-loading__dice {
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+.app-loading__text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: app-loading-pulse 1.4s ease-in-out infinite;
+}
+@keyframes app-loading-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-loading__text { animation: none; }
+}

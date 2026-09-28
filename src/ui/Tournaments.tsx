@@ -5,6 +5,7 @@ import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
+import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import PremiumCrown from './PremiumCrown'
 import { TavlaTvLogo } from './TavlaTvLogo'
@@ -739,7 +740,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 
         {loading ? (
-          <div className="lb-empty">{t('an.loading')}</div>
+          <Loading />
         ) : list.length === 0 ? (
           <div className="lb-empty">{t('tourn.empty')}</div>
         ) : (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { useEscape } from './useEscape'
 import { getCookies, getLegalPage, type CookieRow, type LegalPage } from '../api'
 import { OPEN_COOKIE_PREFS } from './CookieConsent'
@@ -110,7 +111,7 @@ export function LegalView({
         </Button>
 
         {loading ? (
-          <div className="admin-empty">Yükleniyor…</div>
+          <Loading />
         ) : !page ? (
           <div className="admin-empty">Sayfa bulunamadı.</div>
         ) : (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
+import Loading from './Loading'
 import { useEscape } from './useEscape'
 import MiniBoard from './MiniBoard'
 import type { GameState, Player, Step } from '../engine/types'
@@ -184,7 +185,7 @@ export default function BlunderLog({
       )}
 
       {loading ? (
-          <div className="admin-empty">{t('admin.loading')}</div>
+          <Loading />
         ) : error ? (
           <div className="admin-empty">
             {t('common.loadError')}{' '}

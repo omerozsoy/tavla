@@ -3,6 +3,7 @@ import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
+import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankMedals from './TopRankMedals'
 import { Button } from '@/components/ui/button'
@@ -45,7 +46,7 @@ export default function PublicProfile({
     <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="register-card pp-card" onClick={(e) => e.stopPropagation()}>
         {error && <div className="lb-empty">{t('lb.error')}</div>}
-        {!error && !p && <div className="lb-empty">{t('an.loading')}</div>}
+        {!error && !p && <Loading />}
 
         {p && (
           <>

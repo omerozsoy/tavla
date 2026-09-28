@@ -8,6 +8,7 @@ import {
   type MyStats, type MyMatch, type Analytics, type PerformanceStats, type MedianFilter,
   type DiceStats, type DicePhase,
 } from '../api'
+import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankMedals from './TopRankMedals'
 import { LineChart, BarChart } from './Charts'
@@ -458,7 +459,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
             {/* Son maclar (mac gecmisi) */}
             <div className="mh-head">{t('stats.recent')}</div>
             {matches === null ? (
-              <div className="lb-empty small">{t('an.loading')}</div>
+              <Loading />
             ) : matches.length === 0 ? (
               <div className="lb-empty small">{t('stats.noMatches')}</div>
             ) : (

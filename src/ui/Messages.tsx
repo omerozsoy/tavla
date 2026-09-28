@@ -16,6 +16,7 @@ import {
   type ChatUser,
   type AppNotification,
 } from '../api'
+import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import AvatarFrame from './AvatarFrame'
 import { Button } from '@/components/ui/button'
@@ -429,7 +430,7 @@ export default function Messages({
                 const list = (q ? source.filter((th) => th.user.name.toLowerCase().includes(q)) : [...source]).sort(
                   (a, b) => Number(!!b.user.online) - Number(!!a.user.online),
                 )
-                if (loadingThreads) return <div className="lb-empty">{t('dm.loading')}</div>
+                if (loadingThreads) return <Loading />
                 if (pane === 'requests' && source.length === 0) return <div className="lb-empty">{t('dm.requestsEmpty')}</div>
                 if (pane === 'chats' && chatThreads.length === 0 && !q) return <div className="lb-empty">{t('dm.empty')}</div>
                 if (list.length === 0) return <div className="lb-empty">{t('dm.searchEmpty')}</div>
@@ -592,7 +593,7 @@ export default function Messages({
                   }}
                 >
                   {loadingThread ? (
-                    <div className="lb-empty">{t('dm.loading')}</div>
+                    <Loading />
                   ) : messages.length === 0 ? (
                     <div className="messages-hint">{t('dm.firstHint')}</div>
                   ) : (
