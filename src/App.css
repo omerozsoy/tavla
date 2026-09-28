@@ -1645,12 +1645,24 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  max-width: min(90vw, 420px);
   padding: 14px 22px;
-  border-radius: var(--radius-pill);
+  border-radius: 16px;
   background: color-mix(in srgb, var(--card-bg) 92%, transparent);
   border: 1px solid var(--border);
   font-size: 0.95rem;
   color: var(--text);
+}
+.mh-loading-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mh-loading-note {
+  font-style: normal;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--muted);
 }
 .mh-item.win {
   border-left-color: var(--success-fg, #4caf7d);

@@ -1672,6 +1672,16 @@ class AuthController extends Controller
         if (empty($match->log)) {
             return response()->json(['ok' => false, 'error' => 'no-log'], 404);
         }
+        // ÖNBELLEK: hamle-hamle review ağırdır (~saniyeler); .mat maç bittikten sonra değişmez.
+        // Varsayılan plies(2) sonucunu satırda sakla -> İLK açılış hesaplar, sonrakiler anında döner.
+        // (deploy/cache flush'tan etkilenmesin diye Laravel cache değil DB kolonu.)
+        $useCache = $plies === 2 && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_review');
+        if ($useCache && ! empty($match->gnubg_review)) {
+            $cached = json_decode((string) $match->gnubg_review, true);
+            if (is_array($cached) && ! empty($cached['ok'])) {
+                return response()->json($cached);
+            }
+        }
         try {
             $mat = $match->matText(); // match_results.log -> kanonik .mat
         } catch (\Throwable $e) {
@@ -1686,6 +1696,13 @@ class AuthController extends Controller
                 'ok' => false, 'error' => 'review-failed',
                 'detail' => is_array($res) ? ($res['error'] ?? $res['exception'] ?? null) : null,
             ], 503);
+        }
+        // Başarılı review'i önbelleğe yaz (yalnız plies=2). Query-builder update -> fillable gerekmez.
+        if ($useCache) {
+            \App\Models\MatchResult::where('id', $match->id)->update([
+                'gnubg_review' => json_encode($res),
+                'gnubg_review_at' => now(),
+            ]);
         }
 
         return response()->json($res); // {ok, matchLength, names, decisions, log: LogEntry[]}
