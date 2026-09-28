@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -80,7 +81,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Filament tarih seciciler: Turkce gun.ay.yil formati + takvim (native degil)
         DatePicker::configureUsing(fn (DatePicker $c) => $c->native(false)->displayFormat('d.m.Y')->locale('tr')->firstDayOfWeek(1));
-        DateTimePicker::configureUsing(fn (DateTimePicker $c) => $c->native(false)->displayFormat('d.m.Y H:i')->locale('tr')->firstDayOfWeek(1));
+        // SAAT DILIMI: veritabani UTC kalir (app.timezone). Admin paneli Turkiye saatiyle GOSTERIR ve
+        // GIRILENI Turkiye saati kabul edip UTC'ye cevirerek kaydeder. Eskiden panel UTC gosteriyordu ->
+        // saatler 3 saat geri gorunuyor, "20:00" yazilan turnuva sitede 23:00'te basliyordu.
+        DateTimePicker::configureUsing(fn (DateTimePicker $c) => $c->native(false)->displayFormat('d.m.Y H:i')->locale('tr')->firstDayOfWeek(1)->timezone('Europe/Istanbul'));
+        TextColumn::configureUsing(fn (TextColumn $c) => $c->timezone('Europe/Istanbul'));
 
         // Sifre sifirlama linki SPA'ya (kok sayfaya) gitsin
         ResetPassword::createUrlUsing(function ($notifiable, string $token) {
