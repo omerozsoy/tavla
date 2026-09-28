@@ -67,7 +67,7 @@ class TourneyBots extends Command
 
         return match ($action) {
             'join' => $this->join($t),
-            'run' => $this->run($t, $engine),
+            'run' => $this->runBots($t, $engine),
             'status' => $this->status($t),
             default => $this->bail("Bilinmeyen islem: {$action}"),
         };
@@ -190,7 +190,7 @@ class TourneyBots extends Command
 
     // ---------------------------------------------------------------- oyun dongusu
 
-    private function run(Tournament $t, BotMoveService $engine): int
+    private function runBots(Tournament $t, BotMoveService $engine): int
     {
         $level = max(1, min(12, (int) $this->option('level')));
         $this->info("Botlar calisiyor (seviye {$level}). Durdurmak icin Ctrl+C.");
