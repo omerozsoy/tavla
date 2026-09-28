@@ -79,6 +79,10 @@ class InfoPageResource extends Resource
                 ->fileAttachmentsVisibility('public')
                 ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir. Ataç ikonu ile metnin içine resim ekleyebilirsin.')
                 ->columnSpanFull(),
+            Forms\Components\ViewField::make('divider_action')
+                ->label('')
+                ->view('filament.forms.info-divider')
+                ->columnSpanFull(),
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi (varsayılan)')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('bilgi')->visibility('public')
