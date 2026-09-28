@@ -1822,6 +1822,10 @@ class RoomController extends Controller
         if ($room->authoritative) {
             $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
             if (empty($sm['done'])) {
+                // ZAR ATILDI AMA OYNANMADAN TIMEOUT/TERK: kaybeden (sıra sahibi) zarını atıp hamle
+                // yapmadan süresi bitti/terk etti -> atılan zarı .mat'e yaz (pes ile aynı gerekçe;
+                // done set edilmeden ÖNCE, bu blok yalnız ilk-karar poll'unda çalışır -> idempotent).
+                $this->recordPendingRoll($room, $winnerColor === 'white' ? 'black' : 'white');
                 $target = (int) ($sm['target'] ?? $room->target ?? 1);
                 $cubeVal = (int) ($sm['cube']['value'] ?? 1);
                 $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + max(1, $cubeVal));
@@ -2160,6 +2164,32 @@ class RoomController extends Controller
                 'room' => $room->code, 'kind' => $fields['kind'] ?? '?', 'err' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * ZAR ATILDI AMA OYNANMADAN oyun bitişi (pes / timeout / terk): sıra sahibi zarını atıp (ör.
+     * 6-2) HAMLE YAPMADAN oyunu kapatırsa, atılan zar match_moves'a HİÇ yazılmıyordu (yalnız
+     * server_state'te). Sonuç: .mat/gnubg/XG kaybı zar-ÖNCESİ "Roll or Double" kararında sanar ->
+     * hâlâ kazanma şansı olan konumu bıraktın diye AĞIR ceza. Zarı boş-notasyonlu 'move' satırı
+     * olarak yaz ("62:") -> analiz kaybı zar-SONRASI (gerçek/umutsuz) konumda değerlendirir.
+     * Yalnız $ownerColor sıra sahibiyken + atılmış zar varken kaydeder; aksi halde no-op.
+     */
+    private function recordPendingRoll(Room $room, string $ownerColor): void
+    {
+        $st = is_array($room->server_state) ? $room->server_state : [];
+        if (($st['turn'] ?? null) !== $ownerColor || empty($st['dice'])) {
+            return;
+        }
+        $sm = is_array($room->server_match) ? $room->server_match : [];
+        $this->recordAction($room, [
+            'game_no' => (int) ($sm['gameNo'] ?? 1),
+            'seq' => (int) ($sm['turns'] ?? 0),
+            'ord' => 0, 'player' => $ownerColor, 'kind' => 'move',
+            'dice' => array_values($st['dice']),
+            'steps' => [], 'notation' => '',
+            'pos' => $st, 'mctx' => $this->moveMctx($room),
+            'cube_value' => (int) $this->cubeOf($room)['value'],
+        ]);
     }
 
     /** Eylem anındaki maç bağlamı (PR match-aware eval için): skor/küp/crawford/matchLen. */
@@ -2984,24 +3014,8 @@ class RoomController extends Controller
             $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
             $value = \App\Support\Backgammon::resignationValue($state, $winner); // 1/2/3
             $points = $value * (int) $this->cubeOf($room)['value'];
-            // ZAR ATILDI AMA OYNANMADAN PES: pes eden zarını atıp (ör. 6-2) oyunu kaybettiğini görüp
-            // hamle YAPMADAN pes ederse, o zar match_moves'a HİÇ yazılmıyordu (yalnız server_state'te).
-            // Sonuç: .mat/gnubg/XG pesi "Roll or Double" (zar-öncesi) kararında sanır -> hâlâ kazanma
-            // şansı olan konumu bıraktın diye AĞIR ceza. Zarı boş-notasyonlu move satırı olarak
-            // kaydet ("62:") -> analiz pesi zar-SONRASI (umutsuz) konumda değerlendirir, ceza gerçekçi.
-            $resignerColor = $this->slotColor($slot);
-            if (($state['turn'] ?? null) === $resignerColor && ! empty($state['dice'])) {
-                $sm2 = is_array($room->server_match) ? $room->server_match : [];
-                $this->recordAction($room, [
-                    'game_no' => (int) ($sm2['gameNo'] ?? 1),
-                    'seq' => (int) ($sm2['turns'] ?? 0),
-                    'ord' => 0, 'player' => $resignerColor, 'kind' => 'move',
-                    'dice' => array_values($state['dice']),
-                    'steps' => [], 'notation' => '',
-                    'pos' => $state, 'mctx' => $this->moveMctx($room),
-                    'cube_value' => (int) $this->cubeOf($room)['value'],
-                ]);
-            }
+            // ZAR ATILDI AMA OYNANMADAN PES: atılan zarı .mat'e yaz (bkz. recordPendingRoll).
+            $this->recordPendingRoll($room, $this->slotColor($slot));
             $matchDone = $this->applyGameResult($room, $winner, $points);
             if ($matchDone) {
                 // MOVE yoluyla AYNI terminal kapanış: server_match.done ile oda status'ü birlikte

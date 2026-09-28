@@ -131,6 +131,52 @@ class RoomClockTest extends TestCase
         $this->assertSame('black', $room->state['gameEnd']['winner']);
     }
 
+    // ---- TIMEOUT: zar atılıp oynanmadan süre bitince atılan zar match_moves'a yazılır ----
+    // (resign ile aynı gerekçe: analiz kaybı zar-SONRASI konumda değerlendirsin; bkz recordPendingRoll)
+    public function test_timeout_after_roll_records_pending_dice(): void
+    {
+        $this->p1 = User::factory()->create();
+        $this->p2 = User::factory()->create();
+        $now = microtime(true);
+        $state = array_merge(\App\Support\Backgammon::initialState(), [
+            'turn' => 'white', 'dice' => [6, 2], 'diceUsed' => [false, false],
+        ]);
+        Room::create([
+            'code' => 'CLKROLL',
+            'p1_token' => 't1', 'p1_user_id' => $this->p1->id, 'p1_name' => 'P1',
+            'p2_token' => 't2', 'p2_user_id' => $this->p2->id, 'p2_name' => 'P2',
+            'status' => 'playing', 'mode' => 'friendly', 'time_control' => 'speed',
+            'target' => 1, 'authoritative' => true, 'dice_authority' => true,
+            'version' => 1, 'server_version' => 2,
+            'server_state' => $state,
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null,
+                'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 3,
+            ],
+            // İnsanın (p1/white) sırası + zar atılmış; bankası tükenmiş -> TIMEOUT.
+            'clock' => [
+                'running' => true, 'turn_slot' => 'p1',
+                'p1_bank' => 24, 'p2_bank' => 24, 'delay' => 8,
+                'started_at' => $now - 400, 'moved' => true,
+                'p1_seen' => $now - 1, 'p2_seen' => $now - 1,
+            ],
+        ]);
+
+        // Rakip (p2) poll eder -> tickClock -> applyClockEnd (p1 süresi bitti, black kazanır).
+        Sanctum::actingAs($this->p2);
+        $this->getJson('/api/rooms/CLKROLL')->assertOk();
+
+        $room = Room::where('code', 'CLKROLL')->first();
+        $this->assertSame('finished', $room->status);
+
+        $moves = \App\Models\MatchMove::where('room_code', 'CLKROLL')->where('kind', 'move')->get();
+        $this->assertCount(1, $moves);               // atılan zar kaydedildi
+        $this->assertSame([6, 2], $moves[0]->dice);
+        $this->assertSame('white', $moves[0]->player); // kaybeden (sıra sahibi) beyaz
+    }
+
     // ---- show AFK_TIMEOUT'u enforce eder (casual 5: ana sure uzun, once AFK) ----
     // AFK yalniz ILK gercek hamleden sonra sayilir -> once bir gercek hamle gonderilir.
     public function test_show_enforces_afk_timeout(): void
