@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class WarmMatchReviews extends Command
 {
-    protected $signature = 'tavla:review-warmup {--limit=10 : Bir çalışmada kuyruğa alınacak maç sayısı} {--dry-run : Sadece listele, dispatch etme}';
+    protected $signature = 'tavla:review-warmup {--limit=10 : Bir çalışmada kuyruğa alınacak maç sayısı} {--days=7 : Yalnız son N gün içindeki maçlar (0=tümü)} {--dry-run : Sadece listele, dispatch etme}';
 
     protected $description = 'Geçmiş maçların Analiz review\'ini boş zamanda önden önbelleğe al (backfill).';
 
@@ -50,16 +50,21 @@ class WarmMatchReviews extends Command
         }
 
         $limit = max(1, (int) $this->option('limit'));
+        $days = max(0, (int) $this->option('days'));
         $dry = (bool) $this->option('dry-run');
 
         // Hiç denenmemiş (gnubg_review_at NULL) + GERÇEK log'u olan (LENGTH>40; boş sarmalayıcı ~24
         // hariç — has_log ile aynı eşik). En yeni önce (yakın maçlar daha çok açılır). LENGTH hem
-        // MySQL hem SQLite'ta var.
-        $ids = MatchResult::query()
+        // MySQL hem SQLite'ta var. days>0 -> yalnız son N gün (kullanıcı direktifi: eski arşivi ISITMA,
+        // yalnız yakın maçlar açılır; gnubg yükü + kuyruk minimum).
+        $q = MatchResult::query()
             ->whereNull('gnubg_review_at')
             ->whereNotNull('log')
-            ->whereRaw('LENGTH(log) > 40')
-            ->orderByDesc('id')
+            ->whereRaw('LENGTH(log) > 40');
+        if ($days > 0) {
+            $q->where('created_at', '>=', now()->subDays($days));
+        }
+        $ids = $q->orderByDesc('id')
             ->limit($limit)
             ->pluck('id')
             ->all();

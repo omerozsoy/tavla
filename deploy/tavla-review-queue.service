@@ -1,0 +1,21 @@
+[Unit]
+Description=Tavla review warmup worker (Analiz gnubg review önbellek — AYRI kuyruk)
+After=network.target mariadb.service mysqld.service
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı olmalı (tavla-queue.service ile AYNI kullanıcı).
+#   stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
+# ve CHANGE_ME_VHOST_USER yerine yaz.
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
+# YALNIZ 'reviews' kuyruğunu işler -> CacheMatchReviewJob buraya düşer (bkz onQueue('reviews')).
+# Böylece geçmiş-maç backfill'i, canlı PR/luck worker'ı (tavla-queue, 'default' kuyruk) ile YARIŞMAZ;
+# yeni maçların PR analizi backfill arkasında BEKLEMEZ. Review'ler gnubg HEAVY havuzunda koşar
+# (foreground/bot bloklanmaz). --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
