@@ -11807,6 +11807,10 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--tv-green, #3f9e6a);
   background: color-mix(in srgb, var(--tv-green, #3f9e6a) 14%, transparent);
 }
+.lm-type-tournament {
+  color: var(--coin-gold);
+  background: color-mix(in srgb, var(--coin-gold) 16%, transparent);
+}
 .lm-side {
   display: flex;
   align-items: center;

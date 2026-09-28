@@ -14,9 +14,10 @@ import { Button } from '@/components/ui/button'
 import playerPlayIcon from '../assets/player-play.svg'
 import diceSpinIcon from '../assets/dice-spin.gif'
 
-// Canli mac tipi: Arkadaslik (puansiz) | Puan Maci (N-puan) | Tek Mac (1 oyun)
-type LiveCat = 'single' | 'match' | 'friendly'
+// Canli mac tipi: Turnuva | Arkadaslik | Puan Maci (N-puan) | Tek Mac (1 oyun)
+type LiveCat = 'single' | 'match' | 'friendly' | 'tournament'
 function liveCat(m: LiveMatch): LiveCat {
+  if (m.mode === 'tournament') return 'tournament'
   if (m.mode === 'friendly') return 'friendly'
   return (m.target ?? 1) > 1 ? 'match' : 'single'
 }
@@ -24,6 +25,7 @@ const LIVE_CAT_KEY: Record<LiveCat, string> = {
   single: 'live.catSingle',
   match: 'live.catPoint',
   friendly: 'live.catFriendly',
+  tournament: 'live.catTournament',
 }
 
 // ---- Ozellik vitrini (yalniz misafirlere): urunun ne sundugunu tanitir ----
@@ -186,7 +188,7 @@ export function LiveMatchesPanel({
 }) {
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
-  const [tab, setTab] = useState<'all' | 'single' | 'match' | 'friendly'>('all')
+  const [tab, setTab] = useState<'all' | LiveCat>('all')
   const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 mac (Liderlik Tablosu gibi)
   const PAGE_SIZE = 10
   const MAX_PAGES = 10 // en fazla 100 mac
@@ -233,6 +235,9 @@ export function LiveMatchesPanel({
         </Button>
         <Button type="button" variant={tab === 'friendly' ? 'default' : 'ghost'} aria-pressed={tab === 'friendly'} onClick={() => setTab('friendly')}>
           {t('live.catFriendly')}
+        </Button>
+        <Button type="button" variant={tab === 'tournament' ? 'default' : 'ghost'} aria-pressed={tab === 'tournament'} onClick={() => setTab('tournament')}>
+          {t('live.catTournament')}
         </Button>
       </div>
       {shown === null ? (
