@@ -424,7 +424,11 @@ export default function Messages({
               {(() => {
                 const source = pane === 'requests' ? requestThreads : chatThreads
                 const q = search.trim().toLowerCase()
-                const list = q ? source.filter((th) => th.user.name.toLowerCase().includes(q)) : source
+                // Cevrimici kisiler EN USTTE; her grup kendi icinde sunucu sirasini (son mesaj) korur
+                // (Array.sort kararli).
+                const list = (q ? source.filter((th) => th.user.name.toLowerCase().includes(q)) : [...source]).sort(
+                  (a, b) => Number(!!b.user.online) - Number(!!a.user.online),
+                )
                 if (loadingThreads) return <div className="lb-empty">{t('dm.loading')}</div>
                 if (pane === 'requests' && source.length === 0) return <div className="lb-empty">{t('dm.requestsEmpty')}</div>
                 if (pane === 'chats' && chatThreads.length === 0 && !q) return <div className="lb-empty">{t('dm.empty')}</div>
