@@ -30,7 +30,7 @@
                             $deltaColor = $delta > 0 ? 'text-success-600 dark:text-success-400' : ($delta < 0 ? 'text-danger-600 dark:text-danger-400' : 'text-gray-500');
                         @endphp
                         <tr class="text-gray-800 dark:text-gray-200">
-                            <td class="px-3 py-2 whitespace-nowrap">{{ optional($m->created_at)->format('d.m.Y H:i') ?? '—' }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ $m->created_at?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') ?? '—' }}</td>
                             <td class="px-3 py-2">
                                 @if ($m->won)
                                     <span class="inline-flex items-center rounded-md bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700 ring-1 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400">Galibiyet</span>

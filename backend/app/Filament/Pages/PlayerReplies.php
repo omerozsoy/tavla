@@ -103,7 +103,7 @@ class PlayerReplies extends Page
                 'mine' => $m->sender_id === $official, // "yönetim" tarafı (sağda)
                 'body' => (string) $m->body,
                 'image' => $m->image ?? null,
-                'at' => optional($m->created_at)->format('d.m.Y H:i'),
+                'at' => $m->created_at?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i'),
             ])
             ->all();
     }

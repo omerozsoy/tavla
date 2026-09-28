@@ -79,7 +79,7 @@ class BugReportController extends Controller
             ."Sayfa: ".($report->page ?: '—')."\n"
             ."Adres: ".($report->url ?: '—')."\n"
             ."Bildiren: {$reporter}\n"
-            ."Tarih: ".$report->created_at->toDateTimeString()."\n"
+            ."Tarih: ".$report->created_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').' (TSİ)'."\n"
             ."Tarayıcı: ".($report->user_agent ?: '—')."\n\n"
             ."Açıklama:\n{$report->message}\n\n"
             ."Yönetim panelinde görüntüle:\n{$adminUrl}\n";

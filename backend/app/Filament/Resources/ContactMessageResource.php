@@ -95,7 +95,7 @@ class ContactMessageResource extends Resource
                     ? new \Illuminate\Support\HtmlString(nl2br(e($record->admin_reply))
                         .($record->replied_at
                             ? '<div style="margin-top:8px;font-size:12px;color:#6b6154;">Gönderildi: '
-                                .$record->replied_at->format('d.m.Y H:i').'</div>'
+                                .$record->replied_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').'</div>'
                             : ''))
                     : 'Henüz yanıt gönderilmedi. Üstteki “Yanıtla ve E-posta Gönder” butonunu kullanın.')
                 ->columnSpanFull(),

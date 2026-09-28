@@ -282,6 +282,10 @@ class PanelController extends Controller
         $data['published'] = $request->boolean('published');
         $data['sort'] = $data['sort'] ?? 0;
         unset($data['image_file']);
+        // datetime-local Turkiye saatiyle girilir (TZ bilgisi yok) -> UTC'ye cevirip sakla (DB UTC).
+        if (! empty($data['event_at'])) {
+            $data['event_at'] = \Illuminate\Support\Carbon::parse($data['event_at'], 'Europe/Istanbul')->utc();
+        }
 
         // Gorsel yuklendiyse public/uploads'a tasi
         if ($request->hasFile('image_file')) {
@@ -424,7 +428,7 @@ class PanelController extends Controller
         $mailer = config('mail.default');
         try {
             \Illuminate\Support\Facades\Mail::raw(
-                "TavlaTv test e-postasi.\n\nBu mesaji gorduyseniz mail ayarlariniz calisiyor. \n(surucu: {$mailer})\n\nTarih: ".now()->toDateTimeString(),
+                "TavlaTv test e-postasi.\n\nBu mesaji gorduyseniz mail ayarlariniz calisiyor. \n(surucu: {$mailer})\n\nTarih: ".now('Europe/Istanbul')->format('d.m.Y H:i').' (TSİ)',
                 function ($m) use ($data) {
                     $m->to($data['to'])->subject('TavlaTv — Mail Testi');
                 }

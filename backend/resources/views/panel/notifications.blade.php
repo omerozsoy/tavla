@@ -56,7 +56,7 @@
             <td><b>{{ $n->title }}</b></td>
             <td class="muted">{{ \Illuminate\Support\Str::limit($n->body, 60) }}</td>
             <td><span class="tag {{ $n->read ? 'gray' : '' }}">{{ $n->read ? 'okundu' : 'yeni' }}</span></td>
-            <td class="muted">{{ optional($n->created_at)->format('d.m.Y H:i') }}</td>
+            <td class="muted">{{ $n->created_at?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') }}</td>
           </tr>
         @empty
           <tr><td colspan="5" class="muted" style="padding:24px;text-align:center">Henüz bildirim yok.</td></tr>

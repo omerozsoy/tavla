@@ -131,7 +131,7 @@
                         <tbody class="divide-y divide-danger-100 dark:divide-danger-400/10">
                             @foreach ($w['admin_events'] as $e)
                                 <tr class="text-gray-800 dark:text-gray-200">
-                                    <td class="px-3 py-2 whitespace-nowrap">{{ optional($e['date'])->format('d.m.Y H:i') ?? '—' }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">{{ ($e['date'] ?? null)?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') ?? '—' }}</td>
                                     <td class="px-3 py-2 whitespace-nowrap">{{ $e['type'] }}</td>
                                     <td class="px-3 py-2 whitespace-nowrap">
                                         @if ($e['actor'])
@@ -204,7 +204,7 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                         @foreach ($w['recent'] as $t)
                             <tr class="text-gray-800 dark:text-gray-200">
-                                <td class="px-3 py-2 whitespace-nowrap">{{ optional($t['date'])->format('d.m.Y H:i') ?? '—' }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap">{{ ($t['date'] ?? null)?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') ?? '—' }}</td>
                                 <td class="px-3 py-2 whitespace-nowrap">{{ $t['type'] }}</td>
                                 <td class="px-3 py-2 text-right font-medium {{ $t['amount'] >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">{{ $signed($t['amount']) }}</td>
                                 <td class="px-3 py-2 text-right text-gray-500">{{ $fmt($t['balance_after']) }}</td>

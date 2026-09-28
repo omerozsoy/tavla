@@ -24,13 +24,13 @@
               @if($u->plan_active !== 'free')<span class="tag">{{ $u->plan_active }}</span>@endif
               <div class="muted" style="font-size:11px;margin-top:3px;line-height:1.5">
                 Kayıt: {{ $u->created_at?->format('d.m.Y') ?? '—' }}<br>
-                Son giriş: {{ $u->last_login_at?->format('d.m.Y H:i') ?? 'hiç' }}
+                Son giriş: {{ $u->last_login_at?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') ?? 'hiç' }}
               </div>
             </td>
             <td class="muted">
               {{ $u->email }}<br>
               @if($u->email_verified_at)
-                <span class="tag" style="background:#1f8a4c;color:#fff" title="Doğrulandı: {{ $u->email_verified_at->format('d.m.Y H:i') }}">✓ doğrulandı</span>
+                <span class="tag" style="background:#1f8a4c;color:#fff" title="Doğrulandı: {{ $u->email_verified_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') }}">✓ doğrulandı</span>
               @else
                 <span class="tag" style="background:#c0392b;color:#fff">✗ doğrulanmadı</span>
               @endif
