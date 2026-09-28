@@ -133,6 +133,32 @@ class RoomServerAuthTest extends TestCase
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
     }
 
+    public function test_resign_after_roll_records_the_rolled_dice(): void
+    {
+        // Zar atıldı (6-2) ama OYNANMADAN pes: zar match_moves'a boş-notasyonlu 'move' olarak
+        // yazılmalı -> .mat/gnubg/XG pesi zar-SONRASI (umutsuz) konumda değerlendirir. Aksi halde
+        // pes "Roll or Double" (zar-öncesi, hâlâ şans var) kararında sanılıp AĞIR ceza yazılır.
+        $p = array_fill(0, 24, 0);
+        $p[0] = 3; $p[1] = 3; $p[4] = 3; $p[5] = 3; // beyaz (kazanan) neredeyse bitmiş
+        $p[10] = -15;
+        $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'turns' => 5,
+            'done' => false, 'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+            'crawford' => false, 'crawfordDone' => false, 'opened' => true];
+        $state = array_merge($this->board($p, ['white' => 3, 'black' => 0]), ['dice' => [6, 2], 'diceUsed' => [false, false]]);
+        $this->room($sm, $state, 15);
+
+        $this->command('p2', '/api/rooms/AUTHX/resign')->assertOk();
+
+        $moves = \App\Models\MatchMove::where('room_code', 'AUTHX')->where('kind', 'move')->get();
+        $this->assertCount(1, $moves);              // atılan zar kaydedildi
+        $this->assertSame([6, 2], $moves[0]->dice);
+        $this->assertSame('black', $moves[0]->player);
+        $this->assertSame('', (string) $moves[0]->notation); // hamle yok, yalnız zar
+
+        $mat = \App\Models\MatchMove::buildMat('AUTHX', ['matchLength' => 15]);
+        $this->assertStringContainsString('62:', $mat); // .mat zarı gösterir (boş hamle satırı)
+    }
+
     public function test_resign_opening_is_backgammon_pure_position(): void
     {
         // SAF KONUM (kullanıcı kararı): açılışta kaybedenin (siyah) anchor'ı beyazın evinde (1-nokta)
