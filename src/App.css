@@ -16590,8 +16590,20 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Bilgi sayfasi — kart genisligi (dar 380px yerine rahat okuma genisligi).
    Hakkinda/Hizmetler ozellik grid'i icin yer acar; canli sekmeler de merkezlenir. */
 .info-card {
-  width: min(760px, 96vw);
-  max-width: min(760px, 96vw);
+  width: 100%;
+  max-width: 1400px;
+  margin: 0;
+  padding: 6px clamp(16px, 3vw, 48px) 40px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .info-card {
+    padding: 6px clamp(12px, 4vw, 20px) 32px;
+  }
 }
 
 /* ---- Hakkinda / Hizmetler (info_pages) redesign: RichEditor cikti bicimlendirmesi ---- */
