@@ -1491,6 +1491,11 @@ export async function pollTournament(id: number, rev?: string): Promise<Tourname
   const d = await req<{ tournament?: Tournament }>(`/tournaments/${id}${q}`)
   return d.tournament ?? null
 }
+// Suren turnuva maclarinin canli izleyici sayilari (oda kodu -> sayi). Detay poll'undan ayri, hafif.
+export async function tournamentViewers(id: number): Promise<Record<string, number>> {
+  const d = await req<{ counts?: Record<string, number> }>(`/tournaments/${id}/viewers`)
+  return d.counts ?? {}
+}
 export async function createTournament(
   name: string,
   size: number,

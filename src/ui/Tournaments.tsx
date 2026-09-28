@@ -12,6 +12,7 @@ import {
   listTournaments,
   showTournament,
   pollTournament,
+  tournamentViewers,
   joinTournament,
   leaveTournament,
   tournamentRoundTarget,
@@ -156,6 +157,36 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detailId])
+
+  // IZLEYICI SAYILARI (goz ikonunun yaninda): suren turnuvada, izlenebilir oda varken 8sn'de bir
+  // hafif uctan cekilir. Detay poll'u (rev) izleyici degisiminde tetiklenmez -> ayri dongu.
+  const [viewerCounts, setViewerCounts] = useState<Record<string, number>>({})
+  const hasRooms = !!active?.bracket?.some((r) => r.some((m) => m.room && !m.winner))
+  useEffect(() => {
+    if (detailId == null || active?.status !== 'running' || !hasRooms) {
+      setViewerCounts({})
+      return
+    }
+    let alive = true
+    const tick = () => {
+      if (document.visibilityState !== 'visible') return
+      tournamentViewers(detailId)
+        .then((c) => {
+          if (alive) setViewerCounts(c)
+        })
+        .catch(() => {
+          /* gecici hata: sonraki tick dener */
+        })
+    }
+    tick()
+    const id = window.setInterval(tick, 8000)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
+    }
+  }, [detailId, active?.status, hasRooms])
 
   // Detay yuklendiginde URL'i SEO-dostu slug'a yukselt (banner/eski-id ile acildiysa da).
   useEffect(() => {
@@ -417,17 +448,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     // Izlenebilir: oda acilmis (biri "Oyna"ya basmis) ve mac bitmemis. Kendi macimda
                     // "Oyna" var; goz yalniz baskalarinin maclarinda.
                     const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
+                    const viewers = watchable ? viewerCounts[m.room!.toUpperCase()] ?? 0 : 0
                     return (
                       <div key={m.key} className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''}`}>
                         {watchable && (
                           <button
                             type="button"
                             className="tm-watch"
-                            title={t('tourn.watch')}
-                            aria-label={t('tourn.watch')}
+                            title={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
+                            aria-label={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
                             onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)}
                           >
                             <Icon name="eye" size={16} />
+                            {viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
                           </button>
                         )}
                         <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''}`}>
