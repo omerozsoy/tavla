@@ -147,7 +147,7 @@ function GalleryBlock({ images }: { images: string[] }) {
   if (!images.length) return null
   return (
     <>
-      <div className="service-gallery">
+      <div className={`service-gallery${images.length === 1 ? ' service-gallery-single' : ''}`}>
         {images.map((g, i) => (
           <button
             key={i}
