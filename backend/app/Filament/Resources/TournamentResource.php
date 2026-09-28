@@ -124,6 +124,10 @@ class TournamentResource extends Resource
                 Forms\Components\Toggle::make('prize_paid')
                     ->label('Ödül ödendi')
                     ->helperText('Turnuva bitince otomatik işaretlenir. Açıkken ödül tekrar ödenmez.'),
+                Forms\Components\Toggle::make('premium_only')
+                    ->label('Sadece Premium üyeler katılabilir')
+                    ->helperText('Kapalıysa tüm üyeler (normal + Premium) katılabilir. Misafirler hiçbir turnuvaya katılamaz.')
+                    ->default(true),
                 Forms\Components\TextInput::make('entry_fee')
                     ->label('Giriş ücreti (coin)')
                     ->helperText('0 = ücretsiz. Toplanan ücretler ödül havuzuna eklenir.')
@@ -155,6 +159,10 @@ class TournamentResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('premium_only')
+                    ->label('Premium')
+                    ->boolean()
+                    ->tooltip('Açık: yalnız Premium katılır. Kapalı: tüm üyeler.'),
                 Tables\Columns\ToggleColumn::make('active')
                     ->label('Aktif')
                     ->tooltip('Kapatınca sitede gösterilmez (pasif); silmez.'),

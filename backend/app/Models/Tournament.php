@@ -10,6 +10,7 @@ class Tournament extends Model
     protected $fillable = [
         'name', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
+        'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
     ];
 
     protected $casts = [
@@ -17,6 +18,7 @@ class Tournament extends Model
         'bracket' => 'array',
         'prizes' => 'array',
         'active' => 'boolean',
+        'premium_only' => 'boolean',
         'register_until' => 'datetime',
     ];
 

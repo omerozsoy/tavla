@@ -6,6 +6,7 @@ import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
 import PlayerIdentity from './PlayerIdentity'
+import PremiumCrown from './PremiumCrown'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import {
   listTournaments,
@@ -15,6 +16,7 @@ import {
   reportTournament,
   type Tournament,
   type TMatch,
+  ApiError,
 } from '../api'
 import { Button } from '@/components/ui/button'
 
@@ -49,10 +51,16 @@ interface Props {
   detailId?: number | null
   /** Detay ac/kapat -> App URL'i gunceller. slug verilirse SEO-dostu URL (/online-turnuvalar/isim-{id}). */
   onOpenDetail?: (id: number | null, slug?: string) => void
+  /** Kullanici Premium mu? (premium_only turnuvaya katilim) */
+  premium?: boolean
+  /** Misafir "Katil"a basti -> giris/kayit ekrani. */
+  onRequireLogin?: () => void
+  /** Normal uye Premium'a ozel turnuvaya "Katil"a basti -> uyelik ekrani. */
+  onRequirePremium?: () => void
 }
 
 
-export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail }: Props) {
+export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [list, setList] = useState<Tournament[]>([])
@@ -106,6 +114,10 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     try {
       setActive(await joinTournament(id))
       refreshList()
+    } catch (e) {
+      // Sunucu kapisi (premium_only): plan bu arada dustuyse vb. -> uyelik ekrani.
+      if (e instanceof ApiError && e.status === 403) onRequirePremium?.()
+      else if (e instanceof ApiError && e.status === 401) onRequireLogin?.()
     } finally {
       setBusy(false)
       setConfirm(null)
@@ -139,7 +151,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
       ? active.players?.find((p) => p.id === active.champion_id)
       : null
     const joined = active.players?.some((p) => p.id === myId)
-    const canJoin = active.status === 'open' && !joined && myId != null
+    // "Katil" misafire ve Premium olmayan uyeye de GORUNUR; basinca giris/uyelik ekranina yonlenir.
+    const canJoin = active.status === 'open' && !joined
+    const premiumLocked = !!active.premium_only && !premium
+    const onJoinClick = () =>
+      myId == null ? onRequireLogin?.() : premiumLocked ? onRequirePremium?.() : setConfirm('join')
     // Hero ozet: toplam odul havuzu + katilim doluluk yuzdesi
     const totalPrize = active.prizes && active.prizes.length
       ? active.prizes.reduce((s, pr) => s + (pr.coins || 0), 0)
@@ -167,6 +183,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <span className={`tr-status tr-status-${active.status}`}>
               {t(`tourn.status.${active.status}`)}
             </span>
+            <AccessBadge premiumOnly={!!active.premium_only} />
             <span className="tourn-meta-inline">
               {t('tourn.organizer')}:
               <TavlaTvLogo size={26} tone="light" className="tourn-runby-logo" />
@@ -243,7 +260,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
           {(canJoin || (joined && active.status === 'open')) && (
             <div className="tourn-actions tourn-actions-hero">
               {canJoin && (
-                <Button variant="default" className="tourn-join-btn" disabled={busy} onClick={() => setConfirm('join')}>
+                <Button variant="default" className="tourn-join-btn" disabled={busy} onClick={onJoinClick}>
+                  {premiumLocked && <PremiumCrown size={16} />}
                   {t('tourn.join')}
                   {!!active.entry_fee && (
                     <span className="tourn-join-fee">
@@ -461,6 +479,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <span className={`tcard-status tcard-status-${tr.status}`}>
               {t(`tourn.status.${tr.status}`)}
             </span>
+            <AccessBadge premiumOnly={!!tr.premium_only} />
             {/* Katilimcilar: UST SATIRDA, durum rozetinin yaninda (kompakt). */}
             <span className="tourn-players">
               <span className="tcard-ic navy" aria-hidden="true">
@@ -571,5 +590,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         )}
       </div>
     </div>
+  )
+}
+
+// Katilim kosulu rozeti: Premium'a ozel (tac) / Tum uyeler. Misafir hicbir turnuvaya katilamaz.
+function AccessBadge({ premiumOnly }: { premiumOnly: boolean }) {
+  const { t } = useT()
+  return premiumOnly ? (
+    <span className="tourn-access tourn-access-premium" title={t('tourn.premiumOnlyHint')}>
+      <PremiumCrown size={14} /> {t('tourn.premiumOnly')}
+    </span>
+  ) : (
+    <span className="tourn-access tourn-access-all" title={t('tourn.membersHint')}>
+      <Icon name="users" size={14} /> {t('tourn.members')}
+    </span>
   )
 }

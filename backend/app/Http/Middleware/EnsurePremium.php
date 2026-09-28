@@ -10,7 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
  * PREMIUM-only uçlar için sunucu tarafı kapısı (defense-in-depth). Frontend menü/route
  * zaten free kullanıcıyı üyelik ekranına yönlendirir; bu middleware API'nin doğrudan
  * çağrılmasını (bypass) kapatır. Kapsam: Pozisyon Analizi, Mat Analiz, Hata Günlüğü,
- * Maç Analizleri (derin gnubg incelemesi), Online Turnuvalara katılım.
+ * Maç Analizleri (derin gnubg incelemesi). (Turnuva katılımı artık turnuva başına:
+ * tournaments.premium_only -> TournamentController::join.)
  *
  * plan_active accessor: süresi geçerli ücretli plan -> 'star'; aksi 'free'. Bu grup
  * 'auth:sanctum' arkasında olduğundan user daima vardır; yine de null-güvenli tutarız.

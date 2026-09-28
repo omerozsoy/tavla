@@ -48,6 +48,7 @@ class TournamentController extends Controller
             'prizes.*.desc' => ['nullable', 'string', 'max:120'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'register_until' => ['nullable', 'date'],
+            'premium_only' => ['nullable', 'boolean'], // varsayilan true (Premium'a ozel)
         ]);
         $t = Tournament::create([
             'name' => $data['name'],
@@ -59,6 +60,7 @@ class TournamentController extends Controller
             'prize_desc' => $data['prize_desc'] ?? null,
             'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
+            'premium_only' => (bool) ($data['premium_only'] ?? true),
             'players' => [],
         ]);
         // Olusturan otomatik katilir
@@ -70,6 +72,16 @@ class TournamentController extends Controller
     {
         $me = $request->user();
         $fee = $tournament->entry_fee ?? 0;
+        // Katilim kapisi turnuva basina: premium_only ise yalniz Premium (eskiden route'ta EnsurePremium
+        // TUM turnuvalara uygulanıyordu). Misafir buraya hic ulasmaz (auth:sanctum). Zaten kayitliysa
+        // (plan sonradan dustu) idempotent join'i engelleme -> asagida addPlayer no-op.
+        $alreadyIn = collect($tournament->players ?? [])->contains(fn ($p) => ($p['id'] ?? null) === $me->id);
+        if ($tournament->premium_only && $me->plan_active === 'free' && ! $alreadyIn) {
+            return response()->json([
+                'message' => 'Bu turnuva Premium üyelere özeldir.',
+                'code' => 'premium_required',
+            ], 403);
+        }
 
         // ATOMIK: turnuva satirini kilitle -> kapasite/kayit/ucret kontrolu tutarli
         // (cift katilim, cift ucret tahsili, eksi bakiye yaris korumasi).
@@ -636,6 +648,7 @@ class TournamentController extends Controller
                 ->values()
                 ->all(),
             'entry_fee' => $t->entry_fee ?? 0,
+            'premium_only' => (bool) ($t->premium_only ?? true), // katilim: true=Premium, false=tum uyeler
             'register_until' => $t->register_until?->toIso8601String(),
             'starts_at' => $this->startsAt($t),
         ];
