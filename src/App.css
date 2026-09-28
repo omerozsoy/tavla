@@ -16731,6 +16731,13 @@ button.acct-row-logout:hover:not(:disabled) {
   border: 0;
   border-top: 1px solid var(--border);
 }
+.info-rich.rich figure[data-trix-attributes*='wide'] img,
+.info-rich.rich figure.info-image-wide img {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+}
 .info-body h3 {
   margin: 10px 0 0;
   font-size: 1.05rem;

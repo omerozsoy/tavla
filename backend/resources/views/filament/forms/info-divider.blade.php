@@ -12,10 +12,14 @@
     x-data="{
         editor: null,
         savedRange: null,
+        selectedFigure: null,
         init() {
             this.editor = $el.closest('form')?.querySelector('trix-editor');
             if (! this.editor) return;
             this.editor.classList.add('info-page-rte-scroll');
+            this.editor.addEventListener('click', (event) => {
+                this.selectedFigure = event.target.closest('figure[data-trix-attachment]');
+            });
             this.editor.addEventListener('trix-selection-change', () => {
                 this.savedRange = this.editor.editor?.getSelectedRange?.() ?? null;
             });
@@ -38,6 +42,24 @@
             this.editor.dispatchEvent(new Event('input', { bubbles: true }));
             this.editor.dispatchEvent(new Event('trix-change', { bubbles: true }));
         },
+        makeImageWide() {
+            if (! this.selectedFigure) return;
+            let attributes = {};
+            try {
+                attributes = JSON.parse(this.selectedFigure.getAttribute('data-trix-attributes') || '{}');
+            } catch (_) {}
+            attributes.presentation = attributes.presentation === 'wide' ? undefined : 'wide';
+            if (attributes.presentation) {
+                this.selectedFigure.setAttribute('data-trix-attributes', JSON.stringify(attributes));
+                this.selectedFigure.classList.add('info-image-wide');
+            } else {
+                delete attributes.presentation;
+                this.selectedFigure.setAttribute('data-trix-attributes', JSON.stringify(attributes));
+                this.selectedFigure.classList.remove('info-image-wide');
+            }
+            this.editor.dispatchEvent(new Event('input', { bubbles: true }));
+            this.editor.dispatchEvent(new Event('trix-change', { bubbles: true }));
+        },
     }"
 >
     <button
@@ -48,6 +70,15 @@
     >
         <span aria-hidden="true">—</span>
         <span>Ayraç ekle</span>
+    </button>
+    <button
+        type="button"
+        class="fi-btn fi-btn-size-sm fi-btn-color-gray fi-outlined"
+        @mousedown.prevent
+        @click.prevent="makeImageWide()"
+    >
+        <span aria-hidden="true">↔</span>
+        <span>Tam genişlik</span>
     </button>
     <span class="text-sm text-gray-500 dark:text-gray-400">İmlecin bulunduğu yere yatay ayraç ekler.</span>
 </div>
