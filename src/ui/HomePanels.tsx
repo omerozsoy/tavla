@@ -447,11 +447,22 @@ export function OnlinePlayersPanel({
             {ordered.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((p) => {
               const self = (currentId != null && p.id === currentId) || (!!currentName && p.name === currentName)
               return (
-                <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
+                // SATIRIN TAMAMI profil acar: eskiden yalniz isim butonu tiklanabiliyordu, ama satir
+                // hover'da butunuyle vurgulaniyor ve isim sutunu isim kadar dar (max-content) ->
+                // kisa isimlilerde satirin cogu olu alandi ("bazen acilmiyor, ikinci tiklamada aciliyor").
+                // Aksiyon alani (Oyna / oyunda) haric. Isim butonu klavye erisimi icin kalir: Enter/Space
+                // click'i satira kabarir -> ayni isleyici.
+                <div
+                  key={p.id}
+                  className={`rank-row online-row ${self ? 'mine' : ''}`}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('.online-actions')) return
+                    onProfile(p.id)
+                  }}
+                >
                   <button
                     type="button"
                     className="online-id"
-                    onClick={() => onProfile(p.id)}
                     title={t(STATUS_KEY[p.status ?? 'available'])}
                   >
                     <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated statusDot={p.status ?? 'available'} />

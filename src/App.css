@@ -11366,6 +11366,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .rank-row.online-row {
   /* oyuncu (isim KESILMESIN: max-content) | bayrak (hizali) | rating | aksiyonlar */
   grid-template-columns: minmax(56px, max-content) 1fr auto auto;
+  cursor: pointer; /* satirin tamami profil acar (HomePanels OnlinePlayersPanel) */
 }
 /* Cevrimici panelde isim kolonu icerige gore buyudugunden ellipsis'e gerek yok;
    ad tam gorunsun (kullanici adlari en fazla 15 karakter). */
