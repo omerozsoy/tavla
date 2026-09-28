@@ -603,6 +603,12 @@ class AuthController extends Controller
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('gnubg PR dispatch hata', ['err' => $e->getMessage()]);
             }
+            // Analiz ekranı review'ini de ARKA PLANDA önden ısıt -> ilk açılış bile anında (best-effort).
+            try {
+                \App\Jobs\CacheMatchReviewJob::dispatch($result->id)->onConnection('database');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('review önbellek dispatch hata', ['err' => $e->getMessage()]);
+            }
         }
 
         // Tavlai Luck V1 (gnubg NATIVE, KALICI): online maç sonrası per-oyuncu MWC-luck'ı ARKA PLANDA
@@ -970,6 +976,12 @@ class AuthController extends Controller
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
             try {
                 \App\Jobs\AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
+            } catch (\Throwable $e) {
+                // best-effort
+            }
+            // Analiz ekranı review'ini de ARKA PLANDA önden ısıt (best-effort; gnubg down ise atlar).
+            try {
+                \App\Jobs\CacheMatchReviewJob::dispatch($row->id)->onConnection('database');
             } catch (\Throwable $e) {
                 // best-effort
             }
