@@ -452,7 +452,7 @@ export function OnlinePlayersPanel({
                     <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated statusDot={p.status ?? 'available'} />
                   </button>
                   <span className="rank-flag">
-                    <CountryFlag code={p.country} size={32} />
+                    <CountryFlag code={p.country} size={26} />
                   </span>
                   <span className="rank-val">{p.rating}</span>
                   {/* AKTİF MAÇTA (YZ/normal) -> "Oyna" yerine dönen zar ikonu (oyunda göstergesi).
@@ -576,7 +576,7 @@ export function RankingPanel({
                   <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
                 </span>
                 <span className="rank-flag">
-                  <CountryFlag code={r.country} size={32} />
+                  <CountryFlag code={r.country} size={26} />
                 </span>
                 <span className="rank-val lb-pr-val">{r.career_pr.toFixed(2)}</span>
               </button>
@@ -605,7 +605,7 @@ export function RankingPanel({
                 <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
               </span>
               <span className="rank-flag">
-                <CountryFlag code={r.country} size={32} />
+                <CountryFlag code={r.country} size={26} />
               </span>
               <span className="rank-val">
                 {by === 'coins' ? (

@@ -62,7 +62,7 @@ export default function LangMenu() {
                 setOpen(false)
               }}
             >
-              <Flag code={l.code} size={32} /> <span>{l.label}</span>
+              <Flag code={l.code} size={26} /> <span>{l.label}</span>
             </Button>
           ))}
         </div>

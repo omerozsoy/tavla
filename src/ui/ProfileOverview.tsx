@@ -150,7 +150,7 @@ export default function ProfileOverview({
                 {premium && <PremiumCrown style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
               </div>
               <div className="prof-ov-meta">
-                {cc && <CountryFlag code={cc} size={32} />}
+                {cc && <CountryFlag code={cc} size={26} />}
                 {country && <span>{country}</span>}
                 {age != null && (
                   <>
