@@ -16731,6 +16731,34 @@ button.acct-row-logout:hover:not(:disabled) {
   border-radius: 0;
 }
 
+/* Bilgi sayfalarındaki çoklu galeriler de içerik alanının tamamını kullansın.
+   Sütunlar eşit genişlikte olur; görsellerin en-boy oranı korunur. */
+.info-rich.rich .service-gallery {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.info-rich.rich .service-gallery-thumb {
+  width: 100%;
+  height: auto;
+}
+.info-rich.rich .service-gallery-thumb img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+@media (max-width: 1000px) {
+  .info-rich.rich .service-gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .info-rich.rich .service-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Bilgi sayfasi */
 .info-card .info-body {
   max-width: 720px;
