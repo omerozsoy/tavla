@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Schema;
  *
  * KURAL:
  *  - Bot (PvB): puansız.
+ *  - Misafir (hesapsız) rakip/oyuncu: puansız. Misafir arkadaş odasına kodla girebilir; eskiden
+ *    "limit sayılamaz, puanlı say" deniyordu -> kendi ikinci tarayıcısındaki misafire bilerek
+ *    kaybettirip SINIRSIZ rating/PR kasılabiliyordu (misafir rating'i de istemciden geliyor).
  *  - Eşleşme (mode='ranked') + Turnuva (mode=NULL): PUANLI, limitsiz (rakip rastgele -> farm yok).
  *  - Arkadaş/Kılıç (mode='friendly', SEÇİLEN rakip): PUANLI ama ANTI-FARM limiti — aynı rakiple
  *    son 24 SAATTE en fazla `friendly_rating_daily_limit` (Site Ayarları, varsayılan 3) kez
@@ -66,7 +69,7 @@ class RatingPolicy
      *
      * @param  Room  $room          maç odası
      * @param  int   $userId        raporlayan/işlenen oyuncu
-     * @param  int   $opponentId    rakip hesap id (0/negatif = misafir -> limit uygulanamaz)
+     * @param  int   $opponentId    rakip hesap id (0/negatif = misafir -> puansız)
      */
     public static function isRanked(Room $room, int $userId, int $opponentId): bool
     {
@@ -76,13 +79,13 @@ class RatingPolicy
         if ($room->unrated) {
             return false; // oda kurucusu "puansız" seçti (Arkadaşınla Oyna) -> rating yok, PR kariyere girmez
         }
+        if ($userId <= 0 || $opponentId <= 0) {
+            return false; // misafir (hesapsız) taraf -> puansız: anti-farm, misafir rating'i doğrulanamaz
+        }
         if ($room->mode !== 'friendly') {
             return true; // eşleşme (ranked) + turnuva (NULL) -> limitsiz puanlı
         }
-        // Friendly (kılıç + özel oda): aynı-rakip 24h limiti.
-        if ($userId <= 0 || $opponentId <= 0) {
-            return true; // rakip/oyuncu hesapsız -> limit sayılamaz, puanlı say
-        }
+        // Friendly (kılıç + özel oda): aynı-rakip 24h limiti (iki taraf da hesaplı; misafir yukarıda elendi).
         // Migration henüz koşmadıysa (kolonlar yok) eski-uyumlu: puanlı say (deploy migrate ile düzelir).
         if (! Schema::hasColumn('match_results', 'opponent_user_id') || ! Schema::hasColumn('match_results', 'rated')) {
             return true;
