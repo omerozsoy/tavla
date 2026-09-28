@@ -72,10 +72,6 @@ class InfoPageResource extends Resource
                 ->visibility('public')
                 ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir. Medya butonu ile metnin içine resim/tablo ekleyebilirsin.')
                 ->columnSpanFull(),
-            Forms\Components\ViewField::make('divider_action')
-                ->label('')
-                ->view('filament.forms.info-divider')
-                ->columnSpanFull(),
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi (varsayılan)')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('bilgi')->visibility('public')
