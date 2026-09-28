@@ -67,11 +67,17 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            // TipTap editör içerik alanına belirgin scroll: varsayılan 40rem çok uzun (scroll
-            // görünmüyor). ~420px'e indir + dikey kaydır; fullscreen modda dokunma (tam yükseklik).
+            // Admin özel CSS:
+            // 1) TipTap editör: varsayılan 40rem çok uzun -> ~420px'e indir + dikey scroll (fullscreen hariç).
+            // 2) Galeri FileUpload grid'i: Filament varsayılanı 3 kolon + kare item -> ~430px dev kutular,
+            //    30 resimde sayfa upuzun. Kolonu 6'ya (mobil 4) çıkar -> küçük thumbnail'lar, önizleme doldurur.
             ->renderHook(
                 'panels::head.end',
-                fn (): string => '<style>.tiptap-editor:not(.tiptap-fullscreen) .tiptap-prosemirror-wrapper{max-height:420px;overflow-y:auto}</style>',
+                fn (): string => '<style>'
+                    .'.tiptap-editor:not(.tiptap-fullscreen) .tiptap-prosemirror-wrapper{max-height:420px;overflow-y:auto}'
+                    .'.filepond--root[data-style-panel-layout=grid] .filepond--item{width:calc(25% - .5rem)!important}'
+                    .'@media(min-width:1024px){.filepond--root[data-style-panel-layout=grid] .filepond--item{width:calc(16.66% - .5rem)!important}}'
+                    .'</style>',
             );
     }
 }
