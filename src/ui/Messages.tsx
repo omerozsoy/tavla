@@ -754,7 +754,8 @@ export default function Messages({
       </div>
       {zoomImage && (
         <div className="dm-zoom-overlay" onClick={() => setZoomImage(null)} role="dialog" aria-modal="true">
-          <img src={zoomImage} alt="" onClick={(e) => e.stopPropagation()} />
+          <button type="button" className="dm-zoom-close" onClick={() => setZoomImage(null)} aria-label={t('common.close')}>✕</button>
+          <img src={zoomImage} alt="" />
         </div>
       )}
     </div>
