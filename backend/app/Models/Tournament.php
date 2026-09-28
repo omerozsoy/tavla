@@ -12,6 +12,7 @@ class Tournament extends Model
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
         'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
+        'round_minutes', 'semi_minutes', 'final_minutes', // mac sureleri (dk, oyuncu basina); bkz roundMinutes()
     ];
 
     protected $casts = [
@@ -24,7 +25,27 @@ class Tournament extends Model
         'match_length' => 'integer',
         'semi_length' => 'integer',
         'final_length' => 'integer',
+        'round_minutes' => 'integer',
+        'semi_minutes' => 'integer',
+        'final_minutes' => 'integer',
     ];
+
+    /**
+     * $ri. turdaki maclarin suresi (dk, oyuncu basina ana sure). Yari final / final bos ->
+     * normal tur suresi; o da bos -> null (saat modunun varsayilani).
+     */
+    public function roundMinutes(int $ri, int $rounds): ?int
+    {
+        $base = $this->round_minutes ? (int) $this->round_minutes : null;
+        $pick = $base;
+        if ($ri === $rounds - 1 && $this->final_minutes) {
+            $pick = (int) $this->final_minutes;
+        } elseif ($ri === $rounds - 2 && $this->semi_minutes) {
+            $pick = (int) $this->semi_minutes;
+        }
+
+        return $pick && $pick > 0 ? $pick : null;
+    }
 
     /** Secilebilir mac uzunluklari (puan). 1 = tek oyun. */
     public const LENGTHS = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25];

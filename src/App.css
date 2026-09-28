@@ -22496,6 +22496,12 @@ button.acct-row-logout:hover:not(:disabled) {
 .tm-p.lose {
   color: var(--muted);
 }
+/* Ilk turda rakipsiz gecis: cizgi yerine yesil "Bye" */
+.tm-p .tm-bye {
+  color: var(--success-fg);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
 .tm-p:last-child {
   border-bottom: none;
 }

@@ -97,6 +97,25 @@ class TournamentResource extends Resource
                     ->options(self::lengthOptions())
                     ->placeholder('Normal turlarla aynı')
                     ->nullable(),
+                // ---- Maç süreleri (dakika, oyuncu başına) ----
+                Forms\Components\TextInput::make('round_minutes')
+                    ->label('Maç süresi (dk)')
+                    ->helperText('Her oyuncunun maç boyunca toplam süresi. Boş: seçilen saat modunun varsayılanı. Yarı final / final için ayrıca girilmezse bu kullanılır.')
+                    ->numeric()->integer()->minValue(1)->maxValue(180)
+                    ->suffix('dk')
+                    ->nullable(),
+                Forms\Components\TextInput::make('semi_minutes')
+                    ->label('Yarı final süresi (dk)')
+                    ->placeholder('Normal turlarla aynı')
+                    ->numeric()->integer()->minValue(1)->maxValue(180)
+                    ->suffix('dk')
+                    ->nullable(),
+                Forms\Components\TextInput::make('final_minutes')
+                    ->label('Final süresi (dk)')
+                    ->placeholder('Normal turlarla aynı')
+                    ->numeric()->integer()->minValue(1)->maxValue(180)
+                    ->suffix('dk')
+                    ->nullable(),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')
                     ->relationship('creator', 'nickname')

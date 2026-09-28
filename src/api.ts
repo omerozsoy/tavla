@@ -1068,6 +1068,8 @@ export interface TMatch {
   target?: number
   /** Mac odasinin kodu; bir oyuncu "Oyna"ya ilk bastiginda sunucu yazar (izleme icin). */
   room?: string | null
+  /** Bu macin suresi (dk, oyuncu basina); oda alininca sunucu yazar. */
+  minutes?: number | null
   /** Biten macin skoru (bracket oyuncu sirasiyla) veya hukmen (rakip gelmedi). */
   score?: { p1?: number; p2?: number; walkover?: boolean } | null
 }
@@ -1096,6 +1098,10 @@ export interface Tournament {
   match_length?: number
   semi_length?: number | null
   final_length?: number | null
+  /** Mac sureleri (dk, oyuncu basina). semi/final null -> normal tur; hepsi null -> saat modu. */
+  round_minutes?: number | null
+  semi_minutes?: number | null
+  final_minutes?: number | null
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null
@@ -1559,6 +1565,14 @@ export async function tournamentMatchRoom(id: number, matchKey: string): Promise
   return { code: d.code, target: d.target ?? 1 }
 }
 
+/** Turnuvanin ri. turunun mac suresi (dk; sunucudaki Tournament::roundMinutes ile ayni kural). */
+export function tournamentRoundMinutes(tr: Tournament, ri: number, rounds: number): number | null {
+  const base = tr.round_minutes || null
+  if (ri === rounds - 1) return tr.final_minutes || base
+  if (ri === rounds - 2) return tr.semi_minutes || base
+  return base
+}
+
 /** Turnuvanin ri. turunun mac uzunlugu (sunucudaki Tournament::roundTarget ile ayni kural). */
 export function tournamentRoundTarget(tr: Tournament, ri: number, rounds: number): number {
   const base = tr.match_length || 1
@@ -1649,6 +1663,8 @@ export interface RoomView {
   version: number
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
   target?: number | null
+  /** Oyuncu basina ana sure (sn): turnuva turunun elle girilen suresi (null = mod varsayilani). */
+  clock_bank?: number | null
   stake?: number // anlasilan sabit bahis (coklu secimde eslesmede kesinlesir)
   clock?: RoomClock | null
   // Sunucu-otoriter mod (Faz 2c). true ise istemci zar/hamleyi SUNUCUDAN alir (serverRoll/

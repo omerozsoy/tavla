@@ -73,6 +73,30 @@ class TournamentMatchLengthTest extends TestCase
         $this->assertSame(9, $t->fresh()->bracket[0][0]['target']);
     }
 
+    public function test_round_minutes_fall_back_to_normal_round(): void
+    {
+        $t = new Tournament(['round_minutes' => 10, 'semi_minutes' => null, 'final_minutes' => 20]);
+        $this->assertSame(10, $t->roundMinutes(0, 3));
+        $this->assertSame(10, $t->roundMinutes(1, 3)); // yari final girilmedi -> normal
+        $this->assertSame(20, $t->roundMinutes(2, 3));
+        $this->assertNull((new Tournament([]))->roundMinutes(0, 2)); // hic yok -> saat modu
+    }
+
+    public function test_room_gets_clock_bank_from_round_minutes(): void
+    {
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $t = Tournament::create([
+            'name' => 'T', 'size' => 2, 'status' => 'running', 'final_minutes' => 7,
+            'players' => [],
+            'bracket' => [[['key' => 'f0', 'p1' => ['id' => $a->id, 'name' => 'A'], 'p2' => ['id' => $b->id, 'name' => 'B']]]],
+        ]);
+        Sanctum::actingAs($a);
+        $code = $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'f0'])->assertOk()->json('code');
+        $this->postJson("/api/rooms/{$code}/enter", ['token' => 'tokA', 'name' => 'A'])->assertOk();
+        $this->assertSame(420, (int) Room::where('code', $code)->first()->clock_bank);
+    }
+
     public function test_auto_start_happens_exactly_at_register_until(): void
     {
         $a = $this->user('a');
