@@ -34,6 +34,7 @@ for (const item of [
   'icon-512.png',
   'assets',
   'models',
+  'flags', // ulke bayraklari (circle-flags, CountryFlag -> /flags/xx.svg)
   'checker-demo.html', // animasyon demo (gecici)
   'dice-demo.html', // animasyon demo (gecici)
 ]) {
