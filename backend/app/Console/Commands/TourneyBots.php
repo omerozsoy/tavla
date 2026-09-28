@@ -9,8 +9,10 @@ use App\Services\WalletService;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -55,6 +57,67 @@ class TourneyBots extends Command
 
     /** Turnuva basina son yazilan durum (log'u her turda tekrar etmesin) */
     private array $lastStatus = [];
+
+    /**
+     * SITE TRAFIGINDEN TETIK (cron/SSH gerekmez): turnuva/oda istekleri bunu cagirir. Botlarin
+     * katildigi acik/suren turnuva varsa ve baska tur calismiyorsa, YANIT GONDERILDIKTEN SONRA
+     * (afterResponse; kullanici beklemez) ~25sn'lik bir tick calistirir. Tur bitince kendi
+     * kendine bir istek atip bir sonraki turu tetikler -> turnuva bitene kadar surer.
+     * Bot turnuvasi yoksa maliyeti tek onbellek okumasi.
+     */
+    public static function kick(): void
+    {
+        try {
+            $active = Cache::remember('tourney-bots:active', 20, fn () => self::hasActiveBotTournament());
+            if (! $active || Cache::has('tourney-bots:running')) {
+                return;
+            }
+            dispatch(function () {
+                $lock = Cache::lock('tourney-bots:driver', 60);
+                if (! $lock->get()) {
+                    return;
+                }
+                Cache::put('tourney-bots:running', 1, 55);
+                try {
+                    @set_time_limit(120);
+                    ignore_user_abort(true);
+                    Artisan::call('tavla:tourney-bots', ['action' => 'tick', '--seconds' => 25]);
+                    $out = trim(Artisan::output());
+                    if ($out !== '') {
+                        @file_put_contents(storage_path('logs/tourney-bots.log'), $out.PHP_EOL, FILE_APPEND);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('tourney-bots kick: '.$e->getMessage());
+                } finally {
+                    Cache::forget('tourney-bots:running');
+                    $lock->release();
+                }
+                // Zinciri surdur: hala aktif bot turnuvasi varsa kendimize bir istek at (o istegin
+                // afterResponse'u bir sonraki turu calistirir).
+                Cache::forget('tourney-bots:active');
+                if (self::hasActiveBotTournament()) {
+                    try {
+                        Http::timeout(8)->acceptJson()->get(rtrim((string) config('app.url'), '/').'/api/tournaments');
+                    } catch (\Throwable) {
+                        // sonraki site istegi zaten tetikler
+                    }
+                }
+            })->afterResponse();
+        } catch (\Throwable $e) {
+            Log::warning('tourney-bots kick setup: '.$e->getMessage());
+        }
+    }
+
+    private static function hasActiveBotTournament(): bool
+    {
+        $ids = User::where('email', 'like', 'dayibot%@bots.tavlatv.invalid')->pluck('id')->map(fn ($i) => (int) $i)->all();
+        if (! $ids) {
+            return false;
+        }
+
+        return Tournament::whereIn('status', ['open', 'running'])->get(['id', 'players'])
+            ->contains(fn ($t) => collect($t->players ?? [])->contains(fn ($p) => in_array((int) ($p['id'] ?? 0), $ids, true)));
+    }
 
     public function handle(BotMoveService $engine, WalletService $wallet): int
     {
