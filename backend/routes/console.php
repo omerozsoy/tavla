@@ -121,3 +121,13 @@ Schedule::command('tavla:review-warmup --limit=15 --days=7')
 
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
+
+// TURNUVA TEST BOTLARI (tavla:tourney-bots): botlarin katildigi acik/suren turnuvalari her dakika
+// ~55sn oynatir (SSH olmadan uzun sure calisan `run` yerine). Bot turnuvasi yoksa aninda cikar.
+// runInBackground: diger zamanlanmis isleri bloklamasin; withoutOverlapping: ust uste binmesin.
+Schedule::command('tavla:tourney-bots tick --seconds=55')
+    ->everyMinute()
+    ->name('tourney-bots-tick')
+    ->withoutOverlapping(3)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/tourney-bots.log'));
