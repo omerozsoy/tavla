@@ -22573,7 +22573,11 @@ button.acct-row-logout:hover:not(:disabled) {
   left: 0;
   right: 0;
   top: 50%;
-  bottom: 0;
+  bottom: auto;
+  /* Final kutusu H/2'de ortali; ucunculuk macini onun HEMEN ALTINA koy (final yari-kutu + bosluk).
+     ponytail: 30px ~ final kutu yariyuksekligi+bosluk; kutu boyu degisirse ufak elle ayar. */
+  margin-top: 30px;
+  justify-content: flex-start;
 }
 .tb-out,
 .tb-in {
