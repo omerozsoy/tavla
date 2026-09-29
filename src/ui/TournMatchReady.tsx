@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { showTournament, type TournNotice } from '../api'
 
-const COUNTDOWN = 20 // sn: sonra oyuncu macina otomatik girer
+const COUNTDOWN = 3 // sn: rakip kisaca gorunur, sonra oyuncu macina OTOMATIK girer (aninda akis)
 const DRAW_MS = 2200 // ilk tur: kura animasyonu suresi
 
 interface Props {
