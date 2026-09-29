@@ -524,6 +524,20 @@ class TourneyBots extends Command
 
         // Zar atildi: tam turu sec ve oyna (bos = oynanacak hamle yok, pas)
         $steps = $engine->chooseSteps($state, $sm, $level);
+        // IZLENEBILIRLIK: hamleyi ONCE 'live' onizleme olarak POST et + kisa reveal, SONRA commit.
+        // Boylece izleyiciler (spectate) adimlari INSAN oynuyormus gibi tek tek animasyonla gorur
+        // (Spectate rv.live'i turn == board.turn iken oynatir; bot kendi turunda POST ettigi icin
+        // eslesir). Bot aninda commit ederse live bos kalir -> izleyici "kut" gorurdu. Reveal
+        // suresi adim sayisina gore (~550ms/adim, 0.6-2.2sn) -> istemcinin 500ms/adim animasyonuna denk.
+        if (! empty($steps)) {
+            $api->post("/rooms/{$code}/live", [
+                'token' => $bot['token'],
+                'steps' => array_values($steps),
+                'turn' => $mine,
+                'seq' => (int) ($sm['turns'] ?? 0),
+            ]);
+            usleep(min(2200, max(600, count($steps) * 550)) * 1000);
+        }
         $r = $api->post("/rooms/{$code}/move", $cmd(['steps' => $steps]));
         if (! $r->successful()) {
             $this->warn("{$tag} hamle reddedildi: ".$r->status().' '.($r->json('message') ?? ''));
