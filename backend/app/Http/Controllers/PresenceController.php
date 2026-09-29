@@ -75,6 +75,20 @@ class PresenceController extends Controller
                     $p1 = $m['p1']['id'] ?? null;
                     $p2 = $m['p2']['id'] ?? null;
                     if (empty($m['winner']) && $p1 && $p2 && ($p1 === $me->id || $p2 === $me->id)) {
+                        // GATED FINAL: önce 3.'lük oynanır; final ancak 3.'lük bitip opens_at geçince
+                        // "hazır" sayılır. Aksi halde finalistlere erken "Maç Hazır" popup'ı çıkar ve
+                        // 20sn auto-enter matchRoom gate'ine (422) takılır. 3.'lük çözülünce çıkar.
+                        $isFinal = $ri === $rounds - 1 && empty($m['third_place']);
+                        if ($isFinal) {
+                            $tp = $round[1] ?? null;
+                            if ($tp && ! empty($tp['third_place'])) {
+                                $gated = empty($tp['winner'])
+                                    || (! empty($m['opens_at']) && now()->lt(\Illuminate\Support\Carbon::parse($m['opens_at'])));
+                                if ($gated) {
+                                    continue;
+                                }
+                            }
+                        }
                         $opp = $p1 === $me->id ? $m['p2'] : $m['p1'];
                         $tmatches[] = [
                             'tid' => $tr->id,
