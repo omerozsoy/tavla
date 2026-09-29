@@ -17730,35 +17730,34 @@ button.acct-row-logout:hover:not(:disabled) {
   min-width: 180px;
 }
 
-/* ===== Turnuva detay redesign v2: "poster" hero (ink + amber arena) =====
-   Kendi kendine yeten koyu blok: acik/koyu temada ayni okunur. */
+/* ===== Turnuva detay redesign v2: "poster" hero (ACIK — krem + amber) =====
+   Sicak krem/porselen zemin, ink metin, terracotta+amber vurgu. */
 .td-hero {
   position: relative;
   overflow: hidden;
   margin: 4px 0 16px;
   padding: clamp(20px, 3.5vw, 34px);
   border-radius: 16px;
-  color: var(--med-ivory);
-  border: 1px solid color-mix(in srgb, var(--tv-gold) 26%, #000);
+  color: var(--med-ink);
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 32%, var(--med-sand));
   background:
-    radial-gradient(120% 150% at 88% -12%, color-mix(in srgb, var(--med-terracotta) 62%, transparent), transparent 55%),
-    linear-gradient(155deg, #241f1a 0%, #14110e 62%, #0d0b09 100%);
-  box-shadow: 0 24px 60px -28px rgb(0 0 0 / 70%), inset 0 1px 0 rgb(255 255 255 / 6%);
+    radial-gradient(120% 150% at 88% -12%, color-mix(in srgb, var(--med-terracotta) 20%, transparent), transparent 55%),
+    linear-gradient(155deg, #ffffff 0%, var(--med-ivory) 68%, #f0e8da 100%);
+  box-shadow: 0 18px 44px -26px rgb(70 45 20 / 38%), inset 0 1px 0 rgb(255 255 255 / 65%);
 }
 .td-hero-glow {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  mix-blend-mode: screen;
   opacity: 0.85;
-  background: radial-gradient(58% 80% at 10% 122%, color-mix(in srgb, var(--tv-gold) 36%, transparent), transparent 60%);
+  background: radial-gradient(58% 80% at 10% 122%, color-mix(in srgb, var(--tv-gold) 24%, transparent), transparent 60%);
 }
 .td-hero-grain {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.5;
-  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 3%) 0 1px, transparent 1px 7px);
+  opacity: 0.45;
+  background-image: repeating-linear-gradient(135deg, rgb(70 45 20 / 4%) 0 1px, transparent 1px 7px);
   -webkit-mask-image: radial-gradient(130% 100% at 50% 0%, #000 32%, transparent 100%);
   mask-image: radial-gradient(130% 100% at 50% 0%, #000 32%, transparent 100%);
 }
@@ -17778,28 +17777,28 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--med-ivory);
-  background: rgb(255 255 255 / 8%);
-  border: 1px solid rgb(255 255 255 / 14%);
+  color: var(--med-ink);
+  background: color-mix(in srgb, var(--med-ink) 6%, transparent);
+  border: 1px solid var(--med-sand);
 }
 .td-status-open {
-  color: #86e3ab;
-  background: color-mix(in srgb, #86e3ab 15%, transparent);
-  border-color: color-mix(in srgb, #86e3ab 40%, transparent);
+  color: #2f8a55;
+  background: color-mix(in srgb, #2f8a55 12%, transparent);
+  border-color: color-mix(in srgb, #2f8a55 34%, transparent);
 }
 .td-status-running {
-  color: #ffce6b;
+  color: var(--med-terracotta-dark);
   background: color-mix(in srgb, var(--tv-gold) 18%, transparent);
-  border-color: color-mix(in srgb, var(--tv-gold) 52%, transparent);
+  border-color: color-mix(in srgb, var(--tv-gold) 48%, transparent);
 }
 .td-status-finished {
-  color: var(--rn-muted);
+  color: var(--med-slate);
 }
-/* AccessBadge hero'da (koyu zemin) okunur olsun */
+/* AccessBadge hero'da (acik zemin) okunur olsun */
 .td-chips .tourn-access {
-  color: var(--med-ivory);
-  background: rgb(255 255 255 / 8%);
-  border-color: rgb(255 255 255 / 16%);
+  color: var(--med-ink);
+  background: color-mix(in srgb, var(--med-ink) 6%, transparent);
+  border-color: var(--med-sand);
 }
 .td-title {
   margin: 0;
@@ -17808,7 +17807,7 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.02;
-  color: #fff;
+  color: var(--med-ink);
   text-wrap: balance;
 }
 .td-org {
@@ -17818,13 +17817,13 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 8px;
   margin-top: 12px;
   font-size: 0.85rem;
-  color: var(--rn-muted);
+  color: var(--med-slate);
 }
 .td-org-lbl {
   font-size: 0.6rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 .td-org-logo {
   vertical-align: middle;
@@ -17834,7 +17833,7 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 20px;
   border-radius: 5px;
   object-fit: contain;
-  background: rgb(255 255 255 / 8%);
+  background: color-mix(in srgb, var(--med-ink) 5%, transparent);
 }
 .td-dot {
   width: 3px;
@@ -17852,7 +17851,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .td-pool {
   margin-top: 22px;
   padding-top: 18px;
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid var(--med-sand);
 }
 .td-pool-lbl {
   display: block;
@@ -17860,14 +17859,14 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.62rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--tv-gold) 72%, #fff);
+  color: var(--med-terracotta-dark);
 }
 .td-pool-val {
   display: inline-flex;
   align-items: center;
   font-weight: 700;
-  color: #fff;
-  filter: drop-shadow(0 2px 20px color-mix(in srgb, var(--tv-gold) 40%, transparent));
+  color: var(--med-ink);
+  filter: drop-shadow(0 2px 16px color-mix(in srgb, var(--tv-gold) 36%, transparent));
 }
 /* 3 gerçek: baslangic / katilim / giris */
 .td-facts {
@@ -17877,8 +17876,8 @@ button.acct-row-logout:hover:not(:disabled) {
   margin-top: 20px;
   border-radius: 12px;
   overflow: hidden;
-  background: rgb(255 255 255 / 8%);
-  border: 1px solid rgb(255 255 255 / 10%);
+  background: var(--med-sand);
+  border: 1px solid var(--med-sand);
 }
 @media (min-width: 520px) {
   .td-facts {
@@ -17890,13 +17889,13 @@ button.acct-row-logout:hover:not(:disabled) {
   flex-direction: column;
   gap: 6px;
   padding: 14px 16px;
-  background: linear-gradient(180deg, rgb(0 0 0 / 18%), rgb(0 0 0 / 32%));
+  background: color-mix(in srgb, #ffffff 90%, var(--med-ivory));
 }
 .td-fact-lbl {
   font-size: 0.58rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--rn-muted);
+  color: var(--med-slate);
 }
 .td-fact-val {
   display: inline-flex;
@@ -17904,7 +17903,7 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.1;
-  color: #fff;
+  color: var(--med-ink);
 }
 .td-fact-val.tnum {
   font-variant-numeric: tabular-nums;
@@ -17914,11 +17913,11 @@ button.acct-row-logout:hover:not(:disabled) {
   background: none;
   border: none;
   font-size: 1rem;
-  color: #ffce6b;
+  color: var(--med-terracotta-dark);
 }
 .td-fact-sub {
   font-size: 0.66rem;
-  color: var(--rn-muted);
+  color: var(--med-slate);
   font-variant-numeric: tabular-nums;
 }
 .td-bar {
@@ -17927,7 +17926,7 @@ button.acct-row-logout:hover:not(:disabled) {
   margin-top: 2px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgb(255 255 255 / 12%);
+  background: color-mix(in srgb, var(--med-ink) 10%, transparent);
 }
 .td-bar > i {
   display: block;
