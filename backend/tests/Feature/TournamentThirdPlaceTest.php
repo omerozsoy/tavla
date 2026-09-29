@@ -42,6 +42,15 @@ class TournamentThirdPlaceTest extends TestCase
         return $ref->invoke($c, $t->bracket);
     }
 
+    private function callPrivate(Tournament $t, string $method): mixed
+    {
+        $c = new TournamentController();
+        $ref = new \ReflectionMethod($c, $method);
+        $ref->setAccessible(true);
+
+        return $ref->invoke($c, $t);
+    }
+
     public function test_semi_losers_auto_placed_into_third_place_match_and_it_is_startable(): void
     {
         $a = $this->user('a');
@@ -81,21 +90,26 @@ class TournamentThirdPlaceTest extends TestCase
         $this->assertSame($cc->id, $t->bracket[1][0]['p2']['id']);
         $this->assertSame('running', $t->status);
 
-        // OTOMATİK BAŞLAR: 3.'lük maçı için oda kodu üretilebilmeli (oyuncu girince başlar).
+        // GATE: FINAL (r1m0) 3.'lük bitmeden AÇILMAZ (önce 3.'lük oynanır).
+        Sanctum::actingAs($a);
+        $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'r1m0'])
+            ->assertStatus(422);
+        // 3.'lük maçı ise OTOMATİK açılır (oda kodu üretilir -> oyuncu girince başlar).
         Sanctum::actingAs($b);
         $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'r1m1'])
             ->assertOk()
             ->assertJsonStructure(['code']);
 
-        // Final: A şampiyon. 3.'lük OYNANMADIĞI için turnuva HÂLÂ kapanmamalı.
+        // 3.'lük maçı oynanır: B yener D. Final için opens_at (+1dk) yazılır; turnuva hâlâ kapanmaz.
+        $this->apply($t, 1, 1, $b->id);
+        $t->refresh();
+        $this->assertNotEmpty($t->bracket[1][0]['opens_at'] ?? null, '3.lük bitince final opens_at set edilmeli');
+        $this->assertSame('running', $t->status, 'final oynanmadan turnuva kapanmamalı');
+
+        // Final oynanır (reflection gate'i atlar): A şampiyon -> turnuva kapanır.
         $this->apply($t, 1, 0, $a->id);
         $t->refresh();
         $this->assertSame($a->id, (int) $t->champion_id);
-        $this->assertSame('running', $t->status, 'final bitse de 3.lük bitmeden turnuva kapanmamalı');
-
-        // 3.'lük maçı: B yener D -> B 3., D 4.; turnuva şimdi kapanır.
-        $this->apply($t, 1, 1, $b->id);
-        $t->refresh();
         $this->assertSame('finished', $t->status);
 
         // Sıralama: 1=A(şampiyon), 2=C(final kaybedeni), 3=B(3.lük kazananı), 4=D
@@ -134,5 +148,47 @@ class TournamentThirdPlaceTest extends TestCase
         $this->assertNotNull($tp);
         $this->assertSame($b->id, (int) $tp['winner']); // walkover 3.
         $this->assertSame([$a->id, $cc->id, $b->id], array_slice($this->standings($t), 0, 3));
+    }
+
+    public function test_stalled_third_place_auto_resolves_by_rating_to_unblock_final(): void
+    {
+        // TAKILMA ÖNLEME: 3.'lük iki oyunculu HAZIR ama kimse odayı açmadı + süre doldu -> rating ile
+        // 3. belirlenir, FINAL gate'i açılır (turnuva 3.'lükte asılı kalmaz).
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $cc = $this->user('c');
+        $d = $this->user('d');
+        $p = fn (User $u, int $r) => ['id' => $u->id, 'name' => strtoupper($u->nickname), 'rating' => $r];
+
+        $t = Tournament::create([
+            'name' => 'T', 'size' => 4, 'status' => 'running', 'active' => true,
+            'players' => [$p($a, 1500), $p($b, 1500), $p($cc, 1500), $p($d, 1600)],
+            'bracket' => [
+                [
+                    ['key' => 'r0m0', 'p1' => $p($a, 1500), 'p2' => $p($b, 1500), 'winner' => null],
+                    ['key' => 'r0m1', 'p1' => $p($cc, 1500), 'p2' => $p($d, 1600), 'winner' => null],
+                ],
+                [['key' => 'r1m0', 'p1' => null, 'p2' => null, 'winner' => null]],
+            ],
+        ]);
+        $this->apply($t, 0, 0, $a->id);   // B -> 3.'lük
+        $this->apply($t, 0, 1, $cc->id);  // D (1600) -> 3.'lük
+        $t->refresh();
+
+        // Kimse odayı açmadı; ready_at'i 11 dk geçmişe çek (stall eşiği 10 dk).
+        $bk = $t->bracket;
+        $bk[1][1]['ready_at'] = now()->subMinutes(11)->toIso8601String();
+        $t->bracket = $bk;
+        $t->save();
+
+        $this->assertTrue($this->callPrivate($t, 'resolveStalledThirdPlace'));
+        $t->refresh();
+        $this->assertSame($d->id, (int) $t->bracket[1][1]['winner']); // yüksek rating (D) 3.
+
+        // FINAL artık AÇIK (opens_at yok, 3.'lük çözüldü) -> matchRoom başarılı.
+        Sanctum::actingAs($a);
+        $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'r1m0'])
+            ->assertOk()
+            ->assertJsonStructure(['code']);
     }
 }

@@ -22600,6 +22600,37 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-match.mine {
   border-color: var(--accent);
 }
+/* OYNANAN MAÇ: çerçeve parlar (paralel/aktif final ya da 3.'lük dikkat çeksin). */
+.tourn-match.playing {
+  border-color: var(--accent);
+  animation: tm-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tm-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(78, 161, 255, 0.28),
+      0 0 10px 1px rgba(78, 161, 255, 0.32);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(78, 161, 255, 0.55),
+      0 0 18px 4px rgba(78, 161, 255, 0.6);
+  }
+}
+/* FINAL uyarısı: 3.'lük bitmeden final oynanmaz (küçük, dikkat çeken not). */
+.tm-gate {
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  color: #d98a2b;
+  background: rgba(217, 138, 43, 0.1);
+  border: 1px solid rgba(217, 138, 43, 0.3);
+  border-radius: 6px;
+}
 /* Suren turnuva macini izle (goz): kartin sag ortasi; isimler butonun altina girmesin */
 .tourn-match.watchable .tm-p {
   padding-right: 52px;

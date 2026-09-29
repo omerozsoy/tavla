@@ -357,17 +357,26 @@ class TournamentController extends Controller
         $loser = ($m['p1']['id'] ?? null) === $winnerId ? ($m['p2'] ?? null) : ($m['p1'] ?? null);
 
         if (! empty($m['third_place'])) {
-            // 3.'LÜK MAÇI: yalnız kazananı kaydet (üst tura taşıma / şampiyon YOK). Sıralama/ödül
+            // 3.'LÜK MAÇI bitti -> FINAL 1 DK SONRA açılır (önce 3.'lük, sonra final). opens_at final
+            // maçına yazılır (matchRoom gate + frontend uyarısı/geri sayımı okur). Sıralama/ödül
             // maybeFinalize'da (final + 3.'lük ikisi de bitince) verilir.
+            $lastRi = count($bracket) - 1;
+            if (isset($bracket[$lastRi][0]) && empty($bracket[$lastRi][0]['winner'])) {
+                $bracket[$lastRi][0]['opens_at'] = now()->addMinute()->toIso8601String();
+            }
             $t->bracket = $bracket;
         } elseif (isset($bracket[$ri + 1])) {
             $nextIndex = intdiv($mi, 2);
             $slot = $mi % 2 === 0 ? 'p1' : 'p2';
             $bracket[$ri + 1][$nextIndex][$slot] = $winner;
             // YARI FINAL (üst tur = SON tur = final) -> kaybedeni 3.'lük maçına yerleştir. Bye maçında
-            // gerçek kaybeden yok (null) -> yazılmaz (tek-oyunculu 3.'lük maybeFinalize'da walkover olur).
-            if ($ri + 1 === count($bracket) - 1 && $loser && isset($loser['id'])) {
-                $bracket = $this->placeThirdPlaceLoser($bracket, $mi, $loser);
+            // gerçek kaybeden yok (null) -> yazılmaz; iki yarı final de bitince tek-oyunculu 3.'lük
+            // walkover ile çözülür (final o durumda beklemeden açılır).
+            if ($ri + 1 === count($bracket) - 1) {
+                if ($loser && isset($loser['id'])) {
+                    $bracket = $this->placeThirdPlaceLoser($bracket, $mi, $loser);
+                }
+                $bracket = $this->maybeResolveThirdPlaceWalkover($bracket);
             }
             $t->bracket = $bracket;
         } else {
@@ -391,6 +400,72 @@ class TournamentController extends Controller
         $bracket[$lastRi][1][$slot] = $loser;
 
         return $bracket;
+    }
+
+    /**
+     * İki yarı final de bittiğinde (final iki oyuncuyla dolu) 3.'lük maçı TEK oyunculuysa (karşı yarı
+     * final bye idi) o oyuncu walkover ile 3. olur -> gerçek maç yok, final BEKLEMEDEN açılır (opens_at
+     * yazılmaz). İki oyunculu 3.'lükte dokunmaz (oynanır; bitince final opens_at gate'lenir).
+     */
+    private function maybeResolveThirdPlaceWalkover(array $bracket): array
+    {
+        $lastRi = count($bracket) - 1;
+        $tp = $bracket[$lastRi][1] ?? null;
+        $final = $bracket[$lastRi][0] ?? null;
+        if (! $tp || empty($tp['third_place']) || ! empty($tp['winner'])) {
+            return $bracket;
+        }
+        $bothSemisDone = ! empty($final['p1']['id']) && ! empty($final['p2']['id']);
+        if (! $bothSemisDone) {
+            return $bracket;
+        }
+        $has1 = ! empty($tp['p1']['id']);
+        $has2 = ! empty($tp['p2']['id']);
+        if ($has1 !== $has2) { // tek oyunculu -> walkover 3.
+            $tp['winner'] = $has1 ? (int) $tp['p1']['id'] : (int) $tp['p2']['id'];
+            $tp['score'] = ['walkover' => true];
+            $bracket[$lastRi][1] = $tp; // opens_at YOK -> final hemen açılır
+        } elseif ($has1 && $has2 && empty($tp['ready_at'])) {
+            // İki oyunculu 3.'lük HAZIR -> damga (takılma-önleme resolveStalledThirdPlace bunu kullanır).
+            $tp['ready_at'] = now()->toIso8601String();
+            $bracket[$lastRi][1] = $tp;
+        }
+
+        return $bracket;
+    }
+
+    /**
+     * TAKILMA ÖNLEME (kritik): 3.'lük maçına İKİ oyuncu geldi ama KİMSE odayı açmadı (consolation
+     * maçını umursamadılar) -> final sonsuza dek gate'li kalır = turnuva takılır. ready_at'ten
+     * STALL_MIN dk geçtiyse ve oda HİÇ açılmadıysa 3.'yü RATING ile belirle (yüksek rating 3.) ->
+     * final AÇILIR (opens_at yok = beklemeden). Oda açıldıysa dokunma: room presence/timeout/noShow
+     * zaten sonuç üretir (reconcileVerifiedResults alır). Değişiklik olduysa true.
+     */
+    private function resolveStalledThirdPlace(Tournament $t): bool
+    {
+        $bracket = is_array($t->bracket) ? $t->bracket : [];
+        $lastRi = count($bracket) - 1;
+        $tp = $bracket[$lastRi][1] ?? null;
+        if (! $tp || empty($tp['third_place']) || ! empty($tp['winner'])) {
+            return false;
+        }
+        if (empty($tp['p1']['id']) || empty($tp['p2']['id']) || ! empty($tp['room'])) {
+            return false; // henüz iki oyuncu yok VEYA oda açıldı (room mekanizması halleder)
+        }
+        $readyAt = $tp['ready_at'] ?? null;
+        $stall = (int) config('tournament.third_place_stall_minutes', 10);
+        if (! $readyAt || now()->lt(\Illuminate\Support\Carbon::parse($readyAt)->addMinutes($stall))) {
+            return false;
+        }
+        $r1 = (int) ($tp['p1']['rating'] ?? 0);
+        $r2 = (int) ($tp['p2']['rating'] ?? 0);
+        $tp['winner'] = $r1 >= $r2 ? (int) $tp['p1']['id'] : (int) $tp['p2']['id'];
+        $tp['score'] = ['stalled' => true];
+        $bracket[$lastRi][1] = $tp; // opens_at yok -> final beklemeden açılır
+        $t->bracket = $bracket;
+        $t->save();
+
+        return true;
     }
 
     /**
@@ -559,6 +634,22 @@ class TournamentController extends Controller
                 }
                 if (! empty($m['winner'])) {
                     return $this->fail('Maç bitti.', 422);
+                }
+                // FINAL GATE: önce 3.'lük maçı oynanır; final ancak 3.'lük bitip 1 dk geçince açılır.
+                // (Bu maç FINAL ise ve son turda bir 3.'lük maçı VARSA kontrol et.)
+                $isFinalMatch = $ri === count($bracket) - 1 && empty($m['third_place']);
+                if ($isFinalMatch) {
+                    $tp = $bracket[$ri][1] ?? null;
+                    if ($tp && ! empty($tp['third_place'])) {
+                        if (empty($tp['winner'])) {
+                            return $this->fail('Önce üçüncülük maçı oynanmalı.', 422);
+                        }
+                        $opensAt = $m['opens_at'] ?? null;
+                        if ($opensAt && now()->lt(\Illuminate\Support\Carbon::parse($opensAt))) {
+                            $sec = max(1, now()->diffInSeconds(\Illuminate\Support\Carbon::parse($opensAt)));
+                            return $this->fail("Final, üçüncülük maçından sonra başlar ({$sec} sn).", 422);
+                        }
+                    }
                 }
                 // Bu turun mac uzunlugu (normal / yari final / final). Bracket'e yazilir (UI gosterir)
                 // + oda kodu icin cache'e -> odayi ilk kuran enter() istemci degerine GUVENMEZ.
@@ -825,6 +916,12 @@ class TournamentController extends Controller
                 // Otoriter oda sonucu HAZIR ama bracket'e islenmemis maclari onar (report cagrisi
                 // ulasmasa da) + olu dallari coz. Ikisi de degisiklik yaparsa sampiyon guncellenir.
                 $changed = $this->reconcileVerifiedResults($t);
+                // TAKILMA ÖNLEME: 3.'lük maçına kimse gelmediyse (oda açılmadı) rating ile çöz ->
+                // final gate'i açılır (turnuva 3.'lükte asılı kalmaz). Çözünce reconcile'ı tekrar
+                // çalıştır ki final de işlenebilsin.
+                if ($this->resolveStalledThirdPlace($t)) {
+                    $changed = $this->reconcileVerifiedResults($t) || true;
+                }
 
                 return ($this->resolveDeadByes($t) || $changed) ? $t : null;
             });

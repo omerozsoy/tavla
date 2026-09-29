@@ -207,6 +207,13 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   // hafif uctan cekilir. Detay poll'u (rev) izleyici degisiminde tetiklenmez -> ayri dongu.
   const [viewerCounts, setViewerCounts] = useState<Record<string, number>>({})
   const hasRooms = !!active?.bracket?.some((r) => r.some((m) => m.room && !m.winner))
+  // FINAL gate geri sayımı için saniyelik tik (3.'lük bitince final opens_at'e kadar sayar).
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  useEffect(() => {
+    if (detailId == null || active?.status !== 'running') return
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [detailId, active?.status])
   useEffect(() => {
     if (detailId == null || active?.status !== 'running' || !hasRooms) {
       setViewerCounts({})
@@ -531,11 +538,23 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <div className="tourn-round-body">
                       {round.map((m, mi) => {
                         const mine = m.p1?.id === myId || m.p2?.id === myId
-                        const playable = mine && m.p1 && m.p2 && !m.winner
+                        // FINAL GATE: önce 3.'lük oynanır; final ancak 3.'lük bitip 1 dk geçince açılır.
+                        // Bu maç FINAL ise ve aynı turda bir 3.'lük maçı varsa: 3.'lük bitmediyse KİLİTLİ;
+                        // bittiyse opens_at'e kadar (geri sayım) KİLİTLİ. Kilitliyken Oyna gizli + uyarı.
+                        const isFinalMatch = isFinal && !m.third_place
+                        const tp3 = isFinalMatch ? round.find((x) => x.third_place) : undefined
+                        const gateSecs = m.opens_at
+                          ? Math.max(0, Math.ceil((new Date(m.opens_at).getTime() - nowTick) / 1000))
+                          : 0
+                        const finalGated = isFinalMatch && !!tp3 && (!tp3.winner || gateSecs > 0)
+                        const playable = mine && !!m.p1 && !!m.p2 && !m.winner && !finalGated
                         // Izlenebilir: oda acilmis (biri "Oyna"ya basmis) ve mac bitmemis. Kendi macimda
                         // "Oyna" var; goz yalniz baskalarinin maclarinda.
                         const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
                         const viewers = watchable ? viewerCounts[m.room!.toUpperCase()] ?? 0 : 0
+                        // OYNANIYOR: iki oyuncu belli + bitmemiş + (oda açık=canlı ya da benim oynayacağım
+                        // maç), gate'liyken DEĞİL. Çerçeve parlar -> aktif maç (3.'lük/final) dikkat çeker.
+                        const playing = !!m.p1 && !!m.p2 && !m.winner && !finalGated && (!!m.room || mine)
                         // Skor / hukmen: yalniz biten macta (bye'da skor yok).
                         const sc = m.winner && m.p1 && m.p2 ? m.score : null
                         const scoreOf = (side: 'p1' | 'p2') => {
@@ -559,7 +578,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                                 aria-hidden="true"
                               />
                             )}
-                            <div className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''}`}>
+                            <div className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''} ${playing ? 'playing' : ''}`}>
                               {watchable && (
                                 <button
                                   type="button"
@@ -568,7 +587,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                                   aria-label={viewers > 0 ? `${t('tourn.watch')} · ${t('live.watchCount', { n: viewers })}` : t('tourn.watch')}
                                   onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)}
                                 >
-                                  <Icon name="eye" size={16} />
+                                  <Icon name="eye" size={20} />
                                   {viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
                                 </button>
                               )}
@@ -603,6 +622,14 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                                   {/* Elle "Kazandim/Kaybettim" KALDIRILDI: sonuc yalniz sunucudaki gercek mac
                                       sonucundan gelir (App mac bitince otomatik bildirir, sunucu dogrular). */}
                                 </>
+                              )}
+                              {/* FINAL uyarısı: 3.'lük bitmeden / opens_at gelmeden final oynanmaz. */}
+                              {isFinalMatch && finalGated && !!m.p1 && !!m.p2 && (
+                                <div className="tm-gate">
+                                  {tp3 && !tp3.winner
+                                    ? t('tourn.finalAfterThird')
+                                    : t('tourn.finalOpensIn', { s: gateSecs })}
+                                </div>
                               )}
                             </div>
                           </div>
