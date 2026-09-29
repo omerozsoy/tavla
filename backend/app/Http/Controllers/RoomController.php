@@ -2887,6 +2887,11 @@ class RoomController extends Controller
                         $this->markDropFinished($room, 'white');
                     }
                     $room->server_version = (int) $room->server_version + 1;
+                    // SAAT: teklif beklerken saat/tur bottaydı (p2, yanıtlayan). Bot karar verdi ->
+                    // segmenti kapat, yeni oyun/oda-sonu durumuna göre saati yeniden sür (cubeRespond
+                    // drop dalıyla simetrik). Yoksa turn_slot 'p2'de KİLİTLENİR.
+                    $this->driveAuthoritativeClock($room, 'p2', microtime(true));
+                    $this->graceHumanAfterBot($room);
                     $room->save();
 
                     return response()->json([
@@ -2904,6 +2909,13 @@ class RoomController extends Controller
                 $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => 'black', 'pending' => null];
                 $room->server_match = $sm;
                 $room->server_version = (int) $room->server_version + 1;
+                // SAAT: teklif beklerken saat/tur bottaydı (p2, yanıtlayan). Bot 'take' dedi -> teklif
+                // çözüldü, sıra insana (p1, zarını atar) döner. Segmenti p2 için kapat -> turn_slot p1'e
+                // geçsin (cubeRespond take dalıyla simetrik). Bu satır OLMADAN turn_slot 'p2'de KİLİTLENİR:
+                // insan p1 poll'u onUpdate'te "yetkisiz" (requester!=current) sayılıp saati ilerletemez
+                // -> "bot almadı, saat durdu, bot bekliyor" DONMASI. graceHumanAfterBot reveal süresini yazmaz.
+                $this->driveAuthoritativeClock($room, 'p2', microtime(true));
+                $this->graceHumanAfterBot($room);
                 $room->save();
 
                 return response()->json([
