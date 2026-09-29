@@ -22515,19 +22515,19 @@ button.acct-row-logout:hover:not(:disabled) {
    yol (.on) yesil. Turlar arasi bosluk = 2 x 20px cizgi. */
 .tourn-bracket {
   display: flex;
-  gap: 40px;
+  gap: 0;
   overflow-x: auto;
   padding: 8px 6px 10px;
   align-items: stretch;
 }
 .tourn-round {
-  min-width: 132px;
+  min-width: 172px;
   display: flex;
   flex-direction: column;
-  /* Her turun kendi alani (arka plan inline style ile ri'ye gore koyulasir). Yatay padding YOK:
-     baglanti cizgileri (.tb-out/.tb-in) turlar arasi 40px boslukta tam bulusur. */
-  border-radius: 12px;
-  padding: 6px 0 10px;
+  /* Her turun kendi ALANI; alanlar BITISIK dursun (gap:0) -> her sinirda sol/sag renk ayrimi net.
+     40px tur-arasi bosluk kolon ICINE yatay padding olarak alindi (20+20); boylece arka plan
+     bosluk birakmaz AMA baglanti cizgileri (.tb-out/.tb-in) ortak sinirda hala tam bulusur. */
+  padding: 6px 20px 10px;
 }
 .tourn-bracket .tourn-round-title {
   height: 20px;
@@ -22651,7 +22651,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Sampiyon sutunu (finalin sagi, tac) */
 .tourn-champ-col {
-  min-width: 140px;
+  min-width: 180px;
 }
 .tourn-champ {
   display: flex;
