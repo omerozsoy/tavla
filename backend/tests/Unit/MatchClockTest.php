@@ -81,6 +81,22 @@ class MatchClockTest extends TestCase
         $this->assertEqualsWithDelta(0, $v['delay'], 0.001);
     }
 
+    // ---- 3b) HOLD (bot-reveal grace): started_at GELECEKTE -> delay DONUK + hold raporlanir ----
+    public function test_hold_reports_grace_and_freezes_delay(): void
+    {
+        // started_at now+4.5 (grace ile ileri itilmis). clientView hold=4.5, delay TAM (10) donmeli;
+        // istemci hold kadar geri saymaz -> "10 9 10 9" titremesi biter.
+        $c = $this->started('normal', 5); // delay 10, started_at=T0
+        $c['started_at'] = self::T0 + 4.5;
+        $v = MatchClock::clientView($c, self::T0); // now < started_at
+        $this->assertEqualsWithDelta(4.5, $v['hold'], 0.001);
+        $this->assertEqualsWithDelta(10, $v['delay'], 0.001); // grace boyunca delay DONUK
+        // grace bitince hold 0, delay normal geri sayar.
+        $v2 = MatchClock::clientView($c, self::T0 + 4.5 + 3);
+        $this->assertEqualsWithDelta(0, $v2['hold'], 0.001);
+        $this->assertEqualsWithDelta(7, $v2['delay'], 0.001);
+    }
+
     // ---- 4) TIMEOUT: kisa ana sure (speed 1 puan) ----
     public function test_timeout_when_bank_exhausted(): void
     {
