@@ -9,3 +9,9 @@ Type=oneshot
 User=CHANGE_ME_VHOST_USER
 WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 ExecStart=/opt/plesk/php/8.2/bin/php artisan schedule:run
+# KRİTİK: schedule:run, uzun süren işleri (ör. tavla:tourney-bots tick --seconds=55) runInBackground
+# ile ARKA PLANDA başlatıp hemen çıkar. Type=oneshot varsayılan KillMode=control-group ile servis
+# "bitti" sayılınca cgroup'u söküp bu arka plan çocuklarını ANINDA öldürür -> tick 1 tur bile
+# oynayamadan SIGTERM yer (turnuva botları "takılıyor" kökü). KillMode=process: yalnız ana süreci
+# (schedule:run) durdur, arka plan çocukları yaşasın.
+KillMode=process
