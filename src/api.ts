@@ -1072,6 +1072,8 @@ export interface TMatch {
   minutes?: number | null
   /** Biten macin skoru (bracket oyuncu sirasiyla) veya hukmen (rakip gelmedi). */
   score?: { p1?: number; p2?: number; walkover?: boolean } | null
+  /** ÜÇÜNCÜLÜK MAÇI: son turda (index 1) iki yarı final kaybedeninin oynadığı maç. */
+  third_place?: boolean
 }
 export interface Tournament {
   id: number

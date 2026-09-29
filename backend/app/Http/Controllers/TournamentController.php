@@ -354,24 +354,78 @@ class TournamentController extends Controller
             $bracket[$ri][$mi]['score'] = $score; // {p1,p2} veya {walkover:true} (bracket gosterir)
         }
         $winner = ($m['p1']['id'] ?? null) === $winnerId ? $m['p1'] : $m['p2'];
+        $loser = ($m['p1']['id'] ?? null) === $winnerId ? ($m['p2'] ?? null) : ($m['p1'] ?? null);
 
-        if (isset($bracket[$ri + 1])) {
+        if (! empty($m['third_place'])) {
+            // 3.'LÜK MAÇI: yalnız kazananı kaydet (üst tura taşıma / şampiyon YOK). Sıralama/ödül
+            // maybeFinalize'da (final + 3.'lük ikisi de bitince) verilir.
+            $t->bracket = $bracket;
+        } elseif (isset($bracket[$ri + 1])) {
             $nextIndex = intdiv($mi, 2);
             $slot = $mi % 2 === 0 ? 'p1' : 'p2';
             $bracket[$ri + 1][$nextIndex][$slot] = $winner;
-        } else {
-            // Final bitti -> sampiyon
-            $t->champion_id = $winnerId;
-            $t->status = 'finished';
-            // Odulleri bir kez ode (kilit altinda check-then-set yaris-guvenli).
-            if (! $t->prize_paid) {
-                $this->payPrizes($t, $bracket, $winnerId);
-                $t->prize_paid = true;
+            // YARI FINAL (üst tur = SON tur = final) -> kaybedeni 3.'lük maçına yerleştir. Bye maçında
+            // gerçek kaybeden yok (null) -> yazılmaz (tek-oyunculu 3.'lük maybeFinalize'da walkover olur).
+            if ($ri + 1 === count($bracket) - 1 && $loser && isset($loser['id'])) {
+                $bracket = $this->placeThirdPlaceLoser($bracket, $mi, $loser);
             }
+            $t->bracket = $bracket;
+        } else {
+            // FINAL bitti -> şampiyon belli. status/ödül maybeFinalize'da (3.'lük maçı da bitmeli).
+            $t->champion_id = $winnerId;
+            $t->bracket = $bracket;
         }
 
-        $t->bracket = $bracket;
+        $this->maybeFinalize($t);
         $t->save();
+    }
+
+    /** Yarı final kaybedenini SON turdaki 3.'lük maçına (index 1) koy; maç yoksa oluştur. */
+    private function placeThirdPlaceLoser(array $bracket, int $semiMi, array $loser): array
+    {
+        $lastRi = count($bracket) - 1;
+        if (! isset($bracket[$lastRi][1])) {
+            $bracket[$lastRi][1] = ['key' => "r{$lastRi}m1", 'third_place' => true, 'p1' => null, 'p2' => null, 'winner' => null];
+        }
+        $slot = $semiMi % 2 === 0 ? 'p1' : 'p2';
+        $bracket[$lastRi][1][$slot] = $loser;
+
+        return $bracket;
+    }
+
+    /**
+     * Turnuvayı SONLANDIR: şampiyon (final) BELLİ ve 3.'lük maçı da (varsa) çözülmüşse status='finished'
+     * + ödüller. 3.'lük maçı tek oyunculu kaldıysa (diğer yarı final bye idi) walkover ile 3. olur.
+     * Final ile 3.'lük paralel oynanır; hangisi önce biterse bitsin turnuva İKİSİ de bitince kapanır.
+     */
+    private function maybeFinalize(Tournament $t): void
+    {
+        if ($t->status === 'finished' || ! $t->champion_id) {
+            return;
+        }
+        $bracket = $t->bracket;
+        $lastRi = count($bracket) - 1;
+        $tp = $bracket[$lastRi][1] ?? null;
+        if ($tp && ! empty($tp['third_place']) && empty($tp['winner'])) {
+            $has1 = ! empty($tp['p1']['id']);
+            $has2 = ! empty($tp['p2']['id']);
+            if ($has1 && $has2) {
+                return; // 3.'lük maçı henüz oynanmadı -> finalize etme (turnuva 'running' kalır)
+            }
+            // Tek oyunculu 3.'lük (karşı yarı final bye idi) -> o oyuncu walkover ile 3.
+            if ($has1 !== $has2) {
+                $tp['winner'] = $has1 ? (int) $tp['p1']['id'] : (int) $tp['p2']['id'];
+                $tp['score'] = ['walkover' => true];
+                $bracket[$lastRi][1] = $tp;
+                $t->bracket = $bracket;
+            }
+            // İkisi de boş (imkânsız: final iki oyuncu istiyor) -> 3.'lük yok say, finalize et.
+        }
+        $t->status = 'finished';
+        if (! $t->prize_paid) {
+            $this->payPrizes($t, $t->bracket, (int) $t->champion_id);
+            $t->prize_paid = true;
+        }
     }
 
     // Turnuva bittiyse sampiyona galibiyet rozetleri (idempotent). tournaments_won
@@ -508,9 +562,11 @@ class TournamentController extends Controller
                 }
                 // Bu turun mac uzunlugu (normal / yari final / final). Bracket'e yazilir (UI gosterir)
                 // + oda kodu icin cache'e -> odayi ilk kuran enter() istemci degerine GUVENMEZ.
-                $target = $tournament->roundTarget($ri, count($bracket));
+                // 3.'LÜK MAÇI (son turda ama final değil) -> YARI FINAL uzunluğunu kullan (final değil).
+                $lenRi = ! empty($m['third_place']) ? max(0, count($bracket) - 2) : $ri;
+                $target = $tournament->roundTarget($lenRi, count($bracket));
                 $bracket[$ri][$mi]['target'] = $target;
-                $minutes = $tournament->roundMinutes($ri, count($bracket));
+                $minutes = $tournament->roundMinutes($lenRi, count($bracket));
                 $bracket[$ri][$mi]['minutes'] = $minutes;
                 // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
                 // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
@@ -654,23 +710,46 @@ class TournamentController extends Controller
         if (empty($bracket)) {
             return [];
         }
-        $lastRound = $bracket[count($bracket) - 1];
-        $final = $lastRound[0] ?? null;
+        $lastRi = count($bracket) - 1;
+        $final = $bracket[$lastRi][0] ?? null;
         $championId = isset($final['winner']) ? (int) $final['winner'] : null;
 
         $standings = [];
         if ($championId) {
-            $standings[] = $championId;
+            $standings[] = $championId; // 1.
         }
-        for ($ri = count($bracket) - 1; $ri >= 0; $ri--) {
+        // 2. = final kaybedeni
+        if ($final && $championId && isset($final['p1']['id'], $final['p2']['id'])) {
+            $ru = (int) $final['p1']['id'] === $championId ? $final['p2'] : $final['p1'];
+            if (isset($ru['id'])) {
+                $standings[] = (int) $ru['id'];
+            }
+        }
+        // 3./4. = 3.'LÜK MAÇI sonucu (varsa+bittiyse). Yoksa eski davranış: yarı final kaybedenleri
+        // rating'e göre (aşağıdaki döngü). $startRi döngünün başlayacağı tur (yarı final = lastRi-1).
+        $tp = $bracket[$lastRi][1] ?? null;
+        $startRi = $lastRi - 1;
+        if ($tp && ! empty($tp['third_place']) && ! empty($tp['winner'])) {
+            $tw = (int) $tp['winner'];
+            $standings[] = $tw; // 3.
+            if (isset($tp['p1']['id'], $tp['p2']['id'])) {
+                $tl = (int) $tp['p1']['id'] === $tw ? (int) $tp['p2']['id'] : (int) $tp['p1']['id'];
+                $standings[] = $tl; // 4.
+            }
+            $startRi = $lastRi - 2; // 3./4. yazıldı -> yarı finalleri atla
+        }
+        // Kalan turların kaybedenleri (rating azalan). Son tur (final + 3.'lük) yukarıda ele alındı.
+        for ($ri = $startRi; $ri >= 0; $ri--) {
             $losers = [];
             foreach ($bracket[$ri] as $m) {
+                if (! empty($m['third_place'])) {
+                    continue; // 3.'lük maçı ayrı ele alındı
+                }
                 $w = $m['winner'] ?? null;
                 $p1 = $m['p1'] ?? null;
                 $p2 = $m['p2'] ?? null;
-                // Bye/yarim mac: iki gercek oyuncu yoksa kaybeden yok
                 if (! $w || ! isset($p1['id'], $p2['id'])) {
-                    continue;
+                    continue; // Bye/yarim mac: kaybeden yok
                 }
                 $loser = ((int) $p1['id'] === (int) $w) ? $p2 : $p1;
                 if (isset($loser['id'])) {
