@@ -50,8 +50,10 @@ return [
     // (Ekranda gosterilen 499 TL ile birebir; odeme callback'inde plan_until'a +1 yil EKLENIR.)
     'renew' => ['yearly' => 49900],
 
-    // Coin (jeton) paketleri — KURUS (TL x 100). Frontend src/coinPackages.ts ile BIREBIR ayni
-    // olmali (fiyat sunucuda dogrulanir; frontend'den gelen tutara guvenilmez).
+    // Coin (jeton) paketleri — ARTIK OTORITER DEGIL (2026-09-30): fiyat/paketler DB `coin_packages`
+    // tablosundan okunur (Magaza > Coin Paketleri panelinden yonetilir), bkz CoinPackage +
+    // PaymentController::coinSubtotal. Bu array yalniz baslangic tohumu ile ayni referans/dokuman
+    // olarak kalir (bazi testler slug anahtari icin okur). Fiyat degistirmek icin PANELI kullan.
     'coin_packages' => [
         'baslangic' => ['price' => 10000,  'gc' => 100],
         'kese'      => ['price' => 47500,  'gc' => 500],

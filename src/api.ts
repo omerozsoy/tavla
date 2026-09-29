@@ -2,6 +2,7 @@
 import type { Profile } from './storage'
 import type { GameState, Player, Step } from './engine/types'
 import { normalizeCountry } from './countries'
+import { COIN_PACKAGES, type CoinPackage } from './coinPackages'
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
@@ -432,6 +433,17 @@ export async function getFooterConfig(): Promise<FooterColumnCfg[]> {
     return d.columns || []
   } catch {
     return []
+  }
+}
+
+// Coin paketleri — panelden (Mağaza > Coin Paketleri) yönetilir; fiyat değişince site anında
+// yansır. Erişilemezse statik COIN_PACKAGES'e düşer (dükkân yine açılır). id=slug, price TL.
+export async function getCoinPackages(): Promise<CoinPackage[]> {
+  try {
+    const d = await req<{ packages?: CoinPackage[] }>('/shop/coin-packages')
+    return d.packages && d.packages.length ? d.packages : COIN_PACKAGES
+  } catch {
+    return COIN_PACKAGES
   }
 }
 

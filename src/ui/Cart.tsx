@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import { COIN_PACKAGES } from '../coinPackages'
+import type { CoinPackage } from '../coinPackages'
+import { useCoinPackages } from '../useCoinPackages'
 import { validatePromo, getAddresses, getBankTransferInfo, type PromoResult, type Address, type BankInfo, type PayMethod } from '../api'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
@@ -53,6 +54,7 @@ export default function Cart({
 }) {
   useEscape(onClose)
   const notify = useToast()
+  const coinPackages = useCoinPackages()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [code, setCode] = useState('')
@@ -71,8 +73,8 @@ export default function Cart({
 
   const memItem = items.find((i) => i.kind === 'membership')
   const coinRows = items
-    .map((it) => ({ it, pkg: COIN_PACKAGES.find((p) => p.id === it.id) }))
-    .filter((r): r is { it: CartItem; pkg: (typeof COIN_PACKAGES)[number] } => !!r.pkg && it_isCoins(r.it))
+    .map((it) => ({ it, pkg: coinPackages.find((p) => p.id === it.id) }))
+    .filter((r): r is { it: CartItem; pkg: CoinPackage } => !!r.pkg && it_isCoins(r.it))
   const productRows = items.filter((i) => i.kind === 'product' && i.product)
   const hasProducts = productRows.length > 0
 
