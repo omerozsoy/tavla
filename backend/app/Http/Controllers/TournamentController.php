@@ -740,13 +740,57 @@ class TournamentController extends Controller
         foreach (Tournament::where('status', 'running')->pluck('id') as $id) {
             $done = DB::transaction(function () use ($id) {
                 $t = Tournament::lockForUpdate()->find($id);
+                if (! $t || $t->status !== 'running') {
+                    return null;
+                }
+                // Otoriter oda sonucu HAZIR ama bracket'e islenmemis maclari onar (report cagrisi
+                // ulasmasa da) + olu dallari coz. Ikisi de degisiklik yaparsa sampiyon guncellenir.
+                $changed = $this->reconcileVerifiedResults($t);
 
-                return $t && $t->status === 'running' && $this->resolveDeadByes($t) ? $t : null;
+                return ($this->resolveDeadByes($t) || $changed) ? $t : null;
             });
             if ($done) {
                 $this->awardChampionIfFinished($done);
             }
         }
+    }
+
+    /**
+     * KILITLENME ONARIMI (bkz [[turnuva-akicilik]] / raporlanmayan sonuc): bir mac odasi otoriter
+     * olarak BITMIS (hasVerifiedServerResult) ama bracket'e kazanan islenmemisse -> report() cagrisi
+     * (bot/istemci o an olmus, deadline'a denk gelmis vb.) hic ulasmadigi icin turnuva sonsuza dek
+     * "kazanansiz" takilir. Bu, odadaki DOGRULANMIS sonucu bracket'e islet -> report'a bagimli kalma.
+     * Cagiran turnuva satirini KILITLER (autoStartDue transaction'i). Degisiklik olduysa true.
+     */
+    private function reconcileVerifiedResults(Tournament $t): bool
+    {
+        $changed = false;
+        // applyWinnerToBracket her cagride kaydeder + bir ust tura tasir; birden fazla mac hazirsa
+        // ( or. iki yari final ayni anda) hepsini isle. Final islenince status 'finished' -> dongu biter.
+        for ($guard = 0; $guard < 64 && $t->status === 'running'; $guard++) {
+            $bracket = is_array($t->bracket) ? $t->bracket : [];
+            $found = null;
+            foreach ($bracket as $ri => $round) {
+                foreach ($round as $mi => $m) {
+                    if (! empty($m['winner']) || empty($m['p1']['id']) || empty($m['p2']['id']) || empty($m['room'])) {
+                        continue;
+                    }
+                    $winnerId = $this->winnerIdFromRoom($m); // yalniz otoriter+dogrulanmis sonuc -> id, yoksa null
+                    if ($winnerId !== null) {
+                        $found = [$ri, $mi, $winnerId];
+                        break 2;
+                    }
+                }
+            }
+            if (! $found) {
+                break;
+            }
+            [$ri, $mi, $winnerId] = $found;
+            $this->applyWinnerToBracket($t, $ri, $mi, $winnerId, $this->scoreFromRoom($bracket[$ri][$mi]));
+            $changed = true;
+        }
+
+        return $changed;
     }
 
     /** Mac, hic oyuncu gelmeyecek OLU bir dal mi? (bos + kazanansiz; ilk tur ya da iki besleyeni de olu) */
