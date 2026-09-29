@@ -827,6 +827,7 @@ export default function App() {
   const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
+  const [matchCodeCopied, setMatchCodeCopied] = useState(false) // oyun-içi maç ID kopyalandı geri bildirimi
   // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
   const [cubeHint, setCubeHint] = useState<CubeHint | null>(null)
   const cubeHintRef = useRef<CubeHint | null>(null) // karar aninda loglamak icin
@@ -9532,6 +9533,31 @@ export default function App() {
       >
         <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
       </button>
+      {/* Maç ID rozeti (sağ üst, tam ekran butonunun solunda): yalnız online maçta. Tıklayınca
+          oda kodunu panoya kopyalar (destek/hata bildirimi/arkadaşa paylaşma için). */}
+      {online && room?.code && (
+        <button
+          type="button"
+          className={`match-code-badge${matchCodeCopied ? ' copied' : ''}`}
+          onClick={() => {
+            const c = room?.code
+            if (!c) return
+            navigator.clipboard
+              ?.writeText(c)
+              .then(() => {
+                setMatchCodeCopied(true)
+                window.setTimeout(() => setMatchCodeCopied(false), 1500)
+              })
+              .catch(() => {})
+          }}
+          title={t('game.copyMatchId')}
+          aria-label={t('game.copyMatchId')}
+        >
+          <span className="mcb-lbl">{t('game.matchId')}</span>
+          <span className="mcb-val">{room.code}</span>
+          <Icon name={matchCodeCopied ? 'check' : 'copy'} size={14} />
+        </button>
+      )}
       {/* İzleyenler (oynayan oyuncular da kimlerin izlediğini + sayıyı görsün) — yalnız online
           maçta izleyici varken; izleyicilerin gördüğü panelin aynısı (bkz Spectate). */}
       {online && viewerCount > 0 && (
