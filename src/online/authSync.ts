@@ -24,7 +24,8 @@ export interface ServerSyncView {
   server_state?: { turn?: Player; dice?: number[] } | null
   server_version?: number
   // Açılış kalkanı (openingNeedsResync) için: sunucuda bu oyunun açılış eli atıldı mı.
-  server_match?: { opened?: boolean; done?: boolean } | null
+  // cube.pending: rakibin BEKLEYEN küp teklifi (mid-move kalkanının atlaması gereken sınır).
+  server_match?: { opened?: boolean; done?: boolean; cube?: { pending?: Player | null } | null } | null
 }
 
 /**
@@ -48,8 +49,12 @@ export function shouldApplyServerState(local: SyncLocal, rv: ServerSyncView, myC
   //    cube/respond "Oyun aktif değil" 409 (#5PTWV).
   //  - opened=false: bir OYUN bitti; sunucu sonraki oyunu açılış-öncesi taze tahtayla kurdu
   //    (opened=false). Kaybeden bayat zarıyla dururken sonraki oyun HİÇ gelmez (aynı kilit).
+  //  - cube.pending: rakip KÜP çekti (double). Yanıtlayanın tahtası bayat mid-move'daysa (kendi
+  //    biten turunun zarı/adımı hâlâ duruyor) mid-move kalkanı teklifi bloklar -> take/drop kutusu
+  //    HİÇ çıkmaz; oyuncu "sıra rakipte" sanıp beklerken saati eriyip kaybeder (canlı bug, 4-5 rapor).
+  //    Bekleyen teklif otoriter bir sınırdır: bayat mid-move yerine teklifi UYGULA (kutu görünsün).
   // Version kapısından SONRA olduğu için stale poll elenir; sınır durumu tam bir kez uygulanır.
-  if (rv.server_match?.done || rv.server_match?.opened === false) return true
+  if (rv.server_match?.done || rv.server_match?.opened === false || rv.server_match?.cube?.pending) return true
   const myTurn = local.turn === myColor
   const midMove = myTurn && (local.playedCount > 0 || local.diceCount > 0)
   return !midMove

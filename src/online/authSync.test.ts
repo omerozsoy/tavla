@@ -84,6 +84,21 @@ describe('shouldApplyServerState', () => {
     const active = { ...rv(9, 'white'), server_match: { opened: true, done: false } }
     expect(shouldApplyServerState(local, active, 'white')).toBe(false)
   })
+
+  it('KÜP FIX: rakip küp çekti (cube.pending) iken bayat mid-move olsa bile uygula (görünmeyen küp bug)', () => {
+    // Rakip (white) double çekti -> cube.pending=white. Yanıtlayanın (white slot) tahtası kendi biten
+    // turunun bayat zarıyla duruyor (mid-move). ESKİ BUG: midMove -> teklif hiç uygulanmaz -> take/drop
+    // kutusu çıkmaz -> "sıra rakipte" sanıp saati eriyip kaybeder. FIX: pending sınırı mid-move'u atlar.
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 5 }
+    const offered = { ...rv(9, 'white'), server_match: { opened: true, done: false, cube: { pending: 'black' as Player } } }
+    expect(shouldApplyServerState(local, offered, 'white')).toBe(true)
+  })
+
+  it('cube.pending olsa bile SÜRÜM ilerlemediyse uygulamaz (döngü önlenir)', () => {
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 9 }
+    const offered = { ...rv(9, 'white'), server_match: { opened: true, done: false, cube: { pending: 'black' as Player } } }
+    expect(shouldApplyServerState(local, offered, 'white')).toBe(false)
+  })
 })
 
 describe('rollResponseAction', () => {
