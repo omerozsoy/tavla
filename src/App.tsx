@@ -3346,6 +3346,18 @@ export default function App() {
             if (r?.version != null) appliedServerVersionRef.current = r.version
             recordCubePR(player, 'offer', 'double') // XG cube PR + .mat kaydı
             recordCubeEvent(player, 'double') // maç kaydı (okunur)
+            // BOT ODASI: bot teklifi AYNI yanıtta yanıtlar (bot_cube = take|drop). Çözülen durumu
+            // HEMEN uygula -> "rakip yanıtı bekleniyor" örtüsünü kaldır + küp/skoru senkronla. YOKSA
+            // cubePending 'white'ta asılı kalır ve POLL de temizleyemez (appliedServerVersionRef bu
+            // sürüme set edildi -> aynı/eski sürümlü poll atlanır) -> insan zar atamaz, saati boşa
+            // akar = "bot küpü kabul etmiyor, sürem gidiyor" (yüzlerce şikayetin FE kökü).
+            const bc = (r as { bot_cube?: string; match?: ServerMatch })?.bot_cube
+            if (botMatch && bc) {
+              // Board küp take'te değişmez; applyServerBoard match'i (cube + pending=null) uygular ->
+              // cubePending temizlenir, sıra insana (zar) döner. PR/.mat SUNUCU-otoriter -> burada
+              // KAYIT YOK (çift kayıt/yanlış atıf olmasın).
+              applyServerBoard(turnStart, (r as { match?: ServerMatch }).match ?? null)
+            }
           })
           .catch((e) => {
             setCubePending(null) // reddedildi (409/kural) -> iyimser durumu geri al; poll gerçeği getirir
