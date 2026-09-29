@@ -7,8 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Tournament extends Model
 {
+    /** Turnuva tipleri. bracket = klasik eleme ağacı; swiss_triple = Swiss Triple Elimination (TBD). */
+    public const TYPES = [
+        'bracket' => 'Bracket System',
+        'swiss_triple' => 'Swiss Triple Elimination',
+    ];
+
     protected $fillable = [
-        'name', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
+        'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
         'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
