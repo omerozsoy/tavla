@@ -4351,13 +4351,12 @@ export default function App() {
         if ((oppPr == null || !oppLuckDone || !mwcDone) && code) {
           // Rakip PR'ı (kaybedenin KENDİ gnubg satırı) otoriter kaynaktır; gnubg tek-thread/kuyrukta
           // yavaş olabildiğinden ~90sn poll et (eski 18sn penceresi kısa kalıp "—"da bırakıyordu).
-          // 0'ı "henüz gelmedi" say: bu ONLINE İNSAN rakibin async analizini bekleyen poll;
-          // insan bir maçı tam 0 PR oynamaz -> 0 = transient/hazır değil. (Bot 0.00'ı ayrı yoldan
-          // gelir: pollGnubgPr g.opponent_pr; orada 0 gerçek kabul edilir.)
+          // 0 GERÇEK bir değerdir (kusursuz oyun): sunucu hazır değilken NULL döner, hesaplandıysa
+          // gerçek değeri (0 dahil). Bu yüzden yalnız null'da poll'a devam; 0 gelirse 0 yaz (atma).
           for (let i = 0; i < 60 && (oppPr == null || !oppLuckDone || !mwcDone); i++) {
             await new Promise((res) => setTimeout(res, 1500))
             const pair = await matchPr(code)
-            if (pair.opponent != null && pair.opponent !== 0) {
+            if (pair.opponent != null) {
               oppPr = pair.opponent
               // Rakip raporunu YENI tamamladiysa kirilim da o an gelir; gelmeyen ONCEKI kalir.
               setServerPr((prev) => ({
