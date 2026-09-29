@@ -22465,9 +22465,14 @@ button.acct-row-logout:hover:not(:disabled) {
    responsive grid ile cok kolona yay. Baslik + bekleme notu tum kolonlari kaplar. */
 .tourn-card .tourn-players {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2px 12px;
   align-items: stretch;
+}
+@media (max-width: 640px) {
+  .tourn-card .tourn-players {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .tourn-card .tourn-players h3,
 .tourn-card .tourn-players .tourn-wait {
