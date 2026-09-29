@@ -22554,6 +22554,27 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted, #8a95a5);
   white-space: nowrap;
 }
+/* FINAL turu: final maci TAM ORTADA (iki yari-finalin bulustugu H/2 hizasi) dursun; ucunculuk
+   maci alt yariya (3H/4, alt yari-final hizasi) otursun. Esit-yuva flex bolusumu final'i ust
+   yariya itiyordu -> absolute ile tam ortala. Sampiyon sutunu ayni hizayi aynalar.
+   ponytail: cok kucuk bracket'te (4 kisi) final+3.'luk kutulari birbirine yaklasabilir; buyuk
+   bracket'te bol bosluk var, sorun degil. */
+.tourn-round-final .tourn-round-body,
+.tourn-champ-col .tourn-round-body {
+  position: relative;
+}
+.tourn-round-final .tb-slot:not(.tb-slot-3rd),
+.tourn-champ-col .tb-slot:first-child {
+  position: absolute;
+  inset: 0;
+}
+.tourn-round-final .tb-slot-3rd {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  bottom: 0;
+}
 .tb-out,
 .tb-in {
   position: absolute;
@@ -22736,11 +22757,16 @@ button.acct-row-logout:hover:not(:disabled) {
 .tm-p.win .tm-score {
   color: var(--success-fg);
 }
-.tm-score.wo {
+/* Hukmen (walkover) her zaman KIRMIZI (kazanan tarafinda gorunse de yesili ez). */
+.tm-score.wo,
+.tm-p.win .tm-score.wo {
   font-size: 0.72rem;
+  color: var(--danger-fg);
+  font-weight: 700;
 }
+/* Kaybeden: gri + 1 ton acik (soluk) -> kazanan yesil daha cok one ciksin. */
 .tm-p.lose {
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 70%, var(--card-bg));
 }
 /* Ilk turda rakipsiz gecis: cizgi yerine yesil "Bye" */
 .tm-p .tm-bye {
@@ -22753,7 +22779,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .tm-p.win {
   color: var(--success-fg);
-  font-weight: 400;
+  font-weight: 700;
 }
 .tm-play {
   width: calc(100% - 8px);
