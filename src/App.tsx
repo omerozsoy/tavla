@@ -6972,7 +6972,10 @@ export default function App() {
     )
   } else if (humanRespond) {
     centerMain = (
-      <div className="result-box">
+      <div className="result-box cube-respond">
+        <div className="cube-respond-badge" aria-hidden>
+          <Icon name="alert" size={20} /> ×{match.cube.value * 2}
+        </div>
         <div className="result-title">
           {t('msg.doubled', { name: pName(cubePending!), value: match.cube.value * 2 })}
         </div>
