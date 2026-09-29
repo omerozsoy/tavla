@@ -42,15 +42,29 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
 
 // Bracket'ten nihai sıralama (oyuncu id'leri, 1.den sonuncuya) — backend standingsFromBracket ile
 // AYNI mantık: 1.=final kazananı; sonra son turdan ilk tura her turun KAYBEDENLERI (rating azalan).
+// Backend standingsFromBracket ile AYNI: 1=şampiyon, 2=final kaybedeni, 3/4=ÜÇÜNCÜLÜK MAÇI sonucu
+// (varsa+bittiyse; yoksa yarı final kaybedenleri rating'e göre), 5+=alt turlar rating'e göre.
 function tournStandings(bracket?: TMatch[][] | null): number[] {
   if (!bracket || bracket.length === 0) return []
-  const final = bracket[bracket.length - 1]?.[0]
+  const lastRi = bracket.length - 1
+  const final = bracket[lastRi]?.[0]
   const out: number[] = []
-  if (final?.winner) out.push(final.winner)
-  for (let ri = bracket.length - 1; ri >= 0; ri--) {
+  if (final?.winner) out.push(final.winner) // 1.
+  if (final?.winner && final.p1?.id && final.p2?.id) {
+    const ru = final.p1.id === final.winner ? final.p2 : final.p1 // 2.
+    if (ru?.id) out.push(ru.id)
+  }
+  const tp = bracket[lastRi]?.[1] // 3.'lük maçı (final round index 1)
+  let startRi = lastRi - 1
+  if (tp?.third_place && tp.winner && tp.p1?.id && tp.p2?.id) {
+    out.push(tp.winner) // 3.
+    out.push(tp.p1.id === tp.winner ? tp.p2.id : tp.p1.id) // 4.
+    startRi = lastRi - 2
+  }
+  for (let ri = startRi; ri >= 0; ri--) {
     const losers: { id: number; rating: number }[] = []
     for (const m of bracket[ri]) {
-      if (!m.winner || !m.p1?.id || !m.p2?.id) continue
+      if (m.third_place || !m.winner || !m.p1?.id || !m.p2?.id) continue
       const loser = m.p1.id === m.winner ? m.p2 : m.p1
       if (loser?.id) losers.push({ id: loser.id, rating: loser.rating ?? 0 })
     }
@@ -532,14 +546,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                           return <span className="tm-score tnum">{sc[side] ?? 0}</span>
                         }
                         return (
-                          <div key={m.key} className="tb-slot">
+                          <div key={m.key} className={`tb-slot${m.third_place ? ' tb-slot-3rd' : ''}`}>
+                            {/* ÜÇÜNCÜLÜK MAÇI: finalin altında ayrı etiketli kutu (çeyrek/yarı/final gibi).
+                                Bağlantı çizgisi YOK (şampiyona gitmez); iki yarı final kaybedeni burada oynar. */}
+                            {m.third_place && <div className="tourn-3rd-title">{t('tourn.thirdPlace')}</div>}
                             {/* Onceki turdan gelen ok (kazanan yol yesil) */}
-                            {ri > 0 && <span className={`tb-in${m.p1 || m.p2 ? ' on' : ''}`} aria-hidden="true" />}
+                            {ri > 0 && !m.third_place && <span className={`tb-in${m.p1 || m.p2 ? ' on' : ''}`} aria-hidden="true" />}
                             {/* Sonraki tura giden cizgi: cift eslesme ortasinda birlesir; final -> sampiyon */}
-                            <span
-                              className={`tb-out ${isFinal ? 'straight' : mi % 2 === 0 ? 'down' : 'up'}${m.winner ? ' on' : ''}`}
-                              aria-hidden="true"
-                            />
+                            {!m.third_place && (
+                              <span
+                                className={`tb-out ${isFinal ? 'straight' : mi % 2 === 0 ? 'down' : 'up'}${m.winner ? ' on' : ''}`}
+                                aria-hidden="true"
+                              />
+                            )}
                             <div className={`tourn-match ${mine ? 'mine' : ''} ${watchable ? 'watchable' : ''}`}>
                               {watchable && (
                                 <button
