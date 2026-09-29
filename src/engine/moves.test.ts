@@ -138,6 +138,66 @@ describe('maksimum zar kullanimi', () => {
   })
 })
 
+// BUYUK-ZAR KURALI — GERCEK SENARYOLAR (oyuncu raporu: "1 zar başka hamlesi varken oto oynandı").
+// Kural (backgammon): iki FARKLI zardan yalnız BİRİ oynanabiliyorsa BÜYÜĞÜ oynamak ZORUNLU.
+// generateMoves bunu maximalTerminals içinde uygular -> tek sonuç kalırsa oto-oyna DOĞRU tetiklenir.
+describe('buyuk-zar kurali — gercek senaryolar', () => {
+  it('bear-off bitisi: son tas pip 1, [6,2] -> BUYUK zar (6) ile toplanir (RRJV7 endgame tipi)', () => {
+    // Oyun sonu: 14 tas toplanmis, son tas 1. hanede (index 0). [6,2] gelir.
+    // Her iki zar da tek başına bear-off yapar; ikisi birlikte oynanamaz (tek tas). Kural: 6 zorunlu.
+    // Kullanicinin "2 ile de oynardim" dedigi hamle YASAK -> motor 6'yi oto-oynar (sonuç aynı: tas dışarı).
+    const s = emptyState(WHITE)
+    s.points[0] = 1
+    s.off.white = 14
+    s.dice = [6, 2]
+    const moves = generateMoves(s)
+    expect(moves.length).toBe(1)
+    expect(moves[0].steps.length).toBe(1)
+    expect(moves[0].steps[0]).toEqual({ from: 0, to: 'off', die: 6 })
+  })
+
+  it('bloke kosucu: [5,3], her iki tek-zar yolu 2. adimda bloke -> 5 zorunlu, 3-yalniz REDDEDILIR', () => {
+    // Beyaz tek tas index 9. index 1 rakip blok (>=2). 5->4 sonra 3->1 bloke; 3->6 sonra 5->1 bloke.
+    // Yani tek zar oynanir; kural 5 (buyuk) der. Kritik: 3'ü tek başına oynama SEÇENEK OLMAMALI.
+    const s = emptyState(WHITE)
+    s.points[9] = 1
+    s.points[1] = -2
+    s.dice = [5, 3]
+    const moves = generateMoves(s)
+    expect(moves.length).toBe(1)
+    expect(moves[0].steps.length).toBe(1)
+    expect(moves[0].steps[0]).toEqual({ from: 9, to: 4, die: 5 })
+    // 3'ü tek başına oynayan (9->6) HERHANGI bir tam-hamle OLMAMALI (kural onu eler).
+    expect(moves.some((m) => m.steps.some((st) => st.die === 3))).toBe(false)
+  })
+
+  it('SIYAH bloke kosucu: [5,3] -> 5 (buyuk) zorunlu, yon +die', () => {
+    // Siyah tek tas index 14 (soldan saga). index 22 beyaz blok (>=2 pozitif).
+    // 5: 14->19 sonra 3: 19->22 bloke; 3: 14->17 sonra 5: 17->22 bloke -> tek zar; buyuk (5) zorunlu.
+    const s = emptyState(BLACK)
+    s.points[14] = -1
+    s.points[22] = 2
+    s.dice = [5, 3]
+    const moves = generateMoves(s)
+    expect(moves.length).toBe(1)
+    expect(moves[0].steps.length).toBe(1)
+    expect(moves[0].steps[0]).toEqual({ from: 14, to: 19, die: 5 })
+  })
+
+  it('NEGATIF kontrol: iki farkli zar da oynanabiliyorsa kural DEVREYE GIRMEZ (secim korunur)', () => {
+    // Iki ayri tas: index 12 ve index 8. [6,3]. Her tas her zari oynayabilir, farkli sonuclar cikar
+    // -> moves.length > 1 -> oto-oyna TETIKLENMEZ (oyuncunun secimi elinden alinmaz). Kullanicinin
+    // korktugu durum: gercek secim varken oto-oyna. Bu test onun OLMADIGINI kanitlar.
+    const s = emptyState(WHITE)
+    s.points[12] = 1
+    s.points[8] = 1
+    s.dice = [6, 3]
+    const moves = generateMoves(s)
+    expect(moves.length).toBeGreaterThan(1)
+    expect(moves.every((m) => m.steps.length === 2)).toBe(true) // iki zar da kullanilir (maks kural)
+  })
+})
+
 describe('cift zar (double) - dort hamle', () => {
   it('4-4 tek tasla dort adet 4 hamlesi uretir', () => {
     // Cift zar motora [d,d,d,d] olarak gelir.
