@@ -39,10 +39,16 @@ class UserResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Kimlik')->columns(2)->schema([
-                Forms\Components\TextInput::make('nickname')->label('Takma ad')->required()->maxLength(15),
+                // Admin GÜVENİLİR bağlam: 15-karakter takma ad kuralı kullanıcı formları/API içindir.
+                // Sistem/marka hesabı ("Tavla TV Yönetim" = 16) panelde düzenlenebilsin diye burada 32.
+                Forms\Components\TextInput::make('nickname')->label('Takma ad')->required()->maxLength(32),
                 Forms\Components\TextInput::make('email')->label('E-posta')->email()->required(),
-                Forms\Components\TextInput::make('first_name')->label('Ad'),
-                Forms\Components\TextInput::make('last_name')->label('Soyad'),
+                // first_name/last_name DB'de NOT NULL. Boş TextInput Filament varsayılanında null'a
+                // dönüşüp NOT NULL ihlali (500) verir -> boş = '' olarak yaz.
+                Forms\Components\TextInput::make('first_name')->label('Ad')
+                    ->dehydrateStateUsing(fn ($state) => (string) $state),
+                Forms\Components\TextInput::make('last_name')->label('Soyad')
+                    ->dehydrateStateUsing(fn ($state) => (string) $state),
                 Forms\Components\Select::make('country')->label('Ülke')
                     ->options(\App\Support\Geo::countries())
                     ->searchable(),
