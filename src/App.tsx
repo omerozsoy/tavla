@@ -5868,8 +5868,14 @@ export default function App() {
       })
       setMode('online')
       setHome(false)
-    } catch {
-      notify.error(t('mp.connError'))
+    } catch (e) {
+      // Premium bot (Seviye 11/12) gate: sunucu 403 döndürürse üyelik ekranını aç (yedek kalkan;
+      // UI zaten seçtirmez ama eski istemci / doğrudan istek buradan yakalanır).
+      if ((e as { status?: number })?.status === 403) {
+        setMemOpen(true)
+      } else {
+        notify.error(t('mp.connError'))
+      }
       setRoom(null)
       setHome(true)
     } finally {
@@ -9088,6 +9094,8 @@ export default function App() {
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
+            premium={user?.plan_active === 'star'}
+            onRequirePremium={() => setMemOpen(true)}
             onCancel={() => {
               setSetup(null)
               if (mode === 'online' && !room) setHome(true)

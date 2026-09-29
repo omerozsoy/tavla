@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
+import PremiumCrown from './PremiumCrown'
 import { PR_TARGET_LABELS } from '../botPr'
 import { botPersona } from '../botPersonas'
 
@@ -83,7 +84,12 @@ interface Props {
   onChangeBoard: () => void
   onConfirm: (opts: MatchOptions) => void
   onCancel: () => void
+  premium?: boolean // Seviye 11/12 (Premium botlar) yalniz Premium uyelere secilebilir
+  onRequirePremium?: () => void // misafir/normal uye Premium bot secince -> uyelik ekrani
 }
+
+// Seviye 11 ve uzeri = Premium bot (Grandmaster/Ultimate). Tek dogruluk kaynagi.
+const PREMIUM_BOT_MIN = 11
 
 export default function MatchSetup({
   mode: initialMode,
@@ -94,6 +100,8 @@ export default function MatchSetup({
   onChangeBoard,
   onConfirm,
   onCancel,
+  premium = false,
+  onRequirePremium,
 }: Props) {
   const { t } = useT()
   const mode = initialMode // Mac Oyunu online-only; rematch pvb (mod degistirilmez)
@@ -109,7 +117,18 @@ export default function MatchSetup({
     )
   }
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
-  const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
+  // Premium değilse Seviye 11/12 SEÇİLEMEZ -> kayıtlı/başlangıç seviyesi 10'a kırpılır.
+  const [difficulty, setDifficulty] = useState<number>(
+    Math.min(initial.difficulty ?? 10, premium ? 12 : PREMIUM_BOT_MIN - 1),
+  )
+  // Seviye seç: Premium bot (11/12) ise ve üye Premium değilse -> üyelik ekranı (seçme).
+  const pickLevel = (lvl: number) => {
+    if (lvl >= PREMIUM_BOT_MIN && !premium) {
+      onRequirePremium?.()
+      return
+    }
+    setDifficulty(lvl)
+  }
   const [betPct, setBetPct] = useState<number>(initial.betPct ?? 10)
   const [minRating] = useState<number>(initial.minRating ?? 0) // UI kaldirildi; her zaman 0 (rakip puan filtresi yok)
   const stake = Math.floor((coins * betPct) / 100)
@@ -141,28 +160,53 @@ export default function MatchSetup({
               type="range"
               className="level-slider"
               min={1}
-              max={AI_LEVELS.length}
+              // Premium değilse slider 10'da durur (11/12 Premium botlar seçilemez).
+              max={premium ? AI_LEVELS.length : PREMIUM_BOT_MIN - 1}
               step={1}
               value={difficulty}
-              onChange={(e) => setDifficulty(Number(e.target.value))}
+              onChange={(e) => pickLevel(Number(e.target.value))}
             />
             <div className="level-grid">
               {AI_LEVELS.map((name, i) => {
-                const persona = botPersona(i + 1) // 11/12: karakter (Oklavalı Teyze / Kahvedeki Dayı)
-                return (
+                const lvl = i + 1
+                const persona = botPersona(lvl) // 11/12: karakter (Oklavalı Teyze / Kahvedeki Dayı)
+                const isPremiumLvl = lvl >= PREMIUM_BOT_MIN
+                const locked = isPremiumLvl && !premium
+                const chip = (
                   <button
                     key={`${i}-${name}`}
-                    className={`level-chip ${persona ? 'has-persona' : ''} ${difficulty === i + 1 ? 'active' : ''}`}
-                    onClick={() => setDifficulty(i + 1)}
+                    className={`level-chip ${persona ? 'has-persona' : ''} ${difficulty === lvl ? 'active' : ''} ${isPremiumLvl ? 'level-chip-premium' : ''} ${locked ? 'locked' : ''}`}
+                    onClick={() => pickLevel(lvl)}
+                    title={locked ? t('setup.premiumBotHint') : undefined}
+                    aria-label={locked ? `${lvl}. ${persona ? persona.name : name} — ${t('setup.premiumBotHint')}` : undefined}
                   >
+                    {locked && (
+                      <span className="level-chip-lock" aria-hidden="true">
+                        <PremiumCrown size={13} />
+                      </span>
+                    )}
                     {persona && <img className="level-chip-ava" src={persona.avatar} alt="" />}
                     <span className="level-chip-name">
-                      {i + 1}. {persona ? persona.name : name}
+                      {lvl}. {persona ? persona.name : name}
                     </span>
                     {persona && <span className="level-chip-tier">{name}</span>}
                     <span className="level-chip-pr">~PR {PR_TARGET_LABELS[i] ?? '0–0.3'}</span>
                   </button>
                 )
+                // Seviye 10'dan SONRA Premium ayracı: 11 ve 12 (Premium botlar) ayrı olduğu belli olsun.
+                if (lvl === PREMIUM_BOT_MIN) {
+                  return (
+                    <Fragment key={`prem-sep-${i}`}>
+                      <div className="level-premium-sep" role="separator">
+                        <PremiumCrown size={14} />
+                        <span className="lps-title">{t('setup.premiumBots')}</span>
+                        <span className="lps-sub">{t('setup.premiumBotHint')}</span>
+                      </div>
+                      {chip}
+                    </Fragment>
+                  )
+                }
+                return chip
               })}
             </div>
             {DEEP_LEVEL_NOTE[difficulty] && (

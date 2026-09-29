@@ -24061,6 +24061,48 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--on-accent);
   opacity: 0.72;
 }
+/* ===== Premium botlar ayracı: Seviye 10'dan SONRA <hr> gibi çizgi + "Premium Botlar" başlığı.
+   11 (Grandmaster) ve 12 (Ultimate) ayrı olduğu net görünür; misafir görür ama seçemez. ===== */
+.level-premium-sep {
+  grid-column: 1 / -1; /* iki kolonu da kapla -> tam genişlik ayraç */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 9px 0 3px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border); /* <hr> çizgisi */
+  color: var(--accent);
+  flex-wrap: wrap;
+}
+.level-premium-sep .lps-title {
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+.level-premium-sep .lps-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+/* Premium seviye çipi: hafif aksan kenar -> ayrı olduğu belli (Premium üye için de). */
+.level-chip-premium {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+/* Kilitli premium bot (misafir/normal üye): soluk + sağ üstte kilit tacı; tıklayınca üyelik ekranı. */
+.level-chip.locked {
+  position: relative;
+  opacity: 0.6;
+  filter: grayscale(0.35);
+}
+.level-chip.locked:hover {
+  opacity: 0.78;
+}
+.level-chip-lock {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: inline-flex;
+  color: var(--accent);
+}
 /* YZ karakteri olan seviyeler (11 Oklavalı Teyze / 12 Kahvedeki Dayı): avatar + tier alt satiri */
 .level-chip.has-persona {
   align-items: center;
