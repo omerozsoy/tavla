@@ -1,0 +1,22 @@
+[Unit]
+Description=GNU Backgammon TURNUVA botlari ADANMIS havuzu #1 (:8102)
+After=network.target
+# TURNUVA test botlari (tavla:tourney-bots, Seviye 12 agir) icin AYRILMIS instance. Canli bot
+# (:8092,:8093,:8096,:8097), PR/heal (:8094,:8095) ve Mat-analizi heavy (:8098-:8101) havuzlariyla
+# CAKISMAZ -> turnuva kosarken canli insan-vs-AI maclari ASLA beklemez (bot-unavailable kaynagi kesilir).
+# 4 dedike instance = 8'li bracket'te es-zamanli en fazla 4 mac -> mac basina 1 instance.
+# backend/.env: TOURNEY_BOTS_GNUBG_URLS listesine http://127.0.0.1:8102 ekle + GNUBG_UNITS'e gnubg-analysis-11.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# GNUBG_SECRET diger tum instance'lar + backend .env ile AYNI olmali. SADECE port farkli.
+Environment=GNUBG_PORT=8102
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
