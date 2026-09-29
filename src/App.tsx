@@ -1629,6 +1629,7 @@ export default function App() {
   // Boylece 1.2sn poll'un 1sn'lik sayaci ornekleme aliasing'i (10->8->7->6->4 atlama) biter.
   const clockAnchorRef = useRef<{
     delay: number
+    hold: number // grace: delay bu kadar sn SABİT kalır (started_at gelecekte), sonra geri sayar
     white: number
     black: number
     active: Player | null
@@ -4116,9 +4117,12 @@ export default function App() {
       const id = window.setInterval(() => {
         const a = clockAnchorRef.current
         if (!a) return
+        // HOLD (bot-reveal grace): started_at gelecekteyken sunucu delay'i SABİT tutar. İstemci de
+        // hold sn boyunca geri saymamalı (eff=0) yoksa 10'dan 9'a iner, her poll 10'a döner = titreme.
         const elapsed = (Date.now() - a.at) / 1000
-        const delay = Math.max(0, a.delay - elapsed)
-        const over = Math.max(0, elapsed - a.delay) // gecikme bittikten sonra bankayı yer
+        const eff = Math.max(0, elapsed - (a.hold ?? 0))
+        const delay = Math.max(0, a.delay - eff)
+        const over = Math.max(0, eff - a.delay) // gecikme bittikten sonra bankayı yer
         const white = a.active === 'white' ? Math.max(0, a.white - over) : a.white
         const black = a.active === 'black' ? Math.max(0, a.black - over) : a.black
         const next = { delay: Math.ceil(delay), white: Math.ceil(white), black: Math.ceil(black) }
@@ -5120,7 +5124,7 @@ export default function App() {
         if (sc && !botAnimRef.current) {
           const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
           // Demiri tazele (ekrandaki rakamı DEĞİL): interpolasyon tick'i buradan pürüzsüz sayar.
-          clockAnchorRef.current = { delay: sc.delay, white: sc.white, black: sc.black, active: act, at: Date.now() }
+          clockAnchorRef.current = { delay: sc.delay, hold: (sc as { hold?: number }).hold ?? 0, white: sc.white, black: sc.black, active: act, at: Date.now() }
           setSrvActive(act)
           setAfkLeft(sc.afk)
         } else if (srvDone) {

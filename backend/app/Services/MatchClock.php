@@ -325,6 +325,10 @@ class MatchClock
         $p2 = (float) ($clock['p2_bank'] ?? 0);
         $delayRem = (float) ($clock['delay'] ?? 0);
         $afkRem = null;
+        // HOLD = segment başlangıcı GELECEKTE ise (bot-reveal grace: started_at ileri itilir) delay/banka
+        // henüz İŞLEMEZ; istemci bu kadar sn DELAY'i SABİT tutmalı. Yoksa istemci 10'dan aşağı sayar,
+        // her poll 10'a geri döner -> "10 9 10 9" titreme. (started_at <= now iken 0.)
+        $hold = max(0.0, (float) ($clock['started_at'] ?? $now) - $now);
 
         if ($running && $active !== null) {
             $elapsed = max(0.0, $now - (float) ($clock['started_at'] ?? $now));
@@ -346,6 +350,8 @@ class MatchClock
             'white' => round($p1, 1),
             'black' => round($p2, 1),
             'delay' => round($delayRem, 1),
+            // İstemci bu kadar sn delay'i SABİT tutsun (grace); 0 ise normal geri say.
+            'hold' => $running ? round($hold, 1) : 0.0,
             'active' => $running ? $activeColor : null,
             // AFK: son 15sn'de gorunur geri sayim; degilse null.
             'afk' => ($afkRem !== null && $afkRem <= self::AFK_COUNTDOWN) ? (int) ceil($afkRem) : null,
