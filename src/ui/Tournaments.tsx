@@ -617,83 +617,56 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     return (
       <button
         key={tr.id}
-        className={`event-row tourn-row ${tr.status === 'finished' ? 'past' : ''} ${logo ? 'has-logo' : ''}`}
+        className={`tcard2 tcard2-${tr.status}${tr.status === 'finished' ? ' past' : ''}`}
         onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}
       >
-        {/* Sag ust kose flamasi: turnuva-takvimindeki bayrak gibi -> icinde TavlaTV logosu
-            (wordmark), bayrak gibi 90 derece dondurulup dik flamayi doldurur. */}
-        <span className="event-ribbon tourn-ribbon" aria-hidden="true">
-          <span className="event-ribbon-band tourn-ribbon-band">
-            <TavlaTvLogo size={20} tone="dark" className="tourn-ribbon-logo" />
+        {/* Üst şerit (terracotta): tarih • Online • durum (running -> canlı nokta) */}
+        <div className="tcard2-band">
+          {start && (
+            <span className="tcard2-date">
+              {start.getDate()} {monthUpper(start)}
+            </span>
+          )}
+          <span className="tcard2-sep" aria-hidden="true">•</span>
+          <span className="tcard2-online">{t('tourn.online')}</span>
+          <span className={`tcard2-status tcard2-status-${tr.status}`}>
+            {tr.status === 'running' && <span className="tcard2-dot" aria-hidden="true" />}
+            {t(`tourn.status.${tr.status}`)}
           </span>
-        </span>
-        {/* Katilim ucreti: UST SAGDA (flamanin soluna, altina girmeden). */}
-        <span className={`tourn-fee ${tr.entry_fee ? '' : 'free'}`}>
-          <Icon name="ticket" size={15} />
-          {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
-        </span>
-        {/* Sol: duzenleyen kurumun BUYUK logosu (varsa; yoksa sutun render edilmez). */}
-        {logo && (
-          <div className="event-logo-col">
-            <img className="event-kurum-logo" src={logo} alt={tr.organizer?.name ?? ''} />
-          </div>
-        )}
-        {/* Orta: turnuva bilgileri */}
-        <div className="event-main">
-          {/* Tarih rozeti (baslama gunu) + YER (online turnuva -> "Online") + durum + geri sayim */}
-          <div className="event-datebadges">
-            {start && (
-              <div className="event-datebadge">
-                <span className="edb-day">{start.getDate()}</span>
-                <span className="edb-month">{monthUpper(start)}</span>
-              </div>
+        </div>
+
+        <div className="tcard2-body">
+          {/* Başlık (+ varsa katkıda bulunan kurumun logosu) */}
+          <div className="tcard2-head">
+            {logo && (
+              <img className="tcard2-orglogo" src={logo} alt={tr.organizer?.name ?? ''} />
             )}
-            {/* Online turnuva: etkinlik takvimindeki IL (event-province-top) ile BIREBIR ayni
-                format -> tarih rozetinin yaninda buyuk (1.6rem) kiremit "Online". */}
-            <span className="event-province-top">{t('tourn.online')}</span>
-            <span className={`tcard-status tcard-status-${tr.status}`}>
-              {t(`tourn.status.${tr.status}`)}
-            </span>
-            <AccessBadge premiumOnly={!!tr.premium_only} />
-            {/* Katilimcilar: UST SATIRDA, durum rozetinin yaninda (kompakt). */}
-            <span className="tourn-players">
-              <span className="tcard-ic navy" aria-hidden="true">
-                <Icon name="users" size={16} />
-              </span>
-              <span className="tourn-pcount" data-full={full || undefined}>
-                {tr.count}
-                <small>/{tr.size > 0 ? tr.size : '∞'}</small>
-              </span>
-              <span className="tourn-plabel">{t('tourn.players')}</span>
-              <span className="tourn-pbar" aria-hidden="true">
-                <span style={{ width: `${pct}%` }} />
-              </span>
-            </span>
+            <h3 className="tcard2-title">{tr.name}</h3>
           </div>
-          {/* Geri sayim: tarihin ALTINDA, baslik ile arasinda (kendi satiri). */}
+
+          {/* Düzenleyen = HER online turnuvada TavlaTv (sabit); Organizasyon = katkıda bulunan kurum */}
+          <div className="tcard2-meta">
+            <span className="tcard2-runby">
+              {t('tourn.organizer')} ·{' '}
+              <TavlaTvLogo size={24} tone="dark" className="tcard2-wm" />
+            </span>
+            {tr.organizer && (
+              <span className="tcard2-org">
+                <Icon name="star" size={14} /> {t('tourn.organization')}: {tr.organizer.name}
+              </span>
+            )}
+          </div>
+
+          {/* Geri sayım (açık turnuva) */}
           {tr.status === 'open' && tr.starts_at && (
-            <div className="tourn-cd-row">
+            <div className="tcard2-cd">
               <Countdown target={tr.starts_at} onExpire={refreshList} />
             </div>
           )}
-          <div className="event-title">{tr.name}</div>
-          {/* Organizasyon = katkida bulunan kurum (varsa); Duzenleyen = HER online
-              turnuvada TavlaTv (sabit kural). Iki ayri satir. */}
-          <div className="event-meta">
-            {tr.organizer && (
-              <span className="event-organizer">
-                <Icon name="star" size={24} /> {t('tourn.organization')}: {tr.organizer.name}
-              </span>
-            )}
-            <span className="event-runby">
-              {t('tourn.organizer')}:{' '}
-              <TavlaTvLogo size={30} tone="light" className="event-runby-logo" />
-            </span>
-          </div>
-          {/* Odul dagilimi: 1., 2., 3. ... her sira ne kazanir -> NET liste.
-              prizes[] varsa sira-sira; yoksa tek toplam odul (fallback). */}
+
+          {/* Ödül dağılımı: prizes[] varsa sıra-sıra; yoksa tek toplam ödül (fallback) */}
           {tr.prizes && tr.prizes.length > 0 ? (
-            <div className="tourn-prizes tourn-row-prizes">
+            <div className="tcard2-prizes">
               <div className="tp-head">
                 <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}
                 {prizeCount > 1 ? ` · ${prizeCount}×` : ''}
@@ -712,7 +685,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             </div>
           ) : (
             pool > 0 && (
-              <div className="tourn-prizes tourn-row-prizes">
+              <div className="tcard2-prizes">
                 <div className="tp-head">
                   <Icon name="medal" size={16} /> {t('tourn.prizePool')}
                 </div>
@@ -728,6 +701,24 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               </div>
             )
           )}
+
+          {/* Alt satır: katılımcı barı + erişim rozeti | katılım ücreti */}
+          <div className="tcard2-foot">
+            <div className="tcard2-players">
+              <span className="tcard2-pc" data-full={full || undefined}>
+                {tr.count}
+                <small>/{tr.size > 0 ? tr.size : '∞'}</small>
+              </span>
+              <span className="tcard2-bar" aria-hidden="true">
+                <span style={{ width: `${pct}%` }} />
+              </span>
+              <AccessBadge premiumOnly={!!tr.premium_only} />
+            </div>
+            <span className={`tcard2-fee ${tr.entry_fee ? '' : 'free'}`}>
+              <Icon name="ticket" size={14} />
+              {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+            </span>
+          </div>
         </div>
       </button>
     )
