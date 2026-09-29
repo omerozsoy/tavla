@@ -28411,3 +28411,272 @@ select:-webkit-autofill {
   font-weight: inherit;
   letter-spacing: inherit;
 }
+
+/* =====================================================================
+   Turnuva kartı v2 — "poster · koyu terracotta" (event-* düzeninin yerine).
+   Kendi renk değişkenleriyle temadan bağımsız: hem açık hem koyu temada
+   aynı koyu-terracotta afiş görünür. Liste + geçmiş + ana sayfa panelinde
+   ortak .tcard2 (button).
+   ===================================================================== */
+.tcard2 {
+  --tc-card: #2a2420;
+  --tc-brick: #a83a2b;
+  --tc-brick-soft: #c9563f;
+  --tc-ember: #e88a5a;
+  --tc-cream: #f4efe6;
+  --tc-muted: #b8ad9c;
+  --tc-line: rgba(244, 239, 230, 0.12);
+  --tc-green: #7ff0a8;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  display: block;
+  padding: 0;
+  cursor: pointer;
+  background: var(--tc-card);
+  color: var(--tc-cream);
+  border: 1px solid rgba(244, 239, 230, 0.06);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.tcard2:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.36);
+}
+.tcard2:active {
+  transform: translateY(0);
+}
+.tcard2.past {
+  opacity: 0.72;
+}
+
+/* Üst şerit */
+.tcard2-band {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 24px;
+  background: linear-gradient(100deg, var(--tc-brick), var(--tc-brick-soft) 70%, var(--tc-ember));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tcard2-date {
+  font-weight: 800;
+}
+.tcard2-sep {
+  opacity: 0.55;
+}
+.tcard2-online {
+  opacity: 0.95;
+}
+.tcard2-status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 0.76rem;
+}
+.tcard2-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tc-green);
+  box-shadow: 0 0 0 4px rgba(127, 240, 168, 0.25);
+}
+.tcard2-finished .tcard2-band {
+  background: linear-gradient(100deg, #5b524a, #6e6459);
+}
+
+/* Gövde */
+.tcard2-body {
+  padding: 22px 24px 24px;
+}
+.tcard2-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.tcard2-orglogo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #fff;
+  flex: none;
+}
+.tcard2-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--tc-cream);
+}
+.tcard2-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  color: var(--tc-muted);
+}
+.tcard2-runby {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.tcard2-org {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tcard2-org svg {
+  color: var(--tc-ember);
+}
+.tcard2-cd {
+  margin: -6px 0 16px;
+  color: var(--tc-muted);
+}
+
+/* Ödüller (koyu) */
+.tcard2-prizes {
+  margin: 0 0 16px;
+  background: rgba(244, 239, 230, 0.05);
+  border: 1px solid var(--tc-line);
+  border-radius: 12px;
+  padding: 10px 13px;
+}
+.tcard2-prizes .tp-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tc-ember);
+  margin-bottom: 6px;
+}
+.tcard2-prizes .tp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tcard2-prizes .tp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--tc-cream);
+}
+.tcard2-prizes .tp-rank {
+  font-weight: 800;
+  color: var(--tc-muted);
+  min-width: 1.4em;
+}
+.tcard2-prizes .tp-rank-1 { color: #f0c674; }
+.tcard2-prizes .tp-rank-2 { color: #cfd3d8; }
+.tcard2-prizes .tp-rank-3 { color: #d8a06a; }
+.tcard2-prizes .tp-desc {
+  flex: 1;
+  color: var(--tc-muted);
+}
+.tcard2-prizes .tp-coins {
+  margin-left: auto;
+}
+
+/* Alt satır */
+.tcard2-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tcard2-players {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tcard2-pc {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--tc-cream);
+}
+.tcard2-pc small {
+  color: var(--tc-muted);
+  font-weight: 600;
+}
+.tcard2-pc[data-full] {
+  color: var(--tc-ember);
+}
+.tcard2-bar {
+  width: 120px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(244, 239, 230, 0.12);
+  overflow: hidden;
+}
+.tcard2-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--tc-brick-soft), var(--tc-ember));
+  border-radius: 99px;
+}
+.tcard2-fee {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: var(--tc-cream);
+  background: rgba(244, 239, 230, 0.08);
+  border: 1px solid rgba(244, 239, 230, 0.2);
+  border-radius: 99px;
+  padding: 7px 15px;
+}
+.tcard2-fee.free {
+  color: var(--tc-ember);
+  background: color-mix(in srgb, var(--tc-ember) 14%, transparent);
+  border-color: color-mix(in srgb, var(--tc-ember) 35%, transparent);
+}
+
+/* Erişim rozeti (AccessBadge) — koyu karta uyarla */
+.tcard2 .tourn-access {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--tc-muted);
+  background: rgba(244, 239, 230, 0.07);
+  border: none;
+  border-radius: 99px;
+  padding: 5px 11px;
+}
+.tcard2 .tourn-access-premium {
+  color: #f0c674;
+  background: rgba(240, 198, 116, 0.1);
+}
+
+@media (max-width: 560px) {
+  .tcard2-band { flex-wrap: wrap; gap: 8px 10px; }
+  .tcard2-status { margin-left: 0; }
+  .tcard2-title { font-size: 1.6rem; }
+  .tcard2-body { padding: 18px 18px 20px; }
+}
