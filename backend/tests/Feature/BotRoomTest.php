@@ -404,6 +404,27 @@ class BotRoomTest extends TestCase
         $this->assertSame(1, (int) $room->server_match['score']['white']); // 1 puan (küp değeri)
     }
 
+    public function test_bot_clock_self_heals_when_stuck_on_bot_slot(): void
+    {
+        // DONMA senaryosu: saat bota (p2) yaslanmış ama oyun sırası insanda (white), küp beklenmyor.
+        // Eski davranışta insan p1 poll'u onUpdate'te "yetkisiz" sayılıp saati kurtaramaz -> kalıcı donma.
+        $room = $this->cubeRoom('white');
+        $room->clock = [
+            'mode' => 'normal', 'target' => 3, 'delay' => 10,
+            'p1_bank' => 180.0, 'p2_bank' => 180.0,
+            'turn_slot' => 'p2', 'started_at' => microtime(true) - 100,
+            'sig' => '1|0|black||1||0|0', 'running' => true, 'moved' => true, 'end' => null,
+            'p1_seen' => microtime(true), 'p2_seen' => microtime(true) - 600, // bot 10dk "görülmedi"
+        ];
+        $room->save();
+
+        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), 'p1');
+
+        $room->refresh();
+        $this->assertSame('p1', $room->clock['turn_slot']); // oyun sırasına (white) resync -> kilit açıldı
+        $this->assertNull($room->clock['end']);             // bot present sayıldı -> SAHTE-ABANDON yok
+    }
+
     public function test_bot_offers_double_via_gnubg(): void
     {
         config()->set('gnubg.url', 'http://gnubg.test');

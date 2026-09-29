@@ -1660,6 +1660,36 @@ class RoomController extends Controller
                 $changed = true;
             }
         }
+        // ── BOT MAÇI SAAT SELF-HEAL (yüzlerce "bot küpte/turda dondu" şikayetinin KÖK çözümü) ──
+        // Bot SUNUCU-taraflı oynar, ASLA poll etmez -> iki kronik arıza:
+        //  (a) p2_seen hiç tazelenmez -> presence bot'u "terk etti" sanar -> SAHTE-ABANDON (insan
+        //      forfeit'le kazanır/kaybeder).
+        //  (b) Saat bir kez bota (p2) yaslanınca (herhangi bir aksiyon dalı saati sürmeyi atlarsa:
+        //      bot küp take/drop, senkron bot turu, vb.) turn_slot p2'de KİLİTLENİR. İnsanın (p1)
+        //      poll'u onUpdate'te "yetkisiz" (requester p1 != current p2) sayılıp saati İLERLETEMEZ
+        //      -> KALICI DONMA (istemci "rakip yanıtı bekleniyor"da asılı kalır).
+        // Çözüm bir sonraki poll'da KENDİLİĞİNDEN kurtarır, hangi dal saati atlamış olursa olsun:
+        //   (1) botu her zaman "present" say (bot asla terk etmez);
+        //   (2) küp yanıtı BEKLENMİYORSA saat sahibini OYUN SIRASINA göre yeniden senkronla.
+        if ($room->bot && empty($clock['end'])) {
+            if ($now - (float) ($clock['p2_seen'] ?? 0) >= 4.0) {
+                $clock = MatchClock::seen($clock, 'p2', $now);
+                $changed = true;
+            }
+            $ss = is_array($room->server_state) ? $room->server_state : [];
+            $pending = is_array($sm) ? ($sm['cube']['pending'] ?? null) : null;
+            if ($pending === null) {
+                $want = (($ss['turn'] ?? 'white') === 'black') ? 'p2' : 'p1';
+                if (($clock['turn_slot'] ?? null) !== $want) {
+                    // Saat oyun sırasıyla çelişiyor -> yeni segment aç (kilidi kır). started_at now:
+                    // yanlış geçmiş süre yazılmaz; insan roll/karar verince zaten now'a sıfırlanır.
+                    $clock['turn_slot'] = $want;
+                    $clock['started_at'] = $now;
+                    $clock['running'] = true;
+                    $changed = true;
+                }
+            }
+        }
         // BOT SAATİ ASLA DOLMASIN (bot-unavailable haksız forfeit kökü): bir bot senkron + ANINDA
         // oynar -> "süre" kaybetmez. Sırası botta (p2) iken saat işliyorsa, bu YALNIZCA sunucu botun
         // hamlesini üretemediği (gnubg/validator anlık doygunluk/hiccup) içindir; süre kaybı DEĞİL.
