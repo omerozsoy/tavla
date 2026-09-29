@@ -38,7 +38,13 @@ DirectoryIndex index.html index.php
 # Aktif etmek: backend/public/maintenance.on adli BOS dosyayi olustur.
 # Kapatmak: o dosyayi SIL. (Deploy/kod gerekmez; aninda etkili.)
 # Bayrak varken /admin, /panel ve bakim sayfasi HARIC tum istekler -> 503 + logolu maintenance.html.
-ErrorDocument 503 /maintenance.html
+# ErrorDocument YALNIZCA bayrak dosyasi varken devreye girer. Aksi halde FPM/Passenger anlik
+# hiccup'inda donen GECICI 503 de bu logolu bakim sayfasini gosterirdi -> kullanici "kendi kendine
+# bakima girdik" saniyordu. Bayrak yokken (-f false) ErrorDocument tanimsiz kalir, Apache'nin sade
+# 503'u doner; boylece backend dalgalanmasi bakim sayfasi olarak GORUNMEZ.
+<If "-f '%{DOCUMENT_ROOT}/maintenance.on'">
+    ErrorDocument 503 /maintenance.html
+</If>
 
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
