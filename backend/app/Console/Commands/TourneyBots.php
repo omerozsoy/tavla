@@ -142,6 +142,20 @@ class TourneyBots extends Command
         // Komuta ozel yukselt (sunucu geneli php.ini'ye dokunma).
         @ini_set('memory_limit', '512M');
 
+        // GNUBG İZOLASYON (canlı bot "takılması" kökü): turnuva botları Seviye 12'de (agir 3-4 ply)
+        // her hamlede gnubg ON havuzunu (8092/8093/8096/8097) mesgul ediyor -> AYNI havuzu kullanan
+        // canlı insan-vs-AI maclarinin bot hamlesi araya giremeyip timeout'a dusuyor (unavailable).
+        // TOURNEY_BOTS_GNUBG_URLS verilirse (or. heavy havuz 8098..8101) turnuva botlari o havuzu
+        // kullansin -> canlı ON havuz turnuvaya BLOKE OLMAZ. Bu CLI surecine ozel runtime override;
+        // FPM (canlı mac) etkilenmez. Bossa eski davranis (ON havuz paylasilir).
+        $isoUrls = array_values(array_filter(array_map('trim', explode(',', (string) env('TOURNEY_BOTS_GNUBG_URLS', '')))));
+        if ($isoUrls) {
+            config([
+                'gnubg.url' => $isoUrls[0],
+                'gnubg.url_backup' => implode(',', array_slice($isoUrls, 1)),
+            ]);
+        }
+
         $action = (string) $this->argument('action');
         if ($action === 'setup') {
             return $this->setup($wallet);
