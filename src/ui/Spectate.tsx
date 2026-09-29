@@ -314,6 +314,10 @@ export default function Spectate({
   const cubeVal = sm?.cube.value ?? legacy?.match?.cube?.value ?? 1
   const cubeOwner: Player | null = sm?.cube.owner ?? legacy?.match?.cube?.owner ?? null
   const crawford = sm?.crawford ?? legacy?.match?.isCrawford ?? false
+  // KÜP TEKLİFİ (izleyici görsün): biri küpü çekince (cube.pending set) rakip yanıtı bekleniyor.
+  // Eskiden izleyici bunu HİÇ görmüyordu (yalnız kabul SONRASI değer güncelleniyordu). pending
+  // renk = teklif EDEN (msg.doubled ile aynı). Board merkezine salt-okunur "X küpü çekti" overlay'i.
+  const cubePending: Player | null = sm?.cube.pending ?? null
 
   // Konvansiyon: p1 = beyaz (altta), p2 = siyah (üstte); izleyici beyaz bakışıyla oturur.
   const p1Name = eff?.p1_name || t('player.white')
@@ -464,6 +468,19 @@ export default function Spectate({
                 showPip
                 centerLeft={activeBottom ? null : diceRow}
                 centerRight={activeBottom ? diceRow : null}
+                centerMain={
+                  cubePending ? (
+                    <div className="result-box">
+                      <div className="result-title">
+                        {t('msg.doubled', {
+                          name: cubePending === 'white' ? p1Name : p2Name,
+                          value: cubeVal * 2,
+                        })}
+                      </div>
+                      <div className="err-detail">{t('cube.waiting')}</div>
+                    </div>
+                  ) : null
+                }
               />
             </>
           ) : gone ? (
