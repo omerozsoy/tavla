@@ -507,7 +507,9 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               <span className="tourn-players-count">{active.count}/{active.size > 0 ? active.size : '∞'}</span>
             </h3>
             {active.players && active.players.length > 0 ? (
-              active.players.map((p) => (
+              [...active.players]
+                .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }))
+                .map((p) => (
                 <div key={p.id} className="tourn-prow">
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
                   <b>{p.rating}</b>
