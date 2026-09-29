@@ -46,6 +46,12 @@ class TournamentResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required(),
+                Forms\Components\Select::make('type')
+                    ->label('Turnuva tipi')
+                    ->helperText('Bracket System: klasik eleme ağacı (bugünkü). Swiss Triple Elimination: kuralları ayrıca tanımlanacak.')
+                    ->options(Tournament::TYPES)
+                    ->required()
+                    ->default('bracket'),
                 Forms\Components\TextInput::make('venue')
                     ->label('Düzenlenme yeri / Otel')
                     ->helperText('Turnuvanın fiziksel yeri. Örn: "Titanic Otel, Antalya". Boş bırakılabilir.')
@@ -197,6 +203,11 @@ class TournamentResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Tip')
+                    ->formatStateUsing(fn (?string $state): string => Tournament::TYPES[$state] ?? ($state ?? 'Bracket System'))
+                    ->badge()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('venue')
                     ->label('Yer / Otel')
                     ->placeholder('—')
