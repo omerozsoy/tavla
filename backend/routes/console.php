@@ -35,6 +35,14 @@ Schedule::command('gamelogs:prune --days=90')
     ->name('prune-game-logs')
     ->withoutOverlapping();
 
+// room_commands budama: idempotency/versiyon defteri yalnız CANLI oyunda gerekir; maç bitince
+// ölü ağırlıktır (211k satıra kadar şişip DB sıcak setini büyütmüştü). Bitmiş+2 günden eski
+// odaların komutlarını her gün sil (aktif odalar korunur; analizi ETKİLEMEZ -> match_moves ayrı).
+Schedule::command('tavla:prune-room-commands --days=2')
+    ->dailyAt('04:20')
+    ->name('prune-room-commands')
+    ->withoutOverlapping();
+
 // Yayındaki haber URL'lerini sitemap'e günlük ekle; taslak/silinmiş haberler otomatik çıkar.
 Schedule::command('seo:sitemap')
     ->dailyAt('02:15')
