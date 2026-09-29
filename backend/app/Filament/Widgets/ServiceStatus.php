@@ -30,21 +30,37 @@ class ServiceStatus extends Widget
     public function status(): array
     {
         $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
+            $client = app(GnuBgClient::class);
+            $units = $client->unitNames();
             $vres = $this->checkValidators();
-            $gnubgRows = $this->checkGnubgInstances();
-            $gnubgAnyUp = collect($gnubgRows)->contains(fn ($r) => ($r['up'] ?? null) === true);
+
+            // gnubg havuzları ROL BAZLI ayrı gruplar (kullanıcı zihin modeli): Canlı YZ (Yapay Zeka
+            // ile Oyna) / PR analizi (maç sonu) / Mat-Pozisyon analizi (ağır). İnsan-vs-insan maçları
+            // (Tek Oyun/Maç/Arkadaş) gnubg KULLANMAZ -> yalnız validator'a bağlı.
+            $frontRows = $this->checkGnubgPool($client->foregroundBases(), 'gnubg — Canlı YZ (Yapay Zeka ile Oyna)', $units);
+            $prRows = $this->checkGnubgPool($client->backgroundBases(), 'gnubg — PR Analizi (maç sonu)', $units);
+            $matRows = $this->checkGnubgPool($this->heavyBasesRaw($client), 'gnubg — Mat / Pozisyon Analizi (ağır)', $units);
+
+            $upCount = fn ($rows) => collect($rows)->filter(fn ($r) => ($r['up'] ?? null) === true)->count();
+            $frontUp = $upCount($frontRows);
+            $bgUp = $upCount($prRows);
 
             return [
                 'services' => [
-                    ...$vres['rows'], // birincil + yedek validator(lar) AYRI lamba
-                    ...$gnubgRows,    // birincil + yedek gnubg instance'ları AYRI lamba
-                    // Türetilmiş: sunucu-otoriter bot maçı oynatılabilir mi (EN AZ BİR gnubg + EN AZ BİR validator).
-                    $this->checkBot($vres['up'], $gnubgAnyUp),
-                    $this->checkDatabase(),
-                    $this->checkQueue(),
-                    // İzleyiciyi izler: cron durursa TÜM izleme/alarm ölür -> bunu görünür kıl.
-                    $this->checkScheduler(),
-                    $this->checkDisk(),
+                    // Hakem: hem insan hem YZ maçlarının hamle yasallığı.
+                    ...array_map(fn ($r) => $r + ['group' => 'Hakem (tüm maçlar)'], $vres['rows']),
+                    // İKİ NET ÖZET: hangi maç türü şu an oynanabilir.
+                    $this->checkHumanMatches($vres['up'], count($vres['rows'])),
+                    $this->checkAiMatches($vres['up'], $frontUp, count($frontRows), $bgUp),
+                    // gnubg instance'ları rol gruplarıyla (Canlı YZ / PR / Mat) AYRI lamba.
+                    ...$frontRows,
+                    ...$prRows,
+                    ...$matRows,
+                    // Altyapı.
+                    $this->checkDatabase() + ['group' => 'Altyapı'],
+                    $this->checkQueue() + ['group' => 'Altyapı'],
+                    $this->checkScheduler() + ['group' => 'Altyapı'],
+                    $this->checkDisk() + ['group' => 'Altyapı'],
                 ],
                 'validator_required' => (bool) config('validator.required', true),
             ];
@@ -107,14 +123,17 @@ class ServiceStatus extends Widget
      * tabanı DOĞRUDAN /health ile yoklar ki panelde "birincil düştü, yedek ayakta" NET görünsün. PR +
      * canlı bot analyze()'ı failover ile bu instance'lardan çağırır -> EN AZ BİR yeşil = PR asla boş.
      */
-    private function checkGnubgInstances(): array
+    /**
+     * TEK bir gnubg HAVUZUNU (rol grubu) instance-instance yokla. Her instance için ayrı lamba +
+     * (birim biliniyorsa) restart. key = 'gnubgp-{port}' -> restartService port→birim eşler.
+     * $group Blade'de grup başlığı olur (Canlı YZ / PR / Mat ayrımı net görünsün).
+     */
+    private function checkGnubgPool(array $bases, string $group, array $units): array
     {
-        $client = app(GnuBgClient::class);
-        $bases = $client->analyzeBases();
         if ($bases === []) {
-            return [$this->svc('gnubg', 'TavlaTV Analiz Servisi', false, null, 'GNUBG_URL boş')];
+            return [$this->svc('gnubg-'.md5($group), $group.' — yapılandırılmamış', false, null, 'Bu havuz için URL tanımlı değil') + ['group' => $group]];
         }
-        $units = $client->unitNames();
+        $client = app(GnuBgClient::class);
         $rows = [];
         foreach ($bases as $i => $base) {
             try {
@@ -124,26 +143,51 @@ class ServiceStatus extends Widget
                 $info = null;
                 $up = false;
             }
-            $label = $i === 0
-                ? 'TavlaTV Analiz Servisi — Birincil'
-                : 'TavlaTV Analiz Servisi — Yedek #'.$i;
-            $detail = $up ? $base : $base.' — '.$this->gnubgDownReason($units[$i] ?? null);
-            // ÖLÇÜM: en çok eşzamanlı analiz (çok-süreçli havuz gerekli mi?). peak>=2 ise analizler
-            // kilitte kuyruğa giriyor -> çok-süreçli gnubg hız kazandırır; hep 1 ise gereksiz.
+            $port = (int) (parse_url($base, PHP_URL_PORT) ?: 0);
+            $unit = $this->unitForPort($port, $units);
+            $label = 'Analiz #'.($i + 1).' (:'.$port.')';
+            $detail = $up ? $base : $base.' — '.$this->gnubgDownReason($unit);
             if ($up && isset($info['peak_inflight'])) {
                 $peak = (int) $info['peak_inflight'];
-                $now = (int) ($info['inflight'] ?? 0);
-                $detail .= " · eşzamanlı analiz: şu an {$now}, tepe {$peak}";
-                if ($peak >= 2) {
-                    $detail .= ' (üst üste biniyor — çok-süreçli havuz düşünülebilir)';
-                }
+                $nowN = (int) ($info['inflight'] ?? 0);
+                $detail .= " · eşzamanlı: şu an {$nowN}, tepe {$peak}";
             }
-            // Restart butonu: bu instance için systemd birimi biliniyorsa (config gnubg.units) aktif.
-            $hasUnit = isset($units[$i]) && $units[$i] !== '';
-            $rows[] = $this->svc('gnubg'.($i === 0 ? '' : '-'.$i), $label, true, $up, $detail, $hasUnit);
+            $rows[] = $this->svc('gnubgp-'.$port, $label, true, $up, $detail, $unit !== null) + ['group' => $group];
         }
 
         return $rows;
+    }
+
+    /** Mat/ağır analiz havuzunun HAM listesi (heavyBases() shuffle eder -> panelde stabil sıra için config'ten). */
+    private function heavyBasesRaw(GnuBgClient $client): array
+    {
+        $pool = array_values(array_filter(array_map(
+            fn ($u) => rtrim(trim((string) $u), '/'),
+            explode(',', (string) config('gnubg.heavy_urls', '')),
+        ), fn ($u) => $u !== ''));
+        if ($pool === []) {
+            $single = (string) (config('gnubg.heavy_url') ?: '');
+            if ($single !== '') {
+                $pool = [rtrim($single, '/')];
+            }
+        }
+
+        return $pool;
+    }
+
+    /** Port → systemd birim adı (konvansiyon: 8092=gnubg-analysis, 8093=gnubg-analysis-heavy, 8091+N=gnubg-analysis-N). Yalnız GNUBG_UNITS'te varsa döner (izlenen/restart edilebilir). */
+    private function unitForPort(int $port, array $units): ?string
+    {
+        if ($port <= 0) {
+            return null;
+        }
+        $cand = match ($port) {
+            8092 => 'gnubg-analysis',
+            8093 => 'gnubg-analysis-heavy',
+            default => 'gnubg-analysis-'.($port - 8091),
+        };
+
+        return in_array($cand, $units, true) ? $cand : null;
     }
 
     /** gnubg KIRMIZIyken nedenini teşhis et: symlink kırık / dosya yok / servis kapalı. */
@@ -223,22 +267,50 @@ class ServiceStatus extends Widget
         }
     }
 
-    /** Bot (PvB) hazır mı: sunucu-otoriter bot maçı gnubg + validator gerektirir (EN AZ BİRER UP). */
-    private function checkBot(bool $vUp, bool $gUp): array
+    /**
+     * İNSAN-vs-İNSAN maçları (Tek Oyun · Maç Oyunu · Arkadaşınla Oyna): YALNIZ validator'a bağlı
+     * (hamle yasallığı hakemi). gnubg KULLANMAZ -> analiz servisleri tamamen düşse bile insan
+     * maçları oynanır. Bu satır oyuncu-vs-oyuncu akışının canlılığını tek bakışta gösterir.
+     */
+    private function checkHumanMatches(bool $vUp, int $vCount): array
     {
-        $up = $vUp && $gUp;
-        $need = [];
-        if (! $gUp) {
-            $need[] = 'analiz servisi (gnubg)';
-        }
-        if (! $vUp) {
-            $need[] = 'validator';
-        }
-        $detail = $up
-            ? 'Sunucu-otoriter bot maçı oynatılabilir'
-            : 'Oynatılamaz — gerekli: '.implode(' + ', $need);
+        $detail = $vUp
+            ? "Oynanabilir — hakem (validator) ayakta. gnubg gerekmez; analiz servisleri düşse bile etkilenmez."
+            : 'Oynatılamaz — hakem (validator) erişilemiyor (authoritative maçta hamleler reddedilir).';
 
-        return $this->svc('bot', 'Bot Maçı (PvB)', true, $up, $detail);
+        return $this->svc('human-matches', 'İnsan Maçları — Tek Oyun · Maç · Arkadaş', true, $vUp, $detail)
+            + ['group' => 'Maç Türleri (oynanabilirlik)'];
+    }
+
+    /**
+     * YZ MAÇI (Yapay Zeka ile Oyna): validator (hakem) + CANLI YZ gnubg ön havuzundan EN AZ BİR
+     * instance gerektirir (bot beynini ön havuz sağlar; ön havuz tümü düşerse PR havuzuna failover
+     * eder -> hâlâ oynanır ama daha yavaş). Ön havuz kapasitesini (N/M) gösterir -> "güçlü mü" net.
+     */
+    private function checkAiMatches(bool $vUp, int $frontUp, int $frontTotal, int $bgUp): array
+    {
+        $engineUp = $frontUp > 0 || $bgUp > 0; // ön havuz yoksa PR havuzuna failover (analyze() yolu)
+        $up = $vUp && $engineUp;
+        if (! $up) {
+            $need = [];
+            if (! $engineUp) {
+                $need[] = 'analiz servisi (gnubg — tüm havuzlar düşük)';
+            }
+            if (! $vUp) {
+                $need[] = 'validator (hakem)';
+            }
+            $detail = 'Oynatılamaz — gerekli: '.implode(' + ', $need);
+        } else {
+            $detail = "Oynanabilir — canlı YZ havuzu {$frontUp}/{$frontTotal} ayakta + hakem.";
+            if ($frontUp === 0) {
+                $detail = "Oynanabilir ama YAVAŞ — canlı YZ havuzu 0/{$frontTotal} (PR havuzuna failover, {$bgUp} ayakta). Ön havuzu ayağa kaldır!";
+            } elseif ($frontTotal > 0 && $frontUp <= (int) ceil($frontTotal / 2)) {
+                $detail .= ' — kapasite DÜŞÜK (yoğunlukta bot hamlesi bekleyebilir).';
+            }
+        }
+
+        return $this->svc('ai-matches', 'YZ Maçı — Yapay Zeka ile Oyna', true, $up, $detail)
+            + ['group' => 'Maç Türleri (oynanabilirlik)'];
     }
 
     /**
@@ -319,9 +391,20 @@ class ServiceStatus extends Widget
             return;
         }
 
-        // gnubg / gnubg-1 / gnubg-2 ... -> config('gnubg.units') içinden hizalı systemd birimi.
+        // gnubgp-{port} -> port→systemd birimi (rol-gruplu yeni panel). Eski 'gnubg'/'gnubg-N' de desteklenir.
         $unit = null;
-        if ($key === 'gnubg' || str_starts_with($key, 'gnubg-')) {
+        if (str_starts_with($key, 'gnubgp-')) {
+            $port = (int) substr($key, strlen('gnubgp-'));
+            $units = app(GnuBgClient::class)->unitNames();
+            $unit = $this->unitForPort($port, $units);
+            if (! $unit) {
+                Notification::make()->title('Bu instance için birim adı tanımlı değil')
+                    ->body('GNUBG_UNITS env\'ine :'.$port.' portunun systemd birim adını ekle. SSH: systemctl restart <birim>.')
+                    ->warning()->persistent()->send();
+
+                return;
+            }
+        } elseif ($key === 'gnubg' || str_starts_with($key, 'gnubg-')) {
             $idx = $key === 'gnubg' ? 0 : (int) substr($key, strlen('gnubg-'));
             $units = app(GnuBgClient::class)->unitNames();
             $unit = $units[$idx] ?? null;
