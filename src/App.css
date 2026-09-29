@@ -4211,8 +4211,9 @@ button[aria-disabled='true'],
 }
 /* SEO icerik: ana sayfa alt blogu (taranabilir tanitim + ic linkler). */
 .seo-content-home {
-  margin: 26px auto 6px;
-  max-width: 980px;
+  /* Ana sayfa STANDART genişliği: üstteki kutular (home-cal-wrap / ad-strip) ile AYNI hizada.
+     Eskiden max-width:980 + auto -> daha dar + ortalı (kutularla hizasız); kaldırıldı. */
+  margin: 26px 0 6px;
   width: 100%;
   padding: clamp(18px, 3vw, 30px);
   border: 1px solid var(--border);
