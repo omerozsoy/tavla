@@ -13778,6 +13778,24 @@ button.acct-row-logout:hover:not(:disabled) {
   font-style: normal;
   color: var(--muted);
 }
+/* Bitiş sebebi (süre doldu / hareketsizlik / terk) — skorun hemen altında, sakin ton */
+.mr-endreason {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid var(--border);
+}
+.mr-endreason > svg {
+  color: var(--accent);
+}
 /* Istatistik tablosu: agir kiremit barlar yerine temiz, cizgili tablo */
 .mr-table {
   display: flex;

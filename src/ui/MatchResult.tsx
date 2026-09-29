@@ -61,6 +61,9 @@ interface Props {
   onAnalysis: () => void
   hasReport: boolean
   matchCode?: string | null // online maç kodu (kopyalanabilir; hata bildirimi/destek için)
+  // Maç saat/terk ile bittiyse sebep: 'TIMEOUT' | 'AFK_TIMEOUT' | 'ABANDON'. null -> normal bitiş
+  // (pul bitirme / pes). Kaybeden "kimse çıkmadan kendi kendine bitti" sanmasın diye gösterilir.
+  endReason?: string | null
 }
 
 function Avatar({ url, color }: { url?: string | null; color: Side }) {
@@ -114,6 +117,7 @@ export default function MatchResult({
   onAnalysis,
   hasReport,
   matchCode,
+  endReason,
 }: Props) {
   const { t } = useT()
   const [codeCopied, setCodeCopied] = useState(false)
@@ -225,6 +229,16 @@ export default function MatchResult({
               <em>–</em>
               <span>{loserScore}</span>
             </div>
+            {endReason && (
+              <div className="mr-endreason">
+                <Icon name={endReason === 'ABANDON' ? 'flag' : 'clock'} size={13} />
+                {endReason === 'AFK_TIMEOUT'
+                  ? t('mr.endAfk')
+                  : endReason === 'ABANDON'
+                    ? t('mr.endAbandon')
+                    : t('mr.endTimeout')}
+              </div>
+            )}
           </div>
 
           <div className="mr-player">
