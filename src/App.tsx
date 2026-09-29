@@ -4311,7 +4311,8 @@ export default function App() {
       } else {
         // Not YALNIZ sunucu AÇIKÇA rated:false derse (eski backend rated göndermez -> undefined ->
         // not gösterme; puanlı maçlar yanlışlıkla "puansız" etiketi almasın).
-        setRatingChange({ before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
+        // before = SUNUCU-otoriter rating_before (yerel user.rating drift edip sahte +1 gösterebilir).
+        setRatingChange({ before: r.rating_before ?? before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
@@ -4580,7 +4581,8 @@ export default function App() {
       } else {
         // Not YALNIZ sunucu AÇIKÇA rated:false derse (eski backend rated göndermez -> undefined ->
         // not gösterme; puanlı maçlar yanlışlıkla "puansız" etiketi almasın).
-        setRatingChange({ before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
+        // before = SUNUCU-otoriter rating_before (yerel user.rating drift edip sahte +1 gösterebilir).
+        setRatingChange({ before: r.rating_before ?? before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // pvb: kendi PR + BOT PR ikisi de gnubg (authoritative) -> pollGnubgPr doldurur. Başlangıçta
