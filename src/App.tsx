@@ -3333,12 +3333,23 @@ export default function App() {
       // Küp kararı SUNUCUDA uygulanır ama PR/.mat kaydı istemcide tutulur -> sunucu teklifi
       // KABUL ettiyse (2xx) kendi kararımı da logla; yoksa online maçta Küp PR hiç oluşmuyordu.
       if (room?.code) {
+        // İYİMSER + ANINDA (take/drop ile aynı): teklifi çeker çekmez "rakip bekleniyor" durumunu
+        // GÖSTER. Eskiden yerel mutasyon yoktu -> teklif eden bir sonraki poll'e (~1-2sn) kadar
+        // hiçbir geri bildirim görmüyordu = "küp çekerken takılma" (tüm otoriter maçlarda). Sunucu
+        // teklifi zaten cube.pending=offerer yapar; poll bunu doğrular. Ret olursa .catch geri alır.
+        setCubePending(player)
+        setMessage(t('msg.doubled', { name: pName(player), value: match.cube.value * 2 }))
         void serverCubeOffer(room.code, room.server_version ?? 0)
-          .then(() => {
+          .then((r) => {
+            // Otoriter sürümü benimse -> araya giren bayat poll iyimser durumu EZMESIN.
+            if (r?.version != null) appliedServerVersionRef.current = r.version
             recordCubePR(player, 'offer', 'double') // XG cube PR + .mat kaydı
             recordCubeEvent(player, 'double') // maç kaydı (okunur)
           })
-          .catch((e) => notify.error(srvErr(e)))
+          .catch((e) => {
+            setCubePending(null) // reddedildi (409/kural) -> iyimser durumu geri al; poll gerçeği getirir
+            notify.error(srvErr(e))
+          })
       }
       return
     }
