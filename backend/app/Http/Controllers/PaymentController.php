@@ -263,11 +263,15 @@ class PaymentController extends Controller
         $u->save();
     }
 
-    // Sepet alt toplami (kurus) + coin + id ozetleri (config'ten, client'a GUVENILMEZ).
-    // Donus: [totalKurus, totalCoins, ids[], errorOrNull].
+    // Sepet alt toplami (kurus) + coin + id ozetleri. SUNUCU-OTORITER: fiyat DB coin_packages
+    // tablosundan (panelden yonetilir), client'a GUVENILMEZ. Donus: [totalKurus, totalCoins, ids[], errorOrNull].
     private function coinSubtotal(array $items): array
     {
-        $packages = config('garanti.coin_packages', []);
+        $slugs = array_values(array_unique(array_map(fn ($it) => (string) $it['id'], $items)));
+        $packages = \App\Models\CoinPackage::where('published', true)
+            ->whereIn('slug', $slugs)
+            ->get()
+            ->keyBy('slug');
         $totalKurus = 0;
         $totalCoins = 0;
         $ids = [];
@@ -276,12 +280,26 @@ class PaymentController extends Controller
             if (! $pkg) {
                 return [0, 0, [], 'Geçersiz coin paketi: '.$it['id']];
             }
-            $totalKurus += (int) $pkg['price'] * (int) $it['qty'];
-            $totalCoins += (int) $pkg['gc'] * (int) $it['qty'];
+            $totalKurus += (int) $pkg->price * (int) $it['qty'];
+            $totalCoins += (int) $pkg->coins * (int) $it['qty'];
             $ids[] = $it['id'].'x'.$it['qty'];
         }
 
         return [$totalKurus, $totalCoins, $ids, null];
+    }
+
+    // PUBLIC katalog: yayindaki coin paketleri (Magaza > Coin Paketleri panelinden yonetilir).
+    // Frontend bunu CANLI ceker (src/coinPackages.ts fallback + useCoinPackages) -> panelde fiyat
+    // degisince site aninda yansir. id=slug (sepet/odeme anahtari), price TL (kurus/100).
+    public function coinPackagesCatalog()
+    {
+        $packages = \App\Models\CoinPackage::where('published', true)
+            ->orderBy('sort')
+            ->get()
+            ->map(fn ($p) => $p->toCatalog())
+            ->values();
+
+        return response()->json(['packages' => $packages]);
     }
 
     // Promo dogrulama gerekce -> kullanici mesaji.

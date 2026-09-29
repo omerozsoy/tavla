@@ -3,7 +3,7 @@ import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { COIN_PACKAGES } from '../coinPackages'
+import { useCoinPackages } from '../useCoinPackages'
 import { Button } from '@/components/ui/button'
 import { type BoardThemeOpt } from './BoardPicker'
 import { ProductsInner, type CartAddLine } from './Products'
@@ -74,6 +74,7 @@ export default function Shop({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  const coinPackages = useCoinPackages()
   const initial = initialTab === 'board' || initialTab === 'frame' ? 'coin' : initialTab
   const [tabInner, setTabInner] = useState<string>(controlledTab ?? initial)
   // Kontrollu (URL-otoriter) sekme varsa onu kullan; yoksa ic state. Sekme secince App'e bildir.
@@ -260,7 +261,7 @@ export default function Shop({
             <section className="shop-section coin-store" aria-label={coinLabel || t('shop.buyCoins')}>
               <h3 className="shop-section-t">{coinLabel || t('shop.buyCoins')}</h3>
               <div className="coin-grid">
-                {COIN_PACKAGES.map((p) => {
+                {coinPackages.map((p) => {
                   const per = (p.price / p.gc).toLocaleString('tr-TR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,

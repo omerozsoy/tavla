@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
-import { COIN_PACKAGES } from '../coinPackages'
+import type { CoinPackage } from '../coinPackages'
+import { useCoinPackages } from '../useCoinPackages'
 import type { CartItem } from './Cart'
 
 const fmtCoin = (n: number) => n.toLocaleString('tr-TR')
@@ -37,6 +38,7 @@ export default function Checkout({
   onBack: () => void
 }) {
   useEscape(onBack)
+  const coinPackages = useCoinPackages()
   const [number, setNumber] = useState('')
   const [holder, setHolder] = useState('')
   const [month, setMonth] = useState('')
@@ -52,9 +54,9 @@ export default function Checkout({
   const rows = useMemo(
     () =>
       items
-        .map((it) => ({ it, pkg: COIN_PACKAGES.find((p) => p.id === it.id) }))
-        .filter((r): r is { it: CartItem; pkg: (typeof COIN_PACKAGES)[number] } => !!r.pkg),
-    [items],
+        .map((it) => ({ it, pkg: coinPackages.find((p) => p.id === it.id) }))
+        .filter((r): r is { it: CartItem; pkg: CoinPackage } => !!r.pkg),
+    [items, coinPackages],
   )
 
   return (
