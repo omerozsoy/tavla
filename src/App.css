@@ -84,6 +84,11 @@
   /* success METIN (dark yuzey uzerine) */
   --success-fg: #7ee0a0;
 
+  /* Turnuva bracket: her tur kendi ALANI; ri arttikca bir ton daha KOYU (light) /
+     ACIK (dark). tint=taban, shade=her tur eklenen ton. */
+  --tourn-round-tint: #232a33;
+  --tourn-round-shade: #ffffff;
+
   /* Flat yon: elevation golgeleri kaldirildi; ayrimi 1px border + boslugu tasir.
      Sadece modal/overlay icin cok hafif bir "scrim golgesi" xl'de birakildi. */
   --shadow-sm: none;
@@ -274,6 +279,10 @@
   --danger-fg: #b8443a;
   /* success METIN: acik zeminde okunur terracotta green */
   --success-fg: #2f7a5e;
+
+  /* Turnuva bracket tur-alani: 1. tur #eeeae1, sonraki turlar birer ton daha koyu. */
+  --tourn-round-tint: #eeeae1;
+  --tourn-round-shade: #000000;
 
   /* ---- Rank ANCHOR'larÄ± â€” LIGHT (krem/beyaz yÃ¼zey iÃ§in koyulaÅŸtÄ±rÄ±lmÄ±ÅŸ) ----
      YalnÄ±zca foreground+accent override; background/border/icon tÃ¼retilmiÅŸ
@@ -22515,6 +22524,10 @@ button.acct-row-logout:hover:not(:disabled) {
   min-width: 132px;
   display: flex;
   flex-direction: column;
+  /* Her turun kendi alani (arka plan inline style ile ri'ye gore koyulasir). Yatay padding YOK:
+     baglanti cizgileri (.tb-out/.tb-in) turlar arasi 40px boslukta tam bulusur. */
+  border-radius: 12px;
+  padding: 6px 0 10px;
 }
 .tourn-bracket .tourn-round-title {
   height: 20px;
