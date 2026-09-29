@@ -525,7 +525,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                 const rounds = active.bracket!.length
                 const isFinal = ri === rounds - 1
                 return (
-                  <div key={ri} className="tourn-round">
+                  <div key={ri} className={`tourn-round${isFinal ? ' tourn-round-final' : ''}`}>
                     <div className="tourn-round-title">
                       {isFinal ? t('tourn.final') : ri === rounds - 2 ? t('tourn.semi') : t('tourn.round', { n: ri + 1 })}
                       <span className="tourn-round-len">
