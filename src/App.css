@@ -22512,7 +22512,7 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: stretch;
 }
 .tourn-round {
-  min-width: 158px;
+  min-width: 132px;
   display: flex;
   flex-direction: column;
 }
@@ -22520,6 +22520,7 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 20px;
   margin: 0 0 4px;
   white-space: nowrap;
+  font-size: 0.75rem;
 }
 .tourn-round-body {
   flex: 1;
@@ -22618,12 +22619,12 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 12px;
+  padding: 7px 10px;
   border: 1px dashed var(--border);
   border-radius: var(--radius-md);
   background: var(--card-bg);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   min-width: 0;
 }
 .tourn-champ.done {
@@ -22713,9 +22714,9 @@ button.acct-row-logout:hover:not(:disabled) {
 .tm-p {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  font-size: 0.85rem;
+  gap: 6px;
+  padding: 4px 7px;
+  font-size: 0.75rem;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }

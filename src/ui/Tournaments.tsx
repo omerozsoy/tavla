@@ -639,18 +639,26 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   </div>
                 )
               })}
-              {/* Sampiyon: finalin sagi, tac ile */}
+              {/* Sampiyon: finalin sagi, tac ile. Final turu 3.'luk macini da icerdiginden
+                  final ust-yariya oturur; sampiyon TAM finalin hizasinda dursun diye final
+                  turunun YUVA yapisini birebir aynala (final yuvasi=sampiyon, 3.'luk yuvasi=bos). */}
               {!!active.bracket?.length && (
                 <div className="tourn-round tourn-champ-col">
                   <div className="tourn-round-title">{t('tourn.champion')}</div>
                   <div className="tourn-round-body">
-                    <div className="tb-slot">
-                      <span className={`tb-in${champ ? ' on' : ''}`} aria-hidden="true" />
-                      <div className={`tourn-champ${champ ? ' done' : ''}`}>
-                        <Icon name="crown" size={18} />
-                        <span className="tm-name">{champ ? champ.name : '?'}</span>
+                    {active.bracket[active.bracket.length - 1].map((m, i) => (
+                      <div key={m.key ?? i} className="tb-slot">
+                        {!m.third_place && (
+                          <>
+                            <span className={`tb-in${champ ? ' on' : ''}`} aria-hidden="true" />
+                            <div className={`tourn-champ${champ ? ' done' : ''}`}>
+                              <Icon name="crown" size={18} />
+                              <span className="tm-name">{champ ? champ.name : '?'}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
