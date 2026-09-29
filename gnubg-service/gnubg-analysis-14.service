@@ -1,11 +1,11 @@
 [Unit]
-Description=GNU Backgammon TURNUVA botlari ADANMIS havuzu #4 (:8105)
+Description=GNU Backgammon CANLI bot havuzu genisletme (:8105 — Yapay Zeka ile Oyna #8)
 After=network.target
-# TURNUVA test botlari (tavla:tourney-bots, Seviye 12 agir) icin AYRILMIS instance. Canli bot
-# (:8092,:8093,:8096,:8097), PR/heal (:8094,:8095) ve Mat-analizi heavy (:8098-:8101) havuzlariyla
-# CAKISMAZ -> turnuva kosarken canli insan-vs-AI maclari ASLA beklemez (bot-unavailable kaynagi kesilir).
-# 4 dedike instance = 8'li bracket'te es-zamanli en fazla 4 mac -> mac basina 1 instance.
-# backend/.env: TOURNEY_BOTS_GNUBG_URLS listesine http://127.0.0.1:8105 ekle + GNUBG_UNITS'e gnubg-analysis-14.
+# CANLI YZ maci ON havuzunun genisletmesi (8092/8093/8096/8097 ile AYNI kod, AYRI port). Amac:
+# es-zamanli cok "Yapay Zeka ile Oyna" maci VEYA test turnuvasi kosarken bot hamlesi bekletilmesin
+# -> bot-unavailable/forfeit kaynagi kesilir. backend/.env: GNUBG_URL_BACKUP listesine
+# http://127.0.0.1:8105 ekle + GNUBG_UNITS'e gnubg-analysis-14. (Insan-vs-insan maclari gnubg
+# KULLANMAZ; bu havuz yalnizca YZ maci + PR/analiz failover icindir.)
 StartLimitIntervalSec=0
 
 [Service]
