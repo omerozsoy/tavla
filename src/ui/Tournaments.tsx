@@ -40,6 +40,35 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
   return s ? `${s}-${t.id}` : String(t.id)
 }
 
+// Bracket'ten nihai sıralama (oyuncu id'leri, 1.den sonuncuya) — backend standingsFromBracket ile
+// AYNI mantık: 1.=final kazananı; sonra son turdan ilk tura her turun KAYBEDENLERI (rating azalan).
+function tournStandings(bracket?: TMatch[][] | null): number[] {
+  if (!bracket || bracket.length === 0) return []
+  const final = bracket[bracket.length - 1]?.[0]
+  const out: number[] = []
+  if (final?.winner) out.push(final.winner)
+  for (let ri = bracket.length - 1; ri >= 0; ri--) {
+    const losers: { id: number; rating: number }[] = []
+    for (const m of bracket[ri]) {
+      if (!m.winner || !m.p1?.id || !m.p2?.id) continue
+      const loser = m.p1.id === m.winner ? m.p2 : m.p1
+      if (loser?.id) losers.push({ id: loser.id, rating: loser.rating ?? 0 })
+    }
+    losers.sort((a, b) => b.rating - a.rating)
+    for (const l of losers) out.push(l.id)
+  }
+  return Array.from(new Set(out))
+}
+// Bir sıranın (0-based) kazandığı coin — backend payPrizes ile AYNI: prizes[i].coins + (i===0 ? havuz : 0);
+// prizes yoksa yalnız şampiyona havuz.
+function rankPrizeCoins(t: Tournament, rank: number): number {
+  const prizes = t.prizes ?? []
+  if (prizes.length > 0) {
+    return (prizes[rank]?.coins ?? 0) + (rank === 0 ? (t.prize_coins ?? 0) : 0)
+  }
+  return rank === 0 ? (t.prize_coins ?? 0) : 0
+}
+
 // Takvim (turnuva-takvimi) ile ayni tarih rozeti: bordo kare, GUN + altinda AY.
 const monthUpper = (d: Date) =>
   d.toLocaleDateString('tr-TR', { month: 'long' }).toLocaleUpperCase('tr-TR')
@@ -378,11 +407,50 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             </div>
           )}
 
-          {champ && (
-            <div className="tourn-champ">
-              <Icon name="crown" size={16} /> {t('tourn.champion')}: {champ.name}
-            </div>
-          )}
+          {/* PODYUM: finalde ilk 3 — altın/gümüş/bronz taç + kazandıkları ödül (bracket + kazanan
+              listesi tek blokta). Sıralama backend payPrizes ile birebir (kim ne kazandıysa o). */}
+          {active.status === 'finished'
+            ? (() => {
+                const top = tournStandings(active.bracket)
+                  .slice(0, 3)
+                  .map((id) => active.players?.find((pl) => pl.id === id))
+                  .filter((p): p is NonNullable<typeof p> => !!p)
+                if (top.length === 0) {
+                  return champ ? (
+                    <div className="tourn-champ">
+                      <Icon name="crown" size={16} /> {t('tourn.champion')}: {champ.name}
+                    </div>
+                  ) : null
+                }
+                const medal = ['podium-gold', 'podium-silver', 'podium-bronze']
+                return (
+                  <div className="tourn-podium">
+                    <div className="tp-head">
+                      <Icon name="trophy" size={16} /> {t('tourn.standings')}
+                    </div>
+                    <ol className="podium-list">
+                      {top.map((p, i) => {
+                        const coins = rankPrizeCoins(active, i)
+                        return (
+                          <li key={p.id} className={`podium-row ${medal[i] ?? ''}`}>
+                            <span className="podium-crown" aria-hidden="true">
+                              <Icon name="crown" size={18} />
+                            </span>
+                            <span className="podium-rank">{i + 1}.</span>
+                            <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={30} rankSize="md" premium={p.premium} />
+                            {coins > 0 && (
+                              <span className="podium-prize">
+                                <Coins amount={coins} gain suffix="coin" size={14} />
+                              </span>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ol>
+                  </div>
+                )
+              })()
+            : null}
 
           {/* Odul dagilimi (siralamaya gore) */}
           {active.prizes && active.prizes.length > 0 ? (
