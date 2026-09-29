@@ -2695,7 +2695,35 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $resp = DB::transaction(function () use ($data, $code, $validator, $request) {
+        // ---- FAZ 1: KİLİTSİZ doğrulama (yavaş HTTP; rooms row-lock + DB bağlantısı TUTULMAZ) ----
+        // Node validator /validate saf + stateless (validateTurn; DB'ye dokunmaz) -> lock DIŞINDA
+        // çağrılabilir. Böylece tıkalı/yavaş validator artık FPM worker + DB bağlantısı + rooms
+        // satır kilidini HTTP round-trip boyunca tutup poll/zar/diğer odaları DONDURMAZ
+        // ([[turnuva-akicilik-validator-darbogazi]] cascade). Aşağıdaki KISA tx sürüm değişmediyse
+        // bu sonucu uygular; araya komut girip server_version oynadıysa tx İÇİNDE yeniden doğrular
+        // (nadir yarış — güvenli fallback). Burada HİÇBİR hata döndürülmez: tüm otoriter guard'lar
+        // ve yanıtlar tek kaynak olarak kilitli tx'e aittir.
+        $preResult = null;
+        $preExpectedVer = null;
+        try {
+            $pre = Room::where('code', strtoupper($code))->first();
+            if ($pre && $pre->acceptsGameActions()) {
+                $preSlot = $this->slotOf($pre, $data['token'], $request);
+                $preSt = is_array($pre->server_state) ? $pre->server_state : null;
+                $verOk = array_key_exists('expected_version', $data) && $data['expected_version'] !== null
+                    && (int) $data['expected_version'] === (int) $pre->server_version;
+                if ($preSlot !== null && ! ($pre->bot && $preSlot === 'p2') && $preSt && ! empty($preSt['dice']) && $verOk
+                    && ($preSt['turn'] ?? 'white') === $this->slotColor($preSlot)
+                    && $this->cubeOf($pre)['pending'] === null) {
+                    $preExpectedVer = (int) $pre->server_version;
+                    $preResult = $validator->validate($preSt, array_values($data['steps']));
+                }
+            }
+        } catch (\Throwable $e) {
+            $preResult = null; // teşhis dışı hata: kilit altındaki doğrulamaya düş
+        }
+
+        $resp = DB::transaction(function () use ($data, $code, $validator, $request, $preResult, $preExpectedVer) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2742,8 +2770,12 @@ class RoomController extends Controller
                 ]);
             }
 
-            // Node validator ile doğrula (TS motoru = tek gerçek).
-            $result = $validator->validate($state, array_values($data['steps']));
+            // Node validator ile doğrula (TS motoru = tek gerçek). FAZ 1'de KİLİTSİZ hesaplandıysa
+            // ve server_version o an ile AYNIYSA (araya komut girmedi) onu yeniden kullan -> kilit
+            // içinde HTTP YOK. Aksi halde (nadir yarış) burada kilit altında yeniden doğrula.
+            $result = ($preResult !== null && (int) $room->server_version === $preExpectedVer)
+                ? $preResult
+                : $validator->validate($state, array_values($data['steps']));
 
             if (! empty($result['unreachable'])) {
                 // FAIL-CLOSED: doğrulama yapılamadıysa hamleyi reddet (güvenli taraf).
