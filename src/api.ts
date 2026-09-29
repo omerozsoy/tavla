@@ -1921,6 +1921,7 @@ export async function reportRating(
   opponentLuck?: number | null, // rakibin HAM luck'i (yalniz PvB: bot; online'da rakip kendi satirini yazar)
 ): Promise<{
   rating: number
+  rating_before?: number // OTORİTER maç-öncesi rating; delta bundan çizilir (yerel user.rating drift -> sahte +1 önlenir)
   achievements?: UnlockedAchievement[]
   // Maç PUANLI mı (Elo/PR üretti mi) + değilse SEBEP -> sonuç ekranı "puansız maç" etiketi.
   rated?: boolean

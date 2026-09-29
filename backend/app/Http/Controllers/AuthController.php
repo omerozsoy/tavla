@@ -752,6 +752,7 @@ class AuthController extends Controller
         }
         return response()->json([
             'rating' => $newRating,
+            'rating_before' => (int) $ra,     // OTORİTER maç-öncesi rating; istemci delta'yı bundan çizer (yerel user.rating drift edebilir -> sahte +1)
             'user' => $user,
             'achievements' => $unlocked,
             'rated' => $ranked,               // maç Elo/PR ürettiyse true; casual/kılıç-limit -> false
