@@ -1,12 +1,21 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">Servis Durumu</x-slot>
-        <x-slot name="description">Çalışan tüm servisler (validator · TavlaTV · bot · veritabanı · queue · cron · disk) + otorite/PR/luck modu</x-slot>
+        <x-slot name="description">Rol bazlı: Hakem (validator) · Maç türleri (İnsan: Tek Oyun/Maç/Arkadaş — YZ: Yapay Zeka ile Oyna) · gnubg havuzları (Canlı YZ · PR · Mat) · Altyapı</x-slot>
 
         @php($s = $this->status())
 
         <div wire:poll.30s class="space-y-3">
+            @php($lastGroup = null)
             @foreach ($s['services'] as $svc)
+                @if (($svc['group'] ?? null) !== $lastGroup)
+                    @php($lastGroup = $svc['group'] ?? null)
+                    @if ($lastGroup)
+                        <div class="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            {{ $lastGroup }}
+                        </div>
+                    @endif
+                @endif
                 @php($color = $svc['up'] === true ? '#16a34a' : ($svc['up'] === false ? '#dc2626' : '#9ca3af'))
                 @php($label = ! $svc['configured']
                     ? 'Yapılandırılmamış'
