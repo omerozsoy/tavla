@@ -18419,6 +18419,57 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-row .event-title {
   margin-bottom: 0;
 }
+/* ===== Turnuva kartı (liste) MOBİL — desktop'a DOKUNULMAZ (yalnız ≤560px) =====
+   KÖK: .event-datebadges no-wrap flex satırı (tarih tile + "Online" + durum/erişim rozetleri +
+   160px katılım barı) min-content'i ~563px'e itiyor -> event-main sola taşıp (L=-85) kartın
+   overflow:hidden'ıyla SOLDAN kırpılıyordu (390px'te "Online"->"ne"). FIX: badge satırını SARDIR,
+   barı esnet, dev flamayı (72×152) küçült, ücret pill'ini yeniden konumla. */
+@media (max-width: 560px) {
+  /* KESİN KÖK: .event-row mobilde flex-direction:column oluyor ama base'ten gelen
+     align-items:flex-start KALIYOR -> event-main İÇERİĞE göre boyutlanıp (kart genişliğine
+     değil) datebadges min-content'iyle 563px'e taşıyordu. stretch + width:100% -> event-main
+     tam kart genişliği, çocuklar (sarılan badge satırı) içine sığar. */
+  .tourn-row {
+    align-items: stretch;
+  }
+  .tourn-row .event-main {
+    width: 100%;
+    min-width: 0;
+  }
+  .tourn-row .event-datebadges {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding-right: 56px; /* küçültülen sağ-üst flama ilk satıra binmesin */
+  }
+  .tourn-row .tourn-players {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Katılım barı dekoratif (sayı "2/∞" zaten var) + dar kartta sarınca uzun oval'e dönüyor;
+     mobilde gizle. */
+  .tourn-row .tourn-pbar {
+    display: none;
+  }
+  /* "Online" etiketi mobilde satırı domine etmesin (desktop 1.4rem korunur). */
+  .tourn-row .event-province-top {
+    font-size: 1.12rem;
+  }
+  /* Sağ-üst flama devasaydı (72×152) -> mobilde makul boyut. */
+  .tourn-row .tourn-ribbon {
+    width: 46px;
+    height: 96px;
+    right: 8px;
+  }
+  /* Ücret pill'i küçülen flamanın SOLUNA otursun (desktop right:100 dar kartta ortaya biniyordu). */
+  .tourn-row .tourn-fee {
+    top: 10px;
+    right: 60px;
+  }
+  /* Başlık uzun turnuva adında taşmasın. */
+  .tourn-row .event-title {
+    overflow-wrap: anywhere;
+  }
+}
 .tourn-litem {
   display: flex;
   justify-content: space-between;
