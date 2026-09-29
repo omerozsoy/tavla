@@ -22461,16 +22461,24 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Detay katilimci listesi DIKEY olmali. .tourn-players list-kartinda yatay avatar seridi
    (flex row) olarak da kullaniliyor -> base flex row'u YALNIZ .tourn-card detay baglaminda
    kolona cevir. Aksi halde 8 oyuncu (h3 + prow'lar) yatay dizilip mobilde ~1337px tasiyordu. */
+/* Katilimci listesi: cok kisi (64+) tek kolonda devasa dikey yigin yapiyordu ->
+   responsive grid ile cok kolona yay. Baslik + bekleme notu tum kolonlari kaplar. */
 .tourn-card .tourn-players {
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2px 12px;
   align-items: stretch;
+}
+.tourn-card .tourn-players h3,
+.tourn-card .tourn-players .tourn-wait {
+  grid-column: 1 / -1;
 }
 .tourn-prow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 2px;
+  gap: 8px;
+  padding: 4px 2px;
   border-bottom: 1px solid var(--border);
   min-width: 0;
 }
