@@ -3157,6 +3157,18 @@ class RoomController extends Controller
         if ($level >= 11 && ! config('gnubg.level11_enabled', true)) {
             $level = 10;
         }
+        // PREMIUM KURALI: Seviye 11 (Grandmaster) ve 12 (Ultimate) yalnız Premium üyelere açık.
+        // Kırpmadan SONRA kontrol -> feature-flag ile zaten 10'a düşen istek premium gerektirmez.
+        // Misafir/normal üye 11/12 isterse 403 'premium_required' -> istemci üyelik ekranına yönlendirir.
+        if ($level >= 11) {
+            $botUser = $request->user('sanctum');
+            if (! $botUser || $botUser->plan_active === 'free') {
+                return response()->json([
+                    'message' => 'Seviye 11 ve 12 yalnız Premium üyelere açıktır.',
+                    'code' => 'premium_required',
+                ], 403);
+            }
+        }
         $room = Room::create([
             'code' => $code,
             'p1_token' => $data['token'],
