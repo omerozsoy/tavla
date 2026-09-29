@@ -1074,6 +1074,8 @@ export interface TMatch {
   score?: { p1?: number; p2?: number; walkover?: boolean } | null
   /** ÜÇÜNCÜLÜK MAÇI: son turda (index 1) iki yarı final kaybedeninin oynadığı maç. */
   third_place?: boolean
+  /** FINAL için açılış zamanı (ISO): 3.'lük maçı bitince +1dk. Bundan önce final oynanamaz (gate). */
+  opens_at?: string | null
 }
 export interface Tournament {
   id: number
