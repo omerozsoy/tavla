@@ -328,6 +328,59 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertGreaterThan(1, (int) $mr->delta, 'gerçek Elo ~+18; sahte +1 değil');
     }
 
+    // DAVET ÖNİZLEMESİ == GERÇEK SONUÇ: davet kartındaki "Kazanırsan +N / Kaybedersen −N"
+    // (RatingPolicy::eloPreview) ile maç bitince match_results'a yazılan delta BİREBİR aynı
+    // olmalı. İkisi de tek formülü (eloNewRating) çağırır; tek risk girdi kayması: rakip rating'i
+    // maç sonunda ODA anlık-görüntüsünden okunur, raporlayanın rating'i canlıdır. Bu test ekran
+    // görüntüsündeki gerçek sayıları (1389 vs 1501 -> +21/−11) hem önizlemede hem sonuçta doğrular.
+    public function test_invite_preview_matches_recorded_delta(): void
+    {
+        // Ekran görüntüsü senaryosu: davet eden 1389, rakip (Zgrclskn91) 1501.
+        $preview = \App\Support\RatingPolicy::eloPreview(1389, 1501);
+        $this->assertSame(21, $preview['win'], 'önizleme: Kazanırsan +21');
+        $this->assertSame(-11, $preview['loss'], 'önizleme: Kaybedersen −11');
+
+        // KAZANMA yolu: davet eden (p2=siyah) kazanır (skor 0-3). Rakip rating'i ODADA snapshot=1501.
+        $meWin = $this->makeUser('prevW');   // davet eden
+        $oppW = $this->makeUser('prevWopp'); // rakip
+        $meWin->rating = 1389;
+        $meWin->save();
+        $room = $this->makeFinishedRoom($oppW, $meWin); // p1=rakip, p2=davet eden(kazanan siyah)
+        $room->p1_rating = 1501; // maç sonunda okunacak rakip snapshot'ı
+        $room->save();
+        Sanctum::actingAs($meWin);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1501, 'ranked' => true, 'room_code' => 'AUTHR',
+        ])->assertOk();
+        $winRow = MatchResult::where('user_id', $meWin->id)->latest('id')->firstOrFail();
+        $this->assertSame($preview['win'], (int) $winRow->delta, 'gerçek delta == önizleme kazanç');
+        $this->assertSame(1389 + 21, (int) $meWin->fresh()->rating);
+
+        // KAYBETME yolu: davet eden (p2=siyah) kaybeder (skor 3-0, kazanan beyaz).
+        $meLose = $this->makeUser('prevL');
+        $oppL = $this->makeUser('prevLopp');
+        $meLose->rating = 1389;
+        $meLose->save();
+        $roomL = Room::create([
+            'code' => 'PREVL', 'p1_token' => 't1', 'p1_user_id' => $oppL->id, 'p1_name' => 'prevLopp',
+            'p1_rating' => 1501,
+            'p2_token' => 't2', 'p2_user_id' => $meLose->id, 'p2_name' => 'prevL',
+            'status' => 'finished', 'target' => 3, 'version' => 1, 'settled' => false,
+            'authoritative' => true, 'mode' => 'ranked',
+            'server_match' => ['done' => true, 'winner' => 'white', 'target' => 3,
+                'score' => ['white' => 3, 'black' => 0]],
+            'state' => ['match' => ['target' => 3, 'score' => ['white' => 3, 'black' => 0]],
+                'gameEnd' => ['winner' => 'white']],
+        ]);
+        Sanctum::actingAs($meLose);
+        $this->postJson('/api/rating/report', [
+            'won' => false, 'opponent_rating' => 1501, 'ranked' => true, 'room_code' => 'PREVL',
+        ])->assertOk();
+        $loseRow = MatchResult::where('user_id', $meLose->id)->latest('id')->firstOrFail();
+        $this->assertSame($preview['loss'], (int) $loseRow->delta, 'gerçek delta == önizleme kayıp');
+        $this->assertSame(1389 - 11, (int) $meLose->fresh()->rating);
+    }
+
     public function test_finished_room_cannot_be_reported_by_a_third_user(): void
     {
         $white = $this->makeUser('ownerw');
