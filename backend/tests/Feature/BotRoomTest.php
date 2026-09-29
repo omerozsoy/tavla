@@ -382,6 +382,12 @@ class BotRoomTest extends TestCase
         $res->assertJsonPath('match.cube.value', 2);
         $res->assertJsonPath('match.cube.owner', 'black');
         $res->assertJsonPath('match.cube.pending', null);
+
+        // REGRESYON: bot 'take' dedikten sonra saat/tur İNSANA (p1) dönmeli. Yoksa turn_slot
+        // 'p2'de (bot) kilitlenir -> insan poll'u onUpdate'te "yetkisiz" sayılıp saati ilerletemez
+        // -> "bot almadı, saat durdu, bot bekliyor" DONMASI.
+        $room = Room::where('code', 'BOTCU')->first();
+        $this->assertSame('p1', $room->clock['turn_slot']);
     }
 
     public function test_bot_cube_response_uses_gnubg_drop(): void
