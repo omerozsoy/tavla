@@ -1636,6 +1636,9 @@ export default function App() {
   // AFK (sunucu-otoriter): kayba kalan saniye (yalniz son 15sn'de dolu) + sirasi gelen renk.
   const [afkLeft, setAfkLeft] = useState<number | null>(null)
   const [srvActive, setSrvActive] = useState<Player | null>(null)
+  // Maç saat/terk ile bittiyse sebep ('TIMEOUT'|'AFK_TIMEOUT'|'ABANDON') -> sonuç ekranında göster
+  // ("kimse çıkmadan kendi kendine bitti" kafa karışıklığını önler). Normal bitişte null.
+  const [endReason, setEndReason] = useState<string | null>(null)
   // Mac basi taze saat: rezerv bankasi = puan-basi sure x mac uzunlugu (her oyuncuya)
   // Turnuva turunun elle girilen suresi (sn, oyuncu basina); null = saat modunun varsayilani.
   const clockBankRef = useRef<number | null>(null)
@@ -4909,6 +4912,7 @@ export default function App() {
   // Online: odayi periyodik yokla (rakip hamlesi + durum)
   useEffect(() => {
     if (!online || !room) return
+    setEndReason(null) // yeni oda/rövanş: önceki maçın saat-kaybı sebebini temizle
     let cancelled = false
     const poll = async () => {
       if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme: poll'u da durdur
@@ -5080,6 +5084,9 @@ export default function App() {
         // sayac akmaya devam ediyordu. Sunucu tarafinda da tick durduruldu; bu istemci
         // korumasi deploy oncesi acilmis odalar icin de gecerli.
         const srvDone = !!rv.server_match?.done || rv.status === 'finished'
+        // Saat/terk kaybı sebebini yakala (rv.clock.loss, srvDone'dan BAĞIMSIZ okunur; sonuç
+        // ekranında "Süre doldu / Hareketsizlik / Terk" gösterilir). Normal bitişte loss=null.
+        if (rv.clock?.loss?.reason) setEndReason(rv.clock.loss.reason)
         const sc = srvDone ? null : rv.clock
         // BOT ANIMASYONU (botAnim): bot hamlesi EKRANDA oynanirken sunucu saatini YAZMA. Sunucuda
         // bot aninda oynayip sirayi/saati insana (p1) devrettigi icin bu araligi yazmak "sira botta
@@ -9844,6 +9851,7 @@ export default function App() {
           onStats={() => setResultView('stats')}
           onAnalysis={() => setResultView('analysis')}
           matchCode={online ? (room?.code ?? null) : null}
+          endReason={online ? endReason : null}
         />
       )}
 
