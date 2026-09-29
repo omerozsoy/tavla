@@ -28412,20 +28412,19 @@ select:-webkit-autofill {
 }
 
 /* =====================================================================
-   Turnuva kartı v2 — "poster · koyu terracotta" (event-* düzeninin yerine).
-   Kendi renk değişkenleriyle temadan bağımsız: hem açık hem koyu temada
-   aynı koyu-terracotta afiş görünür. Liste + geçmiş + ana sayfa panelinde
-   ortak .tcard2 (button).
+   Turnuva kartı v2 — "poster · ACIK krem" (event-* düzeninin yerine).
+   Beyaz/krem kart, ink metin; terracotta ust serit renk vurgusu kalir.
+   Liste + geçmiş + ana sayfa panelinde ortak .tcard2 (button).
    ===================================================================== */
 .tcard2 {
-  --tc-card: #2a2420;
+  --tc-card: #ffffff;
   --tc-brick: #a83a2b;
   --tc-brick-soft: #c9563f;
-  --tc-ember: #e88a5a;
-  --tc-cream: #f4efe6;
-  --tc-muted: #b8ad9c;
-  --tc-line: rgba(244, 239, 230, 0.12);
-  --tc-green: #7ff0a8;
+  --tc-ember: #c9563f;
+  --tc-ink: #1c1a17;
+  --tc-muted: #5e574c;
+  --tc-line: rgba(28, 26, 23, 0.1);
+  --tc-green: #2f8a55;
   appearance: none;
   -webkit-appearance: none;
   font-family: inherit;
@@ -28435,16 +28434,16 @@ select:-webkit-autofill {
   padding: 0;
   cursor: pointer;
   background: var(--tc-card);
-  color: var(--tc-cream);
-  border: 1px solid rgba(244, 239, 230, 0.06);
+  color: var(--tc-ink);
+  border: 1px solid var(--med-sand, #ded7ca);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 10px 30px -12px rgba(70, 45, 20, 0.28);
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 .tcard2:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.36);
+  box-shadow: 0 18px 40px -14px rgba(70, 45, 20, 0.34);
 }
 .tcard2:active {
   transform: translateY(0);
@@ -28520,7 +28519,7 @@ select:-webkit-autofill {
   letter-spacing: -0.02em;
   line-height: 1.1;
   margin: 0;
-  color: var(--tc-cream);
+  color: var(--tc-ink);
 }
 .tcard2-meta {
   display: flex;
@@ -28552,7 +28551,7 @@ select:-webkit-autofill {
 /* Ödüller (koyu) */
 .tcard2-prizes {
   margin: 0 0 16px;
-  background: rgba(244, 239, 230, 0.05);
+  background: color-mix(in srgb, var(--tc-brick) 5%, #fff);
   border: 1px solid var(--tc-line);
   border-radius: 12px;
   padding: 10px 13px;
@@ -28581,16 +28580,16 @@ select:-webkit-autofill {
   align-items: center;
   gap: 8px;
   font-size: 0.86rem;
-  color: var(--tc-cream);
+  color: var(--tc-ink);
 }
 .tcard2-prizes .tp-rank {
   font-weight: 800;
   color: var(--tc-muted);
   min-width: 1.4em;
 }
-.tcard2-prizes .tp-rank-1 { color: #f0c674; }
-.tcard2-prizes .tp-rank-2 { color: #cfd3d8; }
-.tcard2-prizes .tp-rank-3 { color: #d8a06a; }
+.tcard2-prizes .tp-rank-1 { color: #c9971f; }
+.tcard2-prizes .tp-rank-2 { color: #8b9096; }
+.tcard2-prizes .tp-rank-3 { color: #b06a2f; }
 .tcard2-prizes .tp-desc {
   flex: 1;
   color: var(--tc-muted);
@@ -28615,7 +28614,7 @@ select:-webkit-autofill {
 .tcard2-pc {
   font-weight: 800;
   font-size: 1.15rem;
-  color: var(--tc-cream);
+  color: var(--tc-ink);
 }
 .tcard2-pc small {
   color: var(--tc-muted);
@@ -28628,7 +28627,7 @@ select:-webkit-autofill {
   width: 120px;
   height: 8px;
   border-radius: 99px;
-  background: rgba(244, 239, 230, 0.12);
+  background: rgba(28, 26, 23, 0.1);
   overflow: hidden;
 }
 .tcard2-bar > span {
@@ -28643,9 +28642,9 @@ select:-webkit-autofill {
   gap: 6px;
   font-weight: 700;
   font-size: 0.84rem;
-  color: var(--tc-cream);
-  background: rgba(244, 239, 230, 0.08);
-  border: 1px solid rgba(244, 239, 230, 0.2);
+  color: var(--tc-ink);
+  background: rgba(28, 26, 23, 0.05);
+  border: 1px solid var(--med-sand, #ded7ca);
   border-radius: 99px;
   padding: 7px 15px;
 }
@@ -28663,14 +28662,14 @@ select:-webkit-autofill {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--tc-muted);
-  background: rgba(244, 239, 230, 0.07);
+  background: rgba(28, 26, 23, 0.05);
   border: none;
   border-radius: 99px;
   padding: 5px 11px;
 }
 .tcard2 .tourn-access-premium {
-  color: #f0c674;
-  background: rgba(240, 198, 116, 0.1);
+  color: #a87a12;
+  background: rgba(201, 151, 31, 0.12);
 }
 
 @media (max-width: 560px) {
