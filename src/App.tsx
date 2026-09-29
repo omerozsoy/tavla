@@ -9545,31 +9545,6 @@ export default function App() {
       >
         <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
       </button>
-      {/* Maç ID rozeti (sağ üst, tam ekran butonunun solunda): yalnız online maçta. Tıklayınca
-          oda kodunu panoya kopyalar (destek/hata bildirimi/arkadaşa paylaşma için). */}
-      {online && room?.code && (
-        <button
-          type="button"
-          className={`match-code-badge${matchCodeCopied ? ' copied' : ''}`}
-          onClick={() => {
-            const c = room?.code
-            if (!c) return
-            navigator.clipboard
-              ?.writeText(c)
-              .then(() => {
-                setMatchCodeCopied(true)
-                window.setTimeout(() => setMatchCodeCopied(false), 1500)
-              })
-              .catch(() => {})
-          }}
-          title={t('game.copyMatchId')}
-          aria-label={t('game.copyMatchId')}
-        >
-          <span className="mcb-lbl">{t('game.matchId')}</span>
-          <span className="mcb-val">{room.code}</span>
-          <Icon name={matchCodeCopied ? 'check' : 'copy'} size={14} />
-        </button>
-      )}
       {/* İzleyenler (oynayan oyuncular da kimlerin izlediğini + sayıyı görsün) — yalnız online
           maçta izleyici varken; izleyicilerin gördüğü panelin aynısı (bkz Spectate). */}
       {online && viewerCount > 0 && (
@@ -9674,12 +9649,28 @@ export default function App() {
 
       <main className="main game-scene">
       <div className="game-area">
-        {/* Maç ID (sol üst): oynanan maçın kimliği — admin panelde bu ID ile bulunur */}
+        {/* Maç ID (sol üst): oynanan maçın kimliği — admin panelde bu ID ile bulunur.
+            KOPYALANABİLİR: tıklayınca kodu panoya kopyalar (kopyalandı -> aksan renk + tik). */}
         {recordUid && (
-          <div className="match-id-hud" title={t('log.matchId')}>
+          <button
+            type="button"
+            className={`match-id-hud${matchCodeCopied ? ' copied' : ''}`}
+            title={t('game.copyMatchId')}
+            aria-label={t('game.copyMatchId')}
+            onClick={() => {
+              navigator.clipboard
+                ?.writeText(recordUid)
+                .then(() => {
+                  setMatchCodeCopied(true)
+                  window.setTimeout(() => setMatchCodeCopied(false), 1500)
+                })
+                .catch(() => {})
+            }}
+          >
             <span className="match-id-hud__label">{t('log.matchId')}</span>
             <span className="match-id-hud__code">#{recordUid}</span>
-          </div>
+            <Icon name={matchCodeCopied ? 'check' : 'copy'} size={13} />
+          </button>
         )}
         {/* Board flip'lendiginde (yerel oyuncu siyah) kartlar da cevrilir: SEN hep altta */}
         <Sidebar
