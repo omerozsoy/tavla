@@ -80,8 +80,28 @@ class MatchResult extends Model
     public function analysisHc(): ?string
     {
         $decoded = json_decode((string) $this->log, true);
+        $hc = is_array($decoded) ? ($decoded['hc'] ?? null) : null;
+        if (in_array($hc, ['white', 'black'], true)) {
+            return $hc;
+        }
+        // Client log YOK (ForfeitLoss / MatchBackstop yedek satırı): rengi RAKİP satırının
+        // hc'sinden türet (zıt renk). Böylece log'suz satır da SUNUCU hamleleriyle (match_moves)
+        // DOĞRU renkte analiz edilir; yoksa çağıran 'white'a düşüp rakibin PR'ını alırdı.
+        if (! empty($this->room_code)) {
+            $opp = static::where('room_code', $this->room_code)
+                ->where('user_id', '!=', $this->user_id)
+                ->latest('id')->first();
+            $oppDecoded = $opp ? json_decode((string) $opp->log, true) : null;
+            $oppHc = is_array($oppDecoded) ? ($oppDecoded['hc'] ?? null) : null;
+            if ($oppHc === 'white') {
+                return 'black';
+            }
+            if ($oppHc === 'black') {
+                return 'white';
+            }
+        }
 
-        return is_array($decoded) ? ($decoded['hc'] ?? null) : null;
+        return null;
     }
 
     public function matText(): string

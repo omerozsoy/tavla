@@ -52,35 +52,47 @@ class GnubgPrHeal extends Command
         $days = max(1, (int) $this->option('days'));
         $dry = (bool) $this->option('dry-run');
 
-        // gnubg_pr_at NULL = "gnubg'ye HİÇ ulaşılamadı" (outage'da yaralandı ya da hiç denenmedi). Log'u
-        // olan + son N gün. Job reachable-ama-boş durumda mezar taşı (gnubg_pr_at) koyduğundan analiz-dışı
-        // maçlar bir kez işlenip bir daha buraya düşmez -> sonsuz re-dispatch yok.
-        $ids = MatchResult::query()
+        // gnubg_pr_at NULL = "gnubg'ye HİÇ ulaşılamadı" (outage'da yaralandı ya da hiç denenmedi). Son N gün.
+        // KAYNAK: (a) client log'u olan satırlar VEYA (b) log'suz ama hamleleri SUNUCUDA olan satırlar
+        // (ForfeitLoss/MatchBackstop yedek satırları — rapor göndermeyen kaybeden). Job SUNUCU-OTORİTER
+        // kaynaktan (match_moves) log'suz satırı da DOĞRU renkte analiz eder (analysisHc rakip satırından
+        // türetir). Job reachable-ama-boş durumda mezar taşı (gnubg_pr_at) koyar -> sonsuz re-dispatch yok.
+        $rows = MatchResult::query()
             ->whereNull('gnubg_pr_at')
-            ->whereNotNull('log')
-            ->where('log', '!=', '')
             ->where('created_at', '>=', now()->subDays($days))
+            ->where(function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereNotNull('log')->where('log', '!=', '');
+                })->orWhereExists(function ($sub) {
+                    $sub->selectRaw('1')->from('match_moves')
+                        ->whereColumn('match_moves.room_code', 'match_results.room_code');
+                });
+            })
             ->orderByDesc('id')
             ->limit($limit)
-            ->pluck('id')
-            ->all();
+            ->get(['id', 'luck_mwc']);
 
-        if ($ids === []) {
+        if ($rows->isEmpty()) {
             $this->info('Yarali (gnubg_pr_at NULL) mac yok -> heal gerekmedi.');
 
             return self::SUCCESS;
         }
 
         if ($dry) {
-            $this->info('DRY-RUN: '.count($ids).' mac yeniden analiz edilecekti: '.implode(',', $ids));
+            $this->info('DRY-RUN: '.$rows->count().' mac yeniden analiz edilecekti: '.$rows->pluck('id')->implode(','));
 
             return self::SUCCESS;
         }
 
-        foreach ($ids as $id) {
-            AnalyzeMatchPrJob::dispatch($id)->onConnection('database');
+        foreach ($rows as $row) {
+            AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
+            // Log'suz yedek satırların ŞANSI da eksiktir; luck yoksa onu da kuyruğa al (job idempotent,
+            // bozuk kaydı TAVLAI_LUCK_UNAVAILABLE ile karantinaya alır -> döngü yok).
+            if ($row->luck_mwc === null) {
+                \App\Jobs\AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database');
+            }
         }
-        $this->info(count($ids).' mac PR analizi yeniden kuyruga alindi (heal). Worker isleyecek.');
+        $this->info($rows->count().' mac PR/sans analizi yeniden kuyruga alindi (heal). Worker isleyecek.');
 
         return self::SUCCESS;
     }

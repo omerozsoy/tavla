@@ -88,6 +88,23 @@ class AnalyzeMatchLuckJob implements ShouldQueue
 
             return;
         }
+        // LOG'SUZ SATIR (ForfeitLoss / MatchBackstop yedek): kendi client log'u yok ama hamleler
+        // SUNUCUDA (match_moves). Rengi rakip satırından türet (analysisHc), .mat'i SUNUCUDAN kur,
+        // self+opp şansını bu satıra self-contained yaz. Böylece rapor göndermeyen kaybeden de şans alır.
+        if (empty($mr->log) && \App\Models\MatchMove::existsForRoom($mr->room_code)) {
+            $hc = $mr->analysisHc();
+            if (in_array($hc, ['white', 'black'], true)) {
+                $mat = \App\Models\MatchMove::buildMat($mr->room_code, [
+                    'matchLength' => max(1, (int) ($mr->match_length ?? 1)),
+                    'whiteName' => 'White', 'blackName' => 'Black',
+                ]);
+                if (trim($mat) !== '') {
+                    $this->writeLuckFromMat($gnubg, $mr, $hc, $mat);
+
+                    return;
+                }
+            }
+        }
         $oppRow = MatchResult::where('room_code', $mr->room_code)
             ->where('user_id', '!=', $mr->user_id)->latest('id')->first();
         if (! $oppRow) {

@@ -49,14 +49,27 @@ class ForfeitLoss
             return;
         }
 
-        DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId) {
+        // SKOR: kaybedenin satiri da skor tasisin (analiz/gecmis icin) -> odanin SUNUCU-OTORITER
+        // sonucundan coz (RoomResult). Cozulemezse null kalir (eski davranis).
+        $selfScore = null;
+        $oppScore = null;
+        $room = \App\Models\Room::where('code', $roomCode)->first();
+        if ($room) {
+            $res = RoomResult::resolve($room, $loserId);
+            if ($res !== null) {
+                $selfScore = $res['self'] ?? null;
+                $oppScore = $res['opp'] ?? null;
+            }
+        }
+
+        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId, $selfScore, $oppScore) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
-                return;
+                return null;
             }
             // Kilit altinda TEKRAR kontrol (yaris: bu arada baska cagri yazmis olabilir).
             if (MatchResult::where('room_code', $roomCode)->where('user_id', $loserId)->exists()) {
-                return;
+                return null;
             }
 
             $ra = (int) ($loser->rating ?? 1500);
@@ -90,13 +103,26 @@ class ForfeitLoss
             if (Schema::hasColumn('match_results', 'match_type')) {
                 $row['match_type'] = $matchType;
             }
+            if (Schema::hasColumn('match_results', 'score_self')) {
+                $row['score_self'] = $selfScore;
+                $row['score_opp'] = $oppScore;
+            }
             if (Schema::hasColumn('match_results', 'opponent_user_id')) {
                 $row['opponent_user_id'] = $opponentUserId > 0 ? $opponentUserId : null;
             }
             if (Schema::hasColumn('match_results', 'rated')) {
                 $row['rated'] = $ranked;
             }
-            MatchResult::create($row);
+
+            return MatchResult::create($row)->id;
         });
+
+        // COMMIT SONRASI: hamleler SUNUCUDA ise (match_moves) kaybedenin satirini da analiz et ->
+        // PR + Sans + Hata Gunlugu (SUNUCU-OTORITER kaynak, DOGRU renk analysisHc ile). Boylece rapor
+        // gondermeyen kaybenin satiri "Mac Analizleri"nde bos kalmaz. gnubg down ise job retry/heal eder.
+        if ($createdId !== null && \App\Models\MatchMove::existsForRoom($roomCode)) {
+            \App\Jobs\AnalyzeMatchPrJob::dispatch($createdId)->onConnection('database');
+            \App\Jobs\AnalyzeMatchLuckJob::dispatch($createdId)->onConnection('database');
+        }
     }
 }
