@@ -525,7 +525,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                 const rounds = active.bracket!.length
                 const isFinal = ri === rounds - 1
                 return (
-                  <div key={ri} className={`tourn-round${isFinal ? ' tourn-round-final' : ''}`}>
+                  <div
+                    key={ri}
+                    className={`tourn-round${isFinal ? ' tourn-round-final' : ''}`}
+                    style={{ background: `color-mix(in srgb, var(--tourn-round-tint), var(--tourn-round-shade) ${ri * 5}%)` }}
+                  >
                     <div className="tourn-round-title">
                       {isFinal ? t('tourn.final') : ri === rounds - 2 ? t('tourn.semi') : t('tourn.round', { n: ri + 1 })}
                       <span className="tourn-round-len">
@@ -643,7 +647,10 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   final ust-yariya oturur; sampiyon TAM finalin hizasinda dursun diye final
                   turunun YUVA yapisini birebir aynala (final yuvasi=sampiyon, 3.'luk yuvasi=bos). */}
               {!!active.bracket?.length && (
-                <div className="tourn-round tourn-champ-col">
+                <div
+                  className="tourn-round tourn-champ-col"
+                  style={{ background: `color-mix(in srgb, var(--tourn-round-tint), var(--tourn-round-shade) ${active.bracket.length * 5}%)` }}
+                >
                   <div className="tourn-round-title">{t('tourn.champion')}</div>
                   <div className="tourn-round-body">
                     {active.bracket[active.bracket.length - 1].map((m, i) => (
