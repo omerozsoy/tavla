@@ -301,6 +301,33 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertNull($stats->best_error_rate);
     }
 
+    // GBKK5 REGRESYON: sonuç ekranı "+1/-1" sahte delta gösteriyordu. Kök: istemci delta'yı
+    // yerel user.rating'ten çiziyordu (drift edebilir); sunucu yanıtı otoriter rating_before'ı
+    // döndürmeliydi. Yanıt rating_before == kayıt satırı == (rating_after - delta) olmalı ki
+    // istemci HER ZAMAN DB ile birebir delta çizsin.
+    public function test_report_returns_authoritative_rating_before(): void
+    {
+        $white = $this->makeUser('rbw'); // p1 (kaybeden)
+        $black = $this->makeUser('rbb'); // p2 (gerçek kazanan, score 0-3)
+        $this->makeFinishedRoom($white, $black);
+
+        // Kazananın maç-öncesi rating'i 1500 değil -> yanıt bu değeri döndürmeli (yerel drift'ten değil).
+        $black->rating = 1409;
+        $black->save();
+
+        Sanctum::actingAs($black);
+        $json = $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1463, 'ranked' => true, 'room_code' => 'AUTHR',
+        ])->assertOk()->json();
+
+        $mr = MatchResult::where('user_id', $black->id)->latest('id')->firstOrFail();
+        $this->assertSame(1409, (int) $json['rating_before'], 'yanıt otoriter maç-öncesi rating döndürmeli');
+        $this->assertSame((int) $mr->rating_before, (int) $json['rating_before'], 'yanıt == kayıt satırı');
+        // İstemcinin çizeceği delta (after - before) == DB delta.
+        $this->assertSame((int) $mr->delta, (int) $json['rating'] - (int) $json['rating_before'], 'çizilen delta == DB delta');
+        $this->assertGreaterThan(1, (int) $mr->delta, 'gerçek Elo ~+18; sahte +1 değil');
+    }
+
     public function test_finished_room_cannot_be_reported_by_a_third_user(): void
     {
         $white = $this->makeUser('ownerw');
