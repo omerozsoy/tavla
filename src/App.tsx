@@ -6480,7 +6480,19 @@ export default function App() {
             rejoinRoom(rs[0])
           }
         })
-        .catch(() => alive && setActiveRooms([]))
+        .catch((e) => {
+          if (!alive) return
+          // Oturum GERÇEKTEN dolmuşsa (sanctum'un JSON 401'i): poll'u durdur ve oturumu düşür.
+          // Yoksa 10sn'de bir sonsuza dek 401 döner (konsol gürültüsü + boşuna sunucu yükü).
+          // Bootstrap'taki `isAuthRejected(e) -> apiLogout()` ile aynı davranış (tek kaynak).
+          if (isAuthRejected(e)) {
+            apiLogout()
+            setUser(null)
+            return
+          }
+          // Geçici hata (503 hiccup / ağ kopukluğu / 502): banner'ı SİLME (blip'te "Maça Dön"
+          // kaybolmasın), bu turu atla — bir sonraki poll toparlar.
+        })
     load()
     const id = window.setInterval(load, 10000)
     return () => {
