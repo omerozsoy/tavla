@@ -136,6 +136,12 @@ class TourneyBots extends Command
 
     public function handle(BotMoveService $engine, WalletService $wallet): int
     {
+        // Uzun-omurlu + veri/hesap agir dongu (level-12 gnubg motoru + 55sn boyunca tekrar tekrar
+        // oda/turnuva yukleme). CLI varsayilan 128M bunu KALDIRMIYOR -> tick oyun ortasinda
+        // "Allowed memory size exhausted" ile COKUP odayi abandon'a birakiyordu (final 0-0 dongusu).
+        // Komuta ozel yukselt (sunucu geneli php.ini'ye dokunma).
+        @ini_set('memory_limit', '512M');
+
         $action = (string) $this->argument('action');
         if ($action === 'setup') {
             return $this->setup($wallet);
@@ -304,6 +310,7 @@ class TourneyBots extends Command
                 foreach ($tours as $t) {
                     $this->runBots($t, $engine, $deadline, true);
                 }
+                gc_collect_cycles(); // 55sn dongude biriken dongusel referanslari birak (OOM'a karsi)
                 usleep(1_200_000);
             }
         } finally {
