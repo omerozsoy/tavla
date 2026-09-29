@@ -3382,6 +3382,15 @@ class RoomController extends Controller
                 if (($state['turn'] ?? 'white') !== 'black') {
                     break; // sıra insanda (veya yeni oyun açılışı insan roll'una kaldı)
                 }
+                // KÜP KARARI BEKLİYOR -> bot OYNAMAZ (kritik). pending=black: bot KENDİ teklifini
+                // insanın take/drop yanıtına bekletir; pending=white: insan teklif etti (yanıt
+                // cube/offer bot dalında senkron verilir). Bu guard OLMADAN driveBot aşağıda
+                // cubeAvailability=false (pending!=null) görüp zar atardı -> bekleyen teklif ORPHAN
+                // kalır + tahta bozulur ("bot kendi küp teklifi dururken oynadı/takıldı"). Karar
+                // çözülünce (cube/respond ya da cube/offer) maybeDriveBot yeniden çağrılır.
+                if (($sm['cube']['pending'] ?? null) !== null) {
+                    break;
+                }
 
                 // KÜP (gnubg): zar ATMADAN önce bot katlamayı düşünür. Kurallar cubeAvailability'de
                 // (sıra/açılış/sahiplik/64/ölü-küp/Crawford/1-puan). gnubg 'double' derse teklif et,
