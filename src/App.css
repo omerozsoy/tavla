@@ -8652,6 +8652,69 @@ html.fs-active .account-bar {
 .fs-toggle:active {
   transform: scale(0.94);
 }
+/* Maç ID rozeti: oyun görünümü SAĞ ÜST, tam ekran butonunun (right:12 + 38px) SOLUNDA.
+   Tıklanınca oda kodunu panoya kopyalar (kopyalandı -> aksan renk + tik ikonu). */
+.match-code-badge {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(58px + env(safe-area-inset-right)); /* fs-toggle 38px + ~8px boşluk */
+  z-index: 120;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  font-variant-numeric: tabular-nums;
+  transition: background 0.15s, transform 0.1s, border-color 0.15s;
+}
+.match-code-badge:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.match-code-badge:active {
+  transform: scale(0.97);
+}
+.match-code-badge.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.mcb-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.match-code-badge.copied .mcb-lbl {
+  color: var(--accent);
+}
+.mcb-val {
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+}
+/* Dar ekran: etiketi gizle, kod + ikon kalsın (yer aç, tam ekran butonuna binmesin). */
+@media (max-width: 560px) {
+  .match-code-badge {
+    right: calc(56px + env(safe-area-inset-right));
+    padding: 0 10px;
+    gap: 5px;
+  }
+  .match-code-badge .mcb-lbl {
+    display: none;
+  }
+}
+/* Mobil yatay: fs-toggle küçülüyor -> rozet de biraz sola kaysın, çakışmasın. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .match-code-badge {
+    height: 32px;
+    right: calc(50px + env(safe-area-inset-right));
+  }
+}
 /* Mobil yatay: tam ekran butonu GORUNSUN (kullanici istegi). Sag ust kose; hamburger
    sag-ortada oldugu icin cakismaz. Biraz kucultuldu ki board kosesine az binsin. */
 @media (max-height: 560px) and (orientation: landscape) {
