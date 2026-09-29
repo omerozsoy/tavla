@@ -453,7 +453,7 @@ class TournamentController extends Controller
             return false; // henüz iki oyuncu yok VEYA oda açıldı (room mekanizması halleder)
         }
         $readyAt = $tp['ready_at'] ?? null;
-        $stall = (int) config('tournament.third_place_stall_minutes', 10);
+        $stall = (int) config('tournament.third_place_stall_minutes', 3);
         if (! $readyAt || now()->lt(\Illuminate\Support\Carbon::parse($readyAt)->addMinutes($stall))) {
             return false;
         }
