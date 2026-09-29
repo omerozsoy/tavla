@@ -61,7 +61,6 @@ const CAT_ICON: Record<string, IconName> = {
 //   /magaza/<kategori>          -> Kategori urun izgarasi (ProductsInner)
 //   /magaza/<kategori>/<urun>   -> Urun detayi (ProductsInner -> ProductDetail)
 export default function Shop({
-  coins,
   onBuyCoins,
   cartCount = 0,
   onOpenCart,
@@ -176,12 +175,6 @@ export default function Shop({
                 <span className="shop-cart-count tnum">{cartCount}</span>
               </Button>
             )}
-            <div className="shop-wallet" title={t('shop.balance')}>
-              <span className="shop-wallet-label">{t('shop.balance')}</span>
-              <span className="shop-wallet-amt">
-                <Coins amount={coins} size={22} />
-              </span>
-            </div>
           </div>
         </header>
 
