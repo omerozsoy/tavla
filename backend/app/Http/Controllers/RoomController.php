@@ -1678,16 +1678,24 @@ class RoomController extends Controller
             }
             $ss = is_array($room->server_state) ? $room->server_state : [];
             $pending = is_array($sm) ? ($sm['cube']['pending'] ?? null) : null;
-            if ($pending === null) {
+            // İSTENEN slot = MatchClock::turnSlotFromState mantığı. KÜP TEKLİFİ beklerken aktif taraf
+            // YANITLAYANDIR (white teklif -> p2 karar; black teklif -> p1 karar); teklif yoksa oyun
+            // sırası. ESKİ sürüm yalnız pending===null'ı ele alıyordu -> BOT REDOUBLE teklifinde
+            // (pending=black, saat p2'de takılı) insan yanıt saatini alamıyor/kilit açılmıyordu.
+            if ($pending === 'white') {
+                $want = 'p2';
+            } elseif ($pending === 'black') {
+                $want = 'p1';
+            } else {
                 $want = (($ss['turn'] ?? 'white') === 'black') ? 'p2' : 'p1';
-                if (($clock['turn_slot'] ?? null) !== $want) {
-                    // Saat oyun sırasıyla çelişiyor -> yeni segment aç (kilidi kır). started_at now:
-                    // yanlış geçmiş süre yazılmaz; insan roll/karar verince zaten now'a sıfırlanır.
-                    $clock['turn_slot'] = $want;
-                    $clock['started_at'] = $now;
-                    $clock['running'] = true;
-                    $changed = true;
-                }
+            }
+            if (($clock['turn_slot'] ?? null) !== $want) {
+                // Saat gerçek sıra sahibiyle çelişiyor -> yeni segment aç (kilidi kır). started_at now:
+                // yanlış geçmiş süre yazılmaz; taraf roll/karar verince zaten now'a sıfırlanır.
+                $clock['turn_slot'] = $want;
+                $clock['started_at'] = $now;
+                $clock['running'] = true;
+                $changed = true;
             }
         }
         // BOT SAATİ ASLA DOLMASIN (bot-unavailable haksız forfeit kökü): bir bot senkron + ANINDA

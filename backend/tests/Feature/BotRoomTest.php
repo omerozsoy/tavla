@@ -425,6 +425,31 @@ class BotRoomTest extends TestCase
         $this->assertNull($room->clock['end']);             // bot present sayıldı -> SAHTE-ABANDON yok
     }
 
+    public function test_bot_clock_self_heals_pending_bot_offer(): void
+    {
+        // BOT REDOUBLE: bot küp teklif etti (pending=black -> YANIT insanın) ama saat p2'de takıldı.
+        // Self-heal turn_slot'u yanıtlayana (p1) resync etmeli, yoksa insan take/drop yapamaz + bot
+        // kendi teklifi pending iken oynayamaz -> "bot takıldı oynamıyor" DONMASI.
+        $room = $this->cubeRoom('black'); // sıra botta
+        $sm = $room->server_match;
+        $sm['cube'] = ['value' => 2, 'owner' => 'black', 'pending' => 'black'];
+        $room->server_match = $sm;
+        $room->clock = [
+            'mode' => 'normal', 'target' => 3, 'delay' => 10,
+            'p1_bank' => 180.0, 'p2_bank' => 180.0,
+            'turn_slot' => 'p2', 'started_at' => microtime(true) - 50,
+            'sig' => '26|0|black||2|black|0|0', 'running' => true, 'moved' => true, 'end' => null,
+            'p1_seen' => microtime(true), 'p2_seen' => microtime(true),
+        ];
+        $room->save();
+
+        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), 'p1');
+
+        $room->refresh();
+        $this->assertSame('p1', $room->clock['turn_slot']); // pending=black -> yanıt insanın -> p1
+        $this->assertNull($room->clock['end']);
+    }
+
     public function test_bot_offers_double_via_gnubg(): void
     {
         config()->set('gnubg.url', 'http://gnubg.test');
