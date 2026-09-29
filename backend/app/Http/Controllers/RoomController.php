@@ -1660,6 +1660,18 @@ class RoomController extends Controller
                 $changed = true;
             }
         }
+        // BOT SAATİ ASLA DOLMASIN (bot-unavailable haksız forfeit kökü): bir bot senkron + ANINDA
+        // oynar -> "süre" kaybetmez. Sırası botta (p2) iken saat işliyorsa, bu YALNIZCA sunucu botun
+        // hamlesini üretemediği (gnubg/validator anlık doygunluk/hiccup) içindir; süre kaybı DEĞİL.
+        // Segment başını now'a iterek bot bankasını DONDUR -> timeout forfeit olmaz; gnubg boşalınca
+        // bot oynar, maç sürer. (İnsan turunda saat normal işler; graceHumanAfterBot ayrı ele alır.)
+        if ($room->bot && ($clock['turn_slot'] ?? null) === 'p2' && ! empty($clock['running']) && empty($clock['end'])) {
+            $clock['started_at'] = $now;
+            $room->clock = $clock;
+            $room->save();
+
+            return;
+        }
         $ticked = MatchClock::tick($clock, $now);
         if (! empty($ticked['end'])) {
             $clock = $ticked;

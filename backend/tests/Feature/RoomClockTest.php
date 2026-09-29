@@ -509,4 +509,59 @@ class RoomClockTest extends TestCase
         $this->assertTrue((bool) ($sm['done'] ?? false));
         $this->assertSame('black', $sm['winner'] ?? null);
     }
+
+    /**
+     * BOT SAATİ DONAR (bot-unavailable haksız forfeit kökü): sıra BOTTA (p2) iken bot bankası
+     * "tükenmiş" görünse bile maç forfeit OLMAMALI -> bir bot senkron+anında oynar, "süre"
+     * kaybetmez; gecikme yalnız sunucu (gnubg/validator) botun hamlesini üretemediğindedir.
+     * (Karşıt: yukarıdaki insan-AFK testi p1 turnunda NORMAL forfeit eder.)
+     */
+    public function test_bot_clock_does_not_forfeit_bot_on_bot_turn(): void
+    {
+        $now = microtime(true);
+        Room::create([
+            'code' => 'BOTF',
+            'p1_token' => 't1',
+            'p1_name' => 'Insan',
+            'p2_token' => 'botsecret',
+            'p2_name' => 'Seviye 12 · Neural AI',
+            'status' => 'playing',
+            'mode' => 'friendly',
+            'time_control' => 'normal',
+            'target' => 1,
+            'authoritative' => true,
+            'dice_authority' => true,
+            'bot' => true,
+            'bot_level' => 12,
+            'version' => 1,
+            'server_version' => 2,
+            'server_state' => \App\Support\Backgammon::initialState(),
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null,
+                'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 2,
+            ],
+            // SIRA BOTTA (p2) ve bot bankası tükenmiş görünüyor (started_at çok geçmişte).
+            // İnsan present (p1_seen taze) -> presence değil SÜRE karar verirdi; ama bot turnunda DONAR.
+            'clock' => [
+                'running' => true,
+                'turn_slot' => 'p2',
+                'p1_bank' => 60, 'p2_bank' => 60, 'delay' => 0,
+                'started_at' => $now - 400,
+                'moved' => true,
+                'p1_seen' => $now - 1,
+                'p2_seen' => $now - 1,
+            ],
+        ]);
+
+        $this->artisan('matches:tick-bots')->assertSuccessful();
+
+        $room = Room::where('code', 'BOTF')->first();
+        // Maç BİTMEDİ: bot süreden kaybetmez, insana haksız forfeit galibiyeti verilmez.
+        $this->assertSame('playing', $room->status);
+        $this->assertNull($room->p1_result);
+        $this->assertNull($room->p2_result);
+        $this->assertFalse((bool) ($room->server_match['done'] ?? false));
+    }
 }
