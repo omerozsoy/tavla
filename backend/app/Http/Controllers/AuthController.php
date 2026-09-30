@@ -26,8 +26,15 @@ class AuthController extends Controller
             'birth_date' => ['nullable', 'date'],
             'nickname'   => ['required', 'string', 'max:15', 'unique:users,nickname'],
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
+            // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). Zorunluluk frontend'de; API'de format + nullable.
+            'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
             'password'   => ['required', 'string', 'min:6', 'max:100'],
         ]);
+
+        // phone kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
+        if (isset($data['phone']) && ! Schema::hasColumn('users', 'phone')) {
+            unset($data['phone']);
+        }
 
         // Ulke secilmezse BOS kalsin (kullanici sonradan profilinden secer). Kolon NOT NULL
         // olsa bile kayit patlamasin diye '' ata.
@@ -230,10 +237,14 @@ class AuthController extends Controller
             'birth_date' => ['nullable', 'date'],
             'nickname'   => ['required', 'string', 'max:15', Rule::unique('users', 'nickname')->ignore($user->id)],
             'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
         ]);
         // province kolonu (migration) henuz uygulanmamissa guncelleme patlamasin: atla.
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
             unset($data['province']);
+        }
+        if (isset($data['phone']) && ! Schema::hasColumn('users', 'phone')) {
+            unset($data['phone']);
         }
         $adminEmails = array_map('strtolower', config('services.admin_emails', []));
         $movesIntoConfigAdmin = $user->is_admin

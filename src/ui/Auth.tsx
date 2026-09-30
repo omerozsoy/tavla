@@ -20,6 +20,15 @@ function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
+// Cep telefonu: state 0'sız 10 hane tutar (kullanici 0'ı yazmaz, biz gosteririz).
+// Gecerli Turk cep = 10 hane, 5 ile baslar. Gorunum: "532 218 22 80" (3-3-2-2).
+function formatPhone(d: string): string {
+  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join(' ')
+}
+function isPhone(d: string): boolean {
+  return /^5\d{9}$/.test(d)
+}
+
 // Google Identity Services keeps its initialization state globally. Auth can be
 // mounted more than once during route/profile transitions, so initialize it
 // once and always dispatch credentials to the latest mounted Auth instance.
@@ -115,7 +124,7 @@ export default function Auth({
   const editing = !!(editUser || editGuest)
   const seed = editUser
     ? api.toProfile(editUser)
-    : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '' }
+    : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '', phone: '' }
 
   const [firstName, setFirstName] = useState(seed.firstName)
   const [lastName, setLastName] = useState(seed.lastName)
@@ -123,6 +132,10 @@ export default function Auth({
   const [province, setProvince] = useState(seed.province ?? '')
   const [nickname, setNickname] = useState(seed.nickname)
   const [email, setEmail] = useState(seed.email)
+  // Telefon state'i 0'sız 10 haneyi tutar (seed '05XX...' gelirse 0'ı ve haneleri ayıkla).
+  const [phone, setPhone] = useState((seed.phone || '').replace(/\D/g, '').replace(/^0/, '').slice(0, 10))
+  // Telefon yalnız gerçek hesaplarda sorulur (misafir yerel profilinde değil).
+  const askPhone = !editGuest
   const [avatar, setAvatar] = useState<string | undefined>(seed.avatar)
   const [cropSrc, setCropSrc] = useState<string | null>(null) // cember kirpici acik kaynagi
   const [birthDate, setBirthDate] = useState(seed.birthDate ?? '')
@@ -285,6 +298,10 @@ export default function Auth({
       setError(t('reg.validEmail'))
       return false
     }
+    if (askPhone && !isPhone(phone)) {
+      setError(t('reg.validPhone'))
+      return false
+    }
     return true
   }
 
@@ -305,6 +322,7 @@ export default function Auth({
         province: country === 'TR' ? province.trim() : '',
         nickname: nickname.trim(),
         email: email.trim(),
+        phone: phone ? '0' + phone : '',
         avatar,
         birthDate,
         password,
@@ -328,6 +346,7 @@ export default function Auth({
       province: country === 'TR' ? province.trim() : '',
       nickname: nickname.trim(),
       email: email.trim(),
+      phone: phone ? '0' + phone : '',
       avatar,
       birthDate,
     }
@@ -483,6 +502,25 @@ export default function Auth({
           autoComplete="email"
         />
       </div>
+      {askPhone && (
+        <div className="grid gap-1.5">
+          <Label htmlFor="pf-phone">{t('reg.phone')}</Label>
+          <div className="flex items-center gap-2">
+            {/* Sabit '0' öneki: kullanıcı 0'sız girer, biz gösteririz */}
+            <span className="text-muted-foreground select-none" style={{ fontWeight: 600 }}>0</span>
+            <Input
+              id="pf-phone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              placeholder="532 218 22 80"
+              value={formatPhone(phone)}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              aria-invalid={phone.length > 0 && !isPhone(phone)}
+            />
+          </div>
+        </div>
+      )}
       {editing && (
         <div className="grid gap-1.5">
           <Label htmlFor="pf-birthDate">{t('reg.birthDate')}</Label>

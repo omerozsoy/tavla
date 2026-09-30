@@ -64,6 +64,7 @@ export interface ServerUser {
   province?: string | null
   nickname: string
   email: string
+  phone?: string | null
   avatar?: string | null
   birth_date?: string | null
   rating?: number
@@ -95,6 +96,7 @@ export function toProfile(u: ServerUser): Profile {
     province: u.province ?? '',
     nickname: u.nickname,
     email: u.email,
+    phone: u.phone ?? '',
     avatar: u.avatar ?? undefined,
     birthDate: u.birth_date ?? undefined,
   }
@@ -207,6 +209,7 @@ export async function register(
       birth_date: input.birthDate || null,
       nickname: input.nickname,
       email: input.email,
+      phone: input.phone || null,
       password: input.password,
     }),
   })
@@ -303,6 +306,7 @@ export async function updateProfile(input: Profile): Promise<ServerUser> {
       birth_date: input.birthDate || null,
       nickname: input.nickname,
       email: input.email,
+      phone: input.phone || null,
     }),
   })
   return data.user
