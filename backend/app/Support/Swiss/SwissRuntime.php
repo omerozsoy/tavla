@@ -323,14 +323,58 @@ class SwissRuntime
         return $p ? SwissEngine::remainingLives($p) : null;
     }
 
-    /** Çekilme (contract §10): aktif eşleştirilmiş maç varsa rakibe hükmen; sahte maç/mağlubiyet yok. */
-    public static function withdraw(Tournament $t, int $userId, bool $matchLossApplied): void
+    /**
+     * Turnuvadan ÇIK (çekilme veya diskalifiye), turnuva SÜRERKEN (contract §10).
+     * $mode: 'withdraw' (kendi isteğiyle) | 'dq' (yönetici diskalifiye).
+     *
+     * Sıra: (1) katılımcı durumunu ÖNCE işaretle (withdrawn/dq) — böylece sonraki tur eşleştirmesi
+     * onu almaz; (2) varsa BEKLEYEN maçını rakibe hükmen (walkover) bırak → applyResult turu ilerletir
+     * / turnuvayı sonlandırır (rakip artık pasif olanı asla yeniden eşleşmez); (3) bekleyen maç yoksa
+     * (bay almış / turlar arası) alan tek aktife düştüyse sonlandır. Sahte 3 mağlubiyet YOK: yalnız
+     * gerçekten terk edilen maç bir walkover kaybı yazar (applyResult), o kadar. Çağıran lockForUpdate
+     * transaction sağlar; idempotent (zaten pasifse walkover hücresi de çözülmüş olur → no-op).
+     */
+    public static function exit(Tournament $t, int $userId, string $mode): void
     {
         $state = $t->swiss_state;
+        if (! is_array($state) || empty($state['participants'])) {
+            return;
+        }
         $round = (int) ($state['round'] ?? 0);
-        $state['participants'] = SwissEngine::applyWithdraw($state['participants'], $userId, $round, $matchLossApplied);
+        $state['participants'] = $mode === 'dq'
+            ? SwissEngine::applyDisqualify($state['participants'], $userId, $round)
+            : SwissEngine::applyWithdraw($state['participants'], $userId, $round, false);
         $t->swiss_state = $state;
-        // Eğer bu tur artık tamamsa (çekilen oyuncunun maçı zaten hükmen çözüldüyse) ilerlet.
+
+        // Bekleyen (kazananı belli olmayan) maçını bul → rakibe hükmen. Bay hücresi zaten çözülü
+        // (winner=kendisi) olduğundan buraya düşmez.
+        $bracket = is_array($t->bracket) ? $t->bracket : [];
+        foreach ($bracket as $ri => $cells) {
+            foreach ($cells as $mi => $m) {
+                if (! empty($m['winner'])) {
+                    continue;
+                }
+                $p1 = (int) ($m['p1']['id'] ?? 0);
+                $p2 = (int) ($m['p2']['id'] ?? 0);
+                if ($userId !== $p1 && $userId !== $p2) {
+                    continue;
+                }
+                $opp = $userId === $p1 ? $p2 : $p1;
+                if ($opp > 0) {
+                    self::applyResult($t, $ri, $mi, $opp, ['walkover' => true], false); // kaydeder + ilerletir
+
+                    return;
+                }
+                break 2; // rakipsiz bekleyen hücre (olmamalı) — sadece işaretle, tur bitince ilerler
+            }
+        }
+
+        // Bekleyen maç yoktu → alan tek aktife düştüyse turnuvayı sonlandır.
+        if (SwissEngine::isComplete($t->swiss_state['participants'])) {
+            self::finalize($t); // kaydeder
+
+            return;
+        }
         $t->save();
     }
 
