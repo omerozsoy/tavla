@@ -133,7 +133,21 @@ class Room extends Model
         $existingRoom = DB::table('active_money_match_claims')
             ->where('user_id', $userId)->value('room_id');
         if ($existingRoom !== null) {
-            return (int) $existingRoom === $roomId;
+            if ((int) $existingRoom === $roomId) {
+                return true;
+            }
+            // BAYAT CLAIM: işaret ettiği oda artık aktif (mm_waiting/playing) para maçı değilse
+            // slot fiilen boştur. settle()/release atlanarak biten (terk/timeout/no-contest) odalar
+            // claim satırını sızdırıp kullanıcıyı sonsuza dek matchmaking'de 500'e sokuyordu
+            // (rooms ile claims tablosu diverjansı). Bayatı temizle, yeni odayı claim et.
+            $stillActive = static::whereKey($existingRoom)
+                ->whereIn('status', ['mm_waiting', 'playing'])
+                ->exists();
+            if ($stillActive) {
+                return false;
+            }
+            DB::table('active_money_match_claims')
+                ->where('user_id', $userId)->where('room_id', $existingRoom)->delete();
         }
         try {
             DB::table('active_money_match_claims')->insert([

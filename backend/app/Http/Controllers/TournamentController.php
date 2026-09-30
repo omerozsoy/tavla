@@ -917,43 +917,70 @@ class TournamentController extends Controller
             ->where('register_until', '<=', now()) // tam son katilim saatinde baslar
             ->pluck('id');
         foreach ($ids as $id) {
-            DB::transaction(function () use ($id) {
-                $t = Tournament::lockForUpdate()->find($id);
-                if (! $t || $t->status !== 'open') {
-                    return;
+            try {
+                DB::transaction(function () use ($id) {
+                    $t = Tournament::lockForUpdate()->find($id);
+                    if (! $t || $t->status !== 'open') {
+                        return;
+                    }
+                    $players = array_filter($t->players ?? [], fn ($p) => $p !== null);
+                    if (count($players) >= 2) {
+                        $this->startBracket($t);
+                    }
+                    // <2 oyuncu: baslatma; acik kalir (yonetici karar verir/siler)
+                });
+            } catch (\Throwable $e) {
+                if (! $this->isTransientDb($e)) {
+                    throw $e;
                 }
-                $players = array_filter($t->players ?? [], fn ($p) => $p !== null);
-                if (count($players) >= 2) {
-                    $this->startBracket($t);
-                }
-                // <2 oyuncu: baslatma; acik kalir (yonetici karar verir/siler)
-            });
+                // Geçici kilit çakışması: bir sonraki poll self-heal'i yeniden dener.
+            }
         }
 
         // Suren turnuvalarda OLU DAL onarimi (bkz resolveDeadByes). Eski (kapasiteye gore kurulmus)
         // agaclarda takili kalan oyuncular da boylece kendiliginden ilerler.
         foreach (Tournament::where('status', 'running')->pluck('id') as $id) {
-            $done = DB::transaction(function () use ($id) {
-                $t = Tournament::lockForUpdate()->find($id);
-                if (! $t || $t->status !== 'running') {
-                    return null;
-                }
-                // Otoriter oda sonucu HAZIR ama bracket'e islenmemis maclari onar (report cagrisi
-                // ulasmasa da) + olu dallari coz. Ikisi de degisiklik yaparsa sampiyon guncellenir.
-                $changed = $this->reconcileVerifiedResults($t);
-                // TAKILMA ÖNLEME: 3.'lük maçına kimse gelmediyse (oda açılmadı) rating ile çöz ->
-                // final gate'i açılır (turnuva 3.'lükte asılı kalmaz). Çözünce reconcile'ı tekrar
-                // çalıştır ki final de işlenebilsin.
-                if ($this->resolveStalledThirdPlace($t)) {
-                    $changed = $this->reconcileVerifiedResults($t) || true;
-                }
+            try {
+                $done = DB::transaction(function () use ($id) {
+                    $t = Tournament::lockForUpdate()->find($id);
+                    if (! $t || $t->status !== 'running') {
+                        return null;
+                    }
+                    // Otoriter oda sonucu HAZIR ama bracket'e islenmemis maclari onar (report cagrisi
+                    // ulasmasa da) + olu dallari coz. Ikisi de degisiklik yaparsa sampiyon guncellenir.
+                    $changed = $this->reconcileVerifiedResults($t);
+                    // TAKILMA ÖNLEME: 3.'lük maçına kimse gelmediyse (oda açılmadı) rating ile çöz ->
+                    // final gate'i açılır (turnuva 3.'lükte asılı kalmaz). Çözünce reconcile'ı tekrar
+                    // çalıştır ki final de işlenebilsin.
+                    if ($this->resolveStalledThirdPlace($t)) {
+                        $changed = $this->reconcileVerifiedResults($t) || true;
+                    }
 
-                return ($this->resolveDeadByes($t) || $changed) ? $t : null;
-            });
+                    return ($this->resolveDeadByes($t) || $changed) ? $t : null;
+                });
+            } catch (\Throwable $e) {
+                if (! $this->isTransientDb($e)) {
+                    throw $e;
+                }
+                // Geçici kilit çakışması (1020/1213/1205): reconcile idempotent, sonraki poll yeniden dener.
+                continue;
+            }
             if ($done) {
                 $this->awardChampionIfFinished($done);
             }
         }
+    }
+
+    /**
+     * Geçici DB serialization çakışması mı? (MariaDB 1213 deadlock / 1205 lock-wait-timeout /
+     * 1020 "record has changed since last read"). autoStartDue GET poll'unda fırsatçı self-heal
+     * yapar; bu geçici hatalar sayfayı 500'e düşürmemeli — heal bir sonraki poll'da yinelenir.
+     */
+    private function isTransientDb(\Throwable $e): bool
+    {
+        $code = ($e instanceof \Illuminate\Database\QueryException) ? (int) ($e->errorInfo[1] ?? 0) : 0;
+
+        return in_array($code, [1020, 1205, 1213], true);
     }
 
     /**
