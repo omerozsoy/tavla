@@ -236,6 +236,28 @@ class TournamentController extends Controller
             if ($t->status !== 'open') {
                 return ['err' => 'Turnuva başladı, çıkılamaz.', 'code' => 422];
             }
+            $this->removeRegistered($t, $me->id); // idempotent: kayitli degilse no-op
+            return ['ok' => true];
+        });
+        if (isset($out['err'])) {
+            return $this->fail($out['err'], $out['code']);
+        }
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
+    // Katilim onayi (check-in): kayitli oyuncu "buradayim" der (yalniz kayit acikken). Organizator
+    // lobide kimin hazir oldugunu gorur; gelmeyeni baslamadan disqualify ile cikarabilir. Idempotent.
+    public function checkIn(Request $request, Tournament $tournament)
+    {
+        $me = $request->user();
+        $out = DB::transaction(function () use ($tournament, $me) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t) {
+                return ['err' => 'Turnuva bulunamadı.', 'code' => 404];
+            }
+            if ($t->status !== 'open') {
+                return ['err' => 'Check-in yalnızca kayıt açıkken yapılır.', 'code' => 422];
+            }
             $players = $t->players ?? [];
             $idx = null;
             foreach ($players as $i => $p) {
@@ -245,23 +267,80 @@ class TournamentController extends Controller
                 }
             }
             if ($idx === null) {
-                return ['ok' => true]; // zaten katilimci degil -> idempotent
+                return ['err' => 'Turnuvaya kayıtlı değilsin.', 'code' => 403];
             }
-            // Giris ucreti iadesi: havuzdan dus + kullaniciya geri ver
-            $fee = (int) ($t->entry_fee ?? 0);
-            if ($fee > 0) {
-                $u = User::lockForUpdate()->find($me->id);
-                app(\App\Services\WalletService::class)->credit($u, $fee, 'tournament_refund');
-                $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
+            if (empty($players[$idx]['checked_in'])) {
+                $players[$idx]['checked_in'] = true;
+                $t->players = array_values($players);
+                $t->save();
             }
-            array_splice($players, $idx, 1);
-            $t->players = array_values($players);
-            $t->save();
             return ['ok' => true];
         });
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
         }
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
+    // Cekilme (self). Kayit acikken = leave (giris ucreti iadesi + listeden cikar). Turnuva
+    // baslamissa = hukmen cekilme: bekleyen mac rakibe walkover, Swiss'te durum 'withdrawn' (sonraki
+    // turlarda eslesmeye alinmaz). Sahte 3 maglubiyet YOK (contract §10).
+    public function withdraw(Request $request, Tournament $tournament)
+    {
+        if ($tournament->status === 'open') {
+            return $this->leave($request, $tournament); // ayni davranis: iade + cikar
+        }
+        $me = $request->user()->id;
+        $out = DB::transaction(function () use ($tournament, $me) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t || $t->status !== 'running') {
+                return ['err' => 'Turnuva aktif değil.', 'code' => 422];
+            }
+            if (! $this->isRegistered($t, $me)) {
+                return ['err' => 'Turnuvada değilsin.', 'code' => 404];
+            }
+            $this->exitRunningPlayer($t, $me, 'withdraw');
+            return ['t' => $t];
+        });
+        if (isset($out['err'])) {
+            return $this->fail($out['err'], $out['code']);
+        }
+        $this->awardChampionIfFinished($out['t']);
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
+    // Diskalifiye (yalniz yonetici): bir oyuncuyu turnuvadan cikar. Kayit acikken = iade + listeden
+    // cikar. Turnuva baslamissa = hukmen: bekleyen mac rakibe walkover; Swiss'te durum 'dq' (ayri,
+    // maglubiyet uydurmaz — contract §3/§10).
+    public function disqualify(Request $request, Tournament $tournament)
+    {
+        if (! $request->user()?->is_admin) {
+            return $this->fail('Yalnızca yönetici.', 403);
+        }
+        $data = $request->validate(['user_id' => ['required', 'integer']]);
+        $uid = (int) $data['user_id'];
+        $out = DB::transaction(function () use ($tournament, $uid) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t) {
+                return ['err' => 'Turnuva bulunamadı.', 'code' => 404];
+            }
+            if ($t->status === 'finished') {
+                return ['err' => 'Turnuva bitti.', 'code' => 422];
+            }
+            if (! $this->isRegistered($t, $uid)) {
+                return ['err' => 'Oyuncu turnuvada değil.', 'code' => 404];
+            }
+            if ($t->status === 'open') {
+                $this->removeRegistered($t, $uid); // iade + cikar (baslamadan)
+            } else {
+                $this->exitRunningPlayer($t, $uid, 'dq');
+            }
+            return ['t' => $t];
+        });
+        if (isset($out['err'])) {
+            return $this->fail($out['err'], $out['code']);
+        }
+        $this->awardChampionIfFinished($out['t']);
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
@@ -893,6 +972,75 @@ class TournamentController extends Controller
         $t->players = $players;
         $t->save();
         return true;
+    }
+
+    // Kullanici bu turnuvaya kayitli mi (players listesinde)?
+    private function isRegistered(Tournament $t, int $uid): bool
+    {
+        foreach ($t->players ?? [] as $p) {
+            if (($p['id'] ?? null) === $uid) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Kayit acikken oyuncuyu listeden cikar + giris ucreti iadesi (leave + open-dq ortak). Idempotent:
+    // kayitli degilse no-op. Cagiran lockForUpdate transaction saglar.
+    private function removeRegistered(Tournament $t, int $uid): void
+    {
+        $players = $t->players ?? [];
+        $idx = null;
+        foreach ($players as $i => $p) {
+            if (($p['id'] ?? null) === $uid) {
+                $idx = $i;
+                break;
+            }
+        }
+        if ($idx === null) {
+            return;
+        }
+        $fee = (int) ($t->entry_fee ?? 0);
+        if ($fee > 0) {
+            $u = User::lockForUpdate()->find($uid);
+            if ($u) {
+                app(\App\Services\WalletService::class)->credit($u, $fee, 'tournament_refund');
+                $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
+            }
+        }
+        array_splice($players, $idx, 1);
+        $t->players = array_values($players);
+        $t->save();
+    }
+
+    // Turnuva SURERKEN oyuncuyu cikar (withdraw/dq). Swiss = SwissRuntime::exit (durum isaretle +
+    // bekleyen maci walkover + ilerlet/sonlandir). Eleme agaci = bekleyen macini rakibe walkover.
+    // Cagiran lockForUpdate transaction saglar.
+    private function exitRunningPlayer(Tournament $t, int $uid, string $mode): void
+    {
+        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
+            \App\Support\Swiss\SwissRuntime::exit($t, $uid, $mode);
+            return;
+        }
+        // Eleme agaci: bekleyen (kazanansiz) macini bul -> rakibe hukmen. Yoksa (zaten elenmis) no-op.
+        $bracket = is_array($t->bracket) ? $t->bracket : [];
+        foreach ($bracket as $ri => $cells) {
+            foreach ($cells as $mi => $m) {
+                if (! empty($m['winner'])) {
+                    continue;
+                }
+                $p1 = (int) ($m['p1']['id'] ?? 0);
+                $p2 = (int) ($m['p2']['id'] ?? 0);
+                if ($uid !== $p1 && $uid !== $p2) {
+                    continue;
+                }
+                $opp = $uid === $p1 ? $p2 : $p1;
+                if ($opp > 0) {
+                    $this->applyWinnerToBracket($t, $ri, $mi, $opp, ['walkover' => true]);
+                }
+                return;
+            }
+        }
     }
 
     // Rating'e gore seed'leyip 1. tur eslesmelerini uret (bye'lar otomatik ilerler).
