@@ -430,7 +430,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
 
           {/* PODYUM: finalde ilk 3 — altın/gümüş/bronz taç + kazandıkları ödül (bracket + kazanan
               listesi tek blokta). Sıralama backend payPrizes ile birebir (kim ne kazandıysa o). */}
-          {active.status === 'finished'
+          {active.status === 'finished' && active.type !== 'swiss_triple'
             ? (() => {
                 const top = tournStandings(active.bracket)
                   .slice(0, 3)
@@ -521,7 +521,141 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             {active.status === 'open' && <div className="tourn-wait">{t('tourn.waitFull')}</div>}
           </div>
 
-          {active.status !== 'open' && (
+          {/* 3 HAKLI SWISS: eleme ağacı yerine tur/hak/sıralama görünümü. Play/Watch aynı akışı
+              (onPlayMatch/onSpectate) kullanır; maçlar bracket hücreleridir. */}
+          {active.status !== 'open' && active.type === 'swiss_triple' && (() => {
+            const sw = active.swiss
+            const bracket = active.bracket || []
+            const curRound = bracket.length ? bracket[bracket.length - 1] : []
+            const myRow = sw?.standings.find((s) => s.id === myId) || null
+            const myMatch = curRound.find((m) => !m.winner && (m.p1?.id === myId || m.p2?.id === myId)) || null
+            const myBye = curRound.find((m) => (m as { bye?: boolean }).bye && m.winner === myId) || null
+            const opp = myMatch ? (myMatch.p1?.id === myId ? myMatch.p2 : myMatch.p1) : null
+            const stLabel = (s: string) => t(`swiss.st${s.charAt(0).toUpperCase()}${s.slice(1)}`)
+            const maxLives = sw?.max_lives ?? 3
+            const rows: Array<Record<string, unknown>> =
+              (active.status === 'finished' && sw?.final ? sw.final : sw?.standings) as Array<Record<string, unknown>> ?? []
+            return (
+              <div className="swiss-view">
+                <div className="swiss-head">
+                  <span className="swiss-badge">{t('swiss.title')}</span>
+                  {sw && <span className="swiss-round">{t('swiss.round', { n: sw.round })}</span>}
+                  {sw && active.status === 'running' && <span className="swiss-left">{t('swiss.activeCount', { n: sw.active })}</span>}
+                </div>
+                <div className="swiss-rules">{t('swiss.rulesShort')}</div>
+
+                {myRow && active.status === 'running' && (
+                  <div className={`swiss-me swiss-me-${myRow.status}`}>
+                    <div className="swiss-lives" aria-label={t('swiss.lives')}>
+                      {Array.from({ length: maxLives }).map((_, i) => (
+                        <span key={i} className={`swiss-life ${i < myRow.lives ? 'on' : 'off'}`} aria-hidden="true" />
+                      ))}
+                      <b className="swiss-lives-n">{myRow.lives}/{maxLives}</b>
+                    </div>
+                    <div className="swiss-me-txt">
+                      {myRow.status === 'eliminated'
+                        ? t('swiss.eliminatedYou')
+                        : myRow.status === 'withdrawn'
+                          ? t('swiss.withdrawnYou')
+                          : myRow.lives === 1
+                            ? t('swiss.lastLife')
+                            : t('swiss.livesText', { n: myRow.lives })}
+                    </div>
+                    <div className="swiss-me-stats">
+                      <span>{t('swiss.wins')}: <b>{myRow.wins}</b></span>
+                      <span>{t('swiss.losses')}: <b>{myRow.losses}</b></span>
+                    </div>
+                  </div>
+                )}
+
+                {active.status === 'running' && myRow?.status === 'active' && (
+                  myMatch && opp ? (
+                    <div className="swiss-mymatch">
+                      <div className="swiss-mm-head">{t('swiss.myMatch')}</div>
+                      <div className="swiss-mm-opp">
+                        <PlayerIdentity userId={opp.id} name={opp.name} rating={opp.rating} avatar={opp.avatar} size={28} premium={opp.premium} />
+                      </div>
+                      <Button variant="default" className="tm-play" onClick={() => onPlayMatch(active.id, myMatch, opp.id)}>
+                        <Icon name="play" size={16} /> {t('swiss.play')}
+                      </Button>
+                    </div>
+                  ) : myBye ? (
+                    <div className="swiss-mymatch swiss-bye"><Icon name="check" size={16} /> {t('swiss.bye')}</div>
+                  ) : (
+                    <div className="swiss-mymatch swiss-wait">{t('swiss.waiting')}</div>
+                  )
+                )}
+
+                <div className="swiss-round-box">
+                  <div className="swiss-rb-head">{t('swiss.currentRound')}</div>
+                  <div className="swiss-matches">
+                    {curRound.map((m) => {
+                      const isBye = !!(m as { bye?: boolean }).bye
+                      const mine = m.p1?.id === myId || m.p2?.id === myId
+                      const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
+                      const viewers = watchable ? (viewerCounts[(m.room || '').toUpperCase()] ?? 0) : 0
+                      const sc = m.winner && m.p1 && m.p2 ? m.score : null
+                      const scoreOf = (side: 'p1' | 'p2') => {
+                        if (!sc) return null
+                        if (sc.walkover) return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
+                        return <span className="tm-score tnum">{sc[side] ?? 0}</span>
+                      }
+                      return (
+                        <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}`}>
+                          {isBye ? (
+                            <div className="tm-p win"><span className="tm-name">{m.p1?.name ?? '—'}</span><span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
+                          ) : (
+                            <>
+                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${m.winner && m.winner !== m.p1?.id ? 'lose' : ''}`}><span className="tm-name">{m.p1?.name ?? '—'}</span>{scoreOf('p1')}</div>
+                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${m.winner && m.winner !== m.p2?.id ? 'lose' : ''}`}><span className="tm-name">{m.p2?.name ?? '—'}</span>{scoreOf('p2')}</div>
+                              {watchable && (
+                                <button type="button" className="tm-watch" onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)} aria-label={t('tourn.watch')}>
+                                  <Icon name="eye" size={18} />{viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {sw && (
+                  <div className="swiss-standings">
+                    <div className="swiss-st-head">
+                      <Icon name="trophy" size={16} /> {active.status === 'finished' ? t('swiss.finalStandings') : t('swiss.standings')}
+                    </div>
+                    {active.status === 'finished' && sw.note === 'no_champion' && <div className="swiss-nochamp">{t('swiss.noChampion')}</div>}
+                    <table className="swiss-table">
+                      <thead>
+                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th>{t('swiss.colWins')}</th><th>{t('swiss.colLosses')}</th></tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, i) => {
+                          const status = String(row.status ?? 'active')
+                          const rank = row.rank != null ? Number(row.rank) : null
+                          const losses = Number(row.losses ?? 0)
+                          const lives = row.lives != null ? Number(row.lives) : Math.max(0, maxLives - losses)
+                          return (
+                            <tr key={String(row.id)} className={`swiss-tr swiss-tr-${status}`}>
+                              <td className="swiss-td-rank">{rank ? `${rank}.` : active.status === 'finished' ? '—' : i + 1}</td>
+                              <td className="swiss-td-name">{String(row.name ?? '')}{status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}</td>
+                              <td className="swiss-td-lives">{lives}</td>
+                              <td>{Number(row.wins ?? 0)}</td>
+                              <td>{losses}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {active.status !== 'open' && active.type !== 'swiss_triple' && (
             <div className="tourn-bracket">
               {active.bracket?.map((round, ri) => {
                 const rounds = active.bracket!.length
