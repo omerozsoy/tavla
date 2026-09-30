@@ -79,10 +79,13 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('games_played')->label('Oynanan')->numeric()->default(0),
             ]),
             Forms\Components\Section::make('Üyelik & Yetki')->columns(2)->schema([
+                // plan DB'de NOT NULL (default 'free'). Placeholder'a ("Bir seçenek seçin")
+                // dönüp boş kaydedilirse plan=NULL -> 500. Boşaltmayı engelle + null gelirse 'free'e çevir.
                 Forms\Components\Select::make('plan')->label('Plan')->options([
                     'free' => 'Ücretsiz',
                     'star' => 'Premium',
-                ])->default('free'),
+                ])->default('free')->required()->selectablePlaceholder(false)
+                    ->dehydrateStateUsing(fn ($state) => $state ?: 'free'),
                 Forms\Components\DateTimePicker::make('plan_until')->label('Plan bitişi'),
                 // Hizli sure ekleme: basilinca bitis tarihine ekler (gelecekteyse ustune,
                 // gecmis/bossa bugunden baslar), plan'i Premium yapar ve ANINDA kaydeder.
