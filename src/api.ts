@@ -1089,9 +1089,38 @@ export interface TMatch {
   /** FINAL için açılış zamanı (ISO): 3.'lük maçı bitince +1dk. Bundan önce final oynanamaz (gate). */
   opens_at?: string | null
 }
+/** 3 Haklı Swiss canlı sıralama satırı (backend SwissEngine::liveStandings). */
+export interface SwissStanding {
+  id: number
+  name: string
+  status: 'active' | 'eliminated' | 'withdrawn' | 'dq'
+  losses: number
+  wins: number // ilerleme galibiyeti (bay + hükmen dahil)
+  realWins: number // gerçekten oynanıp kazanılan
+  byes: number
+  lives: number // kalan hak = max(0, 3 - losses)
+}
+
+/** 3 Haklı Swiss canlı durumu (yalnız type='swiss_triple' turnuvalarda dolu). */
+export interface SwissState {
+  round: number
+  active: number
+  total: number
+  standings: SwissStanding[]
+  final?: { id: number; name: string; rank: number | null; status: string; losses: number; wins: number; realWins: number }[] | null
+  note?: string | null // 'no_champion' vb.
+  config?: { match_length: number; final_length: number | null; round_minutes: number | null; final_minutes: number | null } | null
+  optimal_last?: boolean
+  max_lives?: number
+}
+
 export interface Tournament {
   id: number
   name: string
+  /** Turnuva tipi: klasik eleme ağacı veya 3 Haklı Swiss. */
+  type?: 'bracket' | 'swiss_triple'
+  /** 3 Haklı Swiss canlı durumu (yalnız type='swiss_triple'). */
+  swiss?: SwissState | null
   /** Duzenlenme yeri / otel adi (fiziksel mekan). */
   venue?: string | null
   /** Turnuvayi duzenleyen kurum (panelden secilir). logo = ciplak yol, /uploads/ ile oneklenir. */

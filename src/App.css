@@ -22653,6 +22653,202 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-champ-col {
   min-width: 180px;
 }
+
+/* ===== 3 HAKLI SWISS (Swiss Triple Elimination) görünümü ===== */
+.swiss-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+.swiss-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.swiss-badge {
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--on-accent, #fff);
+  background: var(--accent);
+}
+.swiss-round {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.swiss-left {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.swiss-rules {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.swiss-me {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+.swiss-me-eliminated {
+  border-color: color-mix(in srgb, var(--danger-fg) 45%, var(--border));
+}
+.swiss-lives {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.swiss-life {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--success-fg);
+}
+.swiss-life.on {
+  background: var(--success-fg);
+}
+.swiss-life.off {
+  border-color: var(--muted);
+  opacity: 0.4;
+}
+.swiss-lives-n {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.swiss-me-txt {
+  flex: 1;
+  min-width: 180px;
+  font-size: 0.82rem;
+}
+.swiss-me-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.swiss-mymatch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.swiss-mm-head {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.swiss-mm-opp {
+  flex: 1;
+  min-width: 140px;
+}
+.swiss-mymatch .tm-play {
+  width: auto;
+  margin: 0;
+}
+.swiss-bye,
+.swiss-wait {
+  border-color: var(--border);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.swiss-round-box,
+.swiss-standings {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.swiss-rb-head,
+.swiss-st-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: color-mix(in srgb, var(--text) 5%, var(--card-bg));
+  border-bottom: 1px solid var(--border);
+}
+.swiss-matches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+.swiss-match {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.swiss-match.mine {
+  border-color: var(--accent);
+}
+.swiss-match.isbye {
+  opacity: 0.85;
+}
+.swiss-match .tm-watch {
+  top: 50%;
+}
+.swiss-nochamp {
+  padding: 8px 12px;
+  color: var(--danger-fg);
+  font-size: 0.82rem;
+}
+.swiss-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.swiss-table th {
+  text-align: left;
+  padding: 6px 10px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+  border-bottom: 1px solid var(--border);
+}
+.swiss-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.swiss-td-rank {
+  width: 2.2em;
+  color: var(--muted);
+}
+.swiss-td-name {
+  width: 100%;
+}
+.swiss-tr-eliminated .swiss-td-name,
+.swiss-tr-withdrawn .swiss-td-name,
+.swiss-tr-dq .swiss-td-name {
+  color: var(--muted);
+}
+.swiss-tag {
+  margin-left: 6px;
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.swiss-tag-eliminated {
+  color: var(--danger-fg);
+  border-color: color-mix(in srgb, var(--danger-fg) 40%, var(--border));
+}
 .tourn-champ {
   display: flex;
   align-items: center;
