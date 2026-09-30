@@ -129,21 +129,43 @@ export function isTransientError(e: unknown): boolean {
   return e instanceof ApiError && (e.nonJson || e.status === 502 || e.status === 504)
 }
 
-async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function req<T>(path: string, options: RequestInit = {}, timeoutMs?: number): Promise<T> {
   const token = getToken()
   const gate = getGate()
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(gate ? { 'X-Site-Gate': gate } : {}),
-      // Güvenlik Kalkanı "kim hangi sayfada" için o anki SPA rotasını bildir (yalnız yol, gizli veri yok).
-      ...(typeof location !== 'undefined' ? { 'X-Page': location.pathname } : {}),
-      ...(options.headers || {}),
-    },
-  })
+  // ISTEK ZAMAN ASIMI (yalniz timeoutMs verilen cagrilar, or. oyun komutlari): sunucu TCP'yi
+  // KABUL edip HIC cevap vermezse (doygun PHP-FPM/proxy istegi backlog'da tutar) ciplak fetch
+  // SURESIZ asili kalir -> buton sonsuza dek "Gonderiliyor...", otoriter saat isler, rakip
+  // sureden kazanir ([[turnuva-akicilik-validator-darbogazi]] artigi: sunucu darbogazi kuculdu
+  // ama TEK stall'lu istek hâlâ hamleyi kurtarilamaz kilitliyordu). Zaman asiminda abort et ->
+  // asagida gecici (nonJson) ApiError'a cevrilir -> roomCommand AYNI command_id ile guvenle
+  // yeniden dener (sunucu idempotent; iki kez uygulanmaz).
+  const ctrl = timeoutMs ? new AbortController() : null
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: ctrl?.signal ?? options.signal,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(gate ? { 'X-Site-Gate': gate } : {}),
+        // Güvenlik Kalkanı "kim hangi sayfada" için o anki SPA rotasını bildir (yalnız yol, gizli veri yok).
+        ...(typeof location !== 'undefined' ? { 'X-Page': location.pathname } : {}),
+        ...(options.headers || {}),
+      },
+    })
+  } catch (e) {
+    if (ctrl?.signal.aborted) {
+      const err = new ApiError(0, 'Sunucu zamanında yanıt vermedi')
+      err.nonJson = true // gecici -> roomCommand yeniden dener (asili istek = 502/504 gibi)
+      throw err
+    }
+    throw e // ag kopuklugu (fetch TypeError) — cagiran zaten gecici sayar
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
   const text = await res.text()
   let data
   try {
@@ -2441,12 +2463,16 @@ export async function botNudge(
 // deneme kayıtlı cevabı (ya da 409 "command-replayed" -> istemcinin olağan resync'i) alır,
 // komut İKİ KEZ uygulanmaz.
 const COMMAND_RETRY_DELAYS_MS = [1000, 2000, 4000]
+// Oyun komutu (zar/hamle/kup/pes) zaman asimi: saglikli round-trip <1sn (validator timeout 3sn +
+// DB). 8sn'de hâlâ cevap yoksa istek STALL'lu -> abort + ayni command_id ile yeniden dene. Boylece
+// asili istek "Gonderiliyor..."i sonsuza kilitleyip saati yakmaz.
+const GAME_COMMAND_TIMEOUT_MS = 8000
 
 async function roomCommand<T>(code: string, action: string, fields: Record<string, unknown>): Promise<T> {
   const body = JSON.stringify({ token: playerToken(), command_id: newCommandId(), ...fields })
   for (let i = 0; ; i++) {
     try {
-      return await req<T>(`/rooms/${encodeURIComponent(code)}/${action}`, { method: 'POST', body })
+      return await req<T>(`/rooms/${encodeURIComponent(code)}/${action}`, { method: 'POST', body }, GAME_COMMAND_TIMEOUT_MS)
     } catch (e) {
       if (!isTransientError(e) || i >= COMMAND_RETRY_DELAYS_MS.length) throw e
       await new Promise((r) => setTimeout(r, COMMAND_RETRY_DELAYS_MS[i]))

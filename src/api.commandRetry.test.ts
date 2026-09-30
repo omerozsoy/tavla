@@ -41,6 +41,23 @@ it('retries a move through a 502 HTML page and a network drop with the same comm
   expect(ids[0]).toBeTruthy()
 })
 
+it('aborts a hung request and retries the move with the same command_id', async () => {
+  // Sunucu TCP'yi kabul edip HIC cevap vermezse fetch asili kalir: abort sinyali gelince
+  // reject et (gercek fetch davranisi). 8sn zaman asimi -> gecici -> ayni command_id ile yeniden.
+  const hang = (_url: string, init: RequestInit) =>
+    new Promise<Response>((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+    })
+  fetchMock
+    .mockImplementationOnce(hang)
+    .mockResolvedValueOnce(json(200, { state: {}, version: 9, winner: null }))
+  const p = serverMove('ROOM1', steps, 7)
+  await vi.runAllTimersAsync()
+  await expect(p).resolves.toMatchObject({ version: 9 })
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+  expect(new Set(commandIds()).size).toBe(1)
+})
+
 it('does not retry application errors (422 illegal move)', async () => {
   fetchMock.mockResolvedValue(json(422, { message: 'Geçersiz hamle.' }))
   const err = await serverMove('ROOM1', steps, 7).catch((e) => e)
