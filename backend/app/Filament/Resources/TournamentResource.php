@@ -283,7 +283,13 @@ class TournamentResource extends Resource
                     ->visible(fn (Tournament $record): bool => $record->status === 'open'
                         && count(array_filter($record->players ?? [], fn ($p) => $p !== null)) >= 2)
                     ->action(function (Tournament $record): void {
-                        $record->startBracket();
+                        // Tipe göre başlat: 3 Haklı Swiss -> SwissRuntime (kura + eşleştirme + kilitli
+                        // kural seti); eleme ağacı -> model startBracket. (Controller start() ile aynı dal.)
+                        if (($record->type ?? 'bracket') === 'swiss_triple') {
+                            \App\Support\Swiss\SwissRuntime::start($record);
+                        } else {
+                            $record->startBracket();
+                        }
                         \Filament\Notifications\Notification::make()
                             ->title('Turnuva başlatıldı')
                             ->success()

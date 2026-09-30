@@ -14,7 +14,7 @@ class Tournament extends Model
     ];
 
     protected $fillable = [
-        'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
+        'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'swiss_state', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
         'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
@@ -24,6 +24,7 @@ class Tournament extends Model
     protected $casts = [
         'players' => 'array',
         'bracket' => 'array',
+        'swiss_state' => 'array',
         'prizes' => 'array',
         'active' => 'boolean',
         'premium_only' => 'boolean',

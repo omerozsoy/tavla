@@ -103,6 +103,7 @@ class TournamentController extends Controller
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
+            'type' => ['nullable', 'string', 'in:'.implode(',', array_keys(Tournament::TYPES))],
             'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'], // 0 = sinirsiz
             'prize_coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prize_desc' => ['nullable', 'string', 'max:120'],
@@ -119,8 +120,13 @@ class TournamentController extends Controller
             'semi_minutes' => ['nullable', 'integer', 'min:1', 'max:180'],
             'final_minutes' => ['nullable', 'integer', 'min:1', 'max:180'],
         ]);
+        $type = $data['type'] ?? 'bracket';
+        if ($type === 'swiss_triple' && ! config('tournament.swiss.enabled', true)) {
+            return $this->fail('3 Haklı Swiss şu an kapalı.', 422);
+        }
         $t = Tournament::create([
             'name' => $data['name'],
+            'type' => $type,
             'size' => $data['size'],
             'status' => 'open',
             'register_until' => $data['register_until'] ?? null,
@@ -347,6 +353,15 @@ class TournamentController extends Controller
 
     private function applyWinnerToBracket(Tournament $t, int $ri, int $mi, int $winnerId, ?array $score = null): void
     {
+        // 3 HAKLI SWISS: eleme ağacı yerine Swiss motoru işler (haklar/eleme/tur üretimi/sonlandırma).
+        // report/reconcile/noShow bu ortak metottan geçtiği için tek dal yeterli. realMatch: hükmen
+        // (walkover/bye/stalled) değilse gerçek maç.
+        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
+            $real = ! ($score && (isset($score['walkover']) || isset($score['bye']) || isset($score['stalled'])));
+            \App\Support\Swiss\SwissRuntime::applyResult($t, $ri, $mi, $winnerId, $score, $real);
+
+            return;
+        }
         $bracket = $t->bracket;
         $m = $bracket[$ri][$mi];
         $bracket[$ri][$mi]['winner'] = $winnerId;
@@ -635,9 +650,10 @@ class TournamentController extends Controller
                 if (! empty($m['winner'])) {
                     return $this->fail('Maç bitti.', 422);
                 }
-                // FINAL GATE: önce 3.'lük maçı oynanır; final ancak 3.'lük bitip 1 dk geçince açılır.
-                // (Bu maç FINAL ise ve son turda bir 3.'lük maçı VARSA kontrol et.)
-                $isFinalMatch = $ri === count($bracket) - 1 && empty($m['third_place']);
+                $isSwiss = \App\Support\Swiss\SwissRuntime::isSwiss($tournament);
+                // FINAL GATE (yalnız eleme ağacı): önce 3.'lük maçı oynanır; final 3.'lük bitip 1 dk
+                // geçince açılır. Swiss'te 3.'lük maçı YOK -> gate atlanır.
+                $isFinalMatch = ! $isSwiss && $ri === count($bracket) - 1 && empty($m['third_place']);
                 if ($isFinalMatch) {
                     $tp = $bracket[$ri][1] ?? null;
                     if ($tp && ! empty($tp['third_place'])) {
@@ -651,13 +667,17 @@ class TournamentController extends Controller
                         }
                     }
                 }
-                // Bu turun mac uzunlugu (normal / yari final / final). Bracket'e yazilir (UI gosterir)
-                // + oda kodu icin cache'e -> odayi ilk kuran enter() istemci degerine GUVENMEZ.
-                // 3.'LÜK MAÇI (son turda ama final değil) -> YARI FINAL uzunluğunu kullan (final değil).
-                $lenRi = ! empty($m['third_place']) ? max(0, count($bracket) - 2) : $ri;
-                $target = $tournament->roundTarget($lenRi, count($bracket));
+                // Bu maçın uzunluğu/süresi. Swiss'te hücreye tur üretiminde yazılmıştır (normal/final-iki);
+                // eleme ağacında roundTarget/roundMinutes ile hesaplanır (3.'lük -> yarı final uzunluğu).
+                if ($isSwiss) {
+                    $target = (int) ($m['target'] ?? ($tournament->match_length ?: 1));
+                    $minutes = isset($m['minutes']) ? ($m['minutes'] !== null ? (int) $m['minutes'] : null) : null;
+                } else {
+                    $lenRi = ! empty($m['third_place']) ? max(0, count($bracket) - 2) : $ri;
+                    $target = $tournament->roundTarget($lenRi, count($bracket));
+                    $minutes = $tournament->roundMinutes($lenRi, count($bracket));
+                }
                 $bracket[$ri][$mi]['target'] = $target;
-                $minutes = $tournament->roundMinutes($lenRi, count($bracket));
                 $bracket[$ri][$mi]['minutes'] = $minutes;
                 // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
                 // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
@@ -879,6 +899,11 @@ class TournamentController extends Controller
     // Tek kaynak: App\Models\Tournament::startBracket (admin panel de ayni metodu kullanir).
     private function startBracket(Tournament $t): void
     {
+        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
+            \App\Support\Swiss\SwissRuntime::start($t); // 3 Haklı Swiss: 1. tur kura + eşleştirme
+
+            return;
+        }
         $t->startBracket();
     }
 
@@ -1047,6 +1072,7 @@ class TournamentController extends Controller
         return [
             'id' => $t->id,
             'name' => $t->name,
+            'type' => $t->type ?? 'bracket', // 'bracket' | 'swiss_triple'
             'venue' => $t->venue,
             'organizer' => $t->organizer ? [
                 'id' => $t->organizer->id,
@@ -1085,6 +1111,7 @@ class TournamentController extends Controller
             'players' => array_values(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'bracket' => $t->bracket,
             'champion_id' => $t->champion_id,
+            'swiss' => \App\Support\Swiss\SwissRuntime::isSwiss($t) ? \App\Support\Swiss\SwissRuntime::serialize($t) : null,
             'rev' => self::rev($t), // canli poll: ?rev= ayniysa show() 204 doner
         ]);
     }
