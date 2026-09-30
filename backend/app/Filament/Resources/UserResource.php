@@ -43,6 +43,8 @@ class UserResource extends Resource
                 // Sistem/marka hesabı ("Tavla TV Yönetim" = 16) panelde düzenlenebilsin diye burada 32.
                 Forms\Components\TextInput::make('nickname')->label('Takma ad')->required()->maxLength(32),
                 Forms\Components\TextInput::make('email')->label('E-posta')->email()->required(),
+                Forms\Components\TextInput::make('phone')->label('Cep telefonu')->tel()->maxLength(20)
+                    ->placeholder('05XXXXXXXXX'),
                 // first_name/last_name DB'de NOT NULL. Boş TextInput Filament varsayılanında null'a
                 // dönüşüp NOT NULL ihlali (500) verir -> boş = '' olarak yaz.
                 Forms\Components\TextInput::make('first_name')->label('Ad')
@@ -176,6 +178,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->label('E-posta')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('phone')->label('Cep telefonu')->searchable()->toggleable()->placeholder('—'),
                 Tables\Columns\IconColumn::make('email_verified')->label('E-posta ✓')
                     ->boolean()->trueColor('success')->falseColor('danger')
                     ->getStateUsing(fn ($record) => $record->email_verified_at !== null)
@@ -324,6 +327,7 @@ class UserResource extends Resource
                     TextEntry::make('id')->label('#'),
                     TextEntry::make('nickname')->label('Takma ad'),
                     TextEntry::make('email')->label('E-posta')->copyable(),
+                    TextEntry::make('phone')->label('Cep telefonu')->copyable()->placeholder('—'),
                     TextEntry::make('full_name')->label('Ad Soyad')
                         ->state(fn (User $r) => trim(($r->first_name ?? '').' '.($r->last_name ?? '')) ?: '—'),
                     TextEntry::make('country')->label('Ülke')->placeholder('—'),
