@@ -585,11 +585,13 @@ class RoomController extends Controller
             $commission = (int) floor($debit * $commissionPct / 100);
             $winnerGets = max(0, $debit - $commission);
             if ($loser) {
-                app(\App\Services\WalletService::class)->debit($loser, $debit, 'match_settlement_debit', Room::class, $room->id);
+                // Rezervi ÖNCE bırak: debit `coins`i düşürünce CHECK (coins_reserved <= coins)
+                // bozulmasın (kaybeden coins→0 iken reserved hâlâ stake ise 500 verirdi).
                 if ($escrowed && $stake > 0) { // rezerv bırak (sabit-stake escrow)
                     $loser->coins_reserved = max(0, (int) ($loser->coins_reserved ?? 0) - $stake);
                     $loser->save();
                 }
+                app(\App\Services\WalletService::class)->debit($loser, $debit, 'match_settlement_debit', Room::class, $room->id);
             }
             if ($winner) {
                 app(\App\Services\WalletService::class)->credit($winner, $winnerGets, 'match_settlement_credit', Room::class, $room->id);
