@@ -62,6 +62,10 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     protected $hidden = [
         'password',
         'remember_token',
+        // Hesap kapatma detaylari ASLA istemciye sizmasin (ozellikle ban_note = admin-ozel not).
+        'ban_reason',
+        'ban_note',
+        'banned_by',
     ];
 
     // is_admin (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
@@ -144,6 +148,12 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     public function isBanned(): bool
     {
         return $this->banned_at !== null;
+    }
+
+    // Hesap kapatma/yeniden-acma gecmisi (denetim + panel "Hesap Durumu" sekmesi).
+    public function banEvents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\AccountBanEvent::class)->latest('id');
     }
 
     // ---- Basarim (achievement) sistemi iliskileri ----

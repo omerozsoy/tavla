@@ -79,9 +79,11 @@ class AuthController extends Controller
             ]);
         }
 
+        // Kimlik DOGRULANDI (dogru sifre) ama hesap kapali -> tam olarak bu mesaj + oturum ACMA.
+        // Yanlis sifre/kimliksiz kisi yukarida generic hatayi alir (durum sizmaz).
         if ($user->isBanned()) {
             throw ValidationException::withMessages([
-                'login' => ['Bu hesap askıya alınmış.'],
+                'login' => ['Hesabınız kapatılmıştır.'],
             ]);
         }
 
@@ -174,7 +176,7 @@ class AuthController extends Controller
         }
 
         if ($user->isBanned()) {
-            return $this->fail('Bu hesap askıya alınmış.', 403);
+            return $this->fail('Hesabınız kapatılmıştır.', 403);
         }
 
         $user->last_login_at = now();
@@ -1857,6 +1859,13 @@ class AuthController extends Controller
                 'token'                 => $request->token,
             ],
             function (User $user, string $password) {
+                // Kapali hesap sifre sifirlamayla yasagi ASAMAZ: sifreyi degistirme, oturumlari
+                // (varsa) kapat. Sonraki login zaten isBanned ile bloklu; ekstra emniyet.
+                if ($user->isBanned()) {
+                    $user->tokens()->delete();
+
+                    return;
+                }
                 $user->password = Hash::make($password);
                 $user->save();
                 $user->tokens()->delete(); // eski oturumlari kapat
