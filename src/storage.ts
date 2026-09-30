@@ -54,6 +54,7 @@ export interface Profile {
   province?: string // Turkiye ili (yalnizca ulke Turkiye ise)
   nickname: string
   email: string
+  phone?: string // cep telefonu, normalize: '05XXXXXXXXX'
   avatar?: string // profil fotografi (kucultulmus data URL)
   birthDate?: string // dogum tarihi (YYYY-MM-DD)
 }

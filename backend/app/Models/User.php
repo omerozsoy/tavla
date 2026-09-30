@@ -46,6 +46,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'birth_date',
         'nickname',
         'email',
+        'phone',
         'password',
         'game_state',
         'presence_status', // oyuncu durumu (available|ready|busy|offline)
