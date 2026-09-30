@@ -138,6 +138,36 @@ class UserResource extends Resource
             });
     }
 
+    /** Hesap kapatma modalı: kullanıcı+durum özeti, ZORUNLU gerekçe, admin-özel not, oturum uyarısı. */
+    public static function closeFormSchema(): array
+    {
+        return [
+            Forms\Components\Placeholder::make('who')->label('Kullanıcı')
+                ->content(fn (User $record) => $record->nickname.' (#'.$record->id.') — '
+                    .($record->isBanned() ? 'KAPALI' : 'Aktif')),
+            Forms\Components\Textarea::make('reason')->label('Kapatma gerekçesi')
+                ->required()->rows(3)->maxLength(2000),
+            Forms\Components\Textarea::make('note')->label('Özel not (yalnız adminler görür)')
+                ->rows(2)->maxLength(2000),
+            Forms\Components\Placeholder::make('warn')->hiddenLabel()
+                ->content('Bu kullanıcının mevcut oturumları da kapatılacak (tüm cihazlardan çıkış).'),
+        ];
+    }
+
+    /** Yeniden açma modalı: ZORUNLU gerekçe + yan-etki uyarısı. */
+    public static function reopenFormSchema(): array
+    {
+        return [
+            Forms\Components\Placeholder::make('who')->label('Kullanıcı')
+                ->content(fn (User $record) => $record->nickname.' (#'.$record->id.')'),
+            Forms\Components\Textarea::make('reason')->label('Yeniden açma gerekçesi')
+                ->required()->rows(3)->maxLength(2000),
+            Forms\Components\Placeholder::make('info')->hiddenLabel()
+                ->content('Eski oturumlar geri gelmez; kullanıcı yeniden giriş yapmalı. '
+                    .'Ayrı konuşma yasağı ve turnuva diskalifiyesi otomatik kalkmaz.'),
+        ];
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -170,12 +200,37 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->label('Kayıt')->dateTime('d.m.Y H:i')->sortable()->toggleable(),
                 Tables\Columns\TextColumn::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')
                     ->placeholder('—')->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('banned_at')->label('Kapatılma')->dateTime('d.m.Y H:i')
+                    ->placeholder('—')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('closed_by')->label('Kapatan')->placeholder('—')
+                    ->state(fn ($record) => $record->banned_by ? (\App\Models\User::find($record->banned_by)?->nickname ?? '#'.$record->banned_by) : null)
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('plan')->label('Plan')->options([
                     'free' => 'Ücretsiz', 'star' => 'Premium',
                 ]),
                 Tables\Filters\TernaryFilter::make('is_admin')->label('Yönetici'),
+                // KAPALI HESAPLAR listesi: durum + kapatan admin + tarih aralığı filtreleri.
+                Tables\Filters\TernaryFilter::make('closed')->label('Hesap durumu')
+                    ->placeholder('Hepsi')->trueLabel('Kapalı')->falseLabel('Aktif')
+                    ->queries(
+                        true: fn (Builder $q) => $q->whereNotNull('banned_at'),
+                        false: fn (Builder $q) => $q->whereNull('banned_at'),
+                        blank: fn (Builder $q) => $q,
+                    ),
+                Tables\Filters\SelectFilter::make('banned_by')->label('Kapatan admin')
+                    ->options(fn () => \App\Models\User::whereNotNull('banned_at')->whereNotNull('banned_by')
+                        ->get()->pluck('banned_by')->unique()
+                        ->mapWithKeys(fn ($id) => [$id => \App\Models\User::find($id)?->nickname ?? '#'.$id])->all()),
+                Tables\Filters\Filter::make('closed_between')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Kapatılma ≥'),
+                        Forms\Components\DatePicker::make('until')->label('Kapatılma ≤'),
+                    ])
+                    ->query(fn (Builder $q, array $data) => $q
+                        ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('banned_at', '>=', $d))
+                        ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('banned_at', '<=', $d))),
                 Tables\Filters\TernaryFilter::make('email_verified')->label('E-posta doğrulama')
                     ->placeholder('Hepsi')->trueLabel('Doğrulanmış')->falseLabel('Doğrulanmamış')
                     ->queries(
@@ -197,18 +252,30 @@ class UserResource extends Resource
                         $record->email_verified_at = $record->email_verified_at ? null : now();
                         $record->save();
                     }),
-                Tables\Actions\Action::make('ban')
-                    ->label(fn ($record) => $record->banned_at ? 'Yasağı Kaldır' : 'Yasakla')
-                    ->icon('heroicon-m-no-symbol')
-                    ->color(fn ($record) => $record->banned_at ? 'gray' : 'danger')
-                    ->requiresConfirmation()
-                    ->action(function ($record) {
-                        $record->banned_at = $record->banned_at ? null : now();
-                        if ($record->banned_at) {
-                            $record->tokens()->delete();
-                        }
-                        $record->save();
-                    }),
+                // HESAP KAPATMA (siteden yasaklama) — gerekçe+not+onay modalı. Konuşma yasağından
+                // BAĞIMSIZ: yalnız giriş/site erişimini engeller; kayıt/maç/turnuva sonuçlarını SİLMEZ.
+                Tables\Actions\Action::make('closeAccount')
+                    ->label('Hesabı Kapat')
+                    ->icon('heroicon-m-lock-closed')
+                    ->color('danger')
+                    ->visible(fn (User $record) => ! $record->isBanned())
+                    ->modalHeading('Hesabı Kapat / Siteden Yasakla')
+                    ->modalSubmitActionLabel('Hesabı Kapat')
+                    ->form(self::closeFormSchema())
+                    ->action(fn (User $record, array $data) => \App\Support\AccountClosure::close(
+                        $record, (int) auth()->id(), $data['reason'], $data['note'] ?? null
+                    )),
+                Tables\Actions\Action::make('reopenAccount')
+                    ->label('Hesabı Yeniden Aç')
+                    ->icon('heroicon-m-lock-open')
+                    ->color('success')
+                    ->visible(fn (User $record) => $record->isBanned())
+                    ->modalHeading('Hesabı Yeniden Aç')
+                    ->modalSubmitActionLabel('Yeniden Aç')
+                    ->form(self::reopenFormSchema())
+                    ->action(fn (User $record, array $data) => \App\Support\AccountClosure::reopen(
+                        $record, (int) auth()->id(), $data['reason']
+                    )),
             ])
             ->bulkActions([
                 // ÇOKLU-SEÇİM SİLME: satır seçip toplu sil. Filament'in hazır DeleteBulkAction'ı
@@ -318,6 +385,29 @@ class UserResource extends Resource
                             return $label;
                         })->columnSpanFull(),
                 ])->columns(3),
+
+                ITabs\Tab::make('Hesap Durumu')->icon('heroicon-o-lock-closed')
+                    ->badge(fn (User $r) => $r->isBanned() ? 'KAPALI' : null)->badgeColor('danger')
+                    ->schema([
+                        TextEntry::make('account_state')->label('Durum')->badge()
+                            ->state(fn (User $r) => $r->isBanned() ? 'KAPALI' : 'Aktif')
+                            ->color(fn ($state) => $state === 'KAPALI' ? 'danger' : 'success'),
+                        TextEntry::make('banned_at')->label('Kapatılma')->dateTime('d.m.Y H:i')->placeholder('—'),
+                        TextEntry::make('closed_by')->label('İşlemi yapan admin')->placeholder('—')
+                            ->state(fn (User $r) => $r->banned_by
+                                ? (\App\Models\User::find($r->banned_by)?->nickname ?? '#'.$r->banned_by) : null),
+                        TextEntry::make('ban_reason')->label('Gerekçe')->placeholder('—')->columnSpanFull(),
+                        // Admin-özel not: yalnız panelde görünür, kullanıcıya ASLA ($hidden ile serialize dışı).
+                        TextEntry::make('ban_note')->label('Özel not (yalnız admin)')->placeholder('—')->columnSpanFull(),
+                        TextEntry::make('ban_history')->label('Kapatma / yeniden açma geçmişi')
+                            ->state(fn (User $r) => $r->banEvents->map(fn ($e) => trim(
+                                ($e->created_at?->format('d.m.Y H:i') ?? '—').' · '
+                                .($e->action === 'closed' ? 'KAPATILDI' : 'YENİDEN AÇILDI').' · '
+                                .(\App\Models\User::find($e->actor_id)?->nickname ?? '#'.$e->actor_id).' · '
+                                .$e->reason
+                            ))->all())
+                            ->listWithLineBreaks()->bulleted()->placeholder('Kayıt yok')->columnSpanFull(),
+                    ])->columns(2),
 
                 ITabs\Tab::make('Cüzdan')->icon('heroicon-o-banknotes')
                     ->badge(fn (User $r) => self::walletData($r)['recon']['clean'] ?? true ? null : '⚠')
