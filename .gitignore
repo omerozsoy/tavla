@@ -92,3 +92,11 @@ schema-audit-*.json
 premium-gallery.png
 rating-unvanlari.txt
 ratingler.txt
+.aider*
+
+# gecici indirilenler / arac ciktilari (repoya girmez)
+.tmp/
+graphify-out/
+*.zip
+chatgpt-standart-board/
+tourn-card-preview.html
