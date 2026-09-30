@@ -25619,8 +25619,8 @@ select:-webkit-autofill {
     padding-top: 18px;
   }
   .register-overlay.page > .register-card.auth-card {
-    max-width: 440px;
-    padding: 22px 20px 26px;
+    max-width: 100%;
+    padding: 56px 14px 40px;
   }
 }
 
@@ -25631,27 +25631,20 @@ select:-webkit-autofill {
 .register-card.auth-card {
   max-width: 440px;
 }
-/* Giris/kayit 'page' modu: sol menu gorunur; page'in seffaf + sol-yasli + tam-en
-   tabanini ez -> auth-card yine ORTALANMIS KART kalir (kendi zemin/kenar/golgesi).
-   left:190 overlay menunin sagini kaplar, boylece menu solda gorunur. */
+/* Giris/kayit 'page' modu: diger menu sayfalari gibi SOLA DAYALI + cercevesiz
+   (ortalanmis kart DEGIL). Ust "Tavla TV" basligi kaldirildi; Giris/Kayit kolon
+   basliklari standart sayfa basligi rolunu ustlenir. */
 .register-overlay.page > .register-card.auth-card {
-  align-self: center;
-  margin: 0 auto;
+  align-self: stretch;
+  margin: 0; /* sola dayali */
   max-width: 900px; /* iki kolon (Giris | Kayit) rahat sigsin */
-  min-height: 0;
+  min-height: 100%;
   max-height: none;
-  padding: 26px 30px 30px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-}
-/* Sayfa basligini (page-header) auth kartinda normal kart basligina indir */
-.register-overlay.page > .register-card.auth-card > h2 {
-  font-size: 1.35rem;
-  border-bottom: none;
-  padding-bottom: 0;
-  margin: 0 0 14px;
+  padding: calc(var(--header-h) + 18px) clamp(16px, 3vw, 48px) 56px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* ---- Giris | Kayit YAN YANA (iki EÅžIT kolon) ----
@@ -25681,10 +25674,12 @@ select:-webkit-autofill {
   min-width: 0;
 }
 .auth-col-title {
-  font-size: 1.02rem;
+  /* standart sayfa basligi ile ayni olcek (1.7rem / 400 / -0.01em) */
+  font-size: 1.7rem;
   font-weight: 400;
+  letter-spacing: -0.01em;
   color: var(--text);
-  margin: 0 0 2px;
+  margin: 0 0 12px;
 }
 /* Kolon ana aksiyon butonu: kolon genisligi (kolon-ici oldugundan tam-genislik dogru) */
 .auth-col-submit {

@@ -546,7 +546,9 @@ export default function Auth({
             <Icon name="x" size={16} />
           </Button>
         )}
-        <h2>{title}</h2>
+        {/* Giris/kayit landing'inde ust baslik ("Tavla TV") gosterilmez; Giris/Kayit
+            kolon basliklari sayfa basligi rolunu ustlenir. Duzenleme/sifremi-unuttum h2 kalir. */}
+        {(editing || forgot) && <h2>{title}</h2>}
         {editUser && emailUnverified && (
           <div className="verify-bar profile-verify">
             <Icon name="alert" size={15} />
