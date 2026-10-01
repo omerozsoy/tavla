@@ -331,7 +331,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 alt={active.organizer.name}
               />
             ) : (
-              <TavlaTvMark size={72} />
+              <TavlaTvMark size={120} />
             )}
             <Icon name="trophy" size={20} /> {active.name}
           </h2>
@@ -359,6 +359,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 </>
               )}
             </span>
+            {active.organizer && (
+              <span className="tourn-meta-inline tourn-org-name">
+                {t('tourn.organization')}: <b>{active.organizer.name}</b>
+              </span>
+            )}
           </div>
 
           {/* Hero: turnuvanin ozeti — odul havuzu / baslangic / katilim / giris */}
