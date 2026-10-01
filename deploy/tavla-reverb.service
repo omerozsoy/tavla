@@ -1,0 +1,21 @@
+[Unit]
+Description=Tavla Reverb WebSocket sunucusu (gerçek-zamanlı oda push — polling yükü fix)
+After=network.target
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı (tavla-queue ile AYNI). Bul:
+#   stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
+# ve CHANGE_ME_VHOST_USER yerine yaz.
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
+# Reverb YALNIZ localhost'ta dinler (127.0.0.1:8080); dış dünya nginx wss reverse-proxy
+# üzerinden (443 -> 8080) erişir -> port internete AÇIK DEĞİL (bkz deploy/README.md nginx bloğu).
+# Deploy'da `systemctl restart tavla-reverb` ile taze kod alır (uzun-ömürlü PHP daemon'u;
+# aksi halde eski Event/payload kodunu tutar). Restart=always kopmada geri getirir.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan reverb:start --host=127.0.0.1 --port=8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

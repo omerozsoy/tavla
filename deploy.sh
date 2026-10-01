@@ -144,6 +144,13 @@ if systemctl list-unit-files 2>/dev/null | grep -q '^tavla-review-queue\.service
     && echo "tavla-review-queue yeniden baslatildi." \
     || echo "UYARI: tavla-review-queue yenilenemedi -> ELLE: sudo systemctl restart tavla-review-queue"
 fi
+# Reverb WebSocket sunucusu (gercek-zamanli oda push) — uzun-omurlu PHP daemon'u eski Event/payload
+# kodunu tutar -> kuruluysa her deploy'da yenile (bkz deploy/README.md + deploy/tavla-reverb.service).
+if systemctl list-unit-files 2>/dev/null | grep -q '^tavla-reverb\.service'; then
+  sudo -n systemctl restart tavla-reverb 2>/dev/null \
+    && echo "tavla-reverb yeniden baslatildi." \
+    || echo "UYARI: tavla-reverb yenilenemedi -> ELLE: sudo systemctl restart tavla-reverb"
+fi
 # -----------------------------------------------------------------------------
 
 echo "Deploy tamam: migrate + cache + haber importu + gnubg/queue restart."
