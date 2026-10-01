@@ -62,6 +62,12 @@ async function getEcho(): Promise<EchoAny | null> {
         wssPort: https ? 443 : 80,
         forceTLS: https,
         enabledTransports: ['ws', 'wss'],
+        // HIZLI KOPMA TESPİTİ: soket "sessizce" ölürse (kapanma sinyali gelmeden; mobil ağ geçişi,
+        // proxy idle-drop) pusher-js bunu ping/pong ile ~15sn içinde fark eder -> realtimeConnected
+        // false olur -> App.tsx ANINDA 1.2sn poll'a döner (donma değil). Varsayılanlar (120sn/30sn)
+        // çok yavaştı; kısaldı. Ping çerçeveleri minik -> ek yük ihmal edilebilir.
+        activityTimeout: 10000, // 10sn mesajsızlıkta ping gönder
+        pongTimeout: 5000, // 5sn'de pong gelmezse bağlantı KOPUK say
       }) as unknown as EchoAny
       const conn = inst.connector?.pusher?.connection
       if (conn) {
