@@ -295,6 +295,40 @@ class TournamentResource extends Resource
                             ->success()
                             ->send();
                     }),
+                Tables\Actions\Action::make('disqualify')
+                    ->label('Diskalifiye')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    // Kayit acik (her tip) VEYA sürüyor+Swiss. Sürüyor+eleme ağacı panelde YOK (bracket
+                    // walkover ilerletmesi HTTP controller'a özel; TournamentModeration::remove false döner).
+                    ->visible(fn (Tournament $record): bool => $record->status === 'open'
+                        || ($record->status === 'running' && ($record->type ?? 'bracket') === 'swiss_triple'))
+                    ->form([
+                        Forms\Components\Select::make('user_id')
+                            ->label('Oyuncu')
+                            ->options(fn (Tournament $record): array => collect($record->players ?? [])
+                                ->filter()
+                                ->mapWithKeys(fn ($p) => [(int) $p['id'] => ($p['name'] ?? ('#'.$p['id']))])
+                                ->all())
+                            ->searchable()
+                            ->required(),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Oyuncuyu diskalifiye et')
+                    ->modalDescription('Kayıt açıksa oyuncu listeden çıkarılır + giriş ücreti iade edilir. Turnuva sürüyorsa hükmen uygulanır: sıradaki maçı rakibine verilir ve bir daha eşleşmeye alınmaz. Bu işlem geri alınamaz.')
+                    ->action(function (Tournament $record, array $data): void {
+                        $uid = (int) $data['user_id'];
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($record, $uid): void {
+                            $t = Tournament::lockForUpdate()->find($record->id);
+                            if ($t) {
+                                \App\Support\TournamentModeration::remove($t, $uid, 'dq');
+                            }
+                        });
+                        \Filament\Notifications\Notification::make()
+                            ->title('Oyuncu diskalifiye edildi')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

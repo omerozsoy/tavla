@@ -974,53 +974,26 @@ class TournamentController extends Controller
         return true;
     }
 
-    // Kullanici bu turnuvaya kayitli mi (players listesinde)?
+    // Kullanici bu turnuvaya kayitli mi? (ortak kaynak: TournamentModeration)
     private function isRegistered(Tournament $t, int $uid): bool
     {
-        foreach ($t->players ?? [] as $p) {
-            if (($p['id'] ?? null) === $uid) {
-                return true;
-            }
-        }
-        return false;
+        return \App\Support\TournamentModeration::isRegistered($t, $uid);
     }
 
-    // Kayit acikken oyuncuyu listeden cikar + giris ucreti iadesi (leave + open-dq ortak). Idempotent:
-    // kayitli degilse no-op. Cagiran lockForUpdate transaction saglar.
+    // Kayit acikken oyuncuyu listeden cikar + giris ucreti iadesi (leave + open-dq ortak). Idempotent.
+    // Ortak kaynak: TournamentModeration (Filament paneli de ayni mantigi kullanir). Lock cagiranda.
     private function removeRegistered(Tournament $t, int $uid): void
     {
-        $players = $t->players ?? [];
-        $idx = null;
-        foreach ($players as $i => $p) {
-            if (($p['id'] ?? null) === $uid) {
-                $idx = $i;
-                break;
-            }
-        }
-        if ($idx === null) {
-            return;
-        }
-        $fee = (int) ($t->entry_fee ?? 0);
-        if ($fee > 0) {
-            $u = User::lockForUpdate()->find($uid);
-            if ($u) {
-                app(\App\Services\WalletService::class)->credit($u, $fee, 'tournament_refund');
-                $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
-            }
-        }
-        array_splice($players, $idx, 1);
-        $t->players = array_values($players);
-        $t->save();
+        \App\Support\TournamentModeration::removeRegistered($t, $uid);
     }
 
-    // Turnuva SURERKEN oyuncuyu cikar (withdraw/dq). Swiss = SwissRuntime::exit (durum isaretle +
-    // bekleyen maci walkover + ilerlet/sonlandir). Eleme agaci = bekleyen macini rakibe walkover.
-    // Cagiran lockForUpdate transaction saglar.
+    // Turnuva SURERKEN oyuncuyu cikar (withdraw/dq). open/Swiss ortak serviste (TournamentModeration::
+    // remove: Swiss durum isaretle + bekleyen maci walkover + ilerlet/sonlandir). Eleme agaci (running)
+    // burada: bekleyen maci rakibe walkover (bracket advancement controller'a ozel). Lock cagiranda.
     private function exitRunningPlayer(Tournament $t, int $uid, string $mode): void
     {
-        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
-            \App\Support\Swiss\SwissRuntime::exit($t, $uid, $mode);
-            return;
+        if (\App\Support\TournamentModeration::remove($t, $uid, $mode)) {
+            return; // open veya Swiss ele alindi
         }
         // Eleme agaci: bekleyen (kazanansiz) macini bul -> rakibe hukmen. Yoksa (zaten elenmis) no-op.
         $bracket = is_array($t->bracket) ? $t->bracket : [];
