@@ -2202,6 +2202,22 @@ class RoomController extends Controller
         if ($decidedColor !== null) {
             $winnerSlot = $decidedColor === 'white' ? 'p1' : 'p2';
         }
+        // GHOST-WIN KALKANI (turnuva "çekmedi/giremedi" + PR 0.00 KÖK FIX): forfeit (terk/timeout/AFK)
+        // ile "kazanan" ilan edilen taraf maçta HİÇ gerçek aksiyon yapmadıysa (match_moves'ta o renge
+        // ait hamle/küp satırı YOK) ama KAYBEDEN oynadıysa -> kazanan aslında tahtayı hiç
+        // yükleyememiş/oynamamış demektir; rakibin kopması/terki onu haksız şampiyon yapmasın
+        // (Caner ÇELİK 3-0, PR 0.00 vakası: Omer oynadı+terk etti, hiç yüklenmeyen Caner kazandı).
+        // -> NO-CONTEST'e indir (puan/coin/rating YOK, ForfeitLoss YOK). decidedWinnerColor (gerçek
+        // skor hedefte) varsa buraya GİRMEZ. SÖMÜRÜ YOK: hamleler sunucu-otoriter (match_moves),
+        // rakibin 0-hamlesini zorlayamazsın; "1 hamle yap-kaç" da no-contest olur (kimse kazanmaz).
+        if ($winnerSlot !== null && $decidedColor === null && \App\Models\MatchMove::existsForRoom($room->code)) {
+            $wColor = $winnerSlot === 'p1' ? 'white' : 'black';
+            $lColor = $winnerSlot === 'p1' ? 'black' : 'white';
+            if (! \App\Models\MatchMove::colorPlayed($room->code, $wColor)
+                && \App\Models\MatchMove::colorPlayed($room->code, $lColor)) {
+                $winnerSlot = null;
+            }
+        }
         // NO-CONTEST: iki taraf da terk etmis + sonuc BELLI DEGIL (winner=null) -> kimse
         // kazanmaz/kaybetmez (puan/coin YOK, ForfeitLoss YOK). Yalnizca odayi 'finished'
         // isaretle ki hayalet "Devam Eden Maç" + izleyici donmasi bitsin. version'i ARTIR ki

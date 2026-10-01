@@ -36,6 +36,23 @@ class MatchMove extends Model
         return static::where('room_code', strtoupper($roomCode))->exists();
     }
 
+    /**
+     * Verilen renk (white|black) bu odada GERÇEKTEN oynadı mı? (en az bir hamle/küp aksiyonu).
+     * 'end' satırı sayılmaz (sistem kaydı, oyuncu aksiyonu değil). Ghost-win kalkanı kullanır:
+     * forfeit "kazananı" hiç oynamadıysa (tahtayı hiç yükleyememiş/çekememiş) o kazanç geçersizdir.
+     */
+    public static function colorPlayed(string $roomCode, string $color): bool
+    {
+        if (! Schema::hasTable('match_moves')) {
+            return false;
+        }
+
+        return static::where('room_code', strtoupper($roomCode))
+            ->where('player', $color)
+            ->whereIn('kind', ['move', 'double', 'take', 'drop'])
+            ->exists();
+    }
+
     /** Kanonik sıra (oyun -> tur -> aynı-tur-ord -> ekleme sırası). */
     private static function orderedForRoom(string $roomCode)
     {
