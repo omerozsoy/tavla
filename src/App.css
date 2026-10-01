@@ -22733,6 +22733,12 @@ button.acct-row-logout:hover:not(:disabled) {
    (esit yukseklik) dikey ortalanir -> sonraki turun maci besleyen iki macin TAM ortasina denk gelir.
    Baglantilar: .tb-out (sag: cift eslesmenin ortasinda birlesir) + .tb-in (sol: okla girer). Kazanan
    yol (.on) yesil. Turlar arasi bosluk = 2 x 20px cizgi. */
+/* Bracket basligi: "Turnuva Lobisi" (duyuru h3 ile ayni aksan ritmi). */
+.tourn-bracket-title {
+  margin: 10px 0 6px;
+  color: var(--accent);
+  font-size: 1rem;
+}
 .tourn-bracket {
   display: flex;
   gap: 0;

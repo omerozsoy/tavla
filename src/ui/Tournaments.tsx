@@ -765,6 +765,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           })()}
 
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
+            <h3 className="tourn-bracket-title">{t('tourn.lobby')}</h3>
+          )}
+          {active.status !== 'open' && active.type !== 'swiss_triple' && (
             <div className="tourn-bracket">
               {active.bracket?.map((round, ri) => {
                 const rounds = active.bracket!.length
