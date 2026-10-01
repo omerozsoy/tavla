@@ -181,4 +181,48 @@ class MatchResult extends Model
 
         return implode('_', $parts).'.mat';
     }
+
+    /**
+     * HAKEM=gnubg: bu maçın hamle-hamle review'i (MatchReport/MatchSummary'nin yediği LogEntry[]).
+     * .mat'i matText() (match_moves VEYA client log) ile kurar, GnuBgClient ile per-karar
+     * loss/best/equity çıkarır. plies=2 sonucu DB kolonunda (gnubg_review) önbelleklenir -> ilk
+     * hesap ağır (~saniyeler), sonrakiler anında. matchGnubgReview (sahip) + roomSummary (izleyici)
+     * ORTAK bu kaynağı kullanır. Dönen: {ok, matchLength, names, decisions, log, luck?} veya {ok:false,error}.
+     *
+     * @return array<string,mixed>
+     */
+    public function gnubgReview(int $plies = 2): array
+    {
+        $plies = max(0, min(3, $plies));
+        $useCache = $plies === 2 && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_review');
+        if ($useCache && ! empty($this->gnubg_review)) {
+            $cached = json_decode((string) $this->gnubg_review, true);
+            if (is_array($cached) && ! empty($cached['ok'])) {
+                return $cached;
+            }
+        }
+        try {
+            $mat = $this->matText();
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => 'mat-build', 'message' => $e->getMessage()];
+        }
+        if (trim((string) $mat) === '') {
+            return ['ok' => false, 'error' => 'empty-mat'];
+        }
+        $res = app(\App\Services\GnuBg\GnuBgClient::class)->reviewMatch($mat, $plies);
+        if (! is_array($res) || empty($res['ok'])) {
+            return [
+                'ok' => false, 'error' => 'review-failed',
+                'detail' => is_array($res) ? ($res['error'] ?? $res['exception'] ?? null) : null,
+            ];
+        }
+        if ($useCache) {
+            static::where('id', $this->id)->update([
+                'gnubg_review' => json_encode($res),
+                'gnubg_review_at' => now(),
+            ]);
+        }
+
+        return $res;
+    }
 }

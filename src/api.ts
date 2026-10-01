@@ -1613,10 +1613,17 @@ export async function pollTournament(id: number, rev?: string): Promise<Tourname
   const d = await req<{ tournament?: Tournament }>(`/tournaments/${id}${q}`)
   return d.tournament ?? null
 }
-// Suren turnuva maclarinin canli izleyici sayilari (oda kodu -> sayi). Detay poll'undan ayri, hafif.
-export async function tournamentViewers(id: number): Promise<Record<string, number>> {
-  const d = await req<{ counts?: Record<string, number> }>(`/tournaments/${id}/viewers`)
-  return d.counts ?? {}
+// Suren turnuva maclarinin canli izleyici sayilari (ODA->n) + canli mac skoru (ODA->{userId: skor}).
+// Detay poll'undan ayri, hafif. Bracket'i oda icine girmeden guncel tutar.
+export interface TournamentLive {
+  counts: Record<string, number>
+  scores: Record<string, Record<string, number>>
+}
+export async function tournamentViewers(id: number): Promise<TournamentLive> {
+  const d = await req<{ counts?: Record<string, number>; scores?: Record<string, Record<string, number>> }>(
+    `/tournaments/${id}/viewers`,
+  )
+  return { counts: d.counts ?? {}, scores: d.scores ?? {} }
 }
 export async function createTournament(
   name: string,
@@ -2415,6 +2422,20 @@ export async function matchLogById(id: number): Promise<string | null> {
 export async function matchGnubgReview(id: number, plies = 2): Promise<MatReview> {
   // Kullanıcıya görünen endpoint adı 'tavlatv-review' (marka; Network'te gnubg görünmez).
   return req<MatReview>(`/me/matches/${id}/tavlatv-review?plies=${plies}`)
+}
+
+// İzleyici MAÇ ÖZETİ: biten odanın "Maç Özeti" verisi (oyuncuların gördüğü AYNI tablo). Herkese
+// açık; ağır gnubg review SUNUCUDA bir kez hesaplanıp önbelleklenir -> herkes aynı sonucu alır.
+export interface RoomSummary {
+  ready: boolean
+  log?: import('./ui/MatchReport').LogEntry[]
+  names?: string[] | null
+  matchLength?: number | null
+  luck?: { white: import('./analysis/matchSummary').LuckInfo | null; black: import('./analysis/matchSummary').LuckInfo | null }
+  authPr?: { white: import('./analysis/matchSummary').AuthPr | null; black: import('./analysis/matchSummary').AuthPr | null }
+}
+export async function roomSummary(code: string): Promise<RoomSummary> {
+  return req<RoomSummary>(`/rooms/${encodeURIComponent(code)}/summary`)
 }
 
 // Poll: since verilirse degismemisse null doner

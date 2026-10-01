@@ -1708,41 +1708,15 @@ class AuthController extends Controller
             return response()->json(['message' => 'Yetkisiz.'], 403);
         }
         $plies = max(0, min(3, (int) $request->query('plies', 2)));
-        // NOT: 'empty(log)' erken-reddi KALDIRILDI — client log'suz ama match_moves'lu (sunucu-
-        // otoriter) maçlarda .mat ORADAN kurulur. Gerçekten hiç kaynak yoksa aşağıda empty-mat 404.
+        // Ortak kaynak (match_moves veya client log -> .mat -> gnubg; önbellekli). Bkz MatchResult::gnubgReview.
+        $res = $match->gnubgReview($plies);
         // hc: self/opp hizalaması için (client log'suz satırda rakipten türetilir); yanıta eklenir.
         $hc = $match->analysisHc();
-        // ÖNBELLEK: hamle-hamle review ağırdır (~saniyeler); .mat maç bittikten sonra değişmez.
-        // Varsayılan plies(2) sonucunu satırda sakla -> İLK açılış hesaplar, sonrakiler anında döner.
-        // (deploy/cache flush'tan etkilenmesin diye Laravel cache değil DB kolonu.)
-        $useCache = $plies === 2 && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_review');
-        if ($useCache && ! empty($match->gnubg_review)) {
-            $cached = json_decode((string) $match->gnubg_review, true);
-            if (is_array($cached) && ! empty($cached['ok'])) {
-                return response()->json(array_merge($cached, ['hc' => $hc]));
-            }
-        }
-        try {
-            $mat = $match->matText(); // match_moves (varsa) VEYA client log -> kanonik .mat
-        } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'error' => 'mat-build', 'message' => $e->getMessage()], 422);
-        }
-        if (trim((string) $mat) === '') {
-            return response()->json(['ok' => false, 'error' => 'empty-mat'], 404);
-        }
-        $res = app(\App\Services\GnuBg\GnuBgClient::class)->reviewMatch($mat, $plies);
-        if (! is_array($res) || empty($res['ok'])) {
-            return response()->json([
-                'ok' => false, 'error' => 'review-failed',
-                'detail' => is_array($res) ? ($res['error'] ?? $res['exception'] ?? null) : null,
-            ], 503);
-        }
-        // Başarılı review'i önbelleğe yaz (yalnız plies=2). Query-builder update -> fillable gerekmez.
-        if ($useCache) {
-            \App\Models\MatchResult::where('id', $match->id)->update([
-                'gnubg_review' => json_encode($res),
-                'gnubg_review_at' => now(),
-            ]);
+        if (empty($res['ok'])) {
+            $err = $res['error'] ?? 'review-failed';
+            $code = $err === 'empty-mat' ? 404 : ($err === 'mat-build' ? 422 : 503);
+
+            return response()->json($res, $code);
         }
 
         return response()->json(array_merge($res, ['hc' => $hc])); // {ok, matchLength, names, decisions, log, hc}

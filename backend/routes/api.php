@@ -143,6 +143,9 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:40
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:600,1,live'])->post('/rooms/{code}/live', [RoomController::class, 'live']);
 // Canli mac IZLEME presence (spectator heartbeat): izleyici kaydi + izleyen listesi/sayisi. Herkese acik.
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:120,1,watch'])->post('/rooms/{code}/watch', [RoomController::class, 'watch']);
+// Izleyici MAC OZETI: biten odanin "Mac Ozeti" verisi (gnubg review once hesaplanip onbelleklenir;
+// herkes AYNI sonucu alir). Herkese acik; agir islem icin dar hiz siniri.
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:30,1,room-summary'])->get('/rooms/{code}/summary', [RoomController::class, 'roomSummary']);
 // GEÇİCİ TEŞHİS (Faz 2): backend Node validator'a ulaşabiliyor mu? Secret/URL AÇMAZ. Sorun
 // çözülünce KALDIR. Tarayıcıda /api/validator-check açılır. Limit bol (teşhis için yenilenebilsin).
 Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1,validator'])
