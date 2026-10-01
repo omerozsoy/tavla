@@ -17822,6 +17822,24 @@ button.acct-row-logout:hover:not(:disabled) {
   object-fit: contain;
   border-radius: 4px;
 }
+/* Turnuva detay başlığı: büyük yuvarlak logo + kupa + ad tek satırda hizalı. */
+.tourn-card > h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+/* Başlıktaki BÜYÜK yuvarlak düzenleyen logosu (en başta, isimden önce). */
+.tourn-title-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  flex: none;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
 /* Hero: 4 istatistik hucre (odul / baslangic / katilim / giris) */
 .tourn-hero {
   display: grid;
