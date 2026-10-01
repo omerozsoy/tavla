@@ -1635,6 +1635,11 @@ export default function App() {
   const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
   const [rewardCoins, setRewardCoins] = useState(25) // odul miktari (plana+admin ayarina gore; presence'tan)
   const [myStatus, setMyStatus] = useState<PresenceStatus>('available') // oyuncu durumu (durum secici; presence'tan senkron)
+  // Durum seçici YARIŞ koruması: kullanıcı elle değiştirince zaman damgası. Heartbeat (beat) bayat
+  // sunucu durumunu bu pencerede (≤8sn) GERİ ALMASIN -> mobilde "değiştiriyorum ama değişmiyor" kökü:
+  // iyimser setMyStatus + fire-and-forget POST uçuşta iken, önce atılmış bir heartbeat eski durumu
+  // döndürüp optimistik değeri eziyordu (POST yavaş mobilde her seferinde yakalıyor).
+  const statusChangedAtRef = useRef(0)
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
@@ -1711,6 +1716,9 @@ export default function App() {
   // kapanır ve "sıra botta, düşünüyor" gösterilir; gnubg hamlesi arkada hesaplanır. Yoksa buton
   // ~1.5sn ekranda takılı kalıp yanıt gelince kaybolur (kullanıcı "donuyor/akıcı değil" dedi).
   const [botThinking, setBotThinking] = useState(false)
+  // TURNUVA BEKLEME GERİ SAYIMI: maç ekranında (tahtada) rakibin bağlanması için 60sn sayaç.
+  // Dolunca no-show effect'i (tournamentNoShow) hükmen kazandırır. Yalnız görsel; otorite sunucuda.
+  const [tournWaitSec, setTournWaitSec] = useState(60)
   // ONLINE AKICILIK: insan maçında (bot değil) aksiyon SUNUCU yanıtını bekler; optimistik yerel
   // uygulama yoktur. Yanıt gelene kadar butonu "Gönderiliyor…/Atılıyor…"a çevirip DISABLE ederek
   // (a) donuk his yerine ilerleme göster, (b) sabırsız tekrar-basışı (moveInFlightRef zaten yutar
@@ -4342,6 +4350,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.status, room?.code])
 
+  // ---- Turnuva bekleme: maç ekranındaki 60sn geri sayımı (görsel; yukarıdaki no-show hükmen verir)
+  useEffect(() => {
+    const tm = tournMatchRef.current
+    if (!online || !tm || room?.status !== 'waiting' || !room?.code) {
+      setTournWaitSec(60)
+      return
+    }
+    const started = Date.now()
+    setTournWaitSec(60)
+    const id = window.setInterval(() => {
+      setTournWaitSec(Math.max(0, 60 - Math.floor((Date.now() - started) / 1000)))
+    }, 1000)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.status, room?.code])
+
   // ---- Online mac bitince Elo puanini bildir (sadece giris yapmis kullanici) ----
   useEffect(() => {
     if (!online || !user || ratingReportedRef.current) return
@@ -5510,7 +5534,10 @@ export default function App() {
             setNotifications(notifs)
             setUnreadNotif(r.unread ?? 0)
             setDmUnread(r.dm_unread ?? 0)
-            if (r.status) setMyStatus(r.status) // durum secici sunucu ile senkron
+            // durum secici sunucu ile senkron — AMA kullanıcı az önce (≤8sn) elle değiştirdiyse
+            // bayat heartbeat EZMESIN (POST uçuşta). Aksi halde mobilde "değiştiriyorum ama eski haline
+            // dönüyor" olur. Pencere dolunca server gerçeği (POST başarılıysa yeni değer) yansır.
+            if (r.status && Date.now() - statusChangedAtRef.current > 8000) setMyStatus(r.status)
             if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
           }
         })
@@ -6661,10 +6688,20 @@ export default function App() {
       setHome(true)
     }
   }
-  // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz.
+  // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
+  // damgayı HEMEN vur (uçuştaki heartbeat optimistik değeri ezmesin); POST onayında değeri + damgayı
+  // tazele. POST başarısızsa damgayı sıfırla -> bir sonraki heartbeat GERÇEK (server) durumu yansıtsın.
   function handleSetStatus(s: PresenceStatus) {
     setMyStatus(s)
-    setPresenceStatus(s).catch(() => {})
+    statusChangedAtRef.current = Date.now()
+    setPresenceStatus(s)
+      .then((confirmed) => {
+        statusChangedAtRef.current = Date.now()
+        setMyStatus(confirmed)
+      })
+      .catch(() => {
+        statusChangedAtRef.current = 0
+      })
   }
   // Cevrimici oyuncu panelinden "Arkadas ol": id ile istek + toast.
   async function handleAddFriend(userId: number) {
@@ -9840,9 +9877,15 @@ export default function App() {
   // YALNIZ gerçek bekleme/arama durumları Lobby'yi (embed) render eder: arama spinner'ı
   // (roomBusy), davet bekleme (waiting) veya hızlı eşleşme (mm_waiting). 'finished'/bayat
   // durumlar ESKİ seçim ekranını açmasın -> returnToOrigin effect'i origine götürür.
+  // TURNUVA BEKLEME = maç ekranı: rakip bağlanmamış turnuva odasında Lobby "Rakip Bekleniyor"
+  // kartı YERİNE tahtayı göster (+ 60sn geri sayım banner'ı). Böylece oyuncu boş kartta değil maç
+  // ekranında bekler; rakip 60sn gelmezse no-show effect'i hükmen kazandırır.
+  const isTournWaiting =
+    online && !!tournRoom && room?.code === tournRoom.code && room?.status === 'waiting' && !matchOver
   if (
     mode === 'online' &&
     !matchOver &&
+    !isTournWaiting &&
     (roomBusy || room?.status === 'waiting' || room?.status === 'mm_waiting')
   ) {
     // Oda olustur/bekle/arama: FIXED tam-ekran overlay YERINE lobi kabugu (logo + sol
@@ -9890,7 +9933,7 @@ export default function App() {
   // Online ama GERÇEK oynanan oyun yok (room null VEYA 'finished'/bayat) + sonuç yok:
   // board FLASH etme. Bekleme/arama üstteki Lobby dalında; buraya yalnız geçiş karesi düşer
   // (returnToOrigin effect'i bir sonraki tick'te origine/kuruluma götürür).
-  if (mode === 'online' && !matchOver && room?.status !== 'playing') {
+  if (mode === 'online' && !matchOver && room?.status !== 'playing' && !isTournWaiting) {
     return <div className="app game-view" aria-hidden />
   }
 
@@ -10016,6 +10059,16 @@ export default function App() {
 
       <main className="main game-scene">
       <div className="game-area">
+        {isTournWaiting && (
+          <div className="tourn-wait-banner" role="status" aria-live="polite">
+            <span className="tourn-wait-spin" aria-hidden="true" />
+            <div className="tourn-wait-txt">
+              <strong>{t('mp.tournWaiting')}</strong>
+              <span>{t('tourn.autoWinIn', { n: tournWaitSec })}</span>
+            </div>
+            <span className="tourn-wait-count tnum">{tournWaitSec}</span>
+          </div>
+        )}
         {/* Maç ID (sol üst): oynanan maçın kimliği — admin panelde bu ID ile bulunur.
             KOPYALANABİLİR: tıklayınca kodu panoya kopyalar (kopyalandı -> aksan renk + tik). */}
         {recordUid && (
