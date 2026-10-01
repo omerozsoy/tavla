@@ -456,6 +456,47 @@ class RoomClockTest extends TestCase
         $this->assertSame('playing', $room->status);
     }
 
+    // ---- MASS-FORFEIT KÖK FIX: turnuva odası myActiveRooms'ta tournament/tid/tmatch ile işaretlenir ----
+    // Generic rejoin bu bilgiyle tournMatchRef kurar -> "maç hazır" penceresi kendi maçını "başka
+    // oyun" sanıp confirmLeave ile hükmen terke SÜRÜKLEMEZ + sonuç bracket'e raporlanır.
+    public function test_active_rooms_flags_tournament_room_with_tid_and_match(): void
+    {
+        $me = $this->user('mt@t.co');
+        $opp = $this->user('ot@t.co');
+        $room = $this->playingRoom('TRM1', 'casual', 1);
+        $room->p1_user_id = $me->id;
+        $room->p2_user_id = $opp->id;
+        $now = microtime(true);
+        $room->clock = ['p1_seen' => $now - 1, 'p2_seen' => $now - 1];
+        $room->save();
+
+        // Süren turnuva: bracket'te bu oda kodunu taşıyan aktif maç.
+        \App\Models\Tournament::create([
+            'name' => 'T', 'status' => 'running', 'size' => 2,
+            'players' => [['id' => $me->id], ['id' => $opp->id]],
+            'bracket' => [[['key' => 'r0m0', 'room' => 'TRM1',
+                'p1' => ['id' => $me->id], 'p2' => ['id' => $opp->id]]]],
+        ]);
+
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $r = $this->getJson('/api/me/active-rooms')->assertOk()->json('rooms.0');
+        $this->assertTrue($r['tournament']);
+        $this->assertSame('r0m0', $r['tmatch']);
+        $this->assertSame($opp->id, $r['opp_id']);
+
+        // Normal (turnuvasız) oda: tournament=false, tid null.
+        $room2 = $this->playingRoom('CAS1', 'casual', 5);
+        $room2->p1_user_id = $me->id;
+        $room2->p2_user_id = $opp->id;
+        $room2->clock = ['p1_seen' => $now - 1, 'p2_seen' => $now - 1];
+        $room2->save();
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $rows = collect($this->getJson('/api/me/active-rooms')->assertOk()->json('rooms'));
+        $cas = $rows->firstWhere('code', 'CAS1');
+        $this->assertFalse($cas['tournament']);
+        $this->assertNull($cas['tid']);
+    }
+
     // ---- BOT MAÇI: rakip(bot) HİÇ poll etmez -> tick-bots insanın süresini SUNUCUDA bitirir ----
     // "Süre bitmemiş" bug'ı: bot maçında saati soracak kimse (rakip poll'ü) yok; insan sekmeyi
     // arka plana alınca süre gerçekte bitse de timeout ilan edilmiyordu. matches:tick-bots

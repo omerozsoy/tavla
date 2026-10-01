@@ -6641,6 +6641,15 @@ export default function App() {
     const tgt = r.target ?? 1
     onlineTargetRef.current = tgt
     matchTargetSyncedRef.current = true
+    // TURNUVA ODASI: tournMatchRef/tournRoom'u KUR (mass-forfeit kök fix). Aksi halde generic
+    // rejoin isaretci koymaz -> "maç hazır" penceresi kendi maçını "başka oyun" sanıp confirmLeave
+    // ile hükmen terke sürüklüyordu; ayrıca maç sonucu bracket'e raporlanmıyordu (tm null).
+    if (r.tournament && r.tid != null && r.tmatch) {
+      tournMatchRef.current = { tid: r.tid, matchKey: r.tmatch, oppId: r.opp_id ?? 0 }
+      setTournRoom({ code: r.code, tid: r.tid })
+    } else {
+      tournMatchRef.current = null
+    }
     resetRoomSync()
     syncEnabledRef.current = false // poll apply edince acilir (echo yok)
     setMode('online')
@@ -6706,15 +6715,17 @@ export default function App() {
       myActiveRooms()
         .then((rs) => {
           if (!alive) return
-          setActiveRooms(rs)
-          // OTOMATIK GERI GIRIS (terk-kaybi kok fix, #V2RDM): reload sonrasi kullanici lobiye
-          // duser ve "Maca Don" banner'ina ELLE tiklayana kadar oda poll'u BASLAMAZ -> presence
-          // damgasi (_seen) tazelenmez -> 45sn'de haksiz ABANDON (oyuncunun OYUN saati doluyken).
-          // Boot'ta TEK aktif oda varsa ve henuz bir odada degilsek banner'i beklemeden bir kez
-          // otomatik don -> oda poll'u aninda baslar, presence 45sn dolmadan tazelenir.
-          if (!autoResumedRef.current && !room && rs.length === 1) {
+          // TURNUVA ODALARINI HARIC TUT (mass-forfeit kok fix): turnuva maci odasini generic
+          // rejoinRoom ile acmak tournMatchRef'i set ETMEZ -> "maç hazır" penceresi kendi maçını
+          // "başka aktif oyun" sanıp confirmLeave ("oyunu bırak, geç") ile HÜKMEN terke sürüklüyordu.
+          // Turnuva macina giris YALNIZ TournMatchReady akisindan (o tournMatchRef kurar). Presence
+          // _seen sunucuda her myActiveRooms poll'unda zaten tazelenir (abandon riski yok); reload'da
+          // ping bildirimi (maç bitene dek sürer) normal 3sn modunda dogru girisi yapar.
+          const nonTourn = rs.filter((r) => !r.tournament)
+          setActiveRooms(nonTourn)
+          if (!autoResumedRef.current && !room && nonTourn.length === 1) {
             autoResumedRef.current = true
-            rejoinRoom(rs[0])
+            rejoinRoom(nonTourn[0])
           }
         })
         .catch((e) => {
