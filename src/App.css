@@ -18559,10 +18559,12 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-radius: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
+  /* Ic kutu zeminsiz: dis panel (.tourn-announce) zaten pembe (accent tonu) -> metin
+     dogrudan onun uzerine yazilir, beyaz kutu olmaz. */
+  background: transparent;
+  border: none;
 }
 .tourn-announce-ic {
   flex: none;
@@ -18574,7 +18576,7 @@ button.acct-row-logout:hover:not(:disabled) {
   min-width: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  /* Duyuru metni: kucuk + koyu gri (gunduz #444, gece --muted ile okunur kalir). */
+  /* Duyuru metni: kucuk + koyu gri (tema-duyarli: gunduz koyu gri, gece okunur acik gri). */
   font-size: 0.82rem;
   line-height: 1.45;
   color: color-mix(in srgb, var(--text) 68%, transparent);
