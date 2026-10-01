@@ -7326,6 +7326,9 @@ export default function App() {
         onClose={() => setEditProfile(false)}
         onRenew={handleRenew}
         onToggleAutoRenew={handleToggleAutoRenew}
+        emailUnverified={!!user && !user.email_verified_at}
+        resendState={resendState}
+        onResendVerification={handleResendVerification}
         onOpenMatchHistory={(matchId) => {
           setMatchHistInitialId(matchId ?? null)
           setEditProfile(false)
@@ -7384,9 +7387,6 @@ export default function App() {
         page
         editUser={user}
         editGuest={!user ? guestProfile : null}
-        emailUnverified={!!user && !user.email_verified_at}
-        resendState={resendState}
-        onResendVerification={handleResendVerification}
         {...authProps}
         onCancel={() => (user ? setProfileEditMode(false) : setEditProfile(false))}
       />

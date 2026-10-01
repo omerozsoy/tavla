@@ -91,9 +91,6 @@ interface Props {
   onGuest: (profile: Profile) => void
   onCancel?: () => void
   onDeleteAccount?: () => void // profil duzenlemede hesabi sil
-  emailUnverified?: boolean // e-posta dogrulanmadi -> profilde uyari
-  resendState?: 'idle' | 'sending' | 'sent'
-  onResendVerification?: () => void
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
   initialForgot?: boolean // /sifremi-unuttum deep-link: acilista "sifremi unuttum" modu
@@ -107,9 +104,6 @@ export default function Auth({
   onGuest,
   onCancel,
   onDeleteAccount,
-  emailUnverified,
-  resendState = 'idle',
-  onResendVerification,
   modal,
   page,
   initialForgot,
@@ -549,24 +543,8 @@ export default function Auth({
         {/* Giris/kayit landing'inde ust baslik ("Tavla TV") gosterilmez; Giris/Kayit
             kolon basliklari sayfa basligi rolunu ustlenir. Duzenleme/sifremi-unuttum h2 kalir. */}
         {(editing || forgot) && <h2>{title}</h2>}
-        {editUser && emailUnverified && (
-          <div className="verify-bar profile-verify">
-            <Icon name="alert" size={15} />
-            <span>{t('verify.needed')}</span>
-            {resendState === 'sent' ? (
-              <span className="verify-sent">{t('verify.sent')}</span>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={resendState === 'sending'}
-                onClick={onResendVerification}
-              >
-                {t('verify.resend')}
-              </Button>
-            )}
-          </div>
-        )}
+        {/* E-posta dogrulama uyarisi profil DUZENLEME formundan KALDIRILDI; artik uyelik
+            kartinda (ProfileOverview > MembershipCard) gosterilir. */}
 
         {/* Sifremi unuttum */}
         {!editing && forgot && (
