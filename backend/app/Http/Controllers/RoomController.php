@@ -825,7 +825,7 @@ class RoomController extends Controller
 
         // 'stakes' kolonu canlida migrate kosmadan olmayabilir (bkz. matchmaking) -> guard.
         $hasStakes = Schema::hasColumn('rooms', 'stakes');
-        $cols = ['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'stake', 'bet_pct', 'target', 'targets', 'created_at'];
+        $cols = ['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'stake', 'bet_pct', 'target', 'targets', 'time_control', 'created_at'];
         if ($hasStakes) {
             $cols[] = 'stakes';
         }
@@ -861,6 +861,7 @@ class RoomController extends Controller
                 'stake'   => (int) $r->stake,
                 'stakes'  => $stakes,
                 'bet_pct' => (int) $r->bet_pct,
+                'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
                 'since'   => optional($r->created_at)->toIso8601String(),
             ];
         });

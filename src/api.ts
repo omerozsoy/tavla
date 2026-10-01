@@ -2012,6 +2012,7 @@ export interface Seeker {
   stake: number
   stakes: number[]
   bet_pct: number
+  time_control: 'casual' | 'normal' | 'speed' // eslesme icin tempo (kuyruga katilirken ayni olmali)
   since?: string | null // havuza giris zamani (ISO) — "ne kadardir ariyor"
 }
 export async function seekers(): Promise<Seeker[]> {
