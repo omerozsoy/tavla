@@ -9,11 +9,16 @@ interface Props {
   user: ServerUser
   onRenew?: () => void
   onToggleAutoRenew?: (enabled: boolean) => void
+  // E-posta dogrulama uyarisi uyelik kartinda gosterilir (dogrulamayan premium olamaz;
+  // Google ile giren zaten dogrulanmistir -> emailUnverified false gelir).
+  emailUnverified?: boolean
+  resendState?: 'idle' | 'sending' | 'sent'
+  onResendVerification?: () => void
 }
 
 // Uyelik durumu karti (Premium): tip + baslangic/bitis + kalan gun + otomatik yenileme +
 // Yenile / Yenilemeyi iptal. Profil ANA sayfasinda (ProfileOverview) baslikin altinda.
-export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Props) {
+export default function MembershipCard({ user, onRenew, onToggleAutoRenew, emailUnverified, resendState = 'idle', onResendVerification }: Props) {
   const { t } = useT()
   const [confirmOpen, setConfirmOpen] = useState(false) // oto-yenileme iptal onay modali
   const plan = user.plan_active ?? 'free'
@@ -38,6 +43,26 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Pro
           </span>
         )}
       </div>
+      {/* E-posta dogrulama uyarisi: profil DUZENLEME formundan buraya tasindi. Dogrulamayan
+          kullanici premium olamaz; dogal yeri uyelik karti. Google ile giris = zaten dogrulu. */}
+      {emailUnverified && (
+        <div className="verify-bar profile-verify">
+          <Icon name="alert" size={15} />
+          <span>{t('verify.needed')}</span>
+          {resendState === 'sent' ? (
+            <span className="verify-sent">{t('verify.sent')}</span>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={resendState === 'sending'}
+              onClick={onResendVerification}
+            >
+              {t('verify.resend')}
+            </Button>
+          )}
+        </div>
+      )}
       {premium && (
         <div className="mem-status-detail">
           {since && <span>{t('mem.status.since', { date: sinceFmt })}</span>}

@@ -49,6 +49,10 @@ interface Props {
   // Uyelik karti (baslikin altinda). Bildirimler artik Mesajlar'da (birlesti).
   onRenew?: () => void
   onToggleAutoRenew?: (enabled: boolean) => void
+  // E-posta dogrulama uyarisi uyelik kartinda gosterilir (profil formundan tasindi).
+  emailUnverified?: boolean
+  resendState?: 'idle' | 'sending' | 'sent'
+  onResendVerification?: () => void
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
   onOpenShop?: (tab: 'frame' | 'board') => void // (kullanılmıyor; geriye dönük)
@@ -90,6 +94,9 @@ export default function ProfileOverview({
   onClose,
   onRenew,
   onToggleAutoRenew,
+  emailUnverified,
+  resendState,
+  onResendVerification,
   onOpenMatchHistory,
   onOpenAchievements,
   onOpenOrders,
@@ -185,7 +192,14 @@ export default function ProfileOverview({
             </div>
           </div>
           {/* Premium karti: kimlik ile ayni ust satirda */}
-          <MembershipCard user={user} onRenew={onRenew} onToggleAutoRenew={onToggleAutoRenew} />
+          <MembershipCard
+            user={user}
+            onRenew={onRenew}
+            onToggleAutoRenew={onToggleAutoRenew}
+            emailUnverified={emailUnverified}
+            resendState={resendState}
+            onResendVerification={onResendVerification}
+          />
         </div>
 
         {/* --- Alt satir: Tavla Tasarımları + Avatar Çerçevesi kutuları --- */}
