@@ -9556,6 +9556,7 @@ export default function App() {
               currentId={user?.id}
               onProfile={(id) => setHomeProfileId(id)}
               onJoin={handleJoinSeeker}
+              onInvite={user ? handleInviteFriend : undefined}
             />
             {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">

@@ -11460,6 +11460,25 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   text-align: center;
 }
+/* Oyun Arayanlar paneli: diger ana sayfa bolumleriyle (.home-panels/.tts-panel) AYNI
+   standart genislik + ortali (tek basina tam-kap genislige TASMASIN -> "cok buyuk"). */
+.seek-panel {
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 10px auto 0;
+}
+/* Bosken ufak, sade not (kullanici: "minnacik yazsin"). */
+.seek-empty {
+  padding: 6px 2px 2px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--text, currentColor) 55%, transparent);
+}
+/* "Müsait" rozeti (available satir — kriter yerine). */
+.seek-avail {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #16a34a;
+}
 /* Oyun Arayanlar: "ne ariyor" sutunu (mac uzunlugu + varsa bahis) — online-row'un
    rating sutununun yerinde (3. kolon). */
 .seek-meta {

@@ -1999,8 +1999,10 @@ export async function onlinePlayers(): Promise<OnlinePlayer[]> {
   return data.players
 }
 
-// Oyun Arayanlar: hizli eslesme havuzunda (mm_waiting) bekleyen oyuncular -> ana sayfa paneli
+// Oyun Arayanlar: (1) mm_waiting havuzunda AKTIF arayanlar (kind='seeking') + (2) oynamaya
+// MUSAIT cevrimici oyuncular (kind='available'). seeking -> kuyruga katil; available -> davet et.
 export interface Seeker {
+  kind: 'seeking' | 'available'
   id: number
   name: string
   rating?: number | null
