@@ -22592,13 +22592,7 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--success-fg);
   font-variant-numeric: tabular-nums;
 }
-/* Katilim onayi (check-in) gostergesi + yonetici diskalifiye butonu (oyuncu satiri) */
-.tourn-prow-checkedin {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  color: var(--success-fg);
-}
+/* Yonetici diskalifiye butonu (oyuncu satiri) */
 .tourn-dq-btn {
   flex: none;
   width: 24px;
@@ -22607,27 +22601,6 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .tourn-dq-btn:hover {
   opacity: 1;
-}
-/* "Hazir" rozeti (hero aksiyon satiri) */
-.tourn-checkedin {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--success-fg) 16%, transparent);
-  color: var(--success-fg);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-/* Swiss "benim durumum" -> Cekil butonu (belli belirsiz, yanlislikla basilmasin) */
-.swiss-withdraw-btn {
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-.swiss-withdraw-btn:hover {
-  color: var(--destructive, #e5484d);
 }
 .tourn-wait {
   color: var(--muted);
