@@ -138,9 +138,9 @@ export default function Auth({
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  // Takma isim canli durumu: idle (bos/degismedi) | checking | ok (musait) | taken (alinmis)
-  const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken'>('idle')
-  const nickTaken = nickStatus === 'taken' // alinmis -> kirmizi + gonderim engellenir
+  // Takma isim canli durumu: idle | checking | ok (musait) | taken (alinmis) | blocked (kufur/uygunsuz)
+  const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken' | 'blocked'>('idle')
+  const nickBad = nickStatus === 'taken' || nickStatus === 'blocked' // kirmizi + gonderim engellenir
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
   const [forgot, setForgot] = useState(!!initialForgot) // sifremi unuttum modu (/sifremi-unuttum)
@@ -237,8 +237,8 @@ export default function Auth({
     let cancelled = false
     const timer = setTimeout(async () => {
       try {
-        const ok = await api.nicknameAvailable(n)
-        if (!cancelled) setNickStatus(ok ? 'ok' : 'taken')
+        const r = await api.nicknameAvailable(n)
+        if (!cancelled) setNickStatus(r.available ? 'ok' : r.reason === 'blocked' ? 'blocked' : 'taken')
       } catch {
         if (!cancelled) setNickStatus('idle') // sunucu yoksa notr birak
       }
@@ -284,8 +284,8 @@ export default function Auth({
       setError(t('reg.fillAll'))
       return false
     }
-    if (nickTaken) {
-      setError(t('reg.nickTaken'))
+    if (nickBad) {
+      setError(t(nickStatus === 'blocked' ? 'reg.nickBlocked' : 'reg.nickTaken'))
       return false
     }
     if (!isEmail(email)) {
@@ -471,7 +471,7 @@ export default function Auth({
           maxLength={15}
           onChange={(e) => setNickname(e.target.value.slice(0, 15))}
           autoComplete="username"
-          aria-invalid={nickStatus === 'taken'}
+          aria-invalid={nickBad}
         />
         <span className="nick-counter text-xs text-muted-foreground">{nickname.length}/15</span>
         {nickStatus === 'checking' && (
@@ -484,6 +484,9 @@ export default function Auth({
         )}
         {nickStatus === 'taken' && (
           <span className="text-xs text-destructive" role="alert">{t('reg.nickTaken')}</span>
+        )}
+        {nickStatus === 'blocked' && (
+          <span className="text-xs text-destructive" role="alert">{t('reg.nickBlocked')}</span>
         )}
       </div>
       <div className="grid gap-1.5">
@@ -686,7 +689,7 @@ export default function Auth({
                 </div>
                 <span className="pw-hint text-xs text-muted-foreground">{t('reg.pwShort')}</span>
               </label>
-              <Button type="submit" className="w-full" disabled={busy || nickTaken}>
+              <Button type="submit" className="w-full" disabled={busy || nickBad}>
                 {t('reg.submitNew')}
               </Button>
             </div>
@@ -739,7 +742,7 @@ export default function Auth({
                 {t('reg.cancel')}
               </Button>
             )}
-            <Button type="submit" disabled={busy || nickTaken}>
+            <Button type="submit" disabled={busy || nickBad}>
               {t('reg.submitEdit')}
             </Button>
           </div>

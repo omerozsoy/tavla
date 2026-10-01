@@ -351,11 +351,13 @@ export async function deleteAccount(): Promise<void> {
   }
 }
 
-export async function nicknameAvailable(nickname: string): Promise<boolean> {
-  const data = await req<{ available: boolean }>(
+export async function nicknameAvailable(
+  nickname: string,
+): Promise<{ available: boolean; reason?: 'taken' | 'blocked' }> {
+  const data = await req<{ available: boolean; reason?: 'taken' | 'blocked' }>(
     `/nickname-available?nickname=${encodeURIComponent(nickname)}`,
   )
-  return data.available
+  return { available: data.available, reason: data.reason }
 }
 
 export interface LeaderRow {

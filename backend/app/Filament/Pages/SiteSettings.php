@@ -3,8 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use App\Support\NicknameFilter;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -95,6 +97,7 @@ class SiteSettings extends Page implements HasForms
             'friendly_rating_daily_limit' => Setting::int('friendly_rating_daily_limit', \App\Support\RatingPolicy::DEFAULT_LIMIT),
             'gtag_enabled' => Setting::bool('gtag_enabled', false),
             'gtag_id' => Setting::get('gtag_id', ''),
+            'banned_nicknames' => NicknameFilter::rawList(),
         ]);
     }
 
@@ -154,6 +157,13 @@ class SiteSettings extends Page implements HasForms
                             ->maxLength(120)
                             ->helperText('Google Ads için AW-…, GA4 için G-…. Birden fazla etiketi VİRGÜLLE ayır (örn. AW-123,G-XYZ).'),
                     ])->columns(2),
+                Section::make('Yasaklı Takma Adlar (Küfür Filtresi)')
+                    ->description('Kayıt ve profil düzenlemede takma ad bu listedeki kelimeleri içeremez. Her satıra (veya virgülle) bir kelime yaz. Eşleşme küçük/büyük harf, Türkçe karakter ve 4mk/a.m.k gibi kaçışlara dayanıklıdır (kelime, adın herhangi bir yerinde geçerse engellenir). Boş bırakırsan filtre kapanır.')
+                    ->schema([
+                        Textarea::make('banned_nicknames')->label('Yasaklı kelimeler')
+                            ->rows(8)
+                            ->helperText('Her satıra bir kelime. Çok kısa kökler (ör. "am") masum adları da engelleyebilir; net kelimeler tercih et.'),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -172,6 +182,10 @@ class SiteSettings extends Page implements HasForms
         }
         if (array_key_exists('gtag_enabled', $data)) {
             Setting::put('gtag_enabled', $data['gtag_enabled'] ? '1' : '0');
+        }
+        // Yasaklı takma ad listesi (satır/virgül ayrık ham metin). Boş = filtre kapalı.
+        if (array_key_exists('banned_nicknames', $data)) {
+            Setting::put('banned_nicknames', trim((string) $data['banned_nicknames']));
         }
         Notification::make()->title('Site ayarları kaydedildi')->success()->send();
     }
