@@ -65,6 +65,7 @@ import {
   nextSubmittedKey,
 } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
+import { subscribeRoom, onRealtimeConn } from './online/realtime'
 import { botPersona } from './botPersonas'
 import Board from './ui/Board'
 import Loading from './ui/Loading'
@@ -4988,8 +4989,15 @@ export default function App() {
     if (!online || !room) return
     setEndReason(null) // yeni oda/rövanş: önceki maçın saat-kaybı sebebini temizle
     let cancelled = false
-    const poll = async () => {
+    // PUSH YEDEĞİ (Faz 2 / gerçek-zamanlı): Reverb WS bağlıyken periyodik poll'u ~9sn'ye yavaşlat
+    // (yalnız yedek); 'room.updated' olayı poll(true) ile ANINDA çeker. Bağlı değilken (push
+    // kapalı/bağlanamadı) eski 1.2sn tam-poll aynen sürer -> sıfır davranış değişikliği.
+    let realtimeConnected = false
+    let lastFetchAt = 0
+    const poll = async (force = false) => {
       if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme: poll'u da durdur
+      if (!force && realtimeConnected && Date.now() - lastFetchAt < 9000) return // push bağlı -> seyrek yedek
+      lastFetchAt = Date.now()
       try {
         // Oda sürümleri oda-yereldir. Son uygulanan sürümü gönderince backend
         // değişiklik yoksa 204 döner; büyük state her 1.2 saniyede yeniden taşınmaz.
@@ -5185,8 +5193,22 @@ export default function App() {
         /* diğer geçici hatalar: sonraki tur yeniden dener */
       }
     }
-    const id = window.setInterval(poll, 1200)
+    const id = window.setInterval(() => void poll(), 1200) // poll(force) -> interval arg'ı force sanılmasın
     poll()
+    // GERÇEK-ZAMANLI PUSH (Faz 2): oda kanalına abone ol; 'room.updated' gelince ANINDA poll(true)
+    // (tek yerde uygula -> desync yok). Bağlantı durumu değişince yedek-poll hızını ayarla. Dormant:
+    // push kapalı/bağlanamazsa realtimeConnected hep false -> saf 1.2sn poll.
+    const offConn = onRealtimeConn((c) => {
+      realtimeConnected = c
+      if (c && !cancelled) void poll(true) // bağlanınca kaçırılanları yakala
+    })
+    let offRoom = () => {}
+    void subscribeRoom(room.code, () => {
+      if (!cancelled) void poll(true)
+    }).then((off) => {
+      if (cancelled) off()
+      else offRoom = off
+    })
     // SEKMEYE DÖNÜNCE ANINDA RESYNC: sunucu-otoriter saat POLL'da lazy hesaplanır
     // (MatchClock::tick -> now - started_at). Arka planda tarayıcı poll interval'ını
     // kısıp/askıya alır -> saati soracak kimse kalmaz ve süre bittiği HALDE timeout ilan
@@ -5202,6 +5224,8 @@ export default function App() {
       cancelled = true
       window.clearInterval(id)
       document.removeEventListener('visibilitychange', onVisiblePoll)
+      offConn()
+      offRoom()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.code])

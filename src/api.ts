@@ -202,6 +202,12 @@ async function req<T>(path: string, options: RequestInit = {}, timeoutMs?: numbe
 
 export { ApiError }
 
+// GERÇEK-ZAMANLI PUSH yapılandırması (public): Reverb açık mı + public app key. enabled=false
+// (varsayılan) iken istemci Echo'yu HİÇ kurmaz -> saf poll (dormant). SECRET dönmez.
+export async function getRealtimeConfig(): Promise<{ enabled: boolean; key: string }> {
+  return req('/realtime-config')
+}
+
 export async function register(
   input: Profile & { password: string },
 ): Promise<ServerUser> {

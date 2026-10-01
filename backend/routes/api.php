@@ -42,6 +42,7 @@ Route::get('/info-pages', [\App\Http\Controllers\InfoPageController::class, 'ind
 Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
 Route::get('/footer-config', [\App\Http\Controllers\FooterController::class, 'index']); // footer kolon sira/baslik/gorunurluk (acik)
 Route::get('/site-tags', [\App\Http\Controllers\SiteTagController::class, 'index']); // Google Etiketi (gtag) yapilandirmasi (acik)
+Route::get('/realtime-config', [RoomController::class, 'realtimeConfig']); // Reverb WS push: enabled + public app key (acik; secret DONMEZ)
 Route::get('/rank-divisions', [\App\Http\Controllers\RankDivisionController::class, 'index']); // rutbe rating esikleri (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
