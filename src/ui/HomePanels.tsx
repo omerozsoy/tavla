@@ -589,7 +589,7 @@ export function SeekersPanel({
                         ) : null}
                       </>
                     ) : (
-                      <span className="seek-avail">{t('seekers.available')}</span>
+                      <span className="seek-avail">{t('online.st.ready')}</span>
                     )}
                   </span>
                   {/* seeking -> kuyruğa katıl (eşleş); available -> davet et. */}
