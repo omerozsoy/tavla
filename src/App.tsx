@@ -9838,6 +9838,7 @@ export default function App() {
           inviteWaitName={inviteWaitName}
           inviteWaitRating={inviteWaitRating}
           inviteWaitPreview={inviteWaitPreview}
+          isTournament={online && !!tournRoom && room?.code === tournRoom.code}
           myAvatar={profile.avatar}
           onCreate={() => handleCreateRoom(onlineTargetRef.current)}
           onJoin={handleJoinRoom}
