@@ -255,9 +255,18 @@ export async function forgotPassword(email: string): Promise<void> {
   await req('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) })
 }
 
-// E-posta dogrulama linkini tekrar gonder (giris yapmis kullanici)
+// E-posta dogrulama: tekrar gonder (6 haneli kod + link e-postaya gider)
 export async function resendVerification(): Promise<void> {
   await req('/email/resend', { method: 'POST' })
+}
+
+// E-posta kodu dogrula -> basarida guncel kullaniciyi (email_verified_at dolu) dondurur.
+export async function verifyEmailCode(code: string): Promise<ServerUser> {
+  const data = await req<{ user: ServerUser }>('/email/verify-code', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+  return data.user
 }
 
 // Telefon OTP: kayitli numaraya 6 haneli kod gonder (SMS). Kod yanitta DONMEZ.

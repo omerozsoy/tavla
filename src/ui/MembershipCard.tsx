@@ -5,6 +5,7 @@ import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import type { ServerUser } from '../api'
 import PhoneVerify from './PhoneVerify'
+import EmailVerify from './EmailVerify'
 
 interface Props {
   user: ServerUser
@@ -21,7 +22,7 @@ interface Props {
 
 // Uyelik durumu karti (Premium): tip + baslangic/bitis + kalan gun + otomatik yenileme +
 // Yenile / Yenilemeyi iptal. Profil ANA sayfasinda (ProfileOverview) baslikin altinda.
-export default function MembershipCard({ user, onRenew, onToggleAutoRenew, emailUnverified, resendState = 'idle', onResendVerification, onUserUpdate }: Props) {
+export default function MembershipCard({ user, onRenew, onToggleAutoRenew, emailUnverified, onUserUpdate }: Props) {
   const { t } = useT()
   const [confirmOpen, setConfirmOpen] = useState(false) // oto-yenileme iptal onay modali
   const plan = user.plan_active ?? 'free'
@@ -46,26 +47,9 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew, email
           </span>
         )}
       </div>
-      {/* E-posta dogrulama uyarisi: profil DUZENLEME formundan buraya tasindi. Dogrulamayan
-          kullanici premium olamaz; dogal yeri uyelik karti. Google ile giris = zaten dogrulu. */}
-      {emailUnverified && (
-        <div className="verify-bar profile-verify">
-          <Icon name="alert" size={15} />
-          <span>{t('verify.needed')}</span>
-          {resendState === 'sent' ? (
-            <span className="verify-sent">{t('verify.sent')}</span>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={resendState === 'sending'}
-              onClick={onResendVerification}
-            >
-              {t('verify.resend')}
-            </Button>
-          )}
-        </div>
-      )}
+      {/* E-posta dogrulama: "Tekrar gönder" -> e-postaya 6 haneli kod + link; kodu kutuya girince
+          hesap ANINDA doğrulanır. (Eski link-only bar yerine EmailVerify; PhoneVerify ile simetrik.) */}
+      {emailUnverified && <EmailVerify onVerified={(u) => onUserUpdate?.(u)} />}
       {/* Telefon doğrulama (OTP): numara var + doğrulanmamışsa gösterilir (bileşen kendi karar verir). */}
       <PhoneVerify user={user} onVerified={(u) => onUserUpdate?.(u)} />
       {premium && (

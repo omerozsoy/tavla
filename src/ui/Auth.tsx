@@ -676,6 +676,7 @@ export default function Auth({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
+                    className={password.length === 0 ? undefined : api.pwValid(password) ? 'valid' : 'invalid'}
                   />
                   <button
                     type="button"
@@ -687,7 +688,16 @@ export default function Auth({
                     <Icon name="eye" size={16} />
                   </button>
                 </div>
-                <span className="pw-hint text-xs text-muted-foreground">{t('reg.pwShort')}</span>
+                {/* Canli sifre dogrulamasi: bos=notr ipucu, karsilandi=yesil, eksik=kirmizi */}
+                {password.length === 0 ? (
+                  <span className="pw-hint text-xs text-muted-foreground">{t('reg.pwShort')}</span>
+                ) : api.pwValid(password) ? (
+                  <span className="pw-hint inline-flex items-center gap-1 text-xs" style={{ color: 'var(--success-fg)' }}>
+                    <Icon name="check" size={12} /> {t('reg.pwOk')}
+                  </span>
+                ) : (
+                  <span className="pw-hint text-xs text-destructive">{t('reg.pwShort')}</span>
+                )}
               </label>
               <Button type="submit" className="w-full" disabled={busy || nickBad}>
                 {t('reg.submitNew')}
