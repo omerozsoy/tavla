@@ -22758,7 +22758,10 @@ button.acct-row-logout:hover:not(:disabled) {
      yatay scrollbar cikinca (align-items:stretch ile) hayalet DIKEY scrollbar dogar; y'yi acikca
      hidden yap. Yukseklik icerige gore (clamp yok) oldugundan gercek icerik kirpilmaz. */
   overflow: auto hidden;
-  padding: 8px 6px 10px;
+  /* ALTTAN KESILME FIX: overflow-y:hidden + yatay scrollbar (~17px) icerik-kutusu kenarindan
+     keser -> en alttaki mac satiri scrollbar'in altinda kalip kirpiliyordu. padding-bottom'u
+     scrollbar'i gececek kadar buyut -> scrollbar PADDING alaninda durur, maclar TAM gorunur. */
+  padding: 8px 6px 26px;
   align-items: stretch;
 }
 .tourn-round {
