@@ -4996,7 +4996,7 @@ export default function App() {
     let lastFetchAt = 0
     const poll = async (force = false) => {
       if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme: poll'u da durdur
-      if (!force && realtimeConnected && Date.now() - lastFetchAt < 9000) return // push bağlı -> seyrek yedek
+      if (!force && realtimeConnected && Date.now() - lastFetchAt < 4000) return // push bağlı -> yedek ~4sn (timeout tespiti güvenli; hamleler zaten anında push)
       lastFetchAt = Date.now()
       try {
         // Oda sürümleri oda-yereldir. Son uygulanan sürümü gönderince backend
