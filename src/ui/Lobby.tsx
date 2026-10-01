@@ -147,7 +147,10 @@ export default function Lobby({
                notu. "Odadan Cik" butonu KALDIRILDI: bu kart sol menuyu bloklamaz (gezinilebilir) ve
                bekleme sirasinda cikis turnuva macini terk edip hukmen/no-show KAYBI dogururdu
                (footgun). Rakip baglaninca otomatik oyuna gecilir; gercekten cikmak isteyen menuden. */
-            <p className="register-sub">{t('mp.tournWaiting')}</p>
+            <>
+              <p className="register-sub">{t('mp.tournWaiting')}</p>
+              <p className="register-sub tourn-wait-info">{t('mp.tournWaitInfo')}</p>
+            </>
           ) : inviteWaitName ? (
             <>
               <p className="register-sub">{t('mp.waitingFor', { name: inviteWaitName })}</p>
