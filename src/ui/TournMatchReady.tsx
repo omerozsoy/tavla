@@ -10,6 +10,9 @@ const DRAW_MS = 2200 // ilk tur: kura animasyonu suresi
 interface Props {
   notice: TournNotice
   onEnter: () => void
+  // Aktif bir oyundayken: OTOMATIK girme; "oyunu birak, gec" / "devam et" diye SOR.
+  confirmLeave?: boolean
+  onDismiss?: () => void
 }
 
 /**
@@ -17,7 +20,7 @@ interface Props {
  * ardindan 20sn geri sayim -> oyuncu macina OTOMATIK girer ("Maca Gir" ile hemen).
  * Sitenin neresinde olursa olsun acilir (App, ping'teki tournament_matches'ten).
  */
-export default function TournMatchReady({ notice, onEnter }: Props) {
+export default function TournMatchReady({ notice, onEnter, confirmLeave = false, onDismiss }: Props) {
   const { t } = useT()
   const firstRound = (notice.round ?? 0) === 0
   const [drawing, setDrawing] = useState(firstRound)
@@ -56,8 +59,10 @@ export default function TournMatchReady({ notice, onEnter }: Props) {
   }, [firstRound, notice.tid, notice.oppName])
 
   // Geri sayim (kura bittikten sonra); 0 -> otomatik giris.
+  // confirmLeave: aktif oyun var -> OTOMATIK GIRME, kullanici onaylasin (coin/puan kaybi).
   useEffect(() => {
     if (drawing) return
+    if (confirmLeave) return
     if (left <= 0) {
       enter()
       return
@@ -65,7 +70,7 @@ export default function TournMatchReady({ notice, onEnter }: Props) {
     const id = window.setTimeout(() => setLeft((s) => s - 1), 1000)
     return () => window.clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drawing, left])
+  }, [drawing, left, confirmLeave])
 
   const rounds = notice.rounds ?? 0
   const ri = notice.round ?? 0
@@ -85,7 +90,17 @@ export default function TournMatchReady({ notice, onEnter }: Props) {
         <h2 className="tmr-title">{drawing ? t('tourn.drawing') : firstRound ? t('tourn.drawDone') : t('tourn.nextMatch')}</h2>
         <div className="tmr-label">{t('tourn.opponent')}</div>
         <div className={`tmr-opp${drawing ? ' spinning' : ''}`}>{shown}</div>
-        {!drawing && (
+        {!drawing && (confirmLeave ? (
+          <>
+            <div className="tmr-warn">{t('tourn.leaveCurrentWarn')}</div>
+            <Button variant="destructive" className="tmr-go" onClick={enter}>
+              <Icon name="flag" size={16} /> {t('tourn.leaveAndEnter')}
+            </Button>
+            <Button variant="secondary" onClick={() => onDismiss?.()}>
+              {t('tourn.keepPlaying')}
+            </Button>
+          </>
+        ) : (
           <>
             <div className="tmr-count" aria-label={t('tourn.autoEnter', { n: left })}>
               <span className="tmr-count-n tnum">{left}</span>
@@ -95,7 +110,7 @@ export default function TournMatchReady({ notice, onEnter }: Props) {
               <Icon name="play" size={16} /> {t('tourn.enterNow')}
             </Button>
           </>
-        )}
+        ))}
       </div>
     </div>
   )

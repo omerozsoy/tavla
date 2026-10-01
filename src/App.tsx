@@ -1605,6 +1605,8 @@ export default function App() {
   // Turnuva maci hazir penceresi (kura + 20sn geri sayim -> otomatik giris). Ayni mac icin bir kez.
   const [readyNotice, setReadyNotice] = useState<TournNoticeT | null>(null)
   const readySeenRef = useRef(new Set<string>())
+  // Aktif oyundayken "oyuna devam et" denen turnuva maclari: o oyun bitene kadar tekrar sorma.
+  const tournDismissedRef = useRef(new Set<string>())
   // Su anki oda bir turnuva maci mi (sonuc ekrani: rovans yok, "Turnuva Lobisi" var)
   const [tournRoom, setTournRoom] = useState<{ code: string; tid: number } | null>(null)
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
@@ -2313,20 +2315,29 @@ export default function App() {
 
   // TURNUVA MACI HAZIR: ping'te yeni (gorulmemis) mac varsa pencereyi ac. Aktif online oyunda
   // (turnuva maci dahil, bitmemis) BOLME; biten macin sonuc ekranindayken acilir (sonraki tur).
+  // Aktif online oyundayken de ac: ama OTOMATIK girme -> TournMatchReady confirmLeave moduyla
+  // "oyunu birak, gec" diye sorar (coin/puan kaybi). Oyun bitince (matchOver) tournDismissedRef
+  // temizlenir -> deklanse olan maci normal (oto-giris) modda tekrar gosterir.
+  const inActiveOnlineGame = online && !matchOver
   useEffect(() => {
     if (readyNotice) return
-    if (online && !matchOver) return
     const tm = tournMatchRef.current
     const n = tournNotices.find(
       (x) =>
         !readySeenRef.current.has(`${x.tid}-${x.match}`) &&
+        !tournDismissedRef.current.has(`${x.tid}-${x.match}`) &&
         !(tm && tm.tid === x.tid && tm.matchKey === x.match),
     )
     if (!n) return
-    readySeenRef.current.add(`${n.tid}-${n.match}`)
+    // Aktif oyunda: seen'e EKLEME (kullanici "devam"e basarsa oyun bitince tekrar gosterilsin).
+    if (!inActiveOnlineGame) readySeenRef.current.add(`${n.tid}-${n.match}`)
     setReadyNotice(n)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournNotices, online, matchOver, readyNotice])
+  }, [tournNotices, inActiveOnlineGame, readyNotice])
+  // Oyun bitince (sonuc ekrani) "devam" denen maclari yeniden sorulabilir yap.
+  useEffect(() => {
+    if (!inActiveOnlineGame) tournDismissedRef.current.clear()
+  }, [inActiveOnlineGame])
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
@@ -6312,6 +6323,27 @@ export default function App() {
     }
   }
 
+  // AKTIF OYUNDAYKEN turnuva macina gec: once mevcut oyunu HUKMEN birak (leaveRoom = ABANDON ->
+  // rakip galip; para macinda stake oder, ranked'da Elo kaybi), SONRA turnuva odasina gir.
+  // handleLeaveRoom'u CAGIRMA: o setRoom(null)/tournMatchRef=null ile yeni turnuva odasini ezer
+  // (yaris). Bunun yerine leaveRoom'u await edip stake/bet ref'lerini elle sifirla; state'i
+  // handlePlayTournamentMatch kendisi bastan kurar.
+  async function leaveCurrentAndEnterTourn(tid: number, matchKey: string, oppId: number) {
+    if (online && room?.code) {
+      const code = room.code
+      roomLeavingRef.current = code
+      syncEnabledRef.current = false
+      try {
+        await leaveRoom(code)
+      } catch {
+        /* abandon basarisiz olsa da turnuvaya devam et; sunucu presence ile temizler */
+      }
+    }
+    stakeRef.current = 0 // turnuva maci bahissiz -> eski para macinin stake'i tasinmasin
+    betPctRef.current = 0
+    await handlePlayTournamentMatch(tid, { key: matchKey }, oppId)
+  }
+
   // Paylasimli kodla online oyuna gir (arkadas daveti). Turnuva baglami yok.
   // DONUS: girildi mi (true/false). Rovans akisi bunu okur -> basarisiz girisi TEKRAR dener.
   async function enterOnlineByCode(code: string, target = 3, tc?: TimeControl): Promise<boolean> {
@@ -10177,6 +10209,26 @@ export default function App() {
             )}
           </div>
         </div>
+      )}
+
+      {/* TURNUVA MACI HAZIR — OYUN GORUNUMU: aktif oyunda banner oto-girmez, "oyunu birak, gec" /
+          "devam et" diye sorar (confirmLeave). matchOver (sonuc ekrani) iken normal oto-giris. */}
+      {readyNotice && (
+        <TournMatchReady
+          key={`${readyNotice.tid}-${readyNotice.match}`}
+          notice={readyNotice}
+          confirmLeave={online && !matchOver}
+          onDismiss={() => {
+            tournDismissedRef.current.add(`${readyNotice.tid}-${readyNotice.match}`)
+            setReadyNotice(null)
+          }}
+          onEnter={() => {
+            const n = readyNotice
+            setReadyNotice(null)
+            if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
+            else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
+          }}
+        />
       )}
     </div>
   )
