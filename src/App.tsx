@@ -724,7 +724,13 @@ export default function App() {
   // Rutbe esikleri (admin: Ayarlar > Rating Ayar) boot'ta sunucudan tazelenir; degisirse bu
   // abonelik agaci yeniden render eder -> rozetler/rutbeler yenilenmeyi beklemeden guncellenir.
   useSyncExternalStore(subscribeRankThresholds, rankThresholdsVersion, rankThresholdsVersion)
-  const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
+  // Pul renkleri takas edilince (swapStones) oyuncu motor-beyazi SIYAH, motor-siyahi BEYAZ
+  // gorur. Renk ADI da tahtadaki gorunumle ayni olmali (Board.tsx ayni inversiyon) -> yoksa
+  // "siyah kubu katladi" derken rakip ekranda BEYAZ gorunur. Tek kaynak: tum cagiranlar duzelir.
+  const pName = (p: Player) => {
+    const shown: Player = swapStones ? (p === 'white' ? 'black' : 'white') : p
+    return t(shown === 'white' ? 'player.white' : 'player.black')
+  }
   const [saved] = useState(() => loadGame())
   const [user, setUser] = useState<ServerUser | null>(null)
   // Sol menu override'lari (admin panelden: sira/ad/gorunurluk/grup). Anahtar -> override.
