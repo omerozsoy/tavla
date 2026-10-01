@@ -22698,7 +22698,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-prow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   padding: 4px 2px;
   border-bottom: 1px solid var(--border);
