@@ -2011,8 +2011,65 @@ class AuthController extends Controller
         if ($user->hasVerifiedEmail()) {
             return response()->json(['message' => 'already_verified']);
         }
-        $user->sendEmailVerificationNotification();
+        // 60sn cooldown (tekrar-gonder spam'i) — telefon OTP ile ayni desen.
+        $cd = 'eotp-cd:'.$user->id;
+        if (\Illuminate\Support\Facades\Cache::has($cd)) {
+            return response()->json(['message' => 'cooldown'], 429);
+        }
+        // 6 haneli kod uret + cache'le (15 dk). Kullanici bu kodu formdan girip ANINDA aktive eder;
+        // ayrica mevcut imzali dogrulama LINKI de gonderilir (iki yontem de calisir).
+        $code = (string) random_int(100000, 999999);
+        \Illuminate\Support\Facades\Cache::put('eotp:'.$user->id, ['code' => $code, 'tries' => 0], now()->addMinutes(15));
+        \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "Tavla TV e-posta doğrulama kodunuz: {$code}\n\nBu kod 15 dakika geçerlidir. "
+                ."Kodu siteye girerek hesabınızı doğrulayabilirsiniz.",
+                fn ($m) => $m->to($user->email)->subject('Tavla TV doğrulama kodu: '.$code)
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('email verify code mail failed', ['e' => $e->getMessage()]);
+        }
+        // Imzali link de gonder (geri uyumluluk; mail patlarsa sessiz).
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('email verify link mail failed', ['e' => $e->getMessage()]);
+        }
         return response()->json(['message' => 'sent']);
+    }
+
+    // E-posta kodu dogrula: dogruysa email_verified_at damgalanir. 5 yanlista kod iptal.
+    // Telefon OTP (verifyPhoneOtp) ile birebir ayni desen; kod cache'te 'eotp:{id}'.
+    public function verifyEmailCode(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'regex:/^\d{6}$/'],
+        ]);
+        $user = $request->user();
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['user' => $user, 'message' => 'already_verified']);
+        }
+        $key = 'eotp:'.$user->id;
+        $rec = \Illuminate\Support\Facades\Cache::get($key);
+        if (! $rec) {
+            return response()->json(['message' => 'expired'], 422);
+        }
+        if (($rec['tries'] ?? 0) >= 5) {
+            \Illuminate\Support\Facades\Cache::forget($key);
+
+            return response()->json(['message' => 'too_many'], 422);
+        }
+        if (! hash_equals((string) $rec['code'], $data['code'])) {
+            $rec['tries'] = ($rec['tries'] ?? 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($key, $rec, now()->addMinutes(15));
+
+            return response()->json(['message' => 'wrong'], 422);
+        }
+        $user->markEmailAsVerified(); // fillable disi -> guvenli
+        \Illuminate\Support\Facades\Cache::forget($key);
+
+        return response()->json(['user' => $user->fresh(), 'message' => 'verified']);
     }
 
     // Telefon OTP gonder: kullanicinin kayitli cep numarasina 6 haneli kod (5 dk gecerli).

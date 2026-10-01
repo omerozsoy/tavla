@@ -25283,15 +25283,49 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.88rem;
   max-width: 94vw;
 }
-/* Profil formu icindeki (in-flow) dogrulama uyarisi: yuzen degil */
+/* Profil formu icindeki (in-flow) dogrulama uyarisi: yuzen degil + KOMPAKT (eski koyu
+   bar tum karti kaplayip "cok buyuk" + ghost buton dusuk kontrast "gorunmez"di).
+   Icerik kadar genis (fit-content) acik amber uyari cipi; metin+buton net okunur. */
 .profile-verify {
   position: static;
   right: auto;
   bottom: auto;
   z-index: auto;
-  max-width: none;
-  margin: 4px 0 12px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  margin: 2px 0 12px;
+  padding: 7px 12px;
+  gap: 8px;
+  background: color-mix(in srgb, #e6b422 16%, var(--card-bg, #fff));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, #e6b422 55%, transparent);
   box-shadow: none;
+  font-size: 0.85rem;
+}
+.profile-verify > svg {
+  color: #b8860b;
+  flex: none;
+}
+/* Bar icindeki butonlar (shadcn ghost) acik cipte dusuk kontrasttaydi -> belirgin altin pill */
+.profile-verify [data-slot='button'] {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  height: auto;
+  min-height: 0;
+  padding: 5px 13px;
+  font-size: 0.82rem;
+}
+.profile-verify [data-slot='button']:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  color: #fff;
+}
+.profile-verify [data-slot='button']:disabled {
+  opacity: 0.6;
 }
 .verify-resend:not([data-slot]) {
   background: #e6b422;

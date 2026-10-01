@@ -182,7 +182,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     // test maclari 12/dk'yi asip 429 -> "puanin kaydedilemedi" verebiliyordu; 30/dk yeterli
     // headroom (reportRating oda+kullanici basi IDEMPOTENT -> yuksek limit guvenli).
     Route::middleware('throttle:30,1,rating-report')->post('/rating/report', [AuthController::class, 'reportRating']);
-    Route::post('/email/resend', [AuthController::class, 'resendVerification']);
+    Route::post('/email/resend', [AuthController::class, 'resendVerification'])->middleware('throttle:6,1,email-resend');
+    Route::post('/email/verify-code', [AuthController::class, 'verifyEmailCode'])->middleware('throttle:10,1,email-verify');
     // Telefon OTP: kod gonder (60sn cooldown + 6/dk) ve dogrula (10/dk). Islemsel SMS.
     Route::post('/phone/send-otp', [AuthController::class, 'sendPhoneOtp'])->middleware('throttle:6,1,phone-otp');
     Route::post('/phone/verify-otp', [AuthController::class, 'verifyPhoneOtp'])->middleware('throttle:10,1,phone-verify');
