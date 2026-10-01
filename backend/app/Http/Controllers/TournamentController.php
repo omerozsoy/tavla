@@ -115,6 +115,10 @@ class TournamentController extends Controller
             }
             $parts[] = $winners;
         }
+        // Duyuru degisimi de poll'u tazelesin: en yuksek id + toplam adet (silme de yakalanir).
+        $ann = \App\Models\TournamentAnnouncement::where('tournament_id', $t->id)
+            ->selectRaw('MAX(id) as m, COUNT(*) as c')->first();
+        $parts[] = (int) ($ann->m ?? 0).':'.(int) ($ann->c ?? 0);
 
         return substr(md5(json_encode($parts)), 0, 12);
     }
@@ -1326,6 +1330,16 @@ class TournamentController extends Controller
             'bracket' => $t->bracket,
             'champion_id' => $t->champion_id,
             'swiss' => \App\Support\Swiss\SwissRuntime::isSwiss($t) ? \App\Support\Swiss\SwissRuntime::serialize($t) : null,
+            // Lobi duyurulari (admin panelden; en yeni ustte). Yeni duyuruda istemci zil calar.
+            'announcements' => \App\Models\TournamentAnnouncement::where('tournament_id', $t->id)
+                ->latest('id')->limit(30)
+                ->get(['id', 'message', 'created_at'])
+                ->map(fn ($a) => [
+                    'id' => $a->id,
+                    'message' => $a->message,
+                    'at' => $a->created_at?->toIso8601String(),
+                ])
+                ->all(),
             'rev' => self::rev($t), // canli poll: ?rev= ayniysa show() 204 doner
         ]);
     }
