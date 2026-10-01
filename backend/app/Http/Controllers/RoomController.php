@@ -868,26 +868,25 @@ class RoomController extends Controller
             ];
         });
 
-        // Oynamaya musait: cevrimici (last_seen<70sn) + durum Musait/Hazir (veya secmemis) +
-        // oyunda DEGIL + arayan listesinde DEGIL + sistem/kendisi DEGIL. Bunlar kuyrukta degil
-        // -> "davet" (onInvite) ile oynanir; seeking gibi "eslesme" yapilmaz.
+        // Oynamaya MUSAIT: YALNIZCA durumu "Oyuna Hazir" (presence_status='ready') + cevrimici
+        // (last_seen<70sn) + oyunda DEGIL + arayan listesinde DEGIL + sistem/kendisi DEGIL. Bunlar
+        // kuyrukta degil -> "davet" (onInvite) ile oynanir; seeking gibi "eslesme" yapilmaz.
+        // presence_status kolonu YOKSA (migrate kosmadi) "hazir" dogrulanamaz -> musait listesi bos.
         $seekingIds = $rooms->pluck('p1_user_id')->filter()->map(fn ($i) => (int) $i)->all();
         $hasStatus = Schema::hasColumn('users', 'presence_status');
-        $ucols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until'];
+        $avUsers = collect();
         if ($hasStatus) {
-            $ucols[] = 'presence_status';
+            $ucols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'presence_status'];
+            $avUsers = User::whereNotNull('last_seen')
+                ->where('is_system', false)
+                ->where('last_seen', '>', now()->subSeconds(70))
+                ->where('presence_status', 'ready') // SADECE "Oyuna Hazir"
+                ->when($me, fn ($q) => $q->where('id', '!=', $me->id))
+                ->when(! empty($seekingIds), fn ($q) => $q->whereNotIn('id', $seekingIds))
+                ->orderByDesc('rating')
+                ->limit(100)
+                ->get($ucols);
         }
-        $avQuery = User::whereNotNull('last_seen')
-            ->where('is_system', false)
-            ->where('last_seen', '>', now()->subSeconds(70))
-            ->when($me, fn ($q) => $q->where('id', '!=', $me->id))
-            ->when(! empty($seekingIds), fn ($q) => $q->whereNotIn('id', $seekingIds));
-        if ($hasStatus) {
-            $avQuery->where(function ($q) {
-                $q->whereNull('presence_status')->orWhereIn('presence_status', ['available', 'ready']);
-            });
-        }
-        $avUsers = $avQuery->orderByDesc('rating')->limit(100)->get($ucols);
 
         // Aktif macta olanlar musait sayilmaz (onlinePlayers deseni, tek sorgu).
         $avIds = $avUsers->pluck('id');
