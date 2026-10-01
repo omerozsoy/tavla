@@ -1,30 +1,18 @@
-// BAYAT BUNDLE KALICI ÇÖZÜM: yeni bir deploy algılandığında istemciyi GÜVENLİ bir anda
-// (aktif maç / ödeme akışı DIŞINDA) TEK SEFER otomatik yeniler. Böylece kullanıcılar eski
-// koddaki hatalarla (ör. maç-sonu desync / yanlış senkron uçları) maça girmez — deploy edilen
-// düzeltmeler kullanıcıya HIZLA ulaşır.
+// BAYAT BUNDLE ÇÖZÜMÜ: yeni bir deploy algılandığında kullanıcıyı HABERSİZ yenilemek YERİNE
+// "sitenin yeni sürümü var, lütfen güncelleyin" banner'ı gösterilir (UpdateBanner). Reload yalnız
+// kullanıcı "Güncelle"ye dokununca olur. Böylece "durup dururken sayfa yenilendi" (özellikle iOS
+// Safari arka plana atınca görünmez reload) şikâyeti biter. Banner, aktif maç / hassas rota (ödeme)
+// / metin seçimi / bilgi okuma sayfası varken GÖSTERİLMEZ -> güvenli ana ertelenir.
 //
-// Nasıl çalışır:
-//  - Açılışta çalışan bundle'ın ana giriş hash'ini (assets/index-XXXX.js) DOM'dan yakalar.
-//  - Periyodik + sekmeye dönünce + odakta /index.html'i no-store çeker, oradaki giriş hash'iyle
-//    kıyaslar. Deploy additive olduğu için index.html her deploy'da YENİ hash'e döner -> fark =
-//    yeni sürüm.
-//  - Yeni sürüm varsa GÜVENLİ + ŞAŞIRTMAYAN anda location.reload(): (a) sekme ARKA PLANDAyken
-//    (kullanıcı görmez) VEYA (b) sekme önde ama IDLE_MS boyunca ETKİLEŞİMSİZKEN ("gerçekten
-//    boşta"). Sekmeye DÖNÜŞ yenilemez (dönüş = aktivite kabul edilir, boşta sayacı sıfırlanır)
-//    -> "başka sekmede gezip geri dönünce sayfa yenileniyor" şikâyetinin kökü budur. Aktif maç
-//    ekranı / ödeme rotası her hâlükârda hariç. sessionStorage kalkanı reload döngüsünü önler.
-//
-// TASARIM İLKESİ: aktif maçı ASLA bölme (oyun kaybı/desync olmasın) + kullanıcıyı gözünün önünde
-// ŞAŞIRTMA. Yalnız lobi/gezinme + arka plan / boşta anlarda yenile. "Maçtayım" tespiti DOM'dan
-// (.app.game-view) yapılır -> React state'e bağımlılık yok, App.tsx'e dokunulmaz.
+// Tespit: açılıştaki bundle giriş hash'i (assets/index-XXXX.js) ile sunucudaki /index.html'in giriş
+// hash'i kıyaslanır. Frontend içerik-hash'li olduğundan backend-only deploy hash'i DEĞİŞTİRMEZ ->
+// banner çıkmaz; yalnız frontend gerçekten değiştiğinde çıkar. "Maçtayım" tespiti DOM'dan
+// (.app.game-view) -> React state'e bağımlılık yok.
 
 import { reloadWithCause } from './reloadDiag'
 
-const RELOAD_KEY = 'tavla:autoupdate:target'
-// Reload'ın kesinlikle YAPILMAYACAĞI hassas rotalar (form/ödeme akışı yarıda kalmasın).
+// Banner'ın KESİNLİKLE gösterilmeyeceği hassas rotalar (form/ödeme akışı bölünmesin).
 const SENSITIVE = ['/sepet', '/odeme', '/checkout', '/cart', '/uyelik', '/payment', '/magaza']
-// Sekme ÖNDEyken "gerçekten boşta" eşiği: bu kadar süre hiç etkileşim olmazsa yenilemeye izin ver.
-const IDLE_MS = 3 * 60 * 1000
 
 function entryOf(text: string): string | null {
   const m = text.match(/index-[A-Za-z0-9_-]+\.js/)
@@ -43,8 +31,8 @@ function currentEntry(): string | null {
 }
 async function deployedEntry(): Promise<string | null> {
   try {
-    // Cache-bust query ŞART: service worker /index.html'i stale-while-revalidate ile
-    // cache'den (BAYAT) dönebilir. Benzersiz query -> SW cache miss -> daima ağdan taze HTML.
+    // Cache-bust query ŞART: service worker /index.html'i stale-while-revalidate ile BAYAT
+    // dönebilir. Benzersiz query -> SW cache miss -> daima ağdan taze HTML.
     const res = await fetch('/index.html?_v=' + Date.now(), { cache: 'no-store' })
     if (!res.ok) return null
     return entryOf(await res.text())
@@ -52,65 +40,55 @@ async function deployedEntry(): Promise<string | null> {
     return null
   }
 }
-// GÜVENLİ Mİ? Aktif maç ekranı (.app.game-view) açıkken VEYA hassas bir rotadayken reload etme.
-function unsafeToReload(): boolean {
-  if (document.querySelector('.app.game-view')) return true // maç/oyun görünümü -> bölme
+
+// Banner'ı GÖSTERMEK güvenli mi? Aktif maç / hassas rota / metin seçimi / okuma sayfası -> ERTELE.
+function unsafeToPrompt(): boolean {
+  if (document.querySelector('.app.game-view')) return true // maç/oyun görünümü -> dikkat dağıtma
   const p = (window.location.pathname || '').toLowerCase()
-  // Bilgi/icerik sayfalarinda kullanici metin okuyup secebilir; arka planda
-  // bundle yenilemek sayfayi bastan kurar ve tarayici secimini siler.
-  if (p.startsWith('/bilgi/')) return true
-  if (window.getSelection()?.toString()) return true
+  if (p.startsWith('/bilgi/')) return true // okuma sayfası
+  if (window.getSelection()?.toString()) return true // metin seçili
   return SENSITIVE.some((s) => p.includes(s))
 }
 
-/** main.tsx'ten bir kez çağrılır. Deploy izleyip güvenli anda otomatik yeniler. */
-export function installAutoUpdate() {
+let pendingTarget: string | null = null // algılanan yeni sürüm (hash)
+let notified = false // banner bu oturumda gösterildi mi (tekrar tetikleme)
+let listener: (() => void) | null = null // UpdateBanner aboneliği
+
+function maybeNotify(): void {
+  if (!pendingTarget || notified || !listener) return
+  if (unsafeToPrompt()) return // güvenli ana ertele (interval tekrar dener)
+  notified = true
+  listener()
+}
+
+/** UpdateBanner buna abone olur; yeni sürüm güvenli anda algılanınca çağrılır. */
+export function onUpdateAvailable(cb: () => void): void {
+  listener = cb
+  maybeNotify()
+}
+
+/** Banner "Güncelle" butonu -> yeni bundle'ı yükle (reload nedenini damgalayarak). */
+export function applyUpdate(): void {
+  reloadWithCause('autoupdate')
+}
+
+/** main.tsx'ten bir kez. Deploy izler; yeni sürümü güvenli anda banner ile BİLDİRİR (reload etmez). */
+export function installAutoUpdate(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
   const mine = currentEntry()
   if (!mine) return // giriş hash'i saptanamadı -> güvenli taraf: hiçbir şey yapma
 
-  let target: string | null = null
-  // Son ETKİLEŞİM anı. Sekmeye dönüş de "etkileşim" sayılır (bump) -> dönüşte anında yenilenmez.
-  let lastActivity = Date.now()
-  const bump = () => { lastActivity = Date.now() }
-  const idle = () => Date.now() - lastActivity >= IDLE_MS
-
-  const tryReload = () => {
-    if (!target || unsafeToReload()) return
-    // ŞAŞIRTMA: sekme ÖNDE ve kullanıcı YAKIN ZAMANDA etkileşimdeyse yenileme. İzin verilen anlar:
-    //  - sekme ARKA PLANDA (hidden) -> reload görünmez, kullanıcı flash görmez;
-    //  - sekme önde ama IDLE_MS'tir dokunulmamış ("gerçekten boşta").
-    if (document.visibilityState === 'visible' && !idle()) return
-    try {
-      if (sessionStorage.getItem(RELOAD_KEY) === target) return // bu sürüme zaten reload denendi
-      sessionStorage.setItem(RELOAD_KEY, target)
-    } catch {
-      /* gizli mod / storage yok -> yine de reload et (bu hedefe ilk denemedir) */
-    }
-    reloadWithCause('autoupdate')
-  }
-
   const check = async () => {
     const dep = await deployedEntry()
-    if (dep && dep !== mine) target = dep // yeni sürüm bulundu (deploy oldu)
-    tryReload()
-  }
-
-  // Etkileşim izleme: her biri "boşta" sayacını sıfırlar (pasif -> scroll perf'i etkilenmez).
-  for (const ev of ['pointerdown', 'keydown', 'scroll', 'touchstart', 'mousemove', 'wheel']) {
-    window.addEventListener(ev, bump, { passive: true })
+    if (dep && dep !== mine) pendingTarget = dep // yeni sürüm bulundu (frontend değişti)
+    maybeNotify()
   }
 
   check()
   window.setInterval(check, 5 * 60 * 1000) // 5 dk: yeni deploy tara
-  window.setInterval(tryReload, 15000) // periyodik: boşta/arka plan koşulu sağlanınca uygula
+  window.setInterval(maybeNotify, 15000) // güvenli ana geçince (maçtan çıkınca vb.) banner'ı sun
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      bump() // DÖNÜŞ = aktivite: boşta sayacını sıfırla -> dönüşte anında reload YOK
-      check() // yeni sürüm var mı diye taze bak (reload'u tryReload boşta/arka plan kuralına bırakır)
-    } else {
-      tryReload() // arka plana geçti -> güvenliyse hemen (görünmez) yenile
-    }
+    if (document.visibilityState === 'visible') check()
   })
-  window.addEventListener('focus', () => { bump(); check() })
+  window.addEventListener('focus', check)
 }

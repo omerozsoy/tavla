@@ -11,6 +11,7 @@ import { TopRanksProvider } from './topRanks.tsx'
 import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
+import UpdateBanner from './ui/UpdateBanner.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
@@ -32,6 +33,8 @@ createRoot(document.getElementById('root')!).render(
               <GatePrompt />
               {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
               <PullToRefresh />
+              {/* Yeni sürüm algılanınca "güncelleyin" istemi (kendiliğinden reload YOK) */}
+              <UpdateBanner />
             </PresenceProvider>
           </TopRanksProvider>
         </ToastProvider>
@@ -40,10 +43,8 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// BAYAT BUNDLE KALICI ÇÖZÜM: yeni deploy'u algılayıp GÜVENLİ anda (aktif maç/ödeme DIŞINDA,
-// metin seçiliyken ve /bilgi/ okuma sayfalarında DEĞİL, yalnız boşta/arka planda) TEK SEFER
-// otomatik yenile. Açık kalan sekmeler eski kodda (ör. "resim önizleme kapanmıyor") takılı
-// kalmasın. Okuma/seçim koruması artık autoUpdate.ts unsafeToReload() içinde -> güvenle açık.
+// BAYAT BUNDLE ÇÖZÜMÜ: yeni deploy'u algıla; kendiliğinden YENİLEME -> güvenli anda UpdateBanner
+// ile "yeni sürüm var, güncelleyin" de. Reload yalnız kullanıcı "Güncelle"ye basınca olur.
 installAutoUpdate()
 
 // GEÇİCİ: Safari "çok yenileniyor" şikâyetinin kökünü ölç (reload nedeni/ekran -> /api/diag/reload).
