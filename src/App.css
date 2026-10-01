@@ -17841,17 +17841,25 @@ button.acct-row-logout:hover:not(:disabled) {
   background: var(--card-bg);
 }
 /* Kart alt kosesinde "Turnuva Lobisi ->" ipucu baglantisi (kart zaten buton). */
+/* Standart (primary) dugme gorunumu, SAGA yasli. Kart zaten buton; bu gorsel CTA. */
 .tourn-lobby-link {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
+  margin-left: auto; /* event-main blok akisinda saga yaslar */
   align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-  color: var(--primary);
+  gap: 6px;
+  margin-top: 10px;
+  padding: 9px 16px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md, 8px);
+  background: var(--primary);
+  color: var(--primary-foreground, #fff);
   font-weight: 600;
   font-size: 0.9rem;
 }
 .event-row:hover .tourn-lobby-link {
-  text-decoration: underline;
+  background: var(--primary-hover, var(--primary));
+  border-color: var(--primary-hover, var(--primary));
 }
 /* Hero: 4 istatistik hucre (odul / baslangic / katilim / giris) */
 .tourn-hero {
