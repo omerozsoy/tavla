@@ -7902,6 +7902,7 @@ export default function App() {
     setSoloOpen(false)
     setProductsOpen(false)
     setMyOrdersOpen(false)
+    setBankData(null) // Havale/EFT talimat ekrani da yuzen overlay; navigasyonda kapansin (baska sayfaya sizmasin)
     setContentView(null)
     setNewsSlug(null)
     setQuizOpen(false)
@@ -8767,6 +8768,7 @@ export default function App() {
         <Suspense fallback={null}>
         <Tournaments
           myId={user?.id ?? null}
+          isAdmin={!!user?.is_admin}
           premium={premium}
           onRequireLogin={() => setShowAuth(true)}
           onRequirePremium={() => setMemOpen(true)}
