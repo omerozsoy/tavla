@@ -101,3 +101,6 @@ graphify-out/
 chatgpt-standart-board/
 tourn-card-preview.html
 e2e/__out__/
+
+# DB yedek dokumleri repoya girmesin (hassas kullanici verisi)
+backup_*.sql

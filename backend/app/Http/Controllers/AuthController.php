@@ -2085,6 +2085,11 @@ class AuthController extends Controller
         if (! preg_match('/^0?5\d{9}$/', $phone)) {
             return response()->json(['message' => 'no_phone'], 422);
         }
+        // Hesap-bazli kilit: cok yanlis denemede yeni kod uretimi de durur (aksi halde
+        // saldirgan cooldown sonrasi surekli yeni kod uretip her birine 5 deneme yapar).
+        if (\Illuminate\Support\Facades\Cache::has('otp-lock:'.$user->id)) {
+            return response()->json(['message' => 'locked'], 429);
+        }
         $cd = 'otp-cd:'.$user->id;
         if (\Illuminate\Support\Facades\Cache::has($cd)) {
             return response()->json(['message' => 'cooldown'], 429);
@@ -2107,6 +2112,13 @@ class AuthController extends Controller
         if ($user->phone_verified_at) {
             return response()->json(['user' => $user, 'message' => 'already_verified']);
         }
+        // Kalici kilit: kod yenilense bile toplam yanlis denemeyi sayar. Esik asilinca
+        // 30 dk hem dogrulama hem yeni kod uretimi durur -> 10^6 kod brute-force edilemez.
+        $lock = 'otp-lock:'.$user->id;
+        $fails = 'otp-fails:'.$user->id;
+        if (\Illuminate\Support\Facades\Cache::has($lock)) {
+            return response()->json(['message' => 'locked'], 429);
+        }
         $key = 'otp:'.$user->id;
         $rec = \Illuminate\Support\Facades\Cache::get($key);
         if (! $rec) {
@@ -2120,9 +2132,18 @@ class AuthController extends Controller
         if (! hash_equals((string) $rec['code'], $data['code'])) {
             $rec['tries'] = ($rec['tries'] ?? 0) + 1;
             \Illuminate\Support\Facades\Cache::put($key, $rec, now()->addMinutes(5));
+            $total = (int) \Illuminate\Support\Facades\Cache::get($fails, 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($fails, $total, now()->addMinutes(30));
+            if ($total >= 10) {
+                \Illuminate\Support\Facades\Cache::put($lock, 1, now()->addMinutes(30));
+                \Illuminate\Support\Facades\Cache::forget($key);
+
+                return response()->json(['message' => 'locked'], 429);
+            }
 
             return response()->json(['message' => 'wrong'], 422);
         }
+        \Illuminate\Support\Facades\Cache::forget($fails);
         $user->phone_verified_at = now(); // fillable disi -> guvenli dogrudan atama
         $user->save();
         \Illuminate\Support\Facades\Cache::forget($key);

@@ -12,6 +12,16 @@ class SecurityHeaders
     {
         $response = $next($request);
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        // OWASP temel baslikları: clickjacking + MIME-sniff + Adobe cross-domain.
+        // X-Frame-Options SAMEORIGIN (DENY degil) -> ayni kaynak iframe'leri kirmaz.
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        // HSTS yalniz production + https (http uzerinde gondermek anlamsiz/zararli).
+        if (app()->environment('production') && $request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
 
         // COOP burada SET EDİLMEZ. COOP tek kaynaktan (nginx additional directives) verilir.
         // Birden fazla katman (nginx + .htaccess + middleware) aynı COOP başlığını eklerse tarayıcı
