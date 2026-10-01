@@ -7156,6 +7156,38 @@ html[data-board='yilbasi'] .checker.black {
 .board.stones-swapped .die-face.black .pip-dot {
   background: #18181b;
 }
+/* ZAR, PUL'un FINISH'ini de alsin (yalniz renk degil): gloss/ice/neon boardlarda pul parlak/
+   buzlu/neon iken zar DUZ kaliyordu -> "zar pul'a uymuyor". Pul kurallarinin ([data-checker=…]
+   .checker.*) zar karsiligi; ayni --cream/--navy taban + ayni radyal highlight. Taban renk
+   zaten pul rengi; burada SADECE yuzey finish'i eklenir (dual-ring golge korunur, pip ustte). */
+[data-checker='gloss'] .die-face.white {
+  background:
+    radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 55%),
+    var(--cream);
+}
+[data-checker='gloss'] .die-face.black {
+  background:
+    radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 55%),
+    var(--navy);
+}
+[data-checker='ice'] .die-face.white {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.08) 62%),
+    var(--cream);
+}
+[data-checker='ice'] .die-face.black {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(210, 235, 255, 0.6), rgba(255, 255, 255, 0) 58%),
+    var(--navy);
+}
+[data-checker='neon'] .die-face.white {
+  background: radial-gradient(circle at 38% 30%, #fff, var(--cream) 72%);
+}
+[data-checker='neon'] .die-face.black {
+  background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--navy) 45%, #fff), var(--navy) 72%);
+}
+/* ring (orbit): pul İÇİ BOŞ halka; zar pip göstermek zorunda -> içi DOLU kalır ama pul rengini
+   (--cream/--navy) alır ve dual-ring kenarıyla zaten halka hissi verir (okunurluk korunur). */
 .die-face.used {
   opacity: 0.35;
 }
