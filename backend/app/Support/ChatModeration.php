@@ -36,22 +36,28 @@ class ChatModeration
         if ($u && $u->is_admin) {
             return [$text, false];
         }
-        $words = NicknameFilter::words();
-        if (! $words) {
+        $sub = NicknameFilter::words();          // substring aranan kokler
+        $whole = NicknameFilter::wholeWords();   // '=' onekli tam-kelime kokler
+        if (! $sub && ! $whole) {
             return [$text, false];
         }
         $hit = false;
-        $out = preg_replace_callback('/\S+/u', function ($m) use ($words, &$hit) {
+        $out = preg_replace_callback('/\S+/u', function ($m) use ($sub, $whole, &$hit) {
             $norm = NicknameFilter::normalize($m[0]);
             if ($norm === '') {
                 return $m[0];
             }
-            foreach ($words as $w) {
+            foreach ($sub as $w) {
                 if (str_contains($norm, $w)) {
                     $hit = true;
 
                     return '****';
                 }
+            }
+            if (in_array($norm, $whole, true)) { // tam-kelime: token'a birebir esit
+                $hit = true;
+
+                return '****';
             }
 
             return $m[0];
