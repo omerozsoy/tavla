@@ -1026,6 +1026,8 @@ export default function App() {
       ? tournDetailId != null
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
         : 'online-turnuvalar'
+      : bankData
+        ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
       : checkoutOpen
         ? 'sepet' // odeme adimi URL'de /sepet gosterir: yenileme/geri guvenle sepete doner
       : cartOpen
@@ -1034,6 +1036,10 @@ export default function App() {
         ? shopTab && shopTab !== 'coin' && shopTab !== 'coins'
           ? 'magaza/' + shopTab + (shopProduct ? '/' + shopProduct : '') // kategori / urun detay sayfasi
           : 'magaza' // coin (varsayilan) sayfasi
+      : productsOpen
+        ? 'urunler'
+      : myOrdersOpen
+        ? 'siparislerim'
       : luckyWheelOpen
         ? 'sans-carki'
         : diceSlotOpen
@@ -1283,6 +1289,7 @@ export default function App() {
         case 'urunler':
           setProductsOpen(true)
           break
+        case 'havale': // Havale talimati gecici (sunucu referansi, URL'den kurulamaz) -> siparislere dus
         case 'siparislerim':
           setMyOrdersOpen(true)
           break
