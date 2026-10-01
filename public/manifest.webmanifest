@@ -1,5 +1,6 @@
 {
-  "name": "TavlaTv — Online & Ücretsiz Tavla",
+  "id": "/",
+  "name": "TavlaTv",
   "short_name": "TavlaTv",
   "description": "Ücretsiz online tavla: arkadaşınla oyna, yapay zekaya karşı yarış, rating kazan.",
   "start_url": "/",

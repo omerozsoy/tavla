@@ -12,6 +12,7 @@ import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
 import UpdateBanner from './ui/UpdateBanner.tsx'
+import InstallPrompt from './ui/InstallPrompt.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
@@ -35,6 +36,8 @@ createRoot(document.getElementById('root')!).render(
               <PullToRefresh />
               {/* Yeni sürüm algılanınca "güncelleyin" istemi (kendiliğinden reload YOK) */}
               <UpdateBanner />
+              {/* "TavlaTv'yi yükle" (PWA): standalone/maç/yakın-zamanda-kapatıldıysa görünmez */}
+              <InstallPrompt />
             </PresenceProvider>
           </TopRanksProvider>
         </ToastProvider>
