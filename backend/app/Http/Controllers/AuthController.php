@@ -1998,6 +1998,64 @@ class AuthController extends Controller
         return response()->json(['message' => 'sent']);
     }
 
+    // Telefon OTP gonder: kullanicinin kayitli cep numarasina 6 haneli kod (5 dk gecerli).
+    // 60sn cooldown (tekrar-gonder spam'i). IYS MUAF islemsel dogrulama SMS'i. Kod ASLA
+    // yanitta donmez (yalniz SMS ile gider). Netgsm yapilandirilmamissa Sms::send loglar.
+    public function sendPhoneOtp(Request $request)
+    {
+        $user = $request->user();
+        if ($user->phone_verified_at) {
+            return response()->json(['message' => 'already_verified']);
+        }
+        $phone = (string) ($user->phone ?? '');
+        if (! preg_match('/^0?5\d{9}$/', $phone)) {
+            return response()->json(['message' => 'no_phone'], 422);
+        }
+        $cd = 'otp-cd:'.$user->id;
+        if (\Illuminate\Support\Facades\Cache::has($cd)) {
+            return response()->json(['message' => 'cooldown'], 429);
+        }
+        $code = (string) random_int(100000, 999999);
+        \Illuminate\Support\Facades\Cache::put('otp:'.$user->id, ['code' => $code, 'tries' => 0], now()->addMinutes(5));
+        \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
+        \App\Support\Sms::send($phone, 'Tavla TV dogrulama kodunuz: '.$code.'. Kod 5 dakika gecerlidir.');
+
+        return response()->json(['message' => 'sent']);
+    }
+
+    // Telefon OTP dogrula: dogruysa phone_verified_at damgalanir. 5 yanlista kod iptal.
+    public function verifyPhoneOtp(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'regex:/^\d{6}$/'],
+        ]);
+        $user = $request->user();
+        if ($user->phone_verified_at) {
+            return response()->json(['user' => $user, 'message' => 'already_verified']);
+        }
+        $key = 'otp:'.$user->id;
+        $rec = \Illuminate\Support\Facades\Cache::get($key);
+        if (! $rec) {
+            return response()->json(['message' => 'expired'], 422);
+        }
+        if (($rec['tries'] ?? 0) >= 5) {
+            \Illuminate\Support\Facades\Cache::forget($key);
+
+            return response()->json(['message' => 'too_many'], 422);
+        }
+        if (! hash_equals((string) $rec['code'], $data['code'])) {
+            $rec['tries'] = ($rec['tries'] ?? 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($key, $rec, now()->addMinutes(5));
+
+            return response()->json(['message' => 'wrong'], 422);
+        }
+        $user->phone_verified_at = now(); // fillable disi -> guvenli dogrudan atama
+        $user->save();
+        \Illuminate\Support\Facades\Cache::forget($key);
+
+        return response()->json(['user' => $user, 'message' => 'verified']);
+    }
+
     // Takma isim musait mi? (kayit formu icin, halka acik)
     public function nicknameAvailable(Request $request)
     {

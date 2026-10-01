@@ -53,6 +53,7 @@ interface Props {
   emailUnverified?: boolean
   resendState?: 'idle' | 'sending' | 'sent'
   onResendVerification?: () => void
+  onUserUpdate?: (u: ServerUser) => void // telefon OTP dogrulaninca global user guncelle
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
   onOpenShop?: (tab: 'frame' | 'board') => void // (kullanılmıyor; geriye dönük)
@@ -97,6 +98,7 @@ export default function ProfileOverview({
   emailUnverified,
   resendState,
   onResendVerification,
+  onUserUpdate,
   onOpenMatchHistory,
   onOpenAchievements,
   onOpenOrders,
@@ -199,6 +201,7 @@ export default function ProfileOverview({
             emailUnverified={emailUnverified}
             resendState={resendState}
             onResendVerification={onResendVerification}
+            onUserUpdate={onUserUpdate}
           />
         </div>
 

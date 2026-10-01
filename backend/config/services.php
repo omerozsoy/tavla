@@ -35,6 +35,14 @@ return [
         ],
     ],
 
+    // Netgsm SMS (telefon OTP + islemsel bildirim). usercode/password hesaptan,
+    // header = onayli gonderici basligi (orn 'TAVLATV'). Uretimde .env'de tanimla.
+    'netgsm' => [
+        'user'   => env('NETGSM_USER', ''),
+        'pass'   => env('NETGSM_PASS', ''),
+        'header' => env('NETGSM_HEADER', ''),
+    ],
+
     // Google Sign-In (ID token dogrulama). Client ID gizli degildir.
     'google' => [
         'client_id' => env(
