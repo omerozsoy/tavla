@@ -2138,6 +2138,7 @@ export async function reportRating(
 // ready=false iken "analiz ediliyor" gösterilir; ready=true olunca gösterilen PR gnubg olur.
 export async function matchGnubgPr(id: number): Promise<{
   ready: boolean
+  settled?: boolean // analiz KESİN bitti (PR çıksa da çıkmasa da) -> settled && !ready => PR yok, "—"
   pr: number | null
   checker_pr: number | null
   cube_pr: number | null

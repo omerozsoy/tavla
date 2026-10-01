@@ -4658,6 +4658,12 @@ export default function App() {
           }))
           setPrAnalyzing(false)
           prDone = true
+        } else if (!prDone && g.settled) {
+          // ANALİZ BİTTİ AMA PR YOK (forfeit / çok kısa maç = değerlendirilecek karar yok -> sunucu
+          // mezar taşı: gnubg_pr null + gnubg_pr_at set). Eskiden `ready` hiç true olmayıp loader
+          // SONSUZA dek dönüyordu (#ABBAB 2-hamle hükmen -> 5 dk spinner). Dürüst "—" göster.
+          setPrAnalyzing(false)
+          prDone = true
         }
         // ADIM 4: gnubg NATIVE şans (Luck V1) hazır olunca swap. pvb: insan=beyaz, bot=siyah.
         if (!luckDone && g.luck_ready) {
@@ -4672,7 +4678,9 @@ export default function App() {
       }
     }
     // TIMEOUT (gnubg ~3dk gelmedi): wildbg SAYISINI GÖSTERME (kullanıcı direktifi: yalnız gnubg PR).
-    // Loader kalır; kesin gnubg PR "Maç Analizleri"nde görünür. (prDone olduysa zaten kapandı.)
+    // AMA loader'ı da SONSUZA dek döndürme -> dürüst "—" (kesin gnubg PR "Maç Analizleri"nde görünür).
+    // Güvenlik ağı: settled hiç gelmese bile (ör. job hiç dispatch edilmedi) ~3dk sonra spinner durur.
+    if (prPollRef.current === token && !prDone) setPrAnalyzing(false)
   }
 
   // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).

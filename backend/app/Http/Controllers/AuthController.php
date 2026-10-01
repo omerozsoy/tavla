@@ -827,6 +827,14 @@ class AuthController extends Controller
         $ready = $has && $match->gnubg_pr !== null;
         $num = fn ($v) => $v !== null ? (float) $v : null;
 
+        // SETTLED: analiz KESİN bitti mi (PR çıksa da çıkmasa da). gnubg_pr_at mezar taşı: job çalıştı,
+        // gnubg erişilebilirdi; totEval=0 (forfeit/çok kısa maç = karar yok) ise gnubg_pr NULL kalır ama
+        // gnubg_pr_at İŞARETLENİR. İstemci eskiden yalnız `ready`ye bakıp PR gelmeyince LOADER'ı SONSUZA
+        // dek döndürüyordu (ör. #ABBAB 2-hamle hükmen -> kaybeden PR'ı null -> 5 dk spinner). settled ile
+        // istemci "analiz bitti, PR yok" durumunda loader'ı durdurup dürüst "—" gösterir. (ready => settled.)
+        $hasAt = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_pr_at');
+        $settled = $ready || ($hasAt && $match->gnubg_pr_at !== null);
+
         // ADIM 4: gnubg NATIVE şans (Luck V1) hazır mı? Ayrı (async) job -> PR'dan farklı zamanda dolar.
         $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
         $luckReady = $hasMwc && $match->luck_mwc !== null;
@@ -848,6 +856,7 @@ class AuthController extends Controller
 
         return response()->json([
             'ready' => $ready,
+            'settled' => $settled, // analiz bitti (PR yoksa istemci loader'ı durdurup "—" gösterir)
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
             'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
