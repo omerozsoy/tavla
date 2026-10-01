@@ -2,8 +2,9 @@ import type { ChatWarning } from '../api'
 
 type T = (k: string, p?: Record<string, string | number>) => string
 
-// Küfür uyarısı (kırmızı küçük yazı): uygulanan yasak süresini yerelleştir.
+// Küfür uyarısı (kırmızı küçük yazı). 1. ihlal = yalnız uyarı (yasak yok); sonrası uygulanan yasak.
 export function chatWarnText(t: T, w: ChatWarning): string {
+  if (w.label === 'warn') return t('chat.profanityFirst')
   return t('chat.profanity', { ban: t(`chat.ban.${w.label}`) })
 }
 
