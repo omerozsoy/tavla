@@ -77,7 +77,7 @@ class MutedUserResource extends Resource
                 Tables\Columns\TextColumn::make('status')->label('Durum')
                     ->badge()
                     ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture() ? 'Aktif yasak' : 'Süresi doldu')
-                    ->color(fn (string $s) => $s === 'Aktif yasak' ? 'danger' : 'gray'),
+                    ->color(fn (string $state) => $state === 'Aktif yasak' ? 'danger' : 'gray'),
                 Tables\Columns\TextColumn::make('chat_muted_until')->label('Bitiş')
                     ->dateTime('d.m.Y H:i')->timezone('Europe/Istanbul')
                     ->description(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture()
