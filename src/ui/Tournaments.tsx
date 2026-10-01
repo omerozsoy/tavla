@@ -322,7 +322,19 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <Icon name="x" size={16} />
           </Button>
           <Breadcrumb items={[homeCrumb(t), { name: t('menu.tournaments'), href: '/online-turnuvalar' }, { name: active.name }]} />
-          <h2><TavlaTvMark size={28} /> <Icon name="trophy" size={20} /> {active.name}</h2>
+          <h2>
+            {/* EN BAŞTA büyük yuvarlak logo: düzenleyenin logosu (varsa) yoksa TavlaTV marka işareti. */}
+            {active.organizer?.logo ? (
+              <img
+                className="tourn-title-logo"
+                src={orgLogoSrc(active.organizer.logo) ?? undefined}
+                alt={active.organizer.name}
+              />
+            ) : (
+              <TavlaTvMark size={44} />
+            )}
+            <Icon name="trophy" size={20} /> {active.name}
+          </h2>
 
           {/* Editoryal alt-satir: durum rozeti + duzenleyen/mekan (tek satirda toplandi) */}
           <div className="tourn-subline">
@@ -332,17 +344,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <AccessBadge premiumOnly={!!active.premium_only} />
             <span className="tourn-meta-inline">
               {t('tourn.organizer')}:
-              <TavlaTvLogo size={26} tone="dark" className="tourn-runby-logo" />
+              {/* tone="auto" -> tema değişkenlerini izler (gündüz koyu / gece krem harfler) */}
+              <TavlaTvLogo size={26} tone="auto" className="tourn-runby-logo" />
               {active.organizer && (
                 <>
                   <span className="tourn-meta-sep">·</span>
-                  {active.organizer.logo && (
-                    <img
-                      className="tourn-org-logo sm"
-                      src={orgLogoSrc(active.organizer.logo) ?? undefined}
-                      alt={active.organizer.name}
-                    />
-                  )}
                   {active.organizer.name}
                 </>
               )}
@@ -537,7 +543,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
                   <b>{p.rating}</b>
                   {isAdmin && active.status !== 'finished' && (
-                    <Button variant="secondary" size="icon" className="tourn-dq-btn" disabled={busy}
+                    <Button variant="default" size="icon" className="tourn-dq-btn" disabled={busy}
                       title={t('tourn.disqualify')} onClick={() => disqualify(active.id, p.id, p.name)}>
                       <Icon name="x" size={13} />
                     </Button>
@@ -987,7 +993,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             )}
             <span className="event-runby">
               {t('tourn.organizer')}:{' '}
-              <TavlaTvLogo size={30} tone="dark" className="event-runby-logo" />
+              <TavlaTvLogo size={30} tone="auto" className="event-runby-logo" />
             </span>
           </div>
           {/* Odul dagilimi: 1., 2., 3. ... her sira ne kazanir -> NET liste.
