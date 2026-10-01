@@ -17,7 +17,7 @@ class WelcomeCoinsTest extends TestCase
         config(['game.welcome_coins' => 100]);
         $this->postJson('/api/register', [
             'first_name' => 'Yeni', 'last_name' => 'Uye',
-            'nickname' => 'yeniuye', 'email' => 'yeni@e.com', 'password' => 'secret123',
+            'nickname' => 'yeniuye', 'email' => 'yeni@e.com', 'password' => 'Secret123',
         ])->assertStatus(201);
 
         $u = User::where('email', 'yeni@e.com')->first();
@@ -40,7 +40,7 @@ class WelcomeCoinsTest extends TestCase
         config(['game.welcome_coins' => 100]);
         $this->postJson('/api/register', [
             'first_name' => 'Bir', 'last_name' => 'Kez',
-            'nickname' => 'birkez', 'email' => 'birkez@e.com', 'password' => 'secret123',
+            'nickname' => 'birkez', 'email' => 'birkez@e.com', 'password' => 'Secret123',
         ])->assertStatus(201);
         $u = User::where('email', 'birkez@e.com')->first();
         $mk = fn () => URL::temporarySignedRoute('verification.verify', now()->addHour(), [
@@ -57,7 +57,7 @@ class WelcomeCoinsTest extends TestCase
         // start_rating kaldırıldı -> gönderilse bile yok sayılır, herkes 1400.
         $this->postJson('/api/register', [
             'first_name' => 'A', 'last_name' => 'B',
-            'nickname' => 'usta', 'email' => 'usta@e.com', 'password' => 'secret123',
+            'nickname' => 'usta', 'email' => 'usta@e.com', 'password' => 'Secret123',
             'start_rating' => 1700,
         ])->assertStatus(201);
 
