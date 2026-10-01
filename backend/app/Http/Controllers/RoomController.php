@@ -2287,12 +2287,21 @@ class RoomController extends Controller
             return $this->fail('Bu odada değilsin.', 403);
         }
 
+        // KÜFÜR YAPTIRIMI: konuşma yasağı aktifse gönderme engelli; aktif değilse metni süz,
+        // küfür varsa **** maskele + artan yasak uygula (24s/1h/1ay/1yıl) + uyarı döndür.
+        $user = $request->user('sanctum');
+        if (($left = \App\Support\ChatModeration::mutedSeconds($user)) !== null) {
+            return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $user->chat_offenses], 403);
+        }
+        [$text, $hit] = \App\Support\ChatModeration::filter(trim($data['text']));
+        $warning = $hit ? \App\Support\ChatModeration::penalize($user) : null;
+
         $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;
         $messages = $room->messages ?? [];
         $messages[] = [
             'slot' => $slot,
             'name' => $name,
-            'text' => trim($data['text']),
+            'text' => $text,
             'id' => (string) round(microtime(true) * 1000).'-'.$slot,
         ];
         // Son 50 mesaji tut
@@ -2302,7 +2311,7 @@ class RoomController extends Controller
         $room->messages = $messages;
         $room->save();
 
-        return response()->json(['messages' => $messages]);
+        return response()->json(['messages' => $messages, 'warning' => $warning]);
     }
 
     // Canlı maç İZLEME presence (spectator heartbeat). İzleyici her ~5sn'de bir çağırır; kayıt

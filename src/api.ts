@@ -1118,7 +1118,7 @@ export async function sendMessage(
   userId: number,
   body: string,
   image?: string | null,
-): Promise<{ message: ChatMessage }> {
+): Promise<{ message: ChatMessage; warning?: ChatWarning | null }> {
   return req(`/messages/${userId}`, { method: 'POST', body: JSON.stringify({ body, image: image ?? null }) })
 }
 // Yonetici: bir DM mesajini kalici sil (backend is_admin denetler)
@@ -2772,7 +2772,21 @@ export async function submitGameLog(
 }
 
 // Sohbet mesaji gonder -> guncel mesaj listesini doner
-export async function sendChat(code: string, text: string): Promise<{ messages: ChatMsg[] }> {
+// Küfür yaptırımı: küfür tespitinde `warning` döner (maskeli mesaj iletilir); konuşma yasaklıysa
+// 403 {error:'muted',muted_seconds,level} -> ApiError.data'da. chatMuteFromError ile okunur.
+export interface ChatWarning {
+  level: number
+  label: string // '24h' | '1w' | '1mo' | '1y'
+  until: string
+  seconds: number
+}
+export function chatMuteFromError(e: unknown): { seconds: number; level: number } | null {
+  if (!(e instanceof ApiError) || e.status !== 403) return null
+  const d = e.data as { error?: string; muted_seconds?: number; level?: number } | undefined
+  if (d?.error !== 'muted') return null
+  return { seconds: d.muted_seconds ?? 0, level: d.level ?? 0 }
+}
+export async function sendChat(code: string, text: string): Promise<{ messages: ChatMsg[]; warning?: ChatWarning | null }> {
   return req(`/rooms/${encodeURIComponent(code)}/chat`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), text }),

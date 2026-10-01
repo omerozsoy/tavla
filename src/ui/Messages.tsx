@@ -10,6 +10,7 @@ import {
   deleteMessage,
   acceptRequest,
   declineRequest,
+  chatMuteFromError,
   ApiError,
   type ChatThread,
   type ChatMessage,
@@ -17,6 +18,7 @@ import {
   type AppNotification,
 } from '../api'
 import Loading from './Loading'
+import { chatWarnText, chatMuteText } from './chatNotice'
 import PlayerIdentity from './PlayerIdentity'
 import AvatarFrame from './AvatarFrame'
 import { Button } from '@/components/ui/button'
@@ -133,6 +135,7 @@ export default function Messages({
   const [loadingThread, setLoadingThread] = useState(false)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null) // küfür uyarısı/konuşma yasağı (kırmızı)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null) // gonderilmeyi bekleyen sikistirilmis gorsel
   const [imgBusy, setImgBusy] = useState(false) // gorsel sikistiriliyor
@@ -288,6 +291,7 @@ export default function Messages({
         // Iyimser mesaj bir tazeleme tarafindan silinmisti -> gercek mesaji yine de ekle.
         return m.some((x) => x.id === r.message.id) ? m : [...m, r.message]
       })
+      setNotice(r.warning ? chatWarnText(t, r.warning) : null) // küfür -> kırmızı uyarı (mesaj sansürlü iletildi)
       refreshThreads()
     } catch (err) {
       // Basarisiz -> iyimser mesaji geri al + NEDENINI goster (eskiden sessizce yutuluyordu
@@ -296,7 +300,12 @@ export default function Messages({
       setMessages((m) => m.filter((x) => x.id !== optimistic.id))
       setText(body)
       if (image) setPendingImage(image) // gorseli de geri yukle (tekrar denenebilsin)
-      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.sendFail'))
+      const mute = chatMuteFromError(err) // konuşma yasaklı -> kalan süre (toast yerine kırmızı not)
+      if (mute) {
+        setNotice(chatMuteText(t, mute.seconds))
+      } else {
+        toast.error(err instanceof ApiError && err.message ? err.message : t('dm.sendFail'))
+      }
     } finally {
       setSending(false)
     }
@@ -679,6 +688,7 @@ export default function Messages({
                     </button>
                   </div>
                 )}
+                {notice && <div className="chat-notice dm-notice" role="alert">{notice}</div>}
                 <div className="messages-compose">
                   <div className="emoji-wrap">
                     <button
