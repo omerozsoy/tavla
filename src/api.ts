@@ -2238,6 +2238,7 @@ export interface MatReview {
   log: import('./ui/MatchReport').LogEntry[]
   // Maç Özeti şansı (gnubg matchluck; p0=beyaz, p1=siyah). Yoksa/başarısızsa undefined -> '—'.
   luck?: { p0: MatLuckSide; p1: MatLuckSide }
+  hc?: 'white' | 'black' | null // izleyenin (bu satırın) rengi — client log'suz maçta self/opp hizası
 }
 export interface MatLuckSide {
   mwc: number | null // MWC% (şans yüzdesi)
