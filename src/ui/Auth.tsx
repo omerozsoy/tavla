@@ -369,7 +369,7 @@ export default function Auth({
   const title = editing
     ? t('reg.titleEdit')
     : forgot
-      ? `${t('brand.name')} — ${t('auth.login')}`
+      ? t('auth.forgot')
       : t('brand.name')
   const danger = DANGER_I18N[lang] ?? DANGER_I18N.en
 
