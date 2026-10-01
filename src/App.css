@@ -10500,6 +10500,12 @@ button.acct-row-logout:hover:not(:disabled) {
     min-width: 34px !important;
     padding: 0 5px !important;
   }
+  /* Giris/Kayit butonu: mobilde kompakt (ince font + dar padding) -> bar'da devasa durmasin. */
+  .account-bar .ab-login {
+    font-size: 0.8rem !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
   /* Dar telefon: wordmark biraz daha kucuk + en sola yaslansin (hamburger sagda). */
   .ab-wordmark {
     font-size: 20px !important;
@@ -18568,6 +18574,10 @@ button.acct-row-logout:hover:not(:disabled) {
   min-width: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  /* Duyuru metni: kucuk + koyu gri (gunduz #444, gece --muted ile okunur kalir). */
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
 }
 .tourn-announce-at {
   flex: none;
