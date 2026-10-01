@@ -1882,7 +1882,14 @@ class AuthController extends Controller
         $unique = $ignoreId ? Rule::unique('users', 'nickname')->ignore($ignoreId) : 'unique:users,nickname';
 
         return ['required', 'string', 'max:15', $unique, function (string $attr, mixed $value, \Closure $fail): void {
-            if (! NicknameFilter::isAllowed((string) $value)) {
+            $v = (string) $value;
+            // YALNIZCA harf (TR dahil: \p{L}) + rakam (\p{N}). Boşluk/noktalama/özel karakter/emoji YOK.
+            if (! preg_match('/^[\p{L}\p{N}]+$/u', $v)) {
+                $fail('Takma ad yalnızca harf ve rakam içerebilir. Boşluk, noktalama işareti, özel karakter ve emoji kullanılamaz.');
+
+                return;
+            }
+            if (! NicknameFilter::isAllowed($v)) {
                 $fail('Bu takma ad uygun değil, lütfen başka bir ad seçin.');
             }
         }];
@@ -2156,13 +2163,15 @@ class AuthController extends Controller
     public function nicknameAvailable(Request $request)
     {
         $nickname = (string) $request->query('nickname', '');
-        $taken = $nickname !== '' && User::where('nickname', $nickname)->exists();
-        $blocked = $nickname !== '' && ! NicknameFilter::isAllowed($nickname);
-        // reason: istemci canli durumda "alinmis" vs "uygun degil" ayrimini gostersin.
-        $reason = $blocked ? 'blocked' : ($taken ? 'taken' : null);
+        // Geçersiz karakter (harf/rakam dışı) ÖNCE: canlı kontrolde net uyarı.
+        $invalid = $nickname !== '' && ! preg_match('/^[\p{L}\p{N}]+$/u', $nickname);
+        $taken = $nickname !== '' && ! $invalid && User::where('nickname', $nickname)->exists();
+        $blocked = $nickname !== '' && ! $invalid && ! NicknameFilter::isAllowed($nickname);
+        // reason: istemci canli durumda "gecersiz" vs "alinmis" vs "uygun degil" ayrimini gostersin.
+        $reason = $invalid ? 'invalid' : ($blocked ? 'blocked' : ($taken ? 'taken' : null));
 
         return response()->json([
-            'available' => $nickname !== '' && ! $taken && ! $blocked,
+            'available' => $nickname !== '' && ! $invalid && ! $taken && ! $blocked,
             'reason'    => $reason,
         ]);
     }
