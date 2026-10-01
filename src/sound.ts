@@ -177,4 +177,10 @@ export const Sound = {
     chime(0.62)
     chime(1.24)
   },
+  // Turnuva duyurusu: net "zil" (ding-ding) — iki vurus + parlak harmonik. Asset gerektirmez.
+  bell() {
+    tone(1318, 0, 0.5, 'sine', 0.28) // E6 ana vurus
+    tone(1976, 0.01, 0.4, 'sine', 0.13) // B6 harmonik (parlaklik)
+    tone(1318, 0.2, 0.6, 'sine', 0.22) // ikinci vurus
+  },
 }
