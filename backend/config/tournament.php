@@ -5,6 +5,10 @@ return [
     // 3.'lük maçına kimse gelmezse (oda açılmadı) bu kadar dk sonra rating ile çözülür (final açılsın).
     'third_place_stall_minutes' => (int) env('TOURNAMENT_STALL_MINUTES', 3),
 
+    // HERHANGİ bir eleme maçına iki oyuncu da gelmezse (ya da biri gelip öteki gelmezse) bu kadar dk
+    // sonra sunucu çözer: tek taraf geldiyse hükmen (walkover), kimse gelmediyse rating ile ilerlet.
+    'match_stall_minutes' => (int) env('TOURNAMENT_MATCH_STALL_MINUTES', 3),
+
     // 3 Haklı Swiss (Swiss Triple Elimination) — feature flag + varsayılan zaman ayarları.
     'swiss' => [
         'enabled' => (bool) env('FEATURE_SWISS_TRIPLE', true), // kapatılırsa yeni Swiss turnuvası kurulamaz
