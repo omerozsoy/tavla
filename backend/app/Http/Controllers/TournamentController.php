@@ -1325,6 +1325,36 @@ class TournamentController extends Controller
 
     private function full(Tournament $t): array
     {
+        $playerIds = collect($t->players ?? [])->filter()->pluck('id')->filter()->values()->all();
+        // Online/offline: son 90 sn icinde last_seen dokunan oyuncular "online" (bracket noktasi).
+        $onlineIds = $playerIds
+            ? \App\Models\User::whereIn('id', $playerIds)
+                ->where('last_seen', '>=', now()->subSeconds(90))
+                ->pluck('id')->map(fn ($id) => (int) $id)->all()
+            : [];
+
+        // Onceki tur PR'lari: bitmis bracket maclarinin room_code'larindan oyuncu PR'lari.
+        // match_prs[ROOM_UPPER][userId] = PR (gnubg oncelikli, yoksa client pr). Frontend
+        // "Ad skor - Pr: X.XX" gosterir. PR analizi gec gelebilir -> reload'da kesin dolar.
+        $roomCodes = [];
+        foreach (is_array($t->bracket) ? $t->bracket : [] as $round) {
+            foreach (is_array($round) ? $round : [] as $m) {
+                if (! empty($m['room']) && ! empty($m['winner'])) {
+                    $roomCodes[] = $m['room'];
+                }
+            }
+        }
+        $matchPrs = [];
+        if ($roomCodes) {
+            foreach (\App\Models\MatchResult::whereIn('room_code', array_unique($roomCodes))
+                ->get(['room_code', 'user_id', 'pr', 'gnubg_pr']) as $mr) {
+                $val = $mr->gnubg_pr ?? $mr->pr;
+                if ($val !== null && $mr->room_code) {
+                    $matchPrs[strtoupper($mr->room_code)][(string) $mr->user_id] = round((float) $val, 2);
+                }
+            }
+        }
+
         return array_merge($this->summary($t), [
             'players' => array_values(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'bracket' => $t->bracket,
@@ -1340,6 +1370,8 @@ class TournamentController extends Controller
                     'at' => $a->created_at?->toIso8601String(),
                 ])
                 ->all(),
+            'online_ids' => $onlineIds,
+            'match_prs' => $matchPrs,
             'rev' => self::rev($t), // canli poll: ?rev= ayniysa show() 204 doner
         ]);
     }
