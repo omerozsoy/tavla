@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { reloadWithCause } from '../reloadDiag'
 
 // Sabit-kabuk SPA (body/.app overflow:hidden, 100dvh) -> tarayicinin NATIVE "asagi cek-yenile"si
 // tetiklenmez (sayfa/doküman kaymaz). Bu bilesen en ustteki scroll konteynerinde asagi cekince
@@ -58,7 +59,7 @@ export default function PullToRefresh() {
       setPull((p) => {
         if (p >= THRESHOLD) {
           setRefreshing(true)
-          setTimeout(() => location.reload(), 180)
+          setTimeout(() => reloadWithCause('ptr'), 180)
           return THRESHOLD
         }
         return 0

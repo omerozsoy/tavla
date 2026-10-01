@@ -18,6 +18,8 @@
 // ŞAŞIRTMA. Yalnız lobi/gezinme + arka plan / boşta anlarda yenile. "Maçtayım" tespiti DOM'dan
 // (.app.game-view) yapılır -> React state'e bağımlılık yok, App.tsx'e dokunulmaz.
 
+import { reloadWithCause } from './reloadDiag'
+
 const RELOAD_KEY = 'tavla:autoupdate:target'
 // Reload'ın kesinlikle YAPILMAYACAĞI hassas rotalar (form/ödeme akışı yarıda kalmasın).
 const SENSITIVE = ['/sepet', '/odeme', '/checkout', '/cart', '/uyelik', '/payment', '/magaza']
@@ -85,7 +87,7 @@ export function installAutoUpdate() {
     } catch {
       /* gizli mod / storage yok -> yine de reload et (bu hedefe ilk denemedir) */
     }
-    window.location.reload()
+    reloadWithCause('autoupdate')
   }
 
   const check = async () => {
