@@ -10511,6 +10511,8 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Tek alanli (e-posta) sifre-sifirlama formu; sayfa genisligine yayilmasin -> tidy blok. */
+  max-width: 440px;
 }
 
 /* ---- Hesap sil (tehlike bolgesi) ---- */
@@ -25674,7 +25676,9 @@ select:-webkit-autofill {
 .register-overlay.page > .register-card.auth-card {
   align-self: stretch;
   margin: 0; /* sola dayali */
-  max-width: 1400px; /* site standart sayfa genisligi (diger menu sayfalariyla ayni) */
+  /* Giris/Kayit 2 alanli bir formdur: 1400px'e yayilinca inputlar yarim sayfa genisliginde
+     "cok kotu" duruyordu. ~900px -> iki kolon (~420px/kolon) dengeli, okunur, kompakt. */
+  max-width: 900px;
   min-height: 100%;
   max-height: none;
   padding: calc(var(--header-h) + 18px) clamp(16px, 3vw, 48px) 56px;
