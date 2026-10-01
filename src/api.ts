@@ -1115,8 +1115,10 @@ export interface TMatch {
   room?: string | null
   /** Bu macin suresi (dk, oyuncu basina); oda alininca sunucu yazar. */
   minutes?: number | null
-  /** Biten macin skoru (bracket oyuncu sirasiyla) veya hukmen (rakip gelmedi). */
-  score?: { p1?: number; p2?: number; walkover?: boolean } | null
+  /** Biten macin skoru (bracket oyuncu sirasiyla) veya hukmen (rakip gelmedi) veya cift maglubiyet. */
+  score?: { p1?: number; p2?: number; walkover?: boolean; double_loss?: boolean } | null
+  /** Swiss yonetici sonuc duzeltme: cift maglubiyet (iki taraf da gelmedi) -> galipsiz ama cozulu hucre. */
+  double_loss?: boolean
   /** ÜÇÜNCÜLÜK MAÇI: son turda (index 1) iki yarı final kaybedeninin oynadığı maç. */
   third_place?: boolean
   /** FINAL için açılış zamanı (ISO): 3.'lük maçı bitince +1dk. Bundan önce final oynanamaz (gate). */

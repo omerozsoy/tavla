@@ -590,7 +590,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             const bracket = active.bracket || []
             const curRound = bracket.length ? bracket[bracket.length - 1] : []
             const myRow = sw?.standings.find((s) => s.id === myId) || null
-            const myMatch = curRound.find((m) => !m.winner && (m.p1?.id === myId || m.p2?.id === myId)) || null
+            const myMatch = curRound.find((m) => !m.winner && !m.double_loss && (m.p1?.id === myId || m.p2?.id === myId)) || null
             const myBye = curRound.find((m) => (m as { bye?: boolean }).bye && m.winner === myId) || null
             const opp = myMatch ? (myMatch.p1?.id === myId ? myMatch.p2 : myMatch.p1) : null
             const stLabel = (s: string) => t(`swiss.st${s.charAt(0).toUpperCase()}${s.slice(1)}`)
@@ -659,23 +659,26 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   <div className="swiss-matches">
                     {curRound.map((m) => {
                       const isBye = !!(m as { bye?: boolean }).bye
+                      const isDoubleLoss = !!m.double_loss
                       const mine = m.p1?.id === myId || m.p2?.id === myId
-                      const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner
+                      const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner && !isDoubleLoss
                       const viewers = watchable ? (viewerCounts[(m.room || '').toUpperCase()] ?? 0) : 0
                       const sc = m.winner && m.p1 && m.p2 ? m.score : null
                       const scoreOf = (side: 'p1' | 'p2') => {
+                        // Cift maglubiyet: iki tarafta da "çift mağlubiyet" rozeti (galip yok).
+                        if (isDoubleLoss) return <span className="tm-score wo dloss">{t('swiss.doubleLossBadge')}</span>
                         if (!sc) return null
                         if (sc.walkover) return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
                         return <span className="tm-score tnum">{sc[side] ?? 0}</span>
                       }
                       return (
-                        <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}`}>
+                        <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}${isDoubleLoss ? ' dloss' : ''}`}>
                           {isBye ? (
                             <div className="tm-p win"><span className="tm-name">{m.p1?.name ?? '—'}</span><span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
                           ) : (
                             <>
-                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${m.winner && m.winner !== m.p1?.id ? 'lose' : ''}`}><span className="tm-name">{m.p1?.name ?? '—'}</span>{scoreOf('p1')}</div>
-                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${m.winner && m.winner !== m.p2?.id ? 'lose' : ''}`}><span className="tm-name">{m.p2?.name ?? '—'}</span>{scoreOf('p2')}</div>
+                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p1?.id) || isDoubleLoss ? 'lose' : ''}`}><span className="tm-name">{m.p1?.name ?? '—'}</span>{scoreOf('p1')}</div>
+                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p2?.id) || isDoubleLoss ? 'lose' : ''}`}><span className="tm-name">{m.p2?.name ?? '—'}</span>{scoreOf('p2')}</div>
                               {watchable && (
                                 <button type="button" className="tm-watch" onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)} aria-label={t('tourn.watch')}>
                                   <Icon name="eye" size={18} />{viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
