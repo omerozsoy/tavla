@@ -1039,6 +1039,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </div>
             )
           )}
+          {/* Belirgin detay/lobi baglantisi (tum kart zaten tiklanabilir; bu gorsel ipucu). */}
+          <span className="tourn-lobby-link">
+            {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
+          </span>
         </div>
       </button>
     )
