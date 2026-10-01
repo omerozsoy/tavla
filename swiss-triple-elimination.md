@@ -117,11 +117,20 @@ maçlarını da oynatır (maç hücresi API'si tip-bağımsız).
 
 ## 11. Kalan işler (bu sürümde YOK — açıkça belirtilir)
 
-Sözleşmenin şu maddeleri henüz uçtan uca bağlanmadı; çekirdek + entegrasyon + testler tamamdır:
-- **Check-in aşaması** (kayıt → check-in → başlangıç) ve check-in UI. Şu an: kayıt donar, admin/otomatik
-  başlatır.
-- **Çekilme/diskalifiye/sonuç-düzeltme API + Filament aksiyonları** (motor `applyWithdraw/applyDisqualify`
-  + `SwissRuntime::withdraw` HAZIR; HTTP/panel uçları bağlanacak).
-- **Çift no-show inceleme politikası** paneli (motor `applyDoubleLoss` HAZIR).
+**BAĞLANDI (2026-10-01):**
+- **Check-in** API + oyuncu UI (`POST /tournaments/{t}/check-in`, `players[].checked_in`, "Katılımı Onayla"
+  butonu + "Hazır" rozeti). Not: gelmeyeni başlatınca otomatik eleme YOK — organizatör elle çıkarır.
+- **Çekilme/diskalifiye** API (`POST .../withdraw`, `.../disqualify`) + oyuncu UI (Çekil butonu, admin
+  satır-DQ) + **Filament aksiyonları** ("Diskalifiye" + "Çekilme (hükmen)", ortak `TournamentModeration`
+  + `SwissRuntime::exit(mode)`).
+- **Sonuç düzeltme** (`SwissRuntime::resolveMatch(key, outcome)`: hükmen galip veya çift mağlubiyet
+  `applyDoubleLoss`; `double_loss` hücresi `advanceIfRoundComplete`'te çözülü sayılır) + **Filament
+  "Sonuç düzelt" aksiyonu** (sürüyor+Swiss; maç seç + galip/çift-mağlubiyet).
+
+**KALAN:**
+- Uygulanmış (sonraki tur üretilmiş) sonucun GERİ ALINMASI/yeniden-simülasyonu (resolveMatch yalnız
+  BEKLEYEN maçı düzeltir). Eleme ağacında (running) DQ/sonuç-düzeltme Filament'te YOK (bracket JSON elle).
+- **Çift no-show OTOMATİK inceleme** politikası (şu an admin elle "Sonuç düzelt → çift mağlubiyet").
 - **CSV dışa aktarım** ve genişletilmiş yönetici audit görünümü.
+- Frontend: `double_loss` hücresi görsel rozeti (şu an galipsiz görünür; standings doğru).
 Bunlar mevcut çekirdeği bozmadan eklenebilir; bkz. `SwissEngine`/`SwissRuntime` hazır metotları.
