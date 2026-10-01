@@ -7059,7 +7059,14 @@ html[data-board='yilbasi'] .checker.black {
   width: var(--dice-size);
   height: var(--dice-size);
   border-radius: 18%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  /* GÖRÜNÜRLÜK (bazı boardlarda zar kayboluyordu): zar zemini pul rengini (--cream/--navy)
+     aldığından koyu zar koyu boardda / açık zar açık boardda SINIRSIZ kalıp zemine karışıyordu.
+     Tema-bağımsız ÇİFT halka: dış koyu halka (açık zar/açık zemin) + iç açık halka (koyu zar/koyu
+     zemin) -> hangi zar+zemin olursa olsun en az bir kenar DAİMA kontrast yapar, zar HER boardda görünür. */
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.45),
+    0 0 0 1.5px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.5);
   transform-origin: 50% 60%; /* alt-merkezden savrulma -> yer cekimi hissi */
   /* Yeni atista tumble + overshoot ile yerine oturur (emil: guclu ease-out, hareket
      bulanikligi hizi anlatir, hafif salinimla yerlesir). AYRI isim: eski 'die-roll'
