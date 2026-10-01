@@ -64,18 +64,23 @@ Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [\App\Http\Con
 // yapmissa ContactController Bearer token'dan kullaniciyi iliskilendirir. IP basi 5/dk.
 Route::middleware('throttle:5,1,contact')->post('/contact', [\App\Http\Controllers\ContactController::class, 'store']);
 // GEÇİCİ ÖLÇÜM: Safari "sayfa çok yenileniyor" şikâyeti -> reload nedenini/ekranını canlı topla.
-// İstemci (reloadDiag.ts) yalnız GERÇEK bir yenilenmede beacon'lar. laravel.log'a yazar:
-//   grep reload_diag storage/logs/laravel.log  ->  cause/nav/prevView ile durum1 vs durum2 ayrılır.
-// Ölçüm bitince bu route + src/reloadDiag.ts + çağrılar silinecek.
+// İstemci (reloadDiag.ts) yalnız GERÇEK bir yenilenmede beacon'lar. reload_diags tablosuna yazar;
+// panelde "Reload Teşhis" widget'ı (ReloadDiagStats) durum1 (autoUpdate) vs durum2 (Safari bellek-
+// öldürme) dağılımını özetler. Ölçüm bitince bu route + tablo + widget + src/reloadDiag.ts silinecek.
 Route::middleware('throttle:60,1,diag')->post('/diag/reload', function (\Illuminate\Http\Request $r) {
-    \Illuminate\Support\Facades\Log::info('reload_diag', [
-        'cause' => (string) $r->input('cause'),
-        'nav' => (string) $r->input('nav'),
-        'prevView' => (string) $r->input('prevView'),
-        'hiddenForMs' => (int) $r->input('hiddenForMs'),
-        'ua' => mb_substr((string) $r->input('ua'), 0, 300),
-        'ip' => $r->ip(),
-    ]);
+    try {
+        \Illuminate\Support\Facades\DB::table('reload_diags')->insert([
+            'cause' => mb_substr((string) $r->input('cause'), 0, 24),
+            'nav' => mb_substr((string) $r->input('nav'), 0, 24),
+            'prev_view' => mb_substr((string) $r->input('prevView'), 0, 12),
+            'hidden_for_ms' => (int) $r->input('hiddenForMs'),
+            'ua' => mb_substr((string) $r->input('ua'), 0, 300),
+            'ip' => $r->ip(),
+            'created_at' => now(),
+        ]);
+    } catch (\Throwable) {
+        // ölçüm yazımı başarısız -> beacon'ı yut (kullanıcıya hata dönme)
+    }
     return response()->noContent();
 });
 Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
