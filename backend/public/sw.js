@@ -5,16 +5,24 @@
 // ONEMLI: respondWith'e HER ZAMAN gecerli bir Response donmeli; undefined donersen
 // tarayici "Failed to convert value to 'Response'" atar (fetch VEYA cache.put reddettiginde
 // eski surumde iki caches.match da bos olunca bu oluyordu -> asagida her yol Response garanti).
-const CACHE = 'tavla-cache-v9'
+const CACHE = 'tavla-cache-v10'
+const CACHE_PREFIX = 'tavla-cache-' // yalniz KENDI surumlu cache'lerimizi temizle; baskasina dokunma
 
-// Son care cevrimdisi yaniti (tek-kullanimlik body -> her cagride YENI uret).
+// Son care cevrimdisi yaniti -> YALNIZ gezinme (sayfa) isteklerinde. Tek-kullanimlik body
+// oldugundan her cagride YENI uret.
 function offlineResponse() {
   return new Response(
     '<!doctype html><meta charset="utf-8"><title>Çevrimdışı</title>' +
       '<body style="font-family:system-ui,sans-serif;padding:2rem;text-align:center">' +
-      'Bağlantı kurulamadı. İnternet bağlantını kontrol edip sayfayı yenile.</body>',
+      'İnternet bağlantınız yok. Online tavla oynamak için yeniden bağlanın.</body>',
     { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   )
+}
+
+// Varlik (js/css/wasm) istegi cevrimdisi basarisiz olursa HTML cevrimdisi sayfasi DONME ->
+// aksi halde bir <script>/<img> HTML metni alir ve "Unexpected token '<'" hatasi uretir.
+function assetErrorResponse() {
+  return new Response('', { status: 504, statusText: 'Offline' })
 }
 
 self.addEventListener('install', (event) => {
@@ -27,7 +35,9 @@ self.addEventListener('install', (event) => {
       } catch {
         /* install cache basarisiz olsa da SW yuklensin */
       }
-      await self.skipWaiting()
+      // skipWaiting YOK: yeni SW, tum sekmeler kapanana kadar BEKLER. Boylece acik bir mac
+      // sirasinda surum zorla degismez (eski ve yeni varliklar karismaz). Surum guncellemesi
+      // zaten icerik-hash'li paket + UpdateBanner ("yeni surum hazir") ile kullanici onayina bagli.
     })(),
   )
 })
@@ -35,9 +45,12 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
+      // YALNIZ kendi eski surumlu cache'lerimizi temizle (tavla-cache-*), baska cache'lere dokunma.
       const keys = await caches.keys()
-      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-      await self.clients.claim()
+      await Promise.all(
+        keys.filter((k) => k !== CACHE && k.startsWith(CACHE_PREFIX)).map((k) => caches.delete(k)),
+      )
+      // clients.claim YOK: acik sayfalari zorla devralma -> suren mac mevcut SW/varliklarla devam etsin.
     })(),
   )
 })
@@ -106,7 +119,8 @@ self.addEventListener('fetch', (event) => {
           return res
         })
         .catch(() => undefined)
-      return cached || (await network) || offlineResponse()
+      // Varlik yolu: cevrimdisi basarisizlikta HTML DEGIL, bos 504 don (yanlis MIME'i onle).
+      return cached || (await network) || assetErrorResponse()
     })(),
   )
 })

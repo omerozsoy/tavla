@@ -105,7 +105,7 @@ class MutedUserResource extends Resource
                 Tables\Actions\Action::make('reset')->label('Sıfırla')
                     ->icon('heroicon-o-arrow-path')->color('gray')
                     ->requiresConfirmation()
-                    ->modalDescription('İhlal geçmişi de sıfırlanır; sonraki küfürde ceza yeniden 24 saatten başlar.')
+                    ->modalDescription('İhlal geçmişi de sıfırlanır; sonraki küfür yeniden yalnız uyarı olur (sonra 24 saat, 1 hafta, 1 ay, 1 yıl).')
                     ->action(function (User $u) {
                         $u->chat_muted_until = null;
                         $u->chat_offenses = 0;

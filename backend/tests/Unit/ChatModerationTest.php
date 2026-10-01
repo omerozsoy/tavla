@@ -28,24 +28,34 @@ class ChatModerationTest extends TestCase
         $this->assertSame('****', $masked2);
     }
 
-    public function test_penalize_escalates_24h_1w_1mo_1y(): void
+    public function test_penalize_warns_first_then_escalates_24h_1w_1mo_1y(): void
     {
         $u = User::factory()->create();
 
-        $mins = ChatModeration::BAN_MINUTES; // [1440, 10080, 43200, 525600]
-        $expect = [$mins[0], $mins[1], $mins[2], $mins[3], $mins[3]]; // 5. ihlal hâlâ 1 yıl
+        // 1. ihlal = YALNIZ UYARI (yasak yok); 2=24s, 3=1h, 4=1ay, 5+=1yıl.
+        $expectMin = [0, 1440, 10080, 43200, 525600, 525600];
+        $expectLabel = ['warn', '24h', '1w', '1mo', '1y', '1y'];
 
-        foreach ($expect as $i => $m) {
+        foreach ($expectMin as $i => $m) {
             $before = now();
             $r = ChatModeration::penalize($u->fresh());
             $this->assertSame($i + 1, $r['level']);
-            $this->assertSame(['24h', '1w', '1mo', '1y', '1y'][$i], $r['label']);
-            // Yasak bitişi ~ now + dakika (±60sn tolerans).
-            $expUntil = $before->copy()->addMinutes($m)->getTimestamp();
-            $this->assertEqualsWithDelta($expUntil, strtotime($r['until']), 60);
+            $this->assertSame($expectLabel[$i], $r['label']);
+            if ($m === 0) {
+                $this->assertTrue($r['warning_only']);
+                $this->assertNull($r['until']); // ilk ihlal: yasak YOK
+            } else {
+                $this->assertFalse($r['warning_only']);
+                $expUntil = $before->copy()->addMinutes($m)->getTimestamp();
+                $this->assertEqualsWithDelta($expUntil, strtotime($r['until']), 60);
+            }
         }
 
-        // Yasak aktifken mutedSeconds pozitif döner.
-        $this->assertNotNull(ChatModeration::mutedSeconds($u->fresh()));
+        // İlk ihlalden sonra (yalnız uyarı) kullanıcı yasaklı DEĞİL; ikinciden sonra yasaklı.
+        $fresh = User::factory()->create();
+        ChatModeration::penalize($fresh->fresh());
+        $this->assertNull(ChatModeration::mutedSeconds($fresh->fresh())); // 1. ihlal: yasak yok
+        ChatModeration::penalize($fresh->fresh());
+        $this->assertNotNull(ChatModeration::mutedSeconds($fresh->fresh())); // 2. ihlal: 24s yasak
     }
 }
