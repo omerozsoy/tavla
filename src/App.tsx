@@ -3963,6 +3963,10 @@ export default function App() {
     // calisir; boylece adim adim ilerler. Bir secim cikarsa durur (oyuncu oynar).
     if (moves.length === 1 && moves[0].steps.length > 0) {
       if (played.length === 0) fullyForcedRef.current = true
+      // Tur BASTAN zorunlu degilse (oyuncu bir yerde secim yapti) kalan tek-yasal zari da
+      // OTOMATIK OYNAMA -> kullanici kendi oynasin. Or. 5-3'te 5 oynanmaz + 3 cok sekilde, ya da
+      // 6-2'de 6 cok sekilde + 2 zorunlu: elin tamami elle oynanir, kalan zar da elle.
+      if (!fullyForcedRef.current) return
       setMessage(t('msg.forcedAuto'))
       const timer = window.setTimeout(() => playSteps([moves[0].steps[0]]), AUTO_STEP_MS)
       return () => window.clearTimeout(timer)
@@ -3990,7 +3994,10 @@ export default function App() {
     if (!diceRolled || played.length === 0 || opening || cubePending || gameEnd || matchOver) return
     if (!myTurn) return
     const stuckLeftover = nextSteps.length === 0 && remainingDice.length > 0
-    if (!gameWon && !stuckLeftover) return
+    // stuckLeftover oto-onay YALNIZ tur tamamen zorunlu oynandiginda. Oyuncunun secimi vardiysa
+    // (or. 5-3'te 5 oynanmaz, 3'u 2-3 sekilde) geri alip secebilsin, kalan oynanamayan zari KENDI
+    // onaylasin. gameWon ise her halukarda oto-onay (saat kaybi onlenir).
+    if (!gameWon && !(stuckLeftover && fullyForcedRef.current)) return
     const timer = window.setTimeout(() => handleConfirm(), 900) // el net gorunsun, sonra kapat
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
