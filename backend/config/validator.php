@@ -13,6 +13,17 @@ return [
     //   VALIDATOR_URL_BACKUP=http://127.0.0.1:8091,http://127.0.0.1:8092
     'url_backup' => env('VALIDATOR_URL_BACKUP', ''),
 
+    // AĞIR ANALİZ İZOLASYONU (anlık yavaşlık fix): /analyze-pr sinir ağı çalıştırır (≤20sn) ve
+    // Node TEK event-loop'tur -> aynı instance'a düşen bir PR analizi o instance'ın /validate'ini
+    // (canlı HAMLELERİ) saniyelerce BLOKLAR [[gonderiliyor-haksiz-afk-inflight-kalkani]]. Ağır işi
+    // ADANMIŞ bir Node örneğine (ör. :8098) ayır: analyzePr yalnız buraya gider, /validate
+    // instance'ları PR'dan arınır. BOŞSA otomatik olarak normal url(+backup) listesine düşer
+    // (davranış değişmez) -> adanmış instance kurulana kadar güvenli. Virgülle çok yedek.
+    //   VALIDATOR_HEAVY_URL=http://127.0.0.1:8098
+    //   VALIDATOR_HEAVY_URL_BACKUP=http://127.0.0.1:8099
+    'heavy_url' => env('VALIDATOR_HEAVY_URL', ''),
+    'heavy_url_backup' => env('VALIDATOR_HEAVY_URL_BACKUP', ''),
+
     // Paylaşılan sır (validator VALIDATOR_SECRET ile aynı). x-validator-secret başlığı.
     'secret' => env('VALIDATOR_SECRET', ''),
 

@@ -16,6 +16,9 @@ class MoveValidatorService
     /** Sıralı validator tabanları: [birincil, yedek...]. Birincil düşükse SIRAYLA denenir (failover). */
     private array $urls;
 
+    /** AĞIR analiz (/analyze-pr) tabanları — /validate'ten AYRI. Boşsa $urls'e düşer. */
+    private array $heavyUrls;
+
     private string $secret;
 
     private float $timeout;
@@ -32,6 +35,14 @@ class MoveValidatorService
             explode(',', (string) ($cfg['url_backup'] ?? '')),
         );
         $this->urls = array_values(array_filter(array_merge([$primary], $backups), fn ($u) => $u !== ''));
+        // AĞIR analiz tabanları (adanmış). Boşsa normal $urls kullanılır -> davranış değişmez.
+        $heavyPrimary = rtrim((string) ($cfg['heavy_url'] ?? ''), '/');
+        $heavyBackups = array_map(
+            fn ($u) => rtrim(trim((string) $u), '/'),
+            explode(',', (string) ($cfg['heavy_url_backup'] ?? '')),
+        );
+        $heavy = array_values(array_filter(array_merge([$heavyPrimary], $heavyBackups), fn ($u) => $u !== ''));
+        $this->heavyUrls = $heavy !== [] ? $heavy : $this->urls;
         $this->secret = (string) ($cfg['secret'] ?? '');
         $this->timeout = (float) ($cfg['timeout'] ?? 3);
         $this->verifyTls = (bool) ($cfg['verify_tls'] ?? false);
@@ -85,14 +96,15 @@ class MoveValidatorService
      * Artık yedekler SAF STANDBY: yalnız birincil GERÇEKTEN başarısız olunca vurulur -> ileride yavaş
      * bir yedek eklense bile sağlıklı istek asla oraya gitmez (sorun bir daha olmaz).
      */
-    private function postFailover(string $path, array $payload, ?float $timeout = null): ?\Illuminate\Http\Client\Response
+    private function postFailover(string $path, array $payload, ?float $timeout = null, ?array $bases = null): ?\Illuminate\Http\Client\Response
     {
-        $n = count($this->urls);
+        $urls = $bases ?? $this->urls;
+        $n = count($urls);
         if ($n === 0) {
             return null;
         }
         for ($i = 0; $i < $n; $i++) {
-            $base = $this->urls[$i];
+            $base = $urls[$i];
             try {
                 $req = $this->client();
                 if ($timeout !== null) {
@@ -228,10 +240,12 @@ class MoveValidatorService
         if (! $this->isConfigured()) {
             return null;
         }
-        // PR analizi motor çalıştırır (yavaş olabilir) -> daha uzun timeout; yedekli.
+        // PR analizi motor çalıştırır (yavaş olabilir) -> daha uzun timeout; yedekli. AĞIR işi
+        // ADANMIŞ instance'a yolla ($heavyUrls; VALIDATOR_HEAVY_URL boşsa normal url'e düşer) ->
+        // sinir ağı analizi canlı /validate instance'ının event-loop'unu bloklamaz (anlık yavaşlık fix).
         $res = $this->postFailover('/analyze-pr', [
             'hc' => $hc, 'log' => $log, 'matchLength' => $matchLength, 'isMoney' => $isMoney,
-        ], max($this->timeout, 20));
+        ], max($this->timeout, 20), $this->heavyUrls);
         if ($res === null) {
             return null;
         }
