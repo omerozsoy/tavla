@@ -165,10 +165,16 @@ export const Sound = {
     tone(440, 0, 0.1, 'square', 0.18)
     tone(660, 0.09, 0.14, 'square', 0.18)
   },
-  // Oyun daveti geldi: yumusak yukselen uc-notali "cling" (bildirim; asset gerektirmez).
+  // Oyun daveti geldi: yumusak yukselen uc-notali "cling", ARKA ARKAYA 3 kez (daha belirgin;
+  // tek tetiklemede hepsi AudioContext'e onceden zamanlanir, asset gerektirmez).
   invite() {
-    tone(660, 0, 0.16, 'sine', 0.22)
-    tone(880, 0.12, 0.18, 'sine', 0.22)
-    tone(1175, 0.26, 0.26, 'sine', 0.2)
+    const chime = (o: number) => {
+      tone(660, o, 0.16, 'sine', 0.22)
+      tone(880, o + 0.12, 0.18, 'sine', 0.22)
+      tone(1175, o + 0.26, 0.26, 'sine', 0.2)
+    }
+    chime(0)
+    chime(0.62)
+    chime(1.24)
   },
 }
