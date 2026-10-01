@@ -58,4 +58,24 @@ class ChatModerationTest extends TestCase
         ChatModeration::penalize($fresh->fresh());
         $this->assertNotNull(ChatModeration::mutedSeconds($fresh->fresh())); // 2. ihlal: 24s yasak
     }
+
+    public function test_admin_is_never_muted(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        // Çok sayıda ihlal -> sayaç artmaz, yasak yazılmaz, hep yalnız-uyarı.
+        for ($i = 0; $i < 5; $i++) {
+            $r = ChatModeration::penalize($admin->fresh());
+            $this->assertTrue($r['warning_only']);
+            $this->assertNull($r['until']);
+        }
+        $admin->refresh();
+        $this->assertSame(0, (int) $admin->chat_offenses);     // sayaç hiç artmadı
+        $this->assertNull(ChatModeration::mutedSeconds($admin)); // yasaklı değil
+
+        // Elle yasak yazılmış olsa bile admin konuşabilir (muafiyet her zaman kazanır).
+        $admin->chat_muted_until = now()->addYear();
+        $admin->save();
+        $this->assertNull(ChatModeration::mutedSeconds($admin->fresh()));
+    }
 }

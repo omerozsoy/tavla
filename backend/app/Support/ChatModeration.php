@@ -56,9 +56,13 @@ class ChatModeration
         return [$out ?? $text, $hit];
     }
 
-    /** Kullanıcı şu an konuşma yasaklı mı? Kalan saniye (>0) ya da null. */
+    /** Kullanıcı şu an konuşma yasaklı mı? Kalan saniye (>0) ya da null.
+     *  ADMIN KESİNLİKLE YASAKLANMAZ: is_admin ise daima null (eski bir yasak kalmış olsa bile konuşur). */
     public static function mutedSeconds(User $u): ?int
     {
+        if ($u->is_admin) {
+            return null;
+        }
         $until = $u->chat_muted_until;
         if (! $until instanceof Carbon) {
             return null;
@@ -72,6 +76,16 @@ class ChatModeration
      *  @return array{level:int,label:string,warning_only:bool,until:?string,seconds:int} */
     public static function penalize(User $u): array
     {
+        // ADMIN KESİNLİKLE YASAKLANMAZ: sayaç artmaz, yasak yazılmaz; yalnız-uyarı no-op döner.
+        if ($u->is_admin) {
+            return [
+                'level' => 0,
+                'label' => 'warn',
+                'warning_only' => true,
+                'until' => null,
+                'seconds' => 0,
+            ];
+        }
         $offense = (int) $u->chat_offenses + 1;
         $minutes = self::BAN_MINUTES[self::idx($offense)];
         $u->chat_offenses = $offense;
