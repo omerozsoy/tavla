@@ -50,6 +50,27 @@ class PhoneOtpTest extends TestCase
         $this->assertNull($u->fresh()->phone_verified_at);
     }
 
+    public function test_repeated_wrong_codes_lock_account(): void
+    {
+        // throttle (5/dk) kilit esigine (10) ulasmadan 429 verir; burada kilit
+        // mantigini izole etmek icin throttle devre disi, sayac esige 1 kala seed'li.
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $u = $this->user();
+        Sanctum::actingAs($u);
+        $this->postJson('/api/phone/send-otp')->assertOk();
+        $real = Cache::get('otp:'.$u->id)['code'];
+        $wrong = $real === '000000' ? '111111' : '000000';
+
+        Cache::put('otp-fails:'.$u->id, 9, now()->addMinutes(30)); // esige 1 kala
+        $this->postJson('/api/phone/verify-otp', ['code' => $wrong])
+            ->assertStatus(429)->assertJson(['message' => 'locked']);
+
+        // Kilitliyken yeni kod da uretilemez (cooldown temizlense bile)
+        Cache::forget('otp-cd:'.$u->id);
+        $this->postJson('/api/phone/send-otp')->assertStatus(429)->assertJson(['message' => 'locked']);
+        $this->assertNull($u->fresh()->phone_verified_at);
+    }
+
     public function test_no_phone_cannot_send(): void
     {
         $u = $this->user(['phone' => null]);

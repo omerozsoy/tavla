@@ -63,6 +63,21 @@ Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [\App\Http\Con
 // landing'lerindeki formdan gonderilir. HALKA ACIK (misafir de gonderebilir); giris
 // yapmissa ContactController Bearer token'dan kullaniciyi iliskilendirir. IP basi 5/dk.
 Route::middleware('throttle:5,1,contact')->post('/contact', [\App\Http\Controllers\ContactController::class, 'store']);
+// GEÇİCİ ÖLÇÜM: Safari "sayfa çok yenileniyor" şikâyeti -> reload nedenini/ekranını canlı topla.
+// İstemci (reloadDiag.ts) yalnız GERÇEK bir yenilenmede beacon'lar. laravel.log'a yazar:
+//   grep reload_diag storage/logs/laravel.log  ->  cause/nav/prevView ile durum1 vs durum2 ayrılır.
+// Ölçüm bitince bu route + src/reloadDiag.ts + çağrılar silinecek.
+Route::middleware('throttle:60,1,diag')->post('/diag/reload', function (\Illuminate\Http\Request $r) {
+    \Illuminate\Support\Facades\Log::info('reload_diag', [
+        'cause' => (string) $r->input('cause'),
+        'nav' => (string) $r->input('nav'),
+        'prevView' => (string) $r->input('prevView'),
+        'hiddenForMs' => (int) $r->input('hiddenForMs'),
+        'ua' => mb_substr((string) $r->input('ua'), 0, 300),
+        'ip' => $r->ip(),
+    ]);
+    return response()->noContent();
+});
 Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
@@ -185,9 +200,11 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::middleware('throttle:30,1,rating-report')->post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/email/resend', [AuthController::class, 'resendVerification'])->middleware('throttle:6,1,email-resend');
     Route::post('/email/verify-code', [AuthController::class, 'verifyEmailCode'])->middleware('throttle:10,1,email-verify');
-    // Telefon OTP: kod gonder (60sn cooldown + 6/dk) ve dogrula (10/dk). Islemsel SMS.
+    // Telefon OTP: kod gonder (60sn cooldown + 6/dk) ve dogrula (5/dk). Islemsel SMS.
+    // verify 10->5/dk + AuthController'da hesap-bazli kalici kilit (kod yenilense de
+    // toplam deneme sayilir) -> 6 haneli kod brute-force ile ele gecirilemez.
     Route::post('/phone/send-otp', [AuthController::class, 'sendPhoneOtp'])->middleware('throttle:6,1,phone-otp');
-    Route::post('/phone/verify-otp', [AuthController::class, 'verifyPhoneOtp'])->middleware('throttle:10,1,phone-verify');
+    Route::post('/phone/verify-otp', [AuthController::class, 'verifyPhoneOtp'])->middleware('throttle:5,1,phone-verify');
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
     // Ödeme/promo başlangıçlarında kullanıcı başına ayrı kova: pending ödeme ve promo
