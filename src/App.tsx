@@ -125,6 +125,7 @@ import {
   myActiveRooms,
   type ActiveRoom,
   sendChat,
+  chatMuteFromError,
   reportRating,
   fetchUnseenAchievements,
   type UnlockedAchievement,
@@ -443,6 +444,7 @@ import AvatarFrame from './ui/AvatarFrame'
 import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
+import { chatWarnText, chatMuteText } from './ui/chatNotice'
 import TournMatchReady from './ui/TournMatchReady'
 import ScrollTop from './ui/ScrollTop'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
@@ -853,6 +855,7 @@ export default function App() {
   const [roomError, setRoomError] = useState('')
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
+  const [chatNotice, setChatNotice] = useState<string | null>(null) // küfür uyarısı/konuşma yasağı (kırmızı)
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]) // maçı izleyenler (oyuncular da görsün)
   const [viewerCount, setViewerCount] = useState(0)
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
@@ -6742,8 +6745,11 @@ export default function App() {
     try {
       const res = await sendChat(room.code, text)
       if (res.messages) setChat(res.messages)
-    } catch {
-      /* yoksay - sonraki yoklamada gelir */
+      setChatNotice(res.warning ? chatWarnText(t, res.warning) : null) // küfür -> kırmızı uyarı
+    } catch (e) {
+      const mute = chatMuteFromError(e) // konuşma yasaklı -> gönderim engellendi, kalan süre
+      if (mute) setChatNotice(chatMuteText(t, mute.seconds))
+      /* diğer hatalar: yoksay - sonraki yoklamada gelir */
     }
   }
 
@@ -10010,6 +10016,7 @@ export default function App() {
           loggedIn={!!user}
           onLogin={() => setShowAuth(true)}
           behindMenu={gameMenuOpen}
+          notice={chatNotice}
         />
       )}
       {authModal}

@@ -264,6 +264,19 @@ class MessageController extends Controller
         if ($body === '' && ! $image) {
             return $this->fail('Mesaj boş olamaz.', 422); // metin VEYA görsel gerekli
         }
+
+        // KÜFÜR YAPTIRIMI (oyun içi sohbetle ortak): yasaklıysa engelle; değilse metni süz,
+        // küfür varsa **** maskele + artan konuşma yasağı uygula + uyarı döndür.
+        if (($left = \App\Support\ChatModeration::mutedSeconds($me)) !== null) {
+            return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $me->chat_offenses], 403);
+        }
+        $warning = null;
+        if ($body !== '') {
+            [$body, $hit] = \App\Support\ChatModeration::filter($body);
+            if ($hit) {
+                $warning = \App\Support\ChatModeration::penalize($me);
+            }
+        }
         if ($userId === $me->id) {
             return $this->fail('Kendine mesaj gönderemezsin.', 422);
         }
@@ -321,6 +334,7 @@ class MessageController extends Controller
                 'read' => false,
                 'created_at' => optional($msg->created_at)->toIso8601String(),
             ],
+            'warning' => $warning,
         ]);
     }
 

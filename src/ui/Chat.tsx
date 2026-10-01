@@ -15,12 +15,14 @@ interface Props {
   /** Oyun-ici menu (sag drawer) acikken TRUE: sohbeti menu backdrop'unun arkasina indir
       ki menunun alt aksiyonlarini (Lobi / Pes Et) ORTMESIN. Mount kalir -> okunmamis surer. */
   behindMenu?: boolean
+  /** Küfür uyarısı / konuşma yasağı (kırmızı küçük yazı). null -> gösterilmez. */
+  notice?: string | null
 }
 
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Maca girince sohbet KAPALI baslar; baslikla acilir.
@@ -98,6 +100,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             </div>
           )}
 
+          {notice && <div className="chat-notice" role="alert">{notice}</div>}
           <div className="chat-input">
             {!loggedIn ? (
               // MİSAFİR: sohbet edemez -> giriş prompt'u (emoji/yazma yok).

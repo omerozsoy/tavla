@@ -111,6 +111,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'birth_date' => 'date:Y-m-d',
             'banned_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'chat_muted_until' => 'datetime', // sohbet küfür yasağı bitişi (ChatModeration)
         ];
     }
 
