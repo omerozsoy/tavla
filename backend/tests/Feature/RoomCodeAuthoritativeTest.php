@@ -42,6 +42,29 @@ class RoomCodeAuthoritativeTest extends TestCase
     }
 
     /**
+     * MAVI EKRAN KÖK FIX: enter() ile kurulan otoriter oda, iki oyuncu belli olunca (playing) AÇILIŞ
+     * tahtasını (server_state) ANINDA seed etmeli — matchmaking/bot yoluyla AYNI. Aksi halde otoriter
+     * istemci server_state gelene (ilk roll) kadar BOŞ/mavi ekranda kalıyordu.
+     */
+    public function test_enter_seeds_server_state_so_board_is_never_blank(): void
+    {
+        config()->set('game.server_authoritative', true);
+        $code = 'TRNMT2';
+        $this->postJson("/api/rooms/{$code}/enter", ['token' => 'p1tok', 'name' => 'A'])->assertOk();
+        $room = Room::where('code', strtoupper($code))->first();
+        $this->assertNull($room->server_state, 'Tek oyuncu (waiting) iken henüz tahta kurulmaz.');
+
+        $this->postJson("/api/rooms/{$code}/enter", ['token' => 'p2tok', 'name' => 'B'])->assertOk();
+
+        $room->refresh();
+        $this->assertSame('playing', $room->status);
+        $this->assertIsArray($room->server_state, 'İki oyuncu belli -> otoriter açılış tahtası seed edilmeli (boş/mavi ekran yok).');
+        $this->assertCount(24, $room->server_state['points'] ?? [], 'Geçerli açılış pozisyonu (24 hane).');
+        $this->assertIsArray($room->server_match);
+        $this->assertSame(false, $room->server_match['opened'] ?? null, 'Açılış eli henüz atılmadı (ilk roll açar).');
+    }
+
+    /**
      * REGRESYON: "arkadaşla 5'lik maç seçtik ama 1'lik başladı". Davet EDEN odayı enter() ile
      * KURARKEN maç uzunluğunu davetten (game_invites) almalı; aksi halde rooms.target NULL kalıp
      * server_match 1'e düşüyordu. Hem açık gelen 'target' hem de davet-yedeği doğrulanır.

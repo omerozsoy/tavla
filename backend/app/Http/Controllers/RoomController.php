@@ -1257,6 +1257,13 @@ class RoomController extends Controller
                 $room->authoritative = true;
                 $room->dice_authority = false;
             }
+            // MAVI EKRAN KÖK FIX (enter() ile AYNI): otoriter oda açılış tahtasını hemen seed et ki
+            // otoriter istemci ilk roll'a kadar boş/mavi ekranda kalmasın. Idempotent.
+            if ($room->authoritative && $room->server_state === null) {
+                $room->server_match = $this->initServerMatch($room);
+                $room->server_state = \App\Support\Backgammon::initialState();
+                $room->server_version = 0;
+            }
             $room->save();
             $slot = 'p2';
         }
@@ -1373,6 +1380,18 @@ class RoomController extends Controller
             }
             $room->refresh();
             $slot = 'p2';
+            // MAVI EKRAN KÖK FIX (turnuva/arkadaş "çekmiyor/giremedi"): otoriter oda AÇILIŞ tahtasını
+            // SEED et. Matchmaking/bot yolu zaten server_state=initialState() ile kurar; enter() yolu
+            // (turnuva + davet) authoritative=true yapıp tahtayı HİÇ kurmuyordu -> otoriter istemci
+            // server_state gelene (ilk roll) kadar BOŞ/mavi ekranda kalıyor, rakip bekleyip terk edince
+            // hayalet galibiyet/no-contest doğuruyordu. roll() pre-seed'li state'i zaten tolere eder
+            // (bot odaları birebir böyle). Idempotent: yalnız henüz kurulmadıysa.
+            if ($room->authoritative && $room->server_state === null) {
+                $room->server_match = $this->initServerMatch($room);
+                $room->server_state = \App\Support\Backgammon::initialState();
+                $room->server_version = 0;
+                $room->save();
+            }
         }
 
         return response()->json(['room' => $room->toClient(), 'slot' => $slot]);
