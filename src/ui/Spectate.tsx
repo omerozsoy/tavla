@@ -12,6 +12,8 @@ import ClockStack from './ClockStack'
 import DiceRow from './Dice'
 import { showRoom, watchRoom, roomSummary, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
 import MatchSummary from './MatchSummary'
+import MatchResult from './MatchResult'
+import { divisionOfPR } from '../badges'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from '../sound'
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
@@ -79,9 +81,7 @@ export default function Spectate({
   const verRef = useRef(-1)
   // Maç Özeti (izleyici): sunucuda bir kez hesaplanıp önbelleklenen özet. Butonla açılır.
   const [summary, setSummary] = useState<RoomSummary | null>(null)
-  const [summaryBusy, setSummaryBusy] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
-  const [summaryErr, setSummaryErr] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -344,7 +344,6 @@ export default function Spectate({
           : board && board.off.black >= 15
             ? 'black'
             : null
-  const winnerName = winnerColor === 'white' ? p1Name : winnerColor === 'black' ? p2Name : null
 
   // Maç bitince tek sefer kısa bitiş sesi (izleyici tarafsız).
   const endedRef = useRef(false)
@@ -354,6 +353,26 @@ export default function Spectate({
       Sound.win()
     }
   }, [matchDone])
+
+  // Maç bitince özeti OTOMATİK çek: sonuç kartındaki PR/şans/seviye dolsun (oyuncunun gördüğü kartla
+  // aynı). gnubg review async -> hazır olana kadar birkaç saniyede bir yeniden dene (hazır olunca
+  // effect cleanup durdurur). Bir kez hazır olduktan sonra tekrar istenmez.
+  useEffect(() => {
+    if (!matchDone || summary?.ready) return
+    let alive = true
+    const fetchSum = () =>
+      roomSummary(code)
+        .then((s) => {
+          if (alive && s.ready) setSummary(s)
+        })
+        .catch(() => {})
+    fetchSum()
+    const id = window.setInterval(fetchSum, 3000)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+    }
+  }, [matchDone, summary?.ready, code])
 
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
@@ -405,20 +424,14 @@ export default function Spectate({
       setSummaryOpen(true)
       return
     }
-    setSummaryBusy(true)
-    setSummaryErr(false)
     try {
       const s = await roomSummary(code)
       if (s.ready && s.log && s.log.length > 0) {
         setSummary(s)
         setSummaryOpen(true)
-      } else {
-        setSummaryErr(true)
       }
     } catch {
-      setSummaryErr(true)
-    } finally {
-      setSummaryBusy(false)
+      /* özet henüz hazır değil; auto-fetch birazdan tekrar dener */
     }
   }
 
@@ -521,33 +534,72 @@ export default function Spectate({
         </div>
       </main>
 
-      {/* MAÇ SONU sonuç kartı: board frozen kalmasın, izleyici kazananı + skoru görsün + kapatsın. */}
-      {matchDone && (
+      {/* MAÇ SONU: oyuncunun gördüğü AYNI sonuç kartı (izleyici/misafir modu). Veri sunucudan
+          (summary.authPr/luck) + oda poll'undan (isim/avatar/rating/skor). Rövanş/coin yok; yalnız
+          Analiz/İstatistik + Kapat. Kazanan belirsizse (no-contest) basit bitti kutusu. */}
+      {matchDone && winnerColor && (() => {
+        const loserColor: Player = winnerColor === 'white' ? 'black' : 'white'
+        const nameOf = (c: Player) => (c === 'white' ? p1Name : p2Name)
+        const avatarOf = (c: Player) => (c === 'white' ? eff?.p1_avatar : eff?.p2_avatar) ?? null
+        const ratingOf = (c: Player) => (c === 'white' ? eff?.p1_rating : eff?.p2_rating) ?? null
+        const prOf = (c: Player) => summary?.authPr?.[c]?.pr ?? null
+        const bandOf = (c: Player) => (prOf(c) != null ? t(divisionOfPR(prOf(c)!).key) : '')
+        return (
+          <MatchResult
+            spectator
+            winnerName={nameOf(winnerColor)}
+            loserName={nameOf(loserColor)}
+            winnerAvatar={avatarOf(winnerColor)}
+            loserAvatar={avatarOf(loserColor)}
+            winnerColor={winnerColor}
+            loserColor={loserColor}
+            winnerScore={score[winnerColor]}
+            loserScore={score[loserColor]}
+            winnerPr={prOf(winnerColor)}
+            loserPr={prOf(loserColor)}
+            analyzing={!summary?.ready}
+            analyzingBoth
+            winnerCheckerPr={summary?.authPr?.[winnerColor]?.checker ?? null}
+            winnerCubePr={summary?.authPr?.[winnerColor]?.cube ?? null}
+            loserCheckerPr={summary?.authPr?.[loserColor]?.checker ?? null}
+            loserCubePr={summary?.authPr?.[loserColor]?.cube ?? null}
+            winnerBand={bandOf(winnerColor)}
+            loserBand={bandOf(loserColor)}
+            winnerLuck={summary?.luck?.[winnerColor]?.cost ?? null}
+            loserLuck={summary?.luck?.[loserColor]?.cost ?? null}
+            winnerLuckPct={summary?.luck?.[winnerColor]?.mwc ?? null}
+            loserLuckPct={summary?.luck?.[loserColor]?.mwc ?? null}
+            winnerRating={ratingOf(winnerColor)}
+            loserRating={ratingOf(loserColor)}
+            coinAmount={null}
+            ratingBefore={null}
+            ratingAfter={null}
+            ratingIsWinner
+            oppRating={null}
+            onNewMatch={onClose}
+            onRematch={onClose}
+            onHome={onClose}
+            onStats={openSummary}
+            onAnalysis={openSummary}
+            hasReport
+            matchCode={code}
+          />
+        )
+      })()}
+      {matchDone && !winnerColor && (
         <div className="spectate-result" role="dialog" aria-modal="true">
           <div className="spectate-result-card">
             <span className="sr-ic" aria-hidden="true">
               <Icon name="trophy" size={30} />
             </span>
             <h3>{t('live.matchEnded')}</h3>
-            {winnerName ? (
-              <div className="sr-winner">{t('live.winnerIs', { name: winnerName })}</div>
-            ) : (
-              <div className="sr-winner sr-muted">{t('live.ended')}</div>
-            )}
+            <div className="sr-winner sr-muted">{t('live.ended')}</div>
             <div className="sr-score">
-              <span className="sr-side">
-                <b>{p1Name}</b> {score.white}
-              </span>
+              <span className="sr-side"><b>{p1Name}</b> {score.white}</span>
               <span className="sr-dash">–</span>
-              <span className="sr-side">
-                {score.black} <b>{p2Name}</b>
-              </span>
+              <span className="sr-side">{score.black} <b>{p2Name}</b></span>
             </div>
-            {summaryErr && <div className="sr-muted sr-sumnote">{t('live.summaryNone')}</div>}
             <div className="sr-actions">
-              <Button variant="outline" className="sr-summary" onClick={openSummary} disabled={summaryBusy}>
-                <Icon name="chart" size={16} /> {summaryBusy ? t('ms.loading') : t('ms.btn')}
-              </Button>
               <Button variant="default" className="sr-close" onClick={onClose}>
                 {t('common.close')}
               </Button>
