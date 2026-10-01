@@ -40,8 +40,8 @@ class TournamentAnnouncementResource extends Resource
             Forms\Components\Textarea::make('message')
                 ->label('Duyuru metni')
                 ->placeholder('Örn: Turnuva başlıyor! Lütfen masalarınıza geçin.')
-                ->rows(3)
-                ->maxLength(500)
+                ->rows(6)
+                ->maxLength(3000)
                 ->required(),
         ]);
     }
