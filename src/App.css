@@ -25674,7 +25674,7 @@ select:-webkit-autofill {
 .register-overlay.page > .register-card.auth-card {
   align-self: stretch;
   margin: 0; /* sola dayali */
-  max-width: 900px; /* iki kolon (Giris | Kayit) rahat sigsin */
+  max-width: 1400px; /* site standart sayfa genisligi (diger menu sayfalariyla ayni) */
   min-height: 100%;
   max-height: none;
   padding: calc(var(--header-h) + 18px) clamp(16px, 3vw, 48px) 56px;
