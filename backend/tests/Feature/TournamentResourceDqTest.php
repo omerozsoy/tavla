@@ -81,6 +81,32 @@ class TournamentResourceDqTest extends TestCase
         $this->assertSame('dq', $part['status']);
     }
 
+    public function test_admin_withdraws_running_swiss_player_via_panel(): void
+    {
+        [$t] = $this->swiss(4);
+        SwissRuntime::start($t);
+        $t->refresh();
+        $p1 = null;
+        foreach ($t->bracket as $cells) {
+            foreach ($cells as $m) {
+                if (empty($m['winner']) && ! empty($m['p1']['id']) && ! empty($m['p2']['id'])) {
+                    $p1 = (int) $m['p1']['id'];
+                    break 2;
+                }
+            }
+        }
+        $this->assertNotNull($p1);
+
+        Livewire::actingAs($this->admin())
+            ->test(ListTournaments::class)
+            ->callTableAction('withdrawPlayer', $t->id, data: ['user_id' => $p1])
+            ->assertHasNoTableActionErrors();
+
+        // Diskalifiyeden farkı: durum 'withdrawn' (ceza değil).
+        $part = collect($t->fresh()->swiss_state['participants'])->firstWhere('id', $p1);
+        $this->assertSame('withdrawn', $part['status']);
+    }
+
     public function test_disqualify_action_hidden_for_running_bracket(): void
     {
         [$t] = $this->swiss(4, 'bracket');

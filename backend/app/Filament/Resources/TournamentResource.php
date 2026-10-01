@@ -40,6 +40,52 @@ class TournamentResource extends Resource
         return $out;
     }
 
+    /**
+     * Moderasyon tablo aksiyonu (Diskalifiye / Çekilme). İkisi de aynı iş: oyuncuyu turnuvadan çıkar
+     * (TournamentModeration::remove). Fark SADECE $mode (Swiss durumu 'dq' vs 'withdrawn') + etiket/metin.
+     * GÖRÜNÜR: kayıt açık (her tip) VEYA sürüyor+Swiss; sürüyor+eleme ağacında GİZLİ (bracket walkover
+     * ilerletmesi HTTP controller'a özel, remove() false döner).
+     */
+    private static function moderationAction(string $mode): Tables\Actions\Action
+    {
+        $isDq = $mode === 'dq';
+
+        return Tables\Actions\Action::make($isDq ? 'disqualify' : 'withdrawPlayer')
+            ->label($isDq ? 'Diskalifiye' : 'Çekilme (hükmen)')
+            ->icon($isDq ? 'heroicon-o-no-symbol' : 'heroicon-o-arrow-right-start-on-rectangle')
+            ->color($isDq ? 'danger' : 'warning')
+            ->visible(fn (Tournament $record): bool => $record->status === 'open'
+                || ($record->status === 'running' && ($record->type ?? 'bracket') === 'swiss_triple'))
+            ->form([
+                Forms\Components\Select::make('user_id')
+                    ->label('Oyuncu')
+                    ->options(fn (Tournament $record): array => collect($record->players ?? [])
+                        ->filter()
+                        ->mapWithKeys(fn ($p) => [(int) $p['id'] => ($p['name'] ?? ('#'.$p['id']))])
+                        ->all())
+                    ->searchable()
+                    ->required(),
+            ])
+            ->requiresConfirmation()
+            ->modalHeading($isDq ? 'Oyuncuyu diskalifiye et' : 'Oyuncuyu turnuvadan çek')
+            ->modalDescription($isDq
+                ? 'Kayıt açıksa oyuncu listeden çıkarılır + giriş ücreti iade edilir. Turnuva sürüyorsa hükmen uygulanır: sıradaki maçı rakibine verilir ve bir daha eşleşmeye alınmaz. Bu işlem geri alınamaz.'
+                : 'Oyuncu adına çekilme kaydeder (örn. "devam edemeyeceğim" diyen oyuncu). Kayıt açıksa listeden çıkarılır + giriş ücreti iade; turnuva sürüyorsa sıradaki maçı rakibine verilir. Diskalifiyeden farkı: durum "çekildi" (ceza değil) olarak işaretlenir. Geri alınamaz.')
+            ->action(function (Tournament $record, array $data) use ($mode, $isDq): void {
+                $uid = (int) $data['user_id'];
+                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $uid, $mode): void {
+                    $t = Tournament::lockForUpdate()->find($record->id);
+                    if ($t) {
+                        \App\Support\TournamentModeration::remove($t, $uid, $mode);
+                    }
+                });
+                \Filament\Notifications\Notification::make()
+                    ->title($isDq ? 'Oyuncu diskalifiye edildi' : 'Oyuncu turnuvadan çekildi')
+                    ->success()
+                    ->send();
+            });
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -295,40 +341,8 @@ class TournamentResource extends Resource
                             ->success()
                             ->send();
                     }),
-                Tables\Actions\Action::make('disqualify')
-                    ->label('Diskalifiye')
-                    ->icon('heroicon-o-no-symbol')
-                    ->color('danger')
-                    // Kayit acik (her tip) VEYA sürüyor+Swiss. Sürüyor+eleme ağacı panelde YOK (bracket
-                    // walkover ilerletmesi HTTP controller'a özel; TournamentModeration::remove false döner).
-                    ->visible(fn (Tournament $record): bool => $record->status === 'open'
-                        || ($record->status === 'running' && ($record->type ?? 'bracket') === 'swiss_triple'))
-                    ->form([
-                        Forms\Components\Select::make('user_id')
-                            ->label('Oyuncu')
-                            ->options(fn (Tournament $record): array => collect($record->players ?? [])
-                                ->filter()
-                                ->mapWithKeys(fn ($p) => [(int) $p['id'] => ($p['name'] ?? ('#'.$p['id']))])
-                                ->all())
-                            ->searchable()
-                            ->required(),
-                    ])
-                    ->requiresConfirmation()
-                    ->modalHeading('Oyuncuyu diskalifiye et')
-                    ->modalDescription('Kayıt açıksa oyuncu listeden çıkarılır + giriş ücreti iade edilir. Turnuva sürüyorsa hükmen uygulanır: sıradaki maçı rakibine verilir ve bir daha eşleşmeye alınmaz. Bu işlem geri alınamaz.')
-                    ->action(function (Tournament $record, array $data): void {
-                        $uid = (int) $data['user_id'];
-                        \Illuminate\Support\Facades\DB::transaction(function () use ($record, $uid): void {
-                            $t = Tournament::lockForUpdate()->find($record->id);
-                            if ($t) {
-                                \App\Support\TournamentModeration::remove($t, $uid, 'dq');
-                            }
-                        });
-                        \Filament\Notifications\Notification::make()
-                            ->title('Oyuncu diskalifiye edildi')
-                            ->success()
-                            ->send();
-                    }),
+                self::moderationAction('dq'),
+                self::moderationAction('withdraw'),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
