@@ -43,8 +43,11 @@ class InfoPageResource extends Resource
     public static function form(Form $form): Form
     {
         // Ust sayfa secenekleri: canli-bilesen DISINDAKI mevcut sayfalar (nesting icin).
+        // Deger = TURKCE URL slug'i (about->hakkinda) -> cocuk adresi /bilgi/<turkce>/<cocuk> olur.
         $parentOptions = InfoPage::whereNotIn('slug', InfoPage::LIVE_COMPONENT_SLUGS)
-            ->orderBy('title')->pluck('title', 'slug')->all();
+            ->orderBy('title')->get()
+            ->mapWithKeys(fn (InfoPage $p) => [self::urlSlug($p->slug) => $p->title])
+            ->all();
 
         return $form->schema([
             // --- Yeni sayfa: adres + ust sayfa (yalniz olusturmada; slug sabittir) ---
