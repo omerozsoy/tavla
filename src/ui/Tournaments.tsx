@@ -381,12 +381,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               {t('tourn.organizer')}:
               {/* tone="auto" -> tema değişkenlerini izler (gündüz koyu / gece krem harfler) */}
               <TavlaTvLogo size={26} tone="auto" className="tourn-runby-logo" />
-              {active.organizer && (
-                <>
-                  <span className="tourn-meta-sep">·</span>
-                  {active.organizer.name}
-                </>
-              )}
+              {/* Organizator adi ayri "Organizasyon:" satirinda; burada tekrar etme. */}
               {active.venue && (
                 <>
                   <span className="tourn-meta-sep">·</span>
