@@ -1218,6 +1218,10 @@ export interface Tournament {
   champion_id?: number | null
   /** Lobi duyurulari (admin panelden; en yeni ustte). Yeni duyuruda istemci zil calar. */
   announcements?: { id: number; message: string; at: string | null }[]
+  /** Son 90sn icinde aktif (online) oyuncu id'leri — bracket/katilimci online noktasi. */
+  online_ids?: number[]
+  /** Bitmis bracket maclarinin PR'lari: match_prs[ODA_KODU_BUYUK][userId] = PR. */
+  match_prs?: Record<string, Record<string, number>>
 }
 
 export async function listTournaments(): Promise<Tournament[]> {

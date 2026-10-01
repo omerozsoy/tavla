@@ -23158,6 +23158,31 @@ button.acct-row-logout:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Oyuncu online/offline noktasi (bracket adinin solunda): yesil=online, gri=offline. */
+.tm-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex: none;
+}
+.tm-dot.on {
+  background: var(--success-fg, #2f9e44);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--success-fg) 25%, transparent);
+}
+.tm-dot.off {
+  background: var(--muted, #9aa0a6);
+  opacity: 0.55;
+}
+/* Onceki tur PR'i (ad yaninda, soluk kucuk). */
+.tm-pr {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 /* Biten macin skoru (sag) / hukmen etiketi */
 .tm-score {
   flex: none;

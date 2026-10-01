@@ -334,6 +334,22 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       ? active.prizes.reduce((s, pr) => s + (pr.coins || 0), 0)
       : (active.prize_coins || 0)
     const fillPct = active.size ? Math.min(100, Math.round((active.count / active.size) * 100)) : 0
+    // Online/offline (son 90sn last_seen) + onceki tur PR'lari (bitmis maclar). Backend: online_ids, match_prs.
+    const onlineSet = new Set(active.online_ids ?? [])
+    const prFor = (room: string | null | undefined, uid: number | null | undefined) =>
+      room && uid != null ? active.match_prs?.[room.toUpperCase()]?.[String(uid)] : undefined
+    // Bracket oyuncu adi: online noktasi + ad + (varsa) onceki tur PR'i.
+    const tmName = (p: { id?: number; name?: string } | null | undefined, room?: string | null) => {
+      const online = p?.id != null && onlineSet.has(p.id)
+      const pr = prFor(room, p?.id)
+      return (
+        <span className="tm-name">
+          <span className={`tm-dot ${online ? 'on' : 'off'}`} aria-hidden="true" />
+          {p?.name ?? '—'}
+          {pr != null && <span className="tm-pr"> · Pr: {pr.toFixed(2)}</span>}
+        </span>
+      )
+    }
     return (
       <div className="register-overlay modal page" role="dialog" aria-modal="true">
         <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
@@ -592,6 +608,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }))
                 .map((p) => (
                 <div key={p.id} className="tourn-prow">
+                  <span className={`tm-dot ${onlineSet.has(p.id) ? 'on' : 'off'}`} title={onlineSet.has(p.id) ? 'online' : 'offline'} />
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
                   <b>{p.rating}</b>
                   {isAdmin && active.status !== 'finished' && (
@@ -700,11 +717,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                       return (
                         <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}${isDoubleLoss ? ' dloss' : ''}`}>
                           {isBye ? (
-                            <div className="tm-p win"><span className="tm-name">{m.p1?.name ?? '—'}</span><span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
+                            <div className="tm-p win">{tmName(m.p1, m.room)}<span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
                           ) : (
                             <>
-                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p1?.id) || isDoubleLoss ? 'lose' : ''}`}><span className="tm-name">{m.p1?.name ?? '—'}</span>{scoreOf('p1')}</div>
-                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p2?.id) || isDoubleLoss ? 'lose' : ''}`}><span className="tm-name">{m.p2?.name ?? '—'}</span>{scoreOf('p2')}</div>
+                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p1?.id) || isDoubleLoss ? 'lose' : ''}`}>{tmName(m.p1, m.room)}{scoreOf('p1')}</div>
+                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p2?.id) || isDoubleLoss ? 'lose' : ''}`}>{tmName(m.p2, m.room)}{scoreOf('p2')}</div>
                               {watchable && (
                                 <button type="button" className="tm-watch" onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)} aria-label={t('tourn.watch')}>
                                   <Icon name="eye" size={18} />{viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
@@ -840,7 +857,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                 {m.p2 && !m.p1 && (ri === 0 || !!m.winner) ? (
                                   <span className="tm-name tm-bye">{t('tourn.bye')}</span>
                                 ) : (
-                                  <span className="tm-name">{m.p1?.name ?? '—'}</span>
+                                  tmName(m.p1, m.room)
                                 )}
                                 {scoreOf('p1')}
                               </div>
@@ -849,7 +866,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                 {m.p1 && !m.p2 && (ri === 0 || !!m.winner) ? (
                                   <span className="tm-name tm-bye">{t('tourn.bye')}</span>
                                 ) : (
-                                  <span className="tm-name">{m.p2?.name ?? '—'}</span>
+                                  tmName(m.p2, m.room)
                                 )}
                                 {scoreOf('p2')}
                               </div>
