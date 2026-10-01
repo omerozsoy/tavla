@@ -116,6 +116,7 @@ class ApiError extends Error {
   // Govde JSON degil (nginx/PHP-FPM HTML hata sayfasi: deploy'da FPM reload, 502/504 vb.).
   // Uygulamanin kendi cevabi DEGIL -> gecici sayilir; oturumu dusurmez, komut tekrar denenir.
   nonJson = false
+  data?: unknown // ham yanıt gövdesi (ör. 403 konuşma yasağı: {error,muted_seconds,level})
   constructor(status: number, message: string, errors?: Record<string, string[]>) {
     super(message)
     this.status = status
@@ -195,7 +196,9 @@ async function req<T>(path: string, options: RequestInit = {}, timeoutMs?: numbe
       err.gate = true
       throw err
     }
-    throw new ApiError(res.status, data.message || 'Hata', data.errors)
+    const err = new ApiError(res.status, data.message || 'Hata', data.errors)
+    err.data = data
+    throw err
   }
   return data as T
 }
@@ -368,8 +371,8 @@ export async function deleteAccount(): Promise<void> {
 
 export async function nicknameAvailable(
   nickname: string,
-): Promise<{ available: boolean; reason?: 'taken' | 'blocked' }> {
-  const data = await req<{ available: boolean; reason?: 'taken' | 'blocked' }>(
+): Promise<{ available: boolean; reason?: 'taken' | 'blocked' | 'invalid' }> {
+  const data = await req<{ available: boolean; reason?: 'taken' | 'blocked' | 'invalid' }>(
     `/nickname-available?nickname=${encodeURIComponent(nickname)}`,
   )
   return { available: data.available, reason: data.reason }

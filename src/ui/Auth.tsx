@@ -139,8 +139,8 @@ export default function Auth({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   // Takma isim canli durumu: idle | checking | ok (musait) | taken (alinmis) | blocked (kufur/uygunsuz)
-  const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken' | 'blocked'>('idle')
-  const nickBad = nickStatus === 'taken' || nickStatus === 'blocked' // kirmizi + gonderim engellenir
+  const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken' | 'blocked' | 'invalid'>('idle')
+  const nickBad = nickStatus === 'taken' || nickStatus === 'blocked' || nickStatus === 'invalid' // kirmizi + gonderim engellenir
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
   const [forgot, setForgot] = useState(!!initialForgot) // sifremi unuttum modu (/sifremi-unuttum)
@@ -233,12 +233,20 @@ export default function Auth({
       setNickStatus('idle')
       return
     }
+    // Gecersiz karakter (harf/rakam disi: bosluk, noktalama, ozel, emoji) -> ANINDA uyar (API'ye gitme).
+    if (!/^[\p{L}\p{N}]+$/u.test(n)) {
+      setNickStatus('invalid')
+      return
+    }
     setNickStatus('checking')
     let cancelled = false
     const timer = setTimeout(async () => {
       try {
         const r = await api.nicknameAvailable(n)
-        if (!cancelled) setNickStatus(r.available ? 'ok' : r.reason === 'blocked' ? 'blocked' : 'taken')
+        if (!cancelled)
+          setNickStatus(
+            r.available ? 'ok' : r.reason === 'invalid' ? 'invalid' : r.reason === 'blocked' ? 'blocked' : 'taken',
+          )
       } catch {
         if (!cancelled) setNickStatus('idle') // sunucu yoksa notr birak
       }
@@ -285,7 +293,7 @@ export default function Auth({
       return false
     }
     if (nickBad) {
-      setError(t(nickStatus === 'blocked' ? 'reg.nickBlocked' : 'reg.nickTaken'))
+      setError(t(nickStatus === 'invalid' ? 'reg.nickInvalid' : nickStatus === 'blocked' ? 'reg.nickBlocked' : 'reg.nickTaken'))
       return false
     }
     if (!isEmail(email)) {
@@ -487,6 +495,9 @@ export default function Auth({
         )}
         {nickStatus === 'blocked' && (
           <span className="text-xs text-destructive" role="alert">{t('reg.nickBlocked')}</span>
+        )}
+        {nickStatus === 'invalid' && (
+          <span className="text-xs text-destructive" role="alert">{t('reg.nickInvalid')}</span>
         )}
       </div>
       <div className="grid gap-1.5">
