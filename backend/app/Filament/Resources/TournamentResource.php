@@ -262,9 +262,26 @@ class TournamentResource extends Resource
                     ->searchable()
                     ->preload()
                     ->default(fn () => auth()->id()),
+                // SALT GÖRÜNÜM: players/bracket JSON (array) kolonlarıdır. Düz Textarea olarak
+                // KAYDEDİLİRSE string -> array-cast ile BOZULUR; "saat/uzunluk değiştirip kaydedince
+                // katılımcılar atılıyor" bug'ının kökü buydu. dehydrated(false) => forma yazılır ama
+                // ASLA kaydedilmez (kolona dokunulmaz) + disabled + okunur JSON. Katılımcı yönetimi
+                // ayrı aksiyonlardan (Diskalifiye/Çekilme) yapılır; buradan elle düzenlenmez.
                 Forms\Components\Textarea::make('players')
+                    ->label('Katılımcılar (otomatik)')
+                    ->helperText('Otomatik yönetilir; buradan düzenlenmez (salt görünüm).')
+                    ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) ($state ?? ''))
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->rows(6)
                     ->columnSpanFull(),
                 Forms\Components\Textarea::make('bracket')
+                    ->label('Eşleşme ağacı (otomatik)')
+                    ->helperText('Otomatik yönetilir; buradan düzenlenmez (salt görünüm).')
+                    ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) ($state ?? ''))
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->rows(6)
                     ->columnSpanFull(),
                 Forms\Components\Select::make('champion_id')
                     ->label('Şampiyon')
