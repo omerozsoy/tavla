@@ -27,6 +27,10 @@ interface Props {
   onMatchmake: () => void
   onCancelMatch: () => void
   onLeave: () => void
+  /** true: bu bekleme odasi bir TURNUVA maci (rakip oto-eslesir) -> "kodu arkadasina gonder"
+   *  (9QHHU) arkadas-daveti UI'si YERINE kodsuz "turnuva maci basliyor, rakip baglaniyor" goster.
+   *  Turnuvada kod paylasmak anlamsiz; rakip davet beklemez, oto-girer. */
+  isTournament?: boolean
   /** true: lobi kabugu (logo+sidebar) icinde GOMULU render (fixed tam-ekran overlay YERINE
    *  ortali in-flow panel) -> oda olustur/bekle ekraninda menu/logo kaybolmaz. */
   embedded?: boolean
@@ -45,6 +49,7 @@ export default function Lobby({
   onMatchmake,
   onCancelMatch,
   onLeave,
+  isTournament,
   embedded,
 }: Props) {
   const { t } = useT()
@@ -136,7 +141,19 @@ export default function Lobby({
       <div className={wrapCls}>
         <div className="register-card">
           <h2>{t('mp.waiting')}</h2>
-          {inviteWaitName ? (
+          {isTournament ? (
+            /* TURNUVA MACI: rakip oto-eslesir -> kod paylasma YOK. Oda 'waiting'ken (rakip henuz
+               girmemis) arkadas-daveti "9QHHU kodu gonder" ekrani YANLIS; kisa "baglaniyor" notu +
+               cikis (hukmen). */
+            <>
+              <p className="register-sub">{t('mp.tournWaiting')}</p>
+              <div className="register-actions">
+                <Button variant="outline" onClick={onLeave}>
+                  {t('mp.leave')}
+                </Button>
+              </div>
+            </>
+          ) : inviteWaitName ? (
             <>
               <p className="register-sub">{t('mp.waitingFor', { name: inviteWaitName })}</p>
               {inviteWaitRating != null && (
