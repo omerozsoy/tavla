@@ -1829,6 +1829,43 @@ class RoomController extends Controller
         }
     }
 
+    /**
+     * IN-FLIGHT VARIS DAMGASI ("Gonderiliyor..." haksiz AFK/terk KOKU — yuzlerce turnuva sikayeti):
+     * bir oyun komutu (hamle/zar/kup/pes) AGIR islenmeden ONCE, komutu gonderen oyuncunun _acted
+     * (+ _seen) damgasini KISA, ayri bir tx'te DB'ye yazar. Boylece komut yavas validate/lock/retry'de
+     * takilsa bile RAKIBIN rutin poll'u (kilitsiz tickClock) o oyuncuyu "hareketsiz" sanip haksiz
+     * AFK/TIMEOUT ilan edemez: MatchClock::maybeEnd _acted'i in-flight kalkani olarak kullanir
+     * (deadline'lari poll 'now'u yerine son komut VARISina gore olcer). Idempotent: retry'ler
+     * damgayi tazeler, komutun kendisi command_id ile tekil uygulanir. En iyi caba: hata komutu
+     * BLOKLAMAZ (damga yazilamazsa akis normal devam eder, en kotu halde eski davranis).
+     */
+    private function stampActed(string $code, string $token, Request $request): void
+    {
+        try {
+            DB::transaction(function () use ($code, $token, $request) {
+                $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+                if (! $room) {
+                    return;
+                }
+                $clock = is_array($room->clock) ? $room->clock : null;
+                if (! is_array($clock) || empty($clock) || ! empty($clock['end'])) {
+                    return; // saat yok / zaten bitti -> damgaya gerek yok
+                }
+                $slot = $this->slotOf($room, $token, $request);
+                if ($slot === null || ($room->bot && $slot === 'p2')) {
+                    return; // odada degil / bot slotu -> damgalama
+                }
+                $now = microtime(true);
+                $clock[$slot.'_acted'] = $now; // in-flight AFK/timeout kalkani
+                $clock[$slot.'_seen'] = $now;  // presence (terk) de tazelensin
+                $room->clock = $clock;
+                $room->save();
+            });
+        } catch (\Throwable $e) {
+            // yut: damga en iyi caba, komut akisini asla bozmaz
+        }
+    }
+
     // Istemciye donen canli saat goruntusu (beyaz/siyah/delay/aktif/AFK/kayip) veya null.
     private function clockView(Room $room): ?array
     {
@@ -2497,6 +2534,8 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $this->stampActed($code, $data['token'], $request); // in-flight AFK/terk kalkani (bkz stampActed)
+
         $resp = DB::transaction(function () use ($data, $code, $dice, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
@@ -2697,6 +2736,10 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        // IN-FLIGHT KALKANI: AGIR validate/lock ONCESI "oynuyorum" damgasini yaz -> hamle yolda
+        // takilsa (yavas validator/FPM) bile rakibin poll'u beni AFK/terk ilan edemez. Bkz stampActed.
+        $this->stampActed($code, $data['token'], $request);
+
         // ---- FAZ 1: KİLİTSİZ doğrulama (yavaş HTTP; rooms row-lock + DB bağlantısı TUTULMAZ) ----
         // Node validator /validate saf + stateless (validateTurn; DB'ye dokunmaz) -> lock DIŞINDA
         // çağrılabilir. Böylece tıkalı/yavaş validator artık FPM worker + DB bağlantısı + rooms
@@ -2887,6 +2930,8 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $this->stampActed($code, $data['token'], $request); // in-flight AFK/terk kalkani (bkz stampActed)
+
         $resp = DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
@@ -3030,6 +3075,8 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $this->stampActed($code, $data['token'], $request); // in-flight AFK/terk kalkani (bkz stampActed)
+
         $resp = DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
@@ -3133,6 +3180,8 @@ class RoomController extends Controller
             'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
+
+        $this->stampActed($code, $data['token'], $request); // in-flight AFK/terk kalkani (bkz stampActed)
 
         $resp = DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
