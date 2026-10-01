@@ -8405,6 +8405,14 @@ button.move-row:focus-visible {
      board (tepsi dahil) ekrana TAM otursun, kirpma yok. */
   :root {
     --board-h: max(210px, min(calc((100vw - 60px) / 1.4), calc(100vh - var(--header-h) - 200px)));
+    /* Kup mobilde orta bara SIGSIN: taban clamp'in 38px tabani dar barda (bar-w ~30px)
+       barin disina tasiyordu. Her zaman bar genisliginin icinde kal (2px pay) + 40px cap. */
+    --cube-size: min(calc(var(--bar-w) - 4px), 40px);
+  }
+  /* Hane numaralari (1-24) mobilde biraz kuculsun: sabit 1rem kucuk tahtada iri duruyordu.
+     Board'a (--checker) gore olcekle -> her ekranda dengeli. */
+  .pt-numbers {
+    font-size: calc(var(--checker) * 0.5);
   }
   .game-area {
     flex-direction: column;
