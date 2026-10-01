@@ -18,6 +18,13 @@ use Illuminate\Support\Facades\Schema;
 
 class RoomController extends Controller
 {
+    // POLL YAZIM THROTTLE (anlık yavaşlık / DB yük fix): her poll (~1.2sn) presence _seen için
+    // ağır `rooms.clock` JSON'unu yazıyordu (eski 4sn -> turnuvada N oyuncu × ~0.25 yazım/sn).
+    // _seen yalnız presence (terk) tespiti için gerekir; eşik MatchClock::PRESENCE_TIMEOUT (45sn).
+    // 15sn'de bir yazmak 3× pay bırakır (terk tespiti etkilenmez) ve poll kaynaklı rooms yazımını
+    // ~4× azaltır. Komut yolu (stampActed/driveAuthoritativeClock) _seen'i zaten anında tazeler.
+    private const PRESENCE_WRITE_THROTTLE_S = 15.0;
+
     // Benzersiz oda kodu (karisik olmayan karakterler)
     private function generateCode(): string
     {
@@ -1654,10 +1661,11 @@ class RoomController extends Controller
         }
         $now = microtime(true);
         $changed = false;
-        // Varlik damgasi: en fazla ~4sn'de bir yaz (poll her ~1.5sn; gereksiz DB yazma yok).
+        // Varlik damgasi: en fazla PRESENCE_WRITE_THROTTLE_S'de bir yaz (poll ~1.2sn; gereksiz
+        // ağır rooms.clock JSON yazmasını kes -> turnuva DB yükü düşer, terk tespiti etkilenmez).
         if ($slot !== null) {
             $prev = (float) ($clock[$slot.'_seen'] ?? 0);
-            if ($now - $prev >= 4.0) {
+            if ($now - $prev >= self::PRESENCE_WRITE_THROTTLE_S) {
                 $clock = MatchClock::seen($clock, $slot, $now);
                 $changed = true;
             }
@@ -1674,7 +1682,7 @@ class RoomController extends Controller
         //   (1) botu her zaman "present" say (bot asla terk etmez);
         //   (2) küp yanıtı BEKLENMİYORSA saat sahibini OYUN SIRASINA göre yeniden senkronla.
         if ($room->bot && empty($clock['end'])) {
-            if ($now - (float) ($clock['p2_seen'] ?? 0) >= 4.0) {
+            if ($now - (float) ($clock['p2_seen'] ?? 0) >= self::PRESENCE_WRITE_THROTTLE_S) {
                 $clock = MatchClock::seen($clock, 'p2', $now);
                 $changed = true;
             }
