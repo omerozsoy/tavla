@@ -2780,7 +2780,11 @@ export default function App() {
           // aynı çıkar ve dedup guard onu SESSİZCE yutar (kalıcı kilit). Eşzamanlı çift-submit'i zaten
           // moveInFlightRef (senkron) engeller. Bkz. authSync nextSubmittedKey + regresyon testi.
           lastSubmittedMoveRef.current = nextSubmittedKey(lastSubmittedMoveRef.current, { type: 'rejected' })
-          if (err?.status !== 409) notify.error(srvErr(e))
+          // Geçici hata (offline/timeout; api.ts retry'yi zaten tüketti) = hamle SUNUCUYA ULAŞMADI.
+          // Jenerik "ulaşılamadı" yerine aksiyon bildir: tahta zaten re-playable'a resync oluyor,
+          // kullanıcıya yeniden bağlanınca hamlesini TEKRAR OYNAMASINI söyle (dev_bay AFK vakası).
+          if (isTransientError(e)) notify.error(t('mp.moveConnLost'))
+          else if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
           // KÖK FIX (canlı "onaylaya bastıkça Geçersiz hamle" kilidi): reddedilen hamle (409/422/…)
           // SUNUCUDA UYGULANMADI ama istemci HÂLÂ mid-move'da (sıra bende + zar atılmış/step oynanmış).
