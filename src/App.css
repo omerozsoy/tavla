@@ -23021,6 +23021,17 @@ button.acct-row-logout:hover:not(:disabled) {
 .tm-p.lose {
   color: color-mix(in srgb, var(--muted) 70%, var(--card-bg));
 }
+/* Cift maglubiyet (yonetici sonuc duzeltmesi): iki taraf da kaybetti, galip yok. Hucre soluk +
+   kesik cerceve, iki tarafta da amber "Çift mağlubiyet" rozeti (bay/walkover'dan ayrisir). */
+.swiss-match.dloss {
+  opacity: 0.9;
+  border-style: dashed;
+}
+.tm-score.wo.dloss,
+.tm-p.win .tm-score.wo.dloss {
+  color: var(--warning-fg, #b45309);
+  font-size: 0.66rem;
+}
 /* Ilk turda rakipsiz gecis: cizgi yerine yesil "Bye" */
 .tm-p .tm-bye {
   color: var(--success-fg);
@@ -25682,7 +25693,9 @@ select:-webkit-autofill {
   max-width: 900px;
   min-height: 100%;
   max-height: none;
-  padding: calc(var(--header-h) + 18px) clamp(16px, 3vw, 48px) 56px;
+  /* Ust bosluk: diger menu sayfalari ust chrome'un ALTINDAKI akista basliyor; auth fixed
+     overlay'inde header-h+18 (~88px) fazladan bos bant yaratiyordu -> kucuk ust padding. */
+  padding: 24px clamp(16px, 3vw, 48px) 56px;
   background: transparent;
   border: none;
   border-radius: 0;
