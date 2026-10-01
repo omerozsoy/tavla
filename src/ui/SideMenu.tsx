@@ -40,6 +40,10 @@ export interface SideMenuProps {
   // Admin katlama-varsayilanlarinin imzasi; degisince kullanici override'lari sifirlanir.
   groupSig?: string
   onResume: () => void
+  // TURNUVA MACI (re-entry): otomatik giremeyen/takilan oyuncu "Aktif Maçlar"la maçına döner.
+  hasTournMatch?: boolean
+  tournMatchCount?: number
+  onTournMatch?: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
   active?: string
@@ -129,7 +133,8 @@ export default function SideMenu(p: SideMenuProps) {
         const firstPlayIdx = p.groups.findIndex((g) => g.group === 'play')
         return p.groups.map((g, gi) => {
         const items = g.items.filter((it) => !(it.hideInGame && p.inGame))
-        const showResume = gi === firstPlayIdx && !p.inGame && p.hasActiveGame
+        // "Aktif Maçlar": yerel devam eden oyun VEYA otomatik giremediği turnuva maçı varsa göster.
+        const showResume = gi === firstPlayIdx && !p.inGame && (p.hasActiveGame || !!p.hasTournMatch)
         if (items.length === 0 && !showResume) return null
         // Grup basligi: admin cozumlemesi (g.label) varsa + oyun disinda + gercekten oge varsa.
         const showTitle = !!g.label && !p.inGame && items.length > 0
@@ -168,8 +173,16 @@ export default function SideMenu(p: SideMenuProps) {
                 )
               })}
             {!collapsedNow && showResume && (
-              <Button variant="secondary" className={NAV} onClick={p.onResume}>
-                <Icon name="live" size={24} /> {t('menu.activeGames')}
+              // Turnuva maçı varsa ÖNCELİKLİ + belirgin (default/madalya + adet rozeti); yoksa yerel devam.
+              <Button
+                variant={p.hasTournMatch ? 'default' : 'secondary'}
+                className={NAV}
+                onClick={p.hasTournMatch && p.onTournMatch ? p.onTournMatch : p.onResume}
+              >
+                <Icon name={p.hasTournMatch ? 'medal' : 'live'} size={24} /> {t('menu.activeGames')}
+                {p.hasTournMatch && (p.tournMatchCount ?? 0) > 0 && (
+                  <span className="menu-badge">{p.tournMatchCount}</span>
+                )}
               </Button>
             )}
           </div>

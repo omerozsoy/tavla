@@ -2341,6 +2341,33 @@ export default function App() {
   useEffect(() => {
     if (!inActiveOnlineGame) tournDismissedRef.current.clear()
   }, [inActiveOnlineGame])
+
+  // TURNUVA MACINA GIRIS — TEK KAYNAK. TournMatchReady 4 farkli gorunum dalinda render edilir;
+  // gorunum degisince remount olup kura animasyonu BASTAN baslar ve "Kura cekiliyor…" penceresinde
+  // TAKILIP maca hic girilmeyebilir (-> hukmen; sahadan cok rapor). Giris mantigini burada TEK yerde
+  // tutup hem 4 onEnter hem GUVENLIK ZAMANLAYICISI ayni yolu kullanir. enteredNoticeRef cift-girisi
+  // onler (child onEnter + timer ayni an); giris BASARISIZ olursa catch sifirlar -> tekrar denenir.
+  const enteredNoticeRef = useRef('')
+  const readyEnterRef = useRef<() => void>(() => {})
+  readyEnterRef.current = () => {
+    const n = readyNotice
+    if (!n) return
+    const k = `${n.tid}-${n.match}`
+    if (enteredNoticeRef.current === k) return
+    enteredNoticeRef.current = k
+    setReadyNotice(null)
+    if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
+    else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
+  }
+  // GUVENLIK AGI: readyNotice acilinca ~7sn sonra (kura+geri sayim ~5sn'den sonra) HALA aciksa
+  // child'in remount/takilmasindan BAGIMSIZ zorla gir. readyNotice'a bagli -> child kac kez
+  // remount olursa olsun bu timer BIR kez calisir (giris olunca readyNotice null -> cleanup iptal eder).
+  useEffect(() => {
+    if (!readyNotice) return
+    const id = window.setTimeout(() => readyEnterRef.current(), 7000)
+    return () => window.clearTimeout(id)
+  }, [readyNotice])
+
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
@@ -6321,6 +6348,7 @@ export default function App() {
     } catch {
       setRoomError(t('mp.connError'))
       setTournOpen(true)
+      enteredNoticeRef.current = '' // giris basarisiz -> ayni mac tekrar denenebilsin (guvenlik timer/banner)
     } finally {
       setRoomBusy(false)
     }
@@ -9286,6 +9314,16 @@ export default function App() {
         groups={menuGroups}
         groupSig={groupCollapseSig}
         onResume={menuProps.onResume}
+        hasTournMatch={tournNotices.length > 0}
+        tournMatchCount={tournNotices.length}
+        onTournMatch={() => {
+          const n = tournNotices[0]
+          if (!n) return
+          enteredNoticeRef.current = '' // elle giriş -> çift-giriş kilidini sıfırla, daima dene
+          setReadyNotice(null)
+          if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
+          else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
+        }}
         active={activeKey}
         badges={{ messages: dmUnread }}
         mobileOpen={menuOpen}
@@ -9304,11 +9342,7 @@ export default function App() {
         <TournMatchReady
           key={`${readyNotice.tid}-${readyNotice.match}`}
           notice={readyNotice}
-          onEnter={() => {
-            const n = readyNotice
-            setReadyNotice(null)
-            void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
-          }}
+          onEnter={() => readyEnterRef.current()}
         />
       )}
       {menuOverlays}
@@ -9734,11 +9768,7 @@ export default function App() {
               <TournMatchReady
                 key={`${readyNotice.tid}-${readyNotice.match}`}
                 notice={readyNotice}
-                onEnter={() => {
-                  const n = readyNotice
-                  setReadyNotice(null)
-                  void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
-                }}
+                onEnter={() => readyEnterRef.current()}
               />
             )}
             {menuOverlays}
@@ -10036,11 +10066,7 @@ export default function App() {
         <TournMatchReady
           key={`${readyNotice.tid}-${readyNotice.match}`}
           notice={readyNotice}
-          onEnter={() => {
-            const n = readyNotice
-            setReadyNotice(null)
-            void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
-          }}
+          onEnter={() => readyEnterRef.current()}
         />
       )}
       {menuPages}
@@ -10241,13 +10267,7 @@ export default function App() {
             tournDismissedRef.current.add(`${readyNotice.tid}-${readyNotice.match}`)
             setReadyNotice(null)
           }}
-          onEnter={() => {
-            const n = readyNotice
-            setReadyNotice(null)
-            // Turnuva disi aktif maçtaysa NO-CONTEST kapat + gir; degilse direk gir.
-            if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
-            else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
-          }}
+          onEnter={() => readyEnterRef.current()}
         />
       )}
     </div>

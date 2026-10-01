@@ -776,6 +776,29 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
             <h3 className="tourn-bracket-title">{t('tourn.lobby')}</h3>
           )}
+          {/* ELEME: oyuncunun şu anki (bitmemiş) maçı için BELİRGİN "Maça Gir" düğmesi — otomatik
+              giremeyen/takılan oyuncu buradan maçına döner (Swiss'teki swiss-mymatch ile aynı). */}
+          {active.status === 'running' && active.type !== 'swiss_triple' && (() => {
+            let myM: TMatch | null = null
+            let myOpp: TMatch['p1'] | TMatch['p2'] = null
+            for (const round of active.bracket || []) {
+              const m = round.find((mm) => !mm.winner && !mm.double_loss && (mm.p1?.id === myId || mm.p2?.id === myId))
+              if (m) { myM = m; myOpp = m.p1?.id === myId ? m.p2 : m.p1; break }
+            }
+            if (!myM || !myOpp?.id) return null
+            const o = myOpp
+            return (
+              <div className="swiss-mymatch">
+                <div className="swiss-mm-head">{t('swiss.myMatch')}</div>
+                <div className="swiss-mm-opp">
+                  <PlayerIdentity userId={o.id} name={o.name} rating={o.rating} avatar={o.avatar} size={28} premium={o.premium} />
+                </div>
+                <Button variant="default" className="tm-play" onClick={() => onPlayMatch(active.id, myM!, o.id)}>
+                  <Icon name="play" size={16} /> {t('swiss.play')}
+                </Button>
+              </div>
+            )
+          })()}
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
             <div className="tourn-bracket">
               {active.bracket?.map((round, ri) => {
