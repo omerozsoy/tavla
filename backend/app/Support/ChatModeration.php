@@ -29,9 +29,13 @@ class ChatModeration
         return min(max(1, $offense), count(self::BAN_MINUTES)) - 1;
     }
 
-    /** Küfürlü token'ları **** ile maskele. @return array{0:string,1:bool} [maskeli_metin, bulundu_mu] */
-    public static function filter(string $text): array
+    /** Küfürlü token'ları **** ile maskele. @return array{0:string,1:bool} [maskeli_metin, bulundu_mu]
+     *  ADMIN MUAF: $u verilip is_admin ise HİÇ maskelenmez (hit=false) -> penalize de çağrılmaz. */
+    public static function filter(string $text, ?User $u = null): array
     {
+        if ($u && $u->is_admin) {
+            return [$text, false];
+        }
         $words = NicknameFilter::words();
         if (! $words) {
             return [$text, false];

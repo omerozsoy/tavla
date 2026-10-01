@@ -77,5 +77,13 @@ class ChatModerationTest extends TestCase
         $admin->chat_muted_until = now()->addYear();
         $admin->save();
         $this->assertNull(ChatModeration::mutedSeconds($admin->fresh()));
+
+        // Admin mesajı HİÇ maskelenmez (hit=false); normal kullanıcıda maskelenir.
+        [$txt, $hit] = ChatModeration::filter('seni amk', $admin->fresh());
+        $this->assertFalse($hit);
+        $this->assertSame('seni amk', $txt);
+        [$txt2, $hit2] = ChatModeration::filter('seni amk', User::factory()->create());
+        $this->assertTrue($hit2);
+        $this->assertSame('seni ****', $txt2);
     }
 }
