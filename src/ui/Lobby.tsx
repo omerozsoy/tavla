@@ -143,16 +143,11 @@ export default function Lobby({
           <h2>{t('mp.waiting')}</h2>
           {isTournament ? (
             /* TURNUVA MACI: rakip oto-eslesir -> kod paylasma YOK. Oda 'waiting'ken (rakip henuz
-               girmemis) arkadas-daveti "9QHHU kodu gonder" ekrani YANLIS; kisa "baglaniyor" notu +
-               cikis (hukmen). */
-            <>
-              <p className="register-sub">{t('mp.tournWaiting')}</p>
-              <div className="register-actions">
-                <Button variant="outline" onClick={onLeave}>
-                  {t('mp.leave')}
-                </Button>
-              </div>
-            </>
+               girmemis) arkadas-daveti "9QHHU kodu gonder" ekrani YANLIS; yalniz kisa "baglaniyor"
+               notu. "Odadan Cik" butonu KALDIRILDI: bu kart sol menuyu bloklamaz (gezinilebilir) ve
+               bekleme sirasinda cikis turnuva macini terk edip hukmen/no-show KAYBI dogururdu
+               (footgun). Rakip baglaninca otomatik oyuna gecilir; gercekten cikmak isteyen menuden. */
+            <p className="register-sub">{t('mp.tournWaiting')}</p>
           ) : inviteWaitName ? (
             <>
               <p className="register-sub">{t('mp.waitingFor', { name: inviteWaitName })}</p>
