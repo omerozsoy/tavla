@@ -18512,6 +18512,57 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
 }
 /* Katilimcilar: kompakt tek satir -> sayac + kucuk etiket + kucuk bar yan yana. */
+/* Turnuva duyurulari paneli (lobi): admin panelden girilen duyurular, en yeni ustte.
+   Yeni duyuru gelince istemci zil calar (annSeenRef efekti). */
+.tourn-announce {
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.tourn-announce h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 1rem;
+}
+.tourn-announce-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tourn-announce-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+.tourn-announce-ic {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+.tourn-announce-msg {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tourn-announce-at {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
 .tourn-players {
   display: flex;
   align-items: center;

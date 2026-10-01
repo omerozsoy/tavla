@@ -1216,6 +1216,8 @@ export interface Tournament {
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null
+  /** Lobi duyurulari (admin panelden; en yeni ustte). Yeni duyuruda istemci zil calar. */
+  announcements?: { id: number; message: string; at: string | null }[]
 }
 
 export async function listTournaments(): Promise<Tournament[]> {

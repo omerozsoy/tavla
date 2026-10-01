@@ -24,6 +24,7 @@ import {
   ApiError,
 } from '../api'
 import { Button } from '@/components/ui/button'
+import { Sound } from '../sound'
 
 // SEO-dostu URL: /online-turnuvalar/{isim-slug}-{id}. Id sonda kalir -> derin link cozumu
 // (applyFromPath son '-' parcasini id olarak alir). Eski /turnuvalar/... de calisir.
@@ -254,6 +255,24 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     if (active) onOpenDetail?.(active.id, tournUrlSlug(active))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id])
+
+  // Yeni turnuva duyurusu geldiginde ZIL cal. Ilk yuklemede (veya baska turnuvaya gecince)
+  // yalniz taban cizgisini kaydeder, ses yok; sonraki poll'da daha yuksek id gorulurse calar.
+  const annSeenRef = useRef<{ tid: number; maxId: number } | null>(null)
+  useEffect(() => {
+    if (!active) return
+    const ids = active.announcements?.map((a) => a.id) ?? []
+    const maxId = ids.length ? Math.max(...ids) : 0
+    const seen = annSeenRef.current
+    if (!seen || seen.tid !== active.id) {
+      annSeenRef.current = { tid: active.id, maxId }
+      return
+    }
+    if (maxId > seen.maxId) {
+      annSeenRef.current = { tid: active.id, maxId }
+      Sound.bell()
+    }
+  }, [active])
 
 
 
@@ -532,6 +551,34 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}: <span>{active.prize_desc}</span>
               </div>
             )
+          )}
+
+          {/* Turnuva duyurulari (admin panelden): lobi en ustunde, en yeni ilk sirada.
+              Yeni duyuru geldiginde zil calar (annSeenRef efekti). */}
+          {active.announcements && active.announcements.length > 0 && (
+            <div className="tourn-announce">
+              <h3>
+                <Icon name="megaphone" size={16} /> {t('tourn.announcements')}
+              </h3>
+              <ul className="tourn-announce-list">
+                {active.announcements.map((a) => (
+                  <li key={a.id} className="tourn-announce-item">
+                    <Icon name="bell" size={15} className="tourn-announce-ic" />
+                    <span className="tourn-announce-msg">{a.message}</span>
+                    {a.at && (
+                      <time className="tourn-announce-at">
+                        {new Date(a.at).toLocaleString('tr-TR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </time>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
