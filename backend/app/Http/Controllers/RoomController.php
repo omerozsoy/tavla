@@ -1682,7 +1682,13 @@ class RoomController extends Controller
     // sonucu netlestirir. Yalniz CANLI (playing, bitmemis) macta anlamli.
     public function leave(Request $request, string $code)
     {
-        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            // TURNUVA MACINA GECIS: istemci bu maci NO-CONTEST (kazanan/kaybeden YOK, puan/coin degismez,
+            // stake iade) kapatmak ister. Yalniz SUNUCU dogrularsa onurlanir (oyuncunun gercekten hazir
+            // bir turnuva maci varsa) -> kaybeden oyuncu para macindan cezasiz kacamaz.
+            'tournament' => ['nullable', 'boolean'],
+        ]);
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
             return response()->json(['ok' => true]);
@@ -1698,15 +1704,40 @@ class RoomController extends Controller
         // ile kazanan ters çevriliyor, kazanan "terk edip kaybetti" gibi yazılıyordu (DrBakır bug'ı).
         $decided = $this->decidedWinnerColor($room) !== null;
         if ($room->status === 'playing' && ! $ended && ! $decided) {
-            // Terk eden = $slot -> rakip kazanir. applyClockEnd skoru/gameEnd'i yazar,
-            // p{slot}_result + end_reason'i set eder (istemci sync'te otoriter sonucu gorur).
-            $clock['end'] = ['reason' => 'ABANDON', 'winner' => MatchClock::other($slot)];
+            // NO-CONTEST (turnuva maçına geçiş): oyuncu başka bir (turnuva dışı) maçtayken turnuva
+            // maçına çekiliyor -> mevcut maç kazananSIZ kapanır. Sunucu, oyuncunun GERÇEKTEN hazır bir
+            // turnuva maçı olduğunu doğrular; aksi halde normal ABANDON (rakip kazanır).
+            $noContest = $request->boolean('tournament')
+                && ! Cache::has(TournamentController::roomTargetKey($room->code)) // bırakılan oda turnuva odası DEĞİL
+                && $this->hasReadyTournamentMatch($request->user()?->id);
+            $clock['end'] = ['reason' => 'ABANDON', 'winner' => $noContest ? null : MatchClock::other($slot)];
             $this->applyClockEnd($room, $clock);
             $room->clock = $clock;
             $room->save();
         }
 
         return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
+    }
+
+    /** Oyuncunun ŞU AN oynanmayı bekleyen (kazananı belirsiz) bir turnuva maçı var mı? No-contest
+     *  terk yetkisini SUNUCU bununla doğrular (client flag'ine güvenilmez). */
+    private function hasReadyTournamentMatch(?int $userId): bool
+    {
+        if (! $userId) {
+            return false;
+        }
+        foreach (\App\Models\Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
+            foreach (($tr->bracket ?? []) as $round) {
+                foreach ($round as $m) {
+                    if (empty($m['winner']) && ! empty($m['p1']['id']) && ! empty($m['p2']['id'])
+                        && ($m['p1']['id'] === $userId || $m['p2']['id'] === $userId)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     // Oyun durumunu guncelle (hamle). Sadece odadaki oyuncular.

@@ -6326,8 +6326,9 @@ export default function App() {
     }
   }
 
-  // AKTIF OYUNDAYKEN turnuva macina gec: once mevcut oyunu HUKMEN birak (leaveRoom = ABANDON ->
-  // rakip galip; para macinda stake oder, ranked'da Elo kaybi), SONRA turnuva odasina gir.
+  // AKTIF OYUNDAYKEN turnuva macina gec: once mevcut (turnuva disi) maci NO-CONTEST kapat
+  // (kazanan/kaybeden YOK, puan/coin degismez, stake iade -> leaveRoom(code, true); sunucu hazir
+  // turnuva maci olunca onurlar), SONRA turnuva odasina gir. KULLANICIYA SORULMAZ ("direk al").
   // handleLeaveRoom'u CAGIRMA: o setRoom(null)/tournMatchRef=null ile yeni turnuva odasini ezer
   // (yaris). Bunun yerine leaveRoom'u await edip stake/bet ref'lerini elle sifirla; state'i
   // handlePlayTournamentMatch kendisi bastan kurar.
@@ -6337,9 +6338,9 @@ export default function App() {
       roomLeavingRef.current = code
       syncEnabledRef.current = false
       try {
-        await leaveRoom(code)
+        await leaveRoom(code, true) // NO-CONTEST (turnuva geçişi) -> kazanan/kaybeden yok
       } catch {
-        /* abandon basarisiz olsa da turnuvaya devam et; sunucu presence ile temizler */
+        /* kapatma basarisiz olsa da turnuvaya devam et; sunucu presence ile temizler */
       }
     }
     stakeRef.current = 0 // turnuva maci bahissiz -> eski para macinin stake'i tasinmasin
@@ -10229,13 +10230,13 @@ export default function App() {
         </div>
       )}
 
-      {/* TURNUVA MACI HAZIR — OYUN GORUNUMU: aktif oyunda banner oto-girmez, "oyunu birak, gec" /
-          "devam et" diye sorar (confirmLeave). matchOver (sonuc ekrani) iken normal oto-giris. */}
+      {/* TURNUVA MACI HAZIR — OYUN GORUNUMU: KULLANICIYA SORULMAZ. Normal 3sn kura penceresi gosterilir,
+          sonra DIREK turnuva macina alinir. Baska (turnuva disi) bir maçtaysa o maç NO-CONTEST kapanir
+          (kazanan/kaybeden yok) ve turnuva macina cekilir. confirmLeave KALDIRILDI (mass-forfeit kok). */}
       {readyNotice && (
         <TournMatchReady
           key={`${readyNotice.tid}-${readyNotice.match}`}
           notice={readyNotice}
-          confirmLeave={online && !matchOver}
           onDismiss={() => {
             tournDismissedRef.current.add(`${readyNotice.tid}-${readyNotice.match}`)
             setReadyNotice(null)
@@ -10243,6 +10244,7 @@ export default function App() {
           onEnter={() => {
             const n = readyNotice
             setReadyNotice(null)
+            // Turnuva disi aktif maçtaysa NO-CONTEST kapat + gir; degilse direk gir.
             if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
             else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
           }}

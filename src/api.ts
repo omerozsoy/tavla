@@ -2479,11 +2479,14 @@ export async function showRoom(code: string, since?: number): Promise<RoomView |
 // Maci ACIKCA TERK ET (kullanici "cikis/terk" der) -> terk eden kaybeder, rakip kazanir.
 // NOT: refresh'te CAGIRMA — sekme kapanma/yenileme ayirt edilemez; yenileyen oyuncu
 // haksiz kaybetmesin diye tab-close forfeit'i SUNUCU presence (60sn) ile ele alinir.
-export async function leaveRoom(code: string): Promise<void> {
+// forTournament=true -> turnuva maçına geçiş: mevcut (turnuva dışı) maç NO-CONTEST kapanır
+// (kazanan/kaybeden YOK, puan/coin değişmez). Sunucu oyuncunun gerçekten hazır turnuva maçı
+// olduğunu doğrular (yoksa normal ABANDON).
+export async function leaveRoom(code: string, forTournament = false): Promise<void> {
   try {
     await req(`/rooms/${encodeURIComponent(code)}/leave`, {
       method: 'POST',
-      body: JSON.stringify({ token: playerToken() }),
+      body: JSON.stringify({ token: playerToken(), tournament: forTournament }),
     })
   } catch {
     // en iyi caba: hata olsa da presence yine forfeit eder

@@ -497,6 +497,53 @@ class RoomClockTest extends TestCase
         $this->assertNull($cas['tid']);
     }
 
+    // ---- TURNUVA GEÇİŞİ: başka maçta iken turnuva maçına çekilince mevcut maç NO-CONTEST kapanır ----
+    // "direk turnuva maçına al": kullanıcıya sorulmaz, turnuva dışı maç kazanan/kaybeden OLMADAN kapanır.
+    public function test_leave_for_tournament_is_no_contest_when_player_has_ready_match(): void
+    {
+        $me = $this->user('nc1@t.co');
+        $opp = $this->user('nc2@t.co');
+        $room = $this->playingRoom('NCR1', 'casual', 5);
+        $room->p1_user_id = $me->id;  // ben p1 (terk eden)
+        $room->p2_user_id = $opp->id;
+        $room->p1_token = 'tk1';
+        $room->save();
+
+        // Oyuncunun ŞU AN hazır (kazananı belirsiz) turnuva maçı var.
+        \App\Models\Tournament::create([
+            'name' => 'T', 'status' => 'running', 'size' => 2,
+            'players' => [['id' => $me->id], ['id' => $opp->id]],
+            'bracket' => [[['key' => 'r0m0',
+                'p1' => ['id' => $me->id], 'p2' => ['id' => $opp->id]]]],
+        ]);
+
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $this->postJson('/api/rooms/NCR1/leave', ['token' => 'tk1', 'tournament' => true])->assertOk();
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        // NO-CONTEST: kazanan YOK (rakip galip yazılmadı).
+        $this->assertNull($room->clock['end']['winner']);
+    }
+
+    public function test_leave_for_tournament_falls_back_to_abandon_without_ready_match(): void
+    {
+        $me = $this->user('nc3@t.co');
+        $opp = $this->user('nc4@t.co');
+        $room = $this->playingRoom('NCR2', 'casual', 5);
+        $room->p1_user_id = $me->id;
+        $room->p2_user_id = $opp->id;
+        $room->p1_token = 'tk1';
+        $room->save();
+        // Hazır turnuva maçı YOK -> tournament flag'i onurlanmaz -> normal ABANDON (rakip=p2 kazanır).
+
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $this->postJson('/api/rooms/NCR2/leave', ['token' => 'tk1', 'tournament' => true])->assertOk();
+
+        $room->refresh();
+        $this->assertSame('p2', $room->clock['end']['winner']); // terk eden p1 -> rakip p2 kazanır
+    }
+
     // ---- BOT MAÇI: rakip(bot) HİÇ poll etmez -> tick-bots insanın süresini SUNUCUDA bitirir ----
     // "Süre bitmemiş" bug'ı: bot maçında saati soracak kimse (rakip poll'ü) yok; insan sekmeyi
     // arka plana alınca süre gerçekte bitse de timeout ilan edilmiyordu. matches:tick-bots
