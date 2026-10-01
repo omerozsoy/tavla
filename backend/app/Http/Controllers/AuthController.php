@@ -78,15 +78,29 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        // Hesap-bazli kaba kuvvet kilidi (IP throttle'a EK): ayni hesaba 5 yanlis
+        // denemede 15 dk kilit. Hesap-bazli olmasi dagitik IP saldirisini de durdurur.
+        // ponytail: hedefli hesap-kilitleme DoS acar (saldirgan kasten kilitler) ama
+        // 15 dk + generic mesaj ile kabul edilebilir; raporda talep edildi.
+        $loginKey = 'login-fails:'.sha1(mb_strtolower(trim($data['login'])));
+        if ((int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) >= 5) {
+            throw ValidationException::withMessages([
+                'login' => ['Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.'],
+            ]);
+        }
+
         $user = User::where('email', $data['login'])
             ->orWhere('nickname', $data['login'])
             ->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            $fails = (int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($loginKey, $fails, now()->addMinutes(15));
             throw ValidationException::withMessages([
                 'login' => ['E-posta/takma isim veya şifre hatalı.'],
             ]);
         }
+        \Illuminate\Support\Facades\Cache::forget($loginKey); // basarili giris -> sayaci sifirla
 
         // Kimlik DOGRULANDI (dogru sifre) ama hesap kapali -> tam olarak bu mesaj + oturum ACMA.
         // Yanlis sifre/kimliksiz kisi yukarida generic hatayi alir (durum sizmaz).
@@ -1858,16 +1872,18 @@ class AuthController extends Controller
     // Sifreyi sifirla (link'teki token + yeni sifre)
     /**
      * Kayit + sifirlama ortak sifre politikasi (sunucu-otoriter):
-     * en az 8 karakter, en az 1 buyuk harf, en az 1 rakam.
+     * en az 12 karakter, en az 1 kucuk + 1 buyuk harf + 1 rakam.
+     * (HIBP uncompromised eklenmedi: kayit kritik yoluna canli dis bagimlilik
+     *  getirir; acikca istenirse ->uncompromised() eklenebilir.)
      */
     private static function passwordRules(): array
     {
-        return ['required', 'string', 'min:8', 'max:100', 'regex:/[A-Z]/', 'regex:/[0-9]/'];
+        return ['required', 'string', 'min:12', 'max:100', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/'];
     }
 
     private static function passwordMessages(): array
     {
-        $msg = 'Şifre en az 8 karakter olmalı, en az 1 büyük harf ve 1 rakam içermeli.';
+        $msg = 'Şifre en az 12 karakter olmalı; en az 1 küçük harf, 1 büyük harf ve 1 rakam içermeli.';
 
         return ['password.min' => $msg, 'password.regex' => $msg];
     }
@@ -2025,7 +2041,7 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Mail::raw(
                 "Tavla TV e-posta doğrulama kodunuz: {$code}\n\nBu kod 15 dakika geçerlidir. "
                 ."Kodu siteye girerek hesabınızı doğrulayabilirsiniz.",
-                fn ($m) => $m->to($user->email)->subject('Tavla TV doğrulama kodu: '.$code)
+                fn ($m) => $m->to($user->email)->subject('Tavla TV e-posta doğrulama kodunuz')
             );
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('email verify code mail failed', ['e' => $e->getMessage()]);
