@@ -18,6 +18,11 @@ use Illuminate\Support\Str;
  */
 class OfficialMessenger
 {
+    /** SABİT resmi hesap kimliği: hesap id=1'e bağlıdır (e-postadan BAĞIMSIZ). #1'in e-postası
+     *  değişse bile yeni hesap YARATILMAZ (eski e-posta bağımlılığı bug'ı buradan geliyordu). */
+    public const ACCOUNT_ID = 1;
+
+    /** Yalnız ilk kurulum/test'te hesap YOKTURSA oluşturulacak e-posta (çözümleme buna bağlı DEĞİL). */
     public const EMAIL = 'yonetim@sistem.tavlatv';
 
     public const DEFAULT_NAME = 'Tavla TV Yönetim';
@@ -25,6 +30,15 @@ class OfficialMessenger
     /** Resmi hesabı getir; yoksa oluştur (giriş yapılamaz). */
     public static function account(): User
     {
+        $hasSys = Schema::hasColumn('users', 'is_system');
+        // BİRİNCİL: sabit id=1. is_system guard -> id=1 normal bir kullanıcıysa (ör. test ortamı)
+        // onu resmi sayma, fallback'e düş. Prod'da #1 = sistem hesabı (TavlaTV) -> doğrudan döner.
+        $byId = User::find(self::ACCOUNT_ID);
+        if ($byId && (! $hasSys || $byId->is_system)) {
+            return $byId;
+        }
+
+        // FALLBACK (id=1 sistem hesabı değil/yok — test veya ilk kurulum): e-postayla bul, yoksa oluştur.
         $u = User::where('email', self::EMAIL)->first();
         if (! $u) {
             $u = new User;
@@ -34,16 +48,31 @@ class OfficialMessenger
             $u->nickname = self::freeNickname(self::DEFAULT_NAME);
             $u->email = self::EMAIL;
             $u->password = Hash::make(Str::random(48));
-            if (Schema::hasColumn('users', 'is_system')) {
+            if ($hasSys) {
                 $u->is_system = true;
             }
             $u->save();
-        } elseif (Schema::hasColumn('users', 'is_system') && ! $u->is_system) {
+        } elseif ($hasSys && ! $u->is_system) {
             $u->is_system = true;
             $u->save();
         }
 
         return $u;
+    }
+
+    /** Resmi hesap id'si (VARSA) — OLUŞTURMADAN. Rozet/salt-okuma gibi yan etkisiz yerler için.
+     *  account() ile AYNI çözümleme: sabit id=1 (is_system) öncelikli; yoksa e-posta fallback. */
+    public static function existingId(): ?int
+    {
+        $hasSys = Schema::hasColumn('users', 'is_system');
+        $byId = User::find(self::ACCOUNT_ID);
+        if ($byId && (! $hasSys || $byId->is_system)) {
+            return (int) $byId->id;
+        }
+
+        $id = User::where('email', self::EMAIL)->value('id');
+
+        return $id !== null ? (int) $id : null;
     }
 
     /** İlk kurulumda çakışmayan bir nickname bul (ad genelde 15 char limitini aştığından güvenli). */

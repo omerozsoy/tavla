@@ -36,7 +36,8 @@ class PlayerReplies extends Page
     /** Menüde okunmamış gelen cevap sayısı rozeti (hesap yoksa null -> gereksiz oluşturma yok). */
     public static function getNavigationBadge(): ?string
     {
-        $officialId = User::where('email', OfficialMessenger::EMAIL)->value('id');
+        // Resmi hesap id'si (sabit id=1 öncelikli, yoksa e-posta); OLUŞTURMADAN -> rozet için yan etki yok.
+        $officialId = OfficialMessenger::existingId();
         if (! $officialId) {
             return null;
         }
