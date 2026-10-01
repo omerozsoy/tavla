@@ -4,7 +4,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type PresenceStatus, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, seekers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Seeker, type PresenceStatus, type Tournament, type Content } from '../api'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
@@ -499,6 +499,110 @@ export function OnlinePlayersPanel({
             })}
           </div>
           <Pager page={curPage} total={ordered.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
+        </>
+      )}
+    </div>
+  )
+}
+
+// ---- Oyun Arayanlar (hizli eslesme havuzunda bekleyenler) ----
+// Cevrimici Oyuncular paneliyle AYNI etkilesim: satir -> profil, (giris yapmissa) "Oyna" davet.
+// Fark: veri kaynagi mm_waiting havuzu + her satir aranan mac uzunlugunu/bahsini gosterir.
+export function SeekersPanel({
+  currentId,
+  onProfile,
+  onInvite,
+}: {
+  currentId?: number
+  onProfile: (id: number) => void
+  onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void
+}) {
+  const { t } = useT()
+  const [rows, setRows] = useState<Seeker[] | null>(null)
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 10
+  const MAX_PAGES = 10
+
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      seekers()
+        .then((s) => alive && setRows(s))
+        .catch(() => alive && setRows([]))
+    load()
+    const id = window.setInterval(load, 10000)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+    }
+  }, [])
+
+  const pageCount = rows ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(rows.length / PAGE_SIZE))) : 1
+  const curPage = Math.min(page, pageCount - 1)
+
+  // Bu panel BOSKEN hic render edilmez (ana sayfayi kirletmesin) — yuklenirken de sessiz.
+  if (rows !== null && rows.length === 0) return null
+
+  return (
+    <div className="home-panel seek-panel">
+      <div className="home-panel-head">
+        <span className="online-dot" />
+        <Icon name="dice" size={18} /> {t('seekers.title')}
+        {rows && rows.length > 0 && <span className="online-count">{rows.length}</span>}
+      </div>
+      {rows === null ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="rank-list">
+            {rows.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
+              const self = currentId != null && s.id === currentId
+              const stakeList = s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]
+              const maxStake = Math.max(0, ...stakeList)
+              const lengths = (s.targets && s.targets.length > 0 ? s.targets : [1]).join('·')
+              return (
+                <div
+                  key={s.id}
+                  className={`rank-row online-row ${self ? 'mine' : ''}`}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('.online-actions')) return
+                    onProfile(s.id)
+                  }}
+                >
+                  <button type="button" className="online-id">
+                    <PlayerIdentity userId={s.id} name={s.name} rating={s.rating ?? undefined} avatar={s.avatar} frame={s.frame} size={30} rankSize="md" premium={s.premium} animated />
+                  </button>
+                  <span className="rank-flag">
+                    <CountryFlag code={s.country} size={26} />
+                  </span>
+                  {/* Ne ariyor: mac uzunlugu + varsa bahis (yuzde VEYA coin) */}
+                  <span className="seek-meta">
+                    <span className="seek-len">{lengths} {t('seekers.pt')}</span>
+                    {s.bet_pct > 0 ? (
+                      <span className="seek-bet">%{s.bet_pct}</span>
+                    ) : maxStake > 0 ? (
+                      <Coins amount={maxStake} size={12} />
+                    ) : null}
+                  </span>
+                  {!self && onInvite ? (
+                    <span className="online-actions">
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="online-act"
+                        title={t('online.invite')}
+                        aria-label={t('online.invite')}
+                        onClick={() => onInvite({ id: s.id, name: s.name, avatar: s.avatar, rating: s.rating })}
+                      >
+                        <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
+                      </Button>
+                    </span>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+          <Pager page={curPage} total={rows.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
         </>
       )}
     </div>

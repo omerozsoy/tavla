@@ -11460,6 +11460,25 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   text-align: center;
 }
+/* Oyun Arayanlar: "ne ariyor" sutunu (mac uzunlugu + varsa bahis) — online-row'un
+   rating sutununun yerinde (3. kolon). */
+.seek-meta {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.seek-len {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.seek-bet {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #d97706;
+}
 /* .rank-row.online-row: ozgulluk .rank-row'dan yuksek olmali; yoksa kaynakta sonra
    gelen .rank-row'un 4-sutunlu grid'i kazanip aksiyonlari alt satira dusurur. */
 .rank-row.online-row {
