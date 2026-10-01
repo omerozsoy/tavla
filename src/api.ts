@@ -1096,6 +1096,7 @@ export interface TPlayer {
   rating: number
   avatar?: string | null
   premium?: boolean // kayıt anındaki premium (snapshot) -> PREMIUM
+  checked_in?: boolean // katilim onayi verdi mi (yalniz kayit asamasi)
 }
 export interface TMatch {
   key: string
@@ -1603,6 +1604,24 @@ export async function joinTournament(id: number): Promise<Tournament> {
 }
 export async function leaveTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/leave`, { method: 'POST' })
+  return d.tournament
+}
+// Katilim onayi (check-in): kayit acikken "buradayim". players[].checked_in=true.
+export async function checkInTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/check-in`, { method: 'POST' })
+  return d.tournament
+}
+// Cekilme: kayit acikken = leave (iade); turnuva surerken = hukmen (rakibe walkover).
+export async function withdrawTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/withdraw`, { method: 'POST' })
+  return d.tournament
+}
+// Diskalifiye (yalniz yonetici): oyuncuyu turnuvadan cikar.
+export async function disqualifyTournament(id: number, userId: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/disqualify`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  })
   return d.tournament
 }
 export async function reportTournament(

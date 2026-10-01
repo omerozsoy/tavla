@@ -16,6 +16,9 @@ import {
   tournamentViewers,
   joinTournament,
   leaveTournament,
+  checkInTournament,
+  withdrawTournament,
+  disqualifyTournament,
   tournamentRoundMinutes,
   tournamentRoundTarget,
   type Tournament,
@@ -92,6 +95,8 @@ const orgLogoSrc = (logo?: string | null): string | null =>
 
 interface Props {
   myId: number | null
+  /** Yonetici mi? (oyuncu diskalifiye butonu yalniz yoneticide gorunur). */
+  isAdmin?: boolean
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
   /** Acik turnuva detayi (URL: /online-turnuvalar/{id}). null -> liste. Ust bilesen (App) kontrol eder. */
@@ -109,7 +114,7 @@ interface Props {
 }
 
 
-export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate }: Props) {
+export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
@@ -118,7 +123,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   const [active, setActive] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [confirm, setConfirm] = useState<null | 'join' | 'leave'>(null) // katıl/çık onay dialogu
+  const [confirm, setConfirm] = useState<null | 'join' | 'leave' | 'withdraw'>(null) // katıl/çık/çekil onay dialogu
   // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
   // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
   const busyRef = useRef(false)
@@ -276,12 +281,52 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     }
   }
 
+  async function checkIn(id: number) {
+    mutSeq.current++
+    setBusy(true)
+    try {
+      setActive(await checkInTournament(id))
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) onRequireLogin?.()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Cekilme (self): kayit acikken = leave (iade); surerken = hukmen (rakibe walkover).
+  async function withdraw(id: number) {
+    mutSeq.current++
+    setBusy(true)
+    try {
+      setActive(await withdrawTournament(id))
+      refreshList()
+    } finally {
+      setBusy(false)
+      setConfirm(null)
+    }
+  }
+
+  // Diskalifiye (yonetici): oyuncuyu turnuvadan cikar. window.confirm yeterli (nadir yonetici islemi).
+  async function disqualify(id: number, userId: number, name: string) {
+    if (!window.confirm(t('tourn.dqConfirm', { name }))) return
+    mutSeq.current++
+    setBusy(true)
+    try {
+      setActive(await disqualifyTournament(id, userId))
+      refreshList()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   // ---- Detay/bracket gorunumu ----
   if (active) {
     const champ = active.champion_id
       ? active.players?.find((p) => p.id === active.champion_id)
       : null
-    const joined = active.players?.some((p) => p.id === myId)
+    const myPlayer = myId != null ? active.players?.find((p) => p.id === myId) ?? null : null
+    const joined = !!myPlayer
+    const checkedIn = !!myPlayer?.checked_in
     // "Katil" misafire ve Premium olmayan uyeye de GORUNUR; basinca giris/uyelik ekranina yonlenir.
     const canJoin = active.status === 'open' && !joined
     const premiumLocked = !!active.premium_only && !premium
@@ -420,6 +465,14 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   )}
                 </Button>
               )}
+              {joined && active.status === 'open' && !checkedIn && (
+                <Button variant="default" className="tourn-checkin-btn" disabled={busy} onClick={() => checkIn(active.id)}>
+                  <Icon name="check" size={16} /> {t('tourn.checkIn')}
+                </Button>
+              )}
+              {joined && active.status === 'open' && checkedIn && (
+                <span className="tourn-checkedin"><Icon name="check" size={14} /> {t('tourn.checkedIn')}</span>
+              )}
               {joined && active.status === 'open' && (
                 <Button variant="destructive" disabled={busy} onClick={() => setConfirm('leave')}>
                   <Icon name="x" size={16} /> {t('tourn.leave')}
@@ -512,7 +565,16 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                 .map((p) => (
                 <div key={p.id} className="tourn-prow">
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
+                  {active.status === 'open' && p.checked_in && (
+                    <span className="tourn-prow-checkedin" title={t('tourn.checkedIn')}><Icon name="check" size={13} /></span>
+                  )}
                   <b>{p.rating}</b>
+                  {isAdmin && active.status !== 'finished' && (
+                    <Button variant="destructive" size="icon" className="tourn-dq-btn" disabled={busy}
+                      title={t('tourn.disqualify')} onClick={() => disqualify(active.id, p.id, p.name)}>
+                      <Icon name="x" size={13} />
+                    </Button>
+                  )}
                 </div>
               ))
             ) : (
@@ -565,6 +627,12 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                       <span>{t('swiss.wins')}: <b>{myRow.wins}</b></span>
                       <span>{t('swiss.losses')}: <b>{myRow.losses}</b></span>
                     </div>
+                    {myRow.status === 'active' && (
+                      <Button variant="ghost" className="swiss-withdraw-btn" disabled={busy}
+                        onClick={() => setConfirm('withdraw')}>
+                        <Icon name="x" size={14} /> {t('tourn.withdraw')}
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -824,6 +892,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     </Button>
                     <Button variant="default" disabled={busy} onClick={() => join(active.id)}>
                       {t('tourn.join')}
+                    </Button>
+                  </div>
+                </>
+              ) : confirm === 'withdraw' ? (
+                <>
+                  <h3>{t('tourn.withdrawTitle')}</h3>
+                  <p className="tourn-confirm-desc">{t('tourn.withdrawDesc')}</p>
+                  <div className="tourn-confirm-actions">
+                    <Button variant="secondary" onClick={() => setConfirm(null)}>
+                      {t('reg.cancel')}
+                    </Button>
+                    <Button variant="destructive" disabled={busy} onClick={() => withdraw(active.id)}>
+                      {t('tourn.withdraw')}
                     </Button>
                   </div>
                 </>
