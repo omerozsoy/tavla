@@ -87,7 +87,7 @@ class SecurityPhaseZeroTest extends TestCase
     }
 
     /** Any unexpected SELECT, write, PDO access or external effect fails the test. */
-    private function reads(array $models, bool $transaction = false): void
+    private function reads(array $models, int $transactions = 0): void
     {
         $connection = Mockery::mock(Connection::class)->makePartial();
         $connection->__construct(null);
@@ -104,9 +104,9 @@ class SecurityPhaseZeroTest extends TestCase
         $resolver = Mockery::mock(ConnectionResolverInterface::class);
         $resolver->shouldReceive('connection')->andReturn($connection);
         Model::setConnectionResolver($resolver);
-        if ($transaction) {
+        if ($transactions > 0) {
             $db = Mockery::mock();
-            $db->shouldReceive('transaction')->once()->andReturnUsing(fn ($callback) => $callback());
+            $db->shouldReceive('transaction')->times($transactions)->andReturnUsing(fn ($callback) => $callback());
             $this->container->instance('db', $db);
         }
     }
@@ -176,7 +176,7 @@ class SecurityPhaseZeroTest extends TestCase
             'authoritative' => false, 'mode' => 'friendly', 'stake' => 0,
             'server_match' => null, 'server_state' => null,
         ], $overrides));
-        $this->reads([$room], true);
+        $this->reads([$room], 1);
         $response = (new RoomController())->update($this->request([
             'token' => 'white-token', 'state' => ['matchOver' => true], 'status' => 'finished',
         ]), 'SAFE0');
@@ -200,7 +200,15 @@ class SecurityPhaseZeroTest extends TestCase
     {
         $room = $this->room(['status' => 'finished']);
         // These handlers also read the room in maybeDriveBot before passing through the error.
-        $this->reads(in_array($method, ['roll', 'move', 'cubeRespond'], true) ? [$room, $room] : [$room], true);
+        // Her komut handler'ı BAŞTA stampActed() çağırır: ayrı tx'te room okur (+1 read/+1 tx;
+        // oda saati yok -> yazım yok). move AYRICA FAZ-1 kilitsiz doğrulamada room'u bir kez daha
+        // okur (+1). roll/move/cubeRespond ayrıca maybeDriveBot'ta okur. Bu yüzden okuma sayıları:
+        // move=4, roll/cubeRespond=3, cubeOffer/resign=2; transaction (stampActed + ana) = 2.
+        $this->reads(match ($method) {
+            'move' => [$room, $room, $room, $room],
+            'roll', 'cubeRespond' => [$room, $room, $room],
+            default => [$room, $room],
+        }, 2);
         $request = $this->request(['token' => 'white-token', 'steps' => [], 'action' => 'take']);
         $controller = new RoomController();
         $response = match ($method) {
@@ -247,7 +255,15 @@ class SecurityPhaseZeroTest extends TestCase
     public function test_stolen_room_token_cannot_run_account_game_commands(string $method, ?int $id): void
     {
         $room = $this->room();
-        $this->reads(in_array($method, ['roll', 'move', 'cubeRespond'], true) ? [$room, $room] : [$room], true);
+        // Her komut handler'ı BAŞTA stampActed() çağırır: ayrı tx'te room okur (+1 read/+1 tx;
+        // oda saati yok -> yazım yok). move AYRICA FAZ-1 kilitsiz doğrulamada room'u bir kez daha
+        // okur (+1). roll/move/cubeRespond ayrıca maybeDriveBot'ta okur. Bu yüzden okuma sayıları:
+        // move=4, roll/cubeRespond=3, cubeOffer/resign=2; transaction (stampActed + ana) = 2.
+        $this->reads(match ($method) {
+            'move' => [$room, $room, $room, $room],
+            'roll', 'cubeRespond' => [$room, $room, $room],
+            default => [$room, $room],
+        }, 2);
         $request = $this->request(['token' => 'white-token', 'steps' => [], 'action' => 'take']);
         $user = new User();
         $user->setRawAttributes(['id' => $id]);
@@ -298,7 +314,7 @@ class SecurityPhaseZeroTest extends TestCase
             'key' => 'final', 'p1' => ['id' => 11], 'p2' => ['id' => 22],
         ]]]]);
         $t->id = 1;
-        $this->reads([$t], true);
+        $this->reads([$t], 1);
         $response = (new TournamentController())->report($this->request([
             'match' => 'final', 'winner_id' => 11,
         ]), $t);
