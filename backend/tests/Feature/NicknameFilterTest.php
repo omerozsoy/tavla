@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Support\NicknameFilter;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -11,6 +13,7 @@ use Tests\TestCase;
  */
 class NicknameFilterTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_normalize_strips_symbols_leet_and_turkish(): void
     {
         $this->assertSame('amk', NicknameFilter::normalize('A.M.K!'));
@@ -32,5 +35,20 @@ class NicknameFilterTest extends TestCase
         $this->assertFalse(NicknameFilter::isAllowed('4mk')); // leetspeak
         $this->assertFalse(NicknameFilter::isAllowed('SikTirGit'));
         $this->assertFalse(NicknameFilter::isAllowed('xXfuckXx'));
+    }
+
+    // 2-harf kokler (mk/aq/oc) artik elenir: masum kelimeler bloke olmamali (scunthorpe).
+    public function test_short_root_false_positives_allowed(): void
+    {
+        // panelde admin'in ekledigi tip 2-harf kokler dahil (put -> cache forget)
+        Setting::put('banned_nicknames', "amk\nmk\naq\noc\nsiktir");
+
+        $this->assertTrue(NicknameFilter::isAllowed('mümkün'));   // mk
+        $this->assertTrue(NicknameFilter::isAllowed('çocuk'));    // oc
+        $this->assertTrue(NicknameFilter::isAllowed('ocak'));     // oc
+        $this->assertTrue(NicknameFilter::isAllowed('koç'));      // oc
+
+        $this->assertFalse(NicknameFilter::isAllowed('amk'));     // 3-harf kok korunur
+        $this->assertFalse(NicknameFilter::isAllowed('siktir'));
     }
 }
