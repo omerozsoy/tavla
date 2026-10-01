@@ -25771,6 +25771,18 @@ select:-webkit-autofill {
      (Aynı kök: .app.lobby align-content:start dersi.) */
   align-items: start;
 }
+/* E-posta yarim kolonda (~200px) cok dardi -> adres sigmiyordu. Ad|Soyad ikili kalir;
+   3. alandan itibaren (Takma isim / E-posta / Cep telefonu) tam kolon genisligi. */
+.register-card .form-grid.reg-grid > div:nth-child(n + 3) {
+  grid-column: 1 / -1;
+}
+/* Mobilde tum kayit alanlari tek kolon (Ad|Soyad da alt alta). Base reg-grid 2-col
+   kuralini (0,3,0) ozgullukle ez; aksi halde media kuralı kaynak-sirasiyla kaybediyordu. */
+@media (max-width: 768px) {
+  .register-overlay.page .register-card .form-grid.reg-grid {
+    grid-template-columns: 1fr;
+  }
+}
 /* shadcn <Label> (data-slot=label) `items-center` + `.register-card label{flex-direction:column}`
    birlesince kayit/profil etiketleri YATAY ORTALANIYORDU (Ad/Soyad/E-posta ortada, giris
    kolonu etiketleri solda -> tutarsiz gorunum). Yalniz STANDALONE shadcn etiketlerini sola
