@@ -31,21 +31,64 @@ class NicknameFilter
             : self::DEFAULT_LIST;
     }
 
-    /** @return string[] normalize edilmis, benzersiz, bos-olmayan yasakli kokler */
-    public static function words(): array
+    /** Ham listeyi iki kumeye ayirir:
+     *   - 'sub':   substring aranan kokler (>=3 harf; 2-harf kokler mk/aq/oc scunthorpe tuzagi)
+     *   - 'whole': '=' onekli TAM-KELIME kokler (normalize edilmis token'a BIREBIR esit olmali)
+     * '=got'/'=pic' -> "got"/"piç" tek basina engellenir ama "ergot"/"kapıcı" serbest kalir.
+     * @return array{sub:string[],whole:string[]}
+     */
+    private static function roots(): array
     {
-        $parts = preg_split('/[\r\n,]+/', self::rawList()) ?: [];
-        $out = [];
-        foreach ($parts as $p) {
+        $sub = [];
+        $whole = [];
+        foreach (preg_split('/[\r\n,]+/', self::rawList()) ?: [] as $p) {
+            $p = trim($p);
+            if ($p === '') {
+                continue;
+            }
+            if ($p[0] === '=') { // tam-kelime kok
+                $w = self::normalize(substr($p, 1));
+                if ($w !== '') {
+                    $whole[] = $w;
+                }
+
+                continue;
+            }
             $w = self::normalize($p);
-            // >=3 harf: 2-harf kokler (mk/aq/oc) substring aramada saf scunthorpe tuzagi
-            // ("mumkun"->mk, "cocuk"/"ocak"/"koc"->oc, "aqua"->aq). En kisa gercek kok "amk"=3.
-            if (strlen($w) >= 3) {
-                $out[] = $w;
+            if (strlen($w) >= 3) { // kisa kokler icin tam-kelime istiyorsan '=' kullan
+                $sub[] = $w;
             }
         }
 
-        return array_values(array_unique($out));
+        return ['sub' => array_values(array_unique($sub)), 'whole' => array_values(array_unique($whole))];
+    }
+
+    /** @return string[] substring aranan yasakli kokler (geriye donuk uyumluluk) */
+    public static function words(): array
+    {
+        return self::roots()['sub'];
+    }
+
+    /** @return string[] tam-kelime ('=' onekli) yasakli kokler */
+    public static function wholeWords(): array
+    {
+        return self::roots()['whole'];
+    }
+
+    /** $normalized bir yasakli koke takiliyor mu? (substring VEYA tam-kelime birebir) */
+    public static function hits(string $normalized): bool
+    {
+        if ($normalized === '') {
+            return false;
+        }
+        $r = self::roots();
+        foreach ($r['sub'] as $w) {
+            if (str_contains($normalized, $w)) {
+                return true;
+            }
+        }
+
+        return in_array($normalized, $r['whole'], true);
     }
 
     /** Kucuk harf + TR->ASCII + leetspeak + yalniz a-z (kacis-dayanikli karsilastirma anahtari). */
@@ -68,12 +111,7 @@ class NicknameFilter
         if ($n === '') {
             return true; // bos/sadece-sembol: 'required' gibi diger kurallar ele alir
         }
-        foreach (self::words() as $w) {
-            if (str_contains($n, $w)) {
-                return false;
-            }
-        }
 
-        return true;
+        return ! self::hits($n);
     }
 }

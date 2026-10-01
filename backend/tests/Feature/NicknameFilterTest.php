@@ -51,4 +51,22 @@ class NicknameFilterTest extends TestCase
         $this->assertFalse(NicknameFilter::isAllowed('amk'));     // 3-harf kok korunur
         $this->assertFalse(NicknameFilter::isAllowed('siktir'));
     }
+
+    // '=' onekli kokler TAM-KELIME: tek basina engellenir ama icinde gectigi kelimeler serbest.
+    public function test_whole_word_roots_match_exact_token_only(): void
+    {
+        Setting::put('banned_nicknames', "amk\n=got\n=pic");
+
+        $this->assertFalse(NicknameFilter::isAllowed('göt'));   // tam kelime -> bloke
+        $this->assertFalse(NicknameFilter::isAllowed('piç'));   // tam kelime -> bloke
+        $this->assertTrue(NicknameFilter::isAllowed('kapıcı')); // pic substring ama tam kelime degil
+        $this->assertTrue(NicknameFilter::isAllowed('ergot'));  // got substring ama tam kelime degil
+        $this->assertFalse(NicknameFilter::isAllowed('amk'));   // substring kok hala calisir
+
+        // sohbet: token bazli tam-kelime
+        [, $hit1] = \App\Support\ChatModeration::filter('bu piç kim');
+        $this->assertTrue($hit1);
+        [, $hit2] = \App\Support\ChatModeration::filter('kapıcı geldi');
+        $this->assertFalse($hit2);
+    }
 }
