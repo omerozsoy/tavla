@@ -1,6 +1,10 @@
 # onnxruntime-web icin .wasm dogru MIME tipiyle servis edilmeli (sinir agi)
 AddType application/wasm .wasm
 
+# PWA manifest dogru MIME ile servis edilsin (bos content-type yerine). Tarayici lenient'tir
+# ama standart tip bazi denetleyicilerde/uyarilarda beklenir.
+AddType application/manifest+json .webmanifest
+
 # index.html HER ZAMAN taze cekilmeli. Deploy'da asset hash'leri (index-XXX.js ...) degisir ve
 # eskileri silinir; bayat index.html silinmis chunk'lara isaret edip "sayfa acilmiyor / refresh
 # edilemiyor" hatasi yapar. Hash'li /assets icerik-adresli oldugu icin uzun cache guvenli.
