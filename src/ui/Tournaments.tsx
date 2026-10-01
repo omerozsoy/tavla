@@ -316,7 +316,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <Icon name="x" size={16} />
           </Button>
           <Breadcrumb items={[homeCrumb(t), { name: t('menu.tournaments'), href: '/online-turnuvalar' }, { name: active.name }]} />
-          <h2><Icon name="trophy" size={20} /> {active.name}</h2>
+          <h2><TavlaTvLogo size={26} tone="dark" className="tourn-title-logo" /> <Icon name="trophy" size={20} /> {active.name}</h2>
 
           {/* Editoryal alt-satir: durum rozeti + duzenleyen/mekan (tek satirda toplandi) */}
           <div className="tourn-subline">
@@ -326,7 +326,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <AccessBadge premiumOnly={!!active.premium_only} />
             <span className="tourn-meta-inline">
               {t('tourn.organizer')}:
-              <TavlaTvLogo size={26} tone="light" className="tourn-runby-logo" />
+              <TavlaTvLogo size={26} tone="dark" className="tourn-runby-logo" />
               {active.organizer && (
                 <>
                   <span className="tourn-meta-sep">·</span>
@@ -966,7 +966,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             )}
             <span className="event-runby">
               {t('tourn.organizer')}:{' '}
-              <TavlaTvLogo size={30} tone="light" className="event-runby-logo" />
+              <TavlaTvLogo size={30} tone="dark" className="event-runby-logo" />
             </span>
           </div>
           {/* Odul dagilimi: 1., 2., 3. ... her sira ne kazanir -> NET liste.
