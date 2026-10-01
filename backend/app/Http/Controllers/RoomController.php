@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RoomUpdated;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\BotMoveService;
@@ -1874,6 +1875,31 @@ class RoomController extends Controller
         }
     }
 
+    /**
+     * GERÇEK-ZAMANLI PUSH (polling -> push, "A" adımı): oda değiştiğinde (hamle/zar/küp/pes/saat)
+     * istemcilere ANINDA yayınla -> rakip 1.2sn poll beklemez. Payload = show() 'room' yanıtının
+     * AYNISI (toClient + clock) -> istemci mevcut poll-uygulama mantığını değiştirmeden kullanır.
+     *
+     * GÜVENLİ / DORMANT: BROADCAST_CONNECTION ayarlı değilse (varsayılan 'null') event no-op'tur.
+     * Bot odaları YAYINLANMAZ (tek-insan; bot hamlesi zaten move yanıtında döner). Herhangi bir
+     * yayın hatası (Reverb kapalı/düşük) try/catch ile YUTULUR -> oyun akışı ASLA bozulmaz
+     * (yavaş poll yedeği zaten güncel durumu getirir). Çağıran taze oda kodunu verir; burada
+     * yeniden okunur ki commit SONRASI (tutarlı) durum yayınlansın.
+     */
+    private function broadcastRoom(string $code): void
+    {
+        try {
+            $room = Room::where('code', strtoupper($code))->first();
+            if (! $room || $room->bot) {
+                return; // oda yok / bot odası -> yayınlama
+            }
+            $payload = array_merge($room->toClient(), ['clock' => $this->clockView($room)]);
+            event(new RoomUpdated($room->code, $payload));
+        } catch (\Throwable $e) {
+            // yut: push en iyi çaba; mutasyon/istek akışını asla bozmaz (poll yedeği var)
+        }
+    }
+
     // Istemciye donen canli saat goruntusu (beyaz/siyah/delay/aktif/AFK/kayip) veya null.
     private function clockView(Room $room): ?array
     {
@@ -2721,6 +2747,7 @@ class RoomController extends Controller
         }, 5); // deadlock-retry: eşzamanlı room_commands yarışında InnoDB victim'i şeffaf tekrar dene
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
+        $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
 
         // BOT ODASI: AÇILIŞ eli botu başlatıcı yaptıysa (starter=black) botu senkron oynat.
         // Normal (insan kendi zarını attı) durumda sıra insanda kalır -> maybeDriveBot no-op.
@@ -2922,6 +2949,7 @@ class RoomController extends Controller
         // BOT ODASI: insan hamlesi KAYDEDİLDİ (yukarıdaki tx commit). Sıra bota geçtiyse botu
         // SENKRON oynat (AYRI tx -> gnubg yoksa insan hamlesi geri ALINMAZ, sadece duraklar).
         $this->markAuthoritativeCommandResult($code, $data, $resp);
+        $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
@@ -3052,6 +3080,7 @@ class RoomController extends Controller
         }, 5); // deadlock-retry (bkz roll)
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
+        $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
 
         return $resp;
     }
@@ -3172,6 +3201,7 @@ class RoomController extends Controller
         // botu senkron oynat; bot[] yanıta eklenir (frontend handleTake uygular). DROP'ta maç bitti
         // (turn insana döndü / done) -> maybeDriveBot no-op.
         $this->markAuthoritativeCommandResult($code, $data, $resp);
+        $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
@@ -3256,6 +3286,7 @@ class RoomController extends Controller
         }, 5); // deadlock-retry (bkz roll)
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
+        $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
 
         return $resp;
     }
