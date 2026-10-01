@@ -22749,7 +22749,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-bracket-title {
   margin: 10px 0 6px;
   color: var(--accent);
-  font-size: 1rem;
+  font-size: 0.82rem;
 }
 .tourn-bracket {
   display: flex;
