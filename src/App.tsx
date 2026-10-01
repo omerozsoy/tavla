@@ -445,7 +445,6 @@ import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import { chatWarnText, chatMuteText } from './ui/chatNotice'
-import TournMatchReady from './ui/TournMatchReady'
 import ScrollTop from './ui/ScrollTop'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
@@ -1606,10 +1605,9 @@ export default function App() {
   const [declineAsk, setDeclineAsk] = useState(false)
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
   // Turnuva maci hazir penceresi (kura + 20sn geri sayim -> otomatik giris). Ayni mac icin bir kez.
-  const [readyNotice, setReadyNotice] = useState<TournNoticeT | null>(null)
-  const readySeenRef = useRef(new Set<string>())
-  // Aktif oyundayken "oyuna devam et" denen turnuva maclari: o oyun bitene kadar tekrar sorma.
-  const tournDismissedRef = useRef(new Set<string>())
+  // Turnuva maçına OTOMATİK giriş çift-giriş kilidi (popup YOK -> ping bildirimi gelince doğrudan
+  // maça alınır; giriş başarısız olursa catch sıfırlar -> tekrar denenir).
+  const enteredNoticeRef = useRef('')
   // Su anki oda bir turnuva maci mi (sonuc ekrani: rovans yok, "Turnuva Lobisi" var)
   const [tournRoom, setTournRoom] = useState<{ code: string; tid: number } | null>(null)
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
@@ -2316,57 +2314,24 @@ export default function App() {
   // yalnız `mode==='pvb'` kontrol ediliyordu -> otoriter bot maçında canlı PR "—" kalıyordu.
   const botMatch = mode === 'pvb' || (online && !!room?.bot)
 
-  // TURNUVA MACI HAZIR: ping'te yeni (gorulmemis) mac varsa pencereyi ac. Aktif online oyunda
-  // (turnuva maci dahil, bitmemis) BOLME; biten macin sonuc ekranindayken acilir (sonraki tur).
-  // Aktif online oyundayken de ac: ama OTOMATIK girme -> TournMatchReady confirmLeave moduyla
-  // "oyunu birak, gec" diye sorar (coin/puan kaybi). Oyun bitince (matchOver) tournDismissedRef
-  // temizlenir -> deklanse olan maci normal (oto-giris) modda tekrar gosterir.
-  const inActiveOnlineGame = online && !matchOver
+  // TURNUVA MACI HAZIR -> POPUP YOK, DOĞRUDAN maça al. ping'teki tournament_matches'ten gelen
+  // yeni (görülmemiş) maça anında girilir. Zaten o maçtaysak (tournMatchRef) tekrar girmeyiz;
+  // başka (turnuva dışı) maçtaysak NO-CONTEST kapatıp geçeriz. enteredNoticeRef kısa async pencerede
+  // çift-girişi önler; giriş başarısız olursa catch sıfırlar -> sonraki poll tekrar dener. Kopma/
+  // reload sonrası ping bildirimi (maç bitene dek sürer) oyuncuyu otomatik geri alır.
   useEffect(() => {
-    if (readyNotice) return
     const tm = tournMatchRef.current
     const n = tournNotices.find(
       (x) =>
-        !readySeenRef.current.has(`${x.tid}-${x.match}`) &&
-        !tournDismissedRef.current.has(`${x.tid}-${x.match}`) &&
+        enteredNoticeRef.current !== `${x.tid}-${x.match}` &&
         !(tm && tm.tid === x.tid && tm.matchKey === x.match),
     )
     if (!n) return
-    // Aktif oyunda: seen'e EKLEME (kullanici "devam"e basarsa oyun bitince tekrar gosterilsin).
-    if (!inActiveOnlineGame) readySeenRef.current.add(`${n.tid}-${n.match}`)
-    setReadyNotice(n)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournNotices, inActiveOnlineGame, readyNotice])
-  // Oyun bitince (sonuc ekrani) "devam" denen maclari yeniden sorulabilir yap.
-  useEffect(() => {
-    if (!inActiveOnlineGame) tournDismissedRef.current.clear()
-  }, [inActiveOnlineGame])
-
-  // TURNUVA MACINA GIRIS — TEK KAYNAK. TournMatchReady 4 farkli gorunum dalinda render edilir;
-  // gorunum degisince remount olup kura animasyonu BASTAN baslar ve "Kura cekiliyor…" penceresinde
-  // TAKILIP maca hic girilmeyebilir (-> hukmen; sahadan cok rapor). Giris mantigini burada TEK yerde
-  // tutup hem 4 onEnter hem GUVENLIK ZAMANLAYICISI ayni yolu kullanir. enteredNoticeRef cift-girisi
-  // onler (child onEnter + timer ayni an); giris BASARISIZ olursa catch sifirlar -> tekrar denenir.
-  const enteredNoticeRef = useRef('')
-  const readyEnterRef = useRef<() => void>(() => {})
-  readyEnterRef.current = () => {
-    const n = readyNotice
-    if (!n) return
-    const k = `${n.tid}-${n.match}`
-    if (enteredNoticeRef.current === k) return
-    enteredNoticeRef.current = k
-    setReadyNotice(null)
+    enteredNoticeRef.current = `${n.tid}-${n.match}`
     if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
     else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
-  }
-  // GUVENLIK AGI: readyNotice acilinca ~7sn sonra (kura+geri sayim ~5sn'den sonra) HALA aciksa
-  // child'in remount/takilmasindan BAGIMSIZ zorla gir. readyNotice'a bagli -> child kac kez
-  // remount olursa olsun bu timer BIR kez calisir (giris olunca readyNotice null -> cleanup iptal eder).
-  useEffect(() => {
-    if (!readyNotice) return
-    const id = window.setTimeout(() => readyEnterRef.current(), 7000)
-    return () => window.clearTimeout(id)
-  }, [readyNotice])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournNotices, online, matchOver])
 
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
@@ -9382,7 +9347,6 @@ export default function App() {
           const n = tournNotices[0]
           if (!n) return
           enteredNoticeRef.current = '' // elle giriş -> çift-giriş kilidini sıfırla, daima dene
-          setReadyNotice(null)
           if (online && !matchOver) void leaveCurrentAndEnterTourn(n.tid, n.match, n.oppId)
           else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
         }}
@@ -9400,13 +9364,6 @@ export default function App() {
     <>
       {menuPages}
       {authModal}
-      {readyNotice && (
-        <TournMatchReady
-          key={`${readyNotice.tid}-${readyNotice.match}`}
-          notice={readyNotice}
-          onEnter={() => readyEnterRef.current()}
-        />
-      )}
       {menuOverlays}
       {bugReport}
     </>
@@ -9826,13 +9783,6 @@ export default function App() {
         trailing={
           <>
             {authModal}
-            {readyNotice && (
-              <TournMatchReady
-                key={`${readyNotice.tid}-${readyNotice.match}`}
-                notice={readyNotice}
-                onEnter={() => readyEnterRef.current()}
-              />
-            )}
             {menuOverlays}
             {bugReport}
           </>
@@ -10125,13 +10075,6 @@ export default function App() {
         />
       )}
       {authModal}
-      {readyNotice && (
-        <TournMatchReady
-          key={`${readyNotice.tid}-${readyNotice.match}`}
-          notice={readyNotice}
-          onEnter={() => readyEnterRef.current()}
-        />
-      )}
       {menuPages}
       {menuOverlays}
 
@@ -10317,21 +10260,6 @@ export default function App() {
             )}
           </div>
         </div>
-      )}
-
-      {/* TURNUVA MACI HAZIR — OYUN GORUNUMU: KULLANICIYA SORULMAZ. Normal 3sn kura penceresi gosterilir,
-          sonra DIREK turnuva macina alinir. Baska (turnuva disi) bir maçtaysa o maç NO-CONTEST kapanir
-          (kazanan/kaybeden yok) ve turnuva macina cekilir. confirmLeave KALDIRILDI (mass-forfeit kok). */}
-      {readyNotice && (
-        <TournMatchReady
-          key={`${readyNotice.tid}-${readyNotice.match}`}
-          notice={readyNotice}
-          onDismiss={() => {
-            tournDismissedRef.current.add(`${readyNotice.tid}-${readyNotice.match}`)
-            setReadyNotice(null)
-          }}
-          onEnter={() => readyEnterRef.current()}
-        />
       )}
 
       {/* KURŞUN GEÇİRMEZ: board 14sn+ yüklenmediyse GÖRÜNÜR kurtarma — oyuncu asla sessiz takılmaz. */}
