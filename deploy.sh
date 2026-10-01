@@ -53,6 +53,18 @@ $PHP artisan optimize:clear
 # optimize:clear bunu KAPSAMAZ. Best-effort (komut yoksa/eski sürümse atla).
 $PHP artisan filament:optimize-clear 2>/dev/null || $PHP artisan filament:clear-cached-components 2>/dev/null || echo "UYARI: filament cache temizleme atlandi (elle: php artisan filament:optimize-clear)"
 
+# --- Laravel derleme-onbellekleri (her istegi hizlandirir) ---------------------
+# optimize:clear yukarida cache'leri TEMIZLER (her istek yeniden parse eder); burada
+# GUVENLI olanlari yeniden derleriz. view:cache -> Blade (panel/pay/errors) onceden
+# derlenir; event:cache -> event->listener haritasi. config:cache ve route:cache
+# KASITLI EKLENMEDI: (1) config:cache -> config DISINDA env() (TourneyBots) null'a doner
+# + .env duzenleyince yeniden cache sart (bu kurulumda .env sik elle degisiyor); (2)
+# route:cache -> web.php closure action'lari (SPA fallback/SeoMeta, admin SSO, pay onizleme)
+# serilestirilemez -> cache PATLAR. Bu ikisi gerekirse ayri is (controller'a tasima + env->config).
+# Best-effort: hata deploy'u durdurmasin (set -e'ye karsi || echo).
+$PHP artisan event:cache || echo "UYARI: event:cache atlandi."
+$PHP artisan view:cache || echo "UYARI: view:cache atlandi."
+
 # --- OPcache / PHP-FPM tazeleme ------------------------------------------------
 # SORUN: PHP-FPM ayri (uzun omurlu) surectir; CLI'dan opcache_reset() FPM'in
 # cache'ini ETKILEMEZ. optimize:clear yalniz Laravel cache'ini temizler. Degisen
