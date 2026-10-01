@@ -355,24 +355,38 @@ export default function Spectate({
   }, [matchDone])
 
   // Maç bitince özeti OTOMATİK çek: sonuç kartındaki PR/şans/seviye dolsun (oyuncunun gördüğü kartla
-  // aynı). gnubg review async -> hazır olana kadar birkaç saniyede bir yeniden dene (hazır olunca
-  // effect cleanup durdurur). Bir kez hazır olduktan sonra tekrar istenmez.
+  // aynı). gnubg review (log) ile per-oyuncu PR (authPr) AYRI async job'lar -> review erken "ready"
+  // olur ama authPr GEÇ dolar. Eskiden tek çekip "ready"de durulduğundan izleyici PR'ı "—" kalıyordu
+  // (per-oyuncu PR job'u henüz bitmemişken yakalanıp poll duruyordu). Artık authPr gelene (ya da
+  // ~3dk tavana) kadar poll SÜRER; her ready yanıtta summary tazelenir -> PR gelince kart dolar,
+  // Analiz/İstatistik düğmeleri de review hazır olur olmaz çalışır. Bağımlılık [matchDone, code]
+  // (summary YOK) -> setSummary re-render'ı effect'i yeniden kurmaz, tight-loop olmaz.
   useEffect(() => {
-    if (!matchDone || summary?.ready) return
+    if (!matchDone) return
+    const hasPr = (s: RoomSummary) =>
+      !!s.ready && (s.authPr?.white?.pr != null || s.authPr?.black?.pr != null)
     let alive = true
-    const fetchSum = () =>
-      roomSummary(code)
-        .then((s) => {
-          if (alive && s.ready) setSummary(s)
-        })
-        .catch(() => {})
-    fetchSum()
-    const id = window.setInterval(fetchSum, 3000)
-    return () => {
+    let tries = 0
+    let id = 0
+    const stop = () => {
       alive = false
       window.clearInterval(id)
     }
-  }, [matchDone, summary?.ready, code])
+    const tick = () => {
+      // ponytail: ~60 deneme (~3dk) tavan -> PR job hiç bitmezse (nadir) sonsuz poll yok.
+      if (++tries > 60) return stop()
+      roomSummary(code)
+        .then((s) => {
+          if (!alive || !s.ready) return
+          setSummary(s)
+          if (hasPr(s)) stop()
+        })
+        .catch(() => {})
+    }
+    id = window.setInterval(tick, 3000)
+    tick()
+    return stop
+  }, [matchDone, code])
 
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
