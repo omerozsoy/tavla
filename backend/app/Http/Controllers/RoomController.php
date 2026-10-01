@@ -1900,6 +1900,22 @@ class RoomController extends Controller
         }
     }
 
+    /**
+     * GERÇEK-ZAMANLI PUSH YAPILANDIRMASI (public): istemci Reverb'e bağlanmak için app KEY'ini +
+     * push'un açık olup olmadığını buradan ÇALIŞMA ANINDA çeker (build'e gömülmez -> key değişse
+     * rebuild gerekmez, panelden/.env'den aç-kapa yapılabilir). SECRET ASLA dönmez (yalnız public
+     * key; Pusher protokolünde key zaten istemcide görünür). enabled=false iken istemci Echo'yu HİÇ
+     * kurmaz -> saf poll davranışı (dormant). Host/port/scheme istemci tarafında window.location'dan
+     * türetilir (aynı alan adı, 443/wss) -> ayrı env'e gerek yok.
+     */
+    public function realtimeConfig()
+    {
+        return response()->json([
+            'enabled' => config('broadcasting.default') === 'reverb',
+            'key' => (string) config('broadcasting.connections.reverb.key', ''),
+        ]);
+    }
+
     // Istemciye donen canli saat goruntusu (beyaz/siyah/delay/aktif/AFK/kayip) veya null.
     private function clockView(Room $room): ?array
     {
