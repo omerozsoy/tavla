@@ -17686,7 +17686,8 @@ button.acct-row-logout:hover:not(:disabled) {
 
 /* Turnuvalar */
 .tourn-card {
-  width: min(680px, 95vw);
+  width: 100%;
+  max-width: 1400px; /* site standart sayfa genisligi (diger menu sayfalariyla ayni) */
   text-align: left;
   max-height: 88vh;
   overflow-y: auto;
