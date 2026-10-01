@@ -1722,14 +1722,22 @@ class RoomController extends Controller
             return;
         }
         $ticked = MatchClock::tick($clock, $now);
+        $ended = false;
         if (! empty($ticked['end'])) {
             $clock = $ticked;
             $this->applyClockEnd($room, $clock);
             $changed = true;
+            $ended = true;
         }
         if ($changed) {
             $room->clock = $clock;
             $room->save();
+        }
+        // TIMEOUT/AFK/TERK bir "hamle" değildir -> normalde yalnız poll'da yakalanır. Push çağında
+        // (yedek poll yavaş) bitişi RAKİBE ANINDA yayınla: iki taraftan hangisi önce poll edip bitişi
+        // yakalarsa diğerine hemen ulaşır -> "kazandım ama ekran beklemede kaldı" olmaz (dormant no-op).
+        if ($ended) {
+            $this->broadcastRoom($room->code);
         }
     }
 
