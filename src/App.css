@@ -22592,14 +22592,18 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--success-fg);
   font-variant-numeric: tabular-nums;
 }
-/* Yonetici diskalifiye butonu (oyuncu satiri) */
-.tourn-dq-btn {
+/* Yonetici diskalifiye butonu (oyuncu satiri): kompakt KARE, site renginde.
+   Ozgul secici (0,3,0) Button tabanindaki w/min-h/rounded utility'lerini (0,1,0) ezer. */
+.tourn-card .tourn-prow .tourn-dq-btn {
   flex: none;
-  width: 24px;
-  height: 24px;
-  opacity: 0.75;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 6px;
+  opacity: 0.85;
 }
-.tourn-dq-btn:hover {
+.tourn-card .tourn-prow .tourn-dq-btn:hover {
   opacity: 1;
 }
 .tourn-wait {

@@ -531,7 +531,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
                   <b>{p.rating}</b>
                   {isAdmin && active.status !== 'finished' && (
-                    <Button variant="destructive" size="icon" className="tourn-dq-btn" disabled={busy}
+                    <Button variant="secondary" size="icon" className="tourn-dq-btn" disabled={busy}
                       title={t('tourn.disqualify')} onClick={() => disqualify(active.id, p.id, p.name)}>
                       <Icon name="x" size={13} />
                     </Button>
