@@ -1687,6 +1687,9 @@ export default function App() {
   const apiBackoffUntilRef = useRef(0)
   const lastSubmittedMoveRef = useRef<string | null>(null)
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
+  // SAVUNMA KALKANI: istemci GEÇERSİZ tahta (toplam != 15/15) hesaplarsa kaç kez resync istendi
+  // (aynı bozulmada sonsuz döngü olmasın). Bkz boardDisplay geçerlilik efekti.
+  const invalidBoardResyncRef = useRef(0)
   // Yukaridaki surum HANGI odaya ait? Surumler oda-yerelidir (her oda 0'dan baslar), bu yuzden
   // "ref eskimis mi" karari SURUM SIRASINA degil ODA KIMLIGINE bakmali (bkz. serverSyncRoomChanged).
   const appliedServerRoomRef = useRef<string | null>(null)
@@ -2325,6 +2328,28 @@ export default function App() {
   // Tahtada gösterilecek durum: kendi turumda `working`; RAKİP turunda canlı önizleme varsa
   // turnStart + rakip adımları (adım adım animasyonla dolar) -> rakip oynarken/geri alırken görürsün.
   const boardDisplay = online && !myTurn && oppLive.length > 0 ? applyPlayed(turnStart, oppLive) : working
+
+  // SAVUNMA KALKANI (vaka N7DNY): istemci bir kare GEÇERSİZ tahta tutarsa — bar+off dahil
+  // toplam 15 beyaz / 15 siyah DEĞİLSE — bu geçici bir state bozulmasıdır (mobilde görüldü:
+  // beyaz taşlar siyah/yanlış hanede). Renk doğrudur, altındaki state bozuktur. O çöp kareyi
+  // kalıcı göstermek yerine otoriter server_state'i yeniden uygulat (appliedServerVersionRef=-1
+  // -> poll re-apply). Döngü koruması: aynı bozulmada en çok 3 resync; geçerliye dönünce sıfırla.
+  useEffect(() => {
+    if (!online || !room?.authoritative || gameEnd || matchOver) return
+    let w = boardDisplay.bar.white + boardDisplay.off.white
+    let b = boardDisplay.bar.black + boardDisplay.off.black
+    for (const v of boardDisplay.points) {
+      if (v > 0) w += v
+      else if (v < 0) b -= v
+    }
+    if (w === 15 && b === 15) {
+      invalidBoardResyncRef.current = 0
+      return
+    }
+    if (invalidBoardResyncRef.current >= 3) return // otoriter de bozuksa sonsuz döngüye girme
+    invalidBoardResyncRef.current++
+    appliedServerVersionRef.current = -1 // poll otoriter (doğru) durumu geri yükler
+  }, [boardDisplay, online, room?.authoritative, gameEnd, matchOver])
 
   const nextSteps = useMemo(
     () => (diceRolled && !gameWon ? legalNextSteps(turnStart, played) : []),
