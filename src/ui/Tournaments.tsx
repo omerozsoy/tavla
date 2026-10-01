@@ -8,7 +8,7 @@ import { Countdown } from './Countdown'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import PremiumCrown from './PremiumCrown'
-import { TavlaTvLogo } from './TavlaTvLogo'
+import { TavlaTvLogo, TavlaTvMark } from './TavlaTvLogo'
 import {
   listTournaments,
   showTournament,
@@ -316,7 +316,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <Icon name="x" size={16} />
           </Button>
           <Breadcrumb items={[homeCrumb(t), { name: t('menu.tournaments'), href: '/online-turnuvalar' }, { name: active.name }]} />
-          <h2><TavlaTvLogo size={26} tone="dark" className="tourn-title-logo" /> <Icon name="trophy" size={20} /> {active.name}</h2>
+          <h2><TavlaTvMark size={28} /> <Icon name="trophy" size={20} /> {active.name}</h2>
 
           {/* Editoryal alt-satir: durum rozeti + duzenleyen/mekan (tek satirda toplandi) */}
           <div className="tourn-subline">
