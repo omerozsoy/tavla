@@ -13,6 +13,12 @@ const API_URL =
 const TOKEN_KEY = 'tavla.token'
 const GATE_KEY = 'tavla.gate' // "kapali test" site sifresi (X-Site-Gate basligi)
 
+// Kayit + sifre sifirlama ortak sifre politikasi (sunucu AuthController::passwordRules ile ayni):
+// en az 8 karakter, en az 1 buyuk harf, en az 1 rakam. UX dogrulamasi; otorite sunucuda.
+export function pwValid(v: string): boolean {
+  return v.length >= 8 && /[A-Z]/.test(v) && /[0-9]/.test(v)
+}
+
 export function newCommandId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
