@@ -286,8 +286,23 @@ class MatchClock
         // payi). O ana kadar sadece TIMEOUT (banka) + presence (terk) yedek olarak calisir
         // -> hazir bekleyen oyuncu acilista haksiz AFK yemez, ama sonsuza dek de stall edemez.
         $moved = (bool) ($clock['moved'] ?? false);
-        $timedOut = $now >= $timeoutAt + self::GRACE;              // banka tukendi
-        $afkedOut = $moved && ($now >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
+        // IN-FLIGHT KALKANI ("Gonderiliyor..." haksiz AFK/terk KOKU, yuzlerce turnuva sikayeti):
+        // aktif oyuncu bir OYUN KOMUTU (hamle/zar/kup/pes) gonderdiginde sunucu VARISTA _acted
+        // damgalar (yavas validate/lock/retry ONCESI). Komut yolda/islenirken henuz commit olmadigi
+        // icin started_at sifirlanmaz; o sirada RAKIBIN rutin poll'u (kilitsiz tickClock, ~1.5sn)
+        // bu oyuncuyu "hareketsiz" sanip AFK/TIMEOUT ilan ediyordu -> hamlesini zamaninda yapmis
+        // oyuncu bankasinda sure VARKEN "mactan cekildi" ile kaybediyordu. Cozum: aktif oyuncunun
+        // kayip deadline'larini poll'un 'now'una gore DEGIL son KOMUT VARISina (_acted) gore
+        // degerlendir -> aktif olarak hamle gonderen oyuncu tanim geregi hareketsiz DEGILDIR.
+        // Guvenli: effNow = min(now, acted); grace yalnizca now-acted = sunucu islem/poll gecikmesi
+        // (retry'ler acted'i ilerletir, acted now'u asamaz) -> sinirsiz stall/grief exploit YOK,
+        // ana banka gercek-zamanli akmaya devam eder (TIMEOUT hard anti-stall limiti korunur: bir
+        // kez acted now'a yetisirse timeout normal uygular). acted bu segmentte degilse (<= start,
+        // or. onceki turdan kalma) etkisizdir.
+        $acted = (float) ($clock[$active.'_acted'] ?? 0);
+        $effNow = ($acted > $start && $acted < $now) ? $acted : $now;
+        $timedOut = $effNow >= $timeoutAt + self::GRACE;              // banka tukendi
+        $afkedOut = $moved && ($effNow >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
         // ADALET (KÖK FIX): ILK gercek hamleden ONCE, aktif oyuncu tahtayi HIC yuklemediyse
         // (seen damgasi YOK = hic poll etmedi) onu TIMEOUT ile KAYBETTIRME. "Oynamadan/görmeden
         // yenildim" bug'i buydu: matchmaking/davet oda acar, acilis sirasi ona gecer ama istemcisi

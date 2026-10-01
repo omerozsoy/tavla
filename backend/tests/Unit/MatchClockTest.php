@@ -351,4 +351,53 @@ class MatchClockTest extends TestCase
         $this->assertEqualsWithDelta(280.0, $taken['p1_bank'], 0.001); // beyaz degismedi
         $this->assertSame('p1', $taken['turn_slot']);
     }
+
+    // ---- 22) IN-FLIGHT KALKANI: "Gonderiliyor..."da takilan hamle AFK ilan ETTIRMEZ ----
+    // Aktif oyuncu komutunu gonderdiginde (sunucu VARISTA _acted damgalar) ama commit gecikince,
+    // rakibin rutin poll'u eskiden onu AFK ilan ediyordu. _acted (son komut varisi) <60 oldugundan
+    // artik hareketsiz SAYILMAZ (yuzlerce turnuva "mactan cekildi" sikayetinin kok cozumu).
+    public function test_inflight_acted_shields_active_from_afk(): void
+    {
+        $c = $this->movedClock('casual', 5);     // started_at=T0, moved -> afk normalde T0+60
+        $c['p1_acted'] = self::T0 + 40;          // hamle T0+40'ta GONDERILDI (yolda/islenirken)
+        // Rakibin poll'u T0+63: eski kod AFK_TIMEOUT yazardi; effNow=_acted(40) < 60 -> KALKAN.
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 63)['end'] ?? null);
+    }
+
+    // ---- 23) KALKAN SINIRSIZ DEGIL: komut varisi 60sn esigini gecerse AFK yine isler ----
+    // (sonsuz stall/grief exploit yok: _acted now'u asamaz, retry'lerle ilerler; esigi gecince kayip.)
+    public function test_inflight_acted_still_afks_past_threshold(): void
+    {
+        $c = $this->movedClock('casual', 5);
+        $c['p1_acted'] = self::T0 + 61;          // komut varisi 60sn hareketsizlik esigini gecti
+        $end = MatchClock::tick($c, self::T0 + 62)['end']; // effNow=61 >= 60 -> AFK
+        $this->assertSame('AFK_TIMEOUT', $end['reason']);
+        $this->assertSame('p2', $end['winner']);
+    }
+
+    // ---- 24) IN-FLIGHT KALKANI banka TIMEOUT'u da korur (dusuk sureli oyuncu stall'da kaybetmez) ----
+    public function test_inflight_acted_shields_active_from_timeout(): void
+    {
+        $c = $this->started('speed', 1);         // banka24 + delay8 -> timeout T0+32
+        $c = MatchClock::seen($c, 'p1', self::T0);
+        $c['p1_acted'] = self::T0 + 30;          // hamle T0+30'da gonderildi (timeout'tan ONCE)
+        // Poll T0+40: eski kod TIMEOUT; effNow=30 < 32 -> KALKAN.
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 40)['end'] ?? null);
+    }
+
+    // ---- 25) BAYAT _acted (bu segment ONCESI) ETKISIZ -> normal AFK korunur ----
+    public function test_stale_acted_before_segment_ignored(): void
+    {
+        $c = $this->movedClock('casual', 5);
+        $c['p1_acted'] = self::T0 - 10;          // onceki turdan kalma (<= started_at) -> etkisiz
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 63)['end']['reason']);
+    }
+
+    // ---- 26) KALKAN YALNIZ AKTIF OYUNCUYA: rakibin _acted'i aktifi korumaz ----
+    public function test_opponent_acted_does_not_shield_active(): void
+    {
+        $c = $this->movedClock('casual', 5);     // aktif p1
+        $c['p2_acted'] = self::T0 + 59;          // rakip (p2, aktif DEGIL) komut yolladi
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 63)['end']['reason']);
+    }
 }
