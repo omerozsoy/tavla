@@ -262,8 +262,6 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     // Online Turnuvalar: liste/detay herkese acik (misafir dahil). Katilim kapisi turnuva basina (premium_only) -> TournamentController::join. Misafir: auth:sanctum.
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/leave', [TournamentController::class, 'leave']);
-    Route::post('/tournaments/{tournament}/check-in', [TournamentController::class, 'checkIn']); // katilim onayi (kayit acikken)
-    Route::post('/tournaments/{tournament}/withdraw', [TournamentController::class, 'withdraw']); // cekilme (kayit=leave, surerken=hukmen)
     Route::post('/tournaments/{tournament}/disqualify', [TournamentController::class, 'disqualify']); // diskalifiye (yalniz yonetici)
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/no-show', [TournamentController::class, 'noShow']); // rakip gelmedi -> hukmen
