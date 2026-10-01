@@ -29,6 +29,10 @@ class InfoPage extends Model
     // "Bilgi" modal sekmesi olan (duzenlenebilir metin) slug'lar — hukuki sayfalar HARIC.
     public const INFO_TAB_SLUGS = ['about', 'services', 'glossary'];
 
+    // CANLI/hesapli bilesen sekmeleri (frontend): panelde DUZENLENMEZ, listede gizli.
+    // (Yeni admin-eklemeli sayfalar bunlarin DISINDAki tum slug'lardir.)
+    public const LIVE_COMPONENT_SLUGS = ['ranks', 'scoring', 'badges', 'fair'];
+
     // SEO icerik sayfalari: landing'ler + nasil-oynanir + turnuva kurallari + rehber yazilari.
     // Bu slug'lar admin panelden (Bilgi Sayfalari) RichEditor ile duzenlenebilir hale gelir.
     // Frontend'de body DB'de varsa onu render eder, yoksa hardcoded icerige duser (fallback).

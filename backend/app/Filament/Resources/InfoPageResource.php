@@ -17,12 +17,13 @@ class InfoPageResource extends Resource
 {
     protected static ?string $model = InfoPage::class;
 
-    // Duzenlenebilir metin sayfalari: Bilgi sekmeleri (Hakkinda/Hizmetler) + HUKUKI sayfalar
-    // (KVKK/gizlilik/cerez/kullanim/uyelik). Canli bilesen sekmeleri (rutbeler vb.) gizli.
+    // Duzenlenebilir metin sayfalari: Bilgi sekmeleri + HUKUKI + SEO + admin-eklemeli ozel
+    // sayfalar. Yalnizca CANLI bilesen sekmeleri (rutbeler/puanlama/basarilarim/adil-zar)
+    // gizli — boylece panelden eklenen yeni sayfalar listede otomatik gorunur.
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->whereIn('slug', array_merge(InfoPage::INFO_TAB_SLUGS, InfoPage::LEGAL_SLUGS, InfoPage::SEO_SLUGS));
+            ->whereNotIn('slug', InfoPage::LIVE_COMPONENT_SLUGS);
     }
 
     protected static ?string $slug = 'bilgi-sayfalari';
@@ -39,15 +40,30 @@ class InfoPageResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    // Sabit 6 sayfa; panelden yeni eklenmez/silinmez.
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
     public static function form(Form $form): Form
     {
+        // Ust sayfa secenekleri: canli-bilesen DISINDAKI mevcut sayfalar (nesting icin).
+        $parentOptions = InfoPage::whereNotIn('slug', InfoPage::LIVE_COMPONENT_SLUGS)
+            ->orderBy('title')->pluck('title', 'slug')->all();
+
         return $form->schema([
+            // --- Yeni sayfa: adres + ust sayfa (yalniz olusturmada; slug sabittir) ---
+            Forms\Components\Select::make('parent')
+                ->label('Üst sayfa (opsiyonel)')
+                ->options($parentOptions)
+                ->searchable()
+                ->placeholder('Üst sayfa yok (en üst düzey)')
+                ->helperText('Seçersen yeni sayfa onun altına girer: adres /bilgi/<üst>/<adres> olur.')
+                // DB kolonu degil; CreateInfoPage::mutateFormDataBeforeCreate slug'a birlestirip siler.
+                ->visibleOn('create')
+                ->columnSpanFull(),
+            Forms\Components\TextInput::make('slug')
+                ->label('Adres (slug)')
+                ->required()
+                ->maxLength(120)
+                ->helperText('Örn: "ekibimiz" → /bilgi/ekibimiz. Sadece küçük harf, rakam ve tire. Sonradan değiştirilemez.')
+                ->visibleOn('create')
+                ->columnSpanFull(),
             Forms\Components\TextInput::make('title')
                 ->label('Başlık')
                 ->helperText('Sayfa/sekme başlığı olarak kullanılır.')
@@ -121,7 +137,16 @@ class InfoPageResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Düzenle'),
+                // Sil YALNIZ admin-eklemeli ozel sayfalar icin (sabit/tohumlu sayfalar korunur).
+                Tables\Actions\DeleteAction::make()->label('Sil')
+                    ->visible(fn (InfoPage $r) => ! in_array($r->slug, self::FIXED_SLUGS(), true)),
             ]);
+    }
+
+    // Tohumlu/sabit (silinemez) sayfa slug'lari. Bunlarin DISI = admin-eklemeli ozel sayfa.
+    private static function FIXED_SLUGS(): array
+    {
+        return array_merge(InfoPage::INFO_TAB_SLUGS, InfoPage::LEGAL_SLUGS, InfoPage::SEO_SLUGS, InfoPage::LIVE_COMPONENT_SLUGS);
     }
 
     // Admin gosteriminde DB slug'ini Turkce URL slug'ina cevir (frontend ile ayni harita).
@@ -142,6 +167,7 @@ class InfoPageResource extends Resource
     {
         return [
             'index' => Pages\ListInfoPages::route('/'),
+            'create' => Pages\CreateInfoPage::route('/create'),
             'edit' => Pages\EditInfoPage::route('/{record}/edit'),
         ];
     }

@@ -177,6 +177,7 @@ const Rules = lazy(() => import('./ui/Rules'))
 import SeoContent from './ui/SeoContent'
 import SeoAppSection from './ui/SeoAppSection'
 const ServiceLanding = lazy(() => import('./ui/ServiceLanding'))
+const CustomInfoPage = lazy(() => import('./ui/CustomInfoPage'))
 const GuideView = lazy(() => import('./ui/GuideView'))
 const TournamentRules = lazy(() => import('./ui/TournamentRules'))
 const FaqView = lazy(() => import('./ui/FaqView'))
@@ -859,6 +860,8 @@ export default function App() {
   // Turnuva organizasyonu SEO servis sayfalari + /iletisim (slug tutar): hub + kurumsal/
   // belediye/avm + iletisim. Tek state -> hepsi ServiceLanding ile render edilir.
   const [servicePage, setServicePage] = useState<string | null>(null)
+  // Admin-eklemeli OZEL bilgi sayfasi: /bilgi/<slug> (sabit sekme DISI) -> CustomInfoPage.
+  const [customInfoSlug, setCustomInfoSlug] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false) // Tavla Rehberi blog: /tavla-rehberi
   const [guideSlug, setGuideSlug] = useState<string | null>(null) // /tavla-rehberi/<slug> -> yazı
   const [tournRulesOpen, setTournRulesOpen] = useState(false) // WBF turnuva kuralları: /turnuva-kurallari
@@ -1018,6 +1021,8 @@ export default function App() {
             : profileTab === 'addresses'
                 ? 'profil/adreslerim'
                 : 'profil'
+    : customInfoSlug
+    ? 'bilgi/' + customInfoSlug
     : infoOpen
     ? 'bilgi/' + INFO_TAB_URL[infoTab]
     : leaderboardOpen
@@ -1249,10 +1254,17 @@ export default function App() {
         case 'rutbeler':
           setRanksOpen(true)
           break
-        case 'bilgi':
-          setInfoTab(INFO_URL_TAB[seg[1] ?? ''] ?? 'about') // /bilgi/<slug> -> sekme
-          setInfoOpen(true)
+        case 'bilgi': {
+          // /bilgi/<slug>: bilinen sekme -> Info modali; katalog disi slug -> OZEL sayfa.
+          const sub = seg.slice(1).join('/')
+          if (sub && !INFO_URL_TAB[seg[1] ?? '']) {
+            setCustomInfoSlug(sub)
+          } else {
+            setInfoTab(INFO_URL_TAB[seg[1] ?? ''] ?? 'about')
+            setInfoOpen(true)
+          }
           break
+        }
         case 'online-turnuvalar':
         case 'turnuvalar': { // eski slug -> geriye donuk uyum
           setTournOpen(true)
@@ -8015,6 +8027,7 @@ export default function App() {
     setOnlineTavlaOpen(false)
     setTavlaOynaOpen(false)
     setServicePage(null)
+    setCustomInfoSlug(null)
     setGuideOpen(false)
     setGuideSlug(null)
     setTournRulesOpen(false)
@@ -9333,6 +9346,26 @@ export default function App() {
               slug={servicePage}
               onClose={() => {
                 setServicePage(null)
+                setHome(true)
+              }}
+            />
+          </Suspense>
+        </div>
+      </LobbyLayout>
+    )
+  }
+
+  // Admin-eklemeli OZEL bilgi sayfasi (/bilgi/<slug>, katalog disi): ServiceLanding ile ayni
+  // page-host akisi; sol menu gorunur kalir. DB'den body + galeriler render edilir. Kapatinca home.
+  if (customInfoSlug) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <Suspense fallback={null}>
+            <CustomInfoPage
+              slug={customInfoSlug}
+              onClose={() => {
+                setCustomInfoSlug(null)
                 setHome(true)
               }}
             />
