@@ -274,6 +274,11 @@ class AuthController extends Controller
         if ($user->email !== $data['email']) {
             $user->email_verified_at = null;
         }
+        // Telefon degisince eski dogrulama GECERSIZ: yoksa A'yi OTP ile dogrulayip B'ye gecen
+        // kullanici (veya oturum ele geciren) B'yi hic OTP girmeden "dogrulanmis" gosterir.
+        if (array_key_exists('phone', $data) && (string) $user->phone !== (string) ($data['phone'] ?? '')) {
+            $user->phone_verified_at = null;
+        }
         $user->update($data);
         return response()->json(['user' => $user]);
     }
