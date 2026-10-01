@@ -21,7 +21,7 @@ function isEmail(v: string): boolean {
 }
 
 // Cep telefonu: state 0'sız 10 hane tutar (kullanici 0'ı yazmaz, biz gosteririz).
-// Gecerli Turk cep = 10 hane, 5 ile baslar. Gorunum: "532 218 22 80" (3-3-2-2).
+// Gecerli Turk cep = 10 hane, 5 ile baslar. Gorunum: "5XX XXX XX XX" (3-3-2-2).
 function formatPhone(d: string): string {
   return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join(' ')
 }
@@ -513,7 +513,7 @@ export default function Auth({
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
-              placeholder="532 218 22 80"
+              placeholder="5XX XXX XX XX"
               value={formatPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               aria-invalid={phone.length > 0 && !isPhone(phone)}
