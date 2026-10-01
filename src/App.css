@@ -22819,6 +22819,12 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-round-final .tourn-round-body,
 .tourn-champ-col .tourn-round-body {
   position: relative;
+  /* ALTTAN KESİLME FIX (üçüncülük maçı): .tb-slot-3rd absolute, top:50%+96px'e itiliyor. KÜÇÜK
+     bracket'te final kolonu (en uzun turun = 1.tur yüksekliği) kısa olunca bu kutu kolondan taşıp
+     overflow:hidden + scrollbar ile kesiliyordu. min-height ile kolon daima üçüncülük kutusunu
+     (0.5·H + 96 + ~90) içine alacak kadar uzun kalsın. Büyük bracket'te 1.tur zaten daha uzun ->
+     min-height etkisiz (fazladan boşluk yok). */
+  min-height: 400px;
 }
 .tourn-round-final .tb-slot:not(.tb-slot-3rd),
 .tourn-champ-col .tb-slot:first-child {
