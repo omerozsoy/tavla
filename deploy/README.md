@@ -54,6 +54,84 @@ systemctl restart tavla-queue
 systemctl status tavla-queue --no-pager        # ExecStart'ta --max-time=3600 görünmeli
 ```
 
+---
+
+# Tavla Reverb (gerçek-zamanlı oda push — polling yükü fix, "A" adımı)
+
+Turnuvada her istemci odayı 1.2sn'de bir `/show`'a soruyordu (FPM/DB yükü). Reverb WebSocket
+sunucusu ile oyun aksiyonları (hamle/zar/küp/pes) istemcilere **anında push** edilir; poll yalnız
+**yavaş yedek** olarak kalır (socket düşerse oyun takılmaz). Backend tarafı hazır: `App\Events\
+RoomUpdated` (public `room.{code}` kanalı) + `RoomController::broadcastRoom()`.
+
+**DORMANT:** `BROADCAST_CONNECTION` ayarlı değilken (varsayılan `null`) hiçbir şey yayınlanmaz.
+Aşağıdaki adımlar tamamlanıp **doğrulanana kadar** `BROADCAST_CONNECTION`'ı değiştirme → canlı
+hiç etkilenmez.
+
+## 1) backend/.env
+```
+# reverb uygulama kimlikleri (php artisan reverb:install bunları üretir; yoksa elle rastgele ata)
+REVERB_APP_ID=...
+REVERB_APP_KEY=...
+REVERB_APP_SECRET=...
+REVERB_HOST=127.0.0.1        # Reverb YALNIZ localhost dinler
+REVERB_PORT=8080
+REVERB_SCHEME=http
+
+# frontend build (Vite) — istemci wss ile 443'ten nginx proxy'ye bağlanır:
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST=tavlatv.com
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
+
+# !!! EN SON, her şey doğrulanınca aç (önce 'null'/ayarsız bırak):
+# BROADCAST_CONNECTION=reverb
+```
+`php artisan reverb:install` yoksa: 3 değeri elle ata (ID sayı, KEY/SECRET rastgele 20+ hex).
+
+## 2) systemd servisi (tavla-queue ile aynı kullanıcı)
+```
+stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs            # vhost kullanıcısı
+cp deploy/tavla-reverb.service /etc/systemd/system/tavla-reverb.service
+nano /etc/systemd/system/tavla-reverb.service                # User=CHANGE_ME_VHOST_USER -> gerçek
+systemctl daemon-reload
+systemctl enable --now tavla-reverb
+systemctl status tavla-reverb --no-pager                     # :8080 dinliyor olmalı
+ss -ltnp | grep 8080                                         # 127.0.0.1:8080 LISTEN
+```
+
+## 3) nginx wss reverse-proxy (Plesk → Websites & Domains → Apache & nginx Settings → **Additional nginx directives**)
+Plesk'te nginx ÖN katmandır (443'ü karşılar) ve WebSocket upgrade'i en temiz o yapar. `/app`
+yolunu doğrudan Reverb'e geçir (Apache'yi baypas eder):
+```nginx
+location /app {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+}
+```
+Not: `/app` yolu SPA'da KULLANILMIYOR (çakışma yok). Laravel'in Reverb'e yayını (`/apps/{id}/
+events`) 127.0.0.1:8080'e DOĞRUDAN gider (nginx'e gerek yok). Sadece istemci WS'i (`/app`) proxy'lenir.
+
+## 4) Doğrula → SONRA aç
+```
+# WS el sıkışması (426/101 beklenir, timeout DEĞİL):
+curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" https://tavlatv.com/app/test 2>&1 | head
+```
+El sıkışma çalışıyorsa `.env`'de `BROADCAST_CONNECTION=reverb` yap + config cache temizle + FPM reload.
+Sorun olursa `BROADCAST_CONNECTION`'ı geri `null` yap → anında eski (poll) davranışa dön (sıfır risk).
+
+## Deploy sonrası
+`deploy.sh` kod değişince `tavla-reverb`'ü otomatik `systemctl restart` eder (uzun-ömürlü PHP daemon
+eski Event kodunu tutmasın). Kurulu değilse sessizce atlar.
+
+---
+
 ## Notlar
 - Worker düşerse `Restart=always` kaldırır. İzleme istersen validator:watch benzeri eklenebilir.
 - **Şans (luck) işi artık asla `failed_jobs`'a düşmez:** `AnalyzeMatchLuckJob` her hatayı yutup
