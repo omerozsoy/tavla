@@ -28813,6 +28813,13 @@ select:-webkit-autofill {
 .tmr-go {
   min-width: 180px;
 }
+/* confirmLeave: aktif oyunu birakip turnuvaya gecme uyarisi */
+.tmr-warn {
+  color: var(--danger, #e5484d);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 6px 0 12px;
+}
 
 /* Merkezi yukleme gostergesi (src/ui/Loading.tsx): donen zar + metin. */
 .app-loading {
