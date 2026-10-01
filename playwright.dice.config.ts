@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 // Hafif config: zar-görünürlük kanıtı (setContent; sunucu gerektirmez).
 export default defineConfig({
   testDir: './e2e',
-  testMatch: 'dice-visibility.spec.ts',
+  testMatch: /dice-(visibility|live)\.spec\.ts/,
   timeout: 60_000,
   workers: 1,
   reporter: [['list']],
