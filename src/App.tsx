@@ -6335,6 +6335,12 @@ export default function App() {
       closeAllPages()
       setHome(false)
       setMode('online')
+      // AUTHORITATIVE: turnuva odasi SUNUCU-OTORITER (backend enter() authoritative=true yapar).
+      // Bu bayrak client room state'ine KONMAZSA ilk poll'e kadar oda non-authoritative sanilip
+      // YANLIS (legacy) sync yoluna dusuyor + board-gecerlilik kalkani (room.authoritative sarti)
+      // calismiyordu -> "oyun ekranina girdim ama board hic yuklenmedi / mavi ekranda kaldim".
+      authoritativeRef.current = res.room.authoritative ?? authoritativeRef.current
+      diceAuthorityRef.current = res.room.dice_authority ?? diceAuthorityRef.current
       setRoom({
         code: res.room.code,
         slot: res.slot,
@@ -6344,6 +6350,8 @@ export default function App() {
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
+        authoritative: res.room.authoritative,
+        dice_authority: res.room.dice_authority,
       })
     } catch {
       setRoomError(t('mp.connError'))
