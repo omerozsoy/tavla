@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Room;
 use App\Models\Tournament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -47,5 +48,25 @@ class TournamentLivePollTest extends TestCase
         $bracket[0][0]['winner'] = 1;
         $t->update(['bracket' => $bracket]);
         $this->getJson("/api/tournaments/{$t->id}?rev={$rev}")->assertOk();
+    }
+
+    // CANLI SKOR: /viewers suren maclarin anlik mac skorunu USER ID ile anahtarli dondurur
+    // (bracket'te oda icine girmeden gorunur). white=p1_user, black=p2_user.
+    public function test_viewers_endpoint_returns_live_scores_by_user_id(): void
+    {
+        $bracket = [[['key' => 'r0m0', 'room' => 'ABCDE', 'p1' => ['id' => 7, 'name' => 'A'], 'p2' => ['id' => 9, 'name' => 'B'], 'winner' => null]]];
+        $t = Tournament::create(['name' => 'K', 'size' => 2, 'status' => 'running', 'active' => true,
+            'players' => [['id' => 7, 'name' => 'A'], ['id' => 9, 'name' => 'B']], 'bracket' => $bracket]);
+
+        Room::create([
+            'code' => 'ABCDE', 'p1_token' => 't1', 'p1_name' => 'A', 'p1_user_id' => 7,
+            'p2_token' => 't2', 'p2_name' => 'B', 'p2_user_id' => 9, 'status' => 'playing',
+            'server_match' => ['target' => 3, 'score' => ['white' => 2, 'black' => 1], 'done' => false],
+        ]);
+
+        $this->getJson("/api/tournaments/{$t->id}/viewers")
+            ->assertOk()
+            ->assertJsonPath('scores.ABCDE.7', 2)  // p1 (white) = 2
+            ->assertJsonPath('scores.ABCDE.9', 1); // p2 (black) = 1
     }
 }

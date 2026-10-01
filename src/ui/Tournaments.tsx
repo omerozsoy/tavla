@@ -209,6 +209,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   // IZLEYICI SAYILARI (goz ikonunun yaninda): suren turnuvada, izlenebilir oda varken 8sn'de bir
   // hafif uctan cekilir. Detay poll'u (rev) izleyici degisiminde tetiklenmez -> ayri dongu.
   const [viewerCounts, setViewerCounts] = useState<Record<string, number>>({})
+  // CANLI SKOR (oda icine girmeden bracket'te): ODA_KODU -> { userId: kazanilan oyun }. Izleyici
+  // poll'uyla AYNI uctan (tournamentViewers) gelir -> ekstra istek yok.
+  const [liveScores, setLiveScores] = useState<Record<string, Record<string, number>>>({})
   const hasRooms = !!active?.bracket?.some((r) => r.some((m) => m.room && !m.winner))
   // FINAL gate geri sayımı için saniyelik tik (3.'lük bitince final opens_at'e kadar sayar).
   const [nowTick, setNowTick] = useState(() => Date.now())
@@ -220,6 +223,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   useEffect(() => {
     if (detailId == null || active?.status !== 'running' || !hasRooms) {
       setViewerCounts({})
+      setLiveScores({})
       return
     }
     let alive = true
@@ -227,7 +231,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       if (document.visibilityState !== 'visible') return
       tournamentViewers(detailId)
         .then((c) => {
-          if (alive) setViewerCounts(c)
+          if (!alive) return
+          setViewerCounts(c.counts)
+          setLiveScores(c.scores)
         })
         .catch(() => {
           /* gecici hata: sonraki tick dener */
@@ -619,12 +625,19 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                       const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner && !isDoubleLoss
                       const viewers = watchable ? (viewerCounts[(m.room || '').toUpperCase()] ?? 0) : 0
                       const sc = m.winner && m.p1 && m.p2 ? m.score : null
+                      const liveSc = !m.winner && m.room ? liveScores[(m.room || '').toUpperCase()] : undefined
                       const scoreOf = (side: 'p1' | 'p2') => {
                         // Cift maglubiyet: iki tarafta da "çift mağlubiyet" rozeti (galip yok).
                         if (isDoubleLoss) return <span className="tm-score wo dloss">{t('swiss.doubleLossBadge')}</span>
-                        if (!sc) return null
-                        if (sc.walkover) return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
-                        return <span className="tm-score tnum">{sc[side] ?? 0}</span>
+                        if (sc) {
+                          if (sc.walkover) return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
+                          return <span className="tm-score tnum">{sc[side] ?? 0}</span>
+                        }
+                        const uid = m[side]?.id
+                        if (liveSc && uid != null && liveSc[String(uid)] != null) {
+                          return <span className="tm-score tnum live">{liveSc[String(uid)]}</span>
+                        }
+                        return null
                       }
                       return (
                         <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}${isDoubleLoss ? ' dloss' : ''}`}>
@@ -721,14 +734,22 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                         // OYNANIYOR: iki oyuncu belli + bitmemiş + (oda açık=canlı ya da benim oynayacağım
                         // maç), gate'liyken DEĞİL. Çerçeve parlar -> aktif maç (3.'lük/final) dikkat çeker.
                         const playing = !!m.p1 && !!m.p2 && !m.winner && !finalGated && (!!m.room || mine)
-                        // Skor / hukmen: yalniz biten macta (bye'da skor yok).
+                        // Skor / hukmen: biten macta nihai skor; SUREN macta (oda acik, kazanan yok)
+                        // CANLI skor (oda icine girmeden). liveScores userId ile anahtarli.
                         const sc = m.winner && m.p1 && m.p2 ? m.score : null
+                        const liveSc = !m.winner && m.room ? liveScores[m.room.toUpperCase()] : undefined
                         const scoreOf = (side: 'p1' | 'p2') => {
-                          if (!sc) return null
-                          if (sc.walkover) {
-                            return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
+                          if (sc) {
+                            if (sc.walkover) {
+                              return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
+                            }
+                            return <span className="tm-score tnum">{sc[side] ?? 0}</span>
                           }
-                          return <span className="tm-score tnum">{sc[side] ?? 0}</span>
+                          const uid = m[side]?.id
+                          if (liveSc && uid != null && liveSc[String(uid)] != null) {
+                            return <span className="tm-score tnum live">{liveSc[String(uid)]}</span>
+                          }
+                          return null
                         }
                         return (
                           <div key={m.key} className={`tb-slot${m.third_place ? ' tb-slot-3rd' : ''}`}>

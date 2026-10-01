@@ -56,19 +56,43 @@ class TournamentController extends Controller
                 }
             }
         }
-        if (! $codes || $tournament->status !== 'running' || ! \Illuminate\Support\Facades\Schema::hasTable('room_viewers')) {
-            return response()->json(['counts' => (object) []]);
+        if (! $codes || $tournament->status !== 'running') {
+            return response()->json(['counts' => (object) [], 'scores' => (object) []]);
         }
-        $counts = DB::table('room_viewers')
-            ->whereIn('room_code', $codes)
-            ->where('last_seen', '>=', microtime(true) - 15)
-            ->groupBy('room_code')
-            ->selectRaw('room_code, COUNT(*) as n')
-            ->pluck('n', 'room_code')
-            ->map(fn ($n) => (int) $n)
-            ->all();
+        $counts = \Illuminate\Support\Facades\Schema::hasTable('room_viewers')
+            ? DB::table('room_viewers')
+                ->whereIn('room_code', $codes)
+                ->where('last_seen', '>=', microtime(true) - 15)
+                ->groupBy('room_code')
+                ->selectRaw('room_code, COUNT(*) as n')
+                ->pluck('n', 'room_code')
+                ->map(fn ($n) => (int) $n)
+                ->all()
+            : [];
 
-        return response()->json(['counts' => (object) $counts]);
+        // CANLI SKOR (bracket'te oda icine girmeden): suren maclarin anlik mac skoru (kazanilan oyun
+        // sayisi, hedefe dogru). server_match.score white=p1 / black=p2 (MatchClock slot rengi) ->
+        // USER ID ile anahtarla ki frontend bracket m.p1/m.p2'ye eslesinsin (slot sirasi degil id).
+        $scores = [];
+        foreach (DB::table('rooms')->whereIn('code', $codes)->get(['code', 'p1_user_id', 'p2_user_id', 'server_match']) as $r) {
+            $sm = is_string($r->server_match) ? json_decode($r->server_match, true) : (array) ($r->server_match ?? []);
+            $sc = is_array($sm) && isset($sm['score']) && is_array($sm['score']) ? $sm['score'] : null;
+            if ($sc === null) {
+                continue;
+            }
+            $perUser = [];
+            if ($r->p1_user_id) {
+                $perUser[(string) $r->p1_user_id] = (int) ($sc['white'] ?? 0);
+            }
+            if ($r->p2_user_id) {
+                $perUser[(string) $r->p2_user_id] = (int) ($sc['black'] ?? 0);
+            }
+            if ($perUser) {
+                $scores[strtoupper((string) $r->code)] = $perUser;
+            }
+        }
+
+        return response()->json(['counts' => (object) $counts, 'scores' => (object) $scores]);
     }
 
     /**
