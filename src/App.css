@@ -22754,7 +22754,10 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-bracket {
   display: flex;
   gap: 0;
-  overflow-x: auto;
+  /* Yalniz YATAY kaydir. overflow-x:auto, overflow-y:visible'i spec geregi auto'ya cevirir ->
+     yatay scrollbar cikinca (align-items:stretch ile) hayalet DIKEY scrollbar dogar; y'yi acikca
+     hidden yap. Yukseklik icerige gore (clamp yok) oldugundan gercek icerik kirpilmaz. */
+  overflow: auto hidden;
   padding: 8px 6px 10px;
   align-items: stretch;
 }
