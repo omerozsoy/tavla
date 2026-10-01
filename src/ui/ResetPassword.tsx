@@ -31,8 +31,8 @@ export default function ResetPassword({ email, token, onDone }: Props) {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (password.length < 6) {
-      showErr(t('reset.tooShort'))
+    if (!api.pwValid(password)) {
+      showErr(t('reg.pwShort'))
       return
     }
     if (password !== password2) {
@@ -84,6 +84,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
                   <Icon name="eye" size={16} />
                 </button>
               </div>
+              <span className="pw-hint text-xs text-muted-foreground">{t('reg.pwShort')}</span>
             </label>
             <label>
               {t('reset.confirm')}

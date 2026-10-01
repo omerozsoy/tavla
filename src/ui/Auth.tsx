@@ -309,7 +309,7 @@ export default function Auth({
     e.preventDefault()
     setError('')
     if (!validProfile()) return
-    if (password.length < 6) {
+    if (!api.pwValid(password)) {
       setError(t('reg.pwShort'))
       return
     }
@@ -706,6 +706,7 @@ export default function Auth({
                     <Icon name="eye" size={16} />
                   </button>
                 </div>
+                <span className="pw-hint text-xs text-muted-foreground">{t('reg.pwShort')}</span>
               </label>
               <Button type="submit" className="w-full" disabled={busy || nickTaken}>
                 {t('reg.submitNew')}

@@ -28,8 +28,8 @@ class AuthController extends Controller
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
             // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). Zorunluluk frontend'de; API'de format + nullable.
             'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
-            'password'   => ['required', 'string', 'min:6', 'max:100'],
-        ]);
+            'password'   => self::passwordRules(),
+        ], self::passwordMessages());
 
         // phone kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
         if (isset($data['phone']) && ! Schema::hasColumn('users', 'phone')) {
@@ -1854,13 +1854,29 @@ class AuthController extends Controller
     }
 
     // Sifreyi sifirla (link'teki token + yeni sifre)
+    /**
+     * Kayit + sifirlama ortak sifre politikasi (sunucu-otoriter):
+     * en az 8 karakter, en az 1 buyuk harf, en az 1 rakam.
+     */
+    private static function passwordRules(): array
+    {
+        return ['required', 'string', 'min:8', 'max:100', 'regex:/[A-Z]/', 'regex:/[0-9]/'];
+    }
+
+    private static function passwordMessages(): array
+    {
+        $msg = 'Şifre en az 8 karakter olmalı, en az 1 büyük harf ve 1 rakam içermeli.';
+
+        return ['password.min' => $msg, 'password.regex' => $msg];
+    }
+
     public function resetPassword(Request $request)
     {
         $request->validate([
             'token'    => ['required', 'string'],
             'email'    => ['required', 'email'],
-            'password' => ['required', 'string', 'min:6', 'max:100'],
-        ]);
+            'password' => self::passwordRules(),
+        ], self::passwordMessages());
 
         $status = Password::reset(
             [
