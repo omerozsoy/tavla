@@ -52,7 +52,29 @@ function unsafeToPrompt(): boolean {
 
 let pendingTarget: string | null = null // algılanan yeni sürüm (hash)
 let notified = false // banner bu oturumda gösterildi mi (tekrar tetikleme)
+let autoApplied = false // PWA oto-güncellemesi tetiklendi mi (tek sefer)
 let listener: (() => void) | null = null // UpdateBanner aboneliği
+
+// Kurulu PWA (standalone) mı? iOS Safari eski `navigator.standalone` + standart display-mode.
+function isStandalone(): boolean {
+  return (
+    window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true
+  )
+}
+
+// Kurulu PWA'da yeni sürümü GÜVENLİ ANDA (maç/ödeme/okuma/seçim yokken) banner beklemeden
+// otomatik uygula. Neden: PWA nadiren tamamen kapandığından ve güncelleme kullanıcı-onaylı
+// olduğundan PWA kullanıcıları eski bundle'da TAKILIP kalıyordu (ör. turnuva oto-giriş çalışmaz).
+// Tarayıcıda yapılmaz (orada banner yeter + "habersiz reload" şikâyeti PWA dışıydı). unsafeToPrompt
+// maç (.app.game-view / sonuç ekranı) ve hassas rotaları dışlar -> maç ortasında ASLA reload etmez.
+function maybeAutoApply(): void {
+  if (!pendingTarget || autoApplied) return
+  if (!isStandalone()) return
+  if (unsafeToPrompt()) return // güvenli ana ertele (interval/visibility tekrar dener)
+  autoApplied = true
+  reloadWithCause('autoupdate-pwa')
+}
 
 function maybeNotify(): void {
   if (!pendingTarget || notified || !listener) return
@@ -64,6 +86,7 @@ function maybeNotify(): void {
 /** UpdateBanner buna abone olur; yeni sürüm güvenli anda algılanınca çağrılır. */
 export function onUpdateAvailable(cb: () => void): void {
   listener = cb
+  maybeAutoApply() // PWA + zaten bekleyen sürüm + güvenli -> banner yerine oto-uygula
   maybeNotify()
 }
 
@@ -78,15 +101,21 @@ export function installAutoUpdate(): void {
   const mine = currentEntry()
   if (!mine) return // giriş hash'i saptanamadı -> güvenli taraf: hiçbir şey yapma
 
+  // Yeni sürüm algılandıysa: PWA'da güvenli anda oto-uygula, yoksa banner sun.
+  const settle = () => {
+    maybeAutoApply()
+    maybeNotify()
+  }
+
   const check = async () => {
     const dep = await deployedEntry()
     if (dep && dep !== mine) pendingTarget = dep // yeni sürüm bulundu (frontend değişti)
-    maybeNotify()
+    settle()
   }
 
   check()
   window.setInterval(check, 5 * 60 * 1000) // 5 dk: yeni deploy tara
-  window.setInterval(maybeNotify, 15000) // güvenli ana geçince (maçtan çıkınca vb.) banner'ı sun
+  window.setInterval(settle, 15000) // güvenli ana geçince (maçtan çıkınca vb.) oto-uygula/banner
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') check()
   })

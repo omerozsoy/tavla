@@ -7,7 +7,7 @@
 const CAUSE_KEY = 'tavla:reloadcause' // bizim bilinçli reload'umuzun nedeni (sonraki boot okur+siler)
 const VIEW_KEY = 'tavla:lastview' // son gizlenme anındaki görünüm (game/other) + zaman
 
-export type ReloadCause = 'autoupdate' | 'ptr' | 'consent' | 'chunk' | 'error-button' | 'gate'
+export type ReloadCause = 'autoupdate' | 'autoupdate-pwa' | 'ptr' | 'consent' | 'chunk' | 'error-button' | 'gate'
 
 /** Bilinçli her location.reload() bunun üzerinden geçer -> nedeni damgalar, sonra yeniler. */
 export function reloadWithCause(cause: ReloadCause): void {
