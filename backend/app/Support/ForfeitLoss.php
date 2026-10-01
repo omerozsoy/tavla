@@ -57,6 +57,12 @@ class ForfeitLoss
         if ($room) {
             $res = RoomResult::resolve($room, $loserId);
             if ($res !== null) {
+                // GÜVENLİK: oda SUNUCU-OTORİTER sonucu bu "kaybeden"in aslında KAZANDIĞINI söylüyorsa
+                // ASLA kayıp yazma. Nadir forfeit yarışında (iki pol ters kazanan sonucuna varıp) gerçek
+                // kazanana da -Elo'lu kayıp satırı düşebiliyordu; tek-kaynak RoomResult ile kapı. (D5CTF)
+                if (($res['won'] ?? false) === true) {
+                    return;
+                }
                 $selfScore = $res['self'] ?? null;
                 $oppScore = $res['opp'] ?? null;
             }
