@@ -8548,9 +8548,9 @@ export default function App() {
         .join(',')
     : ''
 
-  // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
-  const showTournNotices = home && tournNotices.length > 0
-  const inviteBanner = (invites.length > 0 || showTournNotices) && (
+  // Gelen oyun davetleri (sabit, üst üste). Turnuva maçı banner'ı KALDIRILDI -> turnuva maçına
+  // giriş otomatik (popup yok); manuel geri-dönüş yalnız sol menü "Aktif Maçlar".
+  const inviteBanner = invites.length > 0 && (
     <div className="invite-stack">
       {invites.map((inv) => {
         // Davetli NEYE davet edildigini gorsun: oyun turu (Tek Oyun / Mac + puan) + sure.
@@ -8618,21 +8618,6 @@ export default function App() {
           </div>
         )
       })}
-      {showTournNotices &&
-        tournNotices.map((tn) => (
-          <div key={`${tn.tid}-${tn.match}`} className="invite-card tourn-notice">
-            <span className="invite-text">
-              <Icon name="medal" size={16} /> <b>{tn.tname}</b>:{' '}
-              {t('tourn.yourMatch', { name: tn.oppName })}
-            </span>
-            <Button
-              variant="default"
-              onClick={() => handlePlayTournamentMatch(tn.tid, { key: tn.match }, tn.oppId)}
-            >
-              {t('tourn.play')}
-            </Button>
-          </div>
-        ))}
     </div>
   )
 
