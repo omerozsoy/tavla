@@ -2419,6 +2419,52 @@ export default function App() {
     appliedServerVersionRef.current = -1 // poll otoriter (doğru) durumu geri yükler
   }, [boardDisplay, online, room?.authoritative, gameEnd, matchOver])
 
+  // ===== KURŞUN GEÇİRMEZ MAÇ BAŞLANGICI =====
+  // "Oyun ekranına girdim ama board hiç yüklenmedi / mavi ekranda kaldım" bir daha ASLA sessiz
+  // takılmaya dönmesin. Geçerli bir tavla pozisyonu DAİMA 15 beyaz + 15 siyah'tır (açılış dahil);
+  // board bu ölçüde değilse YÜKLENMEMİŞ/BOZUK demektir. online maçta board sürekli geçersiz kalırsa:
+  //  6sn -> sert resync (poll otoriter durumu yeniden uygula), 14sn -> GÖRÜNÜR kurtarma ekranı
+  //  (Tekrar Dene / Sayfayı Yenile). Normal oyunda board hep 15/15 -> hiç tetiklenmez (false-positive yok).
+  const boardBadSinceRef = useRef<number | null>(null)
+  const startHardResyncRef = useRef(false)
+  const [startStuck, setStartStuck] = useState(false)
+  useEffect(() => {
+    if (!online || gameEnd || matchOver || !room?.code) {
+      boardBadSinceRef.current = null
+      startHardResyncRef.current = false
+      setStartStuck(false)
+      return
+    }
+    let w = boardDisplay.bar.white + boardDisplay.off.white
+    let b = boardDisplay.bar.black + boardDisplay.off.black
+    for (const v of boardDisplay.points) {
+      if (v > 0) w += v
+      else if (v < 0) b -= v
+    }
+    if (w === 15 && b === 15) {
+      boardBadSinceRef.current = null
+      startHardResyncRef.current = false
+      setStartStuck(false)
+    } else if (boardBadSinceRef.current == null) {
+      boardBadSinceRef.current = Date.now()
+    }
+  }, [boardDisplay, online, gameEnd, matchOver, room?.code])
+  useEffect(() => {
+    if (!online || !room?.code) return
+    const id = window.setInterval(() => {
+      const since = boardBadSinceRef.current
+      if (since == null) return
+      const bad = Date.now() - since
+      if (bad > 6000 && !startHardResyncRef.current) {
+        startHardResyncRef.current = true
+        invalidBoardResyncRef.current = 0 // 3-resync kilidini aç -> otoriter durumu tekrar iste
+        appliedServerVersionRef.current = -1
+      }
+      if (bad > 14000) setStartStuck(true)
+    }, 2000)
+    return () => window.clearInterval(id)
+  }, [online, room?.code])
+
   const nextSteps = useMemo(
     () => (diceRolled && !gameWon ? legalNextSteps(turnStart, played) : []),
     [turnStart, played, diceRolled, gameWon],
@@ -10277,6 +10323,41 @@ export default function App() {
           }}
           onEnter={() => readyEnterRef.current()}
         />
+      )}
+
+      {/* KURŞUN GEÇİRMEZ: board 14sn+ yüklenmediyse GÖRÜNÜR kurtarma — oyuncu asla sessiz takılmaz. */}
+      {startStuck && online && room?.code && !matchOver && (
+        <div
+          className="register-overlay modal"
+          role="dialog"
+          aria-modal="true"
+          style={{ zIndex: 2147483600 }}
+        >
+          <div className="register-card" style={{ textAlign: 'center', maxWidth: 380 }}>
+            <Icon name="warning-circle" size={30} />
+            <h2 style={{ margin: '8px 0 4px' }}>{t('match.stuckTitle')}</h2>
+            <p style={{ opacity: 0.8, marginBottom: 14 }}>{t('match.stuckDesc')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Button
+                variant="default"
+                onClick={() => {
+                  setStartStuck(false)
+                  boardBadSinceRef.current = null
+                  startHardResyncRef.current = false
+                  invalidBoardResyncRef.current = 0
+                  const tm = tournMatchRef.current
+                  if (tm) void handlePlayTournamentMatch(tm.tid, { key: tm.matchKey }, tm.oppId)
+                  else appliedServerVersionRef.current = -1
+                }}
+              >
+                <Icon name="refresh" size={16} /> {t('match.stuckRetry')}
+              </Button>
+              <Button variant="secondary" onClick={() => window.location.reload()}>
+                {t('match.stuckReload')}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
