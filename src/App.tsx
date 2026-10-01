@@ -7329,6 +7329,7 @@ export default function App() {
         emailUnverified={!!user && !user.email_verified_at}
         resendState={resendState}
         onResendVerification={handleResendVerification}
+        onUserUpdate={(u) => setUser(u)}
         onOpenMatchHistory={(matchId) => {
           setMatchHistInitialId(matchId ?? null)
           setEditProfile(false)

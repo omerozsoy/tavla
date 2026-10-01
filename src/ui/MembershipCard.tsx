@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import type { ServerUser } from '../api'
+import PhoneVerify from './PhoneVerify'
 
 interface Props {
   user: ServerUser
@@ -14,11 +15,13 @@ interface Props {
   emailUnverified?: boolean
   resendState?: 'idle' | 'sending' | 'sent'
   onResendVerification?: () => void
+  // Telefon OTP dogrulandiginda guncel kullaniciyi yukari tasir (global user guncelle).
+  onUserUpdate?: (u: ServerUser) => void
 }
 
 // Uyelik durumu karti (Premium): tip + baslangic/bitis + kalan gun + otomatik yenileme +
 // Yenile / Yenilemeyi iptal. Profil ANA sayfasinda (ProfileOverview) baslikin altinda.
-export default function MembershipCard({ user, onRenew, onToggleAutoRenew, emailUnverified, resendState = 'idle', onResendVerification }: Props) {
+export default function MembershipCard({ user, onRenew, onToggleAutoRenew, emailUnverified, resendState = 'idle', onResendVerification, onUserUpdate }: Props) {
   const { t } = useT()
   const [confirmOpen, setConfirmOpen] = useState(false) // oto-yenileme iptal onay modali
   const plan = user.plan_active ?? 'free'
@@ -63,6 +66,8 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew, email
           )}
         </div>
       )}
+      {/* Telefon doğrulama (OTP): numara var + doğrulanmamışsa gösterilir (bileşen kendi karar verir). */}
+      <PhoneVerify user={user} onVerified={(u) => onUserUpdate?.(u)} />
       {premium && (
         <div className="mem-status-detail">
           {since && <span>{t('mem.status.since', { date: sinceFmt })}</span>}

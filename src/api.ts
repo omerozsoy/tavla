@@ -71,6 +71,7 @@ export interface ServerUser {
   nickname: string
   email: string
   phone?: string | null
+  phone_verified_at?: string | null
   avatar?: string | null
   birth_date?: string | null
   rating?: number
@@ -257,6 +258,20 @@ export async function forgotPassword(email: string): Promise<void> {
 // E-posta dogrulama linkini tekrar gonder (giris yapmis kullanici)
 export async function resendVerification(): Promise<void> {
   await req('/email/resend', { method: 'POST' })
+}
+
+// Telefon OTP: kayitli numaraya 6 haneli kod gonder (SMS). Kod yanitta DONMEZ.
+export async function sendPhoneOtp(): Promise<void> {
+  await req('/phone/send-otp', { method: 'POST' })
+}
+
+// Telefon OTP dogrula -> basarida guncel kullaniciyi (phone_verified_at dolu) dondurur.
+export async function verifyPhoneOtp(code: string): Promise<ServerUser> {
+  const data = await req<{ user: ServerUser }>('/phone/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+  return data.user
 }
 
 // Sifreyi sifirla (link'teki token + yeni sifre)

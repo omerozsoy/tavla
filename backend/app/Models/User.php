@@ -95,6 +95,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'password' => 'hashed',
             'game_state' => 'array',
             'unlocks' => 'array',
