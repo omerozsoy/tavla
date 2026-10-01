@@ -71,4 +71,39 @@ class ValidatorFailoverTest extends TestCase
         $this->assertFalse($res['valid']);
         $this->assertSame('illegal', $res['reason']);
     }
+
+    // AĞIR İZOLASYON: heavy_url verilince /analyze-pr ADANMIŞ instance'a gider (validate'e DEĞİL)
+    // -> sinir ağı analizi canlı /validate instance'ının event-loop'unu bloklamaz.
+    public function test_analyze_pr_routes_to_dedicated_heavy_base(): void
+    {
+        Http::fake([
+            'http://validate.test/*' => Http::response(null, 500),                          // validate instance'ı kullanılMAMALI
+            'http://heavy.test/*' => Http::response(['pr' => 5.0, 'decisions' => 10], 200),  // ağır instance
+        ]);
+        config([
+            'validator.url' => 'http://validate.test',
+            'validator.heavy_url' => 'http://heavy.test',
+        ]);
+
+        $res = (new MoveValidatorService())->analyzePr('X', [['dummy' => 1]]);
+
+        $this->assertNotNull($res);                 // heavy yanıtladı (validate 500'de olsa bile)
+        $this->assertEqualsWithDelta(5.0, $res['pr'], 0.001);
+        $this->assertSame(10, $res['decisions']);
+        Http::assertSent(fn ($req) => str_starts_with($req->url(), 'http://heavy.test/analyze-pr'));
+        Http::assertNotSent(fn ($req) => str_contains($req->url(), 'validate.test'));
+    }
+
+    // heavy_url BOŞSA /analyze-pr normal url'e düşer (davranış değişmez; adanmış instance opsiyonel).
+    public function test_analyze_pr_falls_back_to_normal_url_when_heavy_unset(): void
+    {
+        Http::fake(['http://primary.test/*' => Http::response(['pr' => 3.0, 'decisions' => 4], 200)]);
+        config(['validator.url' => 'http://primary.test', 'validator.heavy_url' => '', 'validator.heavy_url_backup' => '']);
+
+        $res = (new MoveValidatorService())->analyzePr('X', [['dummy' => 1]]);
+
+        $this->assertNotNull($res);
+        $this->assertEqualsWithDelta(3.0, $res['pr'], 0.001);
+        Http::assertSent(fn ($req) => str_starts_with($req->url(), 'http://primary.test/analyze-pr'));
+    }
 }
