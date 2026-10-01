@@ -14,6 +14,7 @@ import PullToRefresh from './ui/PullToRefresh.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
+import { installReloadDiag } from './reloadDiag.ts'
 
 // Rutbe esikleri (admin: Ayarlar > Rating Ayar) onbellekten SENKRON uygulanir -> ilk boyamada
 // dogru rutbe gorunur, esik degisiminde "yanlis rozet" flash'i olmaz.
@@ -44,6 +45,9 @@ createRoot(document.getElementById('root')!).render(
 // otomatik yenile. Açık kalan sekmeler eski kodda (ör. "resim önizleme kapanmıyor") takılı
 // kalmasın. Okuma/seçim koruması artık autoUpdate.ts unsafeToReload() içinde -> güvenle açık.
 installAutoUpdate()
+
+// GEÇİCİ: Safari "çok yenileniyor" şikâyetinin kökünü ölç (reload nedeni/ekran -> /api/diag/reload).
+installReloadDiag()
 
 // Google Etiketi (gtag.js): admin panelden yönetilen ID ile dinamik yükle (aktifse). Ana sayfa
 // statik servis edildiğinden server-side enjeksiyon home'a ulaşmaz -> client-side tek kaynak.

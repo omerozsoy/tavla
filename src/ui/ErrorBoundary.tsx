@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { reloadWithCause } from '../reloadDiag'
 
 interface Props {
   children: ReactNode
@@ -62,12 +63,12 @@ export class ErrorBoundary extends Component<Props, State> {
       } catch {
         // storage yazilamadi -> yine de bir kez dene; kalkan olmasa da tek reload zararsiz
       }
-      window.location.reload()
+      reloadWithCause('chunk')
     }
   }
 
   handleReload = (): void => {
-    window.location.reload()
+    reloadWithCause('error-button')
   }
 
   render(): ReactNode {

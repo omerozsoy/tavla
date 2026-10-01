@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { setGate, onGateRequired } from '../api'
+import { reloadWithCause } from '../reloadDiag'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 
@@ -21,7 +22,7 @@ export default function GatePrompt() {
     const v = pw.trim()
     if (!v) return
     setGate(v)
-    window.location.reload()
+    reloadWithCause('gate')
   }
 
   return (
