@@ -307,6 +307,19 @@ class MatchClockTest extends TestCase
         $this->assertNull($end['winner']); // kimse kaybetmez/kazanmaz (puan/coin islemez)
     }
 
+    // ---- 20c) ADALET (canli #XR37P): RAKIP acilis hamlesini yapti (moved=TRUE) ve sira hic-gormemis
+    // aktif oyuncuya gecti (asimetrik presence: rakip seen, aktif seen YOK). AFK/TIMEOUT dolsa bile
+    // aktifi forfeit ETME -> NO-CONTEST. moved "biri oynadi mi" der, "BU oyuncu adil sans aldi mi" demez. ----
+    public function test_no_contest_after_opponent_move_when_active_never_seen(): void
+    {
+        $c = $this->movedClock('casual', 5);           // moved=true, aktif p1, afk normalde T0+60
+        $c = MatchClock::seen($c, 'p2', self::T0 + 60);  // RAKIP (p2) sona kadar poll etti (present);
+        //                                                  p1 HIC gorulmedi (seen YOK)
+        $end = MatchClock::tick($c, self::T0 + 63)['end']; // afk deadline gecti, p2 hala present
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertNull($end['winner']); // hic-gormemis aktif forfeit edilmez (puan/coin islemez)
+    }
+
     // ---- 21) Ilk hamleden SONRA AFK normal calisir ----
     public function test_afk_applies_after_first_move(): void
     {
