@@ -115,6 +115,33 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(1, MatchResult::where('room_code', 'FL2')->where('user_id', $a->id)->count());
     }
 
+    // D5CTF REGRESYONU: oda SUNUCU-OTORİTER sonucu bu "kaybeden"in aslında KAZANDIĞINI söylüyorsa
+    // ForfeitLoss ASLA kayıp yazmamalı (nadir forfeit yarışında gerçek kazanana da -Elo düşüyordu).
+    public function test_does_not_record_loss_for_actual_winner(): void
+    {
+        $winner = $this->user('w', 1403); // server_match'e göre siyah (p2) KAZANAN
+        $loser = $this->user('l', 1400);
+        $room = $this->rankedRoom('D5R', $loser, $winner); // p1=loser(beyaz), p2=winner(siyah)
+        $room->forceFill([
+            'authoritative' => true,
+            'server_match' => ['done' => true, 'winner' => 'black', 'score' => ['white' => 2, 'black' => 3]],
+        ])->save();
+
+        // Yanlışlıkla gerçek kazananı (p2/siyah) kaybeden olarak yazmaya çalış -> hiçbir şey olmamalı.
+        \App\Support\ForfeitLoss::record('D5R', $winner->id, 1400, 3, 'match', 'l', true, $loser->id);
+
+        $winner->refresh();
+        $this->assertSame(1403, (int) $winner->rating);        // Elo değişmedi
+        $this->assertSame(0, (int) $winner->losses);           // mağlubiyet yazılmadı
+        $this->assertNull(MatchResult::where('room_code', 'D5R')->where('user_id', $winner->id)->first());
+
+        // Gerçek kaybeden (p1/beyaz) hâlâ yazılabilir.
+        \App\Support\ForfeitLoss::record('D5R', $loser->id, 1403, 3, 'match', 'w', true, $winner->id);
+        $loser->refresh();
+        $this->assertSame(1, (int) $loser->losses);
+        $this->assertFalse((bool) MatchResult::where('room_code', 'D5R')->where('user_id', $loser->id)->first()->won);
+    }
+
     // GÜNCEL kural (kullanıcı direktifi): davet (friendly/kılıç) maçları PUANLIDIR (aynı-rakip 24h
     // limiti altında). Terk edilince KAYBEDEN puan/mağlubiyet KAYBEDER (ilk maç -> limit altı).
     public function test_friendly_forfeit_within_cap_is_rated(): void
