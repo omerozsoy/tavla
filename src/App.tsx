@@ -445,7 +445,7 @@ import TournMatchReady from './ui/TournMatchReady'
 import ScrollTop from './ui/ScrollTop'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
-import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel, StatusPicker } from './ui/HomePanels'
+import { LiveMatchesPanel, OnlinePlayersPanel, SeekersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel, StatusPicker } from './ui/HomePanels'
 import TopThreeShowcase from './ui/TopThreeShowcase'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
@@ -4996,7 +4996,7 @@ export default function App() {
     let lastFetchAt = 0
     const poll = async (force = false) => {
       if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme: poll'u da durdur
-      if (!force && realtimeConnected && Date.now() - lastFetchAt < 4000) return // push bağlı -> yedek ~4sn (timeout tespiti güvenli; hamleler zaten anında push)
+      if (!force && realtimeConnected && Date.now() - lastFetchAt < 2500) return // push bağlı -> yedek ~2.5sn (soket boşluğunda bile en fazla 2.5sn'de güncelleme; hamleler zaten anında push)
       lastFetchAt = Date.now()
       try {
         // Oda sürümleri oda-yereldir. Son uygulanan sürümü gönderince backend
@@ -9494,8 +9494,12 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
-            {/* Öne çıkan Şampiyonlar: PR + Puan İlk 3 madalyalı oyuncular (tıklayınca profil) */}
-            <TopThreeShowcase onProfile={(id) => setHomeProfileId(id)} />
+            {/* Oyun Arayanlar: hızlı eşleşme havuzunda bekleyenler (reklam bannerının hemen altı) */}
+            <SeekersPanel
+              currentId={user?.id}
+              onProfile={(id) => setHomeProfileId(id)}
+              onInvite={user ? handleInviteFriend : undefined}
+            />
             {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">
               <OnlinePlayersPanel
@@ -9508,6 +9512,8 @@ export default function App() {
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
               />
             </div>
+            {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA */}
+            <TopThreeShowcase onProfile={(id) => setHomeProfileId(id)} />
             <AdStrip slot="middle" />
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
