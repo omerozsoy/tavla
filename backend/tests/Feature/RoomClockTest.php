@@ -245,6 +245,32 @@ class RoomClockTest extends TestCase
         $this->assertSame('black', $room->state['gameEnd']['winner']);
     }
 
+    // ---- GHOST-WIN KALKANI: hiç oynamayan (çekmeyen) oyuncu, rakip terk edince KAZANMAZ (no-contest) ----
+    // Vaka: Omer tahtaya girip oynadı (match_moves'ta white hamlesi), Caner tahtayı HİÇ yükleyemedi
+    // (match_moves'ta black satırı YOK). Omer bekleyip terk etti -> eskiden Caner haksız 3-0 (PR 0.00)
+    // kazanıyordu. Artık: kazanacak taraf hiç oynamadıysa no-contest (kimse kazanmaz/kaybetmez).
+    public function test_leave_does_not_award_win_to_player_who_never_played(): void
+    {
+        $room = $this->playingRoom('GHST', 'normal', 3);
+        $this->putJson('/api/rooms/GHST', ['token' => 't1', 'state' => $this->state(3)])->assertOk();
+        // SUNUCU-OTORİTER hamle kaydı: yalnız white (p1 = terk edecek olan) oynadı; black (p2) HİÇ.
+        \App\Models\MatchMove::create([
+            'room_id' => $room->id, 'room_code' => 'GHST', 'game_no' => 1, 'seq' => 0, 'ord' => 0,
+            'player' => 'white', 'kind' => 'move', 'dice' => [3, 1], 'notation' => '8/5 6/5',
+        ]);
+
+        Sanctum::actingAs($this->p1);
+        $this->postJson('/api/rooms/GHST/leave', ['token' => 't1'])->assertOk(); // oynayan p1 terk eder
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        // NO-CONTEST: hiç oynamayan p2 (black) GHOST kazanç ALMAZ; oynayan p1 de haksız kayıp YEMEZ.
+        $this->assertNull($room->p1_result);
+        $this->assertNull($room->p2_result);
+        $this->assertDatabaseMissing('match_results', ['user_id' => $this->p1->id, 'room_code' => 'GHST']);
+        $this->assertDatabaseMissing('match_results', ['user_id' => $this->p2->id, 'room_code' => 'GHST']);
+    }
+
     // ---- KORUMA: maç ZATEN sonuçlandıysa geç terk KAZANANI ters çevirmesin (DrBakır bug'ı) ----
     public function test_leave_does_not_overturn_decided_match(): void
     {
