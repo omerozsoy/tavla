@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\NicknameFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -24,7 +25,8 @@ class AuthController extends Controller
             'province'   => ['nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
-            'nickname'   => ['required', 'string', 'max:15', 'unique:users,nickname'],
+            // Kufur/uygunsuz takma ad engeli (panelden yonetilir). Bkz NicknameFilter.
+            'nickname'   => self::nicknameRules(),
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
             // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). Zorunluluk frontend'de; API'de format + nullable.
             'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
@@ -235,7 +237,7 @@ class AuthController extends Controller
             'province'   => ['nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
-            'nickname'   => ['required', 'string', 'max:15', Rule::unique('users', 'nickname')->ignore($user->id)],
+            'nickname'   => self::nicknameRules($user->id),
             'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
             'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
         ]);
@@ -1870,6 +1872,21 @@ class AuthController extends Controller
         return ['password.min' => $msg, 'password.regex' => $msg];
     }
 
+    /**
+     * Kayit + profil guncelleme ortak takma ad kurallari: zorunlu, max 15, benzersiz +
+     * kufur/uygunsuz icerik suzgeci (panelden yonetilir, bkz NicknameFilter).
+     */
+    private static function nicknameRules($ignoreId = null): array
+    {
+        $unique = $ignoreId ? Rule::unique('users', 'nickname')->ignore($ignoreId) : 'unique:users,nickname';
+
+        return ['required', 'string', 'max:15', $unique, function (string $attr, mixed $value, \Closure $fail): void {
+            if (! NicknameFilter::isAllowed((string) $value)) {
+                $fail('Bu takma ad uygun değil, lütfen başka bir ad seçin.');
+            }
+        }];
+    }
+
     public function resetPassword(Request $request)
     {
         $request->validate([
@@ -2060,7 +2077,14 @@ class AuthController extends Controller
     public function nicknameAvailable(Request $request)
     {
         $nickname = (string) $request->query('nickname', '');
-        $taken = User::where('nickname', $nickname)->exists();
-        return response()->json(['available' => $nickname !== '' && ! $taken]);
+        $taken = $nickname !== '' && User::where('nickname', $nickname)->exists();
+        $blocked = $nickname !== '' && ! NicknameFilter::isAllowed($nickname);
+        // reason: istemci canli durumda "alinmis" vs "uygun degil" ayrimini gostersin.
+        $reason = $blocked ? 'blocked' : ($taken ? 'taken' : null);
+
+        return response()->json([
+            'available' => $nickname !== '' && ! $taken && ! $blocked,
+            'reason'    => $reason,
+        ]);
     }
 }
