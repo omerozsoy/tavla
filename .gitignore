@@ -100,3 +100,4 @@ graphify-out/
 *.zip
 chatgpt-standart-board/
 tourn-card-preview.html
+e2e/__out__/
