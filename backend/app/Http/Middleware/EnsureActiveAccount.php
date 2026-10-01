@@ -23,12 +23,13 @@ class EnsureActiveAccount
         // oyuncu (hele turnuvada) ASLA maç ortasında düşmez; yalnız idle_days gün hiç kullanılmayan
         // token Sanctum tarafından geçersiz sayılır. Her istekte DB yazmamak için: kalan ömür
         // (idle-1) günün altına düşünce tazele -> yaklaşık günde 1 yazım (oda poll'u boğmaz).
-        $idle = (int) config('sanctum.idle_days', 30);
+        // Yalnız GERÇEK, veritabanında var olan token'da çalış (TransientToken / test actingAs ve
+        // container'sız unit testler hariç -> config() yalnız bu daldan sonra çağrılır).
         $token = $user?->currentAccessToken();
-        // Yalnız GERÇEK, veritabanında var olan token'da (TransientToken / test actingAs hariç).
-        if ($idle > 0 && $token instanceof \Laravel\Sanctum\PersonalAccessToken && $token->exists) {
+        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken && $token->exists) {
+            $idle = (int) config('sanctum.idle_days', 30);
             $refreshBelow = now()->addDays(max(1, $idle - 1));
-            if (! $token->expires_at || $token->expires_at->lt($refreshBelow)) {
+            if ($idle > 0 && (! $token->expires_at || $token->expires_at->lt($refreshBelow))) {
                 $token->expires_at = now()->addDays($idle);
                 $token->save();
             }
