@@ -1593,6 +1593,8 @@ export default function App() {
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
   const seenNotifRef = useRef<Set<number>>(new Set()) // toast'landi mi (yeni bildirim tespiti)
   const notifPrimedRef = useRef(false) // ilk ping'te eski bildirimleri toast'lama
+  const seenInviteIdsRef = useRef<Set<number>>(new Set()) // yeni oyun daveti tespiti (ses uyarisi)
+  const invitePrimedRef = useRef(false) // ilk ping'te mevcut davetleri ses ile uyarma
   const luckyWheelOpenRef = useRef(false) // cark modali acikken bildirim toast'unu bastir (erken gelmesin)
   useEffect(() => {
     luckyWheelOpenRef.current = luckyWheelOpen
@@ -3237,7 +3239,13 @@ export default function App() {
       // çek + uygula. Maç bittiyse gameEnd kurulur -> matchOver -> auto-roll KALICI durur (döngü
       // biter). move tarafındaki 409 resync ile aynı güvenli yol.
       if (err?.status === 409 && code) {
-        rollConflictRef.current = true
+        // Açılış yarışında NON-STARTER'ın 409'u BEKLENEN/iyi huyludur (starter açılışı tetikledi,
+        // poll server_state'i getirir). rollConflictRef'i burada LATCH ETMEK, açılış sonrası sıra
+        // bu oyuncuya geçince İLK gerçek zarı 3129'da KALICI bloklar; 1 puanlık maçta manuel buton
+        // olmadığı için oyuncu AFK'ye düşer (canlı vaka #XR37P). Mandalı yalnız OYUN-İÇİ 409'da kur;
+        // açılışta sadece resync yap (appliedServerVersionRef=-1 + showRoom). Açılış effect'i 2.5sn
+        // aralıkla zaten yeniden dener -> mandal olmadan spam riski yok.
+        if (openingRef.current !== 'roll') rollConflictRef.current = true
         appliedServerVersionRef.current = -1
         void showRoom(code)
           .then((rv) => {
@@ -5375,6 +5383,8 @@ export default function App() {
       setDmUnread(0)
       seenNotifRef.current.clear()
       notifPrimedRef.current = false
+      seenInviteIdsRef.current.clear()
+      invitePrimedRef.current = false
       return
     }
     let cancelled = false
@@ -5382,7 +5392,14 @@ export default function App() {
       ping()
         .then((r) => {
           if (!cancelled) {
-            setInvites(r.invites ?? [])
+            const inv = r.invites ?? []
+            // Yeni (daha once gorulmemis) oyun daveti -> SES ile uyar. Ilk ping'te (primed=false)
+            // mevcut davetleri calma (sayfa yenileme/girişte eski davet ses cikarmasin).
+            const freshInvite = inv.some((i) => !seenInviteIdsRef.current.has(i.id))
+            inv.forEach((i) => seenInviteIdsRef.current.add(i.id))
+            if (invitePrimedRef.current && freshInvite) Sound.invite()
+            invitePrimedRef.current = true
+            setInvites(inv)
             setTournNotices(r.tournament_matches ?? [])
             setRewardReady(!!r.reward_ready)
             setRewardSecs(r.reward_seconds ?? 0)
