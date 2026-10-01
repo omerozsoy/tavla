@@ -505,17 +505,20 @@ export function OnlinePlayersPanel({
   )
 }
 
-// ---- Oyun Arayanlar (hizli eslesme havuzunda bekleyenler) ----
-// Cevrimici Oyuncular paneliyle AYNI etkilesim: satir -> profil, (giris yapmissa) "Oyna" davet.
-// Fark: veri kaynagi mm_waiting havuzu + her satir aranan mac uzunlugunu/bahsini gosterir.
+// ---- Oyun Arayanlar / Oynamaya Müsait ----
+// İki tür satır: kind='seeking' (mm_waiting havuzunda aktif arayan — kriteriyle "eşleş") ve
+// kind='available' (çevrimiçi + müsait — "davet et"). Satır -> profil. BOŞKEN DE gösterilir
+// (ufak "kimse yok" notu); site genişliğinde (.seek-panel). Çevrimiçi Oyuncular ile aynı dil.
 export function SeekersPanel({
   currentId,
   onProfile,
   onJoin,
+  onInvite,
 }: {
   currentId?: number
   onProfile: (id: number) => void
-  onJoin?: (s: Seeker) => void // eslesme havuzuna AYNI kriterle gir -> backend aninda eslestirir
+  onJoin?: (s: Seeker) => void // seeking: eslesme havuzuna AYNI kriterle gir -> backend aninda eslestirir
+  onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void // available: davet et
 }) {
   const { t } = useT()
   const [rows, setRows] = useState<Seeker[] | null>(null)
@@ -540,9 +543,6 @@ export function SeekersPanel({
   const pageCount = rows ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(rows.length / PAGE_SIZE))) : 1
   const curPage = Math.min(page, pageCount - 1)
 
-  // Bu panel BOSKEN hic render edilmez (ana sayfayi kirletmesin) — yuklenirken de sessiz.
-  if (rows !== null && rows.length === 0) return null
-
   return (
     <div className="home-panel seek-panel">
       <div className="home-panel-head">
@@ -552,6 +552,8 @@ export function SeekersPanel({
       </div>
       {rows === null ? (
         <Loading />
+      ) : rows.length === 0 ? (
+        <div className="seek-empty">{t('seekers.empty')}</div>
       ) : (
         <>
           <div className="rank-list">
@@ -562,7 +564,7 @@ export function SeekersPanel({
               const lengths = (s.targets && s.targets.length > 0 ? s.targets : [1]).join('·')
               return (
                 <div
-                  key={s.id}
+                  key={`${s.kind}-${s.id}`}
                   className={`rank-row online-row ${self ? 'mine' : ''}`}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('.online-actions')) return
@@ -575,25 +577,31 @@ export function SeekersPanel({
                   <span className="rank-flag">
                     <CountryFlag code={s.country} size={26} />
                   </span>
-                  {/* Ne ariyor: mac uzunlugu + varsa bahis (yuzde VEYA coin) */}
+                  {/* seeking: ne arıyor (uzunluk + bahis). available: "Müsait" rozeti. */}
                   <span className="seek-meta">
-                    <span className="seek-len">{lengths} {t('seekers.pt')}</span>
-                    {s.bet_pct > 0 ? (
-                      <span className="seek-bet">%{s.bet_pct}</span>
-                    ) : maxStake > 0 ? (
-                      <Coins amount={maxStake} size={12} />
-                    ) : null}
+                    {s.kind === 'seeking' ? (
+                      <>
+                        <span className="seek-len">{lengths} {t('seekers.pt')}</span>
+                        {s.bet_pct > 0 ? (
+                          <span className="seek-bet">%{s.bet_pct}</span>
+                        ) : maxStake > 0 ? (
+                          <Coins amount={maxStake} size={12} />
+                        ) : null}
+                      </>
+                    ) : (
+                      <span className="seek-avail">{t('seekers.available')}</span>
+                    )}
                   </span>
-                  {!self && onJoin ? (
+                  {/* seeking -> kuyruğa katıl (eşleş); available -> davet et. */}
+                  {!self && s.kind === 'seeking' && onJoin ? (
                     <span className="online-actions">
-                      <Button
-                        variant="default"
-                        size="icon"
-                        className="online-act"
-                        title={t('seekers.join')}
-                        aria-label={t('seekers.join')}
-                        onClick={() => onJoin(s)}
-                      >
+                      <Button variant="default" size="icon" className="online-act" title={t('seekers.join')} aria-label={t('seekers.join')} onClick={() => onJoin(s)}>
+                        <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
+                      </Button>
+                    </span>
+                  ) : !self && s.kind === 'available' && onInvite ? (
+                    <span className="online-actions">
+                      <Button variant="default" size="icon" className="online-act" title={t('online.invite')} aria-label={t('online.invite')} onClick={() => onInvite({ id: s.id, name: s.name, avatar: s.avatar, rating: s.rating })}>
                         <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
                       </Button>
                     </span>

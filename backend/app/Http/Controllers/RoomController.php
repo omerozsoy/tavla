@@ -817,8 +817,9 @@ class RoomController extends Controller
         return response()->json(['players' => $list, 'count' => $list->count()]);
     }
 
-    // Oyun Arayanlar: hizli eslesme havuzunda (mm_waiting) bekleyen oyuncular -> ana sayfa
-    // "Oyun Arayanlar" paneli. Herkese acik (Canli Maclar / Cevrimici gibi). Kendini gorme.
+    // Oyun Arayanlar: (1) hizli eslesme havuzunda (mm_waiting) AKTIF arayanlar + (2) oynamaya
+    // MUSAIT cevrimici oyuncular (durum Musait/Hazir, oyunda degil). Ana sayfa paneli; herkese
+    // acik (Canli Maclar / Cevrimici gibi). Kendini gorme. Her satir 'kind' ile ayrilir.
     public function seekers(Request $request)
     {
         $me = $request->user('sanctum');
@@ -844,12 +845,13 @@ class RoomController extends Controller
             ? collect()
             : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until'])->keyBy('id');
 
-        $list = $rooms->map(function ($r) use ($userMap) {
+        $seeking = $rooms->map(function ($r) use ($userMap) {
             $u = $userMap->get($r->p1_user_id);
             $targets = is_array($r->targets) ? array_values(array_map('intval', $r->targets)) : [(int) ($r->target ?? 1)];
             $stakes = is_array($r->stakes) ? array_values(array_map('intval', $r->stakes)) : [(int) $r->stake];
 
             return [
+                'kind'    => 'seeking', // havuzda aktif arayan -> "eslesme"ye tiklanabilir
                 'id'      => (int) $r->p1_user_id,
                 'name'    => $r->p1_name,
                 'rating'  => $r->p1_rating,
@@ -866,7 +868,66 @@ class RoomController extends Controller
             ];
         });
 
-        return response()->json(['seekers' => $list, 'count' => $list->count()]);
+        // Oynamaya musait: cevrimici (last_seen<70sn) + durum Musait/Hazir (veya secmemis) +
+        // oyunda DEGIL + arayan listesinde DEGIL + sistem/kendisi DEGIL. Bunlar kuyrukta degil
+        // -> "davet" (onInvite) ile oynanir; seeking gibi "eslesme" yapilmaz.
+        $seekingIds = $rooms->pluck('p1_user_id')->filter()->map(fn ($i) => (int) $i)->all();
+        $hasStatus = Schema::hasColumn('users', 'presence_status');
+        $ucols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until'];
+        if ($hasStatus) {
+            $ucols[] = 'presence_status';
+        }
+        $avQuery = User::whereNotNull('last_seen')
+            ->where('is_system', false)
+            ->where('last_seen', '>', now()->subSeconds(70))
+            ->when($me, fn ($q) => $q->where('id', '!=', $me->id))
+            ->when(! empty($seekingIds), fn ($q) => $q->whereNotIn('id', $seekingIds));
+        if ($hasStatus) {
+            $avQuery->where(function ($q) {
+                $q->whereNull('presence_status')->orWhereIn('presence_status', ['available', 'ready']);
+            });
+        }
+        $avUsers = $avQuery->orderByDesc('rating')->limit(100)->get($ucols);
+
+        // Aktif macta olanlar musait sayilmaz (onlinePlayers deseni, tek sorgu).
+        $avIds = $avUsers->pluck('id');
+        $inGame = [];
+        if ($avIds->isNotEmpty()) {
+            Room::where('status', 'playing')
+                ->where('updated_at', '>', now()->subMinutes(5))
+                ->where(fn ($q) => $q->whereIn('p1_user_id', $avIds)->orWhereIn('p2_user_id', $avIds))
+                ->get(['p1_user_id', 'p2_user_id'])
+                ->each(function ($r) use (&$inGame) {
+                    if ($r->p1_user_id) {
+                        $inGame[(int) $r->p1_user_id] = true;
+                    }
+                    if ($r->p2_user_id) {
+                        $inGame[(int) $r->p2_user_id] = true;
+                    }
+                });
+        }
+
+        $available = $avUsers->reject(fn ($u) => isset($inGame[(int) $u->id]))->map(fn ($u) => [
+            'kind'    => 'available',
+            'id'      => (int) $u->id,
+            'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+            'rating'  => $u->rating ?? 1500,
+            'avatar'  => $u->avatar,
+            'frame'   => $u->avatar_frame,
+            'country' => $u->country,
+            'premium' => $u->plan_active !== 'free',
+            'targets' => [],
+            'stake'   => 0,
+            'stakes'  => [],
+            'bet_pct' => 0,
+            'time_control' => 'normal',
+            'since'   => null,
+        ])->values();
+
+        // Arayanlar ONCE (aktif), sonra musaitler. Panel 10'ar sayfalar.
+        $all = $seeking->values()->concat($available);
+
+        return response()->json(['seekers' => $all->values(), 'count' => $all->count()]);
     }
 
     // Site geneli ONLINE DURUM NOKTASI icin: cevrimici (last_seen < 70sn + 'offline' DEGIL,
