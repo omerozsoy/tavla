@@ -8519,21 +8519,23 @@ button.move-row:focus-visible {
   .rotate-tip {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 54px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 60;
-    max-width: min(92vw, 420px);
-    padding: 7px 8px 7px 12px;
+    max-width: min(88vw, 360px);
+    /* DAHA YUKARDA: eskiden +54px ile oyuncu avatar/isimlerinin ustune biniyordu -> en tepeye al. */
+    top: calc(env(safe-area-inset-top, 0px) + 6px);
+    /* DAHA KUCUK: kompakt pill, oyunu az kapasin. */
+    padding: 4px 6px 4px 10px;
     border-radius: var(--radius-pill, 999px);
     background: var(--card-bg);
     border: 1px solid var(--border);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
     color: var(--text);
-    font-size: 0.82rem;
-    line-height: 1.25;
+    font-size: 0.68rem;
+    line-height: 1.2;
     animation: rotate-tip-in 0.3s ease both;
   }
   .rotate-tip-icon {
@@ -13193,6 +13195,21 @@ button.acct-row-logout:hover:not(:disabled) {
   }
   .sp-chat-list {
     max-height: 96px;
+  }
+  /* OYUN EKRANI izleyici rozeti (viewers-float): mobilde YALNIZ SAYI + kucuk, board'u kapamasin.
+     İzleyici listesini (avatar/isim) gizle; kompakt kuecuk pill olarak icerige daralt. */
+  .viewers-float {
+    width: auto;
+    max-width: 44vw;
+  }
+  .viewers-float .sp-viewers-list {
+    display: none;
+  }
+  .viewers-float .sp-viewers {
+    padding: 2px 8px;
+  }
+  .viewers-float .sp-viewers-head {
+    font-size: 0.66rem;
   }
 }
 .lobby-title {
