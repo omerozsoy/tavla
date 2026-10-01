@@ -22707,6 +22707,16 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-prow > :first-child {
   min-width: 0; /* PlayerIdentity buzulebilsin -> uzun ad ellipsize, tasma yok */
 }
+/* Katilimci listesi isimleri bir ton kucuk (yalniz turnuva detay satiri; PlayerIdentity
+   site geneli paylasimli -> global degistirme). */
+.tourn-card .tourn-prow .player-id-name {
+  font-size: 0.85rem;
+}
+/* Katilimci satirinda HICBIR sey bold olmasin (rating <b>, rozetler vb. dahil). */
+.tourn-card .tourn-prow,
+.tourn-card .tourn-prow * {
+  font-weight: 400;
+}
 .tourn-prow b {
   flex: none;
   color: var(--success-fg);
