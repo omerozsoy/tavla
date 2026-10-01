@@ -22749,7 +22749,7 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: stretch;
 }
 .tourn-round {
-  min-width: 172px;
+  min-width: 212px;
   display: flex;
   flex-direction: column;
   /* Her turun kendi ALANI; alanlar BITISIK dursun (gap:0) -> her sinirda sol/sag renk ayrimi net.
@@ -22815,9 +22815,9 @@ button.acct-row-logout:hover:not(:disabled) {
   right: 0;
   top: 50%;
   bottom: auto;
-  /* Final kutusu H/2'de ortali; ucunculuk macini onun HEMEN ALTINA koy (final yari-kutu + bosluk).
-     ponytail: 30px ~ final kutu yariyuksekligi+bosluk; kutu boyu degisirse ufak elle ayar. */
-  margin-top: 30px;
+  /* Final kutusu H/2'de ortali; ucunculuk macini onun ALTINA, ARALIKLI koy (kullanici
+     "asagi cek" istegi). ponytail: 96px ~ final kutu + rahat bosluk; kutu boyu degisirse elle ayar. */
+  margin-top: 96px;
   justify-content: flex-start;
 }
 .tb-out,
@@ -23206,8 +23206,10 @@ button.acct-row-logout:hover:not(:disabled) {
   background: var(--muted, #9aa0a6);
   opacity: 0.55;
 }
-/* Onceki tur PR'i (ad yaninda, soluk kucuk). */
+/* Onceki tur PR'i (adin SAGINDA ayri kardes, soluk kucuk). flex:none -> uzun adda ad
+   ellipsize olur ama PR HER ZAMAN tam gorunur (eskiden ad ile birlikte kesiliyordu). */
 .tm-pr {
+  flex: none;
   color: var(--muted);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;

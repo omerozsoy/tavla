@@ -339,15 +339,24 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     const prFor = (room: string | null | undefined, uid: number | null | undefined) =>
       room && uid != null ? active.match_prs?.[room.toUpperCase()]?.[String(uid)] : undefined
     // Bracket oyuncu adi: online noktasi + ad + (varsa) onceki tur PR'i.
-    const tmName = (p: { id?: number; name?: string } | null | undefined, room?: string | null) => {
+    // hidePr: hukmen (walkover) maclarda PR yazilmaz -> isim tam gorunsun (kullanici istegi).
+    // PR'i tm-name DISINA ayri kardes olarak dondururuz (flex:none) -> uzun adda tm-name
+    // ellipsize olur ama "· Pr: X.XX" HER ZAMAN gorunur (eskiden PR de ad ile birlikte kesiliyordu).
+    const tmName = (
+      p: { id?: number; name?: string } | null | undefined,
+      room?: string | null,
+      hidePr = false,
+    ) => {
       const online = p?.id != null && onlineSet.has(p.id)
-      const pr = prFor(room, p?.id)
+      const pr = hidePr ? null : prFor(room, p?.id)
       return (
-        <span className="tm-name">
-          <span className={`tm-dot ${online ? 'on' : 'off'}`} aria-hidden="true" />
-          {p?.name ?? '—'}
-          {pr != null && <span className="tm-pr"> · Pr: {pr.toFixed(2)}</span>}
-        </span>
+        <>
+          <span className="tm-name">
+            <span className={`tm-dot ${online ? 'on' : 'off'}`} aria-hidden="true" />
+            {p?.name ?? '—'}
+          </span>
+          {pr != null && <span className="tm-pr">· Pr: {pr.toFixed(2)}</span>}
+        </>
       )
     }
     return (
@@ -715,8 +724,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                             <div className="tm-p win">{tmName(m.p1, m.room)}<span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
                           ) : (
                             <>
-                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p1?.id) || isDoubleLoss ? 'lose' : ''}`}>{tmName(m.p1, m.room)}{scoreOf('p1')}</div>
-                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p2?.id) || isDoubleLoss ? 'lose' : ''}`}>{tmName(m.p2, m.room)}{scoreOf('p2')}</div>
+                              <div className={`tm-p ${m.winner === m.p1?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p1?.id) || isDoubleLoss ? 'lose' : ''}`}>{tmName(m.p1, m.room, !!sc?.walkover || isDoubleLoss)}{scoreOf('p1')}</div>
+                              <div className={`tm-p ${m.winner === m.p2?.id ? 'win' : ''} ${(m.winner && m.winner !== m.p2?.id) || isDoubleLoss ? 'lose' : ''}`}>{tmName(m.p2, m.room, !!sc?.walkover || isDoubleLoss)}{scoreOf('p2')}</div>
                               {watchable && (
                                 <button type="button" className="tm-watch" onClick={() => onSpectate!(m.room!, m.p1!.name, m.p2!.name)} aria-label={t('tourn.watch')}>
                                   <Icon name="eye" size={18} />{viewers > 0 && <span className="tm-watch-n">{viewers}</span>}
@@ -810,6 +819,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                         // Skor / hukmen: biten macta nihai skor; SUREN macta (oda acik, kazanan yok)
                         // CANLI skor (oda icine girmeden). liveScores userId ile anahtarli.
                         const sc = m.winner && m.p1 && m.p2 ? m.score : null
+                        const isWalkover = !!sc?.walkover // hukmen: PR yazma, isim tam gorunsun
                         const liveSc = !m.winner && m.room ? liveScores[m.room.toUpperCase()] : undefined
                         const scoreOf = (side: 'p1' | 'p2') => {
                           if (sc) {
@@ -855,7 +865,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                 {m.p2 && !m.p1 && (ri === 0 || !!m.winner) ? (
                                   <span className="tm-name tm-bye">{t('tourn.bye')}</span>
                                 ) : (
-                                  tmName(m.p1, m.room)
+                                  tmName(m.p1, m.room, isWalkover)
                                 )}
                                 {scoreOf('p1')}
                               </div>
@@ -864,7 +874,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                 {m.p1 && !m.p2 && (ri === 0 || !!m.winner) ? (
                                   <span className="tm-name tm-bye">{t('tourn.bye')}</span>
                                 ) : (
-                                  tmName(m.p2, m.room)
+                                  tmName(m.p2, m.room, isWalkover)
                                 )}
                                 {scoreOf('p2')}
                               </div>
