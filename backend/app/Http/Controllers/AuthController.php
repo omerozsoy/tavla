@@ -1531,7 +1531,13 @@ class AuthController extends Controller
             // ({"hc":"white","log":[]} ~24 karakter; online/PvP mac) yanlis pozitif vermesin.
             // LENGTH: hem MySQL hem SQLite'ta var (CHAR_LENGTH sqlite'ta YOK -> local dev 500).
             // Esik 40; bos sarmalayici (~24) ile gercek log ayrimi icin bayt/karakter farki onemsiz.
-            $query->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND LENGTH(log) > 40) as has_log'));
+            $expr = '(log IS NOT NULL AND LENGTH(log) > 40)';
+            // SUNUCU-OTORİTER: client log bos olsa bile match_moves varsa .mat/analiz ORADAN kurulur
+            // (bkz. MatchResult::matText) -> buton gorunsun. Korelasyonlu EXISTS, sayfa basi az satir.
+            if ($hasRoom && \Illuminate\Support\Facades\Schema::hasTable('match_moves')) {
+                $expr .= ' OR (room_code IS NOT NULL AND EXISTS (SELECT 1 FROM match_moves mm WHERE mm.room_code = match_results.room_code))';
+            }
+            $query->addSelect(\Illuminate\Support\Facades\DB::raw("($expr) as has_log"));
         }
         $rows = $query->get();
 
@@ -1672,9 +1678,8 @@ class AuthController extends Controller
         if ($match->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Yetkisiz.'], 403);
         }
-        if (empty($match->log)) {
-            return response()->json(['message' => 'Kayıt bulunamadı'], 404);
-        }
+        // 'empty(log)' erken-reddi KALDIRILDI: match_moves'lu (sunucu-otoriter) maçlar client
+        // log'suz da .mat verir. Gerçek kaynak yoksa matText() boş döner -> aşağıda 404.
         try {
             $mat = $match->matText();
         } catch (\RuntimeException $e) {
@@ -1703,9 +1708,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Yetkisiz.'], 403);
         }
         $plies = max(0, min(3, (int) $request->query('plies', 2)));
-        if (empty($match->log)) {
-            return response()->json(['ok' => false, 'error' => 'no-log'], 404);
-        }
+        // NOT: 'empty(log)' erken-reddi KALDIRILDI — client log'suz ama match_moves'lu (sunucu-
+        // otoriter) maçlarda .mat ORADAN kurulur. Gerçekten hiç kaynak yoksa aşağıda empty-mat 404.
+        // hc: self/opp hizalaması için (client log'suz satırda rakipten türetilir); yanıta eklenir.
+        $hc = $match->analysisHc();
         // ÖNBELLEK: hamle-hamle review ağırdır (~saniyeler); .mat maç bittikten sonra değişmez.
         // Varsayılan plies(2) sonucunu satırda sakla -> İLK açılış hesaplar, sonrakiler anında döner.
         // (deploy/cache flush'tan etkilenmesin diye Laravel cache değil DB kolonu.)
@@ -1713,11 +1719,11 @@ class AuthController extends Controller
         if ($useCache && ! empty($match->gnubg_review)) {
             $cached = json_decode((string) $match->gnubg_review, true);
             if (is_array($cached) && ! empty($cached['ok'])) {
-                return response()->json($cached);
+                return response()->json(array_merge($cached, ['hc' => $hc]));
             }
         }
         try {
-            $mat = $match->matText(); // match_results.log -> kanonik .mat
+            $mat = $match->matText(); // match_moves (varsa) VEYA client log -> kanonik .mat
         } catch (\Throwable $e) {
             return response()->json(['ok' => false, 'error' => 'mat-build', 'message' => $e->getMessage()], 422);
         }
@@ -1739,7 +1745,7 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json($res); // {ok, matchLength, names, decisions, log: LogEntry[]}
+        return response()->json(array_merge($res, ['hc' => $hc])); // {ok, matchLength, names, decisions, log, hc}
     }
 
     // Profil analizi: rating/coin gecmisi + mac-uzunluguna gore kazanma%/PR + WXP

@@ -117,17 +117,25 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     setView(v)
     setReportBusy(true)
     try {
-      const raw = await matchLogById(m.id)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as { hc?: Player; log?: MoveLogEntry[] }
+      // Client log olabilir (eski/pvb maçlar) VEYA boş olabilir (sunucu-otoriter online maç:
+      // reload/disconnect'te istemci logu kaydedilmez). İkinci durumda analiz match_moves'tan
+      // gnubg review ile gelir -> clientLog boş diye ERKEN ÇIKMA.
+      const raw = await matchLogById(m.id).catch(() => null)
+      let parsed: { hc?: Player; log?: MoveLogEntry[] } = {}
+      try {
+        if (raw) parsed = JSON.parse(raw)
+      } catch {
+        /* bozuk/boş log -> gnubg review'e güven */
+      }
       const clientLog = (parsed.log ?? []) as unknown as LogEntry[]
-      // Bos log (online/PvP mac -> hamle analizi tutulmaz): rapor acma, karar yok
-      if (clientLog.length === 0) return
-      const hc: Player = parsed.hc ?? 'white'
       // HAKEM=gnubg: hamle-hamle analizi GNUBG'den (per-karar loss/best/equity). Ağır (~saniyeler);
       // reportBusy loader gösterir. Servis yok/başarısızsa YEREL log'a düş (analiz yine açılır).
       const gr = await matchGnubgReview(m.id).catch(() => null)
       const log: LogEntry[] = gr?.ok && gr.log && gr.log.length > 0 ? gr.log : clientLog
+      // Ne sunucu (gnubg) ne de client log var -> gerçekten analiz edilecek hamle yok.
+      if (log.length === 0) return
+      // Renk (self/opp hizası): client log'dan; yoksa sunucu review'in hc'si; o da yoksa white.
+      const hc: Player = parsed.hc ?? (gr?.hc as Player | undefined) ?? 'white'
       // .mat basligi/oyuncu satiri icin GERCEK mac uzunlugu + isimler (varsayilan 1'e/White'a DUSME).
       // matchLength: kayitli maç uzunlugu (yoksa buildMatXg log'daki mctx.matchLen'den turetir).
       const matchLength = m.match_length ?? undefined

@@ -107,11 +107,14 @@ class MatchResult extends Model
     public function matText(): string
     {
         $mine = json_decode((string) $this->log, true);
-        if (! is_array($mine)) {
-            return '';
+        // Renk (hc): client log'dan al; YOKSA (client log'suz sunucu-otoriter satır — reload/
+        // disconnect) rakip satırdan türet. Eskiden burada `return ''` ile çıkılıyor, match_moves
+        // dolu olsa bile .mat ÜRETİLMİYORDU -> "analiz yok". Artık log'suz satır da match_moves'tan kurulur.
+        $myHc = is_array($mine) ? ($mine['hc'] ?? null) : null;
+        if (! in_array($myHc, ['white', 'black'], true)) {
+            $myHc = $this->analysisHc();
         }
-        $myHc = $mine['hc'] ?? null;
-        $myLog = is_array($mine['log'] ?? null) ? $mine['log'] : [];
+        $myLog = is_array($mine) && is_array($mine['log'] ?? null) ? $mine['log'] : [];
         $matchLen = max(1, (int) ($this->match_length ?? 1));
 
         $selfName = $this->user?->nickname ?: 'Oyuncu';
