@@ -71,6 +71,42 @@ class PhoneOtpTest extends TestCase
         $this->assertNull($u->fresh()->phone_verified_at);
     }
 
+    public function test_changing_phone_resets_verification(): void
+    {
+        $u = User::factory()->create([
+            'nickname' => 'oyuncu1', 'email' => 'op1@e.com',
+            'first_name' => 'Op', 'last_name' => 'Bir',
+            'phone' => '05321112233', 'phone_verified_at' => now(),
+        ]);
+        Sanctum::actingAs($u);
+
+        $this->putJson('/api/profile', [
+            'first_name' => 'Op', 'last_name' => 'Bir',
+            'nickname' => 'oyuncu1', 'email' => 'op1@e.com',
+            'phone' => '05329998877', // numara DEGISTI
+        ])->assertOk();
+
+        $this->assertNull($u->fresh()->phone_verified_at, 'telefon degisince dogrulama sifirlanmali');
+    }
+
+    public function test_same_phone_keeps_verification(): void
+    {
+        $u = User::factory()->create([
+            'nickname' => 'oyuncu2', 'email' => 'op2@e.com',
+            'first_name' => 'Op', 'last_name' => 'Iki',
+            'phone' => '05321112233', 'phone_verified_at' => now(),
+        ]);
+        Sanctum::actingAs($u);
+
+        $this->putJson('/api/profile', [
+            'first_name' => 'Opp', 'last_name' => 'Iki', // baska alan degisti
+            'nickname' => 'oyuncu2', 'email' => 'op2@e.com',
+            'phone' => '05321112233', // AYNI numara
+        ])->assertOk();
+
+        $this->assertNotNull($u->fresh()->phone_verified_at, 'telefon ayni kalinca dogrulama korunmali');
+    }
+
     public function test_no_phone_cannot_send(): void
     {
         $u = $this->user(['phone' => null]);
