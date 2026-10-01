@@ -8935,11 +8935,15 @@ html.fs-active .account-bar {
   position: fixed;
   z-index: 110;
   /* Yatay: SOL kose (Boyner tarzi -> hamburger en solda, sagina logo). Dikey ORTALAMA:
-     buton yuksekligi = bant yuksekligi (~56px) ve top:0 -> ikon flex ile bantta ortalanir. */
-  top: env(safe-area-inset-top);
+     buton yuksekligi = guvenli alan + bant (~56px). top:0 -> zemin centik seridini de doldurur
+     (account-bar ile ayni), padding-top:inset -> ikon centigin ALTINDAKI bantta ortalanir (logo
+     satiriyla hizali). ONCE top=inset VE height=56+inset idi -> inset CIFT sayiliyordu: standalone'da
+     (inset~59px) buton 56+59px olup 48px bar'in ~63px ALTINA tasiyordu (PWA'da bozuk gorunum). */
+  top: 0;
   left: env(safe-area-inset-left);
   width: 52px;
   height: calc(56px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   align-items: center;
   justify-content: center;
   /* Zemin: ust bar ile ayni yuzey (--card-bg -> acik temada BEYAZ) ki altindan kayan
