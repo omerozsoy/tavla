@@ -73,7 +73,7 @@ class AccountClosureTest extends TestCase
 
         $token = Password::broker()->createToken($u);
         $this->postJson('/api/reset-password', [
-            'token' => $token, 'email' => 'deniz@e.com', 'password' => 'Yenisifre1',
+            'token' => $token, 'email' => 'deniz@e.com', 'password' => 'Yenisifre1234',
         ]);
 
         $this->assertTrue($u->fresh()->isBanned(), 'reset ban kaldırmamalı');

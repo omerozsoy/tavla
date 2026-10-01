@@ -3,7 +3,7 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     // Production'da wildcard yerine yalnızca izinli frontend origin'leri kullan.
     // Virgülle ayrılmış liste: CORS_ALLOWED_ORIGINS=https://www.tavlatv.com,http://localhost:5173

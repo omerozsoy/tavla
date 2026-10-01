@@ -17,7 +17,7 @@ class WelcomePremiumTest extends TestCase
     {
         $this->postJson('/api/register', [
             'first_name' => 'Yeni', 'last_name' => 'Uye',
-            'nickname' => $nick, 'email' => $email, 'password' => 'Secret123',
+            'nickname' => $nick, 'email' => $email, 'password' => 'Secret123456',
         ])->assertStatus(201);
 
         return User::where('email', $email)->first();
