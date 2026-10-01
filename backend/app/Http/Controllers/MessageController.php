@@ -272,7 +272,7 @@ class MessageController extends Controller
         }
         $warning = null;
         if ($body !== '') {
-            [$body, $hit] = \App\Support\ChatModeration::filter($body);
+            [$body, $hit] = \App\Support\ChatModeration::filter($body, $me);
             if ($hit) {
                 $warning = \App\Support\ChatModeration::penalize($me);
             }
