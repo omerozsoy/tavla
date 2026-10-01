@@ -67,6 +67,7 @@ import {
 import { liveMoveDelta } from './online/liveMoves'
 import { subscribeRoom, onRealtimeConn } from './online/realtime'
 import { botPersona } from './botPersonas'
+import { pickGuestBot } from './guestBots'
 import Board from './ui/Board'
 import Loading from './ui/Loading'
 import { useBoardDir } from './ui/boardDirection'
@@ -627,6 +628,10 @@ interface RoomState {
   // serverMove yanıtındaki bot[] turlarından gelir (yerel motor YOK). botLevel = HUD zorluk.
   bot?: boolean
   botLevel?: number | null
+  // GİZLİ BOT (misafir): bu oda bir bot maçı AMA kullanıcıya İNSAN gibi gösterilir (üye olmayan
+  // ziyaretçi Tek Oyun/Maç Oyunu arayınca). Bot motoru normal çalışır; yalnız UI'daki bot izleri
+  // (robot ikonu, "Seviye X" satırı, YZ persona, analiz) gizlenir + sahte insan ad/puan gösterilir.
+  botDisguise?: boolean
   // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar.
   live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
 }
@@ -9814,14 +9819,18 @@ export default function App() {
   return (
     <div className="app game-view">
       {accountBar}
-      <button
-        className="fs-toggle"
-        onClick={toggleFullscreen}
-        aria-label={isFullscreen ? t('menu.fsExit') : t('menu.fsEnter')}
-        title={isFullscreen ? t('menu.fsExit') : t('menu.fsEnter')}
-      >
-        <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
-      </button>
+      {/* Tam ekran butonu YALNIZ Fullscreen API destekleniyorsa (iOS Safari desteklemez -> ikon
+          calismiyordu, "o ikonu kaldir" istegi). Masaustu/Android'de calisir, orada kalir. */}
+      {typeof document !== 'undefined' && document.fullscreenEnabled && (
+        <button
+          className="fs-toggle"
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? t('menu.fsExit') : t('menu.fsEnter')}
+          title={isFullscreen ? t('menu.fsExit') : t('menu.fsEnter')}
+        >
+          <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
+        </button>
+      )}
       {/* İzleyenler (oynayan oyuncular da kimlerin izlediğini + sayıyı görsün) — yalnız online
           maçta izleyici varken; izleyicilerin gördüğü panelin aynısı (bkz Spectate). */}
       {online && viewerCount > 0 && (

@@ -55,14 +55,19 @@
   .player-card.pc-bottom {
     justify-content: flex-start;
   }
-  /* pc-top: DOM isim(1)->avatar(2)->rating(3); avatari one al -> pc-bottom ile ayni gorsel sira */
-  .player-card.pc-top .pc-avatar {
+  /* HER IKI KART AYNI dikey sira: avatar(1) -> isim(2) -> rating(3). Boylece iki rating de
+     ALTTA hizali durur (eskiden yalniz pc-top'a order verilip pc-bottom DOM'da rating-ustte
+     kaliyordu -> "biri altta biri ustte" uyumsuzlugu). Yalniz mobil (<=900px). */
+  .player-card.pc-top .pc-avatar,
+  .player-card.pc-bottom .pc-avatar {
     order: 1;
   }
-  .player-card.pc-top .player-name-wrap {
+  .player-card.pc-top .player-name-wrap,
+  .player-card.pc-bottom .player-name-wrap {
     order: 2;
   }
-  .player-card.pc-top .player-rating {
+  .player-card.pc-top .player-rating,
+  .player-card.pc-bottom .player-rating {
     order: 3;
   }
   /* Isim + alt satir (seviye / PR) iki tarafta da ortali -> karsilikli hizali */
