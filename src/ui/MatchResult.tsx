@@ -64,6 +64,12 @@ interface Props {
   // Maç saat/terk ile bittiyse sebep: 'TIMEOUT' | 'AFK_TIMEOUT' | 'ABANDON'. null -> normal bitiş
   // (pul bitirme / pes). Kaybeden "kimse çıkmadan kendi kendine bitti" sanmasın diye gösterilir.
   endReason?: string | null
+  // İZLEYİCİ/MİSAFİR modu: oyuncuya-özel aksiyonlar (rövanş/yeni maç/turnuva lobisi) gizlenir,
+  // yalnız Analiz/İstatistik + Kapat kalır. Rating değişimi yok -> iki tarafın GÜNCEL rating'i
+  // doğrudan gösterilir (winnerRating/loserRating). coin/rövanş prop'ları null geçilir.
+  spectator?: boolean
+  winnerRating?: number | null
+  loserRating?: number | null
 }
 
 function Avatar({ url, color }: { url?: string | null; color: Side }) {
@@ -118,6 +124,9 @@ export default function MatchResult({
   hasReport,
   matchCode,
   endReason,
+  spectator = false,
+  winnerRating,
+  loserRating,
 }: Props) {
   const { t } = useT()
   const [codeCopied, setCodeCopied] = useState(false)
@@ -286,9 +295,13 @@ export default function MatchResult({
             </div>
           )}
           <div className="mr-row">
-            <span className="mr-a">{ratingText(true)}</span>
+            <span className="mr-a">
+              {spectator ? (winnerRating != null ? String(Math.round(winnerRating)) : '—') : ratingText(true)}
+            </span>
             <span className="mr-label">{t('mr.rating')}</span>
-            <span className="mr-b">{ratingText(false)}</span>
+            <span className="mr-b">
+              {spectator ? (loserRating != null ? String(Math.round(loserRating)) : '—') : ratingText(false)}
+            </span>
           </div>
           {/* PUANSIZ MAÇ notu: kullanıcı kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu ->
               tam genişlik açıklayıcı satır. Puanlı maçta ratingReason null -> gösterilmez. */}
@@ -332,14 +345,21 @@ export default function MatchResult({
             </Button>
           </div>
         )}
-        {rmPhase === 'asked' && (
+        {!spectator && rmPhase === 'asked' && (
           <div className="mr-rematch-note">
             <Icon name="refresh" size={14} /> {t('mr.rematchAsk')}
           </div>
         )}
-        {rematchState?.theirs === 'no' && (
+        {!spectator && rematchState?.theirs === 'no' && (
           <div className="mr-rematch-note declined">{t('mr.rematchDeclined')}</div>
         )}
+        {spectator ? (
+          <div className="mr-actions">
+            <Button variant="default" onClick={onHome}>
+              <Icon name="x" /> {t('common.close')}
+            </Button>
+          </div>
+        ) : (
         <div className="mr-actions">
           {onTournamentLobby ? (
             <Button variant="default" onClick={onTournamentLobby}>
@@ -372,6 +392,7 @@ export default function MatchResult({
             <Icon name="home" /> {t('home.title')}
           </Button>
         </div>
+        )}
         {matchCode && (
           <button
             type="button"
