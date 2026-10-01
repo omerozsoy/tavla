@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
@@ -151,6 +151,8 @@ export default function MatchReport({
     .filter(({ e }) => !e.cube && inScope(e))
     .sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
   const rows = worstFirst ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss) : ordered
+  // Maç kaç oyun sürdü? (game index'leri) -> 1'den fazlaysa oyun ayracı/rozeti göster.
+  const gameCount = new Set(log.filter((e) => e.game != null).map((e) => e.game)).size
 
   // Kup tavsiyesi etiketi (take/drop veya double-* icin dogru anahtar)
   const recLabel = (rec: string) =>
@@ -422,23 +424,36 @@ export default function MatchReport({
                 <div className="analysis-rows">
                   {rows.map(({ e, i }, idx) => {
                     const b = band(e.loss)
+                    // Sıralı görünümde (worstFirst değil) oyun değişince "— OYUN N —" ayracı.
+                    const prevGame = idx > 0 ? rows[idx - 1].e.game : undefined
+                    const showSep = !worstFirst && gameCount > 1 && e.game != null && e.game !== prevGame
                     return (
-                      <button
-                        key={i}
-                        className={`analysis-row ${sel === i ? 'sel' : ''}`}
-                        onClick={() => selectMove(i)}
-                      >
-                        <span className={`aq-dot ${b.cls}`} />
-                        <span className="ar-no">{idx + 1}.</span>
-                        {e.dice && e.dice.length >= 2 && e.player && (
-                          <span className="ar-dice">
-                            <Die value={e.dice[0]} owner={e.player} used={false} />
-                            <Die value={e.dice[1]} owner={e.player} used={false} />
-                          </span>
+                      <Fragment key={i}>
+                        {showSep && (
+                          <div className="analysis-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>
                         )}
-                        <span className="ar-move">{e.notation}</span>
-                        {e.loss >= 0.005 && <span className="ar-loss">-{e.loss.toFixed(3)}</span>}
-                      </button>
+                        <button
+                          className={`analysis-row ${sel === i ? 'sel' : ''}`}
+                          onClick={() => selectMove(i)}
+                        >
+                          <span className={`aq-dot ${b.cls}`} />
+                          <span className="ar-no">{idx + 1}.</span>
+                          {/* Hatalı sıralamada (worstFirst) satır hangi oyundan: küçük oyun rozeti. */}
+                          {worstFirst && gameCount > 1 && e.game != null && (
+                            <span className="ar-game" title={t('mrv.game', { n: e.game + 1 })}>
+                              {e.game + 1}
+                            </span>
+                          )}
+                          {e.dice && e.dice.length >= 2 && e.player && (
+                            <span className="ar-dice">
+                              <Die value={e.dice[0]} owner={e.player} used={false} />
+                              <Die value={e.dice[1]} owner={e.player} used={false} />
+                            </span>
+                          )}
+                          <span className="ar-move">{e.notation}</span>
+                          {e.loss >= 0.005 && <span className="ar-loss">-{e.loss.toFixed(3)}</span>}
+                        </button>
+                      </Fragment>
                     )
                   })}
                 </div>

@@ -28101,12 +28101,43 @@ select:-webkit-autofill {
   overflow-y: auto;
   padding: 0 6px 12px;
 }
-.mrv-game-sep {
+/* Oyun ayracı (hem mat analizi hem Maç Analizleri): "— OYUN N —" ortada, iki yanda minik HR.
+   Oyunların nerede bitip başladığını net gösterir (kullanıcı isteği). */
+.mrv-game-sep,
+.analysis-game-sep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   text-align: center;
   font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--muted);
-  padding: 8px 0 4px;
+  padding: 10px 2px 4px;
+}
+.mrv-game-sep::before,
+.mrv-game-sep::after,
+.analysis-game-sep::before,
+.analysis-game-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+/* Hatalı-sıralama görünümünde satırın hangi oyundan olduğu: küçük yuvarlak rozet. */
+.ar-game {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 .mrv-row {
   display: flex;
