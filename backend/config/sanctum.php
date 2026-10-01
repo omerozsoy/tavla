@@ -50,9 +50,15 @@ return [
     |
     */
 
-    // Token ömrü production'da env ile zorunlu olarak yönetilebilsin.
-    // Boş bırakılırsa Sanctum token'ları süresiz olur.
-    'expiration' => env('SANCTUM_EXPIRATION'),
+    // SABİT süre YOK. Eski SANCTUM_EXPIRATION (oluşturulmadan N dk sonra kesin ölüm) aktif
+    // oyuncuyu maç ortasında bile logout ediyordu (token created_at'e bağlı, kaymaz). Bunun
+    // yerine SLIDING (idle) süre: per-token expires_at kullanılır ve her aktif istekte ileri
+    // kaydırılır (EnsureActiveAccount). Böylece aktif token asla düşmez; yalnız 'idle_days'
+    // gün HİÇ kullanılmayan token geçersiz olur. null = Sanctum global sabit süreyi kapatır.
+    'expiration' => null,
+
+    // Hareketsizlik (idle) penceresi: token bu kadar gün kullanılmazsa geçersiz. 0/boş = süresiz.
+    'idle_days' => (int) env('SANCTUM_IDLE_DAYS', 30),
 
     /*
     |--------------------------------------------------------------------------

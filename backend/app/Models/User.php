@@ -115,6 +115,18 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     }
 
     /**
+     * Sliding oturum: yeni token'ın son-kullanma tarihi (now + idle_days). Her aktif istekte
+     * EnsureActiveAccount bunu ileri kaydırır -> aktif oyuncu asla düşmez. idle_days<=0 ise
+     * süresiz (null). Sanctum global 'expiration' null olduğundan per-token expires_at honor edilir.
+     */
+    public static function tokenExpiresAt(): ?\Illuminate\Support\Carbon
+    {
+        $idle = (int) config('sanctum.idle_days', 30);
+
+        return $idle > 0 ? now()->addDays($idle) : null;
+    }
+
+    /**
      * Premium (plan) KAYNAĞINI damgala: nereden geldi ('payment'|'wheel'|'welcome'|'admin') +
      * (admin ise) hangi admin ($by) + ne zaman. Kolon yoksa sessiz geçer. Modeli KAYDETMEZ ->
      * çağıran save() eder (mevcut plan yazımıyla aynı akışta). plan_source_* fillable DEĞİL;

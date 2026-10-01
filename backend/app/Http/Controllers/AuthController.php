@@ -65,7 +65,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('web')->plainTextToken;
+        $token = $user->createToken('web', ['*'], User::tokenExpiresAt())->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token], 201);
     }
@@ -99,7 +99,7 @@ class AuthController extends Controller
         $user->last_login_at = now();
         $user->save();
 
-        $token = $user->createToken('web')->plainTextToken;
+        $token = $user->createToken('web', ['*'], User::tokenExpiresAt())->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token]);
     }
@@ -192,7 +192,7 @@ class AuthController extends Controller
         $user->save();
         $user->refresh(); // grantWelcomePremium query-builder ile yazdı -> plan_active güncel dönsün
 
-        $token = $user->createToken('google')->plainTextToken;
+        $token = $user->createToken('google', ['*'], User::tokenExpiresAt())->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token, 'isNew' => $isNew]);
     }
