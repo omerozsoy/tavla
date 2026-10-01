@@ -1063,16 +1063,33 @@ class RoomController extends Controller
             }
         }
 
+        // TURNUVA ODA HARITASI: oda kodu -> {tid, match}. Suren turnuvalarin bracket'inden
+        // kurulur. Istemci rejoin'de bunu tournMatchRef'e yazar -> (1) sonuc raporu (bracket
+        // ilerler), (2) no-show walkover, (3) "maç hazır" guard calisir. Aksi halde generic
+        // rejoin isaretci koymadan girip kendi macini "başka oyun" sanıp confirmLeave ile
+        // HÜKMEN terke suruklúyordu (mass-forfeit kok nedeni).
+        $tournByCode = [];
+        foreach (\App\Models\Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
+            foreach (($tr->bracket ?? []) as $round) {
+                foreach ($round as $m) {
+                    if (! empty($m['room'])) {
+                        $tournByCode[$m['room']] = ['tid' => $tr->id, 'match' => $m['key']];
+                    }
+                }
+            }
+        }
+
         // Rakip premium: rakip user_id'lerinden TEK sorguyla plan lookup.
         $oppIds = $rooms->map(fn ($r) => (int) $r->p1_user_id === (int) $me->id ? $r->p2_user_id : $r->p1_user_id)
             ->filter()->unique()->values();
         $premiumMap = $oppIds->isEmpty() ? [] : User::whereIn('id', $oppIds)->get(['id', 'plan', 'plan_until'])
             ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
 
-        $list = $rooms->map(function ($r) use ($me, $premiumMap) {
+        $list = $rooms->map(function ($r) use ($me, $premiumMap, $tournByCode) {
             $mine = ((int) $r->p1_user_id === (int) $me->id) ? 'p1' : 'p2';
             $oppId = $mine === 'p1' ? $r->p2_user_id : $r->p1_user_id;
             $score = $r->state['match']['score'] ?? null;
+            $tinfo = $tournByCode[$r->code] ?? null;
             return [
                 'code' => $r->code,
                 'slot' => $mine,
@@ -1085,6 +1102,15 @@ class RoomController extends Controller
                 // SUNUCU-OTORİTER BOT: istemci rejoin'de yerel motoru DEĞİL sunucu akışını kursun.
                 'bot' => (bool) $r->bot,
                 'bot_level' => $r->bot_level !== null ? (int) $r->bot_level : null,
+                // TURNUVA MACI MI: oda koduna tur-uzunlugu cache anahtari yazilmissa turnuva odasidir
+                // (matchRoom). Istemci bu odalari oto-resume/banner'dan HARIC tutar -> turnuva maci
+                // girisi YALNIZ TournMatchReady akisindan (o tournMatchRef'i set eder). Generic
+                // rejoinRoom turnuva odasini isaretci koymadan acinca "maç hazır" penceresi kendi
+                // maçını "başka oyun" sanıp confirmLeave ile hükmen terke suruklúyordu (mass-forfeit).
+                'tournament' => $tinfo !== null,
+                'tid' => $tinfo['tid'] ?? null,
+                'tmatch' => $tinfo['match'] ?? null,
+                'opp_id' => $oppId !== null ? (int) $oppId : null,
             ];
         })->filter(function ($m) {
             // Hedefe ulasilmis (mac bitmis) odalari listeleme -> "devam eden" degil

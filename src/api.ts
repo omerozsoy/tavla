@@ -2049,6 +2049,13 @@ export interface ActiveRoom {
   // SUNUCU-OTORİTER BOT: bu oda bir bot maçı mı (rejoin'de yerel motor değil sunucu akışı kurulur).
   bot?: boolean
   bot_level?: number | null
+  // TURNUVA MACI MI: istemci bu odaları lobi oto-resume/banner'dan HARİÇ tutar (giriş yalnız
+  // TournMatchReady akışından; generic rejoin confirmLeave-hükmen bug'ına yol açıyordu).
+  tournament?: boolean
+  // Turnuva odasıysa: rejoin tournMatchRef'i bunlarla kurar (sonuç raporu + no-show + ready guard).
+  tid?: number | null
+  tmatch?: string | null
+  opp_id?: number | null
 }
 export async function myActiveRooms(): Promise<ActiveRoom[]> {
   const data = await req<{ rooms: ActiveRoom[] }>('/me/active-rooms')
