@@ -38,7 +38,9 @@ class NicknameFilter
         $out = [];
         foreach ($parts as $p) {
             $w = self::normalize($p);
-            if ($w !== '') {
+            // >=3 harf: 2-harf kokler (mk/aq/oc) substring aramada saf scunthorpe tuzagi
+            // ("mumkun"->mk, "cocuk"/"ocak"/"koc"->oc, "aqua"->aq). En kisa gercek kok "amk"=3.
+            if (strlen($w) >= 3) {
                 $out[] = $w;
             }
         }
