@@ -331,7 +331,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 alt={active.organizer.name}
               />
             ) : (
-              <TavlaTvMark size={44} />
+              <TavlaTvMark size={72} />
             )}
             <Icon name="trophy" size={20} /> {active.name}
           </h2>
@@ -366,7 +366,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <div className="th-stat th-prize">
               <span className="th-lbl">{t('tourn.prizePool')}</span>
               <span className="th-val">
-                {totalPrize > 0 ? <Coins amount={totalPrize} gain suffix="coin" size={18} /> : '—'}
+                {totalPrize > 0 ? <Coins amount={totalPrize} gain suffix="coin" size={36} /> : '—'}
               </span>
             </div>
             <div className="th-stat">
@@ -403,7 +403,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <div className="th-stat">
               <span className="th-lbl">{t('tourn.entry')}</span>
               <span className="th-val">
-                {active.entry_fee ? <Coins amount={active.entry_fee} size={16} /> : t('tourn.free')}
+                {active.entry_fee ? <Coins amount={active.entry_fee} size={32} /> : t('tourn.free')}
               </span>
             </div>
           </div>
@@ -444,7 +444,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   {t('tourn.join')}
                   {!!active.entry_fee && (
                     <span className="tourn-join-fee">
-                      <Coins amount={active.entry_fee} size={14} />
+                      <Coins amount={active.entry_fee} size={28} />
                     </span>
                   )}
                 </Button>
@@ -490,7 +490,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                             <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={30} rankSize="md" premium={p.premium} />
                             {coins > 0 && (
                               <span className="podium-prize">
-                                <Coins amount={coins} gain suffix="coin" size={14} />
+                                <Coins amount={coins} gain suffix="coin" size={28} />
                               </span>
                             )}
                           </li>
@@ -514,7 +514,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Coins amount={pr.coins} gain suffix="coin" size={14} />
+                      <Coins amount={pr.coins} gain suffix="coin" size={28} />
                     </span>
                   </li>
                 ))}
@@ -1010,7 +1010,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Coins amount={pr.coins} gain suffix="coin" size={14} />
+                      <Coins amount={pr.coins} gain suffix="coin" size={28} />
                     </span>
                   </li>
                 ))}
@@ -1027,7 +1027,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     <span className="tp-rank tp-rank-1">1.</span>
                     <span className="tp-desc">{tr.prize_desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Coins amount={pool} gain suffix="coin" size={14} />
+                      <Coins amount={pool} gain suffix="coin" size={28} />
                     </span>
                   </li>
                 </ol>

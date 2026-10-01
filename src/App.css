@@ -17831,8 +17831,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Başlıktaki BÜYÜK yuvarlak düzenleyen logosu (en başta, isimden önce). */
 .tourn-title-logo {
-  width: 44px;
-  height: 44px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   object-fit: cover;
   vertical-align: middle;

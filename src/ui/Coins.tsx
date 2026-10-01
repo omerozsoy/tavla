@@ -24,7 +24,7 @@ interface CoinsProps {
 export function Coins({ amount, size = 15, gain, pill, suffix, className }: CoinsProps) {
   return (
     <span className={`coins${pill ? ' coins--pill' : ''}${className ? ' ' + className : ''}`}>
-      <Icon name="coin" size={size} className="coins-ic" />
+      <Icon name="coins" size={size} className="coins-ic" />
       <span className="coins-val">
         {gain ? '+' : ''}
         {amount.toLocaleString('tr-TR')}
