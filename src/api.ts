@@ -1999,6 +1999,26 @@ export async function onlinePlayers(): Promise<OnlinePlayer[]> {
   return data.players
 }
 
+// Oyun Arayanlar: hizli eslesme havuzunda (mm_waiting) bekleyen oyuncular -> ana sayfa paneli
+export interface Seeker {
+  id: number
+  name: string
+  rating?: number | null
+  avatar?: string | null
+  frame?: string | null
+  country?: string | null
+  premium?: boolean
+  targets: number[] // kabul edilen mac uzunluklari (coklu secim)
+  stake: number
+  stakes: number[]
+  bet_pct: number
+  since?: string | null // havuza giris zamani (ISO) — "ne kadardir ariyor"
+}
+export async function seekers(): Promise<Seeker[]> {
+  const data = await req<{ seekers: Seeker[] }>('/seekers')
+  return data.seekers
+}
+
 // Kendi durumunu degistir (Musait/Hazir/Mesgul/Cevrimdisi). Sunucu son_gorulme'yi de tazeler.
 export async function setPresenceStatus(status: PresenceStatus): Promise<PresenceStatus> {
   const d = await req<{ status: PresenceStatus }>('/me/presence-status', {

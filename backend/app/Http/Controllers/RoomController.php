@@ -817,6 +817,57 @@ class RoomController extends Controller
         return response()->json(['players' => $list, 'count' => $list->count()]);
     }
 
+    // Oyun Arayanlar: hizli eslesme havuzunda (mm_waiting) bekleyen oyuncular -> ana sayfa
+    // "Oyun Arayanlar" paneli. Herkese acik (Canli Maclar / Cevrimici gibi). Kendini gorme.
+    public function seekers(Request $request)
+    {
+        $me = $request->user('sanctum');
+
+        // 'stakes' kolonu canlida migrate kosmadan olmayabilir (bkz. matchmaking) -> guard.
+        $hasStakes = Schema::hasColumn('rooms', 'stakes');
+        $cols = ['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'stake', 'bet_pct', 'target', 'targets', 'created_at'];
+        if ($hasStakes) {
+            $cols[] = 'stakes';
+        }
+
+        $rooms = Room::where('status', 'mm_waiting')
+            ->whereNotNull('p1_user_id')
+            ->when($me, fn ($q) => $q->where('p1_user_id', '!=', $me->id))
+            ->where('created_at', '>', now()->subMinutes(2)) // cleanupStale esigiyle ayni: taze aramalar
+            ->orderBy('created_at')
+            ->limit(100)
+            ->get($cols);
+
+        // Bayrak/cerceve/premium icin tek sorguyla User lookup (onlinePlayers deseni).
+        $uids = $rooms->pluck('p1_user_id')->filter()->unique()->values();
+        $userMap = $uids->isEmpty()
+            ? collect()
+            : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until'])->keyBy('id');
+
+        $list = $rooms->map(function ($r) use ($userMap) {
+            $u = $userMap->get($r->p1_user_id);
+            $targets = is_array($r->targets) ? array_values(array_map('intval', $r->targets)) : [(int) ($r->target ?? 1)];
+            $stakes = is_array($r->stakes) ? array_values(array_map('intval', $r->stakes)) : [(int) $r->stake];
+
+            return [
+                'id'      => (int) $r->p1_user_id,
+                'name'    => $r->p1_name,
+                'rating'  => $r->p1_rating,
+                'avatar'  => $r->p1_avatar,
+                'frame'   => $u?->avatar_frame,
+                'country' => $u?->country,
+                'premium' => $u ? $u->plan_active !== 'free' : false,
+                'targets' => $targets ?: [1],
+                'stake'   => (int) $r->stake,
+                'stakes'  => $stakes,
+                'bet_pct' => (int) $r->bet_pct,
+                'since'   => optional($r->created_at)->toIso8601String(),
+            ];
+        });
+
+        return response()->json(['seekers' => $list, 'count' => $list->count()]);
+    }
+
     // Site geneli ONLINE DURUM NOKTASI icin: cevrimici (last_seen < 70sn + 'offline' DEGIL,
     // sistem hesaplari HARIC) TUM kullanici id'leri. Frontend PresenceProvider bunu ceker,
     // PlayerIdentity isim basindaki yesil/kirmizi noktayi buna gore cizer. Kisa cache (10sn):
