@@ -106,4 +106,76 @@ class TournamentNoShowTest extends TestCase
         $t->refresh();
         $this->assertArrayNotHasKey('winner', $t->bracket[0][0]); // sonuc girilmedi
     }
+
+    // IKI oyuncu da gelmezse (kimse odaya girmez) turnuva TAKILMAZ: ready_at + match_stall_minutes
+    // dk sonra sunucu rating ile ilerletir (yuksek rating finale), kimse elle tetiklemese de.
+    public function test_double_no_show_resolved_by_rating_after_deadline(): void
+    {
+        config(['tournament.match_stall_minutes' => 3]);
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $c = $this->user('c');
+        $d = $this->user('d');
+        $t = $this->tournament($a, $b, $c, $d);
+        // Fixture duz id/name; rating'i bracket'e koy (stalled cozumu bracket rating'ini okur).
+        $br = $t->bracket;
+        $br[0][0]['p1']['rating'] = 1600;
+        $br[0][0]['p2']['rating'] = 1400;
+        $t->bracket = $br;
+        $t->save();
+
+        Sanctum::actingAs($a);
+        // 1. poll: maci HAZIR gorup ready_at damgalar (henuz cozmez).
+        $this->getJson('/api/tournaments')->assertOk();
+        $t->refresh();
+        $this->assertArrayHasKey('ready_at', $t->bracket[0][0]);
+        $this->assertArrayNotHasKey('winner', $t->bracket[0][0]);
+
+        // ready_at'i 4 dk geriye it (stall 3 dk doldu).
+        $br = $t->bracket;
+        $br[0][0]['ready_at'] = now()->subMinutes(4)->toIso8601String();
+        $t->bracket = $br;
+        $t->save();
+
+        // 2. poll: kimse gelmedigi icin rating ile cozulur -> yuksek rating (a) finale.
+        $this->getJson('/api/tournaments')->assertOk();
+        $t->refresh();
+        $this->assertSame($a->id, $t->bracket[0][0]['winner']);
+        $this->assertSame(['no_show' => true], $t->bracket[0][0]['score']);
+        $this->assertSame($a->id, $t->bracket[1][0]['p1']['id']); // finale ilerledi
+    }
+
+    // TEK taraf odaya girip otekinin gelmemesi: oyuncu "no-show"a basmasa bile sure dolunca
+    // sunucu otomatik hukmen verir (giren kazanir, finale ilerler).
+    public function test_one_present_auto_walkover_after_deadline(): void
+    {
+        config(['tournament.match_stall_minutes' => 3]);
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $c = $this->user('c');
+        $d = $this->user('d');
+        $t = $this->tournament($a, $b, $c, $d);
+
+        Sanctum::actingAs($a);
+        $code = $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'm0'])
+            ->assertOk()->json('code');
+        $this->postJson("/api/rooms/{$code}/enter", ['token' => 'tokA', 'name' => 'A'])->assertOk();
+
+        // ready_at damgalansin.
+        $this->getJson('/api/tournaments')->assertOk();
+        $t->refresh();
+        $this->assertArrayHasKey('ready_at', $t->bracket[0][0]);
+
+        // Sure doldur.
+        $br = $t->bracket;
+        $br[0][0]['ready_at'] = now()->subMinutes(4)->toIso8601String();
+        $t->bracket = $br;
+        $t->save();
+
+        // Poll: a girdigi/b girmedigi icin a hukmen -> finale. Elle no-show cagrilmadi.
+        $this->getJson('/api/tournaments')->assertOk();
+        $t->refresh();
+        $this->assertSame($a->id, $t->bracket[0][0]['winner']);
+        $this->assertSame($a->id, $t->bracket[1][0]['p1']['id']);
+    }
 }

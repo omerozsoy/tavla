@@ -563,6 +563,107 @@ class TournamentController extends Controller
     }
 
     /**
+     * TAKILMA ÖNLEME (genel): iki oyuncusu belli HERHANGİ bir eleme maçına kimse (ya da tek taraf)
+     * gelmezse turnuva sonsuza dek "kazanansız" takılırdı (noShow gelen oyuncunun elle tetiklemesine
+     * bağlı; ikisi de gelmezse çözen yok). Maç HAZIR (iki oyuncu belli) işaretlenir (ready_at); oda
+     * doğrulanmış sonuç üretmeden match_stall_minutes dk geçerse sunucu çözer:
+     *   - TEK taraf odaya girdiyse -> giren hükmen kazanır (otomatik walkover + gelmeyene ForfeitLoss).
+     *   - KİMSE girmediyse (gerçek çift no-show) -> rating ile ilerlet (stalled 3.'lük ile tutarlı).
+     * İKİ taraf da odadaysa (maç oynanıyor, uzun sürebilir) DOKUNMAZ: oyun saati/presence/report halleder.
+     * 3.'lük maçı hariç (resolveStalledThirdPlace sahibi). Cagiran turnuva satirini KILITLER.
+     */
+    private function resolveStalledMatches(Tournament $t): bool
+    {
+        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
+            return false; // Swiss kendi gelme/eleme akışını işler
+        }
+        $stall = (int) config('tournament.match_stall_minutes', 3);
+        $changed = false;
+        for ($guard = 0; $guard < 64 && $t->status === 'running'; $guard++) {
+            $bracket = is_array($t->bracket) ? $t->bracket : [];
+            $hit = null;
+            foreach ($bracket as $ri => $round) {
+                foreach ($round as $mi => $m) {
+                    if (! empty($m['winner']) || ! empty($m['third_place'])) {
+                        continue; // bitmiş VEYA 3.'lük (resolveStalledThirdPlace halleder)
+                    }
+                    if (empty($m['p1']['id']) || empty($m['p2']['id'])) {
+                        continue; // iki oyuncu belli değil (bye/ölü dal -> resolveDeadByes)
+                    }
+                    // Final gate (opens_at) henüz açılmadıysa süre işlemesin (önce 3.'lük oynanır).
+                    if (! empty($m['opens_at']) && now()->lt(\Illuminate\Support\Carbon::parse($m['opens_at']))) {
+                        continue;
+                    }
+                    $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
+                    if ($room && $room->hasVerifiedServerResult()) {
+                        continue; // gerçek sonuç var -> reconcileVerifiedResults alır
+                    }
+                    $id1 = (int) $m['p1']['id'];
+                    $id2 = (int) $m['p2']['id'];
+                    $present = [];
+                    if ($room) {
+                        foreach (['p1', 'p2'] as $s) {
+                            if (! empty($room->{$s.'_token'}) && (int) $room->{$s.'_user_id'}) {
+                                $present[] = (int) $room->{$s.'_user_id'};
+                            }
+                        }
+                    }
+                    $present = array_values(array_intersect([$id1, $id2], $present));
+                    if (count($present) >= 2) {
+                        continue; // iki taraf da odada -> oynanıyor; saat/presence/report halleder
+                    }
+                    $readyAt = $m['ready_at'] ?? null;
+                    if (! $readyAt) {
+                        // İlk kez HAZIR görüldü -> damgala (süre şimdi başlar). Bu turda çözme.
+                        $bracket[$ri][$mi]['ready_at'] = now()->toIso8601String();
+                        $t->bracket = $bracket;
+                        $t->save();
+                        $changed = true;
+
+                        continue;
+                    }
+                    if (now()->lt(\Illuminate\Support\Carbon::parse($readyAt)->addMinutes($stall))) {
+                        continue; // süre dolmadı
+                    }
+                    $hit = [$ri, $mi, $m, $room, $present, $id1, $id2];
+                    break 2;
+                }
+            }
+            if (! $hit) {
+                break;
+            }
+            [$ri, $mi, $m, $room, $present, $id1, $id2] = $hit;
+            if (count($present) === 1) {
+                // TEK taraf geldi -> hükmen (otomatik; gelen oyuncu "no-show"a basmasa da).
+                $winnerId = $present[0];
+                $loserId = $winnerId === $id1 ? $id2 : $id1;
+                if ($room) {
+                    $wslot = (int) $room->p1_user_id === $winnerId ? 'p1' : 'p2';
+                    $room->status = 'finished';
+                    $room->end_reason = 'NO_SHOW';
+                    $room->{$wslot.'_result'} = 'won';
+                    $room->{($wslot === 'p1' ? 'p2' : 'p1').'_result'} = 'lost';
+                    $room->save();
+                    $w = User::find($winnerId);
+                    \App\Support\ForfeitLoss::record(
+                        $room->code, $loserId, (int) ($w->rating ?? 1500),
+                        (int) ($room->target ?: 1), 'match', $w->nickname ?? $w->first_name,
+                    );
+                }
+                $this->applyWinnerToBracket($t, $ri, $mi, $winnerId, ['walkover' => true]);
+            } else {
+                // KİMSE gelmedi (çift no-show) -> rating ile ilerlet (stalled 3.'lük ile tutarlı).
+                $r1 = (int) ($m['p1']['rating'] ?? 0);
+                $r2 = (int) ($m['p2']['rating'] ?? 0);
+                $this->applyWinnerToBracket($t, $ri, $mi, $r1 >= $r2 ? $id1 : $id2, ['no_show' => true]);
+            }
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
+    /**
      * Turnuvayı SONLANDIR: şampiyon (final) BELLİ ve 3.'lük maçı da (varsa) çözülmüşse status='finished'
      * + ödüller. 3.'lük maçı tek oyunculu kaldıysa (diğer yarı final bye idi) walkover ile 3. olur.
      * Final ile 3.'lük paralel oynanır; hangisi önce biterse bitsin turnuva İKİSİ de bitince kapanır.
@@ -1075,6 +1176,11 @@ class TournamentController extends Controller
                     // çalıştır ki final de işlenebilsin.
                     if ($this->resolveStalledThirdPlace($t)) {
                         $changed = $this->reconcileVerifiedResults($t) || true;
+                    }
+                    // TAKILMA ÖNLEME (genel): iki oyuncusu belli ama kimse/tek taraf gelmeyen maçları
+                    // süre dolunca çöz (hükmen ya da rating). reconcile'dan SONRA: gerçek sonuç önceliklidir.
+                    if ($this->resolveStalledMatches($t)) {
+                        $changed = true;
                     }
 
                     return ($this->resolveDeadByes($t) || $changed) ? $t : null;
