@@ -17840,6 +17840,19 @@ button.acct-row-logout:hover:not(:disabled) {
   border: 1px solid var(--border);
   background: var(--card-bg);
 }
+/* Kart alt kosesinde "Turnuva Lobisi ->" ipucu baglantisi (kart zaten buton). */
+.tourn-lobby-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.event-row:hover .tourn-lobby-link {
+  text-decoration: underline;
+}
 /* Hero: 4 istatistik hucre (odul / baslangic / katilim / giris) */
 .tourn-hero {
   display: grid;
