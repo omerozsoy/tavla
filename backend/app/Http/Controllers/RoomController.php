@@ -929,6 +929,54 @@ class RoomController extends Controller
         return response()->json(['seekers' => $all->values(), 'count' => $all->count()]);
     }
 
+    // IZLEYICI MAÇ ÖZETI: biten bir odanın "Maç Özeti" verisi (oyuncuların gördüğü AYNI tablo).
+    // Herkese açık (showRoom/watch gibi) -> izleyici de görebilir. Ağır gnubg review satırda
+    // önbelleklenir (MatchResult::gnubgReview). authPr + luck iki oyuncunun match_results
+    // satırlarından renge (hc) göre eşlenir. Hazır değilse {ready:false} (henüz analiz yok / servis yok).
+    public function roomSummary(Request $request, string $code)
+    {
+        $rows = \App\Models\MatchResult::where('room_code', $code)->latest('id')->get();
+        if ($rows->isEmpty()) {
+            return response()->json(['ready' => false]);
+        }
+        // Review TEK KEZ hesaplanır, DB'de (gnubg_review) önbelleklenir -> herkes (oyuncu+izleyici)
+        // AYNI sonucu alır; kişi başına hesaplama YOK. Bir oyuncu zaten açtıysa onun önbellekli
+        // satırını kullan (izleyici sıfırdan hesaplatmasın); yoksa ilk satırda bir kez hesapla.
+        $src = $rows->first(fn ($r) => ! empty($r->gnubg_review)) ?? $rows->first();
+        $review = $src->gnubgReview(2);
+        if (empty($review['ok'])) {
+            return response()->json(['ready' => false, 'error' => $review['error'] ?? null]);
+        }
+        // authPr + luck: her oyuncunun KENDI satırından, rengine (hc) göre white/black'e yerleştir.
+        $authPr = ['white' => null, 'black' => null];
+        $luck = ['white' => null, 'black' => null];
+        foreach ($rows as $r) {
+            $hc = $r->analysisHc();
+            if (! in_array($hc, ['white', 'black'], true)) {
+                continue;
+            }
+            $authPr[$hc] = [
+                'pr'      => $r->gnubg_pr,
+                'checker' => $r->gnubg_checker_pr,
+                'cube'    => $r->gnubg_cube_pr,
+            ];
+            $luck[$hc] = [
+                'mwc'    => $r->luck_mwc,
+                'cost'   => $r->luck_emg,
+                'jokers' => $r->luck_jokers,
+            ];
+        }
+
+        return response()->json([
+            'ready'       => true,
+            'log'         => $review['log'] ?? [],
+            'names'       => $review['names'] ?? null,
+            'matchLength' => $review['matchLength'] ?? null,
+            'luck'        => $luck,
+            'authPr'      => $authPr,
+        ]);
+    }
+
     // Site geneli ONLINE DURUM NOKTASI icin: cevrimici (last_seen < 70sn + 'offline' DEGIL,
     // sistem hesaplari HARIC) TUM kullanici id'leri. Frontend PresenceProvider bunu ceker,
     // PlayerIdentity isim basindaki yesil/kirmizi noktayi buna gore cizer. Kisa cache (10sn):

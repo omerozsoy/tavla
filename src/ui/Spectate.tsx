@@ -10,7 +10,8 @@ import Sidebar from './Sidebar'
 import ViewersBadge from './ViewersBadge'
 import ClockStack from './ClockStack'
 import DiceRow from './Dice'
-import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer } from '../api'
+import { showRoom, watchRoom, roomSummary, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
+import MatchSummary from './MatchSummary'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from '../sound'
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
@@ -76,6 +77,11 @@ export default function Spectate({
   const [viewers, setViewers] = useState<RoomViewer[]>([])
   const [viewerCount, setViewerCount] = useState(0)
   const verRef = useRef(-1)
+  // Maç Özeti (izleyici): sunucuda bir kez hesaplanıp önbelleklenen özet. Butonla açılır.
+  const [summary, setSummary] = useState<RoomSummary | null>(null)
+  const [summaryBusy, setSummaryBusy] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
+  const [summaryErr, setSummaryErr] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -392,6 +398,30 @@ export default function Spectate({
   const diceRow =
     displayBoard && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={displayBoard.turn} /> : null
 
+  // Maç Özeti aç (izleyici): sunucudan önbellekli özeti çek (ilk açan hesaplatır, sonrası anında;
+  // herkes AYNI sonucu alır). Zaten çekildiyse tekrar isteme. Hazır değil/analiz yoksa kısa not.
+  const openSummary = async () => {
+    if (summary?.ready) {
+      setSummaryOpen(true)
+      return
+    }
+    setSummaryBusy(true)
+    setSummaryErr(false)
+    try {
+      const s = await roomSummary(code)
+      if (s.ready && s.log && s.log.length > 0) {
+        setSummary(s)
+        setSummaryOpen(true)
+      } else {
+        setSummaryErr(true)
+      }
+    } catch {
+      setSummaryErr(true)
+    } finally {
+      setSummaryBusy(false)
+    }
+  }
+
   // TAM EKRAN "normal sayfa": transform'lu bir ata altında render edildiğinde position:fixed
   // KIRPILIP modal gibi kutuya sıkışıyordu (bkz fixed-portal-transform tuzağı). document.body'ye
   // portal ederek gerçek viewport'u kaplar -> izleme normal tam-ekran sayfa gibi görünür.
@@ -513,11 +543,29 @@ export default function Spectate({
                 {score.black} <b>{p2Name}</b>
               </span>
             </div>
-            <Button variant="default" className="sr-close" onClick={onClose}>
-              {t('common.close')}
-            </Button>
+            {summaryErr && <div className="sr-muted sr-sumnote">{t('live.summaryNone')}</div>}
+            <div className="sr-actions">
+              <Button variant="outline" className="sr-summary" onClick={openSummary} disabled={summaryBusy}>
+                <Icon name="chart" size={16} /> {summaryBusy ? t('ms.loading') : t('ms.btn')}
+              </Button>
+              <Button variant="default" className="sr-close" onClick={onClose}>
+                {t('common.close')}
+              </Button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Maç Özeti modalı (izleyici): oyuncuların gördüğü AYNI tablo; veri sunucuda önbellekli. */}
+      {summaryOpen && summary?.ready && summary.log && (
+        <MatchSummary
+          log={summary.log}
+          names={summary.names ?? null}
+          matchLength={summary.matchLength ?? null}
+          luck={summary.luck}
+          authPr={summary.authPr}
+          onClose={() => setSummaryOpen(false)}
+        />
       )}
 
       {/* Sol alt: izleyenler (sayı + isimler) — oyuncularla AYNI rozet (bkz ViewersBadge) */}

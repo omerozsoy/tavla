@@ -13079,8 +13079,22 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
 }
 .spectate-result-card .sr-close {
-  margin-top: 8px;
   min-width: 120px;
+}
+/* Maç sonu kartı aksiyonları: Maç Özeti + Kapat yan yana (dar ekranda alt alta). */
+.spectate-result-card .sr-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.spectate-result-card .sr-summary {
+  min-width: 120px;
+}
+.spectate-result-card .sr-sumnote {
+  margin-top: 6px;
+  font-size: 12px;
 }
 /* Sol alt izleme paneli: izleyenler + maç sohbeti (salt-okunur) */
 .spectate-side {
@@ -23071,6 +23085,19 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .tm-p.win .tm-score {
   color: var(--success-fg);
+}
+/* CANLI skor (suren mac, oda icine girmeden): kiremit + yumusak nabiz -> "bitmis 0-0" ile karismaz. */
+.tm-score.live {
+  color: var(--accent);
+  font-weight: 700;
+  animation: tm-score-live 1.6s ease-in-out infinite;
+}
+@keyframes tm-score-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-score.live { animation: none; }
 }
 /* Hukmen (walkover) her zaman KIRMIZI (kazanan tarafinda gorunse de yesili ez). */
 .tm-score.wo,

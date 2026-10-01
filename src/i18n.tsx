@@ -270,6 +270,7 @@ const TR: Dict = {
   // Maç Özeti (Match Summary)
   'ms.title': 'Maç Özeti',
   'ms.btn': 'Maç Özeti',
+  'ms.loading': 'Hazırlanıyor…',
   'ms.stat': 'İstatistik',
   'ms.general': 'GENEL',
   'ms.errors': 'HATALAR',
@@ -317,6 +318,7 @@ const TR: Dict = {
   'live.ended': 'Maç bitti.',
   'live.matchEnded': 'Maç Bitti',
   'live.winnerIs': '{name} kazandı',
+  'live.summaryNone': 'Maç özeti henüz hazır değil.',
   'menu.group.play': 'OYNA',
   'menu.group.compete': 'Turnuvalar',
   'menu.group.fun': 'EĞLENCE',
@@ -1992,6 +1994,7 @@ const EN: Dict = {
   // Match Summary
   'ms.title': 'Match Summary',
   'ms.btn': 'Match Summary',
+  'ms.loading': 'Preparing…',
   'ms.stat': 'Statistic',
   'ms.general': 'GENERAL',
   'ms.errors': 'ERRORS',
@@ -2039,6 +2042,7 @@ const EN: Dict = {
   'live.ended': 'Match ended.',
   'live.matchEnded': 'Match Over',
   'live.winnerIs': '{name} won',
+  'live.summaryNone': 'Match summary is not ready yet.',
   'menu.group.play': 'PLAY',
   'menu.group.compete': 'Tournaments',
   'menu.group.fun': 'FUN',
