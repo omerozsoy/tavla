@@ -447,6 +447,31 @@ class TournamentResource extends Resource
                 self::moderationAction('dq'),
                 self::moderationAction('withdraw'),
                 self::resultCorrectionAction(),
+                // KATILIMCILARI TEMİZLE (sıfırla -> açık): test turnuvasını baştan oynamak için.
+                // Katılımcılar + eşleşme ağacı + Swiss durumu + şampiyon silinir, durum 'açık'a döner
+                // -> yeniden katılıma açılır. Başlatınca kura (shuffle) YENİDEN çekilir (yeni eşleşme).
+                Tables\Actions\Action::make('resetTournament')
+                    ->label('Katılımcıları Temizle')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Turnuvayı sıfırla (açık)')
+                    ->modalDescription('TÜM katılımcılar, eşleşme ağacı ve şampiyon silinir; turnuva "açık" durumuna döner (yeniden katılıma açılır). Yeniden başlatıldığında eşleşme KURA ile yeniden çekilir. Oynanmış maç sonuçları/ödüller GERİ ALINMAZ. Test turnuvaları için — geri alınamaz.')
+                    ->action(function (Tournament $record): void {
+                        $record->players = [];
+                        $record->bracket = [];
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('tournaments', 'swiss_state')) {
+                            $record->swiss_state = null;
+                        }
+                        $record->champion_id = null;
+                        $record->status = 'open';
+                        $record->save();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Turnuva sıfırlandı (açık)')
+                            ->body('Katılımcılar temizlendi. Katılım açık; başlatınca kura yeniden çekilir.')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
