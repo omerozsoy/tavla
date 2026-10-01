@@ -107,6 +107,42 @@ class TournamentResourceDqTest extends TestCase
         $this->assertSame('withdrawn', $part['status']);
     }
 
+    public function test_admin_corrects_result_double_loss_via_panel(): void
+    {
+        [$t] = $this->swiss(4);
+        SwissRuntime::start($t);
+        $t->refresh();
+        $key = $a = $b = null;
+        foreach ($t->bracket as $cells) {
+            foreach ($cells as $m) {
+                if (empty($m['winner']) && ! empty($m['p1']['id']) && ! empty($m['p2']['id'])) {
+                    $key = $m['key'];
+                    $a = (int) $m['p1']['id'];
+                    $b = (int) $m['p2']['id'];
+                    break 2;
+                }
+            }
+        }
+        $this->assertNotNull($key);
+
+        Livewire::actingAs($this->admin())
+            ->test(ListTournaments::class)
+            ->callTableAction('correctResult', $t->id, data: ['match' => $key, 'outcome' => 'double_loss'])
+            ->assertHasNoTableActionErrors();
+
+        $parts = collect($t->fresh()->swiss_state['participants']);
+        $this->assertSame(1, (int) $parts->firstWhere('id', $a)['losses']);
+        $this->assertSame(1, (int) $parts->firstWhere('id', $b)['losses']);
+    }
+
+    public function test_correct_result_action_hidden_when_not_running(): void
+    {
+        [$t] = $this->swiss(4); // open
+        Livewire::actingAs($this->admin())
+            ->test(ListTournaments::class)
+            ->assertTableActionHidden('correctResult', $t->id);
+    }
+
     public function test_disqualify_action_hidden_for_running_bracket(): void
     {
         [$t] = $this->swiss(4, 'bracket');

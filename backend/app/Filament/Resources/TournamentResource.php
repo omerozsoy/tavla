@@ -86,6 +86,92 @@ class TournamentResource extends Resource
             });
     }
 
+    /**
+     * Yönetici sonuç düzeltme (yalnız sürüyor + Swiss): bekleyen bir maçı hükmen çöz — galip ilan veya
+     * çift mağlubiyet (iki taraf da gelmedi). Eleme ağacında bracket JSON elle düzenlenir (burada yok).
+     */
+    private static function resultCorrectionAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('correctResult')
+            ->label('Sonuç düzelt')
+            ->icon('heroicon-o-pencil-square')
+            ->color('warning')
+            ->visible(fn (Tournament $record): bool => $record->status === 'running'
+                && ($record->type ?? 'bracket') === 'swiss_triple')
+            ->form([
+                Forms\Components\Select::make('match')
+                    ->label('Maç (bekleyen)')
+                    ->options(fn (Tournament $record): array => self::pendingSwissMatches($record))
+                    ->required()
+                    ->helperText('Yalnızca henüz sonuçlanmamış gerçek maçlar listelenir.'),
+                Forms\Components\Radio::make('outcome')
+                    ->label('Sonuç')
+                    ->options([
+                        'p1' => '1. oyuncu kazandı (hükmen)',
+                        'p2' => '2. oyuncu kazandı (hükmen)',
+                        'double_loss' => 'Çift mağlubiyet (ikisi de gelmedi)',
+                    ])
+                    ->required(),
+            ])
+            ->requiresConfirmation()
+            ->modalHeading('Maç sonucunu düzelt')
+            ->modalDescription('Bekleyen bir maçı hükmen çözer (galip ilan veya çift mağlubiyet). Çift mağlubiyet: iki oyuncuya da birer mağlubiyet yazılır, galip yok. Uygulanmış (sonraki tur üretilmiş) sonuçlar buradan düzeltilemez.')
+            ->action(function (Tournament $record, array $data): void {
+                $ok = false;
+                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data, &$ok): void {
+                    $t = Tournament::lockForUpdate()->find($record->id);
+                    if (! $t) {
+                        return;
+                    }
+                    $cell = self::findCell($t, $data['match']);
+                    if (! $cell) {
+                        return;
+                    }
+                    $outcome = $data['outcome'] === 'double_loss' ? 0
+                        : (int) ($data['outcome'] === 'p1' ? ($cell['p1']['id'] ?? 0) : ($cell['p2']['id'] ?? 0));
+                    $ok = \App\Support\Swiss\SwissRuntime::resolveMatch($t, $data['match'], $outcome);
+                });
+                \Filament\Notifications\Notification::make()
+                    ->title($ok ? 'Maç sonucu düzeltildi' : 'Maç düzeltilemedi (zaten çözülmüş olabilir)')
+                    ->{$ok ? 'success' : 'warning'}()
+                    ->send();
+            });
+    }
+
+    /** Bekleyen (çözülmemiş) gerçek Swiss maçları: ["r0m1" => "1) Ali — 2) Veli · Tur 2"]. */
+    private static function pendingSwissMatches(Tournament $record): array
+    {
+        $out = [];
+        foreach ((is_array($record->bracket) ? $record->bracket : []) as $cells) {
+            foreach ($cells as $m) {
+                if (! empty($m['winner']) || ! empty($m['double_loss'])) {
+                    continue;
+                }
+                if (empty($m['p1']['id']) || empty($m['p2']['id'])) {
+                    continue; // bay / eksik
+                }
+                $out[$m['key']] = '1) '.($m['p1']['name'] ?? '?').' — 2) '.($m['p2']['name'] ?? '?')
+                    .' · Tur '.($m['round'] ?? '?');
+            }
+        }
+
+        return $out;
+    }
+
+    /** Bracket hücresini key ile bul (p1/p2 id eşlemesi için). */
+    private static function findCell(Tournament $t, string $key): ?array
+    {
+        foreach ((is_array($t->bracket) ? $t->bracket : []) as $cells) {
+            foreach ($cells as $m) {
+                if (($m['key'] ?? null) === $key) {
+                    return $m;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -343,6 +429,7 @@ class TournamentResource extends Resource
                     }),
                 self::moderationAction('dq'),
                 self::moderationAction('withdraw'),
+                self::resultCorrectionAction(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

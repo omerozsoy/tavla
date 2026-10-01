@@ -111,7 +111,8 @@ class SwissRuntime
         $bracket = is_array($t->bracket) ? $t->bracket : [];
         $round = $bracket[$ri] ?? [];
         foreach ($round as $m) {
-            if (empty($m['winner'])) {
+            // Çözülü = galip belli VEYA çift mağlubiyet (yönetici düzeltmesi: galip yok ama maç bitti).
+            if (empty($m['winner']) && empty($m['double_loss'])) {
                 return; // bu tur henüz bitmedi
             }
         }
@@ -376,6 +377,60 @@ class SwissRuntime
             return;
         }
         $t->save();
+    }
+
+    /**
+     * YÖNETİCİ SONUÇ DÜZELTME (contract §8): BEKLEYEN bir maçı hükmen çöz. $outcome: galip oyuncu id,
+     * VEYA 0 = ÇİFT MAĞLUBİYET (iki taraf da gelmedi, kanıtlı → ikisine birer mağlubiyet, galip yok).
+     * Zaten çözülmüş (winner/double_loss) maça veya bay hücresine DOKUNMAZ (false döner). Çözüm turu
+     * tamamlarsa sonraki tur üretilir / turnuva sonlandırılır. NOT: uygulanmış sonucun GERİ ALINMASI
+     * (sonraki turlar üretilmişken) kapsam DIŞI — yalnız bekleyen maç düzeltilir. Lock çağıranda.
+     *
+     * @return bool düzeltildi mi
+     */
+    public static function resolveMatch(Tournament $t, string $matchKey, int $outcome): bool
+    {
+        $bracket = is_array($t->bracket) ? $t->bracket : [];
+        foreach ($bracket as $ri => $cells) {
+            foreach ($cells as $mi => $m) {
+                if (($m['key'] ?? null) !== $matchKey) {
+                    continue;
+                }
+                if (! empty($m['winner']) || ! empty($m['double_loss'])) {
+                    return false; // zaten çözülü
+                }
+                $p1 = (int) ($m['p1']['id'] ?? 0);
+                $p2 = (int) ($m['p2']['id'] ?? 0);
+                if ($p1 <= 0 || $p2 <= 0) {
+                    return false; // bay / eksik — düzeltme yok
+                }
+
+                if ($outcome === 0) {
+                    // Çift mağlubiyet: iki oyuncuya birer mağlubiyet, galip yok; hücre double_loss işaretli.
+                    $state = $t->swiss_state;
+                    $round = (int) ($m['round'] ?? $state['round'] ?? ($ri + 1));
+                    $state['participants'] = SwissEngine::applyDoubleLoss($state['participants'], $p1, $p2, $round);
+                    $t->swiss_state = $state;
+                    $bracket[$ri][$mi]['double_loss'] = true;
+                    $bracket[$ri][$mi]['score'] = ['double_loss' => true];
+                    $t->bracket = $bracket;
+                    self::advanceIfRoundComplete($t, $ri);
+                    $t->save();
+
+                    return true;
+                }
+
+                if ($outcome !== $p1 && $outcome !== $p2) {
+                    return false; // galip bu maçta değil
+                }
+                // Hükmen galip (gerçek maç değil → realMatch=false, walkover gibi: realWin/rakip geçmişi yok).
+                self::applyResult($t, $ri, $mi, $outcome, ['walkover' => true], false); // kaydeder + ilerletir
+
+                return true;
+            }
+        }
+
+        return false; // maç bulunamadı
     }
 
     private static function makeSeed(Tournament $t): string
