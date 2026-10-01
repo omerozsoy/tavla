@@ -511,11 +511,11 @@ export function OnlinePlayersPanel({
 export function SeekersPanel({
   currentId,
   onProfile,
-  onInvite,
+  onJoin,
 }: {
   currentId?: number
   onProfile: (id: number) => void
-  onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void
+  onJoin?: (s: Seeker) => void // eslesme havuzuna AYNI kriterle gir -> backend aninda eslestirir
 }) {
   const { t } = useT()
   const [rows, setRows] = useState<Seeker[] | null>(null)
@@ -584,15 +584,15 @@ export function SeekersPanel({
                       <Coins amount={maxStake} size={12} />
                     ) : null}
                   </span>
-                  {!self && onInvite ? (
+                  {!self && onJoin ? (
                     <span className="online-actions">
                       <Button
                         variant="default"
                         size="icon"
                         className="online-act"
-                        title={t('online.invite')}
-                        aria-label={t('online.invite')}
-                        onClick={() => onInvite({ id: s.id, name: s.name, avatar: s.avatar, rating: s.rating })}
+                        title={t('seekers.join')}
+                        aria-label={t('seekers.join')}
+                        onClick={() => onJoin(s)}
                       >
                         <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
                       </Button>

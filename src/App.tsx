@@ -138,6 +138,7 @@ import {
   type GameLogTurn,
   setPresenceStatus,
   type PresenceStatus,
+  type Seeker,
 } from './api'
 import Chat from './ui/Chat'
 import ViewersBadge from './ui/ViewersBadge'
@@ -1682,6 +1683,11 @@ export default function App() {
   // ama görsel de kilitli) engelle. botThinking bot maçına özel; bu ikisi insan maçları içindir.
   const [moveSending, setMoveSending] = useState(false)
   const [rollSending, setRollSending] = useState(false)
+  // OTO-ZAR KURTARMA (1 puanlik/olu-kup maç): kup teklif secenegi olmayan maçta "Zar At" butonu
+  // HİÇ çizilmez (autoRollPending daima true) -> zar %100 oto-zar effect'ine bağlı. Oto-zar bir
+  // transiente (409 mandalı / bayat srvTurn / backoff) takılırsa manuel kurtarma yolu yoktu ->
+  // oyuncu KALICI kilitlenir ("zar atamıyor", #XR37P). true olunca butonu acil kapı olarak açarız.
+  const [autoRollStuck, setAutoRollStuck] = useState(false)
   // API GERİ-ÇEKİLME (429 "Too Many Attempts"): bir istek rate-limit yerse bu zaman damgasına
   // kadar YENİ istek ATMA (roll + poll). Aksi halde takılı auto-roll/poll döngüsü kotayı doldurup
   // tüm hesabı kilitliyor (bir maçın spam'i diğer maçı da bloke ediyordu). Date.now() > ref -> serbest.
@@ -5711,8 +5717,27 @@ export default function App() {
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
     if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed)) return
-    const id = window.setTimeout(() => doRoll(), 500)
-    return () => window.clearTimeout(id)
+    setAutoRollStuck(false)
+    // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
+    // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Açılış effect'indeki (satir ~4096)
+    // retry desenini birebir uygula. Poll BENİM zarsız turumda server_version'i ilerletmez -> bu
+    // effect yeniden çalışmaz, dolayısıyla retry/timer'lar kesintisiz işler; zar atılınca (ya da
+    // tur değişince) version ilerler -> effect cleanup timer'ları temizler. serverRoll idempotent.
+    const first = window.setTimeout(() => doRoll(), 500)
+    const retry = window.setInterval(() => doRoll(), 2500)
+    // ACİL KAPI: ~4sn içinde zar atılmadıysa oto-zar takılmış demektir. Kurtarılabilir mandalları
+    // temizle (rollConflictRef) + otoriter durumu zorla çek (version=-1 -> poll re-apply) ki hem
+    // retry hem de açılacak MANUEL buton tıklaması ilerleyebilsin; sonra butonu göster.
+    const reveal = window.setTimeout(() => {
+      rollConflictRef.current = false
+      appliedServerVersionRef.current = -1
+      setAutoRollStuck(true)
+    }, 4000)
+    return () => {
+      window.clearTimeout(first)
+      window.clearInterval(retry)
+      window.clearTimeout(reveal)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match])
 
@@ -6002,8 +6027,10 @@ export default function App() {
     handleMatchmake()
   }
 
-  // Hizli eslesme: havuza gir; matched ise hemen basla, degilse mm_waiting'de bekle
-  async function handleMatchmake() {
+  // Hizli eslesme: havuza gir; matched ise hemen basla, degilse mm_waiting'de bekle.
+  // tcOverride: "Oyun Arayanlar"dan katilirken seeker'in temposu (setTimeControl state'i ayni
+  // render'da henuz guncel degil) -> dogru tempoyla cagir.
+  async function handleMatchmake(tcOverride?: TimeControl) {
     setRoomBusy(true)
     setRoomError('')
     setInviteWaitName(null) // eslesme havuzu: hedefli davet etiketi gosterme
@@ -6023,7 +6050,7 @@ export default function App() {
         minRatingRef.current,
         betPctRef.current,
         targetsRef.current,
-        timeControl,
+        tcOverride ?? timeControl,
         stakesRef.current ?? undefined,
       )
       // Eslesme olduysa sunucu ortak uzunlugu (target) verir; olmadiysa gecici (max).
@@ -6351,6 +6378,35 @@ export default function App() {
     setInviteTarget(p)
     setHome(false)
     setFriendSetupOpen(true)
+  }
+  // "Oyun Arayanlar": seeker'in kriterleriyle (uzunluk + bahis + tempo) eslesme havuzuna
+  // gir -> backend'in kesisim mantigi seni ANINDA onunla (ya da ayni kriterli en eski uygun
+  // rakiple) PUANLI maca eslestirir. handleInviteFriend'in aksine ayri bir dostluk daveti DEGIL.
+  function handleJoinSeeker(s: Seeker) {
+    if (!user) {
+      notify.info(t('seekers.loginRequired'))
+      setShowAuth(true)
+      return
+    }
+    const stakeList = (s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]).filter((n) => n > 0)
+    const maxStake = stakeList.length > 0 ? Math.max(...stakeList) : 0
+    // Para/bahis maci: tek tiklamayla coin bagladigini acikca ONAYLAT (footgun degil).
+    if (s.bet_pct > 0 && !window.confirm(t('seekers.confirmPct', { pct: s.bet_pct }))) return
+    if (s.bet_pct === 0 && maxStake > 0 && !window.confirm(t('seekers.confirmStake', { coins: maxStake }))) return
+
+    const targets = s.targets && s.targets.length > 0 ? s.targets : [1]
+    targetsRef.current = targets
+    onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
+    minRatingRef.current = 0
+    betPctRef.current = s.bet_pct || 0
+    stakesRef.current = stakeList.length > 0 ? stakeList : null
+    stakeRef.current = maxStake
+    setTimeControl(s.time_control)
+    clockRef.current = CLOCK_PRESETS[s.time_control]
+    mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
+    setHome(false)
+    setMode('online')
+    handleMatchmake(s.time_control) // state henuz stale -> temposu override et
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
@@ -6855,6 +6911,7 @@ export default function App() {
   // BIREBIR ayni (shouldAutoRoll + ayni guard'lar) -> buton gizlenip zar atilmama riski yok.
   const autoRollPending =
     showRoll &&
+    !autoRollStuck && // oto-zar ~4sn basaramadi -> butonu AC (acil kapi, olu-kup macta tek kurtarma)
     !opening &&
     !cubePending &&
     !gameWon &&
@@ -9498,7 +9555,7 @@ export default function App() {
             <SeekersPanel
               currentId={user?.id}
               onProfile={(id) => setHomeProfileId(id)}
-              onInvite={user ? handleInviteFriend : undefined}
+              onJoin={handleJoinSeeker}
             />
             {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">
