@@ -13041,8 +13041,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .spectate-badge {
   position: fixed;
-  top: 10px;
-  left: 12px;
+  top: calc(10px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
   z-index: 120;
   display: flex;
   align-items: center;
@@ -13057,15 +13057,13 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* İzleme ses kontrolü: sağ üstte kapat (×) düğmesinin hemen altında koyu hap
    (hoparlör + seviye kaydırıcısı). Sol üstte TavlaTV logosuyla çakışmasın diye sağa alındı. */
+/* Ses aç/kapa: sağ ALT köşe, yuvarlak tek buton (kaydırıcı kaldırıldı). */
 .spectate-vol {
   position: fixed;
-  top: 58px;
-  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  right: calc(14px + env(safe-area-inset-right));
   z-index: 120;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px 5px 8px;
+  padding: 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--game-scene, #06090f) 62%, transparent);
   border: 1px solid color-mix(in srgb, var(--tv-cream, #f4efe6) 20%, transparent);
@@ -13085,19 +13083,10 @@ button.acct-row-logout:hover:not(:disabled) {
 .spectate-vol-btn:hover {
   color: var(--tv-cream, #f4efe6);
 }
-.spectate-vol-slider {
-  width: 84px;
-  height: 4px;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
 @media (max-width: 640px) {
   .spectate-vol {
-    top: 52px;
-    right: 12px;
-  }
-  .spectate-vol-slider {
-    width: 62px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    right: calc(12px + env(safe-area-inset-right));
   }
 }
 .spectate-status {

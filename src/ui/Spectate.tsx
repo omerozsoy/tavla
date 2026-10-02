@@ -301,18 +301,6 @@ export default function Spectate({
       setVolUi(70)
     }
   }
-  const onVol = (v: number) => {
-    const c = Math.min(100, Math.max(0, Math.round(v)))
-    setVolUi(c)
-    setVolume(c / 100)
-    if (c > 0 && muted) {
-      setMutedUi(false)
-      setMuted(false)
-    } else if (c === 0 && !muted) {
-      setMutedUi(true)
-      setMuted(true)
-    }
-  }
 
   const score: Record<Player, number> = sm?.score ??
     legacy?.match?.score ?? { white: 0, black: 0 }
@@ -458,27 +446,16 @@ export default function Spectate({
       <div className="spectate-badge">
         <span className="live-dot" /> <Icon name="eye" size={14} /> {t('live.watching')}
       </div>
-      {/* Ses kontrolü (misafirler dahil herkes): hoparlör aç/kapat + seviye kaydırıcısı */}
-      <div className="spectate-vol">
-        <button
-          type="button"
-          className="spectate-vol-btn"
-          onClick={toggleMute}
-          aria-label={t('gm.sound')}
-          title={t('gm.sound')}
-        >
-          <Icon name={muted ? 'mute' : 'volume'} size={18} />
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={vol}
-          onChange={(e) => onVol(Number(e.target.value))}
-          className="spectate-vol-slider"
-          aria-label={t('gm.sound')}
-        />
-      </div>
+      {/* Ses aç/kapa (sağ ALT köşe, misafirler dahil herkes): yalnız aç/kapa — kaydırıcı YOK. */}
+      <button
+        type="button"
+        className="spectate-vol-btn spectate-vol"
+        onClick={toggleMute}
+        aria-label={t('gm.sound')}
+        title={t('gm.sound')}
+      >
+        <Icon name={muted ? 'mute' : 'volume'} size={18} />
+      </button>
       <Button
         variant="ghost"
         size="icon"
@@ -486,7 +463,12 @@ export default function Spectate({
         onClick={onClose}
         aria-label={t('common.close')}
         title={t('common.close')}
-        style={{ position: 'fixed', top: '14px', right: '14px', zIndex: 130 }}
+        style={{
+          position: 'fixed',
+          top: 'calc(14px + env(safe-area-inset-top))',
+          right: 'calc(14px + env(safe-area-inset-right))',
+          zIndex: 130,
+        }}
       >
         <Icon name="x" size={18} />
       </Button>
