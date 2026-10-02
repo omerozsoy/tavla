@@ -943,7 +943,16 @@ class RoomController extends Controller
         // AYNI sonucu alır; kişi başına hesaplama YOK. Bir oyuncu zaten açtıysa onun önbellekli
         // satırını kullan (izleyici sıfırdan hesaplatmasın); yoksa ilk satırda bir kez hesapla.
         $src = $rows->first(fn ($r) => ! empty($r->gnubg_review)) ?? $rows->first();
-        $review = $src->gnubgReview(2);
+        // NAZİK "HENÜZ HAZIR DEĞİL" (503 KALKANI): review ÖNBELLEKTE yoksa gnubgReview onu CANLI
+        // hesaplar; uzun maçta (180 hamle ~771KB) gnubg yavaş/geçici erişilemezse TransientAnalysis
+        // fırlatıp HTTP 503'e dönüşüyordu -> izleyici "PR hesaplanıyor"da takılı + console'da sert
+        // hata. Artık istisnayı YUT -> ready:false dön; izleyici poll'u (3sn) nazikçe tekrar dener,
+        // review cache'lenince (job/warmup) 200+ready gelir. (Önbellekli maçlarda zaten anında döner.)
+        try {
+            $review = $src->gnubgReview(2);
+        } catch (\Throwable $e) {
+            return response()->json(['ready' => false]);
+        }
         if (empty($review['ok'])) {
             return response()->json(['ready' => false, 'error' => $review['error'] ?? null]);
         }
