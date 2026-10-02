@@ -5,14 +5,21 @@ import type { RoomViewer } from '../api'
 // İzleyenler rozeti: kaç kişi izliyor + kimler (isim/avatar). Hem Spectate (izleyiciler)
 // hem oyun ekranı (oynayan oyuncular kimlerin izlediğini görsün) tarafından kullanılır.
 // Salt-gösterim; konumlandırma sarmalayıcıya (ör. .spectate-side) bırakılır.
+// Kurulu PWA (standalone) mı? (InstallPrompt/autoUpdate ile aynı inline kontrol.)
+const isStandalone = (): boolean =>
+  window.matchMedia?.('(display-mode: standalone)').matches === true ||
+  (navigator as unknown as { standalone?: boolean }).standalone === true
+
 export default function ViewersBadge({ viewers, count }: { viewers: RoomViewer[]; count: number }) {
   const { t } = useT()
+  // Kurulu PWA'da YALNIZ sayı göster (dar portre ekranda isim listesi yer kaplıyordu).
+  const showList = viewers.length > 0 && !isStandalone()
   return (
     <div className="sp-viewers">
       <div className="sp-viewers-head">
         <Icon name="eye" size={14} /> {t('live.watchCount', { n: count })}
       </div>
-      {viewers.length > 0 && (
+      {showList && (
         <div className="sp-viewers-list">
           {viewers.map((v, i) => (
             <span key={i} className="sp-viewer" title={v.name}>
