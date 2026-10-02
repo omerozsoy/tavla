@@ -64,12 +64,14 @@ function applyPlayed(base: GameState, played: Step[]): GameState {
 export default function Spectate({
   code,
   viewerName,
+  isAdmin = false,
   onClose,
 }: {
   code: string
   p1?: string
   p2?: string
   viewerName?: string // izleyicinin adı (giriş yoksa misafir); presence heartbeat için
+  isAdmin?: boolean // admin: izlenen maçın kodu rozette görünür (şikayet/arama için)
   onClose: () => void
 }) {
   const { t } = useT()
@@ -445,6 +447,17 @@ export default function Spectate({
       {/* İzleme rozeti (sol üst) */}
       <div className="spectate-badge">
         <span className="live-dot" /> <Icon name="eye" size={14} /> {t('live.watching')}
+        {/* Admin: izlenen maçın kodu — tıklayınca panoya kopyalar (panelde bu kodla aranır). */}
+        {isAdmin && (
+          <button
+            type="button"
+            className="spectate-code"
+            title={t('game.copyMatchId')}
+            onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}
+          >
+            #{code}
+          </button>
+        )}
       </div>
       {/* Ses aç/kapa (sağ ALT köşe, misafirler dahil herkes): yalnız aç/kapa — kaydırıcı YOK. */}
       <button

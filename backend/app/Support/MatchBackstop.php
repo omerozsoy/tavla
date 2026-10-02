@@ -67,7 +67,7 @@ class MatchBackstop
             $oppId = (int) ($room->{$oppSlot.'_user_id'} ?? 0);
             $ranked = RatingPolicy::isRanked($room, $uid, $oppId); // per-oyuncu (friendly 24h limiti)
             $matchLength = $room->target !== null ? (int) $room->target : null;
-            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId)) {
+            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake)) {
                 $written++;
             }
         }
@@ -90,9 +90,10 @@ class MatchBackstop
         string $roomCode,
         bool $ranked,
         int $opponentUserId = 0,
+        int $stake = 0,
     ): bool {
         try {
-            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId) {
+            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake) {
                 $u = User::lockForUpdate()->find($userId);
                 if (! $u) {
                     return false;
@@ -145,6 +146,9 @@ class MatchBackstop
                 }
                 if (Schema::hasColumn('match_results', 'rated')) {
                     $row['rated'] = $ranked;
+                }
+                if (Schema::hasColumn('match_results', 'stake')) {
+                    $row['stake'] = $stake; // oda purge edilse de oynanan bahis kalsın
                 }
 
                 MatchResult::create($row); // yarış -> UniqueConstraintViolation -> tx rollback (Elo geri alınır)

@@ -68,7 +68,8 @@ class ForfeitLoss
             }
         }
 
-        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId, $selfScore, $oppScore) {
+        $roomStake = $room ? (int) $room->stake : 0;
+        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId, $selfScore, $oppScore, $roomStake) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
                 return null;
@@ -118,6 +119,9 @@ class ForfeitLoss
             }
             if (Schema::hasColumn('match_results', 'rated')) {
                 $row['rated'] = $ranked;
+            }
+            if (Schema::hasColumn('match_results', 'stake')) {
+                $row['stake'] = $roomStake; // oda purge edilse de oynanan bahis kalsın
             }
 
             return MatchResult::create($row)->id;

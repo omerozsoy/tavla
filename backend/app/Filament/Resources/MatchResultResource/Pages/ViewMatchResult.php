@@ -63,10 +63,13 @@ class ViewMatchResult extends ViewRecord
                 ->columns(3),
             Section::make('Bahis (Coin)')
                 ->schema([
-                    TextEntry::make('room.stake')->label('Oynanan bahis')
-                        ->state(fn (MatchResult $r) => $r->room && $r->room->stake
-                            ? number_format((int) $r->room->stake).' coin'
-                            : '—'),
+                    TextEntry::make('stake')->label('Oynanan bahis')
+                        ->state(function (MatchResult $r) {
+                            // Önce sabitlenen snapshot (oda purge edilse de kalır), yoksa eski satırlar için odadan.
+                            $stake = $r->stake ?? ($r->room?->stake ?? 0);
+
+                            return (int) $stake > 0 ? number_format((int) $stake).' coin' : '—';
+                        }),
                     TextEntry::make('coins_after')->label('Maç sonrası bakiye')
                         ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((int) $state).' coin'),
                     TextEntry::make('room_code')->label('Oda kodu')->default('—')->copyable(),

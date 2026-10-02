@@ -5629,31 +5629,6 @@ button[aria-disabled='true'],
 }
 @keyframes tourn-wait-spin { to { transform: rotate(360deg); } }
 
-/* Rakip zar göstergesi: rakip oynayınca attığı zarı sırası açılınca kısa süre gösterir */
-.opp-roll-badge {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 44;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 14px;
-  border-radius: 12px;
-  color: #fff;
-  background: color-mix(in srgb, var(--game-scene, #06090f) 82%, transparent);
-  backdrop-filter: blur(6px);
-  border: 1px solid color-mix(in srgb, var(--accent, #c9643c) 45%, transparent);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  animation: opp-roll-in 0.22s ease-out;
-  pointer-events: none;
-}
-.opp-roll-label { font-size: 0.82rem; opacity: 0.9; }
-.opp-roll-dice { display: inline-flex; gap: 4px; }
-.opp-roll-die { font-size: 1.5rem; line-height: 1; color: var(--accent, #e8a07a); }
-@keyframes opp-roll-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
-
 .match-id-hud {
   position: absolute;
   top: 4px;
@@ -13117,6 +13092,21 @@ button.acct-row-logout:hover:not(:disabled) {
   color: color-mix(in srgb, var(--tv-cream, #f4efe6) 88%, transparent);
   font-size: 0.82rem;
   letter-spacing: 0.02em;
+}
+/* Admin izleme: maç kodu çipi (rozetin içinde, tıklayınca kopyalanır). */
+.spectate-code {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--tv-gold, #d8b25a) 55%, transparent);
+  background: color-mix(in srgb, var(--tv-gold, #d8b25a) 16%, transparent);
+  color: var(--tv-gold, #d8b25a);
+  font: 600 0.8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.spectate-code:hover {
+  background: color-mix(in srgb, var(--tv-gold, #d8b25a) 28%, transparent);
 }
 /* İzleme ses kontrolü: sağ üstte kapat (×) düğmesinin hemen altında koyu hap
    (hoparlör + seviye kaydırıcısı). Sol üstte TavlaTV logosuyla çakışmasın diye sağa alındı. */

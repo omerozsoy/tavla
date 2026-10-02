@@ -11,7 +11,7 @@ class MatchResult extends Model
 {
     protected $fillable = [
         'user_id', 'won', 'opponent_rating', 'opponent_name', 'opponent_user_id', 'opponent_pr', 'opponent_luck', 'room_code', 'rating_before', 'rating_after', 'delta', 'rated',
-        'match_length', 'match_type', 'pr', 'coins_after', 'luck', 'score_self', 'score_opp', 'log',
+        'match_length', 'match_type', 'pr', 'coins_after', 'stake', 'luck', 'score_self', 'score_opp', 'log',
         'analyzed_at', 'analysis_version',
         // XG-style havuzlama totalleri (§13): dogru lifetime PR icin ham toplamlar.
         'pr_equity_lost', 'pr_decisions',

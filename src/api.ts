@@ -1801,6 +1801,7 @@ export interface RoomView {
   /** Oyuncu basina ana sure (sn): turnuva turunun elle girilen suresi (null = mod varsayilani). */
   clock_bank?: number | null
   stake?: number // anlasilan sabit bahis (coklu secimde eslesmede kesinlesir)
+  pot?: number // oynanan gercek tutar: yuzde-bahis maçta iki bahsin kucugu, sabitte = stake
   clock?: RoomClock | null
   // Sunucu-otoriter mod (Faz 2c). true ise istemci zar/hamleyi SUNUCUDAN alir (serverRoll/
   // serverMove) + server_state uygular; false (varsayilan) eski akis (degisiklik yok).

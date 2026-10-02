@@ -587,6 +587,10 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
             $mr['room_code'] = $data['room_code'] ?? null;
         }
+        // Oynanan coin bahsini SABITLE: oda sonradan purge edilse de "Oynanan bahis" kalsın.
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'stake')) {
+            $mr['stake'] = $room ? (int) $room->stake : 0;
+        }
         // Aynı-rakip 24h limiti için: rakip hesap id + bu satır puanlı mı (rated).
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_user_id')) {
             $mr['opponent_user_id'] = $opponentId > 0 ? $opponentId : null;
