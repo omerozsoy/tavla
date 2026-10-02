@@ -5656,18 +5656,18 @@ button[aria-disabled='true'],
 
 .match-id-hud {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 4px;
+  left: 2px; /* daha sola: üst oyuncu ismini/panelini daha az kapatsın */
   z-index: 40;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 9px;
+  gap: 5px;
+  padding: 3px 7px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--game-scene) 60%, transparent);
   border: 1px solid color-mix(in srgb, var(--tv-cream) 20%, transparent);
   color: color-mix(in srgb, var(--tv-cream) 82%, transparent);
-  font-size: 0.72rem;
+  font-size: 0.62rem; /* küçült: ismi kapatmasın */
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -5877,7 +5877,7 @@ button[aria-disabled='true'],
    Mobil (<=900) ve fiziksel yatay kendi tuned padding'lerini korur. */
 @media (min-width: 901px) {
   .main.game-scene {
-    padding-top: 12px;
+    padding-top: 4px; /* board'u birazcık yukarı: alttaki hane numaraları kesilmesin */
     /* Oyun sahnesi masaüstünde viewport'a SIĞACAK şekilde boyutlanır (board-h = min(100dvh-92, ...)).
        .main'in genel overflow-y:auto kuralı burada, board+sayı-satırları+gap toplamı client
        yüksekliğini birkaç px aştığında (misafirde bile ~4px) HAYALET bir dikey scrollbar
@@ -5891,7 +5891,8 @@ button[aria-disabled='true'],
    Sadece masaustu-uzun ekran; fiziksel yatay (max-height:560) kendi tuned board-h'ini korur. */
 @media (min-width: 901px) and (min-height: 561px) {
   .app.game-view {
-    --board-h: max(320px, min(calc(100dvh - 92px), calc((100vw - 440px) / 1.3)));
+    /* 92 -> 106: board + alt/üst hane numara şeritlerine biraz daha pay -> alt rakamlar kesilmez. */
+    --board-h: max(320px, min(calc(100dvh - 106px), calc((100vw - 440px) / 1.3)));
   }
 }
 
@@ -5979,6 +5980,33 @@ button[aria-disabled='true'],
 }
 .player-rating > svg {
   color: var(--tv-gold);
+}
+
+/* ===== OYUN GÖRÜNÜMÜ SOL PANEL OPTİMİZASYONU =====
+   İstek: iki oyuncunun da avatar+isim+rating+anlık PR'ı TAM görünsün (alttaki PR kesilmesin),
+   avatarlar + anlık PR küçülsün (ama görünsün), Maç ID rozeti üst oyuncu ismini kapatmasın.
+   .sidebar space-between ile board yüksekliğini doldurduğundan içerik fazlaysa alt PR kırpılıyordu;
+   avatar/rating/PR küçültülüp sidebar'a üst boşluk (Maç ID altından başlasın) verilerek hepsi sığar. */
+.main.game-scene .sidebar {
+  --pc-av: 56px;        /* avatarları küçült (84 -> 56) */
+  padding-top: 30px;    /* üst oyuncu kartı Maç ID rozetinin ALTINDAN başlasın (ismi kapanmaz) */
+  padding-bottom: 6px;
+}
+.main.game-scene .player-name {
+  font-size: 1.04rem;   /* isim kompakt ama okunur */
+}
+.main.game-scene .player-rating {
+  font-size: 1.05rem;   /* 1.6 -> 1.05: rating görünür ama kompakt */
+}
+.main.game-scene .player-rating > svg {
+  width: 18px;
+  height: 18px;
+}
+.main.game-scene .pc-pr .pr-val {
+  font-size: 0.82rem;   /* anlık PR küçül ama görünür */
+}
+.main.game-scene .pc-bot-lvl {
+  font-size: 0.66rem;
 }
 /* Tek ortak maÃ§ skoru (iki kartÄ±n arasÄ±nda, ortada) */
 .sidebar-score {
