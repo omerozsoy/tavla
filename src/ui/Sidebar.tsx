@@ -147,19 +147,10 @@ function Rating({ p }: { p: PlayerInfo }) {
 function PlayerCard({ p, pos }: { p: PlayerInfo; pos: 'top' | 'bottom' }) {
   return (
     <div className={`player-card pc-${pos} ${p.active ? 'active' : ''}`}>
-      {pos === 'top' ? (
-        <>
-          <Name p={p} />
-          <Avatar p={p} />
-          <Rating p={p} />
-        </>
-      ) : (
-        <>
-          <Rating p={p} />
-          <Avatar p={p} />
-          <Name p={p} />
-        </>
-      )}
+      {/* Her iki taraf da aynı sıra: avatar -> isim -> rating */}
+      <Avatar p={p} />
+      <Name p={p} />
+      <Rating p={p} />
     </div>
   )
 }
