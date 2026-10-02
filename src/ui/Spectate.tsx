@@ -491,7 +491,13 @@ export default function Spectate({
           {displayBoard ? (
             <>
               {/* p1 = beyaz (altta): 1. oyuncunun gördüğü perspektif. flip=false. */}
-              <Sidebar top={mkInfo('black')} bottom={mkInfo('white')} length={target} crawford={crawford} />
+              <Sidebar
+                top={mkInfo('black')}
+                bottom={mkInfo('white')}
+                length={target}
+                stake={eff?.pot ?? eff?.stake ?? 0}
+                crawford={crawford}
+              />
               {clock && (
                 <ClockStack
                   active={clock.active}

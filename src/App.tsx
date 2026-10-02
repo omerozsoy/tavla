@@ -7505,7 +7505,9 @@ export default function App() {
       <DiceRow faces={oppRoll.dice.map((v) => ({ value: v, used: false }))} owner={opponent(myColor)} />
     ) : null
   const centerRight = turnIsMine ? primary : secondary
-  const centerLeft = turnIsMine ? (secondary ?? oppRollDice) : primary
+  // Rakip zar echo'su YALNIZ ben daha zar atmadan (sıram yeni geçti) solda durur; zarımı atınca
+  // hemen kalkar -> kendi zarım (sağ) ile rakip echo'su (sol) AYNI ANDA görünmez (iki-zar karmaşası).
+  const centerLeft = turnIsMine ? (secondary ?? (!diceRolled ? oppRollDice : null)) : primary
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
