@@ -2518,6 +2518,9 @@ export interface ServerMatch {
   crawfordDone?: boolean
   opened?: boolean
   turns?: number // bu oyunda tamamlanan tur sayisi (kup hakki: ilk el oynanmadan kup yok)
+  // RAKİP ZAR GÖSTERİMİ: son hamlenin zarı (renk+zar) — alıcı istemci poll/push ara durumu
+  // kaçırsa bile rakibin ne attığını sırası açılınca kısa gösterir. v = benzersiz hamle kimliği.
+  lastMove?: { color: 'white' | 'black'; dice: number[]; v: number } | null
 }
 
 // SUNUCU-OTORİTER BOT turu: botun (siyah) sunucuda oynadığı BİR tam tur. İstemci bunu birebir

@@ -209,6 +209,8 @@ const DEFAULT_DESC =
 // (Beta aşaması bitti: artık "BETA" öneki yok; yalnız sürüm numarası gösterilir.)
 declare const __APP_VERSION__: string
 const VERSION_LABEL = `BETA ${__APP_VERSION__.replace(/\.0$/, '')}`
+// Zar yüzü (Unicode) — rakip zar göstergesi için (⚀..⚅; index 1-6).
+const DIE_FACE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
@@ -838,6 +840,11 @@ export default function App() {
   // CANLI rakip önizlemesi (cosmetic): rakibin o an oynadığı adımlar; ekranda adım adım gösterilir.
   const [oppLive, setOppLive] = useState<Step[]>([])
   const oppLiveShownRef = useRef<Step[]>([]) // ekranda gösterilen rakip adımları (delta hesabı)
+  // RAKİP ZAR GÖSTERİMİ (bug: sıra rakipteyken attığı zar görünmüyor): rakibin son hamlesinin
+  // zarını sırası açılınca kısa süre göster. Kaynak otoriter (server_match.lastMove) -> poll/push
+  // ara durumu kaçırsa bile rakibin ne attığı görünür. v = benzersiz kimlik (bir kez gösterilir).
+  const [oppRoll, setOppRoll] = useState<{ dice: number[]; at: number } | null>(null)
+  const lastOppRollVRef = useRef<number>(-1)
   const pendingOppFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect; offColor?: Player } | null>(null)
   const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
@@ -4366,6 +4373,13 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.status, room?.code])
 
+  // ---- Rakip zar göstergesi: 3.5sn sonra kendiliğinden kaybolur ----
+  useEffect(() => {
+    if (!oppRoll) return
+    const id = window.setTimeout(() => setOppRoll(null), 3500)
+    return () => window.clearTimeout(id)
+  }, [oppRoll])
+
   // ---- Online mac bitince Elo puanini bildir (sadece giris yapmis kullanici) ----
   useEffect(() => {
     if (!online || !user || ratingReportedRef.current) return
@@ -4935,6 +4949,18 @@ export default function App() {
         isCrawford: lm.crawford, // Crawford'da kup YASAK (sunucu da reddeder) -> buton cikmasin
       }))
       setCubePending(lm.cubePending)
+      // RAKİP ZAR GÖSTERİMİ: rakibin (color !== myColor) son hamlesinin zarını, YENİ (v) ise kısa
+      // süre göster -> poll/push "zar atıldı ama oynanmadı" ara durumunu kaçırsa bile rakibin ne
+      // attığı sırası açılınca görünür (rapor: "sıra rakipteyken gelen zarları göremedim"). Cosmetic.
+      const oppLastMove = sm.lastMove
+      if (
+        online && oppLastMove && oppLastMove.color !== myColor &&
+        Array.isArray(oppLastMove.dice) && oppLastMove.dice.length >= 1 &&
+        oppLastMove.v !== lastOppRollVRef.current
+      ) {
+        lastOppRollVRef.current = oppLastMove.v
+        setOppRoll({ dice: oppLastMove.dice.slice(0, 2), at: Date.now() })
+      }
       // TUR SAYACI otoriter modda SUNUCUDAN gelir: commitTurn authoritative dalinda erken
       // doner (yerel setTurnsPlayed calismaz) -> sayac 0'da kalirsa `turnsPlayed > 0` sarti
       // hic saglanmaz: "Katla" butonu HIC gorunmez ve shouldAutoRoll her turu otomatik atar.
@@ -10078,6 +10104,18 @@ export default function App() {
               <span>{t('tourn.autoWinIn', { n: tournWaitSec })}</span>
             </div>
             <span className="tourn-wait-count tnum">{tournWaitSec}</span>
+          </div>
+        )}
+        {/* RAKİP ZAR GÖSTERGESİ: rakip oynayınca attığı zarı sırası açılınca kısa süre göster
+            (poll/push ara durumu kaçırsa bile "rakibin zarını göremedim" olmasın). 3.5sn sonra gider. */}
+        {online && oppRoll && myTurn && !gameEnd && !matchOver && (
+          <div className="opp-roll-badge" role="status" aria-live="polite">
+            <span className="opp-roll-label">{t('game.oppRolled')}</span>
+            <span className="opp-roll-dice" aria-hidden="true">
+              {oppRoll.dice.map((d, i) => (
+                <span key={i} className="opp-roll-die">{DIE_FACE[d] ?? d}</span>
+              ))}
+            </span>
           </div>
         )}
         {/* Maç ID (sol üst): oynanan maçın kimliği — admin panelde bu ID ile bulunur.
