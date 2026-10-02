@@ -90,6 +90,15 @@ Schedule::command('services:watch')
     ->name('services-watch')
     ->withoutOverlapping();
 
+// TURNUVA BAKIM NABZI: süren turnuvalarda hükmen/no-show/ölü-dal çözümü HTTP poll'una (GET
+// /tournaments) bağlı kalmadan dakikada bir koşsun. İki oyuncu da sekmeyi kapatıp kimse poll
+// etmezse stall eden maç sonsuza dek "kazanansız" takılıyordu (tahtadaki 60sn no-show istemci
+// çağrısının sunucu-tarafı yedeği). Idempotent -> değişiklik yoksa maliyetsiz.
+Schedule::command('tournaments:tick')
+    ->everyMinute()
+    ->name('tournaments-tick')
+    ->withoutOverlapping();
+
 // CRON NABZI (izleyiciyi izler): schedule:run GERÇEKTEN çalışıyor mu? Her dakika cache'e zaman
 // damgası yaz. Admin "Servis Durumu" panelindeki "Zamanlayıcı (cron)" lambası bunu okur; bayatsa
 // (>~2.5dk) cron DURMUŞ demektir -> services:watch dahil TÜM izleme/otomatik-restart/alarm sessizce
