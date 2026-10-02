@@ -3200,6 +3200,15 @@ class RoomController extends Controller
             // (applyGameResult oyun bitince 0'a döndürür -> yeni oyunda yine açılış eli şartı.)
             $smTurn = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
             $smTurn['turns'] = (int) ($smTurn['turns'] ?? 0) + 1;
+            // RAKİP ZAR GÖSTERİMİ (bug: "sıra rakipteyken attığı zarı göremedim"): son hamlenin zarını
+            // OTORİTER payload'a koy -> alıcı istemci poll/push ara durumu (zar atıldı-ama-oynanmadı)
+            // kaçırsa bile sırası açılınca rakibin ne attığını görür. v = benzersiz hamle kimliği
+            // (server_version+1) -> istemci bir kez gösterir, her poll'de tekrarlamaz. Cosmetic.
+            $smTurn['lastMove'] = [
+                'color' => $moverColor,
+                'dice' => array_values($state['dice'] ?? []),
+                'v' => (int) $room->server_version + 1,
+            ];
             $room->server_match = $smTurn;
 
             // ---- SUNUCU-OTORİTER MAÇ SKORU + KÜP (Faz 2/3) ----
