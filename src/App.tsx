@@ -5125,6 +5125,7 @@ export default function App() {
     let realtimeConnected = false
     let lastFetchAt = 0
     const poll = async (force = false) => {
+      if (cancelled) return // oda temizlendi (404 / unmount) -> interval son kez tetiklese de iş yapma
       if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme: poll'u da durdur
       if (!force && realtimeConnected && Date.now() - lastFetchAt < 2500) return // push bağlı -> yedek ~2.5sn (soket boşluğunda bile en fazla 2.5sn'de güncelleme; hamleler zaten anında push)
       lastFetchAt = Date.now()
@@ -5315,9 +5316,19 @@ export default function App() {
           setAfkLeft(null)
         }
       } catch (e) {
+        const st = (e as { status?: number })?.status
+        // 404: oda SUNUCUDA YOK (silinmiş / süresi dolmuş). Bayat referansı temizle + poll'u durdur
+        // -> aksi halde kullanıcı kurulum/ana sayfadayken bile her 1.2sn boşa 404 atılıyordu
+        // (konsol kirliliği + gereksiz istek). Aktif maçta oda 404 VERMEZ (bitişten ~1 gün sonra
+        // silinir) -> 404 = kesin yok, temizlemek güvenli. setRoom(null) effect cleanup'ı tetikler.
+        if (st === 404) {
+          cancelled = true
+          setRoom(null)
+          return
+        }
         // 429 (Too Many Attempts): poll da rate-limit yedi -> GERİ ÇEKİL. Yoksa her 1.2sn tekrar
         // vurup kovayı dolu tutar (yaşanan #3ZYS8 kilidi). Kısa bekleyiş kovayı boşaltır.
-        if ((e as { status?: number })?.status === 429) {
+        if (st === 429) {
           apiBackoffUntilRef.current = Date.now() + 5000
         }
         /* diğer geçici hatalar: sonraki tur yeniden dener */
