@@ -842,6 +842,11 @@ export default function App() {
   const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
+  // RAKİP ZAR GÖSTERGESİ: rakibin attığı zar, tahtanın ORTASINDA normal zar gibi gösterilir.
+  // oppRoll sunucu lastMove'undan (rakibin tamamladığı son hamlenin zarı) türetilir; sırası bana
+  // geçince kısa süre durur (poll ara durumunu kaçırsa bile "rakibin zarını göremedim" olmaz).
+  const [oppRoll, setOppRoll] = useState<{ dice: number[]; at: number } | null>(null)
+  const lastOppRollVRef = useRef<number>(-1) // son gösterilen lastMove.v (mükerrer tetik engeli)
   const [matchCodeCopied, setMatchCodeCopied] = useState(false) // oyun-içi maç ID kopyalandı geri bildirimi
   // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
   const [cubeHint, setCubeHint] = useState<CubeHint | null>(null)
@@ -893,6 +898,12 @@ export default function App() {
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
+  // RAKİP ZAR GÖSTERGESİ: gösterildikten ~3.5sn sonra otomatik kaybolsun.
+  useEffect(() => {
+    if (!oppRoll) return
+    const id = window.setTimeout(() => setOppRoll(null), 3500)
+    return () => window.clearTimeout(id)
+  }, [oppRoll])
   // Giris/acilista: turnuva/backfill gibi mac-disi kanallardan gelen GORULMEMIS unlock'lari
   // kuyruga al (bir kez animasyon; backend cagride notified=true isaretler).
   useEffect(() => {
@@ -4936,6 +4947,18 @@ export default function App() {
         isCrawford: lm.crawford, // Crawford'da kup YASAK (sunucu da reddeder) -> buton cikmasin
       }))
       setCubePending(lm.cubePending)
+      // RAKİP ZAR GÖSTERİMİ: rakibin (color !== myColor) son hamlesinin zarını, YENİ (v) ise kısa
+      // süre göster -> poll/push "zar atıldı ama oynanmadı" ara durumunu kaçırsa bile rakibin ne
+      // attığı sırası açılınca görünür (rapor: "sıra rakipteyken gelen zarları göremedim"). Cosmetic.
+      const oppLastMove = sm.lastMove
+      if (
+        online && oppLastMove && oppLastMove.color !== myColor &&
+        Array.isArray(oppLastMove.dice) && oppLastMove.dice.length >= 1 &&
+        oppLastMove.v !== lastOppRollVRef.current
+      ) {
+        lastOppRollVRef.current = oppLastMove.v
+        setOppRoll({ dice: oppLastMove.dice.slice(0, 2), at: Date.now() })
+      }
       // TUR SAYACI otoriter modda SUNUCUDAN gelir: commitTurn authoritative dalinda erken
       // doner (yerel setTurnsPlayed calismaz) -> sayac 0'da kalirsa `turnsPlayed > 0` sarti
       // hic saglanmaz: "Katla" butonu HIC gorunmez ve shouldAutoRoll her turu otomatik atar.
@@ -7472,8 +7495,17 @@ export default function App() {
   // beyaz), dolayisiyla "alttaki oyuncunun sirasi mi" = "sira bende mi".
   // Yan slot (Katla / Geri Al) yalniz kendi turumda dolar -> rakip zariyla cakismaz.
   const turnIsMine = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
+  // RAKİP ZAR GÖSTERGESİ: rakibin attığı zar, tahtanın ORTASINDA normal zar gibi (rakip hep SOLDA).
+  // Rakip turunda `primary` zaten canlı zarı (turnStart.dice) çizer. Rakip oynayıp sıra bana geçince
+  // poll ara durumu ("attı ama oynamadı") kaçırsa bile oppRoll echo'su (lastMove'dan) kısa süre sol
+  // merkezde durur -> "sıra rakipteyken attığı zarı göremedim" olmaz. Yalnız KENDİ turumda fallback
+  // (rakip turunda oppRoll ÖNCEKİ eli taşıyabilir -> bayat; orada yalnız canlı `primary` gösterilir).
+  const oppRollDice =
+    online && oppRoll && !gameEnd && !matchOver ? (
+      <DiceRow faces={oppRoll.dice.map((v) => ({ value: v, used: false }))} owner={opponent(myColor)} />
+    ) : null
   const centerRight = turnIsMine ? primary : secondary
-  const centerLeft = turnIsMine ? secondary : primary
+  const centerLeft = turnIsMine ? (secondary ?? oppRollDice) : primary
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
