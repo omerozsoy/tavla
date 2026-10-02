@@ -18,6 +18,7 @@ interface Props {
   loserPr: number | null
   analyzing?: boolean // HAKEM=gnubg: insanın PR'ı gnubg ile hesaplanıyor (async) -> sayı yerine "…"
   analyzingBoth?: boolean // pvb: tek gnubg job İKİ tarafı da (insan+bot) hesaplar -> ikisinde de "…"
+  oppAnalyzing?: boolean // online: RAKİBİN PR'ı ayrı/geç gelir -> gelene kadar onun hücresinde de "…" (boş — değil)
   // XG kırılım: checker-yalnız + küp-yalnız PR (overall = winnerPr/loserPr). null -> —.
   winnerCheckerPr?: number | null
   winnerCubePr?: number | null
@@ -93,6 +94,7 @@ export default function MatchResult({
   loserPr,
   analyzing = false,
   analyzingBoth = false,
+  oppAnalyzing = false,
   winnerCheckerPr,
   winnerCubePr,
   loserCheckerPr,
@@ -156,8 +158,11 @@ export default function MatchResult({
   // hücrelerinde sayı yerine nabızlı "…" gösterilir (wildbg sayısı ASLA gösterilmez).
   // pvb'de tek gnubg job hem insanı hem botu hesaplar -> analyzingBoth ile İKİ tarafta da loader
   // (aksi halde bot tarafı analiz boyunca "—" gösterip sonra sayıya sıçrardı).
-  const aAnalyzing = analyzing && (analyzingBoth || ratingIsWinner)
-  const bAnalyzing = analyzing && (analyzingBoth || !ratingIsWinner)
+  // Rakip tarafı (= yerel oyuncu OLMAYAN taraf): kazanan-görenin rakibi kaybeden(b), kaybeden-görenin
+  // rakibi kazanan(a). Rakip PR'ı ayrı/geç geldiğinden, gelene kadar onun hücresinde de "…" göster
+  // (boş "—" değil -> "rakibin PR'ı yok" sanılmaz; birkaç sn sonra dolar).
+  const aAnalyzing = (analyzing && (analyzingBoth || ratingIsWinner)) || (oppAnalyzing && !ratingIsWinner)
+  const bAnalyzing = (analyzing && (analyzingBoth || !ratingIsWinner)) || (oppAnalyzing && ratingIsWinner)
   // gnubg (sunucu) PR hesaplanana kadar DÖNEN loader; wildbg sayısı ASLA gösterilmez.
   const dots = () => <span className="mr-pr-loader" role="status" aria-label={t('mr.prCalculating')} />
 
@@ -218,6 +223,11 @@ export default function MatchResult({
     if (asymCoin) return isWinner ? `+${winnerCoin} GC` : `-${loserCoin} GC`
     return coinAmount == null ? '—' : `${isWinner ? '+' : '-'}${coinAmount} GC`
   }
+  // Kazanandan site komisyonu: kaybeden TAM potu (loserCoin) öder, kazanan komisyon sonrası
+  // (winnerCoin) alır -> fark = komisyon. Pot başına açıklayıcı not (kullanıcı neden +/- eşit
+  // değil görsün). loserCoin = pot; pct = komisyon/pot. Yalnız para maçında (asymCoin) + >0.
+  const commission = asymCoin && winnerCoin != null && loserCoin != null ? loserCoin - winnerCoin : 0
+  const commissionPct = commission > 0 && loserCoin ? Math.round((commission / loserCoin) * 100) : 0
 
   return (
     <div className="register-overlay modal mr-overlay">
@@ -322,6 +332,12 @@ export default function MatchResult({
               <span className="mr-a mr-pos">{fmtCoins(true)}</span>
               <span className="mr-label">{t('mr.coins')}</span>
               <span className="mr-b mr-neg">{fmtCoins(false)}</span>
+            </div>
+          )}
+          {commission > 0 && (
+            <div className="mr-pr-note" role="note">
+              <Icon name="info" size={14} aria-hidden="true" />{' '}
+              {t('mr.commission', { p: commissionPct, n: commission })}
             </div>
           )}
           <div className="mr-row">
