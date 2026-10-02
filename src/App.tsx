@@ -843,8 +843,12 @@ export default function App() {
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
   // RAKİP ZAR GÖSTERGESİ: rakibin attığı zar, tahtanın ORTASINDA normal zar gibi gösterilir.
-  // oppRoll sunucu lastMove'undan (rakibin tamamladığı son hamlenin zarı) türetilir; sırası bana
-  // geçince kısa süre durur (poll ara durumunu kaçırsa bile "rakibin zarını göremedim" olmaz).
+  // oppRoll sunucu lastMove'undan (rakibin tamamladığı son hamlenin zarı) türetilir; sıra bana
+  // geçtiği andan BEN KENDİ ZARIMI ATANA KADAR solda SABİT durur (otomatik kaybolma YOK).
+  // KÖK FIX ("rakibin zarı gözükmüyor"): zar-atma ve hamle AYRI sunucu sürümleridir; istemci poll/
+  // push'ta yalnız EN SON sürümü uygular -> rakip hızlı oynar/çift atarsa zar-sürümü atlanır VEYA
+  // commit (sıra=ben, zar=boş) zarı animasyon bitmeden ezer. lastMove coalescing'den SAĞ KALIR;
+  // sabit tutunca (timer yok) + render !diceRolled kapısı (zarımı atınca kalkar) -> zar kaçmaz.
   const [oppRoll, setOppRoll] = useState<{ dice: number[]; at: number } | null>(null)
   const lastOppRollVRef = useRef<number>(-1) // son gösterilen lastMove.v (mükerrer tetik engeli)
   const [matchCodeCopied, setMatchCodeCopied] = useState(false) // oyun-içi maç ID kopyalandı geri bildirimi
@@ -898,12 +902,9 @@ export default function App() {
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
-  // RAKİP ZAR GÖSTERGESİ: gösterildikten ~3.5sn sonra otomatik kaybolsun.
-  useEffect(() => {
-    if (!oppRoll) return
-    const id = window.setTimeout(() => setOppRoll(null), 3500)
-    return () => window.clearTimeout(id)
-  }, [oppRoll])
+  // RAKİP ZAR GÖSTERGESİ: OTO-KAYBOLMA KALDIRILDI (kök fix). Eskiden 3.5sn sonra setOppRoll(null)
+  // yapılıyordu; yavaş düşünen/çift atan rakipte zar daha sen bakmadan kaybolup "göremedim" oluyordu.
+  // Artık kendi zarımı atana kadar durur (render !diceRolled); temizlik resetRoomSync + yeni-oyunda.
   // Giris/acilista: turnuva/backfill gibi mac-disi kanallardan gelen GORULMEMIS unlock'lari
   // kuyruga al (bir kez animasyon; backend cagride notified=true isaretler).
   useEffect(() => {
@@ -1779,6 +1780,8 @@ export default function App() {
     appliedServerRoomRef.current = null
     srvTurnStartRef.current = null
     oppLoggedRef.current = ''
+    setOppRoll(null) // yeni oda/rövanş: önceki maçın rakip-zarı bayat görünmesin
+    lastOppRollVRef.current = -1
   }
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
@@ -4976,6 +4979,7 @@ export default function App() {
           setGameEnd((g) => g ?? { winner: w, points: lm.cubeValue, mult: 1, dropped: false })
         }
       } else {
+        if (os === 'roll') setOppRoll(null) // yeni oyun başladı -> önceki oyunun rakip-zarı bayat kalmasın
         setGameEnd(null) // yeni oyun -> önceki oyun-sonu ekranını temizle
         setOpening(os)
       }
