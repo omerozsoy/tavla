@@ -1096,6 +1096,17 @@ class TournamentController extends Controller
     // Son katilim tarihi gelen ACIK turnuvalari otomatik baslat (>=2 oyuncu).
     // Cron gerektirmez: liste/detay her cekildiginde tembel calisir. Kilit altinda
     // status yeniden okunur -> es zamanli iki istek ayni turnuvayi iki kez baslatamaz.
+    /**
+     * ZAMANLANMIŞ BAKIM (cron, tournaments:tick): autoStartDue ile AYNI pipeline'ı HTTP poll'u
+     * beklemeden çalıştırır — süren turnuvalarda hükmen/no-show/ölü-dal/sonuç-uzlaştırma. Böylece
+     * iki taraf da sekmeyi kapatsa bile (poll yok) stall eden maç ~1 dk içinde çözülür (walkover /
+     * rating) ve turnuva takılmaz. Tamamen idempotent (değişiklik yoksa maliyetsiz).
+     */
+    public function runScheduledMaintenance(): void
+    {
+        $this->autoStartDue();
+    }
+
     private function autoStartDue(): void
     {
         $ids = Tournament::where('status', 'open')
