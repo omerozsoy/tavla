@@ -7589,6 +7589,17 @@ html[data-board='yilbasi'] .checker.black {
 @media (prefers-reduced-motion: reduce) {
   .result-box.cube-respond { animation: none; }
 }
+/* İZLEYİCİ (misafir) küp bildirimi: salt-okunur metin kutusu, buton yok -> mobilde
+   board'u az kapasın. Ekrana göre ölç (vw cap) + küçük font; okunur kalsın yeter.
+   Oyuncunun kendi küp kutusu (take/drop butonlu) ETKİLENMEZ (.spectate-view kapsamı). */
+@media (max-width: 900px) {
+  .spectate-view .result-box {
+    padding: 9px 12px;
+    max-width: min(210px, 62vw);
+  }
+  .spectate-view .result-title { font-size: 0.82rem; }
+  .spectate-view .result-box .err-detail { font-size: 0.72rem; margin-top: 3px; }
+}
 .nm-dice {
   justify-content: center;
   margin-bottom: 10px;
@@ -8517,6 +8528,21 @@ button.move-row:focus-visible {
   .pt-numbers {
     font-size: calc(var(--checker) * 0.5);
   }
+  /* Pip sayilari (167/127) mobilde sabit 1.05rem kucuk board'da "cok buyuk" duruyordu ve
+     bar'in ucundaki kup/kirik tas ile cakisiyordu -> board'a oranli kucult. */
+  .game-scene .pip {
+    font-size: calc(var(--checker) * 0.5);
+    transform: translateY(-3px);
+  }
+  /* KUP PIP VE KIRIK TAS ASLA UST USTE GELMESIN: ucucu kup varsayilan top/bottom 0.9*checker'da
+     pip'in uzerine biniyordu (portre). Kupu uclardan 1.5*checker iceri cek -> ustte pip'e, altta
+     kirik tasa yer acilir (landscape zaten 1.3 ile ayarli; bu portre esi). */
+  .board .cube.cube-top {
+    top: calc(var(--checker) * 1.5);
+  }
+  .board .cube.cube-bottom {
+    bottom: calc(var(--checker) * 1.5);
+  }
   .game-area {
     flex-direction: column;
     align-items: center;
@@ -9430,20 +9456,27 @@ html.fs-active .account-bar {
     max-width: 86vw;
     z-index: 100;
     background: var(--card-bg);
-    padding: 14px 12px 12px;
+    /* Ust padding'e safe-area: PWA standalone'da drawer top:0 -> logo durum cubugu saatinin
+       ALTINA insin (eskiden saatle cakisiyordu). Hamburger zaten inset'li; logo da hizalanir. */
+    padding: calc(14px + env(safe-area-inset-top)) 12px 12px;
     box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
     transform: translateX(-102%);
     transition: transform 0.25s ease;
     overflow-y: auto;
-    gap: 4px; /* mobil drawer: masaustu kompakt ritmini gevset */
+    gap: 2px; /* mobil drawer: kompakt dikey ritim (eski 4px cok aralikliydi) */
   }
-  /* Mobil drawer: dokunma hedefi WCAG 44px (masaustunde 36px kompakt) */
+  /* Mobil drawer: dokunma hedefi 40px (eski 44px + bol gap cok dikey yer kapliyordu) */
   .side-menu .menu-group {
-    gap: 4px;
+    gap: 2px;
+  }
+  /* Grup basliklari (TURNUVALAR/ICERIKLER/ANALIZ) arasi ekstra bosluk kisildi */
+  .side-menu .menu-group-title {
+    margin: 2px 0 0;
+    padding-block: 3px;
   }
   .side-menu .menu-btn,
   .side-menu [data-slot='button'] {
-    min-height: 44px;
+    min-height: 40px;
     /* shadcn px-4 (16px) uzun etiketi (~10px) drawer disina tasiriyordu -> kis. */
     padding-inline: 10px;
     justify-content: flex-start;
@@ -9920,28 +9953,30 @@ button.stat-chip:hover {
 }
 .acct-pop {
   z-index: 60;
-  min-width: 248px;
-  padding: 6px;
+  min-width: 212px;
+  max-height: calc(100dvh - 72px); /* uzun menu ekrani asmasin -> kaydir */
+  overflow-y: auto;
+  padding: 4px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
 }
 .acct-row {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
   width: 100%;
-  min-height: 42px;
-  padding: 8px 10px;
+  min-height: 32px;
+  padding: 4px 9px;
   background: none;
   border: none;
   border-radius: var(--radius-md);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 400;
   text-align: left;
   cursor: pointer;
@@ -10001,7 +10036,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .acct-div {
   height: 1px;
-  margin: 5px 8px;
+  margin: 2px 8px;
   background: var(--border);
 }
 /* Gomulu bilesen (bildirim cani): satirin sagina hizali */
@@ -10020,13 +10055,13 @@ button.acct-row-logout:hover:not(:disabled) {
 .acct-langs {
   margin-left: auto;
   display: inline-flex;
-  flex-wrap: wrap; /* 8 dil x 26px daire dar ekranda sarar */
+  flex-wrap: wrap; /* 8 dil x 22px daire dar ekranda sarar */
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 .acct-lang {
   display: inline-flex;
-  padding: 2px;
+  padding: 1px;
   border: 2px solid transparent;
   border-radius: 50%; /* yuvarlak dil bayragini halka ile sarar */
   background: none;
@@ -11697,8 +11732,8 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 2px 8px;
 }
 .acct-status .status-picker {
-  margin: 4px 0;
-  font-size: 0.9rem;
+  margin: 2px 0;
+  font-size: 0.85rem;
 }
 .status-cur {
   display: inline-flex;
@@ -13199,6 +13234,10 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.82rem;
   letter-spacing: 0.02em;
   color: color-mix(in srgb, var(--tv-cream, #f4efe6) 78%, transparent);
+}
+/* İzleyici panelinde (sol alt) YALNIZ sayı: ad/soyad/takma isim gösterme. */
+.spectate-side .sp-viewers-list {
+  display: none;
 }
 .sp-viewers-list {
   display: flex;
