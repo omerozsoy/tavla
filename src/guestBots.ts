@@ -1,3 +1,8 @@
+// ============================================================================================
+// BOTCAN — misafir gizli bot projesi. "BOTCAN'ı kaldır" dendiğinde sökülecek ÖZELLİĞİN KÖKÜ.
+// Tüm BOTCAN kod yerleri `BOTCAN` kelimesiyle etiketli (grep "BOTCAN"). Kaldırma kılavuzu:
+// bu dosyayı sil + App.tsx'teki BOTCAN bloklarını geri al (ayrıntı: memory botcan-projesi).
+// ============================================================================================
 // GİZLİ BOT (misafir deneyimi): Üye OLMAYAN ziyaretçi "Tek Oyun" / "Maç Oyunu" ile rakip arayınca
 // gerçek eşleşme (auth gerekli) yerine SESSİZCE bir bota eşlenir. Bot insan gibi görünür: aşağıdaki
 // 100 isimden rasgele biri + makul rasgele puan + seviye 6-10. Kullanıcı bot oynadığını BİLMEZ.

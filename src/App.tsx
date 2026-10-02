@@ -67,7 +67,7 @@ import {
 import { liveMoveDelta } from './online/liveMoves'
 import { subscribeRoom, onRealtimeConn } from './online/realtime'
 import { botPersona } from './botPersonas'
-import { pickGuestBot } from './guestBots'
+import { pickGuestBot } from './guestBots' // BOTCAN (misafir gizli bot) — "BOTCAN'ı kaldır" = bu özelliği sök
 import Board from './ui/Board'
 import Loading from './ui/Loading'
 import { useBoardDir } from './ui/boardDirection'
@@ -628,7 +628,7 @@ interface RoomState {
   // serverMove yanıtındaki bot[] turlarından gelir (yerel motor YOK). botLevel = HUD zorluk.
   bot?: boolean
   botLevel?: number | null
-  // GİZLİ BOT (misafir): bu oda bir bot maçı AMA kullanıcıya İNSAN gibi gösterilir (üye olmayan
+  // BOTCAN — GİZLİ BOT (misafir): bu oda bir bot maçı AMA kullanıcıya İNSAN gibi gösterilir (üye olmayan
   // ziyaretçi Tek Oyun/Maç Oyunu arayınca). Bot motoru normal çalışır; yalnız UI'daki bot izleri
   // (robot ikonu, "Seviye X" satırı, YZ persona, analiz) gizlenir + sahte insan ad/puan gösterilir.
   botDisguise?: boolean
@@ -942,7 +942,7 @@ export default function App() {
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
-  // GİZLİ BOT (misafir): sahte "Rakip aranıyor" bekleme zamanlayıcısı + iptal bayrağı. Timer dolunca
+  // BOTCAN — GİZLİ BOT (misafir): sahte "Rakip aranıyor" bekleme zamanlayıcısı + iptal bayrağı. Timer dolunca
   // bot odası açılır; kullanıcı beklerken iptal ederse timer temizlenir + cancelled=true.
   const guestBotTimerRef = useRef<number | null>(null)
   const guestBotCancelRef = useRef<{ cancelled: boolean } | null>(null)
@@ -1375,7 +1375,7 @@ export default function App() {
           setLessonsOpen(true)
           break
         case 'tek-oyun':
-          // MİSAFİR: Tek Oyun bahis ekranı (coin, hesap şart) yerine doğrudan gizli bot (1 oyun).
+          // BOTCAN — MİSAFİR: Tek Oyun bahis ekranı (coin, hesap şart) yerine doğrudan gizli bot (1 oyun).
           if (!user) { mmOriginRef.current = 'solo'; startDisguisedBotGame(1) }
           else setSoloOpen(true)
           break
@@ -2332,7 +2332,7 @@ export default function App() {
   // room.bot). Canlı PR / analiz gösterimi ikisinde de açık olmalı; SERVER_BOT geçişinden önce
   // yalnız `mode==='pvb'` kontrol ediliyordu -> otoriter bot maçında canlı PR "—" kalıyordu.
   const botMatch = mode === 'pvb' || (online && !!room?.bot)
-  // GİZLİ BOT (misafir): botMatch DOĞRU (motor çalışsın) ama UI'da bot izleri gizlenir -> rakip
+  // BOTCAN — GİZLİ BOT (misafir): botMatch DOĞRU (motor çalışsın) ama UI'da bot izleri gizlenir -> rakip
   // insan gibi görünür. Bot göstergelerini `botMatch && !botDisguised` ile gate ederiz.
   const botDisguised = online && !!room?.botDisguise
 
@@ -6033,7 +6033,7 @@ export default function App() {
   // (serverRoll/serverMove + poll + applyServerBoard) oynanır, bot hamleleri yanıttaki bot[] turlarından
   // gelir. Böylece iki sekme/pencere TEK sunucu-state'i izler (yerel ıraksama YOK). Açılış, ilk
   // serverRoll'da sunucuda atılır (online açılış yolu); bot başlatıcıysa aynı yanıtta oynar.
-  // disguise: verilirse (misafir gizli botu) oda bir bot maçıdır AMA rakip İNSAN gibi gösterilir
+  // BOTCAN — disguise: verilirse (misafir gizli botu) oda bir bot maçıdır AMA rakip İNSAN gibi gösterilir
   // (sahte ad/puan + bot izleri gizli). Normal "Yapay Zeka ile Oyna"da undefined -> açık bot.
   async function handleCreateBotRoom(
     target: number,
@@ -6141,7 +6141,7 @@ export default function App() {
     }
   }
 
-  // GİZLİ BOT (misafir): üye OLMAYAN ziyaretçi Tek Oyun/Maç Oyunu arayınca çağrılır. Gerçek
+  // BOTCAN — GİZLİ BOT (misafir): üye OLMAYAN ziyaretçi Tek Oyun/Maç Oyunu arayınca çağrılır. Gerçek
   // matchmaking auth ister (misafir 401) -> onun yerine SESSİZCE bota eşle. Önce GERÇEKÇİLİK için
   // kısa "Rakip aranıyor…" ekranı (2-5 sn rasgele), sonra seviye 6-10 bot odası + sahte insan kimliği.
   // Kullanıcı bot oynadığını BİLMEZ. (Üyeler bu yola HİÇ girmez; handleMatchmake/Tek Oyun guard'ı.)
@@ -6216,7 +6216,7 @@ export default function App() {
   // tcOverride: "Oyun Arayanlar"dan katilirken seeker'in temposu (setTimeControl state'i ayni
   // render'da henuz guncel degil) -> dogru tempoyla cagir.
   async function handleMatchmake(tcOverride?: TimeControl) {
-    // MİSAFİR (üye değil): gerçek matchmaking auth ister (401) -> onun yerine gizli bota eşle
+    // BOTCAN — MİSAFİR (üye değil): gerçek matchmaking auth ister (401) -> onun yerine gizli bota eşle
     // (seviye 6-10, sahte insan kimliği, kısa gerçekçi arama). Üyeler normal havuza devam eder.
     if (!user) {
       startDisguisedBotGame(onlineTargetRef.current, tcOverride)
@@ -6311,7 +6311,7 @@ export default function App() {
   }
 
   async function handleCancelMatch() {
-    // GİZLİ BOT (misafir) sahte araması aktifse: sunucuya gitme (cancelMatchmake auth ister), yalnız
+    // BOTCAN — GİZLİ BOT (misafir) sahte araması aktifse: sunucuya gitme (cancelMatchmake auth ister), yalnız
     // zamanlayıcıyı iptal et ve ana sayfaya dön (Tek Oyun bahis ekranını AÇMA -> misafirde anlamsız).
     if (guestBotTimerRef.current || guestBotCancelRef.current) {
       if (guestBotTimerRef.current) window.clearTimeout(guestBotTimerRef.current)
@@ -7470,7 +7470,7 @@ export default function App() {
   // adı + avatar görseli persona'dan gelir (robot ikonu yerine gerçek karakter). Bot DAİMA
   // siyah/üst oyuncudur (insan bot maçlarında hep beyaz). Persona yoksa eski davranış (jenerik
   // ad + robot ikonu) korunur. Bkz. [[src/botPersonas.ts]].
-  // GİZLİ BOT'ta persona (YZ karakteri) KULLANMA -> sahte insan adı (blackName = room.oppName) kalsın.
+  // BOTCAN — GİZLİ BOT'ta persona (YZ karakteri) KULLANMA -> sahte insan adı (blackName = room.oppName) kalsın.
   const botPersonaActive = botMatch && !botDisguised && myColor !== 'black' ? botPersona(difficulty) : undefined
   const topInfo = {
     name: botPersonaActive ? botPersonaActive.name : blackName,
@@ -7495,7 +7495,7 @@ export default function App() {
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
     // Bot ise (persona dahil) isBot=true -> avatar yoksa robot ikonu + seviye alt-satiri (Sidebar
     // seviye 'sub'unu yalniz isBot'ta cizer). Persona'da avatarUrl dolu -> gorsel gosterilir.
-    isBot: botMatch && !botDisguised, // GİZLİ BOT: robot ikonu + seviye satırı GİZLE (insan görün)
+    isBot: botMatch && !botDisguised, // BOTCAN GİZLİ BOT: robot ikonu + seviye satırı GİZLE (insan görün)
     premium: online ? (myColor === 'black' ? isMePremium : (room?.oppPremium ?? false)) : false,
     // Rakip (siyah/ust, ben beyazsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:
@@ -8331,7 +8331,7 @@ export default function App() {
     }, // Mac Oyunu her zaman online (gercek rakip)
     onSolo: () =>
       !user
-        ? (() => { mmOriginRef.current = 'solo'; startDisguisedBotGame(1) })() // misafir: gizli bot
+        ? (() => { mmOriginRef.current = 'solo'; startDisguisedBotGame(1) })() // BOTCAN misafir: gizli bot
         : goPage(() => setSoloOpen(true)),
     onAiGame: () => {
       closeAllPages()

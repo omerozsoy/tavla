@@ -63,6 +63,25 @@ function isStandalone(): boolean {
   )
 }
 
+// SONSUZ OTO-RELOAD KALKANI: autoApplied YALNIZ bu oturum için (reload'da sıfırlanır). Reload yeni
+// bundle'ı GERÇEKTEN getiremezse (SW bayat kabuğu döndü / o an çevrimdışı / tarayıcı HTTP cache)
+// açılış yine eski hash'i görür -> tekrar reload -> "Yükleniyor…"da takılı sonsuz reload döngüsü +
+// başlık/URL titremesi (saha vakası: turnuvaya girerken). Son denemeyi sessionStorage'a damgala;
+// AYNI hedef için ~60sn içinde zaten denediysek bir daha RELOAD ETME -> banner'a düş (kullanıcı
+// elle güncelleyebilir / en azından uygulama kullanılır kalır). Farklı (yeni) deploy = farklı hash
+// -> kalkan onu engellemez. (ErrorBoundary'nin chunk-reload kalkanıyla aynı desen.)
+const AUTO_KEY = 'tavla.autoUpdateReloadAt'
+function recentlyAutoApplied(target: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(AUTO_KEY)
+    if (!raw) return false
+    const o = JSON.parse(raw) as { h?: string; t?: number }
+    return o.h === target && !!o.t && Date.now() - o.t < 60_000
+  } catch {
+    return false
+  }
+}
+
 // Kurulu PWA'da yeni sürümü GÜVENLİ ANDA (maç/ödeme/okuma/seçim yokken) banner beklemeden
 // otomatik uygula. Neden: PWA nadiren tamamen kapandığından ve güncelleme kullanıcı-onaylı
 // olduğundan PWA kullanıcıları eski bundle'da TAKILIP kalıyordu (ör. turnuva oto-giriş çalışmaz).
@@ -72,7 +91,16 @@ function maybeAutoApply(): void {
   if (!pendingTarget || autoApplied) return
   if (!isStandalone()) return
   if (unsafeToPrompt()) return // güvenli ana ertele (interval/visibility tekrar dener)
+  if (recentlyAutoApplied(pendingTarget)) {
+    maybeNotify() // döngü kalkanı: reload işe yaramadı -> banner'a düş (sonsuz reload YOK)
+    return
+  }
   autoApplied = true
+  try {
+    sessionStorage.setItem(AUTO_KEY, JSON.stringify({ h: pendingTarget, t: Date.now() }))
+  } catch {
+    /* storage yoksa yine de tek reload dene (kalkansız) */
+  }
   reloadWithCause('autoupdate-pwa')
 }
 
