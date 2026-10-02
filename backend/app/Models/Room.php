@@ -224,6 +224,15 @@ class Room extends Model
             : collect();
         $prem = fn ($uid) => $uid && isset($users[$uid]) ? $users[$uid]->plan_active !== 'free' : false;
         $clientServerMatch = $this->server_match;
+        // OYNANAN POT: yüzde-bahis (bet_pct) maçta gerçek tutar = iki oyuncunun snapshot
+        // bahsinin KÜÇÜĞÜ (küçük limit belirler; settle de min alır). Sabit-stake'te = stake.
+        // Ham snapshot gizli kalır (altta siliniyor); yalnız bu türetilmiş sayı istemciye gider.
+        $pot = (int) $this->stake;
+        $snapshot = is_array($this->server_match['pct_stake_snapshot'] ?? null)
+            ? array_map('intval', array_values($this->server_match['pct_stake_snapshot'])) : null;
+        if ((int) $this->bet_pct > 0 && $snapshot && count($snapshot) >= 2) {
+            $pot = max(0, min($snapshot));
+        }
         if (is_array($clientServerMatch)) {
             unset($clientServerMatch['pct_stake_snapshot']);
         }
@@ -249,6 +258,7 @@ class Room extends Model
             'status' => $this->status,
             'stake' => (int) $this->stake,
             'bet_pct' => (int) $this->bet_pct,
+            'pot' => $pot, // oynanan gerçek tutar (yüzde maçta min snapshot, sabitte = stake)
             'target' => $this->target !== null ? (int) $this->target : null,
             'clock_bank' => $this->clock_bank !== null ? (int) $this->clock_bank : null, // ozel saat (sn)
             // Sunucu-otoriter mod (Faz 2c). false ise istemci eski akisi kullanir (degisiklik yok).

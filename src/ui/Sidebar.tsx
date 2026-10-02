@@ -184,7 +184,7 @@ export default function Sidebar({ top, bottom, length, stake, crawford }: Sideba
         )}
         {stake != null && stake > 0 && (
           <div className="sm-row">
-            <span className="sm-lbl">{t('game.stake')}</span>
+            <span className="sm-lbl">Pot</span>
             <span className="sm-val">{fmtK(stake)}</span>
           </div>
         )}

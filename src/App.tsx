@@ -209,8 +209,6 @@ const DEFAULT_DESC =
 // (Beta aşaması bitti: artık "BETA" öneki yok; yalnız sürüm numarası gösterilir.)
 declare const __APP_VERSION__: string
 const VERSION_LABEL = `BETA ${__APP_VERSION__.replace(/\.0$/, '')}`
-// Zar yüzü (Unicode) — rakip zar göstergesi için (⚀..⚅; index 1-6).
-const DIE_FACE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
@@ -840,11 +838,6 @@ export default function App() {
   // CANLI rakip önizlemesi (cosmetic): rakibin o an oynadığı adımlar; ekranda adım adım gösterilir.
   const [oppLive, setOppLive] = useState<Step[]>([])
   const oppLiveShownRef = useRef<Step[]>([]) // ekranda gösterilen rakip adımları (delta hesabı)
-  // RAKİP ZAR GÖSTERİMİ (bug: sıra rakipteyken attığı zar görünmüyor): rakibin son hamlesinin
-  // zarını sırası açılınca kısa süre göster. Kaynak otoriter (server_match.lastMove) -> poll/push
-  // ara durumu kaçırsa bile rakibin ne attığı görünür. v = benzersiz kimlik (bir kez gösterilir).
-  const [oppRoll, setOppRoll] = useState<{ dice: number[]; at: number } | null>(null)
-  const lastOppRollVRef = useRef<number>(-1)
   const pendingOppFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect; offColor?: Player } | null>(null)
   const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
@@ -948,6 +941,7 @@ export default function App() {
   const friendlyRef = useRef(false)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
+  const potRef = useRef(0) // oynanan gercek pot (yuzde maçta min snapshot, sabitte = stake); sunucudan gelir
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   // BOTCAN — GİZLİ BOT (misafir): sahte "Rakip aranıyor" bekleme zamanlayıcısı + iptal bayrağı. Timer dolunca
   // bot odası açılır; kullanıcı beklerken iptal ederse timer temizlenir + cancelled=true.
@@ -4373,13 +4367,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.status, room?.code])
 
-  // ---- Rakip zar göstergesi: 3.5sn sonra kendiliğinden kaybolur ----
-  useEffect(() => {
-    if (!oppRoll) return
-    const id = window.setTimeout(() => setOppRoll(null), 3500)
-    return () => window.clearTimeout(id)
-  }, [oppRoll])
-
   // ---- Online mac bitince Elo puanini bildir (sadece giris yapmis kullanici) ----
   useEffect(() => {
     if (!online || !user || ratingReportedRef.current) return
@@ -4949,18 +4936,6 @@ export default function App() {
         isCrawford: lm.crawford, // Crawford'da kup YASAK (sunucu da reddeder) -> buton cikmasin
       }))
       setCubePending(lm.cubePending)
-      // RAKİP ZAR GÖSTERİMİ: rakibin (color !== myColor) son hamlesinin zarını, YENİ (v) ise kısa
-      // süre göster -> poll/push "zar atıldı ama oynanmadı" ara durumunu kaçırsa bile rakibin ne
-      // attığı sırası açılınca görünür (rapor: "sıra rakipteyken gelen zarları göremedim"). Cosmetic.
-      const oppLastMove = sm.lastMove
-      if (
-        online && oppLastMove && oppLastMove.color !== myColor &&
-        Array.isArray(oppLastMove.dice) && oppLastMove.dice.length >= 1 &&
-        oppLastMove.v !== lastOppRollVRef.current
-      ) {
-        lastOppRollVRef.current = oppLastMove.v
-        setOppRoll({ dice: oppLastMove.dice.slice(0, 2), at: Date.now() })
-      }
       // TUR SAYACI otoriter modda SUNUCUDAN gelir: commitTurn authoritative dalinda erken
       // doner (yerel setTurnsPlayed calismaz) -> sayac 0'da kalirsa `turnsPlayed > 0` sarti
       // hic saglanmaz: "Katla" butonu HIC gorunmez ve shouldAutoRoll her turu otomatik atar.
@@ -5177,6 +5152,7 @@ export default function App() {
           handleLeaveRoom()
           return
         }
+        if (rv.pot != null) potRef.current = rv.pot // oynanan gercek pot (yuzde maçta eslesmede kesinlesir)
         setRoom((r) =>
           r
             ? {
@@ -5376,21 +5352,33 @@ export default function App() {
       if (cancelled) off()
       else offRoom = off
     })
-    // SEKMEYE DÖNÜNCE ANINDA RESYNC: sunucu-otoriter saat POLL'da lazy hesaplanır
-    // (MatchClock::tick -> now - started_at). Arka planda tarayıcı poll interval'ını
-    // kısıp/askıya alır -> saati soracak kimse kalmaz ve süre bittiği HALDE timeout ilan
-    // edilmez (özellikle bot maçında: rakip=bot hiç poll etmez, tek insan arka plandadır ->
-    // maç saati donmuş görünür, "süre bitmemiş" gibi asılı kalır). Sekme tekrar görünür
-    // olunca hemen bir poll at: sunucu gerçek geçen süreyi döndürür, süre bittiyse timeout/AFK
-    // o an tetiklenir ve istemci gameEnd olarak uygular (bot maçı 'friendly' -> rating cezası yok).
-    const onVisiblePoll = () => {
-      if (document.visibilityState === 'visible' && !cancelled) void poll()
+    // SEKMEYE/UYGULAMAYA DÖNÜNCE ANINDA RESYNC + PRESENCE TAZELE: arka planda tarayıcı poll
+    // interval'ını kısar/askıya alır -> _seen (presence damgası, showRoom ucunda yazılır) tazelenmez
+    // ve PRESENCE_TIMEOUT (45sn) dolunca rakip "terk etti" sanıp HAKSIZ ABANDON kazanır (vaka 2FLK9:
+    // oyuncu kendi hamlesinden hemen sonra uygulamayı arka plana aldı, sırası gelince poll atan kimse
+    // olmadı -> 45sn'de terk). Ayrıca sunucu-otoriter saat POLL'da lazy hesaplanır (MatchClock::tick)
+    // -> arka planda süre/AFK ilan edilmez. Dönüşte force poll (push debounce'unu da ATLA) -> sunucu
+    // _seen'i ANINDA günceller + gerçek geçen süreyi döndürür.
+    //
+    // visibilitychange TEK BAŞINA mobil PWA/Safari'de güvenilmez: bfcache restore (pageshow), pencere
+    // focus ve ağ geri gelmesi (online) de tetiklesin. SINIR: arka planda polling SÜRDÜRÜLEMEZ
+    // (tarayıcı timer'ı askıya alır); 45sn'yi AŞAN arka plan yine meşru terk sayılır. Buradaki koruma
+    // "kısa süre arka plana alıp dönen" oyuncu için: dönüşte GARANTİLİ, anında re-poll ile _seen'i
+    // 45sn penceresi kapanmadan tazelemek.
+    const onResume = () => {
+      if (!cancelled && document.visibilityState === 'visible') void poll(true)
     }
-    document.addEventListener('visibilitychange', onVisiblePoll)
+    document.addEventListener('visibilitychange', onResume)
+    window.addEventListener('pageshow', onResume)
+    window.addEventListener('focus', onResume)
+    window.addEventListener('online', onResume)
     return () => {
       cancelled = true
       window.clearInterval(id)
-      document.removeEventListener('visibilitychange', onVisiblePoll)
+      document.removeEventListener('visibilitychange', onResume)
+      window.removeEventListener('pageshow', onResume)
+      window.removeEventListener('focus', onResume)
+      window.removeEventListener('online', onResume)
       offConn()
       offRoom()
     }
@@ -6286,6 +6274,7 @@ export default function App() {
       if (res.room.target != null) onlineTargetRef.current = res.room.target
       // Eslesme aninda anlasilan bahis (coklu secim) kesinlesti -> gercek tutari uygula.
       if (res.matched && res.room.stake != null && res.room.stake > 0) stakeRef.current = res.room.stake
+      potRef.current = res.room.pot ?? stakeRef.current // oynanan pot (yuzde maçta eslesmede min; sabitte = stake)
       resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -9421,6 +9410,7 @@ export default function App() {
           code={spectate.code}
           p1={spectate.p1}
           p2={spectate.p2}
+          isAdmin={!!user?.is_admin}
           onClose={() => setSpectate(null)}
         />
       )}
@@ -10106,18 +10096,6 @@ export default function App() {
             <span className="tourn-wait-count tnum">{tournWaitSec}</span>
           </div>
         )}
-        {/* RAKİP ZAR GÖSTERGESİ: rakip oynayınca attığı zarı sırası açılınca kısa süre göster
-            (poll/push ara durumu kaçırsa bile "rakibin zarını göremedim" olmasın). 3.5sn sonra gider. */}
-        {online && oppRoll && myTurn && !gameEnd && !matchOver && (
-          <div className="opp-roll-badge" role="status" aria-live="polite">
-            <span className="opp-roll-label">{t('game.oppRolled')}</span>
-            <span className="opp-roll-dice" aria-hidden="true">
-              {oppRoll.dice.map((d, i) => (
-                <span key={i} className="opp-roll-die">{DIE_FACE[d] ?? d}</span>
-              ))}
-            </span>
-          </div>
-        )}
         {/* Maç ID (sol üst): oynanan maçın kimliği — admin panelde bu ID ile bulunur.
             KOPYALANABİLİR: tıklayınca kodu panoya kopyalar (kopyalandı -> aksan renk + tik). */}
         {recordUid && (
@@ -10146,7 +10124,7 @@ export default function App() {
           top={flipBoard ? bottomInfo : topInfo}
           bottom={flipBoard ? topInfo : bottomInfo}
           length={match.target}
-          stake={stakeRef.current}
+          stake={potRef.current || stakeRef.current}
           crawford={match.isCrawford && !gameEnd}
         />
         {clockOn && (

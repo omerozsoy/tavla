@@ -142,6 +142,24 @@ class ForfeitLossTest extends TestCase
         $this->assertFalse((bool) MatchResult::where('room_code', 'D5R')->where('user_id', $loser->id)->first()->won);
     }
 
+    // Oynanan coin bahsi forfeit satırına SABITLENİR ve oda purge edilse de kalır
+    // (admin "Oynanan bahis" artık rooms.stake yerine bu snapshot'tan okur).
+    public function test_forfeit_snapshots_stake_surviving_room_purge(): void
+    {
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $room = $this->rankedRoom('FLS', $a, $b);
+        $room->forceFill(['stake' => 500])->save();
+
+        \App\Support\ForfeitLoss::record('FLS', $a->id, 1500, 1, 'coin', 'b', true, $b->id);
+
+        $row = MatchResult::where('room_code', 'FLS')->where('user_id', $a->id)->first();
+        $this->assertSame(500, (int) $row->stake);
+
+        $room->delete(); // oda purge edildi -> snapshot yine durur
+        $this->assertSame(500, (int) MatchResult::find($row->id)->stake);
+    }
+
     // GÜNCEL kural (kullanıcı direktifi): davet (friendly/kılıç) maçları PUANLIDIR (aynı-rakip 24h
     // limiti altında). Terk edilince KAYBEDEN puan/mağlubiyet KAYBEDER (ilk maç -> limit altı).
     public function test_friendly_forfeit_within_cap_is_rated(): void

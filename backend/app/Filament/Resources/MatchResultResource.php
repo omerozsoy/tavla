@@ -107,7 +107,8 @@ class MatchResultResource extends Resource
                     ->state(fn (MatchResult $r) => $r->pr === null ? 'Terk / Yedek' : null)
                     ->badge()->color('warning')->icon('heroicon-o-exclamation-triangle')
                     ->tooltip('Terk/kopma ile bitti: oyuncu raporlamadan ayrıldı. Sunucu sonucu + puanı sakladı; PR / şans / skor hesaplanmadığı için boş (—) görünür. Veri kaybı değildir.'),
-                Tables\Columns\TextColumn::make('room.stake')->label('Bahis (coin)')
+                Tables\Columns\TextColumn::make('stake')->label('Bahis (coin)')
+                    ->state(fn (MatchResult $r) => (int) ($r->stake ?? ($r->room?->stake ?? 0)))
                     ->formatStateUsing(fn ($state) => $state ? number_format((int) $state).' coin' : '—')
                     ->color(fn ($state) => $state ? 'warning' : 'gray')
                     ->alignEnd(),
