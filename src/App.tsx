@@ -1865,6 +1865,10 @@ export default function App() {
   // HAKEM=gnubg: maç bitince gösterilen PR gnubg (async job) ile hesaplanır. Hazır olana kadar
   // sonuç ekranı insan PR'ında "…" gösterir (wildbg sayısı gösterilmez); gnubg gelince swap edilir.
   const [prAnalyzing, setPrAnalyzing] = useState(false)
+  // RAKİP PR'ı ayrı/geç gelir (kaybeden kendi satırını geç raporlar/gnubg kuyruğu). KENDİ PR'ım hazır
+  // olunca prAnalyzing kapanıp rakip hücresi boş "—" gösteriyordu ("rakibin PR'ı yok" sanılıyordu).
+  // Bu bayrak rakip PR'ı gelene (ya da matchPr poll tavanına) kadar onun hücresinde "…" tutar.
+  const [oppPrPending, setOppPrPending] = useState(false)
   const prPollRef = useRef(0) // aktif poll oturumu (yeni maç/yeni rapor eski poll'u iptal eder)
   // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
@@ -2522,6 +2526,7 @@ export default function App() {
     setServerPr(null) // yeni mac -> onceki sunucu-PR'i gosterme
     prPollRef.current++ // aktif gnubg PR poll'unu iptal et
     setPrAnalyzing(false)
+    setOppPrPending(false)
     setServerLuck(null) // yeni mac -> onceki sunucu-sansini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
@@ -4507,6 +4512,10 @@ export default function App() {
           cubeSelf: r.pr_cube_self ?? null,
           cubeOpp: r.pr_cube_opponent ?? null,
         })
+        // Rakip PR'ı online insan maçında ayrı/geç gelir -> gelene kadar onun hücresinde "…" tut
+        // (boş "—" değil). Bot/terk/forfeit'te rakip satırı olmayabilir; aşağıdaki poll ~90sn'de
+        // gelmezse tavan vurup kapatır (sonsuz loader yok).
+        setOppPrPending(!!code && !room?.bot && oppPr == null)
         // HAKEM=gnubg (online): kendi PR'ımı da gnubg gelene kadar LOADER göster, gnubg gelince
         // değiştir (wildbg sayısı gösterilmez). Rakip PR aşağıdaki matchPr poll'undan (o da gnubg).
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
@@ -4557,6 +4566,7 @@ export default function App() {
             const pair = await matchPr(code)
             if (pair.opponent != null) {
               oppPr = pair.opponent
+              setOppPrPending(false) // rakip PR geldi -> "…" kapan, sayı göster
               // Rakip raporunu YENI tamamladiysa kirilim da o an gelir; gelmeyen ONCEKI kalir.
               setServerPr((prev) => ({
                 self: pair.self ?? prev?.self ?? r!.pr_self ?? null,
@@ -4579,6 +4589,7 @@ export default function App() {
             setColorPair(setServerLuckJokers, pair.luck_jokers_self, pair.luck_jokers_opp)
           }
         }
+        setOppPrPending(false) // poll bitti (geldi ya da ~90sn tavan) -> sonsuz "…" bırakma
       }
     })()
     // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
@@ -10284,6 +10295,7 @@ export default function App() {
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
           analyzing={prAnalyzing}
+          oppAnalyzing={oppPrPending}
           analyzingBoth={mode === 'pvb'}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}
