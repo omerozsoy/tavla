@@ -8178,7 +8178,7 @@ export default function App() {
                       title={l.label}
                       aria-label={l.label}
                     >
-                      <Flag code={l.code} size={26} />
+                      <Flag code={l.code} size={22} />
                     </button>
                   ))}
                 </span>
