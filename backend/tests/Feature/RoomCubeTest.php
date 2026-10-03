@@ -120,7 +120,10 @@ class RoomCubeTest extends TestCase
     {
         $this->room(target: 3, cube: ['value' => 2, 'owner' => 'white', 'pending' => 'white']);
         $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'drop'])
-            ->assertOk()->assertJsonPath('winner', 'white')->assertJsonPath('match_done', false);
+            ->assertOk()->assertJsonPath('winner', 'white')->assertJsonPath('match_done', false)
+            // KÖK FIX (S8SR7): drop yanıtı state DÖNER -> drop eden sonraki oyun durumunu DOĞRUDAN
+            // uygular (poll mid-move kalkanına takılıp eski tahtada KİLİTLİ kalmaz).
+            ->assertJsonStructure(['state', 'match', 'version']);
         $sm = Room::first()->fresh()->server_match;
         $this->assertSame(2, $sm['score']['white']); // drop = MEVCUT kÃ¼p deÄŸeri (gammon YOK)
         $this->assertSame(2, $sm['gameNo']);

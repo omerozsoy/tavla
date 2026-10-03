@@ -3632,6 +3632,14 @@ export default function App() {
             if (r?.version != null) appliedServerVersionRef.current = r.version
             recordCubePR(srvDropper, 'take', 'drop') // XG cube PR + .mat kaydı
             recordCubeEvent(srvDropper, 'drop') // maç kaydı (okunur)
+            // KÖK FIX (vaka S8SR7 "bot küp çekti pasladım oyun kilitlendi"): drop yanıtını DOĞRUDAN
+            // uygula. drop eden KENDİ turunda olduğu için poll'un mid-move kalkanı senkronu bloklar +
+            // version zaten yukarıda yazıldı -> poll bir sonraki OYUN (opened=false) / maç-sonu durumunu
+            // HİÇ getiremez. Backend artık state döner; resign ile birebir aynı desen.
+            if (r?.state) {
+              appliedServerRoomRef.current = code
+              applyServerBoard(r.state as GameState, r.match ?? null)
+            }
           })
           // Hata (409 DAHİL): resync et (bkz handleTake) -> drop uygulanmadıysa kutu geri gelir.
           .catch((e) => {
