@@ -31,8 +31,13 @@
         <div class="lg:col-span-2">
             @if ($selectedUserId)
                 <div class="flex flex-col overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" style="height: 62vh;">
-                    <div class="border-b border-gray-200 px-4 py-3 font-medium text-gray-950 dark:border-gray-700 dark:text-white">
-                        {{ $this->selectedName() }}
+                    <div class="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                        <span class="font-medium text-gray-950 dark:text-white">{{ $this->selectedName() }}</span>
+                        <x-filament::button color="danger" size="sm" icon="heroicon-m-trash"
+                            wire:click="deleteConversation"
+                            wire:confirm="Bu oyuncuyla tüm konuşma kalıcı olarak silinecek. Emin misin?">
+                            Konuşmayı Sil
+                        </x-filament::button>
                     </div>
                     <div class="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4 dark:bg-gray-950/40">
                         @foreach ($this->thread() as $m)

@@ -128,6 +128,22 @@ class PlayerReplies extends Page
             ->whereNull('read_at')->update(['read_at' => now()]);
     }
 
+    /** Seçili oyuncuyla TÜM konuşmayı (iki yönlü DM'ler) kalıcı sil. thread() ile AYNI kapsam. */
+    public function deleteConversation(): void
+    {
+        if (! $this->selectedUserId) {
+            return;
+        }
+        $official = $this->officialId();
+        $pid = $this->selectedUserId;
+        Message::where(fn ($q) => $q->where('sender_id', $official)->where('receiver_id', $pid))
+            ->orWhere(fn ($q) => $q->where('sender_id', $pid)->where('receiver_id', $official))
+            ->delete();
+        $this->selectedUserId = null;
+        $this->reply = '';
+        Notification::make()->title('Konuşma silindi.')->success()->send();
+    }
+
     public function sendReply(): void
     {
         $body = trim($this->reply);
