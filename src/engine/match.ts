@@ -50,34 +50,37 @@ export interface CubeAvailability {
 // Bot da AYNI kurala tabidir (ek kisit YOK) -> insan ve bot birebir ayni kupu kullanir.
 // NOT: sira/oyun-bitti/zar-atildi gibi durumlar cagiran tarafta (App handleDouble: diceRolled;
 // otoriter online'da backend cubeAvailability) kontrol edilir; burada MAC-DURUMU kurallari.
+// isMoney = PARA OYUNU (Tek Oyun: sabit bahis + tek oyun). Küp CANLI: 1-puan kuralı ve ölü-küp
+// UYGULANMAZ (coin stake × küp × gammon ile ölçeklendiği için katlamak HER ZAMAN anlamlı); tavan 16
+// (en kötü = stake × 16 × 3 = 48, giriş şartıyla rezerve). Backend cubeAvailability ile birebir.
 export function cubeAvailability(
   m: MatchState,
   player: Player,
   awaitingResponse: boolean,
+  isMoney = false,
 ): CubeAvailability {
   if (awaitingResponse) return { allowed: false, reason: 'DOUBLE_ALREADY_PENDING' }
   if (m.isCrawford) return { allowed: false, reason: 'CRAWFORD_GAME' } // Crawford: kup yok
-  if (m.target <= 1) return { allowed: false, reason: 'ONE_POINT_MATCH' } // 1 puanlik mac: kup yok
-  if (m.cube.value >= 64) return { allowed: false, reason: 'CUBE_AT_MAX' } // 64 tavan
+  if (!isMoney && m.target <= 1) return { allowed: false, reason: 'ONE_POINT_MATCH' } // 1 puanlik mac: kup yok
+  if (m.cube.value >= (isMoney ? 16 : 64)) return { allowed: false, reason: 'CUBE_AT_MAX' } // tavan (para 16)
   if (m.cube.owner !== null && m.cube.owner !== player) {
     return { allowed: false, reason: 'NOT_CUBE_OWNER' } // rakip kupu tutuyor
   }
-  // OLU KUP (teklif eden icin): kup zaten teklif edenin ihtiyaci olan puani karsiliyorsa
-  // katlamanin kazanci YOKTUR (oyunu kazaninca mac zaten bitiyor), riski vardir. Teklif
-  // SUNULMAZ -> zar dogrudan atilir (shouldAutoRoll bunu okur).
-  if (m.cube.value >= pointsNeeded(m, player)) return { allowed: false, reason: 'DEAD_CUBE' }
+  // OLU KUP (yalniz puan maci): kup zaten teklif edenin ihtiyaci olan puani karsiliyorsa
+  // katlamanin kazanci YOKTUR. Para oyununda hedef yok -> olu kup YOK, kup hep canli.
+  if (!isMoney && m.cube.value >= pointsNeeded(m, player)) return { allowed: false, reason: 'DEAD_CUBE' }
   return { allowed: true }
 }
 
 // Boolean kisayol (mevcut cagri yerleri icin korunur). cubeAvailability'nin allowed'i.
-export function canDouble(m: MatchState, player: Player, awaitingResponse: boolean): boolean {
-  return cubeAvailability(m, player, awaitingResponse).allowed
+export function canDouble(m: MatchState, player: Player, awaitingResponse: boolean, isMoney = false): boolean {
+  return cubeAvailability(m, player, awaitingResponse, isMoney).allowed
 }
 
 // Sira gelen oyuncu icin zar otomatik atilmali mi?
 // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyor veya
 // ilk el) beklemenin anlami yok -> otomatik at.
-export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number, pos?: GameState): boolean {
+export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number, pos?: GameState, isMoney = false): boolean {
   // BARDA (pozisyon verilmisse): rakip ev bolgesi tamamen kapaliysa hicbir zarla giremem
   // -> kesin dans, oto-at (kullanici direktifi: "bana zar at deme, otomatik at"). En az bir
   // giris aciksa (girebilecek duruma geldim) ELLE at -> false (kullanici: "girecek duruma
@@ -86,7 +89,7 @@ export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number,
   // "Otomatik zar" AYARI KALDIRILDI (kullanici direktifi): zar yalnizca kup teklif etme
   // secenegi YOKKEN otomatik atilir. Teklif mumkunse oyuncu "Zar At"/"Katla" arasinda
   // secim yapabilsin diye beklenir.
-  const canOfferCube = turnsPlayed > 0 && canDouble(m, turn, false)
+  const canOfferCube = turnsPlayed > 0 && canDouble(m, turn, false, isMoney)
   return !canOfferCube
 }
 
