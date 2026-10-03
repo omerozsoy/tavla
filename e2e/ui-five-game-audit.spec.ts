@@ -28,6 +28,8 @@ async function waitVersion(request: APIRequestContext, code: string, user: User,
 }
 
 test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }) => {
+  // 5 tam oyun (yüzlerce hamle) genel 120 sn test sınırına sığmaz.
+  test.setTimeout(20 * 60_000)
   mkdirSync('test-results/ui-five-game-audit', { recursive: true })
   const users = JSON.parse(readFileSync('backend/storage/app/e2e-users.json', 'utf8')) as User[]
   const errors: { player: string; type: string; message: string }[] = []
@@ -47,7 +49,8 @@ test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }
   const t0 = Date.now()
   const gameRows: Record<string, unknown>[] = []
   try {
-    for (const p of pages) await p.goto('/', { waitUntil: 'domcontentloaded' })
+    // Paralel: sıralı goto'da ikinci sayfa ilk sayfanın soğuk-derleme süresini de bekliyordu.
+    await Promise.all(pages.map((p) => p.goto('/', { waitUntil: 'domcontentloaded' })))
     await Promise.all(pages.map((p) => expect(p.locator('.app')).toBeVisible({ timeout: 15_000 })))
     await pages[0].getByRole('button', { name: /^Maç Oyunu$/ }).first().click()
     await expect(pages[0].locator('.setup-page')).toBeVisible()

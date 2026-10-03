@@ -1233,6 +1233,9 @@ export default function App() {
       alive = false
       window.removeEventListener('online', onOnline)
     }
+  // BİLEREK yalnız user?.id: user nesnesi her profil/coin yenilemesinde değişir; dep olursa flush
+  // her seferinde yeniden koşar (gereksiz retry istekleri). Kimlik değişince bir kez yeterli.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]) // stabil kimlik -> döngü yok (bkz heartbeat-ping-kacak-dongu)
 
   // Çerez banner'ı / hukuki sayfalar: "tavla:open-legal" olayı -> hukuki sayfayı aç
@@ -3759,6 +3762,9 @@ export default function App() {
     const points = match.cube.value * outcome.multiplier
     setMatch((m) => scoreGame(m, w, m.cube.value * outcome.multiplier))
     setGameEnd({ winner: w, points, mult: outcome.multiplier, dropped: false })
+  // BİLEREK `online` yok: online/otoriter durum authoritativeRef ile okunur; online true->false
+  // geçişinde (maç arası room=null) effect'i yeniden koşturmak eski tahtayı skorlatabilirdi.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [working, gameEnd, cubePending, match.cube.value, turnsPlayed])
 
   // ---- Bot sirasi: kup teklifi -> zar -> oyna ----
@@ -4365,6 +4371,9 @@ export default function App() {
     if (!online || afkLeft == null) return
     const id = window.setInterval(() => setAfkLeft((a) => (a == null ? a : Math.max(0, a - 1))), 1000)
     return () => window.clearInterval(id)
+  // BİLEREK afkLeft değil `afkLeft == null`: değer her saniye değişir; dep olursa interval her
+  // tikte yeniden kurulur. Sayım setAfkLeft(fn) ile yapılır, güncel değer gerekmez.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, afkLeft == null])
 
   // Ek sure bitti -> sirasi gelen oyuncu oyunu kaybeder.
@@ -5685,6 +5694,9 @@ export default function App() {
     if (rewardReady || rewardSecs <= 0) return
     const id = window.setInterval(() => setRewardSecs((s) => Math.max(0, s - 1)), 1000)
     return () => window.clearInterval(id)
+  // BİLEREK rewardSecs değil `rewardSecs > 0`: değer her saniye değişir; dep olursa interval her
+  // tikte yeniden kurulur. Sayım setRewardSecs(fn) ile yapılır.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rewardReady, rewardSecs > 0])
 
   // Bonus HAZIR OLDUGU AN (false->true gecisi) konfeti patlat. prevRef ile yalniz

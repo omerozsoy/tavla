@@ -118,14 +118,21 @@ test.describe('touch-target min (mobil)', () => {
         const r = el.getBoundingClientRect()
         return { w: Math.round(r.width), h: Math.round(r.height) }
       }
-      return { calNav: pick('.cal-nav button'), bugFab: pick('.bug-fab') }
+      // Mobilde (<=900px) sabit .bug-fab BİLEREK gizli (display:none -> 0px); "Hata Bildir"
+      // hamburger çekmecesinde (.side-menu-bug). Görünür olanı ölç.
+      const fab = pick('.bug-fab')
+      const bug = fab && fab.h > 0 ? { ...fab, min: 42 } : (() => {
+        const m = pick('.side-menu-bug button')
+        return m && { ...m, min: 40 } // menü öğeleri (NAV) 40px; FAB için 42
+      })()
+      return { calNav: pick('.cal-nav button'), bugFab: bug }
     })
     if (sizes.calNav) {
       expect(sizes.calNav.w, 'cal-nav genişlik').toBeGreaterThanOrEqual(38)
       expect(sizes.calNav.h, 'cal-nav yükseklik').toBeGreaterThanOrEqual(38)
     }
     if (sizes.bugFab) {
-      expect(sizes.bugFab.h, 'bug-fab yükseklik').toBeGreaterThanOrEqual(42)
+      expect(sizes.bugFab.h, 'hata-bildir (fab / menü) yükseklik').toBeGreaterThanOrEqual(sizes.bugFab.min)
     }
     await ctx.close()
   })

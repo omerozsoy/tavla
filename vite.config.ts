@@ -15,6 +15,9 @@ export default defineConfig({
   },
   plugins: [react(), tailwindcss()],
   server: {
+    // Yalnız DEV: giriş modülünü sunucu açılınca önceden derle -> ilk goto soğuk-derleme beklemesin
+    // (E2E ilk navigasyon 45 sn timeout'u). Üretim build'ini etkilemez.
+    warmup: { clientFiles: ['./src/main.tsx'] },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
