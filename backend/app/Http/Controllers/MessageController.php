@@ -62,6 +62,43 @@ class MessageController extends Controller
         return ($out && $out->status === 'accepted') || ($in && $in->status === 'accepted');
     }
 
+    // İki kullanıcı arasında (HERHANGİ yönde) blok var mı? -> mesajlaşma engellenir.
+    private function blockedBetween(int $a, int $b): bool
+    {
+        if (! Schema::hasTable('user_blocks')) {
+            return false;
+        }
+
+        return DB::table('user_blocks')
+            ->where(function ($q) use ($a, $b) {
+                $q->where('blocker_id', $a)->where('blocked_id', $b);
+            })
+            ->orWhere(function ($q) use ($a, $b) {
+                $q->where('blocker_id', $b)->where('blocked_id', $a);
+            })
+            ->exists();
+    }
+
+    // Ben (me) bu peer'i blokladım mı? (kebab etiketi: "Blokla" / "Blok kaldır").
+    private function iBlocked(int $me, int $peer): bool
+    {
+        if (! Schema::hasTable('user_blocks')) {
+            return false;
+        }
+
+        return DB::table('user_blocks')->where('blocker_id', $me)->where('blocked_id', $peer)->exists();
+    }
+
+    // "Sohbeti sil" damgam: bu ID'ye KADAR (<=) mesajlar bana gizli (karşı taraf etkilenmez). Yoksa 0.
+    private function clearedMsgId(int $me, int $peer): int
+    {
+        if (! Schema::hasTable('dm_clears')) {
+            return 0;
+        }
+
+        return (int) (DB::table('dm_clears')->where('user_id', $me)->where('peer_id', $peer)->value('cleared_msg_id') ?? 0);
+    }
+
     private function pub(User $u): array
     {
         $online = $u->last_seen && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
@@ -98,6 +135,13 @@ class MessageController extends Controller
 
         $users = User::whereIn('id', $partnerIds)->get()->keyBy('id');
         $hasImageCol = Schema::hasColumn('messages', 'image');
+        // Kebab: "Sohbeti sil" damgaları (peer_id => cleared_at) + blokladıklarım (peer_id set). Batch (N+1 yok).
+        $myClears = Schema::hasTable('dm_clears')
+            ? DB::table('dm_clears')->where('user_id', $me)->whereIn('peer_id', $partnerIds)->pluck('cleared_msg_id', 'peer_id')
+            : collect();
+        $myBlocks = Schema::hasTable('user_blocks')
+            ? DB::table('user_blocks')->where('blocker_id', $me)->whereIn('blocked_id', $partnerIds)->pluck('blocked_id')->flip()
+            : collect();
 
         // Ilgili istek satirlarini tek seferde cek (N+1 olmasin).
         $reqRows = DB::table('message_requests')
@@ -119,11 +163,12 @@ class MessageController extends Controller
             }
         }
 
-        $threads = $partnerIds->map(function ($pid) use ($me, $users, $out, $in, $hasImageCol) {
+        $threads = $partnerIds->map(function ($pid) use ($me, $users, $out, $in, $hasImageCol, $myClears, $myBlocks) {
             $u = $users->get($pid);
             if (! $u) {
                 return null;
             }
+            $clr = (int) ($myClears[$pid] ?? 0); // "Sohbeti sil": bu ID'ye kadar mesajlar bana gizli
             $inRow = $in[$pid] ?? null;
             // Reddettigim gelen istek -> konusmayi gizle.
             if ($inRow && $inRow->status === 'declined') {
@@ -146,16 +191,23 @@ class MessageController extends Controller
             }
             $last = Message::query()
                 ->where(function ($q) use ($me, $pid) {
-                    $q->where('sender_id', $me)->where('receiver_id', $pid);
+                    $q->where(function ($x) use ($me, $pid) {
+                        $x->where('sender_id', $me)->where('receiver_id', $pid);
+                    })->orWhere(function ($x) use ($me, $pid) {
+                        $x->where('sender_id', $pid)->where('receiver_id', $me);
+                    });
                 })
-                ->orWhere(function ($q) use ($me, $pid) {
-                    $q->where('sender_id', $pid)->where('receiver_id', $me);
-                })
+                ->when($clr, fn ($q) => $q->where('id', '>', $clr)) // silinen (eski) mesajları atla
                 ->orderByDesc('created_at')->orderByDesc('id')
                 ->first($lastCols);
+            // Sohbeti sildim + sonrasında yeni mesaj YOK -> listede GÖSTERME (yeni mesaj gelince döner).
+            if (! $last) {
+                return null;
+            }
             $unread = Message::where('sender_id', $pid)
                 ->where('receiver_id', $me)
                 ->whereNull('read_at')
+                ->when($clr, fn ($q) => $q->where('id', '>', $clr))
                 ->count();
 
             return [
@@ -169,6 +221,7 @@ class MessageController extends Controller
                 ] : null,
                 'unread' => $unread,
                 'request' => $isRequest, // BENIM onayimi bekleyen gelen istek
+                'blocked' => isset($myBlocks[$pid]), // ben bu kullanıcıyı blokladım mı (kebab etiketi)
                 'ts' => optional($last?->created_at)->timestamp ?? 0,
             ];
         })->filter()->sortByDesc('ts')->values()->map(function ($t) {
@@ -193,13 +246,16 @@ class MessageController extends Controller
             return $this->fail('Kullanıcı bulunamadı.', 404);
         }
 
+        $clr = $this->clearedMsgId($me, $userId); // "Sohbeti sil": bu ID'ye kadar mesajlar bana gizli
         $rows = Message::query()
             ->where(function ($q) use ($me, $userId) {
-                $q->where('sender_id', $me)->where('receiver_id', $userId);
+                $q->where(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $me)->where('receiver_id', $userId);
+                })->orWhere(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $userId)->where('receiver_id', $me);
+                });
             })
-            ->orWhere(function ($q) use ($me, $userId) {
-                $q->where('sender_id', $userId)->where('receiver_id', $me);
-            })
+            ->when($clr, fn ($q) => $q->where('id', '>', $clr))
             ->orderByDesc('id')->limit(100)->get()->reverse()->values();
 
         // Karsi taraftan gelen okunmamislari OKUNDU yap.
@@ -230,6 +286,7 @@ class MessageController extends Controller
             'messages' => $messages,
             'typing' => $typing,
             'request' => $isRequest,
+            'blocked' => $this->iBlocked($me, $userId), // ben bu kullanıcıyı blokladım mı
         ]);
     }
 
@@ -282,6 +339,10 @@ class MessageController extends Controller
         }
         if (! User::whereKey($userId)->exists()) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
+        }
+        // BLOK: iki yönden biri blokladıysa mesaj gönderilemez (ben blokladım ya da o beni).
+        if ($this->blockedBetween($me->id, $userId)) {
+            return $this->fail('Bu kullanıcıyla mesajlaşamazsınız.', 403);
         }
 
         if (! $this->isOpen($me->id, $userId)) {
@@ -398,6 +459,64 @@ class MessageController extends Controller
         $msg->delete();
 
         return response()->json(['ok' => true, 'id' => $messageId]);
+    }
+
+    // "Sohbeti sil" (KULLANICIYA ÖZEL): bu andan eski mesajlar BANA gizlenir + sohbet listemden
+    // kalkar. Karşı taraf ETKİLENMEZ (onun geçmişi durur). Karşı taraf yeni mesaj atarsa sohbet geri döner.
+    public function deleteConversation(Request $request, int $userId)
+    {
+        $me = $request->user()->id;
+        if (! Schema::hasTable('dm_clears')) {
+            return response()->json(['ok' => false]); // migration kosmadi -> sessiz
+        }
+        // İki yöndeki en büyük mesaj ID'si: bu ID'ye kadar her şey bana gizlenir.
+        $maxId = (int) (Message::query()
+            ->where(function ($q) use ($me, $userId) {
+                $q->where(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $me)->where('receiver_id', $userId);
+                })->orWhere(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $userId)->where('receiver_id', $me);
+                });
+            })
+            ->max('id') ?? 0);
+        DB::table('dm_clears')->updateOrInsert(
+            ['user_id' => $me, 'peer_id' => $userId],
+            ['cleared_msg_id' => $maxId],
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    // Kullanıcıyı BLOKLA: iki yönlü mesajlaşma engeli (idempotent). Gelen kutusunda sohbet kalır
+    // (blok kaldırılabilsin), ama mesaj gönderilemez/alınamaz.
+    public function block(Request $request, int $userId)
+    {
+        $me = $request->user()->id;
+        if ($userId === $me) {
+            return $this->fail('Kendini bloklayamazsın.', 422);
+        }
+        if (! User::whereKey($userId)->exists()) {
+            return $this->fail('Kullanıcı bulunamadı.', 404);
+        }
+        if (Schema::hasTable('user_blocks')) {
+            DB::table('user_blocks')->updateOrInsert(
+                ['blocker_id' => $me, 'blocked_id' => $userId],
+                ['created_at' => now()],
+            );
+        }
+
+        return response()->json(['ok' => true, 'blocked' => true]);
+    }
+
+    // Bloğu kaldır.
+    public function unblock(Request $request, int $userId)
+    {
+        $me = $request->user()->id;
+        if (Schema::hasTable('user_blocks')) {
+            DB::table('user_blocks')->where('blocker_id', $me)->where('blocked_id', $userId)->delete();
+        }
+
+        return response()->json(['ok' => true, 'blocked' => false]);
     }
 
     // Toplam okunmamis mesaj sayisi (rozet). ping'e de eklenir.

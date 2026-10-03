@@ -8,6 +8,9 @@ import {
   sendMessage,
   sendTyping,
   deleteMessage,
+  deleteConversation,
+  blockUser,
+  unblockUser,
   acceptRequest,
   declineRequest,
   chatMuteFromError,
@@ -144,6 +147,7 @@ export default function Messages({
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const [search, setSearch] = useState('') // sol listede sohbet arama
   const [pane, setPane] = useState<'chats' | 'requests'>('chats') // sol liste: sohbetler / istekler
+  const [menuFor, setMenuFor] = useState<number | null>(null) // kebab menüsü açık olan sohbet (user.id)
   const [activeRequest, setActiveRequest] = useState(false) // aktif konusma benim onayimi bekleyen istek mi
   const listEndRef = useRef<HTMLDivElement>(null)
   const logRef = useRef<HTMLDivElement>(null) // sohbet log kaydırma kabı (en alta indir)
@@ -162,6 +166,35 @@ export default function Messages({
       setLoadingThreads(false)
     }
   }, [])
+
+  // Kebab: sohbeti sil (KULLANICIYA ÖZEL gizleme; karşı taraf etkilenmez, yeni mesajda geri döner).
+  async function handleDeleteConversation(id: number) {
+    setMenuFor(null)
+    if (!window.confirm(t('dm.convDeleteConfirm'))) return
+    try {
+      await deleteConversation(id)
+      if (activeId === id) { setActiveId(null); setMessages([]) }
+      refreshThreads()
+      toast.success(t('dm.convDeleted'))
+    } catch (err) {
+      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+    }
+  }
+
+  // Kebab: kullanıcıyı blokla / bloğu kaldır (iki yönlü mesaj engeli).
+  async function handleBlockToggle(id: number, blocked: boolean) {
+    setMenuFor(null)
+    if (!blocked && !window.confirm(t('dm.blockConfirm'))) return
+    try {
+      if (blocked) await unblockUser(id)
+      else await blockUser(id)
+      if (activeId === id) loadThread(id, true)
+      refreshThreads()
+      toast.success(blocked ? t('dm.unblocked') : t('dm.blocked'))
+    } catch (err) {
+      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+    }
+  }
 
   // onRead prop'u her render'da yeni gelebilir (App inline arrow) -> ref'te tut ki
   // loadThread kimligi sabit kalsin (yoksa yukleme effect'i sonsuz doner -> ekran yanip soner).
@@ -413,6 +446,8 @@ export default function Messages({
               </button>
             </div>
             <div className="messages-thread-scroll">
+              {/* Kebab menüsü açıkken dışarı tıklama menüyü kapatır */}
+              {menuFor != null && <div className="messages-menu-backdrop" onClick={() => setMenuFor(null)} />}
               {pane === 'chats' && (
                 <button
                   type="button"
@@ -449,10 +484,10 @@ export default function Messages({
                   // atmışsa (okunmamış var) soluklaştırma, dikkat çeksin. Durum yazısı yine offline.
                   const dimmed = !online && th.unread === 0
                   return (
+                  <div key={th.user.id} className="messages-thread-row">
                   <button
-                    key={th.user.id}
                     type="button"
-                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''} ${dimmed ? 'messages-thread-off' : ''}`}
+                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''} ${dimmed ? 'messages-thread-off' : ''} ${th.blocked ? 'messages-thread-blocked' : ''}`}
                     onClick={() => setActiveId(th.user.id)}
                   >
                     <span className="messages-thread-ava">
@@ -479,6 +514,28 @@ export default function Messages({
                     </span>
                     {th.unread > 0 && <span className="messages-badge">{th.unread > 9 ? '9+' : th.unread}</span>}
                   </button>
+                  {/* Kebab: sohbeti sil / blokla-blok kaldır */}
+                  <button
+                    type="button"
+                    className="messages-thread-kebab"
+                    aria-label={t('dm.menuAria')}
+                    aria-haspopup="menu"
+                    aria-expanded={menuFor === th.user.id}
+                    onClick={(e) => { e.stopPropagation(); setMenuFor(menuFor === th.user.id ? null : th.user.id) }}
+                  >
+                    <Icon name="dots-vertical" size={18} />
+                  </button>
+                  {menuFor === th.user.id && (
+                    <div className="messages-thread-menu" role="menu">
+                      <button type="button" role="menuitem" onClick={() => handleDeleteConversation(th.user.id)}>
+                        <Icon name="trash" size={15} /> {t('dm.convDelete')}
+                      </button>
+                      <button type="button" role="menuitem" className="danger" onClick={() => handleBlockToggle(th.user.id, !!th.blocked)}>
+                        <Icon name="ban" size={15} /> {th.blocked ? t('dm.unblock') : t('dm.block')}
+                      </button>
+                    </div>
+                  )}
+                  </div>
                   )
                 })
               })()}

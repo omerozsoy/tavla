@@ -75,6 +75,8 @@ import {
   IconRobot,
   IconRobotFace,
   IconTrash,
+  IconDotsVertical,
+  IconBan,
   IconLock,
   IconLockAccess,
   IconLockOpen,
@@ -188,6 +190,8 @@ export type IconName =
   | 'robot'
   | 'robot-face'
   | 'trash'
+  | 'dots-vertical'
+  | 'ban'
   | 'lock'
   | 'camera'
   | 'menu'
@@ -299,6 +303,8 @@ const MAP: Record<IconName, TablerIcon> = {
   robot: IconRobot,
   'robot-face': IconRobotFace,
   trash: IconTrash,
+  'dots-vertical': IconDotsVertical,
+  ban: IconBan,
   lock: IconLock,
   camera: IconCamera,
   menu: IconMenu2,

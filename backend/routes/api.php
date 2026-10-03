@@ -244,6 +244,13 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
         ->whereNumber('userId');
     Route::post('/messages/{userId}/decline', [\App\Http\Controllers\MessageController::class, 'decline'])
         ->whereNumber('userId');
+    // Kebab menüsü: kullanıcı sohbeti SİLER (kendine özel gizleme) + BLOKLA / blok kaldır.
+    Route::delete('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'deleteConversation'])
+        ->whereNumber('userId');
+    Route::post('/messages/{userId}/block', [\App\Http\Controllers\MessageController::class, 'block'])
+        ->whereNumber('userId');
+    Route::delete('/messages/{userId}/block', [\App\Http\Controllers\MessageController::class, 'unblock'])
+        ->whereNumber('userId');
     // Yonetici: DM mesajini sil (controller icinde is_admin denetimi var).
     Route::delete('/messages/{userId}/{messageId}', [\App\Http\Controllers\MessageController::class, 'destroy'])
         ->whereNumber('userId')->whereNumber('messageId');
