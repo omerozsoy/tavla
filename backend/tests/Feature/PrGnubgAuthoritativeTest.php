@@ -73,6 +73,45 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6);
     }
 
+    /**
+     * DEDUPE: ikinci oyuncunun işi, aynı maçın DİĞER oyuncusu zaten analiz edildiyse RAKİP tarafını
+     * yeniden gnubg'de hesaplamaz -> sibling'den aynalar. fakeOrch FARKLI (99) döndürür; buna rağmen
+     * gnubg_pr sibling'in opponent_pr'ı (10.67) ile dolmalı (self-fake 99 DEĞİL) -> mirror kanıtı.
+     */
+    public function test_second_player_job_mirrors_sibling_without_recompute(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+        $aRow = MatchResult::create([
+            'user_id' => $a->id, 'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+            'match_length' => 3, 'match_type' => 'match', 'room_code' => 'MIRROR1', 'pr' => 7.07,
+            'log' => json_encode(['hc' => 'white', 'log' => []]),
+        ]);
+        // sibling (A) zaten analiz edildi: self 7.07, rakip(=B) 10.67 (query-builder -> fillable gerekmez).
+        MatchResult::where('id', $aRow->id)->update([
+            'gnubg_pr' => 7.07, 'gnubg_checker_pr' => 7.07,
+            'gnubg_opponent_pr' => 10.67, 'gnubg_opponent_checker_pr' => 10.67,
+            'gnubg_pr_at' => now(),
+        ]);
+        $mrB = MatchResult::create([
+            'user_id' => $b->id, 'won' => false, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1484, 'delta' => -16,
+            'match_length' => 3, 'match_type' => 'match', 'room_code' => 'MIRROR1', 'pr' => 12.0,
+            'log' => json_encode(['hc' => 'black', 'log' => [
+                ['player' => 'black', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [3, 1], 'playedSteps' => [[8, 5]]],
+            ]]),
+        ]);
+
+        (new AnalyzeMatchPrJob($mrB->id))->handle($this->fakeOrch(chkPr: 99.0, chkLoss: 2.0, chkDec: 6));
+
+        $mrB->refresh();
+        $this->assertEqualsWithDelta(10.67, (float) $mrB->gnubg_pr, 1e-6, 'kendi PR sibling.opponent_pr ile aynalandi (self-fake 99 ezmedi)');
+        $this->assertEqualsWithDelta(7.07, (float) $mrB->gnubg_opponent_pr, 1e-6, 'rakip PR sibling.self ile aynalandi');
+        $this->assertNotNull($mrB->gnubg_pr_at);
+    }
+
     public function test_match_pr_gnubg_endpoint_ready_flag(): void
     {
         $u = User::factory()->create();

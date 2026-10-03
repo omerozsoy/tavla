@@ -79,6 +79,39 @@ class AnalyzeMatchPrJob implements ShouldQueue
         }
         $ml = (int) ($mr->match_length ?? 0);
 
+        // DEDUPE (perf): aynı maçın DİĞER oyuncusunun işi önce bittiyse, RAKİP tarafını gnubg'de YENİDEN
+        // hesaplama — sibling satırından AYNALA. İki satır AYNI match_moves'tan türer: sibling'in
+        // "opponent" değerleri = benim "self" değerlerim; sibling'in "self" = benim "opponent"ım (birebir).
+        // Böylece ikinci oyuncunun GÖSTERİLEN PR'ı ~anında gelir + rakip-tarafı tekrar hesaplanmaz
+        // (gnubg yükü ~yarıya iner). KENDİ tarafımı yine analiz ederim (kariyer pr_equity_lost/
+        // pr_decisions + Hata Günlüğü perDecision bunu gerektirir). pvb (bot) maçında sibling yok.
+        $sibling = (! empty($mr->room_code) && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI)
+            ? MatchResult::where('room_code', $mr->room_code)
+                ->where('user_id', '!=', $mr->user_id)
+                ->whereNotNull('gnubg_pr_at')
+                ->latest('id')->first()
+            : null;
+        // sibling benim PR'ımı (onun "opponent"ını) GERÇEKTEN skorladı mı?
+        $mirror = $sibling && $sibling->gnubg_opponent_pr !== null;
+        // HIZLI GÖSTERİM: kendi PR'ımı sibling'den ANINDA yaz -> ekran self-analizi beklemeden dolar
+        // (self-analiz arkadan kariyer/Hata Günlüğü'nü tamamlar; aynı match_moves -> aynı değer).
+        if ($mirror) {
+            $fast = [];
+            foreach ([
+                'gnubg_pr' => $sibling->gnubg_opponent_pr,
+                'gnubg_checker_pr' => $sibling->gnubg_opponent_checker_pr,
+                'gnubg_cube_pr' => $sibling->gnubg_opponent_cube_pr,
+                'gnubg_pr_at' => now(),
+            ] as $c => $v) {
+                if (Schema::hasColumn('match_results', $c)) {
+                    $fast[$c] = $v;
+                }
+            }
+            if ($fast !== []) {
+                MatchResult::where('id', $mr->id)->update($fast);
+            }
+        }
+
         try {
             $chk = $orch->checkerPr($log, $player, $ml, 2);
             $cube = $orch->cubePr($log, $player, $ml);
@@ -129,14 +162,19 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // Her kova SAYILAN kararına göre: decisions>0 -> gerçek değer; yoksa NULL (varsa eski sentinel
         // 0'ı da TEMİZLER -> ekran dürüst "—"). Eskiden evaluated>0 ile yazılıyordu; bu, 0-karar degrade
         // run'da sahte 0.00 sızdırıyordu (bu maçın kök nedeni).
-        if (Schema::hasColumn('match_results', 'gnubg_pr')) {
-            $upd['gnubg_pr'] = $totDec > 0 ? round((float) $overall, 2) : null;
-        }
-        if (Schema::hasColumn('match_results', 'gnubg_checker_pr')) {
-            $upd['gnubg_checker_pr'] = $chkDec > 0 ? round((float) $chk['pr'], 2) : null;
-        }
-        if (Schema::hasColumn('match_results', 'gnubg_cube_pr')) {
-            $upd['gnubg_cube_pr'] = $cubeDec > 0 ? round((float) $cube['pr'], 2) : null;
+        // $mirror iken kendi GÖSTERİLEN PR'ım yukarıda sibling'den YAZILDI; self-analiz null/düşük dönerse
+        // doğru mirror değerini EZMESİN diye display kolonlarını mirror'da ATLA (kariyer + Hata Günlüğü
+        // için self-analiz yine koştu). Normal yolda (mirror yok) eskisi gibi yaz.
+        if (! $mirror) {
+            if (Schema::hasColumn('match_results', 'gnubg_pr')) {
+                $upd['gnubg_pr'] = $totDec > 0 ? round((float) $overall, 2) : null;
+            }
+            if (Schema::hasColumn('match_results', 'gnubg_checker_pr')) {
+                $upd['gnubg_checker_pr'] = $chkDec > 0 ? round((float) $chk['pr'], 2) : null;
+            }
+            if (Schema::hasColumn('match_results', 'gnubg_cube_pr')) {
+                $upd['gnubg_cube_pr'] = $cubeDec > 0 ? round((float) $cube['pr'], 2) : null;
+            }
         }
         if ($totEval > 0 && Schema::hasColumn('match_results', 'gnubg_pr_at')) {
             $upd['gnubg_pr_at'] = now();
@@ -159,7 +197,23 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // senkronlanır (aşağıda + matchPr poll) ve ekran onu tercih eder; bu yalnız emniyet ağıdır.
         $computeOppPr = ($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI
             || ! empty($mr->room_code);
-        if ($computeOppPr) {
+        // DEDUPE: sibling zaten analiz edildiyse rakip tarafını onun KENDİ değerlerinden aynala
+        // (yeniden gnubg YOK -> işin ağır yarısı atlanır). Aksi halde eskisi gibi gnubg ile hesapla.
+        if ($computeOppPr && $mirror) {
+            if (Schema::hasColumn('match_results', 'gnubg_opponent_pr')) {
+                $upd['gnubg_opponent_pr'] = $sibling->gnubg_pr;
+            }
+            if (Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr')) {
+                $upd['gnubg_opponent_checker_pr'] = $sibling->gnubg_checker_pr;
+            }
+            if (Schema::hasColumn('match_results', 'gnubg_opponent_cube_pr')) {
+                $upd['gnubg_opponent_cube_pr'] = $sibling->gnubg_cube_pr;
+            }
+            if ($mr->opponent_pr === null && $sibling->gnubg_pr !== null
+                && Schema::hasColumn('match_results', 'opponent_pr')) {
+                $upd['opponent_pr'] = $sibling->gnubg_pr;
+            }
+        } elseif ($computeOppPr) {
             $opp = $player === 'white' ? 'black' : 'white';
             try {
                 $oChk = $orch->checkerPr($log, $opp, $ml, 2);
