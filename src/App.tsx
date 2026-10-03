@@ -3504,7 +3504,9 @@ export default function App() {
         // teklifi zaten cube.pending=offerer yapar; poll bunu doğrular. Ret olursa .catch geri alır.
         setCubePending(player)
         setMessage(t('msg.doubled', { name: pName(player), value: match.cube.value * 2 }))
-        void serverCubeOffer(room.code, room.server_version ?? 0)
+        // SÜRÜM: serverMove/handleTake ile AYNI — iyimser ref (bayat room.server_version -> 409 stale).
+        const ev = appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room.server_version ?? 0)
+        void serverCubeOffer(room.code, ev)
           .then((r) => {
             // Otoriter sürümü benimse -> araya giren bayat poll iyimser durumu EZMESIN.
             if (r?.version != null) appliedServerVersionRef.current = r.version
@@ -3550,7 +3552,15 @@ export default function App() {
         setCubePending(null)
         if (botMatch) setBotThinking(true)
         const code = room.code
-        void serverCubeRespond(code, 'take', room.server_version ?? 0)
+        // SÜRÜM: serverMove ile AYNI — iyimser ref (appliedServerVersionRef) kullan, room.server_version
+        // DEĞİL. KÖK FIX ("küp kabul ettim ama zar gelmedi, sürem bitti"): bot teklifi/redouble İNSAN
+        // hamlesinin yanıtında SATIR-İÇİ gelir (appliedServerVersionRef'i bump eder) ama room.server_version
+        // (React state) bir sonraki poll'e kadar BAYAT kalır. Bayat sürümle gönderilen take/drop sunucuda
+        // staleCommand ile 409 yenir, .catch 409'u sessizce yutardı, cubePending iyimser null'da kalır ve
+        // POLL de geri getiremez (appliedServerVersionRef zaten güncel sürümde) -> kutu kalıcı kaybolur,
+        // insan yanıt veremeden AFK ile kaybeder (yüzlerce "bot küpü verince donup kaybettim" şikayeti).
+        const ev = appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room.server_version ?? 0)
+        void serverCubeRespond(code, 'take', ev)
           .then((r) => {
             // BEKLEYEN TEKLİF YOK (yarış): sunucu not_turn+güncel durum döndü -> sessizce senkronla,
             // PR/olay KAYDETME (teklif yoktu). Konsolda 409 spam olmaz.
@@ -3561,15 +3571,26 @@ export default function App() {
               }
               return
             }
+            if (r?.version != null) appliedServerVersionRef.current = r.version
             recordCubePR(srvTaker, 'take', 'take') // XG cube PR + .mat kaydı
             recordCubeEvent(srvTaker, 'take') // maç kaydı (okunur)
             // BOT ODASI: insan botun küpünü TAKE etti -> sıra botta; botun hamlesi yanıtta gelir.
             if (!applyBotTurns(r?.bot) && r?.bot_status === 'unavailable') scheduleBotNudge(code)
           })
-          // 409 = teklif zaten çözüldü (bot sunucuda anında yanıtladı / çift-tıklama) -> zararsız;
-          // poll server_match ile cubePending'i senkronlar. Hata toast'ı GÖSTERME.
+          // Hata (409 bayat-sürüm/çift-tıklama DAHİL): toast GÖSTERME ama MUTLAKA resync et. appliedServer
+          // Version=-1 + showRoom -> otoriter durumu geri yükle. Take gerçekten uygulanmadıysa cube.pending
+          // yine black döner (kutu GERİ GELİR, insan tekrar yanıtlayabilir); zaten uygulandıysa null döner
+          // (kutu kapalı kalır). İYA KUTU KALICI KAYBOLMAZ (haksız AFK kaybının önlenmesi).
           .catch((e) => {
             if ((e as { status?: number })?.status !== 409) notify.error(srvErr(e))
+            appliedServerVersionRef.current = -1
+            void showRoom(code)
+              .then((rv) => {
+                if (!rv?.server_state) return
+                applyServerBoard(rv.server_state, rv.server_match ?? null)
+                appliedServerVersionRef.current = rv.server_version ?? 0
+              })
+              .catch(() => {})
           })
           .finally(() => {
             cubeBusyRef.current = false
@@ -3591,9 +3612,12 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code && !cubeBusyRef.current) {
         cubeBusyRef.current = true
+        const code = room.code
         const srvDropper = opponent(cubePending) // pas geçen taraf (= ben)
         setCubePending(null) // iyimser: pas edilen teklifi ANINDA kaldır (take ile aynı; kutu geri gelmez)
-        void serverCubeRespond(room.code, 'drop', room.server_version ?? 0)
+        // SÜRÜM: handleTake ile AYNI kök fix — iyimser ref kullan (bayat room.server_version -> 409 stale).
+        const ev = appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room.server_version ?? 0)
+        void serverCubeRespond(code, 'drop', ev)
           .then((r) => {
             // BEKLEYEN TEKLİF YOK (yarış): not_turn -> sessizce senkronla, PR/olay kaydetme.
             if (r?.not_turn) {
@@ -3603,12 +3627,21 @@ export default function App() {
               }
               return
             }
+            if (r?.version != null) appliedServerVersionRef.current = r.version
             recordCubePR(srvDropper, 'take', 'drop') // XG cube PR + .mat kaydı
             recordCubeEvent(srvDropper, 'drop') // maç kaydı (okunur)
           })
-          // 409 = teklif zaten çözüldü / çift-tıklama -> zararsız; poll senkronlar (bkz handleTake).
+          // Hata (409 DAHİL): resync et (bkz handleTake) -> drop uygulanmadıysa kutu geri gelir.
           .catch((e) => {
             if ((e as { status?: number })?.status !== 409) notify.error(srvErr(e))
+            appliedServerVersionRef.current = -1
+            void showRoom(code)
+              .then((rv) => {
+                if (!rv?.server_state) return
+                applyServerBoard(rv.server_state, rv.server_match ?? null)
+                appliedServerVersionRef.current = rv.server_version ?? 0
+              })
+              .catch(() => {})
           })
           .finally(() => {
             cubeBusyRef.current = false
