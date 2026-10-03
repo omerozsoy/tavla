@@ -821,3 +821,35 @@ Koyu ve açık temada 5–7 sayfa, masaüstü ve 390 px'te yeniden ölçüldü.
 ### 10.6 Dağıtım
 
 Derlenmiş çıktı `npm run deploy:build` ile `backend/public`'e kopyalandı ve commit'lendi. Betik ek modda çalışır: eski hash'li dosyalar korunur. Değişiklikler `claude/cloud-session-credits-9nd4yl` dalında. Canlıya çıkış için kalan adımlar: dalın sunucunun çektiği ana dala (main) birleştirilmesi, ardından Plesk'te `git pull` + `deploy.sh`.
+
+## 11. Ek backlog düzeltmeleri (3. aşama, 2026-10-03)
+
+Başka bir oturumun 24 maddelik "tasarım sorunları" notu tek tek kontrol edildi.
+
+**Triage**
+
+| Durum | Maddeler |
+|---|---|
+| Zaten kapalıydı (önceki düzeltmeler) | #4, #9, #11, #14 |
+| Doğrulandı, sorun yok | #10 (küp/pip çakışmıyor, 7 boyut), #12 (maç sonucu düğmeleri her boyutta görünür) |
+| Geçersiz | #5 (body zaten `overflow: hidden`), #17'nin "maskable" kısmı (ikonlar doğru) |
+| Bu aşamada düzeltildi | #1, 2, 3, 6, 7, 8, 13, 15, 16, 17 (apple-touch-icon), 18, 19, 20, 21, 22, 23, 24 |
+
+**Yapılanlar (özet)**
+
+- iOS PWA: durum çubuğu `default` (yazılar çentiğin altına girmiyor); 180×180 `apple-touch-icon.png` eklendi (index.html, 404 sayfası, deploy kopya listesi).
+- Safe-area: sayfa kapatma düğmeleri, analiz kapatma, oyun menüsü, toast alanı ve davet yığını `env(safe-area-inset-*)` hesaba katıyor.
+- Katmanlar: toast `--z-toast` (3000) ile modallerin üstünde; davet yığını 2100; sayfa açıkken kapalı sohbet balonu sayfanın altında kalıyor.
+- Toast: üzerine gelince / dokununca / odakta süre duraklıyor.
+- Bildirim zili paneli: ekran içinde konumlanıyor, dışarı tıklayınca ve Esc ile kapanıyor, taşarsa kayıyor.
+- Yatay telefon eşiği 500px → 560px (App.tsx, App.css, çerez bandı, footer); kullanılmayan `force-landscape` CSS bloğu silindi.
+- Modallar: ödeme sürerken onay penceresi dışarı tıklamayla kapanmıyor; Bahane Makinesi / Şans Çarkı sayfa modunda arka plana tıklayınca kapanmıyor.
+- Erişilebilirlik: değiştirilebilir zarlar klavyeyle (Enter/Boşluk) çalışıyor ve ⇄ rozetiyle belli; avatar ve küp için `aria-label`; sözlük harf düğmeleri 38px; ürün renk örneklerinin dokunma alanı büyütüldü.
+- iOS yakınlaştırma: iletişim formu girdileri 16px.
+- Ödeme sayfası (Checkout) tamamen i18n'e taşındı (`co.*`, TR+EN).
+- Service worker: yönlendirilmiş / sorgu parametreli / HTML olmayan yanıtlar navigasyon önbelleğine yazılmıyor.
+- AFK uyarısı tahtanın üstüne kaymıyor (`top: 6px`).
+
+**Doğrulama:** `tsc -b` temiz, oxlint 0 hata, vitest 370/370, vite build tamam. Tarayıcıda (çentikli iPhone emülasyonu): toast top 119px / z 3000, oyun menüsü başlığı inset altında, AFK 6px, iletişim girdisi 16px, davet z 2100, yatay telefon algısı 1000×540 açık / 1366×768 kapalı.
+
+**Doğrulanamayan:** sayfa kapatma düğmesinin inset konumu ve zil panelinin davranışı headless ortamda ilgili düğme bulunamadığı için gözle doğrulanmadı; gerçek cihazda bakılmalı.

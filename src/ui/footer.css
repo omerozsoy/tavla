@@ -252,7 +252,7 @@ a.foot-partner:hover {
 }
 
 /* Yatay telefon / PWA: footer metni centik/kenar bukumu bolgesine girmesin. */
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 560px) {
   .foot-inner {
     padding-left: max(clamp(16px, 4vw, 56px), calc(env(safe-area-inset-left) + 8px));
     padding-right: max(clamp(16px, 4vw, 56px), calc(env(safe-area-inset-right) + 8px));

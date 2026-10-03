@@ -67,6 +67,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([])
   const seqRef = useRef(0)
   const timersRef = useRef<Map<number, number>>(new Map())
+  // Kalan sure takibi: fare uzerindeyken / odaktayken (okurken) kapanma DURAKLAR, cikinca kalan
+  // sureyle devam eder (en az 1.5 sn). Eskiden okurken kayboluyordu.
+  const endsRef = useRef<Map<number, number>>(new Map())
+  const pausedRef = useRef<Map<number, number> | null>(null)
 
   const dismiss = useCallback((id: number) => {
     setItems((list) => list.filter((it) => it.id !== id))
@@ -76,7 +80,33 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(h)
       timers.delete(id)
     }
+    endsRef.current.delete(id)
+    pausedRef.current?.delete(id)
   }, [])
+
+  const pause = useCallback(() => {
+    if (pausedRef.current) return
+    const now = Date.now()
+    const rem = new Map<number, number>()
+    timersRef.current.forEach((h, id) => {
+      window.clearTimeout(h)
+      rem.set(id, Math.max(0, (endsRef.current.get(id) ?? now) - now))
+    })
+    timersRef.current.clear()
+    pausedRef.current = rem
+  }, [])
+
+  const resume = useCallback(() => {
+    const rem = pausedRef.current
+    if (!rem) return
+    pausedRef.current = null
+    const now = Date.now()
+    rem.forEach((ms, id) => {
+      const wait = Math.max(1500, ms)
+      endsRef.current.set(id, now + wait)
+      timersRef.current.set(id, window.setTimeout(() => dismiss(id), wait))
+    })
+  }, [dismiss])
 
   const show = useCallback(
     (msg: string, kind: ToastKind = 'info') => {
@@ -97,8 +127,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         }
         return next
       })
-      const handle = window.setTimeout(() => dismiss(id), LIFETIME[kind])
-      timersRef.current.set(id, handle)
+      if (pausedRef.current) {
+        // Kullanici su an bir bildirimi okuyor: yenisi de ayni duraklatmaya katilsin.
+        pausedRef.current.set(id, LIFETIME[kind])
+      } else {
+        endsRef.current.set(id, Date.now() + LIFETIME[kind])
+        const handle = window.setTimeout(() => dismiss(id), LIFETIME[kind])
+        timersRef.current.set(id, handle)
+      }
     },
     [dismiss],
   )
@@ -133,7 +169,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastCtx.Provider value={stableRef.current}>
       {children}
-      <ToastViewport items={items} onDismiss={dismiss} />
+      <ToastViewport items={items} onDismiss={dismiss} onPause={pause} onResume={resume} />
     </ToastCtx.Provider>
   )
 }
@@ -141,9 +177,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastViewport({
   items,
   onDismiss,
+  onPause,
+  onResume,
 }: {
   items: ToastItem[]
   onDismiss: (id: number) => void
+  onPause: () => void
+  onResume: () => void
 }) {
   const { t } = useT()
   if (typeof document === 'undefined') return null
@@ -155,6 +195,12 @@ function ToastViewport({
           className={`toastr toastr--${it.kind}`}
           role={it.kind === 'error' ? 'alert' : 'status'}
           aria-live={it.kind === 'error' ? 'assertive' : 'polite'}
+          onMouseEnter={onPause}
+          onMouseLeave={onResume}
+          onFocus={onPause}
+          onBlur={onResume}
+          onTouchStart={onPause}
+          onTouchEnd={onResume}
         >
           <span className="toastr__icon" aria-hidden="true">
             <Icon name={ICON[it.kind]} size={18} />

@@ -60,6 +60,11 @@ export default function DiceRow({
       className={`board-dice ${swappable ? 'swappable' : ''}`}
       onClick={swappable ? onSwap : undefined}
       title={swappable ? t('dice.swap') : undefined}
+      // Dokunmatikte title (hover ipucu) gorunmez: dugme rolu + etiket + gorunur ⇄ rozeti (CSS).
+      role={swappable ? 'button' : undefined}
+      tabIndex={swappable ? 0 : undefined}
+      aria-label={swappable ? t('dice.swap') : undefined}
+      onKeyDown={swappable ? (e) => (e.key === 'Enter' || e.key === ' ') && onSwap?.() : undefined}
     >
       {faces.map((f, i) => (
         // key'e deger dahil -> yeni atista yeniden mount olur, donme animasyonu oynar

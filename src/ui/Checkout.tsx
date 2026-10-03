@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import type { CoinPackage } from '../coinPackages'
 import { useCoinPackages } from '../useCoinPackages'
@@ -37,6 +38,7 @@ export default function Checkout({
   demo?: boolean // true: banka yapilandirilmadi; "Öde" gercek para cekmez (onizleme/test)
   onBack: () => void
 }) {
+  const { t } = useT()
   useEscape(onBack)
   const coinPackages = useCoinPackages()
   const [number, setNumber] = useState('')
@@ -65,17 +67,17 @@ export default function Checkout({
         {/* Sol: sipariş özeti */}
         <div className="register-card checkout-summary">
           <button type="button" className="checkout-back" onClick={onBack}>
-            <Icon name="arrow-right" size={16} /> Sepete dön
+            <Icon name="arrow-right" size={16} /> {t('co.backToCart')}
           </button>
           <h2>
-            <Icon name="shop" size={20} /> Sipariş Özeti
+            <Icon name="shop" size={20} /> {t('co.summary')}
           </h2>
           <div className="co-list">
             {isMembership ? (
               <div className="co-row">
                 <span className="co-name">
-                  <Icon name="crown" size={15} /> 1 Yıllık Premium Üyelik
-                  <b className="co-gc">Üyelik bitişine +1 yıl</b>
+                  <Icon name="crown" size={15} /> {t('co.premiumYear')}
+                  <b className="co-gc">{t('co.extendYear')}</b>
                 </span>
                 <span className="co-price tnum">{fmtTL(amount)}</span>
               </div>
@@ -84,7 +86,7 @@ export default function Checkout({
                 <div className="co-row" key={it.id}>
                   <span className="co-name">
                     <Icon name="coin" size={15} /> {pkg.name}
-                    <b className="co-gc">{fmtCoin(pkg.gc)} coin</b>
+                    <b className="co-gc">{fmtCoin(pkg.gc)} {t('co.coin')}</b>
                     {it.qty > 1 && <span className="co-qty">×{it.qty}</span>}
                   </span>
                   <span className="co-price tnum">{fmtTL(pkg.price * 100 * it.qty)}</span>
@@ -95,10 +97,10 @@ export default function Checkout({
           <div className="co-total">
             <span>
               {isMembership ? (
-                'Toplam'
+                t('co.total')
               ) : (
                 <>
-                  Toplam <b className="tnum">{fmtCoin(coins)}</b> coin
+                  {t('co.total')} <b className="tnum">{fmtCoin(coins)}</b> {t('co.coin')}
                 </>
               )}
             </span>
@@ -109,15 +111,14 @@ export default function Checkout({
         {/* Sağ: kredi kartı formu (native POST -> Garanti 3D) */}
         <form className="register-card checkout-card" method="post" action={submitUrl} autoComplete="on">
           <h2>
-            <Icon name="credit-card" size={20} /> Kredi Kartı ile Öde
+            <Icon name="credit-card" size={20} /> {t('co.payByCard')}
           </h2>
 
           {demo && (
             <div className="checkout-demo" role="status">
               <Icon name="shield-check" size={15} />
               <span>
-                <b>DEMO modu</b> — banka bağlı değil. Kart bilgileri kimseye gönderilmez; "Öde" deyince gerçek para
-                çekilmeden {isMembership ? 'üyeliğin uzatılır' : 'coin hesabına yüklenir'}. (Test kartı: 4111 1111 1111 1111 · 12/30 · 123)
+                <b>{t('co.demoTitle')}</b> — {t(isMembership ? 'co.demoBodyMem' : 'co.demoBodyCoin')}
               </span>
             </div>
           )}
@@ -132,16 +133,16 @@ export default function Checkout({
             <div className="cc-foot">
               <span className="cc-holder">
                 <span className="cc-lbl">Kart Sahibi</span>
-                {holder.trim() ? holder.toUpperCase() : 'AD SOYAD'}
+                {holder.trim() ? holder.toUpperCase() : t('co.holderPh').toUpperCase()}
               </span>
               <span>
                 <span className="cc-lbl">Son Kul.</span>
-                {(month || 'AA') + '/' + (year || 'YY')}
+                {(month || t('co.mmPh')) + '/' + (year || t('co.yyPh'))}
               </span>
             </div>
           </div>
 
-          <label>Kart Numarası</label>
+          <label>{t('co.cardNumber')}</label>
           <input
             name="number"
             inputMode="numeric"
@@ -152,35 +153,35 @@ export default function Checkout({
             required
           />
 
-          <label>Kart Üzerindeki İsim</label>
+          <label>{t('co.cardHolder')}</label>
           <input
             name="holder"
             autoComplete="cc-name"
-            placeholder="Ad Soyad"
+            placeholder={t('co.holderPh')}
             value={holder}
             onChange={(e) => setHolder(e.target.value)}
           />
 
           <div className="cc-row">
             <div>
-              <label>Ay</label>
+              <label>{t('co.month')}</label>
               <input
                 name="month"
                 inputMode="numeric"
                 autoComplete="cc-exp-month"
-                placeholder="AA"
+                placeholder={t('co.mmPh')}
                 value={month}
                 onChange={(e) => setMonth(onlyDigits(e.target.value).slice(0, 2))}
                 required
               />
             </div>
             <div>
-              <label>Yıl</label>
+              <label>{t('co.year')}</label>
               <input
                 name="year"
                 inputMode="numeric"
                 autoComplete="cc-exp-year"
-                placeholder="YY"
+                placeholder={t('co.yyPh')}
                 value={year}
                 onChange={(e) => setYear(onlyDigits(e.target.value).slice(0, 2))}
                 required
@@ -201,10 +202,10 @@ export default function Checkout({
           </div>
 
           <Button type="submit" variant="default" className="checkout-pay">
-            <Icon name={isMembership ? 'crown' : 'coin'} size={18} /> {fmtTL(amount)} {demo ? 'Öde (Demo)' : 'Güvenli Öde'}
+            <Icon name={isMembership ? 'crown' : 'coin'} size={18} /> {fmtTL(amount)} {demo ? t('co.payDemo') : t('co.paySecure')}
           </Button>
           <p className="checkout-secure">
-            <Icon name="shield-check" size={13} /> 3D Secure · Kart bilgileriniz saklanmaz, doğrudan bankaya iletilir.
+            <Icon name="shield-check" size={13} /> {t('co.secureNote')}
           </p>
         </form>
       </div>

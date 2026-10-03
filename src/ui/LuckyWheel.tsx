@@ -235,7 +235,16 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
   const showProb = !!data?.settings.showProbability
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+    // Pencere olarak acikken perdeye tiklama kapatir (diger pencerelerle tutarli); cark donerken
+    // ve sayfa kabugunda (tam sayfa) kapanmaz.
+    <div
+      className="register-overlay modal page"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (!spinning && e.target === e.currentTarget && !e.currentTarget.closest('.page-host')) onClose()
+      }}
+    >
       <div className="register-card lw-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />

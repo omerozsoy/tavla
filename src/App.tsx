@@ -6030,10 +6030,11 @@ export default function App() {
 
   // Landscape TELEFON (yatay + kisa yukseklik): masaustu duzeni yerine kompakt MOBIL
   // kabuk (hamburger + drawer + dropdown bar). #root.lsphone -> ui/landscapePhone.css.
-  // Gercek masaustu/tablet ETKILENMEZ (yukseklik >500). matchMedia ile canli takip.
+  // Esik 560px: tahtanin kompakt yatay duzeni (CSS @media max-height:560px) ile AYNI. Eskiden 500'du;
+  // 501-560px yukseklikte kompakt tahta + masaustu kabugu karisik gorunuyordu. matchMedia canli takip.
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return
-    const mq = window.matchMedia('(orientation: landscape) and (max-height: 500px)')
+    const mq = window.matchMedia('(orientation: landscape) and (max-height: 560px)')
     const root = document.getElementById('root')
     const apply = () => root?.classList.toggle('lsphone', mq.matches)
     apply()

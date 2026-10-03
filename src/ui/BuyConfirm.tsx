@@ -24,7 +24,8 @@ export default function BuyConfirm({ name, price, coins, busy, onConfirm, onCanc
   const { t } = useT()
   const after = Math.max(0, coins - price)
   return createPortal(
-    <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onCancel}>
+    // Islem surerken (busy) arka plana tiklama KAPATMAZ: coin dusumu belirsiz kalmasin.
+    <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={busy ? undefined : onCancel}>
       <div className="register-card resign-card buy-confirm-card" onClick={(e) => e.stopPropagation()}>
         <h2>
           <Icon name="cart" size={20} /> {t('shop.confirmTitle')}

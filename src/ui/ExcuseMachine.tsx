@@ -207,7 +207,13 @@ export default function ExcuseMachine({ onClose }: Props) {
   const rarityColor = result ? RARITY_COLORS[result.rarity] : undefined
 
   return (
-    <div className="register-overlay modal page em-overlay" role="dialog" aria-modal="true" aria-label={t('exc.title')}>
+    <div className="register-overlay modal page em-overlay" role="dialog" aria-modal="true" aria-label={t('exc.title')}
+      // Yalniz PENCERE olarak acikken perdeye tiklama kapatir (sayfa kabugunda tam sayfa iken
+      // bos kenara tiklamak sayfayi kapatmasin).
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !e.currentTarget.closest('.page-host')) onClose()
+      }}
+    >
       <div className="register-card em-card" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="ghost"

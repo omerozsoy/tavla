@@ -235,7 +235,7 @@
   }
 }
 /* Yatay telefon: dugmeler sutun yerine tek satir, metin 2 satir. */
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 560px) {
   .cc-banner {
     padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   }

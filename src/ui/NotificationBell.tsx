@@ -42,23 +42,39 @@ export default function NotificationBell({ items, unread, onOpen, onDelete, onDe
   const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 })
   const ref = useRef<HTMLDivElement>(null)
 
-  // Disari tiklayinca kapat
+  // Konumu can butonundan hesapla. Acikken pencere boyutu/yonu degisir ya da sayfa kayarsa
+  // YENIDEN hesapla (eskiden yalniz acilista bir kez hesaplaniyordu -> panel butondan kopuyordu).
+  const place = () => {
+    if (!ref.current) return
+    const r = ref.current.getBoundingClientRect()
+    setPos({ top: Math.round(r.bottom + 8), right: Math.round(Math.max(8, window.innerWidth - r.right)) })
+  }
   useEffect(() => {
     if (!open) return
-    const h = (e: MouseEvent) => {
+    // Disari dokununca/tiklayinca kapat: pointerdown fare + dokunmatik + kalemi kapsar
+    // (eski mousedown dokunmatikte guvenilir tetiklenmiyordu). Esc de kapatir.
+    const h = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    window.addEventListener('mousedown', h)
-    return () => window.removeEventListener('mousedown', h)
+    const k = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('pointerdown', h)
+    window.addEventListener('keydown', k)
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('pointerdown', h)
+      window.removeEventListener('keydown', k)
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
   }, [open])
 
   function toggle() {
     const next = !open
     if (next) {
-      if (ref.current) {
-        const r = ref.current.getBoundingClientRect()
-        setPos({ top: Math.round(r.bottom + 8), right: Math.round(Math.max(8, window.innerWidth - r.right)) })
-      }
+      place()
       if (unread > 0) onOpen() // acinca okundu isaretle (silme yok; liste kalir)
     }
     setOpen(next)
@@ -78,7 +94,11 @@ export default function NotificationBell({ items, unread, onOpen, onDelete, onDe
         {unread > 0 && <span className="notif-badge">{unread > 9 ? '9+' : unread}</span>}
       </Button>
       {open && (
-        <div className="notif-panel" style={{ position: 'fixed', top: pos.top, right: pos.right }}>
+        <div
+          className="notif-panel"
+          // max-height: uzun bildirim listesi ekranin altindan tasmasin, panel icinde kaysin.
+          style={{ position: 'fixed', top: pos.top, right: pos.right, maxHeight: `calc(100dvh - ${pos.top + 12}px)`, overflowY: 'auto' }}
+        >
           <div className="notif-head">
             <span>{t('notif.title')}</span>
             {items.length > 0 && onDeleteAll && (

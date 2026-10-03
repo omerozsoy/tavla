@@ -97,6 +97,7 @@ function Avatar({ p }: { p: PlayerInfo }) {
       tabIndex={p.onOpenProfile ? 0 : undefined}
       onKeyDown={p.onOpenProfile ? (e) => (e.key === 'Enter' || e.key === ' ') && p.onOpenProfile!() : undefined}
       title={p.onOpenProfile ? t('menu.viewProfile') : undefined}
+      aria-label={p.onOpenProfile ? t('menu.viewProfile') : undefined}
     >
       {p.active && <span className="turn-arcs" aria-hidden="true" />}
       {inner}

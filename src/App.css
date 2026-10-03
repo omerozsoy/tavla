@@ -2973,8 +2973,9 @@ button[aria-disabled='true'],
   background: color-mix(in srgb, var(--card-bg) 94%, var(--accent));
 }
 .glossary-alphabet button {
-  min-width: 31px;
-  height: 31px;
+  /* 31px -> 38px: harf dugmeleri dar telefonda birbirine yakin ve kucuktu (yanlis harf). */
+  min-width: 38px;
+  height: 38px;
   padding: 0 7px;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -5454,9 +5455,10 @@ button[aria-disabled='true'],
   .register-overlay.page > *:not(.register-overlay) .modal-close {
     display: flex;
     position: fixed;
-    top: 10px;
+    /* Kurulu PWA: centik/durum cubugu bolgesinin ALTINDA (top:10px'te ulasilamiyordu). */
+    top: calc(10px + env(safe-area-inset-top));
     left: auto;
-    right: 12px;
+    right: calc(12px + env(safe-area-inset-right));
     z-index: 210;
     background: var(--card-bg);
   }
@@ -5511,8 +5513,8 @@ button[aria-disabled='true'],
   .register-overlay.page > *:not(.register-overlay) .analyzer-close {
     display: inline-flex;
     position: fixed;
-    top: 10px;
-    right: 12px;
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
     z-index: 210;
   }
 }
@@ -5725,9 +5727,10 @@ button[aria-disabled='true'],
 /* AFK son-15sn uyarisi (sunucu-otoriter): belirgin, pulsing kirmizi banner. */
 .afk-warn {
   position: absolute;
-  top: 50%;
+  /* Tahtanin ORTASI yerine ust kenari: ortada zar / Zar At / Onayla aksiyonlarini ortuyordu. */
+  top: 6px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 30;
   display: inline-flex;
   align-items: center;
@@ -7192,6 +7195,25 @@ html[data-board='yilbasi'] .checker.black {
 }
 .board-dice.swappable {
   cursor: pointer;
+  position: relative;
+}
+/* Zar sirasi degistirilebilir: dokunmatikte hover ipucu (title) gorunmez -> gorunur ⇄ rozeti. */
+.board-dice.swappable::after {
+  content: '⇄';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 .die-face {
   position: relative;
@@ -8754,136 +8776,9 @@ button.move-row:focus-visible {
     transform: none;
   }
 }
-@keyframes rotate-tip-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -6px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
 
-/* Manuel yatay: cihazin donme kilidi acikken gorunumu 90 dondur.
-   #root'a transform verildiginde tum position:fixed ogeler bu ataya gore
-   konumlanir -> hesap bari, saat, menu her sey birlikte doner. */
-#root.force-landscape {
-  position: fixed;
-  top: 0;
-  left: 100vw;
-  /* iOS Safari: adres cubugu ile 100vh kayar -> dvh (gorunur yukseklik) kullan */
-  width: 100dvh;
-  height: 100vw;
-  overflow: hidden;
-  transform-origin: top left;
-  transform: rotate(90deg);
-  /* Board hem YUKSEKLIGE (100vw) hem GENISLIGE (100dvh) sigmali. Ikinci terim board'un
-     gercek en-boy oranini (~1.55) + kenar cubugu payini hesaba katar; aksi halde board
-     yatay cercevesinden tasip sol kenari kesiliyordu (iOS'ta 100dvh adres cubuguyla dar). */
-  --board-h: max(220px, min(calc(100vw - 52px), calc((100dvh - 150px) / 1.72)));
-}
-/* Icerigi cerceveye GARANTI ortala: justify-content bazi durumlarda tutmuyordu ->
-   margin:auto + overflow:visible + padding sifirla (board sola kayip kesilmesin) */
-#root.force-landscape .app {
-  padding: 0 !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-#root.force-landscape .main {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: visible !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-#root.force-landscape .game-area {
-  margin: auto !important;
-}
-/* Force-landscape: gercek viewport 390px dikey oldugundan max-width:720/900 DIKEY
-   mobil kurallari tetikleniyor; #root 844px genis oldugu icin bunlari geri alip
-   Galaxy tarzi YATAY duzeni zorluyoruz. */
-/* Hesap cubugu (ust menu) oyun-ici yatayda board'a biniyordu -> gizle (menu game-ham'da) */
-#root.force-landscape .account-bar {
-  display: none;
-}
-#root.force-landscape .analysis {
-  display: none;
-}
-#root.force-landscape .status {
-  display: none;
-}
-#root.force-landscape .app {
-  padding: 4px 6px;
-  gap: 6px;
-  height: 100%;
-}
-#root.force-landscape .main {
-  padding-top: 4px;
-  gap: 4px;
-  justify-content: center;
-}
-#root.force-landscape .game-area {
-  flex-direction: row;
-  gap: 6px;
-  padding: 4px;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-#root.force-landscape .sidebar {
-  width: 104px;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  --pc-av: 50px; /* kompakt yatay: kap + ic avatar + turn-arcs halkasi birlikte kuculur */
-}
-#root.force-landscape .avatar {
-  font-size: 24px;
-  margin-bottom: 3px;
-  border-width: 2px;
-}
-#root.force-landscape .player-name {
-  font-size: 0.8rem;
-}
-#root.force-landscape .player-sub,
-#root.force-landscape .player-rating,
-#root.force-landscape .score-badge {
-  font-size: 0.72rem;
-  margin-bottom: 2px;
-}
-#root.force-landscape .off-box {
-  width: 40px;
-  height: 32px;
-  font-size: 1.2rem;
-}
-/* Force-landscape (telefon yatay oyun): saat sayaclari KOMPAKT olsun ki merkez sutunu
-   daralip board buyusun (medya sorgulari gercek dikey viewport'u gordugu icin buraya AYRI
-   yaziyoruz; #root.force-landscape ozgullugu clockStack.css tabanini ezer). */
-#root.force-landscape .clock-off {
-  font-size: 1.25rem;
-  min-width: 50px;
-  padding: 6px 8px;
-}
-#root.force-landscape .clock-group {
-  min-width: 58px;
-  padding: 5px;
-  gap: 4px;
-}
-#root.force-landscape .clock-bank {
-  font-size: 0.92rem;
-  padding: 4px 6px;
-}
-#root.force-landscape .clock-move {
-  font-size: 1.05rem;
-  padding: 4px 0;
-}
-/* Oyun-ici hamburger sag ortada (Galaxy gibi); mobil sol-menu hamburger'i gizli */
-#root.force-landscape .hamburger {
-  display: none;
-}
+/* (Kaldirildi: #root.force-landscape "manuel yatay" duzeni. Sinif hicbir yerde EKLENMIYORDU —
+   App.tsx yalniz eski oturumlardan kalan sinifi/anahtari temizler — ~120 satir olu CSS idi.) */
 .force-landscape-exit {
   position: fixed;
   top: 8px;
@@ -9239,7 +9134,9 @@ html.fs-active .account-bar {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px 15px calc(16px + env(safe-area-inset-bottom));
+  /* Ust/sag centik payi: kurulu PWA'da baslik ve Kapat durum cubugunun altina girmesin. */
+  padding: calc(16px + env(safe-area-inset-top)) calc(15px + env(safe-area-inset-right))
+    calc(16px + env(safe-area-inset-bottom)) 15px;
   overflow-y: auto;
 }
 .game-menu.open {
@@ -24040,10 +23937,12 @@ button.acct-row-logout:hover:not(:disabled) {
   /* Üst yığının (account-bar var(--header-h) + varsa beta bandı --beta-h) TAM ALTINA konumlan;
      aksi halde beta bandı davetin başını (kimin davet ettiği) örtüyordu. --beta-h BetaBanner'dan
      dinamik gelir (kapatılınca 0). z-index üst yığından (105) yüksek -> asla altında kalmaz. */
-  top: calc(var(--header-h) + var(--beta-h, 0px) + 6px);
+  top: calc(var(--header-h) + var(--beta-h, 0px) + 6px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 110;
+  /* Davet zaman kritik: maç sonucu (120), çekmece ve sayfa katmanlarının ÜSTÜNDE; modal
+     onay pencereleri (--z-modal 2500) ve bildirimlerin (--z-toast 3000) altında. */
+  z-index: 2100;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -25709,7 +25608,7 @@ button.acct-row-logout:hover:not(:disabled) {
     gap: 10px;
   }
 }
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 560px) {
   /* Yatay telefon: dikey alan yok -> sag kenarda, oyun menusu dugmesinin ALTINDA ikon dugme. */
   .chat-panel.closed {
     width: 38px;
@@ -26209,11 +26108,12 @@ button.acct-row-logout:hover:not(:disabled) {
    ========================================================================== */
 .toastr-viewport {
   position: fixed;
-  top: 72px; /* üst bar + bayrağın ALTINDA (sağ üst köşe) */
-  right: 16px;
+  top: calc(72px + env(safe-area-inset-top)); /* üst bar + bayrağın ALTINDA (sağ üst köşe); PWA'da çentik payı */
+  right: calc(16px + env(safe-area-inset-right));
   left: auto;
   transform: none;
-  z-index: 1000;
+  /* Bildirim HER katmanın üstünde (açık menü/modal dahil): eski 1000 çekmece/modalın altında kalıyordu. */
+  z-index: var(--z-toast, 3000);
   display: flex;
   flex-direction: column;
   align-items: flex-end; /* sağa hizalı yığın */
@@ -27898,6 +27798,16 @@ select:-webkit-autofill {
   cursor: pointer;
   padding: 0;
   box-shadow: inset 0 0 0 2px var(--card-bg);
+}
+/* Dokunma alani 40px (gorunen nokta 30px kalir): yan yana renkler dar ekranda zor seciliyordu. */
+.product-swatch {
+  position: relative;
+}
+.product-swatch::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
 }
 .product-swatch.active {
   border-color: var(--accent);
@@ -29840,4 +29750,10 @@ select:-webkit-autofill {
   .page-back {
     display: inline-flex;
   }
+}
+
+/* Bir pencere (maç sonucu, Pes Et onayı vb.) açıkken kapalı sohbet düğmesi perdenin ÜSTÜNDE
+   parlak kalıyordu -> pencerenin altına insin. */
+body:has(.register-overlay) .chat-panel.closed {
+  z-index: 90;
 }

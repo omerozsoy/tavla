@@ -32,6 +32,7 @@ for (const item of [
   'sw.js',
   'icon-192.png',
   'icon-512.png',
+  'apple-touch-icon.png', // iOS ana ekran ikonu (180x180)
   'assets',
   'models',
   'flags', // ulke bayraklari (circle-flags, CountryFlag -> /flags/xx.svg)

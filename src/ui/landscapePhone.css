@@ -1,11 +1,11 @@
 /* LANDSCAPE TELEFON KABUĞU
-   Yatay telefon (genişlik >900 ama YÜKSEKLİK ≤500) masaüstü düzenine düşüp üst bar
+   Yatay telefon (genişlik >900 ama YÜKSEKLİK ≤560) masaüstü düzenine düşüp üst bar
    sıkışıyor + yan menü garip duruyordu. #root.lsphone (App.tsx matchMedia ile eklenir)
    ile o durumda KOMPAKT MOBİL kabuğu zorlarız: hamburger + soldan drawer + dropdown bar.
 
    Neden #root (ID) seçici: App.css'teki class-tabanlı @media (min-width:901px) masaüstü
    kuralları (0,2,0) bu genişlikte de eşleşiyor; ID özgüllüğü (1,x,x) onları KESİN yener,
-   kaynak sırasından bağımsız. Gerçek masaüstü/tablet ETKİLENMEZ (yükseklik >500 -> lsphone yok). */
+   kaynak sırasından bağımsız. Gerçek masaüstü/tablet ETKİLENMEZ (yükseklik >560 -> lsphone yok). */
 
 #root.lsphone .app.lobby {
   grid-template-columns: 1fr;

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#A83A2B" />
     <meta name="robots" content="noindex, follow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <title>Sayfa Bulunamadı (404) | TavlaTv</title>
     <meta name="description" content="Aradığınız sayfa bulunamadı. TavlaTV ana sayfasından ücretsiz online tavla oynamaya devam edebilirsiniz." />
     <style>

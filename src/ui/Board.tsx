@@ -709,6 +709,7 @@ function Board({
               cube.owner == null ? 'center' : cube.owner === topBarPlayer ? 'top' : 'bottom'
             }${crawford ? ' cube-crawford' : ''}`}
             title={crawford ? t('board.crawfordHint') : t('board.cube')}
+            aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
           >
             {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
           </div>

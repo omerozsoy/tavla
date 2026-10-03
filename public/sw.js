@@ -86,10 +86,16 @@ self.addEventListener('fetch', (event) => {
           // Kabuğu YALNIZ gerçek kök ('/') gezinmesinde güncelle. Önceden HER gezinme yanıtı
           // '/' altına yazılıyordu -> kabuk cache'i son ziyaret edilen sayfayla (ör. /online-tavla
           // veya bir 302) KİRLENİYORDU. Yalnız kök + redirect olmayan başarılı yanıt cache'lensin.
-          if (url.pathname === '/' && fresh.ok && !fresh.redirected) {
+          // Basarili (redirect olmayan) HTML yanitlari KENDI URL'i altinda saklanir; kok '/'
+          // ayrica uygulama kabugu olarak tazelenir. Eskiden yalniz '/' guncelleniyordu: kullanici
+          // hep bir alt sayfadan (/online-turnuvalar, PWA start_url disi derin link) girerse
+          // cevrimdisi kabuk BAYAT kaliyordu. Her URL kendi yanitini tuttugu icin '/' kirlenmez.
+          // Sorgu parametreli URL'ler (sifre sifirlama tokeni vb.) saklanmaz.
+          if (fresh.ok && !fresh.redirected && !url.search && (fresh.headers.get('content-type') || '').includes('text/html')) {
             try {
               const cache = await caches.open(CACHE)
-              await cache.put('/', fresh.clone())
+              await cache.put(req, fresh.clone())
+              if (url.pathname === '/') await cache.put('/', fresh.clone())
             } catch {
               /* cache.put reddetse bile taze yaniti dondur */
             }
