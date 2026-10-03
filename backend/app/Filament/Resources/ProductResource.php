@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
+use App\Support\ImageOptimizer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -11,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * Fiziksel magaza urunleri (Tavla, zar, kitap, zar kulesi vb.). Panelden yonetilir.
@@ -84,7 +86,12 @@ class ProductResource extends Resource
                 ->directory('urunler')
                 ->visibility('public')
                 ->maxFiles(8)
-                ->helperText('İlk görsel kapak olarak kullanılır.')
+                // YÜKLEME-ANI OPTİMİZASYON: her görsel ≤1600px'e küçültülür + WebP'ye sıkıştırılır.
+                // multiple() her dosya için ayrı ayrı çağırır. GD yoksa/hata olursa orijinal saklanır
+                // (yükleme kırılmaz). Bkz App\Support\ImageOptimizer.
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'urunler', 1600, 82))
+                ->helperText('İlk görsel kapak olarak kullanılır. Yüklerken otomatik optimize edilir (≤1600px, WebP).')
                 ->columnSpanFull(),
 
             // Renk = gorsel varyant. Ayni stok/fiyat; kullanici yalnizca rengini secer.
