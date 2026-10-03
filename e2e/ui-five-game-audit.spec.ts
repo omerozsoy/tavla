@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { generateMoves } from '../src/engine/moves'
 
@@ -22,6 +22,16 @@ async function clickButton(page: Page, re: RegExp) {
   const b = page.getByRole('button', { name: re }).last()
   await expect(b).toBeVisible({ timeout: 15_000 })
   await b.click()
+}
+async function dragChecker(page: Page, from: Locator, to: Locator) {
+  const a = await from.boundingBox(); const b = await to.boundingBox()
+  if (!a || !b) throw new Error('sürükleme kutusu yok')
+  // Kaynak/hedefte taş yığını kenara yakın olabilir: noktanın ortası yeterli (Board cömert hitbox).
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 })
+  await page.mouse.up()
+  await page.waitForTimeout(150)
 }
 async function waitVersion(request: APIRequestContext, code: string, user: User, roomToken: string, before: number) {
   await expect.poll(async () => (await getRoom(request, code, user, roomToken)).server_version, { timeout: 15_000 }).toBeGreaterThan(before)
@@ -98,11 +108,12 @@ test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }
       const moves = generateMoves(r.server_state) as { steps: Step[] }[]
       if (!moves.length) { await page.waitForTimeout(1200); continue }
       const before = r.server_version
+      // Tek dokunuş taşı ETKİN zarla otomatik oynatır (hedef tıklaması yok sayılır) -> zar sırası
+      // adımla uyuşmayabilir. Gerçek kullanıcı gibi SÜRÜKLE-BIRAK: hedefe tam o adım oynanır.
       for (const s of moves[0].steps) {
-        if (s.from === 'bar') await page.locator('[data-slot="bar"]').click()
-        else await page.locator(`.point[data-point="${s.from}"]`).click()
-        if (s.to === 'off') await page.locator('[data-slot="off"]').click()
-        else await page.locator(`.point[data-point="${s.to}"]`).click()
+        const from = s.from === 'bar' ? page.locator('[data-slot="bar"]') : page.locator(`.point[data-point="${s.from}"]`)
+        const to = s.to === 'off' ? page.locator('[data-slot="off"]') : page.locator(`.point[data-point="${s.to}"]`)
+        await dragChecker(page, from, to)
       }
       await clickButton(page, /Onayla|Onay/)
       await waitVersion(request, code, me, roomTokens[playerIndex], before)
