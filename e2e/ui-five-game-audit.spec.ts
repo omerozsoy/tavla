@@ -29,7 +29,10 @@ async function dragChecker(page: Page, from: Locator, to: Locator) {
   const board = page.locator('.board').first()
   for (let attempt = 0; attempt < 6; attempt++) {
     const before = await board.innerHTML()
-    const a = await from.boundingBox(); const b = await to.boundingBox()
+    // Noktanın ortası taş yığını kısaysa boş kalır -> sürüklenebilir EN ÜST taştan tut.
+    const grab = from.locator('.checker.draggable').last()
+    const a = (await grab.count()) ? await grab.boundingBox() : await from.boundingBox()
+    const b = await to.boundingBox()
     if (!a || !b) throw new Error('sürükleme kutusu yok')
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
     await page.mouse.down()
