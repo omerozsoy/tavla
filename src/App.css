@@ -14456,7 +14456,16 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--text);
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
+}
+.solo-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.solo-preview-sep {
+  color: var(--text-dim, #999);
 }
 .solo-preview-info b {
   display: inline-flex;
