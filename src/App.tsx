@@ -1381,7 +1381,10 @@ export default function App() {
         case 'tek-oyun':
           // Misafir Tek Oyun oynayamaz (coin/hesap şart) -> üyelik iste. Yalnız Yapay Zeka ile
           // oynama misafire açık.
-          if (!user) requireLogin()
+          // KRITIK: mount'ta (refresh) profil fetch'i HENUZ bitmedi -> `user` null olur; `!user`
+          // ile gate edersek GIRISLI kullaniciyi refresh'te haksiz giris sayfasina atar. Senkron
+          // getToken() oturumu guvenilir soyler (profil beklemeden). Token yoksa misafir -> uyelik.
+          if (!getToken()) requireLogin()
           else setSoloOpen(true)
           break
         case 'turnuva-takvimi':
@@ -1507,10 +1510,14 @@ export default function App() {
           setEditProfile(true)
           break
         case 'giris': // Giris/Kayit artik normal sayfa (URL'li). Deep-link/geri tusu ile acilir.
+          // Zaten girisliyse (token var) giris/kayit formu anlamsiz -> ana sayfaya cek, acma.
+          // getToken() senkron+guvenilir (profil fetch'i beklemeden formun gorunmesini onler).
+          if (getToken()) { window.history.replaceState(null, '', '/'); break }
           setShowAuth(true)
           setAuthForgot(false)
           break
         case 'sifremi-unuttum': // Sifremi unuttum = Auth'un forgot alt-modu, artik kendi URL'si
+          if (getToken()) { window.history.replaceState(null, '', '/'); break }
           setShowAuth(true)
           setAuthForgot(true)
           break
