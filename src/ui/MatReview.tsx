@@ -12,6 +12,7 @@ import { pipCount } from '../engine/evaluate'
 import { applyStep } from '../engine/moves'
 import { divisionOfPR } from '../badges'
 import MatchSummary from './MatchSummary'
+import { withGameIndex } from '../matExport'
 import type { LogEntry } from './MatchReport'
 import type { GameState, Step, Player } from '../engine/types'
 
@@ -74,7 +75,7 @@ export function computeSummary(log: LogEntry[], names: string[] | null, duration
 const perfPct = (erMemg: number) => Math.max(0, Math.min(100, 100 - erMemg * 1.2))
 
 export default function MatReview({
-  log,
+  log: rawLog,
   names,
   matchLength,
   summary,
@@ -91,6 +92,8 @@ export default function MatReview({
 }) {
   const { t } = useT()
   useEscape(onClose)
+  // OYUN AYRACI: log `game` taşımıyorsa seq'ten türet (zaten varsa dokunmaz) -> "— OYUN N —" ayracı.
+  const log = useMemo(() => withGameIndex(rawLog), [rawLog])
   const [showSum, setShowSum] = useState(!!summary)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const nameW = names?.[0] || t('mrv.white') // white = gnubg player0

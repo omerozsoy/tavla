@@ -134,6 +134,29 @@ function splitGames(log: MoveLogEntry[]): MoveLogEntry[][] {
   return games
 }
 
+// OYUN AYRACI (site geneli): hamle log'una `game` (0-based oyun indeksi) TÜRET. Zaten varsa
+// DOKUNMA (MatSerializer/backend .mat kaynaklı log'lar game taşır). Yoksa splitGames/MatBuilder ile
+// AYNI kural: bir oyuncunun seq'i öncekinin ALTINA ve <=1'e düşünce o oyuncu için yeni oyun başlar;
+// girdinin game'i = o oyuncunun sayacı. Canlı maç-sonu logu (gnubg review / client matchLog) `game`
+// taşımaz -> bu türetme sayesinde "Hamle Analizi" sıralı listesinde de "— OYUN N —" ayracı + rozet
+// görünür. Oyuncusuz girdiler (nadir) o anki en yüksek oyunda kalır.
+export function withGameIndex<T extends { player?: Player; seq?: number; game?: number }>(log: T[]): T[] {
+  if (log.some((e) => e.game != null)) return log
+  const last: Partial<Record<Player, number>> = {}
+  const g: Record<Player, number> = { white: 0, black: 0 }
+  let maxG = 0
+  return log.map((e, i) => {
+    if (!e.player) return { ...e, game: maxG }
+    const p = e.player
+    const s = e.seq ?? i
+    const prev = last[p]
+    if (prev !== undefined && s < prev && s <= 1) g[p] += 1
+    last[p] = s
+    maxG = Math.max(maxG, g[p])
+    return { ...e, game: g[p] }
+  })
+}
+
 // Oyunun eylem dizisi: kup satirlari CIFTLENIR. Cikan dizide her teklifin hemen ardindan
 // rakibin yaniti gelir -> sutun almasigi bozulmaz. Eksik teklif/yanit oyunun akisindan uretilir.
 function actsOf(game: MoveLogEntry[]): Act[] {
