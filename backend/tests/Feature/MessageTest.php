@@ -211,4 +211,51 @@ class MessageTest extends TestCase
             ->assertJsonPath('threads.0.last.body', 'son mesaj')
             ->assertJsonPath('threads.0.unread', 1);
     }
+
+    public function test_delete_conversation_hides_for_me_only_and_returns_on_new_message(): void
+    {
+        $me = $this->makeUser('me');
+        $friend = $this->makeUser('fr');
+        $this->befriend($me, $friend);
+        Sanctum::actingAs($me);
+        $this->postJson("/api/messages/{$friend->id}", ['body' => 'eski mesaj'])->assertOk();
+
+        // Ben sohbeti silerim -> listemden kalkar, geçmiş bana gizli.
+        $this->deleteJson("/api/messages/{$friend->id}")->assertOk()->assertJsonPath('ok', true);
+        $this->getJson('/api/messages')->assertOk()->assertJsonCount(0, 'threads');
+        $this->getJson("/api/messages/{$friend->id}")->assertOk()->assertJsonCount(0, 'messages');
+
+        // Karşı taraf ETKİLENMEZ: onun listesinde sohbet + mesaj durur.
+        Sanctum::actingAs($friend);
+        $this->getJson('/api/messages')->assertOk()->assertJsonCount(1, 'threads');
+        // Karşı taraf yeni mesaj atınca sohbet BANA geri döner (yalnız yeni mesaj görünür).
+        $this->postJson("/api/messages/{$me->id}", ['body' => 'yeni mesaj'])->assertOk();
+        Sanctum::actingAs($me);
+        $this->getJson('/api/messages')->assertOk()
+            ->assertJsonCount(1, 'threads')
+            ->assertJsonPath('threads.0.last.body', 'yeni mesaj');
+        $this->getJson("/api/messages/{$friend->id}")->assertOk()->assertJsonCount(1, 'messages');
+    }
+
+    public function test_block_prevents_messaging_both_ways_and_unblock_restores(): void
+    {
+        $me = $this->makeUser('me');
+        $friend = $this->makeUser('fr');
+        $this->befriend($me, $friend);
+
+        Sanctum::actingAs($me);
+        $this->postJson("/api/messages/{$friend->id}/block")->assertOk()->assertJsonPath('blocked', true);
+        // Ben ona yazamam.
+        $this->postJson("/api/messages/{$friend->id}", ['body' => 'olmaz'])->assertStatus(403);
+        // O da bana yazamaz (iki yönlü).
+        Sanctum::actingAs($friend);
+        $this->postJson("/api/messages/{$me->id}", ['body' => 'olmaz2'])->assertStatus(403);
+        // Thread'te blocked bayrağı bende true.
+        Sanctum::actingAs($me);
+        $this->getJson("/api/messages/{$friend->id}")->assertOk()->assertJsonPath('blocked', true);
+
+        // Blok kaldır -> tekrar mesajlaşılır.
+        $this->deleteJson("/api/messages/{$friend->id}/block")->assertOk()->assertJsonPath('blocked', false);
+        $this->postJson("/api/messages/{$friend->id}", ['body' => 'tekrar'])->assertOk();
+    }
 }

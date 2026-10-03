@@ -21194,6 +21194,89 @@ button.acct-row-logout:hover:not(:disabled) {
 .messages-thread:hover {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
+/* Sohbet satırı sarmalayıcı (buton + kebab menü kardeş) */
+.messages-thread-row {
+  position: relative;
+}
+/* Kebab (dikey üç nokta): satır sağında, hover'da / menü açıkken görünür */
+.messages-thread-kebab {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: color-mix(in srgb, var(--text, #333) 55%, transparent);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.messages-thread-row:hover .messages-thread-kebab,
+.messages-thread-kebab[aria-expanded='true'] {
+  opacity: 1;
+}
+.messages-thread-kebab:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+@media (hover: none) {
+  .messages-thread-kebab { opacity: 0.6; } /* dokunmatik: hover yok -> daima görünür */
+}
+/* Açılır menü (Sohbeti sil / Blokla) */
+.messages-thread-menu {
+  position: absolute;
+  top: 42px;
+  right: 8px;
+  z-index: 30;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+}
+.messages-thread-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 11px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text, #222);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.messages-thread-menu button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.messages-thread-menu button.danger {
+  color: #d64545;
+}
+.messages-thread-menu button.danger:hover {
+  background: color-mix(in srgb, #d64545 12%, transparent);
+}
+/* Dışarı tıklayınca menüyü kapatan görünmez katman */
+.messages-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+.messages-thread-blocked .messages-thread-name {
+  opacity: 0.6; /* bloklanmış kullanıcı adı soluk */
+}
 /* Aktif satır: yumuşak dolgu + solda ince aksan çubuğu */
 .messages-thread.active {
   background: color-mix(in srgb, var(--accent) 13%, transparent);

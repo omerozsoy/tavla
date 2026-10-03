@@ -1087,6 +1087,7 @@ export interface ChatThread {
   last: { body: string; has_image?: boolean; mine: boolean; read?: boolean; created_at?: string | null } | null
   unread: number
   request?: boolean // BENIM onayimi bekleyen gelen mesaj istegi (arkadas degiliz)
+  blocked?: boolean // ben bu kullaniciyi blokladim mi (kebab: "Blok kaldir")
 }
 
 // Gelen kutusu: mesajlasilan kisiler + son mesaj + okunmamis sayisi + istek bayragi.
@@ -1098,8 +1099,18 @@ export async function getThreads(): Promise<{ threads: ChatThread[]; requestCoun
 // request: bu konusma benim onayimi bekleyen bir istek mi (banner icin).
 export async function getThread(
   userId: number,
-): Promise<{ user: ChatUser; messages: ChatMessage[]; typing?: boolean; request?: boolean }> {
+): Promise<{ user: ChatUser; messages: ChatMessage[]; typing?: boolean; request?: boolean; blocked?: boolean }> {
   return req(`/messages/${userId}`)
+}
+// Kebab menüsü: sohbeti SİL (kullanıcıya özel gizleme — karşı taraf etkilenmez), blokla / blok kaldır.
+export async function deleteConversation(userId: number): Promise<void> {
+  await req(`/messages/${userId}`, { method: 'DELETE' })
+}
+export async function blockUser(userId: number): Promise<void> {
+  await req(`/messages/${userId}/block`, { method: 'POST' })
+}
+export async function unblockUser(userId: number): Promise<void> {
+  await req(`/messages/${userId}/block`, { method: 'DELETE' })
 }
 // Gelen mesaj istegini kabul et (konusma normal gelen kutusuna gecer)
 export async function acceptRequest(userId: number): Promise<void> {
