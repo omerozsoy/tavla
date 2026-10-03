@@ -141,7 +141,14 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
                 </>
               ) : (
                 <>
-                  {t('solo.selCount', { n: selectedLevels.length })} · <Coins amount={preview.stake} size={14} />
+                  {t('solo.selCount', { n: selectedLevels.length })} ·{' '}
+                  {/* Secilen TUM bahisleri listele (sadece en yuksek degil). Artan sirada. */}
+                  {selectedLevels.map((l, i) => (
+                    <span key={l.level} className="solo-preview-chip">
+                      {i > 0 && <span className="solo-preview-sep">·</span>}
+                      <Coins amount={l.stake} size={14} />
+                    </span>
+                  ))}
                 </>
               )}
             </span>
