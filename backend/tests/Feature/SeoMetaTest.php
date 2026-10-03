@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
+use App\Support\SeoMeta;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -98,6 +99,11 @@ class SeoMetaTest extends TestCase
         $this->assertNotFalse($sitemap);
         preg_match_all('~<loc>(https://www\\.tavlatv\\.com/[^<]*)</loc>~', (string) $sitemap, $matches);
         $this->assertNotEmpty($matches[1]);
+        $sitemapUrls = array_fill_keys($matches[1], true);
+
+        foreach (SeoMeta::indexableUrls() as $url) {
+            $this->assertArrayHasKey($url, $sitemapUrls, "Indexable SEO URL is missing from sitemap: {$url}");
+        }
 
         foreach ($matches[1] as $url) {
             $path = parse_url($url, PHP_URL_PATH) ?: '/';

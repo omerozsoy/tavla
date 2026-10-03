@@ -4220,10 +4220,12 @@ button[aria-disabled='true'],
 }
 /* SEO icerik: ana sayfa alt blogu (taranabilir tanitim + ic linkler). */
 .seo-content-home {
-  /* Ana sayfa STANDART genişliği: üstteki kutular (home-cal-wrap / ad-strip) ile AYNI hizada.
-     Eskiden max-width:980 + auto -> daha dar + ortalı (kutularla hizasız); kaldırıldı. */
-  margin: 26px 0 6px;
+  /* Ana sayfa STANDART genişliği: üstteki kutular (home-panels / ad-strip / home-cal-wrap /
+     TopThreeShowcase) hepsi max-width:var(--lobby-w) + ortalı; aynısını uygula ki hizalı olsun
+     (yoksa lobby-main'in TAM genişliğine yayılıp daha geniş görünür). */
+  margin: 26px auto 6px;
   width: 100%;
+  max-width: var(--lobby-w);
   padding: clamp(18px, 3vw, 30px);
   border: 1px solid var(--border);
   border-radius: 18px;
