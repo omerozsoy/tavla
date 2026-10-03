@@ -48,7 +48,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
   font: inherit;
 }
@@ -117,7 +117,7 @@
 }
 .cc-always {
   font-size: var(--fs-2xs, 0.72rem);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -207,4 +207,55 @@
   border: 1px solid var(--border);
   color: var(--muted);
   white-space: nowrap;
+}
+
+/* Mobil: band dikey telefonda ekranin ~%41'ini, yatayda ~%51'ini kapliyordu.
+   Metni 3 satira kisalt (politika baglantilari gorunur kalir), bosluklari daralt. */
+@media (max-width: 719px) {
+  .cc-banner {
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  }
+  .cc-banner-inner {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .cc-title {
+    font-size: 1rem;
+  }
+  .cc-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .cc-actions .cc-grow {
+    flex: 1 1 40%;
+  }
+}
+/* Yatay telefon: dugmeler sutun yerine tek satir, metin 2 satir. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .cc-banner {
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+  .cc-banner-inner {
+    padding: 10px 14px;
+    gap: 12px;
+  }
+  .cc-title {
+    font-size: 0.95rem;
+  }
+  .cc-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.78rem;
+  }
+  .cc-actions {
+    flex-direction: row;
+    width: auto;
+    flex-wrap: nowrap;
+  }
 }

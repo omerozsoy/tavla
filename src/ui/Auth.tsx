@@ -171,6 +171,9 @@ export default function Auth({
 
   // Google butonu: onAuthed'i ref'te tut (efekt bagimliligini sabit tut)
   const googleBtnRef = useRef<HTMLDivElement>(null)
+  // Google butonu gercekten cizildi mi? Cizilemezse (betik engellendi / cevrimdisi) "veya"
+  // ayraci ve bos alan gosterilmez (girişte ~100px anlamsiz bosluk kaliyordu).
+  const [googleReady, setGoogleReady] = useState(false)
   const onAuthedRef = useRef(onAuthed)
   onAuthedRef.current = onAuthed
 
@@ -214,6 +217,7 @@ export default function Auth({
         shape: 'pill',
         width: 300,
       })
+      setGoogleReady(true)
       return true
     }
     if (render()) return
@@ -268,6 +272,15 @@ export default function Auth({
     return first || err.message || t('auth.failed')
   }
 
+  // Giris ve kayit tek <form>'da (onSubmit = kayit). Giris alanlarinda Enter / mobil klavyede
+  // "Git" tusu eskiden KAYIT dogrulamasini tetikleyip alanlar doluyken "Lutfen tum alanlari
+  // doldurun" diyordu -> giris alanlarinda Enter dogrudan girisi gondersin.
+  function loginOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
+    e.preventDefault()
+    if (!busy && loginId.trim() && loginPw) void doLogin()
+  }
+
   async function doLogin(e?: React.FormEvent) {
     e?.preventDefault()
     setError('')
@@ -276,11 +289,10 @@ export default function Auth({
       const user = await api.login(loginId.trim(), loginPw)
       onAuthed(user)
     } catch (err) {
-      // Giriste alan bazli mesaj yerine tek anlasilir uyari. Hem inline banner (giris
-      // kolonu ustunde, belirgin) hem site-standart toast -> kullanici KESIN gorur.
+      // Giriste alan bazli mesaj yerine tek anlasilir uyari: yalniz inline banner (formun
+      // ustunde, role=alert). Ayrica toast basmak ayni mesaji iki kez gosterip banner'i ortuyordu.
       const msg = err instanceof api.ApiError ? t('auth.badLogin') : t('auth.offline')
       setError(msg)
-      notify.error(msg)
     } finally {
       setBusy(false)
     }
@@ -622,7 +634,7 @@ export default function Auth({
                 e-posta + sifre -> Giris Yap -> Sifremi unuttum. */}
             <div className="auth-col">
               <h3 className="auth-col-title">{t('auth.login')}</h3>
-              <div className="google-auth google-auth-top">
+              <div className="google-auth google-auth-top" style={googleReady ? undefined : { display: 'none' }}>
                 <div ref={googleBtnRef} className="google-btn" />
                 <div className="auth-divider">{t('auth.or')}</div>
               </div>
@@ -631,7 +643,9 @@ export default function Auth({
                 <input
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
+                  onKeyDown={loginOnEnter}
                   autoComplete="username"
+                  enterKeyHint="next"
                 />
               </label>
               <label>
@@ -641,7 +655,9 @@ export default function Auth({
                     type={showLoginPw ? 'text' : 'password'}
                     value={loginPw}
                     onChange={(e) => setLoginPw(e.target.value)}
+                    onKeyDown={loginOnEnter}
                     autoComplete="current-password"
+                    enterKeyHint="go"
                   />
                   <button
                     type="button"

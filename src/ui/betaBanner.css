@@ -72,7 +72,7 @@
   color: #faf9f5; /* siyah zemin -> parlak beyaz */
 }
 .bb-sep {
-  color: var(--accent); /* ayrac kiremit */
+  color: var(--accent-text); /* ayrac kiremit */
   padding: 0 18px; /* mesajlar arasi uniform aralik (◆ ortada) */
   font-size: 12px;
   line-height: 1;

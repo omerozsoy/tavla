@@ -43,7 +43,7 @@
   color: var(--text);
 }
 .ach-sum-total > svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .ach-sum-num {
   font-size: 1.5rem;
@@ -102,7 +102,7 @@
   color: var(--text);
 }
 .ach-cat.active {
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
@@ -180,7 +180,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
+  color: var(--accent-text);
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .ach-name {
@@ -270,7 +270,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
+  color: var(--accent-text);
   border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
 }
 .ach-detail.tier-bronze .ach-detail-ic { color: var(--tier-bronze); border-color: color-mix(in srgb, var(--tier-bronze) 45%, transparent); }
@@ -375,7 +375,7 @@
   gap: 8px;
 }
 .stats-ach-entry-l > svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .stats-ach-entry-r {
   display: inline-flex;
@@ -450,7 +450,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 15%, transparent);
-  color: var(--accent);
+  color: var(--accent-text);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .ach-unlock.tier-bronze .ach-unlock-ic { color: var(--tier-bronze); }
@@ -469,7 +469,7 @@
   font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .ach-unlock-name {
   font-size: 1rem;
@@ -505,7 +505,7 @@
 .ach-unlock-view {
   border: 1px solid var(--accent);
   background: transparent;
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: 8px;
   padding: 5px 10px;
   font-size: 0.76rem;

@@ -45,6 +45,21 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
   useEffect(() => {
     if (open) setUnread(0)
   }, [open])
+  // Genis masaustunde (>=1440px, CSS) acik sohbet tahtanin YANINA yerlesir: body sinifi oyun
+  // sahnesine sag pay + daha kucuk --board-h verir (tahta ortulmez, perde yok).
+  useEffect(() => {
+    document.body.classList.toggle('chat-open', open && !behindMenu)
+    return () => document.body.classList.remove('chat-open')
+  }, [open, behindMenu])
+  // Esc acik sohbet sayfasini kapatir.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
   // Yeni mesajda en alta kaydir
   useEffect(() => {
@@ -60,13 +75,27 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
     setEmojiOpen(false)
   }
 
+  // Acik sohbet = sagdan acilan sayfa (sheet) + perde. Eskiden tahtanin sag alt kosesine sabit
+  // 260px panel olarak aciliyor ve 1-4 numarali haneleri + bear-off tepsisini ortuyordu.
+  // Kapaliyken: masaustu/dikeyde kose hapi, yatay telefonda kompakt ikon dugmesi (CSS).
   return (
-    <div className={`chat-panel ${open ? 'open' : 'closed'} ${behindMenu ? 'behind-menu' : ''}`}>
-      <button className={`chat-head ${!open && unread > 0 ? 'has-unread' : ''}`} onClick={() => setOpen((v) => !v)}>
-        <span><Icon name="chat" size={16} /> {t('chat.title')}</span>
+    <>
+    {open && !behindMenu && <div className="chat-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
+    <div
+      className={`chat-panel ${open ? 'open' : 'closed'} ${behindMenu ? 'behind-menu' : ''}`}
+      role={open ? 'dialog' : undefined}
+      aria-label={open ? t('chat.title') : undefined}
+    >
+      <button
+        className={`chat-head ${!open && unread > 0 ? 'has-unread' : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={t('chat.title')}
+      >
+        <span className="chat-head-label"><Icon name="chat" size={16} /> <span className="chat-head-text">{t('chat.title')}</span></span>
         <span className="chat-head-right">
           {!open && unread > 0 && <span className="chat-unread">{unread > 9 ? '9+' : unread}</span>}
-          <span className="chat-toggle">{open ? '▾' : '▴'}</span>
+          <span className="chat-toggle">{open ? <Icon name="x" size={16} /> : '▴'}</span>
         </span>
       </button>
 
@@ -151,5 +180,6 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
         </>
       )}
     </div>
+    </>
   )
 }

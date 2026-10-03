@@ -13,6 +13,7 @@ import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
 import UpdateBanner from './ui/UpdateBanner.tsx'
 import InstallPrompt from './ui/InstallPrompt.tsx'
+import OfflineBanner from './ui/LoadError.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
@@ -38,6 +39,8 @@ createRoot(document.getElementById('root')!).render(
               <UpdateBanner />
               {/* "TavlaTv'yi yükle" (PWA): standalone/maç/yakın-zamanda-kapatıldıysa görünmez */}
               <InstallPrompt />
+              {/* Bağlantı koptuğunda üstte ince "Çevrimdışısın" şeridi (geri gelince kısa bildirim) */}
+              <OfflineBanner />
             </PresenceProvider>
           </TopRanksProvider>
         </ToastProvider>

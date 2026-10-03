@@ -33,33 +33,12 @@
   letter-spacing: 0.03em;
 }
 
-/* Mobilde daha küçük, alt-orta yerine kenarda kalsın; metni gizle (yalnız ikon) */
-@media (max-width: 640px) {
+/* Mobil/tablet (<=900px): sabit sekme GIZLI. Dar ekranda mesaj Gonder dugmesinin, lider
+   tablosu puan sutununun ve form alanlarinin ustune biniyordu. Bu genisliklerde
+   "Hata Bildir" hamburger cekmecesinin en altinda (SideMenu .side-menu-bug). */
+@media (max-width: 900px) {
   .bug-fab {
-    top: auto;
-    bottom: 84px; /* alttaki olası çubukların üstünde */
-    transform: none;
-    /* Yalnız ikon kaldığında dokunma hedefi ~44x44 olsun (mobil dokunma erişilebilirliği). */
-    padding: 12px;
-  }
-  .bug-fab-txt {
     display: none;
-  }
-}
-
-/* Misafir + mobil: sabit FAB'ı gizle — bayrak ÜST BARDA dil bayrağının solunda çıkar
-   (App.css .ab-bug-flag). Masaüstünde ve giriş yapmış kullanıcıda FAB olduğu gibi kalır. */
-@media (max-width: 720px) {
-  .bug-fab-guest {
-    display: none;
-  }
-}
-
-/* 320px'te üst bardaki hata bayrağı gizlenir; geri bildirim aynı erişilebilir
-   44px hedefle sabit FAB olarak kalır. */
-@media (max-width: 360px) {
-  .bug-fab-guest {
-    display: flex;
   }
 }
 

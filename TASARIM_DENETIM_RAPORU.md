@@ -5,7 +5,7 @@
 | **Tarih** | 2026-10-03 |
 | **Sürüm** | `package.json` 4.2.0 · commit `7c887d4` |
 | **Kapsam** | Masaüstü, mobil tarayıcı, tablet ve kurulu PWA (standalone) görünümü |
-| **Kod değişikliği** | Yok. Bu çalışma yalnızca denetim raporudur. |
+| **Kod değişikliği** | 1. aşama (§1–§9): yok, yalnızca denetim. 2. aşama: 31 bulgunun düzeltme durumu §10'da. |
 | **Kanıt klasörü** | [`docs/tasarim-denetim/`](docs/tasarim-denetim/) (29 ekran görüntüsü) |
 
 ---
@@ -571,6 +571,7 @@ Tarayıcıda gerçekten tıklanarak şunlar test edildi:
 - **Mevcut durum:** URL sessizce `/` olarak yeniden yazılıyor ve ana sayfa gösteriliyor. Kullanıcı yanlış bağlantıyı fark etmiyor; arama motorları için "soft 404" oluşuyor.
 - **İlgili dosya:** `src/App.tsx` `applyFromPath` `default:` dalı (≈1530) ve `currentSlug` → `replaceState('/')` (≈1555)
 - **Öneri:** Tanınmayan rota için "Sayfa bulunamadı" görünümü göster ve URL'yi koru.
+- **Sonradan düzeltme (doğrulama):** Bu davranış yalnızca test ortamındaki `vite preview` sunucusundan kaynaklanıyor. Üretimde Laravel `routes/web.php` içindeki `Route::fallback`, bilinmeyen ilk segmentler için 404 durum koduyla markalı bir hata sayfası (`errors.404`) döndürüyor. Bu nedenle üretim için bir hata değildir; kodda değişiklik yapılmadı (bkz. §10).
 
 #### TD-28 — Oyun ekranının çevresinde krem renkli çerçeve
 - **Önem:** Düşük
@@ -712,3 +713,107 @@ Tarayıcıda gerçekten tıklanarak şunlar test edildi:
   - **Android kurulum istemi:** `beforeinstallprompt` olayı elle tetiklendi.
   - **Çevrimdışı:** Playwright `context.setOffline(true)` ile (service worker etkin).
 - **Ekran görüntüleri:** `docs/tasarim-denetim/` klasöründe. Dosya adları bulgu numaralarıyla eşleşir.
+
+---
+
+## 10. Düzeltme durumu (2. aşama)
+
+Denetimden sonra 31 bulgunun tamamı ele alındı. Her düzeltme aynı test ortamında (production paketi + Chromium emülasyonu) tarayıcıda yeniden ölçüldü. Gerçek cihaz doğrulaması (§8) hâlâ gerekli.
+
+### 10.1 Özet
+
+| Durum | Adet | Bulgular |
+|---|---|---|
+| Düzeltildi ve tarayıcıda doğrulandı | 29 | TD-01…TD-05, TD-07…TD-26, TD-28…TD-31 |
+| Kısmen düzeltildi | 1 | TD-06 (yapısal sınır, aşağıda) |
+| Değişiklik gerekmedi (test ortamı kaynaklı) | 1 | TD-27 |
+
+Denetim sırasında ayrıca önceden var olan **3 ek hata** bulunup düzeltildi:
+- **Mesajlar listesi mobilde taşıyordu:** Uzun son-mesaj önizlemesi ızgarayı yaklaşık 770 px'e çıkarıyordu; arama kutusu ve "İstekler" sekmesi ekran dışında kalıyordu.
+- **Kurulum kartı 360 px'te 9 px taşıyordu:** "Hızlı" süre seçeneği ve "Katıl" düğmesi kesiliyordu.
+- **Turnuva liste kartında katılımcı satırı dağınıktı:** Detay sayfası için yazılmış ızgara kuralı liste kartına da uygulanıp satırı dört sütuna dağıtıyordu.
+
+### 10.2 Tam tarama karşılaştırması (75 rota × 11 boyut = 814 yükleme)
+
+Aynı betik ve aynı test verisiyle, düzeltme öncesi ve sonrası:
+
+| Ölçüt | Önce | Sonra |
+|---|---|---|
+| Yatay kaydırma olan sayfa | 0 | 0 |
+| Ekran dışına taşan etkileşimli öğe | 70 | 25 → 0* |
+| Kapalı menüde (ekran dışı) odaklanabilir öğe | 5 858 | 0 |
+| 24 px altı dokunma hedefi | 554 | 151 |
+| 11 px altı yazı (ölçüm sayısı) | 10 576 | 2 478 |
+| WCAG AA altı kontrast (ölçüm sayısı) | 1 080 | 537 → (aşağıya bakın) |
+| Sayfa yükleme hatası | 0 | 0 |
+
+\* Taramada kalan 25 öğe, düzeltme sonrası ortaya çıkan önceden var olan iki hatadan geliyordu (Mesajlar ızgarası, kurulum kartı). İkisi de düzeltildi; ilgili sayfalarda yeniden ölçümde 0 kaldı.
+
+Kalan küçük hedeflerin çoğu form etiketleri (`<label>`; dokunma alanı ilişkili `input`), metin içi bağlantılar (WCAG'de satır içi bağlantılar muaf) ve sözlükteki dekoratif tahta etiketleridir. Kontrastın son ölçümü (koyu + açık tema, 7 sayfa × 2 boyut) aşağıda.
+
+### 10.3 Bulgu bazında yapılan değişiklik ve doğrulama
+
+| No | Yapılan değişiklik | Doğrulama (sonra) |
+|---|---|---|
+| TD-01 | `UpdateBanner`, güvenli olmayan anda (maç, ödeme, okuma) her saniye kontrolle gizleniyor; "Sonra" (×) düğmesi eklendi. `unsafeToPrompt` dışa açıldı. | Bandı gösterip oyuna girildiğinde band dikeyde ve yatayda görünmüyor; "Sonra" ile kapanıyor. |
+| TD-02 | 360 px kuralındaki `button:not(...)` seçicisinden giriş düğmesi çıkarıldı (onu 34 px'e zorluyordu); ölü `.app.lobby > .account-bar` seçicisi düzeltildi. BETA rozeti ≤560 px'te logonun altına alındı. Giriş düğmesi büzülmüyor. Üst çubuktaki hata bayrağı kaldırıldı (çekmeceye taşındı). Hesap adı genişliği sınırlandı. | 360 px: "Giriş / Kayıt" 86 px (önce 34). Dil düğmesi sağ kenarı 352 / 380 / 420 px (360 / 390 / 430), hepsi ekranda. Oturum açıkken avatar 352 px. |
+| TD-03 | Giriş alanlarında Enter / "Git" doğrudan `doLogin`; `enterKeyHint`. | Enter → "E-posta/takma isim veya şifre hatalı." (kayıt uyarısı yok). |
+| TD-04 | Açık sohbet artık sağdan açılan tam yükseklik sayfa (perde + × + Esc). ≥1440 px'te tahtanın yanında kalıcı sütun; tahta ölçüleri buna göre yeniden hesaplanıyor. | 1440: tahta 290–1018, sohbet 1080–1440 (örtüşme yok). 1920: tahta ≤1529, sohbet 1560+. 1280 / 768'de perdeli sayfa. |
+| TD-05 | Mobilde sohbet gizlenmiyor. Dikeyde alt-sağ hap, yatayda menü düğmesinin altında ikon; açılınca tam ekran. | 360 / 390 dikey ve 844 yatayda sohbet bulunup açılıyor. |
+| TD-06 | **Kısmen.** Dikey telefonda pul tepsisi taşa oranlı daraltıldı ve tahtaya yer açıldı. Nokta numaraları en az 11 px, zarlar en az 22 px. Menü düğmesi tepsinin üstünden alındı. | Taş 360 px'te 19 → 21 px, 390 px'te 21 → 22 px; numaralar 9,7 → 11 px. **Sınır:** Tahta 12 haneyi yan yana sığdırmak zorunda; dikey 360 px'te taşın ~28 px'i aşması mümkün değil. Haneler (tam sütun) dokunma hedefi olduğu için hedef genişliği ≥24 px. Yatay mod önerisi korunuyor. |
+| TD-07 | ≤900 px'te yüzen "Hata Bildir" gizlendi; çekmece menünün en altına "Hata Bildir" eklendi. Masaüstünde içerik sağ payı ≥52 px. | `.bug-fab` mobilde `display:none`; Gönder düğmesi açık; çekmece öğesi Hata Bildir modalını açıyor. |
+| TD-08 | `LoadError` (mesaj + "Tekrar dene") ve `useOnReconnect` eklendi. Turnuva listesi/detayı ile lider tablosu hatayı boş listeden ayırıyor. Uygulama genelinde alt "Çevrimdışısın" şeridi var. | Çevrimdışı: "Veriler yüklenemedi / İnternet bağlantını kontrol et / Tekrar dene". Bağlantı dönünce turnuva listesi kendiliğinden 3 karta yenilendi. |
+| TD-09 | Ücret rozeti mutlak konumdan rozet satırının akışına alındı; satır sarıyor ve flamaya pay bırakıyor. | 360 / 390 / 768 / 844 / 1366 px'te kart içi çakışma 0. |
+| TD-10 | ≤480 px'te katılımcı ızgarası tek sütun; ad alanı kalan genişliği alıyor. | 360 px: "Ayşe0", "Mehmet1", "Muhteşemoyuncu1", "WWWWWWWWWWWWWWW" kesilmeden. |
+| TD-11 | İzleme 404/410'da "Bu maç bulunamadı ya da sona erdi" + "Canlı maçlara dön"; sorgulama duruyor; rozet "Maç bulunamadı". | `/izle/ABCDEF` 4 sn'de mesaj gösteriyor. |
+| TD-12 | Hamburger payı kaynak sırasına uygun yere (temel kuraldan sonra, ≤900 px) taşındı. | 768 / 800 / 844 px: hamburger 0–52, logo 60'tan başlıyor. |
+| TD-13 | Üst çubuk, çekmece, lobi içeriği ve footer `env(safe-area-inset-left/right)` kullanıyor. | iPhone yatay emülasyonu: hamburger 47–99, logo 107, dil düğmesi ≤797, kartlar 55–789, çekmece öğesi x=98. |
+| TD-14 | Oyuncu adı en fazla 2 satıra sarıyor (`line-clamp`). | 844×390 ve 360×800'de "Seviye 1 · Neural AI" tam okunuyor. |
+| TD-15 | Dikey ekranda oyun menüsü düğmesi sağ üste (tam ekran düğmesinin soluna) alındı. | 360 px: düğme y=12–50, tahta 369+'dan başlıyor. |
+| TD-16 | Kurulum aksiyonları (`.setup-actions`, `.solo-preview-bar`) yapışkan alt çubuk oldu. | "Başla" 1280×720'de y=668–710, 1440×900'de 848–890, 390×844'te 792–834 (kaydırmadan görünür). |
+| TD-17 | iOS rehberi `createPortal` ile `body`'ye render ediliyor. | Karartma katmanı 0,0 → 390,844 (tam ekran). |
+| TD-18 | Kurulum istemi, güncelleme bandı görünürken bekliyor. Kapat düğmesi 40 px; düğme metni "Yükle". | İki bildirim aynı anda çıkmıyor; düğmeler 70×42 ve 40×40. |
+| TD-19 | Kapalı çekmece ve oyun menüsü `visibility:hidden` (geçiş sonrası); oyun menüsü `aria-hidden`; Esc çekmeceyi kapatıyor; hamburgerde `aria-expanded`. | Tab sırası: Menü → Logo → Giriş → Tema → Dil → içerik (gizli menüye gitmiyor). Esc kapatıyor. |
+| TD-20 | Breadcrumb ≥32 px dokunma alanı, SSS arama kutusu 44 px, coin çipi 34 px, Maç ID 28 px, oyun menüsü kapat 40 px, izleme ses düğmesi 40 px, döndürme ipucu kapat 32 px. | 24 px altı hedef ölçümü 554 → 151. |
+| TD-21 | Mikro etiketlere 11 px taban; BETA 10 / 9 px; ay adı 10,5 px; bot seviyesi 11,5 px. | 11 px altı yazı ölçümü 10 576 → 2 478. |
+| TD-22 | Açık tema: Premium rozeti, "Kayıt açık", galibiyet/mağlubiyet, coin, nadirlik ve seviye etiketleri koyulaştırıldı; takvim yeşili değişkene alındı. | Bkz. 10.4. |
+| TD-23 | Metin ve zemin vurgusu ayrıldı: 265 `color: var(--accent)` kullanımı `--accent-text`'e taşındı. Koyu temada metin #E07A63, düğme zemini #B04A35. | Bkz. 10.4. |
+| TD-24 | Çekmecede logo satırı yapışkan ve opak. | Kaydırılan menü öğeleri hamburgerin altına girmiyor. |
+| TD-25 | Giriş hatasında yinelenen toast kaldırıldı (yalnız satır içi `role=alert`). Google düğmesi çizilemezse "veya" ayracı ve boş alan gizleniyor. | Tek hata mesajı; Google yokken boşluk yok. |
+| TD-26 | Mobilde çerez metni 3 satıra (yatayda 2) kısaltıldı; yatayda düğmeler tek satır. | Kaplanan alan dikeyde %41 → %29, yatayda %51 → %28. |
+| TD-27 | Değişiklik yok: üretimde Laravel `Route::fallback` markalı 404 döndürüyor; bulgu yalnızca `vite preview` ortamına özgü. | — |
+| TD-28 | `.app.game-view` zemini oyun sahnesiyle aynı. | Krem kenar yok (masaüstü, mobil, PWA). |
+| TD-29 | Sol menü ve Mesajlar sekmesi rozetleri de "sohbet + bildirim" toplamını gösteriyor. | Üst çubuk 4, sekme 4, sol menü 4. |
+| TD-30 | Döndürme ipucu yalnız ≤600 px dikey (telefon); sola hizalı. | 768 px tablette çıkmıyor. |
+| TD-31 | Çekmece gölgesi yalnız açıkken uygulanıyor. | Kapalıyken `box-shadow:none`; sol kenarda gri şerit yok. |
+
+### 10.4 Kontrastın son ölçümü
+
+Koyu ve açık temada 5–7 sayfa, masaüstü ve 390 px'te yeniden ölçüldü.
+
+**Hâlâ eşik altında kalanlar (bilinçli istisna):**
+- Bitmiş turnuvanın soluk tarih rozeti (koyu tema 2,97:1): pasif/geçmiş öğe bilerek soluk gösteriliyor.
+
+**Hatalı alarmlar (ölçüm aracının zemini göremediği durumlar):**
+- Sol menüde aktif öğe: zemin `::before` ile çiziliyor.
+- "Turnuva Lobisi" bağlantısı.
+- 🥇 emojisi: renk uygulanmıyor.
+
+**Eşik üstüne çıkanlar (örnekler):**
+- "Giriş / Kayıt" (koyu tema): 3,83 → ~4,8:1.
+- Vurgu metinleri (koyu tema): 3,1–3,7 → ~5,4:1.
+- Premium rozeti (açık tema): 1,6–1,9 → ~6:1.
+- Takvim yeşili: 4,39 → ~6:1 (açık), 3,65 → ~7:1 (koyu).
+
+### 10.5 Estetik öneriler
+
+| No | Durum |
+|---|---|
+| E-1 | Uygulandı: mobilde boş "Çevrimiçi Oyuncular" kartı rezerv yüksekliğini bırakıyor. |
+| E-2 | Uygulandı: ≤560 px'te canlı maç filtreleri tek satır, yatay kaydırılabilir. |
+| E-8 | Uygulandı: hamburger baloncuğu kaldırıldı; kurulum istemi düğme metni kısaltıldı. |
+| E-3, E-4, E-5, E-6, E-7 | Açık bırakıldı (tasarım kararı gerektiriyor). |
+
+### 10.6 Dağıtım notu
+
+Değişiklikler yalnızca `src/` altında. README'ye göre canlıya çıkmak için `npm run deploy:build` ile derlenmiş çıktının `backend/public`'e kopyalanıp commit'lenmesi gerekiyor. Bu adım bu çalışmada **yapılmadı**.

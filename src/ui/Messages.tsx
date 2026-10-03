@@ -398,7 +398,13 @@ export default function Messages({
           <Icon name="x" size={16} />
         </button>
         {onTab ? (
-          <SocialTabs active="messages" onTab={onTab} messagesBadge={unreadNotif} />
+          <SocialTabs
+            active="messages"
+            onTab={onTab}
+            // Rozet = okunmamis sohbet + bildirim (ust bar ikonu ve sol menuyle ayni toplam;
+            // eskiden yalniz bildirimleri sayiyordu -> ayni anda 4 / 3 / 1 gorunuyordu).
+            messagesBadge={unreadNotif + threads.reduce((n, th) => n + (th.unread || 0), 0)}
+          />
         ) : (
           <h2>
             <Icon name="chat" size={20} /> {t('dm.title')}

@@ -189,6 +189,19 @@ export default function SideMenu(p: SideMenuProps) {
         )
         })
       })()}
+
+      {/* Hata Bildir: mobil/tablet cekmecesinde (<=900px) menunun en altinda. Sabit yuzen dugme
+          dar ekranda Gonder dugmesi, tablo sutunlari ve form alanlarinin ustune biniyordu.
+          Masaustu sabit yan menude CSS ile gizli (orada sag kenar sekmesi var). */}
+      <div className="menu-group side-menu-bug">
+        <Button
+          variant="ghost"
+          className={NAV}
+          onClick={() => window.dispatchEvent(new Event('tavla:open-bug-report'))}
+        >
+          <Icon name="flag" size={24} /> <span className="nav-label">{t('bug.button')}</span>
+        </Button>
+      </div>
     </aside>
   )
 }

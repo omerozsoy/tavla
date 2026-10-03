@@ -36,7 +36,7 @@
   color: var(--text);
 }
 .rank-prog__title > svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .rank-prog--compact .rank-prog__title {
   font-size: 1.2rem;

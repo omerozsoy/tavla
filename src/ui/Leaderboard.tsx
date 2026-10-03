@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { LoadError } from './LoadError'
+import { useOnReconnect } from './useOnReconnect'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
@@ -22,6 +24,10 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0) // "Tekrar dene" / baglanti geri geldi -> yeniden cek
+  useOnReconnect(() => {
+    if (error) setReloadKey((k) => k + 1)
+  })
   const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>('rating')
   const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
   const [prMeta, setPrMeta] = useState<{ minMatches: number; minDecisions: number } | null>(null)
@@ -59,7 +65,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
     return () => {
       alive = false
     }
-  }, [by])
+  }, [by, reloadKey])
 
   // WXP sekmesi: kendi WXP kirilimini getir (yalniz giris yapmis kullanici)
   useEffect(() => {
@@ -232,7 +238,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           </div>
         )}
 
-        {error && <div className="lb-empty">{t('lb.error')}</div>}
+        {error && <LoadError message={t('lb.error')} onRetry={() => setReloadKey((k) => k + 1)} />}
         {by !== 'pr' && !error && rows === null && (
           <div className="lb-table" aria-busy="true" aria-live="polite">
             <div className="lb-head">

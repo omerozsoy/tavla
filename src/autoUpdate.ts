@@ -42,7 +42,7 @@ async function deployedEntry(): Promise<string | null> {
 }
 
 // Banner'ı GÖSTERMEK güvenli mi? Aktif maç / hassas rota / metin seçimi / okuma sayfası -> ERTELE.
-function unsafeToPrompt(): boolean {
+export function unsafeToPrompt(): boolean {
   if (document.querySelector('.app.game-view')) return true // maç/oyun görünümü -> dikkat dağıtma
   const p = (window.location.pathname || '').toLowerCase()
   if (p.startsWith('/bilgi/')) return true // okuma sayfası

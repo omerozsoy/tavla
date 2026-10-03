@@ -63,7 +63,7 @@ export default function GameMenu(p: Props) {
   return (
     <>
       {p.open && <div className="gm-backdrop" onClick={p.onClose} />}
-      <div className={`game-menu ${p.open ? 'open' : ''}`} role="dialog" aria-modal="true">
+      <div className={`game-menu ${p.open ? 'open' : ''}`} role="dialog" aria-modal="true" aria-hidden={!p.open}>
         <div className="gm-head">
           <span className="gm-title">{t('gm.title')}</span>
           <button className="gm-close" onClick={p.onClose} aria-label={t('common.close')}>

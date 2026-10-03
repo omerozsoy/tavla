@@ -250,3 +250,11 @@ a.foot-partner:hover {
     font-size: 0.8rem;
   }
 }
+
+/* Yatay telefon / PWA: footer metni centik/kenar bukumu bolgesine girmesin. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .foot-inner {
+    padding-left: max(clamp(16px, 4vw, 56px), calc(env(safe-area-inset-left) + 8px));
+    padding-right: max(clamp(16px, 4vw, 56px), calc(env(safe-area-inset-right) + 8px));
+  }
+}

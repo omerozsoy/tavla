@@ -22,7 +22,7 @@
   color: var(--text);
 }
 .lw-head h2 svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .lw-sub {
   margin: 6px 0 0;
@@ -366,7 +366,7 @@
 }
 .lw-win-reward {
   font-size: 1.05rem;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .lw-win-sub {
   font-size: 0.85rem;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -46,6 +47,11 @@ function inActiveMatch(): boolean {
   return !!document.querySelector('.app.game-view')
 }
 
+// Güncelleme bandı (UpdateBanner) aynı köşede: ikisi üst üste binmesin -> o görünürken bekle.
+function updateBannerVisible(): boolean {
+  return !!document.querySelector('.update-banner')
+}
+
 export default function InstallPrompt() {
   const { t } = useT()
   const deferredRef = useRef<BIPEvent | null>(null)
@@ -91,10 +97,10 @@ export default function InstallPrompt() {
         setShow(false)
         return
       }
-      setShow(!inActiveMatch())
+      setShow(!inActiveMatch() && !updateBannerVisible())
     }
     tick()
-    const id = window.setInterval(tick, 3000)
+    const id = window.setInterval(tick, 1500)
     document.addEventListener('visibilitychange', tick)
     return () => {
       window.clearInterval(id)
@@ -165,7 +171,7 @@ export default function InstallPrompt() {
         <div style={{ opacity: 0.75, fontSize: 12 }}>{t('pwa.installHint')}</div>
       </div>
       <Button type="button" onClick={install} className="shrink-0">
-        {t('pwa.install')}
+        {t('pwa.installBtn')}
       </Button>
       <button
         type="button"
@@ -177,14 +183,19 @@ export default function InstallPrompt() {
           color: 'inherit',
           opacity: 0.7,
           cursor: 'pointer',
-          padding: 4,
+          width: 40,
+          height: 40,
+          flexShrink: 0,
           display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <Icon name="x" size={18} />
       </button>
 
-      {guide && (
+      {guide &&
+        createPortal(
         <div
           role="dialog"
           aria-label={t('pwa.iosTitle')}
@@ -197,6 +208,7 @@ export default function InstallPrompt() {
             alignItems: 'flex-end',
             justifyContent: 'center',
             background: 'rgba(0,0,0,0.5)',
+            font: '500 14px/1.35 system-ui, sans-serif',
           }}
         >
           <div
@@ -218,7 +230,17 @@ export default function InstallPrompt() {
                 type="button"
                 onClick={() => setGuide(false)}
                 aria-label={t('common.close')}
-                style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex' }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
                 <Icon name="x" size={18} />
               </button>
@@ -229,8 +251,9 @@ export default function InstallPrompt() {
               <li>{t('pwa.iosStep3')}</li>
             </ol>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </div>
   )
 }

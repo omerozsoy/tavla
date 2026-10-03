@@ -1,3 +1,5 @@
+import { LoadError } from './LoadError'
+import { useOnReconnect } from './useOnReconnect'
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
@@ -121,6 +123,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   const [list, setList] = useState<Tournament[]>([])
   const [active, setActive] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
+  // Ag hatasi BOS LISTEDEN AYRI: eskiden hata yutulup list=[] kaliyor ve "Su an aktif turnuva yok"
+  // yaziyordu (cevrimdisiyken yanlis bilgi; baglanti donunce de duzelmiyordu).
+  const [listError, setListError] = useState(false)
+  const [detailError, setDetailError] = useState(false)
+  const [detailReload, setDetailReload] = useState(0)
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState<null | 'join' | 'leave'>(null) // katıl/çık onay dialogu
   // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
@@ -134,8 +141,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   async function refreshList() {
     try {
       setList(await listTournaments())
+      setListError(false)
     } catch {
-      /* yoksay */
+      // Liste daha once yuklendiyse (arka plan poll'u) eski veriyi koru; ilk yuklemede hata goster.
+      setListError(true)
     } finally {
       setLoading(false)
     }
@@ -153,15 +162,21 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       return
     }
     let ok = true
+    setDetailError(false)
     showTournament(detailId)
       .then((tt) => ok && setActive(tt))
       .catch(() => {
-        /* yoksay */
+        if (ok) setDetailError(true)
       })
     return () => {
       ok = false
     }
-  }, [detailId])
+  }, [detailId, detailReload])
+  // Baglanti geri gelince hata durumundaki liste/detay kendiliginden yenilensin.
+  useOnReconnect(() => {
+    if (listError) refreshList()
+    if (detailError) setDetailReload((k) => k + 1)
+  })
 
   // CANLI GUNCELLEME: acik detay 8sn'de bir sunucuya elindeki rev'i sorar; yalniz degistiyse tam
   // veri gelir (aksi 204). rev kayit acikken katilimcilara, turnuva BASLADIKTAN SONRA yalniz mac
@@ -1010,11 +1025,6 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <TavlaTvLogo size={20} tone="dark" className="tourn-ribbon-logo" />
           </span>
         </span>
-        {/* Katilim ucreti: UST SAGDA (flamanin soluna, altina girmeden). */}
-        <span className={`tourn-fee ${tr.entry_fee ? '' : 'free'}`}>
-          <Icon name="ticket" size={15} />
-          {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
-        </span>
         {/* Sol: duzenleyen kurumun BUYUK logosu (varsa; yoksa sutun render edilmez). */}
         {logo && (
           <div className="event-logo-col">
@@ -1038,6 +1048,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               {t(`tourn.status.${tr.status}`)}
             </span>
             <AccessBadge premiumOnly={!!tr.premium_only} />
+            {/* Katilim ucreti: rozet satirinin AKISINDA (eskiden kartin sag ustune mutlak
+                konumluydu; dar kartta "KAYIT ACIK"/"KATILIMCILAR" ustune biniyordu). */}
+            <span className={`tourn-fee ${tr.entry_fee ? '' : 'free'}`}>
+              <Icon name="ticket" size={15} />
+              {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+            </span>
             {/* Katilimcilar: UST SATIRDA, durum rozetinin yaninda (kompakt). */}
             <span className="tourn-players">
               <span className="tcard-ic navy" aria-hidden="true">
@@ -1132,6 +1148,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
         {loading ? (
           <Loading />
+        ) : listError && list.length === 0 ? (
+          <LoadError onRetry={() => { setLoading(true); refreshList() }} />
+        ) : detailId != null && detailError ? (
+          <LoadError onRetry={() => setDetailReload((k) => k + 1)} />
         ) : list.length === 0 ? (
           <div className="lb-empty">{t('tourn.empty')}</div>
         ) : (

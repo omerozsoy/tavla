@@ -86,6 +86,8 @@ import {
   IconMinimize,
   IconAlertTriangle,
   IconAlertCircle,
+  IconWifi,
+  IconWifiOff,
   IconBuilding,
   IconBuildingCommunity,
   IconBuildingBank,
@@ -207,6 +209,8 @@ export type IconName =
   | 'article'
   | 'palette'
   | 'warning-circle'
+  | 'wifi'
+  | 'wifi-off'
   | 'chart-line'
   | 'info'
   | 'smiley'
@@ -320,6 +324,8 @@ const MAP: Record<IconName, TablerIcon> = {
   article: IconArticle,
   palette: IconPalette,
   'warning-circle': IconAlertCircle,
+  wifi: IconWifi,
+  'wifi-off': IconWifiOff,
   'chart-line': IconChartLine,
   info: IconInfoCircle,
   'shield-check': IconShieldCheck,

@@ -78,6 +78,9 @@ export default function Spectate({
   useEscape(onClose)
   const [rv, setRv] = useState<RoomView | null>(null)
   const [gone, setGone] = useState(false)
+  // Gecersiz / silinmis oda kodu (404/410): eskiden hata yutulup sonsuza dek "Yukleniyor…" +
+  // "Izleniyor" rozeti gosteriliyordu -> net mesaj + geri donus dugmesi, poll durur.
+  const [notFound, setNotFound] = useState(false)
   const [viewers, setViewers] = useState<RoomViewer[]>([])
   const [viewerCount, setViewerCount] = useState(0)
   const verRef = useRef(-1)
@@ -101,13 +104,18 @@ export default function Spectate({
         } else {
           misses = 0
         }
-      } catch {
-        /* gecici ag hatasi -> sonraki poll dener */
+      } catch (e) {
+        const st = (e as { status?: number })?.status
+        if (alive && (st === 404 || st === 410)) {
+          setNotFound(true)
+          window.clearInterval(id)
+        }
+        /* diger hatalar gecici ag hatasi -> sonraki poll dener */
       }
     }
-    poll()
     // Oynarken gibi adım adım izleme için daha sık yokla (oyuncunun poll'üyle aynı tempo).
     const id = window.setInterval(poll, 1200)
+    poll()
     return () => {
       alive = false
       window.clearInterval(id)
@@ -446,7 +454,7 @@ export default function Spectate({
     <div className="app game-view spectate-view" style={{ position: 'fixed', inset: 0, zIndex: 5000 }}>
       {/* İzleme rozeti (sol üst) */}
       <div className="spectate-badge">
-        <span className="live-dot" /> <Icon name="eye" size={14} /> {t('live.watching')}
+        {!notFound && <span className="live-dot" />} <Icon name="eye" size={14} /> {notFound ? t('live.notFoundBadge') : t('live.watching')}
         {/* Admin: izlenen maçın kodu — tıklayınca panoya kopyalar (panelde bu kodla aranır). */}
         {isAdmin && (
           <button
@@ -541,6 +549,13 @@ export default function Spectate({
                 }
               />
             </>
+          ) : notFound ? (
+            <div className="spectate-status spectate-notfound" role="alert">
+              <p>{t('live.notFound')}</p>
+              <Button variant="default" onClick={onClose}>
+                {t('live.backToLive')}
+              </Button>
+            </div>
           ) : gone ? (
             <div className="spectate-status">{t('live.ended')}</div>
           ) : (

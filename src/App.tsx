@@ -5753,6 +5753,15 @@ export default function App() {
   }
 
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
+  // Esc acik mobil cekmeceyi kapatir (klavye kullanicilari icin standart cikis yolu).
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
   const [gameMenuOpen, setGameMenuOpen] = useState(false) // oyun-ici menu (Galaxy tarzi)
   // Sag ust hesap dropdown'u: ada tiklayinca acilir; profil + tum bar kontrolleri icinde.
   // Panel position:fixed (ust bar overflow'una takilmasin) -> koordinat tetikten hesaplanir.
@@ -8292,6 +8301,7 @@ export default function App() {
         className="hamburger"
         onClick={() => setMenuOpen((v) => !v)}
         aria-label={t('common.menu')}
+        aria-expanded={menuOpen}
       >
         <Icon name="menu" size={30} />
       </button>
@@ -9553,7 +9563,8 @@ export default function App() {
           else void handlePlayTournamentMatch(n.tid, { key: n.match }, n.oppId)
         }}
         active={activeKey}
-        badges={{ messages: dmUnread }}
+        // Mesajlar = sohbetler + bildirimler (birlesik sayfa): ust bar ikonu ve sekme ile AYNI toplam.
+        badges={{ messages: dmUnread + unreadNotif }}
         mobileOpen={menuOpen}
         onCloseMobile={() => setMenuOpen(false)}
         onHome={menuProps.onHome}

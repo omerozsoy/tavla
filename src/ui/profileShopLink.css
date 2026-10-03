@@ -20,7 +20,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: var(--accent);
+  color: var(--accent-text);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }

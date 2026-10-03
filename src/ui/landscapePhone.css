@@ -41,7 +41,9 @@
   min-height: 44px;
   padding-top: 4px;
   padding-bottom: 4px;
-  padding-left: 60px;
+  /* Yatay PWA: centik (safe-area) solda/sagda -> hamburger zaten inset kadar iceride; logo da. */
+  padding-left: calc(60px + env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
 }
 /* Logo kompakt: portre-mobildeki gibi küçük wordmark + slogan gizli (bar kalınlaşmasın).
    Bu kurallar max-width:900 media'sında; 956px landscape'te tetiklenmiyordu -> burada uygula. */
@@ -70,14 +72,23 @@
   max-width: 86vw;
   z-index: 106;
   background: var(--card-bg);
-  padding: 10px 12px 12px;
-  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
+  /* Yatay PWA: sol centik payi (safe-area) -> menu ogeleri centigin altinda kalmasin. */
+  padding: 10px 12px max(12px, env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  width: calc(248px + env(safe-area-inset-left));
+  /* Kapaliyken golge + odak yok (bkz. App.css <=900px drawer). */
+  box-shadow: none;
+  visibility: hidden;
   transform: translateX(-102%);
-  transition: transform 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    visibility 0s linear 0.25s;
   overflow-y: auto;
 }
 #root.lsphone .side-menu.open {
   transform: translateX(0);
+  visibility: visible;
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease;
 }
 /* Bar logosu zaten ustte gorunur -> drawer'da tekrar logo gosterme */
 #root.lsphone .side-menu-brand {

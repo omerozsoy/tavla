@@ -104,14 +104,14 @@
   color: var(--muted);
 }
 .news-date > svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .news-go {
   flex: 0 0 auto;
   color: var(--muted);
 }
 .news-row:hover .news-go {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 /* Alt "Tum Haberler" linki: sade, sag ok'lu, hover'da kiremit */
 .news-all {
@@ -129,7 +129,7 @@
   transition: color 140ms var(--ease-out);
 }
 .news-all:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .news-all:hover > svg {
   transform: translateX(2px);
@@ -156,7 +156,7 @@
   color: var(--text);
 }
 .cal-title svg {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 /* Alt aksiyon: tam takvim sayfasina git (bizim <Button> formati) */
 .cal-foot {
@@ -183,7 +183,7 @@
 }
 .cal-nav button:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 /* Dokunmatik (coarse) cihazlarda ay-gezinme oklarının dokunma hedefini büyüt:
    masaüstünde kompakt 26px görünüm korunur, telefon/tablette rahat dokunulur (~40px).
@@ -264,14 +264,14 @@
   background: color-mix(in srgb, #12a061 14%, transparent);
 }
 .cal-cell.cal-tourn:not(.today) .cal-daynum {
-  color: #0f8a54;
+  color: var(--cal-green, #0f8a54);
   font-weight: 400;
 }
 .cal-cell.cal-event:not(.today) {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .cal-cell.cal-event:not(.today) .cal-daynum {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 400;
 }
 .cal-evname {
@@ -285,10 +285,10 @@
   text-overflow: ellipsis;
 }
 .ev-tourn {
-  color: #0f8a54; /* bizim turnuva */
+  color: var(--cal-green, #0f8a54); /* bizim turnuva */
 }
 .ev-event {
-  color: var(--accent); /* dis etkinlik (kiremit) */
+  color: var(--accent-text); /* dis etkinlik (kiremit) */
 }
 .cal-cell.today .cal-evname {
   color: #fff;
