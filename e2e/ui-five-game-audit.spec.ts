@@ -24,15 +24,22 @@ async function clickButton(page: Page, re: RegExp) {
   await b.click()
 }
 async function dragChecker(page: Page, from: Locator, to: Locator) {
-  const a = await from.boundingBox(); const b = await to.boundingBox()
-  if (!a || !b) throw new Error('sürükleme kutusu yok')
-  // Kaynak/hedefte taş yığını kenara yakın olabilir: noktanın ortası yeterli (Board cömert hitbox).
-  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 })
-  await page.mouse.up()
-  // Taş uçuş animasyonu sürerken tahta yeni sürüklemeyi almaz -> animasyon bitsin.
-  await page.waitForTimeout(800)
+  // Açılış zarı / taş uçuş animasyonu sürerken tahta sürüklemeyi yok sayar -> tahta DOM'u
+  // değişene dek (en çok 6 kez) tekrar dene.
+  const board = page.locator('.board').first()
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const before = await board.innerHTML()
+    const a = await from.boundingBox(); const b = await to.boundingBox()
+    if (!a || !b) throw new Error('sürükleme kutusu yok')
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 })
+    await page.mouse.up()
+    await page.waitForTimeout(800) // uçuş animasyonu bitsin
+    if ((await board.innerHTML()) !== before) return
+    await page.waitForTimeout(700)
+  }
+  throw new Error('sürükleme tahtaya işlenmedi')
 }
 async function waitVersion(request: APIRequestContext, code: string, user: User, roomToken: string, before: number) {
   await expect.poll(async () => (await getRoom(request, code, user, roomToken)).server_version, { timeout: 15_000 }).toBeGreaterThan(before)
