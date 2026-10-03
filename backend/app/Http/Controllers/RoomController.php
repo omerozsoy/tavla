@@ -3544,6 +3544,12 @@ class RoomController extends Controller
             $room->save();
 
             return response()->json([
+                // state DÖNER (resign ile AYNI kök fix): drop eden oyuncu KENDİ turunda (zar atılmış)
+                // olduğu için poll'un shouldApplyServerState mid-move kalkanı senkronu bloklar -> drop
+                // sonrası YENİ OYUN (opened=false) ya da MAÇ-SONU durumu HİÇ gelmez ve oyuncu ESKİ
+                // tahtada KİLİTLİ kalır (vaka S8SR7: botun küpünü düşürdü, oyun 2 hiç başlamadı).
+                // İstemci (handleDrop) bu state'i DOĞRUDAN uygular; poll'a muhtaç kalmaz.
+                'state' => $room->server_state,
                 'match' => $room->server_match, 'action' => 'drop', 'winner' => $offerer,
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
