@@ -202,12 +202,13 @@ class SecurityPhaseZeroTest extends TestCase
         // These handlers also read the room in maybeDriveBot before passing through the error.
         // Her komut handler'ı BAŞTA stampActed() çağırır: ayrı tx'te room okur (+1 read/+1 tx;
         // oda saati yok -> yazım yok). move AYRICA FAZ-1 kilitsiz doğrulamada room'u bir kez daha
-        // okur (+1). roll/move/cubeRespond ayrıca maybeDriveBot'ta okur. Bu yüzden okuma sayıları:
-        // move=4, roll/cubeRespond=3, cubeOffer/resign=2; transaction (stampActed + ana) = 2.
+        // okur (+1). Tx'ten sonra broadcastRoom() yayın için room'u yeniden okur (+1; yazım yok).
+        // roll/move/cubeRespond ayrıca maybeDriveBot'ta okur. Bu yüzden okuma sayıları:
+        // move=5, roll/cubeRespond=4, cubeOffer/resign=3; transaction (stampActed + ana) = 2.
         $this->reads(match ($method) {
-            'move' => [$room, $room, $room, $room],
-            'roll', 'cubeRespond' => [$room, $room, $room],
-            default => [$room, $room],
+            'move' => [$room, $room, $room, $room, $room],
+            'roll', 'cubeRespond' => [$room, $room, $room, $room],
+            default => [$room, $room, $room],
         }, 2);
         $request = $this->request(['token' => 'white-token', 'steps' => [], 'action' => 'take']);
         $controller = new RoomController();
@@ -257,12 +258,13 @@ class SecurityPhaseZeroTest extends TestCase
         $room = $this->room();
         // Her komut handler'ı BAŞTA stampActed() çağırır: ayrı tx'te room okur (+1 read/+1 tx;
         // oda saati yok -> yazım yok). move AYRICA FAZ-1 kilitsiz doğrulamada room'u bir kez daha
-        // okur (+1). roll/move/cubeRespond ayrıca maybeDriveBot'ta okur. Bu yüzden okuma sayıları:
-        // move=4, roll/cubeRespond=3, cubeOffer/resign=2; transaction (stampActed + ana) = 2.
+        // okur (+1). Tx'ten sonra broadcastRoom() yayın için room'u yeniden okur (+1; yazım yok).
+        // roll/move/cubeRespond ayrıca maybeDriveBot'ta okur. Bu yüzden okuma sayıları:
+        // move=5, roll/cubeRespond=4, cubeOffer/resign=3; transaction (stampActed + ana) = 2.
         $this->reads(match ($method) {
-            'move' => [$room, $room, $room, $room],
-            'roll', 'cubeRespond' => [$room, $room, $room],
-            default => [$room, $room],
+            'move' => [$room, $room, $room, $room, $room],
+            'roll', 'cubeRespond' => [$room, $room, $room, $room],
+            default => [$room, $room, $room],
         }, 2);
         $request = $this->request(['token' => 'white-token', 'steps' => [], 'action' => 'take']);
         $user = new User();

@@ -10,7 +10,7 @@ class DeploymentFingerprintTest extends TestCase
     {
         $this->artisan('security:deployment-fingerprint')
             ->expectsOutput('app_env=testing')
-            ->expectsOutput('app_debug=true')
+            ->expectsOutput('app_debug='.(config('app.debug') ? 'true' : 'false')) // .env'e bağlı; ortamdan bağımsız
             ->expectsOutputToContain('php_version=')
             ->expectsOutputToContain('db_driver=')
             ->expectsOutputToContain('db_transaction_isolation=')

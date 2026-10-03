@@ -62,7 +62,8 @@ class RoomStakeGuardTest extends TestCase
     public function test_staked_match_allowed_when_no_active_staked_game(): void
     {
         // Aktif bahisli maçı olmayan kullanıcı bahisli arama başlatabilir (havuza girer).
-        $a = $this->user('stakeC');
+        // Tek Oyun (target 1) para oyunudur: küp canlı -> en kötü stake×48 (100×48 = 4800) karşılanmalı.
+        $a = $this->user('stakeC', 4800);
 
         Sanctum::actingAs($a);
         $this->postJson('/api/matchmaking', [

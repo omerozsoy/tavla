@@ -418,8 +418,10 @@ class PrGnubgAuthoritativeTest extends TestCase
         ]);
 
         $status = (new \App\Filament\Widgets\ServiceStatus)->status();
+        // Panel gnubg havuzlarını rol gruplarına ayırır; satır anahtarı 'gnubgp-{port}'. url + url_backup
+        // = ön plan (Canlı YZ) havuzu -> o grubun satırları.
         $gnubgRows = collect($status['services'])
-            ->filter(fn ($r) => $r['key'] === 'gnubg' || str_starts_with($r['key'], 'gnubg-'))
+            ->filter(fn ($r) => str_starts_with($r['key'], 'gnubgp-') && str_contains($r['group'] ?? '', 'Canlı YZ'))
             ->values();
 
         $this->assertCount(4, $gnubgRows, '4 gnubg instance AYRI satir olmali');
@@ -429,6 +431,11 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertTrue($gnubgRows[3]['up'], 'yedek #3 (8095) yesil');
         // 1 instance down olsa da bot oynatilabilir (en az bir gnubg + validator... validator yok -> bot down);
         // en azindan gnubg tarafinin "en az biri up" mantigi calisiyor: 3/4 yesil.
-        $this->assertSame('gnubg-3', $gnubgRows[3]['key'], 'yedek #3 anahtari gnubg-3 olmali (restart eslemesi)');
+        $this->assertSame(
+            ['gnubgp-8092', 'gnubgp-8093', 'gnubgp-8094', 'gnubgp-8095'],
+            $gnubgRows->pluck('key')->all(),
+            'anahtarlar port bazli olmali (restart port -> birim eslemesi)',
+        );
+        $this->assertTrue($gnubgRows[3]['restart'], '8095 -> gnubg-analysis-4 birimi GNUBG_UNITS\'te -> restart edilebilir');
     }
 }

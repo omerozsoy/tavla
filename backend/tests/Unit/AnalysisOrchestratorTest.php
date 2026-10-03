@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * AnalysisOrchestrator::checkerPr XG mantığını sunucu/gnubg GEREKMEDEN doğrular.
- * GnuBgClient sahte (canned /analyze yanıtları) ile değiştirilir.
+ * GnuBgClient sahte (canned /analyze yanıtları) ile değiştirilir. Orchestrator arka plan havuzunu
+ * (analyzeBackground) kullandığı için sahteler o metodu ezer.
  */
 class AnalysisOrchestratorTest extends TestCase
 {
@@ -29,7 +30,7 @@ class AnalysisOrchestratorTest extends TestCase
         {
             public array $responses = [];
 
-            public function analyze(array $position): ?array
+            public function analyzeBackground(array $position): ?array
             {
                 return array_shift($this->responses);
             }
@@ -61,7 +62,7 @@ class AnalysisOrchestratorTest extends TestCase
     {
         $fake = new class extends GnuBgClient
         {
-            public function analyze(array $position): ?array
+            public function analyzeBackground(array $position): ?array
             {
                 return null; // gnubg erişilemez
             }
@@ -80,7 +81,7 @@ class AnalysisOrchestratorTest extends TestCase
         // Değerlendirilen var ama hepsi obvious (sayılmaz) -> strict null, loose devreye girer, PR asla null.
         $fake = new class extends GnuBgClient
         {
-            public function analyze(array $position): ?array
+            public function analyzeBackground(array $position): ?array
             {
                 return ['result' => ['hint' => [['move' => 'a', 'equity' => 0.10], ['move' => 'b', 'equity' => 0.0999]]],
                     'played' => ['move' => 'b', 'loss' => 0.02]];
@@ -102,7 +103,7 @@ class AnalysisOrchestratorTest extends TestCase
         {
             public array $captured = [];
 
-            public function analyze(array $position): ?array
+            public function analyzeBackground(array $position): ?array
             {
                 $this->captured[] = $position;
 
@@ -130,7 +131,7 @@ class AnalysisOrchestratorTest extends TestCase
         // Örnek gnubg cube analizi: noDouble +0.385, doubleTake +0.301, doublePass +1.000.
         return new class extends GnuBgClient
         {
-            public function analyze(array $position): ?array
+            public function analyzeBackground(array $position): ?array
             {
                 return ['cube' => ['equities' => ['noDouble' => 0.385, 'doubleTake' => 0.301, 'doublePass' => 1.000]]];
             }
