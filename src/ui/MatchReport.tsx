@@ -10,7 +10,7 @@ import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
-import { buildMatXg, type GameResultInput } from '../matExport'
+import { buildMatXg, withGameIndex, type GameResultInput } from '../matExport'
 import { fetchGameLogMat, fetchMatchMat } from '../api'
 import type { GameState, Player, Step } from '../engine/types'
 
@@ -80,7 +80,7 @@ function winPct(probs?: number[]): number | null {
 
 export default function MatchReport({
   mode,
-  log,
+  log: rawLog,
   pr,
   humanColor,
   matchLength = 1,
@@ -93,6 +93,9 @@ export default function MatchReport({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  // OYUN AYRACI: canlı maç-sonu logu (gnubg review / matchLog) `game` taşımaz -> seq'ten türet
+  // (zaten varsa dokunmaz). Böylece sıralı listede "— OYUN N —" ayracı + rozet her yerde görünür.
+  const log = useMemo(() => withGameIndex(rawLog), [rawLog])
   // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri, 'all' = iki taraf.
   // 'all' + "Sirala gore" -> hamleler seq'e gore ic ice (karsilikli) listelenir; oyunun
   // gidisatini iki taraftan sirayla takip edersin.
