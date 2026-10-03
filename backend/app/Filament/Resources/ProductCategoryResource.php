@@ -4,12 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductCategoryResource\Pages;
 use App\Models\ProductCategory;
+use App\Support\ImageOptimizer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * Panelden yonetilen urun kategorileri (Tavla, Zar, Kitap, Zar Kulesi, Diger...).
@@ -56,7 +58,10 @@ class ProductCategoryResource extends Resource
                 ->image()
                 ->disk('uploads')->directory('kategori')->visibility('public')
                 ->maxSize(4096)
-                ->helperText('Mağaza vitrinindeki kategori kartında gösterilir. Yatay/kare görsel önerilir. Boş bırakırsan o kategorinin ilk ürününün görseli kullanılır.'),
+                // YÜKLEME-ANI OPTİMİZASYON: ≤1200px'e küçült + WebP. GD yoksa orijinal saklanır. Bkz ImageOptimizer.
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'kategori', 1200, 82))
+                ->helperText('Mağaza vitrinindeki kategori kartında gösterilir. Yatay/kare görsel önerilir. Yüklerken otomatik optimize edilir (≤1200px, WebP). Boş bırakırsan o kategorinin ilk ürününün görseli kullanılır.'),
             Forms\Components\TextInput::make('sort')
                 ->label('Sıra')
                 ->numeric()
