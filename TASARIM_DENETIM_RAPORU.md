@@ -820,4 +820,4 @@ Koyu ve açık temada 5–7 sayfa, masaüstü ve 390 px'te yeniden ölçüldü.
 
 ### 10.6 Dağıtım
 
-Derlenmiş çıktı `npm run deploy:build` ile `backend/public`'e kopyalandı ve commit'lendi. Betik ek modda çalışır: eski hash'li dosyalar korunur. Canlıya çıkış için kalan adım, sunucuda (Plesk) `git pull` + `deploy.sh`.
+Derlenmiş çıktı `npm run deploy:build` ile `backend/public`'e kopyalandı ve commit'lendi. Betik ek modda çalışır: eski hash'li dosyalar korunur. Değişiklikler `claude/cloud-session-credits-9nd4yl` dalında. Canlıya çıkış için kalan adımlar: dalın sunucunun çektiği ana dala (main) birleştirilmesi, ardından Plesk'te `git pull` + `deploy.sh`.
