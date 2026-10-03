@@ -13253,8 +13253,10 @@ button.acct-row-logout:hover:not(:disabled) {
   letter-spacing: 0.02em;
   color: color-mix(in srgb, var(--tv-cream, #f4efe6) 78%, transparent);
 }
-/* İzleyici panelinde (sol alt) YALNIZ sayı: ad/soyad/takma isim gösterme. */
-.spectate-side .sp-viewers-list {
+/* Oyun ekranı izleyici rozeti (viewers-float): oynayanlar için YALNIZ sayı.
+   İzleme (Spectate) ekranında masaüstünde isimler görünür; mobilde ViewersBadge
+   isMobile() ile listeyi hiç render etmez. */
+.spectate-side.viewers-float .sp-viewers-list {
   display: none;
 }
 .sp-viewers-list {
