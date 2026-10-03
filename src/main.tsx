@@ -23,6 +23,19 @@ import { installReloadDiag } from './reloadDiag.ts'
 // dogru rutbe gorunur, esik degisiminde "yanlis rozet" flash'i olmaz.
 applyCachedRankThresholds()
 
+// Kurulu PWA (standalone) isareti: CSS'te `.is-standalone` ile yalniz uygulamada gorunen ogeler
+// (orn. sayfa basi "Geri"). display-mode medya sorgusu eski iOS'ta yok -> navigator.standalone da.
+try {
+  if (
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true
+  ) {
+    document.documentElement.classList.add('is-standalone')
+  }
+} catch {
+  /* yok */
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

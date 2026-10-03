@@ -390,3 +390,37 @@
   .kiz-side { padding: 3px 8px; }
   .kiz-phase { font-size: 0.62rem; padding: 2px 5px; }
 }
+
+/* Masaüstü okunabilirlik: skor şeridi (0.76-0.8rem) ve "Çok Sıkıldım" paneli (148px, 0.82rem)
+   büyük tahtanın yanında çok küçük kalıyordu. Geniş ekranda büyüt; mobil düzen değişmez. */
+@media (min-width: 901px) {
+  .kiz-scorebar {
+    max-width: 880px;
+    gap: 14px;
+  }
+  .kiz-side {
+    font-size: 0.92rem;
+    padding: 4px 10px;
+  }
+  .kiz-side b {
+    font-size: 0.9rem;
+  }
+  .kiz-phase {
+    font-size: 0.78rem;
+  }
+  .kiz-turnmsg {
+    font-size: 0.95rem;
+  }
+  .kiz-bored-panel {
+    flex-basis: 176px;
+    padding: 16px 14px;
+    gap: 10px;
+  }
+  .kiz-bored-panel h2 {
+    font-size: 1.05rem;
+  }
+  .kiz-bored-panel a {
+    padding: 11px 12px;
+    font-size: 0.92rem;
+  }
+}

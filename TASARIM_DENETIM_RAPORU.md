@@ -807,13 +807,17 @@ Koyu ve açık temada 5–7 sayfa, masaüstü ve 390 px'te yeniden ölçüldü.
 
 ### 10.5 Estetik öneriler
 
-| No | Durum |
-|---|---|
-| E-1 | Uygulandı: mobilde boş "Çevrimiçi Oyuncular" kartı rezerv yüksekliğini bırakıyor. |
-| E-2 | Uygulandı: ≤560 px'te canlı maç filtreleri tek satır, yatay kaydırılabilir. |
-| E-8 | Uygulandı: hamburger baloncuğu kaldırıldı; kurulum istemi düğme metni kısaltıldı. |
-| E-3, E-4, E-5, E-6, E-7 | Açık bırakıldı (tasarım kararı gerektiriyor). |
+| No | Durum | Doğrulama |
+|---|---|---|
+| E-1 | Uygulandı: mobilde boş "Çevrimiçi Oyuncular" kartı rezerv yüksekliğini bırakıyor. | — |
+| E-2 | Uygulandı: ≤560 px'te canlı maç filtreleri tek satır, yatay kaydırılabilir. | — |
+| E-3 | Uygulandı: aktif menü öğesinin flaması menü kartının içinde bitiyor. | 1440: flama sağ ucu 214 px, kart sağ kenarı 224 px. |
+| E-4 | Uygulandı: final/şampiyon sütunlarındaki sabit 400 px yükseklik yalnız üçüncülük maçı varken uygulanıyor; ≤640 px'te başlıkta "← kaydırarak tüm turlar →" ipucu. | 4 kişilik tablo yüksekliği 200 px; ipucu yalnız mobilde. |
+| E-5 | Düzeltme: tam boyutta incelendiğinde tahta küçük **değil** (1440'ta 974 px, yüksekliği dolduruyor); denetimdeki tespit küçük önizlemeden kaynaklı bir yanılgıydı. Asıl sorun olan küçük yazılar giderildi: ≥901 px'te skor şeridi ve "Çok Sıkıldım" paneli büyütüldü. | — |
+| E-6 | Uygulandı: üyelik modalında planlar alt alta dizildiğinde ücretli plan üstte; "Abone Ol" alanı kart içinde yapışkan. | "Abone Ol" 360×800'de y=447–489, 844×390'da y=329–371 (kaydırmadan görünür). |
+| E-7 | Uygulandı: kurulu PWA'da (`display-mode: standalone` veya iOS `navigator.standalone` → `<html class="is-standalone">`) sayfa başında "‹ Geri". Geçmiş yoksa ana sayfaya döner. Tarayıcı modunda gizli. | Standalone emülasyonunda görünür, tarayıcıda `display:none`; derin bağlantıdan ana sayfaya, menüden gelinince bir önceki sayfaya dönüyor. |
+| E-8 | Uygulandı: hamburger baloncuğu kaldırıldı; kurulum istemi düğme metni kısaltıldı. | — |
 
-### 10.6 Dağıtım notu
+### 10.6 Dağıtım
 
-Değişiklikler yalnızca `src/` altında. README'ye göre canlıya çıkmak için `npm run deploy:build` ile derlenmiş çıktının `backend/public`'e kopyalanıp commit'lenmesi gerekiyor. Bu adım bu çalışmada **yapılmadı**.
+Derlenmiş çıktı `npm run deploy:build` ile `backend/public`'e kopyalandı ve commit'lendi. Betik ek modda çalışır: eski hash'li dosyalar korunur. Canlıya çıkış için kalan adım, sunucuda (Plesk) `git pull` + `deploy.sh`.

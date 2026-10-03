@@ -789,7 +789,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           })()}
 
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
-            <h3 className="tourn-bracket-title">{t('tourn.lobby')}</h3>
+            <h3 className="tourn-bracket-title">
+              {t('tourn.lobby')}
+              <span className="tourn-bracket-hint">{t('tourn.scrollHint')}</span>
+            </h3>
           )}
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
             <div className="tourn-bracket">

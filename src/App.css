@@ -1217,7 +1217,8 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button']:hover::before {
   content: '';
   position: absolute;
-  inset: -6px -10px -6px 0;
+  /* Sag uc menu kartinin ICINDE bitsin (eski -10px kartin yuvarlak sag kenarindan tasiyordu). */
+  inset: -6px 0 -6px 0;
   z-index: -1;
   clip-path: polygon(0 0, 100% 40%, 100% 60%, 0 100%);
   pointer-events: none;
@@ -1242,7 +1243,8 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true']::before {
   content: '';
   position: absolute;
-  inset: -6px -10px -6px 0;
+  /* Sag uc menu kartinin ICINDE bitsin (eski -10px kartin yuvarlak sag kenarindan tasiyordu). */
+  inset: -6px 0 -6px 0;
   z-index: -1;
   clip-path: polygon(0 0, 100% 40%, 100% 60%, 0 100%);
   pointer-events: none;
@@ -16618,6 +16620,21 @@ button.acct-row-logout:hover:not(:disabled) {
 .mem-cta {
   text-align: center;
 }
+/* Ucretli planin "Abone Ol" alani kaydirma kabinda (.mem-card) yapiskan: plan karti gorunurken
+   dugme her zaman altta gorunur (yatay telefonda ilk ekranda kaliyordu). */
+.mem-plan.paid .mem-cta {
+  position: sticky;
+  bottom: -24px; /* .mem-card alt padding'i kadar: dugme kartin gorunen alt kenarina oturur */
+  margin-top: auto;
+  padding: 10px 0 2px;
+  background: linear-gradient(to bottom, transparent, var(--card-bg) 30%);
+}
+/* Planlar alt alta dizildiginde ucretli plan USTTE: dikey telefonda "Abone Ol" ilk ekranda. */
+@media (max-width: 720px) {
+  .mem-plan.paid {
+    order: -1;
+  }
+}
 .mem-btn {
   width: 100%;
   padding: 11px;
@@ -23285,8 +23302,27 @@ button.acct-row-logout:hover:not(:disabled) {
      bracket'te final kolonu (en uzun turun = 1.tur yüksekliği) kısa olunca bu kutu kolondan taşıp
      overflow:hidden + scrollbar ile kesiliyordu. min-height ile kolon daima üçüncülük kutusunu
      (0.5·H + 96 + ~90) içine alacak kadar uzun kalsın. Büyük bracket'te 1.tur zaten daha uzun ->
-     min-height etkisiz (fazladan boşluk yok). */
+     min-height etkisiz (fazladan boşluk yok).
+     YALNIZ üçüncülük maçı VARKEN: yoksa küçük bracket'te final/şampiyon sütunları 400px'e
+     uzayıp büyük boş gri alan bırakıyordu. */
+  min-height: 0;
+}
+.tourn-bracket:has(.tb-slot-3rd) .tourn-round-final .tourn-round-body,
+.tourn-bracket:has(.tb-slot-3rd) .tourn-champ-col .tourn-round-body {
   min-height: 400px;
+}
+/* Mobil: tablo yatay kaydırılabilir ama bunu gösteren işaret yoktu -> başlığın yanında ipucu. */
+.tourn-bracket-hint {
+  display: none;
+}
+@media (max-width: 640px) {
+  .tourn-bracket-hint {
+    display: inline;
+    margin-left: 8px;
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
 }
 .tourn-round-final .tb-slot:not(.tb-slot-3rd),
 .tourn-champ-col .tb-slot:first-child {
@@ -29778,4 +29814,30 @@ select:-webkit-autofill {
   --rar-rare: #6f9fe6;
   --rar-epic: #a59cf0;
   --rar-mythic: #e07a63;
+}
+
+/* Kurulu PWA'da sayfa basi "‹ Geri" (tarayici modunda gizli; orada tarayicinin geri tusu var).
+   .is-standalone: main.tsx (display-mode VEYA iOS navigator.standalone). */
+.page-back {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  margin: 0 0 6px;
+  padding: 0 10px 0 4px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.is-standalone .page-back {
+  display: inline-flex;
+}
+@media (display-mode: standalone) {
+  .page-back {
+    display: inline-flex;
+  }
 }

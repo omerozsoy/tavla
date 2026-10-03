@@ -9798,6 +9798,21 @@ export default function App() {
       >
             {anyPageOpen ? (
               <div className="page-host">
+                {/* Kurulu PWA (standalone): tarayici geri tusu ve iOS'ta kenardan geri hareketi yok
+                    -> sayfa basinda "‹ Geri". Tarayicida CSS ile gizli (orada geri tusu var). */}
+                <button
+                  type="button"
+                  className="page-back"
+                  onClick={() => {
+                    if (window.history.length > 1) window.history.back()
+                    else {
+                      window.history.pushState(null, '', '/')
+                      window.dispatchEvent(new PopStateEvent('popstate'))
+                    }
+                  }}
+                >
+                  <Icon name="caret-left" size={18} /> {t('common.back')}
+                </button>
                 {/* showAuth iken YALNIZ auth goster -> baska sayfa (Tek Oyun vb.) acikken auth
                     ile ALT ALTA yigilmasin. Auth kapaninca menuPages geri gelir. Header page-host
                     icinde oldugu icin korunur. */}
