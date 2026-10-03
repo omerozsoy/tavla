@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 import { soloScene } from './soloScenes'
 
-// Tek Oyun = money game: her zaman TEK oyun (1 puan). Puan/uzunluk secimi YOK.
+// Tek Oyun = money game: her zaman TEK oyun (1 puan) ama KÜP CANLI. Küp katlandıkça coin bahsi de
+// katlanır (ödeme = stake × küp × 1/2/3 gammon). Küp tavanı 16; en kötü senaryo = stake × 16 × 3 = 48.
+// Bir bahse GİREBİLMEK için bu en kötü (stake × 48) kadar bakiye ŞART (backend ile birebir).
+export const MONEY_WORST_MULT = 48
 
 export interface SoloLevel {
   level: number
@@ -20,15 +23,15 @@ export interface SoloLevel {
 
 // 9 sabit bahis seviyesi; her biri farkli bir tahta temasi (3x3 dizilim).
 export const SOLO_LEVELS: SoloLevel[] = [
-  { level: 1, stake: 100, theme: 'tavla', panel: '#efeae1', a: '#d98b7a', b: '#a83a2b' },
-  { level: 2, stake: 250, theme: 'walnut', panel: '#7a5230', a: '#caa06a', b: '#5c3a20' },
-  { level: 3, stake: 500, theme: 'green', panel: '#2f7d4f', a: '#56b37a', b: '#22633e' },
-  { level: 4, stake: 1000, theme: 'purple', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c' },
-  { level: 5, stake: 2500, theme: 'teal', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666' },
-  { level: 6, stake: 5000, theme: 'red', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a' },
-  { level: 7, stake: 10000, theme: 'night', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444' },
-  { level: 8, stake: 25000, theme: 'gray', panel: '#5a6478', a: '#8b95a8', b: '#434c5e' },
-  { level: 9, stake: 50000, theme: 'ocean', panel: '#1f6f8b', a: '#3fa9c9', b: '#144f63' },
+  { level: 1, stake: 10, theme: 'tavla', panel: '#efeae1', a: '#d98b7a', b: '#a83a2b' },
+  { level: 2, stake: 25, theme: 'walnut', panel: '#7a5230', a: '#caa06a', b: '#5c3a20' },
+  { level: 3, stake: 50, theme: 'green', panel: '#2f7d4f', a: '#56b37a', b: '#22633e' },
+  { level: 4, stake: 100, theme: 'purple', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c' },
+  { level: 5, stake: 250, theme: 'teal', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666' },
+  { level: 6, stake: 500, theme: 'red', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a' },
+  { level: 7, stake: 1000, theme: 'night', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444' },
+  { level: 8, stake: 2500, theme: 'gray', panel: '#5a6478', a: '#8b95a8', b: '#434c5e' },
+  { level: 9, stake: 5000, theme: 'ocean', panel: '#1f6f8b', a: '#3fa9c9', b: '#144f63' },
 ]
 
 interface BoardColors {
@@ -55,11 +58,12 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Coklu secim: baslangicta oynanabilir ilk seviye secili. Set = secili seviye NO'lari.
-  const firstPlayable = SOLO_LEVELS.find((l) => coins >= l.stake) ?? SOLO_LEVELS[0]
+  // Girilebilir seviye = bakiye en kötü senaryoyu (stake × 48) karşılıyorsa (küp canlı).
+  const firstPlayable = SOLO_LEVELS.find((l) => coins >= l.stake * MONEY_WORST_MULT) ?? SOLO_LEVELS[0]
   const [selected, setSelected] = useState<Set<number>>(() => new Set([firstPlayable.level]))
 
   function toggle(lv: SoloLevel) {
-    if (coins < lv.stake) return // kilitli tutar secilemez
+    if (coins < lv.stake * MONEY_WORST_MULT) return // en kötü (stake×48) karşılanmıyorsa kilitli
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(lv.level)) next.delete(lv.level)
@@ -95,7 +99,7 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
 
           <div className="solo-grid">
             {SOLO_LEVELS.map((lv) => {
-              const locked = coins < lv.stake
+              const locked = coins < lv.stake * MONEY_WORST_MULT
               return (
                 <button
                   key={lv.level}

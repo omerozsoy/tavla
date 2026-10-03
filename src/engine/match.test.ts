@@ -278,6 +278,22 @@ describe('cubeAvailability (reason kodlari)', () => {
     })
   })
 
+  it('PARA OYUNU (isMoney): tek oyun (target 1) ama kup CANLI (ONE_POINT atlanir)', () => {
+    expect(cubeAvailability(newMatch(1), WHITE, false, true)).toEqual({ allowed: true })
+  })
+
+  it('PARA OYUNU: olu kup YOK (hedef yok) -> hep canli', () => {
+    const m = { ...newMatch(1), score: { white: 0, black: 0 } }
+    expect(cubeAvailability(m, WHITE, false, true)).toEqual({ allowed: true })
+  })
+
+  it('PARA OYUNU: kup tavani 16 -> 16da CUBE_AT_MAX', () => {
+    const m8 = { ...newMatch(1), cube: { value: 8, owner: null } }
+    expect(cubeAvailability(m8, WHITE, false, true)).toEqual({ allowed: true }) // 8 < 16 canli
+    const m16 = { ...newMatch(1), cube: { value: 16, owner: null } }
+    expect(cubeAvailability(m16, WHITE, false, true)).toEqual({ allowed: false, reason: 'CUBE_AT_MAX' })
+  })
+
   it('kup 64 tavanda -> CUBE_AT_MAX', () => {
     const m = { ...newMatch(128), cube: { value: 64, owner: null } }
     expect(cubeAvailability(m, WHITE, false)).toEqual({ allowed: false, reason: 'CUBE_AT_MAX' })

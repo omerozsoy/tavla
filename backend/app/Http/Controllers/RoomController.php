@@ -19,6 +19,13 @@ use Illuminate\Support\Facades\Schema;
 
 class RoomController extends Controller
 {
+    // PARA OYUNU (Tek Oyun) KÜP: Tek Oyun = sabit bahis + tek oyun (target 1) ama küp CANLI.
+    // Küp tavanı 16 (standart 64 değil). En kötü ödeme = stake × 16(küp) × 3(backgammon) = stake × 48.
+    // Giriş şartı + escrow bu en kötü senaryoyu baştan rezerve eder -> küp kaçıncıya çıkarsa çıksın
+    // kazanan TAM ödenir (per-double bakiye kontrolü gerekmez). Para oyunu = stake>0 && bet_pct==0 && target<=1.
+    private const MONEY_CUBE_MAX = 16;
+    private const MONEY_WORST_MULT = 48; // = MONEY_CUBE_MAX × 3 (backgammon)
+
     // POLL YAZIM THROTTLE (anlık yavaşlık / DB yük fix): her poll (~1.2sn) presence _seen için
     // ağır `rooms.clock` JSON'unu yazıyordu (eski 4sn -> turnuvada N oyuncu × ~0.25 yazım/sn).
     // _seen yalnız presence (terk) tespiti için gerekir; eşik MatchClock::PRESENCE_TIMEOUT (45sn).
@@ -83,6 +90,19 @@ class RoomController extends Controller
     }
 
     /**
+     * Bir odanın oyuncu başına REZERVE edilen escrow tutarı. Para oyununda (Tek Oyun: sabit bahis +
+     * target 1, küp canlı) en kötü senaryo = stake × 48 (küp 16 × backgammon 3); diğer sabit-stake
+     * maçlarda = stake. REZERV + BIRAKMA tüm yollarda AYNI tutarı kullanmalı (yoksa coins_reserved sızar).
+     */
+    private function escrowAmount(Room $room): int
+    {
+        $target = (int) (($room->server_match['target'] ?? null) ?? $room->target ?? 1);
+        $isMoney = (int) $room->stake > 0 && (int) $room->bet_pct === 0 && $target <= 1;
+
+        return (int) $room->stake * ($isMoney ? self::MONEY_WORST_MULT : 1);
+    }
+
+    /**
      * ESCROW BIRAK: bu odanın rezerve edilmiş stake'ini iki oyuncudan serbest bırak. IDEMPOTENT
      * (escrowed true->false tek claim). Coin DÜŞMEZ/EKLENMEZ; yalnız coins_reserved azalır -> hiçbir
      * yol kaçsa bile coin KAYBOLMAZ (en fazla geçici kilitli). Settle sonrası + abort/cleanup öncesi çağrılır.
@@ -92,7 +112,7 @@ class RoomController extends Controller
         if (! Schema::hasColumn('rooms', 'escrowed') || ! $room->escrowed) {
             return;
         }
-        $stake = (int) $room->stake;
+        $stake = $this->escrowAmount($room); // para oyununda ×48 (rezervle AYNI tutar)
         DB::transaction(function () use ($room, $stake) {
             // Idempotent: yalnız ilk çağrı escrowed'u false yapıp rezervi bırakır.
             $claimed = Room::where('id', $room->id)->where('escrowed', true)->update(['escrowed' => false]);
@@ -254,13 +274,15 @@ class RoomController extends Controller
         // Bahisli oyun (sabit stake VEYA % bahis): dogrulanmis giris + coin sart.
         // Coklu bahiste EN YUKSEK secilen tutari karsilayabilmeli (eslesme o tutarda olabilir).
         $maxStake = max($stakes);
+        // PARA OYUNU (Tek Oyun: sabit bahis + target 1): küp CANLI -> en kötü (stake×48) baştan şart.
+        $moneyMult = ($maxStake > 0 && $betPct === 0 && max($targets) <= 1) ? self::MONEY_WORST_MULT : 1;
         if ($maxStake > 0 || $betPct > 0) {
             if (! $authUser) {
                 return $this->fail('Bahisli oyun için giriş yapmalısın.', 422);
             }
             // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Rezerve edilmiş coin yeni
-            // bahse sayılmaz (o an başka maçta kilitli).
-            if ((($authUser->coins ?? 0) - ($authUser->coins_reserved ?? 0)) < max($maxStake, 1)) {
+            // bahse sayılmaz (o an başka maçta kilitli). Para oyununda en kötü (×48) karşılanmalı.
+            if ((($authUser->coins ?? 0) - ($authUser->coins_reserved ?? 0)) < max($maxStake * $moneyMult, 1)) {
                 return $this->fail('Yetersiz coin.', 422);
             }
             // C1: Zaten OYNANAN bahisli bir maçı varsa yeni bahisli arama/eşleşme REDDEDİLİR ->
@@ -333,10 +355,13 @@ class RoomController extends Controller
                     continue;
                 }
                 $agreedStake = max($commonStakes);
-                // Bekleyen oyuncu anlasilan tutari HALA karsilayabiliyor mu? (coin degismis olabilir)
+                // PARA OYUNU (sabit bahis + target 1): küp canlı -> en kötü (stake×48) baştan şart.
+                $candMoneyMult = ($agreedStake > 0 && $betPct === 0 && max($commonTargets) <= 1) ? self::MONEY_WORST_MULT : 1;
+                $reserveAmt = $agreedStake * $candMoneyMult; // escrow + bakiye kontrolü bu tutarla
+                // Bekleyen oyuncu anlasilan tutari (para oyununda en kötü ×48) HALA karsilayabiliyor mu?
                 if ($agreedStake > 0 && $cand->p1_user_id) {
                     $candCoins = (int) (User::where('id', $cand->p1_user_id)->value('coins') ?? 0);
-                    if ($candCoins < $agreedStake) {
+                    if ($candCoins < $reserveAmt) {
                         continue;
                     }
                 }
@@ -363,13 +388,15 @@ class RoomController extends Controller
                     $p1Available = $p1u ? $avail($p1u) : 0;
                     $p2Available = $p2u ? $avail($p2u) : 0;
                     if (! $p1u || ! $p2u
-                        || ($agreedStake > 0 && ($p1Available < $agreedStake || $p2Available < $agreedStake))
+                        || ($agreedStake > 0 && ($p1Available < $reserveAmt || $p2Available < $reserveAmt))
                         || ($betPct > 0 && ($p1Available < 1 || $p2Available < 1))) {
                         continue; // biri kullanılabilir bakiyeyle karşılayamıyor -> bu eşleşme yok
                     }
                     if ($agreedStake > 0 && Schema::hasColumn('users', 'coins_reserved')) {
-                        $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $agreedStake;
-                        $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $agreedStake;
+                        // Para oyununda en kötü senaryo (stake×48) rezerve edilir -> küp kaça çıkarsa
+                        // çıksın kazanan tam ödenir. settle AYNI tutarı bırakır (drift olmaz).
+                        $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $reserveAmt;
+                        $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $reserveAmt;
                         $p1u->save();
                         $p2u->save();
                         $cand->escrowed = true;
@@ -577,6 +604,19 @@ class RoomController extends Controller
             } else {
                 $amount = $stake;
             }
+            // PARA OYUNU (Tek Oyun): küp CANLI -> ödeme = stake × oyun puanı (= stake × küp × 1/2/3
+            // gammon). Kazananın server_match skoru tek oyunun puanıdır (gamePoints×cube). Rezerv
+            // (stake×48) bu en kötüyü baştan kapsadığından kazanan DAİMA tam alır.
+            $smTarget = (int) (($room->server_match['target'] ?? null) ?? $room->target ?? 1);
+            $isMoneyCube = $stake > 0 && $betPct === 0 && $smTarget <= 1;
+            if ($isMoneyCube) {
+                $sm = is_array($room->server_match) ? $room->server_match : [];
+                $winColor = ((int) $winnerId === (int) $room->p1_user_id) ? 'white' : 'black';
+                $pts = max(1, (int) ($sm['score'][$winColor] ?? 1));
+                $amount = $stake * $pts;
+            }
+            // Para oyununda escrow bırakma tutarı = rezerve edilen EN KÖTÜ (stake×48); diğerinde stake.
+            $relAmt = $isMoneyCube ? $stake * self::MONEY_WORST_MULT : $stake;
             // Never make a silent partial payout when the locked stake is unavailable.
             // Throwing here rolls back the earlier settled claim in the same transaction.
             if ($loser && (int) ($loser->coins ?? 0) < $amount) {
@@ -595,8 +635,8 @@ class RoomController extends Controller
             if ($loser) {
                 // Rezervi ÖNCE bırak: debit `coins`i düşürünce CHECK (coins_reserved <= coins)
                 // bozulmasın (kaybeden coins→0 iken reserved hâlâ stake ise 500 verirdi).
-                if ($escrowed && $stake > 0) { // rezerv bırak (sabit-stake escrow)
-                    $loser->coins_reserved = max(0, (int) ($loser->coins_reserved ?? 0) - $stake);
+                if ($escrowed && $stake > 0) { // rezerv bırak (sabit-stake escrow; para oyununda ×48)
+                    $loser->coins_reserved = max(0, (int) ($loser->coins_reserved ?? 0) - $relAmt);
                     $loser->save();
                 }
                 app(\App\Services\WalletService::class)->debit($loser, $debit, 'match_settlement_debit', Room::class, $room->id);
@@ -604,7 +644,7 @@ class RoomController extends Controller
             if ($winner) {
                 app(\App\Services\WalletService::class)->credit($winner, $winnerGets, 'match_settlement_credit', Room::class, $room->id);
                 if ($escrowed && $stake > 0) {
-                    $winner->coins_reserved = max(0, (int) ($winner->coins_reserved ?? 0) - $stake);
+                    $winner->coins_reserved = max(0, (int) ($winner->coins_reserved ?? 0) - $relAmt);
                     $winner->save();
                 }
             }
@@ -1599,6 +1639,8 @@ class RoomController extends Controller
             // kural). Deadlock'a karsi user'lar sirali-id kilitlenir.
             if ($stake > 0 && Schema::hasColumn('users', 'coins_reserved')
                 && $locked->p1_user_id && $locked->p2_user_id) {
+                // Para oyununda en kötü (stake×48) rezerve edilir (matchmaking/settle ile AYNI tutar).
+                $reserveAmt = $this->escrowAmount($locked);
                 $uids = [(int) $locked->p1_user_id, (int) $locked->p2_user_id];
                 sort($uids);
                 $lk = [];
@@ -1608,11 +1650,11 @@ class RoomController extends Controller
                 $p1u = $lk[$locked->p1_user_id] ?? null;
                 $p2u = $lk[$locked->p2_user_id] ?? null;
                 $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
-                if (! $p1u || ! $p2u || $avail($p1u) < $stake || $avail($p2u) < $stake) {
+                if (! $p1u || ! $p2u || $avail($p1u) < $reserveAmt || $avail($p2u) < $reserveAmt) {
                     throw new \RuntimeException('Bahis için yeterli bakiye yok.');
                 }
-                $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $stake;
-                $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $stake;
+                $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $reserveAmt;
+                $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $reserveAmt;
                 $p1u->save();
                 $p2u->save();
                 $escrowed = true;
@@ -2715,8 +2757,11 @@ class RoomController extends Controller
         // SAVUNMA: server_match['target'] eksik/bozuksa oda uzunluğuna düş (asla 1'e sabitleme ->
         // aksi halde çok-puanlı maç yanlışlıkla "tek puanlık" sayılıp küp reddedilirdi).
         $target = (int) ($sm['target'] ?? $room->target ?? 1);
-        if ($target <= 1) {
-            // 1 puanlık maç: tek oyun maçı bitirir -> küp anlamsız (gerçek tavla kuralı).
+        // PARA OYUNU (Tek Oyun: sabit bahis + target 1): küp CANLI (coin stake×küp×gammon ile ölçeklenir).
+        // 1-puanlık maç kuralı (küp ölü) yalnız BAHİSSİZ/puan maçları içindir; para oyununda atlanır.
+        $isMoney = (int) $room->stake > 0 && (int) $room->bet_pct === 0 && $target <= 1;
+        if ($target <= 1 && ! $isMoney) {
+            // 1 puanlık (bahissiz) maç: tek oyun maçı bitirir -> küp anlamsız (gerçek tavla kuralı).
             return $deny('ONE_POINT_MATCH');
         }
         if (($state['turn'] ?? 'white') !== $color) {
@@ -2734,17 +2779,21 @@ class RoomController extends Controller
         if ($cube['pending'] !== null) {
             return $deny('DOUBLE_ALREADY_PENDING');
         }
-        if ($cube['value'] >= 64) {
+        // Küp tavanı: para oyununda 16 (en kötü stake×48 rezervi bu tavana göre), diğerlerinde 64.
+        $cubeMax = $isMoney ? self::MONEY_CUBE_MAX : 64;
+        if ($cube['value'] >= $cubeMax) {
             return $deny('CUBE_AT_MAX');
         }
         if ($cube['owner'] !== null && $cube['owner'] !== $color) {
             return $deny('NOT_CUBE_OWNER');
         }
-        // ÖLÜ KÜP: küpün MEVCUT değeri, teklif edenin maçı bitirmesi için gereken puanı zaten
-        // karşılıyorsa katlamak ona hiçbir şey kazandırmaz (oyunu kazanınca maç zaten biter).
-        $need = $target - (int) ($sm['score'][$color] ?? 0);
-        if ($cube['value'] >= $need) {
-            return $deny('DEAD_CUBE');
+        // ÖLÜ KÜP (yalnız puan maçı): küpün değeri maçı bitirmeye yetiyorsa katlamak anlamsız.
+        // Para oyununda hedef yok (tek oyun) -> ölü küp YOK, küp hep canlı.
+        if (! $isMoney) {
+            $need = $target - (int) ($sm['score'][$color] ?? 0);
+            if ($cube['value'] >= $need) {
+                return $deny('DEAD_CUBE');
+            }
         }
 
         return ['allowed' => true, 'reason' => null];

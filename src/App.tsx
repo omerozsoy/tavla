@@ -170,8 +170,8 @@ import { LegalView } from './ui/LegalView'
 import SoloStakes from './ui/SoloStakes'
 const ErrorJournal = lazy(() => import('./ui/ErrorJournal'))
 const MatchAnalytics = lazy(() => import('./ui/MatchAnalytics'))
-import GamePreview from './ui/GamePreview'
-import ContentView from './ui/ContentView'
+const GamePreview = lazy(() => import('./ui/GamePreview'))
+const ContentView = lazy(() => import('./ui/ContentView'))
 import QuizPlay from './ui/QuizPlay'
 const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
@@ -182,7 +182,8 @@ const CustomInfoPage = lazy(() => import('./ui/CustomInfoPage'))
 const GuideView = lazy(() => import('./ui/GuideView'))
 const TournamentRules = lazy(() => import('./ui/TournamentRules'))
 const FaqView = lazy(() => import('./ui/FaqView'))
-import Info, { type InfoTab } from './ui/Info'
+const Info = lazy(() => import('./ui/Info'))
+import type { InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
   about: 'hakkinda', services: 'hizmetler', glossary: 'sozluk', ranks: 'rutbeler',
@@ -2352,6 +2353,9 @@ export default function App() {
   // room.bot). Canlı PR / analiz gösterimi ikisinde de açık olmalı; SERVER_BOT geçişinden önce
   // yalnız `mode==='pvb'` kontrol ediliyordu -> otoriter bot maçında canlı PR "—" kalıyordu.
   const botMatch = mode === 'pvb' || (online && !!room?.bot)
+  // PARA OYUNU (Tek Oyun): online + sabit bahis (stake>0, % bahis değil) + tek oyun (target≤1).
+  // Küp CANLI (coin stake×küp×gammon ile ölçeklenir); cubeAvailability/shouldAutoRoll'a geçilir.
+  const isMoneyGame = online && stakeRef.current > 0 && betPctRef.current === 0 && match.target <= 1
 
   // TURNUVA MACI HAZIR -> POPUP YOK, DOĞRUDAN maça al. ping'teki tournament_matches'ten gelen
   // yeni (görülmemiş) maça anında girilir. Zaten o maçtaysak (tournMatchRef) tekrar girmeyiz;
@@ -3474,7 +3478,7 @@ export default function App() {
     const c: Player = online ? myColor : turnStart.turn
     if (gameEnd || gameWon || matchOver || cubePending !== null || diceRolled) return
     if (turnsPlayed <= 0 || turnStart.turn !== c) return
-    if (!canDouble(match, c, false)) return
+    if (!canDouble(match, c, false, isMoneyGame)) return
     recordCubePR(c, 'offer', 'no-double')
   }
 
@@ -3489,7 +3493,7 @@ export default function App() {
   }
 
   function handleDouble(player: Player) {
-    if (diceRolled || !canDouble(match, player, cubePending !== null)) return
+    if (diceRolled || !canDouble(match, player, cubePending !== null, isMoneyGame)) return
     // OTORİTER (Faz 2): küp teklifi SUNUCUYA (kurallar sunucuda: sıra/sahiplik/Crawford).
     // Yerel mutasyon YOK -> poll server_match ile cubePending'i senkronlar (forge yok).
     if (online && authoritativeRef.current) {
@@ -3763,7 +3767,7 @@ export default function App() {
       timer = window.setTimeout(async () => {
         // Bota EK kup kisiti YOK (kullanici direktifi): ne olu-kup engeli ne de 8 tavani.
         // Tek kural canDouble (Crawford / sahiplik / 64 tavani) — insanla BIREBIR ayni.
-        if (turnsPlayed > 0 && canDouble(match, BOT_PLAYER, false)) {
+        if (turnsPlayed > 0 && canDouble(match, BOT_PLAYER, false, isMoneyGame)) {
           try {
             const probs = await neuralRef.current.evalPosition(turnStart, BOT_PLAYER)
             const w = probs[0] + probs[1] + probs[2]
@@ -4018,7 +4022,7 @@ export default function App() {
       turnsPlayed > 0 &&
       cubePending === null &&
       turnStart.turn === humanColor &&
-      canDouble(match, humanColor, false)
+      canDouble(match, humanColor, false, isMoneyGame)
     const facingDouble =
       mode === 'pvb' &&
       cubePending !== null &&
@@ -5963,7 +5967,7 @@ export default function App() {
   // oyuncu "Zar At"/"Katla" arasinda secim yapabilsin. (Ayar olarak sunulmuyor.)
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
-    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart)) return
+    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)) return
     setAutoRollStuck(false)
     // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Açılış effect'indeki (satir ~4096)
@@ -7238,12 +7242,12 @@ export default function App() {
     !opening &&
     !cubePending &&
     !gameWon &&
-    shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart)
+    shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0
   const humanCanDouble =
-    showRoll && turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
+    showRoll && turnsPlayed > 0 && canDouble(match, turnStart.turn, false, isMoneyGame)
   // Kup teklifine yanit: pvp (ayni ekran), bota karsi, veya online'da rakip teklif ettiyse
   // Kutu görünürlüğü YALNIZ cubePending'e bağlı (tek kaynak). Kabul edince handleTake cubePending'i
   // ANINDA null yapar -> kutu hemen kapanır ve GERİ GELMEZ. (botThinking ile GATE ETME: botThinking
@@ -8995,19 +8999,21 @@ export default function App() {
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
       {infoOpen && (
-        <Info
-          onClose={() => setInfoOpen(false)}
-          tab={infoTab}
-          onTab={setInfoTab}
-          currentRating={user?.rating ?? undefined}
-          loggedIn={!!user}
-          fair={{
-            commitment: fairRef.current.commitment,
-            clientSeed: fairRef.current.clientSeed,
-            serverSeed: matchWinner(match) ? fairRef.current.serverSeed : undefined,
-            rolls: fairRef.current.nonce,
-          }}
-        />
+        <Suspense fallback={null}>
+          <Info
+            onClose={() => setInfoOpen(false)}
+            tab={infoTab}
+            onTab={setInfoTab}
+            currentRating={user?.rating ?? undefined}
+            loggedIn={!!user}
+            fair={{
+              commitment: fairRef.current.commitment,
+              clientSeed: fairRef.current.clientSeed,
+              serverSeed: matchWinner(match) ? fairRef.current.serverSeed : undefined,
+              rolls: fairRef.current.nonce,
+            }}
+          />
+        </Suspense>
       )}
       {ranksOpen && (
         <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />
@@ -9325,24 +9331,30 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
       )}
-      {gamePreviewOpen && <GamePreview onClose={() => setGamePreviewOpen(false)} />}
+      {gamePreviewOpen && (
+        <Suspense fallback={null}>
+          <GamePreview onClose={() => setGamePreviewOpen(false)} />
+        </Suspense>
+      )}
       {contentView && (
-        <ContentView
-          type={contentView}
-          // KURAL: sayfa basligi = menu etiketi. Menude admin yeniden adlandirmissa
-          // (override) baslik da onu alsin; override yoksa ContentView i18n'e duser.
-          titleOverride={menuLabel(
-            ({ event: 'calendar', news: 'news', magazine: 'magazine', club: 'clubs', makale: 'makale' } as Record<string, string>)[
-              contentView
-            ] ?? '',
-          )}
-          onClose={() => setContentView(null)}
-          slug={newsSlug}
-          onOpenDetail={(s) => setNewsSlug(s)}
-          onCloseDetail={() => setNewsSlug(null)}
-          currentUser={user ? { id: user.id, name: user.nickname || user.first_name } : null}
-          onRequireLogin={() => setShowAuth(true)}
-        />
+        <Suspense fallback={null}>
+          <ContentView
+            type={contentView}
+            // KURAL: sayfa basligi = menu etiketi. Menude admin yeniden adlandirmissa
+            // (override) baslik da onu alsin; override yoksa ContentView i18n'e duser.
+            titleOverride={menuLabel(
+              ({ event: 'calendar', news: 'news', magazine: 'magazine', club: 'clubs', makale: 'makale' } as Record<string, string>)[
+                contentView
+              ] ?? '',
+            )}
+            onClose={() => setContentView(null)}
+            slug={newsSlug}
+            onOpenDetail={(s) => setNewsSlug(s)}
+            onCloseDetail={() => setNewsSlug(null)}
+            currentUser={user ? { id: user.id, name: user.nickname || user.first_name } : null}
+            onRequireLogin={() => setShowAuth(true)}
+          />
+        </Suspense>
       )}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {clubsOpen && user && (
@@ -10171,7 +10183,7 @@ export default function App() {
           top={flipBoard ? bottomInfo : topInfo}
           bottom={flipBoard ? topInfo : bottomInfo}
           length={match.target}
-          stake={potRef.current || stakeRef.current}
+          stake={(potRef.current || stakeRef.current) * (isMoneyGame ? match.cube.value : 1)}
           crawford={match.isCrawford && !gameEnd}
         />
         {clockOn && (

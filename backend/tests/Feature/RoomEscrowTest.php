@@ -30,8 +30,10 @@ class RoomEscrowTest extends TestCase
 
     public function test_matchmaking_reserves_stake_for_both(): void
     {
-        $a = $this->user('resA');
-        $b = $this->user('resB');
+        // PARA OYUNU (Tek Oyun: sabit bahis + target 1, küp CANLI): en kötü senaryo = stake × 48
+        // (küp 16 × backgammon 3) baştan rezerve edilir -> küp kaça çıkarsa çıksın kazanan tam ödenir.
+        $a = $this->user('resA', 5000);
+        $b = $this->user('resB', 5000);
 
         Sanctum::actingAs($a);
         $this->postJson('/api/matchmaking', ['token' => 'tokA', 'name' => 'resA', 'stake' => 100, 'targets' => [1]])
@@ -41,12 +43,42 @@ class RoomEscrowTest extends TestCase
         $this->postJson('/api/matchmaking', ['token' => 'tokB', 'name' => 'resB', 'stake' => 100, 'targets' => [1]])
             ->assertOk()->assertJsonPath('matched', true); // B eşleşir -> pairing rezerv
 
-        // Coins DÜŞMEZ (1000), coins_reserved = stake (100), oda escrowed.
-        $this->assertSame(1000, (int) $a->fresh()->coins);
-        $this->assertSame(1000, (int) $b->fresh()->coins);
-        $this->assertSame(100, (int) $a->fresh()->coins_reserved);
-        $this->assertSame(100, (int) $b->fresh()->coins_reserved);
+        // Coins DÜŞMEZ (5000), coins_reserved = stake × 48 (4800), oda escrowed.
+        $this->assertSame(5000, (int) $a->fresh()->coins);
+        $this->assertSame(5000, (int) $b->fresh()->coins);
+        $this->assertSame(4800, (int) $a->fresh()->coins_reserved);
+        $this->assertSame(4800, (int) $b->fresh()->coins_reserved);
         $this->assertTrue((bool) Room::where('p1_user_id', $a->id)->orWhere('p2_user_id', $a->id)->value('escrowed'));
+    }
+
+    public function test_money_game_cube_scales_payout(): void
+    {
+        // PARA OYUNU (Tek Oyun): küp CANLI -> coin ödemesi = stake × oyun puanı (= stake × küp × 1/2/3).
+        // Örn: stake 100, küp 4'te backgammon (gamePoints 3) -> puan 12 -> ödeme 1200. Rezerv (stake×48)
+        // bunu baştan kapsar -> kazanan TAM alır. (score, otoriter oyun bitişinde server_match'e yazılır.)
+        config(['game.commission_pct' => 0]);
+        $p1 = $this->user('cubA', 5000);
+        $p2 = $this->user('cubB', 5000);
+        User::where('id', $p1->id)->update(['coins_reserved' => 4800]); // stake 100 × 48
+        User::where('id', $p2->id)->update(['coins_reserved' => 4800]);
+        Room::create([
+            'code' => 'MCUB', 'p1_token' => 'tok1', 'p1_user_id' => $p1->id, 'p1_name' => 'cubA',
+            'p2_token' => 'tok2', 'p2_user_id' => $p2->id, 'p2_name' => 'cubB',
+            'status' => 'playing', 'stake' => 100, 'bet_pct' => 0, 'target' => 1, 'version' => 1, 'settled' => false,
+            'escrowed' => true, 'authoritative' => true,
+            // p1 (white) küp 4'te backgammon kazandı -> puan = 3 × 4 = 12.
+            'server_match' => ['done' => true, 'winner' => 'white', 'target' => 1, 'score' => ['white' => 12, 'black' => 0]],
+        ]);
+
+        Sanctum::actingAs($p1);
+        $resp = $this->postJson('/api/rooms/MCUB/settle', ['token' => 'tok1', 'won' => true])->assertOk();
+
+        // Ödeme = stake(100) × puan(12) = 1200. Kazanan +1200, kaybeden -1200, rezerv (4800) bırakıldı.
+        $this->assertSame(6200, (int) $p1->fresh()->coins, 'kazanan stake×puan = 1200 alır');
+        $this->assertSame(3800, (int) $p2->fresh()->coins, 'kaybeden stake×puan = 1200 öder');
+        $this->assertSame(0, (int) $p1->fresh()->coins_reserved);
+        $this->assertSame(0, (int) $p2->fresh()->coins_reserved);
+        $resp->assertJsonPath('stake', 1200);
     }
 
     public function test_reserved_coins_block_new_staked_match(): void
