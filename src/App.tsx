@@ -5040,11 +5040,16 @@ export default function App() {
   function applyBotTurn(bt: BotTurn, animate = false) {
     const steps = (bt.steps ?? []) as Step[]
     const rollDice = ((bt.rollState as GameState)?.dice ?? []) as number[]
-    // SNAP (animasyon YOK): (a) çoklu tur (nadir oyun geçişi) VEYA (b) ZAR YOK = küp teklifi/pas.
-    // Zar yoksa gösterilecek zar da yoktur; küp teklifinde tahta değişmez (pending gösterilir).
+    // SNAP (animasyon YOK): (a) çoklu tur (nadir oyun geçişi) VEYA (b) ZAR YOK = küp teklifi/pas
+    // VEYA (c) MAÇ-SONU turu (bt.match.done). Zar yoksa gösterilecek zar da yoktur; küp teklifinde
+    // tahta değişmez (pending gösterilir).
     // NOT: "hamle yok" (dance) ARTIK snap DEĞİL -> zarı VAR, aşağıda gösterilir (kullanıcı raporu:
     // "bot gele attı göremedim" = dance'te bot zarı hiç görünmeden snap'leniyordu).
-    if (!animate || rollDice.length === 0) {
+    // MAÇ-SONU (c) KÖK FIX (#HM9V4 "bot zar atmıyor"): maç BOTUN kazanan hamlesiyle biterse sonuç
+    // (done=true) durumunu botAnim timer'ına bağlamak kırılgandır — araya giren bir setBotAnim(null)
+    // (poll/başka effect) bekleyen serverFinal timeout'unu iptal eder, gameEnd HİÇ kurulmaz ve
+    // kaybeden ölü tahtada kilitli kalır (settle de çalışmaz). Maç-sonunu DAİMA senkron uygula.
+    if (!animate || rollDice.length === 0 || (bt.match as ServerMatch)?.done) {
       srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
       appliedServerVersionRef.current = bt.version
       if (room?.code) appliedServerRoomRef.current = room.code
@@ -5950,7 +5955,7 @@ export default function App() {
   // oyuncu "Zar At"/"Katla" arasinda secim yapabilsin. (Ayar olarak sunulmuyor.)
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
-    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed)) return
+    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart)) return
     setAutoRollStuck(false)
     // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Açılış effect'indeki (satir ~4096)
@@ -7272,7 +7277,7 @@ export default function App() {
     !opening &&
     !cubePending &&
     !gameWon &&
-    shouldAutoRoll(match, turnStart.turn, turnsPlayed)
+    shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0

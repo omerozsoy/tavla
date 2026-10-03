@@ -19,11 +19,20 @@ class PresenceController extends Controller
         $me->save();
         \App\Console\Commands\TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
 
+        // OYUNDAYKEN DAVET GELMEZ: aktif maçta (tek oyun / turnuva / YZ dahil) olan oyuncuya
+        // gelen oyun daveti banner'ı GÖSTERİLMEZ. Davet oluşturulurken hedef müsaitti ama sonra
+        // hızlı eşleşmeyle maça giren oyuncu, maç ortasında bekleyen davetin banner'ını/sesini
+        // almasın. (onlinePlayers/seekers 'in_game' deseniyle aynı: status=playing + p1/p2 + <5dk.)
+        $inGame = \App\Models\Room::where('status', 'playing')
+            ->where('updated_at', '>', now()->subMinutes(5))
+            ->where(fn ($q) => $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id))
+            ->exists();
+
         // BAYAT DAVET KALKANI: davet YALNIZCA davet edenin odası HÂLÂ 'waiting' iken canlıdır.
         // Oda silinmiş/başlamış/bitmiş (davet eden iptal etti, ayrıldı ya da başka maça geçti) ise
         // rooms join'i düşer -> davet o an banner'dan kalkar (açık iptal beklemeden). +status pending
         // +2dk pencere backstop. Böylece "kabul ettim saçma sayfaya gitti" (ölü oda) tekrarlanmaz.
-        $invites = DB::table('game_invites')
+        $invites = $inGame ? collect() : DB::table('game_invites')
             ->join('users', 'users.id', '=', 'game_invites.from_user_id')
             ->join('rooms', 'rooms.code', '=', 'game_invites.room_code')
             ->where('rooms.status', 'waiting')
@@ -258,7 +267,7 @@ class PresenceController extends Controller
         // uyarilir. updated_at 3dk guard'i: yalnizca GERCEKTEN aktif maclar (yarim kalmis/hayalet
         // 'playing' odalar sayilmaz). Bot maci dahil -> oyuncu her turlu mesgul.
         $inMatch = Room::where('status', 'playing')
-            ->where('updated_at', '>', now()->subMinutes(3))
+            ->where('updated_at', '>', now()->subMinutes(5))
             ->where(function ($q) use ($userId) {
                 $q->where('p1_user_id', $userId)->orWhere('p2_user_id', $userId);
             })
