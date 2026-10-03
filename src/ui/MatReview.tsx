@@ -700,10 +700,18 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
     }
     measure()
     const raf = requestAnimationFrame(measure) // yerleşim otursun (font/tema) diye bir kez daha
+    // KÖK FIX (ok kayması): kapsayıcı modal (.report-card) açılışta transform:scale(0.96->1) 220ms
+    // ile canlanır. transform LAYOUT kutusunu değiştirmez -> ResizeObserver TETİKLENMEZ; ilk ölçüm
+    // animasyon sürerken (scale<1) ölçeklenmiş koordinatları gömer -> animasyon bitince oklar konuma
+    // bağlı ~yarım pul kayar (üstte geri/altta ileri). Animasyon oturunca YENİDEN ölç (son kare scale=1).
+    const t1 = window.setTimeout(measure, 260)
+    const t2 = window.setTimeout(measure, 520) // güvenlik: font/doku geç otursa da hizalansın
     const ro = new ResizeObserver(measure)
     ro.observe(board)
     return () => {
       cancelAnimationFrame(raf)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
       ro.disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
