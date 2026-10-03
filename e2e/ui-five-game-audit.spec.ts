@@ -117,7 +117,8 @@ test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }
         r = await getRoom(request, code, me, roomTokens[playerIndex])
       }
       const moves = generateMoves(r.server_state) as { steps: Step[] }[]
-      if (!moves.length) { await page.waitForTimeout(1200); continue }
+      // Oynanabilir hamle yok (generateMoves [] veya [{steps: []}]) -> sunucu sırayı kendisi geçirir.
+      if (!moves.length || !moves[0].steps.length) { await page.waitForTimeout(1200); continue }
       const before = r.server_version
       // Tek dokunuş taşı ETKİN zarla otomatik oynatır (hedef tıklaması yok sayılır) -> zar sırası
       // adımla uyuşmayabilir. Gerçek kullanıcı gibi SÜRÜKLE-BIRAK: hedefe tam o adım oynanır.
