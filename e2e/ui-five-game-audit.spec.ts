@@ -86,8 +86,13 @@ test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }
       if (!r.server_state.dice?.length) {
         const before = r.server_version
         const roll = page.getByRole('button', { name: /Zar At/ }).last()
-        if (await roll.isVisible().catch(() => false)) await roll.click()
-        await waitVersion(request, code, me, roomTokens[playerIndex], before)
+        // İstemci sunucuyu ~1 sn'de bir yoklar: "Zar At" sıra geçtikten KISA SÜRE SONRA belirir.
+        // Tek seferlik isVisible yarışı kaybedip tıklamadan bekliyordu -> görünene/sürüm artana dek dene.
+        await expect.poll(async () => {
+          if ((await getRoom(request, code, me, roomTokens[playerIndex])).server_version > before) return true
+          if (await roll.isVisible().catch(() => false)) await roll.click().catch(() => {})
+          return false
+        }, { timeout: 20_000 }).toBe(true)
         r = await getRoom(request, code, me, roomTokens[playerIndex])
       }
       const moves = generateMoves(r.server_state) as { steps: Step[] }[]
