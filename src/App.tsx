@@ -4434,6 +4434,13 @@ export default function App() {
     // Bekleyen (async) hamle analizleri bitene kadar bekle (max ~1.5s) -> online analiz
     // log'u TAM kaydolsun (son hamleler kaybolmasin). Sonra en guncel log ile bildir.
     void (async () => {
+      // PR LOADER'I HEMEN GÖSTER (kullanıcı raporu: "PR hesaplanıyor…" notu 3-4sn geç geliyordu): bu
+      // akış rapor ÖNCESİ ~9sn bekleyebilir (analiz flush + sunucu 'finished' bekleme); setPrAnalyzing
+      // eskiden YALNIZ rapor DÖNÜNCE true oluyordu -> sonuç ekranı o süre boyunca loader'sız "—"
+      // gösteriyordu. Tüm online maçlar gnubg ile analiz edilir -> iyimser aç; rapor
+      // gnubg_authoritative=false derse (aşağıda) ya da rapor tümden başarısızsa KAPAT.
+      setPrAnalyzing(true)
+      if (reportRoomCode && !room?.bot) setOppPrPending(true)
       for (let i = 0; i < 30 && pendingAnalysisRef.current > 0; i++) {
         await new Promise((res) => setTimeout(res, 100))
       }
@@ -4529,6 +4536,10 @@ export default function App() {
           achExtra,
           null, // .mat: backend stored log'dan kurar; istemci .mat'i kullanılmaz
         ])
+        // Rapor 12 denemede de gelmedi -> erken açtığımız PR loader'ını KAPAT (sonsuz "hesaplanıyor"
+        // takılmasın; kurtarma raporu açılışta tekrar dener).
+        setPrAnalyzing(false)
+        setOppPrPending(false)
       } else {
         // Not YALNIZ sunucu AÇIKÇA rated:false derse (eski backend rated göndermez -> undefined ->
         // not gösterme; puanlı maçlar yanlışlıkla "puansız" etiketi almasın).
@@ -4555,6 +4566,7 @@ export default function App() {
         // değiştir (wildbg sayısı gösterilmez). Rakip PR aşağıdaki matchPr poll'undan (o da gnubg).
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
         if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
+        else setPrAnalyzing(false) // gnubg yok -> erken açtığımız loader'ı kapat (serverPr zaten dolu)
         // Sunucu-otoriter SANS: self/opp HAM luck'ı renge (white/black) eşle -> iki istemci
         // AYNI çifti tutar -> net TUTARLI. Gelmeyen (null) değeri önceki değeri korur (merge).
         const setLuckPair = (selfL?: number | null, oppL?: number | null) =>
