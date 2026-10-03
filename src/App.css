@@ -5866,8 +5866,9 @@ button[aria-disabled='true'],
    Sadece masaustu-uzun ekran; fiziksel yatay (max-height:560) kendi tuned board-h'ini korur. */
 @media (min-width: 901px) and (min-height: 561px) {
   .app.game-view {
-    /* 92 -> 106: board + alt/üst hane numara şeritlerine biraz daha pay -> alt rakamlar kesilmez. */
-    --board-h: max(320px, min(calc(100dvh - 106px), calc((100vw - 440px) / 1.3)));
+    /* 92 -> 106: board + alt/üst hane numara şeritlerine pay (alt rakamlar kesilmesin).
+       106 -> 98: alt anlatım satırı kaldırıldı, boşalan dikey alanı board'a ver (>92: numara kesilmez). */
+    --board-h: max(320px, min(calc(100dvh - 98px), calc((100vw - 440px) / 1.3)));
   }
 }
 

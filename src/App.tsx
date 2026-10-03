@@ -1802,7 +1802,9 @@ export default function App() {
   const prevGameEndRef = useRef(false) // gameEnd null->deger gecisini yakala (oyun-sonu flush)
   const autoNextGameRef = useRef(false)
   const turnsPlayedRef = useRef(0) // commitTurn anindaki ortak sira (iki istemci ayni deger)
-  const [message, setMessage] = useState(() => t('msg.roll'))
+  // Alt anlatım satırı kaldırıldı (board görsel veriyor); setMessage yazımları
+  // zararsız kalır ama değer artık GÖSTERİLMEZ. ponytail: dead state, okuyan kalmadı.
+  const [, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [currentProbs, setCurrentProbs] = useState<number[] | null>(null)
@@ -10281,20 +10283,10 @@ export default function App() {
       </div>
 
       <div className="status">
+        {/* Alt anlatım satırı ("Beyaz oynuyor. Zarlar…", "hamle yok — geçiliyor…",
+           "rakip oynuyor") KALDIRILDI: board zaten zar+sırayı görsel veriyor, bu alan
+           board'a bırakıldı. Yalnız Crawford yazıyla kalır (küp neden yok). */}
         {match.isCrawford && !gameEnd && <span className="crawford">{t('status.crawford')}</span>}
-        {/* Oda kodu alttan kaldırıldı: MAÇ ID zaten sol üst HUD'da gösteriliyor (tekrar). */}
-        <span>
-          {online && onlineReady && !myTurn && !gameEnd && !opening
-            ? t('mp.oppTurn')
-            : // Yapay zekaya karsi oyunda "Beyaz oynuyor / Zarlar / dusunuyor" gibi
-              // anlatim yazilarini gosterme (board zaten zar+sirayi gorsel veriyor).
-              // TEK istisna: Crawford — kup neden yok, oyuncu YAZIYLA gorsun.
-              mode === 'pvb'
-              ? match.isCrawford
-                ? t('board.crawfordHint')
-                : null
-              : message}
-        </span>
       </div>
       </main>
 
