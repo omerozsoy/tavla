@@ -31,7 +31,8 @@ async function dragChecker(page: Page, from: Locator, to: Locator) {
   await page.mouse.down()
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 })
   await page.mouse.up()
-  await page.waitForTimeout(150)
+  // Taş uçuş animasyonu sürerken tahta yeni sürüklemeyi almaz -> animasyon bitsin.
+  await page.waitForTimeout(800)
 }
 async function waitVersion(request: APIRequestContext, code: string, user: User, roomToken: string, before: number) {
   await expect.poll(async () => (await getRoom(request, code, user, roomToken)).server_version, { timeout: 15_000 }).toBeGreaterThan(before)
