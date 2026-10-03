@@ -148,11 +148,13 @@ export default function MatchReport({
     if (!worst || e.loss > worst.loss) worst = e
   }
 
-  // Sira: seq'e gore (async bot kayitlari dogru yere otursun); yoksa dizideki sira
+  // Sira: ONCE oyun (game) index'i -> oyunlar 1,2,3… sirayla bloklanir (yoksa seq oyunlar
+  // arasi karisip OYUN 2 en uste cikabiliyordu); oyun ICINDE seq'e gore (async bot kayitlari
+  // dogru yere otursun); seq yoksa dizideki sira.
   const ordered = log
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => !e.cube && inScope(e))
-    .sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
+    .sort((a, b) => (a.e.game ?? 0) - (b.e.game ?? 0) || (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
   const rows = worstFirst ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss) : ordered
   // Maç kaç oyun sürdü? (game index'leri) -> 1'den fazlaysa oyun ayracı/rozeti göster.
   const gameCount = new Set(log.filter((e) => e.game != null).map((e) => e.game)).size

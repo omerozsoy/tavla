@@ -1,4 +1,5 @@
-import type { Player } from './types'
+import type { GameState, Player } from './types'
+import { closedOutOnBar } from './board'
 
 // Kup (doubling cube)
 export interface Cube {
@@ -76,7 +77,12 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
 // Sira gelen oyuncu icin zar otomatik atilmali mi?
 // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyor veya
 // ilk el) beklemenin anlami yok -> otomatik at.
-export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number): boolean {
+export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number, pos?: GameState): boolean {
+  // BARDA (pozisyon verilmisse): rakip ev bolgesi tamamen kapaliysa hicbir zarla giremem
+  // -> kesin dans, oto-at (kullanici direktifi: "bana zar at deme, otomatik at"). En az bir
+  // giris aciksa (girebilecek duruma geldim) ELLE at -> false (kullanici: "girecek duruma
+  // geldigimde oto zari yapma"). Bar durumu kup-bekleme mantigini EZER.
+  if (pos && pos.bar[turn] > 0) return closedOutOnBar(pos, turn)
   // "Otomatik zar" AYARI KALDIRILDI (kullanici direktifi): zar yalnizca kup teklif etme
   // secenegi YOKKEN otomatik atilir. Teklif mumkunse oyuncu "Zar At"/"Katla" arasinda
   // secim yapabilsin diye beklenir.

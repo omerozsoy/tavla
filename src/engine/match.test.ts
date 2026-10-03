@@ -217,6 +217,42 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
 
 })
 
+describe('barda oto-zar (rakip board kapali/acik)', () => {
+  const turnsPlayed = 3
+  const m = newMatch(7) // kup teklif edilebilir -> normalde beklenir (buton cikar)
+
+  it('barda + rakip evi TAMAMEN kapali -> hicbir zarla giremem, oto-at', () => {
+    const s = emptyBoard()
+    s.bar.white = 1
+    for (let i = 18; i <= 23; i++) s.points[i] = -2 // siyah 6 giris noktasini da kapatti
+    // Kup teklif edilebilir olsa bile bar-kapali durumu ezer -> oto-at (kullanici direktifi).
+    expect(canDouble(m, WHITE, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(true)
+  })
+
+  it('barda + en az bir giris ACIK -> girebilirim, ELLE at (oto-zar YOK)', () => {
+    const s = emptyBoard()
+    s.bar.white = 1
+    for (let i = 18; i <= 23; i++) s.points[i] = -2
+    s.points[20] = -1 // bir nokta acildi (blot) -> 4 zariyla girebilirim
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(false)
+  })
+
+  it('siyah icin de simetrik: 0..5 kapali -> oto-at', () => {
+    const s = emptyBoard()
+    s.bar.black = 1
+    for (let i = 0; i <= 5; i++) s.points[i] = 2 // beyaz tum giris noktalarini kapatti
+    expect(shouldAutoRoll(m, BLACK, turnsPlayed, s)).toBe(true)
+    s.points[3] = 0 // bir nokta acildi -> elle at
+    expect(shouldAutoRoll(m, BLACK, turnsPlayed, s)).toBe(false)
+  })
+
+  it('barda degil -> bar kurali devreye girmez (mevcut kup-bekleme mantigi)', () => {
+    const s = emptyBoard() // bar bos
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(false) // kup teklif edilebilir -> beklenir
+  })
+})
+
 // cubeAvailability: net GEREKCE (reason) kodlari — backend cubeAvailability ile ayni kume.
 describe('cubeAvailability (reason kodlari)', () => {
   it('merkez kup teklif edilebilir -> allowed', () => {
