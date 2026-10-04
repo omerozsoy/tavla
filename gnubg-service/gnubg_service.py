@@ -947,14 +947,38 @@ def _player_summary(parsed, idx):
     }
 
 
+def _new_tmp_mat():
+    """A-26: istek başına BENZERSİZ geçici .mat dosyası. Eskiden tüm gnubg örnekleri (ayrı süreçler,
+    ortak /tmp) sabit /tmp/tavlai_*.mat yolunu kullanıyordu: eşzamanlı iki yükleme birbirinin dosyasını
+    ezip bir kullanıcıya BAŞKA kullanıcının maç analizini döndürebiliyordu (_GNUBG_LOCK süreç-içi)."""
+    import tempfile
+    fd, path = tempfile.mkstemp(prefix="tavlai_", suffix=".mat")
+    os.close(fd)
+    return path
+
+
+def _rm_quiet(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
 def _analyzematch(mat_text, plies=2):
+    tmp = _new_tmp_mat()
+    try:
+        return _analyzematch_at(mat_text, plies, tmp)
+    finally:
+        _rm_quiet(tmp)
+
+
+def _analyzematch_at(mat_text, plies, tmp):
     """Yüklenen .mat maçını gnubg ile TAM analiz edip özet istatistikleri döndürür.
     Doner: {ok, matchLength, names, players:[p0,p1 özet], stats:{sections}, statistics_match(raw)}."""
     out = {"ok": False, "import_cmd": None}
     if not mat_text or not mat_text.strip():
         out["error"] = "empty-mat"
         return out
-    tmp = "/tmp/tavlai_analyze.mat"
     try:
         ml = _MATCHLEN_RE.search(mat_text)
         out["matchLength"] = int(ml.group(1)) if ml else None
@@ -1411,11 +1435,18 @@ def _reviewmatch(mat_text, plies=2):
 
 
 def _matchluck(mat_text=None, selftest=False, points_match=1):
+    tmp = _new_tmp_mat()
+    try:
+        return _matchluck_at(mat_text, selftest, points_match, tmp)
+    finally:
+        _rm_quiet(tmp)
+
+
+def _matchluck_at(mat_text, selftest, points_match, tmp):
     """.mat maçının gnubg NATIVE luck'ını (per-oyuncu MWC% + EMG) döndürür — Tavlai Luck V1 kaynağı.
     mat_text verilmezse (selftest) gnubg kendi maçını oynar+export eder+reimport eder -> import+
     analyse+parse hattını tek çağrıda kanıtlar. Üretimde backend gerçek .mat gönderir."""
     out = {"import_cmd": None, "luck": None}
-    tmp = "/tmp/tavlai_luck.mat"
     try:
         if selftest or not mat_text:
             steps = []

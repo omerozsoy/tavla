@@ -129,6 +129,15 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
       && echo "gnubg: gnubg-analysis-heavy (agir analiz) yeniden baslatildi." \
       || echo "UYARI: gnubg-analysis-heavy restart edilemedi -> ELLE: sudo systemctl restart gnubg-analysis-heavy.service"
   fi
+  # A-26: numaralı yedek instance'lar (-3..-N) da AYNI dosyayı çalıştırır; yalnız ilk ikisi yeniden
+  # başlatılıyordu -> güvenlik düzeltmeleri bu instance'lara elle restart edilene kadar ulaşmıyordu.
+  # Sırayla (biri yeniden başlarken diğerleri failover havuzunda hizmet verir).
+  for unit in $(systemctl list-unit-files 2>/dev/null | awk '/^gnubg-analysis-[0-9]+\.service/ {print $1}'); do
+    sudo -n systemctl restart "$unit" 2>/dev/null \
+      && echo "gnubg: $unit yeniden baslatildi." \
+      || echo "UYARI: $unit restart edilemedi -> ELLE: sudo systemctl restart $unit"
+    sleep 2
+  done
 fi
 # Queue worker (gnubg PR shadow) eski kodu calistirir -> her deploy'da yenile (bkz deploy/README).
 if sudo -n systemctl restart tavla-queue 2>/dev/null; then

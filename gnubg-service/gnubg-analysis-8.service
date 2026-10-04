@@ -16,6 +16,9 @@ WorkingDirectory=/opt/gnubg-service
 ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
 Restart=always
 RestartSec=3
+# A-26: her instance kendi /tmp'si (paylaşılan geçici dosya çakışması yok) + yetki yükseltme yok.
+PrivateTmp=yes
+NoNewPrivileges=yes
 
 [Install]
 WantedBy=multi-user.target
