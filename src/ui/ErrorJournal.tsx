@@ -280,7 +280,20 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      {detail && <ErrorDetail entry={detail} catLabel={catLabel} onClose={() => setDetail(null)} />}
+      {detail && (
+        <ErrorDetail
+          entry={detail}
+          catLabel={catLabel}
+          onClose={() => setDetail(null)}
+          onOpenMatch={(id) => {
+            // Hata günlüğünü kapat -> o maçın analizini aç (/mac-analizleri/<id>, App popstate yönlendirir).
+            setDetail(null)
+            onClose()
+            window.history.pushState(null, '', `/mac-analizleri/${encodeURIComponent(id)}`)
+            window.dispatchEvent(new PopStateEvent('popstate'))
+          }}
+        />
+      )}
     </div>
   )
 }

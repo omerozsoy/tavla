@@ -43,10 +43,12 @@ export default function ErrorDetail({
   entry,
   catLabel,
   onClose,
+  onOpenMatch,
 }: {
   entry: EJEntry
   catLabel: (id: string) => string
   onClose: () => void
+  onOpenMatch?: (matchId: string) => void
 }) {
   const { t } = useT()
   useEscape(onClose)
@@ -145,6 +147,34 @@ export default function ErrorDetail({
           <span className={`ej-sev ${SEV_CLS[entry.severity]}`}>{sevLabel}</span>
           <h3>{catLabel(entry.category)}</h3>
         </div>
+
+        {entry.match && (
+          // Hatanın yapıldığı maç: rakip · tür · sonuç · tarih (+ maç analizine geçiş)
+          <div className="ej-detail-match">
+            <span className="ej-dm-opp">
+              <Icon name="user" size={14} /> {t('errorJournal.detail.opponent')}:{' '}
+              <b>{entry.match.opponent || (entry.match.type === 'ai' ? t('errorJournal.detail.ai') : '—')}</b>
+            </span>
+            <span className="ej-dm-meta">
+              {entry.match.type === 'match' && entry.match.length
+                ? t('errorJournal.detail.points', { n: entry.match.length })
+                : entry.match.type === 'ai'
+                  ? t('errorJournal.detail.ai')
+                  : t('errorJournal.detail.single')}
+              {' · '}
+              <span className={entry.match.won ? 'ej-dm-won' : 'ej-dm-lost'}>
+                {entry.match.won ? t('errorJournal.detail.won') : t('errorJournal.detail.lost')}
+                {entry.match.score[0] != null && entry.match.score[1] != null && ` ${entry.match.score[0]}-${entry.match.score[1]}`}
+              </span>
+              {entry.match.at && ` · ${new Date(entry.match.at).toLocaleDateString()}`}
+            </span>
+            {onOpenMatch && (
+              <button type="button" className="ej-dm-open" onClick={() => onOpenMatch(entry.matchId)}>
+                {t('errorJournal.detail.openMatch')} <Icon name="arrow-right" size={13} />
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="ej-detail-board">
           {boardState ? (

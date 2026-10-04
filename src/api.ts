@@ -1618,6 +1618,16 @@ export interface EJEntry {
   playedSteps: Step[]
   alternatives: { notation: string; equity: number }[]
   engine?: string | null // 'gnubg-best' = en iyi hamle + equity gnubg'den (hakem)
+  // Hatanın yapıldığı maç (rakip/tür/sonuç)
+  match?: {
+    opponent: string | null
+    opponentUserId: number | null
+    type: string | null
+    length: number | null
+    won: boolean
+    score: [number | null, number | null]
+    at: string | null
+  } | null
 }
 export interface EJResponse {
   period: string

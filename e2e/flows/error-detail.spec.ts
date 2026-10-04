@@ -22,6 +22,7 @@ test('hata detayı: zar ikonları, oyuncu bakışı, tıklanınca en iyi hamle',
     tags: [], severity: 'blunder', equityLoss: 0.274, playedMove: playedNotation, bestMove: playedNotation, engine: 'gnubg',
     playedEquity: null, bestEquity: null, dice: [5, 4], player: 'black', myPip: 167, opponentPip: 167,
     position: pos, bestSteps: played.steps, playedSteps: played.steps, alternatives: [],
+    match: { opponent: 'CanerÇELİK', opponentUserId: 5, type: 'match', length: 5, won: false, score: [3, 5], at: new Date().toISOString() },
   }
   await page.route('**/api/me/error-journal**', (r) =>
     r.fulfill({
@@ -73,5 +74,12 @@ test('hata detayı: zar ikonları, oyuncu bakışı, tıklanınca en iyi hamle',
   expect(bestText.split(' ').sort()).toEqual(['13/8', '24/20'])
   await bestBtn.click()
   await expect(bestBtn).toHaveClass(/active/)
+  // "Bu hatayı kiminle oynarken yaptım": rakip + maç bilgisi + maç analizine geçiş.
+  await expect(detail.locator('.ej-detail-match')).toContainText('CanerÇELİK')
+  await expect(detail.locator('.ej-detail-match')).toContainText('5 puanlık maç')
+  await expect(detail.locator('.ej-detail-match')).toContainText('Kaybettin 3-5')
   await page.screenshot({ path: process.env.EJ_SHOT || test.info().outputPath('error-detail.png') })
+  await detail.locator('.ej-dm-open').click()
+  await expect(page).toHaveURL(/\/mac-analizleri\/1$/)
+  await expect(page.locator('.ej-detail')).toHaveCount(0)
 })

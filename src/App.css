@@ -27198,6 +27198,47 @@ select:-webkit-autofill {
 .ej-loss {
   color: var(--danger-fg, #e0455e);
 }
+.ej-detail-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: -4px 0 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.ej-dm-opp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ej-dm-opp b {
+  color: var(--text);
+}
+.ej-dm-won {
+  color: var(--color-success, #2e8b57);
+  font-weight: 600;
+}
+.ej-dm-lost {
+  color: var(--danger-fg, #e0455e);
+  font-weight: 600;
+}
+.ej-dm-open {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-text, #a83a2b);
+  font-weight: 600;
+  cursor: pointer;
+}
+.ej-dm-open:hover {
+  text-decoration: underline;
+}
 /* Hata detayı: zar ikonları + tıklanınca tahtada gösterilen hamle satırları */
 .ej-dice {
   display: inline-flex;

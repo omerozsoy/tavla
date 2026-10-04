@@ -217,6 +217,7 @@ class ErrorJournalService
         }
 
         return $q->orderByDesc('played_at')->orderByDesc('equity_loss')
+            ->with('match:id,opponent_name,opponent_user_id,match_type,match_length,won,score_self,score_opp,created_at')
             ->limit($limit)->get()
             ->map(fn (DecisionAnalysis $d) => $this->entryJson($d))->all();
     }
@@ -272,6 +273,16 @@ class ErrorJournalService
             'alternatives' => $d->engine_version === 'gnubg-best' ? ($this->decode($d->cands) ?? []) : [],
             // 'gnubg-best' -> en iyi hamle + equity hakemden (gnubg); diğerlerinde frontend gnubg'ye sorar.
             'engine' => $d->engine_version,
+            // Hatanın yapıldığı maç: rakip + tür/uzunluk + sonuç (detayda "kiminle oynarken").
+            'match' => $d->relationLoaded('match') && $d->match ? [
+                'opponent' => $d->match->opponent_name ?: null,
+                'opponentUserId' => $d->match->opponent_user_id,
+                'type' => $d->match->match_type,
+                'length' => $d->match->match_length,
+                'won' => (bool) $d->match->won,
+                'score' => [$d->match->score_self, $d->match->score_opp],
+                'at' => optional($d->match->created_at)->toIso8601String(),
+            ] : null,
         ];
     }
 

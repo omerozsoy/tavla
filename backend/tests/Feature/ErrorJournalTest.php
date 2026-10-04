@@ -144,6 +144,9 @@ class ErrorJournalTest extends TestCase
             ->firstWhere('moveNumber', 0);
         $this->assertSame(['gnubg-best', '24/18 8/5', []], [$e['engine'], $e['bestMove'], $e['bestSteps']]);
         $this->assertSame('24/18 8/5', $e['alternatives'][0]['notation']);
+        // Hatanın yapıldığı maç bilgisi (rakip/tür/sonuç) detayda gösterilir.
+        $this->assertSame(['match', 5, true], [$e['match']['type'], $e['match']['length'], $e['match']['won']]);
+        $this->assertArrayHasKey('opponent', $e['match']);
     }
 
     public function test_analyze_is_idempotent(): void
