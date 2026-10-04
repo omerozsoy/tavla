@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { listTournamentAds, type TournamentAd } from '../api'
 import { Icon } from './Icon'
+import { safeHref } from './safeHref'
 
 interface Props {
   /** Banner'a tiklaninca bagli turnuvanin detayini ac. */
@@ -145,7 +146,7 @@ export default function BannerSlider({ onOpen }: Props) {
   // Banner tiklandiginda nereye gidilecek: once serbest link (varsa), yoksa bagli turnuva.
   // Dis URL (http/https) yeni sekmede; site-ici yol (/ ile baslar) ayni sekmede acilir.
   const openBanner = (b: TournamentAd) => {
-    const link = b.link?.trim()
+    const link = safeHref(b.link)
     if (link) {
       if (/^https?:\/\//i.test(link)) window.open(link, '_blank', 'noopener,noreferrer')
       else window.location.assign(link)

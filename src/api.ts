@@ -358,6 +358,16 @@ export async function logout(): Promise<void> {
     /* yoksay */
   }
   setToken(null)
+  // A-30: paylaşılan cihazda bir sonraki kullanıcıya hesap verisi kalmasın (sepet, bekleyen
+  // rapor/settle, oyun kaydı kuyruğu — açılışta YENİ kullanıcının token'ıyla yeniden denenirdi).
+  // Misafir oda token'ı (tavla.playerToken) bilinçli korunur (misafir oyunu oturumdan bağımsız).
+  for (const k of ['cart', 'tavla.pendingReport', 'tavla.pendingSettle', GAMELOG_QUEUE_KEY]) {
+    try {
+      localStorage.removeItem(k)
+    } catch {
+      /* depolama yok */
+    }
+  }
 }
 
 // Hesabi kalici olarak sil

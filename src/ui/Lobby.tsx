@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { DivisionChip } from './Badges'
 import { Button } from '@/components/ui/button'
 import { listContents, type Content } from '../api'
+import { safeHref } from './safeHref'
 
 interface RoomInfo {
   code: string
@@ -104,7 +105,7 @@ export default function Lobby({
             <div className="mm-ad">
               <a
                 className="mm-ad-img"
-                href={ad.body || undefined}
+                href={safeHref(ad.body)}
                 target="_blank"
                 rel="noreferrer"
                 style={{ pointerEvents: ad.body ? 'auto' : 'none' }}

@@ -970,6 +970,9 @@ export default function App() {
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
+  // A-30: coin sipariş idempotency anahtarı AYNI sepet+adres için yeniden denemelerde KORUNUR
+  // (eskiden her denemede yeni anahtar -> yanıtı kaybolan başarılı istek tekrarında çift düşüm).
+  const coinOrderKeyRef = useRef<{ sig: string; key: string } | null>(null)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
       const raw = localStorage.getItem('cart')
@@ -7216,6 +7219,7 @@ export default function App() {
 
   function handleLogout() {
     apiLogout()
+    setCartItems([]) // A-30: bellekteki sepet de (effect onu yeniden localStorage'a yazmasın)
     setUser(null)
     setGuestProfile(null)
   }
@@ -9172,13 +9176,11 @@ export default function App() {
 
             // 1) Coin ödemeli ürünler -> ANINDA sipariş (atomik). Başarınca sepetten çıkar.
             if (coinProducts.length) {
-              const r = await cartCoinOrder(
-                coinProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null })),
-                sel.shippingId as number,
-                sel.billingId,
-                undefined,
-                newCommandId(),
-              )
+              const lines = coinProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null }))
+              const sig = JSON.stringify([lines, sel.shippingId, sel.billingId ?? null])
+              if (coinOrderKeyRef.current?.sig !== sig) coinOrderKeyRef.current = { sig, key: newCommandId() }
+              const r = await cartCoinOrder(lines, sel.shippingId as number, sel.billingId, undefined, coinOrderKeyRef.current.key)
+              coinOrderKeyRef.current = null // başarı -> sonraki sipariş yeni anahtar
               setUser((u) => (u ? { ...u, coins: r.coins } : u))
               setCartItems((prev) => prev.filter((i) => !(i.kind === 'product' && i.product?.payment === 'coin')))
             }

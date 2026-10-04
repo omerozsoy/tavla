@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getEntryPopup, type EntryPopup } from '../api'
 import { useEscape } from './useEscape'
 import './entryPopup.css'
+import { safeHref } from './safeHref'
 
 // Gorsel yolu: tam URL / mutlak yol ise oldugu gibi; ciplak yol ise panelden yuklenmis -> /uploads/
 function srcOf(img: string): string {
@@ -104,7 +105,7 @@ export function EntryPopupModal({ loggedIn }: { loggedIn: boolean }) {
           // Dis URL (http(s):// veya //) YENI sekmede; site-ici yol (/...) AYNI pencerede acilir
           // (kullaniciyi siteden koparmaz). rel="sponsored" her durumda (promosyon/reklam isareti).
           <a
-            href={popup.link}
+            href={safeHref(popup.link)}
             {...(/^(https?:)?\/\//i.test(popup.link.trim())
               ? { target: '_blank', rel: 'noopener noreferrer sponsored' }
               : { rel: 'sponsored' })}

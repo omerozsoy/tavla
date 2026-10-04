@@ -22,6 +22,7 @@ import AvatarFrame from './AvatarFrame'
 import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
 import { TavlaTvLogo } from './TavlaTvLogo'
+import { safeHref } from './safeHref'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
@@ -711,7 +712,7 @@ export default function ContentView({
                             {c.links?.website && (
                               <a
                                 className="club-link"
-                                href={c.links.website}
+                                href={safeHref(c.links.website)}
                                 target="_blank"
                                 rel="noreferrer noopener"
                                 aria-label="Web sitesi"
@@ -722,7 +723,7 @@ export default function ContentView({
                             {c.links?.instagram && (
                               <a
                                 className="club-link ig"
-                                href={c.links.instagram}
+                                href={safeHref(c.links.instagram)}
                                 target="_blank"
                                 rel="noreferrer noopener"
                                 aria-label="Instagram"
@@ -733,7 +734,7 @@ export default function ContentView({
                             {c.links?.youtube && (
                               <a
                                 className="club-link yt"
-                                href={c.links.youtube}
+                                href={safeHref(c.links.youtube)}
                                 target="_blank"
                                 rel="noreferrer noopener"
                                 aria-label="YouTube"

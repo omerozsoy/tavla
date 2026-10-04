@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listAdSlots, type AdSlot, type AdSlotPos } from '../api'
 import './adStrip.css'
+import { safeHref } from './safeHref'
 
 // Gorsel yolu: tam URL / mutlak yol ise oldugu gibi; ciplak yol ise panelden yuklenmis -> /uploads/
 function srcOf(img: string): string {
@@ -60,7 +61,7 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
     <div className={`ad-strip ad-strip-${slot}`}>
       {ad.link ? (
         <a
-          href={ad.link}
+          href={safeHref(ad.link)}
           {...(isExternal
             ? { target: '_blank', rel: 'noopener noreferrer sponsored' }
             : { rel: 'sponsored' })}

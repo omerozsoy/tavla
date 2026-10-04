@@ -55,3 +55,18 @@ it('logout removes the account credential from later room polls', async () => {
   expect(headers).not.toHaveProperty('Authorization')
   expect(headers['X-Room-Token']).toBe('synthetic-room-token')
 })
+
+// A-30: çıkışta hesap verisi (sepet, bekleyen rapor/settle, oyun kaydı kuyruğu) cihazda kalmamalı.
+it('logout clears per-account local data but keeps the guest room token', async () => {
+  storage.set('cart', '[{"id":1}]')
+  storage.set('tavla.pendingReport', '{"code":"X"}')
+  storage.set('tavla.pendingSettle', '{"code":"X"}')
+  storage.set('tavla.gamelog.queue', '[{}]')
+  fetchMock.mockResolvedValue(new Response('{}'))
+  await logout()
+  expect(storage.has('cart')).toBe(false)
+  expect(storage.has('tavla.pendingReport')).toBe(false)
+  expect(storage.has('tavla.pendingSettle')).toBe(false)
+  expect(storage.has('tavla.gamelog.queue')).toBe(false)
+  expect(storage.get('tavla.playerToken')).toBe('synthetic-room-token')
+})
