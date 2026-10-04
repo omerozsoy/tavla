@@ -77,8 +77,8 @@ class SwissRuntime
     public static function applyResult(Tournament $t, int $ri, int $mi, int $winnerId, ?array $score, bool $realMatch): void
     {
         $bracket = is_array($t->bracket) ? $t->bracket : [];
-        if (! isset($bracket[$ri][$mi]) || ! empty($bracket[$ri][$mi]['winner'])) {
-            return; // zaten işlendi (idempotent)
+        if (! isset($bracket[$ri][$mi]) || ! empty($bracket[$ri][$mi]['winner']) || ! empty($bracket[$ri][$mi]['double_loss'])) {
+            return; // zaten işlendi (idempotent; A-21: çift-mağlubiyetle kapanmış maç da)
         }
         $m = $bracket[$ri][$mi];
         $ids = [(int) ($m['p1']['id'] ?? 0), (int) ($m['p2']['id'] ?? 0)];

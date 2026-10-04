@@ -270,4 +270,65 @@ class SwissTournamentTest extends TestCase
             }
         }
     }
+
+    public function test_double_loss_match_cannot_be_replayed_or_applied_again(): void
+    {
+        // A-21: çift mağlubiyetle kapanan maç "winner" boş kaldığı için oda açılıp tekrar oynanabiliyor
+        // ve sonucu İKİNCİ kez işleniyordu (ek galibiyet/mağlubiyet + tur iki kez ilerliyordu).
+        $t = $this->makeTournament(4);
+        SwissRuntime::start($t);
+        $t->refresh();
+        [$key, $a, $b] = $this->firstPending($t);
+        $this->assertTrue(SwissRuntime::resolveMatch($t, $key, 0));
+        $t->refresh();
+
+        \Laravel\Sanctum\Sanctum::actingAs(User::find($a));
+        $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => $key])->assertStatus(422);
+
+        foreach ($t->bracket as $ri => $cells) {
+            foreach ($cells as $mi => $m) {
+                if ($m['key'] === $key) {
+                    \Illuminate\Support\Facades\DB::transaction(fn () => SwissRuntime::applyResult($t, $ri, $mi, $a, null, true));
+                }
+            }
+        }
+        $t->refresh();
+        $parts = collect($t->swiss_state['participants']);
+        $this->assertSame(1, (int) $parts->firstWhere('id', $b)['losses'], 'kaybedene ikinci mağlubiyet yazılmamalı');
+        $this->assertSame(0, (int) ($parts->firstWhere('id', $a)['wins'] ?? 0), 'ek galibiyet yazılmamalı');
+    }
+
+    public function test_concurrent_match_room_requests_keep_both_room_codes(): void
+    {
+        // A-20: matchRoom bracket JSON'u kilitsiz oku-değiştir-yaz yapıyordu; eşzamanlı iki istekte son
+        // yazan diğer maçın oda kodunu siliyordu.
+        $t = $this->makeTournament(4);
+        SwissRuntime::start($t);
+        $t->refresh();
+        $cells = array_values(array_filter($t->bracket[0], fn ($m) => ! empty($m['p1']['id']) && ! empty($m['p2']['id'])));
+        [$m1, $m2] = [$cells[0], $cells[1]];
+
+        // Yarış: bu istek turnuvayı okuduktan hemen sonra diğer maçın odası commit olur.
+        $raced = false;
+        Tournament::retrieved(function (Tournament $x) use (&$raced, $t, $m2) {
+            if (! $raced && $x->id === $t->id) {
+                $raced = true;
+                $fresh = Tournament::find($t->id);
+                $bk = $fresh->bracket;
+                foreach ($bk[0] as $i => $c) {
+                    if ($c['key'] === $m2['key']) {
+                        $bk[0][$i]['room'] = 'RACE2';
+                    }
+                }
+                \Illuminate\Support\Facades\DB::table('tournaments')->where('id', $t->id)->update(['bracket' => json_encode($bk)]);
+            }
+        });
+
+        \Laravel\Sanctum\Sanctum::actingAs(User::find((int) $m1['p1']['id']));
+        $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => $m1['key']])->assertOk();
+
+        $rooms = collect(Tournament::find($t->id)->bracket[0])->pluck('room', 'key');
+        $this->assertSame('RACE2', $rooms[$m2['key']], 'diğer maçın oda kodu korunmalı');
+        $this->assertNotEmpty($rooms[$m1['key']]);
+    }
 }

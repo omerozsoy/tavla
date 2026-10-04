@@ -352,7 +352,7 @@ class TournamentController extends Controller
             if (! in_array($data['winner_id'], $ids, true)) {
                 return ['err' => 'Geçersiz kazanan.', 'code' => 422];
             }
-            if (! empty($m['winner'])) {
+            if (! empty($m['winner']) || ! empty($m['double_loss'])) {
                 return ['err' => 'Sonuç zaten girildi.', 'code' => 422];
             }
 
@@ -790,85 +790,91 @@ class TournamentController extends Controller
     public function matchRoom(Request $request, Tournament $tournament)
     {
         $data = $request->validate(['match' => ['required', 'string', 'max:16']]);
-        if ($tournament->status !== 'running') {
-            return $this->fail('Turnuva aktif değil.', 422);
-        }
-        $me = $request->user()->id;
-        $bracket = $tournament->bracket;
-        foreach ($bracket as $ri => $round) {
-            foreach ($round as $mi => $m) {
-                if ($m['key'] !== $data['match']) {
-                    continue;
-                }
-                $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
-                if (! in_array($me, $ids, true)) {
-                    return $this->fail('Bu maçta değilsin.', 403);
-                }
-                if (! empty($m['winner'])) {
-                    return $this->fail('Maç bitti.', 422);
-                }
-                $isSwiss = \App\Support\Swiss\SwissRuntime::isSwiss($tournament);
-                // FINAL GATE (yalnız eleme ağacı): önce 3.'lük maçı oynanır; final 3.'lük bitip 1 dk
-                // geçince açılır. Swiss'te 3.'lük maçı YOK -> gate atlanır.
-                $isFinalMatch = ! $isSwiss && $ri === count($bracket) - 1 && empty($m['third_place']);
-                if ($isFinalMatch) {
-                    $tp = $bracket[$ri][1] ?? null;
-                    if ($tp && ! empty($tp['third_place'])) {
-                        if (empty($tp['winner'])) {
-                            return $this->fail('Önce üçüncülük maçı oynanmalı.', 422);
-                        }
-                        $opensAt = $m['opens_at'] ?? null;
-                        if ($opensAt && now()->lt(\Illuminate\Support\Carbon::parse($opensAt))) {
-                            $sec = max(1, now()->diffInSeconds(\Illuminate\Support\Carbon::parse($opensAt)));
-                            return $this->fail("Final, üçüncülük maçından sonra başlar ({$sec} sn).", 422);
-                        }
-                    }
-                }
-                // Bu maçın uzunluğu/süresi. Swiss'te hücreye tur üretiminde yazılmıştır (normal/final-iki);
-                // eleme ağacında roundTarget/roundMinutes ile hesaplanır (3.'lük -> yarı final uzunluğu).
-                if ($isSwiss) {
-                    $target = (int) ($m['target'] ?? ($tournament->match_length ?: 1));
-                    $minutes = isset($m['minutes']) ? ($m['minutes'] !== null ? (int) $m['minutes'] : null) : null;
-                } else {
-                    $lenRi = ! empty($m['third_place']) ? max(0, count($bracket) - 2) : $ri;
-                    $target = $tournament->roundTarget($lenRi, count($bracket));
-                    $minutes = $tournament->roundMinutes($lenRi, count($bracket));
-                }
-                $bracket[$ri][$mi]['target'] = $target;
-                $bracket[$ri][$mi]['minutes'] = $minutes;
-                // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
-                // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
-                if (! empty($m['room'])) {
-                    $old = \App\Models\Room::where('code', $m['room'])->first();
-                    if ($old && $old->status === 'finished' && ! $old->hasVerifiedServerResult()) {
-                        $m['room'] = null;
-                    }
-                }
-                if (empty($m['room'])) {
-                    // Benzersiz kod uret
-                    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                    do {
-                        $code = '';
-                        for ($i = 0; $i < 5; $i++) {
-                            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-                        }
-                    } while (\App\Models\Room::where('code', $code)->exists());
-                    $bracket[$ri][$mi]['room'] = $code;
-                }
-                if ($bracket !== $tournament->bracket) {
-                    $tournament->bracket = $bracket;
-                    $tournament->save();
-                }
-                Cache::put(self::roomTargetKey($bracket[$ri][$mi]['room']), $target, now()->addDays(2));
-                // Koltuk yetkisi: yalniz bu macin iki oyuncusu (oda kodu tabloda herkese acik; A-05).
-                Cache::put(self::roomPlayersKey($bracket[$ri][$mi]['room']), array_values(array_filter($ids)), now()->addDays(2));
-                if ($minutes) {
-                    Cache::put(self::roomClockKey($bracket[$ri][$mi]['room']), $minutes, now()->addDays(2));
-                }
-                return response()->json(['code' => $bracket[$ri][$mi]['room'], 'target' => $target]);
+        // A-20: bracket JSON'u KİLİTLİ satırdan oku-değiştir-yaz. Eskiden aynı anda iki maç odası
+        // istendiğinde son yazan diğerinin oda kodunu siliyor (oyuncular farklı odalara düşüyordu);
+        // bayat kopya tick'in yazdığı kazananı da ezebiliyordu (Swiss'te sonuç iki kez işleniyordu).
+        return DB::transaction(function () use ($data, $request, $tournament) {
+            $tournament = Tournament::whereKey($tournament->id)->lockForUpdate()->firstOrFail();
+            if ($tournament->status !== 'running') {
+                return $this->fail('Turnuva aktif değil.', 422);
             }
-        }
-        return $this->fail('Maç bulunamadı.', 404);
+            $me = $request->user()->id;
+            $bracket = $tournament->bracket;
+            foreach ($bracket as $ri => $round) {
+                foreach ($round as $mi => $m) {
+                    if ($m['key'] !== $data['match']) {
+                        continue;
+                    }
+                    $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
+                    if (! in_array($me, $ids, true)) {
+                        return $this->fail('Bu maçta değilsin.', 403);
+                    }
+                    if (! empty($m['winner']) || ! empty($m['double_loss'])) {
+                        return $this->fail('Maç bitti.', 422); // A-21: çift-mağlubiyetle kapanan maç da bitmiştir
+                    }
+                    $isSwiss = \App\Support\Swiss\SwissRuntime::isSwiss($tournament);
+                    // FINAL GATE (yalnız eleme ağacı): önce 3.'lük maçı oynanır; final 3.'lük bitip 1 dk
+                    // geçince açılır. Swiss'te 3.'lük maçı YOK -> gate atlanır.
+                    $isFinalMatch = ! $isSwiss && $ri === count($bracket) - 1 && empty($m['third_place']);
+                    if ($isFinalMatch) {
+                        $tp = $bracket[$ri][1] ?? null;
+                        if ($tp && ! empty($tp['third_place'])) {
+                            if (empty($tp['winner'])) {
+                                return $this->fail('Önce üçüncülük maçı oynanmalı.', 422);
+                            }
+                            $opensAt = $m['opens_at'] ?? null;
+                            if ($opensAt && now()->lt(\Illuminate\Support\Carbon::parse($opensAt))) {
+                                $sec = max(1, now()->diffInSeconds(\Illuminate\Support\Carbon::parse($opensAt)));
+                                return $this->fail("Final, üçüncülük maçından sonra başlar ({$sec} sn).", 422);
+                            }
+                        }
+                    }
+                    // Bu maçın uzunluğu/süresi. Swiss'te hücreye tur üretiminde yazılmıştır (normal/final-iki);
+                    // eleme ağacında roundTarget/roundMinutes ile hesaplanır (3.'lük -> yarı final uzunluğu).
+                    if ($isSwiss) {
+                        $target = (int) ($m['target'] ?? ($tournament->match_length ?: 1));
+                        $minutes = isset($m['minutes']) ? ($m['minutes'] !== null ? (int) $m['minutes'] : null) : null;
+                    } else {
+                        $lenRi = ! empty($m['third_place']) ? max(0, count($bracket) - 2) : $ri;
+                        $target = $tournament->roundTarget($lenRi, count($bracket));
+                        $minutes = $tournament->roundMinutes($lenRi, count($bracket));
+                    }
+                    $bracket[$ri][$mi]['target'] = $target;
+                    $bracket[$ri][$mi]['minutes'] = $minutes;
+                    // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
+                    // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
+                    if (! empty($m['room'])) {
+                        $old = \App\Models\Room::where('code', $m['room'])->first();
+                        if ($old && $old->status === 'finished' && ! $old->hasVerifiedServerResult()) {
+                            $m['room'] = null;
+                        }
+                    }
+                    if (empty($m['room'])) {
+                        // Benzersiz kod uret
+                        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                        do {
+                            $code = '';
+                            for ($i = 0; $i < 5; $i++) {
+                                $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+                            }
+                        } while (\App\Models\Room::where('code', $code)->exists());
+                        $bracket[$ri][$mi]['room'] = $code;
+                    }
+                    if ($bracket !== $tournament->bracket) {
+                        $tournament->bracket = $bracket;
+                        $tournament->save();
+                    }
+                    Cache::put(self::roomTargetKey($bracket[$ri][$mi]['room']), $target, now()->addDays(2));
+                    // Koltuk yetkisi: yalniz bu macin iki oyuncusu (oda kodu tabloda herkese acik; A-05).
+                    Cache::put(self::roomPlayersKey($bracket[$ri][$mi]['room']), array_values(array_filter($ids)), now()->addDays(2));
+                    if ($minutes) {
+                        Cache::put(self::roomClockKey($bracket[$ri][$mi]['room']), $minutes, now()->addDays(2));
+                    }
+                    return response()->json(['code' => $bracket[$ri][$mi]['room'], 'target' => $target]);
+                }
+            }
+            return $this->fail('Maç bulunamadı.', 404);
+        });
     }
 
     // Turnuvayi bitir (yalnizca yonetici)
@@ -1219,7 +1225,7 @@ class TournamentController extends Controller
             $found = null;
             foreach ($bracket as $ri => $round) {
                 foreach ($round as $mi => $m) {
-                    if (! empty($m['winner']) || empty($m['p1']['id']) || empty($m['p2']['id']) || empty($m['room'])) {
+                    if (! empty($m['winner']) || ! empty($m['double_loss']) || empty($m['p1']['id']) || empty($m['p2']['id']) || empty($m['room'])) {
                         continue;
                     }
                     $winnerId = $this->winnerIdFromRoom($m); // yalniz otoriter+dogrulanmis sonuc -> id, yoksa null
