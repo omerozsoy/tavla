@@ -35,3 +35,21 @@ assert "[Site] A" in seen[0][1] and "[Site] B" in seen[-1][1]
 for p in paths:
     assert not os.path.exists(p), "geçici dosya silinmeli: " + p
 print("OK", paths)
+
+# A-31: GET teşhis uçları ve POST yalnız doğru secret ile; karşılaştırma sabit-zamanlı.
+os.environ["GNUBG_SECRET"] = "dogru-sir"
+ns2 = {"__name__": "gnubg_service_test2"}
+exec(compile(src, "gnubg_service.py", "exec"), ns2)
+H = ns2["Handler"]
+sent = []
+h = H.__new__(H)
+h._send = lambda code, body: sent.append(code)
+for hdrs, path, want in (({}, "/selftest", 401), ({"x-gnubg-secret": "yanlis"}, "/maptest", 401), ({}, "/health", 200)):
+    sent.clear()
+    h.headers = hdrs
+    h.path = path
+    h.do_GET()
+    assert sent and sent[0] == want, (path, hdrs, sent)
+h.headers = {"x-gnubg-secret": "dogru-sir"}
+assert h._authorized()
+print("OK auth")

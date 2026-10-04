@@ -29,6 +29,7 @@ except ImportError:  # düz python ile çalıştırılırsa anlamlı hata
 
 PORT = int(os.environ.get("GNUBG_PORT", "8092"))
 SECRET = os.environ.get("GNUBG_SECRET", "")
+_MAX_BODY = 4 * 1024 * 1024  # .mat 500KB sınırı + JSON payı
 
 # gnubg'nin geçerli konumu GLOBAL durumdur (setgnubgid onu değiştirir) -> gnubg'ye dokunan HER
 # istek bu kilidi TUTARAK sırayla işlenmeli (yarış yok). Sunucu artık thread'li (ThreadingMixIn):
@@ -1640,6 +1641,12 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _authorized(self):
+        # A-31: sabit-zamanlı karşılaştırma (zamanlama ile secret tahmini yok).
+        import hmac
+        got = self.headers.get("x-gnubg-secret") or ""
+        return bool(SECRET) and hmac.compare_digest(got.encode(), SECRET.encode())
+
     def do_GET(self):
         # /health gnubg'ye DOKUNMAZ + kilit BEKLEMEZ -> uzun bir analiz sürerken bile ANINDA cevap
         # (izleyicinin 5sn timeout'lu probe'u sahte "düştü" görmesin). Sürüm başta cache'lendi.
@@ -1648,6 +1655,9 @@ class Handler(BaseHTTPRequestHandler):
             # int okuması atomik -> teşhis için kilit-siz oku (health asla bloklanmasın).
             return self._send(200, {"ok": True, "service": "gnubg", "version": _VERSION,
                                     "inflight": _INFLIGHT, "peak_inflight": _PEAK_INFLIGHT})
+        # A-31: teşhis uçları gnubg kilidini tutar -> secret'siz çağrılamaz (/health hariç).
+        if not self._authorized():
+            return self._send(401, {"error": "unauthorized"})
         # gnubg'ye dokunan teşhis uçları -> global kilit (analiz istekleriyle SIRAYLA).
         if self.path == "/selftest":
             with _GnubgSession():
@@ -1661,10 +1671,12 @@ class Handler(BaseHTTPRequestHandler):
         # Secret yokken fail-open yapma: analiz motoru yalnız backend içinden çağrılmalı.
         if not SECRET:
             return self._send(503, {"error": "gnubg-misconfigured"})
-        if self.headers.get("x-gnubg-secret") != SECRET:
+        if not self._authorized():
             return self._send(401, {"error": "unauthorized"})
         try:
             n = int(self.headers.get("Content-Length", 0) or 0)
+            if n > _MAX_BODY:  # A-31: sınırsız rfile.read bellek tüketimi yok
+                return self._send(413, {"error": "body-too-large"})
             data = json.loads(self.rfile.read(n) or b"{}") if n else {}
         except Exception as e:
             return self._send(400, {"error": "bad-json", "detail": str(e)})

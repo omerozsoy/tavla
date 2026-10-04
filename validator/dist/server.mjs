@@ -1,5 +1,6 @@
 // validator/server.ts
 import cluster from "node:cluster";
+import { timingSafeEqual } from "node:crypto";
 import { availableParallelism } from "node:os";
 import { createServer } from "node:http";
 
@@ -452,6 +453,19 @@ function takeLoss(probs, chosen, x = CUBE_EFFICIENCY) {
   };
 }
 
+// validator/prInput.ts
+var MAX_PR_LOG = 1e3;
+function saneDice(d) {
+  return Array.isArray(d) && d.length === 2 && d.every((x) => Number.isInteger(x) && x >= 1 && x <= 6);
+}
+function sanePos(p) {
+  const pts = p?.points;
+  return Array.isArray(pts) && pts.length === 24 && pts.every((x) => Number.isInteger(x) && Math.abs(x) <= 15);
+}
+function saneSteps(s) {
+  return Array.isArray(s) && s.length <= 4;
+}
+
 // validator/analyzePr.ts
 var INPUT_NAME = "onnx::Gemm_0";
 var ort = null;
@@ -543,11 +557,11 @@ async function checkerRecord(pos, dice, playedSteps, matchLength, isMoney) {
 async function analyzePr(hc, log, matchLength = 1, isMoney = false) {
   await init();
   const decisions = [];
-  for (const e of log) {
-    if (e.player !== hc || !e.pos) continue;
+  for (const e of log.slice(0, MAX_PR_LOG)) {
+    if (e.player !== hc || !e.pos || !sanePos(e.pos)) continue;
     if (e.cube && typeof e.cube.chosen === "string") {
       decisions.push(await cubeRecord(e.pos, hc, e.cube.chosen, matchLength, isMoney));
-    } else if (e.dice && e.playedSteps) {
+    } else if (saneDice(e.dice) && saneSteps(e.playedSteps)) {
       decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney));
     }
   }
@@ -557,6 +571,12 @@ async function analyzePr(hc, log, matchLength = 1, isMoney = false) {
 
 // validator/server.ts
 var SECRET = process.env.VALIDATOR_SECRET || "";
+function secretMatches(got) {
+  if (typeof got !== "string" || !SECRET) return false;
+  const a = Buffer.from(got);
+  const b = Buffer.from(SECRET);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 var HOST = process.env.VALIDATOR_HOST || "127.0.0.1";
 var PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090);
 var UNDER_PASSENGER = !!(process.env.PASSENGER_BASE_URI || process.env.PASSENGER_APP_ENV || process.env.PHUSION_PASSENGER);
@@ -607,7 +627,7 @@ var server = createServer(async (req, res) => {
   if (!SECRET) {
     return send(res, 503, { error: "validator-misconfigured" });
   }
-  if (req.headers["x-validator-secret"] !== SECRET) {
+  if (!secretMatches(req.headers["x-validator-secret"])) {
     return send(res, 401, { error: "unauthorized" });
   }
   if (req.method === "POST" && req.url === "/restart") {

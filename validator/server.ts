@@ -11,6 +11,7 @@
 //   bundle: `node validator/dist/server.mjs`. Port: VALIDATOR_PORT (vars. 8090).
 
 import cluster from 'node:cluster'
+import { timingSafeEqual } from 'node:crypto'
 import { availableParallelism } from 'node:os'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { validateTurn } from '../src/engine/validateTurn.ts'
@@ -18,6 +19,14 @@ import { generateMoves } from '../src/engine/moves.ts'
 import { analyzePr, type PrLogEntry } from './analyzePr.ts'
 
 const SECRET = process.env.VALIDATOR_SECRET || ''
+
+// A-31: sabit-zamanlı sır karşılaştırması (alt-alan adından erişilebilir olabilir -> zamanlama sızıntısı yok).
+function secretMatches(got: string | string[] | undefined): boolean {
+  if (typeof got !== 'string' || !SECRET) return false
+  const a = Buffer.from(got)
+  const b = Buffer.from(SECRET)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 const HOST = process.env.VALIDATOR_HOST || '127.0.0.1'
 // Plesk/Passenger PORT env'i enjekte eder; SSH/PM2'de VALIDATOR_PORT kullanılır; yoksa 8090.
 const PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090)
@@ -91,7 +100,7 @@ const server = createServer(async (req, res) => {
   if (!SECRET) {
     return send(res, 503, { error: 'validator-misconfigured' })
   }
-  if (req.headers['x-validator-secret'] !== SECRET) {
+  if (!secretMatches(req.headers['x-validator-secret'])) {
     return send(res, 401, { error: 'unauthorized' })
   }
   // Yeniden başlat: süreç kendini kapatır; Plesk/Passenger (veya pm2/systemd) bir sonraki

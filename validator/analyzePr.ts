@@ -29,6 +29,7 @@ import {
 } from '../src/engine/encoding'
 import { checkerDecision, cubeDecision, summarize, type PrDecision, type PrSummary } from '../src/analysis/pr'
 import { offerLoss, takeLoss } from '../src/engine/cubeEquity'
+import { MAX_PR_LOG, saneDice, sanePos, saneSteps } from './prInput'
 
 const INPUT_NAME = 'onnx::Gemm_0'
 
@@ -181,12 +182,12 @@ export async function analyzePr(
 ): Promise<PrResult> {
   await init()
   const decisions: PrDecision[] = []
-  for (const e of log) {
-    if (e.player !== hc || !e.pos) continue
+  for (const e of log.slice(0, MAX_PR_LOG)) {
+    if (e.player !== hc || !e.pos || !sanePos(e.pos)) continue
     if (e.cube && typeof e.cube.chosen === 'string') {
       // KÜP kararı -> sunucu-otoriter cube PR (pozisyonu NN ile değerlendir + cubeEquity).
       decisions.push(await cubeRecord(e.pos, hc, e.cube.chosen, matchLength, isMoney))
-    } else if (e.dice && e.playedSteps) {
+    } else if (saneDice(e.dice) && saneSteps(e.playedSteps)) {
       decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney))
     }
   }

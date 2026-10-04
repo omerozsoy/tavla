@@ -115,6 +115,12 @@ class MoveValidatorService
                     return $res;
                 }
                 Log::warning('validator non-2xx', ['idx' => $i, 'path' => $path, 'status' => $res->status()]);
+                // A-31: istek HATALI (400/413/422…) -> her yedekte aynı sonuç; yükü çoğaltma ve
+                // sahte "validator erişilemez" alarmı üretme. (401/408/429 örneğe özgü olabilir -> dene.)
+                $st = $res->status();
+                if ($st >= 400 && $st < 500 && ! in_array($st, [401, 408, 429], true)) {
+                    return null;
+                }
             } catch (\Throwable $e) {
                 // Bu taban erişilemez -> sıradaki yedeği dene; hepsi tükenirse null.
                 Log::warning(
