@@ -663,6 +663,7 @@ const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar 
 const BOT_STEP_DELAY = 500 // her tas arasi (izlenebilir ama snappy; sunucu-bot tur devri hizlansin)
 const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn tur-devri gecikmesi cok uzundu)
 const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullanici "gele attigini goremedim" -> zar okunsun)
+const BOT_FINAL_DELAY = 1400 // botun MAÇI BİTİREN hamlesinden sonra: son pozisyon görünsün, sonra sonuç ekranı
 const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
 
 interface BotAnim {
@@ -1772,6 +1773,9 @@ export default function App() {
   // "sira botta ama benim (beyaz) sayim eriyor" desync'i olusur. Animasyon bitene kadar yerel saat
   // (aktif=siyah) gosterilir; bittiginde poll gercek sunucu saatini (reveal-grace'li) yazar.
   const botAnimRef = useRef(false)
+  // MAÇI BİTİREN bot hamlesi animasyonla oynanırken bekleyen otoriter son durum (bkz applyBotTurn).
+  // Animasyon bir şekilde iptal edilirse güvenlik zamanlayıcısı bunu yine de uygular (gameEnd kurulur).
+  const pendingBotFinalRef = useRef<{ code: string; version: number; state: GameState; match: ServerMatch | null } | null>(null)
   const oppLoggedRef = useRef('') // otoriter modda rakip hamlesi bir KEZ loglansin
   // Odaya (yeniden) GIRERKEN senkron sayaclarini sifirla — TEK YER.
   // KRITIK BUG (canli): appliedServerVersionRef yalniz ilk mount'ta -1'di ve oda girislerinde
@@ -3857,13 +3861,15 @@ export default function App() {
       // Tum taslar oynandi -> kisa bekle, sirayi gec. DANCE (adim yok): bot zarini + "Hamle Yok"
       // overlay'ini (online && !myTurn) daha uzun goster ki kullanici botun ne attigini GORSUN.
       const sf = botAnim.serverFinal
-      const endDelay = botAnim.steps.length === 0 ? BOT_DANCE_DELAY : BOT_END_DELAY
+      // Maçı bitiren hamlede son pozisyon sonuç ekranından ÖNCE okunabilsin diye biraz daha uzun bekle.
+      const endDelay = botAnim.steps.length === 0 ? BOT_DANCE_DELAY : sf?.match?.done ? BOT_FINAL_DELAY : BOT_END_DELAY
       const t = window.setTimeout(() => {
         if (sf) {
           // SUNUCU-OTORİTER BOT: sunucu hamleyi zaten uyguladı -> commitTurn YERİNE otoriter durumu
           // uygula (tekrar serverMove YOLLAMA). srvTurnStartRef = animasyon başı (rollState) korunur.
           appliedServerVersionRef.current = sf.version
           if (room?.code) appliedServerRoomRef.current = room.code
+          if (pendingBotFinalRef.current?.version === sf.version) pendingBotFinalRef.current = null
           applyServerBoard(sf.state, sf.match)
         } else {
           commitTurn(botAnim.steps)
@@ -3877,7 +3883,9 @@ export default function App() {
     const stepDelay = botAnim.index === 0 ? BOT_REVEAL_DELAY : BOT_STEP_DELAY
     const t = window.setTimeout(() => {
       setPlayed(botAnim.steps.slice(0, botAnim.index + 1))
-      setBotAnim({ steps: botAnim.steps, index: botAnim.index + 1 })
+      // serverFinal KORUNMALI: eskiden ilk taştan sonra düşüyordu -> animasyon sonunda otoriter durum
+      // (ve maç-sonu ekranı) uygulanmıyor, tahta poll'u bekliyordu.
+      setBotAnim({ ...botAnim, index: botAnim.index + 1 })
     }, stepDelay)
     return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -5081,7 +5089,11 @@ export default function App() {
     // (done=true) durumunu botAnim timer'ına bağlamak kırılgandır — araya giren bir setBotAnim(null)
     // (poll/başka effect) bekleyen serverFinal timeout'unu iptal eder, gameEnd HİÇ kurulmaz ve
     // kaybeden ölü tahtada kilitli kalır (settle de çalışmaz). Maç-sonunu DAİMA senkron uygula.
-    if (!animate || rollDice.length === 0 || (bt.match as ServerMatch)?.done) {
+    // MAÇ-SONU turu artık ANİMASYONLA oynanır (kullanıcı: "botun son hamlesini göremiyorum, direkt
+    // sonuç ekranı geliyor"). #HM9V4 kilitlenmesine karşı: son durum pendingBotFinalRef'e yazılır ve
+    // animasyondan BAĞIMSIZ bir güvenlik zamanlayıcısı onu her koşulda uygular (iptal edilse bile).
+    const matchDone = !!(bt.match as ServerMatch)?.done
+    if (!animate || rollDice.length === 0 || (matchDone && steps.length === 0)) {
       srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
       appliedServerVersionRef.current = bt.version
       if (room?.code) appliedServerRoomRef.current = room.code
@@ -5099,11 +5111,24 @@ export default function App() {
     playDice()
     setTurnStart(bt.rollState as GameState)
     setPlayed([])
-    setBotAnim({
-      steps,
-      index: 0,
-      serverFinal: { state: bt.state as GameState, match: (bt.match as ServerMatch) ?? null, version: bt.version },
-    })
+    const serverFinal = { state: bt.state as GameState, match: (bt.match as ServerMatch) ?? null, version: bt.version }
+    if (matchDone && room?.code) {
+      const code = room.code
+      pendingBotFinalRef.current = { code, ...serverFinal }
+      const budget = BOT_REVEAL_DELAY + steps.length * BOT_STEP_DELAY + BOT_FINAL_DELAY + 1500
+      window.setTimeout(() => flushPendingBotFinal(code, serverFinal.version), budget)
+    }
+    setBotAnim({ steps, index: 0, serverFinal })
+  }
+  // Bekleyen maç-sonu durumunu (henüz uygulanmadıysa) uygula. Oda değiştiyse (oyuncu çıktı/yeni maç)
+  // eski maçın sonu yeni tahtaya ASLA yazılmaz.
+  function flushPendingBotFinal(code: string, version: number) {
+    const p = pendingBotFinalRef.current
+    if (!p || p.code !== code || p.version !== version) return
+    pendingBotFinalRef.current = null
+    if (appliedServerRoomRef.current !== code) return
+    applyServerBoard(p.state, p.match)
+    setBotAnim(null)
   }
   function applyBotTurns(turns?: BotTurn[] | null): boolean {
     if (!turns || turns.length === 0) return false
@@ -5355,7 +5380,10 @@ export default function App() {
         // Sürüm ilerlediğinde bir kez uygula (idempotent; done bump'ı version'ı artırır). return YOK:
         // aşağıdaki saat-durdurma (srvDone) mantığı da çalışsın.
         const srvTerminal = !!(isAuthoritative && rv.server_state && (rv.status === 'finished' || rv.server_match?.done))
-        if (srvTerminal && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
+        // Botun maçı bitiren hamlesi ekranda oynanırken terminal durumu ERKEN uygulama (sonuç ekranı
+        // animasyonun önüne geçmesin); animasyon sonu ya da güvenlik zamanlayıcısı uygular.
+        const botFinalPending = pendingBotFinalRef.current?.code === room.code
+        if (srvTerminal && !botFinalPending && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
           try {
             applyServerBoard(rv.server_state as GameState, rv.server_match ?? null)
             appliedServerVersionRef.current = rv.server_version ?? 0
@@ -6898,6 +6926,8 @@ export default function App() {
       mode === 'online' &&
       !matchOver &&
       room?.status === 'finished' &&
+      !botAnim && // bot maçı bitiren hamleyi oynatıyor -> sonuç ekranı birazdan gelecek
+      !pendingBotFinalRef.current &&
       !rematch.code &&
       !rematch.mine &&
       !rematch.theirs &&
@@ -6906,7 +6936,7 @@ export default function App() {
       returnToOrigin()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, matchOver, room?.status, rematch.code, rematch.mine, rematch.theirs])
+  }, [mode, matchOver, room?.status, rematch.code, rematch.mine, rematch.theirs, botAnim])
 
   // Reload sonrasi TEK aktif odaya bir kez otomatik don (asagidaki activeRooms effect'i kullanir).
   const autoResumedRef = useRef(false)
