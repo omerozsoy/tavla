@@ -282,6 +282,7 @@ class AuthController extends Controller
         }
         if ($user->email !== $data['email']) {
             $user->email_verified_at = null;
+            \Illuminate\Support\Facades\Cache::forget('eotp:'.$user->id); // A-13: eski adrese giden kod geçersiz
         }
         // Telefon degisince eski dogrulama GECERSIZ: yoksa A'yi OTP ile dogrulayip B'ye gecen
         // kullanici (veya oturum ele geciren) B'yi hic OTP girmeden "dogrulanmis" gosterir.
@@ -2049,7 +2050,7 @@ class AuthController extends Controller
         // 6 haneli kod uret + cache'le (15 dk). Kullanici bu kodu formdan girip ANINDA aktive eder;
         // ayrica mevcut imzali dogrulama LINKI de gonderilir (iki yontem de calisir).
         $code = (string) random_int(100000, 999999);
-        \Illuminate\Support\Facades\Cache::put('eotp:'.$user->id, ['code' => $code, 'tries' => 0], now()->addMinutes(15));
+        \Illuminate\Support\Facades\Cache::put('eotp:'.$user->id, ['code' => $code, 'tries' => 0, 'email' => strtolower((string) $user->email)], now()->addMinutes(15));
         \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
         try {
             \Illuminate\Support\Facades\Mail::raw(
@@ -2082,7 +2083,11 @@ class AuthController extends Controller
         }
         $key = 'eotp:'.$user->id;
         $rec = \Illuminate\Support\Facades\Cache::get($key);
-        if (! $rec) {
+        // A-13: kod GÖNDERİLDİĞİ e-postaya bağlı. Kod alındıktan sonra e-posta değiştirildiyse eski
+        // kod yeni (sahipliği kanıtlanmamış) adresi doğrulayamaz. (Eski kayıtlar 'email' taşımaz -> geçersiz.)
+        if (! $rec || ($rec['email'] ?? null) !== strtolower((string) $user->email)) {
+            \Illuminate\Support\Facades\Cache::forget($key);
+
             return response()->json(['message' => 'expired'], 422);
         }
         if (($rec['tries'] ?? 0) >= 5) {
