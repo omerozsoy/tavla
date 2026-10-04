@@ -2,6 +2,37 @@
 
 Tarih: 2026-10-04 · Commit: `4604765` · Kod DEĞİŞTİRİLMEDİ (yalnız denetim).
 
+## 0. DÜZELTME DURUMU (2026-10-04)
+
+A-01…A-16'nın **tamamı düzeltildi**. Her düzeltmenin bir regresyon testi var ve her test düzeltme
+olmadan **kırmızı**, düzeltmeyle **yeşil** doğrulandı. Garanti entegrasyonu henüz canlı değil; A-01/A-07
+yine de düzeltildi (canlıya alınmadan önce banka test ortamında gerçek dönüşle ayrıca denenmeli).
+
+| Bulgu | Düzeltme | Commit | Test |
+|---|---|---|---|
+| A-01 P0 | Karar alanları (`mdstatus`, `procreturncode`, `response`) + sipariş no imzalı alanlarda olmak zorunda; mükerrer ad red; `oid`=`orderid` | `f35ca98` | `GarantiCallbackSecurityTest` |
+| A-02 P1 | In-flight `_acted` kalkanı en fazla 30 sn (`MatchClock::INFLIGHT_MAX`) | `22f41ac` | `MatchClockTest` (+2) |
+| A-03 P1 | `WalletService::spendable` = coins − rezerv − açık %-bahis görüntüsü; isteğe bağlı harcamalar (çark/slot/dükkân/ürün/sepet/turnuva) buna bakar | `90eea9f` | `PctStakeSpendLockTest` |
+| A-04 P1 | Davetsiz, turnuva dışı `/enter` odası `mode='friendly'` (24 saat aynı-rakip limiti) | `f284967` | `RoomEnterIntegrityTest` |
+| A-05 P1 | Turnuva odasında koltuk yalnız tablodaki iki oyuncuya (`roomPlayersKey`), `enter` + `join` | `f284967` | `RoomEnterIntegrityTest` |
+| A-06 P1 | `throttle:5,1` + `login-fails` kilidi + tek tip hata | `73fe808` | `PanelLoginSecurityTest` |
+| A-07 P2 | Yalnız banka imzalı red ödemeyi `failed` yapar; sipariş no kriptografik rastgele | `f35ca98` | `GarantiCallbackSecurityTest` |
+| A-08 P2 | Kod, kilitli tx'te; son 24 saatteki bekleyen ödemeler kullanım sayılır | `ad5e569` | `PromoCodeTest` (+3) |
+| A-09 P2 | İade = kaydedilen `fee_paid` (eski kayıtlarda güncel ücret) | `e1d4ba6` | `TournamentRefundTest` |
+| A-10 P2 | `uid` bir odaya aitse mode'dan bağımsız oda yetkisi | `48581e5` | `GameLogTest` (+2) |
+| A-11 P2 | Doğrulanmamış hesaba Google ile bağlanınca şifre sıfırlanır, tüm token'lar silinir | `86c30d8` | `GoogleLoginTakeoverTest` |
+| A-12 P2 | Terk/süre/AFK = pes ile aynı: konum değeri (1/2/3) × küp | `fdc9ee3` | `ForfeitGammonValueTest` |
+| A-13 P3 | Kod gönderildiği e-postaya bağlı; e-posta değişince kod silinir | `bb336e3` | `EmailCodeBindingTest` |
+| A-14 P3 | `leave()` kilitli tx; `tickClock` yazma gerekirse satırı kilitleyip taze veriden yeniden hesaplar | `532e407` | `RoomTickLockTest` |
+| A-15 P3 | `join()` koşullu UPDATE ile atomik koltuk; kaybeden 409 | `1695817` | `RoomJoinAtomicTest` |
+| A-16 P3 | Rövanş cevabı kilitli satıra yazılır (sürüm artışı kaybolmaz, karar taze veriden) | `15b91b6` | `RoomRematchRaceTest` |
+
+Davranış değişiklikleri (bilinçli): terk eden oyuncu artık mars/katmerli mars durumunda 2×/3× öder;
+davetsiz kod odaları dereceli değil arkadaş maçı sayılır; %-bahisli açık maçı olan oyuncu, kilitli
+tutarı çark/slot/dükkân/turnuva için kullanamaz.
+
+> §5'teki kalan denetim partileri hâlâ yapılmadı — denetim kapsamı değişmedi.
+
 > **Kapsam uyarısı — denetim TAMAMLANMADI.** İstenen "tüm depo, %100 dosya" denetimi bu partide
 > yapılmadı. Bu parti üç hedefli, salt-okur denetimden oluşur (aşağıda §4). Kalan alanlar §5'te
 > kontrol listesi olarak verilmiştir; tam kapsam için partiler halinde devam edilmelidir.
@@ -128,7 +159,7 @@ dondurma (P1), yüzde-bahis ödememe (P1) ve rating çiftliği (P1) gibi maç/ek
 - [ ] `database/migrations/*` — benzersiz kısıtlar / FK / indeksler (ör. match_results(room_code,user_id), room_commands, ledger)
 - [ ] `PresenceController`, `ClubController`, `MessageController` tamamı, `ContentController`, SEO uçları
 - [ ] `config/*`, `bootstrap/app.php`, `deploy.sh`, `deploy/*`, CSP/nginx
-- [ ] Statik analiz/testlerin bu parti için yeniden koşulması (son koşu: phpunit 788 OK/4 skip, vitest 371, tsc temiz, oxlint 0 hata)
+- [x] Düzeltmeler sonrası tam koşu: phpunit 821 OK/4 skip, vitest 371, tsc temiz, oxlint 0 hata
 
 Kapsam sayıları: bu parti dosya bazında tam envanter çıkarılmadan hedefli yapıldığı için
 "incelenen/toplam dosya" sayısı **verilemez** — denetim tamamlanmış sayılmamalıdır.
