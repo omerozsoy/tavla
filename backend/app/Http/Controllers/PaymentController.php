@@ -108,7 +108,7 @@ class PaymentController extends Controller
             'user_id'        => $request->user()->id,
             'kind'           => 'subscription',
             'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
-            'order_id'       => 'TV'.now()->format('ymdHis').mt_rand(100, 999),
+            'order_id'       => 'TV'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
             'plan'           => $data['plan'],
             'period'         => $data['period'],
             'amount'         => $amount,
@@ -165,7 +165,7 @@ class PaymentController extends Controller
             'user_id'        => $request->user()->id,
             'kind'           => 'coins',
             'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
-            'order_id'       => 'TC'.now()->format('ymdHis').mt_rand(100, 999),
+            'order_id'       => 'TC'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
             'amount'         => $chargeKurus,
             'coins'          => $totalCoins,
             'package_id'     => implode(',', $ids),
@@ -207,7 +207,7 @@ class PaymentController extends Controller
             'user_id'        => $request->user()->id,
             'kind'           => 'renew',
             'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
-            'order_id'       => 'TM'.now()->format('ymdHis').mt_rand(100, 999),
+            'order_id'       => 'TM'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
             'plan'           => 'star',
             'period'         => 'yearly',
             'amount'         => $amount,
@@ -487,7 +487,10 @@ class PaymentController extends Controller
                 if ($claimed) {
                     $payment->status = 'paid';
                 }
-            } elseif ($payment->status === 'pending') {
+            } elseif ($payment->status === 'pending' && ($res['hash_ok'] ?? false)) {
+                // Yalniz BANKA IMZALI (hash_ok) bir red ödemeyi 'failed' yapabilir. Eskiden imzasiz/sahte
+                // bir callback de bekleyen ödemeyi düşürüyordu; sonra gelen GERÇEK onay 'pending değil'
+                // diye reddedilip kart çekildiği halde coin/üyelik verilmiyordu (denetim A-07).
                 // A failed callback must not overwrite a concurrent successful callback.
                 // Re-read and lock the payment row before changing its terminal status.
                 DB::transaction(function () use ($payment, $amountOk, $res) {
@@ -681,7 +684,7 @@ class PaymentController extends Controller
             'user_id'           => $request->user()->id,
             'kind'              => 'cart',
             'payment_method'    => $method === 'bank_transfer' ? 'bank_transfer' : null,
-            'order_id'          => 'TK'.now()->format('ymdHis').mt_rand(100, 999),
+            'order_id'          => 'TK'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
             'amount'            => $chargeKurus,
             'coins'             => $packageCoins,
             'package_id'        => implode(',', $ids) ?: 'products',

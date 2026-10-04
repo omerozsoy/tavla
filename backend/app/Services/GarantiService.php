@@ -119,16 +119,43 @@ class GarantiService
         return ['action' => $this->url('3d'), 'fields' => $fields];
     }
 
+    /**
+     * Karar veren alanlar: banka imzasinin (hash) KAPSAMINDA olmak ZORUNDA. Aksi halde hash dogru
+     * olsa bile bu alanlar imzasiz olur ve degistirilebilir.
+     */
+    private const SIGNED_DECISION_FIELDS = ['mdstatus', 'procreturncode', 'response'];
+
     // Banka 3D donusunu dogrula (hashparams/hash). Basari + mesaj doner.
+    //
+    // GUVENLIK (denetim A-01): 'hashparams' istekten gelir (saldirgan kontrolunde) ve kendisi hash'e
+    // girmez. Eskiden yalniz listedeki alanlarin degerleri birlestirilip hash'leniyordu; karar alanlari
+    // (orderid/mdstatus/response/procreturncode) listede olmak zorunda degildi. Bankanin imzaladigi
+    // HERHANGI bir dizi baska bir alan adina konup (hashparams=x&x=<dizi>) gecerli hash elde edilip,
+    // imzasiz karar alanlariyla baska bir siparis "onaylandi" yapilabiliyordu (bedava coin/uyelik).
+    // Artik: karar alanlari + siparis no hash KAPSAMINDA olmak zorunda; listede tekrar eden ad yok;
+    // oid ve orderid ikisi de geldiyse ayni olmali. Kararlar yalniz imzali alanlardan okunur.
     public function verifyCallback(array $post): array
     {
-        // Garanti geri donuste hashparams + hash gonderir; alanlari birlestirip
-        // storeKey ile hashleyip 'hash' ile karsilastiririz.
-        $hashParams = $post['hashparams'] ?? '';
-        $received = $post['hash'] ?? '';
+        $hashParams = (string) ($post['hashparams'] ?? '');
+        $received = (string) ($post['hash'] ?? '');
+        $ids = array_values(array_filter(explode(':', $hashParams), fn ($x) => $x !== ''));
+        $signed = array_flip($ids);
+
+        // Siparis no: bankanin imzaladigi alan (oid veya orderid). Ikisi de geldiyse ESIT olmali.
+        $oid = isset($post['oid']) ? (string) $post['oid'] : null;
+        $orderid = isset($post['orderid']) ? (string) $post['orderid'] : null;
+        $orderConsistent = $oid === null || $orderid === null || $oid === $orderid;
+        $orderId = $orderid ?? $oid ?? '';
+        // Ikisi de geldiyse esit olmak zorunda (orderConsistent) -> hangisi imzaliysa yeter.
+        $orderSigned = ($orderid !== null && isset($signed['orderid'])) || ($oid !== null && isset($signed['oid']));
+        $decisionSigned = $orderSigned;
+        foreach (self::SIGNED_DECISION_FIELDS as $f) {
+            $decisionSigned = $decisionSigned && isset($signed[$f]);
+        }
+        $noDuplicates = count($ids) === count($signed);
+
         $calc = '';
-        if ($hashParams !== '') {
-            $ids = explode(':', $hashParams);
+        if ($ids !== [] && $decisionSigned && $noDuplicates && $orderConsistent) {
             $concat = '';
             foreach ($ids as $id) {
                 $concat .= $post[$id] ?? '';
@@ -136,7 +163,7 @@ class GarantiService
             $concat .= $this->cfg['store_key'];
             $calc = $this->hash($concat);
         }
-        $hashOk = $received !== '' && hash_equals(strtoupper($received), $calc);
+        $hashOk = $received !== '' && $calc !== '' && hash_equals($calc, strtoupper($received));
 
         $md = $post['mdstatus'] ?? '';
         $response = $post['response'] ?? '';        // 'Approved'
@@ -149,6 +176,6 @@ class GarantiService
 
         $msg = $post['errmsg'] ?? ($post['mderrormessage'] ?? ($ok ? 'Onaylandı' : 'Onaylanmadı'));
 
-        return ['ok' => $ok, 'hash_ok' => $hashOk, 'msg' => (string) $msg, 'order_id' => $post['orderid'] ?? ''];
+        return ['ok' => $ok, 'hash_ok' => $hashOk, 'msg' => (string) $msg, 'order_id' => $orderId];
     }
 }

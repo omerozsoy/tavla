@@ -262,7 +262,7 @@ class ProductController extends Controller
             'user_id'          => $request->user()->id,
             'kind'             => 'product',
             'payment_method'   => $bank ? 'bank_transfer' : null,
-            'order_id'         => 'TP'.now()->format('ymdHis').mt_rand(100, 999),
+            'order_id'         => 'TP'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
             'amount'           => $amount,
             'package_id'       => $product->slug.'x'.$qty,
             'product_order_id' => $order->id,
