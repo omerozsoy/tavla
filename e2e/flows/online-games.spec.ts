@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { call, friendRoom, matchmake, playToEnd, seeded, users, type PlayResult } from './helpers'
 
-// Her online oyun türünde ≥5 tam oyun/maç döngüsü (API). Sonuçlar test-results/flows/*.json.
-const OUT = 'test-results/flows'
+// Her online oyun türünde ≥5 tam oyun/maç döngüsü (API). Sonuçlar test-kanitlari/flows/*.json.
+const OUT = 'test-kanitlari/flows'
 mkdirSync(OUT, { recursive: true })
 const [W, B] = users
 

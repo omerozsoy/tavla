@@ -12,7 +12,7 @@ import { applyMove } from '../../src/engine/game'
 import { gameOutcome } from '../../src/engine/board'
 import type { GameState, Move, Player } from '../../src/engine/types'
 
-export const API = 'http://127.0.0.1:8000/api'
+export const API = process.env.FLOWS_API || 'http://127.0.0.1:8000/api'
 export type User = { id: number; token: string; nick: string }
 export const users: User[] = JSON.parse(readFileSync('backend/storage/app/e2e-users.json', 'utf8'))
 
