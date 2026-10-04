@@ -18,6 +18,8 @@ class MessageController extends Controller
     // Bir istek onaylanana kadar gonderen en fazla bu kadar mesaj atabilir (flood korumasi).
     private const MAX_PENDING_MSGS = 5;
 
+    private const DAILY_IMAGE_LIMIT = 60; // A-28
+
     // Iki kullanici arkadas mi (kabul edilmis, her iki yon)?
     private function areFriends(int $a, int $b): bool
     {
@@ -314,10 +316,16 @@ class MessageController extends Controller
         $data = $request->validate([
             'body' => ['nullable', 'string', 'max:4000'],
             // GÖRSEL: base64 data-URL (avatar deseni, daha büyük limit; istemci sıkıştırır).
-            'image' => ['nullable', 'string', 'max:3000000', 'starts_with:data:image/'],
+            // A-28: ~750 KB üst sınır (istemci 1280px JPEG'e sıkıştırır; eskiden 3 MB) + yalnız raster
+            // türler (SVG yok) + gönderen başına günlük görsel kotası -> DB/bant genişliği taşırma yok.
+            'image' => ['nullable', 'string', 'max:1000000', 'regex:#^data:image/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]++$#'],
         ]);
         $body = trim((string) ($data['body'] ?? ''));
         $image = $hasImageCol ? ($data['image'] ?? null) : null;
+        if ($image && Message::where('sender_id', $me->id)->whereNotNull('image')
+            ->where('created_at', '>=', now()->subDay())->count() >= self::DAILY_IMAGE_LIMIT) {
+            return $this->fail('Günlük görsel gönderme sınırına ulaştın.', 429);
+        }
         if ($body === '' && ! $image) {
             return $this->fail('Mesaj boş olamaz.', 422); // metin VEYA görsel gerekli
         }
