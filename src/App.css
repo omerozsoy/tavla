@@ -27198,6 +27198,51 @@ select:-webkit-autofill {
 .ej-loss {
   color: var(--danger-fg, #e0455e);
 }
+/* Hata detayı: zar ikonları + tıklanınca tahtada gösterilen hamle satırları */
+.ej-dice {
+  display: inline-flex;
+  gap: 6px;
+}
+.ej-die rect {
+  fill: var(--cream, #f7f1e6);
+  stroke: color-mix(in srgb, var(--text, #222) 35%, transparent);
+  stroke-width: 1.2;
+}
+.ej-die circle {
+  fill: var(--navy, #241a12);
+}
+.ej-drow-btn {
+  width: 100%;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  padding-inline: 8px;
+}
+.ej-drow-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent, #a83a2b) 8%, transparent);
+}
+.ej-drow-btn.active {
+  background: color-mix(in srgb, var(--accent, #a83a2b) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent, #a83a2b);
+}
+.ej-drow-btn:disabled {
+  cursor: default;
+}
+.ej-dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.ej-drow-btn .bl-move {
+  font-weight: var(--fw-semibold, 600);
+}
 .ej-alts {
   margin-bottom: var(--space-4, 16px);
 }
