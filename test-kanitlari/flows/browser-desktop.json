@@ -1,0 +1,57 @@
+{
+  "code": "958CP",
+  "checks": {
+    "reload": "OK: yenileme sonrası oyun aynı tahtayla devam etti",
+    "secondTab": "OK: ikinci sekme oyunu açtı; iki sekme senkron",
+    "offline": "OK: 5 sn çevrimdışı sonrası tahta sunucuya yetişti",
+    "background": "OK: gizli->görünür sonrası senkron (tarayıcı emülasyonu, gerçek cihaz değil)",
+    "result": "OK: iki tarafta maç sonu ekranı"
+  },
+  "errors": {
+    "a": [
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)"
+    ],
+    "b": [
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+      "console: Failed to load resource: the server responded with a status of 409 (Conflict)"
+    ]
+  }
+}
