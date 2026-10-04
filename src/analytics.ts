@@ -4,6 +4,7 @@
 // edince home dahil TUM rotalar kapsanir + tek yerden (Setting) yonetilir. Verdigimiz snippet'in
 // birebir esdegeri; ID Setting'ten gelir. Kapaliyken/ID bosken HICBIR Google script'i yuklenmez.
 import { getSiteTags } from './api'
+import { getConsent } from './consent'
 
 let injected = false
 
@@ -16,6 +17,9 @@ interface GtagWindow {
 // Sessiz fail: olcum etiketi uygulamayi ASLA bozmaz.
 export async function initGoogleTag(): Promise<void> {
   if (injected) return
+  // A-25: çerez onayı (analitik) yoksa Google etiketi YÜKLENMEZ (KVKK/GDPR; consent.ts sözleşmesi).
+  // Eskiden her açılışta onaysız yükleniyordu. Onay sonradan verilince CookieConsent yeniden çağırır.
+  if (!getConsent()?.analytics) return
   try {
     const { gtag } = await getSiteTags()
     if (!gtag?.enabled || !gtag.id) return
@@ -50,5 +54,15 @@ function injectGtag(rawId: string): void {
   document.head.appendChild(s)
   // 2) Baslangic + HER etiket icin config.
   w.gtag('js', new Date())
-  for (const id of ids) w.gtag('config', id)
+  for (const id of ids) w.gtag('config', id, { page_location: scrubbedLocation() })
+}
+
+// A-25: gtag varsayılan olarak TAM URL'yi (sorgu dizesi dahil) gönderir -> şifre sıfırlama bağlantısı
+// (/sifre-sifirla?token=…&email=…) Google'a sızıyordu. Yalnız köken + yol gönderilir.
+export function scrubbedLocation(): string {
+  try {
+    return window.location.origin + window.location.pathname
+  } catch {
+    return ''
+  }
 }

@@ -13,6 +13,7 @@ import {
   saveConsent,
   type ConsentConfig,
 } from '../consent'
+import { initGoogleTag } from '../analytics'
 import './cookieConsent.css'
 
 // Footer / diğer yerlerden tercih modalını açmak için olay adları (App'e state eklemeden).
@@ -67,6 +68,7 @@ export function CookieConsent() {
         const existing = getConsent()
         if (existing && !needsConsent(conf.consent_version)) {
           applyConsent(existing, conf) // önceden onaylı -> script'leri yükle
+          void initGoogleTag() // A-25: panel Google etiketi de yalnız analitik onayıyla
         } else {
           setShowBanner(true) // onay yok / sürüm eskimiş -> banner göster
         }
@@ -98,6 +100,7 @@ export function CookieConsent() {
   const acceptAll = useCallback(() => {
     const rec = saveConsent(ACCEPT_ALL, version)
     applyConsent(rec, cfgRef.current)
+    void initGoogleTag()
     setShowBanner(false)
     setPrefsOpen(false)
   }, [version])
@@ -152,6 +155,7 @@ export function CookieConsent() {
           onSave={(cats) => {
             const rec = saveConsent(cats, version)
             applyConsentOrReload(rec, cfgRef.current)
+            void initGoogleTag()
             setPrefsOpen(false)
             setShowBanner(false)
           }}

@@ -109,7 +109,8 @@ export function applyConsent(rec: ConsentRecord, cfg: ConsentConfig | null): voi
       }
     }
     w.gtag('js', new Date())
-    w.gtag('config', cfg.ga_id)
+    // A-25: sorgu dizesi (ör. şifre sıfırlama token'ı) Google'a gönderilmesin.
+    w.gtag('config', cfg.ga_id, { page_location: window.location.origin + window.location.pathname })
     injectScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(cfg.ga_id)}`, 'ga')
   }
 
@@ -145,7 +146,8 @@ export function applyConsent(rec: ConsentRecord, cfg: ConsentConfig | null): voi
 // (izin geri çekme) script'i tam temizlemek için sayfayı yeniler; aksi halde uygular.
 export function applyConsentOrReload(rec: ConsentRecord, cfg: ConsentConfig | null): void {
   const revoked =
-    (!rec.analytics && (injected.has('ga') || injected.has('gtm'))) ||
+    // gtag: panel Google etiketi (analytics.ts) yüklendiyse onay geri çekilince de temizlenmeli.
+    (!rec.analytics && (injected.has('ga') || injected.has('gtm') || typeof (window as unknown as { gtag?: unknown }).gtag === 'function')) ||
     (!rec.marketing && injected.has('meta'))
   if (revoked) {
     reloadWithCause('consent')
