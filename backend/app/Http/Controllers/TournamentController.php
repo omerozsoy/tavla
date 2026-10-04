@@ -228,7 +228,7 @@ class TournamentController extends Controller
                 $t->prize_coins = ($t->prize_coins ?? 0) + $fee;
                 $t->save();
             }
-            $added = $this->addPlayer($t, $me); // kilit altinda, idempotent
+            $added = $this->addPlayer($t, $me, $already ? 0 : (int) $fee); // kilit altinda, idempotent; ödenen ücret kaydedilir
             if ($added) {
                 \App\Models\UserStat::forUser($me->id)->increment('tournaments_played');
             }
@@ -1021,7 +1021,8 @@ class TournamentController extends Controller
         return array_values(array_unique($standings));
     }
 
-    private function addPlayer(Tournament $t, $user): bool
+    /** $feePaid: bu kayıt için GERÇEKTEN tahsil edilen giriş ücreti (iade bunu kullanır; A-09). */
+    private function addPlayer(Tournament $t, $user, int $feePaid = 0): bool
     {
         $players = $t->players ?? [];
         foreach ($players as $p) {
@@ -1035,6 +1036,7 @@ class TournamentController extends Controller
             'rating' => $user->rating ?? 1500,
             'avatar' => $user->avatar,
             'premium' => $user->plan_active !== 'free', // kayıt anındaki premium (snapshot)
+            'fee_paid' => max(0, $feePaid),
         ];
         $t->players = $players;
         $t->save();

@@ -34,7 +34,11 @@ class TournamentModeration
         if ($idx === null) {
             return;
         }
-        $fee = (int) ($t->entry_fee ?? 0);
+        // A-09: iade = oyuncunun GERÇEKTEN ödediği tutar (kayıtta fee_paid). Eskiden GÜNCEL entry_fee
+        // iade ediliyordu: ücret kayıt açıkken değişirse ödenmemiş coin iade edilebiliyor (0 ödeyip 1000
+        // almak) ya da ödenen kısmen kayboluyordu; ücretsiz eklenen oluşturucu da iade alabiliyordu.
+        // fee_paid alanı yoksa (bu düzeltmeden önceki kayıt) eski davranış: güncel ücret.
+        $fee = array_key_exists('fee_paid', $players[$idx]) ? (int) $players[$idx]['fee_paid'] : (int) ($t->entry_fee ?? 0);
         if ($fee > 0) {
             $u = User::lockForUpdate()->find($uid);
             if ($u) {
