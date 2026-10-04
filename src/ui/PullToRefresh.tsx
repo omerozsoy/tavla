@@ -25,8 +25,15 @@ export default function PullToRefresh() {
       return null
     }
 
+    // METİN SEÇİMİ: telefonda yazı seçip seçim tutamacını aşağı sürüklemek de bir "aşağı çekme"
+    // hareketidir. Eskiden bu hareket yenileme sayılıyordu -> seçim kayboluyor, sayfa yenileniyordu
+    // (kullanıcı şikâyeti: gizlilik politikasında yazı seçince "sayfa güncelleniyor"). Seçim varken
+    // (uzun basmayla seçim hareketin ORTASINDA da başlayabilir) yenileme devre dışı.
+    const selecting = () => (window.getSelection()?.toString() ?? '').length > 0
+
     const onStart = (e: TouchEvent) => {
       if (refreshing || e.touches.length !== 1) return
+      if (selecting()) return
       const target = e.target as HTMLElement
       // Oyun/sürükleme/giris alanlarinda devre disi
       if (
@@ -40,6 +47,11 @@ export default function PullToRefresh() {
     }
     const onMove = (e: TouchEvent) => {
       if (!st.current.active) return
+      if (selecting()) {
+        st.current.active = false // seçim tutamacı sürükleniyor -> yerel davranışa bırak
+        setPull(0)
+        return
+      }
       const dy = e.touches[0].clientY - st.current.y0
       if (dy <= 0) {
         setPull(0)
@@ -56,6 +68,10 @@ export default function PullToRefresh() {
     const onEnd = () => {
       if (!st.current.active) return
       st.current.active = false
+      if (selecting()) {
+        setPull(0)
+        return
+      }
       setPull((p) => {
         if (p >= THRESHOLD) {
           setRefreshing(true)
