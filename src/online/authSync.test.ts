@@ -42,6 +42,17 @@ describe('shouldApplyServerState', () => {
     expect(shouldApplyServerState(local, rv(9), 'white')).toBe(false) // benim turum, zar elimde
   })
 
+  it('KİLİT FIX: kendi turumda bayat zar/hamle varken sunucu sırayı RAKİBE geçirdiyse uygula', () => {
+    // Hamle başka sekmeden/cihazdan sunucuya ulaştı ya da /move yanıtı kayboldu: sunucuda tur bitti.
+    // ESKİ BUG: midMove -> poll hiç uygulamaz -> ekran eski tahtada kalıcı takılı.
+    const rolled: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 0, appliedServerVersion: 5 }
+    expect(shouldApplyServerState(rolled, rv(7, 'black'), 'white')).toBe(true)
+    const played: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 5 }
+    expect(shouldApplyServerState(played, rv(7, 'black'), 'white')).toBe(true)
+    // Sunucuda sıra hâlâ bendeyse kalkan aynen çalışır (canlı hamlem ezilmez).
+    expect(shouldApplyServerState(played, rv(7, 'white'), 'white')).toBe(false)
+  })
+
   it('DESYNC FIX: rakip turundayken zar görünse bile DAİMA senkronla (açılış başlayan-olmayan)', () => {
     // Açılışta başlayan-olmayan tarafın tahtasında da açılış zarı görünür (turn=rakip, diceCount>0).
     // ESKİ BUG: sıra-kontrolsüz midMove -> uygulamaz -> kalıcı desync. FIX: rakip turu -> uygula.

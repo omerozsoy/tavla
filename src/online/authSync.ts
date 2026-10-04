@@ -56,7 +56,13 @@ export function shouldApplyServerState(local: SyncLocal, rv: ServerSyncView, myC
   // Version kapısından SONRA olduğu için stale poll elenir; sınır durumu tam bir kez uygulanır.
   if (rv.server_match?.done || rv.server_match?.opened === false || rv.server_match?.cube?.pending) return true
   const myTurn = local.turn === myColor
-  const midMove = myTurn && (local.playedCount > 0 || local.diceCount > 0)
+  // Kalkan yalnız sunucuda da sıra HÂLÂ bendeyken geçerli. Sunucu sırayı rakibe geçirdiyse benim
+  // turum sunucuda zaten bitmiştir (hamle başka sekmeden/cihazdan geldi ya da /move yanıtı ağda
+  // kayboldu): yereldeki mid-move BAYATTIR. Uygulamazsak yerel durum hiç değişmediği için poll
+  // onu bir daha asla uygulamaz -> ekran eski tahtada KALICI takılır (E2E 5-oyun denetimi buldu).
+  const serverTurn = rv.server_state.turn
+  const serverStillMine = serverTurn === undefined || serverTurn === myColor
+  const midMove = myTurn && serverStillMine && (local.playedCount > 0 || local.diceCount > 0)
   return !midMove
 }
 
