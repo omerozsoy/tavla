@@ -191,9 +191,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::middleware(['throttle:30,1,analyze-position', \App\Http\Middleware\EnsurePremium::class])->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
     // Mat Analiz sayfasi: yuklenen .mat maci gnubg ile TAM analiz edilir (import mat + analyse match).
     // analyse match agir; yine de test/kullanim icin makul limit. PREMIUM-only.
-    Route::middleware(['throttle:30,1,analyze-mat', \App\Http\Middleware\EnsurePremium::class])->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
+    Route::middleware(['throttle:5,1,analyze-mat', \App\Http\Middleware\EnsurePremium::class])->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
     // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin analiz) -> agir ama makul limit. PREMIUM-only.
-    Route::middleware(['throttle:30,1,review-mat', \App\Http\Middleware\EnsurePremium::class])->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
+    Route::middleware(['throttle:5,1,review-mat', \App\Http\Middleware\EnsurePremium::class])->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // Haber yorumu birak (kayitli kullanici) -> ONAY BEKLER. Spam korumasi: kullanici basi 5/dk.

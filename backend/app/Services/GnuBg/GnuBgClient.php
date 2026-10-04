@@ -344,6 +344,15 @@ class GnuBgClient
                 }
                 Log::warning('gnubg heavy non-ok', ['path' => $path, 'idx' => $i, 'base' => $base, 'status' => $resp->status()]);
             } catch (\Throwable $e) {
+                // A-27: ZAMAN AŞIMI failover sebebi DEĞİL. gnubg bir hint'i iptal edemez -> instance hâlâ
+                // bu isteği işliyor; aynı yükü sıradakine göndermek her instance'ı (canlı PR havuzu dahil)
+                // N × timeout kilitliyordu (tek kullanıcıyla tüm ağır havuzu tıkama). Yalnız ERİŞİLEMEZ
+                // (bağlantı reddi/DNS) instance'ta sonrakine geçilir.
+                if (self::isTimeout($e)) {
+                    Log::warning('gnubg heavy zaman asimi (failover yok)', ['path' => $path, 'base' => $base]);
+
+                    return null;
+                }
                 Log::warning(
                     $i < $last ? 'gnubg heavy erisilemez, sonrakine geciliyor' : 'gnubg heavy erisilemez (tum instance dustu)',
                     ['path' => $path, 'base' => $base, 'msg' => $e->getMessage()],
@@ -352,6 +361,14 @@ class GnuBgClient
         }
 
         return null;
+    }
+
+    /** cURL 28 / "timed out": istek instance'a ULAŞTI, yanıt süresi doldu. */
+    public static function isTimeout(\Throwable $e): bool
+    {
+        $m = strtolower($e->getMessage());
+
+        return str_contains($m, 'curl error 28') || str_contains($m, 'timed out') || str_contains($m, 'timeout was reached');
     }
 
     private function url(string $path): string

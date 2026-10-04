@@ -116,11 +116,12 @@ class AnalysisController extends Controller
 
         $res = $this->gnubg->analyzeMatch($data['mat'], (int) ($data['plies'] ?? 2));
         if (! is_array($res) || empty($res['ok'])) {
+            \Illuminate\Support\Facades\Log::warning('gnubg mat analiz basarisiz', ['res' => is_array($res) ? array_intersect_key($res, array_flip(['error', 'import_err', 'exception'])) : null]);
             return response()->json([
                 'ok' => false, 'error' => 'analyze-failed',
                 'message' => $this->engineFailMessage($res),
-                'detail' => is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null,
-                'debug' => is_array($res) ? $res : null,
+                // A-27: iç gnubg istisna/import metni istemciye DÖNMEZ (yalnız hata kodu); ayrıntı logda.
+                'detail' => is_array($res) ? ($res['error'] ?? null) : null,
             ], 503);
         }
 
@@ -170,11 +171,12 @@ class AnalysisController extends Controller
 
         $res = $this->gnubg->reviewMatch($data['mat'], (int) ($data['plies'] ?? 2));
         if (! is_array($res) || empty($res['ok'])) {
+            \Illuminate\Support\Facades\Log::warning('gnubg mat analiz basarisiz', ['res' => is_array($res) ? array_intersect_key($res, array_flip(['error', 'import_err', 'exception'])) : null]);
             return response()->json([
                 'ok' => false, 'error' => 'review-failed',
                 'message' => $this->engineFailMessage($res),
-                'detail' => is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null,
-                'debug' => is_array($res) ? $res : null,
+                // A-27: iç gnubg istisna/import metni istemciye DÖNMEZ (yalnız hata kodu); ayrıntı logda.
+                'detail' => is_array($res) ? ($res['error'] ?? null) : null,
             ], 503);
         }
 
