@@ -231,4 +231,33 @@ class TournamentThirdPlaceTest extends TestCase
         $t->refresh();
         $this->assertEmpty($t->bracket[1][0]['winner'] ?? null, 'gate açılınca hemen hükmen verilmemeli');
     }
+
+    public function test_disqualified_player_waiting_for_opponent_loses_when_opponent_arrives(): void
+    {
+        // A-23: rakibi henüz belli olmayan oyuncu diskalifiye edilince eskiden hiçbir şey olmuyordu;
+        // oyuncu finale çıkıp ödül alabiliyordu.
+        [$a, $b, $cc, $d] = [$this->user('a'), $this->user('b'), $this->user('c'), $this->user('d')];
+        $admin = $this->user('adm');
+        $admin->forceFill(['is_admin' => true])->save();
+        $p = fn (User $u) => ['id' => $u->id, 'name' => strtoupper($u->nickname), 'rating' => 1500];
+        $t = Tournament::create([
+            'name' => 'T', 'size' => 4, 'status' => 'running', 'active' => true,
+            'players' => [$p($a), $p($b), $p($cc), $p($d)],
+            'bracket' => [
+                [
+                    ['key' => 'r0m0', 'p1' => $p($a), 'p2' => $p($b), 'winner' => null],
+                    ['key' => 'r0m1', 'p1' => $p($cc), 'p2' => $p($d), 'winner' => null],
+                ],
+                [['key' => 'r1m0', 'p1' => null, 'p2' => null, 'winner' => null]],
+            ],
+        ]);
+        $this->apply($t, 0, 0, $a->id); // A finalde, rakibi bekliyor
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/tournaments/{$t->id}/disqualify", ['user_id' => $a->id])->assertSuccessful();
+        $t->refresh();
+        $this->apply($t, 0, 1, $cc->id); // rakip (C) finale geldi
+        $t->refresh();
+        $this->assertSame($cc->id, (int) $t->bracket[1][0]['winner'], 'diskalifiye oyuncunun rakibi hükmen kazanmalı');
+        $this->assertSame($cc->id, (int) $t->champion_id);
+    }
 }

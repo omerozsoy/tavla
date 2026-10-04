@@ -427,6 +427,7 @@ class TournamentController extends Controller
             $nextIndex = intdiv($mi, 2);
             $slot = $mi % 2 === 0 ? 'p1' : 'p2';
             $bracket[$ri + 1][$nextIndex][$slot] = $winner;
+            $dqNext = $bracket[$ri + 1][$nextIndex];
             // YARI FINAL (üst tur = SON tur = final) -> kaybedeni 3.'lük maçına yerleştir. Bye maçında
             // gerçek kaybeden yok (null) -> yazılmaz; iki yarı final de bitince tek-oyunculu 3.'lük
             // walkover ile çözülür (final o durumda beklemeden açılır).
@@ -445,6 +446,14 @@ class TournamentController extends Controller
 
         $this->maybeFinalize($t);
         $t->save();
+
+        // A-23: diskalifiye edilmiş oyuncunun bekleyen maçına rakip geldi -> rakibe hükmen galibiyet.
+        if (isset($dqNext) && ! empty($dqNext['dq_pending']) && empty($dqNext['winner'])
+            && ! empty($dqNext['p1']['id']) && ! empty($dqNext['p2']['id'])) {
+            $dqId = (int) $dqNext['dq_pending'];
+            $oppId = (int) $dqNext['p1']['id'] === $dqId ? (int) $dqNext['p2']['id'] : (int) $dqNext['p1']['id'];
+            $this->applyWinnerToBracket($t, $ri + 1, intdiv($mi, 2), $oppId, ['walkover' => true]);
+        }
     }
 
     /** Yarı final kaybedenini SON turdaki 3.'lük maçına (index 1) koy; maç yoksa oluştur. */
@@ -1124,6 +1133,13 @@ class TournamentController extends Controller
                 $opp = $uid === $p1 ? $p2 : $p1;
                 if ($opp > 0) {
                     $this->applyWinnerToBracket($t, $ri, $mi, $opp, ['walkover' => true]);
+                } else {
+                    // A-23: rakip henüz belli değil -> eskiden HİÇBİR ŞEY yapılmıyordu (diskalifiye
+                    // "başarılı" ama oyuncu ilerleyip ödül alabiliyordu). Hücreyi işaretle; rakip
+                    // yerleşince applyWinnerToBracket ona hükmen galibiyet verir.
+                    $bracket[$ri][$mi]['dq_pending'] = $uid;
+                    $t->bracket = $bracket;
+                    $t->save();
                 }
                 return;
             }
