@@ -16,7 +16,27 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            // A-18: düz DeleteAction kök/diğer yöneticileri siliyor ve UserEraser'ı (kulüp devri)
+            // atlıyordu. Toplu silme ile AYNI sözleşme: yönetici asla silinmez, UserEraser kullanılır.
+            Actions\Action::make('deleteUser')
+                ->label('Sil')
+                ->icon('heroicon-m-trash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->visible(fn () => ! $this->record->is_admin)
+                ->action(function () {
+                    $user = $this->record;
+                    $deny = \App\Support\AdminGuard::denyReason(auth()->user(), $user);
+                    if ($user->is_admin || $deny !== null) {
+                        \Filament\Notifications\Notification::make()->danger()
+                            ->title($deny ?? 'Yönetici hesaplar silinemez.')->send();
+
+                        return;
+                    }
+                    \App\Support\Shield::audit(auth()->id(), 'filament_user_delete', 'target_user='.$user->id, 3);
+                    \App\Support\UserEraser::erase($user);
+                    $this->redirect(UserResource::getUrl('index'));
+                }),
         ];
     }
 
@@ -32,6 +52,9 @@ class EditUser extends EditRecord
         $coinsChanged = array_key_exists('coins', $data);
         return DB::transaction(function () use ($record, $data, $beforeCoins, $coinsChanged) {
             $locked = $record::query()->lockForUpdate()->findOrFail($record->getKey());
+            // A-18: kök (config) yönetici hesabının yetki/e-posta/şifre/yasak alanları yalnız kökçe.
+            \App\Support\AdminGuard::assertCanSave(auth()->user(), $locked, $data, 'data.');
+            $beforeAdmin = (bool) $locked->is_admin;
             if (array_key_exists('coins', $data)
                 && (int) $data['coins'] < (int) ($locked->coins_reserved ?? 0)) {
                 throw ValidationException::withMessages([
@@ -52,6 +75,10 @@ class EditUser extends EditRecord
                 $locked->stampPlanSource('admin', auth()->id());
             }
             $locked->save();
+            if ((bool) $locked->is_admin !== $beforeAdmin) {
+                \App\Support\Shield::audit(auth()->id(), 'filament_admin_flag',
+                    sprintf('target_user=%d is_admin=%d', $locked->id, (int) $locked->is_admin), 3);
+            }
 
             // Denetim/uyarı YALNIZ bakiye gerçekten değiştiyse yazılsın. Coins alanı formda
             // gelip de değer aynı kaldığında (no-op kaydet) tehlike-alarmı üretmeyelim.

@@ -29,6 +29,11 @@ class AccountClosure
         if ($user->isBanned()) {
             return; // zaten kapali -> cift kayit uretme
         }
+        // A-18: kök (config) yönetici yalnız kökçe kapatılabilir; kimse kendini kapatamaz.
+        $deny = AdminGuard::denyReason(User::find($actorId), $user);
+        if ($deny !== null) {
+            throw new \RuntimeException($deny);
+        }
         // 1) KOSULSUZ kapat + tum oturum/refresh token'lari (Sanctum) iptal et.
         $user->forceFill([
             'banned_at' => now(),

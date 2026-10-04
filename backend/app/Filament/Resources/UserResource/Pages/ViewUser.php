@@ -25,9 +25,7 @@ class ViewUser extends ViewRecord
                 ->modalHeading('Hesabı Kapat / Siteden Yasakla')
                 ->modalSubmitActionLabel('Hesabı Kapat')
                 ->form(UserResource::closeFormSchema())
-                ->action(fn (User $record, array $data) => AccountClosure::close(
-                    $record, (int) auth()->id(), $data['reason'], $data['note'] ?? null
-                )),
+                ->action(fn (User $record, array $data) => UserResource::closeAccountSafely($record, $data)),
             Actions\Action::make('reopenAccount')
                 ->label('Hesabı Yeniden Aç')
                 ->icon('heroicon-m-lock-open')

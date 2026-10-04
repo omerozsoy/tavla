@@ -73,7 +73,7 @@ class UserResource extends Resource
                     ->helperText('Seçince rating o kademenin alt eşiğine ayarlanır')
                     ->live()
                     ->afterStateUpdated(fn ($state, Forms\Set $set) => $state !== null ? $set('rating', max(100, (int) $state)) : null),
-                Forms\Components\TextInput::make('coins')->label('Coin')->numeric()->default(0),
+                Forms\Components\TextInput::make('coins')->label('Coin')->numeric()->integer()->minValue(0)->default(0),
                 Forms\Components\TextInput::make('wins')->label('Galibiyet')->numeric()->default(0),
                 Forms\Components\TextInput::make('losses')->label('Mağlubiyet')->numeric()->default(0),
                 Forms\Components\TextInput::make('games_played')->label('Oynanan')->numeric()->default(0),
@@ -144,6 +144,16 @@ class UserResource extends Resource
     }
 
     /** Hesap kapatma modalı: kullanıcı+durum özeti, ZORUNLU gerekçe, admin-özel not, oturum uyarısı. */
+    /** A-18: kök hesap / kendi hesabı kapatma reddi -> 500 yerine panel bildirimi. */
+    public static function closeAccountSafely(User $record, array $data): void
+    {
+        try {
+            \App\Support\AccountClosure::close($record, (int) auth()->id(), $data['reason'], $data['note'] ?? null);
+        } catch (\RuntimeException $e) {
+            \Filament\Notifications\Notification::make()->danger()->title($e->getMessage())->send();
+        }
+    }
+
     public static function closeFormSchema(): array
     {
         return [
@@ -268,9 +278,7 @@ class UserResource extends Resource
                     ->modalHeading('Hesabı Kapat / Siteden Yasakla')
                     ->modalSubmitActionLabel('Hesabı Kapat')
                     ->form(self::closeFormSchema())
-                    ->action(fn (User $record, array $data) => \App\Support\AccountClosure::close(
-                        $record, (int) auth()->id(), $data['reason'], $data['note'] ?? null
-                    )),
+                    ->action(fn (User $record, array $data) => self::closeAccountSafely($record, $data)),
                 Tables\Actions\Action::make('reopenAccount')
                     ->label('Hesabı Yeniden Aç')
                     ->icon('heroicon-m-lock-open')
