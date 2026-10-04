@@ -133,7 +133,7 @@ Hamle başka sekmeden/cihazdan geldiğinde ya da `/move` yanıtı kaybolduğunda
 - **Final açılış gecikmesi:** Üçüncülük maçı bitince final 1 dk sonra açılır (`opens_at`).
 - **Otomatik zar:** Mobil/masaüstü istemci, sırası gelince zarı düğmesiz kendiliğinden atabiliyor (UI zarları gösteriyor).
 - **Bahis komisyonu:** Kazanan stake×puan×0,95 alır; kaybeden stake×puan öder. `settle` tekrarında ikinci ödeme yok.
-- **Performans notu:** `POST /rating/report` maç sonu PR'ını istek içinde senkron hesaplıyor (kod yorumu "validator PR max ~20s"); testte bu istekler 20–35 sn sürdü. İşlevsel hata değil ama istemcinin bekleme süresini uzatıyor. İleride kuyruk işine taşınması önerilir (yapılmadı: mimari değişiklik).
+- **Puan raporu süresi (DÜZELTME — ilk sürümdeki iddia yanlıştı):** İlk raporda `POST /rating/report`'un 20–35 sn sürdüğü yazılmıştı. Ölçüm bunu doğrulamadı: bitmiş maç için rapor **0,04–0,06 sn**. O testteki gecikme, testin aynı IP'den yoğun istek sonrası hız sınırına (429) takılıp beklemesinden kaynaklanıyordu. Senkron validator PR dalı yalnız `VALIDATOR_PR_MODE != off` **ve** `GNUBG_PR_MODE != authoritative` iken + istemci `log` gönderdiğinde çalışır; önerilen canlı ayar (`GNUBG_PR_MODE=authoritative`) ile bu dal hiç çalışmaz, PR `AnalyzeMatchPrJob` ile arka planda hesaplanır. Canlı sunucunun gerçek `.env` değerleri bu ortamdan doğrulanamadı.
 - **Hız sınırı:** Oda komutları 240/dk. API testleri gerçek oyuncudan hızlı olduğu için 429 alıp bekledi (ürün davranışı doğru).
 
 ## 7. Değiştirilen dosyalar
@@ -197,5 +197,14 @@ Not: Testlerin bir kısmı ilk denemede **test tarafı** nedenlerle başarısız
 - **Keşfedilen oyun türleri:** YZ (seviye 1–12), rastgele eşleşme (Tek Oyun, Maç, bahisli), arkadaş odası, davet, turnuva (eleme; Swiss kod tabanında), Kız Tavlası (bilgisayara karşı), yerel (aynı cihaz), rövanş/izleme.
 - **Tamamlanan oyun döngüleri:** her çevrimiçi türde ≥5 maç — toplam **50 sunucu maçı** (eşleşme 10, bahisli 5, arkadaş 5, davet 5, YZ 12, turnuva 8, rövanş 2, .mat 1, tarayıcı 2) + **9 Kız Tavlası oyunu**; tümünde taş sayısı, iki istemci durumu ve puanlar bağımsız olarak doğrulandı, **anomali 0**.
 - **Bulunan ürün hatası:** 5 (Yüksek 1, Orta 1, Orta/Düşük 1, Düşük 2) — **hepsi düzeltildi** ve regresyon testleri eklendi. Ayrıca bu oturumun önceki işinde 1 Yüksek senkron hatası düzeltilmişti (yeniden doğrulandı).
-- **Kalan kritik sorun:** doğrulanmış kritik sorun **yok**. Açık riskler: gerçek cihaz/PWA ve WebSocket yolu test edilemedi; `rating/report` senkron PR hesabı 20–35 sn sürebiliyor (performans).
-- **Yayın:** Değişiklikler yalnız `claude/cloud-session-credits-9nd4yl` dalında; canlıya alınmadı.
+- **Kalan kritik sorun:** doğrulanmış kritik sorun **yok**. Açık riskler: gerçek cihaz/PWA ve WebSocket yolu test edilemedi.
+- **Yayın:** H-1…H-5 düzeltmeleri `main`'e gönderildi (`73aea44`); canlıya çıkması için Plesk Pull + deploy.sh gerekir.
+
+## 11. Ek düzeltme (rapor sonrası)
+
+### H-6 — Düşük: Mobilde oyun içi merkez düğmeleri (Zar At / Katla / Onayla) 40 px idi
+- **Gerçekleşen:** Pixel 7 emülasyonunda "Onayla" 104×40 px ölçüldü (önerilen dokunma hedefi ≥44 px); yatay telefonda 34 px.
+- **Kök neden:** `src/App.css` `@media (max-width: 900px) .center-overlay [data-slot='button'] { height: 40px }` (tahtadan yer çalmamak için bilinçli küçültme).
+- **Düzeltme:** Dikey mobilde 44 px. Yatay telefonda görünüş 34 px kaldı (yer çok kısıtlı), dokunma alanı görünmez `::after` ile 44 px'e genişletildi.
+- **Doğrulama:** Mobil tarayıcı testi yeniden koşuldu: "Onayla" **104×44 px**, yatay taşma 0, test ✅. Teste ≥44 px beklentisi eklendi. Yatay telefondaki genişletilmiş dokunma alanı yalnız CSS ile yapıldı; tarayıcıda ayrıca ölçülmedi.
+- **Puan raporu performansı** maddesi incelendi: ölçümle hata olmadığı görüldü (§6), kod değişikliği yapılmadı.

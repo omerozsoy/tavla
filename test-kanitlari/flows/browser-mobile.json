@@ -1,24 +1,23 @@
 {
-  "code": "BVMQH",
+  "code": "96C4N",
   "ui": [
-    "onay düğmesi 104x40",
+    "onay düğmesi 104x44",
     "otomatik zar (düğmesiz)",
-    "onay düğmesi 104x40",
+    "onay düğmesi 104x44",
     "otomatik zar (düğmesiz)",
-    "onay düğmesi 104x40",
+    "onay düğmesi 104x44",
     "otomatik zar (düğmesiz)",
-    "onay düğmesi 104x40"
+    "onay düğmesi 104x44"
   ],
   "resultCard": {
     "x": 20,
-    "y": 166.359375,
+    "y": 103.359375,
     "width": 372,
-    "height": 506.28125
+    "height": 632.28125
   },
   "overflow": 0,
   "errors": {
     "a": [
-      "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
       "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
       "console: Failed to load resource: the server responded with a status of 409 (Conflict)"
     ],

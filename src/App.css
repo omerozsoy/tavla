@@ -7493,11 +7493,12 @@ html[data-board='yilbasi'] .checker.black {
   width: 18px !important;
   height: 18px !important;
 }
-/* Mobil: oyun-ici merkez butonlari (Zar At / Katla / Onayla) kucult -> board'dan rol calmasin. */
+/* Mobil: oyun-ici merkez butonlari (Zar At / Katla / Onayla) kucult -> board'dan rol calmasin.
+   Yukseklik 44px: dokunma hedefi alt siniri (Apple HIG / WCAG 2.5.5); 40px'te Onayla iska oluyordu. */
 @media (max-width: 900px) {
   .center-overlay [data-slot='button'] {
-    height: 40px;
-    min-height: 40px;
+    height: 44px;
+    min-height: 44px;
     padding: 0 16px;
     font-size: 0.94rem;
   }
@@ -7509,10 +7510,17 @@ html[data-board='yilbasi'] .checker.black {
 /* Yatay telefon (kisa): iyice kompakt. */
 @media (max-height: 560px) and (orientation: landscape) {
   .center-overlay [data-slot='button'] {
+    position: relative;
     height: 34px;
     min-height: 34px;
     padding: 0 13px;
     font-size: 0.85rem;
+  }
+  /* Gorunus kompakt (34px) kalir; DOKUNMA alani gorunmez sekilde 44px'e genisletilir. */
+  .center-overlay [data-slot='button']::after {
+    content: '';
+    position: absolute;
+    inset: -5px -4px;
   }
 }
 /* Merkez HUD modali (#11): kompakt, premium game-HUD; dev popup DEGIL */

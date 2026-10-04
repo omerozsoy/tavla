@@ -182,6 +182,7 @@ test('mobil (Pixel 7): UI ile zar at, taş oyna, onayla; tahta taşmıyor; maç 
     if (await confirm.isVisible().catch(() => false)) {
       const cb = await confirm.boundingBox()
       ui.push(`onay düğmesi ${Math.round(cb!.width)}x${Math.round(cb!.height)}`)
+      expect(Math.round(cb!.height), 'Onayla dokunma hedefi ≥44px').toBeGreaterThanOrEqual(44)
       await confirm.tap()
     }
     await expect.poll(async () => (await getRoom(req, s.code, s.white)).server_version, { timeout: 20_000, message: 'UI hamlesi sunucuya ulaşmalı' }).toBeGreaterThan(v0)
