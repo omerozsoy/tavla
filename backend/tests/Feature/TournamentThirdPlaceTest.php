@@ -191,4 +191,44 @@ class TournamentThirdPlaceTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['code']);
     }
+
+    public function test_final_is_not_decided_while_third_place_is_being_played(): void
+    {
+        // A-19: 3.'lük oynanırken final henüz AÇIK DEĞİL -> finalin stall sayacı işlememeli; eskiden
+        // 3 dk sonra final rating ile karara bağlanıp yanlış şampiyon belirleniyordu.
+        [$a, $b, $cc, $d] = [$this->user('a'), $this->user('b'), $this->user('c'), $this->user('d')];
+        $p = fn (User $u, int $r) => ['id' => $u->id, 'name' => strtoupper($u->nickname), 'rating' => $r];
+        $t = Tournament::create([
+            'name' => 'T', 'size' => 4, 'status' => 'running', 'active' => true,
+            'players' => [$p($a, 1500), $p($b, 1500), $p($cc, 1900), $p($d, 1500)],
+            'bracket' => [
+                [
+                    ['key' => 'r0m0', 'p1' => $p($a, 1500), 'p2' => $p($b, 1500), 'winner' => null],
+                    ['key' => 'r0m1', 'p1' => $p($cc, 1900), 'p2' => $p($d, 1500), 'winner' => null],
+                ],
+                [['key' => 'r1m0', 'p1' => null, 'p2' => null, 'winner' => null]],
+            ],
+        ]);
+        $this->apply($t, 0, 0, $a->id);
+        $this->apply($t, 0, 1, $cc->id);
+        $t->refresh();
+        // Final hazır görünür ve süre çoktan dolmuş gibi damgalı; 3.'lük hâlâ oynanıyor.
+        $bk = $t->bracket;
+        $bk[1][0]['ready_at'] = now()->subMinutes(30)->toIso8601String();
+        $t->bracket = $bk;
+        $t->save();
+
+        $this->callPrivate($t, 'resolveStalledMatches');
+        $t->refresh();
+        $this->assertEmpty($t->bracket[1][0]['winner'] ?? null, 'final 3.\'lük bitmeden karara bağlanmamalı');
+        $this->assertNull($t->champion_id);
+
+        // 3.'lük bitti -> final 1 dk sonra açılır; açıldığı an oyunculara YENİ gelme süresi verilir.
+        $this->apply($t, 1, 1, $b->id);
+        $t->refresh();
+        $this->travel(2)->minutes();
+        $this->callPrivate($t, 'resolveStalledMatches');
+        $t->refresh();
+        $this->assertEmpty($t->bracket[1][0]['winner'] ?? null, 'gate açılınca hemen hükmen verilmemeli');
+    }
 }

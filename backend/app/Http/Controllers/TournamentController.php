@@ -558,6 +558,13 @@ class TournamentController extends Controller
                     if (! empty($m['opens_at']) && now()->lt(\Illuminate\Support\Carbon::parse($m['opens_at']))) {
                         continue;
                     }
+                    // A-19: 3.'lük maçı OYNANIRKEN final henüz açılmamıştır (opens_at 3.'lük bitince
+                    // yazılır; matchRoom final odasını vermez). Eskiden finalin saati yine de işliyor ve
+                    // 3 dk sonra final RATING ile karara bağlanıp yanlış şampiyona ödül veriliyordu.
+                    $tpCell = ($ri === count($bracket) - 1 && $mi === 0) ? ($bracket[$ri][1] ?? null) : null;
+                    if (is_array($tpCell) && ! empty($tpCell['third_place']) && empty($tpCell['winner'])) {
+                        continue;
+                    }
                     $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
                     if ($room && $room->hasVerifiedServerResult()) {
                         continue; // gerçek sonuç var -> reconcileVerifiedResults alır
@@ -577,6 +584,12 @@ class TournamentController extends Controller
                         continue; // iki taraf da odada -> oynanıyor; saat/presence/report halleder
                     }
                     $readyAt = $m['ready_at'] ?? null;
+                    // A-19: gate'ten (opens_at) ÖNCE damgalanmış hazır-saati geçersiz: oyuncuların
+                    // gelme süresi final açıldığı andan başlar (yoksa açılır açılmaz hükmen).
+                    if ($readyAt && ! empty($m['opens_at'])
+                        && \Illuminate\Support\Carbon::parse($readyAt)->lt(\Illuminate\Support\Carbon::parse($m['opens_at']))) {
+                        $readyAt = null;
+                    }
                     if (! $readyAt) {
                         // İlk kez HAZIR görüldü -> damgala (süre şimdi başlar). Bu turda çözme.
                         $bracket[$ri][$mi]['ready_at'] = now()->toIso8601String();
