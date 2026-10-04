@@ -489,6 +489,7 @@ import {
   setAutoRenew as apiSetAutoRenew,
   toProfile,
   getMenuConfig,
+  getShopDesigns,
   getFooterConfig,
   buyMembership,
   cartCoinOrder,
@@ -653,9 +654,14 @@ import {
   hexLum,
   boardRarityOf,
   boardPrice,
+  boardOnSale,
   FREE_BOARDS,
+  CUSTOM_THEMES,
 } from './boardThemes'
+import { applyCachedShopDesigns, storeShopDesigns } from './shopDesigns'
 import { NAUTICAL_FLAG_TOP_BY_DP, NAUTICAL_FLAG_BOTTOM_BY_DP } from './nauticalFlags'
+// Admin Tavla/Avatar/Pul Tasarımı ayarlarının son bilinen hali (özel tahta seçili oyuncu açılışta standarda düşmesin).
+applyCachedShopDesigns()
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
@@ -794,6 +800,8 @@ export default function App() {
       return 'light'
     }
   })
+  // Sunucudan tahta tasarımları gelince (özel tahta/grup/fiyat) tema + mağaza listesi yeniden hesaplansın.
+  const [boardDesignsRev, setBoardDesignsRev] = useState(0)
   const [boardTheme, setBoardTheme] = useState<string>(() => {
     try {
       const stored = localStorage.getItem('tavla.board')
@@ -1185,6 +1193,12 @@ export default function App() {
       if (!alive) return
       setMenuOverrides(Object.fromEntries(items.map((it) => [it.key, it])))
       setMenuGroupCfg(Object.fromEntries(groups.map((g) => [g.key, g])))
+    })
+    // Tavla/Avatar/Pul Tasarımı (admin): özel tahtalar + grup/fiyat/satış ayarları. Hata -> önbellek/yerleşik.
+    getShopDesigns().then((d) => {
+      if (!alive || !d) return
+      storeShopDesigns(d)
+      setBoardDesignsRev((n) => n + 1)
     })
     // Footer kolon yapilandirmasi (admin panel): sira/gorunurluk/baslik. Hata/bos -> sabit sira.
     getFooterConfig().then((cols) => {
@@ -2319,7 +2333,7 @@ export default function App() {
     } catch {
       /* yok */
     }
-  }, [theme, boardTheme])
+  }, [theme, boardTheme, boardDesignsRev])
 
   // Lobiye girildiginde aktif turnuvalari cek (bitmis olanlar haric)
   useEffect(() => {
@@ -7777,32 +7791,20 @@ export default function App() {
   // Tahta tema listesi: nadirlik bazli COIN fiyati + sahiplik (unlocks). Ucretsiz: standart/tavla/galaxy + kulup.
   const boardUnlocks = user?.unlocks ?? []
   const boardOwned = (id: string) => FREE_BOARDS.has(id) || boardUnlocks.includes('theme.' + id)
+  // Admin "Tavla Tasarımı": grup (rarity) override'ı + özel tahtalar; satıştan kaldırılan tahta
+  // yalnız sahibine görünür. boardDesignsRev: sunucu ayarı gelince liste yeniden kurulur.
+  void boardDesignsRev
   const boardThemeList = [
-    ...[...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...GALAXY_EXTRA_THEMES].map((tt) => ({
+    ...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...GALAXY_EXTRA_THEMES,
+    ...CLUB_THEMES, ...COUNTRY_THEMES, ...TAVLATV_THEMES, ...CUSTOM_THEMES,
+  ]
+    .map((tt) => ({
       ...tt,
       rarity: boardRarityOf(tt),
       price: boardPrice(tt),
       owned: boardOwned(tt.id),
-    })),
-    ...CLUB_THEMES.map((tt) => ({
-      ...tt,
-      rarity: 'club' as const,
-      price: boardPrice(tt),
-      owned: boardOwned(tt.id),
-    })),
-    ...COUNTRY_THEMES.map((tt) => ({
-      ...tt,
-      rarity: 'country' as const,
-      price: boardPrice(tt),
-      owned: boardOwned(tt.id),
-    })),
-    ...TAVLATV_THEMES.map((tt) => ({
-      ...tt,
-      rarity: 'tavlatv' as const,
-      price: boardPrice(tt),
-      owned: boardOwned(tt.id),
-    })),
-  ]
+    }))
+    .filter((tt) => tt.owned || boardOnSale(tt))
 
   // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik sayfasi
   // Sahip olunan tahtalar (kilitli olmayanlar) + cerceveler (unlocks) — Profil genel bakisi

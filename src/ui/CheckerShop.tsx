@@ -5,7 +5,7 @@ import Coins from './Coins'
 import { useToast } from './Toast'
 import { useEscape } from './useEscape'
 import CheckerSkin from './CheckerSkin'
-import { CHECKER_FINISHES, checkerPrice } from '../checkers'
+import { CHECKER_FINISHES, checkerOnSale, checkerPrice } from '../checkers'
 import './CheckerShop.css'
 
 /**
@@ -73,7 +73,7 @@ export default function CheckerShop({
               {selected == null ? 'Seçili ✓' : 'Seç'}
             </Button>
           </div>
-          {CHECKER_FINISHES.map((s) => {
+          {CHECKER_FINISHES.filter((s) => checkerOnSale(s.id) || owns(s.id)).map((s) => {
             const owned = owns(s.id)
             const active = selected === s.id
             return (

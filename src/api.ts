@@ -496,6 +496,16 @@ export async function getMenuConfig(): Promise<{ items: MenuOverride[]; groups: 
   }
 }
 
+// Admin "Tavla/Avatar/Pul Tasarımı": grup/fiyat/satış ayarları + özel tahtalar. Hata -> null (önbellek kalır).
+export async function getShopDesigns(): Promise<import('./shopDesigns').ShopDesigns | null> {
+  try {
+    const d = await req<import('./shopDesigns').ShopDesigns>('/board-designs')
+    return { designs: Array.isArray(d.designs) ? d.designs : [], items: Array.isArray(d.items) ? d.items : [] }
+  } catch {
+    return null
+  }
+}
+
 // Footer kolon override'i (admin "Footer Kolonları"): sira + gorunurluk + baslik (labels[lang]).
 export interface FooterColumnCfg {
   key: string

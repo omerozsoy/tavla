@@ -9,7 +9,7 @@
 // tarafı). Böylece tek seçim iki-renk eşleşmiş takım verir (gerçek ürün color+white çiftleri gibi).
 
 export type CheckerFamily = 'pearl' | 'marble' | 'crystal' | 'resin' | 'metallic'
-export type CheckerRarity = 'rare' | 'epic' | 'legendary'
+export type CheckerRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
 
 export interface CheckerSkin {
   id: string // 'pearl-purple' -> unlock id 'checker.pearl-purple'
@@ -23,9 +23,11 @@ export interface CheckerSkin {
 
 // rarity -> coin fiyatı (backend RARITY_PRICE ile aynı; frame'lerle ortak kademe)
 export const CHECKER_RARITY_PRICE: Record<CheckerRarity, number> = {
+  common: 90,
   rare: 180,
   epic: 360,
   legendary: 540,
+  mythic: 750,
 }
 
 // Aile başına açık (ivory) eş renk — rakip tarafı; aile finish'i aynı kalır.
@@ -110,6 +112,26 @@ export const CHECKER_FAMILIES: { key: CheckerFamily; label: string }[] = [
   { key: 'metallic', label: 'Metallic Pearl' },
 ]
 
+// Admin "Pul Tasarımı" ayarı: id -> sabit fiyat / satışta mı (grup skin.rarity'ye yazılır).
+const CHECKER_OVERRIDES = new Map<string, { price?: number; active: boolean }>()
+const CHECKER_BASE_RARITY = new Map(Object.values(CHECKER_BY_ID).map((s) => [s.id, s.rarity]))
+const CHECKER_RARITIES = Object.keys(CHECKER_RARITY_PRICE) as CheckerRarity[]
+
 export function checkerPrice(s: CheckerSkin): number {
-  return CHECKER_RARITY_PRICE[s.rarity]
+  return CHECKER_OVERRIDES.get(s.id)?.price ?? CHECKER_RARITY_PRICE[s.rarity]
+}
+export function checkerOnSale(id: string): boolean {
+  return CHECKER_OVERRIDES.get(id)?.active !== false
+}
+// Sunucu ayarlarını uygula (idempotent).
+export function applyCheckerOverrides(rows: { id: string; group?: string; price?: number | null; active?: boolean }[]): void {
+  CHECKER_OVERRIDES.clear()
+  for (const s of Object.values(CHECKER_BY_ID)) s.rarity = CHECKER_BASE_RARITY.get(s.id)!
+  for (const r of rows) {
+    const s = CHECKER_BY_ID[r.id]
+    if (!s) continue
+    CHECKER_OVERRIDES.set(r.id, { price: typeof r.price === 'number' && r.price > 0 ? r.price : undefined, active: r.active !== false })
+    const g = CHECKER_RARITIES.find((x) => x === r.group)
+    if (g) s.rarity = g
+  }
 }

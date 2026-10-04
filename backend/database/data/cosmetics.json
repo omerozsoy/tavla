@@ -1,0 +1,632 @@
+[
+ {
+  "kind": "frame",
+  "id": "pulse",
+  "name": "Nabız",
+  "group": "rare",
+  "sort": 0,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "heartScale",
+  "name": "Kalp Ölçek",
+  "group": "rare",
+  "sort": 1,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "float",
+  "name": "Süzülme",
+  "group": "rare",
+  "sort": 2,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "pulseFast",
+  "name": "Hızlı Nabız",
+  "group": "rare",
+  "sort": 3,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "levitate",
+  "name": "Havalanma",
+  "group": "rare",
+  "sort": 4,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "wobble",
+  "name": "Yalpa",
+  "group": "rare",
+  "sort": 5,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "expand",
+  "name": "Genişleme",
+  "group": "rare",
+  "sort": 6,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "seesaw",
+  "name": "Tahterevalli",
+  "group": "rare",
+  "sort": 7,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sweep",
+  "name": "Işık Turu",
+  "group": "rare",
+  "sort": 8,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "glint",
+  "name": "Işıltı",
+  "group": "rare",
+  "sort": 9,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "bright",
+  "name": "Parlaklık",
+  "group": "rare",
+  "sort": 10,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "shineOnce",
+  "name": "Parlama",
+  "group": "rare",
+  "sort": 11,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "ripple",
+  "name": "Dalga",
+  "group": "rare",
+  "sort": 12,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "invert",
+  "name": "Ters",
+  "group": "rare",
+  "sort": 13,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "flicker",
+  "name": "Titrek",
+  "group": "rare",
+  "sort": 14,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "ember",
+  "name": "Kor",
+  "group": "rare",
+  "sort": 15,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sheen",
+  "name": "Cila",
+  "group": "rare",
+  "sort": 16,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "blur",
+  "name": "Bulanıklık",
+  "group": "rare",
+  "sort": 17,
+  "meta": {
+   "accent": "#6e8db8"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "tilt",
+  "name": "Eğim",
+  "group": "epic",
+  "sort": 18,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "glowPulse",
+  "name": "Glow Nabız",
+  "group": "epic",
+  "sort": 19,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sweepFast",
+  "name": "Hızlı Tur",
+  "group": "epic",
+  "sort": 20,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "radar",
+  "name": "Radar",
+  "group": "epic",
+  "sort": 21,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "auraPulse",
+  "name": "Aura Nabız",
+  "group": "epic",
+  "sort": 22,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "hueCycle",
+  "name": "Renk Döngüsü",
+  "group": "epic",
+  "sort": 23,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "pulseHalo",
+  "name": "Hale Nabız",
+  "group": "epic",
+  "sort": 24,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sweepRev",
+  "name": "Ters Tur",
+  "group": "epic",
+  "sort": 25,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "orbit",
+  "name": "Yörünge",
+  "group": "epic",
+  "sort": 26,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "hueWobble",
+  "name": "Renk Sarsıntısı",
+  "group": "epic",
+  "sort": 27,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "ringPulse",
+  "name": "Halka Nabzı",
+  "group": "epic",
+  "sort": 28,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "bloom",
+  "name": "Çiçeklenme",
+  "group": "epic",
+  "sort": 29,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "conicRainbow",
+  "name": "Konik Gökkuşağı",
+  "group": "epic",
+  "sort": 30,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "duotone",
+  "name": "İki Ton",
+  "group": "epic",
+  "sort": 31,
+  "meta": {
+   "accent": "#a17fb5"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sway",
+  "name": "Sallanma",
+  "group": "legendary",
+  "sort": 32,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "gradSpin",
+  "name": "Dönen Gradient",
+  "group": "legendary",
+  "sort": 33,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "dualSweep",
+  "name": "Çift Tur",
+  "group": "legendary",
+  "sort": 34,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "gradPulse",
+  "name": "Gradient Nabız",
+  "group": "legendary",
+  "sort": 35,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "blob",
+  "name": "Damla",
+  "group": "legendary",
+  "sort": 36,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "rainbow",
+  "name": "Gökkuşağı",
+  "group": "legendary",
+  "sort": 37,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "rain",
+  "name": "Parıltı Yağmuru",
+  "group": "legendary",
+  "sort": 38,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sparkleBurst",
+  "name": "Parıltı Patlaması",
+  "group": "legendary",
+  "sort": 39,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "dualOrbit",
+  "name": "Çift Yörünge",
+  "group": "legendary",
+  "sort": 40,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "dualRipple",
+  "name": "Çift Dalga",
+  "group": "legendary",
+  "sort": 41,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "neonPulse",
+  "name": "Neon Nabız",
+  "group": "legendary",
+  "sort": 42,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "sonar",
+  "name": "Sonar",
+  "group": "legendary",
+  "sort": 43,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "twinkle",
+  "name": "Pırıltı",
+  "group": "legendary",
+  "sort": 44,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "comet",
+  "name": "Kuyruklu Yıldız",
+  "group": "legendary",
+  "sort": 45,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "aura",
+  "name": "Aura",
+  "group": "legendary",
+  "sort": 46,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "barrelRoll",
+  "name": "Fıçı Dönüşü",
+  "group": "legendary",
+  "sort": 47,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "dropGlow",
+  "name": "Işık Gölgesi",
+  "group": "legendary",
+  "sort": 48,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "pulseSweep",
+  "name": "Nabızlı Tur",
+  "group": "legendary",
+  "sort": 49,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "haloSpin",
+  "name": "Hale Dönüşü",
+  "group": "legendary",
+  "sort": 50,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "glowSpread",
+  "name": "Işık Yayılımı",
+  "group": "legendary",
+  "sort": 51,
+  "meta": {
+   "accent": "#c2a15f"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "vibrate",
+  "name": "Titreşim",
+  "group": "mythic",
+  "sort": 52,
+  "meta": {
+   "accent": "#c0616b"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "pop",
+  "name": "Pop",
+  "group": "mythic",
+  "sort": 53,
+  "meta": {
+   "accent": "#c0616b"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "tada",
+  "name": "Tada",
+  "group": "mythic",
+  "sort": 54,
+  "meta": {
+   "accent": "#c0616b"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "loading",
+  "name": "Yükleniyor",
+  "group": "mythic",
+  "sort": 55,
+  "meta": {
+   "accent": "#c0616b"
+  }
+ },
+ {
+  "kind": "frame",
+  "id": "rising",
+  "name": "Yükseliş",
+  "group": "mythic",
+  "sort": 56,
+  "meta": {
+   "accent": "#c0616b"
+  }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-pearl",
+  "name": "Pearl",
+  "group": "rare",
+  "sort": 0,
+  "meta": {
+   "dark": "#6d5bd0",
+   "light": "#efe7d6",
+   "family": "pearl"
+  }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-marble",
+  "name": "Marble",
+  "group": "epic",
+  "sort": 1,
+  "meta": {
+   "dark": "#37506b",
+   "light": "#efe9dd",
+   "family": "marble"
+  }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-crystal",
+  "name": "Crystal",
+  "group": "epic",
+  "sort": 2,
+  "meta": {
+   "dark": "#2b6fe0",
+   "light": "#eef1f4",
+   "family": "crystal"
+  }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-resin",
+  "name": "Premium Resin",
+  "group": "rare",
+  "sort": 3,
+  "meta": {
+   "dark": "#7a3b28",
+   "light": "#ece2d0",
+   "family": "resin"
+  }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-metallic",
+  "name": "Metallic Pearl",
+  "group": "legendary",
+  "sort": 4,
+  "meta": {
+   "dark": "#c9a34a",
+   "light": "#e7e2d6",
+   "family": "metallic"
+  }
+ }
+]

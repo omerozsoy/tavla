@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BoardDesign;
+use App\Models\CosmeticItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -112,33 +114,142 @@ class ShopController extends Controller
     /** Tüm checker skin id'leri (Şans Çarkı rastgele ödülü bu havuzdan da seçebilir). */
     public static function checkerIds(): array
     {
-        return array_keys(self::CHECKER_RARITY);
+        return array_keys(self::cosmeticPrices('checker', self::CHECKER_RARITY));
+    }
+
+    /**
+     * Avatar çerçevesi / pul tasarımı id -> fiyat. Varsayılan: sabit nadirlik fiyatı; admin
+     * "Avatar Tasarımı" / "Pul Tasarımı" (cosmetic_items) grubu/fiyatı değiştirir veya satıştan kaldırır.
+     */
+    private static function cosmeticPrices(string $kind, array $rarities): array
+    {
+        $c = [];
+        foreach ($rarities as $id => $rarity) {
+            $c[$id] = self::RARITY_PRICE[$rarity];
+        }
+        try {
+            $items = CosmeticItem::allCached();
+        } catch (\Throwable) {
+            $items = []; // tablo henüz yok (migrate öncesi)
+        }
+        foreach ($items as $it) {
+            if ($it->kind !== $kind || ! array_key_exists($it->item_id, $c)) {
+                continue;
+            }
+            if (! $it->active) {
+                unset($c[$it->item_id]);
+                continue;
+            }
+            $price = $it->price ?? (self::RARITY_PRICE[$it->group] ?? null);
+            if ($price !== null && $price > 0) {
+                $c[$it->item_id] = $price;
+            }
+        }
+
+        return $c;
+    }
+
+    /** Çerçeve/pul grubunun varsayılan fiyatı (admin placeholder'ı). */
+    public static function rarityPrice(?string $group): ?int
+    {
+        return self::RARITY_PRICE[$group ?? ''] ?? null;
     }
 
     /** Tüm avatar çerçeve motion id'leri (Şans Çarkı rastgele ödülü bu havuzdan seçer). */
     public static function frameMotionIds(): array
     {
-        return array_keys(self::FRAME_MOTIONS);
+        return array_keys(self::cosmeticPrices('frame', self::FRAME_MOTIONS));
     }
 
     /** Tüm satın alınabilir tahta tema id'leri (Şans Çarkı rastgele ödülü bu havuzdan seçer). */
     public static function boardThemeIds(): array
     {
-        return array_keys(self::BOARD_RARITY);
+        return array_keys(self::boardPrices());
+    }
+
+    /** Tahta grubunun varsayılan coin fiyatı (admin Tavla Tasarımı placeholder'ı). */
+    public static function groupPrice(?string $group): ?int
+    {
+        return self::BOARD_PRICE[$group ?? ''] ?? null;
+    }
+
+    /**
+     * Satılık tahta id -> coin fiyatı. Varsayılan: BOARD_RARITY grup fiyatı; admin "Tavla Tasarımı"
+     * (board_designs) satırları grubu/fiyatı değiştirir, satıştan kaldırır veya özel tahta ekler.
+     */
+    public static function boardPrices(): array
+    {
+        $c = [];
+        foreach (self::BOARD_RARITY as $id => $rarity) {
+            $c[$id] = self::BOARD_PRICE[$rarity];
+        }
+        try {
+            $designs = BoardDesign::allCached();
+        } catch (\Throwable) {
+            $designs = []; // tablo henüz yok (migrate öncesi) -> sabit katalog
+        }
+        foreach ($designs as $d) {
+            if ($d->isFree() || ! $d->active) {
+                unset($c[$d->slug]);
+                continue;
+            }
+            $price = $d->price ?? (self::BOARD_PRICE[$d->group] ?? null);
+            if ($price !== null && $price > 0) {
+                $c[$d->slug] = $price;
+            }
+        }
+
+        return $c;
+    }
+
+    /** Herkese açık: tahta grup/fiyat/satış ayarları + özel tahtaların renkleri (frontend birleştirir). */
+    public function designs()
+    {
+        try {
+            $designs = BoardDesign::allCached();
+        } catch (\Throwable) {
+            $designs = collect();
+        }
+        $out = [];
+        foreach ($designs as $d) {
+            $row = ['id' => $d->slug, 'group' => $d->group, 'price' => $d->price, 'active' => $d->active, 'custom' => $d->is_custom];
+            if ($d->is_custom) {
+                $row += [
+                    'name' => $d->name,
+                    'colors' => $d->colors,
+                    'surface' => $d->surface,
+                    'checker_style' => $d->checker_style,
+                ];
+            }
+            $out[] = $row;
+        }
+
+        // Avatar çerçevesi + pul tasarımı ayarları (frontend fiyat/grup/satış).
+        try {
+            $items = CosmeticItem::allCached();
+        } catch (\Throwable) {
+            $items = collect();
+        }
+        $cos = [];
+        foreach ($items as $it) {
+            $cos[] = ['kind' => $it->kind, 'id' => $it->item_id, 'group' => $it->group, 'price' => $it->price, 'active' => $it->active];
+        }
+
+        return response()->json(['designs' => $out, 'items' => $cos])->header('Cache-Control', 'public, max-age=60');
     }
 
     // Tam katalog: tahtalar (nadirlik fiyati) + 62 cerceve (anim basina tek; id: 'frame.<motion>').
     private function catalog(): array
     {
         $c = [];
-        foreach (self::BOARD_RARITY as $id => $rarity) {
-            $c["theme.$id"] = self::BOARD_PRICE[$rarity];
+        foreach (self::boardPrices() as $id => $price) {
+            $c["theme.$id"] = $price;
         }
-        foreach (self::FRAME_MOTIONS as $motion => $rarity) {
-            $c["frame.$motion"] = self::RARITY_PRICE[$rarity];
+        foreach (self::cosmeticPrices('frame', self::FRAME_MOTIONS) as $motion => $price) {
+            $c["frame.$motion"] = $price;
         }
-        foreach (self::CHECKER_RARITY as $id => $rarity) {
-            $c["checker.$id"] = self::RARITY_PRICE[$rarity];
+        foreach (self::cosmeticPrices('checker', self::CHECKER_RARITY) as $id => $price) {
+            $c["checker.$id"] = $price;
         }
 
         return $c;

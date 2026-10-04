@@ -1,0 +1,1697 @@
+[
+ {
+  "id": "standart",
+  "name": "Standart",
+  "group": "common",
+  "free": true,
+  "sort": 0,
+  "colors": {
+   "panel": "#d8c6ac",
+   "frame": "#3a2a1c",
+   "a": "#a83a2b",
+   "b": "#f2ead9",
+   "checker": "#241a12",
+   "light": "#f7f1e6"
+  }
+ },
+ {
+  "id": "tavla",
+  "name": "Latte",
+  "group": "common",
+  "free": false,
+  "sort": 1,
+  "colors": {
+   "panel": "#e6e9ef",
+   "frame": null,
+   "a": "#dd7878",
+   "b": "#ccd0da",
+   "checker": "#4c4f69",
+   "light": null
+  }
+ },
+ {
+  "id": "galaxy",
+  "name": "Galaxy",
+  "group": "common",
+  "free": false,
+  "sort": 2,
+  "colors": {
+   "panel": "#3568c8",
+   "frame": "#080d2d",
+   "a": "#72a0ea",
+   "b": "#244da7",
+   "checker": "#18286e",
+   "light": "#f2f3f7"
+  }
+ },
+ {
+  "id": "frostfall",
+  "name": "Frostfall",
+  "group": "rare",
+  "free": false,
+  "sort": 3,
+  "colors": {
+   "panel": "#12224a",
+   "frame": "#5b3a1e",
+   "a": "#2f7d5e",
+   "b": "#1f5f45",
+   "checker": "#d32f2f",
+   "light": "#dbeeff"
+  }
+ },
+ {
+  "id": "pumpkin",
+  "name": "Pumpkin Night",
+  "group": "common",
+  "free": false,
+  "sort": 4,
+  "colors": {
+   "panel": "#3a2352",
+   "frame": "#241436",
+   "a": "#e8822a",
+   "b": "#4a2f5e",
+   "checker": "#241533",
+   "light": "#f0e2c8"
+  }
+ },
+ {
+  "id": "marrakesh",
+  "name": "Marrakesh",
+  "group": "common",
+  "free": false,
+  "sort": 5,
+  "colors": {
+   "panel": "#efe4d0",
+   "frame": "#3a281a",
+   "a": "#c97b3c",
+   "b": "#6e4a2f",
+   "checker": "#1c140e",
+   "light": "#f6efe2"
+  }
+ },
+ {
+  "id": "bosphorus",
+  "name": "Bosphorus",
+  "group": "common",
+  "free": false,
+  "sort": 6,
+  "colors": {
+   "panel": "#7a5230",
+   "frame": "#3a2616",
+   "a": "#9a6a3e",
+   "b": "#5f3f24",
+   "checker": "#1a120a",
+   "light": "#efe6d6"
+  }
+ },
+ {
+  "id": "manhattan",
+  "name": "Manhattan",
+  "group": "common",
+  "free": false,
+  "sort": 7,
+  "colors": {
+   "panel": "#0f5c3a",
+   "frame": "#3a2a1a",
+   "a": "#8fae90",
+   "b": "#0c4a2e",
+   "checker": "#111111",
+   "light": "#f4f4f0"
+  }
+ },
+ {
+  "id": "worldmasters",
+  "name": "World Masters",
+  "group": "rare",
+  "free": false,
+  "sort": 8,
+  "colors": {
+   "panel": "#5b3f86",
+   "frame": "#120c1e",
+   "a": "#c2a15a",
+   "b": "#4a3270",
+   "checker": "#161016",
+   "light": "#f2f2f6"
+  }
+ },
+ {
+  "id": "retroclub",
+  "name": "Retro Club",
+  "group": "rare",
+  "free": false,
+  "sort": 9,
+  "colors": {
+   "panel": "#0b0b0b",
+   "frame": "#3a2a1e",
+   "a": "#e0821f",
+   "b": "#2f7d3f",
+   "checker": "#c0392b",
+   "light": "#e8ddc0"
+  }
+ },
+ {
+  "id": "redplanet",
+  "name": "Red Planet",
+  "group": "common",
+  "free": false,
+  "sort": 10,
+  "colors": {
+   "panel": "#b5482f",
+   "frame": "#141026",
+   "a": "#cf6a48",
+   "b": "#7c2a1c",
+   "checker": "#5a1a12",
+   "light": "#f0dcc8"
+  }
+ },
+ {
+  "id": "glacier",
+  "name": "Glacier",
+  "group": "common",
+  "free": false,
+  "sort": 11,
+  "colors": {
+   "panel": "#9fc0e4",
+   "frame": "#0e1830",
+   "a": "#bcd6f0",
+   "b": "#7ea6d8",
+   "checker": "#35597f",
+   "light": "#f4f9fd"
+  }
+ },
+ {
+  "id": "atlantis",
+  "name": "Atlantis",
+  "group": "common",
+  "free": false,
+  "sort": 12,
+  "colors": {
+   "panel": "#2f9c94",
+   "frame": "#0a2a28",
+   "a": "#46b1a7",
+   "b": "#1f7d76",
+   "checker": "#0d4a45",
+   "light": "#eafaf7"
+  }
+ },
+ {
+  "id": "amethyst",
+  "name": "Amethyst",
+  "group": "common",
+  "free": false,
+  "sort": 13,
+  "colors": {
+   "panel": "#9a5fb8",
+   "frame": "#160b24",
+   "a": "#b985d0",
+   "b": "#7a4596",
+   "checker": "#3f2360",
+   "light": "#f2e7f8"
+  }
+ },
+ {
+  "id": "radioactive",
+  "name": "Radioactive",
+  "group": "common",
+  "free": false,
+  "sort": 14,
+  "colors": {
+   "panel": "#a6b24a",
+   "frame": "#1e260c",
+   "a": "#c2cf64",
+   "b": "#8a963c",
+   "checker": "#3a4818",
+   "light": "#f2f6d8"
+  }
+ },
+ {
+  "id": "gaia",
+  "name": "Gaia",
+  "group": "common",
+  "free": false,
+  "sort": 15,
+  "colors": {
+   "panel": "#3f8f6a",
+   "frame": "#2a1f16",
+   "a": "#5aa583",
+   "b": "#2f7a58",
+   "checker": "#123527",
+   "light": "#eafaf1"
+  }
+ },
+ {
+  "id": "lunar",
+  "name": "Lunar",
+  "group": "common",
+  "free": false,
+  "sort": 16,
+  "colors": {
+   "panel": "#7e8aa0",
+   "frame": "#10131f",
+   "a": "#9aa4b8",
+   "b": "#6a7688",
+   "checker": "#2f3646",
+   "light": "#eef1f7"
+  }
+ },
+ {
+  "id": "monaco",
+  "name": "Monaco",
+  "group": "common",
+  "free": false,
+  "sort": 17,
+  "colors": {
+   "panel": "#1f6b40",
+   "frame": "#5a3b1e",
+   "a": "#c0392b",
+   "b": "#d9c9a3",
+   "checker": "#141414",
+   "light": "#f0ead6"
+  }
+ },
+ {
+  "id": "violetstorm",
+  "name": "Violet Storm",
+  "group": "common",
+  "free": false,
+  "sort": 18,
+  "colors": {
+   "panel": "#7a4fb0",
+   "frame": "#0d0a16",
+   "a": "#9265c6",
+   "b": "#5f3f96",
+   "checker": "#3a2560",
+   "light": "#efe7f6"
+  }
+ },
+ {
+  "id": "blueorbit",
+  "name": "Blue Orbit",
+  "group": "common",
+  "free": false,
+  "sort": 19,
+  "colors": {
+   "panel": "#3f66cc",
+   "frame": "#0a0e1c",
+   "a": "#6f93e6",
+   "b": "#2f52b8",
+   "checker": "#16227a",
+   "light": "#eef2fb"
+  }
+ },
+ {
+  "id": "crimsonash",
+  "name": "Crimson Ash",
+  "group": "rare",
+  "free": false,
+  "sort": 20,
+  "colors": {
+   "panel": "#4a4d55",
+   "frame": "#141622",
+   "a": "#5e626b",
+   "b": "#3a3d44",
+   "checker": "#8e2a26",
+   "light": "#d9cdbc"
+  }
+ },
+ {
+  "id": "ion",
+  "name": "Ion",
+  "group": "rare",
+  "free": false,
+  "sort": 21,
+  "colors": {
+   "panel": "#33363e",
+   "frame": "#14161e",
+   "a": "#40434c",
+   "b": "#26282f",
+   "checker": "#6b3fc0",
+   "light": "#e88a3a"
+  }
+ },
+ {
+  "id": "reddwarf",
+  "name": "Red Dwarf",
+  "group": "epic",
+  "free": false,
+  "sort": 22,
+  "colors": {
+   "panel": "#5f1c16",
+   "frame": "#1a0806",
+   "a": "#c0402a",
+   "b": "#8c2a1e",
+   "checker": "#280c08",
+   "light": "#e8ded0"
+  }
+ },
+ {
+  "id": "eclipse",
+  "name": "Eclipse",
+  "group": "epic",
+  "free": false,
+  "sort": 23,
+  "colors": {
+   "panel": "#8a3626",
+   "frame": "#1e0c08",
+   "a": "#a44a34",
+   "b": "#722a1e",
+   "checker": "#e6b64a",
+   "light": "#f2e6cc"
+  }
+ },
+ {
+  "id": "nord",
+  "name": "Nord",
+  "group": "common",
+  "free": false,
+  "sort": 24,
+  "colors": {
+   "panel": "#3b4252",
+   "frame": null,
+   "a": "#88c0d0",
+   "b": "#2e3440",
+   "checker": "#4c566a",
+   "light": null
+  }
+ },
+ {
+  "id": "dracula",
+  "name": "Dracula",
+  "group": "rare",
+  "free": false,
+  "sort": 25,
+  "colors": {
+   "panel": "#282a36",
+   "frame": null,
+   "a": "#bd93f9",
+   "b": "#44475a",
+   "checker": "#6272a4",
+   "light": null
+  }
+ },
+ {
+  "id": "gruvbox",
+  "name": "Gruvbox",
+  "group": "common",
+  "free": false,
+  "sort": 26,
+  "colors": {
+   "panel": "#3c3836",
+   "frame": null,
+   "a": "#d79921",
+   "b": "#282828",
+   "checker": "#504945",
+   "light": null
+  }
+ },
+ {
+  "id": "solarized",
+  "name": "Solarized",
+  "group": "common",
+  "free": false,
+  "sort": 27,
+  "colors": {
+   "panel": "#073642",
+   "frame": null,
+   "a": "#b58900",
+   "b": "#002b36",
+   "checker": "#586e75",
+   "light": null
+  }
+ },
+ {
+  "id": "tokyonight",
+  "name": "Tokyo Night",
+  "group": "rare",
+  "free": false,
+  "sort": 28,
+  "colors": {
+   "panel": "#24283b",
+   "frame": null,
+   "a": "#7aa2f7",
+   "b": "#1a1b26",
+   "checker": "#414868",
+   "light": null
+  }
+ },
+ {
+  "id": "rosepine",
+  "name": "Rosé Pine",
+  "group": "rare",
+  "free": false,
+  "sort": 29,
+  "colors": {
+   "panel": "#26233a",
+   "frame": null,
+   "a": "#ebbcba",
+   "b": "#1f1d2e",
+   "checker": "#6e6a86",
+   "light": null
+  }
+ },
+ {
+  "id": "mocha",
+  "name": "Mocha",
+  "group": "common",
+  "free": false,
+  "sort": 30,
+  "colors": {
+   "panel": "#313244",
+   "frame": null,
+   "a": "#f5c2e7",
+   "b": "#1e1e2e",
+   "checker": "#585b70",
+   "light": null
+  }
+ },
+ {
+  "id": "monokai",
+  "name": "Monokai",
+  "group": "common",
+  "free": false,
+  "sort": 31,
+  "colors": {
+   "panel": "#3e3d32",
+   "frame": null,
+   "a": "#a6e22e",
+   "b": "#272822",
+   "checker": "#75715e",
+   "light": null
+  }
+ },
+ {
+  "id": "everforest",
+  "name": "Everforest",
+  "group": "common",
+  "free": false,
+  "sort": 32,
+  "colors": {
+   "panel": "#374145",
+   "frame": null,
+   "a": "#a7c080",
+   "b": "#2b3339",
+   "checker": "#4f5b58",
+   "light": null
+  }
+ },
+ {
+  "id": "ayu",
+  "name": "Ayu",
+  "group": "common",
+  "free": false,
+  "sort": 33,
+  "colors": {
+   "panel": "#1f2430",
+   "frame": null,
+   "a": "#ffcc66",
+   "b": "#171b24",
+   "checker": "#444a55",
+   "light": null
+  }
+ },
+ {
+  "id": "onedark",
+  "name": "One Dark",
+  "group": "common",
+  "free": false,
+  "sort": 34,
+  "colors": {
+   "panel": "#3a3f4b",
+   "frame": null,
+   "a": "#61afef",
+   "b": "#282c34",
+   "checker": "#4b5263",
+   "light": null
+  }
+ },
+ {
+  "id": "nightowl",
+  "name": "Night Owl",
+  "group": "rare",
+  "free": false,
+  "sort": 35,
+  "colors": {
+   "panel": "#1d3b53",
+   "frame": null,
+   "a": "#82aaff",
+   "b": "#011627",
+   "checker": "#365069",
+   "light": null
+  }
+ },
+ {
+  "id": "synthwave",
+  "name": "Synthwave",
+  "group": "epic",
+  "free": false,
+  "sort": 36,
+  "colors": {
+   "panel": "#2b1a4a",
+   "frame": "#0f0820",
+   "a": "#ff5bd0",
+   "b": "#1a1030",
+   "checker": "#00d4e8",
+   "light": "#ff7be0"
+  }
+ },
+ {
+  "id": "horizon",
+  "name": "Horizon",
+  "group": "rare",
+  "free": false,
+  "sort": 37,
+  "colors": {
+   "panel": "#3a2a5e",
+   "frame": "#0f0820",
+   "a": "#7a4fd0",
+   "b": "#241a40",
+   "checker": "#e0553a",
+   "light": "#c0a8e8"
+  }
+ },
+ {
+  "id": "palenight",
+  "name": "Palenight",
+  "group": "common",
+  "free": false,
+  "sort": 38,
+  "colors": {
+   "panel": "#292d3e",
+   "frame": null,
+   "a": "#c792ea",
+   "b": "#1c1f2b",
+   "checker": "#4a4f66",
+   "light": null
+  }
+ },
+ {
+  "id": "oceanic",
+  "name": "Oceanic",
+  "group": "common",
+  "free": false,
+  "sort": 39,
+  "colors": {
+   "panel": "#263238",
+   "frame": null,
+   "a": "#6699cc",
+   "b": "#1b2b34",
+   "checker": "#405860",
+   "light": null
+  }
+ },
+ {
+  "id": "gruvlight",
+  "name": "Gruvbox Light",
+  "group": "common",
+  "free": false,
+  "sort": 40,
+  "colors": {
+   "panel": "#ebdbb2",
+   "frame": null,
+   "a": "#d79921",
+   "b": "#bdae93",
+   "checker": "#504945",
+   "light": null
+  }
+ },
+ {
+  "id": "sollight",
+  "name": "Solarized Light",
+  "group": "common",
+  "free": false,
+  "sort": 41,
+  "colors": {
+   "panel": "#eee8d5",
+   "frame": null,
+   "a": "#268bd2",
+   "b": "#93a1a1",
+   "checker": "#586e75",
+   "light": null
+  }
+ },
+ {
+  "id": "dawn",
+  "name": "Dawn",
+  "group": "common",
+  "free": false,
+  "sort": 42,
+  "colors": {
+   "panel": "#faf4ed",
+   "frame": null,
+   "a": "#d7827e",
+   "b": "#dfdad9",
+   "checker": "#575279",
+   "light": null
+  }
+ },
+ {
+  "id": "ocean",
+  "name": "Okyanus",
+  "group": "epic",
+  "free": false,
+  "sort": 43,
+  "colors": {
+   "panel": "#1f6f8b",
+   "frame": null,
+   "a": "#3fa9c9",
+   "b": "#144f63",
+   "checker": "#0e5a70",
+   "light": null
+  }
+ },
+ {
+  "id": "gold",
+  "name": "Altın",
+  "group": "legendary",
+  "free": false,
+  "sort": 44,
+  "colors": {
+   "panel": "#b8912f",
+   "frame": null,
+   "a": "#e8c14a",
+   "b": "#8a6a1a",
+   "checker": "#7a5f14",
+   "light": null
+  }
+ },
+ {
+  "id": "sunset",
+  "name": "Sunset",
+  "group": "legendary",
+  "free": false,
+  "sort": 45,
+  "colors": {
+   "panel": "#c25a3a",
+   "frame": "#3a1810",
+   "a": "#f0894f",
+   "b": "#8f3a22",
+   "checker": "#a3401f",
+   "light": "#ffe6c8"
+  }
+ },
+ {
+  "id": "neon",
+  "name": "Neon",
+  "group": "mythic",
+  "free": false,
+  "sort": 46,
+  "colors": {
+   "panel": "#2a2a4a",
+   "frame": null,
+   "a": "#18e0c0",
+   "b": "#7a1fb0",
+   "checker": "#00b0ff",
+   "light": null
+  }
+ },
+ {
+  "id": "sahara",
+  "name": "Sahara",
+  "group": "common",
+  "free": false,
+  "sort": 47,
+  "colors": {
+   "panel": "#c79a5b",
+   "frame": "#141026",
+   "a": "#e0b878",
+   "b": "#8a5e38",
+   "checker": "#4a3324",
+   "light": "#f6ecd6"
+  }
+ },
+ {
+  "id": "emerald",
+  "name": "Emerald",
+  "group": "common",
+  "free": false,
+  "sort": 48,
+  "colors": {
+   "panel": "#0f6b52",
+   "frame": "#052620",
+   "a": "#1f9d78",
+   "b": "#0a4d3b",
+   "checker": "#08352a",
+   "light": "#dff7ec"
+  }
+ },
+ {
+  "id": "arctic",
+  "name": "Arctic",
+  "group": "common",
+  "free": false,
+  "sort": 49,
+  "colors": {
+   "panel": "#8db8d0",
+   "frame": "#101b2a",
+   "a": "#c4dfea",
+   "b": "#5688a5",
+   "checker": "#294b68",
+   "light": "#f7fbff"
+  }
+ },
+ {
+  "id": "coral",
+  "name": "Coral",
+  "group": "common",
+  "free": false,
+  "sort": 50,
+  "colors": {
+   "panel": "#D66F61",
+   "frame": "#24141D",
+   "a": "#F4A17F",
+   "b": "#A9474A",
+   "checker": "#62313B",
+   "light": "#FFF0D5"
+  }
+ },
+ {
+  "id": "jade",
+  "name": "Jade",
+  "group": "common",
+  "free": false,
+  "sort": 51,
+  "colors": {
+   "panel": "#438C72",
+   "frame": "#18231F",
+   "a": "#78B99A",
+   "b": "#24604E",
+   "checker": "#173D35",
+   "light": "#E7E6CE"
+  }
+ },
+ {
+  "id": "ocean2",
+  "name": "Ocean",
+  "group": "common",
+  "free": false,
+  "sort": 52,
+  "colors": {
+   "panel": "#086D8B",
+   "frame": "#031727",
+   "a": "#22A3BA",
+   "b": "#06465F",
+   "checker": "#082E48",
+   "light": "#D8F3F5"
+  }
+ },
+ {
+  "id": "lagoon",
+  "name": "Lagoon",
+  "group": "common",
+  "free": false,
+  "sort": 53,
+  "colors": {
+   "panel": "#158A8A",
+   "frame": "#062127",
+   "a": "#5AB9A8",
+   "b": "#0B5A65",
+   "checker": "#083D43",
+   "light": "#E5F3D6"
+  }
+ },
+ {
+  "id": "lavender",
+  "name": "Lavender",
+  "group": "common",
+  "free": false,
+  "sort": 54,
+  "colors": {
+   "panel": "#8064A8",
+   "frame": "#171126",
+   "a": "#B18AC5",
+   "b": "#584378",
+   "checker": "#3C285C",
+   "light": "#F0E8F4"
+  }
+ },
+ {
+  "id": "ruby",
+  "name": "Ruby",
+  "group": "rare",
+  "free": false,
+  "sort": 55,
+  "colors": {
+   "panel": "#8F2635",
+   "frame": "#190A10",
+   "a": "#D14B52",
+   "b": "#5A1728",
+   "checker": "#35121B",
+   "light": "#F6D7C9"
+  }
+ },
+ {
+  "id": "royal",
+  "name": "Royal Gold",
+  "group": "rare",
+  "free": false,
+  "sort": 56,
+  "colors": {
+   "panel": "#182a5e",
+   "frame": "#0a1330",
+   "a": "#e8c14a",
+   "b": "#0f1c42",
+   "checker": "#0a1330",
+   "light": "#f6e6b0"
+  }
+ },
+ {
+  "id": "cherry",
+  "name": "Cherry",
+  "group": "rare",
+  "free": false,
+  "sort": 57,
+  "colors": {
+   "panel": "#771E3A",
+   "frame": "#140811",
+   "a": "#BC3156",
+   "b": "#44152B",
+   "checker": "#27111C",
+   "light": "#F5D8D5"
+  }
+ },
+ {
+  "id": "copper",
+  "name": "Copper",
+  "group": "rare",
+  "free": false,
+  "sort": 58,
+  "colors": {
+   "panel": "#9B593D",
+   "frame": "#21130E",
+   "a": "#CE8356",
+   "b": "#633827",
+   "checker": "#42251C",
+   "light": "#F3D6AE"
+  }
+ },
+ {
+  "id": "midnight",
+  "name": "Midnight",
+  "group": "rare",
+  "free": false,
+  "sort": 59,
+  "colors": {
+   "panel": "#121B42",
+   "frame": "#03040C",
+   "a": "#253D82",
+   "b": "#10102B",
+   "checker": "#090A18",
+   "light": "#BFCDF2"
+  }
+ },
+ {
+  "id": "gold2",
+  "name": "Gold",
+  "group": "rare",
+  "free": false,
+  "sort": 60,
+  "colors": {
+   "panel": "#9C7528",
+   "frame": "#1B1209",
+   "a": "#D8B653",
+   "b": "#604318",
+   "checker": "#382712",
+   "light": "#FFF0BC"
+  }
+ },
+ {
+  "id": "volcano",
+  "name": "Volcano",
+  "group": "epic",
+  "free": false,
+  "sort": 61,
+  "colors": {
+   "panel": "#55272A",
+   "frame": "#090608",
+   "a": "#C54A31",
+   "b": "#29171B",
+   "checker": "#160D10",
+   "light": "#E5B76D"
+  }
+ },
+ {
+  "id": "tokyo",
+  "name": "Tokyo",
+  "group": "epic",
+  "free": false,
+  "sort": 62,
+  "colors": {
+   "panel": "#26283A",
+   "frame": "#0D0E18",
+   "a": "#E0526A",
+   "b": "#6676C5",
+   "checker": "#202131",
+   "light": "#F1E9DE"
+  }
+ },
+ {
+  "id": "aurora2",
+  "name": "Aurora II",
+  "group": "epic",
+  "free": false,
+  "sort": 63,
+  "colors": {
+   "panel": "#174B50",
+   "frame": "#081B24",
+   "a": "#31A48D",
+   "b": "#7046A0",
+   "checker": "#22265D",
+   "light": "#C7F2DE"
+  }
+ },
+ {
+  "id": "imperial",
+  "name": "Imperial",
+  "group": "epic",
+  "free": false,
+  "sort": 64,
+  "colors": {
+   "panel": "#492354",
+   "frame": "#160A19",
+   "a": "#9B467D",
+   "b": "#C29145",
+   "checker": "#31152E",
+   "light": "#F1DFB1"
+  }
+ },
+ {
+  "id": "obsidian",
+  "name": "Obsidian",
+  "group": "legendary",
+  "free": false,
+  "sort": 65,
+  "colors": {
+   "panel": "#1a1b20",
+   "frame": "#000000",
+   "a": "#3a3d47",
+   "b": "#0e0f13",
+   "checker": "#050608",
+   "light": "#e6e8ec"
+  }
+ },
+ {
+  "id": "samurai",
+  "name": "Samurai",
+  "group": "legendary",
+  "free": false,
+  "sort": 66,
+  "colors": {
+   "panel": "#161616",
+   "frame": "#050505",
+   "a": "#b12a2a",
+   "b": "#0c0c0c",
+   "checker": "#8a1f1f",
+   "light": "#e8dcc0"
+  }
+ },
+ {
+  "id": "blackdiamond",
+  "name": "Black Diamond",
+  "group": "legendary",
+  "free": false,
+  "sort": 67,
+  "colors": {
+   "panel": "#20222a",
+   "frame": "#000000",
+   "a": "#4a4f5e",
+   "b": "#14161c",
+   "checker": "#0a0b0f",
+   "light": "#eef1f7"
+  }
+ },
+ {
+  "id": "cyber",
+  "name": "Cyberpunk",
+  "group": "mythic",
+  "free": false,
+  "sort": 68,
+  "colors": {
+   "panel": "#160f2e",
+   "frame": "#07051c",
+   "a": "#ff2e97",
+   "b": "#0e0a24",
+   "checker": "#0bb8d8",
+   "light": "#ff4fb0"
+  }
+ },
+ {
+  "id": "inferno",
+  "name": "Inferno",
+  "group": "mythic",
+  "free": false,
+  "sort": 69,
+  "colors": {
+   "panel": "#1a0e0a",
+   "frame": "#0a0504",
+   "a": "#e8541f",
+   "b": "#7c1e10",
+   "checker": "#ff6a2a",
+   "light": "#ffd9a8"
+  }
+ },
+ {
+  "id": "fenerbahce",
+  "name": "Fenerbahçe",
+  "group": "club",
+  "free": false,
+  "sort": 70,
+  "colors": {
+   "panel": "#F3D428",
+   "frame": "#091B52",
+   "a": "#102A72",
+   "b": "#E6BC15",
+   "checker": "#173B8F",
+   "light": "#F7D72C"
+  }
+ },
+ {
+  "id": "galatasaray",
+  "name": "Galatasaray",
+  "group": "club",
+  "free": false,
+  "sort": 71,
+  "colors": {
+   "panel": "#A91B32",
+   "frame": "#6D0B1B",
+   "a": "#F2B900",
+   "b": "#7F1024",
+   "checker": "#A71930",
+   "light": "#F4BB16"
+  }
+ },
+ {
+  "id": "besiktas",
+  "name": "Beşiktaş",
+  "group": "club",
+  "free": false,
+  "sort": 72,
+  "colors": {
+   "panel": "#D9D9D9",
+   "frame": "#111111",
+   "a": "#171717",
+   "b": "#A3A3A3",
+   "checker": "#111111",
+   "light": "#F4F4F4"
+  }
+ },
+ {
+  "id": "trabzonspor",
+  "name": "Trabzonspor",
+  "group": "club",
+  "free": false,
+  "sort": 73,
+  "colors": {
+   "panel": "#7A1E33",
+   "frame": "#40101D",
+   "a": "#0E4C92",
+   "b": "#5F1728",
+   "checker": "#0E4C92",
+   "light": "#F5DCE2"
+  }
+ },
+ {
+  "id": "turkey",
+  "name": "Türkiye",
+  "group": "country",
+  "free": false,
+  "sort": 74,
+  "colors": {
+   "panel": "#E30A17",
+   "frame": "#4A060B",
+   "a": "#F4EDDF",
+   "b": "#B70810",
+   "checker": "#6E0910",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "usa",
+  "name": "USA",
+  "group": "country",
+  "free": false,
+  "sort": 75,
+  "colors": {
+   "panel": "#0A3161",
+   "frame": "#071733",
+   "a": "#B31942",
+   "b": "#F4F5FA",
+   "checker": "#0A1F45",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "uk",
+  "name": "United Kingdom",
+  "group": "country",
+  "free": false,
+  "sort": 76,
+  "colors": {
+   "panel": "#012169",
+   "frame": "#010F30",
+   "a": "#C8102E",
+   "b": "#F4F6FB",
+   "checker": "#011543",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "germany",
+  "name": "Deutschland",
+  "group": "country",
+  "free": false,
+  "sort": 77,
+  "colors": {
+   "panel": "#151515",
+   "frame": "#000000",
+   "a": "#DD0000",
+   "b": "#FFCE00",
+   "checker": "#0A0A0A",
+   "light": "#F4EFDD"
+  }
+ },
+ {
+  "id": "greece",
+  "name": "Ελλάδα",
+  "group": "country",
+  "free": false,
+  "sort": 78,
+  "colors": {
+   "panel": "#0D5EAF",
+   "frame": "#04223F",
+   "a": "#F4F6FB",
+   "b": "#0A4E93",
+   "checker": "#062A50",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "italy",
+  "name": "Italia",
+  "group": "country",
+  "free": false,
+  "sort": 79,
+  "colors": {
+   "panel": "#008C45",
+   "frame": "#053C20",
+   "a": "#CD212A",
+   "b": "#F1F2F1",
+   "checker": "#054F29",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "france",
+  "name": "France",
+  "group": "country",
+  "free": false,
+  "sort": 80,
+  "colors": {
+   "panel": "#0055A4",
+   "frame": "#00234A",
+   "a": "#EF4135",
+   "b": "#F4F6FB",
+   "checker": "#00306A",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "spain",
+  "name": "España",
+  "group": "country",
+  "free": false,
+  "sort": 81,
+  "colors": {
+   "panel": "#AA151B",
+   "frame": "#2A0507",
+   "a": "#F1BF00",
+   "b": "#8E1116",
+   "checker": "#4E080C",
+   "light": "#FBF3DA"
+  }
+ },
+ {
+  "id": "japan",
+  "name": "日本",
+  "group": "country",
+  "free": false,
+  "sort": 82,
+  "colors": {
+   "panel": "#F2EFEA",
+   "frame": "#7A0A1E",
+   "a": "#BC002D",
+   "b": "#E7CDD1",
+   "checker": "#7A0018",
+   "light": "#FFFFFF"
+  }
+ },
+ {
+  "id": "brazil",
+  "name": "Brasil",
+  "group": "country",
+  "free": false,
+  "sort": 83,
+  "colors": {
+   "panel": "#009C3B",
+   "frame": "#05341A",
+   "a": "#FFDF00",
+   "b": "#002776",
+   "checker": "#064A22",
+   "light": "#F5F8EE"
+  }
+ },
+ {
+  "id": "tavlatv-special",
+  "name": "TavlaTV Özel",
+  "group": "tavlatv",
+  "free": false,
+  "sort": 84,
+  "colors": {
+   "panel": "#2b2824",
+   "frame": "#6d4a2c",
+   "a": "#e08a2e",
+   "b": "#d8c5a0",
+   "checker": "#5a3d26",
+   "light": "#efe6cc"
+  }
+ },
+ {
+  "id": "citrus-wood",
+  "name": "Citrus Wood",
+  "group": "tavlatv",
+  "free": false,
+  "sort": 85,
+  "colors": {
+   "panel": "#E8D7BC",
+   "frame": "#DDC59E",
+   "a": "#4E9B45",
+   "b": "#F39A0A",
+   "checker": "#FF9800",
+   "light": "#3F9146"
+  }
+ },
+ {
+  "id": "nautical",
+  "name": "Maritime",
+  "group": "tavlatv",
+  "free": false,
+  "sort": 86,
+  "colors": {
+   "panel": "#a6824f",
+   "frame": "#7a5c37",
+   "a": "#4a3620",
+   "b": "#946f43",
+   "checker": "#1e3a5f",
+   "light": "#f4eeda"
+  }
+ },
+ {
+  "id": "iznik",
+  "name": "İznik",
+  "group": "tavlatv",
+  "free": false,
+  "sort": 87,
+  "colors": {
+   "panel": "#F4EEE1",
+   "frame": "#33241a",
+   "a": "#F8F4EB",
+   "b": "#C81E28",
+   "checker": "#161E3E",
+   "light": "#FBF6EC"
+  }
+ },
+ {
+  "id": "sakura",
+  "name": "Sakura",
+  "group": "tavlatv",
+  "free": false,
+  "sort": 88,
+  "colors": {
+   "panel": "#F7E7EC",
+   "frame": "#3B0A14",
+   "a": "#DE9CAF",
+   "b": "#C4114F",
+   "checker": "#3B0A14",
+   "light": "#FBEDF2"
+  }
+ },
+ {
+  "id": "yilbasi",
+  "name": "Yılbaşı",
+  "group": "tavlatv",
+  "free": false,
+  "sort": 89,
+  "colors": {
+   "panel": "#D20117",
+   "frame": "#0E4A2B",
+   "a": "#14532D",
+   "b": "#F7F3EA",
+   "checker": "#14532D",
+   "light": "#FFFBF2"
+  }
+ },
+ {
+  "id": "gamma",
+  "name": "Gamma",
+  "group": "rare",
+  "free": false,
+  "sort": 90,
+  "colors": {
+   "panel": "#2f8a80",
+   "frame": "#0a2422",
+   "a": "#4fb0a2",
+   "b": "#1f6b63",
+   "checker": "#0d3d38",
+   "light": "#d9f5ee"
+  }
+ },
+ {
+  "id": "cosmos",
+  "name": "Cosmos",
+  "group": "rare",
+  "free": false,
+  "sort": 91,
+  "colors": {
+   "panel": "#0e1230",
+   "frame": "#05060f",
+   "a": "#232a5a",
+   "b": "#0a0e24",
+   "checker": "#3a46c0",
+   "light": "#eef0ff"
+  }
+ },
+ {
+  "id": "titan",
+  "name": "Titan",
+  "group": "rare",
+  "free": false,
+  "sort": 92,
+  "colors": {
+   "panel": "#6a5a3a",
+   "frame": "#141026",
+   "a": "#8a7548",
+   "b": "#4e4228",
+   "checker": "#c85a1f",
+   "light": "#9aa2e6"
+  }
+ },
+ {
+  "id": "jupiter",
+  "name": "Jupiter",
+  "group": "rare",
+  "free": false,
+  "sort": 93,
+  "colors": {
+   "panel": "#6e6a3e",
+   "frame": "#141026",
+   "a": "#8a8550",
+   "b": "#4e4a28",
+   "checker": "#c98a5a",
+   "light": "#eae6d0"
+  }
+ },
+ {
+  "id": "helix",
+  "name": "Helix",
+  "group": "rare",
+  "free": false,
+  "sort": 94,
+  "colors": {
+   "panel": "#2f7a80",
+   "frame": "#0a2226",
+   "a": "#469b8f",
+   "b": "#3a4a7a",
+   "checker": "#5a3f96",
+   "light": "#bff0e6"
+  }
+ },
+ {
+  "id": "solaris",
+  "name": "Solaris",
+  "group": "rare",
+  "free": false,
+  "sort": 95,
+  "colors": {
+   "panel": "#e0642f",
+   "frame": "#141026",
+   "a": "#f0864f",
+   "b": "#b5451f",
+   "checker": "#2a2a2a",
+   "light": "#f0e2c8"
+  }
+ },
+ {
+  "id": "orion",
+  "name": "Orion",
+  "group": "rare",
+  "free": false,
+  "sort": 96,
+  "colors": {
+   "panel": "#4a4d58",
+   "frame": "#0e1018",
+   "a": "#6a5a80",
+   "b": "#3a3d46",
+   "checker": "#2f56d0",
+   "light": "#eef1f7"
+  }
+ },
+ {
+  "id": "kepler",
+  "name": "Kepler",
+  "group": "rare",
+  "free": false,
+  "sort": 97,
+  "colors": {
+   "panel": "#3a5f4a",
+   "frame": "#0e1a14",
+   "a": "#4f7a5f",
+   "b": "#2a4a38",
+   "checker": "#7a4a2f",
+   "light": "#bff0d8"
+  }
+ },
+ {
+  "id": "andromeda",
+  "name": "Andromeda",
+  "group": "epic",
+  "free": false,
+  "sort": 98,
+  "colors": {
+   "panel": "#4a2a6a",
+   "frame": "#160b24",
+   "a": "#8a3a7a",
+   "b": "#3a2258",
+   "checker": "#8a9a4a",
+   "light": "#f0a17f"
+  }
+ },
+ {
+  "id": "orbit",
+  "name": "Orbit",
+  "group": "epic",
+  "free": false,
+  "sort": 99,
+  "colors": {
+   "panel": "#1a1c22",
+   "frame": "#000000",
+   "a": "#2a2d36",
+   "b": "#141519",
+   "checker": "#c0392b",
+   "light": "#c8ccd4"
+  }
+ },
+ {
+  "id": "cassio",
+  "name": "Cassio",
+  "group": "epic",
+  "free": false,
+  "sort": 100,
+  "colors": {
+   "panel": "#2a3d40",
+   "frame": "#0e1618",
+   "a": "#6a5a4a",
+   "b": "#3a4a4d",
+   "checker": "#e0623a",
+   "light": "#3fb598"
+  }
+ },
+ {
+  "id": "quasar",
+  "name": "Quasar",
+  "group": "epic",
+  "free": false,
+  "sort": 101,
+  "colors": {
+   "panel": "#5a4a3a",
+   "frame": "#141026",
+   "a": "#6a5a48",
+   "b": "#3a4a6a",
+   "checker": "#d0392b",
+   "light": "#3ac0e0"
+  }
+ },
+ {
+  "id": "polaris",
+  "name": "Polaris",
+  "group": "epic",
+  "free": false,
+  "sort": 102,
+  "colors": {
+   "panel": "#5a5d66",
+   "frame": "#0e1018",
+   "a": "#6a6d78",
+   "b": "#4a4d55",
+   "checker": "#6b3fc0",
+   "light": "#bcd6f0"
+  }
+ },
+ {
+  "id": "apollo",
+  "name": "Apollo",
+  "group": "epic",
+  "free": false,
+  "sort": 103,
+  "colors": {
+   "panel": "#6a6258",
+   "frame": "#141026",
+   "a": "#7f766a",
+   "b": "#4e4a5a",
+   "checker": "#1f2a5a",
+   "light": "#eae2d0"
+  }
+ },
+ {
+  "id": "aurora",
+  "name": "Aurora",
+  "group": "epic",
+  "free": false,
+  "sort": 104,
+  "colors": {
+   "panel": "#1a2258",
+   "frame": "#080a1c",
+   "a": "#2f3a8a",
+   "b": "#141a44",
+   "checker": "#7a3fd0",
+   "light": "#3fe0d0"
+  }
+ },
+ {
+  "id": "gutenberg",
+  "name": "Gutenberg",
+  "group": "legendary",
+  "free": false,
+  "sort": 105,
+  "colors": {
+   "panel": "#c8cdd4",
+   "frame": "#0e0f13",
+   "a": "#dfe3e8",
+   "b": "#a8afb8",
+   "checker": "#1a1c22",
+   "light": "#f4f6f9"
+  }
+ },
+ {
+  "id": "krypton",
+  "name": "Krypton",
+  "group": "legendary",
+  "free": false,
+  "sort": 106,
+  "colors": {
+   "panel": "#1f5a44",
+   "frame": "#08160f",
+   "a": "#2f8a5f",
+   "b": "#144a34",
+   "checker": "#0c3526",
+   "light": "#9ff0c8"
+  }
+ },
+ {
+  "id": "infinity",
+  "name": "Infinity",
+  "group": "legendary",
+  "free": false,
+  "sort": 107,
+  "colors": {
+   "panel": "#3a1a6a",
+   "frame": "#0f0820",
+   "a": "#7a3fd0",
+   "b": "#241040",
+   "checker": "#00d4e8",
+   "light": "#ff5bd0"
+  }
+ },
+ {
+  "id": "vega",
+  "name": "Vega",
+  "group": "legendary",
+  "free": false,
+  "sort": 108,
+  "colors": {
+   "panel": "#3a4a9a",
+   "frame": "#0a0f2a",
+   "a": "#5a6ad0",
+   "b": "#8a5aa8",
+   "checker": "#2f6ad0",
+   "light": "#7fe0f0"
+  }
+ },
+ {
+  "id": "quantum",
+  "name": "Quantum",
+  "group": "legendary",
+  "free": false,
+  "sort": 109,
+  "colors": {
+   "panel": "#123a3f",
+   "frame": "#06171a",
+   "a": "#1f6f7a",
+   "b": "#0c2429",
+   "checker": "#57ffc8",
+   "light": "#b07bff"
+  }
+ },
+ {
+  "id": "singularity",
+  "name": "Singularity",
+  "group": "legendary",
+  "free": false,
+  "sort": 110,
+  "colors": {
+   "panel": "#1f3fd0",
+   "frame": "#060a28",
+   "a": "#3f6ae8",
+   "b": "#152f9a",
+   "checker": "#00cfe8",
+   "light": "#ff5bb0"
+  }
+ },
+ {
+  "id": "bazaar",
+  "name": "Bazaar",
+  "group": "common",
+  "free": false,
+  "sort": 111,
+  "colors": {
+   "panel": "#7a4a30",
+   "frame": "#3a2414",
+   "a": "#9a5a3a",
+   "b": "#5a3420",
+   "checker": "#1a120a",
+   "light": "#e8d8c0"
+  }
+ },
+ {
+  "id": "miami",
+  "name": "Miami",
+  "group": "common",
+  "free": false,
+  "sort": 112,
+  "colors": {
+   "panel": "#e8709a",
+   "frame": "#18d0e8",
+   "a": "#f0a84a",
+   "b": "#4fd0c0",
+   "checker": "#2f5ad0",
+   "light": "#f0e8d8"
+  }
+ }
+]

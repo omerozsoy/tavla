@@ -34,8 +34,15 @@ export const FRAME_RARITY_PRICE: Record<FrameRarity, number> = {
   mythic: 750,
 }
 // Satin alma fiyati; 'earned' cerceveler magazadan alinamaz (undefined)
+// Admin "Avatar Tasarımı" ayarı: motion id -> sabit fiyat / satışta mı (grup AVATAR_FRAMES'e yazılır).
+const FRAME_OVERRIDES = new Map<string, { price?: number; active: boolean }>()
 export function framePrice(f: AvatarFrameDef): number | undefined {
-  return f.earned ? undefined : FRAME_RARITY_PRICE[f.rarity]
+  if (f.earned) return undefined
+  return FRAME_OVERRIDES.get(f.id)?.price ?? FRAME_RARITY_PRICE[f.rarity]
+}
+// Satıştan kaldırıldıysa mağazada yalnız sahibine görünür.
+export function frameOnSale(id: string): boolean {
+  return FRAME_OVERRIDES.get(id)?.active !== false
 }
 
 export const FRAME_GROUP_LABEL: Record<FrameGroup, string> = {
@@ -130,6 +137,30 @@ export const AVATAR_FRAMES: AvatarFrameDef[] = ANIMS.map((a) => ({
   motion: a.motion,
   accent: FRAME_RARITY_COLOR[a.rarity],
 }))
+
+const FRAME_BASE_RARITY = new Map(AVATAR_FRAMES.map((f) => [f.id, f.rarity]))
+const FRAME_RARITIES: readonly FrameRarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic']
+// Sunucu ayarlarını uygula (idempotent): grup değişimi kartın kademesini + halka rengini de taşır.
+export function applyFrameOverrides(rows: { id: string; group?: string; price?: number | null; active?: boolean }[]): void {
+  FRAME_OVERRIDES.clear()
+  for (const f of AVATAR_FRAMES) {
+    const base = FRAME_BASE_RARITY.get(f.id)!
+    f.rarity = base
+    f.group = base
+    f.accent = FRAME_RARITY_COLOR[base]
+  }
+  for (const r of rows) {
+    const f = AVATAR_FRAMES.find((x) => x.id === r.id)
+    if (!f) continue
+    FRAME_OVERRIDES.set(r.id, { price: typeof r.price === 'number' && r.price > 0 ? r.price : undefined, active: r.active !== false })
+    const g = FRAME_RARITIES.find((x) => x === r.group)
+    if (g) {
+      f.rarity = g
+      f.group = g
+      f.accent = FRAME_RARITY_COLOR[g]
+    }
+  }
+}
 
 export const FRAME_BY_ID: Record<string, AvatarFrameDef> = Object.fromEntries(
   AVATAR_FRAMES.map((f) => [f.id, f]),

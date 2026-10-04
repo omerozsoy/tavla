@@ -330,7 +330,67 @@ export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
   { id: 'bazaar', name: 'Bazaar', rarity: 'common', panel: '#7a4a30', a: '#9a5a3a', b: '#5a3420', checker: '#1a120a', light: '#e8d8c0', frame: '#3a2414' },
   { id: 'miami', name: 'Miami', rarity: 'common', panel: '#e8709a', a: '#f0a84a', b: '#4fd0c0', checker: '#2f5ad0', light: '#f0e8d8', frame: '#18d0e8', checkerStyle: 'gloss' },
 ]
+// Admin "Tavla Tasarımı" sayfasında üretilen özel tahtalar (GET /api/board-designs; applyBoardDesigns).
+export const CUSTOM_THEMES: BoardTheme[] = []
 export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...COUNTRY_THEMES, ...TAVLATV_THEMES, ...GALAXY_EXTRA_THEMES]
+const BUILTIN_COUNT = ALL_THEMES.length
+
+type BoardGroup = NonNullable<BoardTheme['rarity']>
+const BOARD_GROUPS: readonly BoardGroup[] = ['common', 'rare', 'epic', 'legendary', 'mythic', 'club', 'country', 'tavlatv']
+// Admin ayarı: tahta id -> grup / fiyat / satışta mı (yerleşik + özel).
+const BOARD_OVERRIDES = new Map<string, { group?: BoardGroup; price?: number; active: boolean }>()
+
+export interface BoardDesignRow {
+  id: string
+  group: string
+  price: number | null
+  active: boolean
+  custom: boolean
+  name?: string
+  colors?: { panel?: string; frame?: string | null; a?: string; b?: string; checker?: string; light?: string | null }
+  surface?: string | null
+  checker_style?: string | null
+}
+const HEX = /^#[0-9a-fA-F]{6}$/
+const SURFACES = ['plain', 'gradient', 'felt', 'wood'] as const
+const CHECKER_STYLES = ['flat', 'gloss', 'ice', 'ring', 'neon'] as const
+
+// Sunucudaki tahta ayarlarını uygula: grup/fiyat/satış override'ları + özel tahtaları
+// CUSTOM_THEMES/ALL_THEMES'e ekle (öncekiler temizlenir; idempotent). Bozuk satır atlanır.
+export function applyBoardDesigns(rows: BoardDesignRow[]): void {
+  BOARD_OVERRIDES.clear()
+  CUSTOM_THEMES.length = 0
+  ALL_THEMES.length = BUILTIN_COUNT
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (!r || typeof r.id !== 'string' || !r.id) continue
+    const group = BOARD_GROUPS.includes(r.group as BoardGroup) ? (r.group as BoardGroup) : undefined
+    const price = typeof r.price === 'number' && r.price > 0 ? r.price : undefined
+    BOARD_OVERRIDES.set(r.id, { group, price, active: r.active !== false })
+    if (!r.custom) continue
+    const c = r.colors ?? {}
+    if (![c.panel, c.a, c.b, c.checker].every((v) => typeof v === 'string' && HEX.test(v))) continue
+    if (ALL_THEMES.some((x) => x.id === r.id)) continue
+    const theme: BoardTheme = {
+      id: r.id,
+      name: String(r.name ?? r.id).slice(0, 60),
+      panel: c.panel!,
+      a: c.a!,
+      b: c.b!,
+      checker: c.checker!,
+      frame: c.frame && HEX.test(c.frame) ? c.frame : undefined,
+      light: c.light && HEX.test(c.light) ? c.light : undefined,
+      rarity: group ?? 'common',
+      surface: SURFACES.find((x) => x === r.surface),
+      checkerStyle: CHECKER_STYLES.find((x) => x === r.checker_style),
+    }
+    CUSTOM_THEMES.push(theme)
+    ALL_THEMES.push(theme)
+  }
+}
+// Admin satıştan kaldırdıysa mağazada gösterme (sahip olan yine görür/kullanır).
+export function boardOnSale(t: BoardTheme): boolean {
+  return BOARD_OVERRIDES.get(t.id)?.active !== false
+}
 
 // Tahta nadirlik -> coin fiyati (backend ShopController BOARD_RARITY ile BIREBIR).
 // 2026-10-04: tüm fiyatlar 3 katına çıkarıldı (backend ile birlikte).
@@ -351,11 +411,13 @@ export const COUNTRY_BOARD_PRICE = 300
 export const TAVLATV_BOARD_PRICE = 1500
 // Bir temanin etkin nadirligi (kendi alani -> THEME_RARITY -> 'common').
 export function boardRarityOf(t: BoardTheme): NonNullable<BoardTheme['rarity']> {
-  return t.rarity ?? THEME_RARITY[t.id] ?? 'common'
+  return BOARD_OVERRIDES.get(t.id)?.group ?? t.rarity ?? THEME_RARITY[t.id] ?? 'common'
 }
 // Coin fiyati: 'standart' ucretsiz -> undefined; kulup/ulke -> sabit kategori fiyati; digerleri nadirlik fiyati.
 export function boardPrice(t: BoardTheme): number | undefined {
   if (FREE_BOARDS.has(t.id)) return undefined
+  const fixed = BOARD_OVERRIDES.get(t.id)?.price
+  if (fixed != null) return fixed
   const r = boardRarityOf(t)
   if (r === 'club') return CLUB_BOARD_PRICE
   if (r === 'country') return COUNTRY_BOARD_PRICE

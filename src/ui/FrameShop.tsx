@@ -9,6 +9,7 @@ import {
   FRAME_GROUP_ORDER,
   FRAME_GROUP_LABEL,
   framePrice,
+  frameOnSale,
   type FrameGroup,
   type AvatarFrameDef,
 } from './avatarFrames'
@@ -162,7 +163,8 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
       )}
 
       {FRAME_GROUP_ORDER.map((group) => {
-        const frames = AVATAR_FRAMES.filter((f) => f.group === group)
+        // Admin satıştan kaldırdıysa yalnız sahibine görünür.
+        const frames = AVATAR_FRAMES.filter((f) => f.group === group && (frameOnSale(f.id) || owns('frame.' + f.id)))
         const isStandart = group === 'common' // Standart grubu boş olsa da "Çerçevesiz" için gösterilir
         if (frames.length === 0 && !isStandart) return null
         return (
