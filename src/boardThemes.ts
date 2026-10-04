@@ -333,21 +333,22 @@ export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
 export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...COUNTRY_THEMES, ...TAVLATV_THEMES, ...GALAXY_EXTRA_THEMES]
 
 // Tahta nadirlik -> coin fiyati (backend ShopController BOARD_RARITY ile BIREBIR).
+// 2026-10-04: tüm fiyatlar 3 katına çıkarıldı (backend ile birlikte).
 export const BOARD_RARITY_PRICE: Record<'common' | 'rare' | 'epic' | 'legendary' | 'mythic', number> = {
-  common: 50,
-  rare: 90,
-  epic: 150,
-  legendary: 250,
-  mythic: 400,
+  common: 150,
+  rare: 270,
+  epic: 450,
+  legendary: 750,
+  mythic: 1200,
 }
 // Ucretsiz (her zaman sahip): SADECE 'standart'. Diger tum tahtalar (tavla/galaxy/kulup dahil) coin ile alinir.
 export const FREE_BOARDS = new Set<string>(['standart'])
 // Kulup temasi fiyati (nadirlik ladder'inda degil; sabit).
-export const CLUB_BOARD_PRICE = 100
+export const CLUB_BOARD_PRICE = 300
 // Ulke boardu fiyati (nadirlik ladder'inda degil; sabit — kulup gibi kategori fiyati).
-export const COUNTRY_BOARD_PRICE = 100
+export const COUNTRY_BOARD_PRICE = 300
 // TavlaTV Özel board fiyati (en ust kademe, tek özel board).
-export const TAVLATV_BOARD_PRICE = 500
+export const TAVLATV_BOARD_PRICE = 1500
 // Bir temanin etkin nadirligi (kendi alani -> THEME_RARITY -> 'common').
 export function boardRarityOf(t: BoardTheme): NonNullable<BoardTheme['rarity']> {
   return t.rarity ?? THEME_RARITY[t.id] ?? 'common'
