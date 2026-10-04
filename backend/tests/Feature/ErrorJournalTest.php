@@ -72,6 +72,24 @@ class ErrorJournalTest extends TestCase
         ]);
     }
 
+    /** gnubg hakem: insan kararları (0,2,3) log'daki kayıplarla aynı (Hata Günlüğü yalnız gnubg satırlarını gösterir). */
+    private function gnubgSame(): array
+    {
+        return [0 => 0.084, 2 => 0.0, 3 => 0.05];
+    }
+
+    // TEK MOTOR = gnubg: wildbg ile ölçülmüş (gnubg job'u koşmamış) kararlar Hata Günlüğü'ne girmez.
+    public function test_wildbg_only_decisions_hidden_from_journal(): void
+    {
+        $u = $this->user();
+        app(ErrorJournalService::class)->analyzeMatch($this->match($u)); // gnubg yok -> wildbg satırları
+        $u->forceFill(['plan' => 'star', 'plan_until' => now()->addMonth()])->save();
+        Sanctum::actingAs($u->fresh());
+        $res = $this->getJson('/api/me/error-journal?period=all')->assertOk();
+        $this->assertSame([], $res->json('entries'));
+        $this->assertSame(0, $res->json('summary.decisionsAnalyzed'));
+    }
+
     public function test_analyze_persists_both_sides_checker_decisions(): void
     {
         $u = $this->user();
@@ -104,6 +122,30 @@ class ErrorJournalTest extends TestCase
         $this->assertSame('wildbg', $dOpp->engine_version);
     }
 
+    // KULLANICI ŞİKÂYETİ: "Senin Hamlen 11/6 6/4 = En İyi Hamle 11/6 6/4" ama kayıp −0.034. Kayıp gnubg'den,
+    // 'best' wildbg'den geliyordu. Tek motor gnubg: en iyi hamle + equity + adaylar da gnubg'den yazılır.
+    public function test_gnubg_best_move_replaces_wildbg_suggestion(): void
+    {
+        $u = $this->user();
+        $mr = $this->match($u);
+        app(ErrorJournalService::class)->analyzeMatch($mr, true, [
+            0 => ['loss' => 0.034, 'best' => '24/18 8/5', 'bestEquity' => 0.31, 'playedEquity' => 0.276,
+                'cands' => [['notation' => '24/18 8/5', 'equity' => 0.31], ['notation' => '13/7 8/5', 'equity' => 0.276]]],
+        ]);
+        $d0 = DecisionAnalysis::where('match_result_id', $mr->id)->where('move_index', 0)->first();
+        $this->assertSame('gnubg-best', $d0->engine_version);
+        $this->assertSame('24/18 8/5', $d0->best); // wildbg'nin '24/18 13/10' önerisi DEĞİL
+        $this->assertEqualsWithDelta(0.31, (float) $d0->best_equity, 1e-6);
+        $this->assertEqualsWithDelta(0.276, (float) $d0->played_equity, 1e-6);
+
+        $u->forceFill(['plan' => 'star', 'plan_until' => now()->addMonth()])->save();
+        Sanctum::actingAs($u->fresh());
+        $e = collect($this->getJson('/api/me/error-journal?period=all')->assertOk()->json('entries'))
+            ->firstWhere('moveNumber', 0);
+        $this->assertSame(['gnubg-best', '24/18 8/5', []], [$e['engine'], $e['bestMove'], $e['bestSteps']]);
+        $this->assertSame('24/18 8/5', $e['alternatives'][0]['notation']);
+    }
+
     public function test_analyze_is_idempotent(): void
     {
         $u = $this->user();
@@ -117,7 +159,7 @@ class ErrorJournalTest extends TestCase
     public function test_summary_counts_and_error_rate(): void
     {
         $u = $this->user();
-        app(ErrorJournalService::class)->analyzeMatch($this->match($u));
+        app(ErrorJournalService::class)->analyzeMatch($this->match($u), true, $this->gnubgSame());
 
         $summary = app(ErrorJournalService::class)->summary($u, null, null);
         $this->assertSame(3, $summary['decisionsAnalyzed']);
@@ -139,7 +181,7 @@ class ErrorJournalTest extends TestCase
         $u->plan = 'star'; // Hata Gunlugu PREMIUM-only (plan/plan_until fillable degil)
         $u->plan_until = now()->addYear();
         $u->save();
-        app(ErrorJournalService::class)->analyzeMatch($this->match($u));
+        app(ErrorJournalService::class)->analyzeMatch($this->match($u), true, $this->gnubgSame());
         Sanctum::actingAs($u);
 
         $res = $this->getJson('/api/me/error-journal?period=all');

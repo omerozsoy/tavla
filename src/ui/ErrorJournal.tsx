@@ -259,8 +259,13 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
                           {e.dice && <span className="ej-err-dice">{e.dice.join('-')}</span>}
                           <span className="ej-err-moves">
                             <code className="bl-move played">{e.playedMove}</code>
-                            <span aria-hidden="true">→</span>
-                            <code className="bl-move best">{e.bestMove}</code>
+                            {/* En iyi hamle yalnız gnubg'den geldiyse listede; diğerleri detayda gnubg'ye sorulur. */}
+                            {e.engine === 'gnubg-best' && e.bestMove && (
+                              <>
+                                <span aria-hidden="true">→</span>
+                                <code className="bl-move best">{e.bestMove}</code>
+                              </>
+                            )}
                           </span>
                           <span className="ej-err-loss">−{e.equityLoss.toFixed(3)}</span>
                           <span className="ej-err-date">{relDate(e.playedAt)}</span>

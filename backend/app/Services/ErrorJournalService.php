@@ -29,7 +29,7 @@ class ErrorJournalService
      * @return int islenen karar sayisi
      */
     /**
-     * @param  array<int,float>|null  $gnubgLoss  logIndex => gnubg equity kaybı (HAKEM=gnubg). Verilirse
+     * @param  array<int,float|array>|null  $gnubgLoss  logIndex => gnubg kaybı ya da {loss,best,bestEquity,playedEquity,cands} (HAKEM=gnubg). Verilirse
      *   o karar için wildbg loss yerine gnubg loss kullanılır + engine_version='gnubg'. Yalnız insanın
      *   (hc) kararları için doludur; rakip/bot kararları wildbg kalır (Hata Günlüğü zaten hc-scoped).
      */
@@ -90,9 +90,12 @@ class ErrorJournalService
                 // HAKEM=gnubg: bu karar için gnubg loss varsa onu kullan (wildbg loss yerine).
                 $engine = 'wildbg';
                 $loss = (float) ($e['loss'] ?? 0);
+                $g = null; // gnubg karar detayı (en iyi hamle/equity/adaylar) — varsa wildbg'nin yerine
                 if ($gnubgLoss !== null && array_key_exists($i, $gnubgLoss)) {
-                    $loss = max(0.0, (float) $gnubgLoss[$i]);
-                    $engine = 'gnubg';
+                    $g = is_array($gnubgLoss[$i]) ? $gnubgLoss[$i] : ['loss' => $gnubgLoss[$i]];
+                    $loss = max(0.0, (float) ($g['loss'] ?? 0));
+                    // 'gnubg-best': kayıp + en iyi hamle + equity gnubg'den (frontend buna güvenir).
+                    $engine = ! empty($g['best']) ? 'gnubg-best' : 'gnubg';
                 }
                 $severity = Cfg::severity($loss);        // null = hata degil
                 $isError = $severity !== null;
@@ -102,9 +105,15 @@ class ErrorJournalService
                 $cls = PositionClassifier::classify($f, $player, $prev);
                 $prevByPlayer[$player] = $cls['primaryCategory'];
 
-                // gnubg loss kullanıldıysa wildbg cands[0] "best equity" tutarsız -> gösterme (null).
-                $bestEq = ($engine === 'wildbg' && isset($e['cands'][0]['equity'])) ? (float) $e['cands'][0]['equity'] : null;
-                $playedEq = $bestEq !== null ? $bestEq - $loss : null;
+                // Equity: gnubg varsa onunki; gnubg loss + wildbg cands[0] karışımı tutarsız -> null.
+                if ($engine === 'gnubg-best') {
+                    $bestEq = isset($g['bestEquity']) ? (float) $g['bestEquity'] : null;
+                    $playedEq = isset($g['playedEquity']) ? (float) $g['playedEquity'] : null;
+                } else {
+                    $bestEq = ($engine === 'wildbg' && isset($e['cands'][0]['equity'])) ? (float) $e['cands'][0]['equity'] : null;
+                    $playedEq = $bestEq !== null ? $bestEq - $loss : null;
+                }
+                $gBest = $engine === 'gnubg-best';
 
                 DecisionAnalysis::create([
                     'user_id' => $mr->user_id,
@@ -116,7 +125,8 @@ class ErrorJournalService
                     'decision_type' => 'checker',
                     'dice' => $this->diceStr($e['dice'] ?? null),
                     'played' => isset($e['notation']) ? mb_substr((string) $e['notation'], 0, 40) : null,
-                    'best' => isset($e['best']) ? mb_substr((string) $e['best'], 0, 40) : null,
+                    'best' => $gBest ? mb_substr((string) $g['best'], 0, 40)
+                        : (isset($e['best']) ? mb_substr((string) $e['best'], 0, 40) : null),
                     'played_equity' => $playedEq,
                     'best_equity' => $bestEq,
                     'equity_loss' => $loss,
@@ -127,9 +137,12 @@ class ErrorJournalService
                     'opp_pip' => $f['opponentPipCount'],
                     // Agir JSON yalniz HATALAR icin (board onizleme). Perfect kararlar sadece payda.
                     'pos' => $isError ? json_encode($pos) : null,
-                    'steps' => $isError ? json_encode($e['steps'] ?? []) : null,
+                    // gnubg en iyi hamlesinin adımları sunucuda yok -> boş; frontend notasyondan kurar.
+                    'steps' => $isError ? json_encode($gBest ? [] : ($e['steps'] ?? [])) : null,
                     'played_steps' => $isError ? json_encode($e['playedSteps'] ?? []) : null,
-                    'cands' => $isError ? json_encode(array_slice($e['cands'] ?? [], 0, 3)) : null,
+                    'cands' => $isError ? json_encode($gBest && is_array($g['cands'] ?? null)
+                        ? array_slice($g['cands'], 0, 3)
+                        : array_slice($e['cands'] ?? [], 0, 3)) : null,
                     'engine_version' => $engine,
                     'analysis_version' => Cfg::ANALYSIS_VERSION,
                 ]);
@@ -210,12 +223,18 @@ class ErrorJournalService
 
     // --- yardimcilar ---------------------------------------------------------
 
+    /** gnubg ile ölçülmüş karar satırları (engine_version). */
+    public const GNUBG_ENGINES = ['gnubg', 'gnubg-best'];
+
     /** user + tarih araligi ile filtrelenmis checker-karari sorgusu (RAKIP haric). */
     private function scoped(int $userId, ?Carbon $from, ?Carbon $to)
     {
         $q = DecisionAnalysis::where('user_id', $userId)
             ->where('decision_type', 'checker')
-            ->where('is_opponent', false); // Hata Gunlugu yalniz kullanicinin kararlari
+            ->where('is_opponent', false) // Hata Gunlugu yalniz kullanicinin kararlari
+            // TEK MOTOR = gnubg: wildbg ile ölçülmüş kararlar (gnubg job'u henüz koşmadı / gnubg o kararı
+            // eşleyemedi) Hata Günlüğü'ne HİÇ girmez — ne hata ne payda (kullanıcı kararı).
+            ->whereIn('engine_version', self::GNUBG_ENGINES);
         if ($from) {
             $q->where('played_at', '>=', $from);
         }
@@ -249,7 +268,10 @@ class ErrorJournalService
             'position' => $this->decode($d->pos),
             'bestSteps' => $this->decode($d->steps) ?? [],
             'playedSteps' => $this->decode($d->played_steps) ?? [],
-            'alternatives' => $this->decode($d->cands) ?? [],
+            // Adaylar yalnız gnubg'den geldiyse ('gnubg-best'); eski 'gnubg' satırlarında wildbg adaylarıydı.
+            'alternatives' => $d->engine_version === 'gnubg-best' ? ($this->decode($d->cands) ?? []) : [],
+            // 'gnubg-best' -> en iyi hamle + equity hakemden (gnubg); diğerlerinde frontend gnubg'ye sorar.
+            'engine' => $d->engine_version,
         ];
     }
 

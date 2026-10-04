@@ -310,7 +310,14 @@ class AnalyzeMatchPrJob implements ShouldQueue
             $lossByIndex = [];
             foreach (($chk['perDecision'] ?? []) as $d) {
                 if (isset($d['logIndex'])) {
-                    $lossByIndex[(int) $d['logIndex']] = (float) $d['loss'];
+                    // Kayıp + gnubg'nin EN İYİ hamlesi/equity'leri/adayları (wildbg önerisi KULLANILMAZ).
+                    $lossByIndex[(int) $d['logIndex']] = [
+                        'loss' => (float) $d['loss'],
+                        'best' => $d['bestMove'] ?? null,
+                        'bestEquity' => $d['bestEquity'] ?? null,
+                        'playedEquity' => $d['playedEquity'] ?? null,
+                        'cands' => $d['cands'] ?? null,
+                    ];
                 }
             }
             if ($lossByIndex !== []) {

@@ -1617,6 +1617,7 @@ export interface EJEntry {
   bestSteps: Step[]
   playedSteps: Step[]
   alternatives: { notation: string; equity: number }[]
+  engine?: string | null // 'gnubg-best' = en iyi hamle + equity gnubg'den (hakem)
 }
 export interface EJResponse {
   period: string

@@ -18,7 +18,8 @@ test('hata detayı: zar ikonları, oyuncu bakışı, tıklanınca en iyi hamle',
   const playedNotation = moveNotation(played, 'black')
   const entry = {
     id: '1', matchId: '1', playedAt: new Date().toISOString(), moveNumber: 1, category: 'blitz',
-    tags: [], severity: 'blunder', equityLoss: 0.274, playedMove: playedNotation, bestMove: null,
+    // Şikâyet senaryosu: eski kayıt — kayıp gnubg'den, 'best' wildbg'den ve OYNANANLA AYNI.
+    tags: [], severity: 'blunder', equityLoss: 0.274, playedMove: playedNotation, bestMove: playedNotation, engine: 'gnubg',
     playedEquity: null, bestEquity: null, dice: [5, 4], player: 'black', myPip: 167, opponentPip: 167,
     position: pos, bestSteps: played.steps, playedSteps: played.steps, alternatives: [],
   }
@@ -41,6 +42,12 @@ test('hata detayı: zar ikonları, oyuncu bakışı, tıklanınca en iyi hamle',
     }
     await r.fulfill({ response: res, json: body })
   })
+  // Tek motor gnubg: en iyi hamle /api/analyze-position'dan (gnubg) gelir — burada taklit.
+  let gnubgAsked = 0
+  await page.route('**/api/analyze-position', (r) => {
+    gnubgAsked++
+    return r.fulfill({ json: { engine: 'tavlatv', moves: [{ notation: '13/8 24/20', equity: 0.1, probs: null }, { notation: playedNotation, equity: -0.174, probs: null }] } })
+  })
   await page.addInitScript((tok) => localStorage.setItem('tavla.token', tok), U.token)
   await page.goto(BASE + '/hata-gunlugu', { waitUntil: 'domcontentloaded' })
   // Derin link (/hata-gunlugu) kullanıcı yüklenmeden işlenebilir -> menüden aç.
@@ -61,7 +68,9 @@ test('hata detayı: zar ikonları, oyuncu bakışı, tıklanınca en iyi hamle',
   const bestBtn = detail.locator('.ej-drow-btn').nth(1)
   await expect(bestBtn.locator('code')).not.toHaveText(/^(—|…)$/, { timeout: 30_000 })
   const bestText = (await bestBtn.locator('code').innerText()).trim()
-  expect(bestText).toMatch(/\d+\/\d+/)
+  expect(gnubgAsked).toBeGreaterThan(0)
+  expect(bestText).not.toBe(playedNotation) // "Senin Hamlen = En İyi Hamle" çelişkisi yok
+  expect(bestText.split(' ').sort()).toEqual(['13/8', '24/20'])
   await bestBtn.click()
   await expect(bestBtn).toHaveClass(/active/)
   await page.screenshot({ path: process.env.EJ_SHOT || test.info().outputPath('error-detail.png') })

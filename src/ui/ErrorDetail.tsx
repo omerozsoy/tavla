@@ -13,17 +13,8 @@ import { useT } from '../i18n'
 import type { EJEntry, EJSeverity } from '../api'
 import type { GameState, Player, Step } from '../engine/types'
 import { moveNotation } from '../engine/notation'
-
-// Kaydi olmayan "en iyi hamle" icin istemci-tarafi sinir agi (lazy; tek ornek, ilk ihtiyacta yuklenir).
-let bestBot: Promise<import('../engine/neuralBot').NeuralBot> | null = null
-function getBestBot() {
-  bestBot ??= import('../engine/neuralBot').then(async (m) => {
-    const b = new m.NeuralBot()
-    await b.ready()
-    return b
-  })
-  return bestBot
-}
+import { matchGnubgMove } from '../engine/gnubgMove'
+import { analyzePosition } from '../api'
 
 // Zar ikonu (Zar satiri): 3x3 pip izgarasi.
 const PIP_POS: Record<number, [number, number][]> = {
@@ -78,20 +69,39 @@ export default function ErrorDetail({
       }
     : null
   const [view, setView] = useState<'played' | 'best'>('played')
-  // Bazı kayıtlarda (gnubg hakemli / yeniden kurulan hamle) en iyi hamle saklanmamış -> burada hesapla.
-  const stored = entry.bestMove ? { notation: entry.bestMove, steps: entry.bestSteps ?? [] } : null
+  // TEK MOTOR = gnubg (hakem). Saklı en iyi hamleye yalnız gnubg'den geldiyse ('gnubg-best') güvenilir;
+  // eski kayıtlarda 'best' wildbg önerisiydi (kayıp gnubg'den) -> "Senin Hamlen = En İyi Hamle"
+  // çelişkisi. Bu kayıtlarda en iyi hamle gnubg'ye (analyze-position) canlı sorulur.
+  const fromNotation = (notation: string) => {
+    const m = boardState ? matchGnubgMove(boardState, pl, notation) : null
+    return m ? { notation: moveNotation(m, pl), steps: m.steps } : null
+  }
+  const stored =
+    entry.engine === 'gnubg-best' && entry.bestMove
+      ? entry.bestSteps?.length
+        ? { notation: entry.bestMove, steps: entry.bestSteps }
+        : (fromNotation(entry.bestMove) ?? { notation: entry.bestMove, steps: [] as Step[] })
+      : null
   const [computed, setComputed] = useState<{ notation: string; steps: Step[] } | null | 'loading' | 'fail'>(null)
   const best = stored ?? (computed && typeof computed === 'object' ? computed : null)
   useEffect(() => {
     if (stored || !boardState || fullDice.length === 0) return
     let alive = true
     setComputed('loading')
-    getBestBot()
-      .then((b) => b.analyzeMoves(boardState))
-      .then((ranks) => {
+    analyzePosition({
+      points: boardState.points,
+      bar: boardState.bar,
+      turn: pl,
+      dice: d.slice(0, 2),
+      plies: 2,
+    })
+      .then((g) => {
         if (!alive) return
-        const top = ranks[0]
-        setComputed(top ? { notation: moveNotation(top.move, pl), steps: top.move.steps } : 'fail')
+        for (const c of g.moves ?? []) {
+          const m = matchGnubgMove(boardState, pl, c.notation)
+          if (m) return setComputed({ notation: moveNotation(m, pl), steps: m.steps })
+        }
+        setComputed('fail')
       })
       .catch(() => alive && setComputed('fail'))
     return () => {

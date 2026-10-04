@@ -122,6 +122,11 @@ class AnalysisOrchestrator
                 // XG karşılaştırma tablosu (tavla:gnubg-pr) için ek sütunlar:
                 'dice' => array_values($e['dice']),
                 'bestMove' => $cand[0]['move'] ?? null,
+                // Hata Günlüğü "Alternatif En İyi Hamleler" (gnubg ilk 3 aday).
+                'cands' => array_values(array_map(
+                    fn ($c) => ['notation' => (string) ($c['move'] ?? ''), 'equity' => round((float) ($c['equity'] ?? 0), 4)],
+                    array_slice(array_filter($cand, 'is_array'), 0, 3),
+                )),
                 'bestEquity' => round((float) $bestEq, 4),
                 'playedEquity' => round((float) $bestEq - $lossVal, 4),
                 'legal' => $legal,

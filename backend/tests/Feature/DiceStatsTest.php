@@ -53,6 +53,7 @@ class DiceStatsTest extends TestCase
             'primary_category' => $cat,
             'my_pip' => $pip,
             'analysis_version' => 2,
+            'engine_version' => 'gnubg', // Hata Günlüğü yalnız gnubg satırlarını sayar
         ]);
     }
 
