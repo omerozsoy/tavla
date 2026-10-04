@@ -1,0 +1,20 @@
+{
+  "code": "UUBXZ",
+  "token": "911250d0c5934bf898ed690113b4bbb7",
+  "log": [
+    {
+      "roll": 200,
+      "bot_status": "unavailable"
+    },
+    {
+      "roll": 200,
+      "bot_status": "unavailable"
+    },
+    {
+      "after40s": {
+        "status": "playing",
+        "loss": null
+      }
+    }
+  ]
+}
