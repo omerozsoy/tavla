@@ -1,0 +1,97 @@
+[
+  {
+    "code": "NNNGS",
+    "games": [
+      {
+        "score": "1-0",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "white",
+        "plies": 75
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 1,
+      "black": 0
+    },
+    "plies": 75,
+    "anomalies": []
+  },
+  {
+    "code": "JKTV2",
+    "games": [
+      {
+        "score": "1-0",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "white",
+        "plies": 41
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 1,
+      "black": 0
+    },
+    "plies": 41,
+    "anomalies": []
+  },
+  {
+    "code": "RBS2Q",
+    "games": [
+      {
+        "score": "2-0",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "white",
+        "plies": 70
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 2,
+      "black": 0
+    },
+    "plies": 70,
+    "anomalies": []
+  },
+  {
+    "code": "3PBH2",
+    "games": [
+      {
+        "score": "0-1",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "black",
+        "plies": 73
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 1
+    },
+    "plies": 73,
+    "anomalies": []
+  },
+  {
+    "code": "6MKV3",
+    "games": [
+      {
+        "score": "3-0",
+        "points": 3,
+        "expectedPoints": 3,
+        "winner": "white",
+        "plies": 54
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 3,
+      "black": 0
+    },
+    "plies": 54,
+    "anomalies": []
+  }
+]
