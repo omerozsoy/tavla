@@ -83,3 +83,72 @@ test('hata detayı: zar ikonları, oyuncu bakışı, tıklanınca en iyi hamle',
   await expect(page).toHaveURL(/\/mac-analizleri\/1$/)
   await expect(page.locator('.ej-detail')).toHaveCount(0)
 })
+
+// "Tüm Hatalar" sekmesi: gnubg kayıtlarından maça göre gruplu kartlar (eski wildbg /blunders DEĞİL);
+// kartta zarlar, grupta okunur "N hata" rozeti; karta tıklayınca detay açılır.
+test('tüm hatalar: gnubg kartları, zarlar, hata sayısı rozeti', async ({ page }) => {
+  const pos = { ...initialState(), turn: 'black' as const, dice: [5, 4], diceUsed: [false, false] }
+  const moves = generateMoves(pos)
+  const played = moves.find((m) => moveNotation(m, 'black') === '24/20 24/19') ?? moves[moves.length - 1]
+  const playedNotation = moveNotation(played, 'black')
+  const entry = {
+    id: '1', matchId: '1', playedAt: new Date().toISOString(), moveNumber: 1, category: 'blitz',
+    // Şikâyet senaryosu: eski kayıt — kayıp gnubg'den, 'best' wildbg'den ve OYNANANLA AYNI.
+    tags: [], severity: 'blunder', equityLoss: 0.274, playedMove: playedNotation, bestMove: playedNotation, engine: 'gnubg',
+    playedEquity: null, bestEquity: null, dice: [5, 4], player: 'black', myPip: 167, opponentPip: 167,
+    position: pos, bestSteps: played.steps, playedSteps: played.steps, alternatives: [],
+    match: { opponent: 'CanerÇELİK', opponentUserId: 5, type: 'match', length: 5, won: false, score: [3, 5], at: new Date().toISOString() },
+  }
+  await page.route('**/api/me/error-journal**', (r) =>
+    r.fulfill({
+      json: {
+        period: '7d', from: null, to: null, entries: [entry], categoryOrder: ['blitz'],
+        summary: { totalDecisions: 10, totalErrors: 1, inaccuracies: 0, mistakes: 0, blunders: 1, totalEquityLoss: 0.274, averageEquityLoss: 0.027, categories: [{ id: 'blitz', decisions: 10, errors: 1, blunders: 1, mistakes: 0, inaccuracies: 0, equityLoss: 0.274, errorRate: 0.1, avgLoss: 0.274 }] },
+        insights: { topWeakness: null, biggestLoss: null },
+      },
+    }),
+  )
+  // Hata Günlüğü premium özelliği: /api/me yanıtında planı 'star' göster (test kullanıcısı değişmez).
+  await page.route(/\/api\/me(\?.*)?$/, async (r) => {
+    const res = await r.fetch()
+    const body = await res.json().catch(() => null)
+    if (body && typeof body === 'object') {
+      const u = (body as { user?: Record<string, unknown> }).user ?? (body as Record<string, unknown>)
+      u.plan_active = 'star'
+    }
+    await r.fulfill({ response: res, json: body })
+  })
+  // Tek motor gnubg: en iyi hamle /api/analyze-position'dan (gnubg) gelir — burada taklit.
+  let gnubgAsked = 0
+  await page.route('**/api/analyze-position', (r) => {
+    gnubgAsked++
+    return r.fulfill({ json: { engine: 'tavlatv', moves: [{ notation: '13/8 24/20', equity: 0.1, probs: null }, { notation: playedNotation, equity: -0.174, probs: null }] } })
+  })
+  await page.addInitScript((tok) => localStorage.setItem('tavla.token', tok), U.token)
+  await page.goto(BASE + '/hata-gunlugu', { waitUntil: 'domcontentloaded' })
+  let legacyAsked = 0
+  await page.route('**/api/blunders', (r) => {
+    legacyAsked++
+    return r.fulfill({ json: { blunders: [] } })
+  })
+  await expect(page.getByText('Bonus').first()).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'Tümünü Kabul Et' }).click().catch(() => {})
+  if (!(await page.locator('.ej-tab').count())) {
+    await page.getByText('Araçlar', { exact: false }).first().click()
+    await page.getByText('Hata Günlüğü').first().click()
+  }
+  await page.getByRole('tab', { name: 'Tüm Hatalar' }).click()
+  const card = page.locator('.bl-card').first()
+  await expect(card).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.bl-group-count').first()).toHaveText('1 hata')
+  await expect(page.locator('.bl-group-head').first()).toContainText('CanerÇELİK')
+  // Zarlar mini tahtada (iki zar yüzü)
+  expect(await card.locator('.mini-board rect[rx]').count()).toBeGreaterThanOrEqual(2)
+  // Üst renkli şerit yok
+  expect(await card.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('1px')
+  expect(legacyAsked).toBe(0)
+  await card.scrollIntoViewIfNeeded()
+  await page.screenshot({ path: (process.env.EJ_SHOT || test.info().outputPath('x.png')).replace('.png', '-all.png') })
+  await card.click()
+  await expect(page.locator('.ej-detail')).toBeVisible()
+})

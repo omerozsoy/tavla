@@ -2279,15 +2279,24 @@ button[aria-disabled='true'],
   color: var(--muted);
 }
 .bl-group-count {
+  /* Maçtaki hata sayısı: okunur rozet (eskiden --panel tahta rengine düşüp koyu-üstüne-koyu kalıyordu). */
   margin-left: auto;
-  font-size: 0.72rem;
-  font-weight: 400;
-  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
-  background: var(--rn-navy-muted, var(--panel));
+  background: var(--card-bg, #fff);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  padding: 2px 9px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+.bl-card[role='button'] {
+  cursor: pointer;
+}
+.bl-card[role='button']:focus-visible {
+  outline: 2px solid var(--accent, #a83a2b);
+  outline-offset: 2px;
 }
 
 /* --- Kart grid: akan, kaydiran, sarmalayan --- */
@@ -2301,8 +2310,7 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--sev);
+  border: 1px solid var(--border); /* üst renkli şerit YOK (kullanıcı); şiddet köşe rozetinde */
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition:

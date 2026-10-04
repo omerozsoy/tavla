@@ -23,6 +23,21 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [detail, setDetail] = useState<EJEntry | null>(null)
+  // "Tüm hatalar" sekmesi: tüm zamanların gnubg hataları (maça göre gruplu kartlar).
+  const [all, setAll] = useState<EJEntry[] | null>(null)
+  const [allLoading, setAllLoading] = useState(false)
+  const [allError, setAllError] = useState(false)
+  const loadAll = useCallback(() => {
+    setAllLoading(true)
+    setAllError(false)
+    errorJournal('all', null, 100)
+      .then((d) => setAll(d.entries))
+      .catch(() => setAllError(true))
+      .finally(() => setAllLoading(false))
+  }, [])
+  useEffect(() => {
+    if (tab === 'all' && all === null && !allLoading) loadAll()
+  }, [tab, all, allLoading, loadAll])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -102,7 +117,13 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
         </div>
 
         {tab === 'all' ? (
-          <BlunderLog embedded onClose={onClose} />
+          <BlunderLog
+            entries={all ?? []}
+            loading={allLoading || (all === null && !allError)}
+            error={allError}
+            onRetry={loadAll}
+            onOpen={setDetail}
+          />
         ) : (
           <>
             {/* Tarih filtresi */}
