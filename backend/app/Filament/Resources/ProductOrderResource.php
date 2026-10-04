@@ -145,14 +145,21 @@ class ProductOrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Yönet'),
+                // A-32: ödenmiş/kargolanmış/teslim siparişler SİLİNEMEZ (defter kaydı var olmayan siparişi
+                // gösterirdi -> denetim izi kopar). Yalnız ödeme bekleyen/iptal siparişler silinebilir.
                 Tables\Actions\DeleteAction::make()->label('Sil')
+                    ->visible(fn (ProductOrder $record) => in_array($record->status, ['pending', 'cancelled'], true))
                     ->requiresConfirmation()
                     ->modalHeading('Siparişi sil')
                     ->modalDescription('Bu sipariş kaydı kalıcı olarak silinecek. Coin/ödeme bakiyesi etkilenmez (yalnızca kayıt).'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label('Seçilenleri sil'),
+                    Tables\Actions\BulkAction::make('deleteUnpaid')->label('Seçilenleri sil (ödenmemiş)')
+                        ->icon('heroicon-m-trash')->color('danger')->requiresConfirmation()
+                        ->action(fn (\Illuminate\Support\Collection $records) => $records
+                            ->filter(fn (ProductOrder $o) => in_array($o->status, ['pending', 'cancelled'], true))
+                            ->each->delete()),
                 ]),
             ]);
     }

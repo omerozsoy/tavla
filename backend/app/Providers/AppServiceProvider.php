@@ -27,6 +27,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // A-32: panel görsel yüklemeleri yalnız raster türler. FileUpload::image() "image/*" kabul eder
+        // (SVG dahil); /uploads aynı kökenden servis edildiği için betik içeren SVG diğer yöneticilerin
+        // oturumunda çalışabilirdi. Kural EK'tir (->image() sonrası da geçerli).
+        \Filament\Forms\Components\FileUpload::configureUsing(
+            fn (\Filament\Forms\Components\FileUpload $c) => $c->rule('mimes:png,jpg,jpeg,webp,gif')
+        );
         // Livewire gecici yukleme klasorunu garanti et. Windows'ta klasor yoksa
         // "klasor olustur -> hemen boyut oku" yarisi Flysystem'de
         // "Unable to retrieve the file_size for livewire-tmp/..." hatasi veriyordu.
