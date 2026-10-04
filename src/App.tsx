@@ -5823,6 +5823,10 @@ export default function App() {
   useEffect(() => {
     if (!acctMenuOpen) return
     const onDoc = (e: MouseEvent) => {
+      // Durum seçicinin listesi document.body'ye PORTAL edilir (menünün DIŞINDA görünür). Ona
+      // dokunmak "dışarı tıklama" sayılıp hesap menüsünü (ve seçiciyi) seçim işlenmeden kapatıyordu
+      // -> mobilde kullanıcılar durumunu "Müsait" yapamıyordu (masaüstünde seçici üst çubukta).
+      if ((e.target as Element | null)?.closest?.('.status-menu, .status-backdrop')) return
       if (acctMenuRef.current && !acctMenuRef.current.contains(e.target as Node)) setAcctMenuOpen(false)
     }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setAcctMenuOpen(false)
