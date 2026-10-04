@@ -149,13 +149,22 @@ test('mobil (Pixel 7): UI ile zar at, taş oyna, onayla; tahta taşmıyor; maç 
     const c = byColor[r.server_state!.turn]
     const before = r.server_version
     if (!r.server_state!.dice.length) {
+      // İstemci zarı ya "Zar At" düğmesiyle ya da (otomatik zar) kendiliğinden atar: hangisi
+      // önce olursa. Düğme görünürse dokun; zar sunucuda belirince devam.
       const roll = c.page.getByRole('button', { name: /Zar At/ }).last()
-      await expect(roll).toBeVisible({ timeout: 20_000 })
-      const box = await roll.boundingBox()
-      ui.push(`zar düğmesi ${Math.round(box!.width)}x${Math.round(box!.height)}`)
-      await roll.tap()
-      await expect.poll(async () => (await getRoom(req, s.code, s.white)).server_version, { timeout: 15_000 }).toBeGreaterThan(before)
+      await expect.poll(async () => {
+        const now = await getRoom(req, s.code, s.white)
+        if (now.server_state?.dice?.length) return true
+        if (await roll.isVisible().catch(() => false)) {
+          const box = await roll.boundingBox()
+          ui.push(`zar düğmesi ${Math.round(box!.width)}x${Math.round(box!.height)}`)
+          await roll.tap().catch(() => {})
+        }
+        return false
+      }, { timeout: 25_000, message: 'sırası gelen istemci zar atmalı (düğme ya da otomatik)' }).toBe(true)
+      if (!ui.some((x) => x.startsWith('zar düğmesi'))) ui.push('otomatik zar (düğmesiz)')
       r = await getRoom(req, s.code, s.white)
+      await expect.poll(() => c.page.locator('.board-dice .die, .board-dice [class*="die"]').count(), { timeout: 15_000, message: 'zar arayüzde görünmeli' }).toBeGreaterThan(0)
     }
     const moves = generateMoves(r.server_state!) as Move[]
     if (!moves.length || !moves[0].steps.length) continue
