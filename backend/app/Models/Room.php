@@ -88,6 +88,43 @@ class Room extends Model
     }
 
     /**
+     * %-bahis (bet_pct) maçlarında EMANET yok; ödeme maç sonunda `settle` ile yapılır. Kullanıcının
+     * SONUÇLANMAMIŞ %-maçlarındaki bahis tutarı (pct_stake_snapshot) kilitli sayılır: harcanabilir
+     * bakiyeden düşülür ki kaybeden, settle'dan önce coin'lerini harcayıp ödemeyi kalıcı 409'a
+     * (kazanan hiç ödeme almaz) düşüremesin (denetim A-03). Oynanan maçlar + kazananı belli ama henüz
+     * settle edilmemiş maçlar sayılır; kazananı belirsiz (no-contest) / 30 günden eski maçlar sayılmaz
+     * (kalıcı kilit olmasın).
+     */
+    public static function pctLockedCoins(?int $uid): int
+    {
+        if (! $uid) {
+            return 0;
+        }
+        $rooms = static::where('bet_pct', '>', 0)
+            ->where('settled', false)
+            ->whereIn('status', ['playing', 'finished'])
+            ->where('updated_at', '>', now()->subDays(30))
+            ->where(function ($q) use ($uid) {
+                $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
+            })
+            ->get(['id', 'status', 'server_match', 'clock']);
+        $sum = 0;
+        foreach ($rooms as $r) {
+            $sm = is_array($r->server_match) ? $r->server_match : [];
+            if ($r->status === 'finished') {
+                $decided = ! empty($sm['winner']) || ! empty(($r->clock['end']['winner'] ?? null));
+                if (! $decided) {
+                    continue;
+                }
+            }
+            $snap = is_array($sm['pct_stake_snapshot'] ?? null) ? $sm['pct_stake_snapshot'] : [];
+            $sum += max(0, (int) ($snap[(string) $uid] ?? 0));
+        }
+
+        return $sum;
+    }
+
+    /**
      * A money/ranked room reserves a user's single active-game slot, including matchmaking wait.
      * The caller must hold the user row lock when this is used for admission decisions.
      */

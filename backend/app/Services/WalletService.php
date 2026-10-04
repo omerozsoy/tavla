@@ -17,10 +17,33 @@ class WalletService
         return $this->move($user, $amount, $type, $referenceType, $referenceId, $idempotencyKey, $actorUserId);
     }
 
+    /**
+     * İsteğe bağlı harcama türleri (oyuncunun kendi seçtiği coin kullanımı). Bunlar yalnız
+     * HARCANABİLİR bakiyeden (coins - coins_reserved - %-bahis kilidi) yapılabilir. Maç ödemesi
+     * (match_settlement_debit) / yönetici düzeltmesi bu kısıta tabi DEĞİL.
+     */
+    public const DISCRETIONARY_SPEND = [
+        'dice_slot_spin', 'lucky_wheel_spin', 'tournament_entry',
+        'product_purchase', 'cart_purchase', 'shop_purchase',
+    ];
+
+    /** Harcanabilir bakiye: coins − rezerv (sabit bahis emaneti) − sonuçlanmamış %-bahis kilidi (A-03). */
+    public function spendable(User $user): int
+    {
+        return (int) ($user->coins ?? 0) - (int) ($user->coins_reserved ?? 0) - \App\Models\Room::pctLockedCoins((int) $user->id);
+    }
+
     public function debit(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null, ?string $idempotencyKey = null, ?int $actorUserId = null): User
     {
         if ($amount < 0) {
             throw new \RuntimeException('Insufficient wallet balance.');
+        }
+        if (in_array($type, self::DISCRETIONARY_SPEND, true)) {
+            // Son savunma hattı: çağıran kontrolü unutsa bile kilitli/rezerve coin harcanamaz.
+            $fresh = User::query()->whereKey($user->id)->first(['id', 'coins', 'coins_reserved']) ?? $user;
+            if ($this->spendable($fresh) < $amount) {
+                throw new \RuntimeException('Insufficient spendable balance (reserved/locked coins).');
+            }
         }
         return $this->move($user, -$amount, $type, $referenceType, $referenceId, $idempotencyKey, $actorUserId);
     }

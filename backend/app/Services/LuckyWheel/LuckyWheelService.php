@@ -337,7 +337,7 @@ class LuckyWheelService
                     // Ödemeli çevirme kapalı ve ücretsiz hak yok.
                     return ['error' => 'no_spins', 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
                 }
-                $available = (int) ($u->coins ?? 0) - (int) ($u->coins_reserved ?? 0);
+                $available = app(\App\Services\WalletService::class)->spendable($u); // rezerv + %-bahis kilidi (A-03)
                 if ($available < $cost) {
                     return ['error' => 'need_coins', 'cost' => $cost, 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
                 }

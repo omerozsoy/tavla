@@ -178,7 +178,7 @@ class ShopController extends Controller
             }
             // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta REZERVE edilmiş
             // coin mağazaya harcanamaz -> kaybeden stake'i maç sırasında eritip settle'ı eksik ödetemez.
-            if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $price) {
+            if (app(\App\Services\WalletService::class)->spendable($u) < $price) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
             $purchaseKey = 'shop_purchase:'.$u->id.':'.$id;

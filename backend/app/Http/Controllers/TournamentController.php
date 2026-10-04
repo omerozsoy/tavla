@@ -218,7 +218,7 @@ class TournamentController extends Controller
                 }
                 // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta rezerve
                 // edilmiş coin turnuva ücretine harcanamaz (stake maç sonuna kadar kilitli).
-                if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $fee) {
+                if (app(\App\Services\WalletService::class)->spendable($u) < $fee) {
                     return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
                 }
                 // Entry/leave cycles are legitimate. The player-list lock is

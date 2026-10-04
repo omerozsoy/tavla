@@ -181,7 +181,7 @@ class ProductController extends Controller
             if (Room::userInPctStakedPlaying($u->id)) {
                 return ['pct_locked' => true];
             }
-            if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $cost) {
+            if (app(\App\Services\WalletService::class)->spendable($u) < $cost) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
             // Stok satir kilidi: eszamanli satista asiri satisi engelle.
@@ -401,7 +401,7 @@ class ProductController extends Controller
             if (Room::userInPctStakedPlaying($u->id)) {
                 return ['pct_locked' => true];
             }
-            if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $total) {
+            if (app(\App\Services\WalletService::class)->spendable($u) < $total) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
             // Önce TÜM stokları kilitle+doğrula (kısmi sipariş olmasın), sonra düş+oluştur.
