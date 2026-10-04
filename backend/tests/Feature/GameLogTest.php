@@ -122,6 +122,32 @@ class GameLogTest extends TestCase
         $this->assertSame(9, (int) $log->p2_user_id);
     }
 
+    // A-10: oda kayıtları istemcinin bildirdiği mode'a bakılmadan oda yetkisi ister.
+    public function test_pvb_mode_cannot_bypass_room_access_for_live_match(): void
+    {
+        Room::create(['code' => 'LIVE1', 'p1_token' => 'w-tok', 'p2_token' => 'b-tok', 'p1_name' => 'W', 'p2_name' => 'B',
+            'status' => 'playing', 'version' => 0]);
+        $this->postJson('/api/game-logs', ['uid' => 'LIVE1', 'slot' => 'p1', 'mode' => 'online', 'token' => 'w-tok', 'target' => 1,
+            'events' => [['g' => 1, 's' => 1, 'p' => 'W', 'd' => '31', 'm' => '8/5 6/5']]])->assertOk();
+        // Kimliksiz saldırgan mode=pvb ile ezmeye çalışır.
+        $this->postJson('/api/game-logs', ['uid' => 'LIVE1', 'slot' => 'p1', 'mode' => 'pvb', 'target' => 1, 'events' => [],
+            'status' => 'finished', 'winner' => 'black', 'score' => ['white' => 0, 'black' => 9]])->assertStatus(403);
+        $log = GameLog::where('uid', 'LIVE1')->first();
+        $this->assertCount(1, $log->p1_events);
+        $this->assertNotSame('black', $log->winner);
+        $this->assertSame('online', $log->mode);
+    }
+
+    public function test_pvb_precreated_log_for_room_code_still_requires_access_on_export(): void
+    {
+        Room::create(['code' => 'LIVE2', 'p1_token' => 'w2', 'p2_token' => 'b2', 'p1_name' => 'W', 'p2_name' => 'B',
+            'status' => 'playing', 'version' => 0]);
+        // Saldırgan oda koduyla pvb kaydı önceden oluşturamaz (oda var -> online -> yetki).
+        $this->postJson('/api/game-logs', ['uid' => 'LIVE2', 'slot' => 'p1', 'mode' => 'pvb', 'target' => 1, 'events' => []])->assertStatus(403);
+        GameLog::create(['uid' => 'LIVE2', 'mode' => 'pvb', 'target' => 1, 'p1_events' => [['g' => 1, 's' => 1, 'p' => 'W', 'd' => '31', 'm' => '8/5 6/5']]]);
+        $this->getJson('/api/game-logs/LIVE2/mat')->assertStatus(403);
+    }
+
     public function test_rejects_invalid_uid(): void
     {
         $this->postJson('/api/game-logs', [

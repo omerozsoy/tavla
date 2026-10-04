@@ -58,8 +58,16 @@ class GameLogController extends Controller
 
         // Online kayıtlar yalnızca ilgili odanın yetkili oyuncusundan kabul edilir.
         // Slot ve sonuç metadatası client'tan gelmez; oda/server state'inden türetilir.
+        // A-10: kayıt bir ODAYA aitse istemcinin bildirdiği `mode`'a bakılmaz. Eskiden mode=pvb/local
+        // gönderilince oda yetkisi atlanıyor; kimliksiz biri canlı maçın olaylarını, kazananını ve skorunu
+        // (replay, .mat, şans analizi) ezebiliyordu. (Odası artık olmayan eski kayıtlarda davranış
+        // aynı kalır: istemcinin kuyruğa aldığı gecikmeli yüklemeler kaybolmasın.)
+        $room = Room::where('code', $uid)->first();
+        if ($room) {
+            $data['mode'] = 'online';
+            $meta['mode'] = 'online';
+        }
         if ($data['mode'] === 'online') {
-            $room = Room::where('code', $uid)->first();
             if ($room) {
                 $actor = $request->user('sanctum');
                 $guestToken = (string) ($data['token'] ?? $request->header('X-Room-Token', ''));
@@ -131,8 +139,9 @@ class GameLogController extends Controller
         // Online replay mevcut oda ile eşleşiyorsa yalnızca katılımcı/guest room token
         // export edebilsin. PvB/local ve arşivlenmiş (artık odası olmayan) eski kayıtlar
         // geriye dönük export sözleşmesini korur.
-        if ($log->mode === 'online') {
-            $room = Room::where('code', $uid)->first();
+        // A-10: oda varsa kaydın (istemcinin ilk yazdığı) mode'una bakılmadan yetki zorunlu.
+        $room = Room::where('code', $uid)->first();
+        if ($log->mode === 'online' || $room) {
             if ($room) {
                 $actor = $request->user('sanctum');
                 $guestToken = (string) ($request->header('X-Room-Token') ?? '');
