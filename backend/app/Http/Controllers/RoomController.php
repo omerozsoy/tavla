@@ -4202,6 +4202,42 @@ class RoomController extends Controller
     }
 
     /**
+     * Daha önce işlenmiş bir komutun (aynı room + command_id) makbuzu varsa onun yanıtını döndür;
+     * aynı kimlik FARKLI içerikle geldiyse 409 command-payload-mismatch. Makbuz yoksa null.
+     * claimAuthoritativeCommand'dan farkı: YENİ makbuz OLUŞTURMAZ (salt-okur).
+     */
+    private function replayedCommand(Room $room, array $data): ?\Symfony\Component\HttpFoundation\Response
+    {
+        $commandId = $data['command_id'] ?? null;
+        if (! $room->authoritative || ! $commandId || ! Schema::hasTable('room_commands')) {
+            return null;
+        }
+        $existing = \App\Models\RoomCommand::where('room_id', $room->id)->where('command_id', $commandId)->first();
+        if (! $existing) {
+            return null;
+        }
+        $payload = $data;
+        unset($payload['command_id'], $payload['expected_version']);
+        $hash = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        if (! hash_equals((string) $existing->payload_hash, $hash)) {
+            return $this->fail('Aynı komut kimliği farklı içerikle kullanılamaz.', 409, [
+                'reason' => 'command-payload-mismatch',
+            ]);
+        }
+        if ($existing->response_json !== null) {
+            $replayed = json_decode((string) $existing->response_json, true);
+            if (is_array($replayed)) {
+                return response()->json($replayed, (int) ($existing->response_status ?: 200));
+            }
+        }
+
+        return $this->fail('Bu komut daha önce işlendi.', 409, [
+            'reason' => 'command-replayed',
+            'version' => (int) $room->server_version,
+        ]);
+    }
+
+    /**
      * Reject stale commands. Full server-authoritative rooms require the version envelope;
      * omitting it would leave an old/manual client outside the concurrency protocol.
      */
@@ -4219,6 +4255,15 @@ class RoomController extends Controller
 
         $actual = $room->authoritative ? (int) $room->server_version : (int) $room->version;
         if ((int) $data['expected_version'] !== $actual) {
+            // AĞ YENİDEN DENEMESİ: başarılı bir komutun BİREBİR tekrarı (aynı command_id) artık eski
+            // expected_version taşır. Sürüm kapısı makbuz kontrolünden ÖNCE çalıştığı için replay
+            // yolu hiç çalışmıyor, istemci kendi kabul edilmiş hamlesine 409 stale alıyordu (yanıt
+            // ağda kaybolunca "hamlem gitti mi?" belirsizliği). Makbuz varsa onu yanıtla; YENİ makbuz
+            // açılmaz -> sürüm kapısı yeni komutlar için aynen geçerli.
+            if (($replay = $this->replayedCommand($room, $data)) !== null) {
+                return $replay;
+            }
+
             return $this->fail('Oyun durumu güncellendi; önce yeniden senkronize ol.', 409, [
                 'reason' => 'stale-version', 'version' => $actual,
             ]);

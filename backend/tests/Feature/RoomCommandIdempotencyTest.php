@@ -99,6 +99,42 @@ class RoomCommandIdempotencyTest extends TestCase
         $this->assertDatabaseCount('room_commands', 1);
     }
 
+    /**
+     * AĞ YENİDEN DENEMESİ (birebir tekrar): yanıtı kaybolan istemci AYNI command_id + AYNI (artık
+     * eski) expected_version ile tekrar gönderir. Eskiden sürüm kapısı makbuzdan önce çalıştığı için
+     * 409 stale-version dönüyordu; artık saklanan yanıt döner, durum iki kez değişmez. Aynı kimlik
+     * farklı içerikle gelirse 409 command-payload-mismatch.
+     */
+    public function test_exact_retry_with_original_version_replays_receipt_mid_game(): void
+    {
+        $user = User::factory()->create(['coins' => 1000]);
+        Sanctum::actingAs($user);
+        $room = $this->room($user);
+        $room->update([
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 1,
+            ],
+            'server_state' => array_merge(\App\Support\Backgammon::initialState(), ['turn' => 'white', 'dice' => []]),
+        ]);
+        $commandId = (string) Str::uuid();
+        $body = ['token' => 'p1-token', 'command_id' => $commandId, 'expected_version' => 0];
+
+        $first = $this->postJson("/api/rooms/{$room->code}/roll", $body)->assertOk();
+        $retry = $this->postJson("/api/rooms/{$room->code}/roll", $body)->assertOk();
+        $this->assertSame($first->json(), $retry->json());
+        $this->assertSame(1, (int) $room->fresh()->server_version);
+        $this->assertCount(1, $room->fresh()->dice_rolls ?? []);
+
+        $this->postJson("/api/rooms/{$room->code}/roll", $body + ['client_seed' => 'baska'])
+            ->assertStatus(409)->assertJsonPath('reason', 'command-payload-mismatch');
+        // Yeni kimlikli eski-sürümlü komut yine stale (sürüm kapısı aynen çalışır).
+        $this->postJson("/api/rooms/{$room->code}/roll", ['token' => 'p1-token', 'command_id' => (string) Str::uuid(), 'expected_version' => 0])
+            ->assertStatus(409)->assertJsonPath('reason', 'stale-version');
+        $this->assertDatabaseCount('room_commands', 1);
+    }
+
     public function test_cube_and_resign_require_command_id(): void
     {
         $user = User::factory()->create(['coins' => 1000]);
