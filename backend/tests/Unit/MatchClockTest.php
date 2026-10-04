@@ -398,6 +398,25 @@ class MatchClockTest extends TestCase
         $this->assertEmpty(MatchClock::tick($c, self::T0 + 40)['end'] ?? null);
     }
 
+    // ---- 24b) A-02: TEK (reddedilmis) komut damgasi saati SONSUZA dek dondurmaz ----
+    // Oyuncu tur basinda gecersiz bir komut gonderir (_acted=T0+5), sonra hic oynamaz. Eskiden
+    // effNow=T0+5'te sabit kalip AFK/TIMEOUT asla tetiklenmiyordu.
+    public function test_single_stale_acted_does_not_freeze_clock_afk(): void
+    {
+        $c = $this->movedClock('casual', 5);
+        $c['p1_acted'] = self::T0 + 5;
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 200)['end']['reason'] ?? null);
+    }
+
+    public function test_single_stale_acted_does_not_freeze_clock_timeout(): void
+    {
+        $c = $this->started('speed', 1);         // timeout T0+32
+        // Iki oyuncu da poll ile "bagli" (seen taze) -> terk degil, saat ile karar verilmeli.
+        $c = MatchClock::seen(MatchClock::seen($c, 'p1', self::T0 + 88), 'p2', self::T0 + 88);
+        $c['p1_acted'] = self::T0 + 2;
+        $this->assertSame('TIMEOUT', MatchClock::tick($c, self::T0 + 90)['end']['reason'] ?? null);
+    }
+
     // ---- 25) BAYAT _acted (bu segment ONCESI) ETKISIZ -> normal AFK korunur ----
     public function test_stale_acted_before_segment_ignored(): void
     {

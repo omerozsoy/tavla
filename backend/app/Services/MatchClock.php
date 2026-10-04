@@ -52,6 +52,8 @@ class MatchClock
     // 45sn: terk edilen/olu oda ~45sn'de (45 + GRACE, GRACE=0) kapanir. Daha dusuk deger (30) mobilde
     // sekme arka plana atilinca / kisa ag kesintisinde haksiz "terk" (false-forfeit) riskini artirir.
     public const PRESENCE_TIMEOUT = 45;
+    /** In-flight kalkanin azami suresi (sn): komut isleme + retry payi. Daha eski _acted etkisiz (A-02). */
+    public const INFLIGHT_MAX = 30;
 
     public static function normalizeMode(?string $mode): string
     {
@@ -299,8 +301,14 @@ class MatchClock
         // ana banka gercek-zamanli akmaya devam eder (TIMEOUT hard anti-stall limiti korunur: bir
         // kez acted now'a yetisirse timeout normal uygular). acted bu segmentte degilse (<= start,
         // or. onceki turdan kalma) etkisizdir.
+        // SINIR (denetim A-02): _acted, komut REDDEDILSE bile (409/422, tekrar /roll) yazilir. Tek bir
+        // damga effNow'u o ana SABITLIYOR, TIMEOUT/AFK hic tetiklenmiyordu -> oyuncu bir gecersiz komut
+        // gonderip sonra hic oynamadan (yalniz poll ile "bagli" kalarak) maci sonsuza dek kilitleyebiliyordu.
+        // Kalkan yalniz komut ISLENIRKEN gecerli: damga INFLIGHT_MAX'tan eskiyse etkisiz. Damgayi surekli
+        // tazelemek de kazandirmaz (effNow=acted damgayla ilerler; gecikme <= INFLIGHT_MAX).
         $acted = (float) ($clock[$active.'_acted'] ?? 0);
-        $effNow = ($acted > $start && $acted < $now) ? $acted : $now;
+        $inFlight = $acted > $start && $acted < $now && ($now - $acted) <= self::INFLIGHT_MAX;
+        $effNow = $inFlight ? $acted : $now;
         $timedOut = $effNow >= $timeoutAt + self::GRACE;              // banka tukendi
         $afkedOut = $moved && ($effNow >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
         // ADALET (KÖK FIX): aktif oyuncu bu odayi HIC yuklemediyse (seen damgasi YOK = hic poll
