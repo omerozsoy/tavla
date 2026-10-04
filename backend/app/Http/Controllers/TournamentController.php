@@ -264,7 +264,12 @@ class TournamentController extends Controller
             if ($t->status !== 'open') {
                 return ['err' => 'Turnuva başladı, çıkılamaz.', 'code' => 422];
             }
+            $wasIn = $this->isRegistered($t, $me->id);
             $this->removeRegistered($t, $me->id); // idempotent: kayitli degilse no-op
+            if ($wasIn) {
+                // A-33: katıl/ayrıl döngüsüyle "oynanan turnuva" sayacı (ve başarımlar) şişirilemesin.
+                \App\Models\UserStat::where('user_id', $me->id)->where('tournaments_played', '>', 0)->decrement('tournaments_played');
+            }
             return ['ok' => true];
         });
         if (isset($out['err'])) {

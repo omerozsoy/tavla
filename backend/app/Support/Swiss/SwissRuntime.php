@@ -225,6 +225,11 @@ class SwissRuntime
         } else {
             $state['note'] = 'no_champion'; // contract §10: hayali şampiyon YOK
             $t->swiss_state = $state;
+            // A-33: şampiyonsuz bitiş (ör. herkes çift-mağlubiyetle elendi) -> havuz kimseye ödenmiyor ve
+            // giriş ücretleri kayboluyordu. Ödül dağıtılmadıysa ödenen ücretler iade edilir (idempotent).
+            if (! $t->prize_paid) {
+                \App\Support\TournamentModeration::refundAll($t);
+            }
         }
         if (! $t->prize_paid && $champ !== null) {
             self::payPrizes($t);

@@ -331,4 +331,30 @@ class SwissTournamentTest extends TestCase
         $this->assertSame('RACE2', $rooms[$m2['key']], 'diğer maçın oda kodu korunmalı');
         $this->assertNotEmpty($rooms[$m1['key']]);
     }
+
+    public function test_no_champion_finish_refunds_paid_fees(): void
+    {
+        // A-33: şampiyonsuz bitişte giriş ücretleri kayboluyordu.
+        $t = $this->makeTournament(2, ['entry_fee' => 100, 'prize_coins' => 200]);
+        $players = $t->players;
+        foreach ($players as $i => $pl) {
+            $players[$i]['fee_paid'] = 100;
+        }
+        $t->players = $players;
+        $t->save();
+        SwissRuntime::start($t);
+        $t->refresh();
+        $before = User::whereIn('id', array_column($players, 'id'))->pluck('coins', 'id');
+        $guard = 0;
+        while ($t->status === 'running' && $guard++ < 10) {
+            [$key] = $this->firstPending($t);
+            SwissRuntime::resolveMatch($t, $key, 0);
+            $t->refresh();
+        }
+        $this->assertSame('finished', $t->status);
+        $this->assertNull($t->champion_id);
+        foreach ($before as $id => $c) {
+            $this->assertSame((int) $c + 100, (int) User::find($id)->coins, 'ödenen ücret iade edilmeli');
+        }
+    }
 }

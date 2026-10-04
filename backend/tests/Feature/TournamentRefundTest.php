@@ -129,4 +129,20 @@ class TournamentRefundTest extends TestCase
         $this->assertSame($before + 120, (int) $p->fresh()->coins, 'sıfırlamada ödenen ücret iade edilmeli');
         $this->assertSame([], $t->fresh()->players);
     }
+
+    // A-33: katıl/ayrıl döngüsü "oynanan turnuva" sayacını şişirmemeli (başka oyuncununkine de dokunmamalı).
+    public function test_join_leave_cycle_does_not_farm_tournaments_played(): void
+    {
+        $t = $this->open($this->admin(), 0);
+        $other = User::factory()->create();
+        \App\Models\UserStat::forUser($other->id)->update(['tournaments_played' => 7]);
+        $p = User::factory()->create();
+        Sanctum::actingAs($p);
+        for ($i = 0; $i < 3; $i++) {
+            $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
+            $this->postJson("/api/tournaments/{$t->id}/leave")->assertSuccessful();
+        }
+        $this->assertSame(0, (int) \App\Models\UserStat::forUser($p->id)->fresh()->tournaments_played);
+        $this->assertSame(7, (int) \App\Models\UserStat::forUser($other->id)->fresh()->tournaments_played);
+    }
 }
