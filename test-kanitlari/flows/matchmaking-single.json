@@ -1,0 +1,97 @@
+[
+  {
+    "code": "PBNT3",
+    "games": [
+      {
+        "score": "1-0",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "white",
+        "plies": 78
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 1,
+      "black": 0
+    },
+    "plies": 78,
+    "anomalies": []
+  },
+  {
+    "code": "QJ2HZ",
+    "games": [
+      {
+        "score": "3-0",
+        "points": 3,
+        "expectedPoints": 3,
+        "winner": "white",
+        "plies": 137
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 3,
+      "black": 0
+    },
+    "plies": 137,
+    "anomalies": []
+  },
+  {
+    "code": "AXLAX",
+    "games": [
+      {
+        "score": "0-3",
+        "points": 3,
+        "expectedPoints": 3,
+        "winner": "black",
+        "plies": 73
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 3
+    },
+    "plies": 73,
+    "anomalies": []
+  },
+  {
+    "code": "ZXLZJ",
+    "games": [
+      {
+        "score": "0-1",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "black",
+        "plies": 88
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 1
+    },
+    "plies": 88,
+    "anomalies": []
+  },
+  {
+    "code": "629ZA",
+    "games": [
+      {
+        "score": "1-0",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "white",
+        "plies": 65
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 1,
+      "black": 0
+    },
+    "plies": 65,
+    "anomalies": []
+  }
+]
