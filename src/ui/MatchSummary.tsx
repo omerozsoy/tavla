@@ -104,6 +104,9 @@ export default function MatchSummary({
     )
   }
 
+  // NOT: Row/Head/PlayerHead JSX bileşeni olarak DEĞİL düz fonksiyon olarak çağrılır ({Row({...})}).
+  // Bu bileşenin içinde tanımlandıkları için her çizimde YENİ bileşen türü olurlardı -> React tabloyu
+  // her seferinde silip yeniden kurar, kullanıcının seçtiği yazı kaybolurdu.
   // Kategori başlık satırı (GENEL / HATALAR / …)
   const Head = ({ label }: { label: string }) => (
     <tr className="ms-cat">
@@ -144,48 +147,48 @@ export default function MatchSummary({
             <thead>
               <tr>
                 <th className="ms-corner">{t('ms.stat')}</th>
-                <th><PlayerHead p={p1} /></th>
-                <th><PlayerHead p={p2} /></th>
+                <th>{PlayerHead({ p: p1 })}</th>
+                <th>{PlayerHead({ p: p2 })}</th>
               </tr>
             </thead>
             <tbody>
-              <Head label={t('ms.general')} />
-              <Row label={t('ms.level')} kind="level" strong />
-              <Row label={t('ms.pr')} kind="pr" field="performanceRating" strong />
-              <Row label={t('ms.checkerPlay')} kind="pr" field="checkerPlay" />
-              <Row label={t('ms.cubePlay')} kind="pr" field="cubePlay" />
-              <Row label={t('ms.luckPct')} kind="luck" field="luck" />
+              {Head({ label: t('ms.general') })}
+              {Row({ label: t('ms.level'), kind: 'level', strong: true })}
+              {Row({ label: t('ms.pr'), kind: 'pr', field: 'performanceRating', strong: true })}
+              {Row({ label: t('ms.checkerPlay'), kind: 'pr', field: 'checkerPlay' })}
+              {Row({ label: t('ms.cubePlay'), kind: 'pr', field: 'cubePlay' })}
+              {Row({ label: t('ms.luckPct'), kind: 'luck', field: 'luck' })}
 
-              <Head label={t('ms.errors')} />
-              <Row label={t('ms.totalErrors')} kind="errs" field="totalErrors" blunderField="totalBlunders" strong />
-              <Row label={t('ms.equityCost')} kind="cost" field="totalEquityCost" sub />
-              <Row label={t('ms.decisions')} kind="count" field="decisions" sub />
+              {Head({ label: t('ms.errors') })}
+              {Row({ label: t('ms.totalErrors'), kind: 'errs', field: 'totalErrors', blunderField: 'totalBlunders', strong: true })}
+              {Row({ label: t('ms.equityCost'), kind: 'cost', field: 'totalEquityCost', sub: true })}
+              {Row({ label: t('ms.decisions'), kind: 'count', field: 'decisions', sub: true })}
 
-              <Head label={t('ms.checker')} />
-              <Row label={t('ms.checkerErrors')} kind="errs" field="checkerErrors" blunderField="checkerBlunders" strong />
-              <Row label={t('ms.equityCost')} kind="cost" field="checkerEquityCost" sub />
-              <Row label={t('ms.unforced')} kind="count" field="unforcedMoves" sub />
+              {Head({ label: t('ms.checker') })}
+              {Row({ label: t('ms.checkerErrors'), kind: 'errs', field: 'checkerErrors', blunderField: 'checkerBlunders', strong: true })}
+              {Row({ label: t('ms.equityCost'), kind: 'cost', field: 'checkerEquityCost', sub: true })}
+              {Row({ label: t('ms.unforced'), kind: 'count', field: 'unforcedMoves', sub: true })}
 
-              <Head label={t('ms.cube')} />
-              <Row label={t('ms.doubles')} kind="errs" field="doubles" blunderField="doubleBlunders" strong />
-              <Row label={t('ms.equityCost')} kind="cost" field="doubleEquityCost" sub />
-              <Row label={t('ms.wrongDoubles')} kind="cost" field="wrongDoublesCost" sub />
-              <Row label={t('ms.missedDoubles')} kind="cost" field="missedDoublesCost" sub />
-              <Row label={t('ms.cubeDecisions')} kind="count" field="cubeDecisions" sub />
+              {Head({ label: t('ms.cube') })}
+              {Row({ label: t('ms.doubles'), kind: 'errs', field: 'doubles', blunderField: 'doubleBlunders', strong: true })}
+              {Row({ label: t('ms.equityCost'), kind: 'cost', field: 'doubleEquityCost', sub: true })}
+              {Row({ label: t('ms.wrongDoubles'), kind: 'cost', field: 'wrongDoublesCost', sub: true })}
+              {Row({ label: t('ms.missedDoubles'), kind: 'cost', field: 'missedDoublesCost', sub: true })}
+              {Row({ label: t('ms.cubeDecisions'), kind: 'count', field: 'cubeDecisions', sub: true })}
 
-              <Head label={t('ms.take')} />
-              <Row label={t('ms.takes')} kind="errs" field="takes" blunderField="takeBlunders" strong />
-              <Row label={t('ms.equityCost')} kind="cost" field="takeEquityCost" sub />
-              <Row label={t('ms.wrongTakes')} kind="cost" field="wrongTakesCost" sub />
-              <Row label={t('ms.wrongPasses')} kind="cost" field="wrongPassesCost" sub />
-              <Row label={t('ms.takeDecisions')} kind="count" field="takeDecisions" sub />
+              {Head({ label: t('ms.take') })}
+              {Row({ label: t('ms.takes'), kind: 'errs', field: 'takes', blunderField: 'takeBlunders', strong: true })}
+              {Row({ label: t('ms.equityCost'), kind: 'cost', field: 'takeEquityCost', sub: true })}
+              {Row({ label: t('ms.wrongTakes'), kind: 'cost', field: 'wrongTakesCost', sub: true })}
+              {Row({ label: t('ms.wrongPasses'), kind: 'cost', field: 'wrongPassesCost', sub: true })}
+              {Row({ label: t('ms.takeDecisions'), kind: 'count', field: 'takeDecisions', sub: true })}
 
-              <Head label={t('ms.luck')} />
-              <Row label={t('ms.jokers')} kind="count" field="jokers" />
-              <Row label={t('ms.luckCost')} kind="cost" field="luckCost" />
-              <Row label={t('ms.rolls')} kind="count" field="rolls" />
-              <Row label={t('ms.luckRating')} kind="pr" field="luckBasedRating" />
-              <Row label={t('ms.luckElo')} kind="count" field="luckBasedElo" />
+              {Head({ label: t('ms.luck') })}
+              {Row({ label: t('ms.jokers'), kind: 'count', field: 'jokers' })}
+              {Row({ label: t('ms.luckCost'), kind: 'cost', field: 'luckCost' })}
+              {Row({ label: t('ms.rolls'), kind: 'count', field: 'rolls' })}
+              {Row({ label: t('ms.luckRating'), kind: 'pr', field: 'luckBasedRating' })}
+              {Row({ label: t('ms.luckElo'), kind: 'count', field: 'luckBasedElo' })}
             </tbody>
           </table>
         </div>
