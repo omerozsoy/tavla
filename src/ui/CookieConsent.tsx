@@ -197,11 +197,13 @@ function CookiePreferences({
   //   X'i masaustunde GIZLER (sayfa menuden kapatilir). CookieConsent ise footer'dan acilan
   //   GLOBAL bir overlay (menu baglami yok) -> 254px'lik solda KOYU KUTU + kapatma yolu yok.
   // - `.cc-prefs-card`'in HIC CSS'i yoktu.
-  // Cozum: standart ortalanmis `.register-overlay.modal` + `.info-card` (760px) -> scrim,
+  // Cozum: standart ortalanmis `.register-overlay.modal` + kendi kartı `.cc-prefs` -> scrim,
   // gorunur X, backdrop tiklamasi (ortalanmis modalda guvenli) veya Escape ile kapanir.
+  // NOT: `.info-card` KULLANILMAZ — o sinif sayfa-ici bilgi sayfalari icin SEFFAF/kenarliksiz ve
+  // 1400px genisliktedir; modalda kart zemini kaybolup baslik/aciklama/3. buton okunmuyordu.
   return (
-    <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="register-card info-card" onClick={(e) => e.stopPropagation()}>
+    <div className="register-overlay modal cc-prefs-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="register-card cc-prefs" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
         </Button>
