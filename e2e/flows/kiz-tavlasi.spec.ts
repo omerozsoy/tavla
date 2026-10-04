@@ -46,7 +46,7 @@ for (const [label, device] of [['masaüstü', { viewport: { width: 1280, height:
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     writeFileSync(`${OUT}/kiz-${label}.json`, JSON.stringify({ games, overflow, errors }, null, 2))
     expect(games.length, 'tamamlanan oyun').toBe(target)
-    for (const g of games) expect(g.result).toMatch(/\d+\s*\/\s*\d+|Kazand|Kaybett|Bilgisayar|Sen/)
+    for (const g of games) { expect(g.result).toMatch(/Kazandın!|Bilgisayar kazandı!/); expect(g.result).not.toContain('Sen kazandı') }
     expect(overflow, 'yatay taşma').toBeLessThanOrEqual(1)
     expect(errors).toEqual([])
     await ctx.close()

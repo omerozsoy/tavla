@@ -270,7 +270,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
         <div className="kiz-result" role="dialog" aria-modal="true">
           <div className="kiz-result-card">
             <Icon name="trophy" size={34} />
-            <h3>{nameFor(state.winner)} kazandı!</h3>
+            <h3>{state.winner === 'white' ? 'Kazandın!' : 'Bilgisayar kazandı!'}</h3>
             {state.mars && <div className="kiz-mars">MARS! (iki kat)</div>}
             <div className="kiz-score">
               Sen {state.off.white}/{TOTAL_CHECKERS} · Bilgisayar {state.off.black}/{TOTAL_CHECKERS}
