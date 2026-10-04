@@ -83,7 +83,8 @@ class BoardDesign extends Model
         $rows = json_decode((string) file_get_contents($path), true) ?: [];
         $existing = self::where('is_custom', false)->get()->keyBy('slug');
         foreach ($rows as $r) {
-            $attrs = ['name' => $r['name'], 'colors' => $r['colors'], 'sort' => (int) $r['sort']];
+            $attrs = ['name' => $r['name'], 'colors' => $r['colors'], 'sort' => (int) $r['sort'],
+                'surface' => $r['surface'] ?? null, 'checker_style' => $r['checker_style'] ?? null];
             $d = $existing->get($r['id']);
             if ($d) {
                 $d->fill($attrs);

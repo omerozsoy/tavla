@@ -57,6 +57,7 @@ function FrameCard(p: CardProps) {
     <button
       type="button"
       className={`shop-anim ${equipped ? 'active' : ''} ${buyable ? 'locked' : ''}`}
+      data-frame-id={p.f.id}
       style={{ ['--rarity-color']: p.groupColor } as CSSProperties}
       disabled={buyable && !affordable}
       title={buyable && price != null ? `${p.f.name} — ${fmtCoin(price)} coin` : p.f.name}

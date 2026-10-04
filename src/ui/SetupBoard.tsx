@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { Icon } from './Icon'
 import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
 import iznikTile from '../assets/iznik-pano-x3.webp' // İznik board: çini pano deseni (dolu hane)
@@ -20,6 +21,7 @@ interface Props {
   cream?: string
   pointStyle?: 'sharp' | 'rounded' // hane sekli (yuvarlak damla = TavlaTV Özel)
   surface?: 'plain' | 'gradient' | 'felt' | 'wood' // agac damari vb.
+  checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon' // pul stili (App.css [data-checker] karsiligi)
   themeId?: string // ozel cok-renkli desenli boardlar icin (or. 'citrus-wood')
   onChangeBoard?: () => void
   changeLabel?: string
@@ -67,10 +69,13 @@ export default function SetupBoard({
   cream = '#f4efe6',
   pointStyle = 'sharp',
   surface = 'plain',
+  checkerStyle = 'flat',
   themeId,
   onChangeBoard,
   changeLabel,
 }: Props) {
+  // Ayni sayfada cok sayida onizleme var -> doku/parlama tanimlari icin benzersiz id.
+  const uid = 'sb' + useId().replace(/[^a-zA-Z0-9]/g, '')
   const W = 400
   const H = 264
   const PAD = 9 // dis cerceve (rail) kalinligi -> INCE kibar cerceve
@@ -195,17 +200,30 @@ export default function SetupBoard({
     const cx = colCx(s.half, s.col)
     for (let k = 0; k < s.n; k++) {
       const cy = s.row === 'top' ? PAD + r + 1 + k * step : H - PAD - r - 1 - k * step
+      const key = `d-${s.half}-${s.row}-${s.col}-${k}`
+      const fill = s.w ? cream : checker
+      const tone = s.w ? 'l' : 'd'
+      // Pul stili (App.css [data-checker] ile ayni his): ring = ici bos halka; neon = dis parilti;
+      // gloss/ice = sol-ust parlama (ice: acik kenar).
+      if (checkerStyle === 'ring') {
+        discs.push(<circle key={key} cx={cx} cy={cy} r={r - 1.5} fill="none" stroke={fill} strokeWidth={3} />)
+        continue
+      }
       discs.push(
         <circle
-          key={`d-${s.half}-${s.row}-${s.col}-${k}`}
+          key={key}
           cx={cx}
           cy={cy}
           r={r}
-          fill={s.w ? cream : checker}
-          stroke={citrus ? '#e5d6bc' : 'rgba(0,0,0,0.28)'}
+          fill={fill}
+          filter={checkerStyle === 'neon' ? `url(#${uid}-glow)` : undefined}
+          stroke={citrus ? '#e5d6bc' : checkerStyle === 'ice' ? 'rgba(255,255,255,0.65)' : checkerStyle === 'neon' ? 'none' : 'rgba(0,0,0,0.28)'}
           strokeWidth={citrus ? 2 : 1}
         />,
       )
+      if (checkerStyle === 'gloss' || checkerStyle === 'ice' || checkerStyle === 'neon') {
+        discs.push(<circle key={key + 'h'} cx={cx} cy={cy} r={checkerStyle === 'neon' ? r * 0.72 : r} fill={`url(#${uid}-hl-${checkerStyle}-${tone})`} />)
+      }
     }
   }
 
@@ -249,6 +267,39 @@ export default function SetupBoard({
           {/* Ic oyun alani KOSELERI YUVARLAK: haneler/bar bu yuvarlak dikdortgene klipli.
               Aksi halde sivri hane tabanlari dis (yuvarlak) cerceve koselerine tasip
               "kotu kose" veriyordu -> klip ile alan koseleri cerceveyle uyumlu yuvarlanir. */}
+          {surface === 'gradient' && (
+            <linearGradient id={`${uid}-grad`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#fff" stopOpacity="0.16" />
+              <stop offset="0.46" stopColor="#fff" stopOpacity="0" />
+              <stop offset="1" stopColor="#000" stopOpacity="0.18" />
+            </linearGradient>
+          )}
+          {surface === 'felt' && (
+            <pattern id={`${uid}-felt`} width="4" height="4" patternUnits="userSpaceOnUse">
+              <path d="M0 4L4 0" stroke="#000" strokeOpacity="0.1" strokeWidth="1.2" />
+              <path d="M0 0L4 4" stroke="#fff" strokeOpacity="0.07" strokeWidth="1.2" />
+            </pattern>
+          )}
+          {(['gloss', 'ice', 'neon'] as const).includes(checkerStyle as 'gloss') &&
+            (['l', 'd'] as const).map((tone) => (
+              <radialGradient key={tone} id={`${uid}-hl-${checkerStyle}-${tone}`} cx="0.38" cy="0.26" r="0.55">
+                <stop
+                  offset="0"
+                  stopColor={checkerStyle === 'ice' && tone === 'd' ? '#d2ebff' : '#fff'}
+                  stopOpacity={tone === 'l' ? (checkerStyle === 'ice' ? 0.95 : 0.8) : checkerStyle === 'ice' ? 0.6 : 0.3}
+                />
+                <stop offset="1" stopColor="#fff" stopOpacity="0" />
+              </radialGradient>
+            ))}
+          {checkerStyle === 'neon' && (
+            <filter id={`${uid}-glow`} x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="2.4" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          )}
           <clipPath id="sb-field">
             <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="9" />
           </clipPath>
@@ -262,6 +313,10 @@ export default function SetupBoard({
           {/* Ic oyun alani: cerceveden AYRISIN diye hafif koyulastir (tema-bagimsiz overlay;
               acik+koyu tum boardlarda "cukur alan" hissi -> kenar/kose net). */}
           <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} fill="rgba(0,0,0,0.06)" />
+          {/* Zemin dokusu: degrade (dikey derinlik) / kece (capraz iplik) */}
+          {(surface === 'gradient' || surface === 'felt') && (
+            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} fill={`url(#${uid}-${surface === 'gradient' ? 'grad' : 'felt'})`} />
+          )}
           {/* orta bar */}
           <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
           {tris}

@@ -743,6 +743,30 @@ button[aria-disabled='true'],
   grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
   gap: 10px;
 }
+/* Profil > Tahtalar: masaustunde karta gelince 400px buyuk onizleme (BoardPicker HoverPreview). */
+.bp-hover {
+  position: fixed;
+  z-index: 3000;
+  pointer-events: none;
+  padding: 10px 10px 8px;
+  border-radius: 14px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  animation: bp-hover-in 0.12s ease-out;
+}
+.bp-hover-name {
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+@keyframes bp-hover-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@media (hover: none), (pointer: coarse), (max-width: 899px) {
+  .bp-hover { display: none; }
+}
 .board-prev {
   position: relative;
   display: flex;

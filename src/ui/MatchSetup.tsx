@@ -73,6 +73,7 @@ interface BoardColors {
   light?: string // acik pul rengi (onizleme gercek tahta ile ayni pulu gostersin)
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
+  checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
 }
 
 interface Props {
@@ -312,6 +313,7 @@ export default function MatchSetup({
           cream={board.light}
           pointStyle={board.pointStyle}
           surface={board.surface}
+          checkerStyle={board.checkerStyle}
           themeId={board.id}
           onChangeBoard={onChangeBoard}
           changeLabel={t('setup.changeBoard')}

@@ -42,6 +42,7 @@ interface BoardColors {
   checker: string
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
+  checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
 }
 
 interface Props {

@@ -12,7 +12,9 @@
    "b": "#f2ead9",
    "checker": "#241a12",
    "light": "#f7f1e6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "tavla",
@@ -27,7 +29,9 @@
    "b": "#ccd0da",
    "checker": "#4c4f69",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "galaxy",
@@ -42,7 +46,9 @@
    "b": "#244da7",
    "checker": "#18286e",
    "light": "#f2f3f7"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "frostfall",
@@ -57,7 +63,9 @@
    "b": "#1f5f45",
    "checker": "#d32f2f",
    "light": "#dbeeff"
-  }
+  },
+  "surface": null,
+  "checker_style": "ice"
  },
  {
   "id": "pumpkin",
@@ -72,7 +80,9 @@
    "b": "#4a2f5e",
    "checker": "#241533",
    "light": "#f0e2c8"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "marrakesh",
@@ -87,7 +97,9 @@
    "b": "#6e4a2f",
    "checker": "#1c140e",
    "light": "#f6efe2"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "bosphorus",
@@ -102,7 +114,9 @@
    "b": "#5f3f24",
    "checker": "#1a120a",
    "light": "#efe6d6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "manhattan",
@@ -117,7 +131,9 @@
    "b": "#0c4a2e",
    "checker": "#111111",
    "light": "#f4f4f0"
-  }
+  },
+  "surface": "felt",
+  "checker_style": "gloss"
  },
  {
   "id": "worldmasters",
@@ -132,7 +148,9 @@
    "b": "#4a3270",
    "checker": "#161016",
    "light": "#f2f2f6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "retroclub",
@@ -147,7 +165,9 @@
    "b": "#2f7d3f",
    "checker": "#c0392b",
    "light": "#e8ddc0"
-  }
+  },
+  "surface": null,
+  "checker_style": "gloss"
  },
  {
   "id": "redplanet",
@@ -162,7 +182,9 @@
    "b": "#7c2a1c",
    "checker": "#5a1a12",
    "light": "#f0dcc8"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "glacier",
@@ -177,7 +199,9 @@
    "b": "#7ea6d8",
    "checker": "#35597f",
    "light": "#f4f9fd"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "atlantis",
@@ -192,7 +216,9 @@
    "b": "#1f7d76",
    "checker": "#0d4a45",
    "light": "#eafaf7"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "amethyst",
@@ -207,7 +233,9 @@
    "b": "#7a4596",
    "checker": "#3f2360",
    "light": "#f2e7f8"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "radioactive",
@@ -222,7 +250,9 @@
    "b": "#8a963c",
    "checker": "#3a4818",
    "light": "#f2f6d8"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "gaia",
@@ -237,7 +267,9 @@
    "b": "#2f7a58",
    "checker": "#123527",
    "light": "#eafaf1"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "lunar",
@@ -252,7 +284,9 @@
    "b": "#6a7688",
    "checker": "#2f3646",
    "light": "#eef1f7"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "monaco",
@@ -267,7 +301,9 @@
    "b": "#d9c9a3",
    "checker": "#141414",
    "light": "#f0ead6"
-  }
+  },
+  "surface": "felt",
+  "checker_style": "gloss"
  },
  {
   "id": "violetstorm",
@@ -282,7 +318,9 @@
    "b": "#5f3f96",
    "checker": "#3a2560",
    "light": "#efe7f6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "blueorbit",
@@ -297,7 +335,9 @@
    "b": "#2f52b8",
    "checker": "#16227a",
    "light": "#eef2fb"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "crimsonash",
@@ -312,7 +352,9 @@
    "b": "#3a3d44",
    "checker": "#8e2a26",
    "light": "#d9cdbc"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "ion",
@@ -327,7 +369,9 @@
    "b": "#26282f",
    "checker": "#6b3fc0",
    "light": "#e88a3a"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "reddwarf",
@@ -342,7 +386,9 @@
    "b": "#8c2a1e",
    "checker": "#280c08",
    "light": "#e8ded0"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "eclipse",
@@ -357,7 +403,9 @@
    "b": "#722a1e",
    "checker": "#e6b64a",
    "light": "#f2e6cc"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "nord",
@@ -372,7 +420,9 @@
    "b": "#2e3440",
    "checker": "#4c566a",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "dracula",
@@ -387,7 +437,9 @@
    "b": "#44475a",
    "checker": "#6272a4",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "gruvbox",
@@ -402,7 +454,9 @@
    "b": "#282828",
    "checker": "#504945",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "solarized",
@@ -417,7 +471,9 @@
    "b": "#002b36",
    "checker": "#586e75",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "tokyonight",
@@ -432,7 +488,9 @@
    "b": "#1a1b26",
    "checker": "#414868",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "rosepine",
@@ -447,7 +505,9 @@
    "b": "#1f1d2e",
    "checker": "#6e6a86",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "mocha",
@@ -462,7 +522,9 @@
    "b": "#1e1e2e",
    "checker": "#585b70",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "monokai",
@@ -477,7 +539,9 @@
    "b": "#272822",
    "checker": "#75715e",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "everforest",
@@ -492,7 +556,9 @@
    "b": "#2b3339",
    "checker": "#4f5b58",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "ayu",
@@ -507,7 +573,9 @@
    "b": "#171b24",
    "checker": "#444a55",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "onedark",
@@ -522,7 +590,9 @@
    "b": "#282c34",
    "checker": "#4b5263",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "nightowl",
@@ -537,7 +607,9 @@
    "b": "#011627",
    "checker": "#365069",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "synthwave",
@@ -552,7 +624,9 @@
    "b": "#1a1030",
    "checker": "#00d4e8",
    "light": "#ff7be0"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "neon"
  },
  {
   "id": "horizon",
@@ -567,7 +641,9 @@
    "b": "#241a40",
    "checker": "#e0553a",
    "light": "#c0a8e8"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "gloss"
  },
  {
   "id": "palenight",
@@ -582,7 +658,9 @@
    "b": "#1c1f2b",
    "checker": "#4a4f66",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "oceanic",
@@ -597,7 +675,9 @@
    "b": "#1b2b34",
    "checker": "#405860",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "gruvlight",
@@ -612,7 +692,9 @@
    "b": "#bdae93",
    "checker": "#504945",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "sollight",
@@ -627,7 +709,9 @@
    "b": "#93a1a1",
    "checker": "#586e75",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "dawn",
@@ -642,7 +726,9 @@
    "b": "#dfdad9",
    "checker": "#575279",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "ocean",
@@ -657,7 +743,9 @@
    "b": "#144f63",
    "checker": "#0e5a70",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "gold",
@@ -672,7 +760,9 @@
    "b": "#8a6a1a",
    "checker": "#7a5f14",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "sunset",
@@ -687,7 +777,9 @@
    "b": "#8f3a22",
    "checker": "#a3401f",
    "light": "#ffe6c8"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "gloss"
  },
  {
   "id": "neon",
@@ -702,7 +794,9 @@
    "b": "#7a1fb0",
    "checker": "#00b0ff",
    "light": null
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "sahara",
@@ -717,7 +811,9 @@
    "b": "#8a5e38",
    "checker": "#4a3324",
    "light": "#f6ecd6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "emerald",
@@ -732,7 +828,9 @@
    "b": "#0a4d3b",
    "checker": "#08352a",
    "light": "#dff7ec"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "ice"
  },
  {
   "id": "arctic",
@@ -747,7 +845,9 @@
    "b": "#5688a5",
    "checker": "#294b68",
    "light": "#f7fbff"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "ice"
  },
  {
   "id": "coral",
@@ -762,7 +862,9 @@
    "b": "#A9474A",
    "checker": "#62313B",
    "light": "#FFF0D5"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "jade",
@@ -777,7 +879,9 @@
    "b": "#24604E",
    "checker": "#173D35",
    "light": "#E7E6CE"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "ocean2",
@@ -792,7 +896,9 @@
    "b": "#06465F",
    "checker": "#082E48",
    "light": "#D8F3F5"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "lagoon",
@@ -807,7 +913,9 @@
    "b": "#0B5A65",
    "checker": "#083D43",
    "light": "#E5F3D6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "lavender",
@@ -822,7 +930,9 @@
    "b": "#584378",
    "checker": "#3C285C",
    "light": "#F0E8F4"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "ruby",
@@ -837,7 +947,9 @@
    "b": "#5A1728",
    "checker": "#35121B",
    "light": "#F6D7C9"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "royal",
@@ -852,7 +964,9 @@
    "b": "#0f1c42",
    "checker": "#0a1330",
    "light": "#f6e6b0"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "gloss"
  },
  {
   "id": "cherry",
@@ -867,7 +981,9 @@
    "b": "#44152B",
    "checker": "#27111C",
    "light": "#F5D8D5"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "copper",
@@ -882,7 +998,9 @@
    "b": "#633827",
    "checker": "#42251C",
    "light": "#F3D6AE"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "midnight",
@@ -897,7 +1015,9 @@
    "b": "#10102B",
    "checker": "#090A18",
    "light": "#BFCDF2"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "gold2",
@@ -912,7 +1032,9 @@
    "b": "#604318",
    "checker": "#382712",
    "light": "#FFF0BC"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "volcano",
@@ -927,7 +1049,9 @@
    "b": "#29171B",
    "checker": "#160D10",
    "light": "#E5B76D"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "tokyo",
@@ -942,7 +1066,9 @@
    "b": "#6676C5",
    "checker": "#202131",
    "light": "#F1E9DE"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "aurora2",
@@ -957,7 +1083,9 @@
    "b": "#7046A0",
    "checker": "#22265D",
    "light": "#C7F2DE"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "imperial",
@@ -972,7 +1100,9 @@
    "b": "#C29145",
    "checker": "#31152E",
    "light": "#F1DFB1"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "obsidian",
@@ -987,7 +1117,9 @@
    "b": "#0e0f13",
    "checker": "#050608",
    "light": "#e6e8ec"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "gloss"
  },
  {
   "id": "samurai",
@@ -1002,7 +1134,9 @@
    "b": "#0c0c0c",
    "checker": "#8a1f1f",
    "light": "#e8dcc0"
-  }
+  },
+  "surface": null,
+  "checker_style": "gloss"
  },
  {
   "id": "blackdiamond",
@@ -1017,7 +1151,9 @@
    "b": "#14161c",
    "checker": "#0a0b0f",
    "light": "#eef1f7"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "ice"
  },
  {
   "id": "cyber",
@@ -1032,7 +1168,9 @@
    "b": "#0e0a24",
    "checker": "#0bb8d8",
    "light": "#ff4fb0"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "neon"
  },
  {
   "id": "inferno",
@@ -1047,7 +1185,9 @@
    "b": "#7c1e10",
    "checker": "#ff6a2a",
    "light": "#ffd9a8"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "neon"
  },
  {
   "id": "fenerbahce",
@@ -1062,7 +1202,9 @@
    "b": "#E6BC15",
    "checker": "#173B8F",
    "light": "#F7D72C"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "galatasaray",
@@ -1077,7 +1219,9 @@
    "b": "#7F1024",
    "checker": "#A71930",
    "light": "#F4BB16"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "besiktas",
@@ -1092,7 +1236,9 @@
    "b": "#A3A3A3",
    "checker": "#111111",
    "light": "#F4F4F4"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "trabzonspor",
@@ -1107,7 +1253,9 @@
    "b": "#5F1728",
    "checker": "#0E4C92",
    "light": "#F5DCE2"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "turkey",
@@ -1122,7 +1270,9 @@
    "b": "#B70810",
    "checker": "#6E0910",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "usa",
@@ -1137,7 +1287,9 @@
    "b": "#F4F5FA",
    "checker": "#0A1F45",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "uk",
@@ -1152,7 +1304,9 @@
    "b": "#F4F6FB",
    "checker": "#011543",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "germany",
@@ -1167,7 +1321,9 @@
    "b": "#FFCE00",
    "checker": "#0A0A0A",
    "light": "#F4EFDD"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "greece",
@@ -1182,7 +1338,9 @@
    "b": "#0A4E93",
    "checker": "#062A50",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "italy",
@@ -1197,7 +1355,9 @@
    "b": "#F1F2F1",
    "checker": "#054F29",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "france",
@@ -1212,7 +1372,9 @@
    "b": "#F4F6FB",
    "checker": "#00306A",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "spain",
@@ -1227,7 +1389,9 @@
    "b": "#8E1116",
    "checker": "#4E080C",
    "light": "#FBF3DA"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "japan",
@@ -1242,7 +1406,9 @@
    "b": "#E7CDD1",
    "checker": "#7A0018",
    "light": "#FFFFFF"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "brazil",
@@ -1257,7 +1423,9 @@
    "b": "#002776",
    "checker": "#064A22",
    "light": "#F5F8EE"
-  }
+  },
+  "surface": null,
+  "checker_style": "gloss"
  },
  {
   "id": "tavlatv-special",
@@ -1272,7 +1440,9 @@
    "b": "#d8c5a0",
    "checker": "#5a3d26",
    "light": "#efe6cc"
-  }
+  },
+  "surface": "wood",
+  "checker_style": "gloss"
  },
  {
   "id": "citrus-wood",
@@ -1287,7 +1457,9 @@
    "b": "#F39A0A",
    "checker": "#FF9800",
    "light": "#3F9146"
-  }
+  },
+  "surface": "wood",
+  "checker_style": "flat"
  },
  {
   "id": "nautical",
@@ -1302,7 +1474,9 @@
    "b": "#946f43",
    "checker": "#1e3a5f",
    "light": "#f4eeda"
-  }
+  },
+  "surface": "wood",
+  "checker_style": "gloss"
  },
  {
   "id": "iznik",
@@ -1317,7 +1491,9 @@
    "b": "#C81E28",
    "checker": "#161E3E",
    "light": "#FBF6EC"
-  }
+  },
+  "surface": "plain",
+  "checker_style": "gloss"
  },
  {
   "id": "sakura",
@@ -1332,7 +1508,9 @@
    "b": "#C4114F",
    "checker": "#3B0A14",
    "light": "#FBEDF2"
-  }
+  },
+  "surface": "plain",
+  "checker_style": "gloss"
  },
  {
   "id": "yilbasi",
@@ -1347,7 +1525,9 @@
    "b": "#F7F3EA",
    "checker": "#14532D",
    "light": "#FFFBF2"
-  }
+  },
+  "surface": "plain",
+  "checker_style": "gloss"
  },
  {
   "id": "gamma",
@@ -1362,7 +1542,9 @@
    "b": "#1f6b63",
    "checker": "#0d3d38",
    "light": "#d9f5ee"
-  }
+  },
+  "surface": null,
+  "checker_style": "ice"
  },
  {
   "id": "cosmos",
@@ -1377,7 +1559,9 @@
    "b": "#0a0e24",
    "checker": "#3a46c0",
    "light": "#eef0ff"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "titan",
@@ -1392,7 +1576,9 @@
    "b": "#4e4228",
    "checker": "#c85a1f",
    "light": "#9aa2e6"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "jupiter",
@@ -1407,7 +1593,9 @@
    "b": "#4e4a28",
    "checker": "#c98a5a",
    "light": "#eae6d0"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "helix",
@@ -1422,7 +1610,9 @@
    "b": "#3a4a7a",
    "checker": "#5a3f96",
    "light": "#bff0e6"
-  }
+  },
+  "surface": null,
+  "checker_style": "ice"
  },
  {
   "id": "solaris",
@@ -1437,7 +1627,9 @@
    "b": "#b5451f",
    "checker": "#2a2a2a",
    "light": "#f0e2c8"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "orion",
@@ -1452,7 +1644,9 @@
    "b": "#3a3d46",
    "checker": "#2f56d0",
    "light": "#eef1f7"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "kepler",
@@ -1467,7 +1661,9 @@
    "b": "#2a4a38",
    "checker": "#7a4a2f",
    "light": "#bff0d8"
-  }
+  },
+  "surface": null,
+  "checker_style": "ice"
  },
  {
   "id": "andromeda",
@@ -1482,7 +1678,9 @@
    "b": "#3a2258",
    "checker": "#8a9a4a",
    "light": "#f0a17f"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "orbit",
@@ -1497,7 +1695,9 @@
    "b": "#141519",
    "checker": "#c0392b",
    "light": "#c8ccd4"
-  }
+  },
+  "surface": null,
+  "checker_style": "ring"
  },
  {
   "id": "cassio",
@@ -1512,7 +1712,9 @@
    "b": "#3a4a4d",
    "checker": "#e0623a",
    "light": "#3fb598"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "quasar",
@@ -1527,7 +1729,9 @@
    "b": "#3a4a6a",
    "checker": "#d0392b",
    "light": "#3ac0e0"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "polaris",
@@ -1542,7 +1746,9 @@
    "b": "#4a4d55",
    "checker": "#6b3fc0",
    "light": "#bcd6f0"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "apollo",
@@ -1557,7 +1763,9 @@
    "b": "#4e4a5a",
    "checker": "#1f2a5a",
    "light": "#eae2d0"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "aurora",
@@ -1572,7 +1780,9 @@
    "b": "#141a44",
    "checker": "#7a3fd0",
    "light": "#3fe0d0"
-  }
+  },
+  "surface": null,
+  "checker_style": "neon"
  },
  {
   "id": "gutenberg",
@@ -1587,7 +1797,9 @@
    "b": "#a8afb8",
    "checker": "#1a1c22",
    "light": "#f4f6f9"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": null
  },
  {
   "id": "krypton",
@@ -1602,7 +1814,9 @@
    "b": "#144a34",
    "checker": "#0c3526",
    "light": "#9ff0c8"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "ice"
  },
  {
   "id": "infinity",
@@ -1617,7 +1831,9 @@
    "b": "#241040",
    "checker": "#00d4e8",
    "light": "#ff5bd0"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "neon"
  },
  {
   "id": "vega",
@@ -1632,7 +1848,9 @@
    "b": "#8a5aa8",
    "checker": "#2f6ad0",
    "light": "#7fe0f0"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "ice"
  },
  {
   "id": "quantum",
@@ -1647,7 +1865,9 @@
    "b": "#0c2429",
    "checker": "#57ffc8",
    "light": "#b07bff"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "neon"
  },
  {
   "id": "singularity",
@@ -1662,7 +1882,9 @@
    "b": "#152f9a",
    "checker": "#00cfe8",
    "light": "#ff5bb0"
-  }
+  },
+  "surface": "gradient",
+  "checker_style": "neon"
  },
  {
   "id": "bazaar",
@@ -1677,7 +1899,9 @@
    "b": "#5a3420",
    "checker": "#1a120a",
    "light": "#e8d8c0"
-  }
+  },
+  "surface": null,
+  "checker_style": null
  },
  {
   "id": "miami",
@@ -1692,6 +1916,8 @@
    "b": "#4fd0c0",
    "checker": "#2f5ad0",
    "light": "#f0e8d8"
-  }
+  },
+  "surface": null,
+  "checker_style": "gloss"
  }
 ]

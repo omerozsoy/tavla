@@ -61,7 +61,7 @@ class BoardDesignResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Grid::make(['default' => 1, 'lg' => 3])->schema([
+            Forms\Components\Grid::make(['default' => 1, 'lg' => 5])->schema([
                 Forms\Components\Group::make([
                     Forms\Components\Section::make('Bilgiler')->schema([
                         Forms\Components\TextInput::make('name')
@@ -104,25 +104,29 @@ class BoardDesignResource extends Resource
                             self::color('light', 'Açık pul rengi', '#f7f1e6', 'Beyaz oyuncunun pulları'),
                             self::color('checker', 'Koyu pul rengi', '#241a12', 'Siyah oyuncunun pulları'),
                             Forms\Components\Select::make('surface')
+                                ->live()
                                 ->label('Zemin dokusu')
                                 ->options(BoardDesign::SURFACES)
                                 ->placeholder('Düz')
                                 ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom),
                             Forms\Components\Select::make('checker_style')
+                                ->live()
                                 ->label('Pul stili')
                                 ->options(BoardDesign::CHECKER_STYLES)
                                 ->placeholder('Düz')
                                 ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom),
                         ])->columns(2),
-                ])->columnSpan(['lg' => 2]),
+                ])->columnSpan(['lg' => 3]),
                 Forms\Components\Section::make('Önizleme')->schema([
                     Forms\Components\Placeholder::make('preview')
                         ->hiddenLabel()
                         ->content(fn (Get $get) => new HtmlString(view('filament.board-design.preview', [
                             'colors' => $get('colors'),
-                            'width' => 320,
+                            'surface' => $get('surface'),
+                            'checkerStyle' => $get('checker_style'),
+                            'width' => 640,
                         ])->render())),
-                ])->columnSpan(1),
+                ])->columnSpan(['lg' => 2])->extraAttributes(['style' => 'position:sticky;top:5rem;align-self:start']),
             ]),
         ]);
     }

@@ -21,6 +21,8 @@ const rows = m.ALL_THEMES.map((t, i) => ({
   free: m.FREE_BOARDS.has(t.id),
   sort: i,
   colors: { panel: t.panel, frame: t.frame ?? null, a: t.a, b: t.b, checker: t.checker, light: t.light ?? null },
+  surface: t.surface ?? null,
+  checker_style: t.checkerStyle ?? null,
 }))
 writeFileSync('backend/database/data/board_themes.json', JSON.stringify(rows, null, 1) + '\n')
 console.log(`exported ${rows.length} board themes`)

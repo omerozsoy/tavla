@@ -33,6 +33,7 @@ interface BoardOpt {
   rarity?: string
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
+  checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
 }
 
 interface Props {
@@ -230,6 +231,7 @@ export default function ProfileOverview({
                     cream={swapStones ? (equipped.checker ?? equipped.b) : equipped.light}
                     pointStyle={equipped.pointStyle}
                     surface={equipped.surface}
+                    checkerStyle={equipped.checkerStyle}
                     themeId={equipped.id}
                   />
                 </div>
@@ -421,6 +423,7 @@ export default function ProfileOverview({
                       cream={b.light}
                       pointStyle={b.pointStyle}
                       surface={b.surface}
+                      checkerStyle={b.checkerStyle}
                       themeId={b.id}
                     />
                   </div>

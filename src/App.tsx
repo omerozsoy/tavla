@@ -9314,7 +9314,7 @@ export default function App() {
           coins={user?.coins ?? 0}
           board={(() => {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
+            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle }
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
@@ -9646,7 +9646,7 @@ export default function App() {
             initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
@@ -9674,7 +9674,7 @@ export default function App() {
           <FriendGameSetup
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}

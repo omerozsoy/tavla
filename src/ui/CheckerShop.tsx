@@ -78,7 +78,7 @@ export default function CheckerShop({
             const active = selected === s.id
             return (
               <div key={s.id} className={`cshop-item ${active ? 'active' : ''}`}>
-                <div className="cshop-prev">
+                <div className="cshop-prev" data-checker-id={s.id}>
                   <CheckerSkin skin={s} tone="dark" size={56} />
                   <CheckerSkin skin={s} tone="light" size={44} />
                 </div>
