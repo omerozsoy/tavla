@@ -260,4 +260,37 @@ class TournamentThirdPlaceTest extends TestCase
         $this->assertSame($cc->id, (int) $t->bracket[1][0]['winner'], 'diskalifiye oyuncunun rakibi hükmen kazanmalı');
         $this->assertSame($cc->id, (int) $t->champion_id);
     }
+
+    public function test_third_place_with_opened_but_empty_room_still_resolves(): void
+    {
+        // A-24: biri 3.'lük odasını açtı ama kimse oturmadı -> eskiden "oda var" diye hiç çözülmüyor,
+        // final gate'i sonsuza dek kapalı kalıyordu.
+        [$a, $b, $cc, $d] = [$this->user('a'), $this->user('b'), $this->user('c'), $this->user('d')];
+        $p = fn (User $u, int $r) => ['id' => $u->id, 'name' => strtoupper($u->nickname), 'rating' => $r];
+        $t = Tournament::create([
+            'name' => 'T', 'size' => 4, 'status' => 'running', 'active' => true,
+            'players' => [$p($a, 1500), $p($b, 1500), $p($cc, 1500), $p($d, 1600)],
+            'bracket' => [
+                [
+                    ['key' => 'r0m0', 'p1' => $p($a, 1500), 'p2' => $p($b, 1500), 'winner' => null],
+                    ['key' => 'r0m1', 'p1' => $p($cc, 1500), 'p2' => $p($d, 1600), 'winner' => null],
+                ],
+                [['key' => 'r1m0', 'p1' => null, 'p2' => null, 'winner' => null]],
+            ],
+        ]);
+        $this->apply($t, 0, 0, $a->id);
+        $this->apply($t, 0, 1, $cc->id);
+        $t->refresh();
+        Sanctum::actingAs($b);
+        $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'r1m1'])->assertOk();
+        $t->refresh();
+        $this->assertNotEmpty($t->bracket[1][1]['room']);
+        $bk = $t->bracket;
+        $bk[1][1]['ready_at'] = now()->subMinutes(30)->toIso8601String();
+        $t->bracket = $bk;
+        $t->save();
+
+        $this->assertTrue($this->callPrivate($t, 'resolveStalledThirdPlace'));
+        $this->assertSame($d->id, (int) $t->fresh()->bracket[1][1]['winner']);
+    }
 }

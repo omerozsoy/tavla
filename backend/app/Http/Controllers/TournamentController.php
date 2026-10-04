@@ -516,18 +516,46 @@ class TournamentController extends Controller
         if (! $tp || empty($tp['third_place']) || ! empty($tp['winner'])) {
             return false;
         }
-        if (empty($tp['p1']['id']) || empty($tp['p2']['id']) || ! empty($tp['room'])) {
-            return false; // henüz iki oyuncu yok VEYA oda açıldı (room mekanizması halleder)
+        if (empty($tp['p1']['id']) || empty($tp['p2']['id'])) {
+            return false; // henüz iki oyuncu yok
+        }
+        // A-24: oda kodu alınmış olması artık "halledildi" sayılmaz: biri match-room çağırıp kimse
+        // oturmazsa 3.'lük (ve gate'li final) SONSUZA dek takılıyordu. İki taraf odadaysa/doğrulanmış
+        // sonuç varsa dokunma; tek taraf oturduysa o kazanır; kimse yoksa rating ile.
+        $id1 = (int) $tp['p1']['id'];
+        $id2 = (int) $tp['p2']['id'];
+        $present = [];
+        if (! empty($tp['room'])) {
+            $room = \App\Models\Room::where('code', $tp['room'])->first();
+            if ($room && $room->hasVerifiedServerResult()) {
+                return false; // gerçek sonuç -> reconcileVerifiedResults
+            }
+            if ($room) {
+                foreach (['p1', 'p2'] as $s) {
+                    if (! empty($room->{$s.'_token'}) && (int) $room->{$s.'_user_id'}) {
+                        $present[] = (int) $room->{$s.'_user_id'};
+                    }
+                }
+            }
+            $present = array_values(array_intersect([$id1, $id2], $present));
+            if (count($present) >= 2) {
+                return false; // oynanıyor
+            }
         }
         $readyAt = $tp['ready_at'] ?? null;
         $stall = (int) config('tournament.third_place_stall_minutes', 3);
         if (! $readyAt || now()->lt(\Illuminate\Support\Carbon::parse($readyAt)->addMinutes($stall))) {
             return false;
         }
-        $r1 = (int) ($tp['p1']['rating'] ?? 0);
-        $r2 = (int) ($tp['p2']['rating'] ?? 0);
-        $tp['winner'] = $r1 >= $r2 ? (int) $tp['p1']['id'] : (int) $tp['p2']['id'];
-        $tp['score'] = ['stalled' => true];
+        if (count($present) === 1) {
+            $tp['winner'] = $present[0];
+            $tp['score'] = ['walkover' => true];
+        } else {
+            $r1 = (int) ($tp['p1']['rating'] ?? 0);
+            $r2 = (int) ($tp['p2']['rating'] ?? 0);
+            $tp['winner'] = $r1 >= $r2 ? $id1 : $id2;
+            $tp['score'] = ['stalled' => true];
+        }
         $bracket[$lastRi][1] = $tp; // opens_at yok -> final beklemeden açılır
         $t->bracket = $bracket;
         $t->save();
