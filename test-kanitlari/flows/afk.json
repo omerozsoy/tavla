@@ -1,0 +1,9 @@
+{
+  "code": "MNAVC",
+  "loss": {
+    "winner": "white",
+    "reason": "AFK_TIMEOUT"
+  },
+  "afkWarn": 14,
+  "elapsed": 61.245
+}
