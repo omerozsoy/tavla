@@ -2359,7 +2359,11 @@ class RoomController extends Controller
                 $this->recordPendingRoll($room, $winnerColor === 'white' ? 'black' : 'white');
                 $target = (int) ($sm['target'] ?? $room->target ?? 1);
                 $cubeVal = (int) ($sm['cube']['value'] ?? 1);
-                $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + max(1, $cubeVal));
+                // A-12: terk/timeout/AFK = pes ile AYNI değer (SAF KONUM 1/2/3 × küp). Eskiden yalnız
+                // küp değeri yazılıyordu -> para maçında (stake × skor) gammon/backgammon'da olan
+                // oyuncu masayı terk ederek kaybını 1×'e indirebiliyordu.
+                $gp = is_array($room->server_state) ? \App\Support\Backgammon::resignationValue($room->server_state, $winnerColor) : 1;
+                $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + max(1, $cubeVal) * $gp);
                 $sm['done'] = true;
                 $sm['winner'] = $winnerColor;
                 $sm['cube']['pending'] = null;
