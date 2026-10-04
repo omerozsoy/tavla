@@ -1788,46 +1788,50 @@ class RoomController extends Controller
             // bir turnuva maci varsa) -> kaybeden oyuncu para macindan cezasiz kacamaz.
             'tournament' => ['nullable', 'boolean'],
         ]);
-        $room = Room::where('code', strtoupper($code))->first();
-        if (! $room) {
-            return response()->json(['ok' => true]);
-        }
-        $slot = $this->slotOf($room, $data['token'], $request);
-        if ($slot === null) {
-            return $this->fail('Bu odada değilsin.', 403);
-        }
-        // BEKLEYEN ODA (rakip henüz yok): sahibi ayrılınca oda kapanır ve bu odaya ait bekleyen
-        // davetler düşer. Eskiden no-op'tu: davetli, sahibi gitmiş odayı kabul edip giriyor, maç
-        // başlayınca sahip "terk" ile (puan kaybederek) yeniliyordu. (matchmakingCancel ile aynı desen.)
-        if ($room->status === 'waiting' && $slot === 'p1' && ! $room->p2_token) {
-            if (Schema::hasTable('game_invites')) {
-                DB::table('game_invites')->where('room_code', $room->code)->where('status', 'pending')
-                    ->update(['status' => 'expired', 'updated_at' => now()]);
+        // A-14: oda satırı KİLİTLİ okunur -> eşzamanlı hamle/pes/poll ile terk kararı yarışmaz
+        // (bayat kopya save() edilip bir hamlenin/kazananın üzerine yazılmaz).
+        return DB::transaction(function () use ($data, $code, $request) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return response()->json(['ok' => true]);
             }
-            $room->delete();
+            $slot = $this->slotOf($room, $data['token'], $request);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
+            // BEKLEYEN ODA (rakip henüz yok): sahibi ayrılınca oda kapanır ve bu odaya ait bekleyen
+            // davetler düşer. Eskiden no-op'tu: davetli, sahibi gitmiş odayı kabul edip giriyor, maç
+            // başlayınca sahip "terk" ile (puan kaybederek) yeniliyordu. (matchmakingCancel ile aynı desen.)
+            if ($room->status === 'waiting' && $slot === 'p1' && ! $room->p2_token) {
+                if (Schema::hasTable('game_invites')) {
+                    DB::table('game_invites')->where('room_code', $room->code)->where('status', 'pending')
+                        ->update(['status' => 'expired', 'updated_at' => now()]);
+                }
+                $room->delete();
 
-            return response()->json(['ok' => true, 'clock' => null]);
-        }
-        $clock = is_array($room->clock) ? $room->clock : [];
-        $ended = ! empty($clock['end']) || $room->status === 'finished';
-        // KORUMA: maç ODA DURUMUNDA (oynanışta) zaten sonuçlandıysa (kazanan belli) geç gelen
-        // terk sinyali sonucu EZMESIN. Aksi halde KAZANAN sekmeyi kapatınca winner=other(leaver)
-        // ile kazanan ters çevriliyor, kazanan "terk edip kaybetti" gibi yazılıyordu (DrBakır bug'ı).
-        $decided = $this->decidedWinnerColor($room) !== null;
-        if ($room->status === 'playing' && ! $ended && ! $decided) {
-            // NO-CONTEST (turnuva maçına geçiş): oyuncu başka bir (turnuva dışı) maçtayken turnuva
-            // maçına çekiliyor -> mevcut maç kazananSIZ kapanır. Sunucu, oyuncunun GERÇEKTEN hazır bir
-            // turnuva maçı olduğunu doğrular; aksi halde normal ABANDON (rakip kazanır).
-            $noContest = $request->boolean('tournament')
-                && ! Cache::has(TournamentController::roomTargetKey($room->code)) // bırakılan oda turnuva odası DEĞİL
-                && $this->hasReadyTournamentMatch($request->user()?->id);
-            $clock['end'] = ['reason' => 'ABANDON', 'winner' => $noContest ? null : MatchClock::other($slot)];
-            $this->applyClockEnd($room, $clock);
-            $room->clock = $clock;
-            $room->save();
-        }
+                return response()->json(['ok' => true, 'clock' => null]);
+            }
+            $clock = is_array($room->clock) ? $room->clock : [];
+            $ended = ! empty($clock['end']) || $room->status === 'finished';
+            // KORUMA: maç ODA DURUMUNDA (oynanışta) zaten sonuçlandıysa (kazanan belli) geç gelen
+            // terk sinyali sonucu EZMESIN. Aksi halde KAZANAN sekmeyi kapatınca winner=other(leaver)
+            // ile kazanan ters çevriliyor, kazanan "terk edip kaybetti" gibi yazılıyordu (DrBakır bug'ı).
+            $decided = $this->decidedWinnerColor($room) !== null;
+            if ($room->status === 'playing' && ! $ended && ! $decided) {
+                // NO-CONTEST (turnuva maçına geçiş): oyuncu başka bir (turnuva dışı) maçtayken turnuva
+                // maçına çekiliyor -> mevcut maç kazananSIZ kapanır. Sunucu, oyuncunun GERÇEKTEN hazır bir
+                // turnuva maçı olduğunu doğrular; aksi halde normal ABANDON (rakip kazanır).
+                $noContest = $request->boolean('tournament')
+                    && ! Cache::has(TournamentController::roomTargetKey($room->code)) // bırakılan oda turnuva odası DEĞİL
+                    && $this->hasReadyTournamentMatch($request->user()?->id);
+                $clock['end'] = ['reason' => 'ABANDON', 'winner' => $noContest ? null : MatchClock::other($slot)];
+                $this->applyClockEnd($room, $clock);
+                $room->clock = $clock;
+                $room->save();
+            }
 
-        return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
+            return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
+        });
     }
 
     /** Oyuncunun ŞU AN oynanmayı bekleyen (kazananı belirsiz) bir turnuva maçı var mı? No-contest
@@ -1973,22 +1977,60 @@ class RoomController extends Controller
 
     // Saati poll aninda ilerlet: kayip kosulu olustuysa maci sonlandir (idempotent).
     // $slot verilirse poll edenin VARLIK damgasi (throttle ile) tazelenir -> terk tespiti.
+    //
+    // A-14 (KİLİT): poll kilitsiz okur; yazma gerekirse (presence/bot-heal/kayıp) oda satırı
+    // lockForUpdate ile TAZE okunup hesap kilit altında YENİDEN yapılır. Eskiden bayat kopya
+    // save() ediliyordu -> eşzamanlı bir hamlenin clock/server_match yazımı ezilebiliyordu.
+    // Yazma gerekmeyen (çoğunluk) poll'lar kilit almaz.
     public function tickClock(Room $room, ?string $slot = null): void
     {
-        $clock = $room->clock;
-        if (! is_array($clock) || empty($clock)) {
+        $probe = clone $room;
+        if (! $this->tickClockCore($probe, $slot, microtime(true), false)['changed']) {
             return;
         }
+        $ended = false;
+        DB::transaction(function () use ($room, $slot, &$ended) {
+            $fresh = Room::where('id', $room->id)->lockForUpdate()->first();
+            if (! $fresh) {
+                return;
+            }
+            $r = $this->tickClockCore($fresh, $slot, microtime(true), true);
+            if ($r['changed']) {
+                $fresh->save();
+            }
+            $ended = $r['ended'];
+            $room->setRawAttributes($fresh->getAttributes(), true);
+        });
+        // TIMEOUT/AFK/TERK bir "hamle" değildir -> normalde yalnız poll'da yakalanır. Push çağında
+        // (yedek poll yavaş) bitişi RAKİBE ANINDA yayınla: iki taraftan hangisi önce poll edip bitişi
+        // yakalarsa diğerine hemen ulaşır -> "kazandım ama ekran beklemede kaldı" olmaz (dormant no-op).
+        if ($ended) {
+            $this->broadcastRoom($room->code);
+        }
+    }
+
+    /**
+     * tickClock hesabı: $room'u BELLEKTE değiştirir (kaydetmez). $apply=false -> yan etkisiz
+     * "yazma gerekir mi" yoklaması (applyClockEnd çağrılmaz). Dönüş: changed/ended.
+     *
+     * @return array{changed: bool, ended: bool}
+     */
+    private function tickClockCore(Room $room, ?string $slot, float $now, bool $apply): array
+    {
+        $none = ['changed' => false, 'ended' => false];
+        $clock = $room->clock;
+        if (! is_array($clock) || empty($clock)) {
+            return $none;
+        }
         if (! empty($clock['end'])) {
-            return;
+            return $none;
         }
         // MAC BITTI -> saat DURUR. Aksi halde kazanan ilan edildikten sonra da her poll'da
         // tick isliyor ve istemci sonuc ekraninin ARKASINDA akan bir sayac gosteriyordu.
         $sm = is_array($room->server_match) ? $room->server_match : null;
         if ($room->status === 'finished' || ($sm && ! empty($sm['done']))) {
-            return;
+            return $none;
         }
-        $now = microtime(true);
         $changed = false;
         // Varlik damgasi: en fazla PRESENCE_WRITE_THROTTLE_S'de bir yaz (poll ~1.2sn; gereksiz
         // ağır rooms.clock JSON yazmasını kes -> turnuva DB yükü düşer, terk tespiti etkilenmez).
@@ -2045,28 +2087,24 @@ class RoomController extends Controller
         if ($room->bot && ($clock['turn_slot'] ?? null) === 'p2' && ! empty($clock['running']) && empty($clock['end'])) {
             $clock['started_at'] = $now;
             $room->clock = $clock;
-            $room->save();
 
-            return;
+            return ['changed' => true, 'ended' => false];
         }
         $ticked = MatchClock::tick($clock, $now);
         $ended = false;
         if (! empty($ticked['end'])) {
             $clock = $ticked;
-            $this->applyClockEnd($room, $clock);
+            if ($apply) {
+                $this->applyClockEnd($room, $clock);
+            }
             $changed = true;
             $ended = true;
         }
         if ($changed) {
             $room->clock = $clock;
-            $room->save();
         }
-        // TIMEOUT/AFK/TERK bir "hamle" değildir -> normalde yalnız poll'da yakalanır. Push çağında
-        // (yedek poll yavaş) bitişi RAKİBE ANINDA yayınla: iki taraftan hangisi önce poll edip bitişi
-        // yakalarsa diğerine hemen ulaşır -> "kazandım ama ekran beklemede kaldı" olmaz (dormant no-op).
-        if ($ended) {
-            $this->broadcastRoom($room->code);
-        }
+
+        return ['changed' => $changed, 'ended' => $ended];
     }
 
     /**
