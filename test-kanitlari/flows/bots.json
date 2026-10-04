@@ -1,0 +1,182 @@
+[
+  {
+    "level": 1,
+    "code": "223H2",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 2
+    },
+    "humanPlies": 30,
+    "botTurns": 31,
+    "botMsMax": 358,
+    "botMsAvg": 152,
+    "statuses": {
+      "played": 31,
+      "idle": 30
+    },
+    "anomalies": []
+  },
+  {
+    "level": 2,
+    "code": "L5FQ4",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 3
+    },
+    "humanPlies": 30,
+    "botTurns": 31,
+    "botMsMax": 250,
+    "botMsAvg": 138,
+    "statuses": {
+      "played": 31,
+      "idle": 30
+    },
+    "anomalies": []
+  },
+  {
+    "level": 3,
+    "code": "PGH4L",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 2
+    },
+    "humanPlies": 45,
+    "botTurns": 45,
+    "botMsMax": 269,
+    "botMsAvg": 148,
+    "statuses": {
+      "idle": 45,
+      "played": 45
+    },
+    "anomalies": []
+  },
+  {
+    "level": 4,
+    "code": "UJTCM",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 2
+    },
+    "humanPlies": 26,
+    "botTurns": 27,
+    "botMsMax": 25435,
+    "botMsAvg": 1134,
+    "statuses": {
+      "played": 27,
+      "idle": 26
+    },
+    "anomalies": []
+  },
+  {
+    "level": 5,
+    "code": "F26X9",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 3
+    },
+    "humanPlies": 39,
+    "botTurns": 39,
+    "botMsMax": 828,
+    "botMsAvg": 153,
+    "statuses": {
+      "idle": 39,
+      "played": 39
+    },
+    "anomalies": []
+  },
+  {
+    "level": 6,
+    "code": "MAX98",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 2
+    },
+    "humanPlies": 33,
+    "botTurns": 33,
+    "botMsMax": 6770,
+    "botMsAvg": 575,
+    "statuses": {
+      "idle": 33,
+      "played": 33
+    },
+    "anomalies": []
+  },
+  {
+    "level": 7,
+    "code": "SC7W5",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 3
+    },
+    "humanPlies": 28,
+    "botTurns": 28,
+    "botMsMax": 516,
+    "botMsAvg": 149,
+    "statuses": {
+      "idle": 28,
+      "played": 28
+    },
+    "anomalies": []
+  },
+  {
+    "level": 8,
+    "code": "U6PZZ",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 2
+    },
+    "humanPlies": 24,
+    "botTurns": 24,
+    "botMsMax": 225,
+    "botMsAvg": 127,
+    "statuses": {
+      "idle": 24,
+      "played": 24
+    },
+    "anomalies": []
+  },
+  {
+    "level": 9,
+    "code": "VE4XR",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 3
+    },
+    "humanPlies": 35,
+    "botTurns": 35,
+    "botMsMax": 260,
+    "botMsAvg": 120,
+    "statuses": {
+      "idle": 35,
+      "played": 35
+    },
+    "anomalies": []
+  },
+  {
+    "level": 10,
+    "code": "XMVFR",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 3
+    },
+    "humanPlies": 43,
+    "botTurns": 44,
+    "botMsMax": 21236,
+    "botMsAvg": 629,
+    "statuses": {
+      "played": 44,
+      "idle": 43
+    },
+    "anomalies": []
+  }
+]

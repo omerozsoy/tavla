@@ -1,0 +1,38 @@
+[
+  {
+    "level": 5,
+    "code": "YU2KA",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 4
+    },
+    "humanPlies": 25,
+    "botTurns": 26,
+    "botMsMax": 238,
+    "botMsAvg": 125,
+    "statuses": {
+      "played": 26,
+      "idle": 25
+    },
+    "anomalies": []
+  },
+  {
+    "level": 9,
+    "code": "4JMJP",
+    "winner": "black",
+    "score": {
+      "white": 0,
+      "black": 6
+    },
+    "humanPlies": 35,
+    "botTurns": 35,
+    "botMsMax": 198,
+    "botMsAvg": 103,
+    "statuses": {
+      "idle": 35,
+      "played": 35
+    },
+    "anomalies": []
+  }
+]
