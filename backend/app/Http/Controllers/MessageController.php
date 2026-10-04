@@ -349,7 +349,11 @@ class MessageController extends Controller
             $out = $this->reqRow($me->id, $userId); // benim ona istegim
             $in = $this->reqRow($userId, $me->id);  // onun bana istegi
 
-            if ($in) {
+            // A-17: yalnız karşı taraf bana GERÇEKTEN yazdıysa (mesajı varsa) cevap = kabul. Eskiden
+            // decline() satır yokken "o->ben" satırı ekliyordu; saldırgan önce /decline sonra /send ile
+            // bu sahte satırı kabule çevirip istek kutusunu, 5 mesaj sınırını ve reddi atlıyordu.
+            $peerWrote = $in && Message::where('sender_id', $userId)->where('receiver_id', $me->id)->exists();
+            if ($peerWrote) {
                 // Karsi taraf bana yazmisti -> cevap = istegi kabul (reddettiysem de tekrar acilir).
                 DB::table('message_requests')->where('id', $in->id)
                     ->update(['status' => 'accepted', 'updated_at' => now()]);
