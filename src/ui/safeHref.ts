@@ -5,7 +5,10 @@ export function safeHref(raw: string | null | undefined): string | undefined {
   const v = (raw ?? '').trim()
   if (!v) return undefined
   // Kontrol karakterleri/boşluklar şema gizlemek için kullanılabilir ("java\tscript:") -> temizle.
-  const probe = v.replace(/[\u0000- \u007f]+/g, '').toLowerCase()
+  const probe = Array.from(v)
+    .filter((c) => c.charCodeAt(0) > 0x20 && c.charCodeAt(0) !== 0x7f)
+    .join('')
+    .toLowerCase()
   if (/^(https?:|mailto:|tel:)/.test(probe)) return v
   if (/^\/\//.test(probe)) return v // protokole göreli (https'te https)
   if (/^[a-z][a-z0-9+.-]*:/.test(probe)) return undefined // başka her şema reddedilir
