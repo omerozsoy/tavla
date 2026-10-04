@@ -36,7 +36,7 @@ Route::get('/top-ranks', [AuthController::class, 'topRanks']); // site geneli to
 Route::get('/achievements', [\App\Http\Controllers\AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
-Route::post('/contents/{content}/view', [ContentController::class, 'view']); // makale/haber okunma sayaci +1 (acik)
+Route::post('/contents/{content}/view', [ContentController::class, 'view'])->middleware('throttle:10,1,content-view'); // makale/haber okunma sayaci +1 (acik)
 Route::get('/contents/{content}/comments', [ContentCommentController::class, 'index']); // haber ONAYLI yorumlari (acik)
 Route::get('/info-pages', [\App\Http\Controllers\InfoPageController::class, 'index']); // /bilgi/<slug> sekmeleri (acik)
 Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
@@ -255,11 +255,11 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::delete('/messages/{userId}/{messageId}', [\App\Http\Controllers\MessageController::class, 'destroy'])
         ->whereNumber('userId')->whereNumber('messageId');
 
-    Route::post('/ping', [PresenceController::class, 'ping']);
+    Route::post('/ping', [PresenceController::class, 'ping'])->middleware('throttle:60,1,ping'); // A-29
     Route::post('/me/presence-status', [PresenceController::class, 'setStatus']); // oyuncu durumu (musait/hazir/mesgul/cevrimdisi)
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
     Route::post('/notifications/delete', [PresenceController::class, 'deleteNotifications']);
-    Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite']);
+    Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite'])->middleware('throttle:10,1,invite'); // A-29
     Route::post('/invites/cancel', [PresenceController::class, 'cancelInvite']); // davet EDEN iptal eder
     Route::post('/invites/{inviteId}/respond', [PresenceController::class, 'respond']);
 

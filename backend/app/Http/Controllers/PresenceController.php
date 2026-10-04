@@ -262,6 +262,13 @@ class PresenceController extends Controller
         }
         // "Oyun Kabul Etmiyor" (busy) veya "Çevrimdışı Görün" (offline) durumundaki
         // oyuncu maça davet edilemez -> davet eden dostça uyarilir.
+        // A-29: engelleme (iki yönden) davetleri de keser; eskiden engellenen kullanıcı davet
+        // banner'ı göndermeye devam edebiliyordu.
+        if (\Illuminate\Support\Facades\Schema::hasTable('user_blocks') && \Illuminate\Support\Facades\DB::table('user_blocks')
+            ->where(fn ($q) => $q->where('blocker_id', $me->id)->where('blocked_id', $userId))
+            ->orWhere(fn ($q) => $q->where('blocker_id', $userId)->where('blocked_id', $me->id))->exists()) {
+            return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
+        }
         if (in_array($target->presence_status, ['busy', 'offline'], true)) {
             return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
         }

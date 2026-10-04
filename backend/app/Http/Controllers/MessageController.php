@@ -103,7 +103,8 @@ class MessageController extends Controller
 
     private function pub(User $u): array
     {
-        $online = $u->last_seen && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
+        $online = $u->last_seen && ($u->presence_status ?? null) !== 'offline' // A-29
+            && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
 
         return [
             'id' => $u->id,

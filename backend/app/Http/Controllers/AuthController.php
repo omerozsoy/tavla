@@ -1458,7 +1458,8 @@ class AuthController extends Controller
             'badges' => $user->badges ?? [],
             'featured' => app(\App\Services\Achievements\AchievementService::class)->resolveFeatured($user->featured_badges),
             // Cevrimici mi? last_seen son 2 dk icinde ise (presence ping penceresiyle ayni).
-            'online' => $user->last_seen
+            // A-29: "Çevrimdışı Görün" seçen oyuncu çevrimdışı görünür (eskiden gerçek durum sızıyordu).
+            'online' => $user->last_seen && $user->presence_status !== 'offline'
                 ? \Illuminate\Support\Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
                 : false,
         ]);
