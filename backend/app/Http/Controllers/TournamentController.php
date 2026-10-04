@@ -578,10 +578,90 @@ class TournamentController extends Controller
      * İKİ taraf da odadaysa (maç oynanıyor, uzun sürebilir) DOKUNMAZ: oyun saati/presence/report halleder.
      * 3.'lük maçı hariç (resolveStalledThirdPlace sahibi). Cagiran turnuva satirini KILITLER.
      */
+    /**
+     * A-35: SWISS gelmeyen oyuncu çözücüsü. Eskiden Swiss maçında iki oyuncu da gelmezse tur
+     * yöneticinin elle çözmesini bekliyordu (swiss.arrive_minutes hiç kullanılmıyordu). Maç hazır
+     * görüldüğünde (iki oyuncu belli) ready_at damgalanır; gelme süresi dolunca:
+     *   - TEK taraf odadaysa -> o hükmen kazanır (Swiss'te hükmen = gerçek maç sayılmaz).
+     *   - KİMSE yoksa -> ÇİFT MAĞLUBİYET (ikisine birer hak düşer; yöneticinin elle verdiği kararla aynı).
+     * İki taraf odadaysa ya da doğrulanmış sonuç varsa DOKUNMAZ. Çağıran turnuva satırını kilitler.
+     */
+    private function resolveStalledSwiss(Tournament $t): bool
+    {
+        $stall = max(1, (int) config('tournament.swiss.arrive_minutes', 5));
+        $changed = false;
+        for ($guard = 0; $guard < 256 && $t->status === 'running'; $guard++) {
+            $bracket = is_array($t->bracket) ? $t->bracket : [];
+            $hit = null;
+            foreach ($bracket as $ri => $round) {
+                foreach ($round as $mi => $m) {
+                    if (! empty($m['winner']) || ! empty($m['double_loss']) || ! empty($m['bye'])) {
+                        continue;
+                    }
+                    if (empty($m['p1']['id']) || empty($m['p2']['id'])) {
+                        continue;
+                    }
+                    $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
+                    if ($room && $room->hasVerifiedServerResult()) {
+                        continue; // gerçek sonuç -> reconcileVerifiedResults
+                    }
+                    $id1 = (int) $m['p1']['id'];
+                    $id2 = (int) $m['p2']['id'];
+                    $present = [];
+                    if ($room) {
+                        foreach (['p1', 'p2'] as $sl) {
+                            if (! empty($room->{$sl.'_token'}) && (int) $room->{$sl.'_user_id'}) {
+                                $present[] = (int) $room->{$sl.'_user_id'};
+                            }
+                        }
+                    }
+                    $present = array_values(array_intersect([$id1, $id2], $present));
+                    if (count($present) >= 2) {
+                        continue; // oynanıyor
+                    }
+                    if (empty($m['ready_at'])) {
+                        $bracket[$ri][$mi]['ready_at'] = now()->toIso8601String();
+                        $t->bracket = $bracket;
+                        $t->save();
+                        $changed = true;
+
+                        continue;
+                    }
+                    if (now()->lt(\Illuminate\Support\Carbon::parse($m['ready_at'])->addMinutes($stall))) {
+                        continue;
+                    }
+                    $hit = [$ri, $mi, $m, $room, $present, $id1, $id2];
+                    break 2;
+                }
+            }
+            if (! $hit) {
+                break;
+            }
+            [$ri, $mi, $m, $room, $present, $id1, $id2] = $hit;
+            if (count($present) === 1) {
+                $winnerId = $present[0];
+                if ($room) {
+                    $wslot = (int) $room->p1_user_id === $winnerId ? 'p1' : 'p2';
+                    $room->status = 'finished';
+                    $room->end_reason = 'NO_SHOW';
+                    $room->{$wslot.'_result'} = 'won';
+                    $room->{($wslot === 'p1' ? 'p2' : 'p1').'_result'} = 'lost';
+                    $room->save();
+                }
+                $this->applyWinnerToBracket($t, $ri, $mi, $winnerId, ['walkover' => true]);
+            } else {
+                \App\Support\Swiss\SwissRuntime::resolveMatch($t, (string) $m['key'], 0);
+            }
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
     private function resolveStalledMatches(Tournament $t): bool
     {
         if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
-            return false; // Swiss kendi gelme/eleme akışını işler
+            return $this->resolveStalledSwiss($t);
         }
         $stall = (int) config('tournament.match_stall_minutes', 3);
         $changed = false;

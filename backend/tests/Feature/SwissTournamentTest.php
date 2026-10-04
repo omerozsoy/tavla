@@ -357,4 +357,67 @@ class SwissTournamentTest extends TestCase
             $this->assertSame((int) $c + 100, (int) User::find($id)->coins, 'ödenen ücret iade edilmeli');
         }
     }
+
+    private function stall(Tournament $t): void
+    {
+        $c = new \App\Http\Controllers\TournamentController();
+        $m = new \ReflectionMethod($c, 'resolveStalledMatches');
+        $m->setAccessible(true);
+        $m->invoke($c, $t);
+    }
+
+    public function test_swiss_no_show_resolver_walkover_and_double_no_show(): void
+    {
+        // A-35: Swiss'te gelmeyen oyuncu çözücüsü yoktu; tur yöneticiyi bekliyordu.
+        $t = $this->makeTournament(4);
+        SwissRuntime::start($t);
+        $t->refresh();
+        $cells = array_values(array_filter($t->bracket[0], fn ($m) => ! empty($m['p1']['id']) && ! empty($m['p2']['id'])));
+        [$m1, $m2] = $cells;
+        // Maç 1: yalnız p1 odaya oturdu. Maç 2: kimse gelmedi.
+        $a = (int) $m1['p1']['id'];
+        \App\Models\Room::create(['code' => 'SWNS1', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
+            'status' => 'waiting', 'version' => 0]);
+        $bk = $t->bracket;
+        foreach ($bk[0] as $i => $c) {
+            if ($c['key'] === $m1['key']) {
+                $bk[0][$i]['room'] = 'SWNS1';
+            }
+        }
+        $t->bracket = $bk;
+        $t->save();
+
+        $this->stall($t); // ilk görüş: ready_at damgalanır, çözülmez
+        $t->refresh();
+        $this->assertEmpty(collect($t->bracket[0])->firstWhere('key', $m1['key'])['winner'] ?? null);
+
+        $this->travel((int) config('tournament.swiss.arrive_minutes', 5) + 1)->minutes();
+        $this->stall($t);
+        $t->refresh();
+        $c1 = collect($t->bracket[0])->firstWhere('key', $m1['key']);
+        $c2 = collect($t->bracket[0])->firstWhere('key', $m2['key']);
+        $this->assertSame($a, (int) $c1['winner'], 'gelen oyuncu hükmen kazanmalı');
+        $this->assertTrue((bool) ($c2['double_loss'] ?? false), 'iki taraf da gelmezse çift mağlubiyet');
+        $this->assertGreaterThan(1, count($t->bracket), 'tur tamamlanınca sonraki tur üretilmeli');
+    }
+
+    public function test_swiss_no_show_resolver_leaves_played_match_alone(): void
+    {
+        $t = $this->makeTournament(2);
+        SwissRuntime::start($t);
+        $t->refresh();
+        [$key, $a, $b] = $this->firstPending($t);
+        \App\Models\Room::create(['code' => 'SWNS2', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
+            'p2_token' => 'tb', 'p2_user_id' => $b, 'p2_name' => 'B', 'status' => 'playing', 'version' => 0]);
+        $bk = $t->bracket;
+        $bk[0][0]['room'] = 'SWNS2';
+        $t->bracket = $bk;
+        $t->save();
+        $this->stall($t);
+        $this->travel(30)->minutes();
+        $this->stall($t);
+        $t->refresh();
+        $this->assertEmpty($t->bracket[0][0]['winner'] ?? null, 'iki taraf oynarken dokunulmamalı');
+        $this->assertEmpty($t->bracket[0][0]['double_loss'] ?? null);
+    }
 }
