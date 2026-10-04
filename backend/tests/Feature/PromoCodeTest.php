@@ -76,6 +76,40 @@ class PromoCodeTest extends TestCase
         $this->assertSame(100, (int) $p->coins);
     }
 
+    // A-08: kod ödenmeden önce birden çok checkout'ta kullanılamaz (bekleyen ödemeler de sayılır).
+    public function test_single_use_code_cannot_open_multiple_pending_checkouts(): void
+    {
+        $u = $this->user();
+        PromoCode::create(['code' => 'TEKSEFER', 'type' => 'percent', 'value' => 50, 'active' => true]);
+        $this->postJson('/api/shop/coins', self::CART + ['code' => 'teksefer'])->assertOk();
+        $this->postJson('/api/shop/coins', self::CART + ['code' => 'teksefer'])->assertStatus(422);
+        $this->assertSame(1, Payment::where('user_id', $u->id)->where('discount_code', 'TEKSEFER')->count());
+    }
+
+    public function test_max_uses_counts_pending_checkouts_of_all_users(): void
+    {
+        PromoCode::create(['code' => 'IKIKISI', 'type' => 'percent', 'value' => 10, 'active' => true, 'max_uses' => 2]);
+        foreach (['a', 'b'] as $n) {
+            $u = User::create(['first_name' => $n, 'last_name' => 'T', 'country' => '', 'nickname' => "pm$n",
+                'email' => "pm$n@e.com", 'password' => bcrypt('secret123')]);
+            Sanctum::actingAs($u);
+            $this->postJson('/api/shop/coins', self::CART + ['code' => 'ikikisi'])->assertOk();
+        }
+        $c = User::create(['first_name' => 'c', 'last_name' => 'T', 'country' => '', 'nickname' => 'pmc',
+            'email' => 'pmc@e.com', 'password' => bcrypt('secret123')]);
+        Sanctum::actingAs($c);
+        $this->postJson('/api/shop/coins', self::CART + ['code' => 'ikikisi'])->assertStatus(422);
+    }
+
+    public function test_stale_pending_checkout_releases_code_after_hold_window(): void
+    {
+        $u = $this->user();
+        PromoCode::create(['code' => 'BEKLEYEN', 'type' => 'percent', 'value' => 10, 'active' => true]);
+        $this->postJson('/api/shop/coins', self::CART + ['code' => 'bekleyen'])->assertOk();
+        Payment::where('user_id', $u->id)->update(['created_at' => now()->subHours(PromoCode::PENDING_HOLD_HOURS + 1)]);
+        $this->postJson('/api/shop/coins', self::CART + ['code' => 'bekleyen'])->assertOk();
+    }
+
     public function test_buycoins_without_code_full_price(): void
     {
         $this->user();

@@ -145,35 +145,41 @@ class PaymentController extends Controller
         }
 
         // Indirim kodu (opsiyonel): SUNUCU-OTORITER dogrulama + uygulama. amount ZATEN indirimli.
-        $discountKurus = 0;
-        $discountCode = null;
-        if (! empty($data['code'])) {
-            $reason = null;
-            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason, $request->user()?->id);
-            if (! $promo) {
-                return $this->fail($this->promoReason($reason), 422);
-            }
-            $discountKurus = $promo->discountKurus($totalKurus);
-            $discountCode = $promo->code;
-        }
-        $chargeKurus = $totalKurus - $discountKurus;
-        if ($chargeKurus <= 0) {
+        // Kod kontrolü + ödeme kaydı promo satırı kilitli tek transaction'da (A-08: eşzamanlı checkout).
+        $zeroCharge = false;
+        [$payment, $reason] = \App\Models\PromoCode::checkoutWithLock($data['code'] ?? null, $totalKurus, $request->user()?->id,
+            function ($promo) use ($request, $method, $totalKurus, $totalCoins, $ids, &$zeroCharge) {
+                $discountKurus = $promo ? $promo->discountKurus($totalKurus) : 0;
+                $chargeKurus = $totalKurus - $discountKurus;
+                if ($chargeKurus <= 0) {
+                    $zeroCharge = true;
+
+                    return null;
+                }
+
+                return Payment::create([
+                    'user_id'        => $request->user()->id,
+                    'kind'           => 'coins',
+                    'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
+                    'order_id'       => 'TC'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
+                    'amount'         => $chargeKurus,
+                    'coins'          => $totalCoins,
+                    'package_id'     => implode(',', $ids),
+                    'discount_code'  => $promo?->code,
+                    'discount_kurus' => $discountKurus,
+                    'currency'       => '949',
+                    'status'         => 'pending',
+                ]);
+            });
+        if ($zeroCharge) {
             return $this->fail('İndirim kodu sepeti tamamen sıfırlıyor; geçersiz.', 422);
         }
-
-        $payment = Payment::create([
-            'user_id'        => $request->user()->id,
-            'kind'           => 'coins',
-            'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
-            'order_id'       => 'TC'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
-            'amount'         => $chargeKurus,
-            'coins'          => $totalCoins,
-            'package_id'     => implode(',', $ids),
-            'discount_code'  => $discountCode,
-            'discount_kurus' => $discountKurus,
-            'currency'       => '949',
-            'status'         => 'pending',
-        ]);
+        if (! $payment) {
+            return $this->fail($this->promoReason($reason), 422);
+        }
+        $chargeKurus = (int) $payment->amount;
+        $discountKurus = (int) $payment->discount_kurus;
+        $discountCode = $payment->discount_code;
 
         // Kart: url (eski ayrı sayfa) + submitUrl (uygulama-içi form) -> Garanti 3D.
         // Havale: IBAN + referans (order_id) döner; ödeme admin panelden elle onaylanır.
@@ -663,37 +669,42 @@ class PaymentController extends Controller
             return $this->fail('Sepet tutarı geçersiz.', 422);
         }
 
-        // İndirim kodu (opsiyonel): tüm para toplamına uygulanır.
-        $discountKurus = 0;
-        $discountCode = null;
-        if (! empty($data['code'])) {
-            $reason = null;
-            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason, $request->user()?->id);
-            if (! $promo) {
-                return $this->fail($this->promoReason($reason), 422);
-            }
-            $discountKurus = $promo->discountKurus($totalKurus);
-            $discountCode = $promo->code;
-        }
-        $chargeKurus = max(0, $totalKurus - $discountKurus);
-        if ($chargeKurus <= 0) {
+        // İndirim kodu (opsiyonel): tüm para toplamına uygulanır. Kilitli tek transaction (A-08).
+        $zeroCharge = false;
+        [$payment, $reason] = \App\Models\PromoCode::checkoutWithLock($data['code'] ?? null, $totalKurus, $request->user()?->id,
+            function ($promo) use ($request, $method, $totalKurus, $packageCoins, $ids, $orderIds, &$zeroCharge) {
+                $discountKurus = $promo ? $promo->discountKurus($totalKurus) : 0;
+                $chargeKurus = max(0, $totalKurus - $discountKurus);
+                if ($chargeKurus <= 0) {
+                    $zeroCharge = true;
+
+                    return null;
+                }
+
+                return Payment::create([
+                    'user_id'           => $request->user()->id,
+                    'kind'              => 'cart',
+                    'payment_method'    => $method === 'bank_transfer' ? 'bank_transfer' : null,
+                    'order_id'          => 'TK'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
+                    'amount'            => $chargeKurus,
+                    'coins'             => $packageCoins,
+                    'package_id'        => implode(',', $ids) ?: 'products',
+                    'product_order_ids' => $orderIds,
+                    'discount_code'     => $promo?->code,
+                    'discount_kurus'    => $discountKurus,
+                    'currency'          => '949',
+                    'status'            => 'pending',
+                ]);
+            });
+        if ($zeroCharge) {
             return $this->fail('İndirim kodu sepeti tamamen sıfırlıyor; geçersiz.', 422);
         }
-
-        $payment = Payment::create([
-            'user_id'           => $request->user()->id,
-            'kind'              => 'cart',
-            'payment_method'    => $method === 'bank_transfer' ? 'bank_transfer' : null,
-            'order_id'          => 'TK'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
-            'amount'            => $chargeKurus,
-            'coins'             => $packageCoins,
-            'package_id'        => implode(',', $ids) ?: 'products',
-            'product_order_ids' => $orderIds,
-            'discount_code'     => $discountCode,
-            'discount_kurus'    => $discountKurus,
-            'currency'          => '949',
-            'status'            => 'pending',
-        ]);
+        if (! $payment) {
+            return $this->fail($this->promoReason($reason), 422);
+        }
+        $chargeKurus = (int) $payment->amount;
+        $discountKurus = (int) $payment->discount_kurus;
+        $discountCode = $payment->discount_code;
 
         return $this->checkoutResponse($payment, $method, $garanti, [
             'amount'   => $chargeKurus,

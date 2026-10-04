@@ -11,6 +11,9 @@ use Illuminate\Support\Carbon;
  */
 class PromoCode extends Model
 {
+    /** Bekleyen (ödenmemiş) bir ödemenin kodu rezerve tuttuğu süre (saat). Sonra kod serbest kalır. */
+    public const PENDING_HOLD_HOURS = 24;
+
     protected $fillable = [
         'code', 'type', 'value', 'min_amount', 'max_uses', 'used_count', 'active', 'expires_at',
     ];
@@ -46,9 +49,17 @@ class PromoCode extends Model
             $reason = 'expired';
             return null;
         }
-        if ($promo->max_uses !== null && $promo->used_count >= $promo->max_uses) {
-            $reason = 'exhausted';
-            return null;
+        // A-08: kapasite = tamamlanan kullanım + SON 24 SAATTE başlatılmış bekleyen ödemeler. Eskiden yalnız
+        // used_count sayılıyordu; ödenmeden önce N eşzamanlı checkout aynı kodla N indirimli ödeme açıp
+        // hepsini ödeyebiliyordu (fulfillment'ta bumpUse 0 dönse de indirim zaten uygulanmıştı).
+        $pendingWindow = now()->subHours(self::PENDING_HOLD_HOURS);
+        if ($promo->max_uses !== null) {
+            $pendingAll = \App\Models\Payment::where('discount_code', $norm)
+                ->where('status', 'pending')->where('created_at', '>', $pendingWindow)->count();
+            if ($promo->used_count + $pendingAll >= $promo->max_uses) {
+                $reason = 'exhausted';
+                return null;
+            }
         }
         if ($subtotalKurus < (int) $promo->min_amount) {
             $reason = 'min_amount';
@@ -58,13 +69,41 @@ class PromoCode extends Model
         if ($userId !== null
             && \App\Models\Payment::where('user_id', $userId)
                 ->where('discount_code', $norm)
-                ->where('status', 'paid')
+                ->where(function ($q) use ($pendingWindow) {
+                    $q->where('status', 'paid')
+                        ->orWhere(fn ($q2) => $q2->where('status', 'pending')->where('created_at', '>', $pendingWindow));
+                })
                 ->exists()) {
             $reason = 'already_used';
             return null;
         }
 
         return $promo;
+    }
+
+    /**
+     * Checkout: kod kontrolü + ödeme kaydı TEK transaction'da, promo satırı KİLİTLİ (A-08). Böylece
+     * eşzamanlı checkout'lar aynı tek-kullanımlık kodu ikiden fazla kez rezerve edemez.
+     * $create(PromoCode|null $promo): Payment — null promo = kod yok.
+     *
+     * @return array{0: ?\App\Models\Payment, 1: ?string} [payment, hata nedeni]
+     */
+    public static function checkoutWithLock(?string $code, int $subtotalKurus, ?int $userId, callable $create): array
+    {
+        if ($code === null || $code === '') {
+            return [$create(null), null];
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($code, $subtotalKurus, $userId, $create) {
+            self::where('code', self::normalize($code))->lockForUpdate()->first();
+            $reason = null;
+            $promo = self::usable($code, $subtotalKurus, $reason, $userId);
+            if (! $promo) {
+                return [null, $reason];
+            }
+
+            return [$create($promo), null];
+        });
     }
 
     // Fulfillment'ta (odeme 'paid' olurken) ATOMIK + yaris-guvenli sayac artir: yalnizca limit
