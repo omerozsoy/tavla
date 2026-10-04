@@ -46,7 +46,8 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 // ---- Yonetim paneli (ayri backend sayfasi, Blade) ----
 Route::prefix('panel')->group(function () {
     Route::get('/login', [PanelController::class, 'showLogin']);
-    Route::post('/login', [PanelController::class, 'login']);
+    // A-06: kaba kuvvete karşı IP hız sınırı (+ controller'da hesap bazlı kilit).
+    Route::post('/login', [PanelController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/enter', static fn () => response()->json(['message' => 'POST required'], 405)
         ->withHeaders(['Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer']));
     Route::post('/enter', [PanelController::class, 'enter'])

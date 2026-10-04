@@ -30,13 +30,29 @@ class PanelController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        // A-06: API login ile AYNI hesap bazlı kilit (login-fails:*; 5 hatada 15 dk) + TEK TİP hata.
+        // Eskiden throttle/kilit yoktu ve "Bu hesap yönetici değil" mesajı, yönetici olmayan herhangi
+        // bir oyuncunun şifresinin DOĞRU olduğunu ele veriyordu (kaba kuvvetle şifre doğrulama).
+        $generic = 'E-posta veya şifre hatalı.';
+        $loginKey = 'login-fails:'.sha1(mb_strtolower(trim($data['email'])));
+        if ((int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) >= 5) {
+            return back()->withErrors(['email' => 'Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.'])->withInput();
+        }
+        $fail = function () use ($loginKey, $generic) {
+            $fails = (int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($loginKey, $fails, now()->addMinutes(15));
+
+            return back()->withErrors(['email' => $generic])->withInput();
+        };
         if (! Auth::attempt($data)) {
-            return back()->withErrors(['email' => 'E-posta veya şifre hatalı.'])->withInput();
+            return $fail();
         }
         if (! Auth::user()->is_admin || Auth::user()->isBanned()) {
             Auth::logout();
-            return back()->withErrors(['email' => 'Bu hesap yönetici değil.']);
+
+            return $fail(); // doğru şifre de olsa yönetici değilse AYNI mesaj (durum sızmaz)
         }
+        \Illuminate\Support\Facades\Cache::forget($loginKey);
         $request->session()->regenerate();
         return redirect('/panel/users');
     }
