@@ -36,7 +36,12 @@ test('8 kişilik eleme turnuvası: tüm maçlar oynanır, sonuçlar ve tur geçi
   const anomalies: string[] = []
   for (let loop = 0; loop < 60; loop++) {
     const t = await show(request, id)
-    if (t.status === 'finished') { played.push({ champion: t.winner ?? t.champion ?? null }); break }
+    if (t.status === 'finished') {
+      const finalM = (t.bracket as BMatch[][]).at(-1)!.find((m) => !m.third_place)!
+      played.push({ champion: t.champion_id ?? null, finalWinner: finalM.winner ?? null })
+      if ((t.champion_id ?? null) !== (finalM.winner ?? null)) anomalies.push(`şampiyon ${t.champion_id} != final kazananı ${finalM.winner}`)
+      break
+    }
     const pending = (t.bracket as BMatch[][]).flat().filter((m) => m.p1?.id && m.p2?.id && !m.winner)
     if (!pending.length) { await new Promise((r) => setTimeout(r, 1000)); continue }
     for (const m of pending) {
