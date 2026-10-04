@@ -1,0 +1,162 @@
+[
+  {
+    "code": "GENQN",
+    "games": [
+      {
+        "score": "1-0",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "white",
+        "plies": 79
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 1,
+      "black": 0
+    },
+    "plies": 79,
+    "anomalies": [],
+    "coins": {
+      "before": {
+        "w": 100000,
+        "b": 100000
+      },
+      "after": {
+        "w": 100095,
+        "b": 99900
+      },
+      "dw": 95,
+      "db": -100,
+      "pts": 1
+    }
+  },
+  {
+    "code": "9G6EX",
+    "games": [
+      {
+        "score": "2-0",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "white",
+        "plies": 60
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 2,
+      "black": 0
+    },
+    "plies": 60,
+    "anomalies": [],
+    "coins": {
+      "before": {
+        "w": 100095,
+        "b": 99900
+      },
+      "after": {
+        "w": 100285,
+        "b": 99700
+      },
+      "dw": 190,
+      "db": -200,
+      "pts": 2
+    }
+  },
+  {
+    "code": "TGG54",
+    "games": [
+      {
+        "score": "0-1",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "black",
+        "plies": 80
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 1
+    },
+    "plies": 80,
+    "anomalies": [],
+    "coins": {
+      "before": {
+        "w": 100285,
+        "b": 99700
+      },
+      "after": {
+        "w": 100185,
+        "b": 99795
+      },
+      "dw": -100,
+      "db": 95,
+      "pts": 1
+    }
+  },
+  {
+    "code": "RXZ37",
+    "games": [
+      {
+        "score": "0-1",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "black",
+        "plies": 71
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 1
+    },
+    "plies": 71,
+    "anomalies": [],
+    "coins": {
+      "before": {
+        "w": 100185,
+        "b": 99795
+      },
+      "after": {
+        "w": 100085,
+        "b": 99890
+      },
+      "dw": -100,
+      "db": 95,
+      "pts": 1
+    }
+  },
+  {
+    "code": "9XHDA",
+    "games": [
+      {
+        "score": "0-2",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "black",
+        "plies": 50
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 2
+    },
+    "plies": 50,
+    "anomalies": [],
+    "coins": {
+      "before": {
+        "w": 100085,
+        "b": 99890
+      },
+      "after": {
+        "w": 99885,
+        "b": 100080
+      },
+      "dw": -200,
+      "db": 190,
+      "pts": 2
+    }
+  }
+]
