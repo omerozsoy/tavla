@@ -191,6 +191,15 @@ class AuthController extends Controller
         // Google e-postasi zaten dogrulanmis: HEM yeni HEM mevcut kullanicide garantiye al
         // (eski hesaplar Google'a baglaninca "e-postani dogrula" uyarisi almasin).
         if (! $user->hasVerifiedEmail()) {
+            if (! $isNew) {
+                // A-11 (hesap ön-ele geçirme): bu e-posta daha önce DOĞRULANMAMIŞTI -> hesabı açan/şifreyi
+                // koyan kişi bu e-postanın sahibi olmayabilir (saldırgan kurbanın adresiyle önceden kayıt).
+                // Google sahipliği kanıtladı: önceki şifre ve TÜM oturumlar geçersiz kılınır ki saldırgan
+                // erişimini korumasın. (Meşru kullanıcı Google ile ya da şifre sıfırlama ile girer.)
+                $user->password = Hash::make(Str::random(40));
+                $user->save();
+                $user->tokens()->delete();
+            }
             $user->markEmailAsVerified(); // fillable disi, guvenli
             $this->grantWelcomeCoins($user->id); // Google = doğrulanmış -> hoşgeldin coin'i (idempotent)
         }
