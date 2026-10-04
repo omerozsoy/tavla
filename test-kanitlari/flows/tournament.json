@@ -1,0 +1,288 @@
+{
+  "id": 1,
+  "status": "running",
+  "played": [
+    {
+      "match": "r0m0",
+      "code": "GKMQ5",
+      "winner": "W",
+      "games": 1,
+      "score": {
+        "white": 2,
+        "black": 0
+      }
+    },
+    {
+      "match": "r0m1",
+      "code": "X9KCM",
+      "winner": "P3",
+      "games": 1,
+      "score": {
+        "white": 3,
+        "black": 0
+      }
+    },
+    {
+      "match": "r0m2",
+      "code": "2V4H8",
+      "winner": "P6",
+      "games": 1,
+      "score": {
+        "white": 2,
+        "black": 0
+      }
+    },
+    {
+      "match": "r0m3",
+      "code": "8TJXT",
+      "winner": "P7",
+      "games": 1,
+      "score": {
+        "white": 0,
+        "black": 2
+      }
+    },
+    {
+      "match": "r1m0",
+      "code": "296Q7",
+      "winner": "W",
+      "games": 1,
+      "score": {
+        "white": 3,
+        "black": 0
+      }
+    },
+    {
+      "match": "r1m1",
+      "code": "P7XZL",
+      "winner": "P6",
+      "games": 1,
+      "score": {
+        "white": 2,
+        "black": 0
+      }
+    },
+    {
+      "match": "r2m1",
+      "code": "7VMBF",
+      "winner": "P7",
+      "games": 1,
+      "score": {
+        "white": 0,
+        "black": 2
+      }
+    }
+  ],
+  "anomalies": [],
+  "bracket": [
+    [
+      {
+        "key": "r0m0",
+        "p1": {
+          "id": 1,
+          "name": "W",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 4,
+          "name": "P4",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 1,
+        "ready_at": "2026-10-04T07:59:53+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "GKMQ5",
+        "score": {
+          "p1": 2,
+          "p2": 0
+        }
+      },
+      {
+        "key": "r0m1",
+        "p1": {
+          "id": 3,
+          "name": "P3",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 8,
+          "name": "P8",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 3,
+        "ready_at": "2026-10-04T07:59:53+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "X9KCM",
+        "score": {
+          "p1": 3,
+          "p2": 0
+        }
+      },
+      {
+        "key": "r0m2",
+        "p1": {
+          "id": 6,
+          "name": "P6",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 5,
+          "name": "P5",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 6,
+        "ready_at": "2026-10-04T07:59:53+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "2V4H8",
+        "score": {
+          "p1": 2,
+          "p2": 0
+        }
+      },
+      {
+        "key": "r0m3",
+        "p1": {
+          "id": 2,
+          "name": "B",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 7,
+          "name": "P7",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 7,
+        "ready_at": "2026-10-04T07:59:53+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "8TJXT",
+        "score": {
+          "p1": 0,
+          "p2": 2
+        }
+      }
+    ],
+    [
+      {
+        "key": "r1m0",
+        "p1": {
+          "id": 1,
+          "name": "W",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 3,
+          "name": "P3",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 1,
+        "ready_at": "2026-10-04T08:01:21+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "296Q7",
+        "score": {
+          "p1": 3,
+          "p2": 0
+        }
+      },
+      {
+        "key": "r1m1",
+        "p1": {
+          "id": 6,
+          "name": "P6",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 7,
+          "name": "P7",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 6,
+        "ready_at": "2026-10-04T08:03:26+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "P7XZL",
+        "score": {
+          "p1": 2,
+          "p2": 0
+        }
+      }
+    ],
+    [
+      {
+        "key": "r2m0",
+        "p1": {
+          "id": 1,
+          "name": "W",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 6,
+          "name": "P6",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": null,
+        "ready_at": "2026-10-04T08:05:10+00:00",
+        "opens_at": "2026-10-04T08:06:34+00:00"
+      },
+      {
+        "key": "r2m1",
+        "third_place": true,
+        "p1": {
+          "id": 3,
+          "name": "P3",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "p2": {
+          "id": 7,
+          "name": "P7",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        },
+        "winner": 7,
+        "ready_at": "2026-10-04T08:05:10+00:00",
+        "target": 1,
+        "minutes": null,
+        "room": "7VMBF",
+        "score": {
+          "p1": 0,
+          "p2": 2
+        }
+      }
+    ]
+  ]
+}

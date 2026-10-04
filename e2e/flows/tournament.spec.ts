@@ -34,7 +34,7 @@ test('8 kişilik eleme turnuvası: tüm maçlar oynanır, sonuçlar ve tur geçi
   const byId = new Map<number, User>(users.map((u) => [u.id, u]))
   const played: Record<string, unknown>[] = []
   const anomalies: string[] = []
-  for (let loop = 0; loop < 30; loop++) {
+  for (let loop = 0; loop < 60; loop++) {
     const t = await show(request, id)
     if (t.status === 'finished') { played.push({ champion: t.winner ?? t.champion ?? null }); break }
     const pending = (t.bracket as BMatch[][]).flat().filter((m) => m.p1?.id && m.p2?.id && !m.winner)
@@ -42,7 +42,12 @@ test('8 kişilik eleme turnuvası: tüm maçlar oynanır, sonuçlar ve tur geçi
     for (const m of pending) {
       const u1 = byId.get(m.p1!.id)!, u2 = byId.get(m.p2!.id)!
       const mr = await call(request, 'POST', `/tournaments/${id}/match-room`, u1.token, { match: m.key })
-      if (mr.status === 422 && /üçüncülük/.test(mr.body?.message ?? '')) { await new Promise((r) => setTimeout(r, 2000)); continue }
+      if (mr.status === 422 && /üçüncülük/.test(mr.body?.message ?? '')) {
+        // Final, 3.'lük maçından 1 dk sonra açılır (tasarım). Sunucunun bildirdiği süre kadar bekle.
+        const sec = Number((/\((\d+) sn\)/.exec(mr.body?.message ?? '') ?? [])[1] ?? 5)
+        await new Promise((r) => setTimeout(r, (Math.min(sec, 120) + 2) * 1000))
+        continue
+      }
       expect(mr.status, `match-room ${m.key} ${JSON.stringify(mr.body)}`).toBe(200)
       const code = mr.body.code as string
       const mr2 = await call(request, 'POST', `/tournaments/${id}/match-room`, u2.token, { match: m.key })
