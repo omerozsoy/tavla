@@ -1591,13 +1591,20 @@ class RoomController extends Controller
             return $this->fail('Önce mevcut maçın settlement işlemi tamamlanmalı.', 409);
         }
 
-        $room->{'rematch_'.$slot} = $data['accept'] ? 'yes' : 'no';
         // RÖVANŞ CEVABI = oda değişikliği: server_version'ı BUMP et. Aksi halde maç bitince (saat
         // durunca) show() 204 döner ve karşı taraf rövanş isteğini/cevabını POLL ile HİÇ görmezdi.
-        $room->server_version = (int) $room->server_version + 1;
-        $room->version = (int) $room->version + 1;
-        $room->save();
-        $room = $room->fresh();
+        // A-16: cevap oda satırı KİLİTLİ yazılır. Eskiden iki taraf aynı anda kabul edince ikisi de
+        // bayat version+1 yazıyor (bir bump kayboluyor -> sürüm-kapılı poll cevabı kaçırıyordu) ve
+        // karar bayat kopyadan veriliyordu. Karar her zaman kilit sonrası taze satırdan.
+        $room = DB::transaction(function () use ($room, $slot, $data) {
+            $locked = Room::where('id', $room->id)->lockForUpdate()->first();
+            $locked->{'rematch_'.$slot} = $data['accept'] ? 'yes' : 'no';
+            $locked->server_version = (int) $locked->server_version + 1;
+            $locked->version = (int) $locked->version + 1;
+            $locked->save();
+
+            return $locked;
+        });
 
         // Iki taraf da kabul -> yeni odayi TEK kez ac (yaris: lockForUpdate + kod bir kez yazilir).
         if ($room->rematch_p1 === 'yes' && $room->rematch_p2 === 'yes' && ! $room->rematch_code) {
