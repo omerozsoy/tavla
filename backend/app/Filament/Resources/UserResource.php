@@ -303,8 +303,9 @@ class UserResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Seçili üyeleri sil')
-                    ->modalDescription('Seçilen üyeler ve maç/istatistik/coin kayıtları KALICI silinir '
-                        .'(sahip oldukları kulüpler en eski üyeye devredilir). Yönetici hesaplar atlanır. '
+                    ->modalDescription('Seçilen üyeler KALICI silinir (kulüpleri en eski üyeye devredilir). '
+                        .'Coin/ödeme/sipariş geçmişi olan üyeler silinmez, ANONİMLEŞTİRİLİR: kişisel bilgiler '
+                        .'ve mesajlar silinir, mali kayıtlar yasal saklama için kalır. Yönetici hesaplar atlanır. '
                         .'Bu işlem GERİ ALINAMAZ.')
                     ->modalSubmitActionLabel('Evet, sil')
                     ->action(function (\Illuminate\Support\Collection $records) {

@@ -160,6 +160,46 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         return $this->is_admin && in_array(strtolower((string) $this->email), $admins, true);
     }
 
+    /**
+     * Mali geçmiş: coin defteri, ödeme veya ürün siparişi kaydı. Bu kayıtlar kullanıcıya
+     * cascadeOnDelete bağlı olduğundan kullanıcı silinince İZSİZ giderdi (MySQL FK cascade'de
+     * defter denetim tetikleyicisi çalışmaz). Böyle hesaplar SİLİNMEZ, anonimleştirilir (UserEraser).
+     */
+    public function hasFinancialHistory(): bool
+    {
+        foreach (['wallet_transactions', 'payments', 'product_orders'] as $table) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($table)
+                && \Illuminate\Support\Facades\DB::table($table)->where('user_id', $this->id)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool $financialDeleteGuardOff = false;
+
+    /** Yalnız sentetik test hesaplarını temizleyen tanı komutları için (ör. money:claim-race-test). */
+    public static function withoutFinancialDeleteGuard(callable $fn): mixed
+    {
+        self::$financialDeleteGuardOff = true;
+        try {
+            return $fn();
+        } finally {
+            self::$financialDeleteGuardOff = false;
+        }
+    }
+
+    protected static function booted(): void
+    {
+        // Mali geçmişi olan hesap HANGİ yoldan olursa olsun (panel, CLI, tinker) fiziksel silinemez.
+        static::deleting(function (User $user) {
+            if (! self::$financialDeleteGuardOff && $user->hasFinancialHistory()) {
+                throw new \RuntimeException('Mali geçmişi olan hesap silinemez; UserEraser ile anonimleştirilir.');
+            }
+        });
+    }
+
     public function isBanned(): bool
     {
         return $this->banned_at !== null;

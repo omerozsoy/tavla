@@ -97,7 +97,7 @@ class MoneyClaimRaceTest extends Command
             if ($user) {
                 DB::table('active_money_match_claims')->where('user_id', $user->id)->delete();
                 foreach ($rooms as $room) $room->delete();
-                $user->delete();
+                \App\Models\User::withoutFinancialDeleteGuard(fn () => $user->delete()); // sentetik test hesabı
             }
             $this->line('cleanup=complete');
         }

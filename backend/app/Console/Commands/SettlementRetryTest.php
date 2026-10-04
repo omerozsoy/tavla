@@ -104,7 +104,7 @@ class SettlementRetryTest extends Command
                 }
                 $room->delete();
             }
-            foreach ($users as $user) $user->delete();
+            foreach ($users as $user) \App\Models\User::withoutFinancialDeleteGuard(fn () => $user->delete()); // sentetik test hesabı
             $this->line('cleanup=complete');
         }
     }
