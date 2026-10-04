@@ -31,7 +31,7 @@ Davranış değişiklikleri (bilinçli): terk eden oyuncu artık mars/katmerli m
 davetsiz kod odaları dereceli değil arkadaş maçı sayılır; %-bahisli açık maçı olan oyuncu, kilitli
 tutarı çark/slot/dükkân/turnuva için kullanamaz.
 
-> §5'teki kalan denetim partileri hâlâ yapılmadı — denetim kapsamı değişmedi.
+> 2. parti (A-17…A-33) ve kalan kararlar için bkz. §5.
 
 > **Kapsam uyarısı — denetim TAMAMLANMADI.** İstenen "tüm depo, %100 dosya" denetimi bu partide
 > yapılmadı. Bu parti üç hedefli, salt-okur denetimden oluşur (aşağıda §4). Kalan alanlar §5'te
@@ -148,18 +148,62 @@ dondurma (P1), yüzde-bahis ödememe (P1) ve rating çiftliği (P1) gibi maç/ek
 | Kimlik doğrulama / yetki / API / admin: AuthController, PanelController, routes, middleware, GameLog, Address, Message, BugReport, CORS | denetlendi |
 | Oyun/maç akışı: RoomController (matchmaking, create/join/enter, roll/move/küp/resign, clock, leave, settle, rematch, bot), MatchClock, RatingPolicy, RoomResult, ForfeitLoss, MatchBackstop | denetlendi |
 
-## 5. KALAN — denetlenmedi (sonraki partiler)
+## 5. 2. PARTİ (2026-10-04) — kalan alanlar denetlendi ve düzeltildi
 
-- [ ] `src/` ön yüz (App.tsx ~10k satır, ui/*, online/*, api.ts) — durum, yarış, sızıntı, yalnız-UI kontrolleri
-- [ ] Gerçek zamanlı: `src/online/realtime.ts`, `app/Events/*`, `routes/channels.php`, Reverb yapılandırması
-- [ ] `validator/` (server.ts, PR analizi) ve `gnubg-service/gnubg_service.py`
-- [ ] `TournamentController` tamamı + `app/Support/Swiss/*` + `tournaments:tick`
-- [ ] `app/Jobs/*`, `app/Console/Commands/*` (kuyruk/cron, çift çalışma)
-- [ ] `app/Filament/*` yönetim paneli
-- [ ] `database/migrations/*` — benzersiz kısıtlar / FK / indeksler (ör. match_results(room_code,user_id), room_commands, ledger)
-- [ ] `PresenceController`, `ClubController`, `MessageController` tamamı, `ContentController`, SEO uçları
-- [ ] `config/*`, `bootstrap/app.php`, `deploy.sh`, `deploy/*`, CSP/nginx
-- [x] Düzeltmeler sonrası tam koşu: phpunit 821 OK/4 skip, vitest 371, tsc temiz, oxlint 0 hata
+1. partide denetlenmeyen alanların tamamı beş paralel salt-okur denetimle tarandı:
+gerçek zamanlı + sosyal uçlar, turnuva/Swiss/cron, validator + gnubg + config/deploy + migration'lar,
+ön yüz (`src/`), Filament yönetim paneli. Her bulgu ayrıca kod okunarak doğrulandı. Her düzeltmenin
+regresyon testi var; her test düzeltme olmadan **kırmızı**, düzeltmeyle **yeşil** doğrulandı.
 
-Kapsam sayıları: bu parti dosya bazında tam envanter çıkarılmadan hedefli yapıldığı için
-"incelenen/toplam dosya" sayısı **verilemez** — denetim tamamlanmış sayılmamalıdır.
+| Bulgu | Önem | Sorun → Düzeltme | Commit | Test |
+|---|---|---|---|---|
+| A-17 | P1 | DM: `/decline` sahte "o bana yazdı" satırı ekliyor, `/send` bunu kabule çevirip istek kutusu + 5 mesaj sınırı + reddi atlıyordu → yalnız karşı tarafın GERÇEK mesajı isteği kabul eder | `8d765d6` | `MessageConsentBypassTest` |
+| A-18 | P1 | Filament: sıradan yönetici kök (config) yöneticinin şifre/e-posta/yetki/yasak alanlarını değiştirip ele geçirebiliyor, silebiliyor, kendi e-postasını kök adrese çevirebiliyordu; yeni hesaba defter dışı coin → `AdminGuard` (kök yalnız kökçe), güvenli silme (UserEraser, yönetici silinmez), coin deftere, yetki değişikliği denetimde | `a4cf7f1` | `AdminGuardFilamentTest` |
+| A-19 | P0 | Eleme finali, 3.'lük maçı oynanırken 3 dk sonra RATING ile karara bağlanıyor, ödül yanlış şampiyona gidiyordu → final saati 3.'lük bitip gate açılana kadar işlemez; gate'ten önceki hazır-saati geçersiz | `c9c4dcd` | `TournamentThirdPlaceTest` |
+| A-20 | P1 | `matchRoom` bracket JSON'unu kilitsiz yazıyordu: eşzamanlı isteklerde oda kodu siliniyor (oyuncular farklı odalara düşüyor), bayat kopya kazananı ezip Swiss'te sonuç iki kez işleniyordu → kilitli transaction | `d461aef` | `SwissTournamentTest` |
+| A-21 | P1 | Swiss çift-mağlubiyet maçı yeniden oynanıp ikinci kez işlenebiliyordu → `double_loss` her yerde "bitti" | `d461aef` | `SwissTournamentTest` |
+| A-22 | P2 | Yönetici bitir/sil/sıfırla giriş ücretlerini iade etmiyordu; `start()` bayat modelle arada katılanı ağaçtan düşürüyordu → ödül ödenmediyse iade (kayıt başına idempotent), start kilitli | `f09e833` | `TournamentRefundTest` |
+| A-23 | P2 | Rakibi belli olmayan oyuncunun diskalifiyesi hiçbir şey yapmıyordu (oyuncu ödül alabiliyordu) → `dq_pending`, rakip gelince hükmen | `a0d90da` | `TournamentThirdPlaceTest` |
+| A-24 | P2 | Oda açılıp kimse oturmayınca 3.'lük (ve final) sonsuza dek takılıyordu → oda boşsa yine çözülür | `b84f799` | `TournamentThirdPlaceTest` |
+| A-25 | P2 | Google etiketi çerez onayı olmadan yükleniyor, tam URL ile **şifre sıfırlama token'ı + e-posta** Google'a gidiyordu → yalnız analitik onayıyla; yalnız köken+yol gönderilir | `387ab87` | `src/analytics.test.ts` |
+| A-26 | P2 | gnubg örnekleri ortak sabit `/tmp/tavlai_*.mat` yolunu kullanıyordu (eşzamanlı yüklemede başka kullanıcının analizi dönebiliyordu) → istek başına benzersiz dosya + `PrivateTmp`/`NoNewPrivileges`; deploy tüm örnekleri yeniden başlatır | `5bd0572` | `gnubg-service/test_tmp_isolation.py` |
+| A-27 | P2 | Ağır .mat analizi zaman aşımında aynı yükü her örneğe (canlı PR havuzu dahil) gönderiyordu → zaman aşımında failover yok, 5/dk sınır, iç hata ayrıntısı istemciye dönmez | `28f42af` | `GnuBgHeavyTimeoutTest` |
+| A-28 | P2 | DM görselleri 3 MB, SVG kabul, kota yok → ~750 KB, yalnız raster, günlük 60 görsel | `213c015` | `MessageImageLimitsTest` |
+| A-29 | P3 | "Çevrimdışı Görün" profil/DM'de gerçek durumu sızdırıyordu; engellenen davet gönderebiliyordu; davet/ping/okunma sayacı sınırsızdı → düzeltildi | `4a3d69a` | `PresencePrivacyTest` |
+| A-30 | P3 | Sepet coin siparişi yeniden denemede yeni idempotency anahtarı (çift düşüm riski); çıkışta sepet/bekleyen rapor/kuyruk cihazda kalıyordu; yönetici linklerinde `javascript:` engellenmiyordu → düzeltildi | `02594c0` | `api.roomSecurity.test.ts`, `safeHref.test.ts` |
+| A-31 | P3 | `/analyze-pr` doğrulanmamış zar dizisi validator'ı kilitleyebiliyordu; gnubg GET teşhis uçları secret'sizdi; gövde sınırı yok; sır karşılaştırması sabit-zamanlı değil; 400 tüm yedeklere tekrar gönderiliyordu; promo sorgusu indekssizdi → düzeltildi | `a5fdf58` | `validatorPrInput.test.ts`, `ValidatorFailoverTest`, gnubg testi |
+| A-32 | P3 | Havale ödeme durumu ve ödül havuzu değişikliği izsizdi; ödenmiş sipariş silinebiliyordu; panel yüklemeleri SVG kabul ediyordu → denetim kaydı, ödenmiş sipariş korunur, yalnız raster | `efdc231` | `AdminAuditTrailTest` |
+| A-33 | P3 | Şampiyonsuz Swiss bitişinde ücretler kayboluyordu; katıl/ayrıl ile "oynanan turnuva" şişiriliyordu → iade + ayrılınca sayaç geri alınır | `11e0179` | `SwissTournamentTest`, `TournamentRefundTest` |
+
+### Açık kalanlar (karar / sunucu işlemi gerekiyor)
+
+- **Kullanıcı silme defteri siliyor (P2, karar):** `wallet_transactions` ve `payments` kullanıcıya
+  `cascadeOnDelete` bağlı; panelden üye silinince coin defteri ve ödeme geçmişi iz bırakmadan gider
+  (MySQL FK cascade'de BEFORE DELETE tetikleyicisi çalışmaz). Seçenekler: (a) finansal geçmişi olan
+  üyeyi silmek yerine anonimleştir (KVKK silme talebi + mali kayıt saklama birlikte karşılanır), (b) FK'yi
+  `restrictOnDelete` yap. Hukuki saklama süresi bağlayıcı olduğundan karar sizin.
+- **Swiss'te gelmeyen oyuncu çözücüsü yok (P3, özellik):** eleme ağacındaki `resolveStalledMatches`
+  Swiss'te çalışmıyor; iki oyuncu da gelmezse tur yöneticinin elle çözmesini bekler.
+- **Sunucu tarafı (repo dışında):** gnubg servislerini root dışı bir kullanıcıyla çalıştırma
+  (`User=`), Plesk arkasında gerçek istemci IP'sinin Laravel'e geçtiğinin doğrulanması (IP tabanlı
+  hız sınırları), CSP'nin `CSP_ENFORCE=true` ile açılması, `validator.tavlatv.com`'un dışarıya açık
+  olup olmadığı, Reverb `max_request_size` (10 KB) ile oda yayınlarının 413 alıp almadığı.
+- `shield_events` denetim kayıtları 14 günde budanıyor; mali denetim izi için daha uzun saklama
+  düşünülmeli.
+
+### Kapsam
+
+| Alt sistem | Durum |
+|---|---|
+| 1. parti alanları (ekonomi, kimlik/API/admin, oyun akışı) | denetlendi + düzeltildi (A-01…A-16) |
+| Gerçek zamanlı (Reverb, Events), Presence/Club/Message/Content | denetlendi + düzeltildi |
+| TournamentController, Swiss, tick, Jobs, Console Commands, scheduler | denetlendi + düzeltildi |
+| validator/, gnubg-service/, Laravel istemcileri, config/bootstrap/deploy, migration kısıtları | denetlendi + düzeltildi |
+| `src/` ön yüz + `public/sw.js` | denetlendi + düzeltildi |
+| `app/Filament/*` | denetlendi + düzeltildi |
+
+Tam koşu (2. parti sonrası): phpunit 849 OK / 4 skip · vitest 378 OK · tsc temiz · oxlint 0 hata · gnubg python testi OK.
+
+Kapsam notu: denetim alt sistem bazında yapıldı (dosya bazında satır satır tam envanter değil);
+bu yüzden "incelenen/toplam dosya" sayısı verilmiyor. Yukarıdaki tüm alt sistemler en az bir
+hedefli denetimden geçti.
