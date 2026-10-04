@@ -339,7 +339,7 @@ const SEO_DESCS: Record<string, string> = {
   'bahane-makinesi':
     'Bahane Makinesi: tavla kaybettiğinde işine yarayacak 100 hazır bahane. Salt eğlence.',
   'kiz-tavlasi':
-    'Kız Tavlası: pulları önce toplayan kazanır. İki kişi veya bilgisayara karşı ücretsiz oyna.',
+    'Kız Tavlası: pulları önce toplayan kazanır. Bilgisayara karşı ücretsiz oyna.',
   'bilgi/hakkinda': 'TavlaTv hakkında: misyonumuz, adil oyun ilkelerimiz ve tavla topluluğu.',
   'bilgi/hizmetler': 'TavlaTv hizmetleri: online tavla, turnuvalar, analiz araçları ve daha fazlası.',
   'bilgi/sozluk': 'Tavla sözlüğü: tavla terimleri ve anlamları — mars, gammon, backgammon, küp, pip ve daha fazlası.',
