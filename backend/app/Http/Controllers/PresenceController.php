@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Schema;
 
 class PresenceController extends Controller
 {
+    /** Davetin görünür + kabul edilebilir kaldığı süre (dk). /ping ve respond AYNI pencereyi kullanır. */
+    public const INVITE_TTL_MINUTES = 2;
+
     // Kalp atisi: cevrimici tut + bekleyen davetleri dondur (istemci periyodik cagirir)
     public function ping(Request $request)
     {
@@ -38,7 +41,7 @@ class PresenceController extends Controller
             ->where('rooms.status', 'waiting')
             ->where('game_invites.to_user_id', $me->id)
             ->where('game_invites.status', 'pending')
-            ->where('game_invites.created_at', '>', now()->subMinutes(2))
+            ->where('game_invites.created_at', '>', now()->subMinutes(self::INVITE_TTL_MINUTES))
             ->get([
                 'game_invites.id',
                 'game_invites.from_user_id',
@@ -336,6 +339,26 @@ class PresenceController extends Controller
         // enter() ile KENDINI p1 yapan bos bir oda kurup tek basina takilir -> kullanicinin
         // gozunde "kabul ettim hicbir sey olmadi". Davet eden ayrilmis / davetini iptal etmis /
         // oda dolmus / maca baslamissa dostca uyar ve daveti 'expired' yap (banner geri gelmesin).
+        // DURUM: yalnız bekleyen davet kabul edilir. Reddedilmiş / süresi dolmuş / iptal edilmiş davet
+        // sonradan kabul edilemez. Zaten KABUL edilmişse (ağ yeniden denemesi) aynı yanıtı ver.
+        if (($invite->status ?? 'pending') === 'accepted' && $data['accept']) {
+            return response()->json([
+                'code' => $invite->room_code,
+                'target' => (int) ($invite->target ?? 1),
+                'timeControl' => $invite->time_control,
+            ]);
+        }
+        if (($invite->status ?? 'pending') !== 'pending') {
+            return $this->fail('Bu davet artık geçerli değil.', 409);
+        }
+        // SÜRE: davet yalnız /ping'in gösterdiği pencerede (2 dk) kabul edilebilir. Eskiden yaş
+        // denetlenmiyordu; davetlinin artık GÖREMEDİĞİ bir davet 10 dk'lık temizliğe kadar kabul
+        // edilip davet edenin çoktan terk ettiği odaya girilebiliyordu.
+        if (\Illuminate\Support\Carbon::parse($invite->created_at)->lt(now()->subMinutes(self::INVITE_TTL_MINUTES))) {
+            DB::table('game_invites')->where('id', $inviteId)->update(['status' => 'expired', 'updated_at' => now()]);
+
+            return $this->fail('Davetin süresi doldu. Tekrar davet iste.', 409);
+        }
         $room = Room::where('code', $invite->room_code)->first();
         $joinable = $room
             && $room->status === 'waiting'

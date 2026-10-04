@@ -1767,6 +1767,18 @@ class RoomController extends Controller
         if ($slot === null) {
             return $this->fail('Bu odada değilsin.', 403);
         }
+        // BEKLEYEN ODA (rakip henüz yok): sahibi ayrılınca oda kapanır ve bu odaya ait bekleyen
+        // davetler düşer. Eskiden no-op'tu: davetli, sahibi gitmiş odayı kabul edip giriyor, maç
+        // başlayınca sahip "terk" ile (puan kaybederek) yeniliyordu. (matchmakingCancel ile aynı desen.)
+        if ($room->status === 'waiting' && $slot === 'p1' && ! $room->p2_token) {
+            if (Schema::hasTable('game_invites')) {
+                DB::table('game_invites')->where('room_code', $room->code)->where('status', 'pending')
+                    ->update(['status' => 'expired', 'updated_at' => now()]);
+            }
+            $room->delete();
+
+            return response()->json(['ok' => true, 'clock' => null]);
+        }
         $clock = is_array($room->clock) ? $room->clock : [];
         $ended = ! empty($clock['end']) || $room->status === 'finished';
         // KORUMA: maç ODA DURUMUNDA (oynanışta) zaten sonuçlandıysa (kazanan belli) geç gelen
