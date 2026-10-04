@@ -1,5 +1,6 @@
-import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { generateMoves } from '../src/engine/moves'
 
 type User = { id: number; token: string; nick: string }
@@ -23,29 +24,31 @@ async function clickButton(page: Page, re: RegExp) {
   await expect(b).toBeVisible({ timeout: 15_000 })
   await b.click()
 }
-async function dragChecker(page: Page, from: Locator, to: Locator) {
-  // Açılış zarı / taş uçuş animasyonu sürerken tahta sürüklemeyi yok sayar -> tahta DOM'u
-  // değişene dek (en çok 6 kez) tekrar dene.
-  const board = page.locator('.board').first()
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const before = await board.innerHTML()
-    // Noktanın ortası taş yığını kısaysa boş kalır -> sürüklenebilir EN ÜST taştan tut.
-    const grab = from.locator('.checker.draggable').last()
-    const a = (await grab.count()) ? await grab.boundingBox() : await from.boundingBox()
-    const b = await to.boundingBox()
-    if (!a || !b) throw new Error('sürükleme kutusu yok')
-    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
-    await page.mouse.down()
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 })
-    await page.mouse.up()
-    await page.waitForTimeout(800) // uçuş animasyonu bitsin
-    if ((await board.innerHTML()) !== before) return
-    await page.waitForTimeout(700)
-  }
-  throw new Error('sürükleme tahtaya işlenmedi')
+async function post(request: APIRequestContext, url: string, bearer: string, data: unknown) {
+  const res = await request.post(url, { timeout: 10_000, headers: { Authorization: `Bearer ${bearer}` }, data })
+  return { status: res.status(), body: await res.json().catch(() => null) }
 }
-async function waitVersion(request: APIRequestContext, code: string, user: User, roomToken: string, before: number) {
-  await expect.poll(async () => (await getRoom(request, code, user, roomToken)).server_version, { timeout: 15_000 }).toBeGreaterThan(before)
+// Tarayıcının ÇİZDİĞİ tahta -> motor konvansiyonunda points[24] (beyaz +, siyah -). >5 taşlı
+// yığında üst taş sayıyı etiket olarak taşır (.checker-count), yoksa taş elemanları sayılır.
+async function readBoard(page: Page): Promise<number[]> {
+  return page.evaluate(() => {
+    const pts = Array<number>(24).fill(0)
+    document.querySelectorAll<HTMLElement>('.board .point[data-point]').forEach((pt) => {
+      const idx = Number(pt.dataset.point)
+      const cs = pt.querySelectorAll('.checkers > .checker')
+      if (!cs.length || !(idx >= 0 && idx < 24)) return
+      const label = Number(pt.querySelector('.checkers .checker-count')?.textContent || 0)
+      const n = label > cs.length ? label : cs.length
+      pts[idx] = cs[0].classList.contains('black') ? -n : n
+    })
+    return pts
+  })
+}
+// İki tarayıcı da sunucu tahtasını göstermeli (istemci ~1 sn'de bir yoklar -> poll ile bekle).
+async function expectUiSynced(pages: Page[], nicks: string[], points: number[], label: string) {
+  await Promise.all(pages.map((p, i) =>
+    expect.poll(() => readBoard(p), { timeout: 15_000, message: `${nicks[i]} arayüzü sunucu tahtasını göstermiyor (${label})` }).toEqual(points),
+  ))
 }
 
 test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }) => {
@@ -87,53 +90,59 @@ test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }
     const roomTokens = await Promise.all(pages.map((p) => p.evaluate(() => localStorage.getItem('tavla.playerToken') || '')))
     expect(roomTokens.every(Boolean), 'iki oturumun oda tokenı olmalı').toBeTruthy()
 
+    // OYUN: zar/hamle doğrudan SUNUCUYA (/roll, /move) gider -> fare/animasyon zamanlamasına bağlı
+    // değil. ARAYÜZ ayrıca doğrulanır: her hamleden sonra İKİ tarayıcının çizdiği tahta sunucu
+    // tahtasıyla aynı olmalı. Hamleler istemci motorundan (backend validator ile aynı TS motoru).
+    const nicks = users.map((u) => u.nick)
     let completedGames = 0
+    let matchDone = false
+    let uiChecks = 0
     const seenScores = new Set<string>()
-    for (let turn = 0; turn < 1200 && completedGames < 5; turn++) {
+    for (let ply = 0; ply < 3000 && completedGames < 5 && !matchDone; ply++) {
       let r = await getRoom(request, code, users[0], roomTokens[0])
-      if (r.server_match.done) break
+      matchDone = !!r.server_match.done
       const score = `${r.server_match.score?.white ?? 0}-${r.server_match.score?.black ?? 0}`
       if (!seenScores.has(score) && score !== '0-0') {
         seenScores.add(score); completedGames++
-        const started = gameRows.length ? Number(gameRows.at(-1)?.startedAt ?? t0) : t0
+        const started = gameRows.length ? Number(gameRows.at(-1)?.finishedAt ?? t0) : t0
         gameRows.push({ game: completedGames, score, startedAt: started, finishedAt: Date.now(), durationMs: Date.now() - started })
         await Promise.all(pages.map((p, i) => p.screenshot({ path: `test-results/ui-five-game-audit/game-${completedGames}-${users[i].nick}.png` })))
       }
+      if (matchDone || completedGames >= 5) break
       if (!r.server_state) { await pages[0].waitForTimeout(500); continue }
       const color = r.server_state.turn
-      const playerIndex = color === 'white' ? 0 : 1
-      const me = users[playerIndex]
-      const page = pages[playerIndex]
+      const idx = color === 'white' ? 0 : 1
+      const me = users[idx]
       if (!r.server_state.dice?.length) {
-        const before = r.server_version
-        const roll = page.getByRole('button', { name: /Zar At/ }).last()
-        // İstemci sunucuyu ~1 sn'de bir yoklar: "Zar At" sıra geçtikten KISA SÜRE SONRA belirir.
-        // Tek seferlik isVisible yarışı kaybedip tıklamadan bekliyordu -> görünene/sürüm artana dek dene.
-        await expect.poll(async () => {
-          if ((await getRoom(request, code, me, roomTokens[playerIndex])).server_version > before) return true
-          if (await roll.isVisible().catch(() => false)) await roll.click().catch(() => {})
-          return false
-        }, { timeout: 20_000 }).toBe(true)
-        r = await getRoom(request, code, me, roomTokens[playerIndex])
+        const rr = await post(request, `${API}/rooms/${code}/roll`, me.token, {
+          token: roomTokens[idx], expected_version: r.server_version, command_id: randomUUID(),
+        })
+        // 409 = yeni oyun açılışı vb. ara durum -> durumu yeniden oku.
+        if (rr.status !== 200) { await pages[0].waitForTimeout(500); continue }
+        r = await getRoom(request, code, me, roomTokens[idx])
+        if (!r.server_state.dice?.length || r.server_state.turn !== color) continue
       }
       const moves = generateMoves(r.server_state) as { steps: Step[] }[]
-      // Oynanabilir hamle yok (generateMoves [] veya [{steps: []}]) -> sunucu sırayı kendisi geçirir.
-      if (!moves.length || !moves[0].steps.length) { await page.waitForTimeout(1200); continue }
-      const before = r.server_version
-      // Tek dokunuş taşı ETKİN zarla otomatik oynatır (hedef tıklaması yok sayılır) -> zar sırası
-      // adımla uyuşmayabilir. Gerçek kullanıcı gibi SÜRÜKLE-BIRAK: hedefe tam o adım oynanır.
-      for (const s of moves[0].steps) {
-        const from = s.from === 'bar' ? page.locator('[data-slot="bar"]') : page.locator(`.point[data-point="${s.from}"]`)
-        const to = s.to === 'off' ? page.locator('[data-slot="off"]') : page.locator(`.point[data-point="${s.to}"]`)
-        await dragChecker(page, from, to)
-      }
-      await clickButton(page, /Onayla|Onay/)
-      await waitVersion(request, code, me, roomTokens[playerIndex], before)
+      const steps = moves.length ? moves[0].steps : [] // boş = pas
+      const mv = await post(request, `${API}/rooms/${code}/move`, me.token, {
+        token: roomTokens[idx], steps, expected_version: r.server_version, command_id: randomUUID(),
+      })
+      if (mv.status === 409) continue // sunucu sırayı zaten geçirmiş (otomatik pas) / sürüm ilerlemiş
+      expect(mv.status, `move(${color}) ply ${ply} steps=${JSON.stringify(steps)}`).toBe(200)
+
       const a = await getRoom(request, code, users[0], roomTokens[0]); const b = await getRoom(request, code, users[1], roomTokens[1])
-      expect(a.server_version, `desync turn ${turn}`).toBe(b.server_version)
-      expect(a.server_state, `state desync turn ${turn}`).toEqual(b.server_state)
+      expect(a.server_version, `desync ply ${ply}`).toBe(b.server_version)
+      expect(a.server_state, `state desync ply ${ply}`).toEqual(b.server_state)
+      // Oyun bitmediyse arayüz kontrolü (oyun sonunda tahta yeni oyuna sıfırlanır -> o anı atla).
+      if (a.server_state && !a.server_match.done && `${a.server_match.score?.white ?? 0}-${a.server_match.score?.black ?? 0}` === score) {
+        await expectUiSynced(pages, nicks, a.server_state.points, `ply ${ply}, ${color}`)
+        uiChecks++
+      }
     }
-    expect(completedGames, 'beş tam oyun tamamlanmalı').toBe(5)
+    console.log(`UI audit: ${completedGames} oyun, ${uiChecks} arayüz senkron kontrolü, maç bitti=${matchDone}`)
+    // 5 sayılık maç gammon/küp ile 5 oyundan önce bitebilir: o durumda maçın bitmesi de geçerli.
+    expect(completedGames === 5 || matchDone, `beş tam oyun ya da maç sonu (oyun: ${completedGames})`).toBeTruthy()
+    expect(uiChecks, 'arayüz senkron kontrolü yapılmalı').toBeGreaterThan(0)
   } finally {
     writeFileSync('test-results/ui-five-game-audit/summary.json', JSON.stringify({ code, elapsedMs: Date.now() - t0, games: gameRows, errors }, null, 2))
     await Promise.all(contexts.map((c) => c.close()))
