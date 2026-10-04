@@ -60,4 +60,73 @@ class TournamentRefundTest extends TestCase
         $this->postJson("/api/tournaments/{$t->id}/leave")->assertSuccessful();
         $this->assertSame($before, (int) $admin->fresh()->coins, 'ücretsiz eklenen oluşturucu iade almamalı');
     }
+
+    // A-22: yönetici bitir/sil -> ödül ödenmediyse ödenen giriş ücretleri iade edilir (eskiden kayboluyordu).
+    public function test_admin_finish_open_tournament_refunds_paid_fees_once(): void
+    {
+        $admin = $this->admin();
+        $t = $this->open($admin, 200);
+        $p = User::factory()->create(['coins' => 1000]);
+        Sanctum::actingAs($p);
+        $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
+        $before = (int) $p->fresh()->coins;
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/tournaments/{$t->id}/finish")->assertSuccessful();
+        $this->postJson("/api/tournaments/{$t->id}/finish")->assertSuccessful(); // tekrar: çift iade yok
+        $this->assertSame($before + 200, (int) $p->fresh()->coins);
+        $this->assertSame(0, (int) $t->fresh()->prize_coins);
+    }
+
+    public function test_admin_delete_refunds_paid_fees(): void
+    {
+        $admin = $this->admin();
+        $t = $this->open($admin, 150);
+        $p = User::factory()->create(['coins' => 1000]);
+        Sanctum::actingAs($p);
+        $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
+        $before = (int) $p->fresh()->coins;
+        Sanctum::actingAs($admin);
+        $this->deleteJson("/api/tournaments/{$t->id}")->assertSuccessful();
+        $this->assertSame($before + 150, (int) $p->fresh()->coins);
+    }
+
+    public function test_start_uses_fresh_player_list(): void
+    {
+        $admin = $this->admin();
+        $t = $this->open($admin, 0);
+        $users = User::factory()->count(2)->create();
+        foreach ($users as $u) {
+            Sanctum::actingAs($u);
+            $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
+        }
+        // Yarış: start isteği turnuvayı okuduktan sonra bir oyuncu daha katılır.
+        $late = User::factory()->create();
+        $raced = false;
+        Tournament::retrieved(function (Tournament $x) use (&$raced, $t, $late) {
+            if (! $raced && $x->id === $t->id) {
+                $raced = true;
+                $players = Tournament::find($t->id)->players;
+                $players[] = ['id' => $late->id, 'name' => 'Late', 'rating' => 1500, 'fee_paid' => 0];
+                \Illuminate\Support\Facades\DB::table('tournaments')->where('id', $t->id)->update(['players' => json_encode($players)]);
+            }
+        });
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/tournaments/{$t->id}/start")->assertSuccessful();
+        $ids = collect(Tournament::find($t->id)->players)->filter()->pluck('id')->all();
+        $this->assertContains($late->id, $ids, 'arada katılan oyuncu ağaçtan düşmemeli');
+    }
+
+    public function test_filament_reset_refunds_paid_fees(): void
+    {
+        $admin = $this->admin();
+        $t = $this->open($admin, 120);
+        $p = User::factory()->create(['coins' => 1000]);
+        Sanctum::actingAs($p);
+        $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
+        $before = (int) $p->fresh()->coins;
+        \Livewire\Livewire::actingAs($admin)->test(\App\Filament\Resources\TournamentResource\Pages\ListTournaments::class)
+            ->callTableAction('resetTournament', $t);
+        $this->assertSame($before + 120, (int) $p->fresh()->coins, 'sıfırlamada ödenen ücret iade edilmeli');
+        $this->assertSame([], $t->fresh()->players);
+    }
 }

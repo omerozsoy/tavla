@@ -883,8 +883,17 @@ class TournamentController extends Controller
         if (! $request->user()?->is_admin) {
             return $this->fail('Yalnızca yönetici.', 403);
         }
-        $tournament->status = 'finished';
-        $tournament->save();
+        // A-22: yönetici bitirmesi = iptal; ödül ödenmediyse giriş ücretleri iade (kilitli, idempotent).
+        $tournament = DB::transaction(function () use ($tournament) {
+            $t = Tournament::whereKey($tournament->id)->lockForUpdate()->firstOrFail();
+            if ($t->status !== 'finished') {
+                \App\Support\TournamentModeration::refundAll($t);
+                $t->status = 'finished';
+                $t->save();
+            }
+
+            return $t;
+        });
         return response()->json(['tournament' => $this->full($tournament)]);
     }
 
@@ -894,13 +903,23 @@ class TournamentController extends Controller
         if (! $request->user()?->is_admin) {
             return $this->fail('Yalnızca yönetici.', 403);
         }
-        if ($tournament->status !== 'open') {
-            return $this->fail('Turnuva zaten başladı.', 422);
+        // A-22: kilitli + taze satır. Eskiden bayat route modeliyle başlatılıyordu: arada katılan
+        // (ücretini ödemiş) oyuncu ağaçtan düşüyor, autoStartDue ile çift başlatma kurayı bozuyordu.
+        $err = DB::transaction(function () use ($tournament) {
+            $t = Tournament::whereKey($tournament->id)->lockForUpdate()->firstOrFail();
+            if ($t->status !== 'open') {
+                return 'Turnuva zaten başladı.';
+            }
+            if (count(array_filter($t->players ?? [])) < 2) {
+                return 'En az 2 oyuncu gerekli.';
+            }
+            $this->startBracket($t);
+
+            return null;
+        });
+        if ($err !== null) {
+            return $this->fail($err, 422);
         }
-        if (count($tournament->players ?? []) < 2) {
-            return $this->fail('En az 2 oyuncu gerekli.', 422);
-        }
-        $this->startBracket($tournament);
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
@@ -910,7 +929,13 @@ class TournamentController extends Controller
         if (! $request->user()?->is_admin) {
             return $this->fail('Yalnızca yönetici.', 403);
         }
-        $tournament->delete();
+        DB::transaction(function () use ($tournament) {
+            $t = Tournament::whereKey($tournament->id)->lockForUpdate()->first();
+            if ($t) {
+                \App\Support\TournamentModeration::refundAll($t); // A-22: ücretler kaybolmasın
+                $t->delete();
+            }
+        });
         return $this->ok();
     }
 
@@ -1056,6 +1081,7 @@ class TournamentController extends Controller
             'avatar' => $user->avatar,
             'premium' => $user->plan_active !== 'free', // kayıt anındaki premium (snapshot)
             'fee_paid' => max(0, $feePaid),
+            'entry' => bin2hex(random_bytes(6)), // kayıt kimliği: iptal iadesi idempotency anahtarı (A-22)
         ];
         $t->players = $players;
         $t->save();

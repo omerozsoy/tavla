@@ -51,6 +51,52 @@ class TournamentModeration
         $t->save();
     }
 
+    /**
+     * A-22: turnuva İPTAL (yönetici bitir/sil/sıfırla) -> ödül ödenmediyse her oyuncuya ÖDEDİĞİ giriş
+     * ücreti iade edilir, havuz sıfırlanır. Eskiden ücretler sessizce kayboluyordu (açık turnuvada
+     * "ayrıl" da kapandığı için iade yolu yoktu). Idempotent: oyuncu+turnuva başına tek iade anahtarı.
+     * Çağıran turnuva satırını kilitli tutmalı. Dönüş: iade edilen toplam.
+     */
+    public static function refundAll(Tournament $t): int
+    {
+        if ($t->prize_paid ?? false) {
+            return 0; // ödül dağıtıldı -> iade yok (kazanç/kayıp kesinleşti)
+        }
+        $total = 0;
+        foreach ($t->players ?? [] as $p) {
+            $uid = (int) ($p['id'] ?? 0);
+            if ($uid <= 0) {
+                continue;
+            }
+            $fee = array_key_exists('fee_paid', $p) ? (int) $p['fee_paid'] : (int) ($t->entry_fee ?? 0);
+            if ($fee <= 0) {
+                continue;
+            }
+            $u = User::lockForUpdate()->find($uid);
+            if (! $u) {
+                continue;
+            }
+            app(WalletService::class)->credit($u, $fee, 'tournament_refund', Tournament::class, (int) $t->id,
+                'tournament_cancel_refund:'.$t->id.':'.$uid.':'.($p['entry'] ?? 'legacy'));
+            $total += $fee;
+        }
+        $t->prize_coins = 0;
+
+        return $total;
+    }
+
+    /** Kilitli transaction içinde refundAll + $then (Filament sıfırla/sil aksiyonları için). */
+    public static function cancelWithRefund(Tournament $record, callable $then): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($record, $then) {
+            $t = Tournament::whereKey($record->id)->lockForUpdate()->first();
+            if ($t) {
+                self::refundAll($t);
+                $then($t);
+            }
+        });
+    }
+
     /** Oyuncu bu turnuvaya kayıtlı mı? */
     public static function isRegistered(Tournament $t, int $uid): bool
     {

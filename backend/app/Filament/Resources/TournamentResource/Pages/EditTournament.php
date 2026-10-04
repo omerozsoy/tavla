@@ -13,7 +13,8 @@ class EditTournament extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->before(fn ($record) => \App\Support\TournamentModeration::cancelWithRefund($record, fn () => null)), // A-22
         ];
     }
 }

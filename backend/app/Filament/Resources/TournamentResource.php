@@ -458,14 +458,19 @@ class TournamentResource extends Resource
                     ->modalHeading('Turnuvayı sıfırla (açık)')
                     ->modalDescription('TÜM katılımcılar, eşleşme ağacı ve şampiyon silinir; turnuva "açık" durumuna döner (yeniden katılıma açılır). Yeniden başlatıldığında eşleşme KURA ile yeniden çekilir. Oynanmış maç sonuçları/ödüller GERİ ALINMAZ. Test turnuvaları için — geri alınamaz.')
                     ->action(function (Tournament $record): void {
-                        $record->players = [];
-                        $record->bracket = [];
-                        if (\Illuminate\Support\Facades\Schema::hasColumn('tournaments', 'swiss_state')) {
-                            $record->swiss_state = null;
-                        }
-                        $record->champion_id = null;
-                        $record->status = 'open';
-                        $record->save();
+                        // A-22: ödül ödenmediyse katılımcıların ödediği giriş ücretleri iade edilir
+                        // (eskiden sıfırlamada ücretler kayboluyor, yeniden katılan iki kez ödüyordu).
+                        \App\Support\TournamentModeration::cancelWithRefund($record, function (Tournament $t): void {
+                            $t->players = [];
+                            $t->bracket = [];
+                            if (\Illuminate\Support\Facades\Schema::hasColumn('tournaments', 'swiss_state')) {
+                                $t->swiss_state = null;
+                            }
+                            $t->champion_id = null;
+                            $t->prize_paid = false;
+                            $t->status = 'open';
+                            $t->save();
+                        });
                         \Filament\Notifications\Notification::make()
                             ->title('Turnuva sıfırlandı (açık)')
                             ->body('Katılımcılar temizlendi. Katılım açık; başlatınca kura yeniden çekilir.')
@@ -476,7 +481,10 @@ class TournamentResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(fn (\Illuminate\Support\Collection $records) => $records->each(
+                            fn (Tournament $r) => \App\Support\TournamentModeration::cancelWithRefund($r, fn () => null)
+                        )), // A-22: silmeden önce ücret iadesi
                 ]),
             ]);
     }
