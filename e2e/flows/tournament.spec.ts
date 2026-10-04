@@ -63,13 +63,12 @@ test('8 kişilik eleme turnuvası: tüm maçlar oynanır, sonuçlar ve tur geçi
       anomalies.push(...res.anomalies.map((a) => `${m.key}/${code}: ${a}`))
       const winnerUser = seats[res.matchWinner!].user!
       const loserUser = winnerUser.id === u1.id ? u2 : u1
-      // Kaybeden kendini kazanan bildiremez.
+      // Kaybeden kendini kazanan bildirir: sunucu winner_id'yi YOK SAYAR, kazananı oda sonucundan
+      // (sunucu-otoriter) hesaplar -> eşleme tablosuna GERÇEK kazanan yazılmalı.
       const fake = await call(request, 'POST', `/tournaments/${id}/report`, loserUser.token, { match: m.key, winner_id: loserUser.id })
-      expect(fake.status, `sahte rapor ${JSON.stringify(fake.body)}`).toBeGreaterThanOrEqual(400)
+      expect(fake.status, 'sahte rapor 5xx olmamalı').toBeLessThan(500)
       const rep = await call(request, 'POST', `/tournaments/${id}/report`, winnerUser.token, { match: m.key, winner_id: winnerUser.id })
-      expect(rep.status, `rapor ${JSON.stringify(rep.body)}`).toBeLessThan(300)
-      const rep2 = await call(request, 'POST', `/tournaments/${id}/report`, loserUser.token, { match: m.key, winner_id: winnerUser.id })
-      expect(rep2.status, 'tekrar rapor 5xx olmamalı').toBeLessThan(500)
+      expect(rep.status, `rapor/tekrar rapor 5xx olmamalı ${JSON.stringify(rep.body).slice(0, 200)}`).toBeLessThan(500)
       const after = (await show(request, id)).bracket as BMatch[][]
       const mm = after.flat().find((x) => x.key === m.key)!
       if (mm.winner !== winnerUser.id) anomalies.push(`${m.key}: bracket kazananı ${mm.winner}, beklenen ${winnerUser.id}`)
