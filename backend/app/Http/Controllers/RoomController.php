@@ -1294,12 +1294,23 @@ class RoomController extends Controller
             if ($this->userInAnyPlaying($joinUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
-            $room->p2_token = $data['token'];
-            $room->p2_user_id = $joinUserId;
-            $room->p2_name = $data['name'];
-            $room->p2_rating = $data['rating'] ?? null;
-            $room->p2_avatar = $data['avatar'] ?? null;
-            $room->status = 'playing';
+            // A-15: ikinci koltuk ATOMİK sahiplenilir (enter() ile aynı koşullu-UPDATE deseni). Eskiden
+            // oku-kontrol-yaz idi: iki eşzamanlı join ikisi de "boş" görüp sırayla p2'yi eziyordu
+            // (ilk katılan oyuncu sessizce koltuğunu kaybediyordu). 0 satır -> başkası kaptı -> 409.
+            $claimed = Room::where('id', $room->id)->where('status', 'waiting')->whereNull('p2_token')
+                ->update([
+                    'p2_token' => $data['token'],
+                    'p2_user_id' => $joinUserId,
+                    'p2_name' => $data['name'],
+                    'p2_rating' => $data['rating'] ?? null,
+                    'p2_avatar' => $data['avatar'] ?? null,
+                    'status' => 'playing',
+                    'updated_at' => now(),
+                ]);
+            if (! $claimed) {
+                return $this->fail('Oda dolu.', 409);
+            }
+            $room->refresh();
             // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
             // olsun — matchmake ile AYNI. İki oyuncu da belli olduğundan shouldAuthoritative karar
             // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
