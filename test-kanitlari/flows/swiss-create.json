@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "body": {
+    "tournament": {
+      "id": 3,
+      "name": "E2E-NS 97642",
+      "type": "swiss_triple",
+      "venue": null,
+      "organizer": null,
+      "size": 8,
+      "status": "open",
+      "count": 1,
+      "prize_coins": 0,
+      "prize_desc": null,
+      "prizes": [],
+      "entry_fee": 0,
+      "premium_only": false,
+      "register_until": null,
+      "starts_at": null,
+      "match_length": 1,
+      "semi_length": null,
+      "final_length": null,
+      "round_minutes": null,
+      "semi_minutes": null,
+      "final_minutes": null,
+      "players": [
+        {
+          "id": 1,
+          "name": "W",
+          "rating": 1500,
+          "avatar": null,
+          "premium": false
+        }
+      ],
+      "bracket": null,
+      "champion_id": null,
+      "swiss": null,
+      "announcements": [],
+      "online_ids": [],
+      "match_prs": [],
+      "rev": "fb328f4f9974"
+    }
+  }
+}

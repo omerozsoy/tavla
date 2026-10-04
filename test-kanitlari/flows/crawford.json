@@ -1,0 +1,112 @@
+[
+  {
+    "code": "CHQTL",
+    "gameNo": 2,
+    "score": {
+      "white": 1,
+      "black": 0
+    },
+    "phase": "normal",
+    "offer": 200,
+    "reason": null
+  },
+  {
+    "code": "W3WMU",
+    "gameNo": 2,
+    "score": {
+      "white": 1,
+      "black": 0
+    },
+    "phase": "normal",
+    "offer": 200,
+    "reason": null
+  },
+  {
+    "code": "4ZQ3F",
+    "gameNo": 2,
+    "score": {
+      "white": 0,
+      "black": 1
+    },
+    "phase": "normal",
+    "offer": 200,
+    "reason": null
+  },
+  {
+    "code": "4ZQ3F",
+    "gameNo": 3,
+    "score": {
+      "white": 2,
+      "black": 1
+    },
+    "phase": "crawford",
+    "offer": 409,
+    "reason": "CRAWFORD_GAME"
+  },
+  {
+    "code": "JHZXA",
+    "gameNo": 2,
+    "score": {
+      "white": 1,
+      "black": 0
+    },
+    "phase": "normal",
+    "offer": 200,
+    "reason": null
+  },
+  {
+    "code": "63LMY",
+    "gameNo": 2,
+    "score": {
+      "white": 2,
+      "black": 0
+    },
+    "phase": "crawford",
+    "offer": 409,
+    "reason": "CRAWFORD_GAME"
+  },
+  {
+    "code": "JL64S",
+    "gameNo": 2,
+    "score": {
+      "white": 1,
+      "black": 0
+    },
+    "phase": "normal",
+    "offer": 200,
+    "reason": null
+  },
+  {
+    "code": "PE2V5",
+    "gameNo": 2,
+    "score": {
+      "white": 0,
+      "black": 2
+    },
+    "phase": "crawford",
+    "offer": 409,
+    "reason": "CRAWFORD_GAME"
+  },
+  {
+    "code": "BHTZ5",
+    "gameNo": 2,
+    "score": {
+      "white": 0,
+      "black": 1
+    },
+    "phase": "normal",
+    "offer": 200,
+    "reason": null
+  },
+  {
+    "code": "BHTZ5",
+    "gameNo": 3,
+    "score": {
+      "white": 2,
+      "black": 1
+    },
+    "phase": "crawford",
+    "offer": 409,
+    "reason": "CRAWFORD_GAME"
+  }
+]

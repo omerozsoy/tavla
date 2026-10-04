@@ -208,3 +208,19 @@ Not: Testlerin bir kısmı ilk denemede **test tarafı** nedenlerle başarısız
 - **Düzeltme:** Dikey mobilde 44 px. Yatay telefonda görünüş 34 px kaldı (yer çok kısıtlı), dokunma alanı görünmez `::after` ile 44 px'e genişletildi.
 - **Doğrulama:** Mobil tarayıcı testi yeniden koşuldu: "Onayla" **104×44 px**, yatay taşma 0, test ✅. Teste ≥44 px beklentisi eklendi. Yatay telefondaki genişletilmiş dokunma alanı yalnız CSS ile yapıldı; tarayıcıda ayrıca ölçülmedi.
 - **Puan raporu performansı** maddesi incelendi: ölçümle hata olmadığı görüldü (§6), kod değişikliği yapılmadı.
+
+## 12. Eksik alanların testi (2. tur)
+
+| Senaryo | Sonuç | Kanıt |
+|---|---|---|
+| Bot motoru (gnubg) kapalı | ✅ İnsan hamlesi kabul edilip korunur; `bot_status: unavailable`; sıra botta bekler; hızlı modda 40 sn geçse de maç bitmez (oyuncu hükmen yenilmez) | `extra.spec` (BOT_PHASE=down), `bot-down-room.json` |
+| Bot motoru geri geldi | ✅ `POST /rooms/{code}/bot` botu oynatır (`played`); aynı oda maç sonuna dek sürdü | `extra.spec` (BOT_PHASE=up) |
+| AFK (60 sn hareketsiz ama bağlı) | ✅ `AFK_TIMEOUT`, bekleyen kaybeder, son 15 sn geri sayımı (`clock.afk`) görünür, ~60 sn | `afk.json` |
+| Crawford | ✅ 4 ayrı Crawford oyununda küp teklifi 409 `CRAWFORD_GAME`. ⚠️ Crawford sonrası (küp tekrar serbest) aşama 8 maçta oluşmadı (maçlar Crawford oyununda bitti) → **doğrulanamadı**; backend birim testleri kapsıyor | `crawford.json` |
+| Turnuva no-show | ✅ 60 sn dolmadan 422; maçta olmayan 403; 60 sn sonra odada bekleyen hükmen kazanır (tabloya yazılır); tekrar talep reddedilir | `tournament-noshow.json` |
+| Swiss (3 haklı) | ✅ yalnız oluşturma: açık (`swiss.enabled`), 200 + `type: swiss_triple`. Swiss turları/eşleşmeleri oynatılmadı | `swiss-create.json` |
+| Zamanlanmış görevler | ✅ `tournaments:tick`, `matches:tick-bots`, `matches:reap-stale`, `matches:backstop-finished` hatasız (rc=0, <1 sn). Backstop, istemci raporu gelmemiş 23 oda için 33 eksik sonuç satırı yazdı; ikinci koşuda 0 → idempotent; `match_results`'ta (oda, kullanıcı) tekrarı **0** | konsol çıktısı |
+| Aynı cihaz (`pvp`) modu | ⛔ **Kullanıcıya açık değil:** kodda `Mode='pvp'` var ama hiçbir arayüz yolu `setMode('pvp')` çağırmıyor (yalnız eski kayıtlı oyun geri yüklenirse girilir). Oyun türü olarak test edilecek giriş yok. | `src/App.tsx` |
+
+### Ürün kararı gerektiren gözlem
+- **Turnuvayı açan yönetici otomatik oyuncu olur:** `TournamentController::create` → `// Olusturan otomatik katilir` + `addPlayer($t, creator)`. Turnuvayı artık yalnız yönetici açabildiği için yönetici her açtığı turnuvada bir koltuk kaplıyor (testte 4 kişilik turnuvada W + 2 oyuncu → biri bye geçti). Kullanıcıların turnuva açabildiği dönemden kalma olabilir. **Değiştirilmedi** — ürün kararı.

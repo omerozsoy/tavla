@@ -163,15 +163,18 @@ test('turnuva no-show: 60 sn dolmadan red, rakip girdiyse red, girmediyse hükme
   for (const u of players) expect((await call(request, 'POST', `/tournaments/${id}/join`, u.token, {})).status).toBeLessThan(300)
   expect((await call(request, 'POST', `/tournaments/${id}/start`, W.token, {})).status).toBeLessThan(300)
   const t = (await call(request, 'GET', `/tournaments/${id}`, W.token)).body.tournament
-  const m = (t.bracket as { key: string; p1?: { id: number }; p2?: { id: number } }[][]).flat().find((x) => x.p1?.id && x.p2?.id)!
-  const me = m.p1!.id === P3.id ? P3 : P4
+  // NOT: turnuvayı açan yönetici (W) oluşturma anında otomatik oyuncu olur ("Olusturan otomatik
+  // katilir") -> eşleşmeyi tablodan oku, oyuncuları id ile eşle.
+  const m = (t.bracket as { key: string; p1?: { id: number }; p2?: { id: number } }[][]).flat().find((x) => x.p1?.id && x.p2?.id && !('winner' in x && (x as { winner?: number }).winner))!
+  const byId = new Map(users.map((u) => [u.id, u]))
+  const me = byId.get(m.p1!.id)!
   const mr = await call(request, 'POST', `/tournaments/${id}/match-room`, me.token, { match: m.key })
   const tok = seatToken()
   expect((await call(request, 'POST', `/rooms/${mr.body.code}/enter`, me.token, { token: tok, name: me.nick, target: mr.body.target })).status).toBe(200)
   const early = await call(request, 'POST', `/tournaments/${id}/no-show`, me.token, { match: m.key, token: tok })
   expect(early.status, 'erken no-show reddedilmeli').toBe(422)
-  const other = me === P3 ? P4 : P3
-  const outsider = await call(request, 'POST', `/tournaments/${id}/no-show`, P5.token, { match: m.key, token: tok })
+  const other = byId.get(m.p2!.id)!
+  const outsider = await call(request, 'POST', `/tournaments/${id}/no-show`, P8.token, { match: m.key, token: tok })
   expect(outsider.status, 'maçta olmayan no-show isteyemez').toBe(403)
   await sleep(62_000)
   const ok = await call(request, 'POST', `/tournaments/${id}/no-show`, me.token, { match: m.key, token: tok })
@@ -179,7 +182,6 @@ test('turnuva no-show: 60 sn dolmadan red, rakip girdiyse red, girmediyse hükme
   const after = (await call(request, 'GET', `/tournaments/${id}`, W.token)).body.tournament
   const done = (after.bracket as { key: string; winner?: number }[][]).flat().find((x) => x.key === m.key)!
   expect(done.winner, 'no-show: odada bekleyen kazanır').toBe(me.id)
-  expect(after.status).toBe('finished') // 2 kişilik: tek maç = final
   const again = await call(request, 'POST', `/tournaments/${id}/no-show`, me.token, { match: m.key, token: tok })
   expect(again.status).toBeGreaterThanOrEqual(400)
   writeFileSync(`${OUT}/tournament-noshow.json`, JSON.stringify({ id, match: m.key, winner: done.winner, champion: after.champion_id, other: other.id }, null, 2))
