@@ -177,13 +177,15 @@ regresyon testi var; her test düzeltme olmadan **kırmızı**, düzeltmeyle **y
 
 ### Açık kalanlar (karar / sunucu işlemi gerekiyor)
 
-- **Kullanıcı silme defteri siliyor (P2, karar):** `wallet_transactions` ve `payments` kullanıcıya
-  `cascadeOnDelete` bağlı; panelden üye silinince coin defteri ve ödeme geçmişi iz bırakmadan gider
-  (MySQL FK cascade'de BEFORE DELETE tetikleyicisi çalışmaz). Seçenekler: (a) finansal geçmişi olan
-  üyeyi silmek yerine anonimleştir (KVKK silme talebi + mali kayıt saklama birlikte karşılanır), (b) FK'yi
-  `restrictOnDelete` yap. Hukuki saklama süresi bağlayıcı olduğundan karar sizin.
-- **Swiss'te gelmeyen oyuncu çözücüsü yok (P3, özellik):** eleme ağacındaki `resolveStalledMatches`
-  Swiss'te çalışmıyor; iki oyuncu da gelmezse tur yöneticinin elle çözmesini bekler.
+- **A-34 (çözüldü) — Kullanıcı silme defteri siliyordu:** `wallet_transactions`/`payments`/`product_orders`
+  kullanıcıya `cascadeOnDelete` bağlıydı; üye silinince mali geçmiş izsiz gidiyordu. Karar: ikisi birden —
+  mali geçmişi olan hesap fiziksel **silinemez** (User modeli engeller), silme talebi (KVKK self-sil, panel,
+  CLI) **anonimleştirir**: kimlik/iletişim bilgileri, mesaj/arkadaşlık/adres/yorum silinir, giriş kalıcı
+  kapanır; defter, ödemeler, siparişler ve maç geçmişi kalır. Mali geçmişi olmayan hesap eskisi gibi
+  silinir. Test: `UserFinancialErasureTest`.
+- **A-35 (çözüldü) — Swiss'te gelmeyen oyuncu çözücüsü:** maç hazır olunca `swiss.arrive_minutes`
+  (varsayılan 5 dk) sayılır; dolunca tek gelen hükmen kazanır, kimse gelmediyse çift mağlubiyet. İki
+  taraf oynuyorsa dokunulmaz. Test: `SwissTournamentTest`.
 - **Sunucu tarafı (repo dışında):** gnubg servislerini root dışı bir kullanıcıyla çalıştırma
   (`User=`), Plesk arkasında gerçek istemci IP'sinin Laravel'e geçtiğinin doğrulanması (IP tabanlı
   hız sınırları), CSP'nin `CSP_ENFORCE=true` ile açılması, `validator.tavlatv.com`'un dışarıya açık
@@ -202,7 +204,7 @@ regresyon testi var; her test düzeltme olmadan **kırmızı**, düzeltmeyle **y
 | `src/` ön yüz + `public/sw.js` | denetlendi + düzeltildi |
 | `app/Filament/*` | denetlendi + düzeltildi |
 
-Tam koşu (2. parti sonrası): phpunit 849 OK / 4 skip · vitest 378 OK · tsc temiz · oxlint 0 hata · gnubg python testi OK.
+Tam koşu (A-35 sonrası): phpunit 854 OK / 4 skip · vitest 378 OK · tsc temiz · oxlint 0 hata · gnubg python testi OK.
 
 Kapsam notu: denetim alt sistem bazında yapıldı (dosya bazında satır satır tam envanter değil);
 bu yüzden "incelenen/toplam dosya" sayısı verilmiyor. Yukarıdaki tüm alt sistemler en az bir
