@@ -1277,6 +1277,9 @@ class RoomController extends Controller
             if (RoomAccess::requiresAccount($room)) {
                 return $this->fail('Bu odaya yeni katılım için eşleşme akışını kullanmalısın.', 403);
             }
+            if ($this->tournamentSeatDenied($room->code, $authUser?->id)) {
+                return $this->fail('Bu turnuva maçında değilsin.', 403);
+            }
             if ($room->status !== 'waiting' || $room->bot) {
                 return $this->fail('Bu odaya yeni oyuncu alınamaz.', 409);
             }
@@ -1322,6 +1325,21 @@ class RoomController extends Controller
 
     // Belirli bir kodla odaya gir: yoksa olustur (p1), varsa katil (p2).
     // Turnuva maclari icin: iki oyuncu ayni kodu kullanip ayni odada bulusur.
+    /**
+     * Turnuva maç odasında YENİ koltuk yalnız tablodaki iki oyuncuya verilir (A-05). Oda kodları
+     * GET /tournaments/{id} ile herkese açık; eskiden herhangi biri boş koltuğa oturup maçı
+     * kilitleyebiliyordu (gerçek oyuncu "Oda dolu", no-show red, rapor 409).
+     */
+    private function tournamentSeatDenied(string $code, ?int $userId): bool
+    {
+        $allowed = Cache::get(TournamentController::roomPlayersKey($code));
+        if (! is_array($allowed) || $allowed === []) {
+            return false; // turnuva odası değil (veya kayıt yok) -> normal kurallar
+        }
+
+        return ! $userId || ! in_array($userId, array_map('intval', $allowed), true);
+    }
+
     public function enter(Request $request, string $code)
     {
         $data = $request->validate([
@@ -1370,6 +1388,11 @@ class RoomController extends Controller
             $createAttrs['mode'] = 'friendly';
             // Puansız bayrağı davetten (davet eden seçti). Oda zaten varsa firstOrCreate dokunmaz.
             $createAttrs['unrated'] = (bool) ($invite->unrated ?? false);
+        } elseif (! Cache::has(TournamentController::roomTargetKey($code))) {
+            // Davetsiz + turnuva dışı: rastgele kodla kurulan özel oda = arkadaşlık maçı (A-04).
+            // Eskiden mode NULL kalıyor ve RatingPolicy NULL'u "dereceli, limitsiz" sayıyordu ->
+            // iki hesap yeni kodlarla sınırsız puan kasabiliyordu. friendly -> 24 saatlik aynı-rakip limiti.
+            $createAttrs['mode'] = 'friendly';
         }
 
         // Turnuva turunun elle girilen suresi (dk -> sn): matchRoom cache'e yazar.
@@ -1378,6 +1401,12 @@ class RoomController extends Controller
             $createAttrs['clock_bank'] = (int) $tournMinutes * 60;
         }
 
+        if ($this->tournamentSeatDenied($code, $authUser?->id)) {
+            $existing = Room::where('code', $code)->first();
+            if (! $existing || $this->slotOf($existing, $data['token'], $request) === null) {
+                return $this->fail('Bu turnuva maçında değilsin.', 403);
+            }
+        }
         $room = Room::firstOrCreate(['code' => $code], $createAttrs);
 
         $slot = $this->slotOf($room, $data['token'], $request);

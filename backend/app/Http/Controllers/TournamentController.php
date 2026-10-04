@@ -847,6 +847,8 @@ class TournamentController extends Controller
                     $tournament->save();
                 }
                 Cache::put(self::roomTargetKey($bracket[$ri][$mi]['room']), $target, now()->addDays(2));
+                // Koltuk yetkisi: yalniz bu macin iki oyuncusu (oda kodu tabloda herkese acik; A-05).
+                Cache::put(self::roomPlayersKey($bracket[$ri][$mi]['room']), array_values(array_filter($ids)), now()->addDays(2));
                 if ($minutes) {
                     Cache::put(self::roomClockKey($bracket[$ri][$mi]['room']), $minutes, now()->addDays(2));
                 }
@@ -1288,6 +1290,12 @@ class TournamentController extends Controller
     public static function roomTargetKey(string $code): string
     {
         return 'tourn_room_target:'.strtoupper($code);
+    }
+
+    /** Turnuva mac odasinin IKI oyuncusu (user id) — enter/join yalniz bunlara koltuk verir (A-05). */
+    public static function roomPlayersKey(string $code): string
+    {
+        return 'tourn_room_players:'.strtoupper($code);
     }
 
     /** Turnuva mac odasinin suresi (dk) icin cache anahtari (RoomController::enter okur). */
