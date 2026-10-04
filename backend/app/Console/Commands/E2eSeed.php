@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
  */
 class E2eSeed extends Command
 {
-    protected $signature = 'e2e:seed';
+    protected $signature = 'e2e:seed {--users=2 : Test kullanıcı sayısı (turnuva/davet senaryoları için >2)}';
 
     protected $description = 'E2E: temiz test DB + 2 kullanici + token (yalniz APP_ENV=e2e)';
 
@@ -28,7 +28,13 @@ class E2eSeed extends Command
         $this->call('migrate:fresh', ['--force' => true]);
 
         $out = [];
-        foreach ([['e2e-p1@test.local', 'W'], ['e2e-p2@test.local', 'B']] as [$email, $nick]) {
+        // İlk ikisi her zaman W/B (mevcut E2E'ler bunlara bağlı); fazlası P3, P4, ...
+        $count = max(2, min(64, (int) $this->option('users')));
+        $accounts = [['e2e-p1@test.local', 'W'], ['e2e-p2@test.local', 'B']];
+        for ($i = 3; $i <= $count; $i++) {
+            $accounts[] = ["e2e-p{$i}@test.local", "P{$i}"];
+        }
+        foreach ($accounts as [$email, $nick]) {
             $u = User::create([
                 'first_name' => $nick, 'last_name' => 'E2E', 'country' => 'TR',
                 'nickname' => $nick, 'email' => $email, 'password' => Hash::make('e2e-pass-123'),
