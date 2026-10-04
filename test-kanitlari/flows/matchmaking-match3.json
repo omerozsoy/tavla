@@ -1,0 +1,118 @@
+[
+  {
+    "code": "EA6ZM",
+    "games": [
+      {
+        "score": "0-2",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "black",
+        "plies": 101
+      },
+      {
+        "score": "0-4",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "black",
+        "plies": 66
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 4
+    },
+    "plies": 167,
+    "anomalies": []
+  },
+  {
+    "code": "RFB6K",
+    "games": [
+      {
+        "score": "0-3",
+        "points": 3,
+        "expectedPoints": 3,
+        "winner": "black",
+        "plies": 83
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 3
+    },
+    "plies": 83,
+    "anomalies": []
+  },
+  {
+    "code": "HV7RA",
+    "games": [
+      {
+        "score": "0-1",
+        "points": 1,
+        "expectedPoints": 1,
+        "winner": "black",
+        "plies": 93
+      },
+      {
+        "score": "0-4",
+        "points": 3,
+        "expectedPoints": 3,
+        "winner": "black",
+        "plies": 48
+      }
+    ],
+    "matchWinner": "black",
+    "finalScore": {
+      "white": 0,
+      "black": 4
+    },
+    "plies": 141,
+    "anomalies": []
+  },
+  {
+    "code": "DCSHL",
+    "games": [
+      {
+        "score": "2-0",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "white",
+        "plies": 136
+      },
+      {
+        "score": "4-0",
+        "points": 2,
+        "expectedPoints": 2,
+        "winner": "white",
+        "plies": 63
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 4,
+      "black": 0
+    },
+    "plies": 199,
+    "anomalies": []
+  },
+  {
+    "code": "WRV9M",
+    "games": [
+      {
+        "score": "3-0",
+        "points": 3,
+        "expectedPoints": 3,
+        "winner": "white",
+        "plies": 93
+      }
+    ],
+    "matchWinner": "white",
+    "finalScore": {
+      "white": 3,
+      "black": 0
+    },
+    "plies": 93,
+    "anomalies": []
+  }
+]
