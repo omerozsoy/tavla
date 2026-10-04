@@ -4,6 +4,7 @@ import { useInfoPageBody } from './useInfoPage'
 import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Button } from '@/components/ui/button'
+import { RawHtml } from './RawHtml'
 
 interface Props {
   onClose: () => void
@@ -485,7 +486,7 @@ export default function Rules({ onClose }: Props) {
           <Icon name="book" size={20} /> {c.title}
         </h2>
         {dbBody ? (
-          <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: dbBody }} />
+          <RawHtml className="info-rich rich" html={dbBody} />
         ) : (
           <>
             <p className="rules-intro">{c.intro}</p>

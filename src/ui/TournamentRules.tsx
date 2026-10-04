@@ -11,6 +11,7 @@ import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Button } from '@/components/ui/button'
 import { TOURNAMENT_RULES, RULE_EDITION } from '../data/tournamentRules'
+import { RawHtml } from './RawHtml'
 
 interface Props {
   onClose?: () => void
@@ -43,7 +44,7 @@ export default function TournamentRules({ onClose }: Props) {
             süre, zar ve küp kuralları, kural dışı hareketler ve anlaşmazlıkların çözümü.
           </p>
         </header>
-        <div className="info-rich rich doc-body" dangerouslySetInnerHTML={{ __html: dbBody }} />
+        <RawHtml className="info-rich rich doc-body" html={dbBody} />
         <div className="seo-cta">
           <Button asChild className="seo-cta-btn">
             <a href="/yeni-oyun">

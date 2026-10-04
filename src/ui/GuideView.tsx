@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { GUIDES, findGuide } from '../data/guides'
 import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
+import { RawHtml } from './RawHtml'
 
 interface Props {
   slug: string | null
@@ -81,13 +82,13 @@ function GuideArticle({ slug, onOpen }: { slug: string; onOpen?: (slug: string) 
   return (
     <div className="info-rich rich seo-landing-body">
       {dbBody ? (
-        <div dangerouslySetInnerHTML={{ __html: dbBody }} />
+        <RawHtml html={dbBody} />
       ) : (
         guide.sections.map((s, i) => (
           <section key={i}>
             <h2>{s.h}</h2>
             {s.body.map((para, j) => (
-              <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
+              <RawHtml key={j} as="p" html={para} />
             ))}
           </section>
         ))

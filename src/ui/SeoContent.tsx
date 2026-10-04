@@ -15,6 +15,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useInfoPageBody } from './useInfoPage'
 import { Button } from '@/components/ui/button'
+import { RawHtml } from './RawHtml'
 
 export type SeoVariant = 'home' | 'online-tavla' | 'tavla-oyna'
 
@@ -401,7 +402,7 @@ function TavlaOynaContent() {
 function LandingDbBody({ body, cta }: { body: string; cta: string }) {
   return (
     <div className="info-rich rich seo-landing-body">
-      <div dangerouslySetInnerHTML={{ __html: body }} />
+      <RawHtml html={body} />
       <div className="seo-cta">
         <Button asChild className="seo-cta-btn">
           <a href="/yeni-oyun">

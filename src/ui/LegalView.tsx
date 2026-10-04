@@ -6,6 +6,7 @@ import { useEscape } from './useEscape'
 import { getCookies, getLegalPage, type CookieRow, type LegalPage } from '../api'
 import { OPEN_COOKIE_PREFS } from './CookieConsent'
 import './cookieConsent.css'
+import { RawHtml } from './RawHtml'
 
 const COOKIE_TOKEN = '[[COOKIE_TABLE]]'
 
@@ -118,11 +119,11 @@ export function LegalView({
           <>
             <h2 className="info-title">{page.title}</h2>
             <div className="info-tab-pane">
-              <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: before }} />
+              <RawHtml className="info-rich rich" html={before} />
               {after !== null && (
                 <>
                   <CookieTable rows={cookies} />
-                  <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: after }} />
+                  <RawHtml className="info-rich rich" html={after} />
                   <div className="cc-modal-actions" style={{ marginTop: 12 }}>
                     <Button variant="outline" onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS))}>
                       Çerez Tercihlerini Yönet

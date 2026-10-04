@@ -22,6 +22,7 @@ import Achievements from './Achievements'
 import Scoring from './Scoring'
 import GlossaryView from './GlossaryView'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
+import { RawHtml } from './RawHtml'
 
 export type InfoTab = InfoPageSlug
 
@@ -191,7 +192,7 @@ export function InfoPane({ page }: { page?: InfoPage }) {
 
   // Galeri yoksa düz gövde.
   if (all.length === 0) {
-    return <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: body }} />
+    return <RawHtml className="info-rich rich" html={body} />
   }
 
   // <ad> / &lt;ad&gt; (tek başına paragrafsa çevreleyen <p> dahil) tüm token'ları yakala.
@@ -212,7 +213,7 @@ export function InfoPane({ page }: { page?: InfoPage }) {
   while ((mm = re.exec(body)) !== null) {
     const name = (mm[1] ?? mm[2] ?? '').toLowerCase()
     const seg = body.slice(last, mm.index)
-    if (seg) nodes.push(<div key={`h${k}`} className="info-rich rich" dangerouslySetInnerHTML={{ __html: seg }} />)
+    if (seg) nodes.push(<RawHtml key={`h${k}`} className="info-rich rich" html={seg} />)
     const g = all.find((x) => x.token === name)
     if (g) {
       nodes.push(<GalleryBlock key={`g${k}`} images={g.images} />)
@@ -222,7 +223,7 @@ export function InfoPane({ page }: { page?: InfoPage }) {
     k++
   }
   const tail = body.slice(last)
-  if (tail) nodes.push(<div key="ht" className="info-rich rich" dangerouslySetInnerHTML={{ __html: tail }} />)
+  if (tail) nodes.push(<RawHtml key="ht" className="info-rich rich" html={tail} />)
   // Referans verilmeyen varsayılan galeri en alta (geriye dönük uyum).
   if (legacy.length && !used.has('resimgalerisi')) nodes.push(<GalleryBlock key="glegacy" images={legacy} />)
 

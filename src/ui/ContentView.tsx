@@ -23,6 +23,7 @@ import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import { safeHref } from './safeHref'
+import { RawHtml } from './RawHtml'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
@@ -888,7 +889,7 @@ function NewsDetail({
         seg.kind === 'board' ? (
           <ArticleBoard key={i} {...seg.board} />
         ) : (
-          <div key={i} className="news-detail-body rich" dangerouslySetInnerHTML={{ __html: seg.html }} />
+          <RawHtml key={i} className="news-detail-body rich" html={seg.html} />
         ),
       )}
       {gallery.length > 0 && (
@@ -1057,7 +1058,7 @@ function ServiceCard({ s }: { s: Content }) {
       {/* Aciklama RichEditor (HTML) ise bicimlendirilmis basilir; eski duz metinler
           paragraflara bolunur (geriye donuk uyumluluk). */}
       {isHtml(s.body) ? (
-        <div className="service-body rich" dangerouslySetInnerHTML={{ __html: s.body ?? '' }} />
+        <RawHtml className="service-body rich" html={s.body ?? ''} />
       ) : (
         paras(s.body).map((p, i) => <p key={i}>{p}</p>)
       )}
@@ -1370,7 +1371,7 @@ function EventRow({
         {!ev.organizer &&
           ev.body &&
           (isHtml(ev.body) ? (
-            <div className="event-body rich" dangerouslySetInnerHTML={{ __html: linksBlank(ev.body) }} />
+            <RawHtml className="event-body rich" html={linksBlank(ev.body)} />
           ) : (
             <p className="event-body">{ev.body}</p>
           ))}
@@ -1404,7 +1405,7 @@ function EventRow({
                 {ev.organizer && <p className="event-info-sub">{ev.organizer}</p>}
               </header>
               {isHtml(ev.body) ? (
-                <div className="event-info-body rich" dangerouslySetInnerHTML={{ __html: linksBlank(ev.body) }} />
+                <RawHtml className="event-info-body rich" html={linksBlank(ev.body)} />
               ) : (
                 <div className="event-info-body">
                   {paras(ev.body).map((p, i) => (
