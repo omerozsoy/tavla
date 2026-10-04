@@ -11,12 +11,18 @@ type Clock = { white: number; black: number; delay: number; active: string | nul
 async function clockOf(request: APIRequestContext, code: string, seat: Seat): Promise<{ clock: Clock; room: Awaited<ReturnType<typeof getRoom>> }> {
   const r = await call(request, 'GET', `/rooms/${code}?token=${encodeURIComponent(seat.token)}`, seat.user!.token)
   expect(r.status).toBe(200)
-  return { clock: r.body.clock as Clock, room: r.body.room }
+  return { clock: r.body.room.clock as Clock, room: r.body.room }
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+const opened: { code: string; white: Seat }[] = []
+test.afterEach(async ({ request }) => {
+  // Başarısız test odayı açık bırakmasın (sonraki eşleşmeler "aktif maç" ile engellenir).
+  for (const o of opened.splice(0)) await call(request, 'POST', `/rooms/${o.code}/leave`, o.white.user!.token, { token: o.white.token }).catch(() => {})
+})
 
 async function openAndFirstMove(request: APIRequestContext, mode: string) {
   const s = await matchmake(request, P3, P4, { stake: 0, targets: [1], time_control: mode })
+  opened.push(s)
   let r = await getRoom(request, s.code, s.white)
   await getRoom(request, s.code, s.black) // iki taraf da "görüldü"
   expect((await call(request, 'POST', `/rooms/${s.code}/roll`, P3.token, cmd(s.white, r.server_version))).status).toBe(200)
@@ -39,7 +45,6 @@ test('hızlı mod: gecikme içinde oynayanın bankası azalmaz; sıra sahibi olm
   const b = await clockOf(request, s.code, s.black)
   expect(b.clock[starter.color as 'white' | 'black'], 'sırası olmayanın bankası sabit').toBe(a.clock[starter.color as 'white' | 'black'])
   expect(b.clock.delay, 'aktifin gecikmesi azalır').toBeLessThan(a.clock.delay)
-  await call(request, 'POST', `/rooms/${s.code}/leave`, P3.token, { token: s.white.token })
 })
 
 test('hızlı mod: banka + gecikme dolunca hükmen kayıp (TIMEOUT), sonra saat durur ve komut reddedilir', async ({ request }) => {

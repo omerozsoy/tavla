@@ -18,8 +18,9 @@ test('.mat: oyun sayısı, oyun puanları ve skor sunucu sonucuyla aynı (hedef 
     expect(rep.status, JSON.stringify(rep.body)).toBeLessThan(300)
   }
   const list = await call(request, 'GET', '/me/matches', P7.token)
-  const rows = (list.body?.matches ?? list.body?.data ?? list.body ?? []) as { id: number; room_code?: string }[]
-  const row = rows.find((m) => m.room_code === s.code)
+  const rows = (list.body?.matches ?? list.body?.data ?? list.body ?? []) as { id: number; room_code?: string; opponent_name?: string; match_length?: number }[]
+  // Liste room_code döndürmüyor -> bu maçın satırı: en yeni (id en büyük), rakip P8, uzunluk 3.
+  const row = rows.find((m) => m.room_code === s.code) ?? [...rows].sort((a, b) => b.id - a.id).find((m) => m.opponent_name === P8.nick && m.match_length === 3)
   expect(row, `maç listesinde oda ${s.code} yok: ${JSON.stringify(rows.slice(0, 2))}`).toBeTruthy()
   const mat = await call(request, 'GET', `/me/matches/${row!.id}/mat`, P7.token)
   expect(mat.status, JSON.stringify(mat.body)).toBe(200)

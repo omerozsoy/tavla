@@ -14,7 +14,15 @@ for (const [label, device] of [['masaüstü', { viewport: { width: 1280, height:
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (m) => { if (m.type() === 'error' && !/google|analytics|ERR_|fonts|Failed to load resource/i.test(m.text())) errors.push(m.text()) })
+    // Vite DEV'de derin bağlantı overlay'i açmaz (bkz responsive.spec) -> menüden aç.
     await page.goto('/kiz-tavlasi', { waitUntil: 'domcontentloaded' })
+    if (!(await page.locator('.kiz-topbar').isVisible({ timeout: 8000 }).catch(() => false))) {
+      const menu = page.getByRole('button', { name: /menü|menu/i }).first()
+      if (await menu.isVisible().catch(() => false)) await menu.click()
+      const fun = page.getByRole('button', { name: /^EĞLENCE$/ }).first()
+      if (await fun.isVisible().catch(() => false)) await fun.click()
+      await page.getByRole('button', { name: /Kız Tavlası/ }).first().click()
+    }
     await expect(page.locator('.kiz-topbar')).toBeVisible({ timeout: 30_000 })
     const games: { result: string; ms: number; clicks: number }[] = []
     const target = label === 'masaüstü' ? 5 : 2
