@@ -221,6 +221,17 @@ class BoardDesignResource extends Resource
                     return null;
                 }
 
+                // Livewire'ın imzalı önizleme adresi: resim HTML'e GÖMÜLMEZ (base64 her hane/önizleme için
+                // tekrarlanınca canlıda her kaydırıcı hareketinde yanıt onlarca MB oluyor, güncelleme
+                // takılıyordu). Adres üretilemezse küçük dosyada base64'e düş.
+                try {
+                    return (string) $state->temporaryUrl();
+                } catch (\Throwable) {
+                    if ($state->getSize() > 150 * 1024) {
+                        return null;
+                    }
+                }
+
                 return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($state->getRealPath()));
             } catch (\Throwable) {
                 return null;

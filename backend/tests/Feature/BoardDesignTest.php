@@ -83,7 +83,9 @@ class BoardDesignTest extends TestCase
                 'point_image_odd' => UploadedFile::fake()->image('tek.png', 60, 200),
                 'point_image_even' => UploadedFile::fake()->image('cift.jpg', 60, 200),
             ])
-            ->assertSeeHtml('<image href="data:image/png;base64,')
+            // Resim gömülmez (base64 yok) — imzalı önizleme adresi kullanılır
+            ->assertSeeHtml('livewire/preview-file/')
+            ->assertDontSeeHtml('data:image/png;base64,')
             ->call('create')->assertHasNoFormErrors();
         $d = BoardDesign::where('name', 'Resimli')->firstOrFail();
         $this->assertStringStartsWith('tahta/', (string) $d->point_image_odd);
