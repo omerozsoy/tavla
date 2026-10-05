@@ -2308,6 +2308,16 @@ export default function App() {
     root.setAttribute('data-checker', bt.checkerStyle ?? 'flat')
     root.setAttribute('data-surface', bt.surface ?? 'plain')
     root.setAttribute('data-point-style', bt.pointStyle ?? 'sharp') // hane sekli: sivri/yuvarlak
+    // Özel tahta hane resimleri (tek = shade-a, çift = shade-b): CSS değişkeni + işaret attribute'u.
+    for (const [k, v] of [['a', bt.pointImgA], ['b', bt.pointImgB]] as const) {
+      if (v) {
+        root.style.setProperty(`--pt-img-${k}`, `url("${v}")`)
+        root.setAttribute(`data-pt-img-${k}`, '')
+      } else {
+        root.style.removeProperty(`--pt-img-${k}`)
+        root.removeAttribute(`data-pt-img-${k}`)
+      }
+    }
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
     // Maritime board: 12 sinyal flamasini CSS degiskeni olarak yaz. Ust/alt hane AYRI varyant
     // (--naut-<dp> = ust, --naut-<dp>-b = alt) -> motif DAIMA tabanda (rail), distort YOK.
@@ -9316,7 +9326,7 @@ export default function App() {
           coins={user?.coins ?? 0}
           board={(() => {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle }
+            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB }
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
@@ -9648,7 +9658,7 @@ export default function App() {
             initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
@@ -9676,7 +9686,7 @@ export default function App() {
           <FriendGameSetup
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}

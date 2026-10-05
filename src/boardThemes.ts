@@ -30,6 +30,9 @@ export interface BoardTheme {
   // Hane (point) sekli: 'sharp' = klasik sivri ucgen (varsayilan); 'rounded' = ucu yuvarlak
   // uzun damla (teardrop) — ahsap referans boardu icin (TavlaTV Özel).
   pointStyle?: 'sharp' | 'rounded'
+  // Admin özel tahta: tek (1,3,5… = shade-a) / çift (2,4,6… = shade-b) hane resmi (üçgene kırpılır)
+  pointImgA?: string
+  pointImgB?: string
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -350,6 +353,15 @@ export interface BoardDesignRow {
   colors?: { panel?: string; frame?: string | null; a?: string; b?: string; checker?: string; light?: string | null }
   surface?: string | null
   checker_style?: string | null
+  images?: { odd?: string | null; even?: string | null } | null
+}
+// Hane resmi URL'si: yalnız site içi /uploads/… ya da https; CSS url("…") kırılmasın diye tırnak,
+// parantez, ters bölü ve boşluk içeremez.
+export function safeImgUrl(u: unknown): string | undefined {
+  if (typeof u !== 'string' || u.length > 500) return undefined
+  if (!(u.startsWith('/uploads/') || /^https:\/\/[^/]+\//.test(u))) return undefined
+  if (/["'()\\\s<>]/.test(u)) return undefined
+  return u
 }
 const HEX = /^#[0-9a-fA-F]{6}$/
 const SURFACES = ['plain', 'gradient', 'felt', 'wood'] as const
@@ -382,6 +394,8 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
       rarity: group ?? 'common',
       surface: SURFACES.find((x) => x === r.surface),
       checkerStyle: CHECKER_STYLES.find((x) => x === r.checker_style),
+      pointImgA: safeImgUrl(r.images?.odd),
+      pointImgB: safeImgUrl(r.images?.even),
     }
     CUSTOM_THEMES.push(theme)
     ALL_THEMES.push(theme)

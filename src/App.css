@@ -6899,6 +6899,18 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
   background-blend-mode: soft-light, normal;
 }
 
+/* ============ Admin özel tahta: hane resimleri (Tavla Tasarımı) ============
+   tek haneler (1,3,5… = shade-a) / çift haneler (2,4,6… = shade-b). Resim hane üçgenine kırpılır
+   (::before clip-path), arkada hane rengi kalır. Değişkenler App.tsx tema efektinden gelir. */
+html[data-pt-img-a] .point.shade-a.top::before,
+html[data-pt-img-a] .point.shade-a.bottom::before {
+  background: var(--pt-img-a) center / cover no-repeat, var(--tri-a);
+}
+html[data-pt-img-b] .point.shade-b.top::before,
+html[data-pt-img-b] .point.shade-b.bottom::before {
+  background: var(--pt-img-b) center / cover no-repeat, var(--tri-b);
+}
+
 /* ============ İznik (Kütahya/İznik çini): dolu-desen hane + karanfil kırmızısı hane ============
    Referans: design_handoff_iznik_tavla_board. KURAL: iki hane tipi dönüşümlü —
    shade-a = ÇİNİ DESENLİ (gerçek pano fotoğrafı, üçgene klipli, DAİMA DİK; clip yönü üst/alt

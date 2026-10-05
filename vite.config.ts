@@ -23,11 +23,21 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
+      // Admin yüklemeleri (hane resimleri vb.) — canlıda aynı köken; yerelde backend'den
+      '/uploads': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
     },
   },
   preview: {
     proxy: {
       '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      // Admin yüklemeleri (hane resimleri vb.) — canlıda aynı köken; yerelde backend'den
+      '/uploads': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },

@@ -45,6 +45,40 @@ class BoardDesignResource extends Resource
         return \App\Http\Controllers\ShopController::groupPrice($group);
     }
 
+    private static function pointImage(string $field, string $label): Forms\Components\FileUpload
+    {
+        return Forms\Components\FileUpload::make($field)
+            ->label($label)
+            ->image()
+            ->disk('uploads')->directory('tahta')->visibility('public')
+            ->maxSize(4096)
+            ->imageEditor()
+            ->helperText('PNG / JPG / WEBP, en fazla 4 MB. Dikey (uzun) resimler hane şekline daha iyi oturur.')
+            ->live();
+    }
+
+    /** Form durumundaki resmi önizleme için URL'ye çevir (yeni yüklenen geçici dosya -> data URI). */
+    public static function previewImage(mixed $state): ?string
+    {
+        if (is_array($state)) {
+            $state = reset($state) ?: null;
+        }
+        if ($state instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+            try {
+                $mime = $state->getMimeType();
+                if (! in_array($mime, ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], true) || $state->getSize() > 4 * 1024 * 1024) {
+                    return null;
+                }
+
+                return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($state->getRealPath()));
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return is_string($state) && $state !== '' ? BoardDesign::imageUrl($state) : null;
+    }
+
     private static function color(string $key, string $label, string $default, ?string $help = null): Forms\Components\ColorPicker
     {
         return Forms\Components\ColorPicker::make("colors.$key")
@@ -116,15 +150,25 @@ class BoardDesignResource extends Resource
                                 ->placeholder('Düz')
                                 ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom),
                         ])->columns(2),
+                    Forms\Components\Section::make('Hane Resimleri')
+                        ->description('İsteğe bağlı: tek (1, 3, 5…) ve çift (2, 4, 6…) numaralı hanelere resim. Resim üçgene kırpılır; boşsa hane rengi kullanılır.')
+                        ->schema([
+                            self::pointImage('point_image_odd', 'Tek haneler için resim'),
+                            self::pointImage('point_image_even', 'Çift haneler için resim'),
+                        ])->columns(2)
+                        ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
                 ])->columnSpan(['lg' => 3]),
                 Forms\Components\Section::make('Önizleme')->schema([
                     Forms\Components\Placeholder::make('preview')
                         ->hiddenLabel()
-                        ->content(fn (Get $get) => new HtmlString(view('filament.board-design.preview', [
+                        ->content(fn (Get $get) => new HtmlString(view('filament.board-design.preview-zoom', [
                             'colors' => $get('colors'),
                             'surface' => $get('surface'),
                             'checkerStyle' => $get('checker_style'),
+                            'imgOdd' => self::previewImage($get('point_image_odd')),
+                            'imgEven' => self::previewImage($get('point_image_even')),
                             'width' => 640,
+                            'hint' => true,
                         ])->render())),
                 ])->columnSpan(['lg' => 2])->extraAttributes(['style' => 'position:sticky;top:5rem;align-self:start']),
             ]),

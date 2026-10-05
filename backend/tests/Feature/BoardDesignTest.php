@@ -10,6 +10,8 @@ use App\Models\BoardDesign;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -69,6 +71,39 @@ class BoardDesignTest extends TestCase
         $this->postJson('/api/shop/buy', ['id' => 'theme.'.$d->slug])->assertOk();
         $this->assertSame(5000 - 777, (int) $u->fresh()->coins);
         $this->assertContains('theme.'.$d->slug, $u->fresh()->unlocks);
+    }
+
+    // Tek/çift hane resimleri: yüklenir, kaydedilir, API'de URL olarak döner; önizleme resimleri çizer.
+    public function test_point_images_upload_and_api(): void
+    {
+        Storage::fake('uploads');
+        Livewire::actingAs($this->admin)->test(CreateBoardDesign::class)
+            ->fillForm([
+                'name' => 'Resimli', 'group' => 'mythic', 'colors' => $this->colors(),
+                'point_image_odd' => UploadedFile::fake()->image('tek.png', 60, 200),
+                'point_image_even' => UploadedFile::fake()->image('cift.jpg', 60, 200),
+            ])
+            ->assertSeeHtml('<image href="data:image/png;base64,')
+            ->call('create')->assertHasNoFormErrors();
+        $d = BoardDesign::where('name', 'Resimli')->firstOrFail();
+        $this->assertStringStartsWith('tahta/', (string) $d->point_image_odd);
+        Storage::disk('uploads')->assertExists($d->point_image_odd);
+        Storage::disk('uploads')->assertExists($d->point_image_even);
+        $row = collect($this->getJson('/api/board-designs')->json('designs'))->firstWhere('id', $d->slug);
+        $this->assertStringEndsWith($d->point_image_odd, $row['images']['odd']);
+        $this->assertStringEndsWith($d->point_image_even, $row['images']['even']);
+    }
+
+    public function test_svg_point_image_rejected(): void
+    {
+        Storage::fake('uploads');
+        Livewire::actingAs($this->admin)->test(CreateBoardDesign::class)
+            ->fillForm([
+                'name' => 'Svg', 'group' => 'common', 'colors' => $this->colors(),
+                'point_image_odd' => UploadedFile::fake()->createWithContent('x.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
+            ])
+            ->call('create')->assertHasFormErrors(['point_image_odd']);
+        $this->assertFalse(BoardDesign::where('name', 'Svg')->exists());
     }
 
     public function test_invalid_color_rejected(): void

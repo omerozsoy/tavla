@@ -34,7 +34,7 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'point_image_odd', 'point_image_even', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
@@ -56,6 +56,12 @@ class BoardDesign extends Model
         });
         static::saved(fn () => Cache::forget(self::CACHE_KEY));
         static::deleted(fn () => Cache::forget(self::CACHE_KEY));
+    }
+
+    /** Hane resminin herkese açık URL'si (uploads diski; yoksa null). */
+    public static function imageUrl(?string $path): ?string
+    {
+        return $path ? \Illuminate\Support\Facades\Storage::disk('uploads')->url($path) : null;
     }
 
     public function isFree(): bool

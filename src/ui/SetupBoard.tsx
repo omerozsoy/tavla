@@ -22,6 +22,8 @@ interface Props {
   pointStyle?: 'sharp' | 'rounded' // hane sekli (yuvarlak damla = TavlaTV Özel)
   surface?: 'plain' | 'gradient' | 'felt' | 'wood' // agac damari vb.
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon' // pul stili (App.css [data-checker] karsiligi)
+  pointImgA?: string // tek haneler (a rengi) resmi — üçgene kırpılır
+  pointImgB?: string // çift haneler (b rengi) resmi
   themeId?: string // ozel cok-renkli desenli boardlar icin (or. 'citrus-wood')
   onChangeBoard?: () => void
   changeLabel?: string
@@ -70,6 +72,8 @@ export default function SetupBoard({
   pointStyle = 'sharp',
   surface = 'plain',
   checkerStyle = 'flat',
+  pointImgA,
+  pointImgB,
   themeId,
   onChangeBoard,
   changeLabel,
@@ -180,6 +184,13 @@ export default function SetupBoard({
       const botFill = citrus ? CITRUS_POINTS[(col + 3) % 6] : light ? b : a
       tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, topFill))
       tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, botFill))
+      // Özel tahta hane resmi: renkli hanenin ÜSTÜNE üçgene kırpılı resim (a = tek, b = çift).
+      if (!citrus && (pointImgA || pointImgB)) {
+        const topImg = light ? pointImgA : pointImgB
+        const botImg = light ? pointImgB : pointImgA
+        if (topImg) tris.push(...flagTri(`${uid}pi-${half}${col}t`, cx, PAD, PAD + trTriH, topImg))
+        if (botImg) tris.push(...flagTri(`${uid}pi-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, botImg))
+      }
       // Agac damari: hane uzerine ince dikey damar (aynı teardrop/ucgen sekle klipli degil,
       // path'i pattern ile ikinci kez cizerek) — yalniz wood board.
       if (wood && rounded) {

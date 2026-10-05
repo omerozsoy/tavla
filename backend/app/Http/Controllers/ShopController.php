@@ -219,6 +219,11 @@ class ShopController extends Controller
                     'colors' => $d->colors,
                     'surface' => $d->surface,
                     'checker_style' => $d->checker_style,
+                    // Tek (1,3,5…) / çift (2,4,6…) hane resmi (üçgene kırpılır; yoksa düz renk)
+                    'images' => [
+                        'odd' => BoardDesign::imageUrl($d->point_image_odd),
+                        'even' => BoardDesign::imageUrl($d->point_image_even),
+                    ],
                 ];
             }
             $out[] = $row;

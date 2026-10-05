@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { applyShopDesigns } from './shopDesigns'
-import { ALL_THEMES, CUSTOM_THEMES, boardPrice, boardRarityOf, boardOnSale, FREE_BOARDS } from './boardThemes'
+import { ALL_THEMES, CUSTOM_THEMES, boardPrice, boardRarityOf, boardOnSale, FREE_BOARDS, safeImgUrl } from './boardThemes'
 import { AVATAR_FRAMES, FRAME_BY_ID, framePrice, frameOnSale } from './ui/avatarFrames'
 import { CHECKER_BY_ID, CHECKER_FINISHES, checkerPrice, checkerOnSale } from './checkers'
 
@@ -26,6 +26,16 @@ describe('admin tasarım ayarları (Tavla/Avatar/Pul Tasarımı)', () => {
     expect(boardPrice(t)).toBe(777)
     applyShopDesigns({ designs: [], items: [] })
     expect(ALL_THEMES.length).toBe(n)
+  })
+
+  it('hane resimleri: güvenli URL kabul, CSS kıran/yabancı şema reddedilir', () => {
+    applyShopDesigns({ designs: [{ ...custom, images: { odd: '/uploads/tahta/a.png', even: 'javascript:alert(1)' } }], items: [] })
+    const t = ALL_THEMES.find((x) => x.id === custom.id)!
+    expect([t.pointImgA, t.pointImgB]).toEqual(['/uploads/tahta/a.png', undefined])
+    expect(safeImgUrl('https://cdn.example.com/x.webp')).toBe('https://cdn.example.com/x.webp')
+    for (const bad of ['http://x.com/a.png', '/uploads/a.png") ; background:red', '/uploads/a b.png', 'data:image/png;base64,AA', '/etc/x.png', 42]) {
+      expect(safeImgUrl(bad)).toBeUndefined()
+    }
   })
 
   it('bozuk renkli özel tahta atlanır', () => {

@@ -24,6 +24,8 @@ export interface BoardThemeOpt {
   pointStyle?: 'sharp' | 'rounded' // hane sekli (yuvarlak = TavlaTV Özel)
   surface?: 'plain' | 'gradient' | 'felt' | 'wood' // yuzey (agac damari vb.)
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon' // pul stili
+  pointImgA?: string // özel tahta: tek hane resmi
+  pointImgB?: string // özel tahta: çift hane resmi
 }
 
 // Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
@@ -63,6 +65,8 @@ function HoverPreview({ bt, rect }: { bt: BoardThemeOpt; rect: DOMRect }) {
         pointStyle={bt.pointStyle}
         surface={bt.surface}
         checkerStyle={bt.checkerStyle}
+        pointImgA={bt.pointImgA}
+        pointImgB={bt.pointImgB}
         themeId={bt.id}
       />
       <div className="bp-hover-name">
@@ -138,6 +142,8 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                       pointStyle={bt.pointStyle}
                       surface={bt.surface}
                       checkerStyle={bt.checkerStyle}
+                      pointImgA={bt.pointImgA}
+                      pointImgB={bt.pointImgB}
                       themeId={bt.id}
                     />
                     {boardTheme === bt.id && (

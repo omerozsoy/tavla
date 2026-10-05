@@ -34,6 +34,8 @@ interface BoardOpt {
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
+  pointImgA?: string
+  pointImgB?: string
 }
 
 interface Props {
@@ -232,6 +234,8 @@ export default function ProfileOverview({
                     pointStyle={equipped.pointStyle}
                     surface={equipped.surface}
                     checkerStyle={equipped.checkerStyle}
+                    pointImgA={equipped.pointImgA}
+                    pointImgB={equipped.pointImgB}
                     themeId={equipped.id}
                   />
                 </div>
@@ -424,6 +428,8 @@ export default function ProfileOverview({
                       pointStyle={b.pointStyle}
                       surface={b.surface}
                       checkerStyle={b.checkerStyle}
+                      pointImgA={b.pointImgA}
+                      pointImgB={b.pointImgB}
                       themeId={b.id}
                     />
                   </div>

@@ -12,6 +12,10 @@
     $light = $hex($c['light'] ?? null, '#f7f1e6');
     $surface = in_array($surface ?? null, ['gradient', 'felt', 'wood'], true) ? $surface : 'plain';
     $style = in_array($checkerStyle ?? null, ['gloss', 'ice', 'ring', 'neon'], true) ? $checkerStyle : 'flat';
+    // Tek (1,3,5… = 'a' rengi) / çift (2,4,6… = 'b' rengi) hane resimleri: üçgene kırpılır.
+    $okImg = fn ($v) => is_string($v) && (str_starts_with($v, 'data:image/') || str_starts_with($v, '/') || str_starts_with($v, 'http'));
+    $imgA = $okImg($imgOdd ?? null) ? $imgOdd : null;
+    $imgB = $okImg($imgEven ?? null) ? $imgEven : null;
     $w = (int) ($width ?? 240);
     $u = 'bp'.substr(md5(uniqid('', true)), 0, 8); // sayfadaki her SVG için benzersiz id öneki
     $W = 260; $H = 170; $fw = 10; $bar = 14;
@@ -58,8 +62,18 @@
     @endif
     @for ($i = 0; $i < 12; $i++)
         @php $x = $px($i); @endphp
-        <polygon points="{{ $x }},{{ $fw }} {{ $x + $pw }},{{ $fw }} {{ $x + $pw / 2 }},{{ $fw + $ph }}" fill="{{ $i % 2 ? $b : $a }}"/>
-        <polygon points="{{ $x }},{{ $H - $fw }} {{ $x + $pw }},{{ $H - $fw }} {{ $x + $pw / 2 }},{{ $H - $fw - $ph }}" fill="{{ $i % 2 ? $a : $b }}"/>
+        @foreach ([['t', $fw, $fw + $ph, $i % 2 ? 'b' : 'a'], ['b', $H - $fw, $H - $fw - $ph, $i % 2 ? 'a' : 'b']] as [$row, $base, $tip, $tone])
+            @php
+                $pts = $x.','.$base.' '.($x + $pw).','.$base.' '.($x + $pw / 2).','.$tip;
+                $img = $tone === 'a' ? $imgA : $imgB;
+            @endphp
+            <polygon points="{{ $pts }}" fill="{{ $tone === 'a' ? $a : $b }}"/>
+            @if ($img)
+                <clipPath id="{{ $u }}c{{ $row }}{{ $i }}"><polygon points="{{ $pts }}"/></clipPath>
+                <image href="{{ $img }}" x="{{ $x }}" y="{{ min($base, $tip) }}" width="{{ $pw }}" height="{{ $ph }}"
+                    preserveAspectRatio="xMidYMid slice" clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})"/>
+            @endif
+        @endforeach
     @endfor
     <rect x="{{ $fw + $half }}" y="{{ $fw }}" width="{{ $bar }}" height="{{ $H - 2 * $fw }}" fill="{{ $frame }}"/>
     @if ($surface === 'wood')

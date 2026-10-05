@@ -19,6 +19,8 @@ interface BoardOpt {
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
+  pointImgA?: string
+  pointImgB?: string
 }
 
 interface Props {

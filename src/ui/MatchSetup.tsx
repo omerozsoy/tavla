@@ -74,6 +74,8 @@ interface BoardColors {
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
+  pointImgA?: string
+  pointImgB?: string
 }
 
 interface Props {
@@ -314,6 +316,8 @@ export default function MatchSetup({
           pointStyle={board.pointStyle}
           surface={board.surface}
           checkerStyle={board.checkerStyle}
+          pointImgA={board.pointImgA}
+          pointImgB={board.pointImgB}
           themeId={board.id}
           onChangeBoard={onChangeBoard}
           changeLabel={t('setup.changeBoard')}
