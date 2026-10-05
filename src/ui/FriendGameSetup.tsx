@@ -28,6 +28,8 @@ interface BoardColors {
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
   pointImgA?: string
   pointImgB?: string
+  pointFitA?: import('../boardThemes').PointFit
+  pointFitB?: import('../boardThemes').PointFit
 }
 
 interface Props {
@@ -200,6 +202,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             checkerStyle={board.checkerStyle}
             pointImgA={board.pointImgA}
             pointImgB={board.pointImgB}
+            pointFitA={board.pointFitA}
+            pointFitB={board.pointFitB}
             themeId={board.id}
             onChangeBoard={onChangeBoard}
             changeLabel={t('setup.changeBoard')}

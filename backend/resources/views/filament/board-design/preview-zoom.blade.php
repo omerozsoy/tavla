@@ -1,5 +1,5 @@
 {{-- Tıklayınca büyüyen tahta önizlemesi (Tavla Tasarımı formu + listesi). Esc / tıklama ile kapanır. --}}
-@php $args = ['colors' => $colors ?? [], 'surface' => $surface ?? null, 'checkerStyle' => $checkerStyle ?? null, 'imgOdd' => $imgOdd ?? null, 'imgEven' => $imgEven ?? null]; @endphp
+@php $args = ['colors' => $colors ?? [], 'surface' => $surface ?? null, 'checkerStyle' => $checkerStyle ?? null, 'imgOdd' => $imgOdd ?? null, 'imgEven' => $imgEven ?? null, 'fitOdd' => $fitOdd ?? null, 'fitEven' => $fitEven ?? null]; @endphp
 <div x-data="{ big: false }" @keydown.escape.window="big = false">
     <button type="button" @click="big = true" title="Büyütmek için tıkla"
         style="display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;position:relative">

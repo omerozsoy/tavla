@@ -34,10 +34,11 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'point_image_odd', 'point_image_even', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'point_image_odd', 'point_image_even', 'point_image_fit', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
+        'point_image_fit' => 'array',
         'is_custom' => 'boolean',
         'active' => 'boolean',
         'price' => 'integer',
@@ -54,8 +55,46 @@ class BoardDesign extends Model
                 $d->slug = $slug;
             }
         });
+        // Hane resmi yerleşimi: değerleri sınırla + resmin en-boy oranını dosyadan hesapla.
+        static::saving(function (self $d) {
+            // Resimsiz tahta (yerleşikler dahil): dokunma — ilk migration'daki senkron bu kolon
+            // eklenmeden önce çalışır; ayrıca gereksiz veri yazılmaz.
+            if (! $d->point_image_odd && ! $d->point_image_even && $d->point_image_fit === null) {
+                return;
+            }
+            $fit = is_array($d->point_image_fit) ? $d->point_image_fit : [];
+            foreach (['odd' => $d->point_image_odd, 'even' => $d->point_image_even] as $k => $path) {
+                $f = is_array($fit[$k] ?? null) ? $fit[$k] : [];
+                $f = self::clampFit($f);
+                if ($path) {
+                    $abs = \Illuminate\Support\Facades\Storage::disk('uploads')->path($path);
+                    $size = @getimagesize($abs);
+                    if ($size && $size[1] > 0) {
+                        $f['aspect'] = round($size[0] / $size[1], 4);
+                    }
+                }
+                $fit[$k] = $f;
+            }
+            $d->point_image_fit = $fit;
+        });
         static::saved(fn () => Cache::forget(self::CACHE_KEY));
         static::deleted(fn () => Cache::forget(self::CACHE_KEY));
+    }
+
+    /** Yerleşim değerlerini güvenli aralığa çek (x/y 0–100 %, zoom 100–400 %, aspect 0.05–20). */
+    public static function clampFit(array $f): array
+    {
+        $num = fn ($v, $d) => is_numeric($v) ? (float) $v : $d;
+        $out = [
+            'x' => max(0, min(100, $num($f['x'] ?? null, 50))),
+            'y' => max(0, min(100, $num($f['y'] ?? null, 50))),
+            'zoom' => max(100, min(400, $num($f['zoom'] ?? null, 100))),
+        ];
+        if (isset($f['aspect']) && is_numeric($f['aspect'])) {
+            $out['aspect'] = max(0.05, min(20, (float) $f['aspect']));
+        }
+
+        return $out;
     }
 
     /** Hane resminin herkese açık URL'si (uploads diski; yoksa null). */

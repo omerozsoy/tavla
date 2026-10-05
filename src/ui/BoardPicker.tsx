@@ -26,6 +26,8 @@ export interface BoardThemeOpt {
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon' // pul stili
   pointImgA?: string // özel tahta: tek hane resmi
   pointImgB?: string // özel tahta: çift hane resmi
+  pointFitA?: import('../boardThemes').PointFit
+  pointFitB?: import('../boardThemes').PointFit
 }
 
 // Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
@@ -67,6 +69,8 @@ function HoverPreview({ bt, rect }: { bt: BoardThemeOpt; rect: DOMRect }) {
         checkerStyle={bt.checkerStyle}
         pointImgA={bt.pointImgA}
         pointImgB={bt.pointImgB}
+        pointFitA={bt.pointFitA}
+        pointFitB={bt.pointFitB}
         themeId={bt.id}
       />
       <div className="bp-hover-name">
@@ -144,6 +148,8 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                       checkerStyle={bt.checkerStyle}
                       pointImgA={bt.pointImgA}
                       pointImgB={bt.pointImgB}
+                      pointFitA={bt.pointFitA}
+                      pointFitB={bt.pointFitB}
                       themeId={bt.id}
                     />
                     {boardTheme === bt.id && (

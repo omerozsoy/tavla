@@ -36,6 +36,8 @@ interface BoardOpt {
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
   pointImgA?: string
   pointImgB?: string
+  pointFitA?: import('../boardThemes').PointFit
+  pointFitB?: import('../boardThemes').PointFit
 }
 
 interface Props {
@@ -236,6 +238,8 @@ export default function ProfileOverview({
                     checkerStyle={equipped.checkerStyle}
                     pointImgA={equipped.pointImgA}
                     pointImgB={equipped.pointImgB}
+                    pointFitA={equipped.pointFitA}
+                    pointFitB={equipped.pointFitB}
                     themeId={equipped.id}
                   />
                 </div>
@@ -430,6 +434,8 @@ export default function ProfileOverview({
                       checkerStyle={b.checkerStyle}
                       pointImgA={b.pointImgA}
                       pointImgB={b.pointImgB}
+                      pointFitA={b.pointFitA}
+                      pointFitB={b.pointFitB}
                       themeId={b.id}
                     />
                   </div>

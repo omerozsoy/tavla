@@ -14,7 +14,7 @@ class EditBoardDesign extends EditRecord
     {
         // Yerleşik tahta: ad/renk/doku koda aittir — formdan gelse bile yazılmaz.
         if (! $this->record->is_custom) {
-            unset($data['name'], $data['colors'], $data['surface'], $data['checker_style'], $data['point_image_odd'], $data['point_image_even']);
+            unset($data['name'], $data['colors'], $data['surface'], $data['checker_style'], $data['point_image_odd'], $data['point_image_even'], $data['point_image_fit']);
         } elseif (isset($data['colors'])) {
             $data['colors'] = array_map(fn ($v) => strtolower((string) $v), $data['colors']);
         }

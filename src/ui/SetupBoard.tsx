@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { Icon } from './Icon'
+import type { PointFit } from '../boardThemes'
 import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
 import iznikTile from '../assets/iznik-pano-x3.webp' // İznik board: çini pano deseni (dolu hane)
 import sakuraTile from '../assets/sakura.webp' // Sakura board: kiraz dalı + kızıl güneş deseni
@@ -24,6 +25,8 @@ interface Props {
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon' // pul stili (App.css [data-checker] karsiligi)
   pointImgA?: string // tek haneler (a rengi) resmi — üçgene kırpılır
   pointImgB?: string // çift haneler (b rengi) resmi
+  pointFitA?: PointFit // resim yerleşimi (admin kaydırıcıları)
+  pointFitB?: PointFit
   themeId?: string // ozel cok-renkli desenli boardlar icin (or. 'citrus-wood')
   onChangeBoard?: () => void
   changeLabel?: string
@@ -74,6 +77,8 @@ export default function SetupBoard({
   checkerStyle = 'flat',
   pointImgA,
   pointImgB,
+  pointFitA,
+  pointFitB,
   themeId,
   onChangeBoard,
   changeLabel,
@@ -118,9 +123,33 @@ export default function SetupBoard({
   // Yılbaşı: köknar (a) + kar (b) dönüşümlü renkli haneler.
   const yilbasi = themeId === 'yilbasi'
   let nautIdx = 0
-  const flagTri = (key: string, cx: number, baseY: number, tipY: number, uri: string, par = 'xMidYMid slice') => {
+  const flagTri = (key: string, cx: number, baseY: number, tipY: number, uri: string, par = 'xMidYMid slice', fit?: PointFit) => {
     const pts = `${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`
     const y = Math.min(baseY, tipY)
+    // Admin yerleşimi: kutuyu "cover" × zoom ile kapla, x/y % konum (oyun tahtası CSS'i ile aynı formül)
+    if (fit) {
+      // Admin kadrajı üst-sıra (aşağı bakan) haneye göre yapılır; alt sıradaki (yukarı bakan) hane
+      // aynı tasarımı 180° çevrilmiş gösterir -> kırpma üst yönlü, grup döndürülür.
+      const bw = colW
+      const bh = Math.abs(tipY - baseY)
+      const up = `${cx - colW / 2 + 1},${y} ${cx + colW / 2 - 1},${y} ${cx},${y + bh}`
+      const flip = tipY < baseY
+      const g = fit.aspect
+        ? (() => {
+            const sc = Math.max(bw / fit.aspect!, bh) * (fit.zoom / 100)
+            const w = fit.aspect! * sc
+            return { x: cx - colW / 2 + ((bw - w) * fit.x) / 100, y: y + ((bh - sc) * fit.y) / 100, w, h: sc, par: 'none' }
+          })()
+        : { x: cx - colW / 2, y, w: colW, h: bh, par }
+      return [
+        <g key={key} transform={flip ? `rotate(180 ${cx} ${y + bh / 2})` : undefined}>
+          <clipPath id={`nf-${key}`}>
+            <polygon points={up} />
+          </clipPath>
+          <image href={uri} x={g.x} y={g.y} width={g.w} height={g.h} preserveAspectRatio={g.par} clipPath={`url(#nf-${key})`} />
+        </g>,
+      ]
+    }
     return [
       <clipPath key={`${key}-c`} id={`nf-${key}`}>
         <polygon points={pts} />
@@ -188,8 +217,11 @@ export default function SetupBoard({
       if (!citrus && (pointImgA || pointImgB)) {
         const topImg = light ? pointImgA : pointImgB
         const botImg = light ? pointImgB : pointImgA
-        if (topImg) tris.push(...flagTri(`${uid}pi-${half}${col}t`, cx, PAD, PAD + trTriH, topImg))
-        if (botImg) tris.push(...flagTri(`${uid}pi-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, botImg))
+        const dflt = { x: 50, y: 50, zoom: 100 }
+        const topFit = (light ? pointFitA : pointFitB) ?? dflt
+        const botFit = (light ? pointFitB : pointFitA) ?? dflt
+        if (topImg) tris.push(...flagTri(`${uid}pi-${half}${col}t`, cx, PAD, PAD + trTriH, topImg, undefined, topFit))
+        if (botImg) tris.push(...flagTri(`${uid}pi-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, botImg, undefined, botFit))
       }
       // Agac damari: hane uzerine ince dikey damar (aynı teardrop/ucgen sekle klipli degil,
       // path'i pattern ile ikinci kez cizerek) — yalniz wood board.

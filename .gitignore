@@ -104,3 +104,6 @@ e2e/__out__/
 
 # DB yedek dokumleri repoya girmesin (hassas kullanici verisi)
 backup_*.sql
+
+# Admin Tavla Tasarımı hane resimleri (sunucuda yüklenir; repoya girmez)
+/backend/public/uploads/tahta/

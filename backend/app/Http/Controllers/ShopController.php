@@ -223,6 +223,11 @@ class ShopController extends Controller
                     'images' => [
                         'odd' => BoardDesign::imageUrl($d->point_image_odd),
                         'even' => BoardDesign::imageUrl($d->point_image_even),
+                        // Üçgen içindeki yerleşim (konum %, yakınlaştırma %, en-boy oranı)
+                        'fit' => [
+                            'odd' => BoardDesign::clampFit($d->point_image_fit['odd'] ?? []),
+                            'even' => BoardDesign::clampFit($d->point_image_fit['even'] ?? []),
+                        ],
                     ],
                 ];
             }

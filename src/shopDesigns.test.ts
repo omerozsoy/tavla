@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { applyShopDesigns } from './shopDesigns'
-import { ALL_THEMES, CUSTOM_THEMES, boardPrice, boardRarityOf, boardOnSale, FREE_BOARDS, safeImgUrl } from './boardThemes'
+import { ALL_THEMES, CUSTOM_THEMES, boardPrice, boardRarityOf, boardOnSale, FREE_BOARDS, safeImgUrl, safeFit } from './boardThemes'
 import { AVATAR_FRAMES, FRAME_BY_ID, framePrice, frameOnSale } from './ui/avatarFrames'
 import { CHECKER_BY_ID, CHECKER_FINISHES, checkerPrice, checkerOnSale } from './checkers'
 
@@ -36,6 +36,14 @@ describe('admin tasarım ayarları (Tavla/Avatar/Pul Tasarımı)', () => {
     for (const bad of ['http://x.com/a.png', '/uploads/a.png") ; background:red', '/uploads/a b.png', 'data:image/png;base64,AA', '/etc/x.png', 42]) {
       expect(safeImgUrl(bad)).toBeUndefined()
     }
+  })
+
+  it('hane resmi yerleşimi: değerler sınırlanır, eksik alan varsayılan', () => {
+    expect(safeFit({ x: 62, y: 50, zoom: 180, aspect: 2.5 })).toEqual({ x: 62, y: 50, zoom: 180, aspect: 2.5 })
+    expect(safeFit({ x: 900, y: -5, zoom: 9999, aspect: 'x' })).toEqual({ x: 100, y: 0, zoom: 400 })
+    expect(safeFit(null)).toEqual({ x: 50, y: 50, zoom: 100 })
+    applyShopDesigns({ designs: [{ ...custom, images: { odd: '/uploads/tahta/a.png', fit: { odd: { x: 10, zoom: 150, aspect: 0.5 } } } }], items: [] })
+    expect(ALL_THEMES.find((x) => x.id === custom.id)!.pointFitA).toEqual({ x: 10, y: 50, zoom: 150, aspect: 0.5 })
   })
 
   it('bozuk renkli özel tahta atlanır', () => {

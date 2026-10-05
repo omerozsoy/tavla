@@ -45,6 +45,8 @@ interface BoardColors {
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
   pointImgA?: string
   pointImgB?: string
+  pointFitA?: import('../boardThemes').PointFit
+  pointFitB?: import('../boardThemes').PointFit
 }
 
 interface Props {

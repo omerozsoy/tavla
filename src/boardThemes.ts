@@ -33,6 +33,15 @@ export interface BoardTheme {
   // Admin özel tahta: tek (1,3,5… = shade-a) / çift (2,4,6… = shade-b) hane resmi (üçgene kırpılır)
   pointImgA?: string
   pointImgB?: string
+  // Resmin hane üçgeni içindeki yerleşimi: x/y konum (%), zoom (%, 100 = kaplar), aspect = en/boy
+  pointFitA?: PointFit
+  pointFitB?: PointFit
+}
+export interface PointFit {
+  x: number
+  y: number
+  zoom: number
+  aspect?: number
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -353,7 +362,19 @@ export interface BoardDesignRow {
   colors?: { panel?: string; frame?: string | null; a?: string; b?: string; checker?: string; light?: string | null }
   surface?: string | null
   checker_style?: string | null
-  images?: { odd?: string | null; even?: string | null } | null
+  images?: { odd?: string | null; even?: string | null; fit?: { odd?: Partial<PointFit> | null; even?: Partial<PointFit> | null } | null } | null
+}
+// Yerleşimi güvenli aralığa çek (backend BoardDesign::clampFit ile aynı)
+export function safeFit(f: unknown): PointFit {
+  const o = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>
+  const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
+  const out: PointFit = {
+    x: Math.max(0, Math.min(100, num(o.x, 50))),
+    y: Math.max(0, Math.min(100, num(o.y, 50))),
+    zoom: Math.max(100, Math.min(400, num(o.zoom, 100))),
+  }
+  if (typeof o.aspect === 'number' && Number.isFinite(o.aspect)) out.aspect = Math.max(0.05, Math.min(20, o.aspect))
+  return out
 }
 // Hane resmi URL'si: yalnız site içi /uploads/… ya da https; CSS url("…") kırılmasın diye tırnak,
 // parantez, ters bölü ve boşluk içeremez.
@@ -396,6 +417,8 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
       checkerStyle: CHECKER_STYLES.find((x) => x === r.checker_style),
       pointImgA: safeImgUrl(r.images?.odd),
       pointImgB: safeImgUrl(r.images?.even),
+      pointFitA: safeFit(r.images?.fit?.odd),
+      pointFitB: safeFit(r.images?.fit?.even),
     }
     CUSTOM_THEMES.push(theme)
     ALL_THEMES.push(theme)

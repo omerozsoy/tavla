@@ -57,6 +57,70 @@ class BoardDesignResource extends Resource
             ->live();
     }
 
+    /**
+     * Bir hane resmi bloğu: yükleme + yerleşim kaydırıcıları (yatay/dikey konum, yakınlaştırma) +
+     * tek haneyi büyük gösteren canlı önizleme.
+     */
+    private static function pointImageBlock(string $kind, string $label, string $tone): Forms\Components\Group
+    {
+        $slider = fn (string $key, string $lbl, int $min, int $max, int $def, string $help) => Forms\Components\TextInput::make("point_image_fit.$kind.$key")
+            ->label(fn (Get $get) => $lbl.' · %'.(int) round((float) ($get("point_image_fit.$kind.$key") ?? $def)))
+            ->type('range')
+            ->extraInputAttributes(['min' => $min, 'max' => $max, 'step' => 1, 'style' => 'padding:0;accent-color:#a83a2b'])
+            ->default($def)
+            ->helperText($help)
+            ->live(debounce: 120)
+            ->visible(fn (Get $get) => filled($get("point_image_$kind")));
+
+        return Forms\Components\Group::make([
+            self::pointImage("point_image_$kind", $label),
+            Forms\Components\Grid::make(['default' => 3])->schema([
+                Forms\Components\Placeholder::make("point_preview_$kind")
+                    ->label('Hane önizlemesi')
+                    ->content(fn (Get $get) => new HtmlString(view('filament.board-design.point-preview', [
+                        'img' => self::previewImage($get("point_image_$kind")),
+                        'fit' => self::fitState($get, $kind),
+                        'color' => $get("colors.$tone"),
+                    ])->render()))
+                    ->columnSpan(1),
+                Forms\Components\Group::make([
+                    $slider('x', 'Yatay konum', 0, 100, 50, 'Sola ← → sağa'),
+                    $slider('y', 'Dikey konum', 0, 100, 50, 'Yukarı ↑ ↓ aşağı'),
+                    $slider('zoom', 'Yakınlaştırma', 100, 400, 100, '%100 = haneyi tam kaplar'),
+                ])->columnSpan(2),
+            ]),
+        ]);
+    }
+
+    /** Formdaki yerleşim değerleri + resmin en-boy oranı (yeni yüklenen ya da kayıtlı dosyadan). */
+    public static function fitState(Get $get, string $kind): array
+    {
+        $f = BoardDesign::clampFit((array) ($get("point_image_fit.$kind") ?? []));
+        $aspect = self::imageAspect($get("point_image_$kind"));
+        if ($aspect) {
+            $f['aspect'] = $aspect;
+        }
+
+        return $f;
+    }
+
+    public static function imageAspect(mixed $state): ?float
+    {
+        if (is_array($state)) {
+            $state = reset($state) ?: null;
+        }
+        try {
+            $abs = $state instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
+                ? $state->getRealPath()
+                : (is_string($state) && $state !== '' ? \Illuminate\Support\Facades\Storage::disk('uploads')->path($state) : null);
+            $size = $abs ? @getimagesize($abs) : false;
+
+            return $size && $size[1] > 0 ? round($size[0] / $size[1], 4) : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /** Form durumundaki resmi önizleme için URL'ye çevir (yeni yüklenen geçici dosya -> data URI). */
     public static function previewImage(mixed $state): ?string
     {
@@ -153,9 +217,9 @@ class BoardDesignResource extends Resource
                     Forms\Components\Section::make('Hane Resimleri')
                         ->description('İsteğe bağlı: tek (1, 3, 5…) ve çift (2, 4, 6…) numaralı hanelere resim. Resim üçgene kırpılır; boşsa hane rengi kullanılır.')
                         ->schema([
-                            self::pointImage('point_image_odd', 'Tek haneler için resim'),
-                            self::pointImage('point_image_even', 'Çift haneler için resim'),
-                        ])->columns(2)
+                            self::pointImageBlock('odd', 'Tek haneler için resim', 'a'),
+                            self::pointImageBlock('even', 'Çift haneler için resim', 'b'),
+                        ])->columns(['default' => 1, 'xl' => 2])
                         ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
                 ])->columnSpan(['lg' => 3]),
                 Forms\Components\Section::make('Önizleme')->schema([
@@ -167,6 +231,8 @@ class BoardDesignResource extends Resource
                             'checkerStyle' => $get('checker_style'),
                             'imgOdd' => self::previewImage($get('point_image_odd')),
                             'imgEven' => self::previewImage($get('point_image_even')),
+                            'fitOdd' => self::fitState($get, 'odd'),
+                            'fitEven' => self::fitState($get, 'even'),
                             'width' => 640,
                             'hint' => true,
                         ])->render())),

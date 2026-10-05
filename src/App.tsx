@@ -2309,14 +2309,21 @@ export default function App() {
     root.setAttribute('data-surface', bt.surface ?? 'plain')
     root.setAttribute('data-point-style', bt.pointStyle ?? 'sharp') // hane sekli: sivri/yuvarlak
     // Özel tahta hane resimleri (tek = shade-a, çift = shade-b): CSS değişkeni + işaret attribute'u.
-    for (const [k, v] of [['a', bt.pointImgA], ['b', bt.pointImgB]] as const) {
-      if (v) {
-        root.style.setProperty(`--pt-img-${k}`, `url("${v}")`)
-        root.setAttribute(`data-pt-img-${k}`, '')
-      } else {
-        root.style.removeProperty(`--pt-img-${k}`)
-        root.removeAttribute(`data-pt-img-${k}`)
+    for (const [k, v, fit] of [['a', bt.pointImgA, bt.pointFitA], ['b', bt.pointImgB, bt.pointFitB]] as const) {
+      // Yerleşim: sayılar kökte (boyut hesabı .point::before'da --col/--tri-h ile yapılır)
+      const vars: [string, string | null][] = [
+        [`--pt-img-${k}`, v ? `url("${v}")` : null],
+        [`--pt-${k}-x`, v && fit ? String(fit.x) : null],
+        [`--pt-${k}-y`, v && fit ? String(fit.y) : null],
+        [`--pt-${k}-zoom`, v && fit ? String(fit.zoom / 100) : null],
+        [`--pt-${k}-aspect`, v && fit?.aspect ? String(fit.aspect) : null],
+      ]
+      for (const [name, val] of vars) {
+        if (val != null) root.style.setProperty(name, val)
+        else root.style.removeProperty(name)
       }
+      if (v) root.setAttribute(`data-pt-img-${k}`, '')
+      else root.removeAttribute(`data-pt-img-${k}`)
     }
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
     // Maritime board: 12 sinyal flamasini CSS degiskeni olarak yaz. Ust/alt hane AYRI varyant
@@ -9326,7 +9333,7 @@ export default function App() {
           coins={user?.coins ?? 0}
           board={(() => {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB }
+            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB }
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
@@ -9658,7 +9665,7 @@ export default function App() {
             initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
@@ -9686,7 +9693,7 @@ export default function App() {
           <FriendGameSetup
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}

@@ -94,6 +94,28 @@ class BoardDesignTest extends TestCase
         $this->assertStringEndsWith($d->point_image_even, $row['images']['even']);
     }
 
+    // Resim yerleşimi: kaydırıcı değerleri kaydedilir (sınırlanır), en-boy oranı dosyadan hesaplanır, API'de döner.
+    public function test_point_image_fit_saved_clamped_and_exposed(): void
+    {
+        Storage::fake('uploads');
+        Livewire::actingAs($this->admin)->test(CreateBoardDesign::class)
+            ->fillForm([
+                'name' => 'Yerlesim', 'group' => 'rare', 'colors' => $this->colors(),
+                'point_image_odd' => UploadedFile::fake()->image('genis.png', 600, 240),
+            ])
+            ->set('data.point_image_fit.odd.x', 62)
+            ->set('data.point_image_fit.odd.zoom', 180)
+            ->assertSee('Yakınlaştırma · %180')
+            ->call('create')->assertHasNoFormErrors();
+        $d = BoardDesign::where('name', 'Yerlesim')->firstOrFail();
+        $this->assertEquals(['x' => 62, 'y' => 50, 'zoom' => 180, 'aspect' => 2.5], $d->point_image_fit['odd']);
+        $d->update(['point_image_fit' => ['odd' => ['x' => 900, 'y' => -5, 'zoom' => 9999]]]);
+        $this->assertEquals(['x' => 100, 'y' => 0, 'zoom' => 400, 'aspect' => 2.5], $d->fresh()->point_image_fit['odd']);
+        $row = collect($this->getJson('/api/board-designs')->json('designs'))->firstWhere('id', $d->slug);
+        $this->assertSame(400, (int) $row['images']['fit']['odd']['zoom']);
+        $this->assertEqualsWithDelta(2.5, $row['images']['fit']['odd']['aspect'], 1e-9);
+    }
+
     public function test_svg_point_image_rejected(): void
     {
         Storage::fake('uploads');

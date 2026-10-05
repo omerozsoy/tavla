@@ -6902,13 +6902,26 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
 /* ============ Admin özel tahta: hane resimleri (Tavla Tasarımı) ============
    tek haneler (1,3,5… = shade-a) / çift haneler (2,4,6… = shade-b). Resim hane üçgenine kırpılır
    (::before clip-path), arkada hane rengi kalır. Değişkenler App.tsx tema efektinden gelir. */
+/* Yerleşim (admin kaydırıcıları): genişlik = max(hane genişliği, hane yüksekliği × en/boy) × zoom
+   -> %100'de haneyi tam kaplar ("cover"); konum x/y % = background-position. */
 html[data-pt-img-a] .point.shade-a.top::before,
 html[data-pt-img-a] .point.shade-a.bottom::before {
-  background: var(--pt-img-a) center / cover no-repeat, var(--tri-a);
+  background: var(--pt-img-a) calc(var(--pt-a-x, 50) * 1%) calc(var(--pt-a-y, 50) * 1%) /
+      calc(max(var(--col), calc(var(--tri-h) * var(--pt-a-aspect, 0))) * var(--pt-a-zoom, 1)) auto no-repeat,
+    var(--tri-a);
 }
 html[data-pt-img-b] .point.shade-b.top::before,
 html[data-pt-img-b] .point.shade-b.bottom::before {
-  background: var(--pt-img-b) center / cover no-repeat, var(--tri-b);
+  background: var(--pt-img-b) calc(var(--pt-b-x, 50) * 1%) calc(var(--pt-b-y, 50) * 1%) /
+      calc(max(var(--col), calc(var(--tri-h) * var(--pt-b-aspect, 0))) * var(--pt-b-zoom, 1)) auto no-repeat,
+    var(--tri-b);
+}
+/* Karşı (alt) sıra: admin kadrajı üst-sıra hanesine göre yapılır -> alt sıradaki hane aynı tasarımı
+   180° çevrilmiş gösterir (üçgen kutusu + kırpma üst yönlü, ::before döndürülür). */
+html[data-pt-img-a] .point.shade-a.bottom::before,
+html[data-pt-img-b] .point.shade-b.bottom::before {
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: translateX(-50%) rotate(180deg);
 }
 
 /* ============ İznik (Kütahya/İznik çini): dolu-desen hane + karanfil kırmızısı hane ============

@@ -16,6 +16,22 @@
     $okImg = fn ($v) => is_string($v) && (str_starts_with($v, 'data:image/') || str_starts_with($v, '/') || str_starts_with($v, 'http'));
     $imgA = $okImg($imgOdd ?? null) ? $imgOdd : null;
     $imgB = $okImg($imgEven ?? null) ? $imgEven : null;
+    // Yerleşim: resim hane kutusunu "cover" ile kaplar × yakınlaştırma; konum x/y % (CSS
+    // background-position ile aynı anlam). Oyun tahtası + mağaza kartı aynı formülü kullanır.
+    $fitA = is_array($fitOdd ?? null) ? $fitOdd : [];
+    $fitB = is_array($fitEven ?? null) ? $fitEven : [];
+    $place = function ($bx, $by, $bw, $bh, array $f) {
+        $a = (float) ($f['aspect'] ?? 0);
+        if ($a <= 0) {
+            return null;
+        }
+        $z = max(1, (float) ($f['zoom'] ?? 100) / 100);
+        $sc = max($bw / $a, $bh) * $z;
+        $w = $a * $sc;
+        $h = $sc;
+
+        return [$bx + ($bw - $w) * (float) ($f['x'] ?? 50) / 100, $by + ($bh - $h) * (float) ($f['y'] ?? 50) / 100, $w, $h];
+    };
     $w = (int) ($width ?? 240);
     $u = 'bp'.substr(md5(uniqid('', true)), 0, 8); // sayfadaki her SVG için benzersiz id öneki
     $W = 260; $H = 170; $fw = 10; $bar = 14;
@@ -69,9 +85,24 @@
             @endphp
             <polygon points="{{ $pts }}" fill="{{ $tone === 'a' ? $a : $b }}"/>
             @if ($img)
-                <clipPath id="{{ $u }}c{{ $row }}{{ $i }}"><polygon points="{{ $pts }}"/></clipPath>
-                <image href="{{ $img }}" x="{{ $x }}" y="{{ min($base, $tip) }}" width="{{ $pw }}" height="{{ $ph }}"
-                    preserveAspectRatio="xMidYMid slice" clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})"/>
+                @php
+                    // Karşı (alt) sıra: resim 180° çevrilir -> admin'in üst-sıra hanesinde yaptığı kadraj
+                    // iki sırada da aynı görünür. Kırpma üçgeni üst-sıra yönünde, grup döndürülür.
+                    $by = min($base, $tip);
+                    $flip = $row === 'b';
+                    $tri = $x.','.$by.' '.($x + $pw).','.$by.' '.($x + $pw / 2).','.($by + $ph);
+                    $g = $place($x, $by, $pw, $ph, $tone === 'a' ? $fitA : $fitB);
+                @endphp
+                <g @if ($flip) transform="rotate(180 {{ $x + $pw / 2 }} {{ $by + $ph / 2 }})" @endif>
+                    <clipPath id="{{ $u }}c{{ $row }}{{ $i }}"><polygon points="{{ $tri }}"/></clipPath>
+                    @if ($g)
+                        <image href="{{ $img }}" x="{{ $g[0] }}" y="{{ $g[1] }}" width="{{ $g[2] }}" height="{{ $g[3] }}"
+                            preserveAspectRatio="none" clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})"/>
+                    @else
+                        <image href="{{ $img }}" x="{{ $x }}" y="{{ $by }}" width="{{ $pw }}" height="{{ $ph }}"
+                            preserveAspectRatio="xMidYMid slice" clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})"/>
+                    @endif
+                </g>
             @endif
         @endforeach
     @endfor
