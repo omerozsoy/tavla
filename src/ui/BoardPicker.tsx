@@ -28,6 +28,8 @@ export interface BoardThemeOpt {
   pointImgB?: string // özel tahta: çift hane resmi
   pointFitA?: import('../boardThemes').PointFit
   pointFitB?: import('../boardThemes').PointFit
+  pointImgs?: Record<number, string>
+  pointFits?: Record<number, import('../boardThemes').PointFit>
 }
 
 // Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
@@ -71,6 +73,8 @@ function HoverPreview({ bt, rect }: { bt: BoardThemeOpt; rect: DOMRect }) {
         pointImgB={bt.pointImgB}
         pointFitA={bt.pointFitA}
         pointFitB={bt.pointFitB}
+        pointImgs={bt.pointImgs}
+        pointFits={bt.pointFits}
         themeId={bt.id}
       />
       <div className="bp-hover-name">
@@ -150,6 +154,8 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                       pointImgB={bt.pointImgB}
                       pointFitA={bt.pointFitA}
                       pointFitB={bt.pointFitB}
+                      pointImgs={bt.pointImgs}
+                      pointFits={bt.pointFits}
                       themeId={bt.id}
                     />
                     {boardTheme === bt.id && (

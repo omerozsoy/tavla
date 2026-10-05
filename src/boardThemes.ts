@@ -36,6 +36,9 @@ export interface BoardTheme {
   // Resmin hane üçgeni içindeki yerleşimi: x/y konum (%), zoom (%, 100 = kaplar), aspect = en/boy
   pointFitA?: PointFit
   pointFitB?: PointFit
+  // Tam resim modu: her haneye ayrı resim (hane no 1..24 = beyazın bakışı) + yerleşimi
+  pointImgs?: Record<number, string>
+  pointFits?: Record<number, PointFit>
 }
 export interface PointFit {
   x: number
@@ -362,7 +365,25 @@ export interface BoardDesignRow {
   colors?: { panel?: string; frame?: string | null; a?: string; b?: string; checker?: string; light?: string | null }
   surface?: string | null
   checker_style?: string | null
-  images?: { odd?: string | null; even?: string | null; fit?: { odd?: Partial<PointFit> | null; even?: Partial<PointFit> | null } | null } | null
+  images?: {
+    mode?: 'pair' | 'each'
+    odd?: string | null
+    even?: string | null
+    points?: Record<string, string | null> | null
+    fit?: Record<string, Partial<PointFit> | null> | null
+  } | null
+}
+// Tam resim modu: 1..24 hane resimleri + yerleşimleri (güvenli URL'ler)
+function eachImages(im: NonNullable<BoardDesignRow['images']>): Pick<BoardTheme, 'pointImgs' | 'pointFits' | 'pointImgA' | 'pointImgB'> {
+  const pointImgs: Record<number, string> = {}
+  const pointFits: Record<number, PointFit> = {}
+  for (let n = 1; n <= 24; n++) {
+    const u = safeImgUrl(im.points?.[String(n)])
+    if (!u) continue
+    pointImgs[n] = u
+    pointFits[n] = safeFit(im.fit?.[String(n)])
+  }
+  return { pointImgs, pointFits, pointImgA: undefined, pointImgB: undefined }
 }
 // Yerleşimi güvenli aralığa çek (backend BoardDesign::clampFit ile aynı)
 export function safeFit(f: unknown): PointFit {
@@ -419,6 +440,7 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
       pointImgB: safeImgUrl(r.images?.even),
       pointFitA: safeFit(r.images?.fit?.odd),
       pointFitB: safeFit(r.images?.fit?.even),
+      ...(r.images?.mode === 'each' ? eachImages(r.images) : {}),
     }
     CUSTOM_THEMES.push(theme)
     ALL_THEMES.push(theme)

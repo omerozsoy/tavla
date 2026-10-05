@@ -27,6 +27,8 @@ interface Props {
   pointImgB?: string // çift haneler (b rengi) resmi
   pointFitA?: PointFit // resim yerleşimi (admin kaydırıcıları)
   pointFitB?: PointFit
+  pointImgs?: Record<number, string> // tam resim modu: hane no (1..24) -> resim
+  pointFits?: Record<number, PointFit>
   themeId?: string // ozel cok-renkli desenli boardlar icin (or. 'citrus-wood')
   onChangeBoard?: () => void
   changeLabel?: string
@@ -79,6 +81,8 @@ export default function SetupBoard({
   pointImgB,
   pointFitA,
   pointFitB,
+  pointImgs,
+  pointFits,
   themeId,
   onChangeBoard,
   changeLabel,
@@ -214,7 +218,14 @@ export default function SetupBoard({
       tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, topFill))
       tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, botFill))
       // Özel tahta hane resmi: renkli hanenin ÜSTÜNE üçgene kırpılı resim (a = tek, b = çift).
-      if (!citrus && (pointImgA || pointImgB)) {
+      if (!citrus && pointImgs && Object.keys(pointImgs).length) {
+        // Tam resim: hane no (beyazın bakışı) — üst: sol yarı 13..18, sağ 19..24; alt: sol 12..7, sağ 6..1
+        const nTop = (half === 'L' ? 13 : 19) + col
+        const nBot = (half === 'L' ? 12 : 6) - col
+        const dflt = { x: 50, y: 50, zoom: 100 }
+        if (pointImgs[nTop]) tris.push(...flagTri(`${uid}pe-${nTop}`, cx, PAD, PAD + trTriH, pointImgs[nTop], undefined, pointFits?.[nTop] ?? dflt))
+        if (pointImgs[nBot]) tris.push(...flagTri(`${uid}pe-${nBot}`, cx, H - PAD, H - PAD - trTriH, pointImgs[nBot], undefined, pointFits?.[nBot] ?? dflt))
+      } else if (!citrus && (pointImgA || pointImgB)) {
         const topImg = light ? pointImgA : pointImgB
         const botImg = light ? pointImgB : pointImgA
         const dflt = { x: 50, y: 50, zoom: 100 }

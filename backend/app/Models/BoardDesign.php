@@ -34,11 +34,12 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'point_image_odd', 'point_image_even', 'point_image_fit', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
         'point_image_fit' => 'array',
+        'point_images' => 'array',
         'is_custom' => 'boolean',
         'active' => 'boolean',
         'price' => 'integer',
@@ -59,11 +60,25 @@ class BoardDesign extends Model
         static::saving(function (self $d) {
             // Resimsiz tahta (yerleşikler dahil): dokunma — ilk migration'daki senkron bu kolon
             // eklenmeden önce çalışır; ayrıca gereksiz veri yazılmaz.
-            if (! $d->point_image_odd && ! $d->point_image_even && $d->point_image_fit === null) {
+            if (! $d->point_image_odd && ! $d->point_image_even && $d->point_image_fit === null && empty($d->point_images)) {
                 return;
             }
             $fit = is_array($d->point_image_fit) ? $d->point_image_fit : [];
-            foreach (['odd' => $d->point_image_odd, 'even' => $d->point_image_even] as $k => $path) {
+            // Her haneye ayrı resim: yalnız 1..24 anahtarları, boşlar atılır
+            $each = [];
+            foreach ((array) ($d->point_images ?? []) as $n => $path) {
+                $n = (int) $n;
+                if ($n >= 1 && $n <= 24 && is_string($path) && $path !== '') {
+                    $each[$n] = $path;
+                }
+            }
+            ksort($each);
+            $d->point_images = $each ?: null;
+            $targets = ['odd' => $d->point_image_odd, 'even' => $d->point_image_even];
+            foreach ($each as $n => $path) {
+                $targets['p'.$n] = $path;
+            }
+            foreach ($targets as $k => $path) {
                 $f = is_array($fit[$k] ?? null) ? $fit[$k] : [];
                 $f = self::clampFit($f);
                 if ($path) {
@@ -74,6 +89,12 @@ class BoardDesign extends Model
                     }
                 }
                 $fit[$k] = $f;
+            }
+            // Silinmiş hanelerin yerleşimini at
+            foreach (array_keys($fit) as $k) {
+                if (str_starts_with((string) $k, 'p') && ! isset($targets[$k])) {
+                    unset($fit[$k]);
+                }
             }
             $d->point_image_fit = $fit;
         });

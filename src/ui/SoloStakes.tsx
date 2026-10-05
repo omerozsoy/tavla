@@ -47,6 +47,8 @@ interface BoardColors {
   pointImgB?: string
   pointFitA?: import('../boardThemes').PointFit
   pointFitB?: import('../boardThemes').PointFit
+  pointImgs?: Record<number, string>
+  pointFits?: Record<number, import('../boardThemes').PointFit>
 }
 
 interface Props {

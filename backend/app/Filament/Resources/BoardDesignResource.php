@@ -74,22 +74,109 @@ class BoardDesignResource extends Resource
 
         return Forms\Components\Group::make([
             self::pointImage("point_image_$kind", $label),
-            Forms\Components\Grid::make(['default' => 3])->schema([
+            Forms\Components\Grid::make(['default' => 1])->schema([
                 Forms\Components\Placeholder::make("point_preview_$kind")
-                    ->label('Hane önizlemesi')
-                    ->content(fn (Get $get) => new HtmlString(view('filament.board-design.point-preview', [
+                    ->label('Haneye yerleştir')
+                    ->content(fn (Get $get) => new HtmlString(view('filament.board-design.point-cropper', [
                         'img' => self::previewImage($get("point_image_$kind")),
                         'fit' => self::fitState($get, $kind),
                         'color' => $get("colors.$tone"),
-                    ])->render()))
-                    ->columnSpan(1),
+                        'kind' => $kind,
+                    ])->render())),
+                // İnce ayar (kırpıcıyla senkron)
                 Forms\Components\Group::make([
                     $slider('x', 'Yatay konum', 0, 100, 50, 'Sola ← → sağa'),
                     $slider('y', 'Dikey konum', 0, 100, 50, 'Yukarı ↑ ↓ aşağı'),
                     $slider('zoom', 'Yakınlaştırma', 100, 400, 100, '%100 = haneyi tam kaplar'),
-                ])->columnSpan(2),
+                ]),
             ]),
         ]);
+    }
+
+    /**
+     * Tam resim modu: 24 hane, dört çeyrek bölüm (her biri 6 hane). Her hanede yükleme + kırpıcı.
+     * @return array<Forms\Components\Section>
+     */
+    private static function eachPointSections(): array
+    {
+        $quarters = [
+            'Alt sağ (1–6) — beyazın evi' => range(1, 6),
+            'Alt sol (7–12)' => range(7, 12),
+            'Üst sol (13–18)' => range(13, 18),
+            'Üst sağ (19–24) — siyahın evi' => range(19, 24),
+        ];
+        $out = [];
+        foreach ($quarters as $title => $nums) {
+            $out[] = Forms\Components\Section::make($title)
+                ->collapsible()
+                ->compact()
+                ->schema(array_map(fn (int $n) => Forms\Components\Group::make([
+                    Forms\Components\FileUpload::make("point_images.$n")
+                        ->label("Hane $n")
+                        ->image()
+                        ->disk('uploads')->directory('tahta')->visibility('public')
+                        ->maxSize(4096)
+                        ->imageEditor()
+                        ->live(),
+                    Forms\Components\Placeholder::make("point_each_preview_$n")
+                        ->hiddenLabel()
+                        ->content(fn (Get $get) => new HtmlString(view('filament.board-design.point-cropper', [
+                            'img' => self::previewImage($get("point_images.$n")),
+                            'fit' => self::fitStateEach($get, $n),
+                            'color' => $get($n % 2 ? 'colors.a' : 'colors.b'),
+                            'kind' => 'p'.$n,
+                            'maxWidth' => 110,
+                            'compact' => true,
+                        ])->render()))
+                        ->visible(fn (Get $get) => filled($get("point_images.$n"))),
+                    // Kırpıcının yazdığı yerleşim (kaydedilsin diye formda gizli alan)
+                    Forms\Components\Hidden::make("point_image_fit.p$n.x")->default(50),
+                    Forms\Components\Hidden::make("point_image_fit.p$n.y")->default(50),
+                    Forms\Components\Hidden::make("point_image_fit.p$n.zoom")->default(100),
+                ]), $nums))
+                ->columns(['default' => 2, 'md' => 3])
+                ->visible(fn (Get $get) => $get('point_mode') === 'each');
+        }
+
+        return $out;
+    }
+
+    public static function fitStateEach(Get $get, int $n): array
+    {
+        $f = BoardDesign::clampFit((array) ($get("point_image_fit.p$n") ?? []));
+        $aspect = self::imageAspect($get("point_images.$n"));
+        if ($aspect) {
+            $f['aspect'] = $aspect;
+        }
+
+        return $f;
+    }
+
+    /** @return array<int,string> hane no => önizleme URL'si */
+    public static function eachPreviewImages(Get $get): array
+    {
+        $out = [];
+        for ($n = 1; $n <= 24; $n++) {
+            $u = self::previewImage($get("point_images.$n"));
+            if ($u) {
+                $out[$n] = $u;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return array<int,array> hane no => yerleşim */
+    public static function eachPreviewFits(Get $get): array
+    {
+        $out = [];
+        for ($n = 1; $n <= 24; $n++) {
+            if (filled($get("point_images.$n"))) {
+                $out[$n] = self::fitStateEach($get, $n);
+            }
+        }
+
+        return $out;
     }
 
     /** Formdaki yerleşim değerleri + resmin en-boy oranı (yeni yüklenen ya da kayıtlı dosyadan). */
@@ -215,11 +302,22 @@ class BoardDesignResource extends Resource
                                 ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom),
                         ])->columns(2),
                     Forms\Components\Section::make('Hane Resimleri')
-                        ->description('İsteğe bağlı: tek (1, 3, 5…) ve çift (2, 4, 6…) numaralı hanelere resim. Resim üçgene kırpılır; boşsa hane rengi kullanılır.')
+                        ->description('İsteğe bağlı. Resim hane üçgenine kırpılır; boş hanede hane rengi kullanılır.')
                         ->schema([
-                            self::pointImageBlock('odd', 'Tek haneler için resim', 'a'),
-                            self::pointImageBlock('even', 'Çift haneler için resim', 'b'),
-                        ])->columns(['default' => 1, 'xl' => 2])
+                            Forms\Components\ToggleButtons::make('point_mode')
+                                ->label('Resim modu')
+                                ->options(['pair' => 'Tek / çift haneler (2 resim)', 'each' => 'Tam resim — her haneye ayrı (24 resim)'])
+                                ->icons(['pair' => 'heroicon-o-squares-2x2', 'each' => 'heroicon-o-photo'])
+                                ->default('pair')
+                                ->inline()
+                                ->live()
+                                ->columnSpanFull(),
+                            Forms\Components\Grid::make(['default' => 1, 'xl' => 2])->schema([
+                                self::pointImageBlock('odd', 'Tek haneler için resim', 'a'),
+                                self::pointImageBlock('even', 'Çift haneler için resim', 'b'),
+                            ])->visible(fn (Get $get) => $get('point_mode') !== 'each'),
+                            ...self::eachPointSections(),
+                        ])
                         ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
                 ])->columnSpan(['lg' => 3]),
                 Forms\Components\Section::make('Önizleme')->schema([
@@ -229,10 +327,12 @@ class BoardDesignResource extends Resource
                             'colors' => $get('colors'),
                             'surface' => $get('surface'),
                             'checkerStyle' => $get('checker_style'),
-                            'imgOdd' => self::previewImage($get('point_image_odd')),
-                            'imgEven' => self::previewImage($get('point_image_even')),
+                            'imgOdd' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_odd')),
+                            'imgEven' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_even')),
                             'fitOdd' => self::fitState($get, 'odd'),
                             'fitEven' => self::fitState($get, 'even'),
+                            'pointImgs' => $get('point_mode') === 'each' ? self::eachPreviewImages($get) : null,
+                            'pointFits' => $get('point_mode') === 'each' ? self::eachPreviewFits($get) : null,
                             'width' => 640,
                             'hint' => true,
                         ])->render())),

@@ -78,6 +78,8 @@ interface BoardColors {
   pointImgB?: string
   pointFitA?: import('../boardThemes').PointFit
   pointFitB?: import('../boardThemes').PointFit
+  pointImgs?: Record<number, string>
+  pointFits?: Record<number, import('../boardThemes').PointFit>
 }
 
 interface Props {
@@ -322,6 +324,8 @@ export default function MatchSetup({
           pointImgB={board.pointImgB}
           pointFitA={board.pointFitA}
           pointFitB={board.pointFitB}
+          pointImgs={board.pointImgs}
+          pointFits={board.pointFits}
           themeId={board.id}
           onChangeBoard={onChangeBoard}
           changeLabel={t('setup.changeBoard')}

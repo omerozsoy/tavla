@@ -220,7 +220,14 @@ class ShopController extends Controller
                     'surface' => $d->surface,
                     'checker_style' => $d->checker_style,
                     // Tek (1,3,5…) / çift (2,4,6…) hane resmi (üçgene kırpılır; yoksa düz renk)
-                    'images' => [
+                    'images' => $d->point_mode === 'each' ? [
+                        // Her haneye ayrı resim (1..24) + yerleşimleri
+                        'mode' => 'each',
+                        'points' => collect($d->point_images ?? [])->map(fn ($p) => BoardDesign::imageUrl($p))->all(),
+                        'fit' => collect($d->point_images ?? [])->keys()
+                            ->mapWithKeys(fn ($n) => [$n => BoardDesign::clampFit($d->point_image_fit['p'.$n] ?? [])])->all(),
+                    ] : [
+                        'mode' => 'pair',
                         'odd' => BoardDesign::imageUrl($d->point_image_odd),
                         'even' => BoardDesign::imageUrl($d->point_image_even),
                         // Üçgen içindeki yerleşim (konum %, yakınlaştırma %, en-boy oranı)

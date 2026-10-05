@@ -18,6 +18,9 @@
     $imgB = $okImg($imgEven ?? null) ? $imgEven : null;
     // Yerleşim: resim hane kutusunu "cover" ile kaplar × yakınlaştırma; konum x/y % (CSS
     // background-position ile aynı anlam). Oyun tahtası + mağaza kartı aynı formülü kullanır.
+    // Her haneye ayrı resim modu: [hane no (1..24) => url], [hane no => yerleşim]
+    $each = is_array($pointImgs ?? null) ? array_filter($pointImgs, $okImg) : [];
+    $eachFit = is_array($pointFits ?? null) ? $pointFits : [];
     $fitA = is_array($fitOdd ?? null) ? $fitOdd : [];
     $fitB = is_array($fitEven ?? null) ? $fitEven : [];
     $place = function ($bx, $by, $bw, $bh, array $f) {
@@ -81,7 +84,10 @@
         @foreach ([['t', $fw, $fw + $ph, $i % 2 ? 'b' : 'a'], ['b', $H - $fw, $H - $fw - $ph, $i % 2 ? 'a' : 'b']] as [$row, $base, $tip, $tone])
             @php
                 $pts = $x.','.$base.' '.($x + $pw).','.$base.' '.($x + $pw / 2).','.$tip;
-                $img = $tone === 'a' ? $imgA : $imgB;
+                // Hane numarası (beyazın bakışı): üst sıra soldan 13..24, alt sıra soldan 12..1
+                $n = $row === 't' ? 13 + $i : 12 - $i;
+                $img = $each ? ($each[$n] ?? null) : ($tone === 'a' ? $imgA : $imgB);
+                $fitHere = $each ? (array) ($eachFit[$n] ?? []) : ($tone === 'a' ? $fitA : $fitB);
             @endphp
             <polygon points="{{ $pts }}" fill="{{ $tone === 'a' ? $a : $b }}"/>
             @if ($img)
@@ -91,7 +97,7 @@
                     $by = min($base, $tip);
                     $flip = $row === 'b';
                     $tri = $x.','.$by.' '.($x + $pw).','.$by.' '.($x + $pw / 2).','.($by + $ph);
-                    $g = $place($x, $by, $pw, $ph, $tone === 'a' ? $fitA : $fitB);
+                    $g = $place($x, $by, $pw, $ph, $fitHere);
                 @endphp
                 <g @if ($flip) transform="rotate(180 {{ $x + $pw / 2 }} {{ $by + $ph / 2 }})" @endif>
                     <clipPath id="{{ $u }}c{{ $row }}{{ $i }}"><polygon points="{{ $tri }}"/></clipPath>

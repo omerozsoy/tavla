@@ -2325,6 +2325,33 @@ export default function App() {
       if (v) root.setAttribute(`data-pt-img-${k}`, '')
       else root.removeAttribute(`data-pt-img-${k}`)
     }
+    // Tam resim modu: her hanenin kendi resmi -> hane başı CSS kuralı (data-point = 0..23 sıra).
+    // URL'ler safeImgUrl ile doğrulandı (tırnak/parantez yok); sayılar safeFit ile sınırlı.
+    {
+      let el = document.getElementById('pt-each-style') as HTMLStyleElement | null
+      const imgs = bt.pointImgs ?? {}
+      const ns = Object.keys(imgs).map(Number)
+      if (ns.length) {
+        if (!el) {
+          el = document.createElement('style')
+          el.id = 'pt-each-style'
+          document.head.appendChild(el)
+        }
+        el.textContent = ns
+          .map((n) => {
+            const f = bt.pointFits?.[n] ?? { x: 50, y: 50, zoom: 100 }
+            const tri = n % 2 ? 'var(--tri-a)' : 'var(--tri-b)'
+            const size = `calc(max(var(--col), calc(var(--tri-h) * ${f.aspect ?? 0})) * ${f.zoom / 100}) auto`
+            return `html[data-pt-each] .point[data-point="${n - 1}"]::before{background:url("${imgs[n]}") ${f.x}% ${f.y}% / ${size} no-repeat,${tri}}` +
+              `html[data-pt-each] .point.bottom[data-point="${n - 1}"]::before{clip-path:polygon(0 0,100% 0,50% 100%);transform:translateX(-50%) rotate(180deg)}`
+          })
+          .join('\n')
+        root.setAttribute('data-pt-each', '')
+      } else {
+        el?.remove()
+        root.removeAttribute('data-pt-each')
+      }
+    }
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
     // Maritime board: 12 sinyal flamasini CSS degiskeni olarak yaz. Ust/alt hane AYRI varyant
     // (--naut-<dp> = ust, --naut-<dp>-b = alt) -> motif DAIMA tabanda (rail), distort YOK.
@@ -9333,7 +9360,7 @@ export default function App() {
           coins={user?.coins ?? 0}
           board={(() => {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB }
+            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB, pointImgs: bt.pointImgs, pointFits: bt.pointFits }
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
@@ -9665,7 +9692,7 @@ export default function App() {
             initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB, pointImgs: bt.pointImgs, pointFits: bt.pointFits }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
@@ -9693,7 +9720,7 @@ export default function App() {
           <FriendGameSetup
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB }
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB, pointImgs: bt.pointImgs, pointFits: bt.pointFits }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}

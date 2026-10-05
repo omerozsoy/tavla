@@ -38,6 +38,8 @@ interface BoardOpt {
   pointImgB?: string
   pointFitA?: import('../boardThemes').PointFit
   pointFitB?: import('../boardThemes').PointFit
+  pointImgs?: Record<number, string>
+  pointFits?: Record<number, import('../boardThemes').PointFit>
 }
 
 interface Props {
@@ -240,6 +242,8 @@ export default function ProfileOverview({
                     pointImgB={equipped.pointImgB}
                     pointFitA={equipped.pointFitA}
                     pointFitB={equipped.pointFitB}
+                    pointImgs={equipped.pointImgs}
+                    pointFits={equipped.pointFits}
                     themeId={equipped.id}
                   />
                 </div>
@@ -436,6 +440,8 @@ export default function ProfileOverview({
                       pointImgB={b.pointImgB}
                       pointFitA={b.pointFitA}
                       pointFitB={b.pointFitB}
+                      pointImgs={b.pointImgs}
+                      pointFits={b.pointFits}
                       themeId={b.id}
                     />
                   </div>

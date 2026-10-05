@@ -116,6 +116,34 @@ class BoardDesignTest extends TestCase
         $this->assertEqualsWithDelta(2.5, $row['images']['fit']['odd']['aspect'], 1e-9);
     }
 
+    // Tam resim modu: her haneye ayrı resim (1..24) + hane başı yerleşim; API 'each' döner.
+    public function test_each_point_mode_images_and_api(): void
+    {
+        Storage::fake('uploads');
+        Livewire::actingAs($this->admin)->test(CreateBoardDesign::class)
+            ->fillForm([
+                'name' => 'Tam Resim', 'group' => 'mythic', 'colors' => $this->colors(), 'point_mode' => 'each',
+                'point_images' => [
+                    1 => UploadedFile::fake()->image('h1.png', 100, 300),
+                    24 => UploadedFile::fake()->image('h24.png', 300, 100),
+                ],
+            ])
+            ->set('data.point_image_fit.p24.zoom', 150)
+            ->assertSeeHtml('aria-label="Hane kırpıcı"')
+            ->call('create')->assertHasNoFormErrors();
+        $d = BoardDesign::where('name', 'Tam Resim')->firstOrFail();
+        $this->assertSame('each', $d->point_mode);
+        $this->assertSame([1, 24], array_map('intval', array_keys($d->point_images)));
+        Storage::disk('uploads')->assertExists($d->point_images[24] ?? $d->point_images['24']);
+        $this->assertEqualsWithDelta(3.0, $d->point_image_fit['p24']['aspect'], 1e-6);
+        $this->assertEquals(150, $d->point_image_fit['p24']['zoom']);
+        $row = collect($this->getJson('/api/board-designs')->json('designs'))->firstWhere('id', $d->slug);
+        $this->assertSame('each', $row['images']['mode']);
+        $this->assertSame(['1', '24'], array_map('strval', array_keys($row['images']['points'])));
+        $this->assertEquals(150, $row['images']['fit']['24']['zoom']);
+        $this->assertArrayNotHasKey('odd', $row['images']);
+    }
+
     public function test_svg_point_image_rejected(): void
     {
         Storage::fake('uploads');
