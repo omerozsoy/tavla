@@ -182,12 +182,14 @@ class ErrorJournalService
         $cats = $base()
             ->selectRaw('primary_category, count(*) decisions, '
                 .'sum(case when severity is not null then 1 else 0 end) errors, '
+                ."sum(case when severity = 'blunder' then 1 else 0 end) blunders, "
                 .'sum(case when severity is not null then equity_loss else 0 end) equity_loss')
             ->groupBy('primary_category')->get()
             ->map(fn ($r) => [
                 'category' => $r->primary_category,
                 'decisions' => (int) $r->decisions,
                 'errors' => (int) $r->errors,
+                'blunders' => (int) $r->blunders,
                 'errorRate' => (int) $r->decisions > 0 ? round((int) $r->errors / (int) $r->decisions, 4) : 0.0,
                 'equityLoss' => round((float) $r->equity_loss, 4),
             ])->values()->all();
@@ -202,7 +204,41 @@ class ErrorJournalService
             'totalEquityLoss' => round($totalLoss, 4),
             'averageEquityLoss' => round($avgLoss, 4),
             'categories' => $cats,
+            'trend' => $this->trend($base),
         ];
+    }
+
+    /**
+     * Zaman içinde hata oranı (Özet "Hata oranı" çizgi grafiği). Gerçek kararlardan gün gün;
+     * aralık 90 günü aşarsa haftalık (Pazartesi başlangıçlı) kovalara toplanır.
+     * @return array<array{date:string,decisions:int,errors:int,blunders:int,errorRate:float}>
+     */
+    private function trend(\Closure $base): array
+    {
+        $rows = $base()
+            ->selectRaw('date(played_at) d, count(*) decisions, '
+                .'sum(case when severity is not null then 1 else 0 end) errors, '
+                ."sum(case when severity = 'blunder' then 1 else 0 end) blunders")
+            ->whereNotNull('played_at')
+            ->groupBy('d')->orderBy('d')->get();
+        if ($rows->isEmpty()) {
+            return [];
+        }
+        $span = Carbon::parse($rows->first()->d)->diffInDays(Carbon::parse($rows->last()->d));
+        $buckets = [];
+        foreach ($rows as $r) {
+            $key = $span > 90 ? Carbon::parse($r->d)->startOfWeek()->toDateString() : (string) $r->d;
+            $b = $buckets[$key] ?? ['date' => $key, 'decisions' => 0, 'errors' => 0, 'blunders' => 0];
+            $b['decisions'] += (int) $r->decisions;
+            $b['errors'] += (int) $r->errors;
+            $b['blunders'] += (int) $r->blunders;
+            $buckets[$key] = $b;
+        }
+
+        return array_values(array_map(fn ($b) => $b + [
+            'errorRate' => $b['decisions'] > 0 ? round($b['errors'] / $b['decisions'], 4) : 0.0,
+            'weekly' => $span > 90,
+        ], $buckets));
     }
 
     /**

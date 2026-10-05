@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import BlunderLog from './BlunderLog'
+import { CategoryBars, ErrorTrend, SeverityDonut } from './ErrorJournalCharts'
 import ErrorDetail from './ErrorDetail'
 import { errorJournal, type EJEntry, type EJPeriod, type EJResponse, type EJSeverity } from '../api'
 
@@ -69,12 +70,6 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
 
   const s = data?.summary
   const cats = s?.categories ?? []
-  const byCat = new Map(cats.map((c) => [c.category, c]))
-  const struggles = [...cats]
-    .filter((c) => c.errors > 0)
-    .sort((a, b) => b.errorRate - a.errorRate)
-    .slice(0, 5)
-  const maxRate = Math.max(0.0001, ...struggles.map((c) => c.errorRate))
   const order = data?.categoryOrder ?? []
   const entries = data?.entries ?? []
   const weak = data?.insights?.topWeakness ?? null
@@ -195,62 +190,31 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
 
-                {/* En cok zorlandigin alanlar (errorRate'e gore, ham sayiya gore DEGIL) */}
-                {struggles.length > 0 && (
-                  <section className="ej-section">
-                    <h3 className="ej-h">{t('errorJournal.struggles')}</h3>
-                    <div className="ej-rank">
-                      {struggles.map((c) => (
-                        <button
-                          key={c.category}
-                          className="ej-rank-row"
-                          onClick={() => setCategory(c.category)}
-                        >
-                          <span className="ej-rank-label">{catLabel(c.category)}</span>
-                          <span className="ej-rank-bar">
-                            <span
-                              className="ej-rank-fill"
-                              style={{ width: `${Math.round((c.errorRate / maxRate) * 100)}%` }}
-                            />
-                          </span>
-                          <span className="ej-rank-meta">
-                            <b>{c.errors}</b> {t('errorJournal.errUnit')} · {c.decisions}{' '}
-                            {t('errorJournal.decUnit')} · <b>%{Math.round(c.errorRate * 100)}</b>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                {/* Grafikler: çizgi (zaman) + halka (derece payı) yan yana; altta kategori çubukları */}
+                <div className="ejc-row">
+                  <section className="ejc-card ejc-card-wide">
+                    <h3 className="ejc-h">
+                      {s.trend?.[0]?.weekly ? t('ejc.trendTitleWeekly') : t('ejc.trendTitle')}
+                    </h3>
+                    <p className="ejc-sub">{t('ejc.trendSub')}</p>
+                    <ErrorTrend points={s.trend ?? []} />
                   </section>
-                )}
-
-                {/* Tum kategoriler (17) */}
-                <section className="ej-section">
-                  <h3 className="ej-h">{t('errorJournal.allCategories')}</h3>
-                  <div className="ej-cats">
-                    {order.map((id) => {
-                      const c = byCat.get(id)
-                      const dec = c?.decisions ?? 0
-                      const err = c?.errors ?? 0
-                      const rate = c?.errorRate ?? 0
-                      return (
-                        <button
-                          key={id}
-                          className={`ej-cat ${dec === 0 ? 'zero' : ''} ${category === id ? 'active' : ''}`}
-                          onClick={() => setCategory(category === id ? null : id)}
-                          disabled={err === 0}
-                        >
-                          <span className="ej-cat-name">{catLabel(id)}</span>
-                          {dec === 0 ? (
-                            <span className="ej-cat-meta muted">—</span>
-                          ) : (
-                            <span className="ej-cat-meta">
-                              <b>{err}</b> {t('errorJournal.errUnit')} · %{Math.round(rate * 100)}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
+                  <section className="ejc-card">
+                    <h3 className="ejc-h">{t('ejc.sevTitle')}</h3>
+                    <p className="ejc-sub">{t('ejc.sevSub')}</p>
+                    <SeverityDonut inaccuracies={s.inaccuracies} mistakes={s.mistakes} blunders={s.blunders} />
+                  </section>
+                </div>
+                <section className="ejc-card">
+                  <h3 className="ejc-h">{t('ejc.catTitle')}</h3>
+                  <p className="ejc-sub">{t('ejc.catSub')}</p>
+                  <CategoryBars
+                    categories={cats}
+                    order={order}
+                    catLabel={catLabel}
+                    selected={category}
+                    onSelect={setCategory}
+                  />
                 </section>
 
                 {/* Son hatalar / secili kategori hatalari */}

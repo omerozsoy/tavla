@@ -149,6 +149,21 @@ class ErrorJournalTest extends TestCase
         $this->assertArrayHasKey('opponent', $e['match']);
     }
 
+    // Özet grafikleri: kategori blunder sayısı + gün gün hata oranı trendi (gerçek kararlardan).
+    public function test_summary_has_category_blunders_and_daily_trend(): void
+    {
+        $u = $this->user();
+        $svc = app(ErrorJournalService::class);
+        $svc->analyzeMatch($this->match($u), true, $this->gnubgSame());
+        \App\Models\DecisionAnalysis::where('user_id', $u->id)->where('move_index', 0)
+            ->update(['played_at' => now()->subDays(2)]);
+        $sum = $svc->summary($u, null, null);
+        $this->assertSame(1, array_sum(array_column($sum['categories'], 'blunders')));
+        $this->assertCount(2, $sum['trend']); // 2 farklı gün
+        $this->assertSame([1, 1, 1], [$sum['trend'][0]['decisions'], $sum['trend'][0]['errors'], $sum['trend'][0]['blunders']]);
+        $this->assertSame([2, 1, 0.5], [$sum['trend'][1]['decisions'], $sum['trend'][1]['errors'], $sum['trend'][1]['errorRate']]);
+    }
+
     public function test_analyze_is_idempotent(): void
     {
         $u = $this->user();

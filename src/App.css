@@ -29883,3 +29883,354 @@ select:-webkit-autofill {
 body:has(.register-overlay) .chat-panel.closed {
   z-index: 90;
 }
+
+/* ===== Hata Günlüğü grafikleri (ErrorJournalCharts.tsx) =====
+   Derece rengi: tek-ton kiremit dizisi (sıralı: küçük -> blunder), dataviz validator'dan geçti.
+   Koyu tema varsayılan: "daha çok" = daha parlak; açık temada açıktan koyuya. */
+:root {
+  --ejc-s1: #9c3e2e;
+  --ejc-s2: #d4664e;
+  --ejc-s3: #f5b09c;
+  --ejc-hot: var(--accent);
+  --ejc-cold: color-mix(in srgb, var(--muted) 40%, transparent);
+  --ejc-grid: color-mix(in srgb, var(--muted) 22%, transparent);
+}
+:root[data-theme='light'] {
+  --ejc-s1: #eba58f;
+  --ejc-s2: #c9563f;
+  --ejc-s3: #7e2416;
+}
+.ejc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 14px;
+  margin: 0 0 14px;
+}
+.ejc-card {
+  min-width: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  padding: 14px 16px 12px;
+  margin: 0 0 14px;
+}
+.ejc-row > .ejc-card {
+  margin: 0;
+}
+.ejc-h {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ejc-sub {
+  margin: 2px 0 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.ejc-empty {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  padding: 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+.ejc-tick {
+  font-size: 10.5px;
+  fill: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ejc-grid {
+  stroke: var(--ejc-grid);
+  stroke-width: 1;
+}
+/* tooltip (çizgi + çubuk ortak) */
+.ejc-tip {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, calc(-100% - 12px));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1c1a17;
+  color: #fff;
+  font-size: 0.74rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+.ejc-tip strong {
+  font-size: 0.95rem;
+}
+.ejc-tip span {
+  opacity: 0.78;
+}
+/* çizgi */
+.ejc-trend {
+  position: relative;
+  width: 100%;
+  touch-action: pan-y;
+  outline: none;
+}
+.ejc-trend svg {
+  display: block;
+  max-width: 100%;
+}
+.ejc-trend:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+  border-radius: 8px;
+}
+.ejc-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.ejc-dot {
+  fill: var(--accent);
+  stroke: var(--card-bg);
+  stroke-width: 2;
+}
+.ejc-cross {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+/* halka */
+.ejc-donut {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ejc-donut-svg {
+  width: 168px;
+  height: 168px;
+  flex: none;
+  overflow: visible;
+}
+.ejc-donut-track {
+  stroke: var(--ejc-grid);
+}
+.ejc-sev {
+  cursor: pointer;
+  stroke-linecap: butt;
+  transition: stroke-width 0.15s ease;
+}
+.ejc-sev.s1,
+.ejc-swatch.s1 {
+  stroke: var(--ejc-s1);
+  background: var(--ejc-s1);
+}
+.ejc-sev.s2,
+.ejc-swatch.s2 {
+  stroke: var(--ejc-s2);
+  background: var(--ejc-s2);
+}
+.ejc-sev.s3,
+.ejc-swatch.s3 {
+  stroke: var(--ejc-s3);
+  background: var(--ejc-s3);
+}
+.ejc-donut-num {
+  font-size: 26px;
+  font-weight: 700;
+  fill: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.ejc-donut-sub {
+  font-size: 10.5px;
+  fill: var(--muted);
+}
+.ejc-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+  flex: 1 1 170px;
+}
+.ejc-legend li {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: default;
+  outline: none;
+}
+.ejc-legend li.on,
+.ejc-legend li:focus-visible {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ejc-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.ejc-leg-label {
+  white-space: nowrap;
+}
+.ejc-leg-val {
+  white-space: nowrap;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ejc-leg-val b {
+  color: var(--text);
+}
+/* yatay çubuklar */
+.ejc-bars-axis,
+.ejc-bar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 30%) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+}
+.ejc-bars-axis {
+  margin-bottom: 2px;
+}
+.ejc-bars-scale {
+  position: relative;
+  height: 14px;
+}
+.ejc-bars-scale i {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.ejc-bars-scale i:first-child {
+  transform: none;
+}
+.ejc-bars-scale i:last-child {
+  transform: translateX(-100%);
+}
+.ejc-bars-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ejc-bar-row {
+  width: 100%;
+  padding: 6px 4px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ejc-bar-row:disabled {
+  cursor: default;
+}
+.ejc-bar-row:hover:not(:disabled),
+.ejc-bar-row:focus-visible {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  outline: none;
+}
+.ejc-bar-row.on {
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.ejc-bar-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.ejc-bar-label small {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.ejc-bar-track {
+  position: relative;
+  height: 14px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+}
+.ejc-bar-grid {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--ejc-grid);
+}
+.ejc-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0 4px 4px 0;
+  background: var(--ejc-cold);
+  transition: width 0.3s ease;
+}
+.ejc-bar-row.hot .ejc-bar-fill {
+  background: var(--ejc-hot);
+}
+.ejc-bar-tip {
+  left: 50%;
+  top: 0;
+}
+.ejc-bar-val {
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+.ejc-bar-row:not(.hot) .ejc-bar-val {
+  font-weight: 500;
+  color: var(--muted);
+}
+.ejc-note {
+  margin: 8px 4px 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+@media (max-width: 760px) {
+  .ejc-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .ejc-card {
+    padding: 12px 12px 10px;
+  }
+  /* Dar ekranda etiket çubuğun üstünde (uzun kategori adları kesilmesin) */
+  .ejc-bar-row {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    grid-template-areas: 'label val' 'track track';
+    row-gap: 4px;
+  }
+  .ejc-bar-label {
+    grid-area: label;
+  }
+  .ejc-bar-val {
+    grid-area: val;
+  }
+  .ejc-bar-track {
+    grid-area: track;
+  }
+  .ejc-bars-axis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ejc-bars-axis > span:first-child,
+  .ejc-bars-axis > span:last-child {
+    display: none;
+  }
+}

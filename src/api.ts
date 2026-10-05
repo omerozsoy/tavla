@@ -1584,6 +1584,16 @@ export interface EJCategoryStat {
   errors: number
   errorRate: number // 0..1
   equityLoss: number
+  blunders?: number
+}
+// Özet çizgi grafiği: gün (ya da >90 gün aralıkta hafta) başına hata oranı
+export interface EJTrendPoint {
+  date: string // YYYY-MM-DD (haftalıksa haftanın Pazartesi'si)
+  decisions: number
+  errors: number
+  blunders: number
+  errorRate: number // 0..1
+  weekly?: boolean
 }
 export interface EJSummary {
   gamesAnalyzed: number
@@ -1595,6 +1605,7 @@ export interface EJSummary {
   totalEquityLoss: number
   averageEquityLoss: number
   categories: EJCategoryStat[]
+  trend?: EJTrendPoint[]
 }
 export interface EJEntry {
   id: string
