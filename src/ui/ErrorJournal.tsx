@@ -13,12 +13,33 @@ const PERIODS: EJPeriod[] = ['today', '3d', '7d', '30d', 'all']
 
 // Hata Gunlugu ana ekrani (brief §28-34). Backend'in verdigi analizi gosterir;
 // equity/errorRate/classification TEKRAR HESAPLANMAZ.
+const ssGet = (k: string): string | null => {
+  try {
+    return sessionStorage.getItem('tavla.ej.' + k)
+  } catch {
+    return null
+  }
+}
+const ssSet = (k: string, v: string) => {
+  try {
+    sessionStorage.setItem('tavla.ej.' + k, v)
+  } catch {
+    /* sessiz */
+  }
+}
+
 export default function ErrorJournal({ onClose }: { onClose: () => void }) {
   const { t, lang } = useT()
   useEscape(onClose)
 
-  const [tab, setTab] = useState<'summary' | 'all'>('summary')
-  const [period, setPeriod] = useState<EJPeriod>('7d')
+  // Sekme + dönem yenilemede korunur (kaldığın yerden devam; bkz. scrollRestore.ts).
+  const [tab, setTab] = useState<'summary' | 'all'>(() => (ssGet('tab') === 'all' ? 'all' : 'summary'))
+  const [period, setPeriod] = useState<EJPeriod>(() => {
+    const p = ssGet('period')
+    return PERIODS.includes(p as EJPeriod) ? (p as EJPeriod) : '7d'
+  })
+  useEffect(() => ssSet('tab', tab), [tab])
+  useEffect(() => ssSet('period', period), [period])
   const [category, setCategory] = useState<string | null>(null)
   const [data, setData] = useState<EJResponse | null>(null)
   const [loading, setLoading] = useState(true)

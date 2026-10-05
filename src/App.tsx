@@ -1565,7 +1565,9 @@ export default function App() {
     const pathSlug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
     // Doğrudan bilgi URL'sinde önce path -> state efekti çalışmalı; ilk render'da
     // başlangıç state'i boşken adresi ana sayfaya geri yazma.
-    if (!initialPathHydratedRef.current && (initialPathRef.current.startsWith('bilgi/') || initialPathRef.current === 'sikca-sorulan-sorular')) {
+    // Genel kural: açılışta adreste bir sayfa varsa (ör. /hata-gunlugu) path -> state henüz
+    // oturmadan adresi '/'ye yazma — yenilemede sayfa ana sayfaya düşüp "en üste atıyordu".
+    if (!initialPathHydratedRef.current && initialPathRef.current !== '') {
       initialPathHydratedRef.current = true
       return
     }

@@ -128,3 +128,42 @@ test('özet grafikleri: koyu tema', async ({ page }) => {
     await page.screenshot({ path: `${SHOT}/ejc-dark.png` })
   }
 })
+
+// KULLANICI ŞİKÂYETİ: "/hata-gunlugu sayfayı yenileyince en üste atıyor; kaldığım yerden devam etmek
+// istiyorum". Yenilemede kaydırma konumu + sekme/dönem korunur (src/scrollRestore.ts).
+for (const [name, vp] of [
+  ['masaustu', { width: 1280, height: 800 }],
+  ['mobil', { width: 390, height: 844 }],
+] as const) {
+  test(`yenilemede kaldığı yerden devam (${name})`, async ({ page }) => {
+    await page.setViewportSize(vp)
+    await open(page)
+    await page.getByRole('tab', { name: '30 Gün' }).click()
+    const pos = async () =>
+      page.evaluate(() => {
+        for (const sel of ['.register-overlay.page', '.app.lobby', '.lobby-main', '.page-host', '.main', '.register-card']) {
+          const el = document.querySelector(sel) as HTMLElement | null
+          if (el && el.scrollTop > 0) return el.scrollTop
+        }
+        return window.scrollY
+      })
+    // Kategori grafiğinin ortasına kadar kaydır
+    await page.locator('.ejc-bar-row').nth(8).scrollIntoViewIfNeeded()
+    await page.mouse.wheel(0, 200)
+    // Kaydırma (yumuşak) bitene kadar bekle -> kararlı konum
+    let before = -1
+    for (let k = 0; k < 20; k++) {
+      await page.waitForTimeout(150)
+      const p = await pos()
+      if (p === before) break
+      before = p
+    }
+    await page.waitForTimeout(300)
+    expect(before).toBeGreaterThan(300)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/hata-gunlugu$/)
+    await expect.poll(pos, { timeout: 15_000 }).toBeGreaterThan(before - 40)
+    expect(Math.abs((await pos()) - before)).toBeLessThanOrEqual(40)
+    await expect(page.getByRole('tab', { name: '30 Gün' })).toHaveClass(/active/)
+  })
+}

@@ -18,10 +18,14 @@ import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
 import { installReloadDiag } from './reloadDiag.ts'
+import { installScrollRestore } from './scrollRestore.ts'
 
 // Rutbe esikleri (admin: Ayarlar > Rating Ayar) onbellekten SENKRON uygulanir -> ilk boyamada
 // dogru rutbe gorunur, esik degisiminde "yanlis rozet" flash'i olmaz.
 applyCachedRankThresholds()
+
+// Sayfa yenilemede kaldığın kaydırma konumuna dön (içerik geç yüklense bile).
+installScrollRestore()
 
 // Kurulu PWA (standalone) isareti: CSS'te `.is-standalone` ile yalniz uygulamada gorunen ogeler
 // (orn. sayfa basi "Geri"). display-mode medya sorgusu eski iOS'ta yok -> navigator.standalone da.
