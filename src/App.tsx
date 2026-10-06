@@ -4895,6 +4895,49 @@ export default function App() {
     if (prPollRef.current === token && !prDone) setPrAnalyzing(false)
   }
 
+  // RAKİP PR EMNİYET AĞI (kök fix "rakip gene yok"): sonuç ekranı açıkken rakip PR hâlâ gelmemişse
+  // matchPr'ı BAĞIMSIZ poll et. doReport içindeki tek-atış inline döngüsü (effect re-run / oda kodu
+  // yarışı / token yok) rakip değerini KAÇIRABİLİYORDU -> ekran "—"da kalıyordu (oysa DB'de hazır:
+  // rakibin kendi satırı VEYA benim gnubg_opponent_pr'ım). Bu effect, serverPr.opp null olduğu sürece
+  // (online, bot değil, oda kodu var) ~3 dk boyunca poll eder; geldiğinde serverPr.opp'u + kırılımı
+  // yazar ve oppPrPending'i kapatır. Geldi/gelmedi 3dk sonra pending kapanır (sonsuz "…" yok).
+  useEffect(() => {
+    const code = room?.code
+    if (!online || !matchOver || !mWinner || room?.bot || !code) return
+    if (!serverPr || serverPr.opp != null) return // zaten var -> poll gereksiz
+    let cancelled = false
+    setOppPrPending(true)
+    void (async () => {
+      for (let i = 0; i < 60 && !cancelled; i++) {
+        await new Promise((res) => setTimeout(res, 3000))
+        if (cancelled) return
+        try {
+          const pair = await matchPr(code)
+          if (cancelled) return
+          if (pair.opponent != null) {
+            setServerPr((prev) => ({
+              self: pair.self ?? prev?.self ?? null,
+              opp: pair.opponent,
+              checkerSelf: pair.checker_self ?? prev?.checkerSelf ?? null,
+              checkerOpp: pair.checker_opponent ?? prev?.checkerOpp ?? null,
+              cubeSelf: pair.cube_self ?? prev?.cubeSelf ?? null,
+              cubeOpp: pair.cube_opponent ?? prev?.cubeOpp ?? null,
+            }))
+            setOppPrPending(false)
+            return
+          }
+        } catch {
+          /* geçici hata -> tekrar dene */
+        }
+      }
+      if (!cancelled) setOppPrPending(false) // ~3dk geldi gelmedi -> dürüst "—" (loader sonsuz dönmesin)
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, matchOver, mWinner, room?.code, room?.bot, serverPr?.opp])
+
   // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).
   // Casual (rankedMatch=false) macta puana/lig'e etki yok; PR + hata gunlugu kalir.
   useEffect(() => {
