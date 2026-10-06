@@ -4492,6 +4492,21 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.status])
 
+  // BELLEK (Safari sekme-atma azaltma): lobide bosa dururken sinir agi ONNX session'larini serbest
+  // birak. Olcum: native reload'larin cogu oyun ekraninda WASM yukluyken -> idle'da bu belle gi
+  // tutmak iOS Safari'nin arka plan sekmeyi oldurup native reload etme baskisini artiriyordu. Idle =
+  // aktif oyun yok (matchOver / hic oynanmamis + sonuc ekrani yok) + online-playing degil + analiz
+  // modali kapali. init() mac/analiz acilinca tekrar tembel yukler. 30sn gecikme hizli lobi
+  // gecislerinde gereksiz bosalt/yeniden-yukle savrulmasini onler.
+  const hasActiveGameForMem = !matchOver && (turnsPlayed > 0 || !!gameEnd)
+  useEffect(() => {
+    if (hasActiveGameForMem) return
+    if (online && room?.status === 'playing') return
+    if (analyzerOpen) return
+    const id = window.setTimeout(() => void neuralRef.current.dispose(), 30_000)
+    return () => window.clearTimeout(id)
+  }, [hasActiveGameForMem, online, room?.status, analyzerOpen])
+
   // ---- Turnuva maci: rakip 1dk icinde GELMEZSE hukmen (walkover) kazan ----
   // Yalniz bekleyen (status='waiting') turnuva macinda calisir; opponent odaya girince
   // status 'playing' olur -> effect cleanup timer'i iptal eder. Sunucu 60sn esigini +

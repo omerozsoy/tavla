@@ -128,6 +128,33 @@ export class NeuralBot implements Engine {
     await this.init()
   }
 
+  // Bellek: ONNX session'larini (model agirliklari + ara buffer'lar) serbest birak. iOS Safari
+  // bellek baskisi altinda arka plandaki sekmeyi oldurup native reload ediyor (olcum: native
+  // discard'larin cogu oyun ekraninda, WASM yukluyken) -> lobide bosa dururken bu belle gi birak
+  // ki discard baskisi dussun. Devam eden run'i bekler (release mid-run WASM heap'i bozar); sonra
+  // init() ihtiyac olunca tekrar tembel yukler. ort runtime (ortPromise) kalir -> yeniden-yukleme ucuz.
+  async dispose(): Promise<void> {
+    try {
+      await this.runChain // in-flight run bitsin
+    } catch {
+      /* onceki run hatasi onemsiz */
+    }
+    const c = this.contact
+    const r = this.race
+    this.contact = null
+    this.race = null
+    try {
+      await c?.release()
+    } catch {
+      /* yoksay */
+    }
+    try {
+      await r?.release()
+    } catch {
+      /* yoksay */
+    }
+  }
+
   private async init(): Promise<Ort> {
     const ort = await getOrt()
     this.ort = ort
