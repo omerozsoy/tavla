@@ -50,7 +50,6 @@ import {
   IconSearch,
   IconMessageCircle,
   IconUser,
-  IconCoin,
   IconCrown,
   IconCrownFilled,
   IconTicket,
@@ -283,7 +282,7 @@ const MAP: Record<IconName, TablerIcon> = {
   search: IconSearch,
   chat: IconMessageCircle,
   user: IconUser,
-  coin: IconCoin,
+  coin: IconCoins, // "$"'li IconCoin yerine dolar-sız yığın-coin (site genelinde dolar işareti istenmiyor)
   banknotes: IconCash,
   crown: IconCrown,
   'crown-simple': IconCrown,
