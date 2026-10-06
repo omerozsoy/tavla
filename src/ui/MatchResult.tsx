@@ -58,7 +58,6 @@ interface Props {
   onHome: () => void
   /** Turnuva maci: verilirse rovans/yeni mac gizlenir, "Turnuva Lobisi" gosterilir. */
   onTournamentLobby?: () => void
-  onStats: () => void
   onAnalysis: () => void
   hasReport: boolean
   matchCode?: string | null // online maç kodu (kopyalanabilir; hata bildirimi/destek için)
@@ -121,7 +120,6 @@ export default function MatchResult({
   onRematchDecline,
   onHome,
   onTournamentLobby,
-  onStats,
   onAnalysis,
   hasReport,
   matchCode,
@@ -353,11 +351,9 @@ export default function MatchResult({
 
         {hasReport && (
           <div className="mr-actions mr-report-actions">
+            {/* Tek "Maç Özeti" butonu: Analiz + İstatistik aynı raporu açıyordu -> birleştirildi. */}
             <Button variant="outline" onClick={onAnalysis}>
-              <Icon name="search" /> {t('mr.analysis')}
-            </Button>
-            <Button variant="outline" onClick={onStats}>
-              <Icon name="chart" /> {t('mr.stats')}
+              <Icon name="chart" /> {t('ms.btn')}
             </Button>
           </div>
         )}

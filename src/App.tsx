@@ -10604,7 +10604,6 @@ export default function App() {
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}
           hasReport={matchLog.length > 0}
-          onStats={() => setResultView('stats')}
           onAnalysis={() => setResultView('analysis')}
           matchCode={online ? (room?.code ?? null) : null}
           endReason={online ? endReason : null}

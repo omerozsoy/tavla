@@ -610,7 +610,6 @@ export default function Spectate({
             onNewMatch={onClose}
             onRematch={onClose}
             onHome={onClose}
-            onStats={openSummary}
             onAnalysis={openSummary}
             hasReport
             matchCode={code}
