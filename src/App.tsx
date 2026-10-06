@@ -153,6 +153,7 @@ import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
 import { Icon } from './ui/Icon'
+import ConfirmModal from './ui/ConfirmModal'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
@@ -1636,6 +1637,9 @@ export default function App() {
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   // Cevrimici listeden "kilic" ile secilen rakip -> FriendGameSetup davet modu (oyun turu/sure sec)
   const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
+  // "Oyun Arayanlar" para/bahis onayı: native window.confirm yerine uygulama-içi stilli modal
+  // (markasız tarayıcı popup'ı yerine). msg = onay metni, run = onaylanınca çalışacak eşleşme.
+  const [seekerConfirm, setSeekerConfirm] = useState<{ msg: string; run: () => void } | null>(null)
   // Hedefli davetle acilan bekleme odasinda rakip adi: doluysa Lobby bekleme ekrani "kod
   // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
   // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
@@ -6818,23 +6822,34 @@ export default function App() {
     }
     const stakeList = (s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]).filter((n) => n > 0)
     const maxStake = stakeList.length > 0 ? Math.max(...stakeList) : 0
-    // Para/bahis maci: tek tiklamayla coin bagladigini acikca ONAYLAT (footgun degil).
-    if (s.bet_pct > 0 && !window.confirm(t('seekers.confirmPct', { pct: s.bet_pct }))) return
-    if (s.bet_pct === 0 && maxStake > 0 && !window.confirm(t('seekers.confirmStake', { coins: maxStake }))) return
-
-    const targets = s.targets && s.targets.length > 0 ? s.targets : [1]
-    targetsRef.current = targets
-    onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
-    minRatingRef.current = 0
-    betPctRef.current = s.bet_pct || 0
-    stakesRef.current = stakeList.length > 0 ? stakeList : null
-    stakeRef.current = maxStake
-    setTimeControl(s.time_control)
-    clockRef.current = CLOCK_PRESETS[s.time_control]
-    mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
-    setHome(false)
-    setMode('online')
-    handleMatchmake(s.time_control) // state henuz stale -> temposu override et
+    const proceed = () => {
+      const targets = s.targets && s.targets.length > 0 ? s.targets : [1]
+      targetsRef.current = targets
+      onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
+      minRatingRef.current = 0
+      betPctRef.current = s.bet_pct || 0
+      stakesRef.current = stakeList.length > 0 ? stakeList : null
+      stakeRef.current = maxStake
+      setTimeControl(s.time_control)
+      clockRef.current = CLOCK_PRESETS[s.time_control]
+      mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
+      setHome(false)
+      setMode('online')
+      handleMatchmake(s.time_control) // state henuz stale -> temposu override et
+    }
+    // Para/bahis maci: tek tiklamayla coin bagladigini acikca ONAYLAT (footgun degil). Markasiz
+    // native window.confirm yerine uygulama-ici stilli modal (seekerConfirm) -> proceed onayla calisir.
+    const msg =
+      s.bet_pct > 0
+        ? t('seekers.confirmPct', { pct: s.bet_pct })
+        : maxStake > 0
+          ? t('seekers.confirmStake', { coins: maxStake })
+          : null
+    if (msg) {
+      setSeekerConfirm({ msg, run: proceed })
+      return
+    }
+    proceed()
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
@@ -10042,6 +10057,19 @@ export default function App() {
               onJoin={handleJoinSeeker}
               onInvite={user ? handleInviteFriend : undefined}
             />
+            {seekerConfirm && (
+              <ConfirmModal
+                icon="coin"
+                title={t('seekers.title')}
+                message={seekerConfirm.msg}
+                onConfirm={() => {
+                  const run = seekerConfirm.run
+                  setSeekerConfirm(null)
+                  run()
+                }}
+                onCancel={() => setSeekerConfirm(null)}
+              />
+            )}
             {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">
               <OnlinePlayersPanel

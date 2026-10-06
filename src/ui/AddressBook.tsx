@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import Loading from './Loading'
+import ConfirmModal from './ConfirmModal'
 import { useToast } from './Toast'
 import { getAddresses, createAddress, updateAddress, deleteAddress, type Address, type AddressInput } from '../api'
 import { PROVINCES } from '../provinces'
@@ -21,6 +22,7 @@ export default function AddressBook() {
   const [list, setList] = useState<Address[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Editing>(null)
+  const [delTarget, setDelTarget] = useState<Address | null>(null) // silme onayı (uygulama-içi modal)
 
   const load = () => {
     setLoading(true)
@@ -34,8 +36,7 @@ export default function AddressBook() {
   const shipping = list.filter((a) => a.type === 'shipping')
   const billing = list.filter((a) => a.type === 'billing')
 
-  async function remove(a: Address) {
-    if (!window.confirm(`"${a.title || a.name}" adresini sil?`)) return
+  async function runRemove(a: Address) {
     try {
       await deleteAddress(a.id)
       notify.success('Adres silindi.')
@@ -96,7 +97,7 @@ export default function AddressBook() {
                 <button type="button" onClick={() => setEditing({ mode: 'edit', addr: a })} title="Düzenle">
                   <Icon name="pencil" size={15} />
                 </button>
-                <button type="button" onClick={() => remove(a)} title="Sil">
+                <button type="button" onClick={() => setDelTarget(a)} title="Sil">
                   <Icon name="trash" size={15} />
                 </button>
               </div>
@@ -116,6 +117,22 @@ export default function AddressBook() {
           {group('Teslimat Adresleri', 'shipping', shipping)}
           {group('Fatura Adresleri', 'billing', billing)}
         </>
+      )}
+      {delTarget && (
+        <ConfirmModal
+          icon="trash"
+          destructive
+          title="Adresi sil"
+          message={`"${delTarget.title || delTarget.name}" adresini silmek istiyor musun?`}
+          confirmLabel="Sil"
+          cancelLabel="Vazgeç"
+          onConfirm={() => {
+            const a = delTarget
+            setDelTarget(null)
+            runRemove(a)
+          }}
+          onCancel={() => setDelTarget(null)}
+        />
       )}
     </section>
   )

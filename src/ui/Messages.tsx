@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { type IconName } from './Icon'
 import SocialTabs, { type SocialTab } from './SocialTabs'
+import ConfirmModal from './ConfirmModal'
 
 interface Props {
   focusUserId?: number | null // acilirken dogrudan bu arkadasin konusmasini ac (NOTIF_ID -> Bildirimler)
@@ -148,6 +149,14 @@ export default function Messages({
   const [search, setSearch] = useState('') // sol listede sohbet arama
   const [pane, setPane] = useState<'chats' | 'requests'>('chats') // sol liste: sohbetler / istekler
   const [menuFor, setMenuFor] = useState<number | null>(null) // kebab menüsü açık olan sohbet (user.id)
+  // Uygulama-içi onay penceresi (native window.confirm yerine): onaylanınca run() çalışır.
+  const [confirmBox, setConfirmBox] = useState<null | {
+    title: string
+    message: string
+    icon?: IconName
+    destructive?: boolean
+    run: () => void
+  }>(null)
   const [activeRequest, setActiveRequest] = useState(false) // aktif konusma benim onayimi bekleyen istek mi
   const listEndRef = useRef<HTMLDivElement>(null)
   const logRef = useRef<HTMLDivElement>(null) // sohbet log kaydırma kabı (en alta indir)
@@ -168,32 +177,46 @@ export default function Messages({
   }, [])
 
   // Kebab: sohbeti sil (KULLANICIYA ÖZEL gizleme; karşı taraf etkilenmez, yeni mesajda geri döner).
-  async function handleDeleteConversation(id: number) {
+  function handleDeleteConversation(id: number) {
     setMenuFor(null)
-    if (!window.confirm(t('dm.convDeleteConfirm'))) return
-    try {
-      await deleteConversation(id)
-      if (activeId === id) { setActiveId(null); setMessages([]) }
-      refreshThreads()
-      toast.success(t('dm.convDeleted'))
-    } catch (err) {
-      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
-    }
+    setConfirmBox({
+      title: t('dm.convDelete'),
+      message: t('dm.convDeleteConfirm'),
+      icon: 'trash',
+      destructive: true,
+      run: async () => {
+        try {
+          await deleteConversation(id)
+          if (activeId === id) { setActiveId(null); setMessages([]) }
+          refreshThreads()
+          toast.success(t('dm.convDeleted'))
+        } catch (err) {
+          toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+        }
+      },
+    })
   }
 
   // Kebab: kullanıcıyı blokla / bloğu kaldır (iki yönlü mesaj engeli).
-  async function handleBlockToggle(id: number, blocked: boolean) {
+  function handleBlockToggle(id: number, blocked: boolean) {
     setMenuFor(null)
-    if (!blocked && !window.confirm(t('dm.blockConfirm'))) return
-    try {
-      if (blocked) await unblockUser(id)
-      else await blockUser(id)
-      if (activeId === id) loadThread(id, true)
-      refreshThreads()
-      toast.success(blocked ? t('dm.unblocked') : t('dm.blocked'))
-    } catch (err) {
-      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+    const run = async () => {
+      try {
+        if (blocked) await unblockUser(id)
+        else await blockUser(id)
+        if (activeId === id) loadThread(id, true)
+        refreshThreads()
+        toast.success(blocked ? t('dm.unblocked') : t('dm.blocked'))
+      } catch (err) {
+        toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+      }
     }
+    // Bloğu kaldırma onaysız (geri alma); bloklama onaylı (iki yönlü mesaj engeli).
+    if (!blocked) {
+      setConfirmBox({ title: t('dm.block'), message: t('dm.blockConfirm'), icon: 'ban', destructive: true, run })
+      return
+    }
+    run()
   }
 
   // onRead prop'u her render'da yeni gelebilir (App inline arrow) -> ref'te tut ki
@@ -345,17 +368,25 @@ export default function Messages({
   }
 
   // Yonetici: bir mesaji sil. Onay iste -> API -> listeden dus + baslik/thread tazele.
-  async function doDelete(messageId: number) {
+  function doDelete(messageId: number) {
     if (activeId == null || messageId < 0) return // iyimser (henuz sunucuda yok) mesaji atla
-    if (!window.confirm(t('dm.deleteConfirm'))) return
-    try {
-      await deleteMessage(activeId, messageId)
-      pendingRef.current = pendingRef.current.filter((x) => x.id !== messageId)
-      setMessages((m) => m.filter((x) => x.id !== messageId))
-      refreshThreads()
-    } catch (err) {
-      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.deleteFail'))
-    }
+    const aid = activeId // onay sirasinda aktif sohbet degisirse dogru odaya sil
+    setConfirmBox({
+      title: t('dm.delete'),
+      message: t('dm.deleteConfirm'),
+      icon: 'trash',
+      destructive: true,
+      run: async () => {
+        try {
+          await deleteMessage(aid, messageId)
+          pendingRef.current = pendingRef.current.filter((x) => x.id !== messageId)
+          setMessages((m) => m.filter((x) => x.id !== messageId))
+          refreshThreads()
+        } catch (err) {
+          toast.error(err instanceof ApiError && err.message ? err.message : t('dm.deleteFail'))
+        }
+      },
+    })
   }
 
   // Mesaj istegini kabul et: konusma normal gelen kutusuna gecer, sohbetler sekmesinde acik kalir.
@@ -372,16 +403,24 @@ export default function Messages({
   }
 
   // Mesaj istegini reddet: konusma listeden kalkar, karsi taraf tekrar yazamaz.
-  async function doDecline() {
+  function doDecline() {
     if (activeId == null || activeId === NOTIF_ID) return
-    if (!window.confirm(t('dm.declineConfirm'))) return
-    try {
-      await declineRequest(activeId)
-      setActiveId(null)
-      refreshThreads()
-    } catch (err) {
-      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.reqFail'))
-    }
+    const aid = activeId
+    setConfirmBox({
+      title: t('dm.decline'),
+      message: t('dm.declineConfirm'),
+      icon: 'ban',
+      destructive: true,
+      run: async () => {
+        try {
+          await declineRequest(aid)
+          setActiveId(null)
+          refreshThreads()
+        } catch (err) {
+          toast.error(err instanceof ApiError && err.message ? err.message : t('dm.reqFail'))
+        }
+      },
+    })
   }
 
   // Sol liste iki bolme: normal sohbetler ve onay bekleyen istekler.
@@ -393,6 +432,20 @@ export default function Messages({
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      {confirmBox && (
+        <ConfirmModal
+          title={confirmBox.title}
+          message={confirmBox.message}
+          icon={confirmBox.icon}
+          destructive={confirmBox.destructive}
+          onConfirm={() => {
+            const run = confirmBox.run
+            setConfirmBox(null)
+            run()
+          }}
+          onCancel={() => setConfirmBox(null)}
+        />
+      )}
       <div className="register-card messages-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />

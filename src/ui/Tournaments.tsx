@@ -26,6 +26,7 @@ import {
   ApiError,
 } from '../api'
 import { Button } from '@/components/ui/button'
+import ConfirmModal from './ConfirmModal'
 import { Sound } from '../sound'
 
 // SEO-dostu URL: /online-turnuvalar/{isim-slug}-{id}. Id sonda kalir -> derin link cozumu
@@ -130,6 +131,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   const [detailReload, setDetailReload] = useState(0)
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState<null | 'join' | 'leave'>(null) // katıl/çık onay dialogu
+  const [dqTarget, setDqTarget] = useState<null | { id: number; userId: number; name: string }>(null) // diskalifiye onayı
   // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
   // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
   const busyRef = useRef(false)
@@ -319,9 +321,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     }
   }
 
-  // Diskalifiye (yonetici): oyuncuyu turnuvadan cikar. window.confirm yeterli (nadir yonetici islemi).
-  async function disqualify(id: number, userId: number, name: string) {
-    if (!window.confirm(t('tourn.dqConfirm', { name }))) return
+  // Diskalifiye (yonetici): oyuncuyu turnuvadan cikar. Onay uygulama-ici modal (dqTarget).
+  function disqualify(id: number, userId: number, name: string) {
+    setDqTarget({ id, userId, name })
+  }
+  async function runDisqualify(id: number, userId: number) {
     mutSeq.current++
     setBusy(true)
     try {
@@ -991,6 +995,21 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               )}
             </div>
           </div>
+        )}
+        {dqTarget && (
+          <ConfirmModal
+            icon="ban"
+            destructive
+            title={t('tourn.disqualify')}
+            message={t('tourn.dqConfirm', { name: dqTarget.name })}
+            confirmLabel={t('tourn.disqualify')}
+            onConfirm={() => {
+              const { id, userId } = dqTarget
+              setDqTarget(null)
+              runDisqualify(id, userId)
+            }}
+            onCancel={() => setDqTarget(null)}
+          />
         )}
       </div>
     )
