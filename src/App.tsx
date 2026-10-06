@@ -616,6 +616,7 @@ interface RoomState {
   oppRating: number | null
   oppAvatar: string | null
   oppFrame: string | null
+  oppCountry?: string | null // rakip ülke kodu -> isim yaninda minik bayrak
   oppPremium?: boolean // rakip premium mi -> isim yaninda PREMIUM
   oppId?: number | null // rakip user id (herkese açık profil modalı için; misafir=null)
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
@@ -5392,6 +5393,7 @@ export default function App() {
                 oppRating: r.slot === 'p1' ? rv.p2_rating : rv.p1_rating,
                 oppAvatar: r.slot === 'p1' ? rv.p2_avatar : rv.p1_avatar,
                 oppFrame: r.slot === 'p1' ? (rv.p2_frame ?? null) : (rv.p1_frame ?? null),
+                oppCountry: r.slot === 'p1' ? (rv.p2_country ?? null) : (rv.p1_country ?? null),
                 oppPremium: r.slot === 'p1' ? rv.p2_premium : rv.p1_premium,
                 oppId: r.slot === 'p1' ? (rv.p2_user_id ?? null) : (rv.p1_user_id ?? null),
                 status: rv.status,
@@ -7748,6 +7750,7 @@ export default function App() {
       ? botPersonaActive.avatar
       : online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
+    country: online ? (myColor === 'black' ? (profile.country || null) : (room?.oppCountry ?? null)) : null,
     // Bot ise (persona dahil) isBot=true -> avatar yoksa robot ikonu + seviye alt-satiri (Sidebar
     // seviye 'sub'unu yalniz isBot'ta cizer). Persona'da avatarUrl dolu -> gorsel gosterilir.
     isBot: botMatch, // bot ise robot ikonu + seviye alt-satırı
@@ -7774,6 +7777,7 @@ export default function App() {
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
+    country: online ? (myColor === 'white' ? (profile.country || null) : (room?.oppCountry ?? null)) : (profile.country || null),
     // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli).
     // Anlık PR TAHMİNİ (oyun-içi, yalnız pvb + menüden açık): yerel estimate; Sidebar "~PR"
     // tahmin etiketiyle gösterir. RESMİ/kesin PR maç sonu gnubg (sonuç ekranı + analiz).

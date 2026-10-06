@@ -1848,12 +1848,14 @@ export interface RoomView {
   p1_rating: number | null
   p1_avatar: string | null
   p1_frame?: string | null
+  p1_country?: string | null
   p1_premium?: boolean
   p1_user_id?: number | null // herkese açık profil için (misafir=null)
   p2_name: string | null
   p2_rating: number | null
   p2_avatar: string | null
   p2_frame?: string | null
+  p2_country?: string | null
   p2_premium?: boolean
   p2_user_id?: number | null
   state: unknown

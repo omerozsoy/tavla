@@ -91,6 +91,12 @@
   }
 }
 
+/* Isim yani minik ulke bayragi: isimle ayni satirda, dikey ortali. */
+.player-name .player-flag {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 /* Sira gostergesi: avatari saran kap; icteki avatarin margin'ini kap devralir.
    TEK BOYUT KAYNAGI: --pc-av (varsayilan 84px, var() FALLBACK ile — .sidebar'a taban DEGER
    YAZMIYORUZ ki App.css'teki kompakt @media override'lari kaynak-sirasi yuzunden EZILMESIN).

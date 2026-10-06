@@ -257,7 +257,7 @@ class Room extends Model
         // plan_active accessor -> premium (isim yaninda PREMIUM; oyun-ici rakip + Spectate).
         $ids = array_values(array_filter([$this->p1_user_id, $this->p2_user_id]));
         $users = $ids
-            ? User::whereIn('id', $ids)->get(['id', 'avatar_frame', 'plan', 'plan_until'])->keyBy('id')
+            ? User::whereIn('id', $ids)->get(['id', 'avatar_frame', 'plan', 'plan_until', 'country'])->keyBy('id')
             : collect();
         $prem = fn ($uid) => $uid && isset($users[$uid]) ? $users[$uid]->plan_active !== 'free' : false;
         $clientServerMatch = $this->server_match;
@@ -280,6 +280,7 @@ class Room extends Model
             'p1_rating' => $this->p1_rating,
             'p1_avatar' => $this->p1_avatar,
             'p1_frame' => $this->p1_user_id && isset($users[$this->p1_user_id]) ? $users[$this->p1_user_id]->avatar_frame : null,
+            'p1_country' => $this->p1_user_id && isset($users[$this->p1_user_id]) ? $users[$this->p1_user_id]->country : null,
             'p1_premium' => $prem($this->p1_user_id),
             // Oyun-içi/izleme: avatara tıklayınca herkese açık profili aç (misafirde null).
             'p1_user_id' => $this->p1_user_id,
@@ -287,6 +288,7 @@ class Room extends Model
             'p2_rating' => $this->p2_rating,
             'p2_avatar' => $this->p2_avatar,
             'p2_frame' => $this->p2_user_id && isset($users[$this->p2_user_id]) ? $users[$this->p2_user_id]->avatar_frame : null,
+            'p2_country' => $this->p2_user_id && isset($users[$this->p2_user_id]) ? $users[$this->p2_user_id]->country : null,
             'p2_premium' => $prem($this->p2_user_id),
             'p2_user_id' => $this->p2_user_id,
             'state' => $this->state,

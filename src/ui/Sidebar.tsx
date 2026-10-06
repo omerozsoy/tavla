@@ -3,6 +3,7 @@ import './sidebar.css'
 import { Icon } from './Icon'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
+import { CountryFlag } from './Flag'
 import { useT } from '../i18n'
 
 // Anlik PR degisim yonu: son harekette PR yukseldi (kotu) mi dustu (iyi) mi?
@@ -42,6 +43,7 @@ interface PlayerInfo {
   rating?: number | null
   avatarUrl?: string | null
   frame?: string | null
+  country?: string | null // isim yaninda minik ulke bayragi
   isBot?: boolean // YZ rakip -> avatar yoksa emoji yerine robot ikonu
   pr?: number | null // anlik PR (performans reytingi); null ise gizli
   prEstimate?: boolean // true: oyun-içi TAHMİN (yerel); "~PR" + not gösterilir (kesin PR maç sonu gnubg)
@@ -112,6 +114,7 @@ function Name({ p }: { p: PlayerInfo }) {
     <div className="player-name-wrap">
       <div className="player-name">
         {p.name}
+        {p.country && <CountryFlag code={p.country} size={16} className="player-flag" />}
         {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
       </div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
