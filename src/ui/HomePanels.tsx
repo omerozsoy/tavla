@@ -497,7 +497,7 @@ export function OnlinePlayersPanel({
                     // Oyun kabul etmiyor -> davet edilemez; "Oyna" butonu yerine kırmızı nokta.
                     <span className="online-actions">
                       <span className="online-busy" title={t('online.st.busy')} aria-label={t('online.st.busy')}>
-                        <Icon name="warning-circle" size={34} weight="fill" />
+                        <Icon name="warning-circle" size={28} weight="fill" />
                       </span>
                     </span>
                   ) : null}

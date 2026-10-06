@@ -11900,13 +11900,13 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 30px;
   display: block;
 }
-/* "Oyun kabul etmiyor" -> belirgin kırmızı dolu uyarı ikonu (davet edilemez işareti). */
+/* "Oyun kabul etmiyor" -> kırmızı dolu uyarı ikonu; "Oyna" butonuyla aynı 32px footprint. */
 .online-busy {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   color: #ef4444;
 }
 .online-pdot {
