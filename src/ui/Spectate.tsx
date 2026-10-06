@@ -96,7 +96,10 @@ export default function Spectate({
         const r = await showRoom(code, verRef.current >= 0 ? verRef.current : undefined)
         if (!alive) return
         if (r === null) return // degismedi
-        verRef.current = r.version
+        // SINCE = backend'in "degisti mi" kiyasladigi EFEKTIF surum. Otoriter odada bu server_version'dir
+        // (legacy `version` otoriter akista ARTMAZ -> hep 0 -> since=0 -> ASLA 204/delta -> her poll
+        // 19KB tam state tasirdi). Oyuncu poll'u (App.tsx appliedServerVersionRef) zaten boyle yapar.
+        verRef.current = r.authoritative ? (r.server_version ?? r.version) : r.version
         setRv(r)
         if (r.status === 'finished') {
           misses++
