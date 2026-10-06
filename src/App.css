@@ -3913,6 +3913,22 @@ button[aria-disabled='true'],
   flex-direction: column;
   gap: 20px;
 }
+/* Takvim ustunde: TAVLATV bayragi ne demek aciklama notu */
+.event-tvflag-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.event-tvflag-note .event-tvflag-logo {
+  flex: 0 0 auto;
+}
 .event-month-title {
   font-size: 0.9rem;
   font-weight: 400;

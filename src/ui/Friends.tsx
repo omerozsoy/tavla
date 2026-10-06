@@ -144,7 +144,7 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
                   <div key={f.id} className="friend-row">
                     {identity(f)}
                     <span className="friend-flag">
-                      <CountryFlag code={f.country} size={26} />
+                      <CountryFlag code={f.country} size={22} />
                     </span>
                     <span className="friend-actions">
                       <Button variant="default" size="icon" onClick={() => doAccept(f.id)} aria-label="Kabul">
@@ -172,7 +172,7 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
                     <span className={`friend-dot ${f.online ? 'on' : ''}`} title={f.online ? t('friends.online') : t('friends.offline')} />
                     {identity(f)}
                     <span className="friend-flag">
-                      <CountryFlag code={f.country} size={26} />
+                      <CountryFlag code={f.country} size={22} />
                     </span>
                     <span className="friend-actions">
                       {onMessage && (
