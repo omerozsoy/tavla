@@ -15891,7 +15891,7 @@ button.acct-row-logout:hover:not(:disabled) {
   animation: presence-pulse 1.5s ease-in-out infinite;
 }
 .presence-dot.is-offline {
-  background: #ef4444;
+  background: #9ca3af;
   opacity: 0.75;
 }
 @keyframes presence-pulse {
