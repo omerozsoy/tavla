@@ -37,6 +37,7 @@ class AnalysisOrchestrator
         $per = [];
         $reasons = ['no_content' => 0, 'gnubg_null' => 0, 'no_match' => 0];
         $firstSkip = null;
+        $jobs = []; // PR HIZLANDIRMA: önce TÜM kararları topla, sonra havuza PARALEL analiz et (aşağıda)
 
         foreach ($log as $logIndex => $e) {
             if (($e['player'] ?? null) !== $player) {
@@ -80,7 +81,16 @@ class AnalysisOrchestrator
                 $structured['cube'] = ['value' => (int) ($mctx['cube'] ?? 1), 'owner' => $mctx['cubeOwner'] ?? null];
                 $structured['crawford'] = (bool) ($mctx['crawford'] ?? false);
             }
-            $res = $this->gnubg->analyzeBackground($structured);
+            $jobs[$logIndex] = ['s' => $structured, 'e' => $e];
+        }
+
+        // TÜM kararları havuza PARALEL analiz et -> tek maçın ~60 kararı sıralı (~15sn) yerine
+        // instance sayısı kadar hızlı (6 instance ≈ 6×). Sonuçlar log sırasında işlenir (PR aynı).
+        $results = $this->gnubg->analyzeBackgroundBatch(array_map(fn ($j) => $j['s'], $jobs));
+
+        foreach ($jobs as $logIndex => $job) {
+            $e = $job['e'];
+            $res = $results[$logIndex] ?? null;
             if ($res === null) {
                 $skipped++;
                 $reasons['gnubg_null']++;
@@ -168,8 +178,9 @@ class AnalysisOrchestrator
         $evaluated = 0;
         $skipped = 0;
         $per = [];
+        $jobs = []; // PR HIZLANDIRMA: önce TÜM küp kararlarını topla, sonra havuza PARALEL analiz et
 
-        foreach ($log as $e) {
+        foreach ($log as $logIndex => $e) {
             if (($e['player'] ?? null) !== $player) {
                 continue;
             }
@@ -198,8 +209,16 @@ class AnalysisOrchestrator
                 $structured['cube'] = ['value' => (int) ($mctx['cube'] ?? 1), 'owner' => $mctx['cubeOwner'] ?? null];
                 $structured['crawford'] = (bool) ($mctx['crawford'] ?? false);
             }
-            $res = $this->gnubg->analyzeBackground($structured);
-            $eq = $res['cube']['equities'] ?? null;
+            $jobs[$logIndex] = ['s' => $structured, 'chosen' => $chosen];
+        }
+
+        // Küp kararlarını da havuza PARALEL analiz et (checker ile aynı mantık; PR değişmez).
+        $results = $this->gnubg->analyzeBackgroundBatch(array_map(fn ($j) => $j['s'], $jobs));
+
+        foreach ($jobs as $logIndex => $job) {
+            $chosen = $job['chosen'];
+            $res = $results[$logIndex] ?? null;
+            $eq = is_array($res) ? ($res['cube']['equities'] ?? null) : null;
             if (! is_array($eq) || ! isset($eq['noDouble'], $eq['doubleTake'], $eq['doublePass'])) {
                 $skipped++;
 

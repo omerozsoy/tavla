@@ -7,6 +7,24 @@ use App\Services\GnuBg\GnuBgClient;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * Test yardımcısı: Orchestrator artık analyzeBackgroundBatch() (paralel) çağırıyor; sahteler
+ * analyzeBackground()'u ezdiği için batch'i ona (log sırasında) delege ederiz -> array_shift
+ * sıralı sahteler bozulmadan çalışır.
+ */
+trait FakeGnubgBatch
+{
+    public function analyzeBackgroundBatch(array $positions): array
+    {
+        $out = [];
+        foreach ($positions as $k => $p) {
+            $out[$k] = $this->analyzeBackground($p);
+        }
+
+        return $out;
+    }
+}
+
+/**
  * AnalysisOrchestrator::checkerPr XG mantığını sunucu/gnubg GEREKMEDEN doğrular.
  * GnuBgClient sahte (canned /analyze yanıtları) ile değiştirilir. Orchestrator arka plan havuzunu
  * (analyzeBackground) kullandığı için sahteler o metodu ezer.
@@ -28,6 +46,8 @@ class AnalysisOrchestratorTest extends TestCase
     {
         $fake = new class extends GnuBgClient
         {
+            use FakeGnubgBatch;
+
             public array $responses = [];
 
             public function analyzeBackground(array $position): ?array
@@ -62,6 +82,8 @@ class AnalysisOrchestratorTest extends TestCase
     {
         $fake = new class extends GnuBgClient
         {
+            use FakeGnubgBatch;
+
             public function analyzeBackground(array $position): ?array
             {
                 return null; // gnubg erişilemez
@@ -81,6 +103,8 @@ class AnalysisOrchestratorTest extends TestCase
         // Değerlendirilen var ama hepsi obvious (sayılmaz) -> strict null, loose devreye girer, PR asla null.
         $fake = new class extends GnuBgClient
         {
+            use FakeGnubgBatch;
+
             public function analyzeBackground(array $position): ?array
             {
                 return ['result' => ['hint' => [['move' => 'a', 'equity' => 0.10], ['move' => 'b', 'equity' => 0.0999]]],
@@ -101,6 +125,8 @@ class AnalysisOrchestratorTest extends TestCase
     {
         $fake = new class extends GnuBgClient
         {
+            use FakeGnubgBatch;
+
             public array $captured = [];
 
             public function analyzeBackground(array $position): ?array
@@ -131,6 +157,8 @@ class AnalysisOrchestratorTest extends TestCase
         // Örnek gnubg cube analizi: noDouble +0.385, doubleTake +0.301, doublePass +1.000.
         return new class extends GnuBgClient
         {
+            use FakeGnubgBatch;
+
             public function analyzeBackground(array $position): ?array
             {
                 return ['cube' => ['equities' => ['noDouble' => 0.385, 'doubleTake' => 0.301, 'doublePass' => 1.000]]];

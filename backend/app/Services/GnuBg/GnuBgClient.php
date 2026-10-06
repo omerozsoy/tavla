@@ -186,6 +186,82 @@ class GnuBgClient
         return $this->tryAnalyze(array_merge($bg, $fallback), $position);
     }
 
+    /**
+     * TOPLU ARKA PLAN analiz (PR HIZLANDIRMA): N pozisyonu arka plan havuzuna PARALEL dağıtır.
+     * Eskiden AnalysisOrchestrator her kararı SIRAYLA analyzeBackground() ile çağırıyordu -> tek maçın
+     * ~60 kararı tek instance'ta arka arkaya (~0.25sn × 60 ≈ 15sn). Burada tüm kararları Http::pool ile
+     * AYNI ANDA, round-robin ile havuzdaki instance'lara dağıtırız -> gnubg'ler paralel çalışır
+     * (her biri tek-thread, kendi kuyruğunu sıralı işler) -> ~ceil(N / instance) tur ≈ 6 instance'ta ~6×.
+     * Dönüş: GİRİŞLE AYNI anahtarlı dizi; her biri analyze JSON'u ya da null. Başarısız/boş yanıtlar
+     * SIRAYLA failover ile (analyzeBackground) telafi edilir (nadir; instance down). PR matematiği
+     * DEĞİŞMEZ — yalnız çağrılar paralelleşir.
+     *
+     * @param  array<int|string,array>  $positions
+     * @return array<int|string,?array>
+     */
+    public function analyzeBackgroundBatch(array $positions): array
+    {
+        if ($positions === []) {
+            return [];
+        }
+        $bg = $this->backgroundBases();
+        if ($bg === []) {
+            $bg = $this->foregroundBases(); // izolasyon yapılandırılmamış -> ön planı kullan
+        }
+        if ($bg === []) {
+            // hiç instance yok -> tekil sıralı (geriye dönük)
+            $out = [];
+            foreach ($positions as $k => $p) {
+                $out[$k] = $this->analyzeBackground($p);
+            }
+
+            return $out;
+        }
+
+        $n = count($bg);
+        $secret = (string) config('gnubg.secret');
+        $timeout = (int) config('gnubg.timeout', 20);
+
+        // Tüm istekleri AYNI ANDA aç (curl_multi); her biri round-robin bir instance'a gider.
+        $responses = Http::pool(function ($pool) use ($positions, $bg, $n, $secret, $timeout) {
+            $i = 0;
+            foreach ($positions as $k => $p) {
+                $base = rtrim($bg[$i % $n], '/');
+                $i++;
+                $pool->as((string) $k)
+                    ->timeout($timeout)
+                    ->withHeaders(['x-gnubg-secret' => $secret])
+                    ->acceptJson()
+                    ->post($base.'/analyze', $p);
+            }
+        });
+
+        $out = [];
+        $failed = [];
+        foreach ($positions as $k => $p) {
+            $resp = $responses[(string) $k] ?? null;
+            try {
+                if ($resp instanceof \Illuminate\Http\Client\Response && $resp->ok()) {
+                    $out[$k] = $resp->json();
+
+                    continue;
+                }
+            } catch (\Throwable $e) {
+                // düş -> failover
+            }
+            $out[$k] = null;
+            $failed[$k] = $p; // havuz denemesi başarısız -> sıralı failover ile telafi
+        }
+        if ($failed !== []) {
+            Log::warning('gnubg batch: '.count($failed).'/'.count($positions).' pozisyon havuzda basarisiz, sirali failover');
+            foreach ($failed as $k => $p) {
+                $out[$k] = $this->analyzeBackground($p);
+            }
+        }
+
+        return $out;
+    }
+
     /** Verilen tabanları SIRAYLA /analyze dener, ilk 2xx'i döndürür; hepsi düşükse null (failover). */
     private function tryAnalyze(array $bases, array $position): ?array
     {
