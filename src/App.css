@@ -1386,11 +1386,11 @@ button[aria-disabled='true'],
 /* Bloke tutar: tile'da stake altinda kucuk/soluk -> secmeden once ne kadar bloke olacagi gorunur. */
 .solo-blocked {
   display: block;
-  margin-top: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.1;
-  color: #8a7f72;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #7a6f62;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
 }
