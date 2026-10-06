@@ -20,6 +20,11 @@ export default function PhoneVerify({ user, onVerified }: Props) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
+  // SMS servisi (Netgsm) henüz AKTİF DEĞİL -> telefon doğrulama rozeti geçici gizli.
+  // SMS aktive edilince `true` yap (backend send-otp/verify-otp zaten hazır). ponytail: tek bayrak.
+  const SMS_LIVE = false
+  if (!SMS_LIVE) return null
+
   const hasPhone = /^0?5\d{9}$/.test((user.phone ?? '').replace(/\D/g, ''))
   if (user.phone_verified_at || !hasPhone) return null
 
