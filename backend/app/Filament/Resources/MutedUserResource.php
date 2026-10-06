@@ -74,6 +74,11 @@ class MutedUserResource extends Resource
                     ->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('chat_offenses')->label('İhlal')
                     ->badge()->color('warning')->sortable(),
+                // Hangi kelimeden yasaklandı: "kullanıcı_token (eşleşen_kök)" (ör. "klasik (sik)").
+                // Admin yanlış-pozitifi görür -> listeyi inceltmeye / yasağı kaldırmaya karar verir.
+                Tables\Columns\TextColumn::make('chat_offense_word')->label('Tetikleyen Kelime')
+                    ->placeholder('—')->color('danger')->wrap()->searchable()
+                    ->tooltip('Son ihlali tetikleyen kelime (kullanıcının yazdığı + eşleşen kök).'),
                 Tables\Columns\TextColumn::make('status')->label('Durum')
                     ->badge()
                     ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture() ? 'Aktif yasak' : 'Süresi doldu')
@@ -109,6 +114,9 @@ class MutedUserResource extends Resource
                     ->action(function (User $u) {
                         $u->chat_muted_until = null;
                         $u->chat_offenses = 0;
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_offense_word')) {
+                            $u->chat_offense_word = null;
+                        }
                         $u->save();
                         Notification::make()->title('İhlal geçmişi sıfırlandı')->success()->send();
                     }),

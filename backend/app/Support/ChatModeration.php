@@ -29,20 +29,23 @@ class ChatModeration
         return min(max(1, $offense), count(self::BAN_MINUTES)) - 1;
     }
 
-    /** Küfürlü token'ları **** ile maskele. @return array{0:string,1:bool} [maskeli_metin, bulundu_mu]
-     *  ADMIN MUAF: $u verilip is_admin ise HİÇ maskelenmez (hit=false) -> penalize de çağrılmaz. */
+    /** Küfürlü token'ları **** ile maskele.
+     *  @return array{0:string,1:bool,2:?string} [maskeli_metin, bulundu_mu, tetikleyen_kelime]
+     *  tetikleyen_kelime = ilk eşleşen "kullanıcı_token (eşleşen_kök)" (ör. "klasik (sik)") -> Yasaklılar
+     *  panelinde gösterilir; admin yanlış-pozitifi görür. ADMIN MUAF: is_admin ise maskelenmez (hit=false). */
     public static function filter(string $text, ?User $u = null): array
     {
         if ($u && $u->is_admin) {
-            return [$text, false];
+            return [$text, false, null];
         }
         $sub = NicknameFilter::words();          // substring aranan kokler
         $whole = NicknameFilter::wholeWords();   // '=' onekli tam-kelime kokler
         if (! $sub && ! $whole) {
-            return [$text, false];
+            return [$text, false, null];
         }
         $hit = false;
-        $out = preg_replace_callback('/\S+/u', function ($m) use ($sub, $whole, &$hit) {
+        $matched = null; // ilk eşleşen kelime (yasak kararı için)
+        $out = preg_replace_callback('/\S+/u', function ($m) use ($sub, $whole, &$hit, &$matched) {
             $norm = NicknameFilter::normalize($m[0]);
             if ($norm === '') {
                 return $m[0];
@@ -50,12 +53,18 @@ class ChatModeration
             foreach ($sub as $w) {
                 if (str_contains($norm, $w)) {
                     $hit = true;
+                    if ($matched === null) {
+                        $matched = mb_substr($m[0], 0, 60).' ('.$w.')'; // "klasik (sik)"
+                    }
 
                     return '****';
                 }
             }
             if (in_array($norm, $whole, true)) { // tam-kelime: token'a birebir esit
                 $hit = true;
+                if ($matched === null) {
+                    $matched = mb_substr($m[0], 0, 60);
+                }
 
                 return '****';
             }
@@ -63,7 +72,7 @@ class ChatModeration
             return $m[0];
         }, $text);
 
-        return [$out ?? $text, $hit];
+        return [$out ?? $text, $hit, $matched];
     }
 
     /** Kullanıcı şu an konuşma yasaklı mı? Kalan saniye (>0) ya da null.
@@ -83,8 +92,9 @@ class ChatModeration
     }
 
     /** Bir ihlal işle: sayacı artır; yasak süresi >0 ise uygula (1. ihlal=0 -> yalnız uyarı), kaydet.
+     *  $word: ihlali tetikleyen kelime (Yasaklılar panelinde gösterilir).
      *  @return array{level:int,label:string,warning_only:bool,until:?string,seconds:int} */
-    public static function penalize(User $u): array
+    public static function penalize(User $u, ?string $word = null): array
     {
         // ADMIN KESİNLİKLE YASAKLANMAZ: sayaç artmaz, yasak yazılmaz; yalnız-uyarı no-op döner.
         if ($u->is_admin) {
@@ -103,6 +113,10 @@ class ChatModeration
         if ($minutes > 0) {
             $until = now()->addMinutes($minutes);
             $u->chat_muted_until = $until;
+        }
+        // Tetikleyen kelimeyi sakla (Yasaklılar paneli gösterir). Kolon yoksa (migrate gecikmesi) atla.
+        if ($word !== null && \Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_offense_word')) {
+            $u->chat_offense_word = mb_substr($word, 0, 120);
         }
         $u->save();
 

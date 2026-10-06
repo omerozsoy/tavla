@@ -2541,8 +2541,8 @@ class RoomController extends Controller
         if (($left = \App\Support\ChatModeration::mutedSeconds($user)) !== null) {
             return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $user->chat_offenses], 403);
         }
-        [$text, $hit] = \App\Support\ChatModeration::filter(trim($data['text']), $user);
-        $warning = $hit ? \App\Support\ChatModeration::penalize($user) : null;
+        [$text, $hit, $word] = \App\Support\ChatModeration::filter(trim($data['text']), $user);
+        $warning = $hit ? \App\Support\ChatModeration::penalize($user, $word) : null;
 
         $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;
         $messages = $room->messages ?? [];
