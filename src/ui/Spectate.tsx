@@ -401,6 +401,7 @@ export default function Spectate({
       rating: (isP1 ? eff?.p1_rating : eff?.p2_rating) ?? null,
       avatarUrl: (isP1 ? eff?.p1_avatar : eff?.p2_avatar) ?? null,
       frame: (isP1 ? eff?.p1_frame : eff?.p2_frame) ?? null,
+      country: (isP1 ? eff?.p1_country : eff?.p2_country) ?? null,
       premium: (isP1 ? eff?.p1_premium : eff?.p2_premium) ?? false,
     }
   }

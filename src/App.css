@@ -3917,14 +3917,16 @@ button[aria-disabled='true'],
 .event-tvflag-note {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  border: 1px solid var(--border);
+  gap: 10px;
+  padding: 13px 16px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-left: 4px solid var(--accent);
   border-radius: 10px;
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.4;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.45;
 }
 .event-tvflag-note .event-tvflag-logo {
   flex: 0 0 auto;

@@ -582,7 +582,7 @@ export default function ContentView({
         ) : type === 'event' && eventGroups ? (
           <div className="content-events">
             <div className="event-tvflag-note">
-              <TavlaTvLogo size={14} tone="dark" className="event-tvflag-logo" />
+              <TavlaTvLogo size={18} tone="auto" className="event-tvflag-logo" />
               <span>{t('content.eventTvFlagNote')}</span>
             </div>
             {eventGroups.byMonth.length === 0 && (
