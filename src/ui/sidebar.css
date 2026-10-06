@@ -91,8 +91,11 @@
   }
 }
 
-/* Isim yani minik ulke bayragi: isimle ayni satirda, dikey ortali. */
+/* Isim yani ulke bayragi: isimle AYNI satirda (ismin bittigi yerde), dikey ortali.
+   CountryFlag inline style'inda display:block var -> alt satira duserdi; inline-block ile
+   satiriçine al (inline style'i ezmek icin !important). */
 .player-name .player-flag {
+  display: inline-block !important;
   margin-left: 6px;
   vertical-align: middle;
 }

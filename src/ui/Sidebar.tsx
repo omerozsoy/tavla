@@ -114,7 +114,7 @@ function Name({ p }: { p: PlayerInfo }) {
     <div className="player-name-wrap">
       <div className="player-name">
         {p.name}
-        {p.country && <CountryFlag code={p.country} size={16} className="player-flag" />}
+        {p.country && <CountryFlag code={p.country} size={20} className="player-flag" />}
         {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
       </div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
