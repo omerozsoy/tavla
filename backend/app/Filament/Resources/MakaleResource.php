@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\MakaleResource\Pages;
 use App\Models\Content;
+use App\Support\ImageOptimizer;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -54,11 +56,17 @@ class MakaleResource extends Resource
             Forms\Components\FileUpload::make('image')->label('Kapak fotoğrafı')
                 ->image()->disk('uploads')->directory('makale')->visibility('public')
                 ->imageEditor()->maxSize(4096)
-                ->helperText('Makaleye kapak fotoğrafı yükle (liste ve detayda gösterilir).')
+                // Yüklerken otomatik optimize: ≤1920px WebP (~2MB -> ~150KB). Sayfa hızlanır;
+                // og:image JPEG'e SeoMeta::ogVariant çevirir. GD yoksa orijinal saklanır.
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'makale', 1920, 82))
+                ->helperText('Makaleye kapak fotoğrafı yükle (liste ve detayda gösterilir). Otomatik küçültülür.')
                 ->columnSpanFull(),
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('makale')->visibility('public')
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'makale', 1920, 82))
                 ->maxSize(4096)->panelLayout('grid')
                 ->helperText('Birden fazla fotoğraf ekleyebilirsin. Makale detayında galeri olarak gösterilir.')
                 ->columnSpanFull(),

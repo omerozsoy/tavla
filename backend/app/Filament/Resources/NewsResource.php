@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\NewsResource\Pages;
 use App\Models\Content;
+use App\Support\ImageOptimizer;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -51,11 +53,17 @@ class NewsResource extends Resource
             Forms\Components\FileUpload::make('image')->label('Kapak fotoğrafı')
                 ->image()->disk('uploads')->directory('haber')->visibility('public')
                 ->imageEditor()->maxSize(4096)
-                ->helperText('Habere kapak fotoğrafı yükle. İçe aktarılan haberlerde otomatik doludur.')
+                // Yüklerken otomatik optimize: ≤1920px WebP (~2MB -> ~150KB). Sayfa hızlanır;
+                // og:image JPEG'e SeoMeta::ogVariant çevirir. GD yoksa orijinal saklanır.
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'haber', 1920, 82))
+                ->helperText('Habere kapak fotoğrafı yükle. İçe aktarılan haberlerde otomatik doludur. Otomatik küçültülür.')
                 ->columnSpanFull(),
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('haber')->visibility('public')
+                ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file) => app(ImageOptimizer::class)
+                    ->store($file, 'uploads', 'haber', 1920, 82))
                 ->maxSize(4096)->panelLayout('grid')
                 ->helperText('Birden fazla fotoğraf ekleyebilirsin. Haber detayında galeri olarak gösterilir; sürükleyerek sıralayabilirsin.')
                 ->columnSpanFull(),
