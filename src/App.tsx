@@ -1788,19 +1788,6 @@ export default function App() {
   // ama görsel de kilitli) engelle. botThinking bot maçına özel; bu ikisi insan maçları içindir.
   const [moveSending, setMoveSending] = useState(false)
   const [rollSending, setRollSending] = useState(false)
-  // Zar atılırken (serverRoll uçuşta) TUMBLING önizleme: yüzler ~90ms'de bir rastgele değişir +
-  // CSS zarı döndürür -> sunucu-otoriter zarın round-trip gecikmesini ÖRTER ("zar sırası bende,
-  // bekliyorum zar gelsin" hissi biter). YALNIZ GÖRSEL (otoriter akışa dokunmaz); gerçek zar
-  // gelince (rollSending=false -> diceRolled) DiceRow die-roll-in girişiyle devralır, pürüzsüz.
-  const [rollTumble, setRollTumble] = useState<[number, number]>([2, 5])
-  useEffect(() => {
-    if (!rollSending) return
-    const id = window.setInterval(
-      () => setRollTumble([1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]),
-      90,
-    )
-    return () => window.clearInterval(id)
-  }, [rollSending])
   // OTO-ZAR KURTARMA (1 puanlik/olu-kup maç): kup teklif secenegi olmayan maçta "Zar At" butonu
   // HİÇ çizilmez (autoRollPending daima true) -> zar %100 oto-zar effect'ine bağlı. Oto-zar bir
   // transiente (409 mandalı / bayat srvTurn / backoff) takılırsa manuel kurtarma yolu yoktu ->
@@ -7741,11 +7728,13 @@ export default function App() {
     </Button>
   ) : showRoll && !autoRollPending ? (
     rollSending ? (
-      // Zar sunucudan gelene kadar TUMBLING zar (buton metni yerine) -> gecikme görünmez.
-      <div className="board-dice dice-tumbling" role="img" aria-label={t('btn.rolling')}>
-        <Die value={rollTumble[0]} owner={turnStart.turn} used={false} className="tumbling" />
-        <Die value={rollTumble[1]} owner={turnStart.turn} used={false} className="tumbling" />
-      </div>
+      // Zar sunucudan gelene kadar "Atılıyor…" (spinner). ESKİDEN rastgele yüzlü tumbling zar
+      // gösteriliyordu -> "settled sayı" gibi görünüp GERÇEK (otoriter) zar gelince "zar değişti"
+      // illüzyonu veriyordu (kullanıcı: "6-4 geldi sonra 4-1'e döndü"). Artık yanıltıcı rastgele sayı
+      // YOK; gerçek zar sunucudan gelince DiceRow die-roll-in girişiyle gösterilir.
+      <Button variant="default" disabled>
+        <span className="btn-spinner" aria-hidden="true" /> {t('btn.rolling')}
+      </Button>
     ) : (
       <Button variant="default" onClick={doRoll}>
         {t('btn.roll')}
