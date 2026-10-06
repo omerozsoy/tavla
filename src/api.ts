@@ -408,6 +408,7 @@ export interface LeaderRow {
   losses: number
   games: number
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
+  status?: PresenceStatus // isim yani nokta: busy -> kirmizi, offline -> gri
 }
 
 export interface ShopState {
@@ -448,6 +449,7 @@ export interface PrLeaderRow {
   matches: number
   decisions: number
   premium?: boolean
+  status?: PresenceStatus // isim yani nokta: busy -> kirmizi, offline -> gri
 }
 export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[]; minMatches: number; minDecisions: number }> {
   const d = await req<{ players: PrLeaderRow[]; min_matches: number; min_decisions: number }>(`/leaderboard/pr?limit=${limit}`)

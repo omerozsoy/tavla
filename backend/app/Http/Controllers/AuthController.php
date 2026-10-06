@@ -1295,9 +1295,12 @@ class AuthController extends Controller
             ->orderByDesc('wins')
             ->limit($limit)
             // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status']);
 
         $rows = $users->values()->map(function ($u, $i) {
+            // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
+            $online = $u->last_seen && $u->presence_status !== 'offline'
+                && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
             return [
                 'rank'    => $i + 1,
                 'id'      => $u->id,
@@ -1312,6 +1315,7 @@ class AuthController extends Controller
                 'losses'  => $u->losses ?? 0,
                 'games'   => $u->games_played ?? 0,
                 'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
+                'status'  => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
 
@@ -1337,21 +1341,26 @@ class AuthController extends Controller
             ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
             ->orderByDesc('career_pr_matches')            // sonra daha cok maç
             ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status']);
 
-        $rows = $users->values()->map(fn ($u, $i) => [
-            'rank' => $i + 1,
-            'id' => $u->id,
-            'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
-            'avatar' => $u->avatar,
-            'frame' => $u->avatar_frame,
-            'country' => $u->country,
-            'rating' => (int) $u->rating, // isim altindaki rutbe: site geneli TEK kaynak rating'dir (PR degil)
-            'career_pr' => $u->career_pr, // TAM hassasiyet (UI 2 ondalik gosterir; siralama full)
-            'matches' => (int) $u->career_pr_matches,
-            'decisions' => (int) $u->career_pr_decisions,
-            'premium' => $u->plan_active !== 'free',
-        ]);
+        $rows = $users->values()->map(function ($u, $i) {
+            $online = $u->last_seen && $u->presence_status !== 'offline'
+                && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+            return [
+                'rank' => $i + 1,
+                'id' => $u->id,
+                'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar' => $u->avatar,
+                'frame' => $u->avatar_frame,
+                'country' => $u->country,
+                'rating' => (int) $u->rating, // isim altindaki rutbe: site geneli TEK kaynak rating'dir (PR degil)
+                'career_pr' => $u->career_pr, // TAM hassasiyet (UI 2 ondalik gosterir; siralama full)
+                'matches' => (int) $u->career_pr_matches,
+                'decisions' => (int) $u->career_pr_decisions,
+                'premium' => $u->plan_active !== 'free',
+                'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
+            ];
+        });
 
         return response()->json(['players' => $rows, 'min_matches' => $minM, 'min_decisions' => $minD]);
     }

@@ -148,6 +148,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
             rankSize="sm"
             premium={r.premium}
             animated
+            statusDot={r.status}
           />
         </span>
         <span className="lb-flag">
@@ -354,7 +355,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
                         <span className="lb-rank">{medal(r.rank) || r.rank}</span>
                         <span className="lb-name">
                           {/* Rutbe site genelinde TEK kaynaktan: rating (PR sekmesinde de). */}
-                          <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated />
+                          <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated statusDot={r.status} />
                         </span>
                         <span className="lb-flag">
                           <CountryFlag code={r.country} size={26} />
