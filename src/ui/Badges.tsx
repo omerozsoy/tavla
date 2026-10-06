@@ -5,9 +5,10 @@ import { RankBadge } from './RankBadge'
 
 // Rating'e gore rutbe rozeti. Yeni RankBadge tasarim sistemine koprudur; mevcut
 // cagri yerleri (Leaderboard/PublicProfile/ProfileStats) degismeden yeni gorunumu alir.
-// size 'sm' -> compact ([icon] M2), 'md' -> standard ([icon] Master M2).
+// DAIMA standard: TAM isim gosterilir ("Intermediate I1"); size yalniz ikon olcegini
+// belirler (sm=kucuk ikon + tam isim, md=buyuk). Kisa kod (sadece "I1") artik yok.
 export function DivisionChip({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' }) {
-  return <RankBadge rating={rating} variant={size === 'sm' ? 'compact' : 'standard'} size={size} />
+  return <RankBadge rating={rating} variant="standard" size={size} />
 }
 
 // Kazanilmis rozetler listesi (bos ise mesaj)
