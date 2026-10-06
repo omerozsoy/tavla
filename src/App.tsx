@@ -1615,18 +1615,22 @@ export default function App() {
   // / deep-link'e karisma); sonraki HER gecelte (home dahil) olasi tum scroll kaplarini tepeye al.
   const scrolledFirstRef = useRef(false)
   const hydratedScrollRef = useRef(false)
-  const prevSlugRef = useRef('')
+  // Gercek SAYFA (menuPages) `.page-host` icine render olur; PORTAL overlay'ler (izle/profil/
+  // modallar, menuOverlays) OLMAZ -> feed arkada mount kalir. Bu geciste page-host var mıydı?
+  const prevPageHostRef = useRef(false)
   useEffect(() => {
-    const prev = prevSlugRef.current
-    prevSlugRef.current = currentSlug || ''
     if (!scrolledFirstRef.current) {
       scrolledFirstRef.current = true
+      prevPageHostRef.current = !!document.querySelector('.page-host')
       return
     }
-    // CANLI IZLEME (/izle/<kod>) bir OVERLAY'dir, gercek sayfa degil. Hem acilista (alttaki lobi
-    // gorunmez sekilde tepeye kaymasin ki cikista yeri korunsun) hem kapanista tepeye-kaydirmadan
-    // muaf tut -> izleyip cikinca lobide kaldigin yerde kalirsin (sinir bozucu siçrama yok).
-    if (prev.startsWith('izle/') || (currentSlug || '').startsWith('izle/')) return
+    // SADECE gercek sayfa (page-host) acilis/kapanisinda tepeye kaydir. Portal overlay'ler
+    // (canli izleme, profil karti, modallar) page-host OLUSTURMAZ -> acilip kapaninca alttaki
+    // lobi feed'inin scroll'u KORUNUR (overlay kapatinca tepeye siçrama yok — sikayet buydu).
+    const curPageHost = !!document.querySelector('.page-host')
+    const wasPageHost = prevPageHostRef.current
+    prevPageHostRef.current = curPageHost
+    if (!curPageHost && !wasPageHost) return
     // DEEP-LINK REFRESH FIX ("/sikca-sorulan-sorular refresh edince en başa dönüyor"): ilk mount'ta
     // currentSlug='' idi; applyFromPath deep-link state'ini kurunca currentSlug URL'deki başlangıç
     // slug'ına OTURUR -> bu HİDRASYON geçişinde EN ÜSTE KAYDIRMA (tarayıcı scroll geri-yükleme +
