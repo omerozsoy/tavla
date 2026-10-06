@@ -63,14 +63,15 @@
                 :x="geo().x" :y="geo().y" :width="geo().w" :height="geo().h"/>
             <polygon points="0,0 {{ $W }},0 {{ $W / 2 }},{{ $H }}" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="5 4" opacity=".9"/>
         </svg>
+        {{-- color ACIK yaz: Filament karanlik temada buton metni beyaz miras alip beyaz zeminde kayboluyordu. --}}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <button type="button" @click="zoomBy(-20)" title="Uzaklaştır"
-                style="width:30px;height:30px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-weight:700">−</button>
+                style="width:30px;height:30px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:700">−</button>
             <span style="font-size:12px;min-width:44px;text-align:center" x-text="'%' + Math.round(zoom)"></span>
             <button type="button" @click="zoomBy(20)" title="Yakınlaştır"
-                style="width:30px;height:30px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-weight:700">+</button>
+                style="width:30px;height:30px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:700">+</button>
             <button type="button" @click="reset()" title="Ortala ve sıfırla"
-                style="height:30px;padding:0 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:12px">Sıfırla</button>
+                style="height:30px;padding:0 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px">Sıfırla</button>
         </div>
         <div style="font-size:11.5px;color:#6b7280;line-height:1.4;max-width:240px" @if (! empty($compact)) hidden @endif>
             Resmi sürükleyerek yerleştir; tekerlek veya +/− ile yakınlaştır. Kesikli çizgi = hane.

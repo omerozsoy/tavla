@@ -2356,6 +2356,22 @@ export default function App() {
         root.removeAttribute('data-pt-each')
       }
     }
+    // Tahta zemin resmi (sol/sağ yarı, üçgenlerin ALTINDA) + şeffaflık. URL'ler safeImgUrl ile doğrulandı.
+    {
+      const sl = bt.surfaceImgLeft
+      const sr = bt.surfaceImgRight
+      if (sl || sr) {
+        root.style.setProperty('--surf-img-left', sl ? `url("${sl}")` : 'none')
+        root.style.setProperty('--surf-img-right', sr ? `url("${sr}")` : 'none')
+        root.style.setProperty('--surf-opacity', String((bt.surfaceOpacity ?? 100) / 100))
+        root.setAttribute('data-surf-img', '')
+      } else {
+        root.style.removeProperty('--surf-img-left')
+        root.style.removeProperty('--surf-img-right')
+        root.style.removeProperty('--surf-opacity')
+        root.removeAttribute('data-surf-img')
+      }
+    }
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
     // Maritime board: 12 sinyal flamasini CSS degiskeni olarak yaz. Ust/alt hane AYRI varyant
     // (--naut-<dp> = ust, --naut-<dp>-b = alt) -> motif DAIMA tabanda (rail), distort YOK.

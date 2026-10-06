@@ -219,6 +219,12 @@ class ShopController extends Controller
                     'colors' => $d->colors,
                     'surface' => $d->surface,
                     'checker_style' => $d->checker_style,
+                    // Tahta zemin resmi (sol/sağ yarı + şeffaflık): üçgenlerin ALTINDA zemin
+                    'surfaceImages' => ($d->surface_image_left || $d->surface_image_right) ? [
+                        'left' => BoardDesign::imageUrl($d->surface_image_left),
+                        'right' => BoardDesign::imageUrl($d->surface_image_right),
+                        'opacity' => $d->surface_image_opacity,
+                    ] : null,
                     // Tek (1,3,5…) / çift (2,4,6…) hane resmi (üçgene kırpılır; yoksa düz renk)
                     'images' => $d->point_mode === 'each' ? [
                         // Her haneye ayrı resim (1..24) + yerleşimleri

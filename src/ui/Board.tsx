@@ -671,7 +671,7 @@ function Board({
         </div>
 
         {/* Sol yari */}
-        <div className="half">
+        <div className="half half-left">
           <div className="quadrant top">{L.TL.map((i) => renderPoint(i, true))}</div>
           <div className="quadrant bottom">{L.BL.map((i) => renderPoint(i, false))}</div>
         </div>
@@ -735,7 +735,7 @@ function Board({
         </div>
 
         {/* Sag yari */}
-        <div className="half">
+        <div className="half half-right">
           <div className="quadrant top">{L.TR.map((i) => renderPoint(i, true))}</div>
           <div className="quadrant bottom">{L.BR.map((i) => renderPoint(i, false))}</div>
         </div>

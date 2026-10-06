@@ -79,6 +79,19 @@
     @if ($surface !== 'plain')
         <rect x="{{ $fw }}" y="{{ $fw }}" width="{{ $W - 2 * $fw }}" height="{{ $H - 2 * $fw }}" fill="url(#{{ $u }}{{ ['gradient' => 'g', 'felt' => 'f', 'wood' => 'w'][$surface] }})"/>
     @endif
+    {{-- Tahta zemin resmi (sol/sağ yarı, üçgenlerin ALTINDA): panel üstünde, hanelerden önce. --}}
+    @php
+        $sL = $okImg($surfLeft ?? null) ? $surfLeft : null;
+        $sR = $okImg($surfRight ?? null) ? $surfRight : null;
+        $sOp = max(0, min(100, (int) ($surfOpacity ?? 100))) / 100;
+        $surfH = $H - 2 * $fw;
+    @endphp
+    @if ($sL)
+        <image href="{{ $sL }}" x="{{ $fw }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="xMidYMid slice" opacity="{{ $sOp }}"/>
+    @endif
+    @if ($sR)
+        <image href="{{ $sR }}" x="{{ $fw + $half + $bar }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="xMidYMid slice" opacity="{{ $sOp }}"/>
+    @endif
     @for ($i = 0; $i < 12; $i++)
         @php $x = $px($i); @endphp
         @foreach ([['t', $fw, $fw + $ph, $i % 2 ? 'b' : 'a'], ['b', $H - $fw, $H - $fw - $ph, $i % 2 ? 'a' : 'b']] as [$row, $base, $tip, $tone])

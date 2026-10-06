@@ -312,6 +312,29 @@ class BoardDesignResource extends Resource
                                 ->placeholder('Düz')
                                 ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom),
                         ])->columns(2),
+                    Forms\Components\Section::make('Tahta Zemin Resmi')
+                        ->description('İsteğe bağlı. Sol ve sağ yarı için AYRI resim; üçgenlerin ALTINDA zemin olur (renge alternatif). Şeffaflıkla zemin rengi görünür kalır.')
+                        ->schema([
+                            Forms\Components\Grid::make(['default' => 1, 'sm' => 2])->schema([
+                                Forms\Components\FileUpload::make('surface_image_left')
+                                    ->label('Sol yarı resmi')->image()
+                                    ->disk('uploads')->directory('tahta')->visibility('public')
+                                    ->maxSize(4096)->imageEditor()->live(),
+                                Forms\Components\FileUpload::make('surface_image_right')
+                                    ->label('Sağ yarı resmi')->image()
+                                    ->disk('uploads')->directory('tahta')->visibility('public')
+                                    ->maxSize(4096)->imageEditor()->live(),
+                            ]),
+                            Forms\Components\TextInput::make('surface_image_opacity')
+                                ->label(fn (Get $get) => 'Şeffaflık · %'.(int) ($get('surface_image_opacity') ?? 100))
+                                ->type('range')
+                                ->extraInputAttributes(['min' => 0, 'max' => 100, 'step' => 1, 'style' => 'padding:0;accent-color:#a83a2b'])
+                                ->default(100)
+                                ->helperText('%100 = tam görünür; düşürdükçe altındaki zemin rengi görünür.')
+                                ->live(debounce: 120)
+                                ->visible(fn (Get $get) => filled($get('surface_image_left')) || filled($get('surface_image_right'))),
+                        ])
+                        ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
                     Forms\Components\Section::make('Hane Resimleri')
                         ->description('İsteğe bağlı. Resim hane üçgenine kırpılır; boş hanede hane rengi kullanılır.')
                         ->schema([
@@ -338,6 +361,9 @@ class BoardDesignResource extends Resource
                             'colors' => $get('colors'),
                             'surface' => $get('surface'),
                             'checkerStyle' => $get('checker_style'),
+                            'surfLeft' => self::previewImage($get('surface_image_left')),
+                            'surfRight' => self::previewImage($get('surface_image_right')),
+                            'surfOpacity' => (int) ($get('surface_image_opacity') ?? 100),
                             'imgOdd' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_odd')),
                             'imgEven' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_even')),
                             'fitOdd' => self::fitState($get, 'odd'),

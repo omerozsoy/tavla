@@ -39,6 +39,10 @@ export interface BoardTheme {
   // Tam resim modu: her haneye ayrı resim (hane no 1..24 = beyazın bakışı) + yerleşimi
   pointImgs?: Record<number, string>
   pointFits?: Record<number, PointFit>
+  // Tahta zemin resmi: sol/sağ yarı AYRI resim (üçgenlerin ALTINDA), şeffaflık %0–100
+  surfaceImgLeft?: string
+  surfaceImgRight?: string
+  surfaceOpacity?: number
 }
 export interface PointFit {
   x: number
@@ -365,6 +369,7 @@ export interface BoardDesignRow {
   colors?: { panel?: string; frame?: string | null; a?: string; b?: string; checker?: string; light?: string | null }
   surface?: string | null
   checker_style?: string | null
+  surfaceImages?: { left?: string | null; right?: string | null; opacity?: number } | null
   images?: {
     mode?: 'pair' | 'each'
     odd?: string | null
@@ -440,6 +445,12 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
       pointImgB: safeImgUrl(r.images?.even),
       pointFitA: safeFit(r.images?.fit?.odd),
       pointFitB: safeFit(r.images?.fit?.even),
+      surfaceImgLeft: safeImgUrl(r.surfaceImages?.left ?? undefined),
+      surfaceImgRight: safeImgUrl(r.surfaceImages?.right ?? undefined),
+      surfaceOpacity:
+        typeof r.surfaceImages?.opacity === 'number'
+          ? Math.max(0, Math.min(100, r.surfaceImages.opacity))
+          : undefined,
       ...(r.images?.mode === 'each' ? eachImages(r.images) : {}),
     }
     CUSTOM_THEMES.push(theme)

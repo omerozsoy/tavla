@@ -34,16 +34,18 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'checker_style', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'checker_style', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
         'point_image_fit' => 'array',
         'point_images' => 'array',
+        'point_texts' => 'array',
         'is_custom' => 'boolean',
         'active' => 'boolean',
         'price' => 'integer',
         'sort' => 'integer',
+        'surface_image_opacity' => 'integer',
     ];
 
     protected static function booted(): void
@@ -55,6 +57,21 @@ class BoardDesign extends Model
                 } while (self::where('slug', $slug)->exists());
                 $d->slug = $slug;
             }
+        });
+        // Zemin resmi şeffaflığı (%0–100) + her haneye metin (1..24, boşlar atılır, kırpılır).
+        // Resim yerleşiminden BAĞIMSIZ (aşağıdaki erken return'den önce çalışmalı).
+        static::saving(function (self $d) {
+            $d->surface_image_opacity = max(0, min(100, (int) ($d->surface_image_opacity ?? 100)));
+            $texts = [];
+            foreach ((array) ($d->point_texts ?? []) as $n => $txt) {
+                $n = (int) $n;
+                $txt = is_string($txt) ? trim($txt) : '';
+                if ($n >= 1 && $n <= 24 && $txt !== '') {
+                    $texts[$n] = mb_substr($txt, 0, 24);
+                }
+            }
+            ksort($texts);
+            $d->point_texts = $texts ?: null;
         });
         // Hane resmi yerleşimi: değerleri sınırla + resmin en-boy oranını dosyadan hesapla.
         static::saving(function (self $d) {

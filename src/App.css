@@ -6283,6 +6283,32 @@ button[aria-disabled='true'],
   flex-direction: column;
   background: var(--panel);
 }
+/* Tahta zemin resmi (admin özel tahta): sol/sağ yarıya AYRI resim, üçgenlerin ALTINDA zemin.
+   Renk (--panel) üstünde, haneler/pullar (.quadrant z-index:1) altında. Şeffaflık = --surf-opacity. */
+html[data-surf-img] .half {
+  position: relative;
+}
+html[data-surf-img] .half::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: var(--surf-opacity, 1);
+}
+html[data-surf-img] .half-left::before {
+  background-image: var(--surf-img-left, none);
+}
+html[data-surf-img] .half-right::before {
+  background-image: var(--surf-img-right, none);
+}
+html[data-surf-img] .half > .quadrant {
+  position: relative;
+  z-index: 1;
+}
 .quadrant {
   flex: 1;
   display: flex;
