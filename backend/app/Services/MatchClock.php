@@ -205,17 +205,27 @@ class MatchClock
         $authorized = $current === null || $requesterSlot === null || $requesterSlot === $current;
 
         if ($sigChanged && $authorized) {
-            // Gecen segmentte aktif oyuncunun harcadigi ana sureyi bankadan dus.
-            if ($current !== null && ($clock['running'] ?? false)) {
-                $elapsed = max(0.0, $now - ($clock['started_at'] ?? $now));
-                $used = max(0.0, $elapsed - ($clock['delay'] ?? 0));
-                $bankKey = $current.'_bank';
-                $clock[$bankKey] = max(0.0, ($clock[$bankKey] ?? 0) - $used);
+            // TUR BASINA TEK DELAY: delay (ve banka tahsili) yalnizca SIRA DEGISINCE islenir.
+            // Ayni oyuncunun tur-ici aksiyonlari (zar at -> hamle) started_at'i SIFIRLAMAZ -> tek
+            // delay + banka turun tamamini (zar+hamle) kapsar. Eskiden HER aksiyon started_at'i
+            // sifirliyordu: oyuncu zar icin delay + hamle icin AYRI delay (efektif ~2x) kazaniyor,
+            // oyalanabiliyordu ("sira sana gelince 10sn olmali ama zar atinca tekrar 10sn" sikayeti).
+            $turnChanged = $newTurn !== $current;
+            if ($turnChanged) {
+                // Biten oyuncunun (current) turunun TAMAMINDA harcadigi ana sureyi bankadan dus.
+                if ($current !== null && ($clock['running'] ?? false)) {
+                    $elapsed = max(0.0, $now - ($clock['started_at'] ?? $now));
+                    $used = max(0.0, $elapsed - ($clock['delay'] ?? 0));
+                    $bankKey = $current.'_bank';
+                    $clock[$bankKey] = max(0.0, ($clock[$bankKey] ?? 0) - $used);
+                }
+                // Yeni oyuncunun TEK delay+AFK segmenti burada baslar.
+                $clock['turn_slot'] = $newTurn;
+                $clock['started_at'] = $now;
             }
-            // Yeni segment: delay+AFK sifir, sira yeni state'ten.
+            // sig/running/moved her yetkili aksiyonda guncellenir (tur-ici zar->hamle dahil) ->
+            // AFK "hareket var" bilir, imza ilerler; ama started_at yalniz sira devrinde sifirlanir.
             $clock['sig'] = $newSig;
-            $clock['turn_slot'] = $newTurn;
-            $clock['started_at'] = $now;
             $clock['running'] = $running;
             $clock['moved'] = true; // ILK gercek hamle yapildi -> AFK artik gecerli
         } else {

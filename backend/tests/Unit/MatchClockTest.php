@@ -128,18 +128,36 @@ class MatchClockTest extends TestCase
         $this->assertSame(1, MatchClock::clientView($c, self::T0 + 59)['afk']);
     }
 
-    // ---- 7) Gercek hamle delay+AFK'yi TAM sifirlar; ana sure islenir ----
-    public function test_real_action_resets_delay_and_afk(): void
+    // ---- 7) SIRA DEGISINCE delay+AFK sifirlanir; biten oyuncunun TUM turu bankadan islenir ----
+    public function test_turn_change_resets_delay_and_charges_full_turn(): void
     {
-        $c = $this->started('normal', 5); // banka 300, delay 10
-        // 20sn sonra ayni oyuncu gercek hamle yapar (played+1) -> segment islenir
-        $c2 = MatchClock::onUpdate($c, $this->state('white', 5, 0, 1), 'p1', self::T0 + 20);
-        // Gecen segment: 20sn - delay10 = 10sn ana kullanildi -> 290
+        $c = $this->started('normal', 5); // banka 300, delay 10, sira beyaz (p1)
+        // 20sn sonra beyaz turunu BITIRIR (hamle -> sira siyaha gecer)
+        $c2 = MatchClock::onUpdate($c, $this->state('black', 5, 1, 0), 'p1', self::T0 + 20);
+        // Biten beyaz: 20sn - delay10 = 10sn ana kullandi -> 290
         $this->assertEqualsWithDelta(290, $c2['p1_bank'], 0.001);
-        // Yeni segment: delay ve AFK sifir
+        $this->assertSame('p2', $c2['turn_slot']); // sira siyahta
+        // Siyahin YENI segmenti: delay ve AFK sifir
         $v = MatchClock::clientView($c2, self::T0 + 20);
         $this->assertEqualsWithDelta(10, $v['delay'], 0.001);
         $this->assertNull($v['afk']);
+    }
+
+    // ---- 7b) TUR BASINA TEK DELAY: ayni oyuncunun tur-ici aksiyonu (zar at -> hamle) delay'i
+    //      SIFIRLAMAZ; tek delay+banka turun tamamini (zar+hamle) kapsar; banka yalniz sira devrinde islenir.
+    public function test_intra_turn_action_keeps_single_delay(): void
+    {
+        $c = $this->started('normal', 5); // banka 300, delay 10, sira beyaz (p1), started_at=T0
+        // Beyaz 5sn'de ZAR atar (ayni tur: turn hala white) -> started_at DEGISMEZ, banka DUSMEZ
+        $c2 = MatchClock::onUpdate($c, $this->state('white', 5, 0, 1), 'p1', self::T0 + 5);
+        $this->assertSame($c['started_at'], $c2['started_at'], 'zar tur-ici -> started_at sifirlanmamali');
+        $this->assertEqualsWithDelta(300, $c2['p1_bank'], 0.001, 'zar -> banka dusmemeli');
+        // 5sn gecti -> delay KALAN 5 (sifirlanmadi, turun basindan sayiyor)
+        $this->assertEqualsWithDelta(5, MatchClock::clientView($c2, self::T0 + 5)['delay'], 0.001);
+        // Beyaz hamlesini 12sn'de bitirir (TURUN TAMAMI 12sn) -> sira siyaha, beyaz 12-10=2 ana kullanir
+        $c3 = MatchClock::onUpdate($c2, $this->state('black', 5, 1, 0), 'p1', self::T0 + 12);
+        $this->assertEqualsWithDelta(298, $c3['p1_bank'], 0.001, 'tur toplami 12sn -> 2sn ana (eski: ~0, cift delay)');
+        $this->assertSame('p2', $c3['turn_slot']);
     }
 
     // ---- 8) Refresh/reconnect (ayni state tekrar) AFK'yi SIFIRLAMAZ ----
