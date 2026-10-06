@@ -22,9 +22,12 @@ rm -rf bootstrap/cache/filament 2>/dev/null || true
 # kalicidir; gecici bir composer hatasi DB semasinin kod ile ayrisip 500'lere -"table/column
 # not found"- yol acmasindan cok daha az zararlidir.)
 if command -v composer >/dev/null 2>&1; then
-  composer install --no-dev --optimize-autoloader --no-interaction || echo "UYARI: composer install patladi -> deploy migrate ile devam ediyor; gerekirse Plesk 'Composer' > Install."
+  # 2>&1: composer TUM ciktisini (ilerleme, autoload, funding notu) stderr'e yazar; Plesk stderr
+  # yazan adimi ⚠️ ile isaretler. stderr'i stdout'a yonlendir -> adim YESIL olur (cikti yine gorunur,
+  # exit kodu korunur -> gercek composer hatasi yine `|| echo`e duser). migrate/cache stderr'i DOKUNULMAZ.
+  composer install --no-dev --optimize-autoloader --no-interaction 2>&1 || echo "UYARI: composer install patladi -> deploy migrate ile devam ediyor; gerekirse Plesk 'Composer' > Install."
 elif [ -f composer.phar ]; then
-  $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction || echo "UYARI: composer.phar install patladi -> deploy migrate ile devam ediyor."
+  $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction 2>&1 || echo "UYARI: composer.phar install patladi -> deploy migrate ile devam ediyor."
 else
   echo "UYARI: composer bulunamadi -> Plesk 'Composer' sekmesinden Install calistir!"
 fi
