@@ -450,7 +450,7 @@ final class SeoMeta
             if ($article) {
                 [$title, $desc] = self::MAKALE_META[$parts[1]]
                     ?? [(string) $article->title . ' | TavlaTv', self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
-                $image = self::absImg($article->image) ?: self::BASE . 'og-image.png';
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.png';
                 $url = self::BASE . $slug;
 
                 $html = self::apply($html, $title, $desc, (string) $article->title, $url, $image, 'article');
@@ -480,7 +480,7 @@ final class SeoMeta
                 $title = $article->title . ' | TavlaTv';
                 $desc  = self::excerpt($article->body)
                     ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
-                $image = self::absImg($article->image) ?: self::BASE . 'og-image.png';
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.png';
 
                 $html = self::apply(
                     $html,
@@ -877,5 +877,80 @@ final class SeoMeta
         $base = rtrim(self::BASE, '/');
 
         return $img[0] === '/' ? $base . $img : $base . '/uploads/' . $img;
+    }
+
+    /**
+     * Paylaşım (og:image) için küçük JPEG variant üret: 1200×630 cover-crop, kalite ~82,
+     * public/uploads/og/<key>.jpg'e cache'lenir, ABSOLUTE url döner. WhatsApp ~600 KB üstü
+     * og:image'ı önizlemede GÖSTERMEZ -> ham ~2 MB makale/haber görseli paylaşımda ÇIKMAZ;
+     * bu variant tipik ~100-250 KB. Üretilemezse (harici url / dosya yok / GD yok / çok büyük)
+     * null döner -> çağıran ham görsele (absImg) düşer; davranış bozulmaz.
+     */
+    private static function ogVariant(?string $img): ?string
+    {
+        if (! $img || preg_match('#^https?://#i', $img)) {
+            return null; // harici/boş -> variant yok (ham absImg kullanılır)
+        }
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg') || ! function_exists('getimagesize')) {
+            return null;
+        }
+        $rel = $img[0] === '/' ? ltrim($img, '/') : 'uploads/' . $img;
+        $srcAbs = public_path($rel);
+        if (! is_file($srcAbs)) {
+            return null;
+        }
+        $info = @getimagesize($srcAbs);
+        if ($info === false) {
+            return null;
+        }
+        // Çözülünce belleği taşıracak devasa görseli işleme (fatal yerine ham'a düş).
+        if ((int) ($info[0] ?? 0) * (int) ($info[1] ?? 0) > 40_000_000) {
+            return null;
+        }
+        $key = substr(md5($rel . '|' . (@filemtime($srcAbs) ?: 0)), 0, 24);
+        $outRel = 'uploads/og/' . $key . '.jpg';
+        $outAbs = public_path($outRel);
+        if (! is_file($outAbs)) {
+            $data = @file_get_contents($srcAbs);
+            if ($data === false) {
+                return null;
+            }
+            $src = @imagecreatefromstring($data);
+            if (! $src) {
+                return null;
+            }
+            $sw = imagesx($src);
+            $sh = imagesy($src);
+            $TW = 1200;
+            $TH = 630;
+            $dstRatio = $TW / $TH;
+            $srcRatio = $sh > 0 ? $sw / $sh : $dstRatio;
+            if ($srcRatio > $dstRatio) { // kaynak daha geniş -> yanlardan kırp
+                $ch = $sh;
+                $cw = (int) round($sh * $dstRatio);
+                $cx = (int) round(($sw - $cw) / 2);
+                $cy = 0;
+            } else { // daha uzun -> üstten/alttan kırp
+                $cw = $sw;
+                $ch = (int) round($sw / $dstRatio);
+                $cx = 0;
+                $cy = (int) round(($sh - $ch) / 2);
+            }
+            $dst = imagecreatetruecolor($TW, $TH);
+            $white = imagecolorallocate($dst, 255, 255, 255); // JPEG alfa yok -> beyaz zemin
+            imagefilledrectangle($dst, 0, 0, $TW, $TH, $white);
+            imagecopyresampled($dst, $src, 0, 0, $cx, $cy, $TW, $TH, max(1, $cw), max(1, $ch));
+            @mkdir(dirname($outAbs), 0755, true);
+            ob_start();
+            $ok = imagejpeg($dst, null, 82);
+            $buf = ob_get_clean();
+            imagedestroy($src);
+            imagedestroy($dst);
+            if (! $ok || $buf === '' || @file_put_contents($outAbs, $buf) === false) {
+                return null;
+            }
+        }
+
+        return rtrim(self::BASE, '/') . '/' . $outRel;
     }
 }

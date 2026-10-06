@@ -107,3 +107,6 @@ backup_*.sql
 
 # Admin Tavla Tasarımı hane resimleri (sunucuda yüklenir; repoya girmez)
 /backend/public/uploads/tahta/
+
+# Paylaşım (og:image) JPEG variant önbelleği (SeoMeta sunucuda üretir; repoya girmez)
+/backend/public/uploads/og/
