@@ -23567,6 +23567,32 @@ button.acct-row-logout:hover:not(:disabled) {
   line-height: 1.4;
   text-align: center;
 }
+/* Turlar arası global bant (topbar): her sayfada görünür, tıklanınca turnuva detayı açılır. */
+.tourn-wait-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  text-align: center;
+  cursor: pointer;
+}
+.tourn-wait-bar:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--card-bg));
+}
+.tourn-wait-bar svg {
+  flex: none;
+  color: var(--accent);
+}
 .swiss-round-box,
 .swiss-standings {
   border: 1px solid var(--border);

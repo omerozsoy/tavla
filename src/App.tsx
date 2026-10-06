@@ -1655,6 +1655,7 @@ export default function App() {
   // Daveti reddedince "Oyun Kabul Etmiyor / Cevrimdisi Gorun" diye soran mini modal
   const [declineAsk, setDeclineAsk] = useState(false)
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
+  const [tournWaiting, setTournWaiting] = useState<{ tid: number; tname: string }[]>([]) // turlar arasi bekleyen turnuvalarim
   // Turnuva maci hazir penceresi (kura + 20sn geri sayim -> otomatik giris). Ayni mac icin bir kez.
   // Turnuva maçına OTOMATİK giriş çift-giriş kilidi (popup YOK -> ping bildirimi gelince doğrudan
   // maça alınır; giriş başarısız olursa catch sıfırlar -> tekrar denenir).
@@ -5752,6 +5753,7 @@ export default function App() {
     if (!user) {
       setInvites([])
       setTournNotices([])
+      setTournWaiting([])
       setNotifications([])
       setUnreadNotif(0)
       setDmUnread(0)
@@ -5775,6 +5777,7 @@ export default function App() {
             invitePrimedRef.current = true
             setInvites(inv)
             setTournNotices(r.tournament_matches ?? [])
+            setTournWaiting(r.tourn_waiting ?? [])
             setRewardReady(!!r.reward_ready)
             setRewardSecs(r.reward_seconds ?? 0)
             if (typeof r.reward_coins === 'number') setRewardCoins(r.reward_coins)
@@ -9687,6 +9690,19 @@ export default function App() {
     topbar: (
       <div className="topbar-stack">
         {accountBar}
+        {/* TURLAR ARASI GLOBAL BANT: turnuvada sıranı beklerken (hazır maç yok) her sayfanın
+            üstünde görünür; turnuva sayfasındayken gizli (orada zaten detaylı not var) ve hazır
+            maç varken gizli (oda oto-açılır). Tıklayınca ilgili turnuvanın detayına gider. */}
+        {!tournOpen && tournNotices.length === 0 && tournWaiting.length > 0 && (
+          <button
+            type="button"
+            className="tourn-wait-bar"
+            onClick={() => menuProps.onTournamentAd(tournWaiting[0].tid)}
+          >
+            <Icon name="trophy" size={16} />
+            <span>{t('tourn.waitNext')}</span>
+          </button>
+        )}
       </div>
     ),
     sideMenu: (
