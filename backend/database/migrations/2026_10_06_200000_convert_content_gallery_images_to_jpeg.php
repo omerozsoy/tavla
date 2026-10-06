@@ -18,7 +18,7 @@ return new class extends Migration
             return;
         }
 
-        $rows = DB::table('content')
+        $rows = DB::table('contents')
             ->whereIn('type', ['makale', 'news'])
             ->whereNotNull('gallery')
             ->where('gallery', '!=', '[]')
@@ -53,7 +53,7 @@ return new class extends Migration
                     $changed = true;
                 }
                 if ($changed) {
-                    DB::table('content')->where('id', $row->id)->update(['gallery' => json_encode(array_values($gallery))]);
+                    DB::table('contents')->where('id', $row->id)->update(['gallery' => json_encode(array_values($gallery))]);
                 }
             } catch (\Throwable $e) {
                 continue;

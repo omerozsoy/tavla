@@ -24,7 +24,7 @@ return new class extends Migration
             return; // GD yok -> dokunma
         }
 
-        $rows = DB::table('content')
+        $rows = DB::table('contents')
             ->whereIn('type', ['makale', 'news'])
             ->where('image', 'like', '%.png')
             ->get(['id', 'image']);
@@ -43,7 +43,7 @@ return new class extends Migration
                     }
                 }
 
-                DB::table('content')->where('id', $row->id)->update(['image' => '/' . $jpgRel]);
+                DB::table('contents')->where('id', $row->id)->update(['image' => '/' . $jpgRel]);
 
                 if (is_file($srcAbs)) {
                     @unlink($srcAbs); // eski ağır png (ref artık jpg)
