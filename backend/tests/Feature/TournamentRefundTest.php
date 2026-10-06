@@ -27,6 +27,17 @@ class TournamentRefundTest extends TestCase
         return Tournament::find($id);
     }
 
+    // Kullanıcı kararı (2026-10-06): turnuvayı açan yönetici OTOMATİK KATILMAZ (koltuk kaplamaz);
+    // oynamak isterse normal "Katıl" ile girer.
+    public function test_creator_admin_is_not_auto_joined_but_can_join(): void
+    {
+        $admin = $this->admin();
+        $t = $this->open($admin, 0);
+        $this->assertSame([], $t->players ?? []);
+        $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
+        $this->assertSame([$admin->id], collect($t->fresh()->players)->pluck('id')->all());
+    }
+
     public function test_refund_uses_fee_actually_paid_when_fee_raised_later(): void
     {
         $t = $this->open($this->admin(), 0);

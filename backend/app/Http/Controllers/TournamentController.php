@@ -172,8 +172,8 @@ class TournamentController extends Controller
             'final_minutes' => $data['final_minutes'] ?? null,
             'players' => [],
         ]);
-        // Olusturan otomatik katilir
-        $this->addPlayer($t, $request->user());
+        // Olusturan (yonetici) OTOMATIK KATILMAZ (kullanici karari, 2026-10-06): koltuk kaplamasin;
+        // oynamak isterse diger oyuncular gibi "Katil" ile girer.
         return response()->json(['tournament' => $this->full($t->fresh())]);
     }
 
