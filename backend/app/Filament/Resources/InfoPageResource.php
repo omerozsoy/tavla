@@ -40,41 +40,71 @@ class InfoPageResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    // Ust baslik secenekleri: "Footer" (alt menu kolonlari) + "Sol Menu" (kenar menu gruplari),
-    // iki grup halinde. Deger "footer:<kolon>" / "menu:<grup>" -> frontend bu sayfayi o basligin
-    // altina enjekte eder (App.tsx footerColumns + menuGroups). ANAHTARLAR frontend ile birebir.
-    public const SECTION_OPTIONS = [
-        'Footer (alt menü)' => [
-            'footer:game' => 'Oyun',
-            'footer:community' => 'Topluluk',
-            'footer:content' => 'İçerik',
-            'footer:guide' => 'Eğitim',
-            'footer:organization' => 'Organizasyon',
-            'footer:info' => 'Bilgi',
-            'footer:legal' => 'Yasal',
+    // Ust baslik secenekleri, KAYNAGA gore (adim 2). Anahtarlar = bare key; secimde
+    // "<kaynak>:<key>" olarak birlestirilir (or. footer:game). ANAHTARLAR frontend ile birebir
+    // (App.tsx footerColumns + pages.ts MENU_GROUP_ORDER).
+    public const SECTION_PICKS = [
+        'footer' => [
+            'game' => 'Oyun',
+            'community' => 'Topluluk',
+            'content' => 'İçerik',
+            'guide' => 'Eğitim',
+            'organization' => 'Organizasyon',
+            'info' => 'Bilgi',
+            'legal' => 'Yasal',
         ],
-        'Sol menü' => [
-            'menu:play' => 'Oyna',
-            'menu:compete' => 'Turnuvalar',
-            'menu:fun' => 'Eğlence',
-            'menu:content' => 'Keşfet',
-            'menu:tools' => 'Araçlar',
-            'menu:account' => 'Hesap',
-            'menu:info' => 'Bilgi',
+        'menu' => [
+            'play' => 'Oyna',
+            'compete' => 'Turnuvalar',
+            'fun' => 'Eğlence',
+            'content' => 'Keşfet',
+            'tools' => 'Araçlar',
+            'account' => 'Hesap',
+            'info' => 'Bilgi',
         ],
     ];
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // --- Ust baslik: sayfa hangi footer kolonu / sol-menu grubu altinda listelenecek ---
-            Forms\Components\Select::make('section')
-                ->label('Üst başlık (nerede görünsün)')
-                ->options(self::SECTION_OPTIONS)
-                ->searchable()
+            // --- Ust baslik: IKI ADIM. (1) Kaynak: Footer mu Sol menu mu? (2) O kaynaktan baslik.
+            //     Secim "section" (gizli, gercek kolon) icinde "<kaynak>:<key>" olarak birlesir.
+            //     section_source/section_pick DB kolonu DEGIL (dehydrated false); edit'te section'dan cozulur.
+            Forms\Components\Select::make('section_source')
+                ->label('1) Nerede görünsün?')
+                ->options(['footer' => 'Footer (alt menü)', 'menu' => 'Sol menü'])
+                ->live()
+                ->dehydrated(false)
                 ->placeholder('Hiçbir yerde listeleme (yalnız doğrudan adres)')
-                ->helperText('Footer kolonu mu, sol menü grubu mu? Seçtiğin başlığın altında /bilgi/<adres> bağlantısı olarak görünür. Boş bırakırsan menüde/footer\'da çıkmaz.')
+                ->helperText('Sayfa footer kolonunda mı yoksa sol menü grubunda mı listelensin? Boş = menüde/footer\'da çıkmaz.')
+                ->afterStateHydrated(fn (Forms\Set $set, ?InfoPage $record) => $set(
+                    'section_source',
+                    $record?->section ? explode(':', $record->section, 2)[0] : null,
+                ))
+                ->afterStateUpdated(function (Forms\Set $set) {
+                    $set('section_pick', null);
+                    $set('section', null);
+                })
                 ->columnSpanFull(),
+            Forms\Components\Select::make('section_pick')
+                ->label('2) Üst başlık')
+                ->options(fn (Forms\Get $get) => self::SECTION_PICKS[$get('section_source')] ?? [])
+                ->visible(fn (Forms\Get $get) => (bool) $get('section_source'))
+                ->live()
+                ->dehydrated(false)
+                ->searchable()
+                ->placeholder('Başlık seç')
+                ->helperText('Seçtiğin başlığın altında /bilgi/<adres> bağlantısı olarak görünür.')
+                ->afterStateHydrated(fn (Forms\Set $set, ?InfoPage $record) => $set(
+                    'section_pick',
+                    ($record?->section && str_contains($record->section, ':')) ? explode(':', $record->section, 2)[1] : null,
+                ))
+                ->afterStateUpdated(fn (Forms\Set $set, $state, Forms\Get $get) => $set(
+                    'section',
+                    $state ? $get('section_source').':'.$state : null,
+                ))
+                ->columnSpanFull(),
+            Forms\Components\Hidden::make('section'), // gercek DB kolonu; yukaridaki iki adimdan doldurulur
             Forms\Components\TextInput::make('slug')
                 ->label('Adres (slug)')
                 ->required()
