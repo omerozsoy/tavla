@@ -61,6 +61,11 @@ class BoardDesign extends Model
         // Zemin resmi şeffaflığı (%0–100) + her haneye metin (1..24, boşlar atılır, kırpılır).
         // Resim yerleşiminden BAĞIMSIZ (aşağıdaki erken return'den önce çalışmalı).
         static::saving(function (self $d) {
+            // Kolonlar henüz yoksa (ilk create migration'ındaki syncBuiltins, surface migration'ından
+            // ÖNCE çalışır -> taze migrate/test) DOKUNMA; aksi halde "no column surface_image_opacity" patlar.
+            if (! \Illuminate\Support\Facades\Schema::hasColumn('board_designs', 'surface_image_opacity')) {
+                return;
+            }
             $d->surface_image_opacity = max(0, min(100, (int) ($d->surface_image_opacity ?? 100)));
             $texts = [];
             foreach ((array) ($d->point_texts ?? []) as $n => $txt) {
