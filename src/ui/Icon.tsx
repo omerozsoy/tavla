@@ -86,6 +86,7 @@ import {
   IconMinimize,
   IconAlertTriangle,
   IconAlertCircle,
+  IconAlertCircleFilled,
   IconWifi,
   IconWifiOff,
   IconBuilding,
@@ -373,6 +374,7 @@ const FILLED: Partial<Record<IconName, TablerIcon>> = {
   'die-5': IconDice5Filled,
   'die-6': IconDice6Filled,
   heart: IconHeartFilled,
+  'warning-circle': IconAlertCircleFilled,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)

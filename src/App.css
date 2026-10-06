@@ -11882,13 +11882,13 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 30px;
   display: block;
 }
-/* "Oyun kabul etmiyor" -> "Oyna" butonuyla aynı 32px footprint, ortada kırmızı nokta. */
+/* "Oyun kabul etmiyor" -> belirgin kırmızı dolu uyarı ikonu (davet edilemez işareti). */
 .online-busy {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   color: #ef4444;
 }
 .online-pdot {
@@ -12198,8 +12198,8 @@ button.acct-row-logout:hover:not(:disabled) {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 .status-dot--busy {
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
 }
 .status-dot--offline {
   background: #9ca3af;
@@ -12211,8 +12211,8 @@ button.acct-row-logout:hover:not(:disabled) {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 .online-pdot.status-dot--busy {
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
 }
 .live-list,
 .rank-list {
