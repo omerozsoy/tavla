@@ -37,6 +37,7 @@ class EntryPopupResource extends Resource
             // Kare gorsel: onerilen 600x600 (2x: 1200x1200). public/uploads/reklam altina yuklenir.
             Forms\Components\FileUpload::make('image')->label('Kare görsel (600×600)')
                 ->image()->disk('uploads')->directory('reklam')->visibility('public')
+                ->optimizeOnUpload('reklam')
                 ->imageEditor()->imageEditorAspectRatios(['1:1'])->maxSize(5120)
                 ->helperText('Önerilen: 600×600 px kare (2× retina: 1200×1200). En fazla 5 MB.')
                 ->required()
@@ -44,6 +45,7 @@ class EntryPopupResource extends Resource
 
             Forms\Components\FileUpload::make('image_mobile')->label('Mobil görsel (opsiyonel)')
                 ->image()->disk('uploads')->directory('reklam')->visibility('public')
+                ->optimizeOnUpload('reklam')
                 ->imageEditor()->maxSize(4096)
                 ->helperText('Opsiyonel. Boşsa mobilde kare görsel küçültülerek gösterilir. En fazla 4 MB.')
                 ->columnSpanFull(),

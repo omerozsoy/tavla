@@ -33,6 +33,15 @@ class AppServiceProvider extends ServiceProvider
         \Filament\Forms\Components\FileUpload::configureUsing(
             fn (\Filament\Forms\Components\FileUpload $c) => $c->rule('mimes:png,jpg,jpeg,webp,gif')
         );
+        // Panel görsel yüklemelerini otomatik küçült: alanda ->optimizeOnUpload('dir') çağrılınca
+        // yüklenen görsel ≤1920px WebP'ye (~2 MB -> ~150 KB) sıkıştırılıp saklanır (sayfalar hızlanır;
+        // og:image JPEG'e SeoMeta::ogVariant çevirir). GD yoksa/hata olursa orijinal (ImageOptimizer
+        // fallback) -> yükleme KIRILMAZ. TAHTA (BoardDesign) alanlarına EKLENMEZ: hassas şeffaflık/kırpma.
+        \Filament\Forms\Components\FileUpload::macro('optimizeOnUpload', function (string $dir, int $maxW = 1920, int $quality = 82) {
+            /** @var \Filament\Forms\Components\FileUpload $this */
+            return $this->saveUploadedFileUsing(fn (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file) => app(\App\Support\ImageOptimizer::class)
+                ->store($file, 'uploads', $dir, $maxW, $quality));
+        });
         // Livewire gecici yukleme klasorunu garanti et. Windows'ta klasor yoksa
         // "klasor olustur -> hemen boyut oku" yarisi Flysystem'de
         // "Unable to retrieve the file_size for livewire-tmp/..." hatasi veriyordu.

@@ -48,6 +48,7 @@ class AdSlotResource extends Resource
             // Masaustu gorsel: 1120x180 (2x: 2240x360). public/uploads/reklam altina yuklenir.
             Forms\Components\FileUpload::make('image')->label('Masaüstü görsel (1120×180)')
                 ->image()->disk('uploads')->directory('reklam')->visibility('public')
+                ->optimizeOnUpload('reklam')
                 ->imageEditor()->maxSize(5120)
                 ->helperText('Önerilen: 1120×180 px (2× retina: 2240×360). Tam genişlikte gösterilir. En fazla 5 MB.')
                 ->required()
@@ -56,6 +57,7 @@ class AdSlotResource extends Resource
             // Mobil gorsel: 720x300 (2x: 1440x600). Opsiyonel — yoksa masaustu gorseli kucultulur.
             Forms\Components\FileUpload::make('image_mobile')->label('Mobil görsel (720×300)')
                 ->image()->disk('uploads')->directory('reklam')->visibility('public')
+                ->optimizeOnUpload('reklam')
                 ->imageEditor()->maxSize(4096)
                 ->helperText('Opsiyonel. Önerilen: 720×300 px (2×: 1440×600). Boşsa mobilde masaüstü görseli küçültülerek gösterilir. En fazla 4 MB.')
                 ->columnSpanFull(),

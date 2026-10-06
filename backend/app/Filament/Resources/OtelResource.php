@@ -47,6 +47,7 @@ class OtelResource extends Resource
             // Otel gorseli: etkinlik takviminde bu resim gosterilir. public/uploads/otel altina yuklenir.
             Forms\Components\FileUpload::make('image')->label('Otel görseli')
                 ->image()->disk('uploads')->directory('otel')->visibility('public')
+                ->optimizeOnUpload('otel')
                 ->imageEditor()->maxSize(5120)
                 ->helperText('Etkinlik takviminde bu görsel gösterilir. En fazla 5 MB.')
                 ->columnSpanFull(),

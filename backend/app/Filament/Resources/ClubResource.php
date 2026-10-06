@@ -42,6 +42,7 @@ class ClubResource extends Resource
             Forms\Components\TextInput::make('title')->label('Kulüp adı')->required()->columnSpanFull(),
             Forms\Components\FileUpload::make('image')->label('Logo')
                 ->image()->disk('uploads')->directory('kulup')->visibility('public')
+                ->optimizeOnUpload('kulup')
                 ->imageEditor()->circleCropper()->maxSize(2048)
                 ->helperText('Kulüp logosu — rehberde ismin solunda görünür. Kare/yuvarlak öneririz.')
                 ->columnSpanFull(),

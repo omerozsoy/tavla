@@ -42,6 +42,7 @@ class KurumResource extends Resource
             Forms\Components\TextInput::make('title')->label('Kurum adı')->required()->columnSpanFull(),
             Forms\Components\FileUpload::make('image')->label('Logo')
                 ->image()->disk('uploads')->directory('kurum')->visibility('public')
+                ->optimizeOnUpload('kurum')
                 ->maxSize(2048)
                 ->helperText('Şeffaf PNG önerilir. En fazla 2 MB.')
                 ->columnSpanFull(),

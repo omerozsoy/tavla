@@ -94,6 +94,7 @@ class InfoPageResource extends Resource
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi (varsayılan)')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('bilgi')->visibility('public')
+                ->optimizeOnUpload('bilgi')
                 ->maxSize(12288)->panelLayout('grid')
                 ->helperText('Varsayılan galeri. İçeriğin altında gösterilir; tıklayınca büyür (lightbox). İpucu: metinde <resimgalerisi> yazarsan tam o noktada çıkar (yoksa en altta). Her resim en çok 12 MB — büyük resimler yüklenmez (sunucu PHP upload_max_filesize / post_max_size limitleri de en az bu kadar olmalı).')
                 ->columnSpanFull(),
@@ -110,6 +111,7 @@ class InfoPageResource extends Resource
                         ->label('Resimler')
                         ->image()->multiple()->reorderable()->appendFiles()
                         ->disk('uploads')->directory('bilgi')->visibility('public')
+                        ->optimizeOnUpload('bilgi')
                         ->maxSize(4096)->panelLayout('grid'),
                 ])
                 ->itemLabel(fn (array $state): ?string => ! empty($state['name']) ? ('<'.$state['name'].'>') : null)
