@@ -10402,6 +10402,7 @@ export default function App() {
           showPip={showPip}
           watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
           showLogo={ALL_THEMES.find((x) => x.id === boardTheme)?.rarity !== 'country'}
+          pointTexts={ALL_THEMES.find((x) => x.id === boardTheme)?.pointTexts}
         />
         {showAnalysis && mode === 'pvb' && (
           <AnalysisPanel

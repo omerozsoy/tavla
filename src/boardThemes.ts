@@ -43,6 +43,8 @@ export interface BoardTheme {
   surfaceImgLeft?: string
   surfaceImgRight?: string
   surfaceOpacity?: number
+  // Her haneye (1..24) opsiyonel metin: üçgene basılır (oto beyaz+dış hat, ortalı, ölçekli)
+  pointTexts?: Record<number, string>
 }
 export interface PointFit {
   x: number
@@ -370,6 +372,7 @@ export interface BoardDesignRow {
   surface?: string | null
   checker_style?: string | null
   surfaceImages?: { left?: string | null; right?: string | null; opacity?: number } | null
+  texts?: Record<string, string> | null
   images?: {
     mode?: 'pair' | 'each'
     odd?: string | null
@@ -409,6 +412,19 @@ export function safeImgUrl(u: unknown): string | undefined {
   if (!(u.startsWith('/uploads/') || /^https:\/\/[^/]+\//.test(u))) return undefined
   if (/["'()\\\s<>]/.test(u)) return undefined
   return u
+}
+// Hane metinleri: yalnız 1..24 anahtarı, string, kırpılmış (maks 24). Boşlar atılır; hiçbiri yoksa undefined.
+export function safeTexts(t: unknown): Record<number, string> | undefined {
+  if (!t || typeof t !== 'object') return undefined
+  const out: Record<number, string> = {}
+  for (const [k, v] of Object.entries(t as Record<string, unknown>)) {
+    const n = Number(k)
+    if (Number.isInteger(n) && n >= 1 && n <= 24 && typeof v === 'string') {
+      const s = v.trim().slice(0, 24)
+      if (s) out[n] = s
+    }
+  }
+  return Object.keys(out).length ? out : undefined
 }
 const HEX = /^#[0-9a-fA-F]{6}$/
 const SURFACES = ['plain', 'gradient', 'felt', 'wood'] as const
@@ -451,6 +467,7 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
         typeof r.surfaceImages?.opacity === 'number'
           ? Math.max(0, Math.min(100, r.surfaceImages.opacity))
           : undefined,
+      pointTexts: safeTexts(r.texts),
       ...(r.images?.mode === 'each' ? eachImages(r.images) : {}),
     }
     CUSTOM_THEMES.push(theme)

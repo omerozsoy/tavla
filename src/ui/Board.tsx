@@ -113,6 +113,8 @@ interface BoardProps {
   // Verilmezse hicbir tasa dokunulmaz (klasik oyun davranisi degismez).
   openMark?: Map<number, number>
   showStackCount?: boolean // Kız Tavlası: 2+ pulluk stack'te kalan toplamı göster
+  // Admin özel tahta: hane no (1..24) -> o hanenin üçgenine basılan opsiyonel metin.
+  pointTexts?: Record<number, string>
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -174,6 +176,7 @@ function Point({
   checkerSkin,
   openCount = 0,
   showStackCount = false,
+  text,
 }: {
   index: number
   top: boolean
@@ -190,6 +193,7 @@ function Point({
   checkerSkin?: CheckerSkinDef | null
   openCount?: number // Kız Tavlası: bu hanedeki UST 'openCount' tas "acik/indirilmis" gosterilir
   showStackCount?: boolean
+  text?: string // hane üçgenine basılan opsiyonel metin (admin özel tahta)
 }) {
   const stack = checkersOf(state, index)
   const shade = index % 2 === 0 ? 'a' : 'b'
@@ -215,6 +219,7 @@ function Point({
   const visible = stack ? Math.min(stack.count, 5) : 0
   return (
     <div className={classes} data-point={index} onClick={selectOnPointerDown ? undefined : handleClick} onPointerDown={handlePointerDown}>
+      {text && <span className="point-label" aria-hidden="true">{text}</span>}
       <div className="checkers">
         {Array.from({ length: visible }).map((_, i) => {
           const isTop = i === visible - 1 // sourceRect() ile ayni: ust/secilebilir tas = son cocuk
@@ -289,6 +294,7 @@ function Board({
   checkerSkin = null,
   openMark,
   showStackCount,
+  pointTexts,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -618,6 +624,7 @@ function Board({
       checkerSkin={checkerSkin}
       openCount={openMark?.get(index) ?? 0}
       showStackCount={showStackCount}
+      text={pointTexts?.[index + 1]}
     />
   )
 

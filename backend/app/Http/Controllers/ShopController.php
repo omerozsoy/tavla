@@ -225,6 +225,8 @@ class ShopController extends Controller
                         'right' => BoardDesign::imageUrl($d->surface_image_right),
                         'opacity' => $d->surface_image_opacity,
                     ] : null,
+                    // Her haneye opsiyonel metin {"1".."24": metin}
+                    'texts' => $d->point_texts ?: null,
                     // Tek (1,3,5…) / çift (2,4,6…) hane resmi (üçgene kırpılır; yoksa düz renk)
                     'images' => $d->point_mode === 'each' ? [
                         // Her haneye ayrı resim (1..24) + yerleşimleri

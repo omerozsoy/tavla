@@ -6331,6 +6331,37 @@ html[data-surf-img] .half > .quadrant {
 .point.bottom {
   flex-direction: column-reverse;
 }
+/* Admin özel tahta: hane üçgenine basılan opsiyonel metin. Oto stil: beyaz + koyu dış hat
+   (her zemin/resim üstünde okunur), ortalı, üçgen genişliğine göre ölçekli. Pulların ALTINDA. */
+.point-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  max-width: var(--col);
+  text-align: center;
+  font-size: calc(var(--col) * 0.26);
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow:
+    0 0 2px #000,
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 1px #000;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.point.top .point-label {
+  top: calc(var(--tri-h) * 0.1);
+}
+.point.bottom .point-label {
+  bottom: calc(var(--tri-h) * 0.1);
+}
+.point .checkers {
+  position: relative;
+  z-index: 1;
+}
 /* Ucgenler (Galaxy tarzi): duz "katlanmis" ucgen. Sert 2-tonlu bolme yerine
    yumusak orta-fold (aydinlik kenar -> taban -> hafif koyu). Boylece dikey
    band/cizgi hissi gitmis, tas gibi solid + hafif derinlikli okunur.

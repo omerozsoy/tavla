@@ -123,6 +123,17 @@
                     @endif
                 </g>
             @endif
+            @php $ptxt = is_array($texts ?? null) ? ($texts[$n] ?? $texts[(string) $n] ?? null) : null; @endphp
+            @if (is_string($ptxt) && trim($ptxt) !== '')
+                @php
+                    $tx = $x + $pw / 2;
+                    $ty = $row === 't' ? $base + $ph * 0.24 : $base - $ph * 0.24;
+                    $fs = $pw * 0.44;
+                @endphp
+                <text x="{{ $tx }}" y="{{ $ty }}" text-anchor="middle" dominant-baseline="middle"
+                    font-size="{{ $fs }}" font-weight="800" fill="#fff" stroke="#000" stroke-width="{{ $fs * 0.14 }}"
+                    style="paint-order:stroke">{{ mb_substr(trim($ptxt), 0, 24) }}</text>
+            @endif
         @endforeach
     @endfor
     <rect x="{{ $fw + $half }}" y="{{ $fw }}" width="{{ $bar }}" height="{{ $H - 2 * $fw }}" fill="{{ $frame }}"/>

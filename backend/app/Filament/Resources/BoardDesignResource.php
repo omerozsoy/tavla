@@ -353,6 +353,15 @@ class BoardDesignResource extends Resource
                             ...self::eachPointSections(),
                         ])
                         ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
+                    Forms\Components\Section::make('Hane Yazıları')
+                        ->description('İsteğe bağlı. Her hanenin üçgenine basılan kısa metin (maks 24 karakter). Oto beyaz + dış hat, ortalı, boyut üçgene göre ölçeklenir.')
+                        ->collapsible()
+                        ->collapsed()
+                        ->schema(array_map(fn (int $n) => Forms\Components\TextInput::make("point_texts.$n")
+                            ->label("Hane $n")
+                            ->maxLength(24), range(1, 24)))
+                        ->columns(['default' => 2, 'md' => 4])
+                        ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
                 ])->columnSpan(['lg' => 3]),
                 Forms\Components\Section::make('Önizleme')->schema([
                     Forms\Components\Placeholder::make('preview')
@@ -364,6 +373,7 @@ class BoardDesignResource extends Resource
                             'surfLeft' => self::previewImage($get('surface_image_left')),
                             'surfRight' => self::previewImage($get('surface_image_right')),
                             'surfOpacity' => (int) ($get('surface_image_opacity') ?? 100),
+                            'texts' => $get('point_texts'),
                             'imgOdd' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_odd')),
                             'imgEven' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_even')),
                             'fitOdd' => self::fitState($get, 'odd'),
