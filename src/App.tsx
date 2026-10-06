@@ -6391,6 +6391,7 @@ export default function App() {
         oppRating: res.room.p2_rating,
         oppAvatar: res.room.p2_avatar,
         oppFrame: res.room.p2_frame ?? null,
+        oppCountry: res.room.p2_country ?? null,
         oppId: res.room.p2_user_id ?? null,
         status: res.room.status,
         authoritative: true,
@@ -6527,6 +6528,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
         // KRİTİK: authoritative'i İLK POLL'U BEKLEMEDEN kur. Eşleşen oyuncu (p2) status='playing'
@@ -6631,6 +6633,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
       })
@@ -6709,6 +6712,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
         authoritative: res.room.authoritative,
@@ -6804,6 +6808,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
       })
@@ -7102,6 +7107,7 @@ export default function App() {
       oppRating: r.opp_rating ?? null,
       oppAvatar: r.opp_avatar ?? null,
       oppFrame: null,
+      oppCountry: r.opp_country ?? null,
       status: 'playing',
       authoritative: isBot ? true : undefined,
       dice_authority: isBot ? true : undefined,

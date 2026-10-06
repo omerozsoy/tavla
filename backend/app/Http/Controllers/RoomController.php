@@ -1133,8 +1133,11 @@ class RoomController extends Controller
             ->filter()->unique()->values();
         $premiumMap = $oppIds->isEmpty() ? [] : User::whereIn('id', $oppIds)->get(['id', 'plan', 'plan_until'])
             ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
+        // Rakip ülke kodu (resume/rejoin'de isim yanı minik bayrak); sync de p1/p2_country döndürür.
+        $countryMap = $oppIds->isEmpty() ? [] : User::whereIn('id', $oppIds)->get(['id', 'country'])
+            ->mapWithKeys(fn ($u) => [$u->id => $u->country])->all();
 
-        $list = $rooms->map(function ($r) use ($me, $premiumMap, $tournByCode) {
+        $list = $rooms->map(function ($r) use ($me, $premiumMap, $countryMap, $tournByCode) {
             $mine = ((int) $r->p1_user_id === (int) $me->id) ? 'p1' : 'p2';
             $oppId = $mine === 'p1' ? $r->p2_user_id : $r->p1_user_id;
             $score = $r->state['match']['score'] ?? null;
@@ -1145,6 +1148,7 @@ class RoomController extends Controller
                 'opp_name' => $mine === 'p1' ? $r->p2_name : $r->p1_name,
                 'opp_rating' => $mine === 'p1' ? $r->p2_rating : $r->p1_rating,
                 'opp_avatar' => $mine === 'p1' ? $r->p2_avatar : $r->p1_avatar,
+                'opp_country' => isset($countryMap[$oppId]) ? $countryMap[$oppId] : null,
                 'opp_premium' => $premiumMap[$oppId] ?? false,
                 'target' => $r->target,
                 'score' => $score,

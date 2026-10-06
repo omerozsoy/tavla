@@ -2109,6 +2109,7 @@ export interface ActiveRoom {
   opp_name: string | null
   opp_rating: number | null
   opp_avatar: string | null
+  opp_country?: string | null
   opp_premium?: boolean
   target: number | null
   score: { white: number; black: number } | null
