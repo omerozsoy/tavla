@@ -3,7 +3,6 @@
 // Tercih localStorage'da saklanır: kategori bayrakları + consentVersion + updatedAt.
 // Politika/consent yapısı önemli ölçüde değişirse (admin consent_version'ı artırınca)
 // tekrar onay istenir.
-import { reloadWithCause } from './reloadDiag'
 
 export interface ConsentRecord {
   necessary: true // zorunlu her zaman açık
@@ -150,7 +149,7 @@ export function applyConsentOrReload(rec: ConsentRecord, cfg: ConsentConfig | nu
     (!rec.analytics && (injected.has('ga') || injected.has('gtm') || typeof (window as unknown as { gtag?: unknown }).gtag === 'function')) ||
     (!rec.marketing && injected.has('meta'))
   if (revoked) {
-    reloadWithCause('consent')
+    window.location.reload()
     return
   }
   applyConsent(rec, cfg)

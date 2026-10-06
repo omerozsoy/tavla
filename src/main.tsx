@@ -17,7 +17,6 @@ import OfflineBanner from './ui/LoadError.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
-import { installReloadDiag } from './reloadDiag.ts'
 import { installScrollRestore } from './scrollRestore.ts'
 
 // Rutbe esikleri (admin: Ayarlar > Rating Ayar) onbellekten SENKRON uygulanir -> ilk boyamada
@@ -69,9 +68,6 @@ createRoot(document.getElementById('root')!).render(
 // BAYAT BUNDLE ÇÖZÜMÜ: yeni deploy'u algıla; kendiliğinden YENİLEME -> güvenli anda UpdateBanner
 // ile "yeni sürüm var, güncelleyin" de. Reload yalnız kullanıcı "Güncelle"ye basınca olur.
 installAutoUpdate()
-
-// GEÇİCİ: Safari "çok yenileniyor" şikâyetinin kökünü ölç (reload nedeni/ekran -> /api/diag/reload).
-installReloadDiag()
 
 // Google Etiketi (gtag.js): admin panelden yönetilen ID ile dinamik yükle (aktifse). Ana sayfa
 // statik servis edildiğinden server-side enjeksiyon home'a ulaşmaz -> client-side tek kaynak.

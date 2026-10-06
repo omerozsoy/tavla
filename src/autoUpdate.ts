@@ -9,8 +9,6 @@
 // banner çıkmaz; yalnız frontend gerçekten değiştiğinde çıkar. "Maçtayım" tespiti DOM'dan
 // (.app.game-view) -> React state'e bağımlılık yok.
 
-import { reloadWithCause } from './reloadDiag'
-
 // Banner'ın KESİNLİKLE gösterilmeyeceği hassas rotalar (form/ödeme akışı bölünmesin).
 const SENSITIVE = ['/sepet', '/odeme', '/checkout', '/cart', '/uyelik', '/payment', '/magaza']
 
@@ -101,7 +99,7 @@ function maybeAutoApply(): void {
   } catch {
     /* storage yoksa yine de tek reload dene (kalkansız) */
   }
-  reloadWithCause('autoupdate-pwa')
+  window.location.reload()
 }
 
 function maybeNotify(): void {
@@ -118,9 +116,9 @@ export function onUpdateAvailable(cb: () => void): void {
   maybeNotify()
 }
 
-/** Banner "Güncelle" butonu -> yeni bundle'ı yükle (reload nedenini damgalayarak). */
+/** Banner "Güncelle" butonu -> yeni bundle'ı yükle. */
 export function applyUpdate(): void {
-  reloadWithCause('autoupdate')
+  window.location.reload()
 }
 
 /** main.tsx'ten bir kez. Deploy izler; yeni sürümü güvenli anda banner ile BİLDİRİR (reload etmez). */
