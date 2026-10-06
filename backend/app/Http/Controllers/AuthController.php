@@ -1436,6 +1436,10 @@ class AuthController extends Controller
                 ->exists();
         }
 
+        $online = $user->last_seen && $user->presence_status !== 'offline'
+            ? \Illuminate\Support\Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
+            : false;
+
         return response()->json([
             'id' => $user->id,
             'is_friend' => $isFriend, // frontend: PublicProfile "Arkadaş ol"u gizler
@@ -1459,9 +1463,10 @@ class AuthController extends Controller
             'featured' => app(\App\Services\Achievements\AchievementService::class)->resolveFeatured($user->featured_badges),
             // Cevrimici mi? last_seen son 2 dk icinde ise (presence ping penceresiyle ayni).
             // A-29: "Çevrimdışı Görün" seçen oyuncu çevrimdışı görünür (eskiden gerçek durum sızıyordu).
-            'online' => $user->last_seen && $user->presence_status !== 'offline'
-                ? \Illuminate\Support\Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
-                : false,
+            'online' => $online,
+            // Durum noktası/rozeti: çevrimiçiyse gerçek presence (busy="Oyun Kabul Etmiyor" -> kırmızı),
+            // değilse 'offline'. Profil kartı yeşil/kırmızı/gri ayrımını buradan yapar.
+            'status' => $online ? ($user->presence_status ?: 'available') : 'offline',
         ]);
     }
 

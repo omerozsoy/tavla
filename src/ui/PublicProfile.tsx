@@ -74,9 +74,10 @@ export default function PublicProfile({
             {/* Top-3 madalyaları (PR/Puan ilk 3): belirgin etiketli blok (isim-yani rozetin buyugu). */}
             <TopRankMedals userId={p.id} />
             <div className="pp-rank">
-              <span className={`pp-status ${p.online ? 'on' : 'off'}`}>
+              {/* busy = "Oyun Kabul Etmiyor" -> kirmizi; diger cevrimici -> yesil; degilse gri. */}
+              <span className={`pp-status ${!p.online ? 'off' : p.status === 'busy' ? 'busy' : 'on'}`}>
                 <span className="pp-status-dot" aria-hidden="true" />
-                {p.online ? t('online.statusOn') : t('online.statusOff')}
+                {!p.online ? t('online.statusOff') : p.status === 'busy' ? t('online.st.busy') : t('online.statusOn')}
               </span>
             </div>
 
