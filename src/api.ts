@@ -304,8 +304,14 @@ export async function resetPassword(
   })
 }
 
-export async function me(): Promise<ServerUser> {
-  const data = await req<{ user: ServerUser }>('/me')
+// ZAMAN ASIMI ZORUNLU: ciplak /me (acilis auth + yeniden-baglanma) timeoutsuz calisirsa,
+// sunucu TCP'yi KABUL edip hic cevap vermedigi anda (uyku/aglar-arasi gecis sonrasi yari-acik
+// baglanti; uzun omurlu PWA'da sik) fetch SURESIZ asili kalir -> meWithRetry sonsuza bekler ->
+// finish() hic cagrilmaz -> authChecked=false -> "Yükleniyor…"da ebediyen takilma. Abort ->
+// gecici ApiError (nonJson) -> meWithRetry yeniden dener, bitince firlar -> app acilir (token
+// korunur; baglanti gelince reconnect effect oturumu geri yukler).
+export async function me(timeoutMs = 10_000): Promise<ServerUser> {
+  const data = await req<{ user: ServerUser }>('/me', {}, timeoutMs)
   return data.user
 }
 

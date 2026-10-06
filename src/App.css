@@ -11927,7 +11927,9 @@ button.acct-row-logout:hover:not(:disabled) {
 /* ---- Maç Özeti (Match Summary) modalı ---- */
 /* Analiz ekranlarının (tam-ekran portal) ÜSTÜNDE dursun diye yüksek z-index. */
 .ms-overlay {
-  z-index: 4000;
+  /* Spectate/GamePreview/KizTavlasi tam-ekran portal'ları body'de z-index:5000 ->
+     özet modalı (body'ye portal) 4000'de ALTTA kalıp "tıklanmıyor" sanılıyordu. 5000'in üstüne al. */
+  z-index: 5200;
   display: flex;
   align-items: center;
   justify-content: center;

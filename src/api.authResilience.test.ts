@@ -57,3 +57,22 @@ it('site-gate 401 does not count as an invalid session', async () => {
   const err = await meWithRetry(() => false, 1).catch((e) => e)
   expect(isAuthRejected(err)).toBe(false)
 })
+
+// Acilis takilmasi (PWA "Yükleniyor…" ebediyen): sunucu TCP'yi kabul edip HIC cevap vermezse
+// /me timeout'u abort etmeli -> meWithRetry sonsuza beklememeli, butce bitince FIRLATMALI (401
+// degil), boylece finish()/authChecked ilerler.
+it('a hung /me (accepted but no response) aborts via timeout instead of hanging forever', async () => {
+  fetchMock.mockImplementation(
+    (_url: string, opts: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        opts.signal?.addEventListener('abort', () =>
+          reject(new DOMException('Aborted', 'AbortError')),
+        )
+      }),
+  )
+  const p = meWithRetry(() => false).catch((e) => e)
+  await vi.runAllTimersAsync()
+  const err = await p
+  expect(isAuthRejected(err)).toBe(false)
+  expect(fetchMock).toHaveBeenCalledTimes(4)
+})
