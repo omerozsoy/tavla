@@ -1615,11 +1615,18 @@ export default function App() {
   // / deep-link'e karisma); sonraki HER gecelte (home dahil) olasi tum scroll kaplarini tepeye al.
   const scrolledFirstRef = useRef(false)
   const hydratedScrollRef = useRef(false)
+  const prevSlugRef = useRef('')
   useEffect(() => {
+    const prev = prevSlugRef.current
+    prevSlugRef.current = currentSlug || ''
     if (!scrolledFirstRef.current) {
       scrolledFirstRef.current = true
       return
     }
+    // CANLI IZLEME (/izle/<kod>) bir OVERLAY'dir, gercek sayfa degil. Hem acilista (alttaki lobi
+    // gorunmez sekilde tepeye kaymasin ki cikista yeri korunsun) hem kapanista tepeye-kaydirmadan
+    // muaf tut -> izleyip cikinca lobide kaldigin yerde kalirsin (sinir bozucu siçrama yok).
+    if (prev.startsWith('izle/') || (currentSlug || '').startsWith('izle/')) return
     // DEEP-LINK REFRESH FIX ("/sikca-sorulan-sorular refresh edince en başa dönüyor"): ilk mount'ta
     // currentSlug='' idi; applyFromPath deep-link state'ini kurunca currentSlug URL'deki başlangıç
     // slug'ına OTURUR -> bu HİDRASYON geçişinde EN ÜSTE KAYDIRMA (tarayıcı scroll geri-yükleme +
