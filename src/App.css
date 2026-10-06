@@ -1383,6 +1383,20 @@ button[aria-disabled='true'],
   color: #2e2721;
   font-variant-numeric: tabular-nums;
 }
+/* Bloke tutar: tile'da stake altinda kucuk/soluk -> secmeden once ne kadar bloke olacagi gorunur. */
+.solo-blocked {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #8a7f72;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.solo-tile.locked .solo-blocked {
+  opacity: 0.6;
+}
 /* Mac Oyunu kurulum tile'lari (saat / maks bahis) */
 .setup-tiles {
   display: grid;

@@ -129,6 +129,11 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
                   <span className="solo-stake">
                     <Coins amount={lv.stake} size={14} />
                   </span>
+                  {/* Bloke tutar: bu bahse girince hesaptan bloke edilen EN KÖTÜ tutar (stake×48).
+                      Oyun bitince çözülür; insanlar ne kadar bloke olacağını baştan görsün. */}
+                  <span className="solo-blocked" title={t('solo.blockedHint')}>
+                    {t('solo.blocked')} {(lv.stake * MONEY_WORST_MULT).toLocaleString('tr-TR')}
+                  </span>
                 </button>
               )
             })}
