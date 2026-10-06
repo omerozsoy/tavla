@@ -30,6 +30,10 @@ export interface BoardThemeOpt {
   pointFitB?: import('../boardThemes').PointFit
   pointImgs?: Record<number, string>
   pointFits?: Record<number, import('../boardThemes').PointFit>
+  surfaceImgLeft?: string
+  surfaceImgRight?: string
+  surfaceOpacity?: number
+  pointTexts?: Record<number, string>
 }
 
 // Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
@@ -75,6 +79,10 @@ function HoverPreview({ bt, rect }: { bt: BoardThemeOpt; rect: DOMRect }) {
         pointFitB={bt.pointFitB}
         pointImgs={bt.pointImgs}
         pointFits={bt.pointFits}
+        surfaceImgLeft={bt.surfaceImgLeft}
+        surfaceImgRight={bt.surfaceImgRight}
+        surfaceOpacity={bt.surfaceOpacity}
+        pointTexts={bt.pointTexts}
         themeId={bt.id}
       />
       <div className="bp-hover-name">
@@ -156,6 +164,10 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                       pointFitB={bt.pointFitB}
                       pointImgs={bt.pointImgs}
                       pointFits={bt.pointFits}
+                      surfaceImgLeft={bt.surfaceImgLeft}
+                      surfaceImgRight={bt.surfaceImgRight}
+                      surfaceOpacity={bt.surfaceOpacity}
+                      pointTexts={bt.pointTexts}
                       themeId={bt.id}
                     />
                     {boardTheme === bt.id && (

@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import type { PointFit } from '../boardThemes'
 import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
@@ -29,6 +29,10 @@ interface Props {
   pointFitB?: PointFit
   pointImgs?: Record<number, string> // tam resim modu: hane no (1..24) -> resim
   pointFits?: Record<number, PointFit>
+  surfaceImgLeft?: string // tahta zemin resmi: sol yarı (üçgenlerin ALTINDA)
+  surfaceImgRight?: string // sağ yarı
+  surfaceOpacity?: number // zemin resmi şeffaflığı %0–100
+  pointTexts?: Record<number, string> // her haneye (1..24) opsiyonel metin
   themeId?: string // ozel cok-renkli desenli boardlar icin (or. 'citrus-wood')
   onChangeBoard?: () => void
   changeLabel?: string
@@ -83,6 +87,10 @@ export default function SetupBoard({
   pointFitB,
   pointImgs,
   pointFits,
+  surfaceImgLeft,
+  surfaceImgRight,
+  surfaceOpacity,
+  pointTexts,
   themeId,
   onChangeBoard,
   changeLabel,
@@ -281,6 +289,29 @@ export default function SetupBoard({
     }
   }
 
+  // Her haneye opsiyonel metin (admin özel tahta): üçgene oto beyaz + koyu dış hat, pulların ALTINDA.
+  // Hane no eşlemesi resim moduyla aynı: üst sol 13..18 / sağ 19..24, alt sol 12..7 / sağ 6..1.
+  const labels: ReactNode[] = []
+  if (pointTexts && Object.keys(pointTexts).length) {
+    const fs = colW * 0.42
+    const txt = (n: number, cx: number, y: number) => {
+      const s = pointTexts[n]
+      if (!s) return
+      labels.push(
+        <text key={`lbl-${n}`} x={cx} y={y} textAnchor="middle" dominantBaseline="middle"
+          fontSize={fs} fontWeight={800} fill="#fff" stroke="#000" strokeWidth={fs * 0.14}
+          style={{ paintOrder: 'stroke' }}>{s}</text>,
+      )
+    }
+    for (const half of ['L', 'R'] as const) {
+      for (let col = 0; col < 6; col++) {
+        const cx = colCx(half, col)
+        txt((half === 'L' ? 13 : 19) + col, cx, PAD + trTriH * 0.24)
+        txt((half === 'L' ? 12 : 6) - col, cx, H - PAD - trTriH * 0.24)
+      }
+    }
+  }
+
   const die = (x: number, y: number, face: number, pip: string) => {
     const size = 34
     return (
@@ -371,9 +402,19 @@ export default function SetupBoard({
           {(surface === 'gradient' || surface === 'felt') && (
             <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} fill={`url(#${uid}-${surface === 'gradient' ? 'grad' : 'felt'})`} />
           )}
+          {/* Tahta zemin resmi (sol/sağ yarı, üçgenlerin ALTINDA): texture üstünde, bar/haneler altında. */}
+          {surfaceImgLeft && (
+            <image href={surfaceImgLeft} x={PAD} y={PAD} width={halfW} height={H - 2 * PAD}
+              preserveAspectRatio="xMidYMid slice" opacity={(surfaceOpacity ?? 100) / 100} />
+          )}
+          {surfaceImgRight && (
+            <image href={surfaceImgRight} x={PAD + halfW + GAP} y={PAD} width={halfW} height={H - 2 * PAD}
+              preserveAspectRatio="xMidYMid slice" opacity={(surfaceOpacity ?? 100) / 100} />
+          )}
           {/* orta bar */}
           <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
           {tris}
+          {labels}
           {/* Yılbaşı: 'Mutlu Yıllar' yalnızca TavlaTV logolarının bulunduğu YERLERDE — her
               yarının (sol/sağ) MERKEZİNE tek yazı (canlı boarddaki .wm-cell background karşılığı;
               taşların/zarın ALTINDA -> {discs}/{dice} sonra çizilir). Oran korunur. */}

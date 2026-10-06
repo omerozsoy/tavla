@@ -40,6 +40,10 @@ interface BoardOpt {
   pointFitB?: import('../boardThemes').PointFit
   pointImgs?: Record<number, string>
   pointFits?: Record<number, import('../boardThemes').PointFit>
+  surfaceImgLeft?: string
+  surfaceImgRight?: string
+  surfaceOpacity?: number
+  pointTexts?: Record<number, string>
 }
 
 interface Props {
@@ -244,6 +248,10 @@ export default function ProfileOverview({
                     pointFitB={equipped.pointFitB}
                     pointImgs={equipped.pointImgs}
                     pointFits={equipped.pointFits}
+                    surfaceImgLeft={equipped.surfaceImgLeft}
+                    surfaceImgRight={equipped.surfaceImgRight}
+                    surfaceOpacity={equipped.surfaceOpacity}
+                    pointTexts={equipped.pointTexts}
                     themeId={equipped.id}
                   />
                 </div>
@@ -442,6 +450,10 @@ export default function ProfileOverview({
                       pointFitB={b.pointFitB}
                       pointImgs={b.pointImgs}
                       pointFits={b.pointFits}
+                      surfaceImgLeft={b.surfaceImgLeft}
+                      surfaceImgRight={b.surfaceImgRight}
+                      surfaceOpacity={b.surfaceOpacity}
+                      pointTexts={b.pointTexts}
                       themeId={b.id}
                     />
                   </div>

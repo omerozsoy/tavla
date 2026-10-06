@@ -32,6 +32,10 @@ interface BoardColors {
   pointFitB?: import('../boardThemes').PointFit
   pointImgs?: Record<number, string>
   pointFits?: Record<number, import('../boardThemes').PointFit>
+  surfaceImgLeft?: string
+  surfaceImgRight?: string
+  surfaceOpacity?: number
+  pointTexts?: Record<number, string>
 }
 
 interface Props {
@@ -208,6 +212,10 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             pointFitB={board.pointFitB}
             pointImgs={board.pointImgs}
             pointFits={board.pointFits}
+            surfaceImgLeft={board.surfaceImgLeft}
+            surfaceImgRight={board.surfaceImgRight}
+            surfaceOpacity={board.surfaceOpacity}
+            pointTexts={board.pointTexts}
             themeId={board.id}
             onChangeBoard={onChangeBoard}
             changeLabel={t('setup.changeBoard')}
