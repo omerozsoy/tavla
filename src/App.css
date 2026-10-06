@@ -11882,6 +11882,15 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 30px;
   display: block;
 }
+/* "Oyun kabul etmiyor" -> "Oyna" butonuyla aynı 32px footprint, ortada kırmızı nokta. */
+.online-busy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #ef4444;
+}
 .online-pdot {
   width: 8px;
   height: 8px;
@@ -23536,6 +23545,27 @@ button.acct-row-logout:hover:not(:disabled) {
   background: var(--card-bg);
   color: var(--muted);
   font-size: 0.82rem;
+}
+.swiss-wait {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.tourn-wait-next {
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.tourn-wait-banner {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  text-align: center;
 }
 .swiss-round-box,
 .swiss-standings {

@@ -493,6 +493,13 @@ export function OnlinePlayersPanel({
                         <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
                       </Button>
                     </span>
+                  ) : !self && p.status === 'busy' ? (
+                    // Oyun kabul etmiyor -> davet edilemez; "Oyna" butonu yerine kırmızı nokta.
+                    <span className="online-actions">
+                      <span className="online-busy" title={t('online.st.busy')} aria-label={t('online.st.busy')}>
+                        <Icon name="warning-circle" size={20} />
+                      </span>
+                    </span>
                   ) : null}
                 </div>
               )

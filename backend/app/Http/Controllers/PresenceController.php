@@ -69,6 +69,10 @@ class PresenceController extends Controller
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
         $tmatches = [];
+        // TURLAR ARASI BEKLEME: turnuvada hâlâ aktifim ama şu an oynanacak hazır maçım yok
+        // (bir sonraki rakibim henüz belli değil). Her sayfada gösterilecek global bant için
+        // ({tid,tname}); rakip belli olunca tmatches'e düşer -> bant kalkar, oda oto-açılır.
+        $waiting = [];
         $running = \App\Models\Tournament::where('status', 'running')->get();
         foreach ($running as $tr) {
             $inThis = false;
@@ -82,10 +86,16 @@ class PresenceController extends Controller
                 continue;
             }
             $rounds = count($tr->bracket ?? []);
+            $hasReady = false;  // bu turnuvada oynanacak hazır maçım var mı
+            $hasPending = false; // (bracket) ilerledim ama rakip slotu boş (TBD)
             foreach (($tr->bracket ?? []) as $ri => $round) {
                 foreach ($round as $m) {
                     $p1 = $m['p1']['id'] ?? null;
                     $p2 = $m['p2']['id'] ?? null;
+                    // İlerledim, rakibim henüz belli değil (ri>0, bir slot boş, kazanan yok).
+                    if (empty($m['winner']) && $ri > 0 && (($p1 === $me->id && ! $p2) || ($p2 === $me->id && ! $p1))) {
+                        $hasPending = true;
+                    }
                     if (empty($m['winner']) && $p1 && $p2 && ($p1 === $me->id || $p2 === $me->id)) {
                         // GATED FINAL: önce 3.'lük oynanır; final ancak 3.'lük bitip opens_at geçince
                         // "hazır" sayılır. Aksi halde finalistlere erken "Maç Hazır" popup'ı çıkar ve
@@ -102,6 +112,7 @@ class PresenceController extends Controller
                             }
                         }
                         $opp = $p1 === $me->id ? $m['p2'] : $m['p1'];
+                        $hasReady = true;
                         $tmatches[] = [
                             'tid' => $tr->id,
                             'tname' => $tr->name,
@@ -114,6 +125,24 @@ class PresenceController extends Controller
                         ];
                     }
                 }
+            }
+            if ($hasReady) {
+                continue; // hazır maç -> oto-giriş; bekleme bandı yok
+            }
+            // Swiss: sıralamada hâlâ 'active' isem bekliyorum. Bracket: bir sonraki rakibi bekliyorsam.
+            if ($tr->type === 'swiss_triple') {
+                $alive = false;
+                foreach (($tr->swiss_state['participants'] ?? []) as $p) {
+                    if (($p['id'] ?? null) === $me->id) {
+                        $alive = (($p['status'] ?? 'active') === 'active');
+                        break;
+                    }
+                }
+                if ($alive) {
+                    $waiting[] = ['tid' => $tr->id, 'tname' => $tr->name];
+                }
+            } elseif ($hasPending) {
+                $waiting[] = ['tid' => $tr->id, 'tname' => $tr->name];
             }
         }
 
@@ -155,6 +184,7 @@ class PresenceController extends Controller
         return response()->json([
             'invites' => $invites,
             'tournament_matches' => $tmatches,
+            'tourn_waiting' => $waiting,
             'reward_ready' => $rewardReady,
             'reward_seconds' => $rewardSeconds,
             'reward_coins' => $rewardCoins,

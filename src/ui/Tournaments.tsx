@@ -709,7 +709,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   ) : myBye ? (
                     <div className="swiss-mymatch swiss-bye"><Icon name="check" size={16} /> {t('swiss.bye')}</div>
                   ) : (
-                    <div className="swiss-mymatch swiss-wait">{t('swiss.waiting')}</div>
+                    <div className="swiss-mymatch swiss-wait">
+                      <div>{t('swiss.waiting')}</div>
+                      <div className="tourn-wait-next">{t('tourn.waitNext')}</div>
+                    </div>
                   )
                 )}
 
@@ -798,6 +801,20 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               <span className="tourn-bracket-hint">{t('tourn.scrollHint')}</span>
             </h3>
           )}
+          {/* ELEME AĞACI: aktif oyuncu bu turda ilerledi ama bir sonraki rakibi henüz belli değil
+              (rakip slotu boş, kazanan yok) ve oynanabilir maçı yoksa → "sıranı bekle" bilgi notu.
+              Rakip belli olunca oyun odası TournMatchReady ile otomatik açılır. */}
+          {active.status === 'running' && active.type !== 'swiss_triple' && (() => {
+            let myPlayable = false, myPending = false
+            active.bracket?.forEach((round, ri) => round.forEach((m) => {
+              const meIs = m.p1?.id === myId || m.p2?.id === myId
+              if (meIs && m.p1 && m.p2 && !m.winner) myPlayable = true
+              if (ri > 0 && !m.winner && ((m.p1?.id === myId && !m.p2) || (m.p2?.id === myId && !m.p1))) myPending = true
+            }))
+            return !myPlayable && myPending
+              ? <div className="tourn-wait-banner">{t('tourn.waitNext')}</div>
+              : null
+          })()}
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
             <div className="tourn-bracket">
               {active.bracket?.map((round, ri) => {

@@ -1026,6 +1026,7 @@ export interface AppNotification {
 export async function ping(): Promise<{
   invites: GameInvite[]
   tournament_matches: TournNotice[]
+  tourn_waiting?: { tid: number; tname: string }[]
   reward_ready: boolean
   reward_seconds?: number
   reward_coins?: number
