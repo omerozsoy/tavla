@@ -63,6 +63,8 @@ export default function PublicProfile({
                 size={64}
                 animated
                 premium={p.premium}
+                // İsim yanı nokta DURUM rengini yansıtsın (busy -> kırmızı); yoksa online/offline.
+                statusDot={p.status ?? (p.online ? 'available' : 'offline')}
               />
               <div className="pp-rating">
                 {p.rating}
