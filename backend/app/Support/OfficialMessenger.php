@@ -143,6 +143,36 @@ class OfficialMessenger
         Message::create($attrs);
     }
 
+    /** Belirli kullanıcı id'lerine gönder (ör. turnuva katılımcıları). Gönderilen sayısını döndürür. */
+    public static function sendToIds(array $ids, string $body, ?string $image = null): int
+    {
+        $official = self::account();
+        $hasImg = Schema::hasColumn('messages', 'image');
+        $now = now();
+        $rows = [];
+        foreach (array_unique(array_map('intval', $ids)) as $id) {
+            if ($id <= 0 || $id === (int) $official->id) {
+                continue;
+            }
+            $row = [
+                'sender_id' => $official->id,
+                'receiver_id' => $id,
+                'body' => $body,
+                'read_at' => null,
+                'created_at' => $now,
+            ];
+            if ($hasImg) {
+                $row['image'] = $image;
+            }
+            $rows[] = $row;
+        }
+        if ($rows) {
+            Message::insert($rows);
+        }
+
+        return count($rows);
+    }
+
     /** Tüm gerçek kullanıcılara gönder (sistem hesapları hariç). Gönderilen sayısını döndürür. */
     public static function broadcast(string $body, ?string $image = null): int
     {

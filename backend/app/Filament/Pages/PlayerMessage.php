@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Tournament;
 use App\Models\User;
 use App\Support\OfficialMessenger;
 use Filament\Forms\Components\FileUpload;
@@ -48,6 +49,7 @@ class PlayerMessage extends Page implements HasForms
             'sender_avatar' => OfficialMessenger::avatarPath() ?: null,
             'target' => 'one',
             'user_id' => null,
+            'tournament_id' => null,
             'body' => '',
             'image' => null,
         ]);
@@ -72,7 +74,7 @@ class PlayerMessage extends Page implements HasForms
                 Section::make('Mesaj')
                     ->schema([
                         Radio::make('target')->label('Kime gönderilsin?')
-                            ->options(['one' => 'Tek oyuncu', 'all' => 'Tüm kullanıcılar'])
+                            ->options(['one' => 'Tek oyuncu', 'tournament' => 'Turnuva katılımcıları', 'all' => 'Tüm kullanıcılar'])
                             ->default('one')->inline()->live()->required(),
                         Select::make('user_id')->label('Oyuncu')
                             ->searchable()
@@ -81,6 +83,12 @@ class PlayerMessage extends Page implements HasForms
                             ->visible(fn (callable $get) => $get('target') === 'one')
                             ->required(fn (callable $get) => $get('target') === 'one')
                             ->helperText('Takma ada, ada veya e-postaya göre ara.'),
+                        Select::make('tournament_id')->label('Turnuva')
+                            ->options(fn () => static::tournamentOptions())
+                            ->searchable()
+                            ->visible(fn (callable $get) => $get('target') === 'tournament')
+                            ->required(fn (callable $get) => $get('target') === 'tournament')
+                            ->helperText('Mesaj, bu turnuvaya kayıtlı tüm oyunculara gönderilir.'),
                         Textarea::make('body')->label('Mesaj')
                             ->rows(5)->maxLength(4000)
                             ->helperText('En fazla 4000 karakter. Metin veya görselden en az biri gerekli.'),
@@ -114,6 +122,17 @@ class PlayerMessage extends Page implements HasForms
             ->all();
     }
 
+    /** Mesaj gönderilebilecek turnuvalar (tamamlananlar hariç), en yeni önce. */
+    public static function tournamentOptions(): array
+    {
+        return Tournament::query()
+            ->where('status', '!=', 'finished')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->pluck('name', 'id')
+            ->all();
+    }
+
     public function send(): void
     {
         $data = $this->form->getState();
@@ -143,9 +162,25 @@ class PlayerMessage extends Page implements HasForms
         }
 
         // 3) Gönder.
-        if (($data['target'] ?? 'one') === 'all') {
+        $target = $data['target'] ?? 'one';
+        if ($target === 'all') {
             $n = OfficialMessenger::broadcast($body, $image);
             Notification::make()->title("Mesaj {$n} kullanıcıya gönderildi.")->success()->send();
+        } elseif ($target === 'tournament') {
+            $t = Tournament::find((int) ($data['tournament_id'] ?? 0));
+            if (! $t) {
+                Notification::make()->title('Turnuva bulunamadı.')->danger()->send();
+
+                return;
+            }
+            $ids = array_filter(array_map(fn ($p) => (int) ($p['id'] ?? 0), $t->players ?? []));
+            if (! $ids) {
+                Notification::make()->title('Bu turnuvada kayıtlı oyuncu yok.')->danger()->send();
+
+                return;
+            }
+            $n = OfficialMessenger::sendToIds($ids, $body, $image);
+            Notification::make()->title("Mesaj “{$t->name}” turnuvasındaki {$n} oyuncuya gönderildi.")->success()->send();
         } else {
             $to = User::find((int) ($data['user_id'] ?? 0));
             if (! $to) {
@@ -163,6 +198,7 @@ class PlayerMessage extends Page implements HasForms
             'sender_avatar' => OfficialMessenger::avatarPath() ?: null,
             'target' => $data['target'] ?? 'one',
             'user_id' => null,
+            'tournament_id' => null,
             'body' => '',
             'image' => null,
         ]);
