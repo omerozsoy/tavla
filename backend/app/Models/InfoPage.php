@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  *  duzenlenir. Slug sabittir. Hukuki sayfalar frontend'de kendi rotalarinda gosterilir. */
 class InfoPage extends Model
 {
-    protected $fillable = ['slug', 'title', 'seo_title', 'seo_description', 'body', 'gallery', 'galleries', 'sort', 'published'];
+    protected $fillable = ['slug', 'title', 'seo_title', 'seo_description', 'body', 'gallery', 'galleries', 'sort', 'section', 'published'];
 
     protected $casts = [
         'gallery' => 'array',

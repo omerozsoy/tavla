@@ -1490,6 +1490,7 @@ export interface InfoPage {
   gallery?: string[] | null // varsayilan galeri (<resimgalerisi>)
   galleries?: { name: string; images: string[] }[] | null // isimli galeriler (<ad>)
   sort: number
+  section?: string | null // "footer:<kolon>" | "menu:<grup>" -> App.tsx footer/menu enjeksiyonu
 }
 export async function listInfoPages(): Promise<InfoPage[]> {
   const d = await req<{ pages: InfoPage[] }>('/info-pages')

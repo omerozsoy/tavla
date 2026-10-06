@@ -14,7 +14,7 @@ class InfoPageController extends Controller
         $pages = InfoPage::where('published', true)
             ->whereNotIn('slug', InfoPage::LEGAL_SLUGS)
             ->orderBy('sort')->orderBy('id')
-            ->get(['slug', 'title', 'body', 'gallery', 'galleries', 'sort']);
+            ->get(['slug', 'title', 'body', 'gallery', 'galleries', 'sort', 'section']);
         return response()->json(['pages' => $pages]);
     }
 }

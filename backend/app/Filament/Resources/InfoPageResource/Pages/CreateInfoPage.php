@@ -12,24 +12,20 @@ class CreateInfoPage extends CreateRecord
 {
     protected static string $resource = InfoPageResource::class;
 
-    // Adres (slug) = secili ust sayfa + girilen slug; slugify + benzersizlik kontrolu.
+    // Adres (slug): slugify + benzersizlik kontrolu. Ust baslik (section) ayri kolon -> URL duz kalir.
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $child = Str::slug((string) ($data['slug'] ?? ''));
-        $parent = $data['parent'] ?? null;
-        unset($data['parent']);
+        $slug = Str::slug((string) ($data['slug'] ?? ''));
 
-        if ($child === '') {
+        if ($slug === '') {
             throw ValidationException::withMessages(['slug' => 'Geçerli bir adres girin (küçük harf/rakam/tire).']);
         }
 
-        $full = $parent ? trim($parent, '/').'/'.$child : $child;
-
-        if (InfoPage::where('slug', $full)->exists() || in_array($full, InfoPage::LIVE_COMPONENT_SLUGS, true)) {
-            throw ValidationException::withMessages(['slug' => 'Bu adres zaten kullanımda: /'.$full]);
+        if (InfoPage::where('slug', $slug)->exists() || in_array($slug, InfoPage::LIVE_COMPONENT_SLUGS, true)) {
+            throw ValidationException::withMessages(['slug' => 'Bu adres zaten kullanımda: /'.$slug]);
         }
 
-        $data['slug'] = $full;
+        $data['slug'] = $slug;
 
         return $data;
     }

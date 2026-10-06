@@ -40,25 +40,40 @@ class InfoPageResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    // Ust baslik secenekleri: "Footer" (alt menu kolonlari) + "Sol Menu" (kenar menu gruplari),
+    // iki grup halinde. Deger "footer:<kolon>" / "menu:<grup>" -> frontend bu sayfayi o basligin
+    // altina enjekte eder (App.tsx footerColumns + menuGroups). ANAHTARLAR frontend ile birebir.
+    public const SECTION_OPTIONS = [
+        'Footer (alt menü)' => [
+            'footer:game' => 'Oyun',
+            'footer:community' => 'Topluluk',
+            'footer:content' => 'İçerik',
+            'footer:guide' => 'Eğitim',
+            'footer:organization' => 'Organizasyon',
+            'footer:info' => 'Bilgi',
+            'footer:legal' => 'Yasal',
+        ],
+        'Sol menü' => [
+            'menu:play' => 'Oyna',
+            'menu:compete' => 'Turnuvalar',
+            'menu:fun' => 'Eğlence',
+            'menu:content' => 'Keşfet',
+            'menu:tools' => 'Araçlar',
+            'menu:account' => 'Hesap',
+            'menu:info' => 'Bilgi',
+        ],
+    ];
+
     public static function form(Form $form): Form
     {
-        // Ust sayfa secenekleri: canli-bilesen DISINDAKI mevcut sayfalar (nesting icin).
-        // Deger = TURKCE URL slug'i (about->hakkinda) -> cocuk adresi /bilgi/<turkce>/<cocuk> olur.
-        $parentOptions = InfoPage::whereNotIn('slug', InfoPage::LIVE_COMPONENT_SLUGS)
-            ->orderBy('title')->get()
-            ->mapWithKeys(fn (InfoPage $p) => [self::urlSlug($p->slug) => $p->title])
-            ->all();
-
         return $form->schema([
-            // --- Yeni sayfa: adres + ust sayfa (yalniz olusturmada; slug sabittir) ---
-            Forms\Components\Select::make('parent')
-                ->label('Üst sayfa (opsiyonel)')
-                ->options($parentOptions)
+            // --- Ust baslik: sayfa hangi footer kolonu / sol-menu grubu altinda listelenecek ---
+            Forms\Components\Select::make('section')
+                ->label('Üst başlık (nerede görünsün)')
+                ->options(self::SECTION_OPTIONS)
                 ->searchable()
-                ->placeholder('Üst sayfa yok (en üst düzey)')
-                ->helperText('Seçersen yeni sayfa onun altına girer: adres /bilgi/<üst>/<adres> olur.')
-                // DB kolonu degil; CreateInfoPage::mutateFormDataBeforeCreate slug'a birlestirip siler.
-                ->visibleOn('create')
+                ->placeholder('Hiçbir yerde listeleme (yalnız doğrudan adres)')
+                ->helperText('Footer kolonu mu, sol menü grubu mu? Seçtiğin başlığın altında /bilgi/<adres> bağlantısı olarak görünür. Boş bırakırsan menüde/footer\'da çıkmaz.')
                 ->columnSpanFull(),
             Forms\Components\TextInput::make('slug')
                 ->label('Adres (slug)')
