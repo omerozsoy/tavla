@@ -23,7 +23,10 @@ return [
         "img-src 'self' data: blob: https:",
         // Google Etiketi (gtag/Ads dönüşüm) beacon/collect uçları -> connect-src'e eklendi (aksi halde
         // CSP enforce iken dönüşüm ölçümü bloklanır). .htaccess CSP ile senkron.
-        "connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://stats.g.doubleclick.net https://www.google.com",
+        // wss://www.tavlatv.com: Reverb WebSocket (gerçek-zamanlı oda push). `'self'` çoğu modern
+        // tarayıcıda same-origin wss'i zaten kapsar; AÇIK eklemek bazı edge tarayıcı/proxy durumlarında
+        // WS'in CSP'ye takılma ihtimalini sıfırlar (yalnız WS için izin ekler, başka şeyi bozmaz).
+        "connect-src 'self' https://www.tavlatv.com wss://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://stats.g.doubleclick.net https://www.google.com",
         // Google Sign-In (GSI) One Tap/buton iframe'i accounts.google.com'dan yüklenir -> frame-src şart.
         // td.doubleclick.net = Google Ads dönüşüm linker gizli iframe'i; googletagmanager = GTM iframe.
         "frame-src 'self' https://accounts.google.com https://td.doubleclick.net https://www.googletagmanager.com",
