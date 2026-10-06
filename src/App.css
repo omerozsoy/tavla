@@ -7429,6 +7429,27 @@ html[data-board='yilbasi'] .checker.black {
     opacity: 1;
   }
 }
+/* Zar atılırken (rollSending) SÜREKLI tumble -> tek-seferlik die-roll-in'i ezer; yüzler ~90ms'de
+   bir değişir (JS) + zar döner (CSS) -> sunucudan zar gelene kadar "atılıyor" hissi, gecikme örtülür. */
+.die-face.tumbling {
+  animation: die-tumble 0.45s linear infinite;
+}
+@keyframes die-tumble {
+  0% {
+    transform: rotate(0deg) scale(0.92);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+  100% {
+    transform: rotate(360deg) scale(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .die-face.tumbling {
+    animation: none;
+  }
+}
 /* Zar rengi = SIRADAKI oyuncunun PUL rengi (owner=turnStart.turn ile gelir).
    Sira kimde karisikligini onlemek icin tema-ozel zar rengi (--die*-bg) YOK SAYILIR:
    zar DOGRUDAN pul rengini (cream=beyaz pul / navy=siyah pul) alir. */

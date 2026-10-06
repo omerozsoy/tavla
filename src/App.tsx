@@ -1778,6 +1778,19 @@ export default function App() {
   // ama görsel de kilitli) engelle. botThinking bot maçına özel; bu ikisi insan maçları içindir.
   const [moveSending, setMoveSending] = useState(false)
   const [rollSending, setRollSending] = useState(false)
+  // Zar atılırken (serverRoll uçuşta) TUMBLING önizleme: yüzler ~90ms'de bir rastgele değişir +
+  // CSS zarı döndürür -> sunucu-otoriter zarın round-trip gecikmesini ÖRTER ("zar sırası bende,
+  // bekliyorum zar gelsin" hissi biter). YALNIZ GÖRSEL (otoriter akışa dokunmaz); gerçek zar
+  // gelince (rollSending=false -> diceRolled) DiceRow die-roll-in girişiyle devralır, pürüzsüz.
+  const [rollTumble, setRollTumble] = useState<[number, number]>([2, 5])
+  useEffect(() => {
+    if (!rollSending) return
+    const id = window.setInterval(
+      () => setRollTumble([1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]),
+      90,
+    )
+    return () => window.clearInterval(id)
+  }, [rollSending])
   // OTO-ZAR KURTARMA (1 puanlik/olu-kup maç): kup teklif secenegi olmayan maçta "Zar At" butonu
   // HİÇ çizilmez (autoRollPending daima true) -> zar %100 oto-zar effect'ine bağlı. Oto-zar bir
   // transiente (409 mandalı / bayat srvTurn / backoff) takılırsa manuel kurtarma yolu yoktu ->
@@ -7717,9 +7730,17 @@ export default function App() {
       {moveSending ? t('btn.sending') : t('btn.confirm')}
     </Button>
   ) : showRoll && !autoRollPending ? (
-    <Button variant="default" onClick={doRoll} disabled={rollSending}>
-      {rollSending ? t('btn.rolling') : t('btn.roll')}
-    </Button>
+    rollSending ? (
+      // Zar sunucudan gelene kadar TUMBLING zar (buton metni yerine) -> gecikme görünmez.
+      <div className="board-dice dice-tumbling" role="img" aria-label={t('btn.rolling')}>
+        <Die value={rollTumble[0]} owner={turnStart.turn} used={false} className="tumbling" />
+        <Die value={rollTumble[1]} owner={turnStart.turn} used={false} className="tumbling" />
+      </div>
+    ) : (
+      <Button variant="default" onClick={doRoll}>
+        {t('btn.roll')}
+      </Button>
+    )
   ) : diceRolled && diceFaces.length > 0 ? (
     <DiceRow
       faces={diceFaces}
