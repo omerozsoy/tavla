@@ -128,18 +128,53 @@ class MatchClockTest extends TestCase
         $this->assertSame(1, MatchClock::clientView($c, self::T0 + 59)['afk']);
     }
 
-    // ---- 7) Gercek hamle delay+AFK'yi TAM sifirlar; ana sure islenir ----
-    public function test_real_action_resets_delay_and_afk(): void
+    // ---- 7a) SIRA DEGISINCE biten oyuncunun TUM turu bankadan dusulur; yeni segment sifirlanir ----
+    public function test_turn_change_charges_full_turn_and_resets(): void
     {
-        $c = $this->started('normal', 5); // banka 300, delay 10
-        // 20sn sonra ayni oyuncu gercek hamle yapar (played+1) -> segment islenir
-        $c2 = MatchClock::onUpdate($c, $this->state('white', 5, 0, 1), 'p1', self::T0 + 20);
-        // Gecen segment: 20sn - delay10 = 10sn ana kullanildi -> 290
+        $c = $this->started('normal', 5); // banka 300, delay 10, beyaz sirasi (started_at=T0)
+        // 20sn sonra beyaz hamle yapar ve SIRA SIYAHA gecer (turn=black)
+        $c2 = MatchClock::onUpdate($c, $this->state('black', 5, 0, 1), 'p1', self::T0 + 20);
+        // Beyazin turu: 20sn - delay10 = 10sn ana kullanildi -> 290
         $this->assertEqualsWithDelta(290, $c2['p1_bank'], 0.001);
-        // Yeni segment: delay ve AFK sifir
+        $this->assertSame('p2', $c2['turn_slot']);          // sira artik siyah
+        $this->assertSame(self::T0 + 20, $c2['started_at']); // yeni segment sifirdan
+        // Yeni segment (siyah): delay taze 10
         $v = MatchClock::clientView($c2, self::T0 + 20);
         $this->assertEqualsWithDelta(10, $v['delay'], 0.001);
-        $this->assertNull($v['afk']);
+    }
+
+    // ---- 7b) TUR BASINA TEK DELAY: ayni oyuncunun tur-ici aksiyonu (zar at -> hamle) delay'i
+    //          SIFIRLAMAZ, bankayi aninda dusmez; tek 10sn geri sayim kesintisiz surer ----
+    public function test_intra_turn_action_keeps_single_delay(): void
+    {
+        $c = $this->started('normal', 5); // banka 300, delay 10, beyaz sirasi (started_at=T0)
+        // 12sn sonra beyaz AYNI turda ikinci aksiyon (zar->hamle); sira hala beyaz (turn=white)
+        $c2 = MatchClock::onUpdate($c, $this->state('white', 5, 0, 1), 'p1', self::T0 + 12);
+        // Banka ANINDA dusulmez (tahsil sira devrederken) + started_at korunur (delay sifirlanmaz)
+        $this->assertEqualsWithDelta(300, $c2['p1_bank'], 0.001);
+        $this->assertSame(self::T0, $c2['started_at']);
+        // clientView: 12sn gecti, delay 10 bitmis -> delay 0 (10'a SIFIRLANMADI), 2sn bankadan dusmus gorunur
+        $v = MatchClock::clientView($c2, self::T0 + 12);
+        $this->assertEqualsWithDelta(0, $v['delay'], 0.001);
+        $this->assertEqualsWithDelta(298, $v['white'], 0.5);
+    }
+
+    // ---- 7c) OYUNLAR-ARASI: oyun bitip (gameEnd) uzun aradan sonra yeni oyun AYNI starter ile
+    //          baslarsa, ara sure bankadan DUSULMEZ (resume started_at'i sifirlar) — "300->10" jump kalkani ----
+    public function test_new_game_after_gap_does_not_charge_bank(): void
+    {
+        $c = $this->started('normal', 5); // beyaz sirasi, banka 300
+        // Oyun biter: siyah hamle yapar, gameEnd set (sira p1'de kalir)
+        $c = MatchClock::onUpdate($c, $this->state('white', 5, 1, 1, ['gameEnd' => ['winner' => 'white']]), 'p1', self::T0 + 10);
+        $this->assertFalse($c['running']); // oyun durdu
+        // 300sn sonra (sonuc ekrani + sonraki oyun kurulumu) YENI oyun, yine beyaz baslar (ayni slot p1)
+        $c = MatchClock::onUpdate($c, $this->state('white', 5, 2, 0), 'p1', self::T0 + 310);
+        // Ara tahsil edilmemeli: banka tam, delay taze, started_at yeni oyuna sifirlanmis
+        $this->assertEqualsWithDelta(300, $c['p1_bank'], 0.001);
+        $this->assertSame(self::T0 + 310, $c['started_at']);
+        $v = MatchClock::clientView($c, self::T0 + 310);
+        $this->assertEqualsWithDelta(300, $v['white'], 0.5); // ara dusurulmedi
+        $this->assertEqualsWithDelta(10, $v['delay'], 0.001); // delay taze
     }
 
     // ---- 8) Refresh/reconnect (ayni state tekrar) AFK'yi SIFIRLAMAZ ----

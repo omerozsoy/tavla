@@ -205,17 +205,28 @@ class MatchClock
         $authorized = $current === null || $requesterSlot === null || $requesterSlot === $current;
 
         if ($sigChanged && $authorized) {
-            // Gecen segmentte aktif oyuncunun harcadigi ana sureyi bankadan dus.
-            if ($current !== null && ($clock['running'] ?? false)) {
+            // TUR BASINA TEK DELAY: delay+banka tahsili yalniz SIRA DEGISINCE (turn_slot degisince).
+            // Ayni oyuncunun tur-ici aksiyonlari (zar at -> hamle) started_at'i SIFIRLAMAZ -> tek 10sn
+            // delay + banka turun tamamini kapsar. (Eskiden her aksiyon sifirliyordu: zar+hamle ayri delay.)
+            $wasRunning = (bool) ($clock['running'] ?? false);
+            $turnChanged = $newTurn !== $current;
+            // Biten oyuncunun turunun TAMAMINI bankadan dus — YALNIZ gercek sira devrinde + saat calisirken.
+            if ($turnChanged && $wasRunning && $current !== null) {
                 $elapsed = max(0.0, $now - ($clock['started_at'] ?? $now));
                 $used = max(0.0, $elapsed - ($clock['delay'] ?? 0));
                 $bankKey = $current.'_bank';
                 $clock[$bankKey] = max(0.0, ($clock[$bankKey] ?? 0) - $used);
             }
-            // Yeni segment: delay+AFK sifir, sira yeni state'ten.
+            // started_at'i SIRA DEGISINCE veya YENIDEN BASLAYINCA (resume: oyun-sonu/ara durdu -> yeni
+            // oyun) sifirla. RESUME sart: aksi halde oyunlar-arasi (sonuc ekrani + sonraki oyun kurulumu)
+            // gecen sure, yeni oyun ayni slot'ta basliyorsa (turnChanged=false) started_at eski kalip
+            // clientView'de dev elapsed -> bankadan toptan dususturuyordu ("432->78"/"300->10" jump).
+            $resumed = ! $wasRunning && $running;
+            if ($turnChanged || $resumed) {
+                $clock['turn_slot'] = $newTurn;
+                $clock['started_at'] = $now;
+            }
             $clock['sig'] = $newSig;
-            $clock['turn_slot'] = $newTurn;
-            $clock['started_at'] = $now;
             $clock['running'] = $running;
             $clock['moved'] = true; // ILK gercek hamle yapildi -> AFK artik gecerli
         } else {
