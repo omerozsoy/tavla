@@ -165,7 +165,8 @@ class InfoPageResource extends Resource
                 ->collapsible()
                 ->defaultItems(0)
                 ->columnSpanFull(),
-            Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
+            Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0)
+                ->helperText('Üst başlık seçtiysen: sayfanın o footer kolonu / sol menü grubu içindeki konumu. 0 = en üst, büyük sayı = aşağı.'),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
     }

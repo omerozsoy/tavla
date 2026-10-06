@@ -752,8 +752,9 @@ export default function App() {
   // Footer kolon override'lari (admin "Footer Kolonları": sira/gorunurluk/baslik). key -> config.
   const [footerCfg, setFooterCfg] = useState<Record<string, FooterColumnCfg>>({})
   // Admin-eklemeli ozel bilgi sayfalari (section'u olanlar): footer kolonu / sol-menu grubu
-  // altina enjekte edilir. section "footer:<kolon>" | "menu:<grup>". Bkz InfoPageResource::SECTION_OPTIONS.
-  const [cmsPages, setCmsPages] = useState<{ slug: string; title: string; section: string }[]>([])
+  // altina enjekte edilir. section "footer:<kolon>" | "menu:<grup>", sort = o bolum icinde konum
+  // (0 = en ust). Bkz InfoPageResource::SECTION_PICKS.
+  const [cmsPages, setCmsPages] = useState<{ slug: string; title: string; section: string; sort: number }[]>([])
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
@@ -1213,7 +1214,7 @@ export default function App() {
     // Admin-eklemeli ozel sayfalardan section'u olanlar -> footer/menu'ye enjekte edilir.
     listInfoPages()
       .then((ps) => {
-        if (alive) setCmsPages(ps.filter((p) => p.section).map((p) => ({ slug: p.slug, title: p.title, section: p.section! })))
+        if (alive) setCmsPages(ps.filter((p) => p.section).map((p) => ({ slug: p.slug, title: p.title, section: p.section!, sort: p.sort ?? 0 })))
       })
       .catch(() => {})
     return () => {
@@ -8805,18 +8806,6 @@ export default function App() {
     }
   }
 
-  // Admin-eklemeli ozel sayfalar: section ("footer:<k>" | "menu:<k>") -> o basligin item listesi.
-  // Tiklama = /bilgi/<slug> SPA navigasyonu (openCustomMenuHref -> applyFromPath -> CustomInfoPage).
-  const customBySection: Record<string, FooterItem[]> = {}
-  for (const p of cmsPages) {
-    ;(customBySection[p.section] ||= []).push({
-      key: 'cms-' + p.slug,
-      labelKey: '',
-      label: p.title,
-      onClick: () => openCustomMenuHref('/bilgi/' + p.slug),
-    })
-  }
-
   // Footer kolonlari — merkezi kayittan (pages.ts). Handler/gate menu ile ayni mantik.
   const footerColumns = [
     { key: 'game', titleKey: 'foot.game', keys: ['solo', 'match', 'aiGame', 'playFriend'] },
@@ -8898,10 +8887,20 @@ export default function App() {
       { key: 'legal-cerez-tercih', labelKey: '', label: 'Çerez Tercihleri', onClick: () => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS)) },
     ],
   })
-  // Admin-eklemeli ozel sayfalari ilgili footer kolonunun SONUNA ekle (section=footer:<key>).
+  // Admin-eklemeli ozel sayfalari ilgili footer kolonuna, "Sıra" (sort) alanina gore KONUMLA
+  // (0 = en ust; buyuk sayi = asagi). Artan sort ile sirayla splice et -> admin footer icinde
+  // yerlestirebilir. Tiklama = /bilgi/<slug> SPA nav (openCustomMenuHref -> applyFromPath).
   for (const col of footerColumns) {
-    const extra = customBySection['footer:' + col.key]
-    if (extra) col.items.push(...extra)
+    const extra = cmsPages.filter((p) => p.section === 'footer:' + col.key)
+    for (const p of extra.sort((a, b) => a.sort - b.sort)) {
+      const at = Math.max(0, Math.min(p.sort, col.items.length))
+      col.items.splice(at, 0, {
+        key: 'cms-' + p.slug,
+        labelKey: '',
+        label: p.title,
+        onClick: () => openCustomMenuHref('/bilgi/' + p.slug),
+      })
+    }
   }
   // Admin "Footer Kolonları" yapilandirmasi: SIRA + GORUNURLUK + BASLIK override uygula. Config
   // bossa (uc yok/hata) sabit varsayilan sira kullanilir. labels[lang] bossa Footer i18n titleKey'e
@@ -8987,13 +8986,13 @@ export default function App() {
       },
     })
   }
-  // Admin-eklemeli ozel sayfalari ilgili sol-menu grubuna ekle (section=menu:<grup>). Katalog
-  // ogelerinden sonra gelsin diye yuksek sort. Grup gorunurlugu/sirasi normal mantikla uygulanir.
+  // Admin-eklemeli ozel sayfalari ilgili sol-menu grubuna ekle (section=menu:<grup>). "Sıra"
+  // (sort) katalog ogeleriyle AYNI olcek (pages.ts index) -> admin grup icinde konumlar (0=en ust).
   for (const p of cmsPages) {
     if (!p.section.startsWith('menu:')) continue
     navEntries.push({
       group: p.section.slice(5),
-      sort: 600,
+      sort: p.sort,
       item: {
         key: 'cms-' + p.slug,
         labelKey: '',
