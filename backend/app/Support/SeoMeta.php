@@ -598,7 +598,12 @@ final class SeoMeta
 
         if ($image) {
             $tImg = htmlspecialchars($image, ENT_QUOTES, 'UTF-8');
+            // og:image:type MIME uzantidan turetilir (WhatsApp/strict crawler bunu bekler).
+            $ext = strtolower((string) pathinfo((string) (parse_url($image, PHP_URL_PATH) ?: $image), PATHINFO_EXTENSION));
+            $mime = $ext === 'png' ? 'image/png' : ($ext === 'webp' ? 'image/webp' : 'image/jpeg');
             $subs['~<meta\s+property="og:image"\s+content="[^"]*"\s*/?>~s'] = "<meta property=\"og:image\" content=\"{$tImg}\" />";
+            $subs['~<meta\s+property="og:image:secure_url"\s+content="[^"]*"\s*/?>~s'] = "<meta property=\"og:image:secure_url\" content=\"{$tImg}\" />";
+            $subs['~<meta\s+property="og:image:type"\s+content="[^"]*"\s*/?>~s'] = "<meta property=\"og:image:type\" content=\"{$mime}\" />";
             $subs['~<meta\s+property="og:image:alt"\s+content="[^"]*"\s*/?>~s'] = "<meta property=\"og:image:alt\" content=\"{$tTitle}\" />";
             $subs['~<meta\s+name="twitter:image"\s+content="[^"]*"\s*/?>~s'] = "<meta name=\"twitter:image\" content=\"{$tImg}\" />";
         }
