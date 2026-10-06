@@ -450,7 +450,7 @@ final class SeoMeta
             if ($article) {
                 [$title, $desc] = self::MAKALE_META[$parts[1]]
                     ?? [(string) $article->title . ' | TavlaTv', self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
-                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.png';
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.jpg';
                 $url = self::BASE . $slug;
 
                 $html = self::apply($html, $title, $desc, (string) $article->title, $url, $image, 'article');
@@ -480,7 +480,7 @@ final class SeoMeta
                 $title = $article->title . ' | TavlaTv';
                 $desc  = self::excerpt($article->body)
                     ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
-                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.png';
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.jpg';
 
                 $html = self::apply(
                     $html,
@@ -652,7 +652,7 @@ final class SeoMeta
             'description' => $desc,
             'url' => $url,
             'inLanguage' => 'tr',
-            'image' => [self::BASE . 'og-image.png'],
+            'image' => [self::BASE . 'og-image.jpg'],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
             'author' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
             'publisher' => [
