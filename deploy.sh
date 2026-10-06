@@ -2,7 +2,13 @@
 # Plesk "Additional deployment actions" tarafindan git pull sonrasi calistirilir.
 # Frontend derlemesi (backend/public/assets) repoya commit'lendigi icin sunucuda
 # build GEREKMEZ; sadece Laravel cache temizlenir ve migration'lar uygulanir.
-set -e
+#
+# `set -e` KASITLI YOK: bu script bastan sona BEST-EFFORT (her servis restart / cache / import
+# `|| echo` ile toleransli). `set -e` (ozellikle /bin/sh=dash'te) guard'li `&&` zincirleri ve
+# `sudo -n` basarisizliklarinda script'i ERKEN non-zero bitiriyordu -> Plesk "additional deployment
+# actions" adimini ⚠️ (uyari) gosteriyordu (cikis kodu != 0), oysa deploy aslinda basariliydi.
+# Tek KRITIK komut `migrate --force`: asagida ACIKCA olumculdur (patlarsa exit 1 -> Plesk dogru
+# sekilde uyarir). Diger her sey basarisiz olsa da deploy tamamlanir; sonda `exit 0` -> adim YESIL.
 
 PHP=/opt/plesk/php/8.2/bin/php
 cd "$(dirname "$0")/backend"
@@ -36,9 +42,10 @@ fi
 $PHP artisan filament:assets || echo "UYARI: filament:assets atlandi"
 
 # DIKKAT: migrate --force geri alinamaz. Kritik surumlerde ONCE DB yedegi al
-# (Plesk > Databases > Export, ya da mysqldump). set -e sayesinde migrate patlarsa
-# script burada durur; ama yarim uygulanan migration'i GERI ALMAK elle yapilir.
-$PHP artisan migrate --force
+# (Plesk > Databases > Export, ya da mysqldump). migrate TEK kritik adim: patlarsa EXIT 1 ->
+# Plesk adimi ⚠️/kirmizi gosterir (dogru davranis; DB semasi kod ile ayrismis demektir, elle
+# kontrol et). Yarim uygulanan migration'i GERI ALMAK elle yapilir.
+$PHP artisan migrate --force || { echo "HATA: migrate --force basarisiz -> DB semasi kod ile ayrisabilir (500 riski). ELLE kontrol et: php artisan migrate --force"; exit 1; }
 
 # Istatistik verisi (idempotent; islenmisleri atlar -> ilk deploy'dan sonra ucuz):
 #  - error-journal:backfill -> decision_analyses (Medyan Hata Orani per-karar + Zar Ortalamalari)
@@ -50,7 +57,7 @@ $PHP artisan stats:backfill-wxp || echo "UYARI: stats:backfill-wxp atlandi."
 # YÜKSEK gösterir. Her deploy'da yeniden kur -> match_results ile tutarlı (chunk'li, ucuz).
 $PHP artisan careerpr:rebuild || echo "UYARI: careerpr:rebuild atlandi."
 
-$PHP artisan optimize:clear
+$PHP artisan optimize:clear || echo "UYARI: optimize:clear atlandi."
 # Filament component/panel cache'ini de temizle: aksi halde YENİ Filament sayfaları (ör. Başarısız
 # İşler) canlıda menüde GÖRÜNMEZ (filament:optimize ile önbelleğe alınmış eski liste kalır).
 # optimize:clear bunu KAPSAMAZ. Best-effort (komut yoksa/eski sürümse atla).
@@ -166,3 +173,7 @@ fi
 # -----------------------------------------------------------------------------
 
 echo "Deploy tamam: migrate + cache + haber importu + gnubg/queue restart."
+
+# Plesk "additional deployment actions" adimi YESIL olsun: buraya kadar geldiyse migrate basarili
+# (yoksa yukarida exit 1 olurdu) ve gerisi best-effort tamamlandi -> kasitli basarili cikis.
+exit 0
