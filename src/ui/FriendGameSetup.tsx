@@ -48,19 +48,21 @@ interface Props {
   // gosterilir, "Oda Oluştur" yerine "Davet Gönder" -> onInvite; kod-ile-katil kutusu gizlenir.
   invitee?: { id: number; name: string; avatar?: string | null } | null
   onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
+  defaultClassic?: boolean // KLASIK TAVLA girişi: klasik varsayılan ON + Maç Oyunu sekmesi açık
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false }: Props) {
   const { t } = useT()
   useEscape(onCancel)
-  const [tab, setTab] = useState<'single' | 'match'>('single')
+  // KLASIK girişte Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı).
+  const [tab, setTab] = useState<'single' | 'match'>(defaultClassic ? 'match' : 'single')
   const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   // PUANSIZ mac: rating degismez, PR hesaplanir (mac analizinde) ama genel PR/siralamaya girmez.
   const [unrated, setUnrated] = useState(false)
   // KLASIK TAVLA: kup yok + mars=2 (yalniz Mac Oyunu; Tek Oyun kup/tek-puan ile zaten farkli).
-  const [classic, setClassic] = useState(false)
+  const [classic, setClassic] = useState(defaultClassic)
   const target = tab === 'single' ? 1 : length
   const inviting = !!invitee // davet modu mu?
 

@@ -31,9 +31,10 @@ export const PAGES: PageDef[] = [
   { key: 'aiGame', slug: 'yz-ile-oyna', labelKey: 'menu.aiGame', icon: 'robot-face', group: 'play', hideInGame: true },
   { key: 'playFriend', slug: 'arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'play', hideInGame: true },
 
-  // --- KLASIK TAVLA OYNA: ayrı ana dal (Modern Tavla Oyna'nın ALTINDA). Küp yok + mars=2; online
-  // eşleşme (5/7/9) / bota karşı tek giriş (setup içi rakip seçici). İleride klasik sayfaları buraya eklenir.
-  { key: 'klassik', slug: 'klasik-tavla', labelKey: 'menu.klassik', icon: 'dice', group: 'klassik', hideInGame: true },
+  // --- KLASIK TAVLA OYNA: ayrı ana dal (Modern Tavla Oyna'nın ALTINDA). Küp yok + mars=2.
+  // İKİ öğe: Arkadaşınla Oyna (klasik davet/oda) + Yapay Zeka ile Oyna (klasik bot).
+  { key: 'klassikFriend', slug: 'klasik-arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'klassik', hideInGame: true },
+  { key: 'klassikAi', slug: 'klasik-yapay-zeka', labelKey: 'menu.aiGame', icon: 'robot-face', group: 'klassik', hideInGame: true },
 
   // --- TURNUVALAR: rekabet + sosyal ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },

@@ -118,9 +118,7 @@ export default function MatchSetup({
   classic = false,
 }: Props) {
   const { t } = useT()
-  // Mac Oyunu online-only; YZ pvb-only (mod degistirilmez). KLASIK TAVLA: tek giristen hem
-  // "Cevrimici Rakip Ara" (online) hem "Bota Karsi" (pvb) secilebilsin diye mod DEGISTIRILEBILIR.
-  const [mode, setMode] = useState<SetupMode>(initialMode)
+  const mode = initialMode // Mac Oyunu online-only; YZ/Klasik-YZ pvb-only (mod degistirilmez)
   // Online: coklu uzunluk secilebilir (kolay eslesme). pvb: tek uzunluk.
   const [accepted, setAccepted] = useState<number[]>([initial.target])
   const toggleTarget = (n: number) => {
@@ -172,29 +170,6 @@ export default function MatchSetup({
 
         {/* KLASIK TAVLA: kup yok + mars=2 kisa notu (kullaniciya mod farki net olsun). */}
         {classic && <p className="pa-depth-note">{t('classic.note')}</p>}
-
-        {/* KLASIK TAVLA: rakip turu — tek giristen hem online eslesme hem bota karsi. */}
-        {classic && (
-          <div className="setup-row">
-            <div className="setup-label">{t('classic.opponent')}</div>
-            <div className="setup-tiles">
-              <button
-                className={`setup-tile ${mode === 'online' ? 'active' : ''}`}
-                onClick={() => setMode('online')}
-                aria-pressed={mode === 'online'}
-              >
-                {t('classic.oppOnline')}
-              </button>
-              <button
-                className={`setup-tile ${mode === 'pvb' ? 'active' : ''}`}
-                onClick={() => setMode('pvb')}
-                aria-pressed={mode === 'pvb'}
-              >
-                {t('classic.oppBot')}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Zorluk seviyesi (yalnizca yapay zekaya karsi) - AI_LEVELS.length kademe (1-12) */}
         {mode === 'pvb' && (

@@ -154,7 +154,7 @@ import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
-import { Icon, type IconName } from './ui/Icon'
+import { Icon } from './ui/Icon'
 import ConfirmModal from './ui/ConfirmModal'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
@@ -929,6 +929,7 @@ export default function App() {
   const [infoTab, setInfoTab] = useState<InfoTab>('about') // aktif Bilgi sekmesi (URL'e bagli)
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
+  const [friendClassic, setFriendClassic] = useState(false) // KLASIK TAVLA arkadas kurulumu (klasik varsayilan ON)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
   // RAKİP ZAR GÖSTERGESİ: OTO-KAYBOLMA KALDIRILDI (kök fix). Eskiden 3.5sn sonra setOppRoll(null)
   // yapılıyordu; yavaş düşünen/çift atan rakipte zar daha sen bakmadan kaybolup "göremedim" oluyordu.
@@ -1494,15 +1495,22 @@ export default function App() {
         }
         case 'arkadasinla-oyna':
           setInviteTarget(null) // menuden acilis = normal mod (davet degil)
+          setFriendClassic(false)
           setFriendSetupOpen(true)
           break
         case 'yeni-oyun':
           setClassicSetup(false)
           setSetup('online')
           break
-        case 'klasik-tavla': // KLASIK TAVLA: kup yok + mars=2 (online eslesme / bota karsi tek giris)
+        case 'klasik-arkadasinla-oyna': // KLASIK TAVLA — Arkadaşınla Oyna (küp yok + mars=2)
+          setInviteTarget(null)
+          setFriendClassic(true)
+          setFriendSetupOpen(true)
+          break
+        case 'klasik-tavla': // eski birleşik slug -> geriye dönük: klasik bota karşı
+        case 'klasik-yapay-zeka': // KLASIK TAVLA — Yapay Zeka ile Oyna (küp yok + mars=2)
           setClassicSetup(true)
-          setSetup('online')
+          setSetup('pvb')
           break
         case 'online-tavla': // SEO landing sayfasi (taranabilir icerik)
           setOnlineTavlaOpen(true)
@@ -7031,6 +7039,7 @@ export default function App() {
   function handleInviteFriend(p: { id: number; name: string; avatar?: string | null; rating?: number | null }) {
     setFriendsOpen(false)
     setInviteTarget(p)
+    setFriendClassic(false) // çevrimiçi listeden davet = modern (klasik değil)
     setHome(false)
     setFriendSetupOpen(true)
   }
@@ -8790,18 +8799,25 @@ export default function App() {
       setClassicSetup(false)
       setSetup('pvb')
     }, // Yapay zekaya karsi oyna (bot)
-    onKlassik: () => {
-      // KLASIK TAVLA: kup yok + mars=2. Kurulumda rakip turu secilir (Cevrimici / Bota Karsi).
-      // Misafir bota karsi oynayabilir; cevrimici eslesme denerse requireLogin tetiklenir.
+    // KLASIK TAVLA — Arkadaşınla Oyna: klasik davet/oda (küp yok + mars=2). FriendGameSetup klasik ON.
+    onKlassikFriend: () => {
+      closeAllPages()
+      setInviteTarget(null)
+      setFriendClassic(true)
+      setFriendSetupOpen(true)
+    },
+    // KLASIK TAVLA — Yapay Zeka ile Oyna: klasik bot maçı (küp yok + mars=2). MatchSetup pvb + classic.
+    onKlassikAi: () => {
       closeAllPages()
       setClassicSetup(true)
-      setSetup('online')
+      setSetup('pvb')
     },
     // Arkadasinla Oyna: once "Ozel Oyun Olustur" ekrani (Tek oyun/Maç + Saat + Uzunluk),
     // onaylayinca davet-kodlu oda olusturulur. Matchmaking'e (rastgele rakip) sokMAZ.
     onPlayFriend: () => {
       closeAllPages()
       setInviteTarget(null) // menuden acilis = normal mod (davet degil)
+      setFriendClassic(false) // Modern arkadas maci (klasik degil)
       setFriendSetupOpen(true)
     },
     onResume: () => {
@@ -8885,7 +8901,8 @@ export default function App() {
     match: menuProps.onNewGame,
     aiGame: menuProps.onAiGame,
     playFriend: menuProps.onPlayFriend,
-    klassik: menuProps.onKlassik,
+    klassikFriend: menuProps.onKlassikFriend,
+    klassikAi: menuProps.onKlassikAi,
     tournaments: menuProps.onTournaments,
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
@@ -9111,9 +9128,9 @@ export default function App() {
         key: o.key,
         labelKey: '',
         label: o.labels?.[lang] || o.labels?.tr || o.href,
-        // Admin ikon seçtiyse onu kullan; yoksa pages.ts'te sayfası olan bilinen slug'ın ikonu
-        // (SSS -> soru işareti); eşleşen sayfa yoksa ve bilinen slug değilse genel 'arrow-right'.
-        icon: (o.icon as IconName) || matchedPage?.icon || (hrefSlug === 'sikca-sorulan-sorular' ? 'question-mark' : 'arrow-right'),
+        // pages.ts'te sayfası olmayan bilinen özel slug'lar için ikon (SSS -> soru işareti);
+        // eşleşen sayfa yoksa ve bilinen slug değilse genel 'arrow-right'.
+        icon: matchedPage?.icon || (hrefSlug === 'sikca-sorulan-sorular' ? 'question-mark' : 'arrow-right'),
         onClick: () => openCustomMenuHref(o.href!),
         hideInGame: true,
       },
@@ -10043,13 +10060,16 @@ export default function App() {
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}
+            defaultClassic={friendClassic}
             onInvite={handleSendInvite}
             onCancel={() => {
               setFriendSetupOpen(false)
               setInviteTarget(null)
+              setFriendClassic(false)
             }}
             onCreate={({ target, timeControl, unrated, classic }) => {
               setFriendSetupOpen(false)
+              setFriendClassic(false)
               setTimeControl(timeControl)
               clockRef.current = CLOCK_PRESETS[timeControl]
               onlineTargetRef.current = target
