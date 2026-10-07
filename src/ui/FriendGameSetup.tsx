@@ -13,8 +13,8 @@ const CLOCKS: { id: TimeControl; key: string }[] = [
   { id: 'normal', key: 'setup.clockNormal' },
   { id: 'speed', key: 'setup.clockSpeed' },
 ]
-// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan). Tam tek sayi dizisi 3..25.
-const LENGTHS = [3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
+// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan). En fazla 11 puan (kullanici istegi).
+const LENGTHS = [3, 5, 7, 9, 11]
 
 interface BoardColors {
   id?: string // ozel desenli boardlar (or. 'citrus-wood') onizlemesi icin
