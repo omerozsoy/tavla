@@ -254,6 +254,11 @@ export default function MatchResult({
                   : endReason === 'ABANDON'
                     ? t('mr.endAbandon')
                     : t('mr.endTimeout')}
+                {endReason !== 'ABANDON' && (
+                  <a className="mr-howclock" href="/bilgi/sure-nasil-isler" target="_blank" rel="noopener noreferrer">
+                    {t('mr.howClock')}
+                  </a>
+                )}
               </div>
             )}
           </div>

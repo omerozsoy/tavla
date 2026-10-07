@@ -12576,6 +12576,24 @@ button.acct-row-logout:hover:not(:disabled) {
 .rank-row.mine {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
+/* Oyun Arayanlar'da KENDI arayan satirim: disaridan belli olsun diye tum satir
+   yanip soner (aktif arama hissi) -> oyuncu aradigini net anlar. */
+.seek-panel .rank-row.mine {
+  animation: seek-row-blink 1.4s ease-in-out infinite;
+}
+@keyframes seek-row-blink {
+  0%, 100% {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  50% {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seek-panel .rank-row.mine { animation: none; }
+}
 .rank-no {
   text-align: center;
   color: var(--muted);
@@ -14475,6 +14493,17 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .mr-endreason > svg {
   color: var(--accent-text);
+}
+/* "Süre nasıl işler?" linki (süre aşımı/AFK sonuç ekranında) -> /bilgi/sure-nasil-isler */
+.mr-howclock {
+  margin-left: 4px;
+  font-weight: 700;
+  text-decoration: underline;
+  color: var(--accent-text);
+  cursor: pointer;
+}
+.mr-howclock:hover {
+  opacity: 0.85;
 }
 /* Istatistik tablosu: agir kiremit barlar yerine temiz, cizgili tablo */
 .mr-table {
