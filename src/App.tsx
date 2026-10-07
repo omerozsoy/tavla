@@ -10681,6 +10681,7 @@ export default function App() {
           pipBottom={pipBottom}
           cube={match.cube}
           crawford={match.isCrawford}
+          classic={!!match.classic}
           centerLeft={centerLeft}
           centerRight={centerRight}
           centerMain={centerMain}

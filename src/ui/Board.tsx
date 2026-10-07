@@ -94,6 +94,7 @@ interface BoardProps {
   pipBottom: number
   cube: { value: number; owner: Player | null }
   crawford?: boolean // Crawford oyunu: kup KULLANILAMAZ -> kupun icine "Crawford" yazilir
+  classic?: boolean // KLASIK TAVLA: kup HIC yok -> tahtada kup gorseli CIZILMEZ
   centerLeft?: ReactNode
   centerRight?: ReactNode
   centerMain?: ReactNode
@@ -280,6 +281,7 @@ function Board({
   pipBottom,
   cube,
   crawford = false,
+  classic = false,
   centerLeft,
   centerRight,
   centerMain,
@@ -710,16 +712,19 @@ function Board({
           {/* Küp GÖRSEL tarafı flip'e göre: sahibi görsel üstteyse üstte, alttaysa altta
               (owner renk sabit değil; online'da tahta çevrilince sahip alta gelir). */}
           {/* Crawford oyununda kup kullanilamaz: sayi yerine "Crawford" yazilir ki iki
-              oyuncu da durumu tahtadan gorsun (kup degeri zaten 1'de sabit kalir). */}
-          <div
-            className={`cube cube-${
-              cube.owner == null ? 'center' : cube.owner === topBarPlayer ? 'top' : 'bottom'
-            }${crawford ? ' cube-crawford' : ''}`}
-            title={crawford ? t('board.crawfordHint') : t('board.cube')}
-            aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
-          >
-            {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
-          </div>
+              oyuncu da durumu tahtadan gorsun (kup degeri zaten 1'de sabit kalir).
+              KLASIK TAVLA: kup HIC yok -> gorsel tamamen cizilmez. */}
+          {!classic && (
+            <div
+              className={`cube cube-${
+                cube.owner == null ? 'center' : cube.owner === topBarPlayer ? 'top' : 'bottom'
+              }${crawford ? ' cube-crawford' : ''}`}
+              title={crawford ? t('board.crawfordHint') : t('board.cube')}
+              aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
+            >
+              {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
+            </div>
+          )}
           <div className="bar-checkers bottom">
             {/* Kirik taslar YIGILMAZ: tek tas, ortasinda kirik adedi (>1 iken) */}
             {bottomBarCount > 0 && (

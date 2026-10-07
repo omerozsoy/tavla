@@ -321,6 +321,7 @@ export default function Spectate({
   const cubeVal = sm?.cube.value ?? legacy?.match?.cube?.value ?? 1
   const cubeOwner: Player | null = sm?.cube.owner ?? legacy?.match?.cube?.owner ?? null
   const crawford = sm?.crawford ?? legacy?.match?.isCrawford ?? false
+  const classic = eff?.classic ?? false // KLASIK TAVLA: izleyicide de küp görseli çizilmez
   // KÜP TEKLİFİ (izleyici görsün): biri küpü çekince (cube.pending set) rakip yanıtı bekleniyor.
   // Eskiden izleyici bunu HİÇ görmüyordu (yalnız kabul SONRASI değer güncelleniyordu). pending
   // renk = teklif EDEN (msg.doubled ile aynı). Board merkezine salt-okunur "X küpü çekti" overlay'i.
@@ -534,6 +535,7 @@ export default function Spectate({
                 pipBottom={pipCount(displayBoard, 'white')}
                 cube={{ value: cubeVal, owner: cubeOwner }}
                 crawford={crawford}
+                classic={classic}
                 flip={false}
                 showPip
                 centerLeft={activeBottom ? null : diceRow}
