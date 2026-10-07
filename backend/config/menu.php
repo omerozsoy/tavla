@@ -66,15 +66,16 @@ return [
      */
     // 'collapsed' => grup menude KATLI (kapali) baslar mi (admin override edebilir).
     'groups' => [
+        // Modern once, Klasik hemen sonra; sonra digerleri. Sort EXPLICIT (tie yok) ki
+        // fresh seed'de de sira net olsun (prod'da admin override eder; syncCatalog mevcut
+        // satirlari EZMEZ -> bu degerler yalniz eksik anahtar ilk eklendiginde gecerli).
         ['key' => 'play', 'label' => 'Modern Tavla Oyna', 'sort' => 0, 'collapsed' => false],
-        // klassik sort=0 (play ile ayni): mevcut compete DB satiri sort=1 ile cakismasin diye;
-        // stable sort play'i (ogeleri once gelir) klassik'ten once tutar -> play, klassik, compete.
-        ['key' => 'klassik', 'label' => 'Klasik Tavla Oyna', 'sort' => 0, 'collapsed' => false],
-        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 1, 'collapsed' => false],
-        ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 2, 'collapsed' => true],
-        ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3, 'collapsed' => true],
-        ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4, 'collapsed' => true],
-        ['key' => 'account', 'label' => 'Hesap', 'sort' => 5, 'collapsed' => true],
-        ['key' => 'info', 'label' => 'Bilgi', 'sort' => 6, 'collapsed' => true],
+        ['key' => 'klassik', 'label' => 'Klasik Tavla Oyna', 'sort' => 1, 'collapsed' => false],
+        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 2, 'collapsed' => false],
+        ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 3, 'collapsed' => true],
+        ['key' => 'content', 'label' => 'Keşfet', 'sort' => 4, 'collapsed' => true],
+        ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 5, 'collapsed' => true],
+        ['key' => 'account', 'label' => 'Hesap', 'sort' => 6, 'collapsed' => true],
+        ['key' => 'info', 'label' => 'Bilgi', 'sort' => 7, 'collapsed' => true],
     ],
 ];
