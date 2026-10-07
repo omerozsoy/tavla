@@ -67,8 +67,10 @@ return [
     // 'collapsed' => grup menude KATLI (kapali) baslar mi (admin override edebilir).
     'groups' => [
         ['key' => 'play', 'label' => 'Modern Tavla Oyna', 'sort' => 0, 'collapsed' => false],
-        ['key' => 'klassik', 'label' => 'Klasik Tavla Oyna', 'sort' => 1, 'collapsed' => false],
-        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 2, 'collapsed' => false],
+        // klassik sort=0 (play ile ayni): mevcut compete DB satiri sort=1 ile cakismasin diye;
+        // stable sort play'i (ogeleri once gelir) klassik'ten once tutar -> play, klassik, compete.
+        ['key' => 'klassik', 'label' => 'Klasik Tavla Oyna', 'sort' => 0, 'collapsed' => false],
+        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 1, 'collapsed' => false],
         ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 2, 'collapsed' => true],
         ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3, 'collapsed' => true],
         ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4, 'collapsed' => true],
