@@ -254,10 +254,14 @@ export function LiveMatchesPanel({
               className="live-row"
               onClick={() => onSpectate(m.code, m.p1_name, m.p2_name)}
             >
-              <span className={`lm-type lm-type-${liveCat(m)}`}>
-                {t(LIVE_CAT_KEY[liveCat(m)])}
+              {/* İki rozet TEK grid hücresinde (lm-types): aksi halde klasik rozet 6. grid öğesi
+                  olup 1fr (oyuncu) kolonuna düşüyor + sağ/sol boşluk + göz ikonu alt satıra kaçıyordu. */}
+              <span className="lm-types">
+                <span className={`lm-type lm-type-${liveCat(m)}`}>
+                  {t(LIVE_CAT_KEY[liveCat(m)])}
+                </span>
+                {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
               </span>
-              {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
               <span className="lm-side lm-p1">
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
                 <span className="lm-name">{m.p1_name}</span>

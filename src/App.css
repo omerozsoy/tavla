@@ -12370,6 +12370,13 @@ button.acct-row-logout:hover:not(:disabled) {
     background: color-mix(in srgb, var(--accent) 6%, var(--btn-bg));
   }
 }
+/* Tip rozetleri sarmalayici: TEK grid hucresinde yan yana (klasik rozet grid'i kaydirmasin). */
+.lm-types {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
 /* Canli mac tip rozeti: Mac Oyunu (ranked) vs Dostluk (friendly) */
 .lm-type {
   flex: none;
