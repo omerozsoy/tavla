@@ -125,7 +125,8 @@ istemci + yeni saf modül; otoriteyi değiştirmez.
 | Test | Komut | Sonuç |
 |---|---|---|
 | Backend saat birim | `php artisan test --filter=MatchClock` | **36/36 geçti** |
-| Frontend birim (tam) | `npx vitest run` | **409 geçti / 1 skip** (yeni clockView 10 + replayStartIndex 5 dahil) |
+| Backend push sözleşme+gate | `test --filter="RoomUpdatedEventTest\|RealtimeConfigTest"` | **3/3 geçti** (kanal `room.{code}` + olay `room.updated` + gövde; `realtime-config` reverb=enabled, log=disabled, secret sızmaz) |
+| Frontend birim (tam) | `npx vitest run` | **415 geçti / 1 skip** (clockView 10 + replayStartIndex 5 + oppReplay yakınsama 6 dahil) |
 | Hedefli birim | `vitest run src/online/{clockView,liveMoves,authSync}.test.ts` | hepsi geçti (clockView 10, liveMoves 11, authSync) |
 | TypeScript | `npx tsc -b` | **Temiz (0 hata)** |
 | Üretim build | `npx vite build` | **Başarılı** (yalnız bilinen büyük-chunk uyarısı) |
@@ -137,11 +138,16 @@ istemci + yeni saf modül; otoriteyi değiştirmez.
 
 ## 5. Kalıcı çözümler
 
-1. **Push'u (Reverb) prod'da etkinleştir** — [OPS, kod HAZIR] Belirti 1 ("geç") + residual 3'ün
-   kök nedeni. `RoomUpdated` altyapısı + istemci Echo kablolaması (`src/online/realtime.ts`) bu
-   denetimde **doğru/sağlam doğrulandı**; `realtimeConfig` `broadcasting.default==='reverb'` iken
-   açılır. Prod `.env`'de `BROADCAST_CONNECTION=reverb` + `REVERB_APP_KEY` + Reverb süreci çalışırsa
-   rakip zar/hamle ~anında gelir. **Repo dışı `.env`; bu denetimden değiştirilemez/doğrulanamaz.**
+1. **Push'u (Reverb) prod'da etkinleştir** — [OPS; KOD HAZIR + TESTLİ] Belirti 1 ("geç") + residual
+   3'ün kök nedeni. Kod tarafı bu oturumda **runnable testlerle** doğrulandı: push sözleşmesi
+   (`RoomUpdatedEventTest`: public `room.{code}` + `room.updated` + gövde) ve istemci-enable gate
+   (`RealtimeConfigTest`: `broadcasting.default==='reverb'`→enabled+key, `log`→disabled, secret
+   sızmaz). `broadcastRoom` 5 oyun aksiyonunda da çağrılıyor (roll/move/cube/resign/saat-sonu).
+   İstemci (`src/online/realtime.ts`) host/port'u `window.location`'dan türetir + key'i sunucudan
+   alır → **rebuild gerekmez** (runbook'taki `VITE_REVERB_*` değişkenleri artık KULLANILMIYOR,
+   eski doc). **Tek kalan ops:** prod `.env` → `REVERB_APP_ID/KEY/SECRET` + systemd
+   (`deploy/tavla-reverb.service`) + nginx `/app` wss proxy + EN SON `BROADCAST_CONNECTION=reverb`.
+   Tam adımlar: `deploy/README.md` §Reverb. **Repo dışı `.env`; bu denetimden açılamaz.**
 2. **Onaylı rakip hamlesini otoriter delta'dan replay et** — [UYGULANDI, §2 Belirti 4] Cosmetic
    `oppReplay` katmanı + `replayStartIndex` (pure, testli) + güvenlik temizliği; iki-istemci E2E ile
    regresyonsuz doğrulandı. Transporttan BAĞIMSIZ: push kapalı olsa bile adım adım gösterir.
@@ -158,9 +164,12 @@ istemci + yeni saf modül; otoriteyi değiştirmez.
 - **Gerçek cihaz / mobil / PWA geri-dönüş:** Test edilmedi (statik analiz dışında).
 - **Prod push durumu:** `BROADCAST_CONNECTION` prod değeri repo dışı (`.env`, Plesk); bu denetimden
   doğrulanamadı. Belirti 1 ("geç") büyüklüğü buna bağlı — istemci tarafı hazır, kalan ops.
-- **§5.2 replay'in GÖRSEL doğrulaması:** İki-istemci E2E senkronu bozmadığını kanıtladı (geçti) ama
-  E2E "adım adım animasyonu gözle" ASSERT ETMEZ; replay'in görsel akıcılığı pure testler + kod
-  üzerinden doğrulandı, gerçek iki-tarayıcı GÖZLE izleme yapılmadı (canlıya dokunma + harness sınırı).
+- **§5.2 replay'in doğrulaması:** DOĞRULUK/YAKINSAMA deterministik kanıtlandı (`oppReplay.test.ts`,
+  gerçek motor): kare dizisi başlangıçtan bitişe TEK TEK ilerler, ara kareler uçlardan farklıdır
+  (snap DEĞİL), SON kare otoriter tahtaya TAM eşittir (tamamlanma ölçütü). İki-istemci E2E de senkronu
+  bozmadığını gösterdi. **Yapılmayan:** subjektif "görsel akıcılık"ı (easing/450ms his) gerçek iki
+  tarayıcıda GÖZLE izleme — bu otomatik assert edilemez; deploy sonrası sende kalır ya da istenirse
+  headed-browser ekran görüntüsü harness'ı ayrıca kurulabilir.
 - **Deploy:** Frontend bundle `backend/public`'e yazılıp commit EDİLMEDİ (deploy kullanıcıya ait,
   canlı kullanıcı etkisi olduğundan). Bu değişiklikler canlıya çıkmak için `npm run deploy:build`
   + `backend/public` commit + push ister.
