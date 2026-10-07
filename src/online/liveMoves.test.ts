@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { liveMoveDelta } from './liveMoves'
+import { liveMoveDelta, replayStartIndex } from './liveMoves'
 import type { Step } from '../engine/types'
 
 const s = (from: number, to: number, die: number): Step => ({ from, to, die } as Step)
@@ -31,5 +31,31 @@ describe('liveMoveDelta', () => {
   it('farklı dizi (prefiks tutmadı): reset + incoming tamamı', () => {
     const c = s(23, 21, 2)
     expect(liveMoveDelta([a], [c])).toEqual({ animate: [c], reset: true })
+  })
+})
+
+describe('replayStartIndex (onaylı hamle adım adım oynatma başlangıcı)', () => {
+  const a = s(23, 20, 3)
+  const b = s(20, 18, 2)
+  const c = s(13, 11, 2)
+
+  it('önizleme hiç göstermediyse: baştan (0)', () => {
+    expect(replayStartIndex([], [a, b])).toBe(0)
+  })
+
+  it('önizleme bir kısmını gösterdiyse: oradan devam', () => {
+    expect(replayStartIndex([a], [a, b])).toBe(1)
+  })
+
+  it('önizleme TAMAMINI gösterdiyse: full.length (çağıran atlar)', () => {
+    expect(replayStartIndex([a, b], [a, b])).toBe(2)
+  })
+
+  it('önizleme saptıysa (yanlış adım): baştan tam oynat (0)', () => {
+    expect(replayStartIndex([c], [a, b])).toBe(0)
+  })
+
+  it('önizleme full-dan uzun ama sapmalı: baştan (0)', () => {
+    expect(replayStartIndex([a, c], [a, b])).toBe(0)
   })
 })

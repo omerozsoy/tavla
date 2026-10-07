@@ -23,3 +23,19 @@ export function liveMoveDelta(shown: Step[], incoming: Step[]): LiveDelta {
   if (isPrefix) return { animate: incoming.slice(shown.length), reset: false }
   return { animate: incoming.slice(), reset: true }
 }
+
+/**
+ * ONAYLI rakip hamlesini (otoriter delta'dan reconstruct edilen `full` adımlar) adım adım oynatırken
+ * KAÇINCI adımdan başlanacağını döndürür. `shown` = canlı önizlemenin (room.live) o tura dek zaten
+ * gösterdiği adımlar. Amaç: önizleme bir kısmını zaten oynattıysa oradan DEVAM et (çift oynatma yok);
+ * hiç oynatmadıysa baştan; tamamını oynattıysa `full.length` (çağıran atlar).
+ *
+ *  - shown, full'un temiz bir PREFİKSİyse -> eşleşen uzunluk (tamamı eşleşmişse full.length = atla).
+ *  - shown full ile SAPTIYSA (farklı adım) -> 0 (baştan tam oynat; yarım/yanlış kalıntı atılır).
+ */
+export function replayStartIndex(shown: Step[], full: Step[]): number {
+  let i = 0
+  while (i < shown.length && i < full.length && stepEq(shown[i], full[i])) i++
+  if (i < shown.length) return 0 // sapma: shown'da full'a uymayan adım var -> baştan
+  return i
+}

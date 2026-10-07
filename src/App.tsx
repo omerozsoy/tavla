@@ -64,7 +64,8 @@ import {
   isDuplicateSubmit,
   nextSubmittedKey,
 } from './online/authSync'
-import { liveMoveDelta } from './online/liveMoves'
+import { liveMoveDelta, replayStartIndex } from './online/liveMoves'
+import { interpClock } from './online/clockView'
 import { subscribeRoom, onRealtimeConn } from './online/realtime'
 import { botPersona } from './botPersonas'
 import Board from './ui/Board'
@@ -632,6 +633,8 @@ interface RoomState {
   // serverMove yanıtındaki bot[] turlarından gelir (yerel motor YOK). botLevel = HUD zorluk.
   bot?: boolean
   botLevel?: number | null
+  // KLASIK TAVLA: bu oda klasik mi (küp yok + mars=2). match.classic buradan aynalanır (tek kaynak oda).
+  classic?: boolean
   // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar.
   live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
 }
@@ -642,6 +645,7 @@ const BOT_PLAYER: Player = 'black'
 // ayakta olmalı; yoksa açılış "Rakip düşünüyor…"da bekler (insan hamlesi kaybolmaz).
 const SERVER_BOT = true
 const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
+const CLASSIC_TARGETS = [5, 7, 9] // KLASIK TAVLA mac uzunluklari (kullanici istegi: 5/7/9)
 
 // Board renk temalari — boardThemes.ts'e cikarildi (God-component kucultme, #10)
 import {
@@ -863,6 +867,17 @@ export default function App() {
   // sabit tutunca (timer yok) + render !diceRolled kapısı (zarımı atınca kalkar) -> zar kaçmaz.
   const [oppRoll, setOppRoll] = useState<{ dice: number[]; at: number } | null>(null)
   const lastOppRollVRef = useRef<number>(-1) // son gösterilen lastMove.v (mükerrer tetik engeli)
+  // §5.2 ONAYLI RAKİP HAMLESİ REPLAY: rakip hamlesini onaylayınca (otoriter durum gelince) tahta
+  // SON konuma sıçrıyordu ("bir anda tamamlanmış geldi"). Bu, hamleyi otoriter delta'dan (reconstruct)
+  // adım adım OYNATIR — COSMETIC: `turnStart`/skor/saat zaten otoriter ilerler, bu yalnız GÖSTERİM.
+  // Canlı önizleme (room.live) zaten oynattıysa atlanır (çift yok); bot/sonuç-ekranı hariç. Her koşulda
+  // güvenlik zamanlayıcısıyla temizlenir (takılma engeli); yeni otoriter durum gelince anında biter.
+  const [oppReplay, setOppReplay] = useState<{ base: GameState; steps: Step[]; shown: number; color: Player } | null>(null)
+  const oppReplayRef = useRef<typeof oppReplay>(null)
+  const oppReplayTimersRef = useRef<number[]>([])
+  useEffect(() => {
+    oppReplayRef.current = oppReplay
+  }, [oppReplay])
   const [matchCodeCopied, setMatchCodeCopied] = useState(false) // oyun-içi maç ID kopyalandı geri bildirimi
   // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
   const [cubeHint, setCubeHint] = useState<CubeHint | null>(null)
@@ -889,6 +904,7 @@ export default function App() {
   // Ayar PROFİLDEN yapılır; burada yalnız okunur (Board'a geçilir).
   const [swapStones] = useSwapStones()
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
+  const [classicSetup, setClassicSetup] = useState(false) // KLASIK TAVLA kurulum ekrani mi (kup yok + mars=2)
   const [onlineTavlaOpen, setOnlineTavlaOpen] = useState(false) // SEO landing: /online-tavla
   const [tavlaOynaOpen, setTavlaOynaOpen] = useState(false) // SEO landing: /tavla-oyna
   // Turnuva organizasyonu SEO servis sayfalari + /iletisim (slug tutar): hub + kurumsal/
@@ -966,7 +982,7 @@ export default function App() {
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const potRef = useRef(0) // oynanan gercek pot (yuzde maçta min snapshot, sabitte = stake); sunucudan gelir
-  const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
+  const mmOriginRef = useRef<'match' | 'solo' | 'klassik'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
@@ -1481,6 +1497,11 @@ export default function App() {
           setFriendSetupOpen(true)
           break
         case 'yeni-oyun':
+          setClassicSetup(false)
+          setSetup('online')
+          break
+        case 'klasik-tavla': // KLASIK TAVLA: kup yok + mars=2 (online eslesme / bota karsi tek giris)
+          setClassicSetup(true)
           setSetup('online')
           break
         case 'online-tavla': // SEO landing sayfasi (taranabilir icerik)
@@ -1508,6 +1529,7 @@ export default function App() {
           break
         case 'yz-ile-oyna':
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
+          setClassicSetup(false)
           setSetup('pvb')
           break
         case 'profil': {
@@ -1711,6 +1733,7 @@ export default function App() {
   const [rankedMatch, setRankedMatch] = useState(true) // false = casual (puana etki etmez)
   const clockRef = useRef(CLOCK_PRESETS.normal) // secili saat preseti (delay/over)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
+  const classicRef = useRef(false) // KLASIK TAVLA (kup yok + mars=2): matchmake/bot/arkadas payload bayragi
   const targetsRef = useRef<number[]>([1]) // eslesme icin kabul edilen uzunluklar (coklu)
   const matchTargetSyncedRef = useRef(false) // eslesme sonrasi anlasilan uzunluk uygulandi mi
   // ROVANS (online): biten oda yeniden kullanilamaz (settle onu 'finished' isaretler), bu yuzden
@@ -2517,7 +2540,13 @@ export default function App() {
     !opening
   // Tahtada gösterilecek durum: kendi turumda `working`; RAKİP turunda canlı önizleme varsa
   // turnStart + rakip adımları (adım adım animasyonla dolar) -> rakip oynarken/geri alırken görürsün.
-  const boardDisplay = online && !myTurn && oppLive.length > 0 ? applyPlayed(turnStart, oppLive) : working
+  // §5.2 REPLAY aktifse tahta otoriter `base`+oynatılan adımlar; değilse canlı önizleme (oppLive);
+  // o da yoksa otoriter `working`. Replay cosmetic: bitince `working`'e (otoriter sonuç) döner.
+  const boardDisplay = oppReplay
+    ? applyPlayed(oppReplay.base, oppReplay.steps.slice(0, oppReplay.shown))
+    : online && !myTurn && oppLive.length > 0
+      ? applyPlayed(turnStart, oppLive)
+      : working
 
   // SAVUNMA KALKANI (vaka N7DNY): istemci bir kare GEÇERSİZ tahta tutarsa — bar+off dahil
   // toplam 15 beyaz / 15 siyah DEĞİLSE — bu geçici bir state bozulmasıdır (mobilde görüldü:
@@ -3788,7 +3817,7 @@ export default function App() {
   const resignLoser: Player = online ? myColor : mode === 'pvp' ? turnStart.turn : 'white'
   // SİSTEM-belirlenen pes değeri (1/2/3): ŞU ANKİ tahtadan (SAF KONUM). Kullanıcı SEÇMEZ — sistem gösterir.
   // Rakip evinde/barında taş -> backgammon(3), hiç toplamadı -> gammon(2), topladı -> single(1).
-  const resignVal = resignationValue(turnStart, resignLoser)
+  const resignVal = resignationValue(turnStart, resignLoser, !!match.classic)
   const resignType = resignationTypeForValue(resignVal)
   const resignPoints = calculateResignationPoints(resignType, match.cube.value)
   const resignWinner = opponent(resignLoser)
@@ -3853,6 +3882,14 @@ export default function App() {
     setGameEnd({ winner: w, points: match.cube.value, mult: 1, dropped: false, resigned: true })
   }
 
+  // KLASIK TAVLA: match.classic'i TEK KAYNAKTAN (otoriter oda bayrağı room.classic) aynala. Böylece
+  // hangi giriş yolu (matchmaking/arkadaş/bot) olursa olsun küp UI'si gizlenir (cubeAvailability +
+  // shouldAutoRoll m.classic okur) ve yerel (legacy arkadaş) skor/pes değeri mars=2 ile sınırlanır.
+  useEffect(() => {
+    const rc = !!room?.classic
+    setMatch((m) => (!!m.classic === rc ? m : { ...m, classic: rc }))
+  }, [room?.classic])
+
   // ---- Oyun sonu (bear off) cozumleme ----
   useEffect(() => {
     // OTORİTER (Faz 2): oyun-sonu puanını SUNUCU hesaplar (move() → server_match); yerelde
@@ -3868,7 +3905,7 @@ export default function App() {
     if (turnsPlayed === 0) return
     const w = winner(working)
     if (!w) return
-    const outcome = gameOutcome(working)
+    const outcome = gameOutcome(working, !!match.classic)
     if (!outcome) return
     const points = match.cube.value * outcome.multiplier
     setMatch((m) => scoreGame(m, w, m.cube.value * outcome.multiplier))
@@ -4430,11 +4467,15 @@ export default function App() {
   }
 
   // ---- Oyun saati ----
-  // Yeni tur/hamle sirasi baslayinca 12sn + 60sn ek sureyi sifirla
+  // Yeni tur/hamle sirasi baslayinca hamle gecikmesini sifirla.
   useEffect(() => {
-    // Yeni tur: yalnizca hamle gecikmesini sifirla; rezerv bankasi tukenmeye devam eder
+    // ONLINE: saat TAMAMEN sunucu demirinden (clockAnchorRef -> interpClock) türetilir; delay'i
+    // burada YEREL preset'le ezersek tur değişiminde bir an yanlış/yerel delay flaşlanır (sunucu
+    // delay'i moda/hold'a göre farklı olabilir) = "anlamsız saniye" sınıfı titreme. Online'da dokunma.
+    if (online) return
+    // OFFLINE (pvb): yeni tur -> yalnizca hamle gecikmesini sifirla; rezerv bankasi tukenmeye devam eder.
     setClock((c) => ({ ...c, delay: clockRef.current.move }))
-  }, [turnStart.turn, turnsPlayed])
+  }, [turnStart.turn, turnsPlayed, online])
 
   // Her saniye: once 12sn gecikme, o bitince ek sure (30+30) azalir.
   // KUP TEKLIFI beklerken saat DURMAZ: karar YANITLAYANIN oldugu icin sure onun
@@ -4453,13 +4494,8 @@ export default function App() {
         if (!a) return
         // HOLD (bot-reveal grace): started_at gelecekteyken sunucu delay'i SABİT tutar. İstemci de
         // hold sn boyunca geri saymamalı (eff=0) yoksa 10'dan 9'a iner, her poll 10'a döner = titreme.
-        const elapsed = (Date.now() - a.at) / 1000
-        const eff = Math.max(0, elapsed - (a.hold ?? 0))
-        const delay = Math.max(0, a.delay - eff)
-        const over = Math.max(0, eff - a.delay) // gecikme bittikten sonra bankayı yer
-        const white = a.active === 'white' ? Math.max(0, a.white - over) : a.white
-        const black = a.active === 'black' ? Math.max(0, a.black - over) : a.black
-        const next = { delay: Math.ceil(delay), white: Math.ceil(white), black: Math.ceil(black) }
+        // Türetme SAF interpClock'ta (src/online/clockView + test): NaN/negatif ekrana düşmez.
+        const next = interpClock(a, Date.now())
         const cur = clockStateRef.current
         if (next.delay === cur.delay && next.white === cur.white && next.black === cur.black) return
         setClock(next)
@@ -5116,10 +5152,66 @@ export default function App() {
     if (snap.gameEnd) setGameEnd(snap.gameEnd)
   }
 
+  // §5.2 replay zamanlayıcılarını + durumunu TEMİZLE (yeni otoriter durum geldi / oda değişti / ayrıldı).
+  function clearOppReplay() {
+    oppReplayTimersRef.current.forEach((t) => window.clearTimeout(t))
+    oppReplayTimersRef.current = []
+    if (oppReplayRef.current) {
+      oppReplayRef.current = null
+      setOppReplay(null)
+    }
+  }
+
+  // §5.2 ONAYLI rakip hamlesini adım adım oynat (COSMETIC). `base` = rakibin tur-başı tahtası (zarlı),
+  // `steps` = reconstruct edilen hamle, `oc` = rakip rengi. Otoriteye (turnStart/skor/saat) DOKUNMAZ;
+  // tahta gösterimini (boardDisplay) kısa süre base+adımlar olarak tutar, bitince otoriter sonuca döner.
+  function maybeReplayOppMove(base: GameState, steps: Step[], oc: Player) {
+    if (!online || room?.bot) return // bot'un kendi reveal animasyonu var (botAnim) — çift oynatma yok
+    const canAnim =
+      animOn && moveStyle !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!canAnim || steps.length === 0) return
+    if (resultShowingRef.current || inLobbyRef.current) return
+    const start = replayStartIndex(oppLiveShownRef.current, steps)
+    if (start >= steps.length) return // canlı önizleme (room.live) zaten tamamını gösterdi
+    clearOppReplay()
+    setOppReplay({ base, steps, shown: start, color: oc })
+    oppReplayRef.current = { base, steps, shown: start, color: oc }
+    const timers: number[] = []
+    for (let i = start; i < steps.length; i++) {
+      timers.push(
+        window.setTimeout(
+          () => {
+            const st = steps[i]
+            const r = sourceRect(st.from) // o anki (replay) tahtada kaynağı yakala -> hedefe uçur
+            if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r, offColor: oc }
+            if (!resultShowingRef.current && !inLobbyRef.current) {
+              const pre = applyPlayed(base, steps.slice(0, i))
+              const moverSign = oc === 'white' ? 1 : -1
+              const hit =
+                typeof st.to === 'number' &&
+                pre.points[st.to] !== 0 &&
+                Math.sign(pre.points[st.to]) !== moverSign &&
+                Math.abs(pre.points[st.to]) === 1
+              if (hit) Sound.hit()
+              else Sound.move()
+            }
+            setOppReplay((cur) => (cur ? { ...cur, shown: i + 1 } : cur))
+          },
+          (i - start + 1) * 450,
+        ),
+      )
+    }
+    // GÜVENLİK: her koşulda temizle (stick engeli) — son adımdan ~0.6sn sonra otoriter sonuca dön.
+    timers.push(window.setTimeout(() => clearOppReplay(), (steps.length - start) * 450 + 600))
+    oppReplayTimersRef.current = timers
+  }
+
   // Sunucu-otoriter durumu (server_state + server_match) uygula (Faz 2). Yalniz TUR SINIRINDA
   // cagirilir (mid-move'u ezmemek icin poll'da korunur). Otorite SUNUCU: tahta + skor + KUP +
   // Crawford + mac-bitti hepsi sunucudan gelir; istemci yalniz yansitir (forge edemez).
   function applyServerBoard(gs: GameState, sm?: ServerMatch | null) {
+    // Önceki hamlenin replay'i (varsa) bitmeden yeni otoriter durum geldi -> replay'i bitir (truth göster).
+    if (oppReplayRef.current) clearOppReplay()
     // RAKIBIN HAMLESINI GERI URET. Otoriter modda applyOnlineState CALISMAZ; rakip
     // hamlelerini matchLog'a katan tek yer orasiydi (snap.moves birlestirmesi) ->
     // matchLog tek tarafli kaliyor, disa aktarilan .mat'te rakip sutunu BOMBOS oluyor
@@ -5175,6 +5267,9 @@ export default function App() {
               m: turnNotation(steps, oc),
             })
           }
+          // §5.2: onaylı rakip hamlesini adım adım OYNAT (snap yerine). Oyun bittiyse (ended) ATLA —
+          // maç/oyun sonu ekranı ayrı akış; bitiren hamleyi replay'e bağlamak kırılgan olur.
+          if (!ended) maybeReplayOppMove(prev, steps, oc)
         }
       }
     }
@@ -5465,6 +5560,7 @@ export default function App() {
                 authoritative: rv.authoritative ?? r.authoritative,
                 server_version: rv.server_version ?? r.server_version,
                 dice_authority: rv.dice_authority ?? r.dice_authority,
+                classic: rv.classic ?? r.classic, // Klasik Tavla bayrağı (küp yok + mars=2)
                 live: rv.live ?? null, // canlı rakip önizlemesi (cosmetic)
               }
             : r,
@@ -6159,7 +6255,7 @@ export default function App() {
     const el = destEl(f.to, f.offColor)
     if (el) flyChecker(el, f.srcRect, moveStyle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [oppLive])
+  }, [oppLive, oppReplay]) // §5.2: replay adımı eklenince de (oppReplay.shown) uçuşu tetikle
 
   // Ses: RAKİBİN zar atışı (online insan/kılıç maçı). Kendi atışım doRoll -> playDice() ile çalar;
   // rakibin zarı yalnız poll/applyServerBoard ile geldiğinden buraya kadar sessizdi (kullanıcı raporu:
@@ -6172,6 +6268,16 @@ export default function App() {
   useEffect(() => {
     oppFirstDiceRef.current = true
     oppDiceKeyRef.current = ''
+    // Önceki odadan kalan CANLI-ÖNİZLEME izlerini temizle. Aksi halde yeni odada (rövanş / yeni
+    // eşleşme — aynı sekme) rakibin ilk turunda bayat adımlar liveMoveDelta'da prefiks sanılıp bazı
+    // adımlar ATLANABİLİR, ya da bekleyen bir uçuş (pendingOppFlightRef) yeni tahtaya düşüp "hayalet"
+    // sıçrama üretebilir. lastOppRollVRef sıfırlanmazsa yeni odanın ilk rakip zarı (aynı v) GÖRÜNMEZ.
+    oppLiveShownRef.current = []
+    pendingOppFlightRef.current = null
+    lastOppRollVRef.current = -1
+    setOppLive([])
+    setOppRoll(null)
+    clearOppReplay() // §5.2: oda değişince bekleyen replay'i iptal et (yeni tahtaya düşmesin)
   }, [room?.code])
   useEffect(() => {
     if (!online || myTurn || !turnStart.dice || turnStart.dice.length === 0) {
@@ -6196,6 +6302,7 @@ export default function App() {
   // oyuncu "Zar At"/"Katla" arasinda secim yapabilsin. (Ayar olarak sunulmuyor.)
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
+    if (oppReplay) return // §5.2: rakibin hamlesi ekranda oynanırken benim zarımı atma (replay bitince tekrar çalışır)
     if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)) return
     setAutoRollStuck(false)
     // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
@@ -6219,7 +6326,7 @@ export default function App() {
       window.clearTimeout(reveal)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match])
+  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match, oppReplay])
 
   // NOT: Eski "telefonunu yan cevir" bloklayici uyari EKRANI kaldirildi (kullanici istegi).
   // Oyun artik hem DIKEY hem YATAY oynanabilir: portre'de @media (max-width:900px) sutun
@@ -6362,6 +6469,7 @@ export default function App() {
         oppFrame: null,
         oppId: null,
         status: res.room.status,
+        classic: res.room.classic ?? false, // Klasik Tavla bayrağı (küp yok + mars=2) -> match.classic aynalanır
       })
     } catch {
       // Hata: bayat online durumda TAKILMA -> arkadas kurulum ekranina don + toast.
@@ -6382,6 +6490,7 @@ export default function App() {
     target: number,
     level: number,
     tc?: TimeControl,
+    classic = false, // KLASIK TAVLA: bota karsi (kup yok + mars=2)
   ) {
     roomLeavingRef.current = null
     rollConflictRef.current = false
@@ -6416,7 +6525,8 @@ export default function App() {
       onlineTargetRef.current = target
       targetsRef.current = [target]
       const tcUse = tc ?? timeControl
-      const res = await createBotRoom(profile?.nickname ?? t('auth.guestNick'), level, target, user?.rating, profile.avatar, tcUse)
+      classicRef.current = classic // rematch/HUD için klasik bayrağı sakla
+      const res = await createBotRoom(profile?.nickname ?? t('auth.guestNick'), level, target, user?.rating, profile.avatar, tcUse, undefined, classic)
       resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -6459,6 +6569,7 @@ export default function App() {
         oppCountry: res.room.p2_country ?? null,
         oppId: res.room.p2_user_id ?? null,
         status: res.room.status,
+        classic: res.room.classic ?? false, // Klasik Tavla bayrağı (küp yok + mars=2) -> match.classic aynalanır
         authoritative: true,
         dice_authority: true,
         bot: true,
@@ -6554,6 +6665,7 @@ export default function App() {
         targetsRef.current,
         tcOverride ?? timeControl,
         stakesRef.current ?? undefined,
+        classicRef.current, // Klasik Tavla: ayri eslesme havuzu
       )
       // Eslesme olduysa sunucu ortak uzunlugu (target) verir; olmadiysa gecici (max).
       matchTargetSyncedRef.current = res.room.target != null
@@ -6596,6 +6708,7 @@ export default function App() {
         oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
+        classic: res.room.classic ?? false, // Klasik Tavla bayrağı (küp yok + mars=2) -> match.classic aynalanır
         // KRİTİK: authoritative'i İLK POLL'U BEKLEMEDEN kur. Eşleşen oyuncu (p2) status='playing'
         // ile hemen açılışa girer; authoritativeRef henüz false ise açılış seededOpening'e (legacy)
         // düşer -> server_state'e zar YAZILMAZ -> ilk serverMove "Önce zar at" (409) -> sıra geçmez.
@@ -6617,7 +6730,7 @@ export default function App() {
       setMode('pvb')
       setHome(true)
       if (mmOriginRef.current === 'solo') setSoloOpen(true)
-      else setSetup('online')
+      else { setClassicSetup(mmOriginRef.current === 'klassik'); setSetup('online') }
     } finally {
       setRoomBusy(false)
     }
@@ -6645,7 +6758,7 @@ export default function App() {
     setMode('pvb')
     setHome(true)
     if (mmOriginRef.current === 'solo') setSoloOpen(true)
-    else setSetup('online')
+    else { setClassicSetup(mmOriginRef.current === 'klassik'); setSetup('online') }
   }
 
   async function handleJoinRoom(code: string) {
@@ -6701,6 +6814,7 @@ export default function App() {
         oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
+        classic: res.room.classic ?? false, // Klasik Tavla bayrağı (küp yok + mars=2) -> match.classic aynalanır
       })
     } catch (e) {
       const msg =
@@ -6780,6 +6894,7 @@ export default function App() {
         oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
+        classic: res.room.classic ?? false, // Klasik Tavla bayrağı (küp yok + mars=2) -> match.classic aynalanır
         authoritative: res.room.authoritative,
         dice_authority: res.room.dice_authority,
       })
@@ -6876,6 +6991,7 @@ export default function App() {
         oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
         oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
+        classic: res.room.classic ?? false, // Klasik Tavla bayrağı (küp yok + mars=2) -> match.classic aynalanır
       })
       return true
     } catch (err) {
@@ -7061,6 +7177,7 @@ export default function App() {
   function handleLeaveRoom() {
     stakeRef.current = 0
     betPctRef.current = 0
+    clearOppReplay() // §5.2: odadan çıkınca bekleyen rakip-hamle replay'ini iptal et
     // Hedefli davetle acilmis + hala BEKLEYEN oda -> "Oyunu Iptal Et": daveti de geri cek ki
     // rakibin ekranindaki davet banner'i (sonraki /ping poll'unda) KALKSIN.
     if (inviteWaitName && room?.status === 'waiting' && room?.code) {
@@ -7100,7 +7217,7 @@ export default function App() {
     setMode('pvb')
     if (friendlyRef.current) setFriendSetupOpen(true)
     else if (mmOriginRef.current === 'solo') setSoloOpen(true)
-    else setSetup('online')
+    else { setClassicSetup(mmOriginRef.current === 'klassik'); setSetup('online') }
   }
 
   // Online oda 'finished' + maç-sonu ekranı (matchOver) yok + rövanş akışı YOK ise: seçim
@@ -7294,16 +7411,18 @@ export default function App() {
     clockRef.current = CLOCK_PRESETS[opts.timeControl]
     if (opts.difficulty) setDifficulty(opts.difficulty)
     setSetup(null)
+    setClassicSetup(false)
     setHome(false)
     // Mac Oyunu: her zaman online -> gercek rakiple dogrudan eslesme (Oyunu Baslat)
     if (opts.mode === 'online') {
-      mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
+      mmOriginRef.current = opts.classic ? 'klassik' : 'match' // iptalde ilgili kurulum ekranina don
       targetsRef.current = opts.targets && opts.targets.length ? opts.targets : [opts.target]
       onlineTargetRef.current = Math.max(...targetsRef.current) // gecici; anlasilan uzunluk eslesmede kesinlesir
       stakeRef.current = 0 // Mac Oyunu sabit stake degil, % bahis kullanir
       stakesRef.current = null // Tek Oyun coklu-bahis'i sizdirma (Mac Oyunu % bahis)
       betPctRef.current = opts.betPct ?? 0
       minRatingRef.current = opts.minRating ?? 0
+      classicRef.current = !!opts.classic // Klasik Tavla: ayri eslesme havuzu + kup yok + mars=2
       setMode('online')
       setHome(false)
       handleMatchmake()
@@ -7311,7 +7430,7 @@ export default function App() {
       // SUNUCU-OTORİTER BOT: PvB artık sunucuda (authoritative oda) oynanır -> iki pencere TEK
       // state'i izler. Yerel motor (handleNewMatch/'pvb') SERVER_BOT=false ile geri gelir.
       mmOriginRef.current = 'solo' // iptal/terkte lobiye dön
-      handleCreateBotRoom(opts.target, opts.difficulty ?? difficulty, opts.timeControl)
+      handleCreateBotRoom(opts.target, opts.difficulty ?? difficulty, opts.timeControl, !!opts.classic)
     } else {
       handleNewMatch(opts.target, 'pvb')
     }
@@ -7482,7 +7601,7 @@ export default function App() {
     diceRolled &&
     hasNoMove(generateMoves(turnStart)) &&
     (interactive || botDance || (online && !myTurn && !gameEnd && !matchOver))
-  const showRoll = interactive && !diceRolled
+  const showRoll = interactive && !diceRolled && !oppReplay // §5.2: replay bitene dek zar kontrolünü gizle
   // Zar zaten OTOMATIK atilacaksa "Zar At" butonunu HIC cizme (kullanici direktifi: kup
   // rakipteyse dugmeyi gormeyeyim, dogrudan zari goreyim). Kosul, otomatik-zar effect'iyle
   // BIREBIR ayni (shouldAutoRoll + ayni guard'lar) -> buton gizlenip zar atilmama riski yok.
@@ -7492,6 +7611,7 @@ export default function App() {
     !opening &&
     !cubePending &&
     !gameWon &&
+    !oppReplay && // §5.2: rakip hamlesi oynanırken "Atılıyor…" gösterme (replay bitince devreye girer)
     shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
@@ -9866,9 +9986,10 @@ export default function App() {
         <div className="page-host">
           <MatchSetup
             mode={setup}
-            targets={TARGETS}
+            classic={classicSetup}
+            targets={classicSetup ? CLASSIC_TARGETS : TARGETS}
             coins={user?.coins ?? 0}
-            initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
+            initial={{ target: classicSetup ? 7 : match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
               return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB, pointImgs: bt.pointImgs, pointFits: bt.pointFits, surfaceImgLeft: bt.surfaceImgLeft, surfaceImgRight: bt.surfaceImgRight, surfaceOpacity: bt.surfaceOpacity, pointTexts: bt.pointTexts }
@@ -9879,6 +10000,7 @@ export default function App() {
             onRequirePremium={() => setMemOpen(true)}
             onCancel={() => {
               setSetup(null)
+              setClassicSetup(false)
               if (mode === 'online' && !room) setHome(true)
             }}
           />
