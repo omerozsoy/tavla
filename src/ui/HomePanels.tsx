@@ -531,11 +531,15 @@ export function SeekersPanel({
   onProfile,
   onJoin,
   onInvite,
+  mySeek,
+  onCancelSeek,
 }: {
   currentId?: number
   onProfile: (id: number) => void
   onJoin?: (s: Seeker) => void // seeking: eslesme havuzuna AYNI kriterle gir -> backend aninda eslestirir
   onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void // available: davet et
+  mySeek?: Seeker | null // kendi aktif havuz aramam (backend self'i hariç tutar) -> en üstte "Rakip Bekleniyor…" + İptal
+  onCancelSeek?: () => void // kendi aramamı iptal et (ana sayfada kal)
 }) {
   const { t } = useT()
   const [rows, setRows] = useState<Seeker[] | null>(null)
@@ -557,7 +561,9 @@ export function SeekersPanel({
     }
   }, [])
 
-  const pageCount = rows ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(rows.length / PAGE_SIZE))) : 1
+  // Kendi aramam (mySeek) listenin EN ÜSTÜNDE; rows yüklenmemişken bile görünür.
+  const list = mySeek ? [mySeek, ...(rows ?? [])] : rows
+  const pageCount = list ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(list.length / PAGE_SIZE))) : 1
   const curPage = Math.min(page, pageCount - 1)
 
   return (
@@ -565,16 +571,16 @@ export function SeekersPanel({
       <div className="home-panel-head">
         <span className="online-dot" />
         <Icon name="dice" size={18} /> {t('seekers.title')}
-        {rows && rows.length > 0 && <span className="online-count">{rows.length}</span>}
+        {list && list.length > 0 && <span className="online-count">{list.length}</span>}
       </div>
-      {rows === null ? (
+      {list === null ? (
         <Loading />
-      ) : rows.length === 0 ? (
+      ) : list.length === 0 ? (
         <div className="seek-empty">{t('seekers.empty')}</div>
       ) : (
         <>
           <div className="rank-list">
-            {rows.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
+            {list.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
               const self = currentId != null && s.id === currentId
               const stakeList = s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]
               const maxStake = Math.max(0, ...stakeList)
@@ -603,6 +609,7 @@ export function SeekersPanel({
                     <span className="seek-rating">{s.rating ?? '—'}</span>
                     {s.kind === 'seeking' ? (
                       <span className="seek-chips">
+                        {self && <span className="seek-chip seek-waiting">{t('mp.waiting')}</span>}
                         {s.classic && <span className="seek-chip seek-classic">{t('classic.badge')}</span>}
                         <span className="seek-chip seek-chip-mode">
                           {maxTarget > 1 ? `${lengths} ${t('seekers.pt')}` : t('live.catSingle')}
@@ -620,8 +627,14 @@ export function SeekersPanel({
                       <span className="seek-avail">{t('online.st.ready')}</span>
                     )}
                   </span>
-                  {/* seeking -> kuyruğa katıl (eşleş); available -> davet et. */}
-                  {!self && s.kind === 'seeking' && onJoin ? (
+                  {/* Kendi aramam -> İptal. Başkası seeking -> kuyruğa katıl (eşleş); available -> davet et. */}
+                  {self && s.kind === 'seeking' && onCancelSeek ? (
+                    <span className="online-actions">
+                      <Button variant="outline" size="default" className="online-act seek-cancel" title={t('mp.cancel')} onClick={onCancelSeek}>
+                        {t('mp.cancel')}
+                      </Button>
+                    </span>
+                  ) : !self && s.kind === 'seeking' && onJoin ? (
                     <span className="online-actions">
                       <Button variant="default" size="icon" className="online-act" title={t('seekers.join')} aria-label={t('seekers.join')} onClick={() => onJoin(s)}>
                         <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
@@ -638,7 +651,7 @@ export function SeekersPanel({
               )
             })}
           </div>
-          <Pager page={curPage} total={rows.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
+          <Pager page={curPage} total={list.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
         </>
       )}
     </div>

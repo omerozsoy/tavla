@@ -11911,6 +11911,25 @@ button.acct-row-logout:hover:not(:disabled) {
 .seek-chip-tc {
   color: color-mix(in srgb, var(--text, currentColor) 60%, transparent);
 }
+/* Kendi aramam: "Rakip Bekleniyor…" -> vurgulu, hafif nabız (aktif bekleyiş hissi). */
+.seek-chip.seek-waiting {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: seek-wait-pulse 1.6s ease-in-out infinite;
+}
+@keyframes seek-wait-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+/* Kendi aramamı iptal butonu: satır-içi kompakt (ikon butonlarla aynı yükseklik). */
+.online-act.seek-cancel {
+  width: auto;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
 /* .rank-row.online-row: ozgulluk .rank-row'dan yuksek olmali; yoksa kaynakta sonra
    gelen .rank-row'un 4-sutunlu grid'i kazanip aksiyonlari alt satira dusurur. */
 .rank-row.online-row {

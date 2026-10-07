@@ -80,7 +80,9 @@ test('UI audit: iki test hesabı ile beş tam oyun', async ({ browser, request }
     await expect(pages[0].locator('.setup-page')).toBeVisible()
     await pages[0].locator('.target-chip').filter({ hasText: '5' }).click()
     await clickButton(pages[0], /Başla|Başlat|Oyuna Başla|Devam/)
-    await expect(pages[0].getByRole('heading', { name: /Rakip aranıyor/ })).toBeVisible({ timeout: 20_000 })
+    // Arama artık BLOKLAYAN "Rakip aranıyor" kartını göstermez: oyuncu ana sayfaya döner ve
+    // "Oyun Arayanlar"da kendini "Rakip Bekleniyor…" (.seek-waiting) ile görür.
+    await expect(pages[0].locator('.seek-waiting')).toBeVisible({ timeout: 20_000 })
     await pages[1].getByRole('button', { name: /^Maç Oyunu$/ }).first().click()
     await expect(pages[1].locator('.setup-page')).toBeVisible()
     await pages[1].locator('.target-chip').filter({ hasText: '5' }).click()

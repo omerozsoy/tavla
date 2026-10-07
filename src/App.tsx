@@ -984,6 +984,10 @@ export default function App() {
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const potRef = useRef(0) // oynanan gercek pot (yuzde maçta min snapshot, sabitte = stake); sunucudan gelir
   const mmOriginRef = useRef<'match' | 'solo' | 'klassik'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
+  // POOL arama (mm_waiting): "Rakip aranıyor" VS kartını GÖSTERME; ana sayfaya dön, kullanıcı
+  // kendini "Oyun Arayanlar"da "Rakip Bekleniyor" + İptal ile görür. true iken poll eşleşmeyi
+  // (status 'playing') yakalayınca auto-enter effect'i oyuna sokar.
+  const awaitingMatchRef = useRef(false)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
@@ -6726,6 +6730,15 @@ export default function App() {
         // BAGIMSIZ Faz 1: bahisli oda -> zar sunucudan (serverRoll). Aynı erken-gate mantığı.
         dice_authority: res.room.dice_authority,
       })
+      // Eşleşme ANINDA olmadıysa (havuzda bekliyoruz): BLOKLAYAN "Rakip aranıyor" VS kartını
+      // gösterme -> ana sayfaya dön. Poll (online+room) arka planda sürer; eşleşince (status
+      // 'playing') auto-enter effect'i oyuna sokar. Kullanıcı "Oyun Arayanlar"da kendini görür.
+      if (res.room.status === 'mm_waiting') {
+        awaitingMatchRef.current = true
+        setHome(true)
+      } else {
+        awaitingMatchRef.current = false
+      }
     } catch (err) {
       // ApiError (status var) -> sunucunun gercek mesajini goster; yoksa ag hatasi
       const e = err as { status?: number; errors?: Record<string, string[]>; message?: string }
@@ -6745,7 +6758,10 @@ export default function App() {
     }
   }
 
-  async function handleCancelMatch() {
+  // stayHome: "Oyun Arayanlar" panelinden iptal -> aramayı öldür ama KURULUM ekranını açma,
+  // ana sayfada kal (kullanıcı listeden iptal etti, SoloStakes/setup'a atlamasın).
+  async function handleCancelMatch(stayHome = false) {
+    awaitingMatchRef.current = false
     stakeRef.current = 0 // bahis eslesmesi iptal edildi
     betPctRef.current = 0
     try {
@@ -6766,6 +6782,7 @@ export default function App() {
     // mac -> setup dali (kendi sidebar'i var).
     setMode('pvb')
     setHome(true)
+    if (stayHome) return // panelden iptal: ana sayfada kal, kurulum ekranı açma
     if (mmOriginRef.current === 'solo') setSoloOpen(true)
     else { setClassicSetup(mmOriginRef.current === 'klassik'); setSetup('online') }
   }
@@ -7054,7 +7071,13 @@ export default function App() {
     }
     const stakeList = (s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]).filter((n) => n > 0)
     const maxStake = stakeList.length > 0 ? Math.max(...stakeList) : 0
-    const proceed = () => {
+    const proceed = async () => {
+      // Zaten bir arama (mm_waiting) varken başka arayana tıklandı -> ESKİ isteği HEMEN öldür
+      // (iki açık havuz odası kalmasın); sonra yeni kriterle havuza gir.
+      if (awaitingMatchRef.current || room?.status === 'mm_waiting') {
+        awaitingMatchRef.current = false
+        try { await cancelMatchmake() } catch { /* yoksay */ }
+      }
       const targets = s.targets && s.targets.length > 0 ? s.targets : [1]
       targetsRef.current = targets
       onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
@@ -7251,6 +7274,18 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, matchOver, room?.status, rematch.code, rematch.mine, rematch.theirs, botAnim])
+
+  // POOL arama ana sayfada beklerken EŞLEŞTİ (status 'playing'): oyuna gir. awaitingMatchRef
+  // gate'i, "aktif oyun sırasında ana sayfaya gitme" (resume bar) akışını ETKİLEMEZ -> yalnız
+  // havuz aramasından gelen bekleyiş auto-enter olur.
+  useEffect(() => {
+    if (awaitingMatchRef.current && online && home && room?.status === 'playing' && !matchOver) {
+      awaitingMatchRef.current = false
+      closeAllPages() // açık menü sayfası varsa kapat (diğer oyuna-giriş yolları gibi)
+      setHome(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, home, room?.status, matchOver])
 
   // Reload sonrasi TEK aktif odaya bir kez otomatik don (asagidaki activeRooms effect'i kullanir).
   const autoResumedRef = useRef(false)
@@ -8985,10 +9020,6 @@ export default function App() {
       { key: 'seo-tavla-oyna', labelKey: '', label: 'Tavla Oyna', onClick: () => goPage(() => setTavlaOynaOpen(true)) },
       { key: 'seo-nasil-oynanir', labelKey: '', label: 'Nasıl Oynanır', onClick: () => goPage(() => setRulesOpen(true)) },
       { key: 'seo-tavla-rehberi', labelKey: '', label: 'Tavla Rehberi', onClick: () => openGuide(null) },
-      { key: 'seo-g-acilis', labelKey: '', label: 'Açılış Stratejileri', onClick: () => openGuide('tavla-acilis-stratejileri') },
-      { key: 'seo-g-kup', labelKey: '', label: 'Küp (Doubling Cube)', onClick: () => openGuide('tavla-kupu-doubling-cube') },
-      { key: 'seo-g-kazanma', labelKey: '', label: 'Kazanma Taktikleri', onClick: () => openGuide('tavla-kazanma-taktikleri') },
-      { key: 'seo-g-mars', labelKey: '', label: 'Mars ve Backgammon', onClick: () => openGuide('mars-gammon-backgammon-nedir') },
       { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', onClick: () => goPage(() => setTournRulesOpen(true)) },
       { key: 'seo-sikca-sorulan', labelKey: '', label: 'Sıkça Sorulan Sorular', onClick: () => goPage(() => setFaqOpen(true)) },
     ],
@@ -10382,6 +10413,29 @@ export default function App() {
               onProfile={(id) => setHomeProfileId(id)}
               onJoin={handleJoinSeeker}
               onInvite={user ? handleInviteFriend : undefined}
+              // Kendi aktif havuz aramam (varsa): listenin en üstünde "Rakip Bekleniyor…" + İptal
+              // ile göster (backend self'i hariç tutar -> yerel room state'ten anında çiz).
+              mySeek={
+                user && online && room?.status === 'mm_waiting'
+                  ? {
+                      kind: 'seeking',
+                      id: user.id,
+                      name: profile.nickname || t('auth.guestNick'),
+                      rating: user.rating ?? null,
+                      avatar: profile.avatar,
+                      frame: user.avatar_frame ?? null,
+                      country: profile.country || null,
+                      premium,
+                      targets: targetsRef.current,
+                      stake: stakeRef.current,
+                      stakes: stakesRef.current ?? [stakeRef.current].filter((n) => n > 0),
+                      bet_pct: betPctRef.current,
+                      classic: classicRef.current,
+                      time_control: timeControl,
+                    }
+                  : null
+              }
+              onCancelSeek={() => handleCancelMatch(true)}
             />
             {seekerConfirm && (
               <ConfirmModal
@@ -10486,7 +10540,7 @@ export default function App() {
           onCreate={() => handleCreateRoom(onlineTargetRef.current)}
           onJoin={handleJoinRoom}
           onMatchmake={handleMatchmake}
-          onCancelMatch={handleCancelMatch}
+          onCancelMatch={() => handleCancelMatch()}
           onLeave={handleLeaveRoom}
         />
       </LobbyLayout>

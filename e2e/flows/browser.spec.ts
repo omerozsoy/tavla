@@ -51,7 +51,8 @@ async function uiMatchmake(a: Ctx, b: Ctx): Promise<{ code: string; white: Seat;
     const start = c.page.getByRole('button', { name: /Başla|Başlat|Oyuna Başla|Devam|Rakip Bul/ }).last()
     await expect(start).toBeVisible({ timeout: 15_000 })
     await start.click()
-    if (c === a) await expect(a.page.getByRole('heading', { name: /Rakip aranıyor/ })).toBeVisible({ timeout: 20_000 })
+    // Arama ana sayfaya döner + "Oyun Arayanlar"da "Rakip Bekleniyor…" (.seek-waiting) gösterir.
+    if (c === a) await expect(a.page.locator('.seek-waiting')).toBeVisible({ timeout: 20_000 })
   }
   await Promise.all([a, b].map((c) => expect(c.page.locator('.board')).toBeVisible({ timeout: 30_000 })))
   await expect.poll(() => code, { timeout: 15_000 }).not.toBe('')
