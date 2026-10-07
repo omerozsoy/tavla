@@ -136,7 +136,30 @@ Route::fallback(function (Request $request) {
         // backend eslesen rotalar (normalde fallback'e dusmez; guvenlik icin allowlist'te)
         'admin', 'panel', 'pay', 'email',
     ];
-    $known = ($first === '' || in_array($first, $valid, true))
+    // DINAMIK allowlist: admin "Sol Menü"den eklenen (href'li) öğelerin iç rota ilk-segmentleri
+    // -> yeni özel sayfa ekleyince web.php'yi ELLE düzenlemeye gerek yok, refresh'te 404 olmaz.
+    // 60sn cache + MenuItem kaydında forget (anında güncellenir). DB hatasında güvenli boş liste.
+    $dynamic = [];
+    try {
+        $dynamic = Cache::remember('spa_menu_route_segs', 60, fn () => \App\Models\MenuItem::query()
+            ->whereNotNull('href')
+            ->pluck('href')
+            ->map(function ($h) {
+                $h = trim((string) $h);
+                if ($h === '' || ! str_starts_with($h, '/')) {
+                    return null; // dış link (https) SPA rotası değil
+                }
+
+                return explode('/', ltrim($h, '/'))[0] ?: null;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all());
+    } catch (\Throwable $e) {
+        $dynamic = [];
+    }
+    $known = ($first === '' || in_array($first, $valid, true) || in_array($first, $dynamic, true))
         && SeoMeta::knownDynamicPath($path);
 
     // BILINMEYEN yol -> SPA kabugu (ana sayfa meta'si) yerine MARKALI 404 sayfasi.

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Translator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Sol menu ogesi (sira + ad override + gorunurluk). Katalog config/menu.php'dedir.
@@ -65,6 +66,11 @@ class MenuItem extends Model
                 }
             }
         });
+
+        // SPA fallback dinamik allowlist cache'ini anında tazele (href değişince refresh 404 olmasın).
+        $bust = fn () => Cache::forget('spa_menu_route_segs');
+        static::saved($bust);
+        static::deleted($bust);
     }
 
     /** Config'teki Turkce varsayilan ad (admin tablosunda sayfayi tanimak icin). */
