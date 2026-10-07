@@ -1,19 +1,16 @@
 /**
- * GuideView — "Tavla Rehberi" blog bölümü. İki mod:
- *  - slug === null  -> HUB: hero + yazı kartları grid (/tavla-rehberi).
- *  - slug dolu      -> YAZI: hero (h1) + zengin gövde + CTA (/tavla-rehberi/<slug>).
+ * GuideView — "Tavla Rehberi" (/tavla-rehberi). ÖZEL editoryal tasarım (guideView.css, .tgx scope):
+ *  - slug === null -> HUB: hero + numaralı dergi kartları (öne çıkan ilk kart geniş) + WBF referansı.
+ *  - slug dolu     -> YAZI: hero (h1) + uzun-metin (.tgx-prose, drop-cap + üçgen başlık işareti) + CTA.
  *
- * Tasarım dili SeoContent.tsx ile aynıdır (.seo-hero / .info-rich.rich / .seo-cta-btn);
- * mevcut .seo-* CSS'i yeniden kullanır. "haberler" (news) bölümünden tamamen bağımsızdır.
- *
- * İç linkler normal <a href> (SPA fallback web.php ile 200 döner); tam-yenileme kabul
- * edilebilir ve taranabilir gerçek bağlantı sağlar. onOpen verilirse SPA içinde de gezinir.
+ * İçerik/veri DEĞİŞMEDİ: GUIDES (data/guides.ts) + DB override (useInfoPageBody) + SEO iç linkler
+ * (<a href> SPA fallback) + Breadcrumb korunur. onOpen verilirse SPA içi gezinir, yoksa tam-yenileme.
  */
 
+import './guideView.css'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useInfoPageBody } from './useInfoPage'
-import { Button } from '@/components/ui/button'
 import { GUIDES, findGuide } from '../data/guides'
 import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
@@ -25,88 +22,83 @@ interface Props {
   onOpen?: (slug: string) => void
 }
 
-// Hub: yazı listesi (kartlar).
+const no2 = (n: number) => String(n).padStart(2, '0')
+
+// Hub: numaralı editoryal kartlar (ilk kart öne çıkan/geniş) + WBF referans kartı.
 function GuideHub({ onOpen }: { onOpen?: (slug: string) => void }) {
   return (
-    <div className="info-rich rich seo-landing-body">
-      <p className="rules-intro">
-        Tavlada gerçekten gelişmek isteyenler için hazırladığımız rehber yazıları. Açılış
-        stratejilerinden küp kullanımına, kazanma taktiklerinden mars ve backgammon puanlamasına
-        kadar oyununu bir üst seviyeye taşıyacak her şey burada.
-      </p>
-      <div className="guide-grid">
-        {GUIDES.map((g) => (
-          <a
-            key={g.slug}
-            href={'/tavla-rehberi/' + g.slug}
-            className="guide-card"
-            onClick={(e) => {
-              if (onOpen) {
-                e.preventDefault()
-                onOpen(g.slug)
-              }
-            }}
-          >
-            <h2 className="guide-card-title">{g.h1}</h2>
-            <p className="guide-card-excerpt">{g.excerpt}</p>
-            <span className="guide-card-more">
-              Devamını oku <Icon name="caret-right" size={14} />
-            </span>
-          </a>
-        ))}
-        {/* Referans makale: WBF resmî turnuva kuralları (tam sayfa /turnuva-kurallari). */}
-        <a href="/turnuva-kurallari" className="guide-card">
-          <h2 className="guide-card-title">Tavla Turnuva Kuralları (WBF)</h2>
-          <p className="guide-card-excerpt">
-            Dünya Tavla Federasyonu resmî turnuva kuralları: format, süre, zar ve küp kuralları,
-            kural dışı hareketler ve anlaşmazlıkların çözümü — eksiksiz Türkçe kural metni.
-          </p>
-          <span className="guide-card-more">
-            Kuralları oku <Icon name="caret-right" size={14} />
+    <div className="tgx-grid">
+      {GUIDES.map((g, i) => (
+        <a
+          key={g.slug}
+          href={'/tavla-rehberi/' + g.slug}
+          className={`tgx-card${i === 0 ? ' tgx-card--feature' : ''}`}
+          data-no={no2(i + 1)}
+          onClick={(e) => {
+            if (onOpen) {
+              e.preventDefault()
+              onOpen(g.slug)
+            }
+          }}
+        >
+          <span className="tgx-card-no">REHBER {no2(i + 1)}</span>
+          <h2 className="tgx-card-title">{g.h1}</h2>
+          <p className="tgx-card-excerpt">{g.excerpt}</p>
+          <span className="tgx-card-more">
+            Devamını oku <Icon name="caret-right" size={14} />
           </span>
         </a>
-      </div>
+      ))}
+      {/* Referans: WBF resmî turnuva kuralları (tam sayfa /turnuva-kurallari). */}
+      <a href="/turnuva-kurallari" className="tgx-card tgx-card--ref" data-no="WBF">
+        <span className="tgx-card-no">REFERANS</span>
+        <h2 className="tgx-card-title">Tavla Turnuva Kuralları (WBF)</h2>
+        <p className="tgx-card-excerpt">
+          Dünya Tavla Federasyonu resmî turnuva kuralları: format, süre, zar ve küp kuralları, kural
+          dışı hareketler ve anlaşmazlıkların çözümü — eksiksiz Türkçe kural metni.
+        </p>
+        <span className="tgx-card-more">
+          Kuralları oku <Icon name="caret-right" size={14} />
+        </span>
+      </a>
     </div>
   )
 }
 
-// Tek yazı gövdesi.
+// Tek yazı gövdesi (uzun metin).
 function GuideArticle({ slug, onOpen }: { slug: string; onOpen?: (slug: string) => void }) {
   const guide = findGuide(slug)
-  // DB'de (admin-duzenlenebilir) body varsa onu render et; yoksa hardcoded guide (fallback).
+  // DB'de (admin-düzenlenebilir) body varsa onu render et; yoksa hardcoded guide (fallback).
   const dbBody = useInfoPageBody(guide ? 'tavla-rehberi/' + slug : null)
-  if (!guide) {
-    // Bulunamadı -> hub göster (yönlendirme yerine güvenli fallback).
-    return <GuideHub onOpen={onOpen} />
-  }
+  if (!guide) return <GuideHub onOpen={onOpen} />
   return (
-    <div className="info-rich rich seo-landing-body">
-      {dbBody ? (
-        <RawHtml html={dbBody} />
-      ) : (
-        guide.sections.map((s, i) => (
-          <section key={i}>
-            <h2>{s.h}</h2>
-            {s.body.map((para, j) => (
-              <RawHtml key={j} as="p" html={para} />
-            ))}
-          </section>
-        ))
-      )}
-
-      <div className="seo-cta">
-        <Button asChild className="seo-cta-btn">
-          <a href="/yeni-oyun">
-            <Icon name="play" size={18} /> Hemen Tavla Oyna
-          </a>
-        </Button>
+    <>
+      <div className="tgx-prose">
+        {dbBody ? (
+          <RawHtml html={dbBody} />
+        ) : (
+          guide.sections.map((s, i) => (
+            <section key={i}>
+              <h2>{s.h}</h2>
+              {s.body.map((para, j) => (
+                <RawHtml key={j} as="p" html={para} />
+              ))}
+            </section>
+          ))
+        )}
       </div>
 
-      <p className="guide-back">
-        {/* Hub'a dönüş: tam-yenileme ile /tavla-rehberi açılır (web.php fallback). */}
+      <div className="tgx-cta-box">
+        <span className="tgx-cta-box-txt">Öğrendiklerini gerçek bir maçta dene.</span>
+        <a className="tgx-btn" href="/yeni-oyun">
+          <Icon name="play" size={18} /> Hemen Tavla Oyna
+        </a>
+      </div>
+
+      <p className="tgx-back">
         <a href="/tavla-rehberi">← Tüm Rehberler</a>
       </p>
-    </div>
+    </>
   )
 }
 
@@ -116,38 +108,38 @@ export default function GuideView({ slug, onClose, onOpen }: Props) {
 
   const guide = slug ? findGuide(slug) : null
   const h1 = guide ? guide.h1 : 'Tavla Rehberi'
-  // İçerik yolu: hub -> Ana Sayfa › Tavla Rehberi; yazı -> Ana Sayfa › Tavla Rehberi › <başlık>
   const crumbs: Crumb[] = guide
     ? [homeCrumb(t), { name: t('breadcrumb.guide'), href: '/tavla-rehberi' }, { name: guide.h1 }]
     : [homeCrumb(t), { name: t('breadcrumb.guide') }]
-  const eyebrow = 'TAVLA REHBERİ'
-  const heroSub = guide
+  const lede = guide
     ? 'TavlaTv rehber yazısı — özgün, pratik ve doğrudan uygulanabilir.'
-    : 'Açılıştan küpe, taktiklerden puanlamaya: tavlanı geliştirecek özgün rehber yazıları.'
+    : 'Açılıştan küpe, taktiklerden puanlamaya: tavlanı bir üst seviyeye taşıyacak özgün rehber yazıları.'
 
   return (
-    <div className="register-card info-card seo-landing-card" onClick={(e) => e.stopPropagation()}>
+    <div className="register-card info-card seo-landing-card tgx-shell" onClick={(e) => e.stopPropagation()}>
       {onClose && (
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button type="button" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
-        </Button>
+        </button>
       )}
       <Breadcrumb items={crumbs} />
-      <header className="seo-hero">
-        <span className="seo-eyebrow">{eyebrow}</span>
-        <h1 className="info-title seo-hero-title">{h1}</h1>
-        <p className="seo-hero-sub">{heroSub}</p>
-        {!guide && (
-          <div className="seo-hero-cta">
-            <Button asChild className="seo-cta-btn">
-              <a href="/yeni-oyun">
-                <Icon name="play" size={18} /> Hemen Tavla Oyna
-              </a>
-            </Button>
+      <div className={`tgx${guide ? ' tgx--article' : ''}`}>
+        <header className={`tgx-hero${guide ? ' tgx-hero--article' : ''}`}>
+          <span className="tgx-eyebrow">Tavla Rehberi</span>
+          <h1 className="tgx-title">{h1}</h1>
+          <p className="tgx-lede">{lede}</p>
+          <div className="tgx-hero-cta">
+            <a className="tgx-btn" href="/yeni-oyun">
+              <Icon name="play" size={18} /> Hemen Tavla Oyna
+            </a>
+            {!guide && (
+              <span className="tgx-hero-meta">
+                <b>{GUIDES.length}</b> rehber yazısı · açılış · küp · taktik · puanlama
+              </span>
+            )}
           </div>
-        )}
-      </header>
-      <div className="info-tab-pane seo-landing-body-wrap">
+        </header>
+
         {slug ? <GuideArticle slug={slug} onOpen={onOpen} /> : <GuideHub onOpen={onOpen} />}
       </div>
     </div>
