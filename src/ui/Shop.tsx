@@ -36,6 +36,8 @@ interface Props {
   /** Urun secilince/geri donunce App'e bildir -> URL guncellenir. */
   onSelectProduct?: (slug: string | null) => void
   onClose: () => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 // 'coin' (ve eski 'coins') = VITRIN (storefront landing): kategori kartlari + jeton paketleri.
@@ -71,6 +73,7 @@ export default function Shop({
   productSlug,
   onSelectProduct,
   onClose,
+  titleOverride,
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
@@ -155,7 +158,7 @@ export default function Shop({
           <div className="shop-head-text">
             {landing ? (
               <>
-                <h2 className="shop-title"><Icon name="shop" size={24} /> {t('shop.title')}</h2>
+                <h2 className="shop-title"><Icon name="shop" size={24} /> {titleOverride || t('shop.title')}</h2>
                 <p className="shop-sub">{t('shop.subtitle')}</p>
               </>
             ) : (

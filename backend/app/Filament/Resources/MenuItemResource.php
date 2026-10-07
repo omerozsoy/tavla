@@ -168,7 +168,7 @@ class MenuItemResource extends Resource
                     ->icon('heroicon-o-pencil-square')
                     ->color('gray')
                     ->modalHeading(fn (MenuItem $r) => $r->defaultLabel().' — sayfa metni')
-                    ->modalDescription('Bu sayfanın başlık/açıklamasını değiştirir (menüdeki ad DEĞİL). Boş bırakırsan site varsayılanı kullanılır. Not: şu an bu override Tek Oyun sayfasında uygulanır; diğer sayfalar kademeli eklenir.')
+                    ->modalDescription('Bu sayfanın başlık/açıklamasını değiştirir (menüdeki ad DEĞİL). Boş bırakırsan site varsayılanı kullanılır. Başlık tüm oyun/araç/hesap sayfalarında uygulanır; açıklama yalnız o sayfada alt-metin varsa görünür (ör. Tek Oyun). Bilgi sayfaları buradan değil, "Bilgi Sayfaları" bölümünden düzenlenir.')
                     ->visible(fn (MenuItem $r) => ! $r->custom)
                     ->fillForm(fn (MenuItem $r) => ['title_tr' => $r->title_tr, 'sub_tr' => $r->sub_tr])
                     ->form([

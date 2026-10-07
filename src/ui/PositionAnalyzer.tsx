@@ -28,6 +28,8 @@ interface Props {
   premium?: boolean // 2-ply (derin) analiz premium
   onUpgrade?: () => void
   onClose: () => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 const emptyPoints = () => new Array(24).fill(0)
@@ -106,6 +108,7 @@ export default function PositionAnalyzer({
   premium = false, // fail-closed: premium bilinmiyorsa analiz kapalı
   onUpgrade,
   onClose,
+  titleOverride,
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
@@ -639,7 +642,7 @@ export default function PositionAnalyzer({
     <div className="analyzer">
       <div className="analyzer-head">
         <div className="analyzer-title">
-          <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
+          <h2><Icon name="search" size={20} /> {titleOverride || t('pa.title')}</h2>
           <p className="analyzer-sub">{t('pa.hint')}</p>
         </div>
         {/* Kapat dugmesi kaldirildi (kullanici istegi): cikis hamburger menu / ESC ile. */}

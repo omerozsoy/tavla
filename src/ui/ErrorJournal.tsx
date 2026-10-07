@@ -28,7 +28,7 @@ const ssSet = (k: string, v: string) => {
   }
 }
 
-export default function ErrorJournal({ onClose }: { onClose: () => void }) {
+export default function ErrorJournal({ onClose, titleOverride }: { onClose: () => void; titleOverride?: string /* admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani) */ }) {
   const { t, lang } = useT()
   useEscape(onClose)
 
@@ -108,7 +108,7 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
           <Icon name="x" size={16} />
         </Button>
         <h2>
-          <Icon name="warning-circle" size={20} /> {t('errorJournal.title')}
+          <Icon name="warning-circle" size={20} /> {titleOverride || t('errorJournal.title')}
         </h2>
         <p className="register-sub">{t('errorJournal.sub')}</p>
 

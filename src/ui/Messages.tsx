@@ -50,6 +50,8 @@ interface Props {
   onTab?: (t: SocialTab) => void
   // Yonetici: her mesajin yaninda "Sil" butonu gosterilir (backend de is_admin denetler).
   isAdmin?: boolean
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 // Bildirimler "sohbeti" icin ozel sentinel id (gercek kullanici id'leri pozitif).
@@ -127,6 +129,7 @@ export default function Messages({
   onAcceptFriend,
   onTab,
   isAdmin = false,
+  titleOverride,
 }: Props) {
   const { t } = useT()
   const toast = useToast()
@@ -460,7 +463,7 @@ export default function Messages({
           />
         ) : (
           <h2>
-            <Icon name="chat" size={20} /> {t('dm.title')}
+            <Icon name="chat" size={20} /> {titleOverride || t('dm.title')}
           </h2>
         )}
 

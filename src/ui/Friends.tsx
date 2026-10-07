@@ -25,9 +25,11 @@ interface Props {
   onAddFriend?: (id: number) => void // arkadaslik istegi (site geneliyle ayni kart)
   // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
   onTab?: (t: SocialTab) => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
-export default function Friends({ onInvite, onMessage, onClose, currentId, onAddFriend, onTab }: Props) {
+export default function Friends({ onInvite, onMessage, onClose, currentId, onAddFriend, onTab, titleOverride }: Props) {
   const { t } = useT()
   const notify = useToast()
   useEscape(onClose)
@@ -117,7 +119,7 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
         {onTab ? (
           <SocialTabs active="friends" onTab={onTab} />
         ) : (
-          <h2><Icon name="users" size={20} /> {t('friends.title')}</h2>
+          <h2><Icon name="users" size={20} /> {titleOverride || t('friends.title')}</h2>
         )}
 
         <div className="friends-add">

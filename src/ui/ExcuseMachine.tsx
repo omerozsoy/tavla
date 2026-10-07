@@ -25,6 +25,8 @@ import './ExcuseMachine.css'
 
 interface Props {
   onClose: () => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 // --- Tambur geometrisi (JS 3D matematiği CSS panel yüksekliği --em-panel-h ile eşleşir) ---
@@ -78,7 +80,7 @@ function haptic(ms: number) {
   }
 }
 
-export default function ExcuseMachine({ onClose }: Props) {
+export default function ExcuseMachine({ onClose, titleOverride }: Props) {
   const { t } = useT()
   const toast = useToast()
   useEscape(onClose)
@@ -227,7 +229,7 @@ export default function ExcuseMachine({ onClose }: Props) {
 
         <div className="em-stage">
           <header className="em-head">
-            <h2 className="em-title"><Icon name="megaphone" size={22} /> {t('exc.title')}</h2>
+            <h2 className="em-title"><Icon name="megaphone" size={22} /> {titleOverride || t('exc.title')}</h2>
             <p className="em-subtitle">{t('exc.subtitle')}</p>
           </header>
 

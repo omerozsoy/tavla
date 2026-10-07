@@ -12,11 +12,14 @@ export default function Membership({
   onClose,
   onExtend,
   onBankTransfer,
+  titleOverride,
 }: {
   current: PlanId
   onClose: () => void
   onExtend?: () => void // "Üyeliğini Uzat" -> 1 yillik premium sepete eklenir (odeme akisi)
   onBankTransfer?: (r: BankTransferResult) => void // havale seçildiğinde talimat ekranını aç
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }) {
   const { t } = useT()
   const notify = useToast()
@@ -65,7 +68,7 @@ export default function Membership({
         <Button type="button" variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2 className="mem-title"><Icon name="star" size={20} /> {premium ? t('mem.status.renew') : t('mem.title')}</h2>
+        <h2 className="mem-title"><Icon name="star" size={20} /> {titleOverride || (premium ? t('mem.status.renew') : t('mem.title'))}</h2>
 
         {err && <div className="register-error mem-err">{err}</div>}
 

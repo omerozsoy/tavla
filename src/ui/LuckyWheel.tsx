@@ -39,6 +39,8 @@ interface Props {
   onRequireLogin: () => void
   onCoinsChange?: (coins: number) => void
   onUser?: (u: ServerUser) => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 const SIZE = 340
@@ -101,7 +103,7 @@ function readableText(bg?: string | null): string {
   return luminance > 150 ? '#1c1a17' : '#ffffff'
 }
 
-export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsChange, onUser }: Props) {
+export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsChange, onUser, titleOverride }: Props) {
   const { t } = useT()
   const toast = useToast()
   useEscape(onClose)
@@ -252,7 +254,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
 
         <header className="lw-head">
           <h2>
-            <Icon name="spinner-ball" size={22} /> {t('lw.title')}
+            <Icon name="spinner-ball" size={22} /> {titleOverride || t('lw.title')}
           </h2>
           <p className="lw-sub">{t('lw.freeInfo')}</p>
         </header>

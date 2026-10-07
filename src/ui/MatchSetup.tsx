@@ -99,6 +99,7 @@ interface Props {
   premium?: boolean // Seviye 11/12 (Premium botlar) yalniz Premium uyelere secilebilir
   onRequirePremium?: () => void // misafir/normal uye Premium bot secince -> uyelik ekrani
   classic?: boolean // KLASIK TAVLA kurulumu: baslik "Klasik Tavla" + kup-yok notu + rakip turu secici (online/bot)
+  titleOverride?: string // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
 }
 
 // Seviye 11 ve uzeri = Premium bot (Grandmaster/Ultimate). Tek dogruluk kaynagi.
@@ -116,6 +117,7 @@ export default function MatchSetup({
   premium = false,
   onRequirePremium,
   classic = false,
+  titleOverride,
 }: Props) {
   const { t } = useT()
   const mode = initialMode // Mac Oyunu online-only; YZ/Klasik-YZ pvb-only (mod degistirilmez)
@@ -154,16 +156,16 @@ export default function MatchSetup({
         <h2>
           {classic ? (
             <>
-              <Icon name="dice" size={24} /> {t('menu.klassik')}
+              <Icon name="dice" size={24} /> {titleOverride || t('menu.klassik')}
             </>
           ) : mode === 'online' ? (
             <>
-              <Icon name="chart-bar-popular" size={24} /> {t('menu.match')}
+              <Icon name="chart-bar-popular" size={24} /> {titleOverride || t('menu.match')}
             </>
           ) : (
             <>
               {/* Sayfa basligi menuden farkli: menu "YZ ile Oyna", sayfa "Yapay Zeka ile Oyna" */}
-              <Icon name="robot-face" size={24} /> {t('home.vsBot')}
+              <Icon name="robot-face" size={24} /> {titleOverride || t('home.vsBot')}
             </>
           )}
         </h2>

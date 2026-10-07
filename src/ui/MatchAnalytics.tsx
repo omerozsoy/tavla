@@ -80,9 +80,11 @@ interface Props {
   myName?: string
   myAvatar?: string | null
   initialMatchId?: number // verilirse acilista bu mac bulunup genisletilir (profilden tiklama)
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
-export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId }: Props) {
+export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [rows, setRows] = useState<MyMatch[]>([])
@@ -258,7 +260,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           <Icon name="x" size={16} />
         </Button>
         <h2>
-          <Icon name="chart-line" size={20} /> {t('mh.title')}
+          <Icon name="chart-line" size={20} /> {titleOverride || t('mh.title')}
         </h2>
         <p className="register-sub">{t('mh.sub')}</p>
 

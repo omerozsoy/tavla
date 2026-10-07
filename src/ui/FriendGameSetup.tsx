@@ -49,9 +49,10 @@ interface Props {
   invitee?: { id: number; name: string; avatar?: string | null } | null
   onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
   defaultClassic?: boolean // KLASIK TAVLA girişi: klasik varsayılan ON + Maç Oyunu sekmesi açık
+  titleOverride?: string // admin "Sayfa Metni" baslik override'i (davet modu HARIÇ; bos -> i18n varsayilani)
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   // KLASIK girişte Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı).
@@ -72,7 +73,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
       <div className="setup-split">
         <div className="register-card setup-card">
           <h2>
-            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t('friend.inviteTitle') : classic ? t('classic.title') : t('friend.title')}
+            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t('friend.inviteTitle') : titleOverride || (classic ? t('classic.title') : t('friend.title'))}
           </h2>
 
           {/* Davet modu: KIMI davet ettigin net gorunsun */}

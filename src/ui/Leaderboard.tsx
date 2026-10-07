@@ -17,9 +17,11 @@ interface Props {
   onClose: () => void
   onAddFriend?: (id: number) => void // arkadaslik istegi (App wire'lar; site geneliyle ayni)
   onMessage?: (id: number) => void // oyuncuya mesaj (arkadas olmasa da istek olarak duser)
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
-export default function Leaderboard({ currentName, currentId, onClose, onAddFriend, onMessage }: Props) {
+export default function Leaderboard({ currentName, currentId, onClose, onAddFriend, onMessage, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
@@ -180,7 +182,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2><Icon name="crown" size={20} /> {t('lb.title')}</h2>
+        <h2><Icon name="crown" size={20} /> {titleOverride || t('lb.title')}</h2>
         <div className="rep-filter">
           <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
             <Icon name="star" size={16} /> {t('lb.rating')}

@@ -113,10 +113,12 @@ interface Props {
   onRequirePremium?: () => void
   /** Suren bir turnuva macini izle (goz butonu) -> App'in izleme ekrani. */
   onSpectate?: (code: string, p1: string, p2: string) => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 
-export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate }: Props) {
+export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
@@ -1183,7 +1185,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           <Icon name="x" size={16} />
         </Button>
         <Breadcrumb items={[homeCrumb(t), { name: t('tourn.title') }]} />
-        <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
+        <h2><Icon name="trophy" size={20} /> {titleOverride || t('tourn.title')}</h2>
 
         {loading ? (
           <Loading />

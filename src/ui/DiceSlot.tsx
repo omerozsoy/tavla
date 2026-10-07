@@ -32,6 +32,8 @@ interface Props {
   onRequireLogin: () => void
   onCoinsChange?: (coins: number) => void
   onUser?: (u: ServerUser) => void
+  // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  titleOverride?: string
 }
 
 // Makara durma süreleri (ms) — sırayla dursun: sol < orta < sağ (stagger).
@@ -42,7 +44,7 @@ const INITIAL_REELS: SlotSymbolCode[] = ['d3', 'd5', 'd2']
 
 type WinType = 'none' | 'triple' | 'jackpot' | 'straight'
 
-export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsChange, onUser }: Props) {
+export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsChange, onUser, titleOverride }: Props) {
   const { t } = useT()
   const toast = useToast()
   useEscape(onClose)
@@ -161,7 +163,7 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
           <p className="ds-note">{t('ds.disabled')}</p>
         ) : (
           <div className="ds-stage">
-            <h2 className="ds-title"><Icon name="slot" size={22} /> {t('ds.menu')}</h2>
+            <h2 className="ds-title"><Icon name="slot" size={22} /> {titleOverride || t('ds.menu')}</h2>
             {/* ORTA: makine (+ kontrol) SOLA DAYALI, ödül tablosu SAĞDA */}
             <div className="ds-main">
               <div className="ds-main-left">
