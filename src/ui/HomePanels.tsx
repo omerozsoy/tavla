@@ -541,7 +541,7 @@ export function SeekersPanel({
         .then((s) => alive && setRows(s))
         .catch(() => alive && setRows([]))
     load()
-    const id = window.setInterval(load, 10000)
+    const id = window.setInterval(load, 3000) // Oyun Arayanlar: 3sn (eşleşen oyuncu daha hızlı düşsün)
     return () => {
       alive = false
       window.clearInterval(id)
