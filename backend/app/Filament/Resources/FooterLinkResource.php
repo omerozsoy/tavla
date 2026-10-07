@@ -58,11 +58,11 @@ class FooterLinkResource extends Resource
                     ->label('Bağlantı')
                     ->formatStateUsing(fn (FooterLink $r) => $r->defaultLabel())
                     ->description(fn (FooterLink $r) => $r->item_key),
-                Tables\Columns\TextColumn::make('column_key')
+                Tables\Columns\SelectColumn::make('column_key')
                     ->label('Kolon')
-                    ->badge()
-                    ->color('gray')
-                    ->formatStateUsing(fn (string $state) => \App\Models\FooterColumn::DEFAULTS[$state] ?? $state),
+                    ->options($columnOptions)
+                    ->selectablePlaceholder(false)
+                    ->rules(['required']),
                 Tables\Columns\TextInputColumn::make('label_tr')
                     ->label('Başlık (boş = varsayılan)')
                     ->placeholder(fn (FooterLink $r) => $r->defaultLabel()),

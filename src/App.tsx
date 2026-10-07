@@ -8976,6 +8976,8 @@ export default function App() {
   }
   // Admin panelden (menu_items) override'lar: ozel ad (o dilde), gorunurluk, sira.
   const menuLabel = (key: string): string | undefined => menuOverrides[key]?.labels?.[lang]
+  // Admin "Sayfa Metni" baslik override'i (menu etiketinden AYRI). Bos -> component i18n varsayilani.
+  const menuTitle = (key: string): string | undefined => menuOverrides[key]?.title?.[lang]
   const menuVisible = (key: string): boolean => menuOverrides[key]?.visible !== false
   const menuSort = (key: string, fallback: number): number => menuOverrides[key]?.sort ?? fallback
 
@@ -9096,16 +9098,24 @@ export default function App() {
         .map((c) => ({ ...c, title: footerCfg[c.key]?.labels?.[lang], _s: footerCfg[c.key]?.sort ?? 999 }))
         .sort((a, b) => a._s - b._s)
     : footerColumns
-  // Kolon İÇİ link sırası/görünürlüğü/başlığı (admin "Footer Bağlantıları", footer_links). Her
-  // kolonun öğelerini item key'ine göre diz (varsayılan = mevcut sıra), gizle, yeniden adlandır.
-  // CMS (cms-*) öğeleri config'te yok -> mevcut konumlarını (idx) korur.
+  // Footer öğe sıralaması/görünürlüğü/başlığı + KOLONLAR ARASI taşıma (admin "Footer Bağlantıları").
+  // Her öğeyi config'teki kolona (cfg.column) + sıraya (cfg.sort) göre yeniden dağıt: admin bir
+  // linki başka kolona taşıyabilir. cfg yoksa (CMS cms-* / yeni öğe) öğe kendi kod-kolonunda
+  // mevcut konumunda (idx) kalır. Görünürlüğü kapalı öğe atlanır; başlık override uygulanır.
+  const footerBucket: Record<string, { it: FooterItem; s: number }[]> = {}
+  footerColsFinal.forEach((col) => {
+    col.items.forEach((it, idx) => {
+      const cfg = footerLinkCfg[it.key]
+      if (cfg?.visible === false) return
+      const target = cfg?.column ?? col.key ?? ''
+      const item = cfg?.labels?.[lang] ? { ...it, label: cfg.labels[lang] } : it
+      const arr = footerBucket[target] ?? (footerBucket[target] = [])
+      arr.push({ it: item, s: cfg?.sort ?? idx })
+    })
+  })
   const footerColsRendered = footerColsFinal.map((col) => ({
     ...col,
-    items: col.items
-      .map((it, idx) => ({ it, idx, cfg: footerLinkCfg[it.key] }))
-      .filter((x) => !x.cfg || x.cfg.visible !== false)
-      .sort((a, b) => (a.cfg?.sort ?? a.idx) - (b.cfg?.sort ?? b.idx))
-      .map((x) => (x.cfg?.labels?.[lang] ? { ...x.it, label: x.cfg.labels[lang] } : x.it)),
+    items: (footerBucket[col.key ?? ''] ?? []).sort((a, b) => a.s - b.s).map((x) => x.it),
   }))
 
   // Sol menu: item SIRASI/GORUNURLUGU/ADI + GRUP admin panelinden yonetilir. Her item bir
@@ -9416,6 +9426,7 @@ export default function App() {
       {editProfilePage}
       {friendsOpen && user && (
         <Friends
+          titleOverride={menuTitle('friends')}
           currentId={user?.id}
           onAddFriend={(id) => handleAddFriend(id)}
           onInvite={handleInviteFriend}
@@ -9437,6 +9448,7 @@ export default function App() {
       )}
       {messagesOpen && user && (
         <Messages
+          titleOverride={menuTitle('messages')}
           focusUserId={messagesFocusId}
           isAdmin={!!user.is_admin}
           onTab={(tab) => {
@@ -9469,6 +9481,7 @@ export default function App() {
       )}
       {leaderboardOpen && (
         <Leaderboard
+          titleOverride={menuTitle('leaderboard')}
           currentName={profile.nickname}
           currentId={user?.id}
           onClose={() => setLeaderboardOpen(false)}
@@ -9521,6 +9534,7 @@ export default function App() {
       )}
       {shopOpen && (
         <Shop
+          titleOverride={menuTitle('shop')}
           // Misafir de mağazayı gezebilir (gate yok): cüzdan 0 görünür, satın alma girişe yönlendirir.
           coins={user?.coins ?? 0}
           rewardReady={rewardReady}
@@ -9702,6 +9716,7 @@ export default function App() {
       {tournOpen && (
         <Suspense fallback={null}>
         <Tournaments
+          titleOverride={menuTitle('tournaments')}
           myId={user?.id ?? null}
           isAdmin={!!user?.is_admin}
           premium={premium}
@@ -9737,6 +9752,7 @@ export default function App() {
       )}
       {luckyWheelOpen && (
         <LuckyWheel
+          titleOverride={menuTitle('luckywheel')}
           loggedIn={!!user}
           onClose={() => setLuckyWheelOpen(false)}
           onRequireLogin={() => setShowAuth(true)}
@@ -9746,6 +9762,7 @@ export default function App() {
       )}
       {diceSlotOpen && (
         <DiceSlot
+          titleOverride={menuTitle('diceslot')}
           loggedIn={!!user}
           onClose={() => setDiceSlotOpen(false)}
           onRequireLogin={() => setShowAuth(true)}
@@ -9753,7 +9770,7 @@ export default function App() {
           onUser={(su) => setUser(su)}
         />
       )}
-      {excusesOpen && <ExcuseMachine onClose={() => setExcusesOpen(false)} />}
+      {excusesOpen && <ExcuseMachine titleOverride={menuTitle('excuses')} onClose={() => setExcusesOpen(false)} />}
       {kizOpen && <KizTavlasi onClose={() => setKizOpen(false)} />}
       {checkerShopOpen && user && (
         <CheckerShop
@@ -9790,12 +9807,13 @@ export default function App() {
       )}
       {blunderOpen && user && premium && (
         <Suspense fallback={null}>
-          <ErrorJournal onClose={() => setBlunderOpen(false)} />
+          <ErrorJournal titleOverride={menuTitle('blunders')} onClose={() => setBlunderOpen(false)} />
         </Suspense>
       )}
       {matchHistOpen && user && premium && (
         <Suspense fallback={null}>
         <MatchAnalytics
+          titleOverride={menuTitle('matchHistory')}
           myName={profile.nickname}
           myAvatar={profile.avatar ?? null}
           initialMatchId={matchHistInitialId ?? undefined}
@@ -9864,6 +9882,7 @@ export default function App() {
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <Suspense fallback={null}>
           <PositionAnalyzer
+            titleOverride={menuTitle('analyzer')}
             neuralEval={(s, p, deep) =>
               deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
             }
@@ -9883,7 +9902,7 @@ export default function App() {
       )}
       {matAnalyzerOpen && premium && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <MatAnalyzer onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
+          <MatAnalyzer titleOverride={menuTitle('matAnalyzer')} onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
         </div>
       )}
     </>
@@ -9980,6 +9999,7 @@ export default function App() {
       )}
       {memOpen && user && (
         <Membership
+          titleOverride={menuTitle('membership')}
           current={(user.plan_active ?? 'free') as PlanId}
           onClose={() => setMemOpen(false)}
           onExtend={() => {
@@ -10079,6 +10099,7 @@ export default function App() {
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
+            titleOverride={menuTitle(classicSetup ? 'klassikAi' : setup === 'online' ? 'match' : 'aiGame')}
             premium={user?.plan_active === 'star'}
             onRequirePremium={() => setMemOpen(true)}
             onCancel={() => {
@@ -10109,6 +10130,7 @@ export default function App() {
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}
             defaultClassic={friendClassic}
+            titleOverride={menuTitle(friendClassic ? 'klassikFriend' : 'playFriend')}
             onInvite={handleSendInvite}
             onCancel={() => {
               setFriendSetupOpen(false)
