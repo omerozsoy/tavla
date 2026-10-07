@@ -510,6 +510,7 @@ import {
   type MenuOverride,
   type MenuGroupCfg,
   type FooterColumnCfg,
+  type FooterLinkCfg,
   type ServerUser,
 } from './api'
 
@@ -755,6 +756,7 @@ export default function App() {
   const [menuGroupCfg, setMenuGroupCfg] = useState<Record<string, MenuGroupCfg>>({})
   // Footer kolon override'lari (admin "Footer Kolonları": sira/gorunurluk/baslik). key -> config.
   const [footerCfg, setFooterCfg] = useState<Record<string, FooterColumnCfg>>({})
+  const [footerLinkCfg, setFooterLinkCfg] = useState<Record<string, FooterLinkCfg>>({})
   // Admin-eklemeli ozel bilgi sayfalari (section'u olanlar): footer kolonu / sol-menu grubu
   // altina enjekte edilir. section "footer:<kolon>" | "menu:<grup>", sort = o bolum icinde konum
   // (0 = en ust). Bkz InfoPageResource::SECTION_PICKS.
@@ -1229,8 +1231,10 @@ export default function App() {
       setBoardDesignsRev((n) => n + 1)
     })
     // Footer kolon yapilandirmasi (admin panel): sira/gorunurluk/baslik. Hata/bos -> sabit sira.
-    getFooterConfig().then((cols) => {
-      if (alive) setFooterCfg(Object.fromEntries(cols.map((c) => [c.key, c])))
+    getFooterConfig().then(({ columns, links }) => {
+      if (!alive) return
+      setFooterCfg(Object.fromEntries(columns.map((c) => [c.key, c])))
+      setFooterLinkCfg(Object.fromEntries(links.map((l) => [l.key, l])))
     })
     // Admin-eklemeli ozel sayfalardan section'u olanlar -> footer/menu'ye enjekte edilir.
     listInfoPages()
@@ -9092,6 +9096,17 @@ export default function App() {
         .map((c) => ({ ...c, title: footerCfg[c.key]?.labels?.[lang], _s: footerCfg[c.key]?.sort ?? 999 }))
         .sort((a, b) => a._s - b._s)
     : footerColumns
+  // Kolon İÇİ link sırası/görünürlüğü/başlığı (admin "Footer Bağlantıları", footer_links). Her
+  // kolonun öğelerini item key'ine göre diz (varsayılan = mevcut sıra), gizle, yeniden adlandır.
+  // CMS (cms-*) öğeleri config'te yok -> mevcut konumlarını (idx) korur.
+  const footerColsRendered = footerColsFinal.map((col) => ({
+    ...col,
+    items: col.items
+      .map((it, idx) => ({ it, idx, cfg: footerLinkCfg[it.key] }))
+      .filter((x) => !x.cfg || x.cfg.visible !== false)
+      .sort((a, b) => (a.cfg?.sort ?? a.idx) - (b.cfg?.sort ?? b.idx))
+      .map((x) => (x.cfg?.labels?.[lang] ? { ...x.it, label: x.cfg.labels[lang] } : x.it)),
+  }))
 
   // Sol menu: item SIRASI/GORUNURLUGU/ADI + GRUP admin panelinden yonetilir. Her item bir
   // gruba aittir (admin override menuOverrides.group, yoksa pages.ts group). Item'lar grup
@@ -10034,7 +10049,7 @@ export default function App() {
         onHome={menuProps.onHome}
       />
     ),
-    footer: <Footer columns={footerColsFinal} />,
+          footer: <Footer columns={footerColsRendered} />,
   }
   // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
   const lobbyTrailing = (

@@ -524,13 +524,21 @@ export interface FooterColumnCfg {
   visible: boolean
   labels: Record<string, string> // dil kodu -> ozel baslik (bos ise i18n foot.* varsayilani)
 }
+// Footer kolon-ici link override'i (admin "Footer Baglantilari"): sira + gorunurluk + baslik.
+export interface FooterLinkCfg {
+  key: string // frontend footer oge key'i (pages.ts / App.tsx) ile birebir
+  column: string
+  sort: number
+  visible: boolean
+  labels: Record<string, string> // dil kodu -> ozel baslik (bos ise frontend varsayilani)
+}
 // Halka acik; hata/bos -> App.tsx sabit varsayilan footer sirasini kullanir.
-export async function getFooterConfig(): Promise<FooterColumnCfg[]> {
+export async function getFooterConfig(): Promise<{ columns: FooterColumnCfg[]; links: FooterLinkCfg[] }> {
   try {
-    const d = await req<{ columns?: FooterColumnCfg[] }>('/footer-config')
-    return d.columns || []
+    const d = await req<{ columns?: FooterColumnCfg[]; links?: FooterLinkCfg[] }>('/footer-config')
+    return { columns: d.columns || [], links: d.links || [] }
   } catch {
-    return []
+    return { columns: [], links: [] }
   }
 }
 

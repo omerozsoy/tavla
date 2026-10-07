@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FooterColumn;
+use App\Models\FooterLink;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -36,6 +37,27 @@ class FooterController extends Controller
             ];
         });
 
-        return response()->json(['columns' => $columns]);
+        // Kolon İÇİ link sıralaması/görünürlüğü/başlığı (footer_links). Migration yoksa boş.
+        $links = Schema::hasTable('footer_links')
+            ? FooterLink::orderBy('sort')->orderBy('id')->get()->map(function (FooterLink $l) {
+                $labels = array_filter([
+                    'tr' => $l->label_tr,
+                    'en' => $l->label_en,
+                    'es' => $l->label_es,
+                    'de' => $l->label_de,
+                    'fr' => $l->label_fr,
+                ], fn ($v) => $v !== null && $v !== '');
+
+                return [
+                    'key' => $l->item_key,
+                    'column' => $l->column_key,
+                    'sort' => (int) $l->sort,
+                    'visible' => (bool) $l->visible,
+                    'labels' => (object) $labels, // boş -> frontend kendi varsayılan etiketini kullanır
+                ];
+            })
+            : [];
+
+        return response()->json(['columns' => $columns, 'links' => $links]);
     }
 }
