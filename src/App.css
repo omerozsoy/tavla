@@ -1228,9 +1228,15 @@ button[aria-disabled='true'],
     background-color 0.15s ease,
     color 0.15s ease;
 }
-.side-menu [data-slot='button'] svg {
+.side-menu [data-slot='button'] svg,
+.side-menu [data-slot='button'] .icon-cdn {
   color: var(--accent-text); /* marka aksanÄ± (light: kiremit Â· dark: coral) â€” okunur */
   transition: color 0.15s ease;
+}
+/* Admin-yapistirma (CDN maske) ikon: <span> maske rengi = currentColor. Yerlesik (svg, stroke 1.5)
+   ikonlardan biraz daha KALIN gorunur (Tabler outline SVG gomulu stroke-width 2) -> hafif incelt. */
+.side-menu [data-slot='button'] .icon-cdn {
+  opacity: 0.92;
 }
 /* HOVER = tavla hanesi (accent gradient Ã¼Ã§gen; soldan geniÅŸ â†’ saÄŸa incelen uÃ§) */
 .side-menu [data-slot='button']:hover {
@@ -1286,7 +1292,8 @@ button[aria-disabled='true'],
     transform: none;
   }
 }
-.side-menu [data-slot='button'][data-active='true'] svg {
+.side-menu [data-slot='button'][data-active='true'] svg,
+.side-menu [data-slot='button'][data-active='true'] .icon-cdn {
   color: #fff !important;
 }
 /* Aktif Ã¶ÄŸeyi hover'lasan hane biraz daha koyulaÅŸÄ±r, yazÄ± beyaz kalÄ±r */

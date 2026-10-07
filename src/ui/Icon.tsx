@@ -443,8 +443,10 @@ export function Icon({
     if (!slug) return null
     const src = `https://cdn.jsdelivr.net/npm/@tabler/icons@3.48.0/icons/outline/${slug}.svg`
     return (
+      // `icon-cdn` sinifi: maskeli ikon bir <span> (svg DEGIL) -> menu/CSS'in `svg`'ye verdigi
+      // aksan rengini ALMAZDI (siyah kalirdi). Sinif ile ayni renk kurali uygulanir (bkz App.css).
       <span
-        className={className}
+        className={`icon-cdn${className ? ` ${className}` : ''}`}
         aria-hidden="true"
         style={{
           flex: 'none',
