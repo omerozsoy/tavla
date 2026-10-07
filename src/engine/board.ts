@@ -117,10 +117,10 @@ export interface GameOutcome {
   winner: Player
   multiplier: number
 }
-export function gameOutcome(state: GameState): GameOutcome | null {
+export function gameOutcome(state: GameState, classic = false): GameOutcome | null {
   const w = winner(state)
   if (!w) return null
-  return { winner: w, multiplier: lossMultiplier(state, opponent(w)) }
+  return { winner: w, multiplier: lossMultiplier(state, opponent(w), classic) }
 }
 
 // Kaybedenin KAC KAT kaybettigi: 1 normal, 2 gammon (mars), 3 backgammon.
@@ -129,8 +129,11 @@ export function gameOutcome(state: GameState): GameOutcome | null {
 //   - kaybeden en az 1 tas topladiysa            -> 1
 //   - hic toplamadi + bar'da ya da RAKIP evinde  -> 3
 //   - hic toplamadi, bar/ev yok                  -> 2
-export function lossMultiplier(state: GameState, loser: Player): 1 | 2 | 3 {
+// classic=true (KLASIK TAVLA): backgammon-3 YOKTUR -> hic toplamadi = her zaman 2 (mars);
+// kaybedenin barda/kazananin evinde tasi marsi 3'e CIKARMAZ. (backend gamePoints $classic ile birebir.)
+export function lossMultiplier(state: GameState, loser: Player, classic = false): 1 | 2 | 3 {
   if (state.off[loser] > 0) return 1 // bir sey topladi -> normal
+  if (classic) return 2 // Klasik Tavla: mars sabit 2, backgammon-3 yok
   if (state.bar[loser] > 0) return 3 // barda tas -> backgammon
   const winnerSide = opponent(loser)
   const [hs, he] = winnerSide === WHITE ? [0, 6] : [18, 24] // KAZANANIN ev bolgesi

@@ -1003,6 +1003,7 @@ export interface GameInvite {
   target: number // 1 = Tek Oyun; >1 = Maç uzunluğu (puan)
   timeControl?: string | null // casual | normal | speed
   unrated?: boolean // puansiz arkadas maci (rating yok, PR genel siralamaya girmez)
+  classic?: boolean // Klasik Tavla daveti (kup yok + mars=2) -> davetli kartinda rozet
   // Davetli bu macta kazanirsa/kaybederse rating degisimi (sunucu Elo'su). null = mac puansiz.
   ratingPreview?: { win: number; loss: number } | null
 }
@@ -1057,17 +1058,17 @@ export async function deleteNotifications(ids?: number[]): Promise<void> {
 }
 export async function inviteFriend(
   userId: number,
-  opts?: { target?: number; timeControl?: string; unrated?: boolean },
+  opts?: { target?: number; timeControl?: string; unrated?: boolean; classic?: boolean },
 ): Promise<{ code: string; ratingPreview?: { win: number; loss: number } | null }> {
   return req(`/friends/${userId}/invite`, {
     method: 'POST',
-    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated }),
+    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated, classic: !!opts?.classic }),
   })
 }
 export async function respondInvite(
   id: number,
   accept: boolean,
-): Promise<{ code: string | null; target: number; timeControl?: string | null }> {
+): Promise<{ code: string | null; target: number; timeControl?: string | null; classic?: boolean }> {
   return req(`/invites/${id}/respond`, { method: 'POST', body: JSON.stringify({ accept }) })
 }
 // Davet EDEN daveti iptal eder (bekleme ekraninda "Oyunu Iptal Et"): oda koduna ait KENDI
@@ -1875,6 +1876,7 @@ export interface RoomView {
   // SUNUCU-OTORİTER BOT (PvB): true ise oda bir bot maçı (p2 = sunucu botu). İstemci yerel motoru
   // KULLANMAZ; roll/move'u sunucuya yollar, botun cevabı server_state / serverMove.bot'tan gelir.
   bot?: boolean
+  classic?: boolean // Klasik Tavla (kup yok + mars=2) -> HUD/rozet/match.classic kaynagi
   bot_level?: number | null // bot zorluk 1-10 (HUD "Seviye X" + isim)
   server_state?: GameState | null // otoriter tahta (yalniz authoritative iken dolu)
   server_version?: number
@@ -1904,6 +1906,7 @@ export async function createRoom(
   timeControl?: string,
   target = 1,
   unrated = false, // puansiz arkadas maci
+  classic = false, // Klasik Tavla (kup yok + mars=2)
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
@@ -1915,6 +1918,7 @@ export async function createRoom(
       time_control: timeControl ?? null,
       target,
       unrated,
+      classic,
     }),
   })
 }
@@ -1959,6 +1963,7 @@ export async function matchmake(
   targets?: number[],
   timeControl?: string,
   stakes?: number[], // Tek Oyun: kabul edilen coklu bahis; kesisen tutarla eslesir
+  classic = false, // Klasik Tavla (kup yok + mars=2): AYRI eslesme havuzu
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -1974,6 +1979,7 @@ export async function matchmake(
       bet_pct: betPct ?? 0,
       targets: targets ?? [1],
       time_control: timeControl ?? null,
+      classic,
     }),
   })
 }
@@ -2045,6 +2051,7 @@ export interface LiveMatch {
   bet_pct: number
   target?: number | null
   mode?: 'ranked' | 'friendly' | 'tournament'
+  classic?: boolean // Klasik Tavla (kup yok + mars=2) -> canli mac listesinde rozet
 }
 export async function liveMatches(): Promise<LiveMatch[]> {
   const data = await req<{ matches: LiveMatch[] }>('/live-matches')
@@ -2086,6 +2093,7 @@ export interface Seeker {
   stake: number
   stakes: number[]
   bet_pct: number
+  classic?: boolean // Klasik Tavla (kup yok + mars=2) -> rozet + "eslesme" ayni moda katar
   time_control: 'casual' | 'normal' | 'speed' // eslesme icin tempo (kuyruga katilirken ayni olmali)
   since?: string | null // havuza giris zamani (ISO) — "ne kadardir ariyor"
 }
@@ -2619,6 +2627,7 @@ export async function createBotRoom(
   avatar?: string,
   timeControl?: string,
   clientSeed?: string,
+  classic = false, // Klasik Tavla'da bota karsi (kup yok + mars=2)
 ): Promise<{ room: RoomView; slot: Slot; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req('/bot/rooms', {
     method: 'POST',
@@ -2631,6 +2640,7 @@ export async function createBotRoom(
       avatar: avatar ?? null,
       time_control: timeControl ?? null,
       client_seed: clientSeed ?? null,
+      classic,
     }),
   })
 }

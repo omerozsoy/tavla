@@ -22,6 +22,7 @@ export interface MatchOptions {
   difficulty?: number // 1..10 AI seviyesi
   betPct?: number // online: bakiyenin % kaci bahis (10/30/50/100)
   minRating?: number // online: rakip min puan filtresi
+  classic?: boolean // KLASIK TAVLA: kup yok + mars=2 (diger kurallar normal macla ayni)
 }
 
 // Saat presetleri (Casual / Normal / Speed)
@@ -97,6 +98,7 @@ interface Props {
   onCancel: () => void
   premium?: boolean // Seviye 11/12 (Premium botlar) yalniz Premium uyelere secilebilir
   onRequirePremium?: () => void // misafir/normal uye Premium bot secince -> uyelik ekrani
+  classic?: boolean // KLASIK TAVLA kurulumu: baslik "Klasik Tavla" + kup-yok notu + rakip turu secici (online/bot)
 }
 
 // Seviye 11 ve uzeri = Premium bot (Grandmaster/Ultimate). Tek dogruluk kaynagi.
@@ -113,9 +115,12 @@ export default function MatchSetup({
   onCancel,
   premium = false,
   onRequirePremium,
+  classic = false,
 }: Props) {
   const { t } = useT()
-  const mode = initialMode // Mac Oyunu online-only; rematch pvb (mod degistirilmez)
+  // Mac Oyunu online-only; YZ pvb-only (mod degistirilmez). KLASIK TAVLA: tek giristen hem
+  // "Cevrimici Rakip Ara" (online) hem "Bota Karsi" (pvb) secilebilsin diye mod DEGISTIRILEBILIR.
+  const [mode, setMode] = useState<SetupMode>(initialMode)
   // Online: coklu uzunluk secilebilir (kolay eslesme). pvb: tek uzunluk.
   const [accepted, setAccepted] = useState<number[]>([initial.target])
   const toggleTarget = (n: number) => {
@@ -149,7 +154,11 @@ export default function MatchSetup({
       <div className="setup-split">
       <div className="register-card setup-card">
         <h2>
-          {mode === 'online' ? (
+          {classic ? (
+            <>
+              <Icon name="dice" size={24} /> {t('menu.klassik')}
+            </>
+          ) : mode === 'online' ? (
             <>
               <Icon name="chart-bar-popular" size={24} /> {t('menu.match')}
             </>
@@ -160,6 +169,32 @@ export default function MatchSetup({
             </>
           )}
         </h2>
+
+        {/* KLASIK TAVLA: kup yok + mars=2 kisa notu (kullaniciya mod farki net olsun). */}
+        {classic && <p className="pa-depth-note">{t('classic.note')}</p>}
+
+        {/* KLASIK TAVLA: rakip turu — tek giristen hem online eslesme hem bota karsi. */}
+        {classic && (
+          <div className="setup-row">
+            <div className="setup-label">{t('classic.opponent')}</div>
+            <div className="setup-tiles">
+              <button
+                className={`setup-tile ${mode === 'online' ? 'active' : ''}`}
+                onClick={() => setMode('online')}
+                aria-pressed={mode === 'online'}
+              >
+                {t('classic.oppOnline')}
+              </button>
+              <button
+                className={`setup-tile ${mode === 'pvb' ? 'active' : ''}`}
+                onClick={() => setMode('pvb')}
+                aria-pressed={mode === 'pvb'}
+              >
+                {t('classic.oppBot')}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Zorluk seviyesi (yalnizca yapay zekaya karsi) - AI_LEVELS.length kademe (1-12) */}
         {mode === 'pvb' && (
@@ -307,6 +342,7 @@ export default function MatchSetup({
                 difficulty: mode === 'pvb' ? difficulty : undefined,
                 betPct: mode === 'online' ? betPct : undefined,
                 minRating: mode === 'online' ? minRating : undefined,
+                classic,
               })
             }
           >

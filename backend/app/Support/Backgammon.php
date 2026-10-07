@@ -48,12 +48,17 @@ class Backgammon
      *  - hiç toplamadı ama yukarıdakiler yok -> 2 (gammon)
      * Konvansiyon: points[0..5]=beyazın evi, points[18..23]=siyahın evi. (src/engine/cube ile aynı.)
      */
-    public static function gamePoints(array $state, string $winner): int
+    public static function gamePoints(array $state, string $winner, bool $classic = false): int
     {
         $loser = $winner === 'white' ? 'black' : 'white';
         $off = $state['off'] ?? [];
         if ((int) ($off[$loser] ?? 0) > 0) {
             return 1; // kaybeden bir şey topladı -> normal
+        }
+        // KLASIK TAVLA ($classic): backgammon-3 YOKTUR -> hiç toplamadı = her zaman 2 (mars).
+        // Kaybedenin barda/kazananın evinde taşı marsı 3'e çıkarmaz. (src/engine/board lossMultiplier ile birebir.)
+        if ($classic) {
+            return 2;
         }
         // Gammon mu backgammon mu? Kaybedenin bar'da ya da KAZANANIN ev bölgesinde taşı var mı?
         $bar = $state['bar'] ?? [];
@@ -81,8 +86,8 @@ class Backgammon
      * olması ARANMAZ (eski "hayalet backgammon" kalkanı kaldırıldı; erken/açılış pes'i de konuma göre
      * 2/3 olabilir). RoomController::resign bunu OTORİTER kullanır.
      */
-    public static function resignationValue(array $state, string $winner): int
+    public static function resignationValue(array $state, string $winner, bool $classic = false): int
     {
-        return self::gamePoints($state, $winner);
+        return self::gamePoints($state, $winner, $classic);
     }
 }

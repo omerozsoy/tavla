@@ -73,8 +73,8 @@ export function calculateResignationPoints(type: ResignationType, cubeValue: num
  * Kazananın bear-off evresinde olması ARANMAZ (eski "hayalet backgammon" kalkanı kaldırıldı):
  * pes eden tam da o an ne kaybediyorsa onu kaybeder; erken/açılış pes'i de konuma göre 2/3 olabilir.
  */
-export function resignationValue(state: GameState, loser: Player): 1 | 2 | 3 {
-  return lossMultiplier(state, loser)
+export function resignationValue(state: GameState, loser: Player, classic = false): 1 | 2 | 3 {
+  return lossMultiplier(state, loser, classic)
 }
 
 // Değer (1/2/3) -> tür (MAT/kayıt + calculateResignationPoints için).

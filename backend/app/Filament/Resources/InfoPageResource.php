@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 /** Bilgi Sayfalari: yalnizca DUZENLENEBILIR sekmeler (Hakkinda + Hizmetler).
  *  Rutbeler/Puanlama/Basarilarim/Adil Zar canli bilesendir (frontend), panelde yok. */
@@ -105,17 +106,26 @@ class InfoPageResource extends Resource
                 ))
                 ->columnSpanFull(),
             Forms\Components\Hidden::make('section'), // gercek DB kolonu; yukaridaki iki adimdan doldurulur
+            Forms\Components\TextInput::make('title')
+                ->label('Başlık')
+                ->helperText('Sayfa/sekme başlığı olarak kullanılır. Adres (slug) bundan otomatik oluşturulur.')
+                ->required()
+                // OLUŞTURURKEN slug'ı başlıktan OTOMATİK türet (admin elle yazmasın). Düzenlemede slug
+                // zaten salt-okunur (visibleOn create). Admin isterse altındaki slug alanını yine değiştirebilir.
+                ->live(onBlur: true)
+                ->afterStateUpdated(function (string $operation, $state, Forms\Set $set) {
+                    if ($operation !== 'create') {
+                        return;
+                    }
+                    $set('slug', Str::slug((string) $state));
+                })
+                ->columnSpanFull(),
             Forms\Components\TextInput::make('slug')
                 ->label('Adres (slug)')
                 ->required()
                 ->maxLength(120)
-                ->helperText('Örn: "ekibimiz" → /bilgi/ekibimiz. Sadece küçük harf, rakam ve tire. Sonradan değiştirilemez.')
+                ->helperText('Başlıktan otomatik oluşturulur; istersen düzenleyebilirsin. Örn: "ekibimiz" → /bilgi/ekibimiz. Sadece küçük harf, rakam ve tire. Sonradan değiştirilemez.')
                 ->visibleOn('create')
-                ->columnSpanFull(),
-            Forms\Components\TextInput::make('title')
-                ->label('Başlık')
-                ->helperText('Sayfa/sekme başlığı olarak kullanılır.')
-                ->required()
                 ->columnSpanFull(),
             Forms\Components\TextInput::make('seo_title')
                 ->label('SEO Başlığı (opsiyonel)')

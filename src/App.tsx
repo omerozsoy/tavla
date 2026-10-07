@@ -6416,7 +6416,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.slot, room?.status])
 
-  async function handleCreateRoom(target = 1, tc?: TimeControl, unrated = false) {
+  async function handleCreateRoom(target = 1, tc?: TimeControl, unrated = false, classic = false) {
     roomLeavingRef.current = null
     rollConflictRef.current = false
     setRoomBusy(true)
@@ -6432,7 +6432,8 @@ export default function App() {
       stakeRef.current = 0
       betPctRef.current = 0
       const tcUse = tc ?? timeControl // FriendGameSetup'tan gelen saat (state stale olmasin)
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target, unrated)
+      classicRef.current = classic // KLASIK TAVLA arkadaş odası (rematch/HUD için sakla)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target, unrated, classic)
       resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -7052,9 +7053,10 @@ export default function App() {
       betPctRef.current = s.bet_pct || 0
       stakesRef.current = stakeList.length > 0 ? stakeList : null
       stakeRef.current = maxStake
+      classicRef.current = !!s.classic // KLASIK TAVLA arayana AYNI modla katıl (küp yok + mars=2)
       setTimeControl(s.time_control)
       clockRef.current = CLOCK_PRESETS[s.time_control]
-      mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
+      mmOriginRef.current = s.classic ? 'klassik' : 'match' // iptalde ilgili kurulum ekranina don
       setHome(false)
       setMode('online')
       handleMatchmake(s.time_control) // state henuz stale -> temposu override et
@@ -7075,7 +7077,7 @@ export default function App() {
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
-  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean }) {
+  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean; classic?: boolean }) {
     const tgt = inviteTarget
     if (!tgt) return
     setFriendSetupOpen(false)
@@ -7099,7 +7101,8 @@ export default function App() {
     setTurnsPlayed(0)
     setMatch(newMatch(opts.target))
     try {
-      const { code, ratingPreview } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated })
+      classicRef.current = !!opts.classic // KLASIK TAVLA daveti: davet eden oda klasik olur
+      const { code, ratingPreview } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated, classic: opts.classic })
       setInviteWaitPreview(ratingPreview ?? null)
       const ok = await enterOnlineByCode(code, opts.target, opts.timeControl)
       if (!ok) {
@@ -8778,13 +8781,22 @@ export default function App() {
       closeAllPages()
       // Mac Oyunu her zaman online (gercek rakip) -> misafir oynayamaz, üyelik iste.
       if (!user) { requireLogin(); return }
+      setClassicSetup(false)
       setSetup('online')
     },
     onSolo: () => (!user ? requireLogin() : goPage(() => setSoloOpen(true))),
     onAiGame: () => {
       closeAllPages()
+      setClassicSetup(false)
       setSetup('pvb')
     }, // Yapay zekaya karsi oyna (bot)
+    onKlassik: () => {
+      // KLASIK TAVLA: kup yok + mars=2. Kurulumda rakip turu secilir (Cevrimici / Bota Karsi).
+      // Misafir bota karsi oynayabilir; cevrimici eslesme denerse requireLogin tetiklenir.
+      closeAllPages()
+      setClassicSetup(true)
+      setSetup('online')
+    },
     // Arkadasinla Oyna: once "Ozel Oyun Olustur" ekrani (Tek oyun/Maç + Saat + Uzunluk),
     // onaylayinca davet-kodlu oda olusturulur. Matchmaking'e (rastgele rakip) sokMAZ.
     onPlayFriend: () => {
@@ -8873,6 +8885,7 @@ export default function App() {
     match: menuProps.onNewGame,
     aiGame: menuProps.onAiGame,
     playFriend: menuProps.onPlayFriend,
+    klassik: menuProps.onKlassik,
     tournaments: menuProps.onTournaments,
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
@@ -9199,6 +9212,11 @@ export default function App() {
               <span className="invite-chip">
                 <Icon name={isMatch ? 'target' : 'play'} size={14} /> {typeLabel}
               </span>
+              {inv.classic && (
+                <span className="invite-chip invite-chip-classic">
+                  <Icon name="dice" size={14} /> {t('classic.badge')}
+                </span>
+              )}
               {clockKey && (
                 <span className="invite-chip">
                   <Icon name="clock" size={14} /> {t(clockKey)}
@@ -10030,7 +10048,7 @@ export default function App() {
               setFriendSetupOpen(false)
               setInviteTarget(null)
             }}
-            onCreate={({ target, timeControl, unrated }) => {
+            onCreate={({ target, timeControl, unrated, classic }) => {
               setFriendSetupOpen(false)
               setTimeControl(timeControl)
               clockRef.current = CLOCK_PRESETS[timeControl]
@@ -10038,7 +10056,7 @@ export default function App() {
               targetsRef.current = [target]
               setMode('online')
               setHome(false)
-              handleCreateRoom(target, timeControl, unrated)
+              handleCreateRoom(target, timeControl, unrated, classic)
             }}
             onJoin={(code) => {
               // Arkadasin kodu: navigasyonu ERKEN yapma. Kod gecerliyse handleJoinRoom

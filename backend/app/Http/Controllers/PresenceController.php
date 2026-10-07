@@ -49,6 +49,7 @@ class PresenceController extends Controller
                 'game_invites.target',
                 'game_invites.time_control',
                 'game_invites.unrated',
+                'game_invites.classic',
                 'users.first_name',
                 'users.nickname',
                 'users.avatar',
@@ -63,6 +64,7 @@ class PresenceController extends Controller
                 'target' => (int) ($r->target ?? 1),
                 'timeControl' => $r->time_control,
                 'unrated' => (bool) ($r->unrated ?? false),
+                'classic' => (bool) ($r->classic ?? false), // Klasik Tavla daveti rozeti
                 // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
                 'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated)),
             ]);
@@ -285,6 +287,7 @@ class PresenceController extends Controller
             'target' => ['nullable', 'integer', 'min:1', 'max:25'],
             'time_control' => ['nullable', 'in:casual,normal,speed'],
             'unrated' => ['nullable', 'boolean'], // puansız arkadaş maçı (rating yok, PR kariyere girmez)
+            'classic' => ['nullable', 'boolean'], // Klasik Tavla daveti (küp yok + mars=2)
         ]);
         $target = User::find($userId);
         if (! $target) {
@@ -338,6 +341,7 @@ class PresenceController extends Controller
             'target' => $settings['target'] ?? 1,
             'time_control' => $settings['time_control'] ?? null,
             'unrated' => (bool) ($settings['unrated'] ?? false),
+            'classic' => (bool) ($settings['classic'] ?? false),
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
@@ -383,6 +387,7 @@ class PresenceController extends Controller
                 'code' => $invite->room_code,
                 'target' => (int) ($invite->target ?? 1),
                 'timeControl' => $invite->time_control,
+                'classic' => (bool) ($invite->classic ?? false),
             ]);
         }
         if (($invite->status ?? 'pending') !== 'pending') {
@@ -418,6 +423,7 @@ class PresenceController extends Controller
             // Kabulde AYNI ayarla odaya gir: davet edenin sectigi Tek Oyun/Mac uzunlugu + saat.
             'target' => (int) ($invite->target ?? 1),
             'timeControl' => $invite->time_control,
+            'classic' => (bool) ($invite->classic ?? false),
         ]);
     }
 

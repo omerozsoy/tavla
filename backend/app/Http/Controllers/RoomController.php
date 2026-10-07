@@ -146,6 +146,7 @@ class RoomController extends Controller
             // oda kuramiyordu. (Eslestirme havuzu 1-11'de kalir: create'in targets.* kurali ayri.)
             'target' => ['nullable', 'integer', 'min:1', 'max:25'],
             'unrated' => ['nullable', 'boolean'], // puansız arkadaş maçı
+            'classic' => ['nullable', 'boolean'], // Klasik Tavla (küp yok + mars=2)
         ]);
 
         $room = Room::create([
@@ -158,6 +159,7 @@ class RoomController extends Controller
             'status' => 'waiting',
             'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
             'unrated' => (bool) ($data['unrated'] ?? false),
+            'classic' => (bool) ($data['classic'] ?? false),
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
             'target' => (int) ($data['target'] ?? 1),
             'version' => 0,
@@ -237,6 +239,7 @@ class RoomController extends Controller
             'targets' => ['nullable', 'array'],
             'targets.*' => ['integer', 'in:1,3,5,7,9,11'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
+            'classic' => ['nullable', 'boolean'], // Klasik Tavla (küp yok + mars=2): AYRI eşleşme havuzu
         ]);
         $stake = (int) ($data['stake'] ?? 0);
         // Kabul edilen bahisler (Tek Oyun coklu secim). Bos -> tek [stake]. Tekillestir + sirala.
@@ -249,6 +252,10 @@ class RoomController extends Controller
         // (aksi halde SQLSTATE 42S22 "Unknown column 'stakes'" ile coker). Kolon yoksa
         // coklu secim tek temsile (en yuksek) duser; migrate --force sonrasi tam calisir.
         $hasStakesCol = Schema::hasColumn('rooms', 'stakes');
+        // KLASIK TAVLA: ayrı eşleşme havuzu (klasik yalnız klasikle eşleşir). Kolon yoksa (migration
+        // kosmadi) klasik oda zaten oluşamaz -> filtre atlanır (hata önlenir).
+        $hasClassicCol = Schema::hasColumn('rooms', 'classic');
+        $classic = (bool) ($data['classic'] ?? false);
         // BAĞIMSIZ Faz 1: bahisli (para) odalarda zarı sunucuya al. Kolon yoksa (migration
         // kosmadi) yazma -> SQLSTATE cokme onlenir; migrate --force sonrasi devreye girer.
         $hasDiceAuthCol = Schema::hasColumn('rooms', 'dice_authority');
@@ -298,6 +305,7 @@ class RoomController extends Controller
             ->where('p1_user_id', $userId)
             ->where('bet_pct', $betPct)
             ->where('time_control', $timeControl)
+            ->when($hasClassicCol, fn ($q) => $q->where('classic', $classic))
             ->first();
         if ($mine) {
             $mineStakes = is_array($mine->stakes) ? array_values(array_map('intval', $mine->stakes)) : [(int) $mine->stake];
@@ -313,7 +321,7 @@ class RoomController extends Controller
         // ATOMIK: aday secimi (lockForUpdate) + rakibe yazma TEK transaction icinde olmali,
         // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
         // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
-        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl) {
+        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl, $classic, $hasClassicCol) {
             $requester = User::lockForUpdate()->find($userId);
             if (! $requester || $requester->isBanned() || Room::userHasActiveMoneyMatch($userId)) {
                 return null;
@@ -322,6 +330,7 @@ class RoomController extends Controller
             $q = Room::where('status', 'mm_waiting')
                 ->where('bet_pct', $betPct)
                 ->where('time_control', $timeControl) // yalnizca ayni tempo
+                ->when($hasClassicCol, fn ($qq) => $qq->where('classic', $classic)) // Klasik<->Klasik ayrı havuz
                 ->whereNotNull('p1_user_id')
                 ->where('p1_user_id', '!=', $userId)
                 ->whereNull('p2_token');
@@ -469,6 +478,9 @@ class RoomController extends Controller
         ];
         if ($hasStakesCol) {
             $roomData['stakes'] = $stakes;
+        }
+        if ($hasClassicCol) {
+            $roomData['classic'] = $classic; // Klasik Tavla bayrağı (eşleşme havuzu + skor + rozet)
         }
         // BAĞIMSIZ Faz 1 (staked): bekleyen oda zarı sunucudan (dice_authority, CANLIDA gölge).
         // Faz 2 TAM otorite (authoritative) kararı EŞLEŞME anında verilir (iki oyuncu da bilinince:
@@ -753,7 +765,10 @@ class RoomController extends Controller
             ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
             ->orderByDesc('updated_at')
             ->limit(30)
-            ->get(['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match']);
+            ->get(array_merge(
+                ['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match'],
+                Schema::hasColumn('rooms', 'classic') ? ['classic'] : [],
+            ));
 
         // Premium: iki oyuncunun user_id'lerinden TEK sorguyla plan lookup (süresi geçerli ücretli).
         $uids = $rooms->flatMap(fn ($r) => [$r->p1_user_id, $r->p2_user_id])->filter()->unique()->values();
@@ -782,6 +797,7 @@ class RoomController extends Controller
                 'stake' => (int) $r->stake,
                 'bet_pct' => (int) $r->bet_pct,
                 'target' => $r->target !== null ? (int) $r->target : null,
+                'classic' => (bool) ($r->classic ?? false), // Klasik Tavla rozeti (canlı maç listesi)
                 // Etiket icin tip. TURNUVA: turnuva mac odasi mode=NULL kurulur (enter(), davetsiz) ve
                 // TournamentController::matchRoom oda koduna tur-uzunlugu cache anahtari yazar -> ikisi
                 // birden = turnuva maci. Yalniz NULL'a guvenilmez (davetsiz enter ile kurulan baska oda).
@@ -866,9 +882,13 @@ class RoomController extends Controller
 
         // 'stakes' kolonu canlida migrate kosmadan olmayabilir (bkz. matchmaking) -> guard.
         $hasStakes = Schema::hasColumn('rooms', 'stakes');
+        $hasClassic = Schema::hasColumn('rooms', 'classic');
         $cols = ['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'stake', 'bet_pct', 'target', 'targets', 'time_control', 'created_at'];
         if ($hasStakes) {
             $cols[] = 'stakes';
+        }
+        if ($hasClassic) {
+            $cols[] = 'classic';
         }
 
         $rooms = Room::where('status', 'mm_waiting')
@@ -903,6 +923,7 @@ class RoomController extends Controller
                 'stake'   => (int) $r->stake,
                 'stakes'  => $stakes,
                 'bet_pct' => (int) $r->bet_pct,
+                'classic' => (bool) ($r->classic ?? false), // Klasik Tavla: rozet + "eşleş" aynı moda katar
                 'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
                 'since'   => optional($r->created_at)->toIso8601String(),
             ];
@@ -959,6 +980,7 @@ class RoomController extends Controller
             'stake'   => 0,
             'stakes'  => [],
             'bet_pct' => 0,
+            'classic' => false, // "müsait" oyuncu (davet edilecek) — mod davet anında seçilir
             'time_control' => 'normal',
             'since'   => null,
         ])->values();
@@ -1403,6 +1425,10 @@ class RoomController extends Controller
             $createAttrs['mode'] = 'friendly';
             // Puansız bayrağı davetten (davet eden seçti). Oda zaten varsa firstOrCreate dokunmaz.
             $createAttrs['unrated'] = (bool) ($invite->unrated ?? false);
+            // KLASIK TAVLA bayrağı da davetten gelir (davet eden klasik seçtiyse oda klasik olur).
+            if (Schema::hasColumn('rooms', 'classic')) {
+                $createAttrs['classic'] = (bool) ($invite->classic ?? false);
+            }
         } elseif (! Cache::has(TournamentController::roomTargetKey($code))) {
             // Davetsiz + turnuva dışı: rastgele kodla kurulan özel oda = arkadaşlık maçı (A-04).
             // Eskiden mode NULL kalıyor ve RatingPolicy NULL'u "dereceli, limitsiz" sayıyordu ->
@@ -2422,7 +2448,7 @@ class RoomController extends Controller
                 // A-12: terk/timeout/AFK = pes ile AYNI değer (SAF KONUM 1/2/3 × küp). Eskiden yalnız
                 // küp değeri yazılıyordu -> para maçında (stake × skor) gammon/backgammon'da olan
                 // oyuncu masayı terk ederek kaybını 1×'e indirebiliyordu.
-                $gp = is_array($room->server_state) ? \App\Support\Backgammon::resignationValue($room->server_state, $winnerColor) : 1;
+                $gp = is_array($room->server_state) ? \App\Support\Backgammon::resignationValue($room->server_state, $winnerColor, (bool) $room->classic) : 1;
                 $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + max(1, $cubeVal) * $gp);
                 $sm['done'] = true;
                 $sm['winner'] = $winnerColor;
@@ -2856,6 +2882,10 @@ class RoomController extends Controller
         if (! empty($sm['done'])) {
             return $deny('GAME_FINISHED');
         }
+        // KLASIK TAVLA: bu modda küp HİÇ yok -> her zaman reddet (frontend cubeAvailability ile birebir).
+        if ((bool) $room->classic) {
+            return $deny('CLASSIC_NO_CUBE');
+        }
         if (! empty($sm['crawford'])) {
             return $deny('CRAWFORD_GAME');
         }
@@ -2918,6 +2948,7 @@ class RoomController extends Controller
             'CUBE_AT_MAX' => 'Küp en yüksek değerde (64) — daha fazla katlanamaz.',
             'NOT_CUBE_OWNER' => 'Küp rakibin elinde — teklif edemezsin.',
             'DEAD_CUBE' => 'Bu skorda küpü yükseltmenin maça etkisi yok (ölü küp).',
+            'CLASSIC_NO_CUBE' => 'Klasik Tavla modunda küp kullanılmaz.',
             default => 'Küp teklif edilemez.',
         };
     }
@@ -3371,7 +3402,7 @@ class RoomController extends Controller
             $matchDone = false;
             if ($winner) {
                 $cubeVal = $this->cubeOf($room)['value'];
-                $pts = \App\Support\Backgammon::gamePoints($new, $winner) * $cubeVal;
+                $pts = \App\Support\Backgammon::gamePoints($new, $winner, (bool) $room->classic) * $cubeVal;
                 $room->server_state = $new; // son tahta (maç biterse korunur; bitmezse applyGameResult ezer)
                 $matchDone = $this->applyGameResult($room, $winner, $pts);
                 if ($matchDone) {
@@ -3718,7 +3749,7 @@ class RoomController extends Controller
             // kaybeder (rakip evinde taş -> backgammon 3, hiç toplamadı -> gammon 2, topladı -> 1).
             // pointsWon = değer × küp.
             $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
-            $value = \App\Support\Backgammon::resignationValue($state, $winner); // 1/2/3
+            $value = \App\Support\Backgammon::resignationValue($state, $winner, (bool) $room->classic); // 1/2/3 (klasik: 2 tavan)
             $points = $value * (int) $this->cubeOf($room)['value'];
             // ZAR ATILDI AMA OYNANMADAN PES: atılan zarı .mat'e yaz (bkz. recordPendingRoll).
             $this->recordPendingRoll($room, $this->slotColor($slot));
@@ -3781,6 +3812,7 @@ class RoomController extends Controller
             // flag'lerle kapatılabilir -> kapalıysa aşağıda 10'a kırpılır (bot yine oynar).
             'level' => ['required', 'integer', 'min:1', 'max:12'],
             'client_seed' => ['nullable', 'string', 'max:40'],
+            'classic' => ['nullable', 'boolean'], // Klasik Tavla'da bota karşı (küp yok + mars=2)
         ]);
 
         $code = $this->generateCode();
@@ -3819,6 +3851,7 @@ class RoomController extends Controller
             'p2_rating' => null,
             'status' => 'playing',
             'mode' => 'friendly',
+            'classic' => (bool) ($data['classic'] ?? false),
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
             'target' => (int) ($data['target'] ?? 1),
             'authoritative' => true,
@@ -4053,7 +4086,7 @@ class RoomController extends Controller
                 $matchDone = false;
                 if ($winner) {
                     $cubeVal = $this->cubeOf($room)['value'];
-                    $pts = Backgammon::gamePoints($new, $winner) * $cubeVal;
+                    $pts = Backgammon::gamePoints($new, $winner, (bool) $room->classic) * $cubeVal;
                     $room->server_state = $new; // son tahta (maç biterse korunur)
                     $matchDone = $this->applyGameResult($room, $winner, $pts);
                 } else {

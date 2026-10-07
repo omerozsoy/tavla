@@ -14,15 +14,17 @@ export interface MatchState {
   cube: Cube
   isCrawford: boolean // su anki oyun Crawford oyunu mu (kup yok)
   crawfordDone: boolean // Crawford oyunu oynandi mi
+  classic?: boolean // KLASIK TAVLA: kup YOK + mars sabit 2 (backgammon-3 yok). Diger modlarda undefined/false.
 }
 
-export function newMatch(target: number): MatchState {
+export function newMatch(target: number, classic = false): MatchState {
   return {
     target,
     score: { white: 0, black: 0 },
     cube: { value: 1, owner: null },
     isCrawford: false,
     crawfordDone: false,
+    classic,
   }
 }
 
@@ -35,6 +37,7 @@ export type CubeDenyReason =
   | 'CUBE_AT_MAX' // kup 64 tavanda -> daha fazla katlanamaz
   | 'NOT_CUBE_OWNER' // kup rakibin elinde
   | 'DEAD_CUBE' // olu kup: katlamak teklif edene puan kazandirmaz
+  | 'CLASSIC_NO_CUBE' // KLASIK TAVLA: bu modda kup hic yok
 
 export interface CubeAvailability {
   allowed: boolean
@@ -60,6 +63,7 @@ export function cubeAvailability(
   isMoney = false,
 ): CubeAvailability {
   if (awaitingResponse) return { allowed: false, reason: 'DOUBLE_ALREADY_PENDING' }
+  if (m.classic) return { allowed: false, reason: 'CLASSIC_NO_CUBE' } // Klasik Tavla: kup hic yok (backend ile birebir)
   if (m.isCrawford) return { allowed: false, reason: 'CRAWFORD_GAME' } // Crawford: kup yok
   if (!isMoney && m.target <= 1) return { allowed: false, reason: 'ONE_POINT_MATCH' } // 1 puanlik mac: kup yok
   if (m.cube.value >= (isMoney ? 16 : 64)) return { allowed: false, reason: 'CUBE_AT_MAX' } // tavan (para 16)

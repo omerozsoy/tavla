@@ -8,7 +8,7 @@ import type { IconName } from './ui/Icon'
  * NOT: Oyun akisi (home/setup/online/game) BURAYA GIRMEZ — onlar sayfa degil, oyun durumu.
  */
 
-export type MenuGroup = 'play' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
+export type MenuGroup = 'play' | 'klassik' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
 
 export interface PageDef {
   key: string // aktif-vurgu + binding anahtari
@@ -30,6 +30,10 @@ export const PAGES: PageDef[] = [
   { key: 'match', slug: 'yeni-oyun', labelKey: 'menu.match', icon: 'chart-bar-popular', group: 'play', hideInGame: true },
   { key: 'aiGame', slug: 'yz-ile-oyna', labelKey: 'menu.aiGame', icon: 'robot-face', group: 'play', hideInGame: true },
   { key: 'playFriend', slug: 'arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'play', hideInGame: true },
+
+  // --- KLASIK TAVLA OYNA: ayrı ana dal (Modern Tavla Oyna'nın ALTINDA). Küp yok + mars=2; online
+  // eşleşme (5/7/9) / bota karşı tek giriş (setup içi rakip seçici). İleride klasik sayfaları buraya eklenir.
+  { key: 'klassik', slug: 'klasik-tavla', labelKey: 'menu.klassik', icon: 'dice', group: 'klassik', hideInGame: true },
 
   // --- TURNUVALAR: rekabet + sosyal ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
@@ -95,12 +99,13 @@ export const PAGES: PageDef[] = [
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
 export const PAGE_BY_SLUG: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.slug, p]))
-export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'compete', 'fun', 'content', 'tools', 'account', 'info']
+export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'compete', 'fun', 'content', 'tools', 'account', 'info']
 
 // Grup basligi i18n anahtari (sol menude gorunur, silik buyuk-harf). null -> baslik cizilmez.
 // NOT: bunlar VARSAYILAN; admin "Sol Menu" panelinden grup/ad/sira override edilebilir.
 export const MENU_GROUP_LABELS: Record<MenuGroup, string | null> = {
-  play: 'menu.group.play',
+  play: 'menu.group.play', // "Modern Tavla Oyna" (eski "Tavla Oyna")
+  klassik: 'menu.group.klassik', // "Klasik Tavla Oyna" ana dalı
   compete: 'menu.group.compete',
   fun: 'menu.group.fun',
   content: 'menu.group.content',

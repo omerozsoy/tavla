@@ -33,6 +33,8 @@ class Room extends Model
         'mode',
         // PUANSIZ arkadaş maçı: rating yok + PR kariyer/sıralamaya işlenmez (bkz RatingPolicy).
         'unrated',
+        // KLASIK TAVLA: küp YOK + mars sabit 2 (backgammon-3 yok). Diğer tüm kurallar normal maçla aynı.
+        'classic',
         'time_control',
         'clock_bank', // oyuncu basina ana sure (sn); turnuva turunun elle girilen suresi (NULL = mod varsayilani)
         'clock',
@@ -222,6 +224,7 @@ class Room extends Model
             'dice_authority' => 'boolean',
             'bot' => 'boolean',
             'unrated' => 'boolean',
+            'classic' => 'boolean',
             'bot_level' => 'integer',
             'live' => 'array',
         ];
@@ -306,6 +309,7 @@ class Room extends Model
             // yollar, botun cevabı server_state'ten gelir. bot_level = zorluk (HUD + rating için).
             'bot' => (bool) $this->bot,
             'unrated' => (bool) $this->unrated, // puansız arkadaş maçı (HUD/sonuç notu)
+            'classic' => (bool) $this->classic, // Klasik Tavla (küp yok + mars=2) — HUD/rozet/kural için
             'bot_level' => $this->bot_level !== null ? (int) $this->bot_level : null,
             'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
             'server_version' => (int) $this->server_version,

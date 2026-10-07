@@ -39,7 +39,7 @@ interface BoardColors {
 }
 
 interface Props {
-  onCreate: (opts: { target: number; timeControl: TimeControl; unrated: boolean }) => void
+  onCreate: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
   onJoin: (code: string) => void // arkadasin verdigi kodla odaya katil
   onCancel: () => void
   board: BoardColors
@@ -47,7 +47,7 @@ interface Props {
   // Belirli bir oyuncuyu DAVET etme modu (cevrimici listeden kilic ikonu): secili rakip
   // gosterilir, "Oda Oluştur" yerine "Davet Gönder" -> onInvite; kod-ile-katil kutusu gizlenir.
   invitee?: { id: number; name: string; avatar?: string | null } | null
-  onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean }) => void
+  onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
 }
 
 export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite }: Props) {
@@ -59,6 +59,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   // PUANSIZ mac: rating degismez, PR hesaplanir (mac analizinde) ama genel PR/siralamaya girmez.
   const [unrated, setUnrated] = useState(false)
+  // KLASIK TAVLA: kup yok + mars=2 (yalniz Mac Oyunu; Tek Oyun kup/tek-puan ile zaten farkli).
+  const [classic, setClassic] = useState(false)
   const target = tab === 'single' ? 1 : length
   const inviting = !!invitee // davet modu mu?
 
@@ -159,16 +161,40 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             {unrated && <p className="setup-unrated-hint">{t('friend.unratedHint')}</p>}
           </div>
 
+          {/* KLASIK TAVLA: kup yok + mars=2 (yalniz Mac Oyunu'nda anlamli; Tek Oyun zaten tek puan). */}
+          {tab === 'match' && (
+            <div className="setup-row">
+              <div className="setup-label">{t('classic.title')}</div>
+              <div className="setup-tiles">
+                <button
+                  className={`setup-tile ${!classic ? 'active' : ''}`}
+                  onClick={() => setClassic(false)}
+                  aria-pressed={!classic}
+                >
+                  {t('friend.match')}
+                </button>
+                <button
+                  className={`setup-tile ${classic ? 'active' : ''}`}
+                  onClick={() => setClassic(true)}
+                  aria-pressed={classic}
+                >
+                  {t('classic.title')}
+                </button>
+              </div>
+              {classic && <p className="setup-unrated-hint">{t('classic.note')}</p>}
+            </div>
+          )}
+
           <div className="setup-actions">
             <Button variant="secondary" onClick={onCancel}>
               {t('setup.cancel')}
             </Button>
             {inviting ? (
-              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated })}>
+              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated, classic: tab === 'match' && classic })}>
                 <Icon name="sword" size={18} /> {t('friend.inviteBtn')}
               </Button>
             ) : (
-              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc, unrated })}>
+              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc, unrated, classic: tab === 'match' && classic })}>
                 <Icon name="play" size={18} /> {t('friend.create')}
               </Button>
             )}

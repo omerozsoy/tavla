@@ -257,6 +257,7 @@ export function LiveMatchesPanel({
               <span className={`lm-type lm-type-${liveCat(m)}`}>
                 {t(LIVE_CAT_KEY[liveCat(m)])}
               </span>
+              {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
               <span className="lm-side lm-p1">
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
                 <span className="lm-name">{m.p1_name}</span>
@@ -588,6 +589,7 @@ export function SeekersPanel({
                   <span className="seek-meta">
                     {s.kind === 'seeking' ? (
                       <>
+                        {s.classic && <span className="seek-classic">{t('classic.badge')}</span>}
                         <span className="seek-len">{lengths} {t('seekers.pt')}</span>
                         {s.bet_pct > 0 ? (
                           <span className="seek-bet">%{s.bet_pct}</span>
