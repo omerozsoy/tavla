@@ -513,10 +513,19 @@ export function OnlinePlayersPanel({
   )
 }
 
+// Oyun Arayanlar: tempo (saat modu) rozet etiketi. Backend time_control: casual|normal|speed.
+const SEEK_TC_KEY: Record<string, string> = {
+  casual: 'setup.clockCasual',
+  normal: 'setup.clockNormal',
+  speed: 'setup.clockSpeed',
+}
+
 // ---- Oyun Arayanlar / Oynamaya Müsait ----
 // İki tür satır: kind='seeking' (mm_waiting havuzunda aktif arayan — kriteriyle "eşleş") ve
 // kind='available' (çevrimiçi + müsait — "davet et"). Satır -> profil. BOŞKEN DE gösterilir
 // (ufak "kimse yok" notu); site genişliğinde (.seek-panel). Çevrimiçi Oyuncular ile aynı dil.
+// 'seeking' satırı seçilmiş kriteri taşır (mod/uzunluk/para/tempo) -> rozetlerle gösterilir;
+// 'available' satırı yalnız "Oyuna Hazır" durum bayrağıdır (kriter yok; mod davet anında seçilir).
 export function SeekersPanel({
   currentId,
   onProfile,
@@ -569,7 +578,10 @@ export function SeekersPanel({
               const self = currentId != null && s.id === currentId
               const stakeList = s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]
               const maxStake = Math.max(0, ...stakeList)
-              const lengths = (s.targets && s.targets.length > 0 ? s.targets : [1]).join('·')
+              const tgList = s.targets && s.targets.length > 0 ? s.targets : [1]
+              const lengths = tgList.join('·')
+              const maxTarget = Math.max(1, ...tgList)
+              const tcKey = SEEK_TC_KEY[s.time_control ?? 'normal']
               return (
                 <div
                   key={`${s.kind}-${s.id}`}
@@ -585,18 +597,25 @@ export function SeekersPanel({
                   <span className="rank-flag">
                     <CountryFlag code={s.country} size={22} />
                   </span>
-                  {/* seeking: ne arıyor (uzunluk + bahis). available: "Müsait" rozeti. */}
+                  {/* Puan (rating) her satırda; altında: seeking -> mod+uzunluk+para+tempo rozetleri,
+                      available -> "Oyuna Hazır" (seçilmiş kriter yok). */}
                   <span className="seek-meta">
+                    <span className="seek-rating">{s.rating ?? '—'}</span>
                     {s.kind === 'seeking' ? (
-                      <>
-                        {s.classic && <span className="seek-classic">{t('classic.badge')}</span>}
-                        <span className="seek-len">{lengths} {t('seekers.pt')}</span>
+                      <span className="seek-chips">
+                        {s.classic && <span className="seek-chip seek-classic">{t('classic.badge')}</span>}
+                        <span className="seek-chip seek-chip-mode">
+                          {maxTarget > 1 ? `${lengths} ${t('seekers.pt')}` : t('live.catSingle')}
+                        </span>
                         {s.bet_pct > 0 ? (
-                          <span className="seek-bet">%{s.bet_pct}</span>
+                          <span className="seek-chip seek-chip-money">%{s.bet_pct}</span>
                         ) : maxStake > 0 ? (
-                          <Coins amount={maxStake} size={12} />
-                        ) : null}
-                      </>
+                          <span className="seek-chip seek-chip-money"><Coins amount={maxStake} size={12} /></span>
+                        ) : (
+                          <span className="seek-chip seek-chip-free">{t('tourn.free')}</span>
+                        )}
+                        {tcKey && <span className="seek-chip seek-chip-tc">{t(tcKey)}</span>}
+                      </span>
                     ) : (
                       <span className="seek-avail">{t('online.st.ready')}</span>
                     )}

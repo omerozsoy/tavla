@@ -11873,6 +11873,44 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 700;
   color: #d97706;
 }
+/* Puan (rating) satiri: online-row rating sutunundaki gibi belirgin; altinda rozetler. */
+.seek-rating {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+/* Oyun detay rozetleri (mod/uzunluk/para/tempo) — saga hizali, sigmazsa alta sarar. */
+.seek-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 2px;
+}
+.seek-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  white-space: nowrap;
+}
+.seek-chip-mode {
+  font-weight: 700;
+}
+.seek-chip-money {
+  color: #d97706;
+  border-color: color-mix(in srgb, #d97706 35%, var(--border));
+}
+.seek-chip-free {
+  color: #16a34a;
+  border-color: color-mix(in srgb, #16a34a 35%, var(--border));
+}
+.seek-chip-tc {
+  color: color-mix(in srgb, var(--text, currentColor) 60%, transparent);
+}
 /* .rank-row.online-row: ozgulluk .rank-row'dan yuksek olmali; yoksa kaynakta sonra
    gelen .rank-row'un 4-sutunlu grid'i kazanip aksiyonlari alt satira dusurur. */
 .rank-row.online-row {

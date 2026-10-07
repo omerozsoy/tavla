@@ -17,7 +17,7 @@ import { divisionOfPR } from '../badges'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from '../sound'
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
-import { applyStep } from '../engine/moves'
+import { applyStep, generateMoves, hasNoMove } from '../engine/moves'
 import { liveMoveDelta } from '../online/liveMoves'
 import { boardSig, validLivePrefix } from '../online/spectateAnim'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './moveAnim'
@@ -434,6 +434,13 @@ export default function Spectate({
   const diceRow =
     displayBoard && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={displayBoard.turn} /> : null
 
+  // GELE / "Hamle Yok" (dance): sıradaki oyuncu zar attı ama (çoğu kez bardaki kırık pulu giremediği
+  // için) hiçbir yasal hamlesi yok. Oyuncunun kendisi bu overlay'i görür (App.noMove); izleyici
+  // eskiden tur sessizce geçtiği için göremiyordu. Zar YANDA görünür; merkeze salt-okunur not.
+  // board = tur başı (server_state) -> oyuncunun generateMoves(turnStart) kontrolüyle BİREBİR aynı.
+  const danced =
+    !!board && (board.dice?.length ?? 0) > 0 && shown.length === 0 && hasNoMove(generateMoves(board))
+
   // Maç Özeti aç (izleyici): sunucudan önbellekli özeti çek (ilk açan hesaplatır, sonrası anında;
   // herkes AYNI sonucu alır). Zaten çekildiyse tekrar isteme. Hazır değil/analiz yoksa kısa not.
   const openSummary = async () => {
@@ -550,6 +557,11 @@ export default function Spectate({
                         })}
                       </div>
                       <div className="err-detail">{t('cube.waiting')}</div>
+                    </div>
+                  ) : danced ? (
+                    <div className="result-box no-moves">
+                      <div className="result-title">{t('overlay.noMoves')}</div>
+                      <div className="err-detail">{t('overlay.noMovesSub')}</div>
                     </div>
                   ) : null
                 }
