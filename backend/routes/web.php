@@ -120,6 +120,7 @@ Route::fallback(function (Request $request) {
         'tavla-turnuvasi-organizasyonu', 'kurumsal-tavla-turnuvasi',
         'belediye-tavla-turnuvasi', 'avm-tavla-turnuvasi', 'iletisim',
         'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna',
+        'klasik-tavla', 'klasik-yapay-zeka', 'klasik-arkadasinla-oyna',
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi', 'kiz-tavlasi',
         'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'makaleler', 'haberler', 'blog', 'tavla-magazin',
