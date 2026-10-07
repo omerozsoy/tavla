@@ -27,15 +27,28 @@ rm -rf bootstrap/cache/filament 2>/dev/null || true
 # BURADA DURDURMASIN; asagidaki `migrate --force` HER ZAMAN calissin. (vendor/ sunucuda
 # kalicidir; gecici bir composer hatasi DB semasinin kod ile ayrisip 500'lere -"table/column
 # not found"- yol acmasindan cok daha az zararlidir.)
-if command -v composer >/dev/null 2>&1; then
-  # 2>&1: composer TUM ciktisini (ilerleme, autoload, funding notu) stderr'e yazar; Plesk stderr
-  # yazan adimi ⚠️ ile isaretler. stderr'i stdout'a yonlendir -> adim YESIL olur (cikti yine gorunur,
-  # exit kodu korunur -> gercek composer hatasi yine `|| echo`e duser). migrate/cache stderr'i DOKUNULMAZ.
-  composer install --no-dev --optimize-autoloader --no-interaction 2>&1 || echo "UYARI: composer install patladi -> deploy migrate ile devam ediyor; gerekirse Plesk 'Composer' > Install."
-elif [ -f composer.phar ]; then
-  $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction 2>&1 || echo "UYARI: composer.phar install patladi -> deploy migrate ile devam ediyor."
+# HIZLANDIRMA: composer install her deploy'da ~30sn-2dk (optimize-autoloader classmap dump) alir,
+# oysa bagimliliklar genelde DEGISMEZ. vendor/ sunucuda kalicidir -> composer.lock BYTE-AYNIysa
+# vendor zaten dogru demektir; install'i atla. Marker = lock'un md5'i (storage/app/, deploy'lar
+# arasi kalici). Lock degisince (ya da vendor/ yoksa, ya da md5sum yoksa) install KOSAR + marker
+# yalniz BASARILI install'dan sonra yazilir (patlarsa sonraki deploy tekrar dener).
+LOCK_HASH=$(md5sum composer.lock 2>/dev/null | awk '{print $1}')
+LOCK_MARK=storage/app/.deploy-composer-lock
+if [ -n "$LOCK_HASH" ] && [ -d vendor ] && [ "$(cat "$LOCK_MARK" 2>/dev/null)" = "$LOCK_HASH" ]; then
+  echo "composer install atlandi (composer.lock degismedi; vendor/ guncel)."
 else
-  echo "UYARI: composer bulunamadi -> Plesk 'Composer' sekmesinden Install calistir!"
+  COMPOSER_OK=0
+  if command -v composer >/dev/null 2>&1; then
+    # 2>&1: composer TUM ciktisini (ilerleme, autoload, funding notu) stderr'e yazar; Plesk stderr
+    # yazan adimi ⚠️ ile isaretler. stderr'i stdout'a yonlendir -> adim YESIL olur (cikti yine gorunur,
+    # exit kodu korunur -> gercek composer hatasi yine `|| echo`e duser). migrate/cache stderr'i DOKUNULMAZ.
+    composer install --no-dev --optimize-autoloader --no-interaction 2>&1 && COMPOSER_OK=1 || echo "UYARI: composer install patladi -> deploy migrate ile devam ediyor; gerekirse Plesk 'Composer' > Install."
+  elif [ -f composer.phar ]; then
+    $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction 2>&1 && COMPOSER_OK=1 || echo "UYARI: composer.phar install patladi -> deploy migrate ile devam ediyor."
+  else
+    echo "UYARI: composer bulunamadi -> Plesk 'Composer' sekmesinden Install calistir!"
+  fi
+  [ "$COMPOSER_OK" = 1 ] && [ -n "$LOCK_HASH" ] && printf '%s' "$LOCK_HASH" > "$LOCK_MARK"
 fi
 
 # Filament statik varliklarini (css/js) public'e yayinla
@@ -47,11 +60,35 @@ $PHP artisan filament:assets || echo "UYARI: filament:assets atlandi"
 # kontrol et). Yarim uygulanan migration'i GERI ALMAK elle yapilir.
 $PHP artisan migrate --force || { echo "HATA: migrate --force basarisiz -> DB semasi kod ile ayrisabilir (500 riski). ELLE kontrol et: php artisan migrate --force"; exit 1; }
 
-# Istatistik verisi (idempotent; islenmisleri atlar -> ilk deploy'dan sonra ucuz):
-#  - error-journal:backfill -> decision_analyses (Medyan Hata Orani per-karar + Zar Ortalamalari)
-#  - stats:backfill-wxp      -> gecmis maclardan WXP toplamlari
-$PHP artisan error-journal:backfill || echo "UYARI: error-journal:backfill atlandi."
-$PHP artisan stats:backfill-wxp || echo "UYARI: stats:backfill-wxp atlandi."
+# Tarihsel backfill'ler (error-journal + wxp): her ikisi de TUM mac gecmisini tarar (buyuk `log`
+# blob'lari) -> her deploy'da kossa deploy lineer yavaslar. YENI maclar zaten CANLI isleniyor
+# (error-journal: AnalyzeMatchPrJob + AuthController::analyzeMatch; wxp: AuthController
+# ::awardForMatchResult) -> bu backfill'ler yalniz TARIHSEL goc / surum degisimi icin gerekli.
+# Marker dosyalariyla gate'le (storage/app/ sunucuda deploy'lar arasi kalici, git'te DEGIL):
+#  - error-journal: yalniz ANALYSIS_VERSION artinca (= siniflandirma kodu degisti) yeniden kos.
+#  - wxp: tek seferlik tarihsel goc; marker varsa bir daha kosma.
+# ponytail: marker dosya bazli; farkli sunuculara/ortama tasinirsa her biri bir kez calisir (zararsiz, idempotent).
+EJ_VER=$(sed -n 's/.*ANALYSIS_VERSION = \([0-9][0-9]*\).*/\1/p' app/Support/ErrorJournalConfig.php | head -n1)
+EJ_MARK=storage/app/.deploy-ej-version
+if [ -z "$EJ_VER" ] || [ "$(cat "$EJ_MARK" 2>/dev/null)" != "$EJ_VER" ]; then
+  if $PHP artisan error-journal:backfill; then
+    [ -n "$EJ_VER" ] && printf '%s' "$EJ_VER" > "$EJ_MARK"
+  else
+    echo "UYARI: error-journal:backfill atlandi."
+  fi
+else
+  echo "error-journal:backfill atlandi (ANALYSIS_VERSION=$EJ_VER degismedi)."
+fi
+WXP_MARK=storage/app/.deploy-wxp-done
+if [ ! -f "$WXP_MARK" ]; then
+  if $PHP artisan stats:backfill-wxp; then
+    touch "$WXP_MARK"
+  else
+    echo "UYARI: stats:backfill-wxp atlandi."
+  fi
+else
+  echo "stats:backfill-wxp atlandi (tarihsel goc zaten yapildi; yeni kazanclar canli kredilenir)."
+fi
 # Career PR (PR Sıralaması) aggregate ÖNBELLEĞİ users tablosunda tutulur; maç satırları
 # silinince (ör. tavla:purge-old-matches) bayat kalıp "N maç analiz edildi"/PR'ı olduğundan
 # YÜKSEK gösterir. Her deploy'da yeniden kur -> match_results ile tutarlı (chunk'li, ucuz).
@@ -146,7 +183,9 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
     sudo -n systemctl restart "$unit" 2>/dev/null \
       && echo "gnubg: $unit yeniden baslatildi." \
       || echo "UYARI: $unit restart edilemedi -> ELLE: sudo systemctl restart $unit"
-    sleep 2
+    # Stagger: biri yeniden baslarken digerleri failover havuzunda hizmet versin. 2sn -> 0.5sn
+    # (N instance'ta 2sn deploy'u ~N*2sn uzatiyordu; 0.5sn stagger'i korur, ~4x hizli).
+    sleep 0.5
   done
 fi
 # Queue worker (gnubg PR shadow) eski kodu calistirir -> her deploy'da yenile (bkz deploy/README).
