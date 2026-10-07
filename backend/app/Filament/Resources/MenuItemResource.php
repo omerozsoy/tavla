@@ -26,48 +26,26 @@ class MenuItemResource extends Resource
 {
     protected static ?string $model = MenuItem::class;
 
-    // IconName (frontend src/ui/Icon.tsx) -> Tabler svg slug (önizleme CDN'inden çekilir).
-    // Yeni ikon eklenince hem burayı hem Icon.tsx MAP'ini güncelle.
-    private const ICON_MAP = [
-        'play' => 'player-play', 'live' => 'broadcast', 'trophy' => 'trophy', 'medal' => 'medal',
-        'ranking' => 'rosette', 'coins' => 'coins', 'shop' => 'building-store', 'chart' => 'chart-bar',
-        'users' => 'users', 'user-plus' => 'user-plus', 'analyze' => 'trending-up', 'dice' => 'dice-5',
-        'settings' => 'settings', 'install' => 'download', 'flag' => 'flag', 'sun' => 'sun', 'moon' => 'moon',
-        'book' => 'book', 'books' => 'books', 'zoom-question' => 'zoom-question', 'question-mark' => 'question-mark',
-        'logout' => 'logout', 'home' => 'home', 'star' => 'star', 'credit-card' => 'credit-card', 'money' => 'cash',
-        'gift' => 'gift', 'spinner-ball' => 'rotate-clockwise-2', 'slot' => 'cherry', 'volume' => 'volume',
-        'mute' => 'volume-off', 'graduation' => 'school', 'bulb' => 'bulb', 'search' => 'search',
-        'chat' => 'message-circle', 'user' => 'user', 'coin' => 'coins', 'banknotes' => 'cash', 'crown' => 'crown',
-        'crown-simple' => 'crown', 'ticket' => 'ticket', 'bell' => 'bell', 'eye' => 'eye', 'check' => 'check',
-        'checks' => 'checks', 'x' => 'x', 'pencil' => 'pencil', 'chevron' => 'chevron-down',
-        'caret-left' => 'chevron-left', 'caret-right' => 'chevron-right', 'arrow-right' => 'arrow-right',
-        'arrow-up' => 'arrow-up', 'calendar' => 'calendar', 'pin' => 'map-pin', 'phone' => 'phone',
-        'whatsapp' => 'brand-whatsapp', 'refresh' => 'refresh', 'target' => 'target', 'globe' => 'world',
-        'robot' => 'robot', 'robot-face' => 'robot-face', 'trash' => 'trash', 'dots-vertical' => 'dots-vertical',
-        'ban' => 'ban', 'lock' => 'lock', 'camera' => 'camera', 'menu' => 'menu-2', 'maximize' => 'maximize',
-        'minimize' => 'minimize', 'alert' => 'alert-triangle', 'calendar-dots' => 'calendar-event',
-        'building-office' => 'building', 'building-community' => 'building-community', 'newspaper' => 'news',
-        'briefcase' => 'briefcase', 'monitor-play' => 'brand-youtube', 'article' => 'article', 'palette' => 'palette',
-        'warning-circle' => 'alert-circle', 'wifi' => 'wifi', 'wifi-off' => 'wifi-off', 'chart-line' => 'chart-line',
-        'info' => 'info-circle', 'smiley' => 'mood-smile', 'paper-plane-right' => 'send', 'shield-check' => 'shield-check',
-        'clock' => 'clock', 'lock-key' => 'lock-access', 'lock-open' => 'lock-open', 'fingerprint' => 'fingerprint',
-        'package' => 'package', 'cart' => 'shopping-cart', 'tag' => 'tag', 'code' => 'code', 'copy' => 'copy',
-        'bank' => 'building-bank', 'file-magnifying-glass' => 'file-search', 'die-1' => 'dice-1', 'die-2' => 'dice-2',
-        'die-3' => 'dice-3', 'die-4' => 'dice-4', 'die-5' => 'dice-5', 'die-6' => 'dice-6', 'flame' => 'flame',
-        'instagram' => 'brand-instagram', 'youtube' => 'brand-youtube', 'mail' => 'mail', 'smiley-sad' => 'mood-sad',
-        'megaphone' => 'speakerphone', 'sword' => 'sword', 'heart' => 'heart', 'chart-bar-popular' => 'chart-bar',
-    ];
-
+    // Admin, Tabler ikon adını (slug) serbestçe yazar; frontend aynı adı Tabler CDN'inden çizer.
+    // Önizleme de aynı CDN'den. (Sürüm frontend Icon.tsx fallback'i ile AYNI olmalı.)
     private const ICON_CDN = 'https://cdn.jsdelivr.net/npm/@tabler/icons@3.48.0/icons/outline';
 
-    /** Select seçeneği: Tabler svg önizleme + IconName (allowHtml). */
-    private static function iconOptionHtml(string $name, string $slug): string
+    /** Yazılan slug'ın canlı önizlemesi (CDN svg). Boş/geçersizse '—'. */
+    private static function iconPreviewHtml(?string $raw): \Illuminate\Support\HtmlString
     {
+        $slug = preg_replace('/[^a-z0-9-]/', '', strtolower(trim((string) $raw)));
+        if ($slug === '') {
+            return new \Illuminate\Support\HtmlString('<span style="color:#9ca3af">—</span>');
+        }
         $src = self::ICON_CDN.'/'.$slug.'.svg';
 
-        return '<span style="display:inline-flex;align-items:center;gap:.5rem">'
-            .'<img src="'.e($src).'" alt="" width="18" height="18" style="flex:none" loading="lazy">'
-            .'<span>'.e($name).'</span></span>';
+        return new \Illuminate\Support\HtmlString(
+            '<span style="display:inline-flex;align-items:center;gap:.5rem">'
+            .'<img src="'.e($src).'" alt="" width="22" height="22" style="flex:none"'
+            .' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'">'
+            .'<span style="display:none;color:#ef4444">bu adda ikon yok</span>'
+            .'<code>'.e($slug).'</code></span>'
+        );
     }
 
     protected static ?string $navigationIcon = 'heroicon-o-bars-3';
@@ -119,13 +97,20 @@ class MenuItemResource extends Resource
                 ->options($groupOptions)
                 ->required()
                 ->native(false),
-            Forms\Components\Select::make('icon')
-                ->label('İkon')
-                ->options(collect(self::ICON_MAP)->map(fn ($slug, $name) => self::iconOptionHtml($name, $slug))->all())
-                ->allowHtml() // seçenekte Tabler svg önizlemesi göster
-                ->searchable()
-                ->placeholder('Otomatik (hedeften türet)')
-                ->helperText('Menüde görünecek ikon. Boş bırakılırsa hedef sayfanın ikonu (yoksa ok) kullanılır.'),
+            Forms\Components\TextInput::make('icon')
+                ->label('İkon (Tabler adı)')
+                ->placeholder('arrow-guide')
+                ->maxLength(60)
+                ->live(onBlur: true) // yazınca/blur -> alttaki önizleme güncellenir
+                ->helperText(new \Illuminate\Support\HtmlString(
+                    'İkonu <a href="https://tabler.io/icons" target="_blank" rel="noopener" '
+                    .'style="color:#2563eb;text-decoration:underline">tabler.io/icons</a> adresinden seç, '
+                    .'ikonun ADINI (ör. <code>arrow-guide</code>, <code>home</code>, <code>trophy</code>) '
+                    .'buraya yaz. Boş bırakılırsa hedef sayfanın ikonu (yoksa ok) kullanılır.'
+                )),
+            Forms\Components\Placeholder::make('icon_preview')
+                ->label('Önizleme')
+                ->content(fn (Forms\Get $get) => self::iconPreviewHtml($get('icon'))),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(999)
                 ->helperText('Küçük sayı üstte. Listeden sürükle-bırak ile de değiştirebilirsin.'),
             Forms\Components\Toggle::make('visible')->label('Menüde göster')->default(true),

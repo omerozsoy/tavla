@@ -154,7 +154,7 @@ import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
-import { Icon } from './ui/Icon'
+import { Icon, type IconName } from './ui/Icon'
 import ConfirmModal from './ui/ConfirmModal'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
@@ -9128,9 +9128,9 @@ export default function App() {
         key: o.key,
         labelKey: '',
         label: o.labels?.[lang] || o.labels?.tr || o.href,
-        // pages.ts'te sayfası olmayan bilinen özel slug'lar için ikon (SSS -> soru işareti);
-        // eşleşen sayfa yoksa ve bilinen slug değilse genel 'arrow-right'.
-        icon: matchedPage?.icon || (hrefSlug === 'sikca-sorulan-sorular' ? 'question-mark' : 'arrow-right'),
+        // Admin ikon seçtiyse onu kullan; yoksa pages.ts'te sayfası olan bilinen slug'ın ikonu
+        // (SSS -> soru işareti); eşleşen sayfa yoksa ve bilinen slug değilse genel 'arrow-right'.
+        icon: (o.icon as IconName) || matchedPage?.icon || (hrefSlug === 'sikca-sorulan-sorular' ? 'question-mark' : 'arrow-right'),
         onClick: () => openCustomMenuHref(o.href!),
         hideInGame: true,
       },

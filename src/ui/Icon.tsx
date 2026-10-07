@@ -433,6 +433,38 @@ export function Icon({
     )
   }
   const Cmp = (weight === 'fill' && FILLED[name]) || MAP[name]
+  if (!Cmp) {
+    // Bilinmeyen ad -> admin'in Tabler'dan yapistirdigi ikon slug'i ( or. 'arrow-guide').
+    // Sabit sete eklemeye gerek YOK: Tabler CDN'indeki outline svg'yi currentColor ile mask'le
+    // (tema uyumlu, yalniz kullanilan ikon icin lazy fetch). Slug'i [a-z0-9-]'e kisitla (CSS/url
+    // enjeksiyonu yok). Gecersizse/CDN engelliyse: bos kutu (cizim yok), ASLA crash.
+    // ponytail: jsdelivr CDN bagimliligi; menu ikonu az sayida ozel oge icin -> self-host'a gerek yok
+    const slug = String(name).toLowerCase().replace(/[^a-z0-9-]/g, '')
+    if (!slug) return null
+    const src = `https://cdn.jsdelivr.net/npm/@tabler/icons@3.48.0/icons/outline/${slug}.svg`
+    return (
+      <span
+        className={className}
+        aria-hidden="true"
+        style={{
+          flex: 'none',
+          display: 'inline-block',
+          verticalAlign: '-0.15em',
+          width: size,
+          height: size,
+          backgroundColor: 'currentColor',
+          maskImage: `url("${src}")`,
+          WebkitMaskImage: `url("${src}")`,
+          maskRepeat: 'no-repeat',
+          WebkitMaskRepeat: 'no-repeat',
+          maskSize: 'contain',
+          WebkitMaskSize: 'contain',
+          maskPosition: 'center',
+          WebkitMaskPosition: 'center',
+        }}
+      />
+    )
+  }
   return (
     <Cmp
       className={className}
