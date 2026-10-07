@@ -8,7 +8,6 @@
  * (Tabler ~5900 ikon; build tree-shake eder.)
  */
 
-import { useEffect, useState } from 'react'
 import { type Icon as TablerIcon } from '@tabler/icons-react'
 import {
   IconPlayerPlay,
@@ -64,6 +63,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconArrowRight,
+  IconArrowGuide,
   IconArrowUp,
   IconCalendar,
   IconCalendarEvent,
@@ -182,6 +182,7 @@ export type IconName =
   | 'caret-left'
   | 'caret-right'
   | 'arrow-right'
+  | 'arrow-guide'
   | 'arrow-up'
   | 'calendar'
   | 'pin'
@@ -298,6 +299,7 @@ const MAP: Record<IconName, TablerIcon> = {
   'caret-left': IconChevronLeft,
   'caret-right': IconChevronRight,
   'arrow-right': IconArrowRight,
+  'arrow-guide': IconArrowGuide,
   'arrow-up': IconArrowUp,
   calendar: IconCalendar,
   pin: IconMapPin,
@@ -392,62 +394,6 @@ const STROKE: Record<IconWeight, number> = {
   duotone: 1.5,
 }
 
-// Admin-yapıştırma (MAP'te olmayan) Tabler ikonu: CDN outline svg'sini bir kez fetch'le, SATIR-İÇİ
-// <svg> olarak çiz -> site `stroke` (çizgi kalınlığı 1.5) + currentColor UYGULANIR (eski maske <span>'de
-// uygulanamıyordu: siyah + kalın görünüyordu). XSS kalkanı: slug [a-z0-9-]; fetch gövdesinden
-// <script>/<style>/on* STRIP edilir (yalnız şekil öğeleri kalır); kaynak güvenilir (jsdelivr @tabler).
-// Başarısız/engelli -> boş kutu (çizim yok), ASLA crash. Modül-düzeyi cache: her slug bir kez fetch.
-const cdnIconCache = new Map<string, string>()
-
-function CdnIcon({ slug, size, weight, className }: { slug: string; size: number; weight: IconWeight; className?: string }) {
-  const [inner, setInner] = useState<string | null>(cdnIconCache.get(slug) ?? null)
-  useEffect(() => {
-    const cached = cdnIconCache.get(slug)
-    if (cached !== undefined) {
-      setInner(cached)
-      return
-    }
-    let alive = true
-    fetch(`https://cdn.jsdelivr.net/npm/@tabler/icons@3.48.0/icons/outline/${slug}.svg`)
-      .then((r) => (r.ok ? r.text() : ''))
-      .then((txt) => {
-        const body = txt
-          .replace(/^[\s\S]*?<svg[^>]*>/i, '')
-          .replace(/<\/svg>[\s\S]*$/i, '')
-          .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
-          .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '')
-        cdnIconCache.set(slug, body)
-        if (alive) setInner(body)
-      })
-      .catch(() => {
-        cdnIconCache.set(slug, '')
-        if (alive) setInner('')
-      })
-    return () => {
-      alive = false
-    }
-  }, [slug])
-  const base = { flex: 'none', display: 'inline-block', verticalAlign: '-0.15em' } as const
-  if (!inner) return <span className={className} aria-hidden="true" style={{ ...base, width: size, height: size }} />
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={STROKE[weight]}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-      style={base}
-      dangerouslySetInnerHTML={{ __html: inner }}
-    />
-  )
-}
-
 export function Icon({
   name,
   size = 20,
@@ -491,12 +437,36 @@ export function Icon({
   }
   const Cmp = (weight === 'fill' && FILLED[name]) || MAP[name]
   if (!Cmp) {
-    // Bilinmeyen ad -> admin'in Tabler'dan yapistirdigi ikon slug'i (or. 'arrow-guide').
-    // CdnIcon: Tabler CDN outline svg'sini SATIR-ICI (<svg>) cizer -> site `stroke` (cizgi
-    // kalinligi) + currentColor UYGULANIR (yerlesik ikonlarla AYNI incelik/renk). Bkz CdnIcon.
+    // Bilinmeyen ad -> admin'in Tabler'dan yapistirdigi ikon slug'i (MAP'te yok). CSP connect-src
+    // jsdelivr'i engelledigi icin fetch EDILEMEZ; CSS mask (img-src https: ile IZINLI) kullanilir:
+    // Tabler outline svg'sini currentColor ile maskele. `icon-cdn` sinifi -> menu svg renk kuralini
+    // da alir (bkz App.css). Gomulu stroke-2 nedeniyle yerlesik ikonlardan bir tik KALIN kalir ->
+    // ince istenen ikonlar MAP'e eklenmeli (or. arrow-guide asagida bundled). Gecersiz slug -> null.
     const slug = String(name).toLowerCase().replace(/[^a-z0-9-]/g, '')
     if (!slug) return null
-    return <CdnIcon slug={slug} size={size} weight={weight} className={className} />
+    const src = `https://cdn.jsdelivr.net/npm/@tabler/icons@3.48.0/icons/outline/${slug}.svg`
+    return (
+      <span
+        className={`icon-cdn${className ? ` ${className}` : ''}`}
+        aria-hidden="true"
+        style={{
+          flex: 'none',
+          display: 'inline-block',
+          verticalAlign: '-0.15em',
+          width: size,
+          height: size,
+          backgroundColor: 'currentColor',
+          maskImage: `url("${src}")`,
+          WebkitMaskImage: `url("${src}")`,
+          maskRepeat: 'no-repeat',
+          WebkitMaskRepeat: 'no-repeat',
+          maskSize: 'contain',
+          WebkitMaskSize: 'contain',
+          maskPosition: 'center',
+          WebkitMaskPosition: 'center',
+        }}
+      />
+    )
   }
   return (
     <Cmp

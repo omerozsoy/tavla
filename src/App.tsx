@@ -1168,7 +1168,7 @@ export default function App() {
                                       : achOpen
                                         ? 'basarimlar'
                                       : friendSetupOpen
-                                        ? 'arkadasinla-oyna'
+                                        ? (friendClassic ? 'klasik-arkadasinla-oyna' : 'arkadasinla-oyna')
                                       : servicePage
                                         ? servicePage
                                       : onlineTavlaOpen
@@ -1184,7 +1184,7 @@ export default function App() {
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
-                                        ? 'yz-ile-oyna'
+                                        ? (classicSetup ? 'klasik-yapay-zeka' : 'yz-ile-oyna')
                                       : spectate
                                         ? 'izle/' + spectate.code
                                         : ''
@@ -9331,7 +9331,7 @@ export default function App() {
                       : matAnalyzerOpen
                         ? 'matAnalyzer'
                       : friendSetupOpen
-                        ? 'playFriend'
+                        ? (friendClassic ? 'klassikFriend' : 'playFriend')
                       : clubsOpen
                         ? 'clubs'
                         : lessonsOpen
@@ -9351,7 +9351,7 @@ export default function App() {
                                       : setup === 'online'
                                         ? 'match'
                                         : setup === 'pvb'
-                                          ? 'aiGame'
+                                          ? (classicSetup ? 'klassikAi' : 'aiGame')
                                           : ''
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
