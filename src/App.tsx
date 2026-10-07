@@ -645,7 +645,7 @@ const BOT_PLAYER: Player = 'black'
 // ayakta olmalı; yoksa açılış "Rakip düşünüyor…"da bekler (insan hamlesi kaybolmaz).
 const SERVER_BOT = true
 const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
-const CLASSIC_TARGETS = [5, 7, 9] // KLASIK TAVLA mac uzunluklari (kullanici istegi: 5/7/9)
+const CLASSIC_TARGETS = [1, 3, 5, 7, 9, 11] // KLASIK TAVLA (YZ) mac uzunluklari (kullanici istegi)
 
 // Board renk temalari — boardThemes.ts'e cikarildi (God-component kucultme, #10)
 import {
