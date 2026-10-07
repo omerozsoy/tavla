@@ -483,6 +483,8 @@ export interface MenuOverride {
   visible: boolean
   group?: string | null // admin grup atamasi (null/undefined -> pages.ts varsayilani)
   labels: Record<string, string> // dil kodu -> ozel ad (bos ise i18n kullanilir)
+  title?: Record<string, string> // opsiyonel SAYFA basligi override'i (dil -> metin; bos -> i18n)
+  sub?: Record<string, string> // opsiyonel SAYFA aciklamasi override'i (dil -> metin; bos -> i18n)
   custom?: boolean // admin-eklemeli özel öğe mi (pages.ts'te YOK -> href ile render)
   href?: string | null // özel öğe hedefi: '/rota' (SPA) veya 'https://...' (yeni sekme)
   icon?: string | null // admin-secili ikon (IconName); bos -> slug'tan turetilir

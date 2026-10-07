@@ -9685,6 +9685,8 @@ export default function App() {
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
+          titleOverride={menuOverrides['solo']?.title?.[lang]}
+          subOverride={menuOverrides['solo']?.sub?.[lang]}
         />
       )}
       {luckyWheelOpen && (

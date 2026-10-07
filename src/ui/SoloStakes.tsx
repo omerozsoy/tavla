@@ -59,9 +59,12 @@ interface Props {
   /** Secilen BIR VEYA BIRDEN COK bahis (coin tutari). Sunucu kesisen tutarla eslestirir. */
   onPick: (stakes: number[]) => void
   onClose: () => void
+  /** Sol Menü'den admin override (bos -> i18n varsayilani). Bkz MenuItem title/sub. */
+  titleOverride?: string
+  subOverride?: string
 }
 
-export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
+export default function SoloStakes({ coins, board, onPick, onClose, titleOverride, subOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Coklu secim: baslangicta oynanabilir ilk seviye secili. Set = secili seviye NO'lari.
@@ -97,9 +100,9 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
             <Icon name="x" size={16} />
           </Button>
           <h2>
-            <Icon name="coins" size={20} /> {t('solo.title')}
+            <Icon name="coins" size={20} /> {titleOverride || t('solo.title')}
           </h2>
-          <p className="register-sub">{t('solo.sub')}</p>
+          <p className="register-sub">{subOverride || t('solo.sub')}</p>
           <div className="solo-balance">
             <Coins amount={coins} size={22} />
           </div>

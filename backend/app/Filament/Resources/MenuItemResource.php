@@ -161,6 +161,31 @@ class MenuItemResource extends Resource
                     ->label('Menüde'),
             ])
             ->actions([
+                // SAYFA METNİ: katalog sayfalarının (ör. Tek Oyun) başlık + açıklamasını düzenle.
+                // Boş = site varsayılanı (frontend i18n). TR girilir, diğer diller otomatik çevrilir.
+                Tables\Actions\Action::make('pageText')
+                    ->label('Sayfa Metni')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('gray')
+                    ->modalHeading(fn (MenuItem $r) => $r->defaultLabel().' — sayfa metni')
+                    ->modalDescription('Bu sayfanın başlık/açıklamasını değiştirir (menüdeki ad DEĞİL). Boş bırakırsan site varsayılanı kullanılır. Not: şu an bu override Tek Oyun sayfasında uygulanır; diğer sayfalar kademeli eklenir.')
+                    ->visible(fn (MenuItem $r) => ! $r->custom)
+                    ->fillForm(fn (MenuItem $r) => ['title_tr' => $r->title_tr, 'sub_tr' => $r->sub_tr])
+                    ->form([
+                        Forms\Components\TextInput::make('title_tr')
+                            ->label('Sayfa başlığı (Türkçe)')
+                            ->maxLength(120)
+                            ->helperText('Boş = site varsayılanı. Diğer diller otomatik çevrilir.'),
+                        Forms\Components\Textarea::make('sub_tr')
+                            ->label('Sayfa açıklaması (Türkçe)')
+                            ->rows(3)
+                            ->maxLength(400)
+                            ->helperText('Boş = site varsayılanı.'),
+                    ])
+                    ->action(fn (array $data, MenuItem $r) => $r->update([
+                        'title_tr' => $data['title_tr'] ?? null,
+                        'sub_tr' => $data['sub_tr'] ?? null,
+                    ])),
                 // Düzenle/Sil YALNIZ özel öğeler için (katalog öğeleri inline yönetilir, silinmez).
                 Tables\Actions\EditAction::make()->label('Düzenle')->visible(fn (MenuItem $r) => $r->custom),
                 Tables\Actions\DeleteAction::make()->label('Sil')->visible(fn (MenuItem $r) => $r->custom),

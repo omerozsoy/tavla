@@ -14,6 +14,9 @@ class MenuItem extends Model
 {
     protected $fillable = [
         'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'group', 'href', 'custom', 'icon',
+        // Opsiyonel SAYFA metni override'ı (ör. Tek Oyun kurulum başlığı/açıklaması). TR girilir, gerisi otomatik.
+        'title_tr', 'title_en', 'title_es', 'title_de', 'title_fr',
+        'sub_tr', 'sub_en', 'sub_es', 'sub_de', 'sub_fr',
     ];
 
     protected $casts = [
@@ -39,6 +42,27 @@ class MenuItem extends Model
             $m->label_tr = $tr;
             foreach (['en', 'es', 'de', 'fr'] as $lang) {
                 $m->{'label_'.$lang} = Translator::translate($tr, $lang) ?? $tr;
+            }
+        });
+
+        // SAYFA metni (title_tr / sub_tr) da aynı şekilde: TR girilince otomatik çevir, boşsa null'la.
+        static::saving(function (MenuItem $m) {
+            foreach (['title', 'sub'] as $field) {
+                if (! $m->isDirty($field.'_tr')) {
+                    continue;
+                }
+                $tr = trim((string) $m->{$field.'_tr'});
+                if ($tr === '') {
+                    foreach (['tr', 'en', 'es', 'de', 'fr'] as $lang) {
+                        $m->{$field.'_'.$lang} = null;
+                    }
+
+                    continue;
+                }
+                $m->{$field.'_tr'} = $tr;
+                foreach (['en', 'es', 'de', 'fr'] as $lang) {
+                    $m->{$field.'_'.$lang} = Translator::translate($tr, $lang) ?? $tr;
+                }
             }
         });
     }

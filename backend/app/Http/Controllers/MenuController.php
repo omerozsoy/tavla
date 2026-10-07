@@ -15,13 +15,16 @@ class MenuController extends Controller
     public function index()
     {
         $items = MenuItem::orderBy('sort')->orderBy('id')->get()->map(function (MenuItem $m) {
-            $labels = array_filter([
-                'tr' => $m->label_tr,
-                'en' => $m->label_en,
-                'es' => $m->label_es,
-                'de' => $m->label_de,
-                'fr' => $m->label_fr,
+            $langMap = fn (string $field) => array_filter([
+                'tr' => $m->{$field.'_tr'},
+                'en' => $m->{$field.'_en'},
+                'es' => $m->{$field.'_es'},
+                'de' => $m->{$field.'_de'},
+                'fr' => $m->{$field.'_fr'},
             ], fn ($v) => $v !== null && $v !== '');
+            $labels = $langMap('label');
+            $title = $langMap('title'); // opsiyonel sayfa başlığı override'ı (boş -> frontend i18n)
+            $sub = $langMap('sub');     // opsiyonel sayfa açıklaması override'ı
 
             return [
                 'key' => $m->key,
@@ -29,6 +32,8 @@ class MenuController extends Controller
                 'visible' => (bool) $m->visible,
                 'group' => $m->group, // admin grup atamasi (null -> pages.ts varsayilani)
                 'labels' => (object) $labels, // JSON'da her zaman nesne
+                'title' => (object) $title, // sayfa başlığı override (dil -> metin)
+                'sub' => (object) $sub,     // sayfa açıklaması override (dil -> metin)
                 'custom' => (bool) $m->custom, // admin-eklemeli özel öğe mi
                 'href' => $m->custom ? ($m->href ?: null) : null, // özel öğe hedefi (/rota veya https://...)
                 'icon' => $m->icon ?: null, // admin-secili ikon (bos -> frontend slug'tan turetir)
