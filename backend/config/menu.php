@@ -18,6 +18,10 @@ return [
         ['key' => 'aiGame', 'group' => 'play', 'label' => 'YZ ile Oyna'],
         ['key' => 'playFriend', 'group' => 'play', 'label' => 'Arkadaşınla Oyna'],
 
+        // --- KLASIK TAVLA OYNA: ayri ana dal (kup yok + mars=2) ---
+        ['key' => 'klassikFriend', 'group' => 'klassik', 'label' => 'Klasik Arkadaşınla Oyna'],
+        ['key' => 'klassikAi', 'group' => 'klassik', 'label' => 'Klasik Yapay Zeka'],
+
         // --- TURNUVALAR: rekabet + sosyal ---
         ['key' => 'tournaments', 'group' => 'compete', 'label' => 'Online Turnuvalar'],
         ['key' => 'leaderboard', 'group' => 'compete', 'label' => 'Liderlik Tablosu'],
@@ -62,8 +66,9 @@ return [
      */
     // 'collapsed' => grup menude KATLI (kapali) baslar mi (admin override edebilir).
     'groups' => [
-        ['key' => 'play', 'label' => 'Oyna', 'sort' => 0, 'collapsed' => false],
-        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 1, 'collapsed' => false],
+        ['key' => 'play', 'label' => 'Modern Tavla Oyna', 'sort' => 0, 'collapsed' => false],
+        ['key' => 'klassik', 'label' => 'Klasik Tavla Oyna', 'sort' => 1, 'collapsed' => false],
+        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 2, 'collapsed' => false],
         ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 2, 'collapsed' => true],
         ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3, 'collapsed' => true],
         ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4, 'collapsed' => true],
