@@ -485,6 +485,7 @@ export interface MenuOverride {
   labels: Record<string, string> // dil kodu -> ozel ad (bos ise i18n kullanilir)
   custom?: boolean // admin-eklemeli özel öğe mi (pages.ts'te YOK -> href ile render)
   href?: string | null // özel öğe hedefi: '/rota' (SPA) veya 'https://...' (yeni sekme)
+  icon?: string | null // admin-secili ikon (IconName); bos -> slug'tan turetilir
 }
 // Grup basligi override'i (admin "Menü Grupları"). labels bos -> i18n varsayilani (bilinen gruplar).
 export interface MenuGroupCfg {

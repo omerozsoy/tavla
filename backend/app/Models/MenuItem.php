@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 class MenuItem extends Model
 {
     protected $fillable = [
-        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'group', 'href', 'custom',
+        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'group', 'href', 'custom', 'icon',
     ];
 
     protected $casts = [
