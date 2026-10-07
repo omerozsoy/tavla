@@ -10447,6 +10447,7 @@ export default function App() {
             {/* Oyun Arayanlar: hızlı eşleşme havuzunda bekleyenler (reklam bannerının hemen altı) */}
             <SeekersPanel
               currentId={user?.id}
+              myCoins={user?.coins}
               onProfile={(id) => setHomeProfileId(id)}
               onJoin={handleJoinSeeker}
               onInvite={user ? handleInviteFriend : undefined}

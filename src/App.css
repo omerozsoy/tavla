@@ -11909,6 +11909,12 @@ button.acct-row-logout:hover:not(:disabled) {
   color: #d97706;
   border-color: color-mix(in srgb, #d97706 35%, var(--border));
 }
+/* "Riske: ~X coin" — %-bahiste kullanıcının bakiyesine göre riske edilen tutar (coin ikonlu). */
+.seek-chip-risk {
+  color: var(--coin-gold, #c98a17);
+  border-color: color-mix(in srgb, var(--coin-gold, #c98a17) 40%, var(--border));
+  font-weight: 700;
+}
 .seek-chip-free {
   color: #16a34a;
   border-color: color-mix(in srgb, #16a34a 35%, var(--border));

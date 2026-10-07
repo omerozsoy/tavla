@@ -537,6 +537,7 @@ export function SeekersPanel({
   onInvite,
   mySeek,
   onCancelSeek,
+  myCoins,
 }: {
   currentId?: number
   onProfile: (id: number) => void
@@ -544,6 +545,7 @@ export function SeekersPanel({
   onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void // available: davet et
   mySeek?: Seeker | null // kendi aktif havuz aramam (backend self'i hariç tutar) -> en üstte "Rakip Bekleniyor…" + İptal
   onCancelSeek?: () => void // kendi aramamı iptal et (ana sayfada kal)
+  myCoins?: number // giriş yapan kullanıcının coin bakiyesi (%-bahiste riske edilen tutarı hesaplamak için)
 }) {
   const { t } = useT()
   const [rows, setRows] = useState<Seeker[] | null>(null)
@@ -619,7 +621,14 @@ export function SeekersPanel({
                           {maxTarget > 1 ? `${lengths} ${t('seekers.pt')}` : t('live.catSingle')}
                         </span>
                         {s.bet_pct > 0 ? (
-                          <span className="seek-chip seek-chip-money">%{s.bet_pct}</span>
+                          <>
+                            <span className="seek-chip seek-chip-money">%{s.bet_pct}</span>
+                            {myCoins != null && (
+                              <span className="seek-chip seek-chip-risk" title={t('seekers.riskHint')}>
+                                {t('seekers.risk')} <Coins amount={Math.floor((myCoins * s.bet_pct) / 100)} size={12} />
+                              </span>
+                            )}
+                          </>
                         ) : maxStake > 0 ? (
                           <span className="seek-chip seek-chip-money"><Coins amount={maxStake} size={12} /></span>
                         ) : (
