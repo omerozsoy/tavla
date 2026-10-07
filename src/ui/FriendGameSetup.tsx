@@ -61,8 +61,9 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   // PUANSIZ mac: rating degismez, PR hesaplanir (mac analizinde) ama genel PR/siralamaya girmez.
   const [unrated, setUnrated] = useState(false)
-  // KLASIK TAVLA: kup yok + mars=2 (yalniz Mac Oyunu; Tek Oyun kup/tek-puan ile zaten farkli).
-  const [classic, setClassic] = useState(defaultClassic)
+  // KLASIK TAVLA: kup yok + mars=2. Mod SAYFAYA gore SABIT (Modern /arkadasinla-oyna vs
+  // Klasik /klasik-arkadasinla-oyna) -> tek sayfada Modern/Klasik gecisi YOK, ayri sayfalar.
+  const classic = defaultClassic
   const target = tab === 'single' ? 1 : length
   const inviting = !!invitee // davet modu mu?
 
@@ -71,7 +72,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
       <div className="setup-split">
         <div className="register-card setup-card">
           <h2>
-            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t('friend.inviteTitle') : t('friend.title')}
+            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t('friend.inviteTitle') : classic ? t('classic.title') : t('friend.title')}
           </h2>
 
           {/* Davet modu: KIMI davet ettigin net gorunsun */}
@@ -163,29 +164,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             {unrated && <p className="setup-unrated-hint">{t('friend.unratedHint')}</p>}
           </div>
 
-          {/* KLASIK TAVLA: kup yok + mars=2 (yalniz Mac Oyunu'nda anlamli; Tek Oyun zaten tek puan). */}
-          {tab === 'match' && (
-            <div className="setup-row">
-              <div className="setup-label">{t('classic.title')}</div>
-              <div className="setup-tiles">
-                <button
-                  className={`setup-tile ${!classic ? 'active' : ''}`}
-                  onClick={() => setClassic(false)}
-                  aria-pressed={!classic}
-                >
-                  {t('friend.match')}
-                </button>
-                <button
-                  className={`setup-tile ${classic ? 'active' : ''}`}
-                  onClick={() => setClassic(true)}
-                  aria-pressed={classic}
-                >
-                  {t('classic.title')}
-                </button>
-              </div>
-              {classic && <p className="setup-unrated-hint">{t('classic.note')}</p>}
-            </div>
-          )}
+          {/* KLASIK TAVLA sayfasi (yalniz Mac Oyunu'nda anlamli): mod sabit, sadece bilgi notu. */}
+          {classic && tab === 'match' && <p className="setup-unrated-hint">{t('classic.note')}</p>}
 
           <div className="setup-actions">
             <Button variant="secondary" onClick={onCancel}>
