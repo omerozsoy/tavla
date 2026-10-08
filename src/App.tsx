@@ -10079,7 +10079,8 @@ export default function App() {
         onHome={menuProps.onHome}
       />
     ),
-          footer: <Footer columns={footerColsRendered} sponsors={sponsors} />,
+          footer: <Footer columns={footerColsRendered} />,
+    sponsors,
   }
   // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
   const lobbyTrailing = (

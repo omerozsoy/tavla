@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { SponsorsStrip, type FooterSponsor } from './Footer'
 
 // Lobi (giriş yapılmış "app lobby") sayfalarının TEK ortak iskeleti. Daha önce bu iskelet
 // (mobil nav + üst bar + sol menü + <main> + Footer + trailing overlay'ler) App.tsx render'ında
@@ -14,6 +15,8 @@ export interface LobbyLayoutProps {
   topbar: ReactNode
   sideMenu: ReactNode
   footer: ReactNode
+  /** Sponsorlar (footer DEĞİL, <main> içeriğinin en altında -> sayfa içeriğiyle aynı hizada). */
+  sponsors?: FooterSponsor[]
   /** <main> sınıfı; içerik sayfaları için varsayılan "has-page". Home dinamik geçer. */
   mainClassName?: string
   /** <main> içeriği. Sayfa dalları genelde <div className="page-host"> ile sarar. */
@@ -27,6 +30,7 @@ export default function LobbyLayout({
   topbar,
   sideMenu,
   footer,
+  sponsors,
   mainClassName = 'main lobby-main has-page',
   children,
   trailing,
@@ -37,7 +41,11 @@ export default function LobbyLayout({
       <div className="app lobby">
         {topbar}
         {sideMenu}
-        <main className={mainClassName}>{children}</main>
+        <main className={mainClassName}>
+          {children}
+          {/* Sponsorlar: içeriğin en altında, footer'dan ÖNCE -> sayfa content'iyle aynı kolonda/ortalı. */}
+          {sponsors && sponsors.length > 0 && <SponsorsStrip sponsors={sponsors} />}
+        </main>
         {footer}
       </div>
       {trailing}

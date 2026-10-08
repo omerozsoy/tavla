@@ -18,48 +18,50 @@ export interface FooterSponsor {
 interface Props {
   // title: admin "Footer Kolonları" başlık override'ı (varsa i18n titleKey'i ezer).
   columns: { key?: string; titleKey: string; title?: string; items: FooterItem[] }[]
-  sponsors?: FooterSponsor[]
 }
 
 // Yüklenen gorsel yolunu cozer (ContentView.mediaSrc ile ayni kural; dairesel import'tan kacin).
 const logoSrc = (img: string) => (/^(https?:|\/)/.test(img) ? img : '/uploads/' + img)
 
-// Ana sayfa footer'i — kolonlar MERKEZI SAYFA KAYDINDAN (pages.ts) turetilir; App
-// footerColumns'u kurar, bu bilesen salt-render. Linkler ilgili sayfayi acar.
-export default function Footer({ columns, sponsors = [] }: Props) {
+// Sponsorlar karuseli — footer DEGIL, <main> (lobby-main) İÇİNDE, içeriğin en altında render edilir
+// (LobbyLayout). Böylece sayfa içeriğiyle AYNI kolonda/ortalanmada olur (çözünürlük değişince de
+// hizalı kalır; footer slot'u sidebar grid'ine bağlı olduğu için kayıyordu). 3+ sponsorda marquee.
+export function SponsorsStrip({ sponsors }: { sponsors: FooterSponsor[] }) {
   const { t } = useT()
-  const year = new Date().getFullYear()
-  // Karusel kesintisiz dönsün diye listeyi iki kez döşeriz (CSS marquee); 2'den az varsa
-  // tekrar gereksiz (satır sığar), statik ortalı gösterilir.
+  if (sponsors.length === 0) return null
   const marquee = sponsors.length > 2
   return (
-    // Tek grid-item sarmalayici: sponsor karti + footer normal blok akisinda ust uste BINMEDEN
-    // dizilir (ikisi ayri grid child olunca auto-placement cakisip footer karti orup biniyordu).
-    <div className="footer-region">
-      {sponsors.length > 0 && (
-        <section className="site-sponsors" aria-label={t('foot.sponsors')}>
-          <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
-          <div className={'foot-sponsors-track' + (marquee ? ' marquee' : '')}>
-            {(marquee ? [...sponsors, ...sponsors] : sponsors).map((s, i) => {
-              const inner = (
-                <>
-                  <img className="foot-sponsor-logo" src={logoSrc(s.logo)} alt={s.name} loading="lazy" />
-                  <span className="foot-sponsor-name">{s.name}</span>
-                </>
-              )
-              return s.link ? (
-                <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer" aria-hidden={i >= sponsors.length}>
-                  {inner}
-                </a>
-              ) : (
-                <div key={i} className="foot-sponsor" aria-hidden={i >= sponsors.length}>
-                  {inner}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      )}
+    <section className="site-sponsors" aria-label={t('foot.sponsors')}>
+      <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
+      <div className={'foot-sponsors-track' + (marquee ? ' marquee' : '')}>
+        {(marquee ? [...sponsors, ...sponsors] : sponsors).map((s, i) => {
+          const inner = (
+            <>
+              <img className="foot-sponsor-logo" src={logoSrc(s.logo)} alt={s.name} loading="lazy" />
+              <span className="foot-sponsor-name">{s.name}</span>
+            </>
+          )
+          return s.link ? (
+            <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer" aria-hidden={i >= sponsors.length}>
+              {inner}
+            </a>
+          ) : (
+            <div key={i} className="foot-sponsor" aria-hidden={i >= sponsors.length}>
+              {inner}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+// Ana sayfa footer'i — kolonlar MERKEZI SAYFA KAYDINDAN (pages.ts) turetilir; App
+// footerColumns'u kurar, bu bilesen salt-render. Linkler ilgili sayfayi acar.
+export default function Footer({ columns }: Props) {
+  const { t } = useT()
+  const year = new Date().getFullYear()
+  return (
       <footer className="site-footer">
         <div className="foot-inner">
         <div className="foot-brand">
@@ -92,6 +94,5 @@ export default function Footer({ columns, sponsors = [] }: Props) {
         </div>
         <div className="foot-bottom">© {year} TavlaTV</div>
       </footer>
-    </div>
   )
 }

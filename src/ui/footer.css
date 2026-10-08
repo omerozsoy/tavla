@@ -189,14 +189,15 @@ a.foot-partner:hover {
   border-radius: 3px;
 }
 
-/* ---- Sponsorlar karuseli (footer'ın ÜSTÜNDE, beyaz içerik-genişliğinde kart) ---- */
+/* ---- Sponsorlar karuseli — <main> İÇİNDE, içeriğin en altında (sayfa content'iyle AYNI
+   kolonda/ortalamada; footer'dan ÖNCE). Beyaz, içerik-genişliğinde kart. ---- */
 .site-sponsors {
   position: relative;
   box-sizing: border-box;
-  /* Ana sayfa içeriğiyle aynı genişlik, ortalanmış; üstte içerikten, altta footer'dan boşluk. */
+  /* Sayfa içeriğiyle aynı genişlik/ortalama (main kolonunda max-width + auto margin). */
   width: 100%;
   max-width: var(--lobby-w, 1120px);
-  margin: 40px auto;
+  margin: 32px auto 40px;
   color: rgba(0, 0, 0, 0.78);
   background: #fff;
   border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
@@ -204,10 +205,6 @@ a.foot-partner:hover {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 22px clamp(16px, 4vw, 40px) 20px;
   overflow: hidden; /* marquee taşmasını kırp */
-}
-/* Bant ile footer arasındaki boşluk: bandın alt margini (footer'ın üst margini sıfırlanır). */
-.site-sponsors + .site-footer {
-  margin-top: 0;
 }
 .foot-sponsors-title {
   text-align: center;
