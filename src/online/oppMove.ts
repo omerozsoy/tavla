@@ -11,8 +11,44 @@
 // icin tahta esitligi yeterlidir). Dance (oynanamayan tur) da adimsiz terminal olarak doner.
 import { cloneState } from '../engine/board'
 import { maximalTerminals, boardKey } from '../engine/moves'
-import type { GameState, Step } from '../engine/types'
+import type { GameState, Player, Step } from '../engine/types'
 import type { MoveLogEntry } from '../storage'
+
+/**
+ * Rakibin hamlesini geri üretmek için TUR-BAŞI tabanını (zarlı) türet.
+ *
+ * KÖK SORUN (RAKIP_ZAR_HAMLE_GECIKMESI): push yalnız "poll et" sinyali; poll HER ZAMAN sunucunun EN
+ * TAZE sürümünü çeker, aradaki sürümleri OYNATMAZ. Rakip bir poll turundan kısa sürede (hızlı oyuncu
+ * / bot / çift zar) hem zar atıp hem oynarsa, istemci rakibin "zar atıldı-ama-oynanmadı" ara durumunu
+ * HİÇ uygulamaz. O yüzden ekrandaki son tur-başı (`prev`) rakibin zarını TAŞIMAZ (`prev.dice` boş) ve
+ * eski reconstruct `!prev.dice?.length` ile null döner -> hamle adım adım OYNANMAZ, tahta SNAP eder,
+ * rakibin zarı ancak son tahtayla aynı anda (geç) görünür.
+ *
+ * Çözüm: tahta DÜZENİ zar atmakla değişmediği için `prev.points` HER İKİ durumda da hamle-ÖNCESİ
+ * düzendir. Eksik olan yalnız zar+sıra; onu otoriter `lastMove`'tan (sunucunun kaydettiği hamlenin
+ * TAM zarı; çift zar 4 eleman) tamamlarız. Böylece ara durum kaçsa bile taban doğru kurulur.
+ *
+ * @returns reconstructOppMove'a verilecek taban (turn=rakip, dice dolu) ya da uygun değilse null.
+ *   Taban yanlışsa (çok-tur atlama / reconnect) reconstructOppMove zaten null döner -> güvenli snap.
+ */
+export function oppMoveBase(
+  prev: GameState | null,
+  next: GameState,
+  lastMove: { color: Player; dice: number[] } | null | undefined,
+  myColor: Player,
+  gameEnded = false,
+): GameState | null {
+  if (!prev || !lastMove) return null
+  const oc = lastMove.color
+  if (oc === myColor) return null // yalnız RAKİBİN hamlesi
+  // Hamle TAMAMLANDI mı? Sıra bana devretti (next.turn !== oc) ya da oyun bitti (kazanan hamlede
+  // sunucu sırayı devretmez). Değilse rakip daha oynamadı -> taban kurma.
+  if (!gameEnded && next.turn === oc) return null
+  // Rakibin tur-başı pollü YAKALANDIYSA prev zaten rakip+zarlı; yakalanmadıysa otoriter lastMove.dice.
+  const dice = prev.turn === oc && prev.dice && prev.dice.length > 0 ? prev.dice : lastMove.dice
+  if (!dice || dice.length === 0) return null
+  return { ...cloneState(prev), turn: oc, dice: [...dice], diceUsed: dice.map(() => false) }
+}
 
 /**
  * @param prev Rakibin tur-basi durumu (turn = rakip, dice dolu)

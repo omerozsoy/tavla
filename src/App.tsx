@@ -53,7 +53,7 @@ import {
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
-import { reconstructOppMove, mergeOppLog } from './online/oppMove'
+import { reconstructOppMove, oppMoveBase, mergeOppLog } from './online/oppMove'
 import {
   isOnlineReady,
   openingNeedsResync,
@@ -511,6 +511,7 @@ import {
   type MenuGroupCfg,
   type FooterColumnCfg,
   type FooterLinkCfg,
+  type SponsorCfg,
   type ServerUser,
 } from './api'
 
@@ -757,6 +758,8 @@ export default function App() {
   // Footer kolon override'lari (admin "Footer Kolonları": sira/gorunurluk/baslik). key -> config.
   const [footerCfg, setFooterCfg] = useState<Record<string, FooterColumnCfg>>({})
   const [footerLinkCfg, setFooterLinkCfg] = useState<Record<string, FooterLinkCfg>>({})
+  // Footer sponsor karuseli (admin "Sponsorlar"): logo + kisa ad.
+  const [sponsors, setSponsors] = useState<SponsorCfg[]>([])
   // Admin-eklemeli ozel bilgi sayfalari (section'u olanlar): footer kolonu / sol-menu grubu
   // altina enjekte edilir. section "footer:<kolon>" | "menu:<grup>", sort = o bolum icinde konum
   // (0 = en ust). Bkz InfoPageResource::SECTION_PICKS.
@@ -1231,10 +1234,11 @@ export default function App() {
       setBoardDesignsRev((n) => n + 1)
     })
     // Footer kolon yapilandirmasi (admin panel): sira/gorunurluk/baslik. Hata/bos -> sabit sira.
-    getFooterConfig().then(({ columns, links }) => {
+    getFooterConfig().then(({ columns, links, sponsors }) => {
       if (!alive) return
       setFooterCfg(Object.fromEntries(columns.map((c) => [c.key, c])))
       setFooterLinkCfg(Object.fromEntries(links.map((l) => [l.key, l])))
+      setSponsors(sponsors)
     })
     // Admin-eklemeli ozel sayfalardan section'u olanlar -> footer/menu'ye enjekte edilir.
     listInfoPages()
@@ -5245,27 +5249,33 @@ export default function App() {
     // halde applyServerBoard burada kesilir, maç-durumu (matchOver/gameEnd) HİÇ uygulanmaz ve
     // KAYBEDEN taraf maç-sonu ekranını GÖREMEZ (poll her seferinde yeniden throw -> kalıcı kilit).
     try {
-    if (online && prev && prev.turn !== myColor && (prev.dice?.length ?? 0) > 0 && (gs.turn !== prev.turn || ended)) {
-      const sig = `${boardKey(prev)}|${prev.dice.join('')}|${boardKey(gs)}`
+    // RAKIP ZAR/HAMLE GECIKMESI KÖK FIX: taban artık `prev.dice`'a BAĞLI DEĞİL. Rakibin "zar
+    // atıldı-ama-oynanmadı" ara pollü kaçtığında (hızlı oyuncu/bot/çift zar) prev zarsızdı ->
+    // reconstruct null -> snap. oppMoveBase, zarı otoriter `sm.lastMove`'tan tamamlayıp doğru
+    // tur-başı tabanını kurar (tahta düzeni zaten hamle-öncesi). Böylece hamle HER ZAMAN adım adım
+    // oynanır ve rakibin zarı adımlardan ÖNCE (replay base'inde) görünür.
+    const oppBase = online ? oppMoveBase(prev, gs, sm?.lastMove, myColor, ended) : null
+    if (oppBase) {
+      const sig = `${boardKey(oppBase)}|${oppBase.dice.join('')}|${boardKey(gs)}`
       if (sig !== oppLoggedRef.current) {
         // Dance (oynanamayan tur) bos dizi olarak doner -> o da yazilir; aksi halde
         // .mat'te tur atlanir ve sutun almasigi bozulur. Cozulemezse null -> kayit YOK
         // (uydurma satir yazmaktansa eksik birakmak yeglenir).
-        const steps = reconstructOppMove(prev, gs, ended)
+        const steps = reconstructOppMove(oppBase, gs, ended)
         if (steps) {
           oppLoggedRef.current = sig
-          const oc = prev.turn
+          const oc = oppBase.turn
           setMatchLog((l) => [
             ...l,
             {
               notation: moveNotation({ steps, resultKey: '' }, oc),
               best: '',
               loss: 0,
-              pos: cloneState(prev),
+              pos: cloneState(oppBase),
               steps,
               playedSteps: steps,
               player: oc,
-              dice: prev.dice.slice(0, 2),
+              dice: oppBase.dice.slice(0, 2),
               seq: turnsPlayedRef.current,
             },
           ])
@@ -5279,13 +5289,13 @@ export default function App() {
               g: rec.gameNo,
               s: turnsPlayedRef.current,
               p: oc === 'white' ? 'W' : 'B',
-              d: (prev.dice ?? []).join('-'),
+              d: (oppBase.dice ?? []).join('-'),
               m: turnNotation(steps, oc),
             })
           }
           // §5.2: onaylı rakip hamlesini adım adım OYNAT (snap yerine). Oyun bittiyse (ended) ATLA —
           // maç/oyun sonu ekranı ayrı akış; bitiren hamleyi replay'e bağlamak kırılgan olur.
-          if (!ended) maybeReplayOppMove(prev, steps, oc)
+          if (!ended) maybeReplayOppMove(oppBase, steps, oc)
         }
       }
     }
@@ -10069,7 +10079,7 @@ export default function App() {
         onHome={menuProps.onHome}
       />
     ),
-          footer: <Footer columns={footerColsRendered} />,
+          footer: <Footer columns={footerColsRendered} sponsors={sponsors} />,
   }
   // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
   const lobbyTrailing = (

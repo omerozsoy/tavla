@@ -532,13 +532,19 @@ export interface FooterLinkCfg {
   visible: boolean
   labels: Record<string, string> // dil kodu -> ozel baslik (bos ise frontend varsayilani)
 }
+// Footer sponsor karuseli (admin "Sponsorlar"): logo + kisa ad (+opsiyonel link).
+export interface SponsorCfg {
+  name: string
+  logo: string // uploads yolu (mediaSrc ile cozulur)
+  link?: string | null
+}
 // Halka acik; hata/bos -> App.tsx sabit varsayilan footer sirasini kullanir.
-export async function getFooterConfig(): Promise<{ columns: FooterColumnCfg[]; links: FooterLinkCfg[] }> {
+export async function getFooterConfig(): Promise<{ columns: FooterColumnCfg[]; links: FooterLinkCfg[]; sponsors: SponsorCfg[] }> {
   try {
-    const d = await req<{ columns?: FooterColumnCfg[]; links?: FooterLinkCfg[] }>('/footer-config')
-    return { columns: d.columns || [], links: d.links || [] }
+    const d = await req<{ columns?: FooterColumnCfg[]; links?: FooterLinkCfg[]; sponsors?: SponsorCfg[] }>('/footer-config')
+    return { columns: d.columns || [], links: d.links || [], sponsors: d.sponsors || [] }
   } catch {
-    return { columns: [], links: [] }
+    return { columns: [], links: [], sponsors: [] }
   }
 }
 

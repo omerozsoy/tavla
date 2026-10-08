@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FooterColumn;
 use App\Models\FooterLink;
+use App\Models\Sponsor;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -58,6 +59,15 @@ class FooterController extends Controller
             })
             : [];
 
-        return response()->json(['columns' => $columns, 'links' => $links]);
+        // Sponsorlar (footer karusel şeridi): sadece görünürler, sıraya göre. Migration yoksa boş.
+        $sponsors = Schema::hasTable('sponsors')
+            ? Sponsor::where('visible', true)->orderBy('sort')->orderBy('id')->get()->map(fn (Sponsor $s) => [
+                'name' => $s->name,
+                'logo' => $s->logo,
+                'link' => $s->link,
+            ])
+            : [];
+
+        return response()->json(['columns' => $columns, 'links' => $links, 'sponsors' => $sponsors]);
     }
 }

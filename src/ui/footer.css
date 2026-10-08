@@ -189,6 +189,75 @@ a.foot-partner:hover {
   border-radius: 3px;
 }
 
+/* ---- Sponsorlar karuseli (footer alt şeridi) ---- */
+.foot-sponsors {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid color-mix(in srgb, var(--foot-bordo) 40%, rgba(255, 255, 255, 0.05));
+  padding: 20px clamp(16px, 4vw, 56px) 8px;
+  overflow: hidden; /* marquee taşmasını kırp */
+}
+.foot-sponsors-title {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foot-cream-faint);
+  margin-bottom: 16px;
+}
+.foot-sponsors-track {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center; /* az sayıda sponsor ORTALI (marquee yoksa) */
+  flex-wrap: wrap;
+  gap: 20px 36px;
+}
+/* 3+ sponsor: kesintisiz yatay akış (liste iki kez döşenir, -50% kaydırılır). */
+.foot-sponsors-track.marquee {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: max-content;
+  animation: foot-sponsor-scroll 40s linear infinite;
+}
+.foot-sponsors:hover .foot-sponsors-track.marquee {
+  animation-play-state: paused;
+}
+@keyframes foot-sponsor-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.foot-sponsor {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  text-decoration: none;
+  color: var(--foot-cream-soft);
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+a.foot-sponsor:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+.foot-sponsor-logo {
+  display: block;
+  height: 46px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+}
+.foot-sponsor-name {
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  text-align: center;
+  max-width: 130px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .foot-sponsors-track.marquee { animation: none; }
+}
+
 /* ---- Alt bar (telif) ---- */
 .foot-bottom {
   position: relative;
