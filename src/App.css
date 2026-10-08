@@ -10373,8 +10373,29 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Footer: grid'in en altinda, HER IKI kolonu (menu + main) kapsar -> TAM GENISLIK.
    (Grid child oldugu icin varsayilan tek kolona sigardi; 1/-1 ile bara kadar uzar.) */
+/* Footer bölgesi: grid'in en altında iki kolonu kapsar. İÇİNDE ana grid'i AYNALAR
+   (224px menü + içerik) -> sponsor kartı içerik kolonuna oturur (sayfa içeriğiyle HİZALI),
+   footer ise 1/-1 ile tam genişlik kalır. */
 .app.lobby > .footer-region {
   grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  align-items: start;
+}
+.footer-region > .site-sponsors {
+  grid-column: 2; /* içerik kolonu -> sayfa content'iyle aynı hizada ortalanır */
+}
+.footer-region > .site-footer {
+  grid-column: 1 / -1; /* tam genişlik (kenardan kenara) */
+}
+/* Mobil (≤900px): ana grid tek kolona düşer -> footer bölgesi de tek kolon, kart tam genişlik. */
+@media (max-width: 900px) {
+  .app.lobby > .footer-region {
+    grid-template-columns: 1fr;
+  }
+  .footer-region > .site-sponsors {
+    grid-column: 1;
+  }
 }
 /* Desktop yan menu: STICKY DEGIL -> sayfayla birlikte kayar (kullanici tercihi).
    Boylece tam-genislik footer ile HIC cakismaz; menu icerikle akar, footer altta kalir.
