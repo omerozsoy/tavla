@@ -15,6 +15,7 @@ const CLOCKS: { id: TimeControl; key: string }[] = [
 ]
 // Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan). En fazla 11 puan (kullanici istegi).
 const LENGTHS = [3, 5, 7, 9, 11]
+const CLASSIC_LENGTHS = [3, 5, 7] // KLASIK TAVLA: max 7 (9/11 yok)
 
 interface BoardColors {
   id?: string // ozel desenli boardlar (or. 'citrus-wood') onizlemesi icin
@@ -113,7 +114,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             <div className="setup-row">
               <div className="setup-label">{t('setup.length')}</div>
               <div className="target-grid">
-                {LENGTHS.map((n) => (
+                {(classic ? CLASSIC_LENGTHS : LENGTHS).map((n) => (
                   <button
                     key={n}
                     className={`target-chip ${length === n ? 'active' : ''}`}

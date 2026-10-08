@@ -10883,6 +10883,7 @@ export default function App() {
           loserColor={opponent(mWinner)}
           winnerScore={match.score[mWinner]}
           loserScore={match.score[opponent(mWinner)]}
+          classic={!!match.classic} // KLASIK TAVLA: PR satirlari (hata/pul/kup) gizlenir
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
           analyzing={prAnalyzing}

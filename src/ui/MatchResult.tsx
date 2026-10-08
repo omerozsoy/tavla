@@ -70,6 +70,8 @@ interface Props {
   spectator?: boolean
   winnerRating?: number | null
   loserRating?: number | null
+  // KLASIK TAVLA: PR satırları (Hata Oranı / Pul Oyunu PR / Küp PR) + "PR hesaplanıyor" notu gizlenir.
+  classic?: boolean
 }
 
 function Avatar({ url, color }: { url?: string | null; color: Side }) {
@@ -127,6 +129,7 @@ export default function MatchResult({
   spectator = false,
   winnerRating,
   loserRating,
+  classic = false,
 }: Props) {
   const { t } = useT()
   const [codeCopied, setCodeCopied] = useState(false)
@@ -278,34 +281,40 @@ export default function MatchResult({
             <span className="mr-label">{t('mr.level')}</span>
             <span className="mr-b">{loserBand}</span>
           </div>
-          <div className="mr-row">
-            <span className="mr-a">
-              {aAnalyzing ? dots() : <>{fmtPr(winnerPr)} {wBetter && <Icon name="crown" size={14} />}</>}
-            </span>
-            <span className="mr-label">{t('mr.errorRate')}</span>
-            <span className="mr-b">
-              {bAnalyzing ? dots() : <>{fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}</>}
-            </span>
-          </div>
-          {/* Pul Oyunu PR + Küp PR HER MAÇTA gösterilir (tek oyun dahil) — kullanıcı direktifi.
-              Küp kararı yoksa Pul PR = Hata Oranı (App tarafı bunu aynı değere sabitler); Küp PR
-              ise "—" olur (hiç sayılan küp kararı yok -> uydurma 0.00 yazılmaz). */}
-          <div className="mr-row mr-sub">
-            <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCheckerPr ?? null)}</span>
-            <span className="mr-label">{t('mr.checkerPr')}</span>
-            <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCheckerPr ?? null)}</span>
-          </div>
-          <div className="mr-row mr-sub">
-            <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
-            <span className="mr-label">{t('mr.cubePr')}</span>
-            <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
-          </div>
-          {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
-              anlaşılmıyordu -> tam genişlik bilgi satırı. */}
-          {(aAnalyzing || bAnalyzing) && (
-            <div className="mr-pr-note" role="status">
-              <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
-            </div>
+          {/* KLASIK TAVLA: PR satırları (Hata Oranı / Pul Oyunu PR / Küp PR) + hesaplanıyor notu
+              GİZLİ (kullanıcı direktifi; yalnız klasikte). Seviye / Rating / Şans görünür kalır. */}
+          {!classic && (
+            <>
+              <div className="mr-row">
+                <span className="mr-a">
+                  {aAnalyzing ? dots() : <>{fmtPr(winnerPr)} {wBetter && <Icon name="crown" size={14} />}</>}
+                </span>
+                <span className="mr-label">{t('mr.errorRate')}</span>
+                <span className="mr-b">
+                  {bAnalyzing ? dots() : <>{fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}</>}
+                </span>
+              </div>
+              {/* Pul Oyunu PR + Küp PR HER MAÇTA gösterilir (tek oyun dahil) — kullanıcı direktifi.
+                  Küp kararı yoksa Pul PR = Hata Oranı (App tarafı bunu aynı değere sabitler); Küp PR
+                  ise "—" olur (hiç sayılan küp kararı yok -> uydurma 0.00 yazılmaz). */}
+              <div className="mr-row mr-sub">
+                <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCheckerPr ?? null)}</span>
+                <span className="mr-label">{t('mr.checkerPr')}</span>
+                <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCheckerPr ?? null)}</span>
+              </div>
+              <div className="mr-row mr-sub">
+                <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
+                <span className="mr-label">{t('mr.cubePr')}</span>
+                <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
+              </div>
+              {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
+                  anlaşılmıyordu -> tam genişlik bilgi satırı. */}
+              {(aAnalyzing || bAnalyzing) && (
+                <div className="mr-pr-note" role="status">
+                  <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
+                </div>
+              )}
+            </>
           )}
           <div className="mr-row">
             <span className="mr-a">
