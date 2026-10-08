@@ -10081,7 +10081,7 @@ export default function App() {
       />
     ),
           footer: <Footer columns={footerColsRendered} />,
-    sponsors,
+    // sponsors: SADECE ana sayfada (home dalinda ayrica gecilir); diger lobi sayfalarinda gosterme.
   }
   // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
   const lobbyTrailing = (
@@ -10299,6 +10299,7 @@ export default function App() {
     return (
       <LobbyLayout
         {...lobbyChrome}
+        sponsors={sponsors}
         mainClassName={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}
         trailing={
           <>
