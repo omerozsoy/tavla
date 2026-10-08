@@ -6,13 +6,15 @@ import { useToast } from './Toast'
 import { reviewMat, type MatReview as MatReviewResp } from '../api'
 import type { LogEntry } from './MatchReport'
 import MatReview, { computeSummary, type MatSummary } from './MatReview'
+import { parseMatScores } from '../analysis/matScores'
 
 type MatLuck = MatReviewResp['luck']
+type GameScore = { white: number; black: number }
 
 // Son analiz sonucu localStorage'da tutulur -> sayfa REFRESH'te kaybolmaz (kullanıcı isteği).
 // İnceleme kapatılınca (reset) temizlenir; yeni analiz üzerine yazar.
 const STORE_KEY = 'matReview:last'
-type Saved = { log: LogEntry[]; names: string[] | null; matchLength: number | null; summary: MatSummary | null; luck?: MatLuck }
+type Saved = { log: LogEntry[]; names: string[] | null; matchLength: number | null; summary: MatSummary | null; luck?: MatLuck; gameScores?: GameScore[] }
 const loadSaved = (): Saved | null => {
   try {
     const raw = localStorage.getItem(STORE_KEY)
@@ -42,6 +44,8 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
   const [matchLength, setMatchLength] = useState<number | null>(saved0?.matchLength ?? null)
   const [summary, setSummary] = useState<MatSummary | null>(saved0?.summary ?? null)
   const [luck, setLuck] = useState<MatLuck | undefined>(saved0?.luck)
+  // Oyun başı maç skorları (.mat başlığından): görüntüleyicide "o oyunda kaç kaç" gösterilir.
+  const [gameScores, setGameScores] = useState<GameScore[] | undefined>(saved0?.gameScores)
 
   function readFile(f: File) {
     if (f.size > 500_000) {
@@ -68,14 +72,16 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
       const r = await reviewMat(matText, 2)
       if (!r || !r.ok || !Array.isArray(r.log) || r.log.length === 0) throw new Error('failed')
       const sm = computeSummary(r.log, r.names ?? null, Date.now() - t0)
+      const gs = parseMatScores(matText)
       setNames(r.names ?? null)
       setMatchLength(r.matchLength ?? null)
       setSummary(sm)
       setLuck(r.luck)
+      setGameScores(gs)
       setReviewLog(r.log)
       // Refresh'te kaybolmasın diye kaydet (kota dolarsa sessizce atla — analiz yine çalışır).
       try {
-        localStorage.setItem(STORE_KEY, JSON.stringify({ log: r.log, names: r.names ?? null, matchLength: r.matchLength ?? null, summary: sm, luck: r.luck }))
+        localStorage.setItem(STORE_KEY, JSON.stringify({ log: r.log, names: r.names ?? null, matchLength: r.matchLength ?? null, summary: sm, luck: r.luck, gameScores: gs }))
       } catch {
         /* kota — persist yok */
       }
@@ -91,6 +97,7 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
     setReviewLog(null)
     setSummary(null)
     setLuck(undefined)
+    setGameScores(undefined)
     setNames(null)
     setMatchLength(null)
     setMatText('')
@@ -106,7 +113,7 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
   // Analiz sonrası: tam-ekran görüntüleyici + açılış özet popup'ı.
   if (reviewLog) {
     return (
-      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} luck={luck} currentName={currentName} onClose={reset} />
+      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} luck={luck} gameScores={gameScores} currentName={currentName} onClose={reset} />
     )
   }
 

@@ -80,6 +80,7 @@ export default function MatReview({
   matchLength,
   summary,
   luck,
+  gameScores,
   onClose,
 }: {
   log: LogEntry[]
@@ -88,6 +89,8 @@ export default function MatReview({
   summary?: MatSummary | null
   luck?: import('../api').MatReview['luck'] // gnubg şansı (p0=beyaz, p1=siyah); yoksa '—'
   currentName?: string
+  // Oyun başı maç skorları (.mat başlığından; index=oyun). Görüntüleyici o oyunun skorunu gösterir.
+  gameScores?: { white: number; black: number }[]
   onClose: () => void
 }) {
   const { t } = useT()
@@ -342,7 +345,7 @@ export default function MatReview({
             </div>
           </div>
           <div className="mrv-player mrv-player-top">
-            <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
+            <span className="mrv-score">{matchLength ? `${gameScores?.[cur?.game ?? 0]?.black ?? 0}/${matchLength}` : ''}</span>
             <span className={`mrv-pname ${cur?.player === 'black' ? 'turn' : ''}`}>
               {cur?.player === 'black' && <span className="mrv-turn">▶</span>}
               {nameB}
@@ -383,7 +386,7 @@ export default function MatReview({
           )}
 
           <div className="mrv-player mrv-player-bot">
-            <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
+            <span className="mrv-score">{matchLength ? `${gameScores?.[cur?.game ?? 0]?.white ?? 0}/${matchLength}` : ''}</span>
             <span className={`mrv-pname ${cur?.player === 'white' ? 'turn' : ''}`}>
               {cur?.player === 'white' && <span className="mrv-turn">▶</span>}
               {nameW}
