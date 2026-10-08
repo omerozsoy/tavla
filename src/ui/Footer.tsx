@@ -24,20 +24,12 @@ interface Props {
 const logoSrc = (img: string) => (/^(https?:|\/)/.test(img) ? img : '/uploads/' + img)
 
 // Sponsorlar karuseli — footer DEGIL, <main> (lobby-main) İÇİNDE, içeriğin en altında render edilir
-// Sponsorluk iletişim hedefi — TEK yer; placeholder slot + alt çağrı buradan okur.
-export const SPONSOR_CONTACT_URL = 'mailto:bilgi@tavlatv.com'
-
-// Logo satırı toplam slot sayısı. Dolu sponsor sayısı kadarı logolarla, kalanı "Bu alan sizin"
-// placeholder'ı ile dolar (yeni sponsor eklenince placeholder kendiliğinden azalır).
-const SPONSOR_SLOTS = 5
-
 // (LobbyLayout). Böylece sayfa içeriğiyle AYNI kolonda/ortalanmada olur (çözünürlük değişince de
-// hizalı kalır; footer slot'u sidebar grid'ine bağlı olduğu için kayıyordu). SABİT (dönmez/kaymaz);
-// 5 sütun: dolu sponsorlar + boş "sponsor olun" slotları + altta tek satır çağrı.
+// hizalı kalır; footer slot'u sidebar grid'ine bağlı olduğu için kayıyordu). SABİT (dönmez/kaymaz),
+// ORTALI: sponsor eklendikçe satır ortalı büyür, çok olursa alt satıra sarar.
 export function SponsorsStrip({ sponsors }: { sponsors: FooterSponsor[] }) {
   const { t } = useT()
   if (sponsors.length === 0) return null
-  const emptyCount = Math.max(0, SPONSOR_SLOTS - sponsors.length)
   return (
     <section className="site-sponsors" aria-label={t('foot.sponsors')}>
       <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
@@ -50,32 +42,15 @@ export function SponsorsStrip({ sponsors }: { sponsors: FooterSponsor[] }) {
             </>
           )
           return s.link ? (
-            <a key={'s' + i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer">
+            <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer">
               {inner}
             </a>
           ) : (
-            <div key={'s' + i} className="foot-sponsor">
+            <div key={i} className="foot-sponsor">
               {inner}
             </div>
           )
         })}
-        {Array.from({ length: emptyCount }).map((_, i) => (
-          <a key={'e' + i} className="foot-sponsor foot-sponsor-empty" href={SPONSOR_CONTACT_URL} aria-label={t('spon.aria')}>
-            <span className="foot-sponsor-dot">
-              <svg className="foot-sponsor-plus" width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </span>
-            <span className="foot-sponsor-empty-text">
-              <span className="fse-main">{t('spon.empty1')}</span>
-              <span className="fse-sub">{t('spon.empty2')}</span>
-            </span>
-          </a>
-        ))}
-      </div>
-      <div className="foot-sponsors-cta">
-        {t('spon.cta')}
-        <a className="foot-sponsors-cta-link" href={SPONSOR_CONTACT_URL}>{t('spon.ctaLink')}</a>
       </div>
     </section>
   )

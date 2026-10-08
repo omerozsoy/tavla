@@ -245,84 +245,10 @@ a.foot-partner:hover {
   max-width: 132px;
 }
 
-/* ---- Boş sponsor slotu ("Bu alan sizin" / Sponsor olun) ---- */
-.foot-sponsor-empty {
-  cursor: pointer;
-}
-.foot-sponsor-dot {
-  box-sizing: border-box;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  border: 1.5px dashed #bdb2a1;
-  background: #faf7f1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s ease;
-}
-.foot-sponsor-plus {
-  color: #8a7e6c;
-  transition: color 0.15s ease;
-}
-.foot-sponsor-empty-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-.fse-main {
-  font-size: 12px;
-  color: #3a3733;
-}
-.fse-sub {
-  font-size: 11px;
-  font-weight: 500;
-  color: #1e5e3b;
-}
-.foot-sponsor-empty:hover .foot-sponsor-dot {
-  border-color: #1e5e3b;
-}
-.foot-sponsor-empty:hover .foot-sponsor-plus {
-  color: #1e5e3b;
-}
-.foot-sponsor-empty:focus-visible {
-  outline: none;
-}
-.foot-sponsor-empty:focus-visible .foot-sponsor-dot {
-  outline: 2px solid #1e5e3b;
-  outline-offset: 3px;
-}
-
-/* ---- Logo satırı altındaki tek satır çağrı ---- */
-.foot-sponsors-cta {
-  width: 560px;
-  max-width: 100%;
-  margin: 22px auto 0; /* logo satırıyla arasında 22px */
-  padding-top: 16px;
-  border-top: 1px solid #efe9de;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 300;
-  color: #6f685e;
-}
-.foot-sponsors-cta-link {
-  font-weight: 500;
-  color: #1e5e3b;
-  text-decoration: underline;
-  transition: color 0.15s ease;
-}
-.foot-sponsors-cta-link:hover {
-  color: #123d26;
-}
-
-/* Mobil (<640px): satır sarar, gap daralır, çağrı tam genişlik */
+/* Mobil (<640px): satır sarar, gap daralır */
 @media (max-width: 639px) {
   .foot-sponsors-track {
     gap: 24px;
-  }
-  .foot-sponsors-cta {
-    width: 100%;
   }
 }
 
