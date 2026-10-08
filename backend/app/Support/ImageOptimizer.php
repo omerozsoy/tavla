@@ -78,6 +78,36 @@ class ImageOptimizer
         return $this->store($file, $disk, $dir, 1920, $quality);
     }
 
+    /**
+     * MEVCUT saklı logoyu (disk/relPath) tekrar pad'ler -> yeni kare WebP yazar, YENİ relatif yolu
+     * döner (çağıran model->logo'yu günceller). Başarısızsa null (dokunma). Komut (sponsors:pad)
+     * tüm eski logoları normalize etmek için kullanır.
+     */
+    public function padStored(string $disk, string $relPath, int $size = 400, float $innerPct = 0.9, int $quality = 90): ?string
+    {
+        try {
+            if (! Storage::disk($disk)->exists($relPath)) {
+                return null;
+            }
+            $tmp = tempnam(sys_get_temp_dir(), 'pad');
+            file_put_contents($tmp, Storage::disk($disk)->get($relPath));
+            $bytes = $this->padToSquareWebp($tmp, $size, $innerPct, $quality);
+            @unlink($tmp);
+            if ($bytes === null) {
+                return null;
+            }
+            $dir = trim(str_replace('\\', '/', dirname($relPath)), '/');
+            $name = ($dir !== '' && $dir !== '.' ? $dir.'/' : '').Str::uuid()->toString().'.webp';
+            Storage::disk($disk)->put($name, $bytes, 'public');
+
+            return $name;
+        } catch (\Throwable $e) {
+            Log::warning('ImageOptimizer padStored başarısız', ['path' => $relPath, 'err' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
     /** Kaynağı $size×$size şeffaf tuvale ortalayıp contain ile yerleştirir; WebP byte döner. */
     private function padToSquareWebp(string $path, int $size, float $innerPct, int $quality): ?string
     {
@@ -90,10 +120,14 @@ class ImageOptimizer
         }
         [$img, $w, $h] = $loaded;
 
+        // Logo etrafındaki "boş" kenarı (şeffaf ya da köşe-arka-plan rengi) KIRP -> küçücük bir
+        // amblem büyük tuvale yüklenmişse (Dimes gibi) gerçek içerik tespit edilip tam ölçeklenir.
+        [$sx, $sy, $sw, $sh] = $this->contentBounds($img, $w, $h) ?? [0, 0, $w, $h];
+
         $inner = max(1, (int) floor($size * $innerPct));
-        $scale = min($inner / $w, $inner / $h); // contain; küçük logolar büyütülerek normalize edilir
-        $nw = max(1, (int) round($w * $scale));
-        $nh = max(1, (int) round($h * $scale));
+        $scale = min($inner / $sw, $inner / $sh); // contain; küçük logolar büyütülerek normalize edilir
+        $nw = max(1, (int) round($sw * $scale));
+        $nh = max(1, (int) round($sh * $scale));
 
         $canvas = imagecreatetruecolor($size, $size);
         imagealphablending($canvas, false);
@@ -101,7 +135,7 @@ class ImageOptimizer
         $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
         imagefilledrectangle($canvas, 0, 0, $size, $size, $transparent);
         imagealphablending($canvas, true); // logoyu şeffaf zemine harmanla
-        imagecopyresampled($canvas, $img, (int) round(($size - $nw) / 2), (int) round(($size - $nh) / 2), 0, 0, $nw, $nh, $w, $h);
+        imagecopyresampled($canvas, $img, (int) round(($size - $nw) / 2), (int) round(($size - $nh) / 2), $sx, $sy, $nw, $nh, $sw, $sh);
         imagealphablending($canvas, false);
         imagesavealpha($canvas, true);
 
@@ -112,6 +146,60 @@ class ImageOptimizer
         imagedestroy($canvas);
 
         return ($ok && $bytes !== '' && $bytes !== false) ? $bytes : null;
+    }
+
+    /**
+     * Logo içeriğinin sınır kutusu [x, y, genişlik, yükseklik]: şeffaf VEYA köşe-arka-plan rengine
+     * eşit pikseller "boş" sayılır, gerisi içerik. İçerik yoksa null (kırpma yapma). Logolar küçük
+     * olduğu için tam tarama ucuz.
+     */
+    private function contentBounds(\GdImage $img, int $w, int $h): ?array
+    {
+        $bg = imagecolorat($img, 0, 0);
+        $bgA = ($bg >> 24) & 0x7F;
+        $bgR = ($bg >> 16) & 0xFF;
+        $bgG = ($bg >> 8) & 0xFF;
+        $bgB = $bg & 0xFF;
+        $bgTransparent = $bgA >= 115;
+        $tol = 20; // köşe rengine bu toleransta yakın = arka plan
+
+        $x0 = $w;
+        $y0 = $h;
+        $x1 = -1;
+        $y1 = -1;
+        for ($y = 0; $y < $h; $y++) {
+            for ($x = 0; $x < $w; $x++) {
+                $c = imagecolorat($img, $x, $y);
+                if ((($c >> 24) & 0x7F) >= 115) {
+                    continue; // şeffaf -> boş
+                }
+                if (! $bgTransparent) {
+                    $r = ($c >> 16) & 0xFF;
+                    $g = ($c >> 8) & 0xFF;
+                    $b = $c & 0xFF;
+                    if (abs($r - $bgR) <= $tol && abs($g - $bgG) <= $tol && abs($b - $bgB) <= $tol) {
+                        continue; // köşe arka plan rengi -> boş
+                    }
+                }
+                if ($x < $x0) {
+                    $x0 = $x;
+                }
+                if ($y < $y0) {
+                    $y0 = $y;
+                }
+                if ($x > $x1) {
+                    $x1 = $x;
+                }
+                if ($y > $y1) {
+                    $y1 = $y;
+                }
+            }
+        }
+        if ($x1 < 0) {
+            return null; // içerik bulunamadı
+        }
+
+        return [$x0, $y0, $x1 - $x0 + 1, $y1 - $y0 + 1];
     }
 
     /** Dosyayı GD kaynağına çevirir: [\GdImage, genişlik, yükseklik] ya da null. */
