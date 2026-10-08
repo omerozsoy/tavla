@@ -33,7 +33,9 @@ export default function Footer({ columns, sponsors = [] }: Props) {
   // tekrar gereksiz (satır sığar), statik ortalı gösterilir.
   const marquee = sponsors.length > 2
   return (
-    <>
+    // Tek grid-item sarmalayici: sponsor karti + footer normal blok akisinda ust uste BINMEDEN
+    // dizilir (ikisi ayri grid child olunca auto-placement cakisip footer karti orup biniyordu).
+    <div className="footer-region">
       {sponsors.length > 0 && (
         <section className="site-sponsors" aria-label={t('foot.sponsors')}>
           <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
@@ -90,6 +92,6 @@ export default function Footer({ columns, sponsors = [] }: Props) {
         </div>
         <div className="foot-bottom">© {year} TavlaTV</div>
       </footer>
-    </>
+    </div>
   )
 }
