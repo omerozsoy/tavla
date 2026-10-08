@@ -623,11 +623,16 @@ export function SeekersPanel({
                         {s.bet_pct > 0 ? (
                           <>
                             <span className="seek-chip seek-chip-money">%{s.bet_pct}</span>
-                            {myCoins != null && (
-                              <span className="seek-chip seek-chip-risk" title={t('seekers.riskHint')}>
-                                {t('seekers.risk')} <Coins amount={Math.floor((myCoins * s.bet_pct) / 100)} size={12} />
-                              </span>
-                            )}
+                            {myCoins != null &&
+                              (myCoins < 1 ? (
+                                <span className="seek-chip seek-chip-low" title={t('seekers.riskLowHint')}>
+                                  {t('seekers.riskLow')}
+                                </span>
+                              ) : (
+                                <span className="seek-chip seek-chip-risk" title={t('seekers.riskHint')}>
+                                  {t('seekers.risk')} <Coins amount={Math.floor((myCoins * s.bet_pct) / 100)} size={12} />
+                                </span>
+                              ))}
                           </>
                         ) : maxStake > 0 ? (
                           <span className="seek-chip seek-chip-money"><Coins amount={maxStake} size={12} /></span>

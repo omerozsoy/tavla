@@ -11915,6 +11915,12 @@ button.acct-row-logout:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--coin-gold, #c98a17) 40%, var(--border));
   font-weight: 700;
 }
+/* Bakiyesi olmayan kullanıcı: %-bahis maçına giremez -> "Yetersiz bakiye" uyarısı. */
+.seek-chip-low {
+  color: #dc2626;
+  border-color: color-mix(in srgb, #dc2626 35%, var(--border));
+  font-weight: 700;
+}
 .seek-chip-free {
   color: #16a34a;
   border-color: color-mix(in srgb, #16a34a 35%, var(--border));
