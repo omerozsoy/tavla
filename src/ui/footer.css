@@ -198,58 +198,132 @@ a.foot-partner:hover {
   width: 100%;
   max-width: var(--lobby-w, 1120px);
   margin: 32px auto 0; /* alt boşluk footer'ın kendi margin-top'undan gelir (çift boşluk olmasın) */
-  color: rgba(0, 0, 0, 0.78);
+  color: #3a3733;
   background: #fff;
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  border: 1px solid #e6dfd2;
   border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 22px clamp(16px, 4vw, 40px) 20px;
-  overflow: hidden; /* marquee taşmasını kırp */
+  box-shadow: 0 2px 10px rgba(60, 45, 20, 0.05);
+  padding: 26px clamp(16px, 4vw, 40px) 28px;
 }
 .foot-sponsors-title {
   text-align: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.4);
-  margin-bottom: 16px;
+  color: #8c867d;
+  margin-bottom: 20px;
 }
 .foot-sponsors-track {
   display: flex;
   align-items: flex-start;
   justify-content: center; /* SABİT: ortalı, dönmez/kaymaz; çok olursa satıra sarar */
   flex-wrap: wrap;
-  gap: 20px 64px;
+  gap: 44px;
 }
 .foot-sponsor {
   display: inline-flex;
+  width: 132px;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex: 0 0 auto;
   text-decoration: none;
-  color: rgba(0, 0, 0, 0.7);
-  transition: transform 0.16s ease, filter 0.16s ease;
+  color: #3a3733;
 }
-a.foot-sponsor:hover {
-  transform: translateY(-2px);
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18));
-}
-/* EŞİT GÖRÜNÜM: logolar yüklemede sabit KARE tuvale ortalanır (backend padOnUpload) -> hepsi
-   aynı kare tile'da eşit boyutta. Burada eşit kare slot (96×96) + object-fit:contain. */
 .foot-sponsor-logo {
   display: block;
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
   object-fit: contain;
   object-position: center;
 }
 .foot-sponsor-name {
-  font-size: 0.74rem;
-  letter-spacing: 0.02em;
+  font-size: 12px;
   text-align: center;
-  max-width: 120px;
+  color: #3a3733;
+  max-width: 132px;
+}
+
+/* ---- Boş sponsor slotu ("Bu alan sizin" / Sponsor olun) ---- */
+.foot-sponsor-empty {
+  cursor: pointer;
+}
+.foot-sponsor-dot {
+  box-sizing: border-box;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 1.5px dashed #bdb2a1;
+  background: #faf7f1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease;
+}
+.foot-sponsor-plus {
+  color: #8a7e6c;
+  transition: color 0.15s ease;
+}
+.foot-sponsor-empty-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.fse-main {
+  font-size: 12px;
+  color: #3a3733;
+}
+.fse-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1e5e3b;
+}
+.foot-sponsor-empty:hover .foot-sponsor-dot {
+  border-color: #1e5e3b;
+}
+.foot-sponsor-empty:hover .foot-sponsor-plus {
+  color: #1e5e3b;
+}
+.foot-sponsor-empty:focus-visible {
+  outline: none;
+}
+.foot-sponsor-empty:focus-visible .foot-sponsor-dot {
+  outline: 2px solid #1e5e3b;
+  outline-offset: 3px;
+}
+
+/* ---- Logo satırı altındaki tek satır çağrı ---- */
+.foot-sponsors-cta {
+  width: 560px;
+  max-width: 100%;
+  margin: 22px auto 0; /* logo satırıyla arasında 22px */
+  padding-top: 16px;
+  border-top: 1px solid #efe9de;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 300;
+  color: #6f685e;
+}
+.foot-sponsors-cta-link {
+  font-weight: 500;
+  color: #1e5e3b;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+.foot-sponsors-cta-link:hover {
+  color: #123d26;
+}
+
+/* Mobil (<640px): satır sarar, gap daralır, çağrı tam genişlik */
+@media (max-width: 639px) {
+  .foot-sponsors-track {
+    gap: 24px;
+  }
+  .foot-sponsors-cta {
+    width: 100%;
+  }
 }
 
 /* ---- Alt bar (telif) ---- */
