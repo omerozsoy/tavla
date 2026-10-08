@@ -197,7 +197,7 @@ a.foot-partner:hover {
   /* Sayfa içeriğiyle aynı genişlik/ortalama (main kolonunda max-width + auto margin). */
   width: 100%;
   max-width: var(--lobby-w, 1120px);
-  margin: 32px auto 40px;
+  margin: 32px auto 0; /* alt boşluk footer'ın kendi margin-top'undan gelir (çift boşluk olmasın) */
   color: rgba(0, 0, 0, 0.78);
   background: #fff;
   border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
