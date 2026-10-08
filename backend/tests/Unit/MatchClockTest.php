@@ -124,8 +124,22 @@ class MatchClockTest extends TestCase
         $this->assertEqualsWithDelta(0, $v['delay'], 0.001);
     }
 
+    // ---- 4c) BANKA 0 olan PASIF (sirasi OLMAYAN) oyuncu da ANINDA kaybeder (kok gap):
+    //          turunu asip bankasi 0'a kirpilan oyuncu, sira rakibe gectikten sonra "canli"
+    //          kalmasin -> her iki slot kontrol edilir (2026-10-08) ----
+    public function test_zero_bank_loses_even_when_not_active(): void
+    {
+        $c = $this->started('speed', 1, 'black'); // AKTIF p2 (siyah); p1 sirasi degil
+        $c = MatchClock::seen($c, 'p1', self::T0);
+        $c = MatchClock::seen($c, 'p2', self::T0);
+        $c['p1_bank'] = 0.0; // beyaz (p1) rezervi gecen turunda asildi -> 0'a kirpildi
+        $end = MatchClock::tick($c, self::T0 + 1)['end'];
+        $this->assertSame('TIMEOUT', $end['reason']);
+        $this->assertSame('p2', $end['winner']); // beyaz(p1) rezervi 0 -> siyah(p2) kazanir
+    }
+
     // NOT: "bank>0 -> delay+banka grace AYNEN korunur" regresyonu test 4 (speed 1: t0+31 yok,
-    // t0+32 var -> delay 8 + banka 24 dahil) ile zaten kanitli; bank=0 dali yalniz 4b'yi etkiler.
+    // t0+32 var -> delay 8 + banka 24 dahil) ile zaten kanitli; bank=0 dali yalniz 4b/4c'yi etkiler.
 
     // ---- 5) AFK: uzun ana sure (casual 5) -> ILK HAMLEDEN SONRA 60sn'de AFK_TIMEOUT ----
     public function test_afk_timeout_when_idle(): void

@@ -290,16 +290,29 @@ class MatchClock
             return $clock;
         }
 
+        // BANKA (rezerv) 0 -> O OYUNCU ANINDA KAYBEDER, siranin kimde oldugundan BAGIMSIZ
+        // (kullanici karari 2026-10-08: "bank 0 oldugu an oyun bitsin, 0 olan kaybetsin";
+        // "suresi biten oyuncu oynamaya devam ediyor" sikayet dalgasi).
+        // KOK: oyuncu bir turda delay+banka suresini ASARSA ama o an kimse tick ETMEZSE (rakip
+        // poll etmiyor / aktif kendi hamlesini once gonderiyor), onUpdate'teki sira-devri dususu
+        // bankayi max(0,...) ile 0'a KIRPAR ve sira rakibe gecer; eski maybeEnd yalniz AKTIFI
+        // kontrol ettiginden 0-bankali (artik pasif) oyuncu forfeit EDILMEZ -> rakip oynarken
+        // "canli" kalir, bear-off hizli turlarla sonsuza oynar. Cozum: her iki slotu kontrol et.
+        // Guvenli: bank init'te daima >0, yalniz gercek oyunla erir -> 0 olan mutlaka oynamis/
+        // gorunmus demektir (haksiz no-contest/never-seen riski yok). Esitlikte (ikisi de 0)
+        // AKTIF once kontrol edilir -> saat kimdeyse o kaybeder.
+        foreach ([$active, self::other($active)] as $slot) {
+            if ((float) ($clock[$slot.'_bank'] ?? 0) <= 0.0) {
+                $clock['end'] = ['reason' => 'TIMEOUT', 'winner' => self::other($slot)];
+
+                return $clock;
+            }
+        }
+
         $bank = (float) ($clock[$active.'_bank'] ?? 0);
         $start = (float) ($clock['started_at'] ?? $now);
         $delay = (float) ($clock['delay'] ?? 0);
-        // BANKA 0 -> ANINDA KAYIP (kullanici karari 2026-10-08, "suresi biten oyuncu oynamaya
-        // devam ediyor" sikayet dalgasi). Ana sure (rezerv) tukendiyse artik TUR BASI free delay
-        // YOK: timeoutAt=start -> aktif oyuncu bu turda derhal timeout. Eskiden timeoutAt=
-        // start+delay+bank idi; bank=0 olan oyuncu her yeni turda delay'i sifirlayip (ozellikle
-        // bear-off "Hamle Yok" hizli turlari) sonsuza dek oynayabiliyordu. Bank>0 iken delay grace
-        // AYNEN korunur (normal oyun akisi + mevcut testler degismez); yalniz rezerv 0'da delay dusser.
-        $timeoutAt = $bank <= 0.0 ? $start : $start + $delay + $bank; // ana sure bitisi
+        $timeoutAt = $start + $delay + $bank; // ana sure bitisi (bank>0 iken; bank=0 yukarida bitti)
         $afkAt = $start + self::AFK_TOTAL;     // hareketsizlik bitisi
         // AFK, macin ILK gercek hamlesinden ONCE SAYILMAZ (matchmaking sonrasi yukleme/acilis
         // payi). O ana kadar sadece TIMEOUT (banka) + presence (terk) yedek olarak calisir
