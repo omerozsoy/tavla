@@ -189,22 +189,23 @@ a.foot-partner:hover {
   border-radius: 3px;
 }
 
-/* ---- Sponsorlar karuseli (footer'ın ÜSTÜNDE ayrı bant) ---- */
+/* ---- Sponsorlar karuseli (footer'ın ÜSTÜNDE, beyaz içerik-genişliğinde kart) ---- */
 .site-sponsors {
-  /* Kendi paleti (footer dışında; .site-footer değişkenlerine erişemez) — footer'la
-     aynı krem metin + ince koyu ahsap bant, üstte sayfa bg ile ayrışsın. */
-  --foot-gold: #e6b422;
-  --foot-amber: #d98b3a;
-  --foot-cream-soft: rgba(244, 239, 230, 0.66);
-  --foot-cream-faint: rgba(244, 239, 230, 0.44);
   position: relative;
-  margin-top: 40px; /* sayfa içeriğinden ayrı (footer'ın eski üst boşluğu buraya taşındı) */
-  color: rgba(244, 239, 230, 0.66);
-  background: linear-gradient(180deg, #2b2420 0%, #221d19 100%);
-  padding: 22px clamp(16px, 4vw, 56px) 20px;
+  box-sizing: border-box;
+  /* Ana sayfa içeriğiyle aynı genişlik, ortalanmış; üstte içerikten, altta footer'dan boşluk. */
+  width: 100%;
+  max-width: var(--lobby-w, 1120px);
+  margin: 40px auto;
+  color: rgba(0, 0, 0, 0.78);
+  background: #fff;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 22px clamp(16px, 4vw, 40px) 20px;
   overflow: hidden; /* marquee taşmasını kırp */
 }
-/* Sponsor bandı varken footer ona BİTİŞİK (araya boşluk girmesin). */
+/* Bant ile footer arasındaki boşluk: bandın alt margini (footer'ın üst margini sıfırlanır). */
 .site-sponsors + .site-footer {
   margin-top: 0;
 }
@@ -214,7 +215,7 @@ a.foot-partner:hover {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--foot-cream-faint);
+  color: rgba(0, 0, 0, 0.4);
   margin-bottom: 16px;
 }
 .foot-sponsors-track {
@@ -245,12 +246,12 @@ a.foot-partner:hover {
   gap: 8px;
   flex: 0 0 auto;
   text-decoration: none;
-  color: var(--foot-cream-soft);
+  color: rgba(0, 0, 0, 0.7);
   transition: transform 0.16s ease, filter 0.16s ease;
 }
 a.foot-sponsor:hover {
   transform: translateY(-2px);
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18));
 }
 .foot-sponsor-logo {
   display: block;
