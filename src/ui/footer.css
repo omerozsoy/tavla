@@ -223,7 +223,7 @@ a.foot-partner:hover {
   align-items: flex-start;
   justify-content: center; /* az sayıda sponsor ORTALI (marquee yoksa) */
   flex-wrap: wrap;
-  gap: 20px 36px;
+  gap: 20px 64px;
 }
 /* 3+ sponsor: kesintisiz yatay akış (liste iki kez döşenir, -50% kaydırılır). */
 .foot-sponsors-track.marquee {
@@ -255,9 +255,9 @@ a.foot-sponsor:hover {
 }
 .foot-sponsor-logo {
   display: block;
-  height: 46px;
+  height: 56px;
   width: auto;
-  max-width: 130px;
+  max-width: 150px;
   object-fit: contain;
 }
 .foot-sponsor-name {
