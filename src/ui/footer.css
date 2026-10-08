@@ -250,18 +250,21 @@ a.foot-sponsor:hover {
   transform: translateY(-2px);
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18));
 }
+/* EŞİT GÖRÜNÜM: her logo AYNI sabit kutuya (160×64) object-fit:contain ile sığar.
+   Böylece geniş yazı-logolar da kare amblemler de aynı alanı kaplar; biri büyük biri
+   küçük görünmez (en-boy oranları korunur, kutuda ortalanır). */
 .foot-sponsor-logo {
   display: block;
+  width: 160px;
   height: 64px;
-  width: auto;
-  max-width: 170px;
   object-fit: contain;
+  object-position: center;
 }
 .foot-sponsor-name {
   font-size: 0.74rem;
   letter-spacing: 0.02em;
   text-align: center;
-  max-width: 130px;
+  max-width: 160px;
 }
 @media (prefers-reduced-motion: reduce) {
   .foot-sponsors-track.marquee { animation: none; }
