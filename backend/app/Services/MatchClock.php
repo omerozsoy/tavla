@@ -293,7 +293,13 @@ class MatchClock
         $bank = (float) ($clock[$active.'_bank'] ?? 0);
         $start = (float) ($clock['started_at'] ?? $now);
         $delay = (float) ($clock['delay'] ?? 0);
-        $timeoutAt = $start + $delay + $bank; // ana sure bitisi
+        // BANKA 0 -> ANINDA KAYIP (kullanici karari 2026-10-08, "suresi biten oyuncu oynamaya
+        // devam ediyor" sikayet dalgasi). Ana sure (rezerv) tukendiyse artik TUR BASI free delay
+        // YOK: timeoutAt=start -> aktif oyuncu bu turda derhal timeout. Eskiden timeoutAt=
+        // start+delay+bank idi; bank=0 olan oyuncu her yeni turda delay'i sifirlayip (ozellikle
+        // bear-off "Hamle Yok" hizli turlari) sonsuza dek oynayabiliyordu. Bank>0 iken delay grace
+        // AYNEN korunur (normal oyun akisi + mevcut testler degismez); yalniz rezerv 0'da delay dusser.
+        $timeoutAt = $bank <= 0.0 ? $start : $start + $delay + $bank; // ana sure bitisi
         $afkAt = $start + self::AFK_TOTAL;     // hareketsizlik bitisi
         // AFK, macin ILK gercek hamlesinden ONCE SAYILMAZ (matchmaking sonrasi yukleme/acilis
         // payi). O ana kadar sadece TIMEOUT (banka) + presence (terk) yedek olarak calisir
@@ -384,6 +390,12 @@ class MatchClock
                 $p2 = max(0.0, $p2 - $used);
             }
             $delayRem = max(0.0, (float) ($clock['delay'] ?? 0) - $elapsed);
+            // BANKA 0 -> delay grace yok (bkz. maybeEnd): UI de free delay GOSTERMESIN (yaniltmasin,
+            // kayip zaten bu turda aninda ilan edilir). Aktif oyuncunun STORED rezervi 0 ise delay=0.
+            $activeBankStored = (float) ($clock[$active.'_bank'] ?? 0);
+            if ($activeBankStored <= 0.0) {
+                $delayRem = 0.0;
+            }
             // AFK geri sayimi yalniz ILK gercek hamleden sonra gorunur (acilis payi).
             $afkRem = ! empty($clock['moved']) ? max(0.0, self::AFK_TOTAL - $elapsed) : null;
         }

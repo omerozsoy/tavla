@@ -108,6 +108,25 @@ class MatchClockTest extends TestCase
         $this->assertSame('p2', $end['winner']); // beyaz(p1) suresi bitti -> siyah(p2) kazandi
     }
 
+    // ---- 4b) BANKA 0 -> ANINDA KAYIP: rezerv tukenmis oyuncu artik tur basi delay grace ALMAZ
+    //          (2026-10-08 kullanici karari; "suresi biten oyuncu oynamaya devam ediyor" fix) ----
+    public function test_bank_zero_is_instant_timeout_no_delay_grace(): void
+    {
+        $c = $this->started('speed', 1);          // beyaz sirasi, started_at=T0, delay 8
+        $c = MatchClock::seen($c, 'p1', self::T0); // p1 present (yoksa no-contest)
+        $c['p1_bank'] = 0.0;                        // rezerv kademeli tukendi
+        // Eskiden t0+8'e (delay) kadar yasardi; artik turun hemen basinda timeout.
+        $end = MatchClock::tick($c, self::T0 + 0.5)['end'];
+        $this->assertSame('TIMEOUT', $end['reason']);
+        $this->assertSame('p2', $end['winner']);   // beyaz rezervi 0 -> siyah kazandi
+        // UI: yaniltici free delay GOSTERILMEZ (bank 0 iken delay 0).
+        $v = MatchClock::clientView($c, self::T0 + 0.5);
+        $this->assertEqualsWithDelta(0, $v['delay'], 0.001);
+    }
+
+    // NOT: "bank>0 -> delay+banka grace AYNEN korunur" regresyonu test 4 (speed 1: t0+31 yok,
+    // t0+32 var -> delay 8 + banka 24 dahil) ile zaten kanitli; bank=0 dali yalniz 4b'yi etkiler.
+
     // ---- 5) AFK: uzun ana sure (casual 5) -> ILK HAMLEDEN SONRA 60sn'de AFK_TIMEOUT ----
     public function test_afk_timeout_when_idle(): void
     {
