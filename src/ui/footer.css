@@ -255,8 +255,10 @@ a.foot-sponsor:hover {
    küçük görünmez (en-boy oranları korunur, kutuda ortalanır). */
 .foot-sponsor-logo {
   display: block;
-  width: 160px;
-  height: 64px;
+  /* Kutu DAHA UZUN (84px): yuvarlak/kare amblemler yükseklikle sınırlı olduğundan büyür;
+     geniş yazı-logolar genişlikle (180px) sınırlı kaldığından aynı kalır -> görsel denge. */
+  width: 180px;
+  height: 84px;
   object-fit: contain;
   object-position: center;
 }
@@ -264,7 +266,7 @@ a.foot-sponsor:hover {
   font-size: 0.74rem;
   letter-spacing: 0.02em;
   text-align: center;
-  max-width: 160px;
+  max-width: 180px;
 }
 @media (prefers-reduced-motion: reduce) {
   .foot-sponsors-track.marquee { animation: none; }
