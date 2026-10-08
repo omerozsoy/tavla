@@ -10373,7 +10373,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Footer: grid'in en altinda, HER IKI kolonu (menu + main) kapsar -> TAM GENISLIK.
    (Grid child oldugu icin varsayilan tek kolona sigardi; 1/-1 ile bara kadar uzar.) */
-.app.lobby > .site-footer {
+.app.lobby > .site-footer,
+.app.lobby > .site-sponsors {
   grid-column: 1 / -1;
 }
 /* Desktop yan menu: STICKY DEGIL -> sayfayla birlikte kayar (kullanici tercihi).

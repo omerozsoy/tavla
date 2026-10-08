@@ -198,11 +198,15 @@ a.foot-partner:hover {
   --foot-cream-soft: rgba(244, 239, 230, 0.66);
   --foot-cream-faint: rgba(244, 239, 230, 0.44);
   position: relative;
+  margin-top: 40px; /* sayfa içeriğinden ayrı (footer'ın eski üst boşluğu buraya taşındı) */
   color: rgba(244, 239, 230, 0.66);
-  background: linear-gradient(180deg, #221d19 0%, #191512 100%);
-  border-top: 1px solid color-mix(in srgb, #7c2533 40%, rgba(255, 255, 255, 0.05));
+  background: linear-gradient(180deg, #2b2420 0%, #221d19 100%);
   padding: 22px clamp(16px, 4vw, 56px) 20px;
   overflow: hidden; /* marquee taşmasını kırp */
+}
+/* Sponsor bandı varken footer ona BİTİŞİK (araya boşluk girmesin). */
+.site-sponsors + .site-footer {
+  margin-top: 0;
 }
 .foot-sponsors-title {
   text-align: center;
