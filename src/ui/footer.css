@@ -189,12 +189,19 @@ a.foot-partner:hover {
   border-radius: 3px;
 }
 
-/* ---- Sponsorlar karuseli (footer alt şeridi) ---- */
-.foot-sponsors {
+/* ---- Sponsorlar karuseli (footer'ın ÜSTÜNDE ayrı bant) ---- */
+.site-sponsors {
+  /* Kendi paleti (footer dışında; .site-footer değişkenlerine erişemez) — footer'la
+     aynı krem metin + ince koyu ahsap bant, üstte sayfa bg ile ayrışsın. */
+  --foot-gold: #e6b422;
+  --foot-amber: #d98b3a;
+  --foot-cream-soft: rgba(244, 239, 230, 0.66);
+  --foot-cream-faint: rgba(244, 239, 230, 0.44);
   position: relative;
-  z-index: 1;
-  border-top: 1px solid color-mix(in srgb, var(--foot-bordo) 40%, rgba(255, 255, 255, 0.05));
-  padding: 20px clamp(16px, 4vw, 56px) 8px;
+  color: rgba(244, 239, 230, 0.66);
+  background: linear-gradient(180deg, #221d19 0%, #191512 100%);
+  border-top: 1px solid color-mix(in srgb, #7c2533 40%, rgba(255, 255, 255, 0.05));
+  padding: 22px clamp(16px, 4vw, 56px) 20px;
   overflow: hidden; /* marquee taşmasını kırp */
 }
 .foot-sponsors-title {
@@ -220,7 +227,7 @@ a.foot-partner:hover {
   width: max-content;
   animation: foot-sponsor-scroll 40s linear infinite;
 }
-.foot-sponsors:hover .foot-sponsors-track.marquee {
+.site-sponsors:hover .foot-sponsors-track.marquee {
   animation-play-state: paused;
 }
 @keyframes foot-sponsor-scroll {

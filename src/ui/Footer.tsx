@@ -33,8 +33,33 @@ export default function Footer({ columns, sponsors = [] }: Props) {
   // tekrar gereksiz (satır sığar), statik ortalı gösterilir.
   const marquee = sponsors.length > 2
   return (
-    <footer className="site-footer">
-      <div className="foot-inner">
+    <>
+      {sponsors.length > 0 && (
+        <section className="site-sponsors" aria-label={t('foot.sponsors')}>
+          <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
+          <div className={'foot-sponsors-track' + (marquee ? ' marquee' : '')}>
+            {(marquee ? [...sponsors, ...sponsors] : sponsors).map((s, i) => {
+              const inner = (
+                <>
+                  <img className="foot-sponsor-logo" src={logoSrc(s.logo)} alt={s.name} loading="lazy" />
+                  <span className="foot-sponsor-name">{s.name}</span>
+                </>
+              )
+              return s.link ? (
+                <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer" aria-hidden={i >= sponsors.length}>
+                  {inner}
+                </a>
+              ) : (
+                <div key={i} className="foot-sponsor" aria-hidden={i >= sponsors.length}>
+                  {inner}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+      <footer className="site-footer">
+        <div className="foot-inner">
         <div className="foot-brand">
           {/* Logo + slogan tek "kilit"te: kilit logo genisligine buzulur. Slogan
               SVG <text> textLength=100% ile TEK SATIR ve TAM logo genisliginde yaslanir. */}
@@ -62,32 +87,9 @@ export default function Footer({ columns, sponsors = [] }: Props) {
               </div>
             ))}
         </nav>
-      </div>
-      {sponsors.length > 0 && (
-        <div className="foot-sponsors" aria-label={t('foot.sponsors')}>
-          <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
-          <div className={'foot-sponsors-track' + (marquee ? ' marquee' : '')}>
-            {(marquee ? [...sponsors, ...sponsors] : sponsors).map((s, i) => {
-              const inner = (
-                <>
-                  <img className="foot-sponsor-logo" src={logoSrc(s.logo)} alt={s.name} loading="lazy" />
-                  <span className="foot-sponsor-name">{s.name}</span>
-                </>
-              )
-              return s.link ? (
-                <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer" aria-hidden={i >= sponsors.length}>
-                  {inner}
-                </a>
-              ) : (
-                <div key={i} className="foot-sponsor" aria-hidden={i >= sponsors.length}>
-                  {inner}
-                </div>
-              )
-            })}
-          </div>
         </div>
-      )}
-      <div className="foot-bottom">© {year} TavlaTV</div>
-    </footer>
+        <div className="foot-bottom">© {year} TavlaTV</div>
+      </footer>
+    </>
   )
 }
