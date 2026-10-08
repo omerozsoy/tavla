@@ -25,16 +25,16 @@ const logoSrc = (img: string) => (/^(https?:|\/)/.test(img) ? img : '/uploads/' 
 
 // Sponsorlar karuseli — footer DEGIL, <main> (lobby-main) İÇİNDE, içeriğin en altında render edilir
 // (LobbyLayout). Böylece sayfa içeriğiyle AYNI kolonda/ortalanmada olur (çözünürlük değişince de
-// hizalı kalır; footer slot'u sidebar grid'ine bağlı olduğu için kayıyordu). 3+ sponsorda marquee.
+// hizalı kalır; footer slot'u sidebar grid'ine bağlı olduğu için kayıyordu). SABİT (dönmez/kaymaz);
+// çok sayıda olursa satıra sarar, ortalı durur.
 export function SponsorsStrip({ sponsors }: { sponsors: FooterSponsor[] }) {
   const { t } = useT()
   if (sponsors.length === 0) return null
-  const marquee = sponsors.length > 2
   return (
     <section className="site-sponsors" aria-label={t('foot.sponsors')}>
       <div className="foot-sponsors-title">{t('foot.sponsors')}</div>
-      <div className={'foot-sponsors-track' + (marquee ? ' marquee' : '')}>
-        {(marquee ? [...sponsors, ...sponsors] : sponsors).map((s, i) => {
+      <div className="foot-sponsors-track">
+        {sponsors.map((s, i) => {
           const inner = (
             <>
               <img className="foot-sponsor-logo" src={logoSrc(s.logo)} alt={s.name} loading="lazy" />
@@ -42,11 +42,11 @@ export function SponsorsStrip({ sponsors }: { sponsors: FooterSponsor[] }) {
             </>
           )
           return s.link ? (
-            <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer" aria-hidden={i >= sponsors.length}>
+            <a key={i} className="foot-sponsor" href={s.link} target="_blank" rel="noopener noreferrer">
               {inner}
             </a>
           ) : (
-            <div key={i} className="foot-sponsor" aria-hidden={i >= sponsors.length}>
+            <div key={i} className="foot-sponsor">
               {inner}
             </div>
           )
