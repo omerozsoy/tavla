@@ -303,6 +303,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
                 {t('lb.prNote', { m: String(prMeta.minMatches), d: prMeta.minDecisions.toLocaleString('tr-TR') })}
               </p>
             )}
+            <p className="lb-pr-note">{t('lb.prExplain')}</p>
             {!error && prRows === null && (
               <div className="lb-table lb-pr" aria-busy="true">
                 <div className="lb-head">
