@@ -8043,8 +8043,9 @@ export default function App() {
     // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli).
     // Anlık PR TAHMİNİ (oyun-içi, yalnız pvb + menüden açık): yerel estimate; Sidebar "~PR"
     // tahmin etiketiyle gösterir. RESMİ/kesin PR maç sonu gnubg (sonuç ekranı + analiz).
-    pr: botMatch && showLivePr ? prLiveEstimate(prHumanColor) : null,
-    prEstimate: botMatch && showLivePr,
+    // KLASIK TAVLA: anlık PR GÖSTERİLMEZ (kullanıcı isteği; klasik kasual mod).
+    pr: botMatch && showLivePr && !match.classic ? prLiveEstimate(prHumanColor) : null,
+    prEstimate: botMatch && showLivePr && !match.classic,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
     // Rakip (beyaz/alt, ben siyahsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:
