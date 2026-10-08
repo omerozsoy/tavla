@@ -40,10 +40,10 @@ class SponsorResource extends Resource
 
             Forms\Components\FileUpload::make('logo')->label('Logo')
                 ->image()->disk('uploads')->directory('sponsor')->visibility('public')
-                ->optimizeOnUpload('sponsor')
+                ->padOnUpload('sponsor') // sabit kare tuvale ortalanır -> tüm logolar eşit boyutta görünür
                 ->imageEditor()->maxSize(3072)
                 ->required()
-                ->helperText('Önerilen: şeffaf PNG/SVG. En fazla 3 MB.')
+                ->helperText('Önerilen: şeffaf arka planlı PNG. Yüklenen logo otomatik olarak eşit kare alana ortalanır (hepsi aynı boyutta görünür). En fazla 3 MB.')
                 ->columnSpanFull(),
 
             // AdSlot ile aynı: tam URL VEYA / ile başlayan site-içi yol; HTML5 url kuralından kaçın.

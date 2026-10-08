@@ -42,6 +42,13 @@ class AppServiceProvider extends ServiceProvider
             return $this->saveUploadedFileUsing(fn (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file) => app(\App\Support\ImageOptimizer::class)
                 ->store($file, 'uploads', $dir, $maxW, $quality));
         });
+        // SPONSOR LOGOLARI vb.: yüklenen görseli SABİT KARE şeffaf tuvale ortalar (contain, normalize)
+        // -> tüm logolar eşit boyutta görünür. Alanda ->padOnUpload('sponsor') çağrılır.
+        \Filament\Forms\Components\FileUpload::macro('padOnUpload', function (string $dir, int $size = 400, float $innerPct = 0.9) {
+            /** @var \Filament\Forms\Components\FileUpload $this */
+            return $this->saveUploadedFileUsing(fn (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file) => app(\App\Support\ImageOptimizer::class)
+                ->storePadded($file, 'uploads', $dir, $size, $innerPct));
+        });
         // Livewire gecici yukleme klasorunu garanti et. Windows'ta klasor yoksa
         // "klasor olustur -> hemen boyut oku" yarisi Flysystem'de
         // "Unable to retrieve the file_size for livewire-tmp/..." hatasi veriyordu.

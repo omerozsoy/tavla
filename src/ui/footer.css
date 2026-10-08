@@ -250,15 +250,12 @@ a.foot-sponsor:hover {
   transform: translateY(-2px);
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18));
 }
-/* EŞİT GÖRÜNÜM: her logo AYNI sabit kutuya (160×64) object-fit:contain ile sığar.
-   Böylece geniş yazı-logolar da kare amblemler de aynı alanı kaplar; biri büyük biri
-   küçük görünmez (en-boy oranları korunur, kutuda ortalanır). */
+/* EŞİT GÖRÜNÜM: logolar yüklemede sabit KARE tuvale ortalanır (backend padOnUpload) -> hepsi
+   aynı kare tile'da eşit boyutta. Burada eşit kare slot (96×96) + object-fit:contain. */
 .foot-sponsor-logo {
   display: block;
-  /* Kutu DAHA UZUN (84px): yuvarlak/kare amblemler yükseklikle sınırlı olduğundan büyür;
-     geniş yazı-logolar genişlikle (180px) sınırlı kaldığından aynı kalır -> görsel denge. */
-  width: 180px;
-  height: 84px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
   object-position: center;
 }
@@ -266,7 +263,7 @@ a.foot-sponsor:hover {
   font-size: 0.74rem;
   letter-spacing: 0.02em;
   text-align: center;
-  max-width: 180px;
+  max-width: 120px;
 }
 @media (prefers-reduced-motion: reduce) {
   .foot-sponsors-track.marquee { animation: none; }
