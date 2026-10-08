@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
 import { useEscape } from './useEscape'
+import { useToast } from './Toast'
 import { myMatches, matchLogById, matchGnubgReview, type MyMatch, type EJPeriod } from '../api'
 import MatchReport, { type LogEntry } from './MatchReport'
 import MatchSummary from './MatchSummary'
@@ -86,6 +87,7 @@ interface Props {
 
 export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId, titleOverride }: Props) {
   const { t } = useT()
+  const notify = useToast()
   useEscape(onClose)
   const [rows, setRows] = useState<MyMatch[]>([])
   const [loading, setLoading] = useState(true)
@@ -134,8 +136,12 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       // reportBusy loader gösterir. Servis yok/başarısızsa YEREL log'a düş (analiz yine açılır).
       const gr = await matchGnubgReview(m.id).catch(() => null)
       const log: LogEntry[] = gr?.ok && gr.log && gr.log.length > 0 ? gr.log : clientLog
-      // Ne sunucu (gnubg) ne de client log var -> gerçekten analiz edilecek hamle yok.
-      if (log.length === 0) return
+      // Ne sunucu (gnubg) ne de client log var -> gerçekten analiz edilecek hamle yok. Sessiz
+      // çıkmak yerine kullanıcıya bildir (çok kısa/terk edilmiş maçlarda hamle kaydı olmayabilir).
+      if (log.length === 0) {
+        notify.info(t('mh.noAnalysis'))
+        return
+      }
       // Renk (self/opp hizası): client log'dan; yoksa sunucu review'in hc'si; o da yoksa white.
       const hc: Player = parsed.hc ?? (gr?.hc as Player | undefined) ?? 'white'
       // .mat basligi/oyuncu satiri icin GERCEK mac uzunlugu + isimler (varsayilan 1'e/White'a DUSME).
