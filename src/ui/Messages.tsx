@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -881,12 +882,17 @@ export default function Messages({
           </div>
         </div>
       </div>
-      {zoomImage && (
-        <div className="dm-zoom-overlay" onClick={() => setZoomImage(null)} role="dialog" aria-modal="true">
-          <button type="button" className="dm-zoom-close" onClick={() => setZoomImage(null)} aria-label={t('common.close')}>✕</button>
-          <img src={zoomImage} alt="" />
-        </div>
-      )}
+      {/* body'ye PORTAL: Messages transform'lu .register-overlay.page içinde; transform fixed için
+          yeni containing block kurar -> overlay panele hapsolup "yarısı beyaz" kalıyordu. Portal
+          ile gerçek viewport'u (tam siyah, ortalı) kaplar. */}
+      {zoomImage &&
+        createPortal(
+          <div className="dm-zoom-overlay" onClick={() => setZoomImage(null)} role="dialog" aria-modal="true">
+            <button type="button" className="dm-zoom-close" onClick={() => setZoomImage(null)} aria-label={t('common.close')}>✕</button>
+            <img src={zoomImage} alt="" />
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

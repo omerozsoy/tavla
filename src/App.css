@@ -22113,8 +22113,10 @@ button.acct-row-logout:hover:not(:disabled) {
 .dm-zoom-overlay {
   position: fixed;
   inset: 0;
-  z-index: 3000;
-  background: rgba(0, 0, 0, 0.85);
+  /* body'ye portal edilir (bkz Messages.tsx) -> mesaj panelinin ÜstÜnde kalmalı; en tepe overlay'ler
+     (confirm 5300, ms 5200) dahil her şeyin üstünde topmost olsun. */
+  z-index: 6000;
+  background: #000; /* tam opak siyah: resmin etrafı yarı-şeffaf değil, net siyah kaplasın */
   display: flex;
   align-items: center;
   justify-content: center;
