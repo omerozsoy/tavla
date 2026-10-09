@@ -4149,8 +4149,24 @@ export default function App() {
           }
           // Hamle yoksa (pas/dance: generateMoves tek BOS-adimli hamle doner) ipucu YOK —
           // gosterecek bir sey yok, ogrenme/ipucu kutusu bos/anlamsiz kalmasin.
-          if (r.length > 0 && r[0].move.steps.length > 0) {
-            const b = r[0]
+          // KÖK FIX ("yapay zekada ilk hamleyi oynayinca ipucu yok oluyor"): 1. turda wildbg
+          // neural net HENÜZ YÜKLENMEMİŞ olabilir (analyzeMoves -> []). Tur BAŞINDA gnubg bosulugu
+          // doldurur ama ALT-HAMLEDE gnubg atlanir (played>0) + kalan tek zarda gnubg zaten 2-zar
+          // ister -> hicbir kaynak kalmaz, curBest null -> ipucu kaybolur. r boşsa YEREL SEZGİSEL
+          // (generateMoves + evaluatePosition, ANINDA, net gerektirmez) ile doldur (ipucu/panel modu).
+          let hintRanks = r
+          if (hintRanks.length === 0 && (showAnalysis || learnMode)) {
+            const mover = analysisState.turn
+            hintRanks = generateMoves(analysisState)
+              .map((move) => ({
+                move,
+                equity: evaluatePosition(applyPlayed(analysisState, move.steps), mover),
+                probs: [] as number[],
+              }))
+              .sort((a, b) => b.equity - a.equity)
+          }
+          if (hintRanks.length > 0 && hintRanks[0].move.steps.length > 0) {
+            const b = hintRanks[0]
             setCurBest({
               notation: moveNotation(b.move, analysisState.turn),
               equity: b.equity,
