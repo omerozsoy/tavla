@@ -4304,11 +4304,20 @@ export default function App() {
     }
   }, [learnMode])
 
-  // Tur/hamle degisince ipucu gorunumu sifirlansin (ogrenme modunda otomatik geri gelir)
+  // YENİ TUR: ipucu sıfırla (analiz effect tur başı için tazeler).
   useEffect(() => {
     setHintShown(false)
     setCurBest(null)
-  }, [turnStart, played.length])
+  }, [turnStart])
+  // ALT-HAMLE (aynı tur içinde zar oynanınca): ÖĞRENME modunda KAPATMA — analiz effect
+  // kalan zar için curBest'i günceller (eskiden played.length'te null'lanıyordu -> "ilk
+  // hamleyi yapınca ipucu kapanıyor" bug'ı). Manuel ipucu modunda (learn değil) ise analiz
+  // effect alt-hamlede erken döndüğünden stale ipucu görünmesin -> orada kapat.
+  useEffect(() => {
+    if (learnMode) return
+    setHintShown(false)
+    setCurBest(null)
+  }, [played.length, learnMode])
 
   // Tur bastan sona zorunlu mu oynandi (oyuncu hic secim yapmadi)? -> otomatik onay.
   const fullyForcedRef = useRef(false)
