@@ -76,4 +76,43 @@ class MatchmakeStakesTest extends TestCase
             'token' => 'A', 'name' => 'A', 'stakes' => [100, 500], 'targets' => [1], 'time_control' => 'normal',
         ])->assertStatus(422);
     }
+
+    // HEARTBEAT: arayan beklerken poll ettigi surece (updated_at tazelenir) havuzda/listede kalir;
+    // poll kesilince (updated_at donar) 2 dk sonra cleanupStale siler ve seekers'tan duser.
+    public function test_active_seeker_survives_while_stale_one_is_removed(): void
+    {
+        $a = $this->makeUser('alice', 100000);
+        Sanctum::actingAs($a);
+        $this->postJson('/api/matchmaking', [
+            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal',
+        ])->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
+        $room = \App\Models\Room::where('p1_user_id', $a->id)->where('status', 'mm_waiting')->firstOrFail();
+
+        // Arayan poll etmeyi birakti: son yasam belirtisi (updated_at) 3 dk once. created_at TAZE
+        // birakilir -> eski created_at mantigi bu odayi tutardi; artik updated_at belirler.
+        $room->forceFill(['updated_at' => now()->subMinutes(3), 'created_at' => now()])->saveQuietly();
+
+        // Baska biri /matchmaking'e girer (cleanupStale tetiklenir) -> bayat oda silinmeli.
+        $b = $this->makeUser('bob', 100000);
+        Sanctum::actingAs($b);
+        $this->postJson('/api/matchmaking', [
+            'token' => 'B', 'name' => 'B', 'stakes' => [777], 'targets' => [1], 'time_control' => 'normal',
+        ])->assertOk();
+        $this->assertDatabaseMissing('rooms', ['id' => $room->id]);
+
+        // Canli (yeni updated_at) arayan hem seekers listesinde kalmali hem cleanup'a dayanmali.
+        $c = $this->makeUser('carol', 100000);
+        Sanctum::actingAs($c);
+        $this->postJson('/api/matchmaking', [
+            'token' => 'C', 'name' => 'C', 'stakes' => [0], 'targets' => [9], 'time_control' => 'normal', // target kesismez -> eslesmez
+        ])->assertOk()->assertJson(['matched' => false]);
+        $cRoom = \App\Models\Room::where('p1_user_id', $c->id)->where('status', 'mm_waiting')->firstOrFail();
+
+        Sanctum::actingAs($b);
+        $res = $this->getJson('/api/seekers')->assertOk();
+        $ids = collect($res->json('seekers'))->where('kind', 'seeking')->pluck('id')->all();
+        $this->assertContains($c->id, $ids);     // canli arayan listede
+        $this->assertNotContains($a->id, $ids);  // bayat arayan listede DEGIL
+        $this->assertDatabaseHas('rooms', ['id' => $cRoom->id]); // canli oda silinmedi
+    }
 }

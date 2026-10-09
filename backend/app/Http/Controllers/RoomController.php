@@ -169,14 +169,14 @@ class RoomController extends Controller
     }
 
     // Bayat odalari temizle (cron gerekmez, erisimde firsatci calisir):
-    // - mm_waiting: 2 dk'dan eski, eslesememis
+    // - mm_waiting: son yasam belirtisinden (owner poll heartbeat -> updated_at) 2 dk gecmis, eslesememis
     // - biten/terkedilmis odalar: 1 gunden eski
     private function cleanupStale(): void
     {
         try {
             $staleWaitingIds = Room::where('status', 'mm_waiting')
                 ->whereNull('p2_token')
-                ->where('created_at', '<', now()->subMinutes(2))
+                ->where('updated_at', '<', now()->subMinutes(2)) // son yasam belirtisinden (show heartbeat) 2 dk
                 ->pluck('id');
             if ($staleWaitingIds->isNotEmpty() && Schema::hasTable('active_money_match_claims')) {
                 DB::table('active_money_match_claims')->whereIn('room_id', $staleWaitingIds)->delete();
@@ -894,8 +894,8 @@ class RoomController extends Controller
         $rooms = Room::where('status', 'mm_waiting')
             ->whereNotNull('p1_user_id')
             ->when($me, fn ($q) => $q->where('p1_user_id', '!=', $me->id))
-            ->where('created_at', '>', now()->subMinutes(2)) // cleanupStale esigiyle ayni: taze aramalar
-            ->orderBy('created_at')
+            ->where('updated_at', '>', now()->subMinutes(2)) // cleanupStale esigiyle ayni: canli (heartbeat) aramalar
+            ->orderBy('created_at') // sira adaleti: en eski arama once
             ->limit(100)
             ->get($cols);
 
@@ -1535,6 +1535,15 @@ class RoomController extends Controller
             return $this->fail('Bot maçları izlenemez.', 403);
         }
         $this->tickClock($room, $slot);
+
+        // MM_WAITING HEARTBEAT: arayanin kendi poll'u (slot p1) odayi "canli" tutar. cleanupStale +
+        // seekers created_at YERINE updated_at'e bakar -> sekmesi acik aktif arayan havuzda/listede
+        // kalir; sekme kapaninca poll durur, updated_at donar, 2 dk sonra temizlenir (terk tespiti).
+        // Yazim amplifikasyonu: yalnizca 30sn'de bir tazele (2 dk pencere icinde bol pay).
+        if ($room->status === 'mm_waiting' && $slot === 'p1'
+            && $room->updated_at && $room->updated_at->lt(now()->subSeconds(30))) {
+            Room::where('id', $room->id)->update(['updated_at' => now()]);
+        }
 
         // DAVET REDDİ: hedefli davetle açılmış ve hâlâ rakip bekleyen odada davet eden (p1) poll'unda
         // reddi öğrenir. Eskiden respond() yalnız game_invites.status='declined' yazıyordu; bekleyen
