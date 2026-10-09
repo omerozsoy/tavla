@@ -9,7 +9,7 @@ import Board from './Board'
 import Sidebar from './Sidebar'
 import ViewersBadge from './ViewersBadge'
 import ClockStack from './ClockStack'
-import DiceRow from './Dice'
+import DiceRow, { Die } from './Dice'
 import { showRoom, watchRoom, roomSummary, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
 import MatchSummary from './MatchSummary'
 import MatchResult from './MatchResult'
@@ -545,8 +545,8 @@ export default function Spectate({
                 classic={classic}
                 flip={false}
                 showPip
-                centerLeft={activeBottom ? null : diceRow}
-                centerRight={activeBottom ? diceRow : null}
+                centerLeft={activeBottom || danced ? null : diceRow}
+                centerRight={activeBottom && !danced ? diceRow : null}
                 centerMain={
                   cubePending ? (
                     <div className="result-box">
@@ -560,6 +560,13 @@ export default function Spectate({
                     </div>
                   ) : danced ? (
                     <div className="result-box no-moves">
+                      {/* App.noMove ile BİREBİR: zar kutunun İÇİNDE — yan diceRow kutu altında
+                          kalıyordu (kullanıcı: "hamle yok diyor ama zarı göremiyorum"). */}
+                      <div className="board-dice nm-dice">
+                        {diceFaces.map((f, i) => (
+                          <Die key={i} value={f.value} owner={displayBoard.turn} used={f.used} />
+                        ))}
+                      </div>
                       <div className="result-title">{t('overlay.noMoves')}</div>
                       <div className="err-detail">{t('overlay.noMovesSub')}</div>
                     </div>
