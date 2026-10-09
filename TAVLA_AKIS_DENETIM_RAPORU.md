@@ -18,8 +18,15 @@ testleri çalıştırıldı. Canlı kullanıcı/prod verisine dokunulmadı.
 > **GÜNCELLEME (07 Eki, 2. oturum — "hepsini tek tek çözelim"):** Snap (Belirti 4) için **§5.2 ONAYLI
 > RAKİP HAMLESİ REPLAY uygulandı** (cosmetic, otoriteye dokunmaz, pure-tested + güvenlik temizliği).
 > Artık rakibin onayladığı hamle, canlı önizleme gelmese BİLE otoriter delta'dan adım adım oynanır →
-> "bir anda tamamlanmış geldi" ve çoğu "göremedim" vakası giderildi. Push istemci kablolaması
-> **doğru/sağlam doğrulandı**; kalan gecikme (Belirti 1 "geç") saf ops: prod'da Reverb aç.
+> "bir anda tamamlanmış geldi" ve çoğu "göremedim" vakası giderildi.
+>
+> **GÜNCELLEME (07 Eki, 3. oturum — Reverb prod DOĞRULANDI):** "Push kapalı olabilir" HİPOTEZİM
+> YANLIŞMIŞ. Prod'da canlı doğrulandı: Reverb daemon 6 gündür ayakta (0.0.0.0:8080), `BROADCAST_
+> CONNECTION=reverb` AÇIK, `/api/realtime-config` → `{enabled:true, key:...}`, nginx `/app` ws proxy →
+> `101 Switching Protocols` + `X-Powered-By: Laravel Reverb`. **Push 6 gündür CANLI.** Dolayısıyla
+> Belirti 1/3/4'ün kökü "transport kapalı" DEĞİL: (a) **snap** push'tan bağımsız bir istemci-render
+> sorunuydu → §5.2 çözer; (b) "zar geç" anları ancak o istemcinin **ws'i düştüğünde** (mobil/flaky ağ
+> → poll fallback; realtime.ts ~15sn'de toparlar). ASIL İYİLEŞTİRME deploy edilmemiş §5.2 bundle'ında.
 
 ---
 
