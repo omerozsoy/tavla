@@ -38,7 +38,7 @@ function prCls(pr: number | null | undefined): string {
 // Sans etiketi: Tavlai Luck V1 -> gnubg NATIVE MWC% (bagimsiz per-oyuncu, yuzde) VARSA onu goster;
 // yoksa ham equity luck'ini okunur isaretli skora olcekle (x100). Ikisi de null -> gosterme.
 function luckLabel(mwc?: number | null, raw?: number | null): { text: string; pos: boolean } | null {
-  if (mwc != null) return { text: `${mwc >= 0 ? '+' : ''}${mwc.toFixed(1)}%`, pos: mwc >= 0 }
+  if (mwc != null) return { text: `${mwc >= 0 ? '+' : ''}${mwc.toFixed(0)}%`, pos: mwc >= 0 }
   if (raw != null) {
     const s = Math.round(raw * 100)
     return { text: `${s >= 0 ? '+' : ''}${s}`, pos: s >= 0 }
