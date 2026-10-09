@@ -9587,6 +9587,17 @@ html.fs-active .account-bar {
   border-color: rgba(214, 64, 52, 0.45);
   color: #ff9a90;
 }
+/* Zar Kontrol: Pes Et ile aynı nötr yarı-saydam stil (eskiden varyantsızdı -> açık/bozuk
+   görünüp "bu ne?" oluyordu). Lobi=kiremit, Pes Et=kırmızımsı hover, bu=nötr beyaz. */
+.gm-circle.dicecheck {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+.gm-circle.dicecheck:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+}
 .gm-circle-ic {
   display: inline-flex;
   align-items: center;

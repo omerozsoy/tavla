@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
@@ -168,7 +169,11 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClo
 
   if (embed) return <div className="fair-embed">{body}</div>
 
-  return (
+  // body'ye PORTAL: oyun görünümü (.app.game-view) + .register-overlay.modal (backdrop-filter)
+  // stacking context kuruyor -> içeride render edilen modal, z-index 5400 olsa bile oyun
+  // ekranının ARKASINDA/bozuk kalıyordu ("açılıyor ama arkada"). Portal ile en tepe (body)
+  // bağlamına taşınır -> z-index gerçekten topmost olur (chat görsel önizleme ile aynı çözüm).
+  return createPortal(
     <div className="register-overlay modal page dicecheck-overlay" role="dialog" aria-modal="true">
       <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
@@ -179,6 +184,7 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClo
         </h2>
         {body}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
