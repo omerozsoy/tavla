@@ -4130,7 +4130,7 @@ export default function App() {
         // HAKEM=gnubg: panel açık/öğrenme modunda GÖSTERİLEN ipucu+liste+equity gnubg'den olsun
         // (giriş yapılmış + servis erişilebilir). wildbg turnRankedRef (PR arka planı) korunur;
         // gnubg move nesnesi vermediğinden MiniBoard oku wildbg en iyi hamlesinde kalır (kozmetik).
-        if (!cancelled && (showAnalysis || (learnMode && played.length === 0)) && mode === 'pvb' && getToken()) {
+        if (!cancelled && (showAnalysis || (learnMode && played.length === 0)) && botMatch && getToken()) {
           const dice2 = analysisState.dice.slice(0, 2)
           if (dice2.length === 2) {
             try {
@@ -4201,7 +4201,7 @@ export default function App() {
     const humanColor: Player = online ? myColor : 'white'
     // Kup danismani SADECE bota karsi (pvb): online/pvp'de gostermek hile olur.
     const onRollCanDouble =
-      mode === 'pvb' &&
+      botMatch &&
       interactive &&
       !diceRolled &&
       !gameWon &&
@@ -4210,7 +4210,7 @@ export default function App() {
       turnStart.turn === humanColor &&
       canDouble(match, humanColor, false, isMoneyGame)
     const facingDouble =
-      mode === 'pvb' &&
+      botMatch &&
       cubePending !== null &&
       cubePending !== humanColor &&
       opponent(cubePending) === humanColor
@@ -10627,8 +10627,9 @@ export default function App() {
     return <div className="app game-view" aria-hidden />
   }
 
+  // botMatch: yerel pvb VEYA sunucu-otoriter bot odası (SERVER_BOT). Öğrenme/ipucu ikisinde de açık.
   const showHintUI =
-    mode === 'pvb' && interactive && diceRolled && !gameWon && remainingDice.length > 0
+    botMatch && interactive && diceRolled && !gameWon && remainingDice.length > 0
 
   return (
     <div className="app game-view">
