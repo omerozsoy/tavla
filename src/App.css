@@ -21669,7 +21669,8 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: center;
   gap: 11px;
   width: 100%;
-  padding: 9px 11px;
+  /* Sağda kebab (28px) için ayrılmış boşluk -> saat yazısı altına binmez. */
+  padding: 9px 40px 9px 11px;
   border: none;
   background: transparent;
   border-radius: 12px;
