@@ -175,11 +175,11 @@ class Shield
                     "≈{$winCount}/dk istek", email: ! $benignRead);
             }
             if ($errEventTier !== null) {
-                // 401/403 = token süresi/misafir polling gürültüsü, saldırı değil → panelde kaydet,
-                // mail atma. Gerçek sunucu hatası (5xx) birikimi mail atmaya devam eder.
-                $authNoise = $status === 401 || $status === 403;
+                // 4xx = normal istemci akışı (401/403 token/izin, 409 sürüm çakışması/resync,
+                // 419 CSRF, 422 doğrulama, 429 hız limiti) → panelde kaydet, mail atma.
+                // YALNIZCA 5xx (gerçek sunucu hatası) birikimi admin'e mail atar.
                 self::event($userId, $ip, 'error_burst', $errEventTier + 1, $path, $method, $status,
-                    "{$errCount} hata (oturum)", email: ! $authNoise);
+                    "{$errCount} hata (oturum)", email: $status >= 500);
             }
             if ($spinEventTier !== null) {
                 // Çark/slot çevirmek bir oyun özelliği (para cüzdandan kontrollü düşer); yüksek spin
