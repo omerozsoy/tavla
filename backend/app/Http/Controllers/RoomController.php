@@ -3056,10 +3056,19 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        // ZAR GEÇ GELİYOR teşhisi (duvar-saati): "hemen Zar At'a bastım, 30sn sonra zar geldi"
+        // kökünü ölç. tReq = FPM isteği aldı (REQUEST_TIME_FLOAT); t0 = handler girişi. Aradaki fark
+        // + lock-wait + toplam süre, sunucu-tarafı stall'ı (kilit çekişmesi / FPM doygunluğu) açığa çıkarır.
+        $tReq = (float) ($request->server('REQUEST_TIME_FLOAT') ?: microtime(true));
+        $t0 = microtime(true);
         $this->stampActed($code, $data['token'], $request); // in-flight AFK/terk kalkani (bkz stampActed)
+        $tStamp = microtime(true);
+        $lockWaitMs = null;
 
-        $resp = DB::transaction(function () use ($data, $code, $dice, $request) {
+        $resp = DB::transaction(function () use ($data, $code, $dice, $request, &$lockWaitMs) {
+            $tBeforeLock = microtime(true);
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            $lockWaitMs = (int) round((microtime(true) - $tBeforeLock) * 1000); // ana tx lock bekleme
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
             }
@@ -3218,7 +3227,7 @@ class RoomController extends Controller
             $state['diceUsed'] = array_fill(0, count($roll), false);
 
             $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
-            $rolls[] = ['index' => $index, 'slot' => $slot, 'dice' => $roll];
+            $rolls[] = ['index' => $index, 'slot' => $slot, 'dice' => $roll, 'at' => round(microtime(true), 3)]; // sunucu duvar-saati (zar-geç teşhisi)
             $room->dice_rolls = $rolls;
             $room->dice_roll_index = $index + 1;
             $room->server_state = $state;
@@ -3233,6 +3242,20 @@ class RoomController extends Controller
                 'reused' => false,
             ]);
         }, 5); // deadlock-retry: eşzamanlı room_commands yarışında InnoDB victim'i şeffaf tekrar dene
+
+        // YAVAŞ ZAR ölçümü: sunucu-tarafı >=2sn sürdüyse logla. total_ms küçükse (sunucu hızlı) ama
+        // oyuncu yine 30sn beklediyse darboğaz FPM kuyruğu (worker doygunluğu) / ağ'dır — PHP'den
+        // görünmez; FPM slowlog/pool'a bakılır. lock_wait_ms yüksekse DB satır-kilidi çekişmesi.
+        $totalMs = (int) round((microtime(true) - $tReq) * 1000);
+        if ($totalMs >= 2000) {
+            \Illuminate\Support\Facades\Log::warning('roll.slow', [
+                'room' => strtoupper($code),
+                'total_ms' => $totalMs,                               // FPM pickup -> yanıt
+                'pre_php_ms' => (int) round(($t0 - $tReq) * 1000),    // FPM pickup -> handler girişi (routing/mw)
+                'stamp_ms' => (int) round(($tStamp - $t0) * 1000),    // stampActed (kendi lockForUpdate'i)
+                'lock_wait_ms' => $lockWaitMs,                        // ana tx lockForUpdate bekleme
+            ]);
+        }
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
         $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
