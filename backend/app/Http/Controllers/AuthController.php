@@ -51,6 +51,7 @@ class AuthController extends Controller
         // seçimi kaldırıldı). 'rating' fillable değil -> doğrudan atanır (DB varsayılanı 1500 devreye girmesin).
         $user = User::create($data);
         $user->rating = \App\Models\Setting::int('starting_rating', 1400);
+        $user->last_login_at = now(); // kayit = ilk giris (login/googleLogin ile tutarli; token ile oto-giris yapiliyor)
         $user->save();
         // NOT: hoşgeldin coin'i KAYITTA verilmez -> e-posta DOĞRULAYINCA verilir (grantWelcomeCoins),
         // sahte e-posta ile bonus farmlanmasın. Google kullanıcısı doğrulanmış sayılır (aşağıda alır).

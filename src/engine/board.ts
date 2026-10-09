@@ -96,9 +96,9 @@ export function highestHomeIndex(state: GameState, player: Player): number {
 }
 
 // Oyuncu BARDA + rakip ev bolgesi TAMAMEN kapali mi (6 giris noktasi da bloke)?
-// Boyle bir pozisyonda hicbir zar kombinasyonu giris saglamaz -> kesin dans. "Zar At"
-// butonu anlamsiz (shouldAutoRoll bunu oto-atar). En az bir giris aciksa false (oyuncu
-// kendi atar). Beyaz bar'dan 18..23'e, siyah 0..5'e girer (bkz. types yon konvansiyonu).
+// Boyle bir pozisyonda hicbir zar kombinasyonu giris saglamaz -> kesin dans. KUP teklifi
+// yoksa shouldAutoRoll bunu oto-atar (teklif varsa ASLA oto-atmaz, oyuncu "Katla" gorebilsin).
+// En az bir giris aciksa false. Beyaz bar'dan 18..23'e, siyah 0..5'e girer (bkz. types yon konvansiyonu).
 export function closedOutOnBar(state: GameState, player: Player): boolean {
   if (state.bar[player] <= 0) return false
   const entries = player === WHITE ? [18, 19, 20, 21, 22, 23] : [0, 1, 2, 3, 4, 5]

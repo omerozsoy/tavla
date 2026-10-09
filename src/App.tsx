@@ -7158,6 +7158,13 @@ export default function App() {
         cancelInvite(code).catch(() => {})
         setInviteWaitName(null)
         setHome(true)
+      } else {
+        // Davet gönderildi + oda kuruldu. BOŞ "Rakip Bekleniyor" kartında bekletme (kullanıcı
+        // sıkılıyor): ana sayfaya dön; davet "Oyun Arayanlar"da (mySeek, inviteWaitName) görünür.
+        // Rakip kabul edip odaya girince (status 'playing') poll + auto-enter effect'i oyuna
+        // sokar -> havuz eşleşmesiyle (mm_waiting) birebir aynı akış.
+        awaitingMatchRef.current = true
+        setHome(true)
       }
     } catch (e) {
       // "Oyun Kabul Etmiyor" (409) gibi durumlarda sunucu mesajini dostça göster.
@@ -7226,6 +7233,7 @@ export default function App() {
   function handleLeaveRoom() {
     stakeRef.current = 0
     betPctRef.current = 0
+    awaitingMatchRef.current = false // odadan çık = artık eşleşme/davet bekleme auto-enter YOK
     clearOppReplay() // §5.2: odadan çıkınca bekleyen rakip-hamle replay'ini iptal et
     // Hedefli davetle acilmis + hala BEKLEYEN oda -> "Oyunu Iptal Et": daveti de geri cek ki
     // rakibin ekranindaki davet banner'i (sonraki /ping poll'unda) KALKSIN.
@@ -10467,7 +10475,9 @@ export default function App() {
               // Kendi aktif havuz aramam (varsa): listenin en üstünde "Rakip Bekleniyor…" + İptal
               // ile göster (backend self'i hariç tutar -> yerel room state'ten anında çiz).
               mySeek={
-                user && online && room?.status === 'mm_waiting'
+                // Havuz araması (mm_waiting) VEYA hedefli davet beklemesi (waiting + inviteWaitName):
+                // ikisi de "Oyun Arayanlar"da en üstte "Rakip Bekleniyor…" + İptal ile gösterilir.
+                user && online && (room?.status === 'mm_waiting' || (room?.status === 'waiting' && !!inviteWaitName))
                   ? {
                       kind: 'seeking',
                       id: user.id,
@@ -10486,7 +10496,11 @@ export default function App() {
                     }
                   : null
               }
-              onCancelSeek={() => handleCancelMatch(true)}
+              onCancelSeek={() =>
+                // Hedefli davet beklemesi -> handleLeaveRoom (daveti geri çeker + odayı kapatır);
+                // havuz araması -> handleCancelMatch (cancelMatchmake). İkisi de ana sayfada kalır.
+                inviteWaitName && room?.status === 'waiting' ? handleLeaveRoom() : handleCancelMatch(true)
+              }
             />
             {seekerConfirm && (
               <ConfirmModal

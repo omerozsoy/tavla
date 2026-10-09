@@ -220,34 +220,43 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
 describe('barda oto-zar (rakip board kapali/acik)', () => {
   const turnsPlayed = 3
   const m = newMatch(7) // kup teklif edilebilir -> normalde beklenir (buton cikar)
+  const m1 = newMatch(1) // 1 puanlik -> kup teklifi YOK
 
-  it('barda + rakip evi TAMAMEN kapali -> hicbir zarla giremem, oto-at', () => {
+  it('kup teklif edilebilirken barda TAMAMEN kapali -> yine de oto-zar YOK (katla gorebilsin)', () => {
     const s = emptyBoard()
     s.bar.white = 1
     for (let i = 18; i <= 23; i++) s.points[i] = -2 // siyah 6 giris noktasini da kapatti
-    // Kup teklif edilebilir olsa bile bar-kapali durumu ezer -> oto-at (kullanici direktifi).
+    // Kup teklif edilebiliyorsa dans da olsa oto-zar atilmaz (kullanici direktifi).
     expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(false)
   })
 
-  it('barda + en az bir giris ACIK -> girebilirim, ELLE at (oto-zar YOK)', () => {
+  it('KUP YOK + barda TAMAMEN kapali -> hicbir zarla giremem, oto-at', () => {
+    const s = emptyBoard()
+    s.bar.white = 1
+    for (let i = 18; i <= 23; i++) s.points[i] = -2
+    expect(canDouble(m1, WHITE, false)).toBe(false) // 1 puanlik: teklif yok
+    expect(shouldAutoRoll(m1, WHITE, turnsPlayed, s)).toBe(true)
+  })
+
+  it('KUP YOK + en az bir giris ACIK -> girebilirim, ELLE at (oto-zar YOK)', () => {
     const s = emptyBoard()
     s.bar.white = 1
     for (let i = 18; i <= 23; i++) s.points[i] = -2
     s.points[20] = -1 // bir nokta acildi (blot) -> 4 zariyla girebilirim
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(false)
+    expect(shouldAutoRoll(m1, WHITE, turnsPlayed, s)).toBe(false)
   })
 
-  it('siyah icin de simetrik: 0..5 kapali -> oto-at', () => {
+  it('KUP YOK + siyah icin simetrik: 0..5 kapali -> oto-at', () => {
     const s = emptyBoard()
     s.bar.black = 1
     for (let i = 0; i <= 5; i++) s.points[i] = 2 // beyaz tum giris noktalarini kapatti
-    expect(shouldAutoRoll(m, BLACK, turnsPlayed, s)).toBe(true)
+    expect(shouldAutoRoll(m1, BLACK, turnsPlayed, s)).toBe(true)
     s.points[3] = 0 // bir nokta acildi -> elle at
-    expect(shouldAutoRoll(m, BLACK, turnsPlayed, s)).toBe(false)
+    expect(shouldAutoRoll(m1, BLACK, turnsPlayed, s)).toBe(false)
   })
 
-  it('barda degil -> bar kurali devreye girmez (mevcut kup-bekleme mantigi)', () => {
+  it('barda degil -> kup teklif edilebiliyorsa beklenir (oto-zar YOK)', () => {
     const s = emptyBoard() // bar bos
     expect(shouldAutoRoll(m, WHITE, turnsPlayed, s)).toBe(false) // kup teklif edilebilir -> beklenir
   })

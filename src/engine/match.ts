@@ -85,16 +85,14 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
 // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyor veya
 // ilk el) beklemenin anlami yok -> otomatik at.
 export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number, pos?: GameState, isMoney = false): boolean {
+  // KUP TEKLIF EDEBILIYORSAM ASLA OTO-ZAR (kullanici direktifi): katlama sansi olan HICBIR
+  // pozisyonda zar otomatik atilmaz -> dans/kapali-bar dahil oyuncu "Zar At"/"Katla" secebilsin.
+  if (turnsPlayed > 0 && canDouble(m, turn, false, isMoney)) return false
+  // Kup teklifi yok (1 puanlik/Crawford/rakip kupu tutuyor/ilk el): beklemenin anlami yok.
   // BARDA (pozisyon verilmisse): rakip ev bolgesi tamamen kapaliysa hicbir zarla giremem
-  // -> kesin dans, oto-at (kullanici direktifi: "bana zar at deme, otomatik at"). En az bir
-  // giris aciksa (girebilecek duruma geldim) ELLE at -> false (kullanici: "girecek duruma
-  // geldigimde oto zari yapma"). Bar durumu kup-bekleme mantigini EZER.
+  // -> kesin dans, oto-at. En az bir giris aciksa (girebilecek duruma geldim) ELLE at -> false.
   if (pos && pos.bar[turn] > 0) return closedOutOnBar(pos, turn)
-  // "Otomatik zar" AYARI KALDIRILDI (kullanici direktifi): zar yalnizca kup teklif etme
-  // secenegi YOKKEN otomatik atilir. Teklif mumkunse oyuncu "Zar At"/"Katla" arasinda
-  // secim yapabilsin diye beklenir.
-  const canOfferCube = turnsPlayed > 0 && canDouble(m, turn, false, isMoney)
-  return !canOfferCube
+  return true
 }
 
 // Mac bitti mi? Kazanan doner.
