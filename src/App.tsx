@@ -1502,7 +1502,12 @@ export default function App() {
           // Canli mac izleme deep-link: /izle/<ODA_KODU>. Isimler oda verisinden
           // (showRoom p1_name/p2_name) gelir -> prop bos verilebilir. Kod yoksa yok say.
           const c = (seg[1] || '').toUpperCase()
-          if (c) setSpectate({ code: c, p1: '', p2: '' })
+          if (!c) break
+          // Adres cubugu oynanan macta /izle/<kod> gosterir (asagidaki effect). F5'te bu kendi
+          // aktif online macimizsa SPECTATE ACMA -> rejoin (localStorage) bizi oyuncu olarak dondurur.
+          const lg = loadGame()
+          if (lg && lg.mode === 'online' && lg.inGame === true && lg.record?.online && (lg.record?.uid || '').toUpperCase() === c) break
+          setSpectate({ code: c, p1: '', p2: '' })
           break
         }
         case 'arkadasinla-oyna':
@@ -2514,6 +2519,20 @@ export default function App() {
   // Küp CANLI (coin stake×küp×gammon ile ölçeklenir); cubeAvailability/shouldAutoRoll'a geçilir.
   const isMoneyGame = online && stakeRef.current > 0 && betPctRef.current === 0 && match.target <= 1
 
+  // Oynadigin online macin IZLEME linkini adres cubugunda goster: /izle/<KOD>. Kopyalanip
+  // paylasilinca baskalari maci canli izler. replaceState -> geri tusu/yeniden-baglanmayi bozmaz.
+  // Izleyici (spectate) URL'yi zaten applyFromPath'ten alir -> dokunma. Bot odasi izlenemez -> atla.
+  useEffect(() => {
+    if (spectate) return
+    const watchCode = online && !room?.bot ? room?.code : null
+    if (watchCode) {
+      const path = '/izle/' + watchCode
+      if (window.location.pathname !== path) window.history.replaceState(null, '', path)
+    } else if (window.location.pathname.startsWith('/izle/')) {
+      window.history.replaceState(null, '', '/')
+    }
+  }, [online, room?.code, room?.bot, spectate])
+
   // TURNUVA MACI HAZIR -> POPUP YOK, DOĞRUDAN maça al. ping'teki tournament_matches'ten gelen
   // yeni (görülmemiş) maça anında girilir. Zaten o maçtaysak (tournMatchRef) tekrar girmeyiz;
   // başka (turnuva dışı) maçtaysak NO-CONTEST kapatıp geçeriz. enteredNoticeRef kısa async pencerede
@@ -3373,7 +3392,7 @@ export default function App() {
     const turnRanked = turnRankedRef.current
     // Analiz paneli SADECE yapay zekaya karşı (pvb). Tek Oyun/Maç Oyunu/pvp'de asla
     // gösterme — hile önlemi (PR/istatistik hesabı arka planda yine calisir).
-    if (!showAnalysis || mode !== 'pvb' || !turnRanked || turnRanked.length === 0) return null
+    if (!showAnalysis || !botMatch || !turnRanked || turnRanked.length === 0) return null
     const resultKey = boardKey(applyPlayed(turnStart, finalPlayed))
     const pl = turnRanked.find((r) => r.move.resultKey === resultKey)
     if (!pl) return null
@@ -10766,11 +10785,13 @@ export default function App() {
           <button
             type="button"
             className={`match-id-hud${matchCodeCopied ? ' copied' : ''}`}
-            title={t('game.copyMatchId')}
-            aria-label={t('game.copyMatchId')}
+            title={online && !room?.bot ? t('game.copyWatchLink') : t('game.copyMatchId')}
+            aria-label={online && !room?.bot ? t('game.copyWatchLink') : t('game.copyMatchId')}
             onClick={() => {
+              // Online maç: tam İZLEME linki (paylaş -> canlı izlensin). Yerel/bot: salt ID (admin arar).
+              const text = online && !room?.bot ? `${window.location.origin}/izle/${recordUid}` : recordUid
               navigator.clipboard
-                ?.writeText(recordUid)
+                ?.writeText(text)
                 .then(() => {
                   setMatchCodeCopied(true)
                   window.setTimeout(() => setMatchCodeCopied(false), 1500)
@@ -10835,7 +10856,7 @@ export default function App() {
           showLogo={ALL_THEMES.find((x) => x.id === boardTheme)?.rarity !== 'country'}
           pointTexts={ALL_THEMES.find((x) => x.id === boardTheme)?.pointTexts}
         />
-        {showAnalysis && mode === 'pvb' && (
+        {showAnalysis && botMatch && (
           <AnalysisPanel
             loading={analysisLoading}
             currentProbs={currentProbs}

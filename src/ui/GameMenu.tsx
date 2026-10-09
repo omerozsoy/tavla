@@ -48,9 +48,10 @@ export default function GameMenu(p: Props) {
   const { t } = useT()
   const rows: Row[] = [
     { label: t('setup.pip'), on: p.showPip, toggle: () => p.setShowPip(!p.showPip) },
-    // Canlı "Analizi göster" KALDIRILDI (maç sonu analizi yeterli). Öğrenme Modu SADECE pvb.
+    // Analiz paneli + Öğrenme + Canlı PR: yalnız bota karşı (canAnalyze=botMatch). İnsan maçında hile.
     ...(p.canAnalyze
       ? [
+          { label: t('setup.analysis'), on: p.showAnalysis, toggle: () => p.setShowAnalysis(!p.showAnalysis) },
           { label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) },
           { label: t('gm.livePr'), on: p.showLivePr, toggle: () => p.setShowLivePr(!p.showLivePr) },
         ]
