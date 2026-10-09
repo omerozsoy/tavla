@@ -43,6 +43,8 @@ type SavedPos = {
   off: { white: number; black: number }
   turn: Player
   cube: { value: number; owner: Player | null }
+  d1?: number
+  d2?: number
 }
 function loadSavedPos(): SavedPos | null {
   try {
@@ -137,9 +139,10 @@ export default function PositionAnalyzer({
   const [touchColor, setTouchColor] = useState<Player>('white')
   // Oyun yonu: oyun ekranlariyla ORTAK ayar (localStorage) — burada degistirmek her yeri etkiler.
   const [boardDir, setBoardDir] = useBoardDir()
-  // Varsayilan zar 1-1 (0 = zarsiz; tahtadaki zara tiklayarak degistirilir)
-  const [d1, setD1] = useState(1)
-  const [d2, setD2] = useState(1)
+  // Varsayilan zar 1-1 (0 = zarsiz; tahtadaki zara tiklayarak degistirilir).
+  // Kayitli zar varsa yukle -> sayfa yenilenince analizdeki zar kaybolmaz.
+  const [d1, setD1] = useState(() => saved0?.d1 ?? 1)
+  const [d2, setD2] = useState(() => saved0?.d2 ?? 1)
   const [matchLen, setMatchLen] = useState(0) // 0 = para oyunu; 1,3,5,7,9,11
   const [scoreW, setScoreW] = useState(0)
   const [scoreB, setScoreB] = useState(0)
@@ -162,11 +165,11 @@ export default function PositionAnalyzer({
   // Dizilim degistikce kalici kaydet (analyzer kapanip acilinca / yenilenince korunur).
   useEffect(() => {
     try {
-      localStorage.setItem(PA_STORE_KEY, JSON.stringify({ pts, bar, off, turn, cube }))
+      localStorage.setItem(PA_STORE_KEY, JSON.stringify({ pts, bar, off, turn, cube, d1, d2 }))
     } catch {
       /* kota/private-mode: yoksay */
     }
-  }, [pts, bar, off, turn, cube])
+  }, [pts, bar, off, turn, cube, d1, d2])
 
   const allFroms = new Set<number | 'bar'>([...Array(24).keys(), 'bar'])
 
