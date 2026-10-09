@@ -14738,8 +14738,9 @@ button.acct-row-logout:hover:not(:disabled) {
 .mr-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
+  margin-top: 10px; /* yan yana + üst üste buton satırları yapışmasın (kullanıcı: "boşluk ver") */
 }
 .mr-actions .galaxy-btn,
 .mr-actions .menu-btn {
@@ -14782,7 +14783,7 @@ button.acct-row-logout:hover:not(:disabled) {
   .mr-row { padding: 5px 14px; font-size: 0.86rem; }
   .mr-row.mr-sub { padding-top: 3px; padding-bottom: 3px; font-size: 0.76rem; }
   .mr-label { font-size: 0.64rem; }
-  .mr-actions { gap: 6px; }
+  .mr-actions { gap: 6px; margin-top: 6px; }
 }
 
 /* ---- Pes et modali ---- */
