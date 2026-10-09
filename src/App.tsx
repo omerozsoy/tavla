@@ -1850,10 +1850,18 @@ export default function App() {
   // transiente (409 mandalı / bayat srvTurn / backoff) takılırsa manuel kurtarma yolu yoktu ->
   // oyuncu KALICI kilitlenir ("zar atamıyor", #XR37P). true olunca butonu acil kapı olarak açarız.
   const [autoRollStuck, setAutoRollStuck] = useState(false)
-  // API GERİ-ÇEKİLME (429 "Too Many Attempts"): bir istek rate-limit yerse bu zaman damgasına
-  // kadar YENİ istek ATMA (roll + poll). Aksi halde takılı auto-roll/poll döngüsü kotayı doldurup
-  // tüm hesabı kilitliyor (bir maçın spam'i diğer maçı da bloke ediyordu). Date.now() > ref -> serbest.
+  // API GERİ-ÇEKİLME (429 "Too Many Attempts"): POLL rate-limit yerse (room-read kovası) bu zaman
+  // damgasına kadar poll ATMA (kota boşalsın). Date.now() > ref -> serbest.
   const apiBackoffUntilRef = useRef(0)
+  // ZAR GERİ-ÇEKİLME: /roll 429 yerse (room-command kovası — poll'ün room-read kovasından AYRI) yalnız
+  // ZAR'ı kıs; POLL'ü SUSTURMA. Eskiden roll 429'u apiBackoffUntilRef'e yazıp poll'ü de durduruyordu ->
+  // sıra-devri/zar getiren tek kurtarma yolu (poll) de susunca oyuncu "hemen Zar At'a bastım 30sn
+  // bekledim" kilidine düşüyordu (sabırsız spam -> 429 -> poll sus -> resync gelmez -> tekrar spam).
+  const rollBackoffUntilRef = useRef(0)
+  // KURTARMA AĞI (tur-başına tek sefer): bu tur-başı pozisyonu için transient mandal (rollConflict /
+  // in-flight / bayat sıra) temizlemesini zaten yaptık mı? boardKey(turnStart) imzası; resync aynı
+  // pozisyonu geri getirince tekrar tetiklenip döngü yapmasın diye.
+  const recoveredTurnRef = useRef('')
   const lastSubmittedMoveRef = useRef<string | null>(null)
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
   // SAVUNMA KALKANI: istemci GEÇERSİZ tahta (toplam != 15/15) hesaplarsa kaç kez resync istendi
@@ -3421,7 +3429,7 @@ export default function App() {
   async function doRollAuthoritative() {
     const code = room?.code
     if (!code) return
-    if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme penceresi
+    if (Date.now() < rollBackoffUntilRef.current) return // /roll 429 sonrası geri-çekilme (poll'ü ETKİLEMEZ)
     // MAÇ BİTTİ: sunucu odayı 'finished' işaretlediyse (forfeit/timeout/normal son) ZAR ATMA.
     // Aksi halde biten maçta auto-roll POST /roll 409 "Oyun aktif değil" döngüsüne girer (#KVU8X).
     // Poll'un maç-sonu kesin-uygulama dalı zaten MatchResult'ı getirir; burada yalnız spam'i keseriz.
@@ -3533,7 +3541,7 @@ export default function App() {
       // GERİ ÇEKİL: birkaç saniye roll+poll durur, kova boşalır, sonra normal akış döner. 429'da
       // rahatsız edici toast da gösterme.
       if (err?.status === 429) {
-        apiBackoffUntilRef.current = Date.now() + 5000 // 5 sn geri çekil (roll + poll)
+        rollBackoffUntilRef.current = Date.now() + 5000 // 5 sn YALNIZ zarı kıs; poll çalışmaya devam (kurtarma)
         return
       }
       if (err?.status !== 409) {
@@ -6377,23 +6385,35 @@ export default function App() {
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
     if (oppReplay) return // §5.2: rakibin hamlesi ekranda oynanırken benim zarımı atma (replay bitince tekrar çalışır)
-    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)) return
+    // OTO-ZAR yalnız shouldAutoRoll iken (küp hakkı yok -> seçim yok). Küpü OLAN oyuncu MANUEL atar
+    // (shouldAutoRoll=false) ama KURTARMA AĞI ikisinde de kurulur (eskiden burada return edilip manuel
+    // atan oyuncu transient mandalda 30sn kilitli kalıyordu — "hemen Zar At'a bastım, zar gelmedi").
+    const canAuto = shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)
     setAutoRollStuck(false)
     // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
-    // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Açılış effect'indeki (satir ~4096)
-    // retry desenini birebir uygula. Poll BENİM zarsız turumda server_version'i ilerletmez -> bu
-    // effect yeniden çalışmaz, dolayısıyla retry/timer'lar kesintisiz işler; zar atılınca (ya da
-    // tur değişince) version ilerler -> effect cleanup timer'ları temizler. serverRoll idempotent.
-    const first = window.setTimeout(() => doRoll(), 500)
-    const retry = window.setInterval(() => doRoll(), 2500)
-    // ACİL KAPI: ~4sn içinde zar atılmadıysa oto-zar takılmış demektir. Kurtarılabilir mandalları
-    // temizle (rollConflictRef) + otoriter durumu zorla çek (version=-1 -> poll re-apply) ki hem
-    // retry hem de açılacak MANUEL buton tıklaması ilerleyebilsin; sonra butonu göster.
-    const reveal = window.setTimeout(() => {
-      rollConflictRef.current = false
-      appliedServerVersionRef.current = -1
-      setAutoRollStuck(true)
-    }, 4000)
+    // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Poll BENİM zarsız turumda
+    // server_version'i ilerletmez -> bu effect yeniden çalışmaz, retry/timer'lar kesintisiz işler;
+    // zar atılınca / tur değişince cleanup temizler. serverRoll idempotent. (Yalnız canAuto'da.)
+    const first = canAuto ? window.setTimeout(() => doRoll(), 500) : 0
+    const retry = canAuto ? window.setInterval(() => doRoll(), 2500) : 0
+    // KURTARMA AĞI (HEM oto HEM MANUEL): transient mandal (rollConflict / in-flight / bayat sıra / 429)
+    // kıstırırsa kurtarılabilir mandalları temizle + otoriter durumu zorla çek (version=-1 -> poll
+    // re-apply) ki retry VE manuel buton tıklaması ilerleyebilsin. canAuto: 4sn (+ manuel butonu aç);
+    // MANUEL: 6sn (düşünme payı) -> 30sn yerine ~6sn'de toparlar. TUR-BAŞINA TEK (recoveredTurnRef):
+    // resync aynı pozisyonu geri getirince (aynı boardKey) tekrar tetiklenmesin -> resync döngüsü yok.
+    const sig = boardKey(turnStart)
+    const reveal =
+      recoveredTurnRef.current === sig
+        ? 0
+        : window.setTimeout(
+            () => {
+              recoveredTurnRef.current = sig
+              rollConflictRef.current = false
+              appliedServerVersionRef.current = -1
+              if (canAuto) setAutoRollStuck(true)
+            },
+            canAuto ? 4000 : 6000,
+          )
     return () => {
       window.clearTimeout(first)
       window.clearInterval(retry)
