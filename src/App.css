@@ -1133,7 +1133,7 @@ button[aria-disabled='true'],
   cursor: pointer;
   color: var(--accent);
   font-size: 0.66rem;
-  font-weight: 400;
+  font-weight: 500;
   font-family: inherit;
   text-transform: uppercase;
   letter-spacing: 0.1em;
