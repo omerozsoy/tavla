@@ -14513,6 +14513,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .mr-score {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-size: 1.6rem;
   font-weight: 400;
@@ -24962,6 +24963,133 @@ button.acct-row-logout:hover:not(:disabled) {
 .fair-verify-cta {
   margin-top: 4px;
 }
+
+/* ==================== Zar Kontrol (DiceCheck) ==================== */
+.dc-intro {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted-foreground, #8a8278);
+  margin: 0 0 14px;
+}
+.dc-note {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border-radius: var(--radius, 10px);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+  border: 1px solid var(--border);
+  margin: 10px 0;
+}
+.dc-note.dc-warn {
+  background: color-mix(in srgb, var(--destructive, #c0392b) 9%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--destructive, #c0392b) 35%, var(--border));
+}
+.dc-note.dc-muted {
+  background: transparent;
+  border: none;
+  padding: 6px 2px;
+}
+.dc-commit {
+  margin: 12px 0;
+}
+.dc-commit-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-foreground, #8a8278);
+  margin-bottom: 4px;
+}
+.dc-commit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dc-commit-row code {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--tv-font-mono);
+  font-size: 0.74rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.dc-verify {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dc-result {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dc-vbanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.dc-vbanner.ok {
+  color: var(--tv-green, #3f9e6a);
+  border-color: color-mix(in srgb, var(--tv-green, #3f9e6a) 40%, var(--border));
+  background: color-mix(in srgb, var(--tv-green, #3f9e6a) 8%, var(--card-bg));
+}
+.dc-vbanner.bad {
+  color: var(--destructive, #c0392b);
+  border-color: color-mix(in srgb, var(--destructive, #c0392b) 40%, var(--border));
+  background: color-mix(in srgb, var(--destructive, #c0392b) 8%, var(--card-bg));
+}
+.dc-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+.dc-row.bad {
+  border-color: color-mix(in srgb, var(--destructive, #c0392b) 45%, var(--border));
+  background: color-mix(in srgb, var(--destructive, #c0392b) 7%, var(--card-bg));
+}
+.dc-row-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 92px;
+  color: var(--muted-foreground, #8a8278);
+}
+.dc-row-dice {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.dc-row-mark {
+  margin-left: auto;
+  color: var(--tv-green, #3f9e6a);
+}
+.dc-row.bad .dc-row-mark {
+  color: var(--destructive, #c0392b);
+}
+
 /* Sonuc state: ok = yesil, bad = destructive; ikisi de sakin (baginan degil) */
 .fair-vresult {
   margin-top: 16px;
