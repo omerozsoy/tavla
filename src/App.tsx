@@ -10307,7 +10307,7 @@ export default function App() {
     return (
       <LobbyLayout
         {...lobbyChrome}
-        sponsors={sponsors}
+        sponsors={anyPageOpen ? [] : sponsors}
         mainClassName={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}
         trailing={
           <>
