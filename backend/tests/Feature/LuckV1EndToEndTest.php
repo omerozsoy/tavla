@@ -6,7 +6,6 @@ use App\Models\Room;
 use App\Models\User;
 use App\Services\GnuBg\GnuBgClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Tests\TestCase;
@@ -83,8 +82,13 @@ class LuckV1EndToEndTest extends TestCase
             'match_length' => 1, 'log' => $blackLog,
         ])->assertOk();
 
-        // Gerçek queue worker: luck (+ no-op PR) job'ları işle.
-        Artisan::call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1]);
+        // Arka plan luck job'ını DOĞRUDAN çalıştır (merged dal iki satırı da yazar). Daha önce burada
+        // gerçek `queue:work` daemon'u vardı; RefreshDatabase transaction + SQLite job-rezervasyonu
+        // (savepoint) platforma/SQLite sürümüne göre kararsızdı → CI'de (Linux) worker job'ı HİÇ
+        // görmeyip boş çıkıyor (luck null), lokalde (Windows) geçiyordu. E2E'nin kanıtı rapor→birleşik
+        // luck job→matchPr zinciri; kuyruk TRANSPORT'u incidental. İş container'daki mock'u enjekte alır.
+        $lastId = (int) \App\Models\MatchResult::where('room_code', 'LKE2E')->max('id');
+        $this->app->call([new \App\Jobs\AnalyzeMatchLuckJob($lastId), 'handle']);
 
         // BEYAZ gözünden: self=white(p0)=+39, opp=black(p1)=-13.
         Sanctum::actingAs($white);
