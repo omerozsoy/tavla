@@ -24967,6 +24967,11 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 
 /* ==================== Zar Kontrol (DiceCheck) ==================== */
+/* Maç Sonucu (mr-overlay z-index:120) ve oyun görünümü (z-index:5000) ÜSTÜNDE açılmalı;
+   aksi halde sonuç ekranının ARKASINDA kalıp "ekran takıldı" görünüyordu. confirm(5300) üstü. */
+.dicecheck-overlay {
+  z-index: 5400;
+}
 .dc-intro {
   font-size: 0.9rem;
   line-height: 1.5;

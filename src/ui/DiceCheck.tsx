@@ -169,7 +169,7 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClo
   if (embed) return <div className="fair-embed">{body}</div>
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+    <div className="register-overlay modal page dicecheck-overlay" role="dialog" aria-modal="true">
       <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
