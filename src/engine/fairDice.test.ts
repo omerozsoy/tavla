@@ -7,6 +7,8 @@ import {
   serverRoll,
   serverSingle,
   verifyServerRolls,
+  futureServerRolls,
+  nextRollIndex,
 } from './fairDice'
 
 // Ground-truth: backend App\Services\FairDiceService (php -r) ile üretildi.
@@ -40,6 +42,18 @@ describe('fairDice sunucu HMAC portu (PHP FairDiceService ile birebir)', () => {
     const res = verifyServerRolls(SEED, CS, entries)
     expect(res.map((r) => r.ok)).toEqual([true, true, true, false])
     expect(res[1].computed).toEqual([5, 5, 5, 5])
+  })
+  it('nextRollIndex + futureServerRolls: oyun sonrası devam deterministik', () => {
+    const entries = [
+      { opening: 1, white: 5, black: 4, starter: 'white' as const },
+      { index: 0, slot: 'p1', dice: [5, 5, 5, 5] },
+      { index: 1, slot: 'p2', dice: [3, 2] },
+    ]
+    expect(nextRollIndex(entries)).toBe(2) // en büyük index 1 -> sonraki 2
+    const fut = futureServerRolls(SEED, CS, 2, 3)
+    expect(fut.map((f) => f.index)).toEqual([2, 3, 4])
+    expect(fut[0].dice).toEqual([3, 2]) // serverRoll index 2 = 3,2 (PHP vektörü)
+    expect(fut.length).toBe(3)
   })
 })
 

@@ -1073,6 +1073,9 @@ const TR: Dict = {
   'dc.needSeed': 'Doğrulamak için sunucu tohumunu gir. Maç bitince otomatik dolar.',
   'dc.noData': 'Bu maçta sunucu zarı yok (yalnız puanlı, paralı ve bot maçları doğrulanabilir).',
   'dc.open': 'Zar Kontrol',
+  'dc.gameEnded': '— oyun burada bitti —',
+  'dc.futureNote':
+    'Yukarıdaki "oyun burada bitti" çizgisinden sonrası OYNANMADI; tohum maç başında sabitlendiği için sıradaki zarlar zaten belliydi. Sunucunun durma noktasını seçmediğini bu devamla görebilirsin.',
   // ---- Bilgi › Adil Zar sayfasi (yeniden tasarim) ----
   'fairp.hero.title': '%100 Adil ve Güvenli Zarlar',
   'fairp.hero.intro1':

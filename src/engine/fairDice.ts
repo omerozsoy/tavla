@@ -273,3 +273,31 @@ export function verifyServerRolls(
     }
   })
 }
+
+// Oynanan son elden SONRAKİ zarlar: tohum ZATEN maç başında taahhüt edildiğinden sıra
+// deterministiktir; oyun bittiği yerden devam eden (OYNANMAMIŞ) elleri de üretip gösterir
+// -> sunucunun "durma noktasını" seçmediği (zar dizisi önceden sabit) görsel olarak kanıtlanır.
+// startIndex = kaydedilen en büyük regular-roll index + 1.
+export function futureServerRolls(
+  serverSeed: string,
+  clientSeed: string,
+  startIndex: number,
+  count: number,
+): Array<{ index: number; dice: number[] }> {
+  const out: Array<{ index: number; dice: number[] }> = []
+  for (let i = 0; i < count; i++) {
+    const index = startIndex + i
+    const [d1, d2] = serverRoll(serverSeed, clientSeed, index)
+    out.push({ index, dice: d1 === d2 ? [d1, d1, d1, d1] : [d1, d2] })
+  }
+  return out
+}
+
+// Kaydedilen rolls içindeki en büyük regular-roll (non-opening) index + 1 -> "gelecek" başlangıcı.
+export function nextRollIndex(entries: ServerDiceEntry[]): number {
+  let max = -1
+  for (const e of entries) {
+    if ('index' in e && typeof e.index === 'number' && e.index > max) max = e.index
+  }
+  return max + 1
+}

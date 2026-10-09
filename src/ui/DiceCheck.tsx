@@ -4,7 +4,13 @@ import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { sha256Hex, verifyServerRolls, type ServerDiceEntry } from '../engine/fairDice'
+import {
+  sha256Hex,
+  verifyServerRolls,
+  futureServerRolls,
+  nextRollIndex,
+  type ServerDiceEntry,
+} from '../engine/fairDice'
 import { showRoom } from '../api'
 
 // Zar Kontrol: online puanlı/paralı/bot maçlarının SUNUCU zarını (commit-reveal) doğrular.
@@ -81,7 +87,9 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
     const cs = vClient.trim()
     const commitOk = commit ? sha256Hex(seed) === commit : null
     const verified = verifyServerRolls(seed, cs, entries)
-    return { commitOk, verified, bad: verified.filter((r) => !r.ok).length }
+    // Oyun bittiği yerden SONRAKİ 20 el (oynanmadı) — tohumdan deterministik üretilir.
+    const future = entries.length > 0 ? futureServerRolls(seed, cs, nextRollIndex(entries), 20) : []
+    return { commitOk, verified, future, bad: verified.filter((r) => !r.ok).length }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checked, vServer, vClient, commit, rolls, fetched])
 
@@ -187,7 +195,27 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
                       <Icon name={r.ok ? 'check' : 'x'} size={15} className="dc-row-mark" />
                     </li>
                   ))}
+                  {/* Oyunun bittiği yer + sonraki 20 el (OYNANMADI): tohum maç başında sabitlendiği
+                      için sıra deterministik -> sunucunun durma noktasını seçmediği görülür. */}
+                  {result.future.length > 0 && (
+                    <>
+                      <li className="dc-divider" aria-hidden="true">
+                        <span>{t('dc.gameEnded')}</span>
+                      </li>
+                      {result.future.map((f) => (
+                        <li key={`f${f.index}`} className="dc-row future">
+                          <span className="dc-row-label">{t('dc.roll', { i: f.index })}</span>
+                          <span className="dc-row-dice" aria-hidden="true">
+                            {f.dice.map((d, j) => (
+                              <Icon key={j} name={dieIcon(d)} size={20} />
+                            ))}
+                          </span>
+                        </li>
+                      ))}
+                    </>
+                  )}
                 </ol>
+                {result.future.length > 0 && <div className="dc-note dc-muted">{t('dc.futureNote')}</div>}
               </div>
             )}
           </div>

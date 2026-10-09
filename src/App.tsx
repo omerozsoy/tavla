@@ -1831,6 +1831,10 @@ export default function App() {
   // SUNUCU-OTORİTER BOT: gnubg yokken (bot_status='unavailable') botu tekrar dürtme zamanlayıcısı.
   const botNudgeTimerRef = useRef<number | null>(null)
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
+  // Provably-fair ISTEMCI TOHUMU: maç başına rastgele (oda koduna bağlı). roll'da sunucuya gider;
+  // sunucu İLK roll'da dice_client_seed'e yazar -> Zar Kontrol'de dolu görünür + adil-zar güçlenir
+  // (sunucu, oyuncunun katkısını bilmeden avantajlı tohum GRIND'leyemez). Oda değişince yenilenir.
+  const clientSeedRef = useRef<{ code: string; seed: string }>({ code: '', seed: '' })
   const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
   // Bot maçı akıcılığı: insan Onayla/Kabul der demez (SUNUCU yanıtını BEKLEMEDEN) buton ANINDA
   // kapanır ve "sıra botta, düşünüyor" gösterilir; gnubg hamlesi arkada hesaplanır. Yoksa buton
@@ -3456,7 +3460,13 @@ export default function App() {
       recordNoDoubleIfEligible() // katlamayip zar atmak = no-double kup karari (PR'a girer)
       const expectedServerVersion =
         appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room?.server_version ?? 0)
-      const r = await serverRoll(code, undefined, expectedServerVersion)
+      // Oda başına rastgele istemci tohumu (yoksa üret): sunucu ilk roll'da saklar, Zar Kontrol açar.
+      if (clientSeedRef.current.code !== code) {
+        const b = new Uint8Array(8)
+        crypto.getRandomValues(b)
+        clientSeedRef.current = { code, seed: Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('') }
+      }
+      const r = await serverRoll(code, clientSeedRef.current.seed, expectedServerVersion)
       // SIRA-DEĞİL: sunucu 409 yerine güncel durumu döndü (not_turn). Tur-geçişi anında yerel tur
       // bir an bayatken auto-roll tetiklenince olur; SESSİZCE otoriter durumu uygula (konsolda 409
       // spam OLMAZ). Zar gelmedi -> yeni tur kurma, yalnız server_state/match'i yansıt.

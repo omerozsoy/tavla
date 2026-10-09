@@ -25117,6 +25117,33 @@ button.acct-row-logout:hover:not(:disabled) {
 .dc-row.bad .dc-row-mark {
   color: var(--destructive, #c0392b);
 }
+/* Oyunun bittiği yer çizgisi + sonrasındaki OYNANMAMIŞ "gelecek" eller (soluk/kesik). */
+.dc-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground, #8a8278);
+}
+.dc-divider::before,
+.dc-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.dc-row.future {
+  opacity: 0.6; /* oynanmadı -> soluk */
+  border-style: dashed;
+}
+.dc-row.future .dc-row-dice {
+  filter: grayscale(0.4);
+}
 
 /* Sonuc state: ok = yesil, bad = destructive; ikisi de sakin (baginan degil) */
 .fair-vresult {
