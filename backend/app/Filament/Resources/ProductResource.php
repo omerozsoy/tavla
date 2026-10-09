@@ -195,8 +195,66 @@ class ProductResource extends Resource
                 Tables\Filters\TernaryFilter::make('published')->label('Yayında'),
             ])
             ->actions([
+                // Ürünün tüm galerisi tek zip olarak iner. Resmi olmayan üründe pasif.
+                Tables\Actions\Action::make('downloadImages')
+                    ->label('Görselleri indir')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->visible(fn (Product $record) => ! empty($record->images))
+                    ->action(function (Product $record) {
+                        $disk = \Illuminate\Support\Facades\Storage::disk('uploads');
+                        $files = array_filter($record->images ?? [], fn ($p) => $disk->exists($p));
+                        if (empty($files)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Dosya bulunamadı')->danger()->send();
+                            return null;
+                        }
+                        $zipPath = tempnam(sys_get_temp_dir(), 'urun').'.zip';
+                        $zip = new \ZipArchive;
+                        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+                        $i = 1;
+                        foreach ($files as $p) {
+                            $zip->addFile($disk->path($p), ($i++).'-'.basename($p));
+                        }
+                        $zip->close();
+                        return response()->download($zipPath, Str::slug($record->name).'-gorseller.zip')
+                            ->deleteFileAfterSend(true);
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                // Seçili ürünlerin tüm görselleri tek zipte (klasör = ürün slug).
+                Tables\Actions\BulkAction::make('downloadImagesBulk')
+                    ->label('Görselleri indir (zip)')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->deselectRecordsAfterCompletion()
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $disk = \Illuminate\Support\Facades\Storage::disk('uploads');
+                        $zipPath = tempnam(sys_get_temp_dir(), 'urunler').'.zip';
+                        $zip = new \ZipArchive;
+                        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+                        $added = 0;
+                        foreach ($records as $record) {
+                            $i = 1;
+                            foreach (($record->images ?? []) as $p) {
+                                if ($disk->exists($p)) {
+                                    $zip->addFile($disk->path($p), Str::slug($record->name).'/'.($i++).'-'.basename($p));
+                                    $added++;
+                                }
+                            }
+                        }
+                        $zip->close();
+                        if ($added === 0) {
+                            @unlink($zipPath);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Seçili ürünlerde görsel yok')->danger()->send();
+                            return null;
+                        }
+                        return response()->download($zipPath, 'urun-gorselleri.zip')
+                            ->deleteFileAfterSend(true);
+                    }),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
