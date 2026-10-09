@@ -11210,11 +11210,12 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 0;
   border: 0;
   background: none;
+  border-radius: 50%;
   color: #fff;
   cursor: pointer;
   /* Daha belirgin golge: kalin ok koyu/acik gorsel uzerinde net okunur */
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 }
 .bs-arrow svg {
   width: 48px;
@@ -11222,6 +11223,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .bs-arrow:hover {
   transform: translateY(-50%) scale(1.08);
+  /* Ok etrafinda yumusak yari-saydam beyaz halka (gorseldeki gibi) */
+  background: rgba(255, 255, 255, 0.28);
 }
 /* Okları en dışa çek (panel yazısının üstüne binmesin) */
 .bs-arrow-prev {
