@@ -677,6 +677,7 @@ export default function PositionAnalyzer({
             pipTop={pipCount(displayState, 'black')}
             pipBottom={pipCount(displayState, 'white')}
             cube={cube}
+            numberFrom={turn}
             mirror={boardDir === 'left'}
             centerLeft={diceOnRight ? undefined : boardDice}
             centerRight={diceOnRight ? boardDice : undefined}
