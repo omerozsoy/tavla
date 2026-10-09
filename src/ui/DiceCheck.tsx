@@ -5,6 +5,7 @@ import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { sha256Hex, verifyServerRolls, type ServerDiceEntry } from '../engine/fairDice'
+import { showRoom } from '../api'
 
 // Zar Kontrol: online puanlı/paralı/bot maçlarının SUNUCU zarını (commit-reveal) doğrular.
 // Maç sırasında yalnız `commit` (mühür) gösterilir + kopyalanır; maç bitince backend
@@ -16,6 +17,7 @@ interface Props {
   serverSeed?: string | null // REVEAL: yalnız maç bitince
   clientSeed?: string | null
   rolls?: ServerDiceEntry[] | null // REVEAL: dice_rolls
+  code?: string // oda kodu: reveal props'ta yoksa maç-sonu burada taze çekilir (bkz aşağıdaki effect)
   onClose: () => void
   embed?: boolean
 }
@@ -25,10 +27,11 @@ function dieIcon(v: number): IconName {
   return ('die-' + n) as IconName
 }
 
-export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClose, embed }: Props) {
+export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code, onClose, embed }: Props) {
   const { t } = useT()
   useEscape(embed ? () => {} : onClose)
-  const revealed = !!serverSeed
+  const [fetched, setFetched] = useState<{ seed: string; client: string; rolls: ServerDiceEntry[] } | null>(null)
+  const revealed = !!serverSeed || !!fetched
   const [vServer, setVServer] = useState(serverSeed ?? '')
   const [vClient, setVClient] = useState(clientSeed ?? '')
   const [copied, setCopied] = useState(false)
@@ -44,7 +47,33 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClo
     }
   }, [serverSeed, clientSeed])
 
-  const entries = (rolls ?? []) as ServerDiceEntry[]
+  // REVEAL'İ KENDİN ÇEK (maç-sonu Zar Kontrol boş kalıyordu): reveal (dice_seed/client_seed/rolls)
+  // yalnız toClient'te gelir; maç bitince server_version artmaz -> poll 204 döner ve KAZANAN bitişi
+  // kendi hamle-yanıtından öğrenince (reveal YOK) room.dice_seed HİÇ dolmaz -> props boş. Props'ta
+  // reveal yoksa ama oda kodu + commit varsa since'siz showRoom ile taze çek (maç bittiyse reveal
+  // döner; bitmediyse dice_seed null -> gizli kalır, güvenli).
+  useEffect(() => {
+    if (serverSeed || !code || !commit || embed) return
+    let alive = true
+    showRoom(code)
+      .then((rv) => {
+        if (!alive || !rv?.dice_seed) return
+        setFetched({
+          seed: rv.dice_seed,
+          client: (rv.dice_client_seed ?? '') as string,
+          rolls: (rv.dice_rolls ?? []) as ServerDiceEntry[],
+        })
+        setVServer(rv.dice_seed)
+        setVClient((rv.dice_client_seed ?? '') as string)
+        setChecked(true)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [code, commit, serverSeed, embed])
+
+  const entries = (fetched?.rolls ?? rolls ?? []) as ServerDiceEntry[]
 
   const result = useMemo(() => {
     if (!checked || !vServer.trim()) return null
@@ -54,7 +83,7 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClo
     const verified = verifyServerRolls(seed, cs, entries)
     return { commitOk, verified, bad: verified.filter((r) => !r.ok).length }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checked, vServer, vClient, commit, rolls])
+  }, [checked, vServer, vClient, commit, rolls, fetched])
 
   function copyCommit() {
     if (!commit) return

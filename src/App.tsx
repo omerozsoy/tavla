@@ -9637,6 +9637,7 @@ export default function App() {
           serverSeed={room?.dice_seed ?? null}
           clientSeed={room?.dice_client_seed ?? null}
           rolls={room?.dice_rolls ?? null}
+          code={room?.code}
           onClose={() => setDiceCheckOpen(false)}
         />
       )}
