@@ -16,7 +16,11 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # npm install (not `npm ci`): depo Windows'ta bakiliyor; @tailwindcss/oxide-wasm32-wasi'nin
+      # BUNDLE'lanmis @emnapi/core+runtime optional dep'leri yalniz Linux'ta cozulur, Windows npm
+      # bunlari lockfile'a yazamaz -> `npm ci` EUSAGE verir. `npm install` lockfile'i kullanir,
+      # drift'i tolere eder, EUSAGE atmaz. (Dogru lockfile ancak Linux'ta uretilebilir.)
+      - run: npm install --no-audit --no-fund
       - run: npm run audit:seo
       - run: npm run typecheck
       - run: npm run lint
