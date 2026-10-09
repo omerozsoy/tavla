@@ -174,7 +174,10 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, onClo
   // ekranının ARKASINDA/bozuk kalıyordu ("açılıyor ama arkada"). Portal ile en tepe (body)
   // bağlamına taşınır -> z-index gerçekten topmost olur (chat görsel önizleme ile aynı çözüm).
   return createPortal(
-    <div className="register-overlay modal page dicecheck-overlay" role="dialog" aria-modal="true">
+    // ORTALI MODAL (page DEĞİL): body'ye portal edildiği için `.register-overlay.page`'in
+    // `left:254px` + sol-hizası `.game-view .page{left:0}` düzeltmesini ALMIYORDU -> solda koyu
+    // şerit + sayfa gibi sol-hizalı açılıyordu. `modal` (+:not(.page)) -> flex-center scrim.
+    <div className="register-overlay modal dicecheck-overlay" role="dialog" aria-modal="true">
       <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />

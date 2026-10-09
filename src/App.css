@@ -24980,10 +24980,17 @@ button.acct-row-logout:hover:not(:disabled) {
 /* ==================== Zar Kontrol (DiceCheck) ==================== */
 /* Maç Sonucu (mr-overlay z-index:120) ve oyun görünümü (z-index:5000) ÜSTÜNDE açılmalı;
    aksi halde sonuç ekranının ARKASINDA kalıp "ekran takıldı" görünüyordu. confirm(5300) üstü. */
-/* .register-overlay.page (0,2,0) z-index:50 bunu eziyordu -> seçici özgüllüğü yükselt
-   ki 5400 gerçekten uygulansın (mr-overlay 120 ÜstÜnde açılsın). */
-.register-overlay.page.dicecheck-overlay {
+/* Zar Kontrol = ORTALI MODAL (page değil): `.register-overlay` tabanı flex-center + inset:0 zaten
+   ortalar; burada yalnız topmost z-index (mr-overlay/game-view üstünde) + kart ölçüsü. */
+.register-overlay.dicecheck-overlay {
   z-index: 5400;
+}
+/* Modal kartı: taban .register-card 380px dar (zar listesi + commit hash için). Ferah ama ortalı;
+   uzun zar listesinde kartın kendi içi kayar (overlay değil -> başlık/kapat sabit kalır). */
+.dicecheck-overlay .register-card.fair-card {
+  max-width: 620px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
 }
 .dc-intro {
   font-size: 0.9rem;
