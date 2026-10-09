@@ -4121,8 +4121,10 @@ export default function App() {
   useEffect(() => {
     if (!interactive || !diceRolled || gameWon) return
     if (remainingDice.length === 0) return // tur tamamlandi, analiz yok
-    // Panel kapali VE ogrenme modu kapali: mid-turn analiz yok (sadece tur basi -> PR)
-    if (!showAnalysis && !learnMode && played.length > 0) return
+    // Panel kapali VE ogrenme modu kapali VE manuel ipucu KAPALI: mid-turn analiz yok (sadece
+    // tur basi -> PR). hintShown eklendi: manuel İpucu açıkken alt-hamlede de kalan zar için
+    // yeniden hesaplansın ("ilk zarı oynayınca ipucu kutusu yok oluyor" fix).
+    if (!showAnalysis && !learnMode && !hintShown && played.length > 0) return
     // Analiz durumu: hic oynanmadiysa tur basi; oynandiysa mevcut konum + kalan zarlar
     const analysisState =
       played.length === 0
@@ -4155,7 +4157,7 @@ export default function App() {
           // ister -> hicbir kaynak kalmaz, curBest null -> ipucu kaybolur. r boşsa YEREL SEZGİSEL
           // (generateMoves + evaluatePosition, ANINDA, net gerektirmez) ile doldur (ipucu/panel modu).
           let hintRanks = r
-          if (hintRanks.length === 0 && (showAnalysis || learnMode)) {
+          if (hintRanks.length === 0 && (showAnalysis || learnMode || hintShown)) {
             const mover = analysisState.turn
             hintRanks = generateMoves(analysisState)
               .map((move) => ({
@@ -4249,7 +4251,7 @@ export default function App() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAnalysis, learnMode, interactive, diceRolled, played, turnStart, working, remainingDice, gameWon])
+  }, [showAnalysis, learnMode, hintShown, interactive, diceRolled, played, turnStart, working, remainingDice, gameWon])
 
   // ---- Kup danismani (insan) ----
   // Roll oncesi insan katlayabiliyorsa: teklif tavsiyesi. Insan kup teklifiyle
@@ -4338,10 +4340,12 @@ export default function App() {
   // hamleyi yapınca ipucu kapanıyor" bug'ı). Manuel ipucu modunda (learn değil) ise analiz
   // effect alt-hamlede erken döndüğünden stale ipucu görünmesin -> orada kapat.
   useEffect(() => {
-    if (learnMode) return
+    // Manuel İpucu AÇIKKEN (hintShown) de alt-hamlede KAPATMA -> analiz effect kalan zar için
+    // curBest'i günceller (öğrenme moduyla aynı davranış; "ilk zarı oynayınca ipucu yok oluyor" fix).
+    if (learnMode || hintShown) return
     setHintShown(false)
     setCurBest(null)
-  }, [played.length, learnMode])
+  }, [played.length, learnMode, hintShown])
 
   // Tur bastan sona zorunlu mu oynandi (oyuncu hic secim yapmadi)? -> otomatik onay.
   const fullyForcedRef = useRef(false)
