@@ -175,12 +175,17 @@ class Shield
                     "≈{$winCount}/dk istek", email: ! $benignRead);
             }
             if ($errEventTier !== null) {
+                // 401/403 = token süresi/misafir polling gürültüsü, saldırı değil → panelde kaydet,
+                // mail atma. Gerçek sunucu hatası (5xx) birikimi mail atmaya devam eder.
+                $authNoise = $status === 401 || $status === 403;
                 self::event($userId, $ip, 'error_burst', $errEventTier + 1, $path, $method, $status,
-                    "{$errCount} hata (oturum)");
+                    "{$errCount} hata (oturum)", email: ! $authNoise);
             }
             if ($spinEventTier !== null) {
+                // Çark/slot çevirmek bir oyun özelliği (para cüzdandan kontrollü düşer); yüksek spin
+                // sayısı saldırı değil → panelde kaydet ama mail atma.
                 self::event($userId, $ip, 'spin_burst', $spinEventTier + 1, $path, $method, $status,
-                    "{$spinCount} çevirme (oturum)");
+                    "{$spinCount} çevirme (oturum)", email: false);
             }
             if ($isSusp && self::guard($subject, 'susp', 10)) {
                 self::event($userId, $ip, 'suspicious_path', 3, $path, $method, $status, 'Şüpheli/tarama isteği');
