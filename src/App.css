@@ -1131,7 +1131,7 @@ button[aria-disabled='true'],
   background: none;
   border: none;
   cursor: pointer;
-  color: color-mix(in srgb, var(--muted) 78%, transparent);
+  color: var(--accent);
   font-size: 0.66rem;
   font-weight: 400;
   font-family: inherit;
@@ -1147,7 +1147,7 @@ button[aria-disabled='true'],
   margin-top: 2px;
 }
 .menu-group-title:hover {
-  color: color-mix(in srgb, var(--accent) 55%, var(--muted));
+  color: color-mix(in srgb, var(--accent) 80%, #000);
 }
 .menu-group-label {
   flex: 1;
