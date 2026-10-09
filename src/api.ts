@@ -1904,7 +1904,12 @@ export interface RoomView {
   // authoritative'den AYRI (o tam otoriter yol). Bahisli (para) odalarda acilir.
   dice_authority?: boolean
   dice_seed?: string | null // REVEAL: yalniz mac bitince dolu (provably-fair dogrulama)
-  dice_rolls?: Array<{ index: number; slot: string; dice: number[] }> | null // REVEAL
+  dice_client_seed?: string | null // REVEAL: istemci tohum katkisi (dogrulamada gerekir)
+  // REVEAL: her el/acilis kaydi. Normal el {index,slot,dice}; acilis {opening,white,black,starter}.
+  dice_rolls?: Array<
+    | { index: number; slot: string; dice: number[] }
+    | { opening: number; white: number; black: number; starter: 'white' | 'black' }
+  > | null
   // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar ->
   // rakip adım adım animasyonla görür. Otorite DEĞİL (server_state/version ayrı).
   live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null

@@ -324,6 +324,10 @@ class Room extends Model
             // commit'i ve tüm zarları provably-fair doğrular. Oyun sürerken dice_seed GİZLİ.
             'dice_seed' => $this->hasVerifiedServerResult() ? $this->dice_seed : null,
             'dice_rolls' => $this->hasVerifiedServerResult() ? ($this->dice_rolls ?? []) : null,
+            // clientSeed de REVEAL ile açılır: Zar Kontrol zarları (serverSeed+clientSeed+index)
+            // yeniden üretip birebir doğrulayabilsin (maç sürerken gizli tutmaya gerek yok ama
+            // tutarlılık için aynı kapıdan).
+            'dice_client_seed' => $this->hasVerifiedServerResult() ? (string) $this->dice_client_seed : null,
             // Oda modu (ranked/friendly): rovans sonrasi istemci puanli/puansiz ayrimini korur.
             'mode' => $this->mode,
             // RÖVANŞ durumu: p1/p2 cevaplari (null|yes|no) + anlasma saglandiysa YENI oda kodu.

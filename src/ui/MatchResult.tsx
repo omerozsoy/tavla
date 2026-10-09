@@ -60,6 +60,8 @@ interface Props {
   onTournamentLobby?: () => void
   onAnalysis: () => void
   hasReport: boolean
+  // Zar Kontrol (provably-fair): online puanlı/paralı/bot maçında sunucu zarını doğrula. undefined -> gizli.
+  onDiceCheck?: () => void
   matchCode?: string | null // online maç kodu (kopyalanabilir; hata bildirimi/destek için)
   // Maç saat/terk ile bittiyse sebep: 'TIMEOUT' | 'AFK_TIMEOUT' | 'ABANDON'. null -> normal bitiş
   // (pul bitirme / pes). Kaybeden "kimse çıkmadan kendi kendine bitti" sanmasın diye gösterilir.
@@ -72,6 +74,8 @@ interface Props {
   loserRating?: number | null
   // KLASIK TAVLA: PR satırları (Hata Oranı / Pul Oyunu PR / Küp PR) + "PR hesaplanıyor" notu gizlenir.
   classic?: boolean
+  // Küp hiç olmayan maç (1 puanlık, para değil): Küp PR satırı gizlenir ("—" bile yazılmaz).
+  noCube?: boolean
 }
 
 function Avatar({ url, color }: { url?: string | null; color: Side }) {
@@ -124,12 +128,14 @@ export default function MatchResult({
   onTournamentLobby,
   onAnalysis,
   hasReport,
+  onDiceCheck,
   matchCode,
   endReason,
   spectator = false,
   winnerRating,
   loserRating,
   classic = false,
+  noCube = false,
 }: Props) {
   const { t } = useT()
   const [codeCopied, setCodeCopied] = useState(false)
@@ -302,11 +308,14 @@ export default function MatchResult({
                 <span className="mr-label">{t('mr.checkerPr')}</span>
                 <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCheckerPr ?? null)}</span>
               </div>
-              <div className="mr-row mr-sub">
-                <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
-                <span className="mr-label">{t('mr.cubePr')}</span>
-                <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
-              </div>
+              {/* Küp PR: küp olmayan maçta (1 puanlık, para değil) gizli — anlamsız "—" yazılmaz. */}
+              {!noCube && (
+                <div className="mr-row mr-sub">
+                  <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
+                  <span className="mr-label">{t('mr.cubePr')}</span>
+                  <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
+                </div>
+              )}
               {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
                   anlaşılmıyordu -> tam genişlik bilgi satırı. */}
               {(aAnalyzing || bAnalyzing) && (
@@ -363,12 +372,20 @@ export default function MatchResult({
           </div>
         </div>
 
-        {hasReport && (
+        {(hasReport || onDiceCheck) && (
           <div className="mr-actions mr-report-actions">
             {/* Tek "Maç Özeti" butonu: Analiz + İstatistik aynı raporu açıyordu -> birleştirildi. */}
-            <Button variant="outline" onClick={onAnalysis}>
-              <Icon name="chart" /> {t('ms.btn')}
-            </Button>
+            {hasReport && (
+              <Button variant="outline" onClick={onAnalysis}>
+                <Icon name="chart" /> {t('ms.btn')}
+              </Button>
+            )}
+            {/* Zar Kontrol: sunucu zarını (commit-reveal) bağımsız doğrula. */}
+            {onDiceCheck && (
+              <Button variant="outline" onClick={onDiceCheck}>
+                <Icon name="dice" /> {t('dc.open')}
+              </Button>
+            )}
           </div>
         )}
         {!spectator && rmPhase === 'asked' && (

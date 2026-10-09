@@ -40,6 +40,7 @@ interface Props {
   onShop?: () => void
   onLobby: () => void
   onResign: () => void
+  onDiceCheck?: () => void // Zar Kontrol (sunucu zarı doğrulama) — yalnız puanlı/paralı/bot maçta
   onClose: () => void
 }
 
@@ -117,6 +118,18 @@ export default function GameMenu(p: Props) {
             <span className="gm-circle-ic"><Icon name="home" size={18} /></span>
             <span className="gm-circle-lbl">{t('gm.lobby')}</span>
           </button>
+          {p.onDiceCheck && (
+            <button
+              className="gm-circle dicecheck"
+              onClick={() => {
+                p.onClose()
+                p.onDiceCheck!()
+              }}
+            >
+              <span className="gm-circle-ic"><Icon name="dice" size={18} /></span>
+              <span className="gm-circle-lbl">{t('dc.open')}</span>
+            </button>
+          )}
           {p.canResign && (
             <button
               className="gm-circle resign"

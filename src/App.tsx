@@ -35,7 +35,7 @@ import {
   secureDie,
 } from './engine/game'
 import { HeuristicBot } from './engine/engine'
-import { FairDice } from './engine/fairDice'
+import { FairDice, type ServerDiceEntry } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
@@ -161,6 +161,7 @@ import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import RankInfo from './ui/RankInfo'
 import FairnessModal from './ui/FairnessModal'
+import DiceCheck from './ui/DiceCheck'
 import Friends from './ui/Friends'
 import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
@@ -639,6 +640,12 @@ interface RoomState {
   classic?: boolean
   // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar.
   live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
+  // Provably-fair zar (Zar Kontrol): commit maç boyunca görünür; seed/clientSeed/rolls yalnız
+  // maç bitince REVEAL ile dolar (puanlı/paralı/bot = sunucu zarı). Bkz DiceCheck.
+  dice_commit?: string | null
+  dice_seed?: string | null
+  dice_client_seed?: string | null
+  dice_rolls?: ServerDiceEntry[] | null
 }
 const BOT_PLAYER: Player = 'black'
 // SUNUCU-OTORİTER BOT: true iken PvB maçı sunucuda (authoritative bot odası) oynanır — zar/tahta/
@@ -955,6 +962,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
+  const [diceCheckOpen, setDiceCheckOpen] = useState(false) // Zar Kontrol (sunucu zarı doğrulama)
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [messagesOpen, setMessagesOpen] = useState(false) // ozel mesajlar (DM) modali
   const [messagesFocusId, setMessagesFocusId] = useState<number | null>(null) // acilirken odaklanilacak arkadas
@@ -4131,13 +4139,17 @@ export default function App() {
             // Sans (luck) artik burada DEGIL: recordPR icinde hesaplaniyor (bu effect
             // hizli oynayinca cleanup ile iptal olup luck'i kaybediyordu).
           }
-          if (r.length > 0) {
+          // Hamle yoksa (pas/dance: generateMoves tek BOS-adimli hamle doner) ipucu YOK —
+          // gosterecek bir sey yok, ogrenme/ipucu kutusu bos/anlamsiz kalmasin.
+          if (r.length > 0 && r[0].move.steps.length > 0) {
             const b = r[0]
             setCurBest({
               notation: moveNotation(b.move, analysisState.turn),
               equity: b.equity,
               reasons: explainMove(analysisState, b.move, analysisState.turn),
             })
+          } else {
+            setCurBest(null)
           }
           if (showAnalysis) {
             setRanked(r)
@@ -4163,7 +4175,7 @@ export default function App() {
                 matchLength: match.target,
                 plies: 2,
               })
-              if (!cancelled && g.moves && g.moves.length > 0) {
+              if (!cancelled && g.moves && g.moves.length > 0 && g.moves[0].notation) {
                 const gb = g.moves[0]
                 setCurBest({ notation: gb.notation, equity: gb.equity, reasons: [] })
                 if (showAnalysis) {
@@ -4189,13 +4201,15 @@ export default function App() {
             }))
             .sort((a, b) => b.equity - a.equity)
           if (played.length === 0) turnRankedRef.current = ranks
-          if (ranks.length > 0) {
+          if (ranks.length > 0 && ranks[0].move.steps.length > 0) {
             const b = ranks[0]
             setCurBest({
               notation: moveNotation(b.move, mover),
               equity: b.equity,
               reasons: explainMove(analysisState, b.move, mover),
             })
+          } else {
+            setCurBest(null)
           }
           if (showAnalysis) {
             setRanked(ranks)
@@ -5607,6 +5621,12 @@ export default function App() {
                 dice_authority: rv.dice_authority ?? r.dice_authority,
                 classic: rv.classic ?? r.classic, // Klasik Tavla bayrağı (küp yok + mars=2)
                 live: rv.live ?? null, // canlı rakip önizlemesi (cosmetic)
+                // Zar Kontrol: commit canlı; seed/clientSeed/rolls maç bitince REVEAL -> bir
+                // kez gelince KORU (?? r.X), sonraki poll null dönse de kaybolmasın.
+                dice_commit: rv.dice_commit ?? r.dice_commit,
+                dice_seed: rv.dice_seed ?? r.dice_seed,
+                dice_client_seed: rv.dice_client_seed ?? r.dice_client_seed,
+                dice_rolls: (rv.dice_rolls as ServerDiceEntry[] | null) ?? r.dice_rolls,
               }
             : r,
         )
@@ -9378,6 +9398,7 @@ export default function App() {
     frameAnimOpen ||
     gamePreviewOpen ||
     fairOpen ||
+    diceCheckOpen ||
     lessonsOpen ||
     soloOpen ||
     !!contentView ||
@@ -9563,6 +9584,15 @@ export default function App() {
           serverSeed={matchWinner(match) ? fairRef.current.serverSeed : undefined}
           rolls={fairRef.current.nonce}
           onClose={() => setFairOpen(false)}
+        />
+      )}
+      {diceCheckOpen && (
+        <DiceCheck
+          commit={room?.dice_commit ?? null}
+          serverSeed={room?.dice_seed ?? null}
+          clientSeed={room?.dice_client_seed ?? null}
+          rolls={room?.dice_rolls ?? null}
+          onClose={() => setDiceCheckOpen(false)}
         />
       )}
       {lessonsOpen && (
@@ -10764,6 +10794,7 @@ export default function App() {
           else setHome(true)
         }}
         onResign={() => setResignOpen(true)}
+        onDiceCheck={room?.dice_commit ? () => setDiceCheckOpen(true) : undefined}
         onClose={() => setGameMenuOpen(false)}
       />
 
@@ -10921,6 +10952,7 @@ export default function App() {
           winnerScore={match.score[mWinner]}
           loserScore={match.score[opponent(mWinner)]}
           classic={!!match.classic} // KLASIK TAVLA: PR satirlari (hata/pul/kup) gizlenir
+          noCube={!isMoneyGame && match.target <= 1} // 1 puanlik mac (para degil): kup yok -> Kup PR gizle
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
           analyzing={prAnalyzing}
@@ -11017,6 +11049,8 @@ export default function App() {
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}
           hasReport={matchLog.length > 0}
           onAnalysis={() => setResultView('analysis')}
+          // Zar Kontrol: yalnız sunucu zarı olan maçlarda (commit var -> puanlı/paralı/bot).
+          onDiceCheck={room?.dice_commit ? () => setDiceCheckOpen(true) : undefined}
           matchCode={online ? (room?.code ?? null) : null}
           endReason={online ? endReason : null}
         />

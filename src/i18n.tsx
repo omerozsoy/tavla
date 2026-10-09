@@ -1050,6 +1050,29 @@ const TR: Dict = {
   'fair.verify.okDesc': 'Bu zar, maç sırasında kullanılan bilgilerle birebir eşleşiyor.',
   'fair.verify.badTitle': 'Eşleşmedi',
   'fair.verify.badDesc': 'Girilen bilgiler bu maçın kayıtlarıyla eşleşmiyor.',
+  // ---- Zar Kontrol (online puanlı/paralı/bot maçları: sunucu tohumu + tüm zarlar) ----
+  'dc.title': 'Zar Kontrol',
+  'dc.intro':
+    'Bu maçın zarları sunucuda gizli bir tohumdan üretildi. Maç sırasında yalnızca tohumun mührü (özeti) gösterilir; maç bitince tohum açılır ve tüm zarları burada birebir doğrulayabilirsin.',
+  'dc.commit': 'Tohum mührü (taahhüt)',
+  'dc.copy': 'Kopyala',
+  'dc.copied': 'Kopyalandı',
+  'dc.sealedNote':
+    'Gerçek tohum maç bitince açılır. O zaman buraya gelip atılan TÜM zarları tohumdan yeniden hesaplayıp doğrulayabilirsin.',
+  'dc.serverSeed': 'Sunucu tohumu (serverSeed)',
+  'dc.clientSeed': 'İstemci tohumu (clientSeed)',
+  'dc.verify': 'Tüm Zarları Doğrula',
+  'dc.commitOk': 'Tohum, maç başında verilen mühürle uyumlu.',
+  'dc.commitBad': 'Tohum, mühürle UYUŞMUYOR!',
+  'dc.allOk': 'Tüm {n} el doğrulandı — zarlar tohumla birebir eşleşiyor.',
+  'dc.someBad': '{bad}/{n} el eşleşmedi!',
+  'dc.opening': 'Oyun {g} · açılış',
+  'dc.roll': 'El #{i}',
+  'dc.recorded': 'Oynanan',
+  'dc.computed': 'Hesaplanan',
+  'dc.needSeed': 'Doğrulamak için sunucu tohumunu gir. Maç bitince otomatik dolar.',
+  'dc.noData': 'Bu maçta sunucu zarı yok (yalnız puanlı, paralı ve bot maçları doğrulanabilir).',
+  'dc.open': 'Zar Kontrol',
   // ---- Bilgi › Adil Zar sayfasi (yeniden tasarim) ----
   'fairp.hero.title': '%100 Adil ve Güvenli Zarlar',
   'fairp.hero.intro1':

@@ -153,3 +153,123 @@ export class FairDice {
 export function verifyRoll(serverSeed: string, clientSeed: string, nonce: number): number[] {
   return rollFromSeed(serverSeed, clientSeed, nonce)
 }
+
+/* ============================================================================
+ * SUNUCU-OTORİTER (online puanlı/paralı/bot) ZAR DOĞRULAMASI
+ * ----------------------------------------------------------------------------
+ * Yukarıdaki rollFromSeed/verifyRoll İSTEMCİ (çevrimdışı/bot-lokal) adil zar
+ * içindir ve DÜZ SHA-256 kullanır. Online otoriter maçlarda zar SUNUCUDA
+ * (App\Services\FairDiceService) HMAC-SHA256 ile üretilir — FARKLI algoritma.
+ * Aşağısı o PHP servisinin BYTE-AYNI portudur (Zar Kontrol sayfası sunucu
+ * zarlarını bağımsız doğrulayabilsin diye). PHP ile birebir: ground-truth
+ * vektörleri fairDice.test.ts'te sabitlenmiştir — DEĞİŞTİRMEDEN ÖNCE testi oku.
+ * ========================================================================== */
+
+function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const out = new Uint8Array(a.length + b.length)
+  out.set(a)
+  out.set(b, a.length)
+  return out
+}
+
+// HMAC-SHA256 (PHP hash_hmac('sha256', msg, key, raw) ile aynı). key = serverSeed
+// metni (hex ASCII baytları — çözülmez). Blok 64 bayt.
+function hmacSha256Bytes(keyBytes: Uint8Array, msgBytes: Uint8Array): Uint8Array {
+  const block = 64
+  let key = keyBytes
+  if (key.length > block) key = sha256Bytes(key)
+  const k = new Uint8Array(block) // sıfır-dolgulu
+  k.set(key)
+  const iPad = new Uint8Array(block)
+  const oPad = new Uint8Array(block)
+  for (let i = 0; i < block; i++) {
+    iPad[i] = k[i] ^ 0x36
+    oPad[i] = k[i] ^ 0x5c
+  }
+  return sha256Bytes(concatBytes(oPad, sha256Bytes(concatBytes(iPad, msgBytes))))
+}
+
+// PHP uniformBytes: round=0,1,… HMAC(message:round) baytlarından <252 olanları
+// `count` tane toplar (modulo yanlılığı yok; 252 = 42*6).
+function serverUniformBytes(serverSeed: string, message: string, count: number): number[] {
+  const key = utf8(serverSeed)
+  const accepted: number[] = []
+  for (let round = 0; accepted.length < count; round++) {
+    const mac = hmacSha256Bytes(key, utf8(`${message}:${round}`))
+    for (let i = 0; i < mac.length && accepted.length < count; i++) {
+      if (mac[i] < 252) accepted.push(mac[i])
+    }
+  }
+  return accepted
+}
+
+// Sunucu `roll(serverSeed, clientSeed, index)` portu -> [d1, d2] (1..6).
+export function serverRoll(serverSeed: string, clientSeed: string, index: number): [number, number] {
+  const b = serverUniformBytes(serverSeed, `${clientSeed}:${index}`, 2)
+  return [(b[0] % 6) + 1, (b[1] % 6) + 1]
+}
+
+// Sunucu `single(serverSeed, clientSeed, index)` portu -> tek zar (açılış).
+export function serverSingle(serverSeed: string, clientSeed: string, index: number): number {
+  const b = serverUniformBytes(serverSeed, `${clientSeed}:single:${index}`, 1)
+  return (b[0] % 6) + 1
+}
+
+// Açılış eli: base = gameNo*4; white=single(base), black=single(base+1); eşitse
+// farklı çıkana dek ilerle (RoomController ile aynı). Başlayan = yüksek zar.
+export function reproduceOpening(
+  serverSeed: string,
+  clientSeed: string,
+  gameNo: number,
+): { white: number; black: number; starter: 'white' | 'black' } {
+  const base = gameNo * 4
+  const white = serverSingle(serverSeed, clientSeed, base)
+  let black = serverSingle(serverSeed, clientSeed, base + 1)
+  for (let k = 2; white === black; k++) black = serverSingle(serverSeed, clientSeed, base + k)
+  return { white, black, starter: white > black ? 'white' : 'black' }
+}
+
+// Sunucunun kaydettiği dice_rolls girdisi (REVEAL ile gelir).
+export type ServerDiceEntry =
+  | { index: number; slot?: string; dice: number[] }
+  | { opening: number; white: number; black: number; starter: 'white' | 'black' }
+
+export interface VerifiedServerRoll {
+  kind: 'opening' | 'roll'
+  gameNo?: number
+  index?: number
+  recorded: number[] // sunucunun oynattığı zar(lar)
+  computed: number[] // tohumdan yeniden hesaplanan
+  ok: boolean
+}
+
+// Açılan serverSeed + clientSeed ile kaydedilen TÜM zarları yeniden üret ve
+// birebir karşılaştır. Online maç biter bitmez (REVEAL) çağrılır.
+export function verifyServerRolls(
+  serverSeed: string,
+  clientSeed: string,
+  entries: ServerDiceEntry[],
+): VerifiedServerRoll[] {
+  return entries.map((e) => {
+    if ('opening' in e) {
+      const c = reproduceOpening(serverSeed, clientSeed, e.opening)
+      return {
+        kind: 'opening',
+        gameNo: e.opening,
+        recorded: [e.white, e.black],
+        computed: [c.white, c.black],
+        ok: c.white === e.white && c.black === e.black && c.starter === e.starter,
+      }
+    }
+    const [d1, d2] = serverRoll(serverSeed, clientSeed, e.index)
+    const computed = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2]
+    const recorded = Array.isArray(e.dice) ? e.dice : []
+    return {
+      kind: 'roll',
+      index: e.index,
+      recorded,
+      computed,
+      ok: computed.length === recorded.length && computed.every((x, i) => x === recorded[i]),
+    }
+  })
+}
