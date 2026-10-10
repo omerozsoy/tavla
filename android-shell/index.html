@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>TavlaTV</title>
+<style>
+  html,body{margin:0;height:100%;background:#1C1A17;color:#F4EFE6;
+    font-family:system-ui,-apple-system,sans-serif;overflow:hidden}
+  .wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
+  .mark{width:96px;height:96px;border-radius:22px;background:#A83A2B;
+    display:flex;align-items:center;justify-content:center;gap:8px}
+  .tri{width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent}
+  .up{border-bottom:28px solid #F4EFE6}
+  .down{border-top:28px solid #1C1A17}
+  .dots{display:flex;gap:7px}
+  .dots i{width:9px;height:9px;border-radius:50%;background:#C9563F;animation:b 1.2s infinite ease-in-out}
+  .dots i:nth-child(2){animation-delay:.2s}
+  .dots i:nth-child(3){animation-delay:.4s}
+  @keyframes b{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mark"><div class="tri up"></div><div class="tri down"></div></div>
+    <div class="dots"><i></i><i></i><i></i></div>
+  </div>
+</body>
+</html>
