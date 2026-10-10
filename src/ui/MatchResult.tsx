@@ -409,9 +409,16 @@ export default function MatchResult({
               <Icon name="trophy" /> {t('tourn.lobby')}
             </Button>
           ) : rmPhase === 'waiting' ? (
-            <Button variant="default" disabled>
-              <Icon name="refresh" /> {t('mr.rematchWait')}
-            </Button>
+            <>
+              <Button variant="default" disabled>
+                <Icon name="refresh" /> {t('mr.rematchWait')}
+              </Button>
+              {onRematchDecline && (
+                <Button variant="outline" onClick={onRematchDecline}>
+                  {t('mr.rematchCancel')}
+                </Button>
+              )}
+            </>
           ) : rmPhase === 'asked' ? (
             <>
               <Button variant="default" onClick={onRematch}>

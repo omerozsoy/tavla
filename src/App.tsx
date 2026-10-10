@@ -7339,6 +7339,12 @@ export default function App() {
       cancelInvite(room.code).catch(() => {})
     }
     setInviteWaitName(null) // hedefli davet bekleme etiketini temizle
+    // RÖVANŞ İPTALİ: "yes" dedim ama henüz rövanş odasına GİRMEDİM iken odadan çıkıyorsam teklifi
+    // geri çek. Aksi halde teklif sunucuda asılı kalır; rakip dakikalar sonra kabul edince oda açılır,
+    // bahis/escrow rezerve edilir ve ben orada olmadığımdan AFK hükmen kaybederim (cancelInvite deseni).
+    if (rematchSentRef.current === 'yes' && rematchEnteredRef.current == null && room?.code) {
+      rematchRoom(room.code, false).catch(() => {})
+    }
     setRematch({ mine: null, theirs: null, code: null })
     rematchEnteredRef.current = null
     rematchEnteringRef.current = null
