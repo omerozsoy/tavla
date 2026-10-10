@@ -56,9 +56,10 @@ class AuthController extends Controller
         // NOT: hoşgeldin coin'i KAYITTA verilmez -> e-posta DOĞRULAYINCA verilir (grantWelcomeCoins),
         // sahte e-posta ile bonus farmlanmasın. Google kullanıcısı doğrulanmış sayılır (aşağıda alır).
 
-        // E-posta dogrulama linki gonder (teslim icin gercek SMTP gerekir; MAIL_MAILER)
+        // E-posta dogrulama: kayitta HEMEN tek e-postada kod + link gonder (teslim icin gercek
+        // SMTP gerekir; MAIL_MAILER). Kullanici kodu/linki an'inda alir -> ekstra "Tekrar gonder" gereksiz.
         try {
-            $user->sendEmailVerificationNotification();
+            $this->sendVerificationEmail($user);
         } catch (\Throwable $e) {
             // Mail gonderilemezse kayit yine de tamamlanir (kullanici sonra tekrar gonderebilir)
             \Illuminate\Support\Facades\Log::warning('register: verification mail failed', [
@@ -1296,7 +1297,7 @@ class AuthController extends Controller
             ->orderByDesc('wins')
             ->limit($limit)
             // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin']);
 
         $rows = $users->values()->map(function ($u, $i) {
             // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
@@ -1316,6 +1317,7 @@ class AuthController extends Controller
                 'losses'  => $u->losses ?? 0,
                 'games'   => $u->games_played ?? 0,
                 'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
+                'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
                 'status'  => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
@@ -1342,7 +1344,7 @@ class AuthController extends Controller
             ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
             ->orderByDesc('career_pr_matches')            // sonra daha cok maç
             ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin']);
 
         $rows = $users->values()->map(function ($u, $i) {
             $online = $u->last_seen && $u->presence_status !== 'offline'
@@ -1359,6 +1361,7 @@ class AuthController extends Controller
                 'matches' => (int) $u->career_pr_matches,
                 'decisions' => (int) $u->career_pr_decisions,
                 'premium' => $u->plan_active !== 'free',
+                'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
                 'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
@@ -1463,6 +1466,7 @@ class AuthController extends Controller
             'losses' => $losses,
             'games' => $games,
             'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
+            'is_admin' => (bool) $user->is_admin, // yönetici -> isim yanı kırmızı kalkan + "Hata Bildir"
             'rank' => $rank,
             // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
             'career_pr' => \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,
@@ -2063,29 +2067,41 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Cache::has($cd)) {
             return response()->json(['message' => 'cooldown'], 429);
         }
-        // 6 haneli kod uret + cache'le (15 dk). Kullanici bu kodu formdan girip ANINDA aktive eder;
-        // ayrica mevcut imzali dogrulama LINKI de gonderilir (iki yontem de calisir).
-        $code = (string) random_int(100000, 999999);
-        \Illuminate\Support\Facades\Cache::put('eotp:'.$user->id, ['code' => $code, 'tries' => 0, 'email' => strtolower((string) $user->email)], now()->addMinutes(15));
         \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
+        // TEK e-postada kod + imzali link (eskiden "Doğrulama Kodun" + "Adresini Doğrula" iki ayri
+        // e-posta gidiyordu; birlestirildi). Mail patlarsa sessiz -> kullanici tekrar deneyebilir.
         try {
-            // Link e-postasiyla ayni markali HTML sablon (emails.message); kod moduyla.
-            \Illuminate\Support\Facades\Mail::send('emails.message', [
-                'heading' => 'Merhaba!',
-                'intro' => 'TavlaTV e-posta doğrulama kodun aşağıda. Kodu siteye girerek hesabını doğrulayabilirsin.',
-                'code' => $code,
-                'outro' => 'Bu kod 15 dakika geçerlidir. Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
-            ], fn ($m) => $m->to($user->email)->subject('TavlaTV — E-posta Doğrulama Kodun'));
+            $this->sendVerificationEmail($user);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('email verify code mail failed', ['e' => $e->getMessage()]);
-        }
-        // Imzali link de gonder (geri uyumluluk; mail patlarsa sessiz).
-        try {
-            $user->sendEmailVerificationNotification();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('email verify link mail failed', ['e' => $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::warning('email verify mail failed', ['e' => $e->getMessage()]);
         }
         return response()->json(['message' => 'sent']);
+    }
+
+    // Tek e-postada HEM 6 haneli kod HEM imzali dogrulama linkini gonderir. Kod 15 dk cache'lenir
+    // ('eotp:{id}'); verifyEmailCode bunu dogrular. Link = temporarySignedRoute('verification.verify')
+    // (sendEmailVerificationNotification ile ayni URL). Kayit + "Tekrar gonder" ikisi de bunu cagirir.
+    private function sendVerificationEmail(User $user): void
+    {
+        $code = (string) random_int(100000, 999999);
+        \Illuminate\Support\Facades\Cache::put(
+            'eotp:'.$user->id,
+            ['code' => $code, 'tries' => 0, 'email' => strtolower((string) $user->email)],
+            now()->addMinutes(15),
+        );
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes((int) config('auth.verification.expire', 60)),
+            ['id' => $user->getKey(), 'hash' => sha1($user->getEmailForVerification())],
+        );
+        \Illuminate\Support\Facades\Mail::send('emails.message', [
+            'heading' => 'Merhaba!',
+            'intro' => 'TavlaTV hesabını doğrulamak için aşağıdaki 6 haneli kodu siteye gir — veya butona tıkla.',
+            'code' => $code,
+            'url' => $url,
+            'buttonText' => 'E-posta Adresini Doğrula',
+            'outro' => 'Kod 15 dakika geçerlidir. Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
+        ], fn ($m) => $m->to($user->email)->subject('TavlaTV — E-posta Doğrulama'));
     }
 
     // E-posta kodu dogrula: dogruysa email_verified_at damgalanir. 5 yanlista kod iptal.
