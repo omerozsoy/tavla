@@ -98,6 +98,7 @@ import {
   IconPalette,
   IconInfoCircle,
   IconShieldCheck,
+  IconShieldCheckFilled,
   IconClock,
   IconFingerprint,
   IconPackage,
@@ -377,6 +378,7 @@ const FILLED: Partial<Record<IconName, TablerIcon>> = {
   'die-6': IconDice6Filled,
   heart: IconHeartFilled,
   'warning-circle': IconAlertCircleFilled,
+  'shield-check': IconShieldCheckFilled,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
