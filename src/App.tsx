@@ -8213,6 +8213,14 @@ export default function App() {
     )
   }
 
+  // E-POSTA DOGRULAMA DUVARI: girisli ama e-postasi dogrulanmamis kullanici TUM siteyi goremez.
+  // KRITIK: en ustte short-circuit. Eskiden yalniz son return'de idi -> home/setup/oyun gibi
+  // ~12 erken-return ekraninda ATLANIYORDU (gate 1sn flash edip kayboluyordu, duvar her ekranda
+  // bypass). Burada tek cikis -> dogrulanana/cikana kadar baska hicbir gorunum render edilmez.
+  if (user && !user.email_verified_at) {
+    return <EmailGate email={user.email} onVerified={(u) => setUser(u)} onLogout={handleLogout} />
+  }
+
   // Ortak Auth handler'lari (giris/kayit modali + profil duzenleme sayfasi paylasir)
   const authProps = {
     onAuthed: (u: ServerUser, isNew?: boolean) => {
@@ -11268,11 +11276,8 @@ export default function App() {
         </div>
       )}
 
-      {/* E-POSTA DOGRULAMA DUVARI: girisli ama e-postasi dogrulanmamis -> ZORUNLU dogrulama
-          engeli (portal, en ustte). Kodla dogrula / tekrar gonder / cikis disinda site kullanilamaz. */}
-      {user && !user.email_verified_at && (
-        <EmailGate email={user.email} onVerified={(u) => setUser(u)} onLogout={handleLogout} />
-      )}
+      {/* E-posta dogrulama duvari render'in EN BASINDA (authChecked guard'indan sonra) short-circuit
+          edilir -> dogrulanmamis kullanici buraya zaten ulasamaz. Bkz. yukaridaki early-return. */}
     </div>
   )
 }
