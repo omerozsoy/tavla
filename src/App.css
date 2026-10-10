@@ -26751,6 +26751,10 @@ button.acct-row-logout:hover:not(:disabled) {
   background: linear-gradient(90deg, transparent, #c9563f, transparent);
   opacity: 0.8;
 }
+.egate-logo {
+  display: inline-flex;
+  margin-bottom: 20px;
+}
 .egate-badge {
   width: 66px;
   height: 66px;

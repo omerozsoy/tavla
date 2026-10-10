@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
 import EmailVerify from './EmailVerify'
+import { TavlaTvLogo } from './TavlaTvLogo'
 import type { ServerUser } from '../api'
 
 interface Props {
@@ -18,6 +19,7 @@ export default function EmailGate({ email, onVerified, onLogout }: Props) {
   return createPortal(
     <div className="egate-overlay" role="dialog" aria-modal="true" aria-label={t('emailGate.title')}>
       <div className="egate-card">
+        <TavlaTvLogo size={26} tone="dark" className="egate-logo" />
         <div className="egate-badge" aria-hidden="true">
           <Icon name="mail" size={30} />
         </div>
