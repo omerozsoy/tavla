@@ -16107,22 +16107,17 @@ button.acct-row-logout:hover:not(:disabled) {
 .lb-name .avf-simple {
   margin: 0 4px;
 }
-/* Liderlik satırları: isim ASLA kırpılmasın -> tam yazılsın. Global .player-id-name-text
-   ellipsis'i burada iptal; kolon darsa isim KELIME sınırında alt satıra sarar (manşet deseni). */
+/* Liderlik satırları: SADE tek satır. Uzun isim alt satıra SARMAZ -> tek satırda kalır,
+   taşarsa ellipsis (…). Rozetler (kalkan/taç/madalya) isim satırına kilitli. */
 .lb-name .player-id-name {
-  /* Rozetler (kalkan/taç/top-3 madalya) ASLA alt satıra kaymasın -> isim satırına
-     kilitli. Uzun isim, metnin KENDİ kutusunda kelime sınırında sarar; rozetler
-     dikeyde ortalı kalır (önceki flex-wrap stray altın nokta hatası giderildi). */
   flex-wrap: nowrap;
-  white-space: normal;
+  white-space: nowrap;
   row-gap: 0;
 }
 .lb-name .player-id-name-text {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---- Global oyuncu kimlik blogu: avatar + isim (ustte) + rutbe (altta, ince) ----

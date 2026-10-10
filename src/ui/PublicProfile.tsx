@@ -152,7 +152,9 @@ export default function PublicProfile({
                     {friendSent ? t('online.friendSent') : t('online.addFriend')}
                   </Button>
                 ))}
-                {onMessage && (
+                {/* Yönetici/Destek profilinde "Mesaj gönder" GIZLI: üstteki "Yardım İste" zaten
+                    DM açıyor (çift buton olmasın). Normal oyuncuda gösterilir. */}
+                {onMessage && !(p.is_admin || p.is_support) && (
                   <Button variant="outline" className="pp-message" onClick={onMessage}>
                     <Icon name="chat" size={14} /> {t('dm.message')}
                   </Button>
