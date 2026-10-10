@@ -9,9 +9,12 @@ const config: CapacitorConfig = {
   webDir: 'android-shell',
   server: {
     // Kabuk CANLI siteyi yukler -> siteyi guncelle, uygulama otomatik guncellenir (TWA gibi).
-    // iOS'a gecip native push/OTA eklenince bu strateji tekrar degerlendirilecek.
-    // ponytail: canli-URL kabugu, offline-shell/OTA ancak App Store 4.2 veya cevrimdisi gerekirse
-    url: 'https://tavlatv.com',
+    // ONEMLI: www KANONIK (tavlatv.com -> 301 -> www.tavlatv.com). server.url'u direkt www yap,
+    // yoksa WebView ilk yuklemede baska host'a (www) yonlenir, Capacitor bunu "dis" sayip
+    // sayfayi HARICI tarayicida acar (uygulama ici beyaz/Chrome). allowNavigation iki host'u da
+    // uygulama ICINDE tutar.
+    url: 'https://www.tavlatv.com',
+    allowNavigation: ['tavlatv.com', 'www.tavlatv.com'],
     cleartext: false,
   },
 }
