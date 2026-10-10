@@ -82,19 +82,22 @@ Route::get('/dice-slot', [\App\Http\Controllers\DiceSlotController::class, 'show
 // 240/dk (IP basi) paylasimli NAT'i bile rahat karsilar ama dev-JSON flood'unu (DB/bant
 // genisligi tuketimi) durdurur. Sohbet spam'i icin ayrica daha siki 40/dk.
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:600,1,rooms'])->group(function () {
-    Route::post('/matchmaking', [RoomController::class, 'matchmaking'])->middleware('auth:sanctum');
+    // E-POSTA DOGRULAMA ZORUNLU: oyun-GIRIS eylemleri (eslesme/oda-olustur/bot/katil/gir) icin
+    // dogrulanmamis kullanici 403 alir (EmailVerified). In-game roll/move'a EKLENMEZ -> deploy aninda
+    // devam eden mac kesilmesin (giris zaten engelli).
+    Route::post('/matchmaking', [RoomController::class, 'matchmaking'])->middleware(['auth:sanctum', \App\Http\Middleware\EnsureEmailVerified::class]);
     Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel'])->middleware('auth:sanctum');
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
     Route::get('/online-players', [RoomController::class, 'onlinePlayers']); // cevrimici oyuncular
     Route::get('/seekers', [RoomController::class, 'seekers']); // oyun arayanlar (hizli eslesme havuzu)
     Route::get('/online-ids', [RoomController::class, 'onlineIds']); // site geneli online durum noktasi (id listesi)
-    Route::post('/rooms', [RoomController::class, 'create']);
+    Route::post('/rooms', [RoomController::class, 'create'])->middleware(\App\Http\Middleware\EnsureEmailVerified::class);
     // SUNUCU-OTORİTER BOT (PvB): bot maçını sunucuda başlat (state/zar/bot hamlesi sunucuda).
-    Route::post('/bot/rooms', [RoomController::class, 'createBotRoom']);
+    Route::post('/bot/rooms', [RoomController::class, 'createBotRoom'])->middleware(\App\Http\Middleware\EnsureEmailVerified::class);
     // Bot dürtme (kurtarma): sıra botta ama senkron sürüş gnubg yokluğunda duraklamışsa tekrar dener.
     Route::post('/rooms/{code}/bot', [RoomController::class, 'botNudge']);
-    Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
-    Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);
+    Route::post('/rooms/{code}/join', [RoomController::class, 'join'])->middleware(\App\Http\Middleware\EnsureEmailVerified::class);
+    Route::post('/rooms/{code}/enter', [RoomController::class, 'enter'])->middleware(\App\Http\Middleware\EnsureEmailVerified::class);
     Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
     Route::post('/rooms/{code}/rematch', [RoomController::class, 'rematch']); // ayni ayarlarla yeni oda
     Route::post('/rooms/{code}/leave', [RoomController::class, 'leave']); // terk -> terk eden kaybeder
