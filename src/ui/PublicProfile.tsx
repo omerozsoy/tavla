@@ -116,7 +116,7 @@ export default function PublicProfile({
                   <Button
                     variant="default"
                     className="pp-help"
-                    style={{ background: '#ffa093', borderColor: '#ffa093', color: '#1c1a17', width: '100%' }}
+                    style={{ background: '#C9563F', borderColor: '#C9563F', color: '#fff', width: '100%' }}
                     onClick={() => {
                       onClose()
                       onMessage()
