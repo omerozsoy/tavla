@@ -479,6 +479,15 @@ class RoomController extends Controller
                     }
                     continue;
                 }
+                // HARD GARANTİ: genel maç koltuğu (bahisli+ücretsiz, iki oyuncu). Biri zaten başka
+                // aktif maçtaysa atomik UNIQUE kilit reddeder -> para slot'unu + koltukları geri
+                // bırak, bu adayı atla (iki oyunda birden KESİN imkansız).
+                if (! Room::claimMatchSeat((int) $cand->p1_user_id, (int) $cand->id)
+                    || ! Room::claimMatchSeat($userId, (int) $cand->id)) {
+                    DB::table('active_money_match_claims')->where('room_id', $cand->id)->delete();
+                    Room::releaseMatchSeats((int) $cand->id);
+                    continue;
+                }
                 $cand->save();
                 return $cand;
             }
@@ -623,6 +632,7 @@ class RoomController extends Controller
             if (Schema::hasTable('active_money_match_claims')) {
                 Room::releaseActiveMoneyClaims((int) $room->id);
             }
+            Room::releaseMatchSeats((int) $room->id); // genel maç koltuklarını bırak (iki oyuncu)
             // Deadlock'u onlemek icin deterministik kilit sirasi (id'ye gore)
             $ids = array_values(array_unique(array_filter([$winnerId, $loserId])));
             sort($ids);
@@ -1362,6 +1372,15 @@ class RoomController extends Controller
             if ($this->userInAnyPlaying($joinUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
+            // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE) — enter() ile AYNI.
+            $joinHostId = (int) ($room->p1_user_id ?? 0);
+            if (! Room::claimMatchSeat((int) $joinUserId, $room->id)) {
+                return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            }
+            if ($joinHostId && ! Room::claimMatchSeat($joinHostId, $room->id)) {
+                Room::releaseUserMatchSeat((int) $joinUserId, $room->id);
+                return $this->fail('Rakip zaten başka bir maçta.', 409);
+            }
             // A-15: ikinci koltuk ATOMİK sahiplenilir (enter() ile aynı koşullu-UPDATE deseni). Eskiden
             // oku-kontrol-yaz idi: iki eşzamanlı join ikisi de "boş" görüp sırayla p2'yi eziyordu
             // (ilk katılan oyuncu sessizce koltuğunu kaybediyordu). 0 satır -> başkası kaptı -> 409.
@@ -1376,6 +1395,7 @@ class RoomController extends Controller
                     'updated_at' => now(),
                 ]);
             if (! $claimed) {
+                Room::releaseUserMatchSeat((int) $joinUserId, $room->id); // odayı alamadım -> kendi koltuğumu bırak
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();
@@ -1515,6 +1535,17 @@ class RoomController extends Controller
             if ($this->userInAnyPlaying($enterUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
+            // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE). userInAnyPlaying yarışı
+            // kaçırsa bile (sub-sn eşzamanlı match+accept) bu kesin engeller. p2 kapmadan ÖNCE kilitle;
+            // oda kapılamazsa (başkası aldı) kendi koltuğumu geri bırak (host'unki kazananındır).
+            $hostId = (int) ($room->p1_user_id ?? 0);
+            if (! Room::claimMatchSeat((int) $enterUserId, $room->id)) {
+                return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            }
+            if ($hostId && ! Room::claimMatchSeat($hostId, $room->id)) {
+                Room::releaseUserMatchSeat((int) $enterUserId, $room->id);
+                return $this->fail('Rakip zaten başka bir maçta.', 409);
+            }
             // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
             // olsun — matchmake ile AYNI. İki oyuncu da belli olduğundan shouldAuthoritative karar
             // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
@@ -1543,6 +1574,7 @@ class RoomController extends Controller
                 })
                 ->update($upd);
             if ($claimed === 0) {
+                Room::releaseUserMatchSeat((int) $enterUserId, $room->id); // odayı alamadım -> kendi koltuğumu bırak
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();

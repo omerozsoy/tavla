@@ -101,4 +101,21 @@ class DoubleGameGuardTest extends TestCase
 
         $this->assertSame('pending', DB::table('game_invites')->where('id', $id)->value('status'));
     }
+
+    // HARD GARANTİ primitifi: atomik koltuk UNIQUE'tir (ikinci maç reddedilir) + self-healing
+    // (ilk maç bitince ikinciye koltuk açılır -> sonsuza dek kilitli kalmaz).
+    public function test_match_seat_is_unique_and_self_heals(): void
+    {
+        $me = $this->user('seatuser');
+        $a = $this->playingRoom($me, 'SEATA');
+        $b = $this->playingRoom($me, 'SEATB');
+
+        $this->assertTrue(Room::claimMatchSeat($me->id, $a->id));   // ilk koltuk alınır
+        $this->assertTrue(Room::claimMatchSeat($me->id, $a->id));   // idempotent (aynı oda)
+        $this->assertFalse(Room::claimMatchSeat($me->id, $b->id));  // ikinci maç REDDEDİLİR
+
+        $a->status = 'finished';                                    // ilk maç biter
+        $a->save();
+        $this->assertTrue(Room::claimMatchSeat($me->id, $b->id));   // self-heal -> ikinciye açılır
+    }
 }

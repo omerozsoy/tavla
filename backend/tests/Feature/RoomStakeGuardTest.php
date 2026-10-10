@@ -47,16 +47,18 @@ class RoomStakeGuardTest extends TestCase
         ])->assertStatus(422); // C1: reddedilmeli
     }
 
-    public function test_free_match_allowed_while_in_staked_game(): void
+    public function test_free_match_blocked_while_in_any_game(): void
     {
-        // Bahisli maçtayken BAHİSSİZ (stake=0) oyun serbest — guard yalnız bahisliye.
+        // KURAL DEĞİŞTİ (kullanıcı: "bir daha asla 2 maçta birden"): HERHANGİ aktif maç (bahisli
+        // ya da bahissiz) varken yeni eşleşme REDDEDİLİR -> tek aktif maç. Eskiden bahisli maçtayken
+        // bahissiz oyun serbestti; o allowance kaldırıldı (userInAnyPlaying + atomik koltuk kilidi).
         $a = $this->user('stakeB');
         $this->playingStakedRoom($a, 'PLAY2');
 
         Sanctum::actingAs($a);
         $this->postJson('/api/matchmaking', [
             'token' => 'freetok', 'name' => 'stakeB', 'stake' => 0, 'targets' => [1],
-        ])->assertOk(); // bahissiz -> serbest
+        ])->assertStatus(409); // zaten bir maçtasın -> engellenir
     }
 
     public function test_staked_match_allowed_when_no_active_staked_game(): void

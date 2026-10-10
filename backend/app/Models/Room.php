@@ -209,6 +209,66 @@ class Room extends Model
         DB::table('active_money_match_claims')->where('room_id', $roomId)->delete();
     }
 
+    // "İki oyunda birden" HARD GARANTİ: kullanıcı için atomik maç koltuğu kilitle. user_id UNIQUE
+    // -> ikinci bir maça INSERT veritabanı seviyesinde reddedilir. TRUE = koltuk bu kullanıcınındır
+    // (bu oda), FALSE = zaten BAŞKA aktif maçta. active_money_match_claims ile AYNI self-healing:
+    // işaret ettiği oda artık mm_waiting/playing değilse (terk/timeout/bitiş settle'sız) bayat
+    // koltuk temizlenir -> kullanıcı sonsuza dek kilitli kalmaz. Tablo yoksa (migration beklemede)
+    // TRUE döner (eski davranış; engelleme yapmaz -> deploy sırası güvenli).
+    public static function claimMatchSeat(int $userId, int $roomId): bool
+    {
+        if ($userId <= 0 || ! Schema::hasTable('active_match_seats')) {
+            return true;
+        }
+        $existing = DB::table('active_match_seats')->where('user_id', $userId)->value('room_id');
+        if ($existing !== null) {
+            if ((int) $existing === $roomId) {
+                return true; // idempotent (aynı oda, ikinci çağrı / aynı maça iki slot)
+            }
+            $stillActive = static::whereKey($existing)
+                ->whereIn('status', ['mm_waiting', 'playing'])
+                ->exists();
+            if ($stillActive) {
+                return false; // gerçekten başka aktif maçta
+            }
+            DB::table('active_match_seats')
+                ->where('user_id', $userId)->where('room_id', $existing)->delete();
+        }
+        try {
+            DB::table('active_match_seats')->insert([
+                'user_id' => $userId,
+                'room_id' => $roomId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return true;
+        } catch (QueryException $e) {
+            if (in_array((string) $e->getCode(), ['23000', '23505'], true)) {
+                return false; // eşzamanlı claim koltuğu kaptı (UNIQUE ihlali)
+            }
+            throw $e;
+        }
+    }
+
+    // Bir odanın maç koltuklarını bırak (iki oyuncu). Maç bitince (settle) çağrılır; kaçırılan
+    // yollar claimMatchSeat self-healing + room cascadeOnDelete ile kendiliğinden temizlenir.
+    public static function releaseMatchSeats(int $roomId): void
+    {
+        if (Schema::hasTable('active_match_seats')) {
+            DB::table('active_match_seats')->where('room_id', $roomId)->delete();
+        }
+    }
+
+    // Tek kullanıcının bu odadaki koltuğunu bırak (p2 kapma yarışını kaybedince geri alma).
+    public static function releaseUserMatchSeat(int $userId, int $roomId): void
+    {
+        if (Schema::hasTable('active_match_seats')) {
+            DB::table('active_match_seats')
+                ->where('user_id', $userId)->where('room_id', $roomId)->delete();
+        }
+    }
+
     protected function casts(): array
     {
         return [
