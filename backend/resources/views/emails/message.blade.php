@@ -49,16 +49,12 @@
                     <p style="margin:0 0 26px;font-size:15px;line-height:1.65;color:#453f37;">{{ $intro }}</p>
 
                     @isset($code)
-                      <!-- OTP kodu: etiket + haneli hucreler -->
+                      <!-- OTP kodu: tek hucre (kopyalayinca bosluksuz gelsin diye) -->
                       <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:{{ $brandDeep }};">Doğrulama Kodu</p>
-                      <table role="presentation" cellpadding="0" cellspacing="7" style="margin:0 0 22px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">
                         <tr>
-                          @foreach (str_split((string) $code) as $digit)
-                            <td align="center" valign="middle" width="46" bgcolor="{{ $soft }}"
-                                style="width:46px;height:56px;border:1px solid {{ $border }};border-radius:11px;font-family:'Courier New',Courier,monospace;font-size:28px;font-weight:800;color:{{ $brandDeep }};">
-                              {{ $digit }}
-                            </td>
-                          @endforeach
+                          <td align="center" valign="middle" bgcolor="{{ $soft }}"
+                              style="padding:16px 24px;border:1px solid {{ $border }};border-radius:12px;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:800;letter-spacing:12px;text-indent:12px;color:{{ $brandDeep }};">{{ $code }}</td>
                         </tr>
                       </table>
                     @endisset
