@@ -815,7 +815,12 @@ class RoomController extends Controller
                 $q->whereNotNull('state')->orWhereNotNull('server_state');
             })
             ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
-            ->orderByDesc('updated_at')
+            // SIRALAMA: maç boyunca DEĞİŞMEYEN alanlara göre -> liste izlerken kaymaz (eskiden
+            // updated_at'e göreydi, her hamle sırayı değiştiriyordu). Önce yüksek stake (para maçı
+            // başta), sonra oyuncuların toplam puanı (güçlü maç üstte), eşitlikte en yeni maç.
+            ->orderByDesc('stake')
+            ->orderByRaw('(COALESCE(p1_rating, 0) + COALESCE(p2_rating, 0)) DESC')
+            ->orderByDesc('id')
             ->limit(30)
             ->get(array_merge(
                 ['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match'],
