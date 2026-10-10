@@ -6,6 +6,7 @@
  * edilmez. Premium tacı gösterilen her yere userId ile eklenir -> [[TopRankBadge]] deseni.
  * İstersen userId yerine admin/support bayraklarını doğrudan ver (override).
  */
+import { type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useRole } from '../roles'
@@ -16,6 +17,7 @@ export default function RoleBadge({
   support: supportProp,
   size = 18,
   className,
+  style,
 }: {
   /** Oyuncu id — rol durumu context'ten okunur. */
   userId?: number | null
@@ -24,6 +26,7 @@ export default function RoleBadge({
   support?: boolean
   size?: number
   className?: string
+  style?: CSSProperties
 }) {
   const { t } = useT()
   const fromCtx = useRole(userId)
@@ -32,7 +35,7 @@ export default function RoleBadge({
   if (!admin && !support) return null
 
   return (
-    <span className={`role-badges${className ? ' ' + className : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+    <span className={`role-badges${className ? ' ' + className : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, ...style }}>
       {admin && (
         <span
           className="role-badge role-badge--admin"

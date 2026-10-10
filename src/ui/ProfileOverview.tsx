@@ -167,9 +167,9 @@ export default function ProfileOverview({
             <AvatarFrame src={avatar} frame={user.avatar_frame} size={96} name={fullName} animated />
             <div className="prof-ov-id-text">
               <div className="prof-ov-name">
+                <RoleBadge userId={user.id} size={20} style={{ marginRight: 5 }} />
                 {fullName}
                 {premium && <PremiumCrown style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
-                <RoleBadge userId={user.id} size={18} />
               </div>
               <div className="prof-ov-meta">
                 {cc && <CountryFlag code={cc} size={26} />}

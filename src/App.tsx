@@ -8480,9 +8480,9 @@ export default function App() {
                 name={profile.nickname}
                 className="account-avf"
               />
+              <RoleBadge userId={user?.id} size={18} style={{ marginRight: 4 }} />
               {profile.nickname}
               {premium && <PremiumCrown style={{ marginLeft: 6 }} />}
-              <RoleBadge userId={user?.id} size={16} />
             </button>
             {/* Oyuncu durumu (Müsait/Oyuna Hazır/Oyun Kabul Etmiyor/Çevrimdışı Görün) — avatarın yanında */}
             <StatusPicker value={myStatus} onChange={handleSetStatus} compact />
@@ -8642,9 +8642,9 @@ export default function App() {
             title={profile.nickname}
           >
             {/* Ad SOLDA; avatar (menu) en sagda kosede. */}
+            <RoleBadge userId={user?.id} size={18} style={{ marginRight: 4 }} />
             <span className="acct-trigger-name">{profile.nickname}</span>
             {premium && <PremiumCrown style={{ marginRight: 2 }} />}
-            <RoleBadge userId={user?.id} size={16} />
             {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
             <Icon name="chevron" size={16} className="acct-chev" />
             <AvatarFrame
@@ -10521,16 +10521,16 @@ export default function App() {
                         <span className="rm-players">
                           <span className="rm-me">
                             <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} className="rm-avf" />
+                            <RoleBadge userId={user?.id} size={17} style={{ marginRight: 3 }} />
                             {myName}
                             {premium && <PremiumCrown style={{ marginLeft: 5 }} />}
-                            <RoleBadge userId={user?.id} size={15} />
                           </span>
                           <span className="rm-vs">vs</span>
                           <span className="rm-you">
                             <AvatarFrame src={r.opp_avatar} size={26} name={oppName} className="rm-avf" />
+                            <RoleBadge userId={r.opp_id} size={17} style={{ marginRight: 3 }} />
                             {oppName}
                             {r.opp_premium && <PremiumCrown style={{ marginLeft: 5 }} />}
-                            <RoleBadge userId={r.opp_id} size={15} />
                             {typeof r.opp_rating === 'number' && (
                               <span className="rm-rat"> {r.opp_rating}</span>
                             )}
@@ -10573,9 +10573,9 @@ export default function App() {
                     <span className="rm-players">
                       <span className="rm-me">
                         <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} className="rm-avf" />
+                        <RoleBadge userId={user?.id} size={17} style={{ marginRight: 3 }} />
                         {profile.nickname || t('resume.you')}
                         {premium && <PremiumCrown style={{ marginLeft: 5 }} />}
-                        <RoleBadge userId={user?.id} size={15} />
                       </span>
                       <span className="rm-vs">vs</span>
                       <span className="rm-you">

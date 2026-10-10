@@ -155,10 +155,10 @@ export default function Clubs({ onClose, currentId, onAddFriend, onMessage }: Pr
                   <button className="ct-player" onClick={() => setProfileId(m.user_id)}>
                     <AvatarFrame src={m.avatar} frame={undefined} size={30} name={m.nickname} animated={false} />
                     <span className="ct-name">
+                      <RoleBadge userId={m.user_id} size={17} style={{ marginRight: 3 }} />
                       {m.nickname}
                       {m.role === 'owner' && <Icon name="crown" size={12} />}
                       {m.premium && <PremiumCrown style={{ marginLeft: 5 }} />}
-                      <RoleBadge userId={m.user_id} size={15} />
                     </span>
                   </button>
                 </td>

@@ -265,9 +265,9 @@ export function LiveMatchesPanel({
               </span>
               <span className="lm-side lm-p1">
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
+                <RoleBadge userId={m.p1_id} size={17} style={{ marginRight: 3 }} />
                 <span className="lm-name">{m.p1_name}</span>
                 {m.p1_premium && <PremiumCrown />}
-                <RoleBadge userId={m.p1_id} size={15} />
                 <TopRankBadge userId={m.p1_id} />
               </span>
               {/* Orta: skor (kaç kaç) vs'nin sol/sağında + hemen ALTINDA minik maç uzunluğu (kaçlık maç). */}
@@ -285,9 +285,9 @@ export function LiveMatchesPanel({
               </span>
               <span className="lm-side lm-p2">
                 <TopRankBadge userId={m.p2_id} />
-                <RoleBadge userId={m.p2_id} size={15} />
-                {m.p2_premium && <PremiumCrown />}
+                <RoleBadge userId={m.p2_id} size={17} style={{ marginRight: 3 }} />
                 <span className="lm-name">{m.p2_name}</span>
+                {m.p2_premium && <PremiumCrown />}
                 <Avatar url={m.p2_avatar} name={m.p2_name} />
               </span>
               <Icon name="eye" size={14} className="lm-watch" />

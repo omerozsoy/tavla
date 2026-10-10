@@ -395,6 +395,8 @@ export default function Spectate({
     const name = isP1 ? p1Name : p2Name
     return {
       name,
+      // İzlerken de oyuncuların yönetici/destek kalkanı görünsün (Sidebar RoleBadge p.id ile).
+      id: (isP1 ? eff?.p1_user_id : eff?.p2_user_id) ?? null,
       avatar: (name || '?').slice(0, 1).toUpperCase(),
       sub: '',
       off: displayBoard?.off[color] ?? 0,

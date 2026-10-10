@@ -87,12 +87,12 @@ export default function PlayerIdentity({
               />
             )
           )}
+          {/* Rol kalkanı (Yönetici kiremit / Destek şeftali) ismin BAŞINDA + bir tık büyük.
+              Veri site geneli RolesProvider'dan (userId); prop override da kabul eder. */}
+          <RoleBadge userId={userId} admin={admin || undefined} support={support || undefined} size={21} className="player-id-role" style={{ marginRight: 4 }} />
           <span className="player-id-name-text" style={isAdmin ? { color: '#A83A2B' } : undefined}>{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
-          {/* Rol kalkanı (Yönetici kiremit / Destek mercan): site geneli RolesProvider'dan
-              userId ile; premium tacı gösterilen her yerle aynı kaynak. */}
-          <RoleBadge userId={userId} admin={admin || undefined} support={support || undefined} size={18} className="player-id-role" />
           {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}
           {userId != null && <TopRankBadge userId={userId} size={20} />}
           {flagInline && country && (
