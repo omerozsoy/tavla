@@ -480,6 +480,7 @@ import {
 import { useT, LANGS } from './i18n'
 import { useToast } from './ui/Toast'
 import BugReport from './ui/BugReport'
+import EmailGate from './ui/EmailGate'
 import { Button } from '@/components/ui/button'
 import {
   getToken,
@@ -11265,6 +11266,12 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* E-POSTA DOGRULAMA DUVARI: girisli ama e-postasi dogrulanmamis -> ZORUNLU dogrulama
+          engeli (portal, en ustte). Kodla dogrula / tekrar gonder / cikis disinda site kullanilamaz. */}
+      {user && !user.email_verified_at && (
+        <EmailGate email={user.email} onVerified={(u) => setUser(u)} onLogout={handleLogout} />
       )}
     </div>
   )
