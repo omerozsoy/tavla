@@ -145,6 +145,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/logout', [AuthController::class, 'logout'])
         ->withoutMiddleware(\App\Http\Middleware\EnsureActiveAccount::class);
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
+    // Push bildirimi: cihaz FCM token'i kaydet/sil (uygulama kabugu - Capacitor native).
+    Route::post('/push/register', [\App\Http\Controllers\PushController::class, 'register']);
+    Route::post('/push/unregister', [\App\Http\Controllers\PushController::class, 'unregister']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
     // Maç Analizleri (derin/gnubg) PREMIUM-only. NOT: sonuç ekranı bu uca çağrı yapıp 403'te
