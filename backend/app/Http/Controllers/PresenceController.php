@@ -414,6 +414,18 @@ class PresenceController extends Controller
             return $this->fail('Davet eden oyundan ayrıldı. Tekrar davet iste.', 409);
         }
 
+        // İKİ-OYUN KALKANI: kabul eden zaten süren bir maçtaysa daveti kabul EDEMEZ (yoksa
+        // ikinci oyuna düşer -> "iki oyunda birden"). Banner ping()'te gizlenir ama yarış /
+        // bayat istemci yine respond POST edebilir -> daveti kabul-öncesi burada reddet (enter()
+        // ve matchmaking de ayrıca korunur). Davet 'pending' kalır (bitince tekrar kabul edilebilir).
+        $busy = Room::where('status', 'playing')
+            ->where('updated_at', '>', now()->subMinutes(5))
+            ->where(fn ($q) => $q->where('p1_user_id', $me)->orWhere('p2_user_id', $me))
+            ->exists();
+        if ($busy) {
+            return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+        }
+
         DB::table('game_invites')->where('id', $inviteId)->update([
             'status' => 'accepted',
             'updated_at' => now(),

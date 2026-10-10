@@ -89,6 +89,33 @@ class RoomController extends Controller
             ->exists();
     }
 
+    // Kullanici bir maca BAGLANINCA (enter/join p2 ya da matchmaking eslesme) DIGER bekleyen
+    // katilimlarini temizle: kendi mm_waiting havuz odalari + bekleyen davetleri (gelen/giden).
+    // KÖK FIX "iki oyunda birden": havuzda beklerken (veya bekleyen davetle) baska bir daveti
+    // kabul edince, eski havuz/davet aktif kalip ikinci oyuna cekiyordu. Committed oyuncu artik
+    // baska havuzda/davette birakilmaz. exceptCode = yeni bagli olunan oda (dokunulmaz).
+    // ponytail: enter/match commit'inden SONRA ayri sorgu -> genis pencereyi kapatir ama tam atomik
+    // degil (es-anli match+accept sub-sn yarisinda userInAnyPlaying kalkani devreye girer).
+    private function clearOtherPending(?int $userId, string $exceptCode): void
+    {
+        if (! $userId) {
+            return;
+        }
+        Room::where('status', 'mm_waiting')
+            ->where('p1_user_id', $userId)
+            ->where('code', '!=', $exceptCode)
+            ->delete();
+        if (Schema::hasTable('game_invites')) {
+            DB::table('game_invites')
+                ->where('status', 'pending')
+                ->where('room_code', '!=', $exceptCode)
+                ->where(function ($q) use ($userId) {
+                    $q->where('to_user_id', $userId)->orWhere('from_user_id', $userId);
+                })
+                ->update(['status' => 'expired', 'updated_at' => now()]);
+        }
+    }
+
     /**
      * Bir odanın oyuncu başına REZERVE edilen escrow tutarı. Para oyununda (Tek Oyun: sabit bahis +
      * target 1, küp canlı) en kötü senaryo = stake × 48 (küp 16 × backgammon 3); diğer sabit-stake
@@ -299,6 +326,14 @@ class RoomController extends Controller
             }
         }
 
+        // C2: OYNANAN (bahisli ya da ücretsiz) bir maçın varken yeni eşleşme arama REDDEDİLİR ->
+        // "oynarken eşleşip ikinci oyuna düşme" kapanır. Kendi mm_waiting havuzun 'playing' DEĞİL
+        // -> havuzu yeniden yoklama engellenmez; yalnız GERÇEKTEN süren maç engeller. (Davet/enter
+        // yolu zaten userInAnyPlaying ile korunuyordu; matchmaking'in ücretsiz yolunda eksikti.)
+        if ($this->userInAnyPlaying($userId)) {
+            return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+        }
+
         // Zaten havuzda bekleyen kendi odam (ayni kategori) varsa: bahis secimi AYNIysa don,
         // FARKLIysa eskiyi kaldir (orphan bekleyen oda kalmasin) -> yeni secimle yeniden aranir.
         $mine = Room::where('status', 'mm_waiting')
@@ -452,6 +487,9 @@ class RoomController extends Controller
         });
 
         if ($opponent) {
+            // İki oyuncu da artık BU maça bağlı -> başka havuz/davetlerini temizle (iki-oyun yarışı).
+            $this->clearOtherPending($userId, $opponent->code);
+            $this->clearOtherPending((int) $opponent->p1_user_id, $opponent->code);
             // Rakip hazir: havuzda bekleyen host (p1) uzaktaysa "eslesme bulundu" push'u.
             $this->pushToUser((int) $opponent->p1_user_id, 'Rakibin hazır', 'Eşleşme bulundu — maç başlıyor!', [
                 'type' => 'match_ready', 'room' => $opponent->code,
@@ -1341,6 +1379,8 @@ class RoomController extends Controller
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();
+            // Bu maça bağlandım -> bekleyen eşleşme havuzum + diğer davetlerim iptal (iki-oyun yarışı).
+            $this->clearOtherPending($joinUserId, $room->code);
             // Rakip hazir: odayi kurup bekleyen host (p1) uzaktaysa "rakibin geldi" push'u.
             $this->pushToUser((int) $room->p1_user_id, 'Rakibin hazır', ($room->p2_name ?: 'Rakibin').' maça katıldı — başlıyor!', [
                 'type' => 'match_ready', 'room' => $room->code,
@@ -1506,6 +1546,8 @@ class RoomController extends Controller
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();
+            // Bu maça bağlandım -> bekleyen eşleşme havuzum + diğer davetlerim iptal (iki-oyun yarışı).
+            $this->clearOtherPending($enterUserId, $code);
             $slot = 'p2';
             // MAVI EKRAN KÖK FIX (turnuva/arkadaş "çekmiyor/giremedi"): otoriter oda AÇILIŞ tahtasını
             // SEED et. Matchmaking/bot yolu zaten server_state=initialState() ile kurar; enter() yolu
