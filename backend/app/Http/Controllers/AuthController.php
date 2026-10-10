@@ -1412,6 +1412,23 @@ class AuthController extends Controller
         return response()->json($data);
     }
 
+    // Site geneli ROL haritasi: yonetici + destek kullanici id'leri. Isim yanindaki
+    // <RoleBadge> bunu okur -> premium gosterilen HER YERDE (userId ile) kalkan cikar,
+    // ayri serializasyon gerekmez. is_admin zaten publicProfile/liderlikte aciktir (yeni sizinti yok).
+    public function roles()
+    {
+        $data = \Illuminate\Support\Facades\Cache::remember('user_roles_v1', 120, function () {
+            $admins = User::where('is_admin', true)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+            $support = \Illuminate\Support\Facades\Schema::hasColumn('users', 'is_support')
+                ? User::where('is_support', true)->pluck('id')->map(fn ($id) => (int) $id)->values()->all()
+                : [];
+
+            return ['admins' => $admins, 'support' => $support];
+        });
+
+        return response()->json($data);
+    }
+
     // Herkese acik oyuncu profili: temel istatistik + son mac formu (W/L)
     public function publicProfile(Request $request, User $user)
     {

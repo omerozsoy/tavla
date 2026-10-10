@@ -3,8 +3,7 @@ import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
 import TopRankBadge from './TopRankBadge'
-import { Icon } from './Icon'
-import { useT } from '../i18n'
+import RoleBadge from './RoleBadge'
 import { useOnline } from '../presence'
 
 /**
@@ -63,7 +62,6 @@ export default function PlayerIdentity({
   // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)
   // veya kırmızı (offline) nokta. İlk fetch tamamlanana kadar (known=false) çizilmez.
   const { online, known } = useOnline(userId)
-  const { t } = useT()
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
       <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
@@ -87,30 +85,9 @@ export default function PlayerIdentity({
           <span className="player-id-name-text">{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
-          {/* Yönetici: dolu kırmızı kalkan rozeti (hover "Yönetici"). */}
-          {admin && (
-            <span
-              className="player-id-admin"
-              role="img"
-              aria-label={t('role.admin')}
-              title={t('role.admin')}
-              style={{ color: '#A83A2B', display: 'inline-flex', marginLeft: 4 }}
-            >
-              <Icon name="shield-check" size={18} weight="fill" />
-            </span>
-          )}
-          {/* Destek: dolu mercan kalkan rozeti (hover "Destek"). */}
-          {support && (
-            <span
-              className="player-id-support"
-              role="img"
-              aria-label={t('role.support')}
-              title={t('role.support')}
-              style={{ color: '#C9563F', display: 'inline-flex', marginLeft: 4 }}
-            >
-              <Icon name="shield-check" size={18} weight="fill" />
-            </span>
-          )}
+          {/* Rol kalkanı (Yönetici kiremit / Destek mercan): site geneli RolesProvider'dan
+              userId ile; premium tacı gösterilen her yerle aynı kaynak. */}
+          <RoleBadge userId={userId} admin={admin || undefined} support={support || undefined} size={18} className="player-id-role" />
           {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}
           {userId != null && <TopRankBadge userId={userId} size={20} />}
           {flagInline && country && (

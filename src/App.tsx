@@ -447,6 +447,7 @@ import { AVATAR_FRAMES } from './ui/avatarFrames'
 import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import PremiumCrown from './ui/PremiumCrown'
+import RoleBadge from './ui/RoleBadge'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import { chatWarnText, chatMuteText } from './ui/chatNotice'
@@ -8128,6 +8129,8 @@ export default function App() {
   const botPersonaActive = botMatch && myColor !== 'black' ? botPersona(difficulty) : undefined
   const topInfo = {
     name: botPersonaActive ? botPersonaActive.name : blackName,
+    // Rol kalkanı (RoleBadge) için oyuncu id'si: kendi rengimse ben, değilse rakip (bot/yerelde null).
+    id: online ? (myColor === 'black' ? (user?.id ?? null) : (room?.oppId ?? null)) : null,
     avatar: '🐱',
     sub: botMatch
       ? `${t('solo.level', { n: difficulty })} · ${AI_LEVELS[difficulty - 1]}`
@@ -8157,6 +8160,7 @@ export default function App() {
   }
   const bottomInfo = {
     name: whiteName,
+    id: online ? (myColor === 'white' ? (user?.id ?? null) : (room?.oppId ?? null)) : null,
     avatar: '🧑‍🚀',
     sub: online
       ? myColor === 'white'
@@ -8478,6 +8482,7 @@ export default function App() {
               />
               {profile.nickname}
               {premium && <PremiumCrown style={{ marginLeft: 6 }} />}
+              <RoleBadge userId={user?.id} size={16} />
             </button>
             {/* Oyuncu durumu (Müsait/Oyuna Hazır/Oyun Kabul Etmiyor/Çevrimdışı Görün) — avatarın yanında */}
             <StatusPicker value={myStatus} onChange={handleSetStatus} compact />
@@ -8639,6 +8644,7 @@ export default function App() {
             {/* Ad SOLDA; avatar (menu) en sagda kosede. */}
             <span className="acct-trigger-name">{profile.nickname}</span>
             {premium && <PremiumCrown style={{ marginRight: 2 }} />}
+            <RoleBadge userId={user?.id} size={16} />
             {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
             <Icon name="chevron" size={16} className="acct-chev" />
             <AvatarFrame
@@ -10517,12 +10523,14 @@ export default function App() {
                             <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} className="rm-avf" />
                             {myName}
                             {premium && <PremiumCrown style={{ marginLeft: 5 }} />}
+                            <RoleBadge userId={user?.id} size={15} />
                           </span>
                           <span className="rm-vs">vs</span>
                           <span className="rm-you">
                             <AvatarFrame src={r.opp_avatar} size={26} name={oppName} className="rm-avf" />
                             {oppName}
                             {r.opp_premium && <PremiumCrown style={{ marginLeft: 5 }} />}
+                            <RoleBadge userId={r.opp_id} size={15} />
                             {typeof r.opp_rating === 'number' && (
                               <span className="rm-rat"> {r.opp_rating}</span>
                             )}
@@ -10567,6 +10575,7 @@ export default function App() {
                         <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} className="rm-avf" />
                         {profile.nickname || t('resume.you')}
                         {premium && <PremiumCrown style={{ marginLeft: 5 }} />}
+                        <RoleBadge userId={user?.id} size={15} />
                       </span>
                       <span className="rm-vs">vs</span>
                       <span className="rm-you">

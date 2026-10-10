@@ -8,6 +8,7 @@ import { LangProvider } from './i18n.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 import { TopRanksProvider } from './topRanks.tsx'
+import { RolesProvider } from './roles.tsx'
 import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
@@ -45,6 +46,7 @@ createRoot(document.getElementById('root')!).render(
       <LangProvider>
         <ToastProvider>
           <TopRanksProvider>
+           <RolesProvider>
             <PresenceProvider>
               <App />
               {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
@@ -58,6 +60,7 @@ createRoot(document.getElementById('root')!).render(
               {/* Bağlantı koptuğunda üstte ince "Çevrimdışısın" şeridi (geri gelince kısa bildirim) */}
               <OfflineBanner />
             </PresenceProvider>
+           </RolesProvider>
           </TopRanksProvider>
         </ToastProvider>
       </LangProvider>

@@ -6,6 +6,7 @@ import ProfileStats from './ProfileStats'
 import Achievements from './Achievements'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
+import RoleBadge from './RoleBadge'
 import './profileShopLink.css'
 import { CountryFlag } from './Flag'
 import SetupBoard from './SetupBoard'
@@ -168,6 +169,7 @@ export default function ProfileOverview({
               <div className="prof-ov-name">
                 {fullName}
                 {premium && <PremiumCrown style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
+                <RoleBadge userId={user.id} size={18} />
               </div>
               <div className="prof-ov-meta">
                 {cc && <CountryFlag code={cc} size={26} />}

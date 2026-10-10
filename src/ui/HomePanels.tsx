@@ -9,6 +9,7 @@ import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
+import RoleBadge from './RoleBadge'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
@@ -266,6 +267,7 @@ export function LiveMatchesPanel({
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
                 <span className="lm-name">{m.p1_name}</span>
                 {m.p1_premium && <PremiumCrown />}
+                <RoleBadge userId={m.p1_id} size={15} />
                 <TopRankBadge userId={m.p1_id} />
               </span>
               {/* Orta: skor (kaç kaç) vs'nin sol/sağında + hemen ALTINDA minik maç uzunluğu (kaçlık maç). */}
@@ -283,6 +285,7 @@ export function LiveMatchesPanel({
               </span>
               <span className="lm-side lm-p2">
                 <TopRankBadge userId={m.p2_id} />
+                <RoleBadge userId={m.p2_id} size={15} />
                 {m.p2_premium && <PremiumCrown />}
                 <span className="lm-name">{m.p2_name}</span>
                 <Avatar url={m.p2_avatar} name={m.p2_name} />

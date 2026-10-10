@@ -16,6 +16,7 @@ import {
 import Loading from './Loading'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
+import RoleBadge from './RoleBadge'
 import PublicProfile from './PublicProfile'
 import { Button } from '@/components/ui/button'
 
@@ -157,6 +158,7 @@ export default function Clubs({ onClose, currentId, onAddFriend, onMessage }: Pr
                       {m.nickname}
                       {m.role === 'owner' && <Icon name="crown" size={12} />}
                       {m.premium && <PremiumCrown style={{ marginLeft: 5 }} />}
+                      <RoleBadge userId={m.user_id} size={15} />
                     </span>
                   </button>
                 </td>

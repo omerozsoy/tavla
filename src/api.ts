@@ -484,6 +484,15 @@ export async function topRanks(): Promise<TopRanks> {
   return req<TopRanks>('/top-ranks')
 }
 
+// Site geneli rol haritası: yönetici + destek kullanıcı id'leri (isim yanı kalkan).
+export interface Roles {
+  admins: number[]
+  support: number[]
+}
+export async function roles(): Promise<Roles> {
+  return req<Roles>('/roles')
+}
+
 // Site geneli online durum noktası: çevrimiçi (son 70sn görülmüş, 'offline' değil) kullanıcı id'leri.
 export async function onlineIds(): Promise<number[]> {
   const d = await req<{ ids: number[] }>('/online-ids')
