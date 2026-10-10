@@ -6,6 +6,7 @@ import { userProfile, type PublicProfile as Profile } from '../api'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankMedals from './TopRankMedals'
+import { useOnline } from '../presence'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
 
@@ -24,6 +25,11 @@ export default function PublicProfile({
 }) {
   const { t } = useT()
   useEscape(onClose)
+  // Profil kartı TEK atış fetch -> p.online/p.status açıldığı AN'ın bayat anlık görüntüsü.
+  // Oyuncu sonradan çıkınca kart "Oyun Kabul Etmiyor/kırmızı"da takılı kalıyordu. Durum
+  // noktasını site geneli CANLI presence'tan (useOnline, 70sn pencere, oto-tazelenen) türet;
+  // busy/available ayrımı için yine snapshot p.status kullanılır ama YALNIZ canlı online ise.
+  const { online: liveOnline, known: onlineKnown } = useOnline(id)
   const [p, setP] = useState<Profile | null>(null)
   const [error, setError] = useState(false)
   const [friendSent, setFriendSent] = useState(false)
@@ -41,6 +47,10 @@ export default function PublicProfile({
   }, [id])
 
   const wr = p && p.games > 0 ? Math.round((p.wins / p.games) * 100) : 0
+  // Presence bilinene kadar (ilk fetch) snapshot'a düş; bilindiğinde CANLI online esas alınır.
+  const isOnline = onlineKnown ? liveOnline : !!p?.online
+  // Canlı online değilse 'offline'; onlineysa snapshot durumu (busy/ready) yoksa 'available'.
+  const statusDot = isOnline ? (p?.status && p.status !== 'offline' ? p.status : 'available') : 'offline'
 
   return (
     <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
@@ -65,8 +75,8 @@ export default function PublicProfile({
                 premium={p.premium}
                 admin={p.is_admin}
                 support={p.is_support}
-                // İsim yanı nokta DURUM rengini yansıtsın (busy -> kırmızı); yoksa online/offline.
-                statusDot={p.status ?? (p.online ? 'available' : 'offline')}
+                // İsim yanı nokta CANLI presence'a göre (busy -> kırmızı; offline -> gri).
+                statusDot={statusDot}
               />
               <div className="pp-rating">
                 {p.rating}
@@ -79,14 +89,16 @@ export default function PublicProfile({
             <TopRankMedals userId={p.id} />
             <div className="pp-rank">
               {/* busy = "Oyun Kabul Etmiyor" -> kirmizi; diger cevrimici -> yesil; degilse gri. */}
-              <span className={`pp-status ${!p.online ? 'off' : p.status === 'busy' ? 'busy' : 'on'}`}>
+              <span className={`pp-status ${!isOnline ? 'off' : p.status === 'busy' ? 'busy' : 'on'}`}>
                 <span className="pp-status-dot" aria-hidden="true" />
-                {!p.online ? t('online.statusOff') : p.status === 'busy' ? t('online.st.busy') : t('online.statusOn')}
+                {!isOnline ? t('online.statusOff') : p.status === 'busy' ? t('online.st.busy') : t('online.statusOn')}
               </span>
             </div>
 
-            {/* Yönetici VEYA Destek profili: tam-genişlik KIRMIZI "Hata Bildir" düğmesi -> mevcut global
-                BugReport formunu açar (yeni modal yok; pencere olayıyla köprülenir). */}
+            {/* Yönetici VEYA Destek profili: resmi iletişim aksiyonları.
+                - "Hata Bildir" -> mevcut global BugReport formunu açar (pencere olayıyla köprülenir).
+                - "Yardım İste" -> bu yönetici/destek kişisine DM açar (onMessage; sohbetten yaz).
+                Her iki rol için de aynı (adminleride aynı yap). */}
             {(p.is_admin || p.is_support) && (
               <div className="pp-actions">
                 <Button
@@ -100,6 +112,19 @@ export default function PublicProfile({
                 >
                   <Icon name="flag" size={14} /> {t('bug.button')}
                 </Button>
+                {onMessage && (
+                  <Button
+                    variant="default"
+                    className="pp-help"
+                    style={{ background: '#ffa093', borderColor: '#ffa093', color: '#1c1a17', width: '100%' }}
+                    onClick={() => {
+                      onClose()
+                      onMessage()
+                    }}
+                  >
+                    <Icon name="chat" size={14} /> {t('role.helpRequest')}
+                  </Button>
+                )}
               </div>
             )}
 

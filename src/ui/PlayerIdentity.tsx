@@ -5,6 +5,7 @@ import { DivisionChip } from './Badges'
 import TopRankBadge from './TopRankBadge'
 import RoleBadge from './RoleBadge'
 import { useOnline } from '../presence'
+import { useRole } from '../roles'
 
 /**
  * PlayerIdentity — site geneli tek oyuncu kimlik blogu: avatar + isim (ustte) +
@@ -62,6 +63,10 @@ export default function PlayerIdentity({
   // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)
   // veya kırmızı (offline) nokta. İlk fetch tamamlanana kadar (known=false) çizilmez.
   const { online, known } = useOnline(userId)
+  // Yönetici ismi TÜM sitede kiremit (#A83A2B) yazılır (rol kalkanıyla aynı kaynak: useRole).
+  // admin prop'u verilmişse onu, yoksa context'teki rolü kullan.
+  const ctxRole = useRole(userId)
+  const isAdmin = admin || ctxRole.admin
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
       <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
@@ -82,7 +87,7 @@ export default function PlayerIdentity({
               />
             )
           )}
-          <span className="player-id-name-text">{name}</span>
+          <span className="player-id-name-text" style={isAdmin ? { color: '#A83A2B' } : undefined}>{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
           {/* Rol kalkanı (Yönetici kiremit / Destek mercan): site geneli RolesProvider'dan
