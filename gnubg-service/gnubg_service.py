@@ -15,6 +15,7 @@
 
 import json
 import os
+import queue
 import random as _random
 import re  # modül düzeyi regex derlemeleri (luck parse) için — eskiden yalnız fonksiyon-içiydi
 import threading
@@ -73,6 +74,46 @@ class _GnubgSession:
         with _COUNT_LOCK:
             _INFLIGHT -= 1
         return False
+
+
+# =====================================================================================
+# ANA-THREAD MARSHALING (KÖK ÇÖZÜM 2026-10-11): gnubg move-üretimi (GenerateMoves, eval.c:2880) her
+# thread için GLib thread-local'ı (g_private -> per-thread NNState) okur; bu TLS YALNIZCA gnubg'nin
+# init ettiği ANA THREAD'de kuruludur. ThreadingMixIn ile gnubg komutu bir HTTP worker thread'inde
+# koşarsa (özellikle 'import mat' -> GenerateMoves) TLS NULL -> SIGSEGV. (2026-10-10: matchluck TÜM
+# instance'larda 7 saat çöktü; plain CLI ana-thread'de hep çalışıyordu — thread sayısı fark etmez,
+# threads=1 de çöküyor.) ÇÖZÜM: TÜM gnubg işini ANA THREAD'de serileştir. HTTP arka plan daemon
+# thread'inde döner (/health worker thread'de kilitsiz, anında cevaplanır); gnubg'ye dokunan işler
+# kuyrukla ana thread'e marshal edilir. _GNUBG_LOCK zaten serileştirdiği için kuyrukta en çok 1 iş.
+# =====================================================================================
+_MAIN_TASKS = queue.Queue()
+_MAIN_IDENT = None  # main()'de ayarlanır: ana (gnubg-init edilmiş) thread'in kimliği
+
+
+def _run_on_main(fn):
+    """fn()'i ANA THREAD'de çalıştır (gnubg TLS'i yalnız orada kurulu). Zaten ana thread'deysek
+    (ya da döngü henüz kurulmadıysa) doğrudan çağır. Hata worker thread'e aynen yeniden fırlatılır."""
+    if _MAIN_IDENT is None or threading.get_ident() == _MAIN_IDENT:
+        return fn()
+    box = {}
+    done = threading.Event()
+    _MAIN_TASKS.put((fn, box, done))
+    done.wait()
+    if "exc" in box:
+        raise box["exc"]
+    return box.get("ret")
+
+
+def _main_task_loop():
+    """ANA THREAD döngüsü: gnubg görevlerini sırayla çalıştır (serve_forever arka planda döner)."""
+    while True:
+        fn, box, done = _MAIN_TASKS.get()
+        try:
+            box["ret"] = fn()
+        except BaseException as e:  # worker thread'e aynen yeniden fırlatılacak
+            box["exc"] = e
+        finally:
+            done.set()
 
 # =====================================================================================
 # GNU Backgammon PositionID / MatchID ENCODER (kilit taşı) — bizim yapısal konumumuzu
@@ -1661,10 +1702,10 @@ class Handler(BaseHTTPRequestHandler):
         # gnubg'ye dokunan teşhis uçları -> global kilit (analiz istekleriyle SIRAYLA).
         if self.path == "/selftest":
             with _GnubgSession():
-                return self._send(200, _selftest())
+                return _run_on_main(lambda: self._send(200, _selftest()))
         if self.path == "/maptest":
             with _GnubgSession():
-                return self._send(200, _maptest())
+                return _run_on_main(lambda: self._send(200, _maptest()))
         self._send(404, {"error": "not-found"})
 
     def do_POST(self):
@@ -1683,7 +1724,7 @@ class Handler(BaseHTTPRequestHandler):
         # TÜM POST uçları gnubg'ye dokunur -> global kilit (tek-thread yarış-yok garantisi korunur;
         # kilit-siz /health thread'li sunucuda paralel cevaplanır). _GnubgSession contention'ı ölçer.
         with _GnubgSession():
-            return self._dispatch_post(data)
+            return _run_on_main(lambda: self._dispatch_post(data))
 
     def _dispatch_post(self, data):
         try:
@@ -1752,29 +1793,11 @@ class _ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 def main():
-    global _VERSION
-    # THREADING FIX (2026-10-11 — KÖK ÇÖZÜM): gnubg move-üretimi (GenerateMoves, eval.c:2880) her
-    # thread için GLib thread-local'ı (g_private) okur; bu TLS YALNIZCA gnubg'nin KENDİ thread'lerinde
-    # (ana thread + eval havuzu) kuruludur. Sunucu ThreadingMixIn ile HER isteği AYRI python
-    # thread'inde koşturur. gnubg tek-thread'se (threads=1 — algılanan CPU 1'e düşünce, ör. cgroup/LVE
-    # CPU kısıtı) analiz move-gen'i O python thread'inde INLINE koşar -> TLS NULL -> SIGSEGV. (Bkz.
-    # 2026-10-10: matchluck tüm instance'larda 7 saat çöktü; plain CLI ana-thread'de çalışıyordu.)
-    # ÇÖZÜM: gnubg'yi >=2 thread'e ZORLA -> analiz, TLS'i kurulu havuz-thread'lerinde koşar, python
-    # HTTP thread'inde ASLA inline değil. CPU sayısına BAĞIMSIZ sabitle ki ileride CPU kısıtı bunu bir
-    # daha tetiklemesin. (Ağır instance zaten _GNUBG_LOCK ile serileşir; thread sayısı yalnız tek bir
-    # analizin iç paralelliğini etkiler — oversubscribe olsa bile doğruluk korunur.) main() gnubg
-    # ANA thread'inde (serve_forever öncesi) koşar -> set threads havuzu burada güvenle kurulur.
-    try:
-        _nthreads = int(os.environ.get("GNUBG_THREADS", "4"))
-    except Exception:
-        _nthreads = 4
-    if _nthreads < 2:
-        _nthreads = 2  # 1 = inline (python thread'inde TLS NULL -> SEGV); asla izin verme
-    try:
-        gnubg.command("set threads %d" % _nthreads)
-    except Exception as e:
-        os.write(2, ("set threads BASARISIZ: %s\n" % e).encode())
-    # Sürümü BİR KEZ, serve_forever ÖNCESİ (tek-thread) oku -> /health artık gnubg'ye dokunmaz.
+    global _VERSION, _MAIN_IDENT
+    # KÖK ÇÖZÜM (2026-10-11): bu thread = gnubg'nin init ettiği ANA thread (gnubg -p burada koşar).
+    # gnubg TLS'i (GenerateMoves NNState) yalnız burada kurulu -> TÜM gnubg işi bu thread'de koşmalı.
+    _MAIN_IDENT = threading.get_ident()
+    # Sürümü BİR KEZ, server açılmadan oku (ana thread) -> /health artık gnubg'ye dokunmaz.
     try:
         _VERSION = _gnubg_version()
     except Exception:
@@ -1782,8 +1805,11 @@ def main():
     # Yavaş/yarı-açık bir istemci tek bir thread'i sonsuza kilitlemesin (kendi bağlantısıyla sınırlı).
     Handler.timeout = 30
     srv = _ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    # gnubg -p bu çağrıda BLOKLAR -> gnubg açık kalır; istekler thread'lerde, gnubg işi sırayla.
-    srv.serve_forever()
+    # HTTP'yi ARKA PLAN daemon thread'inde koştur; ANA THREAD gnubg görev döngüsünü koşar. Böylece
+    # gnubg komutları (import mat/analyse match -> GenerateMoves) TLS'i kurulu TEK thread'de serileşir
+    # -> worker-thread SIGSEGV biter. /health worker thread'de kilitsiz, anında cevaplanır.
+    threading.Thread(target=srv.serve_forever, name="http", daemon=True).start()
+    _main_task_loop()
 
 
 main()
