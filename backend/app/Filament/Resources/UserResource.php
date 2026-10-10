@@ -96,6 +96,8 @@ class UserResource extends Resource
                     self::extendPlanAction('add12m', '1 Yıl Ekle', 12),
                 ])->columnSpanFull(),
                 Forms\Components\Toggle::make('is_admin')->label('Yönetici'),
+                Forms\Components\Toggle::make('is_support')->label('Destek')
+                    ->helperText('Açık = Destek personeli: isim yanında krem kalkan + profilde "Hata Bildir" + herkes DM atabilir'),
                 Forms\Components\DateTimePicker::make('banned_at')->label('Yasak tarihi (boş = aktif)'),
                 // Switch: açık = doğrulanmış. Mevcut zaman damgasını korur (tekrar now()'a ezmez).
                 Forms\Components\Toggle::make('email_verified_at')
@@ -213,6 +215,7 @@ class UserResource extends Resource
                     ->color(fn ($state) => $state === 'free' ? 'gray' : 'success')
                     ->formatStateUsing(fn ($state) => $state === 'free' ? 'Ücretsiz' : 'Premium'),
                 Tables\Columns\IconColumn::make('is_admin')->label('Admin')->boolean(),
+                Tables\Columns\IconColumn::make('is_support')->label('Destek')->boolean(),
                 Tables\Columns\IconColumn::make('banned_at')->label('Yasaklı')
                     ->boolean()->trueColor('danger')->falseColor('gray')
                     ->getStateUsing(fn ($record) => $record->banned_at !== null),
@@ -230,6 +233,7 @@ class UserResource extends Resource
                     'free' => 'Ücretsiz', 'star' => 'Premium',
                 ]),
                 Tables\Filters\TernaryFilter::make('is_admin')->label('Yönetici'),
+                Tables\Filters\TernaryFilter::make('is_support')->label('Destek'),
                 // KAPALI HESAPLAR listesi: durum + kapatan admin + tarih aralığı filtreleri.
                 Tables\Filters\TernaryFilter::make('closed')->label('Hesap durumu')
                     ->placeholder('Hepsi')->trueLabel('Kapalı')->falseLabel('Aktif')

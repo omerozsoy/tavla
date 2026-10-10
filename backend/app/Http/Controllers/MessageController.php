@@ -58,6 +58,11 @@ class MessageController extends Controller
             && User::whereIn('id', [$me, $other])->where('is_system', true)->exists()) {
             return true;
         }
+        // Destek personeli ile konuşma DAİMA açık: herkes arkadaş/istek gerekmeden Destek'e yazabilir.
+        if (Schema::hasColumn('users', 'is_support')
+            && User::whereIn('id', [$me, $other])->where('is_support', true)->exists()) {
+            return true;
+        }
         $out = $this->reqRow($me, $other);
         $in = $this->reqRow($other, $me);
 

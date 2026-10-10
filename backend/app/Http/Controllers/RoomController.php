@@ -870,7 +870,7 @@ class RoomController extends Controller
         // 'available' sayilir. Migrate kosunca durum filtresi devreye girer.
         $hasStatus = Schema::hasColumn('users', 'presence_status');
 
-        $cols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until'];
+        $cols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'is_admin', 'is_support'];
         if ($hasStatus) {
             $cols[] = 'presence_status';
         }
@@ -918,6 +918,8 @@ class RoomController extends Controller
             'country' => $u->country,
             'rating'  => $u->rating ?? 1500,
             'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
+            'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
+            'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
             'status'  => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
             'in_game' => isset($inGameSet[(int) $u->id]), // aktif maçta -> "Oyna" butonu gizlenir
         ]);

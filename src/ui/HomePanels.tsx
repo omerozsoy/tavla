@@ -471,7 +471,7 @@ export function OnlinePlayersPanel({
                     className="online-id"
                     title={t(STATUS_KEY[p.status ?? 'available'])}
                   >
-                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated statusDot={p.status ?? 'available'} />
+                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} admin={p.is_admin} support={p.is_support} animated statusDot={p.status ?? 'available'} />
                   </button>
                   <span className="rank-flag">
                     <CountryFlag code={p.country} size={22} />

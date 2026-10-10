@@ -1297,7 +1297,7 @@ class AuthController extends Controller
             ->orderByDesc('wins')
             ->limit($limit)
             // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
         $rows = $users->values()->map(function ($u, $i) {
             // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
@@ -1318,6 +1318,7 @@ class AuthController extends Controller
                 'games'   => $u->games_played ?? 0,
                 'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
                 'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
+                'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
                 'status'  => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
@@ -1344,7 +1345,7 @@ class AuthController extends Controller
             ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
             ->orderByDesc('career_pr_matches')            // sonra daha cok maç
             ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
         $rows = $users->values()->map(function ($u, $i) {
             $online = $u->last_seen && $u->presence_status !== 'offline'
@@ -1362,6 +1363,7 @@ class AuthController extends Controller
                 'decisions' => (int) $u->career_pr_decisions,
                 'premium' => $u->plan_active !== 'free',
                 'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
+                'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
                 'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
@@ -1467,6 +1469,7 @@ class AuthController extends Controller
             'games' => $games,
             'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'is_admin' => (bool) $user->is_admin, // yönetici -> isim yanı kırmızı kalkan + "Hata Bildir"
+            'is_support' => (bool) $user->is_support, // destek -> isim yanı krem kalkan + "Hata Bildir"
             'rank' => $rank,
             // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
             'career_pr' => \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,

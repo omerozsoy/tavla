@@ -90,6 +90,7 @@ export interface ServerUser {
   losses?: number
   games_played?: number
   is_admin?: boolean
+  is_support?: boolean
   email_verified_at?: string | null
   game_state?: unknown
 }
@@ -417,6 +418,8 @@ export interface LeaderRow {
   losses: number
   games: number
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
+  is_admin?: boolean // yönetici -> isim yanında kırmızı kalkan rozeti
+  is_support?: boolean // destek -> isim yanında krem kalkan rozeti
   status?: PresenceStatus // isim yani nokta: busy -> kirmizi, offline -> gri
 }
 
@@ -458,6 +461,8 @@ export interface PrLeaderRow {
   matches: number
   decisions: number
   premium?: boolean
+  is_admin?: boolean // yönetici -> isim yanında kırmızı kalkan rozeti
+  is_support?: boolean // destek -> isim yanında krem kalkan rozeti
   status?: PresenceStatus // isim yani nokta: busy -> kirmizi, offline -> gri
 }
 export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[]; minMatches: number; minDecisions: number }> {
@@ -994,6 +999,8 @@ export interface PublicProfile {
   online?: boolean // cevrimici mi (last_seen son 2 dk)
   status?: PresenceStatus // cevrimiciyse gercek durum (busy -> "Oyun Kabul Etmiyor" kirmizi); yoksa 'offline'
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
+  is_admin?: boolean // yönetici -> isim yanında kırmızı kalkan + "Hata Bildir" düğmesi
+  is_support?: boolean // destek -> isim yanında krem kalkan + "Hata Bildir" düğmesi
   is_friend?: boolean // bakan kişiyle ZATEN arkadaş mı -> "Arkadaş ol" gizlenir (site geneli)
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
@@ -2101,6 +2108,8 @@ export interface OnlinePlayer {
   country?: string | null
   rating: number
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
+  is_admin?: boolean // yönetici -> isim yanında kırmızı kalkan rozeti
+  is_support?: boolean // destek -> isim yanında krem kalkan rozeti
   status?: PresenceStatus // durum noktasi rengi (offline olanlar listede gelmez)
   in_game?: boolean // aktif maçta (YZ/normal) -> "Oyna" (davet) butonu gizlenir
 }

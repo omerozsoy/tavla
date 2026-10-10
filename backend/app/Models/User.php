@@ -69,8 +69,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'banned_by',
     ];
 
-    // is_admin (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
-    protected $appends = ['is_admin', 'plan_active'];
+    // is_admin + is_support (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
+    protected $appends = ['is_admin', 'is_support', 'plan_active'];
 
     // Suresi gecerli aktif plan: 'free' | 'star'
     public function getPlanActiveAttribute(): string
@@ -151,6 +151,12 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     public function getIsAdminAttribute(): bool
     {
         return (bool) ($this->attributes['is_admin'] ?? false);
+    }
+
+    // Destek personeli (explicit DB grant). is_admin ile ayni desen; fillable DEGIL.
+    public function getIsSupportAttribute(): bool
+    {
+        return (bool) ($this->attributes['is_support'] ?? false);
     }
 
     // Explicit admin ayrica korunan config listesinde mi? Liste tek basina yetki vermez.

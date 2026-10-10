@@ -63,6 +63,8 @@ export default function PublicProfile({
                 size={64}
                 animated
                 premium={p.premium}
+                admin={p.is_admin}
+                support={p.is_support}
                 // İsim yanı nokta DURUM rengini yansıtsın (busy -> kırmızı); yoksa online/offline.
                 statusDot={p.status ?? (p.online ? 'available' : 'offline')}
               />
@@ -82,6 +84,24 @@ export default function PublicProfile({
                 {!p.online ? t('online.statusOff') : p.status === 'busy' ? t('online.st.busy') : t('online.statusOn')}
               </span>
             </div>
+
+            {/* Yönetici VEYA Destek profili: tam-genişlik KIRMIZI "Hata Bildir" düğmesi -> mevcut global
+                BugReport formunu açar (yeni modal yok; pencere olayıyla köprülenir). */}
+            {(p.is_admin || p.is_support) && (
+              <div className="pp-actions">
+                <Button
+                  variant="default"
+                  className="pp-report"
+                  style={{ background: '#A83A2B', borderColor: '#A83A2B', color: '#fff', width: '100%' }}
+                  onClick={() => {
+                    onClose()
+                    window.dispatchEvent(new CustomEvent('tavla:open-bug-report'))
+                  }}
+                >
+                  <Icon name="flag" size={14} /> {t('bug.button')}
+                </Button>
+              </div>
+            )}
 
             {/* Aksiyonlar (Arkadaş ol / Mesaj): başlık sağ sütunu yerine tam-genişlik çubuk ->
                 mobilde sıkışma/taşma olmaz, masaüstünde ferah. */}
