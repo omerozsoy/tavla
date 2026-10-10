@@ -515,6 +515,7 @@ import {
   type SponsorCfg,
   type ServerUser,
 } from './api'
+import { initPush } from './push'
 
 // Geri sayim bicimi: saniye -> "S:DD:SS"
 function fmtCountdown(total: number): string {
@@ -2348,6 +2349,12 @@ export default function App() {
       window.clearInterval(id)
     }
   }, [authChecked, user])
+
+  // Giris yapilinca (native uygulama kabugunda) push bildirimine kaydol. Tarayici/PWA'da no-op.
+  // initPush idempotent (started guard) -> her user degisiminde guvenle cagrilir.
+  useEffect(() => {
+    if (user) void initPush()
+  }, [user])
 
   // Giris yapmissa oyunu sunucuya da kaydet (debounce)
   useEffect(() => {
@@ -10573,19 +10580,6 @@ export default function App() {
                 </button>
               </div>
             )}
-            {/* RÖVANŞ BEKLEME: teklif ettim, rakip henüz yanıtlamadı (rematch.code yok). Ana sayfada
-                banner + İptal. İptal = handleLeaveRoom (teklifi sunucudan geri çeker + odayı kapatır). */}
-            {online && rematch.mine === 'yes' && !rematch.code && (
-              <div className="rematch-wait-bar">
-                <span className="rwb-text">
-                  <Icon name="refresh" size={16} />
-                  {t('mr.rematchWaitHome', { name: room?.oppName || t('mh.opponentFb') })}
-                </span>
-                <Button variant="outline" size="default" onClick={handleLeaveRoom}>
-                  {t('mp.cancel')}
-                </Button>
-              </div>
-            )}
             {user && (
               <HomeDashboard
                 rating={user.rating ?? 0}
@@ -10611,9 +10605,13 @@ export default function App() {
               // Kendi aktif havuz aramam (varsa): listenin en üstünde "Rakip Bekleniyor…" + İptal
               // ile göster (backend self'i hariç tutar -> yerel room state'ten anında çiz).
               mySeek={
-                // Havuz araması (mm_waiting) VEYA hedefli davet beklemesi (waiting + inviteWaitName):
-                // ikisi de "Oyun Arayanlar"da en üstte "Rakip Bekleniyor…" + İptal ile gösterilir.
-                user && online && (room?.status === 'mm_waiting' || (room?.status === 'waiting' && !!inviteWaitName))
+                // Havuz araması (mm_waiting) VEYA hedefli davet beklemesi (waiting + inviteWaitName)
+                // VEYA rövanş beklemesi (teklif ettim, rakip yanıtlamadı): üçü de "Oyun Arayanlar"da
+                // en üstte "Rakip Bekleniyor…" + İptal ile gösterilir. Rövanşta oda 'finished'tır.
+                user && online &&
+                (room?.status === 'mm_waiting' ||
+                  (room?.status === 'waiting' && !!inviteWaitName) ||
+                  (rematch.mine === 'yes' && !rematch.code))
                   ? {
                       kind: 'seeking',
                       id: user.id,
@@ -10633,9 +10631,10 @@ export default function App() {
                   : null
               }
               onCancelSeek={() =>
-                // Hedefli davet beklemesi -> handleLeaveRoom (daveti geri çeker + odayı kapatır);
-                // havuz araması -> handleCancelMatch (cancelMatchmake). İkisi de ana sayfada kalır.
-                inviteWaitName && room?.status === 'waiting' ? handleLeaveRoom() : handleCancelMatch(true)
+                // Havuz araması -> handleCancelMatch (cancelMatchmake). Hedefli davet VEYA rövanş
+                // beklemesi -> handleLeaveRoom (daveti/rövanş teklifini geri çeker + odayı kapatır).
+                // Üçü de ana sayfada kalır.
+                room?.status === 'mm_waiting' ? handleCancelMatch(true) : handleLeaveRoom()
               }
             />
             {seekerConfirm && (
@@ -11105,8 +11104,8 @@ export default function App() {
               rematchSentRef.current = 'yes'
               setRematch((r) => ({ ...r, mine: 'yes' }))
               // Sonuç ekranında "Rakip bekleniyor"da ASILMA: ANA SAYFAYA dön. Oda+poll canlı kalır;
-              // rakip kabul edince enterOnlineByCode (poll) oyuna geri sokar. Ana sayfada "teklif
-              // ettiğin oyuncudan yanıt bekleniyor" banner'ı + İptal gösterilir (rematch-wait-bar).
+              // rakip kabul edince enterOnlineByCode (poll) oyuna geri sokar. Ana sayfada "Oyun
+              // Arayanlar" panelinde "Rakip Bekleniyor… + İptal" satırı gösterilir (mySeek).
               // Rakip ZATEN teklif etmişse (theirs='yes') kabulüm anında maçı açar -> home'a gidip
               // geri dönme flaş'ı olmasın; yalnız ilk teklif edende ana sayfaya geç.
               if (rematch.theirs !== 'yes') setHome(true)
