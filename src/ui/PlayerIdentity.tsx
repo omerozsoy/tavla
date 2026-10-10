@@ -99,20 +99,14 @@ export default function PlayerIdentity({
               <Icon name="shield-check" size={18} weight="fill" />
             </span>
           )}
-          {/* Destek: dolu krem kalkan rozeti (hover "Destek"). Krem açık zeminde kaybolmasın
-              diye ince koyu dış hat (drop-shadow) verilir. */}
+          {/* Destek: dolu mercan kalkan rozeti (hover "Destek"). */}
           {support && (
             <span
               className="player-id-support"
               role="img"
               aria-label={t('role.support')}
               title={t('role.support')}
-              style={{
-                color: '#F4EFE6',
-                display: 'inline-flex',
-                marginLeft: 4,
-                filter: 'drop-shadow(0 0 0.5px rgba(28,26,23,0.9)) drop-shadow(0 1px 1px rgba(28,26,23,0.35))',
-              }}
+              style={{ color: '#C9563F', display: 'inline-flex', marginLeft: 4 }}
             >
               <Icon name="shield-check" size={18} weight="fill" />
             </span>
