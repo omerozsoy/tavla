@@ -13,6 +13,10 @@ import { Icon } from './Icon'
 const DISMISS_KEY = 'tavla.pwaInstallDismissed'
 const DISMISS_DAYS = 14
 
+// PWA "Yükle" banner'ı KAPATILDI: native uygulamaya (Android/iOS) geçiliyor, PWA kurulumu
+// artık teşvik edilmiyor. Geri açmak için: ENABLED = true.
+const ENABLED = false
+
 type BIPEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
@@ -140,7 +144,7 @@ export default function InstallPrompt() {
     }
   }
 
-  if (!show) return null
+  if (!ENABLED || !show) return null
 
   return (
     <div
