@@ -43,6 +43,112 @@ class PrGnubgAuthoritativeTest extends TestCase
         };
     }
 
+    /**
+     * RENK-DUYARLI sahte orkestrator: her renk için FARKLI PR döndürür -> SWAP'ı yakalayabilir.
+     * (Eski fakeOrch renkten bağımsız sabit döner; swap'ı GÖREMEZ.) $byColor =
+     * ['white'=>['loss'=>x,'dec'=>n], 'black'=>[...]]; PR = (loss/dec)*500.
+     */
+    private function colorOrch(array $byColor): AnalysisOrchestrator
+    {
+        return new class($this->app->make(GnuBgClient::class), $byColor) extends AnalysisOrchestrator
+        {
+            public function __construct(GnuBgClient $g, private array $m)
+            {
+                parent::__construct($g);
+            }
+
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            {
+                $c = $this->m[$player] ?? ['loss' => 0.0, 'dec' => 0];
+                $pr = $c['dec'] > 0 ? ($c['loss'] / $c['dec']) * 500 : 0.0;
+
+                return ['pr' => $pr, 'loss' => $c['loss'], 'decisions' => $c['dec'], 'evaluated' => $c['dec'],
+                    'skipped' => 0, 'strictPr' => $pr, 'loosePr' => $pr, 'skipReasons' => [], 'firstSkip' => null, 'perDecision' => []];
+            }
+
+            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            {
+                return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
+                    'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
+            }
+        };
+    }
+
+    /** İki-oyunculu ONLINE maçın iki satırını kurar (her iki renk de log'da). Kazanan = white. */
+    private function onlineMatchRows(string $room): array
+    {
+        $log = [
+            ['player' => 'white', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [3, 1], 'playedSteps' => [[8, 5]]],
+            ['player' => 'black', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [6, 2], 'playedSteps' => [[24, 18]]],
+        ];
+        $w = MatchResult::create([
+            'user_id' => User::factory()->create()->id, 'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+            'match_length' => 1, 'match_type' => 'match', 'room_code' => $room, 'pr' => 99.0, // client PR BİLEREK yanlış
+            'log' => json_encode(['hc' => 'white', 'log' => $log]),
+        ]);
+        $b = MatchResult::create([
+            'user_id' => User::factory()->create()->id, 'won' => false, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1484, 'delta' => -16,
+            'match_length' => 1, 'match_type' => 'match', 'room_code' => $room, 'pr' => 99.0,
+            'log' => json_encode(['hc' => 'black', 'log' => $log]),
+        ]);
+
+        return [$w, $b];
+    }
+
+    /**
+     * 5EPMC AYNEN TEKRAR (bug'ın GERÇEK koşulu): KAYBEDEN'in (black) işi ÖNCE, YARIM logda koşup
+     * kazananı (white) YANLIŞ KÖTÜ (29.0) hesaplar -> black.gnubg_opponent_pr = 29.0 (yanlış). Sonra
+     * KAZANAN'ın (white) işi TAM logda kendi 3.0'ını bulur. ESKİ KOD: white.gnubg_pr = black'in yanlış
+     * opponent'ı (29.0) ile aynalanır -> KAZANANIN EKRANINDA RAKİBİN PR'ı (tam 5EPMC şikayeti). YENİ KOD:
+     * white kendi self 3.0'ını yazar. Bu test ESKİ KODDA KIRILIR, yeni kodda geçer -> gerçek kalkan.
+     */
+    public function test_winner_second_job_keeps_own_pr_when_sibling_miscomputed_opponent(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        [$w, $b] = $this->onlineMatchRows('SWAP5EPMC');
+
+        // (1) KAYBEDEN önce + YARIM log -> kazananı YANLIŞ 29.0 hesaplar (white'ı kötü sanır).
+        (new AnalyzeMatchPrJob($b->id))->handle(
+            $this->colorOrch(['white' => ['loss' => 0.29, 'dec' => 5], 'black' => ['loss' => 0.29, 'dec' => 5]])
+        );
+        $b->refresh();
+        $this->assertEqualsWithDelta(29.0, (float) $b->gnubg_opponent_pr, 0.01, 'kurulum: sibling kazananı YANLIŞ 29.0 hesapladı');
+
+        // (2) KAZANAN sonra + TAM log -> kendi gerçek 3.0'ını bulur.
+        (new AnalyzeMatchPrJob($w->id))->handle(
+            $this->colorOrch(['white' => ['loss' => 0.03, 'dec' => 5], 'black' => ['loss' => 0.29, 'dec' => 5]])
+        );
+        $w->refresh();
+
+        $this->assertEqualsWithDelta(3.0, (float) $w->gnubg_pr, 0.01,
+            '5EPMC KALKANI: kazanan KENDİ self 3.0 PR\'ını görür; sibling\'in yanlış 29.0\'ı ASLA sızmaz');
+        $this->assertGreaterThan(5.0, abs((float) $w->gnubg_pr - (float) $w->gnubg_opponent_pr), 'swap imzası (self==opponent) OLUŞMAZ');
+    }
+
+    /**
+     * Ters sıra + çapraz tutarlılık: kazanan ÖNCE koşsa da (self doğru yazılır), kaybeden SONRA mirror
+     * yapsa da her oyuncu KENDİ rengini görür. İki renk FARKLI PR -> renk filtresi doğru atamazsa kırılır.
+     */
+    public function test_consistent_run_assigns_each_color_its_own_pr_and_cross_consistent(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $orch = $this->colorOrch(['white' => ['loss' => 0.03, 'dec' => 5], 'black' => ['loss' => 0.29, 'dec' => 5]]);
+        [$w, $b] = $this->onlineMatchRows('SWAPGUARD2');
+
+        (new AnalyzeMatchPrJob($w->id))->handle($orch); // kazanan önce
+        (new AnalyzeMatchPrJob($b->id))->handle($orch); // kaybeden sonra (mirror)
+
+        $w->refresh();
+        $b->refresh();
+        $this->assertEqualsWithDelta(3.0, (float) $w->gnubg_pr, 0.01, 'white KENDİ 3.0');
+        $this->assertEqualsWithDelta(29.0, (float) $b->gnubg_pr, 0.01, 'black KENDİ 29.0');
+        // Çapraz: benim self'im = rakibin bana bakışı (iki satır aynı maçı anlatır).
+        $this->assertEqualsWithDelta((float) $w->gnubg_pr, (float) $b->gnubg_opponent_pr, 0.01);
+        $this->assertEqualsWithDelta((float) $b->gnubg_pr, (float) $w->gnubg_opponent_pr, 0.01);
+    }
+
     private function matchWithLog(float $clientPr): MatchResult
     {
         $u = User::factory()->create();
