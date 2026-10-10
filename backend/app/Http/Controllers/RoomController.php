@@ -2672,17 +2672,19 @@ class RoomController extends Controller
         if (! $userId) {
             return;
         }
-        if ($onlyIfAway) {
-            // Aktif (son 60sn icinde ping'lemis) oyuncu ekranda zaten gorur -> push gereksiz.
-            $active = \App\Models\User::where('id', $userId)
-                ->whereNotNull('last_seen')
-                ->where('last_seen', '>', now()->subSeconds(60))
-                ->exists();
-            if ($active) {
-                return;
-            }
-        }
+        // TUM govde try/catch: away-check sorgusu da dahil hicbir hata cagirana (move/join/
+        // matchmaking yanitina) sizmasin -> "push oyun akisini ASLA etkilemez" garantisi.
         try {
+            if ($onlyIfAway) {
+                // Aktif (son 60sn icinde ping'lemis) oyuncu ekranda zaten gorur -> push gereksiz.
+                $active = \App\Models\User::where('id', $userId)
+                    ->whereNotNull('last_seen')
+                    ->where('last_seen', '>', now()->subSeconds(60))
+                    ->exists();
+                if ($active) {
+                    return;
+                }
+            }
             \App\Jobs\SendPushJob::dispatch($userId, $title, $body, $data);
         } catch (\Throwable $e) {
             // push dagitimi oyunu bozmasin
@@ -2694,25 +2696,31 @@ class RoomController extends Controller
     // Odayi tazeleyip (tx kapandiktan sonra) karar verir -> closure scope'una bagimli degil.
     private function maybePushYourTurn(string $code, string $token, Request $request): void
     {
-        $room = Room::where('code', strtoupper($code))->first();
-        if (! $room || $room->bot || $room->status !== 'playing') {
-            return;
+        // TUM govde try/catch: move() en sicak uc -> refetch/slotOf/exists hatasi HICBIR sekilde
+        // hamle yanitina sizmasin (hamle zaten kaydedildi; burasi yalnizca bildirim yan-etkisi).
+        try {
+            $room = Room::where('code', strtoupper($code))->first();
+            if (! $room || $room->bot || $room->status !== 'playing') {
+                return;
+            }
+            if (! $room->p1_user_id || ! $room->p2_user_id) {
+                return; // iki kayitli kullanici sart (misafire push yok)
+            }
+            $moverSlot = $this->slotOf($room, $token, $request);
+            if ($moverSlot === null) {
+                return;
+            }
+            $turn = is_array($room->server_state) ? ($room->server_state['turn'] ?? null) : null;
+            if (! $turn || $turn === $this->slotColor($moverSlot)) {
+                return; // sira devretmedi (el suruyor) -> push yok
+            }
+            $targetUserId = $turn === 'white' ? (int) $room->p1_user_id : (int) $room->p2_user_id;
+            $this->pushToUser($targetUserId, 'Sıra sende', 'Rakibin hamlesini yaptı — sıra sende.', [
+                'type' => 'your_turn', 'room' => $room->code,
+            ]);
+        } catch (\Throwable $e) {
+            // bildirim yan-etkisi oyunu bozmasin
         }
-        if (! $room->p1_user_id || ! $room->p2_user_id) {
-            return; // iki kayitli kullanici sart (misafire push yok)
-        }
-        $moverSlot = $this->slotOf($room, $token, $request);
-        if ($moverSlot === null) {
-            return;
-        }
-        $turn = is_array($room->server_state) ? ($room->server_state['turn'] ?? null) : null;
-        if (! $turn || $turn === $this->slotColor($moverSlot)) {
-            return; // sira devretmedi (el suruyor) -> push yok
-        }
-        $targetUserId = $turn === 'white' ? (int) $room->p1_user_id : (int) $room->p2_user_id;
-        $this->pushToUser($targetUserId, 'Sıra sende', 'Rakibin hamlesini yaptı — sıra sende.', [
-            'type' => 'your_turn', 'room' => $room->code,
-        ]);
     }
 
     /**
