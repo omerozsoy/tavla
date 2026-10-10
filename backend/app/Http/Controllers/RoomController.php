@@ -891,9 +891,15 @@ class RoomController extends Controller
             });
         }
         // Sıralama: önce YÖNETİCİLER, sonra YARDIMCILAR (destek), sonra puana (rating) göre.
+        // Rol sahipleri (yönetici/yardımcı) KENDİ grubunda EN ESKİ üye en üstte (hesap yaşı = id
+        // artan); yeni atanan en alta. Normal oyuncular puana göre (azalan).
+        $hasSupport = Schema::hasColumn('users', 'is_support');
         $query->orderByDesc('is_admin');
-        if (Schema::hasColumn('users', 'is_support')) {
+        if ($hasSupport) {
             $query->orderByDesc('is_support');
+            $query->orderByRaw('CASE WHEN is_admin = 1 OR is_support = 1 THEN id END ASC');
+        } else {
+            $query->orderByRaw('CASE WHEN is_admin = 1 THEN id END ASC');
         }
         $users = $query->orderByDesc('rating')
             ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
@@ -2737,6 +2743,7 @@ class RoomController extends Controller
         $users = $uids ? User::whereIn('id', $uids)->get(['id', 'avatar', 'avatar_frame'])->keyBy('id') : collect();
         $viewers = $rows->map(fn ($v) => [
             'name' => $v->name,
+            'id' => $v->user_id, // isim yaninda rol kalkani (RoleBadge) icin; misafir=null
             'avatar' => ($v->user_id && isset($users[$v->user_id])) ? $users[$v->user_id]->avatar : null,
             'frame' => ($v->user_id && isset($users[$v->user_id])) ? $users[$v->user_id]->avatar_frame : null,
         ])->values();

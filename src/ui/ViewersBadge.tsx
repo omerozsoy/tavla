@@ -1,5 +1,6 @@
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import RoleBadge from './RoleBadge'
 import type { RoomViewer } from '../api'
 
 // İzleyenler rozeti: kaç kişi izliyor + kimler (isim/avatar). Hem Spectate (izleyiciler)
@@ -29,6 +30,8 @@ export default function ViewersBadge({ viewers, count }: { viewers: RoomViewer[]
                   {(v.name || '?').slice(0, 1).toUpperCase()}
                 </span>
               )}
+              {/* Yonetici/Destek izleyici: isim onunde rol kalkani (site geneli roller). */}
+              <RoleBadge userId={v.id} size={14} style={{ marginRight: 2 }} />
               <span className="sp-viewer-name">{v.name}</span>
             </span>
           ))}

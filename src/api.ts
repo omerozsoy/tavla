@@ -2937,6 +2937,7 @@ export async function sendChat(code: string, text: string): Promise<{ messages: 
 // Canlı maç İZLEME presence: izleyici. name -> giriş yoksa misafir adı. leave -> kaydı sil (sekme kapanışı).
 export interface RoomViewer {
   name: string
+  id?: number | null // isim yaninda rol kalkani (RoleBadge) icin; misafir=null
   avatar?: string | null
   frame?: string | null
 }
