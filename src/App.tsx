@@ -5683,6 +5683,14 @@ export default function App() {
         if (rv.rematch) {
           const rm = rv.rematch
           const srvMine = room.slot === 'p1' ? rm.p1 : rm.p2
+          const srvTheirs = room.slot === 'p1' ? rm.p2 : rm.p1
+          // RÖVANŞ REDDEDİLDİ (ya da teklif eden vazgeçti): ben teklif edip beklerken karşı taraf
+          // 'no' döndü -> ana sayfadaki bekleme banner'ında asılı kalma; bildir + odayı kapat.
+          if (srvTheirs === 'no' && rematchSentRef.current === 'yes' && rematchEnteredRef.current == null && !rm.code) {
+            notify.info(t('mr.rematchDeclined'))
+            handleLeaveRoom()
+            return
+          }
           setRematch({
             // Sunucu cevabimi henuz yazmadiysa (istek ucusta) GONDERDIGIMI koru -> buton titremez.
             mine: srvMine ?? rematchSentRef.current,
@@ -10565,6 +10573,19 @@ export default function App() {
                 </button>
               </div>
             )}
+            {/* RÖVANŞ BEKLEME: teklif ettim, rakip henüz yanıtlamadı (rematch.code yok). Ana sayfada
+                banner + İptal. İptal = handleLeaveRoom (teklifi sunucudan geri çeker + odayı kapatır). */}
+            {online && rematch.mine === 'yes' && !rematch.code && (
+              <div className="rematch-wait-bar">
+                <span className="rwb-text">
+                  <Icon name="refresh" size={16} />
+                  {t('mr.rematchWaitHome', { name: room?.oppName || t('mh.opponentFb') })}
+                </span>
+                <Button variant="outline" size="default" onClick={handleLeaveRoom}>
+                  {t('mp.cancel')}
+                </Button>
+              </div>
+            )}
             {user && (
               <HomeDashboard
                 rating={user.rating ?? 0}
@@ -11083,6 +11104,12 @@ export default function App() {
               if (!room) return
               rematchSentRef.current = 'yes'
               setRematch((r) => ({ ...r, mine: 'yes' }))
+              // Sonuç ekranında "Rakip bekleniyor"da ASILMA: ANA SAYFAYA dön. Oda+poll canlı kalır;
+              // rakip kabul edince enterOnlineByCode (poll) oyuna geri sokar. Ana sayfada "teklif
+              // ettiğin oyuncudan yanıt bekleniyor" banner'ı + İptal gösterilir (rematch-wait-bar).
+              // Rakip ZATEN teklif etmişse (theirs='yes') kabulüm anında maçı açar -> home'a gidip
+              // geri dönme flaş'ı olmasın; yalnız ilk teklif edende ana sayfaya geç.
+              if (rematch.theirs !== 'yes') setHome(true)
               rematchRoom(room.code, true)
                 .then((res) => {
                   // İki taraf da kabul ettiyse sunucu YENİ oda kodunu POST yanıtında döner ->

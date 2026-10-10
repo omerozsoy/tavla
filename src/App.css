@@ -12181,6 +12181,7 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 16px;
 }
 .ms-card {
+  position: relative; /* modal-close (position:absolute) kart köşesine otursun, viewport'a kaçmasın */
   width: min(760px, 100%);
   max-height: min(86vh, 900px);
   display: flex;
@@ -23832,6 +23833,32 @@ button.acct-row-logout:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 18%, var(--card-bg));
 }
 .tourn-wait-bar svg {
+  flex: none;
+  color: var(--accent);
+}
+/* Rövanş bekleme banner'ı (ana sayfa): "teklif ettiğin oyuncudan yanıt bekleniyor" + İptal. */
+.rematch-wait-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 0 auto 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  color: var(--text);
+  font-weight: 600;
+}
+.rematch-wait-bar .rwb-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.rematch-wait-bar .rwb-text svg {
   flex: none;
   color: var(--accent);
 }
