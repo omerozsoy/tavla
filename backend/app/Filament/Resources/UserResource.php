@@ -97,9 +97,12 @@ class UserResource extends Resource
                 ])->columnSpanFull(),
                 Forms\Components\Toggle::make('is_admin')->label('Yönetici'),
                 Forms\Components\DateTimePicker::make('banned_at')->label('Yasak tarihi (boş = aktif)'),
-                Forms\Components\DateTimePicker::make('email_verified_at')
-                    ->label('E-posta doğrulama (boş = doğrulanmadı)')
-                    ->helperText('Doldurulursa doğrulanmış sayılır; temizlenirse doğrulama kalkar'),
+                // Switch: açık = doğrulanmış. Mevcut zaman damgasını korur (tekrar now()'a ezmez).
+                Forms\Components\Toggle::make('email_verified_at')
+                    ->label('E-posta aktivasyonu')
+                    ->helperText('Açık = doğrulanmış sayılır; kapalı = doğrulama kalkar')
+                    ->formatStateUsing(fn ($state) => filled($state))
+                    ->dehydrateStateUsing(fn ($state, ?User $record) => $state ? ($record?->email_verified_at ?? now()) : null),
             ]),
         ]);
     }
