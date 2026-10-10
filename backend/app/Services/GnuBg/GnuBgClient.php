@@ -100,6 +100,70 @@ class GnuBgClient
         }
     }
 
+    /**
+     * YALNIZ yapılandırılmış DEDİKE ağır analiz instance'ları (GNUBG_HEAVY_URLS, boşsa heavy_url).
+     * background fallback + shuffle YOK — services:watch her ağır instance'ı KENDİ portu/birimiyle ayrı
+     * izlesin diye (heavyBases() izleme için uygun değil: arka plan havuzunu katar + sırayı karıştırır).
+     */
+    public function heavyOnlyBases(): array
+    {
+        $pool = array_values(array_filter(array_map(
+            fn ($u) => rtrim(trim((string) $u), '/'),
+            explode(',', (string) config('gnubg.heavy_urls', '')),
+        ), fn ($u) => $u !== ''));
+        if ($pool === []) {
+            $h = rtrim((string) config('gnubg.heavy_url'), '/');
+            if ($h !== '') {
+                $pool = [$h];
+            }
+        }
+
+        return array_values(array_unique($pool));
+    }
+
+    /**
+     * Belirli ağır instance'ın ANALİZ MOTORU gerçekten çalışıyor mu? KRİTİK: /health YETMEZ — gnubg
+     * 'analyse match' yolunda SEGV atınca (matchluck/self-play) HTTP sunucusu /health'e HÂLÂ 200
+     * döner ama motor ölüdür (crash-loop: her matchluck isteği SIGSEGV). Bu yüzden GERÇEK matchluck
+     * selftest (kısa self-play -> analyse -> parse) ile motoru yoklarız; p0/p1 luck dönerse UP.
+     */
+    public function probeHeavyEngine(string $base): bool
+    {
+        try {
+            $resp = Http::timeout(30)
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post(rtrim($base, '/').'/matchluck', ['mat' => null, 'selftest' => true]);
+            if (! $resp->ok()) {
+                return false;
+            }
+            $luck = $resp->json('luck');
+
+            return is_array($luck) && isset($luck['p0'], $luck['p1']);
+        } catch (\Throwable $e) {
+            return false; // Empty reply / cURL 52 (SEGV) / erişilemez -> DOWN
+        }
+    }
+
+    /**
+     * Port -> systemd birim adı (konvansiyon: 8092=gnubg-analysis, 8093=gnubg-analysis-heavy,
+     * 8091+N=gnubg-analysis-N). Yalnız GNUBG_UNITS listesinde GERÇEKTEN varsa döner (restart edilebilir);
+     * yoksa null -> services:watch yalnız alarm verir, körlemesine restart denemez.
+     */
+    public function unitForPort(int $port): ?string
+    {
+        if ($port <= 0) {
+            return null;
+        }
+        $guess = match ($port) {
+            8092 => 'gnubg-analysis',
+            8093 => 'gnubg-analysis-heavy',
+            default => 'gnubg-analysis-'.($port - 8091),
+        };
+
+        return in_array($guess, $this->unitNames(), true) ? $guess : null;
+    }
+
     /** Belirli bir tabanın /health JSON'u (inflight/peak ölçümü için) veya null. */
     public function healthInfoAt(string $base): ?array
     {
@@ -364,16 +428,28 @@ class GnuBgClient
      */
     public function matchluck(?string $mat = null, bool $selftest = false): ?array
     {
-        try {
-            $resp = Http::timeout(180) // import + analyse match
-                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
-                ->acceptJson()
-                ->post($this->heavyUrl('/matchluck'), ['mat' => $mat, 'selftest' => $selftest]);
+        // SELFTEST (admin diagnostik, tavla:gnubg-matchluck-test): TEK yapılandırılmış heavy'ye git —
+        // failover ETME ki hangi instance'ın bozuk olduğu GİZLENMESİN (8098 SEGV'i sağlam yedeğe
+        // düşüp "OK" görünmesin; teşhis bu testin doğrudan o instance'ı vurmasına dayanır).
+        if ($selftest || $mat === null) {
+            try {
+                $resp = Http::timeout(180)
+                    ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                    ->acceptJson()
+                    ->post($this->heavyUrl('/matchluck'), ['mat' => $mat, 'selftest' => true]);
 
-            return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
-        } catch (\Throwable $e) {
-            return ['exception' => $e->getMessage()];
+                return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
+            } catch (\Throwable $e) {
+                return ['exception' => $e->getMessage()];
+            }
         }
+
+        // ÜRETİM: AĞIR HAVUZ üzerinden FAILOVER (tryHeavy) — bir heavy instance SEGV/ölü ise (crash-loop
+        // da dahil: 'Empty reply'/cURL 52 ERİŞİLEMEZ sayılır) sonrakine, son çare arka plan (PR) havuzuna
+        // düşer. reviewmatch/analyzematch ile AYNI dayanıklılık; tek instance SEGV'i artık şansı (Luck V1)
+        // DURDURAMAZ — SPOF kalktı. (Zaman aşımı failover sebebi DEĞİL: istek instance'ı hâlâ işliyor.)
+        return $this->tryHeavy('/matchluck', ['mat' => $mat, 'selftest' => false], 180)
+            ?? ['error' => 'heavy-unavailable'];
     }
 
     /**

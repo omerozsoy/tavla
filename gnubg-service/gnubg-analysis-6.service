@@ -3,7 +3,10 @@ Description=GNU Backgammon analiz servisi #6 (CANLI bot havuzu genisletme :8097)
 After=network.target
 # CANLI bot (:8092,:8093,:8096) ile AYNI kod, AYRI instance (:8097). Canli havuzun 4. instance'i.
 # backend/.env: GNUBG_URL_BACKUP listesine http://127.0.0.1:8097 ekle + GNUBG_UNITS'e ekle.
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

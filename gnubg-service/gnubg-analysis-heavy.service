@@ -4,7 +4,10 @@ After=network.target
 # CANLI bot (gnubg-analysis, :8092) ile AYNI kod, AYRI instance (:8093). Amaç: uzun analiz işleri
 # (Mat Analiz, maç incelemesi, luck) canlı botun gnubg process'ini BLOKLAMASIN. backend
 # config/gnubg.php `heavy_url` bu porta (8093) ayarlanır; `url` 8092'de kalır.
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

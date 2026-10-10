@@ -1,10 +1,14 @@
 [Unit]
 Description=GNU Backgammon analiz servisi (tavlai — ana motor)
 After=network.target
-# Kısır döngüde (art arda çökme) systemd varsayılan olarak 10sn'de 5 denemeden sonra PES EDER ve
-# birimi 'failed' bırakır -> elle "systemctl restart" gerekir. 0 = sınırı KALDIR: her çökmede
-# RestartSec sonra TEKRAR başlat (kalıcı self-heal; elle müdahale gerekmez).
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): tek seferlik çökme hâlâ self-heal olur (RestartSec=3), ama
+# DETERMİNİSTİK kısır döngü (ör. 'analyse match'/matchluck SEGV her istekte tekrarlıyor) 5 dk'da 20
+# denemeden sonra 'failed'a düşer. Neden GÜVENLİ: (1) matchluck artık failover'lı (tek instance SEGV
+# şansı durdurmaz), (2) services:watch 'failed'ı GERÇEK motor probe'uyla yakalar -> dakikada bir
+# restart dener + email/WhatsApp uyarır. Böylece 8098'in 7 saat SESSİZ ~4000 kez çöküp kalkması
+# (StartLimitIntervalSec=0 yüzünden görünmez sonsuz döngü) bir daha olmaz: bounded + görünür + alarmlı.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

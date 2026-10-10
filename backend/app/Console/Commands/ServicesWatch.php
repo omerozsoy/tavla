@@ -67,6 +67,30 @@ class ServicesWatch extends Command
             ];
         }
 
+        // 2b) DEDİKE AĞIR ANALİZ instance'ları (GNUBG_HEAVY_URLS — matchluck/reviewmatch/analyzematch).
+        //     KRİTİK: /health probe'u YETMEZ. gnubg 'analyse match' yolunda SEGV atınca (matchluck
+        //     self-play) HTTP sunucusu /health'e HÂLÂ 200 döner ama motor ölüdür -> crash-loop (her
+        //     matchluck SIGSEGV; 2026-10-10'da 8098 ~4000 kez çöküp kalktı, 7 saat sessiz kaldı çünkü
+        //     /health yeşildi + heavy havuz analyzeBases'te YOKtu). Bu yüzden GERÇEK motor probe'u
+        //     (matchluck selftest) kullan -> SEGV'i yakalar. analyzeBases'te zaten izlenenleri atla.
+        $watched = array_flip($bases);
+        foreach ($gnubg->heavyOnlyBases() as $base) {
+            if (isset($watched[$base])) {
+                continue; // zaten foreground/background olarak izleniyor (çift alarm yok)
+            }
+            $port = (int) parse_url($base, PHP_URL_PORT);
+            $unit = $gnubg->unitForPort($port);
+            $services[] = [
+                'key' => 'gnubg-heavy-'.$port, 'name' => 'gnubg ağır analiz (:'.$port.')',
+                'probe' => fn () => $gnubg->probeHeavyEngine($base),
+                'recover' => $unit ? fn () => $this->systemctlRestart($unit) : null,
+                'down' => "🔴 gnubg AĞIR ANALİZ MOTORU DÜŞTÜ ({$base}) — matchluck/analiz SEGV (crash-loop olabilir; "
+                    ."restart düzeltmezse gnubg sürümünü/weights'i incele). ".($unit ? "`systemctl restart {$unit}`." : 'GNUBG_UNITS\'e birim ekle.')
+                    .' Şans (Luck) failover ile arka plan havuzuna düşer; maç sonuçları etkilenmez.',
+                'up' => "🟢 gnubg ağır analiz motoru ({$base}) tekrar ÇALIŞIYOR.",
+            ];
+        }
+
         // 3) Queue worker (shadow PR + gnubg luck işçisi).
         $services[] = [
             'key' => 'queue', 'name' => 'Queue worker',

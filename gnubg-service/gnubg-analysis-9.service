@@ -4,7 +4,10 @@ After=network.target
 # Adanmis heavy havuzunun 3. instance'i (:8098,:8099 ile AYNI kod, AYRI port). heavyBases() shuffle
 # es-zamanli review'lari havuz genelinde dagitir -> 4 instance ile aninda ~4 paralel Mat Analiz.
 # backend/.env: GNUBG_HEAVY_URLS listesine http://127.0.0.1:8100 ekle + GNUBG_UNITS'e ekle.
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

@@ -4,7 +4,10 @@ After=network.target
 # CANLI bot (:8092) + heavy (:8093) ile AYNI kod, AYRI instance (:8094). Amaç: PR + canlı bot
 # analyze() FAILOVER havuzuna 3. instance -> biri düşse/restart olsa bile PR "—" kalmaz.
 # backend/.env: GNUBG_URL_BACKUP listesine http://127.0.0.1:8094 ekle + GNUBG_UNITS'e gnubg-analysis-3.
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

@@ -6,7 +6,10 @@ After=network.target
 # -> bot-unavailable/forfeit kaynagi kesilir. backend/.env: GNUBG_URL_BACKUP listesine
 # http://127.0.0.1:8102 ekle + GNUBG_UNITS'e gnubg-analysis-11. (Insan-vs-insan maclari gnubg
 # KULLANMAZ; bu havuz yalnizca YZ maci + PR/analiz failover icindir.)
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

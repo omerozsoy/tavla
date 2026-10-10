@@ -5,7 +5,10 @@ After=network.target
 # 8098 down/restart olsa VE es-zamanli iki Mat Analiz review gelse bile calisir (SPOF yok).
 # backend/.env: GNUBG_HEAVY_URLS=http://127.0.0.1:8098,http://127.0.0.1:8099 + GNUBG_UNITS'e ekle.
 # GnuBgClient heavyBases() shuffle ile es-zamanli review'lari 8098/8099 arasinda dagitir.
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple

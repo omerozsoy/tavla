@@ -4,7 +4,10 @@ After=network.target
 # CANLI bot (:8092,:8093) ile AYNI kod, AYRI instance (:8096). Amac: peak_inflight=4 olcumu canli
 # havuzun (2 instance) doydugunu gosterdi -> shuffle'i genislet ki bot hamleleri kilitte kuyruga
 # girmesin. backend/.env: GNUBG_URL_BACKUP listesine http://127.0.0.1:8096 ekle + GNUBG_UNITS'e ekle.
-StartLimitIntervalSec=0
+# CRASH-LOOP KORUMASI (2026-10-10): det. kisir dongu (SEGV her istekte) 5dk-20 deneme sonra failed.
+# GUVENLI: matchluck failover + services:watch gercek motor probe ile yakalanir -> restart + alarm.
+StartLimitIntervalSec=300
+StartLimitBurst=20
 
 [Service]
 Type=simple
