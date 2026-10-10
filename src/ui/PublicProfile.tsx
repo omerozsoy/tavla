@@ -100,7 +100,7 @@ export default function PublicProfile({
                 - "Yardım İste" -> bu yönetici/destek kişisine DM açar (onMessage; sohbetten yaz).
                 Her iki rol için de aynı (adminleride aynı yap). */}
             {(p.is_admin || p.is_support) && (
-              <div className="pp-actions">
+              <div className="pp-actions pp-actions-admin">
                 <Button
                   variant="default"
                   className="pp-report"

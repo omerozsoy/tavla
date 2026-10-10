@@ -16002,9 +16002,9 @@ button.acct-row-logout:hover:not(:disabled) {
 .lb-head,
 .lb-row {
   display: grid;
-  /* # | oyuncu (isim KIRPILMASIN, ~15 karaktere kadar) | bayrak | Maç | G/M | % | deger.
-     İsim kolonu 170->230 genişletildi; sayı kolonları hafif daraltıldı ki 560px karta sığsın. */
-  grid-template-columns: 34px minmax(120px, 230px) 1fr 56px 66px 42px 56px;
+  /* # | oyuncu (isim ASLA KIRPILMAZ: max-content -> tam ad) | bayrak | Maç | G/M | % | deger.
+     Çevrimiçi Oyuncular paneliyle ayni mantik (isim kolonu icerige gore buyur). */
+  grid-template-columns: 34px minmax(120px, max-content) 1fr 56px 66px 42px 56px;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
@@ -16107,17 +16107,19 @@ button.acct-row-logout:hover:not(:disabled) {
 .lb-name .avf-simple {
   margin: 0 4px;
 }
-/* Liderlik satırları: SADE tek satır. Uzun isim alt satıra SARMAZ -> tek satırda kalır,
-   taşarsa ellipsis (…). Rozetler (kalkan/taç/madalya) isim satırına kilitli. */
+/* Liderlik satırları: SADE tek satır. İsim ASLA KIRPILMAZ (Çevrimiçi Oyuncular gibi):
+   kolon max-content -> tam ad görünür, ellipsis yok. Font 1 tık küçük ki sığsın.
+   Rozetler (kalkan/taç/madalya) isim satırına kilitli. */
 .lb-name .player-id-name {
   flex-wrap: nowrap;
   white-space: nowrap;
   row-gap: 0;
 }
 .lb-name .player-id-name-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
+  font-size: 0.9rem;
 }
 
 /* ---- Global oyuncu kimlik blogu: avatar + isim (ustte) + rutbe (altta, ince) ----
@@ -16325,6 +16327,12 @@ button.acct-row-logout:hover:not(:disabled) {
   .lb-flag,
   .rank-flag {
     padding-left: 4px;
+  }
+  /* Dar ekran: isim kolonu 1fr'ye düşer -> kırpmak yerine alt satıra SARSIN. */
+  .lb-name .player-id-name,
+  .lb-name .player-id-name-text {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   /* Filtre butonlari (Puan/Jeton/WXP/PR) yan yana min-content ~360px -> lobby
      grid kolonunu 320'nin uzerine itip icerigi kirpiyordu. 2x2 sararak coz. */
@@ -18118,6 +18126,11 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   gap: 8px;
   margin: 0 0 16px;
+}
+/* Yonetici/Destek resmi aksiyonlari (Hata Bildir / Yardim Iste): tam-genislik STACK.
+   Butonlarin inline width:100%'u flex-row'da yan yana sikisiyordu -> alt alta tam genislik. */
+.pp-actions-admin {
+  flex-direction: column;
 }
 /* Arkadaslik/mesaj butonu: KUCUK & kompakt (global 42px standardini bilincli ezeriz). */
 .pp-addfriend,
