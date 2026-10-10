@@ -480,6 +480,7 @@ import {
 import { useT, LANGS } from './i18n'
 import { useToast } from './ui/Toast'
 import BugReport from './ui/BugReport'
+import EmailGate from './ui/EmailGate'
 import { Button } from '@/components/ui/button'
 import {
   getToken,
@@ -1516,25 +1517,30 @@ export default function App() {
           // aktif online macimizsa SPECTATE ACMA -> rejoin (localStorage) bizi oyuncu olarak dondurur.
           const lg = loadGame()
           if (lg && lg.mode === 'online' && lg.inGame === true && lg.record?.online && (lg.record?.uid || '').toUpperCase() === c) break
+          if (!getToken()) { requireLogin(); break } // misafir maç izleyemez -> üyelik
           setSpectate({ code: c, p1: '', p2: '' })
           break
         }
         case 'arkadasinla-oyna':
+          if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setInviteTarget(null) // menuden acilis = normal mod (davet degil)
           setFriendClassic(false)
           setFriendSetupOpen(true)
           break
         case 'yeni-oyun':
+          if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setClassicSetup(false)
           setSetup('online')
           break
         case 'klasik-arkadasinla-oyna': // KLASIK TAVLA — Arkadaşınla Oyna (küp yok + mars=2)
+          if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setInviteTarget(null)
           setFriendClassic(true)
           setFriendSetupOpen(true)
           break
         case 'klasik-tavla': // eski birleşik slug -> geriye dönük: klasik bota karşı
         case 'klasik-yapay-zeka': // KLASIK TAVLA — Yapay Zeka ile Oyna (küp yok + mars=2)
+          if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setClassicSetup(true)
           setSetup('pvb')
           break
@@ -1563,6 +1569,7 @@ export default function App() {
           break
         case 'yz-ile-oyna':
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
+          if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setClassicSetup(false)
           setSetup('pvb')
           break
@@ -8826,7 +8833,7 @@ export default function App() {
             className="ab-bug-flag [&_svg]:size-[24px]!"
             title={t('bug.button')}
             aria-label={t('bug.button')}
-            onClick={() => window.dispatchEvent(new Event('tavla:open-bug-report'))}
+            onClick={() => (!getToken() ? requireLogin() : window.dispatchEvent(new Event('tavla:open-bug-report')))}
           >
             <Icon name="flag" size={24} />
           </Button>
@@ -8973,12 +8980,15 @@ export default function App() {
     onSolo: () => (!user ? requireLogin() : goPage(() => setSoloOpen(true))),
     onAiGame: () => {
       closeAllPages()
+      // Misafir OYUN OYNAYAMAZ -> uyelik iste (Yapay Zeka dahil her oyun modu giris gerektirir).
+      if (!user) { requireLogin(); return }
       setClassicSetup(false)
       setSetup('pvb')
     }, // Yapay zekaya karsi oyna (bot)
     // KLASIK TAVLA — Arkadaşınla Oyna: klasik davet/oda (küp yok + mars=2). FriendGameSetup klasik ON.
     onKlassikFriend: () => {
       closeAllPages()
+      if (!user) { requireLogin(); return }
       setInviteTarget(null)
       setFriendClassic(true)
       setFriendSetupOpen(true)
@@ -8986,6 +8996,7 @@ export default function App() {
     // KLASIK TAVLA — Yapay Zeka ile Oyna: klasik bot maçı (küp yok + mars=2). MatchSetup pvb + classic.
     onKlassikAi: () => {
       closeAllPages()
+      if (!user) { requireLogin(); return }
       setClassicSetup(true)
       setSetup('pvb')
     },
@@ -8993,6 +9004,7 @@ export default function App() {
     // onaylayinca davet-kodlu oda olusturulur. Matchmaking'e (rastgele rakip) sokMAZ.
     onPlayFriend: () => {
       closeAllPages()
+      if (!user) { requireLogin(); return }
       setInviteTarget(null) // menuden acilis = normal mod (davet degil)
       setFriendClassic(false) // Modern arkadas maci (klasik degil)
       setFriendSetupOpen(true)
@@ -9872,7 +9884,7 @@ export default function App() {
           onRequireLogin={() => setShowAuth(true)}
           onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
-          onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+          onSpectate={(code, p1, p2) => (!getToken() ? requireLogin() : setSpectate({ code, p1, p2 }))}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)
@@ -10659,7 +10671,7 @@ export default function App() {
                 onInvite={user ? handleInviteFriend : undefined}
               />
               <LiveMatchesPanel
-                onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+                onSpectate={(code, p1, p2) => (!getToken() ? requireLogin() : setSpectate({ code, p1, p2 }))}
               />
             </div>
             {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA */}
@@ -11254,6 +11266,12 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* E-POSTA DOGRULAMA DUVARI: girisli ama e-postasi dogrulanmamis -> ZORUNLU dogrulama
+          engeli (portal, en ustte). Kodla dogrula / tekrar gonder / cikis disinda site kullanilamaz. */}
+      {user && !user.email_verified_at && (
+        <EmailGate email={user.email} onVerified={(u) => setUser(u)} onLogout={handleLogout} />
       )}
     </div>
   )

@@ -815,6 +815,17 @@ button[aria-disabled='true'],
 .bp-price > svg {
   color: #e6b422;
 }
+/* FIYAT PILI KOYU ZEMIN -> rakam BEYAZ. Açık temada global kural .coins-val'ı koyu amber
+   (#8a5310) yapıyor (açık zeminde okunsun diye) ama .bp-price koyu pil -> rakam görünmez
+   oluyordu. Yüksek özgüllükle (light + .bp-price) geri beyaza al. (Koyu temada zaten
+   .bp-price color:#fff'ten miras alır.) board + frame shop ikisi de .bp-price kullanır. */
+:root[data-theme='light'] .bp-price .coins-val,
+:root[data-theme='light'] .bp-price .coins-suffix {
+  color: #fff;
+}
+:root[data-theme='light'] .bp-price .coins-ic {
+  color: #ffd766; /* altın ikon koyu pil üstünde biraz daha parlak */
+}
 .board-prev:disabled {
   cursor: not-allowed;
 }
