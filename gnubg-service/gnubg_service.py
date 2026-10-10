@@ -1753,6 +1753,27 @@ class _ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
 
 def main():
     global _VERSION
+    # THREADING FIX (2026-10-11 — KÖK ÇÖZÜM): gnubg move-üretimi (GenerateMoves, eval.c:2880) her
+    # thread için GLib thread-local'ı (g_private) okur; bu TLS YALNIZCA gnubg'nin KENDİ thread'lerinde
+    # (ana thread + eval havuzu) kuruludur. Sunucu ThreadingMixIn ile HER isteği AYRI python
+    # thread'inde koşturur. gnubg tek-thread'se (threads=1 — algılanan CPU 1'e düşünce, ör. cgroup/LVE
+    # CPU kısıtı) analiz move-gen'i O python thread'inde INLINE koşar -> TLS NULL -> SIGSEGV. (Bkz.
+    # 2026-10-10: matchluck tüm instance'larda 7 saat çöktü; plain CLI ana-thread'de çalışıyordu.)
+    # ÇÖZÜM: gnubg'yi >=2 thread'e ZORLA -> analiz, TLS'i kurulu havuz-thread'lerinde koşar, python
+    # HTTP thread'inde ASLA inline değil. CPU sayısına BAĞIMSIZ sabitle ki ileride CPU kısıtı bunu bir
+    # daha tetiklemesin. (Ağır instance zaten _GNUBG_LOCK ile serileşir; thread sayısı yalnız tek bir
+    # analizin iç paralelliğini etkiler — oversubscribe olsa bile doğruluk korunur.) main() gnubg
+    # ANA thread'inde (serve_forever öncesi) koşar -> set threads havuzu burada güvenle kurulur.
+    try:
+        _nthreads = int(os.environ.get("GNUBG_THREADS", "4"))
+    except Exception:
+        _nthreads = 4
+    if _nthreads < 2:
+        _nthreads = 2  # 1 = inline (python thread'inde TLS NULL -> SEGV); asla izin verme
+    try:
+        gnubg.command("set threads %d" % _nthreads)
+    except Exception as e:
+        os.write(2, ("set threads BASARISIZ: %s\n" % e).encode())
     # Sürümü BİR KEZ, serve_forever ÖNCESİ (tek-thread) oku -> /health artık gnubg'ye dokunmaz.
     try:
         _VERSION = _gnubg_version()
