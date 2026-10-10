@@ -2693,24 +2693,23 @@ class RoomController extends Controller
 
     // Hamleden sonra sira KARSI tarafa gectiyse ve o oyuncu uzaktaysa "sira sende" push'u.
     // Sira devredilince onda KALIR (rakip oynayamaz) -> tur basina en fazla tek push, spam yok.
-    // Odayi tazeleyip (tx kapandiktan sonra) karar verir -> closure scope'una bagimli degil.
-    private function maybePushYourTurn(string $code, string $token, Request $request): void
+    // EKSTRA SORGU YOK (hot-path): kimlik move() oncesi yuklu $pre odasindan (user id/bot hamlede
+    // degismez), yeni sira ise $resp (tx yaniti) 'state.turn'dan okunur -> buyuk server_state JSON'u
+    // yeniden CEKILMEZ. TUM govde try/catch: bildirim yan-etkisi hamle yanitini ASLA bozmasin.
+    private function maybePushYourTurn(?Room $room, ?string $moverSlot, ?array $resp): void
     {
-        // TUM govde try/catch: move() en sicak uc -> refetch/slotOf/exists hatasi HICBIR sekilde
-        // hamle yanitina sizmasin (hamle zaten kaydedildi; burasi yalnizca bildirim yan-etkisi).
         try {
-            $room = Room::where('code', strtoupper($code))->first();
-            if (! $room || $room->bot || $room->status !== 'playing') {
+            if (! $room || ! $resp || $moverSlot === null) {
                 return;
             }
-            if (! $room->p1_user_id || ! $room->p2_user_id) {
-                return; // iki kayitli kullanici sart (misafire push yok)
-            }
-            $moverSlot = $this->slotOf($room, $token, $request);
-            if ($moverSlot === null) {
+            // Bu hamle oyunu/maci bitirdi -> "sira sende" anlamsiz.
+            if (! empty($resp['winner']) || ! empty($resp['match_done'])) {
                 return;
             }
-            $turn = is_array($room->server_state) ? ($room->server_state['turn'] ?? null) : null;
+            if ($room->bot || ! $room->p1_user_id || ! $room->p2_user_id) {
+                return; // iki kayitli kullanici sart (bot/misafire push yok)
+            }
+            $turn = is_array($resp['state'] ?? null) ? ($resp['state']['turn'] ?? null) : null;
             if (! $turn || $turn === $this->slotColor($moverSlot)) {
                 return; // sira devretmedi (el suruyor) -> push yok
             }
@@ -3536,7 +3535,15 @@ class RoomController extends Controller
         // SENKRON oynat (AYRI tx -> gnubg yoksa insan hamlesi geri ALINMAZ, sadece duraklar).
         $this->markAuthoritativeCommandResult($code, $data, $resp);
         $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
-        $this->maybePushYourTurn($code, $data['token'], $request); // uzaktaki rakibe "sıra sende"
+        // Uzaktaki rakibe "sıra sende": EKSTRA sorgu yok -> $pre (hamle öncesi yüklü oda, kimlik
+        // değişmez) + $resp (yeni sıra). slotOf $pre üzerinde bellek-içi (sorgusuz). $pre pre-check
+        // sorgusu patladıysa null olabilir -> maybePushYourTurn güvenle atlar.
+        $preRoom = $pre ?? null;
+        $this->maybePushYourTurn(
+            $preRoom,
+            $preRoom ? $this->slotOf($preRoom, $data['token'], $request) : null,
+            $resp instanceof \Illuminate\Http\JsonResponse ? $resp->getData(true) : null,
+        );
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
