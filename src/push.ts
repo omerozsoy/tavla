@@ -1,25 +1,42 @@
-// Capacitor native uygulama (TavlaTV Android/iOS kabugu) icin push bildirimi kaydi.
-// Uygulama server.url ile canli siteyi WebView'de yukler; Capacitor koprusu window.Capacitor'i
-// enjekte eder, boylece bu kod native push eklentisini cagirabilir. TARAYICI/PWA'da no-op
-// (web-push ayri bir is; isNativePlatform guard ile tamamen atlanir).
-import { Capacitor } from '@capacitor/core'
+// Capacitor native kabukta (server.url ile CANLI site WebView'de yuklenir) native kopru
+// window.Capacitor'i enjekte eder. ONEMLI: @capacitor/core'u BUNDLE ETMEYIZ -> remote-load'da
+// bundled core + enjekte native-bridge CIFT-BASLATILIR ve "Cannot read properties of undefined
+// (reading 'triggerEvent')" ile beyaz ekrana yol acar. Bu yuzden plugin'e yalnizca enjekte
+// kopruden (window.Capacitor.Plugins) erisiriz; tarayici/PWA'da window.Capacitor yok -> no-op.
 import { registerPushToken } from './api'
+
+interface PushPlugin {
+  checkPermissions(): Promise<{ receive: string }>
+  requestPermissions(): Promise<{ receive: string }>
+  register(): Promise<void>
+  addListener(event: string, cb: (data: { value: string }) => void): Promise<unknown>
+}
+interface CapacitorGlobal {
+  isNativePlatform?: () => boolean
+  getPlatform?: () => string
+  Plugins?: { PushNotifications?: PushPlugin }
+}
+
+function capacitor(): CapacitorGlobal | undefined {
+  return (globalThis as unknown as { Capacitor?: CapacitorGlobal }).Capacitor
+}
 
 let started = false
 
 // Giris yapildiktan SONRA cagir (token gerekli). Birden cok cagri guvenli (started guard).
 export async function initPush(): Promise<void> {
   if (started) return
-  if (!Capacitor?.isNativePlatform?.()) return // sadece native uygulama
+  const cap = capacitor()
+  if (!cap?.isNativePlatform?.()) return // sadece native uygulama (tarayici/PWA'da no-op)
+  const pn = cap.Plugins?.PushNotifications
+  if (!pn) return // native push eklentisi yuklu degil
   started = true
 
   try {
-    const { PushNotifications } = await import('@capacitor/push-notifications')
-
     // Izin: verilmemisse iste. Kullanici reddederse sessizce vazgec.
-    let perm = await PushNotifications.checkPermissions()
+    let perm = await pn.checkPermissions()
     if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
-      perm = await PushNotifications.requestPermissions()
+      perm = await pn.requestPermissions()
     }
     if (perm.receive !== 'granted') {
       started = false // ileride tekrar denenebilsin
@@ -27,18 +44,18 @@ export async function initPush(): Promise<void> {
     }
 
     // FCM token geldiginde sunucuya kaydet.
-    await PushNotifications.addListener('registration', (token) => {
-      const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android'
+    await pn.addListener('registration', (token) => {
+      const platform = cap.getPlatform?.() === 'ios' ? 'ios' : 'android'
       registerPushToken(token.value, platform).catch(() => {
         /* gecici hata: bir sonraki acilista tekrar kaydolur */
       })
     })
-    await PushNotifications.addListener('registrationError', () => {
+    await pn.addListener('registrationError', () => {
       /* FCM kaydi basarisiz (google-services.json/ag) -> sessiz */
     })
 
-    await PushNotifications.register()
+    await pn.register()
   } catch {
-    started = false // eklenti yok / native hata -> sonra tekrar denenebilir
+    started = false // native hata -> sonra tekrar denenebilir
   }
 }
