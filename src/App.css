@@ -16004,11 +16004,10 @@ button.acct-row-logout:hover:not(:disabled) {
   display: grid;
   /* # | oyuncu (isim KIRPILMASIN, ~15 karaktere kadar) | bayrak | Maç | G/M | % | deger.
      İsim kolonu 170->230 genişletildi; sayı kolonları hafif daraltıldı ki 560px karta sığsın. */
-  grid-template-columns: 32px minmax(120px, 230px) 1fr 56px 66px 42px 56px;
+  grid-template-columns: 34px minmax(120px, 230px) 1fr 56px 66px 42px 56px;
   align-items: center;
   gap: 6px;
-  /* İlk 10 tek ekrana sığsın diye satırlar kompakt (scroll yok). */
-  padding: 5px 10px;
+  padding: 8px 12px;
 }
 /* Bayrak hucresi: isim kolonu SABIT genislikte -> bayraklar tum satirlarda ayni
    kolonda hizalanir; isimden sonra tutarli bir bosluk kalir. Ic bayrak null olsa
@@ -16023,14 +16022,25 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .lb-head {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   border-bottom: 1px solid var(--border);
+  padding-bottom: 7px;
+}
+.lb-head .lb-rating {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
 }
 .lb-body {
   /* İlk 10 oyuncu tam gösterilir; scroll bar yok. */
   overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
 }
 .lb-div-head {
   display: flex;
@@ -16046,13 +16056,30 @@ button.acct-row-logout:hover:not(:disabled) {
   margin-top: 2px;
 }
 .lb-row {
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
 .lb-row:nth-child(even) {
-  background: color-mix(in srgb, var(--text) 4%, transparent);
+  background: color-mix(in srgb, var(--text) 3.5%, transparent);
+}
+/* Podium (ilk 3): sol kenarda altın şerit + hafif ışık; madalya zaten sıra sütununda. */
+.lb-row.top {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--orange) 11%, transparent), transparent 52%);
+}
+.lb-row.top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--orange);
 }
 .lb-row.top .lb-rank {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+  line-height: 1;
   color: var(--orange); /* podium (ilk 3) = ORANGE (odul/ranking) */
 }
 .lb-row.mine {
@@ -16062,8 +16089,9 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .lb-rank {
   text-align: center;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 .lb-name {
   display: flex;
@@ -16082,15 +16110,19 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Liderlik satırları: isim ASLA kırpılmasın -> tam yazılsın. Global .player-id-name-text
    ellipsis'i burada iptal; kolon darsa isim KELIME sınırında alt satıra sarar (manşet deseni). */
 .lb-name .player-id-name {
+  /* Rozetler (kalkan/taç/top-3 madalya) ASLA alt satıra kaymasın -> isim satırına
+     kilitli. Uzun isim, metnin KENDİ kutusunda kelime sınırında sarar; rozetler
+     dikeyde ortalı kalır (önceki flex-wrap stray altın nokta hatası giderildi). */
+  flex-wrap: nowrap;
   white-space: normal;
-  flex-wrap: wrap;
-  row-gap: 2px;
+  row-gap: 0;
 }
 .lb-name .player-id-name-text {
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ---- Global oyuncu kimlik blogu: avatar + isim (ustte) + rutbe (altta, ince) ----
@@ -16414,9 +16446,11 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .lb-rating {
   text-align: right;
-  font-weight: 400;
+  font-weight: 600;
+  font-size: 0.98rem;
   color: var(--accent-text);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 /* ---- Lig/division + rozetler ---- */
@@ -18214,6 +18248,19 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .lb-row.clickable:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+.lb-row.clickable:active {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-row {
+    transition: background 0.15s ease;
+  }
+  .lb-row.clickable:hover {
+    transform: none;
+  }
 }
 .pp-head {
   display: flex;
