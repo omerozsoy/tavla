@@ -16079,6 +16079,19 @@ button.acct-row-logout:hover:not(:disabled) {
 .lb-name .avf-simple {
   margin: 0 4px;
 }
+/* Liderlik satırları: isim ASLA kırpılmasın -> tam yazılsın. Global .player-id-name-text
+   ellipsis'i burada iptal; kolon darsa isim KELIME sınırında alt satıra sarar (manşet deseni). */
+.lb-name .player-id-name {
+  white-space: normal;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.lb-name .player-id-name-text {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
 
 /* ---- Global oyuncu kimlik blogu: avatar + isim (ustte) + rutbe (altta, ince) ----
    Liderlik, canli maclar, profil vb. her yerde ayni gorunum (PlayerIdentity). */

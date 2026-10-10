@@ -890,6 +890,11 @@ class RoomController extends Controller
                 $q->whereNull('presence_status')->orWhere('presence_status', '!=', 'offline');
             });
         }
+        // Sıralama: önce YÖNETİCİLER, sonra YARDIMCILAR (destek), sonra puana (rating) göre.
+        $query->orderByDesc('is_admin');
+        if (Schema::hasColumn('users', 'is_support')) {
+            $query->orderByDesc('is_support');
+        }
         $users = $query->orderByDesc('rating')
             ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
             ->get($cols);
