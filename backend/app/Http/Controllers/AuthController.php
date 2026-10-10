@@ -2157,6 +2157,12 @@ class AuthController extends Controller
         }
         $user->markEmailAsVerified(); // fillable disi -> guvenli
         \Illuminate\Support\Facades\Cache::forget($key);
+        // KRITIK: Link yolu (verifyEmail) ile AYNI olmali. Eskiden burada sadece e-posta
+        // damgalaniyordu -> KODLA dogrulayan kullanici hosgeldin coin'ini + 3 ay hosgeldin
+        // Premium'unu ALAMIYORDU (yalniz linke tiklayan alirdi). Her ikisi de idempotent.
+        event(new \Illuminate\Auth\Events\Verified($user));
+        $this->grantWelcomeCoins($user->id);
+        $this->grantWelcomePremium($user->id);
 
         return response()->json(['user' => $user->fresh(), 'message' => 'verified']);
     }
