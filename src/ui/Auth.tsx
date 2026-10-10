@@ -264,10 +264,18 @@ export default function Auth({
   // Sunucudan gelen dogrulama hatasini anlasilir mesaja cevir (hangi alan?)
   function apiErrorMsg(err: unknown): string {
     if (!(err instanceof api.ApiError)) return t('auth.offline')
+    // 422 dogrulama: backend ALAN -> anlasilir TURKCE mesaj (Laravel'in varsayilan ingilizce
+    // mesajini gostermek yerine). Her alan icin ayri uyari ki "hangi bilgi hatali" belli olsun.
     const f = err.errors
+    // Takma ad: backend mesaji zaten Turkce + spesifik (gecersiz karakter / yasakli / alinmis
+    // ayrimini yapar) -> onu aynen goster (nickStatus realtime-kontrol durumudur, submit hatasi degil).
+    if (f?.nickname) return f.nickname[0] || t('reg.nickTaken')
     if (f?.email) return t('reg.emailTaken')
-    if (f?.nickname) return t('reg.nickTaken')
     if (f?.password) return t('reg.pwShort')
+    if (f?.first_name || f?.last_name) return t('reg.fillAll')
+    if (f?.phone) return t('reg.validPhone')
+    if (f?.avatar) return t('reg.avatarBig')
+    if (f?.birth_date) return t('reg.birthInvalid')
     const first = f ? Object.values(f)[0]?.[0] : undefined
     return first || err.message || t('auth.failed')
   }
@@ -370,8 +378,8 @@ export default function Auth({
         const user = await api.updateProfile(p)
         onAuthed(user)
         notify.success(t('reg.saved')) // birlesik toast; sayfada kalir, ana sayfaya donmez
-      } catch {
-        setError(t('auth.failed'))
+      } catch (err) {
+        setError(apiErrorMsg(err)) // jenerik "Bilgileri kontrol et" yerine ALAN bazli mesaj
       } finally {
         setBusy(false)
       }
