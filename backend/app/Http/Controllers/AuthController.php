@@ -2069,11 +2069,13 @@ class AuthController extends Controller
         \Illuminate\Support\Facades\Cache::put('eotp:'.$user->id, ['code' => $code, 'tries' => 0, 'email' => strtolower((string) $user->email)], now()->addMinutes(15));
         \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
         try {
-            \Illuminate\Support\Facades\Mail::raw(
-                "Tavla TV e-posta doğrulama kodunuz: {$code}\n\nBu kod 15 dakika geçerlidir. "
-                ."Kodu siteye girerek hesabınızı doğrulayabilirsiniz.",
-                fn ($m) => $m->to($user->email)->subject('Tavla TV e-posta doğrulama kodunuz')
-            );
+            // Link e-postasiyla ayni markali HTML sablon (emails.message); kod moduyla.
+            \Illuminate\Support\Facades\Mail::send('emails.message', [
+                'heading' => 'Merhaba!',
+                'intro' => 'TavlaTV e-posta doğrulama kodun aşağıda. Kodu siteye girerek hesabını doğrulayabilirsin.',
+                'code' => $code,
+                'outro' => 'Bu kod 15 dakika geçerlidir. Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
+            ], fn ($m) => $m->to($user->email)->subject('TavlaTV — E-posta Doğrulama Kodun'));
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('email verify code mail failed', ['e' => $e->getMessage()]);
         }
