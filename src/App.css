@@ -26707,6 +26707,218 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 400;
   color: #b7f0c6;
 }
+
+/* ==========================================================================
+   E-POSTA DOGRULAMA DUVARI (EmailGate) — src/ui/EmailGate.tsx + EmailVerify tone="gate"
+   Marka: sicak koyu yuzey + coral aksan. Her site temasinda (acik/koyu) AYNI koyu modal
+   gorunsun diye renkler ACIKCA (tema degiskenine bagli degil). reduced-motion'a saygili.
+   ========================================================================== */
+.egate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600; /* her seyin ustunde (install/update banner dahil) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: radial-gradient(120% 120% at 50% 0%, rgba(201, 86, 63, 0.14), rgba(14, 13, 11, 0.86) 60%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: egate-fade 0.28s ease both;
+}
+.egate-card {
+  position: relative;
+  overflow: hidden;
+  width: min(440px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 34px 30px 26px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #221f1b, #1a1714);
+  border: 1px solid rgba(244, 239, 230, 0.1);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(244, 239, 230, 0.05);
+  color: #f4efe6;
+  text-align: center;
+  font: 500 14px/1.5 system-ui, -apple-system, sans-serif;
+  animation: egate-rise 0.42s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+/* ust kenarda ince coral parilti seridi */
+.egate-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #c9563f, transparent);
+  opacity: 0.8;
+}
+.egate-badge {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #e8a08f;
+  background: radial-gradient(circle at 50% 35%, rgba(201, 86, 63, 0.28), rgba(201, 86, 63, 0.1));
+  border: 1px solid rgba(201, 86, 63, 0.4);
+  box-shadow: 0 0 0 6px rgba(201, 86, 63, 0.07);
+}
+.egate-title {
+  margin: 0 0 8px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: #f8f4ec;
+}
+.egate-sub {
+  margin: 0 auto 14px;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(244, 239, 230, 0.68);
+}
+.egate-email {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 0 22px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(201, 86, 63, 0.14);
+  border: 1px solid rgba(201, 86, 63, 0.3);
+  color: #f4efe6;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* --- Kod girisi + aksiyonlar (EmailVerify tone="gate") --- */
+.verify-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+.verify-gate-code {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #2a2620;
+  border: 1.5px solid rgba(244, 239, 230, 0.14);
+  color: #f8f4ec;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em; /* letter-spacing'in son bosluguna denge */
+  caret-color: #c9563f;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.verify-gate-code::placeholder {
+  color: rgba(244, 239, 230, 0.28);
+  letter-spacing: 0.5em;
+}
+.verify-gate-code:focus {
+  border-color: #c9563f;
+  box-shadow: 0 0 0 4px rgba(201, 86, 63, 0.22);
+}
+.verify-gate-primary {
+  width: 100%;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 14px;
+  background: #c9563f;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.08s ease;
+}
+.verify-gate-primary:hover:not(:disabled) {
+  background: #b0472f;
+}
+.verify-gate-primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.verify-gate-primary:disabled {
+  background: #4a423b;
+  color: rgba(244, 239, 230, 0.45);
+  cursor: default;
+}
+.verify-gate-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 20px;
+  font-size: 12.5px;
+}
+.verify-gate-hint {
+  color: rgba(244, 239, 230, 0.5);
+}
+.verify-gate-sent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #7fd79a;
+}
+.verify-gate-err {
+  color: #ef8a78;
+}
+.verify-gate-resend {
+  margin-left: auto;
+  flex: none;
+  background: none;
+  border: none;
+  padding: 2px 2px;
+  color: #e8a08f;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(232, 160, 143, 0.4);
+}
+.verify-gate-resend:hover:not(:disabled) {
+  color: #f4efe6;
+}
+.verify-gate-resend:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.egate-logout {
+  margin-top: 22px;
+  background: none;
+  border: none;
+  color: rgba(244, 239, 230, 0.5);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.egate-logout:hover {
+  color: rgba(244, 239, 230, 0.85);
+}
+
+@keyframes egate-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes egate-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egate-overlay,
+  .egate-card {
+    animation: none;
+  }
+}
 /* ==========================================================================
    BÄ°RLEÅžÄ°K BÄ°LDÄ°RÄ°M (toast) â€” src/ui/Toast.tsx
    Flat/Swiss: dolu yÃ¼zey + 1px kenarlÄ±k + sol renk ÅŸeridi (tÃ¼re gÃ¶re). GÃ¶lge YOK.
