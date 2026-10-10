@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "108537128264",
+    "project_id": "tavlatv",
+    "storage_bucket": "tavlatv.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:108537128264:android:57cfa4a0261d41dd643f7d",
+        "android_client_info": {
+          "package_name": "com.tavlatv.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9_KR5J039j4IhuZijqi9JQHFhtYYAxEs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

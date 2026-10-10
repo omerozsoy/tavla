@@ -65,4 +65,11 @@ return [
         'whatsapp_apikey' => env('ALERT_WHATSAPP_APIKEY', ''),
     ],
 
+    // Firebase Cloud Messaging (push bildirimi). credentials = servis hesabi JSON yolu.
+    // Dosya YOKSA PushSender sessizce no-op yapar (push devre disi, oyun etkilenmez).
+    // Uretimde .env FIREBASE_CREDENTIALS ile mutlak yol verilir; varsayilan storage/app/firebase.
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/service-account.json')),
+    ],
+
 ];

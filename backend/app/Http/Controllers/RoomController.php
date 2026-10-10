@@ -452,6 +452,10 @@ class RoomController extends Controller
         });
 
         if ($opponent) {
+            // Rakip hazir: havuzda bekleyen host (p1) uzaktaysa "eslesme bulundu" push'u.
+            $this->pushToUser((int) $opponent->p1_user_id, 'Rakibin hazır', 'Eşleşme bulundu — maç başlıyor!', [
+                'type' => 'match_ready', 'room' => $opponent->code,
+            ]);
             return response()->json(['room' => $opponent->toClient(), 'slot' => 'p2', 'matched' => true]);
         }
 
@@ -1337,6 +1341,10 @@ class RoomController extends Controller
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();
+            // Rakip hazir: odayi kurup bekleyen host (p1) uzaktaysa "rakibin geldi" push'u.
+            $this->pushToUser((int) $room->p1_user_id, 'Rakibin hazır', ($room->p2_name ?: 'Rakibin').' maça katıldı — başlıyor!', [
+                'type' => 'match_ready', 'room' => $room->code,
+            ]);
             // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
             // olsun — matchmake ile AYNI. İki oyuncu da belli olduğundan shouldAuthoritative karar
             // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
@@ -2657,6 +2665,56 @@ class RoomController extends Controller
         return $slot === 'p1' ? 'white' : 'black';
     }
 
+    // Oyun push'u: uzaktaki (last_seen eski/hic) kullaniciya gonder. $onlyIfAway=false -> her zaman.
+    // FCM yapilandirilmamissa SendPushJob/PushSender SESSIZCE no-op -> oyun akisi ASLA etkilenmez.
+    private function pushToUser(?int $userId, string $title, string $body, array $data, bool $onlyIfAway = true): void
+    {
+        if (! $userId) {
+            return;
+        }
+        if ($onlyIfAway) {
+            // Aktif (son 60sn icinde ping'lemis) oyuncu ekranda zaten gorur -> push gereksiz.
+            $active = \App\Models\User::where('id', $userId)
+                ->whereNotNull('last_seen')
+                ->where('last_seen', '>', now()->subSeconds(60))
+                ->exists();
+            if ($active) {
+                return;
+            }
+        }
+        try {
+            \App\Jobs\SendPushJob::dispatch($userId, $title, $body, $data);
+        } catch (\Throwable $e) {
+            // push dagitimi oyunu bozmasin
+        }
+    }
+
+    // Hamleden sonra sira KARSI tarafa gectiyse ve o oyuncu uzaktaysa "sira sende" push'u.
+    // Sira devredilince onda KALIR (rakip oynayamaz) -> tur basina en fazla tek push, spam yok.
+    // Odayi tazeleyip (tx kapandiktan sonra) karar verir -> closure scope'una bagimli degil.
+    private function maybePushYourTurn(string $code, string $token, Request $request): void
+    {
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room || $room->bot || $room->status !== 'playing') {
+            return;
+        }
+        if (! $room->p1_user_id || ! $room->p2_user_id) {
+            return; // iki kayitli kullanici sart (misafire push yok)
+        }
+        $moverSlot = $this->slotOf($room, $token, $request);
+        if ($moverSlot === null) {
+            return;
+        }
+        $turn = is_array($room->server_state) ? ($room->server_state['turn'] ?? null) : null;
+        if (! $turn || $turn === $this->slotColor($moverSlot)) {
+            return; // sira devretmedi (el suruyor) -> push yok
+        }
+        $targetUserId = $turn === 'white' ? (int) $room->p1_user_id : (int) $room->p2_user_id;
+        $this->pushToUser($targetUserId, 'Sıra sende', 'Rakibin hamlesini yaptı — sıra sende.', [
+            'type' => 'your_turn', 'room' => $room->code,
+        ]);
+    }
+
     /**
      * BAĞIMSIZ Faz 1 zarı: sunucu commit-reveal zarı verir; server_state TUTMAZ (hamle/tahta
      * legacy). Aynı anda TEK açık (tüketilmemiş) el -> idempotent + zar peek-ahead engeli.
@@ -3470,6 +3528,7 @@ class RoomController extends Controller
         // SENKRON oynat (AYRI tx -> gnubg yoksa insan hamlesi geri ALINMAZ, sadece duraklar).
         $this->markAuthoritativeCommandResult($code, $data, $resp);
         $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
+        $this->maybePushYourTurn($code, $data['token'], $request); // uzaktaki rakibe "sıra sende"
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 

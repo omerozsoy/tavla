@@ -37,6 +37,7 @@ class Notification extends Model
         ?string $icon = null,
         ?string $action = null,
         ?int $actorId = null,
+        bool $push = true,
     ): void {
         $row = [
             'user_id' => $userId,
@@ -51,5 +52,18 @@ class Notification extends Model
             $row['actor_id'] = $actorId;
         }
         static::create($row);
+
+        // Ayni bildirimi cihaza PUSH olarak da gonder (uygulama kabugu). FCM yapilandirilmamissa
+        // veya kuyruk yoksa sessizce atlanir -> bildirim kaydi her halukarda dusmustur.
+        if ($push) {
+            try {
+                \App\Jobs\SendPushJob::dispatch($userId, $title, $body, array_filter([
+                    'action' => $action,
+                    'actor_id' => $actorId !== null ? (string) $actorId : null,
+                ]));
+            } catch (\Throwable $e) {
+                // push dagitimi bildirimi bozmasin
+            }
+        }
     }
 }
