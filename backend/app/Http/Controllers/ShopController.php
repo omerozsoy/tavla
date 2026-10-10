@@ -15,8 +15,8 @@ class ShopController extends Controller
     // Gorsel tanimlar (renkler vb.) frontend'de; burada yalnizca id -> fiyat.
 
     // Tahta nadirlik -> coin fiyati (frontend boardThemes.ts BOARD_RARITY_PRICE + CLUB_BOARD_PRICE ile BIREBIR).
-    // 2026-10-04: tüm fiyatlar 3 katına çıkarıldı (kullanıcı kararı).
-    private const BOARD_PRICE = ['common' => 150, 'rare' => 270, 'epic' => 450, 'legendary' => 750, 'mythic' => 1200, 'club' => 300, 'country' => 300, 'tavlatv' => 1500];
+    // 2026-10-04: 3 katına çıkarıldı. 2026-10-10: bir kat daha (2x) -> aşağıdaki değerler (kullanıcı kararı).
+    private const BOARD_PRICE = ['common' => 300, 'rare' => 540, 'epic' => 900, 'legendary' => 1500, 'mythic' => 2400, 'club' => 600, 'country' => 600, 'tavlatv' => 3000];
 
     // Satin alinabilir tahta id -> nadirlik. Kaynak: src/boardThemes.ts (senkron tut).
     // Ucretsiz olanlar (standart/tavla/galaxy + kulup temalari) BURADA YOK.
@@ -89,8 +89,8 @@ class ShopController extends Controller
         'rising' => 'mythic', 'gradWave' => 'mythic',
     ];
 
-    // Avatar çerçeveleri + pul tasarımları ortak kademe. 2026-10-04: 3 katına çıkarıldı.
-    private const RARITY_PRICE = ['common' => 90, 'rare' => 180, 'epic' => 360, 'legendary' => 540, 'mythic' => 750];
+    // Avatar çerçeveleri + pul tasarımları ortak kademe. 2026-10-04: 3x. 2026-10-10: bir kat daha (2x).
+    private const RARITY_PRICE = ['common' => 180, 'rare' => 360, 'epic' => 720, 'legendary' => 1080, 'mythic' => 1500];
 
     // Dijital checker (pul) materyalleri -> rarity (frontend src/checkers.ts CHECKER_SKINS ile BIREBIR).
     // Fiyat: RARITY_PRICE (rare 180 / epic 360 / legendary 540). unlock id: 'checker.<id>'.

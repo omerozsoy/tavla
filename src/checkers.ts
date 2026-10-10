@@ -23,11 +23,11 @@ export interface CheckerSkin {
 
 // rarity -> coin fiyatı (backend RARITY_PRICE ile aynı; frame'lerle ortak kademe)
 export const CHECKER_RARITY_PRICE: Record<CheckerRarity, number> = {
-  common: 90,
-  rare: 180,
-  epic: 360,
-  legendary: 540,
-  mythic: 750,
+  common: 180,
+  rare: 360,
+  epic: 720,
+  legendary: 1080,
+  mythic: 1500,
 }
 
 // Aile başına açık (ivory) eş renk — rakip tarafı; aile finish'i aynı kalır.

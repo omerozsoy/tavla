@@ -62,7 +62,7 @@ describe('admin tasarım ayarları (Tavla/Avatar/Pul Tasarımı)', () => {
       items: [],
     })
     expect(boardRarityOf(sahara)).toBe('mythic')
-    expect(boardPrice(sahara)).toBe(1200)
+    expect(boardPrice(sahara)).toBe(2400)
     expect(boardOnSale(sahara)).toBe(false)
     expect(FREE_BOARDS.has('standart') && boardPrice(std)).toBe(undefined)
   })
@@ -77,11 +77,11 @@ describe('admin tasarım ayarları (Tavla/Avatar/Pul Tasarımı)', () => {
         { kind: 'checker', id: 'finish-pearl', group: 'rare', price: 42, active: true },
       ],
     })
-    expect([pulse.rarity, pulse.group, framePrice(pulse), frameOnSale('pulse')]).toEqual(['mythic', 'mythic', 750, false])
+    expect([pulse.rarity, pulse.group, framePrice(pulse), frameOnSale('pulse')]).toEqual(['mythic', 'mythic', 1500, false])
     expect([checkerPrice(pearl), checkerOnSale('finish-pearl')]).toEqual([42, true])
     applyShopDesigns({ designs: [], items: [] })
-    expect([pulse.rarity, framePrice(pulse), frameOnSale('pulse')]).toEqual(['rare', 180, true])
-    expect(checkerPrice(pearl)).toBe(180)
+    expect([pulse.rarity, framePrice(pulse), frameOnSale('pulse')]).toEqual(['rare', 360, true])
+    expect(checkerPrice(pearl)).toBe(360)
   })
 
   it('backend JSON (scripts/export-board-themes.mjs) koddaki listeyle senkron', () => {
