@@ -73,8 +73,11 @@ class ServicesWatch extends Command
         //     matchluck SIGSEGV; 2026-10-10'da 8098 ~4000 kez çöküp kalktı, 7 saat sessiz kaldı çünkü
         //     /health yeşildi + heavy havuz analyzeBases'te YOKtu). Bu yüzden GERÇEK motor probe'u
         //     (matchluck selftest) kullan -> SEGV'i yakalar. analyzeBases'te zaten izlenenleri atla.
-        $watched = array_flip($bases);
-        foreach ($gnubg->heavyOnlyBases() as $base) {
+        // OPT-IN (varsayılan KAPALI): heavy probe matchluck selftest ATAR -> instance SEGV atıyorsa
+        // probe'un KENDİSİ onu çökertir + her instance için alarm yağar (2026-10-11 olayı: 8098-8101
+        // SEGV crash-loop'ta iken e-posta seli). Motor sağlıkken açmak güvenli; GNUBG_WATCH_HEAVY=1.
+        $watched = env('GNUBG_WATCH_HEAVY', false) ? array_flip($bases) : null;
+        foreach (($watched === null ? [] : $gnubg->heavyOnlyBases()) as $base) {
             if (isset($watched[$base])) {
                 continue; // zaten foreground/background olarak izleniyor (çift alarm yok)
             }
