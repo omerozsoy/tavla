@@ -205,6 +205,15 @@ async function req<T>(path: string, options: RequestInit = {}, timeoutMs?: numbe
 
 export { ApiError }
 
+// Push bildirimi: Capacitor native uygulama FCM token'ini sunucuya kaydeder/siler.
+// Web/tarayicida cagrilmaz (bkz. src/push.ts isNativePlatform guard).
+export async function registerPushToken(token: string, platform = 'android'): Promise<void> {
+  await req('/push/register', { method: 'POST', body: JSON.stringify({ token, platform }) })
+}
+export async function unregisterPushToken(token: string): Promise<void> {
+  await req('/push/unregister', { method: 'POST', body: JSON.stringify({ token }) })
+}
+
 // GERÇEK-ZAMANLI PUSH yapılandırması (public): Reverb açık mı + public app key. enabled=false
 // (varsayılan) iken istemci Echo'yu HİÇ kurmaz -> saf poll (dormant). SECRET dönmez.
 export async function getRealtimeConfig(): Promise<{ enabled: boolean; key: string }> {
