@@ -74,11 +74,15 @@ class PrGnubgAuthoritativeTest extends TestCase
     }
 
     /**
-     * DEDUPE: ikinci oyuncunun işi, aynı maçın DİĞER oyuncusu zaten analiz edildiyse RAKİP tarafını
-     * yeniden gnubg'de hesaplamaz -> sibling'den aynalar. fakeOrch FARKLI (99) döndürür; buna rağmen
-     * gnubg_pr sibling'in opponent_pr'ı (10.67) ile dolmalı (self-fake 99 DEĞİL) -> mirror kanıtı.
+     * KÖK FIX (5EPMC "yanlış PR" / self-opponent SWAP): Gösterilen gnubg_pr DAİMA bu satırın KENDİ
+     * self-analizinden gelir — sibling'in "opponent" hesabından ASLA aynalanmaz. Eskiden mirror
+     * kendi gnubg_pr'ı sibling.gnubg_opponent_pr ile yazıyordu; sibling maç-sonu YARIM match_moves /
+     * client-log fallback'te koşmuşsa o değer YANLIŞtı -> kazananın ekranına RAKİBİN PR'ı düşüyordu
+     * (miayke süper oynadı ama 29.2 göründü). Bu test: sibling'de BİLEREK yanlış opponent değeri (10.67)
+     * dururken, B'nin kendi self-analizi (4.0) gnubg_pr'ı belirlemeli; sibling değeri ASLA sızmamalı.
+     * DEDUPE korunur: yalnız RAKİP (gnubg_opponent_pr) sibling'in SELF'inden aynalanır (pahalı yarı atlanır).
      */
-    public function test_second_player_job_mirrors_sibling_without_recompute(): void
+    public function test_self_pr_is_authoritative_and_never_taken_from_sibling_mirror(): void
     {
         config(['gnubg.pr_mode' => 'authoritative']);
         $a = User::factory()->create();
@@ -89,7 +93,8 @@ class PrGnubgAuthoritativeTest extends TestCase
             'match_length' => 3, 'match_type' => 'match', 'room_code' => 'MIRROR1', 'pr' => 7.07,
             'log' => json_encode(['hc' => 'white', 'log' => []]),
         ]);
-        // sibling (A) zaten analiz edildi: self 7.07, rakip(=B) 10.67 (query-builder -> fillable gerekmez).
+        // sibling (A): self 7.07; B hakkındaki "opponent" hesabı BİLEREK YANLIŞ (10.67) — ör. A yarım
+        // logda koşmuş. B'nin GÖSTERİLEN PR'ı bu yanlış değeri ASLA almamalı.
         MatchResult::where('id', $aRow->id)->update([
             'gnubg_pr' => 7.07, 'gnubg_checker_pr' => 7.07,
             'gnubg_opponent_pr' => 10.67, 'gnubg_opponent_checker_pr' => 10.67,
@@ -104,11 +109,13 @@ class PrGnubgAuthoritativeTest extends TestCase
             ]]),
         ]);
 
-        (new AnalyzeMatchPrJob($mrB->id))->handle($this->fakeOrch(chkPr: 99.0, chkLoss: 2.0, chkDec: 6));
+        // B'nin kendi self-analizi: loss 0.048 / 6 karar -> overall = (0.048/6)*500 = 4.0.
+        (new AnalyzeMatchPrJob($mrB->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
 
         $mrB->refresh();
-        $this->assertEqualsWithDelta(10.67, (float) $mrB->gnubg_pr, 1e-6, 'kendi PR sibling.opponent_pr ile aynalandi (self-fake 99 ezmedi)');
-        $this->assertEqualsWithDelta(7.07, (float) $mrB->gnubg_opponent_pr, 1e-6, 'rakip PR sibling.self ile aynalandi');
+        $this->assertEqualsWithDelta(4.0, (float) $mrB->gnubg_pr, 1e-6, 'KENDİ PR self-analizden (4.0) — sibling.opponent (10.67) ASLA sızmamalı (swap kök fix)');
+        $this->assertEqualsWithDelta(4.0, (float) $mrB->gnubg_checker_pr, 1e-6, 'checker PR de kendi self-analizden');
+        $this->assertEqualsWithDelta(7.07, (float) $mrB->gnubg_opponent_pr, 1e-6, 'RAKİP PR sibling.self (7.07) ile aynalanır (dedupe korunur)');
         $this->assertNotNull($mrB->gnubg_pr_at);
     }
 

@@ -91,26 +91,14 @@ class AnalyzeMatchPrJob implements ShouldQueue
                 ->whereNotNull('gnubg_pr_at')
                 ->latest('id')->first()
             : null;
-        // sibling benim PR'ımı (onun "opponent"ını) GERÇEKTEN skorladı mı?
+        // sibling benim PR'ımı (onun "opponent"ını) GERÇEKTEN skorladı mı? (yalnız OPPONENT tarafını
+        // aynalamak için; KENDİ gösterilen PR'ım DAİMA kendi self-analizimden gelir — aşağıya bak.)
         $mirror = $sibling && $sibling->gnubg_opponent_pr !== null;
-        // HIZLI GÖSTERİM: kendi PR'ımı sibling'den ANINDA yaz -> ekran self-analizi beklemeden dolar
-        // (self-analiz arkadan kariyer/Hata Günlüğü'nü tamamlar; aynı match_moves -> aynı değer).
-        if ($mirror) {
-            $fast = [];
-            foreach ([
-                'gnubg_pr' => $sibling->gnubg_opponent_pr,
-                'gnubg_checker_pr' => $sibling->gnubg_opponent_checker_pr,
-                'gnubg_cube_pr' => $sibling->gnubg_opponent_cube_pr,
-                'gnubg_pr_at' => now(),
-            ] as $c => $v) {
-                if (Schema::hasColumn('match_results', $c)) {
-                    $fast[$c] = $v;
-                }
-            }
-            if ($fast !== []) {
-                MatchResult::where('id', $mr->id)->update($fast);
-            }
-        }
+        // KÖK FIX (5EPMC swap): Eskiden burada "hızlı gösterim" için KENDİ gnubg_pr'ımı sibling'in
+        // OPPONENT hesabından ANINDA yazıyorduk. Ama sibling maç-sonu YARIM match_moves'ta koşmuşsa
+        // (az karar -> yanlış PR) o değer kazananın ekranına RAKİBİN PR'ı olarak düşüyordu (miayke
+        // 3.01 yerine 29.2). Kaldırıldı: gösterilen PR SADECE bu satırın KENDİ (tam log) self-analizinden
+        // yazılır. Sibling yalnız OPPONENT PR'ı (pahalı yarı) için aynalanır.
 
         try {
             $chk = $orch->checkerPr($log, $player, $ml, 2);
@@ -162,19 +150,18 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // Her kova SAYILAN kararına göre: decisions>0 -> gerçek değer; yoksa NULL (varsa eski sentinel
         // 0'ı da TEMİZLER -> ekran dürüst "—"). Eskiden evaluated>0 ile yazılıyordu; bu, 0-karar degrade
         // run'da sahte 0.00 sızdırıyordu (bu maçın kök nedeni).
-        // $mirror iken kendi GÖSTERİLEN PR'ım yukarıda sibling'den YAZILDI; self-analiz null/düşük dönerse
-        // doğru mirror değerini EZMESİN diye display kolonlarını mirror'da ATLA (kariyer + Hata Günlüğü
-        // için self-analiz yine koştu). Normal yolda (mirror yok) eskisi gibi yaz.
-        if (! $mirror) {
-            if (Schema::hasColumn('match_results', 'gnubg_pr')) {
-                $upd['gnubg_pr'] = $totDec > 0 ? round((float) $overall, 2) : null;
-            }
-            if (Schema::hasColumn('match_results', 'gnubg_checker_pr')) {
-                $upd['gnubg_checker_pr'] = $chkDec > 0 ? round((float) $chk['pr'], 2) : null;
-            }
-            if (Schema::hasColumn('match_results', 'gnubg_cube_pr')) {
-                $upd['gnubg_cube_pr'] = $cubeDec > 0 ? round((float) $cube['pr'], 2) : null;
-            }
+        // GÖSTERİLEN gnubg PR'ı DAİMA KENDİ self-analizinden (bu satırın tam logu) yazılır — sibling
+        // mirror'ı KENDİ PR'ıma ASLA dokunmaz (5EPMC swap kök fix). Yalnız GERÇEK karar bulununca yaz:
+        // 0 kararda eski/"—" değer kalır (sahte 0 ya da yanlış sibling değeri YAZMA). Bu, self otoritesini
+        // garantiler: kazananın ekranına rakibin PR'ı bir daha düşemez.
+        if ($totDec > 0 && Schema::hasColumn('match_results', 'gnubg_pr')) {
+            $upd['gnubg_pr'] = round((float) $overall, 2);
+        }
+        if ($chkDec > 0 && Schema::hasColumn('match_results', 'gnubg_checker_pr')) {
+            $upd['gnubg_checker_pr'] = round((float) $chk['pr'], 2);
+        }
+        if ($cubeDec > 0 && Schema::hasColumn('match_results', 'gnubg_cube_pr')) {
+            $upd['gnubg_cube_pr'] = round((float) $cube['pr'], 2);
         }
         if ($totEval > 0 && Schema::hasColumn('match_results', 'gnubg_pr_at')) {
             $upd['gnubg_pr_at'] = now();
