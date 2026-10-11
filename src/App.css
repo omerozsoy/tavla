@@ -1030,9 +1030,12 @@ button[aria-disabled='true'],
   color: var(--muted);
   font-size: 0.9rem;
 }
-/* Kart alt aksiyon alani (Kullan / Satin Al / Kullaniliyor) */
+/* Kart alt aksiyon alani (Kullan / Satin Al / Kullaniliyor). margin-top:auto -> footer
+   DAIMA kartin altina yapisir; kartlar esit boy (grid stretch) oldugundan "Sende var"
+   etiketi olsun olmasin TUM aksiyon butonlari AYNI hizada (alt kenarda) dizilir. */
 .bp-foot {
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 8px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
