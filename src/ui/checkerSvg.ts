@@ -202,7 +202,7 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
         <feTurbulence type="fractalNoise" baseFrequency="0.22 0.34" numOctaves="2" seed="${s}" result="n"/>
         <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.38  0 0 0 0 0.26  0 0 0 0 0.18  0.28 0 0 0 -0.14"/>
       </filter>`
-    finish = `<rect x="7" y="7" width="106" height="106" filter="url(#${P}-leather)" opacity="0.45" style="mix-blend-mode:multiply"/><circle cx="60" cy="60" r="48" fill="none" stroke="${shade(color, -0.48)}" stroke-opacity="0.34" stroke-width="2.2"/><circle cx="60" cy="60" r="47" fill="none" stroke="${shade(color, 0.45)}" stroke-opacity="0.3" stroke-width="0.9"/>`
+    finish = `<rect x="7" y="7" width="106" height="106" filter="url(#${P}-leather)" opacity="0.45" style="mix-blend-mode:multiply"/><circle cx="60" cy="60" r="49" fill="none" stroke="${shade(color, -0.52)}" stroke-opacity="0.42" stroke-width="2.8"/><circle cx="60" cy="60" r="47.8" fill="none" stroke="${shade(color, 0.4)}" stroke-opacity="0.28" stroke-width="0.8"/><circle cx="60" cy="60" r="48.8" fill="none" stroke="${shade(color, 0.58)}" stroke-opacity="0.62" stroke-width="1.1" stroke-dasharray="1.4 2.5" stroke-linecap="round"/>`
   } else if (family === 'glass') {
     // Cam: renkli pul silueti korunur; saydamlığı temsil eden iç ışık yerine dış kenar belirgindir.
     defs = `
