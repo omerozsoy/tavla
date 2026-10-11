@@ -64,6 +64,22 @@ function HomeContent() {
           </li>
         </ul>
 
+        <h2>Tavla kuralları ve rehberleri</h2>
+        <p>
+          Tavla oyununu öğrenmek veya hamlelerini geliştirmek için kapsamlı rehberlerimizi
+          inceleyebilirsin. Kurallardan açılış stratejilerine, mars hesabından turnuva
+          formatlarına kadar tavlayla ilgili temel bilgileri tek yerde topluyoruz.
+        </p>
+        <nav aria-label="Tavla rehberleri">
+          <ul>
+            <li><a href="/nasil-oynanir">Tavla nasıl oynanır? Temel kurallar</a></li>
+            <li><a href="/tavla-rehberi">Tavla rehberi ve stratejiler</a></li>
+            <li><a href="/tavla-rehberi/tavla-acilis-stratejileri">Tavla açılış stratejileri</a></li>
+            <li><a href="/turnuva-kurallari">Tavla turnuva kuralları</a></li>
+            <li><a href="/sikca-sorulan-sorular">Tavla hakkında sıkça sorulan sorular</a></li>
+          </ul>
+        </nav>
+
         <h2>Sık Sorulan Sorular</h2>
         <h3>Tavla oynamak için üye olmam gerekir mi?</h3>
         <p>
