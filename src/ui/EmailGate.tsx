@@ -32,14 +32,18 @@ export default function EmailGate({ email, onVerified, onLogout }: Props) {
 
         <EmailVerify onVerified={onVerified} tone="gate" />
 
-        {/* E-posta hic gelmiyorsa: Hata Bildir formunu ac (halka acik /bug-report). */}
-        <button
-          type="button"
-          className="egate-report"
-          onClick={() => window.dispatchEvent(new CustomEvent('tavla:open-bug-report'))}
-        >
-          <Icon name="flag" size={14} /> {t('emailGate.report')}
-        </button>
+        {/* Yardim bolgesi: e-posta hic gelmiyorsa Hata Bildir formunu ac (halka acik /bug-report). */}
+        <div className="egate-help">
+          <span className="egate-help-cap">{t('emailGate.helpCap')}</span>
+          <button
+            type="button"
+            className="egate-report"
+            onClick={() => window.dispatchEvent(new CustomEvent('tavla:open-bug-report'))}
+          >
+            <Icon name="flag" size={15} />
+            {t('emailGate.report')}
+          </button>
+        </div>
 
         <button type="button" className="egate-logout" onClick={onLogout}>
           {t('auth.logout')}
