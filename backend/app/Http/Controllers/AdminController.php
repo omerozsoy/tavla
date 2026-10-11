@@ -115,6 +115,9 @@ class AdminController extends Controller
         ]);
         $min = (int) $data['minutes'];
         $user->chat_muted_until = $min > 0 ? now()->addMinutes($min) : null;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+            $user->chat_muted_by = $min > 0 ? (int) $me->id : null;
+        }
         $user->save();
         \App\Support\Shield::audit(
             (int) $me->id,

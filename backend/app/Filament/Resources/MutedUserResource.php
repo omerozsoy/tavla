@@ -88,6 +88,12 @@ class MutedUserResource extends Resource
                 Tables\Columns\TextColumn::make('kind')->label('Tür')->badge()
                     ->getStateUsing(fn (User $u) => $u->chat_offenses > 0 ? 'Küfür' : 'Manuel')
                     ->color(fn (string $state) => $state === 'Küfür' ? 'warning' : 'info'),
+                // Elle yasaklarda yasağı veren admin (küfür otomatik yasaklarında —).
+                Tables\Columns\TextColumn::make('chat_muted_by')->label('Yasaklayan')
+                    ->getStateUsing(fn (User $u) => $u->chat_muted_by
+                        ? (User::find($u->chat_muted_by)?->nickname ?? ('#'.$u->chat_muted_by))
+                        : null)
+                    ->placeholder('—')->color('gray'),
                 Tables\Columns\TextColumn::make('status')->label('Durum')
                     ->badge()
                     ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture() ? 'Aktif yasak' : 'Süresi doldu')
@@ -112,6 +118,9 @@ class MutedUserResource extends Resource
                     ->action(function (User $u) {
                         // chat_* alanları fillable DEĞİL -> doğrudan ata + save (ChatModeration ile aynı desen).
                         $u->chat_muted_until = null;
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+                            $u->chat_muted_by = null;
+                        }
                         $u->save();
                         Notification::make()->title('Konuşma yasağı kaldırıldı')->success()->send();
                     }),
@@ -125,6 +134,9 @@ class MutedUserResource extends Resource
                         $u->chat_offenses = 0;
                         if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_offense_word')) {
                             $u->chat_offense_word = null;
+                        }
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+                            $u->chat_muted_by = null;
                         }
                         $u->save();
                         Notification::make()->title('İhlal geçmişi sıfırlandı')->success()->send();

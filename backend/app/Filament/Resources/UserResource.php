@@ -324,7 +324,23 @@ class UserResource extends Resource
                     ->action(function (User $record, array $data) {
                         $min = (int) $data['minutes'];
                         $record->chat_muted_until = $min > 0 ? now()->addMinutes($min) : null;
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+                            $record->chat_muted_by = $min > 0 ? (int) auth()->id() : null;
+                        }
                         $record->save();
+                        // Kullanıcıya resmi DM bildirimi (AdminController::chatMute ile aynı).
+                        if ($min > 0) {
+                            $until = $record->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
+                            \App\Support\OfficialMessenger::sendTo(
+                                $record,
+                                "⚠️ Konuşma yasağı aldın. Sohbete yazamazsın. Ceza bitişi: {$until}."
+                            );
+                        } else {
+                            \App\Support\OfficialMessenger::sendTo(
+                                $record,
+                                '✓ Konuşma yasağın kaldırıldı. Tekrar sohbet edebilirsin.'
+                            );
+                        }
                         \Filament\Notifications\Notification::make()
                             ->title($min > 0 ? 'Konuşma yasağı uygulandı' : 'Konuşma yasağı kaldırıldı')
                             ->success()->send();
