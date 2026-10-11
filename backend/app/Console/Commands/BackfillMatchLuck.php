@@ -39,7 +39,21 @@ class BackfillMatchLuck extends Command
         $days = (int) $this->option('days');
         $dry = (bool) $this->option('dry');
 
-        $q = MatchResult::whereNull('luck_mwc')->whereNotNull('log');
+        // KAYNAK: istemci log'u VEYA sunucu hamleleri (match_moves). Eskiden yalnız log şart koşuluyordu
+        // -> rakip hiç raporlamadıysa (log'suz ama match_moves'lu sunucu-otoriter satır) ATLANIYORDU.
+        // Karantinaya alınmış (hesaplanamaz: forfeit/tek-taraflı) satırları da atla -> boşa dispatch yok.
+        $q = MatchResult::whereNull('luck_mwc')
+            ->where(function ($x) {
+                $x->where(function ($a) {
+                    $a->whereNotNull('log')->where('log', '!=', '');
+                })->orWhereExists(function ($sub) {
+                    $sub->selectRaw('1')->from('match_moves')
+                        ->whereColumn('match_moves.room_code', 'match_results.room_code');
+                });
+            })
+            ->where(function ($x) {
+                $x->whereNull('luck_method')->orWhere('luck_method', '!=', 'TAVLAI_LUCK_UNAVAILABLE');
+            });
         if ($days > 0) {
             $q->where('created_at', '>', now()->subDays($days));
         }

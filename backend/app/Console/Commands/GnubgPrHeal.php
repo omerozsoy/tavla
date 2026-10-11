@@ -92,7 +92,33 @@ class GnubgPrHeal extends Command
                 \App\Jobs\AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database');
             }
         }
-        $this->info($rows->count().' mac PR/sans analizi yeniden kuyruga alindi (heal). Worker isleyecek.');
+
+        // LUCK-ONLY BOŞLUK: PR denendi (gnubg_pr_at DOLU) ama şans hâlâ boş (matchluck o an
+        // başarısız/worker kapalıydı) -> yukarıdaki PR-heal bunları YAKALAMAZ (gnubg_pr_at NULL arar).
+        // Ayrı, SINIRLI (limit) pas: karantina hariç + kaynak (log VEYA match_moves) şart -> döngü yok.
+        $luckOnly = MatchResult::query()
+            ->whereNull('luck_mwc')
+            ->whereNotNull('gnubg_pr_at')
+            ->where('created_at', '>=', now()->subDays($days))
+            ->where(function ($q) {
+                $q->whereNull('luck_method')->orWhere('luck_method', '!=', 'TAVLAI_LUCK_UNAVAILABLE');
+            })
+            ->where(function ($q) {
+                $q->where(function ($a) {
+                    $a->whereNotNull('log')->where('log', '!=', '');
+                })->orWhereExists(function ($sub) {
+                    $sub->selectRaw('1')->from('match_moves')
+                        ->whereColumn('match_moves.room_code', 'match_results.room_code');
+                });
+            })
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->pluck('id');
+        foreach ($luckOnly as $id) {
+            \App\Jobs\AnalyzeMatchLuckJob::dispatch($id)->onConnection('database');
+        }
+
+        $this->info($rows->count().' PR + '.$luckOnly->count().' luck-only mac heal kuyruga alindi. Worker isleyecek.');
 
         return self::SUCCESS;
     }

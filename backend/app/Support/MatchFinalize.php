@@ -30,16 +30,19 @@ class MatchFinalize
         if (! $room || empty($room->code)) {
             return 0;
         }
+        // Prompt finalize YALNIZ sunucu-otoriter modda çalışır: PR/şans match_moves'tan hesaplanır,
+        // rakibin istemci raporuna İHTİYAÇ YOK -> bare satırı erken açmak güvenli. shadow/off modda
+        // istemci raporu (log/pr/luck) hâlâ gerekli; erken ensure onu reddeder -> ESKİ akış + cron
+        // backstop bırak (yalnız authoritative'de erken müdahale et).
+        if ((string) config('gnubg.pr_mode', 'off') !== 'authoritative') {
+            return 0;
+        }
         $written = 0;
         try {
             // 1) Eksik oyuncu satırlarını SUNUCUDA tamamla (bot odası ensure içinde atlanır).
             $written = MatchBackstop::ensure($room);
 
             // 2) PR + şans analizini SUNUCU kaydından (match_moves) tetikle — yalnız eksik alan için.
-            $mode = (string) config('gnubg.pr_mode', 'off');
-            if (! in_array($mode, ['shadow', 'authoritative'], true)) {
-                return $written;
-            }
             $hasMoves = MatchMove::existsForRoom($room->code);
             $rows = MatchResult::where('room_code', $room->code)->get(['id', 'gnubg_pr', 'gnubg_pr_at', 'luck_mwc', 'luck_method', 'log']);
             foreach ($rows as $r) {
