@@ -241,9 +241,9 @@ class BoardDesignResource extends Resource
         return is_string($state) && $state !== '' ? BoardDesign::imageUrl($state) : null;
     }
 
-    private static function color(string $key, string $label, string $default, ?string $help = null): Forms\Components\ColorPicker
+    private static function color(string $key, string $label, string $default, ?string $help = null): \App\Forms\Components\NativeColor
     {
-        return Forms\Components\ColorPicker::make("colors.$key")
+        return \App\Forms\Components\NativeColor::make("colors.$key")
             ->label($label)
             ->default($default)
             ->required()
