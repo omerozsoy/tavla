@@ -123,6 +123,20 @@ class AdminController extends Controller
             2
         );
 
+        // Yasaklanan/kaldırılan kişiye resmi DM bildirimi (kutusunda "Tavla TV Yönetim"den görünür).
+        if ($min > 0) {
+            $until = $user->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
+            \App\Support\OfficialMessenger::sendTo(
+                $user,
+                "⚠️ Konuşma yasağı aldın. Sohbete yazamazsın. Ceza bitişi: {$until}."
+            );
+        } else {
+            \App\Support\OfficialMessenger::sendTo(
+                $user,
+                '✓ Konuşma yasağın kaldırıldı. Tekrar sohbet edebilirsin.'
+            );
+        }
+
         return response()->json([
             'muted_until' => $user->chat_muted_until?->toIso8601String(),
         ]);
