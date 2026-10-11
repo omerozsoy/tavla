@@ -32,7 +32,9 @@ class PrQueueStatus extends BaseWidget
         $workerAlive = $hb > 0 && (time() - $hb) < 60;
 
         $failed = $this->safeCount(function () {
-            return Schema::hasTable('failed_jobs') ? (int) DB::table('failed_jobs')->count() : 0;
+            return Schema::hasTable('failed_jobs')
+                ? (int) DB::table('failed_jobs')->where('failed_at', '>=', now()->subDay())->count()
+                : 0;
         });
 
         // PR bekleyen maç = gnubg'ye hiç ulaşılamamış (gnubg_pr_at NULL) + log'u olan. Heal bunları eritir.
@@ -43,6 +45,7 @@ class PrQueueStatus extends BaseWidget
                 ->whereNull('gnubg_pr_at')
                 ->whereNotNull('log')
                 ->where('log', '!=', '')
+                ->where('created_at', '>=', now()->subDay()) // son 24s: eski forfeit gürültüsü sayılmaz
                 ->count());
             $filledToday = $this->safeCount(fn () => (int) DB::table('match_results')
                 ->where('gnubg_pr_at', '>=', now()->subDay())
@@ -50,19 +53,19 @@ class PrQueueStatus extends BaseWidget
         }
 
         return [
-            Stat::make('Bekleyen İş (kuyruk)', $fmt($pending))
-                ->description($workerAlive ? 'Worker canlı — işleniyor' : 'Worker nabzı yok (kapalı olabilir)')
+            Stat::make('Bekleyen İş (şu an)', $fmt($pending))
+                ->description($workerAlive ? 'Worker canlı — işleniyor (anlık kuyruk)' : 'Worker nabzı yok (kapalı olabilir)')
                 ->descriptionIcon($workerAlive ? 'heroicon-m-bolt' : 'heroicon-m-exclamation-triangle')
                 ->color($pending === 0 ? 'success' : ($workerAlive ? 'warning' : 'danger')),
-            Stat::make('PR Bekleyen Maç', $fmt($awaitingPr))
+            Stat::make('PR Bekleyen Maç (son 24 saat)', $fmt($awaitingPr))
                 ->description('gnubg PR henüz yok (heal eritir)')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($awaitingPr === 0 ? 'success' : 'warning'),
-            Stat::make('Son 24s Dolan PR', $fmt($filledToday))
+            Stat::make('Dolan PR (son 24 saat)', $fmt($filledToday))
                 ->description('gnubg ile hesaplanan maç')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
-            Stat::make('Başarısız İş', $fmt($failed))
+            Stat::make('Başarısız İş (son 24 saat)', $fmt($failed))
                 ->description($failed === 0 ? 'Temiz' : '"Başarısız İşler" sayfasına bak')
                 ->descriptionIcon($failed === 0 ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle')
                 ->color($failed === 0 ? 'success' : 'danger'),

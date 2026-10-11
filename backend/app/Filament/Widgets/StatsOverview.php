@@ -14,42 +14,37 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // Gelir: basarili (paid) odemelerin toplami. amount kurus -> TL.
-        $revenueKurus = (int) Payment::where('status', 'paid')->sum('amount');
-        $revenueTl = $revenueKurus / 100;
+        $since = now()->subDay(); // son 24 saat penceresi — tüm kritik kartlar bunu gösterir
 
-        // Aylik gelir (son 30 gun)
-        $monthKurus = (int) Payment::where('status', 'paid')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->sum('amount');
+        // Gelir: basarili (paid) odemeler. Ana deger son 24s, yasam-boyu toplam aciklamada.
+        $rev24Tl = (int) Payment::where('status', 'paid')
+            ->where('created_at', '>=', $since)->sum('amount') / 100;
+        $revAllTl = (int) Payment::where('status', 'paid')->sum('amount') / 100;
+
+        $paid24 = Payment::where('status', 'paid')->where('created_at', '>=', $since)->count();
 
         $users = User::count();
-        // Aktif Premium: plan free degil ve suresi gecmemis
-        $premium = User::where('plan', '!=', 'free')
-            ->whereNotNull('plan')
-            ->where(function ($q) {
-                $q->whereNull('plan_until')->orWhere('plan_until', '>', now());
-            })->count();
+        $newUsers24 = User::where('created_at', '>=', $since)->count();
 
-        $matches = MatchResult::count();
-        $paidCount = Payment::where('status', 'paid')->count();
+        $matches24 = MatchResult::where('created_at', '>=', $since)->count();
+        $matchesAll = MatchResult::count();
 
         $fmt = fn ($n) => number_format($n, 0, ',', '.');
 
         return [
-            Stat::make('Toplam Gelir', $fmt($revenueTl).' ₺')
-                ->description($fmt($monthKurus / 100).' ₺ (son 30 gün)')
+            Stat::make('Gelir (son 24 saat)', $fmt($rev24Tl).' ₺')
+                ->description('toplam: '.$fmt($revAllTl).' ₺')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
-            Stat::make('Ödeme (başarılı)', $fmt($paidCount))
-                ->description('tamamlanan işlem')
+            Stat::make('Ödeme (son 24 saat)', $fmt($paid24))
+                ->description('başarılı işlem')
                 ->color('success'),
-            Stat::make('Toplam Üye', $fmt($users))
-                ->description($fmt($premium).' aktif Premium')
+            Stat::make('Yeni Üye (son 24 saat)', $fmt($newUsers24))
+                ->description('toplam üye: '.$fmt($users))
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('warning'),
-            Stat::make('Oynanan Maç', $fmt($matches))
-                ->description('kayıtlı sonuç')
+            Stat::make('Oynanan Maç (son 24 saat)', $fmt($matches24))
+                ->description('toplam: '.$fmt($matchesAll))
                 ->descriptionIcon('heroicon-m-trophy')
                 ->color('primary'),
         ];
