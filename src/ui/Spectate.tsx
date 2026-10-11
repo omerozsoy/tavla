@@ -407,10 +407,13 @@ export default function Spectate({
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
     const name = isP1 ? p1Name : p2Name
+    const uid = (isP1 ? eff?.p1_user_id : eff?.p2_user_id) ?? null
     return {
       name,
       // İzlerken de oyuncuların yönetici/destek kalkanı görünsün (Sidebar RoleBadge p.id ile).
-      id: (isP1 ? eff?.p1_user_id : eff?.p2_user_id) ?? null,
+      id: uid,
+      // Avatara tıkla -> oyuncu profilini aç (admin ise oradan konuşma yasağı da verilir).
+      onOpenProfile: uid ? () => setProfileId(uid) : undefined,
       avatar: (name || '?').slice(0, 1).toUpperCase(),
       sub: '',
       off: displayBoard?.off[color] ?? 0,
