@@ -68,6 +68,32 @@ class MatchmakeStakesTest extends TestCase
         ])->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
     }
 
+    public function test_second_money_search_returns_409_not_500_when_multi_stake_room_pending(): void
+    {
+        // ÇOK-STAKE bekleyen oda stake=0 placeholder saklar -> userHasActiveMoneyMatch GÖRMEZ
+        // (stake>0/bet_pct>0/escrowed ister) ama claim satırı vardır. Farklı kategoride (tempo)
+        // ikinci para araması ön-kontrolü geçip claim OTORİTESİNDE reddedilince eskiden
+        // 500 ("Aktif para maçı claim edilemedi") atıyordu. Artık normal 409 dönmeli ve
+        // yeni oda sızmamalı (tx içinde geri alınır).
+        $a = $this->makeUser('alice', 100000);
+        Sanctum::actingAs($a);
+
+        $this->postJson('/api/matchmaking', [
+            'token' => 'A', 'name' => 'A', 'stakes' => [100, 500], 'targets' => [1], 'time_control' => 'normal',
+        ])->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
+
+        // Farklı tempo -> $mine yakalamaz; eşleşecek rakip yok -> create+claim yoluna düşer.
+        $this->postJson('/api/matchmaking', [
+            'token' => 'A', 'name' => 'A', 'stakes' => [100, 500], 'targets' => [1], 'time_control' => 'speed',
+        ])->assertStatus(409);
+
+        // İkinci (speed) oda geri alınmış olmalı; yalnız ilk (normal) bekleyen oda kalır.
+        $this->assertDatabaseCount('rooms', 1);
+        $this->assertDatabaseHas('rooms', [
+            'p1_user_id' => $a->id, 'status' => 'mm_waiting', 'time_control' => 'normal',
+        ]);
+    }
+
     public function test_insufficient_coins_for_selected_max_rejected(): void
     {
         // Yalniz 300 coin ama en yuksek secilen 500 -> reddedilir (eslesme o tutarda olabilir).

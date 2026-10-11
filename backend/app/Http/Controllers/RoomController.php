@@ -570,7 +570,12 @@ class RoomController extends Controller
 
             $created = Room::create($roomData);
             if ($moneySearch && ! Room::claimActiveMoneySlot($userId, (int) $created->id)) {
-                throw new \RuntimeException('Aktif para maçı claim edilemedi.');
+                // Claim tablosu OTORİTE: slot gerçekten dolu (bekleyen/oynanan para maçı var).
+                // userHasActiveMoneyMatch çok-stake placeholder-0 (stake=0) bekleyen odayı GÖRMEZ
+                // -> ön-kontrol geçer ama claim reddeder. Bu 500 DEĞİL, normal 409: yeni odayı
+                // geri al (tx içinde net-sıfır) ve "zaten aktif" 409 yoluna düş.
+                $created->delete();
+                return null;
             }
             return $created;
         });
