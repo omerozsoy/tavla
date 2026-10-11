@@ -200,7 +200,7 @@ const INFO_URL_TAB: Record<string, InfoTab> = {
 
 // Rota bazli sekme/SEO basligi. Ana sayfa (bos slug) index.html'deki varsayilana doner.
 // Hukuki sayfalarin basligini LegalView (page.seo_title) yonetir -> LEGAL_SLUGS atlanir.
-const DEFAULT_DOC_TITLE = 'TavlaTv - Ücretsiz Online Tavla Oyna & Bedava Tavla'
+const DEFAULT_DOC_TITLE = 'Tavla Oyna - Ücretsiz Online Tavla Oyunu | TavlaTv'
 const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
   'uyelik-sozlesmesi', 'sifre-sifirla',
@@ -208,7 +208,7 @@ const LEGAL_SLUGS = new Set([
 const SITE_ORIGIN = 'https://www.tavlatv.com'
 // Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni.
 const DEFAULT_DESC =
-  'Ücretsiz online tavla oyna; arkadaşlarınla maç yap, yapay zekâya karşı yarış, turnuvalara katıl ve maçlarını analiz et. Kayıt gerektirmez.'
+  'Ücretsiz online tavla oyna. Gerçek rakiplerle, arkadaşınla veya yapay zekâya karşı tavla oynayabilir; turnuvalara katılıp maçlarını analiz edebilirsin.'
 // Logo sürüm rozeti: TEK KAYNAK package.json. "3.1.0" -> "3.1" (sondaki .0 kırpılır).
 // (Beta aşaması bitti: artık "BETA" öneki yok; yalnız sürüm numarası gösterilir.)
 declare const __APP_VERSION__: string
