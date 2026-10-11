@@ -13,9 +13,11 @@
 
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useT } from '../i18n'
 import { useInfoPageBody } from './useInfoPage'
 import { Button } from '@/components/ui/button'
 import { RawHtml } from './RawHtml'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 
 export type SeoVariant = 'home' | 'online-tavla' | 'tavla-oyna'
 
@@ -432,6 +434,7 @@ function LandingDbBody({ body, cta }: { body: string; cta: string }) {
 
 export default function SeoContent({ variant, onClose }: Props) {
   useEscape(onClose)
+  const { t } = useT()
   // Ana sayfa kompakt blogu icin DB body cekmeyiz (hep hardcoded).
   const dbBody = useInfoPageBody(variant === 'home' ? null : variant)
 
@@ -448,6 +451,7 @@ export default function SeoContent({ variant, onClose }: Props) {
 
   return (
     <div className="register-card info-card seo-landing-card" onClick={(e) => e.stopPropagation()}>
+      <Breadcrumb items={[homeCrumb(t), { name: h1 }]} />
       {onClose && (
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
