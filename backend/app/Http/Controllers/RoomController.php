@@ -2713,6 +2713,20 @@ class RoomController extends Controller
             'text' => $text,
             'id' => (string) round(microtime(true) * 1000).'-'.$slot,
         ];
+        // Küfür yakalandıysa SOHBETE sistem mesajı düş: rakip (küfür edilen) + izleyiciler adaleti
+        // görür. Yasak uygulandıysa süreyle, ilk ihlalde (yalnız uyarı) uyarı metniyle.
+        if ($warning) {
+            $labelTr = ['24h' => '24 saat', '1w' => '1 hafta', '1mo' => '1 ay', '1y' => '1 yıl'][$warning['label']] ?? null;
+            $sysText = ($warning['warning_only'] || ! $labelTr)
+                ? "⚠️ {$name} uygunsuz dil kullandı ve uyarıldı."
+                : "⚠️ {$name} uygunsuz dil kullandığı için {$labelTr} konuşma yasağı aldı.";
+            $messages[] = [
+                'slot' => 'sys',
+                'name' => 'TavlaTV',
+                'text' => $sysText,
+                'id' => (string) round(microtime(true) * 1000).'-sys',
+            ];
+        }
         // Son 50 mesaji tut
         if (count($messages) > 50) {
             $messages = array_slice($messages, -50);

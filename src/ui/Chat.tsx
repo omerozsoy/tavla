@@ -127,18 +127,25 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             {messages.length === 0 ? (
               <div className="chat-empty">{t('chat.empty')}</div>
             ) : (
-              messages.map((m) => (
-                <div key={m.id} className={`chat-msg ${m.slot === mySlot ? 'mine' : 'theirs'}`}>
-                  {onNameClick ? (
-                    <button type="button" className="chat-name chat-name-btn" onClick={() => onNameClick(m.slot)}>
-                      {m.name}
-                    </button>
-                  ) : (
-                    <span className="chat-name">{m.name}</span>
-                  )}
-                  <span className="chat-text">{m.text}</span>
-                </div>
-              ))
+              messages.map((m) =>
+                m.slot === 'sys' ? (
+                  // TavlaTV sistem bildirimi (küfür yaptırımı): ortalı KIRMIZI satır.
+                  <div key={m.id} className="chat-msg chat-msg-sys" role="alert">
+                    {m.text}
+                  </div>
+                ) : (
+                  <div key={m.id} className={`chat-msg ${m.slot === mySlot ? 'mine' : 'theirs'}`}>
+                    {onNameClick ? (
+                      <button type="button" className="chat-name chat-name-btn" onClick={() => onNameClick(m.slot as Slot)}>
+                        {m.name}
+                      </button>
+                    ) : (
+                      <span className="chat-name">{m.name}</span>
+                    )}
+                    <span className="chat-text">{m.text}</span>
+                  </div>
+                ),
+              )
             )}
           </div>
 

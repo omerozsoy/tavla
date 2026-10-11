@@ -1877,7 +1877,7 @@ export function playerToken(): string {
 
 export type Slot = 'p1' | 'p2'
 export interface ChatMsg {
-  slot: Slot
+  slot: Slot | 'sys' // 'sys' = TavlaTV sistem mesajı (küfür yaptırımı bildirimi); ortalı stil
   name: string
   text: string
   id: string

@@ -26380,6 +26380,21 @@ button.acct-row-logout:hover:not(:disabled) {
 .chat-name-btn:hover {
   opacity: 1;
 }
+/* TavlaTV sistem mesaji (kufur yaptirimi): ortali, kirmizi, dikkat cekici. */
+.chat-msg-sys {
+  align-self: center;
+  max-width: 92%;
+  margin: 4px auto;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--color-danger, #c0392b) 45%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger, #c0392b) 14%, transparent);
+  color: var(--color-danger, #c0392b);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
+}
 .chat-input {
   display: flex;
   align-items: center;
