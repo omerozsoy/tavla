@@ -417,6 +417,9 @@ final class SeoMeta
             $html = self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website', self::LANDING[$slug] ?? null);
 
             $html = self::injectWebPageJsonLd($html, $h1, $desc, self::BASE . $slug);
+            if ($slug === 'tavla-oyna') {
+                $html = self::injectVideoGameJsonLd($html, $h1, $desc, self::BASE . $slug);
+            }
 
             // Statik landing/bilgi sayfaları: Ana Sayfa › <sayfa> (2 seviye).
             return self::injectBreadcrumbJsonLd($html, [[$h1, self::BASE . $slug]]);
@@ -748,6 +751,37 @@ final class SeoMeta
             'url' => $url,
             'inLanguage' => 'tr',
             'isPartOf' => ['@type' => 'WebSite', '@id' => self::BASE . '#website'],
+        ];
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return $html;
+        }
+        $script = '<script type="application/ld+json">' . $json . '</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
+
+        return $out ?? $html;
+    }
+
+    /** Tavla Oyna landing'ini oynanabilir bir web oyunu olarak açıkça bildirir. */
+    private static function injectVideoGameJsonLd(string $html, string $name, string $description, string $url): string
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'VideoGame',
+            'name' => $name,
+            'description' => $description,
+            'url' => $url,
+            'image' => [self::BASE . 'og-image.jpg'],
+            'inLanguage' => 'tr',
+            'genre' => ['Tavla', 'Backgammon', 'Masa Oyunu'],
+            'applicationCategory' => 'Game',
+            'operatingSystem' => 'Web',
+            'playMode' => ['SinglePlayer', 'MultiPlayer'],
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => '0',
+                'priceCurrency' => 'TRY',
+            ],
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
