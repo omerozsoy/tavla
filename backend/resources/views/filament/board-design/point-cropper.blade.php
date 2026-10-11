@@ -46,14 +46,15 @@
             zoomBy(d) { this.zoom = Math.max(100, Math.min(400, Math.round(this.zoom + d))); this.saveSoon() },
             reset() { this.x = 50; this.y = 50; this.zoom = 100; this.save() },
             saveSoon() { clearTimeout(this.timer); this.timer = setTimeout(() => this.save(), 350) },
-            // ÜÇ değeri de DEFERRED yaz (false): mouse bırakınca Livewire round-trip/re-render
-            // TETİKLENMEZ. zoom'un canlı set'i bir re-render açıyor, x-data $cfg'den YENİDEN
-            // kuruluyor ve resim bırakma anında başka konuma SIÇRIYORDU. Değerler form kaydında
-            // işlenir; .live sliderlar yön değiştirince cropper zaten yeniden senkronlanır.
+            // ÜÇ değeri de DEFERRED yaz (false), sonra TEK $commit ile birlikte gönder. Böylece
+            // sunucu üçünü AYNI ANDA alır -> re-render'da $cfg tam bırakılan konumu taşır, Alpine
+            // aynı yerde yeniden kurulur (SIÇRAMA YOK) ve büyük Önizleme de tazelenir. (Eski hata:
+            // zoom'u canlı yazıp x,y'yi deferred bırakınca re-render eski x,y ile olup sıçrıyordu.)
             save() {
                 this.$wire.set(this.path + '.x', Math.round(this.x), false)
                 this.$wire.set(this.path + '.y', Math.round(this.y), false)
                 this.$wire.set(this.path + '.zoom', Math.round(this.zoom), false)
+                this.$wire.$commit()
             },
         }" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;user-select:none">
         <svg x-ref="svg" viewBox="0 0 {{ $W }} {{ $H }}" role="img" aria-label="Hane kırpıcı"
