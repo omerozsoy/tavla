@@ -22,6 +22,15 @@ export type CheckerFamily =
   | 'carbon'
   | 'mother-of-pearl'
 export type CheckerRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
+export type CheckerProfile =
+  | 'classic-ring'
+  | 'double-ring'
+  | 'flat-matte'
+  | 'domed'
+  | 'engraved'
+  | 'thin-frame'
+  | 'tavlatv-emblem'
+  | 'nostalgic'
 
 export interface CheckerSkin {
   id: string // 'pearl-purple' -> unlock id 'checker.pearl-purple'
@@ -31,6 +40,7 @@ export interface CheckerSkin {
   dark: string // birincil renk (oyuncunun pulları); adaptive'te SADECE önizleme/fallback rengi
   light: string // eş açık renk (rakip pulları); adaptive'te SADECE önizleme/fallback rengi
   adaptive?: boolean // true: renk seçtirmez; oyunda AKTİF TAHTANIN pul renklerine (--cream/--navy) uyar
+  profile?: CheckerProfile // yüzey/kabartma/kenar geometrisi; eski skin'lerde yoktur
 }
 
 // rarity -> coin fiyatı (backend RARITY_PRICE ile aynı; frame'lerle ortak kademe)
@@ -111,6 +121,10 @@ function finish(id: string, name: string, family: CheckerFamily, rarity: Checker
   return { id, name, family, rarity, dark, light: IVORY[family], adaptive: true }
 }
 
+function profileFinish(id: string, name: string, profile: CheckerProfile, rarity: CheckerRarity, dark: string): CheckerSkin {
+  return { id, name, family: 'ceramic', profile, rarity, dark, light: IVORY.ceramic, adaptive: true }
+}
+
 export const CHECKER_FINISHES: CheckerSkin[] = [
   finish('finish-pearl', 'İnci', 'pearl', 'rare', '#6d5bd0'),
   finish('finish-marble', 'Mermer', 'marble', 'epic', '#37506b'),
@@ -124,6 +138,16 @@ export const CHECKER_FINISHES: CheckerSkin[] = [
   finish('finish-glass', 'Cam', 'glass', 'epic', '#4f8e9e'),
   finish('finish-carbon', 'Karbon', 'carbon', 'epic', '#38434b'),
   finish('finish-mother-of-pearl', 'Sedef', 'mother-of-pearl', 'legendary', '#b76f9d'),
+
+  // ---- FORM PROFİLLERİ — renk değil, yüzey/kabartma/kenar geometrisi değişir ----
+  profileFinish('profile-classic-ring', 'Klasik Halkalı', 'classic-ring', 'rare', '#49645c'),
+  profileFinish('profile-double-ring', 'Çift Halkalı', 'double-ring', 'rare', '#536b70'),
+  profileFinish('profile-flat-matte', 'Düz Mat', 'flat-matte', 'common', '#58635d'),
+  profileFinish('profile-domed', 'Bombeli', 'domed', 'rare', '#536b8a'),
+  profileFinish('profile-engraved', 'Oyma Desenli', 'engraved', 'epic', '#655a72'),
+  profileFinish('profile-thin-frame', 'İnce Çerçeveli', 'thin-frame', 'epic', '#64717b'),
+  profileFinish('profile-tavlatv-emblem', 'TavlaTV Özel', 'tavlatv-emblem', 'legendary', '#6d4d42'),
+  profileFinish('profile-nostalgic', 'Nostaljik', 'nostalgic', 'rare', '#7a5134'),
 ]
 
 // CHECKER_BY_ID: finish'ler + eski 30 sabit-renkli skin (geriye dönük uyum: satın alınmış olabilir).

@@ -6,7 +6,7 @@
 // Her çağrı BENZERSİZ id ön-eki alır (feTurbulence seed + filtre/gradient id çakışmasın; sayfada
 // düzinelerce pul olabilir). seed varyasyonu -> her pulun damar deseni organik/benzersiz.
 
-import type { CheckerFamily } from '../checkers'
+import type { CheckerFamily, CheckerProfile } from '../checkers'
 
 // ---- küçük renk yardımcıları (hex) ----
 function clamp(n: number): number {
@@ -30,6 +30,7 @@ function shade(hex: string, amt: number): string {
 
 export interface CheckerSvgOpts {
   family: CheckerFamily
+  profile?: CheckerProfile
   color: string // bu tarafın (oyuncu/rakip) rengi
   id: string // benzersiz ön-ek (filtre/gradient/seed)
   seed?: number // damar varyasyonu (yoksa id'den türetilir)
@@ -43,7 +44,7 @@ function seedFrom(id: string, seed?: number): number {
 }
 
 // Aile-bağımsız ortak parçalar (rim/derinlik) + aileye özel FINISH katmanı.
-export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): string {
+export function buildCheckerSvg({ family, profile, color, id, seed }: CheckerSvgOpts): string {
   const s = seedFrom(id, seed)
   const s2 = (s + 37) % 97
   // renk kademeleri
@@ -90,8 +91,52 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
   // --- aileye özel finish ---
   let defs = ''
   let finish = ''
+  let profileRim = rim
+  let profileSpecular = specular
 
-  if (family === 'pearl' || family === 'metallic') {
+  if (profile === 'classic-ring') {
+    // Hafif çukur merkez + tek, fiziksel olarak yükseltilmiş halka.
+    defs = `
+      <radialGradient id="${P}-profile-center" cx="42%" cy="34%" r="78%"><stop stop-color="${shade(color, 0.22)}"/><stop offset="72%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.34)}"/></radialGradient>`
+    finish = `<circle cx="60" cy="60" r="46" fill="url(#${P}-profile-center)"/><circle cx="60" cy="60" r="47.5" fill="none" stroke="${shade(color, -0.5)}" stroke-opacity="0.55" stroke-width="3.2"/><circle cx="60" cy="60" r="46.2" fill="none" stroke="${shade(color, 0.5)}" stroke-opacity="0.58" stroke-width="1.3"/>`
+    profileSpecular = `<ellipse cx="42" cy="34" rx="16" ry="7" fill="#fff" opacity="0.14"/>`
+  } else if (profile === 'double-ring') {
+    // Sade merkez + kenara yakın iki ayrı ince halka.
+    defs = `<radialGradient id="${P}-profile-center" cx="40%" cy="32%" r="82%"><stop stop-color="${shade(color, 0.2)}"/><stop offset="70%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.28)}"/></radialGradient>`
+    finish = `<circle cx="60" cy="60" r="48" fill="url(#${P}-profile-center)"/><circle cx="60" cy="60" r="49" fill="none" stroke="${shade(color, -0.48)}" stroke-opacity="0.52" stroke-width="1.8"/><circle cx="60" cy="60" r="44.5" fill="none" stroke="${shade(color, 0.5)}" stroke-opacity="0.5" stroke-width="1.3"/><circle cx="60" cy="60" r="43.2" fill="none" stroke="${shade(color, -0.32)}" stroke-opacity="0.28" stroke-width="0.8"/>`
+    profileSpecular = `<ellipse cx="42" cy="34" rx="15" ry="6" fill="#fff" opacity="0.12"/>`
+  } else if (profile === 'flat-matte') {
+    // Düz yüzey; ortak parlak speküler kaldırılır, yalnızca ince kenar kalır.
+    defs = `<radialGradient id="${P}-profile-matte" cx="38%" cy="30%" r="86%"><stop stop-color="${shade(color, 0.12)}"/><stop offset="68%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.2)}"/></radialGradient>`
+    finish = `<circle cx="60" cy="60" r="53.2" fill="url(#${P}-profile-matte)"/>`
+    profileRim = `<circle cx="60" cy="60" r="53.4" fill="none" stroke="${shade(color, -0.42)}" stroke-opacity="0.48" stroke-width="1.3"/>`
+    profileSpecular = ''
+  } else if (profile === 'domed') {
+    // Dolgun merkez; ışık merkezde toplanır ama kenar ve çap tavla pulu gibi kalır.
+    defs = `<radialGradient id="${P}-profile-dome" cx="38%" cy="27%" r="70%"><stop stop-color="${shade(color, 0.48)}"/><stop offset="28%" stop-color="${shade(color, 0.16)}"/><stop offset="75%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.48)}"/></radialGradient>`
+    finish = `<circle cx="60" cy="60" r="52.5" fill="url(#${P}-profile-dome)"/><ellipse cx="46" cy="36" rx="18" ry="10" fill="#fff" opacity="0.16"/><circle cx="60" cy="60" r="51.8" fill="none" stroke="${shade(color, -0.5)}" stroke-opacity="0.34" stroke-width="1.1"/>`
+  } else if (profile === 'engraved') {
+    // Basit, geniş aralıklı oyma motifleri; küçük pullarda tek bir sakin geometri olarak okunur.
+    defs = `<radialGradient id="${P}-profile-engraved" cx="40%" cy="30%" r="82%"><stop stop-color="${shade(color, 0.18)}"/><stop offset="70%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.34)}"/></radialGradient><clipPath id="${P}-profile-clip"><circle cx="60" cy="60" r="45"/></clipPath>`
+    finish = `<circle cx="60" cy="60" r="47" fill="url(#${P}-profile-engraved)"/><g clip-path="url(#${P}-profile-clip)" fill="none" stroke-linejoin="round"><path d="M60 28 L92 60 L60 92 L28 60 Z" stroke="${shade(color, -0.56)}" stroke-opacity="0.42" stroke-width="2"/><path d="M60 34 L86 60 L60 86 L34 60 Z" stroke="${shade(color, 0.48)}" stroke-opacity="0.35" stroke-width="1"/></g>`
+    profileSpecular = `<ellipse cx="43" cy="35" rx="14" ry="6" fill="#fff" opacity="0.1"/>`
+  } else if (profile === 'thin-frame') {
+    // Düz merkez + ince metal görünümlü çerçeve.
+    defs = `<radialGradient id="${P}-profile-center" cx="40%" cy="30%" r="82%"><stop stop-color="${shade(color, 0.15)}"/><stop offset="70%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.26)}"/></radialGradient><linearGradient id="${P}-profile-frame" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${shade(color, 0.7)}"/><stop offset="0.45" stop-color="${shade(color, 0.18)}"/><stop offset="0.7" stop-color="${shade(color, -0.48)}"/><stop offset="1" stop-color="${shade(color, 0.45)}"/></linearGradient>`
+    finish = `<circle cx="60" cy="60" r="50" fill="url(#${P}-profile-center)"/><circle cx="60" cy="60" r="51.3" fill="none" stroke="url(#${P}-profile-frame)" stroke-width="2.4"/><circle cx="60" cy="60" r="49.4" fill="none" stroke="${shade(color, 0.58)}" stroke-opacity="0.48" stroke-width="0.65"/>`
+  } else if (profile === 'tavlatv-emblem') {
+    // TavlaTV Mark'ın iki karşılıklı hanesini, pul rengine uyarlanmış kabartma amblem olarak kullanır.
+    defs = `<radialGradient id="${P}-profile-center" cx="40%" cy="30%" r="82%"><stop stop-color="${shade(color, 0.2)}"/><stop offset="70%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.34)}"/></radialGradient>`
+    const emblemLight = shade(color, 0.52)
+    const emblemDark = shade(color, -0.52)
+    finish = `<circle cx="60" cy="60" r="49" fill="url(#${P}-profile-center)"/><g stroke-linejoin="round"><path d="M60 39 L72 66 L48 66 Z" fill="${emblemLight}" stroke="${emblemDark}" stroke-width="1.2"/><path d="M60 81 L72 54 L48 54 Z" fill="${shade(color, 0.18)}" stroke="${emblemDark}" stroke-width="1.2"/></g>`
+    profileSpecular = `<ellipse cx="43" cy="35" rx="14" ry="6" fill="#fff" opacity="0.1"/>`
+  } else if (profile === 'nostalgic') {
+    // Kahvehane pulu: kalın yuvarlatılmış kenar, çukur merkez ve ölçülü eski reçine derinliği.
+    defs = `<radialGradient id="${P}-profile-center" cx="42%" cy="34%" r="78%"><stop stop-color="${shade(color, 0.12)}"/><stop offset="72%" stop-color="${color}"/><stop offset="100%" stop-color="${shade(color, -0.42)}"/></radialGradient><radialGradient id="${P}-profile-well" cx="42%" cy="35%" r="70%"><stop stop-color="${shade(color, 0.06)}"/><stop offset="100%" stop-color="${shade(color, -0.34)}"/></radialGradient>`
+    finish = `<circle cx="60" cy="60" r="52" fill="url(#${P}-profile-center)"/><circle cx="60" cy="60" r="40" fill="url(#${P}-profile-well)"/><circle cx="60" cy="60" r="44" fill="none" stroke="${shade(color, -0.58)}" stroke-opacity="0.55" stroke-width="5"/><circle cx="60" cy="60" r="40.5" fill="none" stroke="${shade(color, 0.4)}" stroke-opacity="0.28" stroke-width="1.2"/>`
+    profileSpecular = `<ellipse cx="42" cy="34" rx="14" ry="6" fill="#fff" opacity="0.1"/>`
+  } else if (family === 'pearl' || family === 'metallic') {
     // sedef / metalik: geniş açık akış (screen) + koyu derinlik (multiply) + parıltı
     const bf1 = family === 'metallic' ? '0.008 0.06' : '0.012 0.045'
     const bf2 = family === 'metallic' ? '0.02 0.12' : '0.013 0.05'
@@ -269,7 +314,7 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
     ${shadow}
     ${base}
     <g clip-path="url(#${P}-clip)">${finish}</g>
-    ${rim}${specular}${edgeLine}`, defs + commonDefs)
+    ${profileRim}${profileSpecular}${edgeLine}`, defs + commonDefs)
 }
 
 function svgWrap(_p: string, _s: number, body: string, defs: string): string {

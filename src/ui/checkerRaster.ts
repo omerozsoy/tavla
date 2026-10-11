@@ -9,7 +9,7 @@
 // Motor/board/hareket koduna DOKUNMAZ — yalnız render katmanı.
 
 import { buildCheckerSvg } from './checkerSvg'
-import type { CheckerFamily } from '../checkers'
+import type { CheckerFamily, CheckerProfile } from '../checkers'
 
 const RASTER = 256 // px — retina-dostu raster çözünürlüğü (CSS ile küçültülür)
 const FIXED_SEED = 7 // (aile+renk) başına deterministik tek doku — pul-başına benzersizlik yok
@@ -18,16 +18,16 @@ const svgCache = new Map<string, string>() // key -> svg data-uri (senkron, anı
 const pngCache = new Map<string, string>() // key -> png data-uri (async, raster sonrası)
 const pending = new Map<string, Promise<string>>()
 
-function key(family: CheckerFamily, color: string): string {
-  return family + '|' + color.toLowerCase()
+function key(family: CheckerFamily, color: string, profile?: CheckerProfile): string {
+  return family + '|' + (profile ?? 'material') + '|' + color.toLowerCase()
 }
 
 // Anında kullanılabilir SVG data-uri (aynı aile+renk → aynı string → tarayıcı bir kez çözer).
-export function checkerSvgUri(family: CheckerFamily, color: string): string {
-  const k = key(family, color)
+export function checkerSvgUri(family: CheckerFamily, color: string, profile?: CheckerProfile): string {
+  const k = key(family, color, profile)
   let u = svgCache.get(k)
   if (!u) {
-    const svg = buildCheckerSvg({ family, color, id: 'ck', seed: FIXED_SEED })
+    const svg = buildCheckerSvg({ family, profile, color, id: 'ck', seed: FIXED_SEED })
     u = 'data:image/svg+xml,' + encodeURIComponent(svg)
     svgCache.set(k, u)
   }
@@ -35,21 +35,21 @@ export function checkerSvgUri(family: CheckerFamily, color: string): string {
 }
 
 // Hazırsa raster PNG data-uri, yoksa null (çağıran SVG'ye düşer + rasterizeChecker tetikler).
-export function checkerPngUri(family: CheckerFamily, color: string): string | null {
-  return pngCache.get(key(family, color)) ?? null
+export function checkerPngUri(family: CheckerFamily, color: string, profile?: CheckerProfile): string | null {
+  return pngCache.get(key(family, color, profile)) ?? null
 }
 
 // SVG'yi offscreen canvas'a çizip PNG data-uri'ye çevirir; (aile+renk) başına bir kez. Başarısızsa
 // SVG data-uri'ye düşer (yine paylaşılan tek görsel — canlı inline SVG'den çok daha ucuz).
-export function rasterizeChecker(family: CheckerFamily, color: string): Promise<string> {
-  const k = key(family, color)
+export function rasterizeChecker(family: CheckerFamily, color: string, profile?: CheckerProfile): Promise<string> {
+  const k = key(family, color, profile)
   const hit = pngCache.get(k)
   if (hit) return Promise.resolve(hit)
   const inflight = pending.get(k)
   if (inflight) return inflight
 
   const p = new Promise<string>((resolve) => {
-    const svgUri = checkerSvgUri(family, color)
+    const svgUri = checkerSvgUri(family, color, profile)
     if (typeof document === 'undefined' || typeof Image === 'undefined') {
       resolve(svgUri)
       return

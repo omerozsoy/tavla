@@ -684,5 +684,69 @@
   "group": "legendary",
   "sort": 11,
   "meta": { "dark": "#b76f9d", "light": "#efe9e5", "family": "mother-of-pearl" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-classic-ring",
+  "name": "Klasik Halkalı",
+  "group": "rare",
+  "sort": 12,
+  "meta": { "dark": "#49645c", "light": "#f0eee8", "family": "ceramic", "profile": "classic-ring" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-double-ring",
+  "name": "Çift Halkalı",
+  "group": "rare",
+  "sort": 13,
+  "meta": { "dark": "#536b70", "light": "#f0eee8", "family": "ceramic", "profile": "double-ring" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-flat-matte",
+  "name": "Düz Mat",
+  "group": "common",
+  "sort": 14,
+  "meta": { "dark": "#58635d", "light": "#f0eee8", "family": "ceramic", "profile": "flat-matte" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-domed",
+  "name": "Bombeli",
+  "group": "rare",
+  "sort": 15,
+  "meta": { "dark": "#536b8a", "light": "#f0eee8", "family": "ceramic", "profile": "domed" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-engraved",
+  "name": "Oyma Desenli",
+  "group": "epic",
+  "sort": 16,
+  "meta": { "dark": "#655a72", "light": "#f0eee8", "family": "ceramic", "profile": "engraved" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-thin-frame",
+  "name": "İnce Çerçeveli",
+  "group": "epic",
+  "sort": 17,
+  "meta": { "dark": "#64717b", "light": "#f0eee8", "family": "ceramic", "profile": "thin-frame" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-tavlatv-emblem",
+  "name": "TavlaTV Özel",
+  "group": "legendary",
+  "sort": 18,
+  "meta": { "dark": "#6d4d42", "light": "#f0eee8", "family": "ceramic", "profile": "tavlatv-emblem" }
+ },
+ {
+  "kind": "checker",
+  "id": "profile-nostalgic",
+  "name": "Nostaljik",
+  "group": "rare",
+  "sort": 19,
+  "meta": { "dark": "#7a5134", "light": "#f0eee8", "family": "ceramic", "profile": "nostalgic" }
  }
 ]

@@ -101,6 +101,9 @@ class ShopController extends Controller
         'finish-wood' => 'rare', 'finish-ceramic' => 'rare', 'finish-brushed-metal' => 'legendary',
         'finish-leather' => 'rare', 'finish-glass' => 'epic', 'finish-carbon' => 'epic',
         'finish-mother-of-pearl' => 'legendary',
+        'profile-classic-ring' => 'rare', 'profile-double-ring' => 'rare', 'profile-flat-matte' => 'common',
+        'profile-domed' => 'rare', 'profile-engraved' => 'epic', 'profile-thin-frame' => 'epic',
+        'profile-tavlatv-emblem' => 'legendary', 'profile-nostalgic' => 'rare',
         // Eski sabit-renkli 30 skin: geriye dönük uyum (satın alınmış olabilir; mağazada gösterilmez).
         'pearl-purple' => 'rare', 'pearl-blue' => 'rare', 'pearl-emerald' => 'rare',
         'pearl-rose' => 'rare', 'pearl-gold' => 'rare', 'pearl-black' => 'rare',

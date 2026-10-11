@@ -57,7 +57,7 @@ export default function CheckerShop({
           <h2><Icon name="palette" size={20} /> Pul Tasarımları</h2>
           <div className="cshop-bal">Bakiye <Coins amount={coins} size={16} /></div>
         </div>
-        <p className="cshop-sub">Bir malzeme (pul tarzı) seç; renk seçmene gerek yok — seçtiğin doku, kullandığın tahtanın kendi pul renklerine otomatik uyar. Oyunda pulların bu malzemeyle görünür.</p>
+        <p className="cshop-sub">Bir malzeme veya yüzey modeli seç; renk seçmene gerek yok — seçtiğin yüzey, kullandığın tahtanın kendi pul renklerine otomatik uyar. Oyunda pulların bu modelle görünür.</p>
 
         <div className="cshop-grid">
           {/* Varsayılan (düz tahta pulu) — İLK kart; skin yok, board'un kendi pul rengi kullanılır. */}

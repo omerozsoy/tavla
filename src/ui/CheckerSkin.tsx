@@ -42,23 +42,23 @@ export default function CheckerSkin({
 
   // Görsel kaynağı: hazır PNG varsa onu, yoksa anında SVG data-uri; arka planda PNG'ye yükselt.
   const [uri, setUri] = useState<string>(() =>
-    checkerPngUri(skin.family, color) ?? checkerSvgUri(skin.family, color),
+    checkerPngUri(skin.family, color, skin.profile) ?? checkerSvgUri(skin.family, color, skin.profile),
   )
   useEffect(() => {
-    const png = checkerPngUri(skin.family, color)
+    const png = checkerPngUri(skin.family, color, skin.profile)
     if (png) {
       setUri(png)
       return
     }
-    setUri(checkerSvgUri(skin.family, color)) // anında göster (paylaşılan, ucuz)
+    setUri(checkerSvgUri(skin.family, color, skin.profile)) // anında göster (paylaşılan, ucuz)
     let alive = true
-    rasterizeChecker(skin.family, color).then((u) => {
+    rasterizeChecker(skin.family, color, skin.profile).then((u) => {
       if (alive) setUri(u)
     })
     return () => {
       alive = false
     }
-  }, [skin.family, color])
+  }, [skin.family, skin.profile, color])
 
   return (
     <span
