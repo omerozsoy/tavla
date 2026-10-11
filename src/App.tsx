@@ -688,6 +688,11 @@ const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar 
 const BOT_STEP_DELAY = 500 // her tas arasi (izlenebilir ama snappy; sunucu-bot tur devri hizlansin)
 const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn tur-devri gecikmesi cok uzundu)
 const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullanici "gele attigini goremedim" -> zar okunsun)
+// ONLINE RAKIP ZAR GÖRÜNÜRLÜK (2026-10-11): sıra bana geçince oto-zar 500ms'de diceRolled=true yapıp
+// rakibin zar echo'sunu (oppRollDice yalnız !diceRolled iken çizilir) ANINDA gizliyordu -> "rakip
+// zarını göremiyorum". Rakip zarı TAZE iken oto-zarı en az bu kadar beklet (BOT_REVEAL_DELAY'in online
+// karşılığı); replay varken zaten bloklu, bu replay-OLMAYAN snap içindir.
+const OPP_REVEAL_HOLD = 1500
 const BOT_FINAL_DELAY = 1400 // botun MAÇI BİTİREN hamlesinden sonra: son pozisyon görünsün, sonra sonuç ekranı
 const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
 
@@ -6461,7 +6466,10 @@ export default function App() {
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Poll BENİM zarsız turumda
     // server_version'i ilerletmez -> bu effect yeniden çalışmaz, retry/timer'lar kesintisiz işler;
     // zar atılınca / tur değişince cleanup temizler. serverRoll idempotent. (Yalnız canAuto'da.)
-    const first = canAuto ? window.setTimeout(() => doRoll(), 500) : 0
+    // RAKİP ZARI GÖRÜNÜRLÜK: rakibin zar echo'su TAZE ise oto-zarı geciktir ki attığı zar ~1.5sn
+    // net görünsün (yoksa 500ms'de diceRolled=true -> echo anında kaybolur = "rakip zarını göremedim").
+    const revealLeft = oppRoll ? Math.max(0, OPP_REVEAL_HOLD - (Date.now() - oppRoll.at)) : 0
+    const first = canAuto ? window.setTimeout(() => doRoll(), Math.max(500, revealLeft)) : 0
     const retry = canAuto ? window.setInterval(() => doRoll(), 2500) : 0
     // KURTARMA AĞI (HEM oto HEM MANUEL): transient mandal (rollConflict / in-flight / bayat sıra / 429)
     // kıstırırsa kurtarılabilir mandalları temizle + otoriter durumu zorla çek (version=-1 -> poll
