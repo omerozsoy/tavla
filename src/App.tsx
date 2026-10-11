@@ -200,7 +200,7 @@ const INFO_URL_TAB: Record<string, InfoTab> = {
 
 // Rota bazli sekme/SEO basligi. Ana sayfa (bos slug) index.html'deki varsayilana doner.
 // Hukuki sayfalarin basligini LegalView (page.seo_title) yonetir -> LEGAL_SLUGS atlanir.
-const DEFAULT_DOC_TITLE = 'Tavla Oyna - Ücretsiz Online Tavla Oyunu | TavlaTv'
+const DEFAULT_DOC_TITLE = 'TavlaTv - Ücretsiz Online Tavla Oyna | Bedava Tavla'
 const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
   'uyelik-sozlesmesi', 'sifre-sifirla',
