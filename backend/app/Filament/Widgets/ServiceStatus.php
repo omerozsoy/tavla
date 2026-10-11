@@ -244,9 +244,12 @@ class ServiceStatus extends Widget
             // Süreç canlılık damgası (backlog'tan bağımsız KESIN sinyal).
             $hb = (int) (Cache::get('queue:worker:heartbeat') ?? 0);
             $alive = $hb > 0 && (time() - $hb) < 60;
+            // KAÇ İŞÇİ? Çalışan queue:work süreçlerini say (tavla-queue + çoğaltmalar) -> ölçekleme görünür.
+            $nw = $this->queueWorkerCount();
+            $wtxt = $nw > 0 ? " · {$nw} işçi" : '';
 
             if ($pending === 0) {
-                $detail = 'Boşta (bekleyen iş yok'.($failed > 0 ? ", $failed başarısız" : '').')';
+                $detail = 'Boşta (bekleyen iş yok'.($failed > 0 ? ", $failed başarısız" : '').')'.$wtxt;
                 // heartbeat taze -> canlı-boşta (yeşil); yoksa ayırt edilemez (gri).
                 return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $alive ? true : null, $detail, true);
             }
@@ -254,7 +257,7 @@ class ServiceStatus extends Widget
             $age = $oldest ? (time() - (int) $oldest) : 0;
             // Heartbeat taze -> worker çalışıyor (backlog erimekte); değilse eski proxy (>90sn = kapalı).
             $up = $alive ? true : ($age < 90);
-            $detail = "$pending iş bekliyor, en eski {$age}sn".($failed > 0 ? " · $failed başarısız" : '');
+            $detail = "$pending iş bekliyor, en eski {$age}sn".$wtxt.($failed > 0 ? " · $failed başarısız" : '');
             if ($alive && $age >= 90) {
                 $detail .= ' — işleniyor (worker canlı, yığın eriyor)';
             } elseif (! $up) {
@@ -356,6 +359,18 @@ class ServiceStatus extends Widget
         } catch (\Throwable $e) {
             return $this->svc('disk', 'Disk Alanı', true, null, 'Ölçülemedi');
         }
+    }
+
+    /** Çalışan queue:work süreç sayısı (tavla-queue + çoğaltma unit'leri). exec yoksa 0 (gizlenir). */
+    private function queueWorkerCount(): int
+    {
+        if (! function_exists('exec')) {
+            return 0;
+        }
+        $o = [];
+        @exec('pgrep -fc "artisan queue:work database" 2>/dev/null', $o);
+
+        return max(0, (int) trim((string) ($o[0] ?? '0')));
     }
 
     /** Servis satırı: up=true yeşil, false kırmızı, null gri (boşta/yapılandırılmamış). */
