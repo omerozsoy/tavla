@@ -14,6 +14,7 @@
     $cfg = [
         'W' => $W, 'H' => $H, 'a' => $a,
         'x' => (float) ($fit['x'] ?? 50), 'y' => (float) ($fit['y'] ?? 50), 'zoom' => (float) ($fit['zoom'] ?? 100),
+        'rot' => (int) ($fit['rot'] ?? 0), 'flip' => ! empty($fit['flip']),
         'path' => 'data.point_image_fit.'.$kind,
     ];
 @endphp
@@ -29,6 +30,15 @@
                 return { w, h: sc, x: (this.W - w) * this.x / 100, y: (this.H - sc) * this.y / 100 }
             },
             pct(v) { return Math.max(0, Math.min(100, v)) },
+            // Döndürme + ayna: merkez (W/2,H/2) etrafında önce ayna sonra döndür (CSS canlı tahta
+            // ile BİREBİR: transform: rotate() scaleX()). Klip SABİT kalsın diye <image>'a uygulanır,
+            // üçgen klip saran <g>'dedir.
+            tf() {
+                const cx = this.W / 2, cy = this.H / 2, f = this.flip ? -1 : 1
+                return `rotate(${this.rot} ${cx} ${cy}) translate(${cx} ${cy}) scale(${f} 1) translate(${-cx} ${-cy})`
+            },
+            flipX() { this.flip = !this.flip; this.save() },
+            rotTo(v) { this.rot = ((Math.round(+v) % 360) + 360) % 360; this.saveSoon() },
             down(e) {
                 const g = this.geo()
                 this.drag = { px: e.clientX, py: e.clientY, gx: g.x, gy: g.y, s: this.$refs.svg.getBoundingClientRect().width / this.W }
@@ -44,7 +54,7 @@
             },
             up() { if (!this.drag) return; this.drag = null; this.save() },
             zoomBy(d) { this.zoom = Math.max(100, Math.min(400, Math.round(this.zoom + d))); this.saveSoon() },
-            reset() { this.x = 50; this.y = 50; this.zoom = 100; this.save() },
+            reset() { this.x = 50; this.y = 50; this.zoom = 100; this.rot = 0; this.flip = false; this.save() },
             saveSoon() { clearTimeout(this.timer); this.timer = setTimeout(() => this.save(), 350) },
             // ÜÇ değeri de DEFERRED yaz (false), sonra TEK $commit ile birlikte gönder. Böylece
             // sunucu üçünü AYNI ANDA alır -> re-render'da $cfg tam bırakılan konumu taşır, Alpine
@@ -54,6 +64,8 @@
                 this.$wire.set(this.path + '.x', Math.round(this.x), false)
                 this.$wire.set(this.path + '.y', Math.round(this.y), false)
                 this.$wire.set(this.path + '.zoom', Math.round(this.zoom), false)
+                this.$wire.set(this.path + '.rot', Math.round(this.rot), false)
+                this.$wire.set(this.path + '.flip', this.flip ? 1 : 0, false)
                 this.$wire.$commit()
             },
         }" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;user-select:none">
@@ -64,11 +76,14 @@
             @wheel.prevent="zoomBy($event.deltaY < 0 ? 8 : -8)">
             <clipPath id="{{ $u }}"><polygon points="0,0 {{ $W }},0 {{ $W / 2 }},{{ $H }}"/></clipPath>
             <polygon points="0,0 {{ $W }},0 {{ $W / 2 }},{{ $H }}" fill="{{ $col }}"/>
-            {{-- Pencere dışında kalan kısım soluk (croppie gibi): resmin tamamı + seçili alan --}}
-            <image href="{{ $img }}" preserveAspectRatio="none" opacity=".28"
+            {{-- Pencere dışında kalan kısım soluk (croppie gibi): resmin tamamı + seçili alan.
+                 Döndürme/ayna <image>'a (tf) uygulanır; üçgen klip saran <g>'de SABİT kalır. --}}
+            <image href="{{ $img }}" preserveAspectRatio="none" opacity=".28" :transform="tf()"
                 :x="geo().x" :y="geo().y" :width="geo().w" :height="geo().h"/>
-            <image href="{{ $img }}" preserveAspectRatio="none" clip-path="url(#{{ $u }})"
-                :x="geo().x" :y="geo().y" :width="geo().w" :height="geo().h"/>
+            <g clip-path="url(#{{ $u }})">
+                <image href="{{ $img }}" preserveAspectRatio="none" :transform="tf()"
+                    :x="geo().x" :y="geo().y" :width="geo().w" :height="geo().h"/>
+            </g>
             <polygon points="0,0 {{ $W }},0 {{ $W / 2 }},{{ $H }}" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="5 4" opacity=".9"/>
         </svg>
         {{-- color ACIK yaz: Filament karanlik temada buton metni beyaz miras alip beyaz zeminde kayboluyordu. --}}
@@ -78,8 +93,16 @@
             <span style="font-size:12px;min-width:44px;text-align:center" x-text="'%' + Math.round(zoom)"></span>
             <button type="button" @click="zoomBy(20)" title="Yakınlaştır"
                 style="width:30px;height:30px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:700">+</button>
+            <button type="button" @click="flipX()" title="Yatay çevir (ayna)"
+                :style="{ background: flip ? '#a83a2b' : '#fff', color: flip ? '#fff' : '#111827' }"
+                style="height:30px;padding:0 10px;border-radius:8px;border:1px solid #d1d5db;font-size:12px">⇋ Ayna</button>
             <button type="button" @click="reset()" title="Ortala ve sıfırla"
                 style="height:30px;padding:0 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px">Sıfırla</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;width:100%;max-width:{{ (int) ($maxWidth ?? 160) }}px">
+            <span style="font-size:12px;white-space:nowrap">⟳ <span x-text="rot + '°'"></span></span>
+            <input type="range" min="0" max="359" step="1" :value="rot" @input="rotTo($event.target.value)"
+                title="Döndür" style="flex:1;accent-color:#a83a2b">
         </div>
         <div style="font-size:11.5px;color:#6b7280;line-height:1.4;max-width:240px" @if (! empty($compact)) hidden @endif>
             Resmi sürükleyerek yerleştir; tekerlek veya +/− ile yakınlaştır. Kesikli çizgi = hane.

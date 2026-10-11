@@ -124,7 +124,9 @@ class BoardDesign extends Model
         static::deleted(fn () => Cache::forget(self::CACHE_KEY));
     }
 
-    /** Yerleşim değerlerini güvenli aralığa çek (x/y 0–100 %, zoom 100–400 %, aspect 0.05–20). */
+    /** Yerleşim değerlerini güvenli aralığa çek (x/y 0–100 %, zoom 100–400 %, aspect 0.05–20,
+     *  rot 0–359° döndürme, flip 0/1 yatay ayna). rot/flip yalnız varsayılan-dışı yazılır (eski
+     *  tahtaların JSON'u aynen kalsın, mevcut testler yeşil). */
     public static function clampFit(array $f): array
     {
         $num = fn ($v, $d) => is_numeric($v) ? (float) $v : $d;
@@ -135,6 +137,16 @@ class BoardDesign extends Model
         ];
         if (isset($f['aspect']) && is_numeric($f['aspect'])) {
             $out['aspect'] = max(0.05, min(20, (float) $f['aspect']));
+        }
+        $rot = ((int) round($num($f['rot'] ?? null, 0))) % 360;
+        if ($rot < 0) {
+            $rot += 360;
+        }
+        if ($rot !== 0) {
+            $out['rot'] = $rot;
+        }
+        if (! empty($f['flip'])) {
+            $out['flip'] = 1;
         }
 
         return $out;

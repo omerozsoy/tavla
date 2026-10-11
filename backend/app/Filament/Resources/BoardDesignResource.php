@@ -88,6 +88,9 @@ class BoardDesignResource extends Resource
                     $slider('x', 'Yatay konum', 0, 100, 50, 'Sola ← → sağa'),
                     $slider('y', 'Dikey konum', 0, 100, 50, 'Yukarı ↑ ↓ aşağı'),
                     $slider('zoom', 'Yakınlaştırma', 100, 400, 100, '%100 = haneyi tam kaplar'),
+                    // Döndürme/ayna kırpıcıdaki düğme+kaydırıcıyla yazılır; burada yalnız kayıt için tutulur.
+                    Forms\Components\Hidden::make("point_image_fit.$kind.rot")->default(0),
+                    Forms\Components\Hidden::make("point_image_fit.$kind.flip")->default(0),
                 ]),
             ]),
         ]);
@@ -133,6 +136,8 @@ class BoardDesignResource extends Resource
                     Forms\Components\Hidden::make("point_image_fit.p$n.x")->default(50),
                     Forms\Components\Hidden::make("point_image_fit.p$n.y")->default(50),
                     Forms\Components\Hidden::make("point_image_fit.p$n.zoom")->default(100),
+                    Forms\Components\Hidden::make("point_image_fit.p$n.rot")->default(0),
+                    Forms\Components\Hidden::make("point_image_fit.p$n.flip")->default(0),
                 ]), $nums))
                 ->columns(['default' => 2, 'md' => 3])
                 ->visible(fn (Get $get) => $get('point_mode') === 'each');

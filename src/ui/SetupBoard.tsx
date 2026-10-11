@@ -153,12 +153,21 @@ export default function SetupBoard({
             return { x: cx - colW / 2 + ((bw - w) * fit.x) / 100, y: y + ((bh - sc) * fit.y) / 100, w, h: sc, par: 'none' }
           })()
         : { x: cx - colW / 2, y, w: colW, h: bh, par }
+      // Kullanıcı döndürme/ayna: resim merkezinde önce ayna sonra döndür (kırpıcı+canlı tahta
+      // ile BİREBİR). Klip SABİT kalsın diye iç <g clipPath>; resme transform.
+      const ucx = cx
+      const ucy = y + bh / 2
+      const uf = fit.flip ? -1 : 1
+      const urot = fit.rot ?? 0
+      const utf = urot || uf < 0 ? `rotate(${urot} ${ucx} ${ucy}) translate(${ucx} ${ucy}) scale(${uf} 1) translate(${-ucx} ${-ucy})` : undefined
       return [
         <g key={key} transform={flip ? `rotate(180 ${cx} ${y + bh / 2})` : undefined}>
           <clipPath id={`nf-${key}`}>
             <polygon points={up} />
           </clipPath>
-          <image href={uri} x={g.x} y={g.y} width={g.w} height={g.h} preserveAspectRatio={g.par} clipPath={`url(#nf-${key})`} />
+          <g clipPath={`url(#nf-${key})`}>
+            <image href={uri} x={g.x} y={g.y} width={g.w} height={g.h} preserveAspectRatio={g.par} transform={utf} />
+          </g>
         </g>,
       ]
     }

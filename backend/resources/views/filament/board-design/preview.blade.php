@@ -113,16 +113,24 @@
                     $flip = $row === 'b';
                     $tri = $x.','.$by.' '.($x + $pw).','.$by.' '.($x + $pw / 2).','.($by + $ph);
                     $g = $place($x, $by, $pw, $ph, $fitHere);
+                    // Kullanıcı döndürme/ayna: resim merkezinde önce ayna sonra döndür (kırpıcı+canlı
+                    // tahtayla BİREBİR). Klip SABİT kalsın diye iç <g clip-path>; resme transform.
+                    $ucx = $x + $pw / 2; $ucy = $by + $ph / 2;
+                    $uf = ! empty($fitHere['flip']) ? -1 : 1;
+                    $urot = (int) ($fitHere['rot'] ?? 0);
+                    $utf = ($urot || $uf < 0) ? "rotate($urot $ucx $ucy) translate($ucx $ucy) scale($uf 1) translate(-$ucx -$ucy)" : null;
                 @endphp
                 <g @if ($flip) transform="rotate(180 {{ $x + $pw / 2 }} {{ $by + $ph / 2 }})" @endif>
                     <clipPath id="{{ $u }}c{{ $row }}{{ $i }}"><polygon points="{{ $tri }}"/></clipPath>
-                    @if ($g)
-                        <image href="{{ $img }}" x="{{ $g[0] }}" y="{{ $g[1] }}" width="{{ $g[2] }}" height="{{ $g[3] }}"
-                            preserveAspectRatio="none" clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})"/>
-                    @else
-                        <image href="{{ $img }}" x="{{ $x }}" y="{{ $by }}" width="{{ $pw }}" height="{{ $ph }}"
-                            preserveAspectRatio="xMidYMid slice" clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})"/>
-                    @endif
+                    <g clip-path="url(#{{ $u }}c{{ $row }}{{ $i }})">
+                        @if ($g)
+                            <image href="{{ $img }}" x="{{ $g[0] }}" y="{{ $g[1] }}" width="{{ $g[2] }}" height="{{ $g[3] }}"
+                                preserveAspectRatio="none" @if ($utf) transform="{{ $utf }}" @endif/>
+                        @else
+                            <image href="{{ $img }}" x="{{ $x }}" y="{{ $by }}" width="{{ $pw }}" height="{{ $ph }}"
+                                preserveAspectRatio="xMidYMid slice" @if ($utf) transform="{{ $utf }}" @endif/>
+                        @endif
+                    </g>
                 </g>
             @endif
             @php $ptxt = is_array($texts ?? null) ? ($texts[$n] ?? $texts[(string) $n] ?? null) : null; @endphp

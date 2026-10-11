@@ -2428,6 +2428,8 @@ export default function App() {
         [`--pt-${k}-y`, v && fit ? String(fit.y) : null],
         [`--pt-${k}-zoom`, v && fit ? String(fit.zoom / 100) : null],
         [`--pt-${k}-aspect`, v && fit?.aspect ? String(fit.aspect) : null],
+        [`--pt-${k}-rot`, v && fit?.rot ? `${fit.rot}deg` : null],
+        [`--pt-${k}-flip`, v && fit?.flip ? '-1' : null],
       ]
       for (const [name, val] of vars) {
         if (val != null) root.style.setProperty(name, val)
@@ -2451,10 +2453,16 @@ export default function App() {
         el.textContent = ns
           .map((n) => {
             const f = bt.pointFits?.[n] ?? { x: 50, y: 50, zoom: 100 }
-            const tri = n % 2 ? 'var(--tri-a)' : 'var(--tri-b)'
             const size = `calc(max(var(--col), calc(var(--tri-h) * ${f.aspect ?? 0})) * ${f.zoom / 100}) auto`
-            return `html[data-pt-each] .point[data-point="${n - 1}"]::before{background:url("${imgs[n]}") ${f.x}% ${f.y}% / ${size} no-repeat,${tri}}` +
-              `html[data-pt-each] .point.bottom[data-point="${n - 1}"]::before{clip-path:polygon(0 0,100% 0,50% 100%);transform:translateX(-50%) rotate(180deg)}`
+            const flip = f.flip ? -1 : 1
+            const rot = f.rot ?? 0
+            const base = `html[data-pt-each] .point[data-point="${n - 1}"]`
+            const tri = n % 2 ? 'var(--tri-a)' : 'var(--tri-b)'
+            // Üst sıra: kullanıcı döndürme/ayna. Alt sıra (.bottom): aynı tasarım base-180 + kullanıcı.
+            // Döndürmede boşluk kalırsa arkada hane rengi (.pt-img zemini) görünsün.
+            return `${base} .pt-img{background:${tri}}` +
+              `${base} .pt-img > i{background:url("${imgs[n]}") ${f.x}% ${f.y}% / ${size} no-repeat;transform:rotate(${rot}deg) scaleX(${flip})}` +
+              `${base}.bottom .pt-img > i{transform:rotate(${180 + rot}deg) scaleX(${flip})}`
           })
           .join('\n')
         root.setAttribute('data-pt-each', '')

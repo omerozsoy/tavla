@@ -51,6 +51,8 @@ export interface PointFit {
   y: number
   zoom: number
   aspect?: number
+  rot?: number // 0–359° döndürme (varsayılan 0)
+  flip?: boolean // yatay ayna (varsayılan false)
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -403,6 +405,9 @@ export function safeFit(f: unknown): PointFit {
     zoom: Math.max(100, Math.min(400, num(o.zoom, 100))),
   }
   if (typeof o.aspect === 'number' && Number.isFinite(o.aspect)) out.aspect = Math.max(0.05, Math.min(20, o.aspect))
+  const rot = ((Math.round(num(o.rot, 0)) % 360) + 360) % 360
+  if (rot !== 0) out.rot = rot
+  if (o.flip) out.flip = true
   return out
 }
 // Hane resmi URL'si: yalnız site içi /uploads/… ya da https; CSS url("…") kırılmasın diye tırnak,

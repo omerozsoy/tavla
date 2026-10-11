@@ -7124,28 +7124,65 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
 }
 
 /* ============ Admin özel tahta: hane resimleri (Tavla Tasarımı) ============
-   tek haneler (1,3,5… = shade-a) / çift haneler (2,4,6… = shade-b). Resim hane üçgenine kırpılır
-   (::before clip-path), arkada hane rengi kalır. Değişkenler App.tsx tema efektinden gelir. */
-/* Yerleşim (admin kaydırıcıları): genişlik = max(hane genişliği, hane yüksekliği × en/boy) × zoom
-   -> %100'de haneyi tam kaplar ("cover"); konum x/y % = background-position. */
-html[data-pt-img-a] .point.shade-a.top::before,
-html[data-pt-img-a] .point.shade-a.bottom::before {
-  background: var(--pt-img-a) calc(var(--pt-a-x, 50) * 1%) calc(var(--pt-a-y, 50) * 1%) /
-      calc(max(var(--col), calc(var(--tri-h) * var(--pt-a-aspect, 0))) * var(--pt-a-zoom, 1)) auto no-repeat,
-    var(--tri-a);
+   tek haneler (1,3,5… = shade-a) / çift haneler (2,4,6… = shade-b). Resim üçgene kırpılır; arkada
+   hane rengini ::before taşır. Değişkenler App.tsx tema efektinden gelir.
+   KATMAN: .pt-img = SABİT üçgen klip; iç <i> = resim (konum/zoom + döndürme/ayna). Döndürmede klip
+   (üçgen) sabit kalsın diye iki katman şart — tek pseudo'da transform klibi de döndürürdü.
+   Yerleşim: genişlik = max(hane gen., hane yük. × en/boy) × zoom -> %100'de haneyi tam kaplar. */
+.pt-img {
+  display: none;
 }
-html[data-pt-img-b] .point.shade-b.top::before,
-html[data-pt-img-b] .point.shade-b.bottom::before {
-  background: var(--pt-img-b) calc(var(--pt-b-x, 50) * 1%) calc(var(--pt-b-y, 50) * 1%) /
-      calc(max(var(--col), calc(var(--tri-h) * var(--pt-b-aspect, 0))) * var(--pt-b-zoom, 1)) auto no-repeat,
-    var(--tri-b);
+html[data-pt-img-a] .point.shade-a .pt-img,
+html[data-pt-img-b] .point.shade-b .pt-img,
+html[data-pt-each] .point .pt-img {
+  display: block;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--col);
+  height: var(--tri-h);
+  z-index: 0;
 }
-/* Karşı (alt) sıra: admin kadrajı üst-sıra hanesine göre yapılır -> alt sıradaki hane aynı tasarımı
-   180° çevrilmiş gösterir (üçgen kutusu + kırpma üst yönlü, ::before döndürülür). */
-html[data-pt-img-a] .point.shade-a.bottom::before,
-html[data-pt-img-b] .point.shade-b.bottom::before {
+/* Klip hane yönünde SABİT (üst=aşağı bakan, alt=yukarı bakan); iç <i> alt sırada 180° döner.
+   Eski ::before tüm elemanı 180° çevirirdi; burada klip sabit kaldığından alt klip doğrudan ters. */
+html[data-pt-img-a] .point.shade-a.top .pt-img,
+html[data-pt-img-b] .point.shade-b.top .pt-img,
+html[data-pt-each] .point.top .pt-img {
+  top: 0;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transform: translateX(-50%) rotate(180deg);
+}
+html[data-pt-img-a] .point.shade-a.bottom .pt-img,
+html[data-pt-img-b] .point.shade-b.bottom .pt-img,
+html[data-pt-each] .point.bottom .pt-img {
+  bottom: 0;
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+}
+.pt-img > i {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  transform-origin: center;
+}
+html[data-pt-img-a] .point.shade-a .pt-img > i {
+  background-image: var(--pt-img-a);
+  background-position: calc(var(--pt-a-x, 50) * 1%) calc(var(--pt-a-y, 50) * 1%);
+  background-size: calc(max(var(--col), calc(var(--tri-h) * var(--pt-a-aspect, 0))) * var(--pt-a-zoom, 1)) auto;
+  transform: rotate(var(--pt-a-rot, 0deg)) scaleX(var(--pt-a-flip, 1));
+}
+html[data-pt-img-b] .point.shade-b .pt-img > i {
+  background-image: var(--pt-img-b);
+  background-position: calc(var(--pt-b-x, 50) * 1%) calc(var(--pt-b-y, 50) * 1%);
+  background-size: calc(max(var(--col), calc(var(--tri-h) * var(--pt-b-aspect, 0))) * var(--pt-b-zoom, 1)) auto;
+  transform: rotate(var(--pt-b-rot, 0deg)) scaleX(var(--pt-b-flip, 1));
+}
+/* Karşı (alt) sıra: admin kadrajı üst-sıra hanesine göre yapılır -> aynı tasarım 180° çevrilmiş.
+   Klip (üçgen) üst yönlü sabit; iç resim base-180 + kullanıcı döndürmesi. */
+html[data-pt-img-a] .point.shade-a.bottom .pt-img > i {
+  transform: rotate(calc(180deg + var(--pt-a-rot, 0deg))) scaleX(var(--pt-a-flip, 1));
+}
+html[data-pt-img-b] .point.shade-b.bottom .pt-img > i {
+  transform: rotate(calc(180deg + var(--pt-b-rot, 0deg))) scaleX(var(--pt-b-flip, 1));
 }
 
 /* ============ İznik (Kütahya/İznik çini): dolu-desen hane + karanfil kırmızısı hane ============
