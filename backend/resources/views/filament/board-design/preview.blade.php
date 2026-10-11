@@ -38,7 +38,9 @@
     $w = (int) ($width ?? 240);
     $u = 'bp'.substr(md5(uniqid('', true)), 0, 8); // sayfadaki her SVG için benzersiz id öneki
     $W = 260; $H = 170; $fw = 10; $bar = 14;
-    $half = ($W - 2 * $fw - $bar) / 2; $pw = $half / 6; $ph = ($H - 2 * $fw) * 0.42;
+    // $ph: hane kutusunun yüksekliği — pw:ph oranı oyun tahtasının gerçek hane oranına (col:tri-h
+    // = (1.14/11)/0.35 ≈ 0.296) eşit olmalı ki resim "cover" kırpması kırpıcı/oyunla birebir olsun.
+    $half = ($W - 2 * $fw - $bar) / 2; $pw = $half / 6; $ph = $pw / ((1.14 / 11) / 0.35);
     $px = function ($i) use ($fw, $half, $bar, $pw) { return $fw + ($i >= 6 ? $half + $bar : 0) + ($i % 6) * $pw; };
     $r = $pw * 0.42;
 @endphp

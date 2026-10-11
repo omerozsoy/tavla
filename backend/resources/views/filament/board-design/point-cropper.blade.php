@@ -3,7 +3,10 @@
     // +/− ile yakınlaştır. Bırakınca değerler forma (point_image_fit.<kind>.x|y|zoom) yazılır;
     // kaydırıcılar ince ayar olarak senkron kalır. Formül oyun tahtası/önizlemelerle AYNI:
     // genişlik = max(W/a, H)·zoom (cover × zoom), konum = (W−w)·x%, (H−h)·y%.
-    $W = 160; $H = 436; // gerçek hane oranı (~1 : 2.7)
+    // Kutu oranı = oyun tahtasının GERÇEK hane oranı (col:tri-h). Yoksa kırpıcı gerçekten daha
+    // geniş bir üçgen gösterir, "cover" oyun tahtasında farklı kırpar -> önizlemede bozuk görünür.
+    // --col = checker*1.14, checker = board-h/11, --tri-h = board-h*0.35  ->  oran = (1.14/11)/0.35
+    $W = 160; $H = (int) round($W / ((1.14 / 11) / 0.35)); // ~540
     $fit = is_array($fit ?? null) ? $fit : [];
     $a = (float) ($fit['aspect'] ?? 0);
     $col = (is_string($color ?? null) && preg_match('/^#[0-9a-fA-F]{6}$/', $color)) ? $color : '#a83a2b';

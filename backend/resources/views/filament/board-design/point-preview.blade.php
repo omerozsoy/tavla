@@ -1,6 +1,6 @@
 @php
     // Tek hane büyük önizleme (yerleşim ayarı yaparken): gerçek hane oranında üçgen + resim.
-    $W = 110; $H = 300;
+    $W = 110; $H = (int) round($W / ((1.14 / 11) / 0.35)); // ~371 — oyun tahtası gerçek hane oranı (col:tri-h)
     $fit = is_array($fit ?? null) ? $fit : [];
     $u = 'pp'.substr(md5(uniqid('', true)), 0, 8);
     $g = null;
