@@ -20,6 +20,7 @@
 }
 .cshop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 12px; }
 .cshop-item {
+  position: relative; /* bp-price (fiyat rozeti) mutlak konum icin */
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
   border-radius: var(--radius-md, 12px); border: 1px solid var(--border);
   background: color-mix(in srgb, currentColor 4%, transparent);

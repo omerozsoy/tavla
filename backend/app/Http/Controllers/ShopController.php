@@ -99,7 +99,7 @@ class ShopController extends Controller
         'finish-pearl' => 'rare', 'finish-marble' => 'epic', 'finish-crystal' => 'epic',
         'finish-resin' => 'rare', 'finish-metallic' => 'legendary',
         'finish-wood' => 'rare', 'finish-ceramic' => 'rare', 'finish-brushed-metal' => 'legendary',
-        'finish-leather' => 'rare', 'finish-glass' => 'epic', 'finish-carbon' => 'epic',
+        'finish-leather' => 'rare', 'finish-glass' => 'epic', 'finish-carbon' => 'mythic', // Karbon en üst kademe (en pahalı)
         'finish-mother-of-pearl' => 'legendary',
         'profile-classic-ring' => 'rare', 'profile-double-ring' => 'rare', 'profile-flat-matte' => 'common',
         'profile-domed' => 'rare', 'profile-engraved' => 'epic', 'profile-thin-frame' => 'epic',

@@ -136,7 +136,7 @@ export const CHECKER_FINISHES: CheckerSkin[] = [
   finish('finish-brushed-metal', 'Fırçalanmış Metal', 'brushed-metal', 'legendary', '#74808a'),
   finish('finish-leather', 'Deri', 'leather', 'rare', '#704733'),
   finish('finish-glass', 'Cam', 'glass', 'epic', '#4f8e9e'),
-  finish('finish-carbon', 'Karbon', 'carbon', 'epic', '#38434b'),
+  finish('finish-carbon', 'Karbon', 'carbon', 'mythic', '#38434b'), // en üst kademe (en pahalı) — Mitik
   finish('finish-mother-of-pearl', 'Sedef', 'mother-of-pearl', 'legendary', '#b76f9d'),
 
   // ---- FORM PROFİLLERİ — renk değil, yüzey/kabartma/kenar geometrisi değişir ----

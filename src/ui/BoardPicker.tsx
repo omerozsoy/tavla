@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
@@ -36,8 +37,9 @@ export interface BoardThemeOpt {
   pointTexts?: Record<number, string>
 }
 
-// Nadirlik -> kart kenar rengi (gruplar kaldırıldı; artık durum-bazlı tek ızgara, ama her
-// kartın kenarı kendi nadirlik renginde kalır — görsel dil korunur).
+// Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
+// Her filtrede bu nadirlik gruplarına ayrılır (Standart / Epik / ... başlıklarıyla).
+const RARITY_ORDER: Rarity[] = ['common', 'club', 'country', 'rare', 'epic', 'legendary', 'mythic', 'tavlatv']
 const RARITY_COLOR: Record<Rarity, string> = RARITY_COLORS
 
 interface Props {
@@ -108,6 +110,7 @@ function statusOf(bt: BoardThemeOpt): { owned: boolean; buyable: boolean } {
 }
 
 export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, coins = 0, onBuy }: Props) {
+  const { t } = useT()
   // Satin alma ONAY adimi: yanlis tiklamayla coin gitmesin diye once onay iste.
   const [pending, setPending] = useState<BoardThemeOpt | null>(null)
   const [hover, setHover] = useState<{ bt: BoardThemeOpt; rect: DOMRect } | null>(null)
@@ -150,6 +153,83 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
     ['buyable', 'Alınabilir', buyableCount],
   ]
 
+  const renderCard = ({ bt, owned, buyable }: (typeof items)[number]) => {
+    const active = boardTheme === bt.id
+    const price = bt.price
+    const affordable = buyable && price != null && coins >= price
+    const color = RARITY_COLOR[bt.rarity ?? 'common']
+    return (
+      <div
+        key={bt.id}
+        className={`board-prev ${active ? 'active' : ''} ${buyable ? 'locked' : ''}`}
+        style={{ ['--rarity-color']: color } as CSSProperties}
+        title={bt.name}
+        onMouseEnter={(e) => {
+          if (canHoverPreview()) setHover({ bt, rect: e.currentTarget.getBoundingClientRect() })
+        }}
+        onMouseLeave={() => setHover(null)}
+      >
+        <SetupBoard
+          panel={bt.panel ?? bt.b}
+          a={bt.a}
+          b={bt.b}
+          checker={bt.checker ?? bt.b}
+          cream={bt.light}
+          pointStyle={bt.pointStyle}
+          surface={bt.surface}
+          checkerStyle={bt.checkerStyle}
+          pointImgA={bt.pointImgA}
+          pointImgB={bt.pointImgB}
+          pointFitA={bt.pointFitA}
+          pointFitB={bt.pointFitB}
+          pointImgs={bt.pointImgs}
+          pointFits={bt.pointFits}
+          surfaceImgLeft={bt.surfaceImgLeft}
+          surfaceImgRight={bt.surfaceImgRight}
+          surfaceOpacity={bt.surfaceOpacity}
+          pointTexts={bt.pointTexts}
+          themeId={bt.id}
+        />
+        <span className="bp-name">
+          {bt.flag && <span className="bp-flag" aria-hidden="true">{bt.flag}</span>}
+          {bt.name}
+        </span>
+        {buyable && price != null && (
+          <span className="bp-price">
+            <Coins amount={price} size={12} />
+          </span>
+        )}
+        <div className="bp-foot">
+          {active ? (
+            <Button variant="secondary" className="bp-act" disabled>
+              <Icon name="check" size={14} /> Kullanılıyor
+            </Button>
+          ) : owned ? (
+            <>
+              <span className="bp-have-tag">Sende var</span>
+              <Button variant="default" className="bp-act" onClick={() => setBoardTheme(bt.id)}>
+                Kullan
+              </Button>
+            </>
+          ) : buyable ? (
+            <Button
+              variant="outline"
+              className="bp-act"
+              disabled={!affordable}
+              onClick={() => setPending(bt)}
+            >
+              Satın Al
+            </Button>
+          ) : (
+            <span className="bp-lock">
+              <Icon name="lock" size={13} /> Özel tasarım
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bp-screen">
       <div className="bp-have-line">
@@ -173,84 +253,24 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
       {shown.length === 0 ? (
         <div className="bp-empty">{emptyMsg}</div>
       ) : (
-        <div className="board-previews board-previews-lg">
-          {shown.map(({ bt, owned, buyable }) => {
-            const active = boardTheme === bt.id
-            const price = bt.price
-            const affordable = buyable && price != null && coins >= price
-            const color = RARITY_COLOR[bt.rarity ?? 'common']
-            return (
+        // Her filtrede nadirlik gruplarına ayrılır (Standart / Epik / ...). Grup içinde:
+        // kullanılan en başta, sonra katalog sırası (shown zaten böyle sıralı).
+        RARITY_ORDER.map((tier) => {
+          const group = shown.filter((x) => (x.bt.rarity ?? 'common') === tier)
+          if (group.length === 0) return null
+          return (
+            <div className="rarity-group" key={tier}>
               <div
-                key={bt.id}
-                className={`board-prev ${active ? 'active' : ''} ${buyable ? 'locked' : ''}`}
-                style={{ ['--rarity-color']: color } as CSSProperties}
-                title={bt.name}
-                onMouseEnter={(e) => {
-                  if (canHoverPreview()) setHover({ bt, rect: e.currentTarget.getBoundingClientRect() })
-                }}
-                onMouseLeave={() => setHover(null)}
+                className={`rarity-title rarity-${tier}`}
+                style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
               >
-                <SetupBoard
-                  panel={bt.panel ?? bt.b}
-                  a={bt.a}
-                  b={bt.b}
-                  checker={bt.checker ?? bt.b}
-                  cream={bt.light}
-                  pointStyle={bt.pointStyle}
-                  surface={bt.surface}
-                  checkerStyle={bt.checkerStyle}
-                  pointImgA={bt.pointImgA}
-                  pointImgB={bt.pointImgB}
-                  pointFitA={bt.pointFitA}
-                  pointFitB={bt.pointFitB}
-                  pointImgs={bt.pointImgs}
-                  pointFits={bt.pointFits}
-                  surfaceImgLeft={bt.surfaceImgLeft}
-                  surfaceImgRight={bt.surfaceImgRight}
-                  surfaceOpacity={bt.surfaceOpacity}
-                  pointTexts={bt.pointTexts}
-                  themeId={bt.id}
-                />
-                <span className="bp-name">
-                  {bt.flag && <span className="bp-flag" aria-hidden="true">{bt.flag}</span>}
-                  {bt.name}
-                </span>
-                {buyable && price != null && (
-                  <span className="bp-price">
-                    <Coins amount={price} size={12} />
-                  </span>
-                )}
-                <div className="bp-foot">
-                  {active ? (
-                    <Button variant="secondary" className="bp-act" disabled>
-                      <Icon name="check" size={14} /> Kullanılıyor
-                    </Button>
-                  ) : owned ? (
-                    <>
-                      <span className="bp-have-tag">Sende var</span>
-                      <Button variant="default" className="bp-act" onClick={() => setBoardTheme(bt.id)}>
-                        Kullan
-                      </Button>
-                    </>
-                  ) : buyable ? (
-                    <Button
-                      variant="outline"
-                      className="bp-act"
-                      disabled={!affordable}
-                      onClick={() => setPending(bt)}
-                    >
-                      Satın Al
-                    </Button>
-                  ) : (
-                    <span className="bp-lock">
-                      <Icon name="lock" size={13} /> Özel tasarım
-                    </span>
-                  )}
-                </div>
+                <span className="rarity-dot" /> {t('rarity.' + tier)}
+                <span className="rarity-count">{group.length}</span>
               </div>
-            )
-          })}
-        </div>
+              <div className="board-previews board-previews-lg">{group.map(renderCard)}</div>
+            </div>
+          )
+        })
       )}
 
       {hover && !pending && <HoverPreview bt={hover.bt} rect={hover.rect} />}
