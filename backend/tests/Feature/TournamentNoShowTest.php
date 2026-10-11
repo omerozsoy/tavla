@@ -16,11 +16,14 @@ class TournamentNoShowTest extends TestCase
 
     private function user(string $nick): User
     {
-        return User::create([
+        $u = User::create([
             'first_name' => $nick, 'last_name' => 'T', 'country' => '',
             'nickname' => $nick, 'email' => $nick.'@example.com',
             'password' => bcrypt('secret123'),
         ]);
+        $u->markEmailAsVerified(); // oyun uclari e-posta dogrulama ister (EnsureEmailVerified; fillable DEGIL)
+
+        return $u;
     }
 
     // 4 oyunculu bracket: yari-final maci (kazanan finale ilerler; sampiyon/prize yolu disi).

@@ -29,6 +29,7 @@ class MatchmakeCubeE2ETest extends TestCase
         ]);
         $u->coins = $coins;
         $u->rating = 1500;
+        $u->email_verified_at = now(); // oyun uclari e-posta dogrulama ister (EnsureEmailVerified; fillable DEGIL)
         $u->save();
 
         return $u;
@@ -58,9 +59,11 @@ class MatchmakeCubeE2ETest extends TestCase
         $code = $res->json('room.code');
         $room = Room::where('code', $code)->firstOrFail();
         $this->assertTrue((bool) $room->authoritative, 'yüzde bahis -> sunucu-otoriter olmalı');
-        // Ön koşul: matchmaking gerçekten pct_stake_snapshot ile ön-tohumladı (bug tetikleyicisi).
+        // Ön koşul: matchmaking server_match'i TAM tohumladı (initServerMatch) — pct_stake_snapshot
+        // KORUNDU ve target EŞLEŞME anında yazıldı (eski bug: target ilk roll'a dek yoktu -> iki
+        // istemci farklı uzunluk + küp 409 görürdü; artık ikisi de 3 görür).
         $this->assertArrayHasKey('pct_stake_snapshot', (array) $room->server_match);
-        $this->assertArrayNotHasKey('target', (array) $room->server_match); // henüz roll yok
+        $this->assertSame(3, (int) ($room->server_match['target'] ?? 0)); // eşleşmede yazıldı
 
         // p1 (B) açılış zarını atar -> server_match NORMALİZE edilmeli.
         Sanctum::actingAs($b);

@@ -23,6 +23,7 @@ class RoomConcurrencyGuardTest extends TestCase
         ]);
         $u->coins = $coins;
         $u->rating = 1500;
+        $u->email_verified_at = now(); // oyun uclari e-posta dogrulama ister (EnsureEmailVerified; fillable DEGIL)
         $u->save();
 
         return $u;
