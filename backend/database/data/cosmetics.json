@@ -572,7 +572,7 @@
  {
   "kind": "checker",
   "id": "finish-pearl",
-  "name": "Pearl",
+  "name": "İnci",
   "group": "rare",
   "sort": 0,
   "meta": {
@@ -584,7 +584,7 @@
  {
   "kind": "checker",
   "id": "finish-marble",
-  "name": "Marble",
+  "name": "Mermer",
   "group": "epic",
   "sort": 1,
   "meta": {
@@ -596,7 +596,7 @@
  {
   "kind": "checker",
   "id": "finish-crystal",
-  "name": "Crystal",
+  "name": "Kristal",
   "group": "epic",
   "sort": 2,
   "meta": {
@@ -608,7 +608,7 @@
  {
   "kind": "checker",
   "id": "finish-resin",
-  "name": "Premium Resin",
+  "name": "Premium Reçine",
   "group": "rare",
   "sort": 3,
   "meta": {
@@ -620,7 +620,7 @@
  {
   "kind": "checker",
   "id": "finish-metallic",
-  "name": "Metallic Pearl",
+  "name": "Metalik İnci",
   "group": "legendary",
   "sort": 4,
   "meta": {
@@ -628,5 +628,61 @@
    "light": "#e7e2d6",
    "family": "metallic"
   }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-wood",
+  "name": "Ahşap",
+  "group": "rare",
+  "sort": 5,
+  "meta": { "dark": "#8f5d38", "light": "#eadfc9", "family": "wood" }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-ceramic",
+  "name": "Mat Seramik",
+  "group": "rare",
+  "sort": 6,
+  "meta": { "dark": "#73818a", "light": "#f0eee8", "family": "ceramic" }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-brushed-metal",
+  "name": "Fırçalanmış Metal",
+  "group": "legendary",
+  "sort": 7,
+  "meta": { "dark": "#74808a", "light": "#e5e8e8", "family": "brushed-metal" }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-leather",
+  "name": "Deri",
+  "group": "rare",
+  "sort": 8,
+  "meta": { "dark": "#704733", "light": "#e7d8c6", "family": "leather" }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-glass",
+  "name": "Cam",
+  "group": "epic",
+  "sort": 9,
+  "meta": { "dark": "#4f8e9e", "light": "#e6f2f1", "family": "glass" }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-carbon",
+  "name": "Karbon",
+  "group": "epic",
+  "sort": 10,
+  "meta": { "dark": "#38434b", "light": "#d9e0e2", "family": "carbon" }
+ },
+ {
+  "kind": "checker",
+  "id": "finish-mother-of-pearl",
+  "name": "Sedef",
+  "group": "legendary",
+  "sort": 11,
+  "meta": { "dark": "#b76f9d", "light": "#efe9e5", "family": "mother-of-pearl" }
  }
 ]

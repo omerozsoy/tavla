@@ -98,6 +98,9 @@ class ShopController extends Controller
         // FINISH'ler (renk seçtirmez; aktif tahtanın pul rengine uyar) — SATILAN ürünler.
         'finish-pearl' => 'rare', 'finish-marble' => 'epic', 'finish-crystal' => 'epic',
         'finish-resin' => 'rare', 'finish-metallic' => 'legendary',
+        'finish-wood' => 'rare', 'finish-ceramic' => 'rare', 'finish-brushed-metal' => 'legendary',
+        'finish-leather' => 'rare', 'finish-glass' => 'epic', 'finish-carbon' => 'epic',
+        'finish-mother-of-pearl' => 'legendary',
         // Eski sabit-renkli 30 skin: geriye dönük uyum (satın alınmış olabilir; mağazada gösterilmez).
         'pearl-purple' => 'rare', 'pearl-blue' => 'rare', 'pearl-emerald' => 'rare',
         'pearl-rose' => 'rare', 'pearl-gold' => 'rare', 'pearl-black' => 'rare',
