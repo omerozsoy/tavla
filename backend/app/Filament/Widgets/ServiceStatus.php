@@ -84,12 +84,25 @@ class ServiceStatus extends Widget
             ];
         }
 
+        // Gruplama/sayım blade'de @php BLOK'unda yapılıyordu; o blok (// yorumlu) sunucu Blade
+        // derleyicisinde $down tanımını yutup "Undefined variable $down" -> 500 veriyordu. Mantık
+        // buraya (PHP, try/catch kapsamında) taşındı; blade yalnız hazır dizileri okur.
+        $services = $data['services'];
+        $groups = [];
+        foreach ($services as $svc) {
+            $groups[$svc['group'] ?? 'Diğer'][] = $svc;
+        }
+
         return [
-            'services' => $data['services'],
+            'services' => $services,
             'validator_required' => $data['validator_required'],
             'authoritative' => (bool) config('game.server_authoritative', false),
             'pr_mode' => (string) config('validator.pr_mode', 'off'),
             'gnubg_pr_mode' => (string) config('gnubg.pr_mode', 'off'),
+            'groups' => $groups,
+            'down' => collect($services)->filter(fn ($x) => ($x['up'] ?? null) === false)->values(),
+            'total' => count($services),
+            'okN' => collect($services)->filter(fn ($x) => ($x['up'] ?? null) === true)->count(),
         ];
     }
 

@@ -3,18 +3,13 @@
         <x-slot name="heading">Servis Durumu</x-slot>
         <x-slot name="description">Hakem (validator) · Maç türleri · gnubg havuzları (Canlı YZ · PR · Mat) · Altyapı</x-slot>
 
+        {{-- Gruplama/sayım status()'ta yapılır (blade @php BLOK'u sunucu Blade derleyicisinde
+             $down'u yutup 500 veriyordu). Burada yalnız eski-güvenli inline @php(...) ile okunur. --}}
         @php($s = $this->status())
-        @php
-            // Grupla (servisler zaten grup sırasına göre geliyor).
-            $groups = [];
-            foreach ($s['services'] as $svc) {
-                $groups[$svc['group'] ?? 'Diğer'][] = $svc;
-            }
-            // Sorunlular (kırmızı) — grid üstünde özetlenir; üstte toplam sağlık.
-            $down = collect($s['services'])->filter(fn ($x) => ($x['up'] ?? null) === false);
-            $total = count($s['services']);
-            $okN = collect($s['services'])->filter(fn ($x) => ($x['up'] ?? null) === true)->count();
-        @endphp
+        @php($groups = $s['groups'])
+        @php($down = $s['down'])
+        @php($total = $s['total'])
+        @php($okN = $s['okN'])
 
         <div wire:poll.30s class="space-y-3 text-[13px]">
             {{-- ÜST ÖZET: tek bakışta kaç servis ayakta + sorun sayısı --}}
