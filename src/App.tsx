@@ -5896,9 +5896,66 @@ export default function App() {
       realtimeConnected = c
       if (c && !cancelled) void poll(true) // bağlanınca kaçırılanları yakala
     })
+    // PUSH DOĞRUDAN UYGULA (2026-10-11 "geç/delayli, akıcılık yok" KÖK FIX): push ESKİDEN yalnız
+    // poll(true) tetikliyordu -> her olayda ekstra HTTP turu (~200ms+); dahası rakip hızlı oynarsa
+    // o fetch dönene kadar sunucu durumu ilerleyip ara-durum (zar atıldı-oynanmadı) KAÇIYORDU ->
+    // "zarı gördüğümde ilk hamle de oynanmış". Push payload'ı ZATEN tam oda verisidir (broadcastWith
+    // = toClient+clock = showRoom ile AYNI şekil) -> otoriter board+saati DOĞRUDAN, ANINDA uygula.
+    // Güvenlik: poll ile AYNI kapılar — sürüm (appliedServerVersion) + mid-move kalkanı
+    // (shouldApplyServerState: KENDİ turumda yarım hamlemi EZMEZ) + bot-final/terminal. Idempotent:
+    // ardından gelen poll(true) aynı sürümü görüp atlar; rematch/chat için poll yine çalışır.
+    const applyPushPayload = (payload: unknown) => {
+      if (cancelled || !payload || typeof payload !== 'object') return
+      const rv = payload as Awaited<ReturnType<typeof showRoom>>
+      if (!rv) return
+      const isAuth = authoritativeRef.current || !!room.authoritative
+      if (!isAuth || !rv.server_state) return // legacy oda -> poll(true) yolu halleder
+      const sv = rv.server_version ?? 0
+      const srvTerminal = rv.status === 'finished' || !!rv.server_match?.done
+      const botFinalPending = pendingBotFinalRef.current?.code === room.code
+      const canApply = !botFinalPending && (
+        srvTerminal
+          ? sv > appliedServerVersionRef.current
+          : shouldApplyServerState(
+              {
+                turn: srvTurnStartRef.current?.turn ?? 'white',
+                diceCount: srvTurnStartRef.current?.dice?.length ?? 0,
+                playedCount: srvPlayedRef.current.length,
+                appliedServerVersion: appliedServerVersionRef.current,
+              },
+              rv,
+              myColor,
+            )
+      )
+      if (canApply) {
+        try {
+          applyServerBoard(rv.server_state as GameState, rv.server_match ?? null)
+          appliedServerVersionRef.current = sv
+          appliedServerRoomRef.current = room.code
+        } catch {
+          appliedServerVersionRef.current = -1
+        }
+      }
+      // Saat demiri (interpClock buradan pürüzsüz sayar) — anında tazele ki sayaç "8'den" değil
+      // doğru değerden başlasın. Bot animasyonu oynarken yazma (poll ile aynı kural).
+      const srvDone = !!rv.server_match?.done || rv.status === 'finished'
+      if (rv.clock?.loss?.reason) setEndReason(rv.clock.loss.reason)
+      const sc = srvDone ? null : rv.clock
+      if (sc && !botAnimRef.current) {
+        const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
+        clockAnchorRef.current = { delay: sc.delay, hold: (sc as { hold?: number }).hold ?? 0, white: sc.white, black: sc.black, active: act, at: Date.now() }
+        setSrvActive(act)
+        setAfkLeft(sc.afk)
+      } else if (srvDone) {
+        setSrvActive(null)
+        setAfkLeft(null)
+      }
+    }
     let offRoom = () => {}
-    void subscribeRoom(room.code, () => {
-      if (!cancelled) void poll(true)
+    void subscribeRoom(room.code, (payload) => {
+      if (cancelled) return
+      applyPushPayload(payload) // ANINDA board+saat (ara-durumu kaçırmadan)
+      void poll(true)           // emniyet ağı: rematch/chat + kaçan bir şey olursa
     }).then((off) => {
       if (cancelled) off()
       else offRoom = off
