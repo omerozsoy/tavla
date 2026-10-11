@@ -10656,6 +10656,9 @@ export default function App() {
                       bet_pct: betPctRef.current,
                       classic: classicRef.current,
                       time_control: timeControl,
+                      // Hedefli davet beklemesi -> satır "X bekleniyor" desin (açık arama gibi
+                      // görünmesin; başkaları zaten bu satırı GÖRMEZ — yalnız mm_waiting listelenir).
+                      waitFor: room?.status === 'waiting' ? inviteWaitName : null,
                     }
                   : null
               }

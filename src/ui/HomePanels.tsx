@@ -618,7 +618,7 @@ export function SeekersPanel({
                     <span className="seek-rating">{s.rating ?? '—'}</span>
                     {s.kind === 'seeking' ? (
                       <span className="seek-chips">
-                        {self && <span className="seek-chip seek-waiting">{t('mp.waiting')}</span>}
+                        {self && <span className="seek-chip seek-waiting">{s.waitFor ? t('seekers.waitingFor', { name: s.waitFor }) : t('mp.waiting')}</span>}
                         {s.classic && <span className="seek-chip seek-classic">{t('classic.badge')}</span>}
                         <span className="seek-chip seek-chip-mode">
                           {maxTarget > 1 ? `${lengths} ${t('seekers.pt')}` : t('live.catSingle')}

@@ -2145,6 +2145,7 @@ export interface Seeker {
   classic?: boolean // Klasik Tavla (kup yok + mars=2) -> rozet + "eslesme" ayni moda katar
   time_control: 'casual' | 'normal' | 'speed' // eslesme icin tempo (kuyruga katilirken ayni olmali)
   since?: string | null // havuza giris zamani (ISO) — "ne kadardir ariyor"
+  waitFor?: string | null // yalnız kendi satırımda (mySeek): hedefli davet beklenen rakibin adı (açık arama değil)
 }
 export async function seekers(): Promise<Seeker[]> {
   const data = await req<{ seekers: Seeker[] }>('/seekers')
