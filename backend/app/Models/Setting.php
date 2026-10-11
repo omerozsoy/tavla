@@ -33,6 +33,11 @@ class Setting extends Model
         // Kapalıyken (veya id boşken) SPA hiçbir Google script'i yüklemez. id örn. 'AW-...' / 'G-...'.
         'gtag_enabled' => 0,
         'gtag_id' => '',
+        // Maç saati (admin panel: Ayarlar > Maç Süreleri). Tempo başına PUAN BAŞINA banka (sn) +
+        // HAMLE delay (sn). Toplam banka = puan-başı × maç uzunluğu. Kayıt yoksa MatchClock sabitleri.
+        'clock_bank_casual' => 180, 'clock_delay_casual' => 15,
+        'clock_bank_normal' => 60, 'clock_delay_normal' => 10,
+        'clock_bank_speed' => 24, 'clock_delay_speed' => 8,
     ];
 
     /** Tüm ayarları cache'li key=>value dizi döndür (tablo yoksa boş). */

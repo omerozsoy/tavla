@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
+
 /**
  * Sunucu-otoriter oyun saati (DELAY sistemi) + AFK motoru.
  *
@@ -23,11 +25,31 @@ namespace App\Services;
  */
 class MatchClock
 {
-    /** Puan basina ana sure (saniye): maç uzunluğu × bu. */
+    /**
+     * Puan basina ana sure (saniye) VARSAYILANlari: maç uzunluğu × bu.
+     * Admin panel > Ayarlar > "Maç Süreleri" bunlari settings.clock_bank_<mode> ile EZER;
+     * kayit yoksa buradaki deger kullanilir (deploy/test guvenli). Yeni maclarda init'te okunur.
+     */
     public const PER_POINT = ['casual' => 180, 'normal' => 60, 'speed' => 24];
 
-    /** Hamle basina delay (saniye). */
+    /** Hamle basina delay (saniye) VARSAYILANlari. settings.clock_delay_<mode> ile ezilir. */
     public const DELAY = ['casual' => 15, 'normal' => 10, 'speed' => 8];
+
+    /** Yururlukteki puan-basi banka (sn): admin ayari varsa o, yoksa sabit varsayilan. */
+    public static function perPoint(string $mode): int
+    {
+        $mode = self::normalizeMode($mode);
+
+        return max(1, Setting::int('clock_bank_'.$mode, self::PER_POINT[$mode]));
+    }
+
+    /** Yururlukteki hamle delay'i (sn): admin ayari varsa o, yoksa sabit varsayilan. */
+    public static function delayFor(string $mode): int
+    {
+        $mode = self::normalizeMode($mode);
+
+        return max(0, Setting::int('clock_delay_'.$mode, self::DELAY[$mode]));
+    }
 
     public const AFK_IDLE = 45;      // uyari esigi (sn) = AFK_TOTAL - AFK_COUNTDOWN
     public const AFK_COUNTDOWN = 15; // son gorunur geri sayim (sn)
@@ -68,12 +90,12 @@ class MatchClock
     public static function init(?string $mode, int $target, float $now, ?int $bankOverride = null): array
     {
         $mode = self::normalizeMode($mode);
-        $bank = $bankOverride !== null && $bankOverride > 0 ? $bankOverride : self::PER_POINT[$mode] * max(1, $target);
+        $bank = $bankOverride !== null && $bankOverride > 0 ? $bankOverride : self::perPoint($mode) * max(1, $target);
 
         return [
             'mode' => $mode,
             'target' => max(1, $target),
-            'delay' => self::DELAY[$mode],
+            'delay' => self::delayFor($mode),
             'p1_bank' => (float) $bank,
             'p2_bank' => (float) $bank,
             'turn_slot' => null,   // 'p1' | 'p2' | null
