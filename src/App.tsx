@@ -10235,6 +10235,7 @@ export default function App() {
       {homeProfileId !== null && (
         <PublicProfile
           id={homeProfileId}
+          viewerIsAdmin={!!user?.is_admin && user?.id !== homeProfileId}
           onClose={() => setHomeProfileId(null)}
           onAddFriend={
             user && user.id !== homeProfileId

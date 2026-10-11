@@ -18306,6 +18306,27 @@ button.acct-row-logout:hover:not(:disabled) {
 .pp-actions-admin {
   flex-direction: column;
 }
+/* Yonetici konusma yasagi bloku: toggle + sure butonlari (grid) + sonuc mesaji. */
+.pp-mod {
+  flex-direction: column;
+}
+.pp-mute-opts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+.pp-mute-opts > * {
+  height: 34px;
+  min-height: 34px;
+  font-size: 0.8rem;
+}
+.pp-mute-msg {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
 /* Arkadaslik/mesaj butonu: KUCUK & kompakt (global 42px standardini bilincli ezeriz). */
 .pp-addfriend,
 .pp-message {

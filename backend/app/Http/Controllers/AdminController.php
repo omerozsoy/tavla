@@ -101,6 +101,33 @@ class AdminController extends Controller
         return response()->json(['user' => $this->row($user->fresh())]);
     }
 
+    // Konuşma yasağı (sohbet susturma): chat_muted_until yaz. minutes=0 -> yasağı kaldır.
+    // Filament "Konuşma Yasağı" aksiyonunun site-içi (profil üstü) karşılığı. Hesap yasağından
+    // bağımsız; ChatModeration::mutedSeconds bu kolona bakar (admin daima muaf).
+    public function chatMute(Request $request, User $user)
+    {
+        $me = $request->user();
+        if (! $me?->is_admin || $me->isBanned()) {
+            return $this->fail('Yetkisiz.', 403);
+        }
+        $data = $request->validate([
+            'minutes' => ['required', 'integer', 'min:0', 'max:525600'], // 0..1 yıl
+        ]);
+        $min = (int) $data['minutes'];
+        $user->chat_muted_until = $min > 0 ? now()->addMinutes($min) : null;
+        $user->save();
+        \App\Support\Shield::audit(
+            (int) $me->id,
+            'admin_chat_mute',
+            sprintf('target_user=%d minutes=%d', $user->id, $min),
+            2
+        );
+
+        return response()->json([
+            'muted_until' => $user->chat_muted_until?->toIso8601String(),
+        ]);
+    }
+
     // Uyenin son maclari (mac gecmisi)
     public function userMatches(Request $request, User $user)
     {

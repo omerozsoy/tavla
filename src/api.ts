@@ -1461,6 +1461,13 @@ export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
   const d = await req<{ matches: AdminMatch[] }>(`/admin/users/${id}/matches`)
   return d.matches
 }
+// Konuşma yasağı (sohbet susturma). minutes=0 -> yasağı kaldır. Döner: muted_until (ISO | null).
+export async function adminChatMute(id: number, minutes: number): Promise<{ muted_until: string | null }> {
+  return req<{ muted_until: string | null }>(`/admin/users/${id}/chat-mute`, {
+    method: 'POST',
+    body: JSON.stringify({ minutes }),
+  })
+}
 // ---- Icerik (hizmet / blog / haber / etkinlik / kulup) ----
 export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad' | 'quiz' | 'magazine' | 'kurum' | 'otel' | 'makale'
 export interface Content {

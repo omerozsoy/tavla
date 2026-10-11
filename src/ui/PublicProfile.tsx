@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { userProfile, type PublicProfile as Profile } from '../api'
+import { userProfile, adminChatMute, type PublicProfile as Profile } from '../api'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankMedals from './TopRankMedals'
@@ -17,14 +17,31 @@ export default function PublicProfile({
   onClose,
   onAddFriend,
   onMessage,
+  viewerIsAdmin,
 }: {
   id: number
   onClose: () => void
   onAddFriend?: () => void
   onMessage?: () => void // baska bir oyuncuya mesaj gonder (arkadas olmasa da; istek olarak duser)
+  viewerIsAdmin?: boolean // bakan kişi yönetici mi (başkasının profili) -> konuşma yasağı aksiyonu
 }) {
   const { t } = useT()
   useEscape(onClose)
+  // Admin moderasyon: konuşma yasağı aksiyonu (süre seçenekleri açık/kapalı + sonuç mesajı).
+  const [showMute, setShowMute] = useState(false)
+  const [muteBusy, setMuteBusy] = useState(false)
+  const [muteMsg, setMuteMsg] = useState<string | null>(null)
+  const applyMute = (minutes: number) => {
+    setMuteBusy(true)
+    setMuteMsg(null)
+    adminChatMute(id, minutes)
+      .then(() => setMuteMsg(minutes > 0 ? t('mod.chatBan.done') : t('mod.chatBan.lifted')))
+      .catch(() => setMuteMsg(t('mod.chatBan.err')))
+      .finally(() => {
+        setMuteBusy(false)
+        setShowMute(false)
+      })
+  }
   // Profil kartı TEK atış fetch -> p.online/p.status açıldığı AN'ın bayat anlık görüntüsü.
   // Oyuncu sonradan çıkınca kart "Oyun Kabul Etmiyor/kırmızı"da takılı kalıyordu. Durum
   // noktasını site geneli CANLI presence'tan (useOnline, 70sn pencere, oto-tazelenen) türet;
@@ -125,6 +142,32 @@ export default function PublicProfile({
                     <Icon name="chat" size={14} /> {t('role.helpRequest')}
                   </Button>
                 )}
+              </div>
+            )}
+
+            {/* YÖNETİCİ: konuşma yasağı (sohbet susturma). Başkasının profili + bakan admin ise. */}
+            {viewerIsAdmin && (
+              <div className="pp-actions pp-mod">
+                {!showMute ? (
+                  <Button
+                    variant="outline"
+                    className="pp-mute-toggle"
+                    disabled={muteBusy}
+                    onClick={() => { setShowMute(true); setMuteMsg(null) }}
+                    style={{ width: '100%' }}
+                  >
+                    <Icon name="chat" size={14} /> {t('mod.chatBan')}
+                  </Button>
+                ) : (
+                  <div className="pp-mute-opts">
+                    <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(1440)}>{t('chat.ban.24h')}</Button>
+                    <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(10080)}>{t('chat.ban.1w')}</Button>
+                    <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(43200)}>{t('chat.ban.1mo')}</Button>
+                    <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(525600)}>{t('chat.ban.1y')}</Button>
+                    <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(0)}>{t('mod.chatBan.lift')}</Button>
+                  </div>
+                )}
+                {muteMsg && <div className="pp-mute-msg">{muteMsg}</div>}
               </div>
             )}
 
