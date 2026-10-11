@@ -904,10 +904,20 @@ button[aria-disabled='true'],
   color: var(--rarity-color, var(--muted));
   background: color-mix(in srgb, var(--rarity-color, var(--muted)) 16%, transparent);
 }
-/* Buyuk onizleme grid'i: tam pul dizili SetupBoard */
+/* Tam pul dizili SetupBoard ızgarası: masaüstünde SATIR BAŞINA 6 tahta (küçük kartlar);
+   dar ekranlarda kademeli azalır (taşma/yatay kaydırma olmasın). */
 .board-previews-lg {
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+@media (max-width: 1024px) {
+  .board-previews-lg { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 680px) {
+  .board-previews-lg { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
+@media (max-width: 440px) {
+  .board-previews-lg { grid-template-columns: repeat(2, 1fr); }
 }
 /* Nadirlik cercevesi: her kart kendi rarity renginde */
 .board-previews-lg .board-prev {
