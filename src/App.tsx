@@ -9184,6 +9184,7 @@ export default function App() {
         key: pg.key,
         labelKey: pg.labelKey,
         label: menuLabel(pg.key),
+        href: '/' + pg.slug,
         onClick: pageHandlers[pg.key]!,
       })),
   }))
@@ -9194,12 +9195,12 @@ export default function App() {
     key: 'guide',
     titleKey: 'foot.guide',
     items: [
-      { key: 'seo-online-tavla', labelKey: '', label: 'Online Tavla Oyna', onClick: () => goPage(() => setOnlineTavlaOpen(true)) },
-      { key: 'seo-tavla-oyna', labelKey: '', label: 'Tavla Oyna', onClick: () => goPage(() => setTavlaOynaOpen(true)) },
-      { key: 'seo-nasil-oynanir', labelKey: '', label: 'Nasıl Oynanır', onClick: () => goPage(() => setRulesOpen(true)) },
-      { key: 'seo-tavla-rehberi', labelKey: '', label: 'Tavla Rehberi', onClick: () => openGuide(null) },
-      { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', onClick: () => goPage(() => setTournRulesOpen(true)) },
-      { key: 'seo-sikca-sorulan', labelKey: '', label: 'Sıkça Sorulan Sorular', onClick: () => goPage(() => setFaqOpen(true)) },
+      { key: 'seo-online-tavla', labelKey: '', label: 'Online Tavla Oyna', href: '/online-tavla', onClick: () => goPage(() => setOnlineTavlaOpen(true)) },
+      { key: 'seo-tavla-oyna', labelKey: '', label: 'Tavla Oyna', href: '/tavla-oyna', onClick: () => goPage(() => setTavlaOynaOpen(true)) },
+      { key: 'seo-nasil-oynanir', labelKey: '', label: 'Nasıl Oynanır', href: '/nasil-oynanir', onClick: () => goPage(() => setRulesOpen(true)) },
+      { key: 'seo-tavla-rehberi', labelKey: '', label: 'Tavla Rehberi', href: '/tavla-rehberi', onClick: () => openGuide(null) },
+      { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', href: '/turnuva-kurallari', onClick: () => goPage(() => setTournRulesOpen(true)) },
+      { key: 'seo-sikca-sorulan', labelKey: '', label: 'Sıkça Sorulan Sorular', href: '/sikca-sorulan-sorular', onClick: () => goPage(() => setFaqOpen(true)) },
     ],
   })
   // Organizasyon kolonu: turnuva organizasyonu SEO servis sayfalari + İletişim. Hepsi
@@ -9210,10 +9211,10 @@ export default function App() {
     key: 'organization',
     titleKey: 'foot.organization',
     items: [
-      { key: 'org-hub', labelKey: '', label: 'Tavla Turnuvası Organizasyonu', onClick: () => openService('tavla-turnuvasi-organizasyonu') },
-      { key: 'org-kurumsal', labelKey: '', label: 'Kurumsal Tavla Turnuvası', onClick: () => openService('kurumsal-tavla-turnuvasi') },
-      { key: 'org-belediye', labelKey: '', label: 'Belediye Tavla Turnuvası', onClick: () => openService('belediye-tavla-turnuvasi') },
-      { key: 'org-avm', labelKey: '', label: 'AVM Tavla Turnuvası', onClick: () => openService('avm-tavla-turnuvasi') },
+      { key: 'org-hub', labelKey: '', label: 'Tavla Turnuvası Organizasyonu', href: '/tavla-turnuvasi-organizasyonu', onClick: () => openService('tavla-turnuvasi-organizasyonu') },
+      { key: 'org-kurumsal', labelKey: '', label: 'Kurumsal Tavla Turnuvası', href: '/kurumsal-tavla-turnuvasi', onClick: () => openService('kurumsal-tavla-turnuvasi') },
+      { key: 'org-belediye', labelKey: '', label: 'Belediye Tavla Turnuvası', href: '/belediye-tavla-turnuvasi', onClick: () => openService('belediye-tavla-turnuvasi') },
+      { key: 'org-avm', labelKey: '', label: 'AVM Tavla Turnuvası', href: '/avm-tavla-turnuvasi', onClick: () => openService('avm-tavla-turnuvasi') },
     ],
   })
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar (openInfoTab yukarida).
@@ -9222,14 +9223,14 @@ export default function App() {
     key: 'info',
     titleKey: 'menu.info',
     items: [
-      { key: 'info-about', labelKey: 'info.tab.about', onClick: () => openInfoTab('about') },
-      { key: 'info-services', labelKey: 'menu.services', onClick: () => openInfoTab('services') },
-      { key: 'info-glossary', labelKey: 'info.tab.glossary', onClick: () => openInfoTab('glossary') },
-      { key: 'info-ranks', labelKey: 'menu.ranks', onClick: () => openInfoTab('ranks') },
-      { key: 'info-scoring', labelKey: 'info.tab.scoring', onClick: () => openInfoTab('scoring') },
-      { key: 'info-badges', labelKey: 'ach.title', onClick: () => openInfoTab('badges') },
-      { key: 'info-fair', labelKey: 'fair.title', onClick: () => openInfoTab('fair') },
-      { key: 'org-iletisim', labelKey: '', label: 'İletişim', onClick: () => openService('iletisim') },
+      { key: 'info-about', labelKey: 'info.tab.about', href: '/bilgi/hakkinda', onClick: () => openInfoTab('about') },
+      { key: 'info-services', labelKey: 'menu.services', href: '/bilgi/hizmetler', onClick: () => openInfoTab('services') },
+      { key: 'info-glossary', labelKey: 'info.tab.glossary', href: '/bilgi/sozluk', onClick: () => openInfoTab('glossary') },
+      { key: 'info-ranks', labelKey: 'menu.ranks', href: '/bilgi/rutbeler', onClick: () => openInfoTab('ranks') },
+      { key: 'info-scoring', labelKey: 'info.tab.scoring', href: '/bilgi/puanlama', onClick: () => openInfoTab('scoring') },
+      { key: 'info-badges', labelKey: 'ach.title', href: '/bilgi/basarilarim', onClick: () => openInfoTab('badges') },
+      { key: 'info-fair', labelKey: 'fair.title', href: '/bilgi/adil-zar', onClick: () => openInfoTab('fair') },
+      { key: 'org-iletisim', labelKey: '', label: 'İletişim', href: '/iletisim', onClick: () => openService('iletisim') },
     ],
   })
   // 5. kolon: "Yasal" — hukuki sayfalar (DB'den) + Cerez Tercihleri (banner/modal).
@@ -9238,11 +9239,11 @@ export default function App() {
     key: 'legal',
     titleKey: 'foot.legal',
     items: [
-      { key: 'legal-kvkk', labelKey: '', label: 'KVKK Aydınlatma Metni', onClick: () => openLegalPage('kvkk') },
-      { key: 'legal-gizlilik', labelKey: '', label: 'Gizlilik Politikası', onClick: () => openLegalPage('gizlilik-politikasi') },
-      { key: 'legal-cerez', labelKey: '', label: 'Çerez Politikası', onClick: () => openLegalPage('cerez-politikasi') },
-      { key: 'legal-kullanim', labelKey: '', label: 'Kullanım Koşulları', onClick: () => openLegalPage('kullanim-kosullari') },
-      { key: 'legal-uyelik', labelKey: '', label: 'Üyelik Sözleşmesi', onClick: () => openLegalPage('uyelik-sozlesmesi') },
+      { key: 'legal-kvkk', labelKey: '', label: 'KVKK Aydınlatma Metni', href: '/kvkk', onClick: () => openLegalPage('kvkk') },
+      { key: 'legal-gizlilik', labelKey: '', label: 'Gizlilik Politikası', href: '/gizlilik-politikasi', onClick: () => openLegalPage('gizlilik-politikasi') },
+      { key: 'legal-cerez', labelKey: '', label: 'Çerez Politikası', href: '/cerez-politikasi', onClick: () => openLegalPage('cerez-politikasi') },
+      { key: 'legal-kullanim', labelKey: '', label: 'Kullanım Koşulları', href: '/kullanim-kosullari', onClick: () => openLegalPage('kullanim-kosullari') },
+      { key: 'legal-uyelik', labelKey: '', label: 'Üyelik Sözleşmesi', href: '/uyelik-sozlesmesi', onClick: () => openLegalPage('uyelik-sozlesmesi') },
       { key: 'legal-cerez-tercih', labelKey: '', label: 'Çerez Tercihleri', onClick: () => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS)) },
     ],
   })
@@ -9257,6 +9258,7 @@ export default function App() {
         key: 'cms-' + p.slug,
         labelKey: '',
         label: p.title,
+        href: '/bilgi/' + p.slug,
         onClick: () => openCustomMenuHref('/bilgi/' + p.slug),
       })
     }

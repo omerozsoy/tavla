@@ -6,6 +6,7 @@ export interface FooterItem {
   key: string
   labelKey: string
   label?: string // admin panelden ozel ad (varsa i18n'i ezer)
+  href?: string // Gercek URL: SPA tiklama davranisi korunurken arama motorlari icin taranabilir.
   onClick: () => void
 }
 
@@ -82,9 +83,22 @@ export default function Footer({ columns }: Props) {
                 <ul>
                   {col.items.map((it) => (
                     <li key={it.key}>
-                      <button type="button" className="foot-link" onClick={it.onClick}>
-                        {it.label ?? t(it.labelKey)}
-                      </button>
+                      {it.href ? (
+                        <a
+                          className="foot-link"
+                          href={it.href}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            it.onClick()
+                          }}
+                        >
+                          {it.label ?? t(it.labelKey)}
+                        </a>
+                      ) : (
+                        <button type="button" className="foot-link" onClick={it.onClick}>
+                          {it.label ?? t(it.labelKey)}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
