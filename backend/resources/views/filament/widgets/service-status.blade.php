@@ -11,7 +11,7 @@
         @php($total = $s['total'])
         @php($okN = $s['okN'])
 
-        <div wire:poll.30s class="space-y-2" style="font-size:12px">
+        <div wire:poll.30s class="space-y-2" style="font-size:15px">
             {{-- ÜST ÖZET: tek satır — kaç ayakta + sorun + mod --}}
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span class="inline-flex items-center gap-1.5 font-semibold">
@@ -29,7 +29,7 @@
             @if ($down->isNotEmpty())
                 <div class="rounded-md border border-red-200 bg-red-50 px-2 py-1 dark:border-red-900/50 dark:bg-red-950/30">
                     @foreach ($down as $svc)
-                        <div class="text-red-700 dark:text-red-300" style="font-size:11px;line-height:1.35">
+                        <div class="text-red-700 dark:text-red-300" style="font-size:14px;line-height:1.4">
                             <b>{{ $svc['name'] }}</b>@if(!empty($svc['detail'])) — {{ $svc['detail'] }}@endif
                             @if ($svc['key'] === 'validator' && $svc['configured'] && $s['validator_required'])
                                 <span class="font-semibold">· Fail-closed: hamleler REDDEDİLİR!</span>
@@ -43,15 +43,15 @@
                  her servis = 7px lamba + ad; durum RENKTEN okunur (✓/✕ kaldırıldı); detay hover'da. --}}
             @foreach ($groups as $gname => $items)
                 <div>
-                    <div class="font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500" style="font-size:9px;margin-bottom:2px">{{ $gname }}</div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:3px">
+                    <div class="font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500" style="font-size:12px;margin-bottom:3px">{{ $gname }}</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:4px">
                         @foreach ($items as $svc)
                             @php($color = $svc['up'] === true ? '#16a34a' : ($svc['up'] === false ? '#dc2626' : '#9ca3af'))
                             <div class="flex items-center gap-1.5 rounded border border-gray-200 bg-gray-50/60 dark:border-gray-800 dark:bg-white/5"
-                                 style="padding:1px 6px;min-width:0"
+                                 style="padding:3px 7px;min-width:0"
                                  title="{{ $svc['name'] }}@if(!empty($svc['detail'])) — {{ $svc['detail'] }}@endif">
                                 <span style="display:inline-block;width:7px;height:7px;flex:none;border-radius:9999px;background:{{ $color }}"></span>
-                                <span class="truncate text-gray-700 dark:text-gray-200" style="font-size:11px">{{ $svc['name'] }}</span>
+                                <span class="truncate text-gray-700 dark:text-gray-200" style="font-size:14px">{{ $svc['name'] }}</span>
                                 @if (! empty($svc['restart']))
                                     <button type="button"
                                             class="ml-auto shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
