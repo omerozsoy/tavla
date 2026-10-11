@@ -61,7 +61,7 @@ Schedule::command('contents:bump-views')
 // ağ/başka cihaz) oyuncuların match_results satırını sunucuda tamamla -> maç HER İKİ oyuncunun
 // "Maç Analizleri" listesinde çıksın. 2 dk grace (canlı istemcinin zengin satırı önce yazsın).
 Schedule::command('matches:backstop-finished')
-    ->everyMinute() // anında finalize (reportRating/finalizeDead) kaçarsa ≤1dk'da yakalar (eski: 5dk)
+    ->everyTwoMinutes() // yedek ağ: anında finalize (reportRating/finalizeDead) kaçarsa yakalar
     ->name('backstop-finished-matches')
     ->withoutOverlapping();
 

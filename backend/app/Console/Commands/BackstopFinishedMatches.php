@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Room;
-use App\Support\MatchFinalize;
+use App\Support\MatchBackstop;
 use Illuminate\Console\Command;
 
 /**
@@ -46,8 +46,11 @@ class BackstopFinishedMatches extends Command
                 foreach ($rooms as $room) {
                     $scanned++;
                     try {
-                        // ensure (eksik satır) + PR/şans analizini match_moves'tan tetikle (sunucu-otoriter).
-                        $written += MatchFinalize::run($room);
+                        // YALNIZ eksik satır oluştur (ucuz existence-check). Analiz DISPATCH'i BURADA
+                        // YAPMA: 2 günlük odaları her tur taradığından, worker geride kalınca aynı boş
+                        // satırlar her turda yeniden kuyruğa girip queue'yu BOĞAR. Taze maçların analizi
+                        // reportRating/finalizeDead'deki MatchFinalize ile anında; eski boşlar GnubgPrHeal'le.
+                        $written += MatchBackstop::ensure($room);
                     } catch (\Throwable $e) {
                         \Illuminate\Support\Facades\Log::warning('matches:backstop-finished oda atlandı', [
                             'room' => $room->code, 'err' => $e->getMessage(),
