@@ -47,6 +47,15 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
   useEffect(() => {
     if (open) setUnread(0)
   }, [open])
+  // Yönetici izlemede (readOnly) sohbet varsa KENDİLİĞİNDEN açık gelsin (bir kez; admin
+  // sonradan kapatabilir). Oyuncu sohbeti eskisi gibi kapalı başlar (başlıkla açılır).
+  const autoOpenedRef = useRef(false)
+  useEffect(() => {
+    if (readOnly && !autoOpenedRef.current && messages.length > 0) {
+      autoOpenedRef.current = true
+      setOpen(true)
+    }
+  }, [readOnly, messages.length])
   // Genis masaustunde (>=1440px, CSS) acik sohbet tahtanin YANINA yerlesir: body sinifi oyun
   // sahnesine sag pay + daha kucuk --board-h verir (tahta ortulmez, perde yok).
   useEffect(() => {
@@ -63,10 +72,12 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
-  // Yeni mesajda en alta kaydir
+  // Yeni mesajda en alta kaydir -- YALNIZ kullanıcı zaten en alttaysa. Yukarı kaydırıp
+  // geçmişi okuyan (admin) izleyiciyi her poll'de zıplatma; konumu scroll bayrağı belirler.
+  const atBottomRef = useRef(true)
   useEffect(() => {
     const el = listRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el && atBottomRef.current) el.scrollTop = el.scrollHeight
   }, [messages, open])
 
   const submit = () => {
@@ -103,7 +114,14 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
 
       {open && (
         <>
-          <div className="chat-list" ref={listRef}>
+          <div
+            className="chat-list"
+            ref={listRef}
+            onScroll={() => {
+              const el = listRef.current
+              if (el) atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+            }}
+          >
             {messages.length === 0 ? (
               <div className="chat-empty">{t('chat.empty')}</div>
             ) : (
