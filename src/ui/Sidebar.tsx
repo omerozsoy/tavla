@@ -115,7 +115,7 @@ function Name({ p }: { p: PlayerInfo }) {
   return (
     <div className="player-name-wrap">
       <div className="player-name">
-        <RoleBadge userId={p.id} size={18} style={{ marginRight: 4 }} />
+        <RoleBadge userId={p.id} size={24} style={{ marginRight: 4 }} />
         {p.name}
         {p.country && <CountryFlag code={p.country} size={20} className="player-flag" />}
         {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
