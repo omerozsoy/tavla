@@ -1327,6 +1327,11 @@ class RoomController extends Controller
         $room->status = 'finished';
         $room->version = (int) $room->version + 1;
         $room->save();
+        // SUNUCU-OTORİTER ANINDA SONLANDIRMA: terk/timeout/decided biten maçta da HER İKİ satırı aç
+        // + PR/şans analizini match_moves'tan hemen tetikle (raporsuz oyuncu da saniyeler içinde dolar).
+        if ($reason === 'decided') {
+            \App\Support\MatchFinalize::run($room->fresh() ?? $room);
+        }
     }
 
     // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)

@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Room;
-use App\Support\MatchBackstop;
+use App\Support\MatchFinalize;
 use Illuminate\Console\Command;
 
 /**
@@ -46,7 +46,8 @@ class BackstopFinishedMatches extends Command
                 foreach ($rooms as $room) {
                     $scanned++;
                     try {
-                        $written += MatchBackstop::ensure($room);
+                        // ensure (eksik satır) + PR/şans analizini match_moves'tan tetikle (sunucu-otoriter).
+                        $written += MatchFinalize::run($room);
                     } catch (\Throwable $e) {
                         \Illuminate\Support\Facades\Log::warning('matches:backstop-finished oda atlandı', [
                             'room' => $room->code, 'err' => $e->getMessage(),

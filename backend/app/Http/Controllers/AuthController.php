@@ -792,6 +792,12 @@ class AuthController extends Controller
         }
 
         $releaseResultLock();
+        // SUNUCU-OTORİTER ANINDA SONLANDIRMA: bir oyuncu raporlayınca RAKİBİN satırını da SUNUCUDA aç
+        // + PR/şans analizini match_moves'tan HEMEN kuyruğa al. Rakip hiç raporlamasa bile (sekme
+        // kapandı/ağ) verisi 5-20 dk cron beklemeden saniyeler içinde dolar. Best-effort (akışı kırmaz).
+        if ($room) {
+            \App\Support\MatchFinalize::run($room->fresh() ?? $room);
+        }
         // Sonuç ekranı "puansız maç" etiketi için: bu maç PUANLI mı + değilse SEBEP. Kullanıcı,
         // kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu -> açıklayıcı not göster.
         $ratingReason = null;

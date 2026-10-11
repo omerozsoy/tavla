@@ -38,9 +38,14 @@ class E2eSeed extends Command
             $u = User::create([
                 'first_name' => $nick, 'last_name' => 'E2E', 'country' => 'TR',
                 'nickname' => $nick, 'email' => $email, 'password' => Hash::make('e2e-pass-123'),
+                // E2E UI akışları, gerçek kullanıcı gibi giriş yaptıktan sonra oyun kurar.
+                // Yalnızca APP_ENV=e2e izole DB'sinde doğrulanmış test hesabı kullanılır.
+                'email_verified_at' => now(),
             ]);
             $u->rating = 1500;
             $u->coins = 100000; // bahisli eşleşme için yeterli coin
+            // User::$fillable kasıtlı olarak doğrulama alanını içermez; E2E hesabını açıkça doğrula.
+            $u->email_verified_at = now();
             $u->save();
             $token = $u->createToken('e2e')->plainTextToken;
             $out[] = ['id' => $u->id, 'token' => $token, 'nick' => $nick];
