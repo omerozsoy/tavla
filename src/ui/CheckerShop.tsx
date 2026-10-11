@@ -14,8 +14,9 @@ import './CheckerShop.css'
 type Filter = 'all' | 'owned' | 'buyable'
 type CheckerSkinT = (typeof CHECKER_FINISHES)[number]
 
-// Pul (checker) nadirlik gruplari — EN PAHALI (mitik: Karbon) EN ÜSTTE -> en ucuz en altta.
-const CHECKER_GROUP_ORDER: CheckerRarity[] = ['mythic', 'legendary', 'epic', 'rare', 'common']
+// Pul (checker) nadirlik gruplari — Standart -> Nadir -> Epik -> Efsanevi -> EN SON Mitik
+// (en ucuz en ustte, en pahali Mitik/Karbon en altta).
+const CHECKER_GROUP_ORDER: CheckerRarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic']
 
 /**
  * PUL TASARIMLARI — Tavla Tasarımları ekranıyla AYNI dil: filtreler (Tümü/Sahip/Alınabilir) +
