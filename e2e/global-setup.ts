@@ -4,7 +4,8 @@ import { execSync } from 'node:child_process'
 // artisan DOĞRUDAN çağrılır (HTTP gerekmez) -> webServer sırasından bağımsız. APP_ENV=e2e ->
 // .env.e2e (ayrı sqlite) -> prod/dev verisine DOKUNMAZ.
 export default async function globalSetup() {
-  execSync('php artisan e2e:seed', {
+  const users = process.env.E2E_USERS ?? '8'
+  execSync(`php artisan e2e:seed --users=${users}`, {
     cwd: 'backend',
     env: { ...process.env, APP_ENV: 'e2e' },
     stdio: 'inherit',

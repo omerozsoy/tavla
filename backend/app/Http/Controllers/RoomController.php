@@ -462,12 +462,28 @@ class RoomController extends Controller
                 $cand->stake = $agreedStake;   // anlasilan sabit bahis (settle bunu kullanir)
                 $cand->target = max($commonTargets); // ortak uzunluklardan en uzunu
                 $cand->status = 'playing';
+                // Eşleşme, bekleme durumundan oynanan duruma geçişte gerçek bir oda
+                // değişikliğidir. Poll istemcisi mevcut sürümü gönderdiğinde bu geçiş
+                // 204'e düşmemeli; aksi halde p1 rakibin bağlandığını hiç öğrenemez.
+                $cand->version = (int) $cand->version + 1;
                 // Faz 2: iki oyuncu da belli -> TAM otorite mi? (global staked VEYA test allow-list).
                 // Öyleyse authoritative=true (Faz 1 dice_authority'nin YERİNE geçer).
                 if (Schema::hasColumn('rooms', 'authoritative')
                     && $this->shouldAuthoritative($cand->p1_user_id, $userId, ($agreedStake > 0 || $betPct > 0))) {
                     $cand->authoritative = true;
                     $cand->dice_authority = false;
+                    // Matchmaking yolu, enter() yolundan farklı olarak başlangıç tahtasını
+                    // eşleşme anında kurmuyordu. Bu, iki istemcinin playing + authoritative
+                    // fakat server_state=null görmesine ve UI'nin masaya girememesine yol açtı.
+                    // enter() ile TAM simetri: server_match'i de tohumla (initServerMatch
+                    // pct_stake_snapshot'ı KORUR). Yalnız server_state kurmak, yüzde-bahis
+                    // maçında ilk roll'a dek server_match={pct-only, target YOK} bırakıp iki
+                    // istemciye farklı maç uzunluğu + küp 409 penceresini açık bırakırdı.
+                    if (! is_array($cand->server_match) || ! isset($cand->server_match['target'])) {
+                        $cand->server_match = $this->initServerMatch($cand);
+                    }
+                    $cand->server_state ??= Backgammon::initialState();
+                    $cand->server_version = (int) $cand->server_version + 1;
                 }
                 $hostClaimed = Room::claimActiveMoneySlot((int) $cand->p1_user_id, (int) $cand->id);
                 if (! $hostClaimed || ! Room::claimActiveMoneySlot($userId, (int) $cand->id)) {
