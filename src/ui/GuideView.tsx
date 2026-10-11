@@ -128,6 +128,9 @@ export default function GuideView({ slug, onClose, onOpen }: Props) {
           <span className="tgx-eyebrow">Tavla Rehberi</span>
           <h1 className="tgx-title">{h1}</h1>
           <p className="tgx-lede">{lede}</p>
+          <p className="tgx-crosslink">
+            Oyuna geçmek için <a href="/tavla-oyna">tavla oyna</a> sayfasını açabilir veya hemen bir maç başlatabilirsin.
+          </p>
           <div className="tgx-hero-cta">
             <a className="tgx-btn" href="/yeni-oyun">
               <Icon name="play" size={18} /> Hemen Tavla Oyna
