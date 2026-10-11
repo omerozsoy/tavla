@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
 import EmailVerify from './EmailVerify'
+import BugReport from './BugReport'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import type { ServerUser } from '../api'
 
@@ -31,10 +32,22 @@ export default function EmailGate({ email, onVerified, onLogout }: Props) {
 
         <EmailVerify onVerified={onVerified} tone="gate" />
 
+        {/* E-posta hic gelmiyorsa: Hata Bildir formunu ac (halka acik /bug-report). */}
+        <button
+          type="button"
+          className="egate-report"
+          onClick={() => window.dispatchEvent(new CustomEvent('tavla:open-bug-report'))}
+        >
+          <Icon name="flag" size={14} /> {t('emailGate.report')}
+        </button>
+
         <button type="button" className="egate-logout" onClick={onLogout}>
           {t('auth.logout')}
         </button>
       </div>
+
+      {/* Duvarin ustunde (z-index) acilan sorun-bildir formu; FAB gizli, yalniz butonla acilir. */}
+      <BugReport currentPage={t('emailGate.reportPage')} loggedIn hideFab />
     </div>,
     document.body,
   )

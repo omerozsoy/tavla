@@ -14,6 +14,9 @@ interface Props {
   currentPage?: string
   // Giris yapmis mi — misafirse ad/e-posta (opsiyonel geri donus) alanlari gosterilir.
   loggedIn?: boolean
+  // Sabit kenar FAB'ini gizle; form yalniz 'tavla:open-bug-report' olayiyla acilir
+  // (ornek: e-posta dogrulama duvari kendi butonundan tetikler).
+  hideFab?: boolean
 }
 
 // Dosyayi data-URL'e cevir. Buyuk gorselleri (>~1600px) canvas ile kucult ki
@@ -54,7 +57,7 @@ function fileToDataUrl(file: File): Promise<string> {
   })
 }
 
-export default function BugReport({ currentPage, loggedIn }: Props) {
+export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
   const { t } = useT()
   const toast = useToast()
   const [open, setOpen] = useState(false)
@@ -135,7 +138,7 @@ export default function BugReport({ currentPage, loggedIn }: Props) {
   return createPortal(
     <>
       {/* Sağ kenar sabit sekme butonu — oyun ekranında render EDİLMEZ (App gizler). */}
-      {!open && (
+      {!open && !hideFab && (
         <button
           className={`bug-fab${loggedIn ? '' : ' bug-fab-guest'}`}
           onClick={openForm}

@@ -27165,6 +27165,27 @@ button.acct-row-logout:hover:not(:disabled) {
 .egate-logout:hover {
   color: rgba(244, 239, 230, 0.85);
 }
+/* "E-posta gelmiyor mu? Sorun bildir" — coral ipucu baglantisi (logout'tan ayirt edilir). */
+.egate-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: #e08b7a;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.egate-report:hover {
+  color: #f0a593;
+}
+/* Sorun-bildir modali e-posta duvarinin (z 2147483600) de USTUNDE acilsin. */
+.bug-overlay {
+  z-index: 2147483620;
+}
 
 @keyframes egate-fade {
   from {
