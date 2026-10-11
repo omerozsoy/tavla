@@ -20,6 +20,7 @@ import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
 import { applyStep, generateMoves, hasNoMove } from '../engine/moves'
 import { liveMoveDelta } from '../online/liveMoves'
+import { subscribeRoom } from '../online/realtime'
 import { boardSig, validLivePrefix } from '../online/spectateAnim'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './moveAnim'
 import type { GameState, Player, Step } from '../engine/types'
@@ -117,12 +118,21 @@ export default function Spectate({
         /* diger hatalar gecici ag hatasi -> sonraki poll dener */
       }
     }
-    // Oynarken gibi adım adım izleme için daha sık yokla (oyuncunun poll'üyle aynı tempo).
-    const id = window.setInterval(poll, 1200)
+    // GERÇEK-ZAMANLI PUSH (2026-10-11): spectate ESKİDEN yalnız 1200ms poll idi -> izlerken rakip
+    // zarı/hamlesi/saati hep geç geliyordu (oyun sayfası push'a aboneydi, izle DEĞİL). Artık oda
+    // kanalına abone ol: 'room.updated' gelince ANINDA poll -> oynanış canlı akar. Push yoksa
+    // (bağlanamadı) 600ms yedek poll (eski 1200'den hızlı). Payload uygulanmaz, yalnız poll tetikler.
+    const id = window.setInterval(poll, 600)
     poll()
+    let offRoom = () => {}
+    void subscribeRoom(code, () => { if (alive) void poll() }).then((off) => {
+      if (!alive) off()
+      else offRoom = off
+    })
     return () => {
       alive = false
       window.clearInterval(id)
+      offRoom()
     }
   }, [code])
 
