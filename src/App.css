@@ -13696,6 +13696,12 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 12px;
 }
 /* Sol alt izleme paneli: izleyenler + maç sohbeti (salt-okunur) */
+/* Yönetici izleme sohbeti (salt okunur Chat): sağ-alt ses düğmesiyle (spectate-vol,
+   40px @ ~14px) ÇAKIŞMASIN -> onun üstüne al. Açılınca yukarı doğru büyür. */
+.spectate-view .chat-panel {
+  bottom: calc(66px + env(safe-area-inset-bottom));
+  right: calc(14px + env(safe-area-inset-right));
+}
 .spectate-side {
   position: fixed;
   left: 12px;
@@ -16328,11 +16334,11 @@ button.acct-row-logout:hover:not(:disabled) {
   .rank-flag {
     padding-left: 4px;
   }
-  /* Dar ekran: isim kolonu 1fr'ye düşer -> kırpmak yerine alt satıra SARSIN. */
-  .lb-name .player-id-name,
+  /* Dar ekran: isim TEK SATIR. Font bir tık küçülür -> çoğu isim tam sığar;
+     yalnızca aşırı uzun isimde sonuna … gelir (isme dokununca profil + tam ad).
+     (player-id-name-text taban stili zaten nowrap+ellipsis; sadece fontu kısalt.) */
   .lb-name .player-id-name-text {
-    white-space: normal;
-    overflow-wrap: anywhere;
+    font-size: 0.82rem;
   }
   /* Filtre butonlari (Puan/Jeton/WXP/PR) yan yana min-content ~360px -> lobby
      grid kolonunu 320'nin uzerine itip icerigi kirpiyordu. 2x2 sararak coz. */

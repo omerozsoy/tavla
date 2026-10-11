@@ -8,6 +8,7 @@ import { useEscape } from './useEscape'
 import Board from './Board'
 import Sidebar from './Sidebar'
 import ViewersBadge from './ViewersBadge'
+import Chat from './Chat'
 import ClockStack from './ClockStack'
 import DiceRow, { Die } from './Dice'
 import { showRoom, watchRoom, roomSummary, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
@@ -680,6 +681,12 @@ export default function Spectate({
       <div className="spectate-side">
         <ViewersBadge viewers={viewers} count={viewerCount} />
       </div>
+
+      {/* Yönetici izleme: oyuncuların maç-içi sohbeti SALT OKUNUR (yalnız konuşma varsa).
+          Veri zaten rv.messages'ta (toClient herkese döner); moderasyon için görünür kılınır. */}
+      {isAdmin && (rv?.messages?.length ?? 0) > 0 && (
+        <Chat messages={rv!.messages} mySlot="p1" onSend={() => {}} readOnly />
+      )}
     </div>,
     document.body,
   )

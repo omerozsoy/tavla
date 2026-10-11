@@ -31,7 +31,7 @@ export default function ViewersBadge({ viewers, count }: { viewers: RoomViewer[]
                 </span>
               )}
               {/* Yonetici/Destek izleyici: isim onunde rol kalkani (site geneli roller). */}
-              <RoleBadge userId={v.id} size={14} style={{ marginRight: 2 }} />
+              <RoleBadge userId={v.id} size={18} style={{ marginRight: 3 }} />
               <span className="sp-viewer-name">{v.name}</span>
             </span>
           ))}

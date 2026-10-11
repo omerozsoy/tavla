@@ -17,12 +17,14 @@ interface Props {
   behindMenu?: boolean
   /** Küfür uyarısı / konuşma yasağı (kırmızı küçük yazı). null -> gösterilmez. */
   notice?: string | null
+  /** SALT OKUNUR (yönetici izleme): yalnız mesaj listesi; emoji/yazma kutusu çizilmez. */
+  readOnly?: boolean
 }
 
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Maca girince sohbet KAPALI baslar; baslikla acilir.
@@ -114,7 +116,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             )}
           </div>
 
-          {loggedIn && emojiOpen && (
+          {!readOnly && loggedIn && emojiOpen && (
             <div className="chat-emojis">
               {EMOJIS.map((e) => (
                 <button
@@ -130,7 +132,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
           )}
 
           {notice && <div className="chat-notice" role="alert">{notice}</div>}
-          <div className="chat-input">
+          {!readOnly && <div className="chat-input">
             {!loggedIn ? (
               // MİSAFİR: sohbet edemez -> giriş prompt'u (emoji/yazma yok).
               <Button variant="secondary" className="flex-1" onClick={onLogin}>
@@ -176,7 +178,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                 )}
               </>
             )}
-          </div>
+          </div>}
         </>
       )}
     </div>
