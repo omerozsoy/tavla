@@ -7,6 +7,7 @@ import Achievements from './Achievements'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
 import RoleBadge from './RoleBadge'
+import { Coins } from './Coins'
 import './profileShopLink.css'
 import { CountryFlag } from './Flag'
 import SetupBoard from './SetupBoard'
@@ -18,7 +19,6 @@ import AddressBook from './AddressBook'
 import { Button } from '@/components/ui/button'
 import { countryName } from '../countries'
 import { type AvatarFrameDef } from './avatarFrames'
-import { RARITY_COLORS } from './rarityColors'
 import type { ServerUser } from '../api'
 
 // Sahip olunan tahta/cerceve icin gevsek tip (App'ten gelir)
@@ -103,7 +103,6 @@ export default function ProfileOverview({
   onEdit,
   onLogout,
   onSelectBoard,
-  onSelectFrame,
   onClose,
   onRenew,
   onToggleAutoRenew,
@@ -369,6 +368,14 @@ export default function ProfileOverview({
             {t('ach.title')}
           </button>
           {/* Adreslerim sekmesi kaldırıldı -> kimlik kartı aksiyon satırına taşındı */}
+          {/* Bakiye: kozmetik sekmelerde (Tahta / Pul / Avatar) sekme şeridinin SAĞ ÜST köşesinde,
+              büyük ve net. Her üç ekranda tek yerden (içerikte tekrar gösterilmez). */}
+          {(tab === 'boards' || tab === 'checkers' || tab === 'frames') && (
+            <span className="prof-ov-balance" title="Bakiye">
+              <span className="prof-ov-balance-lbl">Bakiye</span>
+              <Coins amount={coins ?? 0} size={20} />
+            </span>
+          )}
         </div>
 
         {/* Adreslerim aktifken: sekme şeridi yerine geri dönüşlü başlık göster */}
@@ -385,37 +392,9 @@ export default function ProfileOverview({
 
         {tab === 'frames' && (
           <section className="prof-ov-col">
-            {ownedFrames.length === 0 && <p className="prof-ov-empty">{t('prof.noAvatars')}</p>}
-            {/* Sahip olunan avatarlar — Tavla Tasarımları ile AYNI yatay şerit düzeni */}
-            {ownedFrames.length > 0 && <h4 className="prof-ov-all-t">{t('prof.myCollection')}</h4>}
-            <div className="prof-ov-grid prof-ov-grid-board prof-ov-grid-frames">
-              {ownedFrames.map((f) => (
-                <button
-                  type="button"
-                  className={`prof-ov-item ${user.avatar_frame === f.id ? 'active' : ''}`}
-                  key={f.id}
-                  style={{ ['--rarity-color']: RARITY_COLORS[f.rarity] } as CSSProperties}
-                  onClick={() => onSelectFrame?.(f.id)}
-                  aria-pressed={user.avatar_frame === f.id}
-                  title={f.name}
-                >
-                  {user.avatar_frame === f.id && (
-                    <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
-                  )}
-                  <div className="prof-ov-item-frame">
-                    <AvatarFrame src={avatar} frame={f.id} size={50} name={fullName} animated />
-                  </div>
-                  <span className="prof-ov-item-name">{f.name}</span>
-                </button>
-              ))}
-            </div>
-            {/* TÜM avatar çerçeveleri (satın al / kuşan) — sahip olduklarının altında */}
-            {framesSlot && (
-              <div className="prof-ov-all">
-                <h4 className="prof-ov-all-t">{t('prof.allAvatars')}</h4>
-                {framesSlot}
-              </div>
-            )}
+            {/* TEK birleşik ekran: FrameShop (filtreler + durum rozetleri) hepsini gösterir.
+                Ayrı "Koleksiyonum" grid'i kaldırıldı -> "Sahip Olduklarım" filtresi aynısını yapar. */}
+            {framesSlot ?? <p className="prof-ov-empty">{t('prof.noAvatars')}</p>}
           </section>
         )}
 

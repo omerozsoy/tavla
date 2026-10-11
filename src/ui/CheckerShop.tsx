@@ -18,6 +18,10 @@ type CheckerSkinT = (typeof CHECKER_FINISHES)[number]
 // (en ucuz en ustte, en pahali Mitik/Karbon en altta).
 const CHECKER_GROUP_ORDER: CheckerRarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic']
 
+// Satistan kaldirilan pul tasarimlari: magaza ekraninda HIC gosterilmez (sahip olanlarin
+// oyun-ici gorunumu CHECKER_BY_ID'den korunur — veri silinmez, yalniz listeden cikar).
+const DISCONTINUED = new Set(['finish-wood', 'finish-mother-of-pearl', 'profile-tavlatv-emblem'])
+
 /**
  * PUL TASARIMLARI — Tavla Tasarımları ekranıyla AYNI dil: filtreler (Tümü/Sahip/Alınabilir) +
  * "X / Y sahipsin" + nadirlik grupları (en pahalı Karbon en üstte) + durum footer'lı kartlar.
@@ -64,7 +68,7 @@ export default function CheckerShop({
   }
 
   // Gosterilen: satista VEYA sahip olunan. Sayilar GERCEK veriden; "Varsayilan" (none) daima sahip (+1).
-  const shown = CHECKER_FINISHES.filter((s) => checkerOnSale(s.id) || owns(s.id))
+  const shown = CHECKER_FINISHES.filter((s) => !DISCONTINUED.has(s.id) && (checkerOnSale(s.id) || owns(s.id)))
   const total = shown.length + 1
   const ownedCount = shown.filter((s) => owns(s.id)).length + 1
   const buyableCount = shown.filter((s) => !owns(s.id)).length
@@ -141,10 +145,14 @@ export default function CheckerShop({
 
   const body = (
     <>
-      <div className="cshop-head">
-        <h2><Icon name="palette" size={20} /> Pul Tasarımları</h2>
-        <div className="cshop-bal">Bakiye <Coins amount={coins} size={16} /></div>
-      </div>
+      {/* Profil sekmesinde (embedded) bakiye sekme şeridinde gösterilir -> başlığı gizle.
+          Overlay (standalone) modda başlık + bakiye burada kalır. */}
+      {!embedded && (
+        <div className="cshop-head">
+          <h2><Icon name="palette" size={20} /> Pul Tasarımları</h2>
+          <div className="cshop-bal">Bakiye <Coins amount={coins} size={16} /></div>
+        </div>
+      )}
       <p className="cshop-sub">Bir malzeme veya yüzey modeli seç; renk seçmene gerek yok — seçtiğin yüzey, kullandığın tahtanın kendi pul renklerine otomatik uyar. Oyunda pulların bu modelle görünür.</p>
 
       <div className="bp-have-line">

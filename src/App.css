@@ -962,12 +962,14 @@ button[aria-disabled='true'],
 }
 
 /* ===== Tavla Tasarimlari: birlesik filtreli ekran (BoardPicker) ===== */
+/* Bosluk element MARGIN'leriyle verilir (gap degil) -> hem .bp-screen (board) hem
+   .frame-shop / CheckerShop body'sinde AYNI ferah aralik (yapisik yazi yok). */
 .bp-screen {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 .bp-have-line {
+  margin: 4px 0 12px;
   font-size: 0.9rem;
   color: var(--muted);
 }
@@ -980,6 +982,7 @@ button[aria-disabled='true'],
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin: 0 0 6px;
 }
 .bp-filter {
   display: inline-flex;
@@ -23128,6 +23131,24 @@ button.acct-row-logout:hover:not(:disabled) {
 .prof-ov-tabs > button.active {
   color: var(--accent-text);
   border-bottom-color: var(--accent);
+}
+/* Bakiye: sekme şeridinin SAĞ ucunda (kozmetik sekmeler), büyük ve net. */
+.prof-ov-balance {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px 6px 14px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.prof-ov-balance-lbl {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
 }
 .prof-ov-tabs > button.active .prof-ov-count {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
