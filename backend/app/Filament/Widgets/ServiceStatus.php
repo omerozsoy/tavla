@@ -29,7 +29,8 @@ class ServiceStatus extends Widget
     /** Blade'in okuduğu durum: tüm servislerin lambaları + otorite/PR/luck modu. */
     public function status(): array
     {
-        $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
+        try {
+            $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
             $client = app(GnuBgClient::class);
             $units = $client->unitNames();
             $vres = $this->checkValidators();
@@ -64,7 +65,24 @@ class ServiceStatus extends Widget
                 ],
                 'validator_required' => (bool) config('validator.required', true),
             ];
-        });
+            });
+        } catch (\Throwable $e) {
+            // Sağlık paneli, izlediği admin panelini ASLA 500'le düşürmemeli. Herhangi bir probe
+            // (validator/gnubg), DB, exec ya da render öncesi hata -> görünür kırmızı satıra degrade;
+            // gerçek mesajı panelde göster (log'a gerek kalmadan kök neden okunur).
+            $data = [
+                'services' => [[
+                    'key' => 'healthcheck',
+                    'name' => 'Servis Durumu (kendi kontrolü)',
+                    'configured' => true,
+                    'up' => false,
+                    'detail' => 'Sağlık kontrolü hata verdi: '.$e->getMessage(),
+                    'restart' => false,
+                    'group' => 'Altyapı',
+                ]],
+                'validator_required' => (bool) config('validator.required', true),
+            ];
+        }
 
         return [
             'services' => $data['services'],
