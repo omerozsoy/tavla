@@ -5876,7 +5876,13 @@ export default function App() {
         /* diğer geçici hatalar: sonraki tur yeniden dener */
       }
     }
-    const id = window.setInterval(() => void poll(), 1200) // poll(force) -> interval arg'ı force sanılmasın
+    // YEDEK POLL HIZI: push (Reverb WS) BAĞLIYKEN poll() throttle'ı (yukarıda, realtimeConnected +
+    // 2.5sn) zaten erken döner -> bu aralık sık dönse de GERÇEK fetch ~2.5sn'de bir olur (ek yük yok).
+    // Push BAĞLI DEĞİLKEN (nginx /app WS proxy bozuk / mobil kopuk) throttle devre dışı -> her tetik
+    // gerçek poll. 1200ms iken rakibin turu/zarı/saati ~1.2-2sn geç öğreniliyordu ("10'u göremeden 8
+    // oluyor"); 600ms'e çekince push-yoksa gecikme ~yarıya iner. Gerçek çözüm push (WS) ama bu, push
+    // kopukken bariz rahatlama. (Kök kalıcı çözüm: nginx location /app -> 127.0.0.1:8080 WS upgrade.)
+    const id = window.setInterval(() => void poll(), 600) // poll(force) -> interval arg'ı force sanılmasın
     poll()
     // GERÇEK-ZAMANLI PUSH (Faz 2): oda kanalına abone ol; 'room.updated' gelince ANINDA poll(true)
     // (tek yerde uygula -> desync yok). Bağlantı durumu değişince yedek-poll hızını ayarla. Dormant:
