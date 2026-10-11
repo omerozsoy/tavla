@@ -297,6 +297,38 @@ class UserResource extends Resource
                     ->action(fn (User $record, array $data) => \App\Support\AccountClosure::reopen(
                         $record, (int) auth()->id(), $data['reason']
                     )),
+                // KONUŞMA YASAĞI (sohbet susturma) — hesap yasağından BAĞIMSIZ: kullanıcı oynar ama
+                // oyun-içi + DM mesaj atamaz (ChatModeration::mutedSeconds chat_muted_until'e bakar).
+                // Otomatik küfür yasağıyla aynı kolonu yazar; admin daima muaf (mutedSeconds null döner).
+                Tables\Actions\Action::make('chatMute')
+                    ->label(fn (User $record) => $record->chat_muted_until && $record->chat_muted_until->isFuture()
+                        ? 'Konuşma Yasağı (aktif)' : 'Konuşma Yasağı')
+                    ->icon('heroicon-m-chat-bubble-left-ellipsis')
+                    ->color('warning')
+                    ->modalHeading('Konuşma Yasağı (sohbet susturma)')
+                    ->modalSubmitActionLabel('Uygula')
+                    ->form([
+                        Forms\Components\Placeholder::make('cur')->label('Mevcut durum')
+                            ->content(fn (User $record) => $record->chat_muted_until && $record->chat_muted_until->isFuture()
+                                ? 'Yasaklı: '.$record->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').'\'e kadar'
+                                : 'Yasaksız'),
+                        Forms\Components\Select::make('minutes')->label('Süre')->required()
+                            ->options([
+                                '1440' => '24 saat',
+                                '10080' => '1 hafta',
+                                '43200' => '1 ay',
+                                '525600' => '1 yıl',
+                                '0' => 'Yasağı kaldır',
+                            ])->default('1440'),
+                    ])
+                    ->action(function (User $record, array $data) {
+                        $min = (int) $data['minutes'];
+                        $record->chat_muted_until = $min > 0 ? now()->addMinutes($min) : null;
+                        $record->save();
+                        \Filament\Notifications\Notification::make()
+                            ->title($min > 0 ? 'Konuşma yasağı uygulandı' : 'Konuşma yasağı kaldırıldı')
+                            ->success()->send();
+                    }),
             ])
             ->bulkActions([
                 // ÇOKLU-SEÇİM SİLME: satır seçip toplu sil. Filament'in hazır DeleteBulkAction'ı
