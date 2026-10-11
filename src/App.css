@@ -16035,7 +16035,7 @@ button.acct-row-logout:hover:not(:disabled) {
   margin-top: 14px;
   padding: 16px;
   border-radius: var(--radius-lg);
-  background: var(--bg);
+  background: var(--card-bg); /* beyaz kart (eskiden krem --bg; kullanıcı: sonuç paneli beyaz zemin) */
   border: 1px solid var(--border);
 }
 .pa-win {
