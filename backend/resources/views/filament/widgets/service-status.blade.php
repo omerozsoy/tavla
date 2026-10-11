@@ -11,11 +11,11 @@
         @php($total = $s['total'])
         @php($okN = $s['okN'])
 
-        <div wire:poll.30s class="space-y-3 text-[13px]">
-            {{-- ÜST ÖZET: tek bakışta kaç servis ayakta + sorun sayısı --}}
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div wire:poll.30s class="space-y-2" style="font-size:12px">
+            {{-- ÜST ÖZET: tek satır — kaç ayakta + sorun + mod --}}
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span class="inline-flex items-center gap-1.5 font-semibold">
-                    <span style="display:inline-block;width:9px;height:9px;border-radius:9999px;background:{{ $down->isEmpty() ? '#16a34a' : '#dc2626' }}"></span>
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:{{ $down->isEmpty() ? '#16a34a' : '#dc2626' }}"></span>
                     {{ $okN }}/{{ $total }} ayakta
                 </span>
                 @if ($down->isNotEmpty())
@@ -25,11 +25,11 @@
                 <span class="text-gray-500">Otorite: <b>{{ $s['authoritative'] ? 'açık' : 'kapalı' }}</b></span>
             </div>
 
-            {{-- SORUNLAR (yalnız kırmızılar): detay burada görünür, hover gerektirmez --}}
+            {{-- SORUNLAR (yalnız kırmızılar): detay burada, hover gerektirmez --}}
             @if ($down->isNotEmpty())
-                <div class="rounded-lg border border-red-200 bg-red-50 p-2 dark:border-red-900/50 dark:bg-red-950/30">
+                <div class="rounded-md border border-red-200 bg-red-50 px-2 py-1 dark:border-red-900/50 dark:bg-red-950/30">
                     @foreach ($down as $svc)
-                        <div class="text-[12px] text-red-700 dark:text-red-300">
+                        <div class="text-red-700 dark:text-red-300" style="font-size:11px;line-height:1.35">
                             <b>{{ $svc['name'] }}</b>@if(!empty($svc['detail'])) — {{ $svc['detail'] }}@endif
                             @if ($svc['key'] === 'validator' && $svc['configured'] && $s['validator_required'])
                                 <span class="font-semibold">· Fail-closed: hamleler REDDEDİLİR!</span>
@@ -39,27 +39,27 @@
                 </div>
             @endif
 
-            {{-- GRUPLAR: kompakt çip ızgarası (her servis = küçük lamba + ad + ✓/✕/—) --}}
+            {{-- GRUPLAR: ultra-kompakt auto-fill ızgara (genişliğe göre otomatik sütun) —
+                 her servis = 7px lamba + ad; durum RENKTEN okunur (✓/✕ kaldırıldı); detay hover'da. --}}
             @foreach ($groups as $gname => $items)
                 <div>
-                    <div class="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{{ $gname }}</div>
-                    <div class="grid grid-cols-1 gap-1 sm:grid-cols-2 xl:grid-cols-3">
+                    <div class="font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500" style="font-size:9px;margin-bottom:2px">{{ $gname }}</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:3px">
                         @foreach ($items as $svc)
                             @php($color = $svc['up'] === true ? '#16a34a' : ($svc['up'] === false ? '#dc2626' : '#9ca3af'))
-                            @php($sym = $svc['up'] === true ? '✓' : ($svc['up'] === false ? '✕' : '—'))
-                            <div class="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50/60 px-2 py-1 dark:border-gray-800 dark:bg-white/5"
+                            <div class="flex items-center gap-1.5 rounded border border-gray-200 bg-gray-50/60 dark:border-gray-800 dark:bg-white/5"
+                                 style="padding:1px 6px;min-width:0"
                                  title="{{ $svc['name'] }}@if(!empty($svc['detail'])) — {{ $svc['detail'] }}@endif">
-                                <span style="display:inline-block;width:8px;height:8px;flex:none;border-radius:9999px;background:{{ $color }}"></span>
-                                <span class="truncate font-medium text-gray-700 dark:text-gray-200">{{ $svc['name'] }}</span>
-                                <span class="ml-auto shrink-0 font-bold" style="color:{{ $color }}">{{ $sym }}</span>
+                                <span style="display:inline-block;width:7px;height:7px;flex:none;border-radius:9999px;background:{{ $color }}"></span>
+                                <span class="truncate text-gray-700 dark:text-gray-200" style="font-size:11px">{{ $svc['name'] }}</span>
                                 @if (! empty($svc['restart']))
                                     <button type="button"
-                                            class="shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                                            class="ml-auto shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                                             wire:click="restartService('{{ $svc['key'] }}')"
                                             wire:confirm="{{ $svc['name'] }} yeniden başlatılsın mı?"
                                             wire:loading.attr="disabled"
                                             title="Yeniden Başlat">
-                                        <x-filament::icon icon="heroicon-m-arrow-path" class="h-3.5 w-3.5" />
+                                        <x-filament::icon icon="heroicon-m-arrow-path" class="h-3 w-3" />
                                     </button>
                                 @endif
                             </div>
