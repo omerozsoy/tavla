@@ -951,6 +951,107 @@ button[aria-disabled='true'],
   opacity: 1;
 }
 
+/* ===== Tavla Tasarimlari: birlesik filtreli ekran (BoardPicker) ===== */
+.bp-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bp-have-line {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.bp-have-line strong {
+  color: var(--text);
+  font-weight: 600;
+}
+/* Filtre cubugu: mobilde ALT SATIRA sarar -> yatay tasma/ kaydirma YOK. */
+.bp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bp-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--border);
+  background: var(--card-bg, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.bp-filter:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.bp-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast, #fff);
+}
+.bp-filter-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  color: inherit;
+}
+.bp-filter.active .bp-filter-n {
+  background: rgba(255, 255, 255, 0.26);
+}
+.bp-empty {
+  padding: 30px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+/* Kart alt aksiyon alani (Kullan / Satin Al / Kullaniliyor) */
+.bp-foot {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.bp-foot .bp-act {
+  width: 100%;
+  height: 34px; /* kart ici: global 42px bilincli ezilir (bkz. .pp-addfriend) */
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+}
+.bp-have-tag {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-success, #1a7f37);
+}
+.bp-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 34px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+/* Kart artik <div> (tum-kart tiklamasi yerine footer buton) -> imlec normal. */
+.board-prev {
+  cursor: default;
+}
+
 /* ===== Avatar cerceve galerisi (showcase) ===== */
 .frame-gallery-card {
   max-width: 1000px;
@@ -16158,6 +16259,14 @@ button.acct-row-logout:hover:not(:disabled) {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+}
+/* Yetkili (yönetici + destek) ismi: GECE MODU krem (#F4EFE6), AÇIK MOD kiremit (#A83A2B).
+   Kaynak PlayerIdentity .role-name sınıfı -> site genelinde tek yerden. */
+.player-id-name-text.role-name {
+  color: #F4EFE6;
+}
+:root[data-theme='light'] .player-id-name-text.role-name {
+  color: #A83A2B;
 }
 .player-id-name-flag {
   flex: 0 0 auto;

@@ -421,60 +421,19 @@ export default function ProfileOverview({
 
         {tab === 'boards' && (
           <section className="prof-ov-col">
-            {ownedBoards.length > 0 && <h4 className="prof-ov-all-t">{t('prof.myCollection')}</h4>}
-            <div className="prof-ov-grid prof-ov-grid-board">
-              {ownedBoards.map((b) => (
-                <button
-                  type="button"
-                  className={`prof-ov-item ${boardTheme === b.id ? 'active' : ''}`}
-                  key={b.id}
-                  style={boardVars(b)}
-                  onClick={() => onSelectBoard?.(b.id)}
-                  aria-pressed={boardTheme === b.id}
-                  title={b.name}
-                >
-                  {boardTheme === b.id && (
-                    <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
-                  )}
-                  <div className="prof-ov-item-board">
-                    <SetupBoard
-                      panel={b.panel ?? b.b}
-                      a={b.a}
-                      b={b.b}
-                      checker={b.checker ?? b.b}
-                      cream={b.light}
-                      pointStyle={b.pointStyle}
-                      surface={b.surface}
-                      checkerStyle={b.checkerStyle}
-                      pointImgA={b.pointImgA}
-                      pointImgB={b.pointImgB}
-                      pointFitA={b.pointFitA}
-                      pointFitB={b.pointFitB}
-                      pointImgs={b.pointImgs}
-                      pointFits={b.pointFits}
-                      surfaceImgLeft={b.surfaceImgLeft}
-                      surfaceImgRight={b.surfaceImgRight}
-                      surfaceOpacity={b.surfaceOpacity}
-                      pointTexts={b.pointTexts}
-                      themeId={b.id}
-                    />
-                  </div>
-                  <span className="prof-ov-item-name">{b.name}</span>
-                </button>
-              ))}
-            </div>
-            {/* TÜM tahta tasarımları (satın al / kuşan) — sahip olduklarının altında */}
-            {allBoards && allBoards.length > 0 && onSelectBoard && (
-              <div className="prof-ov-all">
-                <h4 className="prof-ov-all-t">{t('prof.allBoards')}</h4>
-                <BoardPicker
-                  boardTheme={boardTheme}
-                  setBoardTheme={onSelectBoard}
-                  boardThemes={allBoards}
-                  coins={coins ?? 0}
-                  onBuy={onBuyItem}
-                />
-              </div>
+            {/* TEK birleşik ekran: filtreli (Tümü / Sahip Olduklarım / Alınabilir) tasarım listesi.
+                Eski "Koleksiyonum" + "Tüm tasarımlar" ikiye bölünmesi (aynı tahtaları iki kez
+                listeliyordu) kaldırıldı -> BoardPicker filtre + durum rozetleriyle hepsini gösterir. */}
+            {allBoards && allBoards.length > 0 && onSelectBoard ? (
+              <BoardPicker
+                boardTheme={boardTheme}
+                setBoardTheme={onSelectBoard}
+                boardThemes={allBoards}
+                coins={coins ?? 0}
+                onBuy={onBuyItem}
+              />
+            ) : (
+              <p className="prof-ov-empty">Tasarım bulunamadı.</p>
             )}
           </section>
         )}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CHECKER_FINISHES } from './checkers'
+import { checkerSvgUri } from './ui/checkerRaster'
 import { buildCheckerSvg } from './ui/checkerSvg'
 
 describe('pul malzemeleri', () => {
@@ -22,5 +23,15 @@ describe('pul malzemeleri', () => {
       expect(svgs[i]).not.toBe(alternateColorSvgs[i])
       expect(svgs[i]).toContain('viewBox="0 0 120 120"')
     }
+  })
+
+  it('aynı açık/koyu profil assetini paylaşır, profiller birbirine karışmaz', () => {
+    const dark = checkerSvgUri('ceramic', '#263b36', 'classic-ring')
+    const darkAgain = checkerSvgUri('ceramic', '#263b36', 'classic-ring')
+    const light = checkerSvgUri('ceramic', '#ece8dc', 'classic-ring')
+    const otherProfile = checkerSvgUri('ceramic', '#263b36', 'flat-matte')
+    expect(darkAgain).toBe(dark)
+    expect(light).not.toBe(dark)
+    expect(otherProfile).not.toBe(dark)
   })
 })

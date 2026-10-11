@@ -1,8 +1,8 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
+import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 import { RARITY_COLORS } from './rarityColors'
 import BuyConfirm from './BuyConfirm'
@@ -36,8 +36,8 @@ export interface BoardThemeOpt {
   pointTexts?: Record<number, string>
 }
 
-// Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
-const RARITY_ORDER: Rarity[] = ['common', 'club', 'country', 'rare', 'epic', 'legendary', 'mythic', 'tavlatv']
+// Nadirlik -> kart kenar rengi (gruplar kaldırıldı; artık durum-bazlı tek ızgara, ama her
+// kartın kenarı kendi nadirlik renginde kalır — görsel dil korunur).
 const RARITY_COLOR: Record<Rarity, string> = RARITY_COLORS
 
 interface Props {
@@ -96,11 +96,22 @@ function HoverPreview({ bt, rect }: { bt: BoardThemeOpt; rect: DOMRect }) {
 
 // Tahta rengi secici — nadirlik gruplari + buyuk onizlemeler. Hem Magaza (Tahta Rengi
 // sekmesi) hem baska yerlerde tekrar kullanilir.
+type Filter = 'all' | 'owned' | 'buyable'
+
+// Tek bir tasarimin durumu. Ucretsiz/varsayilan (fiyatsiz) -> sahip; fiyatli & sahip degil ->
+// alinabilir; fiyatsiz & sahip degil -> ozel sartla acilan (satin alinamaz). Sahiplik SUNUCUDAN
+// gelen owned/unlocks'a dayanir (bt.owned); burada yalniz gosterim.
+function statusOf(bt: BoardThemeOpt): { owned: boolean; buyable: boolean } {
+  const owned = bt.owned !== false && bt.price == null ? true : !!bt.owned
+  const buyable = !owned && bt.price != null
+  return { owned, buyable }
+}
+
 export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, coins = 0, onBuy }: Props) {
-  const { t } = useT()
   // Satin alma ONAY adimi: yanlis tiklamayla coin gitmesin diye once onay iste.
   const [pending, setPending] = useState<BoardThemeOpt | null>(null)
   const [hover, setHover] = useState<{ bt: BoardThemeOpt; rect: DOMRect } | null>(null)
+  const [filter, setFilter] = useState<Filter>('all')
   // Kaydirmada konum bayatlar -> onizlemeyi kapat.
   useEffect(() => {
     if (!hover) return
@@ -112,85 +123,136 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
       window.removeEventListener('resize', off)
     }
   }, [hover])
+
+  // Sayilar GERCEK veriden (sabit yok). Katalog sirasi (boardThemes dizisi) index ile korunur.
+  const items = boardThemes.map((bt, i) => ({ bt, i, ...statusOf(bt) }))
+  const total = items.length
+  const ownedCount = items.filter((x) => x.owned).length
+  const buyableCount = items.filter((x) => x.buyable).length
+
+  // Siralama: kullanilan (aktif) en basta -> sahip olunanlar -> digerleri (alinabilir/ozel).
+  // Ayni bant icinde katalog sirasi (i) korunur.
+  const rank = (x: (typeof items)[number]) => (x.bt.id === boardTheme ? 0 : x.owned ? 1 : 2)
+  const shown = items
+    .filter((x) => (filter === 'owned' ? x.owned : filter === 'buyable' ? x.buyable : true))
+    .sort((a, b) => rank(a) - rank(b) || a.i - b.i)
+
+  const emptyMsg =
+    filter === 'owned'
+      ? 'Henüz bir tasarıma sahip değilsin.'
+      : filter === 'buyable'
+        ? 'Şu an alınabilir tasarım yok — hepsi sende!'
+        : 'Tasarım bulunamadı.'
+
+  const filters: Array<[Filter, string, number]> = [
+    ['all', 'Tümü', total],
+    ['owned', 'Sahip Olduklarım', ownedCount],
+    ['buyable', 'Alınabilir', buyableCount],
+  ]
+
   return (
-    <div className="setup-row">
-      <div className="setup-label">{t('menu.board')}</div>
-      {RARITY_ORDER.map((tier) => {
-        const items = boardThemes.filter((bt) => (bt.rarity ?? 'common') === tier)
-        if (items.length === 0) return null
-        return (
-          <div className="rarity-group" key={tier}>
-            <div
-              className={`rarity-title rarity-${tier}`}
-              style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
-            >
-              <span className="rarity-dot" /> {t('rarity.' + tier)}
-              <span className="rarity-count">{items.length}</span>
-            </div>
-            <div className="board-previews board-previews-lg">
-              {items.map((bt) => {
-                const owned = bt.owned !== false && bt.price == null ? true : !!bt.owned
-                const price = bt.price
-                const buyable = !owned && price != null
-                const affordable = buyable && coins >= price
-                return (
-                  <button
-                    key={bt.id}
-                    type="button"
-                    className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${buyable ? 'locked' : ''}`}
-                    style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
-                    disabled={buyable && !affordable}
-                    title={buyable ? `${bt.name} — ${price} coin` : bt.name}
-                    onClick={() =>
-                      owned ? setBoardTheme(bt.id) : affordable ? setPending(bt) : undefined
-                    }
-                    onMouseEnter={(e) => {
-                      if (canHoverPreview()) setHover({ bt, rect: e.currentTarget.getBoundingClientRect() })
-                    }}
-                    onMouseLeave={() => setHover(null)}
-                  >
-                    <SetupBoard
-                      panel={bt.panel ?? bt.b}
-                      a={bt.a}
-                      b={bt.b}
-                      checker={bt.checker ?? bt.b}
-                      cream={bt.light}
-                      pointStyle={bt.pointStyle}
-                      surface={bt.surface}
-                      checkerStyle={bt.checkerStyle}
-                      pointImgA={bt.pointImgA}
-                      pointImgB={bt.pointImgB}
-                      pointFitA={bt.pointFitA}
-                      pointFitB={bt.pointFitB}
-                      pointImgs={bt.pointImgs}
-                      pointFits={bt.pointFits}
-                      surfaceImgLeft={bt.surfaceImgLeft}
-                      surfaceImgRight={bt.surfaceImgRight}
-                      surfaceOpacity={bt.surfaceOpacity}
-                      pointTexts={bt.pointTexts}
-                      themeId={bt.id}
-                    />
-                    {boardTheme === bt.id && (
-                      <span className="bp-selected">
-                        <Icon name="check" size={12} /> {t('shop.selected')}
-                      </span>
-                    )}
-                    <span className="bp-name">
-                      {bt.flag && <span className="bp-flag" aria-hidden="true">{bt.flag}</span>}
-                      {bt.name}
+    <div className="bp-screen">
+      <div className="bp-have-line">
+        <strong>{ownedCount}</strong> / {total} tasarıma sahipsin
+      </div>
+      <div className="bp-filters" role="tablist" aria-label="Tasarım filtreleri">
+        {filters.map(([key, label, n]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={filter === key}
+            className={`bp-filter ${filter === key ? 'active' : ''}`}
+            onClick={() => setFilter(key)}
+          >
+            {label} <span className="bp-filter-n">{n}</span>
+          </button>
+        ))}
+      </div>
+
+      {shown.length === 0 ? (
+        <div className="bp-empty">{emptyMsg}</div>
+      ) : (
+        <div className="board-previews board-previews-lg">
+          {shown.map(({ bt, owned, buyable }) => {
+            const active = boardTheme === bt.id
+            const price = bt.price
+            const affordable = buyable && price != null && coins >= price
+            const color = RARITY_COLOR[bt.rarity ?? 'common']
+            return (
+              <div
+                key={bt.id}
+                className={`board-prev ${active ? 'active' : ''} ${buyable ? 'locked' : ''}`}
+                style={{ ['--rarity-color']: color } as CSSProperties}
+                title={bt.name}
+                onMouseEnter={(e) => {
+                  if (canHoverPreview()) setHover({ bt, rect: e.currentTarget.getBoundingClientRect() })
+                }}
+                onMouseLeave={() => setHover(null)}
+              >
+                <SetupBoard
+                  panel={bt.panel ?? bt.b}
+                  a={bt.a}
+                  b={bt.b}
+                  checker={bt.checker ?? bt.b}
+                  cream={bt.light}
+                  pointStyle={bt.pointStyle}
+                  surface={bt.surface}
+                  checkerStyle={bt.checkerStyle}
+                  pointImgA={bt.pointImgA}
+                  pointImgB={bt.pointImgB}
+                  pointFitA={bt.pointFitA}
+                  pointFitB={bt.pointFitB}
+                  pointImgs={bt.pointImgs}
+                  pointFits={bt.pointFits}
+                  surfaceImgLeft={bt.surfaceImgLeft}
+                  surfaceImgRight={bt.surfaceImgRight}
+                  surfaceOpacity={bt.surfaceOpacity}
+                  pointTexts={bt.pointTexts}
+                  themeId={bt.id}
+                />
+                <span className="bp-name">
+                  {bt.flag && <span className="bp-flag" aria-hidden="true">{bt.flag}</span>}
+                  {bt.name}
+                </span>
+                {buyable && price != null && (
+                  <span className="bp-price">
+                    <Coins amount={price} size={12} />
+                  </span>
+                )}
+                <div className="bp-foot">
+                  {active ? (
+                    <Button variant="secondary" className="bp-act" disabled>
+                      <Icon name="check" size={14} /> Kullanılıyor
+                    </Button>
+                  ) : owned ? (
+                    <>
+                      <span className="bp-have-tag">Sende var</span>
+                      <Button variant="default" className="bp-act" onClick={() => setBoardTheme(bt.id)}>
+                        Kullan
+                      </Button>
+                    </>
+                  ) : buyable ? (
+                    <Button
+                      variant="outline"
+                      className="bp-act"
+                      disabled={!affordable}
+                      onClick={() => setPending(bt)}
+                    >
+                      Satın Al
+                    </Button>
+                  ) : (
+                    <span className="bp-lock">
+                      <Icon name="lock" size={13} /> Özel tasarım
                     </span>
-                    {buyable && (
-                      <span className="bp-price">
-                        <Coins amount={price} size={12} />
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {hover && !pending && <HoverPreview bt={hover.bt} rect={hover.rect} />}
       {pending && pending.price != null && (
         <BuyConfirm

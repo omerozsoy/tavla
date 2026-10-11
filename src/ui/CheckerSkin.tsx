@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { checkerPngUri, checkerSvgUri, rasterizeChecker } from './checkerRaster'
 import type { CheckerSkin as Skin } from '../checkers'
 
@@ -15,7 +15,7 @@ import type { CheckerSkin as Skin } from '../checkers'
  * ADAPTIVE FINISH (skin.adaptive): renk sabit değil; pul kendi kabından AKTİF TAHTANIN pul rengini
  * (--cream=açık, --navy=koyu; swap + tema otomatik) canlı okur ve o renge dokusunu uygular.
  */
-export default function CheckerSkin({
+function CheckerSkin({
   skin,
   tone,
   size = 44,
@@ -37,7 +37,8 @@ export default function CheckerSkin({
     const v = getComputedStyle(ref.current)
       .getPropertyValue(tone === 'light' ? '--cream' : '--navy')
       .trim()
-    setColor(v || fallback)
+    const next = v || fallback
+    setColor((current) => (current === next ? current : next))
   })
 
   // Görsel kaynağı: hazır PNG varsa onu, yoksa anında SVG data-uri; arka planda PNG'ye yükselt.
@@ -76,3 +77,8 @@ export default function CheckerSkin({
     </span>
   )
 }
+
+// Board hareketlerinde pulun konumu/stack'i değişse de aynı yüzey asset'i tekrar çizilmesin.
+// Her renk/profil için checkerRaster tek PNG üretir; burada da aynı skin/tone/size props'ları
+// ile gelen pullar React seviyesinde memo'lanır.
+export default memo(CheckerSkin)

@@ -63,10 +63,11 @@ export default function PlayerIdentity({
   // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)
   // veya kırmızı (offline) nokta. İlk fetch tamamlanana kadar (known=false) çizilmez.
   const { online, known } = useOnline(userId)
-  // Yönetici ismi TÜM sitede kiremit (#A83A2B) yazılır (rol kalkanıyla aynı kaynak: useRole).
-  // admin prop'u verilmişse onu, yoksa context'teki rolü kullan.
+  // Yönetici + Destek ismi site geneli .role-name sınıfıyla boyanır (gece modu krem #F4EFE6,
+  // açık mod kiremit #A83A2B — bkz App.css). admin/support prop verilmişse onu, yoksa context rolü.
   const ctxRole = useRole(userId)
   const isAdmin = admin || ctxRole.admin
+  const isSupport = support || ctxRole.support
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
       <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
@@ -90,7 +91,7 @@ export default function PlayerIdentity({
           {/* Rol kalkanı (Yönetici kiremit / Destek şeftali) ismin BAŞINDA + bir tık büyük.
               Veri site geneli RolesProvider'dan (userId); prop override da kabul eder. */}
           <RoleBadge userId={userId} admin={admin || undefined} support={support || undefined} size={21} className="player-id-role" style={{ marginRight: 4 }} />
-          <span className="player-id-name-text" style={isAdmin ? { color: '#A83A2B' } : undefined}>{name}</span>
+          <span className={`player-id-name-text${isAdmin || isSupport ? ' role-name' : ''}`}>{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
           {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}

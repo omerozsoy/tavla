@@ -16,6 +16,8 @@ const FIXED_SEED = 7 // (aile+renk) başına deterministik tek doku — pul-baş
 
 const svgCache = new Map<string, string>() // key -> svg data-uri (senkron, anında)
 const pngCache = new Map<string, string>() // key -> png data-uri (async, raster sonrası)
+// Aynı anda mount olan 15 koyu / 15 açık pul aynı Promise'i paylaşır: bir profil için
+// en fazla bir koyu ve bir açık Image+canvas rasterizasyonu yapılır.
 const pending = new Map<string, Promise<string>>()
 
 function key(family: CheckerFamily, color: string, profile?: CheckerProfile): string {
