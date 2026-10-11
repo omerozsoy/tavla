@@ -1790,6 +1790,12 @@ class _ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     # gnubg'ye erişim _GNUBG_LOCK ile serileşir (yarış yok). daemon_threads: kapanışta askıda
     # kalan thread süreç çıkışını engellemesin. (ThreadingHTTPServer eski Python'da yok -> mixin.)
     daemon_threads = True
+    # ACCEPT-BACKLOG (2026-10-11 SAHTE "düştü" KÖK ÇÖZÜM): PR analizi Http::pool ile tek maçta
+    # ~35 eş-zamanlı /analyze açar (peak_inflight=35 ölçüldü). Native gnubg çağrısı GIL'i tutarken
+    # accept thread aç kalır -> varsayılan backlog=5 patlamada dolar -> o an gelen services:watch
+    # /health probe'u ECONNREFUSED/timeout -> sahte alarm. Backlog'u büyüt: patlama REDDEDİLMEZ,
+    # kuyruğa girer; accept thread GIL'i alır almaz hızla boşaltır (/health kilitsiz -> anında döner).
+    request_queue_size = 256
 
 
 def main():

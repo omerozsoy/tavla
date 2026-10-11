@@ -163,8 +163,14 @@ $PHP artisan seo:sitemap || echo "UYARI: seo:sitemap atlandi."
 # gnubg_service.py'yi senkronla + servisi restart et; yoksa SESSIZCE gecip elle komutu yaz.
 # (cwd = backend/ -> repo koku = ..)
 if [ -f ../gnubg-service/gnubg_service.py ]; then
-  sudo -n cp ../gnubg-service/gnubg_service.py /opt/gnubg-service/gnubg_service.py 2>/dev/null \
-    && echo "gnubg: gnubg_service.py /opt/gnubg-service'e senkronlandi."
+  # SESSIZ ATLAMA TUZAGI (2026-10-11): cp basarisiz olursa eskiden HICBIR SEY basilmazdi -> fix
+  # commit'lenir ama /opt'a GITMEZ, duz restart ESKI kodu yukler ("canlida yok" karmasasi). Artik
+  # basarisizlik SESLI: elle komutu bas ki gozden kacmasin.
+  if sudo -n cp ../gnubg-service/gnubg_service.py /opt/gnubg-service/gnubg_service.py 2>/dev/null; then
+    echo "gnubg: gnubg_service.py /opt/gnubg-service'e senkronlandi."
+  else
+    echo "UYARI: gnubg_service.py SENKRONLANAMADI (sudo -n yok?) -> ELLE: sudo cp $(pwd)/../gnubg-service/gnubg_service.py /opt/gnubg-service/gnubg_service.py && sudo systemctl restart 'gnubg-analysis*'"
+  fi
   if sudo -n systemctl restart gnubg-analysis.service 2>/dev/null; then
     echo "gnubg: gnubg-analysis servisi yeniden baslatildi."
   else

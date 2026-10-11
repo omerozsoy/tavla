@@ -286,35 +286,44 @@ class GnuBgClient
         $secret = (string) config('gnubg.secret');
         $timeout = (int) config('gnubg.timeout', 20);
 
-        // Tüm istekleri AYNI ANDA aç (curl_multi); her biri round-robin bir instance'a gider.
-        $responses = Http::pool(function ($pool) use ($positions, $bg, $n, $secret, $timeout) {
-            $i = 0;
-            foreach ($positions as $k => $p) {
-                $base = rtrim($bg[$i % $n], '/');
-                $i++;
-                $pool->as((string) $k)
-                    ->timeout($timeout)
-                    ->withHeaders(['x-gnubg-secret' => $secret])
-                    ->acceptJson()
-                    ->post($base.'/analyze', $p);
-            }
-        });
-
+        // EŞZAMANLILIK PENCERESİ (2026-10-11 SAHTE "düştü" KÖK ÇÖZÜM): eskiden TÜM pozisyonlar (~60)
+        // tek curl_multi ile aynı anda açılıyordu -> round-robin bir instance'a ~35 eş-zamanlı bağlantı
+        // yığıp (peak_inflight=35) TCP accept-backlog'unu doldurdu -> o an gelen services:watch /health
+        // probe'u bağlanamayıp SAHTE alarm verdi. Her gnubg zaten işi tek main-thread'de SERİLEŞTİRİR
+        // (ana-thread marshaling) -> aynı anda 35 açmak hız KAZANDIRMAZ, sadece accept'i tıkar. Pencere:
+        // instance başına en çok ~4 eş-zamanlı -> instance hep meşgul, accept asla tıkanmaz. Throughput
+        // instance-bağımlı olduğundan DEĞİŞMEZ (toplam tur ≈ N_pozisyon / N_instance). PR matematiği aynı.
+        $window = max(1, $n) * 4;
         $out = [];
         $failed = [];
-        foreach ($positions as $k => $p) {
-            $resp = $responses[(string) $k] ?? null;
-            try {
-                if ($resp instanceof \Illuminate\Http\Client\Response && $resp->ok()) {
-                    $out[$k] = $resp->json();
-
-                    continue;
+        foreach (array_chunk($positions, $window, true) as $chunk) {
+            // Her pencereyi AYNI ANDA aç; round-robin instance'lara dağıt. Sonraki pencere bu bitince.
+            $responses = Http::pool(function ($pool) use ($chunk, $bg, $n, $secret, $timeout) {
+                $i = 0;
+                foreach ($chunk as $k => $p) {
+                    $base = rtrim($bg[$i % $n], '/');
+                    $i++;
+                    $pool->as((string) $k)
+                        ->timeout($timeout)
+                        ->withHeaders(['x-gnubg-secret' => $secret])
+                        ->acceptJson()
+                        ->post($base.'/analyze', $p);
                 }
-            } catch (\Throwable $e) {
-                // düş -> failover
+            });
+            foreach ($chunk as $k => $p) {
+                $resp = $responses[(string) $k] ?? null;
+                try {
+                    if ($resp instanceof \Illuminate\Http\Client\Response && $resp->ok()) {
+                        $out[$k] = $resp->json();
+
+                        continue;
+                    }
+                } catch (\Throwable $e) {
+                    // düş -> failover
+                }
+                $out[$k] = null;
+                $failed[$k] = $p; // havuz denemesi başarısız -> sıralı failover ile telafi
             }
-            $out[$k] = null;
-            $failed[$k] = $p; // havuz denemesi başarısız -> sıralı failover ile telafi
         }
         if ($failed !== []) {
             Log::warning('gnubg batch: '.count($failed).'/'.count($positions).' pozisyon havuzda basarisiz, sirali failover');

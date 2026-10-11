@@ -112,22 +112,48 @@ class ServicesWatch extends Command
             'up' => "🟢 Veritabanı tekrar erişilebilir.",
         ];
 
+        // DE-FLAP (2026-10-11 SAHTE "düştü" KÖK ÇÖZÜM): TEK bir geçici probe ıskası ALARM VERMEZ.
+        // gnubg instance'ı PR patlamasında (peak_inflight=35) meşgulken 5sn'lik /health probe'u bir tur
+        // ıskalayabilir (accept-backlog); süreç sağlamdır. Üst üste 2 tur (≈2 dk) down ise GERÇEK düşüş
+        // say -> ancak o zaman restart + alarm. Ayrıca restart'ı da 2. ıskaya ERTELE: sağlam-ama-meşgul
+        // instance ilk ıskada gereksiz yeniden başlatılıp uçuştaki PR analizini kesmesin.
+        $threshold = (int) env('SERVICES_WATCH_FAIL_STRIKES', 2);
         foreach ($services as $svc) {
+            $failKey = 'svcwatch:fails:'.$svc['key'];
             $up = (bool) $svc['probe']();
             $recovered = false;
-            if (! $up && ! empty($svc['recover'])) {
-                try {
-                    if ($svc['recover']()) {
-                        $recovered = true;
-                        sleep(3); // canlanması için kısa bekleme
-                        $up = (bool) $svc['probe']();
+
+            if ($up) {
+                Cache::forget($failKey);
+                $result = Alert::transition($svc['key'], false, '', $svc['up']);
+            } else {
+                $fails = (int) Cache::get($failKey, 0) + 1;
+                Cache::put($failKey, $fails, 3600);
+                if ($fails < $threshold) {
+                    // İlk ıska(lar): geçici olabilir -> bekle, restart YOK, alarm YOK, state DEĞİŞMEZ.
+                    $result = "flap-hold ({$fails}/{$threshold})";
+                } else {
+                    // Eşik aşıldı: GERÇEK düşüş. Restart dene -> yeniden ölç -> hâlâ down ise alarm.
+                    if (! empty($svc['recover'])) {
+                        try {
+                            if ($svc['recover']()) {
+                                $recovered = true;
+                                sleep(3); // canlanması için kısa bekleme
+                                $up = (bool) $svc['probe']();
+                            }
+                        } catch (\Throwable $e) {
+                            // recover patlarsa yok say -> uyarı yine gider
+                        }
                     }
-                } catch (\Throwable $e) {
-                    // recover patlarsa yok say -> uyarı yine gider
+                    if ($up) {
+                        Cache::forget($failKey);
+                        $result = Alert::transition($svc['key'], false, '', $svc['up']);
+                    } else {
+                        $downMsg = $svc['down'].($recovered ? "\n(Otomatik yeniden başlatma denendi, düzelmedi.)" : '');
+                        $result = Alert::transition($svc['key'], true, $downMsg, $svc['up']);
+                    }
                 }
             }
-            $downMsg = $svc['down'].($recovered && ! $up ? "\n(Otomatik yeniden başlatma denendi, düzelmedi.)" : '');
-            $result = Alert::transition($svc['key'], ! $up, $downMsg, $svc['up']);
 
             $tag = $up ? '<info>UP</info>' : '<error>DOWN</error>';
             $this->line(sprintf('%-26s %s  [%s]', $svc['name'], strip_tags($tag), $result));
