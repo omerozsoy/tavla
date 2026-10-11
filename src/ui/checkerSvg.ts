@@ -42,7 +42,7 @@ function seedFrom(id: string, seed?: number): number {
   return h % 90
 }
 
-// Aile-bağımsız ortak parçalar (kubbe/rim/gloss/speküler) + aileye özel FINISH katmanı.
+// Aile-bağımsız ortak parçalar (rim/derinlik) + aileye özel FINISH katmanı.
 export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): string {
   const s = seedFrom(id, seed)
   const s2 = (s + 37) % 97
@@ -161,6 +161,68 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
       <circle cx="60" cy="60" r="54" fill="url(#${P}-caustic)" style="mix-blend-mode:screen"/>
       <circle cx="60" cy="60" r="54" fill="url(#${P}-glass)"/>
       ${topSheen}`
+  } else if (family === 'wood') {
+    // Ahşap: ince, yönlü damarlar; tahta yüzeyiyle karışmaması için kontrast düşük tutulur.
+    const grainLight = shade(color, 0.42)
+    const grainDark = shade(color, -0.42)
+    defs = `
+      <filter id="${P}-wg" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.025 0.18" numOctaves="3" seed="${s}" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 ${hexToRgb(grainLight)[0] / 255}  0 0 0 0 ${hexToRgb(grainLight)[1] / 255}  0 0 0 0 ${hexToRgb(grainLight)[2] / 255}  0.8 0 0 0 -0.35"/>
+        <feGaussianBlur stdDeviation="0.35"/>
+      </filter>`
+    finish = `
+      <rect x="6" y="6" width="108" height="108" filter="url(#${P}-wg)" opacity="0.38" style="mix-blend-mode:screen"/>
+      <path d="M13 42 C35 34 42 50 61 43 S89 33 108 42 M10 72 C34 64 45 79 66 70 S93 62 111 72 M20 94 C42 86 60 101 82 92 S98 86 108 91" fill="none" stroke="${grainDark}" stroke-opacity="0.26" stroke-width="1.1"/>
+      ${topSheen}`
+  } else if (family === 'ceramic') {
+    // Seramik: mat ve düzgün yüzey, yalnızca yumuşak kenar ışığı.
+    defs = `
+      <radialGradient id="${P}-matte" cx="35%" cy="28%" r="82%">
+        <stop offset="0%" stop-color="${shade(color, 0.28)}"/>
+        <stop offset="62%" stop-color="${color}"/>
+        <stop offset="100%" stop-color="${shade(color, -0.28)}"/>
+      </radialGradient>`
+    finish = `<circle cx="60" cy="60" r="54" fill="url(#${P}-matte)"/><ellipse cx="42" cy="35" rx="18" ry="9" fill="#fff" opacity="0.13"/>`
+  } else if (family === 'brushed-metal') {
+    // Fırçalanmış metal: düzenli yatay çizgiler ve dar, kontrollü yansıma.
+    defs = `
+      <pattern id="${P}-brush" width="7" height="7" patternUnits="userSpaceOnUse">
+        <path d="M0 1.1H7 M0 4.4H7" stroke="${shade(color, 0.55)}" stroke-opacity="0.22" stroke-width="0.7"/>
+        <path d="M0 2.4H7 M0 6H7" stroke="${shade(color, -0.55)}" stroke-opacity="0.2" stroke-width="0.45"/>
+      </pattern>
+      <linearGradient id="${P}-metal-sheen" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0"/><stop offset="46%" stop-color="#fff" stop-opacity="0.08"/><stop offset="53%" stop-color="#fff" stop-opacity="0.5"/><stop offset="62%" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>`
+    finish = `<circle cx="60" cy="60" r="54" fill="url(#${P}-brush)"/><circle cx="60" cy="60" r="54" fill="url(#${P}-metal-sheen)" opacity="0.7"/>`
+  } else if (family === 'leather') {
+    // Deri: mikro gözenek ve kabartılmış kenar; parlama minimumda.
+    defs = `
+      <filter id="${P}-leather" x="-15%" y="-15%" width="130%" height="130%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.22 0.34" numOctaves="2" seed="${s}" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.38  0 0 0 0 0.26  0 0 0 0 0.18  0.28 0 0 0 -0.14"/>
+      </filter>`
+    finish = `<rect x="7" y="7" width="106" height="106" filter="url(#${P}-leather)" opacity="0.45" style="mix-blend-mode:multiply"/><circle cx="60" cy="60" r="48" fill="none" stroke="${shade(color, -0.48)}" stroke-opacity="0.34" stroke-width="2.2"/><circle cx="60" cy="60" r="47" fill="none" stroke="${shade(color, 0.45)}" stroke-opacity="0.3" stroke-width="0.9"/>`
+  } else if (family === 'glass') {
+    // Cam: renkli pul silueti korunur; saydamlığı temsil eden iç ışık yerine dış kenar belirgindir.
+    defs = `
+      <radialGradient id="${P}-glass" cx="34%" cy="24%" r="86%"><stop offset="0%" stop-color="#fff" stop-opacity="0.42"/><stop offset="32%" stop-color="#fff" stop-opacity="0.08"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${P}-glass-edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity="0.72"/><stop offset="45%" stop-color="#fff" stop-opacity="0.16"/><stop offset="100%" stop-color="${shade(color, -0.62)}" stop-opacity="0.9"/></linearGradient>`
+    finish = `<circle cx="60" cy="60" r="53" fill="url(#${P}-glass)"/><circle cx="60" cy="60" r="52.8" fill="none" stroke="url(#${P}-glass-edge)" stroke-width="2.2"/><path d="M21 35 Q42 18 68 22" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="1.2" stroke-linecap="round"/>`
+  } else if (family === 'carbon') {
+    // Karbon: küçük ve düzenli örgü deseni; renk ve form okunurluğunu koruyacak düşük kontrast.
+    defs = `
+      <pattern id="${P}-weave" width="6" height="6" patternUnits="userSpaceOnUse">
+        <path d="M-1 1L1 -1 M0 6L6 0 M5 7L7 5" stroke="${shade(color, 0.5)}" stroke-opacity="0.32" stroke-width="1.1"/>
+        <path d="M-1 5L1 7 M0 0L6 6 M5 -1L7 1" stroke="${shade(color, -0.55)}" stroke-opacity="0.35" stroke-width="1.1"/>
+      </pattern>`
+    finish = `<circle cx="60" cy="60" r="54" fill="url(#${P}-weave)"/><path d="M21 29 Q42 16 68 22" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="1.5" stroke-linecap="round"/>`
+  } else if (family === 'mother-of-pearl') {
+    // Yeni sedef: mevcut İnci'den farklı olarak katmanlı, geniş ve renkli kabuk bantları.
+    defs = `
+      <linearGradient id="${P}-shell-a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3d6d0" stop-opacity="0.38"/><stop offset="0.42" stop-color="#9ee2d4" stop-opacity="0.24"/><stop offset="0.78" stop-color="#c3a4eb" stop-opacity="0.28"/><stop offset="1" stop-color="#f2c487" stop-opacity="0.18"/></linearGradient>
+      <linearGradient id="${P}-shell-b" x1="1" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity="0.28"/><stop offset="0.5" stop-color="#9ad1e8" stop-opacity="0.15"/><stop offset="1" stop-color="#e9a8c8" stop-opacity="0.3"/></linearGradient>`
+    finish = `<path d="M8 51 Q31 25 59 38 T112 30 L112 54 Q80 65 56 53 T8 72Z" fill="url(#${P}-shell-a)"/><path d="M7 77 Q37 52 66 68 T113 55 L113 79 Q86 91 60 78 T7 98Z" fill="url(#${P}-shell-b)"/><path d="M18 47 Q43 29 73 42" fill="none" stroke="#fff" stroke-opacity="0.32" stroke-width="1.2"/><path d="M28 83 Q55 64 91 75" fill="none" stroke="#fff" stroke-opacity="0.25" stroke-width="1"/>`
   } else {
     // resin (fingerdish): kalın RAISED RIM + iç recessed DISH (swirl) + iç gölge (derinlik)
     const dishR = 37

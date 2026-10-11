@@ -23378,12 +23378,6 @@ button.acct-row-logout:hover:not(:disabled) {
 .shop-anim:hover:not(:disabled) {
   border-color: var(--rarity-color, var(--border));
 }
-/* Avatar üstüne gelince NET büyüsün (tahta tasarımlarındaki "üstüne gelince büyüme" dili):
-   border rengi değişimi tek başına fark edilmiyordu. Önizleme ölçeklenir (yer kaplamaz). */
-.shop-anim:hover:not(:disabled) .shop-anim-preview,
-.shop-anim:focus-visible .shop-anim-preview {
-  transform: scale(1.35);
-}
 .shop-anim.active {
   border-color: var(--rarity-color, var(--accent));
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--rarity-color, var(--accent)) 32%, transparent);
@@ -23405,7 +23399,6 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-content: center;
   min-height: 54px;
   align-items: center;
-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .shop-anim-name {
   font-size: 0.8rem;

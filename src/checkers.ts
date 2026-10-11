@@ -8,7 +8,19 @@
 // Her skin bir MATERYAL AİLESİ + birincil renk (dark = oyuncu tarafı) + ivory eş (light = rakip
 // tarafı). Böylece tek seçim iki-renk eşleşmiş takım verir (gerçek ürün color+white çiftleri gibi).
 
-export type CheckerFamily = 'pearl' | 'marble' | 'crystal' | 'resin' | 'metallic'
+export type CheckerFamily =
+  | 'pearl'
+  | 'marble'
+  | 'crystal'
+  | 'resin'
+  | 'metallic'
+  | 'wood'
+  | 'ceramic'
+  | 'brushed-metal'
+  | 'leather'
+  | 'glass'
+  | 'carbon'
+  | 'mother-of-pearl'
 export type CheckerRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
 
 export interface CheckerSkin {
@@ -37,6 +49,13 @@ const IVORY: Record<CheckerFamily, string> = {
   crystal: '#eef1f4',
   resin: '#ece2d0',
   metallic: '#e7e2d6',
+  wood: '#eadfc9',
+  ceramic: '#f0eee8',
+  'brushed-metal': '#e5e8e8',
+  leather: '#e7d8c6',
+  glass: '#e6f2f1',
+  carbon: '#d9e0e2',
+  'mother-of-pearl': '#efe9e5',
 }
 
 function skin(id: string, name: string, family: CheckerFamily, rarity: CheckerRarity, dark: string, light?: string): CheckerSkin {
@@ -93,11 +112,18 @@ function finish(id: string, name: string, family: CheckerFamily, rarity: Checker
 }
 
 export const CHECKER_FINISHES: CheckerSkin[] = [
-  finish('finish-pearl', 'Pearl', 'pearl', 'rare', '#6d5bd0'),
-  finish('finish-marble', 'Marble', 'marble', 'epic', '#37506b'),
-  finish('finish-crystal', 'Crystal', 'crystal', 'epic', '#2b6fe0'),
-  finish('finish-resin', 'Premium Resin', 'resin', 'rare', '#7a3b28'),
-  finish('finish-metallic', 'Metallic Pearl', 'metallic', 'legendary', '#c9a34a'),
+  finish('finish-pearl', 'İnci', 'pearl', 'rare', '#6d5bd0'),
+  finish('finish-marble', 'Mermer', 'marble', 'epic', '#37506b'),
+  finish('finish-crystal', 'Kristal', 'crystal', 'epic', '#2b6fe0'),
+  finish('finish-resin', 'Premium Reçine', 'resin', 'rare', '#7a3b28'),
+  finish('finish-metallic', 'Metalik İnci', 'metallic', 'legendary', '#c9a34a'),
+  finish('finish-wood', 'Ahşap', 'wood', 'rare', '#8f5d38'),
+  finish('finish-ceramic', 'Mat Seramik', 'ceramic', 'rare', '#73818a'),
+  finish('finish-brushed-metal', 'Fırçalanmış Metal', 'brushed-metal', 'legendary', '#74808a'),
+  finish('finish-leather', 'Deri', 'leather', 'rare', '#704733'),
+  finish('finish-glass', 'Cam', 'glass', 'epic', '#4f8e9e'),
+  finish('finish-carbon', 'Karbon', 'carbon', 'epic', '#38434b'),
+  finish('finish-mother-of-pearl', 'Sedef', 'mother-of-pearl', 'legendary', '#b76f9d'),
 ]
 
 // CHECKER_BY_ID: finish'ler + eski 30 sabit-renkli skin (geriye dönük uyum: satın alınmış olabilir).
@@ -105,11 +131,18 @@ export const CHECKER_BY_ID: Record<string, CheckerSkin> = Object.fromEntries(
   [...CHECKER_FINISHES, ...CHECKER_SKINS].map((s) => [s.id, s]),
 )
 export const CHECKER_FAMILIES: { key: CheckerFamily; label: string }[] = [
-  { key: 'pearl', label: 'Pearl' },
-  { key: 'marble', label: 'Marble' },
-  { key: 'crystal', label: 'Crystal' },
-  { key: 'resin', label: 'Premium Resin' },
-  { key: 'metallic', label: 'Metallic Pearl' },
+  { key: 'pearl', label: 'İnci' },
+  { key: 'marble', label: 'Mermer' },
+  { key: 'crystal', label: 'Kristal' },
+  { key: 'resin', label: 'Premium Reçine' },
+  { key: 'metallic', label: 'Metalik İnci' },
+  { key: 'wood', label: 'Ahşap' },
+  { key: 'ceramic', label: 'Mat Seramik' },
+  { key: 'brushed-metal', label: 'Fırçalanmış Metal' },
+  { key: 'leather', label: 'Deri' },
+  { key: 'glass', label: 'Cam' },
+  { key: 'carbon', label: 'Karbon' },
+  { key: 'mother-of-pearl', label: 'Sedef' },
 ]
 
 // Admin "Pul Tasarımı" ayarı: id -> sabit fiyat / satışta mı (grup skin.rarity'ye yazılır).

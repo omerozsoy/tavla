@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
+import HoverZoom, { canHoverPreview } from './HoverZoom'
 import { useT } from '../i18n'
 import AvatarFrame from './AvatarFrame'
 import {
@@ -46,6 +47,8 @@ interface CardProps {
   labels: { equipped: string; earned: string; buyAria: (name: string, price: number) => string }
 }
 function FrameCard(p: CardProps) {
+  // Karta gelince YANINDA büyük yüzen önizleme (Tavla Tasarımları gibi).
+  const [hover, setHover] = useState<DOMRect | null>(null)
   const sid = 'frame.' + p.f.id
   const owned = p.owns(sid)
   const equipped = p.currentFrame === p.f.id
@@ -69,6 +72,8 @@ function FrameCard(p: CardProps) {
           p.onBuy(sid, p.f.name, price)
         }
       }}
+      onMouseEnter={(e) => { if (canHoverPreview()) setHover(e.currentTarget.getBoundingClientRect()) }}
+      onMouseLeave={() => setHover(null)}
     >
       <div className="shop-anim-preview">
         {/* Animasyon dogrudan oynar (reduced-motion'da SoberFrame zaten durdurur) */}
@@ -91,6 +96,14 @@ function FrameCard(p: CardProps) {
         <span className="shop-earn">
           <Icon name="trophy" size={12} /> {p.labels.earned}
         </span>
+      )}
+      {hover && (
+        <HoverZoom rect={hover} width={200} height={232} onDismiss={() => setHover(null)}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
+            <AvatarFrame src={p.avatar} frame={p.f.id} size={156} name={p.name} animated />
+          </div>
+          <div className="bp-hover-name">{p.f.name}</div>
+        </HoverZoom>
       )}
     </button>
   )

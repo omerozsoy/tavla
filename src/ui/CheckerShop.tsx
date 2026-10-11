@@ -5,12 +5,13 @@ import Coins from './Coins'
 import { useToast } from './Toast'
 import { useEscape } from './useEscape'
 import CheckerSkin from './CheckerSkin'
+import HoverZoom, { canHoverPreview } from './HoverZoom'
 import { CHECKER_FINISHES, checkerOnSale, checkerPrice } from '../checkers'
 import './CheckerShop.css'
 
 /**
- * PUL TASARIMLARI — ücretli dijital checker materyali mağazası. 30 skin (5 aile × 6 renk),
- * coin ile alınır (mevcut /shop/buy akışı: onBuy('checker.<id>')), seçilir (onSelect).
+ * PUL TASARIMLARI — ücretli dijital checker materyali mağazası. Eski sabit renkli skin'ler
+ * korunur; satılan adaptif malzemeler coin ile alınır (onBuy('checker.<id>')) ve seçilir.
  * Sahiplik unlocks'tan; seçim users.checker. Görsel: CheckerSkin (dark+light önizleme).
  */
 export default function CheckerShop({
@@ -33,6 +34,8 @@ export default function CheckerShop({
   const toast = useToast()
   useEscape(() => onClose?.())
   const [busy, setBusy] = useState<string | null>(null)
+  // Karta gelince YANINDA büyük yüzen önizleme (Tavla Tasarımları gibi).
+  const [hover, setHover] = useState<{ s: (typeof CHECKER_FINISHES)[number]; rect: DOMRect } | null>(null)
   const owns = (id: string) => unlocks.includes('checker.' + id)
 
   async function buy(id: string) {
@@ -77,7 +80,12 @@ export default function CheckerShop({
             const owned = owns(s.id)
             const active = selected === s.id
             return (
-              <div key={s.id} className={`cshop-item ${active ? 'active' : ''}`}>
+              <div
+                key={s.id}
+                className={`cshop-item ${active ? 'active' : ''}`}
+                onMouseEnter={(e) => { if (canHoverPreview()) setHover({ s, rect: e.currentTarget.getBoundingClientRect() }) }}
+                onMouseLeave={() => setHover(null)}
+              >
                 <div className="cshop-prev" data-checker-id={s.id}>
                   <CheckerSkin skin={s} tone="dark" size={56} />
                   <CheckerSkin skin={s} tone="light" size={44} />
@@ -101,6 +109,15 @@ export default function CheckerShop({
             )
           })}
         </div>
+        {hover && (
+          <HoverZoom rect={hover.rect} width={240} height={206} onDismiss={() => setHover(null)}>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', alignItems: 'center', padding: '16px 0 4px' }}>
+              <CheckerSkin skin={hover.s} tone="dark" size={120} />
+              <CheckerSkin skin={hover.s} tone="light" size={96} />
+            </div>
+            <div className="bp-hover-name">{hover.s.name}</div>
+          </HoverZoom>
+        )}
     </>
   )
   if (embedded) return <div className="cshop-embed">{body}</div>
