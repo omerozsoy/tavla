@@ -57,7 +57,7 @@ export default function PlayerIdentity({
   /** Verilirse: isim BASINDA (presence noktasi yerine) DURUM rengi nokta cizilir
    *  (available yesil / ready mavi / busy sari). Cevrimici oyuncular panelinde
    *  durum noktasini ismin onune tasimak icin. */
-  statusDot?: 'available' | 'ready' | 'busy' | 'offline' | null
+  statusDot?: 'available' | 'ready' | 'busy' | 'offline' | 'ghost' | null
   className?: string
 }) {
   // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)

@@ -302,12 +302,14 @@ export function LiveMatchesPanel({
 }
 
 // Oyuncu durumlari: secim sirasi + i18n anahtari (offline = "Cevrimdisi Gorun").
+// 'ghost' (Hayalet) YALNIZ yoneticiye gosterilir (admin prop) -> listeden sonra eklenir.
 const STATUS_ORDER: PresenceStatus[] = ['available', 'ready', 'busy', 'offline']
 const STATUS_KEY: Record<PresenceStatus, string> = {
   available: 'online.st.available',
   ready: 'online.st.ready',
   busy: 'online.st.busy',
   offline: 'online.st.offline',
+  ghost: 'online.st.ghost',
 }
 
 // Kendi durumunu secen kucuk dropdown (Musait/Hazir/Mesgul/Cevrimdisi). Renkli nokta
@@ -317,12 +319,15 @@ export function StatusPicker({
   value,
   onChange,
   compact = false,
+  admin = false,
 }: {
   value: PresenceStatus
   onChange: (s: PresenceStatus) => void
   compact?: boolean
+  admin?: boolean // yonetici -> "Hayalet" (ghost) secenegi eklenir
 }) {
   const { t } = useT()
+  const options = admin ? [...STATUS_ORDER, 'ghost' as PresenceStatus] : STATUS_ORDER
   const [open, setOpen] = useState(false)
   // Menu konumu: tetik butonunun ekran koordinati (sag-hizali, altina acilir). Menu
   // body'ye PORTAL edilir -> ust bar/hero stacking-context'inde ALTTA KALMAZ (kirpilmaz).
@@ -369,7 +374,7 @@ export function StatusPicker({
             <>
               <button type="button" className="status-backdrop" aria-label="" onClick={() => setOpen(false)} />
               <ul className="status-menu status-menu--fixed" role="listbox" style={{ top: pos.top, right: pos.right }}>
-                {STATUS_ORDER.map((s) => (
+                {options.map((s) => (
                   <li key={s}>
                     <button
                       type="button"

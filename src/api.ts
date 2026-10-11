@@ -2106,7 +2106,8 @@ export async function liveMatches(): Promise<LiveMatch[]> {
 }
 
 // Oyuncu durumu (kendi belirledigi): Musait | Oyuna Hazir | Oyun Kabul Etmiyor | Cevrimdisi Gorun
-export type PresenceStatus = 'available' | 'ready' | 'busy' | 'offline'
+// 'ghost' = YALNIZCA yonetici: hayalet modu. Cevrimici/izleyici listelerinde HIC gorunmez.
+export type PresenceStatus = 'available' | 'ready' | 'busy' | 'offline' | 'ghost'
 
 // Cevrimici oyuncular (son 70sn ping'lemis) -> ana sayfa paneli
 export interface OnlinePlayer {

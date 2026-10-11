@@ -274,6 +274,7 @@ const TR: Dict = {
   'online.st.busy': 'Oyun Kabul Etmiyor',
   'online.inGame': 'Oyunda',
   'online.st.offline': 'Çevrimdışı Görün',
+  'online.st.ghost': 'Hayalet', // YALNIZ yonetici: gorunmez gezer (listelerde/izleyicide hic cikmaz)
   'online.busyBlocked': 'Bu oyuncu şu anda oyun kabul etmiyor.',
   // Maç Özeti (Match Summary)
   'ms.title': 'Maç Özeti',

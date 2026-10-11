@@ -8485,7 +8485,7 @@ export default function App() {
               {premium && <PremiumCrown style={{ marginLeft: 6 }} />}
             </button>
             {/* Oyuncu durumu (Müsait/Oyuna Hazır/Oyun Kabul Etmiyor/Çevrimdışı Görün) — avatarın yanında */}
-            <StatusPicker value={myStatus} onChange={handleSetStatus} compact />
+            <StatusPicker value={myStatus} onChange={handleSetStatus} compact admin={!!user?.is_admin} />
             <button
               type="button"
               className="stat-chip stat-chip-coin"
@@ -8659,7 +8659,7 @@ export default function App() {
             <div className="acct-pop" role="menu" style={{ position: 'fixed', top: acctMenuPos.top, right: acctMenuPos.right }}>
               {/* Oyuncu durumu (mobil): Müsait/Oyuna Hazır/Oyun Kabul Etmiyor/Çevrimdışı Görün */}
               <div className="acct-status">
-                <StatusPicker value={myStatus} onChange={handleSetStatus} />
+                <StatusPicker value={myStatus} onChange={handleSetStatus} admin={!!user?.is_admin} />
               </div>
               <div className="acct-div" />
               {/* Profilini Gor */}

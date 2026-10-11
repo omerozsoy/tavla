@@ -900,10 +900,10 @@ class RoomController extends Controller
             ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") çevrimiçi listesinde çıkmasın
             ->where('last_seen', '>', now()->subSeconds(70));
         if ($hasStatus) {
-            // "Çevrimdışı Görün" (offline) durumundakiler listede GÖRÜNMEZ. Eski/NULL
-            // kayitlar (durum secmemis) 'available' sayilir -> gorunur.
+            // "Çevrimdışı Görün" (offline) + "Hayalet" (ghost, yönetici) listede GÖRÜNMEZ.
+            // Eski/NULL kayitlar (durum secmemis) 'available' sayilir -> gorunur.
             $query->where(function ($q) {
-                $q->whereNull('presence_status')->orWhere('presence_status', '!=', 'offline');
+                $q->whereNull('presence_status')->orWhereNotIn('presence_status', ['offline', 'ghost']);
             });
         }
         // Sıralama: önce YÖNETİCİLER, sonra YARDIMCILAR (destek), sonra puana (rating) göre.
@@ -1147,7 +1147,7 @@ class RoomController extends Controller
                 ->where('last_seen', '>', now()->subSeconds(70));
             if ($hasStatus) {
                 $q->where(function ($x) {
-                    $x->whereNull('presence_status')->orWhere('presence_status', '!=', 'offline');
+                    $x->whereNull('presence_status')->orWhereNotIn('presence_status', ['offline', 'ghost']);
                 });
             }
 
@@ -2749,11 +2749,16 @@ class RoomController extends Controller
         } elseif ($this->slotOf($room, $data['token'], $request) === null) {
             // Oyuncu değil -> izleyici olarak kaydet/tazele (upsert).
             $user = $request->user('sanctum');
-            $name = $user?->nickname ?: ($user?->first_name ?: (($data['name'] ?? '') ?: 'Misafir'));
-            DB::table('room_viewers')->updateOrInsert(
-                ['room_code' => $codeU, 'token' => $data['token']],
-                ['user_id' => $user?->id, 'name' => mb_substr((string) $name, 0, 60), 'last_seen' => $now, 'updated_at' => now()],
-            );
+            // HAYALET: yönetici hayalet modundaysa izleyici olarak KAYDEDİLMEZ -> izleyici
+            // listesinde/sayısında HİÇ görünmez (görünmez izler). Maçı normal izlemeye devam eder.
+            $ghost = $user && $user->is_admin && $user->presence_status === 'ghost';
+            if (! $ghost) {
+                $name = $user?->nickname ?: ($user?->first_name ?: (($data['name'] ?? '') ?: 'Misafir'));
+                DB::table('room_viewers')->updateOrInsert(
+                    ['room_code' => $codeU, 'token' => $data['token']],
+                    ['user_id' => $user?->id, 'name' => mb_substr((string) $name, 0, 60), 'last_seen' => $now, 'updated_at' => now()],
+                );
+            }
         }
 
         // Bayat izleyicileri (>15sn görünmeyen) temizle.

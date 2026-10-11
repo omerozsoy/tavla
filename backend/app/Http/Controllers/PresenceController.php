@@ -203,10 +203,13 @@ class PresenceController extends Controller
     // listesinde gorunmez; busy/offline -> maca davet edilemez (invite() engeller).
     public function setStatus(Request $request)
     {
-        $data = $request->validate([
-            'status' => ['required', 'in:available,ready,busy,offline'],
-        ]);
         $me = $request->user();
+        // HAYALET (ghost): YALNIZCA yöneticiye açık. Çevrimiçi/izleyici listelerinde HİÇ görünmeden
+        // gezer (görünmez moderasyon). Normal kullanıcı 'ghost' gönderemez (422).
+        $allowed = (bool) $me->is_admin ? 'available,ready,busy,offline,ghost' : 'available,ready,busy,offline';
+        $data = $request->validate([
+            'status' => ['required', 'in:'.$allowed],
+        ]);
         $me->last_seen = now(); // durum degisimi = aktivite
         // Kolon henuz migrate edilmemisse durumu kaydetme (500 verme); yine de istenen
         // degeri dondur ki arayuz kirilmasin. Migrate kosunca kalici olur.
@@ -302,7 +305,7 @@ class PresenceController extends Controller
             ->orWhere(fn ($q) => $q->where('blocker_id', $userId)->where('blocked_id', $me->id))->exists()) {
             return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
         }
-        if (in_array($target->presence_status, ['busy', 'offline'], true)) {
+        if (in_array($target->presence_status, ['busy', 'offline', 'ghost'], true)) {
             return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
         }
 

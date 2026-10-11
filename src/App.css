@@ -12508,6 +12508,12 @@ button.acct-row-logout:hover:not(:disabled) {
   background: #9ca3af;
   box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.16);
 }
+/* Hayalet (ghost, yalniz yonetici): mor nokta -> admin kendi gorunmez modunu ayirt etsin.
+   Baskalari bu kullaniciyi zaten hic gormez; bu renk SADECE admin'in kendi secicisinde cikar. */
+.status-dot--ghost {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
 /* Satir-basi durum noktasi: durum rengi online-pdot yesilini ezer (0,2,0 > 0,1,0) */
 .online-pdot.status-dot--ready {
   background: #3b82f6;

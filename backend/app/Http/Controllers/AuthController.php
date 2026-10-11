@@ -1307,7 +1307,8 @@ class AuthController extends Controller
 
         $rows = $users->values()->map(function ($u, $i) {
             // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
-            $online = $u->last_seen && $u->presence_status !== 'offline'
+            // 'ghost' (yönetici hayalet modu) de 'offline' gibi gri -> hiçbir yerde çevrimiçi görünmez.
+            $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
                 && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
             return [
                 'rank'    => $i + 1,
@@ -1354,7 +1355,7 @@ class AuthController extends Controller
             ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
         $rows = $users->values()->map(function ($u, $i) {
-            $online = $u->last_seen && $u->presence_status !== 'offline'
+            $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
                 && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
             return [
                 'rank' => $i + 1,
@@ -1474,7 +1475,7 @@ class AuthController extends Controller
                 ->exists();
         }
 
-        $online = $user->last_seen && $user->presence_status !== 'offline'
+        $online = $user->last_seen && ! in_array($user->presence_status, ['offline', 'ghost'], true)
             ? \Illuminate\Support\Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
             : false;
 
