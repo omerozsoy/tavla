@@ -14,6 +14,7 @@ import DiceRow, { Die } from './Dice'
 import { showRoom, watchRoom, roomSummary, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
 import MatchSummary from './MatchSummary'
 import MatchResult from './MatchResult'
+import PublicProfile from './PublicProfile'
 import { divisionOfPR } from '../badges'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from '../sound'
 import { pipCount } from '../engine/evaluate'
@@ -89,6 +90,8 @@ export default function Spectate({
   // Maç Özeti (izleyici): sunucuda bir kez hesaplanıp önbelleklenen özet. Butonla açılır.
   const [summary, setSummary] = useState<RoomSummary | null>(null)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  // Yönetici moderasyon: sohbette isme tıklanınca açılan oyuncu profili (oradan konuşma yasağı).
+  const [profileId, setProfileId] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -695,7 +698,22 @@ export default function Spectate({
       {/* Yönetici izleme: oyuncuların maç-içi sohbeti SALT OKUNUR (yalnız konuşma varsa).
           Veri zaten rv.messages'ta (toClient herkese döner); moderasyon için görünür kılınır. */}
       {isAdmin && (rv?.messages?.length ?? 0) > 0 && (
-        <Chat messages={rv!.messages} mySlot="p1" onSend={() => {}} readOnly />
+        <Chat
+          messages={rv!.messages}
+          mySlot="p1"
+          onSend={() => {}}
+          readOnly
+          // İsme tıkla -> o slot'un oyuncu id'si -> profil (oradan konuşma yasağı verilir).
+          onNameClick={(slot) => {
+            const uid = (slot === 'p1' ? eff?.p1_user_id : eff?.p2_user_id) ?? null
+            if (uid) setProfileId(uid)
+          }}
+        />
+      )}
+
+      {/* Yönetici: sohbetten açılan oyuncu profili. viewerIsAdmin -> "Konuşma Yasağı" + yasak rozeti. */}
+      {profileId != null && (
+        <PublicProfile id={profileId} viewerIsAdmin={isAdmin} onClose={() => setProfileId(null)} />
       )}
     </div>,
     document.body,

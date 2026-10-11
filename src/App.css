@@ -18327,6 +18327,21 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   text-align: center;
 }
+/* Aktif konusma yasagi rozeti (yonetici profilde gorur). */
+.pp-muted-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--color-danger, #c0392b) 40%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger, #c0392b) 12%, transparent);
+  color: var(--color-danger, #c0392b);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
 /* Arkadaslik/mesaj butonu: KUCUK & kompakt (global 42px standardini bilincli ezeriz). */
 .pp-addfriend,
 .pp-message {
@@ -26351,6 +26366,19 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 400;
   opacity: 0.75;
   margin-bottom: 1px;
+}
+/* Yonetici izlemede tiklanabilir gonderen adi (profil -> konusma yasagi). */
+.chat-name-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.chat-name-btn:hover {
+  opacity: 1;
 }
 .chat-input {
   display: flex;

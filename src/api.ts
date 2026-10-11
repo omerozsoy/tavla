@@ -1011,6 +1011,7 @@ export interface PublicProfile {
   is_admin?: boolean // yönetici -> isim yanında kırmızı kalkan + "Hata Bildir" düğmesi
   is_support?: boolean // destek -> isim yanında krem kalkan + "Hata Bildir" düğmesi
   is_friend?: boolean // bakan kişiyle ZATEN arkadaş mı -> "Arkadaş ol" gizlenir (site geneli)
+  muted_until?: string | null // YALNIZ yönetici görür: aktif konuşma yasağı bitişi (ISO) veya null
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)

@@ -19,12 +19,14 @@ interface Props {
   notice?: string | null
   /** SALT OKUNUR (yönetici izleme): yalnız mesaj listesi; emoji/yazma kutusu çizilmez. */
   readOnly?: boolean
+  /** Gönderen adına tıklayınca (yönetici moderasyon): o slot'un oyuncu profilini aç. */
+  onNameClick?: (slot: Slot) => void
 }
 
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false, onNameClick }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Maca girince sohbet KAPALI baslar; baslikla acilir.
@@ -127,7 +129,13 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             ) : (
               messages.map((m) => (
                 <div key={m.id} className={`chat-msg ${m.slot === mySlot ? 'mine' : 'theirs'}`}>
-                  <span className="chat-name">{m.name}</span>
+                  {onNameClick ? (
+                    <button type="button" className="chat-name chat-name-btn" onClick={() => onNameClick(m.slot)}>
+                      {m.name}
+                    </button>
+                  ) : (
+                    <span className="chat-name">{m.name}</span>
+                  )}
                   <span className="chat-text">{m.text}</span>
                 </div>
               ))

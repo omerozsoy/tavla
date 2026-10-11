@@ -1508,6 +1508,10 @@ class AuthController extends Controller
             // Durum noktası/rozeti: çevrimiçiyse gerçek presence (busy="Oyun Kabul Etmiyor" -> kırmızı),
             // değilse 'offline'. Profil kartı yeşil/kırmızı/gri ayrımını buradan yapar.
             'status' => $online ? ($user->presence_status ?: 'available') : 'offline',
+            // Konuşma yasağı durumu YALNIZ yöneticiye sızar (moderasyon): aktif yasak bitişi (ISO) veya null.
+            'muted_until' => ($me && $me->is_admin && $user->chat_muted_until && $user->chat_muted_until->isFuture())
+                ? $user->chat_muted_until->toIso8601String()
+                : null,
         ]);
     }
 

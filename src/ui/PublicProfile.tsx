@@ -31,11 +31,16 @@ export default function PublicProfile({
   const [showMute, setShowMute] = useState(false)
   const [muteBusy, setMuteBusy] = useState(false)
   const [muteMsg, setMuteMsg] = useState<string | null>(null)
+  // Aktif yasak bitişi (ISO): yüklemede p.muted_until, aksiyondan sonra override (undefined=henüz yok).
+  const [mutedOverride, setMutedOverride] = useState<string | null | undefined>(undefined)
   const applyMute = (minutes: number) => {
     setMuteBusy(true)
     setMuteMsg(null)
     adminChatMute(id, minutes)
-      .then(() => setMuteMsg(minutes > 0 ? t('mod.chatBan.done') : t('mod.chatBan.lifted')))
+      .then((r) => {
+        setMutedOverride(r.muted_until)
+        setMuteMsg(minutes > 0 ? t('mod.chatBan.done') : t('mod.chatBan.lifted'))
+      })
       .catch(() => setMuteMsg(t('mod.chatBan.err')))
       .finally(() => {
         setMuteBusy(false)
@@ -68,6 +73,11 @@ export default function PublicProfile({
   const isOnline = onlineKnown ? liveOnline : !!p?.online
   // Canlı online değilse 'offline'; onlineysa snapshot durumu (busy/ready) yoksa 'available'.
   const statusDot = isOnline ? (p?.status && p.status !== 'offline' ? p.status : 'available') : 'offline'
+  // Gösterilecek yasak bitişi: aksiyon override'ı varsa o, yoksa sunucudan gelen değer (yalnız admin dolu).
+  const mutedUntil = mutedOverride !== undefined ? mutedOverride : (p?.muted_until ?? null)
+  const mutedUntilLabel = mutedUntil
+    ? new Date(mutedUntil).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : null
 
   return (
     <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
@@ -148,6 +158,11 @@ export default function PublicProfile({
             {/* YÖNETİCİ: konuşma yasağı (sohbet susturma). Başkasının profili + bakan admin ise. */}
             {viewerIsAdmin && (
               <div className="pp-actions pp-mod">
+                {mutedUntilLabel && (
+                  <div className="pp-muted-badge">
+                    <Icon name="ban" size={14} /> {t('mod.chatBan.active', { until: mutedUntilLabel })}
+                  </div>
+                )}
                 {!showMute ? (
                   <Button
                     variant="outline"
