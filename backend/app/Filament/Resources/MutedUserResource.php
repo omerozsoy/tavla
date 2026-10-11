@@ -53,11 +53,16 @@ class MutedUserResource extends Resource
         return 'danger';
     }
 
-    // Yalnız ihlal geçmişi olanlar; aktif yasaklar üstte.
+    // Küfür ihlal geçmişi olanlar VEYA şu an elle konuşma yasaklı olanlar (admin'in verdiği
+    // yasaklar chat_offenses artırmaz, yalnız chat_muted_until yazar -> ikinci koşul onları kapsar).
+    // Aktif yasaklar üstte.
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('chat_offenses', '>', 0)
+            ->where(function (Builder $q) {
+                $q->where('chat_offenses', '>', 0)
+                    ->orWhere('chat_muted_until', '>', now());
+            })
             ->orderByRaw('chat_muted_until IS NULL, chat_muted_until DESC');
     }
 
@@ -79,6 +84,10 @@ class MutedUserResource extends Resource
                 Tables\Columns\TextColumn::make('chat_offense_word')->label('Tetikleyen Kelime')
                     ->placeholder('—')->color('danger')->wrap()->searchable()
                     ->tooltip('Son ihlali tetikleyen kelime (kullanıcının yazdığı + eşleşen kök).'),
+                // Yasak kaynağı: küfür filtresi (ihlal sayacı > 0) vs admin'in elle verdiği yasak.
+                Tables\Columns\TextColumn::make('kind')->label('Tür')->badge()
+                    ->getStateUsing(fn (User $u) => $u->chat_offenses > 0 ? 'Küfür' : 'Manuel')
+                    ->color(fn (string $state) => $state === 'Küfür' ? 'warning' : 'info'),
                 Tables\Columns\TextColumn::make('status')->label('Durum')
                     ->badge()
                     ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture() ? 'Aktif yasak' : 'Süresi doldu')
