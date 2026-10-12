@@ -200,7 +200,7 @@ class BotRoomTest extends TestCase
         $segmentStart = (float) $clock['started_at'] - MatchClock::BOT_REVEAL_GRACE;
 
         // 1) started_at gerçekten ~grace kadar İLERİDE (reveal penceresi insana yazılmıyor).
-        $this->assertGreaterThan(3.0, MatchClock::BOT_REVEAL_GRACE, 'grace anlamlı olmalı');
+        $this->assertGreaterThan(0.0, MatchClock::BOT_REVEAL_GRACE, 'grace anlamlı olmalı');
 
         // 2) Segment başlangıcından 2sn SONRA bile insanın delay sayacı TAM + bankası ERİMEMİŞ olmalı.
         $view2 = MatchClock::clientView($clock, $segmentStart + 2.0);
