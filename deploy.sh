@@ -193,6 +193,29 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
     # (N instance'ta 2sn deploy'u ~N*2sn uzatiyordu; 0.5sn stagger'i korur, ~4x hizli).
     sleep 0.5
   done
+  # DEPLOY HEALTH-GATE (2026-10-12): restart'lardan sonra instance'lar GERCEKTEN ayaga kalkti mi?
+  # Eskiden dogrulama yoktu -> bozuk/surum-kaymis deploy (symlink kirik, .py syntax hatasi, port
+  # bind hatasi) SESSIZCE gecer, siradaki maca kadar fark edilmezdi. Burada her gnubg unit'in
+  # is-active'ini + birincil :8092 /health'ini yoklayip basarisizi SESLI basiyoruz (deploy'u
+  # DURDURMAZ; failover havuzu digerlerini servis eder, ama admin hemen gorur).
+  # ponytail: is-active crash-on-boot/StartLimit-failed'i yakalar; analyse-match SEGV'ini DEGIL
+  # (onu services:watch GNUBG_WATCH_HEAVY=1 heavy-probe'u yakalar). Islevsel smoke = tek /health.
+  sleep 3 # RestartSec=3: hemen craslayan unit 'active'den 'failed'a dussun
+  gnubg_bad=0
+  for unit in $(systemctl list-unit-files 2>/dev/null | awk '/^gnubg-analysis(-([0-9]+|heavy))?\.service/ {print $1}'); do
+    if ! systemctl is-active --quiet "$unit" 2>/dev/null; then
+      echo "ALARM: $unit deploy sonrasi AYAKTA DEGIL ($(systemctl is-active "$unit" 2>/dev/null)) -> SSH: systemctl status $unit -n30"
+      gnubg_bad=1
+    fi
+  done
+  # Islevsel smoke: birincil instance /health'e cevap veriyor mu (bind + servis dongusu calisiyor)?
+  if command -v curl >/dev/null 2>&1; then
+    if ! curl -fsS --max-time 5 http://127.0.0.1:8092/health >/dev/null 2>&1; then
+      echo "ALARM: gnubg birincil :8092 /health cevap VERMIYOR (motor acilista craslamis olabilir) -> SSH: systemctl status gnubg-analysis -n30"
+      gnubg_bad=1
+    fi
+  fi
+  [ "$gnubg_bad" = 0 ] && echo "gnubg: tum instance'lar deploy sonrasi AYAKTA (health-gate yesil)."
 fi
 # Queue worker (gnubg PR shadow) eski kodu calistirir -> her deploy'da yenile (bkz deploy/README).
 if sudo -n systemctl restart tavla-queue 2>/dev/null; then
