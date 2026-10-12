@@ -107,13 +107,18 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
       toast.error(t('bug.needMessage'))
       return
     }
+    // MİSAFİR: e-posta ZORUNLU (dönüş için tek kanal). Üye ise sunucu hesabın e-postasını ekler.
+    if (!loggedIn && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error(t('bug.needEmail'))
+      return
+    }
     setBusy(true)
     try {
       await reportBug({
         message: message.trim(),
         page: page.trim() || null,
         url: typeof location !== 'undefined' ? location.href : null,
-        email: !loggedIn && email.trim() ? email.trim() : null,
+        email: !loggedIn ? email.trim() : null,
         screenshot: shot,
       })
       toast.success(t('bug.sent'))
@@ -193,9 +198,10 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
 
             {!loggedIn && (
               <label className="bug-label">
-                <span>{t('bug.emailLabel')}</span>
+                <span>{t('bug.emailLabel')} <span className="bug-req" aria-hidden="true">*</span></span>
                 <input
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t('bug.emailPlaceholder')}

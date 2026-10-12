@@ -55,6 +55,11 @@
   font-size: 0.85rem;
   color: var(--muted);
 }
+/* Zorunlu alan yıldızı (misafir e-posta). */
+.bug-req {
+  color: #e05a4b;
+  font-weight: 700;
+}
 
 /* Ekran görüntüsü yükleme */
 .bug-file-input {

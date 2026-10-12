@@ -18,18 +18,20 @@ class BugReportController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
+        // Giris yapmissa (Bearer token varsa) kullaniciyi iliskilendir; yoksa misafir.
+        $user = $request->user() ?? auth('sanctum')->user();
+
         $data = $request->validate([
             'page'       => ['nullable', 'string', 'max:300'],
             'url'        => ['nullable', 'string', 'max:500'],
             'message'    => ['required', 'string', 'min:3', 'max:5000'],
             'name'       => ['nullable', 'string', 'max:120'],
-            'email'      => ['nullable', 'email', 'max:190'],
+            // MISAFIR: e-posta ZORUNLU (bildirime dönüş için tek kanal). Giriş varsa hesabın
+            // e-postası kullanılır -> misafirde required, üyede nullable.
+            'email'      => [$user ? 'nullable' : 'required', 'email', 'max:190'],
             // Ekran goruntusu: data:image/...;base64,... (opsiyonel). ~8 MB base64 tavani.
             'screenshot' => ['nullable', 'string', 'max:11000000'],
         ]);
-
-        // Giris yapmissa (Bearer token varsa) kullaniciyi iliskilendir; yoksa misafir.
-        $user = $request->user() ?? auth('sanctum')->user();
 
         $screenshotPath = null;
         if (! empty($data['screenshot'])) {
