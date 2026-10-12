@@ -16133,10 +16133,13 @@ button.acct-row-logout:hover:not(:disabled) {
    SONRA gelmeli (kaynak-sirasi kazansin). */
 @media (min-width: 1200px) and (max-width: 1400px) {
   .analyzer {
-    --board-h: max(200px, min(52vh, calc((min(calc(100vw - 254px), 1400px) - 636px) / 1.45)));
+    /* Bolen 1.45 gercek en/boy oranini (cerceve+bar+bearoff payiyla ~1.55) HAFIFE aliyordu
+       -> board orta sutundan tasip yan panellere biniyordu. 1.6 bolen + 640 panel payi:
+       board belirgin DAR, iki yandan nefes payi birakir (bini yok). */
+    --board-h: max(180px, min(48vh, calc((min(calc(100vw - 254px), 1400px) - 640px) / 1.6)));
   }
   .analyzer-body {
-    grid-template-columns: 280px minmax(0, 1fr) 300px;
+    grid-template-columns: 255px minmax(0, 1fr) 275px;
     grid-template-areas: 'controls board results';
     gap: 14px;
     max-width: 1400px;
