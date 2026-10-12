@@ -9500,10 +9500,22 @@ html.fs-active .account-bar {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .gm-title {
-  font-size: 1.05rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 1.08rem;
+  font-weight: 600;
   letter-spacing: 0.3px;
   color: var(--tv-white);
+}
+/* Başlık önünde kiremit aksan çubuğu (site kimliği) */
+.gm-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .gm-close {
   display: inline-flex;
@@ -9703,79 +9715,107 @@ html.fs-active .account-bar {
 .gm-nav-btn:hover {
   opacity: 0.82;
 }
-/* Alt aksiyonlar: Lobi (birincil aksan) + Pes Et (nötr, hover'da destructive) */
+/* Alt aksiyonlar: ikon-çipli DİKEY kart düğmeler. Eski yatay düzende dar kolonlarda iki kelimelik
+   etiket ("Zar Kontrol"/"Pes Et") çirkin sarıp sıkışıyordu; artık ikon çipi üstte + etiket ortada,
+   her buton kendi anlamsal kimliğini taşır (Lobi=kiremit / Zar Kontrol=soğuk bilgi / Pes Et=yıkıcı).
+   grid-auto-flow: column -> 2 ya da 3 buton gösterilsin, kolonlar DAİMA eşit (boşluk kalmaz). */
 .gm-actions {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 10px;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 .gm-circle {
-  flex: 1;
-  display: inline-flex;
-  flex-direction: row;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 48px;
-  padding: 0 12px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  color: var(--tv-white);
+  gap: 9px;
+  min-height: 84px;
+  padding: 13px 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
-  font-weight: 500;
-  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   transition:
-    filter 0.15s ease,
-    background 0.15s ease,
-    border-color 0.15s ease,
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    filter 0.16s ease,
     transform 0.1s ease;
 }
+.gm-circle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
 .gm-circle:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.985);
 }
-.gm-circle.lobby {
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--on-accent);
-}
-.gm-circle.resign {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.9);
-}
-.gm-circle.lobby:hover {
-  filter: brightness(1.06);
-}
-.gm-circle.resign:hover {
-  background: rgba(214, 64, 52, 0.16);
-  border-color: rgba(214, 64, 52, 0.45);
-  color: #ff9a90;
-}
-/* Zar Kontrol: Pes Et ile aynı nötr yarı-saydam stil (eskiden varyantsızdı -> açık/bozuk
-   görünüp "bu ne?" oluyordu). Lobi=kiremit, Pes Et=kırmızımsı hover, bu=nötr beyaz. */
-.gm-circle.dicecheck {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.9);
-}
-.gm-circle.dicecheck:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.28);
-}
+/* İkon çipi: yuvarlatılmış kare, buton kimliğine göre renk tutar */
 .gm-circle-ic {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
-  font-size: inherit;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #fff;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
 }
 .gm-circle-lbl {
-  font-size: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.12;
+  text-align: center;
+}
+/* Lobi = BİRİNCİL (kiremit aksan dolu + yumuşak glow) */
+.gm-circle.lobby {
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--accent) 94%, #fff),
+    color-mix(in srgb, var(--accent) 80%, #000)
+  );
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--on-accent);
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent) 75%, transparent);
+}
+.gm-circle.lobby .gm-circle-ic {
+  background: rgba(0, 0, 0, 0.18);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: var(--on-accent);
+}
+.gm-circle.lobby:hover {
+  filter: brightness(1.07);
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+}
+/* Zar Kontrol = NÖTR BİLGİ (soğuk mavi vurgu — "doğrulama/denetim" çağrışımı) */
+.gm-circle.dicecheck .gm-circle-ic {
+  background: rgba(122, 170, 255, 0.14);
+  border-color: rgba(122, 170, 255, 0.24);
+  color: #bcd4ff;
+}
+.gm-circle.dicecheck:hover {
+  border-color: rgba(122, 170, 255, 0.32);
+}
+/* Pes Et = YIKICI eğilim (nötr dururken, hover'da kırmızı ısınır) */
+.gm-circle.resign .gm-circle-ic {
+  background: rgba(214, 64, 52, 0.15);
+  border-color: rgba(214, 64, 52, 0.26);
+  color: #ff9a90;
+}
+.gm-circle.resign:hover {
+  background: rgba(214, 64, 52, 0.13);
+  border-color: rgba(214, 64, 52, 0.42);
+  color: #ffb3ab;
 }
 
 /* Animasyonlari kapat */
