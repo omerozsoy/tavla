@@ -10635,8 +10635,11 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Desktop: ust band TEK SATIR kalsin. Cok kontrol (giris yapinca) dar genislikte
    2. satira SARIP band'i uzatiyor / icerige biniyordu. nowrap ile yukseklik SABIT;
    tasarsa yatay kaydirilir. (Bu kural base .account-bar'dan SONRA gelmeli ki
-   kaynak-sirasi kazansin â€” media ozgulluk eklemez.) Mobil (<=900) kendi sarma duzeni. */
-@media (min-width: 901px) {
+   kaynak-sirasi kazansin â€” media ozgulluk eklemez.) Mobil (<=900) kendi sarma duzeni.
+   Tablet (901-1300) base `flex-wrap:wrap`ta kalir: yatay dar ekranda nowrap+scroll cubuk
+   cikariyor / son ikonu kirpiyordu. wrap yalniz TASARSA 2. satira iner, sigarsa tek satir
+   kalir -> kaydirma yok. Tek-satir + scroll yalniz gercek masaustunde (>=1301). */
+@media (min-width: 1301px) {
   .account-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -16120,6 +16123,24 @@ button.acct-row-logout:hover:not(:disabled) {
   }
   .analyzer-board {
     justify-self: center;
+  }
+}
+/* Tablet-genis (1200-1400, sol menu acik): board USTTE tam genislik olunca analiz
+   panelleri ALTA dusup dikeyde tasiyordu (tek ekrana sigmiyordu). Bu bandda board'u
+   KUCULT, 3-sutun (kontrol | board | sonuc) yan yana ver -> panel sagdan/soldan girer,
+   dikey yukseklik duser, hepsi tek ekrana sigar. Icerik alani ~100vw-254: 280+300
+   panel + ~390 board ile sigar. Bu kural ustteki max-width:1400 2-satir blogundan
+   SONRA gelmeli (kaynak-sirasi kazansin). */
+@media (min-width: 1200px) and (max-width: 1400px) {
+  .analyzer {
+    --board-h: max(200px, min(52vh, calc((min(calc(100vw - 254px), 1400px) - 636px) / 1.45)));
+  }
+  .analyzer-body {
+    grid-template-columns: 280px minmax(0, 1fr) 300px;
+    grid-template-areas: 'controls board results';
+    gap: 14px;
+    max-width: 1400px;
+    margin-inline: auto;
   }
 }
 /* Mobil (<=900: sol menu drawer'a doner, icerik tam genislik): hepsi alt alta */

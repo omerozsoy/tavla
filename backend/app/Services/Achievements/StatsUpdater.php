@@ -145,7 +145,10 @@ final class StatsUpdater
         }
 
         // ---- Sans (luck) bazli bayraklar ----
-        $luck = $mr->luck !== null ? (float) $mr->luck : null;
+        // Tek yetkili kaynak = gnubg luck_emg (equity, eski istemci `luck` ile ayni olcek:
+        // abs-avg ~0.9, aralik ~[-7,+9] -> esikler aynen gecerli). Async geldiginden finalize'da
+        // null olabilir; stored degerden (backfill / sonraki degerlendirme) okununca uygulanir.
+        $luck = $mr->luck_emg !== null ? (float) $mr->luck_emg : null;
         if ($won && $luck !== null) {
             if ($luck <= (float) $this->thr('low_luck', -6.0)) {
                 $ctx->set('flag_win_low_luck');

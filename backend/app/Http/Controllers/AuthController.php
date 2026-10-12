@@ -306,9 +306,8 @@ class AuthController extends Controller
             'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
             'match_type'      => ['nullable', 'in:coin,match,ai'], // Jeton (coin) / N-puanlik mac / yapay zeka
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
-            'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
-            // Rakibin HAM luck'i (yalniz tek-istemcili PvB'de dolu; online'da rakip kendi satirini yazar)
-            'opponent_luck'   => ['nullable', 'numeric', 'min:-100', 'max:100'],
+            // NOT: istemci HAM 'luck'/'opponent_luck' ARTIK KABUL EDILMEZ (güvenilmezdi, yetkili gnubg
+            // luck_emg/mwc ile ters işaret veriyordu). Tek şans kaynağı sunucu gnubg (AnalyzeMatchLuckJob).
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
             'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
             'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
@@ -405,7 +404,6 @@ class AuthController extends Controller
                 return response()->json([
                     'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
                     'pr_self' => $ex?->pr, 'pr_opponent' => $oppEx?->pr,
-                    'luck_self' => $ex?->luck, 'luck_opp' => $oppEx?->luck,
                     'luck_mwc_self' => $ex?->luck_mwc, 'luck_mwc_opp' => $oppEx?->luck_mwc,
                     'luck_emg_self' => $ex?->luck_emg, 'luck_emg_opp' => $oppEx?->luck_emg,
                     'luck_jokers_self' => $ex?->luck_jokers, 'luck_jokers_opp' => $oppEx?->luck_jokers,
@@ -449,8 +447,6 @@ class AuthController extends Controller
                     'achievements' => [],
                     'pr_self' => $existing->pr,
                     'pr_opponent' => $oppExisting?->pr,
-                    'luck_self' => $existing->luck,
-                    'luck_opp' => $oppExisting?->luck,
                     'luck_mwc_self' => $existing->luck_mwc,
                     'luck_mwc_opp' => $oppExisting?->luck_mwc,
                     'luck_emg_self' => $existing->luck_emg,
@@ -579,9 +575,9 @@ class AuthController extends Controller
             'pr'              => $selfPr,
             'coins_after'     => $user->coins ?? 0,
         ];
-        // luck/score_* migration ile geldi -> kolonlar varsa ekle (yoksa kayit yine olussun)
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck')) {
-            $mr['luck'] = $data['luck'] ?? null;
+        // score_* migration ile geldi -> kolonlar varsa ekle (yoksa kayit yine olussun).
+        // (istemci HAM 'luck' ARTIK saklanmaz; şans = sunucu gnubg luck_emg/mwc.)
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'score_self')) {
             $mr['score_self'] = $data['score_self'] ?? null;
             $mr['score_opp'] = $data['score_opp'] ?? null;
         }
@@ -591,10 +587,6 @@ class AuthController extends Controller
             $mr['opponent_pr'] = ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($data['log']))
                 ? null
                 : ($data['opponent_pr'] ?? null);
-        }
-        // Rakip (bot) ham luck'i: PvB'de karsi satir olmadigindan dogrudan bu satira yazilir.
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck')) {
-            $mr['opponent_luck'] = $data['opponent_luck'] ?? null;
         }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
             $mr['room_code'] = $data['room_code'] ?? null;
@@ -636,7 +628,6 @@ class AuthController extends Controller
             return response()->json([
                 'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
                 'pr_self' => $existing?->pr, 'pr_opponent' => null,
-                'luck_self' => $existing?->luck, 'luck_opp' => null,
                 'luck_mwc_self' => $existing?->luck_mwc, 'luck_mwc_opp' => null,
                 'luck_emg_self' => $existing?->luck_emg, 'luck_emg_opp' => null,
                 'luck_jokers_self' => $existing?->luck_jokers, 'luck_jokers_opp' => null,
@@ -751,7 +742,6 @@ class AuthController extends Controller
         $opponentPr = null;
         $opponentCheckerPr = null; // rakibin pul-yalniz PR'i (kendi log'undan)
         $opponentCubePr = null;    // rakibin kup-yalniz PR'i (kup karari yoksa null)
-        $opponentLuck = null; // rakibin HAM luck'ı (kendi renginden) — sunucu-otoriter sans için
         $opponentLuckMwc = null; // rakibin gnubg NATIVE MWC-luck'ı (V1, varsa)
         $opponentLuckEmg = null; // rakibin luck equity (cost) — Maç Özeti
         $opponentLuckJokers = null; // rakibin joker sayısı — Maç Özeti
@@ -775,7 +765,6 @@ class AuthController extends Controller
                         $opponentCheckerPr = $oppSplit['checker'];
                         $opponentCubePr = $oppSplit['cube'];
                     }
-                    $opponentLuck = $oppRow->luck;
                     $opponentLuckMwc = $oppRow->luck_mwc ?? null;
                     $opponentLuckEmg = $oppRow->luck_emg ?? null;
                     $opponentLuckJokers = $oppRow->luck_jokers ?? null;
@@ -824,8 +813,6 @@ class AuthController extends Controller
             'pr_cube_self' => $selfCubePr,                // XG kirilimi: kup-yalniz (yoksa null)
             'pr_checker_opponent' => $opponentCheckerPr,
             'pr_cube_opponent' => $opponentCubePr,
-            'luck_self' => $result->luck,      // kendi HAM luck'ım (bu maçta sakladığım renk-luck)
-            'luck_opp' => $opponentLuck,       // rakibin HAM luck'ı (raporladıysa) -> tutarlı net
             'luck_mwc_self' => $result->luck_mwc,       // gnubg V1 (async -> ilkin null, matchPr poll'lar)
             'luck_mwc_opp' => $opponentLuckMwc,         // rakibin gnubg MWC%'si (varsa)
             // Maç Özeti: Luck (Equity=emg) + Joker sayısı (self satırdan, opp rakip satırından)
@@ -1004,10 +991,7 @@ class AuthController extends Controller
             }
             $dirty = true;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck') && $row->luck === null && isset($data['luck'])) {
-            $row->luck = $data['luck'];
-            $dirty = true;
-        }
+        // (istemci HAM 'luck' ARTIK saklanmaz -> şans yalnız sunucu gnubg luck_emg/mwc.)
         // Rakip PR: authoritative modda istemci tahmini seed EDİLMEZ (gnubg AnalyzeMatchPrJob'da
         // rakip satırdan/gnubg'den senkronlar). Yalnız gnubg kapalıyken istemci değeri fallback.
         if (! $gnubgAuthoritative
@@ -1212,13 +1196,8 @@ class AuthController extends Controller
             'cube_self' => $col($mine, 'gnubg_cube_pr'),
             'checker_opponent' => $checkerOpp,
             'cube_opponent' => $cubeOpp,
-            // Sans (luck) SUNUCU-OTORITER: her oyuncu KENDİ renginin HAM luck'ını raporlar
-            // (kendi ONNX'inden — aynı zar+pozisyonla merkezî hesapla özdeş). İki istemci de
-            // buradan AYNI beyaz+siyah ham çifti okur -> net (kazanan−kaybeden) TUTARLI görünür.
-            'luck_self' => $mine?->luck,
-            'luck_opp' => $opp?->luck,
-            // Tavlai Luck V1 (gnubg NATIVE MWC%) — hazır olduğunda (async job) dolu; istemci bunu
-            // tercih eder (bağımsız per-oyuncu %). Yoksa yukarıdaki ONNX ham luck fallback.
+            // Tavlai Luck V1 (gnubg NATIVE MWC%) — TEK şans kaynağı. Async job doldurur; hazır
+            // olana kadar null -> istemci loader/"—" gösterir (istemci HAM luck fallback KALDIRILDI).
             'luck_mwc_self' => $mine?->luck_mwc,
             'luck_mwc_opp' => $opp?->luck_mwc,
         ]);
