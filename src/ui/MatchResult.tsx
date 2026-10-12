@@ -106,8 +106,8 @@ export default function MatchResult({
   loserCubePr,
   winnerBand,
   loserBand,
-  winnerLuck,
-  loserLuck,
+  // winnerLuck / loserLuck (HAM istemci luck'ı) ARTIK KULLANILMIYOR: yetkili gnubg MWC ile ters
+  // işaret verip yanıltıyordu. Interface'te kalır (çağıranlar hâlâ geçer) ama display'de ASLA kullanılmaz.
   winnerLuckPct,
   loserLuckPct,
   coinAmount,
@@ -198,32 +198,17 @@ export default function MatchResult({
     }
     return '—'
   }
-  // Tavlai Luck V1: gnubg NATIVE MWC-luck (%) İKİSİ de doluysa onu göster — BAĞIMSIZ per-oyuncu
-  // (sıfır-toplam DEĞİL; gnubg metodolojisi: her oyuncu kendi zarlarından). Yoksa ham luck (net).
+  // Tavlai Luck V1: gnubg NATIVE MWC-luck (%) — İKİSİ de hazırsa gösterilir (BAĞIMSIZ per-oyuncu,
+  // sıfır-toplam DEĞİL; her oyuncu kendi zarlarından). HAZIR DEĞİLSE ASLA ham/istemci luck'ına
+  // DÜŞME: ham değer yetkili gnubg ile TERS işaret verip "şanslıydım ama kaybettim" yanılgısı
+  // yaratıyordu. Hazır olana kadar render'da loader; analiz yoksa "—" (bkz. aşağıdaki Şans satırı).
   const useGnubgPct = winnerLuckPct != null && loserLuckPct != null
-  // Ham (fallback) ZERO-SUM net: iki taraf biliniyorsa göreceli (zıt işaretli); tek taraf -> negatifi.
-  let wLuck: number | null
-  let lLuck: number | null
-  if (winnerLuck != null && loserLuck != null) {
-    const net = winnerLuck - loserLuck
-    wLuck = net
-    lLuck = -net
-  } else {
-    wLuck = winnerLuck ?? (loserLuck != null ? -loserLuck : null)
-    lLuck = loserLuck ?? (winnerLuck != null ? -winnerLuck : null)
-  }
-  // Ham sans: equity toplamini okunur bir skora olcekle (x100), isaretli goster
-  const fmtLuck = (v: number | null) => {
-    if (v == null) return '—'
-    const s = Math.round(v * 100)
-    return `${s >= 0 ? '+' : ''}${s}`
-  }
+  const luckAnalyzing = analyzing || analyzingBoth || oppAnalyzing
   const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(0)}%`
-  // Gösterilecek metin + işaret: gnubg % (bağımsız) ya da ham net (fallback).
-  const wLuckText = useGnubgPct ? fmtPct(winnerLuckPct as number) : fmtLuck(wLuck)
-  const lLuckText = useGnubgPct ? fmtPct(loserLuckPct as number) : fmtLuck(lLuck)
-  const wLuckPos = useGnubgPct ? (winnerLuckPct as number) >= 0 : (wLuck ?? 0) >= 0
-  const lLuckPos = useGnubgPct ? (loserLuckPct as number) >= 0 : (lLuck ?? 0) >= 0
+  const wLuckText = useGnubgPct ? fmtPct(winnerLuckPct as number) : null
+  const lLuckText = useGnubgPct ? fmtPct(loserLuckPct as number) : null
+  const wLuckPos = useGnubgPct ? (winnerLuckPct as number) >= 0 : false
+  const lLuckPos = useGnubgPct ? (loserLuckPct as number) >= 0 : false
   // Komisyon (asimetrik): kazanan +won / kaybeden -lost. Yoksa simetrik coinAmount.
   const asymCoin = winnerCoin != null && loserCoin != null
   const fmtCoins = (isWinner: boolean) => {
@@ -362,12 +347,12 @@ export default function MatchResult({
             </div>
           )}
           <div className="mr-row">
-            <span className={`mr-a ${wLuckPos ? 'mr-pos' : 'mr-neg'}`}>
-              {wLuckText}
+            <span className={`mr-a ${useGnubgPct ? (wLuckPos ? 'mr-pos' : 'mr-neg') : ''}`}>
+              {wLuckText ?? (luckAnalyzing ? dots() : '—')}
             </span>
             <span className="mr-label">{t('mr.luck')}</span>
-            <span className={`mr-b ${lLuckPos ? 'mr-pos' : 'mr-neg'}`}>
-              {lLuckText}
+            <span className={`mr-b ${useGnubgPct ? (lLuckPos ? 'mr-pos' : 'mr-neg') : ''}`}>
+              {lLuckText ?? (luckAnalyzing ? dots() : '—')}
             </span>
           </div>
         </div>
