@@ -146,6 +146,17 @@ class DiceSlotService
 
         $spinCost = max(0, DS::int('spin_cost'));
 
+        // Son jackpot kazananı (sayfada "En son X kazandı" göstermek için). Kazanan yoksa null.
+        $jp = DiceSlotJackpot::current();
+        $lastJackpot = null;
+        if ($jp->last_won_user_id) {
+            $lastJackpot = [
+                'name' => \App\Models\User::find($jp->last_won_user_id)?->nickname,
+                'amount' => (int) $jp->last_won_amount,
+                'at' => $jp->last_won_at?->toIso8601String(),
+            ];
+        }
+
         return [
             'enabled' => $this->isEnabled(),
             'settings' => [
@@ -155,8 +166,9 @@ class DiceSlotService
             ],
             'symbols' => self::SYMBOLS,
             'paytable' => $this->paytable(),
-            'jackpot' => $this->jackpotPool(),
+            'jackpot' => (int) $jp->pool,
             'jackpotBase' => max(0, DS::int('jackpot_base')),
+            'lastJackpot' => $lastJackpot,
             'remainingSpins' => $remaining,
             'bonusSpins' => $bonus,
             'nextFreeSpinAt' => $next,

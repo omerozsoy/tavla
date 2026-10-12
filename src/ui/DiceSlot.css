@@ -104,6 +104,22 @@
   text-shadow: 0 0 14px color-mix(in srgb, var(--gold) 30%, transparent);
 }
 
+/* Son jackpot kazananı — başlık altı ince satır (altın, mütevazı). */
+.ds-last-jackpot {
+  width: 100%;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--gold) 80%, #fff 20%);
+  opacity: 0.9;
+}
+.ds-last-jackpot b {
+  color: var(--gold);
+  font-weight: 700;
+}
+
 /* (Üst başlık/slogan/bakiye pill KALDIRILDI — marquee zaten "ZAR SLOTU" gösterir,
    bakiye BAKİYE göstergesinde. Sayfa doğrudan makineyle başlar, sola dayalı.) */
 

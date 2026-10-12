@@ -164,6 +164,12 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
         ) : (
           <div className="ds-stage">
             <h2 className="ds-title"><Icon name="slot" size={22} /> {titleOverride || t('ds.menu')}</h2>
+            {data.lastJackpot?.name ? (
+              <p className="ds-last-jackpot">
+                <Icon name="trophy" size={14} /> {t('ds.lastJackpot')}: <b>{data.lastJackpot.name}</b>
+                <Coins amount={data.lastJackpot.amount} size={14} />
+              </p>
+            ) : null}
             {/* ORTA: makine (+ kontrol) SOLA DAYALI, ödül tablosu SAĞDA */}
             <div className="ds-main">
               <div className="ds-main-left">

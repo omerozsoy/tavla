@@ -3074,6 +3074,7 @@ export interface DiceSlotState {
   paytable: SlotPaytableRow[]
   jackpot: number
   jackpotBase: number
+  lastJackpot: { name: string | null; amount: number; at: string | null } | null
   remainingSpins: number
   bonusSpins: number
   nextFreeSpinAt: string | null
