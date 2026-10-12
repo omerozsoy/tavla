@@ -151,6 +151,7 @@ class AchievementService
             if ($def) {
                 $out[] = [
                     'slug' => $def['slug'], 'name' => $def['name'], 'icon' => $def['icon'],
+                    'desc' => $def['desc'] ?? null, // isim yanı tooltip (üstüne gelince "bu rozet nedir")
                     'tier' => $def['tier'], 'rarity' => $def['rarity'],
                 ];
             }

@@ -2458,6 +2458,7 @@ export interface FeaturedBadge {
   slug: string
   name: string
   icon: string
+  desc?: string | null // isim yanı tooltip (üstüne gelince ne olduğu)
   tier: AchievementTier
   rarity: AchievementRarity
 }

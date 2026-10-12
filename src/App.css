@@ -16932,6 +16932,17 @@ button.acct-row-logout:hover:not(:disabled) {
 .badge-item > svg {
   color: var(--accent-text);
 }
+/* YÖNETİCİ rozeti (Rozetler'de 1. sırada): site rengi (kiremit) zemin + beyaz yazı + başında kalkan. */
+.badge-item-admin {
+  background: #a83a2b;
+  border-color: #a83a2b;
+  color: #fff;
+  font-weight: 600;
+}
+.badge-item-admin > svg,
+.badge-item-admin .badge-name {
+  color: #fff;
+}
 /* Featured "Rozetler" showcase: altindaki "Toplam Rozet" ozetiyle yapisik durmasin */
 .ach-featured {
   margin-bottom: 18px;

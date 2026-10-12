@@ -320,15 +320,22 @@ export default function PublicProfile({
               </div>
             )}
 
-            {/* Yalnız oyuncunun ÖNE ÇIKARDIĞI (seçtiği) başarımlar; seçmediyse bölüm hiç gösterilmez. */}
-            {p.featured && p.featured.length > 0 && (
+            {/* Yönetici için DAİMA (1. sırada Yönetici rozeti); ayrıca oyuncunun seçtiği başarımlar. */}
+            {(p.is_admin || (p.featured && p.featured.length > 0)) && (
               <div className="badge-section">
                 <div className="badge-head">
                   <Icon name="medal" size={15} /> {t('badges.title')}
                 </div>
                 <div className="badge-grid">
-                  {p.featured.map((b) => (
-                    <span key={b.slug} className="badge-item" title={b.name}>
+                  {/* YÖNETİCİ rozeti: site rengi (kiremit) zemin + beyaz yazı + başında kalkan. */}
+                  {p.is_admin && (
+                    <span className="badge-item badge-item-admin" title={t('role.admin')}>
+                      <Icon name="shield-check" size={16} weight="fill" />
+                      <span className="badge-name">{t('role.admin')}</span>
+                    </span>
+                  )}
+                  {p.featured?.map((b) => (
+                    <span key={b.slug} className="badge-item" title={b.desc || b.name}>
                       <Icon name={b.icon as IconName} size={18} />
                       <span className="badge-name">{b.name}</span>
                     </span>
