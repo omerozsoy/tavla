@@ -688,6 +688,29 @@ const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullani
 const BOT_FINAL_DELAY = 1400 // botun MAÇI BİTİREN hamlesinden sonra: son pozisyon görünsün, sonra sonuç ekranı
 const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
 
+// Zar yüzleri: oynanan zarları soluk (used) yap; çift zarda her hamle zarın çapraz yarısını solar
+// (half). Kendi turum (played), rakip canlı (oppLive) VE rakip replay (oppReplay adımları) ortak
+// kullanır -> rakip zarı da tıpkı bottaki gibi oynandıkça adım adım solar.
+function faceStates(dice: number[], steps: { die: number }[]): { value: number; used: boolean; half?: boolean }[] {
+  if (dice.length === 0) return []
+  if (dice.length === 4) {
+    return [0, 1].map((i) => {
+      const h = Math.min(2, Math.max(0, steps.length - i * 2))
+      return { value: dice[0], used: h >= 2, half: h === 1 }
+    })
+  }
+  const used = [false, false]
+  for (const st of steps) {
+    for (let i = 0; i < dice.length; i++) {
+      if (!used[i] && dice[i] === st.die) {
+        used[i] = true
+        break
+      }
+    }
+  }
+  return dice.map((v, i) => ({ value: v, used: used[i] }))
+}
+
 interface BotAnim {
   steps: Step[]
   index: number
@@ -881,6 +904,15 @@ export default function App() {
   useEffect(() => {
     oppReplayRef.current = oppReplay
   }, [oppReplay])
+  // ONLINE RAKİP DANCE (gele/bardan giremedi -> 0 hamle): botDance'in online karşılığı. Rakip zar
+  // atıp oynayamayınca turnStart ANINDA bana döner (replay 0-adımda tetiklenmez) -> "Hamle Yok" HİÇ
+  // görünmezdi. Bu kozmetik state ~BOT_DANCE_DELAY kadar rakibin zarı + "Hamle Yok" overlay'ini tutar.
+  const [oppDance, setOppDance] = useState<{ dice: number[]; color: Player } | null>(null)
+  useEffect(() => {
+    if (!oppDance) return
+    const h = window.setTimeout(() => setOppDance(null), BOT_DANCE_DELAY)
+    return () => window.clearTimeout(h)
+  }, [oppDance])
   const [matchCodeCopied, setMatchCodeCopied] = useState(false) // oyun-içi maç ID kopyalandı geri bildirimi
   // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
   const [cubeHint, setCubeHint] = useState<CubeHint | null>(null)
@@ -5411,6 +5443,12 @@ export default function App() {
           // §5.2: onaylı rakip hamlesini adım adım OYNAT (snap yerine). Oyun bittiyse (ended) ATLA —
           // maç/oyun sonu ekranı ayrı akış; bitiren hamleyi replay'e bağlamak kırılgan olur.
           if (!ended) maybeReplayOppMove(oppBase, steps, oc)
+          // ONLINE RAKİP DANCE: 0 adım (gele/bardan giremedi) -> replay tetiklenmez. Botun botDance'i
+          // gibi rakibin zarı + "Hamle Yok" overlay'ini kısa süre göster (turnStart bana döndüğü için
+          // noMove koşulu yakalayamaz). Yalnız online-insan; bot zaten botDance ile gösterir.
+          if (!ended && steps.length === 0 && online && !room?.bot) {
+            setOppDance({ dice: oppBase.dice ?? [], color: oc })
+          }
         }
       }
     }
@@ -6493,6 +6531,7 @@ export default function App() {
     oppLiveShownRef.current = []
     pendingOppFlightRef.current = null
     setOppLive([])
+    setOppDance(null) // rakip "Hamle Yok" holdü oda değişince taşınmasın
     clearOppReplay() // §5.2: oda değişince bekleyen replay'i iptal et (yeni tahtaya düşmesin)
   }, [room?.code])
   useEffect(() => {
@@ -7886,7 +7925,7 @@ export default function App() {
     diceRolled &&
     hasNoMove(generateMoves(turnStart)) &&
     (interactive || botDance || (online && !myTurn && !gameEnd && !matchOver))
-  const showRoll = interactive && !diceRolled && !oppReplay // §5.2: replay bitene dek zar kontrolünü gizle
+  const showRoll = interactive && !diceRolled && !oppReplay && !oppDance // replay/rakip-dance bitene dek zar kontrolünü gizle
   // Zar zaten OTOMATIK atilacaksa "Zar At" butonunu HIC cizme (kullanici direktifi: kup
   // rakipteyse dugmeyi gormeyeyim, dogrudan zari goreyim). Kosul, otomatik-zar effect'iyle
   // BIREBIR ayni (shouldAutoRoll + ayni guard'lar) -> buton gizlenip zar atilmama riski yok.
@@ -7897,6 +7936,7 @@ export default function App() {
     !cubePending &&
     !gameWon &&
     !oppReplay && // §5.2: rakip hamlesi oynanırken "Atılıyor…" gösterme (replay bitince devreye girer)
+    !oppDance && // rakip gele "Hamle Yok" gösterilirken benim oto-zarımı beklet
     shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
@@ -7924,29 +7964,7 @@ export default function App() {
   // pvp'de rakibin canlı adımları oppLive'da, bota karşı bot adımları played'de (botAnim) gelir.
   // Kendi turumda: played. Böylece hem kendi hem rakip zarları oynandıkça solar.
   const fadeSteps = online && !myTurn && oppLive.length > 0 ? oppLive : played
-  const diceFaces = ((): { value: number; used: boolean; half?: boolean }[] => {
-    const d = turnStart.dice
-    if (d.length === 0) return []
-    if (d.length === 4) {
-      // Cift zar: 2 zar goster, her zar 2 hamle. Her oynanan hamle zarin CAPRAZ yarisini
-      // soldurur -> 1. hamle 1. zarin yarisi, 2. hamle 1. zar tam, 3. hamle 2. zarin yarisi,
-      // 4. hamle 2. zar tam (4 adimda seffaflasir).
-      return [0, 1].map((i) => {
-        const h = Math.min(2, Math.max(0, fadeSteps.length - i * 2)) // bu zarin oynanmis yarisi (0/1/2)
-        return { value: d[0], used: h >= 2, half: h === 1 }
-      })
-    }
-    const used = [false, false]
-    for (const st of fadeSteps) {
-      for (let i = 0; i < d.length; i++) {
-        if (!used[i] && d[i] === st.die) {
-          used[i] = true
-          break
-        }
-      }
-    }
-    return d.map((v, i) => ({ value: v, used: used[i] }))
-  })()
+  const diceFaces = faceStates(turnStart.dice, fadeSteps)
   const pipTop = pipCount(boardDisplay, 'black')
   const pipBottom = pipCount(boardDisplay, 'white')
 
@@ -8111,12 +8129,15 @@ export default function App() {
         <div className="err-detail">{t('cube.waiting')}</div>
       </div>
     )
-  } else if (noMove) {
+  } else if (noMove || oppDance) {
+    // oppDance (online rakip gele): rakibin zarı + rengi. Yoksa kendi/bot dance -> diceFaces/turnStart.
+    const dd = oppDance ? oppDance.dice.map((v) => ({ value: v, used: false })) : diceFaces
+    const dc = oppDance ? oppDance.color : turnStart.turn
     centerMain = (
       <div className="result-box no-moves">
         <div className="board-dice nm-dice">
-          {diceFaces.map((f, i) => (
-            <Die key={i} value={f.value} owner={turnStart.turn} used={f.used} />
+          {dd.map((f, i) => (
+            <Die key={i} value={f.value} owner={dc} used={f.used} />
           ))}
         </div>
         <div className="result-title">{t('overlay.noMoves')}</div>
@@ -8181,11 +8202,20 @@ export default function App() {
   // Yan slot (Katla / Geri Al) yalniz kendi turumda dolar -> rakip zariyla cakismaz.
   const turnIsMine = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
   const centerRight = turnIsMine ? primary : secondary
-  // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12, kullanıcı isteği): sıra bana geçince rakibin attığı
-  // zar koyu renkte tahtada duruyordu -> "kullandığı zarlar koyu renk geri geldi" karmaşası + "Zar
-  // At" ile aynı anda görünüyordu. Artık sıra bende + zar atmadıysam merkez BOŞ (yalnız Zar At).
-  // Rakibin canlı zarı zaten kendi turunda `primary` ile görünür (echo'ya gerek yok).
-  const centerLeft = turnIsMine ? secondary : primary
+  // §5.2 REPLAY ZARI (bot gibi soluklaşsın): rakip hamlesini onaylayınca turnStart ANINDA bana döner
+  // (authoritative-snap) -> diceFaces artık benim boş zarımı okur, rakip zarı solmazdı. Replay base
+  // rakibin tur-başı tahtasıdır (zarlı); shown adımlarıyla faceStates zarı adım adım soldurur ->
+  // rakibin hangi zarı oynadığı/kaldığı tıpkı bottaki gibi net. Rakip zarı DAİMA SOLDA.
+  const oppReplayDice =
+    oppReplay && !gameEnd && !matchOver ? (
+      <DiceRow
+        faces={faceStates(oppReplay.base.dice, oppReplay.steps.slice(0, oppReplay.shown))}
+        owner={oppReplay.color}
+      />
+    ) : null
+  // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12): sıra bana geçince statik koyu zar duruyordu; kaldırıldı.
+  // Artık sol merkez YALNIZ replay sırasında rakip zarını (soluklaşan) gösterir; replay yoksa boş.
+  const centerLeft = oppReplayDice ?? (turnIsMine ? secondary : primary)
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
