@@ -252,7 +252,11 @@ class UserResource extends Resource
             // sipariş) olan hesaplar yasal saklama için fiziksel silinemez -> UserEraser anonimleştirir
             // (ban_reason='account_deleted', deleted-*@deleted.invalid) ve satır kalır. Bunlar panelde
             // "silmiyor" gibi görünüyordu. Kayıt DURUR (yasal) ama listede gösterilmez.
-            ->modifyQueryUsing(fn (Builder $q) => $q->where(fn (Builder $w) => $w
+            // Param ADI 'query' OLMALI: Filament modifyQueryUsing closure'una gerçek sorguyu
+            // 'query' adıyla enjekte eder; '$q' gibi başka ad ile ad-eşleşmesi kaçar ve tip-bazlı
+            // fallback MODELSİZ bir Builder verir -> getModel()::class null patlar / nested where
+            // null model deref eder. Doğru ad ile grup'lu where güvenli (aramayı da bozmaz).
+            ->modifyQueryUsing(fn (Builder $query) => $query->where(fn (Builder $w) => $w
                 ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted')))
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
