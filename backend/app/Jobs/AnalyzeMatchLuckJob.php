@@ -351,6 +351,20 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         [$selfLuck, $oppLuck] = $hc === 'white' ? [$white, $black] : [$black, $white];
         $this->write($mr->id, $selfLuck);
         $this->writeOpponent($mr->id, $oppLuck);
+        // SUNUCU İKİ OYUNCUYU DA YAZAR (kullanıcı direktifi): .mat her iki rengin TAM hamlesini içerir ->
+        // white+black luck İKİSİ DE otoriter hesaplandı. KARDEŞ satırı (aynı oda, diğer oyuncu) da doldur
+        // ki hangi istemci ne zaman raporlarsa raporlasın İKİ satır da dolu olsun ("bir satır boş" yarışı
+        // biter). Kardeşin self'i = BİZİM opp rengimiz; kardeşin opponent'ı = BİZİM self. Yazımlar
+        // idempotent (update) -> iki job da koşsa zararsız. mr'nin kendi satırı ustte zaten yazildi.
+        if (! empty($mr->room_code)) {
+            $sibling = MatchResult::where('room_code', $mr->room_code)
+                ->where('user_id', '!=', $mr->user_id)
+                ->latest('id')->first();
+            if ($sibling) {
+                $this->write($sibling->id, $oppLuck);          // kardeşin KENDİ şansı (diğer renk)
+                $this->writeOpponent($sibling->id, $selfLuck);  // kardeşin rakibi = bu satır
+            }
+        }
         Log::info('gnubg luck V1', [
             'room' => $mr->room_code, 'hc' => $hc,
             'self_mwc' => $selfLuck['mwc_total'] ?? null, 'opp_mwc' => $oppLuck['mwc_total'] ?? null,

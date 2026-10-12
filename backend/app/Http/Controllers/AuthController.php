@@ -1182,8 +1182,14 @@ class AuthController extends Controller
             'cube_opponent' => $cubeOpp,
             // Tavlai Luck V1 (gnubg NATIVE MWC%) — TEK şans kaynağı. Async job doldurur; hazır
             // olana kadar null -> istemci loader/"—" gösterir (istemci HAM luck fallback KALDIRILDI).
-            'luck_mwc_self' => $mine?->luck_mwc,
-            'luck_mwc_opp' => $opp?->luck_mwc,
+            // KARDEŞ-FALLBACK (PR'daki gibi): online'da İLK raporlayanın kendi satırı veri-tamamlanmadan
+            // koşup boş kalabilir; ama SONRAKİ raporlayanın satırı self-contained (self + opponent_luck_*)
+            // yazar. O yüzden kendi satırım null ise RAKİBİN satırındaki opponent_luck_mwc'den oku
+            // (= benim şansım). Böylece "bir satır boş" yüzünden ekran "—"da kalmaz.
+            'luck_mwc_self' => $col($mine, 'luck_mwc') ?? $col($opp, 'opponent_luck_mwc'),
+            'luck_mwc_opp' => $col($opp, 'luck_mwc') ?? $col($mine, 'opponent_luck_mwc'),
+            'luck_emg_self' => $col($mine, 'luck_emg') ?? $col($opp, 'opponent_luck_emg'),
+            'luck_emg_opp' => $col($opp, 'luck_emg') ?? $col($mine, 'opponent_luck_emg'),
         ]);
     }
 
