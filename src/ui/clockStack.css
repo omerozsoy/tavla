@@ -3,14 +3,31 @@
    Ayri dosya: App.css'teki paralel WIP'e dokunmadan izole. .clock-off (beyaz skor kutusu)
    App.css'ten miras alinir; amber grup ve ic kutular burada. */
 
-/* Beyaz SKOR kutulari (App.css .clock-off temeli). Kucultuldu: eski 112px/2.4rem/18px devasa
-   duruyor + merkez sutunu genisletip board'u kisitliyordu. Daha kompakt -> board'a yer. */
+/* SOL RAY = bear-off tepsisi gibi felt zemin (kullanici: "solda tas topladigimiz zemin gibi bir
+   alan daha olsun"). Skor kutulari + amber grup artik bu tepsinin icinde oturur; bearoff ile AYNI
+   --tray-bg + govde (border/radius/golge) -> board'un toplama tepsisiyle gorsel es. */
+.clock-stack {
+  padding: 12px 9px;
+  background: var(--tray-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 34px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* SKOR kutulari: KARE kutu (kullanici: "skorlari ... kare bir kutu icine koy"). aspect-ratio 1 +
+   ortalanmis icerik -> tam kare; hafif kose. Beyaz zemin App.css .clock-off'tan miras. */
 .clock-stack .clock-off {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.9rem;
   font-weight: 800;
-  min-width: 78px;
-  padding: 11px 10px;
-  border-radius: 12px; /* site stili: hafif yuvarlak kose */
+  min-width: 74px;
+  aspect-ratio: 1;
+  padding: 8px;
+  border-radius: 10px;
 }
 
 /* Amber grup -> board temasina uyar: kup ile ayni renk/kontrast (--cube-bg/--cube-text).
@@ -30,8 +47,8 @@
 /* Oyuncu rezerv bankasi (her zaman gorunur: 06:22 / 06:54) */
 .clock-bank {
   text-align: center;
-  font-weight: 800;
-  font-size: 1.35rem;
+  font-weight: 500; /* kullanici: "03:00 ... ama bold olmasin" */
+  font-size: 1.55rem; /* azicik buyut */
   color: inherit; /* --cube-text */
   padding: 6px 10px;
   letter-spacing: 0.02em;
@@ -52,7 +69,7 @@
 .clock-move {
   text-align: center;
   font-weight: 800;
-  font-size: 1.55rem;
+  font-size: 1.95rem; /* 12'den geriye sayan hamle suresi: biraz buyut (kullanici istegi) */
   color: inherit;
   padding: 7px 0;
   border-radius: 11px;
