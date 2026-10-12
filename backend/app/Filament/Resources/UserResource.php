@@ -251,9 +251,7 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
-                // E-posta sütunu gizli (istek). Arama hâlâ e-posta ile de çalışsın diye searchable kolon:
-                Tables\Columns\TextColumn::make('email')->label('E-posta')->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('email')->label('E-posta')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('phone')->label('Cep telefonu')->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)->placeholder('—'),
                 Tables\Columns\IconColumn::make('email_verified')->label('E-posta ✓')
@@ -263,9 +261,6 @@ class UserResource extends Resource
                         ? 'Doğrulandı: '.$record->email_verified_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i')
                         : 'Doğrulanmadı'),
                 Tables\Columns\TextColumn::make('rating')->label('Puan')->sortable(),
-                Tables\Columns\TextColumn::make('rating')->label('Ünvan')
-                    ->formatStateUsing(fn ($state) => PanelController::levelLabel((int) ($state ?: 1500)))
-                    ->badge()->color('warning'),
                 Tables\Columns\TextColumn::make('coins')->label('Coin')->sortable()
                     ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
                 Tables\Columns\TextColumn::make('wins')->label('G/M')
