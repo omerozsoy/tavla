@@ -1,0 +1,23 @@
+[Unit]
+Description=GNU Backgammon AGIR analiz havuzu genisletme (:8106 — heavy #5: matchluck/review/mat)
+After=network.target
+# HEAVY havuzu genisletmesi (8098-8101 ile AYNI kod, AYRI port). Amac: mac-sonu SANS (matchluck)
+# + Maç Analizleri review'i es-zamanli cok mac bitince bekletilmesin -> sans ERKEN gelsin.
+# backend/.env: GNUBG_HEAVY_URLS listesine http://127.0.0.1:8106 ekle + GNUBG_UNITS'e gnubg-analysis-15.
+# GNUBG_SECRET diger tum instance'lar + backend .env ile AYNI olmali. SADECE port farkli.
+StartLimitIntervalSec=300
+StartLimitBurst=20
+
+[Service]
+Type=simple
+Environment=GNUBG_PORT=8106
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
