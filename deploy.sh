@@ -254,7 +254,30 @@ if systemctl list-unit-files 2>/dev/null | grep -q '^tavla-reverb\.service'; the
 fi
 # -----------------------------------------------------------------------------
 
-echo "Deploy tamam: migrate + cache + haber importu + gnubg/queue restart."
+# ================== POST-DEPLOY SAĞLIK KAPISI (önlem) ==================
+# event:cache/view:cache bazen (eşzamanlı oturumun değişen kodunda) BOZUK cache üretip HER
+# isteği 500'e düşürdü -> site deploy SONRASI kapalı kaldı, elle `optimize:clear` ile açıldı.
+# Bu kapı: deploy sonunda app'i /up ile yokla; 5xx ise bozuk cache'i TEMIZLE (cache'siz ama
+# ÇALIŞAN duruma düş) + tekrar yokla. Deploy ASLA siteyi 500'de bırakmasın. (curl yoksa/ulaşamazsa
+# cache'e DOKUNULMAZ -> gereksiz cache kaybı yok; yalnız kesin 5xx'te iyileştir.)
+HEALTH_URL="https://www.tavlatv.com/up"
+HCODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" 2>/dev/null || echo 000)
+if [ "$HCODE" -ge 500 ] 2>/dev/null; then
+  echo "SAGLIK KAPISI: app $HCODE (BOZUK) -> cache temizleniyor (fail-safe)."
+  $PHP artisan optimize:clear || true
+  HCODE2=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" 2>/dev/null || echo 000)
+  if [ "$HCODE2" -ge 500 ] 2>/dev/null || [ "$HCODE2" = "000" ]; then
+    echo "🔴 SAGLIK KAPISI: temizlik sonrasi HALA $HCODE2 -> KOD HATASI olabilir, storage/logs/laravel.log'a bak!"
+  else
+    echo "SAGLIK KAPISI: temizlik sonrasi $HCODE2 -> app GERI GELDI (cache'siz calisiyor; sonraki deploy yeniden cache'ler)."
+  fi
+elif [ "$HCODE" = "000" ]; then
+  echo "UYARI: SAGLIK KAPISI probe'u ulasamadi (ag/DNS/loopback?) -> cache DOKUNULMADI, canliyi elle dogrula."
+else
+  echo "SAGLIK KAPISI: app sagligi $HCODE (OK)."
+fi
+
+echo "Deploy tamam: migrate + cache + saglik kapisi + haber importu + gnubg/queue restart."
 
 # Plesk "additional deployment actions" adimi YESIL olsun: buraya kadar geldiyse migrate basarili
 # (yoksa yukarida exit 1 olurdu) ve gerisi best-effort tamamlandi -> kasitli basarili cikis.
