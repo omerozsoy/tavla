@@ -7990,6 +7990,10 @@ export default function App() {
   const jokersOf = (c: Player): number | null => serverLuckJokers?.[c] ?? null
 
   let centerMain: React.ReactNode = null
+  // Küp çekildiğinde YANIT: Backgammon Galaxy gibi -> ortada tek kutu yerine SOLDA Pas, SAĞDA
+  // Kabul düğmesi (centerLeft/centerRight slotlarına). Bu iki değişken humanRespond'da doldurulur.
+  let respondPas: React.ReactNode = null
+  let respondTake: React.ReactNode = null
   if (opening === 'roll') {
     centerMain = (
       <div className="result-box">
@@ -8061,29 +8065,27 @@ export default function App() {
       </div>
     )
   } else if (humanRespond) {
-    centerMain = (
-      <div className="result-box cube-respond">
-        <div className="cube-respond-badge" aria-hidden>
-          <Icon name="alert" size={20} /> ×{match.cube.value * 2}
-        </div>
-        <div className="result-title">
-          {t('msg.doubled', { name: pName(cubePending!), value: match.cube.value * 2 })}
+    // Küp yanıtı artık ortada tek kutu DEĞİL: SOLDA Pas, SAĞDA Kabul (centerLeft/centerRight).
+    // Küplenen değer + (öğrenme modu) tavsiye KABUL tarafının üstünde minik gösterilir.
+    respondPas = (
+      <Button variant="default" className="cube-split-btn pas" onClick={handleDrop}>
+        <Icon name="x" size={18} /> {t('btn.drop')}
+      </Button>
+    )
+    respondTake = (
+      <div className="cube-split-take">
+        <div className="cube-split-info" aria-hidden>
+          <Icon name="alert" size={14} /> ×{match.cube.value * 2}
         </div>
         {learnMode && cubeHint?.kind === 'respond' && (
           <div className={`cube-advice ${cubeHint.take === 'take' ? 'ok' : 'warn'}`}>
-            <Icon name="bulb" size={14} />
-            {t(cubeHint.take === 'take' ? 'cube.advTake' : 'cube.advDrop')} ·{' '}
-            {t('cube.win')} {cubeHint.winPct.toFixed(0)}%
+            <Icon name="bulb" size={13} />
+            {t(cubeHint.take === 'take' ? 'cube.advTake' : 'cube.advDrop')}
           </div>
         )}
-        <div className="cube-actions">
-          <Button variant="default" onClick={handleTake}>
-            {t('btn.take')}
-          </Button>
-          <Button variant="default" onClick={handleDrop}>
-            {t('btn.drop')}
-          </Button>
-        </div>
+        <Button variant="default" className="cube-split-btn take" onClick={handleTake}>
+          <Icon name="check" size={18} /> {t('btn.take')}
+        </Button>
       </div>
     )
   } else if (cubeWaiting) {
@@ -8167,7 +8169,8 @@ export default function App() {
   // beyaz), dolayisiyla "alttaki oyuncunun sirasi mi" = "sira bende mi".
   // Yan slot (Katla / Geri Al) yalniz kendi turumda dolar -> rakip zariyla cakismaz.
   const turnIsMine = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
-  const centerRight = turnIsMine ? primary : secondary
+  // Küp yanıtı: SAĞDA Kabul. Yoksa normal (benim turum -> ana buton sağda).
+  const centerRight = respondTake ?? (turnIsMine ? primary : secondary)
   // §5.2 REPLAY ZARI (bot gibi soluklaşsın): rakip hamlesini onaylayınca turnStart ANINDA bana döner
   // (authoritative-snap) -> diceFaces artık benim boş zarımı okur, rakip zarı solmazdı. Replay base
   // rakibin tur-başı tahtasıdır (zarlı); shown adımlarıyla faceStates zarı adım adım soldurur ->
@@ -8181,7 +8184,8 @@ export default function App() {
     ) : null
   // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12): sıra bana geçince statik koyu zar duruyordu; kaldırıldı.
   // Artık sol merkez YALNIZ replay sırasında rakip zarını (soluklaşan) gösterir; replay yoksa boş.
-  const centerLeft = oppReplayDice ?? (turnIsMine ? secondary : primary)
+  // Küp yanıtı: SOLDA Pas. Yoksa normal (rakip zarı / yan buton).
+  const centerLeft = respondPas ?? oppReplayDice ?? (turnIsMine ? secondary : primary)
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online

@@ -648,6 +648,20 @@ function Board({
   const bottomOffPlayer: Player = flip ? 'black' : 'white'
   const bottomOffCount = flip ? state.off.black : state.off.white
 
+  // Küp YERİ: başlangıçta (sahipsiz) ORTA bar'da; çekilip kabul edilince SAHİBİNİN bear-off
+  // tepsisine geçer (üst sahip -> üst slot başı, alt sahip -> alt slot sonu). Tüm oyunlarda ortak.
+  const cubeTraySide: 'top' | 'bottom' | null =
+    !classic && cube.owner != null ? (cube.owner === topBarPlayer ? 'top' : 'bottom') : null
+  const cubeTrayEl = cubeTraySide ? (
+    <div
+      className={`cube cube-tray${crawford ? ' cube-crawford' : ''}`}
+      title={crawford ? t('board.crawfordHint') : t('board.cube')}
+      aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
+    >
+      {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
+    </div>
+  ) : null
+
   return (
     <div
       className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}`}
@@ -717,11 +731,11 @@ function Board({
           {/* Crawford oyununda kup kullanilamaz: sayi yerine "Crawford" yazilir ki iki
               oyuncu da durumu tahtadan gorsun (kup degeri zaten 1'de sabit kalir).
               KLASIK TAVLA: kup HIC yok -> gorsel tamamen cizilmez. */}
-          {!classic && (
+          {/* Küp ORTA bar'da YALNIZ sahipsizken (başlangıç/çekilmemiş). Sahiplenince bear-off
+              tepsisine taşınır (aşağıda). KLASIK TAVLA: küp hiç yok. */}
+          {!classic && cubeTraySide == null && (
             <div
-              className={`cube cube-${
-                cube.owner == null ? 'center' : cube.owner === topBarPlayer ? 'top' : 'bottom'
-              }${crawford ? ' cube-crawford' : ''}`}
+              className={`cube cube-center${crawford ? ' cube-crawford' : ''}`}
               title={crawford ? t('board.crawfordHint') : t('board.cube')}
               aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
             >
@@ -784,6 +798,8 @@ function Board({
         onClick={() => offTarget && onSelectTarget('off')}
       >
         <div className="bearoff-slot top">
+          {/* Küp üst oyuncunundaysa: tepsinin EN ÜSTÜNde (ilk çocuk). */}
+          {cubeTraySide === 'top' && cubeTrayEl}
           {Array.from({ length: topOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
@@ -800,6 +816,8 @@ function Board({
           {Array.from({ length: bottomOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
+          {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda (son çocuk). */}
+          {cubeTraySide === 'bottom' && cubeTrayEl}
         </div>
       </div>
 
