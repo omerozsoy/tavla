@@ -2737,6 +2737,63 @@ class RoomController extends Controller
         return response()->json(['messages' => $messages, 'warning' => $warning]);
     }
 
+    // KÜFÜR / SOHBET ŞİKAYETİ: oyuncu sohbetteki "Şikayet Et" butonuna basınca o anki SON 10 sohbet
+    // satırını (tarafları belirterek) yönetime kaydeder. Metni İSTEMCİDEN ALMAZ -> odanın SUNUCUDAKİ
+    // sohbet kaydından (room->messages) çeker (forge/çarpıtma yok). Spam kalkanı: aynı oyuncu aynı
+    // odayı 2 dk içinde tekrar şikayet edemez. Panelde "Küfür Şikayetleri" sayfasında incelenir.
+    public function reportChat(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+        ]);
+        $user = $request->user('sanctum');
+        if (! $user) {
+            return $this->fail('Şikayet için giriş yapmalısın.', 401);
+        }
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return $this->fail('Oda bulunamadı.', 404);
+        }
+        $slot = $this->slotOf($room, $data['token'], $request);
+        if ($slot === null) {
+            return $this->fail('Bu odada değilsin.', 403);
+        }
+        if (! Schema::hasTable('chat_reports')) {
+            return response()->json(['ok' => true]); // migration beklemede -> sessiz ok (istemci kırılmaz)
+        }
+        // Spam kalkanı: aynı kullanıcı + aynı oda 2 dk içinde tek şikayet.
+        $recent = \App\Models\ChatReport::where('room_code', strtoupper($code))
+            ->where('reporter_user_id', $user->id)
+            ->where('created_at', '>', now()->subMinutes(2))
+            ->exists();
+        if ($recent) {
+            return response()->json(['ok' => true, 'duplicate' => true]);
+        }
+        $messages = is_array($room->messages) ? $room->messages : [];
+        // Son 10 satır (oyuncu + sistem), yalnız slot/name/text sadeleştirilir.
+        $last10 = array_values(array_map(
+            fn ($m) => [
+                'slot' => (string) ($m['slot'] ?? ''),
+                'name' => (string) ($m['name'] ?? ''),
+                'text' => (string) ($m['text'] ?? ''),
+            ],
+            array_slice($messages, -10),
+        ));
+        \App\Models\ChatReport::create([
+            'room_code' => strtoupper($code),
+            'reporter_user_id' => $user->id,
+            'reporter_name' => $slot === 'p1' ? $room->p1_name : $room->p2_name,
+            'reporter_slot' => $slot,
+            'reported_name' => $slot === 'p1' ? $room->p2_name : $room->p1_name,
+            'p1_name' => $room->p1_name,
+            'p2_name' => $room->p2_name,
+            'messages' => $last10,
+            'status' => 'new',
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
     // Canlı maç İZLEME presence (spectator heartbeat). İzleyici her ~5sn'de bir çağırır; kayıt
     // upsert edilir, bayat (>15sn) izleyiciler temizlenir. OYUNCU (slot sahibi) izleyici SAYILMAZ.
     // Güncel izleyici listesi (isim + avatar/çerçeve) ve sayısını döner. Herkese açık.

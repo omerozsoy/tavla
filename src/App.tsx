@@ -126,6 +126,7 @@ import {
   myActiveRooms,
   type ActiveRoom,
   sendChat,
+  reportChat,
   chatMuteFromError,
   reportRating,
   fetchUnseenAchievements,
@@ -7648,6 +7649,12 @@ export default function App() {
     }
   }
 
+  // Küfür şikayeti: o anki son 10 sohbet satırı (sunucu çeker) + taraflar yönetime kaydedilir.
+  async function handleReportChat() {
+    if (!room) return
+    await reportChat(room.code) // Chat bileşeni "gönderildi" durumunu kendi gösterir
+  }
+
   // Mac kurulum ekrani onaylandi -> ayarlari uygula, maci/odayi baslat
   function applyMatchSetup(opts: MatchOptions) {
     // Mac Oyunu her zaman online (gercek rakiple eslesme) -> hesap sart. Misafir icin
@@ -11135,6 +11142,7 @@ export default function App() {
           onLogin={() => setShowAuth(true)}
           behindMenu={gameMenuOpen}
           notice={chatNotice}
+          onReport={room.bot ? undefined : handleReportChat}
         />
       )}
       {authModal}

@@ -26413,6 +26413,66 @@ button.acct-row-logout:hover:not(:disabled) {
 .dm-notice {
   padding: 4px 10px 0;
 }
+/* Küfür şikayeti (iki adımlı): sohbet altında küçük, araya girmeyen satır. */
+.chat-report {
+  padding: 4px 10px 8px;
+  display: flex;
+  justify-content: center;
+  min-height: 24px;
+}
+.chat-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--muted-fg, #8a7f6e);
+  font-size: 0.7rem;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.chat-report-btn:hover {
+  color: var(--danger-fg, #d14343);
+  opacity: 1;
+}
+.chat-report-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.chat-report-hint {
+  font-size: 0.7rem;
+  color: var(--muted-fg, #8a7f6e);
+  text-align: center;
+  line-height: 1.3;
+}
+.chat-report-actions {
+  display: flex;
+  gap: 8px;
+}
+.chat-report-send,
+.chat-report-cancel {
+  font-size: 0.72rem;
+  padding: 3px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.chat-report-send {
+  background: var(--danger-fg, #d14343);
+  color: #fff;
+}
+.chat-report-cancel {
+  background: none;
+  border-color: var(--border, #d8cfc0);
+  color: var(--muted-fg, #8a7f6e);
+}
+.chat-report-sent {
+  font-size: 0.72rem;
+  color: var(--success-fg, #2f9e44);
+}
 .chat-input input {
   flex: 1;
   min-width: 0;

@@ -2944,6 +2944,14 @@ export async function sendChat(code: string, text: string): Promise<{ messages: 
   })
 }
 
+// KÜFÜR ŞİKAYETİ: o anki son 10 sohbet satırı (sunucu tarafında çekilir) + taraflar yönetime kaydedilir.
+export async function reportChat(code: string): Promise<{ ok: boolean; duplicate?: boolean }> {
+  return req(`/rooms/${encodeURIComponent(code)}/report-chat`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken() }),
+  })
+}
+
 // Canlı maç İZLEME presence: izleyici. name -> giriş yoksa misafir adı. leave -> kaydı sil (sekme kapanışı).
 export interface RoomViewer {
   name: string

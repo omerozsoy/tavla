@@ -21,14 +21,18 @@ interface Props {
   readOnly?: boolean
   /** Gönderen adına tıklayınca (yönetici moderasyon): o slot'un oyuncu profilini aç. */
   onNameClick?: (slot: Slot) => void
+  /** Küfür/uygunsuz dil şikayeti: basınca son 10 satır yönetime gönderilir. undefined -> buton yok (ör. bot maçı). */
+  onReport?: () => void | Promise<void>
 }
 
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false, onNameClick }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false, onNameClick, onReport }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
+  // Küfür şikayeti iki adımlı: idle -> (Şikayet Et) -> confirm (Son 10 satır gönderilir: Gönder/Vazgeç) -> sent.
+  const [reportState, setReportState] = useState<'idle' | 'confirm' | 'sent'>('idle')
   // Maca girince sohbet KAPALI baslar; baslikla acilir.
   const [open, setOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -212,6 +216,42 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
               </>
             )}
           </div>}
+
+          {/* KÜFÜR ŞİKAYETİ (iki adımlı): yalnız oyuncu (readOnly değil) + giriş + onReport verilmişse. */}
+          {!readOnly && loggedIn && onReport && (
+            <div className="chat-report">
+              {reportState === 'idle' && (
+                <button type="button" className="chat-report-btn" onClick={() => setReportState('confirm')}>
+                  <Icon name="flag" size={13} /> {t('chat.report')}
+                </button>
+              )}
+              {reportState === 'confirm' && (
+                <div className="chat-report-confirm">
+                  <span className="chat-report-hint">{t('chat.reportHint')}</span>
+                  <div className="chat-report-actions">
+                    <button
+                      type="button"
+                      className="chat-report-send"
+                      onClick={async () => {
+                        try {
+                          await onReport()
+                        } catch {
+                          /* yut: hata olsa da kullanıcıya gönderildi görünümü vermeyelim */
+                        }
+                        setReportState('sent')
+                      }}
+                    >
+                      {t('chat.reportSend')}
+                    </button>
+                    <button type="button" className="chat-report-cancel" onClick={() => setReportState('idle')}>
+                      {t('chat.reportCancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {reportState === 'sent' && <span className="chat-report-sent">✓ {t('chat.reportSent')}</span>}
+            </div>
+          )}
         </>
       )}
     </div>

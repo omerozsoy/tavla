@@ -124,6 +124,8 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:60
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:1200,1,room-read'])
     ->get('/rooms/{code}', [RoomController::class, 'show']);
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:40,1,chat'])->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
+// Kufur/sohbet sikayeti: son 10 satiri yonetime kaydeder (spam kalkani controller'da).
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:10,1,chatreport'])->post('/rooms/{code}/report-chat', [RoomController::class, 'reportChat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:600,1,live'])->post('/rooms/{code}/live', [RoomController::class, 'live']);
 // Canli mac IZLEME presence (spectator heartbeat): izleyici kaydi + izleyen listesi/sayisi. Herkese acik.
