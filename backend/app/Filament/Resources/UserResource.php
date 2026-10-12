@@ -251,7 +251,9 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('email')->label('E-posta')->searchable()->toggleable(),
+                // E-posta sütunu gizli (istek). Arama hâlâ e-posta ile de çalışsın diye searchable kolon:
+                Tables\Columns\TextColumn::make('email')->label('E-posta')->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('phone')->label('Cep telefonu')->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)->placeholder('—'),
                 Tables\Columns\IconColumn::make('email_verified')->label('E-posta ✓')
@@ -272,8 +274,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('plan_active')->label('Plan')->badge()
                     ->color(fn ($state) => $state === 'free' ? 'gray' : 'success')
                     ->formatStateUsing(fn ($state) => $state === 'free' ? 'Ücretsiz' : 'Premium'),
-                Tables\Columns\IconColumn::make('is_admin')->label('Admin')->boolean(),
-                Tables\Columns\IconColumn::make('is_support')->label('Destek')->boolean(),
                 Tables\Columns\IconColumn::make('banned_at')->label('Yasaklı')
                     ->boolean()->trueColor('danger')->falseColor('gray')
                     ->getStateUsing(fn ($record) => $record->banned_at !== null),
