@@ -1512,6 +1512,10 @@ class AuthController extends Controller
             'muted_until' => ($me && $me->is_admin && $user->chat_muted_until && $user->chat_muted_until->isFuture())
                 ? $user->chat_muted_until->toIso8601String()
                 : null,
+            // Admin notu YALNIZ yöneticiye döner (null = yok ya da bakan admin değil).
+            'admin_note' => ($me && $me->is_admin && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note'))
+                ? ($user->admin_note ?: null)
+                : null,
         ]);
     }
 

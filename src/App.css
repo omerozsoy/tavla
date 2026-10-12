@@ -18327,6 +18327,67 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   text-align: center;
 }
+/* Admin notu (yonetici profilde gorur/yazar). */
+.pp-note {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  text-align: left;
+}
+.pp-note-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.pp-note-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.pp-note-edit {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.pp-note-body {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+.pp-note-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+.pp-note-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.pp-note-actions > * {
+  flex: 1;
+  height: 34px;
+  min-height: 34px;
+}
 /* Aktif konusma yasagi rozeti (yonetici profilde gorur). */
 .pp-muted-badge {
   display: flex;

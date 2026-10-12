@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { userProfile, adminChatMute, type PublicProfile as Profile } from '../api'
+import { userProfile, adminChatMute, adminSetNote, type PublicProfile as Profile } from '../api'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankMedals from './TopRankMedals'
@@ -55,6 +55,21 @@ export default function PublicProfile({
   const [p, setP] = useState<Profile | null>(null)
   const [error, setError] = useState(false)
   const [friendSent, setFriendSent] = useState(false)
+  // Admin notu: görüntüle/düzenle. noteOverride = kaydettikten sonra güncel değer (undefined=sunucudan).
+  const [noteOverride, setNoteOverride] = useState<string | null | undefined>(undefined)
+  const [noteEdit, setNoteEdit] = useState<string | null>(null) // null=görüntü modu, string=düzenleme kutusu açık
+  const [noteBusy, setNoteBusy] = useState(false)
+  const saveNote = () => {
+    if (noteEdit == null) return
+    setNoteBusy(true)
+    adminSetNote(id, noteEdit)
+      .then((r) => {
+        setNoteOverride(r.admin_note)
+        setNoteEdit(null)
+      })
+      .catch(() => {})
+      .finally(() => setNoteBusy(false))
+  }
 
   useEffect(() => {
     let alive = true
@@ -78,6 +93,8 @@ export default function PublicProfile({
   const mutedUntilLabel = mutedUntil
     ? new Date(mutedUntil).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : null
+  // Gösterilecek admin notu: kaydetme override'ı varsa o, yoksa sunucudan gelen (yalnız admin dolu).
+  const adminNote = noteOverride !== undefined ? noteOverride : (p?.admin_note ?? null)
 
   return (
     <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
@@ -183,6 +200,40 @@ export default function PublicProfile({
                   </div>
                 )}
                 {muteMsg && <div className="pp-mute-msg">{muteMsg}</div>}
+
+                {/* ADMIN NOTU: varsa oku (tıkla-düzenle), yoksa "Not Ekle". Yalnız yönetici görür. */}
+                {noteEdit == null ? (
+                  adminNote ? (
+                    <div className="pp-note">
+                      <div className="pp-note-head">
+                        <span className="pp-note-lbl"><Icon name="pencil" size={13} /> {t('mod.note')}</span>
+                        <button type="button" className="pp-note-edit" onClick={() => setNoteEdit(adminNote)}>
+                          {t('mod.note.edit')}
+                        </button>
+                      </div>
+                      <div className="pp-note-body">{adminNote}</div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" className="pp-note-add" style={{ width: '100%' }} onClick={() => setNoteEdit('')}>
+                      <Icon name="pencil" size={14} /> {t('mod.note.add')}
+                    </Button>
+                  )
+                ) : (
+                  <div className="pp-note-editor">
+                    <textarea
+                      className="pp-note-input"
+                      value={noteEdit}
+                      maxLength={5000}
+                      rows={4}
+                      placeholder={t('mod.note.ph')}
+                      onChange={(e) => setNoteEdit(e.target.value)}
+                    />
+                    <div className="pp-note-actions">
+                      <Button variant="outline" disabled={noteBusy} onClick={() => setNoteEdit(null)}>{t('mod.note.cancel')}</Button>
+                      <Button variant="default" disabled={noteBusy} onClick={saveNote}>{t('mod.note.save')}</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

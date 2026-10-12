@@ -106,6 +106,12 @@ class UserResource extends Resource
                     ->formatStateUsing(fn ($state) => filled($state))
                     ->dehydrateStateUsing(fn ($state, ?User $record) => $state ? ($record?->email_verified_at ?? now()) : null),
             ]),
+            Forms\Components\Section::make('Admin Notu')->schema([
+                // Yalnız yöneticiler görür/yazar. Sitede admin bu kullanıcının profiline bakınca okunur.
+                Forms\Components\Textarea::make('admin_note')->label('Not')->rows(4)->maxLength(5000)
+                    ->placeholder('Bu kullanıcı hakkında yöneticilere özel not (ör. uyarı geçmişi, şüpheli davranış)...')
+                    ->helperText('Yalnız yöneticiler görür. Sitede bu kullanıcının profilinde admin görür.'),
+            ])->collapsible(),
         ]);
     }
 

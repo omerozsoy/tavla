@@ -277,6 +277,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
         Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
         Route::get('/admin/users/{user}/matches', [AdminController::class, 'userMatches']);
         Route::post('/admin/users/{user}/chat-mute', [AdminController::class, 'chatMute']); // profil üstü konuşma yasağı
+        Route::post('/admin/users/{user}/note', [AdminController::class, 'setNote']); // profil üstü admin notu
         // Icerik yonetimi (hizmet/blog/haber/etkinlik/kulup)
         Route::get('/admin/contents', [ContentController::class, 'adminIndex']);
         Route::post('/admin/contents', [ContentController::class, 'store']);

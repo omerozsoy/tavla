@@ -1012,6 +1012,7 @@ export interface PublicProfile {
   is_support?: boolean // destek -> isim yanında krem kalkan + "Hata Bildir" düğmesi
   is_friend?: boolean // bakan kişiyle ZATEN arkadaş mı -> "Arkadaş ol" gizlenir (site geneli)
   muted_until?: string | null // YALNIZ yönetici görür: aktif konuşma yasağı bitişi (ISO) veya null
+  admin_note?: string | null // YALNIZ yönetici görür: bu kullanıcıya yazılmış admin notu (yoksa null)
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)
@@ -1467,6 +1468,13 @@ export async function adminChatMute(id: number, minutes: number): Promise<{ mute
   return req<{ muted_until: string | null }>(`/admin/users/${id}/chat-mute`, {
     method: 'POST',
     body: JSON.stringify({ minutes }),
+  })
+}
+// Admin notu yaz/temizle (profil üstü). Boş metin -> notu siler. Döner: admin_note (string | null).
+export async function adminSetNote(id: number, note: string): Promise<{ admin_note: string | null }> {
+  return req<{ admin_note: string | null }>(`/admin/users/${id}/note`, {
+    method: 'POST',
+    body: JSON.stringify({ note }),
   })
 }
 // ---- Icerik (hizmet / blog / haber / etkinlik / kulup) ----

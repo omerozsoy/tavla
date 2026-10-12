@@ -67,6 +67,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'ban_reason',
         'ban_note',
         'banned_by',
+        // Admin notu: yalniz publicProfile'da (admin gorene) ACIKCA eklenir; otomatik serilestirmede sizmaz.
+        'admin_note',
     ];
 
     // is_admin + is_support (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir

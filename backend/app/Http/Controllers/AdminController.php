@@ -147,6 +147,27 @@ class AdminController extends Controller
         ]);
     }
 
+    // Admin notu yaz/temizle (profil üstü). Yalnız yönetici; boş metin -> notu siler.
+    public function setNote(Request $request, User $user)
+    {
+        $me = $request->user();
+        if (! $me?->is_admin || $me->isBanned()) {
+            return $this->fail('Yetkisiz.', 403);
+        }
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note')) {
+            return $this->fail('Not alanı henüz hazır değil.', 422);
+        }
+        $data = $request->validate([
+            'note' => ['nullable', 'string', 'max:5000'],
+        ]);
+        $note = trim((string) ($data['note'] ?? ''));
+        $user->admin_note = $note !== '' ? $note : null; // forceFill GEREKMEZ: fillable'da değil ama direct atama + save çalışır
+        $user->save();
+        \App\Support\Shield::audit((int) $me->id, 'admin_user_note', sprintf('target_user=%d len=%d', $user->id, mb_strlen($note)), 1);
+
+        return response()->json(['admin_note' => $user->admin_note]);
+    }
+
     // Uyenin son maclari (mac gecmisi)
     public function userMatches(Request $request, User $user)
     {
