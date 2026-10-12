@@ -13,6 +13,12 @@ class EditUser extends EditRecord
 {
     protected static string $resource = UserResource::class;
 
+    // "Değişiklikleri kaydet" sonrası düzenleme ekranında kalmak yerine üye listesine dön.
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [
