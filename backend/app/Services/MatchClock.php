@@ -68,7 +68,7 @@ class MatchClock
     // grace, bot turundan sonra insanın İLK segmentinin started_at'ını ileri iterek reveal süresini
     // insana yazmaz; insan roll'unda started_at zaten gerçek now'a sıfırlanır (sömürüye kapalı,
     // AFK/presence korumaları aynen işler).
-    public const BOT_REVEAL_GRACE = 4.5;
+    public const BOT_REVEAL_GRACE = 2.0;
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
     // 45sn: terk edilen/olu oda ~45sn'de (45 + GRACE, GRACE=0) kapanir. Daha dusuk deger (30) mobilde
