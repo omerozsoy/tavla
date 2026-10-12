@@ -11121,7 +11121,8 @@ export default function App() {
       </div>
       </main>
 
-      {online && room && (
+      {/* Bot (YZ) maçında sohbet YOK: karşıda yanıt veren insan yok -> paneli gizle. */}
+      {online && room && !room.bot && (
         <Chat
           messages={chat}
           mySlot={room.slot}
