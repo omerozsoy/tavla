@@ -673,9 +673,7 @@ export interface MyMatch {
   match_length?: number | null
   pr?: number | null
   coins_after?: number | null
-  luck?: number | null
-  opponent_luck?: number | null
-  // Tavlai Luck V1 — gnubg NATIVE MWC% (bağımsız per-oyuncu). Doluysa ham luck yerine gösterilir.
+  // Tavlai Luck V1 — gnubg NATIVE MWC% (TEK şans kaynağı; istemci HAM luck kaldırıldı).
   luck_mwc?: number | null
   opponent_luck_mwc?: number | null
   // Maç Özeti: luck EQUITY (cost) + JOKER sayısı (per oyuncu)
@@ -2214,7 +2212,6 @@ export async function reportRating(
   opponentRating: number,
   matchLength?: number,
   pr?: number | null,
-  luck?: number | null,
   scoreSelf?: number | null,
   scoreOpp?: number | null,
   opponentName?: string | null,
@@ -2225,7 +2222,6 @@ export async function reportRating(
   roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
   extra?: { gammons?: number; backgammons?: number; min_win_prob?: number | null; ach_flags?: string[] },
   mat?: string | null, // .mat (gnubg NATIVE luck V1 — backend analyse match ile per-oyuncu MWC%)
-  opponentLuck?: number | null, // rakibin HAM luck'i (yalniz PvB: bot; online'da rakip kendi satirini yazar)
 ): Promise<{
   rating: number
   rating_before?: number // OTORİTER maç-öncesi rating; delta bundan çizilir (yerel user.rating drift -> sahte +1 önlenir)
@@ -2243,9 +2239,7 @@ export async function reportRating(
   pr_cube_self?: number | null // hic sayilan kup karari yoksa null -> "—"
   pr_checker_opponent?: number | null
   pr_cube_opponent?: number | null
-  luck_self?: number | null // kendi HAM luck'ım (renk-luck) — sunucu-otoriter sans (ONNX fallback)
-  luck_opp?: number | null // rakibin HAM luck'ı (varsa) -> iki ekranda tutarlı net
-  luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1, async -> ilkin null)
+  luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1, async -> ilkin null) — TEK şans kaynağı
   luck_mwc_opp?: number | null // rakibin gnubg MWC-luck %'si (varsa)
   luck_emg_self?: number | null // Maç Özeti: luck equity (cost)
   luck_emg_opp?: number | null
@@ -2260,8 +2254,6 @@ export async function reportRating(
       match_length: matchLength ?? null,
       match_type: matchType,
       pr: pr ?? null,
-      luck: luck ?? null,
-      opponent_luck: opponentLuck ?? null,
       score_self: scoreSelf ?? null,
       score_opp: scoreOpp ?? null,
       opponent_name: opponentName ?? null,
@@ -2314,9 +2306,7 @@ export async function matchPr(
   cube_self?: number | null // XG kirilimi: kup-yalniz PR (kup karari yoksa null)
   checker_opponent?: number | null
   cube_opponent?: number | null
-  luck_self?: number | null
-  luck_opp?: number | null
-  luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1)
+  luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1) — TEK şans kaynağı
   luck_mwc_opp?: number | null
   luck_emg_self?: number | null // Maç Özeti: luck equity (cost)
   luck_emg_opp?: number | null

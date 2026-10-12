@@ -37,12 +37,9 @@ function prCls(pr: number | null | undefined): string {
 
 // Sans etiketi: Tavlai Luck V1 -> gnubg NATIVE MWC% (bagimsiz per-oyuncu, yuzde) VARSA onu goster;
 // yoksa ham equity luck'ini okunur isaretli skora olcekle (x100). Ikisi de null -> gosterme.
-function luckLabel(mwc?: number | null, raw?: number | null): { text: string; pos: boolean } | null {
+// Şans = yalnız gnubg NATIVE MWC% (istemci HAM luck fallback KALDIRILDI). Yoksa null -> "—".
+function luckLabel(mwc?: number | null): { text: string; pos: boolean } | null {
   if (mwc != null) return { text: `${mwc >= 0 ? '+' : ''}${mwc.toFixed(0)}%`, pos: mwc >= 0 }
-  if (raw != null) {
-    const s = Math.round(raw * 100)
-    return { text: `${s >= 0 ? '+' : ''}${s}`, pos: s >= 0 }
-  }
   return null
 }
 
@@ -317,9 +314,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
               const oppWon = hasScore ? m.score_opp! > m.score_self! : !m.won
               const oppName = m.opponent_name || t('mh.opponentFb')
               const meName = myName || t('mh.you')
-              // Sans: gnubg NATIVE MWC% oncelikli, yoksa ham luck — her oyuncu kendi tarafinda.
-              const selfLuck = luckLabel(m.luck_mwc, m.luck)
-              const oppLuck = luckLabel(m.opponent_luck_mwc, m.opponent_luck)
+              // Sans: yalnız gnubg NATIVE MWC% — her oyuncu kendi tarafinda (istemci HAM luck kaldırıldı).
+              const selfLuck = luckLabel(m.luck_mwc)
+              const oppLuck = luckLabel(m.opponent_luck_mwc)
               // Rating degisimi Elo sifir-toplamli: birine +N ise digerine -N. Rakip GERCEK
               // puanli oyuncu ise (bot degil, delta != 0) rakip tarafinda -(self) goster.
               const oppDelta = !isBot(oppName) && m.delta ? -m.delta : null

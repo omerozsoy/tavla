@@ -26,11 +26,8 @@ interface Props {
   loserCubePr?: number | null
   winnerBand: string
   loserBand: string
-  // Sans (luck): oyuncu-basi birikmis equity sansi. null = hesaplanmadi (—)
-  winnerLuck: number | null
-  loserLuck: number | null
-  // Tavlai Luck V1 (gnubg NATIVE MWC-luck, YÜZDE): İKİSİ de doluysa BAĞIMSIZ % gösterilir
-  // (sıfır-toplam DEĞİL — her oyuncu kendi zarlarından). null -> yukarıdaki ham luck (net) fallback.
+  // Şans = yalnız Tavlai Luck V1 (gnubg NATIVE MWC-luck, YÜZDE), BAĞIMSIZ per-oyuncu. İKİSİ de
+  // doluysa gösterilir; değilse loader/"—" (istemci HAM luck fallback KALDIRILDI — güvenilmezdi).
   winnerLuckPct?: number | null
   loserLuckPct?: number | null
   // Bahisli macta coin transfer tutari (mutlak); kazanan +, kaybeden -. null = bahissiz
@@ -106,8 +103,6 @@ export default function MatchResult({
   loserCubePr,
   winnerBand,
   loserBand,
-  // winnerLuck / loserLuck (HAM istemci luck'ı) ARTIK KULLANILMIYOR: yetkili gnubg MWC ile ters
-  // işaret verip yanıltıyordu. Interface'te kalır (çağıranlar hâlâ geçer) ama display'de ASLA kullanılmaz.
   winnerLuckPct,
   loserLuckPct,
   coinAmount,

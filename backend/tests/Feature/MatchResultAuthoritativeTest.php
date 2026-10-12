@@ -395,49 +395,31 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertSame(1500, (int) $outsider->fresh()->rating);
     }
 
-    // SUNUCU-OTORITER SANS (luck): her oyuncu KENDİ renginin HAM luck'ını raporlar; /me/match-pr
-    // iki oyuncuya da AYNI çifti verir (self+opp). Çapraz-tutarlı: A'nın self'i = B'nin opp'u.
-    // Böylece MatchResult net'i (kazanan−kaybeden) iki ekranda ÖZDEŞ -> "farklı şans" bug'ı biter.
-    public function test_luck_is_cross_client_consistent(): void
+    // TEK ŞANS KAYNAĞI = gnubg (luck_mwc/emg). İstemci HAM 'luck' ARTIK KABUL EDİLMEZ (güvenilmezdi,
+    // yetkili gnubg ile ters işaret veriyordu) -> DB'ye YAZILMAZ ve /me/match-pr'de luck_self/luck_opp
+    // alanları YOKTUR. Şans yalnız async gnubg (luck_mwc) ile gelir -> yoksa null (istemci loader/"—").
+    public function test_client_raw_luck_is_ignored(): void
     {
         $white = $this->makeUser('wluck'); // p1
         $black = $this->makeUser('bluck'); // p2
         $this->makeFinishedRoom($white, $black);
 
-        // Beyaz kendi HAM luck'ını (0.42) raporlar.
+        // Beyaz bir HAM luck göndermeye ÇALIŞIR (0.42) — backend bunu YOK SAYMALI.
         Sanctum::actingAs($white);
         $this->postJson('/api/rating/report', [
             'won' => false, 'opponent_rating' => 1500, 'ranked' => true,
             'room_code' => 'AUTHR', 'luck' => 0.42,
         ])->assertOk();
 
-        // Siyah kendi HAM luck'ını (-0.17) raporlar.
-        Sanctum::actingAs($black);
-        $this->postJson('/api/rating/report', [
-            'won' => true, 'opponent_rating' => 1500, 'ranked' => true,
-            'room_code' => 'AUTHR', 'luck' => -0.17,
-        ])->assertOk();
+        // DB'de istemci luck'ı SAKLANMADI (gnubg luck_mwc/emg async -> henüz null).
+        $row = \App\Models\MatchResult::where('room_code', 'AUTHR')->where('user_id', $white->id)->first();
+        $this->assertNull($row->luck, 'istemci HAM luck DB\'ye yazılmamalı');
 
-        // Beyaz gözünden: self=0.42 (kendi), opp=-0.17 (siyahın).
-        Sanctum::actingAs($white);
-        $wPair = $this->getJson('/api/me/match-pr?room_code=AUTHR')->assertOk()->json();
-        $this->assertEqualsWithDelta(0.42, $wPair['luck_self'], 1e-6);
-        $this->assertEqualsWithDelta(-0.17, $wPair['luck_opp'], 1e-6);
-
-        // Siyah gözünden: self=-0.17 (kendi), opp=0.42 (beyazın).
-        Sanctum::actingAs($black);
-        $bPair = $this->getJson('/api/me/match-pr?room_code=AUTHR')->assertOk()->json();
-        $this->assertEqualsWithDelta(-0.17, $bPair['luck_self'], 1e-6);
-        $this->assertEqualsWithDelta(0.42, $bPair['luck_opp'], 1e-6);
-
-        // ÇAPRAZ TUTARLILIK: A.self == B.opp ve A.opp == B.self (renk-keyli tek kaynak).
-        $this->assertEqualsWithDelta($wPair['luck_self'], $bPair['luck_opp'], 1e-6);
-        $this->assertEqualsWithDelta($wPair['luck_opp'], $bPair['luck_self'], 1e-6);
-
-        // Gösterilen net (white − black) İKİ ekranda özdeş: 0.42 − (−0.17) = 0.59.
-        $netWhiteScreen = $wPair['luck_self'] - $wPair['luck_opp']; // beyaz: white−black
-        $netBlackScreen = $bPair['luck_opp'] - $bPair['luck_self']; // siyah: white−black
-        $this->assertEqualsWithDelta(0.59, $netWhiteScreen, 1e-6);
-        $this->assertEqualsWithDelta($netWhiteScreen, $netBlackScreen, 1e-6);
+        // /me/match-pr: luck_self/luck_opp alanları YOK; yalnız gnubg luck_mwc (burada null) var.
+        $pair = $this->getJson('/api/me/match-pr?room_code=AUTHR')->assertOk()->json();
+        $this->assertArrayNotHasKey('luck_self', $pair);
+        $this->assertArrayNotHasKey('luck_opp', $pair);
+        $this->assertArrayHasKey('luck_mwc_self', $pair);
+        $this->assertNull($pair['luck_mwc_self'], 'gnubg job koşmadan şans null olmalı');
     }
 }

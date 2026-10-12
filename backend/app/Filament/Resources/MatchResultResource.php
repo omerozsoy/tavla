@@ -138,7 +138,8 @@ class MatchResultResource extends Resource
                 Tables\Columns\TextColumn::make('gnubg_cube_pr')->label('TavlaTV cube')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('luck')->label('Şans')
+                // Şans (equity) — gnubg luck_emg (tek yetkili; istemci HAM 'luck' kolonu kaldırıldı).
+                Tables\Columns\TextColumn::make('luck_emg')->label('Şans')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->toggleable(isToggledHiddenByDefault: true),
                 // Tavlai Luck V1 (gnubg NATIVE MWC-luck, YÜZDE). GNUBG_PR_MODE=shadow + istemci .mat ile dolar.

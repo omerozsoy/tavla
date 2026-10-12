@@ -1502,14 +1502,14 @@ class AuthController extends Controller
     public function myMatches(Request $request)
     {
         $me = $request->user();
-        // SAVUNMACI: luck/score_* kolonlari migration ile eklendi. Migration henuz
+        // SAVUNMACI: score_* kolonlari migration ile eklendi. Migration henuz
         // calismadiysa o kolonlari SECME (aksi halde "unknown column" -> tum liste bos).
-        $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck');
+        // (istemci HAM 'luck'/'opponent_luck' ARTIK SECILMEZ -> şans yalnız gnubg luck_mwc/emg.)
+        $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'score_self');
         $hasOpp = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name');
         $hasLog = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log');
         $hasRoom = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code');
         $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
-        $hasOppLuck = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck');
         $hasOppLuckMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
         // Maç Özeti: luck EQUITY (emg) + JOKER (savunmacı — migration henüz koşmamış olabilir)
         $hasEmg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_emg');
@@ -1537,16 +1537,13 @@ class AuthController extends Controller
             $cols = array_merge($cols, ['gnubg_opponent_checker_pr', 'gnubg_opponent_cube_pr']);
         }
         if ($hasNew) {
-            $cols = array_merge($cols, ['luck', 'score_self', 'score_opp']);
+            $cols = array_merge($cols, ['score_self', 'score_opp']);
         }
         if ($hasMwc) {
             $cols[] = 'luck_mwc'; // Tavlai Luck V1 — gnubg NATIVE MWC% (bağımsız per-oyuncu)
         }
         if ($hasOpp) {
             $cols = array_merge($cols, ['opponent_name', 'opponent_pr']);
-        }
-        if ($hasOppLuck) {
-            $cols[] = 'opponent_luck'; // PvB: rakip (bot) ham luck'i satirin kendisinde
         }
         if ($hasOppLuckMwc) {
             $cols[] = 'opponent_luck_mwc'; // PvB: rakip (bot) gnubg NATIVE MWC-luck'i (Luck V1)
@@ -1599,17 +1596,16 @@ class AuthController extends Controller
         $rows = $query->get();
 
         // Rakip ŞANS'ı (herkesin şansı kendi tarafında gösterilsin): online maçlarda rakibin
-        // satırı aynı room_code'da; tek toplu sorgu ile room_code -> rakip luck haritası çıkar.
-        // Hem ham luck hem gnubg NATIVE MWC% (V1) — istemci MWC%'yi tercih eder, yoksa ham.
-        $oppLuckByRoom = [];
+        // satırı aynı room_code'da; tek toplu sorgu ile room_code -> rakip gnubg şans haritası çıkar.
+        // Yalnız gnubg NATIVE MWC%/EMG (V1) — istemci HAM luck KALDIRILDI.
         $oppLuckMwcByRoom = [];
         $oppLuckEmgByRoom = [];
         $oppLuckJokersByRoom = [];
         $oppPrByRoom = [];        // TEK-KAYNAK: rakibin KENDİ satırındaki otoriter gnubg_pr/checker/cube
-        if ($hasRoom && $hasNew) {
+        if ($hasRoom) {
             $codes = $rows->pluck('room_code')->filter()->unique()->values()->all();
             if (! empty($codes)) {
-                $oppCols = ['room_code', 'luck'];
+                $oppCols = ['room_code'];
                 if ($hasMwc) {
                     $oppCols[] = 'luck_mwc';
                 }
@@ -1628,8 +1624,7 @@ class AuthController extends Controller
                 \App\Models\MatchResult::whereIn('room_code', $codes)
                     ->where('user_id', '!=', $me->id)
                     ->get($oppCols)
-                    ->each(function ($r) use (&$oppLuckByRoom, &$oppLuckMwcByRoom, &$oppLuckEmgByRoom, &$oppLuckJokersByRoom, &$oppPrByRoom, $hasMwc, $hasEmg, $hasJokers, $hasGnubg, $hasGnubgSplit) {
-                        $oppLuckByRoom[$r->room_code] = $r->luck;
+                    ->each(function ($r) use (&$oppLuckMwcByRoom, &$oppLuckEmgByRoom, &$oppLuckJokersByRoom, &$oppPrByRoom, $hasMwc, $hasEmg, $hasJokers, $hasGnubg, $hasGnubgSplit) {
                         if ($hasMwc) {
                             $oppLuckMwcByRoom[$r->room_code] = $r->luck_mwc;
                         }
@@ -1668,12 +1663,7 @@ class AuthController extends Controller
                 'match_length' => $m->match_length,
                 'pr' => $m->pr,
                 'coins_after' => $m->coins_after,
-                'luck' => $hasNew ? $m->luck : null,
-                // Rakip luck: PvB'de satirin kendi opponent_luck kolonu (bot); online'da karsi
-                // satirdan (room_code) okunan deger. Once dogrudan kolon, yoksa oda-eslesmesi.
-                'opponent_luck' => ($hasOppLuck && $m->opponent_luck !== null)
-                    ? $m->opponent_luck
-                    : (($hasRoom && $m->room_code) ? ($oppLuckByRoom[$m->room_code] ?? null) : null),
+                // istemci HAM 'luck'/'opponent_luck' KALDIRILDI -> şans yalnız gnubg luck_mwc/emg.
                 'luck_mwc' => $hasMwc ? $m->luck_mwc : null,
                 // Rakip gnubg MWC-luck: PvB'de satırın kendi kolonu (bot); online'da karşı satır (room).
                 'opponent_luck_mwc' => ($hasOppLuckMwc && $m->opponent_luck_mwc !== null)

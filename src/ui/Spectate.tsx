@@ -650,8 +650,6 @@ export default function Spectate({
             loserCubePr={summary?.authPr?.[loserColor]?.cube ?? null}
             winnerBand={bandOf(winnerColor)}
             loserBand={bandOf(loserColor)}
-            winnerLuck={summary?.luck?.[winnerColor]?.cost ?? null}
-            loserLuck={summary?.luck?.[loserColor]?.cost ?? null}
             winnerLuckPct={summary?.luck?.[winnerColor]?.mwc ?? null}
             loserLuckPct={summary?.luck?.[loserColor]?.mwc ?? null}
             winnerRating={ratingOf(winnerColor)}

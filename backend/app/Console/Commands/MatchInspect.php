@@ -84,7 +84,7 @@ class MatchInspect extends Command
                 ['id', 'user', 'won', 'skor', 'delta', 'rated', 'type', 'pr', 'luck', 'created'],
                 $results->map(fn ($r) => [
                     $r->id, $r->user_id, $r->won ? 'W' : 'L', "{$r->score_self}-{$r->score_opp}", $r->delta,
-                    $r->rated ? 'y' : 'n', $r->match_type, $r->pr, $r->luck, $r->created_at,
+                    $r->rated ? 'y' : 'n', $r->match_type, $r->pr, $r->luck_emg, $r->created_at,
                 ])->all()
             );
         }

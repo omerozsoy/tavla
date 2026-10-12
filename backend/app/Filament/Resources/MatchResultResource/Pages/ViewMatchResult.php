@@ -71,7 +71,7 @@ class ViewMatchResult extends ViewRecord
                 'won' => (bool) $r->won,
                 'pr' => $gnubg,
                 'stored_pr' => $stored,
-                'luck' => $r->luck,
+                'luck' => $r->luck_emg, // gnubg luck equity (tek yetkili şans; istemci HAM luck kaldırıldı)
                 'rating_before' => $r->rating_before,
                 'rating_after' => $r->rating_after,
                 'delta' => (int) ($r->delta ?? 0),

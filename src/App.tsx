@@ -2031,7 +2031,6 @@ export default function App() {
   // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
   // Renk-anahtarlı (peer snapshot'a güvenmez). null iken lokal prLuck'a düşer.
-  const [serverLuck, setServerLuck] = useState<{ white: number | null; black: number | null } | null>(null)
   // Tavlai Luck V1: gnubg NATIVE per-oyuncu MWC-luck (%). Async (analyse match) -> hazır olunca
   // dolar; İKİSİ de biliniyorsa MatchResult BAĞIMSIZ % gösterir (sıfır-toplam DEĞİL, gnubg gibi).
   const [serverLuckMwc, setServerLuckMwc] = useState<{ white: number | null; black: number | null } | null>(null)
@@ -2779,7 +2778,6 @@ export default function App() {
     prPollRef.current++ // aktif gnubg PR poll'unu iptal et
     setPrAnalyzing(false)
     setOppPrPending(false)
-    setServerLuck(null) // yeni mac -> onceki sunucu-sansini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
     setServerLuckJokers(null)
@@ -4815,7 +4813,6 @@ export default function App() {
           oppRating,
           match.target,
           prRef(myColor),
-          prLuck[myColor], // HAM kendi-renk luck -> sunucu iki oyuncunun hamını saklar, net'i istemci hesaplar (tutarlı)
           match.score[myColor],
           match.score[opponent(myColor)],
           room?.oppName ?? null,
@@ -4864,7 +4861,6 @@ export default function App() {
           oppRating,
           match.target,
           prRef(myColor),
-          prLuck[myColor], // HAM kendi-renk luck (bkz doReport) — pending retry de aynı semantik
           match.score[myColor],
           match.score[opponent(myColor)],
           room?.oppName ?? null,
@@ -4907,16 +4903,6 @@ export default function App() {
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
         if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
         else setPrAnalyzing(false) // gnubg yok -> erken açtığımız loader'ı kapat (serverPr zaten dolu)
-        // Sunucu-otoriter SANS: self/opp HAM luck'ı renge (white/black) eşle -> iki istemci
-        // AYNI çifti tutar -> net TUTARLI. Gelmeyen (null) değeri önceki değeri korur (merge).
-        const setLuckPair = (selfL?: number | null, oppL?: number | null) =>
-          setServerLuck((prev) => {
-            const next = { white: prev?.white ?? null, black: prev?.black ?? null }
-            if (selfL != null) next[myColor] = selfL
-            if (oppL != null) next[opponent(myColor)] = oppL
-            return next
-          })
-        setLuckPair(r.luck_self, r.luck_opp)
         // Tavlai Luck V1: gnubg NATIVE MWC-luck (%) — renge eşle (self->myColor). Async (analyse
         // match) olduğundan ilkin null; poll ederek doldur. İkisi de gelince BAĞIMSIZ % gösterilir.
         const setLuckMwcPair = (selfL?: number | null, oppL?: number | null) =>
@@ -4941,14 +4927,14 @@ export default function App() {
           })
         setColorPair(setServerLuckEmg, r.luck_emg_self, r.luck_emg_opp)
         setColorPair(setServerLuckJokers, r.luck_jokers_self, r.luck_jokers_opp)
-        let oppLuckDone = r.luck_opp != null
         let mwcDone = r.luck_mwc_self != null && r.luck_mwc_opp != null
-        if ((oppPr == null || !oppLuckDone || !mwcDone) && code) {
+        if ((oppPr == null || !mwcDone) && code) {
           // Rakip PR'ı (kaybedenin KENDİ gnubg satırı) otoriter kaynaktır; gnubg tek-thread/kuyrukta
           // yavaş olabildiğinden ~90sn poll et (eski 18sn penceresi kısa kalıp "—"da bırakıyordu).
           // 0 GERÇEK bir değerdir (kusursuz oyun): sunucu hazır değilken NULL döner, hesaplandıysa
           // gerçek değeri (0 dahil). Bu yüzden yalnız null'da poll'a devam; 0 gelirse 0 yaz (atma).
-          for (let i = 0; i < 60 && (oppPr == null || !oppLuckDone || !mwcDone); i++) {
+          // ŞANS = yalnız gnubg MWC (mwcDone); istemci HAM luck poll'u KALDIRILDI.
+          for (let i = 0; i < 60 && (oppPr == null || !mwcDone); i++) {
             await new Promise((res) => setTimeout(res, 1500))
             const pair = await matchPr(code)
             if (pair.opponent != null) {
@@ -4963,10 +4949,6 @@ export default function App() {
                 cubeSelf: pair.cube_self ?? prev?.cubeSelf ?? null,
                 cubeOpp: pair.cube_opponent ?? prev?.cubeOpp ?? null,
               }))
-            }
-            if (pair.luck_opp != null || pair.luck_self != null) {
-              setLuckPair(pair.luck_self, pair.luck_opp)
-              if (pair.luck_opp != null) oppLuckDone = true
             }
             if (pair.luck_mwc_self != null || pair.luck_mwc_opp != null) {
               setLuckMwcPair(pair.luck_mwc_self, pair.luck_mwc_opp)
@@ -5180,10 +5162,6 @@ export default function App() {
         botRating,
         match.target,
         prRef('white'),
-        // MUTLAK kendi-renk (insan=beyaz) HAM luck'i -> MatchResult ekraniyla AYNI semantik.
-        // (Eskiden white-black goreceli gonderiliyordu; bot luck'i hicbir yere yazilmadigindan
-        //  "Mac Analizleri"nde AI'nin sansi HIC gozukmuyordu.)
-        prLuckRef.current.white,
         match.score.white,
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
@@ -5193,8 +5171,7 @@ export default function App() {
         'ai', // match_type -> yapay zeka
         room?.code ?? null, // sunucu-otoriter AI odasi -> backend sonucu oda skorundan dogrular
         buildAchExtra(), // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
-        null, // mat yok (pvb'de gnubg NATIVE MWC job'i calismaz -> ham luck gosterilir)
-        prLuckRef.current.black, // rakip (bot) HAM luck'i -> opponent_luck kolonuna yazilir
+        null, // mat yok (pvb'de gnubg NATIVE MWC job'i log'dan kurar -> tek şans kaynağı gnubg)
       ]
       // ONLINE ile AYNI DAYANIKLILIK: 3 deneme + basarisizsa pending-retry (acilis/online'da
       // tekrar denenir). Onceki `.catch(()=>{})` ag hatasinda AI macini SESSIZCE kaybediyordu.
@@ -7998,17 +7975,6 @@ export default function App() {
     if (s.decisions > 0) return (s.loss / s.decisions) * 500
     const ad = s.allDecisions ?? 0
     return ad > 0 ? ((s.allLoss ?? 0) / ad) * 500 : null
-  }
-  // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
-  // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
-  // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
-  // ÇAPRAZ-İSTEMCİ TUTARLILIK: sunucu-otoriter ham renk-luck varsa onu kullan (iki oyuncu da
-  // backend'den AYNI white+black çiftini okur -> MatchResult net'i özdeş). Yoksa lokal prLuck'a
-  // düş (online'da rakip henüz hesaplanmadıysa null -> MatchResult negatifiyle sıfır-toplam).
-  const luckOf = (c: Player): number | null => {
-    if (serverLuck && serverLuck[c] != null) return serverLuck[c]
-    if (online && c !== myColor && prStats[c].decisions === 0) return null
-    return prLuck[c]
   }
   // Tavlai Luck V1: gnubg NATIVE MWC-luck (%). İKİSİ de biliniyorsa MatchResult BAĞIMSIZ %
   // gösterir (sıfır-toplam DEĞİL — gnubg metodolojisi: her oyuncu kendi zarlarından). Biri
@@ -11196,8 +11162,6 @@ export default function App() {
           loserCubePr={prCubeShown(opponent(mWinner))}
           winnerBand={t(prBand(prShown(mWinner)))}
           loserBand={t(prBand(prShown(opponent(mWinner))))}
-          winnerLuck={luckOf(mWinner)}
-          loserLuck={luckOf(opponent(mWinner))}
           winnerLuckPct={luckPctOf(mWinner)}
           loserLuckPct={luckPctOf(opponent(mWinner))}
           coinAmount={coinDelta == null ? null : Math.abs(coinDelta)}
