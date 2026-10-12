@@ -162,10 +162,22 @@ class AdminController extends Controller
         ]);
         $note = trim((string) ($data['note'] ?? ''));
         $user->admin_note = $note !== '' ? $note : null; // forceFill GEREKMEZ: fillable'da değil ama direct atama + save çalışır
+        // Son yazan yönetici + zaman damgası (profilde/panelde "kim yazdı" küçük gösterilir).
+        $hasMeta = \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note_by');
+        if ($hasMeta) {
+            $user->admin_note_by = $note !== '' ? (int) $me->id : null;
+            $user->admin_note_at = $note !== '' ? now() : null;
+        }
         $user->save();
         \App\Support\Shield::audit((int) $me->id, 'admin_user_note', sprintf('target_user=%d len=%d', $user->id, mb_strlen($note)), 1);
 
-        return response()->json(['admin_note' => $user->admin_note]);
+        return response()->json([
+            'admin_note' => $user->admin_note,
+            'admin_note_by_name' => ($hasMeta && $note !== '' && $user->admin_note_by)
+                ? (\App\Models\User::find($user->admin_note_by)?->nickname) : null,
+            'admin_note_at' => ($hasMeta && $note !== '' && $user->admin_note_at)
+                ? $user->admin_note_at->toIso8601String() : null,
+        ]);
     }
 
     // Uyenin son maclari (mac gecmisi)

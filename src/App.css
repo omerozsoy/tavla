@@ -18579,6 +18579,14 @@ button.acct-row-logout:hover:not(:disabled) {
   word-break: break-word;
   color: var(--text);
 }
+/* Notu son yazan yönetici + zaman (minnacık, sağa yaslı). */
+.pp-note-by {
+  margin-top: 4px;
+  text-align: right;
+  font-size: 0.64rem;
+  color: var(--muted);
+  opacity: 0.85;
+}
 .pp-note-input {
   width: 100%;
   padding: 8px 10px;
@@ -26740,25 +26748,36 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Küfür şikayeti (iki adımlı): sohbet altında küçük, araya girmeyen satır. */
 .chat-report {
-  padding: 4px 10px 8px;
+  padding: 6px 10px 10px;
   display: flex;
   justify-content: center;
-  min-height: 24px;
+  min-height: 30px;
 }
+/* Şikayet Et: belirgin ama agresif olmayan pill (danger tonlu çerçeve + hafif zemin). */
 .chat-report-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: var(--muted-fg, #8a7f6e);
-  font-size: 0.7rem;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--danger-fg, #d14343) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger-fg, #d14343) 32%, transparent);
+  color: var(--danger-fg, #d14343);
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  opacity: 0.8;
+  transition:
+    background 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    transform 120ms var(--ease-out);
 }
 .chat-report-btn:hover {
+  background: color-mix(in srgb, var(--danger-fg, #d14343) 16%, transparent);
+  border-color: color-mix(in srgb, var(--danger-fg, #d14343) 58%, transparent);
   color: var(--danger-fg, #d14343);
-  opacity: 1;
+}
+.chat-report-btn:active {
+  transform: scale(0.97);
 }
 .chat-report-confirm {
   display: flex;

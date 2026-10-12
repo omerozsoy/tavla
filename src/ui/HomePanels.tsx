@@ -10,7 +10,7 @@ import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
 import RoleBadge from './RoleBadge'
-import { useTopRank } from '../topRanks'
+import { useTopRank, useTopRankMap } from '../topRanks'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
@@ -271,7 +271,16 @@ export function LiveMatchesPanel({
     }
   }, [])
 
-  const shown = matches?.filter((m) => tab === 'all' || liveCat(m) === tab) ?? null
+  // Liderlik ilk-3 (PR/rating) oyuncusunun olduğu maçlar listede EN ÜSTE (öne çıkan maçlar).
+  const topMap = useTopRankMap()
+  const isFeat = (m: LiveMatch) =>
+    (m.p1_id != null && topMap.has(m.p1_id)) || (m.p2_id != null && topMap.has(m.p2_id))
+  const shown = matches
+    ? matches
+        .filter((m) => tab === 'all' || liveCat(m) === tab)
+        .slice()
+        .sort((a, b) => (isFeat(b) ? 1 : 0) - (isFeat(a) ? 1 : 0)) // kararlı: öne çıkanlar üstte
+    : null
   // Sekme degisince ilk sayfaya dön
   useEffect(() => {
     setPage(0)

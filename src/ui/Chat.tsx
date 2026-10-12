@@ -245,7 +245,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             <div className="chat-report">
               {reportState === 'idle' && (
                 <button type="button" className="chat-report-btn" onClick={() => setReportState('confirm')}>
-                  <Icon name="flag" size={13} /> {t('chat.report')}
+                  <Icon name="flag" size={15} /> {t('chat.report')}
                 </button>
               )}
               {reportState === 'confirm' && (

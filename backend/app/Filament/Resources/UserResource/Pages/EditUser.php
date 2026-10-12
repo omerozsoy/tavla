@@ -19,6 +19,29 @@ class EditUser extends EditRecord
         return $this->getResource()::getUrl('index');
     }
 
+    // admin_note model'de $hidden -> record->attributesToArray() onu DÜŞÜRÜR, form kutusu BOŞ gelirdi
+    // (DB'de not olsa bile). Record'dan doğrudan okuyup forma enjekte et.
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['admin_note'] = $this->record->admin_note;
+
+        return $data;
+    }
+
+    // Not metni değiştiyse "son yazan yönetici + zaman" damgasını güncelle (forceFill ile yazılır).
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note_by')
+            && array_key_exists('admin_note', $data)
+            && (string) ($data['admin_note'] ?? '') !== (string) $this->record->getOriginal('admin_note')) {
+            $has = trim((string) ($data['admin_note'] ?? '')) !== '';
+            $data['admin_note_by'] = $has ? auth()->id() : null;
+            $data['admin_note_at'] = $has ? now() : null;
+        }
+
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

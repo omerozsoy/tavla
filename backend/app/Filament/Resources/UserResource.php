@@ -110,9 +110,18 @@ class UserResource extends Resource
             ]),
             Forms\Components\Section::make('Admin Notu')->schema([
                 // Yalnız yöneticiler görür/yazar. Sitede admin bu kullanıcının profiline bakınca okunur.
+                // NOT: admin_note model'de $hidden -> form attributesToArray'den gelmez; EditUser
+                // ::mutateFormDataBeforeFill record'dan doğrudan enjekte eder (yoksa kutu BOŞ gelir).
                 Forms\Components\Textarea::make('admin_note')->label('Not')->rows(4)->maxLength(5000)
                     ->placeholder('Bu kullanıcı hakkında yöneticilere özel not (ör. uyarı geçmişi, şüpheli davranış)...')
                     ->helperText('Yalnız yöneticiler görür. Sitede bu kullanıcının profilinde admin görür.'),
+                // Notu son yazan yönetici + zaman (kaydedince otomatik damgalanır).
+                Forms\Components\Placeholder::make('admin_note_meta')->label('Son düzenleyen')
+                    ->visible(fn (?User $record) => (bool) ($record?->admin_note_by))
+                    ->content(fn (?User $record) => $record?->admin_note_by
+                        ? ((\App\Models\User::find($record->admin_note_by)?->nickname ?? '#'.$record->admin_note_by)
+                            .($record->admin_note_at ? ' · '.$record->admin_note_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') : ''))
+                        : '—'),
             ])->collapsible(),
         ]);
     }
@@ -294,6 +303,10 @@ class UserResource extends Resource
                         ? 'Susturuldu: '.$record->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').'\'e kadar'
                         : 'Susturulmamış')
                     ->toggleable(),
+                // Admin notu: listede görünür (kimde not var bir bakışta belli) + içerikte arama.
+                Tables\Columns\TextColumn::make('admin_note')->label('Admin Notu')
+                    ->limit(40)->tooltip(fn ($record) => $record->admin_note)
+                    ->placeholder('—')->searchable()->wrap()->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Kayıt')->dateTime('d.m.Y H:i')->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')
@@ -310,6 +323,14 @@ class UserResource extends Resource
                 ]),
                 Tables\Filters\TernaryFilter::make('is_admin')->label('Yönetici'),
                 Tables\Filters\TernaryFilter::make('is_support')->label('Destek'),
+                // Admin notu olan üyeleri süz (kimde not var kolayca bulunur).
+                Tables\Filters\TernaryFilter::make('admin_note')->label('Admin notu')
+                    ->placeholder('Hepsi')->trueLabel('Notu olanlar')->falseLabel('Notu olmayanlar')
+                    ->queries(
+                        true: fn (Builder $q) => $q->whereNotNull('admin_note')->where('admin_note', '!=', ''),
+                        false: fn (Builder $q) => $q->where(fn (Builder $w) => $w->whereNull('admin_note')->orWhere('admin_note', '')),
+                        blank: fn (Builder $q) => $q,
+                    ),
                 // KAPALI HESAPLAR listesi: durum + kapatan admin + tarih aralığı filtreleri.
                 Tables\Filters\TernaryFilter::make('closed')->label('Hesap durumu')
                     ->placeholder('Hepsi')->trueLabel('Kapalı')->falseLabel('Aktif')

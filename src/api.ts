@@ -1011,6 +1011,8 @@ export interface PublicProfile {
   is_friend?: boolean // bakan kişiyle ZATEN arkadaş mı -> "Arkadaş ol" gizlenir (site geneli)
   muted_until?: string | null // YALNIZ yönetici görür: aktif konuşma yasağı bitişi (ISO) veya null
   admin_note?: string | null // YALNIZ yönetici görür: bu kullanıcıya yazılmış admin notu (yoksa null)
+  admin_note_by_name?: string | null // YALNIZ yönetici: notu son yazan yöneticinin takma adı
+  admin_note_at?: string | null // YALNIZ yönetici: notun son yazılma zamanı (ISO)
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)
@@ -1468,9 +1470,12 @@ export async function adminChatMute(id: number, minutes: number): Promise<{ mute
     body: JSON.stringify({ minutes }),
   })
 }
-// Admin notu yaz/temizle (profil üstü). Boş metin -> notu siler. Döner: admin_note (string | null).
-export async function adminSetNote(id: number, note: string): Promise<{ admin_note: string | null }> {
-  return req<{ admin_note: string | null }>(`/admin/users/${id}/note`, {
+// Admin notu yaz/temizle (profil üstü). Boş metin -> notu siler. Döner: not + son yazan admin + zaman.
+export async function adminSetNote(
+  id: number,
+  note: string,
+): Promise<{ admin_note: string | null; admin_note_by_name?: string | null; admin_note_at?: string | null }> {
+  return req(`/admin/users/${id}/note`, {
     method: 'POST',
     body: JSON.stringify({ note }),
   })

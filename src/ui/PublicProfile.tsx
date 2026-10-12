@@ -59,12 +59,15 @@ export default function PublicProfile({
   const [noteOverride, setNoteOverride] = useState<string | null | undefined>(undefined)
   const [noteEdit, setNoteEdit] = useState<string | null>(null) // null=görüntü modu, string=düzenleme kutusu açık
   const [noteBusy, setNoteBusy] = useState(false)
+  // Notu son yazan admin + zaman (kaydetme sonrası override; undefined=sunucudan).
+  const [noteMeta, setNoteMeta] = useState<{ by?: string | null; at?: string | null } | undefined>(undefined)
   const saveNote = () => {
     if (noteEdit == null) return
     setNoteBusy(true)
     adminSetNote(id, noteEdit)
       .then((r) => {
         setNoteOverride(r.admin_note)
+        setNoteMeta({ by: r.admin_note_by_name ?? null, at: r.admin_note_at ?? null })
         setNoteEdit(null)
       })
       .catch(() => {})
@@ -95,6 +98,9 @@ export default function PublicProfile({
     : null
   // Gösterilecek admin notu: kaydetme override'ı varsa o, yoksa sunucudan gelen (yalnız admin dolu).
   const adminNote = noteOverride !== undefined ? noteOverride : (p?.admin_note ?? null)
+  // Notu yazan admin + zaman (override varsa o, yoksa sunucudan).
+  const noteBy = noteMeta !== undefined ? noteMeta.by : (p?.admin_note_by_name ?? null)
+  const noteAt = noteMeta !== undefined ? noteMeta.at : (p?.admin_note_at ?? null)
 
   return (
     <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
@@ -212,6 +218,12 @@ export default function PublicProfile({
                         </button>
                       </div>
                       <div className="pp-note-body">{adminNote}</div>
+                      {noteBy && (
+                        <div className="pp-note-by">
+                          {noteBy}
+                          {noteAt ? ' · ' + new Date(noteAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <Button variant="outline" className="pp-note-add" style={{ width: '100%' }} onClick={() => setNoteEdit('')}>

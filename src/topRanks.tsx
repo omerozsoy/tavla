@@ -73,3 +73,8 @@ export function useTopRank(userId?: number | null): UserTopRank {
   if (userId == null) return {}
   return map.get(userId) ?? {}
 }
+
+/** Tüm top-3 haritası (id -> rozet). Liste sıralama/filtreleme için (tek tek hook çağırmadan). */
+export function useTopRankMap(): Map<number, UserTopRank> {
+  return useContext(TopRanksContext).map
+}

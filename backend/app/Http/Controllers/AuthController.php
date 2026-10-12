@@ -1479,6 +1479,15 @@ class AuthController extends Controller
             'admin_note' => ($me && $me->is_admin && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note'))
                 ? ($user->admin_note ?: null)
                 : null,
+            // Notu son yazan yönetici + zaman (yalnız yöneticiye; profilde küçük gösterilir).
+            'admin_note_by_name' => ($me && $me->is_admin && $user->admin_note
+                && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note_by') && $user->admin_note_by)
+                ? (\App\Models\User::find($user->admin_note_by)?->nickname)
+                : null,
+            'admin_note_at' => ($me && $me->is_admin && $user->admin_note
+                && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note_at') && $user->admin_note_at)
+                ? $user->admin_note_at->toIso8601String()
+                : null,
         ]);
     }
 

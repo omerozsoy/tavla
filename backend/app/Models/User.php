@@ -67,8 +67,10 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'ban_reason',
         'ban_note',
         'banned_by',
-        // Admin notu: yalniz publicProfile'da (admin gorene) ACIKCA eklenir; otomatik serilestirmede sizmaz.
+        // Admin notu + yazan/zaman: yalniz publicProfile'da (admin gorene) ACIKCA eklenir; sizmaz.
         'admin_note',
+        'admin_note_by',
+        'admin_note_at',
     ];
 
     // is_admin + is_support (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
@@ -114,6 +116,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'banned_at' => 'datetime',
             'last_login_at' => 'datetime',
             'chat_muted_until' => 'datetime', // sohbet küfür yasağı bitişi (ChatModeration)
+            'admin_note_at' => 'datetime', // admin notunu son yazan zaman
         ];
     }
 
