@@ -10632,18 +10632,34 @@ button.acct-row-logout:hover:not(:disabled) {
   border-bottom: 1px solid var(--border);
   box-shadow: none; /* flat */
 }
-/* Desktop: ust band TEK SATIR kalsin. Cok kontrol (giris yapinca) dar genislikte
+/* Desktop + tablet: ust band TEK SATIR kalsin. Cok kontrol (giris yapinca) dar genislikte
    2. satira SARIP band'i uzatiyor / icerige biniyordu. nowrap ile yukseklik SABIT;
-   tasarsa yatay kaydirilir. (Bu kural base .account-bar'dan SONRA gelmeli ki
-   kaynak-sirasi kazansin â€” media ozgulluk eklemez.) Mobil (<=900) kendi sarma duzeni.
-   Tablet (901-1300) base `flex-wrap:wrap`ta kalir: yatay dar ekranda nowrap+scroll cubuk
-   cikariyor / son ikonu kirpiyordu. wrap yalniz TASARSA 2. satira iner, sigarsa tek satir
-   kalir -> kaydirma yok. Tek-satir + scroll yalniz gercek masaustunde (>=1301). */
-@media (min-width: 1301px) {
+   tasarsa yatay kaydirilir (overflow-x:auto emniyet agi, sigarsa cubuk cikmaz). Mobil
+   (<=900) kendi sarma duzeni. Tablet (901-1300) ESKIDEN wrap idi (iki satir); kullanici
+   istegiyle tek satira alindi + logo o bantta kucultuldu (asagida) -> kontroller sigar. */
+@media (min-width: 901px) {
   .account-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
+  }
+}
+/* Tablet bandi (901-1300): tek satira sigmasi icin logoyu + bosluk/padding'i kucult.
+   Dogrulandi (1280px WebView): bu degerlerle bar tek satir, yatay tasma 0 (scroll yok). */
+@media (min-width: 901px) and (max-width: 1300px) {
+  .account-bar {
+    padding-left: 18px;
+    padding-right: 18px;
+    gap: 8px;
+  }
+  .acct-desktop {
+    gap: 8px;
+  }
+  .ab-wordmark {
+    font-size: 28px !important;
+  }
+  .ab-tag {
+    font-size: 11px;
   }
 }
 /* Logo sola, hesap kontrolleri saga (auto margin bosluÄŸu doldurur). */
@@ -16144,6 +16160,17 @@ button.acct-row-logout:hover:not(:disabled) {
     gap: 14px;
     max-width: 1400px;
     margin-inline: auto;
+  }
+  /* Bu dar bantta board kuculunce hane numaralari + pip sayilari + kup degeri orantisiz
+     buyuk kaliyordu -> biraz kucult (yalniz analyzer + tablet; oyun ekrani degismez). */
+  .analyzer-board .pt-numbers {
+    font-size: 0.78rem;
+  }
+  .analyzer-board .pip {
+    font-size: 0.82rem;
+  }
+  .analyzer-board .cube {
+    font-size: calc(var(--cube-size) * 0.32);
   }
 }
 /* Mobil (<=900: sol menu drawer'a doner, icerik tam genislik): hepsi alt alta */
