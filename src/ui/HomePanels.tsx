@@ -10,6 +10,8 @@ import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
 import RoleBadge from './RoleBadge'
+import SoberFrame from './SoberFrame'
+import { useTopRank } from '../topRanks'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
@@ -121,11 +123,76 @@ export function HomeFeatures() {
   )
 }
 
-function Avatar({ url, name }: { url?: string | null; name: string }) {
+function Avatar({ url, name, featured }: { url?: string | null; name: string; featured?: boolean }) {
+  // Öne çıkan (liderlik ilk-3) oyuncu: avatar "Yükselen Parıltı" (SoberFrame rising) çerçevesiyle.
+  if (featured)
+    return (
+      <SoberFrame
+        className="lm-avatar-frame"
+        src={url ?? undefined}
+        initial={name.charAt(0).toUpperCase()}
+        motion="rising"
+        accent="#B8862B"
+        size={30}
+      />
+    )
   return url ? (
     <img className="lm-avatar" src={url} alt="" />
   ) : (
     <span className="lm-avatar lm-avatar-ph">{name.charAt(0).toUpperCase()}</span>
+  )
+}
+
+// Tek canlı maç satırı. Liderlik ilk-3'teki (PR veya rating) oyuncu sahadaysa satır "öne
+// çıkan" olur: avatarda yükselen parıltı + maç çerçevesi altın glow ile vurgulanır → insanlar
+// dikkat edip o maçı izlesin. Top-3 durumu useTopRank'tan (site geneli tek kaynak) okunur.
+function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p1: string, p2: string) => void }) {
+  const { t } = useT()
+  const p1Top = useTopRank(m.p1_id)
+  const p2Top = useTopRank(m.p2_id)
+  const p1Feat = !!(p1Top.prRank || p1Top.ratingRank)
+  const p2Feat = !!(p2Top.prRank || p2Top.ratingRank)
+  const cat = liveCat(m)
+  return (
+    <button
+      className={`live-row${p1Feat || p2Feat ? ' live-row--featured' : ''}`}
+      onClick={() => onSpectate(m.code, m.p1_name, m.p2_name)}
+    >
+      {/* İki rozet TEK grid hücresinde (lm-types): aksi halde klasik rozet 6. grid öğesi
+          olup 1fr (oyuncu) kolonuna düşüyor + sağ/sol boşluk + göz ikonu alt satıra kaçıyordu. */}
+      <span className="lm-types">
+        <span className={`lm-type lm-type-${cat}`}>{t(LIVE_CAT_KEY[cat])}</span>
+        {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
+      </span>
+      <span className="lm-side lm-p1">
+        <Avatar url={m.p1_avatar} name={m.p1_name} featured={p1Feat} />
+        <RoleBadge userId={m.p1_id} size={17} style={{ marginRight: 3 }} />
+        <span className="lm-name">{m.p1_name}</span>
+        {m.p1_premium && <PremiumCrown />}
+        <TopRankBadge userId={m.p1_id} />
+      </span>
+      {/* Orta: skor (kaç kaç) vs'nin sol/sağında + hemen ALTINDA minik maç uzunluğu (kaçlık maç). */}
+      <span className="lm-mid">
+        {m.p1_score != null && m.p2_score != null ? (
+          <span className="lm-vs lm-vs-score">
+            <span className="lm-score">{m.p1_score}</span>
+            <span className="lm-vs-sep">vs</span>
+            <span className="lm-score">{m.p2_score}</span>
+          </span>
+        ) : (
+          <span className="lm-vs">vs</span>
+        )}
+        <span className="lm-len">{t('resume.point', { n: m.target ?? 1 })}</span>
+      </span>
+      <span className="lm-side lm-p2">
+        <TopRankBadge userId={m.p2_id} />
+        <RoleBadge userId={m.p2_id} size={17} style={{ marginRight: 3 }} />
+        <span className="lm-name">{m.p2_name}</span>
+        {m.p2_premium && <PremiumCrown />}
+        <Avatar url={m.p2_avatar} name={m.p2_name} featured={p2Feat} />
+      </span>
+      <Icon name="eye" size={14} className="lm-watch" />
+    </button>
   )
 }
 
@@ -250,48 +317,7 @@ export function LiveMatchesPanel({
         <>
         <div className="live-list">
           {shown.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((m) => (
-            <button
-              key={m.code}
-              className="live-row"
-              onClick={() => onSpectate(m.code, m.p1_name, m.p2_name)}
-            >
-              {/* İki rozet TEK grid hücresinde (lm-types): aksi halde klasik rozet 6. grid öğesi
-                  olup 1fr (oyuncu) kolonuna düşüyor + sağ/sol boşluk + göz ikonu alt satıra kaçıyordu. */}
-              <span className="lm-types">
-                <span className={`lm-type lm-type-${liveCat(m)}`}>
-                  {t(LIVE_CAT_KEY[liveCat(m)])}
-                </span>
-                {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
-              </span>
-              <span className="lm-side lm-p1">
-                <Avatar url={m.p1_avatar} name={m.p1_name} />
-                <RoleBadge userId={m.p1_id} size={17} style={{ marginRight: 3 }} />
-                <span className="lm-name">{m.p1_name}</span>
-                {m.p1_premium && <PremiumCrown />}
-                <TopRankBadge userId={m.p1_id} />
-              </span>
-              {/* Orta: skor (kaç kaç) vs'nin sol/sağında + hemen ALTINDA minik maç uzunluğu (kaçlık maç). */}
-              <span className="lm-mid">
-                {m.p1_score != null && m.p2_score != null ? (
-                  <span className="lm-vs lm-vs-score">
-                    <span className="lm-score">{m.p1_score}</span>
-                    <span className="lm-vs-sep">vs</span>
-                    <span className="lm-score">{m.p2_score}</span>
-                  </span>
-                ) : (
-                  <span className="lm-vs">vs</span>
-                )}
-                <span className="lm-len">{t('resume.point', { n: m.target ?? 1 })}</span>
-              </span>
-              <span className="lm-side lm-p2">
-                <TopRankBadge userId={m.p2_id} />
-                <RoleBadge userId={m.p2_id} size={17} style={{ marginRight: 3 }} />
-                <span className="lm-name">{m.p2_name}</span>
-                {m.p2_premium && <PremiumCrown />}
-                <Avatar url={m.p2_avatar} name={m.p2_name} />
-              </span>
-              <Icon name="eye" size={14} className="lm-watch" />
-            </button>
+            <LiveRow key={m.code} m={m} onSpectate={onSpectate} />
           ))}
         </div>
         <Pager page={curPage} total={shown.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />

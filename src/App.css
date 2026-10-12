@@ -12786,6 +12786,49 @@ button.acct-row-logout:hover:not(:disabled) {
 .lm-watch {
   color: var(--muted);
 }
+.lm-avatar-frame {
+  flex: none;
+}
+/* Öne çıkan canlı maç: liderlik ilk-3'teki (PR veya rating) oyuncu sahada → altın glow +
+   avatarda yükselen parıltı (SoberFrame rising). İnsanlar fark edip o maçı izlesin. */
+.live-row--featured {
+  border-color: color-mix(in srgb, var(--coin-gold) 55%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--coin-gold) 10%, var(--btn-bg)),
+    var(--btn-bg)
+  );
+  animation: live-feat-glow 2.4s ease-in-out infinite;
+}
+@keyframes live-feat-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--coin-gold) 25%, transparent),
+      0 2px 10px color-mix(in srgb, var(--coin-gold) 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--coin-gold) 55%, transparent),
+      0 6px 22px color-mix(in srgb, var(--coin-gold) 40%, transparent);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .live-row--featured:hover {
+    border-color: var(--coin-gold);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--coin-gold) 16%, var(--btn-bg)),
+      var(--btn-bg)
+    );
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-row--featured {
+    animation: none;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--coin-gold) 45%, transparent);
+  }
+}
 .rank-tabs {
   display: flex;
   flex-wrap: wrap;
