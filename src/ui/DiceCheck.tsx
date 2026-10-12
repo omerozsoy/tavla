@@ -242,7 +242,8 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
         <h2>
           <Icon name="dice" size={20} /> {t('dc.title')}
         </h2>
-        {body}
+        {/* Scroll YALNIZ gövdede: başlık + kapat (×) kartın sabit başlığında kalır (aşağı inince kaybolmaz). */}
+        <div className="dc-scroll">{body}</div>
       </div>
     </div>,
     document.body,

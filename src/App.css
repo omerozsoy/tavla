@@ -25294,12 +25294,20 @@ button.acct-row-logout:hover:not(:disabled) {
 .register-overlay.dicecheck-overlay {
   z-index: 5400;
 }
-/* Modal kartı: taban .register-card 380px dar (zar listesi + commit hash için). Ferah ama ortalı;
-   uzun zar listesinde kartın kendi içi kayar (overlay değil -> başlık/kapat sabit kalır). */
+/* Modal kartı: taban .register-card 380px dar (zar listesi + commit hash için). Ferah ama ortalı.
+   KÖK FIX: scroll KARTTA değil GÖVDEDE (.dc-scroll). Kart flex-column + overflow:hidden -> başlık (h2)
+   ve kapat (×) sabit kalır (aşağı inince KAYBOLMAZ); yalnız uzun zar listesi gövdesi kayar. */
 .dicecheck-overlay .register-card.fair-card {
   max-width: 620px;
   max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.dicecheck-overlay .dc-scroll {
   overflow-y: auto;
+  min-height: 0; /* flex child'ın taşmadan kayması için şart */
+  flex: 1;
 }
 .dc-intro {
   font-size: 0.9rem;
