@@ -685,11 +685,6 @@ const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar 
 const BOT_STEP_DELAY = 500 // her tas arasi (izlenebilir ama snappy; sunucu-bot tur devri hizlansin)
 const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn tur-devri gecikmesi cok uzundu)
 const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullanici "gele attigini goremedim" -> zar okunsun)
-// ONLINE RAKIP ZAR GÖRÜNÜRLÜK (2026-10-11): sıra bana geçince oto-zar 500ms'de diceRolled=true yapıp
-// rakibin zar echo'sunu (oppRollDice yalnız !diceRolled iken çizilir) ANINDA gizliyordu -> "rakip
-// zarını göremiyorum". Rakip zarı TAZE iken oto-zarı en az bu kadar beklet (BOT_REVEAL_DELAY'in online
-// karşılığı); replay varken zaten bloklu, bu replay-OLMAYAN snap içindir.
-const OPP_REVEAL_HOLD = 1500
 const BOT_FINAL_DELAY = 1400 // botun MAÇI BİTİREN hamlesinden sonra: son pozisyon görünsün, sonra sonuç ekranı
 const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
 
@@ -875,15 +870,6 @@ export default function App() {
   const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
-  // RAKİP ZAR GÖSTERGESİ: rakibin attığı zar, tahtanın ORTASINDA normal zar gibi gösterilir.
-  // oppRoll sunucu lastMove'undan (rakibin tamamladığı son hamlenin zarı) türetilir; sıra bana
-  // geçtiği andan BEN KENDİ ZARIMI ATANA KADAR solda SABİT durur (otomatik kaybolma YOK).
-  // KÖK FIX ("rakibin zarı gözükmüyor"): zar-atma ve hamle AYRI sunucu sürümleridir; istemci poll/
-  // push'ta yalnız EN SON sürümü uygular -> rakip hızlı oynar/çift atarsa zar-sürümü atlanır VEYA
-  // commit (sıra=ben, zar=boş) zarı animasyon bitmeden ezer. lastMove coalescing'den SAĞ KALIR;
-  // sabit tutunca (timer yok) + render !diceRolled kapısı (zarımı atınca kalkar) -> zar kaçmaz.
-  const [oppRoll, setOppRoll] = useState<{ dice: number[]; at: number } | null>(null)
-  const lastOppRollVRef = useRef<number>(-1) // son gösterilen lastMove.v (mükerrer tetik engeli)
   // §5.2 ONAYLI RAKİP HAMLESİ REPLAY: rakip hamlesini onaylayınca (otoriter durum gelince) tahta
   // SON konuma sıçrıyordu ("bir anda tamamlanmış geldi"). Bu, hamleyi otoriter delta'dan (reconstruct)
   // adım adım OYNATIR — COSMETIC: `turnStart`/skor/saat zaten otoriter ilerler, bu yalnız GÖSTERİM.
@@ -1920,8 +1906,6 @@ export default function App() {
     appliedServerRoomRef.current = null
     srvTurnStartRef.current = null
     oppLoggedRef.current = ''
-    setOppRoll(null) // yeni oda/rövanş: önceki maçın rakip-zarı bayat görünmesin
-    lastOppRollVRef.current = -1
   }
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
@@ -5374,10 +5358,6 @@ export default function App() {
     // O yuzden oyun-bitti (sm.done) durumunda tur-devri sartini ARAMA; aksi halde rakibin son
     // (kazanan) toplamasi loga girmez ve .mat sonuc satiri OLMADAN kesilir (tavlatv-mac(4) bug'i).
     const ended = !!sm?.done
-    // Rakip GELE atıp HAMLE YOK (dance) ise: tur-başı "Hamle Yok" overlay'inde zar zaten gösterildi.
-    // Aşağıdaki oppRoll ECHO'su aynı zarı MY turda rakip tarafında tekrar basıp "yeni atılmış gibi"
-    // gösteriyordu (rapor). Dance'te echo'yu bastır (reconstruct boş adım dizisi -> dance imzası).
-    let oppDanced = false
     // GÜVENLİK (KAYBEDEN KİLİDİ KÖK FIX): rakip-hamle rekonstrüksiyonu SALT maç-kaydı/.mat export
     // içindir. reconstructOppMove/notation kazananın BİTİREN (bear-off) hamlesinde throw edebilir;
     // try/catch ile sararız ki aşağıdaki setTurnStart/setMatch/setGameEnd HER ZAMAN çalışsın. Aksi
@@ -5398,7 +5378,6 @@ export default function App() {
         // (uydurma satir yazmaktansa eksik birakmak yeglenir).
         const steps = reconstructOppMove(oppBase, gs, ended)
         if (steps) {
-          oppDanced = steps.length === 0 // dance -> oppRoll echo'sunu bastır (çift zar gösterimi)
           oppLoggedRef.current = sig
           const oc = oppBase.turn
           setMatchLog((l) => [
@@ -5455,19 +5434,7 @@ export default function App() {
         isCrawford: lm.crawford, // Crawford'da kup YASAK (sunucu da reddeder) -> buton cikmasin
       }))
       setCubePending(lm.cubePending)
-      // RAKİP ZAR GÖSTERİMİ: rakibin (color !== myColor) son hamlesinin zarını, YENİ (v) ise kısa
-      // süre göster -> poll/push "zar atıldı ama oynanmadı" ara durumunu kaçırsa bile rakibin ne
-      // attığı sırası açılınca görünür (rapor: "sıra rakipteyken gelen zarları göremedim"). Cosmetic.
-      const oppLastMove = sm.lastMove
-      if (
-        online && oppLastMove && oppLastMove.color !== myColor &&
-        Array.isArray(oppLastMove.dice) && oppLastMove.dice.length >= 1 &&
-        oppLastMove.v !== lastOppRollVRef.current &&
-        !oppDanced // GELE/dance: zar "Hamle Yok" overlay'inde gösterildi -> echo ile tekrar basma
-      ) {
-        lastOppRollVRef.current = oppLastMove.v
-        setOppRoll({ dice: oppLastMove.dice.slice(0, 2), at: Date.now() })
-      }
+      // (Rakip zar echo'su kaldırıldı; rakibin zarı kendi turunda `primary` ile zaten görünür.)
       // TUR SAYACI otoriter modda SUNUCUDAN gelir: commitTurn authoritative dalinda erken
       // doner (yerel setTurnsPlayed calismaz) -> sayac 0'da kalirsa `turnsPlayed > 0` sarti
       // hic saglanmaz: "Katla" butonu HIC gorunmez ve shouldAutoRoll her turu otomatik atar.
@@ -5485,7 +5452,6 @@ export default function App() {
           setGameEnd((g) => g ?? { winner: w, points: lm.cubeValue, mult: 1, dropped: false })
         }
       } else {
-        if (os === 'roll') setOppRoll(null) // yeni oyun başladı -> önceki oyunun rakip-zarı bayat kalmasın
         setGameEnd(null) // yeni oyun -> önceki oyun-sonu ekranını temizle
         setOpening(os)
       }
@@ -6526,9 +6492,7 @@ export default function App() {
     // sıçrama üretebilir. lastOppRollVRef sıfırlanmazsa yeni odanın ilk rakip zarı (aynı v) GÖRÜNMEZ.
     oppLiveShownRef.current = []
     pendingOppFlightRef.current = null
-    lastOppRollVRef.current = -1
     setOppLive([])
-    setOppRoll(null)
     clearOppReplay() // §5.2: oda değişince bekleyen replay'i iptal et (yeni tahtaya düşmesin)
   }, [room?.code])
   useEffect(() => {
@@ -6564,10 +6528,9 @@ export default function App() {
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Poll BENİM zarsız turumda
     // server_version'i ilerletmez -> bu effect yeniden çalışmaz, retry/timer'lar kesintisiz işler;
     // zar atılınca / tur değişince cleanup temizler. serverRoll idempotent. (Yalnız canAuto'da.)
-    // RAKİP ZARI GÖRÜNÜRLÜK: rakibin zar echo'su TAZE ise oto-zarı geciktir ki attığı zar ~1.5sn
-    // net görünsün (yoksa 500ms'de diceRolled=true -> echo anında kaybolur = "rakip zarını göremedim").
-    const revealLeft = oppRoll ? Math.max(0, OPP_REVEAL_HOLD - (Date.now() - oppRoll.at)) : 0
-    const first = canAuto ? window.setTimeout(() => doRoll(), Math.max(500, revealLeft)) : 0
+    // Rakip zar echo'su KALDIRILDI (kullanıcı isteği) -> reveal-hold yok; oto-zar normal 500ms'de
+    // (eskiden echo'yu ~1.5sn göstermek için beklerdi; echo gidince boşuna bekleme olurdu).
+    const first = canAuto ? window.setTimeout(() => doRoll(), 500) : 0
     const retry = canAuto ? window.setInterval(() => doRoll(), 2500) : 0
     // KURTARMA AĞI (HEM oto HEM MANUEL): transient mandal (rollConflict / in-flight / bayat sıra / 429)
     // kıstırırsa kurtarılabilir mandalları temizle + otoriter durumu zorla çek (version=-1 -> poll
@@ -8217,19 +8180,12 @@ export default function App() {
   // beyaz), dolayisiyla "alttaki oyuncunun sirasi mi" = "sira bende mi".
   // Yan slot (Katla / Geri Al) yalniz kendi turumda dolar -> rakip zariyla cakismaz.
   const turnIsMine = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
-  // RAKİP ZAR GÖSTERGESİ: rakibin attığı zar, tahtanın ORTASINDA normal zar gibi (rakip hep SOLDA).
-  // Rakip turunda `primary` zaten canlı zarı (turnStart.dice) çizer. Rakip oynayıp sıra bana geçince
-  // poll ara durumu ("attı ama oynamadı") kaçırsa bile oppRoll echo'su (lastMove'dan) kısa süre sol
-  // merkezde durur -> "sıra rakipteyken attığı zarı göremedim" olmaz. Yalnız KENDİ turumda fallback
-  // (rakip turunda oppRoll ÖNCEKİ eli taşıyabilir -> bayat; orada yalnız canlı `primary` gösterilir).
-  const oppRollDice =
-    online && oppRoll && !gameEnd && !matchOver ? (
-      <DiceRow faces={oppRoll.dice.map((v) => ({ value: v, used: false }))} owner={opponent(myColor)} />
-    ) : null
   const centerRight = turnIsMine ? primary : secondary
-  // Rakip zar echo'su YALNIZ ben daha zar atmadan (sıram yeni geçti) solda durur; zarımı atınca
-  // hemen kalkar -> kendi zarım (sağ) ile rakip echo'su (sol) AYNI ANDA görünmez (iki-zar karmaşası).
-  const centerLeft = turnIsMine ? (secondary ?? (!diceRolled ? oppRollDice : null)) : primary
+  // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12, kullanıcı isteği): sıra bana geçince rakibin attığı
+  // zar koyu renkte tahtada duruyordu -> "kullandığı zarlar koyu renk geri geldi" karmaşası + "Zar
+  // At" ile aynı anda görünüyordu. Artık sıra bende + zar atmadıysam merkez BOŞ (yalnız Zar At).
+  // Rakibin canlı zarı zaten kendi turunda `primary` ile görünür (echo'ya gerek yok).
+  const centerLeft = turnIsMine ? secondary : primary
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
