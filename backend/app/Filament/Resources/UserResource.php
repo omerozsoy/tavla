@@ -431,9 +431,10 @@ class UserResource extends Resource
                         .'gönderilir. Zaten doğrulanmış üyeler atlanır.')
                     ->modalSubmitActionLabel('Gönder')
                     ->action(function (\Illuminate\Support\Collection $records) {
-                        $sent = 0;
+                        // KUYRUK: her mail ayrı job (DB kuyruğu) -> admin isteği beklemez/timeout olmaz,
+                        // mailler worker tarafından arka planda gönderilir. Doğrulanmış/sistem atlanır.
+                        $queued = 0;
                         $skipped = 0;
-                        $failed = 0;
                         foreach ($records as $record) {
                             if ($record->email_verified_at !== null || empty($record->email)
                                 || (\Illuminate\Support\Facades\Schema::hasColumn('users', 'is_system') && $record->is_system)) {
@@ -441,18 +442,13 @@ class UserResource extends Resource
 
                                 continue;
                             }
-                            try {
-                                \App\Support\EmailVerification::send($record);
-                                $sent++;
-                            } catch (\Throwable $e) {
-                                $failed++;
-                            }
+                            \App\Jobs\SendVerificationEmailJob::dispatch((int) $record->id);
+                            $queued++;
                         }
                         \Filament\Notifications\Notification::make()
                             ->title('Doğrulama maili')
-                            ->body("{$sent} mail gönderildi"
-                                .($skipped > 0 ? ", {$skipped} atlandı (doğrulanmış/sistem)" : '')
-                                .($failed > 0 ? ", {$failed} başarısız" : '').'.')
+                            ->body("{$queued} mail kuyruğa alındı (arka planda gönderilecek)"
+                                .($skipped > 0 ? ", {$skipped} atlandı (doğrulanmış/sistem)" : '').'.')
                             ->success()
                             ->send();
                     })
