@@ -19,6 +19,20 @@ cd "$(dirname "$0")/backend"
 # optimize-clear herhangi bir sebeple no-op olsa dahi bayat liste kalmasın.
 rm -rf bootstrap/cache/filament 2>/dev/null || true
 
+# ================== .htaccess KALICI KORUMASI (önlem) ==================
+# backend/public/.htaccess KRİTİK bloğu (CSP -> Google login; mod_rewrite -> /api routing;
+# index.html no-cache -> chunk hataları) BİRDEN FAZLA KEZ yanlışlıkla 96->12 satıra budandı
+# (eşzamanlı oturum public/ ile oynarken ezdi -> site patladı + "login olamıyorlar"). KÖK ÇÖZÜM:
+# .htaccess'in TEK DOĞRU KAYNAĞI = deploy/htaccess.canonical. Her deploy'da public/'e ZORLA
+# kopyalanır -> repoya bozuk .htaccess commit'lense bile CANLI DAİMA doğru olur. Canonical'ın
+# kendisi kritik işaretleri taşımıyorsa (bozuksa) DOKUNMA (mevcut canlıyı riske atma).
+CANON=../deploy/htaccess.canonical
+if [ -f "$CANON" ] && grep -q "Content-Security-Policy" "$CANON" && grep -q "RewriteEngine" "$CANON"; then
+  cp -f "$CANON" public/.htaccess && echo ".htaccess canonical'dan geri yuklendi (CSP + rewrite garanti)."
+else
+  echo "UYARI: deploy/htaccess.canonical eksik/bozuk -> public/.htaccess DOKUNULMADI."
+fi
+
 # ÖNEMLI: vendor/ git'e dahil DEGIL. Filament (ve diger paketler) sunucuda composer
 # install ile kurulmali. Bu adim basarisiz olursa (composer PATH'te yoksa) Plesk
 # "Composer" sekmesinden ELLE Install calistir; aksi halde uygulama Filament siniflarini
