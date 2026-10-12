@@ -20,6 +20,9 @@ interface Props {
   notice?: string | null
   /** SALT OKUNUR (yönetici izleme): yalnız mesaj listesi; emoji/yazma kutusu çizilmez. */
   readOnly?: boolean
+  /** İZLEMEDE sohbet varsa KENDİLİĞİNDEN açık gelsin (bir kez). Yönetici yazabilir (canText)
+      olduğu için readOnly değil -> ayrı bayrak. Oyuncu sohbetinde FALSE (kapalı başlar). */
+  autoOpen?: boolean
   /** Gönderen adına tıklayınca (yönetici moderasyon): o slot'un oyuncu profilini aç. */
   onNameClick?: (slot: Slot) => void
   /** Küfür/uygunsuz dil şikayeti: basınca son 10 satır yönetime gönderilir. undefined -> buton yok (ör. bot maçı). */
@@ -29,7 +32,7 @@ interface Props {
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false, onNameClick, onReport }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false, autoOpen = false, onNameClick, onReport }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Küfür şikayeti iki adımlı: idle -> (Şikayet Et) -> confirm (Son 10 satır gönderilir: Gönder/Vazgeç) -> sent.
@@ -65,15 +68,16 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
     }
     prevLenOpenRef.current = messages.length
   }, [messages])
-  // Yönetici izlemede (readOnly) sohbet varsa KENDİLİĞİNDEN açık gelsin (bir kez; admin
-  // sonradan kapatabilir). Oyuncu sohbeti eskisi gibi kapalı başlar (başlıkla açılır).
+  // Yönetici/izleyici izlemede (readOnly VEYA autoOpen) sohbette önceden yazılmış mesaj varsa
+  // KENDİLİĞİNDEN açık gelsin (bir kez; admin sonradan kapatabilir). Yönetici yazabildiği için
+  // readOnly değil -> autoOpen bayrağı da sayılır. Oyuncu sohbeti eskisi gibi kapalı başlar.
   const autoOpenedRef = useRef(false)
   useEffect(() => {
-    if (readOnly && !autoOpenedRef.current && messages.length > 0) {
+    if ((readOnly || autoOpen) && !autoOpenedRef.current && messages.length > 0) {
       autoOpenedRef.current = true
       setOpen(true)
     }
-  }, [readOnly, messages.length])
+  }, [readOnly, autoOpen, messages.length])
   // Genis masaustunde (>=1440px, CSS) acik sohbet tahtanin YANINA yerlesir: body sinifi oyun
   // sahnesine sag pay + daha kucuk --board-h verir (tahta ortulmez, perde yok).
   useEffect(() => {

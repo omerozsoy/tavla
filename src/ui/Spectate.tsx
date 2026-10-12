@@ -718,6 +718,7 @@ export default function Spectate({
           onSend={handleAdminChat}
           canText
           loggedIn
+          autoOpen // izlemeye girince önceden yazılmış sohbet varsa açık gelsin (yönetici görmeden geçmesin)
           // İsme tıkla -> o slot'un oyuncu id'si -> profil (oradan konuşma yasağı verilir).
           onNameClick={(slot) => {
             const uid = (slot === 'p1' ? eff?.p1_user_id : eff?.p2_user_id) ?? null
