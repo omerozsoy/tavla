@@ -15,6 +15,12 @@ class ViewUser extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Üye listesine dön (detay sayfasından hızlı geri dönüş).
+            Actions\Action::make('back')
+                ->label('Geri Dön')
+                ->icon('heroicon-m-arrow-left')
+                ->color('gray')
+                ->url(fn () => UserResource::getUrl('index')),
             Actions\EditAction::make(),
             // Profil sayfasında "Hesabı Kapat / Yeniden Aç" (adminlere görünür — panel zaten admin-only).
             Actions\Action::make('closeAccount')

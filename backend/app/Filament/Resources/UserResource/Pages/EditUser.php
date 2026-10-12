@@ -22,6 +22,12 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Üye listesine dön (düzenleme sayfasından hızlı geri dönüş).
+            Actions\Action::make('back')
+                ->label('Geri Dön')
+                ->icon('heroicon-m-arrow-left')
+                ->color('gray')
+                ->url(fn () => UserResource::getUrl('index')),
             // A-18: düz DeleteAction kök/diğer yöneticileri siliyor ve UserEraser'ı (kulüp devri)
             // atlıyordu. Toplu silme ile AYNI sözleşme: yönetici asla silinmez, UserEraser kullanılır.
             Actions\Action::make('deleteUser')
