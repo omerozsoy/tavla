@@ -11074,6 +11074,7 @@ export default function App() {
         )}
         <Board
           state={boardDisplay}
+          cubePendingValue={humanRespond ? match.cube.value * 2 : null}
           checkerSkin={user?.checker ? (CHECKER_BY_ID[user.checker] ?? null) : null}
           selectableFroms={selectableFroms}
           targets={targets}

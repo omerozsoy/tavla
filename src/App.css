@@ -7512,12 +7512,31 @@ html[data-board='yilbasi'] .checker.black {
   left: auto;
   transform: none;
   flex: none;
-  width: 92%;
+  width: 104%; /* tepsiden hafif taşarak biraz daha büyük görünür (kullanıcı: çok az büyüt) */
+  max-width: calc(var(--cube-size) * 1.25);
   height: auto;
   aspect-ratio: 1 / 1;
-  margin: 2px auto;
+  margin: 3px auto;
   border: 2px solid var(--tv-brick-light);
-  font-size: calc(var(--cube-size) * 0.4);
+  font-size: calc(var(--cube-size) * 0.46);
+}
+/* Karar bende: teklif edilen küp alt tepsimde YANIP SÖNER (fade out/in) -> dikkat çek. */
+.cube.cube-pending {
+  animation: cube-pending-blink 1s ease-in-out infinite;
+}
+@keyframes cube-pending-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cube.cube-pending {
+    animation: none;
+  }
 }
 
 /* ---- Zarlar (tahta uzeri) ---- */

@@ -35,14 +35,14 @@
 .clock-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  /* Saat satirlari (ust rezerv / hamle / alt rezerv) arasinda azicik bosluk (kullanici isteği). */
+  gap: 8px;
   padding: 9px;
   border-radius: 14px; /* site stili: hafif yuvarlak kose (dis kutu skor kutulariyla uyumlu) */
   min-width: 94px;
-  /* Skor kutulari ile saat grubu arasinda nefes payi (kullanici: "skor ile saatler arasinda
-     en azindan biraz bosluk olsun"). margin-block -> .clock-stack flex gap'ine EKLENIR (cascade
-     cakismasi yok; .clock-group yalniz bu dosyada). */
-  margin-block: 8px;
+  /* Ust/alt skor kutusu ile saat grubu arasi bosluk, panel ust/alt dolgusuyla (12px) EŞİT olsun:
+     .clock-stack flex gap'i (6px) + bu margin (6px) = 12px -> yukari ve asagi simetrik nefes payi. */
+  margin-block: 6px;
   background: var(--cube-bg, #9c7c34);
   color: var(--cube-text, #fff);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);

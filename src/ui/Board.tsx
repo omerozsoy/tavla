@@ -93,6 +93,9 @@ interface BoardProps {
   pipTop: number
   pipBottom: number
   cube: { value: number; owner: Player | null }
+  // Küp çekildi, KARAR BENDE: teklif edilen (katlanmış) değer. Set ise alt tepsime (benim
+  // tarafıma) yanıp sönen küp gelir; kabul edince sahiplenip sabitlenir, yoksa ortaya döner.
+  cubePendingValue?: number | null
   crawford?: boolean // Crawford oyunu: kup KULLANILAMAZ -> kupun icine "Crawford" yazilir
   classic?: boolean // KLASIK TAVLA: kup HIC yok -> tahtada kup gorseli CIZILMEZ
   centerLeft?: ReactNode
@@ -283,6 +286,7 @@ function Board({
   pipTop,
   pipBottom,
   cube,
+  cubePendingValue = null,
   crawford = false,
   classic = false,
   centerLeft,
@@ -661,6 +665,13 @@ function Board({
       {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
     </div>
   ) : null
+  // Karar bende: teklif edilen küp ALT (benim) tepsime yanıp sönerek gelir; ortadaki küp gizlenir.
+  const cubePending = !classic && cubePendingValue != null && cubePendingValue > 0
+  const cubePendingEl = cubePending ? (
+    <div className="cube cube-tray cube-pending" aria-label={t('board.cube')}>
+      {cubePendingValue}
+    </div>
+  ) : null
 
   return (
     <div
@@ -733,7 +744,7 @@ function Board({
               KLASIK TAVLA: kup HIC yok -> gorsel tamamen cizilmez. */}
           {/* Küp ORTA bar'da YALNIZ sahipsizken (başlangıç/çekilmemiş). Sahiplenince bear-off
               tepsisine taşınır (aşağıda). KLASIK TAVLA: küp hiç yok. */}
-          {!classic && cubeTraySide == null && (
+          {!classic && cubeTraySide == null && !cubePending && (
             <div
               className={`cube cube-center${crawford ? ' cube-crawford' : ''}`}
               title={crawford ? t('board.crawfordHint') : t('board.cube')}
@@ -818,6 +829,8 @@ function Board({
           ))}
           {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda (son çocuk). */}
           {cubeTraySide === 'bottom' && cubeTrayEl}
+          {/* Karar bende: teklif edilen küp yanıp sönerek benim (alt) tepsimde. */}
+          {cubePendingEl}
         </div>
       </div>
 
