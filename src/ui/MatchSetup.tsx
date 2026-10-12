@@ -104,6 +104,8 @@ interface Props {
 
 // Seviye 11 ve uzeri = Premium bot (Grandmaster/Ultimate). Tek dogruluk kaynagi.
 const PREMIUM_BOT_MIN = 11
+// Seçilebilir en düşük seviye. 1-4 (Beginner/Rookie/Casual/Skilled) kaldırıldı -> en zayıf bot Expert (5).
+const MIN_LEVEL = 5
 
 export default function MatchSetup({
   mode: initialMode,
@@ -135,7 +137,7 @@ export default function MatchSetup({
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
   // Premium değilse Seviye 11/12 SEÇİLEMEZ -> kayıtlı/başlangıç seviyesi 10'a kırpılır.
   const [difficulty, setDifficulty] = useState<number>(
-    Math.min(initial.difficulty ?? 10, premium ? 12 : PREMIUM_BOT_MIN - 1),
+    Math.min(Math.max(initial.difficulty ?? 10, MIN_LEVEL), premium ? 12 : PREMIUM_BOT_MIN - 1),
   )
   // Seviye seç: Premium bot (11/12) ise ve üye Premium değilse -> üyelik ekranı (seçme).
   const pickLevel = (lvl: number) => {
@@ -182,7 +184,7 @@ export default function MatchSetup({
             <input
               type="range"
               className="level-slider"
-              min={1}
+              min={MIN_LEVEL}
               // Premium değilse slider 10'da durur (11/12 Premium botlar seçilemez).
               max={premium ? AI_LEVELS.length : PREMIUM_BOT_MIN - 1}
               step={1}
@@ -192,6 +194,7 @@ export default function MatchSetup({
             <div className="level-grid">
               {AI_LEVELS.map((name, i) => {
                 const lvl = i + 1
+                if (lvl < MIN_LEVEL) return null // 1-4 kaldırıldı
                 const persona = botPersona(lvl) // 11/12: karakter (Oklavalı Teyze / Kahvedeki Dayı)
                 const isPremiumLvl = lvl >= PREMIUM_BOT_MIN
                 const locked = isPremiumLvl && !premium
