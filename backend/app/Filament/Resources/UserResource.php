@@ -330,11 +330,12 @@ class UserResource extends Resource
             // Satır işlemleri kebab menüsünde toplanır: 5 etiketli buton satırı yatayda taşırıp
             // tabloyu ekran dışına itiyordu (actions "hiç gözükmüyor"). ActionGroup tek "⋮" ikonuna indirir.
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                // E-posta aktivasyonu: kebab'a GÖMÜLMEDEN doğrudan ikon-buton (hızlı aç/kapa).
+                // Yeşil zarf = doğrula; gri = doğrulamayı kaldır. Etiket tooltip'te.
                 Tables\Actions\Action::make('verifyEmail')
                     ->label(fn ($record) => $record->email_verified_at ? 'Doğrulamayı Kaldır' : 'E-postayı Doğrula')
+                    ->tooltip(fn ($record) => $record->email_verified_at ? 'Doğrulamayı Kaldır' : 'E-postayı Doğrula')
+                    ->iconButton()
                     ->icon('heroicon-m-envelope')
                     ->color(fn ($record) => $record->email_verified_at ? 'gray' : 'success')
                     ->requiresConfirmation()
@@ -342,6 +343,9 @@ class UserResource extends Resource
                         $record->email_verified_at = $record->email_verified_at ? null : now();
                         $record->save();
                     }),
+                Tables\Actions\ActionGroup::make([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
                 // HESAP KAPATMA (siteden yasaklama) — gerekçe+not+onay modalı. Konuşma yasağından
                 // BAĞIMSIZ: yalnız giriş/site erişimini engeller; kayıt/maç/turnuva sonuçlarını SİLMEZ.
                 Tables\Actions\Action::make('closeAccount')
