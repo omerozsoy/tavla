@@ -77,6 +77,47 @@ describe('oppReplay — otoriter hamleyi adım adım oynatma yakınsar + snap de
   })
 })
 
+// "AYNI HAMLE 2. KEZ" — canlı önizleme (oppLive) hamleyi gösterdikten SONRA §5.2 replay BAŞTAN
+// oynatıyordu. Kök: canlı adımlar rakibin GERÇEK sırasını, reconstruct ise KENDİ decomposition'ını
+// taşır (aynı tahta, FARKLI die-sırası). replayStartIndex stepEq (from/to/die) ile karşılaştırınca
+// ilk adımdan sapar -> 0 döner -> zaten gösterilen hamle geri sıçratılıp tekrar oynanır. FIX: tahta
+// eşitliği (die-sırasından bağımsız) ile "tamamen gösterildi mi" kontrolü.
+describe('aynı hamle 2. kez: die-sırası farkında tahta-eşitliği dedup', () => {
+  // Aynı tahtaya götüren ama farklı DIE ile başlayan iki bağımsız-adım sıralaması bul: rakip bir
+  // sırayla oynar (live), reconstruct DİĞER sırayı seçer. İki taş bağımsızsa sıra tahtayı değiştirmez.
+  const stepEq = (a: Step, b: Step) => a.from === b.from && a.to === b.to && a.die === b.die
+  const found = (() => {
+    for (const d of [[6, 2], [5, 3], [6, 1], [5, 2], [4, 1], [6, 4], [3, 1], [6, 3]]) {
+      const base = turnOf(initialState(), 'black', d)
+      for (const t of maximalTerminals(base)) {
+        if (t.steps.length !== 2) continue
+        const [a, b] = t.steps
+        if (a.die === b.die) continue // aynı die -> sıra farkı stepEq'i bozmaz (test anlamsız)
+        if (boardKey(frameAt(base, [a, b], 2)) === boardKey(frameAt(base, [b, a], 2)))
+          return { base, recon: [a, b], live: [b, a] } // recon bir sıra, live TERSİ
+      }
+    }
+    return null
+  })()
+
+  it('ÖN KOŞUL: aynı tahtaya götüren farklı-sıralı 2-adım hamle bulundu', () => {
+    expect(found).not.toBeNull()
+    expect(stepEq(found!.recon[0], found!.live[0])).toBe(false) // ilk adım die/haneden sapar
+  })
+
+  it('BUG: canlı adımlar aynı tahtaya götürür ama replayStartIndex 0 (hamleyi baştan oynatır)', () => {
+    const { base, recon, live } = found!
+    expect(boardKey(frameAt(base, live, 2))).toBe(boardKey(frameAt(base, recon, 2))) // aynı sonuç
+    expect(replayStartIndex(live, recon)).toBe(0) // <- die-sırası sapınca "hiç gösterilmedi" sanır
+  })
+
+  it('FIX: tahta-eşitliği "tamamen gösterildi"yi die-sırasından bağımsız yakalar -> replay atlanır', () => {
+    const { base, recon, live } = found!
+    // App.tsx maybeReplayOppMove tam bu eşitlikte return eder (çift oynatma engellenir).
+    expect(boardKey(frameAt(base, live, live.length))).toBe(boardKey(frameAt(base, recon, recon.length)))
+  })
+})
+
 // RAKIP ZAR/HAMLE GECIKMESI — KÖK NEDEN YENİDEN ÜRETİMİ + FIX (RAKIP_ZAR_HAMLE_GECIKMESI_RAPORU).
 //
 // Belirti: "rakibin zarı çok geç görünüyor; zar görünene kadar rakip hamlelerini yapmış oluyor".

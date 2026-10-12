@@ -5316,6 +5316,16 @@ export default function App() {
       animOn && moveStyle !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!canAnim || steps.length === 0) return
     if (resultShowingRef.current || inLobbyRef.current) return
+    // Canlı önizleme (oppLive) otoriter sonuç TAHTASINA ulaştıysa replay YAPMA ("aynı hamle 2. kez"
+    // raporu): replayStartIndex die-SIRASINA bağlıdır, ama reconstruct kendi decomposition'ını seçer
+    // (örn. 6-2'yi 2-6 çözer) -> canlı adımlarla stepEq tutmaz, start=0 döner ve ZATEN gösterilen
+    // hamleyi tahtayı geri sıçratıp baştan oynatır. Tahta-eşitliği die-sırasından BAĞIMSIZ kesin
+    // ölçüt: canlı tahta == sonuç tahta ise hamle tamamen gösterilmiştir -> replay gereksiz.
+    if (
+      oppLiveShownRef.current.length > 0 &&
+      boardKey(applyPlayed(base, oppLiveShownRef.current)) === boardKey(applyPlayed(base, steps))
+    )
+      return
     const start = replayStartIndex(oppLiveShownRef.current, steps)
     if (start >= steps.length) return // canlı önizleme (room.live) zaten tamamını gösterdi
     clearOppReplay()
@@ -5368,6 +5378,10 @@ export default function App() {
     // O yuzden oyun-bitti (sm.done) durumunda tur-devri sartini ARAMA; aksi halde rakibin son
     // (kazanan) toplamasi loga girmez ve .mat sonuc satiri OLMADAN kesilir (tavlatv-mac(4) bug'i).
     const ended = !!sm?.done
+    // Rakip GELE atıp HAMLE YOK (dance) ise: tur-başı "Hamle Yok" overlay'inde zar zaten gösterildi.
+    // Aşağıdaki oppRoll ECHO'su aynı zarı MY turda rakip tarafında tekrar basıp "yeni atılmış gibi"
+    // gösteriyordu (rapor). Dance'te echo'yu bastır (reconstruct boş adım dizisi -> dance imzası).
+    let oppDanced = false
     // GÜVENLİK (KAYBEDEN KİLİDİ KÖK FIX): rakip-hamle rekonstrüksiyonu SALT maç-kaydı/.mat export
     // içindir. reconstructOppMove/notation kazananın BİTİREN (bear-off) hamlesinde throw edebilir;
     // try/catch ile sararız ki aşağıdaki setTurnStart/setMatch/setGameEnd HER ZAMAN çalışsın. Aksi
@@ -5388,6 +5402,7 @@ export default function App() {
         // (uydurma satir yazmaktansa eksik birakmak yeglenir).
         const steps = reconstructOppMove(oppBase, gs, ended)
         if (steps) {
+          oppDanced = steps.length === 0 // dance -> oppRoll echo'sunu bastır (çift zar gösterimi)
           oppLoggedRef.current = sig
           const oc = oppBase.turn
           setMatchLog((l) => [
@@ -5451,7 +5466,8 @@ export default function App() {
       if (
         online && oppLastMove && oppLastMove.color !== myColor &&
         Array.isArray(oppLastMove.dice) && oppLastMove.dice.length >= 1 &&
-        oppLastMove.v !== lastOppRollVRef.current
+        oppLastMove.v !== lastOppRollVRef.current &&
+        !oppDanced // GELE/dance: zar "Hamle Yok" overlay'inde gösterildi -> echo ile tekrar basma
       ) {
         lastOppRollVRef.current = oppLastMove.v
         setOppRoll({ dice: oppLastMove.dice.slice(0, 2), at: Date.now() })
