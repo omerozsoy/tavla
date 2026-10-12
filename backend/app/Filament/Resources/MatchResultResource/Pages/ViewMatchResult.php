@@ -6,7 +6,6 @@ use App\Filament\Resources\MatchResultResource;
 use App\Models\MatchResult;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -40,74 +39,61 @@ class ViewMatchResult extends ViewRecord
         ];
     }
 
+    /**
+     * Skorbord verisi: tek match_results satırı iki tarafı da taşır (oyuncu + rakip).
+     * PR'ın TEK yetkilisi gnubg (gnubg_pr); kayıtlı istemci pr'ı yalnız gnubg'den gerçekten
+     * farklıysa (tutarsızlık) ayrıca gösterilir — yeni maçlarda pr == gnubg_pr olduğundan
+     * "iki PR" görünmez.
+     */
+    public static function summaryData(MatchResult $r): array
+    {
+        $gnubg = $r->gnubg_pr ?? $r->pr;              // gösterilen (yetkili) PR
+        $stored = $r->pr;                             // eski istemci PR'ı
+        $mismatch = $gnubg !== null && $stored !== null
+            && abs((float) $gnubg - (float) $stored) > 0.01;
+
+        $stake = (int) ($r->stake ?? ($r->room?->stake ?? 0));
+
+        return [
+            'id' => $r->id,
+            'type_label' => MatchResultResource::matchTypeLabel($r->match_type, $r->match_length),
+            'type_color' => $r->match_type === 'coin' ? 'warning' : ($r->match_type === 'ai' ? 'gray' : 'info'),
+            'is_ai' => $r->match_type === 'ai',
+            'date' => $r->created_at?->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i:s') ?? '—',
+            'score' => ($r->score_self === null && $r->score_opp === null)
+                ? '—' : ((int) $r->score_self).' - '.((int) $r->score_opp),
+            'stake' => $stake,
+            'coins_after' => $r->coins_after !== null ? (int) $r->coins_after : null,
+            'room' => $r->room_code,
+            'pr_mismatch' => $mismatch,
+            'self' => [
+                'name' => $r->user?->nickname ?? '—',
+                'won' => (bool) $r->won,
+                'pr' => $gnubg,
+                'stored_pr' => $stored,
+                'luck' => $r->luck,
+                'rating_before' => $r->rating_before,
+                'rating_after' => $r->rating_after,
+                'delta' => (int) ($r->delta ?? 0),
+            ],
+            'opp' => [
+                'name' => $r->opponent_name ?: '—',
+                'pr' => $r->opponent_pr,
+                'rating' => $r->opponent_rating,
+            ],
+        ];
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
-            Section::make('Maç')
+            // MAÇ ÖZETİ: tek bakışta iki oyuncu + skor + PR + puan (maç-sonu özeti gibi).
+            Section::make('Maç Özeti')
                 ->schema([
-                    TextEntry::make('user.nickname')->label('Oyuncu')->default('—'),
-                    TextEntry::make('opponent_name')->label('Rakip')->default('—'),
-                    TextEntry::make('won')->label('Sonuç')->badge()
-                        ->formatStateUsing(fn ($state) => $state ? 'Galibiyet' : 'Mağlubiyet')
-                        ->color(fn ($state) => $state ? 'success' : 'danger'),
-                    TextEntry::make('score')->label('Skor')
-                        ->state(fn (MatchResult $r) => ($r->score_self === null && $r->score_opp === null)
-                            ? '—'
-                            : ((int) $r->score_self).' - '.((int) $r->score_opp)),
-                    TextEntry::make('match_type')->label('Tür')->badge()
-                        ->formatStateUsing(fn ($state, MatchResult $r) => MatchResultResource::matchTypeLabel($state, $r->match_length))
-                        ->color(fn ($state) => $state === 'coin' ? 'warning' : 'info'),
-                    TextEntry::make('created_at')->label('Tarih / Saat')
-                        ->dateTime('d.m.Y H:i:s', 'Europe/Istanbul'),
-                ])
-                ->columns(3),
-            Section::make('Bahis (Coin)')
-                ->schema([
-                    TextEntry::make('stake')->label('Oynanan bahis')
-                        ->state(function (MatchResult $r) {
-                            // Önce sabitlenen snapshot (oda purge edilse de kalır), yoksa eski satırlar için odadan.
-                            $stake = $r->stake ?? ($r->room?->stake ?? 0);
-
-                            return (int) $stake > 0 ? number_format((int) $stake).' coin' : '—';
-                        }),
-                    TextEntry::make('coins_after')->label('Maç sonrası bakiye')
-                        ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((int) $state).' coin'),
-                    TextEntry::make('room_code')->label('Oda kodu')->default('—')->copyable(),
-                ])
-                ->columns(3),
-            Section::make('Performans (PR) ve Şans')
-                ->description('PR’ın tek yetkilisi gnubg (TavlaTV motoru). “Oyuncu PR” = gnubg değeri. '
-                    .'“Kayıtlı PR” eski satırlarda istemci (wildbg) tahmini olabilir; ikisi arasında büyük fark '
-                    .'(>10) bir tutarsızlık işaretidir → tavla:gnubg-pr-backfill --rerun ile düzeltilir.')
-                ->schema([
-                    // BİRİNCİL: gnubg (TavlaTV) PR. Yeni satırlarda pr == gnubg_pr; eski satırlarda gnubg_pr
-                    // otoriter değer, pr ise bayat istemci tahmini olabilir -> ikisini de göster.
-                    TextEntry::make('gnubg_pr')->label('Oyuncu PR (TavlaTV)')
-                        ->state(fn (MatchResult $r) => $r->gnubg_pr ?? $r->pr)
-                        ->formatStateUsing(fn ($state) => $state === null ? 'analiz bekliyor' : number_format((float) $state, 2)),
-                    TextEntry::make('pr')->label('Kayıtlı PR')
-                        ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2)),
-                    TextEntry::make('pr_diff')->label('Fark (kayıtlı − gnubg)')
-                        ->state(fn (MatchResult $r) => ($r->pr === null || $r->gnubg_pr === null)
-                            ? '—' : number_format((float) $r->pr - (float) $r->gnubg_pr, 2))
-                        ->color(fn ($state, MatchResult $r) => ($r->pr === null || $r->gnubg_pr === null)
-                            ? 'gray' : (abs((float) $r->pr - (float) $r->gnubg_pr) > 10 ? 'danger' : 'gray')),
-                    TextEntry::make('opponent_pr')->label('Rakip PR')
-                        ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2)),
-                    TextEntry::make('luck')->label('Şans')
-                        ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2)),
-                ])
-                ->columns(3),
-            Section::make('Puan (Rating)')
-                ->schema([
-                    TextEntry::make('rating_before')->label('Önce'),
-                    TextEntry::make('rating_after')->label('Sonra'),
-                    TextEntry::make('delta')->label('Değişim')
-                        ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '').(int) $state)
-                        ->color(fn ($state) => $state > 0 ? 'success' : ($state < 0 ? 'danger' : 'gray')),
-                    TextEntry::make('opponent_rating')->label('Rakip puanı')->default('—'),
-                ])
-                ->columns(4),
+                    ViewEntry::make('summary')->hiddenLabel()
+                        ->state(fn (MatchResult $r) => self::summaryData($r))
+                        ->view('filament.match-result.summary')->columnSpanFull(),
+                ]),
             Section::make('.mat Dosyası (XG uyumlu)')
                 ->description('Maçın hamle/zar kaydından üretilir; Extreme Gammon ile açılır. Başlıktaki “.mat indir” ile dosyayı kaydedin. (Online maçta iki oyuncunun logu birleştirilerek tam .mat üretilir.)')
                 ->schema([

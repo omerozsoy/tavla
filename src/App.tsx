@@ -1818,6 +1818,13 @@ export default function App() {
     active: Player | null
     at: number
   } | null>(null)
+  // BOT MAÇI KOZMETİK SAAT: bot hamlesi EKRANDA reveal/animasyonla oynanırken sunucu demiri
+  // DONDURULUR (botAnim guard) ki botun turu insanın bankasından işlemesin (BOT_REVEAL_GRACE).
+  // Yan etki: ekranda saat rakip (bot) turunda DONUK görünür ("12'den geri saymıyor"). Bu ref,
+  // yalnız o reveal penceresinde delay'i YEREL geri saydırmak içindir (görsel; gerçek saat/kayıp
+  // sunucuda, dokunulmaz). at=bot turu başlangıcı, delay=son görülen tam (reset) delay.
+  const botRevealClockRef = useRef<{ at: number; delay: number } | null>(null)
+  const fullDelayRef = useRef<number>(0) // en son görülen tam delay (hold>0 anında yakalanır)
   // AFK (sunucu-otoriter): kayba kalan saniye (yalniz son 15sn'de dolu) + sirasi gelen renk.
   const [afkLeft, setAfkLeft] = useState<number | null>(null)
   const [srvActive, setSrvActive] = useState<Player | null>(null)
@@ -4619,6 +4626,15 @@ export default function App() {
       // sadece demiri tazeler; rakamı burada ~250ms'de yeniden hesaplarız -> her tam saniye
       // gösterilir, atlama olmaz. Kayıp kararı yine sunucuda (offline timeout efekti online'da devre dışı).
       const id = window.setInterval(() => {
+        // BOT TURU (reveal animasyonu): sunucu demiri dondurulduğundan ekranda saat "donuk" kalır.
+        // Bot tarafında delay'i YEREL geri saydır (kozmetik; gerçek saat sunucuda, insan bankası korunur).
+        const br = botRevealClockRef.current
+        if (br) {
+          const d = Math.max(0, Math.ceil(br.delay - (Date.now() - br.at) / 1000))
+          const cur = clockStateRef.current
+          if (cur.delay !== d) setClock({ ...cur, delay: d })
+          return
+        }
         const a = clockAnchorRef.current
         if (!a) return
         // HOLD (bot-reveal grace): started_at gelecekteyken sunucu delay'i SABİT tutar. İstemci de
@@ -5555,7 +5571,17 @@ export default function App() {
   }, [played])
   useEffect(() => {
     botAnimRef.current = botAnim !== null
-  }, [botAnim])
+    // Bot reveal'i başladı (online bot maçı) -> kozmetik geri sayım demirini kur: son tam delay'den
+    // (yoksa yerel preset) başla. Bitince temizle -> sunucu demiri (insan turu) devralır.
+    if (online && room?.bot && botAnim) {
+      if (!botRevealClockRef.current) {
+        botRevealClockRef.current = { at: Date.now(), delay: fullDelayRef.current || clockRef.current.move }
+      }
+    } else {
+      botRevealClockRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [botAnim, online, room?.bot])
   useEffect(() => {
     openingRef.current = opening
   }, [opening])
@@ -5857,6 +5883,7 @@ export default function App() {
           const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
           // Demiri tazele (ekrandaki rakamı DEĞİL): interpolasyon tick'i buradan pürüzsüz sayar.
           clockAnchorRef.current = { delay: sc.delay, hold: (sc as { hold?: number }).hold ?? 0, white: sc.white, black: sc.black, active: act, at: Date.now() }
+          if (sc.delay > fullDelayRef.current) fullDelayRef.current = sc.delay // tam (reset) delay = maç içi en büyük
           setSrvActive(act)
           setAfkLeft(sc.afk)
         } else if (srvDone) {
@@ -5945,6 +5972,7 @@ export default function App() {
       if (sc && !botAnimRef.current) {
         const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
         clockAnchorRef.current = { delay: sc.delay, hold: (sc as { hold?: number }).hold ?? 0, white: sc.white, black: sc.black, active: act, at: Date.now() }
+        if (sc.delay > fullDelayRef.current) fullDelayRef.current = sc.delay // tam (reset) delay = maç içi en büyük
         setSrvActive(act)
         setAfkLeft(sc.afk)
       } else if (srvDone) {

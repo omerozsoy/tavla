@@ -36,6 +36,28 @@ class ManualMuteMatchLineTest extends TestCase
         $this->assertStringContainsString('yönetici tarafından konuşma yasağı', $last['text']);
     }
 
+    public function test_lifted_drops_green_ok_line(): void
+    {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create(['nickname' => 'Afli']);
+        $room = Room::create([
+            'code' => 'MUT03', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $p1->id, 'p2_user_id' => $p2->id,
+            'p1_name' => 'Temiz', 'p2_name' => 'Afli',
+            'status' => 'playing', 'mode' => 'ranked', 'version' => 0, 'messages' => [],
+        ]);
+
+        ChatModeration::announceMuteInActiveMatch($p2->fresh(), lifted: true);
+
+        $room->refresh();
+        $msgs = $room->messages;
+        $last = end($msgs);
+        $this->assertSame('sys', $last['slot']);
+        $this->assertSame('ok', $last['tone']); // yeşil
+        $this->assertStringContainsString('Afli', $last['text']);
+        $this->assertStringContainsString('kaldırıldı', $last['text']);
+    }
+
     public function test_noop_when_user_not_in_match(): void
     {
         $u = User::factory()->create();

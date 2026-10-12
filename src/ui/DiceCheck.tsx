@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
@@ -42,6 +42,17 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
   const [vClient, setVClient] = useState(clientSeed ?? '')
   const [copied, setCopied] = useState(false)
   const [checked, setChecked] = useState(!!serverSeed) // REVEAL varsa açılışta oto-doğrula
+  // "Tüm Zarları Doğrula"ya basınca ANINDA geri bildirim: checked zaten true olabildiği için
+  // (REVEAL'de oto-doğrulandı) setChecked(true) no-op kalıp "hiçbir şey olmadı" hissi veriyordu.
+  // Kısa bir "doğrulandı" flaşı göster + sonucu görünür kıl (aşağı kaydır).
+  const [flash, setFlash] = useState(false)
+  const resultRef = useRef<HTMLDivElement>(null)
+  const doVerify = () => {
+    setChecked(true)
+    setFlash(true)
+    window.setTimeout(() => setFlash(false), 2500)
+    window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60)
+  }
 
   // REVEAL poll maç bittikten BİRKAÇ SANİYE sonra gelebilir; modal açıkken tohum dolunca
   // alanları doldur + otomatik doğrula (kullanıcı tekrar açmak zorunda kalmasın).
@@ -157,14 +168,19 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
               variant="default"
               className="fair-verify-cta"
               disabled={!vServer.trim()}
-              onClick={() => setChecked(true)}
+              onClick={doVerify}
             >
               <Icon name="search" size={16} /> {t('dc.verify')}
             </Button>
+            {flash && (
+              <div className="dc-flash" role="status">
+                <Icon name="check" size={15} /> {t('dc.flashVerified')}
+              </div>
+            )}
             {!vServer.trim() && <div className="dc-note dc-muted">{t('dc.needSeed')}</div>}
 
             {result && (
-              <div className="dc-result">
+              <div className="dc-result" ref={resultRef}>
                 {result.commitOk != null && (
                   <div className={`dc-vbanner ${result.commitOk ? 'ok' : 'bad'}`}>
                     <Icon name={result.commitOk ? 'shield-check' : 'warning-circle'} size={18} />

@@ -25370,6 +25370,26 @@ button.acct-row-logout:hover:not(:disabled) {
   min-height: 0; /* flex child'ın taşmadan kayması için şart */
   flex: 1;
 }
+/* "Tüm Zarları Doğrula" anında geri bildirim flaşı (yeşil pill). */
+.dc-flash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: var(--radius, 10px);
+  background: color-mix(in srgb, var(--success-fg, #2f9e44) 14%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--success-fg, #2f9e44) 40%, var(--border));
+  color: var(--success-fg, #2f9e44);
+  font-size: 0.82rem;
+  font-weight: 600;
+  animation: dc-flash-in 0.18s ease-out;
+}
+@keyframes dc-flash-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .dc-intro {
   font-size: 0.9rem;
   line-height: 1.5;
@@ -26463,6 +26483,12 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   text-align: center;
   line-height: 1.4;
+}
+/* Yasak KALKTI sistem satırı: yeşil (olumlu). */
+.chat-msg-sys.ok {
+  border-color: color-mix(in srgb, var(--success-fg, #2f9e44) 45%, transparent);
+  background: color-mix(in srgb, var(--success-fg, #2f9e44) 14%, transparent);
+  color: var(--success-fg, #2f9e44);
 }
 /* İzleyen yönetici/destek mesajı: isim önünde rol kalkanı + kiremit renk vurgusu. */
 .chat-msg.admin .chat-name {

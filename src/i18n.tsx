@@ -1067,6 +1067,7 @@ const TR: Dict = {
   'dc.serverSeed': 'Sunucu tohumu (serverSeed)',
   'dc.clientSeed': 'İstemci tohumu (clientSeed)',
   'dc.verify': 'Tüm Zarları Doğrula',
+  'dc.flashVerified': 'Zarlar doğrulandı — sonuçlar aşağıda.',
   'dc.commitOk': 'Tohum, maç başında verilen mühürle uyumlu.',
   'dc.commitBad': 'Tohum, mühürle UYUŞMUYOR!',
   'dc.allOk': 'Tüm {n} el doğrulandı — zarlar tohumla birebir eşleşiyor.',

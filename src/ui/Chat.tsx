@@ -145,8 +145,9 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             ) : (
               messages.map((m) =>
                 m.slot === 'sys' ? (
-                  // TavlaTV sistem bildirimi (küfür yaptırımı): ortalı KIRMIZI satır.
-                  <div key={m.id} className="chat-msg chat-msg-sys" role="alert">
+                  // TavlaTV sistem bildirimi: ortalı satır. tone='ok' -> YEŞİL (yasak kalktı),
+                  // yoksa KIRMIZI (küfür yaptırımı / yasak verildi).
+                  <div key={m.id} className={`chat-msg chat-msg-sys${m.tone === 'ok' ? ' ok' : ''}`} role="alert">
                     {m.text}
                   </div>
                 ) : (

@@ -37,6 +37,16 @@ class ViewUser extends ViewRecord
                 ->action(fn (User $record, array $data) => AccountClosure::reopen(
                     $record, (int) auth()->id(), $data['reason']
                 )),
+            // Konuşma yasağı (sohbet susturma) — profilden doğrudan uygula; durum "Hesap Durumu" sekmesinde görünür.
+            Actions\Action::make('chatMute')
+                ->label(fn (User $record) => $record->chat_muted_until && $record->chat_muted_until->isFuture()
+                    ? 'Konuşma Yasağı (aktif)' : 'Konuşma Yasağı')
+                ->icon('heroicon-m-chat-bubble-left-ellipsis')
+                ->color('warning')
+                ->modalHeading('Konuşma Yasağı (sohbet susturma)')
+                ->modalSubmitActionLabel('Uygula')
+                ->form(UserResource::chatMuteFormSchema())
+                ->action(fn (User $record, array $data) => UserResource::applyChatMute($record, $data)),
         ];
     }
 }

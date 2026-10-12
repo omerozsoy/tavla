@@ -135,7 +135,7 @@ class ChatModeration
      * Hem site-içi (AdminController::chatMute) hem panel (UserResource) yasaklama bunu çağırır ->
      * yasak NEREDEN verilirse verilsin, kişi maçtaysa rakip + izleyiciler görür.
      */
-    public static function announceMuteInActiveMatch(User $user): void
+    public static function announceMuteInActiveMatch(User $user, bool $lifted = false): void
     {
         $room = \App\Models\Room::where('status', 'playing')
             ->where(fn ($q) => $q->where('p1_user_id', $user->id)->orWhere('p2_user_id', $user->id))
@@ -149,8 +149,12 @@ class ChatModeration
         $messages[] = [
             'slot' => 'sys',
             'name' => 'TavlaTV',
-            'text' => "⚠️ {$name} yönetici tarafından konuşma yasağı aldı.",
+            // $lifted = yasak KALDIRILDI (yeşil onay satırı); değilse yasak VERİLDİ (kırmızı uyarı).
+            'text' => $lifted
+                ? "✓ {$name} konuşma yasağı kaldırıldı, tekrar yazabilir."
+                : "⚠️ {$name} yönetici tarafından konuşma yasağı aldı.",
             'id' => (string) round(microtime(true) * 1000).'-sys',
+            'tone' => $lifted ? 'ok' : 'warn',
         ];
         if (count($messages) > 50) {
             $messages = array_slice($messages, -50);

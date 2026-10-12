@@ -1891,6 +1891,7 @@ export interface ChatMsg {
   id: string
   uid?: number // gönderen kullanıcı id'si (isim önünde rol kalkanı için) — admin mesajlarında dolu
   role?: 'admin' | 'support' // admin/destek mesajı -> isim ÖNÜNDE RoleBadge
+  tone?: 'ok' | 'warn' // sys satırı rengi: 'ok' = yeşil (yasak kalktı), 'warn'/yok = kırmızı (yasak/uyarı)
 }
 // Sunucu-otoriter saat goruntusu (poll/update ile doner). white/black = kalan ana sure (sn),
 // delay = aktif oyuncunun kalan hamle gecikmesi, active = sirasi gelen renk, afk = AFK
