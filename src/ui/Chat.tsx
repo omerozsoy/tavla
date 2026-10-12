@@ -54,6 +54,17 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
   useEffect(() => {
     if (open) setUnread(0)
   }, [open])
+  // ADMIN/SİSTEM mesajı gelince sohbet KAPALIYSA bile AÇ: yönetici yazdığında ya da (küfür) yasak
+  // uyarısı düştüğünde oyuncu/izleyici görmeden geçmesin. Yalnız YENİ gelen admin/sys satırında.
+  const prevLenOpenRef = useRef(messages.length)
+  useEffect(() => {
+    const prev = prevLenOpenRef.current
+    if (messages.length > prev) {
+      const fresh = messages.slice(prev)
+      if (fresh.some((m) => m.slot === 'admin' || m.slot === 'sys')) setOpen(true)
+    }
+    prevLenOpenRef.current = messages.length
+  }, [messages])
   // Yönetici izlemede (readOnly) sohbet varsa KENDİLİĞİNDEN açık gelsin (bir kez; admin
   // sonradan kapatabilir). Oyuncu sohbeti eskisi gibi kapalı başlar (başlıkla açılır).
   const autoOpenedRef = useRef(false)

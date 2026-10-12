@@ -133,6 +133,8 @@ class AdminController extends Controller
                 $user,
                 "⚠️ Konuşma yasağı aldın. Sohbete yazamazsın. Ceza bitişi: {$until}."
             );
+            // Kişi o an bir maçtaysa maç sohbetine KIRMIZI yasak satırı düş (panel + profil ORTAK yol).
+            \App\Support\ChatModeration::announceMuteInActiveMatch($user);
         } else {
             \App\Support\OfficialMessenger::sendTo(
                 $user,

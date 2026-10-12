@@ -335,6 +335,8 @@ class UserResource extends Resource
                                 $record,
                                 "⚠️ Konuşma yasağı aldın. Sohbete yazamazsın. Ceza bitişi: {$until}."
                             );
+                            // Panelden yasaklasam da kişi maçtaysa maç sohbetine KIRMIZI satır düşsün (ortak yol).
+                            \App\Support\ChatModeration::announceMuteInActiveMatch($record);
                         } else {
                             \App\Support\OfficialMessenger::sendTo(
                                 $record,

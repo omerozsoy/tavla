@@ -128,4 +128,40 @@ class ChatModeration
             'seconds' => $minutes * 60,
         ];
     }
+
+    /**
+     * MANUEL yasakta maçta kırmızı satır: kullanıcı o an bir maçtaysa (status=playing, bot değil),
+     * o maçın sohbetine otomatik yasakla AYNI görünümde (slot='sys') kırmızı uyarı düşer + push.
+     * Hem site-içi (AdminController::chatMute) hem panel (UserResource) yasaklama bunu çağırır ->
+     * yasak NEREDEN verilirse verilsin, kişi maçtaysa rakip + izleyiciler görür.
+     */
+    public static function announceMuteInActiveMatch(User $user): void
+    {
+        $room = \App\Models\Room::where('status', 'playing')
+            ->where(fn ($q) => $q->where('p1_user_id', $user->id)->orWhere('p2_user_id', $user->id))
+            ->orderByDesc('updated_at')
+            ->first();
+        if (! $room || $room->bot) {
+            return;
+        }
+        $name = ((int) $room->p1_user_id === (int) $user->id) ? $room->p1_name : $room->p2_name;
+        $messages = is_array($room->messages) ? $room->messages : [];
+        $messages[] = [
+            'slot' => 'sys',
+            'name' => 'TavlaTV',
+            'text' => "⚠️ {$name} yönetici tarafından konuşma yasağı aldı.",
+            'id' => (string) round(microtime(true) * 1000).'-sys',
+        ];
+        if (count($messages) > 50) {
+            $messages = array_slice($messages, -50);
+        }
+        $room->messages = $messages;
+        $room->save();
+        // Anında görünsün (push): istemci 'room.updated' -> poll(true) ile taze mesajları çeker.
+        try {
+            event(new \App\Events\RoomUpdated($room->code, $room->toClient()));
+        } catch (\Throwable $e) {
+            // yut: push en iyi çaba; 600ms poll zaten getirir
+        }
+    }
 }
