@@ -10,7 +10,7 @@ import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
 import RoleBadge from './RoleBadge'
-import SoberFrame from './SoberFrame'
+import AvatarFrame from './AvatarFrame'
 import { useTopRank } from '../topRanks'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -124,16 +124,17 @@ export function HomeFeatures() {
 }
 
 function Avatar({ url, name, featured }: { url?: string | null; name: string; featured?: boolean }) {
-  // Öne çıkan (liderlik ilk-3) oyuncu: avatar "Yükselen Parıltı" (SoberFrame rising) çerçevesiyle.
+  // Öne çıkan (liderlik ilk-3) oyuncu: avatar mağazadaki "Yükseliş" (mitik: yörünge + parıltı +
+  // hale) çerçevesiyle gösterilir — tek nokta yerine tam zengin efekt, uzaktan belli olur.
   if (featured)
     return (
-      <SoberFrame
+      <AvatarFrame
         className="lm-avatar-frame"
-        src={url ?? undefined}
-        initial={name.charAt(0).toUpperCase()}
-        motion="rising"
-        accent="#B8862B"
-        size={30}
+        src={url}
+        name={name}
+        frame="rising"
+        size={34}
+        animated
       />
     )
   return url ? (
