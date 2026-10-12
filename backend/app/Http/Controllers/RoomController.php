@@ -2691,41 +2691,59 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
-        $slot = $this->slotOf($room, $data['token'], $request);
-        if ($slot === null) {
-            return $this->fail('Bu odada değilsin.', 403);
-        }
-
-        // KÜFÜR YAPTIRIMI: konuşma yasağı aktifse gönderme engelli; aktif değilse metni süz,
-        // küfür varsa **** maskele + artan yasak uygula (24s/1h/1ay/1yıl) + uyarı döndür.
         $user = $request->user('sanctum');
-        if (($left = \App\Support\ChatModeration::mutedSeconds($user)) !== null) {
-            return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $user->chat_offenses], 403);
+        $slot = $this->slotOf($room, $data['token'], $request);
+        // SADECE YÖNETİCİ/DESTEK: izlediği maça (oyuncu değilken) yazabilir. Diğer izleyiciler YAZAMAZ.
+        $isAdminSender = false;
+        if ($slot === null) {
+            if ($user->is_admin || $user->is_support) {
+                $isAdminSender = true;
+            } else {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
         }
-        [$text, $hit, $word] = \App\Support\ChatModeration::filter(trim($data['text']), $user);
-        $warning = $hit ? \App\Support\ChatModeration::penalize($user, $word) : null;
 
-        $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;
         $messages = $room->messages ?? [];
-        $messages[] = [
-            'slot' => $slot,
-            'name' => $name,
-            'text' => $text,
-            'id' => (string) round(microtime(true) * 1000).'-'.$slot,
-        ];
-        // Küfür yakalandıysa SOHBETE sistem mesajı düş: rakip (küfür edilen) + izleyiciler adaleti
-        // görür. Yasak uygulandıysa süreyle, ilk ihlalde (yalnız uyarı) uyarı metniyle.
-        if ($warning) {
-            $labelTr = ['24h' => '24 saat', '1w' => '1 hafta', '1mo' => '1 ay', '1y' => '1 yıl'][$warning['label']] ?? null;
-            $sysText = ($warning['warning_only'] || ! $labelTr)
-                ? "⚠️ {$name} uygunsuz dil kullandı ve uyarıldı."
-                : "⚠️ {$name} uygunsuz dil kullandığı için {$labelTr} konuşma yasağı aldı.";
+        $warning = null;
+        if ($isAdminSender) {
+            // Yönetici/destek mesajı: küfür süzgeci/yasağına TABİ DEĞİL. İsim ÖNÜNDE rol kalkanı için
+            // uid + role taşınır (istemci RoleBadge çizer). Oyunculara + izleyicilere görünür.
             $messages[] = [
-                'slot' => 'sys',
-                'name' => 'TavlaTV',
-                'text' => $sysText,
-                'id' => (string) round(microtime(true) * 1000).'-sys',
+                'slot' => 'admin',
+                'name' => $user->nickname,
+                'text' => trim($data['text']),
+                'id' => (string) round(microtime(true) * 1000).'-admin',
+                'uid' => (int) $user->id,
+                'role' => $user->is_admin ? 'admin' : 'support',
             ];
+        } else {
+            // KÜFÜR YAPTIRIMI (yalnız oyuncu): yasak aktifse engelle; değilse süz + artan yasak uygula.
+            if (($left = \App\Support\ChatModeration::mutedSeconds($user)) !== null) {
+                return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $user->chat_offenses], 403);
+            }
+            [$text, $hit, $word] = \App\Support\ChatModeration::filter(trim($data['text']), $user);
+            $warning = $hit ? \App\Support\ChatModeration::penalize($user, $word) : null;
+
+            $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;
+            $messages[] = [
+                'slot' => $slot,
+                'name' => $name,
+                'text' => $text,
+                'id' => (string) round(microtime(true) * 1000).'-'.$slot,
+            ];
+            // Küfür yakalandıysa SOHBETE sistem mesajı düş (rakip + izleyiciler adaleti görür).
+            if ($warning) {
+                $labelTr = ['24h' => '24 saat', '1w' => '1 hafta', '1mo' => '1 ay', '1y' => '1 yıl'][$warning['label']] ?? null;
+                $sysText = ($warning['warning_only'] || ! $labelTr)
+                    ? "⚠️ {$name} uygunsuz dil kullandı ve uyarıldı."
+                    : "⚠️ {$name} uygunsuz dil kullandığı için {$labelTr} konuşma yasağı aldı.";
+                $messages[] = [
+                    'slot' => 'sys',
+                    'name' => 'TavlaTV',
+                    'text' => $sysText,
+                    'id' => (string) round(microtime(true) * 1000).'-sys',
+                ];
+            }
         }
         // Son 50 mesaji tut
         if (count($messages) > 50) {

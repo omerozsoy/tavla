@@ -1877,10 +1877,12 @@ export function playerToken(): string {
 
 export type Slot = 'p1' | 'p2'
 export interface ChatMsg {
-  slot: Slot | 'sys' // 'sys' = TavlaTV sistem mesajı (küfür yaptırımı bildirimi); ortalı stil
+  slot: Slot | 'sys' | 'admin' // 'sys' = TavlaTV sistem mesajı (ortalı); 'admin' = izleyen yönetici/destek mesajı
   name: string
   text: string
   id: string
+  uid?: number // gönderen kullanıcı id'si (isim önünde rol kalkanı için) — admin mesajlarında dolu
+  role?: 'admin' | 'support' // admin/destek mesajı -> isim ÖNÜNDE RoleBadge
 }
 // Sunucu-otoriter saat goruntusu (poll/update ile doner). white/black = kalan ana sure (sn),
 // delay = aktif oyuncunun kalan hamle gecikmesi, active = sirasi gelen renk, afk = AFK

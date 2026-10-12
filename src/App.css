@@ -26395,6 +26395,13 @@ button.acct-row-logout:hover:not(:disabled) {
   text-align: center;
   line-height: 1.4;
 }
+/* İzleyen yönetici/destek mesajı: isim önünde rol kalkanı + kiremit renk vurgusu. */
+.chat-msg.admin .chat-name {
+  color: #A83A2B;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
 .chat-input {
   display: flex;
   align-items: center;

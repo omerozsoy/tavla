@@ -11,7 +11,7 @@ import ViewersBadge from './ViewersBadge'
 import Chat from './Chat'
 import ClockStack from './ClockStack'
 import DiceRow, { Die } from './Dice'
-import { showRoom, watchRoom, roomSummary, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
+import { showRoom, watchRoom, roomSummary, sendChat, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
 import MatchSummary from './MatchSummary'
 import MatchResult from './MatchResult'
 import PublicProfile from './PublicProfile'
@@ -92,6 +92,17 @@ export default function Spectate({
   const [summaryOpen, setSummaryOpen] = useState(false)
   // Yönetici moderasyon: sohbette isme tıklanınca açılan oyuncu profili (oradan konuşma yasağı).
   const [profileId, setProfileId] = useState<number | null>(null)
+
+  // Yönetici/destek izlerken sohbete yazar (backend yalnız admin/support'a izin verir; isim önünde
+  // rol kalkanı taşır). Dönen mesaj listesini anında yansıt; sonraki poll de tazeler.
+  const handleAdminChat = async (text: string) => {
+    try {
+      const res = await sendChat(code, text)
+      if (res.messages) setRv((cur) => (cur ? { ...cur, messages: res.messages } : cur))
+    } catch {
+      /* yut: hata olursa sonraki poll zaten günceller */
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -698,14 +709,15 @@ export default function Spectate({
         <ViewersBadge viewers={viewers} count={viewerCount} />
       </div>
 
-      {/* Yönetici izleme: oyuncuların maç-içi sohbeti SALT OKUNUR (yalnız konuşma varsa).
-          Veri zaten rv.messages'ta (toClient herkese döner); moderasyon için görünür kılınır. */}
-      {isAdmin && (rv?.messages?.length ?? 0) > 0 && (
+      {/* Yönetici izleme: maç-içi sohbet. SADECE yönetici/destek izlerken YAZABİLİR (oyunculara +
+          izleyicilere görünür, isim önünde rol kalkanıyla). Normal izleyicide bu panel hiç çıkmaz. */}
+      {isAdmin && (
         <Chat
-          messages={rv!.messages}
+          messages={rv?.messages ?? []}
           mySlot="p1"
-          onSend={() => {}}
-          readOnly
+          onSend={handleAdminChat}
+          canText
+          loggedIn
           // İsme tıkla -> o slot'un oyuncu id'si -> profil (oradan konuşma yasağı verilir).
           onNameClick={(slot) => {
             const uid = (slot === 'p1' ? eff?.p1_user_id : eff?.p2_user_id) ?? null

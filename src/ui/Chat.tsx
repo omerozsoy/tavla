@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
+import RoleBadge from './RoleBadge'
 import type { ChatMsg, Slot } from '../api'
 import { Button } from '@/components/ui/button'
 
@@ -138,14 +139,20 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                     {m.text}
                   </div>
                 ) : (
-                  <div key={m.id} className={`chat-msg ${m.slot === mySlot ? 'mine' : 'theirs'}`}>
-                    {onNameClick ? (
-                      <button type="button" className="chat-name chat-name-btn" onClick={() => onNameClick(m.slot as Slot)}>
-                        {m.name}
-                      </button>
-                    ) : (
-                      <span className="chat-name">{m.name}</span>
-                    )}
+                  <div key={m.id} className={`chat-msg ${m.slot === 'admin' ? 'admin' : m.slot === mySlot ? 'mine' : 'theirs'}`}>
+                    <span className="chat-name">
+                      {/* İzleyen yönetici/destek mesajı: isim ÖNÜNDE rol kalkanı. */}
+                      {(m.role || m.slot === 'admin') && (
+                        <RoleBadge userId={m.uid} admin={m.role === 'admin' || undefined} support={m.role === 'support' || undefined} size={13} style={{ marginRight: 3 }} />
+                      )}
+                      {onNameClick && (m.slot === 'p1' || m.slot === 'p2') ? (
+                        <button type="button" className="chat-name-btn" onClick={() => onNameClick(m.slot as Slot)}>
+                          {m.name}
+                        </button>
+                      ) : (
+                        m.name
+                      )}
+                    </span>
                     <span className="chat-text">{m.text}</span>
                   </div>
                 ),
