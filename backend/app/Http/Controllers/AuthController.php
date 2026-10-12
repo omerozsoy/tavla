@@ -634,35 +634,25 @@ class AuthController extends Controller
             ]);
         }
 
-        // GNU-only SHADOW PR: gnubg PR'ını ARKA PLANDA (database kuyruğu) hesapla + gnubg_* kolonlarına
-        // yaz + client PR ile logla. Gösterilen/otoriter PR'a DOKUNMAZ. Yalnız pr_mode!=off + log varsa.
+        // gnubg ARKA PLAN (database kuyruğu) analizleri. Yalnız pr_mode!=off + log + !overcap.
         // onConnection('database') -> global QUEUE_CONNECTION'a dokunmadan queue worker'a düşer.
+        // ŞANS (luck) ARTIK PR JOB'UNUN İÇİNDE (ağır PR döngüsünden ÖNCE, tek matchluck çağrısı) hesaplanır
+        // -> AYRI kuyruk beklemesi YOK, PR ile AYNI job'da; job başlar başlamaz önce luck_mwc/emg yazılır,
+        // sonra PR. İstemci poll'u önce ŞANS'ı, sonra PR'ı doldurur -> ekran ADIM ADIM dolar. (Ayrı
+        // AnalyzeMatchLuckJob yalnız MatchFinalize/ForfeitLoss/heal BACKSTOP'larında kalır — luck_mwc null gate.)
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log']) && ! $friendlyOverCap) { // friendly 24h limiti aşıldıysa PR KREDİLENMEZ
+            && ! empty($mr['log']) && ! $friendlyOverCap) {
+            // PR job: önce ŞANS (inline), sonra ağır PR. (bkz AnalyzeMatchPrJob::handle inline luck.)
             try {
                 \App\Jobs\AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('gnubg PR dispatch hata', ['err' => $e->getMessage()]);
             }
-            // Analiz ekranı review'ini de ARKA PLANDA önden ısıt -> ilk açılış bile anında (best-effort).
+            // Analiz ekranı review'ini ARKA PLANDA önden ısıt (reviews kuyruğu, best-effort).
             try {
                 \App\Jobs\CacheMatchReviewJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('review önbellek dispatch hata', ['err' => $e->getMessage()]);
-            }
-        }
-
-        // Tavlai Luck V1 (gnubg NATIVE, KALICI): online maç sonrası per-oyuncu MWC-luck'ı ARKA PLANDA
-        // hesapla. Job İKİ oyuncunun stored logunu BİRLEŞTİRİP tam .mat kurar (istemci kısmi .mat'ine
-        // GÜVENMEZ -> "biri 0" bug'ı çözülür). Yalnız online (room_code) + log varsa. matchPr %'yi
-        // döndürür (hazır olunca); istemci ONNX fallback kalır. pr_mode gate.
-        // ADIM 4: online (room_code -> iki-log birleştir) VEYA pvb (tek-log iki renk -> job pvb dalı).
-        if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log']) && ! $friendlyOverCap) { // over-cap friendly -> casual (luck de kredilenmez)
-            try {
-                \App\Jobs\AnalyzeMatchLuckJob::dispatch($result->id)->onConnection('database');
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('gnubg luck dispatch hata', ['err' => $e->getMessage()]);
             }
         }
 
@@ -1022,7 +1012,8 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Career PR recalc (enrich) failed', ['user_id' => $row->user_id, 'err' => $e->getMessage()]);
         }
-        // Artık log var -> gnubg PR/luck (V1) arka plan analizini tetikle (pr_mode açıksa).
+        // Artık log var -> gnubg PR analizini tetikle (pr_mode açıksa). ŞANS (luck) PR job'unun İÇİNDE
+        // inline hesaplanır (ayrı dispatch YOK -> ayrı kuyruk beklemesi yok; bkz AnalyzeMatchPrJob).
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
             try {
                 \App\Jobs\AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
@@ -1034,13 +1025,6 @@ class AuthController extends Controller
                 \App\Jobs\CacheMatchReviewJob::dispatch($row->id)->onConnection('database');
             } catch (\Throwable $e) {
                 // best-effort
-            }
-            if (! empty($row->room_code)) {
-                try {
-                    \App\Jobs\AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database');
-                } catch (\Throwable $e) {
-                    // best-effort
-                }
             }
         }
     }

@@ -69,6 +69,18 @@ class AnalyzeMatchPrJob implements ShouldQueue
         if ($gnubg !== null && ! $gnubg->analyzeHealthy()) {
             throw new \App\Exceptions\TransientAnalysisException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
         }
+        // ŞANS (luck) PR ile AYNI JOB'DA, ağır PR döngüsünden ÖNCE hesaplanır -> AYRI kuyruk beklemesi
+        // YOK (eskiden luck ayrı job'da PR'ın arkasında bekliyordu -> geç geliyordu). luck = TEK hızlı
+        // matchluck çağrısı (heavy havuz) -> job'un ilk saniyelerinde luck_mwc/emg yazılır; istemci
+        // poll'u önce ŞANS'ı, sonra (PR döngüsü bitince) PR'ı doldurur -> ekran ADIM ADIM dolar.
+        // handle() self-contained + hata yutar (PR'ı ASLA bozmaz). $gnubg null ise (test) atla.
+        if ($gnubg !== null) {
+            try {
+                (new AnalyzeMatchLuckJob($this->matchResultId))->handle($gnubg);
+            } catch (\Throwable $e) {
+                Log::warning('PR job inline luck hata (bastırıldı)', ['id' => $this->matchResultId, 'err' => $e->getMessage()]);
+            }
+        }
         $player = $mr->analysisHc() ?? 'white';
         // SUNUCU-OTORİTER analiz logu (match_moves varsa ORADAN; yoksa client). checkerPr + Hata
         // Günlüğü (ErrorJournalService) AYNI kaynağı kullanır -> perDecision.logIndex hizası korunur.
