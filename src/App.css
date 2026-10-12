@@ -12786,12 +12786,11 @@ button.acct-row-logout:hover:not(:disabled) {
 .lm-watch {
   color: var(--muted);
 }
-.lm-avatar-frame {
-  flex: none;
-}
-/* Öne çıkan canlı maç: liderlik ilk-3'teki (PR veya rating) oyuncu sahada → altın glow +
-   avatarda yükselen parıltı (SoberFrame rising). İnsanlar fark edip o maçı izlesin. */
+/* Öne çıkan canlı maç: liderlik ilk-3'teki (PR veya rating) oyuncu sahada → OYUNUN çerçevesi
+   (kişinin avatarı DEĞİL) altın glow + kutudan yükselen parıltılarla dikkat çeker, izlensin. */
 .live-row--featured {
+  position: relative;
+  overflow: hidden; /* yükselen parıltılar kutuya (yuvarlak köşe) kırpılsın */
   border-color: color-mix(in srgb, var(--coin-gold) 55%, transparent);
   background: linear-gradient(
     180deg,
@@ -12799,6 +12798,11 @@ button.acct-row-logout:hover:not(:disabled) {
     var(--btn-bg)
   );
   animation: live-feat-glow 2.4s ease-in-out infinite;
+}
+/* İçerik (oyuncular/skor/izle) parıltı katmanının ÜSTÜnde kalsın. */
+.live-row--featured > :not(.lm-rise) {
+  position: relative;
+  z-index: 1;
 }
 @keyframes live-feat-glow {
   0%,
@@ -12812,6 +12816,36 @@ button.acct-row-logout:hover:not(:disabled) {
       0 0 0 1px color-mix(in srgb, var(--coin-gold) 55%, transparent),
       0 6px 22px color-mix(in srgb, var(--coin-gold) 40%, transparent);
   }
+}
+/* Çerçeveden yükselen parıltı katmanı: kutunun tabanından çıkıp tepede sönen altın zerreler. */
+.lm-rise {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.lm-rise i {
+  position: absolute;
+  bottom: -6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, var(--coin-gold) 55%, transparent 72%);
+  opacity: 0;
+  animation: lm-rise-up 2.8s ease-in infinite;
+}
+.lm-rise i:nth-child(1)  { left: 8%;  animation-delay: 0s;   animation-duration: 2.6s; }
+.lm-rise i:nth-child(2)  { left: 22%; animation-delay: 0.9s; animation-duration: 3.1s; }
+.lm-rise i:nth-child(3)  { left: 36%; animation-delay: 0.4s; animation-duration: 2.9s; }
+.lm-rise i:nth-child(4)  { left: 50%; animation-delay: 1.4s; animation-duration: 3.3s; }
+.lm-rise i:nth-child(5)  { left: 63%; animation-delay: 0.2s; animation-duration: 2.7s; }
+.lm-rise i:nth-child(6)  { left: 77%; animation-delay: 1.1s; animation-duration: 3.0s; }
+.lm-rise i:nth-child(7)  { left: 88%; animation-delay: 0.6s; animation-duration: 2.8s; }
+.lm-rise i:nth-child(8)  { left: 95%; animation-delay: 1.8s; animation-duration: 3.2s; }
+@keyframes lm-rise-up {
+  0%   { transform: translateY(0) scale(0.6);  opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translateY(-60px) scale(1); opacity: 0; }
 }
 @media (hover: hover) and (pointer: fine) {
   .live-row--featured:hover {
@@ -12827,6 +12861,9 @@ button.acct-row-logout:hover:not(:disabled) {
   .live-row--featured {
     animation: none;
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--coin-gold) 45%, transparent);
+  }
+  .lm-rise {
+    display: none;
   }
 }
 .rank-tabs {

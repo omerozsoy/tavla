@@ -10,7 +10,6 @@ import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
 import RoleBadge from './RoleBadge'
-import AvatarFrame from './AvatarFrame'
 import { useTopRank } from '../topRanks'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -123,20 +122,7 @@ export function HomeFeatures() {
   )
 }
 
-function Avatar({ url, name, featured }: { url?: string | null; name: string; featured?: boolean }) {
-  // Öne çıkan (liderlik ilk-3) oyuncu: avatar mağazadaki "Yükseliş" (mitik: yörünge + parıltı +
-  // hale) çerçevesiyle gösterilir — tek nokta yerine tam zengin efekt, uzaktan belli olur.
-  if (featured)
-    return (
-      <AvatarFrame
-        className="lm-avatar-frame"
-        src={url}
-        name={name}
-        frame="rising"
-        size={34}
-        animated
-      />
-    )
+function Avatar({ url, name }: { url?: string | null; name: string }) {
   return url ? (
     <img className="lm-avatar" src={url} alt="" />
   ) : (
@@ -154,11 +140,19 @@ function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p
   const p1Feat = !!(p1Top.prRank || p1Top.ratingRank)
   const p2Feat = !!(p2Top.prRank || p2Top.ratingRank)
   const cat = liveCat(m)
+  const featured = p1Feat || p2Feat
   return (
     <button
-      className={`live-row${p1Feat || p2Feat ? ' live-row--featured' : ''}`}
+      className={`live-row${featured ? ' live-row--featured' : ''}`}
       onClick={() => onSpectate(m.code, m.p1_name, m.p2_name)}
     >
+      {/* Öne çıkan maç: OYUNUN çerçevesinden (kişinin avatarından değil) yükselen parıltılar —
+          maç kutusunun kendisi dikkat çeker. Katman en altta (içeriğin arkasında). */}
+      {featured && (
+        <span className="lm-rise" aria-hidden="true">
+          <i /><i /><i /><i /><i /><i /><i /><i />
+        </span>
+      )}
       {/* İki rozet TEK grid hücresinde (lm-types): aksi halde klasik rozet 6. grid öğesi
           olup 1fr (oyuncu) kolonuna düşüyor + sağ/sol boşluk + göz ikonu alt satıra kaçıyordu. */}
       <span className="lm-types">
@@ -166,7 +160,7 @@ function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p
         {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
       </span>
       <span className="lm-side lm-p1">
-        <Avatar url={m.p1_avatar} name={m.p1_name} featured={p1Feat} />
+        <Avatar url={m.p1_avatar} name={m.p1_name} />
         <RoleBadge userId={m.p1_id} size={17} style={{ marginRight: 3 }} />
         <span className="lm-name">{m.p1_name}</span>
         {m.p1_premium && <PremiumCrown />}
@@ -190,7 +184,7 @@ function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p
         <RoleBadge userId={m.p2_id} size={17} style={{ marginRight: 3 }} />
         <span className="lm-name">{m.p2_name}</span>
         {m.p2_premium && <PremiumCrown />}
-        <Avatar url={m.p2_avatar} name={m.p2_name} featured={p2Feat} />
+        <Avatar url={m.p2_avatar} name={m.p2_name} />
       </span>
       <Icon name="eye" size={14} className="lm-watch" />
     </button>
