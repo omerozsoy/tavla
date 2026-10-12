@@ -22,9 +22,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.9rem;
+  font-size: 2.05rem;
   font-weight: 800;
-  min-width: 74px;
+  min-width: 84px;
   aspect-ratio: 1;
   padding: 8px;
   border-radius: 10px;
@@ -36,9 +36,13 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 8px;
+  padding: 9px;
   border-radius: 14px; /* site stili: hafif yuvarlak kose (dis kutu skor kutulariyla uyumlu) */
-  min-width: 84px;
+  min-width: 94px;
+  /* Skor kutulari ile saat grubu arasinda nefes payi (kullanici: "skor ile saatler arasinda
+     en azindan biraz bosluk olsun"). margin-block -> .clock-stack flex gap'ine EKLENIR (cascade
+     cakismasi yok; .clock-group yalniz bu dosyada). */
+  margin-block: 8px;
   background: var(--cube-bg, #9c7c34);
   color: var(--cube-text, #fff);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
@@ -48,7 +52,7 @@
 .clock-bank {
   text-align: center;
   font-weight: 500; /* kullanici: "03:00 ... ama bold olmasin" */
-  font-size: 1.55rem; /* azicik buyut */
+  font-size: 1.68rem; /* azicik buyut */
   color: inherit; /* --cube-text */
   padding: 6px 10px;
   letter-spacing: 0.02em;
@@ -69,7 +73,7 @@
 .clock-move {
   text-align: center;
   font-weight: 800;
-  font-size: 1.95rem; /* 12'den geriye sayan hamle suresi: biraz buyut (kullanici istegi) */
+  font-size: 2.15rem; /* 12'den geriye sayan hamle suresi: biraz buyut (kullanici istegi) */
   color: inherit;
   padding: 7px 0;
   border-radius: 11px;
