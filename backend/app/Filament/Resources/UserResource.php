@@ -248,6 +248,12 @@ class UserResource extends Resource
     {
         return $table
             ->defaultSort('id', 'desc')
+            // SİLİNMİŞ (anonimleştirilmiş) hesapları listeden GİZLE: mali geçmişi (coin defteri/ödeme/
+            // sipariş) olan hesaplar yasal saklama için fiziksel silinemez -> UserEraser anonimleştirir
+            // (ban_reason='account_deleted', deleted-*@deleted.invalid) ve satır kalır. Bunlar panelde
+            // "silmiyor" gibi görünüyordu. Kayıt DURUR (yasal) ama listede gösterilmez.
+            ->modifyQueryUsing(fn (Builder $q) => $q->where(fn (Builder $w) => $w
+                ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted')))
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
@@ -400,20 +406,27 @@ class UserResource extends Resource
                         .'Bu işlem GERİ ALINAMAZ.')
                     ->modalSubmitActionLabel('Evet, sil')
                     ->action(function (\Illuminate\Support\Collection $records) {
-                        $deleted = 0;
-                        $skipped = 0;
+                        $deleted = 0;      // fiziksel silinen
+                        $anonymized = 0;   // mali geçmişi yüzünden anonimleştirilen (satır kalır, gizlenir)
+                        $skipped = 0;      // yönetici
                         foreach ($records as $record) {
                             if ($record->is_admin) {
                                 $skipped++;
 
                                 continue; // yönetici asla silinmez
                             }
+                            // UserEraser mali geçmiş varsa anonimleştirir (fiziksel silmez) -> doğru say.
+                            $financial = $record->hasFinancialHistory();
                             \App\Support\UserEraser::erase($record);
-                            $deleted++;
+                            $financial ? $anonymized++ : $deleted++;
                         }
                         \Filament\Notifications\Notification::make()
                             ->title('Silme tamamlandı')
-                            ->body("{$deleted} üye silindi".($skipped > 0 ? ", {$skipped} yönetici atlandı." : '.'))
+                            ->body(trim(
+                                ($deleted > 0 ? "{$deleted} üye silindi. " : '')
+                                .($anonymized > 0 ? "{$anonymized} üye anonimleştirildi (mali kayıt — yasal saklama; listeden gizlendi). " : '')
+                                .($skipped > 0 ? "{$skipped} yönetici atlandı." : '')
+                            ) ?: 'İşlem tamamlandı.')
                             ->success()
                             ->send();
                     })
