@@ -418,6 +418,45 @@ class UserResource extends Resource
                             ->send();
                     })
                     ->deselectRecordsAfterCompletion(),
+                // TOPLU DOĞRULAMA MAİLİ: seçili üyelerden e-postası DOĞRULANMAMIŞ olanlara
+                // 6 haneli kod + imzalı link maili gönderir (register/resend ile AYNI içerik).
+                // Zaten doğrulanmış + sistem hesapları atlanır. Hatalı gönderim diğerlerini bloklamaz.
+                Tables\Actions\BulkAction::make('sendVerifyMail')
+                    ->label('Doğrulama Maili Gönder')
+                    ->icon('heroicon-m-envelope')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Doğrulama maili gönder')
+                    ->modalDescription('Seçili üyelerden e-postası DOĞRULANMAMIŞ olanlara doğrulama maili '
+                        .'gönderilir. Zaten doğrulanmış üyeler atlanır.')
+                    ->modalSubmitActionLabel('Gönder')
+                    ->action(function (\Illuminate\Support\Collection $records) {
+                        $sent = 0;
+                        $skipped = 0;
+                        $failed = 0;
+                        foreach ($records as $record) {
+                            if ($record->email_verified_at !== null || empty($record->email)
+                                || (\Illuminate\Support\Facades\Schema::hasColumn('users', 'is_system') && $record->is_system)) {
+                                $skipped++;
+
+                                continue;
+                            }
+                            try {
+                                \App\Support\EmailVerification::send($record);
+                                $sent++;
+                            } catch (\Throwable $e) {
+                                $failed++;
+                            }
+                        }
+                        \Filament\Notifications\Notification::make()
+                            ->title('Doğrulama maili')
+                            ->body("{$sent} mail gönderildi"
+                                .($skipped > 0 ? ", {$skipped} atlandı (doğrulanmış/sistem)" : '')
+                                .($failed > 0 ? ", {$failed} başarısız" : '').'.')
+                            ->success()
+                            ->send();
+                    })
+                    ->deselectRecordsAfterCompletion(),
             ]);
     }
 
