@@ -120,7 +120,20 @@ class Room extends Model
                 }
             }
             $snap = is_array($sm['pct_stake_snapshot'] ?? null) ? $sm['pct_stake_snapshot'] : [];
-            $sum += max(0, (int) ($snap[(string) $uid] ?? 0));
+            $mine = max(0, (int) ($snap[(string) $uid] ?? 0));
+            if ($mine <= 0) {
+                continue;
+            }
+            // RİSKTEKİ tutar = min(kendi stake, rakip stake): %-bahiste transfer min(iki stake)'tir
+            // (settle() ile BİREBİR). Kendi TAM stake'ini kilitlemek aşırı-rezerv -> asimetrik maçta
+            // (zengin vs fakir) orantısız kilit; kullanıcı kaybetse bile en fazla min()'i öder.
+            $oppStakes = [];
+            foreach ($snap as $k => $v) {
+                if ((string) $k !== (string) $uid) {
+                    $oppStakes[] = max(0, (int) $v);
+                }
+            }
+            $sum += $oppStakes ? min($mine, min($oppStakes)) : $mine;
         }
 
         return $sum;

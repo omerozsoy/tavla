@@ -65,6 +65,15 @@ Schedule::command('matches:backstop-finished')
     ->name('backstop-finished-matches')
     ->withoutOverlapping();
 
+// SUNUCU-OTORİTER EKONOMİK SETTLEMENT YEDEĞİ: bahisli (stake/%-bahis) maç bitince coin transferi +
+// settled=1 + kilit açma YALNIZ istemcinin settle çağrısına bağlıydı -> istemci düşerse oda sonsuza
+// dek settled=0 kalıp oyuncunun coinini KALICI kilitliyordu (orphan). Bu süpürme bitmiş+settled=0
+// bahisli odaları sunucudan settleRoom() ile kapatır (idempotent; kazanansız/bakiyesiz -> pending).
+Schedule::command('matches:backstop-settle')
+    ->everyTwoMinutes() // finalizeDead anında dener; bu ağ istemci-drop sonrası normal-bitişleri yakalar
+    ->name('backstop-settle-matches')
+    ->withoutOverlapping();
+
 // BAYAT "playing" ODA SÜPÜRME: kimsenin poll etmediği (oyuncu+izleyici yok) yarım kalan/terk
 // edilmiş online odaları 'finished' işaretle -> "Devam Eden Maç" hayaleti + izleyici DONMASI
 // bir gün beklemeden temizlensin. 3 dk grace: canlı maç ~1.5sn'de bir poll eder -> asla değmez.

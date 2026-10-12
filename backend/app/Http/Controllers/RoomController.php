@@ -614,14 +614,57 @@ class RoomController extends Controller
         }
         $callerId = $room->{$callerSlot.'_user_id'};
 
-        // Money settlement never trusts the client `won` field. The winner comes from the
-        // verified authoritative match; the request field remains only for old API shape.
-        $winnerSlot = $this->resolveWinnerSlot($room->fresh());
-        if ($winnerSlot === null) {
+        // SUNUCU-OTORİTER ekonomik settlement çekirdeği settleRoom'da (token GEREKMEZ; kazanan
+        // server_match'ten otoriter). HTTP ucu token/izin kontrolünü YAPTI -> çekirdeğe delege et.
+        $out = $this->settleRoom($room);
+        if ($out['skip'] ?? false) {
+            return response()->json(['ok' => false]);
+        }
+        if ($out['pending'] ?? false) {
             $caller = User::find($callerId);
             return response()->json(['ok' => false, 'pending' => true, 'coins' => $caller?->coins ?? 0]);
         }
+        if ($out['already'] ?? false) {
+            $caller = User::find($callerId);
+            return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
+        }
+        $caller = User::find($callerId);
+        return response()->json([
+            'ok' => true,
+            'coins' => $caller?->coins ?? 0,
+            'stake' => $out['amount'],                            // kaybedenin ödediği (TAM stake)
+            'won_amount' => $out['won_amount'] ?? $out['amount'], // kazananın aldığı (komisyon sonrası)
+            'commission' => $out['commission'] ?? 0,              // platform payı (ledger'a yazıldı)
+            'won' => ($out['winnerId'] ?? null) === $callerId,
+        ]);
+    }
 
+    /**
+     * SUNUCU-OTORİTER ekonomik settlement ÇEKİRDEĞİ (token GEREKMEZ; kazanan resolveWinnerSlot ile
+     * otoriter belirlenir — forge edilemez). HTTP settle() (token/izin kontrolünden SONRA) ve
+     * matches:backstop-settle cron'u (istemcisi settle çağırmadan biten orphan maçlar) BU metodu
+     * çağırır. Böylece ekonomik kapanış artık yalnız istemciye bağlı DEĞİL.
+     * Dönüş: ['skip'=>true] (bahissiz/arkadaş) | ['pending'=>true] (kazanan çözülmedi) |
+     *        ['already'=>true] (zaten settled) |
+     *        ['amount','commission','won_amount','winnerId','loserId'] (ödendi).
+     * 409 HttpException FIRLATIR (snapshot yok / kaybeden bakiyesi < stake) -> settlement PENDING;
+     * çağıran (HTTP -> 409, cron -> yakalar) tekrar dener.
+     */
+    public function settleRoom(Room $room): array
+    {
+        $code = $room->code;
+        $stake = (int) $room->stake;
+        $betPct = (int) $room->bet_pct;
+        // Arkadaslik (davet) / bahissiz / eksik oyuncu -> coin transferi YOK.
+        if ($room->mode === 'friendly' || ($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
+            return ['skip' => true];
+        }
+        // Money settlement never trusts the client `won` field. The winner comes from the
+        // verified authoritative match (resolveWinnerSlot); unresolved -> pending (no transfer).
+        $winnerSlot = $this->resolveWinnerSlot($room->fresh());
+        if ($winnerSlot === null) {
+            return ['pending' => true];
+        }
         $winnerId = $winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id;
         $loserId = $winnerSlot === 'p1' ? $room->p2_user_id : $room->p1_user_id;
 
@@ -742,20 +785,11 @@ class RoomController extends Controller
             return ['amount' => $debit, 'commission' => $commission, 'won_amount' => $winnerGets];
         });
 
-        if (isset($out['already'])) {
-            $caller = User::find($callerId);
-            return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
+        if ($out['already'] ?? false) {
+            return ['already' => true];
         }
 
-        $caller = User::find($callerId);
-        return response()->json([
-            'ok' => true,
-            'coins' => $caller?->coins ?? 0,
-            'stake' => $out['amount'],                            // kaybedenin ödediği (TAM stake)
-            'won_amount' => $out['won_amount'] ?? $out['amount'], // kazananın aldığı (komisyon sonrası)
-            'commission' => $out['commission'] ?? 0,              // platform payı (ledger'a yazıldı)
-            'won' => $winnerId === $callerId,
-        ]);
+        return $out + ['winnerId' => $winnerId, 'loserId' => $loserId];
     }
 
     // Kazanan slot'u ('p1'|'p2') belirle, yoksa null.
@@ -1352,6 +1386,16 @@ class RoomController extends Controller
         // + PR/şans analizini match_moves'tan hemen tetikle (raporsuz oyuncu da saniyeler içinde dolar).
         if ($reason === 'decided') {
             \App\Support\MatchFinalize::run($room->fresh() ?? $room);
+        }
+        // EKONOMİK KAPANIŞ (orphan önleme): bahisli maç terminal olunca settle'ı yalnız istemciye
+        // BIRAKMA — sunucuda ANINDA dene. Idempotent (settled=false claim); kazanan çözülemezse
+        // pending kalır + zamanlanmış matches:backstop-settle süpürür. Akışı asla kırma (best-effort).
+        if (((int) $room->stake) > 0 || ((int) $room->bet_pct) > 0) {
+            try {
+                $this->settleRoom($room->fresh() ?? $room);
+            } catch (\Throwable $e) {
+                // snapshot yok / kaybeden bakiyesi < stake -> PENDING; cron tekrar dener.
+            }
         }
     }
 
