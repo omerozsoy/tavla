@@ -41,8 +41,10 @@ class UserResource extends Resource
             Forms\Components\Section::make('Kimlik')->columns(2)->schema([
                 // Admin GÜVENİLİR bağlam: 15-karakter takma ad kuralı kullanıcı formları/API içindir.
                 // Sistem/marka hesabı ("Tavla TV Yönetim" = 16) panelde düzenlenebilsin diye burada 32.
-                Forms\Components\TextInput::make('nickname')->label('Takma ad')->required()->maxLength(32),
-                Forms\Components\TextInput::make('email')->label('E-posta')->email()->required(),
+                Forms\Components\TextInput::make('nickname')->label('Takma ad')->required()->maxLength(32)
+                    ->unique(ignoreRecord: true)->validationMessages(['unique' => 'Bu takma ad zaten kullanımda.']),
+                Forms\Components\TextInput::make('email')->label('E-posta')->email()->required()
+                    ->unique(ignoreRecord: true)->validationMessages(['unique' => 'Bu e-posta zaten kullanımda.']),
                 Forms\Components\TextInput::make('phone')->label('Cep telefonu')->tel()->maxLength(20)
                     ->placeholder('05XXXXXXXXX'),
                 // first_name/last_name DB'de NOT NULL. Boş TextInput Filament varsayılanında null'a
