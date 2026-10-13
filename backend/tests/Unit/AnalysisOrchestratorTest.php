@@ -13,11 +13,14 @@ use PHPUnit\Framework\TestCase;
  */
 trait FakeGnubgBatch
 {
-    public function analyzeBackgroundBatch(array $positions): array
+    public function analyzeBackgroundBatch(array $positions, ?callable $onProgress = null): array
     {
         $out = [];
         foreach ($positions as $k => $p) {
             $out[$k] = $this->analyzeBackground($p);
+        }
+        if ($onProgress !== null && $positions !== []) {
+            $onProgress(count($positions)); // ilerleme: tüm pozisyonlar bitti (gerçek batch'i aynalar)
         }
 
         return $out;
@@ -193,5 +196,55 @@ class AnalysisOrchestratorTest extends TestCase
         // Take doğru (-0.301) iken DROP/pass (-1) -> kayıp 0.699 -> PR ~349.5.
         $r = (new AnalysisOrchestrator($this->cubeFake()))->cubePr([$this->cubeEntry('drop')], 'white', 0);
         $this->assertEqualsWithDelta(349.5, $r['pr'], 0.5);
+    }
+
+    /**
+     * İLERLEME ÇUBUĞU: countPositions, checkerPr+cubePr'ın gnubg'ye GERÇEKTEN gönderdiği pozisyon
+     * sayısıyla BİREBİR eşleşmeli (yüzde = analiz/toplam doğru olsun). Karışık log üstünde doğrula:
+     * geçerli checker + fill(skip) + eksik(skip) + geçerli cube + geçersiz cube(skip) + rakip(skip).
+     */
+    public function test_count_positions_matches_sent_to_gnubg(): void
+    {
+        $fake = new class extends GnuBgClient
+        {
+            public int $sent = 0;
+
+            public function analyzeBackgroundBatch(array $positions, ?callable $onProgress = null): array
+            {
+                $this->sent += count($positions);
+                $out = [];
+                foreach ($positions as $k => $p) {
+                    // checker (dice dolu) vs cube (dice boş) -> uygun sahte yanıt.
+                    $out[$k] = empty($p['dice'])
+                        ? ['cube' => ['equities' => ['noDouble' => 0.385, 'doubleTake' => 0.301, 'doublePass' => 1.0]]]
+                        : ['result' => ['hint' => [['move' => 'a', 'equity' => 0.2], ['move' => 'b', 'equity' => -0.3]]],
+                            'played' => ['move' => 'b', 'loss' => 0.05]];
+                }
+                if ($onProgress !== null && $positions !== []) {
+                    $onProgress(count($positions));
+                }
+
+                return $out;
+            }
+        };
+        $log = [
+            $this->entry(), // geçerli white checker
+            $this->entry(), // geçerli white checker
+            ['player' => 'white', 'fill' => true, 'pos' => $this->pos(), 'dice' => [1, 1], 'playedSteps' => [['from' => 1, 'to' => 2]]], // fill -> skip
+            ['player' => 'white', 'pos' => $this->pos()], // eksik (dice/steps yok) -> skip
+            $this->cubeEntry('double'), // geçerli white cube
+            ['player' => 'white', 'cube' => ['chosen' => 'xyz'], 'pos' => $this->pos()], // geçersiz cube -> skip
+            ['player' => 'black', 'pos' => $this->pos(), 'dice' => [2, 2], 'playedSteps' => [['from' => 5, 'to' => 7]]], // rakip -> skip
+        ];
+
+        $orch = new AnalysisOrchestrator($fake);
+        $this->assertSame(3, $orch->countPositions($log, 'white'), '2 checker + 1 cube = 3');
+
+        $total = 0;
+        $onProg = function (int $n) use (&$total) { $total += $n; };
+        $orch->checkerPr($log, 'white', 0, 2, $onProg);
+        $orch->cubePr($log, 'white', 0, $onProg);
+        $this->assertSame(3, $fake->sent, 'gnubg’ye tam 3 pozisyon gönderildi (countPositions ile eşit)');
+        $this->assertSame(3, $total, 'onProgress toplamı = gönderilen pozisyon = countPositions');
     }
 }

@@ -27,7 +27,7 @@ class AnalysisOrchestrator
      * @param  int  $matchLength  0 = money (v1); ileride gercek mac uzunlugu + skor
      * @return array{pr:?float,loss:float,decisions:int,evaluated:int,skipped:int,perDecision:array}
      */
-    public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+    public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2, ?callable $onProgress = null): array
     {
         $loss = 0.0;
         $allLoss = 0.0; // TUM degerlendirilen kararlarin loss'u (loose PR yedegi -> PR asla null olmaz)
@@ -86,7 +86,8 @@ class AnalysisOrchestrator
 
         // TÜM kararları havuza PARALEL analiz et -> tek maçın ~60 kararı sıralı (~15sn) yerine
         // instance sayısı kadar hızlı (6 instance ≈ 6×). Sonuçlar log sırasında işlenir (PR aynı).
-        $results = $this->gnubg->analyzeBackgroundBatch(array_map(fn ($j) => $j['s'], $jobs));
+        // $onProgress: pencere (chunk) bitince "N pozisyon analiz edildi" bildirir (PR ilerleme çubuğu).
+        $results = $this->gnubg->analyzeBackgroundBatch(array_map(fn ($j) => $j['s'], $jobs), $onProgress);
 
         foreach ($jobs as $logIndex => $job) {
             $e = $job['e'];
@@ -165,12 +166,42 @@ class AnalysisOrchestrator
     }
 
     /**
+     * İLERLEME ÇUBUĞU için: bu oyuncunun gnubg'ye GÖNDERİLECEK pozisyon sayısı (checker + cube).
+     * Yüzde = analiz edilen / bu toplam. Predikatlar checkerPr/cubePr'daki $jobs filtreleriyle
+     * BİREBİR aynı olmalı (gnubg'ye giden küme); değişirlerse burası da güncellenmeli.
+     */
+    public function countPositions(array $log, string $player): int
+    {
+        $n = 0;
+        foreach ($log as $e) {
+            if (($e['player'] ?? null) !== $player) {
+                continue;
+            }
+            // KÜP kararı (checkerPr'da $jobs'a girmez; cubePr'da girer).
+            if (! empty($e['cube'])) {
+                if (! empty($e['pos'])
+                    && in_array($e['cube']['chosen'] ?? null, ['double', 'no-double', 'take', 'drop'], true)) {
+                    $n++;
+                }
+
+                continue;
+            }
+            // CHECKER hamlesi: fill değil + pos+playedSteps+dice dolu (checkerPr $jobs filtresi).
+            if (empty($e['fill']) && ! empty($e['pos']) && ! empty($e['playedSteps']) && ! empty($e['dice'])) {
+                $n++;
+            }
+        }
+
+        return $n;
+    }
+
+    /**
      * KÜP PR (double/no-double/take/drop). gnubg cube analizi (3 aksiyon equity'si) -> XG kaybı.
      * Küp girdileri: e['cube']['chosen'] + e['pos'] (doubler on-roll). PR asla null.
      *
      * @return array{pr:float,strictPr:?float,loosePr:?float,loss:float,decisions:int,evaluated:int,skipped:int,perDecision:array}
      */
-    public function cubePr(array $log, string $player, int $matchLength = 0): array
+    public function cubePr(array $log, string $player, int $matchLength = 0, ?callable $onProgress = null): array
     {
         $loss = 0.0;
         $allLoss = 0.0;
@@ -213,7 +244,7 @@ class AnalysisOrchestrator
         }
 
         // Küp kararlarını da havuza PARALEL analiz et (checker ile aynı mantık; PR değişmez).
-        $results = $this->gnubg->analyzeBackgroundBatch(array_map(fn ($j) => $j['s'], $jobs));
+        $results = $this->gnubg->analyzeBackgroundBatch(array_map(fn ($j) => $j['s'], $jobs), $onProgress);
 
         foreach ($jobs as $logIndex => $job) {
             $chosen = $job['chosen'];

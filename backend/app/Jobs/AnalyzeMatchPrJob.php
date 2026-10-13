@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -112,9 +113,27 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // 3.01 yerine 29.2). Kaldırıldı: gösterilen PR SADECE bu satırın KENDİ (tam log) self-analizinden
         // yazılır. Sibling yalnız OPPONENT PR'ı (pahalı yarı) için aynalanır.
 
+        // İLERLEME ÇUBUĞU (gerçek per-pozisyon): gnubg'ye gidecek TOPLAM pozisyonu baştan say
+        // (self + mirror değilse opp) -> yüzde = analiz edilen / toplam. Her pencere (chunk) bitince
+        // closure Cache'e yazar; matchGnubgPr ucu okuyup istemciye verir (prefix tavlatv-cache-,
+        // worker->web paylaşımlı store). Önbellek isabetleri de "bitmiş" sayılır (dürüst: iş bitmiş).
+        $computeOppPr = ($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI
+            || ! empty($mr->room_code);
+        $oppColor = $player === 'white' ? 'black' : 'white';
+        $prTotal = $orch->countPositions($log, $player)
+            + (($computeOppPr && ! $mirror) ? $orch->countPositions($log, $oppColor) : 0);
+        $prTotal = max(1, $prTotal); // 0'a bölme yok; toplam yoksa settled hızlı gelir
+        $prDoneCount = 0;
+        $progressKey = 'pr:progress:'.$mr->id;
+        $onProgress = function (int $n = 0) use (&$prDoneCount, $prTotal, $progressKey) {
+            $prDoneCount = min($prTotal, $prDoneCount + $n);
+            Cache::put($progressKey, ['done' => $prDoneCount, 'total' => $prTotal], now()->addMinutes(10));
+        };
+        $onProgress(0); // ilk yaz: done=0 -> istemci bar'ı 0'dan başlatır (belirsiz spinner değil)
+
         try {
-            $chk = $orch->checkerPr($log, $player, $ml, 2);
-            $cube = $orch->cubePr($log, $player, $ml);
+            $chk = $orch->checkerPr($log, $player, $ml, 2, $onProgress);
+            $cube = $orch->cubePr($log, $player, $ml, $onProgress);
         } catch (\Throwable $e) {
             Log::warning('gnubg PR job hata', ['id' => $mr->id, 'err' => $e->getMessage()]);
 
@@ -194,8 +213,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // Böylece rakip hiç raporlamasa bile gnubg_opponent_pr dolar (matchGnubgPr ucu döndürür).
         // NOT: rakip kendi raporunu gönderirse KENDİ satırının otoriter gnubg PR'ı opponent_pr'a
         // senkronlanır (aşağıda + matchPr poll) ve ekran onu tercih eder; bu yalnız emniyet ağıdır.
-        $computeOppPr = ($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI
-            || ! empty($mr->room_code);
+        // ($computeOppPr + $oppColor ilerleme toplamıyla birlikte yukarıda hesaplandı.)
         // DEDUPE: sibling zaten analiz edildiyse rakip tarafını onun KENDİ değerlerinden aynala
         // (yeniden gnubg YOK -> işin ağır yarısı atlanır). Aksi halde eskisi gibi gnubg ile hesapla.
         if ($computeOppPr && $mirror) {
@@ -213,10 +231,10 @@ class AnalyzeMatchPrJob implements ShouldQueue
                 $upd['opponent_pr'] = $sibling->gnubg_pr;
             }
         } elseif ($computeOppPr) {
-            $opp = $player === 'white' ? 'black' : 'white';
+            $opp = $oppColor;
             try {
-                $oChk = $orch->checkerPr($log, $opp, $ml, 2);
-                $oCube = $orch->cubePr($log, $opp, $ml);
+                $oChk = $orch->checkerPr($log, $opp, $ml, 2, $onProgress);
+                $oCube = $orch->cubePr($log, $opp, $ml, $onProgress);
                 $oTotLoss = $oChk['loss'] + $oCube['loss'];
                 $oTotDec = $oChk['decisions'] + $oCube['decisions'];
                 $oChkDec = (int) ($oChk['decisions'] ?? 0);

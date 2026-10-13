@@ -2289,6 +2289,9 @@ export async function reportRating(
 // ready=false iken "analiz ediliyor" gösterilir; ready=true olunca gösterilen PR gnubg olur.
 export async function matchGnubgPr(id: number): Promise<{
   ready: boolean
+  // GERÇEK per-pozisyon ilerleme (hazır değilken): analiz edilen/toplam + yüzde. null -> yok (eski
+  // maç / henüz yazılmadı) -> istemci zaman-tahminine düşer.
+  progress?: { done: number; total: number; pct: number } | null
   settled?: boolean // analiz KESİN bitti (PR çıksa da çıkmasa da) -> settled && !ready => PR yok, "—"
   pr: number | null
   checker_pr: number | null

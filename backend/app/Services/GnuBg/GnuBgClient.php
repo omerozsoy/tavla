@@ -271,13 +271,13 @@ class GnuBgClient
      * KORELASYON YOK: dönen değer gnubg'nin AYNI sonucudur (sadece önbellekten) -> PR matematiği
      * DEĞİŞMEZ, ıska olursa yalnız hız kaybı (yanlış PR ASLA). Kapatmak: GNUBG_ANALYSIS_CACHE=0.
      */
-    public function analyzeBackgroundBatch(array $positions): array
+    public function analyzeBackgroundBatch(array $positions, ?callable $onProgress = null): array
     {
         if ($positions === []) {
             return [];
         }
         if (! (bool) config('gnubg.analysis_cache', true)) {
-            return $this->analyzeBatchUncached($positions);
+            return $this->analyzeBatchUncached($positions, $onProgress);
         }
         $cached = [];
         $misses = [];
@@ -289,7 +289,12 @@ class GnuBgClient
                 $misses[$k] = $p;
             }
         }
-        $fresh = $misses === [] ? [] : $this->analyzeBatchUncached($misses);
+        // İLERLEME: önbellek isabetleri ANINDA "bitmiş iş"tir (gnubg'ye gitmez) -> hemen say.
+        // (WarmMatchAnalysisJob ısıttıysa bar hızla dolar; dürüst — iş gerçekten bitmiş.)
+        if ($onProgress !== null && $cached !== []) {
+            $onProgress(count($cached));
+        }
+        $fresh = $misses === [] ? [] : $this->analyzeBatchUncached($misses, $onProgress);
         foreach ($fresh as $k => $res) {
             if ($res !== null) { // yalnız BAŞARILI sonucu önbelleğe al (null = tekrar denensin)
                 Cache::put($this->analysisCacheKey($misses[$k]), $res, now()->addDay());
@@ -311,7 +316,7 @@ class GnuBgClient
         return 'gnubg:ab:'.sha1(json_encode($position, JSON_THROW_ON_ERROR));
     }
 
-    private function analyzeBatchUncached(array $positions): array
+    private function analyzeBatchUncached(array $positions, ?callable $onProgress = null): array
     {
         if ($positions === []) {
             return [];
@@ -325,6 +330,9 @@ class GnuBgClient
             $out = [];
             foreach ($positions as $k => $p) {
                 $out[$k] = $this->analyzeBackground($p);
+                if ($onProgress !== null) {
+                    $onProgress(1);
+                }
             }
 
             return $out;
@@ -371,6 +379,11 @@ class GnuBgClient
                 }
                 $out[$k] = null;
                 $failed[$k] = $p; // havuz denemesi başarısız -> sıralı failover ile telafi
+            }
+            // İLERLEME: pencere (chunk) bitti -> o kadar pozisyon analiz edildi (başarısızlar failover'da
+            // yeniden denense de ZATEN sayıldı; nadir -> hafif iyimser, bar geri gitmez). total'ı AŞMAZ.
+            if ($onProgress !== null) {
+                $onProgress(count($chunk));
             }
         }
         if ($failed !== []) {

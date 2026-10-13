@@ -28,14 +28,14 @@ class PrGnubgAuthoritativeTest extends TestCase
                 parent::__construct($g);
             }
 
-            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2, ?callable $onProgress = null): array
             {
                 return ['pr' => $this->p, 'loss' => $this->l, 'decisions' => $this->d, 'evaluated' => $this->d,
                     'skipped' => 0, 'strictPr' => $this->p, 'loosePr' => $this->p, 'skipReasons' => [],
                     'firstSkip' => null, 'perDecision' => []];
             }
 
-            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            public function cubePr(array $log, string $player, int $matchLength = 0, ?callable $onProgress = null): array
             {
                 return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
                     'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
@@ -57,7 +57,7 @@ class PrGnubgAuthoritativeTest extends TestCase
                 parent::__construct($g);
             }
 
-            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2, ?callable $onProgress = null): array
             {
                 $c = $this->m[$player] ?? ['loss' => 0.0, 'dec' => 0];
                 $pr = $c['dec'] > 0 ? ($c['loss'] / $c['dec']) * 500 : 0.0;
@@ -66,7 +66,7 @@ class PrGnubgAuthoritativeTest extends TestCase
                     'skipped' => 0, 'strictPr' => $pr, 'loosePr' => $pr, 'skipReasons' => [], 'firstSkip' => null, 'perDecision' => []];
             }
 
-            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            public function cubePr(array $log, string $player, int $matchLength = 0, ?callable $onProgress = null): array
             {
                 return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
                     'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
@@ -280,13 +280,13 @@ class PrGnubgAuthoritativeTest extends TestCase
     {
         return new class($this->app->make(GnuBgClient::class)) extends AnalysisOrchestrator
         {
-            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2, ?callable $onProgress = null): array
             {
                 return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
                     'strictPr' => null, 'loosePr' => null, 'skipReasons' => [], 'firstSkip' => null, 'perDecision' => []];
             }
 
-            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            public function cubePr(array $log, string $player, int $matchLength = 0, ?callable $onProgress = null): array
             {
                 return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
                     'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
@@ -353,7 +353,7 @@ class PrGnubgAuthoritativeTest extends TestCase
     {
         return new class($this->app->make(GnuBgClient::class)) extends AnalysisOrchestrator
         {
-            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
+            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2, ?callable $onProgress = null): array
             {
                 return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 1,
                     'strictPr' => null, 'loosePr' => null,
@@ -361,7 +361,7 @@ class PrGnubgAuthoritativeTest extends TestCase
                     'firstSkip' => ['why' => 'gnubg_null'], 'perDecision' => []];
             }
 
-            public function cubePr(array $log, string $player, int $matchLength = 0): array
+            public function cubePr(array $log, string $player, int $matchLength = 0, ?callable $onProgress = null): array
             {
                 return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
                     'strictPr' => null, 'loosePr' => null, 'perDecision' => []];

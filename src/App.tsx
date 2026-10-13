@@ -2031,6 +2031,9 @@ export default function App() {
   // HAKEM=gnubg: maç bitince gösterilen PR gnubg (async job) ile hesaplanır. Hazır olana kadar
   // sonuç ekranı insan PR'ında "…" gösterir (wildbg sayısı gösterilmez); gnubg gelince swap edilir.
   const [prAnalyzing, setPrAnalyzing] = useState(false)
+  // PR ilerleme yüzdesi (gerçek per-pozisyon): matchGnubgPr poll'undan gelir (done/total). Hazır
+  // değilken sonuç ekranı bununla determinate çubuk gösterir; null -> MatchResult zaman-tahminine düşer.
+  const [prProgressPct, setPrProgressPct] = useState<number | null>(null)
   // RAKİP PR'ı ayrı/geç gelir (kaybeden kendi satırını geç raporlar/gnubg kuyruğu). KENDİ PR'ım hazır
   // olunca prAnalyzing kapanıp rakip hücresi boş "—" gösteriyordu ("rakibin PR'ı yok" sanılıyordu).
   // Bu bayrak rakip PR'ı gelene (ya da matchPr poll tavanına) kadar onun hücresinde "…" tutar.
@@ -2785,6 +2788,7 @@ export default function App() {
     setServerPr(null) // yeni mac -> onceki sunucu-PR'i gosterme
     prPollRef.current++ // aktif gnubg PR poll'unu iptal et
     setPrAnalyzing(false)
+    setPrProgressPct(null) // yeni mac -> onceki PR ilerleme yuzdesini sifirla
     setOppPrPending(false)
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
@@ -5054,6 +5058,7 @@ export default function App() {
   async function pollGnubgPr(id: number) {
     const token = ++prPollRef.current
     setPrAnalyzing(true)
+    setPrProgressPct(null) // yeni analiz -> önceki yüzdeyi temizle (ilk poll gerçeğini getirir)
     let prDone = false
     let luckDone = false
     // gnubg hazır olana kadar poll et (~3 dk). wildbg'ye ASLA düşme; hazır değilse LOADER kalır.
@@ -5063,6 +5068,11 @@ export default function App() {
       try {
         const g = await matchGnubgPr(id)
         if (prPollRef.current !== token) return
+        // GERÇEK ilerleme yüzdesi (gnubg'ye giden pozisyonların analiz oranı). Hazır değilken güncelle;
+        // hazır olunca aşağıda hücre sayıya döner (yüzde gizlenir).
+        if (!prDone && !g.ready && g.progress && typeof g.progress.pct === 'number') {
+          setPrProgressPct(g.progress.pct)
+        }
         if (!prDone && g.ready) {
           // pvb: bot (rakip) gnubg PR de aynı job'la geldi -> opp/checkerOpp/cubeOpp doldur (yoksa
           // önceki değeri koru; online'da null gelir, matchPr poll'u karşı satırdan doldurur).
@@ -11226,6 +11236,7 @@ export default function App() {
           analyzing={prAnalyzing}
           oppAnalyzing={oppPrPending}
           analyzingBoth={botMatch}
+          progressPct={prProgressPct}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}
           loserCheckerPr={prCheckerShown(opponent(mWinner))}

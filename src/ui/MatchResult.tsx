@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,9 @@ interface Props {
   analyzing?: boolean // HAKEM=gnubg: insanın PR'ı gnubg ile hesaplanıyor (async) -> sayı yerine "…"
   analyzingBoth?: boolean // pvb: tek gnubg job İKİ tarafı da (insan+bot) hesaplar -> ikisinde de "…"
   oppAnalyzing?: boolean // online: RAKİBİN PR'ı ayrı/geç gelir -> gelene kadar onun hücresinde de "…" (boş — değil)
+  // GERÇEK PR ilerleme yüzdesi (0-100): gnubg'ye giden pozisyonların analiz oranı (matchGnubgPr poll'u).
+  // null -> gerçek veri yok (online rakip tarafı / eski maç) -> zaman-tabanlı tahmine düşülür.
+  progressPct?: number | null
   // XG kırılım: checker-yalnız + küp-yalnız PR (overall = winnerPr/loserPr). null -> —.
   winnerCheckerPr?: number | null
   winnerCubePr?: number | null
@@ -97,6 +100,7 @@ export default function MatchResult({
   analyzing = false,
   analyzingBoth = false,
   oppAnalyzing = false,
+  progressPct = null,
   winnerCheckerPr,
   winnerCubePr,
   loserCheckerPr,
@@ -167,16 +171,27 @@ export default function MatchResult({
   const bAnalyzing = (analyzing && (analyzingBoth || !ratingIsWinner)) || (oppAnalyzing && ratingIsWinner)
   // gnubg (sunucu) PR hesaplanana kadar DÖNEN loader; wildbg sayısı ASLA gösterilmez.
   const dots = () => <span className="mr-pr-loader" role="status" aria-label={t('mr.prCalculating')} />
-  // İLERLEME YÜZDESİ: gnubg analizi ~karar-başına paralel batch'lerle koşar; gerçek "kaç pozisyon
-  // bitti" sinyali backend'de yok -> ZAMAN-TABANLI tahmin (asimptotik: hep artar, ASLA 100 demez;
-  // gerçek sonuç gelince (analyzing false olur) hücre sayıya döner). TAU ~ tipik analiz süresi.
+  // İLERLEME YÜZDESİ: ÖNCELİK gerçek per-pozisyon oranı (progressPct — gnubg'ye giden pozisyonların
+  // analiz edilen oranı, backend Cache'ten). Gerçek veri YOKSA (online rakip tarafı / eski maç)
+  // zaman-tabanlı asimptotik tahmine düşülür. MONOTON (geri gitmez) + ASLA %99'u geçmez; gerçek sonuç
+  // gelince (analyzing false) hücre sayıya döner. Adımlar CSS width transition'ıyla yumuşatılır.
   const analyzingAny = aAnalyzing || bAnalyzing
+  const progressPctRef = useRef<number | null>(null)
+  progressPctRef.current = progressPct ?? null
   const [progress, setProgress] = useState(0)
   useEffect(() => {
-    if (!analyzingAny) return
+    if (!analyzingAny) {
+      setProgress(0)
+      return
+    }
     const start = Date.now()
-    const TAU = 12500 // ~15sn'de %70, ~30sn'de %91, ~45sn'de %97; asla %99'u geçmez
-    const tick = () => setProgress(Math.min(99, Math.round(100 * (1 - Math.exp(-(Date.now() - start) / TAU)))))
+    const TAU = 12500 // tahmin: ~15sn'de %70, ~30sn'de %91, ~45sn'de %97
+    const tick = () => {
+      const real = progressPctRef.current
+      const est = Math.round(100 * (1 - Math.exp(-(Date.now() - start) / TAU)))
+      const candidate = Math.min(99, real != null ? real : est)
+      setProgress((p) => Math.max(p, candidate)) // monoton: geri gitme (iki kaynak arası blip yok)
+    }
     tick()
     const id = setInterval(tick, 500)
     return () => clearInterval(id)

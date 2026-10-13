@@ -853,8 +853,22 @@ class AuthController extends Controller
         $oppRecon = $ready && $hasOppPr && ! $oppRowExists; // reconstructed rakip PR'ı yalnız burada ver
         $oppReconLuck = $luckReady && ! $oppRowExists;
 
+        // İLERLEME ÇUBUĞU: AnalyzeMatchPrJob her pencere bitince gnubg'ye giden pozisyonların
+        // done/total'ını Cache'e yazar (gerçek per-pozisyon). Hazır değilken istemci bununla yüzde
+        // gösterir (zaman-tahmini yerine). Bitince/yoksa null -> istemci zaten "ready"ye snap eder.
+        $progress = null;
+        if (! $ready) {
+            $prog = \Illuminate\Support\Facades\Cache::get('pr:progress:'.$match->id);
+            if (is_array($prog) && (int) ($prog['total'] ?? 0) > 0) {
+                $pd = max(0, (int) ($prog['done'] ?? 0));
+                $pt = (int) $prog['total'];
+                $progress = ['done' => min($pd, $pt), 'total' => $pt, 'pct' => (int) floor(min(100, $pd * 100 / $pt))];
+            }
+        }
+
         return response()->json([
             'ready' => $ready,
+            'progress' => $progress, // {done,total,pct} | null (hazır değilken gerçek analiz yüzdesi)
             'settled' => $settled, // analiz bitti (PR yoksa istemci loader'ı durdurup "—" gösterir)
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
