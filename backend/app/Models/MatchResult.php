@@ -65,6 +65,9 @@ class MatchResult extends Model
      */
     public function analysisLog(): array
     {
+        // SUNUCU-OTORİTER kaynak (match_moves) VARSA onu kullan (istemci log'una tercih). İstemci log'u
+        // yalnız SON ÇARE (match_moves yok -> eski/edge). NOT: EU6CD PR bug'ı match_moves HAZIR iken bile
+        // oluştu -> kök neden analysisLog DEĞİL, cubePr (küp kaybı hesabı). match_moves zaten tercih ediliyor.
         if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
             $srv = \App\Models\MatchMove::buildLog($this->room_code);
             if (! empty($srv)) {
@@ -76,32 +79,29 @@ class MatchResult extends Model
         return is_array($decoded['log'] ?? null) ? $decoded['log'] : [];
     }
 
-    /** İzleyenin (bu satırın) rengi — client log'un hc'sinden (renk sınıflandırması için). */
+    /**
+     * Bu satırın (oyuncunun) rengi — SUNUCU-OTORİTER: oda slotundan türetilir (p1_user_id=white,
+     * p2_user_id=black; bkz RoomController winColor). İstemci log'unun 'hc'sine GÜVENİLMEZ (kullanıcı
+     * direktifi: oyuncudan gelen bilgiyle hesaplama yapılmaz). Oda yoksa (eski kayıt) son çare client hc.
+     */
     public function analysisHc(): ?string
     {
+        if (! empty($this->room_code)) {
+            $room = \App\Models\Room::where('code', $this->room_code)->first();
+            if ($room) {
+                if ((int) $this->user_id === (int) $room->p1_user_id) {
+                    return 'white';
+                }
+                if ((int) $this->user_id === (int) $room->p2_user_id) {
+                    return 'black';
+                }
+            }
+        }
+        // SON ÇARE (oda silinmiş eski maç): client log hc. Yeni maçlarda buraya DÜŞÜLMEZ (oda var).
         $decoded = json_decode((string) $this->log, true);
         $hc = is_array($decoded) ? ($decoded['hc'] ?? null) : null;
-        if (in_array($hc, ['white', 'black'], true)) {
-            return $hc;
-        }
-        // Client log YOK (ForfeitLoss / MatchBackstop yedek satırı): rengi RAKİP satırının
-        // hc'sinden türet (zıt renk). Böylece log'suz satır da SUNUCU hamleleriyle (match_moves)
-        // DOĞRU renkte analiz edilir; yoksa çağıran 'white'a düşüp rakibin PR'ını alırdı.
-        if (! empty($this->room_code)) {
-            $opp = static::where('room_code', $this->room_code)
-                ->where('user_id', '!=', $this->user_id)
-                ->latest('id')->first();
-            $oppDecoded = $opp ? json_decode((string) $opp->log, true) : null;
-            $oppHc = is_array($oppDecoded) ? ($oppDecoded['hc'] ?? null) : null;
-            if ($oppHc === 'white') {
-                return 'black';
-            }
-            if ($oppHc === 'black') {
-                return 'white';
-            }
-        }
 
-        return null;
+        return in_array($hc, ['white', 'black'], true) ? $hc : null;
     }
 
     public function matText(): string
