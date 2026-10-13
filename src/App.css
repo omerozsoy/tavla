@@ -175,7 +175,7 @@
      Iliski: CHECKER = POINT WIDTH * 0.877 (0.86-0.90 araligi).
      Board ekranin ana kahramanidir: viewport yuksekliginin ~%89'unu kaplar. */
   --player-panel-w: clamp(150px, 12.5vw, 196px); /* oyuncu paneli (daraltildi -> board'a yer acar) */
-  --tray-w: clamp(50px, 4.4vw, 68px); /* dar bear-off tepsisi */
+  --tray-w: calc(var(--cube-size) * 1.5); /* bear-off tepsisi: sahiplenmiş kare küp rahat sığsın (genişletildi) */
   /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
      Dikey pay: header + ust/alt point-numarasi seritleri (24+24+gap ~54px) + app
      padding -> ~78px (yoksa board 100dvh'yi ~26px asip sagda dikey scrollbar cikar).
@@ -192,9 +192,8 @@
   --dice-size: calc(var(--checker) * 0.76);
   /* Kup (doubling cube): bara oranli ama DAHA BUYUK (desktop'ta net, mobilde dokunulabilir).
      min 38px -> mobil dokunma hedefi (dar barda barin biraz disina tasabilir, kabul).
-     Referans oran ~0.82 x bar; clamp min/max okunabilirlik+dokunma icin.
-     Kullanıcı isteği: küp %50 büyük (0.82->1.23, 38->57, 66->99). Bardan taşar, kabul. */
-  --cube-size: clamp(57px, calc(var(--bar-w) * 1.23), 99px);
+     Referans oran ~0.82 x bar; clamp min/max okunabilirlik+dokunma icin. */
+  --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px);
 
   /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
      board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
@@ -7513,11 +7512,11 @@ html[data-board='yilbasi'] .checker.black {
   left: auto;
   transform: none;
   flex: none;
-  width: 104%; /* tepsiden hafif taşarak biraz daha büyük görünür (kullanıcı: çok az büyüt) */
-  max-width: calc(var(--cube-size) * 1.25);
-  height: auto;
-  aspect-ratio: 1 / 1;
-  margin: 3px auto;
+  /* KESİN KARE: eşit genişlik+yükseklik (aspect-ratio/104% + overflow:hidden kombinasyonu dar
+     tepside dikdörtgen gösteriyordu). Tepsi --tray-w = 1.5×cube-size'a genişletildi -> rahat sığar. */
+  width: var(--cube-size);
+  height: var(--cube-size);
+  margin: 4px auto;
   border: 2px solid var(--tv-brick-light);
   font-size: calc(var(--cube-size) * 0.46);
 }
@@ -26699,7 +26698,7 @@ button.acct-row-logout:hover:not(:disabled) {
     --tri-h: calc(var(--board-h) * 0.35);
     --point-h: var(--tri-h);
     --dice-size: calc(var(--checker) * 0.76);
-    --cube-size: clamp(57px, calc(var(--bar-w) * 1.23), 99px); /* %50 büyük (ana board ile eş) */
+    --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px);
   }
   body.chat-open .chat-backdrop {
     display: none;
