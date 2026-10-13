@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EntryPopup;
+use App\Models\Setting;
 
 class EntryPopupController extends Controller
 {
@@ -12,6 +13,12 @@ class EntryPopupController extends Controller
     // gorsel degisince frontend yeniden gosterir.
     public function index()
     {
+        // ANA KAPATMA: admin paneldeki (/admin/entry-popups) tek dugmeyle giris popup'i site
+        // genelinde kapatilabilir (kayitlar silinmeden). Kapaliysa null -> frontend hic acmaz.
+        if (! Setting::bool('entry_popup_enabled', true)) {
+            return response()->json(['popup' => null]);
+        }
+
         $p = EntryPopup::where('published', true)
             ->whereNotNull('image')
             ->orderBy('sort')

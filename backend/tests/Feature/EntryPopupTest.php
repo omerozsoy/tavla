@@ -34,4 +34,18 @@ class EntryPopupTest extends TestCase
             ->assertJsonPath('popup.frequency', 'session')
             ->assertJsonPath('popup.audience', 'all');
     }
+
+    /** ANA KAPATMA (/admin/entry-popups tek dugme): Setting entry_popup_enabled=0 -> null. */
+    public function test_master_switch_hides_popup(): void
+    {
+        EntryPopup::create(['image' => 'reklam/a.png', 'published' => true]);
+        \App\Models\Setting::put('entry_popup_enabled', 0);
+
+        $this->getJson('/api/entry-popup')->assertOk()->assertJsonPath('popup', null);
+
+        // Kayit SILINMEDI -> tekrar acilinca geri gelir.
+        $this->assertDatabaseCount('entry_popups', 1);
+        \App\Models\Setting::put('entry_popup_enabled', 1);
+        $this->getJson('/api/entry-popup')->assertOk()->assertJsonPath('popup.image', 'reklam/a.png');
+    }
 }
