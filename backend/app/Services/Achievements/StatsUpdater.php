@@ -128,7 +128,11 @@ final class StatsUpdater
         }
 
         // ---- PR (hata orani) bazli beceri bayraklari ----
-        $pr = $mr->pr !== null ? (float) $mr->pr : null;
+        // SUNUCU-OTORİTER: rozetler gnubg_pr (review-based, DOĞRU) kullanır — istemci pr'ına GÜVENİLMEZ
+        // (kullanıcı direktifi). gnubg_pr yoksa (çok eski maç) son çare istemci pr. finalize'da ikisi de
+        // null (async) -> PR-rozetleri stored değerden (backfill) uygulanır.
+        $pr = $mr->gnubg_pr !== null ? (float) $mr->gnubg_pr
+            : ($mr->pr !== null ? (float) $mr->pr : null);
         if ($pr !== null) {
             if ($pr <= (float) $this->thr('cerrah_pr', 3.0)) {
                 $ctx->set('flag_low_pr');

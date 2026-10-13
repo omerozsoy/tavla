@@ -103,6 +103,47 @@ class CacheMatchReviewJob implements ShouldQueue
                 'gnubg_review_at' => now(),
             ]);
             Log::info('review önden önbelleğe alındı', ['id' => $mr->id, 'decisions' => $res['decisions'] ?? null]);
+            // PR'ı REVIEW'DAN türet (TEK YETKİLİ) -> buggy per-pozisyon cubePr'ı devreden çıkar.
+            $this->writePrFromReview($mr, is_array($res['log'] ?? null) ? $res['log'] : []);
+        }
+    }
+
+    /**
+     * PR/küp PR'ı reviewMatch log'undan (tam .mat = SUNUCU match_moves) türetip odadaki İKİ satıra
+     * (self + kardeş) renk-eşlemeli yaz. reviewMatch DOĞRU; per-pozisyon cubePr küp kararlarında runtime
+     * hatalıydı (EU6CD). Böylece tüm raporlar yalnız sunucu verisiyle + DOĞRU (kullanıcı direktifi).
+     */
+    private function writePrFromReview(MatchResult $mr, array $reviewLog): void
+    {
+        if ($reviewLog === [] || empty($mr->room_code) || ! Schema::hasColumn('match_results', 'gnubg_pr')) {
+            return;
+        }
+        try {
+            $orch = app(\App\Services\Analysis\AnalysisOrchestrator::class);
+            $prW = $orch->prFromReviewLog($reviewLog, 'white');
+            $prB = $orch->prFromReviewLog($reviewLog, 'black');
+            foreach (MatchResult::where('room_code', $mr->room_code)->get() as $row) {
+                $hc = $row->analysisHc();
+                if (! in_array($hc, ['white', 'black'], true)) {
+                    continue;
+                }
+                $self = $hc === 'white' ? $prW : $prB;
+                $opp = $hc === 'white' ? $prB : $prW;
+                MatchResult::where('id', $row->id)->update([
+                    'gnubg_pr' => round($self['pr'], 2),
+                    'gnubg_checker_pr' => $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null,
+                    'gnubg_cube_pr' => $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null,
+                    'pr_equity_lost' => round($self['equity_lost'], 4),
+                    'pr_decisions' => $self['decisions'],
+                    'pr' => round($self['pr'], 2),
+                    'gnubg_opponent_pr' => round($opp['pr'], 2),
+                    'gnubg_opponent_checker_pr' => $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null,
+                    'gnubg_opponent_cube_pr' => $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null,
+                    'gnubg_pr_at' => now(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('review-based PR yazımı hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
         }
     }
 }

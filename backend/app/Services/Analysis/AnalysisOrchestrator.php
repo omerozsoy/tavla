@@ -273,4 +273,72 @@ class AnalysisOrchestrator
 
         return [max(0.0, $best - $chosenVal), abs($best - $worst) >= self::OBVIOUS];
     }
+
+    /**
+     * PR'ı gnubg_review (reviewMatch) LOG'undan TÜRET — ayrı per-pozisyon checkerPr/cubePr yeniden-analizine
+     * GEREK YOK. reviewMatch tam .mat (SUNUCU match_moves) ile tek seferde DOĞRU per-karar değer üretir;
+     * cubePr'ın per-pozisyon /analyze yolu küp kararlarında runtime hatalı sonuç veriyordu (EU6CD: kusursuz
+     * oyuncuya cube_pr 67.67 — review DOĞRU 0.021). reviewMatch cands'ı TAM (kırpık değil) -> obvious eşiği
+     * (best-worst spread >= OBVIOUS) birebir uygulanır; küp equity'leri (noDouble/doubleTake/doublePass) de tam.
+     * Böylece tüm raporlar SADECE sunucu verisiyle + DOĞRU hesaplanır (kullanıcı direktifi).
+     *
+     * @param  array  $reviewLog  gnubg_review['log'] dizisi
+     * @param  string  $player  'white'|'black'
+     * @return array{pr:float,checker_pr:?float,cube_pr:?float,equity_lost:float,decisions:int,checker_decisions:int,cube_decisions:int}
+     */
+    public function prFromReviewLog(array $reviewLog, string $player): array
+    {
+        $chkLoss = 0.0;
+        $chkDec = 0;
+        $cubeLossSum = 0.0;
+        $cubeDec = 0;
+        foreach ($reviewLog as $e) {
+            if (($e['player'] ?? null) !== $player) {
+                continue;
+            }
+            // KÜP kararı (double/no-double/take/drop): cubeLoss AYNI formül, ama equity'ler REVIEW'DAN (doğru).
+            if (isset($e['cube']['chosen'])) {
+                $eq = $e['cube']['equities'] ?? null;
+                if (! is_array($eq) || ! isset($eq['noDouble'], $eq['doubleTake'], $eq['doublePass'])) {
+                    continue;
+                }
+                [$lv, $counts] = $this->cubeLoss(
+                    (string) $e['cube']['chosen'],
+                    (float) $eq['noDouble'], (float) $eq['doubleTake'], (float) $eq['doublePass']
+                );
+                if ($counts) {
+                    $cubeLossSum += $lv;
+                    $cubeDec++;
+                }
+
+                continue;
+            }
+            // CHECKER hamlesi: fill (tur-sırası dolgu/dance) ve zorunlu (tek aday) PR'a girmez.
+            if (! empty($e['fill'])) {
+                continue;
+            }
+            $cands = $e['cands'] ?? null;
+            if (! is_array($cands) || count($cands) < 2) {
+                continue; // tek yasal hamle = zorunlu -> sayılmaz
+            }
+            $eqs = array_map(static fn ($c) => (float) ($c['equity'] ?? 0), $cands);
+            if ((max($eqs) - min($eqs)) < self::OBVIOUS) {
+                continue; // obvious (en iyi-en kötü spread < eşik) -> sayılmaz
+            }
+            $chkLoss += max(0.0, (float) ($e['loss'] ?? 0));
+            $chkDec++;
+        }
+        $loss = $chkLoss + $cubeLossSum;
+        $dec = $chkDec + $cubeDec;
+
+        return [
+            'pr' => $dec > 0 ? ($loss / $dec) * 500 : 0.0,
+            'checker_pr' => $chkDec > 0 ? ($chkLoss / $chkDec) * 500 : null,
+            'cube_pr' => $cubeDec > 0 ? ($cubeLossSum / $cubeDec) * 500 : null,
+            'equity_lost' => $loss,
+            'decisions' => $dec,
+            'checker_decisions' => $chkDec,
+            'cube_decisions' => $cubeDec,
+        ];
+    }
 }

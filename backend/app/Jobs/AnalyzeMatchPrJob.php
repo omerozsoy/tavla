@@ -270,6 +270,18 @@ class AnalyzeMatchPrJob implements ShouldQueue
             }
         }
 
+        // REVIEW-BASED PR YETKİLİ: gnubg_review önbelleklendiyse (CacheMatchReviewJob reviewMatch'ten
+        // DOĞRU per-karar PR yazdı) bu job'un per-pozisyon cubePr'ı ONU EZMESİN -> PR alanlarını $upd'den
+        // çıkar. (per-pozisyon cubePr küp kararlarında runtime hatalıydı: EU6CD kusursuz oyuncu 18.54 PR.)
+        $reviewAuthoritative = Schema::hasColumn('match_results', 'gnubg_review')
+            && MatchResult::where('id', $mr->id)->whereNotNull('gnubg_review')->exists();
+        if ($reviewAuthoritative) {
+            foreach (['gnubg_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'pr', 'pr_equity_lost', 'pr_decisions',
+                'gnubg_opponent_pr', 'gnubg_opponent_checker_pr', 'gnubg_opponent_cube_pr'] as $k) {
+                unset($upd[$k]);
+            }
+        }
+
         if ($upd !== []) {
             MatchResult::where('id', $mr->id)->update($upd); // query-builder -> fillable gerekmez
         }
@@ -279,7 +291,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         //  (a) ONLINE rakip satırının opponent_pr'ı = bu satırın gnubg PR'ı (iki oyuncu özdeş görsün).
         //  (b) Bu oyuncunun KARİYER PR havuzu (pr_equity_lost/pr_decisions artık gnubg) -> yeniden hesap;
         //      yoksa maç, reportRating'te null totallerle recalc edildiğinden havuza HİÇ girmez.
-        if ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && $totDec > 0) {
+        if (! $reviewAuthoritative && (string) config('gnubg.pr_mode', 'off') === 'authoritative' && $totDec > 0) {
             try {
                 $prVal = round((float) $overall, 2);
                 if (! empty($mr->room_code)
