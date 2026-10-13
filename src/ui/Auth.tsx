@@ -138,6 +138,9 @@ export default function Auth({
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  // Kayıt/düzenleme formunda "gönder"e basıldı mı — basıldıysa boş zorunlu alanlar tek tek
+  // kendi altında "Zorunlu" işaretiyle gösterilir (tek bir "tüm alanları doldurun" banner'ı yerine).
+  const [triedSubmit, setTriedSubmit] = useState(false)
   // Takma isim canli durumu: idle | checking | ok (musait) | taken (alinmis) | blocked (kufur/uygunsuz)
   const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken' | 'blocked' | 'invalid'>('idle')
   const nickBad = nickStatus === 'taken' || nickStatus === 'blocked' || nickStatus === 'invalid' // kirmizi + gonderim engellenir
@@ -261,6 +264,29 @@ export default function Auth({
     }
   }, [nickname, editing, seed.nickname])
 
+  // Zorunlu alan eksik mi — yalnız "gönder" denendikten (triedSubmit) sonra işaretlenir ve
+  // kullanıcı doldurdukça (re-render) anında kalkar. Kayıtta ülke (+TR'de il) zorunlu;
+  // profil düzenlemede bu ikisi zorlanmaz (backend de nullable).
+  const reqMiss = {
+    firstName: triedSubmit && !firstName.trim(),
+    lastName: triedSubmit && !lastName.trim(),
+    nickname: triedSubmit && !nickname.trim(),
+    country: triedSubmit && !editing && !country.trim(),
+    province: triedSubmit && !editing && country === 'TR' && !province.trim(),
+  }
+  // İlk boş zorunlu alanın input id'si (görsel sırayla, odak için); hepsi doluysa null.
+  function firstMissingFieldId(): string | null {
+    if (!firstName.trim()) return 'pf-firstName'
+    if (!lastName.trim()) return 'pf-lastName'
+    if (!editing && !country.trim()) return 'pf-country'
+    if (!editing && country === 'TR' && !province.trim()) return 'pf-province'
+    if (!nickname.trim()) return 'pf-nickname'
+    return null
+  }
+  // Alan altında "Zorunlu" işareti (boş zorunlu alanlar için).
+  const reqHint = (show: boolean) =>
+    show ? <span className="text-xs text-destructive" role="alert">{t('reg.required')}</span> : null
+
   // Sunucudan gelen dogrulama hatasini anlasilir mesaja cevir (hangi alan?)
   function apiErrorMsg(err: unknown): string {
     if (!(err instanceof api.ApiError)) return t('auth.offline')
@@ -307,17 +333,14 @@ export default function Auth({
   }
 
   function validProfile(): boolean {
-    if (!firstName.trim() || !lastName.trim() || !nickname.trim()) {
-      setError(t('reg.fillAll'))
+    setTriedSubmit(true)
+    // Boş zorunlu alanlar: tek "tüm alanları doldurun" banner'ı yerine her alanın altında
+    // kendi "Zorunlu" işareti çıkar (reqMiss üzerinden). İlk boş alana odaklan.
+    const missingId = firstMissingFieldId()
+    if (missingId) {
+      setError('')
+      document.getElementById(missingId)?.focus()
       return false
-    }
-    // YENİ ÜYE (kayıt): ülke ZORUNLU; TR ise şehir de ZORUNLU. Profil düzenlemede (editing)
-    // eski üyeler zorlanmaz (backend update'te de nullable).
-    if (!editing) {
-      if (!country.trim() || (country === 'TR' && !province.trim())) {
-        setError(t('reg.fillAll'))
-        return false
-      }
     }
     if (nickBad) {
       setError(t(nickStatus === 'invalid' ? 'reg.nickInvalid' : nickStatus === 'blocked' ? 'reg.nickBlocked' : 'reg.nickTaken'))
@@ -451,11 +474,13 @@ export default function Auth({
         <Label htmlFor="pf-firstName">{t('reg.firstName')}</Label>
         {/* autoFocus YALNIZ profil duzenlemede; giris/kayit landing'inde odagi CALMA
             (kullanici nereye yazacagini kendi secsin — istek). */}
-        <Input id="pf-firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus={editing} />
+        <Input id="pf-firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus={editing} aria-invalid={reqMiss.firstName || undefined} />
+        {reqHint(reqMiss.firstName)}
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="pf-lastName">{t('reg.lastName')}</Label>
-        <Input id="pf-lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+        <Input id="pf-lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} aria-invalid={reqMiss.lastName || undefined} />
+        {reqHint(reqMiss.lastName)}
       </div>
       {/* Ülke: kayıtta da sorulur (yeni üye için ZORUNLU). */}
       <div className="grid gap-1.5">
@@ -476,6 +501,7 @@ export default function Auth({
             </option>
           ))}
         </select>
+        {reqHint(reqMiss.country)}
       </div>
       {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz); kayıtta TR ise ZORUNLU. */}
       {country === 'TR' && (
@@ -494,6 +520,7 @@ export default function Auth({
               </option>
             ))}
           </select>
+          {reqHint(reqMiss.province)}
         </div>
       )}
       <div className="grid gap-1.5">
@@ -505,8 +532,9 @@ export default function Auth({
           maxLength={15}
           onChange={(e) => setNickname(e.target.value.slice(0, 15))}
           autoComplete="username"
-          aria-invalid={nickBad}
+          aria-invalid={nickBad || reqMiss.nickname || undefined}
         />
+        {reqHint(reqMiss.nickname)}
         <span className="nick-counter text-xs text-muted-foreground">{nickname.length}/15</span>
         {nickStatus === 'checking' && (
           <span className="text-xs text-muted-foreground">{t('reg.nickChecking')}</span>
