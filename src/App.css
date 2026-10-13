@@ -192,8 +192,9 @@
   --dice-size: calc(var(--checker) * 0.76);
   /* Kup (doubling cube): bara oranli ama DAHA BUYUK (desktop'ta net, mobilde dokunulabilir).
      min 38px -> mobil dokunma hedefi (dar barda barin biraz disina tasabilir, kabul).
-     Referans oran ~0.82 x bar; clamp min/max okunabilirlik+dokunma icin. */
-  --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px);
+     Referans oran ~0.82 x bar; clamp min/max okunabilirlik+dokunma icin.
+     Kullanıcı isteği: küp %50 büyük (0.82->1.23, 38->57, 66->99). Bardan taşar, kabul. */
+  --cube-size: clamp(57px, calc(var(--bar-w) * 1.23), 99px);
 
   /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
      board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
@@ -26698,7 +26699,7 @@ button.acct-row-logout:hover:not(:disabled) {
     --tri-h: calc(var(--board-h) * 0.35);
     --point-h: var(--tri-h);
     --dice-size: calc(var(--checker) * 0.76);
-    --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px);
+    --cube-size: clamp(57px, calc(var(--bar-w) * 1.23), 99px); /* %50 büyük (ana board ile eş) */
   }
   body.chat-open .chat-backdrop {
     display: none;

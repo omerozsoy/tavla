@@ -3819,6 +3819,11 @@ export default function App() {
         // arada humanRespond tekrar true olup AYNI teklif ekranı bir daha geliyordu. cubePending'i
         // burada null yaparak pencereyi kapat (server not_turn/409'da poll zaten null'a senkronlar).
         setCubePending(null)
+        // İYİMSER KÜP SAHİPLİĞİ: kabul anında küpü HEMEN taker'ın (=ben) tarafına koy + değeri ikiye
+        // katla. Yoksa match.cube poll gelene kadar (~2sn) owner=null/value=1 kalıp ortada "64" olarak
+        // asılı durur, sonra birden tarafa düşer. Sunucu yanıtı/poll otoriter düzeltir (409'da .catch
+        // resync eder). Offline path (aşağıda) zaten aynısını yapıyor.
+        setMatch((m) => ({ ...m, cube: { value: m.cube.value * 2, owner: srvTaker } }))
         if (botMatch) setBotThinking(true)
         const code = room.code
         // SÜRÜM: serverMove ile AYNI — iyimser ref (appliedServerVersionRef) kullan, room.server_version
@@ -11220,7 +11225,7 @@ export default function App() {
           loserPr={prShown(opponent(mWinner))}
           analyzing={prAnalyzing}
           oppAnalyzing={oppPrPending}
-          analyzingBoth={mode === 'pvb'}
+          analyzingBoth={botMatch}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}
           loserCheckerPr={prCheckerShown(opponent(mWinner))}
