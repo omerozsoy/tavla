@@ -10122,7 +10122,10 @@ html.fs-active .account-bar {
   display: flex;
   flex-direction: column;
   align-self: center;
-  align-items: center;
+  /* stretch: skor kutulari ile amber grup AYNI genislikte -> yan bosluk = padding (sabit), kutu
+     gruptan dar kalip degisken yan-bosluk olusturmaz. Boylece 4 kenar bosluk esit (portre media
+     query align-items:center ile ezer -> yatay seride etkilemez). */
+  align-items: stretch;
   gap: 12px; /* skor-saat-skor arasi TEK kaynak bosluk (clock-group margin-block kaldirildi) -> esit */
   font-variant-numeric: tabular-nums;
 }

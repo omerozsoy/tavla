@@ -7,9 +7,9 @@
    alan daha olsun"). Skor kutulari + amber grup artik bu tepsinin icinde oturur; bearoff ile AYNI
    --tray-bg + govde (border/radius/golge) -> board'un toplama tepsisiyle gorsel es. */
 .clock-stack {
-  /* Skor kutusu etrafı EŞİT mesafe: yan boşluk = padding-x(9) + kutu gruptan dar olduğu için (94-84)/2=5
-     => 14px. Üst/alt da 14 olsun ki skor kutularının 4 kenarı eşit dursun (kullanıcı isteği). */
-  padding: 14px 9px;
+  /* Skor kutusu etrafı EŞİT mesafe: align-items:stretch kutuları grup genişliğine eşitler, tek
+     değer padding -> 4 kenar da 12px (yan=üst=alt). */
+  padding: 12px;
   background: var(--tray-bg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
