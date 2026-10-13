@@ -86,6 +86,8 @@ class AdSlotResource extends Resource
             ->reorderable('sort')
             ->defaultSort('sort')
             ->columns([
+                Tables\Columns\TextColumn::make('id')->label('ID')->sortable()
+                    ->badge()->color('gray')->copyable(),
                 Tables\Columns\TextColumn::make('slot')->label('Konum')
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         'top' => 'Üst',

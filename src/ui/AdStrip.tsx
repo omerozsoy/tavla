@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { listAdSlots, type AdSlot, type AdSlotPos } from '../api'
 import './adStrip.css'
 import { safeHref } from './safeHref'
+import { Button } from '@/components/ui/button'
+
+// Bu ID'li reklam link'e GİTMEZ; tıklanınca "stok tükendi" şaka modali açılır (bkz aşağı).
+const PRANK_AD_ID = 1
 
 // Gorsel yolu: tam URL / mutlak yol ise oldugu gibi; ciplak yol ise panelden yuklenmis -> /uploads/
 function srcOf(img: string): string {
@@ -22,6 +27,7 @@ function loadAds(): Promise<AdSlot[]> {
  */
 export function AdStrip({ slot }: { slot: AdSlotPos }) {
   const [ads, setAds] = useState<AdSlot[] | null>(null)
+  const [prank, setPrank] = useState(false)
   useEffect(() => {
     let alive = true
     loadAds().then((a) => alive && setAds(a))
@@ -56,6 +62,28 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
       <img className="ad-img" src={srcOf(ad.image)} alt="" width={1120} height={180} loading="lazy" />
     </picture>
   )
+
+  // Şaka reklamı: link'e gitmez; tıklanınca "stok tükendi" modali açılır.
+  if (ad.id === PRANK_AD_ID) {
+    return (
+      <div className={`ad-strip ad-strip-${slot}`}>
+        <button type="button" className="ad-prank-trigger" onClick={() => setPrank(true)} aria-label="Reklam">
+          {img}
+        </button>
+        {prank &&
+          createPortal(
+            <div className="register-overlay modal confirm-overlay" role="dialog" aria-modal="true" onClick={() => setPrank(false)}>
+              <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+                <h2>Stok tükendi.</h2>
+                <p className="register-sub">Rakibiniz son paketi az önce satın aldı.</p>
+                <Button onClick={() => setPrank(false)}>Biliyordum onda bir şey olduğunu!</Button>
+              </div>
+            </div>,
+            document.body,
+          )}
+      </div>
+    )
+  }
 
   return (
     <div className={`ad-strip ad-strip-${slot}`}>

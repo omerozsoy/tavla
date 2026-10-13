@@ -5,10 +5,21 @@
   max-width: var(--lobby-w);
   margin: 4px auto 18px;
 }
-.ad-strip a {
+.ad-strip a,
+.ad-strip .ad-prank-trigger {
   display: block;
   border-radius: var(--radius-lg);
   overflow: hidden;
+}
+/* Saka reklami tetikleyici: <a> gibi gorunsun (buton varsayilan stilini sifirla). */
+.ad-strip .ad-prank-trigger {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 .ad-strip picture {
   display: block;
