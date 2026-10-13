@@ -6,6 +6,7 @@ import type { Profile } from '../storage'
 import { countryOptions, COUNTRY_CODES } from '../countries'
 import { PROVINCES } from '../provinces'
 import DatePicker from './DatePicker'
+import SearchSelect from './SearchSelect'
 import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
@@ -61,9 +62,6 @@ function loadGsiScript(): Promise<void> {
 
 // Native <select> (uzun ulke listesinde native UX korunur) shadcn Input ile AYNI gorunum.
 // Tek kaynak: Input ile ayni yukseklik/kenar/radius/odak halkasi.
-const FIELD_CLS =
-  'h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
-
 // Danger Zone metinleri (i18n.tsx paralel WIP tuttugu icin gecici yerel harita;
 // onay sonrasi home.* gibi i18n anahtarlarina tasinacak).
 const DANGER_I18N: Record<string, { zone: string; desc: string }> = {
@@ -273,6 +271,8 @@ export default function Auth({
     nickname: triedSubmit && !nickname.trim(),
     country: triedSubmit && !editing && !country.trim(),
     province: triedSubmit && !editing && country === 'TR' && !province.trim(),
+    email: triedSubmit && !editing && !email.trim(),
+    phone: triedSubmit && askPhone && !phone.trim(),
   }
   // İlk boş zorunlu alanın input id'si (görsel sırayla, odak için); hepsi doluysa null.
   function firstMissingFieldId(): string | null {
@@ -281,6 +281,8 @@ export default function Auth({
     if (!editing && !country.trim()) return 'pf-country'
     if (!editing && country === 'TR' && !province.trim()) return 'pf-province'
     if (!nickname.trim()) return 'pf-nickname'
+    if (!editing && !email.trim()) return 'pf-email'
+    if (askPhone && !phone.trim()) return 'pf-phone'
     return null
   }
   // Alan altında "Zorunlu" işareti (boş zorunlu alanlar için).
@@ -342,16 +344,17 @@ export default function Auth({
       document.getElementById(missingId)?.focus()
       return false
     }
+    // Format hataları da ALANIN ALTINDA gösterilir (global banner yerine) -> yalnız odaklan.
     if (nickBad) {
-      setError(t(nickStatus === 'invalid' ? 'reg.nickInvalid' : nickStatus === 'blocked' ? 'reg.nickBlocked' : 'reg.nickTaken'))
+      document.getElementById('pf-nickname')?.focus()
       return false
     }
     if (!isEmail(email)) {
-      setError(t('reg.validEmail'))
+      document.getElementById('pf-email')?.focus()
       return false
     }
     if (askPhone && !isPhone(phone)) {
-      setError(t('reg.validPhone'))
+      document.getElementById('pf-phone')?.focus()
       return false
     }
     return true
@@ -362,7 +365,7 @@ export default function Auth({
     setError('')
     if (!validProfile()) return
     if (!api.pwValid(password)) {
-      setError(t('reg.pwShort'))
+      document.getElementById('pf-password')?.focus()
       return
     }
     setBusy(true)
@@ -485,41 +488,31 @@ export default function Auth({
       {/* Ülke: kayıtta da sorulur (yeni üye için ZORUNLU). */}
       <div className="grid gap-1.5">
         <Label htmlFor="pf-country">{t('reg.country')}</Label>
-        <select
+        <SearchSelect
           id="pf-country"
-          className={FIELD_CLS}
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
-        >
-          <option value="">{t('reg.countryPlaceholder')}</option>
-          {country && !COUNTRY_CODES.includes(country) && (
-            <option value={country}>{country}</option>
-          )}
-          {countryOptions(lang).map(({ code, name }) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
+          onChange={setCountry}
+          ariaInvalid={reqMiss.country}
+          placeholder={t('reg.countryPlaceholder')}
+          options={[
+            ...(country && !COUNTRY_CODES.includes(country) ? [{ value: country, label: country }] : []),
+            ...countryOptions(lang).map(({ code, name }) => ({ value: code, label: name })),
+          ]}
+        />
         {reqHint(reqMiss.country)}
       </div>
       {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz); kayıtta TR ise ZORUNLU. */}
       {country === 'TR' && (
         <div className="grid gap-1.5">
           <Label htmlFor="pf-province">{t('reg.province')}</Label>
-          <select
+          <SearchSelect
             id="pf-province"
-            className={FIELD_CLS}
             value={province}
-            onChange={(e) => setProvince(e.target.value)}
-          >
-            <option value="">{t('reg.provincePlaceholder')}</option>
-            {PROVINCES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+            onChange={setProvince}
+            ariaInvalid={reqMiss.province}
+            placeholder={t('reg.provincePlaceholder')}
+            options={PROVINCES.map((p) => ({ value: p, label: p }))}
+          />
           {reqHint(reqMiss.province)}
         </div>
       )}
@@ -562,7 +555,14 @@ export default function Auth({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
+          aria-invalid={reqMiss.email || (triedSubmit && !!email.trim() && !isEmail(email)) || undefined}
         />
+        {/* Hata alanın ALTINDA: boşsa "Zorunlu", doluysa geçersiz format uyarısı. */}
+        {reqMiss.email
+          ? reqHint(true)
+          : triedSubmit && !!email.trim() && !isEmail(email) && (
+              <span className="text-xs text-destructive" role="alert">{t('reg.validEmail')}</span>
+            )}
       </div>
       {askPhone && (
         <div className="grid gap-1.5">
@@ -578,9 +578,15 @@ export default function Auth({
               placeholder="5XX XXX XX XX"
               value={formatPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-              aria-invalid={phone.length > 0 && !isPhone(phone)}
+              aria-invalid={reqMiss.phone || (phone.length > 0 && !isPhone(phone)) || undefined}
             />
           </div>
+          {/* Hata alanın ALTINDA: boşsa "Zorunlu", doluysa "Geçerli bir cep telefonu girin (5XX…)". */}
+          {reqMiss.phone
+            ? reqHint(true)
+            : triedSubmit && phone.length > 0 && !isPhone(phone) && (
+                <span className="text-xs text-destructive" role="alert">{t('reg.validPhone')}</span>
+              )}
         </div>
       )}
       {editing && (
@@ -741,11 +747,13 @@ export default function Auth({
                 {t('reg.password')}
                 <div className="pw-field">
                   <input
+                    id="pf-password"
                     type={showPw ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password"
                     className={password.length === 0 ? undefined : api.pwValid(password) ? 'valid' : 'invalid'}
+                    aria-invalid={(triedSubmit && !api.pwValid(password)) || undefined}
                   />
                   <button
                     type="button"
@@ -759,7 +767,7 @@ export default function Auth({
                 </div>
                 {/* Canli sifre dogrulamasi: bos=notr ipucu, karsilandi=yesil, eksik=kirmizi */}
                 {password.length === 0 ? (
-                  <span className="pw-hint text-xs text-muted-foreground">{t('reg.pwShort')}</span>
+                  <span className={`pw-hint text-xs ${triedSubmit ? 'text-destructive' : 'text-muted-foreground'}`} role={triedSubmit ? 'alert' : undefined}>{t('reg.pwShort')}</span>
                 ) : api.pwValid(password) ? (
                   <span className="pw-hint inline-flex items-center gap-1 text-xs" style={{ color: 'var(--success-fg)' }}>
                     <Icon name="check" size={12} /> {t('reg.pwOk')}

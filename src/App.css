@@ -8389,6 +8389,107 @@ button.move-row:focus-visible {
 }
 
 /* ---- Uye kayit formu ---- */
+/* Aranabilir açılır liste (SearchSelect: ülke/il). Tetik native input görünümüyle (FIELD_CLS) aynı. */
+.search-select {
+  position: relative;
+  width: 100%;
+}
+.ss-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 36px;
+  width: 100%;
+  padding: 1px 10px;
+  border: 1px solid var(--border, var(--input, #d4d4d8));
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+.ss-trigger[aria-invalid='true'] {
+  border-color: var(--destructive, #e5484d);
+}
+.ss-trigger .ss-ph {
+  color: var(--muted);
+}
+.ss-trigger .ss-val {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ss-chev {
+  flex: none;
+  color: var(--muted);
+}
+.ss-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+.ss-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+.ss-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.ss-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.ss-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+.ss-opt:hover,
+.ss-opt:focus-visible {
+  background: color-mix(in srgb, var(--accent, #c9643c) 14%, transparent);
+}
+.ss-opt.sel {
+  color: var(--accent-text, var(--accent));
+  font-weight: 600;
+}
+.ss-empty {
+  padding: 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .register-overlay {
   position: fixed;
   inset: 0;
