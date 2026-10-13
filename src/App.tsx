@@ -4165,7 +4165,9 @@ export default function App() {
       } catch {
         if (!cancelled) handleTake()
       }
-    }, 800)
+      // 800ms -> 1500ms: bot küp kararı "çok hızlı geçiyordu"; 1-2sn düşünüyormuş gibi (teklif küpü
+      // bu sürede bot tarafında yanıp söner). Kullanıcı isteği.
+    }, 1500)
     return () => {
       cancelled = true
       window.clearTimeout(timer)
@@ -7941,6 +7943,8 @@ export default function App() {
       (online && cubePending !== myColor))
   // Online'da kendi teklifim: rakibin yanitini bekliyorum
   const cubeWaiting = online && cubePending === myColor
+  // pvb: ben bota teklif ettim, bot karar veriyor (1-2sn "düşünür") -> teklif küpü bot (üst) tarafında.
+  const botCubeDeciding = mode === 'pvb' && cubePending != null && cubePending !== BOT_PLAYER
   const canSwapDice =
     interactive &&
     played.length === 0 &&
@@ -8084,9 +8088,7 @@ export default function App() {
     )
     respondTake = (
       <div className="cube-split-take">
-        <div className="cube-split-info" aria-hidden>
-          <Icon name="alert" size={14} /> ×{match.cube.value * 2}
-        </div>
+        {/* ×N rozeti KALDIRILDI (kullanıcı isteği): teklif değeri zaten board'da yanıp sönen küpte. */}
         {learnMode && cubeHint?.kind === 'respond' && (
           <div className={`cube-advice ${cubeHint.take === 'take' ? 'ok' : 'warn'}`}>
             <Icon name="bulb" size={13} />
@@ -11075,7 +11077,8 @@ export default function App() {
         )}
         <Board
           state={boardDisplay}
-          cubePendingValue={humanRespond ? match.cube.value * 2 : null}
+          cubePendingValue={humanRespond || cubeWaiting || botCubeDeciding ? match.cube.value * 2 : null}
+          cubePendingSide={humanRespond ? 'bottom' : 'top'}
           checkerSkin={user?.checker ? (CHECKER_BY_ID[user.checker] ?? null) : null}
           selectableFroms={selectableFroms}
           targets={targets}

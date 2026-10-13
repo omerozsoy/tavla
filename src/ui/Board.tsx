@@ -93,9 +93,10 @@ interface BoardProps {
   pipTop: number
   pipBottom: number
   cube: { value: number; owner: Player | null }
-  // Küp çekildi, KARAR BENDE: teklif edilen (katlanmış) değer. Set ise alt tepsime (benim
-  // tarafıma) yanıp sönen küp gelir; kabul edince sahiplenip sabitlenir, yoksa ortaya döner.
+  // Küp çekildi, KARAR BEKLENİYOR: teklif edilen (katlanmış) değer. Set ise karar verenin PIP'inin
+  // yanında (bar'da) yanıp sönen küp belirir; kabul edince sahibin bear-off tepsisine yerleşir.
   cubePendingValue?: number | null
+  cubePendingSide?: 'top' | 'bottom' // karar veren taraf (bottom=ben, top=rakip/bot)
   crawford?: boolean // Crawford oyunu: kup KULLANILAMAZ -> kupun icine "Crawford" yazilir
   classic?: boolean // KLASIK TAVLA: kup HIC yok -> tahtada kup gorseli CIZILMEZ
   centerLeft?: ReactNode
@@ -287,6 +288,7 @@ function Board({
   pipBottom,
   cube,
   cubePendingValue = null,
+  cubePendingSide = 'bottom',
   crawford = false,
   classic = false,
   centerLeft,
@@ -665,10 +667,11 @@ function Board({
       {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
     </div>
   ) : null
-  // Karar bende: teklif edilen küp ALT (benim) tepsime yanıp sönerek gelir; ortadaki küp gizlenir.
+  // Karar bekleniyor: teklif edilen küp, karar verenin PIP'i yanında (bar'da cube-top/cube-bottom
+  // konumunda) YANIP SÖNER; ortadaki (sahipsiz) küp bu sırada gizlenir. Kabul edilince -> tepsi.
   const cubePending = !classic && cubePendingValue != null && cubePendingValue > 0
   const cubePendingEl = cubePending ? (
-    <div className="cube cube-tray cube-pending" aria-label={t('board.cube')}>
+    <div className={`cube cube-${cubePendingSide} cube-pending`} aria-label={t('board.cube')}>
       {cubePendingValue}
     </div>
   ) : null
@@ -753,6 +756,8 @@ function Board({
               {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
             </div>
           )}
+          {/* Karar bekleyen (teklif) küp: PIP yanında yanıp söner. Kabul edilince tepsiye geçer. */}
+          {cubePendingEl}
           <div className="bar-checkers bottom">
             {/* Kirik taslar YIGILMAZ: tek tas, ortasinda kirik adedi (>1 iken) */}
             {bottomBarCount > 0 && (
@@ -829,8 +834,6 @@ function Board({
           ))}
           {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda (son çocuk). */}
           {cubeTraySide === 'bottom' && cubeTrayEl}
-          {/* Karar bende: teklif edilen küp yanıp sönerek benim (alt) tepsimde. */}
-          {cubePendingEl}
         </div>
       </div>
 
