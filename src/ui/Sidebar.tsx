@@ -128,7 +128,7 @@ function Name({ p }: { p: PlayerInfo }) {
             title={t('online.addFriend')}
             aria-label={t('online.addFriend')}
           >
-            <Icon name="user-plus" size={18} />
+            <Icon name="user-plus" size={22} weight="bold" />
           </button>
         )}
       </div>
