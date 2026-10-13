@@ -7457,7 +7457,22 @@ export default function App() {
       const r = await respondInvite(inv.id, true)
       // Davet edenin sectigi AYNI ayarla gir: target (Tek Oyun=1 / Mac uzunlugu) + saat.
       if (r.code) {
-        await enterOnlineByCode(r.code, r.target ?? inv.target ?? 3, (r.timeControl ?? inv.timeControl ?? undefined) as TimeControl | undefined)
+        const ok = await enterOnlineByCode(r.code, r.target ?? inv.target ?? 3, (r.timeControl ?? inv.timeControl ?? undefined) as TimeControl | undefined)
+        if (!ok) {
+          // KABUL ETTIM AMA OYUN ACILMADI: davet sunucuda 'accepted', ama odaya giris HTTP yaniti
+          // blip'te KAYBOLMUS olabilir (PWA yari-acik baglanti) -> enterRoom sunucuda p2'yi yazip
+          // odayi 'playing' yapmis, SAAT ISLIYOR, oysa istemci ana sayfada asili. Banner arkasinda
+          // strand etme (kullanici fark etmeden zaman asimi kaybeder): aktif odayi HEMEN cek ve
+          // OYUNCU olarak gir. One-shot oto-resume'u da yeniden silahlandir ki 10sn poll guvenlik
+          // agi da yakalasin. Oda gercekten 'playing' degilse (enter hakikaten basarisiz) liste
+          // onu DONDURMEZ -> yanlis resume olmaz.
+          autoResumedRef.current = false
+          try {
+            const rs = await myActiveRooms()
+            const mine = rs.find((x) => x.code === r.code && !x.tournament)
+            if (mine) rejoinRoom(mine)
+          } catch { /* activeRooms poll guvenlik agi ~10sn icinde toparlar */ }
+        }
       } else {
         // Kod yok = davet artik gecerli degil. SESSIZ KALMA -> "kabul ettim hicbir sey olmadi".
         notify.error(t('friends.inviteExpired'))
