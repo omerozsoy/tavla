@@ -179,9 +179,11 @@
   /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
      Dikey pay: header + ust/alt point-numarasi seritleri (24+24+gap ~54px) + app
      padding -> ~78px (yoksa board 100dvh'yi ~26px asip sagda dikey scrollbar cikar).
-     440px lump = sol panel(~196) + saat(~96) + game-ham(48) + bosluklar; daraltildi ki board
-     TAM otursun (eski 548 board'u genislikle kisitlayip ust/altta olu bant birakiyordu). */
-  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 100px), calc((100vw - 440px) / 1.3)));
+     420px lump = sol panel(~180) + saat(~137) + game-ham(42) + bosluklar(~30+pay). BOLEN 1.3 DEGIL
+     1.53: board'un GERCEK en/boy orani (oyun alani 1.371·h + bear-off tepsisi) ~1.53'tur; eski 1.3
+     board'u fazla genis yapip tablet/laptop YATAYINDA (1194-1440) sol paneli + menuyu ekran disina
+     kirpiyordu (olcum: scripts/measure-board.mjs). Yukseklik-kisitli genis ekranlar degismez. */
+  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 100px), calc((100vw - 420px) / 1.53)));
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
@@ -6118,8 +6120,10 @@ button[aria-disabled='true'],
 @media (min-width: 901px) and (min-height: 561px) {
   .app.game-view {
     /* 92 -> 106: board + alt/üst hane numara şeritlerine pay (alt rakamlar kesilmesin).
-       106 -> 98: alt anlatım satırı kaldırıldı, boşalan dikey alanı board'a ver (>92: numara kesilmez). */
-    --board-h: max(320px, min(calc(100dvh - 98px), calc((100vw - 440px) / 1.3)));
+       106 -> 98: alt anlatım satırı kaldırıldı, boşalan dikey alanı board'a ver (>92: numara kesilmez).
+       Genislik bolen 1.3 -> 1.53 (board gercek en/boy orani): tablet/laptop yatayinda sol panel+menu
+       kirpilmasin (bkz :root --board-h aciklamasi + scripts/measure-board.mjs). */
+    --board-h: max(320px, min(calc(100dvh - 98px), calc((100vw - 420px) / 1.53)));
   }
 }
 

@@ -32,6 +32,8 @@ const DEVICES = [
   { name: 'iPhone-XR-11', w: 414, h: 896 },
   { name: 'iPhone-14-15-16', w: 390, h: 844 },
   { name: 'iPhone-17-Pro', w: 393, h: 852 },
+  { name: 'iPhone-14-15-Plus', w: 428, h: 926 },
+  { name: 'iPhone-16-17-Pro-Max', w: 440, h: 956 },
   { name: 'Galaxy-S10', w: 360, h: 760 },
   { name: 'Galaxy-Note9', w: 414, h: 846 },
   { name: 'Galaxy-S25', w: 384, h: 854 },
@@ -83,7 +85,28 @@ function scan() {
     const st = getComputedStyle(el); if (st.display === 'none' || st.visibility === 'hidden') continue
     if (r.height < 32 || r.width < 24) smallTaps++
   }
-  return { winW, winH, overflow, offenders: offenders.slice(0, 10), overlaps, offscreen, smallTaps }
+  // KIRPILAN/EKRAN-DISI ogeler: belge tasmasi OLMASA bile (overflow:hidden ebeveyn kirpar) yatayda
+  // viewport disina tasan GORUNUR, anlamli (metin/resim/svg) yaprak ogeler. Logo/wordmark/nav
+  // kirpilmasini yakalar (ornegin landscape telefonda ust-bar logosu). Gurultu icin filtre: metin
+  // veya img/svg iceren, >12px, tam gizli olmayan ogeler.
+  const clipped = []
+  for (const el of document.querySelectorAll('header *, nav *, .account-bar *, .side-menu *, .hero *, .promo *, main > * , [class*="logo" i], [class*="brand" i], [class*="wordmark" i]')) {
+    const r = el.getBoundingClientRect()
+    if (r.width < 12 || r.height < 6) continue
+    if (!(r.left < -2 || r.right > winW + 2)) continue
+    const st = getComputedStyle(el)
+    if (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0) continue
+    const hasInk = (el.textContent || '').trim().length > 0 || el.querySelector('img,svg,use') || /img|svg/.test(el.tagName.toLowerCase())
+    if (!hasInk) continue
+    // yaprak-benzeri: cocuklari da ayni yonde tasmiyorsa bu eleman kaynak
+    let childClip = false
+    for (const c of el.children) { const cr = c.getBoundingClientRect(); if (cr.left < -2 || cr.right > winW + 2) { childClip = true; break } }
+    if (childClip) continue
+    const cls = typeof el.className === 'string' ? el.className : ''
+    clipped.push({ tag: el.tagName.toLowerCase(), cls: cls.slice(0, 50), left: Math.round(r.left), right: Math.round(r.right) })
+    if (clipped.length >= 8) break
+  }
+  return { winW, winH, overflow, offenders: offenders.slice(0, 10), overlaps, offscreen, smallTaps, clipped }
 }
 
 const report = []
@@ -106,7 +129,8 @@ async function shoot(label, device) {
   const flags = []
   if (s.overflow > 1) flags.push(`OVERFLOW +${s.overflow}px`)
   if (s.overlaps.length) flags.push(`OVERLAP: ${s.overlaps.join('; ')}`)
-  if (s.offscreen.length) flags.push(`OFFSCREEN: ${s.offscreen.join(',')}`)
+  if (s.offscreen.length) flags.push(`OFFSCREEN-HUD: ${s.offscreen.join(',')}`)
+  if (s.clipped?.length) flags.push(`CLIP: ${s.clipped.map((c) => `${c.tag}.${c.cls.split(' ')[0]}`).join(', ')}`)
   if (s.smallTaps) flags.push(`smallTaps×${s.smallTaps}`)
   report.push({ device: device.name, screen: label, ...s, file })
   if (flags.length) console.log(`  ⚠ ${device.name} ${label} ${s.winW}x${s.winH}: ${flags.join(' | ')}`)
@@ -117,7 +141,10 @@ async function shoot(label, device) {
 console.log('\n== LOBI ==')
 await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 45000 })
 await page.waitForTimeout(2000)
-for (const d of DEVICES) { await page.setViewportSize({ width: d.w, height: d.h }); await shoot('lobby', d) }
+for (const d of DEVICES) {
+  await page.setViewportSize({ width: d.w, height: d.h }); await shoot('lobby-portrait', d)
+  await page.setViewportSize({ width: d.h, height: d.w }); await shoot('lobby-landscape', d)
+}
 
 // Oyun ekrani: TEK YZ maci baslat
 console.log('\n== OYUN EKRANI ==')
@@ -153,9 +180,11 @@ writeFileSync(join(OUT, 'device-audit-report.json'), JSON.stringify({ base: BASE
 const over = report.filter((r) => r.overflow > 1)
 const ovl = report.filter((r) => r.overlaps.length)
 const off = report.filter((r) => r.offscreen.length)
+const clp = report.filter((r) => r.clipped?.length)
 console.log('\n===== OZET =====')
-console.log(`Ekran goruntusu: ${report.length} | Yatay tasma: ${over.length} | HUD cakisma: ${ovl.length} | HUD ekran-disi: ${off.length}`)
+console.log(`Ekran goruntusu: ${report.length} | Yatay tasma: ${over.length} | HUD cakisma: ${ovl.length} | HUD ekran-disi: ${off.length} | KIRPILAN oge: ${clp.length}`)
 console.log(`Console hatasi (benzersiz ilk 20): ${consoleErrors.length}`)
 for (const r of ovl) console.log(`  CAKISMA ${r.device} ${r.screen}: ${r.overlaps.join('; ')}`)
 for (const r of off) console.log(`  EKRAN-DISI ${r.device} ${r.screen}: ${r.offscreen.join(',')}`)
+for (const r of clp) console.log(`  KIRPIK ${r.device} ${r.screen}: ${r.clipped.map((c) => `${c.tag}.${c.cls.split(' ')[0]}(l${c.left}/r${c.right})`).join(', ')}`)
 console.log(`\nGoruntuler + rapor: ${OUT}`)
