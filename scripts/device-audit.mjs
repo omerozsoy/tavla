@@ -141,6 +141,15 @@ async function shoot(label, device) {
 console.log('\n== LOBI ==')
 await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 45000 })
 await page.waitForTimeout(2000)
+// Popup'lari kapat (cerez + reklam/turnuva modali) -> lobi tasarimi gorunur olsun.
+for (const txt of ['Tümünü Kabul', 'Kabul Et', 'Yalnızca Zorunlu']) {
+  const b = page.getByRole('button', { name: new RegExp(txt, 'i') }).first()
+  if (await b.isVisible().catch(() => false)) { await b.click().catch(() => {}); await page.waitForTimeout(300) }
+}
+for (const sel of ['[aria-label="Kapat"]', '.tourn-ad-close', '.overlay-close', '.modal-x']) {
+  const b = page.locator(sel).first()
+  if (await b.isVisible().catch(() => false)) { await b.click().catch(() => {}); await page.waitForTimeout(300) }
+}
 for (const d of DEVICES) {
   await page.setViewportSize({ width: d.w, height: d.h }); await shoot('lobby-portrait', d)
   await page.setViewportSize({ width: d.h, height: d.w }); await shoot('lobby-landscape', d)
