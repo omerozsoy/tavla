@@ -18,7 +18,12 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 #                       en fazla ~1 saat yaşar, sonra OTOMATİK düzelir. Elle müdahale GEREKMEZ.
 #   --max-jobs=500   -> uzun-ömürlü PHP bellek sızıntısına karşı periyodik geri dönüşüm.
 # Not: bu bayraklar Laravel'in "graceful" çıkışıdır; çalışan job'ı KESMEZ, aradaki boşlukta çıkar.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500
+#
+# KUYRUK ÖNCELİĞİ (--queue=default,bulk): 'default' = CANLI maç-sonu PR/luck; 'bulk' = toplu
+# backfill/heal (tavla:gnubg-pr-heal, tavla:gnubg-pr-backfill, matches:backfill-luck -> onQueue('bulk')).
+# Laravel virgüllü listeyi SIRAYLA (öncelik) işler: default'ta iş varken bulk'a GEÇMEZ. Böylece
+# geçmiş-analiz seli yeni biten maçın PR'ını ARKADA bekletmez (PR gecikme tail'inin kök çözümü).
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=default,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500
 Restart=always
 RestartSec=5
 

@@ -85,11 +85,11 @@ class GnubgPrHeal extends Command
         }
 
         foreach ($rows as $row) {
-            AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
+            AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database')->onQueue('bulk');
             // Log'suz yedek satırların ŞANSI da eksiktir; luck yoksa onu da kuyruğa al (job idempotent,
             // bozuk kaydı TAVLAI_LUCK_UNAVAILABLE ile karantinaya alır -> döngü yok).
             if ($row->luck_mwc === null) {
-                \App\Jobs\AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database');
+                \App\Jobs\AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database')->onQueue('bulk');
             }
         }
 
@@ -115,7 +115,7 @@ class GnubgPrHeal extends Command
             ->limit($limit)
             ->pluck('id');
         foreach ($luckOnly as $id) {
-            \App\Jobs\AnalyzeMatchLuckJob::dispatch($id)->onConnection('database');
+            \App\Jobs\AnalyzeMatchLuckJob::dispatch($id)->onConnection('database')->onQueue('bulk');
         }
 
         $this->info($rows->count().' PR + '.$luckOnly->count().' luck-only mac heal kuyruga alindi. Worker isleyecek.');

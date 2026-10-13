@@ -68,7 +68,7 @@ class BackfillMatchLuck extends Command
             return self::SUCCESS;
         }
         foreach ($ids as $id) {
-            AnalyzeMatchLuckJob::dispatch($id)->onConnection('database');
+            AnalyzeMatchLuckJob::dispatch($id)->onConnection('database')->onQueue('bulk');
         }
         $this->info('Dispatch edildi. Queue: Enabled olmalı; işlendikçe luck_mwc/emg/jokers dolar.');
 

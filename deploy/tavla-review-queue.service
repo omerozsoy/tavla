@@ -13,7 +13,11 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # Böylece geçmiş-maç backfill'i, canlı PR/luck worker'ı (tavla-queue, 'default' kuyruk) ile YARIŞMAZ;
 # yeni maçların PR analizi backfill arkasında BEKLEMEZ. Review'ler gnubg HEAVY havuzunda koşar
 # (foreground/bot bloklanmaz). --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+#
+# KUYRUK ÖNCELİĞİ (--queue=reviews,reviews-bulk): 'reviews' = CANLI maç-sonu review ısıtma;
+# 'reviews-bulk' = toplu geçmiş ısıtma (tavla:review-warmup -> onQueue('reviews-bulk')). Sıralı
+# öncelik: canlı review, toplu warmup selinin arkasında beklemez.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews,reviews-bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
 Restart=always
 RestartSec=5
 
