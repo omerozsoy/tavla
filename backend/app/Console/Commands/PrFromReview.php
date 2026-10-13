@@ -54,14 +54,21 @@ class PrFromReview extends Command
 
             $newPr = round($self['pr'], 2);
             $oldPr = $r->gnubg_pr !== null ? round((float) $r->gnubg_pr, 2) : null;
-            $diff = $oldPr === null || abs($newPr - $oldPr) > 0.01;
+            // LEGACY opponent_pr = otoriter review-opp PR (gnubg_opponent_pr ile aynı). Backfill bunu da
+            // senkron tutmalı; yoksa gnubg_pr doğruyken opponent_pr stale birikir (frontend fallback kolonu).
+            $newOppPr = round($opp['pr'], 2);
+            $oldOppPr = $r->opponent_pr !== null ? round((float) $r->opponent_pr, 2) : null;
+            // Satırı işle: self PR değiştiyse VEYA legacy opponent_pr otoriterden saptıysa.
+            $diff = $oldPr === null || abs($newPr - $oldPr) > 0.01
+                || $oldOppPr === null || abs($newOppPr - $oldOppPr) > 0.01;
             if (! $diff) {
                 $skipped++;
 
                 continue;
             }
-            $this->line(sprintf('#%d %s: PR %s -> %.2f | cube %s -> %s',
+            $this->line(sprintf('#%d %s: PR %s -> %.2f | oppPR %s -> %.2f | cube %s -> %s',
                 $r->id, $r->room_code, $oldPr === null ? '—' : number_format($oldPr, 2), $newPr,
+                $oldOppPr === null ? '—' : number_format($oldOppPr, 2), $newOppPr,
                 $r->gnubg_cube_pr === null ? '—' : number_format((float) $r->gnubg_cube_pr, 2),
                 $self['cube_pr'] === null ? '—' : number_format($self['cube_pr'], 2)));
 
@@ -73,7 +80,8 @@ class PrFromReview extends Command
                     'pr_equity_lost' => round($self['equity_lost'], 4),
                     'pr_decisions' => $self['decisions'],
                     'pr' => $newPr, // gösterilen (eski istemci pr yerine yetkili review PR)
-                    'gnubg_opponent_pr' => round($opp['pr'], 2),
+                    'gnubg_opponent_pr' => $newOppPr,
+                    'opponent_pr' => $newOppPr, // legacy fallback kolonu = otoriter review opp PR (stale birikmesin)
                     'gnubg_opponent_checker_pr' => $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null,
                     'gnubg_opponent_cube_pr' => $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null,
                 ]);
