@@ -52,6 +52,7 @@ class EmailVerification
             'outro' => 'Kod 15 dakika geçerlidir. Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
         ];
         $subject = $en ? "{$name} — Email Verification" : "{$name} — E-posta Doğrulama";
+        $payload['brand'] = $brand; // şablon logo/dil/footer'ı markaya göre çizsin
         Mail::send('emails.message', $payload, fn ($m) => $m->to($user->email)->subject($subject));
     }
 }

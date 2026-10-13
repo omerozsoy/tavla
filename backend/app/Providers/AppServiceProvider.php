@@ -133,7 +133,7 @@ class AppServiceProvider extends ServiceProvider
 
             return (new MailMessage)
                 ->subject($en ? "{$name} — Verify Your Email" : "{$name} — E-posta Adresini Doğrula")
-                ->view('emails.message', $en ? [
+                ->view('emails.message', ['brand' => $b] + ($en ? [
                     'heading' => 'Hello!',
                     'intro' => "Verify your email address to activate your {$name} account. Click the button below.",
                     'buttonText' => 'Verify Email Address',
@@ -145,7 +145,7 @@ class AppServiceProvider extends ServiceProvider
                     'buttonText' => 'E-posta Adresini Doğrula',
                     'url' => $url,
                     'outro' => 'Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
-                ]);
+                ]));
         });
 
         // Sifre sifirlama e-postasi: markali HTML sablon, marka diliyle.
@@ -158,7 +158,7 @@ class AppServiceProvider extends ServiceProvider
 
             return (new MailMessage)
                 ->subject($en ? "{$name} — Password Reset" : "{$name} — Şifre Sıfırlama")
-                ->view('emails.message', $en ? [
+                ->view('emails.message', ['brand' => $b] + ($en ? [
                     'heading' => 'Hello!',
                     'intro' => "We received a password reset request for your {$name} account. Click the button below to set a new password.",
                     'buttonText' => 'Reset Password',
@@ -170,7 +170,7 @@ class AppServiceProvider extends ServiceProvider
                     'buttonText' => 'Şifreyi Sıfırla',
                     'url' => $url,
                     'outro' => 'Bu bağlantı bir süre sonra geçersiz olur. Bu isteği sen yapmadıysan herhangi bir şey yapmana gerek yok.',
-                ]);
+                ]));
         });
     }
 }
