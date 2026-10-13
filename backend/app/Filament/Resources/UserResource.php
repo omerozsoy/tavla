@@ -59,9 +59,17 @@ class UserResource extends Resource
                 Forms\Components\Select::make('province')->label('İl')
                     ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
                     ->searchable(),
-                // Sifre: yalnizca doldurulursa degisir (model 'hashed' cast'i ile hash'lenir)
+                // Sifre: yalnizca doldurulursa degisir (model 'hashed' cast'i ile hash'lenir).
+                // autocomplete='new-password' + data-lpignore: TARAYICI PAROLA YONETICISININ bu alana
+                // kayitli giris parolasini OTO-DOLDURMASINI engeller. Aksi halde Enter/Kaydet'te
+                // filled() true olup parola RE-HASH edilir -> (kendi hesabinizi duzenlerken)
+                // AuthenticateSession oturumu kapatir + (baska uyeyi duzenlerken) o uyenin parolasini
+                // sessizce ezer (hesap ele gecirme). Bos birakinca degismez, dolu olani autofill degil
+                // yalniz ELLE yazilan deger olur.
                 Forms\Components\TextInput::make('password')->label('Yeni şifre')
                     ->password()->dehydrated(fn ($state) => filled($state))
+                    ->autocomplete('new-password')
+                    ->extraInputAttributes(['data-lpignore' => 'true', 'data-1p-ignore' => 'true'])
                     ->required(fn (string $operation) => $operation === 'create')
                     ->helperText('Boş bırakılırsa değişmez'),
             ]),
