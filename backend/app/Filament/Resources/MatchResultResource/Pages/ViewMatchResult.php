@@ -70,6 +70,8 @@ class ViewMatchResult extends ViewRecord
                 'name' => $r->user?->nickname ?? '—',
                 'won' => (bool) $r->won,
                 'pr' => $gnubg,
+                'checker_pr' => $r->gnubg_checker_pr, // Pul Oyunu PR (gnubg)
+                'cube_pr' => $r->gnubg_cube_pr,       // Küp PR (gnubg; küp kararı yoksa null)
                 'stored_pr' => $stored,
                 'luck' => $r->luck_emg, // gnubg luck equity (tek yetkili şans; istemci HAM luck kaldırıldı)
                 'rating_before' => $r->rating_before,

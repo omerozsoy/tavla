@@ -34,6 +34,17 @@
                     <dt class="text-gray-500 dark:text-gray-400">PR</dt>
                     <dd class="font-semibold text-gray-900 dark:text-white">{{ $pr($d['self']['pr']) }}</dd>
                 </div>
+                {{-- Pul (checker) PR + Küp (cube) PR ayrı ayrı (gnubg). Küp kararı yoksa Küp PR gizli. --}}
+                <div class="flex justify-between gap-2 pl-3 text-xs">
+                    <dt class="text-gray-400 dark:text-gray-500">Pul PR</dt>
+                    <dd class="font-medium text-gray-600 dark:text-gray-300">{{ $pr($d['self']['checker_pr']) }}</dd>
+                </div>
+                @if ($d['self']['cube_pr'] !== null)
+                    <div class="flex justify-between gap-2 pl-3 text-xs">
+                        <dt class="text-gray-400 dark:text-gray-500">Küp PR</dt>
+                        <dd class="font-medium text-gray-600 dark:text-gray-300">{{ $pr($d['self']['cube_pr']) }}</dd>
+                    </div>
+                @endif
                 <div class="flex justify-between gap-2">
                     <dt class="text-gray-500 dark:text-gray-400">Puan</dt>
                     <dd class="font-medium text-gray-700 dark:text-gray-200">
