@@ -9647,34 +9647,45 @@ html.fs-active .account-bar {
   background: rgba(255, 255, 255, 0.13);
   color: #fff;
 }
+/* Ayarlar artık TEK gruplanmış kart (iOS-ayarlar + oyun-HUD): kıl-çizgi ayraçlı satırlar.
+   Eski "üst üste kalın kutular" düzeni mobilde dev gibi görünüyordu -> yoğun, premium panel. */
 .gm-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.022));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
-/* Ayar satırı: koyu yüzeyli kart (native buton — yapısal kontrol) */
+/* Ayar satırı: grup kartı içinde şeffaf, altı kıl-çizgi ayraçlı (native buton — yapısal kontrol) */
 .gm-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  padding: 13px 15px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 0;
   color: var(--tv-white);
   cursor: pointer;
   text-align: left;
-  font-size: 0.98rem;
+  font-size: 0.96rem;
   font-weight: 400;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+  transition: background 0.15s ease;
+}
+.gm-row:last-child {
+  border-bottom: 0;
 }
 .gm-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.gm-row:active {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.13);
 }
 .gm-label {
   min-width: 0;
@@ -9724,6 +9735,7 @@ html.fs-active .account-bar {
 .gm-switch.on {
   background: var(--accent);
   border-color: var(--accent);
+  box-shadow: 0 0 11px -2px color-mix(in srgb, var(--accent) 75%, transparent);
 }
 .gm-switch.on .gm-knob {
   left: 21px;
@@ -9734,9 +9746,8 @@ html.fs-active .account-bar {
   gap: 10px;
 }
 .gm-volrow:hover {
-  /* Slider satırı buton değil -> hover vurgusu yok, sabit kalsın. */
-  background: rgba(255, 255, 255, 0.045);
-  border-color: rgba(255, 255, 255, 0.07);
+  /* Slider satırı buton değil -> hover vurgusu yok (grup kartı içinde şeffaf kalır). */
+  background: transparent;
 }
 .gm-vol-ic {
   flex: none;
@@ -9927,6 +9938,89 @@ html.fs-active .account-bar {
   background: rgba(214, 64, 52, 0.13);
   border-color: rgba(214, 64, 52, 0.42);
   color: #ffb3ab;
+}
+
+/* MOBİL: oyun-içi menü kompakt (kullanıcı: "dev gibi"). Başlık/satır/toggle/aksiyonlar
+   yoğunlaşır; dokunma hedefleri satır padding+metin ile >=44px korunur. */
+@media (max-width: 600px) {
+  .game-menu {
+    width: min(328px, 87vw);
+    gap: 13px;
+    padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+      calc(12px + env(safe-area-inset-bottom)) 12px;
+  }
+  .gm-head {
+    padding: 0 0 11px;
+  }
+  .gm-title {
+    font-size: 1rem;
+  }
+  .gm-title::before {
+    height: 16px;
+  }
+  .gm-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+  .gm-row {
+    padding: 11px 13px;
+    font-size: 0.9rem;
+  }
+  .gm-switch {
+    width: 38px;
+    height: 22px;
+  }
+  .gm-switch .gm-knob {
+    width: 16px;
+    height: 16px;
+  }
+  .gm-switch.on .gm-knob {
+    left: 19px;
+  }
+  .gm-chip {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+  .gm-actions {
+    gap: 8px;
+    padding-top: 11px;
+  }
+  .gm-circle {
+    min-height: 64px;
+    padding: 10px 6px;
+    gap: 6px;
+    border-radius: 13px;
+  }
+  .gm-circle-ic {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .gm-circle-lbl {
+    font-size: 0.82rem;
+  }
+}
+/* YATAY telefon (kısa): aksiyon kartları en büyük dikey yük -> iyice kısalt, menü taşmasın. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .game-menu {
+    gap: 11px;
+  }
+  .gm-head {
+    padding: 0 0 9px;
+  }
+  .gm-row {
+    padding: 9px 13px;
+  }
+  .gm-circle {
+    min-height: 54px;
+    padding: 8px 6px;
+    gap: 5px;
+  }
+  .gm-circle-ic {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 /* Animasyonlari kapat */
