@@ -129,14 +129,19 @@ class CacheMatchReviewJob implements ShouldQueue
                 }
                 $self = $hc === 'white' ? $prW : $prB;
                 $opp = $hc === 'white' ? $prB : $prW;
+                // SAHTE-0 KALKANI (AnalyzeMatchPrJob ile AYNI): skorlanan karar yoksa PR TANIMSIZ -> null
+                // (round(0)=0 YAZMA, meşru "—" satırını 0'a çevirmesin). opponent_pr = gnubg_opponent_pr birebir.
+                $selfPr = ($self['decisions'] ?? 0) > 0 ? round($self['pr'], 2) : null;
+                $oppPr = ($opp['decisions'] ?? 0) > 0 ? round($opp['pr'], 2) : null;
                 MatchResult::where('id', $row->id)->update([
-                    'gnubg_pr' => round($self['pr'], 2),
+                    'gnubg_pr' => $selfPr,
                     'gnubg_checker_pr' => $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null,
                     'gnubg_cube_pr' => $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null,
                     'pr_equity_lost' => round($self['equity_lost'], 4),
                     'pr_decisions' => $self['decisions'],
-                    'pr' => round($self['pr'], 2),
-                    'gnubg_opponent_pr' => round($opp['pr'], 2),
+                    'pr' => $selfPr,
+                    'gnubg_opponent_pr' => $oppPr,
+                    'opponent_pr' => $oppPr, // legacy fallback kolonu = otoriter opp PR (drift birikmesin)
                     'gnubg_opponent_checker_pr' => $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null,
                     'gnubg_opponent_cube_pr' => $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null,
                     'gnubg_pr_at' => now(),

@@ -35,11 +35,12 @@ class PrFromReview extends Command
         if ($this->option('since')) {
             $q->where('created_at', '>=', (string) $this->option('since'));
         }
-        $rows = $q->orderByDesc('id')->limit((int) $this->option('limit'))->get();
-
-        $this->info(($apply ? 'UYGULA' : 'DRY-RUN').': '.$rows->count().' satır (gnubg_review olan)');
+        $this->info(($apply ? 'UYGULA' : 'DRY-RUN').': '.$q->count().' satır (gnubg_review olan)');
         $fixed = 0;
         $skipped = 0;
+        // chunkById: uzak DB'de ~771KB'lık review bloklarını tek get() ile çekmek OOM + "packets out of
+        // order" veriyordu -> küçük partiler, her parti sonrası bellek serbest bırakılır.
+        $q->orderBy('id')->chunkById(150, function ($rows) use ($orch, $apply, &$fixed, &$skipped) {
         foreach ($rows as $r) {
             $review = json_decode((string) $r->gnubg_review, true);
             $log = is_array($review['log'] ?? null) ? $review['log'] : null;
@@ -52,25 +53,26 @@ class PrFromReview extends Command
             $self = $orch->prFromReviewLog($log, $hc);
             $opp = $orch->prFromReviewLog($log, $hc === 'white' ? 'black' : 'white');
 
-            $newPr = round($self['pr'], 2);
+            // SAHTE-0 KALKANI (AnalyzeMatchPrJob ile AYNI konvansiyon): skorlanan karar yoksa (decisions=0)
+            // PR TANIMSIZ -> null. round(0)=0 YAZMA; yoksa 81/88 meşru "—" satırı sahte 0'a dönüp bozulur.
+            $newPr = ($self['decisions'] ?? 0) > 0 ? round($self['pr'], 2) : null;
             $oldPr = $r->gnubg_pr !== null ? round((float) $r->gnubg_pr, 2) : null;
-            // LEGACY opponent_pr = otoriter review-opp PR (gnubg_opponent_pr ile aynı). Backfill bunu da
-            // senkron tutmalı; yoksa gnubg_pr doğruyken opponent_pr stale birikir (frontend fallback kolonu).
-            $newOppPr = round($opp['pr'], 2);
+            // LEGACY opponent_pr = otoriter opp PR (gnubg_opponent_pr ile birebir). Backfill bunu da senkron
+            // tutmalı; yoksa gnubg_pr doğruyken opponent_pr stale birikir (frontend fallback kolonu).
+            $newOppPr = ($opp['decisions'] ?? 0) > 0 ? round($opp['pr'], 2) : null;
             $oldOppPr = $r->opponent_pr !== null ? round((float) $r->opponent_pr, 2) : null;
-            // Satırı işle: self PR değiştiyse VEYA legacy opponent_pr otoriterden saptıysa.
-            $diff = $oldPr === null || abs($newPr - $oldPr) > 0.01
-                || $oldOppPr === null || abs($newOppPr - $oldOppPr) > 0.01;
-            if (! $diff) {
+            // null<->değer geçişi de fark sayılır; ikisi de doluysa 0.01 eşiği.
+            $prDiff = (($oldPr === null) !== ($newPr === null)) || ($newPr !== null && abs($newPr - $oldPr) > 0.01);
+            $oppDiff = (($oldOppPr === null) !== ($newOppPr === null)) || ($newOppPr !== null && abs($newOppPr - $oldOppPr) > 0.01);
+            if (! $prDiff && ! $oppDiff) {
                 $skipped++;
 
                 continue;
             }
-            $this->line(sprintf('#%d %s: PR %s -> %.2f | oppPR %s -> %.2f | cube %s -> %s',
-                $r->id, $r->room_code, $oldPr === null ? '—' : number_format($oldPr, 2), $newPr,
-                $oldOppPr === null ? '—' : number_format($oldOppPr, 2), $newOppPr,
-                $r->gnubg_cube_pr === null ? '—' : number_format((float) $r->gnubg_cube_pr, 2),
-                $self['cube_pr'] === null ? '—' : number_format($self['cube_pr'], 2)));
+            $f2 = static fn ($v) => $v === null ? '—' : number_format((float) $v, 2);
+            $this->line(sprintf('#%d %s: PR %s -> %s | oppPR %s -> %s | cube %s -> %s',
+                $r->id, $r->room_code, $f2($oldPr), $f2($newPr), $f2($oldOppPr), $f2($newOppPr),
+                $f2($r->gnubg_cube_pr), $f2($self['cube_pr'])));
 
             if ($apply) {
                 MatchResult::where('id', $r->id)->update([
@@ -91,6 +93,7 @@ class PrFromReview extends Command
             }
             $fixed++;
         }
+        });
         $this->info(($apply ? 'Düzeltildi' : 'Düzeltilecek').": $fixed | atlandı: $skipped");
 
         return self::SUCCESS;
