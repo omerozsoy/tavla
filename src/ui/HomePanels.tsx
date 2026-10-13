@@ -141,10 +141,10 @@ export function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: st
   const p2Feat = !!(p2Top.prRank || p2Top.ratingRank)
   const cat = liveCat(m)
   const featured = p1Feat || p2Feat
-  // Kırmızı köşe kurdelesi: PR ilk-3 ("PR n.") öncelikli, yoksa rating ilk-3 ("Rating n.").
+  // Kırmızı köşe kurdelesi: PR ilk-3 ("PR n.") öncelikli, yoksa puan ilk-3 ("Puan n.").
   const prRank = p1Top.prRank || p2Top.prRank
   const ratingRank = p1Top.ratingRank || p2Top.ratingRank
-  const ribbonText = prRank ? `PR ${prRank}.` : ratingRank ? `Rating ${ratingRank}.` : null
+  const ribbonText = prRank ? `PR ${prRank}.` : ratingRank ? `Puan ${ratingRank}.` : null
   return (
     <button
       className={`live-row${featured ? ' live-row--featured' : ''}`}

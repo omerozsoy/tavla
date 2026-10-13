@@ -13206,47 +13206,67 @@ button.acct-row-logout:hover:not(:disabled) {
   70%  { opacity: 1; }
   100% { transform: translateY(-64px) scale(1.1); opacity: 0; }
 }
-/* PR ilk-3 maçı: sağ üst köşe kırmızı kurdele. Featured satır position:relative +
-   overflow:hidden olduğu için kurdele köşeye temiz kırpılır. */
+/* PR ilk-3 maçı: sağ-üstten sarkan kırmızı "parşömen/scroll" banner.
+   Üstte taşan koyu rulo dudak + dudak altında iki koyu katlanma üçgeni +
+   parlak kırmızı gövde + yuvarlak alt + yumuşak gölge. */
 .lm-ribbon {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 84px;
-  height: 84px;
-  overflow: hidden;
+  right: 12px;
   z-index: 3;
   pointer-events: none;
+  line-height: 0;
 }
 .lm-ribbon b {
-  position: absolute;
-  top: 13px;
-  right: -32px;
-  width: 120px;
-  padding: 3px 0;
-  background: #C9563F;
-  transform: rotate(45deg);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  position: relative;
+  display: inline-block;
+  min-width: 46px;
+  margin-top: 8px;
+  padding: 6px 18px 9px;
   text-align: center;
+  /* gövde: ortası parlak kırmızı (radial glow) → kenarlar koyu */
+  background: radial-gradient(
+    ellipse 120% 95% at 50% 22%,
+    #ef3030 0%,
+    #d9211f 55%,
+    #b81917 100%
+  );
+  /* eliptik alt yarıçap = "draped" (sarkan kumaş) kavis */
+  border-radius: 2px 2px 14px 14px / 2px 2px 22px 22px;
   color: #fff;
-  font-size: 0.6rem;
+  font-size: 0.52rem;
   font-weight: 400;
   font-style: normal;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   white-space: nowrap;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.28));
 }
-/* uçlardaki koyu "katlanma" üçgenleri (kurdele kumaşın arkaya dönmesi) */
-.lm-ribbon b::before,
+/* üstte iki yana taşan tam-en koyu bar (parşömenin üst kenarı) */
+.lm-ribbon b::before {
+  content: '';
+  position: absolute;
+  left: -13px;
+  right: -13px;
+  top: -6px;
+  height: 10px;
+  background: linear-gradient(180deg, #8f1a16, #6f1410);
+  border-radius: 3px;
+  z-index: -1;
+}
+/* bar uçlarındaki aşağı-dönük iki katlanma kuyruğu (kumaş arkaya kıvrılıyor) */
 .lm-ribbon b::after {
   content: '';
   position: absolute;
-  bottom: -6px;
-  border-style: solid;
-  border-color: #8f3626 transparent transparent transparent;
+  left: -13px;
+  right: -13px;
+  top: 4px;
+  height: 9px;
+  background:
+    linear-gradient(225deg, #5a110d 50%, transparent 51%) left top / 9px 9px no-repeat,
+    linear-gradient(135deg, #5a110d 50%, transparent 51%) right top / 9px 9px no-repeat;
+  z-index: -2;
 }
-.lm-ribbon b::before { left: 0;  border-width: 6px 6px 0 0; }
-.lm-ribbon b::after  { right: 0; border-width: 6px 0 0 6px; }
 @media (hover: hover) and (pointer: fine) {
   .live-row--featured:hover {
     border-color: var(--coin-gold);
