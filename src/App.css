@@ -7879,6 +7879,27 @@ html[data-board='yilbasi'] .checker.black {
     height: 16px !important;
   }
 }
+/* Dar telefon (<=480px): butonlar tahtadan rol caliyordu (cok buyuk) -> gorsel kucult.
+   DOKUNMA alani gorunmez ::after ile 44px'te tutulur (Apple HIG / WCAG 2.5.5). */
+@media (max-width: 480px) {
+  .center-overlay [data-slot='button'] {
+    position: relative;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 11px;
+    font-size: 0.82rem;
+    border-radius: var(--radius-md);
+  }
+  .center-overlay [data-slot='button'] svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .center-overlay [data-slot='button']::after {
+    content: '';
+    position: absolute;
+    inset: -5px -7px; /* gorunus 36px kalir, dokunma hedefi ~46px */
+  }
+}
 /* Yatay telefon (kisa): iyice kompakt. */
 @media (max-height: 560px) and (orientation: landscape) {
   .center-overlay [data-slot='button'] {
@@ -9154,8 +9175,9 @@ button.move-row:focus-visible {
     display: inline-flex;
     flex: 0 0 auto;
     color: var(--accent-text);
-    transform: rotate(90deg);
-    animation: rotate-wiggle 1.8s ease-in-out infinite;
+    transform-origin: center;
+    /* device-mobile-rotated ikonu 5sn'de bir yan dönüp düzelir -> "telefonu yan çevir" anlatımı. */
+    animation: rotate-tip-cue 5s ease-in-out infinite;
   }
   .rotate-tip-text {
     flex: 1 1 auto;
@@ -9187,6 +9209,12 @@ button.move-row:focus-visible {
     opacity: 1;
     transform: none;
   }
+}
+/* "Telefonu yan çevir" ikonu: çoğu zaman dik dursun, 5sn'de bir yana dönüp düzelsin. */
+@keyframes rotate-tip-cue {
+  0%, 60% { transform: rotate(0deg); }
+  72%, 88% { transform: rotate(90deg); }
+  100% { transform: rotate(0deg); }
 }
 
 /* (Kaldirildi: #root.force-landscape "manuel yatay" duzeni. Sinif hicbir yerde EKLENMIYORDU —
@@ -9497,12 +9525,18 @@ html.fs-active .account-bar {
   }
 }
 /* Dikey (telefon + tablet): sag-orta konumda bear-off tepsisinin USTUNE biniyordu (pul toplarken
-   yanlis dokunma) -> sag ust koseye, tam ekran dugmesinin soluna al (tahtanin ustundeki bos alan). */
+   yanlis dokunma) -> EN SAG UST KOSE (kullanici istegi). Tam ekran dugmesi (varsa) soluna kayar;
+   iOS'ta tam ekran API yok -> dugme hic cizilmez, menu kosede yalniz kalir (eski 58px'te saga bosluk
+   kaliyordu). */
 @media (max-width: 900px) and (orientation: portrait) {
   .game-ham {
     top: calc(12px + env(safe-area-inset-top));
-    right: calc(58px + env(safe-area-inset-right));
+    right: calc(12px + env(safe-area-inset-right));
     transform: none;
+  }
+  /* Tam ekran butonu menunun SOLUNA (menu kosede kalsin). */
+  .fs-toggle {
+    right: calc(58px + env(safe-area-inset-right));
   }
 }
 .game-ham:hover {
