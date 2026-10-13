@@ -111,37 +111,62 @@ class AppServiceProvider extends ServiceProvider
         TextColumn::configureUsing(fn (TextColumn $c) => $c->timezone('Europe/Istanbul'));
         TextEntry::configureUsing(fn (TextEntry $c) => $c->timezone('Europe/Istanbul'));
 
-        // Sifre sifirlama linki SPA'ya (kok sayfaya) gitsin
-        ResetPassword::createUrlUsing(function ($notifiable, string $token) {
-            $base = rtrim((string) config('app.frontend_url', 'https://www.tavlatv.com'), '/');
+        // Çoklu-domain: e-posta linkleri + dili ZİYARET EDİLEN markaya göre (request host).
+        // tavlatv.com -> Türkçe/TavlaTV; gammontv.com -> İngilizce/GammonTV. CLI/kuyruk -> varsayılan.
+        $brandBase = static function (): string {
+            $b = \App\Support\Brand::current();
+
+            return rtrim((string) ($b['origin'] ?? config('app.frontend_url', 'https://www.tavlatv.com')), '/');
+        };
+
+        // Sifre sifirlama linki SPA'ya (kok sayfaya) gitsin — marka domaininde.
+        ResetPassword::createUrlUsing(function ($notifiable, string $token) use ($brandBase) {
             $email = urlencode($notifiable->getEmailForPasswordReset());
-            return "{$base}/sifre-sifirla?token={$token}&email={$email}";
+            return "{$brandBase()}/sifre-sifirla?token={$token}&email={$email}";
         });
 
-        // E-posta dogrulama e-postasi: markali HTML sablon (logo + terracotta)
+        // E-posta dogrulama e-postasi: markali HTML sablon (logo + terracotta), marka diliyle.
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
+            $b = \App\Support\Brand::current();
+            $en = ($b['locale'] ?? 'tr') === 'en';
+            $name = (string) ($b['name'] ?? 'TavlaTV');
+
             return (new MailMessage)
-                ->subject('TavlaTV — E-posta Adresini Doğrula')
-                ->view('emails.message', [
+                ->subject($en ? "{$name} — Verify Your Email" : "{$name} — E-posta Adresini Doğrula")
+                ->view('emails.message', $en ? [
+                    'heading' => 'Hello!',
+                    'intro' => "Verify your email address to activate your {$name} account. Click the button below.",
+                    'buttonText' => 'Verify Email Address',
+                    'url' => $url,
+                    'outro' => 'If you did not create an account, you can safely ignore this email.',
+                ] : [
                     'heading' => 'Merhaba!',
-                    'intro' => 'TavlaTV hesabını etkinleştirmek için e-posta adresini doğrula. Aşağıdaki butona tıkla.',
+                    'intro' => "{$name} hesabını etkinleştirmek için e-posta adresini doğrula. Aşağıdaki butona tıkla.",
                     'buttonText' => 'E-posta Adresini Doğrula',
                     'url' => $url,
                     'outro' => 'Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
                 ]);
         });
 
-        // Sifre sifirlama e-postasi: markali HTML sablon
-        ResetPassword::toMailUsing(function ($notifiable, string $token) {
-            $base = rtrim((string) config('app.frontend_url', 'https://www.tavlatv.com'), '/');
+        // Sifre sifirlama e-postasi: markali HTML sablon, marka diliyle.
+        ResetPassword::toMailUsing(function ($notifiable, string $token) use ($brandBase) {
+            $b = \App\Support\Brand::current();
+            $en = ($b['locale'] ?? 'tr') === 'en';
+            $name = (string) ($b['name'] ?? 'TavlaTV');
             $email = urlencode($notifiable->getEmailForPasswordReset());
-            $url = "{$base}/sifre-sifirla?token={$token}&email={$email}";
+            $url = "{$brandBase()}/sifre-sifirla?token={$token}&email={$email}";
 
             return (new MailMessage)
-                ->subject('TavlaTV — Şifre Sıfırlama')
-                ->view('emails.message', [
+                ->subject($en ? "{$name} — Password Reset" : "{$name} — Şifre Sıfırlama")
+                ->view('emails.message', $en ? [
+                    'heading' => 'Hello!',
+                    'intro' => "We received a password reset request for your {$name} account. Click the button below to set a new password.",
+                    'buttonText' => 'Reset Password',
+                    'url' => $url,
+                    'outro' => 'This link expires after a while. If you did not request this, no action is needed.',
+                ] : [
                     'heading' => 'Merhaba!',
-                    'intro' => 'TavlaTV hesabın için şifre sıfırlama isteği aldık. Aşağıdaki butona tıklayarak yeni şifreni belirle.',
+                    'intro' => "{$name} hesabın için şifre sıfırlama isteği aldık. Aşağıdaki butona tıklayarak yeni şifreni belirle.",
                     'buttonText' => 'Şifreyi Sıfırla',
                     'url' => $url,
                     'outro' => 'Bu bağlantı bir süre sonra geçersiz olur. Bu isteği sen yapmadıysan herhangi bir şey yapmana gerek yok.',

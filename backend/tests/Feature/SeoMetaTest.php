@@ -181,4 +181,75 @@ class SeoMetaTest extends TestCase
             ->assertSee('"@type":"WebPage"', false)
             ->assertSee('"isPartOf":{"@type":"WebSite"', false);
     }
+
+    // ───────────── Çoklu-domain (GammonTV / İngilizce) ─────────────
+
+    public function test_brand_resolves_from_host(): void
+    {
+        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('www.tavlatv.com'));
+        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('tavlatv.com'));
+        $this->assertSame('gammon', \App\Support\Brand::keyFromHost('www.gammontv.com'));
+        $this->assertSame('gammon', \App\Support\Brand::keyFromHost('gammontv.com'));
+        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('localhost')); // varsayılan
+        $this->assertSame('en', \App\Support\Brand::fromHost('www.gammontv.com')['locale']);
+        $this->assertSame('tr', \App\Support\Brand::fromHost('www.tavlatv.com')['locale']);
+    }
+
+    public function test_gammon_host_serves_english_branded_landing(): void
+    {
+        $this->get('http://www.gammontv.com/online-tavla')
+            ->assertOk()
+            ->assertSee('Play Backgammon Online - Free Live Backgammon | GammonTV', false)
+            ->assertSee('<html lang="en"', false)
+            ->assertSee('property="og:locale" content="en_US"', false)
+            ->assertSee('rel="canonical" href="https://www.gammontv.com/online-tavla"', false)
+            ->assertSee('property="og:site_name" content="GammonTV"', false)
+            ->assertSee('rel="manifest" href="/manifest.en.webmanifest"', false)
+            ->assertSee('Play Backgammon Online</a>', false); // noscript nav İngilizce
+        // NOT: www.tavlatv.com çapraz-domain hreflang'da (tr alternatifi) KASITLI görünür — leak değil.
+    }
+
+    public function test_tavla_host_still_turkish_and_unchanged(): void
+    {
+        // Regresyon: varsayılan marka (tavlatv) eskisi gibi Türkçe + tavlatv kanonik.
+        $this->get('http://www.tavlatv.com/online-tavla')
+            ->assertOk()
+            ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false)
+            ->assertSee('<html lang="tr"', false)
+            ->assertSee('rel="canonical" href="https://www.tavlatv.com/online-tavla"', false)
+            ->assertDontSee('gammontv.com', false);
+    }
+
+    public function test_gammon_homepage_is_english(): void
+    {
+        $this->get('http://www.gammontv.com/')
+            ->assertOk()
+            ->assertSee('GammonTV — Play Backgammon Online Free | Live Multiplayer', false)
+            ->assertSee('<html lang="en"', false)
+            ->assertSee('"name":"GammonTV"', false)
+            ->assertSee('rel="canonical" href="https://www.gammontv.com/"', false);
+    }
+
+    public function test_cross_domain_hreflang_on_standard_route(): void
+    {
+        $this->get('http://www.gammontv.com/turnuva-takvimi')
+            ->assertOk()
+            ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/turnuva-takvimi"', false)
+            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/turnuva-takvimi"', false);
+    }
+
+    public function test_host_aware_robots_and_sitemap(): void
+    {
+        $this->get('http://www.gammontv.com/robots.txt')
+            ->assertOk()
+            ->assertSee('Sitemap: https://www.gammontv.com/sitemap.xml', false);
+
+        $this->get('http://www.tavlatv.com/robots.txt')
+            ->assertOk()
+            ->assertSee('Sitemap: https://www.tavlatv.com/sitemap.xml', false);
+
+        $this->get('http://www.gammontv.com/sitemap.xml')
+            ->assertOk()
+            ->assertSee('<loc>https://www.gammontv.com/online-tavla</loc>', false);
+    }
 }

@@ -15,6 +15,8 @@
  * marka renkleri kullanilir ( or. kiremit zemin uzerinde).
  */
 
+import { BRAND } from '../brand'
+
 type Tone = 'auto' | 'light' | 'dark' | 'brick' | 'mono'
 
 const POINT: Record<Exclude<Tone, 'auto'>, { up: string; down: string; text: string; downOpacity?: number }> = {
@@ -33,6 +35,7 @@ export function TavlaTvLogo({
   tone = 'auto',
   color,
   className,
+  text,
 }: {
   /** font-size. Sayi -> px; string -> dogrudan CSS (or. 'calc(var(--col)*.6)'). */
   size?: number | string
@@ -40,14 +43,29 @@ export function TavlaTvLogo({
   /** Verilirse ucgenler + harfler tek renk olur (watermark: var(--wm-color)). */
   color?: string
   className?: string
+  /** Wordmark metni; varsayilan markadan (TAVLATV / GAMMONTV). 'A'=yukari, 'V'=asagi ucgen. */
+  text?: string
 }) {
   const c = tone === 'auto' ? null : POINT[tone]
   const up = color ?? (c ? c.up : 'var(--accent)')
   const down = color ?? (c ? c.down : 'var(--text)')
-  const text = color ?? (c ? c.text : 'var(--text)')
+  const textColor = color ?? (c ? c.text : 'var(--text)')
 
-  const point = (dir: 'up' | 'down') => (
+  // Gercek marka logosu (gammon) tanimlandiysa wordmark yerine <img>.
+  if (BRAND.logoSrc) {
+    return (
+      <img
+        src={BRAND.logoSrc}
+        alt={BRAND.name}
+        className={className}
+        style={{ height: size, width: 'auto', display: 'inline-block' }}
+      />
+    )
+  }
+
+  const point = (dir: 'up' | 'down', key: number) => (
     <span
+      key={key}
       aria-hidden
       style={{
         width: `${(CAP * POINT_RATIO).toFixed(3)}em`,
@@ -63,11 +81,15 @@ export function TavlaTvLogo({
     />
   )
 
+  // Harf harf: 'A' -> yukari ucgen (aksan), 'V' -> asagi ucgen, digerleri duz harf.
+  // "TAVLATV" -> T ▲ ▼ L ▲ T ▼ (eski gorunumle birebir); "GAMMONTV" -> G ▲ MMON T ▼.
+  const chars = (text ?? BRAND.logoText).split('')
+
   return (
     <span
       className={className}
       role="img"
-      aria-label="TavlaTv"
+      aria-label={BRAND.name}
       style={{
         display: 'inline-flex',
         alignItems: 'baseline',
@@ -77,16 +99,12 @@ export function TavlaTvLogo({
         letterSpacing: '.02em',
         lineHeight: 1,
         fontSize: size,
-        color: text,
+        color: textColor,
       }}
     >
-      <span>T</span>
-      {point('up')}
-      {point('down')}
-      <span>L</span>
-      {point('up')}
-      <span>T</span>
-      {point('down')}
+      {chars.map((ch, i) =>
+        ch === 'A' ? point('up', i) : ch === 'V' ? point('down', i) : <span key={i}>{ch}</span>,
+      )}
     </span>
   )
 }
@@ -126,7 +144,7 @@ export function TavlaTvMark({
   return (
     <span
       role="img"
-      aria-label="TavlaTv"
+      aria-label={BRAND.name}
       style={{
         width: size,
         height: size,

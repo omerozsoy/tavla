@@ -75,6 +75,7 @@ import { DivisionChip } from './ui/Badges'
 import { useSwapStones } from './ui/pieceColors'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
+import { BRAND } from './brand'
 import DiceRow, { Die } from './ui/Dice'
 import Auth from './ui/Auth'
 import Lobby from './ui/Lobby'
@@ -201,15 +202,22 @@ const INFO_URL_TAB: Record<string, InfoTab> = {
 
 // Rota bazli sekme/SEO basligi. Ana sayfa (bos slug) index.html'deki varsayilana doner.
 // Hukuki sayfalarin basligini LegalView (page.seo_title) yonetir -> LEGAL_SLUGS atlanir.
-const DEFAULT_DOC_TITLE = 'TavlaTv - Ücretsiz Online Tavla Oyna | Bedava Tavla'
+// Çoklu-domain: varsayılan sekme başlığı + açıklama markaya (domain) göre. GammonTV=İngilizce.
+const DEFAULT_DOC_TITLE =
+  BRAND.key === 'gammon'
+    ? 'GammonTV — Play Backgammon Online Free | Live Multiplayer'
+    : 'TavlaTv - Ücretsiz Online Tavla Oyna | Bedava Tavla'
 const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
   'uyelik-sozlesmesi', 'sifre-sifirla',
 ])
-const SITE_ORIGIN = 'https://www.tavlatv.com'
-// Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni.
+// Kanonik origin = ziyaret edilen marka (eskiden sabit tavlatv.com). Canonical/og:url per-brand.
+const SITE_ORIGIN = BRAND.origin
+// Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni (markaya göre).
 const DEFAULT_DESC =
-  'Ücretsiz online tavla oyna. Gerçek rakiplerle, arkadaşınla veya yapay zekâya karşı tavla oynayabilir; turnuvalara katılıp maçlarını analiz edebilirsin.'
+  BRAND.key === 'gammon'
+    ? 'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.'
+    : 'Ücretsiz online tavla oyna. Gerçek rakiplerle, arkadaşınla veya yapay zekâya karşı tavla oynayabilir; turnuvalara katılıp maçlarını analiz edebilirsin.'
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
@@ -355,13 +363,84 @@ const SEO_DESCS: Record<string, string> = {
     'Adil zar: kanıtlanabilir rastgelelik (CSPRNG) nasıl çalışır, test alanı ve Ki-Kare doğrulaması.',
 }
 
+// İngilizce (GammonTV) sekme/SEO başlıkları. Backend App\Support\SeoMeta::META_EN ile SENKRON
+// (sunucu, crawler için otoriter <title>'ı aynı metinlerle yazar). Burada olmayan rota İngilizce
+// DEFAULT_DOC_TITLE'a düşer — gammon'da ASLA Türkçe başlık gösterilmez.
+const SEO_TITLES_EN: Record<string, string> = {
+  'online-tavla': 'Play Backgammon Online - Free Live Backgammon | GammonTV',
+  'tavla-oyna': 'Play Backgammon - Free Online Backgammon Game | GammonTV',
+  'backgammon': 'Play Backgammon Online Free - Live Multiplayer | GammonTV',
+  'tavla-turnuvasi-organizasyonu': 'Backgammon Tournament Organization | Corporate, Civic, Retail | GammonTV',
+  'kurumsal-tavla-turnuvasi': 'Corporate Backgammon Tournament Organization | GammonTV',
+  'belediye-tavla-turnuvasi': 'Municipal Backgammon Tournament Organization | GammonTV',
+  'avm-tavla-turnuvasi': 'Shopping Mall Backgammon Tournament Organization | GammonTV',
+  'iletisim': 'Contact | GammonTV',
+  'tek-oyun': 'Single-Player Backgammon | GammonTV',
+  'yeni-oyun': 'Play an Online Backgammon Match | GammonTV',
+  'yz-ile-oyna': 'Play Backgammon Against AI | GammonTV',
+  'arkadasinla-oyna': 'Play Backgammon With a Friend | GammonTV',
+  'online-turnuvalar': 'Online Backgammon Tournaments | GammonTV',
+  'lider-tablosu': 'Leaderboard — Top Backgammon Players | GammonTV',
+  'uyelik': 'Membership and Premium | GammonTV',
+  'magaza': 'Store | GammonTV',
+  'turnuva-takvimi': 'Backgammon Tournament Calendar | GammonTV',
+  'kulupler': 'Backgammon Clubs | GammonTV',
+  'haberler': 'Backgammon News | GammonTV',
+  'makaleler': 'Backgammon Articles | GammonTV',
+  'tavla-magazin': 'Backgammon Magazine | GammonTV',
+  'nasil-oynanir': 'How to Play Backgammon? Rules and Guide | GammonTV',
+  'tavla-rehberi': 'Backgammon Guide — Strategies and Tips | GammonTV',
+  'turnuva-kurallari': 'Backgammon Tournament Rules — Official Rules | GammonTV',
+  'sikca-sorulan-sorular': 'Frequently Asked Questions About Backgammon | GammonTV',
+  'pozisyon-analizi': 'Backgammon Position Analysis | GammonTV',
+  'mat-analiz': 'Backgammon Match Analysis (.mat) | GammonTV',
+  'mac-analizleri': 'My Match Analyses | GammonTV',
+  'hata-gunlugu': 'Error Log | GammonTV',
+  'sans-carki': 'Wheel of Fortune | GammonTV',
+  'zar-slotu': 'Dice Slot | GammonTV',
+  'bahane-makinesi': 'Backgammon Excuse Machine | GammonTV',
+  'kiz-tavlasi': "Girls' Backgammon — Play Online | GammonTV",
+  'bilgi/hakkinda': 'About Us | GammonTV',
+  'bilgi/hizmetler': 'Services | GammonTV',
+  'bilgi/sozluk': 'Backgammon Glossary — Terms | GammonTV',
+  'bilgi/rutbeler': 'Backgammon Ranks | GammonTV',
+  'bilgi/puanlama': 'Scoring and PR (Performance) | GammonTV',
+  'bilgi/basarilarim': 'Badges and Achievements | GammonTV',
+  'bilgi/adil-zar': 'Fair Dice — Provable Randomness | GammonTV',
+}
+
+const SEO_DESCS_EN: Record<string, string> = {
+  'online-tavla': 'Play free online backgammon! Live matches against real opponents, a powerful AI bot, tournaments and match analysis (PR). No sign-up required — start right in your browser.',
+  'tavla-oyna': 'Play free backgammon! A free, no-registration backgammon game that opens instantly in your browser. Practice against the AI, or play online with a friend or real opponents.',
+  'backgammon': 'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.',
+  'nasil-oynanir': 'How do you play backgammon? A beginner-friendly guide to the rules, starting setup, and how the dice and checkers move.',
+  'tavla-rehberi': 'Backgammon guide: opening strategy, using the doubling cube, winning tactics, and gammon and backgammon scoring. Original articles to sharpen your game.',
+  'turnuva-kurallari': 'The international backgammon tournament rules: format, timing, dice and cube rules, illegal moves, and dispute resolution. The complete official rules text.',
+  'sikca-sorulan-sorular': 'Clear questions and answers about backgammon rules, the doubling cube, match play, different backgammon variants and the GammonTV rating system.',
+  'online-turnuvalar': 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.',
+  'lider-tablosu': 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.',
+  'yz-ile-oyna': 'Play free online backgammon against a powerful neural-network AI bot. Choose a level, analyze your moves and improve your game.',
+  'turnuva-takvimi': 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.',
+  'kulupler': 'Discover backgammon clubs, join a club or start your own. The GammonTV club directory.',
+  'haberler': 'The latest news from the backgammon world, tournament results and GammonTV announcements.',
+  'makaleler': 'Backgammon strategy, tactics and analysis articles. Read and learn to play backgammon better.',
+  'pozisyon-analizi': 'A backgammon position analysis tool: analyze any backgammon position for free with the GammonTV Engine and neural network.',
+  'mat-analiz': 'Backgammon match analysis: upload your .mat file and see your error rate (PR) and the best moves, move by move.',
+  'uyelik': 'GammonTV Premium membership: ad-free play, advanced analysis and exclusive perks. Explore the membership options.',
+  'bilgi/hakkinda': 'About GammonTV: a free online backgammon platform. Our mission, our features and how to reach us.',
+  'bilgi/sozluk': 'Backgammon glossary: backgammon terms and their meanings — gammon, backgammon, the doubling cube, pip and more.',
+}
+
 // Rota bazli SEO meta: once tam slug (ör. 'bilgi/hakkinda'), sonra ilk segment (ör.
 // 'haberler/<slug>' -> 'haberler') denenir; ikisi de yoksa ana sayfa varsayilanina doner.
+// Çoklu-domain: gammon'da İngilizce haritalar; eksikse İngilizce DEFAULT (Türkçe sızmaz).
 function seoLookup(slug: string): { title: string; desc: string } {
   const base = slug.split('/')[0]
+  const titles = BRAND.key === 'gammon' ? SEO_TITLES_EN : SEO_TITLES
+  const descs = BRAND.key === 'gammon' ? SEO_DESCS_EN : SEO_DESCS
   return {
-    title: SEO_TITLES[slug] || SEO_TITLES[base] || DEFAULT_DOC_TITLE,
-    desc: SEO_DESCS[slug] || SEO_DESCS[base] || DEFAULT_DESC,
+    title: titles[slug] || titles[base] || DEFAULT_DOC_TITLE,
+    desc: descs[slug] || descs[base] || DEFAULT_DESC,
   }
 }
 

@@ -2076,7 +2076,8 @@ class AuthController extends Controller
     // E-posta dogrulama linki (imzali). Basari/hata sonrasi SPA'ya yonlendirir.
     public function verifyEmail(Request $request, int $id, string $hash)
     {
-        $base = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+        // Çoklu-domain: doğrulama linki hangi markada tıklandıysa SPA'ya oraya dön.
+        $base = rtrim((string) (\App\Support\Brand::current()['origin'] ?? config('app.frontend_url', config('app.url'))), '/');
         $user = User::find($id);
         if (! $user || ! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
             return redirect("{$base}/?verified=0");

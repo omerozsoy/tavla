@@ -25,8 +25,76 @@ use Illuminate\Support\Facades\Schema;
  */
 final class SeoMeta
 {
-    /** Kanonik kök (apex -> www 301). Slug bununla birleşir: BASE . 'haberler'. */
-    private const BASE = 'https://www.tavlatv.com/';
+    /** Geçerli isteğin kanonik kökü (sonunda '/'); varsayılan TavlaTv. Çoklu-domain'de
+     *  istek host'una göre inject() tarafından güncellenir. Slug bununla birleşir. */
+    private static string $base = 'https://www.tavlatv.com/';
+
+    /** Geçerli isteğin markası (App\Support\Brand::fromHost çıktısı). */
+    private static array $brand = [
+        'key' => 'tavla', 'name' => 'TavlaTv', 'locale' => 'tr', 'og_locale' => 'tr_TR',
+        'origin' => 'https://www.tavlatv.com', 'manifest' => '/manifest.webmanifest', 'og_image' => '/og-image.jpg',
+    ];
+
+    /** Varsayılan marka mı (= TavlaTv/Türkçe)? Değilse İngilizce/gammon sunumu uygulanır. */
+    private static function isDefaultBrand(): bool
+    {
+        return (self::$brand['key'] ?? 'tavla') === (string) config('brands.default', 'tavla');
+    }
+
+    private static function brandLang(): string
+    {
+        return (string) (self::$brand['locale'] ?? 'tr');
+    }
+
+    /** Verilen marka anahtarının origin kökü (sonunda '/'); hreflang/sitemap çapraz-domain için. */
+    private static function originFor(string $key): string
+    {
+        $o = (string) config("brands.brands.$key.origin", self::$base);
+
+        return rtrim($o, '/').'/';
+    }
+
+    private static function brandName(): string
+    {
+        return (string) (self::$brand['name'] ?? 'TavlaTv');
+    }
+
+    // Marka-duyarlı tablo erişimi: varsayılan-dışı markada *_EN varsa onu, yoksa TR'ye düşer.
+    private static function metaRow(string $slug): ?array
+    {
+        if (! self::isDefaultBrand() && isset(self::META_EN[$slug])) {
+            return self::META_EN[$slug];
+        }
+
+        return self::META[$slug] ?? null;
+    }
+
+    private static function landingRow(string $slug): ?array
+    {
+        if (! self::isDefaultBrand() && isset(self::LANDING_EN[$slug])) {
+            return self::LANDING_EN[$slug];
+        }
+
+        return self::LANDING[$slug] ?? null;
+    }
+
+    private static function guideRow(string $slug): ?array
+    {
+        if (! self::isDefaultBrand() && isset(self::GUIDES_EN[$slug])) {
+            return self::GUIDES_EN[$slug];
+        }
+
+        return self::GUIDES[$slug] ?? null;
+    }
+
+    private static function makaleRow(string $slug): ?array
+    {
+        if (! self::isDefaultBrand() && isset(self::MAKALE_META_EN[$slug])) {
+            return self::MAKALE_META_EN[$slug];
+        }
+
+        return self::MAKALE_META[$slug] ?? null;
+    }
 
     /** Uygulama/hesap ekranları arama sonuçlarına girmemeli. */
     private const NOINDEX = [
@@ -372,6 +440,99 @@ final class SeoMeta
         'tavlaya-yeni-baslayanlar-rehberi' => ['Tavlaya Yeni Başlayanlar İçin Öğrenme Rehberi | TavlaTV', 'Tavlaya sıfırdan başlamak için kurallar, ilk stratejiler, sık hatalar ve pratik çalışma sırası.'],
     ];
 
+    // ───────────────────────── İngilizce (GammonTV) SEO tabloları ─────────────────────────
+    // Varsayılan-dışı marka (gammontv.com) için META/LANDING/GUIDES/MAKALE İngilizce karşılıkları.
+    // Eksik slug otomatik TR'ye düşer (metaRow/landingRow/...). AYNI anahtarlar kullanılır (URL
+    // slug'ları iki domainde de Türkçe'dir; yalnız sunulan dil değişir).
+
+    /** Ana sayfa (slug '') İngilizce meta: [title, desc, h1]. */
+    private const HOME_EN = [
+        'GammonTV — Play Backgammon Online Free | Live Multiplayer',
+        'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.',
+        'Play Backgammon Online Free',
+    ];
+
+    private const META_EN = [
+        'online-tavla' => ['Play Backgammon Online - Free Live Backgammon | GammonTV', 'Play free online backgammon! Live matches against real opponents, a powerful AI bot, tournaments and match analysis (PR). No sign-up required — start right in your browser.', 'Play Backgammon Online'],
+        'tavla-oyna' => ['Play Backgammon - Free Online Backgammon Game | GammonTV', 'Play free backgammon! A free, no-registration backgammon game that opens instantly in your browser. Practice against the AI, or play online with a friend or real opponents.', 'Play Backgammon'],
+        'backgammon' => ['Play Backgammon Online Free - Live Multiplayer | GammonTV', 'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.', 'Play Backgammon Online'],
+        'tavla-turnuvasi-organizasyonu' => ['Backgammon Tournament Organization | Corporate, Civic, Retail | GammonTV', 'Turnkey backgammon tournament organization for companies, municipalities and shopping centers. Format design, refereeing, digital pairing boards and an awards ceremony included. Request a quote.', 'Backgammon Tournament Organization'],
+        'kurumsal-tavla-turnuvasi' => ['Corporate Backgammon Tournament Organization | GammonTV', 'Corporate backgammon tournament organization for your company: a turnkey event for team spirit and employee engagement. On-site, at a hotel, or hybrid online. Request a quote.', 'Corporate Backgammon Tournament'],
+        'belediye-tavla-turnuvasi' => ['Municipal Backgammon Tournament Organization | GammonTV', 'Mass-participation backgammon tournament organization for municipalities: festivals, seasonal and cultural events. Digital registration, refereeing and an awards ceremony included. Request a quote.', 'Municipal Backgammon Tournament'],
+        'avm-tavla-turnuvasi' => ['Shopping Mall Backgammon Tournament Organization | GammonTV', 'Footfall-driving backgammon tournament organization for shopping centers: stage setup, sponsorship and live scoreboards. An event that builds brand engagement. Request a quote.', 'Shopping Mall Backgammon Tournament'],
+        'iletisim' => ['Contact | GammonTV', 'Get in touch with GammonTV: write to us about tournament organization, sponsorship, partnerships and any questions. We will get back to you as soon as possible.', 'Contact'],
+        'tek-oyun' => ['Single-Player Backgammon | GammonTV', 'Play backgammon on your own: practice against the AI and try out openings and moves. Free and no sign-up required.', 'Single-Player Backgammon'],
+        'yeni-oyun' => ['Play an Online Backgammon Match | GammonTV', 'Set up an online backgammon match: rated games, different time controls and live backgammon against real opponents.', 'Play an Online Backgammon Match'],
+        'arkadasinla-oyna' => ['Play Backgammon With a Friend | GammonTV', 'Invite a friend and play backgammon online together. With custom match settings, time controls and scoring options.', 'Play Backgammon With a Friend'],
+        'nasil-oynanir' => ['How to Play Backgammon? Rules and Guide | GammonTV', 'How do you play backgammon? A beginner-friendly guide to the rules, starting setup, and how the dice and checkers move.', 'How to Play Backgammon?'],
+        'tavla-rehberi' => ['Backgammon Guide — Strategies and Tips | GammonTV', 'Backgammon guide: opening strategy, using the doubling cube, winning tactics, and gammon and backgammon scoring. Original articles to sharpen your game.', 'Backgammon Guide'],
+        'turnuva-kurallari' => ['Backgammon Tournament Rules — Official Rules | GammonTV', 'The international backgammon tournament rules: format, timing, dice and cube rules, illegal moves, and dispute resolution. The complete official rules text.', 'Backgammon Tournament Rules'],
+        'sikca-sorulan-sorular' => ['Frequently Asked Questions About Backgammon | GammonTV', 'Clear questions and answers about backgammon rules, the doubling cube, match play, different backgammon variants and the GammonTV rating system.', 'Frequently Asked Questions About Backgammon'],
+        'sans-carki' => ['Wheel of Fortune | GammonTV', 'Spin the Wheel of Fortune and win prizes. One of GammonTV\'s fun games.', 'Wheel of Fortune'],
+        'zar-slotu' => ['Dice Slot | GammonTV', 'Dice Slot: a backgammon-themed slot game with a growing jackpot and fun prizes.', 'Dice Slot'],
+        'bahane-makinesi' => ['Backgammon Excuse Machine | GammonTV', 'Excuse Machine: 100 ready-made excuses for when you lose at backgammon. Just for fun.', 'Backgammon Excuse Machine'],
+        'yz-ile-oyna' => ['Play Backgammon Against AI | GammonTV', 'Play free online backgammon against a powerful neural-network AI bot. Choose a level, analyze your moves and improve your game.', 'Play Backgammon Against AI'],
+        'online-turnuvalar' => ['Online Backgammon Tournaments | GammonTV', 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.', 'Online Backgammon Tournaments'],
+        'lider-tablosu' => ['Leaderboard — Top Backgammon Players | GammonTV', 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.', 'Backgammon Leaderboard'],
+        'uyelik' => ['Membership and Premium | GammonTV', 'GammonTV Premium membership: ad-free play, advanced analysis and exclusive perks. Explore the membership options.', 'Membership and Premium'],
+        'turnuva-takvimi' => ['Backgammon Tournament Calendar | GammonTV', 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.', 'Backgammon Tournament Calendar'],
+        'kulupler' => ['Backgammon Clubs | GammonTV', 'Discover backgammon clubs, join a club or start your own. The GammonTV club directory.', 'Backgammon Clubs'],
+        'haberler' => ['Backgammon News | GammonTV', 'The latest news from the backgammon world, tournament results and GammonTV announcements.', 'Backgammon News'],
+        'makaleler' => ['Backgammon Articles | GammonTV', 'Backgammon strategy, tactics and analysis articles. Read and learn to play backgammon better.', 'Backgammon Articles'],
+        'tavla-magazin' => ['Backgammon Magazine | GammonTV', 'Backgammon magazine: tournament interviews, match stories and news from the backgammon community.', 'Backgammon Magazine'],
+        'pozisyon-analizi' => ['Backgammon Position Analysis | GammonTV', 'A backgammon position analysis tool: analyze any backgammon position for free with the GammonTV Engine and neural network.', 'Backgammon Position Analysis'],
+        'mat-analiz' => ['Backgammon Match Analysis (.mat) | GammonTV', 'Backgammon match analysis: upload your .mat file and see your error rate (PR) and the best moves, move by move.', 'Backgammon Match Analysis (.mat)'],
+        'mac-analizleri' => ['My Match Analyses | GammonTV', 'Detailed analyses of the online backgammon matches you have played, with PR and luck statistics.', 'My Match Analyses'],
+        'hata-gunlugu' => ['Error Log | GammonTV', 'Track your biggest blunders in your backgammon games and improve your play.', 'Backgammon Error Log'],
+        'bilgi/hakkinda' => ['About Us | GammonTV', 'About GammonTV: a free online backgammon platform. Our mission, our features and how to reach us.', 'About GammonTV'],
+        'bilgi/hizmetler' => ['Services | GammonTV', 'GammonTV services: online backgammon, tournaments, analysis tools and more.', 'Our Services'],
+        'bilgi/sozluk' => ['Backgammon Glossary — Terms | GammonTV', 'Backgammon glossary: backgammon terms and their meanings — gammon, backgammon, the doubling cube, pip and more.', 'Backgammon Glossary'],
+        'bilgi/rutbeler' => ['Backgammon Ranks | GammonTV', 'The GammonTV rank system: backgammon titles by rating range and how you climb them.', 'Backgammon Ranks'],
+        'bilgi/puanlama' => ['Scoring and PR (Performance) | GammonTV', 'How are backgammon scoring and PR (performance rating) calculated? Learn how the rating and error-rate system works.', 'Scoring and PR'],
+        'bilgi/basarilarim' => ['Badges and Achievements | GammonTV', 'GammonTV badges and achievements: complete in-game goals and earn badges.', 'Badges and Achievements'],
+        'bilgi/adil-zar' => ['Fair Dice — Provable Randomness | GammonTV', 'How are the dice rolled on GammonTV? An explanation of provably fair randomness and the CSPRNG behind it.', 'Provably Fair Dice'],
+    ];
+
+    private const LANDING_EN = [
+        'online-tavla' => ['How do you play backgammon online?', 'GammonTV lets you play backgammon online for free, right from your browser. Join live matches against real opponents, practice against the AI, and analyze your match performance.', ['Join a free online backgammon match.', 'Play against a friend or the AI bot.', 'Track your progress with PR, rating and match analysis.']],
+        'tavla-oyna' => ['Free backgammon game options', 'Start playing backgammon in your browser with no sign-up required. Choose the match that suits your style — single-player, play with a friend, or a live opponent.', ['Play solo against the AI.', 'Invite a friend to create a private match.', 'Explore online backgammon tournaments and the leaderboard.']],
+        'backgammon' => ['Free online backgammon', 'GammonTV lets you play backgammon online free in your browser — against real players worldwide, a neural-network AI, or a friend. Provably fair dice, automatic rules and match analysis.', ['Join a free live backgammon match in seconds.', 'Practice against a strong AI bot or invite a friend.', 'Track your progress with rating and performance (PR) analysis.']],
+        'nasil-oynanir' => ['Backgammon rules and getting-started guide', 'In the GammonTV guide, learn how to use the dice, move your checkers, and handle hits and bearing off, step by step.', ['Learn the board\'s starting setup.', 'Review the basic rules for dice and checker movement.', 'Learn gammon and backgammon scoring.']],
+        'tavla-rehberi' => ['Backgammon strategy guide', 'Read clear backgammon articles on opening moves, building points and primes, pip counting, the doubling cube, and winning tactics.', ['Explore backgammon opening strategy.', 'Learn how to use the doubling cube.', 'Discover the difference between a gammon and a backgammon.']],
+        'online-turnuvalar' => ['Join online backgammon tournaments', 'Follow registration, pairings, brackets and results on a single screen in GammonTV online backgammon tournaments. Explore open tournaments and upcoming matches.', ['Browse open online backgammon tournaments.', 'Check the registration and entry requirements.', 'Follow the pairings and tournament results.']],
+        'turnuva-takvimi' => ['Upcoming backgammon tournaments and calendar', 'Follow backgammon tournament dates, online and live events, registration windows and results in the up-to-date tournament calendar.', ['Find upcoming backgammon tournaments by date.', 'Compare online and live tournaments.', 'Check registration dates and prizes.']],
+        'tavla-turnuvasi-organizasyonu' => ['Turnkey backgammon tournament organization', 'GammonTV provides backgammon tournament hosting, digital pairings, refereeing and live result management for companies, municipalities and shopping centers.', ['Design the format, bracket and participation plan.', 'Plan refereeing, scoring and pairing management.', 'Request a quote for your corporate event.']],
+        'kurumsal-tavla-turnuvasi' => ['Corporate backgammon tournament organization', 'Plan an in-house or inter-company backgammon tournament with employee participation, team spirit and measurable results.', ['Choose an office, hotel or hybrid event format.', 'Manage employee registrations and pairings.', 'Plan the final and the awards process.']],
+        'belediye-tavla-turnuvasi' => ['Municipal backgammon tournament organization', 'A large-turnout backgammon event for municipalities: manage registration, brackets, refereeing, live scoring and the awards ceremony in a single plan.', ['Organize neighborhood and district participation.', 'Announce the tournament rules and pairings.', 'Publish results and prizes transparently.']],
+        'avm-tavla-turnuvasi' => ['Shopping mall backgammon tournament organization', 'Run a visible, fun and measurable backgammon tournament for shopping-center visitors; plan the stage, sponsorship, live scoring and final flow.', ['Set up a registration flow that boosts visitor turnout.', 'Use live scoring and pairing displays.', 'Plan sponsorship and prize visibility.']],
+        'tek-oyun' => ['How do you play single-player backgammon?', 'In Single-Player mode you play backgammon at your own pace, with no waiting for an opponent. It opens instantly in your browser, the dice rolls are provably fair, and you can start a new game whenever you like.', ['Play backgammon solo right away, no opponent needed.', 'Provably fair dice and a clean interface.', 'New to the game? Start with the how-to-play guide.']],
+        'yeni-oyun' => ['Create an online backgammon match', 'With New Game you start a rated online backgammon match against real opponents. Choose the match length and time control, find your pairing and play live; at the end you see your performance rating (PR).', ['Choose the match length and time control.', 'Play rated, live matches against real opponents.', 'See your PR and rating change at the end of the match.']],
+        'yz-ile-oyna' => ['Play backgammon against AI', 'Play against a powerful neural-network backgammon bot, choose your level and practice. The bot runs entirely in your browser, so you can train whenever you like with no need to wait for an online opponent.', ['Set the difficulty level to match your own.', 'Practice against a powerful neural-network bot.', 'Speed up your progress by analyzing your moves.']],
+        'arkadasinla-oyna' => ['A private backgammon match with a friend', 'Invite a friend to set up a private backgammon match. Decide the match type, length and time control together, call your opponent in with an invite, and enjoy a head-to-head game.', ['Call your friend in with an invite link.', 'Choose the match type, length and time together.', 'Play a rated or friendly head-to-head match.']],
+        'pozisyon-analizi' => ['Backgammon position analysis', 'Set up a backgammon position on the board and see the best move and its winning chances. The engine evaluates the possible moves; sharpen your game by reviewing cube decisions and equity differences.', ['Set up the position on the board and see the best move.', 'Review winning chances and equity differences.', 'Evaluate cube decisions (double/take/drop).']],
+        'mat-analiz' => ['Backgammon match analysis with a MAT file', 'Upload your .mat match record to analyze it move by move. See the performance rating (PR) of each decision, the mistaken moves and the better alternatives, and pinpoint the weak spots in your game.', ['Upload your .mat match file and review it move by move.', 'See the PR and error margin of each decision.', 'Learn the better alternative moves.']],
+        'uyelik' => ['GammonTV membership and premium', 'A free membership gives you access to rating, match history and tournaments; premium membership adds advanced analysis, extra cosmetics and priority features. You can upgrade or cancel anytime.', ['Join rating and tournaments with a free membership.', 'Advanced match analysis and cosmetics with premium.', 'Secure payment; cancel anytime.']],
+    ];
+
+    private const GUIDES_EN = [
+        'tavla-acilis-stratejileri' => ['Backgammon Opening Strategy: The Best First Moves | GammonTV', 'Backgammon opening strategy: the best first move for every roll, making the 5-point and the bar-point, the risks of leaving a blot, and practical tips for beginners.', 'Backgammon Opening Strategy: The Best First Moves'],
+        'tavla-kupu-doubling-cube' => ['What Is the Doubling Cube and How Do You Use It? | GammonTV', 'What is the backgammon doubling cube and how do you use it? A strategy guide to doubling, take and drop decisions, the Crawford rule, and getting the timing right.', 'What Is the Doubling Cube and How Do You Use It?'],
+        'tavla-kazanma-taktikleri' => ['Backgammon Winning Tactics and Tips | GammonTV', 'Backgammon winning tactics: avoiding blots, building blocks and primes, pip counting, racing and holding games, and using the doubling cube. Practical tips to improve your game.', 'Backgammon Winning Tactics and Tips'],
+        'mars-gammon-backgammon-nedir' => ['What Are a Gammon and a Backgammon? | GammonTV', 'What are a gammon and a backgammon? The point values of single, gammon and backgammon wins, the cube multiplier, and tactics for winning or preventing these big wins.', 'What Are a Gammon and a Backgammon?'],
+    ];
+
+    private const MAKALE_META_EN = [
+        'tavla-hamle-secme-stratejileri' => ['How to Choose Your Move in Backgammon: 3 Core Strategies | GammonTV', 'A move-selection guide for making points, hitting checkers and escaping your back checkers in backgammon.'],
+        'tavla-nedir' => ['What Is Backgammon? The Logic of the Game and Key Terms | GammonTV', 'What is backgammon, how do you win, and which basic terms should you know? A short, clear introduction for newcomers to the game.'],
+        'tavla-nasil-oynanir' => ['How to Play Backgammon? Checker Setup, Dice and Bearing Off | GammonTV', 'Learn the rules of backgammon step by step: the setup of 15 checkers, moving with the dice, hitting, the bar, and bearing off.'],
+        'tavla-acilis-zarlari-31-42-61-53-65' => ['Backgammon Opening Rolls: 3-1, 4-2, 6-1, 5-3 and 6-5 | GammonTV', 'How do you play the 3-1, 4-2, 6-1, 5-3 and 6-5 opening rolls in backgammon? Example moves from the starting position and the reasoning behind them.'],
+        'tavla-acilis-zarlari-62-63-64' => ['How Do You Play the 6-2, 6-3 and 6-4 Openings in Backgammon? | GammonTV', 'A guide to escaping a back checker, bringing down a builder and weighing the risks on the 6-2, 6-3 and 6-4 openings.'],
+        'ilk-tavla-turnuvasina-katilim' => ['How Do You Enter Your First Backgammon Tournament? A Prep Guide | GammonTV', 'Before entering your first backgammon tournament: a practical checklist for registration, rules, match format and game day.'],
+        'tavla-turnuvasinda-ilk-gun' => ['Your First Day at a Backgammon Tournament: From Check-In to Result | GammonTV', 'How do check-in, pairings, the start of a match and reporting the result unfold at a backgammon tournament? A clear walkthrough for day one.'],
+        'evde-tavla-oynama-rehberi' => ['Playing Backgammon at Home: Gear, Format and a Learning Plan | GammonTV', 'What you need to set up backgammon at home, choosing a match format, and tips for beginners to improve together.'],
+        'tavlaya-yeni-baslayanlar-rehberi' => ['A Learning Guide for Backgammon Beginners | GammonTV', 'Starting backgammon from scratch: the rules, first strategies, common mistakes, and the order to practice in.'],
+    ];
+
     /** Tarihler içerik dosyasının Git geçmişindeki ilk yayın commit'inden alınmıştır. */
     private const GUIDE_DATES = [
         'tavla-acilis-stratejileri' => ['2026-09-22T18:24:48+03:00', '2026-09-22T18:24:48+03:00'],
@@ -389,20 +550,74 @@ final class SeoMeta
      *
      * @return list<string>
      */
-    public static function indexableUrls(): array
+    public static function indexableUrls(?string $brandKey = null): array
     {
+        // Çoklu-domain sitemap: her marka kendi origin'iyle listelenir. brandKey verilmezse
+        // DETERMİNİSTİK varsayılan marka (self::$base mutable static'e GÜVENME — önceki isteğin
+        // host'u sızabilir; FPM'de fresh ama test sürecinde kalıcıdır).
+        $base = self::originFor($brandKey ?? (string) config('brands.default', 'tavla'));
+
         $urls = [];
         foreach (array_keys(self::META) as $slug) {
             if (in_array($slug, self::NOINDEX, true)) {
                 continue;
             }
-            $urls[] = self::BASE.$slug;
+            $urls[] = $base.$slug;
         }
         foreach (array_keys(self::GUIDES) as $slug) {
-            $urls[] = self::BASE.'tavla-rehberi/'.$slug;
+            $urls[] = $base.'tavla-rehberi/'.$slug;
         }
 
         return array_values(array_unique($urls));
+    }
+
+    /**
+     * Host-duyarlı sitemap XML'i (gammontv.com .htaccess ile /sitemap.xml'i Laravel'e yönlendirir;
+     * tavlatv.com curated statik sitemap.xml'i kullanır — seo:sitemap komutu). Statik indekslenebilir
+     * rotalar + yayındaki haber slug'ları, markanın origin'iyle listelenir.
+     */
+    public static function sitemapXml(string $brandKey): string
+    {
+        $base = self::originFor($brandKey);
+        $urls = self::indexableUrls($brandKey);
+        try {
+            $rows = \App\Models\Content::query()
+                ->where('type', 'news')->where('published', true)
+                ->orderByDesc('updated_at')->get(['title']);
+            $seen = [];
+            foreach ($rows as $row) {
+                $slug = self::sitemapSlug((string) $row->title);
+                if ($slug === '' || isset($seen[$slug])) {
+                    continue;
+                }
+                $seen[$slug] = true;
+                $urls[] = $base.'haberler/'.$slug;
+            }
+        } catch (\Throwable) {
+            // DB erişilemezse yalnız statik URL'ler.
+        }
+
+        $items = '';
+        foreach (array_values(array_unique($urls)) as $u) {
+            $items .= "  <url>\n    <loc>".htmlspecialchars($u, ENT_XML1, 'UTF-8')."</loc>\n  </url>\n";
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n"
+            .$items
+            .'</urlset>'."\n";
+    }
+
+    private static function sitemapSlug(string $value): string
+    {
+        $value = strtr($value, [
+            'ç' => 'c', 'ğ' => 'g', 'ı' => 'i', 'ö' => 'o', 'ş' => 's', 'ü' => 'u',
+            'İ' => 'i', 'Ç' => 'c', 'Ğ' => 'g', 'Ö' => 'o', 'Ş' => 's', 'Ü' => 'u',
+        ]);
+        $value = mb_strtolower($value, 'UTF-8');
+        $value = preg_replace('/[^a-z0-9]+/', '-', $value);
+
+        return trim((string) $value, '-');
     }
 
     /**
@@ -410,9 +625,35 @@ final class SeoMeta
      * Slug ne statik META'da ne de dinamik haber olarak eşleşirse içerik DEĞİŞMEDEN
      * döner (homepage/bilinmeyen = mevcut davranış).
      */
-    public static function inject(string $path, string $html): string
+    public static function inject(string $path, string $html, ?string $host = null): string
     {
+        // Çoklu-domain: istek host'u markayı (dil + kanonik kök) belirler.
+        self::$brand = Brand::fromHost($host);
+        self::$base = Brand::base(self::$brand);
+
         $slug = trim($path, '/');
+        $html = self::injectRoute($slug, $html);
+
+        // Varsayılan dışı marka (GammonTV/İngilizce): statik TR index.html kabuğunu global
+        // olarak markala (dil, marka adı, og:locale, manifest, temel @graph).
+        if (! self::isDefaultBrand()) {
+            if ($slug === '') {
+                // Ana sayfa: TR başlık/açıklama yerine İngilizce ana sayfa meta'sı.
+                [$ht, $hd, $hh] = self::HOME_EN;
+                $html = self::apply($html, $ht, $hd, $hh, self::$base, null, 'website', null);
+            }
+            $html = self::applyBrand($html);
+        }
+
+        return self::injectCrossDomainHreflang($html, $slug);
+    }
+
+    /**
+     * Yola göre per-route SEO etiketleri. self::$base / self::$brand inject() tarafından
+     * set edilir; varsayılan-dışı markada *_EN tabloları kullanılır (yoksa TR'ye düşer).
+     */
+    private static function injectRoute(string $slug, string $html): string
+    {
         if ($slug === '') {
             return $html;
         }
@@ -421,12 +662,11 @@ final class SeoMeta
             return self::applyNoIndex($html);
         }
 
-        // 1a) İngilizce "backgammon" landing: <html lang="en"> + og:locale + hreflang (tr<->en) +
-        //     İngilizce VideoGame/WebPage şeması. Eşi /online-tavla (reciprocal hreflang aşağıda).
-        if ($slug === 'backgammon') {
-            [$title, $desc, $h1] = self::META[$slug];
-            $url = self::BASE . $slug;
-            $html = self::apply($html, $title, $desc, $h1, $url, null, 'website', self::LANDING[$slug] ?? null);
+        // 1a) /backgammon: TavlaTv alan adındaki İngilizce landing (eski same-domain hreflang çifti).
+        if ($slug === 'backgammon' && ($row = self::metaRow($slug)) !== null) {
+            [$title, $desc, $h1] = $row;
+            $url = self::$base . $slug;
+            $html = self::apply($html, $title, $desc, $h1, $url, null, 'website', self::landingRow($slug));
             $html = self::applyEnglishLocale($html);
             $html = self::injectHreflang($html);
             $html = self::injectVideoGameJsonLd($html, $h1, $desc, $url, 'en');
@@ -436,14 +676,14 @@ final class SeoMeta
         }
 
         // 1) Statik rota META tablosu.
-        if (isset(self::META[$slug])) {
-            [$title, $desc, $h1] = self::META[$slug];
+        if (($row = self::metaRow($slug)) !== null) {
+            [$title, $desc, $h1] = $row;
 
-            $html = self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website', self::LANDING[$slug] ?? null);
+            $html = self::apply($html, $title, $desc, $h1, self::$base . $slug, null, 'website', self::landingRow($slug));
 
-            $html = self::injectWebPageJsonLd($html, $h1, $desc, self::BASE . $slug);
+            $html = self::injectWebPageJsonLd($html, $h1, $desc, self::$base . $slug, self::brandLang());
             if ($slug === 'tavla-oyna') {
-                $html = self::injectVideoGameJsonLd($html, $h1, $desc, self::BASE . $slug);
+                $html = self::injectVideoGameJsonLd($html, $h1, $desc, self::$base . $slug, self::brandLang());
             }
             // /online-tavla = /backgammon'un Türkçe eşi: karşılıklı hreflang (reciprocal şart).
             if ($slug === 'online-tavla') {
@@ -451,7 +691,7 @@ final class SeoMeta
             }
 
             // Statik landing/bilgi sayfaları: Ana Sayfa › <sayfa> (2 seviye).
-            return self::injectBreadcrumbJsonLd($html, [[$h1, self::BASE . $slug]]);
+            return self::injectBreadcrumbJsonLd($html, [[$h1, self::$base . $slug]]);
         }
 
         // 2) Dinamik haber makalesi: /haberler/<slug>. Paylaşımda (WhatsApp/Twitter vb.)
@@ -461,9 +701,9 @@ final class SeoMeta
 
         // 2b) Tavla Rehberi yazısı: /tavla-rehberi/<slug>. Per-article title/desc/h1 +
         //     BlogPosting JSON-LD (yalnız gerçek/doğru alanlarla). guides.ts ile senkron.
-        if (count($parts) === 2 && $parts[0] === 'tavla-rehberi' && isset(self::GUIDES[$parts[1]])) {
-            [$title, $desc, $h1] = self::GUIDES[$parts[1]];
-            $url = self::BASE . $slug;
+        if (count($parts) === 2 && $parts[0] === 'tavla-rehberi' && ($g = self::guideRow($parts[1])) !== null) {
+            [$title, $desc, $h1] = $g;
+            $url = self::$base . $slug;
             $html = self::apply($html, $title, $desc, $h1, $url, null, 'article');
 
             [$datePublished, $dateModified] = self::GUIDE_DATES[$parts[1]];
@@ -471,7 +711,7 @@ final class SeoMeta
 
             // Ana Sayfa › Tavla Rehberi › <yazı> (görünür Breadcrumb ile aynı).
             return self::injectBreadcrumbJsonLd($html, [
-                ['Tavla Rehberi', self::BASE . 'tavla-rehberi'],
+                ['Tavla Rehberi', self::$base . 'tavla-rehberi'],
                 [$h1, $url],
             ]);
         }
@@ -480,10 +720,10 @@ final class SeoMeta
         if (count($parts) === 2 && $parts[0] === 'makaleler') {
             $article = self::findMakale($parts[1]);
             if ($article) {
-                [$title, $desc] = self::MAKALE_META[$parts[1]]
-                    ?? [(string) $article->title . ' | TavlaTv', self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
-                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.jpg';
-                $url = self::BASE . $slug;
+                [$title, $desc] = self::makaleRow($parts[1])
+                    ?? [(string) $article->title . ' | ' . self::brandName(), self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::$base . 'og-image.jpg';
+                $url = self::$base . $slug;
 
                 $html = self::apply($html, $title, $desc, (string) $article->title, $url, $image, 'article');
                 $html = self::injectArticleJsonLd(
@@ -498,7 +738,7 @@ final class SeoMeta
 
                 // Ana Sayfa › Makaleler › <başlık> (görünür Breadcrumb ile aynı).
                 return self::injectBreadcrumbJsonLd($html, [
-                    ['Makaleler', self::BASE . 'makaleler'],
+                    ['Makaleler', self::$base . 'makaleler'],
                     [(string) $article->title, $url],
                 ]);
             }
@@ -512,14 +752,14 @@ final class SeoMeta
                 $title = $article->title . ' | TavlaTv';
                 $desc  = self::excerpt($article->body)
                     ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
-                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::BASE . 'og-image.jpg';
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::$base . 'og-image.jpg';
 
                 $html = self::apply(
                     $html,
                     $title,
                     $desc,
                     (string) $article->title,
-                    self::BASE . $slug,
+                    self::$base . $slug,
                     $image,
                     'article',
                 );
@@ -528,7 +768,7 @@ final class SeoMeta
                     $html,
                     (string) $article->title,
                     $desc,
-                    self::BASE . $slug,
+                    self::$base . $slug,
                     $image,
                     $article->event_at,
                     $article->updated_at,
@@ -536,8 +776,8 @@ final class SeoMeta
 
                 // Ana Sayfa › Haberler › <başlık> (görünür Breadcrumb ile aynı).
                 return self::injectBreadcrumbJsonLd($html, [
-                    ['Haberler', self::BASE . 'haberler'],
-                    [(string) $article->title, self::BASE . $slug],
+                    ['Haberler', self::$base . 'haberler'],
+                    [(string) $article->title, self::$base . $slug],
                 ]);
             }
 
@@ -667,9 +907,131 @@ final class SeoMeta
      */
     private static function injectHreflang(string $html): string
     {
-        $tags = '<link rel="alternate" hreflang="tr" href="' . self::BASE . 'online-tavla" />'
-            . '<link rel="alternate" hreflang="en" href="' . self::BASE . 'backgammon" />'
-            . '<link rel="alternate" hreflang="x-default" href="' . self::BASE . 'online-tavla" />';
+        $tags = '<link rel="alternate" hreflang="tr" href="' . self::originFor('tavla') . 'online-tavla" />'
+            . '<link rel="alternate" hreflang="en" href="' . self::originFor('tavla') . 'backgammon" />'
+            . '<link rel="alternate" hreflang="x-default" href="' . self::originFor('tavla') . 'online-tavla" />';
+        $out = preg_replace_callback('~</head>~i', static fn () => $tags . '</head>', $html, 1);
+
+        return $out ?? $html;
+    }
+
+    /**
+     * Varsayılan-dışı marka (GammonTV/İngilizce) global dönüşümü: statik TR index.html
+     * kabuğunu host + marka adı + dil + manifest + temel @graph bakımından markalar.
+     * Yalnız isDefaultBrand() == false iken çağrılır (TavlaTv byte-aynı kalır).
+     */
+    private static function applyBrand(string $html): string
+    {
+        $b = self::$brand;
+
+        // 1) Host değişimi: statik index.html'deki tüm mutlak tavlatv URL'leri -> marka host'u
+        //    (canonical/og:url/og:image/JSON-LD @id/url/logo). Per-route etiketler zaten marka
+        //    base'iyle yazıldığından etkilenmez.
+        $defaultKey = (string) config('brands.default', 'tavla');
+        $defaultHost = (string) parse_url((string) config("brands.brands.$defaultKey.origin", 'https://www.tavlatv.com'), PHP_URL_HOST);
+        $brandHost = (string) parse_url((string) ($b['origin'] ?? ''), PHP_URL_HOST);
+        if ($defaultHost !== '' && $brandHost !== '' && $defaultHost !== $brandHost) {
+            $html = str_replace($defaultHost, $brandHost, $html);
+        }
+
+        // 2) Marka adı: SADECE belirli meta etiketlerinde (og:site_name, author, apple-title).
+        //    DİKKAT: global str_replace YAPMA — "/assets/TavlaTvLogo-*.js" modulepreload yolunu
+        //    bozar ve JS yüklenmez. JSON-LD adları (4) temel @graph yeniden kurularak düzelir;
+        //    noscript marka metni renderNoscript içinde dile göre üretilir.
+        $name = htmlspecialchars((string) ($b['name'] ?? 'TavlaTv'), ENT_QUOTES, 'UTF-8');
+        $html = preg_replace_callback('~<meta\s+property="og:site_name"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:site_name" content="' . $name . '" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+name="author"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="author" content="' . $name . '" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+name="apple-mobile-web-app-title"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="apple-mobile-web-app-title" content="' . $name . '" />', $html, 1) ?? $html;
+
+        // 3) <html lang>, og:locale, manifest href
+        $lang = self::brandLang();
+        $ogLocale = (string) ($b['og_locale'] ?? 'tr_TR');
+        $manifest = (string) ($b['manifest'] ?? '/manifest.webmanifest');
+        $html = preg_replace_callback('~<html\s+lang="[^"]*"~i', static fn () => '<html lang="' . $lang . '"', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+property="og:locale"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:locale" content="' . $ogLocale . '" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<link\s+rel="manifest"\s+href="[^"]*"\s*/?>~i', static fn () => '<link rel="manifest" href="' . $manifest . '" />', $html, 1) ?? $html;
+
+        // 4) Temel @graph'ı İngilizce/marka sürümüyle değiştir (statik index'teki ilk ld+json).
+        $graph = self::brandBaseJsonLd();
+        $html = preg_replace_callback(
+            '~<script type="application/ld\+json">(?:(?!</script>).)*?"@graph"(?:(?!</script>).)*?</script>~s',
+            static fn () => $graph,
+            $html,
+            1,
+        ) ?? $html;
+
+        return $html;
+    }
+
+    /**
+     * Varsayılan-dışı marka için temel @graph (Organization + WebSite + VideoGame), İngilizce.
+     * ponytail: İngilizce kopya gömülü — tek varsayılan-dışı marka (gammon/en) olduğu sürece yeterli;
+     * 3. bir dil eklenirse markaya göre parametrele.
+     */
+    private static function brandBaseJsonLd(): string
+    {
+        $base = self::$base;
+        $name = self::brandName();
+        $lang = self::brandLang();
+        $img = $base . ltrim((string) (self::$brand['og_image'] ?? '/og-image.jpg'), '/');
+        $graph = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'Organization',
+                    '@id' => $base . '#organization',
+                    'name' => $name,
+                    'url' => $base,
+                    'logo' => $base . 'icon-512.png',
+                    'image' => $img,
+                ],
+                [
+                    '@type' => 'WebSite',
+                    '@id' => $base . '#website',
+                    'name' => $name,
+                    'alternateName' => 'Online Backgammon',
+                    'url' => $base,
+                    'publisher' => ['@id' => $base . '#organization'],
+                    'inLanguage' => $lang,
+                ],
+                [
+                    '@type' => 'VideoGame',
+                    'name' => $name . ' — Free Online Backgammon',
+                    'url' => $base,
+                    'description' => 'Play backgammon online for free: live matches against real players, a strong AI bot, tournaments and move-by-move analysis.',
+                    'inLanguage' => $lang,
+                    'genre' => ['Backgammon', 'Board Game'],
+                    'applicationCategory' => 'Game',
+                    'operatingSystem' => 'Web',
+                    'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
+                ],
+            ],
+        ];
+        $json = json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return '<script type="application/ld+json">' . ($json !== false ? $json : '{}') . '</script>';
+    }
+
+    /**
+     * Çapraz-domain hreflang (tr=tavlatv/slug, en=gammontv/slug, x-default=tr). Ana sayfa + statik
+     * indekslenebilir META rotaları için. /online-tavla ve /backgammon eski same-domain çiftini
+     * korur (injectHreflang) — burada atlanır. Dinamik haber/makale sonraki iyileştirme (yalnız
+     * self-canonical taşır).
+     */
+    private static function injectCrossDomainHreflang(string $html, string $slug): string
+    {
+        if (in_array($slug, ['online-tavla', 'backgammon'], true)) {
+            return $html;
+        }
+        $indexable = $slug === '' || (isset(self::META[$slug]) && ! in_array($slug, self::NOINDEX, true));
+        if (! $indexable) {
+            return $html;
+        }
+        $tr = self::originFor('tavla') . $slug;
+        $en = self::originFor('gammon') . $slug;
+        $tags = '<link rel="alternate" hreflang="tr" href="' . $tr . '" />'
+            . '<link rel="alternate" hreflang="en" href="' . $en . '" />'
+            . '<link rel="alternate" hreflang="x-default" href="' . $tr . '" />';
         $out = preg_replace_callback('~</head>~i', static fn () => $tags . '</head>', $html, 1);
 
         return $out ?? $html;
@@ -690,7 +1052,15 @@ final class SeoMeta
             $body = "<section><h2>{$heading}</h2><p>{$paragraph}</p><ul>{$list}</ul></section>";
         }
 
-        return "<noscript><main><h1>{$h1}</h1><p>{$desc}</p>{$body}<nav aria-label=\"TavlaTV bağlantıları\"><a href=\"/online-tavla\">Online Tavla Oyna</a> · <a href=\"/tavla-rehberi\">Tavla Rehberi</a> · <a href=\"/nasil-oynanir\">Tavla Kuralları</a> · <a href=\"/haberler\">Tavla Haberleri</a></nav></main></noscript>";
+        // Marka diline göre gezinme (slug'lar iki domainde de Türkçe; yalnız etiketler değişir).
+        if (self::isDefaultBrand()) {
+            $nav = '<nav aria-label="TavlaTV bağlantıları"><a href="/online-tavla">Online Tavla Oyna</a> · <a href="/tavla-rehberi">Tavla Rehberi</a> · <a href="/nasil-oynanir">Tavla Kuralları</a> · <a href="/haberler">Tavla Haberleri</a></nav>';
+        } else {
+            $brand = htmlspecialchars(self::brandName(), ENT_QUOTES, 'UTF-8');
+            $nav = '<nav aria-label="' . $brand . ' links"><a href="/online-tavla">Play Backgammon Online</a> · <a href="/tavla-rehberi">Backgammon Guide</a> · <a href="/nasil-oynanir">Backgammon Rules</a> · <a href="/haberler">Backgammon News</a></nav>';
+        }
+
+        return "<noscript><main><h1>{$h1}</h1><p>{$desc}</p>{$body}{$nav}</main></noscript>";
     }
 
     /**
@@ -713,14 +1083,14 @@ final class SeoMeta
             'headline' => $h1,
             'description' => $desc,
             'url' => $url,
-            'inLanguage' => 'tr',
-            'image' => [self::BASE . 'og-image.jpg'],
+            'inLanguage' => self::brandLang(),
+            'image' => [self::$base . 'og-image.jpg'],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
             'author' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => 'TavlaTv',
-                'logo' => ['@type' => 'ImageObject', 'url' => self::BASE . 'icon-512.png'],
+                'logo' => ['@type' => 'ImageObject', 'url' => self::$base . 'icon-512.png'],
             ],
         ];
         if ($datePublished !== null) {
@@ -761,7 +1131,7 @@ final class SeoMeta
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => 'TavlaTV',
-                'logo' => ['@type' => 'ImageObject', 'url' => self::BASE . 'icon-512.png'],
+                'logo' => ['@type' => 'ImageObject', 'url' => self::$base . 'icon-512.png'],
             ],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
         ];
@@ -804,7 +1174,7 @@ final class SeoMeta
             'description' => $description,
             'url' => $url,
             'inLanguage' => $inLanguage,
-            'isPartOf' => ['@type' => 'WebSite', '@id' => self::BASE . '#website'],
+            'isPartOf' => ['@type' => 'WebSite', '@id' => self::$base . '#website'],
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
@@ -825,7 +1195,7 @@ final class SeoMeta
             'name' => $name,
             'description' => $description,
             'url' => $url,
-            'image' => [self::BASE . 'og-image.jpg'],
+            'image' => [self::$base . 'og-image.jpg'],
             'inLanguage' => $inLanguage,
             'genre' => ['Backgammon', 'Tavla', 'Board Game'],
             'applicationCategory' => 'Game',
@@ -861,7 +1231,7 @@ final class SeoMeta
             '@type' => 'ListItem',
             'position' => 1,
             'name' => $homeLabel,
-            'item' => self::BASE,
+            'item' => self::$base,
         ]];
         foreach ($trail as $i => [$name, $url]) {
             $items[] = [
@@ -967,7 +1337,7 @@ final class SeoMeta
         if (preg_match('#^https?://#i', $img)) {
             return $img;
         }
-        $base = rtrim(self::BASE, '/');
+        $base = rtrim(self::$base, '/');
 
         return $img[0] === '/' ? $base . $img : $base . '/uploads/' . $img;
     }
@@ -1044,6 +1414,6 @@ final class SeoMeta
             }
         }
 
-        return rtrim(self::BASE, '/') . '/' . $outRel;
+        return rtrim(self::$base, '/') . '/' . $outRel;
     }
 }

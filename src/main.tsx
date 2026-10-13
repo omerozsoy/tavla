@@ -19,6 +19,19 @@ import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
 import { installScrollRestore } from './scrollRestore.ts'
+import { BRAND } from './brand.ts'
+
+// Çoklu-domain: ana sayfa statik servis edildiğinden (DirectoryIndex) server-side marka
+// enjeksiyonu '/' için garanti değil. İstemci marka düzeltmesi: dil, PWA manifest, apple başlık,
+// og:site_name — ziyaret edilen domaine göre. tavlatv.com'da no-op (statik değerler zaten doğru).
+try {
+  document.documentElement.lang = BRAND.locale
+  document.querySelector('link[rel="manifest"]')?.setAttribute('href', BRAND.manifest)
+  document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', BRAND.name)
+  document.querySelector('meta[property="og:site_name"]')?.setAttribute('content', BRAND.name)
+} catch {
+  /* yok */
+}
 
 // Rutbe esikleri (admin: Ayarlar > Rating Ayar) onbellekten SENKRON uygulanir -> ilk boyamada
 // dogru rutbe gorunur, esik degisiminde "yanlis rozet" flash'i olmaz.

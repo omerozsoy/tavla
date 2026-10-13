@@ -18,11 +18,13 @@ return [
     |
     */
 
+    // Çoklu-domain: her iki markanın www+apex host'ları stateful listede. (API Bearer-token
+    // tabanlı olduğundan bu liste yalnız oturum-çerezli akışları/admin panelini etkiler; yine de
+    // iki host da açıkça listelenir.) Prod'da SANCTUM_STATEFUL_DOMAINS ile override edilmeli.
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+        '%s,%s',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,www.tavlatv.com,tavlatv.com,www.gammontv.com,gammontv.com',
         Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
     ))),
 
     /*

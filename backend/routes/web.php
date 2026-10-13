@@ -43,6 +43,25 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware('signed')
     ->name('verification.verify');
 
+// Coklu-domain SEO: robots.txt + sitemap.xml HOST'a gore. tavlatv.com bunlari STATIK dosyadan
+// sunar (Apache once dosyayi verir; seo:sitemap komutu curated sitemap.xml'i yazar). gammontv.com
+// ise .htaccess ile bu rotalara yonlendirilir -> kendi origin'iyle robots + dinamik sitemap.
+Route::get('/robots.txt', function (Request $request) {
+    $b = \App\Support\Brand::fromHost($request->getHost());
+    $origin = rtrim((string) ($b['origin'] ?? ''), '/');
+
+    return response("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: {$origin}/sitemap.xml\n", 200, [
+        'Content-Type' => 'text/plain; charset=UTF-8',
+    ]);
+});
+Route::get('/sitemap.xml', function (Request $request) {
+    $b = \App\Support\Brand::fromHost($request->getHost());
+
+    return response(SeoMeta::sitemapXml((string) $b['key']), 200, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+});
+
 // ---- Yonetim paneli (ayri backend sayfasi, Blade) ----
 Route::prefix('panel')->group(function () {
     Route::get('/login', [PanelController::class, 'showLogin']);
@@ -181,7 +200,7 @@ Route::fallback(function (Request $request) {
         // indekslemiyordu; JS'siz tarayicilar ayni bos kabugu goruyordu. SeoMeta, yola
         // gore bu etiketleri per-route degerlerle degistirir (slug bilinmiyorsa no-op).
         // response()->file yerine string donuyoruz (icerigi degistirdigimiz icin).
-        $html = SeoMeta::inject($request->path(), (string) file_get_contents($index));
+        $html = SeoMeta::inject($request->path(), (string) file_get_contents($index), $request->getHost());
 
         // index.html ASLA cache'lenmemeli: her deploy asset hash'lerini degistirir ve
         // eskileri silinir. Tarayici bayat index.html tutarsa silinmis chunk'lara istek
