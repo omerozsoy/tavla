@@ -247,8 +247,8 @@ function Point({
               draggable={selectable}
               lifted={lift && isTop}
               onPointerDown={
-                selectable && onCheckerDown && isTop
-                  ? (e) => onCheckerDown(e, index, stack!.player, label)
+                selectable && onCheckerDown
+                  ? (e) => onCheckerDown(e, index, stack!.player, stack!.count > 5 ? stack!.count : undefined)
                   : undefined
               }
               label={label}
