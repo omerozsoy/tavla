@@ -9261,7 +9261,7 @@ export default function App() {
     titleKey: col.titleKey,
     items: col.keys
       .map((k) => PAGE_BY_KEY[k])
-      .filter((pg) => pg && !!pageHandlers[pg.key] && (pg.gate !== 'user' || !!user) && menuVisible(pg.key))
+      .filter((pg) => pg && !!pageHandlers[pg.key] && menuVisible(pg.key))
       .map((pg): FooterItem => ({
         key: pg.key,
         labelKey: pg.labelKey,
@@ -9384,7 +9384,8 @@ export default function App() {
       ({ pg }) =>
         pg.inMenu !== false &&
         !!pageHandlers[pg.key] &&
-        (pg.gate !== 'user' || !!user) &&
+        // Misafir de girisli/premium uye ile BIREBIR ayni sol menuyu gorur (gate kaldirildi);
+        // friends/messages tiklaninca magaza gibi giris istenir. inMenu:false olanlar hala gizli.
         menuVisible(pg.key),
     )
     .sort((a, b) => menuSort(a.pg.key, a.i) - menuSort(b.pg.key, b.i))
