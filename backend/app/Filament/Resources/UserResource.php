@@ -80,6 +80,20 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('losses')->label('Mağlubiyet')->numeric()->default(0),
                 Forms\Components\TextInput::make('games_played')->label('Oynanan')->numeric()->default(0),
             ]),
+            // CÜZDAN: View sayfasıyla AYNI kaynak dökümü + reconciliation (salt-okunur). Üstteki
+            // "Coin" alanı WalletService::setBalance ile ledger'a (admin_adjustment) yazar; bu panel
+            // o değişikliğin tutarlılığını (izahı olmayan para) gösterir. create'te record yok -> gizli.
+            Forms\Components\Section::make('Cüzdan')
+                ->icon('heroicon-o-banknotes')
+                ->hiddenOn('create')
+                ->collapsible()
+                ->schema([
+                    Forms\Components\ViewField::make('wallet_breakdown')
+                        ->hiddenLabel()
+                        ->dehydrated(false)
+                        ->view('filament.user.wallet')
+                        ->afterStateHydrated(fn (Forms\Components\ViewField $component, ?User $record) => $component->state($record ? self::walletData($record) : [])),
+                ]),
             Forms\Components\Section::make('Üyelik & Yetki')->columns(2)->schema([
                 // plan DB'de NOT NULL (default 'free'). Placeholder'a ("Bir seçenek seçin")
                 // dönüp boş kaydedilirse plan=NULL -> 500. Boşaltmayı engelle + null gelirse 'free'e çevir.
