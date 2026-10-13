@@ -51,6 +51,7 @@ interface PlayerInfo {
   prEstimate?: boolean // true: oyun-içi TAHMİN (yerel); "~PR" + not gösterilir (kesin PR maç sonu gnubg)
   premium?: boolean // süresi geçerli ücretli plan -> isim yaninda PREMIUM
   onOpenProfile?: () => void // varsa: avatara tıkla/hover -> herkese açık profil modalı (rakip)
+  onAddFriend?: () => void // varsa: isim yaninda arkadaş-ekle (user-plus) butonu (yalniz online rakip)
 }
 
 interface SidebarProps {
@@ -119,6 +120,17 @@ function Name({ p }: { p: PlayerInfo }) {
         {p.name}
         {p.country && <CountryFlag code={p.country} size={20} className="player-flag" />}
         {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
+        {p.onAddFriend && (
+          <button
+            type="button"
+            className="pc-addfriend"
+            onClick={p.onAddFriend}
+            title={t('online.addFriend')}
+            aria-label={t('online.addFriend')}
+          >
+            <Icon name="user-plus" size={18} />
+          </button>
+        )}
       </div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
       {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}

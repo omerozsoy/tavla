@@ -100,6 +100,26 @@
   vertical-align: middle;
 }
 
+/* Isim yani arkadaş-ekle (user-plus): online rakibi tek tikla arkadaş ekle. */
+.player-name .pc-addfriend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--accent, #4caf50);
+  cursor: pointer;
+  vertical-align: middle;
+  opacity: 0.8;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.player-name .pc-addfriend:hover {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
 /* Sira gostergesi: avatari saran kap; icteki avatarin margin'ini kap devralir.
    TEK BOYUT KAYNAGI: --pc-av (varsayilan 84px, var() FALLBACK ile — .sidebar'a taban DEGER
    YAZMIYORUZ ki App.css'teki kompakt @media override'lari kaynak-sirasi yuzunden EZILMESIN).

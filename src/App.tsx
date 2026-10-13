@@ -8377,6 +8377,9 @@ export default function App() {
     // Rakip (siyah/ust, ben beyazsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:
       online && myColor === 'white' && room?.oppId ? () => setHomeProfileId(room.oppId!) : undefined,
+    // Rakip ismi yaninda arkadaş-ekle (yalniz online gercek rakip, bot haric).
+    onAddFriend:
+      online && !botMatch && myColor === 'white' && room?.oppId ? () => handleAddFriend(room.oppId!) : undefined,
   }
   const bottomInfo = {
     name: whiteName,
@@ -8408,6 +8411,9 @@ export default function App() {
     // Rakip (beyaz/alt, ben siyahsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:
       online && myColor === 'black' && room?.oppId ? () => setHomeProfileId(room.oppId!) : undefined,
+    // Rakip ismi yaninda arkadaş-ekle (yalniz online gercek rakip, bot haric).
+    onAddFriend:
+      online && !botMatch && myColor === 'black' && room?.oppId ? () => handleAddFriend(room.oppId!) : undefined,
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)
