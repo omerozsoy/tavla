@@ -2610,6 +2610,7 @@ export interface RoomSummary {
   matchLength?: number | null
   luck?: { white: import('./analysis/matchSummary').LuckInfo | null; black: import('./analysis/matchSummary').LuckInfo | null }
   authPr?: { white: import('./analysis/matchSummary').AuthPr | null; black: import('./analysis/matchSummary').AuthPr | null }
+  progress?: number | null // PR hazır değilken gerçek analiz yüzdesi (en yavaş taraf); yoksa null → zaman-tahmini
 }
 export async function roomSummary(code: string): Promise<RoomSummary> {
   return req<RoomSummary>(`/rooms/${encodeURIComponent(code)}/summary`)

@@ -1163,6 +1163,24 @@ class RoomController extends Controller
             ];
         }
 
+        // İLERLEME ÇUBUĞU (izleyici): PR'ı HENÜZ gelmemiş (gnubg_pr null) her satır için
+        // AnalyzeMatchPrJob'un yazdığı gerçek per-pozisyon done/total'ı Cache'ten oku; iki taraf da
+        // hesaplanıyorsa en yavaşı (min pct) göster. Gerçek veri yoksa null -> istemci zaman-tahminine
+        // düşer (oyuncunun kendi /me/match-pr ekranıyla aynı mantık).
+        $progressPct = null;
+        foreach ($rows as $r) {
+            if ($r->gnubg_pr !== null) {
+                continue; // bu taraf hazır
+            }
+            $prog = Cache::get('pr:progress:'.$r->id);
+            if (is_array($prog) && (int) ($prog['total'] ?? 0) > 0) {
+                $pd  = max(0, (int) ($prog['done'] ?? 0));
+                $pt  = (int) $prog['total'];
+                $pct = (int) floor(min(100, $pd * 100 / $pt));
+                $progressPct = $progressPct === null ? $pct : min($progressPct, $pct);
+            }
+        }
+
         return response()->json([
             'ready'       => true,
             'log'         => $review['log'] ?? [],
@@ -1170,6 +1188,7 @@ class RoomController extends Controller
             'matchLength' => $review['matchLength'] ?? null,
             'luck'        => $luck,
             'authPr'      => $authPr,
+            'progress'    => $progressPct, // int %% | null (PR hazır değilken gerçek analiz oranı)
         ]);
     }
 

@@ -390,8 +390,10 @@ export default function Spectate({
   // (summary YOK) -> setSummary re-render'ı effect'i yeniden kurmaz, tight-loop olmaz.
   useEffect(() => {
     if (!matchDone) return
+    // İKİ tarafın PR'ı da gelene kadar poll SÜRER (eskiden VEYA idi: kazananın PR'ı önce gelince
+    // poll durup kaybeden "—" kalıyordu). 60-deneme tavanı yine korur.
     const hasPr = (s: RoomSummary) =>
-      !!s.ready && (s.authPr?.white?.pr != null || s.authPr?.black?.pr != null)
+      !!s.ready && s.authPr?.white?.pr != null && s.authPr?.black?.pr != null
     let alive = true
     let tries = 0
     let id = 0
@@ -645,8 +647,9 @@ export default function Spectate({
             loserScore={score[loserColor]}
             winnerPr={prOf(winnerColor)}
             loserPr={prOf(loserColor)}
-            analyzing={!summary?.ready}
-            analyzingBoth
+            analyzing={prOf(winnerColor) == null}
+            oppAnalyzing={prOf(loserColor) == null}
+            progressPct={summary?.progress ?? null}
             winnerCheckerPr={summary?.authPr?.[winnerColor]?.checker ?? null}
             winnerCubePr={summary?.authPr?.[winnerColor]?.cube ?? null}
             loserCheckerPr={summary?.authPr?.[loserColor]?.checker ?? null}
