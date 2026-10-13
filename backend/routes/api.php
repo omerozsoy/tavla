@@ -49,6 +49,8 @@ Route::get('/rank-divisions', [\App\Http\Controllers\RankDivisionController::cla
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/ad-slots', [\App\Http\Controllers\AdSlotController::class, 'index']); // paneller arasi reklam seritleri
+Route::middleware('throttle:30,1,ad-click')->post('/ad-slots/{ad}/click', [\App\Http\Controllers\AdSlotController::class, 'click']); // "saka reklami" tiklamasi (opsiyonel auth)
+Route::get('/ad-slots/{ad}/clickers', [\App\Http\Controllers\AdSlotController::class, 'clickers']); // tiklayanlarin adlari (modal icinde)
 Route::get('/entry-popup', [\App\Http\Controllers\EntryPopupController::class, 'index']); // siteye ilk giriste kare pop-up
 // Hukuki sayfalar + cerez (KVKK/gizlilik/cerez/kullanim/uyelik) — hepsi herkese acik
 Route::get('/legal-pages', [\App\Http\Controllers\LegalPageController::class, 'index']);

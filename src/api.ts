@@ -1355,6 +1355,14 @@ export async function listAdSlots(): Promise<AdSlot[]> {
   const d = await req<{ ads: AdSlot[] }>('/ad-slots')
   return d.ads
 }
+// "Saka reklami" tiklamasini kaydet (giris yapmissa kullaniciyi iliskilendirir). Fire-and-forget.
+export async function recordAdClick(adId: number): Promise<void> {
+  await req(`/ad-slots/${adId}/click`, { method: 'POST' })
+}
+// Reklama inanip tiklayanlarin adlari (modal icinde gosterilir).
+export async function adClickers(adId: number): Promise<{ names: string[]; count: number }> {
+  return req<{ names: string[]; count: number }>(`/ad-slots/${adId}/clickers`)
+}
 
 // Siteye ilk girildiginde gosterilen KARE pop-up ("Giris Kare Banner"). Yayindaki ilki doner.
 export interface EntryPopup {

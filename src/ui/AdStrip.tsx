@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { listAdSlots, type AdSlot, type AdSlotPos } from '../api'
+import { listAdSlots, recordAdClick, adClickers, type AdSlot, type AdSlotPos } from '../api'
 import './adStrip.css'
 import { safeHref } from './safeHref'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,12 @@ function loadAds(): Promise<AdSlot[]> {
 export function AdStrip({ slot }: { slot: AdSlotPos }) {
   const [ads, setAds] = useState<AdSlot[] | null>(null)
   const [prank, setPrank] = useState(false)
+  const [clickers, setClickers] = useState<{ names: string[]; count: number } | null>(null)
+  const openPrank = () => {
+    setPrank(true)
+    setClickers(null)
+    recordAdClick(PRANK_AD_ID).catch(() => {}) // fire-and-forget (misafir/401 onemsiz)
+  }
   useEffect(() => {
     let alive = true
     loadAds().then((a) => alive && setAds(a))
@@ -67,7 +73,7 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
   if (ad.id === PRANK_AD_ID) {
     return (
       <div className={`ad-strip ad-strip-${slot}`}>
-        <button type="button" className="ad-prank-trigger" onClick={() => setPrank(true)} aria-label="Reklam">
+        <button type="button" className="ad-prank-trigger" onClick={openPrank} aria-label="Reklam">
           {img}
         </button>
         {prank &&
@@ -77,6 +83,31 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
                 <h2>Stok tükendi.</h2>
                 <p className="register-sub">Rakibiniz son paketi az önce satın aldı.</p>
                 <Button onClick={() => setPrank(false)}>Biliyordum onda bir şey olduğunu!</Button>
+
+                {clickers === null ? (
+                  <button
+                    type="button"
+                    className="ad-prank-link"
+                    onClick={() => adClickers(PRANK_AD_ID).then(setClickers).catch(() => setClickers({ names: [], count: 0 }))}
+                  >
+                    bu banner'a inanıp kimler tıkladı merak ediyor musun?
+                  </button>
+                ) : (
+                  <div className="ad-prank-clickers">
+                    {clickers.count === 0 ? (
+                      <p>Henüz kimse 😎 İlk sendin.</p>
+                    ) : (
+                      <>
+                        <p>{clickers.count} kişi de inanmış:</p>
+                        <ul>
+                          {clickers.names.map((n) => (
+                            <li key={n}>{n}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>,
             document.body,
