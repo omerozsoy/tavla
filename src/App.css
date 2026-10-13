@@ -8106,6 +8106,7 @@ html[data-board='yilbasi'] .checker.black {
 .nm-dice {
   justify-content: center;
   margin-bottom: 10px;
+  opacity: 0.35; /* dance "Hamle Yok": zarlar silik (oynanamadi) -> .die-face.used ile ayni solgunluk */
 }
 .cube .owner-center {
 }

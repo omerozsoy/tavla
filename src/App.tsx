@@ -688,6 +688,8 @@ const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn
 const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullanici "gele attigini goremedim" -> zar okunsun)
 const BOT_FINAL_DELAY = 1400 // botun MAÇI BİTİREN hamlesinden sonra: son pozisyon görünsün, sonra sonuç ekranı
 const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
+const BOT_CUBE_MIN = 1100 // insan kup verince botun take/drop cevabi: en az dusunme (aninda=sahte)
+const BOT_CUBE_RAND = 1400 // + 0..bu kadar rastgele -> ~1.1-2.5sn dogal "dusunuyor" hissi
 
 // Zar yüzleri: oynanan zarları soluk (used) yap; çift zarda her hamle zarın çapraz yarısını solar
 // (half). Kendi turum (played), rakip canlı (oppLive) VE rakip replay (oppReplay adımları) ortak
@@ -3779,7 +3781,12 @@ export default function App() {
               // Board küp take'te değişmez; applyServerBoard match'i (cube + pending=null) uygular ->
               // cubePending temizlenir, sıra insana (zar) döner. PR/.mat SUNUCU-otoriter -> burada
               // KAYIT YOK (çift kayıt/yanlış atıf olmasın).
-              applyServerBoard(turnStart, (r as { match?: ServerMatch }).match ?? null)
+              // BOT "DÜŞÜNSÜN": cevabı ANINDA uygulama -> ~1.1-2.5sn gecikme (eskiden anında = "bot küpü
+              // çok hızlı kabul ediyor"). O süre cubePending (rakip yanıtı bekleniyor) durur. güvenli:
+              // appliedServerVersionRef zaten r.version'da -> arada poll bu durumu EZMEZ; timeout KESİN uygular.
+              const resolved = (r as { match?: ServerMatch }).match ?? null
+              const think = BOT_CUBE_MIN + Math.round(Math.random() * BOT_CUBE_RAND)
+              window.setTimeout(() => applyServerBoard(turnStart, resolved), think)
             }
           })
           .catch((e) => {
