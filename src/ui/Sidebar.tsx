@@ -171,7 +171,6 @@ export default function Sidebar({ top, bottom, length, stake, crawford }: Sideba
         {crawford && (
           <div className="sm-row sm-crawford" title={t('board.crawfordHint')}>
             <span className="sm-crawford-tag">{t('board.crawford')}</span>
-            <span className="sm-crawford-note">{t('game.noCube')}</span>
           </div>
         )}
         {length != null && (
