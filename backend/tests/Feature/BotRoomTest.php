@@ -500,6 +500,22 @@ class BotRoomTest extends TestCase
         $this->assertNull($room->p1_result);
     }
 
+    public function test_leave_does_not_forfeit_bot_match(): void
+    {
+        // KÖK FIX (ozkaraoglu588 L12 tekrarlı sahte kayıp): leave() sekme-kapama/gezinme sendBeacon'ı
+        // bot maçında winner=other(p1)=p2 yazıp insanı ANINDA bota HÜKMEN kaybettiriyordu (tickClockCore
+        // guard'ı bu yolu kapsamıyordu). Paylaşılan applyClockEnd guard'ı: bot ABANDON -> no-contest.
+        $this->botRoom('white', [3, 1]); // oda kodu BOTAA (misafir/token yetkili)
+
+        $this->postJson('/api/rooms/BOTAA/leave', ['token' => 'human-tok'])->assertOk();
+
+        $room = Room::where('code', 'BOTAA')->first();
+        $this->assertSame('finished', $room->status);
+        $this->assertNull($room->p1_result);    // insana "lost" YAZILMADI (no-contest)
+        $this->assertNull($room->p2_result);     // bota "won" YAZILMADI
+        $this->assertDatabaseMissing('match_results', ['room_code' => 'BOTAA']);
+    }
+
     public function test_bot_offers_double_via_gnubg(): void
     {
         config()->set('gnubg.url', 'http://gnubg.test');

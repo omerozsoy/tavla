@@ -2605,6 +2605,18 @@ class RoomController extends Controller
         if ($decidedColor !== null) {
             $winnerSlot = $decidedColor === 'white' ? 'p1' : 'p2';
         }
+        // BOT MAÇINDA TERK/ABANDON = KAYIP DEĞİL (C3X4Y/XKV9H + leave() beacon KÖK FIX): bot gerçek
+        // rakip değil, bekleyen kimse yok -> insanın terki/kopması onu bota karşı HÜKMEN kaybettirmesin.
+        // fc1292c0 yalnız tickClockCore'u (presence poll/reaper) korumuştu; leave() (sekme-kapama
+        // sendBeacon -> winner=other(slot) ANINDA, ~45sn beklemeden) + legacy update + driveAuthoritative
+        // yolları KORUNMUYORDU (ozkaraoglu588 L12'de dakikalar içinde defalarca sahte kayıp, değişken
+        // süreli = leave imzası). PAYLAŞILAN finalize'da (tek guard, tüm çağrı yerleri) ABANDON'u
+        // no-contest'e indir: winner=null -> puan/coin/rating/ForfeitLoss YOK, oda 'finished' + escrow
+        // iade. decidedColor !== null (tahtada GERÇEK kazanıldı) ise GİRMEZ -> meşru bot galibiyeti kalır.
+        // TIMEOUT/AFK (reason != ABANDON, insan tahtadayken) bu dala girmez.
+        if ($room->bot && $reason === 'ABANDON' && $decidedColor === null) {
+            $winnerSlot = null;
+        }
         // GHOST-WIN KALKANI (turnuva "çekmedi/giremedi" + PR 0.00 KÖK FIX): forfeit (terk/timeout/AFK)
         // ile "kazanan" ilan edilen taraf maçta HİÇ gerçek aksiyon yapmadıysa (match_moves'ta o renge
         // ait hamle/küp satırı YOK) ama KAYBEDEN oynadıysa -> kazanan aslında tahtayı hiç
