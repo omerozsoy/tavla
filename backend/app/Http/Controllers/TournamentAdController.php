@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\TournamentAd;
 
 class TournamentAdController extends Controller
@@ -10,6 +11,13 @@ class TournamentAdController extends Controller
     // Her banner turnuva id + adiyla doner; tiklaninca o turnuvanin detayi acilir.
     public function index()
     {
+        // ANA KAPATMA: admin paneldeki (/admin/tournament-ads) tek dugmeyle tum turnuva reklamlari
+        // site genelinde gizlenebilir (kayitlar silinmeden). Kapaliysa bos liste -> BannerSlider
+        // hic gostermez (collapse), hicbir reklam gorunmez.
+        if (! Setting::bool('tournament_ads_enabled', true)) {
+            return response()->json(['ads' => []]);
+        }
+
         $ads = TournamentAd::with('organizer')
             ->where('published', true)
             ->whereNotNull('image')
