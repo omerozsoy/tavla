@@ -11014,10 +11014,11 @@ button.acct-row-logout:hover:not(:disabled) {
     margin-left: 0; /* hamburger sagda -> logo solda gorunur */
   }
 }
-/* Cok dar telefon (iPhone SE vb. <=360px): misafir barinda logo + Giris + tema +
-   dil yan yana ~361px -> son kontrol (bayrak) kirpiliyordu. Kontrolleri koru,
-   kompaktla: wordmark kucul, hamburger payi/gap/padding daralt, Giris butonu ince. */
-@media (max-width: 360px) {
+/* Dar telefon (iPhone SE..16, Galaxy S <=430px): ust bar logo+kontroller yan yana sigmayip
+   ~4-19px tasiyordu (olcum: measure-topbar.mjs; 375px'te takma ad kisa oldugundan max-width
+   bitmez, asil yer tutan 101px wordmark + 64px hamburger payi). Kontrolleri koru, kompaktla:
+   wordmark kucul (16px), hamburger payi 52px, gap/padding daralt -> bar TAM otursun. */
+@media (max-width: 430px) {
   /* .account-bar.account-bar: (0,2,0) ozgulluk -> asagidaki <=720px `.account-bar` padding
      kisayolunu yener. (Eski `.app.lobby > .account-bar` hic eslesmiyordu: bar .topbar-stack icinde.) */
   .account-bar.account-bar {
