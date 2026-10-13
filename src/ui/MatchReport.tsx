@@ -82,6 +82,7 @@ export default function MatchReport({
   mode,
   log: rawLog,
   pr,
+  authPr,
   humanColor,
   matchLength = 1,
   whiteName = 'White',
@@ -334,6 +335,30 @@ export default function MatchReport({
                   </span>
                 </div>
               )}
+              {/* Pul (checker) PR + Küp (cube) PR AYRI AYRI — toplam PR'ın altında (sunucu-otoriter). */}
+              {(() => {
+                const c = effHuman ?? humanColor
+                const ap = c && authPr ? authPr[c] : null
+                const ck = ap?.checker ?? null
+                const cb = ap?.cube ?? null
+                if (ck == null && cb == null) return null
+                return (
+                  <div className="rep-pr-split">
+                    {ck != null && (
+                      <div className="rep-line">
+                        <span>{t('mr.checkerPr')}</span>
+                        <b>{ck.toFixed(2)}</b>
+                      </div>
+                    )}
+                    {cb != null && (
+                      <div className="rep-line">
+                        <span>{t('mr.cubePr')}</span>
+                        <b>{cb.toFixed(2)}</b>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
               <div className="rep-line">
                 <span>{t('rep.decisions')}</span>
                 <b>{statLog.length}</b>

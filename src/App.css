@@ -14426,6 +14426,14 @@ button.acct-row-logout:hover:not(:disabled) {
   background: var(--bg);
   margin-bottom: 6px;
 }
+/* Pul PR + Küp PR ikilisi (toplam PR'ın hemen altında, ince ayraçlı grup). */
+.rep-pr-split {
+  margin: 2px 0 10px;
+}
+.rep-pr-split .rep-line {
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
 .rep-line.good b {
   color: var(--success-fg);
 }
