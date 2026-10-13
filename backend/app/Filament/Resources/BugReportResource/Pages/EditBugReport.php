@@ -100,6 +100,14 @@ class EditBugReport extends EditRecord
                     ]);
                     $this->refreshFormData(['status', 'admin_note']);
 
+                    // Üyeye in-app bildirim + push: hata ödülü hesabına eklendi (best-effort).
+                    \App\Models\Notification::notify(
+                        $user->id,
+                        'Hata ödülün hesabına eklendi 🎉',
+                        number_format($amount, 0, ',', '.').' coin hediye edildi. Bildirimin için teşekkürler!',
+                        'gift',
+                    );
+
                     Notification::make()
                         ->title('Ödül tanımlandı')
                         ->body(($this->record->name ?: ('#'.$user->id)).' üyesine '.number_format($amount, 0, ',', '.').' coin eklendi.')
