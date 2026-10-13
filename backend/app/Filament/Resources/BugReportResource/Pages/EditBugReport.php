@@ -56,13 +56,13 @@ class EditBugReport extends EditRecord
                         ->options([
                             'big' => 'Büyük hata — '.number_format(self::REWARD_BIG, 0, ',', '.').' coin',
                             'small' => 'Küçük hata — '.number_format(self::REWARD_SMALL, 0, ',', '.').' coin',
-                            'custom' => 'Özel tutar…',
                         ])
-                        ->default('small')->required()->native(false)->live(),
-                    Forms\Components\TextInput::make('custom_amount')->label('Özel tutar (coin)')
-                        ->numeric()->minValue(1)->maxValue(1000000)
-                        ->visible(fn (Forms\Get $get) => $get('tier') === 'custom')
-                        ->required(fn (Forms\Get $get) => $get('tier') === 'custom'),
+                        ->default('small')->required()->native(false),
+                    // Opsiyonel özel tutar: DOLUYSA kademeyi EZER. Her zaman görünür (live/visibility
+                    // bağımlılığı yok -> modal submit'te state sıfırlanmaz, seçilen kademe garanti gider).
+                    Forms\Components\TextInput::make('custom_amount')->label('Özel tutar (coin) — opsiyonel')
+                        ->helperText('Boş bırakın: yukarıdaki kademe uygulanır. Girerseniz bu tutar verilir.')
+                        ->numeric()->minValue(1)->maxValue(1000000),
                     Forms\Components\Toggle::make('mark_resolved')
                         ->label('Bu bildirimi “Çözüldü” olarak işaretle')->default(true),
                 ])
@@ -78,11 +78,10 @@ class EditBugReport extends EditRecord
 
                         return;
                     }
-                    $amount = match ($data['tier']) {
-                        'big' => self::REWARD_BIG,
-                        'small' => self::REWARD_SMALL,
-                        default => (int) ($data['custom_amount'] ?? 0),
-                    };
+                    // Özel tutar DOLUYSA kademeyi ezer; boşsa seçilen kademe (büyük 10.000 / küçük 5.000).
+                    $amount = filled($data['custom_amount'] ?? null)
+                        ? (int) $data['custom_amount']
+                        : (($data['tier'] ?? 'small') === 'big' ? self::REWARD_BIG : self::REWARD_SMALL);
                     if ($amount < 1) {
                         Notification::make()->title('Geçerli bir tutar girin.')->danger()->send();
 
