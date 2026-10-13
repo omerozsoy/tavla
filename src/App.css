@@ -5823,6 +5823,15 @@ button[aria-disabled='true'],
   border-radius: 0;
   padding: 2px;
   max-width: 100%;
+  /* HAYALET DİKEY SCROLLBAR FIX (coral çizgi, özellikle yatay telefon + izleme): mobil güvenlik
+     kuralları .game-area'ya `overflow-x: hidden` verir; CSS spec'ine göre overflow-x hidden +
+     overflow-y visible -> overflow-y OTOMATİK `auto` olur. İçerik (board/panel) client'ı birkaç px
+     aşınca (yatayda ~17px rounding/gap/panel) sağ kenarda accent-renkli dikey scrollbar çıkıyordu.
+     Board/panel tasarımca viewport'a sığar -> bar'ı gizle (içerik kesilmez, yalnız çubuk kalkar). */
+  scrollbar-width: none;
+}
+.game-area::-webkit-scrollbar {
+  display: none;
 }
 
 /* Maç ID (sol üst HUD): oynanan maçın kimliği; admin panelde bu ID ile bulunur.
