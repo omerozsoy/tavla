@@ -71,6 +71,10 @@ class Shield
             $adminProbe = str_starts_with($path, 'api/admin') && $status === 403;
             $bannedHit = $user && $user->banned_at !== null;
 
+            // Brute-force: kimlik uçlarına ard arda başarısız istek (yanlış şifre / doğrulama / throttle).
+            // IP başına 2 dk'lık kayan pencere; eşik aşılınca TEK tehlike olayı (saldırı sinyali).
+            self::detectBruteForce($path, $status, $userId, $ip, $method, $subject);
+
             $prev = DB::table('shield_presence')->where('subject', $subject)->first();
 
             $continuing = $prev
@@ -207,6 +211,65 @@ class Shield
     public static function isSpin(string $path): bool
     {
         return str_contains($path, 'lucky-wheel/spin') || str_contains($path, 'dice-slot/spin');
+    }
+
+    // Kimlik doğrulama uçları (başarısız denemeler brute-force sayılır).
+    private const AUTH_PATHS = ['api/login', 'api/register', 'api/reset-password', 'api/forgot-password'];
+
+    private const BF_THRESHOLD = 8; // 2 dk içinde bu kadar başarısız giriş → saldırı
+
+    /** Kimlik ucuna ard arda başarısız istek (brute-force) tespiti. IP başına kayan pencere. */
+    private static function detectBruteForce(string $path, int $status, ?int $userId,
+        ?string $ip, string $method, string $subject): void
+    {
+        // 401 yanlış şifre, 422 doğrulama hatası, 429 throttle (limit zaten devrede = saldırı sinyali).
+        if (! in_array($path, self::AUTH_PATHS, true) || ! in_array($status, [401, 422, 429], true)) {
+            return;
+        }
+        try {
+            $key = 'shield:bf:'.$ip;
+            $n = (int) Cache::get($key, 0) + 1;
+            Cache::put($key, $n, now()->addMinutes(2));
+            if ($n >= self::BF_THRESHOLD && self::guard($subject, 'bruteforce', 120)) {
+                self::event($userId, $ip, 'brute_force', 3, $path, $method, $status,
+                    "{$n} başarısız giriş denemesi (2 dk)");
+            }
+        } catch (\Throwable $e) {
+            // sessizce geç
+        }
+    }
+
+    /** Verilen IP güvenlik kalkanı IP yasak listesinde mi? (60 sn cache'li — her istekte DB yok) */
+    public static function ipBanned(?string $ip): bool
+    {
+        if (! $ip) {
+            return false;
+        }
+        try {
+            return in_array($ip, self::bannedIps(), true);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /** Aktif IP yasak listesi (cache'li). */
+    public static function bannedIps(): array
+    {
+        return Cache::remember('shield:ipbans', 60, function () {
+            if (! Schema::hasTable('shield_ip_bans')) {
+                return [];
+            }
+            return DB::table('shield_ip_bans')->pluck('ip')->all();
+        });
+    }
+
+    /** Ban/unban sonrası cache'i düşür (anında devreye girsin). */
+    public static function flushIpBans(): void
+    {
+        try {
+            Cache::forget('shield:ipbans');
+        } catch (\Throwable $e) {
+        }
     }
 
     /** Bilinen tarama/sömürü kalıpları (yol + query üzerinde, /api istekleri). */

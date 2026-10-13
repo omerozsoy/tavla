@@ -2,6 +2,7 @@
 
 namespace App\Services\GnuBg;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -263,7 +264,54 @@ class GnuBgClient
      * @param  array<int|string,array>  $positions
      * @return array<int|string,?array>
      */
+    /**
+     * MEMOIZATION (PR hızlandırma #4 "düdükte hazır"): her pozisyon analizi, pozisyonun İÇERİĞİNE
+     * göre (deterministik hash) önbelleğe alınır. Böylece maç SIRASINDA WarmMatchAnalysisJob aynı
+     * pozisyonları önceden ısıtırsa, maç-sonu PR job'u gnubg'ye HİÇ gitmez (cache hit) -> PR ~anında.
+     * KORELASYON YOK: dönen değer gnubg'nin AYNI sonucudur (sadece önbellekten) -> PR matematiği
+     * DEĞİŞMEZ, ıska olursa yalnız hız kaybı (yanlış PR ASLA). Kapatmak: GNUBG_ANALYSIS_CACHE=0.
+     */
     public function analyzeBackgroundBatch(array $positions): array
+    {
+        if ($positions === []) {
+            return [];
+        }
+        if (! (bool) config('gnubg.analysis_cache', true)) {
+            return $this->analyzeBatchUncached($positions);
+        }
+        $cached = [];
+        $misses = [];
+        foreach ($positions as $k => $p) {
+            $hit = Cache::get($this->analysisCacheKey($p));
+            if ($hit !== null) {
+                $cached[$k] = $hit;
+            } else {
+                $misses[$k] = $p;
+            }
+        }
+        $fresh = $misses === [] ? [] : $this->analyzeBatchUncached($misses);
+        foreach ($fresh as $k => $res) {
+            if ($res !== null) { // yalnız BAŞARILI sonucu önbelleğe al (null = tekrar denensin)
+                Cache::put($this->analysisCacheKey($misses[$k]), $res, now()->addDay());
+            }
+        }
+
+        // GİRİŞ anahtarlarını koru (checkerPr logIndex ile eşler): cached + fresh birleşimi.
+        $out = [];
+        foreach ($positions as $k => $_) {
+            $out[$k] = $cached[$k] ?? ($fresh[$k] ?? null);
+        }
+
+        return $out;
+    }
+
+    /** Pozisyon içeriğinin deterministik önbellek anahtarı (aynı tahta+zar+bağlam -> aynı analiz). */
+    private function analysisCacheKey(array $position): string
+    {
+        return 'gnubg:ab:'.sha1(json_encode($position, JSON_THROW_ON_ERROR));
+    }
+
+    private function analyzeBatchUncached(array $positions): array
     {
         if ($positions === []) {
             return [];

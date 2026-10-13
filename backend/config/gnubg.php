@@ -28,6 +28,11 @@ return [
     // Boşsa izolasyon yok (PR ön planı kullanır = geriye dönük). Her havuz diğerine failover yapar.
     'analysis_urls' => env('GNUBG_ANALYSIS_URLS', ''),
 
+    // POZİSYON ANALİZ ÖNBELLEĞİ (#4 "düdükte hazır"): her /analyze sonucu pozisyon içeriğine göre
+    // önbelleğe alınır -> maç sırasında WarmMatchAnalysisJob önden ısıtırsa maç-sonu PR anında gelir.
+    // Dönen değer gnubg'nin AYNISI (PR matematiği değişmez). Sorun olursa 0 ile kapat.
+    'analysis_cache' => (bool) env('GNUBG_ANALYSIS_CACHE', true),
+
     // Servis dosyası (systemd birimi bunu çalıştırır). Admin "Servis Durumu" paneli gnubg KIRMIZI
     // iken bunu inceleyip "symlink kırık / dosya yok" teşhisi verir (bugün yaşanan tavlai->tavlatv
     // symlink sorunu gibi). www-data /opt'u okuyabilir (drwxr-xr-x). Yol farklıysa env ile ayarla.

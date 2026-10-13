@@ -3125,6 +3125,21 @@ class RoomController extends Controller
                 'room' => $room->code, 'kind' => $fields['kind'] ?? '?', 'err' => $e->getMessage(),
             ]);
         }
+
+        // #4 "düdükte hazır": gerçek bir hamle kaydedildiyse, o ana kadarki kararları ARKA PLANDA
+        // gnubg önbelleğine ısıt (bulk şeridi). Maç bitince PR job aynı pozisyonları ister -> cache
+        // hit -> PR ~anında. Yalnız PR otoriterken (prod); best-effort (dispatch patlarsa oyun akışı
+        // bozulmaz). WithoutOverlapping hamle-başına yığılmayı önler.
+        // ponytail: hamle başına 1 dispatch (çoğu lock alamayıp düşer); churn sorun olursa seq%N ile seyreklet.
+        if (($fields['kind'] ?? null) === 'move'
+            && (string) config('gnubg.pr_mode', 'off') === 'authoritative'
+            && (bool) config('gnubg.analysis_cache', true)) {
+            try {
+                \App\Jobs\WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('bulk');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::debug('warm dispatch hata (bastırıldı)', ['room' => $room->code, 'err' => $e->getMessage()]);
+            }
+        }
     }
 
     /**

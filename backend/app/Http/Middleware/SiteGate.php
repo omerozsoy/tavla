@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Shield;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,6 +15,11 @@ class SiteGate
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Güvenlik Kalkanı IP yasağı: yasaklı IP'den gelen TÜM /api istekleri burada biter.
+        if (Shield::ipBanned($request->ip())) {
+            return response()->json(['message' => 'Erişim engellendi.'], 403);
+        }
+
         $pw = (string) config('app.site_password', '');
         if ($pw === '') {
             return $next($request); // kapi kapali (sifre tanimsiz)
