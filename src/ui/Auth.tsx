@@ -307,10 +307,17 @@ export default function Auth({
   }
 
   function validProfile(): boolean {
-    // Ulke zorunlu degil (sonra profilden eklenebilir)
     if (!firstName.trim() || !lastName.trim() || !nickname.trim()) {
       setError(t('reg.fillAll'))
       return false
+    }
+    // YENİ ÜYE (kayıt): ülke ZORUNLU; TR ise şehir de ZORUNLU. Profil düzenlemede (editing)
+    // eski üyeler zorlanmaz (backend update'te de nullable).
+    if (!editing) {
+      if (!country.trim() || (country === 'TR' && !province.trim())) {
+        setError(t('reg.fillAll'))
+        return false
+      }
     }
     if (nickBad) {
       setError(t(nickStatus === 'invalid' ? 'reg.nickInvalid' : nickStatus === 'blocked' ? 'reg.nickBlocked' : 'reg.nickTaken'))
@@ -450,29 +457,28 @@ export default function Auth({
         <Label htmlFor="pf-lastName">{t('reg.lastName')}</Label>
         <Input id="pf-lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
       </div>
-      {editing && (
-        <div className="grid gap-1.5">
-          <Label htmlFor="pf-country">{t('reg.country')}</Label>
-          <select
-            id="pf-country"
-            className={FIELD_CLS}
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-          >
-            <option value="">{t('reg.countryPlaceholder')}</option>
-            {country && !COUNTRY_CODES.includes(country) && (
-              <option value={country}>{country}</option>
-            )}
-            {countryOptions(lang).map(({ code, name }) => (
-              <option key={code} value={code}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz) */}
-      {editing && country === 'TR' && (
+      {/* Ülke: kayıtta da sorulur (yeni üye için ZORUNLU). */}
+      <div className="grid gap-1.5">
+        <Label htmlFor="pf-country">{t('reg.country')}</Label>
+        <select
+          id="pf-country"
+          className={FIELD_CLS}
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+        >
+          <option value="">{t('reg.countryPlaceholder')}</option>
+          {country && !COUNTRY_CODES.includes(country) && (
+            <option value={country}>{country}</option>
+          )}
+          {countryOptions(lang).map(({ code, name }) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+      {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz); kayıtta TR ise ZORUNLU. */}
+      {country === 'TR' && (
         <div className="grid gap-1.5">
           <Label htmlFor="pf-province">{t('reg.province')}</Label>
           <select

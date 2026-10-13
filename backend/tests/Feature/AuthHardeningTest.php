@@ -24,6 +24,7 @@ class AuthHardeningTest extends TestCase
     {
         $this->postJson('/api/register', [
             'first_name' => 'A', 'last_name' => 'B',
+            'country' => 'TR', 'province' => 'İstanbul', 'phone' => '05551234567',
             'nickname' => 'guclu', 'email' => 'guclu@e.com', 'password' => 'Secret123456',
         ])->assertStatus(201);
     }
@@ -44,7 +45,32 @@ class AuthHardeningTest extends TestCase
     {
         $this->postJson('/api/register', [
             'first_name' => 'A', 'last_name' => 'B',
+            'country' => 'TR', 'province' => 'İstanbul', 'phone' => '05551234567',
             'nickname' => 'çağrıKŞ42', 'email' => 'tr@e.com', 'password' => 'Secret123456',
+        ])->assertStatus(201);
+    }
+
+    /** YENİ ÜYE: ülke + cep telefonu zorunlu; TR seçilirse şehir (province) de zorunlu. */
+    public function test_register_requires_country_phone_and_tr_province(): void
+    {
+        // Ülke + telefon yok -> ikisi de hata.
+        $this->postJson('/api/register', [
+            'first_name' => 'A', 'last_name' => 'B',
+            'nickname' => 'eksikad', 'email' => 'eksik@e.com', 'password' => 'Secret123456',
+        ])->assertStatus(422)->assertJsonValidationErrors(['country', 'phone']);
+
+        // Ülke TR ama şehir yok -> province hatası.
+        $this->postJson('/api/register', [
+            'first_name' => 'A', 'last_name' => 'B',
+            'country' => 'TR', 'phone' => '05551234567',
+            'nickname' => 'ilyok', 'email' => 'ilyok@e.com', 'password' => 'Secret123456',
+        ])->assertStatus(422)->assertJsonValidationErrors('province');
+
+        // TR dışı ülke -> şehir zorunlu DEĞİL (il listesi yok) -> 201.
+        $this->postJson('/api/register', [
+            'first_name' => 'A', 'last_name' => 'B',
+            'country' => 'DE', 'phone' => '05551234567',
+            'nickname' => 'almanya', 'email' => 'de@e.com', 'password' => 'Secret123456',
         ])->assertStatus(201);
     }
 

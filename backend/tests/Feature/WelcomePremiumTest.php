@@ -17,6 +17,7 @@ class WelcomePremiumTest extends TestCase
     {
         $this->postJson('/api/register', [
             'first_name' => 'Yeni', 'last_name' => 'Uye',
+            'country' => 'TR', 'province' => 'İstanbul', 'phone' => '05551234567',
             'nickname' => $nick, 'email' => $email, 'password' => 'Secret123456',
         ])->assertStatus(201);
 
