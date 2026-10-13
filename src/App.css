@@ -15058,8 +15058,38 @@ button.acct-row-logout:hover:not(:disabled) {
   width: 13px;
   height: 13px;
 }
+/* İlerleme varyantı: üst satır (spinner + metin + %) ortalı, altında ince determinate bar. */
+.mr-pr-progress {
+  flex-direction: column;
+  gap: 6px;
+}
+.mr-pr-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.mr-pr-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.mr-pr-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  overflow: hidden;
+}
+.mr-pr-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.5s linear;
+}
 @media (prefers-reduced-motion: reduce) {
   .mr-pr-loader { animation-duration: 1.6s; }
+  .mr-pr-bar-fill { transition: none; }
 }
 .mr-label {
   color: var(--muted);

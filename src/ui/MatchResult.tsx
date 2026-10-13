@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -167,6 +167,20 @@ export default function MatchResult({
   const bAnalyzing = (analyzing && (analyzingBoth || !ratingIsWinner)) || (oppAnalyzing && ratingIsWinner)
   // gnubg (sunucu) PR hesaplanana kadar DÖNEN loader; wildbg sayısı ASLA gösterilmez.
   const dots = () => <span className="mr-pr-loader" role="status" aria-label={t('mr.prCalculating')} />
+  // İLERLEME YÜZDESİ: gnubg analizi ~karar-başına paralel batch'lerle koşar; gerçek "kaç pozisyon
+  // bitti" sinyali backend'de yok -> ZAMAN-TABANLI tahmin (asimptotik: hep artar, ASLA 100 demez;
+  // gerçek sonuç gelince (analyzing false olur) hücre sayıya döner). TAU ~ tipik analiz süresi.
+  const analyzingAny = aAnalyzing || bAnalyzing
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    if (!analyzingAny) return
+    const start = Date.now()
+    const TAU = 12500 // ~15sn'de %70, ~30sn'de %91, ~45sn'de %97; asla %99'u geçmez
+    const tick = () => setProgress(Math.min(99, Math.round(100 * (1 - Math.exp(-(Date.now() - start) / TAU)))))
+    tick()
+    const id = setInterval(tick, 500)
+    return () => clearInterval(id)
+  }, [analyzingAny])
 
   // Dusuk PR daha iyi -> tac dusuk olanda
   const wBetter = winnerPr != null && loserPr != null && winnerPr <= loserPr
@@ -298,9 +312,15 @@ export default function MatchResult({
               )}
               {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
                   anlaşılmıyordu -> tam genişlik bilgi satırı. */}
-              {(aAnalyzing || bAnalyzing) && (
-                <div className="mr-pr-note" role="status">
-                  <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
+              {analyzingAny && (
+                <div className="mr-pr-note mr-pr-progress" role="status" aria-live="polite">
+                  <div className="mr-pr-progress-head">
+                    <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
+                    <span className="mr-pr-pct">%{progress}</span>
+                  </div>
+                  <div className="mr-pr-bar" aria-hidden="true">
+                    <div className="mr-pr-bar-fill" style={{ width: `${progress}%` }} />
+                  </div>
                 </div>
               )}
             </>
