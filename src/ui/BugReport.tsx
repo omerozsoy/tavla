@@ -148,10 +148,14 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
           className={`bug-fab${loggedIn ? '' : ' bug-fab-guest'}`}
           onClick={openForm}
           aria-label={t('bug.button')}
-          title={t('bug.button')}
+          title={t('bug.reward')}
         >
           <Icon name="flag" size={20} />
           <span className="bug-fab-txt">{t('bug.button')}</span>
+          <span className="bug-fab-coin" aria-hidden="true">
+            <Icon name="coins" size={13} />
+            10.000
+          </span>
         </button>
       )}
 
@@ -172,10 +176,26 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
             >
               <Icon name="x" size={16} />
             </Button>
-            <h2>
-              <Icon name="flag" size={18} /> {t('bug.title')}
-            </h2>
-            <p className="bug-sub">{t('bug.sub')}</p>
+            <div className="bug-hero">
+              <div className="bug-hero-glow" aria-hidden="true" />
+              <div className="bug-hero-coin" aria-hidden="true">
+                <Icon name="coins" size={30} />
+              </div>
+              <h2 className="bug-hero-title">{t('bug.reward')}</h2>
+              <div className="bug-tiers">
+                <span className="bug-tier bug-tier-big">
+                  <b>10.000</b>
+                  <Icon name="coins" size={13} />
+                  <em>{t('bug.rewardBig')}</em>
+                </span>
+                <span className="bug-tier">
+                  <b>5.000</b>
+                  <Icon name="coins" size={13} />
+                  <em>{t('bug.rewardSmall')}</em>
+                </span>
+              </div>
+              <p className="bug-sub">{t('bug.sub')}</p>
+            </div>
 
             <label className="bug-label">
               <span>{t('bug.pageLabel')}</span>
@@ -238,6 +258,10 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
                 </button>
               )}
             </div>
+
+            <p className="bug-reward-note">
+              <Icon name="info" size={13} /> {t('bug.rewardNote')}
+            </p>
 
             <Button variant="default" className="bug-send" onClick={submit} disabled={busy}>
               <Icon name="paper-plane-right" size={16} />

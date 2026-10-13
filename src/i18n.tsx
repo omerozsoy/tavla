@@ -1899,6 +1899,10 @@ const TR: Dict = {
   // Hata Bildir (sağ kenar formu)
   'bug.button': 'Hata Bildir',
   'bug.title': 'Hata Bildir',
+  'bug.reward': 'Hata bildirene 10.000 coin’e kadar ödül!',
+  'bug.rewardBig': 'Büyük hata',
+  'bug.rewardSmall': 'Küçük hata',
+  'bug.rewardNote': 'Yeni ve tekrarlanabilir hatalarda ödül hesabınıza tanımlanır.',
   'bug.sub': 'Karşılaştığınız sorunu bize iletin; en kısa sürede bakalım.',
   'bug.pageLabel': 'Hata yaşadığınız sayfa',
   'bug.pagePlaceholder': 'örn. Oyun, Mağaza, Profil…',
@@ -3771,6 +3775,10 @@ const EN: Dict = {
   // Report a bug (right-edge form)
   'bug.button': 'Report a bug',
   'bug.title': 'Report a bug',
+  'bug.reward': 'Earn up to 10,000 coins for reporting a bug!',
+  'bug.rewardBig': 'Major bug',
+  'bug.rewardSmall': 'Minor bug',
+  'bug.rewardNote': 'Rewards are credited for new, reproducible bugs.',
   'bug.sub': 'Tell us about the problem you ran into and we’ll look into it.',
   'bug.pageLabel': 'Page where it happened',
   'bug.pagePlaceholder': 'e.g. Game, Shop, Profile…',
