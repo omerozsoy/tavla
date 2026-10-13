@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Güvenlik Kalkanı — SALDIRI paneli. Yalnızca siteye kasıtlı zarar verme girişimleri gösterilir:
- * brute-force giriş, şüpheli/tarama (exploit) istekleri, yetkisiz panel denemeleri, yasaklı hesap
- * ısrarı ve ağır istek/hata selleri. Her satırdaki saldırgan IP'den tek tıkla yasaklanabilir;
+ * yalnız brute-force giriş, şüpheli/tarama (exploit) istekleri ve yetkisiz panel denemeleri. İstek/hata
+ * selleri (rate_burst/error_burst) ve yasaklı hesap ısrarı (oyun gürültüsü) saldırı sayılmaz; yalnız
+ * "tümü" görünümünde kalır, saldırı listesinden elenir. Her satırdaki saldırgan IP'den tek tıkla yasaklanabilir;
  * yasaklı IP'ler shield_ip_bans'te tutulur ve SiteGate middleware'i tüm /api isteklerini keser.
  * Olaylar ShieldTracker middleware'i + Shield çekirdeği tarafından toplanır; sayfa 15 sn'de yenilenir.
  */
@@ -38,8 +39,8 @@ class GuvenlikKalkani extends Page
 
     public string $newIpReason = '';
 
-    /** Saldırı sayılan olay türleri (brute-force + exploit/tarama + yetkisiz panel + yasaklı ısrar). */
-    private const ATTACK_TYPES = ['brute_force', 'suspicious_path', 'admin_probe', 'banned_hit'];
+    /** Saldırı sayılan olay türleri (brute-force + exploit/tarama + yetkisiz panel). */
+    private const ATTACK_TYPES = ['brute_force', 'suspicious_path', 'admin_probe'];
 
     public function toggleAttacks(): void
     {
@@ -54,6 +55,7 @@ class GuvenlikKalkani extends Page
         $n = DB::table('shield_events')
             ->where('created_at', '>', now()->subHour())
             ->where('severity', '>=', 3)
+            ->whereIn('type', self::ATTACK_TYPES)
             ->count();
 
         return $n > 0 ? (string) $n : null;
@@ -97,18 +99,7 @@ class GuvenlikKalkani extends Page
 
         return DB::table('shield_events as e')
             ->leftJoin('users as u', 'u.id', '=', 'e.user_id')
-            ->when($this->onlyAttacks, function ($q) {
-                // Saldırı = açık saldırı türleri VEYA ağır (severity ≥ 3) sel; zararsız salt-okunur
-                // GET patlaması (kazıma/tarayıcı gürültüsü) elenir.
-                $q->where(function ($w) {
-                    $w->whereIn('e.type', self::ATTACK_TYPES)
-                        ->orWhere(function ($x) {
-                            $x->whereIn('e.type', ['rate_burst', 'error_burst'])
-                                ->where('e.severity', '>=', 3)
-                                ->where(fn ($y) => $y->where('e.method', '!=', 'GET')->orWhere('e.status', '>=', 400));
-                        });
-                });
-            })
+            ->when($this->onlyAttacks, fn ($q) => $q->whereIn('e.type', self::ATTACK_TYPES))
             ->orderByDesc('e.created_at')
             ->limit(200)
             ->get([
