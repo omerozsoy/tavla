@@ -5,7 +5,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { leaderboard, prLeaderboard, wxpBreakdown, type LeaderRow, type PrLeaderRow, type WxpBreakdown } from '../api'
+import { leaderboard, prLeaderboard, wxpBreakdown, searchLeaderboard, type LeaderRow, type PrLeaderRow, type WxpBreakdown } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import PublicProfile from './PublicProfile'
@@ -37,6 +37,12 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
   const [wxpInfo, setWxpInfo] = useState<WxpBreakdown | null>(null)
   const [wxpOpen, setWxpOpen] = useState(false) // "WXP nasil hesaplanir?" varsayilan kapali
   const [page, setPage] = useState(0) // 0-tabanli sayfa; her 20 kisi bir sayfa (en fazla 100 kisi = 5 sayfa)
+  // Arama (ilk 100'de olmayanlar kendini bulur): yazdikca sunucu arar, GERCEK sira doner.
+  const [query, setQuery] = useState('')
+  const [searchRows, setSearchRows] = useState<(LeaderRow | PrLeaderRow)[] | null>(null)
+  const [searchErr, setSearchErr] = useState(false)
+  const q = query.trim()
+  const isSearching = q.length >= 2
 
   const PAGE_SIZE = 20
   const MAX_PAGES = 10 // en fazla 200 kisi göster (su an 100 cekiliyor = 5 sayfa)
@@ -83,6 +89,32 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
       alive = false
     }
   }, [by, currentName])
+
+  // Yazdikca ara: 250ms debounce; sekme (by) degisince de yeniden ara. <2 harf -> temizle.
+  useEffect(() => {
+    if (q.length < 2) {
+      setSearchRows(null)
+      setSearchErr(false)
+      return
+    }
+    let alive = true
+    setSearchRows(null) // yeni sorgu -> eski sonuclari gosterme (debounce suresince bos)
+    setSearchErr(false)
+    const timer = setTimeout(() => {
+      searchLeaderboard(q, by)
+        .then((r) => alive && setSearchRows(r))
+        .catch(() => {
+          if (alive) {
+            setSearchErr(true)
+            setSearchRows(null)
+          }
+        })
+    }, 250)
+    return () => {
+      alive = false
+      clearTimeout(timer)
+    }
+  }, [q, by])
 
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
   const wxpCatLabel = (key: string) => (key === 'coin' ? t('wxpbd.coin') : `${key} ${t('wxpbd.point')}`)
@@ -177,13 +209,85 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
     )
   }
 
+  const renderPrRow = (r: PrLeaderRow) => {
+    const mine = currentName && r.name === currentName
+    return (
+      <div
+        key={r.rank}
+        className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
+        onClick={() => r.id && setProfileId(r.id)}
+      >
+        <span className="lb-rank">{medal(r.rank) || r.rank}</span>
+        <span className="lb-name">
+          {/* Rutbe site genelinde TEK kaynaktan: rating (PR sekmesinde de). */}
+          <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} admin={r.is_admin} support={r.is_support} animated statusDot={r.status} />
+        </span>
+        <span className="lb-flag">
+          <CountryFlag code={r.country} size={22} />
+        </span>
+        <span className="lb-games">
+          {r.matches} <small>{t('lb.gamesUnit')}</small>
+        </span>
+        <span className="lb-wl">{r.decisions.toLocaleString('tr-TR')}</span>
+        <span className="lb-wr" aria-hidden="true" />
+        <span className="lb-rating lb-pr-val">{r.career_pr.toFixed(2)}</span>
+      </div>
+    )
+  }
+
+  // Arama/PR/standart tablo basligi: by'a gore dogru sutunlar (tek yerden).
+  const renderHead = () => (
+    <div className="lb-head">
+      <span className="lb-rank">#</span>
+      <span className="lb-name">{t('lb.player')}</span>
+      <span className="lb-flag" aria-hidden="true" />
+      {by === 'pr' ? (
+        <>
+          <span className="lb-games">{t('lb.prMatches')}</span>
+          <span className="lb-wl">{t('lb.prDecisions')}</span>
+          <span className="lb-wr" aria-hidden="true" />
+          <span className="lb-rating">PR</span>
+        </>
+      ) : (
+        <>
+          <span className="lb-games">{t('lb.games')}</span>
+          <span className="lb-wl">{t('lb.winLoss')}</span>
+          <span className="lb-wr">{t('lb.winRate')}</span>
+          <span className="lb-rating">
+            {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
+          </span>
+        </>
+      )}
+    </div>
+  )
+
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card leaderboard-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2><Icon name="crown" size={20} /> {titleOverride || t('lb.title')}</h2>
+        <div className="lb-header">
+          <h2><Icon name="crown" size={20} /> {titleOverride || t('lb.title')}</h2>
+          <div className="lb-search">
+            <Icon name="search" size={16} className="lb-search-ico" />
+            <input
+              type="text"
+              className="lb-search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('lb.searchPlaceholder')}
+              aria-label={t('lb.searchPlaceholder')}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {query && (
+              <button type="button" className="lb-search-clear" onClick={() => setQuery('')} aria-label={t('lb.searchClear')}>
+                <Icon name="x" size={14} />
+              </button>
+            )}
+          </div>
+        </div>
         <div className="rep-filter">
           <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
             <Icon name="star" size={16} /> {t('lb.rating')}
@@ -242,8 +346,28 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           </div>
         )}
 
-        {error && <LoadError message={t('lb.error')} onRetry={() => setReloadKey((k) => k + 1)} />}
-        {by !== 'pr' && !error && rows === null && (
+        {/* Arama sonuçları: ilk 100'de olmayanlar kendini burada bulur (gerçek sırayla). */}
+        {isSearching && (
+          <div className="lb-search-results">
+            {searchErr && <LoadError message={t('lb.error')} onRetry={() => setQuery((s) => s + ' ')} />}
+            {!searchErr && searchRows !== null && searchRows.length === 0 && (
+              <div className="lb-empty">{t('lb.searchNoResult', { q })}</div>
+            )}
+            {!searchErr && searchRows !== null && searchRows.length > 0 && (
+              <div className={`lb-table ${by === 'pr' ? 'lb-pr' : ''}`}>
+                {renderHead()}
+                <div className="lb-body">
+                  {by === 'pr'
+                    ? (searchRows as PrLeaderRow[]).map(renderPrRow)
+                    : (searchRows as LeaderRow[]).map(renderRow)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isSearching && error && <LoadError message={t('lb.error')} onRetry={() => setReloadKey((k) => k + 1)} />}
+        {!isSearching && by !== 'pr' && !error && rows === null && (
           <div className="lb-table" aria-busy="true" aria-live="polite">
             <div className="lb-head">
               <span className="lb-rank">#</span>
@@ -274,30 +398,20 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
             </div>
           </div>
         )}
-        {by !== 'pr' && !error && rows !== null && rows.length === 0 && (
+        {!isSearching && by !== 'pr' && !error && rows !== null && rows.length === 0 && (
           <div className="lb-empty">{t('lb.empty')}</div>
         )}
 
-        {by !== 'pr' && rows !== null && rows.length > 0 && (
+        {!isSearching && by !== 'pr' && rows !== null && rows.length > 0 && (
           <div className="lb-table">
-            <div className="lb-head">
-              <span className="lb-rank">#</span>
-              <span className="lb-name">{t('lb.player')}</span>
-              <span className="lb-flag" aria-hidden="true" />
-              <span className="lb-games">{t('lb.games')}</span>
-              <span className="lb-wl">{t('lb.winLoss')}</span>
-              <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-rating">
-                {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
-              </span>
-            </div>
+            {renderHead()}
             <div className="lb-body">{rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map(renderRow)}</div>
           </div>
         )}
-        {by !== 'pr' && rows !== null && rows.length > 0 && renderPager(rows.length)}
+        {!isSearching && by !== 'pr' && rows !== null && rows.length > 0 && renderPager(rows.length)}
 
         {/* PR Sıralaması (Career PR): düşük PR üstte. Sütunlar: Maç / Karar / PR */}
-        {by === 'pr' && (
+        {!isSearching && by === 'pr' && (
           <>
             {prMeta && (
               <p className="lb-pr-note">
@@ -338,42 +452,8 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
             )}
             {prRows !== null && prRows.length > 0 && (
               <div className="lb-table lb-pr">
-                <div className="lb-head">
-                  <span className="lb-rank">#</span>
-                  <span className="lb-name">{t('lb.player')}</span>
-                  <span className="lb-flag" aria-hidden="true" />
-                  <span className="lb-games">{t('lb.prMatches')}</span>
-                  <span className="lb-wl">{t('lb.prDecisions')}</span>
-                  <span className="lb-wr" aria-hidden="true" />
-                  <span className="lb-rating">PR</span>
-                </div>
-                <div className="lb-body">
-                  {prRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((r) => {
-                    const mine = currentName && r.name === currentName
-                    return (
-                      <div
-                        key={r.rank}
-                        className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
-                        onClick={() => r.id && setProfileId(r.id)}
-                      >
-                        <span className="lb-rank">{medal(r.rank) || r.rank}</span>
-                        <span className="lb-name">
-                          {/* Rutbe site genelinde TEK kaynaktan: rating (PR sekmesinde de). */}
-                          <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} admin={r.is_admin} support={r.is_support} animated statusDot={r.status} />
-                        </span>
-                        <span className="lb-flag">
-                          <CountryFlag code={r.country} size={22} />
-                        </span>
-                        <span className="lb-games">
-                          {r.matches} <small>{t('lb.gamesUnit')}</small>
-                        </span>
-                        <span className="lb-wl">{r.decisions.toLocaleString('tr-TR')}</span>
-                        <span className="lb-wr" aria-hidden="true" />
-                        <span className="lb-rating lb-pr-val">{r.career_pr.toFixed(2)}</span>
-                      </div>
-                    )
-                  })}
-                </div>
+                {renderHead()}
+                <div className="lb-body">{prRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map(renderPrRow)}</div>
               </div>
             )}
             {prRows !== null && prRows.length > 0 && renderPager(prRows.length)}

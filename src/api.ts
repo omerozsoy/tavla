@@ -470,6 +470,13 @@ export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[
   return { players: d.players, minMatches: d.min_matches, minDecisions: d.min_decisions }
 }
 
+// Liderlik araması (ilk 100'de olmayanlar kendini bulur): isme göre eşleşen oyuncular + GERÇEK sırası.
+// Dönen satır by'a göre LeaderRow (rating/coins/wxp) veya PrLeaderRow (pr) — çağıran bildiği için cast eder.
+export async function searchLeaderboard(q: string, by: 'rating' | 'coins' | 'wxp' | 'pr'): Promise<(LeaderRow | PrLeaderRow)[]> {
+  const d = await req<{ players: (LeaderRow | PrLeaderRow)[] }>(`/leaderboard/search?q=${encodeURIComponent(q)}&by=${by}`)
+  return d.players
+}
+
 // Site geneli top-3 rozet haritası: PR sıralamasında ilk 3 (madalya) + Rating sıralamasında
 // ilk 3 (kupa). İsimlerin yanındaki TopRankBadge bunu okur. {id, rank(1..3)}.
 export interface TopRankEntry {

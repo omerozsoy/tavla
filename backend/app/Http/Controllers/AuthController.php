@@ -21,15 +21,18 @@ class AuthController extends Controller
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
-            'country'    => ['nullable', 'string', 'max:80'],
-            'province'   => ['nullable', 'string', 'max:80'],
+            // YENİ ÜYE: ülke ZORUNLU; şehir (province) yalnız Türkiye'de zorunlu (diğer ülkelerde
+            // il listesi yok -> sorulmaz). Not: Google ile kayıt bu formu kullanmaz (country='' kalır,
+            // profilden tamamlanır); bu kurallar yalnız e-posta kaydını kapsar.
+            'country'    => ['required', 'string', 'max:80'],
+            'province'   => ['required_if:country,TR', 'nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
             // Kufur/uygunsuz takma ad engeli (panelden yonetilir). Bkz NicknameFilter.
             'nickname'   => self::nicknameRules(),
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
-            // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). Zorunluluk frontend'de; API'de format + nullable.
-            'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
+            // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). YENİ ÜYEDE ZORUNLU (format + required).
+            'phone'      => ['required', 'string', 'regex:/^0?5\d{9}$/'],
             'password'   => self::passwordRules(),
         ], self::passwordMessages());
 
@@ -38,8 +41,7 @@ class AuthController extends Controller
             unset($data['phone']);
         }
 
-        // Ulke secilmezse BOS kalsin (kullanici sonradan profilinden secer). Kolon NOT NULL
-        // olsa bile kayit patlamasin diye '' ata.
+        // Ulke her zaman gelir (required); yine de NOT NULL kolon guvenligi icin '' fallback.
         $data['country'] = $data['country'] ?? '';
 
         // province kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
@@ -1359,6 +1361,87 @@ class AuthController extends Controller
         });
 
         return response()->json(['players' => $rows, 'min_matches' => $minM, 'min_decisions' => $minD]);
+    }
+
+    // Herkese acik: LIDERLIK ARAMASI. Ilk 100'de olmayan oyuncular kendini burada bulur.
+    // Isme gore (nickname/first_name) eslesen oyuncular + GERCEK global siralari (rank).
+    // by: rating|coins|wxp -> standart satir (LeaderRow); pr -> PR satiri (yalniz uygun oyuncular).
+    public function leaderboardSearch(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['players' => []]); // en az 2 harf
+        }
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%'; // LIKE joker karakterlerini kacir
+        $by = $request->query('by');
+        $nameMatch = fn ($w) => $w->where('nickname', 'like', $like)->orWhere('first_name', 'like', $like);
+
+        if ($by === 'pr') {
+            if (! Schema::hasColumn('users', 'career_pr')) {
+                return response()->json(['players' => []]);
+            }
+            $minM = \App\Services\CareerPrService::minMatches();
+            $minD = \App\Services\CareerPrService::minDecisions();
+            $base = fn () => User::whereNotNull('career_pr')->where('is_system', false)
+                ->where('career_pr_matches', '>=', $minM)->where('career_pr_decisions', '>=', $minD);
+            $users = $base()->where($nameMatch)->orderBy('career_pr', 'asc')->limit(15)
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+            $rows = $users->map(function ($u) use ($base) {
+                // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz
+                $rank = $base()->where('career_pr', '<', $u->career_pr)->count() + 1;
+                $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
+                    && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+                return [
+                    'rank' => $rank,
+                    'id' => $u->id,
+                    'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                    'avatar' => $u->avatar,
+                    'frame' => $u->avatar_frame,
+                    'country' => $u->country,
+                    'rating' => (int) $u->rating,
+                    'career_pr' => $u->career_pr,
+                    'matches' => (int) $u->career_pr_matches,
+                    'decisions' => (int) $u->career_pr_decisions,
+                    'premium' => $u->plan_active !== 'free',
+                    'is_admin' => (bool) $u->is_admin,
+                    'is_support' => (bool) $u->is_support,
+                    'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
+                ];
+            });
+
+            return response()->json(['players' => $rows->values()]);
+        }
+
+        $sortCol = $by === 'coins' ? 'coins' : ($by === 'wxp' ? 'total_wxp' : 'rating');
+        $users = User::where('is_system', false)->where($nameMatch)
+            ->orderByDesc($sortCol)->orderByDesc('wins')->limit(15)
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+        $rows = $users->map(function ($u) use ($sortCol) {
+            // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz. Rank = kendisinden ustte kac kisi var + 1.
+            $rank = User::where('is_system', false)->where($sortCol, '>', $u->{$sortCol})->count() + 1;
+            $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
+                && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+            return [
+                'rank'    => $rank,
+                'id'      => $u->id,
+                'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar'  => $u->avatar,
+                'frame'   => $u->avatar_frame,
+                'country' => $u->country,
+                'rating'  => $u->rating ?? 1500,
+                'coins'   => $u->coins ?? 0,
+                'wxp'     => $u->total_wxp ?? 0,
+                'wins'    => $u->wins ?? 0,
+                'losses'  => $u->losses ?? 0,
+                'games'   => $u->games_played ?? 0,
+                'premium' => $u->plan_active !== 'free',
+                'is_admin' => (bool) $u->is_admin,
+                'is_support' => (bool) $u->is_support,
+                'status'  => $online ? ($u->presence_status ?: 'available') : 'offline',
+            ];
+        });
+
+        return response()->json(['players' => $rows->values()]);
     }
 
     // Herkese acik: SITE GENELI top-3 rozet haritasi. PR sIralamasInda ilk 3 (madalya) +
