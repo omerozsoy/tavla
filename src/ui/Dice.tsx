@@ -47,17 +47,19 @@ export default function DiceRow({
   owner,
   swappable,
   onSwap,
+  className = '',
 }: {
   faces: DieFace[]
   owner: Player
   swappable?: boolean
   onSwap?: () => void
+  className?: string
 }) {
   const { t } = useT()
   if (faces.length === 0) return null
   return (
     <div
-      className={`board-dice ${swappable ? 'swappable' : ''}`}
+      className={`board-dice ${swappable ? 'swappable' : ''} ${className}`}
       onClick={swappable ? onSwap : undefined}
       title={swappable ? t('dice.swap') : undefined}
       // Dokunmatikte title (hover ipucu) gorunmez: dugme rolu + etiket + gorunur ⇄ rozeti (CSS).

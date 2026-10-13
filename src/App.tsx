@@ -8139,16 +8139,10 @@ export default function App() {
       </div>
     )
   } else if (noMove || oppDance) {
-    // oppDance (online rakip gele): rakibin zarı + rengi. Yoksa kendi/bot dance -> diceFaces/turnStart.
-    const dd = oppDance ? oppDance.dice.map((v) => ({ value: v, used: false })) : diceFaces
-    const dc = oppDance ? oppDance.color : turnStart.turn
+    // Dance: zarlar ORTADA değil, dans eden oyuncunun KENDİ zar slotunda (silik) durur
+    // (centerLeft/centerRight'a danceDice ile enjekte edilir). Orta kutu yalnız metni gösterir.
     centerMain = (
       <div className="result-box no-moves">
-        <div className="board-dice nm-dice">
-          {dd.map((f, i) => (
-            <Die key={i} value={f.value} owner={dc} used={f.used} />
-          ))}
-        </div>
         <div className="result-title">{t('overlay.noMoves')}</div>
         <div className="err-detail">{t('overlay.noMovesSub')}</div>
       </div>
@@ -8210,8 +8204,25 @@ export default function App() {
   // beyaz), dolayisiyla "alttaki oyuncunun sirasi mi" = "sira bende mi".
   // Yan slot (Katla / Geri Al) yalniz kendi turumda dolar -> rakip zariyla cakismaz.
   const turnIsMine = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
+  // Dance (Hamle Yok): dans eden oyuncunun zarı DAİMA silik (nm-dice) ve KENDİ slotunda —
+  // kendiminki SAĞDA, rakibin SOLDA (zar yeri kuralıyla aynı). oppDance=online rakip gele;
+  // yoksa kendi/bot dance -> diceFaces/turnStart.turn.
+  const danceInfo = oppDance
+    ? { dice: oppDance.dice.map((v) => ({ value: v, used: false })), color: oppDance.color }
+    : noMove
+      ? { dice: diceFaces, color: turnStart.turn }
+      : null
+  const danceIsMine = danceInfo
+    ? flipBoard
+      ? danceInfo.color === 'black'
+      : danceInfo.color === 'white'
+    : false
+  const danceDice = danceInfo ? (
+    <DiceRow faces={danceInfo.dice} owner={danceInfo.color} className="nm-dice" />
+  ) : null
   // Küp yanıtı: SAĞDA Kabul. Yoksa normal (benim turum -> ana buton sağda).
-  const centerRight = respondTake ?? (turnIsMine ? primary : secondary)
+  const centerRight =
+    respondTake ?? (danceInfo && danceIsMine ? danceDice : turnIsMine ? primary : secondary)
   // §5.2 REPLAY ZARI (bot gibi soluklaşsın): rakip hamlesini onaylayınca turnStart ANINDA bana döner
   // (authoritative-snap) -> diceFaces artık benim boş zarımı okur, rakip zarı solmazdı. Replay base
   // rakibin tur-başı tahtasıdır (zarlı); shown adımlarıyla faceStates zarı adım adım soldurur ->
@@ -8226,7 +8237,10 @@ export default function App() {
   // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12): sıra bana geçince statik koyu zar duruyordu; kaldırıldı.
   // Artık sol merkez YALNIZ replay sırasında rakip zarını (soluklaşan) gösterir; replay yoksa boş.
   // Küp yanıtı: SOLDA Pas. Yoksa normal (rakip zarı / yan buton).
-  const centerLeft = respondPas ?? oppReplayDice ?? (turnIsMine ? secondary : primary)
+  const centerLeft =
+    respondPas ??
+    oppReplayDice ??
+    (danceInfo && !danceIsMine ? danceDice : turnIsMine ? secondary : primary)
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
@@ -10922,7 +10936,8 @@ export default function App() {
 
   // botMatch: yerel pvb VEYA sunucu-otoriter bot odası (SERVER_BOT). Öğrenme/ipucu ikisinde de açık.
   const showHintUI =
-    botMatch && interactive && diceRolled && !gameWon && remainingDice.length > 0
+    botMatch && interactive && diceRolled && !gameWon && remainingDice.length > 0 && !noMove
+  // Dance (Hamle Yok): oynanacak hamle yok -> ipucu anlamsız, gizle (kullanıcı: "dance varken ipucu verme").
 
   return (
     <div className="app game-view">

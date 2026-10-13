@@ -8104,9 +8104,7 @@ html[data-board='yilbasi'] .checker.black {
   .spectate-view .result-box .err-detail { font-size: 0.72rem; margin-top: 3px; }
 }
 .nm-dice {
-  justify-content: center;
-  margin-bottom: 10px;
-  opacity: 0.35; /* dance "Hamle Yok": zarlar silik (oynanamadi) -> .die-face.used ile ayni solgunluk */
+  opacity: 0.35; /* dance "Hamle Yok": dans eden oyuncunun zarı DAİMA silik (oynanamadı), kendi slotunda */
 }
 .cube .owner-center {
 }
