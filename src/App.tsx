@@ -8159,7 +8159,6 @@ export default function App() {
     centerMain = (
       <div className="result-box no-moves">
         <div className="result-title">{t('overlay.noMoves')}</div>
-        <div className="err-detail">{t('overlay.noMovesSub')}</div>
       </div>
     )
   }

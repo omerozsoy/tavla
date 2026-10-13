@@ -602,7 +602,6 @@ export default function Spectate({
                         ))}
                       </div>
                       <div className="result-title">{t('overlay.noMoves')}</div>
-                      <div className="err-detail">{t('overlay.noMovesSub')}</div>
                     </div>
                   ) : null
                 }
