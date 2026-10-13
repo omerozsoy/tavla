@@ -214,6 +214,7 @@ const DEFAULT_DESC =
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
   'tavla-oyna': 'Tavla Oyna - Ücretsiz Bedava Tavla Oyunu | TavlaTv',
+  'backgammon': 'Play Backgammon Online Free - Live Multiplayer | TavlaTv',
   'tavla-turnuvasi-organizasyonu': 'Tavla Turnuvası Organizasyonu | Kurumsal, Belediye, AVM | TavlaTv',
   'kurumsal-tavla-turnuvasi': 'Kurumsal Tavla Turnuvası Organizasyonu | TavlaTv',
   'belediye-tavla-turnuvasi': 'Belediye Tavla Turnuvası Organizasyonu | TavlaTv',
@@ -945,6 +946,7 @@ export default function App() {
   const [classicSetup, setClassicSetup] = useState(false) // KLASIK TAVLA kurulum ekrani mi (kup yok + mars=2)
   const [onlineTavlaOpen, setOnlineTavlaOpen] = useState(false) // SEO landing: /online-tavla
   const [tavlaOynaOpen, setTavlaOynaOpen] = useState(false) // SEO landing: /tavla-oyna
+  const [backgammonOpen, setBackgammonOpen] = useState(false) // SEO landing (EN): /backgammon
   // Turnuva organizasyonu SEO servis sayfalari + /iletisim (slug tutar): hub + kurumsal/
   // belediye/avm + iletisim. Tek state -> hepsi ServiceLanding ile render edilir.
   const [servicePage, setServicePage] = useState<string | null>(null)
@@ -1573,6 +1575,9 @@ export default function App() {
           break
         case 'tavla-oyna': // SEO landing sayfasi (taranabilir icerik)
           setTavlaOynaOpen(true)
+          break
+        case 'backgammon': // SEO landing (EN): "Play Backgammon Online" — İngilizce anahtar kelime
+          setBackgammonOpen(true)
           break
         case 'tavla-turnuvasi-organizasyonu': // Turnuva organizasyonu SEO servis sayfalari + iletisim
         case 'kurumsal-tavla-turnuvasi':
@@ -10486,15 +10491,16 @@ export default function App() {
 
   // SEO landing sayfalari (/online-tavla, /tavla-oyna): diger menu sayfalari gibi sol menu
   // gorunur kalir, taranabilir icerik page-host icinde akis icinde acilir. Kapatinca home'a doner.
-  if (onlineTavlaOpen || tavlaOynaOpen) {
+  if (onlineTavlaOpen || tavlaOynaOpen || backgammonOpen) {
     return (
       <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
         <div className="page-host">
           <SeoContent
-            variant={onlineTavlaOpen ? 'online-tavla' : 'tavla-oyna'}
+            variant={backgammonOpen ? 'backgammon' : onlineTavlaOpen ? 'online-tavla' : 'tavla-oyna'}
             onClose={() => {
               setOnlineTavlaOpen(false)
               setTavlaOynaOpen(false)
+              setBackgammonOpen(false)
               setHome(true)
             }}
           />

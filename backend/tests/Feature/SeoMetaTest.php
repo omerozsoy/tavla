@@ -31,6 +31,31 @@ class SeoMetaTest extends TestCase
             ->assertSee('"@type":"BreadcrumbList"', false);
     }
 
+    public function test_backgammon_landing_is_english_with_hreflang_and_game_schema(): void
+    {
+        $this->get('/backgammon')
+            ->assertOk()
+            ->assertSee('name="robots" content="index, follow"', false)
+            ->assertSee('Play Backgammon Online Free - Live Multiplayer | TavlaTv', false)
+            ->assertSee('<html lang="en"', false)
+            ->assertSee('property="og:locale" content="en_US"', false)
+            ->assertSee('rel="alternate" hreflang="en" href="https://www.tavlatv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/online-tavla"', false)
+            ->assertSee('rel="alternate" hreflang="x-default" href="https://www.tavlatv.com/online-tavla"', false)
+            ->assertSee('rel="canonical" href="https://www.tavlatv.com/backgammon"', false)
+            ->assertSee('"@type":"VideoGame"', false)
+            ->assertSee('"inLanguage":"en"', false)
+            ->assertSee('Play backgammon online for free', false);
+    }
+
+    public function test_online_tavla_has_reciprocal_hreflang_to_backgammon(): void
+    {
+        $this->get('/online-tavla')
+            ->assertOk()
+            ->assertSee('rel="alternate" hreflang="en" href="https://www.tavlatv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/online-tavla"', false);
+    }
+
     public function test_tournament_landing_contains_keyword_relevant_content(): void
     {
         $this->get('/turnuva-takvimi')

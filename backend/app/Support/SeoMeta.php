@@ -54,6 +54,12 @@ final class SeoMeta
             'Bedava tavla oyna! Ücretsiz, kayıtsız ve tarayıcıda anında açılan tavla oyunu. Yapay zekâya karşı pratik yap, arkadaşınla veya gerçek rakiplerle online tavla oyna.',
             'Tavla Oyna',
         ],
+        // İngilizce "backgammon" anahtar kelimesini hedefleyen landing (hreflang tr<->en; eşi /online-tavla).
+        'backgammon' => [
+            'Play Backgammon Online Free - Live Multiplayer | TavlaTv',
+            'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.',
+            'Play Backgammon Online',
+        ],
         'tavla-turnuvasi-organizasyonu' => [
             'Tavla Turnuvası Organizasyonu | Kurumsal, Belediye, AVM | TavlaTv',
             'Kurumlar, belediyeler ve AVM’ler için anahtar teslim tavla turnuvası organizasyonu. Format kurgusu, hakemlik, dijital eşleşme tabloları ve ödül töreni dahil. Teklif alın.',
@@ -247,6 +253,11 @@ final class SeoMeta
             'Kayıt gerektirmeden tarayıcıda tavla oynamaya başlayın. Tek oyun, arkadaşınızla oyun ve canlı rakip seçenekleriyle kendi oyun tarzınıza uygun maçı seçin.',
             ['Tek başınıza yapay zekâya karşı oynayın.', 'Arkadaşınızı davet ederek özel maç oluşturun.', 'Online tavla turnuvalarını ve lider tablosunu keşfedin.'],
         ],
+        'backgammon' => [
+            'Free online backgammon',
+            'TavlaTv lets you play backgammon online free in your browser — against real players worldwide, a neural-network AI, or a friend. Provably fair dice, automatic rules and match analysis.',
+            ['Join a free live backgammon match in seconds.', 'Practice against a strong AI bot or invite a friend.', 'Track your progress with rating and performance (PR) analysis.'],
+        ],
         'nasil-oynanir' => [
             'Tavla kuralları ve başlangıç rehberi',
             'TavlaTV rehberinde zar kullanımı, pul hareketleri, kırık pul ve toplama kurallarını adım adım öğrenin.',
@@ -410,6 +421,20 @@ final class SeoMeta
             return self::applyNoIndex($html);
         }
 
+        // 1a) İngilizce "backgammon" landing: <html lang="en"> + og:locale + hreflang (tr<->en) +
+        //     İngilizce VideoGame/WebPage şeması. Eşi /online-tavla (reciprocal hreflang aşağıda).
+        if ($slug === 'backgammon') {
+            [$title, $desc, $h1] = self::META[$slug];
+            $url = self::BASE . $slug;
+            $html = self::apply($html, $title, $desc, $h1, $url, null, 'website', self::LANDING[$slug] ?? null);
+            $html = self::applyEnglishLocale($html);
+            $html = self::injectHreflang($html);
+            $html = self::injectVideoGameJsonLd($html, $h1, $desc, $url, 'en');
+            $html = self::injectWebPageJsonLd($html, $h1, $desc, $url, 'en');
+
+            return self::injectBreadcrumbJsonLd($html, [[$h1, $url]], 'Home');
+        }
+
         // 1) Statik rota META tablosu.
         if (isset(self::META[$slug])) {
             [$title, $desc, $h1] = self::META[$slug];
@@ -419,6 +444,10 @@ final class SeoMeta
             $html = self::injectWebPageJsonLd($html, $h1, $desc, self::BASE . $slug);
             if ($slug === 'tavla-oyna') {
                 $html = self::injectVideoGameJsonLd($html, $h1, $desc, self::BASE . $slug);
+            }
+            // /online-tavla = /backgammon'un Türkçe eşi: karşılıklı hreflang (reciprocal şart).
+            if ($slug === 'online-tavla') {
+                $html = self::injectHreflang($html);
             }
 
             // Statik landing/bilgi sayfaları: Ana Sayfa › <sayfa> (2 seviye).
@@ -621,6 +650,31 @@ final class SeoMeta
         return $html;
     }
 
+    /** İngilizce landing: <html lang> ve og:locale'i İngilizceye çevirir (dil sinyali). */
+    private static function applyEnglishLocale(string $html): string
+    {
+        $out = preg_replace('~<html\s+lang="[^"]*"~i', '<html lang="en"', $html, 1);
+        $html = $out ?? $html;
+        $out = preg_replace('~<meta\s+property="og:locale"\s+content="[^"]*"\s*/?>~i', '<meta property="og:locale" content="en_US" />', $html, 1);
+
+        return $out ?? $html;
+    }
+
+    /**
+     * tr<->en hreflang kümesi (+x-default). Küme üyeleri AYNI etiketleri taşır (her sayfa tüm
+     * alternatifleri + kendini listeler) -> /online-tavla ve /backgammon'a BİREBİR aynısı basılır
+     * (reciprocal = geçerli). Kümeyi büyütürken tek yer burası.
+     */
+    private static function injectHreflang(string $html): string
+    {
+        $tags = '<link rel="alternate" hreflang="tr" href="' . self::BASE . 'online-tavla" />'
+            . '<link rel="alternate" hreflang="en" href="' . self::BASE . 'backgammon" />'
+            . '<link rel="alternate" hreflang="x-default" href="' . self::BASE . 'online-tavla" />';
+        $out = preg_replace_callback('~</head>~i', static fn () => $tags . '</head>', $html, 1);
+
+        return $out ?? $html;
+    }
+
     /** JS kapalı crawler için başlık, açıklama ve landing içeriği üretir. */
     private static function renderNoscript(string $h1, string $desc, ?array $landing): string
     {
@@ -741,7 +795,7 @@ final class SeoMeta
     }
 
     /** Static public rotanın kendi URL'sini WebPage olarak bildirir. */
-    private static function injectWebPageJsonLd(string $html, string $name, string $description, string $url): string
+    private static function injectWebPageJsonLd(string $html, string $name, string $description, string $url, string $inLanguage = 'tr'): string
     {
         $data = [
             '@context' => 'https://schema.org',
@@ -749,7 +803,7 @@ final class SeoMeta
             'name' => $name,
             'description' => $description,
             'url' => $url,
-            'inLanguage' => 'tr',
+            'inLanguage' => $inLanguage,
             'isPartOf' => ['@type' => 'WebSite', '@id' => self::BASE . '#website'],
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -763,7 +817,7 @@ final class SeoMeta
     }
 
     /** Tavla Oyna landing'ini oynanabilir bir web oyunu olarak açıkça bildirir. */
-    private static function injectVideoGameJsonLd(string $html, string $name, string $description, string $url): string
+    private static function injectVideoGameJsonLd(string $html, string $name, string $description, string $url, string $inLanguage = 'tr'): string
     {
         $data = [
             '@context' => 'https://schema.org',
@@ -772,8 +826,8 @@ final class SeoMeta
             'description' => $description,
             'url' => $url,
             'image' => [self::BASE . 'og-image.jpg'],
-            'inLanguage' => 'tr',
-            'genre' => ['Tavla', 'Backgammon', 'Masa Oyunu'],
+            'inLanguage' => $inLanguage,
+            'genre' => ['Backgammon', 'Tavla', 'Board Game'],
             'applicationCategory' => 'Game',
             'operatingSystem' => 'Web',
             'playMode' => ['SinglePlayer', 'MultiPlayer'],
@@ -801,12 +855,12 @@ final class SeoMeta
      *
      * @param array<int, array{0:string,1:string}> $trail
      */
-    private static function injectBreadcrumbJsonLd(string $html, array $trail): string
+    private static function injectBreadcrumbJsonLd(string $html, array $trail, string $homeLabel = 'Ana Sayfa'): string
     {
         $items = [[
             '@type' => 'ListItem',
             'position' => 1,
-            'name' => 'Ana Sayfa',
+            'name' => $homeLabel,
             'item' => self::BASE,
         ]];
         foreach ($trail as $i => [$name, $url]) {

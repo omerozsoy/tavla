@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button'
 import { RawHtml } from './RawHtml'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 
-export type SeoVariant = 'home' | 'online-tavla' | 'tavla-oyna'
+export type SeoVariant = 'home' | 'online-tavla' | 'tavla-oyna' | 'backgammon'
 
 interface Props {
   variant: SeoVariant
@@ -415,6 +415,149 @@ function TavlaOynaContent() {
   )
 }
 
+// "Play Backgammon Online" landing (EN, H1 + ~700 words). İngilizce "backgammon"
+// anahtar kelimesini hedefler; iç linkler mevcut rotalara (dil-nötr oyun ekranı + kurallar).
+function BackgammonContent() {
+  return (
+    <div className="info-rich rich seo-landing-body">
+      <p className="rules-intro">
+        Open your browser, press play and start an online backgammon match in seconds. TavlaTv is a
+        free online backgammon platform with live games against real opponents, a strong AI bot,
+        tournaments and move-by-move analysis — no download and no signup required.
+      </p>
+
+      <h2>What is online backgammon?</h2>
+      <p>
+        Online backgammon is the classic board game played over the internet, against distant
+        players or a computer opponent. You do not need a physical board, dice or someone sitting
+        across the table — you can match with people from all over the world. The dice are generated
+        on the server with secure randomness (CSPRNG), so every roll is transparent and provably
+        fair. The board is set up automatically, the rules are enforced inside the game and illegal
+        moves are rejected, so you focus only on playing — never on bookkeeping.
+      </p>
+      <p>
+        All the excitement of traditional backgammon is preserved: the same fifteen checkers, the
+        same dice, the same home-board and bar logic. The only thing that changes is the venue — a
+        screen instead of a café table. That makes backgammon more accessible than ever: play a quick
+        match on a break, in the evening at home, or while waiting on the go. You never have to
+        convince anyone to play; dozens of opponents are online at any moment, ready to match with you.
+      </p>
+
+      <h2>How to start</h2>
+      <p>
+        Playing backgammon online at TavlaTv takes no complicated setup. Nothing to install, nothing
+        to configure — everything runs in your browser. The steps are simple:
+      </p>
+      <ul>
+        <li>Open the site and start a <a href="/yeni-oyun">new match</a> instantly, even as a guest.</li>
+        <li>Pick your opponent: a live human, the AI bot for practice, or a private room with a friend.</li>
+        <li>Choose match length (single game or target points), time control and the doubling cube.</li>
+        <li>Roll the dice, drag your checkers and bear all of them off — the first to bear off wins.</li>
+      </ul>
+      <p>
+        If you need a refresher on the rules, our <a href="/nasil-oynanir">how to play backgammon</a>{' '}
+        guide walks through the opening setup, dice movement, hitting and entering from the bar, and
+        bearing off in plain language.
+      </p>
+
+      <h2>Features</h2>
+      <p>
+        TavlaTv is more than a board — it is a complete environment to improve your backgammon.
+        Different game modes and tools let you both enjoy and get better.
+      </p>
+      <ul>
+        <li>
+          <strong>Play with a friend:</strong> create a private invite code, call your friend and
+          enjoy <a href="/arkadasinla-oyna">backgammon together</a> with your own time and point settings.
+        </li>
+        <li>
+          <strong>Against the AI:</strong> play the neural-network <a href="/yz-ile-oyna">backgammon bot</a>,
+          set its strength to your level and learn to play under pressure.
+        </li>
+        <li>
+          <strong>Tournaments:</strong> join <a href="/online-turnuvalar">online backgammon tournaments</a>,
+          advance through the brackets and compete for prizes.
+        </li>
+        <li>
+          <strong>Analysis and PR:</strong> after every match you get a performance rating (PR)
+          showing how close your moves were to the best play. Review your cube decisions and worst
+          blunders to improve for real.
+        </li>
+      </ul>
+
+      <h2>Backgammon strategy and tips</h2>
+      <p>
+        Success in online backgammon is not only about rolling well; it is about making the most of
+        what you roll. A strong player keeps checkers safe, avoids leaving a lone blot and tries to
+        close entry points so the opponent stays stuck on the bar. Making key points — especially
+        your own 5-point and bar-point — strengthens your defense and slows the opponent down.
+      </p>
+      <p>
+        The doubling cube is the other decision that can decide a game. Offering the cube while your
+        winning chances are high forces your opponent to choose between a risky continuation or
+        conceding a point. TavlaTv's in-game cube advisor helps you learn double, take and drop
+        decisions based on your win probability. Over time you master pip counting, telling a race
+        apart from a holding game, and adapting your plan to the position.
+      </p>
+
+      <h2>Why TavlaTv?</h2>
+      <p>
+        There are many backgammon sites, but TavlaTv stands out with its focus on fair play and
+        improvement. Provably random dice give you confidence against cheating and manipulation.
+        It is free, so playing costs nothing, and ads are balanced so they never break the flow of
+        the game. Most importantly, the analysis tools make you learn as you play, so your
+        backgammon genuinely improves. The modern, mobile-friendly interface feels smooth on both
+        desktop and phone, so you can play backgammon online wherever you are.
+      </p>
+
+      <h2>Win types: single, gammon and backgammon</h2>
+      <p>
+        In backgammon not every win is worth the same; the score depends on how decisively you
+        finish. If your opponent has borne off at least one checker you get a normal (single) win,
+        worth one point. If they have not borne off any checker when the game ends, it is a gammon,
+        worth two points.
+      </p>
+      <p>
+        The most spectacular result is a backgammon: the opponent has borne off nothing and still
+        has a checker on the bar or in your home board, giving you a three-point victory. Add the
+        doubling cube and these points multiply. That is exactly why in backgammon it matters not
+        just that you win, but by how much. TavlaTv calculates all of this automatically; you just
+        chase the best possible result.
+      </p>
+
+      <h2>Frequently asked questions</h2>
+      <h3>Is online backgammon free?</h3>
+      <p>
+        Yes. Playing backgammon online at TavlaTv is completely free and you do not need to pay to
+        start. An optional Premium membership adds advanced analysis and an ad-free experience.
+      </p>
+      <h3>Can I play backgammon without signing up?</h3>
+      <p>
+        Yes, you can play instantly as a guest. Creating a free account is recommended to use rating,
+        match history and tournaments.
+      </p>
+      <h3>Are the dice fair?</h3>
+      <p>
+        Dice rolls are generated server-side with secure randomness (CSPRNG) and are provably fair.
+        No player can change the results.
+      </p>
+      <h3>Can I play backgammon on mobile?</h3>
+      <p>
+        Absolutely. TavlaTv is mobile-friendly and runs in the browser on phones and tablets without
+        installing any app.
+      </p>
+
+      <div className="seo-cta">
+        <Button asChild className="seo-cta-btn">
+          <a href="/yeni-oyun">
+            <Icon name="play" size={18} /> Play Backgammon Online Now
+          </a>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 // DB body varsa: hero+CTA kabugunu KORU, govdeyi admin HTML'i ile degistir.
 // CTA fallback icerikte de gomulu oldugundan DB body'nin sonuna ayrica ekliyoruz.
 function LandingDbBody({ body, cta }: { body: string; cta: string }) {
@@ -435,11 +578,42 @@ function LandingDbBody({ body, cta }: { body: string; cta: string }) {
 export default function SeoContent({ variant, onClose }: Props) {
   useEscape(onClose)
   const { t } = useT()
-  // Ana sayfa kompakt blogu icin DB body cekmeyiz (hep hardcoded).
-  const dbBody = useInfoPageBody(variant === 'home' ? null : variant)
+  // Ana sayfa + backgammon(EN) icin DB body cekmeyiz (hep hardcoded).
+  const dbBody = useInfoPageBody(variant === 'home' || variant === 'backgammon' ? null : variant)
 
   if (variant === 'home') {
     return <HomeContent />
+  }
+
+  // İngilizce "backgammon" landing: ayrı (İngilizce) hero + breadcrumb + gövde.
+  if (variant === 'backgammon') {
+    return (
+      <div className="register-card info-card seo-landing-card" onClick={(e) => e.stopPropagation()}>
+        <Breadcrumb items={[{ name: 'Home', href: '/' }, { name: 'Play Backgammon Online' }]} />
+        {onClose && (
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Close">
+            <Icon name="x" size={16} />
+          </Button>
+        )}
+        <header className="seo-hero">
+          <span className="seo-eyebrow">Free · No signup · In your browser</span>
+          <h1 className="info-title seo-hero-title">Play Backgammon Online</h1>
+          <p className="seo-hero-sub">
+            Live matches against real opponents, a strong AI and tournaments — all in your browser, free.
+          </p>
+          <div className="seo-hero-cta">
+            <Button asChild className="seo-cta-btn">
+              <a href="/yeni-oyun">
+                <Icon name="play" size={18} /> Play Backgammon Online Now
+              </a>
+            </Button>
+          </div>
+        </header>
+        <div className="info-tab-pane seo-landing-body-wrap">
+          <BackgammonContent />
+        </div>
+      </div>
+    )
   }
 
   const isOnline = variant === 'online-tavla'
