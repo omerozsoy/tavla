@@ -24,6 +24,10 @@ import { RANKS } from './ranks'
 import DatePicker from './ui/DatePicker'
 import { RARITY_COLORS, type RarityKey } from './ui/rarityColors'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
+import { LiveRow } from './ui/HomePanels'
+import { TopRanksContext } from './topRanks'
+import type { LiveMatch } from './api'
+import type { UserTopRank } from './topRanks'
 
 // ---- Terracotta (krem/kiremit) token tablolari (Colors / Typography / Spacing / Radius) ----
 const COLORS: { name: string; token: string; hex: string; use: string }[] = [
@@ -79,11 +83,31 @@ const SECTIONS = [
   ['tables', '08 · Tables'],
   ['modals', '09 · Modals & Overlays'],
   ['game', '10 · Game Components'],
+  ['live', '10b · Canlı Maçlar'],
   ['profile', '11 · Profile Components'],
   ['tokens', '12 · Spacing · Radius · Shadow'],
   ['icons', '13 · Icons'],
   ['ranks', '14 · Player Ranks'],
   ['rankprog', '15 · Rank Progression'],
+]
+
+// ---- Canli maclar demo verisi (gercek LiveRow'u gercek verisiz gostermek icin) ----
+// Kirmizi kurdele YALNIZ PR ilk-3 oyuncuda; altin parilti PR VEYA rating ilk-3'te.
+const LIVE_TOPRANKS = new Map<number, UserTopRank>([
+  [1, { prRank: 1 }], // gbbg  -> PR #1  -> "PR 1." kurdele
+  [3, { prRank: 2 }], // mehmetcandursun -> PR #2 -> "PR 2." kurdele
+  [5, { prRank: 3 }], // mhtumer -> PR #3 -> "PR 3." kurdele
+  [7, { ratingRank: 1 }], // rating #1 -> "Rating 1." kurdele
+  [9, { ratingRank: 2 }], // rating #2 -> "Rating 2." kurdele
+  [11, { ratingRank: 3 }], // rating #3 -> "Rating 3." kurdele
+])
+const LIVE_DEMO: LiveMatch[] = [
+  { code: 'A1', p1_id: 1, p1_name: 'gbbg', p1_premium: true, p1_score: 3, p2_id: 2, p2_name: 'tuncerkivanc', p2_score: 0, stake: 0, bet_pct: 0, target: 5, mode: 'friendly' },
+  { code: 'A2', p1_id: 3, p1_name: 'mehmetcandursun', p1_premium: true, p1_score: 3, p2_id: 4, p2_name: 'albatros', p2_score: 3, stake: 0, bet_pct: 0, target: 5, mode: 'friendly' },
+  { code: 'A3', p1_id: 5, p1_name: 'mhtumer', p1_premium: true, p1_score: 1, p2_id: 6, p2_name: 'AbdullahiMRAN', p2_premium: true, p2_score: 2, stake: 0, bet_pct: 0, target: 3, mode: 'ranked' },
+  { code: 'A4', p1_id: 7, p1_name: 'ratingLideri', p1_score: 2, p2_id: 8, p2_name: 'Caveman', p2_score: 2, stake: 0, bet_pct: 0, target: 5, mode: 'friendly' },
+  { code: 'A5', p1_id: 9, p1_name: 'ratingIki', p1_score: 1, p2_id: 10, p2_name: 'rakip9', p2_score: 0, stake: 0, bet_pct: 0, target: 5, mode: 'friendly' },
+  { code: 'A6', p1_id: 11, p1_name: 'ratingUc', p1_score: 0, p2_id: 12, p2_name: 'rakip11', p2_score: 0, stake: 0, bet_pct: 0, target: 5, mode: 'friendly' },
 ]
 
 // ---- Kucuk yardimcilar (SADECE showcase duzeni; component kopyasi DEGIL) ----
@@ -580,6 +604,24 @@ function Showcase() {
           </Item>
         </Section>
 
+        {/* 10b CANLI MAÇLAR — gerçek LiveRow + PR ilk-3 kırmızı kurdele */}
+        <section id="live" className="sc-section">
+          <h2 className="sc-section-title">10b · Canlı Maçlar — PR ilk-3 kırmızı kurdele</h2>
+          <p className="sc-note" style={{ marginTop: 0 }}>
+            Gerçek <code>&lt;LiveRow/&gt;</code> componenti + gerçek <code>App.css</code> (kopya değil).
+            Kırmızı köşe kurdelesi <strong>YALNIZ PR ilk-3</strong> oyuncunun olduğu maçta görünür.
+            Altın parıltı mevcut "öne çıkan" (PR <em>veya</em> rating ilk-3) stilidir — son satır
+            rating ilk-3 olduğu için altın alır ama kurdele almaz.
+          </p>
+          <TopRanksContext.Provider value={{ map: LIVE_TOPRANKS }}>
+            <div className="live-list" style={{ maxWidth: 560 }}>
+              {LIVE_DEMO.map((m) => (
+                <LiveRow key={m.code} m={m} onSpectate={() => {}} />
+              ))}
+            </div>
+          </TopRanksContext.Provider>
+        </section>
+
         {/* 11 PROFILE COMPONENTS */}
         <Section id="profile" title="11 · Profile Components">
           <Item name="Avatar (frame'siz)" code="<AvatarFrame />">
@@ -792,6 +834,9 @@ function Showcase() {
 // swatch/grid/sticky-nav + gercek componentlerin olmadigi kucuk gostergeler:
 // durum noktalari, cube/clock/tag/stat mini gostergeleri).
 const SC_CSS = `
+/* Ana uygulama body'yi overflow:hidden yapar (oyun ekrani). Showcase uzun bir
+   belge -> sayfa kaydirmasini geri ac (yalniz bu dev harness'inde). */
+html,body{overflow:auto !important;height:auto !important}
 .sc-root{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--tv-font-ui)}
 .sc-topbar{position:sticky;top:0;z-index:50;display:flex;flex-direction:column;gap:8px;
   background:color-mix(in srgb,var(--rn-bg) 88%,transparent);backdrop-filter:blur(8px);

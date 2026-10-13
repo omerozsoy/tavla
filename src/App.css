@@ -13129,8 +13129,9 @@ button.acct-row-logout:hover:not(:disabled) {
   );
   animation: live-feat-glow 1.8s ease-in-out infinite;
 }
-/* İçerik (oyuncular/skor/izle) efekt katmanlarının ÜSTÜnde kalsın. */
-.live-row--featured > :not(.lm-rise) {
+/* İçerik (oyuncular/skor/izle) efekt katmanlarının ÜSTÜnde kalsın. Kurdele hariç:
+   kendi absolute konumu (sağ üst köşe) korunmalı. */
+.live-row--featured > :not(.lm-rise):not(.lm-ribbon) {
   position: relative;
   z-index: 1;
 }
@@ -13205,6 +13206,47 @@ button.acct-row-logout:hover:not(:disabled) {
   70%  { opacity: 1; }
   100% { transform: translateY(-64px) scale(1.1); opacity: 0; }
 }
+/* PR ilk-3 maçı: sağ üst köşe kırmızı kurdele. Featured satır position:relative +
+   overflow:hidden olduğu için kurdele köşeye temiz kırpılır. */
+.lm-ribbon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 84px;
+  height: 84px;
+  overflow: hidden;
+  z-index: 3;
+  pointer-events: none;
+}
+.lm-ribbon b {
+  position: absolute;
+  top: 13px;
+  right: -32px;
+  width: 120px;
+  padding: 3px 0;
+  background: #C9563F;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+/* uçlardaki koyu "katlanma" üçgenleri (kurdele kumaşın arkaya dönmesi) */
+.lm-ribbon b::before,
+.lm-ribbon b::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  border-style: solid;
+  border-color: #8f3626 transparent transparent transparent;
+}
+.lm-ribbon b::before { left: 0;  border-width: 6px 6px 0 0; }
+.lm-ribbon b::after  { right: 0; border-width: 6px 0 0 6px; }
 @media (hover: hover) and (pointer: fine) {
   .live-row--featured:hover {
     border-color: var(--coin-gold);

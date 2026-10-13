@@ -22,7 +22,7 @@ interface Ctx {
   map: Map<number, UserTopRank>
 }
 
-const TopRanksContext = createContext<Ctx>({ map: new Map() })
+export const TopRanksContext = createContext<Ctx>({ map: new Map() })
 
 // 3 dakikada bir tazele (top-3 sık değişmez; backend zaten 120s cache'liyor).
 const REFRESH_MS = 3 * 60 * 1000

@@ -133,7 +133,7 @@ function Avatar({ url, name }: { url?: string | null; name: string }) {
 // Tek canlı maç satırı. Liderlik ilk-3'teki (PR veya rating) oyuncu sahadaysa satır "öne
 // çıkan" olur: avatarda yükselen parıltı + maç çerçevesi altın glow ile vurgulanır → insanlar
 // dikkat edip o maçı izlesin. Top-3 durumu useTopRank'tan (site geneli tek kaynak) okunur.
-function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p1: string, p2: string) => void }) {
+export function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p1: string, p2: string) => void }) {
   const { t } = useT()
   const p1Top = useTopRank(m.p1_id)
   const p2Top = useTopRank(m.p2_id)
@@ -141,6 +141,10 @@ function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p
   const p2Feat = !!(p2Top.prRank || p2Top.ratingRank)
   const cat = liveCat(m)
   const featured = p1Feat || p2Feat
+  // Kırmızı köşe kurdelesi: PR ilk-3 ("PR n.") öncelikli, yoksa rating ilk-3 ("Rating n.").
+  const prRank = p1Top.prRank || p2Top.prRank
+  const ratingRank = p1Top.ratingRank || p2Top.ratingRank
+  const ribbonText = prRank ? `PR ${prRank}.` : ratingRank ? `Rating ${ratingRank}.` : null
   return (
     <button
       className={`live-row${featured ? ' live-row--featured' : ''}`}
@@ -152,6 +156,10 @@ function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: string, p
         <span className="lm-rise" aria-hidden="true">
           <i /><i /><i /><i /><i /><i /><i /><i />
         </span>
+      )}
+      {/* PR ilk-3 maçı: sağ üst köşede kırmızı kurdele (katlanma uçlu). */}
+      {ribbonText && (
+        <span className="lm-ribbon" aria-hidden="true"><b>{ribbonText}</b></span>
       )}
       {/* İki rozet TEK grid hücresinde (lm-types): aksi halde klasik rozet 6. grid öğesi
           olup 1fr (oyuncu) kolonuna düşüyor + sağ/sol boşluk + göz ikonu alt satıra kaçıyordu. */}
