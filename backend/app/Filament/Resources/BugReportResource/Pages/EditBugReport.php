@@ -134,17 +134,34 @@ class EditBugReport extends EditRecord
                         ->default(fn () => $this->record->admin_reply)
                         ->placeholder('Bildirimin için teşekkürler! Sorunu inceledik ve …')
                         ->rows(6)->required()->maxLength(5000)->autosize(),
+                    // Yanıta GÖRSEL (opsiyonel): ekran görüntüsü/çizim; e-postaya hem gömülür hem eklenir.
+                    Forms\Components\FileUpload::make('reply_image')->label('Görsel ekle (opsiyonel)')
+                        ->image()->disk('uploads')->directory('bug-replies')->imageEditor()
+                        ->maxSize(8192)
+                        ->default(fn () => $this->record->admin_reply_image)
+                        ->helperText('Bildirene gönderilen e-postaya eklenir.'),
                     Forms\Components\Toggle::make('mark_resolved')
                         ->label('Bu bildirimi “Çözüldü” olarak işaretle')
                         ->default(true),
                 ])
                 ->action(function (array $data) {
+                    // FileUpload tek dosya -> yol string (ya da dizi ilk eleman). Normalize et.
+                    $img = $data['reply_image'] ?? null;
+                    if (is_array($img)) {
+                        $img = $img[0] ?? null;
+                    }
                     // Önce kaydet (mail patlasa da yanıt panelde durur).
                     $this->record->update([
                         'admin_reply' => $data['admin_reply'],
+                        'admin_reply_image' => $img,
                         'replied_at' => now(),
                         'status' => ($data['mark_resolved'] ?? false) ? 'resolved' : $this->record->status,
                     ]);
+
+                    // Görselin tam dosya yolu (ek) + herkese açık URL (gömülü <img>).
+                    $imgFsPath = $img && \Illuminate\Support\Facades\Storage::disk('uploads')->exists($img)
+                        ? \Illuminate\Support\Facades\Storage::disk('uploads')->path($img) : null;
+                    $imgUrl = $img ? rtrim(config('app.url'), '/').'/uploads/'.$img : null;
 
                     // Teşekkür + yanıt e-postası (best-effort).
                     $sent = false;
@@ -153,9 +170,13 @@ class EditBugReport extends EditRecord
                             'greetingName' => $this->record->name,
                             'replyText' => $data['admin_reply'],
                             'originalMessage' => $this->record->message,
-                        ], function ($m) {
+                            'replyImageUrl' => $imgUrl,
+                        ], function ($m) use ($imgFsPath) {
                             $m->to($this->record->email, $this->record->name ?: $this->record->email)
                                 ->subject('TavlaTV — Bildirimine Yanıt (#'.$this->record->id.')');
+                            if ($imgFsPath) {
+                                $m->attach($imgFsPath);
+                            }
                         });
                         $sent = true;
                     } catch (\Throwable $e) {

@@ -52,6 +52,20 @@
                       </tr>
                     </table>
 
+                    @if(!empty($replyImageUrl))
+                      <!-- Yanıta eklenen görsel (e-posta ekinde de var; dış görsel engellenirse ek açılır) -->
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">
+                        <tr>
+                          <td align="center">
+                            <a href="{{ $replyImageUrl }}" target="_blank" style="text-decoration:none;">
+                              <img src="{{ $replyImageUrl }}" alt="Yanıt görseli" width="420"
+                                   style="display:block;max-width:100%;height:auto;border:1px solid {{ $border }};border-radius:12px;">
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    @endif
+
                     @if($originalMessage)
                       <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:{{ $muted }};text-transform:uppercase;letter-spacing:0.4px;">
                         Senin bildirimin

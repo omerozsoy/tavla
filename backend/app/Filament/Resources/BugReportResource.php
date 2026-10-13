@@ -101,6 +101,15 @@ class BugReportResource extends Resource
                             : ''))
                     : 'Henüz yanıt gönderilmedi. Üstteki “Yanıtla ve E-posta Gönder” butonunu kullanın.')
                 ->columnSpanFull(),
+
+            // Yanıta eklenen görsel (varsa) — bildirene gönderilen e-postada görünen görsel.
+            Forms\Components\Placeholder::make('admin_reply_image')->label('Yanıta eklenen görsel')
+                ->visible(fn (?BugReport $record) => (bool) $record?->admin_reply_image)
+                ->content(fn (?BugReport $record) => new \Illuminate\Support\HtmlString(
+                    '<img src="'.e(rtrim(config('app.url'), '/').'/uploads/'.$record->admin_reply_image)
+                    .'" alt="Yanıt görseli" style="max-width:280px;height:auto;border-radius:10px;border:1px solid #e2dbcd;">'
+                ))
+                ->columnSpanFull(),
         ]);
     }
 

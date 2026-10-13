@@ -12,7 +12,7 @@ class BugReport extends Model
     protected $fillable = [
         'user_id', 'name', 'email', 'page', 'url', 'message',
         'screenshot', 'user_agent', 'status', 'admin_note',
-        'admin_reply', 'replied_at',
+        'admin_reply', 'admin_reply_image', 'replied_at',
     ];
 
     protected $casts = [
