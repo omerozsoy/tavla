@@ -2317,6 +2317,33 @@ class RoomController extends Controller
 
             return ['changed' => true, 'ended' => false];
         }
+        // İNSAN ABSENT -> BOT MAÇINDA KAYBETMEZ (C3X4Y kök fix: "beni oyundan attı ve geri aldı").
+        // Bot GERÇEK rakip değil; insanın istemcisi geçici kopunca (sekme arka plan / ağ blip'i /
+        // "oyundan atılma") beklettiği kimse yok -> presence-ABANDON (45sn) VEYA AFK/TIMEOUT ile
+        // forfeit HAKSIZ. İnsan (p1) GERÇEKTEN gitmişse (p1_seen PRESENCE_TIMEOUT'tan bayat) saati
+        // DONDUR ve tick'i ATLA -> end hiç yazılmaz, oda 'playing' kalır (banner/myActiveRooms ile
+        // dönünce kaldığı yerden devam). KÖK: bot self-heal (yukarıda) p2'yi daima "present" tutar;
+        // böylece maybeEnd'de yalnız p1 "gone" sayılıp insan bota karşı tek taraflı ABANDON yiyordu.
+        // Present (poll eden) insanda p1_seen taze (en çok ~PRESENCE_WRITE_THROTTLE_S=15sn) -> bu dal
+        // TETİKLENMEZ, idle insana AFK/TIMEOUT normal işler.
+        // XKV9H KÖK FIX: eski koşul `turn_slot==='p1' && running` idi -> SAAT DURUYORKEN (açılış /
+        // oyunlar-arası / ilk zarı/küpü beklerken, running=false) koruma ATLANIYOR, maybeEnd'in
+        // presence-ABANDON'u (saat çalışmasa da geçerli) insanı bota karşı HÜKMEN kaybettiriyordu
+        // (oda 45sn'de 'finished' + p1_result='lost' -> istemci returnToOrigin ile Tek Oyun'a düşer).
+        // Düzeltme: bot maçında p1 bayatladığında running/turn fark etmeksizin tick'i atla. p1_seen
+        // null (hiç poll etmemiş) ise maybeEnd zaten presence-ABANDON yazmaz -> o dalı tick'e bırak.
+        // Sömürü yok: bot maçında stake backstop'ça atlanır; gerçekten dönmeyen oda reapStaleRoom ile
+        // NO-CONTEST (puan/coin/kayıp YOK) kapanır.
+        if ($room->bot && empty($clock['end'])
+            && ($clock['p1_seen'] ?? null) !== null
+            && ($now - (float) $clock['p1_seen']) > MatchClock::PRESENCE_TIMEOUT) {
+            if (! empty($clock['running'])) {
+                $clock['started_at'] = $now; // saati dondur (yalnız işliyorsa anlamlı)
+            }
+            $room->clock = $clock;
+
+            return ['changed' => true, 'ended' => false];
+        }
         $ticked = MatchClock::tick($clock, $now);
         $ended = false;
         if (! empty($ticked['end'])) {

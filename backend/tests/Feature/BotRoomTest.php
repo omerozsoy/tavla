@@ -450,6 +450,56 @@ class BotRoomTest extends TestCase
         $this->assertNull($room->clock['end']);
     }
 
+    public function test_human_absence_does_not_forfeit_bot_match(): void
+    {
+        // C3X4Y KÖK FIX ("beni oyundan attı ve sonra geri aldı"): insan maçtayken istemcisi geçici
+        // kopunca (sekme/ağ blip'i) sıra insanda (p1) iken p1_seen bayatlar; bot self-heal p2'yi
+        // daima present tuttuğundan maybeEnd yalnız insanı "gone" sanıp TEK TARAFLI ABANDON yazıp
+        // insanı bota karşı KAYBETTİRİYORDU. Bot gerçek rakip değil -> insan absent'ken forfeit YOK.
+        $room = $this->cubeRoom('white'); // sıra insanda (p1/beyaz)
+        $room->clock = [
+            'mode' => 'normal', 'target' => 3, 'delay' => 10,
+            'p1_bank' => 180.0, 'p2_bank' => 180.0,
+            'turn_slot' => 'p1', 'started_at' => microtime(true) - 100,
+            'sig' => '3|0|white||1||0|0', 'running' => true, 'moved' => true, 'end' => null,
+            // insan 60sn poll etmedi (PRESENCE_TIMEOUT=45 aşıldı); bot başlangıçta present.
+            'p1_seen' => microtime(true) - 60, 'p2_seen' => microtime(true),
+        ];
+        $room->save();
+
+        // Poll insanı slot=null (blip) veya reaper ile tick'lesin: her iki yolda da forfeit OLMAMALI.
+        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), null);
+
+        $room->refresh();
+        $this->assertNull($room->clock['end']);          // ABANDON/TIMEOUT/AFK YOK -> haksız kayıp yok
+        $this->assertSame('playing', $room->status);     // oda açık kaldı -> dönünce devam (banner)
+        $this->assertNull($room->p1_result);             // insana "lost" yazılmadı
+    }
+
+    public function test_human_absence_does_not_forfeit_bot_match_when_clock_stopped(): void
+    {
+        // XKV9H KÖK FIX: eski guard yalnız `running===true`i koruyordu. SAAT DURUYORKEN (açılış /
+        // oyunlar-arası / ilk zarı beklerken) p1_seen 45sn bayatlayınca maybeEnd'in presence-ABANDON'u
+        // (saat çalışmasa da geçerli) insanı bota karşı HÜKMEN kaybettiriyordu (oda 'finished' +
+        // p1_result='lost' -> istemci Tek Oyun'a düşer). running=false iken de forfeit OLMAMALI.
+        $room = $this->cubeRoom('white');
+        $room->clock = [
+            'mode' => 'normal', 'target' => 3, 'delay' => 10,
+            'p1_bank' => 180.0, 'p2_bank' => 180.0,
+            'turn_slot' => 'p1', 'started_at' => microtime(true) - 100,
+            'sig' => '3|0|white||1||0|0', 'running' => false, 'moved' => true, 'end' => null,
+            'p1_seen' => microtime(true) - 60, 'p2_seen' => microtime(true),
+        ];
+        $room->save();
+
+        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), null);
+
+        $room->refresh();
+        $this->assertNull($room->clock['end']);          // saat dururken de ABANDON yok
+        $this->assertSame('playing', $room->status);
+        $this->assertNull($room->p1_result);
+    }
+
     public function test_bot_offers_double_via_gnubg(): void
     {
         config()->set('gnubg.url', 'http://gnubg.test');
