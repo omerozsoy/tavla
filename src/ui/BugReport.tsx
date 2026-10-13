@@ -112,6 +112,11 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
       toast.error(t('bug.needEmail'))
       return
     }
+    // Ekran görüntüsü ZORUNLU: özellikle büyük hata ödülü için kanıt şart (kullanıcı isteği).
+    if (!shot) {
+      toast.error(t('bug.needShot'))
+      return
+    }
     setBusy(true)
     try {
       await reportBug({
@@ -229,7 +234,10 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
               </label>
             )}
 
-            {/* Ekran görüntüsü yükle */}
+            {/* Ekran görüntüsü yükle — ZORUNLU (büyük hata ödülü için kanıt). */}
+            <div className="bug-shot-head">
+              {t('bug.shotLabel')} <span className="bug-req" aria-hidden="true">*</span>
+            </div>
             <div className="bug-shot">
               <input
                 ref={fileRef}

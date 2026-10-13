@@ -68,6 +68,11 @@
 .bug-card {
   max-width: 440px;
 }
+/* Kapat (X): hero (position:relative, DOM'da sonra) üstüne BİNİYORDU -> tıklanmıyordu.
+   z-index ile hero'nun üstüne al (data-slot'lu Button olduğu için :not([data-slot]) ezmez). */
+.bug-card .modal-close {
+  z-index: 5;
+}
 
 /* --- Ödül kahramanı (hero): coin madalyonu + kademeli ödül çipleri + animasyon --- */
 .bug-hero {
@@ -199,6 +204,12 @@
   font-weight: 700;
 }
 
+/* Ekran görüntüsü başlığı (zorunlu alan — diğer alan etiketleriyle aynı dil). */
+.bug-shot-head {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 2px 0 6px;
+}
 /* Ekran görüntüsü yükleme */
 .bug-file-input {
   display: none;
