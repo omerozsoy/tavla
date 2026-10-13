@@ -14181,6 +14181,13 @@ button.acct-row-logout:hover:not(:disabled) {
     radial-gradient(ellipse 120% 82% at 50% 30%, var(--game-scene-glow, #0b1230) 0%, transparent 62%),
     var(--game-scene, #06090f);
 }
+/* İzleme açıkken alttaki lobi kabını KİLİTLE: Spectate fixed/inset:0 tam ekran kaplar ama
+   body overflow:hidden olduğundan asıl scroller .app.lobby (100dvh + overflow-y:auto) arkada
+   kaydırılabilir kalıp sağda HAYALET scrollbar çıkarıyordu (özellikle yatay telefonda). Portal
+   body'de olduğundan :has ile lobiyi bul ve overflow'u kapat. (:has yoksa eski davranış = zararsız.) */
+body:has(.spectate-view) .app.lobby {
+  overflow: hidden;
+}
 .spectate-badge {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top));
