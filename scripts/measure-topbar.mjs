@@ -5,7 +5,7 @@ const args = process.argv.slice(2)
 const argVal = (k, d = null) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d }
 const BASE = argVal('--base', 'https://www.tavlatv.com')
 const TOKEN = argVal('--token')
-const WIDTHS = [[844, 390], [901, 440], [956, 440], [1024, 500], [1133, 744], [1280, 800]]
+const WIDTHS = [[360, 760], [375, 667], [384, 854], [430, 932], [1024, 600], [1133, 744], [1280, 800]]
 
 const browser = await chromium.launch()
 const ctx = await browser.newContext({ viewport: { width: 956, height: 440 } })
@@ -27,15 +27,18 @@ const measure = () => {
   const q = (s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { l: Math.round(r.left), r: Math.round(r.right), w: Math.round(r.width) } }
   const ab = document.querySelector('.account-bar')
   const abStyle = ab ? getComputedStyle(ab) : null
+  const host = document.querySelector('.acct-desktop') || ab
+  const flat = []
+  const dump = (el) => { for (const c of el.children) { const r = c.getBoundingClientRect(); if (r.width < 4) continue; const cl = (typeof c.className === 'string' ? c.className : '').split(' ').filter(Boolean)[0] || c.tagName.toLowerCase(); if (['account-id', 'acct-desktop'].includes(cl)) { dump(c); continue } flat.push({ t: cl.slice(0, 20), w: Math.round(r.width) }) } }
+  if (host) dump(host)
+  const kids = flat
   return {
     winW: window.innerWidth,
     bar: q('.account-bar'),
     barScroll: ab ? Math.round(ab.scrollWidth) : null,
+    over: ab ? Math.round(ab.scrollWidth) - window.innerWidth : null,
     barPadL: abStyle ? abStyle.paddingLeft : null,
-    barOverflowX: abStyle ? abStyle.overflowX : null,
-    brand: q('.ab-brand'),
-    wordmark: q('.ab-wordmark'),
-    hamburger: q('.hamburger'),
+    kids,
   }
 }
 
@@ -43,8 +46,7 @@ for (const [w, h] of WIDTHS) {
   await page.setViewportSize({ width: w, height: h })
   await page.waitForTimeout(350)
   const m = await page.evaluate(measure)
-  const clip = m.wordmark && (m.wordmark.l < -1)
-  console.log(`\n${w}x${h}  bar=[${m.bar?.l}..${m.bar?.r}] padL=${m.barPadL} ovX=${m.barOverflowX} scroll=${m.barScroll}`)
-  console.log(`  brand=[${m.brand?.l}..${m.brand?.r}]  wordmark=[${m.wordmark?.l}..${m.wordmark?.r}]  ham=${m.hamburger ? `[${m.hamburger.l}..${m.hamburger.r}]` : 'yok'}  ${clip ? 'LOGO CLIP ✗' : 'ok ✓'}`)
+  console.log(`\n${w}x${h}  padL=${m.barPadL} scroll=${m.barScroll} OVER=${m.over}px ${m.over > 1 ? '✗' : '✓'}`)
+  console.log('  kids: ' + m.kids.map((k) => `${k.t}(${k.w})`).join(' '))
 }
 await browser.close()

@@ -10539,6 +10539,18 @@ button.stat-chip:hover {
     display: inline-flex;
   }
 }
+/* Tablet/dar laptop (901-1279): inline ust bar (acct-desktop) ~1090px -> toplam ~1257px gerekir,
+   1280 altinda sol panele/menuye tasiyordu (iPad yatay 1133-1194; olcum: measure-topbar.mjs).
+   Durum pili SADECE renkli nokta (uzun "Oyun Kabul Etmiyor" metni gizli) + sik gap -> bar oturur.
+   1280+ tam metinli bar aynen kalir. */
+@media (min-width: 901px) and (max-width: 1279px) {
+  .acct-desktop {
+    gap: 8px;
+  }
+  .acct-desktop .status-cur-txt {
+    display: none;
+  }
+}
 .acct-trigger {
   display: inline-flex;
   align-items: center;
@@ -11246,9 +11258,11 @@ button.acct-row-logout:hover:not(:disabled) {
     padding: max(4px, env(safe-area-inset-top)) 10px 4px calc(64px + env(safe-area-inset-left));
     flex-wrap: nowrap;
   }
-  /* Dar telefon: ad kisalsin (logo ile bindirmesin; 360px'te avatar ekran disina tasiyordu) */
+  /* Dar telefon: ad kisalsin (logo ile bindirmesin; 360px'te avatar ekran disina tasiyordu).
+     260 -> 284: 360-384px'te ust bar ~4-14px tasiyordu (olcum: measure-topbar.mjs) -> ad biraz
+     daha erken kisalsin, bar TAM otursun. */
   .acct-trigger-name {
-    max-width: min(32vw, calc(100vw - 260px));
+    max-width: min(32vw, calc(100vw - 284px));
   }
   /* Dar telefonda bant ~52px -> hamburger yuksekligini bantla esitle (dikey ortala). */
   .hamburger {
