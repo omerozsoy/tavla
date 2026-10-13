@@ -5430,10 +5430,12 @@ export default function App() {
           // §5.2: onaylı rakip hamlesini adım adım OYNAT (snap yerine). Oyun bittiyse (ended) ATLA —
           // maç/oyun sonu ekranı ayrı akış; bitiren hamleyi replay'e bağlamak kırılgan olur.
           if (!ended) maybeReplayOppMove(oppBase, steps, oc)
-          // ONLINE RAKİP DANCE: 0 adım (gele/bardan giremedi) -> replay tetiklenmez. Botun botDance'i
-          // gibi rakibin zarı + "Hamle Yok" overlay'ini kısa süre göster (turnStart bana döndüğü için
-          // noMove koşulu yakalayamaz). Yalnız online-insan; bot zaten botDance ile gösterir.
-          if (!ended && steps.length === 0 && online && !room?.bot) {
+          // ONLINE RAKİP DANCE: 0 adım (gele/bardan giremedi) -> replay tetiklenmez. Rakibin zarı +
+          // ortada silik "Hamle Yok" overlay'ini kısa süre göster (turnStart bana döndüğü için noMove
+          // koşulu yakalayamaz). SERVER_BOT bot odası da (mode='online' + room.bot) sunucu-sync ile
+          // gelir -> yerel botDance HİÇ çalışmaz (isBotTurn=pvb) -> bot dance'i de burada yakalanmalı.
+          // Yerel pvb bot (SERVER_BOT=false) online=false olduğu için bu yola GİRMEZ (çift tetik yok).
+          if (!ended && steps.length === 0 && online) {
             setOppDance({ dice: oppBase.dice ?? [], color: oc })
           }
         }
