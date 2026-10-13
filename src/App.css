@@ -10123,7 +10123,7 @@ html.fs-active .account-bar {
   flex-direction: column;
   align-self: center;
   align-items: center;
-  gap: 6px;
+  gap: 12px; /* skor-saat-skor arasi TEK kaynak bosluk (clock-group margin-block kaldirildi) -> esit */
   font-variant-numeric: tabular-nums;
 }
 /* Toplanan pul kutusu (Galaxy: saat kolonunda, saatin ust/altinda beyaz kutu) */
