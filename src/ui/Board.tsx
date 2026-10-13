@@ -785,15 +785,12 @@ function Board({
           <div className="quadrant bottom">{L.BR.map((i) => renderPoint(i, false))}</div>
         </div>
 
-        {/* Merkez overlay (Double / Roll / zar / kup / oyun sonu) */}
-        {centerMain ? (
-          <div className="center-overlay main">{centerMain}</div>
-        ) : (
-          <>
-            {centerLeft && <div className="center-overlay left">{centerLeft}</div>}
-            {centerRight && <div className="center-overlay right">{centerRight}</div>}
-          </>
-        )}
+        {/* Merkez overlay (Double / Roll / zar / kup / oyun sonu). Yan slotlar (sol/sag zar)
+            centerMain ile BİRLİKTE çizilir: dance "Hamle Yok"ta orta kutu metni + dans edenin
+            zarı KENDİ slotunda görünsün. Diğer centerMain durumlarında yan slotlar zaten null. */}
+        {centerLeft && <div className="center-overlay left">{centerLeft}</div>}
+        {centerRight && <div className="center-overlay right">{centerRight}</div>}
+        {centerMain && <div className="center-overlay main">{centerMain}</div>}
       </div>
 
       {/* Alt ucgen numaralari */}

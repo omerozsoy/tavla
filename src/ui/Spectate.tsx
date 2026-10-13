@@ -571,6 +571,10 @@ export default function Spectate({
                 pipTop={pipCount(displayBoard, 'black')}
                 pipBottom={pipCount(displayBoard, 'white')}
                 cube={{ value: cubeVal, owner: cubeOwner }}
+                // Küp teklifi: oyuncunun gördüğü AYNI yanıp sönen küp. Karar VERENİN (teklifi
+                // alanın=rakip) tarafında durur; izleyici flip'siz oturur (beyaz=alt, siyah=üst).
+                cubePendingValue={cubePending ? cubeVal * 2 : null}
+                cubePendingSide={cubePending === 'white' ? 'top' : 'bottom'}
                 crawford={crawford}
                 classic={classic}
                 flip={false}
