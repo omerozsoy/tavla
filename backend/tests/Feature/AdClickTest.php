@@ -45,4 +45,15 @@ class AdClickTest extends TestCase
         $this->postJson('/api/ad-slots/1/click')->assertOk();
         $this->assertDatabaseCount('ad_clicks', 0);
     }
+
+    public function test_admin_click_is_not_recorded(): void
+    {
+        $admin = $this->user('Patron');
+        $admin->forceFill(['is_admin' => true])->save();
+
+        Sanctum::actingAs($admin->fresh());
+        $this->postJson('/api/ad-slots/1/click')->assertOk();
+
+        $this->assertDatabaseCount('ad_clicks', 0);
+    }
 }

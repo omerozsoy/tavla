@@ -30,12 +30,13 @@ class AdSlotController extends Controller
     }
 
     // "Saka reklami" tiklamasini kaydet. Yalniz giris yapmis kullanici (liste adlari gosterir;
-    // misafirin adi yok). Kullanici basina TEK satir -> created_at ilk tiklama anini korur.
+    // misafirin adi yok). ADMIN kontrol icin bakar -> KAYDEDILMEZ (listeyi kirletmesin; destek
+    // DAHIL DEGIL). Kullanici basina TEK satir -> created_at ilk tiklama anini korur.
     public function click(Request $request, int $ad)
     {
-        $userId = optional($request->user('sanctum'))->id;
-        if ($userId) {
-            AdClick::firstOrCreate(['ad_id' => $ad, 'user_id' => $userId]);
+        $user = $request->user('sanctum');
+        if ($user && ! $user->is_admin) {
+            AdClick::firstOrCreate(['ad_id' => $ad, 'user_id' => $user->id]);
         }
 
         return response()->json(['ok' => true]);
