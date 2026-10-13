@@ -5924,14 +5924,6 @@ button[aria-disabled='true'],
     display: none; /* dar ekranda yalniz kod */
   }
 }
-/* Telefon-dikey: sol üstte "telefonu yan çevir" pili var -> maç ID onun ALTINA insin (çakışmasın). */
-@media (max-width: 600px) and (orientation: portrait) {
-  .match-id-hud {
-    top: calc(46px + env(safe-area-inset-top));
-  }
-}
-
-
 /* AFK son-15sn uyarisi (sunucu-otoriter): belirgin, pulsing kirmizi banner. */
 .afk-warn {
   position: absolute;

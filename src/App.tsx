@@ -6650,16 +6650,6 @@ export default function App() {
 
   // Tam ekran (browser Fullscreen API) — oyun ekraninda ac/kapa butonu.
   const [isFullscreen, setIsFullscreen] = useState(false)
-  // Mobil DIKEY ipucu: "telefonu yan cevir" (non-blocking pill). Sadece CSS ile
-  // mobil-portre'de gorunur; kullanici cevirince yatay duzen otomatik acilir.
-  // Kapatilinca oturum boyunca bir daha cikmaz (rahatsiz etmesin).
-  const [rotateTipHidden, setRotateTipHidden] = useState(() => {
-    try {
-      return sessionStorage.getItem('tv-rotate-tip') === '1'
-    } catch {
-      return false
-    }
-  })
   useEffect(() => {
     const onFs = () => {
       const fs = !!document.fullscreenElement
@@ -10973,31 +10963,6 @@ export default function App() {
       {online && viewerCount > 0 && (
         <div className="spectate-side viewers-float">
           <ViewersBadge viewers={roomViewers} count={viewerCount} />
-        </div>
-      )}
-      {/* Mobil DIKEY ipucu: "telefonu yan cevir". .rotate-tip CSS'i yalniz mobil-portre'de
-          gosterir; yatay cevrilince kaybolur. Kapatilinca oturum boyu gizlenir. */}
-      {!rotateTipHidden && (
-        <div className="rotate-tip" role="status">
-          <span className="rotate-tip-icon" aria-hidden="true">
-            <Icon name="device-mobile-rotated" size={16} />
-          </span>
-          <span className="rotate-tip-text">{t('mobile.rotate')}</span>
-          <button
-            type="button"
-            className="rotate-tip-x"
-            aria-label={t('common.close')}
-            onClick={() => {
-              setRotateTipHidden(true)
-              try {
-                sessionStorage.setItem('tv-rotate-tip', '1')
-              } catch {
-                /* yok */
-              }
-            }}
-          >
-            <Icon name="x" size={14} />
-          </button>
         </div>
       )}
       {showHintUI && (learnMode || hintShown) && curBest && (
