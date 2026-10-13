@@ -402,7 +402,9 @@ export function Icon({
   className,
   weight = 'regular',
 }: {
-  name: IconName
+  // IconName literalleri otomatik tamamlanir; CDN fallback icin (admin Tabler slug'i,
+  // device-mobile-rotated vb.) herhangi bir string de kabul edilir -> MAP'te yoksa CDN mask.
+  name: IconName | (string & {})
   size?: number
   className?: string
   // Cizgi kalinligi (Phosphor mirasi). Varsayilan temiz outline; oklar gibi vurgu icin 'bold',
@@ -437,7 +439,7 @@ export function Icon({
       </svg>
     )
   }
-  const Cmp = (weight === 'fill' && FILLED[name]) || MAP[name]
+  const Cmp = (weight === 'fill' && FILLED[name as IconName]) || MAP[name as IconName]
   if (!Cmp) {
     // Bilinmeyen ad -> admin'in Tabler'dan yapistirdigi ikon slug'i (MAP'te yok). CSP connect-src
     // jsdelivr'i engelledigi icin fetch EDILEMEZ; CSS mask (img-src https: ile IZINLI) kullanilir:

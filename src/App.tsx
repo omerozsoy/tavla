@@ -10981,7 +10981,7 @@ export default function App() {
       {!rotateTipHidden && (
         <div className="rotate-tip" role="status">
           <span className="rotate-tip-icon" aria-hidden="true">
-            <Icon name="phone" size={16} />
+            <Icon name="device-mobile-rotated" size={16} />
           </span>
           <span className="rotate-tip-text">{t('mobile.rotate')}</span>
           <button

@@ -181,7 +181,7 @@
      padding -> ~78px (yoksa board 100dvh'yi ~26px asip sagda dikey scrollbar cikar).
      440px lump = sol panel(~196) + saat(~96) + game-ham(48) + bosluklar; daraltildi ki board
      TAM otursun (eski 548 board'u genislikle kisitlayip ust/altta olu bant birakiyordu). */
-  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 86px), calc((100vw - 440px) / 1.3)));
+  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 100px), calc((100vw - 440px) / 1.3)));
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
@@ -5872,10 +5872,13 @@ button[aria-disabled='true'],
 @keyframes tourn-wait-spin { to { transform: rotate(360deg); } }
 
 .match-id-hud {
-  position: absolute;
-  top: 4px;
-  left: 2px; /* daha sola: üst oyuncu ismini/panelini daha az kapatsın */
-  z-index: 40;
+  /* EN SOL ÜST KÖŞE (kullanici istegi): menu sag ust kosede -> mac ID sol ust kosede, simetrik.
+     fixed = .game-ham gibi viewport/oyun-kabi kosesine sabitlenir (absolute offsetParent board'du,
+     basligin altinda kaliyordu). */
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  left: calc(10px + env(safe-area-inset-left));
+  z-index: 80;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -5912,13 +5915,17 @@ button[aria-disabled='true'],
 }
 @media (max-width: 720px) {
   .match-id-hud {
-    top: 4px;
-    left: 4px;
     padding: 3px 7px;
     font-size: 0.66rem;
   }
   .match-id-hud__label {
     display: none; /* dar ekranda yalniz kod */
+  }
+}
+/* Telefon-dikey: sol üstte "telefonu yan çevir" pili var -> maç ID onun ALTINA insin (çakışmasın). */
+@media (max-width: 600px) and (orientation: portrait) {
+  .match-id-hud {
+    top: calc(46px + env(safe-area-inset-top));
   }
 }
 
@@ -7900,20 +7907,25 @@ html[data-board='yilbasi'] .checker.black {
     inset: -5px -7px; /* gorunus 36px kalir, dokunma hedefi ~46px */
   }
 }
-/* Yatay telefon (kisa): iyice kompakt. */
+/* Yatay telefon (kisa): iyice kompakt -> butonlar tahtadan rol calmasin. */
 @media (max-height: 560px) and (orientation: landscape) {
   .center-overlay [data-slot='button'] {
     position: relative;
-    height: 34px;
-    min-height: 34px;
-    padding: 0 13px;
-    font-size: 0.85rem;
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+    border-radius: var(--radius-md);
   }
-  /* Gorunus kompakt (34px) kalir; DOKUNMA alani gorunmez sekilde 44px'e genisletilir. */
+  .center-overlay [data-slot='button'] svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  /* Gorunus kompakt (30px) kalir; DOKUNMA alani gorunmez ::after ile ~44px'e genisletilir. */
   .center-overlay [data-slot='button']::after {
     content: '';
     position: absolute;
-    inset: -5px -4px;
+    inset: -7px -9px;
   }
 }
 /* Merkez HUD modali (#11): kompakt, premium game-HUD; dev popup DEGIL */
