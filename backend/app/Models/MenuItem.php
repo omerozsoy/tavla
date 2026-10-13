@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Cache;
 class MenuItem extends Model
 {
     protected $fillable = [
-        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'group', 'href', 'custom', 'icon',
+        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'gammon_visible', 'group', 'href', 'custom', 'icon',
         // Opsiyonel SAYFA metni override'ı (ör. Tek Oyun kurulum başlığı/açıklaması). TR girilir, gerisi otomatik.
         'title_tr', 'title_en', 'title_es', 'title_de', 'title_fr',
         'sub_tr', 'sub_en', 'sub_es', 'sub_de', 'sub_fr',
@@ -22,6 +22,7 @@ class MenuItem extends Model
 
     protected $casts = [
         'visible' => 'boolean',
+        'gammon_visible' => 'boolean', // null kalabilir (miras); doluysa bool'a cast
         'custom' => 'boolean',
         'sort' => 'integer',
     ];
