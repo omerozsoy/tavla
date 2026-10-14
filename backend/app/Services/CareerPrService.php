@@ -35,7 +35,7 @@ class CareerPrService
             // MİN-KARAR KAPISI: < MIN_PR_DECISIONS kararlı maçlar PR gürültüsü (2-3 kararda 300+) ->
             // career toplamına GİRMEZ (tek maç ekranında da PR'ları null = "—").
             ->where('pr_decisions', '>=', \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS)
-            ->whereNotNull('pr_equity_lost')
+            ->whereNotNull('gnubg_checker_pr') // checker-only kariyer: checker PR'ı olan maçlar
             // PUANSIZ maçlar (rated=false: puansız arkadaş odası / friendly 24h limiti aşımı) kariyer PR'a
             // ve PR sıralamasına GİRMEZ; PR'ları yalnız o maçın analizinde görünür. Eski satırlar
             // migration varsayılanıyla rated=true -> geçmiş havuz değişmez.
@@ -45,22 +45,25 @@ class CareerPrService
     /** Bir oyuncunun aggregate Career PR degerlerini maçlarindan YENIDEN hesapla + kaydet. */
     public function recalc(User $user): void
     {
-        // NOT: 'dec' MariaDB'de rezerve kelime -> alias 'decs' (SQLite'ta sorun degil ama MySQL patlar).
+        // CHECKER-ONLY kariyer PR: genel PR küpsüz (checker) olduğundan kariyer de maçların
+        // gnubg_checker_pr'ından KARAR-AĞIRLIKLI ortalanır (gnubg_checker_pr zaten ×500'lü PR değeri).
+        // Bu history+future tutarlı + yavaş review-backfill GEREKTİRMEZ (checker PR her maçta saklı).
+        // NOT: 'dec' MariaDB'de rezerve kelime -> alias 'decs'.
         $agg = $this->eligibleMatches($user->id)
-            ->selectRaw('COALESCE(SUM(pr_equity_lost),0) as loss, COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m')
+            ->selectRaw('COALESCE(SUM(gnubg_checker_pr * pr_decisions),0) as wsum, COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m')
             ->first();
 
-        $loss = (float) ($agg->loss ?? 0);
+        $wsum = (float) ($agg->wsum ?? 0);
         $dec = (int) ($agg->decs ?? 0);
         $m = (int) ($agg->m ?? 0);
-        $pr = $dec > 0 ? ($loss / $dec) * self::SCALE : null;
+        $pr = $dec > 0 ? ($wsum / $dec) : null; // karar-ağırlıklı checker PR ortalaması
 
         // $fillable kisitli -> forceFill (bkz filament-user-forcefill).
         $user->forceFill([
             'career_pr' => $pr,
             'career_pr_matches' => $m,
             'career_pr_decisions' => $dec,
-            'career_pr_equity_lost' => $loss,
+            'career_pr_equity_lost' => $wsum / self::SCALE, // yaklaşık checker equity (bilgi)
         ])->save();
     }
 

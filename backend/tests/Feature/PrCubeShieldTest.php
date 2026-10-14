@@ -6,9 +6,8 @@ use App\Services\Analysis\AnalysisOrchestrator;
 use Tests\TestCase;
 
 /**
- * Birleşik PR (standart): genel PR = checker + küp, TÜM kararlar üzerinden (küp loss GENEL PR'a dahil).
- * Ayrı "Küp PR" göstergesi yalnız >= MIN_CUBE_DECISIONS küp kararında gösterilir (azsa null -> "—",
- * 2 kararda 430 gibi uç değer gösterilmez). Min-karar kapısı (genel PR null) prFromReviewLog'da DEĞİL.
+ * GENEL PR = YALNIZ pul (checker) oyunu (kullanıcı kararı): küp GENEL PR'a KATILMAZ, daha düşük/stabil.
+ * Küp verisi (cube_pr gated + cube_equity_lost) yine hesaplanır -> profilde KARİYER küp PR'ı için.
  */
 class PrCubeShieldTest extends TestCase
 {
@@ -26,22 +25,27 @@ class PrCubeShieldTest extends TestCase
         return $log;
     }
 
-    public function test_cube_in_overall_but_gauge_hidden_when_few(): void
+    public function test_overall_pr_is_checker_only(): void
     {
         $orch = app(AnalysisOrchestrator::class);
-        // 2 küp kararı (< 3): küp GENEL PR'a katılır ama ayrı cube_pr göstergesi GİZLİ (null).
-        // genel pr = (0.1 + 2*1.18)/(1+2) *500 = 410.
-        $r = $orch->prFromReviewLog($this->log(2), 'white');
-        $this->assertEqualsWithDelta(410.0, $r['pr'], 0.5, 'küp GENEL PR\'a dahil olmalı');
-        $this->assertNull($r['cube_pr'], 'az küp kararında ayrı Küp PR göstergesi gizli (null)');
+        // Küp kararı sayısı fark etmez -> genel PR DAİMA checker: (0.1/1)*500 = 50.
+        foreach ([0, 2, 5] as $k) {
+            $r = $orch->prFromReviewLog($this->log($k), 'white');
+            $this->assertEqualsWithDelta(50.0, $r['pr'], 0.01, "genel PR küpsüz olmalı (k=$k)");
+            $this->assertSame(1, $r['decisions'], 'decisions = yalnız checker kararları');
+        }
     }
 
-    public function test_cube_gauge_shown_when_enough(): void
+    public function test_cube_data_still_computed(): void
     {
         $orch = app(AnalysisOrchestrator::class);
-        // 3 küp kararı (>= 3): cube_pr gösterilir = (3*1.18/3)*500 = 590; genel = (0.1+3*1.18)/4*500 = 455.
-        $r = $orch->prFromReviewLog($this->log(3), 'white');
-        $this->assertEqualsWithDelta(590.0, $r['cube_pr'], 0.5, '3+ küp kararında Küp PR gösterilir');
-        $this->assertEqualsWithDelta(455.0, $r['pr'], 0.5);
+        // 2 küp (<3): ayrı cube_pr göstergesi null; ama cube_equity_lost toplanır (kariyer için).
+        $r2 = $orch->prFromReviewLog($this->log(2), 'white');
+        $this->assertNull($r2['cube_pr']);
+        $this->assertGreaterThan(0, $r2['cube_equity_lost']);
+        $this->assertSame(2, $r2['cube_decisions']);
+        // 3 küp (>=3): cube_pr gösterilir = (3*1.18/3)*500 = 590.
+        $r3 = $orch->prFromReviewLog($this->log(3), 'white');
+        $this->assertEqualsWithDelta(590.0, $r3['cube_pr'], 0.5);
     }
 }

@@ -15368,6 +15368,13 @@ body:has(.spectate-view) .app.lobby {
   color: color-mix(in srgb, var(--accent) 40%, #cbd3e6);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
+/* Küp PR açıklama notu (sonuç ekranı): daha küçük, sade, bilgi tonunda. */
+.mr-cubepr-note {
+  font-size: 0.76rem;
+  font-style: italic;
+  text-align: center;
+  line-height: 1.35;
+}
 .mr-pr-note .mr-pr-loader {
   width: 13px;
   height: 13px;

@@ -101,10 +101,6 @@ export default function MatchResult({
   analyzingBoth = false,
   oppAnalyzing = false,
   progressPct = null,
-  winnerCheckerPr,
-  winnerCubePr,
-  loserCheckerPr,
-  loserCubePr,
   winnerBand,
   loserBand,
   winnerLuckPct,
@@ -309,20 +305,11 @@ export default function MatchResult({
                   {bAnalyzing ? dots() : <>{fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}</>}
                 </span>
               </div>
-              {/* Genel PR (Hata Oranı) = birleşik (checker+küp). Alt kırılımlar: Pul Oyunu PR (checker)
-                  + Küp PR. Küp PR az kararda null -> "—" (backend MIN_CUBE_DECISIONS: 2 kararda 430 gibi
-                  uç değer gösterilmez; 3+ küp kararında gerçek değer görünür). */}
-              <div className="mr-row mr-sub">
-                <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCheckerPr ?? null)}</span>
-                <span className="mr-label">{t('mr.checkerPr')}</span>
-                <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCheckerPr ?? null)}</span>
-              </div>
+              {/* PUL OYUNU PR + KÜP PR satırları KALDIRILDI (kullanıcı kararı): Genel PR = yalnız pul
+                  (checker) oyunu, ayrı pul satırı onunla aynı olurdu. Küp PR tek maçta anlamsız
+                  (çok az karar) -> kariyer düzeyinde profilde gösterilir; burada açıklayıcı not. */}
               {!noCube && (
-                <div className="mr-row mr-sub">
-                  <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
-                  <span className="mr-label">{t('mr.cubePr')}</span>
-                  <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
-                </div>
+                <div className="mr-pr-note mr-cubepr-note">{t('mr.cubePrNote')}</div>
               )}
               {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
                   anlaşılmıyordu -> tam genişlik bilgi satırı. */}

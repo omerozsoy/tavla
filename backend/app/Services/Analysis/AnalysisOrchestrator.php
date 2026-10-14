@@ -370,21 +370,20 @@ class AnalysisOrchestrator
             $chkLoss += max(0.0, (float) ($e['loss'] ?? 0));
             $chkDec++;
         }
-        // BİRLEŞİK PR (standart gnubg/XG): checker + küp, TÜM kararlar üzerinden. Çok karara bölününce
-        // tek bir küp/checker uç değeri (430 gibi) erir -> stabil. cube_pr ayrıca hesaplanıp saklanır
-        // ama scoreboard'da satırı gizli (kullanıcı kararı). Az-karar gürültüsü AYRI min-karar kapısıyla
-        // (gnubg_pr=null) ele alınır -> burada ham birleşik değer üretilir.
-        $loss = $chkLoss + $cubeLossSum;
-        $dec = $chkDec + $cubeDec;
+        // GENEL PR = YALNIZ pul (checker) oyunu (kullanıcı kararı): küp PR tek maçta istatistiksel
+        // gürültü (çok az küp kararı) -> headline'a KATILMAZ, daha düşük/stabil PR. Küp verisi
+        // (cube_pr + cube_decisions) yine hesaplanır -> profilde KARİYER küp PR'ı için kullanılır.
+        $loss = $chkLoss;
+        $dec = $chkDec;
 
         return [
             'pr' => $dec > 0 ? ($loss / $dec) * 500 : 0.0,
             'checker_pr' => $chkDec > 0 ? ($chkLoss / $chkDec) * 500 : null,
-            // Küp GENEL PR'a katıldı (yukarıda loss/dec'te); ayrı Küp PR göstergesi yalnız yeterli
-            // (>= MIN_CUBE_DECISIONS) küp kararında gösterilir, azsa null ("—").
+            // Küp GENEL PR'a DAHİL DEĞİL; ayrı küp verisi (kariyer küp PR'ı için) saklanır.
             'cube_pr' => $cubeDec >= self::MIN_CUBE_DECISIONS ? ($cubeLossSum / $cubeDec) * 500 : null,
-            'equity_lost' => $loss,
-            'decisions' => $dec,
+            'cube_equity_lost' => $cubeLossSum, // kariyer küp PR toplamı için
+            'equity_lost' => $loss,             // checker-only
+            'decisions' => $dec,                // checker-only
             'checker_decisions' => $chkDec,
             'cube_decisions' => $cubeDec,
         ];
