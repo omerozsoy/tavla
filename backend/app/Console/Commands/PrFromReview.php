@@ -23,6 +23,10 @@ class PrFromReview extends Command
     public function handle(AnalysisOrchestrator $orch): int
     {
         $apply = (bool) $this->option('apply');
+        // UZUN BACKFILL BELLEK: query log her sorguyu bellekte tutar (analysisHc satır başına Room sorgusu
+        // yapar -> ~10K sorgu birikir) + büyük review decode'ları. 9664 satırda 128MB'ı aşıyordu. Query
+        // log'u kapat (APP_DEBUG açıksa aç olur) + her parti sonrası gc_collect_cycles -> bellek düz kalır.
+        \Illuminate\Support\Facades\DB::connection()->disableQueryLog();
         $q = MatchResult::query()
             ->whereNotNull('gnubg_review')
             ->whereNotNull('room_code');
@@ -93,7 +97,9 @@ class PrFromReview extends Command
                     ->update(['opponent_pr' => $newPr]);
             }
             $fixed++;
+            unset($review, $log, $self, $opp);
         }
+        gc_collect_cycles(); // parti sonrası döngüsel referansları serbest bırak -> bellek düz kalır
         });
         $this->info(($apply ? 'Düzeltildi' : 'Düzeltilecek').": $fixed | atlandı: $skipped");
 
