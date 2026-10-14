@@ -19,6 +19,16 @@ class AnalysisOrchestrator
     // XG obvious esigi (src/analysis/pr.ts ile ayni).
     private const OBVIOUS = 0.001;
 
+    // MİN-KARAR KAPISI: bu sayıdan AZ (sayılan) karar varsa maç PR'ı istatistiksel gürültü
+    // (2-3 kararda 300+ gibi) -> gnubg_pr/pr=null ("—"), career'a katılmaz. Birleşik (checker+küp)
+    // karar sayısına bakılır. CacheMatchReviewJob (yeni maç) + backfill SQL + CareerPrService uygular.
+    public const MIN_PR_DECISIONS = 6;
+
+    // KÜP PR göstergesi için ayrı eşik: küp kararı bu sayıdan AZSA cube_pr GÖSTERİLMEZ (null -> "—"),
+    // çünkü 2 kararda 430 gibi anlamsız uç değer olur. KÜP yine GENEL PR'a katılır (loss/dec dahil);
+    // yalnız ayrı "Küp PR" göstergesi gizlenir. 3+ küp kararında gerçek küp PR'ı gösterilir.
+    public const MIN_CUBE_DECISIONS = 3;
+
 
     public function __construct(private GnuBgClient $gnubg) {}
 
@@ -360,17 +370,19 @@ class AnalysisOrchestrator
             $chkLoss += max(0.0, (float) ($e['loss'] ?? 0));
             $chkDec++;
         }
-        // KÜP PR, PR'DAN ÇIKARILDI (kullanıcı kararı): genel PR = YALNIZ pul (checker) oyunu — her
-        // maçta stabil/karşılaştırılabilir. Tek maçta küp (0-5 karar) istatistiksel gürültü (2 kararda
-        // 430 gibi uç değerler headline'ı bozuyordu); artık headline'a katılmaz, cube_pr gösterilmez.
-        // Küp verisi gnubg_review'da durur -> istenirse kariyer-toplamı ayrı türetilebilir.
-        $loss = $chkLoss;
-        $dec = $chkDec;
+        // BİRLEŞİK PR (standart gnubg/XG): checker + küp, TÜM kararlar üzerinden. Çok karara bölününce
+        // tek bir küp/checker uç değeri (430 gibi) erir -> stabil. cube_pr ayrıca hesaplanıp saklanır
+        // ama scoreboard'da satırı gizli (kullanıcı kararı). Az-karar gürültüsü AYRI min-karar kapısıyla
+        // (gnubg_pr=null) ele alınır -> burada ham birleşik değer üretilir.
+        $loss = $chkLoss + $cubeLossSum;
+        $dec = $chkDec + $cubeDec;
 
         return [
             'pr' => $dec > 0 ? ($loss / $dec) * 500 : 0.0,
             'checker_pr' => $chkDec > 0 ? ($chkLoss / $chkDec) * 500 : null,
-            'cube_pr' => null, // PR'dan çıkarıldı -> gösterimde "—" / satır gizli
+            // Küp GENEL PR'a katıldı (yukarıda loss/dec'te); ayrı Küp PR göstergesi yalnız yeterli
+            // (>= MIN_CUBE_DECISIONS) küp kararında gösterilir, azsa null ("—").
+            'cube_pr' => $cubeDec >= self::MIN_CUBE_DECISIONS ? ($cubeLossSum / $cubeDec) * 500 : null,
             'equity_lost' => $loss,
             'decisions' => $dec,
             'checker_decisions' => $chkDec,

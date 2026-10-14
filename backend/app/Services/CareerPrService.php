@@ -32,7 +32,9 @@ class CareerPrService
         return MatchResult::where('user_id', $userId)
             ->real()                          // yapay zeka (match_type='ai') HARIÇ
             ->whereNotNull('room_code')       // insan/online maç -> tüm bot (pvb) maçlari HARIÇ
-            ->where('pr_decisions', '>', 0)   // analiz edilmis + sayilan karar var
+            // MİN-KARAR KAPISI: < MIN_PR_DECISIONS kararlı maçlar PR gürültüsü (2-3 kararda 300+) ->
+            // career toplamına GİRMEZ (tek maç ekranında da PR'ları null = "—").
+            ->where('pr_decisions', '>=', \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS)
             ->whereNotNull('pr_equity_lost')
             // PUANSIZ maçlar (rated=false: puansız arkadaş odası / friendly 24h limiti aşımı) kariyer PR'a
             // ve PR sıralamasına GİRMEZ; PR'ları yalnız o maçın analizinde görünür. Eski satırlar

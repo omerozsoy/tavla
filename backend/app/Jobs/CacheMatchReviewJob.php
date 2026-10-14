@@ -129,10 +129,12 @@ class CacheMatchReviewJob implements ShouldQueue
                 }
                 $self = $hc === 'white' ? $prW : $prB;
                 $opp = $hc === 'white' ? $prB : $prW;
-                // SAHTE-0 KALKANI (AnalyzeMatchPrJob ile AYNI): skorlanan karar yoksa PR TANIMSIZ -> null
-                // (round(0)=0 YAZMA, meşru "—" satırını 0'a çevirmesin). opponent_pr = gnubg_opponent_pr birebir.
-                $selfPr = ($self['decisions'] ?? 0) > 0 ? round($self['pr'], 2) : null;
-                $oppPr = ($opp['decisions'] ?? 0) > 0 ? round($opp['pr'], 2) : null;
+                // SAHTE-0 KALKANI + MİN-KARAR KAPISI: skorlanan karar MIN_PR_DECISIONS'tan azsa maç PR'ı
+                // istatistiksel gürültü (2-3 kararda 300+) -> gnubg_pr/pr=null ("—"), career'a katılmaz.
+                // round(0)=0 YAZMA; meşru "—" satırını 0'a çevirmesin. checker/cube ayrıca saklanır.
+                $min = \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS;
+                $selfPr = ($self['decisions'] ?? 0) >= $min ? round($self['pr'], 2) : null;
+                $oppPr = ($opp['decisions'] ?? 0) >= $min ? round($opp['pr'], 2) : null;
                 MatchResult::where('id', $row->id)->update([
                     'gnubg_pr' => $selfPr,
                     'gnubg_checker_pr' => $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null,
