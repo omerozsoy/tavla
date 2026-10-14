@@ -4872,6 +4872,7 @@ export default function App() {
     const mW = matchWinner(match)
     if (!mW) return
     ratingReportedRef.current = true
+    matchResultIdRef.current = null // YENİ maç: eski analiz id'sini düşür (rapor id dönerse set edilir)
     const won = mW === myColor
     const oppRating = room?.oppRating ?? 1500
     const before = user.rating ?? 1500
@@ -5250,6 +5251,7 @@ export default function App() {
     // commit ettiği tur sayısı 0 ise maçı KAYDETME (bkz humanTurnsRef).
     if (humanTurnsRef.current === 0) return
     ratingReportedRef.current = true
+    matchResultIdRef.current = null // YENİ maç: eski analiz id'sini düşür (rapor id dönerse set edilir)
     // Giris yapmis kullanicinin AI maci HER ZAMAN kaydedilir (misafir haric).
     // Casual'da rating degismez: ranked=false -> backend Elo/lig islemez, delta=0 kaydeder.
     const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
