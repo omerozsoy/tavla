@@ -882,7 +882,7 @@ export default function App() {
   const [editProfile, setEditProfile] = useState(false)
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   // Profil genel-bakis aktif sekmesi — URL'e yansir (kisisel yer-imi/link: /profil/avatarlar vb.)
-  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'checkers' | 'badges' | 'addresses'>('stats')
+  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'checkers' | 'badges' | 'addresses' | 'reports'>('stats')
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   const [authForgot, setAuthForgot] = useState(false) // Auth "sifremi unuttum" modu -> /sifremi-unuttum
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
@@ -1202,6 +1202,8 @@ export default function App() {
               ? 'profil/pul-tasarimlari'
             : profileTab === 'addresses'
                 ? 'profil/adreslerim'
+                : profileTab === 'reports'
+                ? 'profil/sikayetlerim'
                 : 'profil'
     : customInfoSlug
     ? 'bilgi/' + customInfoSlug
@@ -1705,6 +1707,8 @@ export default function App() {
                       ? 'checkers'
                     : sub === 'adreslerim'
                       ? 'addresses'
+                    : sub === 'sikayetlerim'
+                      ? 'reports'
                       : 'stats',
             )
           }

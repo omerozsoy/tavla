@@ -349,6 +349,20 @@ export async function myStats(): Promise<MyStats> {
   return { user: data.user, rank: data.rank, total: data.total_players }
 }
 
+// "Şikayetlerim": oyuncunun gönderdiği küfür şikayetleri + yönetim sonucu (durum).
+export interface MyChatReport {
+  id: number
+  reported_name: string | null
+  room_code: string
+  messages: { slot: string; name: string; text: string }[]
+  status: 'new' | 'in_progress' | 'resolved'
+  created_at: string | null
+}
+export async function myChatReports(): Promise<MyChatReport[]> {
+  const data = await req<{ reports: MyChatReport[] }>('/me/chat-reports')
+  return data.reports ?? []
+}
+
 export async function updateProfile(input: Profile): Promise<ServerUser> {
   const data = await req<{ user: ServerUser }>('/profile', {
     method: 'PUT',

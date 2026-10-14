@@ -2914,6 +2914,29 @@ class RoomController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    // "Şikayetlerim": oyuncunun gönderdiği küfür/sohbet şikayetleri + yönetim sonucu. Profil sayfasında
+    // listelenir -> oyuncu kendi şikayetini ve işleme alınıp alınmadığını (durum) görür. admin_note DAHİLİ
+    // kalır (panele özel) -> burada DÖNMEZ. En yeni 50 kayıt.
+    public function myChatReports(Request $request)
+    {
+        $user = $request->user();
+        if (! Schema::hasTable('chat_reports')) {
+            return response()->json(['reports' => []]);
+        }
+        $rows = \App\Models\ChatReport::where('reporter_user_id', $user->id)
+            ->orderByDesc('created_at')->limit(50)->get();
+        $reports = $rows->map(fn ($r) => [
+            'id' => $r->id,
+            'reported_name' => $r->reported_name,
+            'room_code' => $r->room_code,
+            'messages' => is_array($r->messages) ? $r->messages : [],
+            'status' => $r->status,
+            'created_at' => optional($r->created_at)->toIso8601String(),
+        ]);
+
+        return response()->json(['reports' => $reports]);
+    }
+
     // Canlı maç İZLEME presence (spectator heartbeat). İzleyici her ~5sn'de bir çağırır; kayıt
     // upsert edilir, bayat (>15sn) izleyiciler temizlenir. OYUNCU (slot sahibi) izleyici SAYILMAZ.
     // Güncel izleyici listesi (isim + avatar/çerçeve) ve sayısını döner. Herkese açık.

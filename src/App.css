@@ -24131,6 +24131,70 @@ body:has(.spectate-view) .app.lobby {
   color: var(--muted);
   font-size: 0.88rem;
 }
+/* "Şikayetlerim" sekmesi: gönderilen küfür şikayetleri + yönetim sonucu (durum) */
+.prof-reports {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prof-report-card {
+  border: 1px solid #e7e0d4;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+}
+.prof-report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.prof-report-who {
+  font-size: 0.92rem;
+  color: #2f2a24;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.prof-report-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.prof-report-status {
+  flex: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.prof-report-log {
+  background: #faf7f1;
+  border: 1px solid #e7e0d4;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  font-size: 0.86rem;
+}
+.prof-report-line {
+  margin: 3px 0;
+  color: #2f2a24;
+}
+.prof-report-name {
+  font-weight: 600;
+  color: #2f2a24;
+}
+.prof-report-name.reported {
+  color: #b91c1c;
+  font-weight: 700;
+}
+.prof-report-sys {
+  color: #b45309;
+  font-style: italic;
+  margin: 2px 0;
+}
 .prof-ov-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));

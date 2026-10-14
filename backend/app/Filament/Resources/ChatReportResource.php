@@ -4,11 +4,17 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ChatReportResource\Pages;
 use App\Models\ChatReport;
+use App\Models\Room;
+use App\Models\User;
+use App\Support\ChatModeration;
+use App\Support\OfficialMessenger;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -141,11 +147,124 @@ class ChatReportResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('İncele'),
+                // Şikayet edilene konuşma yasağı ver (iki tarafa da bilgi gider; küfürlü kelimeler
+                // Yasaklılar listesine işlenir; şikayet "Çözüldü" olur).
+                Tables\Actions\Action::make('ban')->label('Yasak Ver')
+                    ->icon('heroicon-o-no-symbol')->color('danger')
+                    ->form([
+                        Forms\Components\Select::make('minutes')->label('Süre')->required()
+                            ->options(self::BAN_DURATIONS)->default('1440')->native(false),
+                    ])
+                    ->modalHeading('Konuşma yasağı ver')
+                    ->modalDescription(fn (ChatReport $r) => ($r->reported_name ?: 'Şikayet edilen')
+                        .' oyuncusuna yasak uygulanacak; hem şikayet edene hem edilene bilgi mesajı gönderilecek.')
+                    ->action(fn (ChatReport $record, array $data) => static::applyBanFromReport($record, (int) $data['minutes'])),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()->label('Seçilenleri sil'),
             ]);
+    }
+
+    /** Yasak süresi seçenekleri (dakika => etiket). chatMuteFormSchema ile aynı (kaldır hariç). */
+    public const BAN_DURATIONS = [
+        '1440' => '24 saat',
+        '10080' => '1 hafta',
+        '43200' => '1 ay',
+        '525600' => '1 yıl',
+    ];
+
+    /** Şikayet edilen kullanıcıyı çöz: önce maç odasından karşı slot, yoksa isimden (nickname). */
+    protected static function resolveReported(ChatReport $r): ?User
+    {
+        $room = Room::where('code', $r->room_code)->first();
+        if ($room && $r->reporter_slot) {
+            $uid = $r->reporter_slot === 'p1' ? $room->p2_user_id : $room->p1_user_id;
+            if ($uid && ($u = User::find($uid))) {
+                return $u;
+            }
+        }
+        if ($r->reported_name) {
+            return User::where('nickname', $r->reported_name)->first();
+        }
+
+        return null;
+    }
+
+    /** Şikayet edilen oyuncunun satırlarındaki küfürlü kelimeleri topla (Yasaklılar listesine işlenir). */
+    protected static function profanityWords(ChatReport $r): ?string
+    {
+        $words = [];
+        foreach ((is_array($r->messages) ? $r->messages : []) as $m) {
+            if (($m['slot'] ?? '') === 'sys') {
+                continue;
+            }
+            if ($r->reported_name && ($m['name'] ?? '') !== $r->reported_name) {
+                continue; // yalnız şikayet edilenin yazdıkları
+            }
+            [, $hit, $word] = ChatModeration::filter((string) ($m['text'] ?? ''), null);
+            if ($hit && $word && ! in_array($word, $words, true)) {
+                $words[] = $word;
+            }
+        }
+
+        return $words ? mb_substr(implode(', ', $words), 0, 120) : null;
+    }
+
+    /**
+     * Şikayet sonucu konuşma yasağı uygula: şikayet edilene yasak + küfürlü kelimeleri Yasaklılar
+     * listesine işle, HEM şikayet edene HEM edilene bilgi DM'i gönder, maçtaysa kırmızı satır düş,
+     * şikayeti "Çözüldü" yap. "Küfür Şikayeti düzenle" ekranından ve listeden çağrılır.
+     */
+    public static function applyBanFromReport(ChatReport $r, int $minutes): void
+    {
+        $reported = static::resolveReported($r);
+        if (! $reported) {
+            Notification::make()->title('Şikayet edilen oyuncu bulunamadı')
+                ->body('Oda/isim eşleşmedi; yasak uygulanamadı.')->danger()->send();
+
+            return;
+        }
+        $label = self::BAN_DURATIONS[(string) $minutes] ?? ($minutes.' dk');
+
+        $reported->chat_muted_until = now()->addMinutes($minutes);
+        if (Schema::hasColumn('users', 'chat_muted_by')) {
+            $reported->chat_muted_by = (int) auth()->id();
+        }
+        // Küfürlü kelimeleri Yasaklılar listesine işle ("Tetikleyen Kelime" sütunu).
+        if (Schema::hasColumn('users', 'chat_offense_word') && ($words = static::profanityWords($r))) {
+            $reported->chat_offense_word = $words;
+        }
+        $reported->save();
+
+        $reporter = $r->reporter_user_id ? User::find($r->reporter_user_id) : null;
+        $reportedName = $reported->nickname ?: ($r->reported_name ?: 'Rakip');
+        $reporterName = $r->reporter_name ?: ($reporter?->nickname ?: 'Bir oyuncu');
+
+        // Şikayet edilene bilgi: "X kişinin şikayeti sonucu 24 saat konuşma cezası aldınız."
+        OfficialMessenger::sendTo(
+            $reported,
+            "⚠️ {$reporterName} kişinin şikayeti sonucu {$label} konuşma cezası aldınız. Ceza süresince sohbete yazamazsınız."
+        );
+        // Şikayet edene bilgi: "X kişisi şikayetiniz sonucu 24 saat konuşma cezası almıştır."
+        if ($reporter) {
+            OfficialMessenger::sendTo(
+                $reporter,
+                "✓ {$reportedName} kişisi şikayetiniz sonucu {$label} konuşma cezası almıştır. İlginiz için teşekkürler."
+            );
+        }
+        // Kişi o an maçtaysa maç sohbetine kırmızı satır düş.
+        ChatModeration::announceMuteInActiveMatch($reported, false);
+
+        $r->status = 'resolved';
+        $stamp = now()->timezone('Europe/Istanbul')->format('d.m.Y H:i');
+        $r->admin_note = trim(($r->admin_note ? $r->admin_note."\n" : '')
+            ."[{$stamp}] {$label} konuşma yasağı uygulandı ({$reportedName}).");
+        $r->save();
+
+        Notification::make()->title('Konuşma yasağı uygulandı')
+            ->body("{$reportedName} oyuncusuna {$label} yasak verildi; iki tarafa da bilgi gönderildi.")
+            ->success()->send();
     }
 
     public static function getPages(): array

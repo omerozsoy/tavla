@@ -158,6 +158,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/push/register', [\App\Http\Controllers\PushController::class, 'register']);
     Route::post('/push/unregister', [\App\Http\Controllers\PushController::class, 'unregister']);
     Route::get('/me', [AuthController::class, 'me']);
+    // "Şikayetlerim": oyuncunun maç sohbetinde gönderdiği küfür şikayetleri + yönetim sonucu (durum).
+    Route::get('/me/chat-reports', [RoomController::class, 'myChatReports']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
     // Maç Analizleri (derin/gnubg) PREMIUM-only. NOT: sonuç ekranı bu uca çağrı yapıp 403'te
     // sessizce YEREL (yüzeysel) analize düşer -> free kullanıcı yüzeysel, premium derin görür.

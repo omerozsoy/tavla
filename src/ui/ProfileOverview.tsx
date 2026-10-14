@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { myChatReports, type MyChatReport } from '../api'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -81,7 +82,7 @@ interface Props {
   onTabChange?: (tab: ProfTab) => void
 }
 
-type ProfTab = 'frames' | 'boards' | 'checkers' | 'stats' | 'badges' | 'addresses'
+type ProfTab = 'frames' | 'boards' | 'checkers' | 'stats' | 'badges' | 'addresses' | 'reports'
 
 function ageFrom(birth?: string | null): number | null {
   if (!birth) return null
@@ -367,6 +368,15 @@ export default function ProfileOverview({
           >
             {t('ach.title')}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'reports'}
+            className={tab === 'reports' ? 'active' : ''}
+            onClick={() => setTab('reports')}
+          >
+            {t('prof.reports')}
+          </button>
           {/* Adreslerim sekmesi kaldırıldı -> kimlik kartı aksiyon satırına taşındı */}
           {/* Bakiye: kozmetik sekmelerde (Tahta / Pul / Avatar) sekme şeridinin SAĞ ÜST köşesinde,
               büyük ve net. Her üç ekranda tek yerden (içerikte tekrar gösterilmez). */}
@@ -431,6 +441,12 @@ export default function ProfileOverview({
           </section>
         )}
 
+        {tab === 'reports' && (
+          <section className="prof-ov-col">
+            <MyReports />
+          </section>
+        )}
+
         {tab === 'stats' && (
           <div className="prof-ov-stats-tab">
             <ProfileStats
@@ -447,6 +463,87 @@ export default function ProfileOverview({
 
         {tab === 'addresses' && <AddressBook />}
       </div>
+    </div>
+  )
+}
+
+// "Şikayetlerim": oyuncunun gönderdiği küfür şikayetleri + yönetim sonucu (durum). Her kart: tarih,
+// şikayet edilen oyuncu, durum rozeti ve şikayet anındaki son 10 sohbet satırı (şikayet edilen KIRMIZI).
+const REPORT_STATUS: Record<MyChatReport['status'], { label: string; color: string; bg: string }> = {
+  new: { label: 'Alındı', color: '#92600a', bg: '#fef3c7' },
+  in_progress: { label: 'İnceleniyor', color: '#92600a', bg: '#fde68a' },
+  resolved: { label: 'Sonuçlandı', color: '#166534', bg: '#dcfce7' },
+}
+
+function MyReports() {
+  const [reports, setReports] = useState<MyChatReport[] | null>(null)
+  const [err, setErr] = useState(false)
+  useEffect(() => {
+    let alive = true
+    myChatReports()
+      .then((r) => alive && setReports(r))
+      .catch(() => alive && setErr(true))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  if (err) return <p className="prof-ov-empty">Şikayetler yüklenemedi.</p>
+  if (reports === null) return <p className="prof-ov-empty">Yükleniyor…</p>
+  if (reports.length === 0)
+    return <p className="prof-ov-empty">Henüz bir küfür şikayetinde bulunmadın.</p>
+
+  return (
+    <div className="prof-reports">
+      {reports.map((r) => {
+        const st = REPORT_STATUS[r.status] ?? REPORT_STATUS.new
+        const when = r.created_at ? new Date(r.created_at).toLocaleString('tr-TR') : ''
+        return (
+          <div key={r.id} className="prof-report-card">
+            <div className="prof-report-head">
+              <div className="prof-report-who">
+                <strong>{r.reported_name || 'Oyuncu'}</strong> hakkında şikayet
+                <span className="prof-report-meta">
+                  {when} · Maç {r.room_code}
+                </span>
+              </div>
+              <span
+                className="prof-report-status"
+                style={{ color: st.color, background: st.bg }}
+              >
+                {st.label}
+              </span>
+            </div>
+            <div className="prof-report-log">
+              {r.messages.length === 0 ? (
+                <em style={{ color: '#6b6154' }}>Sohbet satırı yok.</em>
+              ) : (
+                r.messages.map((m, i) =>
+                  m.slot === 'sys' ? (
+                    <div key={i} className="prof-report-sys">
+                      ⚠️ {m.text}
+                    </div>
+                  ) : (
+                    <div key={i} className="prof-report-line">
+                      <span
+                        className={
+                          r.reported_name && m.name === r.reported_name
+                            ? 'prof-report-name reported'
+                            : 'prof-report-name'
+                        }
+                      >
+                        {m.name}
+                        {r.reported_name && m.name === r.reported_name ? ' (şikayet edilen)' : ''}:
+                      </span>{' '}
+                      {m.text}
+                    </div>
+                  ),
+                )
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
