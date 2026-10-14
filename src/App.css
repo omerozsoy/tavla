@@ -8613,6 +8613,35 @@ button.move-row:focus-visible {
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
 }
+/* Kariyer Küp PR — Kariyer PR kartının hemen altında ince satır. */
+.career-cube-pr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -4px 0 12px;
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 4%, var(--card-bg));
+  font-size: 0.9rem;
+}
+.career-cube-pr-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.career-cube-pr-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.career-cube-pr-need {
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+}
 .career-pr-card-l {
   min-width: 0;
 }

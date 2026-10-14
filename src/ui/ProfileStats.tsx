@@ -222,6 +222,20 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             </div>
 
+            {/* Kariyer Küp PR: tek maçta küp PR anlamsız; TÜM maçların küp kararları birikince anlamlı.
+                Yeterli küp kararı yoksa ne kadar gerektiği yazılır. */}
+            <div className="career-cube-pr">
+              <span className="career-cube-pr-lbl">
+                <Icon name="dice" size={14} /> {t('stats.careerCubePr')}
+              </span>
+              <span className="career-cube-pr-val">
+                {!perf ? <Skeleton w={48} h={20} r={5} />
+                  : perf.career?.cube_pr != null ? perf.career.cube_pr.toFixed(2)
+                  : perf.career ? <em className="career-cube-pr-need">{t('stats.cubeNeed', { d: perf.career.cube_decisions_needed.toLocaleString('tr-TR') })}</em>
+                  : '–'}
+              </span>
+            </div>
+
             {games > 0 && (
               <div className="stats-bar">
                 <div className="stats-bar-win" style={{ width: `${wr}%` }} />

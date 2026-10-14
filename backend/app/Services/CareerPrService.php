@@ -26,6 +26,9 @@ class CareerPrService
 {
     public const SCALE = 500; // Match PR ile ayni olcek (bkz AuthController::prFromLog)
 
+    // Kariyer küp PR'ı yalnız bu kadar küp kararı birikince anlamlı (altında "—"/gizli).
+    public const MIN_CAREER_CUBE_DECISIONS = 25;
+
     /** Career PR hesabina dahil maçlarin sorgusu (tek kaynak). */
     public function eligibleMatches(int $userId)
     {
@@ -48,9 +51,12 @@ class CareerPrService
         // CHECKER-ONLY kariyer PR: genel PR küpsüz (checker) olduğundan kariyer de maçların
         // gnubg_checker_pr'ından KARAR-AĞIRLIKLI ortalanır (gnubg_checker_pr zaten ×500'lü PR değeri).
         // Bu history+future tutarlı + yavaş review-backfill GEREKTİRMEZ (checker PR her maçta saklı).
+        // KARİYER KÜP PR: tek maçta anlamsız, ama TÜM maçların küp kaybı/kararı toplanınca anlamlı
+        // (Σcube_loss/Σcube_dec ×500). Yeterli küp kararı yoksa (< MIN_CAREER_CUBE_DECISIONS) null.
         // NOT: 'dec' MariaDB'de rezerve kelime -> alias 'decs'.
         $agg = $this->eligibleMatches($user->id)
-            ->selectRaw('COALESCE(SUM(gnubg_checker_pr * pr_decisions),0) as wsum, COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m')
+            ->selectRaw('COALESCE(SUM(gnubg_checker_pr * pr_decisions),0) as wsum, COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m, '
+                .'COALESCE(SUM(cube_equity_lost),0) as cube_loss, COALESCE(SUM(cube_decisions),0) as cube_decs')
             ->first();
 
         $wsum = (float) ($agg->wsum ?? 0);
@@ -58,12 +64,19 @@ class CareerPrService
         $m = (int) ($agg->m ?? 0);
         $pr = $dec > 0 ? ($wsum / $dec) : null; // karar-ağırlıklı checker PR ortalaması
 
+        $cubeLoss = (float) ($agg->cube_loss ?? 0);
+        $cubeDec = (int) ($agg->cube_decs ?? 0);
+        $cubePr = $cubeDec >= self::MIN_CAREER_CUBE_DECISIONS ? ($cubeLoss / $cubeDec) * self::SCALE : null;
+
         // $fillable kisitli -> forceFill (bkz filament-user-forcefill).
         $user->forceFill([
             'career_pr' => $pr,
             'career_pr_matches' => $m,
             'career_pr_decisions' => $dec,
             'career_pr_equity_lost' => $wsum / self::SCALE, // yaklaşık checker equity (bilgi)
+            'career_cube_pr' => $cubePr !== null ? round($cubePr, 2) : null,
+            'career_cube_decisions' => $cubeDec,
+            'career_cube_equity_lost' => round($cubeLoss, 4),
         ])->save();
     }
 

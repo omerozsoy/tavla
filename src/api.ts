@@ -2557,6 +2557,9 @@ export interface PerformanceStats {
     eligible: boolean
     matches_needed: number
     decisions_needed: number
+    cube_pr: number | null // kariyer küp PR (yeterli küp kararı birikince); yoksa null
+    cube_decisions: number
+    cube_decisions_needed: number // küp PR için gereken ek küp kararı
   }
 }
 export async function performanceStats(period: MedianFilter = 'all'): Promise<PerformanceStats> {

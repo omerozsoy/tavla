@@ -139,6 +139,8 @@ class CacheMatchReviewJob implements ShouldQueue
                     'gnubg_pr' => $selfPr,
                     'gnubg_checker_pr' => $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null,
                     'gnubg_cube_pr' => $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null,
+                    'cube_equity_lost' => round((float) ($self['cube_equity_lost'] ?? 0), 4), // kariyer küp PR için
+                    'cube_decisions' => (int) ($self['cube_decisions'] ?? 0),
                     'pr_equity_lost' => round($self['equity_lost'], 4),
                     'pr_decisions' => $self['decisions'],
                     'pr' => $selfPr,

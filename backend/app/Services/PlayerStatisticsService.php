@@ -60,6 +60,12 @@ class PlayerStatisticsService
         $minM = CareerPrService::minMatches();
         $minD = CareerPrService::minDecisions();
 
+        // KARİYER KÜP PR: tek maçta anlamsız; yeterli küp kararı birikince (>= MIN) gösterilir.
+        $hasCube = \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_cube_pr');
+        $cubePr = $hasCube ? $user->career_cube_pr : null;
+        $cubeDec = (int) ($hasCube ? ($user->career_cube_decisions ?? 0) : 0);
+        $cubeMin = CareerPrService::MIN_CAREER_CUBE_DECISIONS;
+
         return [
             'pr' => $pr !== null ? (float) $pr : null,
             'matches' => $m,
@@ -69,6 +75,9 @@ class PlayerStatisticsService
             'eligible' => $pr !== null && $m >= $minM && $d >= $minD,
             'matches_needed' => max(0, $minM - $m),
             'decisions_needed' => max(0, $minD - $d),
+            'cube_pr' => $cubePr !== null ? (float) $cubePr : null,
+            'cube_decisions' => $cubeDec,
+            'cube_decisions_needed' => max(0, $cubeMin - $cubeDec),
         ];
     }
 
