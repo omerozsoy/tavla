@@ -101,10 +101,6 @@ export default function MatchResult({
   analyzingBoth = false,
   oppAnalyzing = false,
   progressPct = null,
-  winnerCheckerPr,
-  winnerCubePr,
-  loserCheckerPr,
-  loserCubePr,
   winnerBand,
   loserBand,
   winnerLuckPct,
@@ -134,7 +130,6 @@ export default function MatchResult({
   winnerRating,
   loserRating,
   classic = false,
-  noCube = false,
 }: Props) {
   const { t } = useT()
   const [codeCopied, setCodeCopied] = useState(false)
@@ -309,22 +304,9 @@ export default function MatchResult({
                   {bAnalyzing ? dots() : <>{fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}</>}
                 </span>
               </div>
-              {/* Pul Oyunu PR + Küp PR HER MAÇTA gösterilir (tek oyun dahil) — kullanıcı direktifi.
-                  Küp kararı yoksa Pul PR = Hata Oranı (App tarafı bunu aynı değere sabitler); Küp PR
-                  ise "—" olur (hiç sayılan küp kararı yok -> uydurma 0.00 yazılmaz). */}
-              <div className="mr-row mr-sub">
-                <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCheckerPr ?? null)}</span>
-                <span className="mr-label">{t('mr.checkerPr')}</span>
-                <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCheckerPr ?? null)}</span>
-              </div>
-              {/* Küp PR: küp olmayan maçta (1 puanlık, para değil) gizli — anlamsız "—" yazılmaz. */}
-              {!noCube && (
-                <div className="mr-row mr-sub">
-                  <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
-                  <span className="mr-label">{t('mr.cubePr')}</span>
-                  <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
-                </div>
-              )}
+              {/* Pul Oyunu PR + Küp PR satırları KALDIRILDI (kullanıcı kararı): küp PR, PR hesabından
+                  çıkarıldı -> genel PR (Hata Oranı) artık YALNIZ pul oyunu, ayrı pul satırı onunla aynı
+                  olurdu; küp satırı da anlamsız. Tek temiz "Hata Oranı (PR)" kalır. Küp verisi backend'de. */}
               {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
                   anlaşılmıyordu -> tam genişlik bilgi satırı. */}
               {analyzingAny && (

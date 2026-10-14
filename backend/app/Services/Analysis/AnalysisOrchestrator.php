@@ -19,6 +19,7 @@ class AnalysisOrchestrator
     // XG obvious esigi (src/analysis/pr.ts ile ayni).
     private const OBVIOUS = 0.001;
 
+
     public function __construct(private GnuBgClient $gnubg) {}
 
     /**
@@ -359,13 +360,17 @@ class AnalysisOrchestrator
             $chkLoss += max(0.0, (float) ($e['loss'] ?? 0));
             $chkDec++;
         }
-        $loss = $chkLoss + $cubeLossSum;
-        $dec = $chkDec + $cubeDec;
+        // KÜP PR, PR'DAN ÇIKARILDI (kullanıcı kararı): genel PR = YALNIZ pul (checker) oyunu — her
+        // maçta stabil/karşılaştırılabilir. Tek maçta küp (0-5 karar) istatistiksel gürültü (2 kararda
+        // 430 gibi uç değerler headline'ı bozuyordu); artık headline'a katılmaz, cube_pr gösterilmez.
+        // Küp verisi gnubg_review'da durur -> istenirse kariyer-toplamı ayrı türetilebilir.
+        $loss = $chkLoss;
+        $dec = $chkDec;
 
         return [
             'pr' => $dec > 0 ? ($loss / $dec) * 500 : 0.0,
             'checker_pr' => $chkDec > 0 ? ($chkLoss / $chkDec) * 500 : null,
-            'cube_pr' => $cubeDec > 0 ? ($cubeLossSum / $cubeDec) * 500 : null,
+            'cube_pr' => null, // PR'dan çıkarıldı -> gösterimde "—" / satır gizli
             'equity_lost' => $loss,
             'decisions' => $dec,
             'checker_decisions' => $chkDec,
