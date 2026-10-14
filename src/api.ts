@@ -2194,6 +2194,7 @@ export interface Seeker {
   stake: number
   stakes: number[]
   bet_pct: number
+  risk?: number // arayanin riske ettigi tutar (%-bahis: arayan bakiyesinin bet_pct'si; sabit: stake) -> istemci kendi riskiyle min'ler = gercek pot
   classic?: boolean // Klasik Tavla (kup yok + mars=2) -> rozet + "eslesme" ayni moda katar
   time_control: 'casual' | 'normal' | 'speed' // eslesme icin tempo (kuyruga katilirken ayni olmali)
   since?: string | null // havuza giris zamani (ISO) — "ne kadardir ariyor"

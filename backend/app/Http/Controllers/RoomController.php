@@ -1028,12 +1028,19 @@ class RoomController extends Controller
         $uids = $rooms->pluck('p1_user_id')->filter()->unique()->values();
         $userMap = $uids->isEmpty()
             ? collect()
-            : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until'])->keyBy('id');
+            : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until', 'coins', 'coins_reserved'])->keyBy('id');
 
         $seeking = $rooms->map(function ($r) use ($userMap) {
             $u = $userMap->get($r->p1_user_id);
             $targets = is_array($r->targets) ? array_values(array_map('intval', $r->targets)) : [(int) ($r->target ?? 1)];
             $stakes = is_array($r->stakes) ? array_values(array_map('intval', $r->stakes)) : [(int) $r->stake];
+            // Oyun Arayanlar POT: arayanın riske ettiği GERÇEK tutar. %-bahis -> arayanın
+            // kullanılabilir bakiyesinin bet_pct'si (settle snapshot ile aynı formül: floor,
+            // coins-reserved). Sabit bahis -> stake (çoklu seçimde en yüksek). İstemci bunu
+            // KENDİ riskiyle min'ler -> gerçek pot (bkz. Room.php min(snapshot)).
+            $seekerAvail = $u ? max(0, (int) ($u->coins ?? 0) - (int) ($u->coins_reserved ?? 0)) : 0;
+            $maxStake = $stakes ? max($stakes) : (int) $r->stake;
+            $risk = (int) $r->bet_pct > 0 ? (int) floor($seekerAvail * (int) $r->bet_pct / 100) : $maxStake;
 
             return [
                 'kind'    => 'seeking', // havuzda aktif arayan -> "eslesme"ye tiklanabilir
@@ -1048,6 +1055,7 @@ class RoomController extends Controller
                 'stake'   => (int) $r->stake,
                 'stakes'  => $stakes,
                 'bet_pct' => (int) $r->bet_pct,
+                'risk'    => $risk, // arayanın riske ettiği tutar (istemci kendi riskiyle min'ler = gerçek pot)
                 'classic' => (bool) ($r->classic ?? false), // Klasik Tavla: rozet + "eşleş" aynı moda katar
                 'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
                 'since'   => optional($r->created_at)->toIso8601String(),
@@ -1065,6 +1073,7 @@ class RoomController extends Controller
             $ucols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'presence_status'];
             $avUsers = User::whereNotNull('last_seen')
                 ->where('is_system', false)
+                ->notDeleted()
                 ->where('last_seen', '>', now()->subSeconds(70))
                 ->where('presence_status', 'ready') // SADECE "Oyuna Hazir"
                 ->when($me, fn ($q) => $q->where('id', '!=', $me->id))
@@ -1105,6 +1114,7 @@ class RoomController extends Controller
             'stake'   => 0,
             'stakes'  => [],
             'bet_pct' => 0,
+            'risk'    => 0,
             'classic' => false, // "müsait" oyuncu (davet edilecek) — mod davet anında seçilir
             'time_control' => 'normal',
             'since'   => null,

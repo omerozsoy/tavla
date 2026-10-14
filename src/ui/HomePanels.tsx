@@ -636,6 +636,10 @@ export function SeekersPanel({
               const self = currentId != null && s.id === currentId
               const stakeList = s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]
               const maxStake = Math.max(0, ...stakeList)
+              // %-bahis POT: kendi satırım -> kendi riskim (floor(coins·pct)). Başkası arıyorsa
+              // gerçek pot = min(arayan riski, kendi riskim) -> küçük bakiye limiti (settle ile aynı).
+              const myRisk = myCoins != null ? Math.floor((myCoins * s.bet_pct) / 100) : null
+              const potAmount = myRisk == null ? null : self ? myRisk : Math.min(s.risk ?? myRisk, myRisk)
               const tgList = s.targets && s.targets.length > 0 ? s.targets : [1]
               const lengths = tgList.join('·')
               const maxTarget = Math.max(1, ...tgList)
@@ -676,7 +680,7 @@ export function SeekersPanel({
                                 </span>
                               ) : (
                                 <span className="seek-chip seek-chip-risk" title={t('seekers.riskHint')}>
-                                  {t('seekers.risk')} <Coins amount={Math.floor((myCoins * s.bet_pct) / 100)} size={12} />
+                                  {t('seekers.risk')} <Coins amount={potAmount ?? 0} size={12} />
                                 </span>
                               ))}
                           </>
