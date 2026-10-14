@@ -405,6 +405,8 @@ class AuthController extends Controller
 
                 return response()->json([
                     'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
+                    // Eş-zamanlı rapor kilidi: mevcut satırın id'sini DÖNDÜR -> "Analiz" doğru maçı çeker.
+                    'match_result_id' => $ex?->id,
                     'pr_self' => $ex?->pr, 'pr_opponent' => $oppEx?->pr,
                     'luck_mwc_self' => $ex?->luck_mwc, 'luck_mwc_opp' => $oppEx?->luck_mwc,
                     'luck_emg_self' => $ex?->luck_emg, 'luck_emg_opp' => $oppEx?->luck_emg,
@@ -447,6 +449,9 @@ class AuthController extends Controller
                     'rating' => $user->rating ?? 1500,
                     'user' => $user,
                     'achievements' => [],
+                    // Satır zaten var (sunucu yedeği/geç rapor) -> id'yi DÖNDÜR ki istemci maç-sonu
+                    // "Analiz"i DOĞRU maçın gnubg incelemesinden çeksin (yoksa önceki maç gösterilirdi).
+                    'match_result_id' => $existing->id,
                     'pr_self' => $existing->pr,
                     'pr_opponent' => $oppExisting?->pr,
                     'luck_mwc_self' => $existing->luck_mwc,
