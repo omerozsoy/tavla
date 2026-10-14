@@ -73,7 +73,7 @@ class Shield
 
             // Brute-force: kimlik uçlarına ard arda başarısız istek (yanlış şifre / doğrulama / throttle).
             // IP başına 2 dk'lık kayan pencere; eşik aşılınca TEK tehlike olayı (saldırı sinyali).
-            self::detectBruteForce($path, $status, $userId, $ip, $method, $subject);
+            self::detectBruteForce($request, $path, $status, $userId, $ip, $method, $subject);
 
             $prev = DB::table('shield_presence')->where('subject', $subject)->first();
 
@@ -219,7 +219,7 @@ class Shield
     private const BF_THRESHOLD = 8; // 2 dk içinde bu kadar başarısız giriş → saldırı
 
     /** Kimlik ucuna ard arda başarısız istek (brute-force) tespiti. IP başına kayan pencere. */
-    private static function detectBruteForce(string $path, int $status, ?int $userId,
+    private static function detectBruteForce(Request $request, string $path, int $status, ?int $userId,
         ?string $ip, string $method, string $subject): void
     {
         // 401 yanlış şifre, 422 doğrulama hatası, 429 throttle (limit zaten devrede = saldırı sinyali).
@@ -230,9 +230,24 @@ class Shield
             $key = 'shield:bf:'.$ip;
             $n = (int) Cache::get($key, 0) + 1;
             Cache::put($key, $n, now()->addMinutes(2));
+
+            // Denenen kimlik(ler)i topla: login (email|takma ad) veya kayıt/şifre-sıfırlama email'i.
+            // ŞİFRE ASLA toplanmaz — yalnız hedeflenen hesap adı (savunma için meşru).
+            $attempt = mb_substr(trim((string) ($request->input('login') ?? $request->input('email') ?? '')), 0, 120);
+            $tKey = 'shield:bf:targets:'.$ip;
+            $targets = (array) Cache::get($tKey, []);
+            if ($attempt !== '' && ! in_array($attempt, $targets, true)) {
+                $targets[] = $attempt;
+                $targets = array_slice($targets, -8); // son 8 farklı hedef
+                Cache::put($tKey, $targets, now()->addMinutes(2));
+            }
+
             if ($n >= self::BF_THRESHOLD && self::guard($subject, 'bruteforce', 120)) {
-                self::event($userId, $ip, 'brute_force', 3, $path, $method, $status,
-                    "{$n} başarısız giriş denemesi (2 dk)");
+                $detail = "{$n} başarısız giriş denemesi (2 dk)";
+                if ($targets) {
+                    $detail .= ' · Denenen: '.implode(', ', $targets);
+                }
+                self::event($userId, $ip, 'brute_force', 3, $path, $method, $status, $detail);
             }
         } catch (\Throwable $e) {
             // sessizce geç
