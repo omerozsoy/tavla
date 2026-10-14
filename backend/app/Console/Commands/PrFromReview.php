@@ -38,9 +38,10 @@ class PrFromReview extends Command
         $this->info(($apply ? 'UYGULA' : 'DRY-RUN').': '.$q->count().' satır (gnubg_review olan)');
         $fixed = 0;
         $skipped = 0;
-        // chunkById: uzak DB'de ~771KB'lık review bloklarını tek get() ile çekmek OOM + "packets out of
-        // order" veriyordu -> küçük partiler, her parti sonrası bellek serbest bırakılır.
-        $q->orderBy('id')->chunkById(150, function ($rows) use ($orch, $apply, &$fixed, &$skipped) {
+        // chunkById: uzak DB'de review blokları BÜYÜK (ort ~771KB, bazıları ~2.6MB) -> tek get() 9640 satır
+        // = GB'larca RAM (OOM). 150'lik parti bile 128MB CLI limitini aşıyordu (150 x ~771KB+ + decode).
+        // 20'lik parti = en kötü ~20x2.6MB ≈ 52MB -> güvenli. Her parti sonrası bellek serbest bırakılır.
+        $q->orderBy('id')->chunkById(20, function ($rows) use ($orch, $apply, &$fixed, &$skipped) {
         foreach ($rows as $r) {
             $review = json_decode((string) $r->gnubg_review, true);
             $log = is_array($review['log'] ?? null) ? $review['log'] : null;
