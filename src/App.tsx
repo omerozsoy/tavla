@@ -5991,8 +5991,11 @@ export default function App() {
         // sonraki poll) gercek saat (reveal-grace'li) yazilir; o ana kadar yerel saat (aktif=siyah).
         if (sc && !botAnimRef.current) {
           const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
-          // Demiri tazele (ekrandaki rakamı DEĞİL): interpolasyon tick'i buradan pürüzsüz sayar.
+          // Demiri tazele: interpolasyon tick'i buradan pürüzsüz sayar. Ekrandaki rakamı da
+          // OTORİTER demirden ANINDA snap et (maç başında onlineReady henüz false iken interpolasyon
+          // tick'i gated -> ekran freshMatchClock TAHMİNİNDE donuk kalıp "önce 2dk sonra 5dk" sıçrardı).
           clockAnchorRef.current = { delay: sc.delay, hold: (sc as { hold?: number }).hold ?? 0, white: sc.white, black: sc.black, active: act, at: Date.now() }
+          setClock(interpClock(clockAnchorRef.current, Date.now()))
           if (sc.delay > fullDelayRef.current) fullDelayRef.current = sc.delay // tam (reset) delay = maç içi en büyük
           setSrvActive(act)
           setAfkLeft(sc.afk)
@@ -6082,6 +6085,7 @@ export default function App() {
       if (sc && !botAnimRef.current) {
         const act = sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null
         clockAnchorRef.current = { delay: sc.delay, hold: (sc as { hold?: number }).hold ?? 0, white: sc.white, black: sc.black, active: act, at: Date.now() }
+        setClock(interpClock(clockAnchorRef.current, Date.now())) // otoriter demirden ANINDA snap (maç başı donuk tahmin sıçramasını önler)
         if (sc.delay > fullDelayRef.current) fullDelayRef.current = sc.delay // tam (reset) delay = maç içi en büyük
         setSrvActive(act)
         setAfkLeft(sc.afk)
