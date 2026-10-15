@@ -144,7 +144,9 @@ export default function Auth({
   const [busy, setBusy] = useState(false)
   // Kayıt/düzenleme formunda "gönder"e basıldı mı — basıldıysa boş zorunlu alanlar tek tek
   // kendi altında "Zorunlu" işaretiyle gösterilir (tek bir "tüm alanları doldurun" banner'ı yerine).
-  const [triedSubmit, setTriedSubmit] = useState(false)
+  // KAPI (requireComplete): eksik alanlar daha ilk açılışta kırmızı görünsün ki kullanıcı
+  // ne doldurması gerektiğini anında görsün (gönder beklenmez).
+  const [triedSubmit, setTriedSubmit] = useState(!!requireComplete)
   // Takma isim canli durumu: idle | checking | ok (musait) | taken (alinmis) | blocked (kufur/uygunsuz)
   const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken' | 'blocked' | 'invalid'>('idle')
   const nickBad = nickStatus === 'taken' || nickStatus === 'blocked' || nickStatus === 'invalid' // kirmizi + gonderim engellenir
