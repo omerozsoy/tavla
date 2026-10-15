@@ -7931,8 +7931,10 @@ export default function App() {
       // 6'ya tik -> topla, tekrar 6'ya tik -> kalan zari oyna). TEMAS varsa ve pulun baska hedefi
       // de varsa otomatik toplamaz: pulu sec + yesil goster, kullanici guvenli diziyi secsin
       // (NR5GJ: Su 6/4->4/off tek aciksiz oyun; 6/off'a zorlanirsa blot birakip vurulurdu).
+      // AMA pul ZATEN seciliyse (ikinci tik ayni puldan) toplamayi tamamla: aksi halde dokunmatikte
+      // kullanici ayni pula tekrar tekrar tiklar ve ASLA toplayamaz (5-3'te 5'e tiklayip almama bug'i).
       const multi = new Set(stepsFrom.map((s) => s.to)).size > 1
-      if (multi && hasContact(turnStart)) {
+      if (multi && hasContact(turnStart) && selectedFrom !== from) {
         setSelectedFrom(from)
         return
       }
