@@ -61,6 +61,16 @@ class MatchMove extends Model
             ->get();
     }
 
+    /** Admin "Hamle/Zar Kaydı" için kanonik sıralı satırlar (tablo yoksa boş koleksiyon). */
+    public static function orderedRows(string $roomCode)
+    {
+        if (! Schema::hasTable('match_moves')) {
+            return collect();
+        }
+
+        return self::orderedForRoom($roomCode);
+    }
+
     /**
      * PR/analiz için MoveLogEntry-benzeri dizi (AnalyzeMatchPrJob checkerPr/cubePr girdisi ile aynı
      * şekil): her move -> pos+dice+notation+playedSteps; her küp -> cube.chosen. 'end' atlanır.

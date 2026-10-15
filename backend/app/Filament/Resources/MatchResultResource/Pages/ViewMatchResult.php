@@ -96,6 +96,14 @@ class ViewMatchResult extends ViewRecord
                         ->state(fn (MatchResult $r) => self::summaryData($r))
                         ->view('filament.match-result.summary')->columnSpanFull(),
                 ]),
+            // OKUNUR hamle/zar kaydı: her hamle + zarı + notasyon (sunucu-otoriter match_moves).
+            Section::make('Hamle / Zar Kaydı')
+                ->description('Maçın her hamlesi, zarı ve notasyonu — sıra ile (sunucu-otoriter kayıttan).')
+                ->schema([
+                    ViewEntry::make('moveLog')->hiddenLabel()
+                        ->view('filament.match-result.move-log')->columnSpanFull(),
+                ])
+                ->collapsible(),
             Section::make('.mat Dosyası (XG uyumlu)')
                 ->description('Maçın hamle/zar kaydından üretilir; Extreme Gammon ile açılır. Başlıktaki “.mat indir” ile dosyayı kaydedin. (Online maçta iki oyuncunun logu birleştirilerek tam .mat üretilir.)')
                 ->schema([

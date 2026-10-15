@@ -165,6 +165,88 @@ class MatchResult extends Model
         return MatBuilder::build($myLog, $matchLen, $whiteName, $blackName, $isMoney);
     }
 
+    /**
+     * Admin detay: OKUNUR hamle/zar kaydı (oyun -> sıralı hamle/küp/sonuç; her hamlede zar).
+     * Otoriter kaynak match_moves; yoksa istemci logundan (notation + pos.dice) kurulur.
+     * .mat zaten zarı taşır ama ham/XG; bu okunur Türkçe liste admin için.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function moveDiceLog(): array
+    {
+        $mine = json_decode((string) $this->log, true);
+        $myHc = is_array($mine) ? ($mine['hc'] ?? null) : null;
+        if (! in_array($myHc, ['white', 'black'], true)) {
+            $myHc = $this->analysisHc();
+        }
+        $selfName = $this->user?->nickname ?: 'Oyuncu';
+        $oppName = $this->opponent_name ?: 'Rakip';
+        [$whiteName, $blackName] = $myHc === 'black' ? [$oppName, $selfName] : [$selfName, $oppName];
+        $nameOf = fn (?string $c) => $c === 'black' ? $blackName : $whiteName;
+        $fmtDice = function ($d): string {
+            $d = is_array($d) ? array_values($d) : [];
+
+            return count($d) >= 2 ? ((int) $d[0]).'-'.((int) $d[1]) : (count($d) === 1 ? (string) (int) $d[0] : '');
+        };
+        $cubeLabel = ['double' => 'Küp çekti (×2)', 'take' => 'Küpü kabul etti', 'drop' => 'Pas (çekilmedi)'];
+
+        $out = [];
+
+        // Otoriter kaynak: match_moves (iki oyuncu, sıralı, zarlı).
+        if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
+            $lastGame = null;
+            $num = 0;
+            foreach (\App\Models\MatchMove::orderedRows($this->room_code) as $r) {
+                $g = (int) $r->game_no;
+                if ($g !== $lastGame) {
+                    $out[] = ['kind' => 'game', 'no' => $g + 1];
+                    $lastGame = $g;
+                    $num = 0;
+                }
+                if ($r->kind === 'move') {
+                    $notation = trim((string) ($r->notation ?? ''));
+                    $out[] = [
+                        'kind' => 'move', 'no' => ++$num, 'player' => $r->player, 'name' => $nameOf($r->player),
+                        'dice' => $fmtDice($r->dice), 'notation' => $notation !== '' ? $notation : 'Hamle yok',
+                        'noMove' => $notation === '',
+                    ];
+                } elseif (in_array($r->kind, ['double', 'take', 'drop'], true)) {
+                    $out[] = ['kind' => 'cube', 'player' => $r->player, 'name' => $nameOf($r->player), 'action' => $cubeLabel[$r->kind] ?? $r->kind];
+                } elseif ($r->kind === 'end' && $r->winner) {
+                    $out[] = ['kind' => 'end', 'name' => $nameOf($r->winner), 'points' => (int) $r->points];
+                }
+            }
+
+            return $out;
+        }
+
+        // Fallback (eski maç, match_moves yok): istemci logu — her iki rengi taşır, zar pos.dice'te.
+        $log = is_array($mine) && is_array($mine['log'] ?? null) ? $mine['log'] : [];
+        $num = 0;
+        foreach ($log as $e) {
+            $player = $e['player'] ?? null;
+            if (! in_array($player, ['white', 'black'], true)) {
+                continue;
+            }
+            if (! empty($e['cube'])) {
+                $chosen = $e['cube']['chosen'] ?? ($e['cube']['action'] ?? null);
+                if ($chosen) {
+                    $out[] = ['kind' => 'cube', 'player' => $player, 'name' => $nameOf($player), 'action' => $cubeLabel[$chosen] ?? $chosen];
+                }
+
+                continue;
+            }
+            $notation = trim((string) ($e['notation'] ?? ''));
+            $out[] = [
+                'kind' => 'move', 'no' => ++$num, 'player' => $player, 'name' => $nameOf($player),
+                'dice' => $fmtDice($e['pos']['dice'] ?? ($e['dice'] ?? [])),
+                'notation' => $notation !== '' ? $notation : 'Hamle yok', 'noMove' => $notation === '',
+            ];
+        }
+
+        return $out;
+    }
+
     /** İndirme dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; ext hariç). */
     public function matFilename(): string
     {
