@@ -97,6 +97,8 @@ export default function MatchResult({
   loserScore,
   winnerPr,
   loserPr,
+  winnerCubePr,
+  loserCubePr,
   analyzing = false,
   analyzingBoth = false,
   oppAnalyzing = false,
@@ -305,11 +307,14 @@ export default function MatchResult({
                   {bAnalyzing ? dots() : <>{fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}</>}
                 </span>
               </div>
-              {/* PUL OYUNU PR + KÜP PR satırları KALDIRILDI (kullanıcı kararı): Genel PR = yalnız pul
-                  (checker) oyunu, ayrı pul satırı onunla aynı olurdu. Küp PR tek maçta anlamsız
-                  (çok az karar) -> kariyer düzeyinde profilde gösterilir; burada açıklayıcı not. */}
+              {/* KÜP PR satırı (kullanıcı kararı: açıklayıcı not yerine değeri göster).
+                  Genel PR (Hata Oranı) = pul (checker) oyunu; bu satır küp PR'ı gösterir. */}
               {!noCube && (
-                <div className="mr-pr-note mr-cubepr-note">{t('mr.cubePrNote')}</div>
+                <div className="mr-row mr-sub">
+                  <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
+                  <span className="mr-label">{t('mr.cubePr')}</span>
+                  <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
+                </div>
               )}
               {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
                   anlaşılmıyordu -> tam genişlik bilgi satırı. */}
