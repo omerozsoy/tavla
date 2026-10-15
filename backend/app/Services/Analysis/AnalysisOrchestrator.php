@@ -370,20 +370,23 @@ class AnalysisOrchestrator
             $chkLoss += max(0.0, (float) ($e['loss'] ?? 0));
             $chkDec++;
         }
-        // GENEL PR = YALNIZ pul (checker) oyunu (kullanıcı kararı): küp PR tek maçta istatistiksel
-        // gürültü (çok az küp kararı) -> headline'a KATILMAZ, daha düşük/stabil PR. Küp verisi
-        // (cube_pr + cube_decisions) yine hesaplanır -> profilde KARİYER küp PR'ı için kullanılır.
-        $loss = $chkLoss;
-        $dec = $chkDec;
+        // GENEL (overall) PR = XG/gnubg HAVUZLANMIŞ standart: pul + küp BİRLİKTE havuzlanır
+        // (Σloss / Σkarar × 500). Küp kaybı tek maçta az olsa da overall'a DAHİL (XG headline = combined).
+        // equity_lost/decisions de HAVUZLANMIŞ döner -> pr_equity_lost/pr_decisions havuz totalleridir;
+        // kariyer bunları doğrudan toplar (Σpr_equity_lost/Σpr_decisions). Ayrı cube_* (küp kariyer PR'ı)
+        // + checker_pr/cube_pr GÖSTERİM alanları korunur; cube_pr ≥MIN_CUBE_DECISIONS gate'i yalnız
+        // GÖSTERİMİ susturur (küp kaybı overall havuzuna daima girer). MIN_PR_DECISIONS gate'i (maç-sonu
+        // "—") çağıran katmanda havuz karar sayısına bakar.
+        $poolLoss = $chkLoss + $cubeLossSum;
+        $poolDec = $chkDec + $cubeDec;
 
         return [
-            'pr' => $dec > 0 ? ($loss / $dec) * 500 : 0.0,
+            'pr' => $poolDec > 0 ? ($poolLoss / $poolDec) * 500 : 0.0, // overall = pul+küp havuzu (XG)
             'checker_pr' => $chkDec > 0 ? ($chkLoss / $chkDec) * 500 : null,
-            // Küp GENEL PR'a DAHİL DEĞİL; ayrı küp verisi (kariyer küp PR'ı için) saklanır.
             'cube_pr' => $cubeDec >= self::MIN_CUBE_DECISIONS ? ($cubeLossSum / $cubeDec) * 500 : null,
             'cube_equity_lost' => $cubeLossSum, // kariyer küp PR toplamı için
-            'equity_lost' => $loss,             // checker-only
-            'decisions' => $dec,                // checker-only
+            'equity_lost' => $poolLoss,         // HAVUZLANMIŞ (pul+küp) -> pr_equity_lost
+            'decisions' => $poolDec,            // HAVUZLANMIŞ (pul+küp) -> pr_decisions + MIN gate + kariyer
             'checker_decisions' => $chkDec,
             'cube_decisions' => $cubeDec,
         ];

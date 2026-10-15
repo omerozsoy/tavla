@@ -6,8 +6,9 @@ use App\Services\Analysis\AnalysisOrchestrator;
 use Tests\TestCase;
 
 /**
- * GENEL PR = YALNIZ pul (checker) oyunu (kullanıcı kararı): küp GENEL PR'a KATILMAZ, daha düşük/stabil.
- * Küp verisi (cube_pr gated + cube_equity_lost) yine hesaplanır -> profilde KARİYER küp PR'ı için.
+ * GENEL PR = XG/gnubg HAVUZLANMIŞ (pul + küp birlikte): overall = (Σloss / Σkarar) × 500.
+ * Küp kaybı overall havuzuna DAİMA girer; ayrı cube_pr GÖSTERİMİ ise ≥MIN_CUBE_DECISIONS ile
+ * stabilize edilir (az küp kararında gürültülü değer gösterilmez), cube_equity_lost kariyer için toplanır.
  */
 class PrCubeShieldTest extends TestCase
 {
@@ -25,14 +26,15 @@ class PrCubeShieldTest extends TestCase
         return $log;
     }
 
-    public function test_overall_pr_is_checker_only(): void
+    public function test_overall_pr_is_pooled_checker_plus_cube(): void
     {
         $orch = app(AnalysisOrchestrator::class);
-        // Küp kararı sayısı fark etmez -> genel PR DAİMA checker: (0.1/1)*500 = 50.
-        foreach ([0, 2, 5] as $k) {
+        // Overall = HAVUZ: 1 checker (loss 0.1) + k küp (her biri loss 1.18) -> (0.1 + k*1.18)/(1+k)*500.
+        //   k=0 -> 50 ; k=2 -> (2.46/3)*500 = 410 ; k=5 -> (6.0/6)*500 = 500. decisions = 1+k (pul+küp).
+        foreach ([[0, 50.0], [2, 410.0], [5, 500.0]] as [$k, $expected]) {
             $r = $orch->prFromReviewLog($this->log($k), 'white');
-            $this->assertEqualsWithDelta(50.0, $r['pr'], 0.01, "genel PR küpsüz olmalı (k=$k)");
-            $this->assertSame(1, $r['decisions'], 'decisions = yalnız checker kararları');
+            $this->assertEqualsWithDelta($expected, $r['pr'], 0.5, "overall havuz (pul+küp) olmalı (k=$k)");
+            $this->assertSame(1 + $k, $r['decisions'], 'decisions = pul + küp kararları (havuz)');
         }
     }
 

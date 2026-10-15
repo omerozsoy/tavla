@@ -38,7 +38,9 @@ class CareerPrService
             // MİN-KARAR KAPISI: < MIN_PR_DECISIONS kararlı maçlar PR gürültüsü (2-3 kararda 300+) ->
             // career toplamına GİRMEZ (tek maç ekranında da PR'ları null = "—").
             ->where('pr_decisions', '>=', \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS)
-            ->whereNotNull('gnubg_checker_pr') // checker-only kariyer: checker PR'ı olan maçlar
+            // HAVUZ kariyer: havuz kaybı hesaplanabilen maçlar — pr_equity_lost (review-yazımı) VEYA
+            // otoriter pooled gnubg_pr (fallback: gnubg_pr×pr_decisions/500). gnubg analizi olan maçlar.
+            ->where(fn ($q) => $q->whereNotNull('pr_equity_lost')->orWhereNotNull('gnubg_pr'))
             // PUANSIZ maçlar (rated=false: puansız arkadaş odası / friendly 24h limiti aşımı) kariyer PR'a
             // ve PR sıralamasına GİRMEZ; PR'ları yalnız o maçın analizinde görünür. Eski satırlar
             // migration varsayılanıyla rated=true -> geçmiş havuz değişmez.
@@ -48,32 +50,36 @@ class CareerPrService
     /** Bir oyuncunun aggregate Career PR degerlerini maçlarindan YENIDEN hesapla + kaydet. */
     public function recalc(User $user): void
     {
-        // CHECKER-ONLY kariyer PR: genel PR küpsüz (checker) olduğundan kariyer de maçların
-        // gnubg_checker_pr'ından KARAR-AĞIRLIKLI ortalanır (gnubg_checker_pr zaten ×500'lü PR değeri).
-        // Bu history+future tutarlı + yavaş review-backfill GEREKTİRMEZ (checker PR her maçta saklı).
-        // KARİYER KÜP PR: tek maçta anlamsız, ama TÜM maçların küp kaybı/kararı toplanınca anlamlı
-        // (Σcube_loss/Σcube_dec ×500). Yeterli küp kararı yoksa (< MIN_CAREER_CUBE_DECISIONS) null.
+        // GENEL (overall) KARİYER PR = XG/gnubg HAVUZLANMIŞ standart: maçların HAVUZ totalleri
+        // (pr_equity_lost/pr_decisions = pul+küp, prFromReviewLog'dan) doğrudan toplanır
+        // (Σpr_equity_lost / Σpr_decisions × 500) -> maç overall'ı ile AYNI standart. pr_equity_lost
+        // null eski satırda otoriter pooled gnubg_pr'dan türet (gnubg_pr × pr_decisions / 500).
+        // KARİYER KÜP PR ayrı gösterim (profil kırılımı): Σcube_loss/Σcube_dec ×500, ≥MIN_CAREER_CUBE_DECISIONS.
         // NOT: 'dec' MariaDB'de rezerve kelime -> alias 'decs'.
         $agg = $this->eligibleMatches($user->id)
-            ->selectRaw('COALESCE(SUM(gnubg_checker_pr * pr_decisions),0) as wsum, COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m, '
-                .'COALESCE(SUM(cube_equity_lost),0) as cube_loss, COALESCE(SUM(cube_decisions),0) as cube_decs')
+            ->selectRaw(
+                'COALESCE(SUM(COALESCE(pr_equity_lost, gnubg_pr * pr_decisions / '.self::SCALE.')),0) as pool_loss, '
+                .'COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m, '
+                .'COALESCE(SUM(cube_equity_lost),0) as cube_loss, COALESCE(SUM(cube_decisions),0) as cube_decs'
+            )
             ->first();
 
-        $wsum = (float) ($agg->wsum ?? 0);
-        $dec = (int) ($agg->decs ?? 0);
+        $poolLoss = (float) ($agg->pool_loss ?? 0);
+        $poolDec = (int) ($agg->decs ?? 0); // pr_decisions = havuz (pul+küp) karar sayısı
         $m = (int) ($agg->m ?? 0);
-        $pr = $dec > 0 ? ($wsum / $dec) : null; // karar-ağırlıklı checker PR ortalaması
-
         $cubeLoss = (float) ($agg->cube_loss ?? 0);
         $cubeDec = (int) ($agg->cube_decs ?? 0);
+
+        $pr = $poolDec > 0 ? ($poolLoss / $poolDec) * self::SCALE : null; // havuzlanmış overall kariyer PR
+
         $cubePr = $cubeDec >= self::MIN_CAREER_CUBE_DECISIONS ? ($cubeLoss / $cubeDec) * self::SCALE : null;
 
         // $fillable kisitli -> forceFill (bkz filament-user-forcefill).
         $user->forceFill([
             'career_pr' => $pr,
             'career_pr_matches' => $m,
-            'career_pr_decisions' => $dec,
-            'career_pr_equity_lost' => $wsum / self::SCALE, // yaklaşık checker equity (bilgi)
+            'career_pr_decisions' => $poolDec,             // havuzlanmış (pul+küp) karar sayısı
+            'career_pr_equity_lost' => round($poolLoss, 4), // havuzlanmış toplam equity kaybı
             'career_cube_pr' => $cubePr !== null ? round($cubePr, 2) : null,
             'career_cube_decisions' => $cubeDec,
             'career_cube_equity_lost' => round($cubeLoss, 4),
