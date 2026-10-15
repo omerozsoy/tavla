@@ -7947,8 +7947,12 @@ export default function App() {
       setSelectedFrom('bar')
       return
     }
-    // Tek hedef -> o adim; birden fazla tahta-ici hedef -> en BUYUK zar.
-    const step = stepsFrom.reduce((a, b) => (b.die > a.die ? b : a))
+    // Tek hedef -> o adim. Birden fazla tahta-ici hedef (or. zar 1-6'da 8->7 veya 8->2):
+    // ZAR SIRASINA gore oyna -> once gosterilen (sol) zar once. Kullanici swap ile sirayi
+    // degistirebildiginden (kucuk-buyuk / buyuk-kucuk) niyetini boyle ifade eder.
+    // (Eski "daima en buyuk zar" kurali 1-6'da hep 8->2 oynuyordu, kullanici 8->7 istiyordu.)
+    const ordered = remainingDice.map((die) => stepsFrom.find((st) => st.die === die)).find(Boolean)
+    const step = ordered ?? stepsFrom.reduce((a, b) => (b.die > a.die ? b : a))
     playSteps([step])
   }
 
