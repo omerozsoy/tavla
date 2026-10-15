@@ -813,7 +813,12 @@ class AuthController extends Controller
             'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
             // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı
             // yalnız fallback; ekran "analiz ediliyor" gösterip gnubg gelince yerine koyar.
-            'gnubg_authoritative' => (string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($mr['log']),
+            // KAYNAK = istemci log'u VEYA sunucu match_moves (gnubg MatchFinalize'da match_moves'tan
+            // da hesaplar). Flag'i YALNIZ istemci log'una bağlamak, log'suz raporda (kurtarma/terk)
+            // ekranı bayat istemci tahmininde bırakıyordu -> analizde gnubg, sonuç ekranında wildbg
+            // uyuşmazlığı. Sunucu hamleleri varsa da poll et (gnubg gelir, hepsi tek kaynak).
+            'gnubg_authoritative' => (string) config('gnubg.pr_mode', 'off') === 'authoritative'
+                && (! empty($mr['log']) || ($room && \App\Models\MatchMove::existsForRoom($room->code))),
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
             'pr_checker_self' => $selfCheckerPr,          // XG kirilimi: pul-yalniz
