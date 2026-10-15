@@ -12443,6 +12443,10 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   text-align: center;
 }
+.live-count {
+  background: rgba(239, 68, 68, 0.14);
+  color: #dc2626;
+}
 /* Oyun Arayanlar paneli: diger ana sayfa bolumleriyle (.home-panels/.tts-panel) AYNI
    standart genislik + ortali (tek basina tam-kap genislige TASMASIN -> "cok buyuk"). */
 .seek-panel {

@@ -261,9 +261,9 @@ export function LiveMatchesPanel({
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
   const [tab, setTab] = useState<'all' | LiveCat>('all')
-  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 mac (Liderlik Tablosu gibi)
-  const PAGE_SIZE = 10
-  const MAX_PAGES = 10 // en fazla 100 mac
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 6 mac
+  const PAGE_SIZE = 6
+  const MAX_PAGES = 20 // en fazla 120 mac
 
   useEffect(() => {
     let alive = true
@@ -303,6 +303,7 @@ export function LiveMatchesPanel({
       <div className="home-panel-head">
         <span className="live-dot" />
         <Icon name="live" size={17} /> {t('live.title')}
+        {matches && matches.length > 0 && <span className="online-count live-count">{matches.length}</span>}
       </div>
       <div className="rank-tabs">
         <Button type="button" variant={tab === 'all' ? 'default' : 'ghost'} aria-pressed={tab === 'all'} onClick={() => setTab('all')}>
