@@ -364,28 +364,37 @@ class MatchClockTest extends TestCase
         $this->assertSame('p2', $end['winner']);
     }
 
-    // ---- 20b) ADALET: aktif oyuncu tahtayi HIC yuklemediyse (seen YOK) ilk hamleden once
-    // TIMEOUT ile KAYBETMEZ -> NO-CONTEST (winner=null). "Oynamadan/görmeden yenildim" fix. ----
-    public function test_no_contest_before_first_move_when_never_loaded(): void
+    // ---- 20b) NO-SHOW FORFEIT (kullanici karari 2026-10-15, QT5XF): aktif oyuncu tahtayi HIC
+    // yuklemedi (seen YOK) ama RAKIP yuklenip bekledi -> hazir bekleyen rakip KAZANIR. ----
+    public function test_noshow_forfeit_before_first_move_when_opponent_waited(): void
     {
         $c = $this->started('speed', 1); // moved=false, aktif p1
-        $c = MatchClock::seen($c, 'p2', self::T0); // yalnız rakip yukledi; p1 HIC gorulmedi
+        $c = MatchClock::seen($c, 'p2', self::T0); // yalnız rakip (p2) yukledi; p1 HIC gorulmedi
         $end = MatchClock::tick($c, self::T0 + 40)['end']; // banka deadline gecti
         $this->assertSame('ABANDON', $end['reason']);
-        $this->assertNull($end['winner']); // kimse kaybetmez/kazanmaz (puan/coin islemez)
+        $this->assertSame('p2', $end['winner']); // hazir bekleyen rakip kazanir
     }
 
-    // ---- 20c) ADALET (canli #XR37P): RAKIP acilis hamlesini yapti (moved=TRUE) ve sira hic-gormemis
-    // aktif oyuncuya gecti (asimetrik presence: rakip seen, aktif seen YOK). AFK/TIMEOUT dolsa bile
-    // aktifi forfeit ETME -> NO-CONTEST. moved "biri oynadi mi" der, "BU oyuncu adil sans aldi mi" demez. ----
-    public function test_no_contest_after_opponent_move_when_active_never_seen(): void
+    // ---- 20c) NO-SHOW FORFEIT (QT5XF): RAKIP acilis hamlesini yapti (moved=TRUE) ve sira hic-gormemis
+    // aktif oyuncuya gecti (asimetrik presence: rakip seen, aktif seen YOK). AFK dolunca hazir rakip kazanir. ----
+    public function test_noshow_forfeit_after_opponent_move_when_active_never_seen(): void
     {
         $c = $this->movedClock('casual', 5);           // moved=true, aktif p1, afk normalde T0+60
         $c = MatchClock::seen($c, 'p2', self::T0 + 60);  // RAKIP (p2) sona kadar poll etti (present);
         //                                                  p1 HIC gorulmedi (seen YOK)
         $end = MatchClock::tick($c, self::T0 + 63)['end']; // afk deadline gecti, p2 hala present
         $this->assertSame('ABANDON', $end['reason']);
-        $this->assertNull($end['winner']); // hic-gormemis aktif forfeit edilmez (puan/coin islemez)
+        $this->assertSame('p2', $end['winner']); // hazir bekleyen rakip kazanir
+    }
+
+    // ---- 20d) NO-CONTEST korundu: IKISI DE tahtayi hic yuklemedi (iki damga da YOK) + ilk hamle yok
+    // -> kimse adil sans almadi, kazanan yok (winner=null; puan/coin islemez). ----
+    public function test_no_contest_before_first_move_when_both_never_loaded(): void
+    {
+        $c = $this->started('speed', 1); // moved=false, aktif p1, hicbir seen damgasi yok
+        $end = MatchClock::tick($c, self::T0 + 40)['end']; // banka deadline gecti
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertNull($end['winner']); // ikisi de no-show -> no-contest
     }
 
     // ---- 21) Ilk hamleden SONRA AFK normal calisir ----

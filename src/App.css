@@ -7526,11 +7526,14 @@ html[data-board='yilbasi'] .checker.black {
   flex: none;
   /* KESİN KARE: eşit genişlik+yükseklik (aspect-ratio/104% + overflow:hidden kombinasyonu dar
      tepside dikdörtgen gösteriyordu). Tepsi --tray-w = 1.5×cube-size'a genişletildi -> rahat sığar. */
-  width: var(--cube-size);
-  height: var(--cube-size);
+  /* Tepsiye (--tray-w) SIĞ: mobilde cube-size (≤40px) tray-w'den (~30px) büyük olabiliyordu ->
+     cube tepsiden taşıp .bearoff-slot overflow:hidden ile kırpılıyordu ("küp 2 tam gözükmüyor").
+     Desktop'ta tray-w = cube-size×1.5 -> min daima cube-size (değişmez). */
+  width: min(var(--cube-size), calc(var(--tray-w) - 8px));
+  height: min(var(--cube-size), calc(var(--tray-w) - 8px));
   margin: 4px auto;
   border: 2px solid var(--tv-brick-light);
-  font-size: calc(var(--cube-size) * 0.46);
+  font-size: calc(min(var(--cube-size), calc(var(--tray-w) - 8px)) * 0.46);
 }
 /* Karar bende: teklif edilen küp alt tepsimde YANIP SÖNER (fade out/in) -> dikkat çek. */
 .cube.cube-pending {
@@ -8140,6 +8143,13 @@ html[data-board='yilbasi'] .checker.black {
   }
   .spectate-view .result-title { font-size: 0.82rem; }
   .spectate-view .result-box .err-detail { font-size: 0.72rem; margin-top: 3px; }
+  /* Oyuncunun KENDİ "Hamle Yok" kutusu da mobilde kompakt olsun: tam boy kutu (260px/1.4rem)
+     board ortasını kaplayıp dans eden silik zarları gizliyordu. Dar pill -> zarlar yanda görünür. */
+  .result-box.no-moves {
+    padding: 8px 14px;
+    max-width: min(150px, 44vw);
+  }
+  .result-box.no-moves .result-title { font-size: 1rem; }
 }
 .nm-dice {
   opacity: 0.35; /* dance "Hamle Yok": dans eden oyuncunun zarı DAİMA silik (oynanamadı), kendi slotunda */

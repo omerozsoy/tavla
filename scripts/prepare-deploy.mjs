@@ -5,7 +5,12 @@ import { cpSync, existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
 console.log('1) React derleniyor…')
-execSync('npm run build', { stdio: 'inherit' })
+// Vite/rolldown büyük bundle'da V8 varsayılan heap'ini (~2-4GB) aşıp OOM (exit 134) veriyordu.
+// ponytail: sabit 8GB heap, build daha da büyürse artır.
+execSync('npm run build', {
+  stdio: 'inherit',
+  env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=8192`.trim() },
+})
 
 const dest = 'backend/public'
 console.log('2) dist -> backend/public kopyalaniyor (ADDITIVE)…')

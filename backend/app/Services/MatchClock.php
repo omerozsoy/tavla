@@ -363,26 +363,25 @@ class MatchClock
         $effNow = $inFlight ? $acted : $now;
         $timedOut = $effNow >= $timeoutAt + self::GRACE;              // banka tukendi
         $afkedOut = $moved && ($effNow >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
-        // ADALET (KÖK FIX): aktif oyuncu bu odayi HIC yuklemediyse (seen damgasi YOK = hic poll
-        // etmedi) onu forfeit ETME — TIMEOUT de AFK de haksiz. "Oynamadan/görmeden yenildim" bug'i:
-        // matchmaking/davet oda acar, sira ona gecer ama istemcisi tahtayi hic almaz; banka
-        // started_at'tan GERCEK-ZAMANLI akar. "Yuklenmedi mi / terk mi" AYIRT EDILEMEZ (presence de
-        // never-seen'i atliyor) -> kayip yazmak haksiz: NO-CONTEST (winner=null) ile bitir.
-        // moved'DAN BAGIMSIZ (canli #XR37P kok fix): eski kosul `! $moved` idi; ama RAKIP acilis
-        // hamlesini yapinca moved=TRUE (match-global) olur ve sira hic-gormemis oyuncuya gecince
-        // koruma ATLANIYORDU -> acilis non-starter'i ilk zarini goremeden AFK_TIMEOUT ile kaybediyordu.
-        // moved "biri oynadi mi" der, "BU oyuncu adil sans aldi mi" DEMEZ; dogru olcu per-oyuncu
-        // presence'tir. EXPLOIT YOK: _seen her poll/komutta yazilir ve ileri-only; bir kez gorunen
-        // oyuncu sonra null'a donemez (gorup oynamayan timeout/AFK'yi NORMAL yer).
+        // ADALET: aktif oyuncu bu odayi HIC yuklemediyse (_seen damgasi YOK = hic poll etmedi) iki yol
+        // var ve RAKIBIN presence'ina gore AYRISIR (saf-zaman testlerinde iki damga da null -> hicbiri
+        // tetiklenmez, normal timeout/AFK matematigi korunur). EXPLOIT YOK: _seen her poll/komutta
+        // yazilir + ileri-only; bir kez gorunen oyuncu sonra null'a donemez.
         $activeSeen = $clock[$active.'_seen'] ?? null;
         $otherSeen = $clock[self::other($active).'_seen'] ?? null;
-        // (a) ASIMETRIK presence (canli #XR37P kok fix): aktif oyuncu HIC gorulmedi ama RAKIP gorundu
-        //     -> moved olsa bile (rakip acilis hamlesini yapti -> moved=true) aktifi forfeit ETME.
-        //     moved "biri oynadi mi" der; "BU oyuncu adil sans aldi mi" DEMEZ. Saf-zaman testlerinde
-        //     iki damga da null oldugu icin bu dal TETIKLENMEZ (normal timeout/AFK matematigi korunur).
-        // (b) ILK hamleden ONCE hic-gormemis aktif (eski koruma aynen): her iki taraf da bilinmese bile.
-        // EXPLOIT YOK: _seen her poll/komutta yazilir + ileri-only; bir kez gorunen null'a donemez.
-        if (($timedOut || $afkedOut) && $activeSeen === null && ($otherSeen !== null || ! $moved)) {
+        // NO-SHOW FORFEIT (kullanici karari 2026-10-15, QT5XF): aktif oyuncu odayi HIC yuklemedi
+        // (seen=null) ama RAKIP yuklenip bekledi (otherSeen!=null) ve sure/AFK doldu -> hazir bekleyen
+        // rakip KAZANIR. (Eski XR37P "gormeyeni forfeit etme" no-contest'i BU dal icin bilerek override
+        // edildi: hazir rakip varken hic baglanmayan no-show cezalandirilir.)
+        if (($timedOut || $afkedOut) && $activeSeen === null && $otherSeen !== null) {
+            $clock['end'] = ['reason' => 'ABANDON', 'winner' => self::other($active)];
+
+            return $clock;
+        }
+        // NO-CONTEST: aktif hic gorulmedi + ilk gercek hamle hic yapilmadi (ikisi de no-show / salt-zaman
+        // degilse). Kimse adil sans almadi -> kazanan yok, rating/coin islemez ("ikisi de gormeden
+        // yenildi" haksizligini onler). (otherSeen!=null ustteki dalda forfeit edildi; burada other=null.)
+        if (($timedOut || $afkedOut) && $activeSeen === null && ! $moved) {
             $clock['end'] = ['reason' => 'ABANDON', 'winner' => null];
 
             return $clock;
