@@ -8747,6 +8747,14 @@ button.move-row:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
 }
+/* Eksik/gecersiz zorunlu alan: KIRMIZI cerceve. Base `.register-card input` (0,1,1) border'ini
+   ezmesi icin [aria-invalid="true"] ile (0,2,1). Odakta bile kirmizi kalsin diye :focus'tan SONRA. */
+.register-card input[aria-invalid="true"],
+.register-card select[aria-invalid="true"],
+.register-card textarea[aria-invalid="true"] {
+  border-color: var(--destructive, #c0392b);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--destructive, #c0392b) 20%, transparent);
+}
 .register-error {
   color: var(--color-error);
   font-size: 0.85rem;
