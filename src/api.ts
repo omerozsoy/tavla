@@ -745,6 +745,8 @@ export interface Analytics {
   rating_dates?: string[] // rating_history ile hizali gun (YYYY-MM-DD)
   coins_history: number[]
   coins_dates?: string[] // coins_history ile hizali gun (YYYY-MM-DD)
+  pr_history: number[] // OTORITER havuzlanmis gnubg_pr gecmisi (dusuk=iyi)
+  pr_dates?: string[] // pr_history ile hizali gun (YYYY-MM-DD)
   by_length: ByLength[]
   wxp: number
   games: number

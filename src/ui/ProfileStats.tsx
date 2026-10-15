@@ -32,7 +32,7 @@ const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
 // Zar Ortalamalari faz sekmeleri: Tumu / Acilis / Temas / Temas Yok
 const DICE_PHASES: DicePhase[] = ['all', 'opening', 'contact', 'race']
 
-export default function ProfileStats({ avatar, frame, name, onClose, embed, onOpenMatchHistory, onOpenAchievements }: Props) {
+export default function ProfileStats({ avatar, frame, name, onClose, embed, onOpenMatchHistory }: Props) {
   const { t, lang } = useT()
   useEscape(embed ? () => {} : onClose)
   const [data, setData] = useState<MyStats | null>(null)
@@ -249,21 +249,9 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             )}
 
-            {/* Rozetler (BadgeList) artik profilde ayri "Basarilarim" sekmesinde gosteriliyor. */}
+            {/* Rozetler/Başarımlar artık profilde ayrı "Başarılarım" sekmesinde (buradaki giriş kaldırıldı). */}
 
-            {/* Basarimlar galerisine giris (tam rozet sistemi) */}
-            {onOpenAchievements && (
-              <button type="button" className="stats-ach-entry" onClick={onOpenAchievements}>
-                <span className="stats-ach-entry-l">
-                  <Icon name="medal" size={18} /> {t('ach.title')}
-                </span>
-                <span className="stats-ach-entry-r">
-                  {t('ach.viewAll')} <Icon name="arrow-right" size={14} />
-                </span>
-              </button>
-            )}
-
-            {/* ===== Üst satır: 3 grafik (Bakiye · Puan · Medyan) ===== */}
+            {/* ===== Üst satır: 3 grafik (Bakiye · Puan · PR) ===== */}
             <div className="stats-dash stats-dash-3">
               {/* Bakiye — coin geçmişi */}
               <div className="sd-card">
@@ -301,7 +289,66 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                 )}
               </div>
 
-              {/* Medyan Hata Oranı — bar chart */}
+              {/* PR — otoriter havuzlanmış gnubg PR geçmişi (coin/rating gibi zaman-serisi; düşük = iyi) */}
+              <div className="sd-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="target" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('stats.careerPr')}</div>
+                    <div className="sd-val">{perf?.career?.pr != null ? perf.career.pr.toFixed(2) : '–'}</div>
+                  </div>
+                </div>
+                {an && an.pr_history.length >= 2 ? (
+                  <LineChart data={an.pr_history} dates={an.pr_dates} color="#A83A2B" />
+                ) : !an ? (
+                  <Skeleton w="100%" h={80} r={8} />
+                ) : (
+                  <div className="sd-empty">–</div>
+                )}
+              </div>
+            </div>
+
+            {/* ===== Alt satır: WXP · Medyan Hata Oranı · Toplam Kaz.% ===== */}
+            <div className="stats-dash stats-dash-3">
+
+              {/* WXP — Kazanma Deneyim Puanlari */}
+              <div className="sd-card wxp-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="star" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('wxp.title')}</div>
+                  </div>
+                </div>
+                {perfErr ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !perf ? (
+                  <div aria-busy="true">
+                    <Skeleton w={120} h={40} r={8} style={{ display: 'block', margin: '4px auto' }} />
+                    <Skeleton w="100%" h={54} r={8} style={{ display: 'block', marginTop: 12 }} />
+                  </div>
+                ) : (
+                  <>
+                    <div className="wxp-total">{fmtNum(perf.wxp.total)}</div>
+                    <div className="wxp-boxes">
+                      <div className="wxp-box">
+                        <strong className="good">{fmtNum(perf.wxp.wins)}</strong>
+                        <span>{t('wxp.g')}</span>
+                      </div>
+                      <div className="wxp-box">
+                        <strong className="bad">{fmtNum(perf.wxp.losses)}</strong>
+                        <span>{t('wxp.m')}</span>
+                      </div>
+                      <div className="wxp-box">
+                        <strong>{perf.wxp.total_matches > 0 ? `%${Math.round(perf.wxp.win_rate)}` : '–'}</strong>
+                        <span>{t('wxp.winRate')}</span>
+                      </div>
+                    </div>
+                    <div className="wxp-legend">{t('wxp.legend')}</div>
+                  </>
+                )}
+              </div>
+
+              {/* Medyan Hata Oranı — bar chart (üst satırdan taşındı) */}
               <div className="sd-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="alert" size={18} /></span>
@@ -347,47 +394,6 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                       }
                     })}
                   />
-                )}
-              </div>
-            </div>
-
-            {/* ===== Alt satır: WXP + Toplam Kaz.% + Zar Ortalamaları ===== */}
-            <div className="stats-dash">
-
-              {/* WXP — Kazanma Deneyim Puanlari */}
-              <div className="sd-card wxp-card">
-                <div className="sd-head">
-                  <span className="sd-ic"><Icon name="star" size={18} /></span>
-                  <div className="sd-head-txt">
-                    <div className="sd-title">{t('wxp.title')}</div>
-                  </div>
-                </div>
-                {perfErr ? (
-                  <div className="lb-empty small">{t('lb.error')}</div>
-                ) : !perf ? (
-                  <div aria-busy="true">
-                    <Skeleton w={120} h={40} r={8} style={{ display: 'block', margin: '4px auto' }} />
-                    <Skeleton w="100%" h={54} r={8} style={{ display: 'block', marginTop: 12 }} />
-                  </div>
-                ) : (
-                  <>
-                    <div className="wxp-total">{fmtNum(perf.wxp.total)}</div>
-                    <div className="wxp-boxes">
-                      <div className="wxp-box">
-                        <strong className="good">{fmtNum(perf.wxp.wins)}</strong>
-                        <span>{t('wxp.g')}</span>
-                      </div>
-                      <div className="wxp-box">
-                        <strong className="bad">{fmtNum(perf.wxp.losses)}</strong>
-                        <span>{t('wxp.m')}</span>
-                      </div>
-                      <div className="wxp-box">
-                        <strong>{perf.wxp.total_matches > 0 ? `%${Math.round(perf.wxp.win_rate)}` : '–'}</strong>
-                        <span>{t('wxp.winRate')}</span>
-                      </div>
-                    </div>
-                    <div className="wxp-legend">{t('wxp.legend')}</div>
-                  </>
                 )}
               </div>
 

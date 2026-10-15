@@ -1903,7 +1903,7 @@ class AuthController extends Controller
         $rows = \App\Models\MatchResult::where('user_id', $me->id)
             ->real() // yapay zeka maclari performans/rating/WXP istatistiklerine girmez
             ->orderBy('id')
-            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'rated', 'created_at']);
+            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'gnubg_pr', 'rated', 'created_at']);
 
         $ratingHistory = $rows->map(fn ($r) => (int) $r->rating_after)->values();
         $ratingDates = $rows->map(fn ($r) => optional($r->created_at)?->toDateString())->values();
@@ -1911,6 +1911,11 @@ class AuthController extends Controller
         $coinsRows = $rows->filter(fn ($r) => $r->coins_after !== null)->values();
         $coinsHistory = $coinsRows->map(fn ($r) => (int) $r->coins_after)->values();
         $coinsDates = $coinsRows->map(fn ($r) => optional($r->created_at)?->toDateString())->values();
+        // PR gecmisi: OTORITER havuzlanmis gnubg_pr (null olmayan = analiz edilmis maclar), tarihleriyle hizali.
+        // Coin/rating gibi zaman-serisi cizgi grafigi; dusuk = iyi.
+        $prRows = $rows->filter(fn ($r) => $r->gnubg_pr !== null)->values();
+        $prHistory = $prRows->map(fn ($r) => round((float) $r->gnubg_pr, 2))->values();
+        $prDates = $prRows->map(fn ($r) => optional($r->created_at)?->toDateString())->values();
 
         // Maç uzunluguna gore grupla (kazanma% + ortalama PR)
         $byLen = [];
@@ -1950,6 +1955,8 @@ class AuthController extends Controller
             'rating_dates' => $ratingDates,
             'coins_history' => $coinsHistory,
             'coins_dates' => $coinsDates,
+            'pr_history' => $prHistory,
+            'pr_dates' => $prDates,
             'by_length' => $byLength,
             'wxp' => $wxp,
             'games' => $me->games_played ?? 0,
