@@ -94,6 +94,21 @@ class SnowieBackfill extends Command
                     $white = $r->analysisHc() === 'white';
                     $self = $white ? $pr1 : $pr2;
                     $opp = $white ? $pr2 : $pr1;
+                    // TUTARLILIK KALKANI: overall (Snowie) = checker+küp havuzlaması -> kendi
+                    // bileşenlerinin ARASINDA olmalı (overall ∈ [min,max]); checker VE küpten yüksek
+                    // overall MATEMATİKSEL OLARAK İMKANSIZDIR. Snowie-CLI, terk/timeout gibi bozuk .mat
+                    // (buildMat resign'de zar düşürür) yeniden-analizinde ŞİŞMİŞ çöp üretir (ör. 1.1 PR'lık
+                    // kusursuz oyuna 88). Böyle değer DOĞRU review-havuz overall'ını EZMESİN -> satırı atla.
+                    $chk = $r->gnubg_checker_pr;
+                    $cube = $r->gnubg_cube_pr;
+                    if ($chk !== null) {
+                        $max = max((float) $chk, $cube !== null ? (float) $cube : (float) $chk);
+                        if ($self > $max + 2.0) {
+                            $this->line(sprintf('  ! imkansiz Snowie atlandi: row#%d self=%.2f > max(checker,cube)=%.2f', $r->id, $self, $max));
+
+                            continue;
+                        }
+                    }
                     MatchResult::where('id', $r->id)->update([
                         'gnubg_pr' => $self,
                         'pr' => $self,
