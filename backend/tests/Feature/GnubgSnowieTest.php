@@ -40,6 +40,15 @@ class GnubgSnowieTest extends TestCase
         $this->assertNull($svc->parseSnowie("Player  A  B\nsome other output"));
     }
 
+    public function test_parse_rejects_absurd_pr(): void
+    {
+        // Canlı-küplü money maçı "1 point match" başlığıyla gnubg'ye verilince küpü ölü sanıp
+        // milyonluk hata üretir -> güvenilmez, null dönmeli (DB'ye çöp PR yazılmaz).
+        $svc = new GnubgSnowieService;
+        $text = "Player  OmerDOGAN  ahselbah\nSnowie error rate  -60,4  ( +0,000%)  -11111002,9  ( +0,000%)";
+        $this->assertNull($svc->parseSnowie($text));
+    }
+
     /**
      * CANLI REGRESYON: gerçek gnubg ile fixture maçı analiz et -> Snowie PR XG'ye yakın olmalı.
      * gnubg CLI yoksa (CI) atlanır; local/prod'da KİLİT görevi görür.
@@ -50,7 +59,7 @@ class GnubgSnowieTest extends TestCase
         if (! is_file($svc->cliPath())) {
             $this->markTestSkipped('gnubg CLI yok ('.$svc->cliPath().') — canlı test atlandı.');
         }
-        $mat = file_get_contents(__DIR__.'/../fixtures/snowie_59c8m.mat');
+        $mat = file_get_contents(__DIR__.'/../Fixtures/snowie_59c8m.mat');
         $r = $svc->analyzeMat($mat); // 2-ply, cubeful (SABİT)
         $this->assertNotNull($r, 'gnubg analizi sonuç vermedi');
         [, , $pr1, $pr2] = $r;

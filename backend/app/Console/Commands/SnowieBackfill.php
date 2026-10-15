@@ -50,7 +50,17 @@ class SnowieBackfill extends Command
 
                 continue;
             }
-            $res = $svc->analyzeMat((string) $rows->first()->matText());
+            // Money (bahisli, CANLI KÜP) oyunu 1-puanlık match olarak serialize ediliyor -> gnubg
+            // küpü ölü sanıp çöp (milyonluk) PR üretir. Doğru analiz money-session (.mat "0 point
+            // match") serileştirmesi ister; o AYRI iş. O yapılana dek money maçlarını ATLA (eski
+            // PR'larını bozma). parseSnowie'nin >100 korumasıyla çift emniyet.
+            $first = $rows->first();
+            if ((int) $first->match_length <= 1 && (int) $first->stake > 0) {
+                $skip++;
+
+                continue;
+            }
+            $res = $svc->analyzeMat((string) $first->matText());
             if ($res === null) {
                 $skip++;
 

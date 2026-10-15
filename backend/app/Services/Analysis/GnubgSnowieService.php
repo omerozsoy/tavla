@@ -69,8 +69,16 @@ class GnubgSnowieService
             return null;
         }
         $f = fn ($v) => round(abs((float) str_replace(',', '.', $v)), 2);
+        [$pr1, $pr2] = [$f($s[1]), $f($s[2])];
+        // Çöp koruması: gerçek PR ~0-50. Absürt değer gnubg'nin güvenilmez analizini gösterir —
+        // ör. canlı-küplü money maçı "1 point match" başlığıyla verilince küpü ölü sanıp milyonluk
+        // hata üretir. Böyle sonucu "analiz yok" (null) say -> DB'ye çöp yazılmaz.
+        // ponytail: 100 sabit eşik; gerçek en-kötü oyuncu ~50'yi aşmaz, gerekirse yükselt.
+        if ($pr1 > 100 || $pr2 > 100) {
+            return null;
+        }
 
-        return [$p1 ?: 'P1', $p2 ?: 'P2', $f($s[1]), $f($s[2])];
+        return [$p1 ?: 'P1', $p2 ?: 'P2', $pr1, $pr2];
     }
 
     /** İki ismin ASCII-normalize eşleşmesi (P1/P2 -> white/black için). */
