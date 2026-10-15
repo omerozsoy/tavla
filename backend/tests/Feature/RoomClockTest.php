@@ -177,6 +177,51 @@ class RoomClockTest extends TestCase
         $this->assertSame('white', $moves[0]->player); // kaybeden (sıra sahibi) beyaz
     }
 
+    // ---- TERK/TIMEOUT: match_moves'a 'end' satırı yazılır -> .mat SONUÇ SATIRLI (XG "dosya hatası" fix) ----
+    // Eskiden terk/timeout yolu (applyClockEnd) applyGameResult çağırmadığından 'end' satırı HİÇ
+    // yazılmıyordu; buildMat son oyunu outcome=null bırakıp .mat'i sonuç satırsız (yarım) üretiyordu.
+    public function test_timeout_writes_end_row_so_mat_has_result(): void
+    {
+        $this->p1 = User::factory()->create();
+        $this->p2 = User::factory()->create();
+        $now = microtime(true);
+        $state = array_merge(\App\Support\Backgammon::initialState(), [
+            'turn' => 'white', 'dice' => [6, 2], 'diceUsed' => [false, false],
+        ]);
+        Room::create([
+            'code' => 'CLKEND',
+            'p1_token' => 't1', 'p1_user_id' => $this->p1->id, 'p1_name' => 'P1',
+            'p2_token' => 't2', 'p2_user_id' => $this->p2->id, 'p2_name' => 'P2',
+            'status' => 'playing', 'mode' => 'friendly', 'time_control' => 'speed',
+            'target' => 1, 'authoritative' => true, 'dice_authority' => true,
+            'version' => 1, 'server_version' => 2,
+            'server_state' => $state,
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null,
+                'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 3,
+            ],
+            'clock' => [
+                'running' => true, 'turn_slot' => 'p1',
+                'p1_bank' => 24, 'p2_bank' => 24, 'delay' => 8,
+                'started_at' => $now - 400, 'moved' => true,
+                'p1_seen' => $now - 1, 'p2_seen' => $now - 1,
+            ],
+        ]);
+
+        Sanctum::actingAs($this->p2);
+        $this->getJson('/api/rooms/CLKEND')->assertOk();
+
+        $end = \App\Models\MatchMove::where('room_code', 'CLKEND')->where('kind', 'end')->first();
+        $this->assertNotNull($end, 'terk/timeout sonrasi end satiri yazilmali');
+        $this->assertSame('black', $end->winner); // sıra sahibi beyaz süreden düştü -> siyah kazanır
+
+        // buildMat artık sonuç satırı üretir (gnubg native: düz "Wins", ayrı "Resigns" anahtarı yok).
+        $mat = \App\Models\MatchMove::buildMat('CLKEND', ['matchLength' => 1, 'whiteName' => 'W', 'blackName' => 'B']);
+        $this->assertStringContainsString('Wins 1 point', $mat);
+    }
+
     // ---- show AFK_TIMEOUT'u enforce eder (casual 5: ana sure uzun, once AFK) ----
     // AFK yalniz ILK gercek hamleden sonra sayilir -> once bir gercek hamle gonderilir.
     public function test_show_enforces_afk_timeout(): void

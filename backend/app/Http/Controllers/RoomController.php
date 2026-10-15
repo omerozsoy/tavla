@@ -2696,7 +2696,20 @@ class RoomController extends Controller
                 // küp değeri yazılıyordu -> para maçında (stake × skor) gammon/backgammon'da olan
                 // oyuncu masayı terk ederek kaybını 1×'e indirebiliyordu.
                 $gp = is_array($room->server_state) ? \App\Support\Backgammon::resignationValue($room->server_state, $winnerColor, (bool) $room->classic) : 1;
-                $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + max(1, $cubeVal) * $gp);
+                $gamePts = max(1, $cubeVal) * $gp;
+                // .mat SONUÇ SATIRI (terk/timeout/AFK): bu yolda applyGameResult ÇAĞRILMADIĞINDAN
+                // match_moves'a 'end' satırı HİÇ yazılmıyordu -> buildMat son oyunun outcome'ını null
+                // bırakıp .mat'i SONUÇ SATIRSIZ (yarım oyun) üretiyordu; XG böyle dosyayı "hata"/yanlış
+                // sonuç gösterir (resign butonu applyGameResult'tan geçtiği için SORUNSUZDU — açık olan
+                // yalnız terk/timeout). gnubg native .mat pes'i de düz "Wins N point" ile yazar (ayrı
+                // "Resigns" anahtarı YOKTUR) -> aynı 'end' satırını yazıp oyunu sonuçlandırırız. Per-OYUN
+                // puanı (cube×konum-değeri) yazılır; maç-skoru hedefe sıçratma (max target) aşağıda kalır.
+                $this->recordAction($room, [
+                    'game_no' => (int) ($sm['gameNo'] ?? 1), 'seq' => (int) ($sm['turns'] ?? 0), 'ord' => 9,
+                    'player' => $winnerColor, 'kind' => 'end', 'winner' => $winnerColor,
+                    'points' => $gamePts, 'cube_value' => max(1, $cubeVal), 'mctx' => $this->moveMctx($room),
+                ]);
+                $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + $gamePts);
                 $sm['done'] = true;
                 $sm['winner'] = $winnerColor;
                 $sm['cube']['pending'] = null;
