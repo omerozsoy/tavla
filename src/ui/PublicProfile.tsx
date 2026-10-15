@@ -97,6 +97,9 @@ export default function PublicProfile({
     ? new Date(mutedUntil).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : null
   // Gösterilecek admin notu: kaydetme override'ı varsa o, yoksa sunucudan gelen (yalnız admin dolu).
+  // Moderasyon bloğu (Konuşma Yasağı + Admin Notu): prop ile GELMESE de backend "bakan admin mi"
+  // der (viewer_is_admin) -> Liderlik/Arkadaşlar/Kulüpler dahil HER açılış yolunda görünür.
+  const showMod = viewerIsAdmin || !!p?.viewer_is_admin
   const adminNote = noteOverride !== undefined ? noteOverride : (p?.admin_note ?? null)
   // Notu yazan admin + zaman (override varsa o, yoksa sunucudan).
   const noteBy = noteMeta !== undefined ? noteMeta.by : (p?.admin_note_by_name ?? null)
@@ -179,7 +182,7 @@ export default function PublicProfile({
             )}
 
             {/* YÖNETİCİ: konuşma yasağı (sohbet susturma). Başkasının profili + bakan admin ise. */}
-            {viewerIsAdmin && (
+            {showMod && (
               <div className="pp-actions pp-mod">
                 {mutedUntilLabel && (
                   <div className="pp-muted-badge">

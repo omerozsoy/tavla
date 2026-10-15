@@ -1030,6 +1030,7 @@ export interface PublicProfile {
   is_admin?: boolean // yönetici -> isim yanında kırmızı kalkan + "Hata Bildir" düğmesi
   is_support?: boolean // destek -> isim yanında krem kalkan + "Hata Bildir" düğmesi
   is_friend?: boolean // bakan kişiyle ZATEN arkadaş mı -> "Arkadaş ol" gizlenir (site geneli)
+  viewer_is_admin?: boolean // BAKAN yönetici mi (başkasının profili) -> moderasyon bloğu her yolda çıkar
   muted_until?: string | null // YALNIZ yönetici görür: aktif konuşma yasağı bitişi (ISO) veya null
   admin_note?: string | null // YALNIZ yönetici görür: bu kullanıcıya yazılmış admin notu (yoksa null)
   admin_note_by_name?: string | null // YALNIZ yönetici: notu son yazan yöneticinin takma adı

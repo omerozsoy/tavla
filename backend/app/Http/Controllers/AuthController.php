@@ -1582,6 +1582,10 @@ class AuthController extends Controller
             'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'is_admin' => (bool) $user->is_admin, // yönetici -> isim yanı kırmızı kalkan + "Hata Bildir"
             'is_support' => (bool) $user->is_support, // destek -> isim yanı krem kalkan + "Hata Bildir"
+            // BAKAN yönetici mi (başkasının profili)? Kart moderasyon bloğunu (Konuşma Yasağı + Admin
+            // Notu) bununla gösterir -> Liderlik/Arkadaşlar/Kulüpler dahil HER açılış yolunda çıkar
+            // (eskiden yalnız viewerIsAdmin prop geçen yollarda görünüyordu).
+            'viewer_is_admin' => (bool) ($me && $me->is_admin && $me->id !== $user->id),
             'rank' => $rank,
             // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
             'career_pr' => \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,
