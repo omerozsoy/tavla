@@ -7918,11 +7918,12 @@ export default function App() {
     if (!interactive) return
     const stepsFrom = nextSteps.filter((s) => s.from === from)
     if (stepsFrom.length === 0) return
-    // Pulun birden fazla FARKLI hedefi varsa (topla VEYA tahtada ilerlet) -> otomatik oynama;
-    // pulu sec, yesil hedefleri goster, kullanici secsin. Yoksa tek-tik daima bear-off'u
-    // secip 6/4->4/off gibi TEK aciksiz oyunu engeller (NR5GJ: pt6'ya tiklayinca 6/off'a
-    // zorlanip pt4 acigi verilen hata). Tek hedef varsa eskisi gibi aninda oyna.
-    if (new Set(stepsFrom.map((s) => s.to)).size > 1) {
+    const tgts = new Set(stepsFrom.map((s) => s.to))
+    // Hedeflerden biri bear-off ise tek-tikta otomatik oynama: pulu sec, yesil hedefleri goster,
+    // kullanici secsin. Yoksa tek-tik 6/off'u secip 6/4->4/off gibi TEK aciksiz oyunu bozar
+    // (NR5GJ: pt6'ya tiklayinca 6/off'a zorlanip pt4 acigi). Bear-off YOKSA (iki tahta-ici hedef)
+    // tek-tik BUYUK zari dogrudan oynar (XKSN3: "8'e tiklayinca direk 4'e"); kucuk zar surukleyerek.
+    if (tgts.size > 1 && tgts.has('off')) {
       setSelectedFrom(from)
       return
     }
@@ -7931,8 +7932,8 @@ export default function App() {
       playSteps([offStep])
       return
     }
-    const active = remainingDice[0]
-    const step = stepsFrom.find((s) => s.die === active) ?? stepsFrom[0]
+    // Tek hedef -> o adim; birden fazla tahta-ici hedef -> en BUYUK zar.
+    const step = stepsFrom.reduce((a, b) => (b.die > a.die ? b : a))
     playSteps([step])
   }
 
