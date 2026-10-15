@@ -506,16 +506,18 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                                   ? t('mh.ptMatch', { n: m.match_length })
                                   : t('mh.moneyGame')}
                             </span>
-                            {m.pr != null && (
-                              <span className="psm-pr">
-                                PR {m.pr.toFixed(1)}
-                                {/* TEK-KAYNAK: rakip PR = rakibin otoriter gnubg değeri (yoksa eski kolon) */}
-                                {(() => {
-                                  const o = m.opponent_gnubg_pr ?? m.opponent_pr
-                                  return o != null && o !== 0 ? ` · ${o.toFixed(1)}` : ''
-                                })()}
-                              </span>
-                            )}
+                            {(() => {
+                              // TEK-KAYNAK: kendi PR'ı DAİMA otoriter gnubg değeri (gnubg_pr); yoksa eski kolon.
+                              const selfPr = m.gnubg_pr ?? m.pr
+                              if (selfPr == null) return null
+                              const o = m.opponent_gnubg_pr ?? m.opponent_pr
+                              return (
+                                <span className="psm-pr">
+                                  PR {selfPr.toFixed(1)}
+                                  {o != null && o !== 0 ? ` · ${o.toFixed(1)}` : ''}
+                                </span>
+                              )
+                            })()}
                           </span>
                         </span>
                         <span className="psm-right">

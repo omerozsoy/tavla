@@ -96,6 +96,14 @@ const luckSign = (mwc: number | null, emg: number): number =>
 // istemci (wildbg canlı) küp girdileri kaybı ÜST DÜZEY e.loss'ta tutar (cube.loss YOK). İkisini
 // de destekle: cube.loss -> e.loss -> 0. (Aksi halde istemci-loglu maçlarda küp maliyeti hep 0.)
 const cubeCost = (e: LogEntry): number => Math.max(0, e.cube?.loss ?? e.loss ?? 0)
+// Checker karar kaybı: maç-bağlamlı (prAdjustedEquityLoss) varsa onu kullan — otoriter gnubg_pr ile
+// AYNI. Oyun kararlaşmış (rakip zaten kazanmış) bir pozisyonda ham money-loss yüksek olsa da
+// prAdjusted ~0 olur -> görüntüleyici onu blunder/ceza sayıp şişirilmiş PR göstermez. Alan yoksa eski
+// ham loss'a düşer (regresyon yok). MatchReport.prLoss + MatReview.computeSummary ile BİREBİR.
+const prLoss = (e: LogEntry): number => Math.max(0, e.prAdjustedEquityLoss ?? e.loss ?? 0)
+// Küp PR az örnekte anlamsız (tek hata 3-haneli PR'a patlar — "266.50" artefaktı). gnubg gibi en az
+// bu kadar sayılan küp kararı yoksa küp PR GÖSTERME (null -> '—'). Backend MIN_CUBE_DECISIONS ile hizalı.
+const MS_MIN_CUBE_DECISIONS = 3
 
 function perPlayer(
   log: LogEntry[],
@@ -109,12 +117,16 @@ function perPlayer(
   const jokers = luckInfo?.jokers != null && Number.isFinite(luckInfo.jokers) ? Math.round(luckInfo.jokers) : null
   const mine = log.filter((e) => e.player === color)
 
-  // ---- Checker kararları: pos'lu, küp DEĞİL, gerçek hamle ('(no move)' zorunlu -> sayılmaz) ----
-  const checker = mine.filter((e) => !e.cube && e.pos && e.notation !== '(no move)')
+  // ---- Checker kararları: pos'lu, küp DEĞİL, gerçek hamle ('(no move)' zorunlu -> sayılmaz).
+  // countsForPR=false (zorunlu/obvious) paydaya GİRMEZ + maç-bağlamlı prLoss -> otoriter gnubg_pr ile
+  // birebir (log'dan ham yeniden-hesap sapması = kullanıcının "imkansız 15 PR" şikayeti ortadan kalkar). ----
+  const checker = mine.filter(
+    (e) => !e.cube && e.pos && e.notation !== '(no move)' && e.countsForPR !== false,
+  )
   const checkerDecisions = checker.length
-  const checkerEquityCost = sum(checker, (e) => Math.max(0, e.loss || 0))
-  const checkerErrors = checker.filter((e) => (e.loss || 0) >= MS_ERROR_MIN).length
-  const checkerBlunders = checker.filter((e) => (e.loss || 0) >= MS_BLUNDER_MIN).length
+  const checkerEquityCost = sum(checker, prLoss)
+  const checkerErrors = checker.filter((e) => prLoss(e) >= MS_ERROR_MIN).length
+  const checkerBlunders = checker.filter((e) => prLoss(e) >= MS_BLUNDER_MIN).length
 
   // ---- Zar sayısı: her checker/no-move turu bir zar (küp kararları zar tüketmez) ----
   const rolls = mine.filter((e) => !e.cube && Array.isArray(e.dice) && e.dice.length === 2).length
@@ -127,7 +139,7 @@ function perPlayer(
   //   no-double + hata   -> kaçırılan double (doublelamalıydı)
   //   take + hata        -> yanlış take (pass etmeliydi)
   //   drop + hata        -> yanlış pass (take etmeliydi)
-  const cubes = mine.filter((e) => !!e.cube)
+  const cubes = mine.filter((e) => !!e.cube && e.countsForPR !== false)
   const isErr = (e: LogEntry) => cubeCost(e) >= MS_ERROR_MIN
   const isBlunder = (e: LogEntry) => cubeCost(e) >= MS_BLUNDER_MIN
   const offerer = cubes.filter((e) => e.cube!.chosen === 'double' || e.cube!.chosen === 'no-double')
@@ -155,7 +167,8 @@ function perPlayer(
   // AYNI tek doğru PR'ı gösterir (log'dan yeniden-hesap sapması ortadan kalkar). ----
   const authFin = (n: number | null | undefined): n is number => n != null && Number.isFinite(n)
   const checkerCalc = prValue(checkerEquityCost, checkerDecisions)
-  const cubeCalc = prValue(cubeCostTotal, cubeCount)
+  // Az-örnekli küp PR'ı bastır (gnubg MIN_CUBE_DECISIONS): tek küp hatası 3-haneli PR üretmesin.
+  const cubeCalc = cubeCount >= MS_MIN_CUBE_DECISIONS ? prValue(cubeCostTotal, cubeCount) : null
   const overallCalc = prValue(checkerEquityCost + cubeCostTotal, checkerDecisions + cubeCount)
   const checkerPlay = authFin(authPr?.checker) ? authPr!.checker! : checkerCalc
   const cubePlay = authFin(authPr?.cube) ? authPr!.cube! : cubeCalc

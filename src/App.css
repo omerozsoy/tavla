@@ -15010,6 +15010,21 @@ body:has(.spectate-view) .app.lobby {
   font-weight: 400;
   color: var(--text);
 }
+/* Mars (gammon) kayıp çubuğu: an-winbar ile aynı düzen, kırmızı/brick dolgu (kayıp riski). */
+.an-marsbar {
+  position: relative;
+  height: 22px;
+  margin-top: 6px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--tv-brick) 22%, transparent);
+  overflow: hidden;
+}
+.an-marsfill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--tv-brick);
+  opacity: 0.5;
+}
 .an-cands-title {
   margin-top: 10px;
   margin-bottom: 6px;

@@ -85,6 +85,12 @@ function winPct(probs?: number[]): number | null {
   if (!probs || probs.length < 3) return null
   return Math.round((probs[0] + probs[1] + probs[2]) * 100)
 }
+// Kaybedenin MARS (gammon) + beşmars kayıp yüzdesi (probs[4]=mars, probs[5]=beşmars). Kazanma %0
+// olsa bile mars kaçınma puanlanır -> bu satır "neden ceza aldım?" sorusunu açıklar.
+function loseGammonPct(probs?: number[]): number | null {
+  if (!probs || probs.length < 6) return null
+  return Math.round((probs[4] + probs[5]) * 100)
+}
 
 export default function MatchReport({
   mode,
@@ -330,19 +336,25 @@ export default function MatchReport({
             <p className="register-sub">{t('rep.empty')}</p>
           ) : mode === 'stats' ? (
             <div className="report-stats">
-              {pr != null && (
-                <div className="rep-pr">
-                  <span className="rep-pr-num">
-                    PR <b>{pr.toFixed(2)}</b>
-                  </span>
-                  <span
-                    className="rep-pr-title"
-                    style={{ color: divisionOfPR(pr).color, borderColor: divisionOfPR(pr).color }}
-                  >
-                    <Icon name={divisionOfPR(pr).icon} size={14} /> {t(divisionOfPR(pr).key)}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                // Ana PR başlığı TEK-KAYNAK: sunucu-otoriter (gnubg) overall PR varsa ONU göster
+                // (pul/küp split + Maç Özeti ile birebir); yoksa prop'tan gelen eski pr'a düş.
+                const hc = effHuman ?? humanColor
+                const headPr = (hc && authPr ? authPr[hc]?.pr : null) ?? pr
+                return headPr != null && (
+                  <div className="rep-pr">
+                    <span className="rep-pr-num">
+                      PR <b>{headPr.toFixed(2)}</b>
+                    </span>
+                    <span
+                      className="rep-pr-title"
+                      style={{ color: divisionOfPR(headPr).color, borderColor: divisionOfPR(headPr).color }}
+                    >
+                      <Icon name={divisionOfPR(headPr).icon} size={14} /> {t(divisionOfPR(headPr).key)}
+                    </span>
+                  </div>
+                )
+              })()}
               {/* Pul (checker) PR + Küp (cube) PR AYRI AYRI — toplam PR'ın altında (sunucu-otoriter). */}
               {(() => {
                 const c = effHuman ?? humanColor
@@ -539,6 +551,19 @@ export default function MatchReport({
                         </span>
                       </div>
                     )}
+                    {/* MARS kaybı: kazanma %0 iken bile anlamlı (mars/beşmars kaçınma puanlanır).
+                        Yalnız risk varken (>0) göster; "neden %0'da ceza aldım" sorusunu açıklar. */}
+                    {(() => {
+                      const lg = loseGammonPct(cur.probs)
+                      return lg != null && lg > 0 ? (
+                        <div className="an-marsbar" title={t('rep.marsLoss')}>
+                          <div className="an-marsfill" style={{ width: `${lg}%` }} />
+                          <span className="an-winlabel">
+                            {t('rep.marsLoss')}: {lg}%
+                          </span>
+                        </div>
+                      ) : null
+                    })()}
                     <div className="an-cands-title">
                       {t('rep.bestN', {
                         n: Math.min(CAND_LIMIT, (cur.cands ?? []).length),
