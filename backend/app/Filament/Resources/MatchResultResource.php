@@ -82,7 +82,7 @@ class MatchResultResource extends Resource
                 static::dedupeOnlineRows($query);
             })
             ->columns([
-                Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
+                Tables\Columns\TextColumn::make('id')->label('#')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.nickname')->label('Oyuncu')
                     ->searchable()->sortable()->default('—')
                     ->description(fn (MatchResult $r) => $r->user_id ? 'ID '.$r->user_id : null),
