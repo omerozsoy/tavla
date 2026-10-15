@@ -7939,6 +7939,14 @@ export default function App() {
       playSteps([offStep])
       return
     }
+    // BAR girisi: iki zar da FARKLI noktaya sokabiliyorsa (or. [6,3] -> 19 ya da 22) tek-tik
+    // en buyuk zari (6) oynayip digerini -cogu zaman blot KIRMAYI- gizlemesin. Bar'i SEC, iki
+    // hedefi goster; oyuncu dokunarak secsin. (9YDP9: mobilde kirik tas suruklenemediginden 3'le
+    // giris/kirma baska turlu yapilamiyor, oyuncu giremeyip AFK kaybediyordu.)
+    if (from === 'bar' && new Set(stepsFrom.map((s) => s.to)).size > 1) {
+      setSelectedFrom('bar')
+      return
+    }
     // Tek hedef -> o adim; birden fazla tahta-ici hedef -> en BUYUK zar.
     const step = stepsFrom.reduce((a, b) => (b.die > a.die ? b : a))
     playSteps([step])
