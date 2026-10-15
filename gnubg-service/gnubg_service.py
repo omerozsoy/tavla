@@ -1081,10 +1081,12 @@ def _probs6_from_cumulative(p):
             max(0.0, lose_any - lg), max(0.0, lg - lb), max(0.0, lb)]
 
 
-def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, plies):
+def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, plies, score=None):
     """Tek bir taş-hamlesi kararını analiz et -> LogEntry-uyumlu dict (frontend MatchReport için).
     pos = analiz ÖNCESİ konum; played_steps = gerçekten oynanan adımlar. hint (gnubg) ile
-    aday listesi + oynanan adayın kaybı hesaplanır (PR çekirdeğiyle aynı yol)."""
+    aday listesi + oynanan adayın kaybı hesaplanır (PR çekirdeğiyle aynı yol).
+    score: {white,black} oyun-basi maç skoru (match-play checker equity için) — None ise 0–0
+    (eski davranış). 0-0 varsaymak oyun 2+'da checker PR'i de bozar (match-play equity skora bağlı)."""
     entry = {
         "player": turn,
         "pos": {"points": list(pos_points), "bar": dict(bar), "off": dict(off), "turn": turn},
@@ -1094,7 +1096,7 @@ def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, 
     }
     try:
         gid = structured_to_gnubgid({"points": pos_points, "bar": bar, "turn": turn,
-                                     "dice": dice, "matchLength": match_len})
+                                     "dice": dice, "matchLength": match_len, "score": score or {}})
         gnubg.setgnubgid(gid)
         _set_plies(plies)
         h = gnubg.hint()
@@ -1401,13 +1403,15 @@ def _reviewmatch(mat_text, plies=2):
             pos = _initial_pos()
             cube_val = 1          # bu oyunun o anki küp değeri (kabul edilen her double -> ×2)
             cube_owner = None     # küp sahibi ('white'/'black'/None=merkez)
+            # GERCEK oyun-basi maç skoru: HEM küp HEM checker analizine geçir. 0-0 varsaymak oyun 2+'da
+            # PR'i bozar (küp "too-good"/take-noktasi VE match-play checker equity skora bağlıdır).
+            gscore = game_scores[gi] if gi < len(game_scores) else None
             for (color, kind, data) in g:
                 if kind == "cube":
                     # Küp kararı: o anki tahta + GERÇEK küp analizi (No double / Double,pass /
                     # Double,take equity'leri + doğru aksiyon + kazanma% + oynananın kaybı).
                     if data in ("double", "take", "drop"):
                         # GERCEK oyun-basi skoru ile kup MWC analizi (0-0 varsaymak PR'i sisirir).
-                        gscore = game_scores[gi] if gi < len(game_scores) else None
                         e = _review_cube(pos["points"], pos["bar"], pos["off"], color, data,
                                          cube_val, cube_owner, match_len, plies, score=gscore)
                     else:  # beaver vb. — analizsiz yer tutucu (tahta yine gösterilir)
@@ -1455,7 +1459,7 @@ def _reviewmatch(mat_text, plies=2):
                     break  # bozuk .mat -> bu oyunu durdur (gecerli kisim korunur)
                 # Analiz: karar ONCESI pozisyon
                 e = _review_decision(pos["points"], pos["bar"], pos["off"], color, dice,
-                                     steps, match_len, plies)
+                                     steps, match_len, plies, score=gscore)
                 if isinstance(e.get("pos"), dict):  # tahtada doğru küp görünsün (double sonrası)
                     e["pos"]["cube"] = {"value": cube_val, "owner": cube_owner}
                 e["seq"] = len(log)
