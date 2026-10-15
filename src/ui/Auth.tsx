@@ -629,7 +629,7 @@ export default function Auth({
             kolon basliklari sayfa basligi rolunu ustlenir. Duzenleme/sifremi-unuttum h2 kalir. */}
         {(editing || forgot) && <h2>{title}</h2>}
         {editing && requireComplete && (
-          <p className="register-sub text-destructive font-semibold" role="alert">{t('reg.completeRequired')}</p>
+          <p className="text-destructive font-semibold text-sm mb-2" role="alert">{t('reg.completeRequired')}</p>
         )}
         {/* E-posta dogrulama uyarisi profil DUZENLEME formundan KALDIRILDI; artik uyelik
             kartinda (ProfileOverview > MembershipCard) gosterilir. */}
