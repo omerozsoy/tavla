@@ -8752,8 +8752,8 @@ button.move-row:focus-visible {
 .register-card input[aria-invalid="true"],
 .register-card select[aria-invalid="true"],
 .register-card textarea[aria-invalid="true"] {
-  border-color: var(--destructive, #c0392b);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--destructive, #c0392b) 20%, transparent);
+  border-color: var(--destructive, #c0392b) !important; /* shadcn aria-invalid:border-destructive (tema token) ezmesin */
+  box-shadow: 0 0 0 1px var(--destructive, #c0392b) !important; /* net, tam-opak kirmizi cerceve (soluk %20 halka degil) */
 }
 .register-error {
   color: var(--color-error);
