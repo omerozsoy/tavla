@@ -135,6 +135,7 @@ class MatchMove extends Model
             'matchLength' => max(1, (int) ($opts['matchLength'] ?? 1)),
             'whiteName' => $opts['whiteName'] ?? 'White',
             'blackName' => $opts['blackName'] ?? 'Black',
+            'isMoney' => (bool) ($opts['isMoney'] ?? false),
         ], array_intersect_key($opts, array_flip(['matchId', 'eventDate', 'eventTime', 'site', 'crawford']))));
     }
 }

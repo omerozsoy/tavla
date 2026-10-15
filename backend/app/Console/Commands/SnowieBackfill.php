@@ -16,7 +16,7 @@ use Illuminate\Console\Command;
  */
 class SnowieBackfill extends Command
 {
-    protected $signature = 'tavla:snowie-backfill {--workers=1} {--shard=0} {--limit=0} {--apply}';
+    protected $signature = 'tavla:snowie-backfill {--workers=1} {--shard=0} {--limit=0} {--apply} {--money}';
 
     protected $description = 'Geçmiş PR\'ları gnubg Snowie error rate\'ine çeker (maç-cubeful, küp dahil)';
 
@@ -26,6 +26,7 @@ class SnowieBackfill extends Command
         $shard = (int) $this->option('shard');
         $limit = (int) $this->option('limit');
         $apply = (bool) $this->option('apply');
+        $moneyOnly = (bool) $this->option('money'); // SADECE money oyunları (money-session .mat ile)
 
         $rooms = MatchResult::whereNotNull('gnubg_review')->whereNotNull('room_code')
             ->orderBy('room_code')->distinct()->pluck('room_code')->all();
@@ -50,15 +51,18 @@ class SnowieBackfill extends Command
 
                 continue;
             }
-            // Money (bahisli, CANLI KÜP) oyunu 1-puanlık match olarak serialize ediliyor -> gnubg
-            // küpü ölü sanıp çöp (milyonluk) PR üretir. Doğru analiz money-session (.mat "0 point
-            // match") serileştirmesi ister; o AYRI iş. O yapılana dek money maçlarını ATLA (eski
-            // PR'larını bozma). parseSnowie'nin >100 korumasıyla çift emniyet.
+            // Money (bahisli, CANLI KÜP) oyunu: matText artık money-session (.mat "0 point match")
+            // kurar -> gnubg küpü canlı + gammon sayar (doğru PR). Normal run'da money'yi ATLA
+            // (eski davranış); --money run'da SADECE money'yi işle. parseSnowie'nin >100 koruması
+            // yine de güvenlik ağı.
             $first = $rows->first();
-            if ((int) $first->match_length <= 1 && (int) $first->stake > 0) {
-                $skip++;
+            $isMoneyRow = (int) $first->match_length <= 1 && (int) $first->stake > 0;
+            if ($moneyOnly !== $isMoneyRow) {
+                if (! $moneyOnly) {
+                    $skip++; // normal run: money atlandı
+                }
 
-                continue;
+                continue; // --money run: money-olmayanı sessizce geç
             }
             $res = $svc->analyzeMat((string) $first->matText());
             if ($res === null) {

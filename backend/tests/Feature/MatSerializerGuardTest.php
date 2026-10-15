@@ -76,4 +76,30 @@ class MatSerializerGuardTest extends TestCase
         $mat = MatSerializer::render($games, ['dialect' => 'gnubg', 'matchLength' => 5]);
         $this->assertStringContainsString('Wins 1 point', $mat); // 2. oyun sonucu yazıldı, hata yok
     }
+
+    // ===== Money-session (bahisli, canlı küp) — gnubg'ye "0 point match" ver, gammon say =====
+
+    public function test_money_session_header_and_gammon_counted(): void
+    {
+        // Money: gammon (points=2, cube=1) SAYILIR + başlık "0 point match" (gnubg küpü canlı tutar).
+        $mat = MatSerializer::render([$this->game('white', 2, 1)], ['dialect' => 'gnubg', 'matchLength' => 1, 'isMoney' => true]);
+        $this->assertStringContainsString('0 point match', $mat);
+        $this->assertStringContainsString('Wins 2 point', $mat); // gammon sayıldı (1'e KIRPILMADI)
+    }
+
+    public function test_one_point_match_strips_gammon_but_money_does_not(): void
+    {
+        // AYNI gammon ama money DEĞİL, 1-puanlık match: gammon SAYILMAZ -> "Wins 1 point".
+        $mat = MatSerializer::render([$this->game('white', 2, 1)], ['dialect' => 'gnubg', 'matchLength' => 1]);
+        $this->assertStringContainsString('1 point match', $mat);
+        $this->assertStringNotContainsString('Wins 2 point', $mat);
+    }
+
+    public function test_money_has_no_match_end_marker(): void
+    {
+        // Money sınırsız -> xg "and the match" ASLA yazılmaz (skorla bitmez).
+        $mat = MatSerializer::render([$this->game('white', 3, 1)], ['dialect' => 'xg', 'matchLength' => 1, 'isMoney' => true]);
+        $this->assertStringContainsString('0 point match', $mat);
+        $this->assertStringNotContainsString('and the match', $mat);
+    }
 }

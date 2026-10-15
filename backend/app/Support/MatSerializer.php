@@ -41,6 +41,9 @@ class MatSerializer
     {
         $dialect = ($opts['dialect'] ?? 'xg') === 'gnubg' ? 'gnubg' : 'xg';
         $matchLength = max(1, (int) ($opts['matchLength'] ?? 1));
+        // Money session (bahisli, CANLI küp): .mat "0 point match" başlığı -> gnubg küpü CANLI,
+        // gammon SAYILIR, skor sınırsız. 1-puanlık match (küp ölü, gammon yok) ile KARIŞTIRMA.
+        $isMoney = (bool) ($opts['isMoney'] ?? false);
         $whiteName = $opts['whiteName'] ?? ($dialect === 'gnubg' ? 'White' : 'Player1');
         $blackName = $opts['blackName'] ?? ($dialect === 'gnubg' ? 'Black' : 'Player2');
         $COLW = $dialect === 'gnubg' ? 34 : 28;
@@ -68,7 +71,7 @@ class MatSerializer
                 '',
             ];
         }
-        $out[] = "$matchLength point match";
+        $out[] = $isMoney ? '0 point match' : "$matchLength point match";
 
         $sw = 0;
         $sb = 0;
@@ -143,15 +146,17 @@ class MatSerializer
                 $winMultiplier = max(1, min(3, $winMultiplier));
             }
             $gamePointsWon = $cubeValue * $winMultiplier;
-            // Tek istisna: 1-PUANLIK maç — gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube.
-            if ($matchLength === 1) {
+            // Tek istisna: 1-PUANLIK MAÇ — gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube.
+            // Money'de bu istisna YOK (gammon sayılır); isMoney ile ayrıştır.
+            if (! $isMoney && $matchLength === 1) {
                 $gamePointsWon = $cubeValue;
             }
             $before = $oc['winner'] === 'white' ? $sw : $sb;
             // matchScoreAfter = min(matchLength, before + gamePointsWon): dahili skor hedefi aşamaz.
             // MAT satırına YAZILAN değer DAİMA gerçek gamePointsWon'dur (matchScoreAfter/kalan DEĞİL).
-            $matchScoreAfter = min($matchLength, $before + $gamePointsWon);
-            $matchOver = $matchScoreAfter >= $matchLength;
+            // Money sınırsız -> kırpma YOK, maç skorla bitmez.
+            $matchScoreAfter = $isMoney ? ($before + $gamePointsWon) : min($matchLength, $before + $gamePointsWon);
+            $matchOver = ! $isMoney && $matchScoreAfter >= $matchLength;
 
             if ($dialect === 'gnubg') {
                 // "Wins N point(s)" çoğul; numaralı satır YOK.

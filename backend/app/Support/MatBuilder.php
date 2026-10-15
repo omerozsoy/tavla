@@ -36,7 +36,7 @@ class MatBuilder
     }
 
     /** MoveLogEntry[] -> gnubg NATIVE .mat metni (MatSerializer 'gnubg' ile). */
-    public static function build(array $log, int $matchLength = 1, string $whiteName = 'White', string $blackName = 'Black'): string
+    public static function build(array $log, int $matchLength = 1, string $whiteName = 'White', string $blackName = 'Black', bool $isMoney = false): string
     {
         $model = [];
         foreach (self::segment($log) as $game) {
@@ -49,6 +49,7 @@ class MatBuilder
             'matchLength' => $matchLength,
             'whiteName' => $whiteName,
             'blackName' => $blackName,
+            'isMoney' => $isMoney,
         ]);
     }
 

@@ -116,6 +116,10 @@ class MatchResult extends Model
         }
         $myLog = is_array($mine) && is_array($mine['log'] ?? null) ? $mine['log'] : [];
         $matchLen = max(1, (int) ($this->match_length ?? 1));
+        // Money oyunu (bahisli, 1-puanlık ama CANLI küp): .mat money-session ("0 point match")
+        // kurulmalı -> gnubg küpü canlı + gammon sayar (aksi halde "1 point match" küpü ölü sanıp
+        // ÇÖP PR üretir). Bkz MatSerializer isMoney.
+        $isMoney = (int) ($this->match_length ?? 0) <= 1 && (int) ($this->stake ?? 0) > 0;
 
         $selfName = $this->user?->nickname ?: 'Oyuncu';
         $oppName = $this->opponent_name ?: 'Rakip';
@@ -127,6 +131,7 @@ class MatchResult extends Model
             [$whiteName, $blackName] = $myHc === 'black' ? [$oppName, $selfName] : [$selfName, $oppName];
             $mat = \App\Models\MatchMove::buildMat($this->room_code, [
                 'matchLength' => $matchLen, 'whiteName' => $whiteName, 'blackName' => $blackName,
+                'isMoney' => $isMoney,
             ]);
             if (trim($mat) !== '') {
                 return $mat;
@@ -146,7 +151,7 @@ class MatchResult extends Model
                     ? [$selfName, $oppName] : [$oppName, $selfName];
                 $merged = MatBuilder::mergeLogs($whiteLog, $blackLog);
                 if (count($merged) >= 2) {
-                    return MatBuilder::build($merged, $matchLen, $whiteName, $blackName);
+                    return MatBuilder::build($merged, $matchLen, $whiteName, $blackName, $isMoney);
                 }
             }
         }
@@ -157,7 +162,7 @@ class MatchResult extends Model
         }
         [$whiteName, $blackName] = $myHc === 'black' ? [$oppName, $selfName] : [$selfName, $oppName];
 
-        return MatBuilder::build($myLog, $matchLen, $whiteName, $blackName);
+        return MatBuilder::build($myLog, $matchLen, $whiteName, $blackName, $isMoney);
     }
 
     /** İndirme dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; ext hariç). */
