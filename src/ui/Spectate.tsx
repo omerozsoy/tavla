@@ -10,7 +10,7 @@ import Sidebar from './Sidebar'
 import ViewersBadge from './ViewersBadge'
 import Chat from './Chat'
 import ClockStack from './ClockStack'
-import DiceRow, { Die } from './Dice'
+import DiceRow from './Dice'
 import { showRoom, watchRoom, roomSummary, sendChat, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
 import MatchSummary from './MatchSummary'
 import MatchResult from './MatchResult'
@@ -465,6 +465,12 @@ export default function Spectate({
   const activeBottom = displayBoard?.turn === 'white'
   const diceRow =
     displayBoard && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={displayBoard.turn} /> : null
+  // Dance (gele): oynayanla BİREBİR — zar dans edenin KENDİ slotunda silik (nm-dice), ortada yalnız
+  // "Hamle Yok" yazısı. (App.tsx danceDice ile aynı; eskiden izleyicide zar orta kutuya alınmıştı.)
+  const danceDice =
+    displayBoard && diceFaces.length > 0 ? (
+      <DiceRow faces={diceFaces} owner={displayBoard.turn} className="nm-dice" />
+    ) : null
 
   // GELE / "Hamle Yok" (dance): sıradaki oyuncu zar attı ama (çoğu kez bardaki kırık pulu giremediği
   // için) hiçbir yasal hamlesi yok. Oyuncunun kendisi bu overlay'i görür (App.noMove); izleyici
@@ -581,8 +587,8 @@ export default function Spectate({
                 classic={classic}
                 flip={false}
                 showPip
-                centerLeft={activeBottom || danced ? null : diceRow}
-                centerRight={activeBottom && !danced ? diceRow : null}
+                centerLeft={!activeBottom ? (danced ? danceDice : diceRow) : null}
+                centerRight={activeBottom ? (danced ? danceDice : diceRow) : null}
                 centerMain={
                   cubePending ? (
                     <div className="result-box">
@@ -595,14 +601,9 @@ export default function Spectate({
                       <div className="err-detail">{t('cube.waiting')}</div>
                     </div>
                   ) : danced ? (
+                    // App.noMove ile BİREBİR: orta kutu YALNIZ "Hamle Yok" yazısı; zar dans edenin
+                    // kendi yan slotunda silik (centerLeft/centerRight -> danceDice).
                     <div className="result-box no-moves">
-                      {/* App.noMove ile BİREBİR: zar kutunun İÇİNDE — yan diceRow kutu altında
-                          kalıyordu (kullanıcı: "hamle yok diyor ama zarı göremiyorum"). */}
-                      <div className="board-dice nm-dice">
-                        {diceFaces.map((f, i) => (
-                          <Die key={i} value={f.value} owner={displayBoard.turn} used={f.used} />
-                        ))}
-                      </div>
                       <div className="result-title">{t('overlay.noMoves')}</div>
                     </div>
                   ) : null
