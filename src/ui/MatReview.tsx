@@ -13,7 +13,7 @@ import { applyStep } from '../engine/moves'
 import { divisionOfPR } from '../badges'
 import MatchSummary from './MatchSummary'
 import { withGameIndex } from '../matExport'
-import type { LogEntry } from './MatchReport'
+import { prLoss, type LogEntry } from './MatchReport'
 import type { GameState, Step, Player } from '../engine/types'
 
 // Mat Analiz FAZ 2: yüklenen .mat maçının HAMLE-HAMLE görüntüleyicisi (HedgeHog benzeri
@@ -49,13 +49,16 @@ export function computeSummary(log: LogEntry[], names: string[] | null, duration
   const colors: Array<'white' | 'black'> = ['white', 'black']
   const players = colors.map((c, i) => {
     // "(no move)" artık pos taşır (tahta gösterimi için) ama ZORUNLU non-karardır -> sayma;
-    // yoksa payda şişip erMemg/XR (PR) yanlış düşerdi.
-    const es = log.filter((e) => e.pos && e.player === c && !e.cube && e.notation !== '(no move)')
+    // yoksa payda şişip erMemg/XR (PR) yanlış düşerdi. countsForPR=false (zorunlu/obvious) de
+    // paydaya girmez -> otoriter gnubg_pr ile birebir. prLoss: maç-bağlamlı kayıp (varsa).
+    const es = log.filter(
+      (e) => e.pos && e.player === c && !e.cube && e.notation !== '(no move)' && e.countsForPR !== false,
+    )
     const decisions = es.length
-    const equityLost = es.reduce((s, e) => s + (e.loss || 0), 0)
-    const blunders = es.filter((e) => e.loss >= 0.08).length
-    const errors = es.filter((e) => e.loss >= 0.04 && e.loss < 0.08).length
-    const inaccuracies = es.filter((e) => e.loss >= 0.02 && e.loss < 0.04).length
+    const equityLost = es.reduce((s, e) => s + prLoss(e), 0)
+    const blunders = es.filter((e) => prLoss(e) >= 0.08).length
+    const errors = es.filter((e) => prLoss(e) >= 0.04 && prLoss(e) < 0.08).length
+    const inaccuracies = es.filter((e) => prLoss(e) >= 0.02 && prLoss(e) < 0.04).length
     const erMemg = decisions ? (equityLost / decisions) * 1000 : 0
     return {
       name: names?.[i] || (i === 0 ? 'White' : 'Black'),
@@ -119,8 +122,8 @@ export default function MatReview({
       .map((e, i) => ({ e, i }))
       .filter(({ e }) => {
         if (who !== 'both' && e.player && e.player !== who) return false
-        if (filter === 'errors') return !e.cube && e.loss >= 0.02
-        if (filter === 'blunders') return !e.cube && e.loss >= 0.08
+        if (filter === 'errors') return !e.cube && prLoss(e) >= 0.02
+        if (filter === 'blunders') return !e.cube && prLoss(e) >= 0.08
         return true
       })
   }, [log, who, filter])
@@ -277,7 +280,7 @@ export default function MatReview({
             {rows.map(({ e, i }, ri) => {
               const prevGame = ri > 0 ? rows[ri - 1].e.game : undefined
               const showGame = e.game != null && e.game !== prevGame
-              const b = e.cube ? 'good' : band(e.loss)
+              const b = e.cube ? 'good' : band(prLoss(e))
               return (
                 <div key={i}>
                   {showGame && <div className="mrv-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>}
@@ -301,9 +304,9 @@ export default function MatReview({
                       <span className="mrv-dice mrv-dice-empty" />
                     )}
                     <span className="mrv-move">{e.notation}</span>
-                    {!e.cube && e.loss >= 0.08 ? (
+                    {!e.cube && prLoss(e) >= 0.08 ? (
                       <span className="mrv-mark blunder">⁉</span>
-                    ) : !e.cube && e.loss >= 0.02 ? (
+                    ) : !e.cube && prLoss(e) >= 0.02 ? (
                       <span className="mrv-mark err">?</span>
                     ) : null}
                   </button>

@@ -17,7 +17,11 @@ import type { GameState, Player, Step } from '../engine/types'
 export interface LogEntry {
   notation: string
   best: string
-  loss: number
+  loss: number // HAM (money) equity kaybı — tekil hamle equity detayı için
+  // Maç-bağlamına göre ayarlanmış (match-aware EMG) PR kaybı; otoriter PR bunu kullanır.
+  // Oyun kararlaşmışsa (ör. rakip zaten kazanmış) ham loss yüksek olsa da bu ~0 olur.
+  prAdjustedEquityLoss?: number
+  countsForPR?: boolean // false = zorunlu/obvious; PR paydasına girmez
   pos?: GameState
   steps?: Step[] // en iyi hamle adimlari
   player?: Player
@@ -63,6 +67,10 @@ interface Props {
   authPr?: { white: import('../analysis/matchSummary').AuthPr | null; black: import('../analysis/matchSummary').AuthPr | null }
   onClose: () => void
 }
+
+// PR/hata sınıflaması için kullanılacak kayıp: maç-bağlamlı (prAdjusted) varsa onu kullan
+// (otoriter gnubg_pr ile aynı), yoksa eski ham loss'a düş. Negatif olmaz.
+export const prLoss = (e: LogEntry) => Math.max(0, e.prAdjustedEquityLoss ?? e.loss ?? 0)
 
 // Equity kaybina gore sinif (renk + etiket anahtari)
 function band(loss: number): { cls: string; key: string } {
@@ -117,7 +125,7 @@ export default function MatchReport({
   // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
   const mistakes = log
     .map((e, i) => ({ e, i }))
-    .filter(({ e }) => !e.cube && e.loss >= 0.02 && inScope(e))
+    .filter(({ e }) => !e.cube && prLoss(e) >= 0.02 && inScope(e))
   const firstAnalyzable = log.findIndex((e) => e.pos && !e.cube)
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
@@ -145,8 +153,8 @@ export default function MatchReport({
   const counts = { good: 0, ok: 0, bad: 0, blunder: 0 }
   let worst: LogEntry | null = null
   for (const e of statLog) {
-    counts[band(e.loss).cls as keyof typeof counts]++
-    if (!worst || e.loss > worst.loss) worst = e
+    counts[band(prLoss(e)).cls as keyof typeof counts]++
+    if (!worst || prLoss(e) > prLoss(worst)) worst = e
   }
 
   // Sira: ONCE oyun (game) index'i -> oyunlar 1,2,3… sirayla bloklanir (yoksa seq oyunlar
@@ -156,7 +164,7 @@ export default function MatchReport({
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => !e.cube && inScope(e))
     .sort((a, b) => (a.e.game ?? 0) - (b.e.game ?? 0) || (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
-  const rows = worstFirst ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss) : ordered
+  const rows = worstFirst ? mistakes.slice().sort((a, b) => prLoss(b.e) - prLoss(a.e)) : ordered
   // Maç kaç oyun sürdü? (game index'leri) -> 1'den fazlaysa oyun ayracı/rozeti göster.
   const gameCount = new Set(log.filter((e) => e.game != null).map((e) => e.game)).size
 
@@ -379,10 +387,10 @@ export default function MatchReport({
                 <span>{t('rep.blunder')}</span>
                 <b>{counts.blunder}</b>
               </div>
-              {worst && worst.loss > 0.001 && (
+              {worst && prLoss(worst) > 0.001 && (
                 <div className="rep-worst">
                   {t('rep.worst')}: <code>{worst.notation}</code> → <code>{worst.best}</code> (
-                  {worst.loss.toFixed(3)})
+                  {prLoss(worst).toFixed(3)})
                 </div>
               )}
               {cubeLog.length > 0 && (
@@ -453,7 +461,7 @@ export default function MatchReport({
                 </div>
                 <div className="analysis-rows">
                   {rows.map(({ e, i }, idx) => {
-                    const b = band(e.loss)
+                    const b = band(prLoss(e))
                     // Sıralı görünümde (worstFirst değil) oyun değişince "— OYUN N —" ayracı.
                     const prevGame = idx > 0 ? rows[idx - 1].e.game : undefined
                     const showSep = !worstFirst && gameCount > 1 && e.game != null && e.game !== prevGame
@@ -481,7 +489,7 @@ export default function MatchReport({
                             </span>
                           )}
                           <span className="ar-move">{e.notation}</span>
-                          {e.loss >= 0.005 && <span className="ar-loss">-{e.loss.toFixed(3)}</span>}
+                          {prLoss(e) >= 0.005 && <span className="ar-loss">-{prLoss(e).toFixed(3)}</span>}
                         </button>
                       </Fragment>
                     )
