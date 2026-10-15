@@ -8412,7 +8412,8 @@ button.move-row:focus-visible {
   text-align: left;
 }
 .ss-trigger[aria-invalid='true'] {
-  border-color: var(--destructive, #e5484d);
+  border-color: var(--terracotta, #c9563f); /* site rengi */
+  border-width: 2px; /* telefon input'uyla birebir KALIN cerceve */
 }
 .ss-trigger .ss-ph {
   color: var(--muted);
@@ -8752,8 +8753,11 @@ button.move-row:focus-visible {
 .register-card input[aria-invalid="true"],
 .register-card select[aria-invalid="true"],
 .register-card textarea[aria-invalid="true"] {
-  border-color: var(--destructive, #c0392b) !important; /* shadcn aria-invalid:border-destructive (tema token) ezmesin */
-  box-shadow: 0 0 0 1px var(--destructive, #c0392b) !important; /* net, tam-opak kirmizi cerceve (soluk %20 halka degil) */
+  /* Site rengi (terracotta) + 2px KALIN cerceve; Ulke (ss-trigger) ile birebir. shadcn'in
+     soluk aria-invalid halkasini ezmek icin !important + box-shadow:none. */
+  border-color: var(--terracotta, #c9563f) !important;
+  border-width: 2px !important;
+  box-shadow: none !important;
 }
 .register-error {
   color: var(--color-error);
