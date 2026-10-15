@@ -7918,6 +7918,14 @@ export default function App() {
     if (!interactive) return
     const stepsFrom = nextSteps.filter((s) => s.from === from)
     if (stepsFrom.length === 0) return
+    // Pulun birden fazla FARKLI hedefi varsa (topla VEYA tahtada ilerlet) -> otomatik oynama;
+    // pulu sec, yesil hedefleri goster, kullanici secsin. Yoksa tek-tik daima bear-off'u
+    // secip 6/4->4/off gibi TEK aciksiz oyunu engeller (NR5GJ: pt6'ya tiklayinca 6/off'a
+    // zorlanip pt4 acigi verilen hata). Tek hedef varsa eskisi gibi aninda oyna.
+    if (new Set(stepsFrom.map((s) => s.to)).size > 1) {
+      setSelectedFrom(from)
+      return
+    }
     const offStep = stepsFrom.find((s) => s.to === 'off')
     if (offStep) {
       playSteps([offStep])
