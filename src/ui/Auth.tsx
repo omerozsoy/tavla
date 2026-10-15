@@ -293,15 +293,15 @@ export default function Auth({
     if (askPhone && !phone.trim()) return 'pf-phone'
     return null
   }
-  // Alan altında "Zorunlu" işareti (boş zorunlu alanlar için).
+  // Alan altında "Zorunlu" işareti (boş zorunlu alanlar için) — site rengi terracotta, ince.
   const reqHint = (show: boolean) =>
-    show ? <span className="text-xs text-destructive" role="alert">{t('reg.required')}</span> : null
-  // Eksik zorunlu alanın ETİKETİ de kırmızı (kullanıcı hangi alanların eksik olduğunu
-  // tek bakışta görsün; kenarlık + "Zorunlu" yazısına ek vurgu). INLINE style ŞART:
-  // `.register-card label { color: var(--muted) }` kuralı text-destructive class'ını ezer;
-  // inline style specificity'yi her zaman yener.
-  const reqLabelStyle = (missing: boolean): React.CSSProperties | undefined =>
-    missing ? { color: 'var(--destructive, #c0392b)', fontWeight: 600 } : undefined
+    show ? <span className="text-xs" role="alert" style={{ color: 'var(--terracotta)' }}>{t('reg.required')}</span> : null
+  // Eksik zorunlu alanın ETİKETİ de terracotta + KALIN (kullanıcı hangi alanların eksik
+  // olduğunu tek bakışta görsün; kenarlık + "Zorunlu" yazısına ek vurgu). INLINE style ŞART:
+  // `.register-card label { color: var(--muted) }` kuralı class'ı ezer; inline style
+  // specificity'yi her zaman yener.
+  const reqLabelStyle = (missing: boolean): React.CSSProperties =>
+    missing ? { color: 'var(--terracotta, #c9563f)', fontWeight: 700 } : { fontWeight: 700 }
 
   // Sunucudan gelen dogrulama hatasini anlasilir mesaja cevir (hangi alan?)
   function apiErrorMsg(err: unknown): string {
@@ -632,7 +632,7 @@ export default function Auth({
             kolon basliklari sayfa basligi rolunu ustlenir. Duzenleme/sifremi-unuttum h2 kalir. */}
         {(editing || forgot) && <h2>{title}</h2>}
         {editing && requireComplete && (
-          <p className="text-destructive font-semibold text-sm mb-2" role="alert">{t('reg.completeRequired')}</p>
+          <p className="font-bold text-sm mb-2" role="alert" style={{ color: 'var(--terracotta)' }}>{t('reg.completeRequired')}</p>
         )}
         {/* E-posta dogrulama uyarisi profil DUZENLEME formundan KALDIRILDI; artik uyelik
             kartinda (ProfileOverview > MembershipCard) gosterilir. */}
