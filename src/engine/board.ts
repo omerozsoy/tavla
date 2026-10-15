@@ -95,6 +95,18 @@ export function highestHomeIndex(state: GameState, player: Player): number {
   }
 }
 
+// Iki tarafin taslari HALA birbirini vurabilir mi? false ise SAF YARIS (kimse blot vuramaz).
+// Beyaz yuksek->dusuk, siyah dusuk->yuksek ilerler; bar herkesten geride (beyaz=24, siyah=-1).
+// En geride kalan beyaz (max index) hala en geride kalan siyahin (min index) GERISINDEYSE
+// yollari kesisir -> temas. Kesismiyorsa (maxWhite <= minBlack) birbirlerini gecmisler = yaris.
+export function hasContact(state: GameState): boolean {
+  let maxWhite = state.bar.white > 0 ? 24 : -1
+  if (maxWhite < 0) for (let i = 23; i >= 0; i--) if (state.points[i] > 0) { maxWhite = i; break }
+  let minBlack = state.bar.black > 0 ? -1 : 24
+  if (minBlack > 23) for (let i = 0; i <= 23; i++) if (state.points[i] < 0) { minBlack = i; break }
+  return maxWhite > minBlack
+}
+
 // Oyuncu BARDA + rakip ev bolgesi TAMAMEN kapali mi (6 giris noktasi da bloke)?
 // Boyle bir pozisyonda hicbir zar kombinasyonu giris saglamaz -> kesin dans. KUP teklifi
 // yoksa shouldAutoRoll bunu oto-atar (teklif varsa ASLA oto-atmaz, oyuncu "Katla" gorebilsin).

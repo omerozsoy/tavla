@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState } from './types'
-import { WHITE, BLACK, lossMultiplier } from './board'
+import { WHITE, BLACK, lossMultiplier, hasContact } from './board'
 
 function emptyBoard(): GameState {
   return {
@@ -59,5 +59,38 @@ describe('lossMultiplier (pes etme carpani, oyun bitmemis olabilir)', () => {
     s.off.white = 1
     s.bar.white = 1 // barda tas VAR ama tas toplamis -> normal
     expect(lossMultiplier(s, WHITE)).toBe(1)
+  })
+})
+
+describe('hasContact (saf yaris mi?)', () => {
+  it('iki taraf da kendi evinde bear-off -> temas yok (yaris)', () => {
+    const s = emptyBoard()
+    s.points[5] = 3 // beyaz pt6 (index5)
+    s.points[0] = 2 // beyaz pt1
+    s.points[18] = -3 // siyah ev (index18)
+    s.points[23] = -2
+    expect(hasContact(s)).toBe(false)
+  })
+
+  it('NR5GJ: beyaz evde, siyah BARDA -> temas var (vurabilir)', () => {
+    const s = emptyBoard()
+    s.points[5] = 1 // beyaz pt6
+    s.points[0] = 5
+    s.bar.black = 2 // siyah bar'dan beyazin evine girip blot vurabilir
+    expect(hasContact(s)).toBe(true)
+  })
+
+  it('beyaz en geride (index10) siyah ilerideyse hala temas', () => {
+    const s = emptyBoard()
+    s.points[10] = 2 // beyaz hala index10'da
+    s.points[8] = -2 // siyah index8 -> maxWhite(10) > minBlack(8) = temas
+    expect(hasContact(s)).toBe(true)
+  })
+
+  it('gecmisler: beyaz hepsi <index, siyah hepsi >index -> yaris', () => {
+    const s = emptyBoard()
+    s.points[4] = 2 // beyaz index4
+    s.points[10] = -2 // siyah index10 -> maxWhite(4) <= minBlack(10)
+    expect(hasContact(s)).toBe(false)
   })
 })

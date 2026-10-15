@@ -14,7 +14,7 @@ import './ui/landscapePhone.css'
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import { ErrorBoundary } from './ui/ErrorBoundary'
 import type { GameState, Move, Player, Step } from './engine/types'
-import { cloneState, gameOutcome, opponent, winner } from './engine/board'
+import { cloneState, gameOutcome, hasContact, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
 import { matchGnubgMove } from './engine/gnubgMove'
 import {
@@ -5541,7 +5541,9 @@ export default function App() {
           // gelir -> yerel botDance HİÇ çalışmaz (isBotTurn=pvb) -> bot dance'i de burada yakalanmalı.
           // Yerel pvb bot (SERVER_BOT=false) online=false olduğu için bu yola GİRMEZ (çift tetik yok).
           if (!ended && steps.length === 0 && online) {
-            setOppDance({ dice: oppBase.dice ?? [], color: oc })
+            // Cift (double) zarda sunucu 4 eleman doner ([3,3,3,3]) -> overlay 4 zar gosteriyordu.
+            // faceStates/match-log gibi 2'ye indir (iki fiziksel zar). slice(0,2) ayni konvansiyon.
+            setOppDance({ dice: (oppBase.dice ?? []).slice(0, 2), color: oc })
           }
         }
       }
@@ -6656,6 +6658,11 @@ export default function App() {
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
     if (oppReplay) return // §5.2: rakibin hamlesi ekranda oynanırken benim zarımı atma (replay bitince tekrar çalışır)
+    // Rakip "Hamle Yok" (dance) overlay'i gösterilirken oto-zar atma: overlay benim zarımı gizler
+    // (centerMain -> primary=null) ama doRoll altta playDice() sesini çalardı -> "zar sesi geldi ama
+    // zar 2sn sonra göründü" sync bug'ı. oppDance ~1.6sn sonra temizlenince oto-zar tekrar tetiklenir
+    // (deps'te oppDance var) -> ses + zar birlikte. Manuel zar zaten !oppDance ile gizli.
+    if (oppDance) return
     // OTO-ZAR yalnız shouldAutoRoll iken (küp hakkı yok -> seçim yok). Küpü OLAN oyuncu MANUEL atar
     // (shouldAutoRoll=false) ama KURTARMA AĞI ikisinde de kurulur (eskiden burada return edilip manuel
     // atan oyuncu transient mandalda 30sn kilitli kalıyordu — "hemen Zar At'a bastım, zar gelmedi").
@@ -6693,7 +6700,7 @@ export default function App() {
       window.clearTimeout(reveal)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match, oppReplay])
+  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match, oppReplay, oppDance])
 
   // NOT: Eski "telefonunu yan cevir" bloklayici uyari EKRANI kaldirildi (kullanici istegi).
   // Oyun artik hem DIKEY hem YATAY oynanabilir: portre'de @media (max-width:900px) sutun
@@ -7918,17 +7925,17 @@ export default function App() {
     if (!interactive) return
     const stepsFrom = nextSteps.filter((s) => s.from === from)
     if (stepsFrom.length === 0) return
-    const tgts = new Set(stepsFrom.map((s) => s.to))
-    // Hedeflerden biri bear-off ise tek-tikta otomatik oynama: pulu sec, yesil hedefleri goster,
-    // kullanici secsin. Yoksa tek-tik 6/off'u secip 6/4->4/off gibi TEK aciksiz oyunu bozar
-    // (NR5GJ: pt6'ya tiklayinca 6/off'a zorlanip pt4 acigi). Bear-off YOKSA (iki tahta-ici hedef)
-    // tek-tik BUYUK zari dogrudan oynar (XKSN3: "8'e tiklayinca direk 4'e"); kucuk zar surukleyerek.
-    if (tgts.size > 1 && tgts.has('off')) {
-      setSelectedFrom(from)
-      return
-    }
     const offStep = stepsFrom.find((s) => s.to === 'off')
     if (offStep) {
+      // SAF YARISTA (temas yok, kimse blot vuramaz) tek-tik DAIMA toplar (owner direktifi:
+      // 6'ya tik -> topla, tekrar 6'ya tik -> kalan zari oyna). TEMAS varsa ve pulun baska hedefi
+      // de varsa otomatik toplamaz: pulu sec + yesil goster, kullanici guvenli diziyi secsin
+      // (NR5GJ: Su 6/4->4/off tek aciksiz oyun; 6/off'a zorlanirsa blot birakip vurulurdu).
+      const multi = new Set(stepsFrom.map((s) => s.to)).size > 1
+      if (multi && hasContact(turnStart)) {
+        setSelectedFrom(from)
+        return
+      }
       playSteps([offStep])
       return
     }
