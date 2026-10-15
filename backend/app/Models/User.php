@@ -164,6 +164,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         return (bool) ($this->attributes['is_support'] ?? false);
     }
 
+    /**
+     * Anonimleştirilmiş SİLİNMİŞ hesapları (UserEraser -> ban_reason='account_deleted', nickname
+     * 'silinmisN') herkese açık listelerden (liderlik/arama/çevrimiçi/arayanlar/kulüp) çıkarır.
+     * Bu hesaplar yasal saklama için fiziksel silinmez ama "Silinmiş Üye" olarak listeleri doldururdu.
+     */
+    public function scopeNotDeleted($query)
+    {
+        return $query->where(fn ($w) => $w
+            ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted'));
+    }
+
     // Explicit admin ayrica korunan config listesinde mi? Liste tek basina yetki vermez.
     public function isConfigAdmin(): bool
     {
