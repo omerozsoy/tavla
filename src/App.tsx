@@ -8461,6 +8461,23 @@ export default function App() {
     return <EmailGate email={user.email} onVerified={(u) => setUser(u)} onLogout={handleLogout} />
   }
 
+  // Profil tamamlama KAPISI (EmailGate ile aynı desen): ülke/telefon — TR'de şehir —
+  // eksikse (Google ile gelen country='' + telefonsuz hesaplar ve eski boş kayıtlar)
+  // tamamlanana dek uygulamaya girilemez. Form backend (updateProfile) ile birebir zorunlu,
+  // iptal/escape yok -> alanlar dolana dek kapanmaz.
+  if (user && (!user.country?.trim() || (BRAND.requirePhone && !user.phone?.trim()) || (user.country === 'TR' && !user.province?.trim()))) {
+    return (
+      <Auth
+        key={`complete-${user.id}`}
+        page
+        requireComplete
+        editUser={user}
+        onAuthed={(u) => setUser(u)}
+        onGuest={() => {}}
+      />
+    )
+  }
+
   // Ortak Auth handler'lari (giris/kayit modali + profil duzenleme sayfasi paylasir)
   const authProps = {
     onAuthed: (u: ServerUser, isNew?: boolean) => {

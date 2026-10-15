@@ -26,6 +26,7 @@ class AdminEmailGuardTest extends TestCase
             'last_name' => 'Admin',
             'nickname' => $admin->nickname,
             'email' => 'root@example.test',
+            'country' => 'TR', 'province' => 'İstanbul', 'phone' => '05321112233',
         ])->assertStatus(422);
 
         $this->assertSame('ordinary-admin@example.test', $admin->fresh()->email);

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Translator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Footer bağlantısı (admin-yönetimli): bir kolonun İÇİNDEKİ tek bir linkin SIRA + GÖRÜNÜRLÜK +
@@ -104,7 +105,55 @@ class FooterLink extends Model
                 return $it['label'];
             }
         }
+        // CMS (Bilgi Sayfaları) satırı: cms-<slug> -> sayfanın başlığı.
+        if (str_starts_with($this->item_key, 'cms-')) {
+            return InfoPage::where('slug', substr($this->item_key, 4))->value('title') ?? $this->item_key;
+        }
 
         return $this->item_key;
+    }
+
+    /**
+     * CMS footer sayfalarını (info_pages.section = 'footer:<kolon>') footer_links satırı olarak
+     * MATERYALİZE et — böylece sabit linklerle AYNI ekranda (Footer Bağlantıları) sürükle-sırala/
+     * taşı/gizle/başlık düzenlenebilir. ListFooterLinks açılışta çağırır (tek senkron noktası).
+     *  - Eksik cms-<slug> satırı oluştur (kolon section'dan, sort o kolonun sonu, görünür).
+     *  - Var olan satırın kolon/sort/görünürlüğüne DOKUNMA (admin footer-links'ten yönetir).
+     *  - footer section'ı kalkan/silinen CMS sayfanın satırını BUDA.
+     * ponytail: 'cms-'+slug 64 karakteri aşarsa atla (item_key unique(64)); çok uzun slug'lı sayfa
+     *           footer yöneticisine girmez ama section-enjeksiyonu ile sitede yine görünür.
+     */
+    public static function syncCmsRows(): void
+    {
+        if (! Schema::hasTable('info_pages') || ! Schema::hasTable('footer_links')) {
+            return;
+        }
+
+        $wanted = []; // cms-<slug> => kolon
+        foreach (InfoPage::where('section', 'like', 'footer:%')->get(['slug', 'section']) as $p) {
+            $key = 'cms-'.$p->slug;
+            if (strlen($key) > 64) {
+                continue;
+            }
+            $wanted[$key] = explode(':', $p->section, 2)[1];
+        }
+
+        // Artık footer'da olmayan cms satırlarını buda.
+        static::where('item_key', 'like', 'cms-%')
+            ->whereNotIn('item_key', array_keys($wanted) ?: [''])
+            ->delete();
+
+        // Eksik olanları ilgili kolonun sonuna ekle.
+        foreach ($wanted as $key => $col) {
+            if (static::where('item_key', $key)->exists()) {
+                continue;
+            }
+            static::create([
+                'item_key' => $key,
+                'column_key' => $col,
+                'sort' => (int) static::where('column_key', $col)->max('sort') + 1,
+                'visible' => true,
+            ]);
+        }
     }
 }

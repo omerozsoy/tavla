@@ -39,7 +39,7 @@ class SeoMetaTest extends TestCase
             ->assertSee('Play Backgammon Online Free - Live Multiplayer | TavlaTv', false)
             ->assertSee('<html lang="en"', false)
             ->assertSee('property="og:locale" content="en_US"', false)
-            ->assertSee('rel="alternate" hreflang="en" href="https://www.tavlatv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/backgammon"', false)
             ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/online-tavla"', false)
             ->assertSee('rel="alternate" hreflang="x-default" href="https://www.tavlatv.com/online-tavla"', false)
             ->assertSee('rel="canonical" href="https://www.tavlatv.com/backgammon"', false)
@@ -52,7 +52,7 @@ class SeoMetaTest extends TestCase
     {
         $this->get('/online-tavla')
             ->assertOk()
-            ->assertSee('rel="alternate" hreflang="en" href="https://www.tavlatv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/backgammon"', false)
             ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/online-tavla"', false);
     }
 
@@ -216,8 +216,11 @@ class SeoMetaTest extends TestCase
             ->assertOk()
             ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false)
             ->assertSee('<html lang="tr"', false)
+            ->assertSee('property="og:locale" content="tr_TR"', false)
             ->assertSee('rel="canonical" href="https://www.tavlatv.com/online-tavla"', false)
-            ->assertDontSee('gammontv.com', false);
+            // NOT: tavla /online-tavla artık çapraz-domain reciprocal hreflang en -> gammontv.com
+            // İÇERİR (kasıtlı); eski assertDontSee('gammontv.com') kaldırıldı.
+            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/backgammon"', false);
     }
 
     public function test_gammon_homepage_is_english(): void

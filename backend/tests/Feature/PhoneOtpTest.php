@@ -83,6 +83,7 @@ class PhoneOtpTest extends TestCase
         $this->putJson('/api/profile', [
             'first_name' => 'Op', 'last_name' => 'Bir',
             'nickname' => 'oyuncu1', 'email' => 'op1@e.com',
+            'country' => 'TR', 'province' => 'İstanbul',
             'phone' => '05329998877', // numara DEGISTI
         ])->assertOk();
 
@@ -101,6 +102,7 @@ class PhoneOtpTest extends TestCase
         $this->putJson('/api/profile', [
             'first_name' => 'Opp', 'last_name' => 'Iki', // baska alan degisti
             'nickname' => 'oyuncu2', 'email' => 'op2@e.com',
+            'country' => 'TR', 'province' => 'İstanbul',
             'phone' => '05321112233', // AYNI numara
         ])->assertOk();
 

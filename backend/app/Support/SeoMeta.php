@@ -557,7 +557,10 @@ final class SeoMeta
         // host'u sızabilir; FPM'de fresh ama test sürecinde kalıcıdır).
         $base = self::originFor($brandKey ?? (string) config('brands.default', 'tavla'));
 
-        $urls = [];
+        // Her markanın ana sayfası sitemap'te mutlaka yer almalı; GammonTV'nin
+        // dinamik sitemap'i statik TavlaTV sitemap'inden ayrı üretildiği için
+        // kökü burada açıkça ekliyoruz.
+        $urls = [$base];
         foreach (array_keys(self::META) as $slug) {
             if (in_array($slug, self::NOINDEX, true)) {
                 continue;
@@ -662,7 +665,8 @@ final class SeoMeta
             return self::applyNoIndex($html);
         }
 
-        // 1a) /backgammon: TavlaTv alan adındaki İngilizce landing (eski same-domain hreflang çifti).
+        // 1a) /backgammon: GammonTV'nin İngilizce landing'i; Türkçe karşılığı
+        // TavlaTV /online-tavla'dır.
         if ($slug === 'backgammon' && ($row = self::metaRow($slug)) !== null) {
             [$title, $desc, $h1] = $row;
             $url = self::$base . $slug;
@@ -908,7 +912,7 @@ final class SeoMeta
     private static function injectHreflang(string $html): string
     {
         $tags = '<link rel="alternate" hreflang="tr" href="' . self::originFor('tavla') . 'online-tavla" />'
-            . '<link rel="alternate" hreflang="en" href="' . self::originFor('tavla') . 'backgammon" />'
+            . '<link rel="alternate" hreflang="en" href="' . self::originFor('gammon') . 'backgammon" />'
             . '<link rel="alternate" hreflang="x-default" href="' . self::originFor('tavla') . 'online-tavla" />';
         $out = preg_replace_callback('~</head>~i', static fn () => $tags . '</head>', $html, 1);
 
@@ -942,6 +946,7 @@ final class SeoMeta
         $html = preg_replace_callback('~<meta\s+property="og:site_name"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:site_name" content="' . $name . '" />', $html, 1) ?? $html;
         $html = preg_replace_callback('~<meta\s+name="author"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="author" content="' . $name . '" />', $html, 1) ?? $html;
         $html = preg_replace_callback('~<meta\s+name="apple-mobile-web-app-title"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="apple-mobile-web-app-title" content="' . $name . '" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+property="og:image:alt"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:image:alt" content="GammonTV — Free Online Backgammon" />', $html, 1) ?? $html;
 
         // 3) <html lang>, og:locale, manifest href
         $lang = self::brandLang();
@@ -1204,7 +1209,7 @@ final class SeoMeta
             'offers' => [
                 '@type' => 'Offer',
                 'price' => '0',
-                'priceCurrency' => 'TRY',
+                'priceCurrency' => self::isDefaultBrand() ? 'TRY' : 'USD',
             ],
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

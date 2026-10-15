@@ -43,7 +43,7 @@ class EmailCodeBindingTest extends TestCase
         $u = User::factory()->unverified()->create(['email' => 'ben@x.test']);
         $code = $this->sendCode($u);
         $this->putJson('/api/profile', ['first_name' => 'A', 'last_name' => 'B', 'nickname' => 'benim'.$u->id,
-            'email' => 'baskasi@x.test'])->assertOk();
+            'email' => 'baskasi@x.test', 'country' => 'TR', 'province' => 'İstanbul', 'phone' => '05321112233'])->assertOk();
         $this->postJson('/api/email/verify-code', ['code' => $code])->assertStatus(422);
         $this->assertFalse($u->fresh()->hasVerifiedEmail());
     }

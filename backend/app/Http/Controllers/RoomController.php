@@ -937,6 +937,7 @@ class RoomController extends Controller
 
         $query = User::whereNotNull('last_seen')
             ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") çevrimiçi listesinde çıkmasın
+            ->notDeleted()
             ->where('last_seen', '>', now()->subSeconds(70));
         if ($hasStatus) {
             // "Çevrimdışı Görün" (offline) + "Hayalet" (ghost, yönetici) listede GÖRÜNMEZ.

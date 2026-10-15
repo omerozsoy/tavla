@@ -18,6 +18,10 @@ class AuthController extends Controller
     // Uye kaydi
     public function register(Request $request)
     {
+        // Cep telefonu markaya bağlı: TavlaTv (TR) zorunlu; GammonTV (yabancı) istemez.
+        $phoneRule = \App\Support\Brand::requiresPhone()
+            ? ['required', 'string', 'regex:/^0?5\d{9}$/']
+            : ['nullable', 'string', 'regex:/^0?5\d{9}$/'];
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
@@ -31,8 +35,8 @@ class AuthController extends Controller
             // Kufur/uygunsuz takma ad engeli (panelden yonetilir). Bkz NicknameFilter.
             'nickname'   => self::nicknameRules(),
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
-            // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). YENİ ÜYEDE ZORUNLU (format + required).
-            'phone'      => ['required', 'string', 'regex:/^0?5\d{9}$/'],
+            // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). TavlaTv'de ZORUNLU, GammonTV'de istenmez ($phoneRule).
+            'phone'      => $phoneRule,
             'password'   => self::passwordRules(),
         ], self::passwordMessages());
 
@@ -257,16 +261,22 @@ class AuthController extends Controller
     public function updateProfile(Request $request)
     {
         $user = $request->user();
+        // Cep telefonu markaya bağlı: TavlaTv (TR) zorunlu; GammonTV (yabancı) istemez.
+        $phoneRule = \App\Support\Brand::requiresPhone()
+            ? ['required', 'string', 'regex:/^0?5\d{9}$/']
+            : ['nullable', 'string', 'regex:/^0?5\d{9}$/'];
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
-            'country'    => ['nullable', 'string', 'max:80'],
-            'province'   => ['nullable', 'string', 'max:80'],
+            // Ülke/telefon ZORUNLU (TR'de şehir de) — kayıtla birebir. Google ile gelen
+            // (country='' + telefonsuz) ve eski boş hesaplar profilini tamamlamadan kaydedemez.
+            'country'    => ['required', 'string', 'max:80'],
+            'province'   => ['required_if:country,TR', 'nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
             'nickname'   => self::nicknameRules($user->id),
             'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
-            'phone'      => ['nullable', 'string', 'regex:/^0?5\d{9}$/'],
+            'phone'      => $phoneRule,
         ]);
         // province kolonu (migration) henuz uygulanmamissa guncelleme patlamasin: atla.
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
@@ -1290,6 +1300,7 @@ class AuthController extends Controller
         $users = User::orderByDesc($sortCol)
             // Resmi/sistem hesabı ("Tavla TV Yönetim") liderlik tablosunda görünmesin.
             ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
+            ->notDeleted()
             ->orderByDesc('wins')
             ->limit($limit)
             // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
@@ -1336,6 +1347,7 @@ class AuthController extends Controller
 
         $users = User::whereNotNull('career_pr')
             ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") listede görünmesin
+            ->notDeleted()
             ->where('career_pr_matches', '>=', $minM)
             ->where('career_pr_decisions', '>=', $minD)
             ->orderBy('career_pr', 'asc')                 // dusuk PR = iyi -> 1. sira
@@ -1377,9 +1389,14 @@ class AuthController extends Controller
         if (mb_strlen($q) < 2) {
             return response()->json(['players' => []]); // en az 2 harf
         }
-        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%'; // LIKE joker karakterlerini kacir
+        // KELİME-BAŞI eşleşme (substring DEĞİL): "si" -> "Sinan"/"Selim Sinan" bulur ama
+        // "Mehmet hulu-si"nin ortasını bulmaz (kullanıcı görünmeyen ada göre "rastgele" sonuç sanıyordu).
+        $esc = str_replace(['%', '_'], ['\%', '\_'], $q); // LIKE joker karakterlerini kacir
+        $pre = $esc.'%';      // adın/takma adın başı
+        $mid = '% '.$esc.'%'; // ad içindeki sonraki kelimelerin başı ("... hulusi")
         $by = $request->query('by');
-        $nameMatch = fn ($w) => $w->where('nickname', 'like', $like)->orWhere('first_name', 'like', $like);
+        $nameMatch = fn ($w) => $w->where('nickname', 'like', $pre)
+            ->orWhere('first_name', 'like', $pre)->orWhere('first_name', 'like', $mid);
 
         if ($by === 'pr') {
             if (! Schema::hasColumn('users', 'career_pr')) {
@@ -1387,7 +1404,7 @@ class AuthController extends Controller
             }
             $minM = \App\Services\CareerPrService::minMatches();
             $minD = \App\Services\CareerPrService::minDecisions();
-            $base = fn () => User::whereNotNull('career_pr')->where('is_system', false)
+            $base = fn () => User::whereNotNull('career_pr')->where('is_system', false)->notDeleted()
                 ->where('career_pr_matches', '>=', $minM)->where('career_pr_decisions', '>=', $minD);
             $users = $base()->where($nameMatch)->orderBy('career_pr', 'asc')->limit(15)
                 ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
@@ -1418,12 +1435,12 @@ class AuthController extends Controller
         }
 
         $sortCol = $by === 'coins' ? 'coins' : ($by === 'wxp' ? 'total_wxp' : 'rating');
-        $users = User::where('is_system', false)->where($nameMatch)
+        $users = User::where('is_system', false)->notDeleted()->where($nameMatch)
             ->orderByDesc($sortCol)->orderByDesc('wins')->limit(15)
             ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
         $rows = $users->map(function ($u) use ($sortCol) {
             // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz. Rank = kendisinden ustte kac kisi var + 1.
-            $rank = User::where('is_system', false)->where($sortCol, '>', $u->{$sortCol})->count() + 1;
+            $rank = User::where('is_system', false)->notDeleted()->where($sortCol, '>', $u->{$sortCol})->count() + 1;
             $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
                 && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
             return [
@@ -1458,7 +1475,7 @@ class AuthController extends Controller
     {
         $data = \Illuminate\Support\Facades\Cache::remember('top_ranks_v1', 120, function () {
             // Rating: leaderboard ile ayni sira (rating DESC, wins DESC), ilk 3.
-            $rating = User::where('is_system', false) // resmi/sistem hesabı rozetlerde çıkmasın
+            $rating = User::where('is_system', false)->notDeleted() // resmi/sistem + silinmiş rozetlerde çıkmasın
                 ->orderByDesc('rating')
                 ->orderByDesc('wins')
                 ->limit(3)
@@ -1471,7 +1488,7 @@ class AuthController extends Controller
             $pr = [];
             if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr')) {
                 $pr = User::whereNotNull('career_pr')
-                    ->where('is_system', false) // resmi/sistem hesabı rozetlerde çıkmasın
+                    ->where('is_system', false)->notDeleted() // resmi/sistem + silinmiş rozetlerde çıkmasın
                     ->where('career_pr_matches', '>=', \App\Services\CareerPrService::minMatches())
                     ->where('career_pr_decisions', '>=', \App\Services\CareerPrService::minDecisions())
                     ->orderBy('career_pr', 'asc')

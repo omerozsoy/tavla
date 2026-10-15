@@ -31,6 +31,8 @@ return [
             'og_locale' => 'tr_TR',
             'origin' => env('TAVLA_ORIGIN', 'https://www.tavlatv.com'),
             'manifest' => '/manifest.webmanifest',
+            // Cep telefonu zorunlu mu? TavlaTv (TR) evet; GammonTV (yabancı) hayır.
+            'require_phone' => true,
             'og_image' => '/og-image.jpg',
             // E-posta gönderen adresi (Resend'de doğrulanmış domain). Boşsa MAIL_FROM_ADDRESS.
             'mail_from' => env('TAVLA_MAIL_FROM'),
@@ -45,6 +47,7 @@ return [
             'og_locale' => 'en_US',
             'origin' => env('GAMMON_ORIGIN', 'https://www.gammontv.com'),
             'manifest' => '/manifest.en.webmanifest',
+            'require_phone' => false, // yabancı kullanıcıdan telefon istenmez
             'og_image' => '/og-image.jpg', // ponytail: şimdilik ortak görsel; gammon kendi OG'sini ekleyince override et
             'mail_from' => env('GAMMON_MAIL_FROM'), // gammontv.com Resend'de doğrulanınca set edilir
             // GammonTV e-posta logosu henüz yok: dosya (/gammontv-email-logo.png) eklenip GAMMON_EMAIL_LOGO

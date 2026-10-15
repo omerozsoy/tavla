@@ -52,6 +52,12 @@ final class Brand
         return self::fromHost($host);
     }
 
+    /** Geçerli markada cep telefonu zorunlu/sorulur mu? (TavlaTv evet, GammonTV hayır.) */
+    public static function requiresPhone(): bool
+    {
+        return (bool) (self::current()['require_phone'] ?? true);
+    }
+
     /** Markanın kanonik kökü, SONUNDA '/' ile (SeoMeta BASE yerine). */
     public static function base(array $brand): string
     {

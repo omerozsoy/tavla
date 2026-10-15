@@ -57,12 +57,26 @@ class LeaderboardSearchTest extends TestCase
         $this->assertSame(3, $players[0]['rank']); // kendisinden ustte 2 kisi -> sira 3
     }
 
-    public function test_name_match_is_partial_and_case_tolerant(): void
+    public function test_name_match_is_word_start_and_case_tolerant(): void
     {
         $this->user('Mehmet', 1500);
-        $players = $this->getJson('/api/leaderboard/search?q=ehm&by=rating')->assertOk()->json('players');
+        // KELİME-BAŞI eşleşme (substring DEĞİL): "meh" -> "Mehmet"; büyük/küçük harf farketmez.
+        $players = $this->getJson('/api/leaderboard/search?q=MEH&by=rating')->assertOk()->json('players');
         $this->assertCount(1, $players);
         $this->assertSame('Mehmet', $players[0]['name']);
+
+        // Ortadaki harf dizisi (kelime başı DEĞİL) artık eşleşmez: "ehm" -> hiç sonuç.
+        $this->assertSame([], $this->getJson('/api/leaderboard/search?q=ehm&by=rating')->assertOk()->json('players'));
+    }
+
+    public function test_name_match_matches_second_word_start(): void
+    {
+        $u = $this->user('ali', 1500);
+        $u->forceFill(['first_name' => 'Ali Veli'])->save();
+        // İkinci kelimenin başı da eşleşir: "vel" -> "Ali Veli".
+        $players = $this->getJson('/api/leaderboard/search?q=vel&by=rating')->assertOk()->json('players');
+        $this->assertCount(1, $players);
+        $this->assertSame($u->id, $players[0]['id']);
     }
 
     public function test_pr_search_ranks_among_qualified_only(): void
@@ -72,7 +86,7 @@ class LeaderboardSearchTest extends TestCase
         $target = $this->user('pcarol', 1500, 4.0); // 3. en iyi PR
         $this->user('pnone', 1500, null);           // PR yok -> aranamaz
 
-        $players = $this->getJson('/api/leaderboard/search?q=carol&by=pr')->assertOk()->json('players');
+        $players = $this->getJson('/api/leaderboard/search?q=pca&by=pr')->assertOk()->json('players');
         $this->assertCount(1, $players);
         $this->assertSame($target->id, $players[0]['id']);
         $this->assertSame(3, $players[0]['rank']);

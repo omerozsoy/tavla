@@ -24,6 +24,8 @@ export interface Brand {
   logoSrc?: string
   /** PWA manifest yolu (host'a göre). */
   manifest: string
+  /** Cep telefonu zorunlu mu + sorulsun mu? TavlaTv (TR) evet; GammonTV (yabancı) hayır. */
+  requirePhone: boolean
 }
 
 const BRANDS: Record<BrandKey, Brand> = {
@@ -34,6 +36,7 @@ const BRANDS: Record<BrandKey, Brand> = {
     origin: 'https://www.tavlatv.com',
     logoText: 'TAVLATV',
     manifest: '/manifest.webmanifest',
+    requirePhone: true,
   },
   gammon: {
     key: 'gammon',
@@ -43,6 +46,7 @@ const BRANDS: Record<BrandKey, Brand> = {
     logoText: 'GAMMONTV',
     // logoSrc: '/gammontv-logo.svg',  // gerçek GammonTV logosu eklenince aç (tasarım hazır olunca)
     manifest: '/manifest.en.webmanifest',
+    requirePhone: false, // yabancı kullanıcıdan telefon istenmez
   },
 }
 

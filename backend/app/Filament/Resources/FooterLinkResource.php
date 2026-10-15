@@ -13,7 +13,10 @@ use Filament\Tables\Table;
  * FOOTER BAĞLANTILARI — bir kolonun İÇİNDEKİ linklerin sırasını/görünürlüğünü/başlığını yönet.
  * ÖNCE üstten bir KOLON seç (filtre), sonra satırları SÜRÜKLE-BIRAK ile sırala. "Başlık" alanına
  * Türkçe yaz (diğer diller otomatik; boş = varsayılan). "Göster" ile linki footer'da aç/kapa.
- * Kolonların kendi sırası/başlığı ayrı: "Footer Kolonları". Yeni link eklenmez/silinmez (sabit set).
+ * Kolonların kendi sırası/başlığı ayrı: "Footer Kolonları". Sabit linkler eklenmez/silinmez.
+ * CMS (Bilgi Sayfaları) footer sayfaları da bu tabloda cms-<slug> satırı olarak görünür ve aynı
+ * şekilde sıralanır/taşınır/gizlenir (ekran açılışında otomatik senkron; bkz ListFooterLinks).
+ * Bir CMS satırını footer'dan çıkarmak: "Göster"i kapat ya da Bilgi Sayfaları'nda üst başlığı kaldır.
  */
 class FooterLinkResource extends Resource
 {

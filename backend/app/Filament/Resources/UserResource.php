@@ -281,16 +281,6 @@ class UserResource extends Resource
     {
         return $table
             ->defaultSort('id', 'desc')
-            // SİLİNMİŞ (anonimleştirilmiş) hesapları listeden GİZLE: mali geçmişi (coin defteri/ödeme/
-            // sipariş) olan hesaplar yasal saklama için fiziksel silinemez -> UserEraser anonimleştirir
-            // (ban_reason='account_deleted', deleted-*@deleted.invalid) ve satır kalır. Bunlar panelde
-            // "silmiyor" gibi görünüyordu. Kayıt DURUR (yasal) ama listede gösterilmez.
-            // Param ADI 'query' OLMALI: Filament modifyQueryUsing closure'una gerçek sorguyu
-            // 'query' adıyla enjekte eder; '$q' gibi başka ad ile ad-eşleşmesi kaçar ve tip-bazlı
-            // fallback MODELSİZ bir Builder verir -> getModel()::class null patlar / nested where
-            // null model deref eder. Doğru ad ile grup'lu where güvenli (aramayı da bozmaz).
-            ->modifyQueryUsing(fn (Builder $query) => $query->where(fn (Builder $w) => $w
-                ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted')))
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
@@ -340,6 +330,19 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                // SİLİNMİŞ (anonimleştirilmiş) hesaplar: mali geçmişi (coin defteri/ödeme/sipariş) olan
+                // hesaplar yasal saklama için fiziksel silinemez -> UserEraser anonimleştirir
+                // (ban_reason='account_deleted', nickname='silinmisN', deleted-N@deleted.invalid). Satır DURUR.
+                // Varsayılan (blank) GİZLER (liste kalabalıklaşmasın) ama admin artık toggle ile BULABİLİR.
+                Tables\Filters\TernaryFilter::make('deleted')->label('Silinmiş hesaplar')
+                    ->placeholder('Gizli (varsayılan)')->trueLabel('Yalnız silinmişler')
+                    ->falseLabel('Silinmişler dahil hepsi')
+                    ->queries(
+                        true: fn (Builder $q) => $q->where('ban_reason', 'account_deleted'),
+                        false: fn (Builder $q) => $q,
+                        blank: fn (Builder $q) => $q->where(fn (Builder $w) => $w
+                            ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted')),
+                    ),
                 Tables\Filters\SelectFilter::make('plan')->label('Plan')->options([
                     'free' => 'Ücretsiz', 'star' => 'Premium',
                 ]),

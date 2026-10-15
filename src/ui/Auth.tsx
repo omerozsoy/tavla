@@ -5,6 +5,7 @@ import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
 import { countryOptions, COUNTRY_CODES } from '../countries'
 import { PROVINCES } from '../provinces'
+import { BRAND } from '../brand'
 import DatePicker from './DatePicker'
 import SearchSelect from './SearchSelect'
 import { useT } from '../i18n'
@@ -93,6 +94,7 @@ interface Props {
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
   initialForgot?: boolean // /sifremi-unuttum deep-link: acilista "sifremi unuttum" modu
   onForgotChange?: (v: boolean) => void // mod degisince URL guncelle (App: /giris <-> /sifremi-unuttum)
+  requireComplete?: boolean // profil tamamlama KAPISI: eksik zorunlu alanlar doldurulana dek cikilamaz (App'te EmailGate gibi)
 }
 
 export default function Auth({
@@ -106,6 +108,7 @@ export default function Auth({
   page,
   initialForgot,
   onForgotChange,
+  requireComplete,
 }: Props) {
   const { t, lang } = useT()
   const notify = useToast()
@@ -126,8 +129,11 @@ export default function Auth({
   const [email, setEmail] = useState(seed.email)
   // Telefon state'i 0'sız 10 haneyi tutar (seed '05XX...' gelirse 0'ı ve haneleri ayıkla).
   const [phone, setPhone] = useState((seed.phone || '').replace(/\D/g, '').replace(/^0/, '').slice(0, 10))
-  // Telefon yalnız gerçek hesaplarda sorulur (misafir yerel profilinde değil).
-  const askPhone = !editGuest
+  // Telefon/ülke/şehir yalnız gerçek hesaplarda ZORUNLU (misafir yerel profilinde değil).
+  // Kayıt + gerçek-hesap profil düzenlemesi backend ile birebir: ülke+telefon zorunlu, TR'de şehir.
+  // Telefon markaya bağlı: TavlaTv (TR) sorar+zorunlu; GammonTV (yabancı) telefon HİÇ sormaz.
+  const askPhone = !editGuest && BRAND.requirePhone
+  const askLoc = !editGuest
   const [avatar, setAvatar] = useState<string | undefined>(seed.avatar)
   const [cropSrc, setCropSrc] = useState<string | null>(null) // cember kirpici acik kaynagi
   const [birthDate, setBirthDate] = useState(seed.birthDate ?? '')
@@ -269,8 +275,8 @@ export default function Auth({
     firstName: triedSubmit && !firstName.trim(),
     lastName: triedSubmit && !lastName.trim(),
     nickname: triedSubmit && !nickname.trim(),
-    country: triedSubmit && !editing && !country.trim(),
-    province: triedSubmit && !editing && country === 'TR' && !province.trim(),
+    country: triedSubmit && askLoc && !country.trim(),
+    province: triedSubmit && askLoc && country === 'TR' && !province.trim(),
     email: triedSubmit && !editing && !email.trim(),
     phone: triedSubmit && askPhone && !phone.trim(),
   }
@@ -278,8 +284,8 @@ export default function Auth({
   function firstMissingFieldId(): string | null {
     if (!firstName.trim()) return 'pf-firstName'
     if (!lastName.trim()) return 'pf-lastName'
-    if (!editing && !country.trim()) return 'pf-country'
-    if (!editing && country === 'TR' && !province.trim()) return 'pf-province'
+    if (askLoc && !country.trim()) return 'pf-country'
+    if (askLoc && country === 'TR' && !province.trim()) return 'pf-province'
     if (!nickname.trim()) return 'pf-nickname'
     if (!editing && !email.trim()) return 'pf-email'
     if (askPhone && !phone.trim()) return 'pf-phone'
@@ -617,6 +623,9 @@ export default function Auth({
         {/* Giris/kayit landing'inde ust baslik ("Tavla TV") gosterilmez; Giris/Kayit
             kolon basliklari sayfa basligi rolunu ustlenir. Duzenleme/sifremi-unuttum h2 kalir. */}
         {(editing || forgot) && <h2>{title}</h2>}
+        {editing && requireComplete && (
+          <p className="register-sub" role="alert">{t('reg.completeRequired')}</p>
+        )}
         {/* E-posta dogrulama uyarisi profil DUZENLEME formundan KALDIRILDI; artik uyelik
             kartinda (ProfileOverview > MembershipCard) gosterilir. */}
 
