@@ -86,6 +86,8 @@ class MatchResultResource extends Resource
                 Tables\Columns\TextColumn::make('user.nickname')->label('Oyuncu')
                     ->searchable()->sortable()->default('—')
                     ->description(fn (MatchResult $r) => $r->user_id ? 'ID '.$r->user_id : null),
+                Tables\Columns\TextColumn::make('user.email')->label('E-posta')
+                    ->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('opponent_name')->label('Rakip')
                     ->searchable()->default('—')
                     ->description(fn (MatchResult $r) => $r->opponent_rating ? 'Puan '.$r->opponent_rating : null),
