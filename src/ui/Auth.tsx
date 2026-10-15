@@ -296,6 +296,9 @@ export default function Auth({
   // Alan altında "Zorunlu" işareti (boş zorunlu alanlar için).
   const reqHint = (show: boolean) =>
     show ? <span className="text-xs text-destructive" role="alert">{t('reg.required')}</span> : null
+  // Eksik zorunlu alanın ETİKETİ de kırmızı (kullanıcı hangi alanların eksik olduğunu
+  // tek bakışta görsün; kenarlık + "Zorunlu" yazısına ek vurgu).
+  const reqLabel = (missing: boolean) => (missing ? 'text-destructive font-semibold' : undefined)
 
   // Sunucudan gelen dogrulama hatasini anlasilir mesaja cevir (hangi alan?)
   function apiErrorMsg(err: unknown): string {
@@ -482,20 +485,20 @@ export default function Auth({
   const profileInputs = (
     <>
       <div className="grid gap-1.5">
-        <Label htmlFor="pf-firstName">{t('reg.firstName')}</Label>
+        <Label htmlFor="pf-firstName" className={reqLabel(reqMiss.firstName)}>{t('reg.firstName')}</Label>
         {/* autoFocus YALNIZ profil duzenlemede; giris/kayit landing'inde odagi CALMA
             (kullanici nereye yazacagini kendi secsin — istek). */}
         <Input id="pf-firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus={editing} aria-invalid={reqMiss.firstName || undefined} />
         {reqHint(reqMiss.firstName)}
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="pf-lastName">{t('reg.lastName')}</Label>
+        <Label htmlFor="pf-lastName" className={reqLabel(reqMiss.lastName)}>{t('reg.lastName')}</Label>
         <Input id="pf-lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} aria-invalid={reqMiss.lastName || undefined} />
         {reqHint(reqMiss.lastName)}
       </div>
       {/* Ülke: kayıtta da sorulur (yeni üye için ZORUNLU). */}
       <div className="grid gap-1.5">
-        <Label htmlFor="pf-country">{t('reg.country')}</Label>
+        <Label htmlFor="pf-country" className={reqLabel(reqMiss.country)}>{t('reg.country')}</Label>
         <SearchSelect
           id="pf-country"
           value={country}
@@ -512,7 +515,7 @@ export default function Auth({
       {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz); kayıtta TR ise ZORUNLU. */}
       {country === 'TR' && (
         <div className="grid gap-1.5">
-          <Label htmlFor="pf-province">{t('reg.province')}</Label>
+          <Label htmlFor="pf-province" className={reqLabel(reqMiss.province)}>{t('reg.province')}</Label>
           <SearchSelect
             id="pf-province"
             value={province}
@@ -525,7 +528,7 @@ export default function Auth({
         </div>
       )}
       <div className="grid gap-1.5">
-        <Label htmlFor="pf-nickname">{t('reg.nickname')}</Label>
+        <Label htmlFor="pf-nickname" className={reqLabel(reqMiss.nickname)}>{t('reg.nickname')}</Label>
         <Input
           id="pf-nickname"
           value={nickname}
@@ -556,7 +559,7 @@ export default function Auth({
         )}
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="pf-email">{t('reg.email')}</Label>
+        <Label htmlFor="pf-email" className={reqLabel(reqMiss.email)}>{t('reg.email')}</Label>
         <Input
           id="pf-email"
           type="email"
@@ -574,7 +577,7 @@ export default function Auth({
       </div>
       {askPhone && (
         <div className="grid gap-1.5">
-          <Label htmlFor="pf-phone">{t('reg.phone')}</Label>
+          <Label htmlFor="pf-phone" className={reqLabel(reqMiss.phone)}>{t('reg.phone')}</Label>
           <div className="flex items-center gap-2">
             {/* Sabit '0' öneki: kullanıcı 0'sız girer, biz gösteririz */}
             <span className="text-muted-foreground select-none" style={{ fontWeight: 600 }}>0</span>
