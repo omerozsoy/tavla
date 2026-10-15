@@ -1151,7 +1151,7 @@ def _review_cube(pos_points, bar, off, decider, chosen, cube_val, cube_owner, ma
       chosen: 'double' (teklif) | 'take'/'drop' (cevap).
       Teklif: mover = decider (teklif eden). Cevap: mover = teklif EDEN = rakip; analiz onun
       perspektifinden alınıp cevap (take/pass) perspektifine çevrilir.
-    NOT: skor 0–0 (maç başı) varsayılır; oyun-oyun skor takibi ileride (game 1 için tam doğru)."""
+    score: {white,black} oyun-basi maç skoru (MWC için) — None ise 0–0 varsayılır (eski davranış)."""
     is_response = chosen in ("take", "drop")
     mover = ("black" if decider == "white" else "white") if is_response else decider
     snap = {"points": list(pos_points), "bar": dict(bar), "off": dict(off), "turn": decider,
@@ -1325,19 +1325,27 @@ def _parse_mat_games(mat_text):
     ml = _MATCHLEN_RE.search(mat_text)
     match_len = int(ml.group(1)) if ml else 0
     games = []
+    game_scores = []  # her oyun icin baslangic skoru {white, black} (kup MWC analizi icin SART)
     cur = None
     col = None  # sag sutun mutlak karakter ofseti (her oyun basligindan tespit)
     for line in mat_text.splitlines():
         if _MAT_GAME_RE.match(line):
             cur = []
             games.append(cur)
+            game_scores.append({"white": 0, "black": 0})
             col = None
             continue
-        # Oyun basligi "P1 : skor   P2 : skor" -> sag sutun ofsetini (col) ver (isim uzunlugu farki icin)
+        # Oyun basligi "P1 : skor   P2 : skor" -> sag sutun ofseti + GERCEK baslangic skoru.
+        # Skor kup kararlarinin MWC'sini belirler (ornegin 1-away'de redouble "too-good" olabilir);
+        # 0-0 varsaymak kup PR'ini sistematik sisirir (oyun 2+ icin). Bkz cube review score gecisi.
         if cur is not None and col is None:
             hm = re.match(r"^(\s*\S.*?:\s*-?\d+)\s{2,}(\S.*?:\s*-?\d+)\s*$", line)
             if hm:
                 col = hm.start(2)
+                m1 = re.search(r"(-?\d+)\s*$", hm.group(1))
+                m2 = re.search(r"(-?\d+)\s*$", hm.group(2))
+                if m1 and m2 and game_scores:
+                    game_scores[-1] = {"white": int(m1.group(1)), "black": int(m2.group(1))}
                 continue
         rm = _MAT_ROW_RE.match(line)
         if not rm or cur is None:
@@ -1363,7 +1371,7 @@ def _parse_mat_games(mat_text):
         rre = _mat_entry(right)
         if rre:
             cur.append(("black",) + rre)
-    return match_len, names, games
+    return match_len, names, games, game_scores
 
 
 def _reviewmatch(mat_text, plies=2):
@@ -1376,7 +1384,7 @@ def _reviewmatch(mat_text, plies=2):
         out["error"] = "empty-mat"
         return out
     try:
-        match_len, names, games = _parse_mat_games(mat_text)
+        match_len, names, games, game_scores = _parse_mat_games(mat_text)
         out["matchLength"] = match_len or None
         out["names"] = names
         # DERİN LİSTE: bu analiz boyunca TÜM legal hamleleri hedef ply'de değerlendir (XG gibi tam,
@@ -1398,8 +1406,10 @@ def _reviewmatch(mat_text, plies=2):
                     # Küp kararı: o anki tahta + GERÇEK küp analizi (No double / Double,pass /
                     # Double,take equity'leri + doğru aksiyon + kazanma% + oynananın kaybı).
                     if data in ("double", "take", "drop"):
+                        # GERCEK oyun-basi skoru ile kup MWC analizi (0-0 varsaymak PR'i sisirir).
+                        gscore = game_scores[gi] if gi < len(game_scores) else None
                         e = _review_cube(pos["points"], pos["bar"], pos["off"], color, data,
-                                         cube_val, cube_owner, match_len, plies)
+                                         cube_val, cube_owner, match_len, plies, score=gscore)
                     else:  # beaver vb. — analizsiz yer tutucu (tahta yine gösterilir)
                         snap = {"points": list(pos["points"]), "bar": dict(pos["bar"]),
                                 "off": dict(pos["off"]), "turn": color,

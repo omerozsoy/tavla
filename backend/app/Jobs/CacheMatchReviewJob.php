@@ -32,7 +32,7 @@ class CacheMatchReviewJob implements ShouldQueue
 
     public int $timeout = 600; // reviewMatch ağır (~saniyeler)
 
-    public function __construct(public int $matchResultId, public int $plies = 2)
+    public function __construct(public int $matchResultId, public int $plies = 2, public bool $force = false)
     {
         // AYRI kuyruk: canlı PR/luck worker'ı ('default') ile yarışmasın; adanmış tavla-review-queue
         // worker'ı YALNIZ bunu işler (bkz deploy/tavla-review-queue.service). Tüm dispatch site'ları
@@ -59,8 +59,9 @@ class CacheMatchReviewJob implements ShouldQueue
         if (! $mr || empty($mr->log)) {
             return; // analiz edilecek log yok (online/PvP boş sarmalayıcı vb.)
         }
-        if ($this->plies === 2 && ! empty($mr->gnubg_review)) {
-            return; // zaten önbellekli (on-demand ya da önceki job yazmış)
+        if (! $this->force && $this->plies === 2 && ! empty($mr->gnubg_review)) {
+            return; // zaten önbellekli (on-demand ya da önceki job yazmış). force=true -> yeniden üret
+            // (ör. skor-farkında küp analizi backfill'i: eski review 0-0 skorunda hesaplanmıştı).
         }
         $client = $gnubg ?? app(GnuBgClient::class);
         if (! $client->analyzeHealthy()) {
