@@ -66,6 +66,20 @@ class OfficialMessengerTest extends TestCase
         $this->assertSame(0, Message::where('receiver_id', $acc->id)->count());
     }
 
+    public function test_broadcast_filters_unverified_country_and_province(): void
+    {
+        $verifiedTr = $this->makeUser('v');
+        $verifiedTr->forceFill(['email_verified_at' => now(), 'country' => 'TR', 'province' => 'İzmir'])->save();
+        $unverifiedTr = $this->makeUser('u');
+        $unverifiedTr->forceFill(['email_verified_at' => null, 'country' => 'TR', 'province' => 'Ankara'])->save();
+        $verifiedDe = $this->makeUser('d');
+        $verifiedDe->forceFill(['email_verified_at' => now(), 'country' => 'DE', 'province' => null])->save();
+
+        $this->assertSame(1, OfficialMessenger::broadcast('x', null, ['unverified' => true]));
+        $this->assertSame(2, OfficialMessenger::broadcast('x', null, ['country' => 'TR']));
+        $this->assertSame(1, OfficialMessenger::broadcast('x', null, ['province' => 'İzmir']));
+    }
+
     public function test_official_account_hidden_from_leaderboard(): void
     {
         $player = $this->makeUser('pl');

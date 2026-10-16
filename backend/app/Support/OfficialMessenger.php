@@ -173,18 +173,29 @@ class OfficialMessenger
         return count($rows);
     }
 
-    /** Tüm gerçek kullanıcılara gönder (sistem hesapları hariç). Gönderilen sayısını döndürür. */
-    public static function broadcast(string $body, ?string $image = null): int
+    /**
+     * Gerçek kullanıcılara gönder (sistem hesapları hariç). Gönderilen sayısını döndürür.
+     * $filters ile daraltılır (boş => herkese):
+     *   'unverified' => true  : yalnız e-posta aktivasyonunu tamamlamamış üyeler (email_verified_at NULL)
+     *   'country'    => 'TR'  : yalnız o ülke
+     *   'province'   => 'İzmir': yalnız o il/şehir (TR)
+     */
+    public static function broadcast(string $body, ?string $image = null, array $filters = []): int
     {
         $official = self::account();
         $hasImg = Schema::hasColumn('messages', 'image');
         $hasSys = Schema::hasColumn('users', 'is_system');
+        $country = trim((string) ($filters['country'] ?? ''));
+        $province = trim((string) ($filters['province'] ?? ''));
         $now = now();
         $count = 0;
 
         User::query()
             ->where('id', '!=', $official->id)
             ->when($hasSys, fn ($q) => $q->where('is_system', false))
+            ->when(! empty($filters['unverified']), fn ($q) => $q->whereNull('email_verified_at'))
+            ->when($country !== '', fn ($q) => $q->where('country', $country))
+            ->when($province !== '', fn ($q) => $q->where('province', $province))
             ->select('id')
             ->chunkById(500, function ($users) use (&$count, $official, $body, $image, $hasImg, $now) {
                 $rows = [];

@@ -50,6 +50,8 @@ class PlayerMessage extends Page implements HasForms
             'target' => 'one',
             'user_id' => null,
             'tournament_id' => null,
+            'country' => null,
+            'province' => null,
             'body' => '',
             'image' => null,
         ]);
@@ -74,8 +76,15 @@ class PlayerMessage extends Page implements HasForms
                 Section::make('Mesaj')
                     ->schema([
                         Radio::make('target')->label('Kime gönderilsin?')
-                            ->options(['one' => 'Tek oyuncu', 'tournament' => 'Turnuva katılımcıları', 'all' => 'Tüm kullanıcılar'])
-                            ->default('one')->inline()->live()->required(),
+                            ->options([
+                                'one' => 'Tek oyuncu',
+                                'tournament' => 'Turnuva katılımcıları',
+                                'all' => 'Tüm kullanıcılar',
+                                'unverified' => 'Aktivasyonunu tamamlamayan üyeler',
+                                'country' => 'Ülkeye göre',
+                                'province' => 'Şehre göre (TR ili)',
+                            ])
+                            ->default('one')->live()->required(),
                         Select::make('user_id')->label('Oyuncu')
                             ->searchable()
                             ->getSearchResultsUsing(fn (string $search) => static::searchUsers($search))
@@ -89,6 +98,18 @@ class PlayerMessage extends Page implements HasForms
                             ->visible(fn (callable $get) => $get('target') === 'tournament')
                             ->required(fn (callable $get) => $get('target') === 'tournament')
                             ->helperText('Mesaj, bu turnuvaya kayıtlı tüm oyunculara gönderilir.'),
+                        Select::make('country')->label('Ülke')
+                            ->options(fn () => static::countryOptions())
+                            ->searchable()
+                            ->visible(fn (callable $get) => $get('target') === 'country')
+                            ->required(fn (callable $get) => $get('target') === 'country')
+                            ->helperText('Mesaj, bu ülkedeki tüm üyelere gönderilir.'),
+                        Select::make('province')->label('Şehir (il)')
+                            ->options(fn () => static::provinceOptions())
+                            ->searchable()
+                            ->visible(fn (callable $get) => $get('target') === 'province')
+                            ->required(fn (callable $get) => $get('target') === 'province')
+                            ->helperText('Mesaj, bu ildeki tüm üyelere gönderilir (TR).'),
                         Textarea::make('body')->label('Mesaj')
                             ->rows(5)->maxLength(4000)
                             ->helperText('En fazla 4000 karakter. Metin veya görselden en az biri gerekli.'),
@@ -133,6 +154,34 @@ class PlayerMessage extends Page implements HasForms
             ->all();
     }
 
+    /** Üyelerin bulunduğu ülkeler (çok üyeli önce). Değer = ISO kodu, etiket = Türkçe ad + üye sayısı. */
+    public static function countryOptions(): array
+    {
+        $names = \App\Support\Geo::countries(); // kod => Türkçe ad (intl yoksa kod)
+
+        return User::query()
+            ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
+            ->whereNotNull('country')->where('country', '!=', '')
+            ->selectRaw('country, COUNT(*) as c')
+            ->groupBy('country')->orderByDesc('c')
+            ->pluck('c', 'country')
+            ->mapWithKeys(fn ($count, $code) => [$code => ($names[$code] ?? $code)." ({$count})"])
+            ->all();
+    }
+
+    /** Üyelerin bulunduğu iller (TR), çok üyeli önce. Etiket = il + üye sayısı. */
+    public static function provinceOptions(): array
+    {
+        return User::query()
+            ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
+            ->whereNotNull('province')->where('province', '!=', '')
+            ->selectRaw('province, COUNT(*) as c')
+            ->groupBy('province')->orderByDesc('c')
+            ->pluck('c', 'province')
+            ->mapWithKeys(fn ($count, $name) => [$name => "{$name} ({$count})"])
+            ->all();
+    }
+
     public function send(): void
     {
         $data = $this->form->getState();
@@ -166,6 +215,28 @@ class PlayerMessage extends Page implements HasForms
         if ($target === 'all') {
             $n = OfficialMessenger::broadcast($body, $image);
             Notification::make()->title("Mesaj {$n} kullanıcıya gönderildi.")->success()->send();
+        } elseif ($target === 'unverified') {
+            $n = OfficialMessenger::broadcast($body, $image, ['unverified' => true]);
+            Notification::make()->title("Mesaj, aktivasyonunu tamamlamayan {$n} üyeye gönderildi.")->success()->send();
+        } elseif ($target === 'country') {
+            $country = trim((string) ($data['country'] ?? ''));
+            if ($country === '') {
+                Notification::make()->title('Ülke seç.')->danger()->send();
+
+                return;
+            }
+            $n = OfficialMessenger::broadcast($body, $image, ['country' => $country]);
+            $cname = \App\Support\Geo::countries()[$country] ?? $country;
+            Notification::make()->title("Mesaj, {$cname} ülkesindeki {$n} üyeye gönderildi.")->success()->send();
+        } elseif ($target === 'province') {
+            $province = trim((string) ($data['province'] ?? ''));
+            if ($province === '') {
+                Notification::make()->title('Şehir (il) seç.')->danger()->send();
+
+                return;
+            }
+            $n = OfficialMessenger::broadcast($body, $image, ['province' => $province]);
+            Notification::make()->title("Mesaj, {$province} ilindeki {$n} üyeye gönderildi.")->success()->send();
         } elseif ($target === 'tournament') {
             $t = Tournament::find((int) ($data['tournament_id'] ?? 0));
             if (! $t) {
@@ -199,6 +270,8 @@ class PlayerMessage extends Page implements HasForms
             'target' => $data['target'] ?? 'one',
             'user_id' => null,
             'tournament_id' => null,
+            'country' => $data['country'] ?? null,
+            'province' => $data['province'] ?? null,
             'body' => '',
             'image' => null,
         ]);
