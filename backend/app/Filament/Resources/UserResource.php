@@ -383,6 +383,21 @@ class UserResource extends Resource
                         false: fn (Builder $q) => $q->whereNull('email_verified_at'),
                         blank: fn (Builder $q) => $q,
                     ),
+                // Ülke/şehir süzgeci: yalnız üyelerde var olan değerler (çok üyeli önce).
+                Tables\Filters\SelectFilter::make('country')->label('Ülke')
+                    ->searchable()
+                    ->options(fn () => \App\Models\User::query()
+                        ->whereNotNull('country')->where('country', '!=', '')
+                        ->selectRaw('country, COUNT(*) as c')->groupBy('country')->orderByDesc('c')
+                        ->pluck('c', 'country')
+                        ->mapWithKeys(fn ($count, $code) => [$code => (\App\Support\Geo::countries()[$code] ?? $code)." ({$count})"])
+                        ->all()),
+                Tables\Filters\SelectFilter::make('province')->label('Şehir (il)')
+                    ->searchable()
+                    ->options(fn () => \App\Models\User::query()
+                        ->whereNotNull('province')->where('province', '!=', '')
+                        ->selectRaw('province, COUNT(*) as c')->groupBy('province')->orderByDesc('c')
+                        ->pluck('province', 'province')->all()),
             ])
             ->recordUrl(fn ($record) => Pages\ViewUser::getUrl([$record]))
             // Satır işlemleri kebab menüsünde toplanır: 5 etiketli buton satırı yatayda taşırıp
