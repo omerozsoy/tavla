@@ -104,8 +104,12 @@ class CacheMatchReviewJob implements ShouldQueue
                 'gnubg_review_at' => now(),
             ]);
             Log::info('review önden önbelleğe alındı', ['id' => $mr->id, 'decisions' => $res['decisions'] ?? null]);
-            // PR'ı REVIEW'DAN türet (TEK YETKİLİ) -> buggy per-pozisyon cubePr'ı devreden çıkar.
+            // PR'ı REVIEW'DAN türet (provisional) -> buggy per-pozisyon cubePr'ı devreden çıkar.
             $this->writePrFromReview($mr, is_array($res['log'] ?? null) ? $res['log'] : []);
+            // OTORİTER PR = gnubg Snowie (XG-birebir). Review-log equity-toplamı match-play'de şişiyor;
+            // ayrı /analyzematch ile Snowie PR'ı yazılır (provisional değeri EZER). Best-effort; gnubg
+            // down/başarısızsa review-log değeri kalır. Bkz AnalyzeMatchSnowieJob + GnubgSnowieService.
+            \App\Jobs\AnalyzeMatchSnowieJob::dispatch($mr->id);
         }
     }
 

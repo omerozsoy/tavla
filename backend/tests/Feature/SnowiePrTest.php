@@ -61,6 +61,11 @@ TXT;
         // tutarlılık: checker + cube ≈ overall pr.
         $this->assertEqualsWithDelta($out[0]['pr'], $out[0]['checker_pr'] + $out[0]['cube_pr'], 0.1);
         $this->assertSame(5, $out[0]['cube_decisions']);
+        // kariyer alanları: equity_lost=overall err (2.569), decisions=tüm hamle+küp (25+25=50).
+        $this->assertEqualsWithDelta(2.569, $out[0]['equity_lost'], 0.01);
+        $this->assertSame(50, $out[0]['decisions']);
+        // tutarlılık: Snowie = equity_lost/decisions × 1000 = 2.569/50×1000 = 51.4.
+        $this->assertEqualsWithDelta($out[0]['pr'], $out[0]['equity_lost'] / $out[0]['decisions'] * 1000, 0.3);
 
         // p1 KUPABEYİ: Snowie 190.9 > 100 çöp koruması -> null (imkansız, gösterilmez).
         $this->assertNull($out[1]);

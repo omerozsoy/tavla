@@ -106,11 +106,16 @@ class GnubgSnowieService
         $f = static fn ($v) => abs((float) str_replace(',', '.', (string) $v));
         // "Error total EMG (MWC)   -2.019 (..%)   -9.318 (..%)" SIRAYLA checker, cube, overall.
         preg_match_all('/Error total EMG[^\n\-]*(-?\d+[.,]\d+)\s*\([^)]*\)\s+(-?\d+[.,]\d+)/', $raw, $em);
-        // "Close or actual cube decisions   5   3" (küp PR gösterim kapısı için)
-        preg_match('/Close or actual cube decisions\s+(\d+)\s+(\d+)/', $raw, $cd);
+        preg_match('/Close or actual cube decisions\s+(\d+)\s+(\d+)/', $raw, $cd); // küp PR gösterim kapısı
+        preg_match('/Total moves\s+(\d+)\s+(\d+)/', $raw, $tm);                    // Snowie paydası (tüm hamle)
+        preg_match('/Total cube decisions\s+(\d+)\s+(\d+)/', $raw, $tc);            // Snowie paydası (tüm küp)
         $chkErr = [isset($em[1][0]) ? $f($em[1][0]) : null, isset($em[2][0]) ? $f($em[2][0]) : null];
         $cubErr = [isset($em[1][1]) ? $f($em[1][1]) : null, isset($em[2][1]) ? $f($em[2][1]) : null];
+        $ovErr = [isset($em[1][2]) ? $f($em[1][2]) : null, isset($em[2][2]) ? $f($em[2][2]) : null];
         $cubeDec = [(int) ($cd[1] ?? 0), (int) ($cd[2] ?? 0)];
+        // Snowie paydası = toplam hamle + toplam küp kararı (ör. 25+25=50 -> 2.569/50×1000=51.4). Kariyer
+        // bunları doğrudan toplar (Σerr/Σdec×1000) -> maç Snowie'leriyle tutarlı kariyer PR.
+        $decisions = [(int) ($tm[1] ?? 0) + (int) ($tc[1] ?? 0), (int) ($tm[2] ?? 0) + (int) ($tc[2] ?? 0)];
 
         $out = [];
         foreach ([0, 1] as $i) {
@@ -126,7 +131,15 @@ class GnubgSnowieService
             $tot = ($ce ?? 0.0) + ($ue ?? 0.0);
             $checkerPr = ($ce !== null && $tot > 0) ? round($pr * $ce / $tot, 2) : null;
             $cubePr = ($ue !== null && $tot > 0 && $cubeDec[$i] >= $minCubeDecisions) ? round($pr * $ue / $tot, 2) : null;
-            $out[$i] = ['pr' => round($pr, 2), 'checker_pr' => $checkerPr, 'cube_pr' => $cubePr, 'cube_decisions' => $cubeDec[$i]];
+            $out[$i] = [
+                'pr' => round($pr, 2),
+                'checker_pr' => $checkerPr,
+                'cube_pr' => $cubePr,
+                'cube_decisions' => $cubeDec[$i], // "close or actual" (küp kariyeri + MIN kapısı)
+                'cube_equity_lost' => $ue !== null ? round($ue, 4) : null, // küp err EMG (kariyer küp PR için)
+                'equity_lost' => $ovErr[$i] !== null ? round($ovErr[$i], 4) : null, // kariyer için (overall err EMG)
+                'decisions' => $decisions[$i], // kariyer paydası (Snowie: tüm hamle+küp)
+            ];
         }
 
         return $out;
