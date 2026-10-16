@@ -397,7 +397,9 @@ class UserResource extends Resource
                     ->options(fn () => \App\Models\User::query()
                         ->whereNotNull('province')->where('province', '!=', '')
                         ->selectRaw('province, COUNT(*) as c')->groupBy('province')->orderByDesc('c')
-                        ->pluck('province', 'province')->all()),
+                        ->pluck('c', 'province')
+                        ->mapWithKeys(fn ($count, $prov) => [$prov => "{$prov} ({$count})"])
+                        ->all()),
             ])
             ->recordUrl(fn ($record) => Pages\ViewUser::getUrl([$record]))
             // Satır işlemleri kebab menüsünde toplanır: 5 etiketli buton satırı yatayda taşırıp
