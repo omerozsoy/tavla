@@ -7941,18 +7941,13 @@ export default function App() {
       playSteps([offStep])
       return
     }
-    // BAR girisi: iki zar da FARKLI noktaya sokabiliyorsa (or. [6,3] -> 19 ya da 22) tek-tik
-    // en buyuk zari (6) oynayip digerini -cogu zaman blot KIRMAYI- gizlemesin. Bar'i SEC, iki
-    // hedefi goster; oyuncu dokunarak secsin. (9YDP9: mobilde kirik tas suruklenemediginden 3'le
-    // giris/kirma baska turlu yapilamiyor, oyuncu giremeyip AFK kaybediyordu.)
-    if (from === 'bar' && new Set(stepsFrom.map((s) => s.to)).size > 1) {
-      setSelectedFrom('bar')
-      return
-    }
-    // Tek hedef -> o adim. Birden fazla tahta-ici hedef (or. zar 1-6'da 8->7 veya 8->2):
+    // Tek hedef -> o adim. Birden fazla hedef -- tahta-ici (or. zar 1-6'da 8->7 veya 8->2)
+    // VEYA bar girisi iki zar da FARKLI noktaya sokabildiginde (or. [5,4] -> 20 ya da 21):
     // ZAR SIRASINA gore oyna -> once gosterilen (sol) zar once. Kullanici swap ile sirayi
     // degistirebildiginden (kucuk-buyuk / buyuk-kucuk) niyetini boyle ifade eder.
-    // (Eski "daima en buyuk zar" kurali 1-6'da hep 8->2 oynuyordu, kullanici 8->7 istiyordu.)
+    // (Eski "daima en buyuk zar" kurali 1-6'da hep 8->2 oynuyordu, kullanici 8->7 istiyordu.
+    //  Bar da eskiden "iki hedefi goster, dokunarak sec" idi -- 53T4X: tek-tik 20'ye koymali.
+    //  swap zaten gorunur, kucuk-zar girisi -9YDP9- icin swap+tik yeter.)
     const ordered = remainingDice.map((die) => stepsFrom.find((st) => st.die === die)).find(Boolean)
     const step = ordered ?? stepsFrom.reduce((a, b) => (b.die > a.die ? b : a))
     playSteps([step])
