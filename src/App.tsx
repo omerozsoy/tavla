@@ -11294,10 +11294,9 @@ export default function App() {
       </div>
 
       <div className="status">
-        {/* Alt anlatım satırı ("Beyaz oynuyor. Zarlar…", "hamle yok — geçiliyor…",
-           "rakip oynuyor") KALDIRILDI: board zaten zar+sırayı görsel veriyor, bu alan
-           board'a bırakıldı. Yalnız Crawford yazıyla kalır (küp neden yok). */}
-        {match.isCrawford && !gameEnd && <span className="crawford">{t('status.crawford')}</span>}
+        {/* Alt anlatım satırı tamamen KALDIRILDI: board zar+sırayı görsel veriyor,
+           Crawford ise hem sol panelde (sm-crawford rozeti) hem küpün içinde ("CRAWFORD")
+           zaten gösteriliyor -> board'un altına hiçbir yazı yazılmaz. */}
       </div>
       </main>
 
