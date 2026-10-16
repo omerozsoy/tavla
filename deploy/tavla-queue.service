@@ -19,11 +19,13 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 #   --max-jobs=500   -> uzun-ömürlü PHP bellek sızıntısına karşı periyodik geri dönüşüm.
 # Not: bu bayraklar Laravel'in "graceful" çıkışıdır; çalışan job'ı KESMEZ, aradaki boşlukta çıkar.
 #
-# KUYRUK ÖNCELİĞİ (--queue=default,bulk): 'default' = CANLI maç-sonu PR/luck; 'bulk' = toplu
-# backfill/heal (tavla:gnubg-pr-heal, tavla:gnubg-pr-backfill, matches:backfill-luck -> onQueue('bulk')).
-# Laravel virgüllü listeyi SIRAYLA (öncelik) işler: default'ta iş varken bulk'a GEÇMEZ. Böylece
-# geçmiş-analiz seli yeni biten maçın PR'ını ARKADA bekletmez (PR gecikme tail'inin kök çözümü).
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=default,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500
+# KUYRUK (--queue=default): YALNIZ 'default' = CANLI maç-sonu PR/luck. 'bulk' backfill/heal İŞLERİNİ
+# BU WORKER ARTIK İŞLEMEZ -> tavla-review-queue'ya taşındı. NEDEN (kök sebep, BQ9LW ÖzkanKayacı 59sn):
+#   Virgüllü "default,bulk" öncelik SADECE yeni iş seçiminde çalışır; worker elindeki uzun bulk işini
+#   (gnubg HTTP-bekleme, timeout=600) YARIDA KESMEZ. Backfill akarken TÜM worker'lar bir bulk işinin
+#   ortasında -> canlı PR ilk boşalan worker'ı ~60sn bekler (CPU boş görünür: beklemede, hesaplamıyor).
+#   'bulk'u tamamen ayırınca 'default' worker'ı DAİMA boşta-hazır -> canlı PR saniyeler içinde koşar.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=default --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500
 Restart=always
 RestartSec=5
 

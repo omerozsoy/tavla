@@ -187,7 +187,10 @@ export default function MatchResult({
     const tick = () => {
       const real = progressPctRef.current
       const est = Math.round(100 * (1 - Math.exp(-(Date.now() - start) / TAU)))
-      const candidate = Math.min(99, real != null ? real : est)
+      // GERÇEK per-pozisyon oranı varsa %99'a dek; YOKSA zaman-TAHMİNİ en çok %90'da TUTULUR.
+      // (Aksi halde tahmin ~%97'ye koşup "bitti ama PR yok" yanılsaması veriyordu — PR gecikince
+      // kullanıcı "göremedim" diyordu. %90'da sabit + dönen loader = "hâlâ hesaplanıyor" nettir.)
+      const candidate = real != null ? Math.min(99, real) : Math.min(90, est)
       setProgress((p) => Math.max(p, candidate)) // monoton: geri gitme (iki kaynak arası blip yok)
     }
     tick()

@@ -14,10 +14,12 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # yeni maçların PR analizi backfill arkasında BEKLEMEZ. Review'ler gnubg HEAVY havuzunda koşar
 # (foreground/bot bloklanmaz). --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar.
 #
-# KUYRUK ÖNCELİĞİ (--queue=reviews,reviews-bulk): 'reviews' = CANLI maç-sonu review ısıtma;
-# 'reviews-bulk' = toplu geçmiş ısıtma (tavla:review-warmup -> onQueue('reviews-bulk')). Sıralı
-# öncelik: canlı review, toplu warmup selinin arkasında beklemez.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews,reviews-bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+# KUYRUK (--queue=reviews,reviews-bulk,bulk): 'reviews' = CANLI maç-sonu review ısıtma;
+# 'reviews-bulk' = toplu geçmiş review ısıtma (tavla:review-warmup, cube-pr-rescore); 'bulk' = PR
+# backfill/heal (tavla:gnubg-pr-heal, tavla:gnubg-pr-backfill, matches:backfill-luck). TÜM backfill
+# türleri BU ayrı worker'da toplandı -> canlı PR worker'ı (tavla-queue, 'default') hiçbir backfill
+# selinin arkasında BEKLEMEZ (BQ9LW 59sn kök çözümü). Sıralı öncelik: canlı review en önde.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews,reviews-bulk,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
 Restart=always
 RestartSec=5
 
