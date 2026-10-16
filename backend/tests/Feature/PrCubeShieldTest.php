@@ -50,4 +50,31 @@ class PrCubeShieldTest extends TestCase
         $r3 = $orch->prFromReviewLog($this->log(3), 'white');
         $this->assertEqualsWithDelta(590.0, $r3['cube_pr'], 0.5);
     }
+
+    /**
+     * ÇÖP KALKANI: gnubg bazı küp pozisyonlarında makul-dışı equity döndürüp PR'ı milyonlara
+     * şişiriyordu (maç 778: cube_pr 33.333.136). Makul-dışı (|eq|>3) / NaN / sonsuz equity'li küp
+     * kararı SAYILMAMALI -> PR patlamaz, yalnız geçerli kararlardan hesaplanır.
+     */
+    public function test_garbage_cube_equity_is_ignored(): void
+    {
+        $orch = app(AnalysisOrchestrator::class);
+        // 1 geçerli checker (loss 0.1 -> checker_pr 50) + 1 ÇÖP küp (doubleTake=-200000) -> çöp atılır.
+        $log = [
+            ['player' => 'white', 'cands' => [['equity' => 0.5], ['equity' => 0.3]], 'loss' => 0.1],
+            ['player' => 'white', 'cube' => [
+                'chosen' => 'drop',
+                'equities' => ['noDouble' => 0.6, 'doubleTake' => -200000.0, 'doublePass' => 1.0],
+            ]],
+            // NaN/sonsuz de atılmalı (JSON'dan gelebilir).
+            ['player' => 'white', 'cube' => [
+                'chosen' => 'double',
+                'equities' => ['noDouble' => INF, 'doubleTake' => 0.1, 'doublePass' => 1.0],
+            ]],
+        ];
+        $r = $orch->prFromReviewLog($log, 'white');
+        $this->assertSame(0, $r['cube_decisions'], 'çöp küp kararları sayılmamalı');
+        $this->assertSame(1, $r['decisions'], 'yalnız geçerli checker sayılmalı');
+        $this->assertEqualsWithDelta(50.0, $r['pr'], 0.5, 'PR çöpten patlamamalı (yalnız checker)');
+    }
 }

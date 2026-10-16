@@ -95,7 +95,9 @@ const luckSign = (mwc: number | null, emg: number): number =>
 // Küp kararının equity kaybı (pozitif). ÖNEMLİ: gnubg review girdileri cube.loss taşır AMA
 // istemci (wildbg canlı) küp girdileri kaybı ÜST DÜZEY e.loss'ta tutar (cube.loss YOK). İkisini
 // de destekle: cube.loss -> e.loss -> 0. (Aksi halde istemci-loglu maçlarda küp maliyeti hep 0.)
-const cubeCost = (e: LogEntry): number => Math.max(0, e.cube?.loss ?? e.loss ?? 0)
+// ÇÖP KALKANI (bkz AnalysisOrchestrator CUBE_LOSS_MAX): gnubg bazı küp pozisyonlarında aşırı equity
+// döndürüp küp kaybını (dolayısıyla PR'ı) milyonlara şişiriyordu. Tek küp kararı kaybı 3.0 ile tavanlanır.
+const cubeCost = (e: LogEntry): number => Math.min(3, Math.max(0, e.cube?.loss ?? e.loss ?? 0))
 // Checker karar kaybı: maç-bağlamlı (prAdjustedEquityLoss) varsa onu kullan — otoriter gnubg_pr ile
 // AYNI. Oyun kararlaşmış (rakip zaten kazanmış) bir pozisyonda ham money-loss yüksek olsa da
 // prAdjusted ~0 olur -> görüntüleyici onu blunder/ceza sayıp şişirilmiş PR göstermez. Alan yoksa eski

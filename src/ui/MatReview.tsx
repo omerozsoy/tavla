@@ -57,7 +57,8 @@ export function computeSummary(log: LogEntry[], names: string[] | null, duration
     // kullanıcı "mat analizde 6.1, sonuçta 8.34" tutarsızlığının kökü buydu). Maliyet: checker ->
     // maç-bağlamlı prLoss; küp -> cube.loss (yoksa e.loss). matchSummary.cubeCost/prLoss ile birebir.
     // "(no move)" ZORUNLU non-karar -> sayma; countsForPR=false (zorunlu/obvious) paydaya girmez.
-    const cost = (e: LogEntry): number => (e.cube ? Math.max(0, e.cube.loss ?? e.loss ?? 0) : prLoss(e))
+    // Küp kaybı ÇÖP KALKANI ile 3.0'a tavanlanır (gnubg aşırı equity -> milyonluk PR; bkz matchSummary).
+    const cost = (e: LogEntry): number => (e.cube ? Math.min(3, Math.max(0, e.cube.loss ?? e.loss ?? 0)) : prLoss(e))
     const es = log.filter(
       (e) =>
         e.player === c &&

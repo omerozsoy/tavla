@@ -29,6 +29,15 @@ class AnalysisOrchestrator
     // yalnız ayrı "Küp PR" göstergesi gizlenir. 3+ küp kararında gerçek küp PR'ı gösterilir.
     public const MIN_CUBE_DECISIONS = 3;
 
+    // ÇÖP KALKANI: gnubg bazı küp pozisyonlarında (bozuk/uç konum) makul-dışı equity döndürüp
+    // cube PR'ı milyonlara şişiriyordu (maç 778: cube_pr 33.333.136, gnubg_pr 9.090.878). Küp
+    // equity'si gerçekte [-3,+3] (backgammon = 3× tekli); bu aralık dışı / NaN / sonsuz = BOZUK
+    // veri -> o kararı SAYMA. Ayrıca tek küp kararı kaybı CUBE_LOSS_MAX ile tavanlanır (gerçekte
+    // <~1.5; üstü veri hatası) -> tek çöp girdi tüm PR'ı patlatamaz.
+    private const CUBE_EQ_SANE = 3.0;
+
+    private const CUBE_LOSS_MAX = 3.0;
+
 
     public function __construct(private GnuBgClient $gnubg) {}
 
@@ -344,10 +353,17 @@ class AnalysisOrchestrator
                 if (! is_array($eq) || ! isset($eq['noDouble'], $eq['doubleTake'], $eq['doublePass'])) {
                     continue;
                 }
-                [$lv, $counts] = $this->cubeLoss(
-                    (string) $e['cube']['chosen'],
-                    (float) $eq['noDouble'], (float) $eq['doubleTake'], (float) $eq['doublePass']
-                );
+                $nd = (float) $eq['noDouble'];
+                $dt = (float) $eq['doubleTake'];
+                $dp = (float) $eq['doublePass'];
+                // ÇÖP KALKANI: makul-dışı/NaN/sonsuz equity = bozuk gnubg çıktısı -> bu kararı SAYMA
+                // (aksi halde cube PR milyonlara patlar — maç 778). Gerçek equity [-3,+3] içinde.
+                if (! is_finite($nd) || ! is_finite($dt) || ! is_finite($dp)
+                    || abs($nd) > self::CUBE_EQ_SANE || abs($dt) > self::CUBE_EQ_SANE || abs($dp) > self::CUBE_EQ_SANE) {
+                    continue;
+                }
+                [$lv, $counts] = $this->cubeLoss((string) $e['cube']['chosen'], $nd, $dt, $dp);
+                $lv = min($lv, self::CUBE_LOSS_MAX); // defansif tavan (gerçek kayıp <~1.5)
                 if ($counts) {
                     $cubeLossSum += $lv;
                     $cubeDec++;
