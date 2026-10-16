@@ -12434,6 +12434,17 @@ button.acct-row-logout:hover:not(:disabled) {
 .online-panel {
   min-height: 360px;
 }
+/* Sayfalayici DAIMA panelin ALTINDA sabit: liste flex ile buyur -> kisa son sayfada
+   pager ortada asili kalmaz (bos alan listede, pager dipte). Live panel de ayni. */
+.online-panel,
+.live-panel {
+  display: flex;
+  flex-direction: column;
+}
+.online-panel .rank-list,
+.live-panel .live-list {
+  flex: 1 1 auto;
+}
 /* Telefonda (paneller alt alta) liste BOSSA 360px'lik rezerv ~300px bos beyaz alan birakiyordu.
    Bos durum kesinlesince rezervi birak (CLS kaymasi yalniz bos liste durumunda, kabul). */
 @media (max-width: 720px) {
