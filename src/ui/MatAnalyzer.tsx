@@ -184,17 +184,45 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
           {busy ? t('ma.analyzing') : t('ma.analyze')}
         </Button>
 
-        {/* GERÇEK ilerleme: pozisyon-bazlı % çubuğu (analiz tek-bloklu, backend /dev/shm'e yazar, poll okur). */}
-        {busy && prog && prog.total > 0 && (
-          <div className="ma-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((prog.done / prog.total) * 100)}>
-            <div className="ma-progress-track">
-              <div className="ma-progress-fill" style={{ width: `${Math.round((prog.done / prog.total) * 100)}%` }} />
+        {/* GERÇEK ilerleme: pozisyon-bazlı analiz loader'ı (backend /dev/shm'e yazar, poll okur).
+            total gelene dek BELİRSİZ ("hazırlanıyor" — motor maçı ayrıştırıyor), sonra BELİRLİ
+            büyük % + pozisyon sayacı. Sakin ama canlı: nabız atan durum noktası + süzülen ışık. */}
+        {busy && (() => {
+          const hasPct = !!(prog && prog.total > 0)
+          const p = hasPct ? Math.round((prog!.done / prog!.total) * 100) : 0
+          return (
+            <div className="ma-loader" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={hasPct ? p : undefined}>
+              <div className="ma-loader-top">
+                <span className="ma-loader-pct">
+                  {hasPct ? (
+                    <>
+                      {p}
+                      <small>%</small>
+                    </>
+                  ) : (
+                    <span className="ma-loader-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  )}
+                </span>
+                <span className="ma-loader-status">
+                  <span className="ma-loader-ping" aria-hidden="true" />
+                  {t('ma.analyzing')}
+                </span>
+              </div>
+              <div className={`ma-loader-track ${hasPct ? 'det' : 'indet'}`}>
+                <div className="ma-loader-fill" style={hasPct ? { width: `${p}%` } : undefined} />
+              </div>
+              {hasPct && (
+                <div className="ma-loader-meta">
+                  <b>{prog!.done}</b> / {prog!.total}
+                </div>
+              )}
             </div>
-            <div className="ma-progress-meta">
-              %{Math.round((prog.done / prog.total) * 100)} · {prog.done}/{prog.total}
-            </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       <div className="ma-footer">
