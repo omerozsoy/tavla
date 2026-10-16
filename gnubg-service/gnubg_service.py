@@ -1376,7 +1376,56 @@ def _parse_mat_games(mat_text):
     return match_len, names, games, game_scores
 
 
-def _reviewmatch(mat_text, plies=2):
+# ---- Mat Analiz ILERLEME (gercek %): review tek bloklu bir cagri; frontend'in "142/246 pozisyon"
+# gosterebilmesi icin dongu her analiz edilen kararda ilerlemeyi PAYLASIMLI dosyaya yazar. Poll
+# Laravel'e gider (gnubg'ye DEGIL -> global kilit/main-thread bloklanmaz), Laravel bu dosyayi okur.
+# /dev/shm = tmpfs (hizli, reboot'ta ucar); dosya adi key'den (alnum/_/- sanitize -> path traversal yok).
+_PROGRESS_DIR = "/dev/shm/tavla-review"
+
+
+def _progress_path(key):
+    import os
+    import re as _re
+    k = _re.sub(r"[^A-Za-z0-9_-]", "", str(key or ""))[:64]
+    return os.path.join(_PROGRESS_DIR, k + ".json") if k else None
+
+
+def _write_progress(key, done, total):
+    path = _progress_path(key)
+    if not path:
+        return
+    try:
+        import json
+        import os
+        import time
+        os.makedirs(_PROGRESS_DIR, exist_ok=True)
+        try:
+            os.chmod(_PROGRESS_DIR, 0o777)
+        except Exception:
+            pass
+        tmp = path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump({"done": int(done), "total": int(total), "ts": time.time()}, f)
+        os.replace(tmp, path)  # atomik -> poll yarim dosya okumaz
+        try:
+            os.chmod(path, 0o666)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
+def _clear_progress(key):
+    path = _progress_path(key)
+    if path:
+        try:
+            import os
+            os.remove(path)
+        except Exception:
+            pass
+
+
+def _reviewmatch(mat_text, plies=2, progress_key=None):
     """Yuklenen .mat macini HAMLE-HAMLE analiz eder (Faz 2 goruntuleyici icin LogEntry[]).
     .mat METNINI dogrudan ayristirir (gnubg.match() yapisina bagli DEGIL); her oyunu baslangictan
     replay eder; her tas-hamlesini gnubg hint ile analiz eder (setgnubgid+hint; import gerekmez).
@@ -1398,6 +1447,18 @@ def _reviewmatch(mat_text, plies=2):
             gnubg.command("set evaluation movefilter 4 0 40 0 0")
         except Exception:
             pass
+        # Gercek % icin: analiz EDILECEK karar sayisini onden say (notasyonlu tas-hamlesi + gercek
+        # kup karari; dance/beaver analiz edilmez -> sayilmaz). Dongu ilerledikce done++ dosyaya yazilir.
+        total = 0
+        for g in games:
+            for (color, kind, data) in g:
+                if kind == "cube" and data in ("double", "take", "drop"):
+                    total += 1
+                elif kind == "move" and data.get("notation"):
+                    total += 1
+        total = max(1, total)
+        done = 0
+        _write_progress(progress_key, 0, total)
         log = []
         for gi, g in enumerate(games):
             pos = _initial_pos()
@@ -1425,6 +1486,9 @@ def _reviewmatch(mat_text, plies=2):
                     e["seq"] = len(log)
                     e["game"] = gi
                     log.append(e)
+                    if data in ("double", "take", "drop"):  # analiz edilen kup karari -> ilerleme
+                        done += 1
+                        _write_progress(progress_key, done, total)
                     if data == "take":  # double kabul edildi -> küp ikiye katlanır, alıcı sahibi
                         cube_val *= 2
                         cube_owner = color
@@ -1465,6 +1529,8 @@ def _reviewmatch(mat_text, plies=2):
                 e["seq"] = len(log)
                 e["game"] = gi
                 log.append(e)
+                done += 1  # analiz edilen tas-hamlesi -> ilerleme
+                _write_progress(progress_key, done, total)
                 pos["points"] = pts
                 pos["bar"] = bar
                 pos["off"] = off
@@ -1479,6 +1545,7 @@ def _reviewmatch(mat_text, plies=2):
     except Exception as e:
         out["error"] = str(e)
     finally:
+        _clear_progress(progress_key)  # ilerleme dosyasini temizle (bitti/hata fark etmez)
         # Move-filter'ı Normal'e geri döndür (gnubg kalıcı süreç -> bot maçları/diğer analizler
         # geniş filtreyle yavaşlamasın). Normal preset: accept 0 + extra 8 + eşik 0.16.
         try:
@@ -1786,7 +1853,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "mat gerekli (.mat metni)"})
                 return self._send(200, _reviewmatch(
                     mat_text=data.get("mat"),
-                    plies=int(data.get("plies", 2))))
+                    plies=int(data.get("plies", 2)),
+                    progress_key=data.get("progressKey")))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})

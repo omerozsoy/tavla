@@ -164,12 +164,15 @@ class AnalysisController extends Controller
         $data = $request->validate([
             'mat' => 'required|string|min:8|max:500000',
             'plies' => 'integer|min:0|max:3',
+            'progress_key' => 'nullable|string|max:64', // gercek % ilerleme icin istemci anahtari
         ]);
         if (! preg_match('/point\s+match/i', $data['mat']) && ! preg_match('/\bGame\s+1\b/i', $data['mat'])) {
             return $this->fail('invalid-mat', 422);
         }
 
-        $res = $this->gnubg->reviewMatch($data['mat'], (int) ($data['plies'] ?? 2));
+        // Path-traversal kalkanı: anahtarı alnum/_/- ile sınırla (gnubg de aynı sanitize'ı yapar).
+        $pk = isset($data['progress_key']) ? preg_replace('/[^A-Za-z0-9_-]/', '', $data['progress_key']) : '';
+        $res = $this->gnubg->reviewMatch($data['mat'], (int) ($data['plies'] ?? 2), $pk !== '' ? $pk : null);
         if (! is_array($res) || empty($res['ok'])) {
             \Illuminate\Support\Facades\Log::warning('gnubg mat analiz basarisiz', ['res' => is_array($res) ? array_intersect_key($res, array_flip(['error', 'import_err', 'exception'])) : null]);
             return response()->json([
@@ -199,6 +202,33 @@ class AnalysisController extends Controller
         }
 
         return response()->json($res);
+    }
+
+    /**
+     * Mat Analiz GERÇEK İLERLEME: review tek bloklu bir çağrı olduğundan frontend ayrı poll eder.
+     * gnubg analiz sürerken /dev/shm/tavla-review/{key}.json'a {done,total} yazar; burada onu okur.
+     * gnubg çağrısı YOK -> poll ağır havuzu/kilidi bloklamaz. Dosya yoksa (başlamadı/bitti) 0/0 döner.
+     */
+    public function matchReviewProgress(string $key): JsonResponse
+    {
+        $k = preg_replace('/[^A-Za-z0-9_-]/', '', $key);
+        if ($k === '' || strlen($k) > 64) {
+            return response()->json(['done' => 0, 'total' => 0]);
+        }
+        $path = '/dev/shm/tavla-review/'.$k.'.json';
+        if (! is_file($path)) {
+            return response()->json(['done' => 0, 'total' => 0]);
+        }
+        $raw = @file_get_contents($path);
+        $j = $raw ? json_decode($raw, true) : null;
+        if (! is_array($j)) {
+            return response()->json(['done' => 0, 'total' => 0]);
+        }
+
+        return response()->json([
+            'done' => max(0, (int) ($j['done'] ?? 0)),
+            'total' => max(0, (int) ($j['total'] ?? 0)),
+        ]);
     }
 
     /**

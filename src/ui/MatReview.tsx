@@ -28,6 +28,8 @@ function band(loss: number): 'good' | 'ok' | 'bad' | 'blunder' {
   return 'blunder'
 }
 const pct = (v: number) => (v * 100).toFixed(1)
+// "Pul Oyunu (PR)" -> "Pul Oyunu": mini bileşen etiketleri için parantezli eki at (tüm dillerde).
+const shortLbl = (s: string) => s.replace(/\s*\([^)]*\)\s*$/, '')
 
 // ---- Özet (popup): hamle-inceleme log'undan per-oyuncu hata istatistikleri ----
 export interface MatSummaryPlayer {
@@ -37,7 +39,9 @@ export interface MatSummaryPlayer {
   inaccuracies: number
   equityLost: number
   erMemg: number // (kayıp/karar)×1000
-  xr: number // (kayıp/karar)×500 = XG PR
+  xr: number // (kayıp/karar)×500 = XG PR (GENEL: checker+cube havuzlanmış)
+  checkerXr: number // yalnız pul oyunu PR (mini gösterim)
+  cubeXr: number | null // yalnız küp PR (<3 karar -> null -> '—', gnubg MIN_CUBE_DECISIONS)
   missedDoubles: number
   decisions: number
 }
@@ -48,18 +52,29 @@ export interface MatSummary {
 export function computeSummary(log: LogEntry[], names: string[] | null, durationMs: number): MatSummary {
   const colors: Array<'white' | 'black'> = ['white', 'black']
   const players = colors.map((c, i) => {
-    // "(no move)" artık pos taşır (tahta gösterimi için) ama ZORUNLU non-karardır -> sayma;
-    // yoksa payda şişip erMemg/XR (PR) yanlış düşerdi. countsForPR=false (zorunlu/obvious) de
-    // paydaya girmez -> otoriter gnubg_pr ile birebir. prLoss: maç-bağlamlı kayıp (varsa).
+    // PR = checker + KÜP birlikte havuzlanır (gnubg/XG "Performance Rating" tanımı) -> üst bar
+    // ve özet, Maç Özeti/Sonuç ekranıyla AYNI genel PR'ı gösterir (checker-only sapma yok;
+    // kullanıcı "mat analizde 6.1, sonuçta 8.34" tutarsızlığının kökü buydu). Maliyet: checker ->
+    // maç-bağlamlı prLoss; küp -> cube.loss (yoksa e.loss). matchSummary.cubeCost/prLoss ile birebir.
+    // "(no move)" ZORUNLU non-karar -> sayma; countsForPR=false (zorunlu/obvious) paydaya girmez.
+    const cost = (e: LogEntry): number => (e.cube ? Math.max(0, e.cube.loss ?? e.loss ?? 0) : prLoss(e))
     const es = log.filter(
-      (e) => e.pos && e.player === c && !e.cube && e.notation !== '(no move)' && e.countsForPR !== false,
+      (e) =>
+        e.player === c &&
+        e.countsForPR !== false &&
+        (e.cube ? true : e.pos && e.notation !== '(no move)'),
     )
     const decisions = es.length
-    const equityLost = es.reduce((s, e) => s + prLoss(e), 0)
-    const blunders = es.filter((e) => prLoss(e) >= 0.08).length
-    const errors = es.filter((e) => prLoss(e) >= 0.04 && prLoss(e) < 0.08).length
-    const inaccuracies = es.filter((e) => prLoss(e) >= 0.02 && prLoss(e) < 0.04).length
+    const equityLost = es.reduce((s, e) => s + cost(e), 0)
+    const blunders = es.filter((e) => cost(e) >= 0.08).length
+    const errors = es.filter((e) => cost(e) >= 0.04 && cost(e) < 0.08).length
+    const inaccuracies = es.filter((e) => cost(e) >= 0.02 && cost(e) < 0.04).length
     const erMemg = decisions ? (equityLost / decisions) * 1000 : 0
+    // Bileşen PR'lar (genel PR'ın altında minnacık ayrı gösterim): checker ve küp AYRI havuz.
+    const checkerEs = es.filter((e) => !e.cube)
+    const cubeEs = es.filter((e) => e.cube)
+    const checkerXr = checkerEs.length ? (checkerEs.reduce((s, e) => s + cost(e), 0) / checkerEs.length) * 500 : 0
+    const cubeXr = cubeEs.length >= 3 ? (cubeEs.reduce((s, e) => s + cost(e), 0) / cubeEs.length) * 500 : null
     return {
       name: names?.[i] || (i === 0 ? 'White' : 'Black'),
       blunders,
@@ -68,6 +83,8 @@ export function computeSummary(log: LogEntry[], names: string[] | null, duration
       equityLost,
       erMemg,
       xr: erMemg / 2,
+      checkerXr,
+      cubeXr,
       missedDoubles: 0,
       decisions,
     }
@@ -230,7 +247,15 @@ export default function MatReview({
       <span>{xgErr(p)}</span>
       <span>−{p.equityLost.toFixed(3)}</span>
       <span>{xgLuck(x)}</span>
-      <span>{p.xr.toFixed(2)}</span>
+      <span className="mrv-xgb-pr">
+        <b>{p.xr.toFixed(2)}</b>
+        {/* Genel PR'ın altında minnacık ayrı pul/küp PR (küp <3 karar -> '—'). Etiketler mevcut
+            çevirilerden türetilir (parantezli "(PR)" eki atılır) -> yeni i18n anahtarı gerekmez. */}
+        <small className="mrv-xgb-split">
+          <span>{shortLbl(t('ms.checkerPlay'))} {p.checkerXr.toFixed(1)}</span>
+          <span>{shortLbl(t('ms.cubePlay'))} {p.cubeXr != null ? p.cubeXr.toFixed(1) : '—'}</span>
+        </small>
+      </span>
       <span className="mrv-xgb-cls">{t(divisionOfPR(p.xr).key)}</span>
     </>
   )

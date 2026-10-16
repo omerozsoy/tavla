@@ -537,9 +537,14 @@ class GnuBgClient
      * Mat Analiz FAZ 2: yüklenen .mat maçını HAMLE-HAMLE analiz eder (görüntüleyici için).
      * Doner: ['ok'=>bool, 'matchLength'=>?int, 'names'=>[..], 'log'=>[LogEntry-uyumlu...]] veya hata.
      */
-    public function reviewMatch(string $mat, int $plies = 2): ?array
+    public function reviewMatch(string $mat, int $plies = 2, ?string $progressKey = null): ?array
     {
-        return $this->tryHeavy('/reviewmatch', ['mat' => $mat, 'plies' => $plies], 600)
+        $payload = ['mat' => $mat, 'plies' => $plies];
+        if ($progressKey !== null && $progressKey !== '') {
+            $payload['progressKey'] = $progressKey; // gnubg /dev/shm'e ilerleme yazar (poll okur)
+        }
+
+        return $this->tryHeavy('/reviewmatch', $payload, 600)
             ?? ['ok' => false, 'error' => 'heavy-unavailable'];
     }
 

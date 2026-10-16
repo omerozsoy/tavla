@@ -3,7 +3,7 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
-import { reviewMat, type MatReview as MatReviewResp } from '../api'
+import { reviewMat, reviewMatProgress, type MatReview as MatReviewResp } from '../api'
 import type { LogEntry } from './MatchReport'
 import MatReview, { computeSummary, type MatSummary } from './MatReview'
 import { parseMatScores } from '../analysis/matScores'
@@ -36,6 +36,8 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
   const [fileName, setFileName] = useState('')
   const [matText, setMatText] = useState('')
   const [busy, setBusy] = useState(false)
+  // Gerçek ilerleme (pozisyon-bazlı): analiz sürerken poll edilir -> "%58 · 142/246".
+  const [prog, setProg] = useState<{ done: number; total: number } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   // Refresh'te kaybolmasın: açılışta son kaydı geri yükle.
   const saved0 = loadSaved()
@@ -67,9 +69,21 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
       return
     }
     setBusy(true)
+    setProg(null)
     const t0 = Date.now()
+    // GERÇEK ilerleme: istemci anahtarı üret, backend'e geçir; analiz sürerken poll et.
+    const key = globalThis.crypto?.randomUUID?.() ?? `${t0}-${Math.floor(Math.random() * 1e9)}`
+    const poll = window.setInterval(() => {
+      reviewMatProgress(key)
+        .then((p) => {
+          if (p && p.total > 0) setProg({ done: Math.min(p.done, p.total), total: p.total })
+        })
+        .catch(() => {
+          /* poll hatası önemsiz */
+        })
+    }, 900)
     try {
-      const r = await reviewMat(matText, 2)
+      const r = await reviewMat(matText, 2, key)
       if (!r || !r.ok || !Array.isArray(r.log) || r.log.length === 0) throw new Error('failed')
       const sm = computeSummary(r.log, r.names ?? null, Date.now() - t0)
       const gs = parseMatScores(matText)
@@ -89,7 +103,9 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
       const m = e as { message?: string }
       notify.error(m?.message || t('ma.analyzeErr'))
     } finally {
+      window.clearInterval(poll)
       setBusy(false)
+      setProg(null)
     }
   }
 
@@ -167,6 +183,18 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
           {busy ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="analyze" size={16} />}
           {busy ? t('ma.analyzing') : t('ma.analyze')}
         </Button>
+
+        {/* GERÇEK ilerleme: pozisyon-bazlı % çubuğu (analiz tek-bloklu, backend /dev/shm'e yazar, poll okur). */}
+        {busy && prog && prog.total > 0 && (
+          <div className="ma-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((prog.done / prog.total) * 100)}>
+            <div className="ma-progress-track">
+              <div className="ma-progress-fill" style={{ width: `${Math.round((prog.done / prog.total) * 100)}%` }} />
+            </div>
+            <div className="ma-progress-meta">
+              %{Math.round((prog.done / prog.total) * 100)} · {prog.done}/{prog.total}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="ma-footer">
