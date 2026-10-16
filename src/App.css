@@ -23337,7 +23337,7 @@ body:has(.spectate-view) .app.lobby {
 .msg-tick {
   display: inline-flex;
   line-height: 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.92);
 }
 .msg-tick.read {
   color: #7fd4ff;
@@ -23351,9 +23351,9 @@ body:has(.spectate-view) .app.lobby {
   margin-left: 2px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.88);
   cursor: pointer;
-  opacity: 0.75;
+  opacity: 1;
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 .msg-delete:hover {
@@ -23369,9 +23369,9 @@ body:has(.spectate-view) .app.lobby {
   margin-left: 2px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.88);
   cursor: pointer;
-  opacity: 0.75;
+  opacity: 1;
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 .msg-bubble.theirs .msg-edit-btn {
