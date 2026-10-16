@@ -452,6 +452,8 @@ function Board({
     window.removeEventListener('pointermove', onWinMove)
     window.removeEventListener('pointerup', onWinUp)
     window.removeEventListener('pointercancel', onWinCancel)
+    window.removeEventListener('contextmenu', onWinAbort)
+    window.removeEventListener('blur', onWinAbort)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -566,6 +568,21 @@ function Board({
     [endCommon, snapBack],
   )
 
+  // Sag-tik (contextmenu) veya pencere odak kaybi (alt-tab / menu): tarayici bu durumlarda
+  // tutulan sol pointer icin pointerup/pointercancel'i her zaman GONDERMEZ -> proxy + dragRef
+  // temizlenmeyip tas havada asili kalirdi. Her ikisini de IPTAL (snap-back) olarak isle.
+  const onWinAbort = useCallback(
+    (e?: Event) => {
+      const d = dragRef.current
+      if (!d) return
+      if (e && e.type === 'contextmenu' && d.active) e.preventDefault() // suruklerken menu acilmasin
+      endCommon()
+      if (d.active) snapBack(d)
+      else dragRef.current = null
+    },
+    [endCommon, snapBack],
+  )
+
   const startDrag = useCallback(
     (e: ReactPointerEvent, from: FromKey, player: Player, label?: number) => {
       if (!dragEnabled) return
@@ -590,8 +607,10 @@ function Board({
       window.addEventListener('pointermove', onWinMove)
       window.addEventListener('pointerup', onWinUp)
       window.addEventListener('pointercancel', onWinCancel)
+      window.addEventListener('contextmenu', onWinAbort)
+      window.addEventListener('blur', onWinAbort)
     },
-    [dragEnabled, onWinMove, onWinUp, onWinCancel],
+    [dragEnabled, onWinMove, onWinUp, onWinCancel, onWinAbort],
   )
 
   // Proxy mount olunca hemen dogru konuma yerlestir (0,0'da flash olmasin).
