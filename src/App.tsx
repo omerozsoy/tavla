@@ -11464,6 +11464,7 @@ export default function App() {
             return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
           })()}
           matchUid={recordUid ?? gameRecordRef.current?.uid ?? undefined}
+          classic={match.classic}
           luck={{
             white: { mwc: luckPctOf('white'), cost: luckEmgOf('white'), jokers: jokersOf('white') },
             black: { mwc: luckPctOf('black'), cost: luckEmgOf('black'), jokers: jokersOf('black') },

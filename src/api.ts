@@ -712,6 +712,7 @@ export interface MyMatch {
   opponent_gnubg_pr?: number | null
   opponent_gnubg_checker_pr?: number | null
   opponent_gnubg_cube_pr?: number | null
+  classic?: boolean // Klasik Tavla maçı: "Klasik" rozeti + .mat indirme yok
   created_at?: string | null
 }
 // Sayfalama + filtre: offset/limit (30'ar yükle), q (rakip adı arama), from (tarih >= ISO)
@@ -2459,11 +2460,15 @@ export interface MatLuckSide {
   cost: number | null // luck EMG (equity cost)
   jokers: number | null // joker sayısı
 }
-export async function reviewMat(mat: string, plies = 2): Promise<MatReview> {
+export async function reviewMat(mat: string, plies = 2, progressKey?: string): Promise<MatReview> {
   return req<MatReview>('/review-mat', {
     method: 'POST',
-    body: JSON.stringify({ mat, plies }),
+    body: JSON.stringify({ mat, plies, progress_key: progressKey }),
   })
+}
+// Mat Analiz GERÇEK ilerleme poll'u (gnubg /dev/shm'e yazar, backend okur). Analiz bitince/yokken 0/0.
+export async function reviewMatProgress(key: string): Promise<{ done: number; total: number }> {
+  return req<{ done: number; total: number }>(`/review-mat/progress/${encodeURIComponent(key)}`)
 }
 
 // ==================== BASARIMLAR (ACHIEVEMENTS) ====================

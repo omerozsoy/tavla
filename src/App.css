@@ -2176,6 +2176,21 @@ button[aria-disabled='true'],
   letter-spacing: 0.03em;
   white-space: nowrap;
 }
+/* "Klasik" rozeti (Klasik Tavla maçları): format satırının altında marka-tonlu pill */
+.mh-classic-pill {
+  margin-top: 3px;
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-text, #fff);
+  background: var(--accent);
+  border-radius: 999px;
+  white-space: nowrap;
+}
 /* --- Alt serit --- */
 .mh-card .mh-foot {
   display: flex;
@@ -30909,6 +30924,34 @@ select:-webkit-autofill {
 .ma-analyze-btn {
   min-width: 200px;
 }
+/* ---- Mat Analiz GERÇEK ilerleme çubuğu (pozisyon-bazlı %) ---- */
+.ma-progress {
+  width: 100%;
+  max-width: 340px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+.ma-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  overflow: hidden;
+}
+.ma-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+.ma-progress-meta {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 /* ---- Sonuc ---- */
 .ma-result-head {
   display: flex;
@@ -31614,6 +31657,29 @@ select:-webkit-autofill {
 }
 .mrv-xgb-cls {
   color: var(--muted);
+}
+/* GENEL PR hücresi: büyük PR + altında minnacık pul/küp bileşen PR'ları (sağa yaslı yığın). */
+.mrv-xgb-pr {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.05;
+  overflow: visible;
+}
+.mrv-xgb-pr > b {
+  font-weight: 700;
+}
+.mrv-xgb-split {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 1px;
+  font-size: 0.58rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.mrv-xgb-split > span {
+  white-space: nowrap;
 }
 /* ---- Küp analizi paneli (sağ sütun, küp kararında) ---- */
 .mrv-cube {

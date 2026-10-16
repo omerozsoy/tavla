@@ -95,6 +95,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [report, setReport] = useState<
     {
       id: number; log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
+      classic?: boolean // Klasik Tavla: .mat indirme gizlenir
       matchResult?: { winner: Player; score: { white: number; black: number } }
       luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null }
       authPr?: { white: import('../analysis/matchSummary').AuthPr | null; black: import('../analysis/matchSummary').AuthPr | null }
@@ -168,7 +169,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const authSelf = { pr: prNz(m.gnubg_pr ?? m.pr), checker: prNz(m.gnubg_checker_pr), cube: m.gnubg_cube_pr ?? null }
       const authOpp = { pr: prNz(m.opponent_gnubg_pr), checker: prNz(m.opponent_gnubg_checker_pr), cube: m.opponent_gnubg_cube_pr ?? null }
       const authPr = hc === 'white' ? { white: authSelf, black: authOpp } : { white: authOpp, black: authSelf }
-      setReport({ id: m.id, log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult, luck, authPr })
+      setReport({ id: m.id, log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, classic: m.classic, matchResult, luck, authPr })
     } catch {
       /* yoksay */
     } finally {
@@ -382,6 +383,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                             ? t('mh.ptMatch', { n: m.match_length })
                             : t('mh.moneyGame')}
                         </span>
+                        {m.classic && <span className="mh-classic-pill">{t('classic.badge')}</span>}
                       </div>
 
                       {/* Ben (sag) */}
@@ -496,6 +498,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           blackName={report.blackName}
           matchResult={report.matchResult}
           matchDbId={report.id}
+          classic={report.classic}
           luck={report.luck}
           authPr={report.authPr}
           onClose={() => setReport(null)}

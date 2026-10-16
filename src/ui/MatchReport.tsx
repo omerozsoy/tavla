@@ -61,6 +61,7 @@ interface Props {
   matchResult?: { winner: Player; score: { white: number; black: number } }
   matchUid?: string // maçın kanonik kimliği (game_logs uid); sunucudan tek-kaynak .mat için
   matchDbId?: number // Maç Analizleri: DB maç id'si -> /me/matches/{id}/mat kanonik .mat (game_logs uid yoksa)
+  classic?: boolean // Klasik Tavla: .mat dosyası yok -> "Dışa aktar" butonu gizlenir
   luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null } // Maç Özeti şansı (mwc/cost/jokers)
   // TEK-KAYNAK PR: sunucu-otoriter (gnubg) PR — verilirse Maç Özeti Performans/Pul/Küp bu değerlerle
   // gösterilir (log'dan yeniden hesaplanmaz) -> sonuç kartı/analiz/istatistik AYNI tek doğru PR.
@@ -104,6 +105,7 @@ export default function MatchReport({
   gameResults,
   matchUid,
   matchDbId,
+  classic,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -635,7 +637,8 @@ export default function MatchReport({
               </div>
             </div>
           )}
-          {log.length > 0 && (
+          {/* Klasik Tavla'da .mat dosyası yok -> "Dışa aktar" gizli (küp yok + otomatik analiz kapalı). */}
+          {log.length > 0 && !classic && (
             <div className="mt-3.5 flex justify-center">
               <Button variant="outline" onClick={() => void exportMat()}>
                 <Icon name="install" size={14} /> {t('rep.export')}

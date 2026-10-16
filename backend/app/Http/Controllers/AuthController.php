@@ -1782,6 +1782,16 @@ class AuthController extends Controller
         // rakibin gerçek adı her kullanıcıya gidiyordu). Maç Analizleri yalnız takma ad gösterir;
         // ad soyad yalnız yönetim panelinde (UserResource).
 
+        // Klasik Tavla bayrağı (room_code -> rooms.classic): listede "Klasik" rozeti + .mat gizli.
+        $classicByRoom = [];
+        if ($hasRoom && \Illuminate\Support\Facades\Schema::hasColumn('rooms', 'classic')) {
+            $ccodes = $rows->pluck('room_code')->filter()->unique()->values()->all();
+            if (! empty($ccodes)) {
+                $classicByRoom = \App\Models\Room::whereIn('code', $ccodes)->pluck('classic', 'code')
+                    ->map(fn ($v) => (bool) $v)->all();
+            }
+        }
+
         $matches = $rows
             ->map(fn ($m) => [
                 'id' => $m->id,
@@ -1829,6 +1839,7 @@ class AuthController extends Controller
                     ? $oppPrByRoom[$m->room_code]['cube']
                     : ($hasOppGnubgSplit ? $m->gnubg_opponent_cube_pr : null),
                 'has_log' => $hasLog ? (bool) $m->has_log : false,
+                'classic' => ($hasRoom && $m->room_code) ? ($classicByRoom[$m->room_code] ?? false) : false,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
 
@@ -1857,6 +1868,10 @@ class AuthController extends Controller
     {
         if ($match->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Yetkisiz.'], 403);
+        }
+        // KLASİK TAVLA: .mat dosyası YOKTUR (küp yok + otomatik analiz kapalı) -> indirme engellenir.
+        if (\Illuminate\Support\Facades\Schema::hasColumn('rooms', 'classic') && optional($match->room)->classic) {
+            return response()->json(['message' => 'Klasik Tavla maçlarında .mat dosyası yoktur.'], 403);
         }
         // 'empty(log)' erken-reddi KALDIRILDI: match_moves'lu (sunucu-otoriter) maçlar client
         // log'suz da .mat verir. Gerçek kaynak yoksa matText() boş döner -> aşağıda 404.
