@@ -248,14 +248,12 @@ export default function MatReview({
       <span>{xgErr(p)}</span>
       <span>−{p.equityLost.toFixed(3)}</span>
       <span>{xgLuck(x)}</span>
+      {/* PR hücresi: Pul · Küp · Genel YAN YANA (etiketler başlıkta bir kez; değerler hizalı,
+          Genel vurgulu). Küp <3 karar -> '—'. Yeni i18n anahtarı yok (mevcut etiketler). */}
       <span className="mrv-xgb-pr">
-        <b>{p.xr.toFixed(2)}</b>
-        {/* Genel PR'ın altında minnacık ayrı pul/küp PR (küp <3 karar -> '—'). Etiketler mevcut
-            çevirilerden türetilir (parantezli "(PR)" eki atılır) -> yeni i18n anahtarı gerekmez. */}
-        <small className="mrv-xgb-split">
-          <span>{shortLbl(t('ms.checkerPlay'))} {p.checkerXr.toFixed(1)}</span>
-          <span>{shortLbl(t('ms.cubePlay'))} {p.cubeXr != null ? p.cubeXr.toFixed(1) : '—'}</span>
-        </small>
+        <span className="mrv-pr-c">{p.checkerXr.toFixed(1)}</span>
+        <span className="mrv-pr-c">{p.cubeXr != null ? p.cubeXr.toFixed(1) : '—'}</span>
+        <b className="mrv-pr-g">{p.xr.toFixed(2)}</b>
       </span>
       <span className="mrv-xgb-cls">{t(divisionOfPR(p.xr).key)}</span>
     </>
@@ -353,7 +351,11 @@ export default function MatReview({
                 <span className="mrv-xgb-h">{t('mrv.miniErr')}</span>
                 <span className="mrv-xgb-h">{t('mrv.miniEq')}</span>
                 <span className="mrv-xgb-h">{t('mrv.miniLuck')}</span>
-                <span className="mrv-xgb-h">{t('mrv.xr')}</span>
+                <span className="mrv-xgb-h mrv-xgb-hpr">
+                  <span>{shortLbl(t('ms.checkerPlay'))}</span>
+                  <span>{shortLbl(t('ms.cubePlay'))}</span>
+                  <span>{t('mrv.xr')}</span>
+                </span>
                 <span className="mrv-xgb-h">{t('mrv.miniClass')}</span>
                 {xgRow(xgP[0], luck?.p0, nameW)}
                 {xgRow(xgP[1], luck?.p1, nameB)}

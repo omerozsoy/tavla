@@ -31802,7 +31802,8 @@ select:-webkit-autofill {
   flex: 1 1 auto;
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(80px, max-content) repeat(5, minmax(0, 1fr));
+  /* PR sütunu (5.) Pul·Küp·Genel'i yan yana taşır -> daha geniş (2.1fr). */
+  grid-template-columns: minmax(80px, max-content) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2.1fr) minmax(0, 1fr);
   align-items: baseline;
   gap: 0; /* sütunlar bitişik -> zebra bantları kesintisiz; boşluğu hücre padding'i verir */
   font-size: 0.8rem;
@@ -31837,28 +31838,38 @@ select:-webkit-autofill {
 .mrv-xgb-cls {
   color: var(--muted);
 }
-/* GENEL PR hücresi: büyük PR + altında minnacık pul/küp bileşen PR'ları (sağa yaslı yığın). */
+/* PR hücresi: Pul · Küp · Genel YAN YANA. Başlık (mrv-xgb-hpr) ve değer satırları (mrv-xgb-pr)
+   AYNI 3-kolon grid -> etiket, altındaki değerle birebir hizalanır (XG tarzı). Genel vurgulu. */
+.mrv-xgb-hpr,
 .mrv-xgb-pr {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.05;
+  display: grid;
+  grid-template-columns: 1fr 1fr minmax(34px, 1.15fr);
+  gap: 8px;
+  align-items: baseline;
   overflow: visible;
 }
+.mrv-xgb-hpr > span,
+.mrv-xgb-pr > span,
 .mrv-xgb-pr > b {
-  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.mrv-xgb-split {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  margin-top: 1px;
-  font-size: 0.58rem;
-  font-weight: 400;
+/* başlıkta Genel etiketini öne çıkar */
+.mrv-xgb-hpr > span:last-child {
+  color: var(--text);
+  font-weight: 600;
+}
+/* Pul/Küp bileşen değerleri sakin; Genel PR büyük + kalın */
+.mrv-xgb-pr > .mrv-pr-c {
+  font-size: 0.76rem;
   color: var(--muted);
 }
-.mrv-xgb-split > span {
-  white-space: nowrap;
+.mrv-xgb-pr > .mrv-pr-g {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
 }
 /* ---- Küp analizi paneli (sağ sütun, küp kararında) ---- */
 .mrv-cube {
