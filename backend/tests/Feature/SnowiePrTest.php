@@ -71,19 +71,22 @@ TXT;
         $this->assertNull($out[1]);
     }
 
-    public function test_cube_pr_suppressed_below_min_decisions(): void
+    public function test_cube_pr_shown_with_few_decisions_xg(): void
     {
         $svc = new GnubgSnowieService;
-        // Küp kararı 2 (<3) -> cube_pr null; pr + checker_pr yine döner.
+        // XG-birebir: eşik YOK -> az küp kararında da (2) küp PR GÖSTERİLİR (null değil).
         $raw = str_replace('             5                       3', '             2                       1', $this->stats7669());
         $res = [
             'ok' => true,
             'players' => [['snowieErrorRate' => -51.4], ['snowieErrorRate' => -190.9]],
             'statistics_match' => $raw,
         ];
-        $out = $svc->snowieFromAnalyze($res);
+        $out = $svc->snowieFromAnalyze($res); // default minCubeDecisions=1 (XG)
         $this->assertNotNull($out[0]);
-        $this->assertNull($out[0]['cube_pr'], 'küp kararı <3 -> cube_pr gizlenir');
-        $this->assertEqualsWithDelta(51.4, $out[0]['pr'], 0.1);
+        $this->assertNotNull($out[0]['cube_pr'], 'XG: 2 küp kararında da küp PR gösterilir');
+        $this->assertEqualsWithDelta(11.01, $out[0]['cube_pr'], 0.2);
+        // Yalnız 0 küp kararında null (bölünecek karar yok).
+        $out0 = $svc->snowieFromAnalyze($res, 1);
+        $this->assertNotNull($out0[0]['cube_pr']);
     }
 }

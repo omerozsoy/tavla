@@ -42,10 +42,10 @@ class PrFromReviewTest extends TestCase
         // checker: 1 sayılan karar, loss 0.1 -> checker_pr = 0.1/1*500 = 50
         $this->assertSame(1, $r['checker_decisions']);
         $this->assertEqualsWithDelta(50.0, $r['checker_pr'], 1e-6);
-        // cube: double (0.021 kayıp) overall HAVUZUNA girer; ama ayrı cube_pr GÖSTERİMİ 1 küp kararında
-        // (<MIN_CUBE_DECISIONS=3) null (stabilite). cube_equity_lost yine toplanır (kariyer için).
+        // cube: double (0.021 kayıp) overall HAVUZUNA girer. XG-birebir (MIN_CUBE_DECISIONS=1): 1 küp
+        // kararında da cube_pr GÖSTERİLİR = 0.021/1*500 = 10.5. cube_equity_lost kariyer için toplanır.
         $this->assertSame(1, $r['cube_decisions']);
-        $this->assertNull($r['cube_pr']);
+        $this->assertEqualsWithDelta(10.5, $r['cube_pr'], 0.1);
         $this->assertEqualsWithDelta(0.021, $r['cube_equity_lost'], 1e-6);
         // overall = HAVUZ (pul+küp): (0.1 + 0.021)/2 * 500 = 30.25 ; equity_lost/decisions havuzlanmış.
         $this->assertEqualsWithDelta(0.121, $r['equity_lost'], 1e-6);

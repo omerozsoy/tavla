@@ -41,7 +41,7 @@ export interface MatSummaryPlayer {
   erMemg: number // (kayıp/karar)×1000
   xr: number // (kayıp/karar)×500 = XG PR (GENEL: checker+cube havuzlanmış)
   checkerXr: number // yalnız pul oyunu PR (mini gösterim)
-  cubeXr: number | null // yalnız küp PR (<3 karar -> null -> '—', gnubg MIN_CUBE_DECISIONS)
+  cubeXr: number | null // yalnız küp PR (XG-birebir: ≥1 küp kararında göster, 0'da null -> '—')
   missedDoubles: number
   decisions: number
 }
@@ -75,7 +75,8 @@ export function computeSummary(log: LogEntry[], names: string[] | null, duration
     const checkerEs = es.filter((e) => !e.cube)
     const cubeEs = es.filter((e) => e.cube)
     const checkerXr = checkerEs.length ? (checkerEs.reduce((s, e) => s + cost(e), 0) / checkerEs.length) * 500 : 0
-    const cubeXr = cubeEs.length >= 3 ? (cubeEs.reduce((s, e) => s + cost(e), 0) / cubeEs.length) * 500 : null
+    // XG-birebir: en az 1 küp kararı varsa küp PR göster (XG eşik uygulamaz); 0 kararda null -> '—'.
+    const cubeXr = cubeEs.length >= 1 ? (cubeEs.reduce((s, e) => s + cost(e), 0) / cubeEs.length) * 500 : null
     return {
       name: names?.[i] || (i === 0 ? 'White' : 'Black'),
       blunders,

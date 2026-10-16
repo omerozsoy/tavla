@@ -24,10 +24,10 @@ class AnalysisOrchestrator
     // karar sayısına bakılır. CacheMatchReviewJob (yeni maç) + backfill SQL + CareerPrService uygular.
     public const MIN_PR_DECISIONS = 6;
 
-    // KÜP PR göstergesi için ayrı eşik: küp kararı bu sayıdan AZSA cube_pr GÖSTERİLMEZ (null -> "—"),
-    // çünkü 2 kararda 430 gibi anlamsız uç değer olur. KÜP yine GENEL PR'a katılır (loss/dec dahil);
-    // yalnız ayrı "Küp PR" göstergesi gizlenir. 3+ küp kararında gerçek küp PR'ı gösterilir.
-    public const MIN_CUBE_DECISIONS = 3;
+    // XG-birebir maç-başı küp PR eşiği: en az 1 küp kararı varsa cube_pr GÖSTERİLİR (XG eşik uygulamaz);
+    // 0 kararda null -> "—". Uç değer riski ÇÖP KALKANI ile (küp loss 3.0'a tavanlı) sınırlı.
+    // NOT: kariyer/profil küp PR AYRI eşik kullanır (CareerPrService::MIN_CAREER_CUBE_DECISIONS=25).
+    public const MIN_CUBE_DECISIONS = 1;
 
     // ÇÖP KALKANI: gnubg bazı küp pozisyonlarında (bozuk/uç konum) makul-dışı equity döndürüp
     // cube PR'ı milyonlara şişiriyordu (maç 778: cube_pr 33.333.136, gnubg_pr 9.090.878). Küp

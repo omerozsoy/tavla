@@ -93,7 +93,7 @@ class GnubgSnowieService
      * @param  array|null  $res  GnuBgClient::analyzeMatch() dönüşü (players + statistics_match)
      * @return array|null  [0=>p0, 1=>p1] her biri {pr,checker_pr,cube_pr,cube_decisions} | null (çöp/yok)
      */
-    public function snowieFromAnalyze(?array $res, int $minCubeDecisions = 3): ?array
+    public function snowieFromAnalyze(?array $res, int $minCubeDecisions = 1): ?array
     {
         if (! is_array($res) || empty($res['ok'])) {
             return null;

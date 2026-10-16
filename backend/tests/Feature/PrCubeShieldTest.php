@@ -41,12 +41,12 @@ class PrCubeShieldTest extends TestCase
     public function test_cube_data_still_computed(): void
     {
         $orch = app(AnalysisOrchestrator::class);
-        // 2 küp (<3): ayrı cube_pr göstergesi null; ama cube_equity_lost toplanır (kariyer için).
+        // XG-birebir (MIN_CUBE_DECISIONS=1): 2 küp kararında da cube_pr GÖSTERİLİR = (2*1.18/2)*500 = 590.
         $r2 = $orch->prFromReviewLog($this->log(2), 'white');
-        $this->assertNull($r2['cube_pr']);
+        $this->assertEqualsWithDelta(590.0, $r2['cube_pr'], 0.5);
         $this->assertGreaterThan(0, $r2['cube_equity_lost']);
         $this->assertSame(2, $r2['cube_decisions']);
-        // 3 küp (>=3): cube_pr gösterilir = (3*1.18/3)*500 = 590.
+        // 3 küp de aynı = 590 (eşik yok, havuz aynı).
         $r3 = $orch->prFromReviewLog($this->log(3), 'white');
         $this->assertEqualsWithDelta(590.0, $r3['cube_pr'], 0.5);
     }
