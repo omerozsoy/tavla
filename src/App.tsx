@@ -14,7 +14,7 @@ import './ui/landscapePhone.css'
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import { ErrorBoundary } from './ui/ErrorBoundary'
 import type { GameState, Move, Player, Step } from './engine/types'
-import { cloneState, gameOutcome, hasContact, opponent, winner } from './engine/board'
+import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
 import { matchGnubgMove } from './engine/gnubgMove'
 import {
@@ -7925,29 +7925,12 @@ export default function App() {
     if (!interactive) return
     const stepsFrom = nextSteps.filter((s) => s.from === from)
     if (stepsFrom.length === 0) return
-    const offStep = stepsFrom.find((s) => s.to === 'off')
-    if (offStep) {
-      // SAF YARISTA (temas yok, kimse blot vuramaz) tek-tik DAIMA toplar (owner direktifi:
-      // 6'ya tik -> topla, tekrar 6'ya tik -> kalan zari oyna). TEMAS varsa ve pulun baska hedefi
-      // de varsa otomatik toplamaz: pulu sec + yesil goster, kullanici guvenli diziyi secsin
-      // (NR5GJ: Su 6/4->4/off tek aciksiz oyun; 6/off'a zorlanirsa blot birakip vurulurdu).
-      // AMA pul ZATEN seciliyse (ikinci tik ayni puldan) toplamayi tamamla: aksi halde dokunmatikte
-      // kullanici ayni pula tekrar tekrar tiklar ve ASLA toplayamaz (5-3'te 5'e tiklayip almama bug'i).
-      const multi = new Set(stepsFrom.map((s) => s.to)).size > 1
-      if (multi && hasContact(turnStart) && selectedFrom !== from) {
-        setSelectedFrom(from)
-        return
-      }
-      playSteps([offStep])
-      return
-    }
-    // Tek hedef -> o adim. Birden fazla hedef -- tahta-ici (or. zar 1-6'da 8->7 veya 8->2)
-    // VEYA bar girisi iki zar da FARKLI noktaya sokabildiginde (or. [5,4] -> 20 ya da 21):
-    // ZAR SIRASINA gore oyna -> once gosterilen (sol) zar once. Kullanici swap ile sirayi
-    // degistirebildiginden (kucuk-buyuk / buyuk-kucuk) niyetini boyle ifade eder.
-    // (Eski "daima en buyuk zar" kurali 1-6'da hep 8->2 oynuyordu, kullanici 8->7 istiyordu.
-    //  Bar da eskiden "iki hedefi goster, dokunarak sec" idi -- 53T4X: tek-tik 20'ye koymali.
-    //  swap zaten gorunur, kucuk-zar girisi -9YDP9- icin swap+tik yeter.)
+    // Tek-tik: TUM hamleler (tahta-ici + TOPLAMA/bear-off) ZAR SIRASINA gore DIREK oynanir --
+    // siradaki (sol) zarin bu puldan adimi (toplama ya da tasima). Diger zari oynamak icin swap ile
+    // zar sirasini degistir (5-3'te pula tik -> 5 ile DIREK topla; swap -> 3 oyna). Owner direktifi:
+    // toplamada ikinci-tik/yesil-sec YOK, direk toplasin. (Eski NR5GJ guvenli-dizi yesil-sec kalkani
+    // kaldirildi; guvenli zar niyeti artik tahta-ici hamlelerle AYNI sekilde swap ile ifade edilir.
+    // Bar girisi [5,4]->20/21 ve tahta-ici 1-6'da 8->7/8->2 de ayni kural. Tek acik varsa o oynanir.)
     const ordered = remainingDice.map((die) => stepsFrom.find((st) => st.die === die)).find(Boolean)
     const step = ordered ?? stepsFrom.reduce((a, b) => (b.die > a.die ? b : a))
     playSteps([step])
