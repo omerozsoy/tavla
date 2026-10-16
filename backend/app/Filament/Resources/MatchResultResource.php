@@ -83,6 +83,14 @@ class MatchResultResource extends Resource
             })
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->searchable()->sortable(),
+                // Maçın ne zaman oynandığı EN BAŞTA görünsün (eskiden en sağda, ~20 kolon ardında kaçıyordu).
+                // DB UTC yazar; panelde Türkiye saati (UTC+3). Alt satırda "x önce" göreli zaman.
+                Tables\Columns\TextColumn::make('created_at')->label('Tarih / Saat')
+                    ->dateTime('d.m.Y H:i', 'Europe/Istanbul')
+                    ->description(fn ($record) => $record->created_at
+                        ? $record->created_at->timezone('Europe/Istanbul')->diffForHumans()
+                        : '')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('user.nickname')->label('Oyuncu')
                     ->searchable()->sortable()->default('—')
                     ->description(fn (MatchResult $r) => $r->user_id ? 'ID '.$r->user_id : null),
@@ -159,9 +167,6 @@ class MatchResultResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('room_code')->label('Oda (maç kodu)')
                     ->searchable()->copyable()->default('—')->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')->label('Tarih / Saat')
-                    // DB UTC yazar; panelde Turkiye saati (UTC+3) goster (veriye dokunma).
-                    ->dateTime('d.m.Y H:i:s', 'Europe/Istanbul')->sortable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('won')->label('Sonuç')
