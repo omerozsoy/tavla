@@ -1722,7 +1722,10 @@ class AuthController extends Controller
             // SUNUCU-OTORİTER: client log bos olsa bile match_moves varsa .mat/analiz ORADAN kurulur
             // (bkz. MatchResult::matText) -> buton gorunsun. Korelasyonlu EXISTS, sayfa basi az satir.
             if ($hasRoom && \Illuminate\Support\Facades\Schema::hasTable('match_moves')) {
-                $expr .= ' OR (room_code IS NOT NULL AND EXISTS (SELECT 1 FROM match_moves mm WHERE mm.room_code = match_results.room_code))';
+                // GERÇEK aksiyon şartı: sadece oyuncu hamle/küp satırı (move/double/take/drop) varsa
+                // analiz edilebilir. Yalnız dice/end satırlı (çok kısa/terk edilmiş) maçlar has_log=FALSE
+                // -> istemci düğme yerine doğrudan "analiz yok" notunu gösterir (önce düğme çıkmaz).
+                $expr .= " OR (room_code IS NOT NULL AND EXISTS (SELECT 1 FROM match_moves mm WHERE mm.room_code = match_results.room_code AND mm.kind IN ('move','double','take','drop')))";
             }
             $query->addSelect(\Illuminate\Support\Facades\DB::raw("($expr) as has_log"));
         }
