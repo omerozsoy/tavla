@@ -119,13 +119,16 @@ class GnubgSnowieService
 
         $out = [];
         foreach ([0, 1] as $i) {
-            $pr = abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
-            // Çöp koruması (bkz parseSnowie): gerçek PR ~0-100; >100 = gnubg güvenilmez analizi -> null.
-            if ($pr <= 0 || $pr > 100) {
+            $prRaw = abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
+            // YOK (0) veya BOZUK-analiz (milyonlar; ör. canlı-küplü maç "1 point" başlığıyla -> küp ölü
+            // sanılır) -> null. gnubg'nin gerçek en-kötü Snowie'si ~birkaç yüz; >1000 = güvenilmez.
+            if ($prRaw <= 0 || $prRaw > 1000) {
                 $out[$i] = null;
 
                 continue;
             }
+            // XG-birebir: XG PR'ı 100'de CAP'ler (maç 7669 KUPABEYİ: XG 100.00 vs gnubg 190.9).
+            $pr = min($prRaw, 100.0);
             $ce = $chkErr[$i];
             $ue = $cubErr[$i];
             $tot = ($ce ?? 0.0) + ($ue ?? 0.0);

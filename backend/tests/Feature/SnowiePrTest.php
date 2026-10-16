@@ -67,8 +67,19 @@ TXT;
         // tutarlılık: Snowie = equity_lost/decisions × 1000 = 2.569/50×1000 = 51.4.
         $this->assertEqualsWithDelta($out[0]['pr'], $out[0]['equity_lost'] / $out[0]['decisions'] * 1000, 0.3);
 
-        // p1 KUPABEYİ: Snowie 190.9 > 100 çöp koruması -> null (imkansız, gösterilmez).
-        $this->assertNull($out[1]);
+        // p1 KUPABEYİ: Snowie 190.9 -> XG gibi 100'e CAP'lenir (null DEĞİL; XG 100.00 gösteriyor).
+        $this->assertNotNull($out[1]);
+        $this->assertEqualsWithDelta(100.0, $out[1]['pr'], 0.1);
+
+        // BOZUK-analiz (milyonlar) yine null (cap değil): >1000 = güvenilmez gnubg.
+        $garbage = [
+            'ok' => true,
+            'players' => [['snowieErrorRate' => -5000.0], ['snowieErrorRate' => -3.2]],
+            'statistics_match' => $this->stats7669(),
+        ];
+        $g = $svc->snowieFromAnalyze($garbage);
+        $this->assertNull($g[0], 'milyonluk/>1000 Snowie -> null (bozuk analiz)');
+        $this->assertNotNull($g[1]); // 3.2 normal
     }
 
     public function test_cube_pr_shown_with_few_decisions_xg(): void
