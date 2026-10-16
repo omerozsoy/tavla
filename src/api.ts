@@ -1179,6 +1179,7 @@ export interface ChatMessage {
   image?: string | null // base64 data-URL gorsel (opsiyonel; metinle birlikte veya tek basina)
   mine: boolean
   read?: boolean // gonderdigim mesaj karsi tarafca okundu mu (mavi cift tik)
+  edited?: boolean // mesaj duzenlendi mi ("(duzenlendi)" rozeti)
   created_at?: string | null
 }
 export interface ChatThread {
@@ -1208,6 +1209,10 @@ export async function deleteConversation(userId: number): Promise<void> {
 export async function blockUser(userId: number): Promise<void> {
   await req(`/messages/${userId}/block`, { method: 'POST' })
 }
+// Özel mesajlaşmayı (tüm yazışma) yönetime şikayet et. Metin sunucudan çekilir (istemci göndermez).
+export async function reportConversation(userId: number): Promise<{ ok: boolean; duplicate?: boolean }> {
+  return await req(`/messages/${userId}/report`, { method: 'POST' })
+}
 export async function unblockUser(userId: number): Promise<void> {
   await req(`/messages/${userId}/block`, { method: 'DELETE' })
 }
@@ -1234,6 +1239,14 @@ export async function sendMessage(
 // Yonetici: bir DM mesajini kalici sil (backend is_admin denetler)
 export async function deleteMessage(userId: number, messageId: number): Promise<void> {
   await req(`/messages/${userId}/${messageId}`, { method: 'DELETE' })
+}
+// Kendi mesajini duzenle (yalniz gonderenin, gonderiminden 5 dk icinde; backend sahiplik+sure denetler)
+export async function editMessage(
+  userId: number,
+  messageId: number,
+  body: string,
+): Promise<{ message: ChatMessage; warning?: ChatWarning | null }> {
+  return req(`/messages/${userId}/${messageId}`, { method: 'PATCH', body: JSON.stringify({ body }) })
 }
 // Toplam okunmamis mesaj sayisi (rozet tazeleme)
 export async function messagesUnread(): Promise<{ unread: number }> {

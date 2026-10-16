@@ -273,12 +273,14 @@ class MessageController extends Controller
             ->update(['read_at' => now()]);
 
         $hasImageCol = Schema::hasColumn('messages', 'image');
+        $hasEditedCol = Schema::hasColumn('messages', 'edited_at');
         $messages = $rows->map(fn ($m) => [
             'id' => $m->id,
             'body' => $m->body,
             'image' => $hasImageCol ? ($m->image ?? null) : null,
             'mine' => $m->sender_id === $me,
             'read' => $m->read_at !== null, // gonderdigim mesaj karsi tarafca okundu mu (mavi tik)
+            'edited' => $hasEditedCol ? ($m->edited_at !== null) : false, // "(düzenlendi)" rozeti
             'created_at' => optional($m->created_at)->toIso8601String(),
         ]);
 
@@ -411,6 +413,61 @@ class MessageController extends Controller
                 'image' => $hasImageCol ? $msg->image : null,
                 'mine' => true,
                 'read' => false,
+                'edited' => false,
+                'created_at' => optional($msg->created_at)->toIso8601String(),
+            ],
+            'warning' => $warning,
+        ]);
+    }
+
+    // DM MESAJ DÜZENLEME: gönderen KENDİ mesajını, gönderiminden sonra 5 DAKİKA içinde düzenleyebilir.
+    // Küfür süzgeci + konuşma yasağı send() ile ortaktır. edited_at damgalanır -> arayüz "(düzenlendi)".
+    public function edit(Request $request, int $userId, int $messageId)
+    {
+        $me = $request->user();
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:4000'],
+        ]);
+        $body = trim((string) $data['body']);
+        if ($body === '') {
+            return $this->fail('Mesaj boş olamaz.', 422);
+        }
+        // Konuşma yasağı (send ile ortak): yasaklıyken düzenlenemez de.
+        if (($left = \App\Support\ChatModeration::mutedSeconds($me)) !== null) {
+            return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $me->chat_offenses], 403);
+        }
+        // Yalnız KENDİ mesajım (gönderen = ben) + bu konuşmadaki satır.
+        $msg = Message::where('id', $messageId)
+            ->where('sender_id', $me->id)
+            ->where('receiver_id', $userId)
+            ->first();
+        if (! $msg) {
+            return $this->fail('Mesaj bulunamadı.', 404);
+        }
+        // 5 DAKİKA KURALI (sunucu-otoriter; istemci düğmeyi gizler ama asıl kapı burası).
+        if ($msg->created_at && $msg->created_at->lt(now()->subMinutes(5))) {
+            return $this->fail('Mesaj 5 dakikadan eski, düzenlenemez.', 422);
+        }
+        // Küfür süzgeci (send ile ortak): küfür varsa maskele + yaptırım uygula.
+        $warning = null;
+        [$body, $hit, $word] = \App\Support\ChatModeration::filter($body, $me);
+        if ($hit) {
+            $warning = \App\Support\ChatModeration::penalize($me, $word);
+        }
+        $msg->body = $body;
+        if (Schema::hasColumn('messages', 'edited_at')) {
+            $msg->edited_at = now();
+        }
+        $msg->save();
+
+        return response()->json([
+            'message' => [
+                'id' => $msg->id,
+                'body' => $msg->body,
+                'image' => Schema::hasColumn('messages', 'image') ? $msg->image : null,
+                'mine' => true,
+                'read' => $msg->read_at !== null,
+                'edited' => true,
                 'created_at' => optional($msg->created_at)->toIso8601String(),
             ],
             'warning' => $warning,
@@ -535,6 +592,66 @@ class MessageController extends Controller
         }
 
         return response()->json(['ok' => true, 'blocked' => false]);
+    }
+
+    // KÜFÜR / UYGUNSUZ DM ŞİKAYETİ: oyuncu özel mesajlaşmadaki "Şikayet Et" butonuna basınca iki
+    // kişi arasındaki TÜM yazışmayı (son 200 satır) yönetime kaydeder. Metni İSTEMCİDEN ALMAZ ->
+    // DB'deki gerçek mesajlardan çeker. Oda sohbeti şikayetiyle ortak panelde ("Küfür Şikayetleri")
+    // incelenir. Spam kalkanı: aynı kullanıcı aynı konuşmayı 2 dk içinde tekrar şikayet edemez.
+    public function report(Request $request, int $userId)
+    {
+        $me = $request->user();
+        $peer = User::find($userId);
+        if (! $peer) {
+            return $this->fail('Kullanıcı bulunamadı.', 404);
+        }
+        if (! Schema::hasTable('chat_reports')) {
+            return response()->json(['ok' => true]); // migration beklemede -> sessiz ok
+        }
+        $roomCode = 'DM-'.$userId; // konuşma-özel işaret (16 char sınırı içinde) + spam kalkanı anahtarı
+        $recent = \App\Models\ChatReport::where('room_code', $roomCode)
+            ->where('reporter_user_id', $me->id)
+            ->where('created_at', '>', now()->subMinutes(2))
+            ->exists();
+        if ($recent) {
+            return response()->json(['ok' => true, 'duplicate' => true]);
+        }
+        $myName = $me->nickname ?: $me->first_name ?: 'Oyuncu';
+        $peerName = $peer->nickname ?: $peer->first_name ?: 'Oyuncu';
+        // İki yöndeki TÜM mesajlar (son 200 satır, eskiden yeniye). Görsel blob'u ÇEKME; metin + "📷".
+        $rows = Message::query()
+            ->where(function ($q) use ($me, $userId) {
+                $q->where(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $me->id)->where('receiver_id', $userId);
+                })->orWhere(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $userId)->where('receiver_id', $me->id);
+                });
+            })
+            ->orderByDesc('id')->limit(200)->get(['sender_id', 'body', 'image'])
+            ->reverse()->values();
+        $messages = $rows->map(function ($m) use ($me, $myName, $peerName) {
+            $mine = $m->sender_id === $me->id;
+            $text = (string) ($m->body ?? '');
+            if ($text === '' && ! empty($m->image)) {
+                $text = '📷 Görsel';
+            }
+
+            return ['slot' => $mine ? 'me' : 'them', 'name' => $mine ? $myName : $peerName, 'text' => $text];
+        })->all();
+
+        \App\Models\ChatReport::create([
+            'room_code' => $roomCode,
+            'reporter_user_id' => $me->id,
+            'reporter_name' => $myName,
+            'reporter_slot' => 'me',
+            'reported_name' => $peerName, // panelde KIRMIZI (şikayet edilen)
+            'p1_name' => $myName,
+            'p2_name' => $peerName,
+            'messages' => $messages,
+            'status' => 'new',
+        ]);
+
+        return response()->json(['ok' => true]);
     }
 
     // Toplam okunmamis mesaj sayisi (rozet). ping'e de eklenir.

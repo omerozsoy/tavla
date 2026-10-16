@@ -14,6 +14,7 @@ class Message extends Model
         'body',
         'image',
         'read_at',
+        'edited_at',
         'created_at',
     ];
 
@@ -21,6 +22,7 @@ class Message extends Model
     {
         return [
             'read_at' => 'datetime',
+            'edited_at' => 'datetime',
             'created_at' => 'datetime',
         ];
     }

@@ -9,7 +9,9 @@ import {
   sendMessage,
   sendTyping,
   deleteMessage,
+  editMessage,
   deleteConversation,
+  reportConversation,
   blockUser,
   unblockUser,
   acceptRequest,
@@ -143,6 +145,9 @@ export default function Messages({
   const [loadingThread, setLoadingThread] = useState(false)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null) // duzenlenen mesajin id'si
+  const [editText, setEditText] = useState('') // duzenleme kutusundaki metin
+  const [editSaving, setEditSaving] = useState(false)
   const [notice, setNotice] = useState<string | null>(null) // küfür uyarısı/konuşma yasağı (kırmızı)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null) // gonderilmeyi bekleyen sikistirilmis gorsel
@@ -221,6 +226,25 @@ export default function Messages({
       return
     }
     run()
+  }
+
+  // Şikayet et: iki kişi arasındaki TÜM yazışmayı yönetime bildir (metin sunucudan çekilir).
+  function handleReport(id: number, name: string) {
+    setMenuFor(null)
+    setConfirmBox({
+      title: t('dm.report'),
+      message: t('dm.reportConfirm', { name }),
+      icon: 'flag',
+      destructive: true,
+      run: async () => {
+        try {
+          await reportConversation(id)
+          toast.success(t('dm.reportSent'))
+        } catch (err) {
+          toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+        }
+      },
+    })
   }
 
   // onRead prop'u her render'da yeni gelebilir (App inline arrow) -> ref'te tut ki
@@ -391,6 +415,45 @@ export default function Messages({
         }
       },
     })
+  }
+
+  // Kendi mesajimi 5 DK icinde duzenleyebilir miyim? (sunucu da dogrular; bu yalniz dugmeyi gosterir)
+  const EDIT_WINDOW_MS = 5 * 60 * 1000
+  function canEdit(m: ChatMessage): boolean {
+    if (!m.mine || m.id <= 0 || !m.created_at) return false // iyimser/baskasinin mesaji degil
+    return Date.now() - new Date(m.created_at).getTime() <= EDIT_WINDOW_MS
+  }
+
+  // Duzenleme moduna gir: kutuyu mevcut metinle doldur.
+  function startEdit(m: ChatMessage) {
+    setEditingId(m.id)
+    setEditText(m.body)
+  }
+  function cancelEdit() {
+    setEditingId(null)
+    setEditText('')
+  }
+  // Duzenlemeyi kaydet: API -> listedeki mesaji guncelle (body + edited rozeti). Bos/degismemis ise iptal.
+  async function saveEdit() {
+    const id = editingId
+    const body = editText.trim()
+    if (id == null || activeId == null || editSaving) return
+    const cur = messages.find((x) => x.id === id)
+    if (!body || (cur && body === cur.body)) { cancelEdit(); return } // degisiklik yoksa sadece kapat
+    setEditSaving(true)
+    try {
+      const r = await editMessage(activeId, id, body)
+      setMessages((m) => m.map((x) => (x.id === id ? r.message : x)))
+      refreshThreads()
+      setNotice(r.warning ? chatWarnText(t, r.warning) : null) // kufur -> sansurlenmis + uyari
+      cancelEdit()
+    } catch (err) {
+      const mute = chatMuteFromError(err)
+      if (mute) setNotice(chatMuteText(t, mute.seconds))
+      else toast.error(err instanceof ApiError && err.message ? err.message : t('dm.editFail'))
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   // Mesaj istegini kabul et: konusma normal gelen kutusuna gecer, sohbetler sekmesinde acik kalir.
@@ -694,6 +757,17 @@ export default function Messages({
                       {activeUser.online ? t('friends.online') : t('friends.offline')}
                     </span>
                   )}
+                  {activeUser && (
+                    <button
+                      type="button"
+                      className="messages-head-report"
+                      onClick={() => handleReport(activeUser.id, activeUser.name)}
+                      aria-label={t('dm.report')}
+                      title={t('dm.report')}
+                    >
+                      <Icon name="flag" size={15} /> {t('dm.report')}
+                    </button>
+                  )}
                 </div>
 
                 {/* Onay bekleyen gelen istek: kabul / reddet bandı */}
@@ -752,30 +826,76 @@ export default function Messages({
                                 onClick={() => setZoomImage(m.image ?? null)}
                               />
                             )}
-                            {m.body && <span className="msg-text">{m.body}</span>}
-                            <span className="msg-meta">
-                              <span className="msg-time">{fmtTime(m.created_at)}</span>
-                              {m.mine && (
-                                <span
-                                  className={`msg-tick ${m.read ? 'read' : ''}`}
-                                  aria-label={m.read ? t('dm.read') : t('dm.sent')}
-                                  title={m.read ? t('dm.read') : t('dm.sent')}
-                                >
-                                  <Icon name={m.read ? 'checks' : 'check'} size={14} />
+                            {editingId === m.id ? (
+                              <div className="msg-edit">
+                                <textarea
+                                  className="msg-edit-input"
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void saveEdit() }
+                                    else if (e.key === 'Escape') cancelEdit()
+                                  }}
+                                  rows={2}
+                                  maxLength={4000}
+                                  autoFocus
+                                />
+                                <div className="msg-edit-actions">
+                                  <button type="button" className="msg-edit-cancel" onClick={cancelEdit} disabled={editSaving}>
+                                    {t('dm.cancel')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="msg-edit-save"
+                                    onClick={() => void saveEdit()}
+                                    disabled={editSaving || !editText.trim()}
+                                  >
+                                    {t('dm.save')}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {m.body && <span className="msg-text">{m.body}</span>}
+                                <span className="msg-meta">
+                                  <span className="msg-time">
+                                    {fmtTime(m.created_at)}
+                                    {m.edited && <span className="msg-edited"> · {t('dm.edited')}</span>}
+                                  </span>
+                                  {m.mine && (
+                                    <span
+                                      className={`msg-tick ${m.read ? 'read' : ''}`}
+                                      aria-label={m.read ? t('dm.read') : t('dm.sent')}
+                                      title={m.read ? t('dm.read') : t('dm.sent')}
+                                    >
+                                      <Icon name={m.read ? 'checks' : 'check'} size={14} />
+                                    </span>
+                                  )}
+                                  {canEdit(m) && (
+                                    <button
+                                      type="button"
+                                      className="msg-edit-btn"
+                                      onClick={() => startEdit(m)}
+                                      aria-label={t('dm.edit')}
+                                      title={t('dm.edit')}
+                                    >
+                                      <Icon name="pencil" size={13} />
+                                    </button>
+                                  )}
+                                  {isAdmin && m.id > 0 && (
+                                    <button
+                                      type="button"
+                                      className="msg-delete"
+                                      onClick={() => doDelete(m.id)}
+                                      aria-label={t('dm.delete')}
+                                      title={t('dm.delete')}
+                                    >
+                                      <Icon name="trash" size={13} />
+                                    </button>
+                                  )}
                                 </span>
-                              )}
-                              {isAdmin && m.id > 0 && (
-                                <button
-                                  type="button"
-                                  className="msg-delete"
-                                  onClick={() => doDelete(m.id)}
-                                  aria-label={t('dm.delete')}
-                                  title={t('dm.delete')}
-                                >
-                                  <Icon name="trash" size={13} />
-                                </button>
-                              )}
-                            </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       )

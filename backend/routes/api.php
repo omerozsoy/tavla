@@ -232,6 +232,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::get('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'thread'])->whereNumber('userId');
     Route::post('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'send'])
         ->whereNumber('userId')->middleware('throttle:30,1,msg-send'); // spam/flood korumasi
+    // Kendi mesajını düzenle (gönderimden sonra 5 dk içinde; controller'da sahiplik + süre + küfür denetimi).
+    Route::patch('/messages/{userId}/{messageId}', [\App\Http\Controllers\MessageController::class, 'edit'])
+        ->whereNumber('userId')->whereNumber('messageId')->middleware('throttle:30,1,msg-edit');
     Route::post('/messages/{userId}/typing', [\App\Http\Controllers\MessageController::class, 'typing'])
         ->whereNumber('userId')->middleware('throttle:60,1,msg-typing'); // "yaziyor…" nabzi
     // Mesaj isteği: arkadaş olmayanın konuşması "istek" olarak düşer -> kabul / reddet.
@@ -242,6 +245,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     // Kebab menüsü: kullanıcı sohbeti SİLER (kendine özel gizleme) + BLOKLA / blok kaldır.
     Route::delete('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'deleteConversation'])
         ->whereNumber('userId');
+    // Küfür/uygunsuz DM şikayeti: iki kişi arasındaki tüm yazışmayı yönetime kaydeder.
+    Route::post('/messages/{userId}/report', [\App\Http\Controllers\MessageController::class, 'report'])
+        ->whereNumber('userId')->middleware('throttle:10,1,dm-report');
     Route::post('/messages/{userId}/block', [\App\Http\Controllers\MessageController::class, 'block'])
         ->whereNumber('userId');
     Route::delete('/messages/{userId}/block', [\App\Http\Controllers\MessageController::class, 'unblock'])
