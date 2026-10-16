@@ -1115,13 +1115,19 @@ class AuthController extends Controller
                 if (! $e['countsForPR']) {
                     continue; // zorunlu/obvious (checker VEYA cube) -> paydaya girmez
                 }
-                $sum += max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
-                $n++;
+                $cl = max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
+                if (is_finite($cl) && $cl <= \App\Services\Analysis\AnalysisOrchestrator::CHK_LOSS_MAX) {
+                    $sum += $cl; // ÇÖP KALKANI: makul-dışı kayıp = bozuk -> sayma (PR şişmesin)
+                    $n++;
+                }
             } elseif (array_key_exists('cube', $e)) {
                 continue; // ESKİ cube log (PR alanı yok, loss=0) -> phantom 0-karar sayma
             } else {
-                $sum += max(0.0, (float) ($e['loss'] ?? 0)); // eski checker log geriye uyum
-                $n++;
+                $cl = max(0.0, (float) ($e['loss'] ?? 0));
+                if (is_finite($cl) && $cl <= \App\Services\Analysis\AnalysisOrchestrator::CHK_LOSS_MAX) {
+                    $sum += $cl; // eski checker log geriye uyum + çöp kalkanı
+                    $n++;
+                }
             }
         }
 

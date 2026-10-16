@@ -79,11 +79,14 @@ class PrFromReview extends Command
 
             // SAHTE-0 KALKANI (AnalyzeMatchPrJob ile AYNI konvansiyon): skorlanan karar yoksa (decisions=0)
             // PR TANIMSIZ -> null. round(0)=0 YAZMA; yoksa 81/88 meşru "—" satırı sahte 0'a dönüp bozulur.
-            $newPr = ($self['decisions'] ?? 0) > 0 ? round($self['pr'], 2) : null;
+            // MIN-KARAR KAPISI (CacheMatchReviewJob ile birebir): <6 sayılan karar = istatistiksel
+            // gürültü (2-3 kararda 300+) -> PR null ("—"), career'a girmez. Eskiden >0 yazıyordu (şişik kısa maç).
+            $minDec = AnalysisOrchestrator::MIN_PR_DECISIONS;
+            $newPr = ($self['decisions'] ?? 0) >= $minDec ? round($self['pr'], 2) : null;
             $oldPr = $r->gnubg_pr !== null ? round((float) $r->gnubg_pr, 2) : null;
             // LEGACY opponent_pr = otoriter opp PR (gnubg_opponent_pr ile birebir). Backfill bunu da senkron
             // tutmalı; yoksa gnubg_pr doğruyken opponent_pr stale birikir (frontend fallback kolonu).
-            $newOppPr = ($opp['decisions'] ?? 0) > 0 ? round($opp['pr'], 2) : null;
+            $newOppPr = ($opp['decisions'] ?? 0) >= $minDec ? round($opp['pr'], 2) : null;
             $oldOppPr = $r->opponent_pr !== null ? round((float) $r->opponent_pr, 2) : null;
             // null<->değer geçişi de fark sayılır; ikisi de doluysa 0.01 eşiği.
             $prDiff = (($oldPr === null) !== ($newPr === null)) || ($newPr !== null && abs($newPr - $oldPr) > 0.01);

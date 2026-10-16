@@ -102,7 +102,8 @@ const cubeCost = (e: LogEntry): number => Math.min(3, Math.max(0, e.cube?.loss ?
 // AYNI. Oyun kararlaşmış (rakip zaten kazanmış) bir pozisyonda ham money-loss yüksek olsa da
 // prAdjusted ~0 olur -> görüntüleyici onu blunder/ceza sayıp şişirilmiş PR göstermez. Alan yoksa eski
 // ham loss'a düşer (regresyon yok). MatchReport.prLoss + MatReview.computeSummary ile BİREBİR.
-const prLoss = (e: LogEntry): number => Math.max(0, e.prAdjustedEquityLoss ?? e.loss ?? 0)
+// ÇÖP KALKANI (backend CHK_LOSS_MAX ile aynı): tek checker kararı kaybı >3 = bozuk eval -> 3'e tavanla.
+const prLoss = (e: LogEntry): number => Math.min(3, Math.max(0, e.prAdjustedEquityLoss ?? e.loss ?? 0))
 // Küp PR az örnekte anlamsız (tek hata 3-haneli PR'a patlar — "266.50" artefaktı). gnubg gibi en az
 // bu kadar sayılan küp kararı yoksa küp PR GÖSTERME (null -> '—'). Backend MIN_CUBE_DECISIONS ile hizalı.
 const MS_MIN_CUBE_DECISIONS = 3

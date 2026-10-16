@@ -38,6 +38,11 @@ class AnalysisOrchestrator
 
     private const CUBE_LOSS_MAX = 3.0;
 
+    // CHECKER ÇÖP KALKANI: tek pul-hamlesi kaybı gerçekte <~1.5 EMG; >3 (money equity sınırı aşımı) =
+    // bozuk gnubg eval (genelde bir adayın çöp equity'si). Böyle bir kararı SAYMA (ölçüm geçersiz) ->
+    // checker PR milyonlara/yüzlere şişmez. Cube kalkanının checker karşılığı (tüm writer'larda uygulanır).
+    public const CHK_LOSS_MAX = 3.0;
+
 
     public function __construct(private GnuBgClient $gnubg) {}
 
@@ -139,9 +144,11 @@ class AnalysisOrchestrator
             $legal = count($cand);
             $bestEq = $cand[0]['equity'] ?? 0.0;
             $worstEq = $legal > 0 ? ($cand[$legal - 1]['equity'] ?? $bestEq) : $bestEq;
-            $counts = $legal > 1 && abs($bestEq - $worstEq) >= self::OBVIOUS;
+            $pl = (float) $played['loss'];
+            // ÇÖP KALKANI: makul-dışı (>3 EMG) / NaN checker kaybı = bozuk eval -> karar SAYILMAZ (PR şişmesin).
+            $counts = $legal > 1 && abs($bestEq - $worstEq) >= self::OBVIOUS && is_finite($pl) && $pl <= self::CHK_LOSS_MAX;
             if ($counts) {
-                $loss += (float) $played['loss'];
+                $loss += $pl;
                 $decisions++;
             }
             $lossVal = (float) $played['loss'];
@@ -383,7 +390,11 @@ class AnalysisOrchestrator
             if ((max($eqs) - min($eqs)) < self::OBVIOUS) {
                 continue; // obvious (en iyi-en kötü spread < eşik) -> sayılmaz
             }
-            $chkLoss += max(0.0, (float) ($e['loss'] ?? 0));
+            $cl = max(0.0, (float) ($e['loss'] ?? 0));
+            if (! is_finite($cl) || $cl > self::CHK_LOSS_MAX) {
+                continue; // ÇÖP KALKANI: makul-dışı checker kaybı = bozuk eval -> sayma (PR şişmesin)
+            }
+            $chkLoss += $cl;
             $chkDec++;
         }
         // GENEL (overall) PR = XG/gnubg HAVUZLANMIŞ standart: pul + küp BİRLİKTE havuzlanır

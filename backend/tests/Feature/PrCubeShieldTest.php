@@ -77,4 +77,22 @@ class PrCubeShieldTest extends TestCase
         $this->assertSame(1, $r['decisions'], 'yalnız geçerli checker sayılmalı');
         $this->assertEqualsWithDelta(50.0, $r['pr'], 0.5, 'PR çöpten patlamamalı (yalnız checker)');
     }
+
+    /**
+     * CHECKER ÇÖP KALKANI: tek pul-hamlesi kaybı >3 EMG (bozuk eval) = SAYILMAZ -> checker PR
+     * şişmez (maç 7669: checker_pr 326 tipi). Geçerli (<3) checker kararları normal sayılır.
+     */
+    public function test_garbage_checker_loss_is_ignored(): void
+    {
+        $orch = app(AnalysisOrchestrator::class);
+        $log = [
+            // geçerli hata: spread>OBVIOUS, loss 0.1 -> sayılır
+            ['player' => 'white', 'cands' => [['equity' => 0.5], ['equity' => 0.3]], 'loss' => 0.1],
+            // ÇÖP: bir adayın equity'si bozuk -> dev loss 8.0 -> SAYILMAMALI
+            ['player' => 'white', 'cands' => [['equity' => 0.5], ['equity' => -50.0]], 'loss' => 8.0],
+        ];
+        $r = $orch->prFromReviewLog($log, 'white');
+        $this->assertSame(1, $r['decisions'], 'çöp checker kararı (loss>3) sayılmamalı');
+        $this->assertEqualsWithDelta(50.0, $r['pr'], 0.5, 'PR yalnız geçerli karardan (çöp patlatmamalı)');
+    }
 }

@@ -70,8 +70,9 @@ interface Props {
 }
 
 // PR/hata sınıflaması için kullanılacak kayıp: maç-bağlamlı (prAdjusted) varsa onu kullan
-// (otoriter gnubg_pr ile aynı), yoksa eski ham loss'a düş. Negatif olmaz.
-export const prLoss = (e: LogEntry) => Math.max(0, e.prAdjustedEquityLoss ?? e.loss ?? 0)
+// (otoriter gnubg_pr ile aynı), yoksa eski ham loss'a düş. Negatif olmaz. ÇÖP KALKANI: tek karar
+// kaybı >3 EMG = bozuk eval -> 3'e tavanla (backend CHK_LOSS_MAX ile aynı; PR milyonlara şişmesin).
+export const prLoss = (e: LogEntry) => Math.min(3, Math.max(0, e.prAdjustedEquityLoss ?? e.loss ?? 0))
 
 // Equity kaybina gore sinif (renk + etiket anahtari)
 function band(loss: number): { cls: string; key: string } {
