@@ -1850,6 +1850,18 @@ button[aria-disabled='true'],
   gap: 8px;
   margin-top: 4px;
 }
+/* Analizi olmayan maç: düğmeler yerine kırmızı bilgi notu. */
+.mh-no-analysis {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: color-mix(in srgb, #b91c1c 8%, transparent);
+  border: 1px solid color-mix(in srgb, #b91c1c 22%, transparent);
+  border-radius: 8px;
+}
 /* Tam ekran analiz loader: mh-card modalının üzerinde ortalı kutu. */
 .mh-loading {
   z-index: 3100;

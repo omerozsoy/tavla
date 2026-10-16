@@ -43,12 +43,13 @@ function luckLabel(mwc?: number | null): { text: string; pos: boolean } | null {
   return null
 }
 
-function fmtDate(iso?: string | null): string {
+function fmtDate(iso?: string | null, locale?: string): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (isNaN(d.getTime())) return ''
   // Tarih + SAAT:DAKİKA (maçın oynandığı an). 24 saat biçimi (hour12:false) — kullanıcı isteği.
-  return d.toLocaleString(undefined, {
+  // Locale aktif UI dilinden (tavlatv -> 'tr' => "16 Eki 2026 21:14"); tarayıcı diline bırakma.
+  return d.toLocaleString(locale || undefined, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -83,7 +84,7 @@ interface Props {
 }
 
 export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId, titleOverride }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const notify = useToast()
   useEscape(onClose)
   const [rows, setRows] = useState<MyMatch[]>([])
@@ -102,6 +103,8 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     } | null
   >(null)
   const [reportBusy, setReportBusy] = useState(false)
+  // Analizi olmayan (kayıtlı hamle yok) maçların id'leri -> düğmeler yerine kırmızı not göster.
+  const [noAnalysis, setNoAnalysis] = useState<Set<number>>(new Set())
   // Yükleme ~1.2sn'yi geçerse (= önbellek YOK, ilk analiz) loader'a "ilk kez hazırlanıyor" notu ekle.
   // Önbellekli açılışlar anında döndüğü için bu not yalnız gerçekten ilk (yavaş) açılışta görünür.
   const [slowNote, setSlowNote] = useState(false)
@@ -138,6 +141,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       // çıkmak yerine kullanıcıya bildir (çok kısa/terk edilmiş maçlarda hamle kaydı olmayabilir).
       if (log.length === 0) {
         notify.info(t('mh.noAnalysis'))
+        setNoAnalysis((s) => new Set(s).add(m.id)) // düğmeler yerine kırmızı not göster
         return
       }
       // Renk (self/opp hizası): client log'dan; yoksa sunucu review'in hc'si; o da yoksa white.
@@ -418,7 +422,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                       <span className={`mh-out ${m.won ? 'win' : 'loss'}`}>
                         {m.won ? t('mh.win') : t('mh.loss')}
                       </span>
-                      <span className="mh-date">{fmtDate(m.created_at)}</span>
+                      <span className="mh-date">{fmtDate(m.created_at, lang)}</span>
                       <Icon name="chevron" size={16} className={`mh-chev mh-chev-end ${open ? 'chev-open' : ''}`} />
                     </div>
                   </button>
@@ -439,7 +443,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                           <span className="mh-stat-v">{m.coins_after}</span>
                         </div>
                       )}
-                      {m.has_log && (
+                      {m.has_log && !noAnalysis.has(m.id) ? (
                         <div className="mh-actions">
                           <Button
                             variant="outline"
@@ -458,6 +462,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                             <Icon name="search" size={15} /> {t('mh.analyze')}
                           </Button>
                         </div>
+                      ) : (
+                        // Analiz yok (kayıtlı hamle bulunamadı): düğmeler yerine kırmızı not.
+                        <div className="mh-no-analysis">{t('mh.noAnalysis')}</div>
                       )}
                     </div>
                   )}
