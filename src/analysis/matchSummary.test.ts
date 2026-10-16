@@ -73,7 +73,7 @@ describe('computeMatchSummary', () => {
     expect(s.white.doubleEquityCost).toBeCloseTo(0.06, 6)
     expect(s.white.doubles).toBe(1) // 0.06 >= 0.02
     expect(s.white.doubleBlunders).toBe(0) // 0.06 < 0.08
-    expect(s.white.cubePlay).toBeNull() // 1 küp kararı < MIN_CUBE_DECISIONS(3) -> bastırılır
+    expect(s.white.cubePlay).toBeCloseTo(30, 6) // XG-birebir: 1 küp kararı -> (0.06/1)×500 = 30
     expect(s.white.wrongDoublesCost).toBeCloseTo(0.06, 6) // maliyet satırı yine gösterilir
   })
 
@@ -112,7 +112,7 @@ describe('computeMatchSummary', () => {
     expect(s.black.wrongPassesCost).toBeCloseTo(0.11, 6) // drop + hata
     expect(s.black.takes).toBe(2)
     expect(s.black.takeBlunders).toBe(1) // 0.11 >= 0.08
-    expect(s.black.cubePlay).toBeNull() // 2 küp kararı < MIN_CUBE_DECISIONS(3) -> bastırılır ('—')
+    expect(s.black.cubePlay).toBeCloseTo(40, 6) // XG-birebir: 2 küp kararı -> (0.16/2)×500 = 40
   })
 
   it('checker + cube havuzlanır (overall PR ORTALAMA değil, Σloss/Σkarar)', () => {
@@ -122,8 +122,8 @@ describe('computeMatchSummary', () => {
     ]
     const s = computeMatchSummary(log, null)
     expect(s.white.checkerPlay).toBeCloseTo(50, 6) // 0.1/1*500
-    expect(s.white.cubePlay).toBeNull() // 1 küp kararı < MIN_CUBE_DECISIONS(3) -> küp PR bastırılır
-    // overall küp kararını HAVUZA katmaya devam eder (küp PR gösterimi bastırılsa da):
+    expect(s.white.cubePlay).toBeCloseTo(150, 6) // XG-birebir: 1 küp kararı -> (0.3/1)×500 = 150
+    // overall küp kararını HAVUZA katmaya devam eder (ayrı gösterim + genel havuz):
     // overall = (0.1+0.3)/(1+1)*500 = 100 -> havuzlama (ortalama DEĞİL) doğrulanır
     expect(s.white.performanceRating).toBeCloseTo(100, 6)
     expect(s.white.decisions).toBe(2)
@@ -135,32 +135,22 @@ describe('computeMatchSummary', () => {
       checker('white', 0.0),
       checker('white', 0.0),
       checker('white', 0.0), // 3 checker karar, 0 loss -> checker PR 0
-      cube('white', 'double', 'no-double', 0.2), // 1 cube karar, 0.2 -> cube PR 100
+      cube('white', 'double', 'no-double', 0.2), // 1 cube karar, 0.2 -> cube PR (0.2/1)×500 = 100
     ]
     const s = computeMatchSummary(log, null)
     expect(s.white.checkerPlay).toBeCloseTo(0, 6)
-    expect(s.white.cubePlay).toBeNull() // 1 küp kararı < MIN_CUBE_DECISIONS(3) -> bastırılır
-    // basit ortalama olsaydı (0+100)/2=50; havuzlama = (0+0.2)/(3+1)*500 = 25 (küp havuza katılır)
+    expect(s.white.cubePlay).toBeCloseTo(100, 6) // XG-birebir: 1 küp kararı -> (0.2/1)×500 = 100
+    // overall havuzlama: basit ortalama olsaydı (0+100)/2=50; havuz = (0+0.2)/(3+1)*500 = 25
     expect(s.white.performanceRating).toBeCloseTo(25, 6)
   })
 
-  it('küp PR: MIN_CUBE_DECISIONS(3) altında bastırılır (null), 3+ karar varsa hesaplanır', () => {
-    // 2 küp kararı -> null; checker ise prLoss/countsForPR ile hesaplanır
-    const two = computeMatchSummary(
-      [cube('white', 'double', 'no-double', 0.1), cube('white', 'take', 'take', 0.0)],
-      null,
-    )
-    expect(two.white.cubePlay).toBeNull()
-    // 3 küp kararı -> küp PR = (Σloss/3)×500 gösterilir
-    const three = computeMatchSummary(
-      [
-        cube('white', 'double', 'no-double', 0.1),
-        cube('white', 'take', 'take', 0.1),
-        cube('white', 'drop', 'drop', 0.1),
-      ],
-      null,
-    )
-    expect(three.white.cubePlay).toBeCloseTo((0.3 / 3) * 500, 6) // 50
+  it('küp PR XG-birebir: ≥1 küp kararında gösterilir (eşik yok), 0 kararda null', () => {
+    // 1 küp kararı -> küp PR = (0.1/1)×500 = 50 (XG eşik uygulamaz, bastırmaz)
+    const one = computeMatchSummary([cube('white', 'double', 'no-double', 0.1)], null)
+    expect(one.white.cubePlay).toBeCloseTo(50, 6)
+    // 0 küp kararı (yalnız checker) -> null ('—')
+    const none = computeMatchSummary([checker('white', 0.1)], null)
+    expect(none.white.cubePlay).toBeNull()
   })
 
   it('maç-bağlamlı prAdjustedEquityLoss kullanılır (ham loss DEĞİL): kararlaşmış pozisyon cezalandırılmaz', () => {
