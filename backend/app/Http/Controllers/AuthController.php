@@ -370,6 +370,10 @@ class AuthController extends Controller
         // Misafir rakip de limit aşımı DEĞİL: puansız ama PR/luck analizi çalışır (rated=false -> kariyere girmez).
         $guestOpponent = ! $room->bot && $opponentId <= 0;
         $friendlyOverCap = ! $room->bot && ! $room->unrated && ! $guestOpponent && $room->mode === 'friendly' && ! $ranked;
+        // KLASIK TAVLA: küp yok + gnubg bu varyantı analiz EDEMEZ -> PR hesabı anlamsız. gnubg PR/review
+        // JOB'UNU HİÇ DISPATCH ETME (boşuna worker/gnubg yükü) + gnubg_authoritative=false (istemci
+        // poll etmez, sonuç ekranı zaten !classic ile PR satırlarını gizler). Kaynak: otoriter oda bayrağı.
+        $isClassic = (bool) ($room->classic ?? false);
         $ra = $user->rating ?? 1500;
         $rb = (int) ($room->{$opponentSlot.'_rating'} ?? $ra);
         if ($rb <= 0) {
@@ -448,7 +452,7 @@ class AuthController extends Controller
                 // ZENGİNLEŞTİR: satır SUNUCU-OTORİTER YEDEK (ForfeitLoss / MatchBackstop) ise "bare"dir
                 // (log/PR yok). İstemci geç raporladıysa analiz verisini o satıra işle -> maç
                 // analiz edilebilir olsun. Rating/galibiyet/delta'ya DOKUNMAZ (çift-Elo yok).
-                $this->enrichBareRow($existing, $data);
+                $this->enrichBareRow($existing, $data, $isClassic);
 
                 // Rakip satırı (varsa) -> tutarlı sunucu-otoriter PR + luck çifti.
                 $oppExisting = \App\Models\MatchResult::where('room_code', $roomCode)
@@ -658,7 +662,7 @@ class AuthController extends Controller
         // sonra PR. İstemci poll'u önce ŞANS'ı, sonra PR'ı doldurur -> ekran ADIM ADIM dolar. (Ayrı
         // AnalyzeMatchLuckJob yalnız MatchFinalize/ForfeitLoss/heal BACKSTOP'larında kalır — luck_mwc null gate.)
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log']) && ! $friendlyOverCap) {
+            && ! empty($mr['log']) && ! $friendlyOverCap && ! $isClassic) {
             // PR job: önce ŞANS (inline), sonra ağır PR. (bkz AnalyzeMatchPrJob::handle inline luck.)
             try {
                 \App\Jobs\AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
@@ -818,6 +822,7 @@ class AuthController extends Controller
             // ekranı bayat istemci tahmininde bırakıyordu -> analizde gnubg, sonuç ekranında wildbg
             // uyuşmazlığı. Sunucu hamleleri varsa da poll et (gnubg gelir, hepsi tek kaynak).
             'gnubg_authoritative' => (string) config('gnubg.pr_mode', 'off') === 'authoritative'
+                && ! $isClassic // KLASIK TAVLA: PR yok -> istemci poll etmesin
                 && (! empty($mr['log']) || ($room && \App\Models\MatchMove::existsForRoom($room->code))),
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
@@ -994,7 +999,7 @@ class AuthController extends Controller
      * çift-Elo yok. Yalnız satır "bare" ise (log boş) çalışır; istemcinin kendi zengin satırını
      * (retry/normal rapor) ASLA ezmez. Böylece "kazandı ama sekmeyi kapattı" maçı analiz edilebilir.
      */
-    private function enrichBareRow(\App\Models\MatchResult $row, array $data): void
+    private function enrichBareRow(\App\Models\MatchResult $row, array $data, bool $isClassic = false): void
     {
         if (! empty($row->log) || empty($data['log'])) {
             return; // zaten zengin VEYA gelen raporda analiz yok -> yapacak bir şey yok
@@ -1050,7 +1055,8 @@ class AuthController extends Controller
         }
         // Artık log var -> gnubg PR analizini tetikle (pr_mode açıksa). ŞANS (luck) PR job'unun İÇİNDE
         // inline hesaplanır (ayrı dispatch YOK -> ayrı kuyruk beklemesi yok; bkz AnalyzeMatchPrJob).
-        if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
+        if (! $isClassic // KLASIK TAVLA: gnubg analiz edemez -> dispatch etme (bkz reportRating $isClassic)
+            && in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
             try {
                 \App\Jobs\AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
             } catch (\Throwable $e) {

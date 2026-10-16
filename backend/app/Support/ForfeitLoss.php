@@ -130,7 +130,8 @@ class ForfeitLoss
         // COMMIT SONRASI: hamleler SUNUCUDA ise (match_moves) kaybedenin satirini da analiz et ->
         // PR + Sans + Hata Gunlugu (SUNUCU-OTORITER kaynak, DOGRU renk analysisHc ile). Boylece rapor
         // gondermeyen kaybenin satiri "Mac Analizleri"nde bos kalmaz. gnubg down ise job retry/heal eder.
-        if ($createdId !== null && \App\Models\MatchMove::existsForRoom($roomCode)) {
+        // KLASIK TAVLA: gnubg analiz edemez -> PR/şans job'u dispatch ETME (satır zaten yazıldı).
+        if ($createdId !== null && ! ($room && $room->classic) && \App\Models\MatchMove::existsForRoom($roomCode)) {
             \App\Jobs\AnalyzeMatchPrJob::dispatch($createdId)->onConnection('database');
             \App\Jobs\AnalyzeMatchLuckJob::dispatch($createdId)->onConnection('database');
         }

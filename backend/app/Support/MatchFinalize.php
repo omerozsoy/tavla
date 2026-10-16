@@ -42,6 +42,12 @@ class MatchFinalize
             // 1) Eksik oyuncu satırlarını SUNUCUDA tamamla (bot odası ensure içinde atlanır).
             $written = MatchBackstop::ensure($room);
 
+            // KLASIK TAVLA: gnubg bu varyantı analiz edemez -> PR/şans job'u dispatch ETME (satır kaydı
+            // yine oluşur; yalnız analiz atlanır). Sonuç/analiz ekranı klasikte PR'ı zaten gizler.
+            if ((bool) ($room->classic ?? false)) {
+                return $written;
+            }
+
             // 2) PR + şans analizini SUNUCU kaydından (match_moves) tetikle — yalnız eksik alan için.
             $hasMoves = MatchMove::existsForRoom($room->code);
             $rows = MatchResult::where('room_code', $room->code)->get(['id', 'gnubg_pr', 'gnubg_pr_at', 'luck_mwc', 'luck_method', 'log']);
