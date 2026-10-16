@@ -81,6 +81,57 @@ class GnubgSnowieService
         return [$p1 ?: 'P1', $p2 ?: 'P2', $pr1, $pr2];
     }
 
+    /**
+     * OTORİTER PR = gnubg'nin KENDİ maç istatistiği (XG ile birebir: 7669 By_tgg gnubg Snowie 51.4
+     * ~ XG 56.24; bizim eski review-log yöntemi 327 veriyordu, ~6x şişik — review 'loss' değerleri
+     * match-play'de yanlış ölçekte). GnuBgClient::analyzeMatch sonucundan per-oyuncu PR çıkarır:
+     *   pr          = |Snowie error rate|            (genel, XG "PR")
+     *   checker_pr  = pr × checker_err / toplam_err  (Snowie'yi kategoriye böl -> toplamı pr eder)
+     *   cube_pr     = pr × cube_err / toplam_err      (yalnız ≥MIN küp kararında, aksi null)
+     * "Error total EMG" ham metinde SIRAYLA Checkerplay→Cube→Overall geçer -> tek regex ile 3'ü de.
+     *
+     * @param  array|null  $res  GnuBgClient::analyzeMatch() dönüşü (players + statistics_match)
+     * @return array|null  [0=>p0, 1=>p1] her biri {pr,checker_pr,cube_pr,cube_decisions} | null (çöp/yok)
+     */
+    public function snowieFromAnalyze(?array $res, int $minCubeDecisions = 3): ?array
+    {
+        if (! is_array($res) || empty($res['ok'])) {
+            return null;
+        }
+        $players = $res['players'] ?? null;
+        $raw = (string) ($res['statistics_match'] ?? '');
+        if (! is_array($players) || count($players) < 2 || trim($raw) === '') {
+            return null;
+        }
+        $f = static fn ($v) => abs((float) str_replace(',', '.', (string) $v));
+        // "Error total EMG (MWC)   -2.019 (..%)   -9.318 (..%)" SIRAYLA checker, cube, overall.
+        preg_match_all('/Error total EMG[^\n\-]*(-?\d+[.,]\d+)\s*\([^)]*\)\s+(-?\d+[.,]\d+)/', $raw, $em);
+        // "Close or actual cube decisions   5   3" (küp PR gösterim kapısı için)
+        preg_match('/Close or actual cube decisions\s+(\d+)\s+(\d+)/', $raw, $cd);
+        $chkErr = [isset($em[1][0]) ? $f($em[1][0]) : null, isset($em[2][0]) ? $f($em[2][0]) : null];
+        $cubErr = [isset($em[1][1]) ? $f($em[1][1]) : null, isset($em[2][1]) ? $f($em[2][1]) : null];
+        $cubeDec = [(int) ($cd[1] ?? 0), (int) ($cd[2] ?? 0)];
+
+        $out = [];
+        foreach ([0, 1] as $i) {
+            $pr = abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
+            // Çöp koruması (bkz parseSnowie): gerçek PR ~0-100; >100 = gnubg güvenilmez analizi -> null.
+            if ($pr <= 0 || $pr > 100) {
+                $out[$i] = null;
+
+                continue;
+            }
+            $ce = $chkErr[$i];
+            $ue = $cubErr[$i];
+            $tot = ($ce ?? 0.0) + ($ue ?? 0.0);
+            $checkerPr = ($ce !== null && $tot > 0) ? round($pr * $ce / $tot, 2) : null;
+            $cubePr = ($ue !== null && $tot > 0 && $cubeDec[$i] >= $minCubeDecisions) ? round($pr * $ue / $tot, 2) : null;
+            $out[$i] = ['pr' => round($pr, 2), 'checker_pr' => $checkerPr, 'cube_pr' => $cubePr, 'cube_decisions' => $cubeDec[$i]];
+        }
+
+        return $out;
+    }
+
     /** İki ismin ASCII-normalize eşleşmesi (P1/P2 -> white/black için). */
     public function nameMatch(string $a, string $b): bool
     {
