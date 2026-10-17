@@ -12626,7 +12626,7 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted);
-  max-width: 44ch;
+  /* max-width YOK: kart (yarı genişlik) zaten sınırlıyor; 44ch erken sardırıp "kesik" gösteriyordu. */
 }
 /* Form: alt-çizgili input (kutu yok) + düz dikdörtgen aksan buton */
 .rfr-form {
