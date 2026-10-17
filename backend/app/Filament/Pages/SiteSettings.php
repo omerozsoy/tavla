@@ -93,6 +93,7 @@ class SiteSettings extends Page implements HasForms
             'reward_premium' => Setting::int('reward_premium', 50),
             'commission_pct' => Setting::int('commission_pct', 5),
             'referral_coins' => Setting::int('referral_coins', \App\Support\Referral::DEFAULT_REWARD),
+            'referral_daily_limit' => Setting::int('referral_daily_limit', \App\Support\Referral::DEFAULT_DAILY_LIMIT),
             'pr_min_matches' => Setting::int('pr_min_matches', 5),
             'pr_min_decisions' => Setting::int('pr_min_decisions', 100),
             'friendly_rating_daily_limit' => Setting::int('friendly_rating_daily_limit', \App\Support\RatingPolicy::DEFAULT_LIMIT),
@@ -139,12 +140,15 @@ class SiteSettings extends Page implements HasForms
                             ->helperText('Varsayılan 3.'),
                     ]),
                 Section::make('Arkadaş Davet (Referral)')
-                    ->description('Davet et, arkadaşın İLK puanlı online maçını yapınca hem davet eden hem davet edilen bu kadar coin kazanır. Davet maili günde en fazla 5/kullanıcı gönderilir (sabit). 0 = ödül yok.')
+                    ->description('Davet et, arkadaşın İLK puanlı online maçını yapınca hem davet eden hem davet edilen bu kadar coin kazanır. 0 = ödül yok.')
                     ->schema([
                         TextInput::make('referral_coins')->label('Davet Ödülü (coin)')
                             ->numeric()->required()->minValue(0)->suffix('GC')
                             ->helperText('Her iki tarafa ayrı ayrı verilir. Varsayılan 5000.'),
-                    ]),
+                        TextInput::make('referral_daily_limit')->label('Günlük davet limiti')
+                            ->numeric()->required()->minValue(0)->maxValue(100)->suffix('mail/gün')
+                            ->helperText('Kullanıcı başına günde en fazla kaç davet maili. Resend kotasını korur. Varsayılan 5; 0 = davet gönderimi kapalı.'),
+                    ])->columns(2),
                 Section::make('PR Sıralaması (Career PR)')
                     ->description('Bir oyuncunun PR Sıralaması leaderboard’una girebilmesi için gereken asgari koşullar. İKİ şart da sağlanmalı.')
                     ->schema([
@@ -179,7 +183,7 @@ class SiteSettings extends Page implements HasForms
     public function save(): void
     {
         $data = $this->form->getState();
-        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct', 'referral_coins', 'pr_min_matches', 'pr_min_decisions', 'friendly_rating_daily_limit'] as $k) {
+        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct', 'referral_coins', 'referral_daily_limit', 'pr_min_matches', 'pr_min_decisions', 'friendly_rating_daily_limit'] as $k) {
             if (array_key_exists($k, $data)) {
                 Setting::put($k, (int) $data[$k]);
             }

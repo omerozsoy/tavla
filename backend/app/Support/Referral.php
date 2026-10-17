@@ -24,7 +24,7 @@ class Referral
 {
     public const REWARD_SETTING = 'referral_coins'; // admin ayarı (Site Ayarları); varsayılan 5000
     public const DEFAULT_REWARD = 5000;
-    public const DAILY_INVITE_LIMIT = 5; // kullanıcı başına günlük davet maili (Resend kotası güvenliği)
+    public const DEFAULT_DAILY_LIMIT = 5; // kullanıcı başına günlük davet maili (admin: referral_daily_limit)
 
     /** Kolonlar migrate edilmiş mi (migration öncesi çağrılar kayıt/maçı patlatmasın). */
     public static function enabled(): bool
@@ -35,6 +35,12 @@ class Referral
     public static function reward(): int
     {
         return Setting::int(self::REWARD_SETTING, self::DEFAULT_REWARD);
+    }
+
+    /** Kullanıcı başına günlük davet maili limiti (admin: Site Ayarları). */
+    public static function dailyLimit(): int
+    {
+        return Setting::int('referral_daily_limit', self::DEFAULT_DAILY_LIMIT);
     }
 
     /** Kullanıcının stabil davet kodu (yoksa üret + kaydet). */

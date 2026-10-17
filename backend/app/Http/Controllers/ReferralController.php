@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Arkadaş davet (referral) uçları. Davet eden kullanıcı kendi linkini/kodunu görür ve
- * arkadaşının e-postasına davet maili gönderir (günde DAILY_INVITE_LIMIT ile sınırlı).
+ * arkadaşının e-postasına davet maili gönderir (günde Referral::dailyLimit() ile sınırlı).
  */
 class ReferralController extends Controller
 {
@@ -23,8 +23,8 @@ class ReferralController extends Controller
             'link' => Referral::linkFor($user),
             'reward' => Referral::reward(),
             'count' => (int) ($user->referral_count ?? 0),
-            'daily_limit' => Referral::DAILY_INVITE_LIMIT,
-            'remaining_today' => max(0, Referral::DAILY_INVITE_LIMIT - $this->sentToday($user->id)),
+            'daily_limit' => Referral::dailyLimit(),
+            'remaining_today' => max(0, Referral::dailyLimit() - $this->sentToday($user->id)),
         ]);
     }
 
@@ -43,7 +43,7 @@ class ReferralController extends Controller
         }
 
         $key = $this->dayKey($user->id);
-        if ($this->sentToday($user->id) >= Referral::DAILY_INVITE_LIMIT) {
+        if ($this->sentToday($user->id) >= Referral::dailyLimit()) {
             return response()->json(['message' => 'Bugünkü davet hakkın doldu.'], 429);
         }
 
@@ -61,7 +61,7 @@ class ReferralController extends Controller
 
         return response()->json([
             'ok' => true,
-            'remaining_today' => max(0, Referral::DAILY_INVITE_LIMIT - (int) $count),
+            'remaining_today' => max(0, Referral::dailyLimit() - (int) $count),
         ]);
     }
 
