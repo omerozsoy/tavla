@@ -12930,8 +12930,13 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 12px 16px;
 }
 .seek-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
-/* Hover: dört tarafı EŞİT boşluklu iç vurgu (kart kenarından her yönde 5px) — avatara/butona yapışmaz. */
-.seek-panel .rank-row.online-row:hover { background: none; }
+/* Hover: dört tarafı EŞİT boşluklu YUMUŞAK iç vurgu. Terracotta dış ÇERÇEVE YOK (base .rank-row
+   1px transparent border'ı hover'da accent oluyordu -> sıfırla, yalnız alt hairline kalsın). */
+.seek-panel .rank-row.online-row:hover {
+  background: none;
+  border-color: transparent;
+  border-bottom-color: var(--border);
+}
 .seek-panel .rank-row.online-row:not(.mine):hover::before {
   content: '';
   position: absolute;
