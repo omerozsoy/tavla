@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
-import { Icon } from './Icon'
-import { Button } from '@/components/ui/button'
 import { ApiError, referralStatus, sendReferralInvite, type ReferralStatus } from '../api'
 
 /**
- * "Arkadaşını Davet Et, 5000 coin kazan" kartı — Oyun Arayanlar'ın üstünde (yarım grid).
+ * "Arkadaşını Davet Et, 5000 coin kazan" kartı — Oyun Arayanlar'ın üstünde.
  * Davet eden arkadaşının e-postasına davet maili yollar; davet edilen İLK puanlı online maçını
  * yapınca iki tarafa coin gider (backend Referral::maybeReward). Kartta gereken maç + kalan hak
  * gösterilir. Misafire teaser + "Üye Ol" CTA.
  *
- * Tasarım: sıcak terracotta (marka aksanı) "ödül kuponu" — üstte kavisli parıltı, kesikli bilet
- * ayracı, kabartmalı coin rozeti. Site token'larıyla (--card-bg/--accent/--coral) tema-duyarlı.
+ * Tasarım: Swiss / International Typographic Style — katı grid, ince kural çizgileri, güçlü
+ * tipografik hiyerarşi (ödül tutarı kahraman rakam), tek aksan (terracotta) + monokrom, keskin
+ * köşe, gölge/degrade/ornament YOK. Site token'larıyla tema-duyarlı.
  */
 export default function InviteFriendCard({ loggedIn, onLogin }: { loggedIn: boolean; onLogin?: () => void }) {
   const { t } = useT()
@@ -68,20 +67,16 @@ export default function InviteFriendCard({ loggedIn, onLogin }: { loggedIn: bool
   }
 
   return (
-    <section className="invite-card home-panel">
-      <span className="invite-glow" aria-hidden />
-      <div className="invite-head">
-        <span className="invite-gift" aria-hidden>
-          <Icon name="gift" size={22} />
-        </span>
-        <div className="invite-head-txt">
+    <section className="invite-card">
+      <div className="invite-top">
+        <div className="invite-copy">
           <h3 className="invite-title">{t('invite.title')}</h3>
           <p className="invite-sub">{t('invite.sub', { n: reward.toLocaleString('tr-TR') })}</p>
         </div>
-        <span className="invite-reward">
-          +{reward.toLocaleString('tr-TR')}
-          <Icon name="coin" size={15} />
-        </span>
+        <div className="invite-figure" aria-hidden>
+          <span className="invite-amount">{reward.toLocaleString('tr-TR')}</span>
+          <span className="invite-unit">COIN &times;2</span>
+        </div>
       </div>
 
       {loggedIn ? (
@@ -98,45 +93,35 @@ export default function InviteFriendCard({ loggedIn, onLogin }: { loggedIn: bool
               onChange={(e) => setEmail(e.target.value)}
               disabled={busy || out}
             />
-            <Button type="submit" disabled={busy || out}>
-              <Icon name="paper-plane-right" size={16} /> {t('invite.send')}
-            </Button>
+            <button type="submit" className="invite-btn" disabled={busy || out}>
+              {t('invite.send')} &rarr;
+            </button>
           </form>
 
           {msg && <div className={`invite-msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
 
-          <span className="invite-dash" aria-hidden />
+          <div className="invite-rule" aria-hidden />
 
           <div className="invite-meta">
-            <span className="invite-chip">
-              <Icon name="target" size={13} /> {t('invite.needMatch')}
-            </span>
-            <span className={`invite-chip ${out ? 'err' : ''}`}>
-              <Icon name="dice" size={13} />{' '}
+            <span className="invite-stat">{t('invite.needMatch')}</span>
+            <span className={`invite-stat ${out ? 'err' : ''}`}>
               {t('invite.remaining', { n: st?.remaining_today ?? '—', t: st?.daily_limit ?? 5 })}
             </span>
-            {!!st?.count && (
-              <span className="invite-chip earned">
-                <Icon name="users" size={13} /> {t('invite.earned', { n: st.count })}
-              </span>
-            )}
+            {!!st?.count && <span className="invite-stat on">{t('invite.earned', { n: st.count })}</span>}
           </div>
 
           {st?.link && (
             <button type="button" className="invite-link" onClick={copy} title={st.link}>
-              <Icon name={copied ? 'shield-check' : 'copy'} size={14} />
-              <span className="invite-link-txt">{copied ? t('invite.copied') : st.link}</span>
+              {copied ? t('invite.copied') : st.link}
             </button>
           )}
         </>
       ) : (
         <div className="invite-guest">
-          <span className="invite-chip">
-            <Icon name="target" size={13} /> {t('invite.needMatch')}
-          </span>
-          <Button onClick={onLogin}>
-            <Icon name="user-plus" size={16} /> {t('invite.join')}
-          </Button>
+          <span className="invite-stat">{t('invite.needMatch')}</span>
+          <button type="button" className="invite-btn" onClick={onLogin}>
+            {t('invite.join')} &rarr;
+          </button>
         </div>
       )}
     </section>

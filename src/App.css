@@ -12545,174 +12545,176 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Oyun Arayanlar paneli: diger ana sayfa bolumleriyle (.home-panels/.tts-panel) AYNI
    standart genislik + ortali (tek basina tam-kap genislige TASMASIN -> "cok buyuk"). */
-/* ===== Arkadaş Davet kartı (Oyun Arayanlar üstü, yarım grid ödül kuponu) ===== */
+/* ===== Arkadaş Davet kartı — Swiss / International Typographic Style =====
+   Katı grid, ince kural çizgileri, kahraman rakam, tek aksan (terracotta) + monokrom,
+   keskin köşe. Gölge/degrade/pill/ikon YOK — tipografik hiyerarşi taşır. */
 .invite-card {
-  position: relative;
-  overflow: hidden;
   width: 100%;
   max-width: var(--lobby-w);
   margin: 10px auto 0;
-  /* sol kenarda sıcak terracotta bilet şeridi */
-  border-left: 3px solid var(--accent);
-  animation: invite-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  padding: 16px 18px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
+  border-radius: 2px; /* keskin köşe */
 }
-/* üst-sağ köşede yumuşak coral parıltı (atmosfer) */
-.invite-glow {
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%);
-  pointer-events: none;
-}
-.invite-head {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-.invite-gift {
-  flex: none;
+/* Üst grid: sola hizalı başlık bloğu | sağda kahraman rakam */
+.invite-top {
   display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--coral), var(--coral-hover));
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 20px;
 }
-.invite-head-txt {
+.invite-copy {
   min-width: 0;
-  flex: 1;
 }
 .invite-title {
   margin: 0;
   font-family: var(--tv-font-display);
-  font-size: 17px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
   color: var(--text);
-  line-height: 1.15;
 }
 .invite-sub {
-  margin: 3px 0 0;
+  margin: 5px 0 0;
   font-size: 0.8rem;
-  line-height: 1.4;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 44ch;
+}
+/* Kahraman rakam: ödül tutarı — Swiss'in büyük sayısı */
+.invite-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 0.92;
+  white-space: nowrap;
+}
+.invite-amount {
+  font-family: var(--tv-font-display);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.invite-unit {
+  margin-top: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   color: var(--muted);
 }
-.invite-reward {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 11px;
-  border-radius: 999px;
-  font-family: var(--tv-font-ui);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #fff;
-  background: linear-gradient(135deg, var(--coral), var(--coral-hover));
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-.invite-reward > svg {
-  color: #ffe08a;
-}
+/* Form: alt-çizgili input (kutu yok) + düz dikdörtgen aksan buton */
 .invite-form {
-  display: flex;
-  gap: 8px;
-  margin-top: 13px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 16px;
 }
 .invite-input {
-  flex: 1;
   min-width: 0;
-  padding: 9px 13px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--input-bg, var(--card-bg));
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 1.5px solid var(--border);
+  border-radius: 0;
+  background: transparent;
   color: var(--text);
   font-size: 0.9rem;
+  transition: border-color 0.14s;
 }
 .invite-input::placeholder {
-  color: color-mix(in srgb, var(--text) 42%, transparent);
+  color: color-mix(in srgb, var(--text) 40%, transparent);
 }
 .invite-input:focus-visible {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+  border-bottom-color: var(--accent);
 }
 .invite-input:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
 }
-/* bilet perforasyonu: kesikli ayraç */
-.invite-dash {
-  display: block;
+.invite-btn {
+  flex: none;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--tv-font-ui);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+.invite-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.invite-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* İnce kural çizgisi (Swiss hairline) */
+.invite-rule {
   height: 0;
-  margin: 13px 0;
-  border-top: 2px dashed color-mix(in srgb, var(--accent) 40%, var(--border));
+  margin: 14px 0 10px;
+  border-top: 1px solid var(--border);
 }
+/* Meta: dikey hairline ile ayrılmış veri satırı */
 .invite-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-}
-.invite-chip {
-  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
+}
+.invite-stat {
+  padding: 1px 12px;
   font-size: 0.74rem;
-  font-weight: 500;
+  letter-spacing: 0.1px;
   color: var(--muted);
-  background: color-mix(in srgb, var(--text) 7%, transparent);
 }
-.invite-chip > svg {
-  color: var(--accent-text);
+.invite-stat:first-child {
+  padding-left: 0;
 }
-.invite-chip.earned {
-  color: var(--accent-text);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+.invite-stat + .invite-stat {
+  border-left: 1px solid var(--border);
 }
-.invite-chip.err {
-  color: #c0392b;
-  background: color-mix(in srgb, #c0392b 12%, transparent);
+.invite-stat.on {
+  color: var(--accent);
+  font-weight: 600;
 }
-.invite-chip.err > svg {
+.invite-stat.err {
   color: #c0392b;
 }
+/* Davet linki: düz, monospace, alt-çizgili (Swiss sadelik) */
 .invite-link {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  display: block;
   width: 100%;
-  margin-top: 10px;
-  padding: 8px 11px;
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-  color: var(--accent-text);
-  font-size: 0.78rem;
-  cursor: pointer;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-family: var(--tv-font-ui);
+  font-size: 0.76rem;
   text-align: left;
-  transition: background 0.14s, border-color 0.14s;
-}
-.invite-link:hover {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-color: var(--accent);
-}
-.invite-link > svg {
-  flex: none;
-}
-.invite-link-txt {
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--tv-font-ui);
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.invite-link:hover {
+  text-decoration-color: var(--accent);
 }
 .invite-msg {
-  margin-top: 9px;
+  margin-top: 10px;
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -12727,28 +12729,21 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 13px;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
-@keyframes invite-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-}
-/* Dar ekran: başlık/ödül sarılsın, form dikey yığılsın */
+/* Dar ekran: rakam küçülsün, form dikey yığılsın */
 @media (max-width: 520px) {
+  .invite-amount {
+    font-size: 32px;
+  }
   .invite-form {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
-  .invite-reward {
-    font-size: 0.82rem;
-    padding: 5px 9px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .invite-card {
-    animation: none;
+  .invite-btn {
+    padding: 11px 18px;
   }
 }
 
