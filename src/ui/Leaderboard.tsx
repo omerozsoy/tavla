@@ -30,7 +30,11 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
   useOnReconnect(() => {
     if (error) setReloadKey((k) => k + 1)
   })
-  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>('rating')
+  // Secili sekme URL'de (?s=) tutulur -> refresh/geri-tusu sekmeyi korur (yoksa 'rating'e donerdi).
+  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>(() => {
+    const s = new URLSearchParams(window.location.search).get('s')
+    return s === 'pr' || s === 'coins' || s === 'wxp' ? s : 'rating'
+  })
   const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
   const [prMeta, setPrMeta] = useState<{ minMatches: number; minDecisions: number } | null>(null)
   const [profileId, setProfileId] = useState<number | null>(null)
@@ -46,6 +50,22 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
 
   const PAGE_SIZE = 20
   const MAX_PAGES = 10 // en fazla 200 kisi göster (su an 100 cekiliyor = 5 sayfa)
+
+  // Sekme -> URL (?s=). 'rating' varsayilan: param yazma. Pathname'i router koruyor (search preserve).
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (by === 'rating') url.searchParams.delete('s')
+    else url.searchParams.set('s', by)
+    window.history.replaceState(null, '', url.pathname + url.search)
+  }, [by])
+  // Kapaninca ?s= sizmasin (baska sayfalara tasinmasin).
+  useEffect(() => () => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('s')) {
+      url.searchParams.delete('s')
+      window.history.replaceState(null, '', url.pathname + url.search)
+    }
+  }, [])
 
   useEffect(() => {
     let alive = true
