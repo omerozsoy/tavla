@@ -10441,6 +10441,54 @@ html.fs-active .account-bar {
   }
 }
 
+/* ÇOK KISA yatay (≤420px: iPhone SE 568×320, iPhone mini 812×375): iki oyuncu kartının
+   öz-yüksekliği (2×avatar 56 + bot alt-etiketi + rating/PR) viewport'u aşıp ALT oyuncunun
+   rating/PR'ı ekranın altından KIRPILIYORDU (ölçüm: 568×320'de sidebar alt kenarı 361px >
+   320). Kök neden board değil, sidebar içeriğinin dikey yükü. Avatarı küçült + en az kritik
+   bot alt-etiketini gizle -> her iki kart da (rating/PR dahil) TAM ekrana otursun. */
+@media (orientation: landscape) and (max-height: 420px) {
+  .main.game-scene .sidebar {
+    --pc-av: 38px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .main.game-scene .avatar {
+    margin-bottom: 1px;
+  }
+  /* Bot seviye alt-etiketi ("Seviye 10 · World Class") en az kritik bilgi -> kısa yatayda
+     gizle (ad + rating + PR kritik; onlar korunur). İnsan kartında bu etiket yoktur. */
+  .main.game-scene .pc-bot-lvl {
+    display: none;
+  }
+  .main.game-scene .sidebar-score {
+    padding: 2px 0;
+  }
+  /* Açılış/sonuç modalı (result-box: "Açılış Atışı", oyun-sonu, küp yanıtı) sabit 260px +
+     46px zar -> kısa yataydaki KÜÇÜK board'a göre DEV kalıp board'un neredeyse tamamını
+     kapatıyordu ("açılış zarı dev gibi"). Board'la orantılı kompakt ölçek. */
+  .main.game-scene .result-box {
+    max-width: 196px;
+    padding: 8px 12px;
+  }
+  .main.game-scene .result-title {
+    font-size: 0.82rem;
+  }
+  .main.game-scene .result-points {
+    font-size: 0.88rem;
+    margin-bottom: 6px;
+  }
+  .main.game-scene .opening-rolling,
+  .main.game-scene .opening-dice {
+    gap: 10px;
+    margin: 5px 0 4px;
+  }
+  .main.game-scene .opening-rolling .die-face,
+  .main.game-scene .opening-dice .die-face {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 /* ---- Oyun saati (Galaxy tarzi dikey yigin) ---- */
 .clock-stack {
   display: flex;
