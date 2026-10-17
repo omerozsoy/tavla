@@ -12913,7 +12913,8 @@ button.acct-row-logout:hover:not(:disabled) {
   border-bottom: 1px solid var(--border);
 }
 .swiss-panel .home-panel-head svg { color: var(--accent); } /* zar ikonu terracotta (davet kartı ikonu ile aynı dil) */
-.swiss-panel .online-count {
+.swiss-panel .online-count,
+.swiss-panel .panel-count {
   margin-left: auto;
   background: none;
   padding: 0;
@@ -12923,7 +12924,7 @@ button.acct-row-logout:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 /* Satır: tam-genişlik (karttan karta), hairline ayraç, keskin. İçerik 16px padding'le hizalı. */
-.swiss-panel .rank-row.online-row {
+.swiss-panel .rank-row {
   position: relative;
   border-radius: 0;
   border-bottom: 1px solid var(--border);
@@ -12933,20 +12934,20 @@ button.acct-row-logout:hover:not(:disabled) {
 .swiss-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
 /* Hover: dört tarafı EŞİT boşluklu YUMUŞAK iç vurgu. Terracotta dış ÇERÇEVE YOK (base .rank-row
    1px transparent border'ı hover'da accent oluyordu -> sıfırla, yalnız alt hairline kalsın). */
-.swiss-panel .rank-row.online-row:hover {
+.swiss-panel .rank-row:hover {
   background: none;
   border-color: transparent;
   border-bottom-color: var(--border);
 }
-.swiss-panel .rank-row.online-row:not(.mine):hover::before {
+.swiss-panel .rank-row:not(.mine):hover::before {
   content: '';
   position: absolute;
   inset: 5px;
   background: color-mix(in srgb, var(--text) 5%, transparent);
   pointer-events: none;
 }
-.swiss-panel .rank-row.online-row > * { position: relative; } /* içerik vurgunun üstünde kalsın */
-.swiss-panel .rank-row.online-row:active { scale: none; }
+.swiss-panel .rank-row > * { position: relative; } /* içerik vurgunun üstünde kalsın */
+.swiss-panel .rank-row:active { scale: none; }
 .swiss-panel .rank-row.mine {
   border-left: 3px solid var(--accent);
   padding-left: 13px; /* 3px border + 13 = 16 -> içerik diğer satırlarla hizalı */

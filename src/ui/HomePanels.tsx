@@ -808,7 +808,7 @@ export function RankingPanel({
   )
 
   return (
-    <div className="home-panel rank-panel">
+    <div className="home-panel rank-panel swiss-panel">
       {onOpen ? (
         <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('lb.title')}>
           <Icon name="trophy" size={17} /> {t('lb.title')}
@@ -1043,7 +1043,7 @@ export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNe
       : dt.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
   }
   return (
-    <div className="home-panel news-panel">
+    <div className="home-panel news-panel swiss-panel">
       <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('home.news.title')}>
         <Icon name="chat" size={18} /> {t('home.news.title')}
         {items && items.length > 0 && <span className="panel-count">{items.length}</span>}
@@ -1190,7 +1190,7 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
   const next = () => setView((v) => (v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 }))
 
   return (
-    <div className="home-panel cal-panel">
+    <div className="home-panel cal-panel swiss-panel">
       <div className="home-panel-head cal-head">
         <span className="cal-title">
           <Icon name="calendar-dots" size={18} /> {title}

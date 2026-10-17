@@ -373,3 +373,68 @@
   background: #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
+
+/* ===== SWISS panel dili (.swiss-panel): Haberler + Turnuva Takvimi =====
+   Çevrimiçi Oyuncular / Canlı Maçlar ile aynı dil: keskin köşe, tam-genişlik
+   hairline satır, uppercase başlık, tek terracotta aksan, font-weight 500. */
+
+/* --- Haberler: kart-satır -> tam-genişlik hairline satır --- */
+.swiss-panel .news-list {
+  gap: 0;
+}
+.swiss-panel .news-row {
+  position: relative;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  margin: 0 -16px;
+  padding: 10px 16px;
+}
+.swiss-panel .news-list > .news-row:last-child {
+  border-bottom: 0;
+}
+/* Hover: terracotta dış çerçeve YOK; yumuşak eşit-boşluklu iç vurgu (satır dili). */
+.swiss-panel .news-row:hover {
+  border-color: transparent;
+  border-bottom-color: var(--border);
+}
+.swiss-panel .news-row:hover::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  pointer-events: none;
+}
+.swiss-panel .news-row > * {
+  position: relative; /* içerik vurgunun üstünde kalsın */
+}
+.swiss-panel .news-thumb {
+  border-radius: 2px; /* keskin köşe */
+}
+/* Alt "Tüm Haberler" linki -> uppercase Swiss etiket (sekme diliyle). */
+.swiss-panel .news-all {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  font-size: 0.74rem;
+}
+
+/* --- Turnuva Takvimi: uppercase başlık + keskin köşe hücre/nav --- */
+.swiss-panel .cal-title {
+  font-family: var(--tv-font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.swiss-panel .cal-wd-cell {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.swiss-panel .cal-cell {
+  border-radius: 0; /* keskin köşe */
+}
+.swiss-panel .cal-nav button {
+  border-radius: 2px;
+}
