@@ -21872,6 +21872,13 @@ body:has(.spectate-view) .app.lobby {
 .shop-cat-card:active {
   transform: scale(0.985);
 }
+/* ===== Tüm site Swiss - Dalga 3: Mağaza + Profil kartları keskin köşe (Swiss). ===== */
+.shop-card,
+.shop-cat-card,
+.shop-cat-ic,
+.pp-card {
+  border-radius: 2px;
+}
 @media (hover: hover) and (pointer: fine) {
   .shop-cat-card:hover {
     transform: translateY(-2px);
