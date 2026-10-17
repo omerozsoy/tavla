@@ -13028,12 +13028,31 @@ button.acct-row-logout:hover:not(:disabled) {
 .live-panel .lm-name { font-weight: 500; }
 .live-panel .lm-len { font-weight: 500; color: var(--accent); }
 /* Öne çıkan maç: parıltı/glow YOK -> yalnız sol terracotta şerit (Swiss). */
-.live-panel .lm-rise { display: none; }
-.live-panel .live-row--featured::after { display: none; }
+.live-panel .lm-rise { display: none; } /* eski parçacık parıltısı kapalı */
 .live-panel .live-row--featured {
   border-left: 3px solid var(--accent);
   padding-left: 13px;
 }
+/* ÖNE ÇIKAN MAÇ (PR/Rating ilk-3): üst + alt kenarda ters yönde akan terracotta ışık (#5 Çift Kenar).
+   animation !important -> App.css global reduced-motion reset'ini de ezer -> herkese oynar. */
+.live-panel .live-row--featured::before,
+.live-panel .live-row--featured::after {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  background-size: 38% 100%;
+  background-repeat: no-repeat;
+}
+.live-panel .live-row--featured::before { top: 0; bottom: auto; animation: lm-edge 1.7s linear infinite !important; }
+.live-panel .live-row--featured::after { top: auto; bottom: 0; animation: lm-edge-r 1.7s linear infinite !important; }
+@keyframes lm-edge { from { background-position: -38% 0; } to { background-position: 138% 0; } }
+@keyframes lm-edge-r { from { background-position: 138% 0; } to { background-position: -38% 0; } }
 
 .seek-panel .seek-rating { font-weight: 500; font-variant-numeric: tabular-nums; }
 /* "Ne arıyor" rozetleri -> düz Swiss etiket (kutu/pill/animasyon yok), dikey hairline ayraç */
