@@ -12558,12 +12558,8 @@ button.acct-row-logout:hover:not(:disabled) {
   border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
   border-radius: 2px; /* keskin köşe */
 }
-/* Başlık grid'i: sol başlık | sağ kahraman rakam. Altında tam-genişlik hairline (OYUN ARAYANLAR gibi). */
+/* Başlık: sadece TITLE + tam-genişlik hairline (her yerde SABİT başlık deseni; sağda rakam yok). */
 .rfr-top {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: 20px;
   margin: 0 -16px; /* hairline karttan karta tam genişlik */
   padding: 0 16px 12px;
   border-bottom: 1px solid var(--border);
@@ -12584,30 +12580,6 @@ button.acct-row-logout:hover:not(:disabled) {
   line-height: 1.45;
   color: var(--muted);
   max-width: 44ch;
-}
-/* Kahraman rakam: ödül tutarı — Swiss'in büyük sayısı */
-.rfr-figure {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 0.92;
-  white-space: nowrap;
-}
-.rfr-amount {
-  font-family: var(--tv-font-display);
-  font-size: 40px;
-  font-weight: 500;
-  letter-spacing: -1.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-.rfr-unit {
-  margin-top: 4px;
-  font-size: 0.6rem;
-  font-weight: 500;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 /* Form: alt-çizgili input (kutu yok) + düz dikdörtgen aksan buton */
 .rfr-form {
