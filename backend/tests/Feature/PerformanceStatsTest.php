@@ -224,22 +224,21 @@ class PerformanceStatsTest extends TestCase
         $wxp->awardForMatchResult($m7);
         $m5 = $this->mr($u, false, 5, 'match', 15.93);
 
-        // Medyan artik PER-KARAR (decision_analyses.equity_loss * 500). Ayni beklenen
-        // degerleri uretecek per-karar hatalar:
-        $this->da($u, $m1, 0, 0.01276);            // *500 = 6.38 (tek karar -> medyan 6.38)
-        $this->da($u, $m7, 0, 0.03294);            // *500 = 16.47
-        $this->da($u, $m5, 0, 0.03);               // *500 = 15.0  \ cift karar medyani
-        $this->da($u, $m5, 1, 0.03372);            // *500 = 16.86 / -> (15.0+16.86)/2 = 15.93
+        // Medyan PER-KARAR (decision_analyses.equity_loss * 1000 = SNOWIE/XG ölçeği):
+        $this->da($u, $m1, 0, 0.01276);            // *1000 = 12.76 (tek karar -> medyan 12.76)
+        $this->da($u, $m7, 0, 0.03294);            // *1000 = 32.94
+        $this->da($u, $m5, 0, 0.03);               // *1000 = 30.0  \ cift karar medyani
+        $this->da($u, $m5, 1, 0.03372);            // *1000 = 33.72 / -> (30.0+33.72)/2 = 31.86
         $this->da($u, $m5, 2, 0.90, opponent: true); // RAKIP karari -> medyana GIRMEZ
 
         Sanctum::actingAs($u->fresh()); // cached total_wxp DB'de guncellendi -> taze oku
         $res = $this->getJson('/api/me/performance-stats?period=all');
         $res->assertOk()
             ->assertJsonPath('median_error_rate.filter', 'all')
-            ->assertJsonPath('median_error_rate.categories.1.median_pr', 6.38)
+            ->assertJsonPath('median_error_rate.categories.1.median_pr', 12.76)
             ->assertJsonPath('median_error_rate.categories.1.sample_count', 1)
-            ->assertJsonPath('median_error_rate.categories.7.median_pr', 16.47)
-            ->assertJsonPath('median_error_rate.categories.5.median_pr', 15.93)
+            ->assertJsonPath('median_error_rate.categories.7.median_pr', 32.94)
+            ->assertJsonPath('median_error_rate.categories.5.median_pr', 31.86)
             ->assertJsonPath('median_error_rate.categories.5.sample_count', 2) // rakip haric
             ->assertJsonPath('median_error_rate.categories.3.median_pr', null)
             ->assertJsonPath('median_error_rate.categories.coin.median_pr', null)
@@ -266,9 +265,9 @@ class PerformanceStatsTest extends TestCase
 
         Sanctum::actingAs($u->fresh());
         $res = $this->getJson('/api/me/performance-stats?period=all');
-        // Havuzlanmis: (0.04+2.0)/(10+100)*500 = 9.27... (ORTALAMA (2+10)/2=6 DEGIL)
+        // Havuzlanmis (SNOWIE ×1000): (0.04+2.0)/(10+100)*1000 = 18.55 (ORTALAMA (2+10)/2=6 DEGIL)
         $res->assertOk()
-            ->assertJsonPath('pooled_pr.categories.7.pooled_pr', 9.27)
+            ->assertJsonPath('pooled_pr.categories.7.pooled_pr', 18.55)
             ->assertJsonPath('pooled_pr.categories.7.decisions', 110)
             ->assertJsonPath('pooled_pr.categories.coin.pooled_pr', null);
     }
@@ -279,7 +278,7 @@ class PerformanceStatsTest extends TestCase
         $u = $this->makeUser();
         $svc = app(MedianPerformanceService::class);
 
-        // 5S maci: 3 kendi karari [0.02,0.04,0.06]*500 = [10,20,30] -> medyan 20
+        // 5S maci: 3 kendi karari [0.02,0.04,0.06]*1000 = [20,40,60] -> medyan 40
         $m5 = $this->mr($u, true, 5, 'match', null);
         $this->da($u, $m5, 0, 0.02);
         $this->da($u, $m5, 1, 0.04);
@@ -291,7 +290,7 @@ class PerformanceStatsTest extends TestCase
         $this->da($u, $mOld, 0, 0.02, false, 200);
 
         $all = $svc->perDecisionCategoriesFor($u->id, 'all');
-        $this->assertSame(20.0, $all['5']['median_pr']);
+        $this->assertSame(40.0, $all['5']['median_pr']);
         $this->assertSame(3, $all['5']['sample_count']);   // rakip karisMADI
         $this->assertSame(1, $all['1']['sample_count']);
         $this->assertNull($all['3']['median_pr']);         // veri yok -> null

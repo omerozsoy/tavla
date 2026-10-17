@@ -70,7 +70,7 @@ class MedianPerformanceService
      * bazinda (Jeton/1S/3S/5S/7S) GERCEK MEDYANI hesaplanir. Ortalama DEGIL -> birkac
      * blunder degeri sismaz.
      *
-     * Olcek: equity_loss * 500 (mac-basi PR = mean(loss)*500 ile AYNI birim) -> kart
+     * Olcek: equity_loss * 1000 (SNOWIE/XG = mean(loss)*1000 ile AYNI birim) -> kart
      * ayni "PR" skalasinda ve "dusuk=iyi" esigi gecerli kalir; fark: mean yerine
      * per-karar MEDIAN.
      *
@@ -106,7 +106,7 @@ class MedianPerformanceService
             if ($key === null) {
                 continue;
             }
-            $buckets[$key][] = (float) $r->equity_loss * 500;
+            $buckets[$key][] = (float) $r->equity_loss * 1000; // SNOWIE/XG ölçeği: per-karar err × 1000 (×500 değil)
         }
 
         $out = [];
@@ -124,7 +124,7 @@ class MedianPerformanceService
 
     /**
      * XG-style HAVUZLANMIS lifetime/oturum PR (§13): maç PR'larının ortalaması ALINMAZ; ham
-     * toplamlar havuzlanır -> lifetimePR = (Σ pr_equity_lost / Σ pr_decisions) × 500. Böylece
+     * toplamlar havuzlanır -> lifetimePR = (Σ pr_equity_lost / Σ pr_decisions) × 1000 (SNOWIE/XG). Böylece
      * 100-kararlık maç, 10-kararlık maçtan 10× ağır basar (medyan/ortalamanın yapamadığı).
      *
      * Kaynak: match_results.pr_equity_lost + pr_decisions (XG totalleri; migration ile geldi).
@@ -171,7 +171,7 @@ class MedianPerformanceService
             $dec = $pool[$key]['dec'] ?? 0;
             $out[$key] = [
                 'label' => $label,
-                'pooled_pr' => $dec > 0 ? round(($loss / $dec) * 500, 2) : null,
+                'pooled_pr' => $dec > 0 ? round(($loss / $dec) * 1000, 2) : null, // SNOWIE/XG: ×1000 (×500 değil)
                 'decisions' => $dec,
             ];
         }

@@ -113,9 +113,11 @@ class GnubgSnowieService
         $cubErr = [isset($em[1][1]) ? $f($em[1][1]) : null, isset($em[2][1]) ? $f($em[2][1]) : null];
         $ovErr = [isset($em[1][2]) ? $f($em[1][2]) : null, isset($em[2][2]) ? $f($em[2][2]) : null];
         $cubeDec = [(int) ($cd[1] ?? 0), (int) ($cd[2] ?? 0)];
-        // Snowie paydası = toplam hamle + toplam küp kararı (ör. 25+25=50 -> 2.569/50×1000=51.4). Kariyer
-        // bunları doğrudan toplar (Σerr/Σdec×1000) -> maç Snowie'leriyle tutarlı kariyer PR.
-        $decisions = [(int) ($tm[1] ?? 0) + (int) ($tc[1] ?? 0), (int) ($tm[2] ?? 0) + (int) ($tc[2] ?? 0)];
+        // Snowie paydası (kariyer ağırlığı). GÜVENİLİR yol: gnubg'nin KENDİ Snowie'sinden geri-türet
+        // dec = err×1000/Snowie (By_tgg 2.569×1000/51.4=50; maç 1448 1.908×1000/20.94=91). "Total moves"
+        // regex'i bazı çok-oyunlu çıktılarda yanlış sayı veriyordu (1448: 16) -> geri-türetme kesin.
+        // Fallback: Snowie 0/parse yoksa ham "Total moves + Total cube" (eski yol).
+        $parsedDec = [(int) ($tm[1] ?? 0) + (int) ($tc[1] ?? 0), (int) ($tm[2] ?? 0) + (int) ($tc[2] ?? 0)];
 
         $out = [];
         foreach ([0, 1] as $i) {
@@ -141,7 +143,10 @@ class GnubgSnowieService
                 'cube_decisions' => $cubeDec[$i], // "close or actual" (küp kariyeri + MIN kapısı)
                 'cube_equity_lost' => $ue !== null ? round($ue, 4) : null, // küp err EMG (kariyer küp PR için)
                 'equity_lost' => $ovErr[$i] !== null ? round($ovErr[$i], 4) : null, // kariyer için (overall err EMG)
-                'decisions' => $decisions[$i], // kariyer paydası (Snowie: tüm hamle+küp)
+                // dec = err×1000/Snowie (gnubg'nin KENDİ paydası, kesin); yoksa parse fallback.
+                'decisions' => ($ovErr[$i] !== null && $prRaw > 0)
+                    ? (int) round($ovErr[$i] * 1000 / $prRaw)
+                    : $parsedDec[$i],
             ];
         }
 
