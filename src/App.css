@@ -12572,7 +12572,7 @@ button.acct-row-logout:hover:not(:disabled) {
   margin: 0;
   font-family: var(--tv-font-display);
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.3px;
   line-height: 1.1;
   color: var(--text);
@@ -12595,7 +12595,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .rfr-amount {
   font-family: var(--tv-font-display);
   font-size: 40px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: -1.5px;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
@@ -12603,7 +12603,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .rfr-unit {
   margin-top: 4px;
   font-size: 0.6rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--muted);
@@ -12646,7 +12646,7 @@ button.acct-row-logout:hover:not(:disabled) {
   color: #fff;
   font-family: var(--tv-font-ui);
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
@@ -12685,7 +12685,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .rfr-stat.on {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 .rfr-stat.err {
   color: #c0392b;
