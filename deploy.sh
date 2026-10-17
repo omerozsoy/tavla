@@ -13,6 +13,21 @@
 PHP=/opt/plesk/php/8.2/bin/php
 cd "$(dirname "$0")/backend"
 
+# ================== ESZAMANLI DEPLOY KILIDI (KOK ONLEM) ==================
+# 2026-10-18: Plesk "Pull & Deploy" task'i AdditionalActionsStep'te asiliyken ELLE
+# `sh deploy.sh` kosturuldu -> IKISI ayni anda bootstrap/cache/packages.php'ye yazdi ->
+# dosya yarida truncate oldu ("array_merge(): Argument #2 must be array, int given" +
+# "Target class [view] does not exist") -> site TAMAMEN 500; optimize:clear bile acilista
+# patladigi icin kendini KURTARAMADI -> yuzlerce kullanici magdur. flock ile ayni anda TEK
+# deploy calissin; ikincisi ilki bitene kadar BEKLER (atlamaz -> en guncel kod yine uygulanir).
+if command -v flock >/dev/null 2>&1; then
+  exec 9>/tmp/tavla-deploy.lock
+  flock -w 600 9 || { echo "HATA: 10dk icinde deploy kilidi alinamadi (baska deploy takildi mi?) -> cikiliyor."; exit 1; }
+  echo "deploy kilidi alindi (eszamanli deploy engellendi)."
+else
+  echo "UYARI: flock yok -> eszamanli deploy korumasi atlandi (riskli; util-linux kur)."
+fi
+
 # YENİ Filament kaynakları (ör. "İletişim Talepleri") cache yüzünden panelde GÖRÜNMESİN
 # diye component cache'ini deploy'un EN BAŞINDA KOŞULSUZ temizle. set -e ile ilerideki bir
 # adım (composer/migrate) patlasa bile bu çalışmış olur; ayrıca dosyayı fiziksel sil ki
@@ -263,7 +278,11 @@ fi
 HEALTH_URL="https://www.tavlatv.com/up"
 HCODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" 2>/dev/null || echo 000)
 if [ "$HCODE" -ge 500 ] 2>/dev/null; then
-  echo "SAGLIK KAPISI: app $HCODE (BOZUK) -> cache temizleniyor (fail-safe)."
+  echo "SAGLIK KAPISI: app $HCODE (BOZUK) -> bootstrap/cache ham temizleme + optimize:clear (fail-safe)."
+  # ONCE ham dosya silme: bozuk/yarida-yazilmis bootstrap/cache/packages.php|services.php
+  # artisan'in KENDISINI acilista patlatir -> optimize:clear CALISAMAZ (2026-10-18 olayi).
+  # rm PHP gerektirmez, her zaman calisir; manifestler sonraki istekte yeniden uretilir.
+  rm -f bootstrap/cache/*.php 2>/dev/null; rm -rf bootstrap/cache/filament 2>/dev/null
   $PHP artisan optimize:clear || true
   HCODE2=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" 2>/dev/null || echo 000)
   if [ "$HCODE2" -ge 500 ] 2>/dev/null || [ "$HCODE2" = "000" ]; then
