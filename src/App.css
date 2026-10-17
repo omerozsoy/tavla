@@ -23821,6 +23821,29 @@ body:has(.spectate-view) .app.lobby {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
+/* Çok satırlı DM kutusu (WhatsApp gibi Shift+Enter): pill görünümü, rows=1 başlar,
+   JS ile scrollHeight'e büyür (max-height'te kaydırır). resize kapalı. */
+.messages-compose textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  max-height: 120px;
+  padding: 11px 15px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 18px;
+  resize: none;
+  overflow-y: auto;
+}
+.messages-compose textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
 /* Emoji secici */
 .emoji-wrap {
   flex: none;
@@ -27869,6 +27892,28 @@ body:has(.spectate-view) .app.lobby {
   font-size: 16px; /* iOS auto-zoom onleme (16px alti zoom yapar) */
 }
 .chat-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+/* Çok satırlı sohbet kutusu (WhatsApp gibi Shift+Enter): input görünümünü korur ama
+   rows=1 başlar, JS ile scrollHeight'e büyür (max-height'te kaydırır). resize kapalı. */
+.chat-input textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  max-height: 96px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* iOS auto-zoom onleme */
+  line-height: 20px;
+  resize: none;
+  overflow-y: auto;
+}
+.chat-input textarea:focus {
   outline: none;
   border-color: var(--accent);
 }

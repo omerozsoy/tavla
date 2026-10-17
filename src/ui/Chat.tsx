@@ -41,6 +41,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
   const [open, setOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // Okunmamis mesaj sayaci: sohbet KAPALIYKEN rakipten (slot !== mySlot) gelen mesajlari
   // say -> baslikta kirmizi rozet goster. Acilinca sifirlanir (kullanici gordu).
@@ -108,6 +109,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
     onSend(v)
     setText('')
     setEmojiOpen(false)
+    if (inputRef.current) inputRef.current.style.height = '' // çok-satır sonrası yüksekliği sıfırla
   }
 
   // Acik sohbet = sagdan acilan sayfa (sheet) + perde. Eskiden tahtanin sag alt kosesine sabit
@@ -211,13 +213,24 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                 </button>
                 {canText ? (
                   <>
-                    <input
+                    <textarea
+                      ref={inputRef}
                       value={text}
+                      rows={1}
                       maxLength={280}
                       placeholder={t('chat.placeholder')}
-                      onChange={(e) => setText(e.target.value)}
+                      onChange={(e) => {
+                        setText(e.target.value)
+                        // WhatsApp gibi otomatik büyüsün (max ~4 satır, sonra kaydır)
+                        e.target.style.height = 'auto'
+                        e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px'
+                      }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') submit()
+                        // Enter = gönder, Shift+Enter = alt satır (IME compose sırasında gönderme)
+                        if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                          e.preventDefault()
+                          submit()
+                        }
                       }}
                     />
                     <button

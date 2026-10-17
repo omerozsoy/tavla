@@ -171,7 +171,7 @@ export default function Messages({
   const logRef = useRef<HTMLDivElement>(null) // sohbet log kaydırma kabı (en alta indir)
   const nearBottomRef = useRef(true) // kullanıcı log'un en altında mı (canlı takip mi, yoksa eski mesaj mı okuyor)
   const prevActiveIdRef = useRef<number | null>(null) // konuşma değişimini yeni-mesajdan ayırt et
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingSentRef = useRef(0) // son "yaziyor" nabzinin zamani (throttle)
 
   const refreshThreads = useCallback(async () => {
@@ -362,6 +362,7 @@ export default function Messages({
     setMessages((m) => [...m, optimistic])
     setText('')
     setPendingImage(null)
+    if (inputRef.current) inputRef.current.style.height = '' // çok-satır sonrası yüksekliği sıfırla
     try {
       const r = await sendMessage(activeId, body, image)
       pendingRef.current = pendingRef.current.filter((x) => x.id !== optimistic.id)
@@ -975,11 +976,15 @@ export default function Messages({
                     hidden
                     onChange={onPickImage}
                   />
-                  <input
+                  <textarea
                     ref={inputRef}
                     value={text}
+                    rows={1}
                     onChange={(e) => {
                       setText(e.target.value)
+                      // WhatsApp gibi otomatik büyüsün (max ~5 satır, sonra kaydır)
+                      e.target.style.height = 'auto'
+                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
                       // Yazarken karsi tarafa "yaziyor…" nabzi (en fazla ~2.5 sn'de bir)
                       if (activeId != null && e.target.value.trim()) {
                         const now = Date.now()
@@ -991,7 +996,13 @@ export default function Messages({
                     }}
                     placeholder={t('dm.placeholder')}
                     maxLength={4000}
-                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), doSend())}
+                    onKeyDown={(e) => {
+                      // Enter = gönder, Shift+Enter = alt satır (IME compose sırasında gönderme)
+                      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                        e.preventDefault()
+                        void doSend()
+                      }
+                    }}
                   />
                   <Button variant="default" size="icon" disabled={sending || imgBusy || (!text.trim() && !pendingImage)} onClick={doSend} aria-label={t('dm.send')}>
                     <Icon name="arrow-right" size={18} />
