@@ -10416,6 +10416,7 @@ export default function App() {
           p2={spectate.p2}
           isAdmin={!!user?.is_admin}
           onClose={() => setSpectate(null)}
+          onAddFriend={user ? (uid) => uid !== user.id && handleAddFriend(uid) : undefined}
           onMessage={
             user
               ? (uid) => {
