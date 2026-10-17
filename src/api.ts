@@ -19,6 +19,32 @@ export function pwValid(v: string): boolean {
   return v.length >= 12 && /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v)
 }
 
+// Arkadaş davet kodu: /?ref=KOD ile gelen ziyaretçinin kodunu sakla; kayıtta backend'e yolla
+// (davet edene bağlanır, ödül ilk puanlı online maçta verilir). captureRef() App açılışında çağrılır.
+const REF_KEY = 'tavla.ref'
+export function captureRef(): void {
+  try {
+    const code = new URLSearchParams(window.location.search).get('ref')
+    if (code && /^[A-Za-z0-9]{4,12}$/.test(code)) localStorage.setItem(REF_KEY, code.toUpperCase())
+  } catch {
+    /* yok */
+  }
+}
+function refCode(): string | null {
+  try {
+    return localStorage.getItem(REF_KEY)
+  } catch {
+    return null
+  }
+}
+function clearRef(): void {
+  try {
+    localStorage.removeItem(REF_KEY)
+  } catch {
+    /* yok */
+  }
+}
+
 export function newCommandId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
@@ -237,9 +263,11 @@ export async function register(
       email: input.email,
       phone: input.phone || null,
       password: input.password,
+      referral_code: refCode(),
     }),
   })
   setToken(data.token)
+  clearRef() // kayıt tamam -> davet kodu tekrar kullanılmasın
   return data.user
 }
 
@@ -254,10 +282,30 @@ export async function googleLogin(
 ): Promise<{ user: ServerUser; isNew: boolean }> {
   const data = await req<{ user: ServerUser; token: string; isNew: boolean }>('/auth/google', {
     method: 'POST',
-    body: JSON.stringify({ credential }),
+    body: JSON.stringify({ credential, referral_code: refCode() }),
   })
   setToken(data.token)
+  if (data.isNew) clearRef() // yeni kayıt davet koduyla bağlandı -> tüket
   return { user: data.user, isNew: data.isNew }
+}
+
+// Arkadaş davet (referral) durumu + davet maili gönderme.
+export type ReferralStatus = {
+  code: string
+  link: string
+  reward: number
+  count: number
+  daily_limit: number
+  remaining_today: number
+}
+export async function referralStatus(): Promise<ReferralStatus> {
+  return req<ReferralStatus>('/me/referral')
+}
+export async function sendReferralInvite(email: string): Promise<{ ok: boolean; remaining_today: number }> {
+  return req<{ ok: boolean; remaining_today: number }>('/me/referral/invite', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
 }
 
 export async function login(loginId: string, password: string): Promise<ServerUser> {

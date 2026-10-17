@@ -742,14 +742,14 @@ export function SeekersPanel({
                     </span>
                   ) : !self && s.kind === 'seeking' && onJoin ? (
                     <span className="online-actions">
-                      <Button variant="default" size="icon" className="online-act" title={t('seekers.join')} aria-label={t('seekers.join')} onClick={() => onJoin(s)}>
-                        <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
+                      <Button variant="default" size="default" className="online-act seek-act-text" title={t('seekers.join')} onClick={() => onJoin(s)}>
+                        {t('seekers.playNow')}
                       </Button>
                     </span>
                   ) : !self && s.kind === 'available' && onInvite ? (
                     <span className="online-actions">
-                      <Button variant="default" size="icon" className="online-act" title={t('online.invite')} aria-label={t('online.invite')} onClick={() => onInvite({ id: s.id, name: s.name, avatar: s.avatar, rating: s.rating })}>
-                        <img className="online-act-icon" src={playerPlayIcon} alt="" aria-hidden="true" />
+                      <Button variant="default" size="default" className="online-act seek-act-text" title={t('online.invite')} onClick={() => onInvite({ id: s.id, name: s.name, avatar: s.avatar, rating: s.rating })}>
+                        {t('seekers.createGame')}
                       </Button>
                     </span>
                   ) : null}

@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class FriendController extends Controller
 {
@@ -60,6 +61,19 @@ class FriendController extends Controller
         }
         if ($target->id === $me->id) {
             return $this->fail('Kendini ekleyemezsin.', 422);
+        }
+
+        // BLOK: iki yönden biri blokladıysa arkadaşlık isteği gönderilemez (DM/davet ile simetri).
+        if (Schema::hasTable('user_blocks')
+            && DB::table('user_blocks')
+                ->where(function ($q) use ($me, $target) {
+                    $q->where('blocker_id', $me->id)->where('blocked_id', $target->id);
+                })
+                ->orWhere(function ($q) use ($me, $target) {
+                    $q->where('blocker_id', $target->id)->where('blocked_id', $me->id);
+                })
+                ->exists()) {
+            return $this->fail('Bu kullanıcıyla arkadaş olamazsınız.', 403);
         }
 
         // Zaten iliski var mi? (her iki yon)

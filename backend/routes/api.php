@@ -47,7 +47,7 @@ Route::get('/site-tags', [\App\Http\Controllers\SiteTagController::class, 'index
 Route::get('/realtime-config', [RoomController::class, 'realtimeConfig']); // Reverb WS push: enabled + public app key (acik; secret DONMEZ)
 Route::get('/board-designs', [\App\Http\Controllers\ShopController::class, 'designs']); // admin Tavla Tasarımı: grup/fiyat/özel tahtalar (acik)
 Route::get('/rank-divisions', [\App\Http\Controllers\RankDivisionController::class, 'index']); // rutbe rating esikleri (acik)
-Route::get('/tournaments', [TournamentController::class, 'index']);
+Route::middleware('throttle:120,1,tourn-read')->get('/tournaments', [TournamentController::class, 'index']); // acik poll (istemci 8-15sn) + autoStartDue bakim yazmasi -> IP basi 2/sn sinir
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/ad-slots', [\App\Http\Controllers\AdSlotController::class, 'index']); // paneller arasi reklam seritleri
 Route::middleware('throttle:30,1,ad-click')->post('/ad-slots/{ad}/click', [\App\Http\Controllers\AdSlotController::class, 'click']); // "saka reklami" tiklamasi (opsiyonel auth)
@@ -69,8 +69,8 @@ Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [\App\Http\Con
 // yapmissa ContactController Bearer token'dan kullaniciyi iliskilendirir. IP basi 5/dk.
 Route::middleware('throttle:5,1,contact')->post('/contact', [\App\Http\Controllers\ContactController::class, 'store']);
 Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
-Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
-Route::get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
+Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}', [TournamentController::class, 'show']); // acik poll + autoStartDue -> IP basi sinir
+Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
 
@@ -158,6 +158,10 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/push/register', [\App\Http\Controllers\PushController::class, 'register']);
     Route::post('/push/unregister', [\App\Http\Controllers\PushController::class, 'unregister']);
     Route::get('/me', [AuthController::class, 'me']);
+    // Arkadaş davet (referral): durum (kod/link/kalan hak) + davet maili gönder (günlük sınır).
+    Route::get('/me/referral', [\App\Http\Controllers\ReferralController::class, 'status']);
+    Route::post('/me/referral/invite', [\App\Http\Controllers\ReferralController::class, 'invite'])
+        ->middleware('throttle:10,1,referral-invite');
     // "Şikayetlerim": oyuncunun maç sohbetinde gönderdiği küfür şikayetleri + yönetim sonucu (durum).
     Route::get('/me/chat-reports', [RoomController::class, 'myChatReports']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);

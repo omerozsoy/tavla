@@ -12545,6 +12545,213 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Oyun Arayanlar paneli: diger ana sayfa bolumleriyle (.home-panels/.tts-panel) AYNI
    standart genislik + ortali (tek basina tam-kap genislige TASMASIN -> "cok buyuk"). */
+/* ===== Arkadaş Davet kartı (Oyun Arayanlar üstü, yarım grid ödül kuponu) ===== */
+.invite-card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 10px auto 0;
+  /* sol kenarda sıcak terracotta bilet şeridi */
+  border-left: 3px solid var(--accent);
+  animation: invite-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+/* üst-sağ köşede yumuşak coral parıltı (atmosfer) */
+.invite-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.invite-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.invite-gift {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--coral), var(--coral-hover));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.invite-head-txt {
+  min-width: 0;
+  flex: 1;
+}
+.invite-title {
+  margin: 0;
+  font-family: var(--tv-font-display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.15;
+}
+.invite-sub {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.invite-reward {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-family: var(--tv-font-ui);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--coral), var(--coral-hover));
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.invite-reward > svg {
+  color: #ffe08a;
+}
+.invite-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 13px;
+}
+.invite-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--input-bg, var(--card-bg));
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.invite-input::placeholder {
+  color: color-mix(in srgb, var(--text) 42%, transparent);
+}
+.invite-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.invite-input:disabled {
+  opacity: 0.55;
+}
+/* bilet perforasyonu: kesikli ayraç */
+.invite-dash {
+  display: block;
+  height: 0;
+  margin: 13px 0;
+  border-top: 2px dashed color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.invite-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.invite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.invite-chip > svg {
+  color: var(--accent-text);
+}
+.invite-chip.earned {
+  color: var(--accent-text);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.invite-chip.err {
+  color: #c0392b;
+  background: color-mix(in srgb, #c0392b 12%, transparent);
+}
+.invite-chip.err > svg {
+  color: #c0392b;
+}
+.invite-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 11px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--accent-text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s, border-color 0.14s;
+}
+.invite-link:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
+}
+.invite-link > svg {
+  flex: none;
+}
+.invite-link-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--tv-font-ui);
+}
+.invite-msg {
+  margin-top: 9px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.invite-msg.ok {
+  color: #16a34a;
+}
+.invite-msg.err {
+  color: #c0392b;
+}
+.invite-guest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 13px;
+}
+@keyframes invite-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+/* Dar ekran: başlık/ödül sarılsın, form dikey yığılsın */
+@media (max-width: 520px) {
+  .invite-form {
+    flex-direction: column;
+  }
+  .invite-reward {
+    font-size: 0.82rem;
+    padding: 5px 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .invite-card {
+    animation: none;
+  }
+}
+
 .seek-panel {
   width: 100%;
   max-width: var(--lobby-w);
@@ -12648,7 +12855,8 @@ button.acct-row-logout:hover:not(:disabled) {
   50% { opacity: 0.55; }
 }
 /* Kendi aramamı iptal butonu: satır-içi kompakt (ikon butonlarla aynı yükseklik). */
-.online-act.seek-cancel {
+.online-act.seek-cancel,
+.online-act.seek-act-text {
   width: auto;
   height: 34px;
   padding: 0 12px;

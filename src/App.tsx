@@ -144,8 +144,10 @@ import {
   type PresenceStatus,
   type Seeker,
   listInfoPages,
+  captureRef,
 } from './api'
 import Chat from './ui/Chat'
+import InviteFriendCard from './ui/InviteFriendCard'
 import ViewersBadge from './ui/ViewersBadge'
 import ClockStack from './ui/ClockStack'
 import BoardPickerModal from './ui/BoardPickerModal'
@@ -849,6 +851,9 @@ const CLOCK_PRESETS: Record<TimeControl, { move: number; over: number }> = {
 const FINAL_STAGE = 30 // son asama uyari esigi (sn)
 const MOVE_DELAY = CLOCK_PRESETS.normal.move // varsayilan/fallback
 const OVER_TOTAL = CLOCK_PRESETS.normal.over
+
+// Arkadaş davet: /?ref=KOD ile gelen ziyaretçinin kodunu kayda kadar sakla (modül yüklenince bir kez).
+captureRef()
 
 export default function App() {
   const { t, lang, setLang } = useT()
@@ -10888,6 +10893,8 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
+            {/* Arkadaşını Davet Et: Oyun Arayanlar'ın üstünde yarım grid ödül kartı. */}
+            <InviteFriendCard loggedIn={!!user} onLogin={() => setShowAuth(true)} />
             {/* Oyun Arayanlar: hızlı eşleşme havuzunda bekleyenler (reklam bannerının hemen altı) */}
             <SeekersPanel
               currentId={user?.id}

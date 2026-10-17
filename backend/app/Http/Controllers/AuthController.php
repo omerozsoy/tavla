@@ -59,6 +59,8 @@ class AuthController extends Controller
         $user->rating = \App\Models\Setting::int('starting_rating', 1400);
         $user->last_login_at = now(); // kayit = ilk giris (login/googleLogin ile tutarli; token ile oto-giris yapiliyor)
         $user->save();
+        // Arkadaş davet: davet koduyla geldiyse davet edene bağla (ödül İLK puanlı online maçta verilir).
+        \App\Support\Referral::link($user, $request->input('referral_code'));
         // NOT: hoşgeldin coin'i KAYITTA verilmez -> e-posta DOĞRULAYINCA verilir (grantWelcomeCoins),
         // sahte e-posta ile bonus farmlanmasın. Google kullanıcısı doğrulanmış sayılır (aşağıda alır).
 
@@ -194,6 +196,8 @@ class AuthController extends Controller
             // Baslangic puani: e-posta kaydiyla ayni (admin 'starting_rating', varsayilan 1400).
             $user->rating = \App\Models\Setting::int('starting_rating', 1400);
             $user->save();
+            // Arkadaş davet: davet koduyla (Google ile YENİ kayıt) davet edene bağla.
+            \App\Support\Referral::link($user, $request->input('referral_code'));
         }
 
         // Google e-postasi zaten dogrulanmis: HEM yeni HEM mevcut kullanicide garantiye al
@@ -639,6 +643,15 @@ class AuthController extends Controller
         // create'i yut -> 500 ("puanın kaydedilemedi") yerine idempotent (mevcut satır) dön.
         try {
             $result = \App\Models\MatchResult::create($mr);
+            // Arkadaş davet ödülü: davet edilen UYGUN ilk maçını yaptıysa iki tarafa coin (bir kez,
+            // idempotent). Başarısız olursa maç raporu YİNE kaydedilir (ödül kritik yol değil).
+            try {
+                \App\Support\Referral::maybeReward($result);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('referral reward failed', [
+                    'user_id' => $user->id, 'err' => $e->getMessage(),
+                ]);
+            }
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             $existing = ! empty($roomCode)
                 ? \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first()
