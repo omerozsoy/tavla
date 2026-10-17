@@ -102,6 +102,7 @@ export default function MatReview({
   matchLength,
   summary,
   luck,
+  snowie,
   gameScores,
   onClose,
 }: {
@@ -110,6 +111,9 @@ export default function MatReview({
   matchLength: number | null
   summary?: MatSummary | null
   luck?: import('../api').MatReview['luck'] // gnubg şansı (p0=beyaz, p1=siyah); yoksa '—'
+  // OTORİTER PR = gnubg Snowie (XG-birebir; p0=beyaz, p1=siyah). Verilirse üst bar + özet bunu gösterir
+  // (log'dan türetilen şişik PR yerine). Yoksa (eski kayıt/analiz başarısız) computeSummary'ye düşer.
+  snowie?: import('../api').MatReview['snowie']
   currentName?: string
   // Oyun başı maç skorları (.mat başlığından; index=oyun). Görüntüleyici o oyunun skorunu gösterir.
   gameScores?: { white: number; black: number }[]
@@ -243,22 +247,34 @@ export default function MatReview({
     x && x.mwc != null
       ? `${x.mwc >= 0 ? '+' : ''}${x.mwc.toFixed(2)}${x.jokers != null ? ` (${x.jokers})` : ''}`
       : '—'
-  const xgRow = (p: MatSummaryPlayer, x?: { mwc: number | null; jokers: number | null } | null, name?: string) => (
-    <>
-      <span className="mrv-xgb-name">{name}</span>
-      <span>{xgErr(p)}</span>
-      <span>−{p.equityLost.toFixed(3)}</span>
-      <span>{xgLuck(x)}</span>
-      {/* PR hücresi: Pul · Küp · Genel YAN YANA (etiketler başlıkta bir kez; değerler hizalı,
-          Genel vurgulu). Küp <3 karar -> '—'. Yeni i18n anahtarı yok (mevcut etiketler). */}
-      <span className="mrv-xgb-pr">
-        <span className="mrv-pr-c">{p.checkerXr.toFixed(1)}</span>
-        <span className="mrv-pr-c">{p.cubeXr != null ? p.cubeXr.toFixed(1) : '—'}</span>
-        <b className="mrv-pr-g">{p.xr.toFixed(2)}</b>
-      </span>
-      <span className="mrv-xgb-cls">{t(divisionOfPR(p.xr).key)}</span>
-    </>
-  )
+  // OTORİTER PR = gnubg Snowie (s). Verilirse genel/pul/küp PR onu gösterir (log'dan türetilen şişik
+  // computeSummary yerine; XG-birebir). Yoksa (analiz başarısız/eski kayıt) p.xr'e düşer.
+  const xgRow = (
+    p: MatSummaryPlayer,
+    x?: { mwc: number | null; jokers: number | null } | null,
+    name?: string,
+    s?: import('../api').MatSnowieSide | null,
+  ) => {
+    const prG = s ? s.pr : p.xr
+    const prChk = s ? s.checker_pr : p.checkerXr
+    const prCub = s ? s.cube_pr : p.cubeXr
+    return (
+      <>
+        <span className="mrv-xgb-name">{name}</span>
+        <span>{xgErr(p)}</span>
+        <span>−{p.equityLost.toFixed(3)}</span>
+        <span>{xgLuck(x)}</span>
+        {/* PR hücresi: Pul · Küp · Genel YAN YANA (etiketler başlıkta bir kez; değerler hizalı,
+            Genel vurgulu). Küp 0 karar -> '—'. */}
+        <span className="mrv-xgb-pr">
+          <span className="mrv-pr-c">{prChk != null ? prChk.toFixed(1) : '—'}</span>
+          <span className="mrv-pr-c">{prCub != null ? prCub.toFixed(1) : '—'}</span>
+          <b className="mrv-pr-g">{prG.toFixed(2)}</b>
+        </span>
+        <span className="mrv-xgb-cls">{t(divisionOfPR(prG).key)}</span>
+      </>
+    )
+  }
 
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
   return createPortal(
@@ -269,6 +285,15 @@ export default function MatReview({
           names={names}
           matchLength={matchLength}
           luck={luck ? { white: luck.p0, black: luck.p1 } : undefined}
+          /* OTORİTER PR: Snowie varsa Maç Özeti de onu gösterir (log yeniden-hesabı yerine). */
+          authPr={
+            snowie
+              ? {
+                  white: snowie.p0 ? { pr: snowie.p0.pr, checker: snowie.p0.checker_pr, cube: snowie.p0.cube_pr } : null,
+                  black: snowie.p1 ? { pr: snowie.p1.pr, checker: snowie.p1.checker_pr, cube: snowie.p1.cube_pr } : null,
+                }
+              : undefined
+          }
           onClose={() => setSummaryOpen(false)}
         />
       )}
@@ -358,8 +383,8 @@ export default function MatReview({
                   <span>{t('mrv.xr')}</span>
                 </span>
                 <span className="mrv-xgb-h">{t('mrv.miniClass')}</span>
-                {xgRow(xgP[0], luck?.p0, nameW)}
-                {xgRow(xgP[1], luck?.p1, nameB)}
+                {xgRow(xgP[0], luck?.p0, nameW, snowie?.p0)}
+                {xgRow(xgP[1], luck?.p1, nameB, snowie?.p1)}
               </div>
             ) : (
               <span className="mrv-title">
@@ -513,7 +538,7 @@ export default function MatReview({
       </div>
 
       {/* ---- Açılış özet popup'ı ("Analiz Tamamlandı") ---- */}
-      {summary && showSum && <SummaryPopup summary={summary} names={names} onClose={() => setShowSum(false)} />}
+      {summary && showSum && <SummaryPopup summary={summary} names={names} snowie={snowie} onClose={() => setShowSum(false)} />}
     </div>,
     document.body,
   )
@@ -916,12 +941,15 @@ function CubeAnalysis({ cube }: { cube: NonNullable<LogEntry['cube']> }) {
 
 // "Analiz Tamamlandı" popup: birincil oyuncu rating% + Blunder/Hata/Kesinsizlik + oyuncu
 // karşılaştırma tablosu + Derinlik/Motor/Süre + "Hataları İncele" (kapat).
-function SummaryPopup({ summary, names, onClose }: { summary: MatSummary; names: string[] | null; onClose: () => void }) {
+function SummaryPopup({ summary, names, snowie, onClose }: { summary: MatSummary; names: string[] | null; snowie?: import('../api').MatReview['snowie']; onClose: () => void }) {
   const { t } = useT()
   const p0 = summary.players[0]
   const p1 = summary.players[1]
+  // OTORİTER PR = gnubg Snowie (varsa); yoksa log'dan türetilen xr'e düş.
+  const prW = snowie?.p0?.pr ?? p0.xr
+  const prB = snowie?.p1?.pr ?? p1.xr
   const pctVal = perfPct(p0.erMemg)
-  const div = divisionOfPR(p0.xr)
+  const div = divisionOfPR(prW)
   const n = (v: number, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : '—')
   return (
     <div className="mrv-sum-backdrop" onClick={onClose}>
@@ -970,8 +998,8 @@ function SummaryPopup({ summary, names, onClose }: { summary: MatSummary; names:
             </tr>
             <tr>
               <td>{t('mrv.xr')}</td>
-              <td>{n(p0.xr, 2)}</td>
-              <td>{n(p1.xr, 2)}</td>
+              <td>{n(prW, 2)}</td>
+              <td>{n(prB, 2)}</td>
             </tr>
           </tbody>
         </table>

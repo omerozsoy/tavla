@@ -201,6 +201,21 @@ class AnalysisController extends Controller
             // luck opsiyonel -> yoksay (Maç Özeti Şans/Equity/Joker '—' gösterir)
         }
 
+        // OTORİTER PR (XG Snowie): review log'dan PR TÜRETME match-play'de ~6x şişiyor (bkz 7669:
+        // bizim 327 vs gnubg 51.4 vs XG 56). gnubg'nin KENDİ "Snowie error rate"ini AYRI /analyzematch
+        // ile al -> frontend bunu authPr yapıp gösterir (yüklenen .mat de stored maçlarla aynı ölçek).
+        // BEST-EFFORT: başarısızsa review bozulmaz (frontend log'dan türetmeye düşer). p0=beyaz, p1=siyah.
+        try {
+            $am = $this->gnubg->analyzeMatch($data['mat'], (int) ($data['plies'] ?? 2));
+            $snow = app(\App\Services\Analysis\GnubgSnowieService::class)
+                ->snowieFromAnalyze($am, \App\Services\Analysis\AnalysisOrchestrator::MIN_CUBE_DECISIONS);
+            if (is_array($snow)) {
+                $res['snowie'] = ['p0' => $snow[0] ?? null, 'p1' => $snow[1] ?? null];
+            }
+        } catch (\Throwable $e) {
+            // snowie opsiyonel -> yoksay
+        }
+
         return response()->json($res);
     }
 

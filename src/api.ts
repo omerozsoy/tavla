@@ -2453,7 +2453,15 @@ export interface MatReview {
   log: import('./ui/MatchReport').LogEntry[]
   // Maç Özeti şansı (gnubg matchluck; p0=beyaz, p1=siyah). Yoksa/başarısızsa undefined -> '—'.
   luck?: { p0: MatLuckSide; p1: MatLuckSide }
+  // OTORİTER PR = gnubg'nin KENDİ Snowie error rate'i (XG-birebir; p0=beyaz, p1=siyah). Verilirse
+  // MatReview bunu gösterir (log'dan türetilen şişik PR yerine). pr>100 cap/null -> taraf null olabilir.
+  snowie?: { p0: MatSnowieSide | null; p1: MatSnowieSide | null }
   hc?: 'white' | 'black' | null // izleyenin (bu satırın) rengi — client log'suz maçta self/opp hizası
+}
+export interface MatSnowieSide {
+  pr: number // genel PR (gnubg Snowie, XG)
+  checker_pr: number | null
+  cube_pr: number | null
 }
 export interface MatLuckSide {
   mwc: number | null // MWC% (şans yüzdesi)

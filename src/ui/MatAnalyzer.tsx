@@ -9,12 +9,13 @@ import MatReview, { computeSummary, type MatSummary } from './MatReview'
 import { parseMatScores } from '../analysis/matScores'
 
 type MatLuck = MatReviewResp['luck']
+type MatSnowie = MatReviewResp['snowie'] // otoriter gnubg Snowie PR (p0=beyaz, p1=siyah)
 type GameScore = { white: number; black: number }
 
 // Son analiz sonucu localStorage'da tutulur -> sayfa REFRESH'te kaybolmaz (kullanıcı isteği).
 // İnceleme kapatılınca (reset) temizlenir; yeni analiz üzerine yazar.
 const STORE_KEY = 'matReview:last'
-type Saved = { log: LogEntry[]; names: string[] | null; matchLength: number | null; summary: MatSummary | null; luck?: MatLuck; gameScores?: GameScore[] }
+type Saved = { log: LogEntry[]; names: string[] | null; matchLength: number | null; summary: MatSummary | null; luck?: MatLuck; snowie?: MatSnowie; gameScores?: GameScore[] }
 const loadSaved = (): Saved | null => {
   try {
     const raw = localStorage.getItem(STORE_KEY)
@@ -46,6 +47,7 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
   const [matchLength, setMatchLength] = useState<number | null>(saved0?.matchLength ?? null)
   const [summary, setSummary] = useState<MatSummary | null>(saved0?.summary ?? null)
   const [luck, setLuck] = useState<MatLuck | undefined>(saved0?.luck)
+  const [snowie, setSnowie] = useState<MatSnowie | undefined>(saved0?.snowie) // otoriter Snowie PR
   // Oyun başı maç skorları (.mat başlığından): görüntüleyicide "o oyunda kaç kaç" gösterilir.
   const [gameScores, setGameScores] = useState<GameScore[] | undefined>(saved0?.gameScores)
 
@@ -91,11 +93,12 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
       setMatchLength(r.matchLength ?? null)
       setSummary(sm)
       setLuck(r.luck)
+      setSnowie(r.snowie) // otoriter gnubg Snowie PR (varsa MatReview bunu gösterir)
       setGameScores(gs)
       setReviewLog(r.log)
       // Refresh'te kaybolmasın diye kaydet (kota dolarsa sessizce atla — analiz yine çalışır).
       try {
-        localStorage.setItem(STORE_KEY, JSON.stringify({ log: r.log, names: r.names ?? null, matchLength: r.matchLength ?? null, summary: sm, luck: r.luck, gameScores: gs }))
+        localStorage.setItem(STORE_KEY, JSON.stringify({ log: r.log, names: r.names ?? null, matchLength: r.matchLength ?? null, summary: sm, luck: r.luck, snowie: r.snowie, gameScores: gs }))
       } catch {
         /* kota — persist yok */
       }
@@ -113,6 +116,7 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
     setReviewLog(null)
     setSummary(null)
     setLuck(undefined)
+    setSnowie(undefined)
     setGameScores(undefined)
     setNames(null)
     setMatchLength(null)
@@ -129,7 +133,7 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
   // Analiz sonrası: tam-ekran görüntüleyici + açılış özet popup'ı.
   if (reviewLog) {
     return (
-      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} luck={luck} gameScores={gameScores} currentName={currentName} onClose={reset} />
+      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} luck={luck} snowie={snowie} gameScores={gameScores} currentName={currentName} onClose={reset} />
     )
   }
 
