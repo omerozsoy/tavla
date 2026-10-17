@@ -4,7 +4,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, seekers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Seeker, type PresenceStatus, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, getFriends, seekers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Seeker, type PresenceStatus, type Tournament, type Content } from '../api'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
@@ -456,6 +456,11 @@ export function OnlinePlayersPanel({
   const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (Liderlik Tablosu gibi)
   const PAGE_SIZE = 10
   const MAX_PAGES = 10 // en fazla 100 kisi
+  // Çevrimiçi / Arkadaşlar sekmesi: Arkadaşlar sekmesi online listeyi arkadaş id'leriyle FİLTRELER
+  // (backend değişmez; offline arkadaşlar zaten online listesinde gelmez -> online arkadaş = kesişim).
+  // Sekmeler yalnız giriş yapınca görünür (arkadaşlık + getFriends auth ister).
+  const [tab, setTab] = useState<'all' | 'friends'>('all')
+  const [friendIds, setFriendIds] = useState<Set<number> | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -471,12 +476,34 @@ export function OnlinePlayersPanel({
     }
   }, [])
 
+  // Arkadaş id'leri (Arkadaşlar sekmesi filtresi): giriş yapınca çek. Arkadaşlık nadiren değişir ->
+  // online listesi (15sn) kadar sık tazelemeye gerek yok; mount'ta bir kez yeter.
+  useEffect(() => {
+    if (currentId == null) {
+      setFriendIds(null)
+      return
+    }
+    let alive = true
+    getFriends()
+      .then((r) => alive && setFriendIds(new Set((r.friends ?? []).map((f) => f.id))))
+      .catch(() => alive && setFriendIds(new Set()))
+    return () => {
+      alive = false
+    }
+  }, [currentId])
+
+  // Sekme değişince ilk sayfaya dön.
+  useEffect(() => setPage(0), [tab])
+
+  // Aktif sekmenin listesi: Arkadaşlar -> online oyuncuları arkadaş id'leriyle filtrele (kesişim).
+  const base = players ? (tab === 'friends' && friendIds ? players.filter((p) => friendIds.has(p.id)) : players) : null
   // Kendini HER ZAMAN gor: liste rating'e gore siralanir (Cevrimdisi Gorun degilsen
   // listedesin) ama dusuk rating'de 2. sayfaya dusersin -> kendini en uste SABITLE.
-  const ordered = players
-    ? currentId != null && players.some((p) => p.id === currentId)
-      ? [players.find((p) => p.id === currentId)!, ...players.filter((p) => p.id !== currentId)]
-      : players
+  // (Arkadaşlar sekmesinde kendin arkadaşın olmadığından base'de yoksun -> sabitlenmez, dogru.)
+  const ordered = base
+    ? currentId != null && base.some((p) => p.id === currentId)
+      ? [base.find((p) => p.id === currentId)!, ...base.filter((p) => p.id !== currentId)]
+      : base
     : null
 
   // Liste kucuudubunde (oyuncu cikinca) mevcut sayfa asilirsa son sayfaya sabitle.
@@ -488,12 +515,22 @@ export function OnlinePlayersPanel({
       <div className="home-panel-head">
         <span className="online-dot" />
         <Icon name="users" size={17} /> {t('online.title')}
-        {players && players.length > 0 && <span className="online-count">{players.length}</span>}
+        {ordered && ordered.length > 0 && <span className="online-count">{ordered.length}</span>}
       </div>
+      {currentId != null && (
+        <div className="rank-tabs">
+          <Button type="button" variant={tab === 'all' ? 'default' : 'ghost'} aria-pressed={tab === 'all'} onClick={() => setTab('all')}>
+            {t('live.catAll')}
+          </Button>
+          <Button type="button" variant={tab === 'friends' ? 'default' : 'ghost'} aria-pressed={tab === 'friends'} onClick={() => setTab('friends')}>
+            {t('menu.friends')}
+          </Button>
+        </div>
+      )}
       {ordered === null ? (
         <Loading />
       ) : ordered.length === 0 ? (
-        <div className="home-panel-empty">{t('online.empty')}</div>
+        <div className="home-panel-empty">{t(tab === 'friends' ? 'online.friendsEmpty' : 'online.empty')}</div>
       ) : (
         <>
           <div className="rank-list">
