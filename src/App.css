@@ -12967,6 +12967,8 @@ button.acct-row-logout:hover:not(:disabled) {
   box-shadow: none;
 }
 .online-panel .online-act:hover:not(:disabled) { filter: brightness(1.08); }
+/* Başlık hairline'ı ile sekme satırı arasına biraz nefes (başlık margin-bottom 4px az kalıyordu). */
+.swiss-panel .rank-tabs { margin-top: 6px; }
 /* Sekmeler (Çevrimiçi Oyuncular + Canlı Maçlar): düz, uppercase, 500, keskin. */
 .swiss-panel .rank-tabs button {
   border-radius: 2px;
@@ -32886,6 +32888,13 @@ select:-webkit-autofill {
 }
 :root[data-theme='light'] .coins-suffix {
   opacity: 0.85;
+}
+/* KATIL butonu terracotta zemin -> ucret rakami BEYAZ. Acik temada ustteki global kural
+   .coins-val'i koyu amber (#8a5310) yapiyor (beyaz zeminde okunsun diye) ama kirmizi buton
+   uzerinde rakam gorunmez oluyordu (ikon altin kaliyor). .bp-price ile ayni durum. */
+:root[data-theme='light'] .tourn-join-btn .coins-val,
+:root[data-theme='light'] .tourn-join-btn .coins-suffix {
+  color: #fff;
 }
 :root[data-theme='light'] .tier-bronze .ach-tier {
   color: #8f5a2b;
