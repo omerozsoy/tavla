@@ -96,7 +96,7 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
   )
 
   return (
-    <section className="home-panel tts-panel" aria-label={t('toprank.showcaseTitle')}>
+    <section className="home-panel tts-panel swiss-panel" aria-label={t('toprank.showcaseTitle')}>
       <div className="home-panel-head">
         <Icon name="crown" size={18} weight="fill" /> {t('toprank.showcaseTitle')}
       </div>

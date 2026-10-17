@@ -4491,16 +4491,21 @@ button[aria-disabled='true'],
   /* Ana sayfa STANDART genişliği: üstteki kutular (home-panels / ad-strip / home-cal-wrap /
      TopThreeShowcase) hepsi max-width:var(--lobby-w) + ortalı; aynısını uygula ki hizalı olsun
      (yoksa lobby-main'in TAM genişliğine yayılıp daha geniş görünür). */
-  margin: 26px auto 6px;
+  margin: 32px auto 6px;
   width: 100%;
   max-width: var(--lobby-w);
-  padding: clamp(18px, 3vw, 30px);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--card-bg) 55%, transparent);
+  /* SWISS: kart kromu YOK -> düz zemin + 2px ink üst kural çizgisi (band dili). */
+  padding: clamp(18px, 3vw, 28px) 0 0;
+  border: 0;
+  border-top: 2px solid var(--text);
+  border-radius: 0;
+  background: none;
 }
 .seo-content-home .info-rich.rich h2 {
   margin-top: 1.15em;
+  text-transform: uppercase; /* Swiss bölüm başlığı */
+  letter-spacing: 0.02em;
+  font-weight: 500; /* bold yok */
 }
 
 /* ---- Landing kart = STANDART ALT SAYFA (register-overlay.page ile ayni his) ----
@@ -11081,8 +11086,16 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 12px clamp(14px, 3vw, 40px);
   background: var(--card-bg);
   border: none;
-  border-bottom: 1px solid var(--border);
+  /* SWISS: ince hairline -> 2px ink kural çizgisi (footer/stat band/SEO ile aynı dil). */
+  border-bottom: 2px solid var(--text);
   box-shadow: none; /* flat */
+}
+/* SWISS üst band: yuvarlak pill'ler -> keskin köşe (2px); band içi buton/çip düz. */
+.account-bar [data-slot='button'],
+.account-bar .chip,
+.account-bar .stat-chip,
+.account-bar .btn-reward:not([data-slot]) {
+  border-radius: 2px;
 }
 /* Desktop + tablet: ust band TEK SATIR kalsin. Cok kontrol (giris yapinca) dar genislikte
    2. satira SARIP band'i uzatiyor / icerige biniyordu. nowrap ile yukseklik SABIT;
@@ -12979,6 +12992,32 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.74rem;
 }
 
+/* --- Turnuvalar paneli'ne ÖZEL Swiss: kart-satır -> tam-genişlik hairline, tek kolon
+   (dar panelde 2-kolon grid yerine düz liste). Diğer panellerle aynı satır dili. --- */
+.swiss-panel.tourn-panel .tourn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.swiss-panel.tourn-panel .tourn-row {
+  position: relative;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  margin: 0 -16px;
+  padding: 10px 16px;
+}
+.swiss-panel.tourn-panel .tourn-list > .tourn-row:last-child { border-bottom: 0; }
+.swiss-panel.tourn-panel .tourn-row:hover::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  pointer-events: none;
+}
+.swiss-panel.tourn-panel .tourn-row > * { position: relative; }
+
 /* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
 .live-panel .live-row {
   position: relative;
@@ -14415,6 +14454,34 @@ button.acct-row-logout:hover:not(:disabled) {
 .dstat-pct {
   font-size: clamp(1.8rem, 4.4vw, 2.4rem);
   color: var(--color-success);
+}
+/* ===== SWISS stat bandı (.home-dash): renkli kartlar -> düz hairline-ayraçlı band;
+   büyük terracotta rakam + uppercase altyazı (mock'taki stat band dili). ikon gizli. ===== */
+.home-dash .dash-stats {
+  gap: 0;
+  border-top: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
+}
+.home-dash .dstat {
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  padding: 18px 16px;
+  gap: 6px;
+}
+.home-dash .dash-stats > .dstat:last-child { border-right: 0; }
+.home-dash .dstat-icon { display: none; } /* Swiss band ikonsuz: büyük rakam öne çıksın */
+.home-dash .dstat-val,
+.home-dash .dstat-pct {
+  font-weight: 500; /* bold yok */
+  font-size: clamp(1.9rem, 4.6vw, 2.6rem);
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.home-dash .dstat-label {
+  font-weight: 500;
+  letter-spacing: 0.1em;
 }
 @media (max-width: 640px) {
   .dash-stats-3 {

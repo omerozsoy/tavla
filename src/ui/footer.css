@@ -321,3 +321,40 @@ a.foot-partner:hover {
     padding-right: max(clamp(16px, 4vw, 56px), calc(env(safe-area-inset-right) + 8px));
   }
 }
+
+/* ===== SWISS footer (International Typographic Style) — ahşap/altın premium katmanı
+   düz kağıt zemine çevrilir: ink metin, 2px ink üst kural çizgisi, hairline, uppercase
+   sütun başlıkları, tek terracotta aksan, font-weight 500. Yapı/responsive değişmez;
+   yalnız görsel katman. Tema-duyarlı (koyu temada ink/paper tersine döner). */
+.site-footer {
+  --foot-cream: var(--text);
+  --foot-cream-soft: var(--muted);
+  --foot-cream-faint: var(--muted);
+  --foot-gold: var(--accent);
+  --foot-amber: var(--accent);
+  background: var(--card-bg);
+  border-top: 2px solid var(--text);
+  margin-top: 48px;
+}
+.site-footer::before { display: none; } /* bordo+altın şerit YOK; üst 2px ink kural çizgisi tek aksan */
+.foot-tag { color: var(--muted); letter-spacing: 0.04em; }
+.foot-brandlock::after { background: var(--accent); opacity: 1; } /* altın degrade ayraç -> düz terracotta */
+.foot-col-title {
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.foot-col-title::before { display: none; } /* altın tavla-ucu üçgeni YOK */
+.foot-link { color: var(--muted); }
+.foot-link:hover { color: var(--accent); transform: none; } /* kayma yok: düz Swiss */
+.foot-bottom {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+.foot-bottom::before,
+.foot-bottom::after { background: var(--accent); opacity: 1; }

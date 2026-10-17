@@ -913,7 +913,7 @@ export function TournamentsPanel({
   const { t, lang } = useT()
   if (tourns.length === 0) return null
   return (
-    <div className="home-panel tourn-panel">
+    <div className="home-panel tourn-panel swiss-panel">
       <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.tournaments')}>
         <Icon name="medal" size={18} /> {t('menu.tournaments')}
         <span className="panel-count">{tourns.length}</span>
