@@ -1438,6 +1438,33 @@ button[aria-disabled='true'],
     animation: none;
   }
 }
+/* ===== SWISS sol menü (International Typographic Style): keskin köşe + düz.
+   Üçgen "hane" (backgammon point) gradient hover/aktif -> düz dolu terracotta
+   dikdörtgen + beyaz; yuvarlak köşe -> keskin (2px); animasyon yok. Grup başlıkları
+   zaten uppercase/500/accent (Swiss). ===== */
+.side-menu {
+  border-radius: 0;
+  background: none; /* koyu panel tinti YOK -> düz zemin */
+}
+.side-menu [data-slot='button'],
+.side-menu .menu-btn {
+  border-radius: 2px;
+}
+.side-menu [data-slot='button']:hover::before,
+.side-menu [data-slot='button'][data-active='true']::before {
+  display: none; /* üçgen gradient hane YOK (düz Swiss) */
+}
+.side-menu [data-slot='button']:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent) !important;
+  color: var(--accent-text) !important;
+}
+.side-menu [data-slot='button'][data-active='true'] {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+.side-menu [data-slot='button'][data-active='true']:hover {
+  background: color-mix(in srgb, var(--accent) 88%, #000) !important;
+}
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
   margin-top: auto;
