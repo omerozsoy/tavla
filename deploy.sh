@@ -124,6 +124,13 @@ fi
 $PHP artisan careerpr:rebuild || echo "UYARI: careerpr:rebuild atlandi."
 
 $PHP artisan optimize:clear || echo "UYARI: optimize:clear atlandi."
+# KOK ONLEM (2026-10-18): optimize:clear bootstrap/cache'i BOSALTIR. Laravel packages.php &
+# services.php'yi eksikse boot'ta KILITSIZ file_put_contents ile yazar -> canli trafikte
+# (yuzlerce kullanici) + worker fan-out'ta onlarca surec AYNI ANDA yazar -> dosya TRUNCATE ->
+# "array_merge Argument #2 must be array, int given" / "Target class [view] does not exist" ->
+# site TAMAMEN 500. Cozum: manifest'i HEMEN burada TEK surecte yeniden kur ki hic kimse bos
+# cache'e yazmak zorunda kalmasin (optimize:clear ile worker/traffic arasindaki pencere kapanir).
+$PHP artisan package:discover || echo "UYARI: package:discover atlandi."
 # Filament component/panel cache'ini de temizle: aksi halde YENİ Filament sayfaları (ör. Başarısız
 # İşler) canlıda menüde GÖRÜNMEZ (filament:optimize ile önbelleğe alınmış eski liste kalır).
 # optimize:clear bunu KAPSAMAZ. Best-effort (komut yoksa/eski sürümse atla).
@@ -283,7 +290,9 @@ if [ "$HCODE" -ge 500 ] 2>/dev/null; then
   # artisan'in KENDISINI acilista patlatir -> optimize:clear CALISAMAZ (2026-10-18 olayi).
   # rm PHP gerektirmez, her zaman calisir; manifestler sonraki istekte yeniden uretilir.
   rm -f bootstrap/cache/*.php 2>/dev/null; rm -rf bootstrap/cache/filament 2>/dev/null
-  $PHP artisan optimize:clear || true
+  # Bos birakma: TEK surecte yeniden kur (yoksa canli trafikte onlarca istek ayni anda yazip
+  # packages.php/services.php'yi YENIDEN truncate eder -> 2026-10-18 tekrar-bozulma dongusu).
+  $PHP artisan package:discover 2>/dev/null || true
   HCODE2=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" 2>/dev/null || echo 000)
   if [ "$HCODE2" -ge 500 ] 2>/dev/null || [ "$HCODE2" = "000" ]; then
     echo "🔴 SAGLIK KAPISI: temizlik sonrasi HALA $HCODE2 -> KOD HATASI olabilir, storage/logs/laravel.log'a bak!"
