@@ -347,6 +347,7 @@ function Board({
     h: number
     el: HTMLElement
     active: boolean // esik asildi -> gercek surukleme basladi
+    thr: number // tik/surukleme esigi (fare dar, dokunmatik genis -> parmak titremesi tik'i yutmasin)
   }
 
   const [drag, setDrag] = useState<{ from: FromKey; player: Player; label?: number; w: number; h: number } | null>(
@@ -366,7 +367,8 @@ function Board({
   const cbRef = useRef({ onDragFrom, onSelectTarget, onDragDrop })
   cbRef.current = { onDragFrom, onSelectTarget, onDragDrop }
 
-  const DRAG_THRESHOLD = 5 // px: altinda -> tik (tap-to-move), ustunde -> surukleme
+  const DRAG_THRESHOLD = 5 // px (fare): altinda -> tik (tap-to-move), ustunde -> surukleme
+  const TOUCH_DRAG_THRESHOLD = 16 // px (dokunmatik): parmak tiki ~5-15px oynar -> tik yutulmasin (touch-slop)
 
   const clearHover = useCallback(() => {
     hoverElRef.current?.classList.remove('drop-hover')
@@ -517,7 +519,7 @@ function Board({
       if (!d || e.pointerId !== d.pointerId) return
       posRef.current = { x: e.clientX, y: e.clientY }
       if (!d.active) {
-        if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < DRAG_THRESHOLD) return
+        if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < d.thr) return
         // Esik asildi -> gercek surukleme basliyor
         d.active = true
         try {
@@ -602,6 +604,7 @@ function Board({
         h: rect.height,
         el,
         active: false,
+        thr: e.pointerType === 'mouse' ? DRAG_THRESHOLD : TOUCH_DRAG_THRESHOLD,
       }
       posRef.current = { x: e.clientX, y: e.clientY }
       window.addEventListener('pointermove', onWinMove)
