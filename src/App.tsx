@@ -10416,6 +10416,16 @@ export default function App() {
           p2={spectate.p2}
           isAdmin={!!user?.is_admin}
           onClose={() => setSpectate(null)}
+          onMessage={
+            user
+              ? (uid) => {
+                  if (uid === user.id) return
+                  setSpectate(null)
+                  setMessagesFocusId(uid)
+                  setMessagesOpen(true)
+                }
+              : undefined
+          }
         />
       )}
       {homeProfileId !== null && (

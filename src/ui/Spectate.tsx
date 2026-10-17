@@ -69,6 +69,7 @@ export default function Spectate({
   viewerName,
   isAdmin = false,
   onClose,
+  onMessage,
 }: {
   code: string
   p1?: string
@@ -76,6 +77,7 @@ export default function Spectate({
   viewerName?: string // izleyicinin adı (giriş yoksa misafir); presence heartbeat için
   isAdmin?: boolean // admin: izlenen maçın kodu rozette görünür (şikayet/arama için)
   onClose: () => void
+  onMessage?: (uid: number) => void // izlenen maçtaki oyuncuya DM aç (arkadaş olmasa da istek düşer)
 }) {
   const { t } = useT()
   useEscape(onClose)
@@ -734,7 +736,12 @@ export default function Spectate({
 
       {/* Yönetici: sohbetten açılan oyuncu profili. viewerIsAdmin -> "Konuşma Yasağı" + yasak rozeti. */}
       {profileId != null && (
-        <PublicProfile id={profileId} viewerIsAdmin={isAdmin} onClose={() => setProfileId(null)} />
+        <PublicProfile
+          id={profileId}
+          viewerIsAdmin={isAdmin}
+          onMessage={onMessage ? () => onMessage(profileId) : undefined}
+          onClose={() => setProfileId(null)}
+        />
       )}
     </div>,
     document.body,
