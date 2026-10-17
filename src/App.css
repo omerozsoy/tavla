@@ -20144,16 +20144,15 @@ body:has(.spectate-view) .app.lobby {
   gap: 6px;
   margin-top: 10px;
   padding: 9px 16px;
-  border: 1px solid var(--primary);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-md, 8px);
-  background: var(--primary);
-  color: var(--primary-foreground, #fff);
-  font-weight: 600;
+  background: var(--accent); /* --primary bu projede TANIMSIZ -> seffaf zemin + beyaz metin = beyazda gorunmez (16 gun boyle kaldi). --accent/--on-accent site genelindeki birincil buton dili. */
+  color: var(--on-accent);
+  font-weight: 500; /* bold yok: tavan 500 */
   font-size: 0.9rem;
 }
 .event-row:hover .tourn-lobby-link {
-  background: var(--primary-hover, var(--primary));
-  border-color: var(--primary-hover, var(--primary));
+  filter: brightness(1.08);
 }
 /* Hero: 4 istatistik hucre (odul / baslangic / katilim / giris) */
 .tourn-hero {
