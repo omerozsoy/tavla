@@ -69,7 +69,7 @@ export default function Footer({ columns }: Props) {
           {/* Logo + slogan tek "kilit"te: kilit logo genisligine buzulur. Slogan
               SVG <text> textLength=100% ile TEK SATIR ve TAM logo genisliginde yaslanir. */}
           <div className="foot-brandlock">
-            <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
+            <TavlaTvLogo size={34} tone="auto" className="foot-logo" />
             {/* Slogan: duz HTML metin (SVG textLength=%100 Firefox'ta bozuluyordu). */}
             <span className="foot-tag">{t('foot.tag')}</span>
           </div>

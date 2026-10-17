@@ -333,7 +333,7 @@ a.foot-partner:hover {
   --foot-gold: var(--accent);
   --foot-amber: var(--accent);
   background: var(--card-bg);
-  border-top: 2px solid var(--text);
+  border-top: 1px solid var(--text); /* ince ink kural çizgisi (kullanıcı "incelt") */
   margin-top: 48px;
 }
 .site-footer::before { display: none; } /* bordo+altın şerit YOK; üst 2px ink kural çizgisi tek aksan */

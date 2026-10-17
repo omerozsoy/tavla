@@ -4494,10 +4494,10 @@ button[aria-disabled='true'],
   margin: 32px auto 6px;
   width: 100%;
   max-width: var(--lobby-w);
-  /* SWISS: kart kromu YOK -> düz zemin + 2px ink üst kural çizgisi (band dili). */
+  /* SWISS: kart kromu YOK -> düz zemin + ince ink üst kural çizgisi (band dili). */
   padding: clamp(18px, 3vw, 28px) 0 0;
   border: 0;
-  border-top: 2px solid var(--text);
+  border-top: 1px solid var(--text);
   border-radius: 0;
   background: none;
 }
@@ -11037,9 +11037,8 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  position: sticky;
-  top: 0;
-  z-index: 105;
+  /* STICKY KALDIRILDI (kullanıcı): üst bar artık içerikle birlikte yukarı kayar. */
+  position: static;
 }
 .app.lobby > .side-menu {
   grid-area: menu;
@@ -11086,8 +11085,8 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 12px clamp(14px, 3vw, 40px);
   background: var(--card-bg);
   border: none;
-  /* SWISS: ince hairline -> 2px ink kural çizgisi (footer/stat band/SEO ile aynı dil). */
-  border-bottom: 2px solid var(--text);
+  /* SWISS: ince ink kural çizgisi (1px — kullanıcı "çizgileri incelt"). */
+  border-bottom: 1px solid var(--text);
   box-shadow: none; /* flat */
 }
 /* SWISS üst band: yuvarlak pill'ler -> keskin köşe (2px); band içi buton/çip düz. */
@@ -14459,8 +14458,8 @@ button.acct-row-logout:hover:not(:disabled) {
    büyük terracotta rakam + uppercase altyazı (mock'taki stat band dili). ikon gizli. ===== */
 .home-dash .dash-stats {
   gap: 0;
-  border-top: 2px solid var(--text);
-  border-bottom: 2px solid var(--text);
+  border-top: 1px solid var(--text);
+  border-bottom: 1px solid var(--text);
 }
 .home-dash .dstat {
   border: 0;
