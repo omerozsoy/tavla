@@ -144,21 +144,21 @@ class MatchClockTest extends TestCase
     // ---- 5) AFK: uzun ana sure (casual 5) -> ILK HAMLEDEN SONRA 60sn'de AFK_TIMEOUT ----
     public function test_afk_timeout_when_idle(): void
     {
-        $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk t0+60 gecerli
-        $this->assertEmpty(MatchClock::tick($c, self::T0 + 59)['end'] ?? null); // 59 < 60 (grace KALDIRILDI)
-        $end = MatchClock::tick($c, self::T0 + 60)['end']; // 60 >= 60 -> ANINDA AFK
+        $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk t0+120 gecerli
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 119)['end'] ?? null); // 119 < 120 (grace KALDIRILDI)
+        $end = MatchClock::tick($c, self::T0 + 120)['end']; // 120 >= 120 -> ANINDA AFK
         $this->assertSame('AFK_TIMEOUT', $end['reason']);
         $this->assertSame('p2', $end['winner']);
     }
 
-    // ---- 6) AFK geri sayimi yalniz son 15 saniyede gorunur (ilk hamleden sonra) ----
-    public function test_afk_countdown_visible_only_last_15s(): void
+    // ---- 6) AFK geri sayimi yalniz son 30 saniyede gorunur (ilk hamleden sonra) ----
+    public function test_afk_countdown_visible_only_last_30s(): void
     {
         $c = $this->movedClock('casual', 5);
-        $this->assertNull(MatchClock::clientView($c, self::T0 + 44)['afk']); // 16sn kaldi
-        $this->assertSame(15, MatchClock::clientView($c, self::T0 + 45)['afk']);
-        $this->assertSame(10, MatchClock::clientView($c, self::T0 + 50)['afk']);
-        $this->assertSame(1, MatchClock::clientView($c, self::T0 + 59)['afk']);
+        $this->assertNull(MatchClock::clientView($c, self::T0 + 89)['afk']); // 31sn kaldi
+        $this->assertSame(30, MatchClock::clientView($c, self::T0 + 90)['afk']);
+        $this->assertSame(10, MatchClock::clientView($c, self::T0 + 110)['afk']);
+        $this->assertSame(1, MatchClock::clientView($c, self::T0 + 119)['afk']);
     }
 
     // ---- 7a) SIRA DEGISINCE biten oyuncunun TUM turu bankadan dusulur; yeni segment sifirlanir ----
@@ -213,27 +213,27 @@ class MatchClockTest extends TestCase
     // ---- 8) Refresh/reconnect (ayni state tekrar) AFK'yi SIFIRLAMAZ ----
     public function test_refresh_does_not_reset_afk(): void
     {
-        $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk t0+60
+        $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk t0+120
         $same = $this->state('white', 5, 1, 1); // moved sonrasi ayni imza (echo / reconnect)
         // 50sn sonra ayni state tekrar gonderilir -> started_at DOKUNULMAZ
         $c2 = MatchClock::onUpdate($c, $same, 'p1', self::T0 + 50);
         $this->assertSame($c['started_at'], $c2['started_at']);
-        $this->assertSame(10, MatchClock::clientView($c2, self::T0 + 50)['afk']); // hala sayiyor
-        // Poll (tick) de sifirlamaz -> 63sn'de AFK kaybi
-        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c2, self::T0 + 63)['end']['reason']);
+        $this->assertSame(20, MatchClock::clientView($c2, self::T0 + 100)['afk']); // hala sayiyor (120-100)
+        // Poll (tick) de sifirlamaz -> 120sn'de AFK kaybi
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c2, self::T0 + 123)['end']['reason']);
     }
 
     // ---- 9) Sahiplik-koruma: rakip forge ile AFK'yi yonlendiremez ----
     public function test_non_owner_cannot_reset_or_redirect_clock(): void
     {
-        $c = $this->movedClock('casual', 5); // aktif p1 (beyaz), ilk hamle yapildi, afk t0+60
+        $c = $this->movedClock('casual', 5); // aktif p1 (beyaz), ilk hamle yapildi, afk t0+120
         // p2 (sira sahibi DEGIL) imza degistiren forge state gonderir
         $forge = $this->state('white', 5, 5, 3); // farkli imza
         $c2 = MatchClock::onUpdate($c, $forge, 'p2', self::T0 + 20);
         // started_at DEGISMEZ, aktif hala p1 -> forge AFK'yi sifirlayamadi
         $this->assertSame($c['started_at'], $c2['started_at']);
         $this->assertSame('p1', $c2['turn_slot']);
-        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c2, self::T0 + 63)['end']['reason']);
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c2, self::T0 + 123)['end']['reason']);
     }
 
     // ---- 9b) Mesru devir: sira sahibi turu devredince AFK rakibe gecer ----
@@ -339,18 +339,26 @@ class MatchClockTest extends TestCase
     public function test_presence_skipped_without_seen_stamps(): void
     {
         $c = $this->movedClock('casual', 5); // hic seen damgasi yok, ilk hamle yapildi
-        // 63sn: presence olsa "gone" derdi; ama damga yok -> normal AFK isler
-        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 63)['end']['reason']);
+        // 123sn: presence olsa "gone" derdi; ama damga yok -> normal AFK isler (afk t0+120)
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 123)['end']['reason']);
     }
 
-    // ---- 19) ILK HAMLEDEN ONCE AFK YOK (acilis/matchmaking yukleme payi) ----
-    public function test_no_afk_before_first_move(): void
+    // ---- 19) 0 HAMLE de AFK ile kaybeder (kullanici karari 2026-10-17): odaya girip (seen) hic
+    //          hamle yapmayan aktif oyuncu 2dk hareketsizlikte AFK'dan kaybeder; son 30sn geri sayim.
+    //          (casual secildi: banka 900 >> AFK 120, yani once AFK tetiklenir.) ----
+    public function test_afk_applies_before_first_move_when_seen(): void
     {
-        $c = $this->started('casual', 5); // moved=false; afk normalde t0+60 olurdu
-        // 63sn bosta ama HIC gercek hamle yok -> AFK TETIKLENMEZ
-        $this->assertEmpty(MatchClock::tick($c, self::T0 + 63)['end'] ?? null);
-        // clientView AFK geri sayimi da GORUNMEZ (yaniltmasin)
-        $this->assertNull(MatchClock::clientView($c, self::T0 + 55)['afk']);
+        $c = $this->started('casual', 5);          // moved=false, aktif p1 (beyaz)
+        // Geri sayim yalniz son 30sn'de gorunur — 0 hamleyken DE (clientView presence'a bakmaz)
+        $this->assertNull(MatchClock::clientView($c, self::T0 + 89)['afk']);
+        $this->assertSame(30, MatchClock::clientView($c, self::T0 + 90)['afk']);
+        // Idle-ama-PRESENT: oyuncu poll ediyor (seen taze) ama hamle yapmiyor -> presence degil AFK.
+        $c119 = MatchClock::seen($c, 'p1', self::T0 + 119);
+        $this->assertEmpty(MatchClock::tick($c119, self::T0 + 119)['end'] ?? null);
+        $c120 = MatchClock::seen($c, 'p1', self::T0 + 120);
+        $end = MatchClock::tick($c120, self::T0 + 120)['end']; // 2dk hareketsiz -> AFK (0 hamle olsa da)
+        $this->assertSame('AFK_TIMEOUT', $end['reason']);
+        $this->assertSame('p2', $end['winner']);
     }
 
     // ---- 20) Ilk hamleden once bile TIMEOUT (banka) calisir -> sonsuz stall engeli ----
@@ -379,10 +387,10 @@ class MatchClockTest extends TestCase
     // aktif oyuncuya gecti (asimetrik presence: rakip seen, aktif seen YOK). AFK dolunca hazir rakip kazanir. ----
     public function test_noshow_forfeit_after_opponent_move_when_active_never_seen(): void
     {
-        $c = $this->movedClock('casual', 5);           // moved=true, aktif p1, afk normalde T0+60
-        $c = MatchClock::seen($c, 'p2', self::T0 + 60);  // RAKIP (p2) sona kadar poll etti (present);
+        $c = $this->movedClock('casual', 5);            // moved=true, aktif p1, afk normalde T0+120
+        $c = MatchClock::seen($c, 'p2', self::T0 + 120);  // RAKIP (p2) sona kadar poll etti (present);
         //                                                  p1 HIC gorulmedi (seen YOK)
-        $end = MatchClock::tick($c, self::T0 + 63)['end']; // afk deadline gecti, p2 hala present
+        $end = MatchClock::tick($c, self::T0 + 123)['end']; // afk deadline gecti, p2 hala present
         $this->assertSame('ABANDON', $end['reason']);
         $this->assertSame('p2', $end['winner']); // hazir bekleyen rakip kazanir
     }
@@ -401,7 +409,7 @@ class MatchClockTest extends TestCase
     public function test_afk_applies_after_first_move(): void
     {
         $c = $this->movedClock('casual', 5);
-        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 63)['end']['reason']);
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 123)['end']['reason']);
     }
     // ---- KUP TEKLIFI: saat ilerler, karar suresi YANITLAYANIN bankasindan iner ----
     // Teklif anina kadar gecen sure teklif edenden dusulur; teklif beklerken aktif taraf

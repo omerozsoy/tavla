@@ -51,9 +51,9 @@ class MatchClock
         return max(0, Setting::int('clock_delay_'.$mode, self::DELAY[$mode]));
     }
 
-    public const AFK_IDLE = 45;      // uyari esigi (sn) = AFK_TOTAL - AFK_COUNTDOWN
-    public const AFK_COUNTDOWN = 15; // son gorunur geri sayim (sn)
-    public const AFK_TOTAL = 60;     // toplam hareketsizlik -> kayip (sn)
+    public const AFK_IDLE = 90;       // uyari esigi (sn) = AFK_TOTAL - AFK_COUNTDOWN
+    public const AFK_COUNTDOWN = 30;  // son gorunur geri sayim (sn)
+    public const AFK_TOTAL = 120;     // toplam hareketsizlik -> kayip (sn) = 2 dk
     // KALDIRILDI (2026-09-25, oyuncu itirazi): eskiden 3sn'lik ag-latency toleransi vardi;
     // sure bitince (TIMEOUT), 60sn hareketsizlikte (AFK) ve terk esiginde kayip ilanini 3sn
     // geciktiriyordu -> "sure bitti ama rakip 3sn daha oynadi" sikayeti. Artik 0: kayip
@@ -336,9 +336,12 @@ class MatchClock
         $delay = (float) ($clock['delay'] ?? 0);
         $timeoutAt = $start + $delay + $bank; // ana sure bitisi (bank>0 iken; bank=0 yukarida bitti)
         $afkAt = $start + self::AFK_TOTAL;     // hareketsizlik bitisi
-        // AFK, macin ILK gercek hamlesinden ONCE SAYILMAZ (matchmaking sonrasi yukleme/acilis
-        // payi). O ana kadar sadece TIMEOUT (banka) + presence (terk) yedek olarak calisir
-        // -> hazir bekleyen oyuncu acilista haksiz AFK yemez, ama sonsuza dek de stall edemez.
+        // AFK ILK HAMLEDEN ONCE DE SAYILIR (kullanici karari 2026-10-17): odaya girip (seen) hic
+        // hamle yapmayan aktif oyuncu da AFK_TOTAL hareketsizlikte kaybeder (0 hamle senaryosu).
+        // Yukleme/acilis payi artik AFK_TOTAL'in kendisidir (2dk). Hic gorulmeyen (seen=null)
+        // oyuncu icin no-show (rakip bekliyorsa) / no-contest (ikisi de yok) dallari asagida AYRICA
+        // korunur -> baglanamamis oyuncu "AFK kaybetti" gibi puan islemez. $moved yalniz o
+        // no-contest guvenligi (ikisi de hic oynamadi) icin tutulur.
         $moved = (bool) ($clock['moved'] ?? false);
         // IN-FLIGHT KALKANI ("Gonderiliyor..." haksiz AFK/terk KOKU, yuzlerce turnuva sikayeti):
         // aktif oyuncu bir OYUN KOMUTU (hamle/zar/kup/pes) gonderdiginde sunucu VARISTA _acted
@@ -362,7 +365,7 @@ class MatchClock
         $inFlight = $acted > $start && $acted < $now && ($now - $acted) <= self::INFLIGHT_MAX;
         $effNow = $inFlight ? $acted : $now;
         $timedOut = $effNow >= $timeoutAt + self::GRACE;              // banka tukendi
-        $afkedOut = $moved && ($effNow >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
+        $afkedOut = ($effNow >= $afkAt + self::GRACE);                // hareketsiz (ilk hamleden ONCE de)
         // ADALET: aktif oyuncu bu odayi HIC yuklemediyse (_seen damgasi YOK = hic poll etmedi) iki yol
         // var ve RAKIBIN presence'ina gore AYRISIR (saf-zaman testlerinde iki damga da null -> hicbiri
         // tetiklenmez, normal timeout/AFK matematigi korunur). EXPLOIT YOK: _seen her poll/komutta
@@ -430,8 +433,8 @@ class MatchClock
             if ($activeBankStored <= 0.0) {
                 $delayRem = 0.0;
             }
-            // AFK geri sayimi yalniz ILK gercek hamleden sonra gorunur (acilis payi).
-            $afkRem = ! empty($clock['moved']) ? max(0.0, self::AFK_TOTAL - $elapsed) : null;
+            // AFK geri sayimi ILK HAMLEDEN ONCE DE gorunur (0 hamleli oyuncu da AFK ile kaybeder).
+            $afkRem = max(0.0, self::AFK_TOTAL - $elapsed);
         }
 
         $activeColor = $active === 'p1' ? 'white' : ($active === 'p2' ? 'black' : null);
@@ -444,7 +447,7 @@ class MatchClock
             // İstemci bu kadar sn delay'i SABİT tutsun (grace); 0 ise normal geri say.
             'hold' => $running ? round($hold, 1) : 0.0,
             'active' => $running ? $activeColor : null,
-            // AFK: son 15sn'de gorunur geri sayim; degilse null.
+            // AFK: son AFK_COUNTDOWN sn'de gorunur geri sayim; degilse null.
             'afk' => ($afkRem !== null && $afkRem <= self::AFK_COUNTDOWN) ? (int) ceil($afkRem) : null,
             'running' => $running,
             'loss' => $end

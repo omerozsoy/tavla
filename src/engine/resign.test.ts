@@ -74,10 +74,10 @@ describe('RESIGN — merkezi puan kuralı (kesin ve değişmez)', () => {
   })
 
   // ---- SİSTEM-belirlenen değer (resignationValue) ----
-  it('AÇILIŞ konumunda pes = BACKGAMMON (saf konum: geri taşlar rakip evinde)', () => {
-    // SAF KONUM (kullanıcı kararı): açılışta beyazın anchor'ı siyahın evinde (24-nokta) -> 3.
-    // Kazananın bear-off evresinde olması ARANMAZ; erken pes de konuma göre değerlenir.
-    expect(resignationValue(initialState(), 'white')).toBe(3)
+  it('AÇILIŞ konumunda pes = SINGLE (toplama-evresi kapısı: kazanan henüz toplamıyor)', () => {
+    // TOPLAMA-EVRESİ KAPISI (2026-10-17): açılışta geri taşlar rakip evinde olsa da kazanan
+    // (siyah) bear-off evresinde DEĞİL -> sahte backgammon üretilmez, tekli (1). Standart kural.
+    expect(resignationValue(initialState(), 'white')).toBe(1)
   })
 
   it('kazanan bear-off + kaybeden 0 toplamış, geri taş yok -> GAMMON (2)', () => {
@@ -108,14 +108,15 @@ describe('RESIGN — merkezi puan kuralı (kesin ve değişmez)', () => {
     expect(resignationValue(s, 'white')).toBe(1)
   })
 
-  it('SAF KONUM: kazanan bear-off DEĞİL ama kaybedenin taşı rakip evinde -> BACKGAMMON (3)', () => {
+  it('KAPI: kazanan bear-off DEĞİL + kaybedenin taşı rakip evinde -> SINGLE (1), backgammon DEĞİL', () => {
     const p = new Array(24).fill(0)
-    p[20] = 1 // beyaz taş siyah evinde (18-23) -> backgammon, kazananın evresi ARANMAZ
+    p[20] = 1 // beyaz taş siyah evinde (18-23)
     p[11] = 14
-    p[5] = -8 // siyah (kazanan) dış sahada (bear-off DEĞİL)
+    p[5] = -8 // siyah (kazanan) dış sahada (bear-off DEĞİL) -> kapı kapalı
     p[15] = -7
     const s = st({ points: p, off: { white: 0, black: 0 } })
-    expect(resignationValue(s, 'white')).toBe(3) // saf konum: rakip evinde taş -> 3
+    // Kazanan henüz toplamıyor: sahte backgammon ÜRETİLMEZ -> tekli (1). (Eski kod yanlışlıkla 3 verirdi.)
+    expect(resignationValue(s, 'white')).toBe(1)
   })
 
   it('resignationTypeForValue eşleşmesi', () => {

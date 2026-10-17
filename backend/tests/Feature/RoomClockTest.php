@@ -113,7 +113,7 @@ class RoomClockTest extends TestCase
         $room = $this->playingRoom('CLK2', 'speed', 1); // banka 24, delay 8 -> timeout 32sn
         $this->putJson('/api/rooms/CLK2', ['token' => 't1', 'state' => $this->state(1)])->assertOk();
 
-        // started_at'i gecmise it: 40sn once (timeout 32 gecti, afk 60 henuz)
+        // started_at'i gecmise it: 40sn once (timeout 32 gecti, afk 120 henuz)
         $room->refresh();
         $clock = $room->clock;
         $clock['started_at'] = microtime(true) - 40;
@@ -236,7 +236,7 @@ class RoomClockTest extends TestCase
 
         $room->refresh();
         $clock = $room->clock;
-        $clock['started_at'] = microtime(true) - 65; // afk 60 gecti
+        $clock['started_at'] = microtime(true) - 125; // afk 120 gecti
         $room->clock = $clock;
         $room->save();
 
