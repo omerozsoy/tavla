@@ -12967,13 +12967,69 @@ button.acct-row-logout:hover:not(:disabled) {
   box-shadow: none;
 }
 .online-panel .online-act:hover:not(:disabled) { filter: brightness(1.08); }
-/* Çevrimiçi / Arkadaşlar sekmeleri: düz, uppercase, 500, keskin. */
-.online-panel .rank-tabs button {
+/* Sekmeler (Çevrimiçi Oyuncular + Canlı Maçlar): düz, uppercase, 500, keskin. */
+.swiss-panel .rank-tabs button {
   border-radius: 2px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
   font-size: 0.74rem;
+}
+
+/* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
+.live-panel .live-row {
+  position: relative;
+  border-radius: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0 -16px;
+  padding: 10px 16px;
+}
+.live-panel .live-list > .live-row:last-child { border-bottom: 0; }
+.live-panel .live-row:active { scale: none; }
+/* Hover: terracotta çerçeve YOK; yumuşak eşit-boşluklu iç vurgu. */
+.live-panel .live-row:hover {
+  background: none;
+  border-color: transparent;
+  border-bottom-color: var(--border);
+}
+.live-panel .live-row:not(.live-row--featured):hover::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  pointer-events: none;
+}
+.live-panel .live-row > *:not(.lm-rise):not(.lm-ribbon) { position: relative; }
+/* Kategori rozetleri -> düz Swiss etiket (pill/renk yok), dikey hairline ayraç. */
+.live-panel .lm-type {
+  border-radius: 0;
+  background: none !important;
+  padding: 0 8px 0 0;
+  font-weight: 500;
+  color: var(--muted);
+}
+.live-panel .lm-type + .lm-type {
+  border-left: 1px solid var(--border);
+  padding-left: 8px;
+}
+/* Skor: pill kalksın, düz tabular 500. */
+.live-panel .lm-vs-score .lm-score {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-weight: 500;
+  color: var(--text);
+}
+.live-panel .lm-name { font-weight: 500; }
+.live-panel .lm-len { font-weight: 500; color: var(--accent); }
+/* Öne çıkan maç: parıltı/glow YOK -> yalnız sol terracotta şerit (Swiss). */
+.live-panel .lm-rise { display: none; }
+.live-panel .live-row--featured::after { display: none; }
+.live-panel .live-row--featured {
+  border-left: 3px solid var(--accent);
+  padding-left: 13px;
 }
 
 .seek-panel .seek-rating { font-weight: 500; font-variant-numeric: tabular-nums; }

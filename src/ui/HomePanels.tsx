@@ -299,7 +299,7 @@ export function LiveMatchesPanel({
   const curPage = Math.min(page, pageCount - 1)
 
   return (
-    <div className="home-panel live-panel">
+    <div className="home-panel live-panel swiss-panel">
       <div className="home-panel-head">
         <span className="live-dot" />
         <Icon name="live" size={17} /> {t('live.title')}
