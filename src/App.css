@@ -12548,7 +12548,7 @@ button.acct-row-logout:hover:not(:disabled) {
 /* ===== Arkadaş Davet kartı — Swiss / International Typographic Style =====
    Katı grid, ince kural çizgileri, kahraman rakam, tek aksan (terracotta) + monokrom,
    keskin köşe. Gölge/degrade/pill/ikon YOK — tipografik hiyerarşi taşır. */
-.invite-card {
+.rfr-card {
   width: 100%;
   max-width: var(--lobby-w);
   margin: 10px auto 0;
@@ -12559,16 +12559,16 @@ button.acct-row-logout:hover:not(:disabled) {
   border-radius: 2px; /* keskin köşe */
 }
 /* Üst grid: sola hizalı başlık bloğu | sağda kahraman rakam */
-.invite-top {
+.rfr-top {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: baseline;
   column-gap: 20px;
 }
-.invite-copy {
+.rfr-copy {
   min-width: 0;
 }
-.invite-title {
+.rfr-title {
   margin: 0;
   font-family: var(--tv-font-display);
   font-size: 18px;
@@ -12577,7 +12577,7 @@ button.acct-row-logout:hover:not(:disabled) {
   line-height: 1.1;
   color: var(--text);
 }
-.invite-sub {
+.rfr-sub {
   margin: 5px 0 0;
   font-size: 0.8rem;
   line-height: 1.45;
@@ -12585,14 +12585,14 @@ button.acct-row-logout:hover:not(:disabled) {
   max-width: 44ch;
 }
 /* Kahraman rakam: ödül tutarı — Swiss'in büyük sayısı */
-.invite-figure {
+.rfr-figure {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   line-height: 0.92;
   white-space: nowrap;
 }
-.invite-amount {
+.rfr-amount {
   font-family: var(--tv-font-display);
   font-size: 40px;
   font-weight: 800;
@@ -12600,7 +12600,7 @@ button.acct-row-logout:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
-.invite-unit {
+.rfr-unit {
   margin-top: 4px;
   font-size: 0.6rem;
   font-weight: 700;
@@ -12609,14 +12609,14 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
 }
 /* Form: alt-çizgili input (kutu yok) + düz dikdörtgen aksan buton */
-.invite-form {
+.rfr-form {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: stretch;
   gap: 10px;
   margin-top: 16px;
 }
-.invite-input {
+.rfr-input {
   min-width: 0;
   padding: 8px 2px;
   border: 0;
@@ -12627,17 +12627,17 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.9rem;
   transition: border-color 0.14s;
 }
-.invite-input::placeholder {
+.rfr-input::placeholder {
   color: color-mix(in srgb, var(--text) 40%, transparent);
 }
-.invite-input:focus-visible {
+.rfr-input:focus-visible {
   outline: none;
   border-bottom-color: var(--accent);
 }
-.invite-input:disabled {
+.rfr-input:disabled {
   opacity: 0.5;
 }
-.invite-btn {
+.rfr-btn {
   flex: none;
   padding: 9px 18px;
   border: 0;
@@ -12652,46 +12652,46 @@ button.acct-row-logout:hover:not(:disabled) {
   cursor: pointer;
   transition: filter 0.12s;
 }
-.invite-btn:hover:not(:disabled) {
+.rfr-btn:hover:not(:disabled) {
   filter: brightness(1.08);
 }
-.invite-btn:disabled {
+.rfr-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 /* İnce kural çizgisi (Swiss hairline) */
-.invite-rule {
+.rfr-rule {
   height: 0;
   margin: 14px 0 10px;
   border-top: 1px solid var(--border);
 }
 /* Meta: dikey hairline ile ayrılmış veri satırı */
-.invite-meta {
+.rfr-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
-.invite-stat {
+.rfr-stat {
   padding: 1px 12px;
   font-size: 0.74rem;
   letter-spacing: 0.1px;
   color: var(--muted);
 }
-.invite-stat:first-child {
+.rfr-stat:first-child {
   padding-left: 0;
 }
-.invite-stat + .invite-stat {
+.rfr-stat + .rfr-stat {
   border-left: 1px solid var(--border);
 }
-.invite-stat.on {
+.rfr-stat.on {
   color: var(--accent);
   font-weight: 600;
 }
-.invite-stat.err {
+.rfr-stat.err {
   color: #c0392b;
 }
 /* Davet linki: düz, monospace, alt-çizgili (Swiss sadelik) */
-.invite-link {
+.rfr-link {
   display: block;
   width: 100%;
   margin-top: 12px;
@@ -12710,21 +12710,21 @@ button.acct-row-logout:hover:not(:disabled) {
   text-underline-offset: 3px;
   text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
-.invite-link:hover {
+.rfr-link:hover {
   text-decoration-color: var(--accent);
 }
-.invite-msg {
+.rfr-msg {
   margin-top: 10px;
   font-size: 0.8rem;
   font-weight: 500;
 }
-.invite-msg.ok {
+.rfr-msg.ok {
   color: #16a34a;
 }
-.invite-msg.err {
+.rfr-msg.err {
   color: #c0392b;
 }
-.invite-guest {
+.rfr-guest {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -12736,24 +12736,24 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Dar ekran: rakam küçülsün, form dikey yığılsın, meta dikey liste (sarınca hairline artığı olmasın) */
 @media (max-width: 520px) {
-  .invite-amount {
+  .rfr-amount {
     font-size: 32px;
   }
-  .invite-form {
+  .rfr-form {
     grid-template-columns: 1fr;
   }
-  .invite-btn {
+  .rfr-btn {
     padding: 11px 18px;
   }
-  .invite-meta {
+  .rfr-meta {
     flex-direction: column;
     align-items: flex-start;
     gap: 3px;
   }
-  .invite-stat {
+  .rfr-stat {
     padding-left: 0;
   }
-  .invite-stat + .invite-stat {
+  .rfr-stat + .rfr-stat {
     border-left: 0;
   }
 }
@@ -12861,13 +12861,17 @@ button.acct-row-logout:hover:not(:disabled) {
   50% { opacity: 0.55; }
 }
 /* Kendi aramamı iptal butonu: satır-içi kompakt (ikon butonlarla aynı yükseklik). */
-.online-act.seek-cancel,
-.online-act.seek-act-text {
+/* .seek-panel öneki: aşağıdaki `.online-act.online-act{width:32px}` kuralından SONRA
+   gelmediğimiz için eşit özgüllükte o eziyordu -> metin 32px'e kırpılıyordu.
+   Ata seçiciyle özgüllüğü yükselt (0,3,0 > 0,2,0) ki auto genişlik kazansın. */
+.seek-panel .online-act.seek-cancel,
+.seek-panel .online-act.seek-act-text {
   width: auto;
   height: 34px;
   padding: 0 12px;
   font-size: 0.8rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 /* Mobil: rating+rozetler (seek-meta) genis olup isim kolonunu 56px'e sikistiriyor ->
    isim harf harf alt alta kayiyordu. Cozum: seek-meta'yi TAM GENISLIK alt satira al;
