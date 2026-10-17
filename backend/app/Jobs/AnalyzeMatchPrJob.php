@@ -291,7 +291,16 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // REVIEW-BASED PR YETKİLİ: gnubg_review önbelleklendiyse (CacheMatchReviewJob reviewMatch'ten
         // DOĞRU per-karar PR yazdı) bu job'un per-pozisyon cubePr'ı ONU EZMESİN -> PR alanlarını $upd'den
         // çıkar. (per-pozisyon cubePr küp kararlarında runtime hatalıydı: EU6CD kusursuz oyuncu 18.54 PR.)
+        //
+        // KÖK FIX (p2/black kalıcı "—" + kariyer maç sayısı yarıya düşüyor): ortak review log'u İKİ satırda
+        // da cache'li ama CacheMatchReviewJob review'dan PR türetmede çoğu kez yalnız RAPORLAYAN tarafı
+        // (p1=white) skorluyor, DİĞER tarafı (p2=black) NULL bırakıyor. Eskiden review VARSA bu job'un
+        // DOĞRU per-pozisyon PR'ını ($overall, ör. 10.14) KOŞULSUZ unset ediyorduk -> review'ın NULL'ı
+        // kalıp maç kalıcı "—" oluyordu (sitede ~yarı satır; oyuncular PR sıralamasından düşüyordu).
+        // ARTIK: review bu satırı GERÇEKTEN skorladıysa (gnubg_pr dolu) ONA bırak; review bu tarafı
+        // skorlayamayıp null bıraktıysa per-pozisyon (doğru) değerlerimiz YAZILSIN.
         $reviewAuthoritative = Schema::hasColumn('match_results', 'gnubg_review')
+            && $mr->gnubg_pr !== null
             && MatchResult::where('id', $mr->id)->whereNotNull('gnubg_review')->exists();
         if ($reviewAuthoritative) {
             foreach (['gnubg_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'pr', 'pr_equity_lost', 'pr_decisions',
