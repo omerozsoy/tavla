@@ -12564,6 +12564,8 @@ button.acct-row-logout:hover:not(:disabled) {
   grid-template-columns: 1fr auto;
   align-items: baseline;
   column-gap: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border); /* OYUN ARAYANLAR ile aynı ince başlık çizgisi (tek tip) */
 }
 .rfr-copy {
   min-width: 0;
@@ -12571,10 +12573,11 @@ button.acct-row-logout:hover:not(:disabled) {
 .rfr-title {
   margin: 0;
   font-family: var(--tv-font-display);
-  font-size: 18px;
+  font-size: 15px; /* OYUN ARAYANLAR başlığı ile birebir (tek tip) */
   font-weight: 500;
-  letter-spacing: -0.3px;
-  line-height: 1.1;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
   color: var(--text);
 }
 .rfr-sub {
@@ -12889,9 +12892,9 @@ button.acct-row-logout:hover:not(:disabled) {
   text-transform: uppercase;
   padding-bottom: 12px;
   margin-bottom: 4px;
-  border-bottom: 2px solid var(--text);
+  border-bottom: 1px solid var(--border); /* davet kartı ile aynı ince hairline (tek tip; kalın çizgi yok) */
 }
-.seek-panel .home-panel-head > svg { display: none; }
+.seek-panel .home-panel-head svg { display: none; } /* dekoratif zar ikonu gizli (davet kartında ikon yok) */
 .seek-panel .online-count {
   margin-left: auto;
   background: none;
@@ -12909,7 +12912,12 @@ button.acct-row-logout:hover:not(:disabled) {
   margin: 0;
 }
 .seek-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
-.seek-panel .rank-row.online-row:hover { background: none; }
+/* Swiss hover: terracotta border parlaması YOK; yalnız çok hafif nötr zemin. Tık-küçülmesi (scale) iptal. */
+.seek-panel .rank-row.online-row:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border-color: var(--border);
+}
+.seek-panel .rank-row.online-row:active { scale: none; }
 .seek-panel .rank-row.mine {
   border-left: 3px solid var(--accent);
   padding-left: 10px;
