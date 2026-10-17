@@ -8798,18 +8798,23 @@ button.move-row:focus-visible {
   max-width: 380px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  /* SWISS global modal/sayfa kabuğu: keskin köşe + 3px terracotta üst aksan + düz gölge.
+     Tüm modal sayfalara (Liderlik, Kulüpler, Mağaza, Auth, Ayarlar, …) kaskad eder. */
+  border-radius: 2px;
+  border-top: 3px solid var(--accent);
   padding: 22px 24px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 30px rgba(40, 30, 24, 0.1); /* shadow-lg -> yumuşak tek gölge (backdrop'tan ayrılsın, flat) */
 }
 .register-card h2 {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 400; /* bold degil */
+  font-size: 1.3rem;
+  font-weight: 500; /* bold degil; Swiss başlık */
   line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .register-sub {
   color: var(--muted);
@@ -8827,7 +8832,7 @@ button.move-row:focus-visible {
 .register-card select,
 .register-card textarea {
   padding: 10px 12px;
-  border-radius: var(--radius-md);
+  border-radius: 2px; /* SWISS: keskin köşe input */
   border: 1px solid var(--btn-border);
   background: var(--input-bg);
   color: var(--text);
@@ -15474,6 +15479,14 @@ body:has(.spectate-view) .app.lobby {
 }
 .rep-filter .menu-btn {
   flex: 1;
+}
+/* SWISS: filtre sekmeleri (Liderlik / raporlar vb.) uppercase, keskin köşe, 500. */
+.rep-filter [data-slot='button'],
+.rep-filter .menu-btn {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  border-radius: 2px;
 }
 .report-list {
   display: flex;
