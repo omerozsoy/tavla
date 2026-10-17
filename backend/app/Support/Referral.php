@@ -16,8 +16,8 @@ use Illuminate\Support\Str;
  * Arkadaş davet (referral) — TEK kaynak. "Davet et, 5000 coin kazan":
  *  1) Davet eden kullanıcının stabil kodu (referral_code) olur; davet linki /?ref=KOD.
  *  2) Davet edilen o kodla kaydolunca referred_by işlenir (link()).
- *  3) Davet edilen İLK PUANLI ONLINE İNSAN maçını yapınca (bota karşı DEĞİL, davet edenine
- *     karşı DEĞİL) her iki tarafa REWARD coin verilir (maybeReward(), referral_rewarded_at ile
+ *  3) Davet edilen İLK PUANLI ONLINE İNSAN maçını yapınca (bota karşı DEĞİL; davet edene karşı
+ *     olsa BİLE sayar) her iki tarafa REWARD coin verilir (maybeReward(), referral_rewarded_at ile
  *     bir kez — WalletService referans-idempotent + bayrak = çift kalkan).
  */
 class Referral
@@ -86,8 +86,8 @@ class Referral
 
     /**
      * Maç raporlandıktan sonra çağrılır. Davet edilen kişi UYGUN ilk maçını yaptıysa iki tarafa
-     * ödül ver. UYGUN = puanlı (rated) + online (room_code) + bota karşı DEĞİL + davet edenine
-     * karşı DEĞİL (self-match farm kalkanı). Bir kez (referral_rewarded_at), kilitli + idempotent.
+     * ödül ver. UYGUN = puanlı (rated) + online (room_code) + bota karşı DEĞİL (davet edene karşı
+     * olsa bile sayar). Bir kez (referral_rewarded_at), kilitli + idempotent.
      */
     public static function maybeReward(MatchResult $result): void
     {
@@ -101,9 +101,9 @@ class Referral
         if (! $invited || empty($invited->referred_by) || $invited->referral_rewarded_at !== null) {
             return;
         }
-        if ((int) $result->opponent_user_id === (int) $invited->referred_by) {
-            return; // davet eden ile oynanan maç ödül vermez (kendini davet edip farmlamayı kır)
-        }
+        // Not: davet eden ile oynanan maç da ödül verir (sahibin kararı). Bu, ikinci hesapla
+        // kendini davet edip tek maçta 10.000 coin farmlamayı mümkün kılar — farm riski kabul edildi.
+        // ponytail: farm kalkanı kaldırıldı; kötüye kullanım görülürse IP/cihaz eşleşmesiyle geri eklenebilir.
         $amount = self::reward();
         if ($amount <= 0) {
             return;

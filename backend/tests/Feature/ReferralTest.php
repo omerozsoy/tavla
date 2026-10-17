@@ -90,7 +90,7 @@ class ReferralTest extends TestCase
         $this->assertSame(1, $inviter->fresh()->referral_count);
     }
 
-    public function test_bot_and_vs_inviter_and_unrated_do_not_reward(): void
+    public function test_bot_and_unrated_and_offline_do_not_reward(): void
     {
         $inviter = $this->user('inviter');
         $invited = $this->user('invited');
@@ -98,12 +98,28 @@ class ReferralTest extends TestCase
         $invited->save();
 
         Referral::maybeReward($this->match($invited, ['match_type' => 'ai', 'room_code' => 'R_AI']));          // bota karşı
-        Referral::maybeReward($this->match($invited, ['opponent_user_id' => $inviter->id, 'room_code' => 'R_INV'])); // davet edene karşı
         Referral::maybeReward($this->match($invited, ['rated' => false, 'room_code' => 'R_UNRATED']));          // puansız
         Referral::maybeReward($this->match($invited, ['room_code' => null]));            // offline
 
         $this->assertSame(0, $invited->fresh()->coins);
         $this->assertNull($invited->fresh()->referral_rewarded_at);
+    }
+
+    public function test_match_vs_inviter_rewards(): void
+    {
+        $inviter = $this->user('inviter');
+        $invited = $this->user('invited');
+        $invited->referred_by = $inviter->id;
+        $invited->save();
+
+        // Davet edene karşı puanlı online maç da artık ödül verir (farm kalkanı kaldırıldı).
+        Referral::maybeReward($this->match($invited, ['opponent_user_id' => $inviter->id, 'room_code' => 'R_INV']));
+
+        $reward = Referral::reward();
+        $this->assertSame($reward, $invited->fresh()->coins);
+        $this->assertSame($reward, $inviter->fresh()->coins);
+        $this->assertNotNull($invited->fresh()->referral_rewarded_at);
+        $this->assertSame(1, $inviter->fresh()->referral_count);
     }
 
     public function test_invite_rejects_self_and_existing_email(): void
