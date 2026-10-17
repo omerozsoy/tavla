@@ -12873,6 +12873,86 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* ===== SWISS deneme: SADECE Oyun Arayanlar (.seek-panel) — diğer paneller etkilenmez.
+   Geri almak için bu blok silinir. International Typographic Style, font-weight 500 (bold yok). ===== */
+.seek-panel {
+  border-radius: 2px;              /* keskin köşe */
+  border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
+}
+/* Başlık: uppercase + hairline, dice ornament kaldır */
+.seek-panel .home-panel-head {
+  font-family: var(--tv-font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid var(--text);
+}
+.seek-panel .home-panel-head > svg { display: none; }
+.seek-panel .online-count {
+  margin-left: auto;
+  background: none;
+  padding: 0;
+  min-width: 0;
+  color: var(--accent);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+/* Satır: hairline ayraç, pill/hover-bg yok, keskin */
+.seek-panel .rank-row.online-row {
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 2px;
+  margin: 0;
+}
+.seek-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
+.seek-panel .rank-row.online-row:hover { background: none; }
+.seek-panel .rank-row.mine {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.seek-panel .seek-rating { font-weight: 500; font-variant-numeric: tabular-nums; }
+/* "Ne arıyor" rozetleri -> düz Swiss etiket (kutu/pill/animasyon yok), dikey hairline ayraç */
+.seek-panel .seek-chips { gap: 8px; }
+.seek-panel .seek-chip {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0 0 0 8px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  animation: none;
+}
+.seek-panel .seek-chip + .seek-chip { border-left: 1px solid var(--border); }
+.seek-panel .seek-chip-money,
+.seek-panel .seek-chip-risk,
+.seek-panel .seek-chip.seek-waiting { color: var(--accent); }
+/* Butonlar: düz dikdörtgen, uppercase, 500, gölgesiz */
+.seek-panel .online-act.seek-act-text {
+  border-radius: 2px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  box-shadow: none;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+.seek-panel .online-act.seek-cancel {
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--text);
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
 /* Mobil: rating+rozetler (seek-meta) genis olup isim kolonunu 56px'e sikistiriyor ->
    isim harf harf alt alta kayiyordu. Cozum: seek-meta'yi TAM GENISLIK alt satira al;
    ust satir isme kalir (tek satir, sigmazsa ellipsis). */
