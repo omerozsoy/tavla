@@ -261,9 +261,9 @@ export function LiveMatchesPanel({
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
   const [tab, setTab] = useState<'all' | LiveCat>('all')
-  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 6 mac
-  const PAGE_SIZE = 6
-  const MAX_PAGES = 20 // en fazla 120 mac
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 8 mac
+  const PAGE_SIZE = 8
+  const MAX_PAGES = 20 // en fazla 160 mac
 
   useEffect(() => {
     let alive = true
