@@ -12548,11 +12548,17 @@ button.acct-row-logout:hover:not(:disabled) {
 /* ===== Arkadaş Davet kartı — Swiss / International Typographic Style =====
    Katı grid, ince kural çizgileri, kahraman rakam, tek aksan (terracotta) + monokrom,
    keskin köşe. Gölge/degrade/pill/ikon YOK — tipografik hiyerarşi taşır. */
-.rfr-card {
+/* Sarmalayıcı: lobby genişliğinde ortalı -> kart sol kenarı Oyun Arayanlar ile hizalı. */
+.rfr-wrap {
   width: 100%;
   max-width: var(--lobby-w);
   margin: 10px auto 0;
-  padding: 16px 16px 18px; /* yatay 16px = seek-panel ile aynı (tam-genişlik hairline hizası) */
+}
+.rfr-card {
+  width: 100%;
+  max-width: calc(var(--lobby-w) / 2 - 8px); /* YARI genişlik (Oyun Arayanlar'ın yarısı), sola hizalı */
+  margin: 0;
+  padding: 16px 16px 18px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
@@ -12915,20 +12921,25 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-/* Satır: tam-genişlik (karttan karta), hairline ayraç, keskin. İçerik 16px padding'le hizalı ->
-   hover bandı avatara/butona yapışmaz, temiz tam-satır vurgusu olur. */
+/* Satır: tam-genişlik (karttan karta), hairline ayraç, keskin. İçerik 16px padding'le hizalı. */
 .seek-panel .rank-row.online-row {
+  position: relative;
   border-radius: 0;
   border-bottom: 1px solid var(--border);
   margin: 0 -16px;
   padding: 12px 16px;
 }
 .seek-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
-/* Swiss hover: terracotta border parlaması YOK; tam-genişlik hafif nötr zemin. Tık-küçülmesi (scale) iptal. */
-.seek-panel .rank-row.online-row:hover {
-  background: color-mix(in srgb, var(--text) 4%, transparent);
-  border-color: var(--border);
+/* Hover: dört tarafı EŞİT boşluklu iç vurgu (kart kenarından her yönde 5px) — avatara/butona yapışmaz. */
+.seek-panel .rank-row.online-row:hover { background: none; }
+.seek-panel .rank-row.online-row:not(.mine):hover::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  pointer-events: none;
 }
+.seek-panel .rank-row.online-row > * { position: relative; } /* içerik vurgunun üstünde kalsın */
 .seek-panel .rank-row.online-row:active { scale: none; }
 .seek-panel .rank-row.mine {
   border-left: 3px solid var(--accent);

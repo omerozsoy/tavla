@@ -10904,8 +10904,10 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
-            {/* Arkadaşını Davet Et: Oyun Arayanlar'ın üstünde yarım grid ödül kartı. */}
-            <InviteFriendCard loggedIn={!!user} onLogin={() => setShowAuth(true)} />
+            {/* Arkadaşını Davet Et: Oyun Arayanlar'ın üstünde YARI genişlik ödül kartı (sol hizalı). */}
+            <div className="rfr-wrap">
+              <InviteFriendCard loggedIn={!!user} onLogin={() => setShowAuth(true)} />
+            </div>
             {/* Oyun Arayanlar: hızlı eşleşme havuzunda bekleyenler (reklam bannerının hemen altı) */}
             <SeekersPanel
               currentId={user?.id}
