@@ -35,18 +35,23 @@ class CareerPrTest extends TestCase
         ]);
     }
 
-    /** PR=$pr, karar=$dec olan bir GERÇEK (online) maç. equity_lost = pr*dec/500. */
+    /** PR=$pr, karar=$dec olan bir GERÇEK (online) maç. Kariyer artık otoriter gnubg_pr'ı (Snowie)
+     * karar-ağırlıklı ortalar -> gnubg_pr=$pr set edilir. equity_lost geri-uyum için yine yazılır. */
     private function mr(User $u, float $pr, int $dec, array $over = []): MatchResult
     {
         $loss = $pr * $dec / CareerPrService::SCALE;
 
-        return MatchResult::create(array_merge([
+        $mr = MatchResult::create(array_merge([
             'user_id' => $u->id, 'won' => true,
             'opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0,
             'match_length' => 5, 'match_type' => 'match', 'pr' => round($pr, 2),
             'room_code' => 'R'.(++$this->room), // insan/online maç (bot degil)
             'pr_equity_lost' => $loss, 'pr_decisions' => $dec,
         ], $over));
+        // gnubg_pr $fillable DEĞİL (job'lar update() ile yazar) -> forceFill. Kariyer bunu ağırlıklı ortalar.
+        $mr->forceFill(['gnubg_pr' => $over['gnubg_pr'] ?? $pr])->save();
+
+        return $mr;
     }
 
     private function svc(): CareerPrService
@@ -135,10 +140,10 @@ class CareerPrTest extends TestCase
     {
         $a = $this->user('pa');
         $b = $this->user('pb');
-        // career_pr = loss/dec*1000 (Snowie/XG). dec=1000 sabit: pr = loss.
+        // Kariyer = gnubg_pr karar-ağırlıklı ort. A=4.362, B=4.364 -> ikisi de UI'da 4.36 ama A önce.
         for ($i = 0; $i < 10; $i++) {
-            $this->mr($a, 0, 100, ['pr_equity_lost' => 0.43620, 'pr_decisions' => 100]); // toplam 4.362/1000×1000 -> 4.362
-            $this->mr($b, 0, 100, ['pr_equity_lost' => 0.43640, 'pr_decisions' => 100]); // 4.364 (2dp aynı: 4.36)
+            $this->mr($a, 4.362, 100);
+            $this->mr($b, 4.364, 100);
         }
         $this->svc()->recalc($a->refresh());
         $this->svc()->recalc($b->refresh());
