@@ -19,6 +19,9 @@ Schedule::call(function () {
         ->whereNull('p2_token')
         ->where('created_at', '<', now()->subMinutes(2))
         ->delete();
+    // Terk edilmiş ÜCRETSİZ 'waiting' (friendly/özel) odalar: rakip hiç girmemiş + stake'siz +
+    // 15 dk dokunulmamış. mm_waiting'den AYRI status; eskiden hiç temizlenmiyordu (~8000 birikmişti).
+    Room::reapAbandonedWaiting();
     // Never delete a playing, escrowed, or finished-unsettled room. Economic rooms are
     // retained until the settlement claim is complete so payout/hold recovery remains possible.
     Room::where('status', 'finished')

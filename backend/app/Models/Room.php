@@ -282,6 +282,35 @@ class Room extends Model
         }
     }
 
+    /**
+     * Terk edilmiş ÜCRETSİZ 'waiting' (friendly/özel) odaları siler: rakip HİÇ girmemiş
+     * (p2_token null) + stake'siz (stake=0 && bet_pct=0 -> escrow/coin riski YOK) + $staleMin
+     * dakikadır dokunulmamış (aktif bekleyen oda show heartbeat'iyle updated_at'i taze tutar;
+     * yalnızca yaratanın da bıraktığı ölü odalar bayatlar). Ekonomik oda (stake/escrow) ASLA
+     * silinmez. mm_waiting AYRI temizlenir (cleanupStale). Batch'li: tek dev DELETE yerine
+     * $limit'lik turlar -> canlı DB'de uzun satır kilidi olmaz.
+     *
+     * @return int silinen oda sayısı
+     */
+    public static function reapAbandonedWaiting(int $staleMin = 15, int $limit = 500): int
+    {
+        $cutoff = now()->subMinutes(max(1, $staleMin));
+        $deleted = 0;
+        do {
+            $n = static::query()
+                ->where('status', 'waiting')
+                ->whereNull('p2_token')   // rakip odaya hiç girmemiş
+                ->where('stake', 0)       // ekonomik guard: stake'siz
+                ->where('bet_pct', 0)     // ekonomik guard: yüzde-bahissiz -> escrow/coin yok
+                ->where('updated_at', '<', $cutoff)
+                ->limit($limit)
+                ->delete();
+            $deleted += $n;
+        } while ($n === $limit);
+
+        return $deleted;
+    }
+
     protected function casts(): array
     {
         return [

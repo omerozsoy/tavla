@@ -209,6 +209,9 @@ class RoomController extends Controller
                 DB::table('active_money_match_claims')->whereIn('room_id', $staleWaitingIds)->delete();
             }
             Room::whereIn('id', $staleWaitingIds)->delete();
+            // Terk edilmiş ÜCRETSİZ 'waiting' (friendly/özel) odalar (mm_waiting'den ayrı status):
+            // rakip hiç girmemiş + stake'siz + 15 dk dokunulmamış -> sil (ekonomik oda ASLA).
+            Room::reapAbandonedWaiting();
             // Eski (>1 gün) odalar. ESCROW: rezerve edilmiş (escrowed) varsa ÖNCE rezervi bırak
             // (terk edilmiş bahisli maçın coin'i kilitli kalmasın; idempotent). NOT: releaseEscrow
             // Eloquent update ile updated_at'i touch ediyor -> silinecek id'leri ÖNCE yakala, sonra
