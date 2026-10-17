@@ -1438,32 +1438,61 @@ button[aria-disabled='true'],
     animation: none;
   }
 }
-/* ===== SWISS sol menü (International Typographic Style): keskin köşe + düz.
-   Üçgen "hane" (backgammon point) gradient hover/aktif -> düz dolu terracotta
-   dikdörtgen + beyaz; yuvarlak köşe -> keskin (2px); animasyon yok. Grup başlıkları
-   zaten uppercase/500/accent (Swiss). ===== */
+/* ===== SWISS sol menü — International Typographic Style navigasyon rayı (v2, frontend-design).
+   Yön: numaralı bölümler (01/02…) + hairline-kurallı grup başlıkları + "defter" aktif
+   durumu (sol terracotta kural + tint) — panellerdeki .mine diliyle BİREBİR sistem-tutarlı.
+   Üçgen "hane" gradient + animasyon + yuvarlak köşe KALDIRILDI; tek aksan, düz, keskin. ===== */
 .side-menu {
   border-radius: 0;
   background: none; /* koyu panel tinti YOK -> düz zemin */
+  counter-reset: navgrp;
 }
+/* Grup başlığı: 01/02… index + uppercase tracked + alt hairline (Swiss kural disiplini). */
+.menu-group {
+  counter-increment: navgrp;
+}
+.side-menu .menu-group-title {
+  padding: 9px 2px 7px;
+  margin: 12px 0 4px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.16em;
+}
+.side-menu .menu-group:first-of-type .menu-group-title {
+  margin-top: 2px;
+}
+.side-menu .menu-group-title::before {
+  content: counter(navgrp, decimal-leading-zero); /* 01, 02, 03 … */
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+}
+/* Öğeler: keskin köşe + sol 3px şeffaf kural (aktifle hizayı korur). */
 .side-menu [data-slot='button'],
 .side-menu .menu-btn {
   border-radius: 2px;
+  border-left: 3px solid transparent;
 }
 .side-menu [data-slot='button']:hover::before,
 .side-menu [data-slot='button'][data-active='true']::before {
-  display: none; /* üçgen gradient hane YOK (düz Swiss) */
+  display: none; /* üçgen gradient hane YOK */
 }
 .side-menu [data-slot='button']:hover {
-  background: color-mix(in srgb, var(--text) 6%, transparent) !important;
+  background: color-mix(in srgb, var(--text) 5%, transparent) !important;
   color: var(--accent-text) !important;
 }
+/* Aktif = sol terracotta kural + ince tint + accent metin/ikon (panellerdeki .mine dili). */
 .side-menu [data-slot='button'][data-active='true'] {
-  background: var(--accent) !important;
-  color: #fff !important;
+  background: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+  border-left-color: var(--accent) !important;
+  color: var(--accent-text) !important;
+}
+.side-menu [data-slot='button'][data-active='true'] svg,
+.side-menu [data-slot='button'][data-active='true'] .icon-cdn {
+  color: var(--accent-text) !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover {
-  background: color-mix(in srgb, var(--accent) 88%, #000) !important;
+  background: color-mix(in srgb, var(--accent) 16%, transparent) !important;
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
