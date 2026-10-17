@@ -511,7 +511,7 @@ export function OnlinePlayersPanel({
   const curPage = Math.min(page, pageCount - 1)
 
   return (
-    <div className="home-panel online-panel">
+    <div className="home-panel online-panel swiss-panel">
       <div className="home-panel-head">
         <span className="online-dot" />
         <Icon name="users" size={17} /> {t('online.title')}
@@ -657,7 +657,7 @@ export function SeekersPanel({
   const curPage = Math.min(page, pageCount - 1)
 
   return (
-    <div className="home-panel seek-panel">
+    <div className="home-panel seek-panel swiss-panel">
       <div className="home-panel-head">
         <span className="online-dot" />
         <Icon name="dice" size={18} /> {t('seekers.title')}

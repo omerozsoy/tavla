@@ -12894,14 +12894,15 @@ button.acct-row-logout:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-/* ===== SWISS deneme: SADECE Oyun Arayanlar (.seek-panel) — diğer paneller etkilenmez.
-   Geri almak için bu blok silinir. International Typographic Style, font-weight 500 (bold yok). ===== */
-.seek-panel {
+/* ===== SWISS panel dili (.swiss-panel): Oyun Arayanlar + Çevrimiçi Oyuncular (ortak).
+   Panele 'swiss-panel' sınıfı eklenince uygulanır; panele-özel kurallar aşağıda kendi sınıfında.
+   International Typographic Style, font-weight 500 (bold yok), keskin köşe, tek aksan. ===== */
+.swiss-panel {
   border-radius: 2px;              /* keskin köşe */
   border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
 }
 /* Başlık: uppercase + tam-genişlik hairline, dice ornament kaldır */
-.seek-panel .home-panel-head {
+.swiss-panel .home-panel-head {
   font-family: var(--tv-font-ui);
   font-size: 15px;
   font-weight: 500;
@@ -12911,8 +12912,8 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 0 16px 12px;
   border-bottom: 1px solid var(--border);
 }
-.seek-panel .home-panel-head svg { color: var(--accent); } /* zar ikonu terracotta (davet kartı ikonu ile aynı dil) */
-.seek-panel .online-count {
+.swiss-panel .home-panel-head svg { color: var(--accent); } /* zar ikonu terracotta (davet kartı ikonu ile aynı dil) */
+.swiss-panel .online-count {
   margin-left: auto;
   background: none;
   padding: 0;
@@ -12922,35 +12923,59 @@ button.acct-row-logout:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 /* Satır: tam-genişlik (karttan karta), hairline ayraç, keskin. İçerik 16px padding'le hizalı. */
-.seek-panel .rank-row.online-row {
+.swiss-panel .rank-row.online-row {
   position: relative;
   border-radius: 0;
   border-bottom: 1px solid var(--border);
   margin: 0 -16px;
   padding: 12px 16px;
 }
-.seek-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
+.swiss-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
 /* Hover: dört tarafı EŞİT boşluklu YUMUŞAK iç vurgu. Terracotta dış ÇERÇEVE YOK (base .rank-row
    1px transparent border'ı hover'da accent oluyordu -> sıfırla, yalnız alt hairline kalsın). */
-.seek-panel .rank-row.online-row:hover {
+.swiss-panel .rank-row.online-row:hover {
   background: none;
   border-color: transparent;
   border-bottom-color: var(--border);
 }
-.seek-panel .rank-row.online-row:not(.mine):hover::before {
+.swiss-panel .rank-row.online-row:not(.mine):hover::before {
   content: '';
   position: absolute;
   inset: 5px;
   background: color-mix(in srgb, var(--text) 5%, transparent);
   pointer-events: none;
 }
-.seek-panel .rank-row.online-row > * { position: relative; } /* içerik vurgunun üstünde kalsın */
-.seek-panel .rank-row.online-row:active { scale: none; }
-.seek-panel .rank-row.mine {
+.swiss-panel .rank-row.online-row > * { position: relative; } /* içerik vurgunun üstünde kalsın */
+.swiss-panel .rank-row.online-row:active { scale: none; }
+.swiss-panel .rank-row.mine {
   border-left: 3px solid var(--accent);
   padding-left: 13px; /* 3px border + 13 = 16 -> içerik diğer satırlarla hizalı */
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
+
+/* --- Çevrimiçi Oyuncular'a ÖZEL (ortak .swiss-panel'e ek) --- */
+.online-panel .rank-val {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+/* Aksiyon ikon butonu ("Oyna"/davet): düz terracotta kare, keskin, gölgesiz. */
+.online-panel .online-act {
+  border-radius: 2px;
+  background: var(--accent);
+  border: 0;
+  box-shadow: none;
+}
+.online-panel .online-act:hover:not(:disabled) { filter: brightness(1.08); }
+/* Çevrimiçi / Arkadaşlar sekmeleri: düz, uppercase, 500, keskin. */
+.online-panel .rank-tabs button {
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  font-size: 0.74rem;
+}
+
 .seek-panel .seek-rating { font-weight: 500; font-variant-numeric: tabular-nums; }
 /* "Ne arıyor" rozetleri -> düz Swiss etiket (kutu/pill/animasyon yok), dikey hairline ayraç */
 .seek-panel .seek-chips { gap: 8px; }
