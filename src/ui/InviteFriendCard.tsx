@@ -67,59 +67,59 @@ export default function InviteFriendCard({ loggedIn, onLogin }: { loggedIn: bool
   }
 
   return (
-    <section className="invite-card">
-      <div className="invite-top">
-        <div className="invite-copy">
-          <h3 className="invite-title">{t('invite.title')}</h3>
-          <p className="invite-sub">{t('invite.sub', { n: reward.toLocaleString('tr-TR') })}</p>
+    <section className="rfr-card">
+      <div className="rfr-top">
+        <div className="rfr-copy">
+          <h3 className="rfr-title">{t('invite.title')}</h3>
+          <p className="rfr-sub">{t('invite.sub', { n: reward.toLocaleString('tr-TR') })}</p>
         </div>
-        <div className="invite-figure" aria-hidden>
-          <span className="invite-amount">{reward.toLocaleString('tr-TR')}</span>
-          <span className="invite-unit">COIN &times;2</span>
+        <div className="rfr-figure" aria-hidden>
+          <span className="rfr-amount">{reward.toLocaleString('tr-TR')}</span>
+          <span className="rfr-unit">COIN &times;2</span>
         </div>
       </div>
 
       {loggedIn ? (
         <>
-          <form className="invite-form" onSubmit={submit}>
+          <form className="rfr-form" onSubmit={submit}>
             <input
               type="email"
               inputMode="email"
               autoComplete="email"
-              className="invite-input"
+              className="rfr-input"
               placeholder={t('invite.placeholder')}
               aria-label={t('invite.placeholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={busy || out}
             />
-            <button type="submit" className="invite-btn" disabled={busy || out}>
+            <button type="submit" className="rfr-btn" disabled={busy || out}>
               {t('invite.send')} &rarr;
             </button>
           </form>
 
-          {msg && <div className={`invite-msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
+          {msg && <div className={`rfr-msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
 
-          <div className="invite-rule" aria-hidden />
+          <div className="rfr-rule" aria-hidden />
 
-          <div className="invite-meta">
-            <span className="invite-stat">{t('invite.needMatch')}</span>
-            <span className={`invite-stat ${out ? 'err' : ''}`}>
+          <div className="rfr-meta">
+            <span className="rfr-stat">{t('invite.needMatch')}</span>
+            <span className={`rfr-stat ${out ? 'err' : ''}`}>
               {t('invite.remaining', { n: st?.remaining_today ?? '—', t: st?.daily_limit ?? 5 })}
             </span>
-            {!!st?.count && <span className="invite-stat on">{t('invite.earned', { n: st.count })}</span>}
+            {!!st?.count && <span className="rfr-stat on">{t('invite.earned', { n: st.count })}</span>}
           </div>
 
           {st?.link && (
-            <button type="button" className="invite-link" onClick={copy} title={st.link}>
+            <button type="button" className="rfr-link" onClick={copy} title={st.link}>
               {copied ? t('invite.copied') : st.link}
             </button>
           )}
         </>
       ) : (
-        <div className="invite-guest">
-          <span className="invite-stat">{t('invite.needMatch')}</span>
-          <button type="button" className="invite-btn" onClick={onLogin}>
+        <div className="rfr-guest">
+          <span className="rfr-stat">{t('invite.needMatch')}</span>
+          <button type="button" className="rfr-btn" onClick={onLogin}>
             {t('invite.join')} &rarr;
           </button>
         </div>
