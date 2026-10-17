@@ -2685,6 +2685,12 @@ button[aria-disabled='true'],
   max-width: 760px;
   width: 100%;
 }
+/* ===== Tüm site Swiss - Dalga 2: sayfa-özel kart köşeleri keskin (yuvarlak -> 2px). ===== */
+.clubs-card,
+.content-card-wide,
+.board-prev {
+  border-radius: 2px;
+}
 /* ── İçerik yolu (breadcrumb) ── başlığın hemen üstünde, site temasıyla uyumlu.
    Ara basamaklar muted+link (accent hover), mevcut sayfa vurgulu. Mobilde sarar;
    son (mevcut) basamak uzun başlıkta kırpılır -> düzen bozulmaz. */
