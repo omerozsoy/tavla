@@ -89,4 +89,26 @@ class AuthHardeningTest extends TestCase
             ->assertStatus(422)
             ->assertJsonPath('errors.login.0', 'Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.');
     }
+
+    // F8: kilit hesap+IP bazli -> saldirgan kurbani kilitleyemez (hedefli DoS yok).
+    public function test_lockout_is_per_ip_not_account_wide_dos(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        User::factory()->create(['email' => 'kurban@e.com', 'password' => Hash::make('DogruSifre123')]);
+
+        // Saldirgan IP'sinden 5 yanlis -> yalniz O IP + hesap kilitlenir.
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.7']);
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/login', ['login' => 'kurban@e.com', 'password' => 'yanlis'])->assertStatus(422);
+        }
+        $this->postJson('/api/login', ['login' => 'kurban@e.com', 'password' => 'DogruSifre123'])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.login.0', 'Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.');
+
+        // KURBAN kendi (farkli) IP'sinden DOGRU sifreyle GIREBILIR -> DoS yok.
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.22']);
+        $this->postJson('/api/login', ['login' => 'kurban@e.com', 'password' => 'DogruSifre123'])
+            ->assertOk()
+            ->assertJsonStructure(['user', 'token']);
+    }
 }

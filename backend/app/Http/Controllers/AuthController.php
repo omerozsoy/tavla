@@ -88,11 +88,12 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Hesap-bazli kaba kuvvet kilidi (IP throttle'a EK): ayni hesaba 5 yanlis
-        // denemede 15 dk kilit. Hesap-bazli olmasi dagitik IP saldirisini de durdurur.
-        // ponytail: hedefli hesap-kilitleme DoS acar (saldirgan kasten kilitler) ama
-        // 15 dk + generic mesaj ile kabul edilebilir; raporda talep edildi.
-        $loginKey = 'login-fails:'.sha1(mb_strtolower(trim($data['login'])));
+        // Hesap+IP bazli kaba kuvvet kilidi (route IP throttle:10,1,auth-login'e EK): ayni
+        // hesaba AYNI IP'den 5 yanlis denemede 15 dk kilit. IP'yi anahtara katmak, hedefli
+        // hesap-kilitleme DoS'unu KAPATIR (saldirgan yalniz KENDI IP'sini kilitler; kurban
+        // kendi IP'sinden girebilir). Tek-IP brute-force yine 5'te kilitlenir; dagitik saldiri
+        // zaten route IP throttle ile IP-basi sinirli. (Plesk/nginx edge -> ip() gercek istemci.)
+        $loginKey = 'login-fails:'.sha1(mb_strtolower(trim($data['login'])).'|'.(string) $request->ip());
         if ((int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) >= 5) {
             throw ValidationException::withMessages([
                 'login' => ['Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.'],
