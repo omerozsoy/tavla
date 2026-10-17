@@ -22,6 +22,7 @@ import { cloneState } from '../engine/board'
 import { applyStep, generateMoves, hasNoMove } from '../engine/moves'
 import { liveMoveDelta } from '../online/liveMoves'
 import { subscribeRoom } from '../online/realtime'
+import { interpClock, type ClockAnchor, type ClockView } from '../online/clockView'
 import { boardSig, validLivePrefix } from '../online/spectateAnim'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './moveAnim'
 import type { GameState, Player, Step } from '../engine/types'
@@ -421,6 +422,39 @@ export default function Spectate({
     return stop
   }, [matchDone, code])
 
+  // SAAT CANLI AKSIN (izleyici KÖK FIX): showRoom sürüm-atlamalı (since=server_version) -> aktif
+  // oyuncu düşünürken tahta sürümü DEĞİŞMEZ, poll r===null döner ve eff.clock TAZELENMEZ -> saat
+  // DONAR; "süre ancak sıra rakibe geçince (hamle sürümü değiştirince) güncelleniyor" şikayeti.
+  // Çözüm oyuncu görünümüyle AYNI: sunucu demirinden (anchor) interpClock ile YEREL say. Snapshot
+  // değişmese de geçen süreyle delay/banka erir; yeni snapshot gelince anchor resync olur. Gerçek
+  // saat/kayıp sunucuda (izleyici yalnız görüntüler).
+  const clkAnchorRef = useRef<ClockAnchor | null>(null)
+  const [clkView, setClkView] = useState<ClockView | null>(null)
+  const sc = eff?.clock
+  const scKey = sc && sc.running ? `${sc.delay}|${sc.white}|${sc.black}|${sc.active}` : ''
+  useEffect(() => {
+    if (!sc || !sc.running || matchDone) {
+      clkAnchorRef.current = null
+      setClkView(null)
+      return
+    }
+    clkAnchorRef.current = {
+      delay: sc.delay,
+      hold: (sc as { hold?: number }).hold ?? 0,
+      white: sc.white,
+      black: sc.black,
+      active: sc.active,
+      at: Date.now(),
+    }
+    setClkView(interpClock(clkAnchorRef.current, Date.now()))
+    const id = window.setInterval(() => {
+      const a = clkAnchorRef.current
+      if (a) setClkView(interpClock(a, Date.now()))
+    }, 250)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scKey, matchDone])
+
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
     const name = isP1 ? p1Name : p2Name
@@ -563,9 +597,9 @@ export default function Spectate({
               {clock && (
                 <ClockStack
                   active={clock.active}
-                  delay={clock.delay}
-                  white={clock.white}
-                  black={clock.black}
+                  delay={clkView?.delay ?? clock.delay}
+                  white={clkView?.white ?? clock.white}
+                  black={clkView?.black ?? clock.black}
                   final={30}
                   flip={false}
                   topScore={score.black}
