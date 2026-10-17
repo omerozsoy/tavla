@@ -228,7 +228,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
         ->middleware('throttle:30,1,promo-validate'); // indirim kodu dogrula (sunucu)
 
     Route::get('/friends', [FriendController::class, 'index']);
-    Route::post('/friends/request', [FriendController::class, 'request']);
+    Route::post('/friends/request', [FriendController::class, 'request'])
+        ->middleware('throttle:20,1,friend-request'); // id-numaralama taramasini yavaslat (yoksa 404/200 ile hesap varligi sizar)
     Route::post('/friends/{userId}/accept', [FriendController::class, 'accept']);
     Route::delete('/friends/{userId}', [FriendController::class, 'destroy']);
 
