@@ -315,10 +315,10 @@ class MatchClockTest extends TestCase
     // ---- 16) Ikisi de present -> normal AFK isler (presence karismaz) ----
     public function test_presence_both_present_afk_still_applies(): void
     {
-        $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk gecerli
-        $c = MatchClock::seen($c, 'p1', self::T0 + 61);
-        $c = MatchClock::seen($c, 'p2', self::T0 + 61);
-        $end = MatchClock::tick($c, self::T0 + 63)['end']; // ikisi de yakinda goruldu
+        $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk gecerli (t0+120)
+        $c = MatchClock::seen($c, 'p1', self::T0 + 121);
+        $c = MatchClock::seen($c, 'p2', self::T0 + 121);
+        $end = MatchClock::tick($c, self::T0 + 123)['end']; // ikisi de yakinda goruldu (present) ama AFK 120 gecti
         $this->assertSame('AFK_TIMEOUT', $end['reason']);
         $this->assertSame('p2', $end['winner']);
     }
@@ -462,13 +462,13 @@ class MatchClockTest extends TestCase
         $this->assertEmpty(MatchClock::tick($c, self::T0 + 63)['end'] ?? null);
     }
 
-    // ---- 23) KALKAN SINIRSIZ DEGIL: komut varisi 60sn esigini gecerse AFK yine isler ----
+    // ---- 23) KALKAN SINIRSIZ DEGIL: komut varisi 120sn esigini gecerse AFK yine isler ----
     // (sonsuz stall/grief exploit yok: _acted now'u asamaz, retry'lerle ilerler; esigi gecince kayip.)
     public function test_inflight_acted_still_afks_past_threshold(): void
     {
         $c = $this->movedClock('casual', 5);
-        $c['p1_acted'] = self::T0 + 61;          // komut varisi 60sn hareketsizlik esigini gecti
-        $end = MatchClock::tick($c, self::T0 + 62)['end']; // effNow=61 >= 60 -> AFK
+        $c['p1_acted'] = self::T0 + 121;         // komut varisi 120sn hareketsizlik esigini gecti
+        $end = MatchClock::tick($c, self::T0 + 122)['end']; // effNow=121 >= 120 -> AFK
         $this->assertSame('AFK_TIMEOUT', $end['reason']);
         $this->assertSame('p2', $end['winner']);
     }
@@ -507,14 +507,14 @@ class MatchClockTest extends TestCase
     {
         $c = $this->movedClock('casual', 5);
         $c['p1_acted'] = self::T0 - 10;          // onceki turdan kalma (<= started_at) -> etkisiz
-        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 63)['end']['reason']);
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 123)['end']['reason']);
     }
 
     // ---- 26) KALKAN YALNIZ AKTIF OYUNCUYA: rakibin _acted'i aktifi korumaz ----
     public function test_opponent_acted_does_not_shield_active(): void
     {
         $c = $this->movedClock('casual', 5);     // aktif p1
-        $c['p2_acted'] = self::T0 + 59;          // rakip (p2, aktif DEGIL) komut yolladi
-        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 63)['end']['reason']);
+        $c['p2_acted'] = self::T0 + 119;         // rakip (p2, aktif DEGIL) komut yolladi
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 123)['end']['reason']);
     }
 }

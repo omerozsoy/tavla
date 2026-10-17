@@ -32,10 +32,15 @@ class ForfeitGammonValueTest extends TestCase
 
     private function backgammonForBlack(): array
     {
-        // Siyah (kaybeden) hiç toplamadı ve barda taşı var -> backgammon (3).
+        // Siyah (kaybeden) hiç toplamadı ve barda taşı var -> backgammon (3). TOPLAMA-EVRESİ KAPISI
+        // (2026-10-17): 3× yalnız KAZANAN gerçekten toplama evresindeyken sayılır, bu yüzden beyaz
+        // (kazanan) off=1 olmalı; aksi halde erken terk gibi tekliye (1) kapanırdı. 15 taş korunur:
+        // siyahtan 1 taş bara (18: -5 -> -4), beyazdan 1 taş toplandı (23: 2 -> 1, off+1).
         $s = \App\Support\Backgammon::initialState();
         $s['bar']['black'] = 1;
         $s['points'][18] = -4;
+        $s['points'][23] = 1;
+        $s['off']['white'] = 1;
 
         return $s;
     }
