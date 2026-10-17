@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\DB;
  * Career PR (PR Sıralaması) — oyuncunun TÜM geçerli maçlarini TEK büyük analiz seti gibi
  * degerlendiren havuzlanmis PR. Match PR'larinin ortalamasi DEGILDIR:
  *
- *   career_pr = (Σ pr_equity_lost / Σ pr_decisions) × 500
+ *   career_pr = (Σ pr_equity_lost / Σ pr_decisions) × 1000
  *
- * (match_results.pr ile AYNI matematik; karar-agirlikli -> uzun/çok-kararli maçlar dogal olarak
- * daha agir.) Dusuk deger daha iyidir. Dahil edilen maçlar: gerçek (match_type!=ai) + insan/online
- * (room_code dolu -> bot maçlari HARIÇ) + analiz edilmis (pr_decisions>0, pr_equity_lost dolu).
+ * SNOWIE/XG konvansiyonu: Aşama 1'den sonra maç pr_equity_lost = genel hata EMG, pr_decisions =
+ * Snowie paydası (tüm hamle + küp kararı). gnubg "Snowie error rate" = err/dec × 1000 (XG-birebir).
+ * Kariyer bunları doğrudan havuzlar -> maç Snowie'leriyle AYNI ölçek (karar-agirlikli). Dusuk daha iyi.
+ * Dahil: gerçek (match_type!=ai) + insan/online (room_code dolu) + analiz edilmis (pr_decisions>=MIN).
  *
  * Performans: users tablosunda aggregate cache tutulur (career_pr, *_matches, *_decisions,
  * *_equity_lost). Yeni maç raporlaninca ilgili oyuncu icin recalc() (tek gruplu sorgu) çalisir;
@@ -24,7 +25,8 @@ use Illuminate\Support\Facades\DB;
  */
 class CareerPrService
 {
-    public const SCALE = 500; // Match PR ile ayni olcek (bkz AuthController::prFromLog)
+    public const SCALE = 1000; // SNOWIE/XG ölçeği: err/dec × 1000 (gnubg "Snowie error rate" ile birebir).
+    // (Aşama 2: 500 -> 1000. Maç PR'ları artık gnubg Snowie; kariyer de aynı ölçekte havuzlanır.)
 
     // Kariyer küp PR'ı yalnız bu kadar küp kararı birikince anlamlı (altında "—"/gizli).
     public const MIN_CAREER_CUBE_DECISIONS = 25;

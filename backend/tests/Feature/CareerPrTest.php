@@ -135,15 +135,15 @@ class CareerPrTest extends TestCase
     {
         $a = $this->user('pa');
         $b = $this->user('pb');
-        // career_pr = loss/dec*500. dec=1000 sabit: pr = loss*0.5.
+        // career_pr = loss/dec*1000 (Snowie/XG). dec=1000 sabit: pr = loss.
         for ($i = 0; $i < 10; $i++) {
-            $this->mr($a, 0, 100, ['pr_equity_lost' => 0.43620, 'pr_decisions' => 100]); // toplam 4.362/1000 -> 2.181
-            $this->mr($b, 0, 100, ['pr_equity_lost' => 0.43680, 'pr_decisions' => 100]); // 2.184
+            $this->mr($a, 0, 100, ['pr_equity_lost' => 0.43620, 'pr_decisions' => 100]); // toplam 4.362/1000×1000 -> 4.362
+            $this->mr($b, 0, 100, ['pr_equity_lost' => 0.43640, 'pr_decisions' => 100]); // 4.364 (2dp aynı: 4.36)
         }
         $this->svc()->recalc($a->refresh());
         $this->svc()->recalc($b->refresh());
-        $this->assertEqualsWithDelta(2.181, $a->fresh()->career_pr, 0.0005);
-        $this->assertEqualsWithDelta(2.184, $b->fresh()->career_pr, 0.0005);
+        $this->assertEqualsWithDelta(4.362, $a->fresh()->career_pr, 0.0005);
+        $this->assertEqualsWithDelta(4.364, $b->fresh()->career_pr, 0.0005);
         // UI 2dp esit gorunur ama siralamada A once.
         $this->assertSame(round($a->fresh()->career_pr, 2), round($b->fresh()->career_pr, 2));
         $players = $this->prBoard()['players'];
