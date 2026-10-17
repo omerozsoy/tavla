@@ -12558,11 +12558,18 @@ button.acct-row-logout:hover:not(:disabled) {
   border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
   border-radius: 2px; /* keskin köşe */
 }
-/* Başlık: sadece TITLE + tam-genişlik hairline (her yerde SABİT başlık deseni; sağda rakam yok). */
+/* Başlık: [ikon] TITLE + tam-genişlik hairline (OYUN ARAYANLAR ile aynı desen). */
 .rfr-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 -16px; /* hairline karttan karta tam genişlik */
   padding: 0 16px 12px;
   border-bottom: 1px solid var(--border);
+}
+.rfr-ico {
+  flex: none;
+  color: var(--accent);
 }
 .rfr-title {
   margin: 0;
@@ -12574,8 +12581,42 @@ button.acct-row-logout:hover:not(:disabled) {
   text-transform: uppercase;
   color: var(--text);
 }
+/* Ödül figürü (gövde) — Swiss büyük rakam, sol hizalı. Başlıkta DEĞİL; başlık her yerde sabit. */
+.rfr-reward {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 16px;
+}
+.rfr-amount {
+  font-family: var(--tv-font-display);
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: -2px;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.rfr-unit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+.rfr-unit > span:first-child {
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.rfr-unit > span:last-child {
+  font-size: 0.72rem;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+}
 .rfr-sub {
-  margin: 12px 0 0; /* başlık çizgisinin ALTINDA (gövde metni) */
+  margin: 10px 0 0; /* ödül figürünün altında kısa açıklama */
   font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted);
@@ -12864,7 +12905,7 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 0 16px 12px;
   border-bottom: 1px solid var(--border);
 }
-.seek-panel .home-panel-head svg { display: none; } /* dekoratif zar ikonu gizli (davet kartında ikon yok) */
+.seek-panel .home-panel-head svg { color: var(--accent); } /* zar ikonu terracotta (davet kartı ikonu ile aynı dil) */
 .seek-panel .online-count {
   margin-left: auto;
   background: none;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 import { ApiError, referralStatus, sendReferralInvite, type ReferralStatus } from '../api'
 
 /**
@@ -69,7 +70,15 @@ export default function InviteFriendCard({ loggedIn, onLogin }: { loggedIn: bool
   return (
     <section className="rfr-card">
       <div className="rfr-top">
+        <Icon name="gift" size={17} className="rfr-ico" />
         <h3 className="rfr-title">{t('invite.title')}</h3>
+      </div>
+      <div className="rfr-reward" aria-hidden>
+        <span className="rfr-amount">{reward.toLocaleString('tr-TR')}</span>
+        <span className="rfr-unit">
+          <span>COIN</span>
+          <span>{t('invite.both')}</span>
+        </span>
       </div>
       <p className="rfr-sub">{t('invite.sub', { n: reward.toLocaleString('tr-TR') })}</p>
 
