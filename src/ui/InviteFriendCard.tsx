@@ -69,15 +69,13 @@ export default function InviteFriendCard({ loggedIn, onLogin }: { loggedIn: bool
   return (
     <section className="rfr-card">
       <div className="rfr-top">
-        <div className="rfr-copy">
-          <h3 className="rfr-title">{t('invite.title')}</h3>
-          <p className="rfr-sub">{t('invite.sub', { n: reward.toLocaleString('tr-TR') })}</p>
-        </div>
+        <h3 className="rfr-title">{t('invite.title')}</h3>
         <div className="rfr-figure" aria-hidden>
           <span className="rfr-amount">{reward.toLocaleString('tr-TR')}</span>
           <span className="rfr-unit">COIN &times;2</span>
         </div>
       </div>
+      <p className="rfr-sub">{t('invite.sub', { n: reward.toLocaleString('tr-TR') })}</p>
 
       {loggedIn ? (
         <>

@@ -12552,23 +12552,21 @@ button.acct-row-logout:hover:not(:disabled) {
   width: 100%;
   max-width: var(--lobby-w);
   margin: 10px auto 0;
-  padding: 16px 18px 18px;
+  padding: 16px 16px 18px; /* yatay 16px = seek-panel ile aynı (tam-genişlik hairline hizası) */
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
   border-radius: 2px; /* keskin köşe */
 }
-/* Üst grid: sola hizalı başlık bloğu | sağda kahraman rakam */
+/* Başlık grid'i: sol başlık | sağ kahraman rakam. Altında tam-genişlik hairline (OYUN ARAYANLAR gibi). */
 .rfr-top {
   display: grid;
   grid-template-columns: 1fr auto;
-  align-items: baseline;
+  align-items: center;
   column-gap: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border); /* OYUN ARAYANLAR ile aynı ince başlık çizgisi (tek tip) */
-}
-.rfr-copy {
-  min-width: 0;
+  margin: 0 -16px; /* hairline karttan karta tam genişlik */
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border);
 }
 .rfr-title {
   margin: 0;
@@ -12581,7 +12579,7 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--text);
 }
 .rfr-sub {
-  margin: 5px 0 0;
+  margin: 12px 0 0; /* başlık çizgisinin ALTINDA (gövde metni) */
   font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted);
@@ -12665,7 +12663,7 @@ button.acct-row-logout:hover:not(:disabled) {
 /* İnce kural çizgisi (Swiss hairline) */
 .rfr-rule {
   height: 0;
-  margin: 14px 0 10px;
+  margin: 14px -16px 10px; /* başlık/satır hairline'larıyla aynı tam genişlik */
   border-top: 1px solid var(--border);
 }
 /* Meta: dikey hairline ile ayrılmış veri satırı */
@@ -12883,16 +12881,16 @@ button.acct-row-logout:hover:not(:disabled) {
   border-radius: 2px;              /* keskin köşe */
   border-top: 3px solid var(--accent); /* tek aksan: üst kural çizgisi */
 }
-/* Başlık: uppercase + hairline, dice ornament kaldır */
+/* Başlık: uppercase + tam-genişlik hairline, dice ornament kaldır */
 .seek-panel .home-panel-head {
   font-family: var(--tv-font-ui);
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  padding-bottom: 12px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--border); /* davet kartı ile aynı ince hairline (tek tip; kalın çizgi yok) */
+  margin: 0 -16px 4px; /* hairline karttan karta tam genişlik (davet kartı ile birebir) */
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border);
 }
 .seek-panel .home-panel-head svg { display: none; } /* dekoratif zar ikonu gizli (davet kartında ikon yok) */
 .seek-panel .online-count {
@@ -12904,15 +12902,16 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-/* Satır: hairline ayraç, pill/hover-bg yok, keskin */
+/* Satır: tam-genişlik (karttan karta), hairline ayraç, keskin. İçerik 16px padding'le hizalı ->
+   hover bandı avatara/butona yapışmaz, temiz tam-satır vurgusu olur. */
 .seek-panel .rank-row.online-row {
   border-radius: 0;
   border-bottom: 1px solid var(--border);
-  padding: 12px 2px;
-  margin: 0;
+  margin: 0 -16px;
+  padding: 12px 16px;
 }
 .seek-panel .rank-list > .rank-row:last-child { border-bottom: 0; }
-/* Swiss hover: terracotta border parlaması YOK; yalnız çok hafif nötr zemin. Tık-küçülmesi (scale) iptal. */
+/* Swiss hover: terracotta border parlaması YOK; tam-genişlik hafif nötr zemin. Tık-küçülmesi (scale) iptal. */
 .seek-panel .rank-row.online-row:hover {
   background: color-mix(in srgb, var(--text) 4%, transparent);
   border-color: var(--border);
@@ -12920,7 +12919,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .seek-panel .rank-row.online-row:active { scale: none; }
 .seek-panel .rank-row.mine {
   border-left: 3px solid var(--accent);
-  padding-left: 10px;
+  padding-left: 13px; /* 3px border + 13 = 16 -> içerik diğer satırlarla hizalı */
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 .seek-panel .seek-rating { font-weight: 500; font-variant-numeric: tabular-nums; }
