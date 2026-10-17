@@ -585,9 +585,14 @@ export default function MatchReport({
                             <span className="an-rank">{ci + 1}</span>
                             <span className="an-cmove">{c.notation}</span>
                             <span className={`an-eq ${diff < -0.001 ? 'neg' : 'pos'}`}>
-                              {ci === 0
-                                ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`
-                                : diff.toFixed(3)}
+                              {diff.toFixed(3)}
+                              {ci === 0 && (
+                                <span style={{ opacity: 0.6, fontWeight: 400 }}>
+                                  {' '}
+                                  ({c.equity >= 0 ? '+' : ''}
+                                  {c.equity.toFixed(3)})
+                                </span>
+                              )}
                             </span>
                             <span className="an-tags">
                               {ci === 0 && (
