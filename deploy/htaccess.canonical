@@ -17,6 +17,13 @@ AddType application/manifest+json .webmanifest
     <FilesMatch "\.(js|css|woff2?|wasm)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
+    # sw.js SABIT isimli (hash'siz): generic .js immutable kurali onu da yakaliyordu -> yeni SW
+    # surumu cihazlara ULASMIYOR (eski sw.js yil boyu cache'ten gelir, v11'de TAKILI kalir -> bayat
+    # cache + beyaz ekran kendini iyilestiremez). Bu kural generic'ten SONRA gelir -> sw.js'i DAIMA
+    # revalidate (no-store) yapar; override eder. Hash'li /assets immutable KALIR.
+    <FilesMatch "^sw\.js$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+    </FilesMatch>
 
     # COOP burada SET EDILMEZ. COOP tek kaynaktan (nginx additional directives) verilir; birden
     # fazla katman (nginx + .htaccess + middleware) ayni basligi eklerse tarayici coklu COOP'u
