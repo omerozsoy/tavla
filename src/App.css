@@ -11723,6 +11723,29 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-content: center;
   min-height: 40px;
 }
+/* Native (kurulu APK) Google butonu: GIS pill'ine benzer notr outline. GIS WebView'da
+   calismadigindan app'te bunun yerine bu buton -> native hesap secici. */
+.native-google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 300px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--line, #dadce0);
+  border-radius: 999px;
+  background: #fff;
+  color: #3c4043;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.native-google-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 .auth-divider {
   display: flex;
   align-items: center;
