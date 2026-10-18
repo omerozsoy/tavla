@@ -24172,10 +24172,21 @@ body:has(.spectate-view) .app.lobby {
   position: relative; /* emoji paleti compose'a gore SAGA hizalanabilsin */
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 6px 10px;
   border-top: 1px solid var(--line);
   background: var(--card-bg);
+}
+/* KOMPAKT compose ("yazma kutusu aşırı büyük" sikayeti): tüm kontroller 36px (eskiden 42px
+   textarea + shared Button + emoji-btn -> çubuk ~62px'ti). Scoped -> paylaşılan .emoji-btn /
+   Button bileşenine GLOBAL dokunmadan yalnız compose'daki örnekleri küçültür. */
+.messages-compose button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+}
+.messages-compose .emoji-btn {
+  font-size: 17px;
 }
 .messages-compose input {
   flex: 1;
@@ -24196,11 +24207,11 @@ body:has(.spectate-view) .app.lobby {
 .messages-compose textarea {
   flex: 1;
   min-width: 0;
-  min-height: 42px;
-  max-height: 120px;
-  padding: 11px 15px;
+  min-height: 36px;
+  max-height: 96px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--bg);
   color: var(--text);
   font: inherit;
@@ -24314,9 +24325,11 @@ body:has(.spectate-view) .app.lobby {
   .messages-badge {
     align-self: flex-end;
   }
-  /* iOS: input font-size < 16px odaklaninca sayfayi zoomlar -> 16px yap (arama + yazma) */
+  /* iOS: input font-size < 16px odaklaninca sayfayi zoomlar -> 16px yap (arama + yazma).
+     Yazma alani artik <textarea> (cok satirli DM) -> onu da ekle (eski 'input' selektoru kacin). */
   .messages-search input,
-  .messages-compose input {
+  .messages-compose input,
+  .messages-compose textarea {
     font-size: 16px;
   }
 }

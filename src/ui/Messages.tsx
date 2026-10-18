@@ -596,10 +596,11 @@ export default function Messages({
               {(() => {
                 const source = pane === 'requests' ? requestThreads : chatThreads
                 const q = search.trim().toLowerCase()
-                // Cevrimici kisiler EN USTTE; her grup kendi icinde sunucu sirasini (son mesaj) korur
-                // (Array.sort kararli).
+                // EN SON KONUSULAN EN USTTE: son mesaj zamanina gore azalan sirala (recency birincil);
+                // esitlikte (son mesaj yok/ayni an) cevrimici oncelikli. Array.sort kararli.
+                const lastTs = (th: ChatThread) => (th.last?.created_at ? new Date(th.last.created_at).getTime() : 0)
                 const list = (q ? source.filter((th) => th.user.name.toLowerCase().includes(q)) : [...source]).sort(
-                  (a, b) => Number(!!b.user.online) - Number(!!a.user.online),
+                  (a, b) => lastTs(b) - lastTs(a) || Number(!!b.user.online) - Number(!!a.user.online),
                 )
                 if (loadingThreads) return <Loading />
                 if (pane === 'requests' && source.length === 0) return <div className="lb-empty">{t('dm.requestsEmpty')}</div>
@@ -982,9 +983,9 @@ export default function Messages({
                     rows={1}
                     onChange={(e) => {
                       setText(e.target.value)
-                      // WhatsApp gibi otomatik büyüsün (max ~5 satır, sonra kaydır)
+                      // WhatsApp gibi otomatik büyüsün (max ~4 satır, sonra kaydır; CSS max-height ile hizalı)
                       e.target.style.height = 'auto'
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+                      e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px'
                       // Yazarken karsi tarafa "yaziyor…" nabzi (en fazla ~2.5 sn'de bir)
                       if (activeId != null && e.target.value.trim()) {
                         const now = Date.now()
