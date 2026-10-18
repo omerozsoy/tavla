@@ -24802,6 +24802,16 @@ h1, h2, h3, h4, h5, h6, strong, b,
 .info-rich.rich h2 { text-transform: uppercase; letter-spacing: 0.02em; }
 /* 6) Kaçak dekoratif yeşil "tasarruf" pili -> aksan. */
 .coin-card-save { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--accent-text) !important; }
+/* 7) Kalan title-case başlıklar uppercase (servis/SSS/adillik). SSS sorularını (.faq-item h3)
+   UZUN olduğu için sentence-case bırakıyorum — okunabilirlik. */
+.service-landing-title,
+.faq-hero h1,
+.faq-section-heading h2,
+.fair-step-title, .fair-box-title, .fair-callout-title,
+.fair-info-head h3, .fair-verify h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
 
 @media (max-width: 560px) {
   .prof-ov-board {

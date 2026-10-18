@@ -1107,3 +1107,43 @@
     gap: 8px;
   }
 }
+
+/* ===== SWISS Zar Slotu (A-Z denetim): karanlık navy/altın casino kabin -> düz kağıt/ink
+   + terracotta (altın yerine), keskin köşe, gradyan/glow azalt. --gold -> --accent cascade
+   çoğu altın kromu terracotta yapar; kabin/marquee/spin/paytable düzlenir. ===== */
+.ds-card,
+.register-overlay.page.ds-overlay > .ds-card {
+  --gold: var(--accent);
+  --gold-deep: color-mix(in srgb, var(--accent) 55%, #000);
+  color: var(--text) !important;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-top: 3px solid var(--accent) !important;
+  border-radius: 2px !important;
+  box-shadow: 0 10px 30px rgba(40, 30, 24, 0.1) !important;
+}
+.sm-cabinet { background: var(--card-bg) !important; box-shadow: none !important; }
+.sm-marquee-title {
+  background: none !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  color: var(--accent) !important;
+  text-transform: uppercase;
+}
+.sm-spin-btn {
+  background: var(--accent) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+  font-weight: 500 !important;
+}
+.ds-paytable {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+}
+.ds-paytable-title { color: var(--accent) !important; }
+.ds-close {
+  color: var(--text) !important;
+  background: none !important;
+  border-color: var(--border) !important;
+}
