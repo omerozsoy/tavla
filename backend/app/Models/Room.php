@@ -171,6 +171,30 @@ class Room extends Model
     }
 
     /**
+     * Any OTHER live match (matchmaking-wait or playing) this user already sits in, regardless of
+     * stake. Used to stop a rematch from opening a clock-running room against a player who has
+     * wandered into another game while the offer was pending — otherwise the new room starts
+     * 'playing', the absent player's clock drains, and they forfeit a match they never joined.
+     * The caller must hold the user row lock when used for an admission decision.
+     */
+    public static function userHasOtherActiveMatch(?int $uid, ?int $excludeRoomId = null): bool
+    {
+        if (! $uid) {
+            return false;
+        }
+
+        $query = static::whereIn('status', ['mm_waiting', 'playing'])
+            ->where(function ($q) use ($uid) {
+                $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
+            });
+        if ($excludeRoomId !== null) {
+            $query->whereKeyNot($excludeRoomId);
+        }
+
+        return $query->exists();
+    }
+
+    /**
      * Claim the user's single economic room slot. The unique user constraint is the
      * database serialization point; application pre-checks are only an optimization.
      */

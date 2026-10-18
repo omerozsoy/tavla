@@ -44,4 +44,28 @@ class RoomRematchRaceTest extends TestCase
         $this->assertNotEmpty($res->json('rematch.code'), 'iki taraf kabul etti -> yeni oda açılmalı');
         $this->assertSame($res->json('rematch.code'), $room->rematch_code);
     }
+
+    // Teklifi yollayan oyuncu ana sayfaya dönüp BAŞKA bir (serbest) maça girmişken rakip rövanşı kabul
+    // ederse: yeni oda AÇILMAMALI. Açılsaydı 'playing'+saat-çalışır başlar, o oyuncu orada olmadığı için
+    // hiç girmediği maçı hareketsizlikten hükmen kaybederdi. (Eski guard yalnız bahisli maçı sayıyordu.)
+    public function test_rematch_blocked_when_requester_already_in_another_match(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+        // Biten maç: A teklifi yolladı (rematch_p1=yes).
+        Room::create(['code' => 'RMR02', 'p1_token' => 't1', 'p1_user_id' => $a->id, 'p1_name' => 'A',
+            'p2_token' => 't2', 'p2_user_id' => $b->id, 'p2_name' => 'B', 'status' => 'finished',
+            'rematch_p1' => 'yes', 'version' => 5, 'server_version' => 5]);
+        // A bu arada başka, bahissiz bir maça (üçüncü bir oyuncuyla) girdi.
+        $c = User::factory()->create();
+        Room::create(['code' => 'OTHER', 'p1_token' => 'x1', 'p1_user_id' => $a->id, 'p1_name' => 'A',
+            'p2_token' => 'x2', 'p2_user_id' => $c->id, 'p2_name' => 'C', 'status' => 'playing']);
+
+        Sanctum::actingAs($b);
+        $this->postJson('/api/rooms/RMR02/rematch', ['token' => 't2', 'accept' => true])
+            ->assertStatus(409);
+
+        $room = Room::where('code', 'RMR02')->first();
+        $this->assertNull($room->rematch_code, 'başka maçtayken rövanş odası açılmamalı');
+    }
 }

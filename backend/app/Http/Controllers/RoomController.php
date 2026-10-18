@@ -1852,16 +1852,18 @@ class RoomController extends Controller
         if ($room->rematch_p1 === 'yes' && $room->rematch_p2 === 'yes' && ! $room->rematch_code) {
             $stake = (int) $room->stake;
             $betPct = (int) $room->bet_pct;
-            // C1: ranked/money rövanş, oyunculardan biri başka aktif money maçındaysa açılmaz.
-            if ($moneyRoom
-                && (Room::userHasActiveMoneyMatch((int) $room->p1_user_id, (int) $room->id)
-                    || Room::userHasActiveMoneyMatch((int) $room->p2_user_id, (int) $room->id))) {
+            // Oyunculardan biri (çoğunlukla teklifi yollayıp ana sayfaya dönen taraf) başka bir aktif
+            // maçtaysa rövanş AÇILMAZ: açılsaydı yeni oda 'playing'+saat-çalışır başlar, o oyuncu orada
+            // olmadığı için saati biter ve hiç girmediği maçı hükmen kaybederdi. Para maçı değil, HER
+            // maç için kontrol et (eski kod yalnız bahisli odayı sayıyordu -> serbest rövanşta forfeit).
+            if (Room::userHasOtherActiveMatch((int) $room->p1_user_id, (int) $room->id)
+                || Room::userHasOtherActiveMatch((int) $room->p2_user_id, (int) $room->id)) {
                 $room->{'rematch_'.$slot} = null;
                 $room->server_version = (int) $room->server_version + 1;
                 $room->version = (int) $room->version + 1;
                 $room->save();
 
-                return $this->fail('Devam eden bahisli maçın var.', 409);
+                return $this->fail('Oyunculardan biri başka bir maçta.', 409);
             }
             try {
                 $newCode = $this->openRematchRoom($room);
@@ -1918,8 +1920,8 @@ class RoomController extends Controller
                 if (! $participant || $participant->isBanned()) {
                     throw new \RuntimeException('Rövanş için iki aktif hesap gerekir.');
                 }
-                if (Room::userHasActiveMoneyMatch($uid, (int) $locked->id)) {
-                    throw new \RuntimeException('Oyunculardan birinin başka aktif para maçı var.');
+                if (Room::userHasOtherActiveMatch($uid, (int) $locked->id)) {
+                    throw new \RuntimeException('Oyunculardan biri başka bir maçta — rövanş açılamadı.');
                 }
             }
             $stake = (int) $locked->stake;

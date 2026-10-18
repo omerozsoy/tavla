@@ -7444,6 +7444,14 @@ export default function App() {
         awaitingMatchRef.current = false
         try { await cancelMatchmake() } catch { /* yoksay */ }
       }
+      // Bekleyen rövanş teklifim varken (ana sayfaya dönmüştüm) başka bir maça giriyorsam teklifi GERİ
+      // ÇEK: aksi halde rakip sonra kabul edince rövanş odası 'playing' açılır, ben burada olmadığım
+      // için hiç girmediğim o maçı hareketsizlikten hükmen kaybederim (handleLeaveRoom ile aynı desen).
+      if (rematchSentRef.current === 'yes' && rematchEnteredRef.current == null && room?.code) {
+        try { await rematchRoom(room.code, false) } catch { /* yoksay */ }
+        setRematch({ mine: null, theirs: null, code: null })
+        rematchSentRef.current = null
+      }
       const targets = s.targets && s.targets.length > 0 ? s.targets : [1]
       targetsRef.current = targets
       onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
