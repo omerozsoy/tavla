@@ -136,8 +136,15 @@ class AnalyzeMatchPrJob implements ShouldQueue
             $cube = $orch->cubePr($log, $player, $ml, $onProgress);
         } catch (\Throwable $e) {
             Log::warning('gnubg PR job hata', ['id' => $mr->id, 'err' => $e->getMessage()]);
-
-            return;
+            // KÖK FIX (2026-10-18): eskiden burada sessizce `return` -> gnubg analiz-ANI hatası
+            // (dejenere havuz / mid-run timeout / non-200) tombstone+retry OLMADAN yutuluyordu ->
+            // maç KALICI "PR bekliyor" (failed_jobs'ta GÖRÜNMEZ; heal her 5dk aynı bozuk havuza düşüp
+            // yine sessizce başarısız olup birikim fark edilmiyordu — 7 maç olayı). Artık transient
+            // fırlat -> $tries/backoff retry (çoğu kez failover ile düzelir) + kalıcıysa failed_jobs'ta
+            // GÖRÜNÜR + tavla:gnubg-pr-heal gnubg düzelince gerçek PR'ı yazar. TAM outage zaten yukarıda
+            // health-precheck'te fırlar; buraya YALNIZ "health geçti ama analizde patladı" (bu olayın
+            // degrade senaryosu) düşer -> retry üretken. TransientAnalysisException 500-alarm'dan muaf.
+            throw new \App\Exceptions\TransientAnalysisException('gnubg PR analiz hatasi (checkerPr/cubePr): '.$e->getMessage(), 0, $e);
         }
 
         $totLoss = $chk['loss'] + $cube['loss'];
