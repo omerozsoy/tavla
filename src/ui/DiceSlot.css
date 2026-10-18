@@ -1147,14 +1147,41 @@
   background: none !important;
   border-color: var(--border) !important;
 }
-/* Re-verify: makine iç kromu hâlâ koyu/yuvarlak/gölge+glow -> düz açık, keskin, glow yok. */
-.sm-cabinet, .sm-screen, .sm-bezel, .sm-reel-col, .sr, .sm-jackpot-banner {
+/* Re-verify: keskin köşe + glow yok. Makara EKRANI tek KOYU INK blok (Swiss figür-zemin):
+   fildişi zar sembolleri (SlotSymbol) yalnız koyu zeminde okunur — düz card-bg'de kaybolmuştu
+   ("zar slotu bozuk"). Kabin kağıt; ekran ink; skeuomorfik kol/perçin/cam/bevel kaldırıldı. */
+.sm-cabinet, .sm-screen, .sm-reel-col, .sr, .sm-jackpot-banner {
   border-radius: 2px !important;
   box-shadow: none !important;
 }
-.sm-cabinet, .sm-screen, .sm-bezel, .sm-jackpot-banner {
-  background: var(--card-bg) !important;
+.sm-cabinet { background: var(--card-bg) !important; }
+/* Ekran = tek ink dikdörtgen (fildişi zarlar burada parlar). */
+.sm-screen { background: var(--text) !important; }
+/* Fildişi makara hücreleri ink ekranda net kutular; ince hairline çerçeve. */
+.sr { border: 1px solid color-mix(in srgb, var(--text) 30%, transparent) !important; }
+/* Cam vinyet + köşe perçini + bevel + faux-3D rim = skeuomorfik -> kaldır (Swiss düz). */
+.sm-glass, .sm-rivet, .sm-bezel, .sm-top-face, .sm-side-face { display: none !important; }
+/* Silindir fade'i hafiflet (eski 0.55 ink dirtiness yerine simetrik hafif). */
+.sr-fade {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.22) 0%, transparent 26%, transparent 74%, rgba(0, 0, 0, 0.22) 100%) !important;
 }
+.sm-payline { opacity: 0.9 !important; }
+/* Skeuomorfik kol tipografik tasarıma uymuyor — gizle (ÇEVİR butonu zaten spin eder). */
+.sm-lever { display: none !important; }
+.sm-wrap { padding: 6px 0 !important; }
+/* Marquee tabelası: yuvarlak koyu pill -> sharp hairline etiket. */
+.sm-marquee-sign {
+  background: none !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+/* Jackpot bandı: sharp bordered strip, terracotta etiket + ink değer. */
+.sm-jackpot-banner { background: var(--card-bg) !important; border: 1px solid var(--border) !important; }
+.sm-jackpot-label { color: var(--accent) !important; }
+.sm-jackpot-value { color: var(--text) !important; }
+/* Ödül tablosu zarları (.ds-pt-combo) fildişiydi -> beyazda görünmezdi -> ink. */
+.ds-pt-combo { color: var(--text) !important; }
 .ds-title, .sm-jackpot-label, .sm-jackpot-value, .ds-pt-jackpot, .sm-marquee-title {
   text-shadow: none !important;
   font-weight: 500 !important;
