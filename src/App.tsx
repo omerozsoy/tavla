@@ -7974,7 +7974,10 @@ export default function App() {
 
   // Geri al: son oynanan tek adimi geri al (komple degil)
   function handleUndo() {
-    setPlayed((p) => p.slice(0, -1))
+    setPlayed((p) => {
+      if (p.length) Sound.move() // geri alınca da hamle sesi çalsın
+      return p.slice(0, -1)
+    })
     setSelectedFrom(null)
   }
 
