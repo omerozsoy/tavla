@@ -7,6 +7,7 @@ use App\Models\MatchResult;
 use App\Models\Setting;
 use App\Services\GnuBg\GnuBgClient;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -80,6 +81,20 @@ class CubePrRescore extends Command
             }
         }
         $ids = array_filter(array_map('intval', explode(',', (string) $this->option('ids'))));
+
+        // CRON-GÜVENLİ KUYRUK KAPISI: kuyruk zaten doluyken YENİ dispatch etme. force=true (hep yeniden
+        // işler) + orderByDesc(id) aynı bekleyen maçları tekrar seçip mükerrer gnubg yükü yaratır (termal
+        // kısıtlı sunucu). Kuyruk limit*2'nin altına drene olunca sonraki cron turu devam eder -> imleç
+        // zaten kalıcı, iş kaybı yok. --ids (nokta atışı) ve --dry-run bu kapıdan muaf.
+        if ($ids === [] && ! $dry) {
+            $pending = DB::table('jobs')->where('queue', 'reviews-bulk')->count();
+            $gate = $limit * 2;
+            if ($pending > $gate) {
+                $this->info("reviews-bulk kuyrukta {$pending} is var (> {$gate}) -> bu tur dispatch ATLANDI (kuyruk drene olunca devam).");
+
+                return self::SUCCESS;
+            }
+        }
 
         // Küp kararı olan (cube_decisions>0), review'li, GERÇEK log'lu, cutoff'tan ESKİ review_at'li maçlar.
         // En yeni önce (yakın maçlar öncelik). _at>=before olanlar (bu backfill'de düzelmiş) atlanır.

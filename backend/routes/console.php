@@ -148,6 +148,16 @@ Schedule::command('tavla:review-warmup --limit=15 --days=7')
     ->name('review-warmup')
     ->withoutOverlapping();
 
+// KÜP PR BACKFILL (skor-farkında rescore) OTOMATİK TAMAMLAMA: eski elle `tavla:cube-pr-rescore`
+// re-run derdini kaldırır. Kalıcı imleç (Setting cutoff) + kuyruk-doluluk kapısı sayesinde cron-güvenli:
+// kuyruk (reviews-bulk) limit*2'nin üstündeyse tur ATLANIR (mükerrer/termal yük yok), drene olunca
+// kaldığı yerden devam -> evren bitince de her tur no-op. --limit=25 ≈ drenaj temposu (ADANMIŞ
+// tavla-backfill-queue@ worker'ları işler, canlı 'reviews' ile yarışmaz). gnubg down iken erteler.
+Schedule::command('tavla:cube-pr-rescore --limit=25')
+    ->everyFiveMinutes()
+    ->name('cube-pr-rescore')
+    ->withoutOverlapping();
+
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
 
