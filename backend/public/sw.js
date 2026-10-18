@@ -5,7 +5,7 @@
 // ONEMLI: respondWith'e HER ZAMAN gecerli bir Response donmeli; undefined donersen
 // tarayici "Failed to convert value to 'Response'" atar (fetch VEYA cache.put reddettiginde
 // eski surumde iki caches.match da bos olunca bu oluyordu -> asagida her yol Response garanti).
-const CACHE = 'tavla-cache-v12'
+const CACHE = 'tavla-cache-v13'
 const CACHE_PREFIX = 'tavla-cache-' // yalniz KENDI surumlu cache'lerimizi temizle; baskasina dokunma
 
 // Son care cevrimdisi yaniti -> YALNIZ gezinme (sayfa) isteklerinde. Tek-kullanimlik body
@@ -35,9 +35,11 @@ self.addEventListener('install', (event) => {
       } catch {
         /* install cache basarisiz olsa da SW yuklensin */
       }
-      // skipWaiting YOK: yeni SW, tum sekmeler kapanana kadar BEKLER. Boylece acik bir mac
-      // sirasinda surum zorla degismez (eski ve yeni varliklar karismaz). Surum guncellemesi
-      // zaten icerik-hash'li paket + UpdateBanner ("yeni surum hazir") ile kullanici onayina bagli.
+      // skipWaiting: yeni SW tum sekmeler kapanmadan HEMEN devralsin. Eskiden YOK'tu ("mac
+      // bozulmasin") ama bozuk cache'te TAKILAN cihaz (beyaz ekran) eski SW'de asili kaliyordu ->
+      // kapat-ac bile kurtarmiyordu (waiting'de). Additive deploy eski chunk'lari DISKTE tuttugu
+      // icin aninda devralma maci BOZMAZ (bellekteki app degismez, lazy chunk diskten gelir).
+      await self.skipWaiting()
     })(),
   )
 })
@@ -50,7 +52,9 @@ self.addEventListener('activate', (event) => {
       await Promise.all(
         keys.filter((k) => k !== CACHE && k.startsWith(CACHE_PREFIX)).map((k) => caches.delete(k)),
       )
-      // clients.claim YOK: acik sayfalari zorla devralma -> suren mac mevcut SW/varliklarla devam etsin.
+      // clients.claim: acik sayfalari HEMEN devral -> bozuk cache'te takilan cihaz yeni (saglam)
+      // SW'ye aninda gecer, eski tavla-cache-* silindigi icin bir reload'da temizlenir.
+      await self.clients.claim()
     })(),
   )
 })
