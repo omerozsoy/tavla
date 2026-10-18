@@ -58,22 +58,21 @@ class ClassicScoringTest extends TestCase
         $this->assertSame(3, Backgammon::resignationValue($s, 'white', false));
     }
 
-    // TOPLAMA-EVRESİ KAPISI (2026-10-17, Galaxy karşılaştırması): erken terk/timeout sahte backgammon
-    // vermesin. Açılışta kazanan HENÜZ toplamıyor -> resignationValue tekli (1); ham gamePoints ise
-    // doğal bitiş için 3 kalır (kapı YALNIZ resign/timeout yolunda).
-    public function test_resignation_gate_early_position_is_single(): void
+    // SAF POZİSYON (2026-10-18, kapı kaldırıldı): pes/timeout değeri = tahtadaki saf çarpan.
+    // Açılışta geri taşlar zaten rakip evinde -> erken terk backgammon (3), kazananın durumuna BAKILMAZ.
+    public function test_resignation_opening_is_backgammon_pure_position(): void
     {
         $s = Backgammon::initialState();
-        $this->assertSame(1, Backgammon::resignationValue($s, 'white'));
-        $this->assertSame(1, Backgammon::resignationValue($s, 'black'));
-        $this->assertSame(3, Backgammon::gamePoints($s, 'white')); // ham çarpan (doğal bitiş) kapısız
+        $this->assertSame(3, Backgammon::resignationValue($s, 'white'));
+        $this->assertSame(3, Backgammon::resignationValue($s, 'black'));
+        $this->assertSame(3, Backgammon::gamePoints($s, 'white')); // resign = ham çarpan ile aynı
     }
 
-    public function test_resignation_gate_opens_when_winner_is_bearing(): void
+    public function test_resignation_loser_on_bar_is_backgammon(): void
     {
-        // Kazanan (beyaz) tüm pulları evde + kaybeden (siyah) hiç toplamadı + barda -> MEŞRU backgammon 3.
+        // Kaybeden (siyah) hiç toplamadı + barda -> backgammon 3 (kazanan toplamasa bile).
         $p = array_fill(0, 24, 0);
-        $p[0] = 15; // beyaz hepsi evde -> allHome
+        $p[0] = 15; // beyaz hepsi evde
         $s = ['points' => $p, 'bar' => ['white' => 0, 'black' => 1], 'off' => ['white' => 0, 'black' => 0]];
         $this->assertSame(3, Backgammon::resignationValue($s, 'white'));
     }

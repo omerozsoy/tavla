@@ -81,46 +81,15 @@ class Backgammon
 
     /**
      * SİSTEM-belirlenen pes/timeout değeri (1/2/3): frontend resignationValue (src/engine/resign.ts)
-     * ile BİREBİR. TOPLAMA-EVRESİ KAPISI (2026-10-17 geri getirildi): mars/backgammon YALNIZ kazanan
-     * gerçekten bear-off evresindeyken (tüm pulları evde VEYA en az 1 toplamış) sayılır; aksi halde
-     * erken/orta oyunda pes/timeout SAHTE 2/3 üretmesin -> tekli (1). gamePoints bir oyun-SONU
-     * sezgisidir (off=0 + kazananın evinde kaybeden taşı -> 3); açılışta geri taşlar zaten rakip
-     * evinde olduğundan kapısız hesap her erken terki backgammon sayardı (standart kural İHLALİ). Kapı
-     * para maçında gammon-kaçışını engeller: kazanan gerçekten topluyorsa 2/3 korunur.
+     * ile BİREBİR. SAF POZİSYON (kullanıcı kararı 2026-09-16, 2026-10-18 geri getirildi): pes eden
+     * ŞU ANKİ tahtada ne kaybediyorsa onu kaybeder -> toplama-evresi KAPISI YOK. Rakibin bear-off'a
+     * geçip geçmemesi FARK ETMEZ. Açılışta geri taşlar zaten rakip evinde olduğundan erken terk =
+     * backgammon (3) olabilir -> kasıtlı anti-terk kuralı (kaçarsan tahtada görüneni ödersin).
      * RoomController::resign (:4235) ve applyClockEnd (:2699, terk/timeout/AFK) bunu OTORİTER kullanır.
-     * Doğal oyun-sonu (15 taş) gamePoints ile AYRI hesaplanır, bu kapıdan ETKİLENMEZ.
+     * Doğal oyun-sonu (15 taş) gamePoints ile AYRI hesaplanır, aynı saf çarpanı verir.
      */
     public static function resignationValue(array $state, string $winner, bool $classic = false): int
     {
-        $base = self::gamePoints($state, $winner, $classic);
-        if ($base === 1) {
-            return 1;
-        }
-        $winnerBearing = (int) (($state['off'] ?? [])[$winner] ?? 0) > 0 || self::allHome($state, $winner);
-
-        return $winnerBearing ? $base : 1;
-    }
-
-    /**
-     * Oyuncunun TÜM pulları ev bölgesinde (ve barında yok) mu? -> bear off yapabilir.
-     * (src/engine/board.ts allHome ile BİREBİR: beyaz evi 0..5, siyah evi 18..23.)
-     */
-    private static function allHome(array $state, string $player): bool
-    {
-        if ((int) (($state['bar'] ?? [])[$player] ?? 0) > 0) {
-            return false;
-        }
-        $points = $state['points'] ?? [];
-        // ev DIŞI aralığı: beyaz 6..23, siyah 0..17
-        $range = $player === 'white' ? range(6, 23) : range(0, 17);
-        foreach ($range as $i) {
-            $v = (int) ($points[$i] ?? 0);
-            $here = $player === 'white' ? $v > 0 : $v < 0;
-            if ($here) {
-                return false;
-            }
-        }
-
-        return true;
+        return self::gamePoints($state, $winner, $classic);
     }
 }

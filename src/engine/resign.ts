@@ -1,5 +1,5 @@
 import type { GameState, Player } from './types'
-import { allHome, lossMultiplier, opponent } from './board'
+import { lossMultiplier } from './board'
 
 // ============================================================================
 // RESIGN / PES ETME — KESİN ve DEĞİŞMEZ kural. TEK KAYNAK (frontend + MAT + testler).
@@ -65,26 +65,17 @@ export function calculateResignationPoints(type: ResignationType, cubeValue: num
 }
 
 /**
- * SİSTEM-belirlenen pes/timeout değeri (1/2/3): kaybedenin ŞU ANKİ konumundan.
- * TOPLAMA-EVRESİ KAPISI (2026-10-17 geri getirildi, bkz. Galaxy karşılaştırması): mars/backgammon
- * YALNIZ kazanan gerçekten bear-off evresindeyken (tüm pulları evde VEYA en az 1 toplamış) sayılır;
- * aksi halde erken/orta oyunda pes/timeout SAHTE 2/3 üretmesin -> tekli (1). Gerekçe: lossMultiplier
- * bir oyun-SONU sezgisidir (off=0 + rakip evinde taş -> 3); açılışta geri taşlar zaten rakip evinde
- * olduğundan kapısız hesap her erken terki backgammon sayardı (standart kural İHLALİ). Kapı, para
- * maçında gammon-kaçışını da engeller: kazanan gerçekten topluyorsa 2/3 korunur.
- *   kaybeden ≥1 taş topladı                         -> 1 (single)
- *   kazanan topluyor + kaybeden barda/rakip evinde   -> 3 (backgammon)
- *   kazanan topluyor + kaybeden hiç toplamadı        -> 2 (gammon)
- *   kazanan HENÜZ toplamıyor                         -> 1 (erken terk = tekli)
- * NOT: Doğal oyun-sonu puanı (15 taş toplandı) gamePoints/lossMultiplier ile AYRI hesaplanır,
- * bu kapıdan ETKİLENMEZ (orada çarpan zaten doğru). backend Backgammon::resignationValue ile BİREBİR.
+ * SİSTEM-belirlenen pes/timeout değeri (1/2/3): SAF POZİSYON (kullanıcı kararı 2026-09-16,
+ * 2026-10-18 geri getirildi). Pes eden ŞU ANKİ tahtada ne kaybediyorsa onu kaybeder; kazananın
+ * bear-off'a geçip geçmemesi FARK ETMEZ (toplama-evresi kapısı YOK).
+ *   kaybeden ≥1 taş topladı          -> 1 (single)
+ *   kaybeden barda/rakip evinde       -> 3 (backgammon)  // açılışta geri taşlar zaten rakip evinde -> erken terk 3 olabilir (kasıtlı)
+ *   kaybeden hiç toplamadı, bar/ev yok -> 2 (gammon)
+ * NOT: Doğal oyun-sonu puanı (15 taş) lossMultiplier ile AYRI hesaplanır, aynı saf çarpanı verir.
+ * backend Backgammon::resignationValue ile BİREBİR.
  */
 export function resignationValue(state: GameState, loser: Player, classic = false): 1 | 2 | 3 {
-  const base = lossMultiplier(state, loser, classic)
-  if (base === 1) return 1
-  const winner = opponent(loser)
-  const winnerBearing = state.off[winner] > 0 || allHome(state, winner)
-  return winnerBearing ? base : 1
+  return lossMultiplier(state, loser, classic)
 }
 
 // Değer (1/2/3) -> tür (MAT/kayıt + calculateResignationPoints için).

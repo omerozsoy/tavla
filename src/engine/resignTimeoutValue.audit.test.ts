@@ -4,21 +4,15 @@ import type { GameState } from './types'
 import { resignationValue } from './resign'
 
 // ============================================================================
-// DENETİM TESTİ (Galaxy karşılaştırması 2026-10-17) — TOPLAMA-EVRESİ KAPISI.
+// DENETİM TESTİ — SAF POZİSYON pes/timeout puanı (kullanıcı kararı 2026-10-18).
 //
-// Bulgu & düzeltme: terk (resign) + timeout/AFK puanı SAF KONUMDAN türetiliyordu
-//   (backend RoomController.php:2699, :4235 -> Backgammon::resignationValue;
-//    frontend src/engine/resign.ts -> lossMultiplier). lossMultiplier end-of-game
-//   sezgisidir (off=0 + kazananın evinde kaybeden taşı -> 3). AÇILIŞTA beyazın geri
-//   taşları siyah evinde (index 23) olduğundan kapısız hesap her erken terki/timeout'u
-//   BACKGAMMON(3) sayardı -> standart kural (bkgm/USBGF/WBGF: mars/backgammon yalnız
-//   oyun gerçekten bitince) İHLALİ.
+// Pes (resign) + timeout/AFK puanı SAF KONUMDAN türetilir: pes eden tahtada ne
+//   kaybediyorsa onu kaybeder -> resignationValue = lossMultiplier (kapı YOK).
+//   Kazananın bear-off'a geçip geçmemesi FARK ETMEZ. AÇILIŞTA geri taşlar zaten
+//   rakip evinde olduğundan erken terk = backgammon(3) olabilir -> kasıtlı anti-terk
+//   kuralı (önceki toplama-evresi kapısı 2026-10-18'de kaldırıldı).
 //
-// DÜZELTME (2026-10-17): toplama-evresi kapısı geri getirildi. mars/backgammon YALNIZ
-//   kazanan gerçekten bear-off evresindeyken (off>0 VEYA tüm pullar evde) sayılır; aksi
-//   halde tekli(1). Para maçı gammon-kaçışı: kazanan gerçekten topluyorsa 2/3 korunur.
-//
-// Bu testler düzeltmeyi doğrular (hepsi YEŞİL olmalı).
+// Bu testler saf-pozisyon davranışını doğrular (hepsi YEŞİL olmalı).
 // ============================================================================
 
 function st(o: Partial<GameState>): GameState {
@@ -33,19 +27,18 @@ function st(o: Partial<GameState>): GameState {
   }
 }
 
-describe('toplama-evresi kapısı: terk/timeout puanı', () => {
-  it('AÇILIŞ: kazanan toplamıyor -> SINGLE(1), backgammon DEĞİL (hata düzeltildi)', () => {
-    expect(resignationValue(initialState(), WHITE)).toBe(1)
-    expect(resignationValue(initialState(), BLACK)).toBe(1)
+describe('saf pozisyon: terk/timeout puanı', () => {
+  it('AÇILIŞ: geri taşlar rakip evinde -> BACKGAMMON(3), kazananın durumuna bakılmaz', () => {
+    expect(resignationValue(initialState(), WHITE)).toBe(3)
+    expect(resignationValue(initialState(), BLACK)).toBe(3)
   })
 
-  it('ham lossMultiplier hâlâ 3 döner (kapı YALNIZ resign/timeout yolunda; doğal bitiş etkilenmez)', () => {
-    // lossMultiplier GATELENMEZ: doğal oyun-sonu puanı için 3 doğru kalır.
+  it('resign = ham lossMultiplier (ikisi de 3 döner)', () => {
     expect(lossMultiplier(initialState(), WHITE)).toBe(3)
     expect(lossMultiplier(initialState(), BLACK)).toBe(3)
   })
 
-  it('MEŞRU backgammon: kazanan topluyor + kaybeden hiç toplamadı + barda -> 3', () => {
+  it('kaybeden hiç toplamadı + barda -> 3 (kazanan toplamasa bile)', () => {
     // loser=black (frontend konvansiyonu: 2.param=kaybeden). winner=white, bear-off evresinde.
     const p = new Array(24).fill(0)
     p[0] = 10 // beyaz (kazanan) hepsi evde (0..5) -> allHome

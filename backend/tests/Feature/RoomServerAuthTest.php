@@ -159,18 +159,18 @@ class RoomServerAuthTest extends TestCase
         $this->assertStringContainsString('62:', $mat); // .mat zarı gösterir (boş hamle satırı)
     }
 
-    public function test_resign_opening_is_single_when_winner_not_bearing(): void
+    public function test_resign_opening_is_backgammon_pure_position(): void
     {
-        // TOPLAMA-EVRESİ KAPISI (2026-10-17 geri getirildi): açılışta kaybedenin (siyah) taşları
-        // beyazın evinde/barında olsa BİLE, KAZANAN (beyaz) henüz toplamıyorsa erken terk = TEKLİ.
-        // cube=2 -> 1×2 = 2. (Eski "saf konum backgammon=6" davranışı kapıyla değişti; standart kural.)
+        // SAF POZİSYON (2026-10-18, kapı kaldırıldı): açılışta kaybedenin (siyah) geri taşları zaten
+        // beyazın evinde -> erken terk = backgammon (3). Kazananın bear-off durumuna BAKILMAZ.
+        // cube=2 -> 3×2 = 6.
         $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
             'winner' => null, 'cube' => ['value' => 2, 'owner' => null, 'pending' => null],
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
         $this->room($sm, Backgammon::initialState(), 15);
 
         $this->command('p2', '/api/rooms/AUTHX/resign')->assertOk();
-        $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
+        $this->assertSame(6, Room::first()->fresh()->server_match['score']['white']);
     }
 
     public function test_after_crawford_game_doubling_resumes(): void
