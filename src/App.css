@@ -33042,6 +33042,14 @@ select:-webkit-autofill {
   justify-content: center;
   min-height: 260px;
 }
+/* Ana sayfa liderlik paneli (RankingPanel) tab yuklemesi: spinner sabit yukseklikte ->
+   tab gecisinde liste cokup panel/scroll sicramasin (~10 satirlik alani tutar). */
+.rank-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+}
 .app-loading__dice {
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));

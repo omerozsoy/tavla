@@ -802,6 +802,17 @@ export function RankingPanel({
     }
   }, [by])
 
+  // Tab'a basinca veriyi HEMEN temizle -> spinner ANINDA cikar (modal Liderlik ile ayni).
+  // Eskiden setRows(null) YOKTU (eski liste duruyordu) -> tab gecisinde loader gorunmuyordu.
+  // Panel yuksekligi .rank-loading min-height ile sabit -> liste cokup scroll atlamaz.
+  const changeTab = (next: typeof by) => {
+    if (next === by) return
+    setRows(null)
+    setPrRows(null)
+    setPage(0)
+    setBy(next)
+  }
+
   // Modal Liderlik Tablosu ile AYNI pager (paylasilan Pager: lb-pager sinifi + oklar).
   const renderPager = (total: number) => (
     <Pager page={page} total={total} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
@@ -819,22 +830,22 @@ export function RankingPanel({
         </div>
       )}
       <div className="rank-tabs">
-        <Button type="button" variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
+        <Button type="button" variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => changeTab('rating')}>
           {t('lb.rating')}
         </Button>
-        <Button type="button" variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => setBy('coins')}>
+        <Button type="button" variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => changeTab('coins')}>
           {t('lb.byCoins')}
         </Button>
-        <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
+        <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')}>
           {t('lb.byWxp')}
         </Button>
-        <Button type="button" variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => setBy('pr')}>
+        <Button type="button" variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => changeTab('pr')}>
           {t('lb.byPr')}
         </Button>
       </div>
       {by === 'pr' ? (
         prRows === null ? (
-          <Loading />
+          <div className="rank-loading"><Loading /></div>
         ) : prRows.length === 0 ? (
           <div className="home-panel-empty">{t('lb.prEmpty')}</div>
         ) : (
@@ -862,7 +873,7 @@ export function RankingPanel({
           </>
         )
       ) : rows === null ? (
-        <Loading />
+        <div className="rank-loading"><Loading /></div>
       ) : rows.length === 0 ? (
         <div className="home-panel-empty">{t('lb.empty')}</div>
       ) : (
