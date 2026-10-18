@@ -11,6 +11,38 @@
         var KEY = '__tavla_recover'
         function attempt() { try { return +(sessionStorage.getItem(KEY) || 0) } catch (e) { return 0 } }
         function bump(n) { try { sessionStorage.setItem(KEY, n) } catch (e) {} }
+        // YALNIZ kurulu APK (Capacitor WebView) icinde: beyaz ekranin GERCEK sebebini ekrana yaz
+        // (web/PC/mobil-Chrome kullanicilari window.Capacitor olmadigindan ASLA gormez). App'te
+        // reload hatayi gizler + WebView ayni sekilde patlar -> bunun yerine hatayi GOSTER, fotograflanabilsin.
+        var INAPP = !!(window.Capacitor || /Capacitor/i.test(navigator.userAgent || ''))
+        var LOG = []
+        function renderDiag() {
+          if (!INAPP) return
+          var d = document.getElementById('__appdiag')
+          if (!d) {
+            d = document.createElement('div'); d.id = '__appdiag'
+            d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#1C1A17;color:#F4EFE6;font:12px/1.5 system-ui,-apple-system,sans-serif;padding:14px;overflow:auto;white-space:pre-wrap;word-break:break-word'
+            ;(document.body || document.documentElement).appendChild(d)
+          }
+          var rootEl = document.getElementById('root')
+          d.textContent = 'TavlaTv app tanisi (BU EKRANI FOTOGRAFLA):\n\n' +
+            'URL=' + location.href + '\n' +
+            'UA=' + navigator.userAgent + '\n' +
+            'online=' + navigator.onLine + '\n' +
+            '#root cocuk=' + (rootEl ? rootEl.children.length : 'root YOK') + '\n\n' +
+            (LOG.length ? LOG.join('\n\n') : '(JS hatasi yakalanmadi -> React sessizce mount olmadi)')
+        }
+        function note(s) { if (INAPP) { LOG.push(s); renderDiag() } }
+        window.addEventListener('error', function (e) {
+          if (!INAPP) return
+          var t = e.target
+          if (t && t.tagName && (t.tagName === 'SCRIPT' || t.tagName === 'LINK' || t.tagName === 'IMG')) { note('KAYNAK YUK HATASI: ' + (t.src || t.href || t.tagName)); return }
+          note('JS HATASI: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + '\n' + ((e.error && e.error.stack) || ''))
+        }, true)
+        window.addEventListener('unhandledrejection', function (e) {
+          if (!INAPP) return
+          var r = e.reason || {}; note('PROMISE HATASI: ' + (r.stack || r.message || r))
+        })
         function nukeAndReload() {
           var done = false
           function go() { if (done) return; done = true; location.reload() }
@@ -39,6 +71,8 @@
           if (b) b.onclick = function () { try { sessionStorage.removeItem(KEY) } catch (e) {} nukeAndReload() }
         }
         function recover() {
+          // App icinde: reload etme (WebView ayni patlar + hatayi gizler) -> tanisi GOSTER.
+          if (INAPP) { note('#root BOS kaldi (React mount OLMADI).'); return }
           var n = attempt()
           if (n === 0) { bump(1); location.reload(); return }
           if (n === 1) { bump(2); nukeAndReload(); return }
