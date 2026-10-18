@@ -75,4 +75,40 @@ class MatBuilderTest extends TestCase
         $this->assertStringContainsString('24/21 13/11', $mat);   // siyahın gerçek hamlesi
         $this->assertStringNotContainsString('BOZUK', $mat);      // çöp elenmeli
     }
+
+    // KÖK BUG regresyonu (XG ile uçurum, ~1227 maç): oyun DROP ile bitince kaybedenin "Drops"u
+    // tek başına bir satırda kalır; "Wins N point" AYRI satıra yazılırsa gnubg bunu fazladan bir
+    // küp aksiyonu (HAYALET double/beaver) sanar -> oyunları BİRLEŞTİRİR -> skor/küp bağlamı kayar
+    // -> İMKÂNSIZ equity (<-1) -> ŞİŞİK küp PR. gnubg lehçesinde win metni DROP satırıyla AYNI
+    // satırda (kazananın sütununda) olmalı; AYRI standalone "Wins" satırı OLMAMALI.
+    public function test_gnubg_pairs_win_onto_drop_line_not_separate(): void
+    {
+        $games = [[
+            'acts' => [
+                ['kind' => 'move', 'player' => 'white', 'dice' => [3, 1], 'notation' => '8/5 6/5'],
+                ['kind' => 'move', 'player' => 'black', 'dice' => [4, 2], 'notation' => '24/20 13/11'],
+                ['kind' => 'double', 'player' => 'black'],
+                ['kind' => 'drop', 'player' => 'white'],
+            ],
+            'outcome' => ['winner' => 'black', 'points' => 1, 'cube' => 1],
+        ]];
+        $mat = \App\Support\MatSerializer::render($games, [
+            'dialect' => 'gnubg', 'matchLength' => 3, 'whiteName' => 'W', 'blackName' => 'B',
+        ]);
+
+        $dropLine = null;
+        foreach (explode("\n", $mat) as $line) {
+            if (str_contains($line, 'Drops')) {
+                $dropLine = $line;
+                break;
+            }
+        }
+        $this->assertNotNull($dropLine, 'Drops satırı bulunamadı');
+        $this->assertStringContainsString('Wins 1 point', $dropLine, 'Kazanma metni DROP satırıyla aynı satırda olmalı');
+        foreach (explode("\n", $mat) as $line) {
+            if (str_contains($line, 'Wins') && ! str_contains($line, 'Drops')) {
+                $this->fail("Ayrı standalone 'Wins' satırı var (gnubg hayalet küp aksiyonu sanar): [$line]");
+            }
+        }
+    }
 }

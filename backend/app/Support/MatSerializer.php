@@ -104,11 +104,64 @@ class MatSerializer
                     }
                 }
             }
+            $oc = $game['outcome'] ?? null;
+
+            // ---- Oyun puanı: gamePointsWon = cubeValue × winMultiplier ----
+            // Alanlar AYRI tutulur + winMultiplier DOĞRULANIR. ESKİ HATA (frontend): puan maç-skoru
+            // FARKINDAN türetiliyordu -> "Wins 8 point" (cube×winType OLMAYAN İMKÂNSIZ değer). Burada
+            // rawPts otoriter (gameEnd/tahta), yine de küpe göre çarpanı doğrularız: mult ∉ {1,2,3}
+            // ise bozuk kayıt -> [1,3]'e kırp ve düzeltmeyi logla (İMKÂNSIZ değer ASLA yazılmaz).
+            // RENDER'DAN ÖNCE hesaplanır: gnubg lehçesinde kazanma satırını son EYLEM satırına
+            // İLİŞTİREBİLMEK için (bkz. aşağıdaki $pairedWin notu).
+            $winTxt = null;
+            $matchOver = false;
+            if ($oc) {
+                $rawPts = (int) $oc['points'];
+                $cube = (int) ($oc['cube'] ?? 0);
+                $cubeValue = $cube > 0 ? $cube : 1;
+                $winMultiplier = (int) round($rawPts / $cubeValue);
+                if ($winMultiplier < 1 || $winMultiplier > 3) {
+                    Log::warning('MAT export: geçersiz winMultiplier düzeltildi', [
+                        'game' => $gi, 'rawPts' => $rawPts, 'cube' => $cubeValue, 'mult' => $winMultiplier,
+                    ]);
+                    $winMultiplier = max(1, min(3, $winMultiplier));
+                }
+                $gamePointsWon = $cubeValue * $winMultiplier;
+                // Tek istisna: 1-PUANLIK MAÇ — gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube.
+                // Money'de bu istisna YOK (gammon sayılır); isMoney ile ayrıştır.
+                if (! $isMoney && $matchLength === 1) {
+                    $gamePointsWon = $cubeValue;
+                }
+                $before = $oc['winner'] === 'white' ? $sw : $sb;
+                // matchScoreAfter = min(matchLength, before + gamePointsWon): dahili skor hedefi aşamaz.
+                // MAT satırına YAZILAN değer DAİMA gerçek gamePointsWon'dur (matchScoreAfter/kalan DEĞİL).
+                // Money sınırsız -> kırpma YOK, maç skorla bitmez.
+                $matchScoreAfter = $isMoney ? ($before + $gamePointsWon) : min($matchLength, $before + $gamePointsWon);
+                $matchOver = ! $isMoney && $matchScoreAfter >= $matchLength;
+                $winTxt = "Wins $gamePointsWon point".($gamePointsWon === 1 ? '' : 's');
+            }
+
+            // KÖK BUG FIX (gnubg): oyun bir DROP ile bitince kaybeden "Drops" tek başına bir satırda
+            // kalır (kazananın sütunu BOŞ). "Wins N point" AYRI satıra yazılınca gnubg bunu fazladan
+            // bir küp aksiyonu (HAYALET double/beaver) sanır -> oyunu bir sonrakiyle BİRLEŞTİRİR ->
+            // skor/küp bağlamı kayar -> İMKÂNSIZ equity (<-1) -> ŞİŞİK küp PR (XG ile uçurum, 1227 maç).
+            // Çözüm: kazananın sütunu son satırda boşsa win metnini ORAYA koy (tek satır -> gnubg doğru
+            // sayar). Kazanan son hamleyi yaptıysa (toplama / çift+drop -> sütun dolu) eskisi gibi ayrı
+            // satır (toplama biten oyunlarda küp aksiyonu yok, hayalet riski yok -> byte-uyumlu kalır).
+            $pairedWin = false;
+            if ($oc && $dialect === 'gnubg') {
+                $wc = $oc['winner'] === 'white' ? 'w' : 'b';
+                $li = count($lines) - 1;
+                if ($li >= 0 && ! array_key_exists($wc, $lines[$li])) {
+                    $lines[$li][$wc] = $winTxt;
+                    $pairedWin = true;
+                }
+            }
+
             foreach ($lines as $idx => $r) {
                 $out[] = rtrim(sprintf('%3d) %s%s', $idx + 1, str_pad($r['w'] ?? '', $COLW), $r['b'] ?? ''));
             }
 
-            $oc = $game['outcome'] ?? null;
             if (! $oc) {
                 // SON-OLMAYAN oyun sonuçsuzsa: bir sonraki oyun başlıyor ama önceki oyunun sonucu
                 // yok (ÖmerDOĞAN_NeuralAI Game 1-3 bug'ı). User direktifi: "hata logla ve export'u
@@ -130,38 +183,11 @@ class MatSerializer
                 continue;
             }
 
-            // ---- Oyun puanı: gamePointsWon = cubeValue × winMultiplier ----
-            // Alanlar AYRI tutulur + winMultiplier DOĞRULANIR. ESKİ HATA (frontend): puan maç-skoru
-            // FARKINDAN türetiliyordu -> "Wins 8 point" (cube×winType OLMAYAN İMKÂNSIZ değer). Burada
-            // rawPts otoriter (gameEnd/tahta), yine de küpe göre çarpanı doğrularız: mult ∉ {1,2,3}
-            // ise bozuk kayıt -> [1,3]'e kırp ve düzeltmeyi logla (İMKÂNSIZ değer ASLA yazılmaz).
-            $rawPts = (int) $oc['points'];
-            $cube = (int) ($oc['cube'] ?? 0);
-            $cubeValue = $cube > 0 ? $cube : 1;
-            $winMultiplier = (int) round($rawPts / $cubeValue);
-            if ($winMultiplier < 1 || $winMultiplier > 3) {
-                Log::warning('MAT export: geçersiz winMultiplier düzeltildi', [
-                    'game' => $gi, 'rawPts' => $rawPts, 'cube' => $cubeValue, 'mult' => $winMultiplier,
-                ]);
-                $winMultiplier = max(1, min(3, $winMultiplier));
-            }
-            $gamePointsWon = $cubeValue * $winMultiplier;
-            // Tek istisna: 1-PUANLIK MAÇ — gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube.
-            // Money'de bu istisna YOK (gammon sayılır); isMoney ile ayrıştır.
-            if (! $isMoney && $matchLength === 1) {
-                $gamePointsWon = $cubeValue;
-            }
-            $before = $oc['winner'] === 'white' ? $sw : $sb;
-            // matchScoreAfter = min(matchLength, before + gamePointsWon): dahili skor hedefi aşamaz.
-            // MAT satırına YAZILAN değer DAİMA gerçek gamePointsWon'dur (matchScoreAfter/kalan DEĞİL).
-            // Money sınırsız -> kırpma YOK, maç skorla bitmez.
-            $matchScoreAfter = $isMoney ? ($before + $gamePointsWon) : min($matchLength, $before + $gamePointsWon);
-            $matchOver = ! $isMoney && $matchScoreAfter >= $matchLength;
-
             if ($dialect === 'gnubg') {
-                // "Wins N point(s)" çoğul; numaralı satır YOK.
-                $winTxt = "Wins $gamePointsWon point".($gamePointsWon === 1 ? '' : 's');
-                $out[] = $oc['winner'] === 'white' ? "      $winTxt" : '      '.str_pad('', $COLW).$winTxt;
+                // "Wins N point(s)" çoğul; numaralı satır YOK. Tek satıra iliştirilemediyse ayrı satır.
+                if (! $pairedWin) {
+                    $out[] = $oc['winner'] === 'white' ? "      $winTxt" : '      '.str_pad('', $COLW).$winTxt;
+                }
             } else {
                 // XG: "and the match" hedefe ulaşınca; siyah kazanınca numaralı iki-sütun.
                 $winTxt = "Wins $gamePointsWon point".($matchOver ? ' and the match' : '');
