@@ -33035,6 +33035,13 @@ select:-webkit-autofill {
   color: var(--muted);
   text-align: center;
 }
+/* Liderlik tab yukleme: spinner stabil yukseklikte ortalansin (tablo<->spinner layout sicramasi azalsin). */
+.lb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+}
 .app-loading__dice {
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));

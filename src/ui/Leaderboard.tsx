@@ -9,7 +9,7 @@ import { leaderboard, prLeaderboard, wxpBreakdown, searchLeaderboard, type Leade
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import PublicProfile from './PublicProfile'
-import { Skeleton } from './Skeleton'
+import Loading from './Loading'
 
 interface Props {
   currentName?: string
@@ -399,34 +399,8 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
 
         {!isSearching && error && <LoadError message={t('lb.error')} onRetry={() => setReloadKey((k) => k + 1)} />}
         {!isSearching && by !== 'pr' && !error && rows === null && (
-          <div className="lb-table" aria-busy="true" aria-live="polite">
-            <div className="lb-head">
-              <span className="lb-rank">#</span>
-              <span className="lb-name">{t('lb.player')}</span>
-              <span className="lb-flag" aria-hidden="true" />
-              <span className="lb-games">{t('lb.games')}</span>
-              <span className="lb-wl">{t('lb.winLoss')}</span>
-              <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-rating">
-                {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
-              </span>
-            </div>
-            <div className="lb-body">
-              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                <div key={i} className="lb-row">
-                  <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
-                  <span className="lb-name">
-                    <Skeleton w={22} h={22} r="50%" />
-                    <Skeleton w={90 + ((i * 17) % 50)} h={12} />
-                  </span>
-                  <span className="lb-flag" aria-hidden="true" />
-                  <span className="lb-games"><Skeleton w={36} h={12} /></span>
-                  <span className="lb-wl"><Skeleton w={40} h={12} /></span>
-                  <span className="lb-wr"><Skeleton w={28} h={12} /></span>
-                  <span className="lb-rating"><Skeleton w={36} h={12} /></span>
-                </div>
-              ))}
-            </div>
+          <div className="lb-loading" aria-busy="true" aria-live="polite">
+            <Loading />
           </div>
         )}
         {!isSearching && by !== 'pr' && !error && rows !== null && rows.length === 0 && (
@@ -451,31 +425,8 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
             )}
             <p className="lb-pr-note">{t('lb.prExplain')}</p>
             {!error && prRows === null && (
-              <div className="lb-table lb-pr" aria-busy="true">
-                <div className="lb-head">
-                  <span className="lb-rank">#</span>
-                  <span className="lb-name">{t('lb.player')}</span>
-                  <span className="lb-flag" aria-hidden="true" />
-                  <span className="lb-games">{t('lb.prMatches')}</span>
-                  <span className="lb-wl">{t('lb.prDecisions')}</span>
-                  <span className="lb-wr" aria-hidden="true" />
-                  <span className="lb-rating">PR</span>
-                </div>
-                <div className="lb-body">
-                  {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                    <div key={i} className="lb-row">
-                      <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
-                      <span className="lb-name">
-                        <Skeleton w={22} h={22} r="50%" /> <Skeleton w={90 + ((i * 17) % 50)} h={12} />
-                      </span>
-                      <span className="lb-flag" aria-hidden="true" />
-                      <span className="lb-games"><Skeleton w={36} h={12} /></span>
-                      <span className="lb-wl"><Skeleton w={48} h={12} /></span>
-                      <span className="lb-wr" aria-hidden="true" />
-                      <span className="lb-rating"><Skeleton w={36} h={12} /></span>
-                    </div>
-                  ))}
-                </div>
+              <div className="lb-loading" aria-busy="true" aria-live="polite">
+                <Loading />
               </div>
             )}
             {!error && prRows !== null && prRows.length === 0 && (
