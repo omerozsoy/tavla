@@ -1963,7 +1963,9 @@ function newGuestCapability(): string {
   webCrypto.getRandomValues(bytes)
   let binary = ''
   for (const byte of bytes) binary += String.fromCharCode(byte)
-  return 'p_' + btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+  // replace(/g) kullan (replaceAll DEGIL): replaceAll Chrome 85+; eski Android WebView'de
+  // (<85) boot'ta token uretirken TypeError atip tum uygulamayi cokertir -> beyaz ekran.
+  return 'p_' + btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 }
 
 // Bu istemci icin kalici rastgele token (hesap gerekmez)
