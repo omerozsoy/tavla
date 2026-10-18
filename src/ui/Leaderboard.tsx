@@ -136,6 +136,17 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
     }
   }, [q, by])
 
+  // Sekme degisince veriyi HEMEN temizle (effect PAINT'ten sonra calisir -> once eski tab
+  // verisi bir kare "flas"lar, yukleniyor iskeleti gec gorunur). Tiklama anında senkron
+  // temizleyince animasyonlu skeleton ANINDA cikar (yavas backend'de net "yukleniyor" geri bildirimi).
+  const changeTab = (next: typeof by) => {
+    if (next === by) return
+    setRows(null)
+    setPrRows(null)
+    setPage(0)
+    setBy(next)
+  }
+
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
   const wxpCatLabel = (key: string) => (key === 'coin' ? t('wxpbd.coin') : `${key} ${t('wxpbd.point')}`)
 
@@ -309,16 +320,16 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           </div>
         </div>
         <div className="rep-filter">
-          <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
+          <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => changeTab('rating')}>
             <Icon name="star" size={16} /> {t('lb.rating')}
           </Button>
-          <Button variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => setBy('coins')}>
+          <Button variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => changeTab('coins')}>
             <Icon name="coin" size={16} /> {t('lb.byCoins')}
           </Button>
-          <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
+          <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')}>
             <Icon name="trophy" size={16} /> {t('lb.byWxp')}
           </Button>
-          <Button variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => setBy('pr')}>
+          <Button variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => changeTab('pr')}>
             <Icon name="target" size={16} /> {t('lb.byPr')}
           </Button>
         </div>
