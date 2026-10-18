@@ -109,7 +109,12 @@ class CacheMatchReviewJob implements ShouldQueue
             // OTORİTER PR = gnubg Snowie (XG-birebir). Review-log equity-toplamı match-play'de şişiyor;
             // ayrı /analyzematch ile Snowie PR'ı yazılır (provisional değeri EZER). Best-effort; gnubg
             // down/başarısızsa review-log değeri kalır. Bkz AnalyzeMatchSnowieJob + GnubgSnowieService.
-            \App\Jobs\AnalyzeMatchSnowieJob::dispatch($mr->id);
+            // KUYRUK = beni doğuran işin kuyruğu: backfill (reviews-bulk) -> snowie de reviews-bulk'ta
+            // kalsın; yoksa 3 backfill worker'ı ~9/dk snowie işini CANLI 'reviews'e sızdırıp tek canlı
+            // worker'ı boğuyordu (reviews 3->400, 2026-10-18). Böylece izolasyon tam: canlı 'reviews'
+            // yalnız canlı maç-sonu snowie'yi görür. $this->job yoksa (sync/test) 'reviews' varsayılanı.
+            \App\Jobs\AnalyzeMatchSnowieJob::dispatch($mr->id)
+                ->onQueue($this->job?->getQueue() ?: 'reviews');
         }
     }
 
