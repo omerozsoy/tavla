@@ -102,21 +102,33 @@ class PrFromReview extends Command
                 $f2($r->gnubg_cube_pr), $f2($self['cube_pr'])));
 
             if ($apply) {
-                MatchResult::where('id', $r->id)->update([
-                    'gnubg_pr' => $newPr,
-                    'gnubg_checker_pr' => $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null,
-                    'gnubg_cube_pr' => $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null,
-                    'pr_equity_lost' => round($self['equity_lost'], 4),
-                    'pr_decisions' => $self['decisions'],
-                    'pr' => $newPr, // gösterilen (eski istemci pr yerine yetkili review PR)
-                    'gnubg_opponent_pr' => $newOppPr,
-                    'opponent_pr' => $newOppPr, // legacy fallback kolonu = otoriter review opp PR (stale birikmesin)
-                    'gnubg_opponent_checker_pr' => $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null,
-                    'gnubg_opponent_cube_pr' => $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null,
-                ]);
+                // KÖK FIX (kalıcı "—" + kariyer yarılanması): review bir tarafı skorlayamazsa (p2/siyah
+                // .mat sağ-sütun boş -> null) o tarafın PR kolonlarını NULL ile EZME. Bu komut KURTARMA
+                // aracı -> eskiden koşulsuz yazınca düzeltilen per-pozisyon değeri geri bozuyordu. SALT-
+                // EKLEYİCİ: yalnız gerçekten skorlanan taraf yazılır.
+                $upd = [];
+                if ($newPr !== null) {
+                    $upd['gnubg_pr'] = $newPr;
+                    $upd['pr'] = $newPr; // gösterilen (eski istemci pr yerine yetkili review PR)
+                    $upd['pr_equity_lost'] = round($self['equity_lost'], 4);
+                    $upd['pr_decisions'] = $self['decisions'];
+                    $upd['gnubg_checker_pr'] = $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null;
+                    $upd['gnubg_cube_pr'] = $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null;
+                }
+                if ($newOppPr !== null) {
+                    $upd['gnubg_opponent_pr'] = $newOppPr;
+                    $upd['opponent_pr'] = $newOppPr; // legacy fallback kolonu = otoriter review opp PR
+                    $upd['gnubg_opponent_checker_pr'] = $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null;
+                    $upd['gnubg_opponent_cube_pr'] = $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null;
+                }
+                if ($upd !== []) {
+                    MatchResult::where('id', $r->id)->update($upd);
+                }
                 // Rakip satırı (varsa) da aynı review'dan: onun opponent_pr'ı = benim self PR'ım.
-                MatchResult::where('room_code', $r->room_code)->where('user_id', '!=', $r->user_id)
-                    ->update(['opponent_pr' => $newPr]);
+                if ($newPr !== null) {
+                    MatchResult::where('room_code', $r->room_code)->where('user_id', '!=', $r->user_id)
+                        ->update(['opponent_pr' => $newPr]);
+                }
             }
             $fixed++;
             unset($review, $log, $self, $opp);

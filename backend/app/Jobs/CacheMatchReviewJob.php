@@ -140,21 +140,33 @@ class CacheMatchReviewJob implements ShouldQueue
                 $min = \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS;
                 $selfPr = ($self['decisions'] ?? 0) >= $min ? round($self['pr'], 2) : null;
                 $oppPr = ($opp['decisions'] ?? 0) >= $min ? round($opp['pr'], 2) : null;
-                MatchResult::where('id', $row->id)->update([
-                    'gnubg_pr' => $selfPr,
-                    'gnubg_checker_pr' => $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null,
-                    'gnubg_cube_pr' => $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null,
-                    'cube_equity_lost' => round((float) ($self['cube_equity_lost'] ?? 0), 4), // kariyer küp PR için
-                    'cube_decisions' => (int) ($self['cube_decisions'] ?? 0),
-                    'pr_equity_lost' => round($self['equity_lost'], 4),
-                    'pr_decisions' => $self['decisions'],
-                    'pr' => $selfPr,
-                    'gnubg_opponent_pr' => $oppPr,
-                    'opponent_pr' => $oppPr, // legacy fallback kolonu = otoriter opp PR (drift birikmesin)
-                    'gnubg_opponent_checker_pr' => $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null,
-                    'gnubg_opponent_cube_pr' => $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null,
-                    'gnubg_pr_at' => now(),
-                ]);
+                // KÖK FIX (kalıcı "—" + kariyer maç sayısı yarılanması): review bir tarafı skorlayamazsa
+                // (p2/siyah .mat sağ-sütun çıkarımı boş -> decisions<min -> null) o tarafın PR kolonlarını
+                // NULL ile EZME. Eskiden koşulsuz yazılıyordu -> AnalyzeMatchPrJob'ın DOĞRU per-pozisyon
+                // değeri silinip mezar taşı (gnubg_pr_at) konuyordu -> heal bir daha denemezdi -> KALICI
+                // "—". Artık review SALT-EKLEYİCİ: yalnız GERÇEKTEN skorladığı tarafı yazar; skorlayamadığı
+                // taraf per-pozisyon değerinde kalır (bu tekrar eden backfill'in kök nedeniydi).
+                $upd = [];
+                if ($selfPr !== null) {
+                    $upd['gnubg_pr'] = $selfPr;
+                    $upd['pr'] = $selfPr;
+                    $upd['pr_equity_lost'] = round($self['equity_lost'], 4);
+                    $upd['pr_decisions'] = $self['decisions'];
+                    $upd['gnubg_checker_pr'] = $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null;
+                    $upd['gnubg_cube_pr'] = $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null;
+                    $upd['cube_equity_lost'] = round((float) ($self['cube_equity_lost'] ?? 0), 4); // kariyer küp PR için
+                    $upd['cube_decisions'] = (int) ($self['cube_decisions'] ?? 0);
+                    $upd['gnubg_pr_at'] = now();
+                }
+                if ($oppPr !== null) {
+                    $upd['gnubg_opponent_pr'] = $oppPr;
+                    $upd['opponent_pr'] = $oppPr; // legacy fallback kolonu = otoriter opp PR (drift birikmesin)
+                    $upd['gnubg_opponent_checker_pr'] = $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null;
+                    $upd['gnubg_opponent_cube_pr'] = $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null;
+                }
+                if ($upd !== []) {
+                    MatchResult::where('id', $row->id)->update($upd);
+                }
             }
         } catch (\Throwable $e) {
             Log::warning('review-based PR yazımı hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);

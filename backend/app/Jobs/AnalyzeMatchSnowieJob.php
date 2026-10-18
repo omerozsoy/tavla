@@ -85,21 +85,34 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
                 // snow[0] = gnubg player0 = white, snow[1] = black. null = pr>100 çöp -> "—".
                 $self = $hc === 'white' ? $snow[0] : $snow[1];
                 $opp = $hc === 'white' ? $snow[1] : $snow[0];
-                MatchResult::where('id', $row->id)->update([
-                    'gnubg_pr' => $self['pr'] ?? null,
-                    'gnubg_checker_pr' => $self['checker_pr'] ?? null,
-                    'gnubg_cube_pr' => $self['cube_pr'] ?? null,
-                    'cube_equity_lost' => $self['cube_equity_lost'] ?? 0, // küp err EMG (kariyer küp PR, Aşama 2)
-                    'cube_decisions' => $self['cube_decisions'] ?? 0,
-                    'pr_equity_lost' => $self !== null ? ($self['equity_lost'] ?? null) : null, // kariyer: overall err EMG (Snowie pay)
-                    'pr_decisions' => $self !== null ? ($self['decisions'] ?? 0) : 0,            // kariyer: tüm hamle+küp (Snowie payda)
-                    'pr' => $self['pr'] ?? null,
-                    'gnubg_opponent_pr' => $opp['pr'] ?? null,
-                    'opponent_pr' => $opp['pr'] ?? null,
-                    'gnubg_opponent_checker_pr' => $opp['checker_pr'] ?? null,
-                    'gnubg_opponent_cube_pr' => $opp['cube_pr'] ?? null,
-                    'gnubg_pr_at' => now(),
-                ]);
+                $selfPr = is_array($self) ? ($self['pr'] ?? null) : null;
+                $oppPr = is_array($opp) ? ($opp['pr'] ?? null) : null;
+                // KÖK FIX (kalıcı "—" + kariyer yarılanması): Snowie bir tarafı skorlayamazsa (pr>100 çöp
+                // ya da .mat p2/siyah çıkarımı boş -> null) o tarafın PR kolonlarını NULL ile EZME. Eskiden
+                // koşulsuz yazılıyordu -> AnalyzeMatchPrJob'ın DOĞRU per-pozisyon değeri silinip mezar taşı
+                // konuyordu -> KALICI "—". Artık SALT-EKLEYİCİ: yalnız gerçekten skorlanan taraf yazılır;
+                // diğer taraf per-pozisyon değerinde kalır (tekrar eden backfill'in kök nedeni).
+                $upd = [];
+                if ($selfPr !== null) {
+                    $upd['gnubg_pr'] = $selfPr;
+                    $upd['pr'] = $selfPr;
+                    $upd['gnubg_checker_pr'] = $self['checker_pr'] ?? null;
+                    $upd['gnubg_cube_pr'] = $self['cube_pr'] ?? null;
+                    $upd['cube_equity_lost'] = $self['cube_equity_lost'] ?? 0; // küp err EMG (kariyer küp PR, Aşama 2)
+                    $upd['cube_decisions'] = $self['cube_decisions'] ?? 0;
+                    $upd['pr_equity_lost'] = $self['equity_lost'] ?? null;     // kariyer: overall err EMG (Snowie pay)
+                    $upd['pr_decisions'] = $self['decisions'] ?? 0;            // kariyer: tüm hamle+küp (Snowie payda)
+                    $upd['gnubg_pr_at'] = now();
+                }
+                if ($oppPr !== null) {
+                    $upd['gnubg_opponent_pr'] = $oppPr;
+                    $upd['opponent_pr'] = $oppPr;
+                    $upd['gnubg_opponent_checker_pr'] = $opp['checker_pr'] ?? null;
+                    $upd['gnubg_opponent_cube_pr'] = $opp['cube_pr'] ?? null;
+                }
+                if ($upd !== []) {
+                    MatchResult::where('id', $row->id)->update($upd);
+                }
             }
             // RESUMABLE imleç: işlenen odayı damgala -> tavla:snowie-pr re-run bunu atlar.
             if (Schema::hasColumn('match_results', 'pr_shield_at')) {

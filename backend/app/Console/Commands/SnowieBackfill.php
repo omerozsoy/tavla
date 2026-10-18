@@ -109,12 +109,20 @@ class SnowieBackfill extends Command
                             continue;
                         }
                     }
-                    MatchResult::where('id', $r->id)->update([
-                        'gnubg_pr' => $self,
-                        'pr' => $self,
-                        'gnubg_opponent_pr' => $opp,
-                        'opponent_pr' => $opp,
-                    ]);
+                    // KÖK FIX (kalıcı "—"): Snowie bir tarafı skorlayamazsa (null) o tarafı NULL ile EZME
+                    // -> per-pozisyon değeri korunur. SALT-EKLEYİCİ (bkz CacheMatchReviewJob/AnalyzeMatchSnowieJob).
+                    $su = [];
+                    if ($self !== null) {
+                        $su['gnubg_pr'] = $self;
+                        $su['pr'] = $self;
+                    }
+                    if ($opp !== null) {
+                        $su['gnubg_opponent_pr'] = $opp;
+                        $su['opponent_pr'] = $opp;
+                    }
+                    if ($su !== []) {
+                        MatchResult::where('id', $r->id)->update($su);
+                    }
                 }
             }
             $done++;
