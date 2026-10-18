@@ -151,9 +151,12 @@ Schedule::command('tavla:review-warmup --limit=15 --days=7')
 // KÜP PR BACKFILL (skor-farkında rescore) OTOMATİK TAMAMLAMA: eski elle `tavla:cube-pr-rescore`
 // re-run derdini kaldırır. Kalıcı imleç (Setting cutoff) + kuyruk-doluluk kapısı sayesinde cron-güvenli:
 // kuyruk (reviews-bulk) limit*2'nin üstündeyse tur ATLANIR (mükerrer/termal yük yok), drene olunca
-// kaldığı yerden devam -> evren bitince de her tur no-op. --limit=25 ≈ drenaj temposu (ADANMIŞ
-// tavla-backfill-queue@ worker'ları işler, canlı 'reviews' ile yarışmaz). gnubg down iken erteler.
-Schedule::command('tavla:cube-pr-rescore --limit=25')
+// kaldığı yerden devam -> evren bitince de her tur no-op. --limit=100 WORKER'LARI TAM BESLER:
+// gerçek throughput 3 tavla-backfill-queue@ worker ile ~16 maç/dk (~80/5dk) = termal tavan; 100/5dk
+// bunun biraz üstü -> worker'lar HİÇ boşta kalmaz (tail hızlanır) ama kuyruk kapı sayesinde (limit*2=200)
+// sınırlı kalır -> şişmez, mükerrer dispatch minimum. Sınırsız yapmak hız KAZANDIRMAZ (worker-bound);
+// yalnız kuyruğu binlere şişirir + termal riskli mükerrer yük. Kalıcı hız = fan onarımı sonrası +worker.
+Schedule::command('tavla:cube-pr-rescore --limit=100')
     ->everyFiveMinutes()
     ->name('cube-pr-rescore')
     ->withoutOverlapping();
