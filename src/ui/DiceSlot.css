@@ -1147,3 +1147,15 @@
   background: none !important;
   border-color: var(--border) !important;
 }
+/* Re-verify: makine iç kromu hâlâ koyu/yuvarlak/gölge+glow -> düz açık, keskin, glow yok. */
+.sm-cabinet, .sm-screen, .sm-bezel, .sm-reel-col, .sr, .sm-jackpot-banner {
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+.sm-cabinet, .sm-screen, .sm-bezel, .sm-jackpot-banner {
+  background: var(--card-bg) !important;
+}
+.ds-title, .sm-jackpot-label, .sm-jackpot-value, .ds-pt-jackpot, .sm-marquee-title {
+  text-shadow: none !important;
+  font-weight: 500 !important;
+}

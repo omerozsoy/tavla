@@ -427,3 +427,13 @@
   background: none !important;
   border-color: var(--border) !important;
 }
+/* Re-verify: bezel/viewport hâlâ koyu-kahve yuvarlak+gölge+glow -> düz açık, keskin. */
+.em-frame, .em-viewport {
+  border-radius: 2px !important;
+  box-shadow: none !important;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+.em-glare { display: none !important; }
+.em-title { text-shadow: none !important; font-weight: 500 !important; }
+.em-panel-text, .em-panel.is-center .em-panel-text { font-weight: 500 !important; }

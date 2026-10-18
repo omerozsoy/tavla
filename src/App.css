@@ -24834,9 +24834,16 @@ h1, h2, h3, h4, h5, h6, strong, b,
 .faq-hero h1,
 .faq-section-heading h2,
 .fair-step-title, .fair-box-title, .fair-callout-title,
-.fair-info-head h3, .fair-verify h3 {
+.fair-info-head h3, .fair-verify h3,
+.auth-col-title {
   text-transform: uppercase;
   letter-spacing: 0.01em;
+}
+/* 8) Re-verify: giriş select/toggle + kulüp logo/sosyal çip + form input keskin köşe. */
+.ss-trigger, .pw-toggle,
+.club-logo, .club-link,
+input:not([type='range']), select, textarea {
+  border-radius: 2px !important;
 }
 
 @media (max-width: 560px) {
