@@ -48,6 +48,14 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    // Eski Android System WebView (<Chrome 85) beyaz ekran fix: Vite 8 varsayilan hedefi
+    // (baseline-widely-available ~Chrome 107) ??= ve ||= gibi sozdizimini bundle'da birakir,
+    // guncellenmemis WebView parse edemeyip tum modul coker -> bos #root. es2019 hedefi
+    // bu operatorleri eski sozdizimine indirger, eski cihazlarda site/uygulama acilir.
+    // Uygulama canli siteyi yukledigi icin bu fix sadece dist deploy ister (yeni APK GEREKMEZ).
+    target: 'es2019',
+  },
   // onnxruntime-web'i esbuild on-paketlemesinden hariç tut: import.meta.url tabanli
   // wasm cozumlemesi bozulmasin (Vite native asset olarak servis etsin).
   optimizeDeps: {
