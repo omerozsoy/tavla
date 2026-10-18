@@ -30,6 +30,24 @@ class MessageTest extends TestCase
         ]);
     }
 
+    public function test_system_account_cannot_be_blocked_but_normal_can(): void
+    {
+        $me = $this->makeUser('me');
+        $normal = $this->makeUser('nm');
+        $system = $this->makeUser('sys');
+        $system->is_system = true;
+        $system->save();
+        Sanctum::actingAs($me);
+
+        // YÖNETİM KORUMASI: Tavla TV Yönetim (is_system) hesabı engellenemez -> 422, kayıt oluşmaz.
+        $this->postJson("/api/messages/{$system->id}/block")->assertStatus(422);
+        $this->assertDatabaseMissing('user_blocks', ['blocker_id' => $me->id, 'blocked_id' => $system->id]);
+
+        // Normal kullanıcı engellenebilir -> 200 + kayıt.
+        $this->postJson("/api/messages/{$normal->id}/block")->assertOk();
+        $this->assertDatabaseHas('user_blocks', ['blocker_id' => $me->id, 'blocked_id' => $normal->id]);
+    }
+
     public function test_friends_can_message_each_other(): void
     {
         $me = $this->makeUser('me');

@@ -1221,6 +1221,7 @@ export interface ChatUser {
   rating: number
   online?: boolean
   premium?: boolean // süresi geçerli ücretli plan -> PREMIUM
+  system?: boolean // Tavla TV Yönetim (resmi hesap) -> engellenemez, Engelle butonu gizlenir
 }
 export interface ChatMessage {
   id: number

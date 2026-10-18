@@ -23706,6 +23706,32 @@ body:has(.spectate-view) .app.lobby {
 .messages-head-report:hover {
   background: color-mix(in srgb, #b91c1c 16%, transparent);
 }
+/* ENGELLE butonu (Şikayet Et yanında): nötr gri; engelliyken "Engeli Kaldır" uyarı tonu. */
+.messages-head-block {
+  flex: none;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.messages-head-block:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+.messages-head-block.is-blocked {
+  color: #b91c1c;
+  background: color-mix(in srgb, #b91c1c 8%, transparent);
+  border-color: color-mix(in srgb, #b91c1c 24%, transparent);
+}
 /* Bildirimler satırı: yuvarlak zil rozeti */
 .messages-notif-ava {
   flex: none;

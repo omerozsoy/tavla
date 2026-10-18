@@ -120,6 +120,7 @@ class MessageController extends Controller
             'rating' => $u->rating ?? 1500,
             'online' => (bool) $online,
             'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> PREMIUM
+            'system' => (bool) ($u->is_system ?? false), // Tavla TV Yönetim: engellenemez (frontend butonu gizler)
         ];
     }
 
@@ -570,8 +571,15 @@ class MessageController extends Controller
         if ($userId === $me) {
             return $this->fail('Kendini bloklayamazsın.', 422);
         }
-        if (! User::whereKey($userId)->exists()) {
+        $target = User::find($userId);
+        if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
+        }
+        // YÖNETİM KORUMASI: resmi/sistem hesabı (Tavla TV Yönetim) engellenemez -> yönetim mesajları
+        // (duyuru/uyarı) herkese ulaşmaya devam eder. broadcast zaten blockedBetween'i baypas eder ama
+        // bu guard "engelle" yolunu da kapatır (frontend butonu da gizler, bu sunucu-tarafı kalkanıdır).
+        if ($target->is_system ?? false) {
+            return $this->fail('Tavla TV Yönetim hesabı engellenemez.', 422);
         }
         if (Schema::hasTable('user_blocks')) {
             DB::table('user_blocks')->updateOrInsert(

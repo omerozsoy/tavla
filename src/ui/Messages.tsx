@@ -156,7 +156,7 @@ export default function Messages({
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const [search, setSearch] = useState('') // sol listede sohbet arama
-  const [pane, setPane] = useState<'chats' | 'requests'>('chats') // sol liste: sohbetler / istekler
+  const [pane, setPane] = useState<'chats' | 'requests' | 'blocked'>('chats') // sol liste: sohbetler / istekler / engelliler
   const [menuFor, setMenuFor] = useState<number | null>(null) // kebab menüsü açık olan sohbet (user.id)
   // Uygulama-içi onay penceresi (native window.confirm yerine): onaylanınca run() çalışır.
   const [confirmBox, setConfirmBox] = useState<null | {
@@ -492,9 +492,14 @@ export default function Messages({
   }
 
   // Sol liste iki bolme: normal sohbetler ve onay bekleyen istekler.
-  const requestThreads = threads.filter((th) => th.request)
-  const chatThreads = threads.filter((th) => !th.request)
+  // Engelliler AYRI sekmede (Sohbetler/İstekler'den çıkarılır; kullanıcı oradan engeli kaldırabilir).
+  const blockedThreads = threads.filter((th) => th.blocked)
+  const requestThreads = threads.filter((th) => th.request && !th.blocked)
+  const chatThreads = threads.filter((th) => !th.request && !th.blocked)
   const reqCount = requestThreads.length
+  const blockedCount = blockedThreads.length
+  const activeThread = threads.find((th) => th.user.id === activeId) ?? null
+  const activeBlocked = !!activeThread?.blocked
 
   const showList = activeId == null // mobilde: liste mi konusma mi
 
@@ -571,6 +576,16 @@ export default function Messages({
                 {t('dm.tabRequests')}
                 {reqCount > 0 && <span className="messages-pane-badge">{reqCount > 9 ? '9+' : reqCount}</span>}
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={pane === 'blocked'}
+                className={`messages-pane-tab ${pane === 'blocked' ? 'active' : ''}`}
+                onClick={() => setPane('blocked')}
+              >
+                {t('dm.tabBlocked')}
+                {blockedCount > 0 && <span className="messages-pane-badge">{blockedCount > 9 ? '9+' : blockedCount}</span>}
+              </button>
             </div>
             <div className="messages-thread-scroll">
               {/* Kebab menüsü açıkken dışarı tıklama menüyü kapatır */}
@@ -594,7 +609,7 @@ export default function Messages({
                 </button>
               )}
               {(() => {
-                const source = pane === 'requests' ? requestThreads : chatThreads
+                const source = pane === 'requests' ? requestThreads : pane === 'blocked' ? blockedThreads : chatThreads
                 const q = search.trim().toLowerCase()
                 // EN SON KONUSULAN EN USTTE: son mesaj zamanina gore azalan sirala (recency birincil);
                 // esitlikte (son mesaj yok/ayni an) cevrimici oncelikli. Array.sort kararli.
@@ -604,6 +619,7 @@ export default function Messages({
                 )
                 if (loadingThreads) return <Loading />
                 if (pane === 'requests' && source.length === 0) return <div className="lb-empty">{t('dm.requestsEmpty')}</div>
+                if (pane === 'blocked' && source.length === 0) return <div className="lb-empty">{t('dm.blockedEmpty')}</div>
                 if (pane === 'chats' && chatThreads.length === 0 && !q) return <div className="lb-empty">{t('dm.empty')}</div>
                 if (list.length === 0) return <div className="lb-empty">{t('dm.searchEmpty')}</div>
                 return list.map((th) => {
@@ -768,6 +784,19 @@ export default function Messages({
                       title={t('dm.report')}
                     >
                       <Icon name="flag" size={15} /> {t('dm.report')}
+                    </button>
+                  )}
+                  {/* ENGELLE: Şikayet Et yanında. Tavla TV Yönetim (system) hesabı engellenemez -> buton gizli
+                     (yönetim mesajları herkese ulaşsın); sunucu-tarafı guard da var (MessageController::block). */}
+                  {activeUser && !activeUser.system && (
+                    <button
+                      type="button"
+                      className={`messages-head-block ${activeBlocked ? 'is-blocked' : ''}`}
+                      onClick={() => handleBlockToggle(activeUser.id, activeBlocked)}
+                      aria-label={activeBlocked ? t('dm.unblock') : t('dm.block')}
+                      title={activeBlocked ? t('dm.unblock') : t('dm.block')}
+                    >
+                      <Icon name="ban" size={15} /> {activeBlocked ? t('dm.unblock') : t('dm.block')}
                     </button>
                   )}
                 </div>
