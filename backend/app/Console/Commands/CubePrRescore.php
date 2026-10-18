@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\CacheMatchReviewJob;
 use App\Models\MatchResult;
+use App\Models\Setting;
 use App\Services\GnuBg\GnuBgClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
@@ -26,7 +27,8 @@ class CubePrRescore extends Command
 {
     protected $signature = 'tavla:cube-pr-rescore
         {--limit=200 : Bir çalışmada kuyruğa alınacak maç sayısı}
-        {--before= : Bu ISO zamandan ESKİ review_at olanlar (varsayılan: komut başlangıcı). Fix deploy anını ver.}
+        {--before= : Bu ISO zamandan ESKİ review_at olanlar. Verilirse cutoff kalıcı yazılır (sonraki çalışmalar buradan devam).}
+        {--reset : Resume imlecini sıfırla -> yeni tam tur (tüm uygun maçlar baştan)}
         {--ids= : Yalnız bu id\'ler (virgüllü) — nokta atışı backfill}
         {--dry-run : Sadece listele, dispatch etme}';
 
@@ -53,7 +55,30 @@ class CubePrRescore extends Command
 
         $limit = max(1, (int) $this->option('limit'));
         $dry = (bool) $this->option('dry-run');
-        $before = $this->option('before') ? \Carbon\Carbon::parse($this->option('before')) : now();
+
+        // RESUME İMLECİ (2026-10-18): cutoff'u DB'ye (Setting) kaydet -> `--before` vermeden tekrar
+        // çalıştırınca BAŞA DÖNMEZ, kayıtlı cutoff'tan devam eder. İşlenen maç bitince CacheMatchReviewJob
+        // gnubg_review_at=now() yazar (cutoff'tan YENİ) -> sonraki çalışma onu atlar. Cutoff SABİT kaldığı
+        // sürece imleç hep ileri gider, çift-iş yok. --reset ile yeni tam tur; --before ile elle cutoff (kalıcı).
+        $cutoffKey = 'cube_pr_rescore_cutoff';
+        if ($this->option('reset')) {
+            Setting::put($cutoffKey, '');
+            $this->info('Resume imleci SIFIRLANDI -> bu çalışma yeni tam tur başlatır.');
+        }
+        if ($this->option('before')) {
+            $before = \Carbon\Carbon::parse($this->option('before'));
+            Setting::put($cutoffKey, $before->toIso8601String()); // elle verilen cutoff'u kalıcı yap
+        } else {
+            $saved = Setting::get($cutoffKey, '');
+            if ($saved === '') {
+                $before = now();
+                Setting::put($cutoffKey, $before->toIso8601String()); // ilk çalışma: imleci sabitle
+                $this->info('Resume imleci kuruldu (cutoff='.$before->toIso8601String().') -> sonraki çalışmalar buradan devam eder.');
+            } else {
+                $before = \Carbon\Carbon::parse($saved);
+                $this->info("Resume: kayıtlı cutoff'tan devam ({$saved}).");
+            }
+        }
         $ids = array_filter(array_map('intval', explode(',', (string) $this->option('ids'))));
 
         // Küp kararı olan (cube_decisions>0), review'li, GERÇEK log'lu, cutoff'tan ESKİ review_at'li maçlar.
