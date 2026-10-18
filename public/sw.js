@@ -5,7 +5,7 @@
 // ONEMLI: respondWith'e HER ZAMAN gecerli bir Response donmeli; undefined donersen
 // tarayici "Failed to convert value to 'Response'" atar (fetch VEYA cache.put reddettiginde
 // eski surumde iki caches.match da bos olunca bu oluyordu -> asagida her yol Response garanti).
-const CACHE = 'tavla-cache-v11'
+const CACHE = 'tavla-cache-v12'
 const CACHE_PREFIX = 'tavla-cache-' // yalniz KENDI surumlu cache'lerimizi temizle; baskasina dokunma
 
 // Son care cevrimdisi yaniti -> YALNIZ gezinme (sayfa) isteklerinde. Tek-kullanimlik body
