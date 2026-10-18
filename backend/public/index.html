@@ -2,6 +2,48 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
+    <!-- GECICI TANI (Android app beyaz ekran avi): hata olursa VEYA #root 6sn bos kalirsa
+         ekrana yazar. Calisan kullanicida GORUNMEZ. Teshis bitince KALDIR. -->
+    <script>
+      (function () {
+        function show(msg) {
+          try {
+            var d = document.getElementById('__diag') || document.createElement('div')
+            d.id = '__diag'
+            d.style.cssText =
+              'position:fixed;inset:0;z-index:2147483647;background:#1C1A17;color:#F4EFE6;font:12px/1.5 system-ui,-apple-system,sans-serif;padding:14px;overflow:auto;white-space:pre-wrap;word-break:break-word'
+            d.textContent = 'TavlaTv tani:\n\n' + msg
+            ;(document.body || document.documentElement).appendChild(d)
+          } catch (e) {}
+        }
+        window.addEventListener(
+          'error',
+          function (e) {
+            show('JS HATASI: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + '\n' + ((e.error && e.error.stack) || ''))
+          },
+          true,
+        )
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason || {}
+          show('PROMISE HATASI: ' + (r.stack || r.message || r))
+        })
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root')
+            if (root && root.children.length === 0) {
+              show(
+                '#root BOS kaldi (sayfa+inline JS calisti, React mount OLMADI).\n\n' +
+                  'href=' + location.href + '\n' +
+                  'origin=' + location.origin + '\n' +
+                  'Capacitor var mi=' + (!!window.Capacitor) + '\n' +
+                  'online=' + navigator.onLine + '\n' +
+                  'UA=' + navigator.userAgent,
+              )
+            }
+          }, 6000)
+        })
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#A83A2B" />
@@ -102,7 +144,7 @@
         ]
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-C1PYxIWe.js"></script>
+    <script type="module" crossorigin src="/assets/index-CAYz0J3z.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/Icon-BztG91yP.js">
     <link rel="modulepreload" crossorigin href="/assets/react-dom-_bz6IuXF.js">
     <link rel="modulepreload" crossorigin href="/assets/button-Cw4nlBuK.js">
@@ -115,7 +157,7 @@
     <link rel="modulepreload" crossorigin href="/assets/Coins-Cy_X56Mr.js">
     <link rel="modulepreload" crossorigin href="/assets/SoberFrame-5Bdcb9PF.js">
     <link rel="stylesheet" crossorigin href="/assets/SoberFrame-BSPxS0vx.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-DkrJ4V48.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-uzOkiK9i.css">
   </head>
   <body>
     <div id="root"></div>
