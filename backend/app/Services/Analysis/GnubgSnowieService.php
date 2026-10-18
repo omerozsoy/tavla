@@ -109,6 +109,14 @@ class GnubgSnowieService
         preg_match('/Close or actual cube decisions\s+(\d+)\s+(\d+)/', $raw, $cd); // küp PR gösterim kapısı
         preg_match('/Total moves\s+(\d+)\s+(\d+)/', $raw, $tm);                    // Snowie paydası (tüm hamle)
         preg_match('/Total cube decisions\s+(\d+)\s+(\d+)/', $raw, $tc);            // Snowie paydası (tüm küp)
+        // OTORİTER Snowie oranı HAM METİNDEN (iki oyuncu) — parseSnowie ile AYNI regex. KÖK BUG:
+        // players[].snowieErrorRate (Python gnubg_service parse'ı) 2. OYUNCU için bazen 0 geliyordu
+        // -> maçın o tarafı HİÇ yazılamayıp eski ŞİŞİK review değerinde kalıyordu (örn. 9JC5A Ömer
+        // 15.14/küp 69.33 sabit kaldı; ham metin -10.6 diyordu). Ham satır güvenilir; players[] fallback.
+        $snowieTxt = [null, null];
+        if (preg_match('/Snowie error rate\s+(-?\d+[.,]\d+)\s+\([^)]*\)\s+(-?\d+[.,]\d+)/', $raw, $sm)) {
+            $snowieTxt = [$f($sm[1]), $f($sm[2])];
+        }
         $chkErr = [isset($em[1][0]) ? $f($em[1][0]) : null, isset($em[2][0]) ? $f($em[2][0]) : null];
         $cubErr = [isset($em[1][1]) ? $f($em[1][1]) : null, isset($em[2][1]) ? $f($em[2][1]) : null];
         $ovErr = [isset($em[1][2]) ? $f($em[1][2]) : null, isset($em[2][2]) ? $f($em[2][2]) : null];
@@ -121,7 +129,7 @@ class GnubgSnowieService
 
         $out = [];
         foreach ([0, 1] as $i) {
-            $prRaw = abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
+            $prRaw = $snowieTxt[$i] ?? abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
             // YOK (0) veya BOZUK-analiz (milyonlar; ör. canlı-küplü maç "1 point" başlığıyla -> küp ölü
             // sanılır) -> null. gnubg'nin gerçek en-kötü Snowie'si ~birkaç yüz; >1000 = güvenilmez.
             if ($prRaw <= 0 || $prRaw > 1000) {

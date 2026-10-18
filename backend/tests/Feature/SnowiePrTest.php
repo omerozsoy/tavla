@@ -71,15 +71,18 @@ TXT;
         $this->assertNotNull($out[1]);
         $this->assertEqualsWithDelta(100.0, $out[1]['pr'], 0.1);
 
-        // BOZUK-analiz (milyonlar) yine null (cap değil): >1000 = güvenilmez gnubg.
+        // BOZUK-analiz (milyonlar) yine null (cap değil): >1000 = güvenilmez gnubg (ör. canlı-küplü
+        // maç "1 point" başlığıyla -> küp ölü sanılır). Garbage artık HAM METİNDEKİ Snowie oranında:
+        // snowieFromAnalyze otorite olarak ham "Snowie error rate" satırını okur (players[] yalnız
+        // fallback — Python servisi 2. oyuncu için bazen 0 veriyordu, o yüzden metin otorite oldu).
         $garbage = [
             'ok' => true,
             'players' => [['snowieErrorRate' => -5000.0], ['snowieErrorRate' => -3.2]],
-            'statistics_match' => $this->stats7669(),
+            'statistics_match' => str_replace('-51.4', '-5000.0', $this->stats7669()),
         ];
         $g = $svc->snowieFromAnalyze($garbage);
         $this->assertNull($g[0], 'milyonluk/>1000 Snowie -> null (bozuk analiz)');
-        $this->assertNotNull($g[1]); // 3.2 normal
+        $this->assertNotNull($g[1]); // 190.9 -> 100'e CAP (null değil)
     }
 
     public function test_cube_pr_shown_with_few_decisions_xg(): void
