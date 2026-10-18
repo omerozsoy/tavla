@@ -95,6 +95,9 @@ export default function Spectate({
   // Maç Özeti (izleyici): sunucuda bir kez hesaplanıp önbelleklenen özet. Butonla açılır.
   const [summary, setSummary] = useState<RoomSummary | null>(null)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  // PR poll tavana (~3dk) ulaşıp authPr hâlâ YOKSA: sonuç kartı sonsuza dek %90 "hesaplanıyor"
+  // spinner'ında donmasın (izleyici şikayeti) -> timeout bayrağı ile "—"a düş.
+  const [prTimedOut, setPrTimedOut] = useState(false)
   // Yönetici moderasyon: sohbette isme tıklanınca açılan oyuncu profili (oradan konuşma yasağı).
   const [profileId, setProfileId] = useState<number | null>(null)
 
@@ -395,6 +398,7 @@ export default function Spectate({
   // (summary YOK) -> setSummary re-render'ı effect'i yeniden kurmaz, tight-loop olmaz.
   useEffect(() => {
     if (!matchDone) return
+    setPrTimedOut(false)
     // İKİ tarafın PR'ı da gelene kadar poll SÜRER (eskiden VEYA idi: kazananın PR'ı önce gelince
     // poll durup kaybeden "—" kalıyordu). 60-deneme tavanı yine korur.
     const hasPr = (s: RoomSummary) =>
@@ -408,7 +412,11 @@ export default function Spectate({
     }
     const tick = () => {
       // ponytail: ~60 deneme (~3dk) tavan -> PR job hiç bitmezse (nadir) sonsuz poll yok.
-      if (++tries > 60) return stop()
+      // Tavanda authPr hâlâ yoksa kartı "—"a düşür (sonsuz %90 spinner yerine).
+      if (++tries > 60) {
+        setPrTimedOut(true)
+        return stop()
+      }
       roomSummary(code)
         .then((s) => {
           if (!alive || !s.ready) return
@@ -686,8 +694,8 @@ export default function Spectate({
             loserScore={score[loserColor]}
             winnerPr={prOf(winnerColor)}
             loserPr={prOf(loserColor)}
-            analyzing={prOf(winnerColor) == null}
-            oppAnalyzing={prOf(loserColor) == null}
+            analyzing={!prTimedOut && prOf(winnerColor) == null}
+            oppAnalyzing={!prTimedOut && prOf(loserColor) == null}
             progressPct={summary?.progress ?? null}
             winnerCheckerPr={summary?.authPr?.[winnerColor]?.checker ?? null}
             winnerCubePr={summary?.authPr?.[winnerColor]?.cube ?? null}
