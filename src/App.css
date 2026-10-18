@@ -24233,8 +24233,12 @@ body:has(.spectate-view) .app.lobby {
 .messages-compose textarea {
   flex: 1;
   min-width: 0;
-  min-height: 36px;
-  max-height: 96px;
+  /* !important: global :where(textarea){min-height:104px;resize:vertical} reset'ini KESİN yener
+     (bazı tarayıcılarda/kademede compose kutusu ~104px + resize tutamağıyla devleşiyordu). height
+     !important DEĞİL -> JS auto-grow (scrollHeight, max 96) çalışmaya devam eder. */
+  min-height: 36px !important;
+  max-height: 96px !important;
+  resize: none !important;
   padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -24243,7 +24247,6 @@ body:has(.spectate-view) .app.lobby {
   font: inherit;
   font-size: 15px;
   line-height: 18px;
-  resize: none;
   overflow-y: auto;
 }
 .messages-compose textarea:focus {
