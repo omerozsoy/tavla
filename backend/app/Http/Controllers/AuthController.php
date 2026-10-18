@@ -1863,6 +1863,9 @@ class AuthController extends Controller
                     : ($hasOppGnubgSplit ? $m->gnubg_opponent_cube_pr : null),
                 'has_log' => $hasLog ? (bool) $m->has_log : false,
                 'classic' => ($hasRoom && $m->room_code) ? ($classicByRoom[$m->room_code] ?? false) : false,
+                // ORTAK MAÇ KODU: bir online maç iki satır/iki id üretir (her oyuncu kendi satırı).
+                // Kullanıcıya satır id'si DEĞİL, iki tarafta da AYNI olan oda kodu gösterilir -> "ortak maç".
+                'room_code' => $hasRoom ? $m->room_code : null,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
 

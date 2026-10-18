@@ -761,6 +761,8 @@ export interface MyMatch {
   opponent_gnubg_checker_pr?: number | null
   opponent_gnubg_cube_pr?: number | null
   classic?: boolean // Klasik Tavla maçı: "Klasik" rozeti + .mat indirme yok
+  // ORTAK maç kodu (oda): iki oyuncuda da AYNI. Satır id'si (id) kişiye özel -> kullanıcıya bu gösterilir.
+  room_code?: string | null
   created_at?: string | null
 }
 // Sayfalama + filtre: offset/limit (30'ar yükle), q (rakip adı arama), from (tarih >= ISO)

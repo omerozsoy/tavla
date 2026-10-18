@@ -418,7 +418,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                     {/* Alt serit: mac id · sonuc · tarih · genislet (rating degisimi artik
                         her oyuncunun kendi tarafinda — sifir-toplamli). */}
                     <div className="mh-foot">
-                      <span className="mh-id" title={t('mh.matchId')}>#{m.id}</span>
+                      {m.room_code && (
+                        <span className="mh-id" title={t('mh.matchId')}>#{m.room_code}</span>
+                      )}
                       <span className={`mh-out ${m.won ? 'win' : 'loss'}`}>
                         {m.won ? t('mh.win') : t('mh.loss')}
                       </span>

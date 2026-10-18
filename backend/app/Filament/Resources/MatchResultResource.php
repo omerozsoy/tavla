@@ -82,7 +82,26 @@ class MatchResultResource extends Resource
                 static::dedupeOnlineRows($query);
             })
             ->columns([
-                Tables\Columns\TextColumn::make('id')->label('#')->searchable()->sortable(),
+                // '#' ARAMASI: bir online maç İKİ satır/İKİ id üretir ama liste yalnız kanonik
+                // (min id) satırı gösterir (dedupeOnlineRows). Oyuncunun Maç Analizleri kartı ise
+                // HER oyuncuya KENDİ satır id'sini gösterir -> aranan id kanonik-olmayan taraf
+                // olabilir (örn. kart #14977 der ama listede yalnız kardeş #14976 vardır) ve düz
+                // "id LIKE" dedup'a takılıp "Maç yok" döner. Çözüm: aranan id'nin AİT OLDUĞU odanın
+                // kanonik satırını da getir -> iki id'den hangisini yazarsan yaz maç bulunur.
+                Tables\Columns\TextColumn::make('id')->label('#')->sortable()
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        $n = trim($search);
+                        if ($n === '' || ! ctype_digit($n)) {
+                            return $query->whereRaw('1=0'); // sayı değil -> bu kolon eşleşmesin
+                        }
+
+                        return $query->where('id', (int) $n)
+                            ->orWhereIn('room_code', function ($sub) use ($n) {
+                                $sub->select('room_code')->from('match_results')
+                                    ->where('id', (int) $n)
+                                    ->whereNotNull('room_code')->where('room_code', '!=', '');
+                            });
+                    }),
                 // Maçın ne zaman oynandığı EN BAŞTA görünsün (eskiden en sağda, ~20 kolon ardında kaçıyordu).
                 // DB UTC yazar; panelde Türkiye saati (UTC+3). Alt satırda "x önce" göreli zaman.
                 Tables\Columns\TextColumn::make('created_at')->label('Tarih / Saat')
