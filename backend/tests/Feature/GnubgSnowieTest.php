@@ -50,6 +50,55 @@ class GnubgSnowieTest extends TestCase
     }
 
     /**
+     * HİBRİT PR = min(EMG, Snowie). EMG = ovErr/(zorunlu-dışı+yakın küp)×500 (XG tanımı); büyük küp
+     * hatasında gnubg 2-ply şişince Snowie tavan. Canned istatistik -> ikisini de doğrular (regex +
+     * formül + min seçimi). gnubg CLI GEREKMEZ (saf parse) -> CI'da da koşar.
+     */
+    public function test_hybrid_min_emg_snowie(): void
+    {
+        $svc = new GnubgSnowieService;
+        // GERÇEK 36P7S 2-ply istatistiği (col0=Zknkyc/white, col1=ÖmerDOĞAN/black).
+        // EMG: Zknkyc 0.770/(28+4)*500=12.03 (<Snowie 12.4 -> EMG). Ömer 0.374/(30+11)*500=4.56
+        // (<Snowie 6.0 -> EMG, XG 4.63'e birebir). Eski kod Snowie'yi (6.0) yazıyordu = şişik.
+        $text = <<<TXT
+        Player                                   Zknkyc                  ÖmerDOĞAN
+        Checkerplay statistics
+        Unforced moves                            28                      30
+        Error total EMG (MWC)                         -0.599 (-13.454%)       -0.102 ( -1.016%)
+        Cube statistics
+        Close or actual cube decisions             4                      11
+        Error total EMG (MWC)                         -0.171 ( -1.696%)       -0.272 ( -3.312%)
+        Overall statistics
+        Error total EMG (MWC)                         -0.770 (-15.150%)       -0.374 ( -4.328%)
+        Snowie error rate                            -12.4   ( +0.000%)       -6.0   ( +0.000%)
+        TXT;
+        $res = ['ok' => true, 'players' => [['snowieErrorRate' => 12.4], ['snowieErrorRate' => 6.0]], 'statistics_match' => $text];
+        $r = $svc->snowieFromAnalyze($res, 1);
+        $this->assertNotNull($r);
+        $this->assertEqualsWithDelta(12.03, $r[0]['pr'], 0.05, 'Zknkyc EMG seçilmeli (12.03 < Snowie 12.4)');
+        $this->assertEqualsWithDelta(4.56, $r[1]['pr'], 0.05, 'Ömer EMG=4.56 (XG 4.63) seçilmeli, Snowie 6.0 DEĞİL');
+        // Bileşenler genel PR'ı havuzlar: checker+cube ≈ overall (hata-oranı bölüşümü).
+        $this->assertEqualsWithDelta(1.24, $r[1]['checker_pr'], 0.05);
+        $this->assertEqualsWithDelta(3.32, $r[1]['cube_pr'], 0.05);
+
+        // DAMPING: EMG büyük küp hatasıyla şişerse (21.87) Snowie (14.7) TAVAN olur.
+        $text2 = <<<TXT
+        Player                                   A                       B
+        Checkerplay statistics
+        Unforced moves                            34                      34
+        Error total EMG (MWC)                         -0.537 ( -5.000%)       -0.537 ( -5.000%)
+        Cube statistics
+        Close or actual cube decisions             9                       9
+        Error total EMG (MWC)                         -1.344 (-13.000%)       -1.344 (-13.000%)
+        Overall statistics
+        Error total EMG (MWC)                         -1.881 (-18.000%)       -1.881 (-18.000%)
+        Snowie error rate                            -14.7   ( +0.000%)      -14.7   ( +0.000%)
+        TXT;
+        $r2 = $svc->snowieFromAnalyze(['ok' => true, 'players' => [['snowieErrorRate' => 14.7], ['snowieErrorRate' => 14.7]], 'statistics_match' => $text2], 1);
+        $this->assertEqualsWithDelta(14.7, $r2[0]['pr'], 0.1, 'EMG 21.87 şişik -> Snowie 14.7 tavanı seçilmeli');
+    }
+
+    /**
      * CANLI REGRESYON: gerçek gnubg ile fixture maçı analiz et -> Snowie PR XG'ye yakın olmalı.
      * gnubg CLI yoksa (CI) atlanır; local/prod'da KİLİT görevi görür.
      */

@@ -3,12 +3,17 @@
 namespace App\Services\Analysis;
 
 /**
- * OTORİTER PR = gnubg CLI'nin "Snowie error rate"i (maç-cubeful MWC, küp DAHİL). gnubg .mat'ten
- * maç/money'yi otomatik ayırt eder (tek-oyun→money, puanlı→maç-cubeful) -> XG ile eşleşir. Eski
- * yol probs'tan cubeless-para equity türetip ~2.4x şişiriyordu.
+ * OTORİTER PR = HİBRİT min(EMG, Snowie) — gnubg maç istatistiğinden, XG ile en yakın (2026-10-19).
+ *   EMG    = ovErr/(zorunlu-dışı pul + yakın küp)×500 = XG "PR" tanımının BİREBİRİ (yetenekli
+ *            oyuncuda XG'ye eşleşir; 36P7S Ömer EMG 4.56 ≈ XG 4.63, Snowie 6.0 şişikti).
+ *   Snowie = gnubg'nin kendi oranı (geniş payda). gnubg 2-ply BÜYÜK küp hatalarını XG'ye göre
+ *            abartınca EMG fırlar (ahselbah EMG 21.9 vs XG 13.3) -> Snowie (14.7) TAVAN.
+ *   min()  = normalde EMG, aşırı küp sapmasında Snowie tavanı -> 4 XG-referansında ikisinden de yakın.
+ * gnubg .mat'ten maç/money'yi otomatik ayırt eder (tek-oyun→money, puanlı→maç-cubeful). Eski saf-Snowie
+ * yolu Ömer-tipi (küp-ağırlıklı az-hata) oyuncuyu ~%30 şişiriyordu; ondan önceki review-log ~2.4x şişik.
  *
  * KİLİT: analiz ayarları (plies, cubeful, luck off) burada SABİT ve yorumlu; regresyon testi
- * sabit .mat'te beklenen Snowie'yi doğrular -> ayar sapması deploy'dan önce yakalanır.
+ * sabit .mat'te beklenen PR'ı doğrular -> ayar/formül sapması deploy'dan önce yakalanır.
  */
 class GnubgSnowieService
 {
@@ -82,13 +87,14 @@ class GnubgSnowieService
     }
 
     /**
-     * OTORİTER PR = gnubg'nin KENDİ maç istatistiği (XG ile birebir: 7669 By_tgg gnubg Snowie 51.4
-     * ~ XG 56.24; bizim eski review-log yöntemi 327 veriyordu, ~6x şişik — review 'loss' değerleri
-     * match-play'de yanlış ölçekte). GnuBgClient::analyzeMatch sonucundan per-oyuncu PR çıkarır:
-     *   pr          = |Snowie error rate|            (genel, XG "PR")
-     *   checker_pr  = pr × checker_err / toplam_err  (Snowie'yi kategoriye böl -> toplamı pr eder)
-     *   cube_pr     = pr × cube_err / toplam_err      (yalnız ≥MIN küp kararında, aksi null)
-     * "Error total EMG" ham metinde SIRAYLA Checkerplay→Cube→Overall geçer -> tek regex ile 3'ü de.
+     * OTORİTER PR = HİBRİT min(EMG, Snowie) gnubg maç istatistiğinden (XG'ye en yakın; sınıf docblock'u).
+     * GnuBgClient::analyzeMatch sonucundan per-oyuncu PR çıkarır:
+     *   emgPr       = ovErr/(zorunlu-dışı pul + yakın küp)×500   (XG PR tanımı)
+     *   pr          = min(emgPr, |Snowie error rate|)            (genel, XG "PR"; biri yoksa diğeri)
+     *   checker_pr  = pr × checker_err / toplam_err              (seçilen PR'ı kategoriye böl -> toplamı pr)
+     *   cube_pr     = pr × cube_err / toplam_err                 (yalnız ≥MIN küp kararında, aksi null)
+     * "Error total EMG" ham metinde SIRAYLA Checkerplay→Cube→Overall geçer -> tek regex ile 3'ü de;
+     * "Unforced moves" + "Close or actual cube decisions" = EMG paydası.
      *
      * @param  array|null  $res  GnuBgClient::analyzeMatch() dönüşü (players + statistics_match)
      * @return array|null  [0=>p0, 1=>p1] her biri {pr,checker_pr,cube_pr,cube_decisions} | null (çöp/yok)
@@ -106,7 +112,8 @@ class GnubgSnowieService
         $f = static fn ($v) => abs((float) str_replace(',', '.', (string) $v));
         // "Error total EMG (MWC)   -2.019 (..%)   -9.318 (..%)" SIRAYLA checker, cube, overall.
         preg_match_all('/Error total EMG[^\n\-]*(-?\d+[.,]\d+)\s*\([^)]*\)\s+(-?\d+[.,]\d+)/', $raw, $em);
-        preg_match('/Close or actual cube decisions\s+(\d+)\s+(\d+)/', $raw, $cd); // küp PR gösterim kapısı
+        preg_match('/Close or actual cube decisions\s+(\d+)\s+(\d+)/', $raw, $cd); // küp PR kapısı + EMG paydası
+        preg_match('/Unforced moves\s+(\d+)\s+(\d+)/', $raw, $um);                  // EMG paydası (pul): zorunlu hariç
         preg_match('/Total moves\s+(\d+)\s+(\d+)/', $raw, $tm);                    // Snowie paydası (tüm hamle)
         preg_match('/Total cube decisions\s+(\d+)\s+(\d+)/', $raw, $tc);            // Snowie paydası (tüm küp)
         // OTORİTER Snowie oranı HAM METİNDEN (iki oyuncu) — parseSnowie ile AYNI regex. KÖK BUG:
@@ -121,6 +128,7 @@ class GnubgSnowieService
         $cubErr = [isset($em[1][1]) ? $f($em[1][1]) : null, isset($em[2][1]) ? $f($em[2][1]) : null];
         $ovErr = [isset($em[1][2]) ? $f($em[1][2]) : null, isset($em[2][2]) ? $f($em[2][2]) : null];
         $cubeDec = [(int) ($cd[1] ?? 0), (int) ($cd[2] ?? 0)];
+        $unforced = [(int) ($um[1] ?? 0), (int) ($um[2] ?? 0)];
         // Snowie paydası (kariyer ağırlığı). GÜVENİLİR yol: gnubg'nin KENDİ Snowie'sinden geri-türet
         // dec = err×1000/Snowie (By_tgg 2.569×1000/51.4=50; maç 1448 1.908×1000/20.94=91). "Total moves"
         // regex'i bazı çok-oyunlu çıktılarda yanlış sayı veriyordu (1448: 16) -> geri-türetme kesin.
@@ -129,19 +137,36 @@ class GnubgSnowieService
 
         $out = [];
         foreach ([0, 1] as $i) {
-            $prRaw = $snowieTxt[$i] ?? abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
-            // YOK (0) veya BOZUK-analiz (milyonlar; ör. canlı-küplü maç "1 point" başlığıyla -> küp ölü
-            // sanılır) -> null. gnubg'nin gerçek en-kötü Snowie'si ~birkaç yüz; >1000 = güvenilmez.
-            if ($prRaw <= 0 || $prRaw > 1000) {
+            // HİBRİT PR = min(EMG, Snowie) — XG'ye en yakın (4 XG-referansında ikisinden de yakın):
+            //  (1) EMG = ovErr/(zorunlu-dışı pul + yakın küp)×500 = XG PR tanımının BİREBİRİ. Yetenekli
+            //      oyuncuda XG'ye eşleşir (36P7S Ömer EMG 4.56 ≈ XG 4.63; Snowie 6.0 şişik).
+            //  (2) Snowie = gnubg'nin kendi oranı (geniş payda, tüm hamle). gnubg 2-ply BÜYÜK küp
+            //      hatalarını XG'ye göre ABARTIR -> EMG fırlar (59C8M ahselbah EMG 21.9 vs XG 13.3);
+            //      Snowie (14.7) tavan görevi görür. min() = normalde EMG, aşırı küp sapmasında Snowie tavanı.
+            // Biri yoksa/çöpse diğeri; ikisi de yoksa null ("—", eski değere DOKUNMA). pr<=0 -> null
+            // (gerçek maçta 0 hata imkansız = degrade/boş taraf; sahte-0 "Super GM" yazma).
+            $snowieRaw = $snowieTxt[$i] ?? abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
+            $snowiePr = ($snowieRaw > 0 && $snowieRaw <= 1000) ? min($snowieRaw, 100.0) : null;
+            $ov = $ovErr[$i];
+            $emgDec = $unforced[$i] + $cubeDec[$i];
+            $emgPr = ($ov !== null && $emgDec > 0) ? $ov / $emgDec * 500 : null;
+            $emgOk = $emgPr !== null && $emgPr > 0 && $emgPr <= 1000; // çöp (NaN/milyon) + sıfır hariç
+            if (! $emgOk && $snowiePr === null) {
                 $out[$i] = null;
 
                 continue;
             }
-            // XG-birebir: XG PR'ı 100'de CAP'ler (maç 7669 KUPABEYİ: XG 100.00 vs gnubg 190.9).
-            $pr = min($prRaw, 100.0);
+            $pr = ($emgOk && $snowiePr !== null) ? min($emgPr, $snowiePr) : ($emgOk ? $emgPr : $snowiePr);
+            $pr = min($pr, 100.0); // XG PR'ı 100'de CAP'ler (maç 7669 KUPABEYİ: XG 100.00 vs gnubg 190.9)
+            if ($pr <= 0) {
+                $out[$i] = null;
+
+                continue;
+            }
             $ce = $chkErr[$i];
             $ue = $cubErr[$i];
             $tot = ($ce ?? 0.0) + ($ue ?? 0.0);
+            // Bileşenler seçilen genel PR'ı hata-oranıyla böler -> checker+cube HAVUZU genel PR'ı verir.
             $checkerPr = ($ce !== null && $tot > 0) ? round($pr * $ce / $tot, 2) : null;
             $cubePr = ($ue !== null && $tot > 0 && $cubeDec[$i] >= $minCubeDecisions) ? round($pr * $ue / $tot, 2) : null;
             $out[$i] = [
@@ -150,11 +175,11 @@ class GnubgSnowieService
                 'cube_pr' => $cubePr,
                 'cube_decisions' => $cubeDec[$i], // "close or actual" (küp kariyeri + MIN kapısı)
                 'cube_equity_lost' => $ue !== null ? round($ue, 4) : null, // küp err EMG (kariyer küp PR için)
-                'equity_lost' => $ovErr[$i] !== null ? round($ovErr[$i], 4) : null, // kariyer için (overall err EMG)
-                // dec = err×1000/Snowie (gnubg'nin KENDİ paydası, kesin); yoksa parse fallback.
-                'decisions' => ($ovErr[$i] !== null && $prRaw > 0)
-                    ? (int) round($ovErr[$i] * 1000 / $prRaw)
-                    : $parsedDec[$i],
+                'equity_lost' => $ov !== null ? round($ov, 4) : null, // kariyer için (overall err EMG)
+                // KARİYER AĞIRLIĞI (dec): Snowie paydasında TUT (CareerPrService SCALE=1000 ile tutarlı;
+                // ağırlık ölçeği matçlar arası sabit kalsın). Snowie yoksa EMG paydası / parse fallback.
+                'decisions' => ($snowieRaw > 0) ? (int) round(($ov ?? 0) * 1000 / $snowieRaw)
+                    : ($emgDec > 0 ? $emgDec : $parsedDec[$i]),
             ];
         }
 

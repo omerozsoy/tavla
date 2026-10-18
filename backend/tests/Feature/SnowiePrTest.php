@@ -72,16 +72,21 @@ TXT;
         $this->assertEqualsWithDelta(100.0, $out[1]['pr'], 0.1);
 
         // BOZUK-analiz (milyonlar) yine null (cap değil): >1000 = güvenilmez gnubg (ör. canlı-küplü
-        // maç "1 point" başlığıyla -> küp ölü sanılır). Garbage artık HAM METİNDEKİ Snowie oranında:
-        // snowieFromAnalyze otorite olarak ham "Snowie error rate" satırını okur (players[] yalnız
-        // fallback — Python servisi 2. oyuncu için bazen 0 veriyordu, o yüzden metin otorite oldu).
+        // maç "1 point" başlığıyla -> küp ölü sanılır). HİBRİT'te hem Snowie HEM EMG çöp olmalı:
+        // gerçek ölü-küp senaryosunda küp/overall EMG de astronomik olur (>1000 -> EMG de reddedilir).
+        // (Yalnız Snowie çöp + EMG geçerli ise hibrit EMG'yi kullanır = DOĞRU; o yüzden burada p0'ın
+        // overall EMG'si de şişirilir -> ikisi de çöp -> null.)
         $garbage = [
             'ok' => true,
             'players' => [['snowieErrorRate' => -5000.0], ['snowieErrorRate' => -3.2]],
-            'statistics_match' => str_replace('-51.4', '-5000.0', $this->stats7669()),
+            'statistics_match' => str_replace(
+                ['-51.4   ', '-2.569 (-25.550%)'],
+                ['-5000.0 ', '-5000.000 (-25.550%)'],
+                $this->stats7669()
+            ),
         ];
         $g = $svc->snowieFromAnalyze($garbage);
-        $this->assertNull($g[0], 'milyonluk/>1000 Snowie -> null (bozuk analiz)');
+        $this->assertNull($g[0], 'bozuk analiz (Snowie>1000 + EMG>1000) -> null');
         $this->assertNotNull($g[1]); // 190.9 -> 100'e CAP (null değil)
     }
 
