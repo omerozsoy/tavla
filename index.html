@@ -2,6 +2,67 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
+    <!-- BEYAZ EKRAN SELF-HEAL: app bundle yuklenemez VEYA #root 12sn bos kalirsa (mount olmadi),
+         hatayi GOSTERME -> KURTAR. 1) bir kez yenile  2) hala olmazsa SW+cache temizle+yenile
+         3) yine olmazsa kibar "Tekrar Dene". sessionStorage sayacli, sonsuz dongu yok. Calisan
+         kullanicida (root dolu) GORUNMEZ; mid-mac surum degisimini TETIKLEMEZ (yalniz root BOS iken). -->
+    <script>
+      (function () {
+        var KEY = '__tavla_recover'
+        function attempt() { try { return +(sessionStorage.getItem(KEY) || 0) } catch (e) { return 0 } }
+        function bump(n) { try { sessionStorage.setItem(KEY, n) } catch (e) {} }
+        function nukeAndReload() {
+          var done = false
+          function go() { if (done) return; done = true; location.reload() }
+          try {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations()
+                .then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister() })) })
+                .catch(function () {})
+            }
+            if (window.caches && caches.keys) {
+              caches.keys()
+                .then(function (ks) { return Promise.all(ks.filter(function (k) { return k.indexOf('tavla-cache-') === 0 }).map(function (k) { return caches.delete(k) })) })
+                .then(go).catch(go)
+            } else { go() }
+          } catch (e) { go() }
+          setTimeout(go, 1500)
+        }
+        function showRetry() {
+          if (document.getElementById('__loadfail')) return
+          var d = document.createElement('div')
+          d.id = '__loadfail'
+          d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#1C1A17;color:#F4EFE6;font:400 15px/1.5 system-ui,-apple-system,sans-serif;padding:24px;text-align:center'
+          d.innerHTML = 'TavlaTv yüklenemedi. Bağlantını kontrol edip tekrar dene.<br><button id="__retry" style="font:inherit;padding:10px 24px;border:0;border-radius:10px;background:#A83A2B;color:#fff;cursor:pointer">Tekrar Dene</button>'
+          ;(document.body || document.documentElement).appendChild(d)
+          var b = document.getElementById('__retry')
+          if (b) b.onclick = function () { try { sessionStorage.removeItem(KEY) } catch (e) {} nukeAndReload() }
+        }
+        function recover() {
+          var n = attempt()
+          if (n === 0) { bump(1); location.reload(); return }
+          if (n === 1) { bump(2); nukeAndReload(); return }
+          showRetry()
+        }
+        // App bundle'i (/assets/*.js) yuklenemezse VE app henuz ayakta DEGILSE kurtar.
+        // (gtag vb. dis script'ler + app ayaktayken kopan lazy-chunk'lar HARIC -> hard-reload etme.)
+        window.addEventListener('error', function (e) {
+          var t = e.target
+          if (!t || t.tagName !== 'SCRIPT' || !t.src || t.src.indexOf('/assets/') < 0) return
+          var r = document.getElementById('root')
+          if (r && r.children.length > 0) return
+          recover()
+        }, true)
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            var r = document.getElementById('root')
+            if (!r) return
+            if (r.children.length > 0) { try { sessionStorage.removeItem(KEY) } catch (e) {} }
+            else if (!document.getElementById('__loadfail')) recover()
+          }, 12000)
+        })
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#A83A2B" />
