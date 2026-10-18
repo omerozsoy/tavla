@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Message;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Support\OfficialMessenger;
@@ -80,6 +81,7 @@ class PlayerMessage extends Page implements HasForms
                                 'one' => 'Tek oyuncu',
                                 'tournament' => 'Turnuva katılımcıları',
                                 'all' => 'Tüm kullanıcılar',
+                                'online' => 'Sadece çevrimiçi oyuncular (son 2 dk)',
                                 'unverified' => 'Aktivasyonunu tamamlamayan üyeler',
                                 'country' => 'Ülkeye göre',
                                 'province' => 'Şehre göre (TR ili)',
@@ -182,6 +184,30 @@ class PlayerMessage extends Page implements HasForms
             ->all();
     }
 
+    /**
+     * Gönderilen son mesajlar (resmi hesabın yolladıkları). Her gönderim-olayı created_at+body ile
+     * gruplanır -> broadcast tek $now'u tüm satırlara yazdığı için bir toplu gönderim = tek satır +
+     * alıcı sayısı. ponytail: created_at saniye hassasiyetinde gruplar (aynı saniyede aynı metinli iki
+     * AYRI gönderim birleşir — admin manuel gönderimde pratikte imkansız); ayrı log tablosu gerekmez.
+     */
+    public function sentHistory(): \Illuminate\Support\Collection
+    {
+        $officialId = OfficialMessenger::existingId();
+        if (! $officialId) {
+            return collect();
+        }
+        $hasImg = Schema::hasColumn('messages', 'image');
+
+        return Message::query()
+            ->where('sender_id', $officialId)
+            ->selectRaw('body, created_at, COUNT(*) as recipients, SUM(read_at IS NOT NULL) as read_count'
+                .($hasImg ? ', MAX(image) as image' : ''))
+            ->groupBy('body', 'created_at')
+            ->orderByDesc('created_at')
+            ->limit(30)
+            ->get();
+    }
+
     public function send(): void
     {
         $data = $this->form->getState();
@@ -215,6 +241,9 @@ class PlayerMessage extends Page implements HasForms
         if ($target === 'all') {
             $n = OfficialMessenger::broadcast($body, $image);
             Notification::make()->title("Mesaj {$n} kullanıcıya gönderildi.")->success()->send();
+        } elseif ($target === 'online') {
+            $n = OfficialMessenger::broadcast($body, $image, ['online' => true]);
+            Notification::make()->title("Mesaj, çevrimiçi {$n} oyuncuya gönderildi.")->success()->send();
         } elseif ($target === 'unverified') {
             $n = OfficialMessenger::broadcast($body, $image, ['unverified' => true]);
             Notification::make()->title("Mesaj, aktivasyonunu tamamlamayan {$n} üyeye gönderildi.")->success()->send();

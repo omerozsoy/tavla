@@ -179,6 +179,8 @@ class OfficialMessenger
      *   'unverified' => true  : yalnız e-posta aktivasyonunu tamamlamamış üyeler (email_verified_at NULL)
      *   'country'    => 'TR'  : yalnız o ülke
      *   'province'   => 'İzmir': yalnız o il/şehir (TR)
+     *   'online'     => true  : yalnız çevrimiçi (last_seen son 2 dk + presence_status offline/ghost DEĞİL —
+     *                            AuthController online panel kriteriyle birebir)
      */
     public static function broadcast(string $body, ?string $image = null, array $filters = []): int
     {
@@ -196,6 +198,11 @@ class OfficialMessenger
             ->when(! empty($filters['unverified']), fn ($q) => $q->whereNull('email_verified_at'))
             ->when($country !== '', fn ($q) => $q->where('country', $country))
             ->when($province !== '', fn ($q) => $q->where('province', $province))
+            ->when(! empty($filters['online']), fn ($q) => $q
+                ->where('last_seen', '>=', now()->subMinutes(2))
+                // presence_status NULL = online-uygun (panel ! in_array ile aynı); SQL NOT IN NULL'ı eler -> OR NULL.
+                ->where(fn ($w) => $w->whereNull('presence_status')
+                    ->orWhereNotIn('presence_status', ['offline', 'ghost'])))
             ->select('id')
             ->chunkById(500, function ($users) use (&$count, $official, $body, $image, $hasImg, $now) {
                 $rows = [];
