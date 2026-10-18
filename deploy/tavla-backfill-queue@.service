@@ -1,0 +1,28 @@
+[Unit]
+Description=Tavla backfill worker %i (gnubg reviews-bulk/bulk — izole, canlıyı starve ETMEZ)
+After=network.target mariadb.service mysqld.service
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı olmalı (tavla-queue.service ile AYNI kullanıcı).
+#   stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
+# ve CHANGE_ME_VHOST_USER yerine yaz.
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
+# YALNIZ BACKFILL kuyrukları: 'reviews-bulk' (tavla:cube-pr-rescore, tavla:review-warmup) +
+# 'bulk' (tavla:gnubg-pr-heal, tavla:gnubg-pr-backfill, matches:backfill-luck).
+#
+# KÖK SEBEP (2026-10-18, 2528 iş 8 saattir attempts=0): canlı 'reviews' + backfill 'reviews-bulk'
+# AYNI worker'a (tavla-review-queue, --queue=reviews,reviews-bulk) konunca, queue:work KATI ÖNCELİK
+# uygular -> 'reviews' tamamen boşalmadan 'reviews-bulk'a GEÇMEZ. Canlı maç-sonu review akışı tek
+# worker'ı %100 meşgul tutuyordu -> backfill sırası HİÇ gelmedi (0 attempts). Çözüm: backfill'i
+# AYRI worker'a izole et (BQ9LW default-vs-bulk izolasyonunun aynısı) -> starve EDİLEMEZ.
+#
+# %i ile N kopya paralel (8/8 kapasitede 2-3 öner): systemctl enable --now tavla-backfill-queue@{1,2,3}
+# --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar. tries=1 (gnubg down -> sessiz).
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews-bulk,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

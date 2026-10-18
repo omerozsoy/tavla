@@ -9,17 +9,17 @@ Type=simple
 # ve CHANGE_ME_VHOST_USER yerine yaz.
 User=CHANGE_ME_VHOST_USER
 WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
-# YALNIZ 'reviews' kuyruğunu işler -> CacheMatchReviewJob buraya düşer (bkz onQueue('reviews')).
-# Böylece geçmiş-maç backfill'i, canlı PR/luck worker'ı (tavla-queue, 'default' kuyruk) ile YARIŞMAZ;
-# yeni maçların PR analizi backfill arkasında BEKLEMEZ. Review'ler gnubg HEAVY havuzunda koşar
-# (foreground/bot bloklanmaz). --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar.
+# YALNIZ 'reviews' kuyruğunu işler -> CANLI maç-sonu review ısıtma (CacheMatchReviewJob, onQueue('reviews')).
+# Böylece canlı review, geçmiş-maç backfill'inin arkasında BEKLEMEZ; gnubg HEAVY havuzunda koşar.
+# --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar. tries=1 (gnubg down -> sessiz).
 #
-# KUYRUK (--queue=reviews,reviews-bulk,bulk): 'reviews' = CANLI maç-sonu review ısıtma;
-# 'reviews-bulk' = toplu geçmiş review ısıtma (tavla:review-warmup, cube-pr-rescore); 'bulk' = PR
-# backfill/heal (tavla:gnubg-pr-heal, tavla:gnubg-pr-backfill, matches:backfill-luck). TÜM backfill
-# türleri BU ayrı worker'da toplandı -> canlı PR worker'ı (tavla-queue, 'default') hiçbir backfill
-# selinin arkasında BEKLEMEZ (BQ9LW 59sn kök çözümü). Sıralı öncelik: canlı review en önde.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews,reviews-bulk,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+# KUYRUK (--queue=reviews SADECE): 'reviews-bulk' + 'bulk' backfill kuyrukları AYRI worker'a taşındı
+# (tavla-backfill-queue@.service). NEDEN (kök sebep, 2026-10-18: 2528 iş 8 saat attempts=0): canlı
+# 'reviews' + backfill 'reviews-bulk' AYNI worker'da (eski --queue=reviews,reviews-bulk) olunca,
+# queue:work KATI ÖNCELİK uygular -> 'reviews' boşalmadan 'reviews-bulk'a GEÇMEZ. Canlı review akışı
+# tek worker'ı sürekli meşgul tutuyordu -> backfill sırası HİÇ gelmedi. Ayrıştırma = BQ9LW
+# default-vs-bulk izolasyonunun aynısı: canlı DAİMA boşta-hazır, backfill paralel ve starve EDİLEMEZ.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
 Restart=always
 RestartSec=5
 

@@ -273,12 +273,20 @@ else
     && echo "queue:restart sinyali gonderildi (worker sonraki job'da yeni kodu alir)." \
     || echo "UYARI: tavla-queue yenilenemedi -> ELLE: sudo systemctl restart tavla-queue"
 fi
-# Adanmis review-warmup worker'i (Analiz onbellek backfill, 'reviews' kuyrugu) — kuruluysa yenile.
+# Adanmis canli review worker'i ('reviews' kuyrugu) — kuruluysa yenile.
 if systemctl list-unit-files 2>/dev/null | grep -q '^tavla-review-queue\.service'; then
   sudo -n systemctl restart tavla-review-queue 2>/dev/null \
     && echo "tavla-review-queue yeniden baslatildi." \
     || echo "UYARI: tavla-review-queue yenilenemedi -> ELLE: sudo systemctl restart tavla-review-queue"
 fi
+# Adanmis backfill worker'lari (reviews-bulk,bulk — izole, template @N). Ayakta olan TUM kopyalari yenile.
+# Yoksa ELLE kur: sudo cp deploy/tavla-backfill-queue@.service /etc/systemd/system/ (User= ayarla) &&
+#   sudo systemctl daemon-reload && sudo systemctl enable --now tavla-backfill-queue@{1,2,3}
+for bf in $(systemctl list-units --type=service --state=running 2>/dev/null | awk '/tavla-backfill-queue@/ {print $1}'); do
+  sudo -n systemctl restart "$bf" 2>/dev/null \
+    && echo "$bf yeniden baslatildi." \
+    || echo "UYARI: $bf yenilenemedi -> ELLE: sudo systemctl restart $bf"
+done
 # Reverb WebSocket sunucusu (gercek-zamanli oda push) — uzun-omurlu PHP daemon'u eski Event/payload
 # kodunu tutar -> kuruluysa her deploy'da yenile (bkz deploy/README.md + deploy/tavla-reverb.service).
 if systemctl list-unit-files 2>/dev/null | grep -q '^tavla-reverb\.service'; then
