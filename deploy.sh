@@ -212,8 +212,10 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
   else
     echo "UYARI: gnubg-analysis restart edilemedi -> ELLE: sudo systemctl restart gnubg-analysis.service"
   fi
-  # AGIR analiz instance'i (varsa; Level 11/12 concurrency ayrimi) — kurulu degilse SESSIZCE gec.
-  if systemctl list-unit-files 2>/dev/null | grep -q '^gnubg-analysis-heavy\.service'; then
+  # AGIR analiz instance'i (varsa; Level 11/12 concurrency ayrimi) — yalniz ENABLED ise restart et.
+  # (2026-10-18: masaustu donanim termal-reboot'u icin backfill havuzu + heavy KASITLI disable
+  # edildi -> deploy onlari `restart` ile GERI BASLATMASIN; bkz asagidaki enabled-kapisi.)
+  if [ "$(systemctl is-enabled gnubg-analysis-heavy.service 2>/dev/null)" = "enabled" ]; then
     sudo -n systemctl restart gnubg-analysis-heavy.service 2>/dev/null \
       && echo "gnubg: gnubg-analysis-heavy (agir analiz) yeniden baslatildi." \
       || echo "UYARI: gnubg-analysis-heavy restart edilemedi -> ELLE: sudo systemctl restart gnubg-analysis-heavy.service"
@@ -222,6 +224,13 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
   # başlatılıyordu -> güvenlik düzeltmeleri bu instance'lara elle restart edilene kadar ulaşmıyordu.
   # Sırayla (biri yeniden başlarken diğerleri failover havuzunda hizmet verir).
   for unit in $(systemctl list-unit-files 2>/dev/null | awk '/^gnubg-analysis-[0-9]+\.service/ {print $1}'); do
+    # ENABLED-KAPISI (2026-10-18): KASITLI disable edilen instance'lari (termal/backfill havuzu)
+    # deploy `restart` ile GERI BASLATMASIN. `systemctl restart` durdurulmus+disabled unit'i de
+    # BASLATIR -> disable ettigin havuz her deploy'da geri gelirdi. is-enabled!=enabled ise atla.
+    if [ "$(systemctl is-enabled "$unit" 2>/dev/null)" != "enabled" ]; then
+      echo "gnubg: $unit disabled -> deploy restart ATLANDI (kasitli kapali havuz)."
+      continue
+    fi
     sudo -n systemctl restart "$unit" 2>/dev/null \
       && echo "gnubg: $unit yeniden baslatildi." \
       || echo "UYARI: $unit restart edilemedi -> ELLE: sudo systemctl restart $unit"
@@ -239,6 +248,9 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
   sleep 3 # RestartSec=3: hemen craslayan unit 'active'den 'failed'a dussun
   gnubg_bad=0
   for unit in $(systemctl list-unit-files 2>/dev/null | awk '/^gnubg-analysis(-([0-9]+|heavy))?\.service/ {print $1}'); do
+    # Yalniz ENABLED unit'leri yokla: kasitli disable edilen havuz (termal/backfill) 'AYAKTA DEGIL'
+    # YANLIS alarmi uretmesin (2026-10-18). Disabled = bilerek kapali, saglik derdi degil.
+    [ "$(systemctl is-enabled "$unit" 2>/dev/null)" = "enabled" ] || continue
     if ! systemctl is-active --quiet "$unit" 2>/dev/null; then
       echo "ALARM: $unit deploy sonrasi AYAKTA DEGIL ($(systemctl is-active "$unit" 2>/dev/null)) -> SSH: systemctl status $unit -n30"
       gnubg_bad=1
