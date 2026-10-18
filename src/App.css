@@ -24708,6 +24708,31 @@ body:has(.spectate-view) .app.lobby {
 .prof-ov-opt .gm-hint {
   color: color-mix(in srgb, var(--accent) 78%, var(--text));
 }
+/* ===== Tüm site Swiss - Profil & Ayarlar (.prof-ov): iç kutular keskin köşe + düz,
+   uppercase sekme/başlık, bold kaldırıldı. Kabuk (.register-card) zaten global Swiss. ===== */
+.prof-ov-frame,
+.prof-ov-board,
+.prof-ov-opt {
+  border-radius: 2px;
+}
+.prof-ov-frame:hover {
+  transform: none; /* lift yok, düz Swiss */
+}
+.prof-ov-tabs > button {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.prof-ov-balance {
+  font-weight: 500; /* bold yok */
+}
+.prof-ov-subtitle {
+  font-family: var(--tv-font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
 @media (max-width: 560px) {
   .prof-ov-board {
     flex-direction: column;
