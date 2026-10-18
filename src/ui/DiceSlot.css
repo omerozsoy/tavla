@@ -98,7 +98,7 @@
   text-align: left;
   font-family: var(--tv-font-display);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--gold);
   text-shadow: 0 0 14px color-mix(in srgb, var(--gold) 30%, transparent);
@@ -117,7 +117,7 @@
 }
 .ds-last-jackpot b {
   color: var(--gold);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* (Üst başlık/slogan/bakiye pill KALDIRILDI — marquee zaten "ZAR SLOTU" gösterir,
@@ -214,7 +214,7 @@
   margin: 0;
   font-family: var(--tv-font-display);
   font-size: 27px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.2em;
   white-space: nowrap;
   background: linear-gradient(180deg, #fff2cf 0%, var(--gold) 50%, var(--gold-deep) 100%);
@@ -309,7 +309,7 @@
 }
 .sm-jackpot-label {
   font-family: var(--tv-font-display);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.26em;
   font-size: 13px;
   color: var(--gold);
@@ -318,7 +318,7 @@
 }
 .sm-jackpot-value {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--med-ivory);
   position: relative;
 }
@@ -537,7 +537,7 @@
 }
 .ds-result-msg {
   font-family: var(--tv-font-display);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.06em;
 }
 /* Kazanılan coin pill'i: genel .coins--pill AÇIK tema (card-bg krem) bg kullanır +
@@ -547,7 +547,7 @@
   background: color-mix(in srgb, #000 46%, transparent);
   border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
   color: #fff;
-  font-weight: 700;
+  font-weight: 500;
 }
 .ds-result .coins--pill .coins-val {
   color: #fff;
@@ -702,7 +702,7 @@
 }
 .sm-gauge-value {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--med-ivory);
 }
 .sm-free {
@@ -714,7 +714,7 @@
   height: 58px !important;
   font-family: var(--tv-font-display) !important;
   font-size: 19px !important;
-  font-weight: 800 !important;
+  font-weight: 500 !important;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 30%, var(--accent)), var(--med-terracotta-dark)) !important;
@@ -771,7 +771,7 @@
 .ds-paytable-title {
   margin: 0 0 10px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--gold);
@@ -816,7 +816,7 @@
   border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
   color: #4a2f08;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
 }
 .ds-pt-meta {
   display: inline-flex;
@@ -842,7 +842,7 @@
 }
 .ds-pt-jackpot {
   font-family: var(--tv-font-display);
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.12em;
   color: var(--gold);
   text-shadow: 0 0 10px color-mix(in srgb, var(--gold) 40%, transparent);
@@ -938,7 +938,7 @@
 .we-word {
   font-family: var(--tv-font-display);
   font-size: 46px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.16em;
   background: linear-gradient(180deg, #fff2cf, var(--gold));
   -webkit-background-clip: text;
@@ -949,7 +949,7 @@
 }
 .we-amount {
   font-size: 36px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--med-ivory);
 }
 .we-claim {
@@ -1106,83 +1106,4 @@
   .sm-reels {
     gap: 8px;
   }
-}
-
-/* ===== SWISS Zar Slotu (A-Z denetim): karanlık navy/altın casino kabin -> düz kağıt/ink
-   + terracotta (altın yerine), keskin köşe, gradyan/glow azalt. --gold -> --accent cascade
-   çoğu altın kromu terracotta yapar; kabin/marquee/spin/paytable düzlenir. ===== */
-.ds-card,
-.register-overlay.page.ds-overlay > .ds-card {
-  --gold: var(--accent);
-  --gold-deep: color-mix(in srgb, var(--accent) 55%, #000);
-  color: var(--text) !important;
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border) !important;
-  border-top: 3px solid var(--accent) !important;
-  border-radius: 2px !important;
-  box-shadow: 0 10px 30px rgba(40, 30, 24, 0.1) !important;
-}
-.sm-cabinet { background: var(--card-bg) !important; box-shadow: none !important; }
-.sm-marquee-title {
-  background: none !important;
-  -webkit-text-fill-color: var(--accent) !important;
-  color: var(--accent) !important;
-  text-transform: uppercase;
-}
-.sm-spin-btn {
-  background: var(--accent) !important;
-  color: #fff !important;
-  box-shadow: none !important;
-  border-radius: 2px !important;
-  font-weight: 500 !important;
-}
-.ds-paytable {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-}
-.ds-paytable-title { color: var(--accent) !important; }
-.ds-close {
-  color: var(--text) !important;
-  background: none !important;
-  border-color: var(--border) !important;
-}
-/* Re-verify: keskin köşe + glow yok. Makara EKRANI tek KOYU INK blok (Swiss figür-zemin):
-   fildişi zar sembolleri (SlotSymbol) yalnız koyu zeminde okunur — düz card-bg'de kaybolmuştu
-   ("zar slotu bozuk"). Kabin kağıt; ekran ink; skeuomorfik kol/perçin/cam/bevel kaldırıldı. */
-.sm-cabinet, .sm-screen, .sm-reel-col, .sr, .sm-jackpot-banner {
-  border-radius: 2px !important;
-  box-shadow: none !important;
-}
-.sm-cabinet { background: var(--card-bg) !important; }
-/* Ekran = tek ink dikdörtgen (fildişi zarlar burada parlar). */
-.sm-screen { background: var(--text) !important; }
-/* Fildişi makara hücreleri ink ekranda net kutular; ince hairline çerçeve. */
-.sr { border: 1px solid color-mix(in srgb, var(--text) 30%, transparent) !important; }
-/* Cam vinyet + köşe perçini + bevel + faux-3D rim = skeuomorfik -> kaldır (Swiss düz). */
-.sm-glass, .sm-rivet, .sm-bezel, .sm-top-face, .sm-side-face { display: none !important; }
-/* Silindir fade'i hafiflet (eski 0.55 ink dirtiness yerine simetrik hafif). */
-.sr-fade {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.22) 0%, transparent 26%, transparent 74%, rgba(0, 0, 0, 0.22) 100%) !important;
-}
-.sm-payline { opacity: 0.9 !important; }
-/* Skeuomorfik kol tipografik tasarıma uymuyor — gizle (ÇEVİR butonu zaten spin eder). */
-.sm-lever { display: none !important; }
-.sm-wrap { padding: 6px 0 !important; }
-/* Marquee tabelası: yuvarlak koyu pill -> sharp hairline etiket. */
-.sm-marquee-sign {
-  background: none !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-  box-shadow: none !important;
-}
-/* Jackpot bandı: sharp bordered strip, terracotta etiket + ink değer. */
-.sm-jackpot-banner { background: var(--card-bg) !important; border: 1px solid var(--border) !important; }
-.sm-jackpot-label { color: var(--accent) !important; }
-.sm-jackpot-value { color: var(--text) !important; }
-/* Ödül tablosu zarları (.ds-pt-combo) fildişiydi -> beyazda görünmezdi -> ink. */
-.ds-pt-combo { color: var(--text) !important; }
-.ds-title, .sm-jackpot-label, .sm-jackpot-value, .ds-pt-jackpot, .sm-marquee-title {
-  text-shadow: none !important;
-  font-weight: 500 !important;
 }
