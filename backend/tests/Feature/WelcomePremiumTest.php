@@ -49,6 +49,31 @@ class WelcomePremiumTest extends TestCase
         $this->assertEqualsWithDelta(now()->addMonths(3)->timestamp, $u->plan_until->timestamp, 60 * 60 * 24 * 2);
     }
 
+    // REGRESYON KİLİDİ: KOD yolu (verifyEmailCode) da LİNK yolu ile BİREBİR aynı ödülü vermeli.
+    // 2026-10 bug'ı: kodla doğrulayan hoşgeldin coin+premium ALAMIYORDU (grant'lar unutulmuştu).
+    // Artık iki yol da tek completeEmailVerification() çağırır -> bu test bunu kilitler.
+    public function test_verify_by_code_also_grants_premium_and_coins(): void
+    {
+        config(['game.welcome_premium_months' => 3]);
+        $u = $this->register('code@e.com', 'codeuye');
+        $this->assertSame('free', $u->plan_active, 'KAYITTA premium YOK');
+
+        // E-posta kodu cache'e konur (sendVerification'ın yaptığı gibi): eotp:{id}.
+        \Illuminate\Support\Facades\Cache::put('eotp:'.$u->id, [
+            'code' => '123456', 'email' => strtolower($u->email), 'tries' => 0,
+        ], now()->addMinutes(15));
+
+        \Laravel\Sanctum\Sanctum::actingAs($u, ['*']);
+        $this->postJson('/api/email/verify-code', ['code' => '123456'])
+            ->assertOk()
+            ->assertJson(['message' => 'verified']);
+
+        $u->refresh();
+        $this->assertSame('star', $u->plan, 'KODLA doğrulayınca da Premium (star)');
+        $this->assertTrue((bool) $u->trial_used, 'trial_used (kod yolu)');
+        $this->assertTrue((bool) $u->welcome_granted, 'hoşgeldin coin de verildi (kod yolu)');
+    }
+
     public function test_verify_twice_grants_premium_only_once(): void
     {
         config(['game.welcome_premium_months' => 3]);

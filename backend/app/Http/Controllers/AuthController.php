@@ -2164,13 +2164,30 @@ class AuthController extends Controller
         if (! $user || ! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
             return redirect("{$base}/?verified=0");
         }
-        if (! $user->hasVerifiedEmail()) {
-            $user->markEmailAsVerified();
-            event(new \Illuminate\Auth\Events\Verified($user));
-            $this->grantWelcomeCoins($user->id); // e-posta DOĞRULANDI -> hoşgeldin coin'i (idempotent)
-            $this->grantWelcomePremium($user->id); // + 3 ay hoşgeldin Premium (bir kez, idempotent)
-        }
+        $this->completeEmailVerification($user); // TEK KAYNAK: damgala + hoşgeldin ödülleri (idempotent)
         return redirect("{$base}/?verified=1");
+    }
+
+    /**
+     * E-POSTA DOĞRULAMASININ TEK TAMAMLAYICISI — e-postayı damgala + hoşgeldin ödüllerini
+     * (coin + 3 ay Premium) ver. TÜM e-posta doğrulama yolları BUNU çağırmalı:
+     *   • verifyEmail  (doğrulama LİNKİ)
+     *   • verifyEmailCode (6-haneli KOD)
+     * Böylece bir yol ödül vermeyi "UNUTAMAZ" -> 2026-10'daki kod-yolu welcome bug'ı
+     * (kodla doğrulayan coin+premium alamıyordu) BİR DAHA OLMAZ. Hepsi idempotent:
+     * markEmailAsVerified + welcome_granted + trial_used flag'leri çift-vermeyi engeller.
+     * YENİ bir e-posta doğrulama yolu eklersen YALNIZ bunu çağır; grant'ları ELLE EKLEME.
+     * (Google OAuth bilinçli olarak AYRI: premium yalnız YENİ kayıtta verilir — bkz google().)
+     */
+    private function completeEmailVerification(User $user): void
+    {
+        if ($user->hasVerifiedEmail()) {
+            return; // zaten doğrulanmış -> tekrar damgalama/ödül yok
+        }
+        $user->markEmailAsVerified();
+        event(new \Illuminate\Auth\Events\Verified($user));
+        $this->grantWelcomeCoins($user->id);   // hoşgeldin coin'i (idempotent: welcome_granted)
+        $this->grantWelcomePremium($user->id); // 3 ay hoşgeldin Premium (idempotent: trial_used)
     }
 
     /**
@@ -2300,14 +2317,10 @@ class AuthController extends Controller
 
             return response()->json(['message' => 'wrong'], 422);
         }
-        $user->markEmailAsVerified(); // fillable disi -> guvenli
         \Illuminate\Support\Facades\Cache::forget($key);
-        // KRITIK: Link yolu (verifyEmail) ile AYNI olmali. Eskiden burada sadece e-posta
-        // damgalaniyordu -> KODLA dogrulayan kullanici hosgeldin coin'ini + 3 ay hosgeldin
-        // Premium'unu ALAMIYORDU (yalniz linke tiklayan alirdi). Her ikisi de idempotent.
-        event(new \Illuminate\Auth\Events\Verified($user));
-        $this->grantWelcomeCoins($user->id);
-        $this->grantWelcomePremium($user->id);
+        // TEK KAYNAK: link yolu (verifyEmail) ile BİREBİR aynı -> damgala + hoşgeldin ödülleri.
+        // (Eskiden burada grant'lar UNUTULMUŞTU; kodla doğrulayan coin+premium alamıyordu. Artık ortak metot.)
+        $this->completeEmailVerification($user);
 
         return response()->json(['user' => $user->fresh(), 'message' => 'verified']);
     }
