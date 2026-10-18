@@ -24746,6 +24746,63 @@ body:has(.spectate-view) .app.lobby {
   letter-spacing: 0.06em;
   font-weight: 500;
 }
+
+/* ============================================================================
+   TÜM SİTE SWISS — A-Z denetim sonrası site-geneli normalizasyon (2026-10-18).
+   6 denetim ajanı tüm sayfaları (desktop+mobil) gezdi; sistemik ihlaller burada
+   toplu düzeltilir. Kurallar: bold yok (max 500), keskin köşe, tek terracotta
+   aksan, düz (gradyan/glow yok). Dönüş noktası: git tag pre-swiss-design.
+   ============================================================================ */
+/* 1) BOLD TAVANI 500 — başlıklar + vurgu + denetimde yakalanan 600-800 sınıflar. */
+h1, h2, h3, h4, h5, h6, strong, b,
+.info-rich.rich h2, .info-rich.rich h3,
+.seo-eyebrow, .tgx-eyebrow, .tgx-card-no,
+.hf-title, .hf-card-title,
+.ach-name, .ach-tier, .ach-cat,
+.lb-win, .lb-rating, .avf-simple,
+.cc-title, .bug-fab-coin,
+.tourn-past-title, .tourn-access-all,
+.sm-marquee-title, .ds-paytable-title,
+.event-tvflag-note, .event-tvflag-logo,
+.pt-numbers, .wm-logo, .cc-value {
+  font-weight: 500 !important;
+}
+/* 2) KESKİN KÖŞE — denetimde yakalanan yuvarlak kart/satır/pill/input -> 2px. */
+.seo-eyebrow, .info-rich.rich li,
+.tgx-hero, .tgx-card, .tgx-card--feature, .tgx-card--ref, .tgx-btn, .tgx-eyebrow,
+.hf-card, .hf-icon,
+.ach-card, .ach-cat,
+.fair-step, .fair-box, .fair-callout, .fair-info-ic, .fair-step-ic, .fair-callout-ic, .fair-step-badge,
+.coin-card, .shop-feat-card, .coin-card-save, .coin-card-badge,
+.fg-item, .fg-size-chip,
+.news-lead-media, .news-item-media, .lesson-item, .club-row, .mag-card,
+.event-row, .event-datebadge, .event-side-img, .event-directions, .event-info-btn, .event-tvflag-note,
+.tourn-prizes, .tp-row, .tourn-lobby-link, .tcard-ic,
+.lb-row, .lb-search-input,
+.rank-prog__card,
+.faq-hero, .faq-item, .faq-share,
+.contact-channel, .contact-form, .cc-icon,
+.bug-fab, .bug-fab-coin, .bug-fab-guest,
+.cc-banner-inner {
+  border-radius: 2px !important;
+}
+/* 3) DEKORATİF GRADYAN / GLOW / GÖLGE KALDIR -> düz, tek aksan. */
+.sf-glow, .sf-lux-halo, .sf-orb, .sf-sweep { display: none !important; }
+.sf-ring, .sf-lux-ring, .avf-simple { background-image: none !important; box-shadow: none !important; }
+.rank-medal, .rank-medal-1, .rank-medal-2, .rank-medal-3 { background-image: none !important; }
+.lb-row.top { background-image: none !important; }
+.tgx-hero { background-image: none !important; }
+.tgx-btn, .event-ribbon-band, .event-tvflag-band { box-shadow: none !important; }
+/* 4) COOKIE BANNER + "Hata Bildir" FAB -> Swiss (düz, keskin, aksan). */
+.cc-banner-inner { box-shadow: 0 8px 24px rgba(40, 30, 24, 0.12) !important; }
+.cc-title { text-transform: uppercase; letter-spacing: 0.02em; }
+.bug-fab, .bug-fab-guest { background: var(--accent) !important; box-shadow: none !important; color: #fff !important; }
+.bug-fab-coin { background: color-mix(in srgb, #000 18%, var(--accent)) !important; box-shadow: none !important; color: #fff !important; }
+/* 5) İçerik bölüm başlıkları uppercase (SEO/kurallar/legal/rehber). */
+.info-rich.rich h2 { text-transform: uppercase; letter-spacing: 0.02em; }
+/* 6) Kaçak dekoratif yeşil "tasarruf" pili -> aksan. */
+.coin-card-save { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--accent-text) !important; }
+
 @media (max-width: 560px) {
   .prof-ov-board {
     flex-direction: column;
