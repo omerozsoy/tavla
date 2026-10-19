@@ -216,7 +216,7 @@ class TourneyBots extends Command
                 $u->markEmailAsVerified();
             }
             // Premium (Premium'a ozel turnuvalara da katilabilsin)
-            $u->forceFill(['plan' => 'star', 'plan_until' => now()->addYear()])->save();
+            $u->forceFill(['plan' => 'premium', 'plan_until' => now()->addYear()])->save();
             if ((int) $u->coins < 10000) {
                 $wallet->setBalance($u->fresh(), 10000, 'admin_adjustment');
             }

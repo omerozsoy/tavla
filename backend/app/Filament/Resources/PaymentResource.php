@@ -44,7 +44,7 @@ class PaymentResource extends Resource
         return match ($r->kind) {
             'coins'        => number_format((int) $r->coins, 0, ',', '.').' coin',
             'cart'         => ((int) $r->coins > 0 ? number_format((int) $r->coins, 0, ',', '.').' coin + ' : '').'sipariş(ler)',
-            'subscription' => 'Premium ('.($r->plan ?: 'star').') — '.($r->period === 'monthly' ? '1 ay' : '1 yıl'),
+            'subscription' => 'Premium ('.($r->plan ?: 'premium').') — '.($r->period === 'monthly' ? '1 ay' : '1 yıl'),
             'renew'        => 'Premium uzatma — '.($r->period === 'monthly' ? '1 ay' : '1 yıl'),
             'product'      => 'Fiziksel ürün siparişi',
             default        => '—',

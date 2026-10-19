@@ -21,7 +21,7 @@ class PaymentCallbackTest extends TestCase
         return Payment::create([
             'user_id' => $u->id,
             'order_id' => 'ORD-'.$u->id,
-            'plan' => 'star',
+            'plan' => 'premium',
             'period' => 'yearly',
             'amount' => $amount,
             'currency' => '949',
@@ -70,7 +70,7 @@ class PaymentCallbackTest extends TestCase
         $this->post('/pay/callback', ['txnamount' => '200000'])->assertOk();
 
         $this->assertSame('paid', $p->fresh()->status);
-        $this->assertSame('star', User::find($p->user_id)->plan);
+        $this->assertSame('premium', User::find($p->user_id)->plan);
     }
 
     public function test_mismatched_amount_is_rejected(): void
@@ -122,12 +122,12 @@ class PaymentCallbackTest extends TestCase
     public function test_renew_extends_existing_future_expiry(): void
     {
         $until = now()->addDays(30);
-        $u = User::factory()->create(['plan' => 'star', 'plan_until' => $until]);
+        $u = User::factory()->create(['plan' => 'premium', 'plan_until' => $until]);
         $p = Payment::create([
             'user_id' => $u->id,
             'kind' => 'renew',
             'order_id' => 'TM-'.$u->id,
-            'plan' => 'star',
+            'plan' => 'premium',
             'period' => 'yearly',
             'amount' => 49900,
             'currency' => '949',
@@ -150,12 +150,12 @@ class PaymentCallbackTest extends TestCase
     // Suresi DOLMUS uyelikte uzatma bugunden baslar (gecmis tarihe eklenmez).
     public function test_renew_starts_from_now_when_expired(): void
     {
-        $u = User::factory()->create(['plan' => 'star', 'plan_until' => now()->subDays(10)]);
+        $u = User::factory()->create(['plan' => 'premium', 'plan_until' => now()->subDays(10)]);
         $p = Payment::create([
             'user_id' => $u->id,
             'kind' => 'renew',
             'order_id' => 'TM2-'.$u->id,
-            'plan' => 'star',
+            'plan' => 'premium',
             'period' => 'yearly',
             'amount' => 49900,
             'currency' => '949',

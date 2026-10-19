@@ -153,10 +153,10 @@ class RewardFulfillmentService
         }
         $future = $u->plan_until && Carbon::parse($u->plan_until)->isFuture();
         $base = $future ? Carbon::parse($u->plan_until) : now();
-        // free/boş plan -> en düşük premium 'star'; mevcut star korunur.
+        // free/boş plan -> 'premium'; mevcut premium korunur.
         $current = $u->getAttribute('plan') ?: 'free';
         if ($current === 'free') {
-            $u->plan = 'star';
+            $u->plan = 'premium';
         }
         $u->plan_until = $base->copy()->addDays($days);
         if (! $u->plan_since) {

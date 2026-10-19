@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Maç Analizleri (derin gnubg incelemesi). (Turnuva katılımı artık turnuva başına:
  * tournaments.premium_only -> TournamentController::join.)
  *
- * plan_active accessor: süresi geçerli ücretli plan -> 'star'; aksi 'free'. Bu grup
+ * plan_active accessor: süresi geçerli ücretli plan -> 'premium'; aksi 'free'. Bu grup
  * 'auth:sanctum' arkasında olduğundan user daima vardır; yine de null-güvenli tutarız.
  */
 class EnsurePremium

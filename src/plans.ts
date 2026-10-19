@@ -1,5 +1,5 @@
-// Uyelik kademeleri (Ucretsiz / Star). Backend plan id'leriyle ayni.
-export type PlanId = 'free' | 'star'
+// Uyelik kademeleri (Ucretsiz / Premium). Backend plan id'leriyle ayni.
+export type PlanId = 'free' | 'premium'
 
 export interface Feature {
   key: string // i18n anahtari
@@ -31,8 +31,8 @@ export const PLANS: Plan[] = [
     ],
   },
   {
-    id: 'star',
-    nameKey: 'plan.star',
+    id: 'premium',
+    nameKey: 'plan.premium',
     color: '#a06bd4',
     yearly: 499, // TL/yil
     features: [

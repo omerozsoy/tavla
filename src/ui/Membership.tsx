@@ -30,7 +30,7 @@ export default function Membership({
   const [method, setMethod] = useState<PayMethod>('card')
   // Zaten premium olan uyeye "Üyeliği Yükselt" + Ücretsiz plan kiyaslamasi saçma; bu ekran
   // onlar icin "Üyeliğini Uzat" (yalniz mevcut plan + uzatma). Ucretsiz/misafir icin degismez.
-  const premium = current === 'star'
+  const premium = current === 'premium'
   const plans = premium ? PLANS.filter((p) => p.id !== 'free') : PLANS
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function Membership({
     }
   }, [])
 
-  async function pay(plan: 'star') {
+  async function pay(plan: 'premium') {
     setErr('')
     setBusy(plan)
     try {
@@ -134,7 +134,7 @@ export default function Membership({
                       variant="secondary"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => (onExtend ? onExtend() : pay(p.id as 'star'))}
+                      onClick={() => (onExtend ? onExtend() : pay(p.id as 'premium'))}
                     >
                       {t('mem.status.renew')}
                     </Button>
@@ -151,7 +151,7 @@ export default function Membership({
                       variant="default"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => pay(p.id as 'star')}
+                      onClick={() => pay(p.id as 'premium')}
                     >
                       {busy === p.id ? <span className="btn-spinner" aria-hidden="true" /> : t('mem.subscribe')}
                     </Button>

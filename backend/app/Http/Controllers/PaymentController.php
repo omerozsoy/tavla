@@ -91,7 +91,7 @@ class PaymentController extends Controller
     public function subscribe(Request $request, GarantiService $garanti)
     {
         $data = $request->validate([
-            'plan'   => ['required', 'in:star'],
+            'plan'   => ['required', 'in:premium'],
             'period' => ['required', 'in:yearly'], // yalnız yıllık üyelik (aylık kaldırıldı)
             'method' => ['nullable', 'in:card,bank_transfer'],
         ]);
@@ -214,7 +214,7 @@ class PaymentController extends Controller
             'kind'           => 'renew',
             'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
             'order_id'       => 'TM'.now()->format('ymdHis').strtoupper(bin2hex(random_bytes(4))),
-            'plan'           => 'star',
+            'plan'           => 'premium',
             'period'         => 'yearly',
             'amount'         => $amount,
             'currency'       => '949',
@@ -257,7 +257,7 @@ class PaymentController extends Controller
     {
         $future = $u->plan_until && \Illuminate\Support\Carbon::parse($u->plan_until)->isFuture();
         $base = $future ? \Illuminate\Support\Carbon::parse($u->plan_until) : now();
-        $u->plan = $payment->plan ?: 'star';
+        $u->plan = $payment->plan ?: 'premium';
         $u->plan_until = $payment->period === 'monthly'
             ? $base->copy()->addMonth()
             : $base->copy()->addYear();

@@ -76,18 +76,19 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     // is_admin + is_support (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
     protected $appends = ['is_admin', 'is_support', 'plan_active'];
 
-    // Suresi gecerli aktif plan: 'free' | 'star'
+    // Suresi gecerli aktif plan: 'free' | 'premium'. Tek tip ucretli uyelik = 'premium'.
+    // Eski 'star'/'starpro' satirlari (migration oncesi inflight) de premium sayilir -> tolerant.
     public function getPlanActiveAttribute(): string
     {
         $plan = $this->attributes['plan'] ?? 'free';
-        if ($plan === 'free') {
+        if ($plan === 'free' || $plan === '' || $plan === null) {
             return 'free';
         }
         $until = $this->plan_until ? \Illuminate\Support\Carbon::parse($this->plan_until) : null;
         if (! $until || $until->isPast()) {
             return 'free';
         }
-        return $plan;
+        return 'premium';
     }
 
     /**

@@ -26,7 +26,7 @@ class TournamentJoinAccessTest extends TestCase
             'password' => bcrypt('secret123'),
         ]);
         if ($premium) {
-            $u->forceFill(['plan' => 'star', 'plan_until' => now()->addMonth()])->save();
+            $u->forceFill(['plan' => 'premium', 'plan_until' => now()->addMonth()])->save();
         }
 
         return $u->fresh();

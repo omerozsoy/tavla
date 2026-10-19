@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Setting;
 use App\Support\NicknameFilter;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -88,7 +89,6 @@ class SiteSettings extends Page implements HasForms
         $this->form->fill([
             'starting_rating' => Setting::int('starting_rating', 1400),
             'welcome_coins' => Setting::int('welcome_coins', 100),
-            'welcome_premium_months' => Setting::int('welcome_premium_months', 3),
             'reward_normal' => Setting::int('reward_normal', 25),
             'reward_premium' => Setting::int('reward_premium', 50),
             'commission_pct' => Setting::int('commission_pct', 5),
@@ -115,9 +115,8 @@ class SiteSettings extends Page implements HasForms
                         TextInput::make('welcome_coins')->label('Hoşgeldin Coin')
                             ->numeric()->required()->minValue(0)->suffix('GC')
                             ->helperText('E-posta doğrulayınca / Google ile girince verilir (kayıtta değil).'),
-                        TextInput::make('welcome_premium_months')->label('Hoşgeldin Premium (ay)')
-                            ->numeric()->required()->minValue(0)->maxValue(24)->suffix('ay')
-                            ->helperText('Yeni üye e-posta doğrulayınca / Google ile kaydolunca bu kadar ay ücretsiz Premium. Bir kez; 0 = kapalı.'),
+                        Placeholder::make('welcome_premium_note')->label('Hoşgeldin Premium')
+                            ->content('Yeni üyeler 2 Ocak 2027 00:00\'a kadar ücretsiz Premium ile başlar. 31 Aralık 2026\'dan sonra kayıt olana hediye YOK (dönem bitti). Tarihler kodda sabit; değiştirmek için geliştirici + yeni sürüm gerekir.'),
                     ])->columns(2),
                 Section::make('6 Saatlik Ödül')
                     ->schema([
@@ -183,7 +182,7 @@ class SiteSettings extends Page implements HasForms
     public function save(): void
     {
         $data = $this->form->getState();
-        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct', 'referral_coins', 'referral_daily_limit', 'pr_min_matches', 'pr_min_decisions', 'friendly_rating_daily_limit'] as $k) {
+        foreach (['starting_rating', 'welcome_coins', 'reward_normal', 'reward_premium', 'commission_pct', 'referral_coins', 'referral_daily_limit', 'pr_min_matches', 'pr_min_decisions', 'friendly_rating_daily_limit'] as $k) {
             if (array_key_exists($k, $data)) {
                 Setting::put($k, (int) $data[$k]);
             }

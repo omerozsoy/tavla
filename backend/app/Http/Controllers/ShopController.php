@@ -367,7 +367,7 @@ class ShopController extends Controller
             }
             // 6 saatlik bonus (admin ayarı): normal kullanıcı reward_normal (25), premium (star)
             // reward_premium (50). Ayarlar Site Ayarları'ndan yönetilir.
-            $premium = $u->plan_active === 'star';
+            $premium = $u->plan_active === 'premium';
             $amount = $premium
                 ? \App\Models\Setting::int('reward_premium', 50)
                 : \App\Models\Setting::int('reward_normal', 25);

@@ -205,7 +205,7 @@ class PanelController extends Controller
         } elseif ($action === 'plan') {
             $plan = $request->input('plan', 'free');
             $days = max(0, (int) $request->input('days', 30));
-            if (in_array($plan, ['free', 'star'], true)) {
+            if (in_array($plan, ['free', 'premium'], true)) {
                 $user->plan = $plan;
                 $user->plan_until = $plan === 'free' ? null : now()->addDays($days ?: 30);
                 $user->save();

@@ -107,7 +107,7 @@ class UserResource extends Resource
                 // dönüp boş kaydedilirse plan=NULL -> 500. Boşaltmayı engelle + null gelirse 'free'e çevir.
                 Forms\Components\Select::make('plan')->label('Plan')->options([
                     'free' => 'Ücretsiz',
-                    'star' => 'Premium',
+                    'premium' => 'Premium',
                 ])->default('free')->required()->selectablePlaceholder(false)
                     ->dehydrateStateUsing(fn ($state) => $state ?: 'free'),
                 Forms\Components\DateTimePicker::make('plan_until')->label('Plan bitişi'),
@@ -151,7 +151,7 @@ class UserResource extends Resource
     /**
      * "Süre Ekle" form-içi buton: bitiş tarihine $months ay ekler.
      * - Mevcut bitiş gelecekteyse onun üstüne, geçmiş/boşsa bugünden başlar.
-     * - Plan 'free' ise 'star' (Premium) yapar; zaten premiumsa korur.
+     * - Plan 'free' ise 'premium' yapar; zaten premiumsa korur.
      * - Kayıtlı üyede forceFill ile ANINDA kaydeder ($fillable kısıtlı — asla fillable'a ekleme).
      */
     protected static function extendPlanAction(string $key, string $label, int $months): Forms\Components\Actions\Action
@@ -167,7 +167,7 @@ class UserResource extends Resource
                     $base = now();
                 }
                 $new = $base->copy()->addMonths($months);
-                $plan = ($get('plan') ?? 'free') === 'free' ? 'star' : $get('plan');
+                $plan = ($get('plan') ?? 'free') === 'free' ? 'premium' : $get('plan');
 
                 // Formda göster (kaydet'e basılmasa da alan güncel görünür)
                 $set('plan_until', $new->format('Y-m-d H:i:s'));
@@ -344,7 +344,7 @@ class UserResource extends Resource
                             ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted')),
                     ),
                 Tables\Filters\SelectFilter::make('plan')->label('Plan')->options([
-                    'free' => 'Ücretsiz', 'star' => 'Premium',
+                    'free' => 'Ücretsiz', 'premium' => 'Premium',
                 ]),
                 Tables\Filters\TernaryFilter::make('is_admin')->label('Yönetici'),
                 Tables\Filters\TernaryFilter::make('is_support')->label('Destek'),

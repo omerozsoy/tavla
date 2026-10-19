@@ -26,7 +26,7 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew, email
   const { t } = useT()
   const [confirmOpen, setConfirmOpen] = useState(false) // oto-yenileme iptal onay modali
   const plan = user.plan_active ?? 'free'
-  const premium = plan === 'star'
+  const premium = plan === 'premium'
   const until = user.plan_until ?? null
   const daysLeft = until ? Math.max(0, Math.ceil((new Date(until).getTime() - Date.now()) / 86400000)) : null
   const untilFmt = until ? new Date(until).toLocaleDateString() : ''

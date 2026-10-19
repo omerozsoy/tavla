@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
-import { leaderboard, prLeaderboard, type LeaderRow, type PrLeaderRow } from '../api'
+import { leaderboard, prLeaderboard, listTournaments, type LeaderRow, type PrLeaderRow } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import './topRank.css'
 
@@ -28,6 +28,7 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
   const { t } = useT()
   const [rating, setRating] = useState<LeaderRow[] | null>(null)
   const [pr, setPr] = useState<PrLeaderRow[] | null>(null)
+  const [champs, setChamps] = useState<RowData[] | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -36,6 +37,26 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
       .catch(() => {})
     prLeaderboard(3)
       .then((r) => alive && setPr((r.players ?? []).slice(0, 3)))
+      .catch(() => {})
+    listTournaments()
+      .then((ts) => {
+        if (!alive) return
+        const rows = ts
+          .filter((tr) => tr.status === 'finished' && tr.champion_id)
+          .sort((a, b) => b.id - a.id)
+          .slice(0, 3)
+          .map((tr) => {
+            const p = (tr.players ?? []).find((pl) => pl.id === tr.champion_id)
+            return {
+              id: tr.champion_id!,
+              name: p?.name ?? '—',
+              avatar: p?.avatar,
+              premium: p?.premium,
+              value: tr.name,
+            }
+          })
+        setChamps(rows)
+      })
       .catch(() => {})
     return () => {
       alive = false
@@ -59,12 +80,14 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
     value: r.career_pr.toFixed(2),
   }))
 
-  if (ratingRows.length === 0 && prRows.length === 0) return null
+  const champRows: RowData[] = champs ?? []
+
+  if (ratingRows.length === 0 && prRows.length === 0 && champRows.length === 0) return null
 
   const renderCol = (headKey: string, icon: IconName, rows: RowData[]) => (
     <div className="tts-col">
       <div className="tts-col-head">
-        <Icon name={icon} size={14} weight="fill" /> {t(headKey)}
+        <Icon name={icon} size={20} weight="fill" /> {t(headKey)}
       </div>
       <div className="rank-list">
         {rows.map((r, i) => (
@@ -103,6 +126,7 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
       <div className="tts-cols">
         {ratingRows.length > 0 && renderCol('toprank.ratingTop', 'ranking', ratingRows)}
         {prRows.length > 0 && renderCol('toprank.prTop', 'medal', prRows)}
+        {champRows.length > 0 && renderCol('toprank.tourneyTop', 'crown', champRows)}
       </div>
     </section>
   )

@@ -1331,7 +1331,7 @@ export default function App() {
     // bu asamada premium'u "false" sayip deep-link'le acilan araci kapatmak PREMIUM uyeyi bile
     // /uyelik'e atardi. authChecked olana kadar BEKLE -> premium bilinince dogru karar verilir.
     if (!authChecked) return
-    const isPrem = user?.plan_active === 'star'
+    const isPrem = user?.plan_active === 'premium'
     if (isPrem) return
     let redirect = false
     if (blunderOpen) { setBlunderOpen(false); redirect = true }
@@ -4999,12 +4999,15 @@ export default function App() {
         // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
         const code = room?.code ?? null
         let oppPr = r.pr_opponent ?? null
+        // KENDİ PR'ım: r.pr_self = backend prFromLog = WILDBG türevi -> TOHUMLAMA (direktif: wildbg
+        // sayısı ekrana ASLA yazılmaz, yalnız gnubg). self/checker/cube self NULL kalır, pollGnubgPr
+        // gnubg gelince doldurur (gelene dek loader). Rakip tarafı otoriter modda zaten gnubg (backend).
         setServerPr({
-          self: r.pr_self ?? null,
+          self: null,
           opp: oppPr,
-          checkerSelf: r.pr_checker_self ?? null,
+          checkerSelf: null,
           checkerOpp: r.pr_checker_opponent ?? null,
-          cubeSelf: r.pr_cube_self ?? null,
+          cubeSelf: null,
           cubeOpp: r.pr_cube_opponent ?? null,
         })
         // Rakip PR'ı online insan maçında ayrı/geç gelir -> gelene kadar onun hücresinde "…" tut
@@ -5055,7 +5058,7 @@ export default function App() {
               setOppPrPending(false) // rakip PR geldi -> "…" kapan, sayı göster
               // Rakip raporunu YENI tamamladiysa kirilim da o an gelir; gelmeyen ONCEKI kalir.
               setServerPr((prev) => ({
-                self: pair.self ?? prev?.self ?? r!.pr_self ?? null,
+                self: pair.self ?? prev?.self ?? null, // r.pr_self (wildbg) fallback KALDIRILDI (direktif)
                 opp: pair.opponent,
                 checkerSelf: pair.checker_self ?? prev?.checkerSelf ?? null,
                 checkerOpp: pair.checker_opponent ?? prev?.checkerOpp ?? null,
@@ -5314,7 +5317,8 @@ export default function App() {
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // pvb: kendi PR + BOT PR ikisi de gnubg (authoritative) -> pollGnubgPr doldurur. Başlangıçta
         // opp=null; analyzingBoth ile iki tarafta da loader gösterilir (wildbg sayısı ASLA gösterilmez).
-        setServerPr({ self: r.pr_self ?? null, opp: null })
+        // self = wildbg türevi (r.pr_self) -> TOHUMLAMA; pollGnubgPr gnubg ile doldurur (direktif).
+        setServerPr({ self: null, opp: null })
         // HAKEM=gnubg: gösterilen PR gnubg olsun. Job async -> "…" göster, gnubg gelince swap.
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
         if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
@@ -8375,7 +8379,7 @@ export default function App() {
       ? myName
       : t('player.white')
   // Kendi premium'um (const `premium` daha ASAGIDA tanimli -> burada yerel turet).
-  const isMePremium = user?.plan_active === 'star'
+  const isMePremium = user?.plan_active === 'premium'
   // YZ KARAKTERİ: bota karşı (yerel pvb VEYA online bot odası) + üst seviyelerde (11/12) botun
   // adı + avatar görseli persona'dan gelir (robot ikonu yerine gerçek karakter). Bot DAİMA
   // siyah/üst oyuncudur (insan bot maçlarında hep beyaz). Persona yoksa eski davranış (jenerik
@@ -8571,7 +8575,7 @@ export default function App() {
     <Auth key="auth" page initialForgot={authForgot} onForgotChange={setAuthForgot} {...authProps} />
   ) : null
   // Ucretli plan aktif mi (premium ozellik kilidi)
-  const premium = user?.plan_active === 'star'
+  const premium = user?.plan_active === 'premium'
 
   // Tahta tema listesi: nadirlik bazli COIN fiyati + sahiplik (unlocks). Ucretsiz: standart/tavla/galaxy + kulup.
   const boardUnlocks = user?.unlocks ?? []
@@ -10573,7 +10577,7 @@ export default function App() {
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
             titleOverride={menuTitle(classicSetup ? 'klassikAi' : setup === 'online' ? 'match' : 'aiGame')}
-            premium={user?.plan_active === 'star'}
+            premium={user?.plan_active === 'premium'}
             onRequirePremium={() => setMemOpen(true)}
             onCancel={() => {
               setSetup(null)

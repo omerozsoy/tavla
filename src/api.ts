@@ -107,7 +107,7 @@ export interface ServerUser {
   checker?: string | null
   badges?: string[]
   plan?: string
-  plan_active?: 'free' | 'star'
+  plan_active?: 'free' | 'premium'
   plan_until?: string | null
   plan_since?: string | null
   auto_renew?: boolean
@@ -809,7 +809,7 @@ export async function myAnalytics(): Promise<Analytics> {
 }
 
 // 7 gunluk ucretsiz deneme baslat
-export async function startTrial(plan: 'star'): Promise<{ user: ServerUser }> {
+export async function startTrial(plan: 'premium'): Promise<{ user: ServerUser }> {
   return req('/membership/trial', { method: 'POST', body: JSON.stringify({ plan }) })
 }
 
@@ -862,7 +862,7 @@ export async function getBankTransferInfo(): Promise<BankInfo> {
 
 // Abonelik odemesi baslat. Kart: {url} doner. Havale: BankTransferResult doner.
 export async function subscribe(
-  plan: 'star',
+  plan: 'premium',
   period: 'yearly' = 'yearly', // yalnız yıllık üyelik (aylık kaldırıldı)
   method: PayMethod = 'card',
 ): Promise<{ url: string } | BankTransferResult> {

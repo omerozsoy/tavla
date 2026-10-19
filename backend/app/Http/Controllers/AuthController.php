@@ -2220,7 +2220,7 @@ class AuthController extends Controller
 
     /**
      * HOŞGELDİN premium'unu BİR KEZ ver (atomik idempotent): yeni üye e-postasını DOĞRULAYINCA veya
-     * Google ile kaydolunca N ay ücretsiz Premium ('star'). trial_used=false + süresi geçerli ücretli
+     * Google ile kaydolunca 2 Ocak 2027'ye kadar ücretsiz Premium. trial_used=false + süresi geçerli ücretli
      * planı OLMAYAN (free/lapsed) kullanıcıya uygulanır -> mevcut ödemeli üyeliği KISALTMAZ, ikinci
      * kez verilmez. Query-builder update (fillable dışı plan alanlarını güvenle yazar).
      */
@@ -2229,14 +2229,22 @@ class AuthController extends Controller
         if (! Schema::hasColumn('users', 'trial_used') || ! Schema::hasColumn('users', 'plan_until')) {
             return;
         }
-        $months = \App\Models\Setting::int('welcome_premium_months', (int) config('game.welcome_premium_months', 3));
-        if ($months <= 0) {
+        // HEDİYE ÜYELİK DÖNEMİ (sabit tarih, kullanıcı kararı 2026-10-19): yeni üyeler 2 Ocak
+        // 2027 00:00'a kadar ücretsiz Premium ile başlar. 31 Aralık 2026'dan SONRA kayıt olana
+        // hediye YOK (dönem bitti) -> normal (free) üye olur, Premium satın alır. Tarihler koda
+        // SABİT (admin Setting'i değil) — owner açıkça böyle istedi. Uzatmak gerekirse buradaki
+        // iki tarihi değiştir + yeni deploy.
+        $now = now();
+        $giftUntil = \Illuminate\Support\Carbon::parse('2027-01-02 00:00:00'); // hediye premium bitişi
+        $giftCutoff = \Illuminate\Support\Carbon::parse('2026-12-31 23:59:59'); // son hediye tarihi
+        if ($now->gt($giftCutoff)) {
+            // Hediye dönemi kapandı: trial_used'ı yine işaretle ki mantık tutarlı kalsın, premium verme.
+            User::where('id', $userId)->where('trial_used', false)->update(['trial_used' => true]);
             return;
         }
-        $now = now();
         $update = [
-            'plan' => 'star',
-            'plan_until' => $now->copy()->addMonths($months),
+            'plan' => 'premium',
+            'plan_until' => $giftUntil,
             'trial_used' => true,
         ];
         if (Schema::hasColumn('users', 'plan_since')) {

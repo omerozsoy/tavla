@@ -59,7 +59,7 @@
 }
 .tts-cols {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   column-gap: 0;
 }
 .tts-col {
@@ -94,9 +94,24 @@
 .tts-panel .rank-row {
   grid-template-columns: 26px 1fr auto;
 }
-@media (max-width: 560px) {
+/* Turnuva kolonunda "değer" = turnuva adı -> uzunsa kırpılsın (sayı değil metin). */
+.tts-panel .rank-val {
+  max-width: 11ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Orta genişlikte 3 kolon dar kalır -> 1 kolona in. */
+@media (max-width: 860px) {
   .tts-cols {
     grid-template-columns: 1fr;
     row-gap: 14px;
+  }
+  .tts-col + .tts-col {
+    border-left: none;
+    padding-left: 0;
+  }
+  .tts-col:first-child {
+    padding-right: 0;
   }
 }

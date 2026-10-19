@@ -32,8 +32,7 @@ return [
     // NOT: bu coin bahse yatırılabilir (bedava değer) -> WELCOME_COINS env ile ayarla.
     'welcome_coins' => max(0, (int) env('WELCOME_COINS', 100)),
 
-    // HOŞGELDİN premium'u: yeni üye e-postasını DOĞRULAYINCA veya Google ile kaydolunca bu kadar
-    // AY ücretsiz Premium ('star') ile başlar. Bir kez (trial_used); zaten premium olana dokunmaz.
-    // 0 = kapalı. Değişiklik: env + config:clear + FPM restart (admin panelinden de ayarlanır).
-    'welcome_premium_months' => max(0, (int) env('WELCOME_PREMIUM_MONTHS', 3)),
+    // HOŞGELDİN premium'u artık SABİT TARİHLİ (AuthController::grantWelcomePremium): yeni üyeler
+    // 2 Ocak 2027'ye kadar ücretsiz Premium; 31 Aralık 2026'dan sonra hediye YOK. Ay-bazlı ayar
+    // (welcome_premium_months) KALDIRILDI — tarihler kodda sabit (owner kararı 2026-10-19).
 ];

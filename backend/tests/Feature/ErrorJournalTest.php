@@ -83,7 +83,7 @@ class ErrorJournalTest extends TestCase
     {
         $u = $this->user();
         app(ErrorJournalService::class)->analyzeMatch($this->match($u)); // gnubg yok -> wildbg satırları
-        $u->forceFill(['plan' => 'star', 'plan_until' => now()->addMonth()])->save();
+        $u->forceFill(['plan' => 'premium', 'plan_until' => now()->addMonth()])->save();
         Sanctum::actingAs($u->fresh());
         $res = $this->getJson('/api/me/error-journal?period=all')->assertOk();
         $this->assertSame([], $res->json('entries'));
@@ -138,7 +138,7 @@ class ErrorJournalTest extends TestCase
         $this->assertEqualsWithDelta(0.31, (float) $d0->best_equity, 1e-6);
         $this->assertEqualsWithDelta(0.276, (float) $d0->played_equity, 1e-6);
 
-        $u->forceFill(['plan' => 'star', 'plan_until' => now()->addMonth()])->save();
+        $u->forceFill(['plan' => 'premium', 'plan_until' => now()->addMonth()])->save();
         Sanctum::actingAs($u->fresh());
         $e = collect($this->getJson('/api/me/error-journal?period=all')->assertOk()->json('entries'))
             ->firstWhere('moveNumber', 0);
@@ -196,7 +196,7 @@ class ErrorJournalTest extends TestCase
     public function test_endpoint_returns_summary_and_entries(): void
     {
         $u = $this->user();
-        $u->plan = 'star'; // Hata Gunlugu PREMIUM-only (plan/plan_until fillable degil)
+        $u->plan = 'premium'; // Hata Gunlugu PREMIUM-only (plan/plan_until fillable degil)
         $u->plan_until = now()->addYear();
         $u->save();
         app(ErrorJournalService::class)->analyzeMatch($this->match($u), true, $this->gnubgSame());

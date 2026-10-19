@@ -42,8 +42,7 @@ return [
     // Tutarlar kurus cinsindendir (TL x 100). Tek tip uyelik "Premium": aylik 200 TL, yillik 2000 TL.
     'prices' => [
         // KURUS (tam sayi). 49,90 TL = 4990 kurus · 499,90 TL = 49990 kurus
-        'star'    => ['yearly' => 49990, 'monthly' => 4990],
-        'starpro' => ['yearly' => 49990, 'monthly' => 4990], // eski id -> ayni fiyata esitlendi
+        'premium' => ['yearly' => 49990, 'monthly' => 4990],
     ],
 
     // "Üyeliğini Uzat" -> sepet -> 1 yillik Premium uzatma. KURUS. 499,00 TL = 49900 kurus
