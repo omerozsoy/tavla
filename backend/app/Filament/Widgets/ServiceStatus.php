@@ -60,6 +60,7 @@ class ServiceStatus extends Widget
                     // Altyapı.
                     $this->checkDatabase() + ['group' => 'Altyapı'],
                     $this->checkQueue() + ['group' => 'Altyapı'],
+                    $this->checkWarmWorker() + ['group' => 'Altyapı'],
                     $this->checkScheduler() + ['group' => 'Altyapı'],
                     $this->checkDisk() + ['group' => 'Altyapı'],
                 ],
@@ -302,6 +303,41 @@ class ServiceStatus extends Widget
     }
 
     /**
+     * Maç-içi gnubg ısıtma işçisi: WarmMatchAnalysisJob 'warm' kuyruğuna (RoomController her hamle) düşer,
+     * DEDİKE tavla-warm-queue@ worker'ları yalnız onu işler (backfill'den İZOLE -> canlı maç-sonu PR'ın
+     * anında gelmesi buna bağlı; gnubg havuzu da ayrı: GNUBG_ANALYSIS_URLS). CANLILIK: --queue=warm süreç
+     * sayısı + 'warm' kuyruk derinliği/yaşı. Süreç varsa yeşil (yığını eritir); süreç yok + eski bekleyen
+     * iş varsa kırmızı (ısıtma durdu -> maç-sonu PR cache miss -> yavaşlar).
+     */
+    private function checkWarmWorker(): array
+    {
+        try {
+            $depth = (int) DB::table('jobs')->where('queue', 'warm')->count();
+            $oldest = $depth > 0 ? (int) DB::table('jobs')->where('queue', 'warm')->min('available_at') : 0;
+        } catch (\Throwable $e) {
+            return $this->svc('warm', 'Maç-içi Isıtma İşçisi (warm)', true, null, 'jobs tablosu okunamadı', false);
+        }
+        $procs = $this->warmWorkerCount();
+        $age = $oldest ? (time() - $oldest) : 0;
+        $wtxt = $procs > 0 ? $procs.' işçi' : 'işçi süreci sayılamadı';
+        if ($procs > 0) {
+            $detail = $wtxt.' · '.($depth === 0 ? 'boşta (ısıtma işi yok)' : "{$depth} ısıtma işi, en eski {$age}sn")
+                .' — maç-içi gnubg ısıtma (backfill\'den izole)';
+
+            return $this->svc('warm', 'Maç-içi Isıtma İşçisi (warm)', true, true, $detail, false);
+        }
+        if ($depth === 0) {
+            // Süreç sayılamadı (exec kapalı) + bekleyen iş yok -> ayırt edilemez (gri).
+            return $this->svc('warm', 'Maç-içi Isıtma İşçisi (warm)', true, null, 'Boşta ('.$wtxt.', bekleyen ısıtma işi yok)', false);
+        }
+        $up = $age < 90; // eski bekleyen iş -> worker muhtemelen kapalı
+        $detail = "{$depth} ısıtma işi bekliyor, en eski {$age}sn · ".$wtxt
+            .($up ? '' : ' — işçi kapalı olabilir (ısıtma durdu, maç-sonu PR yavaşlar)');
+
+        return $this->svc('warm', 'Maç-içi Isıtma İşçisi (warm)', true, $up, $detail, false);
+    }
+
+    /**
      * İNSAN-vs-İNSAN maçları (Tek Oyun · Maç Oyunu · Arkadaşınla Oyna): YALNIZ validator'a bağlı
      * (hamle yasallığı hakemi). gnubg KULLANMAZ -> analiz servisleri tamamen düşse bile insan
      * maçları oynanır. Bu satır oyuncu-vs-oyuncu akışının canlılığını tek bakışta gösterir.
@@ -400,6 +436,18 @@ class ServiceStatus extends Widget
         }
         $o = [];
         @exec('pgrep -fc "artisan queue:work database" 2>/dev/null', $o);
+
+        return max(0, (int) trim((string) ($o[0] ?? '0')));
+    }
+
+    /** Çalışan DEDİKE warm işçisi sayısı (tavla-warm-queue@ -> --queue=warm). exec yoksa 0. */
+    private function warmWorkerCount(): int
+    {
+        if (! function_exists('exec')) {
+            return 0;
+        }
+        $o = [];
+        @exec('pgrep -fc "queue:work database --queue=warm" 2>/dev/null', $o);
 
         return max(0, (int) trim((string) ($o[0] ?? '0')));
     }
