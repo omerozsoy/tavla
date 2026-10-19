@@ -1394,6 +1394,8 @@ export interface Tournament {
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null
+  /** Biten turnuvanin sampiyonu — ozet listede (index) de gelir (ana sayfa Top List kolonu). */
+  champion?: { id: number; name: string; avatar?: string | null; premium?: boolean } | null
   /** Lobi duyurulari (admin panelden; en yeni ustte). Yeni duyuruda istemci zil calar. */
   announcements?: { id: number; message: string; at: string | null }[]
   /** Son 90sn icinde aktif (online) oyuncu id'leri — bracket/katilimci online noktasi. */

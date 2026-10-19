@@ -1495,6 +1495,9 @@ class TournamentController extends Controller
             'size' => $t->size,
             'status' => $t->status,
             'count' => count(array_filter($t->players ?? [], fn ($p) => $p !== null)),
+            // Ana sayfa "Top List" Turnuva Birincileri kolonu: biten turnuvanin sampiyon kimligi
+            // (ozet listede tam players dizisi tasinmaz -> sadece sampiyon). full()'da champion_id ayrica var.
+            'champion' => $this->championSummary($t),
             'prize_coins' => $t->prize_coins ?? 0,
             'prize_desc' => $t->prize_desc,
             // coins int'e zorlanir: JSON'da string kalirsa frontend toplama '+' ile
@@ -1516,6 +1519,26 @@ class TournamentController extends Controller
             'semi_minutes' => $t->semi_minutes ? (int) $t->semi_minutes : null,
             'final_minutes' => $t->final_minutes ? (int) $t->final_minutes : null,
         ];
+    }
+
+    /** Biten turnuvanin sampiyon kimligi (ozet liste icin). players snapshot'tan, yoksa User'dan. */
+    private function championSummary(Tournament $t): ?array
+    {
+        if (! $t->champion_id) {
+            return null;
+        }
+        foreach ($t->players ?? [] as $p) {
+            if ($p && (int) ($p['id'] ?? 0) === (int) $t->champion_id) {
+                return [
+                    'id' => (int) $t->champion_id,
+                    'name' => $p['name'] ?? '',
+                    'avatar' => $p['avatar'] ?? null,
+                    'premium' => (bool) ($p['premium'] ?? false),
+                ];
+            }
+        }
+        $u = \App\Models\User::find($t->champion_id);
+        return $u ? ['id' => $u->id, 'name' => $u->name, 'avatar' => $u->avatar, 'premium' => $u->plan_active === 'premium'] : null;
     }
 
     private function full(Tournament $t): array

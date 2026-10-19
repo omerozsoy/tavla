@@ -42,19 +42,16 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
       .then((ts) => {
         if (!alive) return
         const rows = ts
-          .filter((tr) => tr.status === 'finished' && tr.champion_id)
+          .filter((tr) => tr.status === 'finished' && tr.champion)
           .sort((a, b) => b.id - a.id)
           .slice(0, 3)
-          .map((tr) => {
-            const p = (tr.players ?? []).find((pl) => pl.id === tr.champion_id)
-            return {
-              id: tr.champion_id!,
-              name: p?.name ?? '—',
-              avatar: p?.avatar,
-              premium: p?.premium,
-              value: tr.name,
-            }
-          })
+          .map((tr) => ({
+            id: tr.champion!.id,
+            name: tr.champion!.name || '—',
+            avatar: tr.champion!.avatar,
+            premium: tr.champion!.premium,
+            value: tr.name,
+          }))
         setChamps(rows)
       })
       .catch(() => {})
