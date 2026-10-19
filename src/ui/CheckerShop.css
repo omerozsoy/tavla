@@ -6,7 +6,7 @@
 
 .cshop-default {
   display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
-  border-radius: var(--radius-pill, 999px); border: 1px solid var(--border);
+  border-radius: 2px; border: 1px solid var(--border); /* Swiss: pill -> keskin */
   background: transparent; color: inherit; cursor: pointer; margin-bottom: 8px; font-size: 13px;
 }
 .cshop-default.active { border-color: var(--accent); color: var(--accent-text); }

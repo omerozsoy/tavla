@@ -540,3 +540,39 @@
     justify-content: center;
   }
 }
+
+/* ===== BAŞARILAR SWISS KROMU (2026-10-19): kart/çip/rozet/bar keskin köşe + bold yok +
+   parıltı gölgesi/gradient yok. Nadirlik KENAR rengi (ürün sinyali) korunur. ===== */
+.ach-summary,
+.ach-card,
+.ach-detail,
+.ach-rchip,
+.ach-cat,
+.ach-tier,
+.ach-tag,
+.ach-bar,
+.ach-bar-fill {
+  border-radius: 2px;
+}
+.ach-card.unlocked.rarity-legendary,
+.ach-card.unlocked.rarity-mythic {
+  box-shadow: none; /* parıltı yok; nadirlik kenar rengiyle kalır */
+}
+.ach-unlock-glow,
+.ach-unlock.rarity-legendary .ach-unlock-glow,
+.ach-unlock.rarity-mythic .ach-unlock-glow {
+  background: none; /* kutlama radial-gradient parıltısı -> düz Swiss */
+}
+.ach-sum-num,
+.ach-rchip,
+.ach-cat,
+.ach-name,
+.ach-tier,
+.ach-detail h3,
+.ach-tag,
+.ach-unlock-kicker,
+.ach-unlock-name,
+.ach-unlock-reward,
+.stats-ach-entry {
+  font-weight: 500; /* bold yok (Swiss) */
+}

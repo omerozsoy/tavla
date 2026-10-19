@@ -24824,6 +24824,69 @@ body:has(.spectate-view) .app.lobby {
   border-radius: 2px;
   font-weight: 500;
 }
+
+/* ===== GALERİ KROMU SWISS (profil sekmeleri: Tahta / Pul / Avatar / Başarı / İstatistik) =====
+   Kart/çip/rozet/filtre KROMU: keskin köşe + gölge yok + bold yok + pill yok. ÜRÜN SANATINA
+   DOKUNULMAZ: SetupBoard tahta önizleme, .cshop-def-checker pul 3B görünümü, AvatarFrame çerçeve
+   animasyonları, altın fiyat ve nadirlik KENAR renkleri KORUNUR (kozmetik ürün değeri). App.css'te
+   tanımlı seçiciler burada (dosya-sonu) ezilir; .ach-* achievements.css'te, .cshop-* CheckerShop.css'te. */
+.board-prev,
+.fg-item,
+.badge-item,
+.wxp-box,
+.sd-empty,
+.sd-ic,
+.psm-row,
+.bp-price,
+.bp-filter,
+.bp-filter-n,
+.rarity-title .rarity-count,
+.fg-toolbar,
+.fg-size-chip,
+.fg-rarity,
+.shop-gallery-link,
+.perf-filter,
+.psm-res,
+.psm-more,
+.stats-bar,
+.stats-bar-win {
+  border-radius: 2px; /* keskin köşe (pill/radius-lg kaldırıldı) */
+}
+.bp-hover {
+  border-radius: 2px;
+  box-shadow: none; /* büyük drop-gölge -> düz Swiss */
+  border: 1px solid var(--border);
+}
+.bp-selected {
+  border-radius: 2px;
+  box-shadow: none;
+  background: var(--accent); /* sabit #d0342c -> token */
+  color: var(--accent-contrast, #fff);
+}
+.fg-item:hover {
+  box-shadow: none; /* hover yükseltme gölgesi yok */
+}
+/* Gradient KROM -> düz (ürün gradientleri hariç) */
+.stats-bar-win {
+  background: var(--success-fg, #2e9e5b);
+}
+/* Krom sabit-hex -> token (altın fiyat ürün rengi korunur) */
+.badge-item-admin {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast, #fff);
+}
+/* Bold yok (Swiss tavan 500) — galeri kromu metinleri */
+.bp-hover-name,
+.bp-have-line strong,
+.badge-item-admin,
+.career-cube-pr-val,
+.career-pr-card-title,
+.career-pr-val,
+.psm-res,
+.psm-delta {
+  font-weight: 500;
+}
 .prof-ov-tabs > button {
   text-transform: uppercase;
   letter-spacing: 0.06em;
