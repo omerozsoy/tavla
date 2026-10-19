@@ -947,14 +947,11 @@ export function TournamentsPanel({
         <Icon name="medal" size={18} /> {t('menu.tournaments')}
         {tourns.length > 0 && <span className="panel-count">{tourns.length}</span>}
       </button>
-      {/* Baslik altinda minik turnuva ismi (owner istegi) — birden fazlaysa " · " ile, CSS ellipsize */}
-      {tourns.length > 0 && (
-        <div className="tourn-subname">{tourns.map((tr) => tr.name).join(' · ')}</div>
-      )}
       {tourns.length === 0 && <div className="tourn-empty">{t('tourn.empty')}</div>}
       <div className="tourn-list">
         {tourns.map((tr) => {
-          const full = tr.count >= tr.size
+          // size 0 = sinirsiz kontenjan -> ASLA dolu degil (yoksa count>=0 hep dolu gorunur).
+          const full = tr.size > 0 && tr.count >= tr.size
           const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
           // Odul tablosu: prizes varsa ilk 3 sira (1./2./3.), yoksa eski prize_coins
           const prizeList =
@@ -1032,12 +1029,14 @@ export function TournamentsPanel({
               <span className="tr-side">
                 <span className="tr-count" data-full={full || undefined}>
                   <b>{tr.count}</b>
-                  <span className="tr-count-sep">/{tr.size}</span>
+                  {tr.size > 0 && <span className="tr-count-sep">/{tr.size}</span>}
                 </span>
                 <span className="tr-count-lbl">{t('tourn.players')}</span>
-                <span className="tr-bar" aria-hidden="true">
-                  <span className="tr-bar-fill" style={{ width: `${pct}%` }} />
-                </span>
+                {tr.size > 0 && (
+                  <span className="tr-bar" aria-hidden="true">
+                    <span className="tr-bar-fill" style={{ width: `${pct}%` }} />
+                  </span>
+                )}
               </span>
               {/* Ana sayfadan Katil/Iptal (yalniz kayit acik turnuvada). Satir tiklamasini yutar. */}
               {tr.status === 'open' && (

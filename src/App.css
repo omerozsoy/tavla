@@ -6493,7 +6493,7 @@ button[aria-disabled='true'],
   width: calc(var(--col) * 12 + var(--bar-w));
   height: var(--board-h);
   background: var(--bar);
-  border-radius: var(--radius-sm);
+  border-radius: 0; /* keskin kose: gercek tavla gibi dik koseli cerceve (yuvarlatma yok) */
   /* Board'u koyu sahneden hafifce kaldiran ince cerceve + yumusak golge (buyuk kart YOK) */
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
@@ -12663,7 +12663,7 @@ button.acct-row-logout:hover:not(:disabled) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  align-items: start;
+  align-items: stretch; /* iki kutu esit yukseklik (en uzuna uzar) */
 }
 .rfr-wrap.rfr-duo .rfr-card {
   max-width: none; /* grid kolonu boyutlar; kartın kendi yarı-genişlik cap'i kalksın */
@@ -13110,15 +13110,6 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 14px 0 4px;
   color: var(--muted);
   font-size: 13px;
-}
-/* Baslik altindaki minik turnuva ismi — tek satir, tasarsa ... */
-.tourn-subname {
-  margin: 2px 0 6px;
-  color: var(--muted);
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .swiss-panel.tourn-panel .tourn-row {
   position: relative;
@@ -14249,9 +14240,8 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.98rem;
   font-weight: 400;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Tam ad + tarih/yil gorunsun: kirpma yok, gerekirse 2 satira sarsin (subname kaldirildi). */
+  overflow-wrap: anywhere;
 }
 .tr-chips {
   display: flex;
