@@ -194,7 +194,11 @@ class ServicesWatch extends Command
             $hb = Cache::get('queue:heartbeat');
             $hbStale = $hb !== null && (time() - (int) $hb) > 180;
             // 2) BACKLOG: bekleyen en eski iş >180sn = worker consume etmiyor (nabız da burada birikir).
-            $oldest = DB::table('jobs')->min('available_at');
+            //    SADECE 'default' kuyruğu: bu alarm/restart tavla-queue'ya (--queue=default) aittir.
+            //    Filtresiz min() reviews/bulk/warm gibi AYRI worker'ların birikimini yakalayıp sahte
+            //    "QUEUE WORKER DÜŞTÜ" üretiyordu (restart default'u canlandırır ama başka kuyruğu temizlemez
+            //    -> sonsuz flap). Her kuyruk kendi worker'ı tarafından ayrı izlenir.
+            $oldest = DB::table('jobs')->where('queue', 'default')->min('available_at');
             $backlog = $oldest && (time() - (int) $oldest) > 180;
             // Sonraki tur için nabız bırak (worker up ise hızlıca tüketir + cache tazeler; down ise birikir).
             try {
