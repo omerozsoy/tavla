@@ -157,22 +157,10 @@ Schedule::command('tavla:review-warmup --limit=15 --days=7')
     ->name('review-warmup')
     ->withoutOverlapping();
 
-// KÜP PR BACKFILL (skor-farkında rescore) OTOMATİK TAMAMLAMA: eski elle `tavla:cube-pr-rescore`
-// re-run derdini kaldırır. Kalıcı imleç (Setting cutoff) + kuyruk-doluluk kapısı sayesinde cron-güvenli:
-// kuyruk (reviews-bulk) limit*2'nin üstündeyse tur ATLANIR (mükerrer/termal yük yok), drene olunca
-// kaldığı yerden devam -> evren bitince de her tur no-op. --limit=100 WORKER'LARI TAM BESLER:
-// gerçek throughput 3 tavla-backfill-queue@ worker ile ~16 maç/dk (~80/5dk) = termal tavan; 100/5dk
-// bunun biraz üstü -> worker'lar HİÇ boşta kalmaz (tail hızlanır) ama kuyruk kapı sayesinde (limit*2=200)
-// sınırlı kalır -> şişmez, mükerrer dispatch minimum. Sınırsız yapmak hız KAZANDIRMAZ (worker-bound);
-// yalnız kuyruğu binlere şişirir + termal riskli mükerrer yük. Kalıcı hız = fan onarımı sonrası +worker.
-// GERİ AÇILDI 2026-10-19: PR HİBRİT min(EMG,Snowie) deploy + TÜM maçlar backfill edildi (9220 oda) +
-// careerpr:rebuild tamam. Artık hibrit üretir. Cutoff-cursor'dan devam eder (eski maçların Analiz
-// review görüntülerini güncel serializer'la tazeler; PR zaten hibrit, writePrFromReview -> Snowie hibrit).
-// (Kısa süre DURAKLATILMIŞTI; donanım 3s45dk kesintisiz backfill'i 0 reboot/64°C ile kaldırdı -> güvenli.)
-Schedule::command('tavla:cube-pr-rescore --limit=100')
-    ->everyFiveMinutes()
-    ->name('cube-pr-rescore')
-    ->withoutOverlapping();
+// KÜP PR BACKFILL (skor-farkında rescore) — CRON KALDIRILDI 2026-10-20: tek seferlik görev TAMAMLANDI
+// (5736/5736 küp maçı rescore edildi, KALAN=0, cutoff 2026-10-18). everyFiveMinutes() cron'u artık
+// yalnız boşa tetik (her tur "hepsi tamam" no-op) idi -> kaldırıldı. Komut (`tavla:cube-pr-rescore`)
+// ELLE çalıştırmak için duruyor; eski maç çıkarsa `--before <iso>` ile tek seferlik yeniden koşulur.
 
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
