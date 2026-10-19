@@ -10927,7 +10927,7 @@ export default function App() {
             )}
             <AdStrip slot="top" />
             {/* Arkadaşını Davet Et + Online Turnuvaları: üstte YAN YANA (iki yarı kolon, Swiss dili);
-                mobilde alt alta. Turnuva yoksa panel null döner -> Davet kartı yine sol yarıda kalır. */}
+                mobilde alt alta. Turnuva yoksa panel "aktif turnuva yok" notuyla YİNE görünür. */}
             <div className="rfr-wrap rfr-duo">
               <InviteFriendCard loggedIn={!!user} onLogin={() => setShowAuth(true)} />
               <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />

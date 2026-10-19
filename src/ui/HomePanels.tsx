@@ -922,13 +922,14 @@ export function TournamentsPanel({
   onOpen: () => void
 }) {
   const { t, lang } = useT()
-  if (tourns.length === 0) return null
+  // Boş olsa bile kutuyu GÖSTER (owner isteği): başlık + "aktif turnuva yok" notu.
   return (
     <div className="home-panel tourn-panel swiss-panel">
       <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.tournaments')}>
         <Icon name="medal" size={18} /> {t('menu.tournaments')}
-        <span className="panel-count">{tourns.length}</span>
+        {tourns.length > 0 && <span className="panel-count">{tourns.length}</span>}
       </button>
+      {tourns.length === 0 && <div className="tourn-empty">{t('tourn.empty')}</div>}
       <div className="tourn-list">
         {tourns.map((tr) => {
           const full = tr.count >= tr.size

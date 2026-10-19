@@ -13105,6 +13105,12 @@ button.acct-row-logout:hover:not(:disabled) {
   flex-direction: column;
   gap: 0;
 }
+/* Bos durum notu (hic aktif turnuva yokken kutu yine gorunur) */
+.tourn-empty {
+  padding: 14px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
 .swiss-panel.tourn-panel .tourn-row {
   position: relative;
   border: 0;
