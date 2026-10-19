@@ -25,7 +25,7 @@ class ScheduledTournamentTest extends TestCase
         $s = TournamentSchedule::create([
             'name' => 'Cuma Akşamı',
             'active' => true,
-            'weekdays' => [5, 1],         // Cuma + Pazartesi
+            'weekdays' => ['5', '1'],     // Cuma + Pazartesi — Filament CheckboxList STRING saklar (regresyon kalkanı)
             'start_time' => '20:30',
             'type' => 'bracket',
             'size' => 8,

@@ -27,7 +27,9 @@ class CreateScheduledTournaments extends Command
         $created = 0;
 
         $schedules = TournamentSchedule::where('active', true)->get()
-            ->filter(fn (TournamentSchedule $s) => in_array($iso, $s->weekdays ?? [], true))
+            // weekdays Filament CheckboxList'ten STRING gelir (["1","2"]) -> strict in_array int $iso ile
+            // asla eşleşmezdi; intval'a normalize et (kurucu bu yüzden hiç çalışmıyordu).
+            ->filter(fn (TournamentSchedule $s) => in_array($iso, array_map('intval', $s->weekdays ?? []), true))
             ->filter(fn (TournamentSchedule $s) => ! ($s->last_created_on && $s->last_created_on->isSameDay($today)));
 
         foreach ($schedules as $s) {
