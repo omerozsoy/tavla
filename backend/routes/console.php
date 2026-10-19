@@ -111,6 +111,15 @@ Schedule::command('tournaments:tick')
     ->name('tournaments-tick')
     ->withoutOverlapping();
 
+// PERİYODİK TURNUVA KURUCU: her gece tam 00:00'da, bugüne denk gelen aktif periyodik turnuva
+// şablonlarından birer turnuva kurar (admin -> "Periyodik Turnuva" menüsü). Kurulan turnuva gün
+// boyu "kayıt açık" kalır; şablonun start_time saatinde mevcut autoStartDue() ile otomatik başlar.
+// Idempotent (last_created_on günlük damga): aynı gün ikinci çalıştırma / retry yeniden kurmaz.
+Schedule::command('tournaments:create-scheduled')
+    ->dailyAt('00:00')
+    ->name('create-scheduled-tournaments')
+    ->withoutOverlapping();
+
 // CRON NABZI (izleyiciyi izler): schedule:run GERÇEKTEN çalışıyor mu? Her dakika cache'e zaman
 // damgası yaz. Admin "Servis Durumu" panelindeki "Zamanlayıcı (cron)" lambası bunu okur; bayatsa
 // (>~2.5dk) cron DURMUŞ demektir -> services:watch dahil TÜM izleme/otomatik-restart/alarm sessizce
