@@ -13165,23 +13165,18 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--accent);
 }
 
-/* === Online Turnuvalar (dar yan panel) — editöryal "turnuva masthead" ===
-   Kompakt kart: üstte durum işareti ↔ katılımcı (masthead), ortada editöryal
-   başlık + tek satır tarih/ödül, altta hairline üzerinde geri sayım (HERO) +
-   KATIL. Pill/gradient/ağır font YOK — tipografi, hairline ve tek accent vurgu. */
+/* === Online Turnuvalar (dar yan panel) — Swiss "geri sayım posteri" ===
+   Tek baskın eleman: canlı geri sayım (büyük accent tipografi). Üstte durum
+   kicker'ı + editöryal başlık; altında sessiz veri şeridi (tarih │ katılımcı,
+   hairline ayraç); en altta ödül (sol) ↔ KATIL (sağ). Flush-left, pill/gradient YOK. */
 .swiss-panel.tourn-panel .tourn-row {
   display: flex;
   flex-direction: column;
+  align-items: flex-start; /* flush-left — ortalama YOK */
   gap: 8px;
-  padding: 14px 16px;
+  padding: 16px;
 }
-/* Üst masthead: durum (sol) ↔ katılımcı (sağ), ince uppercase */
-.swiss-panel.tourn-panel .tr-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
+/* Durum kicker — nokta + uppercase */
 .swiss-panel.tourn-panel .tr-status {
   display: inline-flex;
   align-items: center;
@@ -13189,9 +13184,9 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 0;
   border-radius: 0;
   background: none !important;
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 500;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .swiss-panel.tourn-panel .tr-dot {
@@ -13204,44 +13199,90 @@ button.acct-row-logout:hover:not(:disabled) {
 .swiss-panel.tourn-panel .tr-status-open { color: var(--tv-green, #3f9e6a); }
 .swiss-panel.tourn-panel .tr-status-running { color: var(--accent-text); }
 .swiss-panel.tourn-panel .tr-status-finished { color: var(--muted); }
-.swiss-panel.tourn-panel .tr-players {
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.swiss-panel.tourn-panel .tr-players b { color: var(--text); font-size: 0.82rem; font-weight: 500; }
-.swiss-panel.tourn-panel .tr-players[data-full] b { color: var(--accent-text); }
-.swiss-panel.tourn-panel .tr-count-sep { color: var(--muted); font-weight: 400; }
 /* Editöryal başlık */
 .swiss-panel.tourn-panel .tr-name {
-  font-size: 1.05rem;
+  font-size: 1.04rem;
   font-weight: 500;
   line-height: 1.25;
   color: var(--text);
 }
-/* Tarih + ödül: tek kompakt satır, hairline ayraçla isimden ayrık */
-.swiss-panel.tourn-panel .tr-meta {
+/* HERO: geri sayım — büyük tipografi, tek accent odak (saat ikonu gizli) */
+.swiss-panel.tourn-panel .tr-clock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 2px 0 4px;
+}
+.swiss-panel.tourn-panel .tr-clock-lbl {
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.swiss-panel.tourn-panel .tr-cd {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--tv-font-display);
+  font-size: 1.9rem;
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+}
+.swiss-panel.tourn-panel .tr-cd > svg { display: none; } /* 12px saat ikonu dev digitlerin yanında yakışmıyor */
+.swiss-panel.tourn-panel .tr-cd.starting {
+  background: none;
+  border: 0;
+  color: var(--color-success);
+  font-size: 1.15rem; /* "Başlıyor…" metni digit kadar büyük olmasın */
+}
+/* Sessiz veri şeridi: tarih │ katılımcı (hairline ayraçlı, uppercase) */
+.swiss-panel.tourn-panel .tr-stats {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
+  align-items: baseline;
+  gap: 4px 0;
+  width: 100%;
   padding-top: 8px;
   border-top: 1px solid var(--border);
-  font-size: 0.78rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.swiss-panel.tourn-panel .tr-date { color: var(--muted); }
+.swiss-panel.tourn-panel .tr-stat { display: inline-flex; align-items: baseline; gap: 5px; }
+.swiss-panel.tourn-panel .tr-stat + .tr-stat {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+.swiss-panel.tourn-panel .tr-ppl b { color: var(--text); font-weight: 500; font-size: 0.82rem; }
+.swiss-panel.tourn-panel .tr-ppl[data-full] b { color: var(--accent-text); }
+.swiss-panel.tourn-panel .tr-count-sep { color: var(--muted); font-weight: 400; }
+/* Footer: ödül (sol) ↔ KATIL (sağ), hairline üzerinde */
+.swiss-panel.tourn-panel .tr-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
 .swiss-panel.tourn-panel .tr-prizes {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 2px 6px;
+  font-size: 0.8rem;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 .swiss-panel.tourn-panel .tr-prizes > svg { color: #c99a2e; flex: none; } /* altın ton, düz */
 .swiss-panel.tourn-panel .tr-prizes .tr-prize-item + .tr-prize-item {
@@ -13254,48 +13295,10 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
 }
 .swiss-panel.tourn-panel .tr-prize-more { color: var(--muted); }
-/* Footer: geri sayım HERO (sol) + KATIL (sağ) */
-.swiss-panel.tourn-panel .tr-foot {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 2px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-}
-.swiss-panel.tourn-panel .tr-cd-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  line-height: 1;
-  min-width: 0;
-}
-.swiss-panel.tourn-panel .tr-cd-lbl {
-  font-size: 0.56rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.swiss-panel.tourn-panel .tr-cd {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  font-family: var(--tv-font-display);
-  font-size: 1.2rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--accent-text);
-  font-variant-numeric: tabular-nums;
-}
-.swiss-panel.tourn-panel .tr-cd.starting { background: none; border: 0; color: var(--color-success); }
-/* KATIL: keskin köşe, uppercase, 500; footer'da sağ altta hizalı */
+/* KATIL — keskin köşe, uppercase, 500 */
 .swiss-panel.tourn-panel .tr-act {
   flex: none;
   margin: 0;
-  align-self: flex-end;
   padding: 9px 18px;
   font-weight: 500;
 }
