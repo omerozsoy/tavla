@@ -57,10 +57,11 @@ class ServiceStatus extends Widget
                     ...$frontRows,
                     ...$prRows,
                     ...$matRows,
+                    // Maç-içi ısıtma işçileri AYRI grup (gnubg havuzlarıyla ilişkili, altyapıdan bağımsız).
+                    ...array_map(fn ($r) => $r + ['group' => 'Maç-içi Isıtma İşçileri (warm)'], $this->warmRows()),
                     // Altyapı.
                     $this->checkDatabase() + ['group' => 'Altyapı'],
                     $this->checkQueue() + ['group' => 'Altyapı'],
-                    ...array_map(fn ($r) => $r + ['group' => 'Altyapı'], $this->warmRows()),
                     $this->checkScheduler() + ['group' => 'Altyapı'],
                     $this->checkDisk() + ['group' => 'Altyapı'],
                 ],
