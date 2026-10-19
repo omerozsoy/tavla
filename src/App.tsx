@@ -1451,7 +1451,9 @@ export default function App() {
       // slug'i YOK. Aktif oyun yoksa bayat online/oyun state'ini temizle ki GERI tusunda
       // ekrana eski/bitmis board gelmesin (kullanici sikayeti). setHome(true) -> sayfa
       // home dalinda (sol menu + logo) acilir. (Aktif oyun varsa dokunma: resume korunur.)
-      if (!hasActiveGameRef.current) {
+      // mm_waiting (havuzda aktif arama) "aktif oyun" sayilmaz ama room'u temizlersek poll/heartbeat
+      // durur -> sunucu 2 dk sonra seeker'i reap'ler (listeden duser). awaitingMatchRef ararken koru.
+      if (!hasActiveGameRef.current && !awaitingMatchRef.current) {
         setMode('pvb')
         setRoom(null)
       }
