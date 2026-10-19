@@ -12656,6 +12656,23 @@ button.acct-row-logout:hover:not(:disabled) {
   max-width: var(--lobby-w);
   margin: 10px auto 0;
 }
+/* Davet kartı + Online Turnuvalar: üstte YAN YANA (iki yarı kolon, Swiss dili); mobilde alt alta.
+   Her iki panel de aynı dili taşır (keskin köşe + terracotta üst-aksan) -> doğal uyum. Turnuva
+   paneli null ise (0 turnuva) Davet kartı sol yarıda kalır = eski görünüm korunur. */
+.rfr-wrap.rfr-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.rfr-wrap.rfr-duo .rfr-card {
+  max-width: none; /* grid kolonu boyutlar; kartın kendi yarı-genişlik cap'i kalksın */
+}
+@media (max-width: 720px) {
+  .rfr-wrap.rfr-duo {
+    grid-template-columns: 1fr;
+  }
+}
 .rfr-card {
   width: 100%;
   max-width: calc(var(--lobby-w) / 2 - 8px); /* YARI genişlik (Oyun Arayanlar'ın yarısı), sola hizalı */

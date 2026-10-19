@@ -10915,9 +10915,11 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
-            {/* Arkadaşını Davet Et: Oyun Arayanlar'ın üstünde YARI genişlik ödül kartı (sol hizalı). */}
-            <div className="rfr-wrap">
+            {/* Arkadaşını Davet Et + Online Turnuvaları: üstte YAN YANA (iki yarı kolon, Swiss dili);
+                mobilde alt alta. Turnuva yoksa panel null döner -> Davet kartı yine sol yarıda kalır. */}
+            <div className="rfr-wrap rfr-duo">
               <InviteFriendCard loggedIn={!!user} onLogin={() => setShowAuth(true)} />
+              <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
             </div>
             {/* Oyun Arayanlar: hızlı eşleşme havuzunda bekleyenler (reklam bannerının hemen altı) */}
             <SeekersPanel
@@ -10994,10 +10996,9 @@ export default function App() {
             <AdStrip slot="middle" />
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
-              {/* SOL: Online Turnuvalar (ust) + Haberler + Turnuva Takvimi (alt). SAG: Liderlik.
-                  Haberler Takvim'in HEMEN ÜSTÜNDE (kullanıcı isteği) -> hem masaüstü hem mobilde. */}
+              {/* SOL: Haberler + Turnuva Takvimi. SAG: Liderlik. (Online Turnuvalar artık en üstte,
+                  Arkadaş Davet kartının YANINDA -> rfr-duo.) */}
               <div className="home-cal-main">
-                <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
                 <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
                 <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} title={menuLabel('calendar') ?? t('menu.calendar')} />
               </div>
