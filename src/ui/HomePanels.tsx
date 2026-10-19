@@ -1045,6 +1045,9 @@ export function TournamentsPanel({
                           : !full
                             ? t('tourn.join')
                             : t('tourn.full')}
+                      {busy !== tr.id && !tr.joined && !full && (
+                        <Icon name="arrow-right" size={14} className="tr-act-arrow" />
+                      )}
                     </button>
                   )}
                 </div>

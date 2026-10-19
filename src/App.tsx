@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ReactNode,
 } from 'react'
 import './App.css'
 import './ui/landscapePhone.css'
@@ -1846,7 +1847,7 @@ export default function App() {
   const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
   // "Oyun Arayanlar" para/bahis onayı: native window.confirm yerine uygulama-içi stilli modal
   // (markasız tarayıcı popup'ı yerine). msg = onay metni, run = onaylanınca çalışacak eşleşme.
-  const [seekerConfirm, setSeekerConfirm] = useState<{ msg: string; run: () => void; title?: string } | null>(null)
+  const [seekerConfirm, setSeekerConfirm] = useState<{ msg: ReactNode; run: () => void; title?: string } | null>(null)
   // Hedefli davetle acilan bekleme odasinda rakip adi: doluysa Lobby bekleme ekrani "kod
   // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
   // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
@@ -2677,7 +2678,12 @@ export default function App() {
     if (fee > 0) {
       setSeekerConfirm({
         title: t('tourn.joinTitle'),
-        msg: `${t('tourn.joinDesc')} ${fee.toLocaleString('tr-TR')} 🪙`,
+        msg: (
+          <>
+            {t('tourn.joinDesc')} {fee.toLocaleString('tr-TR')}{' '}
+            <Icon name="coin" size={15} />
+          </>
+        ),
         run: () => void run(),
       })
     } else {

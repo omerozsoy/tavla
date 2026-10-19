@@ -13246,10 +13246,7 @@ button.acct-row-logout:hover:not(:disabled) {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 0;
-  width: calc(100% + 32px); /* flex item: stretch+negmargin güvenilmez -> explicit tam genişlik */
-  margin: 0 -16px; /* hairline kart kenarına değsin (row 16px padding'ini iptal) */
-  padding: 8px 16px 0;
-  border-top: 1px solid var(--border);
+  padding-top: 2px; /* isim altındaki çizgi KALDIRILDI (kullanıcı) */
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -13296,13 +13293,17 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
 }
 .swiss-panel.tourn-panel .tr-prize-more { color: var(--muted); }
-/* KATIL — keskin köşe, uppercase, 500 */
+/* KATIL — keskin köşe, uppercase, 500; enlemesine geniş + sonunda ok */
 .swiss-panel.tourn-panel .tr-act {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  padding: 9px 18px;
+  padding: 9px 30px;
   font-weight: 500;
 }
+.swiss-panel.tourn-panel .tr-act-arrow { flex: none; }
 
 /* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
 .live-panel .live-row {

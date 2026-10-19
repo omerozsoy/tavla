@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
@@ -18,7 +19,7 @@ export default function ConfirmModal({
   onCancel,
 }: {
   title: string
-  message: string
+  message: ReactNode
   icon?: IconName
   confirmLabel?: string
   cancelLabel?: string
