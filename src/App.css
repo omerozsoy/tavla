@@ -13246,7 +13246,7 @@ button.acct-row-logout:hover:not(:disabled) {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 0;
-  align-self: stretch; /* satır tam genişliği */
+  width: calc(100% + 32px); /* flex item: stretch+negmargin güvenilmez -> explicit tam genişlik */
   margin: 0 -16px; /* hairline kart kenarına değsin (row 16px padding'ini iptal) */
   padding: 8px 16px 0;
   border-top: 1px solid var(--border);
@@ -13271,8 +13271,8 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  align-self: stretch; /* satır tam genişliği */
-  margin: 2px -16px 0; /* hairline kart kenarına değsin */
+  width: calc(100% + 32px); /* flex item: explicit tam genişlik (hairline kenara değsin) */
+  margin: 2px -16px 0;
   padding: 10px 16px 0;
   border-top: 1px solid var(--border);
 }
