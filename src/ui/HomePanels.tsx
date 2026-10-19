@@ -952,7 +952,6 @@ export function TournamentsPanel({
         {tourns.map((tr) => {
           // size 0 = sinirsiz kontenjan -> ASLA dolu degil (yoksa count>=0 hep dolu gorunur).
           const full = tr.size > 0 && tr.count >= tr.size
-          const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
           // Odul tablosu: prizes varsa ilk 3 sira (1./2./3.), yoksa eski prize_coins
           const prizeList =
             tr.prizes && tr.prizes.length > 0
@@ -961,8 +960,6 @@ export function TournamentsPanel({
                 ? [{ coins: tr.prize_coins }]
                 : []
           const moreP = (tr.prizes?.length ?? 0) - prizeList.length
-          // Kısa ödül açıklaması (ilk ödül desc'i veya genel not) — CSS ile ellipsize
-          const prizeDesc = ((tr.prizes?.[0]?.desc ?? tr.prize_desc) ?? '').trim()
           // Tarih: baslama zamani (yoksa gizli). Dile gore biciml.
           const dateText = tr.starts_at
             ? new Date(tr.starts_at).toLocaleString(lang === 'tr' ? 'tr-TR' : lang, {
@@ -987,57 +984,51 @@ export function TournamentsPanel({
                 }
               }}
             >
-              <span className="tr-main">
-                <span className="tr-name">{tr.name}</span>
-                <span className="tr-chips">
-                  <span className={`tr-status tr-status-${tr.status}`}>
+              {/* Başlık */}
+              <span className="tr-name">{tr.name}</span>
+              {/* Swiss etiket/değer tablosu (sol etiket uppercase muted | sağ değer, hairline ayraç) */}
+              <dl className="tr-spec">
+                <div className="tr-spec-row">
+                  <dt>{t('tourn.lblStatus')}</dt>
+                  <dd className={`tr-spec-val tr-status-${tr.status}`}>
                     {t(`tourn.status.${tr.status}`)}
-                  </span>
-                  {/* Guzel canli sayac (open + baslama zamani varsa) */}
-                  {tr.status === 'open' && tr.starts_at && (
-                    <span className="tr-cd-wrap">
-                      <span className="tr-cd-lbl">{t('tourn.startsIn')}</span>
+                  </dd>
+                </div>
+                {tr.status === 'open' && tr.starts_at && (
+                  <div className="tr-spec-row">
+                    <dt>{t('tourn.startsIn')}</dt>
+                    <dd className="tr-spec-val">
                       <Countdown target={tr.starts_at} className="tr-cd" />
-                    </span>
-                  )}
-                </span>
-                {/* Tarih + odul kirilimi */}
-                {(dateText || prizeList.length > 0) && (
-                  <span className="tr-meta">
-                    {dateText && (
-                      <span className="tr-date">
-                        <Icon name="calendar" size={13} /> {dateText}
-                      </span>
-                    )}
-                    {prizeList.length > 0 && (
-                      <span className="tr-prizes" title={t('tourn.prizePool')}>
-                        <Icon name="trophy" size={13} />
-                        {prizeList.map((p, i) => (
-                          <span key={i} className="tr-prize-item">
-                            <b className="tr-prize-rank">{i + 1}.</b>{' '}
-                            {p.coins.toLocaleString('tr-TR')}
-                          </span>
-                        ))}
-                        {moreP > 0 && <span className="tr-prize-more">+{moreP}</span>}
-                      </span>
-                    )}
-                    {prizeDesc && <span className="tr-prize-desc">{prizeDesc}</span>}
-                  </span>
+                    </dd>
+                  </div>
                 )}
-              </span>
-              {/* SAG: kac kisi katilmis (buyuk) + etiket + doluluk cubugu */}
-              <span className="tr-side">
-                <span className="tr-count" data-full={full || undefined}>
-                  <b>{tr.count}</b>
-                  {tr.size > 0 && <span className="tr-count-sep">/{tr.size}</span>}
-                </span>
-                <span className="tr-count-lbl">{t('tourn.players')}</span>
-                {tr.size > 0 && (
-                  <span className="tr-bar" aria-hidden="true">
-                    <span className="tr-bar-fill" style={{ width: `${pct}%` }} />
-                  </span>
+                {dateText && (
+                  <div className="tr-spec-row">
+                    <dt>{t('tourn.lblDate')}</dt>
+                    <dd className="tr-spec-val tr-spec-muted">{dateText}</dd>
+                  </div>
                 )}
-              </span>
+                {prizeList.length > 0 && (
+                  <div className="tr-spec-row">
+                    <dt>{t('tourn.lblPrize')}</dt>
+                    <dd className="tr-spec-val tr-spec-prizes" title={t('tourn.prizePool')}>
+                      {prizeList.map((p, i) => (
+                        <span key={i} className="tr-prize-item">
+                          {p.coins.toLocaleString('tr-TR')}
+                        </span>
+                      ))}
+                      {moreP > 0 && <span className="tr-prize-more">+{moreP}</span>}
+                    </dd>
+                  </div>
+                )}
+                <div className="tr-spec-row">
+                  <dt>{t('tourn.players')}</dt>
+                  <dd className="tr-spec-val tr-spec-count" data-full={full || undefined}>
+                    {tr.count}
+                    {tr.size > 0 && <span className="tr-count-sep">/{tr.size}</span>}
+                  </dd>
+                </div>
+              </dl>
               {/* Ana sayfadan Katil/Iptal (yalniz kayit acik turnuvada). Satir tiklamasini yutar. */}
               {tr.status === 'open' && (
                 <button
@@ -1064,7 +1055,6 @@ export function TournamentsPanel({
                         : t('tourn.full')}
                 </button>
               )}
-              <Icon name="arrow-right" size={16} className="tr-go" />
             </div>
           )
         })}

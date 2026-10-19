@@ -13165,66 +13165,93 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--accent);
 }
 
-/* === Online Turnuvalar (dar yan panel) — Swiss dikey yeniden tasarım ===
-   Yatay (içerik|sayaç|KATIL) dar genişlikte sıkışıyordu. Yeni düzen: içerik
-   üstte tam genişlik, altta TEK footer satırı [katılımcı ····· KATIL →].
-   Swiss: pill/gradient/ağır font YOK — düz etiket, hairline ayraç, keskin köşe. */
+/* === Online Turnuvalar (dar yan panel) — Swiss etiket/değer tablosu ===
+   Dikey: başlık üstte, altında DURUM/BAŞLIYOR/TARİH/ÖDÜL/KATILIMCI
+   "etiket | değer" satırları (hairline ayraç), en altta tam genişlik KATIL.
+   Pill/gradient/ağır font YOK — hiyerarşi tipografi+boşluk+hairline ile. */
 .swiss-panel.tourn-panel .tourn-row {
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  padding: 12px 16px;
-}
-.swiss-panel.tourn-panel .tr-main {
-  flex: 1 1 100%; /* başlık + meta tam satır */
-  gap: 6px;
+  display: block; /* dikey blok; iç tablo kendi grid'ini kurar */
+  padding: 14px 16px;
 }
 .swiss-panel.tourn-panel .tr-name {
-  font-size: 0.95rem;
+  display: block;
+  font-size: 0.98rem;
   font-weight: 500;
   line-height: 1.3;
+  margin-bottom: 10px;
 }
-/* Durum + geri sayım: düz Swiss etiket (pill yok), aralarında hairline. */
-.swiss-panel.tourn-panel .tr-status {
-  padding: 0;
-  border-radius: 0;
-  background: none !important;
+.swiss-panel.tourn-panel .tr-spec {
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+.swiss-panel.tourn-panel .tr-spec-row {
+  display: grid;
+  grid-template-columns: 7.5em 1fr; /* etiket | değer */
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+.swiss-panel.tourn-panel .tr-spec-row dt {
+  font-size: 0.64rem;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
-.swiss-panel.tourn-panel .tr-status-open { color: var(--tv-green, #3f9e6a); }
-.swiss-panel.tourn-panel .tr-status-running { color: var(--accent-text); }
-.swiss-panel.tourn-panel .tr-status-finished { color: var(--muted); }
-.swiss-panel.tourn-panel .tr-cd-wrap {
-  padding-left: 10px;
-  border-left: 1px solid var(--border);
+.swiss-panel.tourn-panel .tr-spec-val {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
 }
+.swiss-panel.tourn-panel .tr-spec-muted {
+  color: var(--muted);
+  font-weight: 400;
+}
+/* Durum rengi — düz metin (pill yok) */
+.swiss-panel.tourn-panel .tr-spec-val.tr-status-open { color: var(--tv-green, #3f9e6a); }
+.swiss-panel.tourn-panel .tr-spec-val.tr-status-running { color: var(--accent-text); }
+.swiss-panel.tourn-panel .tr-spec-val.tr-status-finished { color: var(--muted); }
+/* Geri sayım — düz accent metin (pill/çerçeve yok) */
 .swiss-panel.tourn-panel .tr-cd {
   padding: 0;
   border: 0;
   border-radius: 0;
   background: none;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--accent-text);
 }
 .swiss-panel.tourn-panel .tr-cd.starting { background: none; border: 0; color: var(--color-success); }
-/* Footer satırı: katılımcı (sol, büyüyüp butonu sağa iter) + KATIL (sağ). */
-.swiss-panel.tourn-panel .tr-side {
-  flex: 1 1 auto;
-  flex-flow: row wrap;
-  align-items: baseline;
+/* Ödül — ortada nokta ayraçlı değerler (pill/çizgi yok) */
+.swiss-panel.tourn-panel .tr-spec-prizes {
+  display: inline-flex;
+  flex-wrap: wrap;
   gap: 2px 6px;
-  min-width: 0;
 }
-.swiss-panel.tourn-panel .tr-count {
-  font-family: var(--tv-font-display);
-  font-weight: 500; /* Swiss: ağır (black) değil */
+.swiss-panel.tourn-panel .tr-spec-prizes .tr-prize-item + .tr-prize-item {
+  padding-left: 0;
+  border-left: 0;
 }
-.swiss-panel.tourn-panel .tr-count > b { font-size: 1.25rem; }
-.swiss-panel.tourn-panel .tr-bar { flex: 1 1 100%; margin-top: 4px; } /* doluluk alt tam genişlik */
+.swiss-panel.tourn-panel .tr-spec-prizes .tr-prize-item + .tr-prize-item::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--muted);
+}
+.swiss-panel.tourn-panel .tr-prize-more { color: var(--muted); }
+/* Katılımcı — tabular, dolu ise accent */
+.swiss-panel.tourn-panel .tr-spec-count[data-full] { color: var(--accent-text); }
+.swiss-panel.tourn-panel .tr-count-sep { color: var(--muted); font-weight: 400; }
+/* KATIL — tam genişlik blok, keskin köşe, uppercase, 500 */
 .swiss-panel.tourn-panel .tr-act {
-  margin-left: 0;
-  font-weight: 500; /* Swiss cap */
+  display: block;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 9px 14px;
+  text-align: center;
+  font-weight: 500;
 }
 
 /* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
