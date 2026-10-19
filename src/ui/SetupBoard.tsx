@@ -358,9 +358,8 @@ export default function SetupBoard({
               <rect x="3" width="0.7" height="8" fill="rgba(255,255,255,0.06)" />
             </pattern>
           )}
-          {/* Ic oyun alani KOSELERI YUVARLAK: haneler/bar bu yuvarlak dikdortgene klipli.
-              Aksi halde sivri hane tabanlari dis (yuvarlak) cerceve koselerine tasip
-              "kotu kose" veriyordu -> klip ile alan koseleri cerceveyle uyumlu yuvarlanir. */}
+          {/* Ic oyun alani KOSELERI KESKIN (dik): haneler/bar bu kare dikdortgene klipli
+              (icerik cerceve disina tasmaz). Gercek tavla gibi koseler yuvarlatilmaz. */}
           {surface === 'gradient' && (
             <linearGradient id={`${uid}-grad`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" stopColor="#fff" stopOpacity="0.16" />
@@ -395,13 +394,13 @@ export default function SetupBoard({
             </filter>
           )}
           <clipPath id="sb-field">
-            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="9" />
+            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} />
           </clipPath>
         </defs>
-        {/* Dis cerceve (rail) - INCE */}
-        <rect x="0" y="0" width={W} height={H} rx="14" fill={panel} />
+        {/* Dis cerceve (rail) - INCE, KESKIN KOSE */}
+        <rect x="0" y="0" width={W} height={H} fill={panel} />
         {/* Zemin agac damari (kullanicinin okla gosterdigi: haneler ARASI koyu zemin dokulu) */}
-        {wood && <rect x="0" y="0" width={W} height={H} rx="14" fill="url(#sb-wood)" />}
+        {wood && <rect x="0" y="0" width={W} height={H} fill="url(#sb-wood)" />}
         {/* Ic alan icerigi yuvarlak-kose alana klipli */}
         <g clipPath="url(#sb-field)">
           {/* Ic oyun alani: cerceveden AYRISIN diye hafif koyulastir (tema-bagimsiz overlay;
@@ -451,19 +450,18 @@ export default function SetupBoard({
               )
             })()}
         </g>
-        {/* Ic alan cercevesi: yuvarlak-kose ince cizgi -> alan/cerceve gecisi temiz */}
+        {/* Ic alan cercevesi: keskin-kose ince cizgi -> alan/cerceve gecisi temiz */}
         <rect
           x={PAD}
           y={PAD}
           width={W - 2 * PAD}
           height={H - 2 * PAD}
-          rx="9"
           fill="none"
           stroke="rgba(0,0,0,0.16)"
           strokeWidth="1"
         />
-        {/* Dis cerceve kenar cizgisi (0.5px iceri -> kirpilmaz), INCE kibar */}
-        <rect x="0.75" y="0.75" width={W - 1.5} height={H - 1.5} rx="13.5" fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="1.25" />
+        {/* Dis cerceve kenar cizgisi (0.5px iceri -> kirpilmaz), INCE kibar, KESKIN KOSE */}
+        <rect x="0.75" y="0.75" width={W - 1.5} height={H - 1.5} fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="1.25" />
         {discs}
         {/* İki zar da AYNI: gövde=cream, pip=checker. (Eskiden sağ zarın pip'i üçgen rengi
             'a' idi -> Siyah pul takasında koyu zar üstünde kırmızı pip okunmuyordu/uyumsuzdu.
