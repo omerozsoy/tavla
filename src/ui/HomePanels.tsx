@@ -984,76 +984,69 @@ export function TournamentsPanel({
                 }
               }}
             >
-              {/* Başlık */}
+              {/* Üst "masthead": durum işareti (sol) ↔ katılımcı (sağ) */}
+              <div className="tr-head">
+                <span className={`tr-status tr-status-${tr.status}`}>
+                  <span className="tr-dot" aria-hidden="true" />
+                  {t(`tourn.status.${tr.status}`)}
+                </span>
+                <span className="tr-players" data-full={full || undefined}>
+                  <b>{tr.count}</b>
+                  {tr.size > 0 && <span className="tr-count-sep">/{tr.size}</span>} {t('tourn.players')}
+                </span>
+              </div>
+              {/* Editöryal başlık */}
               <span className="tr-name">{tr.name}</span>
-              {/* Swiss etiket/değer tablosu (sol etiket uppercase muted | sağ değer, hairline ayraç) */}
-              <dl className="tr-spec">
-                <div className="tr-spec-row">
-                  <dt>{t('tourn.lblStatus')}</dt>
-                  <dd className={`tr-spec-val tr-status-${tr.status}`}>
-                    {t(`tourn.status.${tr.status}`)}
-                  </dd>
-                </div>
-                {tr.status === 'open' && tr.starts_at && (
-                  <div className="tr-spec-row">
-                    <dt>{t('tourn.startsIn')}</dt>
-                    <dd className="tr-spec-val">
-                      <Countdown target={tr.starts_at} className="tr-cd" />
-                    </dd>
-                  </div>
-                )}
-                {dateText && (
-                  <div className="tr-spec-row">
-                    <dt>{t('tourn.lblDate')}</dt>
-                    <dd className="tr-spec-val tr-spec-muted">{dateText}</dd>
-                  </div>
-                )}
-                {prizeList.length > 0 && (
-                  <div className="tr-spec-row">
-                    <dt>{t('tourn.lblPrize')}</dt>
-                    <dd className="tr-spec-val tr-spec-prizes" title={t('tourn.prizePool')}>
+              {/* Tarih + ödül kırılımı (tek kompakt satır) */}
+              {(dateText || prizeList.length > 0) && (
+                <div className="tr-meta">
+                  {dateText && <span className="tr-date">{dateText}</span>}
+                  {prizeList.length > 0 && (
+                    <span className="tr-prizes" title={t('tourn.prizePool')}>
+                      <Icon name="trophy" size={13} />
                       {prizeList.map((p, i) => (
                         <span key={i} className="tr-prize-item">
                           {p.coins.toLocaleString('tr-TR')}
                         </span>
                       ))}
                       {moreP > 0 && <span className="tr-prize-more">+{moreP}</span>}
-                    </dd>
-                  </div>
-                )}
-                <div className="tr-spec-row">
-                  <dt>{t('tourn.players')}</dt>
-                  <dd className="tr-spec-val tr-spec-count" data-full={full || undefined}>
-                    {tr.count}
-                    {tr.size > 0 && <span className="tr-count-sep">/{tr.size}</span>}
-                  </dd>
+                    </span>
+                  )}
                 </div>
-              </dl>
-              {/* Ana sayfadan Katil/Iptal (yalniz kayit acik turnuvada). Satir tiklamasini yutar. */}
+              )}
+              {/* Footer: geri sayım (hero, sol) + KATIL (sağ) — yalnız kayıt açıkken */}
               {tr.status === 'open' && (
-                <button
-                  type="button"
-                  className={`tr-act${tr.joined ? ' tr-act-leave' : ''}`}
-                  disabled={busy === tr.id || (!tr.joined && full)}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (!loggedIn) {
-                      onLogin?.()
-                    } else if (tr.joined) {
-                      act(tr.id, onLeave)
-                    } else {
-                      act(tr.id, onJoin)
-                    }
-                  }}
-                >
-                  {busy === tr.id
-                    ? '…'
-                    : tr.joined
-                      ? t('tourn.leave')
-                      : !full
-                        ? t('tourn.join')
-                        : t('tourn.full')}
-                </button>
+                <div className="tr-foot">
+                  {tr.starts_at && (
+                    <span className="tr-cd-wrap">
+                      <span className="tr-cd-lbl">{t('tourn.startsIn')}</span>
+                      <Countdown target={tr.starts_at} className="tr-cd" />
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className={`tr-act${tr.joined ? ' tr-act-leave' : ''}`}
+                    disabled={busy === tr.id || (!tr.joined && full)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (!loggedIn) {
+                        onLogin?.()
+                      } else if (tr.joined) {
+                        act(tr.id, onLeave)
+                      } else {
+                        act(tr.id, onJoin)
+                      }
+                    }}
+                  >
+                    {busy === tr.id
+                      ? '…'
+                      : tr.joined
+                        ? t('tourn.leave')
+                        : !full
+                          ? t('tourn.join')
+                          : t('tourn.full')}
+                  </button>
+                </div>
               )}
             </div>
           )

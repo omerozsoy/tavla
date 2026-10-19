@@ -13165,92 +13165,138 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--accent);
 }
 
-/* === Online Turnuvalar (dar yan panel) — Swiss etiket/değer tablosu ===
-   Dikey: başlık üstte, altında DURUM/BAŞLIYOR/TARİH/ÖDÜL/KATILIMCI
-   "etiket | değer" satırları (hairline ayraç), en altta tam genişlik KATIL.
-   Pill/gradient/ağır font YOK — hiyerarşi tipografi+boşluk+hairline ile. */
+/* === Online Turnuvalar (dar yan panel) — editöryal "turnuva masthead" ===
+   Kompakt kart: üstte durum işareti ↔ katılımcı (masthead), ortada editöryal
+   başlık + tek satır tarih/ödül, altta hairline üzerinde geri sayım (HERO) +
+   KATIL. Pill/gradient/ağır font YOK — tipografi, hairline ve tek accent vurgu. */
 .swiss-panel.tourn-panel .tourn-row {
-  display: block; /* dikey blok; iç tablo kendi grid'ini kurar */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 14px 16px;
 }
-.swiss-panel.tourn-panel .tr-name {
-  display: block;
-  font-size: 0.98rem;
-  font-weight: 500;
-  line-height: 1.3;
-  margin-bottom: 10px;
-}
-.swiss-panel.tourn-panel .tr-spec {
-  margin: 0;
-  border-top: 1px solid var(--border);
-}
-.swiss-panel.tourn-panel .tr-spec-row {
-  display: grid;
-  grid-template-columns: 7.5em 1fr; /* etiket | değer */
-  align-items: baseline;
+/* Üst masthead: durum (sol) ↔ katılımcı (sağ), ince uppercase */
+.swiss-panel.tourn-panel .tr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--border);
 }
-.swiss-panel.tourn-panel .tr-spec-row dt {
+.swiss-panel.tourn-panel .tr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border-radius: 0;
+  background: none !important;
   font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.swiss-panel.tourn-panel .tr-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.swiss-panel.tourn-panel .tr-status-open { color: var(--tv-green, #3f9e6a); }
+.swiss-panel.tourn-panel .tr-status-running { color: var(--accent-text); }
+.swiss-panel.tourn-panel .tr-status-finished { color: var(--muted); }
+.swiss-panel.tourn-panel .tr-players {
+  font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-}
-.swiss-panel.tourn-panel .tr-spec-val {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text);
   font-variant-numeric: tabular-nums;
-  min-width: 0;
+  white-space: nowrap;
 }
-.swiss-panel.tourn-panel .tr-spec-muted {
-  color: var(--muted);
-  font-weight: 400;
-}
-/* Durum rengi — düz metin (pill yok) */
-.swiss-panel.tourn-panel .tr-spec-val.tr-status-open { color: var(--tv-green, #3f9e6a); }
-.swiss-panel.tourn-panel .tr-spec-val.tr-status-running { color: var(--accent-text); }
-.swiss-panel.tourn-panel .tr-spec-val.tr-status-finished { color: var(--muted); }
-/* Geri sayım — düz accent metin (pill/çerçeve yok) */
-.swiss-panel.tourn-panel .tr-cd {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  font-size: 0.85rem;
+.swiss-panel.tourn-panel .tr-players b { color: var(--text); font-size: 0.82rem; font-weight: 500; }
+.swiss-panel.tourn-panel .tr-players[data-full] b { color: var(--accent-text); }
+.swiss-panel.tourn-panel .tr-count-sep { color: var(--muted); font-weight: 400; }
+/* Editöryal başlık */
+.swiss-panel.tourn-panel .tr-name {
+  font-size: 1.05rem;
   font-weight: 500;
-  color: var(--accent-text);
+  line-height: 1.25;
+  color: var(--text);
 }
-.swiss-panel.tourn-panel .tr-cd.starting { background: none; border: 0; color: var(--color-success); }
-/* Ödül — ortada nokta ayraçlı değerler (pill/çizgi yok) */
-.swiss-panel.tourn-panel .tr-spec-prizes {
+/* Tarih + ödül: tek kompakt satır, hairline ayraçla isimden ayrık */
+.swiss-panel.tourn-panel .tr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.swiss-panel.tourn-panel .tr-date { color: var(--muted); }
+.swiss-panel.tourn-panel .tr-prizes {
   display: inline-flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 2px 6px;
+  color: var(--text);
 }
-.swiss-panel.tourn-panel .tr-spec-prizes .tr-prize-item + .tr-prize-item {
+.swiss-panel.tourn-panel .tr-prizes > svg { color: #c99a2e; flex: none; } /* altın ton, düz */
+.swiss-panel.tourn-panel .tr-prizes .tr-prize-item + .tr-prize-item {
   padding-left: 0;
   border-left: 0;
 }
-.swiss-panel.tourn-panel .tr-spec-prizes .tr-prize-item + .tr-prize-item::before {
+.swiss-panel.tourn-panel .tr-prizes .tr-prize-item + .tr-prize-item::before {
   content: '·';
   margin-right: 6px;
   color: var(--muted);
 }
 .swiss-panel.tourn-panel .tr-prize-more { color: var(--muted); }
-/* Katılımcı — tabular, dolu ise accent */
-.swiss-panel.tourn-panel .tr-spec-count[data-full] { color: var(--accent-text); }
-.swiss-panel.tourn-panel .tr-count-sep { color: var(--muted); font-weight: 400; }
-/* KATIL — tam genişlik blok, keskin köşe, uppercase, 500 */
+/* Footer: geri sayım HERO (sol) + KATIL (sağ) */
+.swiss-panel.tourn-panel .tr-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.swiss-panel.tourn-panel .tr-cd-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1;
+  min-width: 0;
+}
+.swiss-panel.tourn-panel .tr-cd-lbl {
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.swiss-panel.tourn-panel .tr-cd {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--tv-font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+}
+.swiss-panel.tourn-panel .tr-cd.starting { background: none; border: 0; color: var(--color-success); }
+/* KATIL: keskin köşe, uppercase, 500; footer'da sağ altta hizalı */
 .swiss-panel.tourn-panel .tr-act {
-  display: block;
-  width: 100%;
-  margin: 12px 0 0;
-  padding: 9px 14px;
-  text-align: center;
+  flex: none;
+  margin: 0;
+  align-self: flex-end;
+  padding: 9px 18px;
   font-weight: 500;
 }
 
@@ -13964,6 +14010,7 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--tv-white);
   font-size: 0.78rem;
   font-weight: 400;
+  box-shadow: 0 0 0 1px rgb(28, 26, 23); /* standart (harf) avatar ince border — AvatarFrame ile ayni */
 }
 .lm-watch {
   color: var(--muted);
@@ -15356,6 +15403,7 @@ body:has(.spectate-view) .app.lobby {
   background: color-mix(in srgb, var(--accent, #a4432f) 55%, #000);
   color: #fff;
   font-size: 0.62rem;
+  box-shadow: 0 0 0 1px rgb(28, 26, 23); /* standart (harf) avatar ince border — AvatarFrame ile ayni */
 }
 .sp-viewer-name {
   overflow: hidden;
@@ -18051,6 +18099,7 @@ body:has(.spectate-view) .app.lobby {
   color: var(--tv-white);
   font-size: 0.8rem;
   font-weight: 400;
+  box-shadow: 0 0 0 1px rgb(28, 26, 23); /* standart (harf) avatar ince border — AvatarFrame ile ayni */
 }
 .lb-games,
 .lb-wl,
@@ -28866,6 +28915,7 @@ input:not([type='range']), select, textarea {
   font-weight: 400;
   color: var(--tv-white);
   background: linear-gradient(135deg, var(--tri-a, #8a5a44), var(--navy, #2e4372));
+  box-shadow: 0 0 0 1px rgb(28, 26, 23); /* standart (harf) avatar ince border — AvatarFrame ile ayni */
 }
 .club-crest.sm {
   width: 40px;
