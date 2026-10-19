@@ -60,7 +60,7 @@ class ServiceStatus extends Widget
                     // Altyapı.
                     $this->checkDatabase() + ['group' => 'Altyapı'],
                     $this->checkQueue() + ['group' => 'Altyapı'],
-                    $this->checkWarmWorker() + ['group' => 'Altyapı'],
+                    ...array_map(fn ($r) => $r + ['group' => 'Altyapı'], $this->warmRows()),
                     $this->checkScheduler() + ['group' => 'Altyapı'],
                     $this->checkDisk() + ['group' => 'Altyapı'],
                 ],
@@ -452,6 +452,63 @@ class ServiceStatus extends Widget
         return max(0, (int) trim((string) ($o[0] ?? '0')));
     }
 
+    /**
+     * Maç-içi ısıtma işçileri: tavla-warm-queue@N (DEDİKE 'warm' worker'ları) — gnubg havuzları gibi HER
+     * instance AYRI lamba + restart. systemctl'den enumerate edilir; exec yok/birim bulunamazsa tek-özet
+     * satıra (checkWarmWorker) düşer. 'warm' kuyruk derinliği ilk satırın detayında (yığın = ısıtma geride).
+     */
+    private function warmRows(): array
+    {
+        $units = $this->warmUnits(); // ['tavla-warm-queue@1' => true(active), ...] doğal sıralı
+        if ($units === []) {
+            return [$this->checkWarmWorker()]; // fallback: tek özet (süreç sayısı)
+        }
+        try {
+            $depth = (int) DB::table('jobs')->where('queue', 'warm')->count();
+            $oldest = $depth > 0 ? (int) DB::table('jobs')->where('queue', 'warm')->min('available_at') : 0;
+        } catch (\Throwable $e) {
+            $depth = 0;
+            $oldest = 0;
+        }
+        $age = $oldest ? (time() - $oldest) : 0;
+        $queueTxt = $depth === 0 ? 'kuyruk boş (ısıtma güncel)' : "{$depth} ısıtma işi bekliyor, en eski {$age}sn";
+        $rows = [];
+        $first = true;
+        foreach ($units as $unit => $active) {
+            $n = preg_match('/@(\d+)/', $unit, $m) ? $m[1] : '?';
+            $detail = $active ? 'çalışıyor' : 'DURMUŞ — yeniden başlat';
+            if ($first) {
+                $detail .= ' · '.$queueTxt;
+                $first = false;
+            }
+            $rows[] = $this->svc('warm-'.$n, 'Maç-içi Isıtma İşçisi #'.$n.' (warm)', true, $active, $detail, true);
+        }
+
+        return $rows;
+    }
+
+    /** tavla-warm-queue@N birimlerini systemctl'den oku -> ['birim'=>aktif mi]. exec yoksa []. */
+    private function warmUnits(): array
+    {
+        if (! function_exists('exec')) {
+            return [];
+        }
+        $o = [];
+        @exec("systemctl list-units 'tavla-warm-queue@*.service' --all --no-legend --plain 2>/dev/null", $o);
+        $out = [];
+        foreach ($o as $line) {
+            $parts = preg_split('/\s+/', trim((string) $line));
+            if (! is_array($parts) || ! str_contains((string) ($parts[0] ?? ''), 'tavla-warm-queue@')) {
+                continue;
+            }
+            $unit = preg_replace('/\.service$/', '', $parts[0]); // UNIT LOAD ACTIVE SUB ...
+            $out[$unit] = (($parts[2] ?? '') === 'active');
+        }
+        ksort($out, SORT_NATURAL);
+
+        return $out;
+    }
+
     /** Servis satırı: up=true yeşil, false kırmızı, null gri (boşta/yapılandırılmamış). */
     private function svc(string $key, string $name, bool $configured, ?bool $up, string $detail, bool $restart = false): array
     {
@@ -511,6 +568,8 @@ class ServiceStatus extends Widget
             }
         } elseif ($key === 'queue') {
             $unit = 'tavla-queue';
+        } elseif (str_starts_with($key, 'warm-')) {
+            $unit = 'tavla-warm-queue@'.((int) substr($key, strlen('warm-'))); // maç-içi ısıtma işçisi
         }
         if (! $unit) {
             Notification::make()->title('Bilinmeyen servis')->danger()->send();
