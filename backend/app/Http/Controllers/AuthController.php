@@ -581,7 +581,10 @@ class AuthController extends Controller
         // gnubg değeriyle DOLDURUR. Böylece panel/analiz asla bayat istemci tahminini göstermez
         // (bkz XU7E4: istemci 0.39 vs gnubg 65). Log yine saklanır -> gnubg analiz eder. Log YOKSA
         // (pvb-eski/log-kapalı) gnubg çalışamaz -> istemci değeri fallback kalır ('—' yerine).
-        if ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($data['log'])) {
+        // DİREKTİF 2026-10-20 "wildbg asla kullanma": log ŞARTI KALDIRILDI — authoritative modda istemci
+        // (wildbg) PR'ı HİÇBİR koşulda saklanmaz. gnubg log VEYA match_moves'tan hesaplar (MatchFinalize);
+        // ikisi de yoksa wildbg yerine '—' (dürüst). Böylece hiçbir liste/profil bayat wildbg göstermez.
+        if ((string) config('gnubg.pr_mode', 'off') === 'authoritative') {
             $selfPr = null;
             $prEquityLost = null;
             $prDecisions = null;
