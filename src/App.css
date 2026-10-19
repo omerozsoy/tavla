@@ -13138,6 +13138,41 @@ button.acct-row-logout:hover:not(:disabled) {
   pointer-events: none;
 }
 .swiss-panel.tourn-panel .tourn-row > * { position: relative; }
+/* Ana sayfadan Katil/Iptal butonu — Swiss dili: keskin kose, uppercase, accent dolgu.
+   Iptal = ters (outline). Satir acma tiklamasini yutar (stopPropagation JSX'te). */
+.swiss-panel.tourn-panel .tr-act {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: 10px;
+  padding: 7px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--tv-font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.swiss-panel.tourn-panel .tr-act:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+}
+.swiss-panel.tourn-panel .tr-act:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.swiss-panel.tourn-panel .tr-act-leave {
+  background: none;
+  color: var(--accent);
+}
+.swiss-panel.tourn-panel .tr-act-leave:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
 
 /* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
 .live-panel .live-row {

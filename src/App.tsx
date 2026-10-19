@@ -93,6 +93,8 @@ import {
   reportTournament,
   tournamentNoShow,
   listTournaments,
+  joinTournament,
+  leaveTournament,
   type Tournament,
   buyItem,
   selectFrame,
@@ -1842,7 +1844,7 @@ export default function App() {
   const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
   // "Oyun Arayanlar" para/bahis onayı: native window.confirm yerine uygulama-içi stilli modal
   // (markasız tarayıcı popup'ı yerine). msg = onay metni, run = onaylanınca çalışacak eşleşme.
-  const [seekerConfirm, setSeekerConfirm] = useState<{ msg: string; run: () => void } | null>(null)
+  const [seekerConfirm, setSeekerConfirm] = useState<{ msg: string; run: () => void; title?: string } | null>(null)
   // Hedefli davetle acilan bekleme odasinda rakip adi: doluysa Lobby bekleme ekrani "kod
   // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
   // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
@@ -2652,6 +2654,42 @@ export default function App() {
       cancelled = true
     }
   }, [home])
+
+  // Ana sayfa turnuva paneli: lobiye gitmeden Katil/Iptal. Ucretli katilimda stilli onay (coin
+  // disclosure, seekerConfirm) -> sessiz tahsil YOK; ucretsizde dogrudan. Hata (dolu/kapali/
+  // yetersiz coin/premium) sunucu mesajiyla toast'a dusser. Sonra liste yenilenir (joined+count).
+  const refreshLobbyTourns = () =>
+    listTournaments()
+      .then((ts) => setLobbyTourns(ts.filter((x) => x.status !== 'finished')))
+      .catch(() => {})
+  const joinTournFromHome = async (id: number) => {
+    const fee = lobbyTourns.find((x) => x.id === id)?.entry_fee ?? 0
+    const run = async () => {
+      try {
+        await joinTournament(id)
+        await refreshLobbyTourns()
+      } catch (e) {
+        notify.error(e instanceof ApiErr ? e.message : t('common.loadError'))
+      }
+    }
+    if (fee > 0) {
+      setSeekerConfirm({
+        title: t('tourn.joinTitle'),
+        msg: `${t('tourn.joinDesc')} ${fee.toLocaleString('tr-TR')} 🪙`,
+        run: () => void run(),
+      })
+    } else {
+      await run()
+    }
+  }
+  const leaveTournFromHome = async (id: number) => {
+    try {
+      await leaveTournament(id)
+      await refreshLobbyTourns()
+    } catch (e) {
+      notify.error(e instanceof ApiErr ? e.message : t('common.loadError'))
+    }
+  }
 
   const working = useMemo(() => applyPlayed(turnStart, played), [turnStart, played])
   const resultShowingRef = useRef(false)
@@ -10930,7 +10968,14 @@ export default function App() {
                 mobilde alt alta. Turnuva yoksa panel "aktif turnuva yok" notuyla YİNE görünür. */}
             <div className="rfr-wrap rfr-duo">
               <InviteFriendCard loggedIn={!!user} onLogin={() => setShowAuth(true)} />
-              <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
+              <TournamentsPanel
+                tourns={lobbyTourns}
+                onOpen={menuProps.onTournaments}
+                loggedIn={!!user}
+                onJoin={joinTournFromHome}
+                onLeave={leaveTournFromHome}
+                onLogin={() => setShowAuth(true)}
+              />
             </div>
             {/* Oyun Arayanlar: hızlı eşleşme havuzunda bekleyenler (reklam bannerının hemen altı) */}
             <SeekersPanel
@@ -10980,7 +11025,7 @@ export default function App() {
             {seekerConfirm && (
               <ConfirmModal
                 icon="coin"
-                title={t('seekers.title')}
+                title={seekerConfirm.title ?? t('seekers.title')}
                 message={seekerConfirm.msg}
                 onConfirm={() => {
                   const run = seekerConfirm.run

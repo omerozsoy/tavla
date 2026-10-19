@@ -917,11 +917,29 @@ export function RankingPanel({
 export function TournamentsPanel({
   tourns,
   onOpen,
+  loggedIn = false,
+  onJoin,
+  onLeave,
+  onLogin,
 }: {
   tourns: Tournament[]
   onOpen: () => void
+  loggedIn?: boolean
+  onJoin?: (id: number) => Promise<void> | void
+  onLeave?: (id: number) => Promise<void> | void
+  onLogin?: () => void
 }) {
   const { t, lang } = useT()
+  const [busy, setBusy] = useState<number | null>(null)
+  const act = async (id: number, fn?: (id: number) => Promise<void> | void) => {
+    if (!fn || busy) return
+    setBusy(id)
+    try {
+      await fn(id)
+    } finally {
+      setBusy(null)
+    }
+  }
   // Boş olsa bile kutuyu GÖSTER (owner isteği): başlık + "aktif turnuva yok" notu.
   return (
     <div className="home-panel tourn-panel swiss-panel">
@@ -959,7 +977,19 @@ export function TournamentsPanel({
               })
             : null
           return (
-            <button key={tr.id} className="tourn-row" onClick={onOpen}>
+            <div
+              key={tr.id}
+              className="tourn-row"
+              role="button"
+              tabIndex={0}
+              onClick={onOpen}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onOpen()
+                }
+              }}
+            >
               <span className="tr-main">
                 <span className="tr-name">{tr.name}</span>
                 <span className="tr-chips">
@@ -1009,8 +1039,34 @@ export function TournamentsPanel({
                   <span className="tr-bar-fill" style={{ width: `${pct}%` }} />
                 </span>
               </span>
+              {/* Ana sayfadan Katil/Iptal (yalniz kayit acik turnuvada). Satir tiklamasini yutar. */}
+              {tr.status === 'open' && (
+                <button
+                  type="button"
+                  className={`tr-act${tr.joined ? ' tr-act-leave' : ''}`}
+                  disabled={busy === tr.id || (!tr.joined && full)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!loggedIn) {
+                      onLogin?.()
+                    } else if (tr.joined) {
+                      act(tr.id, onLeave)
+                    } else {
+                      act(tr.id, onJoin)
+                    }
+                  }}
+                >
+                  {busy === tr.id
+                    ? '…'
+                    : tr.joined
+                      ? t('tourn.leave')
+                      : !full
+                        ? t('tourn.join')
+                        : t('tourn.full')}
+                </button>
+              )}
               <Icon name="arrow-right" size={16} className="tr-go" />
-            </button>
+            </div>
           )
         })}
       </div>

@@ -1372,6 +1372,8 @@ export interface Tournament {
   size: number
   status: 'open' | 'running' | 'finished'
   count: number
+  /** Giris yapan uye bu turnuvaya kayitli mi (ana sayfa Katil/Iptal butonu). Ozet uctan gelir. */
+  joined?: boolean
   prize_coins?: number
   prize_desc?: string | null
   /** Siralamaya gore odul tablosu: index 0 = 1.lik. Turnuva bitince otomatik odenir. */

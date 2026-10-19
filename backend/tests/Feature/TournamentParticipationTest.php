@@ -53,6 +53,29 @@ class TournamentParticipationTest extends TestCase
         return [$t, $users];
     }
 
+    // ---- index 'joined' bayragi (ana sayfa Katil/Iptal butonu) -------------
+
+    public function test_index_marks_joined_for_authenticated_member(): void
+    {
+        [$t, $users] = $this->swiss(2); // part1_1, part1_2 kayitli
+        $member = $users[0];
+        $outsider = $this->user('outsiderX');
+
+        $rowFor = fn () => collect($this->getJson('/api/tournaments')->json('tournaments'))
+            ->firstWhere('id', $t->id);
+
+        // Misafir (auth yok) -> joined=false
+        $this->assertFalse($rowFor()['joined']);
+
+        // Kayitli uye -> joined=true
+        Sanctum::actingAs($member);
+        $this->assertTrue($rowFor()['joined']);
+
+        // Kayitli olmayan uye -> joined=false
+        Sanctum::actingAs($outsider);
+        $this->assertFalse($rowFor()['joined']);
+    }
+
     // ---- disqualify (admin) ------------------------------------------------
 
     public function test_disqualify_requires_admin(): void

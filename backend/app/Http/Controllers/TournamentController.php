@@ -11,10 +11,13 @@ use Illuminate\Support\Facades\DB;
 class TournamentController extends Controller
 {
     // Acik + devam eden turnuvalar
-    public function index()
+    public function index(Request $request)
     {
         \App\Console\Commands\TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
         $this->autoStartDue(); // son katilim tarihi gelenleri baslat
+        // Acik route (auth middleware yok) -> sanctum bearer'ini ELLE coz: giris yapan uye icin
+        // ozet satirina 'joined' bayragi koy ki ana sayfadan Katil/Iptal dogru butonu gostersin.
+        $meId = optional($request->user('sanctum'))->id;
         // Aktif (open/running) + BİTEN (finished) turnuvalar; biten GİZLENMEZ, frontend'de
         // "Geçmiş" başlığı altında gösterilir. Aktifler önce, biten sonra (her biri yeni->eski).
         $list = Tournament::whereIn('status', ['open', 'running', 'finished'])
@@ -24,7 +27,7 @@ class TournamentController extends Controller
             ->orderByDesc('created_at')
             ->limit(60)
             ->get()
-            ->map(fn ($t) => $this->summary($t));
+            ->map(fn ($t) => $this->summary($t, $meId));
         return response()->json(['tournaments' => $list]);
     }
 
@@ -1480,11 +1483,13 @@ class TournamentController extends Controller
         return 'tourn_room_clock:'.strtoupper($code);
     }
 
-    private function summary(Tournament $t): array
+    private function summary(Tournament $t, ?int $meId = null): array
     {
         return [
             'id' => $t->id,
             'name' => $t->name,
+            // Giris yapan uye bu turnuvaya kayitli mi? (ana sayfa Katil/Iptal butonu). Misafir -> false.
+            'joined' => $meId ? $this->isRegistered($t, $meId) : false,
             'type' => $t->type ?? 'bracket', // 'bracket' | 'swiss_triple'
             'venue' => $t->venue,
             'organizer' => $t->organizer ? [
