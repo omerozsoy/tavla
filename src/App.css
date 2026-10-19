@@ -13165,6 +13165,68 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--accent);
 }
 
+/* === Online Turnuvalar (dar yan panel) — Swiss dikey yeniden tasarım ===
+   Yatay (içerik|sayaç|KATIL) dar genişlikte sıkışıyordu. Yeni düzen: içerik
+   üstte tam genişlik, altta TEK footer satırı [katılımcı ····· KATIL →].
+   Swiss: pill/gradient/ağır font YOK — düz etiket, hairline ayraç, keskin köşe. */
+.swiss-panel.tourn-panel .tourn-row {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px 16px;
+}
+.swiss-panel.tourn-panel .tr-main {
+  flex: 1 1 100%; /* başlık + meta tam satır */
+  gap: 6px;
+}
+.swiss-panel.tourn-panel .tr-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+/* Durum + geri sayım: düz Swiss etiket (pill yok), aralarında hairline. */
+.swiss-panel.tourn-panel .tr-status {
+  padding: 0;
+  border-radius: 0;
+  background: none !important;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+.swiss-panel.tourn-panel .tr-status-open { color: var(--tv-green, #3f9e6a); }
+.swiss-panel.tourn-panel .tr-status-running { color: var(--accent-text); }
+.swiss-panel.tourn-panel .tr-status-finished { color: var(--muted); }
+.swiss-panel.tourn-panel .tr-cd-wrap {
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+.swiss-panel.tourn-panel .tr-cd {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-weight: 500;
+  color: var(--accent-text);
+}
+.swiss-panel.tourn-panel .tr-cd.starting { background: none; border: 0; color: var(--color-success); }
+/* Footer satırı: katılımcı (sol, büyüyüp butonu sağa iter) + KATIL (sağ). */
+.swiss-panel.tourn-panel .tr-side {
+  flex: 1 1 auto;
+  flex-flow: row wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  min-width: 0;
+}
+.swiss-panel.tourn-panel .tr-count {
+  font-family: var(--tv-font-display);
+  font-weight: 500; /* Swiss: ağır (black) değil */
+}
+.swiss-panel.tourn-panel .tr-count > b { font-size: 1.25rem; }
+.swiss-panel.tourn-panel .tr-bar { flex: 1 1 100%; margin-top: 4px; } /* doluluk alt tam genişlik */
+.swiss-panel.tourn-panel .tr-act {
+  margin-left: 0;
+  font-weight: 500; /* Swiss cap */
+}
+
 /* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
 .live-panel .live-row {
   position: relative;
