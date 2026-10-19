@@ -10994,14 +10994,15 @@ export default function App() {
             <AdStrip slot="middle" />
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
-              {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
+              {/* SOL: Online Turnuvalar (ust) + Haberler + Turnuva Takvimi (alt). SAG: Liderlik.
+                  Haberler Takvim'in HEMEN ÜSTÜNDE (kullanıcı isteği) -> hem masaüstü hem mobilde. */}
               <div className="home-cal-main">
                 <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
+                <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
                 <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} title={menuLabel('calendar') ?? t('menu.calendar')} />
               </div>
-              {/* SAG kolon: Haberler (ust) + Liderlik Tablosu (Takvim'in yanina) */}
+              {/* SAG kolon: Liderlik Tablosu */}
               <div className="home-cal-side">
-                <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
                 <RankingPanel
                   currentName={profile.nickname}
                   onProfile={(id) => setHomeProfileId(id)}
