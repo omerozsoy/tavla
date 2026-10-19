@@ -984,6 +984,13 @@ export function TournamentsPanel({
                 }
               }}
             >
+              {/* HERO: canlı geri sayım EN ÜSTTE — tek baskın tipografik eleman (yalnız kayıt açık) */}
+              {tr.status === 'open' && tr.starts_at && (
+                <div className="tr-clock">
+                  <span className="tr-clock-lbl">{t('tourn.startsIn')}</span>
+                  <Countdown target={tr.starts_at} className="tr-cd" />
+                </div>
+              )}
               {/* Durum işareti (flush-left kicker) */}
               <span className={`tr-status tr-status-${tr.status}`}>
                 <span className="tr-dot" aria-hidden="true" />
@@ -991,13 +998,6 @@ export function TournamentsPanel({
               </span>
               {/* Editöryal başlık */}
               <span className="tr-name">{tr.name}</span>
-              {/* HERO: canlı geri sayım — tek baskın tipografik eleman (yalnız kayıt açık) */}
-              {tr.status === 'open' && tr.starts_at && (
-                <div className="tr-clock">
-                  <span className="tr-clock-lbl">{t('tourn.startsIn')}</span>
-                  <Countdown target={tr.starts_at} className="tr-cd" />
-                </div>
-              )}
               {/* Sessiz veri şeridi: tarih · katılımcı (hairline ayraç) */}
               <div className="tr-stats">
                 {dateText && <span className="tr-stat tr-date">{dateText}</span>}

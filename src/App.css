@@ -13206,12 +13206,12 @@ button.acct-row-logout:hover:not(:disabled) {
   line-height: 1.25;
   color: var(--text);
 }
-/* HERO: geri sayım — büyük tipografi, tek accent odak (saat ikonu gizli) */
+/* HERO: geri sayım EN ÜSTTE — büyük tipografi, tek accent odak (saat ikonu gizli) */
 .swiss-panel.tourn-panel .tr-clock {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  margin: 2px 0 4px;
+  margin: 0 0 2px;
 }
 .swiss-panel.tourn-panel .tr-clock-lbl {
   font-size: 0.56rem;
@@ -13226,7 +13226,7 @@ button.acct-row-logout:hover:not(:disabled) {
   border-radius: 0;
   background: none;
   font-family: var(--tv-font-display);
-  font-size: 1.9rem;
+  font-size: 2.4rem;
   font-weight: 500;
   line-height: 0.95;
   letter-spacing: 0.01em;
