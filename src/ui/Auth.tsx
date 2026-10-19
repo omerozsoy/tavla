@@ -196,7 +196,12 @@ export default function Auth({
     nativeGoogleSignIn(api.GOOGLE_CLIENT_ID)
       .then((idToken) => api.googleLogin(idToken))
       .then(({ user, isNew }) => onAuthedRef.current(user, isNew))
-      .catch(() => setError(t('auth.googleFail')))
+      .catch((e: unknown) => {
+        // Native hatayi GOSTER (DEVELOPER_ERROR/kod vb.) -> tanimak icin. Web'i etkilemez (GIS ayri).
+        const detail = (e as { message?: string; code?: string | number })?.message
+          || String((e as { code?: string | number })?.code ?? e ?? '')
+        setError(t('auth.googleFail') + (detail ? ' [' + detail.slice(0, 140) + ']' : ''))
+      })
       .finally(() => setBusy(false))
   }
 
