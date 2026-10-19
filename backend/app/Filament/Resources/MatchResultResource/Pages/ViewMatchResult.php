@@ -54,6 +54,14 @@ class ViewMatchResult extends ViewRecord
 
         $stake = (int) ($r->stake ?? ($r->room?->stake ?? 0));
 
+        // Rakibin PUAN DEĞİŞİMİ (1556 → 1571 (+15)) bu satırda YOK (yalnız opponent_rating=maç öncesi);
+        // aynalı satırdan (aynı oda, rakip user_id) rating_after/delta'yı çek. Tek admin görünümü -> ucuz.
+        $oppRow = $r->opponent_user_id
+            ? MatchResult::where('room_code', $r->room_code)
+                ->where('user_id', $r->opponent_user_id)
+                ->first()
+            : null;
+
         return [
             'id' => $r->id,
             'type_label' => MatchResultResource::matchTypeLabel($r->match_type, $r->match_length),
@@ -80,8 +88,13 @@ class ViewMatchResult extends ViewRecord
             ],
             'opp' => [
                 'name' => $r->opponent_name ?: '—',
-                'pr' => $r->opponent_pr,
-                'rating' => $r->opponent_rating,
+                'pr' => $r->gnubg_opponent_pr ?? $r->opponent_pr, // gnubg (yetkili) -> yoksa istemci
+                'checker_pr' => $r->gnubg_opponent_checker_pr,    // rakip Pul PR (gnubg)
+                'cube_pr' => $r->gnubg_opponent_cube_pr,          // rakip Küp PR (gnubg; yoksa null)
+                'luck' => $r->opponent_luck_emg,                  // rakip gnubg şans (equity)
+                'rating' => $r->opponent_rating,                  // maç öncesi (bu satırda olan)
+                'rating_after' => $oppRow?->rating_after,         // aynalı satırdan (maç sonrası)
+                'delta' => (int) ($oppRow?->delta ?? 0),
             ],
         ];
     }

@@ -84,10 +84,39 @@
                     <dt class="text-gray-500 dark:text-gray-400">PR</dt>
                     <dd class="font-semibold text-gray-900 dark:text-white">{{ $d['is_ai'] ? '—' : $pr($d['opp']['pr']) }}</dd>
                 </div>
+                {{-- Rakip Pul (checker) PR + Küp (cube) PR (gnubg). AI/değer yoksa gizli. --}}
+                @if (!$d['is_ai'] && $d['opp']['checker_pr'] !== null)
+                    <div class="flex justify-between gap-2 pl-3 text-xs">
+                        <dt class="text-gray-400 dark:text-gray-500">Pul PR</dt>
+                        <dd class="font-medium text-gray-600 dark:text-gray-300">{{ $pr($d['opp']['checker_pr']) }}</dd>
+                    </div>
+                @endif
+                @if (!$d['is_ai'] && $d['opp']['cube_pr'] !== null)
+                    <div class="flex justify-between gap-2 pl-3 text-xs">
+                        <dt class="text-gray-400 dark:text-gray-500">Küp PR</dt>
+                        <dd class="font-medium text-gray-600 dark:text-gray-300">{{ $pr($d['opp']['cube_pr']) }}</dd>
+                    </div>
+                @endif
                 <div class="flex justify-between gap-2">
                     <dt class="text-gray-500 dark:text-gray-400">Puan</dt>
-                    <dd class="font-medium text-gray-700 dark:text-gray-200">{{ $d['opp']['rating'] ?? '—' }}</dd>
+                    <dd class="font-medium text-gray-700 dark:text-gray-200">
+                        {{ $d['opp']['rating'] ?? '—' }}
+                        @if ($d['opp']['rating_after'] !== null)
+                            → {{ $d['opp']['rating_after'] }}
+                            @if ($d['opp']['delta'] != 0)
+                                <span class="{{ $d['opp']['delta'] > 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">
+                                    ({{ sprintf('%+d', $d['opp']['delta']) }})
+                                </span>
+                            @endif
+                        @endif
+                    </dd>
                 </div>
+                @if (!$d['is_ai'] && $d['opp']['luck'] !== null)
+                    <div class="flex justify-between gap-2">
+                        <dt class="text-gray-500 dark:text-gray-400">Şans</dt>
+                        <dd class="font-medium text-gray-700 dark:text-gray-200">{{ $pr($d['opp']['luck']) }}</dd>
+                    </div>
+                @endif
             </dl>
         </div>
     </div>

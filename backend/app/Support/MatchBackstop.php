@@ -72,7 +72,38 @@ class MatchBackstop
             }
         }
 
+        self::backfillScores($room);
+
         return $written;
+    }
+
+    /**
+     * SKOR GERİ-DOLDURMA: authoritative oda sonucu (server_match) satır YAZILDIKTAN sonra finalize
+     * olduysa (yarış: satır server_match.done'dan ÖNCE yazıldı -> RoomResult o an null döndü -> skor
+     * NULL kaldı, örn 3'lük maçta terk edince "skor —" görünüyordu) skoru şimdi tamamlar. YALNIZ
+     * score_self/score_opp doldurur -> rating/coins/won/delta'ya ASLA dokunmaz (düşük risk, idempotent;
+     * whereNull sayesinde zaten dolu skoru EZMEZ). Terk'te kazanan server_match'te hedefe tamamlı (2-3).
+     */
+    private static function backfillScores(Room $room): void
+    {
+        if (! Schema::hasColumn('match_results', 'score_self')) {
+            return;
+        }
+        foreach (['p1', 'p2'] as $slot) {
+            $uid = (int) ($room->{$slot.'_user_id'} ?? 0);
+            if ($uid <= 0) {
+                continue;
+            }
+            $res = RoomResult::resolve($room, $uid);
+            if ($res === null || ($res['self'] === null && $res['opp'] === null)) {
+                continue; // sonuç/skor KESİN değil -> dokunma
+            }
+            MatchResult::where('room_code', $room->code)
+                ->where('user_id', $uid)
+                ->whereNull('score_self')
+                ->whereNull('score_opp')
+                ->update(['score_self' => $res['self'], 'score_opp' => $res['opp']]);
+        }
     }
 
     /**
