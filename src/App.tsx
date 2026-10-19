@@ -9246,8 +9246,15 @@ export default function App() {
     closeAllPages()
     // LOBI baglamina gec: sayfa home dalinda (sol menu + logo ile) acilsin. Aksi halde
     // bayat mode==='online'/bitmis oyun kaldiysa sayfa game-view'da (sidebar'siz, yuzen
-    // hamburger ile) aciliyordu. Aktif oyun yoksa online oda/state'i de temizle.
-    if (!hasActiveGame) {
+    // hamburger ile) aciliyordu. Aktif oyun yoksa online oda/state'i de temizle -- AMA
+    // rakip beklerken (havuz/hedefli davet/rovans) oda'yi KORU: aksi halde Liderlik/Mesaj
+    // gibi sayfaya gecip donunce "Rakip Bekleniyor" kartim silinirdi + poll durup rakip
+    // kabul edince oyuna otomatik giremezdim. (mySeek ile birebir ayni 3 bekleme durumu.)
+    const waitingForOpponent =
+      room?.status === 'mm_waiting' ||
+      (room?.status === 'waiting' && !!inviteWaitName) ||
+      (rematch.mine === 'yes' && !rematch.code)
+    if (!hasActiveGame && !waitingForOpponent) {
       setMode('pvb')
       setRoom(null)
     }
