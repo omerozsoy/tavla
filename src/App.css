@@ -25125,7 +25125,11 @@ h1, h2, h3, h4, h5, h6, strong, b,
 }
 /* 3) DEKORATİF GRADYAN / GLOW / GÖLGE KALDIR -> düz, tek aksan. */
 .sf-glow, .sf-lux-halo, .sf-orb, .sf-sweep { display: none !important; }
-.sf-ring, .sf-lux-ring, .avf-simple { background-image: none !important; box-shadow: none !important; }
+.sf-ring, .sf-lux-ring { background-image: none !important; box-shadow: none !important; }
+/* Sade (harf) placeholder avatar: Swiss reset gradyani siliyordu -> harf koyu zemin olmayinca
+   beyazda kayboluyordu. Gradyani DUZ koyu zemine cevir (Swiss) ama box-shadow'u KILLLEME ki
+   AvatarFrame'in inline ince border'i (yalniz src yoksa) gorunsun. Resimli avatarda img kaplar. */
+.avf-simple { background-image: none !important; background-color: #22304d !important; }
 .rank-medal, .rank-medal-1, .rank-medal-2, .rank-medal-3 { background-image: none !important; }
 .lb-row.top { background-image: none !important; }
 .tgx-hero { background-image: none !important; }
