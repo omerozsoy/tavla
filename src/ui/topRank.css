@@ -65,14 +65,14 @@
 .tts-col {
   min-width: 0;
 }
-/* Kolonlar arası ince dikey ayraç (yalnız iki kolon varken; tek kolonda ayraç çıkmaz). */
+/* Kolonlar arası boşluk (dikey ayraç YOK — kullanıcı istedi). */
 @media (min-width: 561px) {
-  .tts-col:first-child {
-    padding-right: clamp(16px, 3vw, 32px);
-  }
   .tts-col + .tts-col {
-    border-left: 1px solid var(--border);
     padding-left: clamp(16px, 3vw, 32px);
+  }
+  .tts-col:first-child,
+  .tts-col:not(:last-child) {
+    padding-right: clamp(16px, 3vw, 32px);
   }
 }
 .tts-col-head {

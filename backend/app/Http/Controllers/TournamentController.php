@@ -1521,24 +1521,30 @@ class TournamentController extends Controller
         ];
     }
 
-    /** Biten turnuvanin sampiyon kimligi (ozet liste icin). players snapshot'tan, yoksa User'dan. */
+    /** Biten turnuvanin sampiyon kimligi (ozet liste icin). GUNCEL User (avatar canli), ad
+     *  silinmis kullanicida snapshot'tan yedeklenir. (En fazla 3 bitmis turnuva gosterilir.) */
     private function championSummary(Tournament $t): ?array
     {
         if (! $t->champion_id) {
             return null;
         }
+        $snap = null;
         foreach ($t->players ?? [] as $p) {
             if ($p && (int) ($p['id'] ?? 0) === (int) $t->champion_id) {
-                return [
-                    'id' => (int) $t->champion_id,
-                    'name' => $p['name'] ?? '',
-                    'avatar' => $p['avatar'] ?? null,
-                    'premium' => (bool) ($p['premium'] ?? false),
-                ];
+                $snap = $p;
+                break;
             }
         }
         $u = \App\Models\User::find($t->champion_id);
-        return $u ? ['id' => $u->id, 'name' => $u->name, 'avatar' => $u->avatar, 'premium' => $u->plan_active === 'premium'] : null;
+        if (! $u && ! $snap) {
+            return null;
+        }
+        return [
+            'id' => (int) $t->champion_id,
+            'name' => $u->name ?? $snap['name'] ?? '',
+            'avatar' => $u->avatar ?? $snap['avatar'] ?? null,
+            'premium' => $u ? $u->plan_active === 'premium' : (bool) ($snap['premium'] ?? false),
+        ];
     }
 
     private function full(Tournament $t): array
