@@ -17,6 +17,7 @@ export default function PlayerIdentity({
   name,
   userId,
   rating,
+  subtitle,
   avatar,
   frame,
   country,
@@ -36,6 +37,8 @@ export default function PlayerIdentity({
   /** Oyuncu id — verilirse isim yanında site geneli top-3 rozeti (PR madalya / Rating kupa). */
   userId?: number | null
   rating?: number | null
+  /** İsim ALTINDA küçük muted metin (rütbe yerine; örn. turnuva adı). rating ile birlikte kullanılmaz. */
+  subtitle?: string | null
   avatar?: string | null
   frame?: string | null
   country?: string | null
@@ -108,6 +111,22 @@ export default function PlayerIdentity({
         {rating != null && (
           <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}>
             <DivisionChip rating={rating} size={rankSize} />
+          </span>
+        )}
+        {/* Serbest altbaşlık (örn. turnuva adı): isim altında küçük muted, kırpılır. */}
+        {subtitle && (
+          <span
+            style={{
+              fontSize: 11,
+              lineHeight: 1.2,
+              color: 'var(--muted)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: 150,
+            }}
+          >
+            {subtitle}
           </span>
         )}
       </span>

@@ -22,6 +22,8 @@ interface RowData {
   frame?: string | null
   premium?: boolean
   value: string
+  /** İsim altında küçük metin (turnuva adı). Varsa sağdaki değer yerine bu gösterilir. */
+  sub?: string
 }
 
 export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number) => void }) {
@@ -50,7 +52,8 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
             name: tr.champion!.name || '—',
             avatar: tr.champion!.avatar,
             premium: tr.champion!.premium,
-            value: tr.name,
+            value: '',
+            sub: tr.name,
           }))
         setChamps(rows)
       })
@@ -105,10 +108,11 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
                 size={30}
                 rankSize="md"
                 premium={r.premium}
+                subtitle={r.sub}
                 animated
               />
             </span>
-            <span className="rank-val">{r.value}</span>
+            {r.value && <span className="rank-val">{r.value}</span>}
           </button>
         ))}
       </div>
