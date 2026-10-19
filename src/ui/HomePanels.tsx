@@ -929,6 +929,10 @@ export function TournamentsPanel({
         <Icon name="medal" size={18} /> {t('menu.tournaments')}
         {tourns.length > 0 && <span className="panel-count">{tourns.length}</span>}
       </button>
+      {/* Baslik altinda minik turnuva ismi (owner istegi) — birden fazlaysa " · " ile, CSS ellipsize */}
+      {tourns.length > 0 && (
+        <div className="tourn-subname">{tourns.map((tr) => tr.name).join(' · ')}</div>
+      )}
       {tourns.length === 0 && <div className="tourn-empty">{t('tourn.empty')}</div>}
       <div className="tourn-list">
         {tourns.map((tr) => {

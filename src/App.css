@@ -13111,6 +13111,15 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   font-size: 13px;
 }
+/* Baslik altindaki minik turnuva ismi — tek satir, tasarsa ... */
+.tourn-subname {
+  margin: 2px 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .swiss-panel.tourn-panel .tourn-row {
   position: relative;
   border: 0;
