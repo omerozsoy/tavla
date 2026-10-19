@@ -3237,15 +3237,18 @@ class RoomController extends Controller
         }
 
         // #4 "düdükte hazır": gerçek bir hamle kaydedildiyse, o ana kadarki kararları ARKA PLANDA
-        // gnubg önbelleğine ısıt (bulk şeridi). Maç bitince PR job aynı pozisyonları ister -> cache
-        // hit -> PR ~anında. Yalnız PR otoriterken (prod); best-effort (dispatch patlarsa oyun akışı
-        // bozulmaz). WithoutOverlapping hamle-başına yığılmayı önler.
+        // gnubg önbelleğine ısıt ('warm' şeridi — DEDİKE worker, backfill starve ETMEZ). Maç bitince PR
+        // job aynı pozisyonları ister -> cache hit -> PR ~anında. Yalnız PR otoriterken (prod); best-effort
+        // (dispatch patlarsa oyun akışı bozulmaz). WithoutOverlapping hamle-başına yığılmayı önler.
+        // ÖNEMLİ: 'bulk' DEĞİL 'warm' -> backfill worker'ları --queue=reviews-bulk,bulk ile warm'i KATI
+        // ÖNCELİKLE arkaya atıyordu (backfill açıkken warm kuyrukta beklerdi). Dedike tavla-warm-queue@
+        // worker'ı yalnız 'warm' işler -> canlı ısıtma backfill'den bağımsız. (gnubg havuzu da ayrı: A fix.)
         // ponytail: hamle başına 1 dispatch (çoğu lock alamayıp düşer); churn sorun olursa seq%N ile seyreklet.
         if (($fields['kind'] ?? null) === 'move'
             && (string) config('gnubg.pr_mode', 'off') === 'authoritative'
             && (bool) config('gnubg.analysis_cache', true)) {
             try {
-                \App\Jobs\WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('bulk');
+                \App\Jobs\WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('warm');
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::debug('warm dispatch hata (bastırıldı)', ['room' => $room->code, 'err' => $e->getMessage()]);
             }

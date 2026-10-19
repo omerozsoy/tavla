@@ -1,0 +1,28 @@
+[Unit]
+Description=Tavla warm worker %i (gnubg maç-içi ısıtma — DEDİKE 'warm' kuyruğu, backfill starve ETMEZ)
+After=network.target mariadb.service mysqld.service
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı olmalı (tavla-queue.service ile AYNI kullanıcı).
+#   stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
+# ve CHANGE_ME_VHOST_USER yerine yaz.
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
+# YALNIZ 'warm' kuyruğu: WarmMatchAnalysisJob (maç-içi gnubg cache ısıtma, RoomController her hamle).
+#
+# KÖK SEBEP (2026-10-19): warm eskiden 'bulk'taydı; backfill worker'ları --queue=reviews-bulk,bulk ile
+# KATI ÖNCELİK uyguluyor -> backfill (reviews-bulk) boşalmadan 'bulk'a (warm) geçmiyordu. Backfill
+# açıkken canlı ısıtma kuyrukta bekliyor -> maç bitince cache MISS -> PR dakikalarca. Çözüm: warm'i
+# AYRI kuyruk + DEDİKE worker'a al -> backfill'den bağımsız, ANINDA işlenir. (gnubg havuzu da ayrı:
+# GNUBG_ANALYSIS_URLS=8108-8113 canlı, GNUBG_HEAVY_URLS=8114-8119 backfill — .env A fix.)
+#
+# %i ile N kopya: systemctl enable --now tavla-warm-queue@{1,2}. 2 kopya yeter (warm hafif + per-oda
+# WithoutOverlapping tek iş). sleep=1 düşük gecikme; tries=1 best-effort (maç-sonu job backstop);
+# --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=warm --sleep=1 --tries=1 --timeout=300 --max-time=3600 --max-jobs=500
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
