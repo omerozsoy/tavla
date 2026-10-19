@@ -47,7 +47,8 @@ export default function AvatarFrame({
     fontWeight: 700,
     fontSize: Math.round(size * 0.4),
     lineHeight: 1,
-    ...(ring ? { boxShadow: `0 0 0 2px ${ring}` } : {}),
+    // Cercevesiz: avatar resmi yoksa (harf placeholder) ince standart cerceve (kullanici istegi).
+    ...(ring ? { boxShadow: `0 0 0 2px ${ring}` } : !src ? { boxShadow: '0 0 0 1px rgb(28, 26, 23)' } : {}),
   }
   if (def && size >= 24) {
     return (
