@@ -24794,11 +24794,35 @@ body:has(.spectate-view) .app.lobby {
    uppercase sekme/başlık, bold kaldırıldı. Kabuk (.register-card) zaten global Swiss. ===== */
 .prof-ov-frame,
 .prof-ov-board,
-.prof-ov-opt {
-  border-radius: 2px;
+.prof-ov-opt,
+.prof-ov-id {
+  border-radius: 2px; /* keskin köşe — profil iç kutuları tek dil (hairline + düz, aksan çizgisiz) */
+}
+.prof-ov-name {
+  letter-spacing: 0.2px; /* Swiss tipografik hiyerarşi (hafif) */
 }
 .prof-ov-frame:hover {
   transform: none; /* lift yok, düz Swiss */
+}
+/* İstatistik kutuları: keskin köşe + uppercase etiket (Swiss grid). Rakam zaten tabular + bold yok. */
+.prof-ov-stats-tab .stats-box {
+  border-radius: 2px;
+}
+.prof-ov-stats-tab .stats-lbl {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+/* Üyelik kartı (kimlik kartının yanında): profil bağlamında Swiss -> keskin köşe + bold yok +
+   oto-yenile rozeti pill yerine düz. (Scoped: MembershipCard başka yerde kullanılırsa dokunmaz.) */
+.prof-ov-top .mem-status {
+  border-radius: 2px;
+}
+.prof-ov-top .mem-status-plan {
+  font-weight: 500; /* bold yok (Swiss) */
+}
+.prof-ov-top .mem-status-auto {
+  border-radius: 2px;
+  font-weight: 500;
 }
 .prof-ov-tabs > button {
   text-transform: uppercase;
@@ -25054,7 +25078,7 @@ input:not([type='range']), select, textarea {
   gap: 7px;
   padding: 0 2px 6px 14px;
   font-size: 1.15rem;
-  font-weight: 600;
+  font-weight: 500; /* bold yok (Swiss) */
   color: var(--text);
   white-space: nowrap;
 }
@@ -25200,10 +25224,12 @@ input:not([type='range']), select, textarea {
   flex-direction: column;
   gap: 12px;
 }
+/* Şikayet kartları — Swiss: token zemin, keskin köşe, hairline; durum = pill DEĞİL sol-kural
+   etiket (uppercase, monokrom; yalnız "Sonuçlandı" terracotta aksan). Sabit hex kaldırıldı. */
 .prof-report-card {
-  border: 1px solid #e7e0d4;
-  border-radius: 12px;
-  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--card-bg);
   padding: 14px 16px;
 }
 .prof-report-head {
@@ -25215,10 +25241,13 @@ input:not([type='range']), select, textarea {
 }
 .prof-report-who {
   font-size: 0.92rem;
-  color: #2f2a24;
+  color: var(--text);
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.prof-report-who strong {
+  font-weight: 500; /* bold yok */
 }
 .prof-report-meta {
   color: var(--muted);
@@ -25227,34 +25256,44 @@ input:not([type='range']), select, textarea {
 }
 .prof-report-status {
   flex: none;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 0 2px 10px;
+  border-left: 2px solid var(--border);
+  color: var(--muted);
   white-space: nowrap;
 }
+.prof-report-status.st-resolved {
+  border-left-color: var(--accent);
+  color: var(--accent-text);
+}
 .prof-report-log {
-  background: #faf7f1;
-  border: 1px solid #e7e0d4;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 4%, var(--card-bg));
+  border: 1px solid var(--border);
+  border-radius: 2px;
   padding: 10px 12px;
   line-height: 1.5;
   font-size: 0.86rem;
 }
 .prof-report-line {
   margin: 3px 0;
-  color: #2f2a24;
+  color: var(--text);
 }
 .prof-report-name {
-  font-weight: 600;
-  color: #2f2a24;
+  font-weight: 500;
+  color: var(--text);
 }
 .prof-report-name.reported {
-  color: #b91c1c;
-  font-weight: 700;
+  color: var(--accent-text); /* terracotta = tek aksan (şikayet edilen vurgusu) */
+  font-weight: 500;
+}
+.prof-report-empty-line {
+  color: var(--muted);
 }
 .prof-report-sys {
-  color: #b45309;
+  color: var(--muted);
   font-style: italic;
   margin: 2px 0;
 }

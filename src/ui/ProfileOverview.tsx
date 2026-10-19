@@ -469,10 +469,10 @@ export default function ProfileOverview({
 
 // "Şikayetlerim": oyuncunun gönderdiği küfür şikayetleri + yönetim sonucu (durum). Her kart: tarih,
 // şikayet edilen oyuncu, durum rozeti ve şikayet anındaki son 10 sohbet satırı (şikayet edilen KIRMIZI).
-const REPORT_STATUS: Record<MyChatReport['status'], { label: string; color: string; bg: string }> = {
-  new: { label: 'Alındı', color: '#92600a', bg: '#fef3c7' },
-  in_progress: { label: 'İnceleniyor', color: '#92600a', bg: '#fde68a' },
-  resolved: { label: 'Sonuçlandı', color: '#166534', bg: '#dcfce7' },
+const REPORT_STATUS: Record<MyChatReport['status'], { label: string }> = {
+  new: { label: 'Alındı' },
+  in_progress: { label: 'İnceleniyor' },
+  resolved: { label: 'Sonuçlandı' },
 }
 
 function MyReports() {
@@ -507,16 +507,11 @@ function MyReports() {
                   {when} · Maç {r.room_code}
                 </span>
               </div>
-              <span
-                className="prof-report-status"
-                style={{ color: st.color, background: st.bg }}
-              >
-                {st.label}
-              </span>
+              <span className={`prof-report-status st-${r.status}`}>{st.label}</span>
             </div>
             <div className="prof-report-log">
               {r.messages.length === 0 ? (
-                <em style={{ color: '#6b6154' }}>Sohbet satırı yok.</em>
+                <em className="prof-report-empty-line">Sohbet satırı yok.</em>
               ) : (
                 r.messages.map((m, i) =>
                   m.slot === 'sys' ? (
