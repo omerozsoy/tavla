@@ -165,14 +165,14 @@ Schedule::command('tavla:review-warmup --limit=15 --days=7')
 // bunun biraz üstü -> worker'lar HİÇ boşta kalmaz (tail hızlanır) ama kuyruk kapı sayesinde (limit*2=200)
 // sınırlı kalır -> şişmez, mükerrer dispatch minimum. Sınırsız yapmak hız KAZANDIRMAZ (worker-bound);
 // yalnız kuyruğu binlere şişirir + termal riskli mükerrer yük. Kalıcı hız = fan onarımı sonrası +worker.
-// GEÇİCİ DURAKLATILDI 2026-10-19: PR HİBRİT min(EMG,Snowie) (commit 2b43e537) deploy edilip TÜM
-// maçlar `tavla:snowie-pr --reset` ile geriye dönük yeniden hesaplanana dek bu cron KAPALI. Aksi halde
-// eski-formül Snowie yeniden yazar + PSU-arızalı sunucuda kontrolsüz ağır yük (dün 6 reboot). Backfill
-// throttle'lı ELLE sürülecek; bitince bu bloğu GERİ AÇ (küp-score backfill cutoff-cursor'u devam eder).
-// Schedule::command('tavla:cube-pr-rescore --limit=100')
-//     ->everyFiveMinutes()
-//     ->name('cube-pr-rescore')
-//     ->withoutOverlapping();
+// GERİ AÇILDI 2026-10-19: PR HİBRİT min(EMG,Snowie) deploy + TÜM maçlar backfill edildi (9220 oda) +
+// careerpr:rebuild tamam. Artık hibrit üretir. Cutoff-cursor'dan devam eder (eski maçların Analiz
+// review görüntülerini güncel serializer'la tazeler; PR zaten hibrit, writePrFromReview -> Snowie hibrit).
+// (Kısa süre DURAKLATILMIŞTI; donanım 3s45dk kesintisiz backfill'i 0 reboot/64°C ile kaldırdı -> güvenli.)
+Schedule::command('tavla:cube-pr-rescore --limit=100')
+    ->everyFiveMinutes()
+    ->name('cube-pr-rescore')
+    ->withoutOverlapping();
 
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
