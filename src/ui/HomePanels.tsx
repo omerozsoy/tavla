@@ -943,10 +943,10 @@ export function TournamentsPanel({
   // Boş olsa bile kutuyu GÖSTER (owner isteği): başlık + "aktif turnuva yok" notu.
   return (
     <div className="home-panel tourn-panel swiss-panel">
-      <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.tournaments')}>
-        <Icon name="medal" size={18} /> {t('menu.tournaments')}
+      <div className="home-panel-head">
+        <Icon name="trophy" size={18} /> {t('menu.tournaments')}
         {tourns.length > 0 && <span className="panel-count">{tourns.length}</span>}
-      </button>
+      </div>
       {tourns.length === 0 && <div className="tourn-empty">{t('tourn.empty')}</div>}
       <div className="tourn-list">
         {tourns.map((tr) => {
