@@ -110,7 +110,7 @@ class SeoMetaTest extends TestCase
             $this->get('/haberler/seo-haber-denemesi')
                 ->assertOk()
                 ->assertSee('"@type":"Article"', false)
-                ->assertSee('"datePublished":"2026-09-20T12:00:00+00:00"', false)
+                ->assertSee('"datePublished":"2026-09-20T12:00:00+03:00"', false) // app.timezone Europe/Istanbul
                 ->assertSee('https://www.tavlatv.com/og-image.jpg', false)
                 ->assertSee('SEO Haber Denemesi', false);
         } finally {

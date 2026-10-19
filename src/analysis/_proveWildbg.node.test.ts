@@ -2,7 +2,7 @@
 // Review log'undan her checker kararının before-pozisyonu + aday hamleleri alınır; her aday wildbg
 // ile değerlendirilir; loss = oynanan − en iyi (opp-perspektif equity, düşük=iyi). PR = Σloss/Σdec ×500.
 import { describe, it, expect, beforeAll } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import * as ort from 'onnxruntime-node'
 import type { GameState, Player, Step } from '../engine/types'
 import { cloneState, opponent } from '../engine/board'
@@ -34,7 +34,8 @@ async function stepsEquity(base: GameState, steps: Step[], mover: Player): Promi
 
 interface Dec { player: Player; pos: { points: number[]; bar: Record<Player, number>; off: Record<Player, number>; turn: Player }; dice: number[]; playedSteps: Step[]; cands: { steps: Step[] }[] }
 
-describe('KANIT: 59C8M wildbg PR vs XG/gnubg', () => {
+// Yerel KANIT/debug testi: 59c8m.json fixture'i repoda YOK (yerel dump). Yoksa atla (CI yesil).
+describe.skipIf(!existsSync('59c8m.json'))('KANIT: 59C8M wildbg PR vs XG/gnubg', () => {
   beforeAll(async () => {
     contact = await ort.InferenceSession.create('public/models/contact.onnx')
     race = await ort.InferenceSession.create('public/models/race.onnx')
