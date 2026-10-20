@@ -68,6 +68,13 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($e instanceof \App\Exceptions\TransientAnalysisException) {
                 return;
             }
+            // `php artisan tinker` oturumunda girilen hatalı PHP (ör. satır başında `\App\...`) PsySH'in
+            // ParseErrorException'ını fırlatır -> "cli/queue" 🔴 500 alarmı spam ediyordu (12 kez, hep
+            // elle tinker serilerinde). Psy YALNIZ interaktif tinker'da çalışır (prod istek/kuyruk yolunda
+            // ASLA) -> hiçbir Psy exception'ı gerçek SUNUCU HATASI DEĞİL: loglanır ama alarm GÖNDERİLMEZ.
+            if ($e instanceof \Psy\Exception\Exception) {
+                return;
+            }
             // GEÇİCİ DB kilit hataları (InnoDB deadlock 1213 / lock-wait timeout 1205 / SQLSTATE 40001):
             // database queue sürücüsünde worker'ın `SELECT ... FOR UPDATE` yoklaması ile eşzamanlı
             // job INSERT'i arasında BEKLENEN + kendiliğinden düzelen çakışmadır (kaybeden işlem geri
