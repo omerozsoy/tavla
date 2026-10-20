@@ -30,9 +30,14 @@ export async function nativeGoogleSignIn(webClientId: string): Promise<string> {
     await SocialLogin.initialize({ google: { webClientId } })
     initialized = true
   }
+  // options.scopes GECME: ozel scope istemek plugin'de Authorization akisini tetikler ve
+  // MainActivity'de onActivityResult/handleGoogleLoginIntent ister ("You CANNOT use scopes
+  // without modifying the main activity" hatasi). Bize yalniz KIMLIK (ID-token) lazim; email+
+  // profile zaten token'da gelir (init varsayilan scope'lari openid/profile/email) -> bos options
+  // ile Credential Manager ID-token akisi calisir, activity degisikligi gerekmez.
   const res = await SocialLogin.login({
     provider: 'google',
-    options: { scopes: ['email', 'profile'] },
+    options: {},
   })
   // Google sonucu: { provider:'google', result:{ idToken, accessToken, profile } }
   const result = (res as { result?: { idToken?: string | null } })?.result
