@@ -85,6 +85,10 @@ class ServicesWatch extends Command
             $unit = $gnubg->unitForPort($port);
             $services[] = [
                 'key' => 'gnubg-heavy-'.$port, 'name' => 'gnubg ağır analiz (:'.$port.')',
+                // Heavy matchluck self-play SEGV'i veri-bağımlı + geçici olabilir (anlık yüklü motoru
+                // probe'un KENDİSİ çökertebilir) ve Şans failover'a düşer -> maç sonuçları etkilenmez.
+                // Bu yüzden daha yüksek strike eşiği: kendini iyileştiren olaylar page atmadan geçsin.
+                'strikes' => (int) env('GNUBG_HEAVY_FAIL_STRIKES', 3),
                 'probe' => fn () => $gnubg->probeHeavyEngine($base),
                 'recover' => $unit ? fn () => $this->systemctlRestart($unit) : null,
                 'down' => "🔴 gnubg AĞIR ANALİZ MOTORU DÜŞTÜ ({$base}) — matchluck/analiz SEGV (crash-loop olabilir; "
@@ -119,6 +123,7 @@ class ServicesWatch extends Command
         // instance ilk ıskada gereksiz yeniden başlatılıp uçuştaki PR analizini kesmesin.
         $threshold = (int) env('SERVICES_WATCH_FAIL_STRIKES', 2);
         foreach ($services as $svc) {
+            $svcThreshold = $svc['strikes'] ?? $threshold; // heavy gnubg kendi (daha yüksek) eşiğini verir
             $failKey = 'svcwatch:fails:'.$svc['key'];
             $up = (bool) $svc['probe']();
             $recovered = false;
@@ -129,9 +134,9 @@ class ServicesWatch extends Command
             } else {
                 $fails = (int) Cache::get($failKey, 0) + 1;
                 Cache::put($failKey, $fails, 3600);
-                if ($fails < $threshold) {
+                if ($fails < $svcThreshold) {
                     // İlk ıska(lar): geçici olabilir -> bekle, restart YOK, alarm YOK, state DEĞİŞMEZ.
-                    $result = "flap-hold ({$fails}/{$threshold})";
+                    $result = "flap-hold ({$fails}/{$svcThreshold})";
                 } else {
                     // Eşik aşıldı: GERÇEK düşüş. Restart dene -> yeniden ölç -> hâlâ down ise alarm.
                     if (! empty($svc['recover'])) {
