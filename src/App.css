@@ -15846,6 +15846,17 @@ body:has(.spectate-view) .app.lobby {
   width: 16px;
   height: 16px;
 }
+/* Küp kararı satırı: zar yerine küp ikonu (vurgu rengi) + kalın aksiyon etiketi -> listede
+   pul hamlelerinden net ayrılır (kullanıcı: "tüm analizlerde küp kararları görünsün"). */
+.ar-cube {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.analysis-row.cube .ar-move {
+  font-weight: 600;
+}
 .ar-move {
   font-weight: 400;
   white-space: nowrap;

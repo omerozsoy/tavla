@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import Board from './Board'
 import DiceRow, { Die } from './Dice'
 import { MoveArrows } from './MatReview'
+import { CubeAnalysis } from './CubeAnalysis'
 import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
@@ -131,10 +132,14 @@ export default function MatchReport({
   })()
   const inScope = (e: LogEntry) =>
     !effHuman || scope === 'all' || (scope === 'mine' ? e.player === effHuman : e.player !== effHuman)
-  // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
+  // Karar kaybı: KÜP girdisinde kayıp cube.loss'ta (top-level e.loss değil); pul hamlesinde prLoss.
+  // Hem pul hem küp kararları aynı listede/sıralamada dürüst karşılaştırılsın diye tek yardımcı.
+  const lossOf = (e: LogEntry) =>
+    e.cube ? Math.min(3, Math.max(0, e.cube.loss ?? 0)) : prLoss(e)
+  // Hatali kararlar (equity kaybi >= 0.02) — analiz varsayilani bunlar (pul + KÜP dahil)
   const mistakes = log
     .map((e, i) => ({ e, i }))
-    .filter(({ e }) => !e.cube && prLoss(e) >= 0.02 && inScope(e))
+    .filter(({ e }) => lossOf(e) >= 0.02 && inScope(e))
   const firstAnalyzable = log.findIndex((e) => e.pos && !e.cube)
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
@@ -171,9 +176,9 @@ export default function MatchReport({
   // dogru yere otursun); seq yoksa dizideki sira.
   const ordered = log
     .map((e, i) => ({ e, i }))
-    .filter(({ e }) => !e.cube && inScope(e))
+    .filter(({ e }) => inScope(e))
     .sort((a, b) => (a.e.game ?? 0) - (b.e.game ?? 0) || (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
-  const rows = worstFirst ? mistakes.slice().sort((a, b) => prLoss(b.e) - prLoss(a.e)) : ordered
+  const rows = worstFirst ? mistakes.slice().sort((a, b) => lossOf(b.e) - lossOf(a.e)) : ordered
   // Maç kaç oyun sürdü? (game index'leri) -> 1'den fazlaysa oyun ayracı/rozeti göster.
   const gameCount = new Set(log.filter((e) => e.game != null).map((e) => e.game)).size
 
@@ -476,7 +481,7 @@ export default function MatchReport({
                 </div>
                 <div className="analysis-rows">
                   {rows.map(({ e, i }, idx) => {
-                    const b = band(prLoss(e))
+                    const b = band(lossOf(e))
                     // Sıralı görünümde (worstFirst değil) oyun değişince "— OYUN N —" ayracı.
                     const prevGame = idx > 0 ? rows[idx - 1].e.game : undefined
                     const showSep = !worstFirst && gameCount > 1 && e.game != null && e.game !== prevGame
@@ -486,7 +491,7 @@ export default function MatchReport({
                           <div className="analysis-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>
                         )}
                         <button
-                          className={`analysis-row ${sel === i ? 'sel' : ''}`}
+                          className={`analysis-row ${e.cube ? 'cube' : ''} ${sel === i ? 'sel' : ''}`}
                           onClick={() => selectMove(i)}
                         >
                           <span className={`aq-dot ${b.cls}`} />
@@ -497,14 +502,26 @@ export default function MatchReport({
                               {e.game + 1}
                             </span>
                           )}
-                          {e.dice && e.dice.length >= 2 && e.player && (
-                            <span className="ar-dice">
-                              <Die value={e.dice[0]} owner={e.player} used={false} />
-                              <Die value={e.dice[1]} owner={e.player} used={false} />
-                            </span>
+                          {/* KÜP kararı satırı: zar/notasyon yerine küp ikonu + seçilen aksiyon (Katla/Kabul/Pas). */}
+                          {e.cube ? (
+                            <>
+                              <span className="ar-cube">
+                                <Icon name="target" size={13} />
+                              </span>
+                              <span className="ar-move">{t(`cube.chose.${e.cube.chosen}`)}</span>
+                            </>
+                          ) : (
+                            <>
+                              {e.dice && e.dice.length >= 2 && e.player && (
+                                <span className="ar-dice">
+                                  <Die value={e.dice[0]} owner={e.player} used={false} />
+                                  <Die value={e.dice[1]} owner={e.player} used={false} />
+                                </span>
+                              )}
+                              <span className="ar-move">{e.notation}</span>
+                            </>
                           )}
-                          <span className="ar-move">{e.notation}</span>
-                          {prLoss(e) >= 0.005 && <span className="ar-loss">-{prLoss(e).toFixed(3)}</span>}
+                          {lossOf(e) >= 0.005 && <span className="ar-loss">-{lossOf(e).toFixed(3)}</span>}
                         </button>
                       </Fragment>
                     )
@@ -512,9 +529,37 @@ export default function MatchReport({
                 </div>
               </div>
 
-              {/* Sag: secili hamlenin tahtasi + siralı adaylar */}
+              {/* Sag: secili kararin tahtasi + (pul) siralı adaylar VEYA (küp) XG-stili küp analizi */}
               <div className="analysis-detail">
-                {cur?.pos && cur.player ? (
+                {cur?.cube ? (
+                  <>
+                    {/* KÜP kararı: karar anındaki tahta (varsa) + küpün değeri/sahibi, ardından
+                        XG-benzeri aksiyon tablosu (Katlama yok / Katla,Pas / Katla,Kabul + verdict). */}
+                    {boardState && (
+                      <div className="mrv-board-stage an-board-stage">
+                        <Board
+                          state={boardState}
+                          selectableFroms={froms}
+                          targets={tos}
+                          selectedFrom={null}
+                          onSelectFrom={() => {}}
+                          onSelectTarget={() => {}}
+                          onDragFrom={() => {}}
+                          pipTop={pipCount(boardState, 'black')}
+                          pipBottom={pipCount(boardState, 'white')}
+                          cube={cubeForBoard}
+                          flip={flipBoard}
+                          numberFrom={cur?.player ?? 'white'}
+                          mirror={boardDir === 'left'}
+                          swapStones={swapStones}
+                          centerLeft={null}
+                          centerRight={null}
+                        />
+                      </div>
+                    )}
+                    <CubeAnalysis cube={cur.cube} />
+                  </>
+                ) : cur?.pos && cur.player ? (
                   <>
                     <div className="mrv-board-stage an-board-stage">
                       <Board
