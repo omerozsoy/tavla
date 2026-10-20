@@ -491,7 +491,9 @@ export default function MatchReport({
                           <div className="analysis-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>
                         )}
                         <button
-                          className={`analysis-row ${e.cube ? 'cube' : ''} ${sel === i ? 'sel' : ''}`}
+                          /* 'cuberow' modifier: global '.cube' (tahta zar-küpü) position:absolute ->
+                             'cube' adini kullanirsak satir tahta ustune kayar. Ayri ad ile cakisma yok. */
+                          className={`analysis-row ${e.cube ? 'cuberow' : ''} ${sel === i ? 'sel' : ''}`}
                           onClick={() => selectMove(i)}
                         >
                           <span className={`aq-dot ${b.cls}`} />
