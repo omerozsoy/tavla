@@ -13032,6 +13032,9 @@ button.acct-row-logout:hover:not(:disabled) {
   border-bottom: 1px solid var(--border);
 }
 .swiss-panel .home-panel-head svg { color: var(--accent); } /* zar ikonu terracotta (davet kartı ikonu ile aynı dil) */
+/* hph-link (buton başlık) width:100% negatif margin genişlemesini kırıp hairline'ı sağdan
+   kısaltıyordu -> calc ile tam genişlik: çizgi iki kenara da değsin (tüm swiss link başlıklar). */
+.swiss-panel .home-panel-head.hph-link { width: calc(100% + 32px); }
 .swiss-panel .online-count,
 .swiss-panel .panel-count {
   margin-left: auto;
@@ -13262,15 +13265,24 @@ button.acct-row-logout:hover:not(:disabled) {
 .swiss-panel.tourn-panel .tr-ppl b { color: var(--text); font-weight: 500; font-size: 0.82rem; }
 .swiss-panel.tourn-panel .tr-ppl[data-full] b { color: var(--accent-text); }
 .swiss-panel.tourn-panel .tr-count-sep { color: var(--muted); font-weight: 400; }
-/* Footer: ödül (sol) ↔ KATIL (sağ), hairline üzerinde */
+/* Footer: ödül (sol) ↔ KATIL (sağ). Hairline MUTLAK ::before ile full-bleed
+   (flex-item'da width/stretch+negmargin güvenilmez; absolute kesin kenara değer). */
 .swiss-panel.tourn-panel .tr-foot {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  width: calc(100% + 32px); /* flex item: explicit tam genişlik (hairline kenara değsin) */
-  margin: 2px -16px 0;
-  padding: 10px 16px 0;
+  width: 100%;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.swiss-panel.tourn-panel .tr-foot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -16px; /* row 16px padding'ini aşıp panel kenarına değ */
+  right: -16px;
   border-top: 1px solid var(--border);
 }
 .swiss-panel.tourn-panel .tr-prizes {
