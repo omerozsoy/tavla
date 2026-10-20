@@ -2136,6 +2136,7 @@ export async function matchmake(
   timeControl?: string,
   stakes?: number[], // Tek Oyun: kabul edilen coklu bahis; kesisen tutarla eslesir
   classic = false, // Klasik Tavla (kup yok + mars=2): AYRI eslesme havuzu
+  opponentId?: number, // Oyun Arayanlar'dan HEDEFLI katilim: YALNIZ bu oyuncuyla eslesilir (havuz fallback yok)
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -2152,6 +2153,7 @@ export async function matchmake(
       targets: targets ?? [1],
       time_control: timeControl ?? null,
       classic,
+      opponent_id: opponentId ?? null,
     }),
   })
 }

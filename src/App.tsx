@@ -7066,7 +7066,7 @@ export default function App() {
   // Hizli eslesme: havuza gir; matched ise hemen basla, degilse mm_waiting'de bekle.
   // tcOverride: "Oyun Arayanlar"dan katilirken seeker'in temposu (setTimeControl state'i ayni
   // render'da henuz guncel degil) -> dogru tempoyla cagir.
-  async function handleMatchmake(tcOverride?: TimeControl) {
+  async function handleMatchmake(tcOverride?: TimeControl, opponentId?: number) {
     // Misafir (üye değil) gerçek eşleşme yapamaz (auth 401) -> üyelik iste. Yalnız Yapay Zeka
     // ile oynama misafire açık.
     if (!user) {
@@ -7095,6 +7095,7 @@ export default function App() {
         tcOverride ?? timeControl,
         stakesRef.current ?? undefined,
         classicRef.current, // Klasik Tavla: ayri eslesme havuzu
+        opponentId, // HEDEFLI: Oyun Arayanlar'dan katildiysa YALNIZ o oyuncuyla esles
       )
       // Eslesme olduysa sunucu ortak uzunlugu (target) verir; olmadiysa gecici (max).
       matchTargetSyncedRef.current = res.room.target != null
@@ -7515,7 +7516,7 @@ export default function App() {
       mmOriginRef.current = s.classic ? 'klassik' : 'match' // iptalde ilgili kurulum ekranina don
       setHome(false)
       setMode('online')
-      handleMatchmake(s.time_control) // state henuz stale -> temposu override et
+      handleMatchmake(s.time_control, s.id) // HEDEFLI: yalniz tiklanan arayanla esles (temposu override et)
     }
     // Para/bahis maci: tek tiklamayla coin bagladigini acikca ONAYLAT (footgun degil). Markasiz
     // native window.confirm yerine uygulama-ici stilli modal (seekerConfirm) -> proceed onayla calisir.

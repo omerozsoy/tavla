@@ -270,6 +270,9 @@ class RoomController extends Controller
             'targets.*' => ['integer', 'in:1,3,5,7,9,11'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
             'classic' => ['nullable', 'boolean'], // Klasik Tavla (küp yok + mars=2): AYRI eşleşme havuzu
+            // Oyun Arayanlar'dan HEDEFLI katilim: tiklanan arayanin user_id'si. Varsa YALNIZ o
+            // oyuncunun bekleyen odasiyla eslesilir; bulunamazsa havuza DUSULMEZ (araya 3. sahis girmez).
+            'opponent_id' => ['nullable', 'integer', 'min:1'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
         // Kabul edilen bahisler (Tek Oyun coklu secim). Bos -> tek [stake]. Tekillestir + sirala.
@@ -291,6 +294,9 @@ class RoomController extends Controller
         $hasDiceAuthCol = Schema::hasColumn('rooms', 'dice_authority');
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
+        // Oyun Arayanlar'dan HEDEFLI katilim: >0 ise aday havuzu TEK bu oyuncuya daraltilir
+        // ve bulunamazsa havuza DUSULMEZ (asagida net hata) -> araya ucuncu sahis giremez.
+        $opponentId = (int) ($data['opponent_id'] ?? 0);
         // Server-otoriter saat AYNI tempoyu gerektirir -> eslesme tempoyu da sart kosar.
         $timeControl = MatchClock::normalizeMode($data['time_control'] ?? null);
         // GUVENLIK: user_id ISTEMCIYE guvenilerek alinmaz. Dogrulanmis Sanctum token'indan
@@ -359,7 +365,7 @@ class RoomController extends Controller
         // ATOMIK: aday secimi (lockForUpdate) + rakibe yazma TEK transaction icinde olmali,
         // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
         // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
-        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl, $classic, $hasClassicCol) {
+        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl, $classic, $hasClassicCol, $opponentId) {
             $requester = User::lockForUpdate()->find($userId);
             if (! $requester || $requester->isBanned() || Room::userHasActiveMoneyMatch($userId)) {
                 return null;
@@ -371,6 +377,7 @@ class RoomController extends Controller
                 ->when($hasClassicCol, fn ($qq) => $qq->where('classic', $classic)) // Klasik<->Klasik ayrı havuz
                 ->whereNotNull('p1_user_id')
                 ->where('p1_user_id', '!=', $userId)
+                ->when($opponentId > 0, fn ($qq) => $qq->where('p1_user_id', $opponentId)) // HEDEFLI: yalniz tiklanan arayan
                 ->whereNull('p2_token');
             if ($minRating > 0) {
                 $q->where('p1_rating', '>=', $minRating);
@@ -523,6 +530,13 @@ class RoomController extends Controller
                 'type' => 'match_ready', 'room' => $opponent->code,
             ]);
             return response()->json(['room' => $opponent->toClient(), 'slot' => 'p2', 'matched' => true]);
+        }
+
+        // HEDEFLI katilim (Oyun Arayanlar'da birine "eslesme" dedi) ama secilen oyuncu artik
+        // bulunamadi (baska biriyle eslesti / aramadan cikti / kriter kesismiyor). HAVUZA DUSME
+        // -> araya ucuncu sahis girmesin. Net hata; istemci ana sayfaya doner.
+        if ($opponentId > 0) {
+            return $this->fail('Seçtiğin oyuncu artık müsait değil (başka biriyle eşleşmiş ya da aramadan çıkmış olabilir).', 409);
         }
 
         // Kimse yok -> havuza gir (kabul edilen uzunluklar saklanir)
