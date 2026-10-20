@@ -27,17 +27,25 @@ class WarmMatchAnalysisJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1; // best-effort; başarısızsa maç-sonu job zaten telafi eder
-
     public int $timeout = 300;
 
     public function __construct(public string $roomCode) {}
 
+    // CATCH-UP (maç kuyruğu ısınsın): çakışan tetik SİLİNMEZ, kısa süre sonra YENİDEN DENENİR ->
+    // en güncel hamle daima birkaç saniyede ısınır, maç-sonu PR job'una yetişir. retryUntil ile
+    // attempt sayacı DEVRE DIŞI (release'ler failed_jobs üretmez; kilit normalde saniyeler içinde
+    // boşalıp iş TAMAMLANIR -> yalnız patolojik 2dk kilitlenmede expire olur). Böylece maçın SON
+    // hamleleri de ısınır (eski dontRelease onları atıp maç-sonu 13sn taze hesaplamaya bırakıyordu).
+    public function retryUntil(): \DateTimeInterface
+    {
+        return now()->addSeconds(120);
+    }
+
     public function middleware(): array
     {
-        // Aynı oda için üst üste gelen hamle-tetiklerini AT (release etme) -> önbellek zaten bir
-        // sonraki tetikte güncellenir; kuyruk şişmez.
-        return [(new WithoutOverlapping('warm:'.$this->roomCode))->expireAfter(300)->dontRelease()];
+        // Aynı oda için üst üste gelen hamle-tetiklerini ~2sn sonra TEKRAR DENE (dontRelease DEĞİL):
+        // çalışan pass bitince en yeni hamleyi kapsayan tetik hemen koşar -> kuyruk/tail güncel kalır.
+        return [(new WithoutOverlapping('warm:'.$this->roomCode))->expireAfter(300)->releaseAfter(2)];
     }
 
     public function handle(AnalysisOrchestrator $orch, ?GnuBgClient $gnubg = null): void
