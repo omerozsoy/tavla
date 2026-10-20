@@ -8022,11 +8022,18 @@ export default function App() {
     playSteps(seq, srcRect)
   }
 
-  // Zar sirasini degistir (2-1 -> 1-2): once oynanacak zari sec
+  // Zar sirasini degistir (2-1 -> 1-2): once oynanacak zari sec.
+  // Tur ortasinda da calisir: yanlis zari (tek-tik soldakini) oynadiysan zara tiklayinca
+  // oynanan adim(lar) GERI alinir ve sira degisir -> kucuk zari once oynayabilirsin
+  // ("kucugu oynatmiyor/zar degismiyor" sikayetinin koku: swap played>0'da kilitliydi).
   function handleSwapDice() {
-    if (!interactive || turnStart.dice.length !== 2 || played.length !== 0) return
+    if (!interactive || turnStart.dice.length !== 2 || turnStart.dice[0] === turnStart.dice[1]) return
     const s = cloneState(turnStart)
     s.dice = [turnStart.dice[1], turnStart.dice[0]]
+    if (played.length > 0) {
+      Sound.move() // tur-ortasi swap = adimlari geri al (undo gibi), sesle bildir
+      setPlayed([])
+    }
     setTurnStart(s)
     setSelectedFrom(null)
   }
@@ -8143,11 +8150,14 @@ export default function App() {
   const cubeWaiting = online && cubePending === myColor
   // pvb: ben bota teklif ettim, bot karar veriyor (1-2sn "düşünür") -> teklif küpü bot (üst) tarafında.
   const botCubeDeciding = mode === 'pvb' && cubePending != null && cubePending !== BOT_PLAYER
+  // Swap tur ORTASINDA da acik: turnStart.dice (non-double'da hep 2) baz alinir -> yanlis zari
+  // oynadiktan sonra da zara tiklayip geri alip sira degistirebilir. (Eski kosul played===0 +
+  // remainingDice idi: ilk tiktan sonra kilitleniyordu; ayrica ciftte remainingDice==2 olunca
+  // yanlislikla swappable gorunuyordu -> turnStart.dice.length===2 bunu da duzeltir.)
   const canSwapDice =
     interactive &&
-    played.length === 0 &&
-    remainingDice.length === 2 &&
-    remainingDice[0] !== remainingDice[1]
+    turnStart.dice.length === 2 &&
+    turnStart.dice[0] !== turnStart.dice[1]
   // Zar yuzleri: hep 2 zar goster, oynananlari soluk yap (ciftte yarisi soluk).
   // RAKİP TURUNDA da soluklaşsın (kullanıcı isteği: rakibin hangi zarı oynadığı/kaldığı net olsun):
   // pvp'de rakibin canlı adımları oppLive'da, bota karşı bot adımları played'de (botAnim) gelir.
