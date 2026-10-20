@@ -177,9 +177,13 @@ export default function MatchResult({
   const progressPctRef = useRef<number | null>(null)
   progressPctRef.current = progressPct ?? null
   const [progress, setProgress] = useState(0)
+  // Geçen süre (sn): gnubg ort ~86sn/en kötü ~6.5dk sürer -> kullanıcı "takıldı mı?" demesin diye
+  // DÜRÜST geçen-süre sayacı göster (sabit yanıltıcı ETA değil; "hesaplanıyor 0:42" güven verir).
+  const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     if (!analyzingAny) {
       setProgress(0)
+      setElapsed(0)
       return
     }
     const start = Date.now()
@@ -192,11 +196,13 @@ export default function MatchResult({
       // kullanıcı "göremedim" diyordu. %90'da sabit + dönen loader = "hâlâ hesaplanıyor" nettir.)
       const candidate = real != null ? Math.min(99, real) : Math.min(90, est)
       setProgress((p) => Math.max(p, candidate)) // monoton: geri gitme (iki kaynak arası blip yok)
+      setElapsed(Math.round((Date.now() - start) / 1000))
     }
     tick()
     const id = setInterval(tick, 500)
     return () => clearInterval(id)
   }, [analyzingAny])
+  const fmtElapsed = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
   // Dusuk PR daha iyi -> tac dusuk olanda
   const wBetter = winnerPr != null && loserPr != null && winnerPr <= loserPr
@@ -325,7 +331,7 @@ export default function MatchResult({
                 <div className="mr-pr-note mr-pr-progress" role="status" aria-live="polite">
                   <div className="mr-pr-progress-head">
                     <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
-                    <span className="mr-pr-pct">%{progress}</span>
+                    <span className="mr-pr-pct">%{progress} · {fmtElapsed(elapsed)}</span>
                   </div>
                   <div className="mr-pr-bar" aria-hidden="true">
                     <div className="mr-pr-bar-fill" style={{ width: `${progress}%` }} />
