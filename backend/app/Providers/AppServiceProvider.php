@@ -76,11 +76,19 @@ class AppServiceProvider extends ServiceProvider
         // yalnız loglar. \App\Support\Alert = 'her aşama' için ortak hook.
         \Illuminate\Support\Facades\Queue::failing(function ($event) {
             try {
+                $job = method_exists($event->job, 'resolveName') ? $event->job->resolveName() : 'job';
+                // BEST-EFFORT job'ları ATLA (cache'ten ÖNCE -> gerçek job hatasının 15dk alarm penceresini
+                // TÜKETMESİNler). WarmMatchAnalysisJob yalnız gnubg cache'i ısıtır, PR'ı YAZMAZ; gnubg
+                // restart/yavaşlamasında WithoutOverlapping kilidi 2dk'yı aşınca retryUntil expire ->
+                // MaxAttempts ile düşer (BEKLENEN + zararsız; maç-sonu job telafi eder). deploy.sh gnubg
+                // restart'ında toplu düşüp alarm spam'i yapıyordu -> bu job'ın başarısızlığı alarm DEĞİL.
+                if ($job === \App\Jobs\WarmMatchAnalysisJob::class) {
+                    return;
+                }
                 if (\Illuminate\Support\Facades\Cache::get('alert:jobfail:last')) {
                     return; // 15 dk penceresi -> bastır
                 }
                 \Illuminate\Support\Facades\Cache::put('alert:jobfail:last', time(), now()->addMinutes(15));
-                $job = method_exists($event->job, 'resolveName') ? $event->job->resolveName() : 'job';
                 $err = $event->exception ? (string) $event->exception->getMessage() : 'bilinmiyor';
                 $err = preg_replace(
                     '/(bearer\s+|(?:token|password|secret|authorization|api_key)=)[^\s&]+/i',
