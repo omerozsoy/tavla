@@ -97,8 +97,10 @@ class PrWhy extends Command
         $oldest = 0;
         $workerAlive = true;
         try {
-            $pending = (int) DB::table('jobs')->count();
-            $oldest = $pending > 0 ? (time() - (int) DB::table('jobs')->min('available_at')) : 0;
+            // SADECE 'default': PR işi (AnalyzeMatchPrJob) default kuyruğa + tavla-queue tüketir. Filtresiz
+            // sayım reviews-bulk/bulk/warm (ayrı worker) birikimini yakalayıp sahte "worker KAPALI" der.
+            $pending = (int) DB::table('jobs')->where('queue', 'default')->count();
+            $oldest = $pending > 0 ? (time() - (int) DB::table('jobs')->where('queue', 'default')->min('available_at')) : 0;
             $workerAlive = $pending === 0 || $oldest < 90;
             $this->line('  bekleyen iş       : '.$pending.'   en eski: '.$oldest.'sn   -> '
                 .($pending === 0 ? 'boşta (bekleyen yok)' : ($workerAlive ? '<info>taze iş akıyor -> worker ÇALIŞIYOR</info>' : '<error>birikmiş -> worker KAPALI OLABILIR (tavla-queue restart)</error>')));
