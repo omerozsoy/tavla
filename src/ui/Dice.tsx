@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import type { Player } from '../engine/types'
 import { useT } from '../i18n'
+
+const SWAP_HINT_KEY = 'tavla.diceSwapHintSeen'
 
 // Zar yuzu - pip (nokta) konumlari yuzde olarak (mutlak konumlandirma -> garanti render)
 export const PIP_POS: Record<number, [number, number][]> = {
@@ -56,22 +59,49 @@ export default function DiceRow({
   className?: string
 }) {
   const { t } = useT()
+  // Tek-seferlik ipucu: swap'i ilk kez kullanana dek goster (kullanici "swap'i kesfedemiyorum").
+  const [hintSeen, setHintSeen] = useState(() => {
+    try {
+      return localStorage.getItem(SWAP_HINT_KEY) === '1'
+    } catch {
+      return true // storage yoksa ipucuyla rahatsiz etme
+    }
+  })
+  const handleSwap = () => {
+    if (!hintSeen) {
+      try {
+        localStorage.setItem(SWAP_HINT_KEY, '1')
+      } catch {
+        /* yoksay */
+      }
+      setHintSeen(true)
+    }
+    onSwap?.()
+  }
   if (faces.length === 0) return null
-  return (
+  const row = (
     <div
       className={`board-dice ${swappable ? 'swappable' : ''} ${className}`}
-      onClick={swappable ? onSwap : undefined}
+      onClick={swappable ? handleSwap : undefined}
       title={swappable ? t('dice.swap') : undefined}
       // Dokunmatikte title (hover ipucu) gorunmez: dugme rolu + etiket + gorunur ⇄ rozeti (CSS).
       role={swappable ? 'button' : undefined}
       tabIndex={swappable ? 0 : undefined}
       aria-label={swappable ? t('dice.swap') : undefined}
-      onKeyDown={swappable ? (e) => (e.key === 'Enter' || e.key === ' ') && onSwap?.() : undefined}
+      onKeyDown={swappable ? (e) => (e.key === 'Enter' || e.key === ' ') && handleSwap() : undefined}
     >
       {faces.map((f, i) => (
         // key'e deger dahil -> yeni atista yeniden mount olur, donme animasyonu oynar
         <Die key={`${i}-${f.value}`} value={f.value} owner={owner} used={f.used} half={f.half} />
       ))}
+    </div>
+  )
+  // Ipucu YOKSA DOM onceki haliyle AYNI (diger tum DiceRow cagrilari etkilenmez).
+  if (!swappable || hintSeen) return row
+  return (
+    <div className="board-dice-wrap">
+      {row}
+      <div className="dice-swap-hint">{t('dice.swapHint')}</div>
     </div>
   )
 }
