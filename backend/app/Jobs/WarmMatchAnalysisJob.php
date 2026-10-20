@@ -66,7 +66,10 @@ class WarmMatchAnalysisJob implements ShouldQueue
             $mat = MatchMove::buildMat($this->roomCode, ['matchLength' => $ml, 'isMoney' => $isMoney]);
             if (trim($mat) !== '') {
                 // affinity=room_code -> maç-sonu review ile AYNI instance -> eval cache paylaşılır.
-                $client->reviewMatch($mat, 2, null, $this->roomCode);
+                // timeout=120 < worker --timeout=300: yavaş gnubg'de worker'ı SIGALRM ile öldürüp
+                // MaxAttemptsExceededException'a (🔴 500 alarmı + failed_jobs) düşmek yerine curl-28 ile
+                // sessizce vazgeç (best-effort; maç-sonu review telafi eder). Sağlıklı pass saniyeler sürer.
+                $client->reviewMatch($mat, 2, null, $this->roomCode, 120);
             }
         } catch (\Throwable $e) {
             Log::debug('warm reviewMatch hata (bastırıldı)', ['room' => $this->roomCode, 'err' => $e->getMessage()]);
