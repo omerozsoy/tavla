@@ -3257,10 +3257,16 @@ class RoomController extends Controller
         // ÖNEMLİ: 'bulk' DEĞİL 'warm' -> backfill worker'ları --queue=reviews-bulk,bulk ile warm'i KATI
         // ÖNCELİKLE arkaya atıyordu (backfill açıkken warm kuyrukta beklerdi). Dedike tavla-warm-queue@
         // worker'ı yalnız 'warm' işler -> canlı ısıtma backfill'den bağımsız. (gnubg havuzu da ayrı: A fix.)
-        // ponytail: hamle başına 1 dispatch (çoğu lock alamayıp düşer); churn sorun olursa seq%N ile seyreklet.
+        // THROTTLE (oda başına ~12sn'de 1 dispatch): warm artık reviewMatch ısıtıyor (soğuk ilk geçiş
+        // ~14sn, ağır havuz). HER hamlede dispatch edilirse çok-maçta 6 warm worker'ı aşıp 'warm' kuyruğu
+        // ŞİŞER (released WithoutOverlapping retry churn'ü + cold-herd). Cache::add atomik kapısı: oda için
+        // 12sn'de yalnız 1 kez geçer -> kuyruk sabit kalır, ağır havuz yükü düşer. Maç-sonu review'in soğuk
+        // kalan "tail"i yalnız son ~12sn'lik hamleler (birkaç pozisyon = ucuz); cache ısınması korunur.
+        // ponytail: 12sn global lock-benzeri throttle; match-end tail büyürse süreyi kısalt.
         if (($fields['kind'] ?? null) === 'move'
             && (string) config('gnubg.pr_mode', 'off') === 'authoritative'
-            && (bool) config('gnubg.analysis_cache', true)) {
+            && (bool) config('gnubg.analysis_cache', true)
+            && \Illuminate\Support\Facades\Cache::add('warm:gate:'.$room->code, 1, 12)) {
             try {
                 \App\Jobs\WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('warm');
             } catch (\Throwable $e) {
