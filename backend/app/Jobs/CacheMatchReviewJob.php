@@ -90,7 +90,9 @@ class CacheMatchReviewJob implements ShouldQueue
 
             return;
         }
-        $res = $client->reviewMatch($mat, $this->plies);
+        // affinity=room_code: maç-İÇİ warm ile AYNI instance -> gnubg review eval cache'i (gid bazlı)
+        // paylaşılır -> warm ısıttıysa bu çağrı cache hit'le ~anında döner (maç 6J8YL 52s -> ~saniye).
+        $res = $client->reviewMatch($mat, $this->plies, null, $mr->room_code ?: null);
         if (! is_array($res) || empty($res['ok'])) {
             Log::warning('review önbellek: gnubg review başarısız (yok sayildi)', ['id' => $mr->id]);
             $tombstone();

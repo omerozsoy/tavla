@@ -56,7 +56,7 @@ class GnuBgClient
      * heavy_url'e (o da boşsa url'e) düşer -> geriye dönük uyum. Canlı foreground (bot) listede DEĞİL ->
      * ağır analiz botu ASLA bloklamaz. Shuffle sayesinde eşzamanlı iki review farklı heavy instance'ına düşer.
      */
-    public function heavyBases(): array
+    public function heavyBases(?string $affinity = null): array
     {
         $pool = array_values(array_filter(array_map(
             fn ($u) => rtrim(trim((string) $u), '/'),
@@ -66,7 +66,18 @@ class GnuBgClient
             $pool = [rtrim((string) config('gnubg.heavy_url') ?: (string) config('gnubg.url', 'http://127.0.0.1:8092'), '/')];
         }
         if (count($pool) > 1) {
-            shuffle($pool);
+            if ($affinity !== null && $affinity !== '') {
+                // AFFINITY (reviewmatch cache lokalite): aynı maçın maç-İÇİ warm'u + maç-SONU review'i
+                // AYNI instance'a gitsin -> o instance'ın (gid bazlı) reviewMatch eval cache'i paylaşılır
+                // -> warm ısıttıysa maç-sonu ~anında (0.03s). Deterministik home (hash) ÖNCE; düşük/
+                // erişilemezse kalanlar failover (sıra korunur). Farklı maçlar farklı home'a -> yük dengeli.
+                sort($pool); // shuffle YERİNE deterministik taban sıra
+                $n = count($pool);
+                $home = (int) (crc32($affinity) % $n);
+                $pool = array_merge(array_slice($pool, $home), array_slice($pool, 0, $home));
+            } else {
+                shuffle($pool);
+            }
         }
 
         return array_values(array_unique(array_merge($pool, $this->backgroundBases())));
@@ -537,14 +548,15 @@ class GnuBgClient
      * Mat Analiz FAZ 2: yüklenen .mat maçını HAMLE-HAMLE analiz eder (görüntüleyici için).
      * Doner: ['ok'=>bool, 'matchLength'=>?int, 'names'=>[..], 'log'=>[LogEntry-uyumlu...]] veya hata.
      */
-    public function reviewMatch(string $mat, int $plies = 2, ?string $progressKey = null): ?array
+    public function reviewMatch(string $mat, int $plies = 2, ?string $progressKey = null, ?string $affinity = null): ?array
     {
         $payload = ['mat' => $mat, 'plies' => $plies];
         if ($progressKey !== null && $progressKey !== '') {
             $payload['progressKey'] = $progressKey; // gnubg /dev/shm'e ilerleme yazar (poll okur)
         }
 
-        return $this->tryHeavy('/reviewmatch', $payload, 600)
+        // $affinity (ör. room_code): warm + maç-sonu AYNI instance -> reviewMatch eval cache paylaşımı.
+        return $this->tryHeavy('/reviewmatch', $payload, 600, $affinity)
             ?? ['ok' => false, 'error' => 'heavy-unavailable'];
     }
 
@@ -556,9 +568,9 @@ class GnuBgClient
      * Shuffle'la yük dağılır ama 3. eşzamanlı review 2 instance'lı havuzda birine kuyruklanabilir (kabul
      * edilen tavan; havuzu büyüterek azaltılır). Failover yalnız DOWN/erişilemez instance içindir.
      */
-    private function tryHeavy(string $path, array $payload, int $timeout): ?array
+    private function tryHeavy(string $path, array $payload, int $timeout, ?string $affinity = null): ?array
     {
-        $bases = $this->heavyBases();
+        $bases = $this->heavyBases($affinity);
         $last = count($bases) - 1;
         foreach ($bases as $i => $base) {
             try {

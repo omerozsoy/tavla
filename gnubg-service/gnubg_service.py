@@ -20,6 +20,7 @@ import random as _random
 import re  # modül düzeyi regex derlemeleri (luck parse) için — eskiden yalnız fonksiyon-içiydi
 import threading
 import time  # adaptive ply süre-duvarı + response_ms ölçümü
+from collections import OrderedDict as _OrderedDict  # review eval cache (çağrılar-arası ısıtma)
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 
@@ -1081,6 +1082,37 @@ def _probs6_from_cumulative(p):
             max(0.0, lose_any - lg), max(0.0, lg - lb), max(0.0, lb)]
 
 
+# REVIEW EVAL CACHE: reviewMatch tek çağrıda bir pozisyonu tek kez görür (tekrar yok) -> cache
+# ÇAĞRILAR ARASI işe yarar. Maç-içi warm (WarmMatchAnalysisJob) maçı reviewMatch'ten geçirip bu
+# cache'i ISITIR; maç bitince CacheMatchReviewJob AYNI pozisyonları (aynı gid) ister -> cache hit ->
+# gnubg.hint() atlanır -> match-end ~anında. Anahtar = (tip, gid, plies); gid pozisyon+zar+küp+skor+
+# matchLength'i KODLAR -> deterministik, bayat-sonuç riski YOK. Instance-başı (süreç-içi); PHP affinity
+# aynı maçı aynı instance'a yönlendirir. _review_decision/_review_cube YALNIZ _reviewmatch'ten çağrılır
+# (movefilter daima geniş) -> cache'li hint tutarlı. LRU tavan: bellek sınırlı.
+_REVIEW_EVAL_CACHE = _OrderedDict()
+_REVIEW_EVAL_MAX = 300000  # ~maç başı 100-150 pozisyon -> binlerce ısıtılmış maç sığar
+
+
+def _review_cache_get(key):
+    try:
+        v = _REVIEW_EVAL_CACHE.get(key)
+        if v is not None:
+            _REVIEW_EVAL_CACHE.move_to_end(key)
+        return v
+    except Exception:
+        return None
+
+
+def _review_cache_put(key, val):
+    try:
+        _REVIEW_EVAL_CACHE[key] = val
+        _REVIEW_EVAL_CACHE.move_to_end(key)
+        while len(_REVIEW_EVAL_CACHE) > _REVIEW_EVAL_MAX:
+            _REVIEW_EVAL_CACHE.popitem(last=False)
+    except Exception:
+        pass
+
+
 def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, plies, score=None):
     """Tek bir taş-hamlesi kararını analiz et -> LogEntry-uyumlu dict (frontend MatchReport için).
     pos = analiz ÖNCESİ konum; played_steps = gerçekten oynanan adımlar. hint (gnubg) ile
@@ -1097,10 +1129,15 @@ def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, 
     try:
         gid = structured_to_gnubgid({"points": pos_points, "bar": bar, "turn": turn,
                                      "dice": dice, "matchLength": match_len, "score": score or {}})
-        gnubg.setgnubgid(gid)
-        _set_plies(plies)
-        h = gnubg.hint()
-        cand = h.get("hint") if isinstance(h, dict) else None
+        ckey = ("m", gid, plies)
+        cand = _review_cache_get(ckey)
+        if cand is None:
+            gnubg.setgnubgid(gid)
+            _set_plies(plies)
+            h = gnubg.hint()
+            cand = h.get("hint") if isinstance(h, dict) else None
+            if cand:
+                _review_cache_put(ckey, cand)
     except Exception as e:
         entry["error"] = str(e)
         cand = None
@@ -1167,16 +1204,22 @@ def _review_cube(pos_points, bar, off, decider, chosen, cube_val, cube_owner, ma
         gid = structured_to_gnubgid({"points": pos_points, "bar": bar, "turn": mover,
                                      "cube": {"value": cube_val, "owner": cube_owner},
                                      "matchLength": match_len, "score": score or {}})
-        gnubg.setgnubgid(gid)
-        _set_plies(plies)
-        parsed = _parse_cube_text(_capture_command("hint"))
+        ckey = ("c", gid, plies)
+        cached = _review_cache_get(ckey)
+        if cached is None:
+            gnubg.setgnubgid(gid)
+            _set_plies(plies)
+            parsed = _parse_cube_text(_capture_command("hint"))
+            try:
+                p6 = _probs6_from_cumulative(gnubg.evaluate())
+            except Exception:
+                p6 = None
+            _review_cache_put(ckey, (parsed, p6))
+        else:
+            parsed, p6 = cached
         eq = parsed.get("equities") or {}
         cube["equities"] = eq
         cube["recommendedText"] = parsed.get("proper")
-        try:
-            p6 = _probs6_from_cumulative(gnubg.evaluate())
-        except Exception:
-            p6 = None
         mover_win = (p6[0] + p6[1] + p6[2]) * 100.0 if p6 else 0.0
     except Exception as e:
         cube["error"] = str(e)

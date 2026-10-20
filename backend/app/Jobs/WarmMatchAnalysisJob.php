@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Models\MatchMove;
 use App\Models\Room;
-use App\Services\Analysis\AnalysisOrchestrator;
 use App\Services\GnuBg\GnuBgClient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -48,29 +47,32 @@ class WarmMatchAnalysisJob implements ShouldQueue
         return [(new WithoutOverlapping('warm:'.$this->roomCode))->expireAfter(300)->releaseAfter(2)];
     }
 
-    public function handle(AnalysisOrchestrator $orch, ?GnuBgClient $gnubg = null): void
+    public function handle(?GnuBgClient $gnubg = null): void
     {
-        if ($gnubg !== null && ! $gnubg->analyzeHealthy()) {
+        $client = $gnubg ?? app(GnuBgClient::class);
+        if (! $client->analyzeHealthy()) {
             return; // servis yoksa ısınmayı atla (maç-sonu job + heal telafi eder)
         }
         if (! MatchMove::existsForRoom($this->roomCode)) {
             return;
         }
-        $log = MatchMove::buildLog($this->roomCode);
-        if (empty($log)) {
-            return;
-        }
-        $ml = (int) (Room::where('code', $this->roomCode)->value('target') ?? 0);
-
-        // Maç-sonu PR job'u iki satırı da (her iki renk) analiz eder -> ikisini de ısıt. checkerPr/
-        // cubePr analyzeBackgroundBatch'i çağırır -> sonuçlar içerik-hash'iyle önbelleğe girer.
-        foreach (['white', 'black'] as $color) {
-            try {
-                $orch->checkerPr($log, $color, $ml, 2);
-                $orch->cubePr($log, $color, $ml);
-            } catch (\Throwable $e) {
-                Log::debug('warm analiz hata (bastırıldı)', ['room' => $this->roomCode, 'color' => $color, 'err' => $e->getMessage()]);
+        // DOĞRU MOTORU ISIT: GÖSTERİLEN maç-sonu PR reviewMatch'ten gelir (reviewAuthoritative). Eski warm
+        // per-pozisyon checkerPr/cubePr ısıtıyordu -> reviewMatch onu EZDİĞİNDEN tamamen BOŞAYDI (maç
+        // 6J8YL 52s). Artık maç-İÇİ .mat'ı reviewMatch'ten geçirip gnubg'nin (gid bazlı) review eval
+        // cache'ini ISITIYORUZ. Maç bitince CacheMatchReviewJob AYNI .mat'ı AYNI instance'tan (affinity=
+        // room_code) review'ler -> ısınmış pozisyonlar cache hit (~0.03s) -> yalnız son hamleler soğuk.
+        $room = Room::where('code', $this->roomCode)->first(['target', 'stake']);
+        $ml = max(1, (int) ($room->target ?? 1));
+        // isMoney = matText ile AYNI mantık (küçük hedef + bahis = money-session) -> .mat gid'leri hizalı.
+        $isMoney = (int) ($room->target ?? 0) <= 1 && (int) ($room->stake ?? 0) > 0;
+        try {
+            $mat = MatchMove::buildMat($this->roomCode, ['matchLength' => $ml, 'isMoney' => $isMoney]);
+            if (trim($mat) !== '') {
+                // affinity=room_code -> maç-sonu review ile AYNI instance -> eval cache paylaşılır.
+                $client->reviewMatch($mat, 2, null, $this->roomCode);
             }
+        } catch (\Throwable $e) {
+            Log::debug('warm reviewMatch hata (bastırıldı)', ['room' => $this->roomCode, 'err' => $e->getMessage()]);
         }
     }
 }

@@ -296,7 +296,8 @@ class MatchResult extends Model
         if (trim((string) $mat) === '') {
             return ['ok' => false, 'error' => 'empty-mat'];
         }
-        $res = app(\App\Services\GnuBg\GnuBgClient::class)->reviewMatch($mat, $plies);
+        // affinity=room_code: warm + maç-sonu + on-demand hepsi AYNI instance -> review eval cache paylaşımı.
+        $res = app(\App\Services\GnuBg\GnuBgClient::class)->reviewMatch($mat, $plies, null, $this->room_code ?: null);
         if (! is_array($res) || empty($res['ok'])) {
             return [
                 'ok' => false, 'error' => 'review-failed',
