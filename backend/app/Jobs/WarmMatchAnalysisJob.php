@@ -30,21 +30,18 @@ class WarmMatchAnalysisJob implements ShouldQueue
 
     public function __construct(public string $roomCode) {}
 
-    // CATCH-UP (maç kuyruğu ısınsın): çakışan tetik SİLİNMEZ, kısa süre sonra YENİDEN DENENİR ->
-    // en güncel hamle daima birkaç saniyede ısınır, maç-sonu PR job'una yetişir. retryUntil ile
-    // attempt sayacı DEVRE DIŞI (release'ler failed_jobs üretmez; kilit normalde saniyeler içinde
-    // boşalıp iş TAMAMLANIR -> yalnız patolojik 2dk kilitlenmede expire olur). Böylece maçın SON
-    // hamleleri de ısınır (eski dontRelease onları atıp maç-sonu 13sn taze hesaplamaya bırakıyordu).
-    public function retryUntil(): \DateTimeInterface
-    {
-        return now()->addSeconds(120);
-    }
-
     public function middleware(): array
     {
-        // Aynı oda için üst üste gelen hamle-tetiklerini ~2sn sonra TEKRAR DENE (dontRelease DEĞİL):
-        // çalışan pass bitince en yeni hamleyi kapsayan tetik hemen koşar -> kuyruk/tail güncel kalır.
-        return [(new WithoutOverlapping('warm:'.$this->roomCode))->expireAfter(300)->releaseAfter(2)];
+        // BEST-EFFORT: aynı oda için çalışan bir pass varken gelen hamle-tetiği DÜŞÜRÜLÜR (dontRelease).
+        // KÖK FIX (2026-10-21): eski releaseAfter(2)+retryUntil(120) "catch-up" tasarımı, 120sn'den UZUN
+        // maçlarda ERKEN tetikleri sürekli release edip retryUntil süresi dolunca framework'ün
+        // MaxAttemptsExceededException'ıyla failed_jobs'a düşürüyordu (admin alarmı). Warm PR'ı ETKİLEMEZ
+        // (maç-sonu review telafi eder) -> best-effort bir iş ASLA paging etmemeli. dontRelease ile çakışan
+        // tetik sessizce silinir (success, failed_jobs YOK). Tail: her hamle yeni tetik atar + buildMat
+        // DAİMA en güncel state'i okur -> kilit boşalınca koşan ilk tetik en yeni hamleyi ısıtır; yalnız
+        // maçın SON 1-2 hamlesi ısınmayabilir (maç-sonu review onları taze hesaplar — Fix 1 dedup bu
+        // maliyeti zaten yarıya indirdi). 4 warm worker farklı odaları paralel ısıtır.
+        return [(new WithoutOverlapping('warm:'.$this->roomCode))->expireAfter(300)->dontRelease()];
     }
 
     public function handle(?GnuBgClient $gnubg = null): void
