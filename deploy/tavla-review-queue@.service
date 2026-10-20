@@ -1,0 +1,32 @@
+[Unit]
+Description=Tavla review worker %i (Analiz gnubg review önbellek — AYRI 'reviews' kuyruğu, PARALEL kopyalar)
+After=network.target mariadb.service mysqld.service
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı olmalı (tavla-queue.service ile AYNI kullanıcı).
+#   stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
+# ve CHANGE_ME_VHOST_USER yerine yaz.
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
+# YALNIZ 'reviews' kuyruğu: CANLI maç-sonu review ısıtma (CacheMatchReviewJob + AnalyzeMatchSnowieJob).
+# 'reviews-bulk' + 'bulk' backfill AYRI worker'da (tavla-backfill-queue@) — bkz tavla-review-queue.service
+# notu (katı-öncelik starvation). Bu TEMPLATE, tek-süreç tavla-review-queue.service'in PARALEL hali.
+#
+# %i ile N kopya: systemctl enable --now tavla-review-queue@{1,2}
+#
+# NEDEN (burst serileşmesi, 2026-10-20 YZVSQ/YNCJT): arka arkaya biten maçların review işleri TEK
+# worker'da seri diziliyordu -> sonraki maçın PR'ı 25-45sn bekliyordu. CacheMatchReviewJob dedup'i
+# (gnubg_review iki satıra da yazılır -> kardeş iş ATLAR) oda-başı işi ZATEN yarıya indirdi; 2 kopya
+# cross-maç serileşmeyi de bitirir.
+#
+# ⚠ GÜÇ (PSU/VRM) UYARISI: iki kopya = aynı anda 2 ağır reviewMatch -> eşzamanlı gnubg yükü artar.
+# Prod'da çözülmemiş PSU/VRM tripi varsa (bkz memory sunucu-reboot + cpu-no-turbo.service stopgap)
+# ÖNCE no_turbo açık olduğundan emin ol, ÖNCE tek kopyayla (Fix 1 dedup) ölç; burst hâlâ sorunsa
+# @2'yi aç. @3'e çıkma (backfill gibi sürekli-yük DEĞİL ama ihtiyatlı ol).
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

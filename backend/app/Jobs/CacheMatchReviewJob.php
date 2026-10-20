@@ -101,8 +101,20 @@ class CacheMatchReviewJob implements ShouldQueue
         }
         // Yalnız varsayılan plies(2) sonucu on-demand ile aynı kolona önbelleklenir.
         if ($this->plies === 2) {
-            MatchResult::where('id', $mr->id)->update([
-                'gnubg_review' => json_encode($res),
+            // DEDUPE (perf + GÜÇ): reviewMatch çıktısı tüm-maç = odanın İKİ satırı için BİREBİR AYNI
+            // (matText() oda match_moves'tan türer, oyuncuya bağlı değil). Eskiden her satır yalnız KENDİ
+            // gnubg_review'ini yazıyordu -> iki oyuncu rapor edince kardeş satırın guard'ı (yukarı:
+            // !empty gnubg_review) TUTMUYORDU -> AYNI ağır reviewMatch + ardından AYNI Snowie analyzeMatch
+            // oda başına 2 KEZ koşuyordu (tek review worker'ını seri boğup PR'ı geciktiren asıl israf;
+            // bkz YZVSQ/YNCJT burst). Artık İKİ satıra da yaz -> kardeşin CacheMatchReviewJob'u guard'a
+            // takılıp ANINDA atlar (Snowie'yi de tekrar dispatch ETMEZ; Snowie zaten tek çağrıda iki satırı
+            // yazar). Bitiş DB durumu AYNI, gnubg yükü ~yarı. room_code yoksa (pvb/bot) yalnız kendi satırı.
+            $enc = json_encode($res);
+            $target = ! empty($mr->room_code)
+                ? MatchResult::where('room_code', $mr->room_code)
+                : MatchResult::where('id', $mr->id);
+            $target->update([
+                'gnubg_review' => $enc,
                 'gnubg_review_at' => now(),
             ]);
             Log::info('review önden önbelleğe alındı', ['id' => $mr->id, 'decisions' => $res['decisions'] ?? null]);
