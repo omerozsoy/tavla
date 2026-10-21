@@ -24,7 +24,9 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # Prod'da çözülmemiş PSU/VRM tripi varsa (bkz memory sunucu-reboot + cpu-no-turbo.service stopgap)
 # ÖNCE no_turbo açık olduğundan emin ol, ÖNCE tek kopyayla (Fix 1 dedup) ölç; burst hâlâ sorunsa
 # @2'yi aç. @3'e çıkma (backfill gibi sürekli-yük DEĞİL ama ihtiyatlı ol).
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+# -d memory_limit=512M + --memory=480: uzun maç review JSON parse'ı 128MB varsayılanını aşıp OOM
+# ("🔴 500 cli/queue") veriyordu; yüksek tavan + işler-arası graceful geri dönüşüm (bkz tavla-warm-queue@).
+ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=512M artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200 --memory=480
 Restart=always
 RestartSec=5
 

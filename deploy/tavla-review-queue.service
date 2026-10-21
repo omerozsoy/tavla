@@ -19,7 +19,9 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # queue:work KATI ÖNCELİK uygular -> 'reviews' boşalmadan 'reviews-bulk'a GEÇMEZ. Canlı review akışı
 # tek worker'ı sürekli meşgul tutuyordu -> backfill sırası HİÇ gelmedi. Ayrıştırma = BQ9LW
 # default-vs-bulk izolasyonunun aynısı: canlı DAİMA boşta-hazır, backfill paralel ve starve EDİLEMEZ.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200
+# -d memory_limit=512M + --memory=480: uzun maç review JSON parse'ı 128MB varsayılanını aşıp OOM
+# ("🔴 500 cli/queue") veriyordu; yüksek tavan + işler-arası graceful geri dönüşüm (bkz tavla-warm-queue@).
+ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=512M artisan queue:work database --queue=reviews --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200 --memory=480
 Restart=always
 RestartSec=5
 

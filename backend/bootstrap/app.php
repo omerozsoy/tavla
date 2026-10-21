@@ -75,6 +75,14 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($e instanceof \Psy\Exception\Exception) {
                 return;
             }
+            // KUYRUK-worker MaxAttemptsExceededException: bir iş worker --timeout'unu aşınca (ör. yavaş
+            // gnubg'de warm reviewMatch) ya da sunucu reboot'u işi yarıda bırakıp retry_after sonrası
+            // yeniden alınınca framework bunu fırlatır. Bu bir İSTEK 500'ü DEĞİL (yalnız cli/queue'da olur)
+            // -> "🔴 Sunucu HATASI (500)" spam'i. Gerçek job hataları ZATEN Queue::failing ile (kendi
+            // per-job filtresiyle; best-effort WarmMatchAnalysisJob orada atlanır) alarmlanır -> bu yolda sus.
+            if ($e instanceof \Illuminate\Queue\MaxAttemptsExceededException) {
+                return;
+            }
             // GEÇİCİ DB kilit hataları (InnoDB deadlock 1213 / lock-wait timeout 1205 / SQLSTATE 40001):
             // database queue sürücüsünde worker'ın `SELECT ... FOR UPDATE` yoklaması ile eşzamanlı
             // job INSERT'i arasında BEKLENEN + kendiliğinden düzelen çakışmadır (kaybeden işlem geri

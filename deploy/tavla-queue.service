@@ -25,7 +25,9 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 #   (gnubg HTTP-bekleme, timeout=600) YARIDA KESMEZ. Backfill akarken TÜM worker'lar bir bulk işinin
 #   ortasında -> canlı PR ilk boşalan worker'ı ~60sn bekler (CPU boş görünür: beklemede, hesaplamıyor).
 #   'bulk'u tamamen ayırınca 'default' worker'ı DAİMA boşta-hazır -> canlı PR saniyeler içinde koşar.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --queue=default --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500
+# -d memory_limit=512M + --memory=480: uzun maç review/PR JSON parse'ı 128MB varsayılanını aşıp OOM
+# ("🔴 500 cli/queue") veriyordu; yüksek tavan + işler-arası graceful geri dönüşüm (bkz tavla-warm-queue@).
+ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=512M artisan queue:work database --queue=default --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500 --memory=480
 Restart=always
 RestartSec=5
 

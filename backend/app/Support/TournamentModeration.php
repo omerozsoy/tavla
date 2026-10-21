@@ -6,6 +6,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Services\WalletService;
 use App\Support\Swiss\SwissRuntime;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Turnuva moderasyonu (çekilme / diskalifiye) — HTTP controller (oyuncu/self + yönetici) ve Filament
@@ -42,8 +43,9 @@ class TournamentModeration
         if ($fee > 0) {
             $u = User::lockForUpdate()->find($uid);
             if ($u) {
+                // İADE: oyuncu oynamadan çıkıyor -> YAKILAN giriş ücreti geri verilir (mint). prize_coins'e
+                // DOKUNMA: ücret havuza hiç eklenmedi (yakıldı); havuz = YALNIZ admin'in yazdığı ödül.
                 app(WalletService::class)->credit($u, $fee, 'tournament_refund');
-                $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
             }
         }
         array_splice($players, $idx, 1);
@@ -88,7 +90,7 @@ class TournamentModeration
     /** Kilitli transaction içinde refundAll + $then (Filament sıfırla/sil aksiyonları için). */
     public static function cancelWithRefund(Tournament $record, callable $then): void
     {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($record, $then) {
+        DB::transaction(function () use ($record, $then) {
             $t = Tournament::whereKey($record->id)->lockForUpdate()->first();
             if ($t) {
                 self::refundAll($t);

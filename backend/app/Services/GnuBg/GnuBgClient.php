@@ -548,7 +548,7 @@ class GnuBgClient
      * Mat Analiz FAZ 2: yüklenen .mat maçını HAMLE-HAMLE analiz eder (görüntüleyici için).
      * Doner: ['ok'=>bool, 'matchLength'=>?int, 'names'=>[..], 'log'=>[LogEntry-uyumlu...]] veya hata.
      */
-    public function reviewMatch(string $mat, int $plies = 2, ?string $progressKey = null, ?string $affinity = null): ?array
+    public function reviewMatch(string $mat, int $plies = 2, ?string $progressKey = null, ?string $affinity = null, int $timeout = 600): ?array
     {
         $payload = ['mat' => $mat, 'plies' => $plies];
         if ($progressKey !== null && $progressKey !== '') {
@@ -556,7 +556,10 @@ class GnuBgClient
         }
 
         // $affinity (ör. room_code): warm + maç-sonu AYNI instance -> reviewMatch eval cache paylaşımı.
-        return $this->tryHeavy('/reviewmatch', $payload, 600, $affinity)
+        // $timeout: maç-sonu CacheMatchReviewJob 600 (worker --timeout=600) ister; WarmMatchAnalysisJob
+        // worker --timeout=300 olduğundan DAHA KISA geçer -> yavaş gnubg'de worker SIGALRM ile ölmek
+        // yerine curl-28 ile sessizce vazgeçer (MaxAttemptsExceededException + 🔴 500 alarmı ÜRETMEZ).
+        return $this->tryHeavy('/reviewmatch', $payload, $timeout, $affinity)
             ?? ['ok' => false, 'error' => 'heavy-unavailable'];
     }
 

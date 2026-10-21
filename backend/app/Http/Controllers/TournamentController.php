@@ -2,18 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\TourneyBots;
+use App\Models\MatchResult;
+use App\Models\Room;
 use App\Models\Tournament;
+use App\Models\TournamentAnnouncement;
 use App\Models\User;
+use App\Models\UserStat;
+use App\Services\Achievements\AchievementService;
+use App\Services\WalletService;
+use App\Support\ForfeitLoss;
+use App\Support\RoomAccess;
+use App\Support\Swiss\SwissRuntime;
+use App\Support\TournamentModeration;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TournamentController extends Controller
 {
     // Acik + devam eden turnuvalar
     public function index(Request $request)
     {
-        \App\Console\Commands\TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
+        TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
         $this->autoStartDue(); // son katilim tarihi gelenleri baslat
         // Acik route (auth middleware yok) -> sanctum bearer'ini ELLE coz: giris yapan uye icin
         // ozet satirina 'joined' bayragi koy ki ana sayfadan Katil/Iptal dogru butonu gostersin.
@@ -28,12 +43,13 @@ class TournamentController extends Controller
             ->limit(60)
             ->get()
             ->map(fn ($t) => $this->summary($t, $meId));
+
         return response()->json(['tournaments' => $list]);
     }
 
     public function show(Request $request, Tournament $tournament)
     {
-        \App\Console\Commands\TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
+        TourneyBots::kick(); // test botlari (yalniz bot turnuvasi varsa)
         $this->autoStartDue(); // acilan turnuva zamani gectiyse burada da baslasin
         $t = $tournament->fresh();
         // CANLI POLL: istemci elindeki rev'i yollar; degismediyse 204 (detay ~80KB: avatarlar gomulu).
@@ -62,7 +78,7 @@ class TournamentController extends Controller
         if (! $codes || $tournament->status !== 'running') {
             return response()->json(['counts' => (object) [], 'scores' => (object) []]);
         }
-        $counts = \Illuminate\Support\Facades\Schema::hasTable('room_viewers')
+        $counts = Schema::hasTable('room_viewers')
             ? DB::table('room_viewers')
                 ->whereIn('room_code', $codes)
                 ->where('last_seen', '>=', microtime(true) - 15)
@@ -119,7 +135,7 @@ class TournamentController extends Controller
             $parts[] = $winners;
         }
         // Duyuru degisimi de poll'u tazelesin: en yuksek id + toplam adet (silme de yakalanir).
-        $ann = \App\Models\TournamentAnnouncement::where('tournament_id', $t->id)
+        $ann = TournamentAnnouncement::where('tournament_id', $t->id)
             ->selectRaw('MAX(id) as m, COUNT(*) as c')->first();
         $parts[] = (int) ($ann->m ?? 0).':'.(int) ($ann->c ?? 0);
 
@@ -175,6 +191,7 @@ class TournamentController extends Controller
             'final_minutes' => $data['final_minutes'] ?? null,
             'players' => [],
         ]);
+
         // Olusturan (yonetici) OTOMATIK KATILMAZ (kullanici karari, 2026-10-06): koltuk kaplamasin;
         // oynamak isterse diger oyuncular gibi "Katil" ile girer.
         return response()->json(['tournament' => $this->full($t->fresh())]);
@@ -216,25 +233,28 @@ class TournamentController extends Controller
             if (! $already && $fee > 0) {
                 $u = User::lockForUpdate()->find($me->id);
                 // %-BAHİS KİLİDİ: oynanan bir % (bet_pct) maçta coin harcaması yasak (escrow'suz).
-                if (\App\Models\Room::userInPctStakedPlaying($u->id)) {
+                if (Room::userInPctStakedPlaying($u->id)) {
                     return ['err' => 'Yüzde bahisli maçtayken coin harcayamazsın (turnuva ücreti). Maç bitince tekrar dene.', 'code' => 422];
                 }
                 // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta rezerve
                 // edilmiş coin turnuva ücretine harcanamaz (stake maç sonuna kadar kilitli).
-                if (app(\App\Services\WalletService::class)->spendable($u) < $fee) {
+                if (app(WalletService::class)->spendable($u) < $fee) {
                     return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
                 }
                 // Entry/leave cycles are legitimate. The player-list lock is
                 // the idempotency guard, so do not reuse the tournament ID as
                 // a unique ledger reference across multiple participations.
-                app(\App\Services\WalletService::class)->debit($u, $fee, 'tournament_entry');
-                $t->prize_coins = ($t->prize_coins ?? 0) + $fee;
-                $t->save();
+                // GİRİŞ ÜCRETİ YAKILIR (coin sink): debit coini oyuncudan siler, ödül havuzuna EKLENMEZ.
+                // Ödül = YALNIZ admin'in yazdığı prize_coins (taban) + prizes (sıralama). Owner direktifi:
+                // "giriş parasını yak, sadece bizim yazdığımız ödülleri öde." İptal/DQ'da addPlayer'ın
+                // kaydettiği per-oyuncu fee_paid refundAll ile yine iade edilir (yakma YALNIZ normal bitişte).
+                app(WalletService::class)->debit($u, $fee, 'tournament_entry');
             }
             $added = $this->addPlayer($t, $me, $already ? 0 : (int) $fee); // kilit altinda, idempotent; ödenen ücret kaydedilir
             if ($added) {
-                \App\Models\UserStat::forUser($me->id)->increment('tournaments_played');
+                UserStat::forUser($me->id)->increment('tournaments_played');
             }
+
             return ['ok' => true, 'added' => $added];
         });
 
@@ -245,11 +265,12 @@ class TournamentController extends Controller
         if (! empty($out['added'])) {
             try {
                 $me->unsetRelation('stat');
-                app(\App\Services\Achievements\AchievementService::class)->evaluate($me);
+                app(AchievementService::class)->evaluate($me);
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Tournament join achievement failed', ['user_id' => $me->id, 'err' => $e->getMessage()]);
+                Log::warning('Tournament join achievement failed', ['user_id' => $me->id, 'err' => $e->getMessage()]);
             }
         }
+
         // Turnuva DOLUNCA baslamaz; yalnizca son katilim tarihi + 1dk gecince
         // (autoStartDue) ya da admin panelden elle baslatilir.
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
@@ -271,13 +292,15 @@ class TournamentController extends Controller
             $this->removeRegistered($t, $me->id); // idempotent: kayitli degilse no-op
             if ($wasIn) {
                 // A-33: katıl/ayrıl döngüsüyle "oynanan turnuva" sayacı (ve başarımlar) şişirilemesin.
-                \App\Models\UserStat::where('user_id', $me->id)->where('tournaments_played', '>', 0)->decrement('tournaments_played');
+                UserStat::where('user_id', $me->id)->where('tournaments_played', '>', 0)->decrement('tournaments_played');
             }
+
             return ['ok' => true];
         });
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
         }
+
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
@@ -307,12 +330,14 @@ class TournamentController extends Controller
             } else {
                 $this->exitRunningPlayer($t, $uid, 'dq');
             }
+
             return ['t' => $t];
         });
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
         }
         $this->awardChampionIfFinished($out['t']);
+
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
@@ -371,6 +396,7 @@ class TournamentController extends Controller
             }
 
             $this->applyWinnerToBracket($t, $ri, $mi, $winnerId, $this->scoreFromRoom($m));
+
             return ['t' => $t];
         });
 
@@ -378,6 +404,7 @@ class TournamentController extends Controller
             return $this->fail($out['err'], $out['code']);
         }
         $this->awardChampionIfFinished($out['t']);
+
         return response()->json(['tournament' => $this->full($out['t']->fresh())]);
     }
 
@@ -389,7 +416,7 @@ class TournamentController extends Controller
      */
     private function scoreFromRoom(array $m): ?array
     {
-        $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
+        $room = ! empty($m['room']) ? Room::where('code', $m['room'])->first() : null;
         $score = $room && is_array($room->server_match) ? ($room->server_match['score'] ?? null) : null;
         if (! is_array($score)) {
             return null;
@@ -407,9 +434,9 @@ class TournamentController extends Controller
         // 3 HAKLI SWISS: eleme ağacı yerine Swiss motoru işler (haklar/eleme/tur üretimi/sonlandırma).
         // report/reconcile/noShow bu ortak metottan geçtiği için tek dal yeterli. realMatch: hükmen
         // (walkover/bye/stalled) değilse gerçek maç.
-        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
+        if (SwissRuntime::isSwiss($t)) {
             $real = ! ($score && (isset($score['walkover']) || isset($score['bye']) || isset($score['stalled'])));
-            \App\Support\Swiss\SwissRuntime::applyResult($t, $ri, $mi, $winnerId, $score, $real);
+            SwissRuntime::applyResult($t, $ri, $mi, $winnerId, $score, $real);
 
             return;
         }
@@ -534,7 +561,7 @@ class TournamentController extends Controller
         $id2 = (int) $tp['p2']['id'];
         $present = [];
         if (! empty($tp['room'])) {
-            $room = \App\Models\Room::where('code', $tp['room'])->first();
+            $room = Room::where('code', $tp['room'])->first();
             if ($room && $room->hasVerifiedServerResult()) {
                 return false; // gerçek sonuç -> reconcileVerifiedResults
             }
@@ -552,7 +579,7 @@ class TournamentController extends Controller
         }
         $readyAt = $tp['ready_at'] ?? null;
         $stall = (int) config('tournament.third_place_stall_minutes', 3);
-        if (! $readyAt || now()->lt(\Illuminate\Support\Carbon::parse($readyAt)->addMinutes($stall))) {
+        if (! $readyAt || now()->lt(Carbon::parse($readyAt)->addMinutes($stall))) {
             return false;
         }
         if (count($present) === 1) {
@@ -604,7 +631,7 @@ class TournamentController extends Controller
                     if (empty($m['p1']['id']) || empty($m['p2']['id'])) {
                         continue;
                     }
-                    $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
+                    $room = ! empty($m['room']) ? Room::where('code', $m['room'])->first() : null;
                     if ($room && $room->hasVerifiedServerResult()) {
                         continue; // gerçek sonuç -> reconcileVerifiedResults
                     }
@@ -630,7 +657,7 @@ class TournamentController extends Controller
 
                         continue;
                     }
-                    if (now()->lt(\Illuminate\Support\Carbon::parse($m['ready_at'])->addMinutes($stall))) {
+                    if (now()->lt(Carbon::parse($m['ready_at'])->addMinutes($stall))) {
                         continue;
                     }
                     $hit = [$ri, $mi, $m, $room, $present, $id1, $id2];
@@ -653,7 +680,7 @@ class TournamentController extends Controller
                 }
                 $this->applyWinnerToBracket($t, $ri, $mi, $winnerId, ['walkover' => true]);
             } else {
-                \App\Support\Swiss\SwissRuntime::resolveMatch($t, (string) $m['key'], 0);
+                SwissRuntime::resolveMatch($t, (string) $m['key'], 0);
             }
             $changed = true;
         }
@@ -663,7 +690,7 @@ class TournamentController extends Controller
 
     private function resolveStalledMatches(Tournament $t): bool
     {
-        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
+        if (SwissRuntime::isSwiss($t)) {
             return $this->resolveStalledSwiss($t);
         }
         $stall = (int) config('tournament.match_stall_minutes', 3);
@@ -680,7 +707,7 @@ class TournamentController extends Controller
                         continue; // iki oyuncu belli değil (bye/ölü dal -> resolveDeadByes)
                     }
                     // Final gate (opens_at) henüz açılmadıysa süre işlemesin (önce 3.'lük oynanır).
-                    if (! empty($m['opens_at']) && now()->lt(\Illuminate\Support\Carbon::parse($m['opens_at']))) {
+                    if (! empty($m['opens_at']) && now()->lt(Carbon::parse($m['opens_at']))) {
                         continue;
                     }
                     // A-19: 3.'lük maçı OYNANIRKEN final henüz açılmamıştır (opens_at 3.'lük bitince
@@ -690,7 +717,7 @@ class TournamentController extends Controller
                     if (is_array($tpCell) && ! empty($tpCell['third_place']) && empty($tpCell['winner'])) {
                         continue;
                     }
-                    $room = ! empty($m['room']) ? \App\Models\Room::where('code', $m['room'])->first() : null;
+                    $room = ! empty($m['room']) ? Room::where('code', $m['room'])->first() : null;
                     if ($room && $room->hasVerifiedServerResult()) {
                         continue; // gerçek sonuç var -> reconcileVerifiedResults alır
                     }
@@ -712,7 +739,7 @@ class TournamentController extends Controller
                     // A-19: gate'ten (opens_at) ÖNCE damgalanmış hazır-saati geçersiz: oyuncuların
                     // gelme süresi final açıldığı andan başlar (yoksa açılır açılmaz hükmen).
                     if ($readyAt && ! empty($m['opens_at'])
-                        && \Illuminate\Support\Carbon::parse($readyAt)->lt(\Illuminate\Support\Carbon::parse($m['opens_at']))) {
+                        && Carbon::parse($readyAt)->lt(Carbon::parse($m['opens_at']))) {
                         $readyAt = null;
                     }
                     if (! $readyAt) {
@@ -724,7 +751,7 @@ class TournamentController extends Controller
 
                         continue;
                     }
-                    if (now()->lt(\Illuminate\Support\Carbon::parse($readyAt)->addMinutes($stall))) {
+                    if (now()->lt(Carbon::parse($readyAt)->addMinutes($stall))) {
                         continue; // süre dolmadı
                     }
                     $hit = [$ri, $mi, $m, $room, $present, $id1, $id2];
@@ -747,7 +774,7 @@ class TournamentController extends Controller
                     $room->{($wslot === 'p1' ? 'p2' : 'p1').'_result'} = 'lost';
                     $room->save();
                     $w = User::find($winnerId);
-                    \App\Support\ForfeitLoss::record(
+                    ForfeitLoss::record(
                         $room->code, $loserId, (int) ($w->rating ?? 1500),
                         (int) ($room->target ?: 1), 'match', $w->nickname ?? $w->first_name,
                     );
@@ -810,14 +837,14 @@ class TournamentController extends Controller
         try {
             $champ = User::find($t->champion_id);
             if ($champ) {
-                $stat = \App\Models\UserStat::forUser($champ->id);
+                $stat = UserStat::forUser($champ->id);
                 $stat->tournaments_won = Tournament::where('champion_id', $champ->id)->where('status', 'finished')->count();
                 $stat->save();
                 $champ->unsetRelation('stat');
-                app(\App\Services\Achievements\AchievementService::class)->evaluate($champ);
+                app(AchievementService::class)->evaluate($champ);
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Tournament champion achievement failed', ['tournament_id' => $t->id, 'err' => $e->getMessage()]);
+            Log::warning('Tournament champion achievement failed', ['tournament_id' => $t->id, 'err' => $e->getMessage()]);
         }
     }
 
@@ -864,7 +891,7 @@ class TournamentController extends Controller
             if (! $code) {
                 return ['err' => 'Maç odası henüz açılmadı.', 'code' => 422];
             }
-            $room = \App\Models\Room::where('code', $code)->first();
+            $room = Room::where('code', $code)->first();
             if (! $room) {
                 return ['err' => 'Maç odası bulunamadı.', 'code' => 422];
             }
@@ -873,7 +900,7 @@ class TournamentController extends Controller
                 return ['err' => 'Rakip için bekleme süresi (1 dk) dolmadı.', 'code' => 422];
             }
             // Bracket uyeligi yetmez: odadaki koltuk da ayni hesaba ait olmali.
-            $slot = \App\Support\RoomAccess::slot($room, $actor, $data['token']);
+            $slot = RoomAccess::slot($room, $actor, $data['token']);
             if ($slot === null || (int) $room->{$slot.'_user_id'} !== (int) $me) {
                 return ['err' => 'Bu odada değilsin.', 'code' => 403];
             }
@@ -895,8 +922,8 @@ class TournamentController extends Controller
             // GELMEYEN KAYBEDER (sunucu kayit): gelmeyen rakibin rating + maglubiyeti
             // sunucuda yazilir (client'i hic acilmadi). Idempotent (bkz ForfeitLoss).
             $loserId = (int) ($ids[0] === $me ? $ids[1] : $ids[0]);
-            $me = \App\Models\User::find($me);
-            \App\Support\ForfeitLoss::record(
+            $me = User::find($me);
+            ForfeitLoss::record(
                 $room->code, $loserId, (int) ($me->rating ?? 1500),
                 (int) ($room->target ?: 1), 'match', $me->nickname ?? $me->first_name,
             );
@@ -908,6 +935,7 @@ class TournamentController extends Controller
             return $this->fail($out['err'], $out['code']);
         }
         $this->awardChampionIfFinished($out['t']);
+
         return response()->json(['tournament' => $this->full($out['t']->fresh())]);
     }
 
@@ -915,6 +943,7 @@ class TournamentController extends Controller
     public function matchRoom(Request $request, Tournament $tournament)
     {
         $data = $request->validate(['match' => ['required', 'string', 'max:16']]);
+
         // A-20: bracket JSON'u KİLİTLİ satırdan oku-değiştir-yaz. Eskiden aynı anda iki maç odası
         // istendiğinde son yazan diğerinin oda kodunu siliyor (oyuncular farklı odalara düşüyordu);
         // bayat kopya tick'in yazdığı kazananı da ezebiliyordu (Swiss'te sonuç iki kez işleniyordu).
@@ -937,7 +966,7 @@ class TournamentController extends Controller
                     if (! empty($m['winner']) || ! empty($m['double_loss'])) {
                         return $this->fail('Maç bitti.', 422); // A-21: çift-mağlubiyetle kapanan maç da bitmiştir
                     }
-                    $isSwiss = \App\Support\Swiss\SwissRuntime::isSwiss($tournament);
+                    $isSwiss = SwissRuntime::isSwiss($tournament);
                     // FINAL GATE (yalnız eleme ağacı): önce 3.'lük maçı oynanır; final 3.'lük bitip 1 dk
                     // geçince açılır. Swiss'te 3.'lük maçı YOK -> gate atlanır.
                     $isFinalMatch = ! $isSwiss && $ri === count($bracket) - 1 && empty($m['third_place']);
@@ -948,8 +977,9 @@ class TournamentController extends Controller
                                 return $this->fail('Önce üçüncülük maçı oynanmalı.', 422);
                             }
                             $opensAt = $m['opens_at'] ?? null;
-                            if ($opensAt && now()->lt(\Illuminate\Support\Carbon::parse($opensAt))) {
-                                $sec = max(1, now()->diffInSeconds(\Illuminate\Support\Carbon::parse($opensAt)));
+                            if ($opensAt && now()->lt(Carbon::parse($opensAt))) {
+                                $sec = max(1, now()->diffInSeconds(Carbon::parse($opensAt)));
+
                                 return $this->fail("Final, üçüncülük maçından sonra başlar ({$sec} sn).", 422);
                             }
                         }
@@ -969,7 +999,7 @@ class TournamentController extends Controller
                     // Onceki oda KAZANANSIZ kapandiysa (sonucsuz: ilk hamleden once sure doldu vb.) mac
                     // hic bildirilemez -> bracket sonsuza dek takilirdi. Yeni oda ac, mac yeniden oynansin.
                     if (! empty($m['room'])) {
-                        $old = \App\Models\Room::where('code', $m['room'])->first();
+                        $old = Room::where('code', $m['room'])->first();
                         if ($old && $old->status === 'finished' && ! $old->hasVerifiedServerResult()) {
                             $m['room'] = null;
                         }
@@ -982,7 +1012,7 @@ class TournamentController extends Controller
                             for ($i = 0; $i < 5; $i++) {
                                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
                             }
-                        } while (\App\Models\Room::where('code', $code)->exists());
+                        } while (Room::where('code', $code)->exists());
                         $bracket[$ri][$mi]['room'] = $code;
                     }
                     if ($bracket !== $tournament->bracket) {
@@ -995,9 +1025,11 @@ class TournamentController extends Controller
                     if ($minutes) {
                         Cache::put(self::roomClockKey($bracket[$ri][$mi]['room']), $minutes, now()->addDays(2));
                     }
+
                     return response()->json(['code' => $bracket[$ri][$mi]['room'], 'target' => $target]);
                 }
             }
+
             return $this->fail('Maç bulunamadı.', 404);
         });
     }
@@ -1012,13 +1044,14 @@ class TournamentController extends Controller
         $tournament = DB::transaction(function () use ($tournament) {
             $t = Tournament::whereKey($tournament->id)->lockForUpdate()->firstOrFail();
             if ($t->status !== 'finished') {
-                \App\Support\TournamentModeration::refundAll($t);
+                TournamentModeration::refundAll($t);
                 $t->status = 'finished';
                 $t->save();
             }
 
             return $t;
         });
+
         return response()->json(['tournament' => $this->full($tournament)]);
     }
 
@@ -1045,6 +1078,7 @@ class TournamentController extends Controller
         if ($err !== null) {
             return $this->fail($err, 422);
         }
+
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
@@ -1057,10 +1091,11 @@ class TournamentController extends Controller
         DB::transaction(function () use ($tournament) {
             $t = Tournament::whereKey($tournament->id)->lockForUpdate()->first();
             if ($t) {
-                \App\Support\TournamentModeration::refundAll($t); // A-22: ücretler kaybolmasın
+                TournamentModeration::refundAll($t); // A-22: ücretler kaybolmasın
                 $t->delete();
             }
         });
+
         return $this->ok();
     }
 
@@ -1073,7 +1108,7 @@ class TournamentController extends Controller
         if (! $code) {
             return null;
         }
-        $room = \App\Models\Room::where('code', $code)->lockForUpdate()->first();
+        $room = Room::where('code', $code)->lockForUpdate()->first();
         if (! $room || $room->bot || ! $room->hasVerifiedServerResult()) {
             return null;
         }
@@ -1104,7 +1139,7 @@ class TournamentController extends Controller
                 if ($coins > 0 && isset($standings[$i])) {
                     $winner = User::lockForUpdate()->find($standings[$i]);
                     if ($winner) {
-                        app(\App\Services\WalletService::class)->credit($winner, $coins, 'tournament_prize', Tournament::class, $t->id);
+                        app(WalletService::class)->credit($winner, $coins, 'tournament_prize', Tournament::class, $t->id);
                     }
                 }
             }
@@ -1113,9 +1148,10 @@ class TournamentController extends Controller
                 $first = $standings[0] ?? $winnerId;
                 $winner = User::lockForUpdate()->find($first);
                 if ($winner) {
-                    app(\App\Services\WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
+                    app(WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
                 }
             }
+
             return;
         }
 
@@ -1123,7 +1159,7 @@ class TournamentController extends Controller
         if ($pool > 0) {
             $winner = User::lockForUpdate()->find($winnerId);
             if ($winner) {
-                app(\App\Services\WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
+                app(WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
             }
         }
     }
@@ -1187,6 +1223,7 @@ class TournamentController extends Controller
                 $standings[] = (int) $l['id'];
             }
         }
+
         return array_values(array_unique($standings));
     }
 
@@ -1210,20 +1247,21 @@ class TournamentController extends Controller
         ];
         $t->players = $players;
         $t->save();
+
         return true;
     }
 
     // Kullanici bu turnuvaya kayitli mi? (ortak kaynak: TournamentModeration)
     private function isRegistered(Tournament $t, int $uid): bool
     {
-        return \App\Support\TournamentModeration::isRegistered($t, $uid);
+        return TournamentModeration::isRegistered($t, $uid);
     }
 
     // Kayit acikken oyuncuyu listeden cikar + giris ucreti iadesi (leave + open-dq ortak). Idempotent.
     // Ortak kaynak: TournamentModeration (Filament paneli de ayni mantigi kullanir). Lock cagiranda.
     private function removeRegistered(Tournament $t, int $uid): void
     {
-        \App\Support\TournamentModeration::removeRegistered($t, $uid);
+        TournamentModeration::removeRegistered($t, $uid);
     }
 
     // Turnuva SURERKEN oyuncuyu cikar (withdraw/dq). open/Swiss ortak serviste (TournamentModeration::
@@ -1231,7 +1269,7 @@ class TournamentController extends Controller
     // burada: bekleyen maci rakibe walkover (bracket advancement controller'a ozel). Lock cagiranda.
     private function exitRunningPlayer(Tournament $t, int $uid, string $mode): void
     {
-        if (\App\Support\TournamentModeration::remove($t, $uid, $mode)) {
+        if (TournamentModeration::remove($t, $uid, $mode)) {
             return; // open veya Swiss ele alindi
         }
         // Eleme agaci: bekleyen (kazanansiz) macini bul -> rakibe hukmen. Yoksa (zaten elenmis) no-op.
@@ -1257,6 +1295,7 @@ class TournamentController extends Controller
                     $t->bracket = $bracket;
                     $t->save();
                 }
+
                 return;
             }
         }
@@ -1266,8 +1305,8 @@ class TournamentController extends Controller
     // Tek kaynak: App\Models\Tournament::startBracket (admin panel de ayni metodu kullanir).
     private function startBracket(Tournament $t): void
     {
-        if (\App\Support\Swiss\SwissRuntime::isSwiss($t)) {
-            \App\Support\Swiss\SwissRuntime::start($t); // 3 Haklı Swiss: 1. tur kura + eşleştirme
+        if (SwissRuntime::isSwiss($t)) {
+            SwissRuntime::start($t); // 3 Haklı Swiss: 1. tur kura + eşleştirme
 
             return;
         }
@@ -1345,6 +1384,7 @@ class TournamentController extends Controller
                 if (! $this->isTransientDb($e)) {
                     throw $e;
                 }
+
                 // Geçici kilit çakışması (1020/1213/1205): reconcile idempotent, sonraki poll yeniden dener.
                 continue;
             }
@@ -1361,7 +1401,7 @@ class TournamentController extends Controller
      */
     private function isTransientDb(\Throwable $e): bool
     {
-        $code = ($e instanceof \Illuminate\Database\QueryException) ? (int) ($e->errorInfo[1] ?? 0) : 0;
+        $code = ($e instanceof QueryException) ? (int) ($e->errorInfo[1] ?? 0) : 0;
 
         return in_array($code, [1020, 1205, 1213], true);
     }
@@ -1540,10 +1580,11 @@ class TournamentController extends Controller
                 break;
             }
         }
-        $u = \App\Models\User::find($t->champion_id);
+        $u = User::find($t->champion_id);
         if (! $u && ! $snap) {
             return null;
         }
+
         return [
             'id' => (int) $t->champion_id,
             'name' => $u->name ?? $snap['name'] ?? '',
@@ -1557,7 +1598,7 @@ class TournamentController extends Controller
         $playerIds = collect($t->players ?? [])->filter()->pluck('id')->filter()->values()->all();
         // Online/offline: son 90 sn icinde last_seen dokunan oyuncular "online" (bracket noktasi).
         $onlineIds = $playerIds
-            ? \App\Models\User::whereIn('id', $playerIds)
+            ? User::whereIn('id', $playerIds)
                 ->where('last_seen', '>=', now()->subSeconds(90))
                 ->pluck('id')->map(fn ($id) => (int) $id)->all()
             : [];
@@ -1575,7 +1616,7 @@ class TournamentController extends Controller
         }
         $matchPrs = [];
         if ($roomCodes) {
-            foreach (\App\Models\MatchResult::whereIn('room_code', array_unique($roomCodes))
+            foreach (MatchResult::whereIn('room_code', array_unique($roomCodes))
                 ->get(['room_code', 'user_id', 'pr', 'gnubg_pr']) as $mr) {
                 $val = $mr->gnubg_pr ?? $mr->pr;
                 if ($val !== null && $mr->room_code) {
@@ -1588,9 +1629,9 @@ class TournamentController extends Controller
             'players' => array_values(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'bracket' => $t->bracket,
             'champion_id' => $t->champion_id,
-            'swiss' => \App\Support\Swiss\SwissRuntime::isSwiss($t) ? \App\Support\Swiss\SwissRuntime::serialize($t) : null,
+            'swiss' => SwissRuntime::isSwiss($t) ? SwissRuntime::serialize($t) : null,
             // Lobi duyurulari (admin panelden; en yeni ustte). Yeni duyuruda istemci zil calar.
-            'announcements' => \App\Models\TournamentAnnouncement::where('tournament_id', $t->id)
+            'announcements' => TournamentAnnouncement::where('tournament_id', $t->id)
                 ->latest('id')->limit(30)
                 ->get(['id', 'message', 'created_at'])
                 ->map(fn ($a) => [

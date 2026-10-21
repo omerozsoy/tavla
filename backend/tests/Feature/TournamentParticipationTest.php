@@ -76,6 +76,34 @@ class TournamentParticipationTest extends TestCase
         $this->assertFalse($rowFor()['joined']);
     }
 
+    // ---- giriş ücreti YAKILIR (coin sink); ödül = yalnız admin'in yazdığı prize_coins/prizes ----
+
+    public function test_entry_fee_is_burned_not_added_to_prize_pool(): void
+    {
+        $u = $this->user('feeburn');
+        User::where('id', $u->id)->update(['coins' => 1000]);
+        $t = Tournament::create([
+            'name' => 'Fee', 'type' => 'swiss_triple', 'size' => 8, 'status' => 'open',
+            'players' => [], 'match_length' => 5, 'entry_fee' => 100, 'prize_coins' => 200,
+            'premium_only' => false,
+        ]);
+
+        Sanctum::actingAs($u);
+        $this->postJson("/api/tournaments/{$t->id}/join")->assertOk();
+
+        // Giriş ücreti havuza EKLENMEDİ (yakıldı) -> admin tabanı 200 korunur (300 OLMAZ)
+        $this->assertSame(200, (int) $t->fresh()->prize_coins, 'ücret havuza EKLENMEMELİ (admin tabanı korunur)');
+        $this->assertSame(100, (int) collect($t->fresh()->players)->firstWhere('id', $u->id)['fee_paid'], 'fee_paid iade için kaydedilmeli');
+        // Ücret oyuncudan düşüldü (join'de başarım bonusu olabilir -> tam değer sabit değil; iade farkı kesin)
+        $afterJoin = (int) $u->fresh()->coins;
+        $this->assertLessThan(1000, $afterJoin, 'giriş ücreti debit edilmeli (yakıldı)');
+
+        // Çıkınca ücret TAM İADE (+100) ama admin ödül tabanı BOZULMAZ (fee havuzda değildi)
+        $this->postJson("/api/tournaments/{$t->id}/leave")->assertOk();
+        $this->assertSame($afterJoin + 100, (int) $u->fresh()->coins, 'çıkışta tam ücret iade');
+        $this->assertSame(200, (int) $t->fresh()->prize_coins, 'çıkış admin ödül tabanını azaltmamalı');
+    }
+
     // ---- disqualify (admin) ------------------------------------------------
 
     public function test_disqualify_requires_admin(): void
