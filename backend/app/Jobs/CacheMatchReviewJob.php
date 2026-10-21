@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -110,13 +111,27 @@ class CacheMatchReviewJob implements ShouldQueue
             // takılıp ANINDA atlar (Snowie'yi de tekrar dispatch ETMEZ; Snowie zaten tek çağrıda iki satırı
             // yazar). Bitiş DB durumu AYNI, gnubg yükü ~yarı. room_code yoksa (pvb/bot) yalnız kendi satırı.
             $enc = json_encode($res);
-            $target = ! empty($mr->room_code)
-                ? MatchResult::where('room_code', $mr->room_code)
-                : MatchResult::where('id', $mr->id);
-            $target->update([
-                'gnubg_review' => $enc,
-                'gnubg_review_at' => now(),
-            ]);
+            // DEADLOCK KALKANI (2026-10-22): "where room_code" İKİ satırı TEK statement'ta kilitler;
+            // aynı anda odanın iki satırını farklı sırada güncelleyen başka aktörlerle (AnalyzeMatchPrJob
+            // opponent_pr senkronu, AnalyzeMatchSnowieJob, writePrFromReview döngüsü, eşzamanlı on-demand
+            // review) InnoDB deadlock (40001/1213) olabiliyordu. Fix1 ÖNCESİ bu job yalnız KENDİ satırını
+            // (where id) kilitliyordu -> deadlock yoktu. tries=1 best-effort olduğundan deadlock iş'i
+            // failed_jobs'a düşürüp ALARM atıyordu. DB::transaction(...,5) deadlock'ta OTOMATİK retry eder
+            // (küçük in-memory update -> ucuz). Son çare başarısızsa YUT: gnubg_review yazılmaz -> kardeş
+            // guard'a takılmaz, review'u tekrar üretir (eski davranış) + on-demand telafi eder (zararsız).
+            try {
+                DB::transaction(function () use ($mr, $enc) {
+                    $target = ! empty($mr->room_code)
+                        ? MatchResult::where('room_code', $mr->room_code)
+                        : MatchResult::where('id', $mr->id);
+                    $target->update([
+                        'gnubg_review' => $enc,
+                        'gnubg_review_at' => now(),
+                    ]);
+                }, 5);
+            } catch (\Throwable $e) {
+                Log::warning('review gnubg_review yazımı başarısız (deadlock/retry tükendi, yok sayıldı; on-demand telafi eder)', ['id' => $mr->id, 'err' => $e->getMessage()]);
+            }
             Log::info('review önden önbelleğe alındı', ['id' => $mr->id, 'decisions' => $res['decisions'] ?? null]);
             // PR'ı REVIEW'DAN türet (provisional) -> buggy per-pozisyon cubePr'ı devreden çıkar.
             $this->writePrFromReview($mr, is_array($res['log'] ?? null) ? $res['log'] : []);
