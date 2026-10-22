@@ -59,4 +59,30 @@ class InviteInGameTest extends TestCase
         $invites = $this->postJson('/api/ping')->assertOk()->json('invites');
         $this->assertCount(0, $invites);
     }
+
+    // TURNUVA MAÇI (dar kapsam): updated_at BAYAT (>5dk) olsa bile turnuva maçındaki oyuncu davet
+    // EDİLEMEZ/KABUL EDEMEZ + banner almaz. Kök: turnuva saati cache'te -> rooms.updated_at bayatlayıp
+    // 5dk guard'ı düşüyordu. userInTournamentMatch (tourn_room_target cache) pencere olmadan bloklar.
+    public function test_stale_tournament_match_player_is_not_invitable(): void
+    {
+        $from = $this->user('from');
+        $me = $this->user('me');
+        // Turnuva maçı odası, updated_at 10 DK ÖNCE (bayat) -> normal 5dk guard'ı KAÇIRIR.
+        $room = Room::create(['code' => 'TRNM1', 'p1_token' => 't1', 'p1_user_id' => $me->id,
+            'p1_name' => 'ME', 'status' => 'playing', 'mode' => '', 'version' => 0]);
+        $room->forceFill(['updated_at' => now()->subMinutes(10)])->saveQuietly();
+        // Bu odayı TURNUVA maçı yap (RoomController mode türetimiyle aynı anahtar).
+        \Illuminate\Support\Facades\Cache::put(
+            \App\Http\Controllers\TournamentController::roomTargetKey('TRNM1'), [$me->id, $from->id], now()->addHour()
+        );
+
+        // 1) invite(): from -> me reddedilir (turnuva maçında).
+        Sanctum::actingAs($from);
+        $this->postJson('/api/friends/'.$me->id.'/invite', ['target' => 1])->assertStatus(409);
+
+        // 2) ping(): me bekleyen daveti olsa bile banner almaz.
+        $this->pendingInvite($from, $me, 'TRNINV');
+        Sanctum::actingAs($me);
+        $this->assertCount(0, $this->postJson('/api/ping')->assertOk()->json('invites'));
+    }
 }

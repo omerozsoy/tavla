@@ -14,6 +14,31 @@ class PresenceController extends Controller
     /** Davetin görünür + kabul edilebilir kaldığı süre (dk). /ping ve respond AYNI pencereyi kullanır. */
     public const INVITE_TTL_MINUTES = 2;
 
+    /**
+     * Kullanıcı ŞU AN bir TURNUVA maçı oynuyor mu? (status='playing' oda + 'tourn_room_target' cache
+     * anahtarı = o oda bir turnuva maçı; bkz RoomController mode türetimi.) updated_at PENCERESİ YOK:
+     * turnuva maç saati/state'i cache'te tutulduğundan rooms.updated_at uzun düşünmede bayatlayıp
+     * normal davet guard'larının 5dk penceresini düşürüyordu -> maçtaki turnuva oyuncusu davet
+     * edilebilir oluyordu. Burada 'playing' turnuva odası varken (bayat olsa da) DAİMA true döner.
+     * Kapsam: yalnız turnuva MAÇI oynanırken; tur-arası bekleme HARİÇ (kullanıcı 'dar' seçti).
+     */
+    private function userInTournamentMatch(?int $uid): bool
+    {
+        if (! $uid) {
+            return false;
+        }
+        $codes = Room::where('status', 'playing')
+            ->where(fn ($q) => $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid))
+            ->pluck('code');
+        foreach ($codes as $c) {
+            if (\Illuminate\Support\Facades\Cache::has(TournamentController::roomTargetKey((string) $c))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Kalp atisi: cevrimici tut + bekleyen davetleri dondur (istemci periyodik cagirir)
     public function ping(Request $request)
     {
@@ -29,7 +54,9 @@ class PresenceController extends Controller
         $inGame = \App\Models\Room::where('status', 'playing')
             ->where('updated_at', '>', now()->subMinutes(5))
             ->where(fn ($q) => $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id))
-            ->exists();
+            ->exists()
+            // Turnuva maçı: updated_at bayatlasa da (cache-state) davet banner'ı gösterme.
+            || $this->userInTournamentMatch($me->id);
 
         // BAYAT DAVET KALKANI: davet YALNIZCA davet edenin odası HÂLÂ 'waiting' iken canlıdır.
         // Oda silinmiş/başlamış/bitmiş (davet eden iptal etti, ayrıldı ya da başka maça geçti) ise
@@ -318,7 +345,8 @@ class PresenceController extends Controller
                 $q->where('p1_user_id', $userId)->orWhere('p2_user_id', $userId);
             })
             ->exists();
-        if ($inMatch) {
+        // Turnuva maçındaki oyuncu HİÇBİR ŞEKİLDE davet edilemez (updated_at bayatlasa da — cache-state).
+        if ($inMatch || $this->userInTournamentMatch($userId)) {
             return $this->fail('Davet ettiğiniz oyuncu aktif maçta.', 409);
         }
 
@@ -425,7 +453,8 @@ class PresenceController extends Controller
             ->where('updated_at', '>', now()->subMinutes(5))
             ->where(fn ($q) => $q->where('p1_user_id', $me)->orWhere('p2_user_id', $me))
             ->exists();
-        if ($busy) {
+        // Turnuva maçındayken (updated_at bayatlasa da) daveti kabul edemez.
+        if ($busy || $this->userInTournamentMatch($me)) {
             return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
         }
 
