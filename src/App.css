@@ -17704,7 +17704,12 @@ body:has(.spectate-view) .app.lobby {
 /* Mobil (<=900: sol menu drawer'a doner, icerik tam genislik): hepsi alt alta */
 @media (max-width: 900px) {
   .analyzer {
-    --board-h: max(240px, min(48vh, calc((100vw - 34px) / 1.42)));
+    /* board-h GENISLIGE gore (320px'de tasmasin): eski `max(240px, ...)` tabani dar telefonda
+       genislik-sigmasini (320px'de ~195px ister) EZIP board'u 357px'e zorluyordu -> tahta her
+       iki yandan ~18px tasip bear-off tepsisini (kup) kirpiyordu. Bolen 1.5 = board'un GERCEK
+       en/boy orani (~1.49, genisletilmis bear-off dahil) + pay -> genislik DAIMA viewport'a sigar.
+       Taban 185px yalniz <305px ekranda (iPhone SE altinda) board'u kullanilabilir tutar. */
+    --board-h: max(185px, min(48vh, calc((100vw - 28px) / 1.5)));
   }
   .analyzer-body {
     grid-template-columns: 1fr;
