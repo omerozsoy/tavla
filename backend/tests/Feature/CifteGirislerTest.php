@@ -60,4 +60,36 @@ class CifteGirislerTest extends TestCase
         $this->assertSame('5.5.5.5', $rows[0]['ip']);
         $this->assertSame(2, $rows[0]['count']);
     }
+
+    public function test_flags_matches_between_same_ip_accounts(): void
+    {
+        $a = $this->user('ali');
+        $b = $this->user('veli');
+        foreach ([$a, $b] as $u) {
+            DB::table('shield_presence')->insert([
+                'subject' => 'u:'.$u->id, 'user_id' => $u->id, 'ip' => '1.2.3.4',
+                'last_seen_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        // ali vs veli: 2 maç (aynı room_code), ali ikisini de kazandı, 100 coin bahis
+        foreach (['R1', 'R2'] as $room) {
+            foreach ([[$a, true], [$b, false]] as [$u, $won]) {
+                DB::table('match_results')->insert([
+                    'user_id' => $u->id, 'won' => $won, 'room_code' => $room, 'match_type' => 'match',
+                    'stake' => 100, 'opponent_rating' => 1500, 'rating_before' => 1500,
+                    'rating_after' => 1500, 'delta' => 0, 'match_length' => 3, 'pr' => 5.0,
+                ]);
+            }
+        }
+
+        $rows = (new CifteGirisler)->sharedIps();
+
+        $this->assertSame(2, $rows[0]['inter']['count'], 'kendi aralarında 2 maç sayılmalı');
+        $pair = $rows[0]['inter']['pairs'][0];
+        $this->assertSame(2, $pair['n']);
+        $this->assertSame(200, $pair['stake']);
+        $aliIsA = $pair['a'] === $a->id;
+        $this->assertSame(2, $aliIsA ? $pair['awins'] : $pair['bwins'], 'ali 2 galibiyet');
+        $this->assertSame(0, $aliIsA ? $pair['bwins'] : $pair['awins'], 'veli 0 galibiyet');
+    }
 }

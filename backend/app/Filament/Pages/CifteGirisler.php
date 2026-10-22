@@ -47,7 +47,81 @@ class CifteGirisler extends Page
 
     public function sharedIps(): array
     {
-        return self::buildSharedIps(max(2, $this->minUsers));
+        return $this->withInterMatches(self::buildSharedIps(max(2, $this->minUsers)));
+    }
+
+    /**
+     * HİLE SİNYALİ: her paylaşılan IP için, o IP'deki hesapların BİRBİRİYLE oynadığı online maçları
+     * (match_type=match, aynı room_code'da ikisi de o IP'de) say — çift başına maç adedi + toplam stake
+     * (coin transfer) + galibiyet dağılımı (boost/danışıklı deseni: biri hep kaybediyorsa şüpheli).
+     * Ağır sorgu; YALNIZ sayfa görünümünde (sharedIps) çalışır, nav rozetinde DEĞİL.
+     */
+    private function withInterMatches(array $rows): array
+    {
+        if ($rows === [] || ! Schema::hasTable('match_results')) {
+            return $rows;
+        }
+        $all = [];
+        foreach ($rows as $r) {
+            foreach ($r['users'] as $u) {
+                $all[$u['id']] = true;
+            }
+        }
+        $all = array_keys($all);
+
+        // Bu kullanıcıların online maçları: room_code -> [user_id => {won, stake}]
+        $byRoom = [];
+        foreach (DB::table('match_results')
+            ->whereIn('user_id', $all)->whereNotNull('room_code')
+            ->where('match_type', 'match')
+            ->get(['room_code', 'user_id', 'won', 'stake']) as $m) {
+            $byRoom[$m->room_code][(int) $m->user_id] = ['won' => (bool) $m->won, 'stake' => (int) ($m->stake ?? 0)];
+        }
+
+        foreach ($rows as &$row) {
+            $set = array_fill_keys(array_column($row['users'], 'id'), true);
+            $names = [];
+            foreach ($row['users'] as $u) {
+                $names[$u['id']] = $u['name'];
+            }
+            $pairs = [];
+            $count = 0;
+            $stakeTotal = 0;
+            foreach ($byRoom as $players) {
+                $here = array_values(array_filter(array_keys($players), fn ($uid) => isset($set[$uid])));
+                if (count($here) < 2) {
+                    continue; // ikisi de bu IP'de değil -> self-play sayılmaz
+                }
+                $n = count($here);
+                for ($i = 0; $i < $n; $i++) {
+                    for ($j = $i + 1; $j < $n; $j++) {
+                        $a = min($here[$i], $here[$j]);
+                        $b = max($here[$i], $here[$j]);
+                        $key = $a.'-'.$b;
+                        $st = max($players[$a]['stake'], $players[$b]['stake']);
+                        $pairs[$key]['a'] = $a;
+                        $pairs[$key]['b'] = $b;
+                        $pairs[$key]['aName'] = $names[$a] ?? ('#'.$a);
+                        $pairs[$key]['bName'] = $names[$b] ?? ('#'.$b);
+                        $pairs[$key]['n'] = ($pairs[$key]['n'] ?? 0) + 1;
+                        $pairs[$key]['stake'] = ($pairs[$key]['stake'] ?? 0) + $st;
+                        $winner = $players[$a]['won'] ? $a : ($players[$b]['won'] ? $b : 0);
+                        $pairs[$key]['awins'] = ($pairs[$key]['awins'] ?? 0) + ($winner === $a ? 1 : 0);
+                        $pairs[$key]['bwins'] = ($pairs[$key]['bwins'] ?? 0) + ($winner === $b ? 1 : 0);
+                        $count++;
+                        $stakeTotal += $st;
+                    }
+                }
+            }
+            usort($pairs, fn ($x, $y) => $y['n'] <=> $x['n']);
+            $row['inter'] = ['count' => $count, 'stake' => $stakeTotal, 'pairs' => array_values($pairs)];
+        }
+        unset($row);
+
+        // Kendi aralarında maç yapan IP'ler (HİLE ŞÜPHESİ) EN ÜSTTE; sonra hesap sayısı.
+        usort($rows, fn ($a, $b) => [$b['inter']['count'], $b['count']] <=> [$a['inter']['count'], $a['count']]);
+
+        return $rows;
     }
 
     /**
