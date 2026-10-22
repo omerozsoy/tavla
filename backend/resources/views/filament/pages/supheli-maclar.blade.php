@@ -119,43 +119,37 @@
                                 <span style="color:#ef4444">● motor&lt;{{ \App\Support\CheatScan::PR_ABSOLUTE }}: <b>{{ $pf['below_engine'] }}</b></span>
                                 <span style="color:#f59e0b">🏆 şampiyon&lt;{{ \App\Support\CheatScan::PR_WORLD_CHAMPION }}: <b>{{ $pf['below_wc'] }}</b></span>
                             </div>
-                            {{-- PR SEVİYE DAĞILIMI (anlaşılır histogram): her seviyede KAÇ maç oynamış.
-                                 Kırmızı/turuncu (motor/şampiyon) çubuklar büyükse insan-üstü oynuyor = şüpheli. --}}
+                            {{-- KARŞILAŞTIRMA GRAFİĞİ (en anlaşılır): oyuncunun hamle hatası (PR) referanslarla
+                                 yan yana. KISA çubuk = daha iyi oyuncu. Oyuncu çubuğu şampiyon kadar kısa = insani değil. --}}
                             @php
-                                $tiers = [
-                                    ['lbl' => '🔴 Motor seviyesi', 'rng' => 'PR 0–2', 'lo' => 0, 'hi' => \App\Support\CheatScan::PR_ABSOLUTE, 'c' => '#ef4444'],
-                                    ['lbl' => '🏆 Dünya şampiyonu', 'rng' => 'PR 2–2.5', 'lo' => \App\Support\CheatScan::PR_ABSOLUTE, 'hi' => \App\Support\CheatScan::PR_WORLD_CHAMPION, 'c' => '#f59e0b'],
-                                    ['lbl' => '🟡 Uzman', 'rng' => 'PR 2.5–6', 'lo' => \App\Support\CheatScan::PR_WORLD_CHAMPION, 'hi' => 6, 'c' => '#eab308'],
-                                    ['lbl' => '🟢 Normal oyuncu', 'rng' => 'PR 6+', 'lo' => 6, 'hi' => 1000000, 'c' => '#10b981'],
+                                $pm = (float) $pf['median'];
+                                $wc = \App\Support\CheatScan::PR_WORLD_CHAMPION;
+                                $cmp = [
+                                    ['lbl' => '🏆 Dünya şampiyonu', 'pr' => $wc, 'c' => '#f59e0b', 'hl' => false],
+                                    ['lbl' => '👤 BU OYUNCU', 'pr' => $pm, 'c' => $pm < $wc ? '#ef4444' : ($pm < 6 ? '#f59e0b' : '#10b981'), 'hl' => true],
+                                    ['lbl' => '🟢 Normal iyi oyuncu', 'pr' => 9, 'c' => '#10b981', 'hl' => false],
+                                    ['lbl' => '🔰 Acemi', 'pr' => 15, 'c' => '#9ca3af', 'hl' => false],
                                 ];
-                                foreach ($tiers as &$ti) { $ti['n'] = 0; }
-                                unset($ti);
-                                foreach ($pf['points'] as $p) {
-                                    foreach ($tiers as &$ti) {
-                                        if ($p['pr'] >= $ti['lo'] && $p['pr'] < $ti['hi']) { $ti['n']++; break; }
-                                    }
-                                    unset($ti);
-                                }
-                                $maxN = max(1, max(array_map(fn ($t) => $t['n'], $tiers)));
+                                $cmpMax = max(15, (int) ceil($pm));
                             @endphp
-                            <div class="space-y-1.5">
-                                <div class="text-[11px] text-gray-500">
-                                    Karşılaştırma: 🏆 <b>dünya şampiyonu ~2.5</b> · 🟢 normal iyi oyuncu ~9 ·
-                                    bu oyuncunun medyanı <b style="color:{{ $pf['median'] < \App\Support\CheatScan::PR_WORLD_CHAMPION ? '#ef4444' : '#6b7280' }}">{{ $pf['median'] }}</b>
-                                    — <b>{{ $pf['below_wc'] }}</b> maçı dünya şampiyonundan bile iyi.
+                            <div class="space-y-2">
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Hamle hatası (PR) karşılaştırması — <b>kısa çubuk = daha iyi oyuncu</b>.
+                                    Bu oyuncunun çubuğu 🏆 dünya şampiyonu kadar kısaysa, hamleleri bir insana ait değil.
                                 </div>
-                                @foreach ($tiers as $ti)
+                                @foreach ($cmp as $b)
                                     <div class="flex items-center gap-2">
-                                        <div class="w-36 sm:w-44 shrink-0 text-xs">{{ $ti['lbl'] }} <span class="text-gray-400 text-[10px]">({{ $ti['rng'] }})</span></div>
-                                        <div class="flex-1 bg-gray-100 dark:bg-white/5 rounded h-5 overflow-hidden">
-                                            <div class="h-5 rounded flex items-center justify-end pr-1.5 text-[11px] font-bold text-white"
-                                                 style="width: {{ $ti['n'] > 0 ? max(10, round($ti['n'] / $maxN * 100)) : 0 }}%; background: {{ $ti['c'] }}">
-                                                {{ $ti['n'] > 0 ? $ti['n'] : '' }}
-                                            </div>
+                                        <div class="w-32 sm:w-44 shrink-0 text-sm {{ $b['hl'] ? 'font-bold' : 'text-gray-600 dark:text-gray-400' }}">{{ $b['lbl'] }}</div>
+                                        <div class="flex-1 bg-gray-100 dark:bg-white/5 rounded-lg h-7 overflow-hidden {{ $b['hl'] ? 'ring-2 ring-red-400 dark:ring-red-500' : '' }}">
+                                            <div class="h-7 rounded-lg flex items-center px-2 text-xs font-bold text-white whitespace-nowrap"
+                                                 style="width: {{ max(7, round($b['pr'] / $cmpMax * 100)) }}%; background: {{ $b['c'] }}">PR {{ $b['pr'] }}</div>
                                         </div>
-                                        <div class="w-8 shrink-0 text-right text-xs font-semibold">{{ $ti['n'] }}</div>
                                     </div>
                                 @endforeach
+                                <div class="text-xs {{ $pf['below_wc'] > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500' }}">
+                                    👉 Bu oyuncunun <b>{{ $pf['below_wc'] }}</b> maçı dünya şampiyonu seviyesinin altında
+                                    ({{ $pf['n'] }} büyük-örneklem maçtan). İnsan 60+ kararlı maçta bunu yapamaz.
+                                </div>
                             </div>
                         </div>
 
