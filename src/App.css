@@ -16926,8 +16926,12 @@ body:has(.spectate-view) .app.lobby {
   vertical-align: -0.12em;
   flex: none;
 }
-/* Analizde surukle-birak: pul uzerinde dokunma kaydirmayi engelle (parmakla surukleme) */
-.analyzer-board .checker {
+/* Analizde surukle-birak: pul VE KUP uzerinde dokunma kaydirmayi engelle (parmakla surukleme).
+   Kupte touch-action YOKken dokunmatikte surukleme kaydirma sayilip pointercancel ile iptal
+   oluyordu -> ne surukleme ne hayalet (ghost) gorunuyordu. touch-action:none ile parmak suruklemesi
+   pointermove akitir -> hayalet kupu parmakla tasir. */
+.analyzer-board .checker,
+.analyzer-board .cube {
   touch-action: none;
 }
 .analyzer-board .point.selectable,

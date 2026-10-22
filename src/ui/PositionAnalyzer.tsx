@@ -483,16 +483,21 @@ export default function PositionAnalyzer({
       if (d?.moved) {
         justDraggedRef.current = true // sonraki click'i (tas ekleme) bastir
         const to = locFromPoint(ev.clientX, ev.clientY)
-        // ASAGI CEKME = SIL: pulu tutup asagi dogru cekip birakirsan o hanedeki pullar
-        // silinir. Yalniz gecerli bir hedefe BIRAKILMADIYSA (bosluk ya da ayni hane)
-        // gecerlidir -> normal hamle (or. ust haneden alt haneye tasima) BOZULMAZ.
+        // DISARI SURUKLE = SIL: pulu tahta SINIRLARININ DISINA birakirsan o hanedeki pullar
+        // silinir (yon onemsiz -> kullanici "disari suruklesin yeter"). Ek olarak eski ASAGI>=24px
+        // gesture'i de gecerli (tahta ICINDE bos/ayni haneye birakma kaza SIL yapmasin diye kapi).
+        const boardEl = document.querySelector('.analyzer-board .board') as HTMLElement | null
+        const br = boardEl?.getBoundingClientRect()
+        const outside =
+          !!br &&
+          (ev.clientX < br.left || ev.clientX > br.right || ev.clientY < br.top || ev.clientY > br.bottom)
         const dy = ev.clientY - d.y0
         const dx = Math.abs(ev.clientX - d.x0)
         const nowhere =
           !to ||
           (to.type === 'point' && d.from.type === 'point' && to.idx === d.from.idx) ||
           (to.type === 'bar' && d.from.type === 'bar')
-        if (nowhere && dy >= 24 && dy >= dx) clearFrom(d.from, d.color)
+        if (outside || (nowhere && dy >= 24 && dy >= dx)) clearFrom(d.from, d.color)
         else performMove(d.color, d.from, to)
       }
     }
