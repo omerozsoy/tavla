@@ -13396,7 +13396,7 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 500;
   color: var(--text);
 }
-.live-panel .lm-name { font-weight: 500; }
+.live-panel .lm-name { font-weight: 400; }
 .live-panel .lm-len { font-weight: 500; color: var(--accent); }
 /* Öne çıkan maç: parıltı/glow YOK -> yalnız sol terracotta şerit (Swiss). */
 .live-panel .lm-rise { display: none; } /* eski parçacık parıltısı kapalı */
