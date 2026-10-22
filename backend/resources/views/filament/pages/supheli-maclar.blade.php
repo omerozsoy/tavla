@@ -2,7 +2,7 @@
     @php
         $s = $this->stats();
         $rows = $this->suspects();
-        $fmt = fn ($d) => $d ? \Illuminate\Support\Carbon::parse($d)->format('d.m.Y') : '—';
+        $fmt = fn ($d) => $d ? \Illuminate\Support\Carbon::parse($d)->format('d.m.Y H:i') : '—';
     @endphp
 
     <div wire:poll.120s class="space-y-6">
