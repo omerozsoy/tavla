@@ -1815,6 +1815,11 @@ button[aria-disabled='true'],
   margin: 0;
   flex: 0 0 auto;
 }
+/* Maç tipi (uzunluk) sekmeleri AYRI ÜST SATIR: tam genişlik -> arama + dönem alt satıra düşer. */
+.mh-card .mh-filters .mh-lentabs {
+  flex: 0 0 100%;
+  margin: 0;
+}
 /* "Daha fazla goster" satiri */
 .mh-card .mh-more {
   display: flex;
