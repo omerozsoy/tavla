@@ -775,11 +775,6 @@ export default function PositionAnalyzer({
               <Icon name="alert" size={15} /> {t('pa.limitWarn')}
             </div>
           )}
-          {isPreview && (
-            <div className="pa-preview-toast" role="status">
-              <Icon name="eye" size={14} /> {t('pa.previewOn')}
-            </div>
-          )}
           <Board
             state={displayState}
             selectableFroms={isPreview ? new Set() : allFroms}
@@ -1119,6 +1114,19 @@ export default function PositionAnalyzer({
               </div>
               <div className="move-list">
                 <div className="move-list-head">{t('an.bestMoves')}</div>
+                {/* HAMLE ÖNCESİ: listenin başında; tıklayınca önizleme kapanır -> düzenlemeye /
+                    başlangıç pozisyonuna döner (banner yerine net satır). previewIdx===null iken vurgulu. */}
+                <button
+                  type="button"
+                  className={`move-row pa-before ${previewIdx === null ? 'sel' : ''}`}
+                  onClick={() => setPreviewIdx(null)}
+                  title={t('rep.beforeMove')}
+                >
+                  <span className="rank" aria-hidden="true"><Icon name="eye" size={13} /></span>
+                  <span className="notation">{t('rep.beforeMove')}</span>
+                  <span className="eq" />
+                  <span className="diff" />
+                </button>
                 {moveRows.map((r, i) => (
                   <button
                     type="button"

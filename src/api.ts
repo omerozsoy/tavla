@@ -771,6 +771,7 @@ export interface MyMatchesQuery {
   limit?: number
   q?: string
   from?: string
+  len?: number // maç tipi filtresi: 1/3/5/7… puanlık; 0 = jeton oyunu; undefined = tüm tipler
 }
 export async function myMatches(opts: MyMatchesQuery = {}): Promise<MyMatch[]> {
   const p = new URLSearchParams()
@@ -778,9 +779,16 @@ export async function myMatches(opts: MyMatchesQuery = {}): Promise<MyMatch[]> {
   if (opts.limit) p.set('limit', String(opts.limit))
   if (opts.q && opts.q.trim()) p.set('q', opts.q.trim())
   if (opts.from) p.set('from', opts.from)
+  if (opts.len != null) p.set('len', String(opts.len))
   const qs = p.toString()
   const data = await req<{ matches: MyMatch[] }>(`/me/matches${qs ? `?${qs}` : ''}`)
   return data.matches
+}
+
+// Maç tipi filtre seçenekleri: kullanıcının oynadığı distinct maç uzunlukları (0=jeton, 1/3/5/7…).
+export async function myMatchLengths(): Promise<number[]> {
+  const data = await req<{ lengths: number[] }>('/me/match-lengths')
+  return Array.isArray(data.lengths) ? data.lengths : []
 }
 
 // Profil analizi (grafikler)

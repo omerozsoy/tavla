@@ -5,7 +5,7 @@ import { Icon } from './Icon'
 import Loading from './Loading'
 import { useEscape } from './useEscape'
 import { useToast } from './Toast'
-import { myMatches, matchLogById, matchGnubgReview, type MyMatch, type EJPeriod } from '../api'
+import { myMatches, myMatchLengths, matchLogById, matchGnubgReview, type MyMatch, type EJPeriod } from '../api'
 import MatchReport, { type LogEntry } from './MatchReport'
 import MatchSummary from './MatchSummary'
 import type { MoveLogEntry } from '../storage'
@@ -112,6 +112,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [view, setView] = useState<'report' | 'summary'>('report')
   // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi.
   const [period, setPeriod] = useState<EJPeriod>('all')
+  // MAÇ TİPİ (uzunluk) filtresi: 'all' = tüm tipler; sayı = o puanlık (0 = jeton). Sunucu tarafında.
+  const [lenFilter, setLenFilter] = useState<number | 'all'>('all')
+  const [lengths, setLengths] = useState<number[]>([]) // oyuncunun oynadığı distinct uzunluklar (sekmeler)
   const [q, setQ] = useState('') // rakip arama (ham input)
   const [qDeb, setQDeb] = useState('') // debounce sonrasi (sunucuya giden)
   const offsetRef = useRef(0)
@@ -191,7 +194,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       setLoadingMore(true)
     }
     const off = reset ? 0 : offsetRef.current
-    myMatches({ offset: off, limit: PAGE, q: qDeb, from: periodFrom(period) })
+    myMatches({ offset: off, limit: PAGE, q: qDeb, from: periodFrom(period), len: lenFilter === 'all' ? undefined : lenFilter })
       .then((data) => {
         setRows((prev) => (reset ? data : [...prev, ...data]))
         offsetRef.current = off + data.length
@@ -223,12 +226,17 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     return () => clearTimeout(id)
   }, [q])
 
-  // Filtre degisince (arama/donem) bastan yukle. Mount'ta da bir kez calisir (ilk yukleme).
+  // Filtre degisince (arama/donem/mac-tipi) bastan yukle. Mount'ta da bir kez calisir (ilk yukleme).
   useEffect(() => {
     setOpenIdx(null)
     load(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qDeb, period])
+  }, [qDeb, period, lenFilter])
+
+  // Mac tipi sekmeleri: oyuncunun oynadigi distinct uzunluklari bir kez cek (best-effort).
+  useEffect(() => {
+    myMatchLengths().then(setLengths).catch(() => {})
+  }, [])
 
   // Profilden bir mac id'siyle gelindiyse: o maci bul, genislet, ortala. Ilk sayfada yoksa
   // (eski mac) bulana kadar "Daha fazla" ile sayfalari otomatik cek.
@@ -272,8 +280,34 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
         </h2>
         <p className="register-sub">{t('mh.sub')}</p>
 
-        {/* Filtre: rakip arama + donem sekmeleri (her zaman gorunur ki bos durumda da daraltilabilsin) */}
+        {/* Filtre: EN ÜSTTE maç tipi (uzunluk) sekmeleri + rakip arama + donem sekmeleri. */}
         <div className="mh-filters">
+          {/* MAÇ TİPİ: oyuncunun oynadığı tüm uzunluklar (1/3/5/7 puan, jeton). Birden çok tip varsa göster. */}
+          {lengths.length > 1 && (
+            <div className="ej-periods mh-lentabs" role="tablist" aria-label={t('mh.typeFilter')}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={lenFilter === 'all'}
+                className={`ej-period ${lenFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setLenFilter('all')}
+              >
+                {t('errorJournal.period.all')}
+              </button>
+              {lengths.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="tab"
+                  aria-selected={lenFilter === n}
+                  className={`ej-period ${lenFilter === n ? 'active' : ''}`}
+                  onClick={() => setLenFilter(n)}
+                >
+                  {n > 0 ? t('mh.ptMatch', { n }) : t('mh.moneyGame')}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             className="mh-search"
             type="search"

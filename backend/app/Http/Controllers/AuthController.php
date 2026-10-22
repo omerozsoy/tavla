@@ -1735,6 +1735,17 @@ class AuthController extends Controller
                 // gecersiz tarih -> filtreyi yoksay
             }
         }
+        // MAÇ TİPİ filtresi (maç uzunluğu): 'len' = 1/3/5/7… puanlık maç; 0 = jeton oyunu (match_length
+        // null veya 0). Boş -> tüm tipler. Sayfalama/arama/dönemle birlikte SUNUCU tarafında uygulanır.
+        $len = $request->query('len');
+        if ($len !== null && $len !== '') {
+            $len = (int) $len;
+            if ($len === 0) {
+                $query->where(fn ($q) => $q->whereNull('match_length')->orWhere('match_length', 0));
+            } else {
+                $query->where('match_length', $len);
+            }
+        }
         $query->orderByDesc('id')->offset($offset)->limit($limit)->select($cols);
         if ($hasLog) {
             // has_log yalniz GERCEK karar iceren log icin true. Bos sarmalayici
@@ -1873,6 +1884,18 @@ class AuthController extends Controller
             ]);
 
         return response()->json(['matches' => $matches]);
+    }
+
+    // MAÇ TİPİ filtre seçenekleri: kullanıcının OYNADIĞI distinct maç uzunlukları (1/3/5/7… puanlık;
+    // null/0 -> 0 = jeton oyunu). Maç Analizleri'ndeki tip sekmeleri bunu okur. Hafif tek sorgu.
+    public function myMatchLengths(Request $request)
+    {
+        $me = $request->user();
+        $lengths = \App\Models\MatchResult::where('user_id', $me->id)
+            ->select('match_length')->distinct()->pluck('match_length')
+            ->map(fn ($v) => (int) ($v ?? 0))->unique()->sort()->values()->all();
+
+        return response()->json(['lengths' => $lengths]);
     }
 
     // Bir macin tam analiz log'u (hamle-hamle MatchReport icin). Sahiplik kontrolu.

@@ -165,6 +165,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     // "Şikayetlerim": oyuncunun maç sohbetinde gönderdiği küfür şikayetleri + yönetim sonucu (durum).
     Route::get('/me/chat-reports', [RoomController::class, 'myChatReports']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
+    Route::get('/me/match-lengths', [AuthController::class, 'myMatchLengths']); // maç tipi filtre seçenekleri
     // Maç Analizleri (derin/gnubg) PREMIUM-only. NOT: sonuç ekranı bu uca çağrı yapıp 403'te
     // sessizce YEREL (yüzeysel) analize düşer -> free kullanıcı yüzeysel, premium derin görür.
     Route::middleware(\App\Http\Middleware\EnsurePremium::class)->get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
