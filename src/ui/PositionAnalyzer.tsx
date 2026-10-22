@@ -399,6 +399,50 @@ export default function PositionAnalyzer({
     if (previewIdx != null) return // onizleme modunda surukleme yok
     if (e.button !== 0 && e.pointerType === 'mouse') return
     const target = e.target as HTMLElement
+    // KUP SURUKLEME (ozellikle dokunmatik): kupu tutup YUKARI (rakip/siyah) / ASAGI (ben/beyaz) /
+    // ORTAYA surukle -> sahip birakma yuksekligine gore atanir. Analyzer board'u dik cevrilmez ->
+    // ust=siyah, alt=beyaz (bkz Board topBarPlayer: flip yok). Tap (hareketsiz) -> onBoardClickCapture
+    // eski bumpCube('white') ile buyutur. Sag-tiki olmayan dokunmatikte "karsiya tasima" boyle cozulur.
+    const cubeEl = target.closest('.cube') as HTMLElement | null
+    if (cubeEl) {
+      const boardRect = (cubeEl.closest('.board') as HTMLElement | null)?.getBoundingClientRect()
+      const rect = cubeEl.getBoundingClientRect()
+      const x0 = e.clientX
+      const y0 = e.clientY
+      const thr = e.pointerType === 'mouse' ? 6 : 12 // dokunmada parmak titremesi payi
+      let moved = false
+      let ghost: HTMLDivElement | null = null
+      const onMove = (ev: PointerEvent) => {
+        if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < thr) return
+        if (!moved) {
+          moved = true
+          justDraggedRef.current = true // sonraki click (bumpCube) bastirilsin
+          ghost = document.createElement('div')
+          ghost.className = 'cube pa-cube-ghost'
+          ghost.textContent = cubeEl.textContent
+          ghost.style.width = `${rect.width}px`
+          ghost.style.height = `${rect.height}px`
+          document.body.appendChild(ghost)
+        }
+        if (ghost) {
+          ghost.style.left = `${ev.clientX}px`
+          ghost.style.top = `${ev.clientY}px`
+        }
+      }
+      const onUp = (ev: PointerEvent) => {
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        window.removeEventListener('pointercancel', onUp)
+        ghost?.remove()
+        if (!moved || !boardRect) return
+        const rel = (ev.clientY - boardRect.top) / boardRect.height
+        setCubeOwner(rel < 0.4 ? 'black' : rel > 0.6 ? 'white' : null)
+      }
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+      window.addEventListener('pointercancel', onUp)
+      return
+    }
     const checkerEl = target.closest('.checker') as HTMLElement | null
     if (!checkerEl) return // surukleme yalnizca pul uzerinden baslar
     const color: Player = checkerEl.classList.contains('white') ? 'white' : 'black'
@@ -877,6 +921,9 @@ export default function PositionAnalyzer({
                 </label>
               </div>
             )}
+            {/* "Sinirsiz" (para oyunu) secili -> skor alani YOK; kullanici skoru nereye gireceGini
+                bulamiyordu. Kisa ipucu: skor icin bir mac uzunluGu sec. */}
+            {matchLen === 0 && <div className="pa-edit-help">{t('pa.scoreHint')}</div>}
           </div>
 
           <div className="setup-row">

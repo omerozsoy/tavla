@@ -9725,7 +9725,10 @@ html.fs-active .account-bar {
 /* ---- Hamburger (mobil menu dugmesi) ---- */
 .hamburger {
   display: none;
-  position: fixed;
+  /* ABSOLUTE (fixed DEGIL): hamburger .topbar-stack'in cocugu -> bar "icerikle yukari kay"
+     yapildigindan (sticky kaldirildi) hamburger de barla birlikte kayar, "havada" kalmaz.
+     Konum topbar-stack'e (position:relative) gore top:0/left. */
+  position: absolute;
   z-index: 110;
   /* Yatay: SOL kose (Boyner tarzi -> hamburger en solda, sagina logo). Dikey ORTALAMA:
      buton yuksekligi = guvenli alan + bant (~56px). top:0 -> zemin centik seridini de doldurur
@@ -11104,8 +11107,10 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* STICKY KALDIRILDI (kullanıcı): üst bar artık içerikle birlikte yukarı kayar. */
-  position: static;
+  /* STICKY KALDIRILDI (kullanıcı): üst bar artık içerikle birlikte yukarı kayar.
+     relative (static DEGIL): icindeki absolute .hamburger'a offset parent olur -> hamburger
+     barla birlikte kayar (sticky degil, scroll akisinda kalir). */
+  position: relative;
 }
 .app.lobby > .side-menu {
   grid-area: menu;
@@ -16936,6 +16941,17 @@ body:has(.spectate-view) .app.lobby {
   pointer-events: none;
   z-index: 3000;
   margin: 0;
+  opacity: 0.92;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+/* Kup surukleme hayalet: .cube'un absolute/left:50% konumunu EZ -> parmagi takip et. */
+.pa-cube-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3000;
   opacity: 0.92;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }

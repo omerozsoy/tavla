@@ -9193,17 +9193,23 @@ export default function App() {
     </div>
   )
 
-  // Mobil hamburger + arka perde (drawer menu)
+  // Mobil hamburger butonu: topbar-stack İÇİNDE render edilir (aşağıda) -> barla birlikte kayar.
+  // Eskiden mobileNav'de position:fixed'ti; bar "içerikle yukarı kay" yapılınca (sticky kaldırıldı)
+  // hamburger tek başına sabit kalıp içeriğin üstünde "havada" duruyordu. Artık bar'ın çocuğu
+  // (position:absolute) -> bar kayınca o da kayar. Backdrop + ScrollTop fixed kalır (overlay).
+  const hamburgerBtn = (
+    <button
+      className="hamburger"
+      onClick={() => setMenuOpen((v) => !v)}
+      aria-label={t('common.menu')}
+      aria-expanded={menuOpen}
+    >
+      <Icon name="menu" size={30} />
+    </button>
+  )
+  // Mobil arka perde (drawer menu) + En Uste Git
   const mobileNav = (
     <>
-      <button
-        className="hamburger"
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-label={t('common.menu')}
-        aria-expanded={menuOpen}
-      >
-        <Icon name="menu" size={30} />
-      </button>
       {menuOpen && <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />}
       {/* "En Uste Git": mobileNav TAM OLARAK 4 lobi dalinda cizilir (oyun ekraninda YOK)
           -> buton da tam oralarda cikar. Kendi scroller'ini (.app.lobby) bulur. */}
@@ -10562,6 +10568,7 @@ export default function App() {
     mobileNav,
     topbar: (
       <div className="topbar-stack">
+        {hamburgerBtn}
         {accountBar}
         {/* TURLAR ARASI GLOBAL BANT: turnuvada sıranı beklerken (hazır maç yok) her sayfanın
             üstünde görünür; turnuva sayfasındayken gizli (orada zaten detaylı not var) ve hazır
