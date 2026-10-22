@@ -77,6 +77,35 @@ class CheatScanTest extends TestCase
         $this->assertSame('bimodal', $flags[0]['reason']);
     }
 
+    public function test_profile_verdict_consistent_when_median_below_world_champion(): void
+    {
+        // TÜM maçlar dünya-şampiyonu (2.5) seviyesinin altında -> medyan düşük -> SÜREKLİ motor.
+        $u = User::factory()->create();
+        foreach ([1.2, 1.8, 2.1, 1.5, 2.3, 1.9, 2.0, 1.6, 2.2, 1.7] as $pr) {
+            $this->match($u->id, $pr, 90);
+        }
+        $pf = CheatScan::profile($u->id);
+        $this->assertSame('consistent', $pf['verdict']);
+        $this->assertSame(10, $pf['n']);
+        $this->assertLessThan(CheatScan::PR_WORLD_CHAMPION, $pf['median']);
+        $this->assertSame(10, $pf['below_wc']); // hepsi şampiyon çizgisinin altında
+    }
+
+    public function test_profile_verdict_selective_when_normal_median_with_engine_dips(): void
+    {
+        // Medyan normal (~8) AMA birkaç maç motor-eşiğinin altında -> SEÇİCİ (iki-tepeli).
+        $u = User::factory()->create();
+        for ($i = 0; $i < 8; $i++) {
+            $this->match($u->id, 8.0, 80);
+        }
+        $this->match($u->id, 0.5, 100);
+        $this->match($u->id, 1.1, 95);
+        $pf = CheatScan::profile($u->id);
+        $this->assertSame('selective', $pf['verdict']);
+        $this->assertSame(2, $pf['below_engine']);
+        $this->assertGreaterThan(CheatScan::PR_WORLD_CHAMPION, $pf['median']);
+    }
+
     public function test_suspects_lists_flagged_user(): void
     {
         $cheat = User::factory()->create(['nickname' => 'Suspect']);

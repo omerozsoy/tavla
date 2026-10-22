@@ -93,6 +93,63 @@
                             </div>
                         </div>
 
+                        {{-- KULLANICI-BAZLI GRAFİK + NEDEN: PR dağılımı, dünya-şampiyonu / motor / medyan
+                             referans çizgileriyle. Dinamik Tailwind rengi purge'lenir -> SVG inline hex. --}}
+                        @php
+                            $pf = $row['profile'];
+                            $axisMax = max(10, (int) ceil($pf['max'] + 0.5));
+                            $xOf = fn ($pr) => round(min($pr, $axisMax) / $axisMax * 960 + 20, 1);
+                            $xEng = $xOf(\App\Support\CheatScan::PR_ABSOLUTE);
+                            $xWc = $xOf(\App\Support\CheatScan::PR_WORLD_CHAMPION);
+                            $xMed = $xOf($pf['median']);
+                            $vClass = [
+                                'consistent' => 'bg-red-500/20 text-red-700 dark:text-red-300',
+                                'selective' => 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
+                                'borderline' => 'bg-gray-500/20 text-gray-700 dark:text-gray-300',
+                            ][$pf['verdict']] ?? 'bg-gray-500/20 text-gray-700';
+                            $vLabel = ['consistent' => 'SÜREKLİ motor', 'selective' => 'SEÇİCİ motor', 'borderline' => 'Sınırda'][$pf['verdict']] ?? '—';
+                            $zoneFill = ['engine' => '#ef4444', 'champ' => '#f59e0b', 'human' => '#10b981'];
+                        @endphp
+                        <div class="px-4 py-3 space-y-3 border-b border-gray-200 dark:border-white/10">
+                            {{-- Neden anlatısı --}}
+                            <div class="flex items-start gap-2 text-sm">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold shrink-0 {{ $vClass }}">{{ $vLabel }}</span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ $pf['reason'] }}</span>
+                            </div>
+                            {{-- İstatistik satırı --}}
+                            <div class="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                                <span><b>{{ $pf['n'] }}</b> büyük-örneklem maç (≥{{ \App\Support\CheatScan::MIN_DECISIONS }} karar)</span>
+                                <span>medyan <b>{{ $pf['median'] }}</b></span>
+                                <span>ort <b>{{ $pf['mean'] }}</b></span>
+                                <span>std <b>{{ $pf['std'] }}</b></span>
+                                <span style="color:#ef4444">● motor&lt;{{ \App\Support\CheatScan::PR_ABSOLUTE }}: <b>{{ $pf['below_engine'] }}</b></span>
+                                <span style="color:#f59e0b">🏆 şampiyon&lt;{{ \App\Support\CheatScan::PR_WORLD_CHAMPION }}: <b>{{ $pf['below_wc'] }}</b></span>
+                            </div>
+                            {{-- DAĞILIM GRAFİĞİ (PR ekseni): nokta = maç; sola ne kadar yığılırsa o kadar şüpheli --}}
+                            <svg viewBox="0 0 1000 92" class="w-full" style="max-height:120px" preserveAspectRatio="xMidYMid meet">
+                                <line x1="20" y1="72" x2="980" y2="72" stroke="#9ca3af" stroke-width="1"/>
+                                @for ($t = 0; $t <= $axisMax; $t += max(1, intval($axisMax / 6)))
+                                    <line x1="{{ $xOf($t) }}" y1="70" x2="{{ $xOf($t) }}" y2="74" stroke="#9ca3af"/>
+                                    <text x="{{ $xOf($t) }}" y="87" text-anchor="middle" fill="#9ca3af" font-size="11">{{ $t }}</text>
+                                @endfor
+                                {{-- motor eşiği (2.0) --}}
+                                <line x1="{{ $xEng }}" y1="8" x2="{{ $xEng }}" y2="72" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3 2"/>
+                                {{-- DÜNYA ŞAMPİYONU (2.5) referansı --}}
+                                <line x1="{{ $xWc }}" y1="14" x2="{{ $xWc }}" y2="72" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 2"/>
+                                <text x="{{ $xWc }}" y="11" text-anchor="middle" font-size="11">🏆</text>
+                                {{-- medyan --}}
+                                <line x1="{{ $xMed }}" y1="16" x2="{{ $xMed }}" y2="72" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="1 2"/>
+                                <text x="{{ $xMed }}" y="13" text-anchor="middle" fill="#3b82f6" font-size="10">medyan</text>
+                                {{-- maç noktaları --}}
+                                @foreach ($pf['points'] as $i => $p)
+                                    <circle cx="{{ $xOf($p['pr']) }}" cy="{{ 60 - (($i * 37) % 46) }}" r="3.2"
+                                            fill="{{ $zoneFill[$p['zone']] ?? '#10b981' }}" fill-opacity="0.82">
+                                        <title>{{ $p['room_code'] }} · PR {{ $p['pr'] }} · {{ $p['decisions'] }} karar · {{ $p['match_length'] ?? '?' }}p · {{ $p['won'] ? 'W' : 'L' }}</title>
+                                    </circle>
+                                @endforeach
+                            </svg>
+                        </div>
+
                         {{-- Şüpheli maçlar: MUTLAK ve BİMODAL ayrı. 'mutlak+bimodal' mutlak grubuna düşer. --}}
                         @php
                             $abs = array_values(array_filter($row['matches'], fn ($m) => $m['reason'] !== 'bimodal'));

@@ -36,6 +36,10 @@ class CheatScan
     /** Bu PR'ın altı, uzun örneklemde motor-seviyesi (XG dünya eliti ~2.5-4.5). */
     public const PR_ABSOLUTE = 2.0;
 
+    /** DÜNYA ŞAMPİYONU / XG elit TABANI — grafik referans çizgisi. Dünya eliti uzun örneklemde
+     *  ~2.5-4.5 PR ortalar; bu çizginin ALTINA düzenli inmek insani değildir (motor sinyali). */
+    public const PR_WORLD_CHAMPION = 2.5;
+
     /** Maç PR'ı, oyuncunun kendi medyanının bu oranından düşükse bimodal-şüpheli. */
     public const BIMODAL_RATIO = 0.40;
 
@@ -151,6 +155,71 @@ class CheatScan
         usort($out, fn ($a, $b) => [$b['flags'], -$a['worst_pr']] <=> [$a['flags'], -$b['worst_pr']]);
 
         return array_slice($out, 0, $limit);
+    }
+
+    /**
+     * TEK KULLANICI grafik+izah profili: büyük-örneklemli (≥MIN_DECISIONS karar) TÜM maçlarının PR
+     * serisi + istatistik + verdict. Panel bununla kullanıcı-bazlı dağılım grafiği (motor/dünya-şampiyonu/
+     * medyan referans çizgileri) + neden anlatısı çizer.
+     *
+     * @return array{n:int,median:float,mean:float,std:float,min:float,max:float,below_wc:int,below_engine:int,
+     *               verdict:string,reason:string,points:array<int,array{pr:float,decisions:int,won:bool,
+     *               match_length:?int,room_code:?string,created_at:?string,zone:string}>}
+     */
+    public static function profile(int $userId): array
+    {
+        $rows = self::load($userId);
+        $pts = [];
+        foreach ($rows as $r) {
+            $dec = (int) ($r->pr_decisions ?? 0);
+            $pr = (float) $r->gnubg_pr;
+            if ($dec < self::MIN_DECISIONS || $pr <= 0) {
+                continue; // yalnız anlamlı örneklem (kısa maç gürültüsü grafiği bozmasın)
+            }
+            $zone = $pr < self::PR_ABSOLUTE ? 'engine' : ($pr < self::PR_WORLD_CHAMPION ? 'champ' : 'human');
+            $pts[] = [
+                'pr' => round($pr, 2), 'decisions' => $dec, 'won' => (bool) $r->won,
+                'match_length' => $r->match_length !== null ? (int) $r->match_length : null,
+                'room_code' => $r->room_code, 'created_at' => $r->created_at, 'zone' => $zone,
+            ];
+        }
+        usort($pts, fn ($a, $b) => $a['pr'] <=> $b['pr']);
+
+        $prs = array_column($pts, 'pr');
+        $n = count($prs);
+        $mean = $n ? array_sum($prs) / $n : 0.0;
+        $sorted = $prs;
+        sort($sorted);
+        $median = $n ? $sorted[intdiv($n, 2)] : 0.0;
+        $std = 0.0;
+        if ($n > 1) {
+            foreach ($prs as $p) {
+                $std += ($p - $mean) ** 2;
+            }
+            $std = sqrt($std / $n);
+        }
+        $belowWc = count(array_filter($prs, fn ($p) => $p < self::PR_WORLD_CHAMPION));
+        $belowEngine = count(array_filter($prs, fn ($p) => $p < self::PR_ABSOLUTE));
+
+        // VERDICT: medyan dünya-şampiyonu seviyesinin altındaysa -> TÜM oyun elit = SÜREKLİ motor.
+        // Medyan normal ama birden çok maç çizginin çok altındaysa -> SEÇİCİ (bazı maçta motor açık).
+        if ($n >= self::MIN_MEDIAN_SAMPLE && $median < self::PR_WORLD_CHAMPION) {
+            $verdict = 'consistent';
+            $reason = 'SÜREKLİ motor şüphesi: medyan PR '.round($median, 1).' — oyuncu ~TÜM maçlarında dünya-şampiyonu ('.self::PR_WORLD_CHAMPION.') seviyesinin altında oynuyor. Bu rating/seviyede bir insan 60+ kararlı maçlarda bunu tutturamaz; düşük varyans (std '.round($std, 1).') makine tutarlılığıdır.';
+        } elseif ($belowEngine >= self::SUSPECT_MIN_FLAGS || $belowWc >= self::SUSPECT_MIN_FLAGS * 2) {
+            $verdict = 'selective';
+            $reason = 'SEÇİCİ motor şüphesi: medyan PR '.round($median, 1).' (normal) AMA '.$belowWc.' maç dünya-şampiyonu çizgisinin ('.self::PR_WORLD_CHAMPION.') altında, '.$belowEngine.' tanesi motor-eşiğinin ('.self::PR_ABSOLUTE.') altında. İki-tepeli yapı = bazı maçta motor açık, bazısında elle.';
+        } else {
+            $verdict = 'borderline';
+            $reason = 'Sınırda: '.$belowWc.' maç dünya-şampiyonu seviyesinin altında. Tek-maç varyansı olabilir; hamle-hamle motor eşleşmesiyle doğrula.';
+        }
+
+        return [
+            'n' => $n, 'median' => round($median, 2), 'mean' => round($mean, 2), 'std' => round($std, 2),
+            'min' => $n ? min($prs) : 0.0, 'max' => $n ? max($prs) : 0.0,
+            'below_wc' => $belowWc, 'below_engine' => $belowEngine,
+            'verdict' => $verdict, 'reason' => $reason, 'points' => $pts,
+        ];
     }
 
     /**

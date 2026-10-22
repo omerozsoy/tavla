@@ -45,6 +45,7 @@ class SupheliMaclar extends Page
         $suspects = CheatScan::suspects();
         foreach ($suspects as &$s) {
             $s['matches'] = CheatScan::flaggedMatches($s['user_id']);
+            $s['profile'] = CheatScan::profile($s['user_id']); // grafik + neden (kullanıcı-bazlı dağılım)
             $s['url'] = self::editUrl($s['user_id']);
         }
         unset($s);
