@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\UserResource;
 use App\Models\User;
+use App\Support\Shield;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +48,56 @@ class CifteGirisler extends Page
 
     public function sharedIps(): array
     {
-        return $this->withInterMatches(self::buildSharedIps(max(2, $this->minUsers)));
+        $rows = $this->withInterMatches(self::buildSharedIps(max(2, $this->minUsers)));
+        // Her IP zaten yasaklı mı (buton durumu)
+        if ($rows !== [] && Schema::hasTable('shield_ip_bans')) {
+            $banned = DB::table('shield_ip_bans')->whereIn('ip', array_column($rows, 'ip'))->pluck('ip')->flip();
+            foreach ($rows as &$r) {
+                $r['ip_banned'] = isset($banned[$r['ip']]);
+            }
+            unset($r);
+        }
+
+        return $rows;
+    }
+
+    /** IP'yi yasakla (GuvenlikKalkani ile AYNI Shield mekanizması — SiteGate tüm /api'yi keser).
+     *  ⚠ Aynı IP'deki TÜM kullanıcıları etkiler (paylaşılan ev/NAT'ta masumlar da); banner'da uyarılır. */
+    public function banIp(string $ip, ?string $reason = null): void
+    {
+        $ip = trim($ip);
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            Notification::make()->title('Geçersiz IP adresi.')->danger()->send();
+
+            return;
+        }
+        if ($ip === request()->ip()) {
+            Notification::make()->title('Kendi IP’ni yasaklayamazsın (kendini kilitlersin).')->danger()->send();
+
+            return;
+        }
+        if (! Schema::hasTable('shield_ip_bans')) {
+            return;
+        }
+        DB::table('shield_ip_bans')->updateOrInsert(
+            ['ip' => $ip],
+            ['reason' => $reason ? mb_substr($reason, 0, 255) : 'Çifte giriş / hile şüphesi', 'created_by' => auth()->id(), 'created_at' => now()],
+        );
+        Shield::flushIpBans();
+        Shield::audit(auth()->id(), 'ip_ban', "IP yasaklandı (çifte giriş): {$ip}", 2);
+        Notification::make()->title("{$ip} yasaklandı.")->success()->send();
+    }
+
+    public function unbanIp(string $ip): void
+    {
+        $ip = trim($ip);
+        if (! Schema::hasTable('shield_ip_bans')) {
+            return;
+        }
+        DB::table('shield_ip_bans')->where('ip', $ip)->delete();
+        Shield::flushIpBans();
+        Shield::audit(auth()->id(), 'ip_unban', "IP yasağı kaldırıldı: {$ip}", 1);
+        Notification::make()->title("{$ip} yasağı kaldırıldı.")->success()->send();
     }
 
     /**

@@ -58,7 +58,16 @@
                                     </span>
                                 @endif
                             </div>
-                            <span class="text-xs text-gray-500">son: {{ $fmt($row['last_seen']) }}</span>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-xs text-gray-500">son: {{ $fmt($row['last_seen']) }}</span>
+                                @if ($row['ip_banned'] ?? false)
+                                    <span class="inline-flex items-center rounded-full bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-0.5 text-[11px] font-bold">IP YASAKLI</span>
+                                    <x-filament::button size="xs" color="gray" wire:click="unbanIp('{{ $row['ip'] }}')">Yasağı kaldır</x-filament::button>
+                                @else
+                                    <x-filament::button size="xs" color="danger" icon="heroicon-m-no-symbol" wire:click="banIp('{{ $row['ip'] }}')"
+                                        wire:confirm="{{ $row['ip'] }} IP'sini yasakla? Bu IP'den giren TÜM hesaplar (varsa masum ev/ofis/mobil ortak kullanıcılar dahil) siteye erişemez.">IP'yi yasakla</x-filament::button>
+                                @endif
+                            </div>
                         </div>
 
                         {{-- HİLE: kendi aralarında maçlar (çift başına adet · stake · galibiyet dağılımı) --}}

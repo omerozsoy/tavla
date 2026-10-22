@@ -92,4 +92,25 @@ class CifteGirislerTest extends TestCase
         $this->assertSame(2, $aliIsA ? $pair['awins'] : $pair['bwins'], 'ali 2 galibiyet');
         $this->assertSame(0, $aliIsA ? $pair['bwins'] : $pair['awins'], 'veli 0 galibiyet');
     }
+
+    public function test_ban_and_unban_ip_toggles_shield_ip_bans_and_flag(): void
+    {
+        $a = $this->user('ali');
+        $b = $this->user('veli');
+        foreach ([$a, $b] as $u) {
+            DB::table('shield_presence')->insert([
+                'subject' => 'u:'.$u->id, 'user_id' => $u->id, 'ip' => '1.2.3.4',
+                'last_seen_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        $page = new CifteGirisler;
+
+        $page->banIp('1.2.3.4');
+        $this->assertDatabaseHas('shield_ip_bans', ['ip' => '1.2.3.4']);
+        $this->assertTrue($page->sharedIps()[0]['ip_banned'], 'yasaklı IP ip_banned=true olmalı');
+
+        $page->unbanIp('1.2.3.4');
+        $this->assertDatabaseMissing('shield_ip_bans', ['ip' => '1.2.3.4']);
+        $this->assertFalse($page->sharedIps()[0]['ip_banned']);
+    }
 }
