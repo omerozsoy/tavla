@@ -8,7 +8,12 @@ Type=oneshot
 # Bul: stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
 User=CHANGE_ME_VHOST_USER
 WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
-ExecStart=/opt/plesk/php/8.2/bin/php artisan schedule:run
+# -d memory_limit=512M: zamanlı komutlar foreground (schedule:run sürecinde) koşar; ağır DB yükleyen
+# komutlar (tavla:gnubg-pr-heal, review-warmup, matches:backstop-*) match_results.gnubg_review (~771KB)
+# çekince 128MB varsayılanı aşıp "🔴 500 cli/queue Allowed memory" OOM veriyordu (Connection.php fetch).
+# 512M tavan -> scheduler + foreground komutları kapsar. (runInBackground komutlar ayrı php süreci açar
+# -> 128MB kalır; ağır olanlar foreground olduğundan sorun değil.) Global CLI ini DEĞİL -> FPM şişmez.
+ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=512M artisan schedule:run
 # KRİTİK: schedule:run, uzun süren işleri (ör. tavla:tourney-bots tick --seconds=55) runInBackground
 # ile ARKA PLANDA başlatıp hemen çıkar. Type=oneshot varsayılan KillMode=control-group ile servis
 # "bitti" sayılınca cgroup'u söküp bu arka plan çocuklarını ANINDA öldürür -> tick 1 tur bile
