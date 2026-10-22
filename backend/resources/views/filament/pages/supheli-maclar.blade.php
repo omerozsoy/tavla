@@ -97,18 +97,12 @@
                              referans çizgileriyle. Dinamik Tailwind rengi purge'lenir -> SVG inline hex. --}}
                         @php
                             $pf = $row['profile'];
-                            $axisMax = max(10, (int) ceil($pf['max'] + 0.5));
-                            $xOf = fn ($pr) => round(min($pr, $axisMax) / $axisMax * 960 + 20, 1);
-                            $xEng = $xOf(\App\Support\CheatScan::PR_ABSOLUTE);
-                            $xWc = $xOf(\App\Support\CheatScan::PR_WORLD_CHAMPION);
-                            $xMed = $xOf($pf['median']);
                             $vClass = [
                                 'consistent' => 'bg-red-500/20 text-red-700 dark:text-red-300',
                                 'selective' => 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
                                 'borderline' => 'bg-gray-500/20 text-gray-700 dark:text-gray-300',
                             ][$pf['verdict']] ?? 'bg-gray-500/20 text-gray-700';
                             $vLabel = ['consistent' => 'SÜREKLİ motor', 'selective' => 'SEÇİCİ motor', 'borderline' => 'Sınırda'][$pf['verdict']] ?? '—';
-                            $zoneFill = ['engine' => '#ef4444', 'champ' => '#f59e0b', 'human' => '#10b981'];
                         @endphp
                         <div class="px-4 py-3 space-y-3 border-b border-gray-200 dark:border-white/10">
                             {{-- Neden anlatısı --}}
@@ -125,29 +119,44 @@
                                 <span style="color:#ef4444">● motor&lt;{{ \App\Support\CheatScan::PR_ABSOLUTE }}: <b>{{ $pf['below_engine'] }}</b></span>
                                 <span style="color:#f59e0b">🏆 şampiyon&lt;{{ \App\Support\CheatScan::PR_WORLD_CHAMPION }}: <b>{{ $pf['below_wc'] }}</b></span>
                             </div>
-                            {{-- DAĞILIM GRAFİĞİ (PR ekseni): nokta = maç; sola ne kadar yığılırsa o kadar şüpheli --}}
-                            <svg viewBox="0 0 1000 92" class="w-full" style="max-height:120px" preserveAspectRatio="xMidYMid meet">
-                                <line x1="20" y1="72" x2="980" y2="72" stroke="#9ca3af" stroke-width="1"/>
-                                @for ($t = 0; $t <= $axisMax; $t += max(1, intval($axisMax / 6)))
-                                    <line x1="{{ $xOf($t) }}" y1="70" x2="{{ $xOf($t) }}" y2="74" stroke="#9ca3af"/>
-                                    <text x="{{ $xOf($t) }}" y="87" text-anchor="middle" fill="#9ca3af" font-size="11">{{ $t }}</text>
-                                @endfor
-                                {{-- motor eşiği (2.0) --}}
-                                <line x1="{{ $xEng }}" y1="8" x2="{{ $xEng }}" y2="72" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3 2"/>
-                                {{-- DÜNYA ŞAMPİYONU (2.5) referansı --}}
-                                <line x1="{{ $xWc }}" y1="14" x2="{{ $xWc }}" y2="72" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 2"/>
-                                <text x="{{ $xWc }}" y="11" text-anchor="middle" font-size="11">🏆</text>
-                                {{-- medyan --}}
-                                <line x1="{{ $xMed }}" y1="16" x2="{{ $xMed }}" y2="72" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="1 2"/>
-                                <text x="{{ $xMed }}" y="13" text-anchor="middle" fill="#3b82f6" font-size="10">medyan</text>
-                                {{-- maç noktaları --}}
-                                @foreach ($pf['points'] as $i => $p)
-                                    <circle cx="{{ $xOf($p['pr']) }}" cy="{{ 60 - (($i * 37) % 46) }}" r="3.2"
-                                            fill="{{ $zoneFill[$p['zone']] ?? '#10b981' }}" fill-opacity="0.82">
-                                        <title>{{ $p['room_code'] }} · PR {{ $p['pr'] }} · {{ $p['decisions'] }} karar · {{ $p['match_length'] ?? '?' }}p · {{ $p['won'] ? 'W' : 'L' }}</title>
-                                    </circle>
+                            {{-- PR SEVİYE DAĞILIMI (anlaşılır histogram): her seviyede KAÇ maç oynamış.
+                                 Kırmızı/turuncu (motor/şampiyon) çubuklar büyükse insan-üstü oynuyor = şüpheli. --}}
+                            @php
+                                $tiers = [
+                                    ['lbl' => '🔴 Motor seviyesi', 'rng' => 'PR 0–2', 'lo' => 0, 'hi' => \App\Support\CheatScan::PR_ABSOLUTE, 'c' => '#ef4444'],
+                                    ['lbl' => '🏆 Dünya şampiyonu', 'rng' => 'PR 2–2.5', 'lo' => \App\Support\CheatScan::PR_ABSOLUTE, 'hi' => \App\Support\CheatScan::PR_WORLD_CHAMPION, 'c' => '#f59e0b'],
+                                    ['lbl' => '🟡 Uzman', 'rng' => 'PR 2.5–6', 'lo' => \App\Support\CheatScan::PR_WORLD_CHAMPION, 'hi' => 6, 'c' => '#eab308'],
+                                    ['lbl' => '🟢 Normal oyuncu', 'rng' => 'PR 6+', 'lo' => 6, 'hi' => 1000000, 'c' => '#10b981'],
+                                ];
+                                foreach ($tiers as &$ti) { $ti['n'] = 0; }
+                                unset($ti);
+                                foreach ($pf['points'] as $p) {
+                                    foreach ($tiers as &$ti) {
+                                        if ($p['pr'] >= $ti['lo'] && $p['pr'] < $ti['hi']) { $ti['n']++; break; }
+                                    }
+                                    unset($ti);
+                                }
+                                $maxN = max(1, max(array_map(fn ($t) => $t['n'], $tiers)));
+                            @endphp
+                            <div class="space-y-1.5">
+                                <div class="text-[11px] text-gray-500">
+                                    Karşılaştırma: 🏆 <b>dünya şampiyonu ~2.5</b> · 🟢 normal iyi oyuncu ~9 ·
+                                    bu oyuncunun medyanı <b style="color:{{ $pf['median'] < \App\Support\CheatScan::PR_WORLD_CHAMPION ? '#ef4444' : '#6b7280' }}">{{ $pf['median'] }}</b>
+                                    — <b>{{ $pf['below_wc'] }}</b> maçı dünya şampiyonundan bile iyi.
+                                </div>
+                                @foreach ($tiers as $ti)
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-36 sm:w-44 shrink-0 text-xs">{{ $ti['lbl'] }} <span class="text-gray-400 text-[10px]">({{ $ti['rng'] }})</span></div>
+                                        <div class="flex-1 bg-gray-100 dark:bg-white/5 rounded h-5 overflow-hidden">
+                                            <div class="h-5 rounded flex items-center justify-end pr-1.5 text-[11px] font-bold text-white"
+                                                 style="width: {{ $ti['n'] > 0 ? max(10, round($ti['n'] / $maxN * 100)) : 0 }}%; background: {{ $ti['c'] }}">
+                                                {{ $ti['n'] > 0 ? $ti['n'] : '' }}
+                                            </div>
+                                        </div>
+                                        <div class="w-8 shrink-0 text-right text-xs font-semibold">{{ $ti['n'] }}</div>
+                                    </div>
                                 @endforeach
-                            </svg>
+                            </div>
                         </div>
 
                         {{-- Şüpheli maçlar: MUTLAK ve BİMODAL ayrı. 'mutlak+bimodal' mutlak grubuna düşer. --}}
