@@ -85,4 +85,19 @@ class TopRanksTest extends TestCase
         $this->assertSame($a->id, $data['pr'][0]['id']);
         $this->assertSame(1, $data['pr'][0]['rank']);
     }
+
+    public function test_banned_user_is_hidden_from_public_rankings(): void
+    {
+        $banned = $this->user('cheater', 3000, 1.0); // en yüksek rating + en iyi PR
+        $banned->forceFill(['banned_at' => now()])->save();
+        $clean = $this->user('clean', 1800, 3.0);
+
+        $data = $this->getJson('/api/top-ranks')->assertOk()->json();
+
+        $ratingIds = array_column($data['rating'], 'id');
+        $prIds = array_column($data['pr'], 'id');
+        $this->assertNotContains($banned->id, $ratingIds, 'engelli oyuncu rating sıralamasında olmamalı');
+        $this->assertNotContains($banned->id, $prIds, 'engelli oyuncu PR sıralamasında olmamalı');
+        $this->assertSame($clean->id, $data['rating'][0]['id']);
+    }
 }

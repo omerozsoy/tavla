@@ -8,11 +8,16 @@ use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail, FilamentUser, HasName
+class User extends Authenticatable implements FilamentUser, HasName, MustVerifyEmail
 {
     // Filament yonetim paneline yalnizca admin (ve yasakli olmayan) erisebilir.
     public function canAccessPanel(Panel $panel): bool
@@ -30,7 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     }
 
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -84,10 +89,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         if ($plan === 'free' || $plan === '' || $plan === null) {
             return 'free';
         }
-        $until = $this->plan_until ? \Illuminate\Support\Carbon::parse($this->plan_until) : null;
+        $until = $this->plan_until ? Carbon::parse($this->plan_until) : null;
         if (! $until || $until->isPast()) {
             return 'free';
         }
+
         return 'premium';
     }
 
@@ -126,7 +132,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
      * EnsureActiveAccount bunu ileri kaydırır -> aktif oyuncu asla düşmez. idle_days<=0 ise
      * süresiz (null). Sanctum global 'expiration' null olduğundan per-token expires_at honor edilir.
      */
-    public static function tokenExpiresAt(): ?\Illuminate\Support\Carbon
+    public static function tokenExpiresAt(): ?Carbon
     {
         $idle = (int) config('sanctum.idle_days', 30);
 
@@ -141,14 +147,14 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
      */
     public function stampPlanSource(string $source, ?int $by = null): void
     {
-        if (! \Illuminate\Support\Facades\Schema::hasColumn('users', 'plan_source')) {
+        if (! Schema::hasColumn('users', 'plan_source')) {
             return;
         }
         $this->plan_source = $source;
-        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'plan_source_by')) {
+        if (Schema::hasColumn('users', 'plan_source_by')) {
             $this->plan_source_by = $by;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'plan_source_at')) {
+        if (Schema::hasColumn('users', 'plan_source_at')) {
             $this->plan_source_at = now();
         }
     }
@@ -167,19 +173,23 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
 
     /**
      * Anonimleştirilmiş SİLİNMİŞ hesapları (UserEraser -> ban_reason='account_deleted', nickname
-     * 'silinmisN') herkese açık listelerden (liderlik/arama/çevrimiçi/arayanlar/kulüp) çıkarır.
-     * Bu hesaplar yasal saklama için fiziksel silinmez ama "Silinmiş Üye" olarak listeleri doldururdu.
+     * 'silinmisN') VE ENGELLENMİŞ hesapları (banned_at dolu — hile/kötüye kullanım) herkese açık
+     * listelerden (liderlik/arama/çevrimiçi/arayanlar/kulüp) çıkarır. Engellenen hileci skor
+     * tablosunda durmaya devam etmesin. Bu hesaplar yasal saklama için fiziksel silinmez.
      */
     public function scopeNotDeleted($query)
     {
-        return $query->where(fn ($w) => $w
-            ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted'));
+        return $query
+            ->whereNull('banned_at')
+            ->where(fn ($w) => $w
+                ->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted'));
     }
 
     // Explicit admin ayrica korunan config listesinde mi? Liste tek basina yetki vermez.
     public function isConfigAdmin(): bool
     {
         $admins = array_map('strtolower', config('services.admin_emails', []));
+
         return $this->is_admin && in_array(strtolower((string) $this->email), $admins, true);
     }
 
@@ -191,8 +201,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     public function hasFinancialHistory(): bool
     {
         foreach (['wallet_transactions', 'payments', 'product_orders'] as $table) {
-            if (\Illuminate\Support\Facades\Schema::hasTable($table)
-                && \Illuminate\Support\Facades\DB::table($table)->where('user_id', $this->id)->exists()) {
+            if (Schema::hasTable($table)
+                && DB::table($table)->where('user_id', $this->id)->exists()) {
                 return true;
             }
         }
@@ -229,38 +239,38 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     }
 
     // Hesap kapatma/yeniden-acma gecmisi (denetim + panel "Hesap Durumu" sekmesi).
-    public function banEvents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function banEvents(): HasMany
     {
-        return $this->hasMany(\App\Models\AccountBanEvent::class)->latest('id');
+        return $this->hasMany(AccountBanEvent::class)->latest('id');
     }
 
     // ---- Basarim (achievement) sistemi iliskileri ----
 
-    public function stat(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function stat(): HasOne
     {
         return $this->hasOne(UserStat::class);
     }
 
-    public function achievements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function achievements(): HasMany
     {
         return $this->hasMany(UserAchievement::class);
     }
 
     // ---- Şans Çarkı (Lucky Wheel) ilişkileri ----
 
-    public function luckyWheelState(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function luckyWheelState(): HasOne
     {
         return $this->hasOne(LuckyWheelUserState::class, 'user_id');
     }
 
-    public function luckyWheelSpins(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function luckyWheelSpins(): HasMany
     {
         return $this->hasMany(LuckyWheelSpin::class, 'user_id');
     }
 
     // ---- Maç geçmişi (admin detay sekmesi) ----
 
-    public function matchResults(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function matchResults(): HasMany
     {
         return $this->hasMany(MatchResult::class, 'user_id');
     }
