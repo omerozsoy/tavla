@@ -11528,7 +11528,10 @@ export default function App() {
           }}
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}
-          hasReport={matchLog.length > 0}
+          // Yerel hamle log'u boş olsa da (terk/yarım kalan maç, çok-oyunlu maçta yeni oyun başında
+          // terk, yeniden bağlanma) sunucuda gnubg review + PR varsa Maç Özeti açılabilir
+          // (analysisGnubgLog matchResultId ile çekilir). PR non-null = sunucu gerçek hamle analiz etti.
+          hasReport={matchLog.length > 0 || (!!matchResultIdRef.current && (prShown(mWinner) != null || prShown(opponent(mWinner)) != null))}
           onAnalysis={() => setResultView('analysis')}
           // Zar Kontrol: yalnız sunucu zarı olan maçlarda (commit var -> puanlı/paralı/bot).
           onDiceCheck={room?.dice_commit ? () => setDiceCheckOpen(true) : undefined}
