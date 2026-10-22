@@ -6,6 +6,16 @@ use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
 
+// BELLEK TAVANI (CLI tek-kaynak): her `php artisan ...` 512M'de koşsun. systemd queue:work
+// servislerine `-d memory_limit=512M` verilmişti AMA Laravel scheduler (schedule:run) zamanlı
+// komutları (services:watch, tournaments:tick, tourney-bots ...) AYRI `php artisan` çocuk süreci
+// olarak başlatır ve scheduler'ın `-d` bayrağını DEVRETMEZ -> çocuklar 128MB'de kalıp ağır DB
+// fetch'te (gnubg_review ~771KB) OOM veriyordu ("🔴 500 cli/queue Allowed memory"). Burada tek
+// yerden ayarlamak TÜM CLI girişlerini kapsar; artisan asla FPM/web tarafından çağrılmaz (web
+// girişi public/index.php) -> FPM belleği ETKİLENMEZ. Per-servis `-d` bayrakları artık gereksiz
+// ama zararsız.
+ini_set('memory_limit', '512M');
+
 // Register the Composer autoloader...
 require __DIR__.'/vendor/autoload.php';
 
