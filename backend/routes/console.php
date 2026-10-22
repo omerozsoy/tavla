@@ -3,6 +3,7 @@
 use App\Models\Room;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
@@ -50,6 +51,14 @@ Schedule::command('tavla:prune-room-commands --days=2')
 Schedule::command('seo:sitemap')
     ->dailyAt('02:15')
     ->name('seo-sitemap')
+    ->withoutOverlapping();
+
+// MOTOR-YARDIMI (HİLE) TARAMASI: maç PR geçmişinde engine-assist imzası taşıyan hesapları işaretle
+// (admin "Şüpheli Maçlar" sayfasına + Shield audit olayına). Read-only tespit; ban elle incelenir.
+// Gece, PR backfill/analiz yoğunluğundan sonra. Kaynak kalıcı (match_results) → her gün tüm tarih.
+Schedule::command('security:cheat-scan --flag')
+    ->dailyAt('05:10')
+    ->name('cheat-scan')
     ->withoutOverlapping();
 
 // MAKALE/HABER OKUNMASI ORGANİK ARTIŞ: yayındaki makale+haber okunma sayaçları zamanla
@@ -125,7 +134,7 @@ Schedule::command('tournaments:create-scheduled')
 // (>~2.5dk) cron DURMUŞ demektir -> services:watch dahil TÜM izleme/otomatik-restart/alarm sessizce
 // ölmüş olur. Bu tek satır o kör noktayı görünür kılar (bugünkü gnubg çökmesinde alarm gelmemesi gibi).
 Schedule::call(function () {
-    \Illuminate\Support\Facades\Cache::put('ops:cron:heartbeat', time(), now()->addHours(6));
+    Cache::put('ops:cron:heartbeat', time(), now()->addHours(6));
 })->everyMinute()->name('ops-cron-heartbeat');
 
 // SINIRLI + ALARMLI otomatik yeniden deneme (failed_jobs). Kör "queue:retry all" cron'u kalıcı

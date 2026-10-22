@@ -4,7 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Http\Controllers\PanelController;
+use App\Jobs\SendVerificationEmailJob;
 use App\Models\User;
+use App\Support\AccountClosure;
+use App\Support\ChatModeration;
+use App\Support\CheatScan;
+use App\Support\Geo;
+use App\Support\OfficialMessenger;
+use App\Support\UserEraser;
+use App\Support\WalletBreakdown;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
@@ -12,10 +20,14 @@ use Filament\Infolists\Components\Section as ISection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class UserResource extends Resource
 {
@@ -54,7 +66,7 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('last_name')->label('Soyad')
                     ->dehydrateStateUsing(fn ($state) => (string) $state),
                 Forms\Components\Select::make('country')->label('Ülke')
-                    ->options(\App\Support\Geo::countries())
+                    ->options(Geo::countries())
                     ->searchable(),
                 Forms\Components\Select::make('province')->label('İl')
                     ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
@@ -141,7 +153,7 @@ class UserResource extends Resource
                 Forms\Components\Placeholder::make('admin_note_meta')->label('Son düzenleyen')
                     ->visible(fn (?User $record) => (bool) ($record?->admin_note_by))
                     ->content(fn (?User $record) => $record?->admin_note_by
-                        ? ((\App\Models\User::find($record->admin_note_by)?->nickname ?? '#'.$record->admin_note_by)
+                        ? ((User::find($record->admin_note_by)?->nickname ?? '#'.$record->admin_note_by)
                             .($record->admin_note_at ? ' · '.$record->admin_note_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i') : ''))
                         : '—'),
             ])->collapsible(),
@@ -162,7 +174,7 @@ class UserResource extends Resource
             ->color('gray')
             ->action(function (?User $record, Forms\Set $set, Forms\Get $get) use ($months) {
                 $current = $get('plan_until');
-                $base = $current ? \Illuminate\Support\Carbon::parse($current) : now();
+                $base = $current ? Carbon::parse($current) : now();
                 if ($base->isPast()) {
                     $base = now();
                 }
@@ -178,7 +190,7 @@ class UserResource extends Resource
                     $record->forceFill(['plan_until' => $new, 'plan' => $plan]);
                     $record->stampPlanSource('admin', auth()->id()); // KAYNAK = admin + hangi admin
                     $record->save();
-                    \Filament\Notifications\Notification::make()
+                    Notification::make()
                         ->title('Süre eklendi')
                         ->body('Yeni bitiş: '.$new->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i'))
                         ->success()
@@ -192,9 +204,9 @@ class UserResource extends Resource
     public static function closeAccountSafely(User $record, array $data): void
     {
         try {
-            \App\Support\AccountClosure::close($record, (int) auth()->id(), $data['reason'], $data['note'] ?? null);
+            AccountClosure::close($record, (int) auth()->id(), $data['reason'], $data['note'] ?? null);
         } catch (\RuntimeException $e) {
-            \Filament\Notifications\Notification::make()->danger()->title($e->getMessage())->send();
+            Notification::make()->danger()->title($e->getMessage())->send();
         }
     }
 
@@ -254,25 +266,25 @@ class UserResource extends Resource
     {
         $min = (int) $data['minutes'];
         $record->chat_muted_until = $min > 0 ? now()->addMinutes($min) : null;
-        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+        if (Schema::hasColumn('users', 'chat_muted_by')) {
             $record->chat_muted_by = $min > 0 ? (int) auth()->id() : null;
         }
         $record->save();
         if ($min > 0) {
             $until = $record->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
-            \App\Support\OfficialMessenger::sendTo(
+            OfficialMessenger::sendTo(
                 $record,
                 "⚠️ Konuşma yasağı aldın. Sohbete yazamazsın. Ceza bitişi: {$until}."
             );
         } else {
-            \App\Support\OfficialMessenger::sendTo(
+            OfficialMessenger::sendTo(
                 $record,
                 '✓ Konuşma yasağın kaldırıldı. Tekrar sohbet edebilirsin.'
             );
         }
         // Kişi o an bir maçtaysa maç sohbetine satır düş (yasak=kırmızı, kalkma=yeşil).
-        \App\Support\ChatModeration::announceMuteInActiveMatch($record, $min === 0);
-        \Filament\Notifications\Notification::make()
+        ChatModeration::announceMuteInActiveMatch($record, $min === 0);
+        Notification::make()
             ->title($min > 0 ? 'Konuşma yasağı uygulandı' : 'Konuşma yasağı kaldırıldı')
             ->success()->send();
     }
@@ -315,6 +327,21 @@ class UserResource extends Resource
                         ? 'Susturuldu: '.$record->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').'\'e kadar'
                         : 'Susturulmamış')
                     ->toggleable(),
+                // ŞÜPHELİ (motor-yardımı): maç PR geçmişinde engine-assist imzası taşıyan hesaplar
+                // (bkz App\Support\CheatScan + "Şüpheli Maçlar" sayfası). Cache'li (suspectIds) — satır
+                // başına tablo taranmaz. SİNYAL'dir; detay/ban için rozetin tooltip'i + Şüpheli Maçlar.
+                Tables\Columns\TextColumn::make('cheat_suspect')->label('Şüpheli')->badge()->color('danger')
+                    ->getStateUsing(function ($record) {
+                        $s = CheatScan::suspectIds()[$record->id] ?? null;
+
+                        return $s ? '⚠ '.$s['flags'] : null;
+                    })
+                    ->tooltip(function ($record) {
+                        $s = CheatScan::suspectIds()[$record->id] ?? null;
+
+                        return $s ? "Motor-yardımı şüphesi: {$s['flags']} uzun-düşük PR maç, en kötü PR {$s['worst_pr']}" : null;
+                    })
+                    ->placeholder('—')->toggleable(),
                 // Admin notu: listede görünür (kimde not var bir bakışta belli) + içerikte arama.
                 Tables\Columns\TextColumn::make('admin_note')->label('Admin Notu')
                     ->limit(40)->tooltip(fn ($record) => $record->admin_note)
@@ -326,7 +353,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('banned_at')->label('Kapatılma')->dateTime('d.m.Y H:i')
                     ->placeholder('—')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('closed_by')->label('Kapatan')->placeholder('—')
-                    ->state(fn ($record) => $record->banned_by ? (\App\Models\User::find($record->banned_by)?->nickname ?? '#'.$record->banned_by) : null)
+                    ->state(fn ($record) => $record->banned_by ? (User::find($record->banned_by)?->nickname ?? '#'.$record->banned_by) : null)
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -365,9 +392,9 @@ class UserResource extends Resource
                         blank: fn (Builder $q) => $q,
                     ),
                 Tables\Filters\SelectFilter::make('banned_by')->label('Kapatan admin')
-                    ->options(fn () => \App\Models\User::whereNotNull('banned_at')->whereNotNull('banned_by')
+                    ->options(fn () => User::whereNotNull('banned_at')->whereNotNull('banned_by')
                         ->get()->pluck('banned_by')->unique()
-                        ->mapWithKeys(fn ($id) => [$id => \App\Models\User::find($id)?->nickname ?? '#'.$id])->all()),
+                        ->mapWithKeys(fn ($id) => [$id => User::find($id)?->nickname ?? '#'.$id])->all()),
                 Tables\Filters\Filter::make('closed_between')
                     ->form([
                         Forms\Components\DatePicker::make('from')->label('Kapatılma ≥'),
@@ -386,15 +413,15 @@ class UserResource extends Resource
                 // Ülke/şehir süzgeci: yalnız üyelerde var olan değerler (çok üyeli önce).
                 Tables\Filters\SelectFilter::make('country')->label('Ülke')
                     ->searchable()
-                    ->options(fn () => \App\Models\User::query()
+                    ->options(fn () => User::query()
                         ->whereNotNull('country')->where('country', '!=', '')
                         ->selectRaw('country, COUNT(*) as c')->groupBy('country')->orderByDesc('c')
                         ->pluck('c', 'country')
-                        ->mapWithKeys(fn ($count, $code) => [$code => (\App\Support\Geo::countries()[$code] ?? $code)." ({$count})"])
+                        ->mapWithKeys(fn ($count, $code) => [$code => (Geo::countries()[$code] ?? $code)." ({$count})"])
                         ->all()),
                 Tables\Filters\SelectFilter::make('province')->label('Şehir (il)')
                     ->searchable()
-                    ->options(fn () => \App\Models\User::query()
+                    ->options(fn () => User::query()
                         ->whereNotNull('province')->where('province', '!=', '')
                         ->selectRaw('province, COUNT(*) as c')->groupBy('province')->orderByDesc('c')
                         ->pluck('c', 'province')
@@ -419,42 +446,42 @@ class UserResource extends Resource
                         $record->save();
                     }),
                 Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                // HESAP KAPATMA (siteden yasaklama) — gerekçe+not+onay modalı. Konuşma yasağından
-                // BAĞIMSIZ: yalnız giriş/site erişimini engeller; kayıt/maç/turnuva sonuçlarını SİLMEZ.
-                Tables\Actions\Action::make('closeAccount')
-                    ->label('Hesabı Kapat')
-                    ->icon('heroicon-m-lock-closed')
-                    ->color('danger')
-                    ->visible(fn (User $record) => ! $record->isBanned())
-                    ->modalHeading('Hesabı Kapat / Siteden Yasakla')
-                    ->modalSubmitActionLabel('Hesabı Kapat')
-                    ->form(self::closeFormSchema())
-                    ->action(fn (User $record, array $data) => self::closeAccountSafely($record, $data)),
-                Tables\Actions\Action::make('reopenAccount')
-                    ->label('Hesabı Yeniden Aç')
-                    ->icon('heroicon-m-lock-open')
-                    ->color('success')
-                    ->visible(fn (User $record) => $record->isBanned())
-                    ->modalHeading('Hesabı Yeniden Aç')
-                    ->modalSubmitActionLabel('Yeniden Aç')
-                    ->form(self::reopenFormSchema())
-                    ->action(fn (User $record, array $data) => \App\Support\AccountClosure::reopen(
-                        $record, (int) auth()->id(), $data['reason']
-                    )),
-                // KONUŞMA YASAĞI (sohbet susturma) — hesap yasağından BAĞIMSIZ: kullanıcı oynar ama
-                // oyun-içi + DM mesaj atamaz (ChatModeration::mutedSeconds chat_muted_until'e bakar).
-                // Otomatik küfür yasağıyla aynı kolonu yazar; admin daima muaf (mutedSeconds null döner).
-                Tables\Actions\Action::make('chatMute')
-                    ->label(fn (User $record) => $record->chat_muted_until && $record->chat_muted_until->isFuture()
-                        ? 'Konuşma Yasağı (aktif)' : 'Konuşma Yasağı')
-                    ->icon('heroicon-m-chat-bubble-left-ellipsis')
-                    ->color('warning')
-                    ->modalHeading('Konuşma Yasağı (sohbet susturma)')
-                    ->modalSubmitActionLabel('Uygula')
-                    ->form(self::chatMuteFormSchema())
-                    ->action(fn (User $record, array $data) => self::applyChatMute($record, $data)),
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    // HESAP KAPATMA (siteden yasaklama) — gerekçe+not+onay modalı. Konuşma yasağından
+                    // BAĞIMSIZ: yalnız giriş/site erişimini engeller; kayıt/maç/turnuva sonuçlarını SİLMEZ.
+                    Tables\Actions\Action::make('closeAccount')
+                        ->label('Hesabı Kapat')
+                        ->icon('heroicon-m-lock-closed')
+                        ->color('danger')
+                        ->visible(fn (User $record) => ! $record->isBanned())
+                        ->modalHeading('Hesabı Kapat / Siteden Yasakla')
+                        ->modalSubmitActionLabel('Hesabı Kapat')
+                        ->form(self::closeFormSchema())
+                        ->action(fn (User $record, array $data) => self::closeAccountSafely($record, $data)),
+                    Tables\Actions\Action::make('reopenAccount')
+                        ->label('Hesabı Yeniden Aç')
+                        ->icon('heroicon-m-lock-open')
+                        ->color('success')
+                        ->visible(fn (User $record) => $record->isBanned())
+                        ->modalHeading('Hesabı Yeniden Aç')
+                        ->modalSubmitActionLabel('Yeniden Aç')
+                        ->form(self::reopenFormSchema())
+                        ->action(fn (User $record, array $data) => AccountClosure::reopen(
+                            $record, (int) auth()->id(), $data['reason']
+                        )),
+                    // KONUŞMA YASAĞI (sohbet susturma) — hesap yasağından BAĞIMSIZ: kullanıcı oynar ama
+                    // oyun-içi + DM mesaj atamaz (ChatModeration::mutedSeconds chat_muted_until'e bakar).
+                    // Otomatik küfür yasağıyla aynı kolonu yazar; admin daima muaf (mutedSeconds null döner).
+                    Tables\Actions\Action::make('chatMute')
+                        ->label(fn (User $record) => $record->chat_muted_until && $record->chat_muted_until->isFuture()
+                            ? 'Konuşma Yasağı (aktif)' : 'Konuşma Yasağı')
+                        ->icon('heroicon-m-chat-bubble-left-ellipsis')
+                        ->color('warning')
+                        ->modalHeading('Konuşma Yasağı (sohbet susturma)')
+                        ->modalSubmitActionLabel('Uygula')
+                        ->form(self::chatMuteFormSchema())
+                        ->action(fn (User $record, array $data) => self::applyChatMute($record, $data)),
                 ]),
             ])
             ->bulkActions([
@@ -474,7 +501,7 @@ class UserResource extends Resource
                         .'ve mesajlar silinir, mali kayıtlar yasal saklama için kalır. Yönetici hesaplar atlanır. '
                         .'Bu işlem GERİ ALINAMAZ.')
                     ->modalSubmitActionLabel('Evet, sil')
-                    ->action(function (\Illuminate\Support\Collection $records) {
+                    ->action(function (Collection $records) {
                         $deleted = 0;      // fiziksel silinen
                         $anonymized = 0;   // mali geçmişi yüzünden anonimleştirilen (satır kalır, gizlenir)
                         $skipped = 0;      // yönetici
@@ -486,10 +513,10 @@ class UserResource extends Resource
                             }
                             // UserEraser mali geçmiş varsa anonimleştirir (fiziksel silmez) -> doğru say.
                             $financial = $record->hasFinancialHistory();
-                            \App\Support\UserEraser::erase($record);
+                            UserEraser::erase($record);
                             $financial ? $anonymized++ : $deleted++;
                         }
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Silme tamamlandı')
                             ->body(trim(
                                 ($deleted > 0 ? "{$deleted} üye silindi. " : '')
@@ -512,22 +539,22 @@ class UserResource extends Resource
                     ->modalDescription('Seçili üyelerden e-postası DOĞRULANMAMIŞ olanlara doğrulama maili '
                         .'gönderilir. Zaten doğrulanmış üyeler atlanır.')
                     ->modalSubmitActionLabel('Gönder')
-                    ->action(function (\Illuminate\Support\Collection $records) {
+                    ->action(function (Collection $records) {
                         // KUYRUK: her mail ayrı job (DB kuyruğu) -> admin isteği beklemez/timeout olmaz,
                         // mailler worker tarafından arka planda gönderilir. Doğrulanmış/sistem atlanır.
                         $queued = 0;
                         $skipped = 0;
                         foreach ($records as $record) {
                             if ($record->email_verified_at !== null || empty($record->email)
-                                || (\Illuminate\Support\Facades\Schema::hasColumn('users', 'is_system') && $record->is_system)) {
+                                || (Schema::hasColumn('users', 'is_system') && $record->is_system)) {
                                 $skipped++;
 
                                 continue;
                             }
-                            \App\Jobs\SendVerificationEmailJob::dispatch((int) $record->id);
+                            SendVerificationEmailJob::dispatch((int) $record->id);
                             $queued++;
                         }
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Doğrulama maili')
                             ->body("{$queued} mail kuyruğa alındı (arka planda gönderilecek)"
                                 .($skipped > 0 ? ", {$skipped} atlandı (doğrulanmış/sistem)" : '').'.')
@@ -544,144 +571,144 @@ class UserResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
-                ISection::make('Bilgiler')->icon('heroicon-o-identification')->collapsible()->schema([
-                    TextEntry::make('id')->label('#'),
-                    TextEntry::make('nickname')->label('Takma ad'),
-                    TextEntry::make('email')->label('E-posta')->copyable(),
-                    TextEntry::make('phone')->label('Cep telefonu')->copyable()->placeholder('—'),
-                    TextEntry::make('full_name')->label('Ad Soyad')
-                        ->state(fn (User $r) => trim(($r->first_name ?? '').' '.($r->last_name ?? '')) ?: '—'),
-                    TextEntry::make('country')->label('Ülke')->placeholder('—'),
-                    TextEntry::make('province')->label('İl')->placeholder('—'),
-                    TextEntry::make('rating')->label('Puan')->badge()->color('warning')
-                        ->formatStateUsing(fn ($state) => (int) $state.'  ·  '.PanelController::levelLabel((int) ($state ?: 1500))),
-                    TextEntry::make('coins')->label('Coin')
-                        ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
-                    TextEntry::make('record')->label('Galibiyet / Mağlubiyet / Oynanan')
-                        ->state(fn (User $r) => ($r->wins ?? 0).' / '.($r->losses ?? 0).' / '.($r->games_played ?? 0)),
-                    TextEntry::make('total_wxp')->label('Toplam WXP')->placeholder('—')
-                        ->formatStateUsing(fn ($state) => $state !== null ? number_format((int) $state, 0, ',', '.') : '—'),
-                    TextEntry::make('email_verified_at')->label('E-posta doğrulama')->dateTime('d.m.Y H:i')
-                        ->placeholder('Doğrulanmadı')->badge()
-                        ->color(fn ($state) => $state ? 'success' : 'danger'),
-                    TextEntry::make('is_admin')->label('Yönetici')->badge()
-                        ->formatStateUsing(fn ($state) => $state ? 'Evet' : 'Hayır')
-                        ->color(fn ($state) => $state ? 'success' : 'gray'),
-                    TextEntry::make('banned_at')->label('Yasak')->dateTime('d.m.Y H:i')
-                        ->placeholder('Aktif (yasaksız)')->badge()
-                        ->color(fn ($state) => $state ? 'danger' : 'success'),
-                    TextEntry::make('presence_status')->label('Durum')->placeholder('—'),
-                    TextEntry::make('created_at')->label('Kayıt')->dateTime('d.m.Y H:i'),
-                    TextEntry::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')->placeholder('—'),
-                ])->columns(3),
+            ISection::make('Bilgiler')->icon('heroicon-o-identification')->collapsible()->schema([
+                TextEntry::make('id')->label('#'),
+                TextEntry::make('nickname')->label('Takma ad'),
+                TextEntry::make('email')->label('E-posta')->copyable(),
+                TextEntry::make('phone')->label('Cep telefonu')->copyable()->placeholder('—'),
+                TextEntry::make('full_name')->label('Ad Soyad')
+                    ->state(fn (User $r) => trim(($r->first_name ?? '').' '.($r->last_name ?? '')) ?: '—'),
+                TextEntry::make('country')->label('Ülke')->placeholder('—'),
+                TextEntry::make('province')->label('İl')->placeholder('—'),
+                TextEntry::make('rating')->label('Puan')->badge()->color('warning')
+                    ->formatStateUsing(fn ($state) => (int) $state.'  ·  '.PanelController::levelLabel((int) ($state ?: 1500))),
+                TextEntry::make('coins')->label('Coin')
+                    ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
+                TextEntry::make('record')->label('Galibiyet / Mağlubiyet / Oynanan')
+                    ->state(fn (User $r) => ($r->wins ?? 0).' / '.($r->losses ?? 0).' / '.($r->games_played ?? 0)),
+                TextEntry::make('total_wxp')->label('Toplam WXP')->placeholder('—')
+                    ->formatStateUsing(fn ($state) => $state !== null ? number_format((int) $state, 0, ',', '.') : '—'),
+                TextEntry::make('email_verified_at')->label('E-posta doğrulama')->dateTime('d.m.Y H:i')
+                    ->placeholder('Doğrulanmadı')->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'danger'),
+                TextEntry::make('is_admin')->label('Yönetici')->badge()
+                    ->formatStateUsing(fn ($state) => $state ? 'Evet' : 'Hayır')
+                    ->color(fn ($state) => $state ? 'success' : 'gray'),
+                TextEntry::make('banned_at')->label('Yasak')->dateTime('d.m.Y H:i')
+                    ->placeholder('Aktif (yasaksız)')->badge()
+                    ->color(fn ($state) => $state ? 'danger' : 'success'),
+                TextEntry::make('presence_status')->label('Durum')->placeholder('—'),
+                TextEntry::make('created_at')->label('Kayıt')->dateTime('d.m.Y H:i'),
+                TextEntry::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')->placeholder('—'),
+            ])->columns(3),
 
-                ISection::make('Üyelik')->icon('heroicon-o-star')->collapsible()->schema([
-                    TextEntry::make('plan_active')->label('Aktif plan')->badge()
-                        ->formatStateUsing(fn ($state) => $state === 'free' ? 'Ücretsiz' : 'Premium')
-                        ->color(fn ($state) => $state === 'free' ? 'gray' : 'success'),
-                    TextEntry::make('plan')->label('Plan (kayıtlı)')->placeholder('free'),
-                    TextEntry::make('plan_since')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('—'),
-                    TextEntry::make('plan_until')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('—')
-                        ->badge()->color(fn (User $r) => $r->plan_active === 'free' ? 'gray' : 'success'),
-                    TextEntry::make('coins')->label('Coin bakiyesi')
-                        ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
-                    // Premium NEREDEN geldi (admin ise HANGİ admin + ne zaman). Eski kayıtlarda null -> "—".
-                    TextEntry::make('plan_source')->label('Premium kaynağı')->placeholder('—')
-                        ->badge()
-                        ->color(fn ($state) => match ($state) {
-                            'payment' => 'success', 'admin' => 'warning', 'wheel' => 'info', default => 'gray',
-                        })
-                        ->formatStateUsing(function ($state, User $r) {
-                            $label = match ($state) {
-                                'payment' => 'Ödeme',
-                                'wheel' => 'Şans Çarkı',
-                                'welcome' => 'Hoşgeldin (e-posta doğrulama)',
-                                'admin' => 'Admin',
-                                default => 'Bilinmiyor',
-                            };
-                            if ($state === 'admin' && $r->plan_source_by) {
-                                $admin = \App\Models\User::find($r->plan_source_by);
-                                $label .= ' — '.($admin?->nickname ?? ('#'.$r->plan_source_by));
-                            }
-                            if ($r->plan_source_at) {
-                                $label .= ' · '.$r->plan_source_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
-                            }
+            ISection::make('Üyelik')->icon('heroicon-o-star')->collapsible()->schema([
+                TextEntry::make('plan_active')->label('Aktif plan')->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'free' ? 'Ücretsiz' : 'Premium')
+                    ->color(fn ($state) => $state === 'free' ? 'gray' : 'success'),
+                TextEntry::make('plan')->label('Plan (kayıtlı)')->placeholder('free'),
+                TextEntry::make('plan_since')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('—'),
+                TextEntry::make('plan_until')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('—')
+                    ->badge()->color(fn (User $r) => $r->plan_active === 'free' ? 'gray' : 'success'),
+                TextEntry::make('coins')->label('Coin bakiyesi')
+                    ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
+                // Premium NEREDEN geldi (admin ise HANGİ admin + ne zaman). Eski kayıtlarda null -> "—".
+                TextEntry::make('plan_source')->label('Premium kaynağı')->placeholder('—')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'payment' => 'success', 'admin' => 'warning', 'wheel' => 'info', default => 'gray',
+                    })
+                    ->formatStateUsing(function ($state, User $r) {
+                        $label = match ($state) {
+                            'payment' => 'Ödeme',
+                            'wheel' => 'Şans Çarkı',
+                            'welcome' => 'Hoşgeldin (e-posta doğrulama)',
+                            'admin' => 'Admin',
+                            default => 'Bilinmiyor',
+                        };
+                        if ($state === 'admin' && $r->plan_source_by) {
+                            $admin = User::find($r->plan_source_by);
+                            $label .= ' — '.($admin?->nickname ?? ('#'.$r->plan_source_by));
+                        }
+                        if ($r->plan_source_at) {
+                            $label .= ' · '.$r->plan_source_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
+                        }
 
-                            return $label;
-                        })->columnSpanFull(),
-                ])->columns(3),
+                        return $label;
+                    })->columnSpanFull(),
+            ])->columns(3),
 
-                ISection::make('Hesap Durumu')->icon('heroicon-o-lock-closed')->collapsible()
-                    ->description(fn (User $r) => $r->isBanned() ? 'KAPALI (hesap yasaklı)' : null)
-                    ->schema([
-                        TextEntry::make('account_state')->label('Durum')->badge()
-                            ->state(fn (User $r) => $r->isBanned() ? 'KAPALI' : 'Aktif')
-                            ->color(fn ($state) => $state === 'KAPALI' ? 'danger' : 'success'),
-                        TextEntry::make('banned_at')->label('Kapatılma')->dateTime('d.m.Y H:i')->placeholder('—'),
-                        TextEntry::make('closed_by')->label('İşlemi yapan admin')->placeholder('—')
-                            ->state(fn (User $r) => $r->banned_by
-                                ? (\App\Models\User::find($r->banned_by)?->nickname ?? '#'.$r->banned_by) : null),
-                        // KONUŞMA YASAĞI (sohbet susturma) — hesap kapatmadan BAĞIMSIZ. Üstteki "Konuşma Yasağı"
-                        // başlık aksiyonuyla uygulanır; durumu burada görünür.
-                        TextEntry::make('chat_mute_state')->label('Konuşma yasağı')->badge()
-                            ->state(fn (User $r) => $r->chat_muted_until && $r->chat_muted_until->isFuture()
-                                ? 'Susturulmuş' : 'Yok')
-                            ->color(fn ($state) => $state === 'Susturulmuş' ? 'warning' : 'success'),
-                        TextEntry::make('chat_muted_until')->label('Yasak bitişi')->dateTime('d.m.Y H:i')
-                            ->placeholder('—'),
-                        TextEntry::make('chat_muted_by')->label('Yasağı koyan admin')->placeholder('—')
-                            ->state(fn (User $r) => $r->chat_muted_by
-                                ? (\App\Models\User::find($r->chat_muted_by)?->nickname ?? '#'.$r->chat_muted_by) : null),
-                        TextEntry::make('ban_reason')->label('Gerekçe')->placeholder('—')->columnSpanFull(),
-                        // Admin-özel not: yalnız panelde görünür, kullanıcıya ASLA ($hidden ile serialize dışı).
-                        TextEntry::make('ban_note')->label('Özel not (yalnız admin)')->placeholder('—')->columnSpanFull(),
-                        TextEntry::make('ban_history')->label('Kapatma / yeniden açma geçmişi')
-                            ->state(fn (User $r) => $r->banEvents->map(fn ($e) => trim(
-                                ($e->created_at?->format('d.m.Y H:i') ?? '—').' · '
-                                .($e->action === 'closed' ? 'KAPATILDI' : 'YENİDEN AÇILDI').' · '
-                                .(\App\Models\User::find($e->actor_id)?->nickname ?? '#'.$e->actor_id).' · '
-                                .$e->reason
-                            ))->all())
-                            ->listWithLineBreaks()->bulleted()->placeholder('Kayıt yok')->columnSpanFull(),
-                    ])->columns(2),
-
-                ISection::make('Cüzdan')->icon('heroicon-o-banknotes')->collapsible()
-                    ->description(fn (User $r) => (self::walletData($r)['recon']['clean'] ?? true) ? null : '⚠ İzahı olmayan para / defter tutarsızlığı')
-                    ->schema([
-                        ViewEntry::make('wallet')->hiddenLabel()
-                            ->state(fn (User $r) => self::walletData($r))
-                            ->view('filament.user.wallet'),
-                    ]),
-
-                ISection::make('Boardlar')->icon('heroicon-o-squares-2x2')->collapsible()->collapsed()
-                    ->description(fn (User $r) => count(self::ownedBoards($r)).' board')
-                    ->schema([
-                        TextEntry::make('boards')->hiddenLabel()
-                            ->state(fn (User $r) => self::ownedBoards($r))
-                            ->badge()->color('info')
-                            ->placeholder('Sahip olduğu board yok.'),
-                    ]),
-
-                ISection::make('Avatarlar')->icon('heroicon-o-user-circle')->collapsible()->collapsed()->schema([
-                    ImageEntry::make('avatar')->label('Avatar')->circular()
-                        ->height(96)->placeholder('Avatar yok'),
-                    TextEntry::make('avatar_frame')->label('Seçili çerçeve')->placeholder('Yok')->badge()->color('warning'),
-                    TextEntry::make('checker')->label('Seçili pul')->placeholder('Varsayılan')->badge()->color('warning'),
-                    TextEntry::make('frames')->label('Sahip olunan çerçeveler')
-                        ->state(fn (User $r) => self::ownedFrames($r))
-                        ->badge()->color('info')->placeholder('Çerçeve yok.'),
-                    TextEntry::make('checkers')->label('Sahip olunan pullar')
-                        ->state(fn (User $r) => self::ownedCheckers($r))
-                        ->badge()->color('info')->placeholder('Ek pul yok.'),
+            ISection::make('Hesap Durumu')->icon('heroicon-o-lock-closed')->collapsible()
+                ->description(fn (User $r) => $r->isBanned() ? 'KAPALI (hesap yasaklı)' : null)
+                ->schema([
+                    TextEntry::make('account_state')->label('Durum')->badge()
+                        ->state(fn (User $r) => $r->isBanned() ? 'KAPALI' : 'Aktif')
+                        ->color(fn ($state) => $state === 'KAPALI' ? 'danger' : 'success'),
+                    TextEntry::make('banned_at')->label('Kapatılma')->dateTime('d.m.Y H:i')->placeholder('—'),
+                    TextEntry::make('closed_by')->label('İşlemi yapan admin')->placeholder('—')
+                        ->state(fn (User $r) => $r->banned_by
+                            ? (User::find($r->banned_by)?->nickname ?? '#'.$r->banned_by) : null),
+                    // KONUŞMA YASAĞI (sohbet susturma) — hesap kapatmadan BAĞIMSIZ. Üstteki "Konuşma Yasağı"
+                    // başlık aksiyonuyla uygulanır; durumu burada görünür.
+                    TextEntry::make('chat_mute_state')->label('Konuşma yasağı')->badge()
+                        ->state(fn (User $r) => $r->chat_muted_until && $r->chat_muted_until->isFuture()
+                            ? 'Susturulmuş' : 'Yok')
+                        ->color(fn ($state) => $state === 'Susturulmuş' ? 'warning' : 'success'),
+                    TextEntry::make('chat_muted_until')->label('Yasak bitişi')->dateTime('d.m.Y H:i')
+                        ->placeholder('—'),
+                    TextEntry::make('chat_muted_by')->label('Yasağı koyan admin')->placeholder('—')
+                        ->state(fn (User $r) => $r->chat_muted_by
+                            ? (User::find($r->chat_muted_by)?->nickname ?? '#'.$r->chat_muted_by) : null),
+                    TextEntry::make('ban_reason')->label('Gerekçe')->placeholder('—')->columnSpanFull(),
+                    // Admin-özel not: yalnız panelde görünür, kullanıcıya ASLA ($hidden ile serialize dışı).
+                    TextEntry::make('ban_note')->label('Özel not (yalnız admin)')->placeholder('—')->columnSpanFull(),
+                    TextEntry::make('ban_history')->label('Kapatma / yeniden açma geçmişi')
+                        ->state(fn (User $r) => $r->banEvents->map(fn ($e) => trim(
+                            ($e->created_at?->format('d.m.Y H:i') ?? '—').' · '
+                            .($e->action === 'closed' ? 'KAPATILDI' : 'YENİDEN AÇILDI').' · '
+                            .(User::find($e->actor_id)?->nickname ?? '#'.$e->actor_id).' · '
+                            .$e->reason
+                        ))->all())
+                        ->listWithLineBreaks()->bulleted()->placeholder('Kayıt yok')->columnSpanFull(),
                 ])->columns(2),
 
-                ISection::make('Maçlar')->icon('heroicon-o-trophy')->collapsible()->collapsed()
-                    ->description(fn (User $r) => $r->matchResults()->count().' maç (son 100 gösterilir)')
-                    ->schema([
-                        ViewEntry::make('matchResults')->hiddenLabel()
-                            ->state(fn (User $r) => self::matchRowsWithNames($r))
-                            ->view('filament.user.matches'),
-                    ]),
+            ISection::make('Cüzdan')->icon('heroicon-o-banknotes')->collapsible()
+                ->description(fn (User $r) => (self::walletData($r)['recon']['clean'] ?? true) ? null : '⚠ İzahı olmayan para / defter tutarsızlığı')
+                ->schema([
+                    ViewEntry::make('wallet')->hiddenLabel()
+                        ->state(fn (User $r) => self::walletData($r))
+                        ->view('filament.user.wallet'),
+                ]),
+
+            ISection::make('Boardlar')->icon('heroicon-o-squares-2x2')->collapsible()->collapsed()
+                ->description(fn (User $r) => count(self::ownedBoards($r)).' board')
+                ->schema([
+                    TextEntry::make('boards')->hiddenLabel()
+                        ->state(fn (User $r) => self::ownedBoards($r))
+                        ->badge()->color('info')
+                        ->placeholder('Sahip olduğu board yok.'),
+                ]),
+
+            ISection::make('Avatarlar')->icon('heroicon-o-user-circle')->collapsible()->collapsed()->schema([
+                ImageEntry::make('avatar')->label('Avatar')->circular()
+                    ->height(96)->placeholder('Avatar yok'),
+                TextEntry::make('avatar_frame')->label('Seçili çerçeve')->placeholder('Yok')->badge()->color('warning'),
+                TextEntry::make('checker')->label('Seçili pul')->placeholder('Varsayılan')->badge()->color('warning'),
+                TextEntry::make('frames')->label('Sahip olunan çerçeveler')
+                    ->state(fn (User $r) => self::ownedFrames($r))
+                    ->badge()->color('info')->placeholder('Çerçeve yok.'),
+                TextEntry::make('checkers')->label('Sahip olunan pullar')
+                    ->state(fn (User $r) => self::ownedCheckers($r))
+                    ->badge()->color('info')->placeholder('Ek pul yok.'),
+            ])->columns(2),
+
+            ISection::make('Maçlar')->icon('heroicon-o-trophy')->collapsible()->collapsed()
+                ->description(fn (User $r) => $r->matchResults()->count().' maç (son 100 gösterilir)')
+                ->schema([
+                    ViewEntry::make('matchResults')->hiddenLabel()
+                        ->state(fn (User $r) => self::matchRowsWithNames($r))
+                        ->view('filament.user.matches'),
+                ]),
         ]);
     }
 
@@ -691,7 +718,7 @@ class UserResource extends Resource
      * - Rakip: opponent_name (nickname) → User tablosundan tek sorguyla çözülür (opp_full_name).
      *   Bulunamazsa null (blade sadece nickname gösterir). Ad soyad = model üzerine dinamik nitelik.
      */
-    public static function matchRowsWithNames(User $u): \Illuminate\Support\Collection
+    public static function matchRowsWithNames(User $u): Collection
     {
         $rows = $u->matchResults()->latest('id')->limit(100)->get();
         $selfFull = trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: null;
@@ -719,7 +746,7 @@ class UserResource extends Resource
 
     public static function walletData(User $u): array
     {
-        return self::$walletCache[$u->id] ??= \App\Support\WalletBreakdown::for($u);
+        return self::$walletCache[$u->id] ??= WalletBreakdown::for($u);
     }
 
     /** unlocks'tan sahip olunan board id'leri (önek soyulmuş). */
