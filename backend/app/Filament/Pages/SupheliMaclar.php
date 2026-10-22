@@ -17,9 +17,9 @@ class SupheliMaclar extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-cpu-chip';
 
-    protected static ?string $navigationLabel = 'Şüpheli Maçlar';
+    protected static ?string $navigationLabel = 'Şüpheli Kullanıcılar';
 
-    protected static ?string $title = 'Şüpheli Maçlar — Motor-Yardımı (Hile) Sinyali';
+    protected static ?string $title = 'Şüpheli Kullanıcılar — Motor-Yardımı (Hile) Sinyali';
 
     protected static ?string $navigationGroup = 'Güvenlik';
 
