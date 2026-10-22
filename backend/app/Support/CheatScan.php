@@ -246,6 +246,75 @@ class CheatScan
         Cache::forget('cheatscan:suspect_ids');
     }
 
+    /**
+     * HAMLE-HAMLE MOTOR EŞLEŞMESİ (kesin kanıt katmanı): bir maçta oyuncunun her checker kararını
+     * gnubg'nin en-iyi hamlesiyle karşılaştır. Kaynak: match_results.gnubg_review.log (her kayıt
+     * {player,notation,best,loss,dice}; loss=0 => motorun #1 hamlesi oynandı). Oyuncu rengi odadan
+     * (p1=white, p2=black — RoomResult ile aynı). İnsan uzun maçta ~%40-60 top-move tutar; %85+ = motor.
+     *
+     * @return array{ok:bool,color:?string,total:int,exact:int,exact_pct:int,near:int,near_pct:int,
+     *               moves:array<int,array{dice:string,played:string,best:string,loss:float,match:bool}>,note:?string}
+     */
+    public static function moveMatch(int $userId, string $roomCode): array
+    {
+        $empty = ['ok' => false, 'color' => null, 'total' => 0, 'exact' => 0, 'exact_pct' => 0,
+            'near' => 0, 'near_pct' => 0, 'moves' => [], 'note' => null];
+
+        $mr = DB::table('match_results')->where('user_id', $userId)->where('room_code', $roomCode)
+            ->first(['gnubg_review']);
+        if (! $mr || ! $mr->gnubg_review) {
+            return [...$empty, 'note' => 'Bu maçın gnubg analizi (review) yok — eşleşme hesaplanamıyor.'];
+        }
+        $j = json_decode($mr->gnubg_review, true);
+        $log = is_array($j['log'] ?? null) ? $j['log'] : null;
+        if (! $log) {
+            return [...$empty, 'note' => 'Review log boş/bozuk.'];
+        }
+
+        // Renk: p1=white, p2=black (RoomResult ile aynı). Oda silinmişse review'dan tek-renk çıkaramayız.
+        $room = DB::table('rooms')->where('code', $roomCode)->first(['p1_user_id', 'p2_user_id']);
+        $color = null;
+        if ($room) {
+            $color = (int) $room->p1_user_id === $userId ? 'white'
+                : ((int) $room->p2_user_id === $userId ? 'black' : null);
+        }
+        if ($color === null) {
+            return [...$empty, 'note' => 'Oyuncunun rengi belirlenemedi (oda silinmiş olabilir).'];
+        }
+
+        $moves = [];
+        $exact = $near = 0;
+        foreach ($log as $x) {
+            if (! is_array($x) || ($x['player'] ?? null) !== $color || ! isset($x['best'])) {
+                continue; // yalnız bu oyuncunun checker kararları (küp/pas kaydında 'best' yok)
+            }
+            $loss = (float) ($x['loss'] ?? 0);
+            $isExact = $loss <= 0.001;
+            $exact += $isExact ? 1 : 0;
+            $near += $loss <= 0.02 ? 1 : 0;
+            $moves[] = [
+                'dice' => is_array($x['dice'] ?? null) ? implode('-', $x['dice']) : (string) ($x['dice'] ?? ''),
+                'played' => (string) ($x['notation'] ?? ''),
+                'best' => (string) ($x['best'] ?? ''),
+                'loss' => round($loss, 3),
+                'match' => $isExact,
+            ];
+        }
+        $total = count($moves);
+
+        return [
+            'ok' => $total > 0,
+            'color' => $color,
+            'total' => $total,
+            'exact' => $exact,
+            'exact_pct' => $total ? (int) round(100 * $exact / $total) : 0,
+            'near' => $near,
+            'near_pct' => $total ? (int) round(100 * $near / $total) : 0,
+            'moves' => $moves,
+            'note' => $total === 0 ? 'Bu renkte checker kararı bulunamadı.' : null,
+        ];
+    }
+
     /** match_results satırlarını (gnubg_pr > 0) tek sorguda çek. */
     private static function load(?int $userId): array
     {

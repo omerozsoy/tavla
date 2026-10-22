@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\UserResource;
 use App\Models\User;
+use App\Support\AccountClosure;
 use App\Support\CheatScan;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -26,6 +27,11 @@ class SupheliMaclar extends Page
     protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.supheli-maclar';
+
+    /** Hamle-hamle eşleşmesi açık olan maçın odası ve hesaplanmış sonucu (on-demand; 244KB review parse). */
+    public ?string $openRoom = null;
+
+    public array $moveMatch = [];
 
     public static function getNavigationBadge(): ?string
     {
@@ -98,7 +104,46 @@ class SupheliMaclar extends Page
         }
         $u->banned_at = null;
         $u->save();
+        CheatScan::forget();
         Notification::make()->title(($u->nickname ?: $u->email).' engeli kaldırıldı.')->success()->send();
+    }
+
+    /**
+     * HESABI KAPAT (ban'dan ağır): UserResource ile AYNI akış — AccountClosure::close hesabı kapatır,
+     * oturumları/token'ları keser, ekonomik kilit/iade işler. Engelle = erişimi kes; Kapat = hesabı sonlandır.
+     */
+    public function closeAccount(int $id): void
+    {
+        $u = User::find($id);
+        if (! $u) {
+            return;
+        }
+        if (method_exists($u, 'isConfigAdmin') && $u->isConfigAdmin()) {
+            Notification::make()->title('Bu hesap (config admin) kapatılamaz.')->danger()->send();
+
+            return;
+        }
+        if ($u->id === auth()->id()) {
+            Notification::make()->title('Kendi hesabını kapatamazsın.')->danger()->send();
+
+            return;
+        }
+        AccountClosure::close($u, (int) auth()->id(), 'Motor-yardımı hile (Şüpheli Kullanıcılar)');
+        CheatScan::forget();
+        Notification::make()->title(($u->nickname ?: $u->email).' hesabı kapatıldı.')->success()->send();
+    }
+
+    /** Hamle-hamle motor eşleşmesini aç/kapa (on-demand — yalnız tıklanan maçın review'ını parse eder). */
+    public function showMoves(int $userId, string $room): void
+    {
+        if ($this->openRoom === $room) {
+            $this->openRoom = null;
+            $this->moveMatch = [];
+
+            return;
+        }
+        $this->openRoom = $room;
+        $this->moveMatch = CheatScan::moveMatch($userId, $room);
     }
 
     private static function editUrl(int $uid): ?string

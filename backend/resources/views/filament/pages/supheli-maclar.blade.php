@@ -90,6 +90,9 @@
                                     <x-filament::button size="xs" color="danger" icon="heroicon-m-no-symbol" wire:click="block({{ $row['user_id'] }})"
                                         wire:confirm="{{ $row['nickname'] }} hesabını motor-yardımı şüphesiyle engellemek istiyor musun?">Engelle</x-filament::button>
                                 @endif
+                                {{-- Hesabı Kapat: ban'dan ağır (oturum/token kesilir, ekonomik iade işlenir). --}}
+                                <x-filament::button size="xs" color="danger" icon="heroicon-m-trash" wire:click="closeAccount({{ $row['user_id'] }})"
+                                    wire:confirm="{{ $row['nickname'] }} hesabını KAPAT? Bu ban'dan ağırdır: oturumlar/token'lar kesilir, hesap sonlandırılır. Emin misin?">Hesabı Kapat</x-filament::button>
                             </div>
                         </div>
 
@@ -178,11 +181,13 @@
                                             <th class="text-left font-medium px-3 py-2">Rakip</th>
                                             <th class="text-right font-medium px-3 py-2">oPR</th>
                                             <th class="text-right font-medium px-3 py-2">Tarih</th>
+                                            <th class="text-center font-medium px-3 py-2">Motor eşleşmesi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                                         @foreach ($g['rows'] as $m)
-                                            <tr>
+                                            @php $open = $m['room_code'] && $this->openRoom === $m['room_code']; @endphp
+                                            <tr @class(['bg-red-500/5' => $open])>
                                                 <td class="px-3 py-2 font-mono text-xs">{{ $m['room_code'] ?: '—' }}</td>
                                                 <td class="px-3 py-2 text-right font-bold {{ $m['pr'] < 2 ? 'text-red-600 dark:text-red-400' : '' }}">{{ $m['pr'] }}</td>
                                                 <td class="px-3 py-2 text-right text-gray-500">{{ $m['checker_pr'] }}</td>
@@ -192,7 +197,67 @@
                                                 <td class="px-3 py-2 truncate max-w-[10rem]">{{ $m['opponent_name'] ?: '—' }}</td>
                                                 <td class="px-3 py-2 text-right text-gray-500">{{ $m['opponent_pr'] }}</td>
                                                 <td class="px-3 py-2 text-right text-xs text-gray-500">{{ $fmt($m['created_at']) }}</td>
+                                                <td class="px-3 py-2 text-center">
+                                                    @if ($m['room_code'])
+                                                        <x-filament::button size="xs" :color="$open ? 'gray' : 'warning'" icon="heroicon-m-magnifying-glass"
+                                                            wire:click="showMoves({{ $row['user_id'] }}, '{{ $m['room_code'] }}')">
+                                                            {{ $open ? 'Kapat' : 'Hamleleri gör' }}
+                                                        </x-filament::button>
+                                                    @else
+                                                        <span class="text-xs text-gray-400">—</span>
+                                                    @endif
+                                                </td>
                                             </tr>
+                                            {{-- HAMLE-HAMLE MOTOR EŞLEŞMESİ (kesin kanıt): oynanan vs gnubg en-iyi hamle. --}}
+                                            @if ($open)
+                                                <tr class="bg-gray-50 dark:bg-white/5">
+                                                    <td colspan="10" class="px-4 py-3">
+                                                        @php $mm = $this->moveMatch; @endphp
+                                                        @if (! ($mm['ok'] ?? false))
+                                                            <div class="text-sm text-amber-600 dark:text-amber-400">{{ $mm['note'] ?? 'Eşleşme hesaplanamadı.' }}</div>
+                                                        @else
+                                                            <div class="mb-2 flex items-center gap-3 flex-wrap text-sm">
+                                                                <span class="inline-flex items-center rounded-full px-2.5 py-1 font-bold {{ $mm['exact_pct'] >= 85 ? 'bg-red-500/20 text-red-700 dark:text-red-300' : ($mm['exact_pct'] >= 70 ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300' : 'bg-gray-500/15 text-gray-600 dark:text-gray-300') }}">
+                                                                    Motor eşleşmesi: %{{ $mm['exact_pct'] }}
+                                                                </span>
+                                                                <span class="text-gray-600 dark:text-gray-400">
+                                                                    {{ $mm['exact'] }}/{{ $mm['total'] }} hamlede gnubg'nin <b>#1</b> hamlesi oynanmış
+                                                                    (yakın: %{{ $mm['near_pct'] }}).
+                                                                </span>
+                                                                <span class="text-xs text-gray-500">
+                                                                    İnsan 60+ kararda ~%40-60 tutar; <b>%85+ = motor</b>.
+                                                                </span>
+                                                            </div>
+                                                            <div class="overflow-x-auto rounded-lg ring-1 ring-gray-200 dark:ring-white/10">
+                                                                <table class="w-full text-xs">
+                                                                    <thead class="text-gray-500 bg-white dark:bg-gray-900">
+                                                                        <tr>
+                                                                            <th class="text-left font-medium px-3 py-1.5">#</th>
+                                                                            <th class="text-left font-medium px-3 py-1.5">Zar</th>
+                                                                            <th class="text-left font-medium px-3 py-1.5">Oynanan</th>
+                                                                            <th class="text-left font-medium px-3 py-1.5">Motor (en iyi)</th>
+                                                                            <th class="text-right font-medium px-3 py-1.5">Kayıp</th>
+                                                                            <th class="text-center font-medium px-3 py-1.5">Eşleşme</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                                                                        @foreach ($mm['moves'] as $i => $mv)
+                                                                            <tr class="{{ $mv['match'] ? '' : 'bg-amber-500/5' }}">
+                                                                                <td class="px-3 py-1 text-gray-400">{{ $i + 1 }}</td>
+                                                                                <td class="px-3 py-1 font-mono">{{ $mv['dice'] }}</td>
+                                                                                <td class="px-3 py-1 font-mono">{{ $mv['played'] }}</td>
+                                                                                <td class="px-3 py-1 font-mono text-gray-500">{{ $mv['best'] }}</td>
+                                                                                <td class="px-3 py-1 text-right {{ $mv['loss'] > 0.02 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-gray-400' }}">{{ number_format($mv['loss'], 3) }}</td>
+                                                                                <td class="px-3 py-1 text-center">{{ $mv['match'] ? '✅' : '—' }}</td>
+                                                                            </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endif
                                         @endforeach
                                     </tbody>
                                 </table>

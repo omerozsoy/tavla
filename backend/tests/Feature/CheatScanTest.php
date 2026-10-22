@@ -106,6 +106,35 @@ class CheatScanTest extends TestCase
         $this->assertGreaterThan(CheatScan::PR_WORLD_CHAMPION, $pf['median']);
     }
 
+    public function test_move_match_computes_engine_top_move_rate(): void
+    {
+        $white = User::factory()->create();
+        $black = User::factory()->create();
+        DB::table('rooms')->insert([
+            'code' => 'MM1', 'p1_token' => 'a', 'p1_name' => 'W',
+            'p1_user_id' => $white->id, 'p2_user_id' => $black->id,
+        ]);
+        $review = ['log' => [
+            ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2]],
+            ['player' => 'white', 'notation' => '13/7', 'best' => '13/7', 'loss' => 0.0, 'dice' => [6, 1]],
+            ['player' => 'white', 'notation' => '24/18', 'best' => '13/11 24/23', 'loss' => 0.12, 'dice' => [2, 1]],
+            ['player' => 'black', 'notation' => '6/2', 'best' => '6/2', 'loss' => 0.0, 'dice' => [4, 0]],
+        ]];
+        DB::table('match_results')->insert([
+            'user_id' => $white->id, 'won' => 1, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
+            'room_code' => 'MM1', 'match_type' => 'match', 'match_length' => 5,
+            'gnubg_review' => json_encode($review), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $mm = CheatScan::moveMatch($white->id, 'MM1');
+        $this->assertTrue($mm['ok']);
+        $this->assertSame('white', $mm['color']);
+        $this->assertSame(3, $mm['total']); // yalnız white'ın checker kararları (black elenir)
+        $this->assertSame(2, $mm['exact']); // 2 hamle loss≈0 = motorun #1'i
+        $this->assertSame(67, $mm['exact_pct']);
+    }
+
     public function test_suspects_lists_flagged_user(): void
     {
         $cheat = User::factory()->create(['nickname' => 'Suspect']);
