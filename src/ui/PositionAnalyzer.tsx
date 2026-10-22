@@ -188,6 +188,17 @@ export default function PositionAnalyzer({
     limitTimer.current = setTimeout(() => setLimitMsg(false), 2600)
   }
 
+  // TOPLAMA HANESINE EKLE (kullanici istegi): toplama tepsisine dokununca o tarafin renginden
+  // bir toplanmis pul ekle (15 pul siniri; dolu ise uyari). Silme: pulu disari surukle.
+  function addOff(color: Player) {
+    if (atLimit(color)) {
+      warnLimit()
+      return
+    }
+    setResult(null)
+    setOff((o) => ({ ...o, [color]: o[color] + 1 }))
+  }
+
   // Tiklanan noktada farenin hangi "kat"a denk geldigi. 3. kat hizasinda tiklamak
   // = 3 pul. maxSlots ucgene sigan gorunur kat sayisi (tipik 5): dolu yiginin
   // tepesine tiklamak 6+ pul dizebilmek icin +1 ekler.
@@ -297,6 +308,14 @@ export default function PositionAnalyzer({
       const v = dir > 0 ? Math.min(64, c.value * 2) : Math.floor(c.value / 2)
       return v < 2 ? { value: 1, owner: null } : { value: v, owner: c.owner }
     })
+  }
+  // DOKUNMATIK TAP (kullanici istegi): kupun UST yarisina dokun -> rakip (siyah/ust), ALT yarisina
+  // -> ben (beyaz/alt). Kup zaten o taraftaysa deger 2->4->...->64->2 DONGU (wrap) -> mobilde
+  // surukleme olmadan hem karsiya gecer hem deger tiklaya tiklaya ayarlanir.
+  function cycleCubeTap(upperHalf: boolean) {
+    const side: Player = upperHalf ? 'black' : 'white'
+    setResult(null)
+    setCube((c) => (c.owner !== side ? { value: 2, owner: side } : { value: c.value >= 64 ? 2 : c.value * 2, owner: side }))
   }
 
   // SAG TIK (Board'un kendi onClick'i sadece sol tik verir -> burada DOM'dan cozuyoruz).
@@ -523,11 +542,28 @@ export default function PositionAnalyzer({
       return
     }
     // KUP: bar'in ICINDE duruyor -> bar onClick'i (bara pul ekler) tetiklenmesin diye
-    // capture fazinda yakalayip durduruyoruz. Sol tik kupu BANA dogru oynatir.
-    if ((e.target as HTMLElement).closest('.cube')) {
+    // capture fazinda yakalayip durduruyoruz. DOKUNMATIK: ust yari=rakip / alt yari=ben + deger
+    // dongu (cycleCubeTap). MASAUSTU: sol tik bana, sag tik rakibe (bumpCube, contextmenu'de).
+    const cubeElClick = (e.target as HTMLElement).closest('.cube') as HTMLElement | null
+    if (cubeElClick) {
       e.stopPropagation()
       pendingSlotRef.current = null
-      bumpCube('white')
+      if (isTouch) {
+        const r = cubeElClick.getBoundingClientRect()
+        cycleCubeTap(e.clientY < r.top + r.height / 2)
+      } else {
+        bumpCube('white')
+      }
+      return
+    }
+    // TOPLAMA HANESI (bear-off tepsisi): dokunulan tarafin renginden toplanmis pul ekle
+    // (ust tepsi=siyah/rakip, alt tepsi=beyaz/ben). Kullanici: "ne tarafa tiklarsa o tarafin
+    // renginden toplama hanesine koy". Slot sinifi .bearoff-slot.top/.bottom.
+    const offSlot = (e.target as HTMLElement).closest('.bearoff-slot') as HTMLElement | null
+    if (offSlot) {
+      e.stopPropagation()
+      pendingSlotRef.current = null
+      addOff(offSlot.classList.contains('top') ? 'black' : 'white')
       return
     }
     // Board onSelectFrom(index) event tasimadigi icin klik yuksekligini burada
