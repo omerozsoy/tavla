@@ -139,6 +139,7 @@ export default function MatReview({
   const firstIdx = useMemo(() => log.findIndex((e) => e.pos && !e.cube), [log])
   const [sel, setSel] = useState(firstIdx >= 0 ? firstIdx : 0)
   const [candIdx, setCandIdx] = useState(0)
+  const PREMOVE = -2 // "Hamle Öncesi": tahta karar anındaki ham pozisyonu OKSUZ gösterir
 
   // Listelenecek satırlar: küp/no-move dahil TÜMÜ (HedgeHog gibi), filtre uygulanır.
   const rows = useMemo(() => {
@@ -155,6 +156,7 @@ export default function MatReview({
   const cur = log[sel]
   const viewSteps: Step[] = (() => {
     if (!cur) return []
+    if (candIdx === PREMOVE) return [] // Hamle Öncesi: ok yok
     if (candIdx >= 0 && cur.cands && cur.cands[candIdx]) return cur.cands[candIdx].steps
     return cur.playedSteps ?? cur.steps ?? []
   })()
@@ -489,6 +491,13 @@ export default function MatReview({
             <span className="mrv-ch-loss">{t('mrv.loss')}</span>
           </div>
           <div className="mrv-cands">
+            {/* EN ÜSTTE: "Hamle Öncesi" — tahtayı oksuz (ham pozisyon) göster. */}
+            <button
+              className={`mrv-cand mrv-cand-pre ${candIdx === PREMOVE ? 'sel' : ''}`}
+              onClick={() => setCandIdx(PREMOVE)}
+            >
+              <span className="mrv-c-move">{t('rep.beforeMove')}</span>
+            </button>
             {(cur?.cands ?? []).map((c, ci) => {
               const diff = c.equity - (cur!.cands![0]?.equity ?? c.equity)
               const isPlayed = ci === playedIdx

@@ -150,6 +150,9 @@ export default function MatchReport({
   // Tahtada gosterilen aday: acilis + secimde OYNANAN hamle (senin oynadigin). Adaylardan
   // (1-5) tiklayarak diger olasiliklarin oklarini gorursun.
   const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
+  // candIdx === PREMOVE: "Hamle Öncesi" — tahta karar anındaki ham pozisyonu OKSUZ gösterir
+  // (hiçbir aday/oynanan ok çizilmez). Liste en üstünde seçilebilir satır.
+  const PREMOVE = -2
   // Aday hamle listesi: varsayilan En Iyi 30; "Tumunu goster" ile hepsi acilir.
   const CAND_LIMIT = 30
   const [showAllCands, setShowAllCands] = useState(false)
@@ -190,6 +193,7 @@ export default function MatchReport({
   // Tahtada hangi hamle: secili aday varsa o, yoksa oynanan
   const viewSteps = useMemo<Step[]>(() => {
     if (!cur) return []
+    if (candIdx === PREMOVE) return [] // Hamle Öncesi: ok yok
     if (candIdx >= 0 && cur.cands && cur.cands[candIdx]) return cur.cands[candIdx].steps
     return cur.playedSteps ?? cur.steps ?? []
   }, [cur, candIdx])
@@ -588,10 +592,12 @@ export default function MatchReport({
                       />
                     </div>
                     {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
-                    <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
-                      {candIdx < 0 || candIdx === playedIdx
-                        ? playedLabel
-                        : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
+                    <div className={`an-view-label ${candIdx === PREMOVE ? '' : candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
+                      {candIdx === PREMOVE
+                        ? t('rep.beforeMove')
+                        : candIdx < 0 || candIdx === playedIdx
+                          ? playedLabel
+                          : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
                     </div>
                     {winPct(cur.probs) != null && (
                       <div className="an-winbar" title={t('rep.winChance')}>
@@ -620,6 +626,13 @@ export default function MatchReport({
                       })}
                     </div>
                     <div className="an-cands">
+                      {/* EN ÜSTTE: "Hamle Öncesi" — tahtayı oksuz (ham pozisyon) göster. */}
+                      <button
+                        className={`an-cand an-cand-pre ${candIdx === PREMOVE ? 'view' : ''}`}
+                        onClick={() => setCandIdx(PREMOVE)}
+                      >
+                        <span className="an-cmove">{t('rep.beforeMove')}</span>
+                      </button>
                       {(showAllCands ? (cur.cands ?? []) : (cur.cands ?? []).slice(0, CAND_LIMIT)).map((c, ci) => {
                         const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)
                         const isPlayed = ci === playedIdx
