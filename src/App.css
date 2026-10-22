@@ -17001,6 +17001,21 @@ body:has(.spectate-view) .app.lobby {
   /* Kup: ana board ile ayni büyütülmüş oran (desktop net + dokunulabilir). */
   --cube-size: clamp(34px, calc(var(--bar-w) * 0.82), 60px);
 }
+/* SAHIPLI KUP MOBILDE GORUNMEZDI (kok neden): oyun board'unda --bearoff-w == --tray-w (genis,
+   cube-size*1.5) -> sahipli kup (cube-tray) tepsiye SIGAR. Analyzer ise --bearoff-w'yi checker*1'e
+   (dar) daraltip --tray-w'yi SENKRONLAMADI -> kup --tray-w'ye gore ~23px boyutlanir ama slot ic
+   genisligi padding'lerle ~10px kalir -> .bearoff-slot overflow:hidden kupu kirpar ("gozukmuyor").
+   COZUM: analyzer tepsisini okunur bir kup sigacak kadar genislet + padding kis + kupu SLOT
+   genisligine gore boyutla (tray-w degil). Board ~11px genisler; dar telefonda board-h zaten
+   taban degerinde, bu paya siga. */
+.analyzer { --bearoff-w: calc(var(--checker) * 1.5); }
+.analyzer-board .bearoff { padding: 2px; gap: 4px; }
+.analyzer-board .bearoff-slot { padding: 1px; }
+.analyzer-board .cube.cube-tray {
+  width: calc(var(--bearoff-w) - 8px);
+  height: calc(var(--bearoff-w) - 8px);
+  font-size: calc((var(--bearoff-w) - 8px) * 0.5);
+}
 /* 15 tas limiti: board ustunde kibar, gecici uyari */
 .pa-limit-toast {
   position: absolute;
