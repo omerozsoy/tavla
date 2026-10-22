@@ -180,12 +180,29 @@ export default function MatchResult({
   // Geçen süre (sn): gnubg ort ~86sn/en kötü ~6.5dk sürer -> kullanıcı "takıldı mı?" demesin diye
   // DÜRÜST geçen-süre sayacı göster (sabit yanıltıcı ETA değil; "hesaplanıyor 0:42" güven verir).
   const [elapsed, setElapsed] = useState(0)
+  // BİTİRME FAZI: gerçek-oran 2sn poll'den kaba geldiği için bar ~%30'da kesilip PR beliriyordu
+  // ("bir anda %30'da bitti"). Analiz bitince bar'ı 100'e ÇEK + kısa süre göster (CSS 0.5s width
+  // transition dolumu görünsün) -> sonra gizle. Böylece loader "tamamlandı" hissiyle 100'e dolar.
+  const [finishing, setFinishing] = useState(false)
+  const wasAnalyzingRef = useRef(false)
   useEffect(() => {
     if (!analyzingAny) {
+      if (wasAnalyzingRef.current) {
+        wasAnalyzingRef.current = false
+        setProgress(100) // son (kaba) değerden 100'e: CSS transition dolumu oynar
+        setFinishing(true)
+        const t = setTimeout(() => {
+          setFinishing(false)
+          setProgress(0)
+          setElapsed(0)
+        }, 600) // >0.5s: dolum animasyonu tamamlansın
+        return () => clearTimeout(t)
+      }
       setProgress(0)
       setElapsed(0)
       return
     }
+    wasAnalyzingRef.current = true
     const start = Date.now()
     const TAU = 12500 // tahmin: ~15sn'de %70, ~30sn'de %91, ~45sn'de %97
     const tick = () => {
@@ -327,7 +344,7 @@ export default function MatchResult({
               )}
               {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
                   anlaşılmıyordu -> tam genişlik bilgi satırı. */}
-              {analyzingAny && (
+              {(analyzingAny || finishing) && (
                 <div className="mr-pr-note mr-pr-progress" role="status" aria-live="polite">
                   <div className="mr-pr-progress-head">
                     <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
