@@ -284,6 +284,21 @@ export default function PositionAnalyzer({
     })
   }
 
+  // DOKUNMATIK kup kontrolu: sag-tik olmadigi icin tahtadan kup YALNIZ buyuyordu (ne kuculur
+  // ne karsiya gecerdi). Panelde acik kontrol: sahip (Ortada/Beyaz/Siyah) + deger (-/+).
+  function setCubeOwner(side: Player | null) {
+    setResult(null)
+    setCube((c) => (side === null ? { value: 1, owner: null } : { value: c.owner === null ? 2 : c.value, owner: side }))
+  }
+  function stepCubeValue(dir: 1 | -1) {
+    setResult(null)
+    setCube((c) => {
+      if (c.owner === null) return c // once taraf secilsin
+      const v = dir > 0 ? Math.min(64, c.value * 2) : Math.floor(c.value / 2)
+      return v < 2 ? { value: 1, owner: null } : { value: v, owner: c.owner }
+    })
+  }
+
   // SAG TIK (Board'un kendi onClick'i sadece sol tik verir -> burada DOM'dan cozuyoruz).
   function onBoardContextMenu(e: RMouseEvent<HTMLDivElement>) {
     const el = e.target as HTMLElement
@@ -771,7 +786,57 @@ export default function PositionAnalyzer({
                 </span>
               )}
             </div>
-            <div className="pa-edit-help">{t('pa.cubeHint')}</div>
+            {/* DOKUNMATIK: sag-tik yok -> tahtadan kup yalniz BUYUYOR (ne kuculur ne karsiya
+                gecer). Acik kontrol: sahip (Ortada/Beyaz/Siyah) + deger (-/+). Fare kullanicisi
+                tahtadan ayarlamaya devam eder (ipucu metni). */}
+            {isTouch ? (
+              <div className="pa-cube-touch">
+                <div className="menu-targets">
+                  <Button
+                    variant={cube.owner === null ? 'secondary' : 'ghost'}
+                    aria-pressed={cube.owner === null}
+                    onClick={() => setCubeOwner(null)}
+                  >
+                    {t('pa.center')}
+                  </Button>
+                  <Button
+                    variant={cube.owner === 'white' ? 'secondary' : 'ghost'}
+                    aria-pressed={cube.owner === 'white'}
+                    onClick={() => setCubeOwner('white')}
+                  >
+                    <Swatch color="white" /> {t('pa.white')}
+                  </Button>
+                  <Button
+                    variant={cube.owner === 'black' ? 'secondary' : 'ghost'}
+                    aria-pressed={cube.owner === 'black'}
+                    onClick={() => setCubeOwner('black')}
+                  >
+                    <Swatch color="black" /> {t('pa.black')}
+                  </Button>
+                </div>
+                <div className="pa-cube-steps">
+                  <Button
+                    variant="ghost"
+                    disabled={cube.owner === null}
+                    aria-label="−"
+                    onClick={() => stepCubeValue(-1)}
+                  >
+                    −
+                  </Button>
+                  <span className="pa-cube-val">{cube.owner === null ? '—' : cube.value}</span>
+                  <Button
+                    variant="ghost"
+                    disabled={cube.owner === null || cube.value >= 64}
+                    aria-label="+"
+                    onClick={() => stepCubeValue(1)}
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="pa-edit-help">{t('pa.cubeHint')}</div>
+            )}
           </div>
 
           <div className="setup-row">

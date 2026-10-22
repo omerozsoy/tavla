@@ -32041,6 +32041,29 @@ select:-webkit-autofill {
   border-radius: var(--radius-pill);
   background: var(--bg);
 }
+/* Dokunmatik kup kontrolu: sahip (Ortada/Beyaz/Siyah) satiri + deger -/+ adimlayici. */
+.pa-cube-touch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pa-cube-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pa-cube-steps [data-slot='button'] {
+  min-width: 44px; /* dokunma hedefi */
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.pa-cube-val {
+  min-width: 2.2ch;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
 
 /* =========================================================================
    FLAT / keskin-kose override KALDIRILDI (kullanici istegi: eski yuvarlak
