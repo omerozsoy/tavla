@@ -13,7 +13,10 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # üzerinden (443 -> 8080) erişir -> port internete AÇIK DEĞİL (bkz deploy/README.md nginx bloğu).
 # Deploy'da `systemctl restart tavla-reverb` ile taze kod alır (uzun-ömürlü PHP daemon'u;
 # aksi halde eski Event/payload kodunu tutar). Restart=always kopmada geri getirir.
-ExecStart=/opt/plesk/php/8.2/bin/php artisan reverb:start --host=127.0.0.1 --port=8080
+# -d memory_limit=512M: Reverb uzun-ömürlü WebSocket daemon'u; bellek bağlantı sayısıyla büyür.
+# 128MB varsayılan çok eşzamanlı bağlantıda sıkışıp OOM verebilir (tüm realtime push düşer) ->
+# ihtiyatlı tavan. (Review/DB OOM'u DEĞİL; ayrı çökme modu.) Global CLI ini DEĞİL -> FPM şişmez.
+ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=512M artisan reverb:start --host=127.0.0.1 --port=8080
 Restart=always
 RestartSec=5
 
