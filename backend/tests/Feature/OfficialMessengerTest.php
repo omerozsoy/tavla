@@ -49,6 +49,24 @@ class OfficialMessengerTest extends TestCase
             ->assertJsonPath('threads.0.unread', 1);
     }
 
+    public function test_message_also_creates_site_notification_for_toast(): void
+    {
+        // DM ile BİRLİKTE site-içi bildirim oluşmalı -> alıcı online'sa /ping'de sağ-üstte TOAST.
+        $player = $this->makeUser('pl');
+        OfficialMessenger::sendTo($player, 'Site yakında kapanacak.');
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $player->id,
+            'title' => 'Site yakında kapanacak.', // title = mesaj metni -> toast bunu gösterir
+            'read' => false,
+        ]);
+
+        // Toplu gönderim de her alıcıya bildirim oluşturur; resmi hesap KENDİNE almaz.
+        $a = $this->makeUser('a');
+        OfficialMessenger::broadcast('Toplu duyuru');
+        $this->assertDatabaseHas('notifications', ['user_id' => $a->id, 'title' => 'Toplu duyuru']);
+        $this->assertDatabaseMissing('notifications', ['user_id' => OfficialMessenger::account()->id]);
+    }
+
     public function test_broadcast_sends_to_all_real_users_only(): void
     {
         $a = $this->makeUser('a');

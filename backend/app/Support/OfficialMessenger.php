@@ -123,6 +123,32 @@ class OfficialMessenger
         return true;
     }
 
+    /**
+     * DM ile BİRLİKTE site-içi BİLDİRİM oluştur -> alıcı online'sa /ping poll'unda sağ-üstte TOAST
+     * görür (frontend yeni Notification'ı notify.info ile toast'lar), ayrıca zil beslemesine düşer.
+     * title = mesaj metni (toast bunu gösterir). notifications tablosu yoksa sessiz geç. 500'lük batch.
+     */
+    private static function pushNotices(array $ids, string $body): void
+    {
+        if (! Schema::hasTable('notifications')) {
+            return;
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn ($i) => $i > 0)));
+        if (! $ids) {
+            return;
+        }
+        $body = trim($body);
+        $title = Str::limit($body !== '' ? $body : (self::name().' sana bir mesaj gönderdi'), 160);
+        $full = $body !== '' ? $body : null;
+        $now = now();
+        foreach (array_chunk($ids, 500) as $batch) {
+            \App\Models\Notification::insert(array_map(fn ($id) => [
+                'user_id' => $id, 'title' => $title, 'body' => $full,
+                'icon' => 'bell', 'read' => false, 'created_at' => $now,
+            ], $batch));
+        }
+    }
+
     /** Tek oyuncuya gönder (body VEYA image gerekli — doğrulama çağırana ait). */
     public static function sendTo(User $to, string $body, ?string $image = null): void
     {
@@ -141,6 +167,7 @@ class OfficialMessenger
             $attrs['image'] = $image;
         }
         Message::create($attrs);
+        self::pushNotices([$to->id], $body); // DM + site-içi bildirim (sağ-üst toast)
     }
 
     /** Belirli kullanıcı id'lerine gönder (ör. turnuva katılımcıları). Gönderilen sayısını döndürür. */
@@ -168,6 +195,7 @@ class OfficialMessenger
         }
         if ($rows) {
             Message::insert($rows);
+            self::pushNotices(array_column($rows, 'receiver_id'), $body); // + site-içi bildirim (toast)
         }
 
         return count($rows);
@@ -221,6 +249,7 @@ class OfficialMessenger
                 }
                 if ($rows) {
                     Message::insert($rows);
+                    self::pushNotices($users->pluck('id')->all(), $body); // + site-içi bildirim (toast)
                     $count += count($rows);
                 }
             });
