@@ -309,13 +309,21 @@ export default function PositionAnalyzer({
       return v < 2 ? { value: 1, owner: null } : { value: v, owner: c.owner }
     })
   }
-  // DOKUNMATIK TAP (kullanici istegi): kupun UST yarisina dokun -> rakip (siyah/ust), ALT yarisina
-  // -> ben (beyaz/alt). Kup zaten o taraftaysa deger 2->4->...->64->2 DONGU (wrap) -> mobilde
-  // surukleme olmadan hem karsiya gecer hem deger tiklaya tiklaya ayarlanir.
-  function cycleCubeTap(upperHalf: boolean) {
-    const side: Player = upperHalf ? 'black' : 'white'
+  // DOKUNMATIK TAP = SADECE DEGER (kullanici: ust/alt yari ayrimi telefonda cok kotuydu -> kaldirildi).
+  // Kupe dokun -> deger 2->4->...->64->2 DONGU (wrap), AYNI tarafta. Merkezdeyse ilk dokunus bana
+  // (beyaz/alt) 2 koyar. Tarafi degistirmek = kupun yanindaki "karsiya at" oku (flipCube).
+  function cycleCubeValue() {
     setResult(null)
-    setCube((c) => (c.owner !== side ? { value: 2, owner: side } : { value: c.value >= 64 ? 2 : c.value * 2, owner: side }))
+    setCube((c) =>
+      c.owner === null
+        ? { value: 2, owner: 'white' }
+        : { value: c.value >= 64 ? 2 : c.value * 2, owner: c.owner },
+    )
+  }
+  // KARSIYA AT (kup yanindaki ok): sahipli kupu KARSI tarafa gecir (deger korunur). Merkezde ok yok.
+  function flipCube() {
+    setResult(null)
+    setCube((c) => (c.owner === null ? c : { value: c.value, owner: c.owner === 'white' ? 'black' : 'white' }))
   }
 
   // SAG TIK (Board'un kendi onClick'i sadece sol tik verir -> burada DOM'dan cozuyoruz).
@@ -541,19 +549,22 @@ export default function PositionAnalyzer({
       pendingSlotRef.current = null
       return
     }
-    // KUP: bar'in ICINDE duruyor -> bar onClick'i (bara pul ekler) tetiklenmesin diye
-    // capture fazinda yakalayip durduruyoruz. DOKUNMATIK: ust yari=rakip / alt yari=ben + deger
-    // dongu (cycleCubeTap). MASAUSTU: sol tik bana, sag tik rakibe (bumpCube, contextmenu'de).
-    const cubeElClick = (e.target as HTMLElement).closest('.cube') as HTMLElement | null
-    if (cubeElClick) {
+    // KARSIYA AT OKU (sahipli kup yaninda): kupu karsi tarafa gecir. Kup/bearoff dallarindan ONCE
+    // yakala (ok .bearoff-slot ICINDE -> addOff'a dusmesin).
+    if ((e.target as HTMLElement).closest('.cube-flip')) {
       e.stopPropagation()
       pendingSlotRef.current = null
-      if (isTouch) {
-        const r = cubeElClick.getBoundingClientRect()
-        cycleCubeTap(e.clientY < r.top + r.height / 2)
-      } else {
-        bumpCube('white')
-      }
+      flipCube()
+      return
+    }
+    // KUP: bar'in ICINDE duruyor -> bar onClick'i (bara pul ekler) tetiklenmesin diye capture fazinda
+    // durduruyoruz. DOKUNMATIK: tap = SADECE deger dongu (ust/alt yari ayrimi telefonda kotuydu,
+    // kaldirildi; taraf icin "karsiya at" oku). MASAUSTU: sol tik bana (sag tik rakibe, contextmenu).
+    if ((e.target as HTMLElement).closest('.cube')) {
+      e.stopPropagation()
+      pendingSlotRef.current = null
+      if (isTouch) cycleCubeValue()
+      else bumpCube('white')
       return
     }
     // TOPLAMA HANESI (bear-off tepsisi): dokunulan tarafin renginden toplanmis pul ekle
@@ -780,6 +791,7 @@ export default function PositionAnalyzer({
             pipTop={pipCount(displayState, 'black')}
             pipBottom={pipCount(displayState, 'white')}
             cube={cube}
+            showCubeFlip={isTouch}
             numberFrom={turn}
             mirror={boardDir === 'left'}
             centerLeft={diceOnRight ? undefined : boardDice}

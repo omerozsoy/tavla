@@ -187,7 +187,12 @@ class CacheMatchReviewJob implements ShouldQueue
                     $upd['pr_equity_lost'] = round($self['equity_lost'], 4);
                     $upd['pr_decisions'] = $self['decisions'];
                     $upd['gnubg_checker_pr'] = $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null;
-                    $upd['gnubg_cube_pr'] = $self['cube_pr'] !== null ? round($self['cube_pr'], 2) : null;
+                    // GÖSTERİLEN küp PR'ı BİLEREK YAZMA (provizyonel review-log yöntemi): az küp kararlı
+                    // maçta (ör. 1 karar) gnubg_cube_pr = (küpKaybı/kararSayısı)×500 absürt şişiyordu (VPARU:
+                    // 145.50 → izleyici o ~birkaç sn transient'i görüyordu). Otoriter küp PR = gnubg Snowie
+                    // (AnalyzeMatchSnowieJob, saniyeler sonra gnubg_cube_pr'ı 2.88 gibi DOĞRU değerle yazar).
+                    // Böylece küp PR Snowie gelene dek "—"/yükleniyor kalır, çöp transient HİÇ görünmez.
+                    // Kariyer küp alanları (cube_equity_lost/cube_decisions) Snowie'nin de yazdığı aggregate.
                     $upd['cube_equity_lost'] = round((float) ($self['cube_equity_lost'] ?? 0), 4); // kariyer küp PR için
                     $upd['cube_decisions'] = (int) ($self['cube_decisions'] ?? 0);
                     $upd['gnubg_pr_at'] = now();
@@ -196,7 +201,7 @@ class CacheMatchReviewJob implements ShouldQueue
                     $upd['gnubg_opponent_pr'] = $oppPr;
                     $upd['opponent_pr'] = $oppPr; // legacy fallback kolonu = otoriter opp PR (drift birikmesin)
                     $upd['gnubg_opponent_checker_pr'] = $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null;
-                    $upd['gnubg_opponent_cube_pr'] = $opp['cube_pr'] !== null ? round($opp['cube_pr'], 2) : null;
+                    // GÖSTERİLEN rakip küp PR'ı da YAZMA (yukarıdaki self ile aynı gerekçe) -> Snowie otoriter.
                 }
                 if ($upd !== []) {
                     MatchResult::where('id', $row->id)->update($upd);

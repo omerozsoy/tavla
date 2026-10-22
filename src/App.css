@@ -7629,6 +7629,29 @@ html[data-board='yilbasi'] .checker.black {
   border: 2px solid var(--tv-brick-light);
   font-size: calc(min(var(--cube-size), calc(var(--tray-w) - 8px)) * 0.46);
 }
+/* "KARSIYA AT" OKU (Pozisyon Analizi, dokunmatik): sahipli kupun yaninda, bear-off tepsisinde,
+   kuple ayni genislikte kucuk ok butonu. Tepsiye sigar (kup genisligiyle ayni: --bearoff-w-8). */
+.cube-flip {
+  flex: none;
+  width: calc(var(--bearoff-w) - 8px);
+  height: calc(var(--bearoff-w) - 10px);
+  margin: 2px auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--tv-brick-light);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tv-brick) 55%, transparent);
+  color: var(--tv-white);
+  font-size: calc((var(--bearoff-w) - 10px) * 0.72);
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.cube-flip:active {
+  background: var(--tv-brick);
+}
 /* Karar bende: teklif edilen küp alt tepsimde YANIP SÖNER (fade out/in) -> dikkat çek. */
 .cube.cube-pending {
   animation: cube-pending-blink 1s ease-in-out infinite;

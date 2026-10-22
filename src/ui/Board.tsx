@@ -93,6 +93,9 @@ interface BoardProps {
   pipTop: number
   pipBottom: number
   cube: { value: number; owner: Player | null }
+  // Pozisyon Analizi (dokunmatik): sahipli kupun yaninda "karsiya at" oku goster (ust kup -> altinda
+  // asagi ok, alt kup -> ustunde yukari ok). Tiklama PositionAnalyzer capture handler'inda (.cube-flip).
+  showCubeFlip?: boolean
   // Küp çekildi, KARAR BEKLENİYOR: teklif edilen (katlanmış) değer. Set ise karar verenin PIP'inin
   // yanında (bar'da) yanıp sönen küp belirir; kabul edince sahibin bear-off tepsisine yerleşir.
   cubePendingValue?: number | null
@@ -287,6 +290,7 @@ function Board({
   pipTop,
   pipBottom,
   cube,
+  showCubeFlip = false,
   cubePendingValue = null,
   cubePendingSide = 'bottom',
   crawford = false,
@@ -680,14 +684,30 @@ function Board({
   // tepsisine geçer (üst sahip -> üst slot başı, alt sahip -> alt slot sonu). Tüm oyunlarda ortak.
   const cubeTraySide: 'top' | 'bottom' | null =
     !classic && cube.owner != null ? (cube.owner === topBarPlayer ? 'top' : 'bottom') : null
+  // "Karsiya at" oku (yalniz Pozisyon Analizi dokunmatik): ust kup -> ALTINDA asagi ok; alt kup ->
+  // USTUNDE yukari ok. Tiklama PositionAnalyzer capture handler'inda (.cube-flip) cozulur.
+  const cubeFlipEl =
+    showCubeFlip && !crawford && cubeTraySide ? (
+      <button
+        type="button"
+        className={`cube-flip cube-flip-${cubeTraySide === 'top' ? 'down' : 'up'}`}
+        aria-label={t('board.cube')}
+      >
+        {cubeTraySide === 'top' ? '▾' : '▴'}
+      </button>
+    ) : null
   const cubeTrayEl = cubeTraySide ? (
-    <div
-      className={`cube cube-tray${crawford ? ' cube-crawford' : ''}`}
-      title={crawford ? t('board.crawfordHint') : t('board.cube')}
-      aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
-    >
-      {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
-    </div>
+    <>
+      {cubeTraySide === 'bottom' && cubeFlipEl}
+      <div
+        className={`cube cube-tray${crawford ? ' cube-crawford' : ''}`}
+        title={crawford ? t('board.crawfordHint') : t('board.cube')}
+        aria-label={crawford ? t('board.crawfordHint') : t('board.cube')}
+      >
+        {crawford ? t('board.crawford') : cube.value === 1 ? 64 : cube.value}
+      </div>
+      {cubeTraySide === 'top' && cubeFlipEl}
+    </>
   ) : null
   // Karar bekleniyor: teklif edilen küp, karar verenin PIP'i yanında (bar'da cube-top/cube-bottom
   // konumunda) YANIP SÖNER; ortadaki (sahipsiz) küp bu sırada gizlenir. Kabul edilince -> tepsi.
