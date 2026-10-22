@@ -138,7 +138,7 @@ class OfficialMessenger
             return;
         }
         $body = trim($body);
-        $title = Str::limit($body !== '' ? $body : (self::name().' sana bir mesaj gönderdi'), 160);
+        $title = Str::limit($body !== '' ? $body : (self::name().' sana bir mesaj gönderdi'), 1000);
         $full = $body !== '' ? $body : null;
         $now = now();
         foreach (array_chunk($ids, 500) as $batch) {
