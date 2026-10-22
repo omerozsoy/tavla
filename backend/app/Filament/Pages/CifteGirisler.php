@@ -214,7 +214,7 @@ class CifteGirisler extends Page
         }
         $ids = array_keys($ids);
         $users = DB::table('users')->whereIn('id', $ids)
-            ->get(['id', 'nickname', 'first_name', 'email', 'banned_at', 'created_at', 'rating'])
+            ->get(['id', 'nickname', 'first_name', 'email', 'banned_at', 'ban_reason', 'created_at', 'rating'])
             ->keyBy('id');
 
         $out = [];
@@ -223,6 +223,11 @@ class CifteGirisler extends Page
             $list = [];
             foreach ($u as $uid => $lastSeen) {
                 $usr = $users[$uid] ?? null;
+                // Silinmiş/anonimleştirilmiş hesabı (ban_reason='account_deleted', "silinmisN") atla:
+                // artık var olmayan hesap, tarihsel presence/session satırları yüzünden listeyi kirletiyordu.
+                if (($usr?->ban_reason) === 'account_deleted') {
+                    continue;
+                }
                 $list[] = [
                     'id' => (int) $uid,
                     'name' => $usr?->nickname ?: ($usr?->first_name ?: ('#'.$uid)),
@@ -233,6 +238,10 @@ class CifteGirisler extends Page
                     'last_seen' => $lastSeen ?: null,
                     'url' => $usr ? self::editUrl((int) $uid) : null,
                 ];
+            }
+            // Silinmiş hesaplar düşünce IP artık minUsers'ı sağlamıyorsa gösterme.
+            if (count($list) < $minUsers) {
+                continue;
             }
             $out[] = [
                 'ip' => (string) $ip,

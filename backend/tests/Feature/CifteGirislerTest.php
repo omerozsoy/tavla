@@ -93,6 +93,33 @@ class CifteGirislerTest extends TestCase
         $this->assertSame(0, $aliIsA ? $pair['bwins'] : $pair['awins'], 'veli 0 galibiyet');
     }
 
+    public function test_deleted_anonymized_accounts_are_excluded(): void
+    {
+        // IP A: 2 gerçek + 1 silinmiş -> silinmiş düşer, 2 gerçek kalır (gösterilir)
+        $a = $this->user('ali');
+        $b = $this->user('veli');
+        $del = $this->user('ghost');
+        $del->forceFill(['ban_reason' => 'account_deleted', 'nickname' => 'silinmis'.$del->id, 'banned_at' => now()])->save();
+        // IP B: 1 gerçek + 1 silinmiş -> silinmiş düşünce tek gerçek kalır (<2, gizlenir)
+        $c = $this->user('cem');
+        $del2 = $this->user('ghost2');
+        $del2->forceFill(['ban_reason' => 'account_deleted', 'nickname' => 'silinmis'.$del2->id, 'banned_at' => now()])->save();
+
+        foreach ([[$a, '1.1.1.1'], [$b, '1.1.1.1'], [$del, '1.1.1.1'], [$c, '2.2.2.2'], [$del2, '2.2.2.2']] as [$u, $ip]) {
+            DB::table('shield_presence')->insert([
+                'subject' => 'u:'.$u->id, 'user_id' => $u->id, 'ip' => $ip,
+                'last_seen_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        $rows = (new CifteGirisler)->sharedIps();
+
+        $this->assertCount(1, $rows, 'yalnız gerçek-2 hesaplı IP kalmalı');
+        $this->assertSame('1.1.1.1', $rows[0]['ip']);
+        $this->assertSame(2, $rows[0]['count']);
+        $this->assertEqualsCanonicalizing([$a->id, $b->id], array_column($rows[0]['users'], 'id'), 'silinmiş hesap listede olmamalı');
+    }
+
     public function test_ban_and_unban_ip_toggles_shield_ip_bans_and_flag(): void
     {
         $a = $this->user('ali');
