@@ -34,6 +34,7 @@ class GenerateSitemap extends Command
         // Önceki çalışmaların YÖNETİLEN bloklarını soy -> temiz statik taban (curated URL'ler) kalır.
         $xml = $this->stripBlock($xml, 'seo pages');
         $xml = $this->stripBlock($xml, 'dynamic news');
+        $xml = $this->stripBlock($xml, 'dynamic makale');
 
         // Statik tabanda ZATEN olan loc'lar -> tekrar ekleme (elle konmuş curated önceliği korunur).
         preg_match_all('~<loc>\s*([^<]+?)\s*</loc>~', $xml, $mm);
@@ -44,13 +45,14 @@ class GenerateSitemap extends Command
 
         [$seoBlock, $seoCount] = $this->seoPagesBlock($existing);
         [$newsBlock, $newsCount] = $this->newsBlock();
+        [$makaleBlock, $makaleCount] = $this->makaleBlock();
 
-        $insert = ($seoBlock !== '' ? $seoBlock."\n" : '').$newsBlock;
+        $insert = ($seoBlock !== '' ? $seoBlock."\n" : '').$newsBlock."\n".$makaleBlock;
         $xml = str_replace('</urlset>', $insert."\n</urlset>", $xml);
 
         if ($this->option('dry-run')) {
             $this->line($xml);
-            $this->info("Özet (dry-run): eksik SEO sayfası +{$seoCount}, yayındaki haber {$newsCount}.");
+            $this->info("Özet (dry-run): eksik SEO sayfası +{$seoCount}, yayındaki haber {$newsCount}, makale {$makaleCount}.");
 
             return self::SUCCESS;
         }
@@ -63,7 +65,7 @@ class GenerateSitemap extends Command
             return self::FAILURE;
         }
 
-        $this->info("Sitemap güncellendi: {$newsCount} haber URL'si senkronlandı; eksik SEO sayfası eklendi: {$seoCount}.");
+        $this->info("Sitemap güncellendi: {$newsCount} haber + {$makaleCount} makale URL'si senkronlandı; eksik SEO sayfası eklendi: {$seoCount}.");
 
         return self::SUCCESS;
     }
@@ -129,6 +131,36 @@ class GenerateSitemap extends Command
         }
 
         return ["  <!-- TavlaTV dynamic news:start -->\n".implode("\n", $urls)."\n  <!-- TavlaTV dynamic news:end -->", count($urls)];
+    }
+
+    /** Yayındaki MAKALELER (/makaleler/<slug>) — newsBlock ile aynı desen (type=makale). Slug frontend
+     * slugify(title) ile eşleşir (SeoMeta /makaleler eşlemesiyle aynı). Daha önce sitemap'te hiç yoktu. */
+    private function makaleBlock(): array
+    {
+        $seen = [];
+        $rows = Content::query()
+            ->where('type', 'makale')
+            ->where('published', true)
+            ->orderByDesc('updated_at')
+            ->get(['title', 'updated_at']);
+
+        $urls = [];
+        foreach ($rows as $row) {
+            $slug = $this->slugify((string) $row->title);
+            if ($slug === '' || isset($seen[$slug])) {
+                continue;
+            }
+            $seen[$slug] = true;
+            $lastmod = $row->updated_at?->toDateString() ?: now()->toDateString();
+            $url = 'https://www.tavlatv.com/makaleler/'.$slug;
+            $urls[] = "  <url>\n    <loc>".htmlspecialchars($url, ENT_XML1, 'UTF-8')."</loc>\n    <lastmod>{$lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>";
+        }
+
+        if ($urls === []) {
+            return ["  <!-- TavlaTV dynamic makale:start -->\n  <!-- No published makale -->\n  <!-- TavlaTV dynamic makale:end -->", 0];
+        }
+
+        return ["  <!-- TavlaTV dynamic makale:start -->\n".implode("\n", $urls)."\n  <!-- TavlaTV dynamic makale:end -->", count($urls)];
     }
 
     private function slugify(string $value): string

@@ -180,18 +180,23 @@
           },
           {
             "@type": "VideoGame",
+            "@id": "https://www.tavlatv.com/#game",
             "name": "TavlaTv - Ücretsiz Online Tavla Oyunu",
             "url": "https://www.tavlatv.com/",
-            "description": "Ücretsiz online tavla oyna. Gerçek rakiplerle, arkadaşınla veya yapay zekâya karşı tavla oynayabilir; turnuvalara katılıp maçlarını analiz edebilirsin.",
+            "description": "Ücretsiz online tavla oyna. Gerçek rakiplerle, arkadaşınla veya yapay zekâya karşı tavla oynayabilir; turnuvalara katılıp maçlarını Maç Analizi / PR ile inceleyebilirsin.",
             "keywords": "online tavla, ücretsiz tavla, bedava tavla, bedava tavla oyna, ücretsiz tavla oyna",
             "genre": ["Tavla", "Backgammon", "Masa Oyunu"],
             "inLanguage": "tr",
-            "applicationCategory": "Game",
+            "applicationCategory": "GameApplication",
             "operatingSystem": "Web",
+            "playMode": ["MultiPlayer", "SinglePlayer"],
+            "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 2 },
+            "publisher": { "@id": "https://www.tavlatv.com/#organization" },
             "offers": {
               "@type": "Offer",
               "price": "0",
-              "priceCurrency": "TRY"
+              "priceCurrency": "TRY",
+              "availability": "https://schema.org/InStock"
             }
           }
         ]
