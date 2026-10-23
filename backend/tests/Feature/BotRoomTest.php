@@ -462,8 +462,8 @@ class BotRoomTest extends TestCase
             'p1_bank' => 180.0, 'p2_bank' => 180.0,
             'turn_slot' => 'p1', 'started_at' => microtime(true) - 100,
             'sig' => '3|0|white||1||0|0', 'running' => true, 'moved' => true, 'end' => null,
-            // insan 60sn poll etmedi (PRESENCE_TIMEOUT=45 aşıldı); bot başlangıçta present.
-            'p1_seen' => microtime(true) - 60, 'p2_seen' => microtime(true),
+            // insan 90sn poll etmedi (PRESENCE_TIMEOUT=60 aşıldı); bot başlangıçta present.
+            'p1_seen' => microtime(true) - 90, 'p2_seen' => microtime(true),
         ];
         $room->save();
 
@@ -479,7 +479,7 @@ class BotRoomTest extends TestCase
     public function test_human_absence_does_not_forfeit_bot_match_when_clock_stopped(): void
     {
         // XKV9H KÖK FIX: eski guard yalnız `running===true`i koruyordu. SAAT DURUYORKEN (açılış /
-        // oyunlar-arası / ilk zarı beklerken) p1_seen 45sn bayatlayınca maybeEnd'in presence-ABANDON'u
+        // oyunlar-arası / ilk zarı beklerken) p1_seen 60sn bayatlayınca maybeEnd'in presence-ABANDON'u
         // (saat çalışmasa da geçerli) insanı bota karşı HÜKMEN kaybettiriyordu (oda 'finished' +
         // p1_result='lost' -> istemci Tek Oyun'a düşer). running=false iken de forfeit OLMAMALI.
         $room = $this->cubeRoom('white');
@@ -488,7 +488,7 @@ class BotRoomTest extends TestCase
             'p1_bank' => 180.0, 'p2_bank' => 180.0,
             'turn_slot' => 'p1', 'started_at' => microtime(true) - 100,
             'sig' => '3|0|white||1||0|0', 'running' => false, 'moved' => true, 'end' => null,
-            'p1_seen' => microtime(true) - 60, 'p2_seen' => microtime(true),
+            'p1_seen' => microtime(true) - 90, 'p2_seen' => microtime(true),
         ];
         $room->save();
 

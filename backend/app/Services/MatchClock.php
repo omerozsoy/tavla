@@ -71,9 +71,11 @@ class MatchClock
     public const BOT_REVEAL_GRACE = 2.0;
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
-    // 45sn: terk edilen/olu oda ~45sn'de (45 + GRACE, GRACE=0) kapanir. Daha dusuk deger (30) mobilde
+    // 60sn: terk edilen/olu oda ~60sn'de (60 + GRACE, GRACE=0) kapanir. Daha dusuk deger (30/45) mobilde
     // sekme arka plana atilinca / kisa ag kesintisinde haksiz "terk" (false-forfeit) riskini artirir.
-    public const PRESENCE_TIMEOUT = 45;
+    // 45->60 (2026-10-23): sunucu-geneli ~45sn blip'te onlarca mac AYNI ANDA haksiz ABANDON oldu
+    // (00:14 T8LCX/YQ29U/7EUXQ/YNLYW...); grace'i 1dk'ya cekince kisa kesintiler maci kesmez.
+    public const PRESENCE_TIMEOUT = 60;
     /** In-flight kalkanin azami suresi (sn): komut isleme + retry payi. Daha eski _acted etkisiz (A-02). */
     public const INFLIGHT_MAX = 30;
 
