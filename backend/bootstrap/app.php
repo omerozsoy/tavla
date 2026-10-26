@@ -115,6 +115,13 @@ return Application::configure(basePath: dirname(__DIR__))
                     return;
                 }
             }
+            // GERÇEK 500 (tüm beklenen/gürültü filtreleri yukarıda elendi): Sentry'ye gönder.
+            // Sentry olayları kendi içinde grup/dedup'lar -> 15dk e-posta/WA spam kapısından ÖNCE
+            // çağır ki her gerçek hata Sentry'ye ulaşsın. DSN yoksa 'sentry' bind edilmez -> no-op
+            // (yerel/test güvenli; testing zaten en üstte return eder).
+            if (app()->bound('sentry')) {
+                \Sentry\captureException($e);
+            }
             try {
                 if (\Illuminate\Support\Facades\Cache::get('alert:http500:last')) {
                     return; // 15 dk penceresi -> spam bastır
