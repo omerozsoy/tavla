@@ -22,7 +22,7 @@ WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # --max-time=3600 + Restart=always -> stale kod en fazla ~1 saat yaşar. tries=1 (gnubg down -> sessiz).
 # -d memory_limit=512M + --memory=480: uzun maç review JSON parse'ı 128MB varsayılanını aşıp OOM
 # ("🔴 500 cli/queue") veriyordu; yüksek tavan + işler-arası graceful geri dönüşüm (bkz tavla-warm-queue@).
-ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=512M artisan queue:work database --queue=reviews-bulk,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200 --memory=480
+ExecStart=/opt/plesk/php/8.2/bin/php -d memory_limit=768M artisan queue:work database --queue=reviews-bulk,bulk --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=200 --memory=720
 Restart=always
 RestartSec=5
 
