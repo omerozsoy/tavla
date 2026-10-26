@@ -38,6 +38,10 @@ class Setting extends Model
         'clock_bank_casual' => 180, 'clock_delay_casual' => 15,
         'clock_bank_normal' => 60, 'clock_delay_normal' => 10,
         'clock_bank_speed' => 24, 'clock_delay_speed' => 8,
+        // Turnuva duyurusu standart metinleri (admin panel: Turnuva Duyuru > oluştur). Turnuva
+        // seçilince tipine göre (bracket / swiss) duyuru metni alanına otomatik doldurulur.
+        'tournament_std_bracket' => '',
+        'tournament_std_swiss' => '',
     ];
 
     /** Tüm ayarları cache'li key=>value dizi döndür (tablo yoksa boş). */

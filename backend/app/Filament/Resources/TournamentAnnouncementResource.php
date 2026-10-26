@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TournamentAnnouncementResource\Pages;
+use App\Models\Setting;
+use App\Models\Tournament;
 use App\Models\TournamentAnnouncement;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -31,12 +33,41 @@ class TournamentAnnouncementResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
+            // Standart metinler Setting'te kalıcıdır; turnuva seçilince tipine göre aşağıdaki
+            // "Duyuru metni" alanına otomatik dolar. Sadece oluşturma ekranında görünür/kaydedilir
+            // (düzenlemede gizli -> model'e yazılmaz). Kaydetme: CreateTournamentAnnouncement::mutate.
+            Forms\Components\Section::make('Standart duyuru metinleri')
+                ->description('Buraya yazdığın metinler kaydedilir ve turnuva seçince tipine göre aşağıya otomatik dolar.')
+                ->columns(2)
+                ->collapsed()
+                ->visibleOn('create')
+                ->schema([
+                    Forms\Components\Textarea::make('std_bracket')
+                        ->label('Bracket standart metni')
+                        ->default(fn () => Setting::get('tournament_std_bracket'))
+                        ->rows(4)
+                        ->maxLength(3000),
+                    Forms\Components\Textarea::make('std_swiss')
+                        ->label('Swiss standart metni')
+                        ->default(fn () => Setting::get('tournament_std_swiss'))
+                        ->rows(4)
+                        ->maxLength(3000),
+                ]),
             Forms\Components\Select::make('tournament_id')
                 ->label('Turnuva')
                 ->relationship('tournament', 'name')
                 ->searchable()
                 ->preload()
-                ->required(),
+                ->required()
+                ->live()
+                ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                    $type = Tournament::whereKey($state)->value('type');
+                    if ($type === null) {
+                        return;
+                    }
+                    // bracket -> std_bracket, aksi (swiss_triple vb.) -> std_swiss
+                    $set('message', $type === 'bracket' ? ($get('std_bracket') ?? '') : ($get('std_swiss') ?? ''));
+                }),
             Forms\Components\Textarea::make('message')
                 ->label('Duyuru metni')
                 ->placeholder('Örn: Turnuva başlıyor! Lütfen masalarınıza geçin.')
