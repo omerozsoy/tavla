@@ -1471,7 +1471,7 @@ export interface EntryPopup {
   image: string
   image_mobile?: string | null
   link?: string | null
-  frequency: 'session' | 'daily' | 'always' // gosterim sikligi (frontend gate)
+  frequency: 'once' | 'session' | 'daily' | 'always' // gosterim sikligi (frontend gate); once = kalici bir kez
   audience: 'all' | 'guest' | 'member' // hedef kitle (login durumuna gore gate)
   v: number // surum (updated_at ts) — gorsel degisince yeniden goster
 }

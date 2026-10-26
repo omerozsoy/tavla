@@ -11,6 +11,7 @@ function srcOf(img: string): string {
 
 const SEEN_KEY = 'tavla.entryPopupSeen' // "<id>:<v>" -> en son gosterilen banner surumu
 const DAY_KEY = 'tavla.entryPopupDay' // "<id>:<v>:<YYYY-MM-DD>" -> gunde-bir icin son gun
+const ONCE_KEY = 'tavla.entryPopupOnce' // "<id>:<v>" -> kalici bir kez: bu surum bir daha gosterilmez
 
 function get(k: string): string | null {
   try {
@@ -28,6 +29,14 @@ function shouldShow(p: EntryPopup, loggedIn: boolean): boolean {
 
   const key = `${p.id}:${p.v}`
   if (p.frequency === 'always') return true
+  if (p.frequency === 'once') {
+    // Kalici: bu surum bu tarayicida daha once gosterildiyse bir daha ASLA gosterme.
+    try {
+      return localStorage.getItem(ONCE_KEY) !== key
+    } catch {
+      return true
+    }
+  }
   if (p.frequency === 'session') {
     try {
       return sessionStorage.getItem(SEEN_KEY) !== key
@@ -44,7 +53,9 @@ function shouldShow(p: EntryPopup, loggedIn: boolean): boolean {
 function markSeen(p: EntryPopup): void {
   const key = `${p.id}:${p.v}`
   try {
-    if (p.frequency === 'session') {
+    if (p.frequency === 'once') {
+      localStorage.setItem(ONCE_KEY, key)
+    } else if (p.frequency === 'session') {
       sessionStorage.setItem(SEEN_KEY, key)
     } else if (p.frequency === 'daily') {
       const today = new Date().toISOString().slice(0, 10)

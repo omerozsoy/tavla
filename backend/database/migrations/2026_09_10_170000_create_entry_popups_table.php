@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('image', 500)->nullable();        // kare gorsel (onerilen 600x600)
             $table->string('image_mobile', 500)->nullable(); // opsiyonel mobil gorsel — yoksa masaustu kucultulur
             $table->string('link', 500)->nullable();          // tiklaninca gidilecek URL — opsiyonel
-            $table->string('frequency', 10)->default('session'); // session | daily | always
+            $table->string('frequency', 10)->default('session'); // once | session | daily | always
             $table->string('audience', 10)->default('all');      // all | guest | member
             $table->unsignedInteger('sort')->default(0);      // birden fazla varsa kucuk sayi once
             $table->boolean('published')->default(true);

@@ -62,6 +62,7 @@ class EntryPopupResource extends Resource
 
             Forms\Components\Select::make('frequency')->label('Gösterim sıklığı')
                 ->options([
+                    'once' => 'Yalnızca bir kez (kalıcı — bir daha asla)',
                     'session' => 'Oturumda bir (sekme kapanana kadar bir kez)',
                     'daily' => 'Günde bir',
                     'always' => 'Her ziyarette',
@@ -93,6 +94,7 @@ class EntryPopupResource extends Resource
                 Tables\Columns\ImageColumn::make('image')->label('Görsel')->disk('uploads'),
                 Tables\Columns\TextColumn::make('frequency')->label('Sıklık')
                     ->formatStateUsing(fn (string $state) => match ($state) {
+                        'once' => 'Bir kez',
                         'session' => 'Oturumda bir',
                         'daily' => 'Günde bir',
                         'always' => 'Her ziyaret',
