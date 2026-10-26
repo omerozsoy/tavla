@@ -194,6 +194,22 @@ class CheatScanTest extends TestCase
         $this->assertCount(2, CheatScan::suspects());
     }
 
+    public function test_deleted_account_is_excluded(): void
+    {
+        // KVKK silme (anonimleştirme): maç satırları korunur ama hesap ban_reason='account_deleted'
+        // + banned_at DOĞRUDAN yazılır (account_ban_events YOK). Triyaj listesinde yer kaplamamalı.
+        $deleted = User::factory()->create(['nickname' => 'silinmis402', 'ban_reason' => 'account_deleted', 'banned_at' => now()]);
+        $live = User::factory()->create(['nickname' => 'Live']);
+        foreach ([$deleted, $live] as $u) {
+            $this->match($u->id, 0.8, 90);
+            $this->match($u->id, 1.2, 110);
+        }
+
+        $suspects = CheatScan::suspects();
+        $this->assertCount(1, $suspects);
+        $this->assertSame($live->id, $suspects[0]['user_id']);
+    }
+
     public function test_whitelisted_user_is_excluded(): void
     {
         $cheat = User::factory()->create(['nickname' => 'Suspect']);

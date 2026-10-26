@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -148,11 +149,18 @@ class CheatScan
         }
 
         $users = DB::table('users')->whereIn('id', array_keys($byUser))
-            ->get(['id', 'nickname', 'first_name', 'rating', 'banned_at', 'created_at'])->keyBy('id');
+            ->get(['id', 'nickname', 'first_name', 'rating', 'banned_at', 'ban_reason', 'created_at'])->keyBy('id');
 
         $out = [];
         foreach ($byUser as $uid => $agg) {
             $u = $users[$uid] ?? null;
+            // KVKK ile silinen (anonimleştirilen) hesap: mali geçmişi olduğu için maç satırları
+            // korunur ama hesap artık yok (UserEraser::anonymize banned_at'i DOĞRUDAN yazar,
+            // account_ban_events'e satır atmaz → closedUserIds yakalayamaz). Triyaj dışı: aksiyon
+            // alınacak bir hesap değil.
+            if (($u?->ban_reason) === 'account_deleted') {
+                continue;
+            }
             $out[] = [
                 'user_id' => (int) $uid,
                 'nickname' => $u?->nickname ?: ($u?->first_name ?: ('#'.$uid)),
@@ -268,7 +276,7 @@ class CheatScan
      */
     public static function whitelistIds(): array
     {
-        $raw = \App\Models\Setting::get('cheat_whitelist', '');
+        $raw = Setting::get('cheat_whitelist', '');
 
         return array_values(array_filter(array_map(
             fn ($x) => (int) trim($x),
@@ -281,7 +289,7 @@ class CheatScan
     {
         $ids = self::whitelistIds();
         $ids = $on ? array_unique([...$ids, $uid]) : array_values(array_diff($ids, [$uid]));
-        \App\Models\Setting::put('cheat_whitelist', implode(',', $ids));
+        Setting::put('cheat_whitelist', implode(',', $ids));
         self::forget();
     }
 
