@@ -20,6 +20,8 @@ final class StatsConfig
         '3' => '3S',
         '5' => '5S',
         '7' => '7S',
+        '9' => '9S',
+        '11' => '11S',
     ];
 
     /** WXP: coin galibiyeti sabit puan. */

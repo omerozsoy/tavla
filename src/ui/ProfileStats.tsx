@@ -26,8 +26,8 @@ interface Props {
   onOpenAchievements?: () => void // Basarimlar galerisi
 }
 
-// Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
-const MED_ORDER = ['coin', '1', '3', '5', '7'] as const
+// Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S, 9S, 11S
+const MED_ORDER = ['coin', '1', '3', '5', '7', '9', '11'] as const
 const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
 // Zar Ortalamalari faz sekmeleri: Tumu / Acilis / Temas / Temas Yok
 const DICE_PHASES: DicePhase[] = ['all', 'opening', 'contact', 'race']
@@ -414,6 +414,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                     }))}
                     suffix="%"
                     threshold={50}
+                    scaleMax={100}
                   />
                 </div>
               )}

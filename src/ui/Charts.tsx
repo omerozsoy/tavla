@@ -210,16 +210,21 @@ export function BarChart({
   height = 90,
   threshold = 50,
   invert = false,
+  scaleMax,
 }: {
   items: { label: string; value: number | null; sub?: string }[]
   suffix?: string
   height?: number
   threshold?: number // kazanma% icin 50 (ustunde yesil)
   invert?: boolean // PR gibi dusuk=iyi metrikler icin (esik altinda yesil)
+  scaleMax?: number // SABIT olcek tavani: yuzde grafiklerinde 100 ver -> barlar gercek %'yi gosterir
+  // + esik dogru yere oturur. Verilmezse veri max'ina gore olceklenir (eski davranis).
 }) {
   const { t } = useT()
   const vals = items.map((i) => i.value ?? 0)
-  const max = Math.max(1, ...vals)
+  // Yuzde metrikleri (kazanma %) veri-max'ina gore olceklenirse yaniltir (55 vs 60 dramatik gorunur
+  // + 50 esigi yanlis yerde). scaleMax=100 ile gercek yuzde + dogru esik. Yoksa eski goreli olcek.
+  const max = scaleMax && scaleMax > 0 ? scaleMax : Math.max(1, ...vals)
   // Esik cizgisi konumu (deger uzayindan yuzdeye) — sadece olcek icindeyse goster
   const threshPct = threshold > 0 && threshold <= max ? (threshold / max) * 100 : null
   return (
