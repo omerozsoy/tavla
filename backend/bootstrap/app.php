@@ -101,6 +101,20 @@ return Application::configure(basePath: dirname(__DIR__))
                     return;
                 }
             }
+            // ELLE çalıştırılan CLI tek-satırlıkları (`php artisan tinker [--execute]`, `php -r '...'`):
+            // yanlış kolon sorgusu (users.name yok -> nickname), ağır ad-hoc `->get()` bellek taşması
+            // (128M/512M FatalError), yazım hataları (count() int) ... hepsi "cli/queue" 🔴 500 maili
+            // atıyordu (hep elle sorgu/araştırma serilerinde). Bunlar UYGULAMA/JOB hatası DEĞİL.
+            // Trace'e BAKMA: bellek FatalError'ı hem elle hem gerçek worker OOM'da `#0 {main}` gösterir.
+            // KESİN imza argv'de: php -r -> ["Standard input code"]; tinker -> ["artisan","tinker",..].
+            // Bu DENYLIST yalnız bu ikisini susturur; GERÇEK queue:work / schedule:run / arka-plan cron /
+            // deploy komutları (hepsi kendi argv'siyle koşar) DOKUNULMAZ -> worker OOM alarmı korunur.
+            if (app()->runningInConsole()) {
+                $argv = implode(' ', (array) ($_SERVER['argv'] ?? []));
+                if (str_contains($argv, 'Standard input code') || str_contains($argv, 'tinker')) {
+                    return;
+                }
+            }
             try {
                 if (\Illuminate\Support\Facades\Cache::get('alert:http500:last')) {
                     return; // 15 dk penceresi -> spam bastır
