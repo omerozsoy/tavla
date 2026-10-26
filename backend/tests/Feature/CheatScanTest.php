@@ -164,8 +164,9 @@ class CheatScanTest extends TestCase
         // Flag'li maç (uzun + düşük PR) + o maçta hamlelerin ~hepsi gnubg #1 → KESİN.
         $u = User::factory()->create();
         DB::table('rooms')->insert(['code' => 'CF1', 'p1_token' => 'a', 'p1_name' => 'W', 'p1_user_id' => $u->id]);
+        // Havuz ≥ MOVE_MATCH_MIN_SAMPLE (100) gerçek karar ister: 110 top-move + 1 kötü = 111 karar.
         $log = [];
-        for ($i = 0; $i < 90; $i++) {
+        for ($i = 0; $i < 110; $i++) {
             $log[] = ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2],
                 'cands' => [['notation' => '8/4', 'equity' => 0.50], ['notation' => '6/2', 'equity' => 0.30]]];
         }
@@ -175,14 +176,14 @@ class CheatScanTest extends TestCase
             'user_id' => $u->id, 'won' => 1, 'opponent_rating' => 1500,
             'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
             'match_type' => 'match', 'match_length' => 5, 'gnubg_pr' => 0.7,
-            'gnubg_checker_pr' => 0.7, 'pr_decisions' => 91, 'cube_decisions' => 2,
+            'gnubg_checker_pr' => 0.7, 'pr_decisions' => 111, 'cube_decisions' => 2,
             'room_code' => 'CF1', 'gnubg_review' => json_encode(['log' => $log]),
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $c = CheatScan::confirmation($u->id);
         $this->assertNotNull($c);
-        $this->assertTrue($c['certain']); // 90/91 ≈ %99 ≥ %85
+        $this->assertTrue($c['certain']); // 110/111 ≈ %99 ≥ %90, havuz 111 ≥ 100 → KESİN
         $this->assertSame('CF1', $c['room_code']);
     }
 

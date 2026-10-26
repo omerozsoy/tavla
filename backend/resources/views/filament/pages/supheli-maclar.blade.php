@@ -44,8 +44,9 @@
                 {{ $onlyCertain ? 'Tüm şüphelileri göster' : 'Sadece KESİN suçlular ('.$certain.')' }}
             </x-filament::button>
             <span class="text-xs text-gray-500">
-                <b>Kesin</b> = hesabın en kötü maçında hamle-hamle gnubg eşleşmesi ≥ %{{ \App\Support\CheatScan::MOVE_MATCH_CERTAIN }}
-                (insan ~%40-60 tutar). Bu artık sinyal değil <b>kanıt</b>.
+                <b>Kesin</b> = hesabın en düşük-PR maçları HAVUZLANDIĞINDA (≥{{ \App\Support\CheatScan::MOVE_MATCH_MIN_SAMPLE }} gerçek karar)
+                hamle-hamle gnubg eşleşmesi ≥ %{{ \App\Support\CheatScan::MOVE_MATCH_CERTAIN }}. Güçlü insan havuzda ~%82'ye kadar;
+                gerçek motor %95+. Tek maç %85-96 olabilir (küçük örneklem) — bu yüzden <b>havuzlanır</b>. Bu kanıttır.
             </span>
         </div>
 
@@ -102,7 +103,7 @@
                                     </span>
                                 @elseif ($row['confirmation'])
                                     <span class="inline-flex items-center rounded-full bg-gray-500/15 text-gray-600 dark:text-gray-300 px-2 py-0.5 text-xs">
-                                        motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }} (en kötü maç)
+                                        motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }} (havuz, {{ $row['confirmation']['total'] }} karar)
                                     </span>
                                 @endif
                                 @if ($row['banned'])

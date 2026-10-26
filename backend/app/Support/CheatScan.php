@@ -54,9 +54,16 @@ class CheatScan
     /** Panel rozeti / otomatik işaretleme için hesap en az bu kadar şüpheli maça sahip olmalı (tek maç = varyans). */
     public const SUSPECT_MIN_FLAGS = 2;
 
-    /** Hamle-hamle motor eşleşmesi bu %'nin üstündeyse artık SİNYAL değil KANIT → "kesin suçlu".
-     *  İnsan uzun maçta ~%40-60 top-move tutar; %85+ = motor (bkz moveMatch()). */
-    public const MOVE_MATCH_CERTAIN = 85;
+    /** HAVUZLANMIŞ hamle-hamle motor eşleşmesi bu %'nin üstündeyse KANIT → "kesin suçlu". Canlı
+     *  kalibrasyon (2026-10-27): güçlü İNSAN havuzda en fazla ~%82; gerçek motor ~%97. %90 = güvenli
+     *  ayraç. (TEK maç %85-96'ya çıkabilir — küçük örneklem/seçim yanlılığı; bu yüzden HAVUZLA, bkz confirmation().) */
+    public const MOVE_MATCH_CERTAIN = 90;
+
+    /** "Kesin" için havuzda en az bu kadar GERÇEK karar olmalı (küçük örneklem %90'ı rastgele aşabilir). */
+    public const MOVE_MATCH_MIN_SAMPLE = 100;
+
+    /** confirmation() en düşük-PR kaç maçı havuzlar (maliyet tavanı — her maç ~244KB review parse). */
+    public const CONFIRM_MATCHES = 12;
 
     /** suspectIds() cache süresi (sn). Günlük security:cheat-scan tazeler; panel ucuz okur. */
     private const CACHE_TTL = 3600;
@@ -387,39 +394,57 @@ class CheatScan
     }
 
     /**
-     * KESİN KANIT özeti: hesabın en ağır (en düşük PR) flag'li maçında hamle-hamle motor eşleşmesi.
-     * exact_pct ≥ MOVE_MATCH_CERTAIN ise 'certain' = true → artık triyaj değil kanıt. Cache'li (ağır
-     * review parse). Null döner: flag'li maçta review yok / renk çıkmıyor (eşleşme hesaplanamaz).
+     * KESİN KANIT özeti: HAVUZLANMIŞ hamle-hamle motor eşleşmesi. Oyuncunun EN DÜŞÜK-PR (en suçlayıcı)
+     * maçlarını, yeterli örnekleme (≥ MOVE_MATCH_MIN_SAMPLE gerçek karar) ulaşana dek havuzlar.
+     * exact_pct ≥ MOVE_MATCH_CERTAIN && total ≥ MIN_SAMPLE ise 'certain' = true. Cache'li (ağır parse).
      *
-     * ponytail: yalnız en düşük-PR maçı tarar (review'lı ilk 3 maça kadar) — en düşük PR, motor-eşleşmesi
-     * en yüksek adaydır; tüm maçları taramak N×244KB parse olurdu. Daha emin olmak istersen panelde
-     * "Hamleleri gör" ile diğer maçları tek tek açabilirsin.
+     * ⚠ NEDEN HAVUZ (2026-10-27 kök düzeltme): TEK maçın top-move oranı güçlü İNSANI bottan AYIRAMAZ.
+     * Küçük örneklem (bir maçta ~10-40 gerçek karar) + seçim yanlılığı (yüzlerce maçtan en iyisini
+     * seçince) güçlü oyuncu tek iyi maçta %85-96 top-move atar. Canlı kalibrasyon: 47 flag'li hesabın
+     * HEPSİ havuzda %60-82 (motor değil); gerçek bir motor kullanıcısı yüzlerce kararda bile %95+ kalır.
+     * Eşik %90 + ≥MIN_SAMPLE karar = insan tavanı (~%82) ile bot (~%97) arasında güvenli ayraç.
      *
-     * @return array{room_code:string,exact_pct:int,near_pct:int,total:int,pr:float,certain:bool}|null
+     * @return array{room_code:?string,exact_pct:int,total:int,matches:int,certain:bool}|null
      */
     public static function confirmation(int $userId): ?array
     {
         return Cache::remember("cheatscan:confirm:$userId", self::CACHE_TTL, function () use ($userId) {
-            $tried = 0;
-            foreach (self::flaggedMatches($userId) as $m) { // PR'a göre artan sıralı → ilk = en kötü
-                if (! $m['room_code'] || $tried >= 3) {
+            $rooms = DB::table('match_results')
+                ->where('user_id', $userId)
+                ->whereNotNull('gnubg_review')->whereNotNull('room_code')
+                ->whereNotNull('gnubg_pr')->where('gnubg_pr', '>', 0)
+                ->orderBy('gnubg_pr')              // en düşük PR = en suçlayıcı önce
+                ->limit(self::CONFIRM_MATCHES)     // maliyet tavanı (her maç ~244KB review parse)
+                ->pluck('room_code');
+
+            $exact = $total = $matches = 0;
+            $worstRoom = null;
+            foreach ($rooms as $rc) {
+                $mm = self::moveMatch($userId, $rc);
+                if (! $mm['ok']) {
                     continue;
                 }
-                $tried++;
-                $mm = self::moveMatch($userId, $m['room_code']);
-                if ($mm['ok']) {
-                    return [
-                        'room_code' => $m['room_code'],
-                        'exact_pct' => $mm['exact_pct'],
-                        'near_pct' => $mm['near_pct'],
-                        'total' => $mm['total'],
-                        'pr' => $m['pr'],
-                        'certain' => $mm['exact_pct'] >= self::MOVE_MATCH_CERTAIN,
-                    ];
+                $worstRoom ??= $rc; // ilk işlenen = en düşük PR
+                $exact += $mm['exact'];
+                $total += $mm['total'];
+                $matches++;
+                if ($total >= self::MOVE_MATCH_MIN_SAMPLE + 50) {
+                    break; // yeterli örneklem — erken çık (parse maliyetini sınırla)
                 }
             }
+            if ($total === 0) {
+                return null;
+            }
 
-            return null;
+            $pct = (int) round(100 * $exact / $total);
+
+            return [
+                'room_code' => $worstRoom,
+                'exact_pct' => $pct,
+                'total' => $total,
+                'matches' => $matches,
+                'certain' => $pct >= self::MOVE_MATCH_CERTAIN && $total >= self::MOVE_MATCH_MIN_SAMPLE,
+            ];
         });
     }
 
