@@ -97,7 +97,7 @@
                                     medyan PR {{ $row['median'] }} · en kötü {{ $row['worst_pr'] }}
                                 </span>
                                 @if ($row['confirmation']['certain'] ?? false)
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2 py-0.5 text-xs font-bold">
+                                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-3 py-1.5 text-sm sm:text-base font-extrabold uppercase tracking-wide shadow-lg shadow-red-600/30 ring-2 ring-red-300 dark:ring-red-400 animate-pulse">
                                         ⚠ KESİN · motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }}
                                     </span>
                                 @elseif ($row['confirmation'])

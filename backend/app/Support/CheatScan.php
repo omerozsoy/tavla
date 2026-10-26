@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Setting;
+use App\Services\Analysis\AnalysisOrchestrator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -339,7 +340,26 @@ class CheatScan
             if (! is_array($x) || ($x['player'] ?? null) !== $color || ! isset($x['best'])) {
                 continue; // yalnız bu oyuncunun checker kararları (küp/pas kaydında 'best' yok)
             }
+            // SADECE GERÇEK SEÇİM olan kararları say — PR'ın "sayılan karar" kapısıyla (AnalysisOrchestrator::
+            // prFromReviewLog) BİREBİR AYNI. Aksi halde zorunlu (tek legal hamle), bariz (tüm adaylar eşdeğer)
+            // ve küp kararları (cands yok) hep loss=0 ile exact%'i şişirir → GÜÇLÜ İNSAN da %85+ eşleşir
+            // (ahselbah/AzadMamedov yanlış-pozitifinin kök nedeni). "İnsan ~%40-60" baz oranı tam da bu
+            // zor kararlar üzerinde tanımlı; forced/obvious dahil edilince karşılaştırma anlamsızlaşır.
+            if (isset($x['cube']['chosen']) || ! empty($x['fill'])) {
+                continue; // küp kararı / tur-dolgu-dance → checker top-move değil
+            }
+            $cands = is_array($x['cands'] ?? null) ? $x['cands'] : [];
+            if (count($cands) < 2) {
+                continue; // tek yasal hamle = zorunlu
+            }
+            $eqs = array_map(static fn ($c) => (float) ($c['equity'] ?? 0), $cands);
+            if ((max($eqs) - min($eqs)) < 0.001) {
+                continue; // obvious (en iyi–en kötü spread < eşik) — gerçek seçim yok
+            }
             $loss = (float) ($x['loss'] ?? 0);
+            if (! is_finite($loss) || $loss > AnalysisOrchestrator::CHK_LOSS_MAX) {
+                continue; // ÇÖP KALKANI parite (PR tarafıyla aynı): bozuk/aşırı checker kaybı sayılmaz
+            }
             $isExact = $loss <= 0.001;
             $exact += $isExact ? 1 : 0;
             $near += $loss <= 0.02 ? 1 : 0;

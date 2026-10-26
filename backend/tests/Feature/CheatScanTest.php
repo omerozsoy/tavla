@@ -15,6 +15,8 @@ class CheatScanTest extends TestCase
 {
     use RefreshDatabase;
 
+    private int $roomSeq = 0;
+
     private function match(int $userId, float $pr, int $decisions): void
     {
         DB::table('match_results')->insert([
@@ -30,7 +32,7 @@ class CheatScanTest extends TestCase
             'gnubg_checker_pr' => $pr,
             'pr_decisions' => $decisions,
             'cube_decisions' => 2,
-            'room_code' => 'R'.random_int(1000, 9999),
+            'room_code' => 'R'.(++$this->roomSeq),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -130,11 +132,17 @@ class CheatScanTest extends TestCase
             'code' => 'MM1', 'p1_token' => 'a', 'p1_name' => 'W',
             'p1_user_id' => $white->id, 'p2_user_id' => $black->id,
         ]);
+        // cands (aday + equity) ZORUNLU — move-match yalnız GERÇEK SEÇİM olan kararları sayar
+        // (forced/obvious hariç, PR'ın sayılan-karar kapısıyla aynı). Her karar ≥2 aday + spread ≥ 0.001.
         $review = ['log' => [
-            ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2]],
-            ['player' => 'white', 'notation' => '13/7', 'best' => '13/7', 'loss' => 0.0, 'dice' => [6, 1]],
-            ['player' => 'white', 'notation' => '24/18', 'best' => '13/11 24/23', 'loss' => 0.12, 'dice' => [2, 1]],
-            ['player' => 'black', 'notation' => '6/2', 'best' => '6/2', 'loss' => 0.0, 'dice' => [4, 0]],
+            ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2],
+                'cands' => [['notation' => '8/4', 'equity' => 0.50], ['notation' => '6/2', 'equity' => 0.30]]],
+            ['player' => 'white', 'notation' => '13/7', 'best' => '13/7', 'loss' => 0.0, 'dice' => [6, 1],
+                'cands' => [['notation' => '13/7', 'equity' => 0.40], ['notation' => '24/18', 'equity' => 0.10]]],
+            ['player' => 'white', 'notation' => '24/18', 'best' => '13/11 24/23', 'loss' => 0.12, 'dice' => [2, 1],
+                'cands' => [['notation' => '13/11 24/23', 'equity' => 0.50], ['notation' => '24/18', 'equity' => 0.38]]],
+            ['player' => 'black', 'notation' => '6/2', 'best' => '6/2', 'loss' => 0.0, 'dice' => [4, 0],
+                'cands' => [['notation' => '6/2', 'equity' => 0.20], ['notation' => '8/4', 'equity' => 0.10]]],
         ]];
         DB::table('match_results')->insert([
             'user_id' => $white->id, 'won' => 1, 'opponent_rating' => 1500,
@@ -158,9 +166,11 @@ class CheatScanTest extends TestCase
         DB::table('rooms')->insert(['code' => 'CF1', 'p1_token' => 'a', 'p1_name' => 'W', 'p1_user_id' => $u->id]);
         $log = [];
         for ($i = 0; $i < 90; $i++) {
-            $log[] = ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2]];
+            $log[] = ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2],
+                'cands' => [['notation' => '8/4', 'equity' => 0.50], ['notation' => '6/2', 'equity' => 0.30]]];
         }
-        $log[] = ['player' => 'white', 'notation' => '24/18', 'best' => '13/11', 'loss' => 0.3, 'dice' => [2, 1]]; // 1 kötü
+        $log[] = ['player' => 'white', 'notation' => '24/18', 'best' => '13/11', 'loss' => 0.3, 'dice' => [2, 1], // 1 kötü
+            'cands' => [['notation' => '13/11', 'equity' => 0.50], ['notation' => '24/18', 'equity' => 0.20]]];
         DB::table('match_results')->insert([
             'user_id' => $u->id, 'won' => 1, 'opponent_rating' => 1500,
             'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
@@ -174,6 +184,48 @@ class CheatScanTest extends TestCase
         $this->assertNotNull($c);
         $this->assertTrue($c['certain']); // 90/91 ≈ %99 ≥ %85
         $this->assertSame('CF1', $c['room_code']);
+    }
+
+    public function test_forced_and_obvious_moves_do_not_inflate_match_rate(): void
+    {
+        // KÖK NEDEN REGRESYONU (ahselbah/AzadMamedov yanlış-pozitifi): zorunlu (tek legal) + bariz
+        // (adaylar eşdeğer) + küp kararları loss=0 ile exact%'i şişirmemeli. Güçlü İNSAN maçı: çok
+        // sayıda zorunlu/bariz hamle + GERÇEK seçimlerde ~%50 top-move → KESİN sayılmamalı.
+        $white = User::factory()->create();
+        $black = User::factory()->create();
+        DB::table('rooms')->insert([
+            'code' => 'FO1', 'p1_token' => 'a', 'p1_name' => 'W',
+            'p1_user_id' => $white->id, 'p2_user_id' => $black->id,
+        ]);
+        $log = [];
+        for ($i = 0; $i < 50; $i++) {
+            // Zorunlu: tek aday → sayılmaz (eskiden exact sayılıp %'yi şişiriyordu).
+            $log[] = ['player' => 'white', 'notation' => '6/1', 'best' => '6/1', 'loss' => 0.0, 'dice' => [5, 0],
+                'cands' => [['notation' => '6/1', 'equity' => 0.10]]];
+            // Bariz: adaylar eşdeğer (spread < 0.001) → sayılmaz.
+            $log[] = ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 0],
+                'cands' => [['notation' => '8/4', 'equity' => 0.2000], ['notation' => '13/9', 'equity' => 0.1998]]];
+            // Küp kararı → cands yok → sayılmaz.
+            $log[] = ['player' => 'white', 'notation' => 'take', 'best' => 'take', 'loss' => 0.0,
+                'cube' => ['chosen' => 'take']];
+        }
+        // 10 GERÇEK seçim: 5 top-move, 5 değil → gerçek top-move oranı %50 (insani).
+        for ($i = 0; $i < 10; $i++) {
+            $log[] = ['player' => 'white', 'notation' => $i < 5 ? '13/7' : '24/18', 'best' => '13/7',
+                'loss' => $i < 5 ? 0.0 : 0.08, 'dice' => [6, 1],
+                'cands' => [['notation' => '13/7', 'equity' => 0.50], ['notation' => '24/18', 'equity' => 0.30]]];
+        }
+        DB::table('match_results')->insert([
+            'user_id' => $white->id, 'won' => 1, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
+            'room_code' => 'FO1', 'match_type' => 'match', 'match_length' => 5,
+            'gnubg_review' => json_encode(['log' => $log]), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $mm = CheatScan::moveMatch($white->id, 'FO1');
+        $this->assertTrue($mm['ok']);
+        $this->assertSame(10, $mm['total']);     // yalnız 10 gerçek seçim sayıldı (160 forced/obvious/cube elendi)
+        $this->assertSame(50, $mm['exact_pct']); // 5/10 = insani, %85 eşiğinin ALTINDA → KESİN değil
     }
 
     public function test_confirmation_null_when_flagged_match_has_no_review(): void
