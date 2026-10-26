@@ -10,12 +10,14 @@ sunucu gnubg** (`SERVER_BOT=true`). Mimari ve kurulum için README.md.
 - **Yalnızca `src/*` commit'lemek canlıyı DEĞİŞTİRMEZ.** Akış:
   `npm run deploy:build` → `git add backend/public` → commit → push → **Forge panel "Deploy Now"**
   (veya deploy-hook URL'ini curl'le). Forge zero-downtime: `current` → `releases/<N>` symlink.
-- **Push tek başına canlıya YANSIMAZ** — Quick Deploy güvenilmez (push'u atladığı oldu). Deploy'u
-  AÇIKÇA tetikle, sonra doğrula: Forge `current` HEAD = commit'in mi + CF'den `curl https://tavlatv.com/`.
+- **Push sonrası canlıyı DOĞRULA, Quick Deploy'a körü körüne güvenme.** 2026-10-26: bir push QD'yi
+  hiç tetiklemedi (~1.5sa release oluşmadı) → elle "Deploy Now" gerekti; sonraki push'ta QD 41sn'de
+  otomatik çalıştı. Doğrulama: Forge `current` HEAD = commit'in mi + `curl https://tavlatv.com/`.
 - Deploy edemiyorsan: `forge` user sudo'su ŞİFRE ister (passwordless YOK), site dosyaları `tavla:tavla`
   (forge yazamaz) → SSH'tan elle deploy edilemez; panel/hook şart. SSH anahtar: `~/.ssh/tavla`.
-- ⚠ `backend/public/uploads` shared storage'da → git'te "deleted" görünür; dirty-tree deploy'u
-  bozup eski commit'te bırakabilir (Quick Deploy'un eski commit deploy etmesinin muhtemel nedeni).
+- QD takılırsa GitHub → Settings → Webhooks → Forge → Recent Deliveries'e bak (webhook gitti mi).
+- ⚠ `backend/public/uploads` shared storage'da → git'te "deleted" görünür (dirty tree); gelecekte
+  in-place `git pull` denersen çakışabilir (ama release-tabanlı Forge deploy'u bundan etkilenmez).
 
 ## Komutlar (kök)
 - `npm run dev` / `npm run build` / `npm test` (vitest, yalnız `src/**`)
