@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Console\Commands\TourneyBots;
 use App\Models\MatchResult;
+use App\Models\Notification;
 use App\Models\Room;
 use App\Models\Tournament;
 use App\Models\TournamentAnnouncement;
@@ -1324,7 +1325,49 @@ class TournamentController extends Controller
      */
     public function runScheduledMaintenance(): void
     {
+        $this->notifyUpcomingStarts();
         $this->autoStartDue();
+    }
+
+    /**
+     * Turnuva başlamadan ~3 dk önce KATILAN tüm oyunculara bildirim at (zil rozeti + FCM push).
+     * Frontend /presence poll'u yeni bildirimi OTOMATİK toast'a çevirir (App.tsx seenNotifRef) ->
+     * ayrı broadcast/event gerekmez: tek Notification::notify = hem bildirim hem toast.
+     * Cron her dakika çalışır, 3dk pencere = ~3 tik -> Cache::add ile oda başına TEK sefer gönder
+     * (cache temizlense en fazla bir fazladan toast; zararsız). register_until = başlangıç saati.
+     */
+    private function notifyUpcomingStarts(): void
+    {
+        $soon = Tournament::where('status', 'open')
+            ->whereNotNull('register_until')
+            ->where('register_until', '>', now())
+            ->where('register_until', '<=', now()->addMinutes(3))
+            ->get(['id', 'name', 'players', 'register_until']);
+
+        foreach ($soon as $t) {
+            // Oda başına tek sefer (Cache::add atomiktir: zaten varsa false döner -> atla).
+            if (! Cache::add("tourney:prestart-notified:{$t->id}", true, 1800)) {
+                continue;
+            }
+            $ids = collect($t->players ?? [])
+                ->filter()
+                ->pluck('id')
+                ->filter()
+                ->unique()
+                ->values();
+            if ($ids->isEmpty()) {
+                continue;
+            }
+            $title = "«{$t->name}» birazdan başlıyor";
+            $body = 'Turnuva 3 dakika içinde başlıyor — maçın için hazır ol!';
+            foreach ($ids as $uid) {
+                try {
+                    Notification::notify((int) $uid, $title, $body, 'medal');
+                } catch (\Throwable $e) {
+                    // Tek kullanıcının push/DB hatası diğerlerini engellemesin.
+                }
+            }
+        }
     }
 
     private function autoStartDue(): void
