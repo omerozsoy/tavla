@@ -3,10 +3,13 @@
 namespace Tests\Unit;
 
 use App\Services\MatchClock;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
-// Saf domain testi (DB'siz): DELAY sistemi banka hesabi + AFK + sahiplik-koruma.
-// 'now' enjekte edildigi icin zaman deterministik; gercek beklemeye gerek yok.
+// Domain testi (zaman enjekte, DB'ye yazmaz). Laravel app'i BOOT eder: MatchClock::init()
+// `Setting::int('clock_bank_*')` -> `Cache` facade okur; saf PHPUnit\TestCase'te facade root
+// kurulmadigindan TUM testler "A facade root has not been set" ile patliyordu. Tests\TestCase
+// app'i ayaga kaldirir; settings tablosu :memory:'de yok -> Setting::map() catch -> [] -> sabit
+// varsayilanlar (PER_POINT/DELAY) kullanilir, beklentilerle ayni.
 class MatchClockTest extends TestCase
 {
     private const T0 = 1_000_000.0; // sabit baslangic epoch
