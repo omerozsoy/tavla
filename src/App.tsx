@@ -8781,6 +8781,8 @@ export default function App() {
         <span className="ab-logo-full">
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
+            {/* Gecici surum rozeti: wordmark'in sag-ustunde kucuk pill (CSS .ab-beta). */}
+            <span className="ab-beta">BETA 5.0</span>
             {/* Slogan: duz HTML metin (SVG textLength=%100 hack'i Firefox'ta stretch/
                 bozulma yapiyordu — fit-content ebeveyn icinde %100 min-width dairesel). */}
             <span className="ab-tag">{t('foot.tag')}</span>

@@ -33,8 +33,8 @@ class SupheliMaclar extends Page
 
     public array $moveMatch = [];
 
-    /** true: yalnız hamle-hamle motor eşleşmesi doğrulanmış (kesin) hesapları göster. */
-    public bool $onlyCertain = false;
+    /** true: yalnız hamle-hamle motor eşleşmesi doğrulanmış (kesin) hesapları göster. Varsayılan AÇIK. */
+    public bool $onlyCertain = true;
 
     public static function getNavigationBadge(): ?string
     {
