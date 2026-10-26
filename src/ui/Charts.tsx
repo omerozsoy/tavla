@@ -211,6 +211,7 @@ export function BarChart({
   threshold = 50,
   invert = false,
   scaleMax,
+  gradient,
 }: {
   items: { label: string; value: number | null; sub?: string }[]
   suffix?: string
@@ -219,6 +220,8 @@ export function BarChart({
   invert?: boolean // PR gibi dusuk=iyi metrikler icin (esik altinda yesil)
   scaleMax?: number // SABIT olcek tavani: yuzde grafiklerinde 100 ver -> barlar gercek %'yi gosterir
   // + esik dogru yere oturur. Verilmezse veri max'ina gore olceklenir (eski davranis).
+  gradient?: { good: number; bad: number } // PR gibi: ikili yesil/kirmizi yerine DEGERE gore
+  // surekli renk (good=yesil ucu, bad=kirmizi ucu) -> 13 ile 24 ayirt edilir, hepsi kirmizi olmaz.
 }) {
   const { t } = useT()
   const vals = items.map((i) => i.value ?? 0)
@@ -233,6 +236,18 @@ export function BarChart({
         const v = it.value
         const h = v == null ? 0 : Math.round((v / max) * 100)
         const good = v != null && (invert ? v <= threshold : v >= threshold)
+        // Renk: (1) veri yok -> notr; (2) gradient -> degere gore surekli yesil..kirmizi
+        // (PR'da 13 ile 24 ayirt edilir); (3) yoksa ikili good/bad (kazanma% esigi).
+        const fillStyle: { height: string; background?: string } = { height: `${h}%` }
+        let fillClass = 'bar-fill'
+        if (v == null) {
+          fillClass += ' empty'
+        } else if (gradient) {
+          const t2 = Math.max(0, Math.min(1, (v - gradient.good) / Math.max(1e-6, gradient.bad - gradient.good)))
+          fillStyle.background = `hsl(${Math.round(140 - t2 * 132)} 62% 46%)` // 140=yesil .. 8=kirmizi
+        } else {
+          fillClass += good ? ' good' : ' bad'
+        }
         return (
           <div key={i} className="bar-col">
             <span className="bar-val">{v == null ? '—' : `${v}${suffix}`}</span>
@@ -245,7 +260,7 @@ export function BarChart({
                   aria-hidden="true"
                 />
               )}
-              <div className={`bar-fill ${good ? 'good' : 'bad'}`} style={{ height: `${h}%` }} />
+              <div className={fillClass} style={fillStyle} />
             </div>
             <span className="bar-label">{it.label}</span>
             {it.sub && <span className="bar-sub">{it.sub}</span>}

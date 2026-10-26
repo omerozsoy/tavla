@@ -19843,6 +19843,11 @@ body:has(.spectate-view) .app.lobby {
 .bar-fill.bad {
   background: var(--tv-brick);
 }
+/* Veri yok (— kategori, or. hic oynanmamis 9S/11S): kirmizi sliver yerine notr/soluk */
+.bar-fill.empty {
+  background: var(--line, #d8d2c8);
+  opacity: 0.45;
+}
 /* Esik referans cizgisi (kazanma %50 / PR esigi) â€” cubuklari yorumlamayi kolaylastirir */
 .bar-thresh {
   position: absolute;

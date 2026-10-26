@@ -381,6 +381,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   <BarChart
                     invert
                     threshold={8}
+                    gradient={{ good: 5, bad: 20 }}
                     items={MED_ORDER.map((k) => {
                       // XG-style HAVUZLANMIS PR birincil (Σloss/Σkarar×500); yoksa medyana düş.
                       const pooled = perf.pooled_pr?.categories?.[k]
