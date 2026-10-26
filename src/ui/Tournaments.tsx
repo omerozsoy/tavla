@@ -45,6 +45,42 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
   return s ? `${s}-${t.id}` : String(t.id)
 }
 
+// Lobi duyuru satiri. Standart metinler (bracket/swiss) 3000 karaktere dek uzun olabilir ->
+// lobiyi sisirmesin: ~3 satira clamp'lenir, chevron ile ac/kapa (akordion). Kisa duyuru oldugu gibi.
+function TournAnnounceItem({ a }: { a: { id: number; message: string; at: string | null } }) {
+  const [open, setOpen] = useState(false)
+  const long = a.message.length > 200 || (a.message.match(/\n/g)?.length ?? 0) >= 3
+  return (
+    <li className="tourn-announce-item">
+      <Icon name="bell" size={15} className="tourn-announce-ic" />
+      <div className="tourn-announce-body">
+        <span className={`tourn-announce-msg${long && !open ? ' is-clamped' : ''}`}>{a.message}</span>
+        {long && (
+          <button
+            type="button"
+            className={`tourn-announce-toggle${open ? ' is-open' : ''}`}
+            aria-expanded={open}
+            aria-label="Duyuru metnini aç/kapat"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <Icon name="chevron" size={16} />
+          </button>
+        )}
+      </div>
+      {a.at && (
+        <time className="tourn-announce-at">
+          {new Date(a.at).toLocaleString('tr-TR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </time>
+      )}
+    </li>
+  )
+}
+
 // Bracket'ten nihai sıralama (oyuncu id'leri, 1.den sonuncuya) — backend standingsFromBracket ile
 // AYNI mantık: 1.=final kazananı; sonra son turdan ilk tura her turun KAYBEDENLERI (rating azalan).
 // Backend standingsFromBracket ile AYNI: 1=şampiyon, 2=final kaybedeni, 3/4=ÜÇÜNCÜLÜK MAÇI sonucu
@@ -603,20 +639,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </h3>
               <ul className="tourn-announce-list">
                 {active.announcements.map((a) => (
-                  <li key={a.id} className="tourn-announce-item">
-                    <Icon name="bell" size={15} className="tourn-announce-ic" />
-                    <span className="tourn-announce-msg">{a.message}</span>
-                    {a.at && (
-                      <time className="tourn-announce-at">
-                        {new Date(a.at).toLocaleString('tr-TR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </time>
-                    )}
-                  </li>
+                  <TournAnnounceItem key={a.id} a={a} />
                 ))}
               </ul>
             </div>

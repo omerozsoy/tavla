@@ -21353,8 +21353,15 @@ body:has(.spectate-view) .app.lobby {
   margin-top: 2px;
   color: var(--accent-text);
 }
-.tourn-announce-msg {
+.tourn-announce-body {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.tourn-announce-msg {
   min-width: 0;
   white-space: pre-wrap;
   word-break: break-word;
@@ -21362,6 +21369,28 @@ body:has(.spectate-view) .app.lobby {
   font-size: 0.82rem;
   line-height: 1.45;
   color: color-mix(in srgb, var(--text) 68%, transparent);
+}
+/* Uzun standart metin: ~3 satira kirp (akordion kapali hali). chevron ile acilinca kaldirilir. */
+.tourn-announce-msg.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tourn-announce-toggle {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  margin: 0;
+  cursor: pointer;
+  line-height: 0;
+  color: var(--accent-text);
+}
+.tourn-announce-toggle svg {
+  transition: transform 0.18s ease;
+}
+.tourn-announce-toggle.is-open svg {
+  transform: rotate(180deg);
 }
 .tourn-announce-at {
   flex: none;
