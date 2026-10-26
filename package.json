@@ -16,7 +16,8 @@
     "check:mat": "vitest run src/matValidate.test.ts",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "validator:build": "node scripts/build-validator.mjs"
+    "validator:build": "node scripts/build-validator.mjs",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
@@ -59,6 +60,7 @@
     "esbuild": "^0.28.2",
     "onnxruntime-node": "^1.29.0",
     "oxlint": "^1.71.0",
+    "patch-package": "^8.0.1",
     "playwright": "^1.62.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",

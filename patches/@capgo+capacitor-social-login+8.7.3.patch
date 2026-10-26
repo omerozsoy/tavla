@@ -1,0 +1,22 @@
+diff --git a/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java b/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
+index d61fc43..5ae19e4 100644
+--- a/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
++++ b/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
+@@ -711,6 +711,17 @@ public class GoogleProvider implements SocialProvider {
+                     GoogleIdTokenCredential googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.getData());
+                     String idToken = googleIdTokenCredential.getIdToken();
+ 
++                    // PATCH (tavlatv): authentication-only scope'larda (email/profile/openid) access-token
++                    // AUTHORIZATION adimini ATLA -> idToken ile hemen coz. Varsayilan davranis Credential
++                    // Manager idToken'indan sonra Identity.getAuthorizationClient().authorize() cagiriyor;
++                    // bu consent intent'i aciyor ama Capacitor remote-load'da MainActivity sonucu kopruye
++                    // baglamadigi icin future.get() ASILI kaliyor (beyaz accounts.google.com ekrani).
++                    // Bize yalniz kimlik (idToken) lazim (backend onu dogruluyor) -> adimi atla, asilma biter.
++                    if (GoogleProvider.this.mode == GoogleProviderLoginType.ONLINE && isAuthenticationOnlyScopes(GoogleProvider.this.scopes)) {
++                        resolveOnlineLogin(call, response, resultObj, user, idToken, null);
++                        return;
++                    }
++
+                     ListenableFuture<AuthorizationResult> future = getAuthorizationResult(forceRefreshToken);
+ 
+                     // Use ExecutorService to retrieve the access token
