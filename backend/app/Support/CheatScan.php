@@ -53,6 +53,10 @@ class CheatScan
     /** Panel rozeti / otomatik işaretleme için hesap en az bu kadar şüpheli maça sahip olmalı (tek maç = varyans). */
     public const SUSPECT_MIN_FLAGS = 2;
 
+    /** Hamle-hamle motor eşleşmesi bu %'nin üstündeyse artık SİNYAL değil KANIT → "kesin suçlu".
+     *  İnsan uzun maçta ~%40-60 top-move tutar; %85+ = motor (bkz moveMatch()). */
+    public const MOVE_MATCH_CERTAIN = 85;
+
     /** suspectIds() cache süresi (sn). Günlük security:cheat-scan tazeler; panel ucuz okur. */
     private const CACHE_TTL = 3600;
 
@@ -360,6 +364,43 @@ class CheatScan
             'moves' => $moves,
             'note' => $total === 0 ? 'Bu renkte checker kararı bulunamadı.' : null,
         ];
+    }
+
+    /**
+     * KESİN KANIT özeti: hesabın en ağır (en düşük PR) flag'li maçında hamle-hamle motor eşleşmesi.
+     * exact_pct ≥ MOVE_MATCH_CERTAIN ise 'certain' = true → artık triyaj değil kanıt. Cache'li (ağır
+     * review parse). Null döner: flag'li maçta review yok / renk çıkmıyor (eşleşme hesaplanamaz).
+     *
+     * ponytail: yalnız en düşük-PR maçı tarar (review'lı ilk 3 maça kadar) — en düşük PR, motor-eşleşmesi
+     * en yüksek adaydır; tüm maçları taramak N×244KB parse olurdu. Daha emin olmak istersen panelde
+     * "Hamleleri gör" ile diğer maçları tek tek açabilirsin.
+     *
+     * @return array{room_code:string,exact_pct:int,near_pct:int,total:int,pr:float,certain:bool}|null
+     */
+    public static function confirmation(int $userId): ?array
+    {
+        return Cache::remember("cheatscan:confirm:$userId", self::CACHE_TTL, function () use ($userId) {
+            $tried = 0;
+            foreach (self::flaggedMatches($userId) as $m) { // PR'a göre artan sıralı → ilk = en kötü
+                if (! $m['room_code'] || $tried >= 3) {
+                    continue;
+                }
+                $tried++;
+                $mm = self::moveMatch($userId, $m['room_code']);
+                if ($mm['ok']) {
+                    return [
+                        'room_code' => $m['room_code'],
+                        'exact_pct' => $mm['exact_pct'],
+                        'near_pct' => $mm['near_pct'],
+                        'total' => $mm['total'],
+                        'pr' => $m['pr'],
+                        'certain' => $mm['exact_pct'] >= self::MOVE_MATCH_CERTAIN,
+                    ];
+                }
+            }
+
+            return null;
+        });
     }
 
     /**

@@ -2,6 +2,7 @@
     @php
         $s = $this->stats();
         $rows = $this->suspects();
+        $certain = $this->certainCount();
         $fmt = fn ($d) => $d ? \Illuminate\Support\Carbon::parse($d)->format('d.m.Y H:i') : '—';
     @endphp
 
@@ -37,8 +38,23 @@
             </div>
         </div>
 
+        {{-- Filtre: kesin suçlu (hamle-hamle motor eşleşmesi doğrulanmış) ↔ tüm şüpheliler --}}
+        <div class="flex items-center gap-3 flex-wrap">
+            <x-filament::button :color="$onlyCertain ? 'danger' : 'gray'" size="sm" icon="heroicon-m-funnel" wire:click="$toggle('onlyCertain')">
+                {{ $onlyCertain ? 'Tüm şüphelileri göster' : 'Sadece KESİN suçlular ('.$certain.')' }}
+            </x-filament::button>
+            <span class="text-xs text-gray-500">
+                <b>Kesin</b> = hesabın en kötü maçında hamle-hamle gnubg eşleşmesi ≥ %{{ \App\Support\CheatScan::MOVE_MATCH_CERTAIN }}
+                (insan ~%40-60 tutar). Bu artık sinyal değil <b>kanıt</b>.
+            </span>
+        </div>
+
         {{-- Üst kartlar --}}
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="rounded-xl p-4 ring-1 {{ $certain > 0 ? 'bg-red-600/15 ring-red-600/50' : 'bg-white dark:bg-gray-900 ring-gray-200 dark:ring-white/10' }}">
+                <div class="text-xs {{ $certain > 0 ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-gray-500' }}">⚠ KESİN suçlu</div>
+                <div class="text-2xl font-bold {{ $certain > 0 ? 'text-red-700 dark:text-red-300' : '' }}">{{ $certain }}</div>
+            </div>
             <div class="rounded-xl p-4 ring-1 {{ $s['suspects'] > 0 ? 'bg-red-500/10 ring-red-500/40' : 'bg-white dark:bg-gray-900 ring-gray-200 dark:ring-white/10' }}">
                 <div class="text-xs {{ $s['suspects'] > 0 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500' }}">Şüpheli hesap</div>
                 <div class="text-2xl font-bold {{ $s['suspects'] > 0 ? 'text-red-600 dark:text-red-400' : '' }}">{{ $s['suspects'] }}</div>
@@ -55,7 +71,11 @@
 
         @if (empty($rows))
             <div class="rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/30 p-6 text-center text-emerald-700 dark:text-emerald-300">
-                Motor-yardımı imzası taşıyan maç bulunamadı.
+                @if ($onlyCertain)
+                    Hamle-hamle motor eşleşmesiyle <b>kesin</b> doğrulanmış hesap yok. “Tüm şüphelileri göster” ile triyaj listesine dön.
+                @else
+                    Motor-yardımı imzası taşıyan maç bulunamadı.
+                @endif
             </div>
         @else
             <div class="space-y-4">
@@ -76,6 +96,15 @@
                                 <span class="inline-flex items-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-xs font-medium">
                                     medyan PR {{ $row['median'] }} · en kötü {{ $row['worst_pr'] }}
                                 </span>
+                                @if ($row['confirmation']['certain'] ?? false)
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2 py-0.5 text-xs font-bold">
+                                        ⚠ KESİN · motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }}
+                                    </span>
+                                @elseif ($row['confirmation'])
+                                    <span class="inline-flex items-center rounded-full bg-gray-500/15 text-gray-600 dark:text-gray-300 px-2 py-0.5 text-xs">
+                                        motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }} (en kötü maç)
+                                    </span>
+                                @endif
                                 @if ($row['banned'])
                                     <span class="inline-flex items-center rounded-full bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-0.5 text-[11px] font-medium">engelli</span>
                                 @endif

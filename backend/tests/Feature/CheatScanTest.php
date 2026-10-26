@@ -151,6 +151,41 @@ class CheatScanTest extends TestCase
         $this->assertSame(67, $mm['exact_pct']);
     }
 
+    public function test_confirmation_marks_certain_when_worst_match_matches_engine(): void
+    {
+        // Flag'li maç (uzun + düşük PR) + o maçta hamlelerin ~hepsi gnubg #1 → KESİN.
+        $u = User::factory()->create();
+        DB::table('rooms')->insert(['code' => 'CF1', 'p1_token' => 'a', 'p1_name' => 'W', 'p1_user_id' => $u->id]);
+        $log = [];
+        for ($i = 0; $i < 90; $i++) {
+            $log[] = ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2]];
+        }
+        $log[] = ['player' => 'white', 'notation' => '24/18', 'best' => '13/11', 'loss' => 0.3, 'dice' => [2, 1]]; // 1 kötü
+        DB::table('match_results')->insert([
+            'user_id' => $u->id, 'won' => 1, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
+            'match_type' => 'match', 'match_length' => 5, 'gnubg_pr' => 0.7,
+            'gnubg_checker_pr' => 0.7, 'pr_decisions' => 91, 'cube_decisions' => 2,
+            'room_code' => 'CF1', 'gnubg_review' => json_encode(['log' => $log]),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $c = CheatScan::confirmation($u->id);
+        $this->assertNotNull($c);
+        $this->assertTrue($c['certain']); // 90/91 ≈ %99 ≥ %85
+        $this->assertSame('CF1', $c['room_code']);
+    }
+
+    public function test_confirmation_null_when_flagged_match_has_no_review(): void
+    {
+        // Flag'li ama review'ı olmayan maç → eşleşme hesaplanamaz → null (kesin değil).
+        $u = User::factory()->create();
+        $this->match($u->id, 0.8, 90);
+        $this->match($u->id, 1.2, 110);
+
+        $this->assertNull(CheatScan::confirmation($u->id));
+    }
+
     public function test_suspects_lists_flagged_user(): void
     {
         $cheat = User::factory()->create(['nickname' => 'Suspect']);

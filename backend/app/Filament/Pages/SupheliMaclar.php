@@ -33,6 +33,9 @@ class SupheliMaclar extends Page
 
     public array $moveMatch = [];
 
+    /** true: yalnız hamle-hamle motor eşleşmesi doğrulanmış (kesin) hesapları göster. */
+    public bool $onlyCertain = false;
+
     public static function getNavigationBadge(): ?string
     {
         $n = count(CheatScan::suspects());
@@ -49,6 +52,20 @@ class SupheliMaclar extends Page
     public function suspects(): array
     {
         $suspects = CheatScan::suspects();
+
+        // Hamle-hamle kanıt (ağır review parse, cache'li) herkese iliştir — rozet + filtre + sıralama için.
+        foreach ($suspects as &$s) {
+            $s['confirmation'] = CheatScan::confirmation($s['user_id']);
+        }
+        unset($s);
+
+        if ($this->onlyCertain) {
+            $suspects = array_values(array_filter($suspects, fn ($s) => $s['confirmation']['certain'] ?? false));
+        }
+
+        // Kesin (motor eşleşmesi doğrulanmış) hesaplar üstte (PHP 8 usort kararlı → gerisi aynı kalır).
+        usort($suspects, fn ($a, $b) => ($b['confirmation']['certain'] ?? false) <=> ($a['confirmation']['certain'] ?? false));
+
         foreach ($suspects as &$s) {
             $s['matches'] = CheatScan::flaggedMatches($s['user_id']);
             $s['profile'] = CheatScan::profile($s['user_id']); // grafik + neden (kullanıcı-bazlı dağılım)
@@ -57,6 +74,19 @@ class SupheliMaclar extends Page
         unset($s);
 
         return $suspects;
+    }
+
+    /** "Kesin suçlu" (motor eşleşmesi ≥ eşik) hesap sayısı — üst kart + filtre etiketi için. */
+    public function certainCount(): int
+    {
+        $n = 0;
+        foreach (CheatScan::suspects() as $s) {
+            if (CheatScan::confirmation($s['user_id'])['certain'] ?? false) {
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     public function stats(): array
