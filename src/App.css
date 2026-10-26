@@ -11779,6 +11779,18 @@ button.acct-row-logout:hover:not(:disabled) {
   opacity: 0.6;
   cursor: default;
 }
+/* Eski APK: native Google eklentisi yok -> buton yerine "uygulamayi guncelle" notu */
+.auth-update-note {
+  width: 300px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line, #dadce0);
+  border-radius: 12px;
+  background: var(--card-2, #faf6f0);
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
 .auth-divider {
   display: flex;
   align-items: center;

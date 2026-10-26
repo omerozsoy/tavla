@@ -21,6 +21,20 @@ export function isNativeApp(): boolean {
   }
 }
 
+/**
+ * Native Google KULLANILABILIR mi? = native platform VE kurulu APK'da SocialLogin eklentisi
+ * DERLENMIS. Eski APK'lar (plugin eklenmeden once build edilmis) icin false doner -> UI butonu
+ * yerine "uygulamayi guncelle" notu gosterir ("plugin is not implemented on android" hatasini
+ * kullaniciya gostermeden onler). Eklenti native kod -> dist deploy ile GELMEZ, yeni APK gerekir.
+ */
+export function isNativeGoogleAvailable(): boolean {
+  try {
+    return Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('SocialLogin')
+  } catch {
+    return false
+  }
+}
+
 let initialized = false
 
 /** Native Google hesap secicisini ac, ID-token (JWT credential) dondur. Web'de CAGIRMA. */

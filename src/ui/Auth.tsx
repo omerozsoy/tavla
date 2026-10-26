@@ -11,7 +11,7 @@ import SearchSelect from './SearchSelect'
 import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
-import { isNativeApp, nativeGoogleSignIn } from '../nativeGoogle'
+import { isNativeApp, isNativeGoogleAvailable, nativeGoogleSignIn } from '../nativeGoogle'
 import AvatarCropper from './AvatarCropper'
 import { useToast } from './Toast'
 import { Button } from '@/components/ui/button'
@@ -190,6 +190,9 @@ export default function Auth({
   // Kurulu APK (Capacitor WebView): Google GIS burada CALISMAZ (Google gomulu WebView'i engeller,
   // ID-token geri donmez -> "Gmail sectim ama iceri almiyor"). Native hesap secici kullan.
   const isNative = isNativeApp()
+  // Eski APK'larda (SocialLogin eklentisi derlenmemis) native Google buton "plugin is not
+  // implemented on android" ile patlar -> butonu gosterme, "uygulamayi guncelle" notu goster.
+  const nativeGoogleOk = isNativeGoogleAvailable()
   const doNativeGoogle = () => {
     setBusy(true)
     setError('')
@@ -200,7 +203,12 @@ export default function Auth({
         // Native hatayi GOSTER (DEVELOPER_ERROR/kod vb.) -> tanimak icin. Web'i etkilemez (GIS ayri).
         const detail = (e as { message?: string; code?: string | number })?.message
           || String((e as { code?: string | number })?.code ?? e ?? '')
-        setError(t('auth.googleFail') + (detail ? ' [' + detail.slice(0, 140) + ']' : ''))
+        // Eski APK (eklenti derlenmemis): "not implemented on android" -> ham hata yerine guncelle notu.
+        if (/not implemented|not available|unimplemented/i.test(detail)) {
+          setError(t('auth.googleUpdateApp'))
+        } else {
+          setError(t('auth.googleFail') + (detail ? ' [' + detail.slice(0, 140) + ']' : ''))
+        }
       })
       .finally(() => setBusy(false))
   }
@@ -720,18 +728,25 @@ export default function Auth({
             <div className="auth-col">
               <h3 className="auth-col-title">{t('auth.login')}</h3>
               {isNative ? (
-                <div className="google-auth google-auth-top">
-                  <button type="button" className="native-google-btn" onClick={doNativeGoogle} disabled={busy}>
-                    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.2 13.1 17.6 9.5 24 9.5z"/>
-                      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7C43.8 38 46.5 31.9 46.5 24.5z"/>
-                      <path fill="#FBBC05" d="M10.4 28.3c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.8-6.1C.9 16 0 19.9 0 24s.9 8 2.6 11.4l7.8-6.1z"/>
-                      <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.6l-7.4-5.7c-2 1.4-4.7 2.3-7.8 2.3-6.4 0-11.8-3.6-13.6-8.8l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
-                    </svg>
-                    <span>Google</span>
-                  </button>
-                  <div className="auth-divider">{t('auth.or')}</div>
-                </div>
+                nativeGoogleOk ? (
+                  <div className="google-auth google-auth-top">
+                    <button type="button" className="native-google-btn" onClick={doNativeGoogle} disabled={busy}>
+                      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.2 13.1 17.6 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7C43.8 38 46.5 31.9 46.5 24.5z"/>
+                        <path fill="#FBBC05" d="M10.4 28.3c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.8-6.1C.9 16 0 19.9 0 24s.9 8 2.6 11.4l7.8-6.1z"/>
+                        <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.6l-7.4-5.7c-2 1.4-4.7 2.3-7.8 2.3-6.4 0-11.8-3.6-13.6-8.8l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
+                      </svg>
+                      <span>Google</span>
+                    </button>
+                    <div className="auth-divider">{t('auth.or')}</div>
+                  </div>
+                ) : (
+                  <div className="google-auth google-auth-top">
+                    <div className="auth-update-note">{t('auth.googleUpdateApp')}</div>
+                    <div className="auth-divider">{t('auth.or')}</div>
+                  </div>
+                )
               ) : (
                 <div className="google-auth google-auth-top" style={googleReady ? undefined : { display: 'none' }}>
                   <div ref={googleBtnRef} className="google-btn" />
