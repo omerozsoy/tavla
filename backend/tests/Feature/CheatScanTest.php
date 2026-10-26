@@ -77,6 +77,22 @@ class CheatScanTest extends TestCase
         $this->assertSame('bimodal', $flags[0]['reason']);
     }
 
+    public function test_bot_match_is_excluded(): void
+    {
+        // PvB (bot) odasında eğitim/ipucu modu olabilir → düşük PR meşru, flag'lenMEMELİ.
+        $u = User::factory()->create();
+        DB::table('rooms')->insert(['code' => 'BOT1', 'p1_token' => 'a', 'p1_name' => 'W', 'bot' => true]);
+        DB::table('match_results')->insert([
+            'user_id' => $u->id, 'won' => 1, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
+            'match_type' => 'match', 'match_length' => 5, 'gnubg_pr' => 0.70,
+            'gnubg_checker_pr' => 0.70, 'pr_decisions' => 106, 'cube_decisions' => 2,
+            'room_code' => 'BOT1', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->assertCount(0, CheatScan::flaggedMatches($u->id));
+    }
+
     public function test_profile_verdict_consistent_when_median_below_world_champion(): void
     {
         // TÜM maçlar dünya-şampiyonu (2.5) seviyesinin altında -> medyan düşük -> SÜREKLİ motor.
@@ -148,6 +164,34 @@ class CheatScanTest extends TestCase
         $suspects = CheatScan::suspects();
         $this->assertCount(1, $suspects);
         $this->assertSame($cheat->id, $suspects[0]['user_id']);
+    }
+
+    public function test_closed_account_is_excluded_but_blocked_stays(): void
+    {
+        $closed = User::factory()->create(['nickname' => 'Closed']);
+        $blocked = User::factory()->create(['nickname' => 'Blocked']);
+        foreach ([$closed, $blocked] as $u) {
+            $this->match($u->id, 0.8, 90);
+            $this->match($u->id, 1.2, 110);
+        }
+        $this->assertCount(2, CheatScan::suspects());
+
+        // Hesabı Kapat akışı → account_ban_events 'closed' → listeden düşer.
+        DB::table('account_ban_events')->insert([
+            'user_id' => $closed->id, 'action' => 'closed', 'actor_id' => 1,
+            'reason' => 'test', 'created_at' => now(),
+        ]);
+        // Engelle (block) tabloya yazmaz → listede kalır.
+        $suspects = CheatScan::suspects();
+        $this->assertCount(1, $suspects);
+        $this->assertSame($blocked->id, $suspects[0]['user_id']);
+
+        // reopen → son olay 'reopened' → yeniden listelenir.
+        DB::table('account_ban_events')->insert([
+            'user_id' => $closed->id, 'action' => 'reopened', 'actor_id' => 1,
+            'reason' => 'test', 'created_at' => now(),
+        ]);
+        $this->assertCount(2, CheatScan::suspects());
     }
 
     public function test_whitelisted_user_is_excluded(): void

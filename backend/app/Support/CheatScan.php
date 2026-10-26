@@ -139,6 +139,14 @@ class CheatScan
             unset($byUser[$wid]);
         }
 
+        // Hesabı KAPATILAN (Hesabı Kapat → AccountClosure::close, account_ban_events action='closed')
+        // hesaplar triyaj listesinde yer kaplamasın — kapatma nihai aksiyon. ENGELLE (block) farklı:
+        // geri alınabilir, bilerek listede kalır ("Engeli kaldır" ile). reopen banned_at'ı sıfırlar +
+        // son olayı 'reopened' yapar → hesap yeniden listelenir.
+        foreach (self::closedUserIds(array_keys($byUser)) as $cid) {
+            unset($byUser[$cid]);
+        }
+
         $users = DB::table('users')->whereIn('id', array_keys($byUser))
             ->get(['id', 'nickname', 'first_name', 'rating', 'banned_at', 'created_at'])->keyBy('id');
 
@@ -346,11 +354,43 @@ class CheatScan
         ];
     }
 
+    /**
+     * Verilen uid'lerden hesabı ŞU AN KAPALI olanlar (en son account_ban_events olayı 'closed').
+     * block() bu tabloya yazmaz → yalnız "Hesabı Kapat" akışı buraya düşer. reopen 'reopened' yazar.
+     *
+     * @param  array<int,int>  $ids
+     * @return array<int,int>
+     */
+    private static function closedUserIds(array $ids): array
+    {
+        if ($ids === [] || ! Schema::hasTable('account_ban_events')) {
+            return [];
+        }
+        $events = DB::table('account_ban_events')
+            ->whereIn('user_id', $ids)
+            ->orderByDesc('id')
+            ->get(['user_id', 'action']);
+        $latest = [];
+        foreach ($events as $e) {
+            $latest[(int) $e->user_id] ??= $e->action; // id desc → ilk görülen = en son olay
+        }
+
+        return array_keys(array_filter($latest, fn ($a) => $a === 'closed'));
+    }
+
     /** match_results satırlarını (gnubg_pr > 0) tek sorguda çek. */
     private static function load(?int $userId): array
     {
         $q = DB::table('match_results')
             ->whereNotNull('gnubg_pr')->where('gnubg_pr', '>', 0)
+            // BOT maçlarını ELE: PvB odasında EĞİTİM/İPUCU modu açık olabilir (oyuncu gnubg ipucuna
+            // bakarak oynar) → düşük PR MEŞRU, motor-yardımı sinyali DEĞİL. İnsan-insan maçı değil.
+            // Oda silinmişse (code artık rooms'ta yok) bot olup olmadığı bilinemez → listede kalır.
+            ->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))->from('rooms')
+                    ->whereColumn('rooms.code', 'match_results.room_code')
+                    ->where('rooms.bot', true);
+            })
             ->select([
                 'user_id', 'room_code', 'gnubg_pr', 'gnubg_checker_pr', 'pr_decisions',
                 'cube_decisions', 'match_length', 'opponent_name', 'opponent_user_id',
