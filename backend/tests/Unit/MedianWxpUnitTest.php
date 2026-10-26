@@ -75,7 +75,9 @@ class MedianWxpUnitTest extends TestCase
         $this->assertSame('1', StatsConfig::categoryKey('match', 1));
         $this->assertSame('5', StatsConfig::categoryKey('match', 5));
         $this->assertSame('7', StatsConfig::categoryKey('match', 7));
-        $this->assertNull(StatsConfig::categoryKey('match', 9)); // tanimsiz kategori
+        $this->assertSame('9', StatsConfig::categoryKey('match', 9));   // 9S kategorisi (20062c8c)
+        $this->assertSame('11', StatsConfig::categoryKey('match', 11)); // 11S kategorisi (20062c8c)
+        $this->assertNull(StatsConfig::categoryKey('match', 13)); // tanimsiz kategori (desteklenmeyen uzunluk)
         $this->assertNull(StatsConfig::categoryKey('match', null));
     }
 }
