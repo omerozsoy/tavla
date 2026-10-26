@@ -95,6 +95,27 @@
             else if (!document.getElementById('__loadfail')) recover()
           }, 12000)
         })
+        // MID-MAC BEYAZ EKRAN: yukaridaki 12sn kontrolu YALNIZ acilisi korur -> root dolunca
+        // nobetci biter. App mount OLDUKTAN sonra (orn. "Maca Don" sirasinda bir render hatasi
+        // React'in tum kok agacini unmount etmesine yol acarsa) #root bos kalir ve eski tek-seferlik
+        // kontrol bunu KACIRIR -> kullanici kurtulamadigi bir bos ekranda asili kalir (aldigi maci
+        // bu yuzden kaybeder). Surekli nobetci: root bir kez doldUktan sonra ~3sn bos kalirsa (gercek
+        // unmount, gecici flash degil) TEK reload ile kurtar (remount -> ana sayfa -> "Maca Don"
+        // banner'i -> devam). Calisan kullanicinin root'u HEP dolu -> asla etkilenmez.
+        var hadRoot = false, emptyTicks = 0
+        setInterval(function () {
+          var r = document.getElementById('root')
+          if (!r) return
+          if (r.children.length > 0) { hadRoot = true; emptyTicks = 0; return }
+          if (!hadRoot) return // acilis bosu: 12sn kontrolu + recover() ilgilenir
+          if (document.getElementById('__loadfail') || document.getElementById('__appdiag')) return
+          if (++emptyTicks < 2) return // >~3sn surekli bos (re-render flash'i degil)
+          emptyTicks = 0; hadRoot = false
+          if (INAPP) { note('#root mount SONRASI bosaldi (React unmount).'); return }
+          var n = attempt()
+          if (n >= 2) { showRetry(); return } // her mount'ta aninda cokuyorsa dongu yapma -> elle
+          bump(n + 1); location.reload()
+        }, 1500)
       })()
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -202,7 +223,7 @@
         ]
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-BvKeYbk2.js"></script>
+    <script type="module" crossorigin src="/assets/index-BZsB7401.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/Icon-BztG91yP.js">
     <link rel="modulepreload" crossorigin href="/assets/react-dom-_bz6IuXF.js">
     <link rel="modulepreload" crossorigin href="/assets/button-Cw4nlBuK.js">
@@ -215,7 +236,7 @@
     <link rel="modulepreload" crossorigin href="/assets/Coins-Cy_X56Mr.js">
     <link rel="modulepreload" crossorigin href="/assets/SoberFrame-5Bdcb9PF.js">
     <link rel="stylesheet" crossorigin href="/assets/SoberFrame-BSPxS0vx.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-ipUS7VB_.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-D_LyXKyo.css">
   </head>
   <body>
     <div id="root"></div>
