@@ -1634,8 +1634,7 @@ export default function App() {
           // aktif online macimizsa SPECTATE ACMA -> rejoin (localStorage) bizi oyuncu olarak dondurur.
           const lg = loadGame()
           if (lg && lg.mode === 'online' && lg.inGame === true && lg.record?.online && (lg.record?.uid || '').toUpperCase() === c) break
-          if (!getToken()) { requireLogin(); break } // misafir maç izleyemez -> üyelik
-          setSpectate({ code: c, p1: '', p2: '' })
+          setSpectate({ code: c, p1: '', p2: '' }) // misafir de izleyebilir (salt-okunur)
           break
         }
         case 'arkadasinla-oyna':
@@ -10250,7 +10249,7 @@ export default function App() {
           onRequireLogin={() => setShowAuth(true)}
           onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
-          onSpectate={(code, p1, p2) => (!getToken() ? requireLogin() : setSpectate({ code, p1, p2 }))}
+          onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)
@@ -11070,7 +11069,7 @@ export default function App() {
                 onInvite={user ? handleInviteFriend : undefined}
               />
               <LiveMatchesPanel
-                onSpectate={(code, p1, p2) => (!getToken() ? requireLogin() : setSpectate({ code, p1, p2 }))}
+                onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
               />
             </div>
             {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA */}
