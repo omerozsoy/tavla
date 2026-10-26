@@ -27,7 +27,10 @@ class RoomTickLockTest extends TestCase
         ], 'p1', $t0);
         $now = microtime(true);
         $c = MatchClock::seen($c, 'p1', $now);
-        $c = MatchClock::seen($c, 'p2', $t0); // p2 uzun süredir görünmüyor -> poll "p2 terk" sanar
+        // p2 TUR BASLAMADAN ONCE gorulup kaybolmus (son-gorulme < started_at=$t0) = gercek terk ->
+        // present sira sahibi (p1) korunur, poll "p2 terk" (ABANDON) der. (seen==started_at olsaydi
+        // J9N5R staller-kalkani devreye girer; bu test abandon'u degil kilidi test ettiginden net terk kurgula.)
+        $c = MatchClock::seen($c, 'p2', $t0 - 10);
         $this->assertSame('ABANDON', MatchClock::tick($c, $now)['end']['reason'] ?? null);
 
         Room::create([

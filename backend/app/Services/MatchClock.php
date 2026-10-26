@@ -295,24 +295,30 @@ class MatchClock
         $p1Gone = $p1s !== null && ($now - (float) $p1s) > $limit;
         $p2Gone = $p2s !== null && ($now - (float) $p2s) > $limit;
         if ($p1Gone !== $p2Gone) {
-            // KOK FIX (J9N5R, 2026-10-26): saat CALISIRKEN ve sira BELLI birindeyken, presence-ABANDON
-            // YALNIZ AKTIF (hamle sirasi kendisinde olan) oyuncu terk ederse gecerlidir. BEKLEYEN
-            // (sirasi OLMAYAN) oyuncunun poll'u kesilse bile ANINDA forfeit ETME: aktif oyuncu hamlesini
-            // yapmak ZORUNDA -> yapmazsa kendi AFK/TIMEOUT'u (asagida) onu kaybettirir; yaparsa sira
-            // bekleyene gecer ve O "aktif-terk" olarak kaybeder. Aksi halde rakip oyalanip hamle yapmazken
-            // (kendi saati 9->7 akarken), beklerken ekrani uyuyan / sekmesi arka plana dusen oyuncu 60sn'de
-            // HAKSIZ "mactan cekildi" yiyor ve HAMLE YAPMAYAN taraf kazaniyordu (kullanici karari:
-            // "oyalayan kaybeder"). Saat DURMUSSA (acilis / oyunlar-arasi / kup-bekleme: aktif yok) eski
-            // davranis korunur -> hayalet oda kapatilabilsin diye gone taraf kaybeder.
+            // KOK FIX (J9N5R, 2026-10-26; RAFINE 2026-10-26): presence-ABANDON kararini saatin kimde
+            // oldugu + BEKLEYENIN NE ZAMAN kayboldugu belirler:
+            //  - AKTIF (sira sahibi) terk -> her zaman forfeit (gone kaybeder).
+            //  - Saat DURMUS / aktif yok (acilis / oyunlar-arasi / kup-bekleme) -> gone forfeit (hayalet kapanir).
+            //  - BEKLEYEN (sirasi olmayan) terk -> IKI DURUM:
+            //      a) Bekleyen BU TUR BASLAMADAN ONCE gitmis (son-gorulme < started_at) = GERCEK TERK ->
+            //         present sira sahibi KORUNUR, bekleyen forfeit eder (turn-owner protection; eski davranis).
+            //      b) Bekleyen AKTIFIN TURU SIRASINDA gorulup sonra kaybolmus (son-gorulme >= started_at) =
+            //         STALLER senaryosu: aktif oyalaniyorken beklerken ekrani uyuyan oyuncu HAKSIZ forfeit
+            //         OLMASIN -> presence KARAR VERMEZ, aktifin kendi AFK/TIMEOUT'u (asagida) kaybettirir
+            //         ("oyalayan kaybeder"; toplu-haksiz-abandon koku). Aktif bir kez hamle yapinca sira
+            //         bekleyene gecer ve O artik gone==active yoluyla "aktif-terk" olarak kaybeder.
             $gone = $p1Gone ? 'p1' : 'p2';
             $active = $clock['turn_slot'] ?? null;
             $runningNow = (bool) ($clock['running'] ?? false);
-            if (! ($runningNow && $active !== null && $gone !== $active)) {
+            $goneSeen = (float) ($clock[$gone.'_seen'] ?? 0);
+            $turnStart = (float) ($clock['started_at'] ?? $now);
+            $stallerShield = $runningNow && $active !== null && $gone !== $active && $goneSeen >= $turnStart;
+            if (! $stallerShield) {
                 $clock['end'] = ['reason' => 'ABANDON', 'winner' => self::other($gone)];
 
                 return $clock;
             }
-            // Bekleyen taraf gorunmez oldu ama sira aktifte -> presence KARAR VERMEZ; AFK/TIMEOUT'a birak.
+            // Staller korumasi: bekleyen aktifin turu SIRASINDA kayboldu -> presence KARAR VERMEZ; AFK/TIMEOUT'a birak.
         }
         if ($p1Gone && $p2Gone) {
             // IKISI DE terk -> eskiden presence KARAR VERMEZDI ve saat de durmussa (acilis / 0-0 /
