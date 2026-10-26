@@ -149,4 +149,18 @@ class CheatScanTest extends TestCase
         $this->assertCount(1, $suspects);
         $this->assertSame($cheat->id, $suspects[0]['user_id']);
     }
+
+    public function test_whitelisted_user_is_excluded(): void
+    {
+        $cheat = User::factory()->create(['nickname' => 'Suspect']);
+        $this->match($cheat->id, 0.8, 90);
+        $this->match($cheat->id, 1.2, 110);
+        $this->assertCount(1, CheatScan::suspects());
+
+        CheatScan::setWhitelisted($cheat->id, true);
+        $this->assertCount(0, CheatScan::suspects());
+
+        CheatScan::setWhitelisted($cheat->id, false);
+        $this->assertCount(1, CheatScan::suspects());
+    }
 }

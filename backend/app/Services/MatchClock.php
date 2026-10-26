@@ -52,14 +52,18 @@ class MatchClock
     }
 
     public const AFK_IDLE = 90;       // uyari esigi (sn) = AFK_TOTAL - AFK_COUNTDOWN
+
     public const AFK_COUNTDOWN = 30;  // son gorunur geri sayim (sn)
+
     public const AFK_TOTAL = 120;     // toplam hareketsizlik -> kayip (sn) = 2 dk
+
     // KALDIRILDI (2026-09-25, oyuncu itirazi): eskiden 3sn'lik ag-latency toleransi vardi;
     // sure bitince (TIMEOUT), 60sn hareketsizlikte (AFK) ve terk esiginde kayip ilanini 3sn
     // geciktiriyordu -> "sure bitti ama rakip 3sn daha oynadi" sikayeti. Artik 0: kayip
     // deadline dolar dolmaz ANINDA ilan edilir. Sabit korunuyor (yerler kod olarak degismedi;
     // gerekirse tekrar >0 yapilabilir), ama etkisi tamamen kapali.
     public const GRACE = 0;          // network latency toleransi KALDIRILDI (0 = grace yok)
+
     // BOT REVEAL GRACE: bot maçında bot hamlesi SUNUCUDA anında oynanır ve sıra/saat aynı anda
     // insana (p1) döner; ama insanın İSTEMCİSİ botun hamlesini REVEAL/animasyonla gösterip (zar
     // ~0.85sn + adımlar + tur-devri ~0.5sn) sonra oto-roll (~0.5sn) eder — bu wall-clock süre
@@ -69,6 +73,7 @@ class MatchClock
     // insana yazmaz; insan roll'unda started_at zaten gerçek now'a sıfırlanır (sömürüye kapalı,
     // AFK/presence korumaları aynen işler).
     public const BOT_REVEAL_GRACE = 2.0;
+
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
     // 60sn: terk edilen/olu oda ~60sn'de (60 + GRACE, GRACE=0) kapanir. Daha dusuk deger (30/45) mobilde
@@ -76,6 +81,7 @@ class MatchClock
     // 45->60 (2026-10-23): sunucu-geneli ~45sn blip'te onlarca mac AYNI ANDA haksiz ABANDON oldu
     // (00:14 T8LCX/YQ29U/7EUXQ/YNLYW...); grace'i 1dk'ya cekince kisa kesintiler maci kesmez.
     public const PRESENCE_TIMEOUT = 60;
+
     /** In-flight kalkanin azami suresi (sn): komut isleme + retry payi. Daha eski _acted etkisiz (A-02). */
     public const INFLIGHT_MAX = 30;
 
@@ -289,9 +295,24 @@ class MatchClock
         $p1Gone = $p1s !== null && ($now - (float) $p1s) > $limit;
         $p2Gone = $p2s !== null && ($now - (float) $p2s) > $limit;
         if ($p1Gone !== $p2Gone) {
-            // TAM OLARAK biri terk (ikisi de degil) -> terk eden kaybeder, rakip kazanir.
-            $clock['end'] = ['reason' => 'ABANDON', 'winner' => $p1Gone ? 'p2' : 'p1'];
-            return $clock;
+            // KOK FIX (J9N5R, 2026-10-26): saat CALISIRKEN ve sira BELLI birindeyken, presence-ABANDON
+            // YALNIZ AKTIF (hamle sirasi kendisinde olan) oyuncu terk ederse gecerlidir. BEKLEYEN
+            // (sirasi OLMAYAN) oyuncunun poll'u kesilse bile ANINDA forfeit ETME: aktif oyuncu hamlesini
+            // yapmak ZORUNDA -> yapmazsa kendi AFK/TIMEOUT'u (asagida) onu kaybettirir; yaparsa sira
+            // bekleyene gecer ve O "aktif-terk" olarak kaybeder. Aksi halde rakip oyalanip hamle yapmazken
+            // (kendi saati 9->7 akarken), beklerken ekrani uyuyan / sekmesi arka plana dusen oyuncu 60sn'de
+            // HAKSIZ "mactan cekildi" yiyor ve HAMLE YAPMAYAN taraf kazaniyordu (kullanici karari:
+            // "oyalayan kaybeder"). Saat DURMUSSA (acilis / oyunlar-arasi / kup-bekleme: aktif yok) eski
+            // davranis korunur -> hayalet oda kapatilabilsin diye gone taraf kaybeder.
+            $gone = $p1Gone ? 'p1' : 'p2';
+            $active = $clock['turn_slot'] ?? null;
+            $runningNow = (bool) ($clock['running'] ?? false);
+            if (! ($runningNow && $active !== null && $gone !== $active)) {
+                $clock['end'] = ['reason' => 'ABANDON', 'winner' => self::other($gone)];
+
+                return $clock;
+            }
+            // Bekleyen taraf gorunmez oldu ama sira aktifte -> presence KARAR VERMEZ; AFK/TIMEOUT'a birak.
         }
         if ($p1Gone && $p2Gone) {
             // IKISI DE terk -> eskiden presence KARAR VERMEZDI ve saat de durmussa (acilis / 0-0 /

@@ -134,6 +134,11 @@ class CheatScan
         }
         $byUser = array_filter($byUser, fn ($a) => $a['flags'] >= max(1, $minFlags));
 
+        // Beyaz-liste: yönetici "bu oyuncu zaten çok iyi / temiz" dediği hesaplar listeden çıkar.
+        foreach (self::whitelistIds() as $wid) {
+            unset($byUser[$wid]);
+        }
+
         $users = DB::table('users')->whereIn('id', array_keys($byUser))
             ->get(['id', 'nickname', 'first_name', 'rating', 'banned_at', 'created_at'])->keyBy('id');
 
@@ -244,6 +249,32 @@ class CheatScan
     public static function forget(): void
     {
         Cache::forget('cheatscan:suspect_ids');
+    }
+
+    /**
+     * Beyaz-liste: dedektörün yanlış-pozitif işaretlediği GERÇEKTEN iyi oyuncular (ör. turnuva/Türkiye
+     * şampiyonu — tutarlı düşük PR = yetenek, motor değil). Bu uid'ler suspects()/rozet dışı kalır.
+     * Setting('cheat_whitelist') = virgülle ayrılmış uid listesi. Admin panelden eklenir/çıkarılır.
+     *
+     * @return array<int,int>
+     */
+    public static function whitelistIds(): array
+    {
+        $raw = \App\Models\Setting::get('cheat_whitelist', '');
+
+        return array_values(array_filter(array_map(
+            fn ($x) => (int) trim($x),
+            explode(',', $raw)
+        )));
+    }
+
+    /** Beyaz-listeye ekle/çıkar (tekil uid). Cache + suspectIds tazelenir. */
+    public static function setWhitelisted(int $uid, bool $on): void
+    {
+        $ids = self::whitelistIds();
+        $ids = $on ? array_unique([...$ids, $uid]) : array_values(array_diff($ids, [$uid]));
+        \App\Models\Setting::put('cheat_whitelist', implode(',', $ids));
+        self::forget();
     }
 
     /**

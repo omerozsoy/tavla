@@ -133,6 +133,34 @@ class SupheliMaclar extends Page
         Notification::make()->title(($u->nickname ?: $u->email).' hesabı kapatıldı.')->success()->send();
     }
 
+    /** Beyaz listeye al: yanlış-pozitif iyi oyuncu (şampiyon vb.) — listeden kalıcı çıkar. */
+    public function whitelist(int $id): void
+    {
+        $u = User::find($id);
+        CheatScan::setWhitelisted($id, true);
+        Notification::make()->title(($u?->nickname ?: '#'.$id).' beyaz listeye alındı (temiz oyuncu).')->success()->send();
+    }
+
+    /** Beyaz listeden çıkar: tekrar taramaya girsin. */
+    public function unwhitelist(int $id): void
+    {
+        $u = User::find($id);
+        CheatScan::setWhitelisted($id, false);
+        Notification::make()->title(($u?->nickname ?: '#'.$id).' beyaz listeden çıkarıldı.')->success()->send();
+    }
+
+    /** Beyaz listedeki hesaplar (altta "geri al" şeridi için). @return array<int,array{id:int,nickname:string}> */
+    public function whitelisted(): array
+    {
+        $ids = CheatScan::whitelistIds();
+        if ($ids === []) {
+            return [];
+        }
+        $names = User::whereIn('id', $ids)->pluck('nickname', 'id');
+
+        return array_map(fn ($id) => ['id' => $id, 'nickname' => $names[$id] ?? ('#'.$id)], $ids);
+    }
+
     /** Hamle-hamle motor eşleşmesini aç/kapa (on-demand — yalnız tıklanan maçın review'ını parse eder). */
     public function showMoves(int $userId, string $room): void
     {

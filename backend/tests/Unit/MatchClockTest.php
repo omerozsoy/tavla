@@ -31,6 +31,7 @@ class MatchClockTest extends TestCase
     private function started(string $mode, int $target, string $turn = 'white'): array
     {
         $c = MatchClock::init($mode, $target, self::T0);
+
         return MatchClock::onUpdate($c, $this->state($turn, $target), $turn === 'white' ? 'p1' : 'p2', self::T0);
     }
 
@@ -39,6 +40,7 @@ class MatchClockTest extends TestCase
     private function movedClock(string $mode, int $target): array
     {
         $c = $this->started($mode, $target);
+
         return MatchClock::onUpdate($c, $this->state('white', $target, 1, 1), 'p1', self::T0);
     }
 
@@ -278,15 +280,23 @@ class MatchClockTest extends TestCase
         $this->assertSame('TIMEOUT', MatchClock::tick($c, self::T0 + 60)['end']['reason']);
     }
 
-    // ---- 13) VARLIK: rakip poll'u keserse (terk) rakip kaybeder; sira sahibi kazanir ----
-    public function test_presence_absent_opponent_forfeits(): void
+    // ---- 13) J9N5R KOK FIX: sira AKTIF oyuncudayken BEKLEYEN rakibin poll'u kesilse bile
+    // presence ANINDA forfeit ETMEZ. Aktif oyuncu oyalanip (kendi saati akarken) hamle yapmazsa
+    // KENDI AFK/TIMEOUT'u onu kaybettirir -> hamle yapmayan taraf kazanamaz (kullanici: "oyalayan kaybeder").
+    public function test_waiting_player_not_forfeited_while_active_stalls(): void
     {
-        $c = $this->started('casual', 5); // aktif p1
-        $c = MatchClock::seen($c, 'p1', self::T0 + 70); // p1 present
-        $c = MatchClock::seen($c, 'p2', self::T0);      // p2 en son t0'da goruldu (terk)
-        $end = MatchClock::tick($c, self::T0 + 70)['end']; // p2: 70sn > 60+3
-        $this->assertSame('ABANDON', $end['reason']);
-        $this->assertSame('p1', $end['winner']); // rakip terk -> sira sahibi kazanir
+        // p2 (siyah) aktif ve oyaliyor (present, poll ediyor ama hamle yok);
+        // p1 (beyaz) bekliyor ve sira p2'ye gecince poll'u kesildi (J9N5R birebir).
+        $c = $this->started('casual', 5, 'black');                              // aktif p2
+        $c = MatchClock::onUpdate($c, $this->state('black', 5, 1, 1), 'p2', self::T0); // ilk hamle -> moved
+        $c = MatchClock::seen($c, 'p1', self::T0);        // bekleyen p1 son kez T0'da goruldu (koptu)
+        $c = MatchClock::seen($c, 'p2', self::T0 + 110);  // aktif p2 poll etmeye devam (present)
+        // T0+70: p1 70sn poll etmedi (>60) AMA sira p2'de -> presence KARAR VERMEZ (eski kod p1'i kaybettirirdi)
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 70)['end'] ?? null);
+        // T0+120: p2 (aktif) hala hamle yapmadi -> AFK ile KENDISI kaybeder, bekleyen p1 kazanir
+        $end = MatchClock::tick($c, self::T0 + 120)['end'];
+        $this->assertSame('AFK_TIMEOUT', $end['reason']);
+        $this->assertSame('p1', $end['winner']); // oyalayan aktif(p2) kaybetti, bekleyen(p1) kazandi
     }
 
     // ---- 14) VARLIK: sira sahibi poll'u keserse (terk) TERK EDEN kaybeder ----
@@ -300,16 +310,19 @@ class MatchClockTest extends TestCase
         $this->assertSame('p2', $end['winner']); // terk eden (p1) kaybetti
     }
 
-    // ---- 15) SIRA SAHIBINI KORU: AFK suresi gecse bile rakip terk ettiyse sira sahibi kaybetmez ----
-    public function test_presence_protects_idle_turn_owner_when_opponent_left(): void
+    // ---- 15) ERTELENEN TERK MATERYALLESIR: aktif oyuncu HAMLE YAPINCA sira bekleyene gecer;
+    // bekleyen kopmussa ARTIK O "aktif-terk" olarak kaybeder (keyfi kazanc yok, kendini duzeltir). ----
+    public function test_waiting_absent_player_forfeits_once_it_becomes_their_turn(): void
     {
-        $c = $this->started('casual', 5); // aktif p1, afk normalde t0+60
-        $c = MatchClock::seen($c, 'p1', self::T0 + 70); // p1 HALA present (poll ediyor)
-        $c = MatchClock::seen($c, 'p2', self::T0);      // p2 terk
-        // now=70: p1 hamlesiz 70sn (AFK 60 gecti) AMA present; p2 terk -> p1 KORUNUR
+        $c = $this->started('casual', 5);           // aktif p1 (beyaz), present
+        $c = MatchClock::seen($c, 'p2', self::T0);   // p2 bekliyor ve koptu (T0)
+        // p1 hamle yapar -> sira p2'ye gecer (p2 hala kopuk)
+        $c = MatchClock::onUpdate($c, $this->state('black', 5, 1, 1), 'p1', self::T0 + 5);
+        $c = MatchClock::seen($c, 'p1', self::T0 + 70); // p1 artik bekleyen ama present
+        // Simdi aktif=p2 (kopuk, son T0). p2 aktif-terk -> p2 kaybeder, p1 kazanir.
         $end = MatchClock::tick($c, self::T0 + 70)['end'];
         $this->assertSame('ABANDON', $end['reason']);
-        $this->assertSame('p1', $end['winner']); // sira sahibi korundu, terk eden kaybetti
+        $this->assertSame('p1', $end['winner']);
     }
 
     // ---- 16) Ikisi de present -> normal AFK isler (presence karismaz) ----
@@ -411,6 +424,7 @@ class MatchClockTest extends TestCase
         $c = $this->movedClock('casual', 5);
         $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 123)['end']['reason']);
     }
+
     // ---- KUP TEKLIFI: saat ilerler, karar suresi YANITLAYANIN bankasindan iner ----
     // Teklif anina kadar gecen sure teklif edenden dusulur; teklif beklerken aktif taraf
     // YANITLAYAN olur (karar onun). Eskiden teklif edenin saati islemeye devam ediyordu.

@@ -93,6 +93,9 @@
                                 {{-- Hesabı Kapat: ban'dan ağır (oturum/token kesilir, ekonomik iade işlenir). --}}
                                 <x-filament::button size="xs" color="danger" icon="heroicon-m-trash" wire:click="closeAccount({{ $row['user_id'] }})"
                                     wire:confirm="{{ $row['nickname'] }} hesabını KAPAT? Bu ban'dan ağırdır: oturumlar/token'lar kesilir, hesap sonlandırılır. Emin misin?">Hesabı Kapat</x-filament::button>
+                                {{-- Beyaz listeye al: yanlış-pozitif iyi oyuncu (şampiyon vb.) — listeden kalıcı çıkar. --}}
+                                <x-filament::button size="xs" color="success" icon="heroicon-m-check-badge" wire:click="whitelist({{ $row['user_id'] }})"
+                                    wire:confirm="{{ $row['nickname'] }} temiz oyuncu olarak beyaz listeye alınsın mı? (Dedektör bir daha işaretlemez.)">Beyaz listeye al</x-filament::button>
                             </div>
                         </div>
 
@@ -265,6 +268,25 @@
                         @endforeach
                     </div>
                 @endforeach
+            </div>
+        @endif
+
+        {{-- BEYAZ LİSTE: dedektörün yanlış işaretlediği temiz oyuncular (şampiyon vb.) — taramaya girmez. --}}
+        @php($wl = $this->whitelisted())
+        @if (count($wl))
+            <div class="rounded-xl ring-1 ring-green-500/20 bg-green-500/5 p-4">
+                <div class="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
+                    Beyaz liste — temiz oyuncu ({{ count($wl) }}) <span class="font-normal text-gray-500">· dedektör bunları işaretlemez</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($wl as $w)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-gray-900 ring-1 ring-gray-200 dark:ring-white/10 pl-3 pr-1 py-0.5 text-xs">
+                            {{ $w['nickname'] }}
+                            <x-filament::button size="xs" color="gray" wire:click="unwhitelist({{ $w['id'] }})"
+                                wire:confirm="{{ $w['nickname'] }} beyaz listeden çıkarılsın mı? (Tekrar taramaya girer.)">Geri al</x-filament::button>
+                        </span>
+                    @endforeach
+                </div>
             </div>
         @endif
     </div>
