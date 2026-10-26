@@ -26,10 +26,26 @@ export function isNativeApp(): boolean {
  * DERLENMIS. Eski APK'lar (plugin eklenmeden once build edilmis) icin false doner -> UI butonu
  * yerine "uygulamayi guncelle" notu gosterir ("plugin is not implemented on android" hatasini
  * kullaniciya gostermeden onler). Eklenti native kod -> dist deploy ile GELMEZ, yeni APK gerekir.
+ *
+ * ⚠ KOK DUZELTME 2026-10-26: Eskiden `Capacitor.isPluginAvailable('SocialLogin')` (BUNDLED core)
+ * kullaniliyordu AMA remote-load'da (server.url=canli site) bundled @capacitor/core native plugin
+ * kaydini GOREMEZ -> plugin DERLENMIS olsa bile false doner (bkz orientation.ts/push.ts ayni tuzak;
+ * 1.6 APK'da plugin var ama "uygulamayi guncelle" notu cikiyordu). Native-enjekte kopru
+ * `window.Capacitor.PluginHeaders` AUTHORITATIVE: derlenmis her plugin burada listelenir
+ * (@CapacitorPlugin name="SocialLogin"). Once ona bak, yoksa bundled core'a dus (PWA/eski kopru).
  */
 export function isNativeGoogleAvailable(): boolean {
   try {
-    return Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('SocialLogin')
+    if (!Capacitor.isNativePlatform()) return false
+    const cap = (window as unknown as { Capacitor?: { PluginHeaders?: Array<{ name?: string }> } }).Capacitor
+    const headers = cap?.PluginHeaders
+    if (Array.isArray(headers) && headers.length > 0) {
+      // Authoritative liste: derlenmis plugin burada olmaLI. Eski APK (plugin yok) -> false -> not gosterir.
+      return headers.some((h) => h?.name === 'SocialLogin')
+    }
+    // PluginHeaders enjekte edilmemis/bos (kopru farkli): iyimser davran — native'de butonu goster.
+    // Plugin gercekten yoksa doNativeGoogle "not implemented" yakalar -> "uygulamayi guncelle" notu.
+    return true
   } catch {
     return false
   }
