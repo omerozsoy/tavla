@@ -942,78 +942,85 @@ class RoomController extends Controller
     // Ana sayfa "Cevrimici Oyuncular" paneli icin. Herkese acik (izleme gibi).
     public function onlinePlayers()
     {
-        // presence_status kolonu HENUZ migrate edilmemis olabilir (canli sunucuda migrate
-        // kosmadan): kolon yoksa filtreyi/select'i uygulama -> endpoint 500 vermez, herkes
-        // 'available' sayilir. Migrate kosunca durum filtresi devreye girer.
-        $hasStatus = Schema::hasColumn('users', 'presence_status');
+        // Yanit kullaniciya ozel DEGIL (herkese ayni liste) -> online_ids gibi ~10sn global
+        // cache. Indeksli bile olsa yuksek eszamanli izleyicide sorgu sayisini dusurur;
+        // in_game tazeligi 10sn gecikir (durum noktalari tolere eder). TTL yeterli, forget yok.
+        $payload = Cache::remember('online_players_v1', 10, function () {
+            // presence_status kolonu HENUZ migrate edilmemis olabilir (canli sunucuda migrate
+            // kosmadan): kolon yoksa filtreyi/select'i uygulama -> endpoint 500 vermez, herkes
+            // 'available' sayilir. Migrate kosunca durum filtresi devreye girer.
+            $hasStatus = Schema::hasColumn('users', 'presence_status');
 
-        $cols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'is_admin', 'is_support'];
-        if ($hasStatus) {
-            $cols[] = 'presence_status';
-        }
+            $cols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'is_admin', 'is_support'];
+            if ($hasStatus) {
+                $cols[] = 'presence_status';
+            }
 
-        $query = User::whereNotNull('last_seen')
-            ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") çevrimiçi listesinde çıkmasın
-            ->notDeleted()
-            ->where('last_seen', '>', now()->subSeconds(70));
-        if ($hasStatus) {
-            // "Çevrimdışı Görün" (offline) + "Hayalet" (ghost, yönetici) listede GÖRÜNMEZ.
-            // Eski/NULL kayitlar (durum secmemis) 'available' sayilir -> gorunur.
-            $query->where(function ($q) {
-                $q->whereNull('presence_status')->orWhereNotIn('presence_status', ['offline', 'ghost']);
-            });
-        }
-        // Sıralama: önce YÖNETİCİLER, sonra YARDIMCILAR (destek), sonra puana (rating) göre.
-        // Rol sahipleri (yönetici/yardımcı) KENDİ grubunda EN ESKİ üye en üstte (hesap yaşı = id
-        // artan); yeni atanan en alta. Normal oyuncular puana göre (azalan).
-        $hasSupport = Schema::hasColumn('users', 'is_support');
-        $query->orderByDesc('is_admin');
-        if ($hasSupport) {
-            $query->orderByDesc('is_support');
-            $query->orderByRaw('CASE WHEN is_admin = 1 OR is_support = 1 THEN id END ASC');
-        } else {
-            $query->orderByRaw('CASE WHEN is_admin = 1 THEN id END ASC');
-        }
-        $users = $query->orderByDesc('rating')
-            ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
-            ->get($cols);
-
-        // AKTİF MAÇTA MI: p1/p2 olduğu 'playing' bir oda varsa (BOT dahil — YZ maçı da sayılır).
-        // Bu oyuncularda "Oyna" (davet) butonu gizlenir (zaten oyunda). Tek sorgu, id kümesi.
-        $userIds = $users->pluck('id');
-        $inGameSet = [];
-        if ($userIds->isNotEmpty()) {
-            Room::where('status', 'playing')
-                ->where('updated_at', '>', now()->subMinutes(5))
-                ->where(function ($q) use ($userIds) {
-                    $q->whereIn('p1_user_id', $userIds)->orWhereIn('p2_user_id', $userIds);
-                })
-                ->get(['p1_user_id', 'p2_user_id'])
-                ->each(function ($r) use (&$inGameSet) {
-                    if ($r->p1_user_id) {
-                        $inGameSet[(int) $r->p1_user_id] = true;
-                    }
-                    if ($r->p2_user_id) {
-                        $inGameSet[(int) $r->p2_user_id] = true;
-                    }
+            $query = User::whereNotNull('last_seen')
+                ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") çevrimiçi listesinde çıkmasın
+                ->notDeleted()
+                ->where('last_seen', '>', now()->subSeconds(70));
+            if ($hasStatus) {
+                // "Çevrimdışı Görün" (offline) + "Hayalet" (ghost, yönetici) listede GÖRÜNMEZ.
+                // Eski/NULL kayitlar (durum secmemis) 'available' sayilir -> gorunur.
+                $query->where(function ($q) {
+                    $q->whereNull('presence_status')->orWhereNotIn('presence_status', ['offline', 'ghost']);
                 });
-        }
+            }
+            // Sıralama: önce YÖNETİCİLER, sonra YARDIMCILAR (destek), sonra puana (rating) göre.
+            // Rol sahipleri (yönetici/yardımcı) KENDİ grubunda EN ESKİ üye en üstte (hesap yaşı = id
+            // artan); yeni atanan en alta. Normal oyuncular puana göre (azalan).
+            $hasSupport = Schema::hasColumn('users', 'is_support');
+            $query->orderByDesc('is_admin');
+            if ($hasSupport) {
+                $query->orderByDesc('is_support');
+                $query->orderByRaw('CASE WHEN is_admin = 1 OR is_support = 1 THEN id END ASC');
+            } else {
+                $query->orderByRaw('CASE WHEN is_admin = 1 THEN id END ASC');
+            }
+            $users = $query->orderByDesc('rating')
+                ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
+                ->get($cols);
 
-        $list = $users->map(fn ($u) => [
-            'id'      => $u->id,
-            'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
-            'avatar'  => $u->avatar,
-            'frame'   => $u->avatar_frame,
-            'country' => $u->country,
-            'rating'  => $u->rating ?? 1500,
-            'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
-            'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
-            'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
-            'status'  => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
-            'in_game' => isset($inGameSet[(int) $u->id]), // aktif maçta -> "Oyna" butonu gizlenir
-        ]);
+            // AKTİF MAÇTA MI: p1/p2 olduğu 'playing' bir oda varsa (BOT dahil — YZ maçı da sayılır).
+            // Bu oyuncularda "Oyna" (davet) butonu gizlenir (zaten oyunda). Tek sorgu, id kümesi.
+            $userIds = $users->pluck('id');
+            $inGameSet = [];
+            if ($userIds->isNotEmpty()) {
+                Room::where('status', 'playing')
+                    ->where('updated_at', '>', now()->subMinutes(5))
+                    ->where(function ($q) use ($userIds) {
+                        $q->whereIn('p1_user_id', $userIds)->orWhereIn('p2_user_id', $userIds);
+                    })
+                    ->get(['p1_user_id', 'p2_user_id'])
+                    ->each(function ($r) use (&$inGameSet) {
+                        if ($r->p1_user_id) {
+                            $inGameSet[(int) $r->p1_user_id] = true;
+                        }
+                        if ($r->p2_user_id) {
+                            $inGameSet[(int) $r->p2_user_id] = true;
+                        }
+                    });
+            }
 
-        return response()->json(['players' => $list, 'count' => $list->count()]);
+            $list = $users->map(fn ($u) => [
+                'id'      => $u->id,
+                'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar'  => $u->avatar,
+                'frame'   => $u->avatar_frame,
+                'country' => $u->country,
+                'rating'  => $u->rating ?? 1500,
+                'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
+                'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
+                'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
+                'status'  => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
+                'in_game' => isset($inGameSet[(int) $u->id]), // aktif maçta -> "Oyna" butonu gizlenir
+            ])->values()->all();
+
+            return ['players' => $list, 'count' => count($list)];
+        });
+
+        return response()->json($payload);
     }
 
     // Oyun Arayanlar: (1) hizli eslesme havuzunda (mm_waiting) AKTIF arayanlar + (2) oynamaya
