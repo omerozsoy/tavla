@@ -1080,66 +1080,10 @@ class RoomController extends Controller
             ];
         });
 
-        // Oynamaya MUSAIT: YALNIZCA durumu "Oyuna Hazir" (presence_status='ready') + cevrimici
-        // (last_seen<70sn) + oyunda DEGIL + arayan listesinde DEGIL + sistem/kendisi DEGIL. Bunlar
-        // kuyrukta degil -> "davet" (onInvite) ile oynanir; seeking gibi "eslesme" yapilmaz.
-        // presence_status kolonu YOKSA (migrate kosmadi) "hazir" dogrulanamaz -> musait listesi bos.
-        $seekingIds = $rooms->pluck('p1_user_id')->filter()->map(fn ($i) => (int) $i)->all();
-        $hasStatus = Schema::hasColumn('users', 'presence_status');
-        $avUsers = collect();
-        if ($hasStatus) {
-            $ucols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'presence_status'];
-            $avUsers = User::whereNotNull('last_seen')
-                ->where('is_system', false)
-                ->notDeleted()
-                ->where('last_seen', '>', now()->subSeconds(70))
-                ->where('presence_status', 'ready') // SADECE "Oyuna Hazir"
-                ->when($me, fn ($q) => $q->where('id', '!=', $me->id))
-                ->when(! empty($seekingIds), fn ($q) => $q->whereNotIn('id', $seekingIds))
-                ->orderByDesc('rating')
-                ->limit(100)
-                ->get($ucols);
-        }
-
-        // Aktif macta olanlar musait sayilmaz (onlinePlayers deseni, tek sorgu).
-        $avIds = $avUsers->pluck('id');
-        $inGame = [];
-        if ($avIds->isNotEmpty()) {
-            Room::where('status', 'playing')
-                ->where('updated_at', '>', now()->subMinutes(5))
-                ->where(fn ($q) => $q->whereIn('p1_user_id', $avIds)->orWhereIn('p2_user_id', $avIds))
-                ->get(['p1_user_id', 'p2_user_id'])
-                ->each(function ($r) use (&$inGame) {
-                    if ($r->p1_user_id) {
-                        $inGame[(int) $r->p1_user_id] = true;
-                    }
-                    if ($r->p2_user_id) {
-                        $inGame[(int) $r->p2_user_id] = true;
-                    }
-                });
-        }
-
-        $available = $avUsers->reject(fn ($u) => isset($inGame[(int) $u->id]))->map(fn ($u) => [
-            'kind'    => 'available',
-            'id'      => (int) $u->id,
-            'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
-            'rating'  => $u->rating ?? 1500,
-            'avatar'  => $u->avatar,
-            'frame'   => $u->avatar_frame,
-            'country' => $u->country,
-            'premium' => $u->plan_active !== 'free',
-            'targets' => [],
-            'stake'   => 0,
-            'stakes'  => [],
-            'bet_pct' => 0,
-            'risk'    => 0,
-            'classic' => false, // "müsait" oyuncu (davet edilecek) — mod davet anında seçilir
-            'time_control' => 'normal',
-            'since'   => null,
-        ])->values();
-
-        // Arayanlar ONCE (aktif), sonra musaitler. Panel 10'ar sayfalar.
-        $all = $seeking->values()->concat($available);
+        // YALNIZCA aktif arayanlar (havuzda "eslesme" bekleyen). "Oyuna Hazir" (presence_status
+        // ='ready') oyuncular bu listede GOSTERILMEZ — onlar Cevrimici Oyuncular panelinden davet
+        // edilir, Oyun Arayanlar kuyrugu degildir.
+        $all = $seeking->values();
 
         return response()->json(['seekers' => $all->values(), 'count' => $all->count()]);
     }
