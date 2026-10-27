@@ -79,7 +79,7 @@ class UserResource extends Resource
                 // sessizce ezer (hesap ele gecirme). Bos birakinca degismez, dolu olani autofill degil
                 // yalniz ELLE yazilan deger olur.
                 Forms\Components\TextInput::make('password')->label('Yeni şifre')
-                    ->password()->dehydrated(fn ($state) => filled($state))
+                    ->password()->revealable()->dehydrated(fn ($state) => filled($state))
                     ->autocomplete('new-password')
                     ->extraInputAttributes(['data-lpignore' => 'true', 'data-1p-ignore' => 'true'])
                     ->required(fn (string $operation) => $operation === 'create')
