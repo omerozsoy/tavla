@@ -222,7 +222,7 @@ function ProductDetail({
       qty,
     })
     setAdded(true)
-    toast.success(t('products.addedToCart'))
+    // Toast'ı çağıran (App.addProductToCart) gösterir -> burada tekrar gösterme (çift bildirim).
   }
 
   const out = product.stock <= 0

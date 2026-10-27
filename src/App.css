@@ -21361,6 +21361,10 @@ body:has(.spectate-view) .app.lobby {
   align-items: flex-start;
   gap: 2px;
 }
+/* Uzun duyuru: tum govde tek tikla ac/kapa (akordion). */
+.tourn-announce-body.is-toggle {
+  cursor: pointer;
+}
 .tourn-announce-msg {
   min-width: 0;
   white-space: pre-wrap;

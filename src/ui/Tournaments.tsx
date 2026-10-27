@@ -53,18 +53,27 @@ function TournAnnounceItem({ a }: { a: { id: number; message: string; at: string
   return (
     <li className="tourn-announce-item">
       <Icon name="bell" size={15} className="tourn-announce-ic" />
-      <div className="tourn-announce-body">
+      <div
+        className={`tourn-announce-body${long ? ' is-toggle' : ''}`}
+        {...(long && {
+          role: 'button',
+          tabIndex: 0,
+          'aria-expanded': open,
+          'aria-label': 'Duyuru metnini aç/kapat',
+          onClick: () => setOpen((v) => !v),
+          onKeyDown: (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setOpen((v) => !v)
+            }
+          },
+        })}
+      >
         <span className={`tourn-announce-msg${long && !open ? ' is-clamped' : ''}`}>{a.message}</span>
         {long && (
-          <button
-            type="button"
-            className={`tourn-announce-toggle${open ? ' is-open' : ''}`}
-            aria-expanded={open}
-            aria-label="Duyuru metnini aç/kapat"
-            onClick={() => setOpen((v) => !v)}
-          >
+          <span className={`tourn-announce-toggle${open ? ' is-open' : ''}`} aria-hidden="true">
             <Icon name="chevron" size={16} />
-          </button>
+          </span>
         )}
       </div>
       {a.at && (

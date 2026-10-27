@@ -10560,7 +10560,8 @@ export default function App() {
 
   // "Hata Bildir": sağ kenar sabit sekme butonu + form (kendi portalıyla body'ye taşınır).
   // OYUN görünümünde (game-view return'ü) RENDER ETMEYİZ -> oyun sırasında üstte kalmaz.
-  const bugReport = <BugReport currentPage={activeKey ? menuLabel(activeKey) : undefined} loggedIn={!!user} />
+  // Mağaza (shopOpen) ve Sepet (cartOpen) modalleri açıkken sabit FAB'ı gizle (kullanıcı isteği).
+  const bugReport = <BugReport currentPage={activeKey ? menuLabel(activeKey) : undefined} loggedIn={!!user} hideFab={shopOpen || cartOpen} />
 
   // LOBİ İSKELETİ (TEK KAYNAK): tüm "app lobby" sayfaları LobbyLayout kullanır -> footer + kabuk
   // tek yerden gelir (footer'sız sayfa kök sebebi kapandı). chrome closure'lu bileşenleri bir kez
