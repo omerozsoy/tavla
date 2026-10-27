@@ -17,6 +17,14 @@ class CheatScanTest extends TestCase
 
     private int $roomSeq = 0;
 
+    /** Suspect olabilmesi için gereken ≥SUSPECT_MIN_FLAGS (5) uzun-düşük (flag'li) maçı ekle. */
+    private function flagSuspect(int $userId): void
+    {
+        foreach ([0.8, 1.2, 0.9, 1.4, 1.1] as $pr) {
+            $this->match($userId, $pr, 90 + (int) ($pr * 10));
+        }
+    }
+
     private function match(int $userId, float $pr, int $decisions): void
     {
         DB::table('match_results')->insert([
@@ -243,8 +251,7 @@ class CheatScanTest extends TestCase
     {
         $cheat = User::factory()->create(['nickname' => 'Suspect']);
         $clean = User::factory()->create();
-        $this->match($cheat->id, 0.8, 90); // suspect için ≥2 uzun-düşük maç (tek maç = varyans, elenir)
-        $this->match($cheat->id, 1.2, 110);
+        $this->flagSuspect($cheat->id); // suspect için ≥5 uzun-düşük maç (az maç = varyans, elenir)
         for ($i = 0; $i < 5; $i++) {
             $this->match($clean->id, 9.0, 60);
         }
@@ -254,13 +261,27 @@ class CheatScanTest extends TestCase
         $this->assertSame($cheat->id, $suspects[0]['user_id']);
     }
 
+    public function test_needs_at_least_five_flags_to_be_listed(): void
+    {
+        // 4 şüpheli maç = listede DEĞİL; 5. gelince listeye girer (SUSPECT_MIN_FLAGS = 5).
+        $u = User::factory()->create(['nickname' => 'Borderline']);
+        foreach ([0.8, 1.2, 0.9, 1.4] as $pr) {
+            $this->match($u->id, $pr, 95);
+        }
+        $this->assertCount(0, CheatScan::suspects(), '4 flag listeye girmemeli');
+
+        $this->match($u->id, 1.1, 95); // 5. flag
+        $suspects = CheatScan::suspects();
+        $this->assertCount(1, $suspects);
+        $this->assertSame(5, $suspects[0]['flags']);
+    }
+
     public function test_closed_account_is_excluded_but_blocked_stays(): void
     {
         $closed = User::factory()->create(['nickname' => 'Closed']);
         $blocked = User::factory()->create(['nickname' => 'Blocked']);
         foreach ([$closed, $blocked] as $u) {
-            $this->match($u->id, 0.8, 90);
-            $this->match($u->id, 1.2, 110);
+            $this->flagSuspect($u->id);
         }
         $this->assertCount(2, CheatScan::suspects());
 
@@ -289,8 +310,7 @@ class CheatScanTest extends TestCase
         $deleted = User::factory()->create(['nickname' => 'silinmis402', 'ban_reason' => 'account_deleted', 'banned_at' => now()]);
         $live = User::factory()->create(['nickname' => 'Live']);
         foreach ([$deleted, $live] as $u) {
-            $this->match($u->id, 0.8, 90);
-            $this->match($u->id, 1.2, 110);
+            $this->flagSuspect($u->id);
         }
 
         $suspects = CheatScan::suspects();
@@ -301,8 +321,7 @@ class CheatScanTest extends TestCase
     public function test_whitelisted_user_is_excluded(): void
     {
         $cheat = User::factory()->create(['nickname' => 'Suspect']);
-        $this->match($cheat->id, 0.8, 90);
-        $this->match($cheat->id, 1.2, 110);
+        $this->flagSuspect($cheat->id);
         $this->assertCount(1, CheatScan::suspects());
 
         CheatScan::setWhitelisted($cheat->id, true);

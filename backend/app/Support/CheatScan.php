@@ -51,8 +51,9 @@ class CheatScan
     /** Bimodal maç yine de bu tavanın altında olmalı (iyi-ama-normal maçı bimodal sanmamak için). */
     public const BIMODAL_PR_CEILING = 3.0;
 
-    /** Panel rozeti / otomatik işaretleme için hesap en az bu kadar şüpheli maça sahip olmalı (tek maç = varyans). */
-    public const SUSPECT_MIN_FLAGS = 2;
+    /** Listeye (suspects) girmek için hesap en az bu kadar şüpheli (flag'li) maça sahip olmalı. Az maç =
+     *  varyans/yanlış-pozitif; 5+ tekrar gerçek sinyali ayırır. Profil verdict eşiğinden bağımsızdır (bkz profile()). */
+    public const SUSPECT_MIN_FLAGS = 5;
 
     /** HAVUZLANMIŞ hamle-hamle motor eşleşmesi bu %'nin üstündeyse KANIT → "kesin suçlu". Canlı
      *  kalibrasyon (2026-10-27): güçlü İNSAN havuzda en fazla ~%82; gerçek motor ~%97. %90 = güvenli
@@ -239,7 +240,9 @@ class CheatScan
         if ($n >= self::MIN_MEDIAN_SAMPLE && $median < self::PR_WORLD_CHAMPION) {
             $verdict = 'consistent';
             $reason = 'SÜREKLİ motor şüphesi: medyan PR '.round($median, 1).' — oyuncu ~TÜM maçlarında dünya-şampiyonu ('.self::PR_WORLD_CHAMPION.') seviyesinin altında oynuyor. Bu rating/seviyede bir insan 60+ kararlı maçlarda bunu tutturamaz; düşük varyans (std '.round($std, 1).') makine tutarlılığıdır.';
-        } elseif ($belowEngine >= self::SUSPECT_MIN_FLAGS || $belowWc >= self::SUSPECT_MIN_FLAGS * 2) {
+            // Verdict eşiği liste barından (SUSPECT_MIN_FLAGS) BAĞIMSIZ: 2+ motor-eşiği ya da 4+ şampiyon-altı
+            // maç = seçici (iki-tepeli) imza — zaten listeye giren hesabın profil anlatısıdır.
+        } elseif ($belowEngine >= 2 || $belowWc >= 4) {
             $verdict = 'selective';
             $reason = 'SEÇİCİ motor şüphesi: medyan PR '.round($median, 1).' (normal) AMA '.$belowWc.' maç dünya-şampiyonu çizgisinin ('.self::PR_WORLD_CHAMPION.') altında, '.$belowEngine.' tanesi motor-eşiğinin ('.self::PR_ABSOLUTE.') altında. İki-tepeli yapı = bazı maçta motor açık, bazısında elle.';
         } else {
