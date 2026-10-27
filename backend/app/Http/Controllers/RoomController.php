@@ -2,20 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\TourneyBots;
 use App\Events\RoomUpdated;
+use App\Jobs\SendPushJob;
+use App\Jobs\WarmMatchAnalysisJob;
+use App\Models\ChatReport;
+use App\Models\Commission;
+use App\Models\MatchMove;
+use App\Models\MatchResult;
+use App\Models\Notification;
 use App\Models\Room;
+use App\Models\RoomCommand;
+use App\Models\Setting;
+use App\Models\Tournament;
 use App\Models\User;
 use App\Services\BotMoveService;
 use App\Services\BotUnavailableException;
 use App\Services\FairDiceService;
 use App\Services\MatchClock;
 use App\Services\MoveValidatorService;
+use App\Services\WalletService;
 use App\Support\Backgammon;
+use App\Support\ChatModeration;
+use App\Support\ForfeitLoss;
+use App\Support\MatchFinalize;
+use App\Support\MoveNotation;
+use App\Support\RatingPolicy;
 use App\Support\RoomAccess;
+use App\Support\SeededOpening;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RoomController extends Controller
 {
@@ -24,6 +46,7 @@ class RoomController extends Controller
     // Giriş şartı + escrow bu en kötü senaryoyu baştan rezerve eder -> küp kaçıncıya çıkarsa çıksın
     // kazanan TAM ödenir (per-double bakiye kontrolü gerekmez). Para oyunu = stake>0 && bet_pct==0 && target<=1.
     private const MONEY_CUBE_MAX = 16;
+
     private const MONEY_WORST_MULT = 48; // = MONEY_CUBE_MAX × 3 (backgammon)
 
     // POLL YAZIM THROTTLE (anlık yavaşlık / DB yük fix): her poll (~1.2sn) presence _seen için
@@ -43,6 +66,7 @@ class RoomController extends Controller
                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
             }
         } while (Room::where('code', $code)->exists());
+
         return $code;
     }
 
@@ -226,7 +250,7 @@ class RoomController extends Controller
             // başlamış/bitmiş) -> banner zaten göstermez (ping rooms-join) + respond joinable=false.
             // DB'de birikmesinler (ping 2dk penceresi ile cleanup 10dk arasındaki 'pending' cruft'ı
             // kapat). >2dk gate: davet-gönder anı "oda henüz kurulmadı" yarış penceresini KORU.
-            \Illuminate\Support\Facades\DB::table('game_invites')
+            DB::table('game_invites')
                 ->where('status', 'pending')
                 ->where('created_at', '<', now()->subMinutes(2))
                 ->whereNotExists(function ($q) {
@@ -236,12 +260,12 @@ class RoomController extends Controller
                 })
                 ->update(['status' => 'expired', 'updated_at' => now()]);
             // Çok eski (>10dk) TÜM davetleri sil (hygiene backstop).
-            \Illuminate\Support\Facades\DB::table('game_invites')
+            DB::table('game_invites')
                 ->where('created_at', '<', now()->subMinutes(10))
                 ->delete();
         } catch (\Throwable $e) {
             // temizlik best-effort; hata olsa da akisi bozma ama sessizce yutma -> logla
-            \Illuminate\Support\Facades\Log::warning('room.cleanupStale failed', ['err' => $e->getMessage()]);
+            Log::warning('room.cleanupStale failed', ['err' => $e->getMessage()]);
         }
     }
 
@@ -357,6 +381,7 @@ class RoomController extends Controller
             if ($mineStakes === $stakes) {
                 return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
             }
+
             return $this->fail('Zaten aktif bir eşleşme bekliyorsun. Önce onu iptal et.', 409);
         }
 
@@ -503,6 +528,7 @@ class RoomController extends Controller
                             ->where('user_id', $cand->p1_user_id)
                             ->delete();
                     }
+
                     continue;
                 }
                 // HARD GARANTİ: genel maç koltuğu (bahisli+ücretsiz, iki oyuncu). Biri zaten başka
@@ -512,9 +538,11 @@ class RoomController extends Controller
                     || ! Room::claimMatchSeat($userId, (int) $cand->id)) {
                     DB::table('active_money_match_claims')->where('room_id', $cand->id)->delete();
                     Room::releaseMatchSeats((int) $cand->id);
+
                     continue;
                 }
                 $cand->save();
+
                 return $cand;
             }
 
@@ -529,6 +557,7 @@ class RoomController extends Controller
             $this->pushToUser((int) $opponent->p1_user_id, 'Rakibin hazır', 'Eşleşme bulundu — maç başlıyor!', [
                 'type' => 'match_ready', 'room' => $opponent->code,
             ]);
+
             return response()->json(['room' => $opponent->toClient(), 'slot' => 'p2', 'matched' => true]);
         }
 
@@ -592,8 +621,10 @@ class RoomController extends Controller
                 // -> ön-kontrol geçer ama claim reddeder. Bu 500 DEĞİL, normal 409: yeni odayı
                 // geri al (tx içinde net-sıfır) ve "zaten aktif" 409 yoluna düş.
                 $created->delete();
+
                 return null;
             }
+
             return $created;
         });
         if (! $room) {
@@ -639,13 +670,16 @@ class RoomController extends Controller
         }
         if ($out['pending'] ?? false) {
             $caller = User::find($callerId);
+
             return response()->json(['ok' => false, 'pending' => true, 'coins' => $caller?->coins ?? 0]);
         }
         if ($out['already'] ?? false) {
             $caller = User::find($callerId);
+
             return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
         }
         $caller = User::find($callerId);
+
         return response()->json([
             'ok' => true,
             'coins' => $caller?->coins ?? 0,
@@ -691,7 +725,7 @@ class RoomController extends Controller
         $escrowed = Schema::hasColumn('rooms', 'escrowed') ? (bool) $room->escrowed : false;
         // KOMISYON (rake): kazanan stake × (1 − oran) alır; fark commissions ledger'ına yazılır.
         // Oran admin 'commission_pct' ayarından (varsayılan config; 0..90 kırpılır).
-        $commissionPct = max(0, min(90, \App\Models\Setting::int('commission_pct', (int) config('game.commission_pct', 5))));
+        $commissionPct = max(0, min(90, Setting::int('commission_pct', (int) config('game.commission_pct', 5))));
         $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed, $commissionPct, $room) {
             // Yalnizca ilk cagri coin tasir (+ escrowed'u da bir kez false yap = rezerv bırakma claim'i)
             // MariaDB CHECK constraint requires a settled room to be terminal in the
@@ -699,7 +733,7 @@ class RoomController extends Controller
             $claimUpdate = [
                 'settled' => true,
                 'status' => 'finished',
-                'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
+                'version' => DB::raw('version + 1'),
             ];
             if ($escrowed) {
                 $claimUpdate['escrowed'] = false;
@@ -733,7 +767,7 @@ class RoomController extends Controller
                 // E_WARNING -> Laravel ErrorException -> HTTP 500). Doğrudan pending 409 dön.
                 // (Snapshot rematch'te betPct için kurulmadığından kaybolabiliyordu; artık kuruluyor.)
                 if ($snapshot === null) {
-                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                    throw new HttpException(
                         409, 'Percentage stake snapshot missing; settlement is pending.'
                     );
                 }
@@ -741,7 +775,7 @@ class RoomController extends Controller
                 $lBet = $snapshot[(string) $loserId] ?? null;
                 if ((! is_int($wBet) && ! ctype_digit((string) $wBet))
                     || (! is_int($lBet) && ! ctype_digit((string) $lBet))) {
-                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                    throw new HttpException(
                         409, 'Percentage stake snapshot missing; settlement is pending.'
                     );
                 }
@@ -765,7 +799,7 @@ class RoomController extends Controller
             // Never make a silent partial payout when the locked stake is unavailable.
             // Throwing here rolls back the earlier settled claim in the same transaction.
             if ($loser && (int) ($loser->coins ?? 0) < $amount) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                throw new HttpException(
                     409, 'Loser balance is below the locked stake; settlement is pending.'
                 );
             }
@@ -784,21 +818,22 @@ class RoomController extends Controller
                     $loser->coins_reserved = max(0, (int) ($loser->coins_reserved ?? 0) - $relAmt);
                     $loser->save();
                 }
-                app(\App\Services\WalletService::class)->debit($loser, $debit, 'match_settlement_debit', Room::class, $room->id);
+                app(WalletService::class)->debit($loser, $debit, 'match_settlement_debit', Room::class, $room->id);
             }
             if ($winner) {
-                app(\App\Services\WalletService::class)->credit($winner, $winnerGets, 'match_settlement_credit', Room::class, $room->id);
+                app(WalletService::class)->credit($winner, $winnerGets, 'match_settlement_credit', Room::class, $room->id);
                 if ($escrowed && $stake > 0) {
                     $winner->coins_reserved = max(0, (int) ($winner->coins_reserved ?? 0) - $relAmt);
                     $winner->save();
                 }
             }
             if ($commission > 0) {
-                \App\Models\Commission::create([
+                Commission::create([
                     'room_code' => $code, 'winner_id' => $winnerId, 'loser_id' => $loserId,
                     'stake' => $debit, 'commission' => $commission, 'pct' => $commissionPct,
                 ]);
             }
+
             return ['amount' => $debit, 'commission' => $commission, 'won_amount' => $winnerGets];
         });
 
@@ -1004,16 +1039,16 @@ class RoomController extends Controller
             }
 
             $list = $users->map(fn ($u) => [
-                'id'      => $u->id,
-                'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
-                'avatar'  => $u->avatar,
-                'frame'   => $u->avatar_frame,
+                'id' => $u->id,
+                'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar' => $u->avatar,
+                'frame' => $u->avatar_frame,
                 'country' => $u->country,
-                'rating'  => $u->rating ?? 1500,
+                'rating' => $u->rating ?? 1500,
                 'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
                 'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
                 'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
-                'status'  => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
+                'status' => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
                 'in_game' => isset($inGameSet[(int) $u->id]), // aktif maçta -> "Oyna" butonu gizlenir
             ])->values()->all();
 
@@ -1068,22 +1103,22 @@ class RoomController extends Controller
             $risk = (int) $r->bet_pct > 0 ? (int) floor($seekerAvail * (int) $r->bet_pct / 100) : $maxStake;
 
             return [
-                'kind'    => 'seeking', // havuzda aktif arayan -> "eslesme"ye tiklanabilir
-                'id'      => (int) $r->p1_user_id,
-                'name'    => $r->p1_name,
-                'rating'  => $r->p1_rating,
-                'avatar'  => $r->p1_avatar,
-                'frame'   => $u?->avatar_frame,
+                'kind' => 'seeking', // havuzda aktif arayan -> "eslesme"ye tiklanabilir
+                'id' => (int) $r->p1_user_id,
+                'name' => $r->p1_name,
+                'rating' => $r->p1_rating,
+                'avatar' => $r->p1_avatar,
+                'frame' => $u?->avatar_frame,
                 'country' => $u?->country,
                 'premium' => $u ? $u->plan_active !== 'free' : false,
                 'targets' => $targets ?: [1],
-                'stake'   => (int) $r->stake,
-                'stakes'  => $stakes,
+                'stake' => (int) $r->stake,
+                'stakes' => $stakes,
                 'bet_pct' => (int) $r->bet_pct,
-                'risk'    => $risk, // arayanın riske ettiği tutar (istemci kendi riskiyle min'ler = gerçek pot)
+                'risk' => $risk, // arayanın riske ettiği tutar (istemci kendi riskiyle min'ler = gerçek pot)
                 'classic' => (bool) ($r->classic ?? false), // Klasik Tavla: rozet + "eşleş" aynı moda katar
                 'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
-                'since'   => optional($r->created_at)->toIso8601String(),
+                'since' => optional($r->created_at)->toIso8601String(),
             ];
         });
 
@@ -1101,7 +1136,7 @@ class RoomController extends Controller
     // satırlarından renge (hc) göre eşlenir. Hazır değilse {ready:false} (henüz analiz yok / servis yok).
     public function roomSummary(Request $request, string $code)
     {
-        $rows = \App\Models\MatchResult::where('room_code', $code)->latest('id')->get();
+        $rows = MatchResult::where('room_code', $code)->latest('id')->get();
         if ($rows->isEmpty()) {
             return response()->json(['ready' => false]);
         }
@@ -1131,13 +1166,13 @@ class RoomController extends Controller
                 continue;
             }
             $authPr[$hc] = [
-                'pr'      => $r->gnubg_pr,
+                'pr' => $r->gnubg_pr,
                 'checker' => $r->gnubg_checker_pr,
-                'cube'    => $r->gnubg_cube_pr,
+                'cube' => $r->gnubg_cube_pr,
             ];
             $luck[$hc] = [
-                'mwc'    => $r->luck_mwc,
-                'cost'   => $r->luck_emg,
+                'mwc' => $r->luck_mwc,
+                'cost' => $r->luck_emg,
                 'jokers' => $r->luck_jokers,
             ];
         }
@@ -1153,21 +1188,21 @@ class RoomController extends Controller
             }
             $prog = Cache::get('pr:progress:'.$r->id);
             if (is_array($prog) && (int) ($prog['total'] ?? 0) > 0) {
-                $pd  = max(0, (int) ($prog['done'] ?? 0));
-                $pt  = (int) $prog['total'];
+                $pd = max(0, (int) ($prog['done'] ?? 0));
+                $pt = (int) $prog['total'];
                 $pct = (int) floor(min(100, $pd * 100 / $pt));
                 $progressPct = $progressPct === null ? $pct : min($progressPct, $pct);
             }
         }
 
         return response()->json([
-            'ready'       => true,
-            'log'         => $review['log'] ?? [],
-            'names'       => $review['names'] ?? null,
+            'ready' => true,
+            'log' => $review['log'] ?? [],
+            'names' => $review['names'] ?? null,
             'matchLength' => $review['matchLength'] ?? null,
-            'luck'        => $luck,
-            'authPr'      => $authPr,
-            'progress'    => $progressPct, // int %% | null (PR hazır değilken gerçek analiz oranı)
+            'luck' => $luck,
+            'authPr' => $authPr,
+            'progress' => $progressPct, // int %% | null (PR hazır değilken gerçek analiz oranı)
         ]);
     }
 
@@ -1263,7 +1298,7 @@ class RoomController extends Controller
         // rejoin isaretci koymadan girip kendi macini "başka oyun" sanıp confirmLeave ile
         // HÜKMEN terke suruklúyordu (mass-forfeit kok nedeni).
         $tournByCode = [];
-        foreach (\App\Models\Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
+        foreach (Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
             foreach (($tr->bracket ?? []) as $round) {
                 foreach ($round as $m) {
                     if (! empty($m['room'])) {
@@ -1287,6 +1322,7 @@ class RoomController extends Controller
             $oppId = $mine === 'p1' ? $r->p2_user_id : $r->p1_user_id;
             $score = $r->state['match']['score'] ?? null;
             $tinfo = $tournByCode[$r->code] ?? null;
+
             return [
                 'code' => $r->code,
                 'slot' => $mine,
@@ -1318,6 +1354,7 @@ class RoomController extends Controller
                 return true;
             }
             $mx = max((int) ($s['white'] ?? 0), (int) ($s['black'] ?? 0));
+
             return $mx < $t;
         })->values();
 
@@ -1383,7 +1420,7 @@ class RoomController extends Controller
         // SUNUCU-OTORİTER ANINDA SONLANDIRMA: terk/timeout/decided biten maçta da HER İKİ satırı aç
         // + PR/şans analizini match_moves'tan hemen tetikle (raporsuz oyuncu da saniyeler içinde dolar).
         if ($reason === 'decided') {
-            \App\Support\MatchFinalize::run($room->fresh() ?? $room);
+            MatchFinalize::run($room->fresh() ?? $room);
         }
         // EKONOMİK KAPANIŞ (orphan önleme): bahisli maç terminal olunca settle'ı yalnız istemciye
         // BIRAKMA — sunucuda ANINDA dene. Idempotent (settled=false claim); kazanan çözülemezse
@@ -1412,6 +1449,7 @@ class RoomController extends Controller
         if (Schema::hasTable('active_money_match_claims')) {
             DB::table('active_money_match_claims')->where('user_id', $user->id)->delete();
         }
+
         return $this->ok();
     }
 
@@ -1465,6 +1503,7 @@ class RoomController extends Controller
             }
             if ($joinHostId && ! Room::claimMatchSeat($joinHostId, $room->id)) {
                 Room::releaseUserMatchSeat((int) $joinUserId, $room->id);
+
                 return $this->fail('Rakip zaten başka bir maçta.', 409);
             }
             // A-15: ikinci koltuk ATOMİK sahiplenilir (enter() ile aynı koşullu-UPDATE deseni). Eskiden
@@ -1482,6 +1521,7 @@ class RoomController extends Controller
                 ]);
             if (! $claimed) {
                 Room::releaseUserMatchSeat((int) $joinUserId, $room->id); // odayı alamadım -> kendi koltuğumu bırak
+
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();
@@ -1504,7 +1544,7 @@ class RoomController extends Controller
             // otoriter istemci ilk roll'a kadar boş/mavi ekranda kalmasın. Idempotent.
             if ($room->authoritative && $room->server_state === null) {
                 $room->server_match = $this->initServerMatch($room);
-                $room->server_state = \App\Support\Backgammon::initialState();
+                $room->server_state = Backgammon::initialState();
                 $room->server_version = 0;
             }
             $room->save();
@@ -1630,6 +1670,7 @@ class RoomController extends Controller
             }
             if ($hostId && ! Room::claimMatchSeat($hostId, $room->id)) {
                 Room::releaseUserMatchSeat((int) $enterUserId, $room->id);
+
                 return $this->fail('Rakip zaten başka bir maçta.', 409);
             }
             // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
@@ -1661,6 +1702,7 @@ class RoomController extends Controller
                 ->update($upd);
             if ($claimed === 0) {
                 Room::releaseUserMatchSeat((int) $enterUserId, $room->id); // odayı alamadım -> kendi koltuğumu bırak
+
                 return $this->fail('Oda dolu.', 409);
             }
             $room->refresh();
@@ -1675,7 +1717,7 @@ class RoomController extends Controller
             // (bot odaları birebir böyle). Idempotent: yalnız henüz kurulmadıysa.
             if ($room->authoritative && $room->server_state === null) {
                 $room->server_match = $this->initServerMatch($room);
-                $room->server_state = \App\Support\Backgammon::initialState();
+                $room->server_state = Backgammon::initialState();
                 $room->server_version = 0;
                 $room->save();
             }
@@ -1687,7 +1729,7 @@ class RoomController extends Controller
     // Oda durumunu getir (polling). ?since=version verilirse degismediyse 204.
     public function show(Request $request, string $code)
     {
-        \App\Console\Commands\TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
+        TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
@@ -2015,6 +2057,7 @@ class RoomController extends Controller
             // bir turnuva maci varsa) -> kaybeden oyuncu para macindan cezasiz kacamaz.
             'tournament' => ['nullable', 'boolean'],
         ]);
+
         // A-14: oda satırı KİLİTLİ okunur -> eşzamanlı hamle/pes/poll ile terk kararı yarışmaz
         // (bayat kopya save() edilip bir hamlenin/kazananın üzerine yazılmaz).
         return DB::transaction(function () use ($data, $code, $request) {
@@ -2068,7 +2111,7 @@ class RoomController extends Controller
         if (! $userId) {
             return false;
         }
-        foreach (\App\Models\Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
+        foreach (Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
             foreach (($tr->bracket ?? []) as $round) {
                 foreach ($round as $m) {
                     if (empty($m['winner']) && ! empty($m['p1']['id']) && ! empty($m['p2']['id'])
@@ -2129,7 +2172,7 @@ class RoomController extends Controller
                     $gameNo = is_array($score)
                         ? (int) ($score['white'] ?? 0) + (int) ($score['black'] ?? 0)
                         : 0;
-                    $openingKey = $this->diceBaseKey(\App\Support\SeededOpening::dice($room->code, $gameNo));
+                    $openingKey = $this->diceBaseKey(SeededOpening::dice($room->code, $gameNo));
 
                     $mismatch = ($newDiceKey !== $openKey && $newDiceKey !== $openingKey);
                     if ($mismatch) {
@@ -2139,7 +2182,7 @@ class RoomController extends Controller
                         }
                         // SHADOW: reddetme ama LOGLA -> canlıda enforce açmadan önce yanlış-red
                         // (meşru oyunu kıracak edge-case) var mı gör. Beklenen: hiç log olmamalı.
-                        \Illuminate\Support\Facades\Log::warning('dice.shadow-mismatch', [
+                        Log::warning('dice.shadow-mismatch', [
                             'room' => $room->code, 'slot' => $slot, 'played' => $newDiceKey,
                             'open' => $openKey, 'opening' => $openingKey, 'gameNo' => $gameNo,
                         ]);
@@ -2431,7 +2474,7 @@ class RoomController extends Controller
         }
         $ss = is_array($room->server_state) ? $room->server_state : [];
         $sm = is_array($room->server_match) ? $room->server_match : [];
-        $winner = $ss ? \App\Support\Backgammon::winner($ss) : null;
+        $winner = $ss ? Backgammon::winner($ss) : null;
         $clockState = [
             'turnStart' => ['turn' => $ss['turn'] ?? 'white'],
             'played' => [],
@@ -2597,7 +2640,11 @@ class RoomController extends Controller
     {
         $end = $clock['end'];
         $winnerSlot = $end['winner']; // 'p1'|'p2'
-        $reason = $end['reason'];     // TIMEOUT|AFK_TIMEOUT
+        $reason = $end['reason'];     // TIMEOUT|AFK_TIMEOUT|ABANDON|ADMIN_KICK
+        // FORCE (yalnız ADMIN_KICK): yönetici kararı kesindir -> adil-oyun kalkanlarını (ghost-win
+        // no-contest indirimi) ATLA. Böylece rakip hiç hamle yapmamış olsa bile ATILAN kesin kaybeder
+        // ("atılan kişi puan kaybeder" sözünü harfiyen tutar). Bot/decidedColor korumaları aynen kalır.
+        $force = ! empty($end['force']);
         // KORUMA: maç oynanışta zaten sonuçlandıysa geç timeout/AFK sinyali kazananı TERS
         // çeviremez -> GERÇEK kazananı kullan (ForfeitLoss yanlış kaybedeni yazmasın). Karar yoksa
         // (henüz bitmemiş meşru timeout) saatin belirlediği kazanan geçerli kalır.
@@ -2625,11 +2672,11 @@ class RoomController extends Controller
         // -> NO-CONTEST'e indir (puan/coin/rating YOK, ForfeitLoss YOK). decidedWinnerColor (gerçek
         // skor hedefte) varsa buraya GİRMEZ. SÖMÜRÜ YOK: hamleler sunucu-otoriter (match_moves),
         // rakibin 0-hamlesini zorlayamazsın; "1 hamle yap-kaç" da no-contest olur (kimse kazanmaz).
-        if ($winnerSlot !== null && $decidedColor === null && \App\Models\MatchMove::existsForRoom($room->code)) {
+        if (! $force && $winnerSlot !== null && $decidedColor === null && MatchMove::existsForRoom($room->code)) {
             $wColor = $winnerSlot === 'p1' ? 'white' : 'black';
             $lColor = $winnerSlot === 'p1' ? 'black' : 'white';
-            if (! \App\Models\MatchMove::colorPlayed($room->code, $wColor)
-                && \App\Models\MatchMove::colorPlayed($room->code, $lColor)) {
+            if (! MatchMove::colorPlayed($room->code, $wColor)
+                && MatchMove::colorPlayed($room->code, $lColor)) {
                 $winnerSlot = null;
             }
         }
@@ -2666,7 +2713,7 @@ class RoomController extends Controller
                 // A-12: terk/timeout/AFK = pes ile AYNI değer (SAF KONUM 1/2/3 × küp). Eskiden yalnız
                 // küp değeri yazılıyordu -> para maçında (stake × skor) gammon/backgammon'da olan
                 // oyuncu masayı terk ederek kaybını 1×'e indirebiliyordu.
-                $gp = is_array($room->server_state) ? \App\Support\Backgammon::resignationValue($room->server_state, $winnerColor, (bool) $room->classic) : 1;
+                $gp = is_array($room->server_state) ? Backgammon::resignationValue($room->server_state, $winnerColor, (bool) $room->classic) : 1;
                 $gamePts = max(1, $cubeVal) * $gp;
                 // .mat SONUÇ SATIRI (terk/timeout/AFK): bu yolda applyGameResult ÇAĞRILMADIĞINDAN
                 // match_moves'a 'end' satırı HİÇ yazılmıyordu -> buildMat son oyunun outcome'ını null
@@ -2736,12 +2783,74 @@ class RoomController extends Controller
             $winnerName = $winnerSlot === 'p1' ? $room->p1_name : $room->p2_name;
             $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0) ? 'coin' : 'match';
             // PUANLI mı: TEK kaynak RatingPolicy (friendly artık puanlı; aynı-rakiple 24h limiti kaybeden için de).
-            $ranked = \App\Support\RatingPolicy::isRanked($room, $loserId, $winnerId);
-            \App\Support\ForfeitLoss::record(
+            $ranked = RatingPolicy::isRanked($room, $loserId, $winnerId);
+            ForfeitLoss::record(
                 $room->code, $loserId, $oppRating, (int) $room->target, $matchType, $winnerName,
                 $ranked, $winnerId,
             );
         }
+    }
+
+    // YÖNETİCİ: izlenen CANLI maçta bir oyuncuyu HÜKMEN attırır -> atılan kaybeder (puan kaybı),
+    // rakip normal forfeit gibi KAZANIR. 'admin' middleware (EnsureAdmin) girişte is_admin doğrular;
+    // burada ayrıca maç/oyuncu geçerliliği + yarış (zaten bitmiş) kontrol edilir. applyClockEnd tek
+    // nokta: server_match forfeit + kaybedenin match_results satırı (rating/coin settle) + oda finished.
+    public function adminForfeit(Request $request, string $code): JsonResponse
+    {
+        $data = $request->validate([
+            'loser_user_id' => ['required', 'integer'],
+            'reason' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $room = Room::where('code', $code)->first();
+        if (! $room) {
+            return $this->fail('Oda bulunamadı.', 404);
+        }
+        if ($room->bot) {
+            return $this->fail('Bot maçında bu işlem yapılamaz.', 422);
+        }
+        if ($room->status === 'finished') {
+            return $this->fail('Maç zaten bitmiş.', 409);
+        }
+        $loserId = (int) $data['loser_user_id'];
+        $p1 = (int) $room->p1_user_id;
+        $p2 = (int) $room->p2_user_id;
+        if ($p1 <= 0 || $p2 <= 0) {
+            return $this->fail('Maçta iki insan oyuncu yok.', 422);
+        }
+        if ($loserId !== $p1 && $loserId !== $p2) {
+            return $this->fail('Bu oyuncu bu maçta değil.', 422);
+        }
+        $loserSlot = $loserId === $p1 ? 'p1' : 'p2';
+        $winnerSlot = MatchClock::other($loserSlot);
+
+        // Clock'u yükle (yoksa kur) ve otoriter bitişi işaretle. force=true -> adil-oyun kalkanları
+        // atlanır (atılan kesin kaybeder). applyClockEnd tüm sonucu uygular.
+        $clock = is_array($room->clock) ? $room->clock : [];
+        if (empty($clock)) {
+            $clock = MatchClock::init(
+                $room->time_control, max(1, (int) $room->target), microtime(true),
+                $room->clock_bank ? (int) $room->clock_bank : null,
+            );
+        }
+        if (empty($clock['end'])) {
+            $clock['end'] = ['reason' => 'ADMIN_KICK', 'winner' => $winnerSlot, 'force' => true];
+        }
+        $this->applyClockEnd($room, $clock);
+        $room->clock = $clock;
+        $room->save();
+
+        // Atılan oyuncuya bildirim (+ push). İsteğe bağlı sebep metni.
+        $reason = trim((string) ($data['reason'] ?? ''));
+        $body = $reason !== ''
+            ? 'Bir yönetici tarafından maçtan çıkarıldınız ve maçı kaybettiniz. Sebep: '.$reason
+            : 'Bir yönetici tarafından maçtan çıkarıldınız ve maçı kaybettiniz.';
+        Notification::notify($loserId, 'Maçtan çıkarıldınız', $body, 'alert');
+
+        return $this->ok([
+            'winner' => $winnerSlot === 'p1' ? 'white' : 'black',
+            'loser_user_id' => $loserId,
+        ]);
     }
 
     // Normal galibiyet/terk icin end_reason etiketle (yalnizca mac gercekten bittiyse).
@@ -2814,11 +2923,11 @@ class RoomController extends Controller
             ];
         } else {
             // KÜFÜR YAPTIRIMI (yalnız oyuncu): yasak aktifse engelle; değilse süz + artan yasak uygula.
-            if (($left = \App\Support\ChatModeration::mutedSeconds($user)) !== null) {
+            if (($left = ChatModeration::mutedSeconds($user)) !== null) {
                 return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $user->chat_offenses], 403);
             }
-            [$text, $hit, $word] = \App\Support\ChatModeration::filter(trim($data['text']), $user);
-            $warning = $hit ? \App\Support\ChatModeration::penalize($user, $word) : null;
+            [$text, $hit, $word] = ChatModeration::filter(trim($data['text']), $user);
+            $warning = $hit ? ChatModeration::penalize($user, $word) : null;
 
             $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;
             $messages[] = [
@@ -2876,7 +2985,7 @@ class RoomController extends Controller
             return response()->json(['ok' => true]); // migration beklemede -> sessiz ok (istemci kırılmaz)
         }
         // Spam kalkanı: aynı kullanıcı + aynı oda 2 dk içinde tek şikayet.
-        $recent = \App\Models\ChatReport::where('room_code', strtoupper($code))
+        $recent = ChatReport::where('room_code', strtoupper($code))
             ->where('reporter_user_id', $user->id)
             ->where('created_at', '>', now()->subMinutes(2))
             ->exists();
@@ -2893,7 +3002,7 @@ class RoomController extends Controller
             ],
             array_slice($messages, -10),
         ));
-        \App\Models\ChatReport::create([
+        ChatReport::create([
             'room_code' => strtoupper($code),
             'reporter_user_id' => $user->id,
             'reporter_name' => $slot === 'p1' ? $room->p1_name : $room->p2_name,
@@ -2917,7 +3026,7 @@ class RoomController extends Controller
         if (! Schema::hasTable('chat_reports')) {
             return response()->json(['reports' => []]);
         }
-        $rows = \App\Models\ChatReport::where('reporter_user_id', $user->id)
+        $rows = ChatReport::where('reporter_user_id', $user->id)
             ->orderByDesc('created_at')->limit(50)->get();
         $reports = $rows->map(fn ($r) => [
             'id' => $r->id,
@@ -3009,7 +3118,7 @@ class RoomController extends Controller
         try {
             if ($onlyIfAway) {
                 // Aktif (son 60sn icinde ping'lemis) oyuncu ekranda zaten gorur -> push gereksiz.
-                $active = \App\Models\User::where('id', $userId)
+                $active = User::where('id', $userId)
                     ->whereNotNull('last_seen')
                     ->where('last_seen', '>', now()->subSeconds(60))
                     ->exists();
@@ -3017,7 +3126,7 @@ class RoomController extends Controller
                     return;
                 }
             }
-            \App\Jobs\SendPushJob::dispatch($userId, $title, $body, $data);
+            SendPushJob::dispatch($userId, $title, $body, $data);
         } catch (\Throwable $e) {
             // push dagitimi oyunu bozmasin
         }
@@ -3059,7 +3168,7 @@ class RoomController extends Controller
      * legacy). Aynı anda TEK açık (tüketilmemiş) el -> idempotent + zar peek-ahead engeli.
      * Yeni el ancak önceki tüketilince (update()'te tur rengi değişince consumed++) verilir.
      */
-    private function rollStandalone(Room $room, string $slot, array $data, \App\Services\FairDiceService $dice)
+    private function rollStandalone(Room $room, string $slot, array $data, FairDiceService $dice)
     {
         // Lazy init: gizli tohum + taahhüt (ilk roll). dice_roll_index=VERİLEN, dice_consumed=TÜKETİLEN.
         if (empty($room->dice_seed)) {
@@ -3134,7 +3243,7 @@ class RoomController extends Controller
     // spam üretiyordu; oyun sessizce resync ile toparlasa da kullanıcı hata sanıyordu. Bu yanıt zar
     // VERMEZ (güvenlik aynı: sıra sahibi değilsen el alamazsın), yalnız mevcut server_state/match'i
     // yansıtır -> istemci (doRollAuthoritative not_turn dalı) sessizce uygular, 409 kalmaz.
-    private function notTurnSync(Room $room): \Illuminate\Http\JsonResponse
+    private function notTurnSync(Room $room): JsonResponse
     {
         return response()->json([
             'not_turn' => true,
@@ -3184,11 +3293,11 @@ class RoomController extends Controller
      */
     private function recordAction(Room $room, array $fields): void
     {
-        if (! \Illuminate\Support\Facades\Schema::hasTable('match_moves')) {
+        if (! Schema::hasTable('match_moves')) {
             return;
         }
         try {
-            \App\Models\MatchMove::create(array_merge([
+            MatchMove::create(array_merge([
                 'room_id' => $room->id,
                 'room_code' => $room->code,
                 'ord' => 0,
@@ -3196,7 +3305,7 @@ class RoomController extends Controller
                 'created_at' => now(),
             ], $fields));
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('match_moves kayıt hatası', [
+            Log::warning('match_moves kayıt hatası', [
                 'room' => $room->code, 'kind' => $fields['kind'] ?? '?', 'err' => $e->getMessage(),
             ]);
         }
@@ -3217,11 +3326,11 @@ class RoomController extends Controller
         if (($fields['kind'] ?? null) === 'move'
             && (string) config('gnubg.pr_mode', 'off') === 'authoritative'
             && (bool) config('gnubg.analysis_cache', true)
-            && \Illuminate\Support\Facades\Cache::add('warm:gate:'.$room->code, 1, 12)) {
+            && Cache::add('warm:gate:'.$room->code, 1, 12)) {
             try {
-                \App\Jobs\WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('warm');
+                WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('warm');
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::debug('warm dispatch hata (bastırıldı)', ['room' => $room->code, 'err' => $e->getMessage()]);
+                Log::debug('warm dispatch hata (bastırıldı)', ['room' => $room->code, 'err' => $e->getMessage()]);
             }
         }
     }
@@ -3431,7 +3540,7 @@ class RoomController extends Controller
             } elseif (max((int) $sm['score']['white'], (int) $sm['score']['black']) === $target - 1) {
                 $sm['crawford'] = true;
             }
-            $room->server_state = \App\Support\Backgammon::initialState(); // sonraki oyun temiz tahta
+            $room->server_state = Backgammon::initialState(); // sonraki oyun temiz tahta
         }
         $room->server_match = $sm;
 
@@ -3468,7 +3577,7 @@ class RoomController extends Controller
      * üretilir; istemci SEÇEMEZ. RE-ROLL ENGELİ: zar ancak server_state.dice BOŞKEN verilir;
      * bir kez verilince geçerli bir hamle tüketene kadar yeni zar VERİLMEZ (aynısı döner).
      */
-    public function roll(Request $request, string $code, \App\Services\FairDiceService $dice)
+    public function roll(Request $request, string $code, FairDiceService $dice)
     {
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
@@ -3538,7 +3647,7 @@ class RoomController extends Controller
             // Lazy init: otoriter durum + tohum/taahhüt + maç skoru (ilk roll).
             $state = is_array($room->server_state) ? $room->server_state : null;
             if (! $state) {
-                $state = \App\Support\Backgammon::initialState();
+                $state = Backgammon::initialState();
             }
             // Lazy init / NORMALİZASYON: server_match matchmaking'de pct_stake_snapshot ile ÖN
             // tohumlanmış olabilir (yüzde bahis maçı). O durumda is_array=true olduğundan ESKİ kod
@@ -3603,7 +3712,7 @@ class RoomController extends Controller
             // GÜVENLİK: yalnız TAHTA HENÜZ BAŞLANGIÇ KONUMUNDAYKEN (hiçbir taş oynanmamış).
             // 'turns' alanı olmayan ESKİ odalarda (?? 0) bu dal oyun ortasında tetiklenip
             // istemciye taze tahta kurdurabilirdi -> konum kaybı. Konum kontrolü bunu keser.
-            $fresh = \App\Support\Backgammon::initialState()['points'];
+            $fresh = Backgammon::initialState()['points'];
             if ((int) ($sm['turns'] ?? 0) === 0 && ! empty($state['dice'])
                 && ($state['points'] ?? null) === $fresh) {
                 return response()->json([
@@ -3624,6 +3733,7 @@ class RoomController extends Controller
                 if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                     return $this->notTurnSync($room);
                 }
+
                 return response()->json([
                     'dice' => $state['dice'],
                     'commit' => $room->dice_commit,
@@ -3669,7 +3779,7 @@ class RoomController extends Controller
         // görünmez; FPM slowlog/pool'a bakılır. lock_wait_ms yüksekse DB satır-kilidi çekişmesi.
         $totalMs = (int) round((microtime(true) - $tReq) * 1000);
         if ($totalMs >= 2000) {
-            \Illuminate\Support\Facades\Log::warning('roll.slow', [
+            Log::warning('roll.slow', [
                 'room' => strtoupper($code),
                 'total_ms' => $totalMs,                               // FPM pickup -> yanıt
                 'pre_php_ms' => (int) round(($t0 - $tReq) * 1000),    // FPM pickup -> handler girişi (routing/mw)
@@ -3691,7 +3801,7 @@ class RoomController extends Controller
      * Sunucu, Node validator (TS motoru) ile YASALLIĞI doğrular; yasadışıysa REDDEDER.
      * FAIL-CLOSED: validator erişilemez + config required ise hamle reddedilir.
      */
-    public function move(Request $request, string $code, \App\Services\MoveValidatorService $validator)
+    public function move(Request $request, string $code, MoveValidatorService $validator)
     {
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
@@ -3794,7 +3904,7 @@ class RoomController extends Controller
                 if (config('validator.required', true)) {
                     // GÖZLEMLENEBİLİRLİK: otoriter mod canlıda; validator erişilemezse gerçek
                     // oyuncu hamleleri reddediliyor demektir. tavla:auth-health bunu sayar.
-                    \Illuminate\Support\Facades\Log::warning('authoritative.move-rejected', [
+                    Log::warning('authoritative.move-rejected', [
                         'reason' => 'validator-unreachable', 'room' => $room->code, 'slot' => $slot,
                     ]);
 
@@ -3804,7 +3914,7 @@ class RoomController extends Controller
             if (empty($result['valid']) || empty($result['state'])) {
                 // GÖZLEMLENEBİLİRLİK: validator ayakta ama hamleyi geçersiz buldu -> istemci
                 // desync'i VEYA validator↔motor uyumsuzluğu sinyali (canlı otoriter modda önemli).
-                \Illuminate\Support\Facades\Log::warning('authoritative.move-rejected', [
+                Log::warning('authoritative.move-rejected', [
                     'reason' => $result['reason'] ?? 'invalid', 'room' => $room->code, 'slot' => $slot,
                 ]);
 
@@ -3816,7 +3926,7 @@ class RoomController extends Controller
                 return $command;
             }
             $new = $result['state'];
-            $winner = \App\Support\Backgammon::winner($new);
+            $winner = Backgammon::winner($new);
 
             // SUNUCU-OTORİTER HAMLE KAYDI (tur sayacı ARTMADAN önce -> seq = bu turun indeksi;
             // pos = hamle ÖNCESİ tahta). İstemci logundan bağımsız tek gerçek kaynak.
@@ -3827,7 +3937,7 @@ class RoomController extends Controller
                 'ord' => 0, 'player' => $moverColor, 'kind' => 'move',
                 'dice' => array_values($state['dice'] ?? []),
                 'steps' => array_values($data['steps']),
-                'notation' => \App\Support\MoveNotation::render(array_values($data['steps']), $moverColor),
+                'notation' => MoveNotation::render(array_values($data['steps']), $moverColor),
                 'pos' => $state, 'mctx' => $this->moveMctx($room),
                 'cube_value' => (int) $this->cubeOf($room)['value'],
             ]);
@@ -3855,7 +3965,7 @@ class RoomController extends Controller
             $matchDone = false;
             if ($winner) {
                 $cubeVal = $this->cubeOf($room)['value'];
-                $pts = \App\Support\Backgammon::gamePoints($new, $winner, (bool) $room->classic) * $cubeVal;
+                $pts = Backgammon::gamePoints($new, $winner, (bool) $room->classic) * $cubeVal;
                 $room->server_state = $new; // son tahta (maç biterse korunur; bitmezse applyGameResult ezer)
                 $matchDone = $this->applyGameResult($room, $winner, $pts);
                 if ($matchDone) {
@@ -3898,8 +4008,9 @@ class RoomController extends Controller
         $this->maybePushYourTurn(
             $preRoom,
             $preRoom ? $this->slotOf($preRoom, $data['token'], $request) : null,
-            $resp instanceof \Illuminate\Http\JsonResponse ? $resp->getData(true) : null,
+            $resp instanceof JsonResponse ? $resp->getData(true) : null,
         );
+
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
@@ -4158,6 +4269,7 @@ class RoomController extends Controller
         // (turn insana döndü / done) -> maybeDriveBot no-op.
         $this->markAuthoritativeCommandResult($code, $data, $resp);
         $this->broadcastRoom($code); // gerçek-zamanlı push (dormant: BROADCAST_CONNECTION=null iken no-op)
+
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
@@ -4210,8 +4322,8 @@ class RoomController extends Controller
             // DEĞİL (Backgammon::resignationValue). SAF KONUM: pes eden o an ne kaybediyorsa onu
             // kaybeder (rakip evinde taş -> backgammon 3, hiç toplamadı -> gammon 2, topladı -> 1).
             // pointsWon = değer × küp.
-            $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
-            $value = \App\Support\Backgammon::resignationValue($state, $winner, (bool) $room->classic); // 1/2/3 (klasik: 2 tavan)
+            $state = is_array($room->server_state) ? $room->server_state : Backgammon::initialState();
+            $value = Backgammon::resignationValue($state, $winner, (bool) $room->classic); // 1/2/3 (klasik: 2 tavan)
             $points = $value * (int) $this->cubeOf($room)['value'];
             // ZAR ATILDI AMA OYNANMADAN PES: atılan zarı .mat'e yaz (bkz. recordPendingRoll).
             $this->recordPendingRoll($room, $this->slotColor($slot));
@@ -4362,7 +4474,7 @@ class RoomController extends Controller
      * olduğu gibi geçirir. gnubg yoksa insan hamlesi KORUNUR; bot_status='unavailable' döner
      * (istemci "Rakip düşünüyor…" gösterip botNudge ile tekrar dener).
      *
-     * @param  \Illuminate\Http\JsonResponse|null  $resp  insan action yanıtı (yoksa botNudge)
+     * @param  JsonResponse|null  $resp  insan action yanıtı (yoksa botNudge)
      */
     private function maybeDriveBot(string $code, $resp)
     {
@@ -4539,7 +4651,7 @@ class RoomController extends Controller
                     'ord' => 0, 'player' => 'black', 'kind' => 'move',
                     'dice' => array_values($rollState['dice'] ?? []),
                     'steps' => array_values($steps),
-                    'notation' => \App\Support\MoveNotation::render(array_values($steps), 'black'),
+                    'notation' => MoveNotation::render(array_values($steps), 'black'),
                     'pos' => $rollState, 'mctx' => $this->moveMctx($room),
                     'cube_value' => (int) $this->cubeOf($room)['value'],
                 ]);
@@ -4653,9 +4765,9 @@ class RoomController extends Controller
      * url_set=false -> VALIDATOR_URL okunmuyor (config cache / .env). unreachable=true -> erişemiyor
      * (secret 401 / IP / URL). Sorun çözülünce bu uç + rota KALDIRILMALI.
      */
-    public function validatorCheck(\App\Services\MoveValidatorService $validator)
+    public function validatorCheck(MoveValidatorService $validator)
     {
-        $s = \App\Support\Backgammon::initialState();
+        $s = Backgammon::initialState();
         $s['dice'] = [3, 1];
         $s['diceUsed'] = [false, false];
         $r = $validator->validate($s, [
@@ -4681,7 +4793,7 @@ class RoomController extends Controller
      * Claim an authoritative command once per room. The room row is already locked by
      * the caller transaction, so the unique receipt is also the replay serialization point.
      */
-    private function claimAuthoritativeCommand(Room $room, array $data, string $slot, string $action): ?\Symfony\Component\HttpFoundation\Response
+    private function claimAuthoritativeCommand(Room $room, array $data, string $slot, string $action): ?Response
     {
         if (! $room->authoritative) {
             return null;
@@ -4712,7 +4824,7 @@ class RoomController extends Controller
         // (eşzamanlı açılış maçlarında ~%60 — bot hata avı ile doğrulandı). Düz consistent-read +
         // benzersiz (room_id,command_id) indeksi + oda kilidi yeterli; ayrıca transaction'lar
         // deadlock-retry ile sarılı (DB::transaction attempts).
-        $existing = \App\Models\RoomCommand::where('room_id', $room->id)
+        $existing = RoomCommand::where('room_id', $room->id)
             ->where('command_id', $commandId)
             ->first();
         if ($existing) {
@@ -4735,7 +4847,7 @@ class RoomController extends Controller
             ]);
         }
 
-        \App\Models\RoomCommand::create([
+        RoomCommand::create([
             'room_id' => $room->id,
             'command_id' => $commandId,
             'action' => $action,
@@ -4773,7 +4885,7 @@ class RoomController extends Controller
                 return;
             }
 
-            $receipt = \App\Models\RoomCommand::where('room_id', $roomId)
+            $receipt = RoomCommand::where('room_id', $roomId)
                 ->where('command_id', $commandId)
                 ->whereNull('result_version')
                 ->first();
@@ -4793,7 +4905,7 @@ class RoomController extends Controller
             // The authoritative state transaction has already committed. A
             // receipt bookkeeping outage must not turn a successful move into
             // a client-visible 500 or roll back the game action.
-            \Illuminate\Support\Facades\Log::warning('room-command-result-receipt-failed', [
+            Log::warning('room-command-result-receipt-failed', [
                 'room' => strtoupper($code),
                 'command_id' => $data['command_id'] ?? null,
                 'error' => $e->getMessage(),
@@ -4806,13 +4918,13 @@ class RoomController extends Controller
      * aynı kimlik FARKLI içerikle geldiyse 409 command-payload-mismatch. Makbuz yoksa null.
      * claimAuthoritativeCommand'dan farkı: YENİ makbuz OLUŞTURMAZ (salt-okur).
      */
-    private function replayedCommand(Room $room, array $data): ?\Symfony\Component\HttpFoundation\Response
+    private function replayedCommand(Room $room, array $data): ?Response
     {
         $commandId = $data['command_id'] ?? null;
         if (! $room->authoritative || ! $commandId || ! Schema::hasTable('room_commands')) {
             return null;
         }
-        $existing = \App\Models\RoomCommand::where('room_id', $room->id)->where('command_id', $commandId)->first();
+        $existing = RoomCommand::where('room_id', $room->id)->where('command_id', $commandId)->first();
         if (! $existing) {
             return null;
         }
@@ -4841,7 +4953,7 @@ class RoomController extends Controller
      * Reject stale commands. Full server-authoritative rooms require the version envelope;
      * omitting it would leave an old/manual client outside the concurrency protocol.
      */
-    private function staleCommand(Room $room, array $data): ?\Symfony\Component\HttpFoundation\Response
+    private function staleCommand(Room $room, array $data): ?Response
     {
         if (! array_key_exists('expected_version', $data) || $data['expected_version'] === null) {
             if ($room->authoritative) {
@@ -4850,6 +4962,7 @@ class RoomController extends Controller
                     'version' => (int) $room->server_version,
                 ]);
             }
+
             return null;
         }
 

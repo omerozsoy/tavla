@@ -11,7 +11,7 @@ import ViewersBadge from './ViewersBadge'
 import Chat from './Chat'
 import ClockStack from './ClockStack'
 import DiceRow from './Dice'
-import { showRoom, watchRoom, roomSummary, sendChat, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
+import { showRoom, watchRoom, roomSummary, sendChat, adminForfeitRoom, type RoomView, type ServerMatch, type RoomViewer, type RoomSummary } from '../api'
 import MatchSummary from './MatchSummary'
 import MatchResult from './MatchResult'
 import PublicProfile from './PublicProfile'
@@ -100,6 +100,27 @@ export default function Spectate({
   const [prTimedOut, setPrTimedOut] = useState(false)
   // Yönetici moderasyon: sohbette isme tıklanınca açılan oyuncu profili (oradan konuşma yasağı).
   const [profileId, setProfileId] = useState<number | null>(null)
+  // Yönetici "Maçtan At": onay modalı (atılacak oyuncu + opsiyonel sebep). Atılan hükmen kaybeder.
+  const [kick, setKick] = useState<{ uid: number; name: string } | null>(null)
+  const [kickReason, setKickReason] = useState('')
+  const [kicking, setKicking] = useState(false)
+  const [kickErr, setKickErr] = useState<string | null>(null)
+
+  const doKick = async () => {
+    if (!kick) return
+    setKicking(true)
+    setKickErr(null)
+    try {
+      await adminForfeitRoom(code, kick.uid, kickReason.trim() || undefined)
+      setKick(null)
+      setKickReason('')
+      // Sonraki poll odayı 'finished' olarak yakalar (atılan kaybetti); izleme sonuç kartına döner.
+    } catch {
+      setKickErr('İşlem başarısız — yetki veya maç durumu uygun değil.')
+    } finally {
+      setKicking(false)
+    }
+  }
 
   // Yönetici/destek izlerken sohbete yazar (backend yalnız admin/support'a izin verir; isim önünde
   // rol kalkanı taşır). Dönen mesaj listesini anında yansıt; sonraki poll de tazeler.
@@ -563,6 +584,22 @@ export default function Spectate({
           </button>
         )}
       </div>
+      {/* Yönetici moderasyon çubuğu: maç sürerken bir oyuncuyu HÜKMEN attır (atılan kaybeder). */}
+      {isAdmin && !matchDone && !notFound && (
+        <div className="spectate-modbar">
+          <span className="spectate-modbar__label"><Icon name="alert" size={13} /> Maçtan at:</span>
+          {eff?.p1_user_id ? (
+            <button type="button" className="spectate-kick" onClick={() => { setKickErr(null); setKick({ uid: eff.p1_user_id as number, name: p1Name }) }}>
+              {p1Name}
+            </button>
+          ) : null}
+          {eff?.p2_user_id ? (
+            <button type="button" className="spectate-kick" onClick={() => { setKickErr(null); setKick({ uid: eff.p2_user_id as number, name: p2Name }) }}>
+              {p2Name}
+            </button>
+          ) : null}
+        </div>
+      )}
       {/* Ses aç/kapa (sağ ALT köşe, misafirler dahil herkes): yalnız aç/kapa — kaydırıcı YOK. */}
       <button
         type="button"
@@ -787,6 +824,34 @@ export default function Spectate({
           onMessage={onMessage ? () => onMessage(profileId) : undefined}
           onClose={() => setProfileId(null)}
         />
+      )}
+
+      {/* Yönetici "Maçtan At" onay modalı: atılan oyuncu HÜKMEN kaybeder (puan kaybı), rakip kazanır. */}
+      {kick && (
+        <div className="spectate-kick-overlay" onClick={() => !kicking && setKick(null)}>
+          <div className="spectate-kick-modal" onClick={(e) => e.stopPropagation()}>
+            <h3><Icon name="alert" size={16} /> Maçtan At</h3>
+            <p>
+              <b>{kick.name}</b> maçtan çıkarılacak ve maçı <b>hükmen kaybedecek</b> (puan kaybı).
+              Rakibi kazanmış sayılır. Bu işlem geri alınamaz.
+            </p>
+            <textarea
+              className="spectate-kick-reason"
+              placeholder="Sebep (opsiyonel — atılan kişiye bildirimde gösterilir)"
+              maxLength={200}
+              value={kickReason}
+              onChange={(e) => setKickReason(e.target.value)}
+              disabled={kicking}
+            />
+            {kickErr && <div className="spectate-kick-err">{kickErr}</div>}
+            <div className="spectate-kick-actions">
+              <Button variant="ghost" onClick={() => setKick(null)} disabled={kicking}>Vazgeç</Button>
+              <Button variant="destructive" onClick={doKick} disabled={kicking}>
+                {kicking ? 'Atılıyor…' : 'Maçtan At'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>,
     document.body,

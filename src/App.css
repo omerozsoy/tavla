@@ -15262,6 +15262,103 @@ body:has(.spectate-view) .app.lobby {
 .spectate-code:hover {
   background: color-mix(in srgb, var(--tv-gold, #d8b25a) 28%, transparent);
 }
+/* Yönetici moderasyon çubuğu (izleme rozetinin hemen altında): "Maçtan at: <oyuncu>" düğmeleri. */
+.spectate-modbar {
+  position: fixed;
+  top: calc(48px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--game-scene, #06090f) 62%, transparent);
+  border: 1px solid color-mix(in srgb, #e05a4a 34%, transparent);
+  font-size: 0.78rem;
+}
+.spectate-modbar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: color-mix(in srgb, #f0a090 90%, transparent);
+  letter-spacing: 0.02em;
+}
+.spectate-kick {
+  padding: 2px 9px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, #e05a4a 60%, transparent);
+  background: color-mix(in srgb, #e05a4a 16%, transparent);
+  color: color-mix(in srgb, #ffd9d0 92%, transparent);
+  font: 600 0.78rem/1.4 inherit;
+  cursor: pointer;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spectate-kick:hover {
+  background: color-mix(in srgb, #e05a4a 30%, transparent);
+}
+/* "Maçtan At" onay modalı */
+.spectate-kick-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+.spectate-kick-modal {
+  width: min(420px, 100%);
+  background: var(--card, #15110d);
+  border: 1px solid color-mix(in srgb, #e05a4a 40%, transparent);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  color: var(--ink, #f4efe6);
+}
+.spectate-kick-modal h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  color: #f08070;
+}
+.spectate-kick-modal p {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.92;
+}
+.spectate-kick-reason {
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--ink, #f4efe6) 24%, transparent);
+  background: color-mix(in srgb, var(--ink, #f4efe6) 6%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.86rem;
+}
+.spectate-kick-err {
+  margin-top: 8px;
+  color: #ff8a7a;
+  font-size: 0.82rem;
+}
+.spectate-kick-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
 /* İzleme ses kontrolü: sağ üstte kapat (×) düğmesinin hemen altında koyu hap
    (hoparlör + seviye kaydırıcısı). Sol üstte TavlaTV logosuyla çakışmasın diye sağa alındı. */
 /* Ses aç/kapa: sağ ALT köşe, yuvarlak tek buton (kaydırıcı kaldırıldı). */

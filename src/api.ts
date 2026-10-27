@@ -3110,6 +3110,19 @@ export async function watchRoom(
   })
 }
 
+// YÖNETİCİ: izlenen canlı maçta bir oyuncuyu HÜKMEN attırır (atılan kaybeder + puan kaybı,
+// rakip kazanır). Yalnız admin: backend 'admin' middleware yetkisizse 403 fırlatır.
+export async function adminForfeitRoom(
+  code: string,
+  loserUserId: number,
+  reason?: string,
+): Promise<{ ok: boolean; winner?: 'white' | 'black'; loser_user_id?: number }> {
+  return req(`/rooms/${encodeURIComponent(code)}/admin-forfeit`, {
+    method: 'POST',
+    body: JSON.stringify({ loser_user_id: loserUserId, reason: reason || undefined }),
+  })
+}
+
 // ---- Şans Çarkı (Lucky Wheel) ----
 // Kazananı DAİMA sunucu belirler (weighted random). Frontend yalnız animasyon gösterir.
 
