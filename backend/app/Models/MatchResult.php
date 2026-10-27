@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Services\GnuBg\GnuBgClient;
 use App\Support\MatBuilder;
+use App\Support\Referral;
 use App\Support\StatsConfig;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class MatchResult extends Model
 {
@@ -24,6 +28,28 @@ class MatchResult extends Model
         'pr_equity_lost' => 'float',
         'pr_decisions' => 'integer',
     ];
+
+    /**
+     * Arkadaş davet ödülü — TEK tetikleyici. Her maç-sonucu satırı oluşturulurken kontrol edilir:
+     * AuthController (istemci raporu), MatchBackstop (sunucu-otoriter yedek) ve ForfeitLoss HEPSİ
+     * MatchResult::create'den geçer. Eskiden ödül yalnız AuthController'ın create'inde çağrılıyordu;
+     * sunucu yedeği bare satırı yazıp istemci geç raporlayınca "enrich-and-return" dalına (satır zaten
+     * var) düşülüp ödül ATLANIYORDU (1521 Uğur / 1523 vakası). Referral::maybeReward idempotent +
+     * koşullu (puanlı online insan maçı + referred_by + bir kez). Ödül hatası maç kaydını ASLA
+     * bozmasın -> yut + logla (eski AuthController try/catch'inin aynısı).
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $mr): void {
+            try {
+                Referral::maybeReward($mr);
+            } catch (\Throwable $e) {
+                Log::warning('referral reward failed', [
+                    'mr' => $mr->id, 'err' => $e->getMessage(),
+                ]);
+            }
+        });
+    }
 
     // GERCEK (puanli) maclar: yapay zeka (match_type='ai') HARIC. rating/WXP/median/basarim
     // istatistikleri yalniz bunlardan hesaplanir. NULL match_type = eski gercek maclar -> DAHIL.
@@ -68,8 +94,8 @@ class MatchResult extends Model
         // SUNUCU-OTORİTER kaynak (match_moves) VARSA onu kullan (istemci log'una tercih). İstemci log'u
         // yalnız SON ÇARE (match_moves yok -> eski/edge). NOT: EU6CD PR bug'ı match_moves HAZIR iken bile
         // oluştu -> kök neden analysisLog DEĞİL, cubePr (küp kaybı hesabı). match_moves zaten tercih ediliyor.
-        if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
-            $srv = \App\Models\MatchMove::buildLog($this->room_code);
+        if (! empty($this->room_code) && MatchMove::existsForRoom($this->room_code)) {
+            $srv = MatchMove::buildLog($this->room_code);
             if (! empty($srv)) {
                 return $srv;
             }
@@ -87,7 +113,7 @@ class MatchResult extends Model
     public function analysisHc(): ?string
     {
         if (! empty($this->room_code)) {
-            $room = \App\Models\Room::where('code', $this->room_code)->first();
+            $room = Room::where('code', $this->room_code)->first();
             if ($room) {
                 if ((int) $this->user_id === (int) $room->p1_user_id) {
                     return 'white';
@@ -127,9 +153,9 @@ class MatchResult extends Model
         // SUNUCU-OTORİTER KAYNAK (yeni maçlar): match_moves varsa .mat ORADAN kurulur — istemci
         // loguna bağımlı DEĞİL. İstemci reload/disconnect'te log kaybı ("olmayan hamle"/yarım
         // oyun/sonuçsuz maç) KÖKTEN biter. Eski maçlar (kayıt yok) aşağıdaki client-log yoluna düşer.
-        if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
+        if (! empty($this->room_code) && MatchMove::existsForRoom($this->room_code)) {
             [$whiteName, $blackName] = $myHc === 'black' ? [$oppName, $selfName] : [$selfName, $oppName];
-            $mat = \App\Models\MatchMove::buildMat($this->room_code, [
+            $mat = MatchMove::buildMat($this->room_code, [
                 'matchLength' => $matchLen, 'whiteName' => $whiteName, 'blackName' => $blackName,
                 'isMoney' => $isMoney,
             ]);
@@ -193,10 +219,10 @@ class MatchResult extends Model
         $out = [];
 
         // Otoriter kaynak: match_moves (iki oyuncu, sıralı, zarlı).
-        if (! empty($this->room_code) && \App\Models\MatchMove::existsForRoom($this->room_code)) {
+        if (! empty($this->room_code) && MatchMove::existsForRoom($this->room_code)) {
             $lastGame = null;
             $num = 0;
-            foreach (\App\Models\MatchMove::orderedRows($this->room_code) as $r) {
+            foreach (MatchMove::orderedRows($this->room_code) as $r) {
                 $g = (int) $r->game_no;
                 if ($g !== $lastGame) {
                     $out[] = ['kind' => 'game', 'no' => $g + 1];
@@ -281,7 +307,7 @@ class MatchResult extends Model
     public function gnubgReview(int $plies = 2): array
     {
         $plies = max(0, min(3, $plies));
-        $useCache = $plies === 2 && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_review');
+        $useCache = $plies === 2 && Schema::hasColumn('match_results', 'gnubg_review');
         if ($useCache && ! empty($this->gnubg_review)) {
             $cached = json_decode((string) $this->gnubg_review, true);
             if (is_array($cached) && ! empty($cached['ok'])) {
@@ -297,7 +323,7 @@ class MatchResult extends Model
             return ['ok' => false, 'error' => 'empty-mat'];
         }
         // affinity=room_code: warm + maç-sonu + on-demand hepsi AYNI instance -> review eval cache paylaşımı.
-        $res = app(\App\Services\GnuBg\GnuBgClient::class)->reviewMatch($mat, $plies, null, $this->room_code ?: null);
+        $res = app(GnuBgClient::class)->reviewMatch($mat, $plies, null, $this->room_code ?: null);
         if (! is_array($res) || empty($res['ok'])) {
             return [
                 'ok' => false, 'error' => 'review-failed',

@@ -2,11 +2,44 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\AnalyzeMatchPrJob;
+use App\Jobs\CacheMatchReviewJob;
+use App\Models\MatchMove;
+use App\Models\MatchResult;
+use App\Models\Notification;
+use App\Models\Room;
+use App\Models\Setting;
 use App\Models\User;
+use App\Models\UserWxpTransaction;
+use App\Services\Achievements\AchievementService;
+use App\Services\Achievements\StatsUpdater;
+use App\Services\Analysis\AnalysisOrchestrator;
+use App\Services\CareerPrService;
+use App\Services\DiceStatisticsService;
+use App\Services\ErrorJournalService;
+use App\Services\MoveValidatorService;
+use App\Services\PlayerStatisticsService;
+use App\Services\WalletService;
+use App\Services\WxpService;
+use App\Support\Brand;
+use App\Support\EmailVerification;
+use App\Support\MatchFinalize;
 use App\Support\NicknameFilter;
+use App\Support\RatingPolicy;
+use App\Support\Referral;
+use App\Support\RoomResult;
+use App\Support\Sms;
+use App\Support\StatsConfig;
+use App\Support\UserEraser;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -19,25 +52,25 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         // Cep telefonu markaya bağlı: TavlaTv (TR) zorunlu; GammonTV (yabancı) istemez.
-        $phoneRule = \App\Support\Brand::requiresPhone()
+        $phoneRule = Brand::requiresPhone()
             ? ['required', 'string', 'regex:/^0?5\d{9}$/']
             : ['nullable', 'string', 'regex:/^0?5\d{9}$/'];
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
-            'last_name'  => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
             // YENİ ÜYE: ülke ZORUNLU; şehir (province) yalnız Türkiye'de zorunlu (diğer ülkelerde
             // il listesi yok -> sorulmaz). Not: Google ile kayıt bu formu kullanmaz (country='' kalır,
             // profilden tamamlanır); bu kurallar yalnız e-posta kaydını kapsar.
-            'country'    => ['required', 'string', 'max:80'],
-            'province'   => ['required_if:country,TR', 'nullable', 'string', 'max:80'],
-            'avatar'     => ['nullable', 'string', 'max:300000'],
+            'country' => ['required', 'string', 'max:80'],
+            'province' => ['required_if:country,TR', 'nullable', 'string', 'max:80'],
+            'avatar' => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
             // Kufur/uygunsuz takma ad engeli (panelden yonetilir). Bkz NicknameFilter.
-            'nickname'   => self::nicknameRules(),
-            'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
+            'nickname' => self::nicknameRules(),
+            'email' => ['required', 'email', 'max:120', 'unique:users,email'],
             // Cep telefonu: 0 + 5XXXXXXXXX (Türk cep). TavlaTv'de ZORUNLU, GammonTV'de istenmez ($phoneRule).
-            'phone'      => $phoneRule,
-            'password'   => self::passwordRules(),
+            'phone' => $phoneRule,
+            'password' => self::passwordRules(),
         ], self::passwordMessages());
 
         // phone kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
@@ -56,11 +89,11 @@ class AuthController extends Controller
         // Baslangic puani: TÜM yeni üyeler admin ayarı 'starting_rating' (varsayılan 1400; seviye
         // seçimi kaldırıldı). 'rating' fillable değil -> doğrudan atanır (DB varsayılanı 1500 devreye girmesin).
         $user = User::create($data);
-        $user->rating = \App\Models\Setting::int('starting_rating', 1400);
+        $user->rating = Setting::int('starting_rating', 1400);
         $user->last_login_at = now(); // kayit = ilk giris (login/googleLogin ile tutarli; token ile oto-giris yapiliyor)
         $user->save();
         // Arkadaş davet: davet koduyla geldiyse davet edene bağla (ödül İLK puanlı online maçta verilir).
-        \App\Support\Referral::link($user, $request->input('referral_code'));
+        Referral::link($user, $request->input('referral_code'));
         // NOT: hoşgeldin coin'i KAYITTA verilmez -> e-posta DOĞRULAYINCA verilir (grantWelcomeCoins),
         // sahte e-posta ile bonus farmlanmasın. Google kullanıcısı doğrulanmış sayılır (aşağıda alır).
 
@@ -70,7 +103,7 @@ class AuthController extends Controller
             $this->sendVerificationEmail($user);
         } catch (\Throwable $e) {
             // Mail gonderilemezse kayit yine de tamamlanir (kullanici sonra tekrar gonderebilir)
-            \Illuminate\Support\Facades\Log::warning('register: verification mail failed', [
+            Log::warning('register: verification mail failed', [
                 'user_id' => $user->id, 'err' => $e->getMessage(),
             ]);
         }
@@ -84,7 +117,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate([
-            'login'    => ['required', 'string'], // email veya nickname
+            'login' => ['required', 'string'], // email veya nickname
             'password' => ['required', 'string'],
         ]);
 
@@ -94,7 +127,7 @@ class AuthController extends Controller
         // kendi IP'sinden girebilir). Tek-IP brute-force yine 5'te kilitlenir; dagitik saldiri
         // zaten route IP throttle ile IP-basi sinirli. (Plesk/nginx edge -> ip() gercek istemci.)
         $loginKey = 'login-fails:'.sha1(mb_strtolower(trim($data['login'])).'|'.(string) $request->ip());
-        if ((int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) >= 5) {
+        if ((int) Cache::get($loginKey, 0) >= 5) {
             throw ValidationException::withMessages([
                 'login' => ['Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.'],
             ]);
@@ -105,13 +138,13 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            $fails = (int) \Illuminate\Support\Facades\Cache::get($loginKey, 0) + 1;
-            \Illuminate\Support\Facades\Cache::put($loginKey, $fails, now()->addMinutes(15));
+            $fails = (int) Cache::get($loginKey, 0) + 1;
+            Cache::put($loginKey, $fails, now()->addMinutes(15));
             throw ValidationException::withMessages([
                 'login' => ['E-posta/takma isim veya şifre hatalı.'],
             ]);
         }
-        \Illuminate\Support\Facades\Cache::forget($loginKey); // basarili giris -> sayaci sifirla
+        Cache::forget($loginKey); // basarili giris -> sayaci sifirla
 
         // Kimlik DOGRULANDI (dogru sifre) ama hesap kapali -> tam olarak bu mesaj + oturum ACMA.
         // Yanlis sifre/kimliksiz kisi yukarida generic hatayi alir (durum sizmaz).
@@ -187,18 +220,18 @@ class AuthController extends Controller
             }
             $user = User::create([
                 'first_name' => $first,
-                'last_name'  => $last,
-                'country'    => '', // Google ile ilk kayitta ulke sorulmaz -> bos; sonradan profilden secilir
-                'avatar'     => $p['picture'] ?? null, // Google profil fotografi (onerilir, degistirilebilir)
-                'nickname'   => $nick,
-                'email'      => $email,
-                'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
+                'last_name' => $last,
+                'country' => '', // Google ile ilk kayitta ulke sorulmaz -> bos; sonradan profilden secilir
+                'avatar' => $p['picture'] ?? null, // Google profil fotografi (onerilir, degistirilebilir)
+                'nickname' => $nick,
+                'email' => $email,
+                'password' => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
             ]);
             // Baslangic puani: e-posta kaydiyla ayni (admin 'starting_rating', varsayilan 1400).
-            $user->rating = \App\Models\Setting::int('starting_rating', 1400);
+            $user->rating = Setting::int('starting_rating', 1400);
             $user->save();
             // Arkadaş davet: davet koduyla (Google ile YENİ kayıt) davet edene bağla.
-            \App\Support\Referral::link($user, $request->input('referral_code'));
+            Referral::link($user, $request->input('referral_code'));
         }
 
         // Google e-postasi zaten dogrulanmis: HEM yeni HEM mevcut kullanicide garantiye al
@@ -237,6 +270,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+
         return $this->ok();
     }
 
@@ -247,7 +281,7 @@ class AuthController extends Controller
         // Endpoint auth:sanctum altinda; her zaman istegi yapan kullaniciya isler.
         // Silme sozlesmesi (kulup nazik devir + notifications/tokens + cascade) TEK kaynaktan:
         // UserEraser (PurgeTestAccounts CLI ve admin coklu-silme ile ayni).
-        \App\Support\UserEraser::erase($request->user());
+        UserEraser::erase($request->user());
 
         return $this->ok();
     }
@@ -259,6 +293,7 @@ class AuthController extends Controller
         // Kendi rating siralamasi (kacinci sirada)
         $rank = User::where('rating', '>', $user->rating ?? 1500)->count() + 1;
         $total = User::count();
+
         return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
     }
 
@@ -267,21 +302,21 @@ class AuthController extends Controller
     {
         $user = $request->user();
         // Cep telefonu markaya bağlı: TavlaTv (TR) zorunlu; GammonTV (yabancı) istemez.
-        $phoneRule = \App\Support\Brand::requiresPhone()
+        $phoneRule = Brand::requiresPhone()
             ? ['required', 'string', 'regex:/^0?5\d{9}$/']
             : ['nullable', 'string', 'regex:/^0?5\d{9}$/'];
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
-            'last_name'  => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
             // Ülke/telefon ZORUNLU (TR'de şehir de) — kayıtla birebir. Google ile gelen
             // (country='' + telefonsuz) ve eski boş hesaplar profilini tamamlamadan kaydedemez.
-            'country'    => ['required', 'string', 'max:80'],
-            'province'   => ['required_if:country,TR', 'nullable', 'string', 'max:80'],
-            'avatar'     => ['nullable', 'string', 'max:300000'],
+            'country' => ['required', 'string', 'max:80'],
+            'province' => ['required_if:country,TR', 'nullable', 'string', 'max:80'],
+            'avatar' => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
-            'nickname'   => self::nicknameRules($user->id),
-            'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
-            'phone'      => $phoneRule,
+            'nickname' => self::nicknameRules($user->id),
+            'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => $phoneRule,
         ]);
         // province kolonu (migration) henuz uygulanmamissa guncelleme patlamasin: atla.
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
@@ -301,7 +336,7 @@ class AuthController extends Controller
         }
         if ($user->email !== $data['email']) {
             $user->email_verified_at = null;
-            \Illuminate\Support\Facades\Cache::forget('eotp:'.$user->id); // A-13: eski adrese giden kod geçersiz
+            Cache::forget('eotp:'.$user->id); // A-13: eski adrese giden kod geçersiz
         }
         // Telefon degisince eski dogrulama GECERSIZ: yoksa A'yi OTP ile dogrulayip B'ye gecen
         // kullanici (veya oturum ele geciren) B'yi hic OTP girmeden "dogrulanmis" gosterir.
@@ -309,6 +344,7 @@ class AuthController extends Controller
             $user->phone_verified_at = null;
         }
         $user->update($data);
+
         return response()->json(['user' => $user]);
     }
 
@@ -316,26 +352,26 @@ class AuthController extends Controller
     public function reportRating(Request $request)
     {
         $data = $request->validate([
-            'won'             => ['required', 'boolean'],
+            'won' => ['required', 'boolean'],
             'opponent_rating' => ['required', 'integer', 'min:100', 'max:4000'],
-            'opponent_name'   => ['nullable', 'string', 'max:40'],
-            'opponent_pr'     => ['nullable', 'numeric', 'min:0', 'max:200'],
-            'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
-            'match_type'      => ['nullable', 'in:coin,match,ai'], // Jeton (coin) / N-puanlik mac / yapay zeka
-            'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'opponent_name' => ['nullable', 'string', 'max:40'],
+            'opponent_pr' => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'match_length' => ['nullable', 'integer', 'min:1', 'max:25'],
+            'match_type' => ['nullable', 'in:coin,match,ai'], // Jeton (coin) / N-puanlik mac / yapay zeka
+            'pr' => ['nullable', 'numeric', 'min:0', 'max:200'],
             // NOT: istemci HAM 'luck'/'opponent_luck' ARTIK KABUL EDILMEZ (güvenilmezdi, yetkili gnubg
             // luck_emg/mwc ile ters işaret veriyordu). Tek şans kaynağı sunucu gnubg (AnalyzeMatchLuckJob).
-            'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
-            'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
-            'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
-            'mat'             => ['nullable', 'string', 'max:200000'],  // .mat (gnubg native luck V1)
-            'ranked'          => ['nullable', 'boolean'],
-            'room_code'       => ['nullable', 'string', 'max:20'], // online oda (friendly denetimi)
+            'score_self' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'score_opp' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'log' => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
+            'mat' => ['nullable', 'string', 'max:200000'],  // .mat (gnubg native luck V1)
+            'ranked' => ['nullable', 'boolean'],
+            'room_code' => ['nullable', 'string', 'max:20'], // online oda (friendly denetimi)
         ]);
         $user = $request->user();
         // Yalniz tamamlanmis authoritative oda ekonomik sonuc uretebilir.
         $roomCode = strtoupper(trim((string) ($data['room_code'] ?? '')));
-        $room = $roomCode !== '' ? \App\Models\Room::where('code', $roomCode)->first() : null;
+        $room = $roomCode !== '' ? Room::where('code', $roomCode)->first() : null;
         // AUTHORITATIVE backstop: server_match is the canonical terminal result. A move/bot
         // response can commit `done=true` just before a delayed status write/poll is observed;
         // do not make the player's completed result permanently unreportable in that window.
@@ -350,7 +386,7 @@ class AuthController extends Controller
             $room->p2_result = $room->p2_result ?? ($winnerSlot === 'p2' ? 'won' : 'lost');
             $room->save();
         }
-        $verified = $room ? \App\Support\RoomResult::verified($room, (int) $user->id) : null;
+        $verified = $room ? RoomResult::verified($room, (int) $user->id) : null;
         if ($verified === null) {
             return response()->json([
                 'message' => 'Bu oyuncuya ait tamamlanmış sunucu maçı bulunamadı.',
@@ -368,7 +404,7 @@ class AuthController extends Controller
         // PUANLI MI? TEK kaynak RatingPolicy: bot puansız; eşleşme(ranked)/turnuva(NULL) limitsiz
         // puanlı; arkadaş/kılıç (friendly) PUANLI ama aynı-rakiple 24h limiti (Site Ayarları,
         // varsayılan 3) — sonrası casual. (Eski kural mode!=='friendly' idi; friendly artık puanlı.)
-        $ranked = \App\Support\RatingPolicy::isRanked($room, (int) $user->id, $opponentId);
+        $ranked = RatingPolicy::isRanked($room, (int) $user->id, $opponentId);
         // Friendly + 24h limit AŞILDI -> casual: rating YOK + PR/istatistik KREDİLENMEZ (analiz job'ı atlanır).
         // Puansız oda (unrated) limit aşımı DEĞİL: PR/luck analizi yine çalışır (maç analizinde görünür),
         // yalnız rated=false yazıldığından kariyer PR/sıralamaya girmez (CareerPrService).
@@ -386,7 +422,7 @@ class AuthController extends Controller
         }
         $data['room_code'] = $roomCode;
         $data['ranked'] = $ranked;
-        $data['match_type'] = $room->bot ? \App\Support\StatsConfig::MATCH_TYPE_AI
+        $data['match_type'] = $room->bot ? StatsConfig::MATCH_TYPE_AI
             : (((int) $room->stake > 0 || (int) $room->bet_pct > 0) ? 'coin' : 'match');
         $data['match_length'] = (int) ($room->server_match['target'] ?? $room->target ?? 1);
         $data['opponent_name'] = $room->{$opponentSlot.'_name'};
@@ -404,7 +440,7 @@ class AuthController extends Controller
             $gotLock = true;
             $lockError = false;
             try {
-                $resultLock = \Illuminate\Support\Facades\Cache::lock('rr:'.$roomCode.':'.$user->id, 30);
+                $resultLock = Cache::lock('rr:'.$roomCode.':'.$user->id, 30);
                 $gotLock = $resultLock->get();
             } catch (\Throwable $e) {
                 // Cache lock altyapısı bilinmiyorsa rating yazmaya devam etme; fail-open
@@ -418,8 +454,8 @@ class AuthController extends Controller
                 ], 503);
             }
             if (! $gotLock) {
-                $ex = \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first();
-                $oppEx = \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', '!=', $user->id)->latest('id')->first();
+                $ex = MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first();
+                $oppEx = MatchResult::where('room_code', $roomCode)->where('user_id', '!=', $user->id)->latest('id')->first();
                 $fresh = $user->fresh() ?? $user;
 
                 return response()->json([
@@ -439,7 +475,7 @@ class AuthController extends Controller
                 try {
                     $resultLock->release();
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning('result lock release failed', ['err' => $e->getMessage()]);
+                    Log::warning('result lock release failed', ['err' => $e->getMessage()]);
                 }
                 $resultLock = null;
             }
@@ -450,7 +486,7 @@ class AuthController extends Controller
         // rating/istatistik/satir YAZMA. Sunucu forfeit'i (ForfeitLoss) kaybedenin satirini
         // onceden yazmis olabilir; kaybeden gec gelip raporlarsa burada durur.
         if (! empty($roomCode)) {
-            $existing = \App\Models\MatchResult::where('room_code', $roomCode)
+            $existing = MatchResult::where('room_code', $roomCode)
                 ->where('user_id', $user->id)
                 ->first();
             if ($existing) {
@@ -460,10 +496,11 @@ class AuthController extends Controller
                 $this->enrichBareRow($existing, $data, $isClassic);
 
                 // Rakip satırı (varsa) -> tutarlı sunucu-otoriter PR + luck çifti.
-                $oppExisting = \App\Models\MatchResult::where('room_code', $roomCode)
+                $oppExisting = MatchResult::where('room_code', $roomCode)
                     ->where('user_id', '!=', $user->id)->latest('id')->first();
 
                 $releaseResultLock();
+
                 return response()->json([
                     'rating' => $user->rating ?? 1500,
                     'user' => $user,
@@ -487,7 +524,7 @@ class AuthController extends Controller
         // Mevcut self-heal davranisi yalniz gercek rakibin satiri ve dogrulanmis sonuc icin korunur.
         $opponentId = (int) $room->{$opponentSlot.'_user_id'};
         if ($ranked && $opponentId > 0) {
-            $oppRow = \App\Models\MatchResult::where('room_code', $roomCode)
+            $oppRow = MatchResult::where('room_code', $roomCode)
                 ->where('user_id', $opponentId)->latest('id')->first();
             if ($oppRow !== null && (bool) $oppRow->won === $won) {
                 $this->reconcileRow($oppRow, ! $won, $verified['opp'], $verified['self']);
@@ -496,7 +533,7 @@ class AuthController extends Controller
 
         if ($ranked) {
             // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
-            $newRating = \App\Support\RatingPolicy::eloNewRating((int) $ra, $rb, $won); // K=32, taban 100
+            $newRating = RatingPolicy::eloNewRating((int) $ra, $rb, $won); // K=32, taban 100
 
             $user->rating = $newRating;
             $user->games_played = ($user->games_played ?? 0) + 1;
@@ -546,10 +583,10 @@ class AuthController extends Controller
                 if (is_array($decoded) && ! empty($decoded['hc']) && is_array($decoded['log'] ?? null)) {
                     $ml = (int) ($data['match_length'] ?? 1);
                     $isMoney = ($data['match_type'] ?? 'match') === 'coin'; // coin=para oyunu -> 1pt ×1.5 YOK
-                    $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml, $isMoney);
+                    $srv = app(MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml, $isMoney);
                     if ($srv !== null && $srv['pr'] !== null) {
                         if ($prMode === 'shadow') {
-                            \Illuminate\Support\Facades\Log::info('PR shadow (client vs server)', [
+                            Log::info('PR shadow (client vs server)', [
                                 'user_id' => $user->id, 'room' => $roomCode,
                                 'client_pr' => $clientPr, 'server_pr' => $srv['pr'],
                                 'decisions' => $srv['decisions'],
@@ -571,7 +608,7 @@ class AuthController extends Controller
                     }
                 }
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('validator PR hata (yok sayildi)', ['err' => $e->getMessage()]);
+                Log::warning('validator PR hata (yok sayildi)', ['err' => $e->getMessage()]);
             }
         }
 
@@ -594,75 +631,69 @@ class AuthController extends Controller
 
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
         $mr = [
-            'user_id'         => $user->id,
-            'won'             => $won,
+            'user_id' => $user->id,
+            'won' => $won,
             'opponent_rating' => $rb,
-            'rating_before'   => (int) $ra,
-            'rating_after'    => $newRating,
-            'delta'           => $newRating - (int) $ra,
-            'match_length'    => $data['match_length'] ?? null,
-            'pr'              => $selfPr,
-            'coins_after'     => $user->coins ?? 0,
+            'rating_before' => (int) $ra,
+            'rating_after' => $newRating,
+            'delta' => $newRating - (int) $ra,
+            'match_length' => $data['match_length'] ?? null,
+            'pr' => $selfPr,
+            'coins_after' => $user->coins ?? 0,
         ];
         // score_* migration ile geldi -> kolonlar varsa ekle (yoksa kayit yine olussun).
         // (istemci HAM 'luck' ARTIK saklanmaz; şans = sunucu gnubg luck_emg/mwc.)
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'score_self')) {
+        if (Schema::hasColumn('match_results', 'score_self')) {
             $mr['score_self'] = $data['score_self'] ?? null;
             $mr['score_opp'] = $data['score_opp'] ?? null;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
+        if (Schema::hasColumn('match_results', 'opponent_name')) {
             $mr['opponent_name'] = $data['opponent_name'] ?? null;
             // gnubg-authoritative + log varsa istemci rakip-PR tahmini KAYDEDİLMEZ (gnubg dolduracak).
             $mr['opponent_pr'] = ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($data['log']))
                 ? null
                 : ($data['opponent_pr'] ?? null);
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
+        if (Schema::hasColumn('match_results', 'room_code')) {
             $mr['room_code'] = $data['room_code'] ?? null;
         }
         // Oynanan coin bahsini SABITLE: oda sonradan purge edilse de "Oynanan bahis" kalsın.
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'stake')) {
+        if (Schema::hasColumn('match_results', 'stake')) {
             $mr['stake'] = $room ? (int) $room->stake : 0;
         }
         // Aynı-rakip 24h limiti için: rakip hesap id + bu satır puanlı mı (rated).
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_user_id')) {
+        if (Schema::hasColumn('match_results', 'opponent_user_id')) {
             $mr['opponent_user_id'] = $opponentId > 0 ? $opponentId : null;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'rated')) {
+        if (Schema::hasColumn('match_results', 'rated')) {
             $mr['rated'] = $ranked;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
+        if (Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
         }
         // XG-style havuzlama totalleri (§13): lifetime PR = ΣequityLost / Σdecisions × 500.
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+        if (Schema::hasColumn('match_results', 'pr_equity_lost')) {
             $mr['pr_equity_lost'] = $prEquityLost;
             $mr['pr_decisions'] = $prDecisions;
         }
         // Oyun turu: Jeton (coin) mi N-puanlik mac mi (Median "Jeton" kategorisi + WXP).
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'match_type')) {
-            $mr['match_type'] = $data['match_type'] ?? \App\Support\StatsConfig::MATCH_TYPE_MATCH;
+        if (Schema::hasColumn('match_results', 'match_type')) {
+            $mr['match_type'] = $data['match_type'] ?? StatsConfig::MATCH_TYPE_MATCH;
         }
         // M2 emniyet ağı: kilit başarısız olup gerçek yarış olursa unique index çift satırı reddeder.
         // create'i yut -> 500 ("puanın kaydedilemedi") yerine idempotent (mevcut satır) dön.
         try {
-            $result = \App\Models\MatchResult::create($mr);
-            // Arkadaş davet ödülü: davet edilen UYGUN ilk maçını yaptıysa iki tarafa coin (bir kez,
-            // idempotent). Başarısız olursa maç raporu YİNE kaydedilir (ödül kritik yol değil).
-            try {
-                \App\Support\Referral::maybeReward($result);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('referral reward failed', [
-                    'user_id' => $user->id, 'err' => $e->getMessage(),
-                ]);
-            }
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Arkadaş davet ödülü artık MatchResult::created event'inden (model booted) tetiklenir —
+            // tüm create yolları (bu + MatchBackstop + ForfeitLoss) tek noktadan geçsin diye.
+            $result = MatchResult::create($mr);
+        } catch (UniqueConstraintViolationException $e) {
             $existing = ! empty($roomCode)
-                ? \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first()
+                ? MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first()
                 : null;
             $fresh = $user->fresh() ?? $user;
 
             $releaseResultLock();
+
             return response()->json([
                 'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
                 'pr_self' => $existing?->pr, 'pr_opponent' => null,
@@ -682,15 +713,15 @@ class AuthController extends Controller
             && ! empty($mr['log']) && ! $friendlyOverCap && ! $isClassic) {
             // PR job: önce ŞANS (inline), sonra ağır PR. (bkz AnalyzeMatchPrJob::handle inline luck.)
             try {
-                \App\Jobs\AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
+                AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('gnubg PR dispatch hata', ['err' => $e->getMessage()]);
+                Log::warning('gnubg PR dispatch hata', ['err' => $e->getMessage()]);
             }
             // Analiz ekranı review'ini ARKA PLANDA önden ısıt (reviews kuyruğu, best-effort).
             try {
-                \App\Jobs\CacheMatchReviewJob::dispatch($result->id)->onConnection('database');
+                CacheMatchReviewJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('review önbellek dispatch hata', ['err' => $e->getMessage()]);
+                Log::warning('review önbellek dispatch hata', ['err' => $e->getMessage()]);
             }
         }
 
@@ -698,31 +729,31 @@ class AuthController extends Controller
         // Ayri, bagimsiz domain akisi: WXP source of truth ledger'dir (rating'den bagimsiz).
         try {
             if ($ranked) {
-                app(\App\Services\WxpService::class)->awardForMatchResult($result);
+                app(WxpService::class)->awardForMatchResult($result);
             }
         } catch (\Throwable $e) {
             // WXP verilemezse mac kaydi yine de gecerli; sessizce veri kaybetme -> logla.
-            \Illuminate\Support\Facades\Log::warning('WXP award failed', [
+            Log::warning('WXP award failed', [
                 'match_result_id' => $result->id, 'user_id' => $user->id,
             ]);
         }
         // Yeni mac -> median cache'ini (tum filtreler) gecersiz kil. (best-effort: cache hatasi
         // reportRating'i dusurmesin.)
         try {
-            app(\App\Services\PlayerStatisticsService::class)->invalidate($user->id);
+            app(PlayerStatisticsService::class)->invalidate($user->id);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('stats invalidate hata (yok sayildi)', ['err' => $e->getMessage()]);
+            Log::warning('stats invalidate hata (yok sayildi)', ['err' => $e->getMessage()]);
         }
 
         // Hata Gunlugu: bu macin log'unu karar-karar analiz et (siniflandirma+pip).
         // Motor CALISMAZ; log'daki hazir equity/loss kullanilir. Hata olursa mac
         // kaydi yine gecerli -> sessizce yutma, logla.
         try {
-            app(\App\Services\ErrorJournalService::class)->analyzeMatch($result);
+            app(ErrorJournalService::class)->analyzeMatch($result);
             // Zar Ortalamalari cache'i (tum fazlar) yeni analizle gecersiz.
-            app(\App\Services\DiceStatisticsService::class)->invalidate($user->id);
+            app(DiceStatisticsService::class)->invalidate($user->id);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Error journal analyze failed', [
+            Log::warning('Error journal analyze failed', [
                 'match_result_id' => $result->id, 'user_id' => $user->id, 'err' => $e->getMessage(),
             ]);
         }
@@ -730,9 +761,9 @@ class AuthController extends Controller
         // Career PR (PR Sıralaması) aggregate'ini bu oyuncu icin GÜNCELLE (tek gruplu sorgu;
         // maç PR'larini ortalamaz, ham havuzlar -> bkz CareerPrService). Best-effort.
         try {
-            app(\App\Services\CareerPrService::class)->recalc($user);
+            app(CareerPrService::class)->recalc($user);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Career PR recalc failed', [
+            Log::warning('Career PR recalc failed', [
                 'user_id' => $user->id, 'err' => $e->getMessage(),
             ]);
         }
@@ -748,17 +779,17 @@ class AuthController extends Controller
             $rewardResult->pr = null;
             $rewardResult->luck = null;
             $ctx = $ranked
-                ? app(\App\Services\Achievements\StatsUpdater::class)->updateForMatch($user, $rewardResult)
+                ? app(StatsUpdater::class)->updateForMatch($user, $rewardResult)
                 : null;
             $user->unsetRelation('stat');
-            $newAch = $ranked ? app(\App\Services\Achievements\AchievementService::class)->evaluate($user, $ctx) : [];
+            $newAch = $ranked ? app(AchievementService::class)->evaluate($user, $ctx) : [];
             $unlocked = array_map(fn ($d) => [
                 'slug' => $d['slug'], 'name' => $d['name'], 'desc' => $d['desc'],
                 'icon' => $d['icon'], 'tier' => $d['tier'], 'rarity' => $d['rarity'],
                 'rewardCoin' => (int) ($d['reward_coin'] ?? 0),
             ], $newAch);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Achievement evaluate failed', [
+            Log::warning('Achievement evaluate failed', [
                 'match_result_id' => $result->id, 'user_id' => $user->id, 'err' => $e->getMessage(),
             ]);
         }
@@ -774,8 +805,8 @@ class AuthController extends Controller
         $opponentLuckEmg = null; // rakibin luck equity (cost) — Maç Özeti
         $opponentLuckJokers = null; // rakibin joker sayısı — Maç Özeti
         try {
-            if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
-                $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
+            if (! empty($data['room_code']) && Schema::hasColumn('match_results', 'room_code')) {
+                $oppRow = MatchResult::where('room_code', $data['room_code'])
                     ->where('user_id', '!=', $user->id)
                     ->latest('id')
                     ->first();
@@ -796,7 +827,7 @@ class AuthController extends Controller
                     $opponentLuckMwc = $oppRow->luck_mwc ?? null;
                     $opponentLuckEmg = $oppRow->luck_emg ?? null;
                     $opponentLuckJokers = $oppRow->luck_jokers ?? null;
-                    if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
+                    if (Schema::hasColumn('match_results', 'opponent_pr')) {
                         $result->opponent_pr = $opponentPr;
                         $result->save();
                         $oppRow->opponent_pr = $selfPr;
@@ -805,7 +836,7 @@ class AuthController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('opponent PR senkron hata (yok sayildi)', ['err' => $e->getMessage()]);
+            Log::warning('opponent PR senkron hata (yok sayildi)', ['err' => $e->getMessage()]);
         }
 
         $releaseResultLock();
@@ -813,7 +844,7 @@ class AuthController extends Controller
         // + PR/şans analizini match_moves'tan HEMEN kuyruğa al. Rakip hiç raporlamasa bile (sekme
         // kapandı/ağ) verisi 5-20 dk cron beklemeden saniyeler içinde dolar. Best-effort (akışı kırmaz).
         if ($room) {
-            \App\Support\MatchFinalize::run($room->fresh() ?? $room);
+            MatchFinalize::run($room->fresh() ?? $room);
         }
         // Sonuç ekranı "puansız maç" etiketi için: bu maç PUANLI mı + değilse SEBEP. Kullanıcı,
         // kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu -> açıklayıcı not göster.
@@ -823,6 +854,7 @@ class AuthController extends Controller
                 ? 'bot'
                 : ($room->unrated ? 'unrated' : ($guestOpponent ? 'guest' : ($friendlyOverCap ? 'friendly_cap' : ($room->mode === 'friendly' ? 'friendly' : 'casual'))));
         }
+
         return response()->json([
             'rating' => $newRating,
             'rating_before' => (int) $ra,     // OTORİTER maç-öncesi rating; istemci delta'yı bundan çizer (yerel user.rating drift edebilir -> sahte +1)
@@ -830,7 +862,7 @@ class AuthController extends Controller
             'achievements' => $unlocked,
             'rated' => $ranked,               // maç Elo/PR ürettiyse true; casual/kılıç-limit -> false
             'rating_reason' => $ratingReason, // false ise sebep: bot|unrated|guest|friendly_cap|friendly|casual
-            'friendly_rating_limit' => \App\Support\RatingPolicy::friendlyDailyLimit(), // "limit doldu (N)" metni için
+            'friendly_rating_limit' => RatingPolicy::friendlyDailyLimit(), // "limit doldu (N)" metni için
             'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
             // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı
             // yalnız fallback; ekran "analiz ediliyor" gösterip gnubg gelince yerine koyar.
@@ -840,7 +872,7 @@ class AuthController extends Controller
             // uyuşmazlığı. Sunucu hamleleri varsa da poll et (gnubg gelir, hepsi tek kaynak).
             'gnubg_authoritative' => (string) config('gnubg.pr_mode', 'off') === 'authoritative'
                 && ! $isClassic // KLASIK TAVLA: PR yok -> istemci poll etmesin
-                && (! empty($mr['log']) || ($room && \App\Models\MatchMove::existsForRoom($room->code))),
+                && (! empty($mr['log']) || ($room && MatchMove::existsForRoom($room->code))),
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
             'pr_checker_self' => $selfCheckerPr,          // XG kirilimi: pul-yalniz
@@ -861,12 +893,12 @@ class AuthController extends Controller
      * HAKEM=gnubg: canlı sonuç ekranı, maç bitince gnubg PR'ı (async job) hazır olana kadar bu ucu
      * poll'lar. Hazır olunca gösterilen PR wildbg yerine gnubg olur. Yalnız KENDİ maçın (pvb/online).
      */
-    public function matchGnubgPr(Request $request, \App\Models\MatchResult $match)
+    public function matchGnubgPr(Request $request, MatchResult $match)
     {
         if ((int) $match->user_id !== (int) $request->user()->id) {
             abort(403);
         }
-        $has = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_pr');
+        $has = Schema::hasColumn('match_results', 'gnubg_pr');
         $ready = $has && $match->gnubg_pr !== null;
         $num = fn ($v) => $v !== null ? (float) $v : null;
 
@@ -875,15 +907,15 @@ class AuthController extends Controller
         // gnubg_pr_at İŞARETLENİR. İstemci eskiden yalnız `ready`ye bakıp PR gelmeyince LOADER'ı SONSUZA
         // dek döndürüyordu (ör. #ABBAB 2-hamle hükmen -> kaybeden PR'ı null -> 5 dk spinner). settled ile
         // istemci "analiz bitti, PR yok" durumunda loader'ı durdurup dürüst "—" gösterir. (ready => settled.)
-        $hasAt = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_pr_at');
+        $hasAt = Schema::hasColumn('match_results', 'gnubg_pr_at');
         $settled = $ready || ($hasAt && $match->gnubg_pr_at !== null);
 
         // ADIM 4: gnubg NATIVE şans (Luck V1) hazır mı? Ayrı (async) job -> PR'dan farklı zamanda dolar.
-        $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
+        $hasMwc = Schema::hasColumn('match_results', 'luck_mwc');
         $luckReady = $hasMwc && $match->luck_mwc !== null;
-        $hasOppMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
+        $hasOppMwc = Schema::hasColumn('match_results', 'opponent_luck_mwc');
         // BOT (pvb) gnubg PR: aynı job self ile birlikte doldurur -> $ready (self hazır) iken bot da hazır.
-        $hasOppPr = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_pr');
+        $hasOppPr = Schema::hasColumn('match_results', 'gnubg_opponent_pr');
 
         // TEK-KAYNAK PR: bu satırın gnubg_opponent_* kolonları RECONSTRUCTED'dır (rakip hamleleri
         // BU oyuncunun log'undan kurulur) -> yalnız rakibin KENDİ otoriter satırı YOKSA meşrudur
@@ -891,8 +923,8 @@ class AuthController extends Controller
         // DEĞER GÖSTERİLMEZ (null döndür); istemci rakip PR'ını /me/match-pr'den rakibin KENDİ
         // gnubg satırından okur. Böylece iki istemci de AYNI tek otoriter değeri görür (5.93 sızıntısı biter).
         $oppRowExists = ! empty($match->room_code)
-            && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')
-            && \App\Models\MatchResult::where('room_code', $match->room_code)
+            && Schema::hasColumn('match_results', 'room_code')
+            && MatchResult::where('room_code', $match->room_code)
                 ->where('user_id', '!=', $match->user_id)->exists();
         $oppRecon = $ready && $hasOppPr && ! $oppRowExists; // reconstructed rakip PR'ı yalnız burada ver
         $oppReconLuck = $luckReady && ! $oppRowExists;
@@ -902,7 +934,7 @@ class AuthController extends Controller
         // gösterir (zaman-tahmini yerine). Bitince/yoksa null -> istemci zaten "ready"ye snap eder.
         $progress = null;
         if (! $ready) {
-            $prog = \Illuminate\Support\Facades\Cache::get('pr:progress:'.$match->id);
+            $prog = Cache::get('pr:progress:'.$match->id);
             if (is_array($prog) && (int) ($prog['total'] ?? 0) > 0) {
                 $pd = max(0, (int) ($prog['done'] ?? 0));
                 $pt = (int) $prog['total'];
@@ -949,12 +981,12 @@ class AuthController extends Controller
         if (empty($code)) {
             return null;
         }
-        $room = \App\Models\Room::where('code', $code)->first();
+        $room = Room::where('code', $code)->first();
         if (! $room) {
             return null;
         }
 
-        return \App\Support\RoomResult::resolve($room, (int) $user->id);
+        return RoomResult::resolve($room, (int) $user->id);
     }
 
     /**
@@ -963,7 +995,7 @@ class AuthController extends Controller
      * win/loss'unu net farkla duzelt. Skorlar verilirse onlari da yaz. Zaten dogruysa
      * dokunmaz. (matches:fix-results ile ayni tek-satir mantigi; nadir yaris self-heal'i.)
      */
-    private function reconcileRow(\App\Models\MatchResult $row, bool $correctWon, ?int $scoreSelf = null, ?int $scoreOpp = null): void
+    private function reconcileRow(MatchResult $row, bool $correctWon, ?int $scoreSelf = null, ?int $scoreOpp = null): void
     {
         if ((bool) $row->won === $correctWon) {
             return;
@@ -989,7 +1021,7 @@ class AuthController extends Controller
             $row->delta = $newDelta;
             $row->rating_after = $newAfter;
 
-            $u = \App\Models\User::find($row->user_id);
+            $u = User::find($row->user_id);
             if ($u) {
                 $u->rating = max(100, (int) ($u->rating ?? 1500) + ($newDelta - $oldDelta));
                 if ($correctWon) {
@@ -1004,7 +1036,7 @@ class AuthController extends Controller
         }
         $row->save();
 
-        \Illuminate\Support\Facades\Log::warning('reportRating: rakip satiri kesin gercekle tamamlayiciya duzeltildi', [
+        Log::warning('reportRating: rakip satiri kesin gercekle tamamlayiciya duzeltildi', [
             'match_result_id' => $row->id, 'user_id' => $row->user_id, 'won' => $correctWon,
         ]);
     }
@@ -1016,14 +1048,14 @@ class AuthController extends Controller
      * çift-Elo yok. Yalnız satır "bare" ise (log boş) çalışır; istemcinin kendi zengin satırını
      * (retry/normal rapor) ASLA ezmez. Böylece "kazandı ama sekmeyi kapattı" maçı analiz edilebilir.
      */
-    private function enrichBareRow(\App\Models\MatchResult $row, array $data, bool $isClassic = false): void
+    private function enrichBareRow(MatchResult $row, array $data, bool $isClassic = false): void
     {
         if (! empty($row->log) || empty($data['log'])) {
             return; // zaten zengin VEYA gelen raporda analiz yok -> yapacak bir şey yok
         }
         $dirty = false;
         $gnubgAuthoritative = (string) config('gnubg.pr_mode', 'off') === 'authoritative';
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
+        if (Schema::hasColumn('match_results', 'log')) {
             $row->log = $data['log']; // log HER durumda saklanır -> gnubg (aşağıda dispatch) analiz eder
             // PR'ın TEK yetkilisi gnubg (DİREKTİF 2026-09-19): authoritative + log varsa istemci
             // (wildbg) PR/totalleri SEED ETME -> gnubg gelene dek NULL kalır, AnalyzeMatchPrJob doldurur.
@@ -1032,7 +1064,7 @@ class AuthController extends Controller
             if (! $gnubgAuthoritative) {
                 $totals = $this->prTotalsFromLog($data['log']);
                 $row->pr = $this->prFromLog($data['log']) ?? ($data['pr'] ?? $row->pr);
-                if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+                if (Schema::hasColumn('match_results', 'pr_equity_lost')) {
                     $row->pr_equity_lost = $totals['loss'] ?? $row->pr_equity_lost;
                     $row->pr_decisions = $totals['decisions'] ?? $row->pr_decisions;
                 }
@@ -1043,12 +1075,12 @@ class AuthController extends Controller
         // Rakip PR: authoritative modda istemci tahmini seed EDİLMEZ (gnubg AnalyzeMatchPrJob'da
         // rakip satırdan/gnubg'den senkronlar). Yalnız gnubg kapalıyken istemci değeri fallback.
         if (! $gnubgAuthoritative
-            && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')
+            && Schema::hasColumn('match_results', 'opponent_name')
             && $row->opponent_pr === null && isset($data['opponent_pr'])) {
             $row->opponent_pr = $data['opponent_pr'];
             $dirty = true;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'score_self')) {
+        if (Schema::hasColumn('match_results', 'score_self')) {
             if ($row->score_self === null && isset($data['score_self'])) {
                 $row->score_self = $data['score_self'];
                 $dirty = true;
@@ -1065,23 +1097,23 @@ class AuthController extends Controller
         // PR totalleri degisti -> bu oyuncunun Career PR aggregate'ini yenile (best-effort).
         try {
             if ($u = User::find($row->user_id)) {
-                app(\App\Services\CareerPrService::class)->recalc($u);
+                app(CareerPrService::class)->recalc($u);
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Career PR recalc (enrich) failed', ['user_id' => $row->user_id, 'err' => $e->getMessage()]);
+            Log::warning('Career PR recalc (enrich) failed', ['user_id' => $row->user_id, 'err' => $e->getMessage()]);
         }
         // Artık log var -> gnubg PR analizini tetikle (pr_mode açıksa). ŞANS (luck) PR job'unun İÇİNDE
         // inline hesaplanır (ayrı dispatch YOK -> ayrı kuyruk beklemesi yok; bkz AnalyzeMatchPrJob).
         if (! $isClassic // KLASIK TAVLA: gnubg analiz edemez -> dispatch etme (bkz reportRating $isClassic)
             && in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
             try {
-                \App\Jobs\AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
+                AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
             } catch (\Throwable $e) {
                 // best-effort
             }
             // Analiz ekranı review'ini de ARKA PLANDA önden ısıt (best-effort; gnubg down ise atlar).
             try {
-                \App\Jobs\CacheMatchReviewJob::dispatch($row->id)->onConnection('database');
+                CacheMatchReviewJob::dispatch($row->id)->onConnection('database');
             } catch (\Throwable $e) {
                 // best-effort
             }
@@ -1133,7 +1165,7 @@ class AuthController extends Controller
                     continue; // zorunlu/obvious (checker VEYA cube) -> paydaya girmez
                 }
                 $cl = max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
-                if (is_finite($cl) && $cl <= \App\Services\Analysis\AnalysisOrchestrator::CHK_LOSS_MAX) {
+                if (is_finite($cl) && $cl <= AnalysisOrchestrator::CHK_LOSS_MAX) {
                     $sum += $cl; // ÇÖP KALKANI: makul-dışı kayıp = bozuk -> sayma (PR şişmesin)
                     $n++;
                 }
@@ -1141,7 +1173,7 @@ class AuthController extends Controller
                 continue; // ESKİ cube log (PR alanı yok, loss=0) -> phantom 0-karar sayma
             } else {
                 $cl = max(0.0, (float) ($e['loss'] ?? 0));
-                if (is_finite($cl) && $cl <= \App\Services\Analysis\AnalysisOrchestrator::CHK_LOSS_MAX) {
+                if (is_finite($cl) && $cl <= AnalysisOrchestrator::CHK_LOSS_MAX) {
                     $sum += $cl; // eski checker log geriye uyum + çöp kalkanı
                     $n++;
                 }
@@ -1210,9 +1242,9 @@ class AuthController extends Controller
         if ($code === '') {
             return response()->json(['self' => null, 'opponent' => null]);
         }
-        $mine = \App\Models\MatchResult::where('room_code', $code)
+        $mine = MatchResult::where('room_code', $code)
             ->where('user_id', $user->id)->latest('id')->first();
-        $opp = \App\Models\MatchResult::where('room_code', $code)
+        $opp = MatchResult::where('room_code', $code)
             ->where('user_id', '!=', $user->id)->latest('id')->first();
 
         // KÖK FIX (çapraz-istemci PR tutarsızlığı #2NPAF): checker/cube KIRILIMI GNUBG-OTORİTER
@@ -1222,7 +1254,7 @@ class AuthController extends Controller
         // ve genel PR (gnubg) ile kendi içinde tutarsızdı. gnubg iki oyuncuda AYNI olduğundan bu
         // değerler her istemcide özdeş. gnubg hazır değilse null -> istemci gnubg gelene kadar mevcut
         // değeri korur (wildbg sayısı KULLANICIYA gösterilmez — direktif).
-        $has = fn (string $c): bool => \Illuminate\Support\Facades\Schema::hasColumn('match_results', $c);
+        $has = fn (string $c): bool => Schema::hasColumn('match_results', $c);
         $col = fn ($m, string $c) => ($m && $has($c) && $m->$c !== null) ? (float) $m->$c : null;
         $auth = (string) config('gnubg.pr_mode', 'off') === 'authoritative';
         // TEK-KAYNAK PR (otoriter=gnubg). self/opponent = her oyuncunun KENDİ satırındaki gnubg_pr.
@@ -1260,18 +1292,18 @@ class AuthController extends Controller
 
     // Rozet tanimlari (id => [ad, ikon]) — frontend ile ayni id'ler
     private const BADGE_LABELS = [
-        'first_win'    => ['İlk Galibiyet', 'medal'],
-        'games_10'     => ['10 Maç', 'medal'],
-        'games_50'     => ['50 Maç', 'medal'],
-        'games_100'    => ['100 Maç', 'medal'],
-        'games_500'    => ['500 Maç', 'medal'],
-        'wins_10'      => ['10 Galibiyet', 'trophy'],
-        'wins_50'      => ['50 Galibiyet', 'trophy'],
-        'wins_100'     => ['100 Galibiyet', 'trophy'],
-        'rating_1600'  => ['Usta (1600)', 'crown'],
-        'rating_1800'  => ['Master (1800)', 'crown'],
-        'rating_2000'  => ['Grandmaster (2000)', 'crown'],
-        'rating_2200'  => ['Efsane (2200)', 'crown'],
+        'first_win' => ['İlk Galibiyet', 'medal'],
+        'games_10' => ['10 Maç', 'medal'],
+        'games_50' => ['50 Maç', 'medal'],
+        'games_100' => ['100 Maç', 'medal'],
+        'games_500' => ['500 Maç', 'medal'],
+        'wins_10' => ['10 Galibiyet', 'trophy'],
+        'wins_50' => ['50 Galibiyet', 'trophy'],
+        'wins_100' => ['100 Galibiyet', 'trophy'],
+        'rating_1600' => ['Usta (1600)', 'crown'],
+        'rating_1800' => ['Master (1800)', 'crown'],
+        'rating_2000' => ['Grandmaster (2000)', 'crown'],
+        'rating_2200' => ['Efsane (2200)', 'crown'],
     ];
 
     // Yeni hak kazanilan rozetleri ekle + her biri icin bildirim gonder
@@ -1311,7 +1343,7 @@ class AuthController extends Controller
         foreach ($new as $b) {
             $label = self::BADGE_LABELS[$b][0] ?? $b;
             $icon = self::BADGE_LABELS[$b][1] ?? 'medal';
-            \App\Models\Notification::notify($user->id, "Yeni rozet: {$label}", null, $icon);
+            Notification::notify($user->id, "Yeni rozet: {$label}", null, $icon);
         }
     }
 
@@ -1344,24 +1376,25 @@ class AuthController extends Controller
             // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
             // 'ghost' (yönetici hayalet modu) de 'offline' gibi gri -> hiçbir yerde çevrimiçi görünmez.
             $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
-                && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+                && Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+
             return [
-                'rank'    => $i + 1,
-                'id'      => $u->id,
-                'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
-                'avatar'  => $u->avatar,
-                'frame'   => $u->avatar_frame,
+                'rank' => $i + 1,
+                'id' => $u->id,
+                'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar' => $u->avatar,
+                'frame' => $u->avatar_frame,
                 'country' => $u->country,
-                'rating'  => $u->rating ?? 1500,
-                'coins'   => $u->coins ?? 0,
-                'wxp'     => $u->total_wxp ?? 0,
-                'wins'    => $u->wins ?? 0,
-                'losses'  => $u->losses ?? 0,
-                'games'   => $u->games_played ?? 0,
+                'rating' => $u->rating ?? 1500,
+                'coins' => $u->coins ?? 0,
+                'wxp' => $u->total_wxp ?? 0,
+                'wins' => $u->wins ?? 0,
+                'losses' => $u->losses ?? 0,
+                'games' => $u->games_played ?? 0,
                 'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
                 'is_admin' => (bool) $u->is_admin, // yönetici -> isim yanı kırmızı kalkan
                 'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
-                'status'  => $online ? ($u->presence_status ?: 'available') : 'offline',
+                'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
 
@@ -1372,12 +1405,12 @@ class AuthController extends Controller
     // sartini saglayan oyuncular; career_pr ASC (tam hassasiyet), esitlikte cok karar/maç önce.
     public function prLeaderboard(Request $request)
     {
-        if (! \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr')) {
+        if (! Schema::hasColumn('users', 'career_pr')) {
             return response()->json(['players' => [], 'min_matches' => 0, 'min_decisions' => 0]);
         }
         $limit = min(100, max(1, (int) $request->query('limit', 10)));
-        $minM = \App\Services\CareerPrService::minMatches();
-        $minD = \App\Services\CareerPrService::minDecisions();
+        $minM = CareerPrService::minMatches();
+        $minD = CareerPrService::minDecisions();
 
         $users = User::whereNotNull('career_pr')
             ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") listede görünmesin
@@ -1392,7 +1425,8 @@ class AuthController extends Controller
 
         $rows = $users->values()->map(function ($u, $i) {
             $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
-                && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+                && Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+
             return [
                 'rank' => $i + 1,
                 'id' => $u->id,
@@ -1436,8 +1470,8 @@ class AuthController extends Controller
             if (! Schema::hasColumn('users', 'career_pr')) {
                 return response()->json(['players' => []]);
             }
-            $minM = \App\Services\CareerPrService::minMatches();
-            $minD = \App\Services\CareerPrService::minDecisions();
+            $minM = CareerPrService::minMatches();
+            $minD = CareerPrService::minDecisions();
             $base = fn () => User::whereNotNull('career_pr')->where('is_system', false)->notDeleted()
                 ->where('career_pr_matches', '>=', $minM)->where('career_pr_decisions', '>=', $minD);
             $users = $base()->where($nameMatch)->orderBy('career_pr', 'asc')->limit(15)
@@ -1446,7 +1480,8 @@ class AuthController extends Controller
                 // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz
                 $rank = $base()->where('career_pr', '<', $u->career_pr)->count() + 1;
                 $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
-                    && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+                    && Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+
                 return [
                     'rank' => $rank,
                     'id' => $u->id,
@@ -1476,24 +1511,25 @@ class AuthController extends Controller
             // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz. Rank = kendisinden ustte kac kisi var + 1.
             $rank = User::where('is_system', false)->notDeleted()->where($sortCol, '>', $u->{$sortCol})->count() + 1;
             $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
-                && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+                && Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+
             return [
-                'rank'    => $rank,
-                'id'      => $u->id,
-                'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
-                'avatar'  => $u->avatar,
-                'frame'   => $u->avatar_frame,
+                'rank' => $rank,
+                'id' => $u->id,
+                'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar' => $u->avatar,
+                'frame' => $u->avatar_frame,
                 'country' => $u->country,
-                'rating'  => $u->rating ?? 1500,
-                'coins'   => $u->coins ?? 0,
-                'wxp'     => $u->total_wxp ?? 0,
-                'wins'    => $u->wins ?? 0,
-                'losses'  => $u->losses ?? 0,
-                'games'   => $u->games_played ?? 0,
+                'rating' => $u->rating ?? 1500,
+                'coins' => $u->coins ?? 0,
+                'wxp' => $u->total_wxp ?? 0,
+                'wins' => $u->wins ?? 0,
+                'losses' => $u->losses ?? 0,
+                'games' => $u->games_played ?? 0,
                 'premium' => $u->plan_active !== 'free',
                 'is_admin' => (bool) $u->is_admin,
                 'is_support' => (bool) $u->is_support,
-                'status'  => $online ? ($u->presence_status ?: 'available') : 'offline',
+                'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
         });
 
@@ -1507,7 +1543,7 @@ class AuthController extends Controller
     // liste her istemcide gorunur, sik degismez.
     public function topRanks()
     {
-        $data = \Illuminate\Support\Facades\Cache::remember('top_ranks_v1', 120, function () {
+        $data = Cache::remember('top_ranks_v1', 120, function () {
             // Rating: leaderboard ile ayni sira (rating DESC, wins DESC), ilk 3.
             $rating = User::where('is_system', false)->notDeleted() // resmi/sistem + silinmiş rozetlerde çıkmasın
                 ->orderByDesc('rating')
@@ -1520,11 +1556,11 @@ class AuthController extends Controller
 
             // PR: prLeaderboard ile ayni sira/esik (career_pr ASC + asgari mac/karar), ilk 3.
             $pr = [];
-            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr')) {
+            if (Schema::hasColumn('users', 'career_pr')) {
                 $pr = User::whereNotNull('career_pr')
                     ->where('is_system', false)->notDeleted() // resmi/sistem + silinmiş rozetlerde çıkmasın
-                    ->where('career_pr_matches', '>=', \App\Services\CareerPrService::minMatches())
-                    ->where('career_pr_decisions', '>=', \App\Services\CareerPrService::minDecisions())
+                    ->where('career_pr_matches', '>=', CareerPrService::minMatches())
+                    ->where('career_pr_decisions', '>=', CareerPrService::minDecisions())
                     ->orderBy('career_pr', 'asc')
                     ->orderByDesc('career_pr_decisions')
                     ->orderByDesc('career_pr_matches')
@@ -1546,9 +1582,9 @@ class AuthController extends Controller
     // ayri serializasyon gerekmez. is_admin zaten publicProfile/liderlikte aciktir (yeni sizinti yok).
     public function roles()
     {
-        $data = \Illuminate\Support\Facades\Cache::remember('user_roles_v1', 120, function () {
+        $data = Cache::remember('user_roles_v1', 120, function () {
             $admins = User::where('is_admin', true)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
-            $support = \Illuminate\Support\Facades\Schema::hasColumn('users', 'is_support')
+            $support = Schema::hasColumn('users', 'is_support')
                 ? User::where('is_support', true)->pluck('id')->map(fn ($id) => (int) $id)->values()->all()
                 : [];
 
@@ -1566,13 +1602,13 @@ class AuthController extends Controller
         // gorunuyor ama MAĞLUBİYET 0" tutarsizligi biter. (User.wins/losses/games_played
         // sayaclari yalniz PUANLI maci sayar; arkadaslik/AI maci satir yazar ama sayaci
         // artirmaz -> form ile celisiyordu.)
-        $agg = \App\Models\MatchResult::where('user_id', $user->id)->real()
+        $agg = MatchResult::where('user_id', $user->id)->real()
             ->selectRaw('COUNT(*) as g, COALESCE(SUM(won), 0) as w')
             ->first();
         $games = (int) ($agg->g ?? 0);
         $wins = (int) ($agg->w ?? 0);
         $losses = max(0, $games - $wins);
-        $recent = \App\Models\MatchResult::where('user_id', $user->id)->real()
+        $recent = MatchResult::where('user_id', $user->id)->real()
             ->orderByDesc('id')
             ->limit(10)
             ->get(['won']);
@@ -1584,8 +1620,8 @@ class AuthController extends Controller
         // Canlı Maçlar dahil; yalnız Arkadaşlar paneli değil). friendships: accepted + çift yön.
         $me = $request->user('sanctum');
         $isFriend = false;
-        if ($me && $me->id !== $user->id && \Illuminate\Support\Facades\Schema::hasTable('friendships')) {
-            $isFriend = \Illuminate\Support\Facades\DB::table('friendships')
+        if ($me && $me->id !== $user->id && Schema::hasTable('friendships')) {
+            $isFriend = DB::table('friendships')
                 ->where('status', 'accepted')
                 ->where(function ($q) use ($me, $user) {
                     $q->where(function ($w) use ($me, $user) {
@@ -1598,7 +1634,7 @@ class AuthController extends Controller
         }
 
         $online = $user->last_seen && ! in_array($user->presence_status, ['offline', 'ghost'], true)
-            ? \Illuminate\Support\Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
+            ? Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
             : false;
 
         return response()->json([
@@ -1622,12 +1658,12 @@ class AuthController extends Controller
             'viewer_is_admin' => (bool) ($me && $me->is_admin && $me->id !== $user->id),
             'rank' => $rank,
             // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
-            'career_pr' => \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,
+            'career_pr' => Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,
             'career_pr_matches' => (int) ($user->career_pr_matches ?? 0),
             'career_pr_decisions' => (int) ($user->career_pr_decisions ?? 0),
             'form' => $form,
             'badges' => $user->badges ?? [],
-            'featured' => app(\App\Services\Achievements\AchievementService::class)->resolveFeatured($user->featured_badges),
+            'featured' => app(AchievementService::class)->resolveFeatured($user->featured_badges),
             // Cevrimici mi? last_seen son 2 dk icinde ise (presence ping penceresiyle ayni).
             // A-29: "Çevrimdışı Görün" seçen oyuncu çevrimdışı görünür (eskiden gerçek durum sızıyordu).
             'online' => $online,
@@ -1639,16 +1675,16 @@ class AuthController extends Controller
                 ? $user->chat_muted_until->toIso8601String()
                 : null,
             // Admin notu YALNIZ yöneticiye döner (null = yok ya da bakan admin değil).
-            'admin_note' => ($me && $me->is_admin && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note'))
+            'admin_note' => ($me && $me->is_admin && Schema::hasColumn('users', 'admin_note'))
                 ? ($user->admin_note ?: null)
                 : null,
             // Notu son yazan yönetici + zaman (yalnız yöneticiye; profilde küçük gösterilir).
             'admin_note_by_name' => ($me && $me->is_admin && $user->admin_note
-                && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note_by') && $user->admin_note_by)
-                ? (\App\Models\User::find($user->admin_note_by)?->nickname)
+                && Schema::hasColumn('users', 'admin_note_by') && $user->admin_note_by)
+                ? (User::find($user->admin_note_by)?->nickname)
                 : null,
             'admin_note_at' => ($me && $me->is_admin && $user->admin_note
-                && \Illuminate\Support\Facades\Schema::hasColumn('users', 'admin_note_at') && $user->admin_note_at)
+                && Schema::hasColumn('users', 'admin_note_at') && $user->admin_note_at)
                 ? $user->admin_note_at->toIso8601String()
                 : null,
         ]);
@@ -1661,23 +1697,23 @@ class AuthController extends Controller
         // SAVUNMACI: score_* kolonlari migration ile eklendi. Migration henuz
         // calismadiysa o kolonlari SECME (aksi halde "unknown column" -> tum liste bos).
         // (istemci HAM 'luck'/'opponent_luck' ARTIK SECILMEZ -> şans yalnız gnubg luck_mwc/emg.)
-        $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'score_self');
-        $hasOpp = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name');
-        $hasLog = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log');
-        $hasRoom = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code');
-        $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
-        $hasOppLuckMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
+        $hasNew = Schema::hasColumn('match_results', 'score_self');
+        $hasOpp = Schema::hasColumn('match_results', 'opponent_name');
+        $hasLog = Schema::hasColumn('match_results', 'log');
+        $hasRoom = Schema::hasColumn('match_results', 'room_code');
+        $hasMwc = Schema::hasColumn('match_results', 'luck_mwc');
+        $hasOppLuckMwc = Schema::hasColumn('match_results', 'opponent_luck_mwc');
         // Maç Özeti: luck EQUITY (emg) + JOKER (savunmacı — migration henüz koşmamış olabilir)
-        $hasEmg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_emg');
-        $hasJokers = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_jokers');
-        $hasOppEmg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_emg');
-        $hasOppJokers = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_jokers');
+        $hasEmg = Schema::hasColumn('match_results', 'luck_emg');
+        $hasJokers = Schema::hasColumn('match_results', 'luck_jokers');
+        $hasOppEmg = Schema::hasColumn('match_results', 'opponent_luck_emg');
+        $hasOppJokers = Schema::hasColumn('match_results', 'opponent_luck_jokers');
         // TEK-KAYNAK PR: otoriter gnubg kırılımı (self + pvb rakip). Maç Analizleri İstatistik'i de
         // sonuç kartı/analizle AYNI değeri göstersin diye listeye eklenir (varsa).
-        $hasGnubg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_pr');
-        $hasGnubgSplit = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_checker_pr');
-        $hasOppGnubg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_pr');
-        $hasOppGnubgSplit = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr');
+        $hasGnubg = Schema::hasColumn('match_results', 'gnubg_pr');
+        $hasGnubgSplit = Schema::hasColumn('match_results', 'gnubg_checker_pr');
+        $hasOppGnubg = Schema::hasColumn('match_results', 'gnubg_opponent_pr');
+        $hasOppGnubgSplit = Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasGnubg) {
@@ -1724,13 +1760,13 @@ class AuthController extends Controller
         $limit = min(100, max(1, (int) $request->query('limit', 30)));
         $search = trim((string) $request->query('q', ''));
         $from = $request->query('from');
-        $query = \App\Models\MatchResult::where('user_id', $me->id);
+        $query = MatchResult::where('user_id', $me->id);
         if ($search !== '' && $hasOpp) {
             $query->where('opponent_name', 'like', '%'.$search.'%');
         }
         if ($from) {
             try {
-                $query->where('created_at', '>=', \Illuminate\Support\Carbon::parse($from));
+                $query->where('created_at', '>=', Carbon::parse($from));
             } catch (\Throwable $e) {
                 // gecersiz tarih -> filtreyi yoksay
             }
@@ -1755,13 +1791,13 @@ class AuthController extends Controller
             $expr = '(log IS NOT NULL AND LENGTH(log) > 40)';
             // SUNUCU-OTORİTER: client log bos olsa bile match_moves varsa .mat/analiz ORADAN kurulur
             // (bkz. MatchResult::matText) -> buton gorunsun. Korelasyonlu EXISTS, sayfa basi az satir.
-            if ($hasRoom && \Illuminate\Support\Facades\Schema::hasTable('match_moves')) {
+            if ($hasRoom && Schema::hasTable('match_moves')) {
                 // GERÇEK aksiyon şartı: sadece oyuncu hamle/küp satırı (move/double/take/drop) varsa
                 // analiz edilebilir. Yalnız dice/end satırlı (çok kısa/terk edilmiş) maçlar has_log=FALSE
                 // -> istemci düğme yerine doğrudan "analiz yok" notunu gösterir (önce düğme çıkmaz).
                 $expr .= " OR (room_code IS NOT NULL AND EXISTS (SELECT 1 FROM match_moves mm WHERE mm.room_code = match_results.room_code AND mm.kind IN ('move','double','take','drop')))";
             }
-            $query->addSelect(\Illuminate\Support\Facades\DB::raw("($expr) as has_log"));
+            $query->addSelect(DB::raw("($expr) as has_log"));
         }
         $rows = $query->get();
 
@@ -1791,7 +1827,7 @@ class AuthController extends Controller
                 if ($hasGnubgSplit) {
                     $oppCols = array_merge($oppCols, ['gnubg_checker_pr', 'gnubg_cube_pr']);
                 }
-                \App\Models\MatchResult::whereIn('room_code', $codes)
+                MatchResult::whereIn('room_code', $codes)
                     ->where('user_id', '!=', $me->id)
                     ->get($oppCols)
                     ->each(function ($r) use (&$oppLuckMwcByRoom, &$oppLuckEmgByRoom, &$oppLuckJokersByRoom, &$oppPrByRoom, $hasMwc, $hasEmg, $hasJokers, $hasGnubg, $hasGnubgSplit) {
@@ -1821,10 +1857,10 @@ class AuthController extends Controller
 
         // Klasik Tavla bayrağı (room_code -> rooms.classic): listede "Klasik" rozeti + .mat gizli.
         $classicByRoom = [];
-        if ($hasRoom && \Illuminate\Support\Facades\Schema::hasColumn('rooms', 'classic')) {
+        if ($hasRoom && Schema::hasColumn('rooms', 'classic')) {
             $ccodes = $rows->pluck('room_code')->filter()->unique()->values()->all();
             if (! empty($ccodes)) {
-                $classicByRoom = \App\Models\Room::whereIn('code', $ccodes)->pluck('classic', 'code')
+                $classicByRoom = Room::whereIn('code', $ccodes)->pluck('classic', 'code')
                     ->map(fn ($v) => (bool) $v)->all();
             }
         }
@@ -1891,7 +1927,7 @@ class AuthController extends Controller
     public function myMatchLengths(Request $request)
     {
         $me = $request->user();
-        $lengths = \App\Models\MatchResult::where('user_id', $me->id)
+        $lengths = MatchResult::where('user_id', $me->id)
             ->select('match_length')->distinct()->pluck('match_length')
             ->map(fn ($v) => (int) ($v ?? 0))->unique()->sort()->values()->all();
 
@@ -1899,14 +1935,15 @@ class AuthController extends Controller
     }
 
     // Bir macin tam analiz log'u (hamle-hamle MatchReport icin). Sahiplik kontrolu.
-    public function matchLog(Request $request, \App\Models\MatchResult $match)
+    public function matchLog(Request $request, MatchResult $match)
     {
         if ($match->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Yetkisiz.'], 403);
         }
-        if (! \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
+        if (! Schema::hasColumn('match_results', 'log')) {
             return response()->json(['log' => null]);
         }
+
         return response()->json(['log' => $match->log]); // JSON string (istemci parse eder)
     }
 
@@ -1916,13 +1953,13 @@ class AuthController extends Controller
      * Sahiplik kontrolü. Log yoksa 404, tutarsız kayıt (sonuçsuz ara oyun) 422 -> istemci
      * kullanıcıyı bozuk dosyayla baş başa bırakmaz.
      */
-    public function matchMat(Request $request, \App\Models\MatchResult $match)
+    public function matchMat(Request $request, MatchResult $match)
     {
         if ($match->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Yetkisiz.'], 403);
         }
         // KLASİK TAVLA: .mat dosyası YOKTUR (küp yok + otomatik analiz kapalı) -> indirme engellenir.
-        if (\Illuminate\Support\Facades\Schema::hasColumn('rooms', 'classic') && optional($match->room)->classic) {
+        if (Schema::hasColumn('rooms', 'classic') && optional($match->room)->classic) {
             return response()->json(['message' => 'Klasik Tavla maçlarında .mat dosyası yoktur.'], 403);
         }
         // 'empty(log)' erken-reddi KALDIRILDI: match_moves'lu (sunucu-otoriter) maçlar client
@@ -1949,7 +1986,7 @@ class AuthController extends Controller
      * wildbg yerine gnubg gösterir. İstemci gnubg gelene kadar loader gösterir; hata olursa
      * (servis yok / log yok) istemci eski (yerel log) yola düşebilir.
      */
-    public function matchGnubgReview(Request $request, \App\Models\MatchResult $match)
+    public function matchGnubgReview(Request $request, MatchResult $match)
     {
         if ($match->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Yetkisiz.'], 403);
@@ -1973,7 +2010,7 @@ class AuthController extends Controller
     public function analytics(Request $request)
     {
         $me = $request->user();
-        $rows = \App\Models\MatchResult::where('user_id', $me->id)
+        $rows = MatchResult::where('user_id', $me->id)
             ->real() // yapay zeka maclari performans/rating/WXP istatistiklerine girmez
             ->orderBy('id')
             ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'gnubg_pr', 'rated', 'created_at']);
@@ -2044,20 +2081,20 @@ class AuthController extends Controller
     public function wxpBreakdown(Request $request)
     {
         $me = $request->user();
-        $txs = \App\Models\UserWxpTransaction::where('user_id', $me->id)
-            ->where('source', \App\Services\WxpService::SOURCE_MATCH_WIN)
+        $txs = UserWxpTransaction::where('user_id', $me->id)
+            ->where('source', WxpService::SOURCE_MATCH_WIN)
             ->get(['amount', 'metadata']);
 
         // Sabit kategori sirasi: coin, 1, 3, 5, 7 (hepsi gorunur; 0 olsa da)
-        $cats = ['coin' => ['wins' => 0, 'wxp' => 0, 'per' => \App\Support\StatsConfig::WXP_COIN]];
-        foreach (\App\Support\StatsConfig::WXP_SUPPORTED_LENGTHS as $L) {
+        $cats = ['coin' => ['wins' => 0, 'wxp' => 0, 'per' => StatsConfig::WXP_COIN]];
+        foreach (StatsConfig::WXP_SUPPORTED_LENGTHS as $L) {
             $cats[(string) $L] = ['wins' => 0, 'wxp' => 0, 'per' => $L];
         }
 
         foreach ($txs as $tx) {
             $m = $tx->metadata ?? [];
-            $type = $m['match_type'] ?? \App\Support\StatsConfig::MATCH_TYPE_MATCH;
-            $key = \App\Support\StatsConfig::categoryKey($type, $m['match_length'] ?? null);
+            $type = $m['match_type'] ?? StatsConfig::MATCH_TYPE_MATCH;
+            $key = StatsConfig::categoryKey($type, $m['match_length'] ?? null);
             if ($key === null || ! isset($cats[$key])) {
                 continue;
             }
@@ -2083,7 +2120,7 @@ class AuthController extends Controller
         $me = $request->user();
         $period = (string) $request->query('period', 'all');
 
-        $stats = app(\App\Services\PlayerStatisticsService::class)->performanceStats($me, $period);
+        $stats = app(PlayerStatisticsService::class)->performanceStats($me, $period);
 
         return response()->json($stats);
     }
@@ -2094,7 +2131,7 @@ class AuthController extends Controller
         $me = $request->user();
         $phase = (string) $request->query('phase', 'all');
 
-        $stats = app(\App\Services\DiceStatisticsService::class)->diceStats($me, $phase);
+        $stats = app(DiceStatisticsService::class)->diceStats($me, $phase);
 
         return response()->json($stats);
     }
@@ -2105,6 +2142,7 @@ class AuthController extends Controller
         $request->validate(['email' => ['required', 'email']]);
         // Google hesaplari sifre kullanmasa da guvenlik icin ayni yaniti veririz
         Password::sendResetLink($request->only('email'));
+
         return response()->json(['message' => 'ok']);
     }
 
@@ -2152,17 +2190,17 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'token'    => ['required', 'string'],
-            'email'    => ['required', 'email'],
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
             'password' => self::passwordRules(),
         ], self::passwordMessages());
 
         $status = Password::reset(
             [
-                'email'                 => $request->email,
-                'password'              => $request->password,
+                'email' => $request->email,
+                'password' => $request->password,
                 'password_confirmation' => $request->password,
-                'token'                 => $request->token,
+                'token' => $request->token,
             ],
             function (User $user, string $password) {
                 // Kapali hesap sifre sifirlamayla yasagi ASAMAZ: sifreyi degistirme, oturumlari
@@ -2181,6 +2219,7 @@ class AuthController extends Controller
         if ($status === Password::PASSWORD_RESET) {
             return response()->json(['message' => 'ok']);
         }
+
         return $this->fail('Sıfırlama başarısız. Link geçersiz veya süresi dolmuş.', 400);
     }
 
@@ -2188,12 +2227,13 @@ class AuthController extends Controller
     public function verifyEmail(Request $request, int $id, string $hash)
     {
         // Çoklu-domain: doğrulama linki hangi markada tıklandıysa SPA'ya oraya dön.
-        $base = rtrim((string) (\App\Support\Brand::current()['origin'] ?? config('app.frontend_url', config('app.url'))), '/');
+        $base = rtrim((string) (Brand::current()['origin'] ?? config('app.frontend_url', config('app.url'))), '/');
         $user = User::find($id);
         if (! $user || ! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
             return redirect("{$base}/?verified=0");
         }
         $this->completeEmailVerification($user); // TEK KAYNAK: damgala + hoşgeldin ödülleri (idempotent)
+
         return redirect("{$base}/?verified=1");
     }
 
@@ -2214,7 +2254,7 @@ class AuthController extends Controller
             return; // zaten doğrulanmış -> tekrar damgalama/ödül yok
         }
         $user->markEmailAsVerified();
-        event(new \Illuminate\Auth\Events\Verified($user));
+        event(new Verified($user));
         $this->grantWelcomeCoins($user->id);   // hoşgeldin coin'i (idempotent: welcome_granted)
         $this->grantWelcomePremium($user->id); // 3 ay hoşgeldin Premium (idempotent: trial_used)
     }
@@ -2229,16 +2269,16 @@ class AuthController extends Controller
         if (! Schema::hasColumn('users', 'welcome_granted')) {
             return;
         }
-        $amount = \App\Models\Setting::int('welcome_coins', (int) config('game.welcome_coins', 100));
+        $amount = Setting::int('welcome_coins', (int) config('game.welcome_coins', 100));
         if ($amount <= 0) {
             return;
         }
-        \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $amount) {
+        DB::transaction(function () use ($userId, $amount) {
             $user = User::lockForUpdate()->find($userId);
             if (! $user || (bool) $user->welcome_granted) {
                 return;
             }
-            app(\App\Services\WalletService::class)->credit($user, $amount, 'welcome_reward', User::class, $user->id);
+            app(WalletService::class)->credit($user, $amount, 'welcome_reward', User::class, $user->id);
             $user->welcome_granted = true;
             $user->save();
         });
@@ -2261,11 +2301,12 @@ class AuthController extends Controller
         // SABİT (admin Setting'i değil) — owner açıkça böyle istedi. Uzatmak gerekirse buradaki
         // iki tarihi değiştir + yeni deploy.
         $now = now();
-        $giftUntil = \Illuminate\Support\Carbon::parse('2027-01-02 00:00:00'); // hediye premium bitişi
-        $giftCutoff = \Illuminate\Support\Carbon::parse('2026-12-31 23:59:59'); // son hediye tarihi
+        $giftUntil = Carbon::parse('2027-01-02 00:00:00'); // hediye premium bitişi
+        $giftCutoff = Carbon::parse('2026-12-31 23:59:59'); // son hediye tarihi
         if ($now->gt($giftCutoff)) {
             // Hediye dönemi kapandı: trial_used'ı yine işaretle ki mantık tutarlı kalsın, premium verme.
             User::where('id', $userId)->where('trial_used', false)->update(['trial_used' => true]);
+
             return;
         }
         $update = [
@@ -2301,17 +2342,18 @@ class AuthController extends Controller
         }
         // 60sn cooldown (tekrar-gonder spam'i) — telefon OTP ile ayni desen.
         $cd = 'eotp-cd:'.$user->id;
-        if (\Illuminate\Support\Facades\Cache::has($cd)) {
+        if (Cache::has($cd)) {
             return response()->json(['message' => 'cooldown'], 429);
         }
-        \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
+        Cache::put($cd, 1, now()->addSeconds(60));
         // TEK e-postada kod + imzali link (eskiden "Doğrulama Kodun" + "Adresini Doğrula" iki ayri
         // e-posta gidiyordu; birlestirildi). Mail patlarsa sessiz -> kullanici tekrar deneyebilir.
         try {
             $this->sendVerificationEmail($user);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('email verify mail failed', ['e' => $e->getMessage()]);
+            Log::warning('email verify mail failed', ['e' => $e->getMessage()]);
         }
+
         return response()->json(['message' => 'sent']);
     }
 
@@ -2320,7 +2362,7 @@ class AuthController extends Controller
     // (sendEmailVerificationNotification ile ayni URL). Kayit + "Tekrar gonder" ikisi de bunu cagirir.
     private function sendVerificationEmail(User $user): void
     {
-        \App\Support\EmailVerification::send($user); // TEK kaynak (Filament toplu aksiyonu da kullanır)
+        EmailVerification::send($user); // TEK kaynak (Filament toplu aksiyonu da kullanır)
     }
 
     // E-posta kodu dogrula: dogruysa email_verified_at damgalanir. 5 yanlista kod iptal.
@@ -2335,26 +2377,26 @@ class AuthController extends Controller
             return response()->json(['user' => $user, 'message' => 'already_verified']);
         }
         $key = 'eotp:'.$user->id;
-        $rec = \Illuminate\Support\Facades\Cache::get($key);
+        $rec = Cache::get($key);
         // A-13: kod GÖNDERİLDİĞİ e-postaya bağlı. Kod alındıktan sonra e-posta değiştirildiyse eski
         // kod yeni (sahipliği kanıtlanmamış) adresi doğrulayamaz. (Eski kayıtlar 'email' taşımaz -> geçersiz.)
         if (! $rec || ($rec['email'] ?? null) !== strtolower((string) $user->email)) {
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
 
             return response()->json(['message' => 'expired'], 422);
         }
         if (($rec['tries'] ?? 0) >= 5) {
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
 
             return response()->json(['message' => 'too_many'], 422);
         }
         if (! hash_equals((string) $rec['code'], $data['code'])) {
             $rec['tries'] = ($rec['tries'] ?? 0) + 1;
-            \Illuminate\Support\Facades\Cache::put($key, $rec, now()->addMinutes(15));
+            Cache::put($key, $rec, now()->addMinutes(15));
 
             return response()->json(['message' => 'wrong'], 422);
         }
-        \Illuminate\Support\Facades\Cache::forget($key);
+        Cache::forget($key);
         // TEK KAYNAK: link yolu (verifyEmail) ile BİREBİR aynı -> damgala + hoşgeldin ödülleri.
         // (Eskiden burada grant'lar UNUTULMUŞTU; kodla doğrulayan coin+premium alamıyordu. Artık ortak metot.)
         $this->completeEmailVerification($user);
@@ -2377,17 +2419,17 @@ class AuthController extends Controller
         }
         // Hesap-bazli kilit: cok yanlis denemede yeni kod uretimi de durur (aksi halde
         // saldirgan cooldown sonrasi surekli yeni kod uretip her birine 5 deneme yapar).
-        if (\Illuminate\Support\Facades\Cache::has('otp-lock:'.$user->id)) {
+        if (Cache::has('otp-lock:'.$user->id)) {
             return response()->json(['message' => 'locked'], 429);
         }
         $cd = 'otp-cd:'.$user->id;
-        if (\Illuminate\Support\Facades\Cache::has($cd)) {
+        if (Cache::has($cd)) {
             return response()->json(['message' => 'cooldown'], 429);
         }
         $code = (string) random_int(100000, 999999);
-        \Illuminate\Support\Facades\Cache::put('otp:'.$user->id, ['code' => $code, 'tries' => 0], now()->addMinutes(5));
-        \Illuminate\Support\Facades\Cache::put($cd, 1, now()->addSeconds(60));
-        \App\Support\Sms::send($phone, 'Tavla TV dogrulama kodunuz: '.$code.'. Kod 5 dakika gecerlidir.');
+        Cache::put('otp:'.$user->id, ['code' => $code, 'tries' => 0], now()->addMinutes(5));
+        Cache::put($cd, 1, now()->addSeconds(60));
+        Sms::send($phone, 'Tavla TV dogrulama kodunuz: '.$code.'. Kod 5 dakika gecerlidir.');
 
         return response()->json(['message' => 'sent']);
     }
@@ -2406,37 +2448,37 @@ class AuthController extends Controller
         // 30 dk hem dogrulama hem yeni kod uretimi durur -> 10^6 kod brute-force edilemez.
         $lock = 'otp-lock:'.$user->id;
         $fails = 'otp-fails:'.$user->id;
-        if (\Illuminate\Support\Facades\Cache::has($lock)) {
+        if (Cache::has($lock)) {
             return response()->json(['message' => 'locked'], 429);
         }
         $key = 'otp:'.$user->id;
-        $rec = \Illuminate\Support\Facades\Cache::get($key);
+        $rec = Cache::get($key);
         if (! $rec) {
             return response()->json(['message' => 'expired'], 422);
         }
         if (($rec['tries'] ?? 0) >= 5) {
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
 
             return response()->json(['message' => 'too_many'], 422);
         }
         if (! hash_equals((string) $rec['code'], $data['code'])) {
             $rec['tries'] = ($rec['tries'] ?? 0) + 1;
-            \Illuminate\Support\Facades\Cache::put($key, $rec, now()->addMinutes(5));
-            $total = (int) \Illuminate\Support\Facades\Cache::get($fails, 0) + 1;
-            \Illuminate\Support\Facades\Cache::put($fails, $total, now()->addMinutes(30));
+            Cache::put($key, $rec, now()->addMinutes(5));
+            $total = (int) Cache::get($fails, 0) + 1;
+            Cache::put($fails, $total, now()->addMinutes(30));
             if ($total >= 10) {
-                \Illuminate\Support\Facades\Cache::put($lock, 1, now()->addMinutes(30));
-                \Illuminate\Support\Facades\Cache::forget($key);
+                Cache::put($lock, 1, now()->addMinutes(30));
+                Cache::forget($key);
 
                 return response()->json(['message' => 'locked'], 429);
             }
 
             return response()->json(['message' => 'wrong'], 422);
         }
-        \Illuminate\Support\Facades\Cache::forget($fails);
+        Cache::forget($fails);
         $user->phone_verified_at = now(); // fillable disi -> guvenli dogrudan atama
         $user->save();
-        \Illuminate\Support\Facades\Cache::forget($key);
+        Cache::forget($key);
 
         return response()->json(['user' => $user, 'message' => 'verified']);
     }
@@ -2454,7 +2496,7 @@ class AuthController extends Controller
 
         return response()->json([
             'available' => $nickname !== '' && ! $invalid && ! $taken && ! $blocked,
-            'reason'    => $reason,
+            'reason' => $reason,
         ]);
     }
 }
