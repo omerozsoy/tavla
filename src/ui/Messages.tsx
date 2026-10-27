@@ -89,6 +89,23 @@ function fmtTime(iso?: string | null): string {
   return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
 }
 
+// Sohbet listesi zamani: BUGUN -> saat (HH:MM); DUN -> "Dün"; daha eski -> tarih (GG.AA.YY).
+// Eskiden hep HH:MM donuyordu -> 2 gun onceki sohbet "15:47" gorunup BUGUNKU/guncel gibi
+// algilaniyordu ("guncellenmemis gibi"). Tarih ekleyince eski sohbetin yasi net.
+function fmtThreadTime(iso?: string | null, t?: (k: string) => string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const now = new Date()
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  if (sameDay(d, now)) return fmtTime(iso)
+  const yest = new Date(now)
+  yest.setDate(now.getDate() - 1)
+  if (sameDay(d, yest)) return t ? t('dm.yesterday') : 'Dün'
+  return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
 // Secilen gorseli DM icin SIKISTIR: en fazla DM_IMG_MAX_DIM px'e olcekle + JPEG kalite 0.82 ->
 // base64 data-URL. 4-5 MB foto ~200-400 KB'a iner (payload + DB makul, backend limiti 3M char).
 const DM_IMG_MAX_DIM = 1280
@@ -644,7 +661,7 @@ export default function Messages({
                     <span className="messages-thread-body">
                       <span className="messages-thread-top">
                         <span className="messages-thread-name">{th.user.name}</span>
-                        {th.last?.created_at && <span className="messages-thread-time">{fmtTime(th.last.created_at)}</span>}
+                        {th.last?.created_at && <span className="messages-thread-time">{fmtThreadTime(th.last.created_at, t)}</span>}
                       </span>
                       <span className="messages-thread-last">
                         {th.last
