@@ -740,7 +740,7 @@ const BOT_PLAYER: Player = 'black'
 // bug'ı kapanır). false = eski yerel motor (ONNX) yolu (anında geri dönüş). DEPLOY: gnubg/validator
 // ayakta olmalı; yoksa açılış "Rakip düşünüyor…"da bekler (insan hamlesi kaybolmaz).
 const SERVER_BOT = true
-const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
+const TARGETS = [1, 3, 5, 7, 9, 11, 13] // mac uzunlugu secenekleri (1 = tek oyun)
 const CLASSIC_TARGETS = [1, 3, 5, 7] // KLASIK TAVLA mac uzunluklari — max 7 (9/11 yok; normal + YZ)
 
 // Board renk temalari — boardThemes.ts'e cikarildi (God-component kucultme, #10)

@@ -267,7 +267,7 @@ class RoomController extends Controller
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
             'bet_pct' => ['nullable', 'integer', 'in:0,10,30,50,100'],
             'targets' => ['nullable', 'array'],
-            'targets.*' => ['integer', 'in:1,3,5,7,9,11'],
+            'targets.*' => ['integer', 'in:1,3,5,7,9,11,13'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
             'classic' => ['nullable', 'boolean'], // Klasik Tavla (küp yok + mars=2): AYRI eşleşme havuzu
             // Oyun Arayanlar'dan HEDEFLI katilim: tiklanan arayanin user_id'si. Varsa YALNIZ o
