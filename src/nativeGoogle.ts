@@ -67,11 +67,15 @@ export async function nativeGoogleSignIn(webClientId: string): Promise<string> {
     initialized = true
   }
 
-  // options BOS: ozel scope istemek plugin'de Authorization akisini tetikler ve MainActivity'de
-  // onActivityResult ister ("You CANNOT use scopes without modifying the main activity"). Bize yalniz
-  // KIMLIK (ID-token) lazim; email+profile zaten token'da gelir -> bos options ile Credential Manager
-  // ID-token akisi calisir, activity degisikligi gerekmez.
-  const res = await c.nativePromise('SocialLogin', 'login', { provider: 'google', options: {} })
+  // style:'bottom' -> plugin GetGoogleIdOption (NATIVE alt-sayfa hesap secici) kullanir. Varsayilan
+  // (style yok) GetSignInWithGoogleOption bazi cihazlarda Chrome Custom Tab (accounts.google.com) acip
+  // Capacitor WebView'da ASILI kaliyor (beyaz ekran). GetGoogleIdOption tarayici ACMAZ, dogrudan
+  // idToken doner. filterByAuthorizedAccounts VERME -> cihazdaki TUM Google hesaplari listelenir (ilk
+  // giriste de calisir). Ozel scope YOK -> MainActivity degisikligi gerekmez.
+  const res = await c.nativePromise('SocialLogin', 'login', {
+    provider: 'google',
+    options: { style: 'bottom' },
+  })
   // Native resolve: { provider:'google', result:{ idToken, accessToken, profile } } (GoogleProvider.java).
   const result = (res as { result?: { idToken?: string | null } })?.result
   const idToken = result?.idToken
