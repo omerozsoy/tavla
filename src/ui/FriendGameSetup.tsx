@@ -13,8 +13,8 @@ const CLOCKS: { id: TimeControl; key: string }[] = [
   { id: 'normal', key: 'setup.clockNormal' },
   { id: 'speed', key: 'setup.clockSpeed' },
 ]
-// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan). En fazla 11 puan (kullanici istegi).
-const LENGTHS = [3, 5, 7, 9, 11]
+// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan). 13 puana kadar (kullanici istegi).
+const LENGTHS = [3, 5, 7, 9, 11, 13]
 const CLASSIC_LENGTHS = [3, 5, 7] // KLASIK TAVLA: max 7 (9/11 yok)
 
 interface BoardColors {

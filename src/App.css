@@ -1639,7 +1639,9 @@ button[aria-disabled='true'],
 /* Mac uzunlugu secici: net chip'ler (tikla-secilebilir) */
 .target-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  /* Tüm puan seçenekleri TEK SIRADA yan yana (sarmalama yok) — eşit genişlik, dar ekranda küçülür. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 8px;
 }
 .target-chip {
