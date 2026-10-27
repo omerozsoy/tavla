@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\MatchResult;
+use App\Models\Notification;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\WalletService;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 /**
@@ -23,7 +25,9 @@ use Illuminate\Support\Str;
 class Referral
 {
     public const REWARD_SETTING = 'referral_coins'; // admin ayarı (Site Ayarları); varsayılan 5000
+
     public const DEFAULT_REWARD = 5000;
+
     public const DEFAULT_DAILY_LIMIT = 5; // kullanıcı başına günlük davet maili (admin: referral_daily_limit)
 
     /** Kolonlar migrate edilmiş mi (migration öncesi çağrılar kayıt/maçı patlatmasın). */
@@ -108,15 +112,15 @@ class Referral
         if ($amount <= 0) {
             return;
         }
-        DB::transaction(function () use ($invited, $amount) {
+        $pair = DB::transaction(function () use ($invited, $amount) {
             // Kilit altında tekrar kontrol (eşzamanlı iki maç raporu çift ödül vermesin).
             $locked = User::lockForUpdate()->find($invited->id);
             if (! $locked || $locked->referral_rewarded_at !== null) {
-                return;
+                return null;
             }
             $inviter = User::find($locked->referred_by);
             if (! $inviter) {
-                return;
+                return null;
             }
             $wallet = app(WalletService::class);
             // Referans-idempotent: (type|User|karşı taraf|kendi) anahtarı -> replay güvenli.
@@ -125,7 +129,23 @@ class Referral
             $locked->referral_rewarded_at = now();
             $locked->save();
             User::where('id', $inviter->id)->increment('referral_count');
+
+            return ['invited' => $locked, 'inviter' => $inviter];
         });
+
+        // Ödül GERÇEKTEN düştüyse (ilk kez, çift değil) iki tarafa da bildirim + push. Transaction
+        // DIŞINDA -> yalnız commit'lenen ödülde bildirim; bildirim hatası ödülü/maçı bozmaz.
+        if ($pair !== null) {
+            $nameOf = fn (User $u) => trim((string) ($u->nickname ?: $u->first_name)) ?: 'Arkadaşın';
+            try {
+                Notification::notify($pair['inviter']->id, 'Davet ödülün hazır! 🎁',
+                    $nameOf($pair['invited']).' davetinle oynadı — +'.$amount.' coin kazandın.', 'gift');
+                Notification::notify($pair['invited']->id, 'Davet ödülün hazır! 🎁',
+                    'İlk maçını tamamladın — +'.$amount.' coin kazandın.', 'gift');
+            } catch (\Throwable $e) {
+                Log::warning('referral reward notify failed', ['invited' => $pair['invited']->id, 'err' => $e->getMessage()]);
+            }
+        }
     }
 
     /** Davet maili gönder (emails.message şablonu, markaya göre TR/EN). */
@@ -134,7 +154,7 @@ class Referral
         $brand = Brand::current();
         $origin = (string) ($brand['origin'] ?? '');
         if ($origin !== '') {
-            \Illuminate\Support\Facades\URL::forceRootUrl($origin);
+            URL::forceRootUrl($origin);
         }
         $en = (($brand['locale'] ?? 'tr') === 'en');
         $name = (string) ($brand['name'] ?? 'TavlaTV');

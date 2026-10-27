@@ -74,6 +74,9 @@ class ReferralTest extends TestCase
         $this->assertSame(5100, $inviter->fresh()->coins);
         $this->assertNotNull($invited->fresh()->referral_rewarded_at);
         $this->assertSame(1, $inviter->fresh()->referral_count);
+        // Ödül bildirimi: iki tarafa da (uygulama-içi kayıt).
+        $this->assertDatabaseHas('notifications', ['user_id' => $invited->id, 'icon' => 'gift']);
+        $this->assertDatabaseHas('notifications', ['user_id' => $inviter->id, 'icon' => 'gift']);
     }
 
     public function test_reward_granted_only_once(): void
