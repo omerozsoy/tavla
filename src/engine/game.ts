@@ -1,5 +1,5 @@
 import type { GameState, Move, Step } from './types'
-import { cloneState, initialState, opponent, winner } from './board'
+import { cloneState, countAt, initialState, opponent, winner } from './board'
 import { allMaximalSequences, applyStep } from './moves'
 
 export { initialState, winner }
@@ -93,6 +93,26 @@ export function reachableFromChecker(
   }
   dfs(from, [])
   return results
+}
+
+// KAPI yapilabilen hedefler: bos bir haneye (oyuncunun tasindan BOS) eldeki zarlarla IKI tas
+// getirilip kapi (2+ tas) yapilabiliyor mu? Her hedef -> [s1, s2] (iki farkli tasin o haneye inisi,
+// played sonrasina eklenir). Her zar icin hedefe giden kaynak TEKtir (geometri) -> secim belirsiz degil.
+// Rakip blot'a inis = vurma (legalNextSteps zaten izin verir). UI: bos haneye dokununca otomatik oynanir.
+export function makePointTargets(state: GameState, played: Step[]): Map<number, Step[]> {
+  // Hedefin "su an kendi tasindan bos" kontrolu played SONRASI tahtada yapilir (cift zarda tur ortasi).
+  const working = cloneState(state)
+  for (const st of played) applyStep(working, st, working.turn)
+  const own = state.turn
+
+  const map = new Map<number, Step[]>()
+  for (const s1 of legalNextSteps(state, played)) {
+    if (typeof s1.to !== 'number' || map.has(s1.to)) continue
+    if (countAt(working.points, s1.to, own) !== 0) continue // zaten kendi hanen/blot -> kapi "yapma" degil
+    const s2 = legalNextSteps(state, [...played, s1]).find((s) => s.to === s1.to)
+    if (s2) map.set(s1.to, [s1, s2])
+  }
+  return map
 }
 
 // Prefix tamamlandi mi? (bu prefix'e tam olarak esit bir dizi var mi)

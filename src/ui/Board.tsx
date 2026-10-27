@@ -82,6 +82,9 @@ interface BoardProps {
   clickableFroms?: Set<number | 'bar'>
   targets: Set<number | 'off'>
   selectedFrom: number | 'bar' | null
+  // Boş haneye dokununca eldeki iki zarla KAPI yapılabilen haneler (seçili kaynak yokken). Otomatik yapılır.
+  makePoints?: Set<number>
+  onMakePoint?: (to: number) => void
   onSelectFrom: (from: number | 'bar') => void
   selectOnPointerDown?: boolean
   onSelectTarget: (to: number | 'off') => void
@@ -180,6 +183,8 @@ function Point({
   onSelectFrom,
   selectOnPointerDown,
   onSelectTarget,
+  makeTarget = false,
+  onMakePoint,
   onCheckerDown,
   checkerSkin,
   openCount = 0,
@@ -197,6 +202,8 @@ function Point({
   onSelectFrom: (from: number) => void
   selectOnPointerDown?: boolean
   onSelectTarget: (to: number) => void
+  makeTarget?: boolean // bu haneye eldeki iki zarla KAPI yapilabilir -> dokununca otomatik yap
+  onMakePoint?: (to: number) => void
   onCheckerDown?: (e: ReactPointerEvent, from: number, player: Player, label?: number) => void
   checkerSkin?: CheckerSkinDef | null
   openCount?: number // Kız Tavlası: bu hanedeki UST 'openCount' tas "acik/indirilmis" gosterilir
@@ -219,9 +226,12 @@ function Point({
   const handleClick = () => {
     if (isTarget) onSelectTarget(index)
     else if (selectable || clickable) onSelectFrom(index)
+    else if (makeTarget) onMakePoint?.(index) // boş haneye KAPI: iki taşı otomatik oyna
   }
   const handlePointerDown = () => {
-    if (selectOnPointerDown && !isTarget && (selectable || clickable)) onSelectFrom(index)
+    if (!selectOnPointerDown || isTarget) return
+    if (selectable || clickable) onSelectFrom(index)
+    else if (makeTarget) onMakePoint?.(index)
   }
 
   const visible = stack ? Math.min(stack.count, 5) : 0
@@ -282,6 +292,8 @@ function Board({
   clickableFroms,
   targets,
   selectedFrom,
+  makePoints,
+  onMakePoint,
   onSelectFrom,
   selectOnPointerDown,
   onSelectTarget,
@@ -654,6 +666,8 @@ function Board({
       isTarget={targets.has(index)}
       selected={selectedFrom === index}
       lift={drag?.from === index}
+      makeTarget={makePoints?.has(index)}
+      onMakePoint={onMakePoint}
       onSelectFrom={onSelectFrom}
       selectOnPointerDown={selectOnPointerDown}
       onSelectTarget={onSelectTarget}

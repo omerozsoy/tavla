@@ -31,6 +31,7 @@ import { offerLoss, takeLoss } from './engine/cubeEquity'
 import {
   initialState,
   legalNextSteps,
+  makePointTargets,
   newTurn,
   reachableFromChecker,
   secureDie,
@@ -2894,6 +2895,20 @@ export default function App() {
     }
     return dice
   }, [turnStart, played])
+
+  // KAPI OTOMATİK: boş bir haneye (seçili kaynak yokken) dokununca, eldeki iki zarla oraya iki taş
+  // gelip KAPI yapılabiliyorsa iki hamleyi otomatik stage et → mevcut "Onayla" akışıyla onaylanır.
+  // Mantık saf engine'de (makePointTargets); burada yalnız interaktiflik + 2 zar kalması kapısı.
+  const makeTargets = useMemo(() => {
+    if (!interactive || remainingDice.length < 2) return new Map<number, Step[]>()
+    return makePointTargets(turnStart, played)
+  }, [interactive, remainingDice, turnStart, played])
+
+  // Yalnız seçili kaynak YOKKEN tappable (seçim/sürükleme akışıyla çakışmasın; o modda normal hedefler geçerli).
+  const makePointSet = useMemo(
+    () => (selectedFrom === null ? new Set(makeTargets.keys()) : new Set<number>()),
+    [makeTargets, selectedFrom],
+  )
 
   // freshBank=true: yeni MAC -> rezerv bankasi bastan dolar.
   // freshBank=false: mac ici SONRAKI oyun -> rezerv bankasi korunur (Galaxy: mac-basi saat),
@@ -8013,6 +8028,13 @@ export default function App() {
     playSteps(seq)
   }
 
+  // Boş haneye dokunma: oraya KAPI yapılabiliyorsa iki taşı otomatik oyna (tur BITMEZ, Onayla bekler).
+  function handleMakePoint(to: number) {
+    if (!interactive) return
+    const seq = makeTargets.get(to)
+    if (seq && seq.length) playSteps(seq)
+  }
+
   // Pointer surukleme birakimi: tas BIRAKILAN konumdan (srcRect) yerine akar.
   function handleDragDrop(to: number | 'off', srcRect: DOMRect) {
     if (!interactive || selectedFrom === null) return
@@ -11344,6 +11366,8 @@ export default function App() {
           selectableFroms={selectableFroms}
           targets={targets}
           selectedFrom={selectedFrom}
+          makePoints={makePointSet}
+          onMakePoint={handleMakePoint}
           onSelectFrom={handleSelectFrom}
           onSelectTarget={handleSelectTarget}
           onDragFrom={handleDragFrom}
