@@ -26674,6 +26674,14 @@ input:not([type='range']), select, textarea {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Tiklanabilir oyuncu adi (profili acar): isaretci + hover'da vurgu. */
+.tm-name-link {
+  cursor: pointer;
+}
+.tm-name-link:hover {
+  text-decoration: underline;
+  color: var(--accent);
+}
 /* Oyuncu online/offline noktasi (bracket adinin solunda): yesil=online, gri=offline. */
 .tm-dot {
   display: inline-block;

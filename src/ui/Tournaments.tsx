@@ -158,12 +158,14 @@ interface Props {
   onRequirePremium?: () => void
   /** Suren bir turnuva macini izle (goz butonu) -> App'in izleme ekrani. */
   onSpectate?: (code: string, p1: string, p2: string) => void
+  /** Bracket/Swiss'te oyuncu adina tiklayinca profilini ac (standart oyuncu bilgisi). */
+  onProfile?: (userId: number) => void
   // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
   titleOverride?: string
 }
 
 
-export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate, titleOverride }: Props) {
+export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate, onProfile, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
@@ -415,9 +417,22 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     ) => {
       const online = p?.id != null && onlineSet.has(p.id)
       const pr = hidePr ? null : prFor(room, p?.id)
+      // Ad: oyuncunun id'si + onProfile varsa TIKLANABILIR (profilini/standart bilgisini acar).
+      const clickable = p?.id != null && !!onProfile
       return (
         <>
-          <span className="tm-name">
+          <span
+            className={`tm-name${clickable ? ' tm-name-link' : ''}`}
+            {...(clickable && {
+              role: 'button',
+              tabIndex: 0,
+              title: p!.name,
+              onClick: (e: React.MouseEvent) => { e.stopPropagation(); onProfile!(p!.id!) },
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onProfile!(p!.id!) }
+              },
+            })}
+          >
             <span className={`tm-dot ${online ? 'on' : 'off'}`} aria-hidden="true" />
             {p?.name ?? '—'}
           </span>

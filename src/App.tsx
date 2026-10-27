@@ -10274,6 +10274,7 @@ export default function App() {
           onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
           onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+          onProfile={(id) => setHomeProfileId(id)}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)
