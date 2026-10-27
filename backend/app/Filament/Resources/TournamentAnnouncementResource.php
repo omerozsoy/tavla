@@ -46,12 +46,12 @@ class TournamentAnnouncementResource extends Resource
                         ->label('Bracket standart metni')
                         ->default(fn () => Setting::get('tournament_std_bracket'))
                         ->rows(4)
-                        ->maxLength(3000),
+                        ->maxLength(10000),
                     Forms\Components\Textarea::make('std_swiss')
                         ->label('Swiss standart metni')
                         ->default(fn () => Setting::get('tournament_std_swiss'))
                         ->rows(4)
-                        ->maxLength(3000),
+                        ->maxLength(10000),
                 ]),
             Forms\Components\Select::make('tournament_id')
                 ->label('Turnuva')
@@ -72,7 +72,7 @@ class TournamentAnnouncementResource extends Resource
                 ->label('Duyuru metni')
                 ->placeholder('Örn: Turnuva başlıyor! Lütfen masalarınıza geçin.')
                 ->rows(6)
-                ->maxLength(3000)
+                ->maxLength(10000)
                 ->required(),
         ]);
     }
