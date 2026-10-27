@@ -3,6 +3,10 @@
 namespace App\Support\Swiss;
 
 use App\Models\Tournament;
+use App\Models\TournamentAnnouncement;
+use App\Models\User;
+use App\Services\WalletService;
+use App\Support\TournamentModeration;
 
 /**
  * "3 Haklı Swiss" — saf SwissEngine ile Tournament kalıcı durumu (bracket + swiss_state) arasında
@@ -68,6 +72,8 @@ class SwissRuntime
         // İlk tur.
         self::generateRound($t);
         $t->save();
+
+        TournamentAnnouncement::publishStandard($t, 'tournament_std_swiss');
     }
 
     /**
@@ -228,7 +234,7 @@ class SwissRuntime
             // A-33: şampiyonsuz bitiş (ör. herkes çift-mağlubiyetle elendi) -> havuz kimseye ödenmiyor ve
             // giriş ücretleri kayboluyordu. Ödül dağıtılmadıysa ödenen ücretler iade edilir (idempotent).
             if (! $t->prize_paid) {
-                \App\Support\TournamentModeration::refundAll($t);
+                TournamentModeration::refundAll($t);
             }
         }
         if (! $t->prize_paid && $champ !== null) {
@@ -247,20 +253,20 @@ class SwissRuntime
         }
         $prizes = is_array($t->prizes) ? $t->prizes : [];
         $pool = (int) ($t->prize_coins ?? 0);
-        $wallet = app(\App\Services\WalletService::class);
+        $wallet = app(WalletService::class);
 
         if (! empty($prizes)) {
             foreach ($prizes as $i => $pr) {
                 $coins = (int) ($pr['coins'] ?? 0);
                 if ($coins > 0 && isset($standings[$i])) {
-                    $u = \App\Models\User::lockForUpdate()->find($standings[$i]);
+                    $u = User::lockForUpdate()->find($standings[$i]);
                     if ($u) {
                         $wallet->credit($u, $coins, 'tournament_prize', Tournament::class, $t->id);
                     }
                 }
             }
             if ($pool > 0) {
-                $u = \App\Models\User::lockForUpdate()->find($standings[0]);
+                $u = User::lockForUpdate()->find($standings[0]);
                 if ($u) {
                     $wallet->credit($u, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
                 }
@@ -269,7 +275,7 @@ class SwissRuntime
             return;
         }
         if ($pool > 0) {
-            $u = \App\Models\User::lockForUpdate()->find($standings[0]);
+            $u = User::lockForUpdate()->find($standings[0]);
             if ($u) {
                 $wallet->credit($u, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
             }

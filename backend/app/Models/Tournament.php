@@ -151,5 +151,6 @@ class Tournament extends Model
         $this->status = 'running';
         $this->players = $players;
         $this->save();
+        TournamentAnnouncement::publishStandard($this, 'tournament_std_bracket');
     }
 }
