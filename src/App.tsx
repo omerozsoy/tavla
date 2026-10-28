@@ -6322,6 +6322,7 @@ export default function App() {
   // geçişini yutar (gerçek sonraki oyun her zaman >2sn sonra olduğundan etkilenmez).
   const endSoundPrevRef = useRef(false)
   const lastEndSoundRef = useRef(0)
+  const lastEndSigRef = useRef('') // en son ses çalınan oyun-sonu imzası (aynı sonucu tekrar çalma)
   useEffect(() => {
     const has = gameEnd != null
     const wasNull = !endSoundPrevRef.current
@@ -6332,7 +6333,13 @@ export default function App() {
     if (home) return
     if (!has || !wasNull) return // yalnız null->dolu geçişinde çal (dolu kalırken tekrar etme)
     const now = performance.now()
-    if (now - lastEndSoundRef.current < 2000) return // titreme (null->dolu->null->dolu) ikinci geçişini yut
+    // İMZA guard (bot pes raporu: "pes ettim çıkınca kaybetme sesini 2 kez duydum"): pes/maç-sonu
+    // akışında gameEnd AYNI sonuç için null->dolu->null->dolu geçebiliyor (2sn'yi aşan aralıkla, eski
+    // debounce yetmiyordu). İmza = kazanan+puan+pes+KÜMÜLATİF skor. Aynı imza 10sn içinde tekrarsa YUT;
+    // gerçek sonraki oyun-sonu hem dakikalarca sonra hem FARKLI skor imzası -> etkilenmez.
+    const sig = `${gameEnd!.winner}|${gameEnd!.points ?? ''}|${gameEnd!.resigned ? 1 : 0}|${match.score.white}-${match.score.black}`
+    if (sig === lastEndSigRef.current && now - lastEndSoundRef.current < 10000) return
+    lastEndSigRef.current = sig
     lastEndSoundRef.current = now
     const humanColor: Player = mode === 'online' && room?.slot === 'p2' ? 'black' : 'white'
     if (gameEnd!.winner === humanColor) {

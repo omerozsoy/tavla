@@ -752,7 +752,7 @@ export default function Auth({
                   const c = (window as unknown as { Capacitor?: Record<string, unknown> }).Capacitor
                   const plat = typeof c?.getPlatform === 'function' ? (c.getPlatform as () => string)() : 'n/a'
                   const keys = c ? Object.keys(c).slice(0, 18).join(',') : '-'
-                  return `dbg v4 · hasCap=${!!c} · platform=${plat} · isNative=${String(isNative)} · UA=${navigator.userAgent.slice(0, 40)} · keys=${keys}`
+                  return `dbg v5 · hasCap=${!!c} · platform=${plat} · isNative=${String(isNative)} · keys=${keys} · UA=${navigator.userAgent}`
                 })()}
               </div>
               {isNative ? (
