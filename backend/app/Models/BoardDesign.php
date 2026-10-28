@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -34,7 +36,7 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'checker_style', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'checker_style', 'hide_logo', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
@@ -42,6 +44,7 @@ class BoardDesign extends Model
         'point_images' => 'array',
         'point_texts' => 'array',
         'is_custom' => 'boolean',
+        'hide_logo' => 'boolean',
         'active' => 'boolean',
         'price' => 'integer',
         'sort' => 'integer',
@@ -63,7 +66,7 @@ class BoardDesign extends Model
         static::saving(function (self $d) {
             // Kolonlar henüz yoksa (ilk create migration'ındaki syncBuiltins, surface migration'ından
             // ÖNCE çalışır -> taze migrate/test) DOKUNMA; aksi halde "no column surface_image_opacity" patlar.
-            if (! \Illuminate\Support\Facades\Schema::hasColumn('board_designs', 'surface_image_opacity')) {
+            if (! Schema::hasColumn('board_designs', 'surface_image_opacity')) {
                 return;
             }
             $d->surface_image_opacity = max(0, min(100, (int) ($d->surface_image_opacity ?? 100)));
@@ -104,7 +107,7 @@ class BoardDesign extends Model
                 $f = is_array($fit[$k] ?? null) ? $fit[$k] : [];
                 $f = self::clampFit($f);
                 if ($path) {
-                    $abs = \Illuminate\Support\Facades\Storage::disk('uploads')->path($path);
+                    $abs = Storage::disk('uploads')->path($path);
                     $size = @getimagesize($abs);
                     if ($size && $size[1] > 0) {
                         $f['aspect'] = round($size[0] / $size[1], 4);
@@ -155,7 +158,7 @@ class BoardDesign extends Model
     /** Hane resminin herkese açık URL'si (uploads diski; yoksa null). */
     public static function imageUrl(?string $path): ?string
     {
-        return $path ? \Illuminate\Support\Facades\Storage::disk('uploads')->url($path) : null;
+        return $path ? Storage::disk('uploads')->url($path) : null;
     }
 
     public function isFree(): bool

@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\BoardDesign;
 use App\Models\CosmeticItem;
+use App\Models\Room;
+use App\Models\Setting;
 use App\Models\User;
+use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +147,7 @@ class ShopController extends Controller
             }
             if (! $it->active) {
                 unset($c[$it->item_id]);
+
                 continue;
             }
             $price = $it->price ?? (self::RARITY_PRICE[$it->group] ?? null);
@@ -197,6 +201,7 @@ class ShopController extends Controller
         foreach ($designs as $d) {
             if ($d->isFree() || ! $d->active) {
                 unset($c[$d->slug]);
+
                 continue;
             }
             $price = $d->price ?? (self::BOARD_PRICE[$d->group] ?? null);
@@ -225,6 +230,7 @@ class ShopController extends Controller
                     'colors' => $d->colors,
                     'surface' => $d->surface,
                     'checker_style' => $d->checker_style,
+                    'hideLogo' => (bool) $d->hide_logo, // true: tahta ortasındaki TavlaTV yazısı gizli
                     // Tahta zemin resmi (sol/sağ yarı + şeffaflık): üçgenlerin ALTINDA zemin
                     'surfaceImages' => ($d->surface_image_left || $d->surface_image_right) ? [
                         'left' => BoardDesign::imageUrl($d->surface_image_left),
@@ -289,6 +295,7 @@ class ShopController extends Controller
     public function index(Request $request)
     {
         $u = $request->user();
+
         return response()->json([
             'catalog' => $this->catalog(),
             'unlocks' => $u->unlocks ?? [],
@@ -317,19 +324,20 @@ class ShopController extends Controller
             }
             // %-BAHİS KİLİDİ: oynanan bir % (bet_pct) maçta coin harcaması yasak (escrow'suz -> bakiye
             // eritip settle'ı eksik ödetme engeli). Sabit-stake ise aşağıdaki rezerv kontrolü yeter.
-            if (\App\Models\Room::userInPctStakedPlaying($u->id)) {
+            if (Room::userInPctStakedPlaying($u->id)) {
                 return ['pct_locked' => true, 'coins' => $u->coins ?? 0];
             }
             // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta REZERVE edilmiş
             // coin mağazaya harcanamaz -> kaybeden stake'i maç sırasında eritip settle'ı eksik ödetemez.
-            if (app(\App\Services\WalletService::class)->spendable($u) < $price) {
+            if (app(WalletService::class)->spendable($u) < $price) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
             $purchaseKey = 'shop_purchase:'.$u->id.':'.$id;
-            app(\App\Services\WalletService::class)->debit($u, $price, 'shop_purchase', null, null, $purchaseKey);
+            app(WalletService::class)->debit($u, $price, 'shop_purchase', null, null, $purchaseKey);
             $unlocks[] = $id;
             $u->unlocks = $unlocks;
             $u->save();
+
             return ['unlocks' => $unlocks, 'coins' => $u->coins];
         });
 
@@ -343,10 +351,12 @@ class ShopController extends Controller
             // Yumusak sonuc: zaten sahip (HATA degil) -> 200 + mesaj + guncel durum.
             return response()->json(['message' => 'Zaten sahipsin.', 'unlocks' => $r['unlocks'], 'coins' => $r['coins']]);
         }
+
         return response()->json(['unlocks' => $r['unlocks'], 'coins' => $r['coins']]);
     }
 
     private const REWARD_AMOUNT = 25; // 6 saatlik ödül (Free). Yeni ekonomi: 500 -> 25.
+
     private const REWARD_COOLDOWN = 6 * 3600; // 6 saat (saniye)
 
     // 6 saatte bir 500 coin odulu
@@ -369,14 +379,15 @@ class ShopController extends Controller
             // reward_premium (50). Ayarlar Site Ayarları'ndan yönetilir.
             $premium = $u->plan_active === 'premium';
             $amount = $premium
-                ? \App\Models\Setting::int('reward_premium', 50)
-                : \App\Models\Setting::int('reward_normal', 25);
+                ? Setting::int('reward_premium', 50)
+                : Setting::int('reward_normal', 25);
             // Claim anahtarı önceki ödül zamanına bağlanır. Aynı cooldown penceresindeki
             // request retry'si tek ledger hareketi üretir; sonraki pencere yeni anahtar alır.
             $claimKey = 'daily_reward:'.$u->id.':'.($last?->timestamp ?? 'initial');
-            app(\App\Services\WalletService::class)->credit($u, $amount, 'daily_reward', null, null, $claimKey);
+            app(WalletService::class)->credit($u, $amount, 'daily_reward', null, null, $claimKey);
             $u->last_reward = now();
             $u->save();
+
             return [
                 'claimed' => true,
                 'reward' => $amount,
@@ -402,6 +413,7 @@ class ShopController extends Controller
         }
         $u->avatar_frame = ($id === 'none') ? null : $id;
         $u->save();
+
         return response()->json(['avatar_frame' => $u->avatar_frame]);
     }
 
@@ -419,6 +431,7 @@ class ShopController extends Controller
         }
         $u->checker = ($id === 'none') ? null : $id;
         $u->save();
+
         return response()->json(['checker' => $u->checker]);
     }
 }

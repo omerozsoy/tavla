@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\BoardDesignResource\Pages;
+use App\Forms\Components\NativeColor;
+use App\Http\Controllers\ShopController;
 use App\Models\BoardDesign;
 use App\Models\User;
 use Filament\Forms;
@@ -13,7 +15,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
  * TAVLA TASARIMI — tüm tahtaları gör, grubunu/fiyatını/satış durumunu değiştir; zemin, etraf,
@@ -42,7 +46,7 @@ class BoardDesignResource extends Resource
     /** Grup varsayılan fiyatı (ShopController BOARD_PRICE). */
     public static function groupPrice(?string $group): ?int
     {
-        return \App\Http\Controllers\ShopController::groupPrice($group);
+        return ShopController::groupPrice($group);
     }
 
     private static function pointImage(string $field, string $label): Forms\Components\FileUpload
@@ -98,6 +102,7 @@ class BoardDesignResource extends Resource
 
     /**
      * Tam resim modu: 24 hane, dört çeyrek bölüm (her biri 6 hane). Her hanede yükleme + kırpıcı.
+     *
      * @return array<Forms\Components\Section>
      */
     private static function eachPointSections(): array
@@ -202,9 +207,9 @@ class BoardDesignResource extends Resource
             $state = reset($state) ?: null;
         }
         try {
-            $abs = $state instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile
+            $abs = $state instanceof TemporaryUploadedFile
                 ? $state->getRealPath()
-                : (is_string($state) && $state !== '' ? \Illuminate\Support\Facades\Storage::disk('uploads')->path($state) : null);
+                : (is_string($state) && $state !== '' ? Storage::disk('uploads')->path($state) : null);
             $size = $abs ? @getimagesize($abs) : false;
 
             return $size && $size[1] > 0 ? round($size[0] / $size[1], 4) : null;
@@ -219,7 +224,7 @@ class BoardDesignResource extends Resource
         if (is_array($state)) {
             $state = reset($state) ?: null;
         }
-        if ($state instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+        if ($state instanceof TemporaryUploadedFile) {
             try {
                 $mime = $state->getMimeType();
                 if (! in_array($mime, ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], true) || $state->getSize() > 4 * 1024 * 1024) {
@@ -246,9 +251,9 @@ class BoardDesignResource extends Resource
         return is_string($state) && $state !== '' ? BoardDesign::imageUrl($state) : null;
     }
 
-    private static function color(string $key, string $label, string $default, ?string $help = null): \App\Forms\Components\NativeColor
+    private static function color(string $key, string $label, string $default, ?string $help = null): NativeColor
     {
-        return \App\Forms\Components\NativeColor::make("colors.$key")
+        return NativeColor::make("colors.$key")
             ->label($label)
             ->default($default)
             ->required()
@@ -316,6 +321,11 @@ class BoardDesignResource extends Resource
                                 ->options(BoardDesign::CHECKER_STYLES)
                                 ->placeholder('Düz')
                                 ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom),
+                            Forms\Components\Toggle::make('hide_logo')
+                                ->label('TavlaTV logosunu gizle')
+                                ->helperText('Açıksa bu tasarımda tahtanın ortasındaki TavlaTV yazısı görünmez.')
+                                ->disabled(fn (?BoardDesign $record) => $record && ! $record->is_custom)
+                                ->columnSpanFull(),
                         ])->columns(2),
                     Forms\Components\Section::make('Tahta Zemin Resmi')
                         ->description('İsteğe bağlı. Sol ve sağ yarı için AYRI resim; üçgenlerin ALTINDA zemin olur (renge alternatif). Şeffaflıkla zemin rengi görünür kalır.')

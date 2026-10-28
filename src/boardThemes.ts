@@ -22,6 +22,7 @@ export interface BoardTheme {
   cubeBg?: string
   cubeText?: string
   watermark?: string // board ortasindaki cok soluk takim adi (logo/arma DEGIL)
+  hideLogo?: boolean // true: tahta ortasindaki TavlaTV yazisini gizle (admin tasarim opsiyonu)
   // Pul stili: referans board'un pul karakteri (flat disk / parlak / buz-kristal /
   // halka / neon). Renkler yine --cream/--navy'den gelir; stil sadece finish/efekt.
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
@@ -373,6 +374,7 @@ export interface BoardDesignRow {
   colors?: { panel?: string; frame?: string | null; a?: string; b?: string; checker?: string; light?: string | null }
   surface?: string | null
   checker_style?: string | null
+  hideLogo?: boolean
   surfaceImages?: { left?: string | null; right?: string | null; opacity?: number } | null
   texts?: Record<string, string> | null
   images?: {
@@ -462,6 +464,7 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
       rarity: group ?? 'common',
       surface: SURFACES.find((x) => x === r.surface),
       checkerStyle: CHECKER_STYLES.find((x) => x === r.checker_style),
+      hideLogo: r.hideLogo === true,
       pointImgA: safeImgUrl(r.images?.odd),
       pointImgB: safeImgUrl(r.images?.even),
       pointFitA: safeFit(r.images?.fit?.odd),

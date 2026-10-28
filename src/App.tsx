@@ -11386,7 +11386,10 @@ export default function App() {
           swapStones={swapStones}
           showPip={showPip}
           watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
-          showLogo={ALL_THEMES.find((x) => x.id === boardTheme)?.rarity !== 'country'}
+          showLogo={
+            ALL_THEMES.find((x) => x.id === boardTheme)?.rarity !== 'country' &&
+            !ALL_THEMES.find((x) => x.id === boardTheme)?.hideLogo
+          }
           pointTexts={ALL_THEMES.find((x) => x.id === boardTheme)?.pointTexts}
         />
         {showAnalysis && botMatch && (
