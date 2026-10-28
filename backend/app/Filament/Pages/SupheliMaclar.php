@@ -38,7 +38,11 @@ class SupheliMaclar extends Page
 
     public static function getNavigationBadge(): ?string
     {
-        $n = count(CheatScan::suspects());
+        // HER admin sayfasinda (sidebar rozeti) calisir -> CACHE'LI suspectIds() kullan.
+        // Eskiden ham suspects() cagriliyordu: ~16.7K match_results satirini her sayfa yuklemede
+        // PHP'ye cekip gruplayip TUM paneli yavaslatiyordu (~200ms+). suspectIds 1 saat cache'li,
+        // gunluk tarama + ban/tarama sonrasi forget() ile tazelenir; sayim ayni kume.
+        $n = count(CheatScan::suspectIds());
 
         return $n > 0 ? (string) $n : null;
     }
