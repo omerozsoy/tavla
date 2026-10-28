@@ -184,10 +184,24 @@ export default function Auth({
 
   // Kurulu APK (Capacitor WebView): Google GIS burada CALISMAZ (Google gomulu WebView'i engeller,
   // ID-token geri donmez -> "Gmail sectim ama iceri almiyor"). Native hesap secici kullan.
-  const isNative = isNativeApp()
+  // ⚠ Enjekte kopru (window.Capacitor) ILK RENDER'da hazir olmayabilir -> isNative STATE + mount
+  // sonrasi ~3sn tekrar kontrol. Yoksa kopru gec gelince WEB Google butonu cikip gomulu WebView'da
+  // accounts.google.com'da BEYAZ EKRANA takiliyordu (kullanicinin yasadigi sorun).
+  const [isNative, setIsNative] = useState(isNativeApp())
   // Eski APK'larda (SocialLogin eklentisi derlenmemis) native Google buton "plugin is not
   // implemented on android" ile patlar -> butonu gosterme, "uygulamayi guncelle" notu goster.
-  const nativeGoogleOk = isNativeGoogleAvailable()
+  const [nativeGoogleOk, setNativeGoogleOk] = useState(isNativeGoogleAvailable())
+  useEffect(() => {
+    if (isNative && nativeGoogleOk) return
+    let n = 0
+    const id = setInterval(() => {
+      if (isNativeApp()) setIsNative(true)
+      if (isNativeGoogleAvailable()) setNativeGoogleOk(true)
+      if ((isNativeApp() && isNativeGoogleAvailable()) || ++n > 30) clearInterval(id)
+    }, 100)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const doNativeGoogle = () => {
     // GECICI TANI (beyaz-ekran avi 2026-10-28): cihaza USB erisemiyoruz -> ortami EKRANDA goster.
     // Chrome/native acilmadan ONCE alert ile hangi JS + native + kopru + plugin durumu gorunur.
@@ -731,6 +745,16 @@ export default function Auth({
                 e-posta + sifre -> Giris Yap -> Sifremi unuttum. */}
             <div className="auth-col">
               <h3 className="auth-col-title">{t('auth.login')}</h3>
+              {/* GECICI TANI v3 (beyaz-ekran avi): her zaman gorunur ortam satiri -> cihazda native mi,
+                  kopru var mi, hangi pluginler. Sorun cozulunce KALDIR. */}
+              <div style={{ fontSize: 10, opacity: 0.6, wordBreak: 'break-all', marginBottom: 6 }}>
+                dbg v3 · native={String(isNative)} · köprü={String(
+                  !!(window as unknown as { Capacitor?: { nativePromise?: unknown } }).Capacitor?.nativePromise,
+                )} · plugins={JSON.stringify(
+                  ((window as unknown as { Capacitor?: { PluginHeaders?: Array<{ name?: string }> } }).Capacitor
+                    ?.PluginHeaders || []).map((h) => h?.name),
+                )}
+              </div>
               {isNative ? (
                 nativeGoogleOk ? (
                   <div className="google-auth google-auth-top">

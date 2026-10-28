@@ -17,6 +17,7 @@
 
 interface CapacitorGlobal {
   isNativePlatform?: () => boolean
+  getPlatform?: () => string
   nativePromise?: (pluginName: string, methodName: string, options?: unknown) => Promise<unknown>
   PluginHeaders?: Array<{ name?: string }>
 }
@@ -25,9 +26,20 @@ function cap(): CapacitorGlobal | undefined {
   return (globalThis as unknown as { Capacitor?: CapacitorGlobal }).Capacitor
 }
 
+// Native APK mi? ÇOK-SİNYALLİ (tek sinyale güvenme): enjekte köprü window.Capacitor ilk render'da
+// henüz TAM hazır olmayabilir -> isNativePlatform() hazır değilse bile nativePromise/PluginHeaders/
+// getPlatform enjekte köprünün VARLIĞINI kanıtlar = native. Tarayıcı/PWA'da window.Capacitor yok -> false.
+// (Eski sürümde yalnız isNativePlatform()===true bakılıyordu -> köprü geç gelince false dönüp WEB Google
+//  butonu çıkıyor, o da gömülü WebView'da accounts.google.com'da BEYAZ EKRANDA takılıyordu.)
 export function isNativeApp(): boolean {
   try {
-    return cap()?.isNativePlatform?.() === true
+    const c = cap()
+    if (!c) return false
+    if (c.isNativePlatform?.() === true) return true
+    if (typeof c.nativePromise === 'function') return true
+    if (Array.isArray(c.PluginHeaders)) return true
+    if (c.getPlatform && c.getPlatform() !== 'web') return true
+    return false
   } catch {
     return false
   }
