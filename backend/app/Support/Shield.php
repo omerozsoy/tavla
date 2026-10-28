@@ -5,6 +5,7 @@ namespace App\Support;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -25,14 +26,17 @@ class Shield
     // İstek/dk eşikleri (kullanıcı+IP başına). Salt-okunur kazıma gürültüsünü elemek için
     // yükseltildi; başarılı GET patlamaları ayrıca e-posta uyarısı üretmez (bkz. event çağrısı).
     private const RATE_WARN = 200;
+
     private const RATE_DANGER = 400;
 
     // Oturum başına hata (4xx/5xx) eşikleri.
     private const ERR_WARN = 15;
+
     private const ERR_DANGER = 40;
 
     // Oturum başına çark+slot çevirme eşikleri.
     private const SPIN_WARN = 60;
+
     private const SPIN_DANGER = 150;
 
     private static ?bool $ready = null;
@@ -274,6 +278,7 @@ class Shield
             if (! Schema::hasTable('shield_ip_bans')) {
                 return [];
             }
+
             return DB::table('shield_ip_bans')->pluck('ip')->all();
         });
     }
@@ -314,6 +319,7 @@ class Shield
                 self::$ready = false;
             }
         }
+
         return self::$ready;
     }
 
@@ -327,6 +333,7 @@ class Shield
                 self::$hasPage = false;
             }
         }
+
         return self::$hasPage;
     }
 
@@ -382,7 +389,7 @@ class Shield
         try {
             self::event($actorId, request()->ip(), $type, $severity, request()->path(), request()->method(), 200, $detail);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('shield audit write failed', ['type' => $type, 'err' => $e->getMessage()]);
+            Log::warning('shield audit write failed', ['type' => $type, 'err' => $e->getMessage()]);
         }
     }
 
@@ -393,8 +400,14 @@ class Shield
             return;
         }
         try {
-            DB::table('shield_events')->where('created_at', '<', now()->subDays(14))->delete();
-            DB::table('shield_presence')->where('last_seen_at', '<', now()->subDays(2))->delete();
+            // Ban-kaçağı dedektörü (BanKacaklari): yasaklı hesapların IP/presence izini KALICI tut —
+            // yeni üye aynı IP'den gelince eşleşsin. Yoksa 2/14 günde silinip bağ kopuyordu.
+            // ponytail: yasaklı sayısı küçük → whereNotIn ucuz; çok büyürse kalıcı fingerprint tablosuna taşı.
+            $bannedIds = DB::table('users')->whereNotNull('banned_at')->pluck('id')->all();
+            DB::table('shield_events')->where('created_at', '<', now()->subDays(14))
+                ->whereNotIn('user_id', $bannedIds)->delete();
+            DB::table('shield_presence')->where('last_seen_at', '<', now()->subDays(2))
+                ->whereNotIn('user_id', $bannedIds)->delete();
         } catch (\Throwable $e) {
         }
     }
