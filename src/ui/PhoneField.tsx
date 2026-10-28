@@ -78,7 +78,16 @@ export default function PhoneField({
     emit(v, national)
   }
   const onNat = (raw: string) => {
-    const d = raw.replace(/\D/g, '').slice(0, iso === 'TR' ? 10 : 15)
+    let d = raw.replace(/\D/g, '')
+    if (iso === 'TR') {
+      // Yapistirma/otomatik-doldurma ulke kodu veya basta-0 sokabilir ( or "905384408076",
+      // "05384408076"): TR ulusal numara 10 hane ve 5 ile baslar -> prefix'i soyarak dogru yakala.
+      d = d.replace(/^0+/, '')
+      if (d.length > 10 && d.startsWith('90')) d = d.slice(2)
+      d = d.slice(0, 10)
+    } else {
+      d = d.slice(0, 15)
+    }
     setNational(d)
     emit(iso, d)
   }
@@ -124,6 +133,9 @@ export default function PhoneField({
           placeholder={iso === 'TR' ? '5XX XXX XX XX' : '000 000 000'}
           value={fmtNational(iso, national)}
           onChange={(e) => onNat(e.target.value)}
+          // iOS Safari otomatik-doldurma kontrollu input'ta onChange'i kacirabilir -> React state bos
+          // kalir, ekranda numara gorunur ama "gecersiz" der. Blur'da DOM degerini tekrar senkronla.
+          onBlur={(e) => onNat(e.target.value)}
           aria-invalid={invalid || undefined}
         />
       </div>
