@@ -31,42 +31,44 @@ class ServiceStatus extends Widget
     {
         try {
             $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
-            $client = app(GnuBgClient::class);
-            $units = $client->unitNames();
-            $vres = $this->checkValidators();
+                $client = app(GnuBgClient::class);
+                $units = $client->unitNames();
+                $vres = $this->checkValidators();
 
-            // gnubg havuzları ROL BAZLI ayrı gruplar (kullanıcı zihin modeli): Canlı YZ (Yapay Zeka
-            // ile Oyna) / PR analizi (maç sonu) / Mat-Pozisyon analizi (ağır). İnsan-vs-insan maçları
-            // (Tek Oyun/Maç/Arkadaş) gnubg KULLANMAZ -> yalnız validator'a bağlı.
-            $frontRows = $this->checkGnubgPool($client->foregroundBases(), 'gnubg — Canlı YZ (Yapay Zeka ile Oyna)', $units);
-            $prRows = $this->checkGnubgPool($client->backgroundBases(), 'gnubg — PR Analizi (maç sonu)', $units);
-            $matRows = $this->checkGnubgPool($this->heavyBasesRaw($client), 'gnubg — Mat / Pozisyon Analizi (ağır)', $units);
+                // gnubg havuzları ROL BAZLI ayrı gruplar (kullanıcı zihin modeli): Canlı YZ (Yapay Zeka
+                // ile Oyna) / PR analizi (maç sonu) / Mat-Pozisyon analizi (ağır). İnsan-vs-insan maçları
+                // (Tek Oyun/Maç/Arkadaş) gnubg KULLANMAZ -> yalnız validator'a bağlı.
+                $frontRows = $this->checkGnubgPool($client->foregroundBases(), 'gnubg — Canlı YZ (Yapay Zeka ile Oyna)', $units);
+                $prRows = $this->checkGnubgPool($client->backgroundBases(), 'gnubg — PR Analizi (maç sonu)', $units);
+                $matRows = $this->checkGnubgPool($this->heavyBasesRaw($client), 'gnubg — Mat / Pozisyon Analizi (ağır)', $units);
 
-            $upCount = fn ($rows) => collect($rows)->filter(fn ($r) => ($r['up'] ?? null) === true)->count();
-            $frontUp = $upCount($frontRows);
-            $bgUp = $upCount($prRows);
+                $upCount = fn ($rows) => collect($rows)->filter(fn ($r) => ($r['up'] ?? null) === true)->count();
+                $frontUp = $upCount($frontRows);
+                $bgUp = $upCount($prRows);
 
-            return [
-                'services' => [
-                    // Hakem: hem insan hem YZ maçlarının hamle yasallığı.
-                    ...array_map(fn ($r) => $r + ['group' => 'Hakem (tüm maçlar)'], $vres['rows']),
-                    // İKİ NET ÖZET: hangi maç türü şu an oynanabilir.
-                    $this->checkHumanMatches($vres['up'], count($vres['rows'])),
-                    $this->checkAiMatches($vres['up'], $frontUp, count($frontRows), $bgUp),
-                    // gnubg instance'ları rol gruplarıyla (Canlı YZ / PR / Mat) AYRI lamba.
-                    ...$frontRows,
-                    ...$prRows,
-                    ...$matRows,
-                    // Maç-içi ısıtma işçileri AYRI grup (gnubg havuzlarıyla ilişkili, altyapıdan bağımsız).
-                    ...array_map(fn ($r) => $r + ['group' => 'Maç-içi Isıtma İşçileri (warm)'], $this->warmRows()),
-                    // Altyapı.
-                    $this->checkDatabase() + ['group' => 'Altyapı'],
-                    $this->checkQueue() + ['group' => 'Altyapı'],
-                    $this->checkScheduler() + ['group' => 'Altyapı'],
-                    $this->checkDisk() + ['group' => 'Altyapı'],
-                ],
-                'validator_required' => (bool) config('validator.required', true),
-            ];
+                return [
+                    'services' => [
+                        // Hakem: hem insan hem YZ maçlarının hamle yasallığı.
+                        ...array_map(fn ($r) => $r + ['group' => 'Hakem (tüm maçlar)'], $vres['rows']),
+                        // İKİ NET ÖZET: hangi maç türü şu an oynanabilir.
+                        $this->checkHumanMatches($vres['up'], count($vres['rows'])),
+                        $this->checkAiMatches($vres['up'], $frontUp, count($frontRows), $bgUp),
+                        // gnubg instance'ları rol gruplarıyla (Canlı YZ / PR / Mat) AYRI lamba.
+                        ...$frontRows,
+                        ...$prRows,
+                        ...$matRows,
+                        // Maç-içi ısıtma işçileri AYRI grup (gnubg havuzlarıyla ilişkili, altyapıdan bağımsız).
+                        ...array_map(fn ($r) => $r + ['group' => 'Maç-içi Isıtma İşçileri (warm)'], $this->warmRows()),
+                        // Altyapı.
+                        $this->checkDatabase() + ['group' => 'Altyapı'],
+                        // Kuyruk işçileri KUYRUK-BAZLI ayrı lamba (default/reviews/backfill): tek 'queue' lambası
+                        // herhangi bir worker'ın nabzına bakıp bir kuyruk ölse de yeşil kalıyordu (kör nokta).
+                        ...$this->queueRows(),
+                        $this->checkScheduler() + ['group' => 'Altyapı'],
+                        $this->checkDisk() + ['group' => 'Altyapı'],
+                    ],
+                    'validator_required' => (bool) config('validator.required', true),
+                ];
             });
         } catch (\Throwable $e) {
             // Sağlık paneli, izlediği admin panelini ASLA 500'le düşürmemeli. Herhangi bir probe
@@ -185,7 +187,9 @@ class ServiceStatus extends Widget
                 $nowN = (int) ($info['inflight'] ?? 0);
                 $detail .= " · eşzamanlı: şu an {$nowN}, tepe {$peak}";
             }
-            $rows[] = $this->svc('gnubgp-'.$port, $label, true, $up, $detail, $unit !== null) + ['group' => $group];
+            // Restart butonu: Forge supervisor her gnubg instance'ı port→'gnubg:gnubg-<port>' ile yeniden
+            // başlatabilir (systemd GNUBG_UNITS haritası gerekmez) -> port biliniyorsa her zaman göster.
+            $rows[] = $this->svc('gnubgp-'.$port, $label, true, $up, $detail, $port > 0) + ['group' => $group];
         }
 
         return $rows;
@@ -258,49 +262,70 @@ class ServiceStatus extends Widget
     }
 
     /**
-     * Queue worker (shadow PR + gnubg luck işçisi). CANLILIK: worker her döngüde 'queue:worker:heartbeat'
-     * cache'ine zaman damgası bırakır (AppServiceProvider Queue::looping). Heartbeat taze (<60sn) ise
-     * worker AYAKTA -> yüzlerce iş birikse (backfill) bile YEŞİL (yığını eritiyor). Heartbeat yok/eski
-     * ise ESKİ proxy'ye düş: en eski bekleyen iş > 90sn -> worker muhtemelen KAPALI (kırmızı).
+     * Kuyruk işçileri KUYRUK-BAZLI ayrı lamba (default / reviews / backfill). Eskiden TEK 'queue' lambası
+     * ortak 'queue:worker:heartbeat' nabzına bakıyordu -> bir kuyruğun worker'ı tamamen ölse bile BAŞKA
+     * kuyruğun worker'ı nabız bıraktığı için YEŞİL kalıyordu (kör nokta: canlı 'reviews' çökse "queue"
+     * yeşil görünür). Artık her kuyruk AYRI: o kuyruğu işleyen süreç sayısı (pgrep --queue=X) + o kuyruğun
+     * derinliği/yaşı. İşçi var -> yeşil (yığını eritir); işçi yok + eski bekleyen iş -> kırmızı (worker
+     * kapalı); işçi sayılamadı + iş yok -> gri (ayırt edilemez). warm AYRI (warmRows).
      */
-    private function checkQueue(): array
+    private function queueRows(): array
     {
+        // [key, DB kuyruk adları, pgrep deseni (bracket-trick: pgrep kendini saymasın), etiket]
+        $defs = [
+            ['default', ['default'], "[q]ueue:work.*[q]ueue='default'", 'Kuyruk: Canlı PR/Luck (default)'],
+            ['reviews', ['reviews'], "[q]ueue:work.*[q]ueue='reviews'", 'Kuyruk: Maç-sonu Review (reviews)'],
+            ['backfill', ['reviews-bulk', 'bulk'], "[q]ueue:work.*[q]ueue='reviews-bulk", 'Kuyruk: Backfill (reviews-bulk/bulk)'],
+        ];
         try {
-            $pending = (int) DB::table('jobs')->count();
-            $failed = 0;
-            try {
-                $failed = (int) DB::table('failed_jobs')->count();
-            } catch (\Throwable $e) {
-                // failed_jobs yoksa yok say
-            }
-
-            // Süreç canlılık damgası (backlog'tan bağımsız KESIN sinyal).
-            $hb = (int) (Cache::get('queue:worker:heartbeat') ?? 0);
-            $alive = $hb > 0 && (time() - $hb) < 60;
-            // KAÇ İŞÇİ? Çalışan queue:work süreçlerini say (tavla-queue + çoğaltmalar) -> ölçekleme görünür.
-            $nw = $this->queueWorkerCount();
-            $wtxt = $nw > 0 ? " · {$nw} işçi" : '';
-
-            if ($pending === 0) {
-                $detail = 'Boşta (bekleyen iş yok'.($failed > 0 ? ", $failed başarısız" : '').')'.$wtxt;
-                // heartbeat taze -> canlı-boşta (yeşil); yoksa ayırt edilemez (gri).
-                return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $alive ? true : null, $detail, true);
-            }
-            $oldest = DB::table('jobs')->min('available_at');
-            $age = $oldest ? (time() - (int) $oldest) : 0;
-            // Heartbeat taze -> worker çalışıyor (backlog erimekte); değilse eski proxy (>90sn = kapalı).
-            $up = $alive ? true : ($age < 90);
-            $detail = "$pending iş bekliyor, en eski {$age}sn".$wtxt.($failed > 0 ? " · $failed başarısız" : '');
-            if ($alive && $age >= 90) {
-                $detail .= ' — işleniyor (worker canlı, yığın eriyor)';
-            } elseif (! $up) {
-                $detail .= ' — birikmiş (worker kapalı olabilir)';
-            }
-
-            return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $up, $detail, true);
+            $failed = (int) DB::table('failed_jobs')->count();
         } catch (\Throwable $e) {
-            return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, false, 'jobs tablosu okunamadı', true);
+            $failed = 0;
         }
+        $rows = [];
+        $failedShown = false;
+        foreach ($defs as [$key, $queues, $pat, $label]) {
+            try {
+                $depth = (int) DB::table('jobs')->whereIn('queue', $queues)->count();
+                $oldest = $depth > 0 ? (int) DB::table('jobs')->whereIn('queue', $queues)->min('available_at') : 0;
+            } catch (\Throwable $e) {
+                $rows[] = $this->svc('q-'.$key, $label, true, null, 'jobs tablosu okunamadı') + ['group' => 'Kuyruk İşçileri'];
+
+                continue;
+            }
+            $procs = $this->queueProcCount($pat);
+            $age = $oldest ? (time() - $oldest) : 0;
+            $wtxt = $procs > 0 ? $procs.' işçi' : 'işçi süreci yok';
+            if ($procs > 0) {
+                $up = true;
+                $detail = $wtxt.' · '.($depth === 0 ? 'boşta (iş yok)' : "{$depth} iş bekliyor, en eski {$age}sn");
+            } elseif ($depth === 0) {
+                $up = null; // süreç sayılamadı (exec kapalı) + iş yok -> ayırt edilemez
+                $detail = 'Boşta ('.$wtxt.', bekleyen iş yok)';
+            } else {
+                $up = $age < 90;
+                $detail = "{$depth} iş bekliyor, en eski {$age}sn · {$wtxt}".($up ? '' : ' — işçi KAPALI olabilir');
+            }
+            if (! $failedShown && $failed > 0) {
+                $detail .= " · ⚠ {$failed} başarısız iş";
+                $failedShown = true;
+            }
+            $rows[] = $this->svc('q-'.$key, $label, true, $up, $detail) + ['group' => 'Kuyruk İşçileri'];
+        }
+
+        return $rows;
+    }
+
+    /** Belirli kuyruğu işleyen queue:work süreç sayısı (pgrep -fc; desen bracket-trick ile pgrep kendini saymaz). exec yoksa 0. */
+    private function queueProcCount(string $pattern): int
+    {
+        if (! function_exists('exec')) {
+            return 0;
+        }
+        $o = [];
+        @exec('pgrep -fc '.escapeshellarg($pattern).' 2>/dev/null', $o);
+
+        return max(0, (int) trim((string) ($o[0] ?? '0')));
     }
 
     /**
@@ -346,7 +371,7 @@ class ServiceStatus extends Widget
     private function checkHumanMatches(bool $vUp, int $vCount): array
     {
         $detail = $vUp
-            ? "Oynanabilir — hakem (validator) ayakta. gnubg gerekmez; analiz servisleri düşse bile etkilenmez."
+            ? 'Oynanabilir — hakem (validator) ayakta. gnubg gerekmez; analiz servisleri düşse bile etkilenmez.'
             : 'Oynatılamaz — hakem (validator) erişilemiyor (authoritative maçta hamleler reddedilir).';
 
         return $this->svc('human-matches', 'İnsan Maçları — Tek Oyun · Maç · Arkadaş', true, $vUp, $detail)
@@ -427,18 +452,6 @@ class ServiceStatus extends Widget
         } catch (\Throwable $e) {
             return $this->svc('disk', 'Disk Alanı', true, null, 'Ölçülemedi');
         }
-    }
-
-    /** Çalışan queue:work süreç sayısı (tavla-queue + çoğaltma unit'leri). exec yoksa 0 (gizlenir). */
-    private function queueWorkerCount(): int
-    {
-        if (! function_exists('exec')) {
-            return 0;
-        }
-        $o = [];
-        @exec('pgrep -fc "artisan queue:work database" 2>/dev/null', $o);
-
-        return max(0, (int) trim((string) ($o[0] ?? '0')));
     }
 
     /** Çalışan DEDİKE warm işçisi sayısı (tavla-warm-queue@ -> --queue=warm). exec yoksa 0. */
@@ -543,19 +556,14 @@ class ServiceStatus extends Widget
             return;
         }
 
-        // gnubgp-{port} -> port→systemd birimi (rol-gruplu yeni panel). Eski 'gnubg'/'gnubg-N' de desteklenir.
+        // gnubgp-{port} -> Forge supervisor program'ı 'gnubg:gnubg-<port>' (bkz /etc/supervisor/conf.d/
+        // gnubg.conf). systemctlRestart ':' görünce supervisorctl kullanır -> GNUBG_UNITS systemd haritasına
+        // ARTIK GEREK YOK (port doğrudan supervisor program adına eşlenir). Eski 'gnubg'/'gnubg-N' systemd
+        // anahtarları (GNUBG_UNITS bazlı) geriye dönük korunur.
         $unit = null;
         if (str_starts_with($key, 'gnubgp-')) {
             $port = (int) substr($key, strlen('gnubgp-'));
-            $units = app(GnuBgClient::class)->unitNames();
-            $unit = $this->unitForPort($port, $units);
-            if (! $unit) {
-                Notification::make()->title('Bu instance için birim adı tanımlı değil')
-                    ->body('GNUBG_UNITS env\'ine :'.$port.' portunun systemd birim adını ekle. SSH: systemctl restart <birim>.')
-                    ->warning()->persistent()->send();
-
-                return;
-            }
+            $unit = 'gnubg:gnubg-'.$port;
         } elseif ($key === 'gnubg' || str_starts_with($key, 'gnubg-')) {
             $idx = $key === 'gnubg' ? 0 : (int) substr($key, strlen('gnubg-'));
             $units = app(GnuBgClient::class)->unitNames();
@@ -588,16 +596,31 @@ class ServiceStatus extends Widget
         }
     }
 
-    /** systemd birimini best-effort yeniden başlat (sudo -n; izin yoksa false + çıktı). */
+    /**
+     * Servisi best-effort yeniden başlat (sudo -n; izin yoksa false + çıktı). Üretim artık Forge +
+     * SUPERVISOR (systemd DEĞİL) -> önce supervisorctl denenir. Birim adı ':' içeriyorsa (gnubg:gnubg-8092
+     * gibi grup:program) yalnız supervisor; içermiyorsa (eski Hetzner systemd birimi) supervisor dener,
+     * tutmazsa systemd'ye düşer (geriye dönük uyum).
+     */
     private function systemctlRestart(string $unit): array
     {
         if (! function_exists('exec')) {
             return [false, 'exec kapalı (paylaşımlı hosting)'];
         }
-        $o = [];
-        $code = 1;
-        @exec('sudo -n systemctl restart '.escapeshellarg($unit).' 2>&1', $o, $code);
+        $cmds = str_contains($unit, ':')
+            ? ['sudo -n supervisorctl restart '.escapeshellarg($unit)]
+            : ['sudo -n supervisorctl restart '.escapeshellarg($unit), 'sudo -n systemctl restart '.escapeshellarg($unit)];
+        $out = '';
+        foreach ($cmds as $cmd) {
+            $o = [];
+            $code = 1;
+            @exec($cmd.' 2>&1', $o, $code);
+            $out = implode("\n", $o);
+            if ($code === 0) {
+                return [true, $out];
+            }
+        }
 
-        return [$code === 0, implode("\n", $o)];
+        return [false, $out];
     }
 }
