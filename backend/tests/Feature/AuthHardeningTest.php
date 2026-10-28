@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -66,18 +67,43 @@ class AuthHardeningTest extends TestCase
             'nickname' => 'ilyok', 'email' => 'ilyok@e.com', 'password' => 'Secret123456',
         ])->assertStatus(422)->assertJsonValidationErrors('province');
 
-        // TR dışı ülke -> şehir zorunlu DEĞİL (il listesi yok) -> 201.
+        // TR dışı ülke -> şehir zorunlu DEĞİL (il listesi yok) + ULUSLARARASI telefon -> 201.
         $this->postJson('/api/register', [
             'first_name' => 'A', 'last_name' => 'B',
-            'country' => 'DE', 'phone' => '05551234567',
+            'country' => 'DE', 'phone' => '+4915221234567',
             'nickname' => 'almanya', 'email' => 'de@e.com', 'password' => 'Secret123456',
         ])->assertStatus(201);
+    }
+
+    // ÜLKEYE DUYARLI TELEFON: TR dışı ülke uluslararası (+kod) format ister; Türk formatı (05…) reddedilir.
+    public function test_foreign_country_phone_format(): void
+    {
+        // Malta -> uluslararası +356… kabul (yabancı üye cebini girebilir).
+        $this->postJson('/api/register', [
+            'first_name' => 'Zy', 'last_name' => 'Go',
+            'country' => 'MT', 'phone' => '+35679123456',
+            'nickname' => 'maltali', 'email' => 'mt@e.com', 'password' => 'Secret123456',
+        ])->assertStatus(201);
+
+        // Malta ama Türk formatı (05…) -> international regex'e takılır (phone hatası).
+        $this->postJson('/api/register', [
+            'first_name' => 'Zy', 'last_name' => 'Go',
+            'country' => 'MT', 'phone' => '05551234567',
+            'nickname' => 'maltali2', 'email' => 'mt2@e.com', 'password' => 'Secret123456',
+        ])->assertStatus(422)->assertJsonValidationErrors('phone');
+
+        // TR hâlâ Türk formatı ister (uluslararası + reddedilir) -> format karışmasın.
+        $this->postJson('/api/register', [
+            'first_name' => 'Ah', 'last_name' => 'Me',
+            'country' => 'TR', 'province' => 'İstanbul', 'phone' => '+905551234567',
+            'nickname' => 'turkplus', 'email' => 'trp@e.com', 'password' => 'Secret123456',
+        ])->assertStatus(422)->assertJsonValidationErrors('phone');
     }
 
     public function test_account_locks_after_five_failed_logins(): void
     {
         // throttle (10/dk) kilit esigine (5) ulasmadan devreye girmesin diye devre disi.
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
         User::factory()->create(['email' => 'kilit@e.com', 'password' => Hash::make('DogruSifre123')]);
 
         for ($i = 0; $i < 5; $i++) {
@@ -93,7 +119,7 @@ class AuthHardeningTest extends TestCase
     // F8: kilit hesap+IP bazli -> saldirgan kurbani kilitleyemez (hedefli DoS yok).
     public function test_lockout_is_per_ip_not_account_wide_dos(): void
     {
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
         User::factory()->create(['email' => 'kurban@e.com', 'password' => Hash::make('DogruSifre123')]);
 
         // Saldirgan IP'sinden 5 yanlis -> yalniz O IP + hesap kilitlenir.

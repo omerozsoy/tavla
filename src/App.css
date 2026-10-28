@@ -8626,6 +8626,92 @@ button.move-row:focus-visible {
   font-size: 0.85rem;
 }
 
+/* Uluslararası telefon alanı: dial (bayrak + +kod) dropdown + numara. */
+.phone-field {
+  position: relative;
+  width: 100%;
+}
+.phone-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.phone-row > input {
+  flex: 1;
+  min-width: 0;
+}
+.phone-dial {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border, var(--input, #d4d4d8));
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.phone-dial[aria-invalid='true'] {
+  border-color: var(--terracotta, #c9563f);
+  border-width: 2px;
+}
+.phone-dial__code {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.phone-dial__chev {
+  color: var(--muted);
+  flex: none;
+}
+.phone-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+.phone-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+.phone-opt:hover,
+.phone-opt:focus-visible {
+  background: color-mix(in srgb, var(--accent, #c9643c) 14%, transparent);
+}
+.phone-opt.sel {
+  color: var(--accent-text, var(--accent));
+  font-weight: 600;
+}
+.phone-opt__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.phone-opt__dial {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .register-overlay {
   position: fixed;
   inset: 0;

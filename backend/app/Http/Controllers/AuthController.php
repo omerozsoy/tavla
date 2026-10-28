@@ -51,10 +51,10 @@ class AuthController extends Controller
     // Uye kaydi
     public function register(Request $request)
     {
-        // Cep telefonu markaya bağlı: TavlaTv (TR) zorunlu; GammonTV (yabancı) istemez.
-        $phoneRule = Brand::requiresPhone()
-            ? ['required', 'string', 'regex:/^0?5\d{9}$/']
-            : ['nullable', 'string', 'regex:/^0?5\d{9}$/'];
+        // Cep telefonu markaya bağlı (zorunluluk) + ÜLKEYE DUYARLI (format): TR -> Türk cep
+        // (05XXXXXXXXX), diğer ülkeler -> uluslararası (+<kod><numara>). Böylece Malta gibi yabancı
+        // üyeler de cebini girebilir.
+        $phoneRule = self::phoneRule($request->input('country'));
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
@@ -301,10 +301,8 @@ class AuthController extends Controller
     public function updateProfile(Request $request)
     {
         $user = $request->user();
-        // Cep telefonu markaya bağlı: TavlaTv (TR) zorunlu; GammonTV (yabancı) istemez.
-        $phoneRule = Brand::requiresPhone()
-            ? ['required', 'string', 'regex:/^0?5\d{9}$/']
-            : ['nullable', 'string', 'regex:/^0?5\d{9}$/'];
+        // Cep telefonu markaya bağlı (zorunluluk) + ÜLKEYE DUYARLI (format): TR Türk cep, diğer uluslararası.
+        $phoneRule = self::phoneRule($request->input('country'));
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
@@ -2156,6 +2154,24 @@ class AuthController extends Controller
     private static function passwordRules(): array
     {
         return ['required', 'string', 'min:12', 'max:100', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/'];
+    }
+
+    /**
+     * Telefon doğrulama kuralı — zorunluluk MARKAya (TavlaTv zorunlu), format ÜLKEye duyarlı:
+     *  - TR (veya boş/bilinmeyen): Türk cep  -> 0?5XXXXXXXXX  (SMS OTP + eski kayıtlarla birebir)
+     *  - diğer ülkeler: uluslararası E.164   -> +<kod><numara> (7-15 hane; Malta vb. yabancı üyeler)
+     * Frontend PhoneField bu iki formatı üretir (TR '05…', yabancı '+356…').
+     */
+    private static function phoneRule($country): array
+    {
+        $iso = strtoupper(trim((string) $country));
+        $format = $iso === '' || $iso === 'TR'
+            ? 'regex:/^0?5\d{9}$/'
+            : 'regex:/^\+[1-9]\d{6,14}$/';
+
+        return Brand::requiresPhone()
+            ? ['required', 'string', $format]
+            : ['nullable', 'string', $format];
     }
 
     private static function passwordMessages(): array

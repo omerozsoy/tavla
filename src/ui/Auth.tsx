@@ -8,6 +8,7 @@ import { PROVINCES } from '../provinces'
 import { BRAND } from '../brand'
 import DatePicker from './DatePicker'
 import SearchSelect from './SearchSelect'
+import PhoneField, { isValidPhone } from './PhoneField'
 import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
@@ -23,14 +24,8 @@ function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
-// Cep telefonu: state 0'sız 10 hane tutar (kullanici 0'ı yazmaz, biz gosteririz).
-// Gecerli Turk cep = 10 hane, 5 ile baslar. Gorunum: "5XX XXX XX XX" (3-3-2-2).
-function formatPhone(d: string): string {
-  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join(' ')
-}
-function isPhone(d: string): boolean {
-  return /^5\d{9}$/.test(d)
-}
+// Cep telefonu: artık PhoneField (uluslararası, ülke arama kodu + numara) ile girilir.
+// TR: '05XXXXXXXXX' (eski format korunur); yabancı: '+<kod><numara>'. Doğrulama isValidPhone.
 
 // Google Identity Services keeps its initialization state globally. Auth can be
 // mounted more than once during route/profile transitions, so initialize it
@@ -128,8 +123,8 @@ export default function Auth({
   const [province, setProvince] = useState(seed.province ?? '')
   const [nickname, setNickname] = useState(seed.nickname)
   const [email, setEmail] = useState(seed.email)
-  // Telefon state'i 0'sız 10 haneyi tutar (seed '05XX...' gelirse 0'ı ve haneleri ayıkla).
-  const [phone, setPhone] = useState((seed.phone || '').replace(/\D/g, '').replace(/^0/, '').slice(0, 10))
+  // Telefon state'i TAM saklanan değeri tutar (TR: '05XX...'; yabancı: '+356...'). PhoneField parse eder.
+  const [phone, setPhone] = useState((seed.phone || '').trim())
   // Telefon/ülke/şehir yalnız gerçek hesaplarda ZORUNLU (misafir yerel profilinde değil).
   // Kayıt + gerçek-hesap profil düzenlemesi backend ile birebir: ülke+telefon zorunlu, TR'de şehir.
   // Telefon markaya bağlı: TavlaTv (TR) sorar+zorunlu; GammonTV (yabancı) telefon HİÇ sormaz.
@@ -395,7 +390,7 @@ export default function Auth({
       document.getElementById('pf-email')?.focus()
       return false
     }
-    if (askPhone && !isPhone(phone)) {
+    if (askPhone && !isValidPhone(phone)) {
       document.getElementById('pf-phone')?.focus()
       return false
     }
@@ -419,7 +414,7 @@ export default function Auth({
         province: country === 'TR' ? province.trim() : '',
         nickname: nickname.trim(),
         email: email.trim(),
-        phone: phone ? '0' + phone : '',
+        phone: phone.trim(),
         avatar,
         birthDate,
         password,
@@ -609,24 +604,18 @@ export default function Auth({
       {askPhone && (
         <div className="grid gap-1.5">
           <Label htmlFor="pf-phone" style={reqLabelStyle(reqMiss.phone)}>{t('reg.phone')}</Label>
-          <div className="flex items-center gap-2">
-            {/* Sabit '0' öneki: kullanıcı 0'sız girer, biz gösteririz */}
-            <span className="text-muted-foreground select-none" style={{ fontWeight: 600 }}>0</span>
-            <Input
-              id="pf-phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              placeholder="5XX XXX XX XX"
-              value={formatPhone(phone)}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-              aria-invalid={reqMiss.phone || (phone.length > 0 && !isPhone(phone)) || undefined}
-            />
-          </div>
-          {/* Hata alanın ALTINDA: boşsa "Zorunlu", doluysa "Geçerli bir cep telefonu girin (5XX…)". */}
+          {/* Ülke arama kodu (bayrak + +kod) + numara. TR: 05XX… korunur; yabancı: +<kod><numara>. */}
+          <PhoneField
+            id="pf-phone"
+            country={country}
+            value={phone}
+            onChange={setPhone}
+            invalid={reqMiss.phone || (phone.length > 0 && !isValidPhone(phone)) || undefined}
+          />
+          {/* Hata alanın ALTINDA: boşsa "Zorunlu", doluysa "Geçerli bir cep telefonu girin". */}
           {reqMiss.phone
             ? reqHint(true)
-            : triedSubmit && phone.length > 0 && !isPhone(phone) && (
+            : triedSubmit && phone.length > 0 && !isValidPhone(phone) && (
                 <span className="text-xs text-destructive" role="alert">{t('reg.validPhone')}</span>
               )}
         </div>
