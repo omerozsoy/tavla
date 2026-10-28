@@ -308,47 +308,12 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             </div>
 
-            {/* ===== Alt satır: WXP · Medyan Hata Oranı · Toplam Kaz.% ===== */}
-            <div className="stats-dash stats-dash-3">
+            {/* ===== Alt satır (2 sütun, yarı yarıya):
+                 üst çift: Maç Tipine Göre PR · Maç Tipine Göre Kazanma %
+                 alt çift: Zar Ortalamaları · WXP ===== */}
+            <div className="stats-dash">
 
-              {/* WXP — Kazanma Deneyim Puanlari */}
-              <div className="sd-card wxp-card">
-                <div className="sd-head">
-                  <span className="sd-ic"><Icon name="star" size={18} /></span>
-                  <div className="sd-head-txt">
-                    <div className="sd-title">{t('wxp.title')}</div>
-                  </div>
-                </div>
-                {perfErr ? (
-                  <div className="lb-empty small">{t('lb.error')}</div>
-                ) : !perf ? (
-                  <div aria-busy="true">
-                    <Skeleton w={120} h={40} r={8} style={{ display: 'block', margin: '4px auto' }} />
-                    <Skeleton w="100%" h={54} r={8} style={{ display: 'block', marginTop: 12 }} />
-                  </div>
-                ) : (
-                  <>
-                    <div className="wxp-total">{fmtNum(perf.wxp.total)}</div>
-                    <div className="wxp-boxes">
-                      <div className="wxp-box">
-                        <strong className="good">{fmtNum(perf.wxp.wins)}</strong>
-                        <span>{t('wxp.g')}</span>
-                      </div>
-                      <div className="wxp-box">
-                        <strong className="bad">{fmtNum(perf.wxp.losses)}</strong>
-                        <span>{t('wxp.m')}</span>
-                      </div>
-                      <div className="wxp-box">
-                        <strong>{perf.wxp.total_matches > 0 ? `%${Math.round(perf.wxp.win_rate)}` : '–'}</strong>
-                        <span>{t('wxp.winRate')}</span>
-                      </div>
-                    </div>
-                    <div className="wxp-legend">{t('wxp.legend')}</div>
-                  </>
-                )}
-              </div>
-
-              {/* Medyan Hata Oranı — bar chart (üst satırdan taşındı) */}
+              {/* Maç Tipine Göre PR — bar chart */}
               <div className="sd-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="alert" size={18} /></span>
@@ -421,7 +386,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               )}
 
               {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı */}
-              <div className="sd-card sd-card-wide dice-card">
+              <div className="sd-card dice-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="dice" size={18} /></span>
                   <div className="sd-head-txt">
@@ -474,6 +439,43 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                       )
                     })}
                   </div>
+                )}
+              </div>
+
+              {/* WXP — Kazanma Deneyim Puanlari (Zar'ın yanında, yarı yarıya) */}
+              <div className="sd-card wxp-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="star" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('wxp.title')}</div>
+                  </div>
+                </div>
+                {perfErr ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !perf ? (
+                  <div aria-busy="true">
+                    <Skeleton w={120} h={40} r={8} style={{ display: 'block', margin: '4px auto' }} />
+                    <Skeleton w="100%" h={54} r={8} style={{ display: 'block', marginTop: 12 }} />
+                  </div>
+                ) : (
+                  <>
+                    <div className="wxp-total">{fmtNum(perf.wxp.total)}</div>
+                    <div className="wxp-boxes">
+                      <div className="wxp-box">
+                        <strong className="good">{fmtNum(perf.wxp.wins)}</strong>
+                        <span>{t('wxp.g')}</span>
+                      </div>
+                      <div className="wxp-box">
+                        <strong className="bad">{fmtNum(perf.wxp.losses)}</strong>
+                        <span>{t('wxp.m')}</span>
+                      </div>
+                      <div className="wxp-box">
+                        <strong>{perf.wxp.total_matches > 0 ? `%${Math.round(perf.wxp.win_rate)}` : '–'}</strong>
+                        <span>{t('wxp.winRate')}</span>
+                      </div>
+                    </div>
+                    <div className="wxp-legend">{t('wxp.legend')}</div>
+                  </>
                 )}
               </div>
             </div>
