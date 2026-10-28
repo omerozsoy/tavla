@@ -351,6 +351,20 @@ class MatchClockTest extends TestCase
         $this->assertNull($end['winner']); // kimse kazanmaz -> no-contest
     }
 
+    // ---- 17b) KAZANAN HİÇ YÜKLENMEDİYSE (seen=null) presence-ABANDON NO-CONTEST olur ----
+    // Kök fix 975NM (2026-10-28): maç-başı kabul eden (p2) yüklenip presence'ı donar; rakip (p1)
+    // odayı HİÇ yüklememişse (seen=null) eskiden hiç gelmeyen p1 hükmen KAZANIYORDU -> artık kimse
+    // kazanmaz (winner=null, puan/coin işlemez). Gerçekten görülmüş kazanan etkilenmez (17/15/14).
+    public function test_presence_abandon_no_contest_when_winner_never_seen(): void
+    {
+        $c = $this->started('casual', 5, 'black');   // aktif p2 (siyah)
+        $c = MatchClock::seen($c, 'p2', self::T0);    // p2 yüklendi, sonra koptu (presence dondu)
+        // p1 HİÇ seen damgalanmadı (odayı hiç yüklemedi)
+        $end = MatchClock::tick($c, self::T0 + 70)['end'];
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertNull($end['winner']); // hiç gelmeyen p1 kazanamaz -> no-contest
+    }
+
     // ---- 18) _seen damgasi yoksa presence ATLANIR (saf zaman davranisi korunur) ----
     public function test_presence_skipped_without_seen_stamps(): void
     {

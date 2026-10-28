@@ -314,7 +314,16 @@ class MatchClock
             $turnStart = (float) ($clock['started_at'] ?? $now);
             $stallerShield = $runningNow && $active !== null && $gone !== $active && $goneSeen >= $turnStart;
             if (! $stallerShield) {
-                $clock['end'] = ['reason' => 'ABANDON', 'winner' => self::other($gone)];
+                // KÖK FIX (975NM, 2026-10-28): presence-ABANDON'da "kazanan" taraf odayı HİÇ yüklemediyse
+                // (seen=null) bu ADİL kazanç DEĞİL -> no-contest (winner=null; applyClockEnd puan/coin
+                // İŞLEMEZ, yalnız odayı kapatır). Aksi halde maça hiç bağlanmamış rakip, yüklenip sonra
+                // presence'ı donan (maç-başı geçiş/poll kesintisi) oyuncuya karşı KAZANIYORDU -> kabul
+                // eden (p2) yükleniyor ama hiç gelmeyen p1'e hükmen yeniliyordu. Her iki taraf da gitmişse
+                // zaten aşağıda (p1Gone && p2Gone) no-contest. seen her poll'da yazılır (ileri-only) ->
+                // gerçekten oynamış/görülmüş kazanan etkilenmez; yalnız no-show "kazanan" no-contest'e döner.
+                $winner = self::other($gone);
+                $winnerSeen = $clock[$winner.'_seen'] ?? null;
+                $clock['end'] = ['reason' => 'ABANDON', 'winner' => $winnerSeen !== null ? $winner : null];
 
                 return $clock;
             }
