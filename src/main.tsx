@@ -95,7 +95,9 @@ void initRankThresholds()
 // PWA: service worker'i kaydet (yuklenebilir + cevrimdisi). Sadece prod'da.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+    // /service-worker.js = Laravel route (no-store header; bkz web.php). Static /sw.js nginx'te
+    // Cloudflare tarafından 4sa cache'leniyordu -> yeni SW geç ulaşıyordu. No-store ile anında güncel.
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {
       /* SW kaydi basarisiz -> uygulama normal calisir */
     })
   })

@@ -5,7 +5,7 @@
 // ONEMLI: respondWith'e HER ZAMAN gecerli bir Response donmeli; undefined donersen
 // tarayici "Failed to convert value to 'Response'" atar (fetch VEYA cache.put reddettiginde
 // eski surumde iki caches.match da bos olunca bu oluyordu -> asagida her yol Response garanti).
-const CACHE = 'tavla-cache-v14'
+const CACHE = 'tavla-cache-v15'
 const CACHE_PREFIX = 'tavla-cache-' // yalniz KENDI surumlu cache'lerimizi temizle; baskasina dokunma
 
 // Son care cevrimdisi yaniti -> YALNIZ gezinme (sayfa) isteklerinde. Tek-kullanimlik body
@@ -71,6 +71,7 @@ self.addEventListener('fetch', (event) => {
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname === '/sw.js' ||
+    url.pathname === '/service-worker.js' ||
     url.pathname === '/admin' ||
     url.pathname.startsWith('/admin/') ||
     url.pathname === '/panel' ||

@@ -2,7 +2,12 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PanelController;
+use App\Http\Controllers\PaymentController;
+use App\Models\MenuItem;
+use App\Models\Payment;
+use App\Support\Brand;
 use App\Support\SeoMeta;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -33,8 +38,10 @@ Route::post('/admin/enter', function (Request $request) {
         }
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
+
         return $safeRedirect('/admin');
     }
+
     return $safeRedirect('/admin/login');
 })->middleware('throttle:10,1,admin-sso');
 
@@ -47,7 +54,7 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 // sunar (Apache once dosyayi verir; seo:sitemap komutu curated sitemap.xml'i yazar). gammontv.com
 // ise .htaccess ile bu rotalara yonlendirilir -> kendi origin'iyle robots + dinamik sitemap.
 Route::get('/robots.txt', function (Request $request) {
-    $b = \App\Support\Brand::fromHost($request->getHost());
+    $b = Brand::fromHost($request->getHost());
     $origin = rtrim((string) ($b['origin'] ?? ''), '/');
 
     return response("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: {$origin}/sitemap.xml\n", 200, [
@@ -55,10 +62,25 @@ Route::get('/robots.txt', function (Request $request) {
     ]);
 });
 Route::get('/sitemap.xml', function (Request $request) {
-    $b = \App\Support\Brand::fromHost($request->getHost());
+    $b = Brand::fromHost($request->getHost());
 
     return response(SeoMeta::sitemapXml((string) $b['key']), 200, [
         'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+});
+// PWA service worker — NO-STORE ile servis. Üretim Forge/nginx'e taşındığından .htaccess (eski
+// Apache no-store kuralı) OKUNMUYOR; nginx static /sw.js'i header'sız verince Cloudflare 4 saat
+// cache'liyor -> yeni SW cihazlara geç ulaşıyordu. İçerik public/sw.js ile AYNI; URL farklı ki
+// static dosya nginx'te route'u GÖLGELEMESİN (try_files statik dosyayı önce verir) -> böylece
+// Laravel'in no-store header'ı geçerli olur, CF cache'lemez. Eski /sw.js statik kalır (geriye dönük).
+Route::get('/service-worker.js', function () {
+    $path = public_path('sw.js');
+    abort_unless(is_file($path), 404);
+
+    return response((string) file_get_contents($path), 200, [
+        'Content-Type' => 'application/javascript; charset=utf-8',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        'Service-Worker-Allowed' => '/',
     ]);
 });
 
@@ -92,21 +114,21 @@ Route::prefix('panel')->group(function () {
 });
 
 // ---- Odeme (Garanti Sanal POS 3D) ----
-Route::get('/pay/card/{payment}', [\App\Http\Controllers\PaymentController::class, 'card'])
+Route::get('/pay/card/{payment}', [PaymentController::class, 'card'])
     ->name('pay.card')->middleware('signed');
-Route::post('/pay/submit/{payment}', [\App\Http\Controllers\PaymentController::class, 'submit'])
+Route::post('/pay/submit/{payment}', [PaymentController::class, 'submit'])
     ->name('pay.submit')->middleware('signed') // imzali: baskasinin bekleyen odemesine POST engellenir
     // CSRF muaf: uygulama-ici (SPA) kart formu da bu uca POST edebilsin. Imza (30 dk, odemeye
     // ozel) zaten sahtecilik korumasi saglar; blade formundaki @csrf zararsizca yok sayilir.
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
-Route::post('/pay/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])
+    ->withoutMiddleware([ValidateCsrfToken::class]);
+Route::post('/pay/callback', [PaymentController::class, 'callback'])
     ->name('pay.callback')
     ->middleware('throttle:30,1') // forged callback flood'una karsi
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+    ->withoutMiddleware([ValidateCsrfToken::class]);
 Route::get('/pay/result', fn () => view('pay.result', ['ok' => false, 'msg' => '']))->name('pay.result');
 // Kredi karti arayuzu ONIZLEMESI (gercek tahsilat yok; tasarimi gormek icin).
 Route::get('/pay/onizleme', fn () => view('pay.card', [
-    'payment' => new \App\Models\Payment(['kind' => 'coins', 'coins' => 5000, 'amount' => 400000, 'currency' => '949']),
+    'payment' => new Payment(['kind' => 'coins', 'coins' => 5000, 'amount' => 400000, 'currency' => '949']),
     'submitUrl' => '#',
     'preview' => true,
 ]))->name('pay.preview');
@@ -160,7 +182,7 @@ Route::fallback(function (Request $request) {
     // 60sn cache + MenuItem kaydında forget (anında güncellenir). DB hatasında güvenli boş liste.
     $dynamic = [];
     try {
-        $dynamic = Cache::remember('spa_menu_route_segs', 60, fn () => \App\Models\MenuItem::query()
+        $dynamic = Cache::remember('spa_menu_route_segs', 60, fn () => MenuItem::query()
             ->whereNotNull('href')
             ->pluck('href')
             ->map(function ($h) {
@@ -175,7 +197,7 @@ Route::fallback(function (Request $request) {
             ->unique()
             ->values()
             ->all());
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         $dynamic = [];
     }
     $known = ($first === '' || in_array($first, $valid, true) || in_array($first, $dynamic, true))
@@ -213,6 +235,7 @@ Route::fallback(function (Request $request) {
             'Expires' => '0',
         ]);
     }
+
     return response(
         'Frontend build not found. Build React and copy dist/* into backend/public/.',
         200
