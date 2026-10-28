@@ -61,6 +61,24 @@ class BoardDesignResource extends Resource
             ->live();
     }
 
+    /** Zemin resmi (sol/sağ yarı) konum kaydırıcıları: yatay/dikey konum + yakınlaştırma. */
+    private static function surfacePosSliders(string $side, string $label, string $imgField): Forms\Components\Group
+    {
+        $sl = fn (string $key, string $lbl, int $min, int $max, int $def) => Forms\Components\TextInput::make("surface_pos.$side.$key")
+            ->label(fn (Get $get) => $lbl.' · %'.(int) round((float) ($get("surface_pos.$side.$key") ?? $def)))
+            ->type('range')
+            ->extraInputAttributes(['min' => $min, 'max' => $max, 'step' => 1, 'style' => 'padding:0;accent-color:#a83a2b'])
+            ->default($def)
+            ->live(debounce: 120);
+
+        return Forms\Components\Group::make([
+            Forms\Components\Placeholder::make("surf_pos_lbl_$side")->hiddenLabel()->content($label),
+            $sl('x', 'Yatay konum', 0, 100, 50),
+            $sl('y', 'Dikey konum', 0, 100, 50),
+            $sl('zoom', 'Yakınlaştırma', 20, 400, 100),
+        ])->visible(fn (Get $get) => filled($get($imgField)));
+    }
+
     /**
      * Bir hane resmi bloğu: yükleme + yerleşim kaydırıcıları (yatay/dikey konum, yakınlaştırma) +
      * tek haneyi büyük gösteren canlı önizleme.
@@ -357,6 +375,12 @@ class BoardDesignResource extends Resource
                                 ->helperText('%100 = tam görünür; düşürdükçe altındaki zemin rengi görünür.')
                                 ->live(debounce: 120)
                                 ->visible(fn (Get $get) => filled($get('surface_image_left')) || filled($get('surface_image_right'))),
+                            // Konum ayarı (yatay/dikey + yakınlaştırma) — sol/sağ yarı AYRI. "Ortalanamıyor"
+                            // şikayeti: artık resmi elle kaydır/yakınlaştır (varsayılan ortalı+%100).
+                            Forms\Components\Grid::make(['default' => 1, 'sm' => 2])->schema([
+                                self::surfacePosSliders('l', 'Sol yarı konumu', 'surface_image_left'),
+                                self::surfacePosSliders('r', 'Sağ yarı konumu', 'surface_image_right'),
+                            ])->visible(fn (Get $get) => filled($get('surface_image_left')) || filled($get('surface_image_right'))),
                         ])
                         ->visible(fn (?BoardDesign $record) => ! $record || $record->is_custom),
                     Forms\Components\Section::make('Hane Resimleri')
@@ -398,6 +422,7 @@ class BoardDesignResource extends Resource
                             'surfRight' => self::previewImage($get('surface_image_right')),
                             'surfOpacity' => (int) ($get('surface_image_opacity') ?? 100),
                             'surfFit' => $get('surface_image_fit') ?: 'cover',
+                            'surfPos' => $get('surface_pos') ?: null,
                             'texts' => $get('point_texts'),
                             'imgOdd' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_odd')),
                             'imgEven' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_even')),

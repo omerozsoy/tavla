@@ -2608,12 +2608,27 @@ export default function App() {
         root.style.setProperty('--surf-img-right', sr ? `url("${sr}")` : 'none')
         root.style.setProperty('--surf-opacity', String((bt.surfaceOpacity ?? 100) / 100))
         root.style.setProperty('--surf-fit', bt.surfaceImgFit === 'contain' ? 'contain' : 'cover')
+        // Elle konum (x/y) + yakınlaştırma (zoom -> background-size genişlik %). Yoksa center/--surf-fit.
+        const posVar = (p?: { x: number; y: number; zoom: number }) => ({
+          pos: p ? `${p.x}% ${p.y}%` : 'center',
+          size: p ? `${p.zoom}% auto` : 'var(--surf-fit, cover)',
+        })
+        const pl = posVar(bt.surfacePos?.l)
+        const pr = posVar(bt.surfacePos?.r)
+        root.style.setProperty('--surf-pos-left', pl.pos)
+        root.style.setProperty('--surf-size-left', pl.size)
+        root.style.setProperty('--surf-pos-right', pr.pos)
+        root.style.setProperty('--surf-size-right', pr.size)
         root.setAttribute('data-surf-img', '')
       } else {
         root.style.removeProperty('--surf-img-left')
         root.style.removeProperty('--surf-img-right')
         root.style.removeProperty('--surf-opacity')
         root.style.removeProperty('--surf-fit')
+        root.style.removeProperty('--surf-pos-left')
+        root.style.removeProperty('--surf-size-left')
+        root.style.removeProperty('--surf-pos-right')
+        root.style.removeProperty('--surf-size-right')
         root.removeAttribute('data-surf-img')
       }
     }

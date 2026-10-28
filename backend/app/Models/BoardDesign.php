@@ -36,13 +36,14 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'surface_image_fit', 'checker_style', 'hide_logo', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'surface_image_fit', 'surface_pos', 'checker_style', 'hide_logo', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
         'point_image_fit' => 'array',
         'point_images' => 'array',
         'point_texts' => 'array',
+        'surface_pos' => 'array',
         'is_custom' => 'boolean',
         'hide_logo' => 'boolean',
         'active' => 'boolean',
@@ -72,6 +73,22 @@ class BoardDesign extends Model
             $d->surface_image_opacity = max(0, min(100, (int) ($d->surface_image_opacity ?? 100)));
             if (Schema::hasColumn('board_designs', 'surface_image_fit')) {
                 $d->surface_image_fit = in_array($d->surface_image_fit, ['cover', 'contain'], true) ? $d->surface_image_fit : 'cover';
+            }
+            // Zemin resmi konumu: {l:{x,y,zoom}, r:{x,y,zoom}} — x/y 0–100 %, zoom 20–400 %. Varsayılan
+            // (ortalı+100) yazılmaz -> boş obje null'lanır (eski tahtalar/temiz veri). Yalnız l/r anahtarları.
+            if (Schema::hasColumn('board_designs', 'surface_pos')) {
+                $pos = is_array($d->surface_pos) ? $d->surface_pos : [];
+                $clean = [];
+                foreach (['l', 'r'] as $k) {
+                    $p = is_array($pos[$k] ?? null) ? $pos[$k] : [];
+                    $x = max(0, min(100, (int) round((float) ($p['x'] ?? 50))));
+                    $y = max(0, min(100, (int) round((float) ($p['y'] ?? 50))));
+                    $z = max(20, min(400, (int) round((float) ($p['zoom'] ?? 100))));
+                    if ($x !== 50 || $y !== 50 || $z !== 100) { // varsayılandan farklıysa sakla
+                        $clean[$k] = ['x' => $x, 'y' => $y, 'zoom' => $z];
+                    }
+                }
+                $d->surface_pos = $clean ?: null;
             }
             $texts = [];
             foreach ((array) ($d->point_texts ?? []) as $n => $txt) {

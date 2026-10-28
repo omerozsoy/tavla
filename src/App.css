@@ -6574,16 +6574,21 @@ html[data-surf-img] .half::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-position: center;
-  background-size: var(--surf-fit, cover); /* cover=kapla+kırp, contain=tümü ortada sığsın */
   background-repeat: no-repeat;
   opacity: var(--surf-opacity, 1);
+  /* Konum/boyut per-yarı değişkenden (admin x/y/zoom); yoksa center + --surf-fit (cover/contain). */
+  background-position: center;
+  background-size: var(--surf-fit, cover);
 }
 html[data-surf-img] .half-left::before {
   background-image: var(--surf-img-left, none);
+  background-position: var(--surf-pos-left, center);
+  background-size: var(--surf-size-left, var(--surf-fit, cover));
 }
 html[data-surf-img] .half-right::before {
   background-image: var(--surf-img-right, none);
+  background-position: var(--surf-pos-right, center);
+  background-size: var(--surf-size-right, var(--surf-fit, cover));
 }
 html[data-surf-img] .half > .quadrant {
   position: relative;

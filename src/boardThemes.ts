@@ -45,6 +45,8 @@ export interface BoardTheme {
   surfaceImgRight?: string
   surfaceOpacity?: number
   surfaceImgFit?: 'cover' | 'contain' // kapla+kırp | tümü ortada sığsın
+  // Zemin resmi elle konum (sol/sağ yarı AYRI): x/y 0–100 % (background-position), zoom 20–400 % (genişlik)
+  surfacePos?: { l?: SurfPos; r?: SurfPos }
   // Her haneye (1..24) opsiyonel metin: üçgene basılır (oto beyaz+dış hat, ortalı, ölçekli)
   pointTexts?: Record<number, string>
 }
@@ -55,6 +57,11 @@ export interface PointFit {
   aspect?: number
   rot?: number // 0–359° döndürme (varsayılan 0)
   flip?: boolean // yatay ayna (varsayılan false)
+}
+export interface SurfPos {
+  x: number // yatay konum % (background-position), 0–100, varsayılan 50
+  y: number // dikey konum %, 0–100, varsayılan 50
+  zoom: number // genişlik % (background-size), 20–400, varsayılan 100
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -376,7 +383,13 @@ export interface BoardDesignRow {
   surface?: string | null
   checker_style?: string | null
   hideLogo?: boolean
-  surfaceImages?: { left?: string | null; right?: string | null; opacity?: number; fit?: string } | null
+  surfaceImages?: {
+    left?: string | null
+    right?: string | null
+    opacity?: number
+    fit?: string
+    pos?: { l?: Partial<SurfPos>; r?: Partial<SurfPos> } | null
+  } | null
   texts?: Record<string, string> | null
   images?: {
     mode?: 'pair' | 'each'
@@ -412,6 +425,25 @@ export function safeFit(f: unknown): PointFit {
   if (rot !== 0) out.rot = rot
   if (o.flip) out.flip = true
   return out
+}
+// Zemin resmi konum ({l,r} her biri {x,y,zoom}) güvenli-oku; varsayılan (ortalı+100) olanı atlar.
+export function safeSurfPos(p: unknown): BoardTheme['surfacePos'] {
+  if (!p || typeof p !== 'object') return undefined
+  const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
+  const one = (s: unknown): SurfPos | undefined => {
+    if (!s || typeof s !== 'object') return undefined
+    const o = s as Record<string, unknown>
+    const v: SurfPos = {
+      x: Math.max(0, Math.min(100, num(o.x, 50))),
+      y: Math.max(0, Math.min(100, num(o.y, 50))),
+      zoom: Math.max(20, Math.min(400, num(o.zoom, 100))),
+    }
+    return v.x === 50 && v.y === 50 && v.zoom === 100 ? undefined : v
+  }
+  const o = p as Record<string, unknown>
+  const l = one(o.l)
+  const r = one(o.r)
+  return l || r ? { ...(l ? { l } : {}), ...(r ? { r } : {}) } : undefined
 }
 // Hane resmi URL'si: yalnız site içi /uploads/… ya da https; CSS url("…") kırılmasın diye tırnak,
 // parantez, ters bölü ve boşluk içeremez.
@@ -477,6 +509,7 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
           ? Math.max(0, Math.min(100, r.surfaceImages.opacity))
           : undefined,
       surfaceImgFit: r.surfaceImages?.fit === 'contain' ? 'contain' : 'cover',
+      surfacePos: safeSurfPos(r.surfaceImages?.pos),
       pointTexts: safeTexts(r.texts),
       ...(r.images?.mode === 'each' ? eachImages(r.images) : {}),
     }

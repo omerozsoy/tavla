@@ -89,12 +89,26 @@
         $surfH = $H - 2 * $fw;
         // Sığdırma: cover=slice (kapla+kırp), contain=meet (tümü ortada sığsın).
         $surfPAR = (($surfFit ?? 'cover') === 'contain') ? 'xMidYMid meet' : 'xMidYMid slice';
+        $sPos = is_array($surfPos ?? null) ? $surfPos : [];
+        // Yarı için elle konum/zoom -> SVG box (yön doğru; oyun CSS'i otoriter). Yoksa tam yarı (ortalı).
+        $surfBox = function ($side, $x0) use ($half, $surfH, $fw, $sPos) {
+            $p = is_array($sPos[$side] ?? null) ? $sPos[$side] : [];
+            $z = max(20, min(400, (int) ($p['zoom'] ?? 100)));
+            $px = max(0, min(100, (int) ($p['x'] ?? 50)));
+            $py = max(0, min(100, (int) ($p['y'] ?? 50)));
+            $w = $half * $z / 100;
+            $h = $surfH * $z / 100;
+
+            return ['x' => $x0 + ($px / 100) * ($half - $w), 'y' => $fw + ($py / 100) * ($surfH - $h), 'w' => $w, 'h' => $h];
+        };
     @endphp
     @if ($sL)
-        <image href="{{ $sL }}" x="{{ $fw }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="{{ $surfPAR }}" opacity="{{ $sOp }}"/>
+        @php $sbx = $surfBox('l', $fw); @endphp
+        <image href="{{ $sL }}" x="{{ $sbx['x'] }}" y="{{ $sbx['y'] }}" width="{{ $sbx['w'] }}" height="{{ $sbx['h'] }}" preserveAspectRatio="{{ $surfPAR }}" opacity="{{ $sOp }}"/>
     @endif
     @if ($sR)
-        <image href="{{ $sR }}" x="{{ $fw + $half + $bar }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="{{ $surfPAR }}" opacity="{{ $sOp }}"/>
+        @php $sbx = $surfBox('r', $fw + $half + $bar); @endphp
+        <image href="{{ $sR }}" x="{{ $sbx['x'] }}" y="{{ $sbx['y'] }}" width="{{ $sbx['w'] }}" height="{{ $sbx['h'] }}" preserveAspectRatio="{{ $surfPAR }}" opacity="{{ $sOp }}"/>
     @endif
     @for ($i = 0; $i < 12; $i++)
         @php $x = $px($i); @endphp
