@@ -202,21 +202,13 @@ export default function Auth({
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // Capacitor köprüsü enjekte OLMAYAN gömülü WebView'lar: bizim remote-load APK'sı (server.url ile
+  // uzak site yüklenince Capacitor'un native köprü-proxy enjeksiyonu başarısız -> window.Capacitor YOK,
+  // bkz WebViewLocalServer.handleProxyRequest) + Facebook/Instagram in-app tarayıcıları. Google, GÖMÜLÜ
+  // WebView'da GIS/OAuth'u ENGELLER (disallowed_useragent) -> accounts.google.com BEYAZ EKRANDA kalır.
+  // Bu ortamlarda Google butonu çalışmaz: gösterme, e-posta/şifre'ye yönlendir (beyaz-ekran avı 2026-10-29).
+  const blockedWebView = !isNative && /;\s*wv\)|FBAN|FBAV|FB_IAB|Instagram|GSA\//i.test(navigator.userAgent)
   const doNativeGoogle = () => {
-    // GECICI TANI (beyaz-ekran avi 2026-10-28): cihaza USB erisemiyoruz -> ortami EKRANDA goster.
-    // Chrome/native acilmadan ONCE alert ile hangi JS + native + kopru + plugin durumu gorunur.
-    try {
-      const cap = (window as unknown as { Capacitor?: { nativePromise?: unknown; PluginHeaders?: Array<{ name?: string }> } }).Capacitor
-      const plugins = Array.isArray(cap?.PluginHeaders) ? cap!.PluginHeaders.map((h) => h?.name).join(',') : '(yok)'
-      alert(
-        'Google TANI v2\n' +
-          'native=' + isNative + '\n' +
-          'kopru(nativePromise)=' + !!cap?.nativePromise + '\n' +
-          'plugins=' + plugins
-      )
-    } catch (e) {
-      alert('TANI hata: ' + String(e))
-    }
     setBusy(true)
     setError('')
     nativeGoogleSignIn(api.GOOGLE_CLIENT_ID)
@@ -226,7 +218,6 @@ export default function Auth({
         // Native hatayi GOSTER (DEVELOPER_ERROR/kod vb.) -> tanimak icin. Web'i etkilemez (GIS ayri).
         const detail = (e as { message?: string; code?: string | number })?.message
           || String((e as { code?: string | number })?.code ?? e ?? '')
-        alert('Google SONUC/HATA:\n' + detail) // GECICI TANI: hang/error'u da goster
         // Eski APK (eklenti derlenmemis): "not implemented on android" -> ham hata yerine guncelle notu.
         if (/not implemented|not available|unimplemented/i.test(detail)) {
           setError(t('auth.googleUpdateApp'))
@@ -745,16 +736,6 @@ export default function Auth({
                 e-posta + sifre -> Giris Yap -> Sifremi unuttum. */}
             <div className="auth-col">
               <h3 className="auth-col-title">{t('auth.login')}</h3>
-              {/* GECICI TANI v4 (beyaz-ekran avi): window.Capacitor'un GERCEK sekli -> kopru enjekte
-                  oluyor mu, platform ne. Sorun cozulunce KALDIR. */}
-              <div style={{ fontSize: 10, opacity: 0.65, wordBreak: 'break-all', marginBottom: 6 }}>
-                {(() => {
-                  const c = (window as unknown as { Capacitor?: Record<string, unknown> }).Capacitor
-                  const plat = typeof c?.getPlatform === 'function' ? (c.getPlatform as () => string)() : 'n/a'
-                  const keys = c ? Object.keys(c).slice(0, 18).join(',') : '-'
-                  return `dbg v5 · hasCap=${!!c} · platform=${plat} · isNative=${String(isNative)} · keys=${keys} · UA=${navigator.userAgent}`
-                })()}
-              </div>
               {isNative ? (
                 nativeGoogleOk ? (
                   <div className="google-auth google-auth-top">
@@ -775,6 +756,15 @@ export default function Auth({
                     <div className="auth-divider">{t('auth.or')}</div>
                   </div>
                 )
+              ) : blockedWebView ? (
+                // Gömülü WebView (APK köprüsüz / FB-IG in-app): Google GIS engelli -> beyaz ekran.
+                // Butonu gösterme; e-posta/şifre'ye yönlendir.
+                <div className="google-auth google-auth-top">
+                  <div className="auth-update-note">
+                    Uygulama içinde Google ile giriş kullanılamıyor. E‑posta ve şifrenizle giriş yapın.
+                  </div>
+                  <div className="auth-divider">{t('auth.or')}</div>
+                </div>
               ) : (
                 <div className="google-auth google-auth-top" style={googleReady ? undefined : { display: 'none' }}>
                   <div ref={googleBtnRef} className="google-btn" />
