@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Icon } from './Icon'
+import { RawHtml } from './RawHtml'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
@@ -49,7 +50,11 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
 // lobiyi sisirmesin: ~3 satira clamp'lenir, chevron ile ac/kapa (akordion). Kisa duyuru oldugu gibi.
 function TournAnnounceItem({ a }: { a: { id: number; message: string; at: string | null } }) {
   const [open, setOpen] = useState(false)
-  const long = a.message.length > 200 || (a.message.match(/\n/g)?.length ?? 0) >= 3
+  // TipTap/RTE ile yazılmış duyuru HTML içerir (kalın/italik/RENK) -> güvenli-render (RawHtml, admin-authored,
+  // makale/haber ile aynı model). Düz metin eski duyurular olduğu gibi. Uzunluk/clamp etiketsiz metinden.
+  const html = /<[a-z][\s\S]*>/i.test(a.message)
+  const plain = html ? a.message.replace(/<[^>]*>/g, ' ') : a.message
+  const long = plain.length > 200 || (plain.match(/\n/g)?.length ?? 0) >= 3
   return (
     <li className="tourn-announce-item">
       <Icon name="bell" size={15} className="tourn-announce-ic" />
@@ -69,7 +74,15 @@ function TournAnnounceItem({ a }: { a: { id: number; message: string; at: string
           },
         })}
       >
-        <span className={`tourn-announce-msg${long && !open ? ' is-clamped' : ''}`}>{a.message}</span>
+        {html ? (
+          <RawHtml
+            as="div"
+            className={`tourn-announce-msg rich${long && !open ? ' is-clamped' : ''}`}
+            html={a.message}
+          />
+        ) : (
+          <span className={`tourn-announce-msg${long && !open ? ' is-clamped' : ''}`}>{a.message}</span>
+        )}
         {long && (
           <span className={`tourn-announce-toggle${open ? ' is-open' : ''}`} aria-hidden="true">
             <Icon name="chevron" size={16} />

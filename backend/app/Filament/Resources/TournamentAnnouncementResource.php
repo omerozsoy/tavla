@@ -11,6 +11,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use FilamentTiptapEditor\TiptapEditor;
 
 // "Turnuva Duyuru" paneli: admin bir turnuva secip duyuru metni yazar. Duyuru turnuva
 // lobisinde (detay sayfasi) oyunculara gosterilir; yeni duyuruda istemci zil sesi calar.
@@ -38,20 +39,21 @@ class TournamentAnnouncementResource extends Resource
             // (düzenlemede gizli -> model'e yazılmaz). Kaydetme: CreateTournamentAnnouncement::mutate.
             Forms\Components\Section::make('Standart duyuru metinleri')
                 ->description('Buraya yazdığın metinler kaydedilir ve turnuva seçince tipine göre aşağıya otomatik dolar.')
-                ->columns(2)
                 ->collapsed()
                 ->visibleOn('create')
                 ->schema([
-                    Forms\Components\Textarea::make('std_bracket')
+                    TiptapEditor::make('std_bracket')
                         ->label('Bracket standart metni')
+                        ->profile('default')
+                        ->disk('uploads')->directory('tournament-announce')->visibility('public')
                         ->default(fn () => Setting::get('tournament_std_bracket'))
-                        ->rows(4)
-                        ->maxLength(10000),
-                    Forms\Components\Textarea::make('std_swiss')
+                        ->columnSpanFull(),
+                    TiptapEditor::make('std_swiss')
                         ->label('Swiss standart metni')
+                        ->profile('default')
+                        ->disk('uploads')->directory('tournament-announce')->visibility('public')
                         ->default(fn () => Setting::get('tournament_std_swiss'))
-                        ->rows(4)
-                        ->maxLength(10000),
+                        ->columnSpanFull(),
                 ]),
             Forms\Components\Select::make('tournament_id')
                 ->label('Turnuva')
@@ -68,12 +70,15 @@ class TournamentAnnouncementResource extends Resource
                     // bracket -> std_bracket, aksi (swiss_triple vb.) -> std_swiss
                     $set('message', $type === 'bracket' ? ($get('std_bracket') ?? '') : ($get('std_swiss') ?? ''));
                 }),
-            Forms\Components\Textarea::make('message')
+            // Zengin metin (TipTap): kalın, italik, RENK, hizalama, liste, link... (makale/haber ile aynı).
+            // HTML olarak saklanır; lobide güvenli-render edilir (RawHtml, admin-authored).
+            TiptapEditor::make('message')
                 ->label('Duyuru metni')
-                ->placeholder('Örn: Turnuva başlıyor! Lütfen masalarınıza geçin.')
-                ->rows(6)
-                ->maxLength(10000)
-                ->required(),
+                ->profile('default')
+                ->disk('uploads')->directory('tournament-announce')->visibility('public')
+                ->helperText('Kalın/italik ve RENK için araç çubuğunu kullan (A harfi = metin rengi).')
+                ->required()
+                ->columnSpanFull(),
         ]);
     }
 
@@ -88,6 +93,7 @@ class TournamentAnnouncementResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('message')
                     ->label('Duyuru')
+                    ->formatStateUsing(fn ($state) => trim(strip_tags((string) $state))) // HTML -> düz önizleme
                     ->wrap()
                     ->limit(80),
                 Tables\Columns\TextColumn::make('created_at')
