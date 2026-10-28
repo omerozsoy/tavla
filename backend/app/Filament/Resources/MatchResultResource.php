@@ -77,6 +77,11 @@ class MatchResultResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
+            // PERFORMANS (admin "çok yavaş buluyor"): canlı-arama her tuşta Livewire turu + sorgu +
+            // render yapıyordu (DB ~100ms hızlı; asıl gecikme tur-gidiş-geliş). searchOnBlur: arama
+            // yazmayı bitirince (odak kaybı / Enter) TEK sefer çalışır -> kod yapıştırıp bulmak hızlanır,
+            // gereksiz istekler gider.
+            ->searchOnBlur()
             ->modifyQueryUsing(function (Builder $query) {
                 // N+1 onle: her satir icin oyuncu + oda (bahis) tek sorguda gelsin.
                 $query->with(['user', 'room']);
@@ -176,7 +181,13 @@ class MatchResultResource extends Resource
                     ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '').(int) $state)
                     ->color(fn ($state) => $state > 0 ? 'success' : ($state < 0 ? 'danger' : 'gray')),
                 Tables\Columns\TextColumn::make('room_code')->label('Oda (maç kodu)')
-                    ->searchable()->copyable()->default('—')->toggleable(isToggledHiddenByDefault: true),
+                    // İNDEKSLİ ARAMA: Filament default'u `LIKE '%kod%'` (baş-wildcard -> room_code indeksi
+                    // KULLANILAMAZ, full scan). Maç kodu küçük/büyük fark etmez ve kod BAŞTAN girilir ->
+                    // prefix `LIKE 'KOD%'` yap: indeks kullanılır, tablo büyüdükçe (24k->100k+) yavaşlamaz.
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where('room_code', 'like', strtoupper(trim($search)).'%');
+                    })
+                    ->copyable()->default('—')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('won')->label('Sonuç')
