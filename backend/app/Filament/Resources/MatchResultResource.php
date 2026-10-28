@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\MatchResultResource\Pages;
 use App\Models\MatchResult;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -79,6 +80,16 @@ class MatchResultResource extends Resource
             ->modifyQueryUsing(function (Builder $query) {
                 // N+1 onle: her satir icin oyuncu + oda (bahis) tek sorguda gelsin.
                 $query->with(['user', 'room']);
+                // PERFORMANS: listede GOSTERILMEYEN dev blob kolonlarini (log ~80KB, gnubg_review
+                // ~400KB ort / 3MB maks) SECME -> eskiden SELECT * sayfa basi ~5MB cekip hidrate
+                // ediyordu (sayfa "cok cok yavas"). Yalniz kolonlarda/eylemlerde kullanilan alanlar +
+                // .mat butonu icin hafif has_log bayragi. Tam log indirme aninda ayri cekilir (asagi).
+                $query->select([
+                    'id', 'created_at', 'user_id', 'opponent_name', 'opponent_rating', 'won',
+                    'score_self', 'score_opp', 'match_type', 'match_length', 'pr', 'gnubg_pr',
+                    'stake', 'opponent_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'luck_emg',
+                    'rating_after', 'delta', 'room_code',
+                ])->selectRaw("(log IS NOT NULL AND log <> '') AS has_log");
                 static::dedupeOnlineRows($query);
             })
             ->columns([
@@ -177,8 +188,8 @@ class MatchResultResource extends Resource
                 ]),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('from')->label('Başlangıç'),
-                        \Filament\Forms\Components\DatePicker::make('until')->label('Bitiş'),
+                        DatePicker::make('from')->label('Başlangıç'),
+                        DatePicker::make('until')->label('Bitiş'),
                     ])
                     ->query(fn (Builder $query, array $data) => $query
                         ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '>=', $d))
@@ -192,12 +203,18 @@ class MatchResultResource extends Resource
                     ->label('.mat')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->visible(fn (MatchResult $record) => ! empty($record->log)) // ucuz kapı (matText satır-başı üretilmez)
-                    ->action(fn (MatchResult $record) => response()->streamDownload(
-                        fn () => print ($record->matText()),
-                        $record->matFilename(),
-                        ['Content-Type' => 'text/plain; charset=utf-8'],
-                    )),
+                    // has_log: liste sorgusundaki hafif bayrak (dev 'log' blob'u listede CEKILMEZ).
+                    ->visible(fn (MatchResult $record) => (bool) ($record->has_log ?? false))
+                    // Tam log/satir indirme aninda ayri cekilir (matText/matFilename blob'a ihtiyac duyar).
+                    ->action(function (MatchResult $record) {
+                        $full = MatchResult::find($record->id);
+
+                        return response()->streamDownload(
+                            fn () => print ($full->matText()),
+                            $full->matFilename(),
+                            ['Content-Type' => 'text/plain; charset=utf-8'],
+                        );
+                    }),
             ]);
     }
 
