@@ -573,6 +573,7 @@ import {
   deleteAccount as apiDeleteAccount,
   me as apiMe,
   meWithRetry,
+  googleCodeLogin,
   isAuthRejected,
   saveServerGame,
   setAutoRenew as apiSetAutoRenew,
@@ -2456,6 +2457,37 @@ export default function App() {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ANDROID SİSTEM-TARAYICI GOOGLE OAUTH DÖNÜŞÜ: APK'da native köprü enjekte olmadığından (GIS engelli)
+  // Google sistem tarayıcısında açılır; dönüşte Google code'u App-Link ile app'e yollar ve MainActivity
+  // bu URL'i (www.tavlatv.com/auth/google/app-return?code=...) WebView'a yükler. Code'u state-doğrulayıp
+  // sunucuda token'a takas et -> giriş. URL'i HEMEN temizle (code tek-kullanımlık, geri/yenile tekrarlamasın).
+  useEffect(() => {
+    if (window.location.pathname !== '/auth/google/app-return') return
+    const q = new URLSearchParams(window.location.search)
+    const code = q.get('code')
+    const retState = q.get('state')
+    try {
+      window.history.replaceState(null, '', '/')
+    } catch {
+      /* yok say */
+    }
+    if (!code) return
+    let saved: string | null = null
+    try {
+      saved = sessionStorage.getItem('g_oauth_state')
+      sessionStorage.removeItem('g_oauth_state')
+    } catch {
+      /* yok say */
+    }
+    if (saved && retState && saved !== retState) return // CSRF uyuşmazlığı -> yok say
+    googleCodeLogin(code)
+      .then(({ user: u }) => setUser(u))
+      .catch(() => {
+        /* takas başarısız -> giriş ekranı kalır */
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

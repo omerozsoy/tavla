@@ -50,6 +50,9 @@ return [
             // Yeni "tavla" projesi (proje no 164766354103) OAuth istemcisi — tavlatv.com.
             '164766354103-tnibk42t91nng26tehvbpjejks3mt5v5.apps.googleusercontent.com',
         ),
+        // Android sistem-tarayıcı OAuth CODE akışı için GEREKİR (web istemcisinin secret'ı).
+        // .env'de GOOGLE_CLIENT_SECRET tanımla; yoksa /auth/google/code 500 döner (GIS/idToken etkilenmez).
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     ],
 
     // Yonetici e-postalari (virgulle ayrilabilir). Bu hesaplar admin sayilir.

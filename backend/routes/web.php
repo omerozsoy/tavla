@@ -68,6 +68,26 @@ Route::get('/sitemap.xml', function (Request $request) {
         'Content-Type' => 'application/xml; charset=UTF-8',
     ]);
 });
+// Android App Links doğrulaması: APK (com.tavlatv.app), www.tavlatv.com/auth/google/app-return
+// bağlantısını ÜSTLENEBİLSİN diye (Google OAuth code akışı sistem tarayıcısından app'e DÖNER).
+// SHA-256 = Play App Signing + doğrulanmış yükleme anahtarları (Play Console > App signing / Android
+// developer verification). HTTP 200, redirect'siz, application/json ŞART (Android böyle doğrular).
+Route::get('/.well-known/assetlinks.json', function () {
+    return response()->json([
+        [
+            'relation' => ['delegate_permission/common.handle_all_urls'],
+            'target' => [
+                'namespace' => 'android_app',
+                'package_name' => 'com.tavlatv.app',
+                'sha256_cert_fingerprints' => [
+                    'E9:CF:EC:14:59:3F:20:36:7B:D8:17:9D:6A:85:C3:87:57:58:6A:C8:1A:79:88:58:F0:A1:E5:48:78:5A:F7:87',
+                    '32:87:50:51:5A:2F:2E:67:EE:63:D2:D1:62:AE:30:09:E6:75:20:A5:D7:70:63:41:5B:BF:43:87:4C:48:77:1E',
+                    '71:23:EA:E7:3A:E0:82:CC:83:0A:D9:F9:11:F2:A7:27:F8:7D:92:03:F9:52:B9:B1:9E:F3:F9:E1:CA:AC:89:3B',
+                ],
+            ],
+        ],
+    ]);
+});
 // PWA service worker — NO-STORE ile servis. Üretim Forge/nginx'e taşındığından .htaccess (eski
 // Apache no-store kuralı) OKUNMUYOR; nginx static /sw.js'i header'sız verince Cloudflare 4 saat
 // cache'liyor -> yeni SW cihazlara geç ulaşıyordu. İçerik public/sw.js ile AYNI; URL farklı ki

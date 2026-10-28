@@ -52,6 +52,7 @@ Route::middleware('throttle:10,1,auth-login')->group(function () {
 Route::middleware('throttle:20,1,auth-register')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/auth/google', [AuthController::class, 'googleLogin']);
+    Route::post('/auth/google/code', [AuthController::class, 'googleCode']); // Android sistem-tarayıcı OAuth code akışı
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 });
 // Kullanici numaralama (enumeration) yavaslatma: halka acik + hiz sinirli

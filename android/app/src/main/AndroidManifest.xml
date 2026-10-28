@@ -18,6 +18,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Android App Link: Google OAuth DÖNÜŞÜ (sistem tarayıcısından app'e). Google code'u
+                 https://www.tavlatv.com/auth/google/app-return?code=... adresine döner; autoVerify +
+                 /.well-known/assetlinks.json ile DOĞRULANIR -> Android bu URL'i app'te açar (tarayıcı
+                 değil). YALNIZ bu yola kapsamlı: sitenin diğer sayfaları app'i açmaz. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.tavlatv.com" android:pathPrefix="/auth/google/app-return" />
+            </intent-filter>
         </activity>
 
         <provider

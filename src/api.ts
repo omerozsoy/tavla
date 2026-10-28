@@ -289,6 +289,36 @@ export async function googleLogin(
   return { user: data.user, isNew: data.isNew }
 }
 
+// Android APK (native köprü enjekte olmayan WebView: GIS engelli, beyaz ekran) için SİSTEM-TARAYICI
+// OAuth code akışı. Dönüş adresi App-Link (AndroidManifest + /.well-known/assetlinks.json ile eşleşir).
+export const GOOGLE_APP_REDIRECT = 'https://www.tavlatv.com/auth/google/app-return'
+
+// Google yetkilendirme URL'i -> sistem tarayıcısında açılır (accounts.google.com, allowNavigation dışı
+// olduğundan Capacitor harici tarayıcıda açar). Google giriş sonrası code'u GOOGLE_APP_REDIRECT'e döner.
+export function googleAuthUrl(state: string): string {
+  const p = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_APP_REDIRECT,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+    prompt: 'select_account',
+    access_type: 'online',
+  })
+  return 'https://accounts.google.com/o/oauth2/v2/auth?' + p.toString()
+}
+
+// App-Link ile app'e dönen 'code'u sunucuda id_token'a takas edip giriş yap (googleLogin ile aynı yanıt).
+export async function googleCodeLogin(code: string): Promise<{ user: ServerUser; isNew: boolean }> {
+  const data = await req<{ user: ServerUser; token: string; isNew: boolean }>('/auth/google/code', {
+    method: 'POST',
+    body: JSON.stringify({ code, redirect_uri: GOOGLE_APP_REDIRECT, referral_code: refCode() }),
+  })
+  setToken(data.token)
+  if (data.isNew) clearRef()
+  return { user: data.user, isNew: data.isNew }
+}
+
 // Arkadaş davet (referral) durumu + davet maili gönderme.
 export type ReferralStatus = {
   code: string

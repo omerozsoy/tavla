@@ -169,9 +169,48 @@ class AuthController extends Controller
             'credential' => ['required', 'string'],
         ]);
 
+        return $this->finishGoogleLogin($data['credential'], $request);
+    }
+
+    // Android APK (remote-load: native köprü enjekte OLMAZ -> gömülü WebView Google GIS'i ENGELLER,
+    // beyaz ekran). ÇÖZÜM: OAuth 2.0 AUTHORIZATION CODE akışı. App, Google'ı SİSTEM tarayıcısında açar;
+    // Google 'code'u App-Link (https://www.tavlatv.com/auth/google/app-return) ile app'e geri gönderir;
+    // burada code -> id_token takası yapıp AYNI idToken giriş mantığını çalıştırırız. client_secret
+    // GEREKİR (GOOGLE_CLIENT_SECRET .env; web OAuth istemcisinin secret'ı).
+    public function googleCode(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string'],
+            'redirect_uri' => ['required', 'string'],
+        ]);
+
+        $secret = config('services.google.client_secret');
+        if (! $secret) {
+            return $this->fail('Google yapılandırması eksik.', 500);
+        }
+
+        $token = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+            'code' => $data['code'],
+            'client_id' => config('services.google.client_id'),
+            'client_secret' => $secret,
+            'redirect_uri' => $data['redirect_uri'],
+            'grant_type' => 'authorization_code',
+        ]);
+        $idToken = $token->ok() ? ($token->json()['id_token'] ?? null) : null;
+        if (! $idToken) {
+            return $this->fail('Google doğrulaması başarısız.', 401);
+        }
+
+        return $this->finishGoogleLogin($idToken, $request);
+    }
+
+    // Google idToken -> kullanıcı bul/oluştur + Sanctum oturumu. googleLogin (credential/GIS) ve
+    // googleCode (sistem-tarayıcı code akışı) ORTAK kullanır.
+    private function finishGoogleLogin(string $idToken, Request $request)
+    {
         // ID token'i Google'da dogrula (imza + sona erme kontrolu Google tarafinda)
         $resp = Http::asForm()->get('https://oauth2.googleapis.com/tokeninfo', [
-            'id_token' => $data['credential'],
+            'id_token' => $idToken,
         ]);
         if (! $resp->ok()) {
             return $this->fail('Google doğrulaması başarısız.', 401);
