@@ -189,6 +189,20 @@ export default function Auth({
   // implemented on android" ile patlar -> butonu gosterme, "uygulamayi guncelle" notu goster.
   const nativeGoogleOk = isNativeGoogleAvailable()
   const doNativeGoogle = () => {
+    // GECICI TANI (beyaz-ekran avi 2026-10-28): cihaza USB erisemiyoruz -> ortami EKRANDA goster.
+    // Chrome/native acilmadan ONCE alert ile hangi JS + native + kopru + plugin durumu gorunur.
+    try {
+      const cap = (window as unknown as { Capacitor?: { nativePromise?: unknown; PluginHeaders?: Array<{ name?: string }> } }).Capacitor
+      const plugins = Array.isArray(cap?.PluginHeaders) ? cap!.PluginHeaders.map((h) => h?.name).join(',') : '(yok)'
+      alert(
+        'Google TANI v2\n' +
+          'native=' + isNative + '\n' +
+          'kopru(nativePromise)=' + !!cap?.nativePromise + '\n' +
+          'plugins=' + plugins
+      )
+    } catch (e) {
+      alert('TANI hata: ' + String(e))
+    }
     setBusy(true)
     setError('')
     nativeGoogleSignIn(api.GOOGLE_CLIENT_ID)
@@ -198,6 +212,7 @@ export default function Auth({
         // Native hatayi GOSTER (DEVELOPER_ERROR/kod vb.) -> tanimak icin. Web'i etkilemez (GIS ayri).
         const detail = (e as { message?: string; code?: string | number })?.message
           || String((e as { code?: string | number })?.code ?? e ?? '')
+        alert('Google SONUC/HATA:\n' + detail) // GECICI TANI: hang/error'u da goster
         // Eski APK (eklenti derlenmemis): "not implemented on android" -> ham hata yerine guncelle notu.
         if (/not implemented|not available|unimplemented/i.test(detail)) {
           setError(t('auth.googleUpdateApp'))
