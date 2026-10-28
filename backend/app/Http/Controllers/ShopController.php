@@ -236,6 +236,7 @@ class ShopController extends Controller
                         'left' => BoardDesign::imageUrl($d->surface_image_left),
                         'right' => BoardDesign::imageUrl($d->surface_image_right),
                         'opacity' => $d->surface_image_opacity,
+                        'fit' => $d->surface_image_fit ?: 'cover',
                     ] : null,
                     // Her haneye opsiyonel metin {"1".."24": metin}
                     'texts' => $d->point_texts ?: null,

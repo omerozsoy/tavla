@@ -44,6 +44,7 @@ export interface BoardTheme {
   surfaceImgLeft?: string
   surfaceImgRight?: string
   surfaceOpacity?: number
+  surfaceImgFit?: 'cover' | 'contain' // kapla+kırp | tümü ortada sığsın
   // Her haneye (1..24) opsiyonel metin: üçgene basılır (oto beyaz+dış hat, ortalı, ölçekli)
   pointTexts?: Record<number, string>
 }
@@ -375,7 +376,7 @@ export interface BoardDesignRow {
   surface?: string | null
   checker_style?: string | null
   hideLogo?: boolean
-  surfaceImages?: { left?: string | null; right?: string | null; opacity?: number } | null
+  surfaceImages?: { left?: string | null; right?: string | null; opacity?: number; fit?: string } | null
   texts?: Record<string, string> | null
   images?: {
     mode?: 'pair' | 'each'
@@ -475,6 +476,7 @@ export function applyBoardDesigns(rows: BoardDesignRow[]): void {
         typeof r.surfaceImages?.opacity === 'number'
           ? Math.max(0, Math.min(100, r.surfaceImages.opacity))
           : undefined,
+      surfaceImgFit: r.surfaceImages?.fit === 'contain' ? 'contain' : 'cover',
       pointTexts: safeTexts(r.texts),
       ...(r.images?.mode === 'each' ? eachImages(r.images) : {}),
     }

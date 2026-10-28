@@ -2607,11 +2607,13 @@ export default function App() {
         root.style.setProperty('--surf-img-left', sl ? `url("${sl}")` : 'none')
         root.style.setProperty('--surf-img-right', sr ? `url("${sr}")` : 'none')
         root.style.setProperty('--surf-opacity', String((bt.surfaceOpacity ?? 100) / 100))
+        root.style.setProperty('--surf-fit', bt.surfaceImgFit === 'contain' ? 'contain' : 'cover')
         root.setAttribute('data-surf-img', '')
       } else {
         root.style.removeProperty('--surf-img-left')
         root.style.removeProperty('--surf-img-right')
         root.style.removeProperty('--surf-opacity')
+        root.style.removeProperty('--surf-fit')
         root.removeAttribute('data-surf-img')
       }
     }

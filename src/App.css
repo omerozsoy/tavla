@@ -6575,7 +6575,7 @@ html[data-surf-img] .half::before {
   z-index: 0;
   pointer-events: none;
   background-position: center;
-  background-size: cover;
+  background-size: var(--surf-fit, cover); /* cover=kapla+kırp, contain=tümü ortada sığsın */
   background-repeat: no-repeat;
   opacity: var(--surf-opacity, 1);
 }

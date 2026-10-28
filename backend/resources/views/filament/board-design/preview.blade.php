@@ -87,12 +87,14 @@
         $sR = $okImg($surfRight ?? null) ? $surfRight : null;
         $sOp = max(0, min(100, (int) ($surfOpacity ?? 100))) / 100;
         $surfH = $H - 2 * $fw;
+        // Sığdırma: cover=slice (kapla+kırp), contain=meet (tümü ortada sığsın).
+        $surfPAR = (($surfFit ?? 'cover') === 'contain') ? 'xMidYMid meet' : 'xMidYMid slice';
     @endphp
     @if ($sL)
-        <image href="{{ $sL }}" x="{{ $fw }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="xMidYMid slice" opacity="{{ $sOp }}"/>
+        <image href="{{ $sL }}" x="{{ $fw }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="{{ $surfPAR }}" opacity="{{ $sOp }}"/>
     @endif
     @if ($sR)
-        <image href="{{ $sR }}" x="{{ $fw + $half + $bar }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="xMidYMid slice" opacity="{{ $sOp }}"/>
+        <image href="{{ $sR }}" x="{{ $fw + $half + $bar }}" y="{{ $fw }}" width="{{ $half }}" height="{{ $surfH }}" preserveAspectRatio="{{ $surfPAR }}" opacity="{{ $sOp }}"/>
     @endif
     @for ($i = 0; $i < 12; $i++)
         @php $x = $px($i); @endphp

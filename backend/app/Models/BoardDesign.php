@@ -36,7 +36,7 @@ class BoardDesign extends Model
 
     private const CACHE_KEY = 'board_designs.all.v1';
 
-    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'checker_style', 'hide_logo', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
+    protected $fillable = ['slug', 'name', 'group', 'price', 'is_custom', 'colors', 'surface', 'surface_image_left', 'surface_image_right', 'surface_image_opacity', 'surface_image_fit', 'checker_style', 'hide_logo', 'point_mode', 'point_image_odd', 'point_image_even', 'point_image_fit', 'point_images', 'point_texts', 'active', 'sort'];
 
     protected $casts = [
         'colors' => 'array',
@@ -70,6 +70,9 @@ class BoardDesign extends Model
                 return;
             }
             $d->surface_image_opacity = max(0, min(100, (int) ($d->surface_image_opacity ?? 100)));
+            if (Schema::hasColumn('board_designs', 'surface_image_fit')) {
+                $d->surface_image_fit = in_array($d->surface_image_fit, ['cover', 'contain'], true) ? $d->surface_image_fit : 'cover';
+            }
             $texts = [];
             foreach ((array) ($d->point_texts ?? []) as $n => $txt) {
                 $n = (int) $n;

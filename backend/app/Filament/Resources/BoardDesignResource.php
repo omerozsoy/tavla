@@ -340,6 +340,15 @@ class BoardDesignResource extends Resource
                                     ->disk('uploads')->directory('tahta')->visibility('public')
                                     ->maxSize(4096)->imageEditor()->live(),
                             ]),
+                            Forms\Components\ToggleButtons::make('surface_image_fit')
+                                ->label('Sığdırma')
+                                ->options(['cover' => 'Kapla (kırp)', 'contain' => 'Sığdır (tümü ortada)'])
+                                ->icons(['cover' => 'heroicon-o-arrows-pointing-out', 'contain' => 'heroicon-o-arrows-pointing-in'])
+                                ->default('cover')
+                                ->inline()
+                                ->live()
+                                ->helperText('Kapla: resim yarıyı doldurur, taşan kısım kırpılır. Sığdır: büyük resmin tamamı ortada görünür (yanlarda zemin rengi kalır).')
+                                ->visible(fn (Get $get) => filled($get('surface_image_left')) || filled($get('surface_image_right'))),
                             Forms\Components\TextInput::make('surface_image_opacity')
                                 ->label(fn (Get $get) => 'Şeffaflık · %'.(int) ($get('surface_image_opacity') ?? 100))
                                 ->type('range')
@@ -388,6 +397,7 @@ class BoardDesignResource extends Resource
                             'surfLeft' => self::previewImage($get('surface_image_left')),
                             'surfRight' => self::previewImage($get('surface_image_right')),
                             'surfOpacity' => (int) ($get('surface_image_opacity') ?? 100),
+                            'surfFit' => $get('surface_image_fit') ?: 'cover',
                             'texts' => $get('point_texts'),
                             'imgOdd' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_odd')),
                             'imgEven' => $get('point_mode') === 'each' ? null : self::previewImage($get('point_image_even')),

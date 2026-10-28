@@ -9,9 +9,9 @@ use App\Http\Controllers\ShopController;
 use App\Models\BoardDesign;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -116,6 +116,26 @@ class BoardDesignTest extends TestCase
         $row = collect($this->getJson('/api/board-designs')->json('designs'))->firstWhere('id', $d->slug);
         $this->assertSame(400, (int) $row['images']['fit']['odd']['zoom']);
         $this->assertEqualsWithDelta(2.5, $row['images']['fit']['odd']['aspect'], 1e-9);
+    }
+
+    // Zemin resmi sığdırma modu: cover/contain kaydedilir, geçersiz değer cover'a normalize, API'de döner.
+    public function test_surface_image_fit_saved_normalized_and_exposed(): void
+    {
+        Storage::fake('uploads');
+        Livewire::actingAs($this->admin)->test(CreateBoardDesign::class)
+            ->fillForm([
+                'name' => 'Zemin', 'group' => 'rare', 'colors' => $this->colors(),
+                'surface_image_left' => UploadedFile::fake()->image('zemin.png', 800, 800),
+                'surface_image_fit' => 'contain',
+            ])
+            ->call('create')->assertHasNoFormErrors();
+        $d = BoardDesign::where('name', 'Zemin')->firstOrFail();
+        $this->assertSame('contain', $d->surface_image_fit);
+        $row = collect($this->getJson('/api/board-designs')->json('designs'))->firstWhere('id', $d->slug);
+        $this->assertSame('contain', $row['surfaceImages']['fit']);
+
+        $d->update(['surface_image_fit' => 'bogus']); // geçersiz -> cover
+        $this->assertSame('cover', $d->fresh()->surface_image_fit);
     }
 
     // Tam resim modu: her haneye ayrı resim (1..24) + hane başı yerleşim; API 'each' döner.
