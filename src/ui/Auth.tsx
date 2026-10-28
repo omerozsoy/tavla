@@ -453,7 +453,7 @@ export default function Auth({
       province: country === 'TR' ? province.trim() : '',
       nickname: nickname.trim(),
       email: email.trim(),
-      phone: phone ? '0' + phone : '',
+      phone: phone.trim(), // PhoneField ZATEN kanonik uretir (TR '05…', yabanci '+…') — '0' EKLEME (cift-0 bug)
       avatar,
       birthDate,
     }

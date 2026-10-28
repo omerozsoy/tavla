@@ -71,6 +71,15 @@ export default function PhoneField({
     if (nextIso === 'TR') onChange('0' + d.slice(0, 10))
     else onChange('+' + dialCode(nextIso) + d)
   }
+  // Mount: saklanan deger kanonik degilse (bosluk/ulke-kodu/eksik-0 — eski veya admin-elle
+  // girilmis formatlar) ebeveyni normalize degerle guncelle. Aksi halde parseStored numarayi
+  // GOSTERIR ama ust-kat isValidPhone ham degeri reddeder -> numara gozukur, "gecersiz" der,
+  // kullanici profili kaydedemez. Kanonik degerde idempotent (deger degismez).
+  useEffect(() => {
+    if (init.national) emit(init.iso, init.national)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const pickIso = (v: string) => {
     setIso(v)
     setOpen(false)

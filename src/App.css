@@ -15944,11 +15944,19 @@ body:has(.spectate-view) .app.lobby {
 }
 .rep-filter {
   display: flex;
+  flex-wrap: wrap; /* dar 300px listede taşarsa board'un üstüne gitmesin, alt satıra sarsın */
   gap: 8px;
   margin: 4px 0 10px;
 }
 .rep-filter .menu-btn {
   flex: 1;
+}
+/* Analiz filtre butonları (BENİM HATALARIM/RAKİP/TÜMÜ) 300px analysis-list kolonuna sığsın:
+   satırı eşit paylaş + kompakt yatay padding. Yoksa 3 buton ~302px edip sağdaki board'un
+   sol köşesine biniyordu (ekran görüntüsündeki taşma). */
+.rep-filter > [data-slot='button'] {
+  flex: 1 1 auto;
+  padding-inline: 10px;
 }
 /* SWISS: filtre sekmeleri (Liderlik / raporlar vb.) uppercase, keskin köşe, 500. */
 .rep-filter [data-slot='button'],
