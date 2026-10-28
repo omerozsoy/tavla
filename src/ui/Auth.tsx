@@ -745,15 +745,15 @@ export default function Auth({
                 e-posta + sifre -> Giris Yap -> Sifremi unuttum. */}
             <div className="auth-col">
               <h3 className="auth-col-title">{t('auth.login')}</h3>
-              {/* GECICI TANI v3 (beyaz-ekran avi): her zaman gorunur ortam satiri -> cihazda native mi,
-                  kopru var mi, hangi pluginler. Sorun cozulunce KALDIR. */}
-              <div style={{ fontSize: 10, opacity: 0.6, wordBreak: 'break-all', marginBottom: 6 }}>
-                dbg v3 · native={String(isNative)} · köprü={String(
-                  !!(window as unknown as { Capacitor?: { nativePromise?: unknown } }).Capacitor?.nativePromise,
-                )} · plugins={JSON.stringify(
-                  ((window as unknown as { Capacitor?: { PluginHeaders?: Array<{ name?: string }> } }).Capacitor
-                    ?.PluginHeaders || []).map((h) => h?.name),
-                )}
+              {/* GECICI TANI v4 (beyaz-ekran avi): window.Capacitor'un GERCEK sekli -> kopru enjekte
+                  oluyor mu, platform ne. Sorun cozulunce KALDIR. */}
+              <div style={{ fontSize: 10, opacity: 0.65, wordBreak: 'break-all', marginBottom: 6 }}>
+                {(() => {
+                  const c = (window as unknown as { Capacitor?: Record<string, unknown> }).Capacitor
+                  const plat = typeof c?.getPlatform === 'function' ? (c.getPlatform as () => string)() : 'n/a'
+                  const keys = c ? Object.keys(c).slice(0, 18).join(',') : '-'
+                  return `dbg v4 · hasCap=${!!c} · platform=${plat} · isNative=${String(isNative)} · UA=${navigator.userAgent.slice(0, 40)} · keys=${keys}`
+                })()}
               </div>
               {isNative ? (
                 nativeGoogleOk ? (
