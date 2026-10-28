@@ -26,7 +26,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="www.tavlatv.com" android:pathPrefix="/auth/google/app-return" />
+                <!-- KANONİK host www'SUZ (www.tavlatv.com -> 301 -> tavlatv.com). Google redirect + App-Link
+                     doğrulaması redirect'i kabul etmez -> host = tavlatv.com (assetlinks.json burada 200). -->
+                <data android:scheme="https" android:host="tavlatv.com" android:pathPrefix="/auth/google/app-return" />
             </intent-filter>
         </activity>
 

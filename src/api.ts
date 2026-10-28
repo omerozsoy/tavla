@@ -291,7 +291,9 @@ export async function googleLogin(
 
 // Android APK (native köprü enjekte olmayan WebView: GIS engelli, beyaz ekran) için SİSTEM-TARAYICI
 // OAuth code akışı. Dönüş adresi App-Link (AndroidManifest + /.well-known/assetlinks.json ile eşleşir).
-export const GOOGLE_APP_REDIRECT = 'https://www.tavlatv.com/auth/google/app-return'
+// KANONİK host www'SUZ: www.tavlatv.com -> 301 -> tavlatv.com. App-Link/redirect redirect'i KABUL ETMEZ
+// -> www'suz (tavlatv.com) kullan (assetlinks.json tavlatv.com'da 200, manifest host da tavlatv.com).
+export const GOOGLE_APP_REDIRECT = 'https://tavlatv.com/auth/google/app-return'
 
 // Google yetkilendirme URL'i -> sistem tarayıcısında açılır (accounts.google.com, allowNavigation dışı
 // olduğundan Capacitor harici tarayıcıda açar). Google giriş sonrası code'u GOOGLE_APP_REDIRECT'e döner.
