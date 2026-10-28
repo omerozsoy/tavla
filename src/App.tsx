@@ -5613,6 +5613,11 @@ export default function App() {
             // Cift (double) zarda sunucu 4 eleman doner ([3,3,3,3]) -> overlay 4 zar gosteriyordu.
             // faceStates/match-log gibi 2'ye indir (iki fiziksel zar). slice(0,2) ayni konvansiyon.
             setOppDance({ dice: (oppBase.dice ?? []).slice(0, 2), color: oc })
+            // ZAR SESİ (kullanıcı raporu: "Hamle Yok efektini görüyorum ama zar sesini duymuyorum"):
+            // rakip gele/bardan giremeyip 0 adım oynayınca sıra ANINDA bana döner -> turnStart tabanlı
+            // rakip-zar sesi efekti (myTurn/boş-zar guard'ı) ÇALMAZ. Dance burada tespit edildiğinden
+            // zar sesini de burada çal (sonuç/lobi ekranında bastır; aynı kapı).
+            if (!resultShowingRef.current && !inLobbyRef.current) Sound.dice()
           }
         }
       }

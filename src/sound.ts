@@ -77,6 +77,18 @@ function ac(): AudioContext | null {
   return ctx
 }
 
+// Sekmeye/odağa geri dönünce AudioContext'i resume et: rakip beklenirken sekme pasifleşip context
+// askıya alınmışsa, dönüşte ses tekrar hazır olsun (dönüş sonrası gelen rakip zarı duyulsun).
+if (typeof document !== 'undefined') {
+  const wake = () => {
+    if (!muted && ctx && ctx.state === 'suspended') ctx.resume().catch(() => {})
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') wake()
+  })
+  window.addEventListener('focus', wake)
+}
+
 // Tek ton (zarf ile)
 function tone(freq: number, start: number, dur: number, type: OscillatorType = 'sine', gain = 0.2) {
   const c = ac()
@@ -133,16 +145,28 @@ function playBuffer(c: AudioContext, buf: AudioBuffer, gain: number) {
 function play(url: string, gain = 0.7) {
   const c = ac()
   if (!c) return
-  const buf = buffers.get(url)
-  if (buf) {
-    playBuffer(c, buf, gain)
-    return
+  const fire = () => {
+    const buf = buffers.get(url)
+    if (buf) {
+      playBuffer(c, buf, gain)
+      return
+    }
+    // Henuz yuklenmedi -> yukle ve hazir olunca bir kez cal (ilk sefer kucuk gecikme).
+    void loadSample(url).then((b) => {
+      const cc = ac()
+      if (b && cc) playBuffer(cc, b, gain)
+    })
   }
-  // Henuz yuklenmedi -> yukle ve hazir olunca bir kez cal (ilk sefer kucuk gecikme).
-  void loadSample(url).then((b) => {
-    const cc = ac()
-    if (b && cc) playBuffer(cc, b, gain)
-  })
+  // KÖK FIX ("rakibin zarını bazen duymuyorum"): AudioContext, rakibin düşünme/ağ süresinde veya
+  // sekme kısa süre pasifken SUSPENDED olabiliyor. ac() resume()'u async çağırıp BEKLEMEDEN
+  // src.start() ediyordu -> context resume olmadan başlatılan buffer SESSİZ düşüyordu. Kendi atışım
+  // jestten hemen sonra geldiği için context aktif -> hep duyulur; rakibin zarı boşluktan sonra
+  // geldiğinden bazen düşüyordu. Suspended ise resume'u BEKLE, sonra çal (idempotent, düşük risk).
+  if (c.state === 'suspended') {
+    c.resume().then(fire).catch(fire)
+  } else {
+    fire()
+  }
 }
 
 export const Sound = {
