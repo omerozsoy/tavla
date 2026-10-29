@@ -9,11 +9,12 @@ const config: CapacitorConfig = {
   webDir: 'android-shell',
   server: {
     // Kabuk CANLI siteyi yukler -> siteyi guncelle, uygulama otomatik guncellenir (TWA gibi).
-    // ONEMLI: www KANONIK (tavlatv.com -> 301 -> www.tavlatv.com). server.url'u direkt www yap,
-    // yoksa WebView ilk yuklemede baska host'a (www) yonlenir, Capacitor bunu "dis" sayip
-    // sayfayi HARICI tarayicida acar (uygulama ici beyaz/Chrome). allowNavigation iki host'u da
-    // uygulama ICINDE tutar.
-    url: 'https://www.tavlatv.com',
+    // ONEMLI: non-www KANONIK. GERCEK: www.tavlatv.com -> 301 -> tavlatv.com (Cloudflare+nginx).
+    // server.url www olursa WebView www origin'inde kalir (eski SW pin'ler) ve /api POST'lari
+    // www -> 301 yer; Fetch standardi 301'de POST'u GET'e cevirip govdeyi atar -> sunucuya bos
+    // login/sifre gider -> "sifre hatali". Bu yuzden server.url DOGRUDAN non-www olmali (hic 301
+    // yok, web ile ayni origin). allowNavigation iki host'u da uygulama ICINDE tutar.
+    url: 'https://tavlatv.com',
     allowNavigation: ['tavlatv.com', 'www.tavlatv.com'],
     cleartext: false,
   },
