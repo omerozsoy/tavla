@@ -10124,22 +10124,24 @@ html.fs-active .account-bar {
 .gm-warn {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   margin: 2px 2px 4px;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--tv-brick, #a83a2b) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tv-brick, #a83a2b) 30%, transparent);
+  background: color-mix(in srgb, var(--tv-brick, #a83a2b) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-brick, #a83a2b) 42%, transparent);
 }
+/* KONTRAST: koyu-kırmızı zemin üzerinde metin okunabilir olsun -> başlık açık terracotta,
+   gövde neredeyse tam metin rengi (eski brick%55 başlık + --muted gövde zemine karışıyordu). */
 .gm-warn-title {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 55%, var(--text));
+  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 22%, var(--text));
 }
 .gm-warn-body {
-  font-size: 0.74rem;
-  line-height: 1.4;
-  color: var(--muted);
+  font-size: 0.77rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text) 85%, transparent);
 }
 /* Ses seviyesi kaydırıcısı satırı (site stili: koyu track + aksan dolgu/thumb). */
 .gm-volrow {
