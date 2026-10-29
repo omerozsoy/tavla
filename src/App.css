@@ -10136,12 +10136,14 @@ html.fs-active .account-bar {
 .gm-warn-title {
   font-size: 0.82rem;
   font-weight: 700;
-  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 22%, var(--text));
+  /* açık warm başlık (çoğu metin + az brick) -> koyu-kırmızı zeminde net. */
+  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 18%, var(--text));
 }
 .gm-warn-body {
-  font-size: 0.77rem;
+  font-size: 0.78rem;
   line-height: 1.45;
-  color: color-mix(in srgb, var(--text) 85%, transparent);
+  /* SOLID (transparent DEĞİL) -> metin kırmızı zemini ememez, soluklaşmaz. */
+  color: color-mix(in srgb, var(--text) 88%, var(--tv-brick, #a83a2b));
 }
 /* Ses seviyesi kaydırıcısı satırı (site stili: koyu track + aksan dolgu/thumb). */
 .gm-volrow {
