@@ -21647,6 +21647,50 @@ body:has(.spectate-view) .app.lobby {
 .tourn-announce-toggle.is-open svg {
   transform: rotate(180deg);
 }
+
+/* Alt gezinme çubuğu (BottomNav) — YALNIZ kurulu APK'da, maç dışı. body'ye portal'lanır. */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--card-bg, #fff) 94%, var(--accent, #b1402f) 6%);
+  border-top: 1px solid color-mix(in srgb, var(--accent, #b1402f) 22%, var(--border, rgba(0, 0, 0, 0.1)));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.1);
+}
+.bottom-nav__item {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 54px;
+  padding: 7px 2px 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--text, #333) 55%, transparent);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+}
+.bottom-nav__item.is-active {
+  color: var(--accent-text, var(--accent, #b1402f));
+}
+.bottom-nav__label {
+  line-height: 1;
+}
+/* İçerik çubuğun altında kalmasın: body'ye alt boşluk (çubuk yüksekliği + güvenli alan). */
+body.has-bottom-nav {
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+}
 .tourn-announce-at {
   flex: none;
   color: var(--muted);

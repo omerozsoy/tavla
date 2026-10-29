@@ -862,6 +862,13 @@ const OVER_TOTAL = CLOCK_PRESETS.normal.over
 // Arkadaş davet: /?ref=KOD ile gelen ziyaretçinin kodunu kayda kadar sakla (modül yüklenince bir kez).
 captureRef()
 
+// Kurulu APK WebView mi? (sadece-app alt gezinme çubuğu için). Android WebView UA'sı 'wv' içerir;
+// Facebook/Instagram in-app tarayıcıları HARİÇ tutulur (onlar bizim app değil). Tarayıcı/masaüstünde false.
+const IS_NATIVE_APP =
+  typeof navigator !== 'undefined' &&
+  /;\s*wv\)/i.test(navigator.userAgent) &&
+  !/FBAN|FBAV|FB_IAB|Instagram|GSA\//i.test(navigator.userAgent)
+
 export default function App() {
   const { t, lang, setLang } = useT()
   // Rutbe esikleri (admin: Ayarlar > Rating Ayar) boot'ta sunucudan tazelenir; degisirse bu
@@ -10792,6 +10799,27 @@ export default function App() {
       {authModal}
       {menuOverlays}
       {bugReport}
+      {/* Alt gezinme çubuğu: YALNIZ kurulu APK'da + maç DIŞI (home). Oyun görünümü farklı trailing
+          kullandığından burada home guard'ı maçta gizler. Profil = kendi profilim (onMyStats). */}
+      {IS_NATIVE_APP && home && (
+        <BottomNav
+          active={
+            activeKey === 'tournaments'
+              ? 'turnuvalar'
+              : editProfile
+                ? 'profil'
+                : activeKey === ''
+                  ? 'ana'
+                  : undefined
+          }
+          items={[
+            { key: 'ana', label: 'Ana Sayfa', icon: 'home', onClick: menuProps.onHome },
+            { key: 'oyna', label: 'Oyna', icon: 'play', onClick: menuProps.onNewGame },
+            { key: 'turnuvalar', label: 'Turnuvalar', icon: 'trophy', onClick: menuProps.onTournaments },
+            { key: 'profil', label: 'Profil', icon: 'user', onClick: menuProps.onMyStats },
+          ]}
+        />
+      )}
     </>
   )
 
