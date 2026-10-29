@@ -2781,6 +2781,11 @@ export default function App() {
     if (resultShowingRef.current || inLobbyRef.current) return
     Sound.dice()
   }
+  // Rakip zar sesi imzası (çift-ses dedup — Q49T2): renk + normalize zar (ilk 2, sıralı). Aynı
+  // fiziksel atış her poll'de AYNI imza üretir; zar sırası veya çift-zarda 4-eleman uzunluğu imzayı
+  // değiştirmez. turnStart-tabanlı rakip-zar efekti + dance dalı BU imzayı paylaşır -> tek atış tek ses.
+  const oppDiceSig = (color: Player, dice?: number[]) =>
+    `${color}|${[...(dice ?? [])].slice(0, 2).sort().join(',')}`
   const gameWon = winner(working) !== null
   const mWinner = matchWinner(match)
   const matchOver = mWinner !== null
@@ -5688,7 +5693,14 @@ export default function App() {
             // rakip gele/bardan giremeyip 0 adım oynayınca sıra ANINDA bana döner -> turnStart tabanlı
             // rakip-zar sesi efekti (myTurn/boş-zar guard'ı) ÇALMAZ. Dance burada tespit edildiğinden
             // zar sesini de burada çal (sonuç/lobi ekranında bastır; aynı kapı).
-            if (!resultShowingRef.current && !inLobbyRef.current) Sound.dice()
+            // ÇİFT-SES FIX (Q49T2): rakibin zarı İKİ poll'de gelirse (önce turn=rakip+zar görünür ->
+            // 6802 efekti çalar, sonra 0-adım dance çözülür) ses İKİ KEZ gelirdi. 6802 ile AYNI imzayı
+            // (oppDiceKeyRef) paylaş: zaten çalındıysa atla. Tek-poll dance'te (6802 çalmadı) yine çalar.
+            const danceSig = oppDiceSig(oc, oppBase.dice ?? undefined)
+            if (danceSig !== oppDiceKeyRef.current && !resultShowingRef.current && !inLobbyRef.current) {
+              oppDiceKeyRef.current = danceSig
+              Sound.dice()
+            }
           }
         }
       }
@@ -6791,7 +6803,7 @@ export default function App() {
       oppDiceKeyRef.current = ''
       return
     }
-    const key = `${turnStart.turn}|${turnStart.dice.join(',')}`
+    const key = oppDiceSig(turnStart.turn, turnStart.dice)
     if (key === oppDiceKeyRef.current) return
     oppDiceKeyRef.current = key
     if (oppFirstDiceRef.current) {
