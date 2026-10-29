@@ -88,6 +88,18 @@ Route::get('/.well-known/assetlinks.json', function () {
         ],
     ]);
 });
+// Google OAuth DÖNÜŞ rotası SPA'da (App.tsx) işlenir -> code takas + giriş. Route::fallback allowlist'inde
+// 'auth' OLMADIĞINDAN bu yol markalı 404 dönüyordu (React hiç yüklenmiyor). Burada AÇIK route ile SPA
+// index.html'i (no-cache) servis et ki React boot olup code'u yakalasın.
+Route::get('/auth/google/app-return', function () {
+    $index = public_path('index.html');
+    abort_unless(is_file($index), 404);
+
+    return response((string) file_get_contents($index), 200, [
+        'Content-Type' => 'text/html; charset=UTF-8',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+    ]);
+});
 // PWA service worker — NO-STORE ile servis. Üretim Forge/nginx'e taşındığından .htaccess (eski
 // Apache no-store kuralı) OKUNMUYOR; nginx static /sw.js'i header'sız verince Cloudflare 4 saat
 // cache'liyor -> yeni SW cihazlara geç ulaşıyordu. İçerik public/sw.js ile AYNI; URL farklı ki
