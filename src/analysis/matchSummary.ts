@@ -46,6 +46,7 @@ export interface PlayerMatchSummary {
   doubleEquityCost: number
   wrongDoublesCost: number
   missedDoublesCost: number
+  missedDoubles: number // KAÇIRILAN double SAYISI (no-double + hata) — "N adet" gösterimi için
   cubeDecisions: number // teklif kararı sayısı (double + no-double)
 
   // TAKES (take / drop = yanıt tarafı)
@@ -150,7 +151,8 @@ function perPlayer(
 
   const doubleEquityCost = sum(offerer, cubeCost)
   const wrongDoublesCost = sum(offerer.filter((e) => e.cube!.chosen === 'double' && isErr(e)), cubeCost)
-  const missedDoublesCost = sum(offerer.filter((e) => e.cube!.chosen === 'no-double' && isErr(e)), cubeCost)
+  const missedDoubles = offerer.filter((e) => e.cube!.chosen === 'no-double' && isErr(e))
+  const missedDoublesCost = sum(missedDoubles, cubeCost)
   const doubles = offerer.filter(isErr).length
   const doubleBlunders = offerer.filter(isBlunder).length
 
@@ -218,6 +220,7 @@ function perPlayer(
     doubleEquityCost,
     wrongDoublesCost,
     missedDoublesCost,
+    missedDoubles: missedDoubles.length,
     cubeDecisions,
     takes,
     takeBlunders,

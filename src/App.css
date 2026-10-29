@@ -33156,6 +33156,18 @@ select:-webkit-autofill {
 .mrv-mark.blunder {
   color: #d0342c;
 }
+/* Küp hatası (kaçırılan double / yanlış take-pass): işaretin önüne küçük küp (kare) ikonu ->
+   çeker hatasından (işaretsiz kare) anında ayrılır. Renk işaretle aynı (err=turuncu/blunder=kırmızı). */
+.mrv-mark.cube::before {
+  content: '';
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin-right: 3px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  vertical-align: middle;
+}
 .mrv-empty {
   padding: 16px;
   color: var(--muted);

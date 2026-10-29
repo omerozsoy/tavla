@@ -81,6 +81,7 @@ describe('computeMatchSummary', () => {
     const log = [cube('black', 'no-double', 'double', 0.09)]
     const s = computeMatchSummary(log, null)
     expect(s.black.missedDoublesCost).toBeCloseTo(0.09, 6)
+    expect(s.black.missedDoubles).toBe(1) // KAÇIRILAN double sayısı ("N adet" gösterimi)
     expect(s.black.wrongDoublesCost).toBe(0)
     expect(s.black.doubleBlunders).toBe(1) // 0.09 >= 0.08
   })

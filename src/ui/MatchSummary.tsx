@@ -23,7 +23,7 @@ const fmtLuck = (n: number | null) => (fin(n) ? `${n >= 0 ? '+' : '−'}${Math.a
 // "2 (1)" = hata (blunder)
 const fmtErr = (errors: number, blunders: number) => `${errors} (${blunders})`
 
-type RowKind = 'pr' | 'count' | 'cost' | 'luck' | 'errs' | 'level' | 'text'
+type RowKind = 'pr' | 'count' | 'cost' | 'luck' | 'errs' | 'level' | 'text' | 'countcost'
 
 export default function MatchSummary({
   log,
@@ -80,6 +80,7 @@ export default function MatchSummary({
     kind,
     field,
     blunderField,
+    costField,
     sub,
     strong,
   }: {
@@ -87,12 +88,19 @@ export default function MatchSummary({
     kind: RowKind
     field?: keyof PlayerMatchSummary
     blunderField?: keyof PlayerMatchSummary
+    costField?: keyof PlayerMatchSummary
     sub?: boolean
     strong?: boolean
   }) => {
     const cell = (p: PlayerMatchSummary) => {
       if (kind === 'errs' && field && blunderField)
         return fmtErr(p[field] as number, p[blunderField] as number)
+      // 'countcost' = "N" (adet); 0'dan büyükse equity maliyetini de ekle -> "2 · −0.340".
+      if (kind === 'countcost' && field) {
+        const n = p[field] as number
+        const c = costField ? (p[costField] as number | null) : null
+        return n > 0 && costField ? `${fmtCount(n)} · ${fmtCost(c)}` : fmtCount(n)
+      }
       return val(p, kind, field as keyof PlayerMatchSummary)
     }
     return (
@@ -173,7 +181,7 @@ export default function MatchSummary({
               {Row({ label: t('ms.doubles'), kind: 'errs', field: 'doubles', blunderField: 'doubleBlunders', strong: true })}
               {Row({ label: t('ms.equityCost'), kind: 'cost', field: 'doubleEquityCost', sub: true })}
               {Row({ label: t('ms.wrongDoubles'), kind: 'cost', field: 'wrongDoublesCost', sub: true })}
-              {Row({ label: t('ms.missedDoubles'), kind: 'cost', field: 'missedDoublesCost', sub: true })}
+              {Row({ label: t('ms.missedDoubles'), kind: 'countcost', field: 'missedDoubles', costField: 'missedDoublesCost', sub: true })}
               {Row({ label: t('ms.cubeDecisions'), kind: 'count', field: 'cubeDecisions', sub: true })}
 
               {Head({ label: t('ms.take') })}

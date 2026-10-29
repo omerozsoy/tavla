@@ -28,6 +28,12 @@ function band(loss: number): 'good' | 'ok' | 'bad' | 'blunder' {
   if (loss < 0.08) return 'bad'
   return 'blunder'
 }
+
+// Hamle/küp BİRLEŞİK equity kaybı: küp kararında cube.loss (0..3 kırpık, matchSummary.cubeCost
+// ile birebir), aksi halde checker prLoss. Liste nokta-rengi + hata filtresi + işaret bunu kullanır
+// -> kaçırılan double / yanlış take-pass da checker hataları gibi KIRMIZI + işaretli + süzülebilir.
+const entryLoss = (e: LogEntry): number =>
+  e.cube ? Math.min(3, Math.max(0, e.cube.loss ?? e.loss ?? 0)) : prLoss(e)
 const pct = (v: number) => (v * 100).toFixed(1)
 // "Pul Oyunu (PR)" -> "Pul Oyunu": mini bileşen etiketleri için parantezli eki at (tüm dillerde).
 const shortLbl = (s: string) => s.replace(/\s*\([^)]*\)\s*$/, '')
@@ -147,8 +153,10 @@ export default function MatReview({
       .map((e, i) => ({ e, i }))
       .filter(({ e }) => {
         if (who !== 'both' && e.player && e.player !== who) return false
-        if (filter === 'errors') return !e.cube && prLoss(e) >= 0.02
-        if (filter === 'blunders') return !e.cube && prLoss(e) >= 0.08
+        // Hata/Blunder filtreleri artık KÜP kararlarını da kapsar (kaçırılan double, yanlış
+        // take/pass) -> kullanıcı "Hatalar"a süzünce küp hataları da görünür (eskiden !e.cube'du).
+        if (filter === 'errors') return entryLoss(e) >= 0.02
+        if (filter === 'blunders') return entryLoss(e) >= 0.08
         return true
       })
   }, [log, who, filter])
@@ -333,7 +341,7 @@ export default function MatReview({
             {rows.map(({ e, i }, ri) => {
               const prevGame = ri > 0 ? rows[ri - 1].e.game : undefined
               const showGame = e.game != null && e.game !== prevGame
-              const b = e.cube ? 'good' : band(prLoss(e))
+              const b = band(entryLoss(e)) // küp kararı da gerçek şiddetiyle renklenir (eskiden hep 'good'du)
               return (
                 <div key={i}>
                   {showGame && <div className="mrv-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>}
@@ -357,11 +365,29 @@ export default function MatReview({
                       <span className="mrv-dice mrv-dice-empty" />
                     )}
                     <span className="mrv-move">{e.notation}</span>
-                    {!e.cube && prLoss(e) >= 0.08 ? (
-                      <span className="mrv-mark blunder">⁉</span>
-                    ) : !e.cube && prLoss(e) >= 0.02 ? (
-                      <span className="mrv-mark err">?</span>
-                    ) : null}
+                    {(() => {
+                      const l = entryLoss(e)
+                      if (l < 0.02) return null
+                      const cls = l >= 0.08 ? 'blunder' : 'err'
+                      // Küp hatasında türünü tooltip'te söyle (kaçırılan double / yanlış take-pass).
+                      const cubeKey = e.cube
+                        ? e.cube.chosen === 'no-double'
+                          ? 'ms.missedDoubles'
+                          : e.cube.chosen === 'double'
+                            ? 'ms.wrongDoubles'
+                            : e.cube.chosen === 'take'
+                              ? 'ms.wrongTakes'
+                              : 'ms.wrongPasses'
+                        : null
+                      return (
+                        <span
+                          className={`mrv-mark ${cls}${e.cube ? ' cube' : ''}`}
+                          title={cubeKey ? t(cubeKey) : undefined}
+                        >
+                          {l >= 0.08 ? '⁉' : '?'}
+                        </span>
+                      )
+                    })()}
                   </button>
                 </div>
               )
