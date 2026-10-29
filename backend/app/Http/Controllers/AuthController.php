@@ -336,6 +336,42 @@ class AuthController extends Controller
         return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
     }
 
+    /**
+     * Cihazdan-bağımsız tercihleri kaydet (tahta/tema/ses/dil/animasyon...).
+     * Eskiden yalnız localStorage'daydı -> web ve app ayrı görünüyordu; artık hesaba
+     * bağlı (users.prefs JSON). İstemci partial gönderir, mevcut prefs'e MERGE edilir.
+     * Değerler kozmetik -> yalnız whitelist anahtar + kısa string; başka doğrulama yok.
+     */
+    public function savePrefs(Request $request)
+    {
+        $allowed = [
+            'tavla.board', 'tavla.boarddir', 'tavla.swapstones', 'tavla.theme',
+            'tavla.soundoff', 'tavla.soundvol', 'tavla.animoff', 'tavla.autoRoll',
+            'tavla.lang', 'tavla.learn',
+        ];
+        $data = $request->validate(['prefs' => ['required', 'array']]);
+        $u = $request->user();
+        $prefs = is_array($u->prefs) ? $u->prefs : [];
+        foreach ($data['prefs'] as $k => $v) {
+            if (! in_array($k, $allowed, true)) {
+                continue;
+            }
+            if ($v === null || $v === '') {
+                unset($prefs[$k]);
+
+                continue;
+            }
+            if (! is_scalar($v)) {
+                continue;
+            }
+            $prefs[$k] = mb_substr((string) $v, 0, 64); // kozmetik; kısa tut
+        }
+        $u->prefs = $prefs;
+        $u->save();
+
+        return response()->json(['prefs' => $u->prefs]);
+    }
+
     // Profil guncelle
     public function updateProfile(Request $request)
     {

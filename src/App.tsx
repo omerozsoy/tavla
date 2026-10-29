@@ -162,6 +162,7 @@ import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
 import { IS_NATIVE_APP } from './appEnv'
+import { setPref, writePrefsToStorage } from './prefs'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
@@ -564,7 +565,7 @@ import {
   type SavedGame,
   type MoveLogEntry,
 } from './storage'
-import { useT, LANGS } from './i18n'
+import { useT, LANGS, type Lang } from './i18n'
 import { useToast } from './ui/Toast'
 import BugReport from './ui/BugReport'
 import EmailGate from './ui/EmailGate'
@@ -2097,12 +2098,7 @@ export default function App() {
     }
   })
   useEffect(() => {
-    try {
-      if (autoRoll === null) localStorage.removeItem('tavla.autoRoll')
-      else localStorage.setItem('tavla.autoRoll', autoRoll ? '1' : '0')
-    } catch {
-      /* yoksay */
-    }
+    setPref('tavla.autoRoll', autoRoll === null ? null : autoRoll ? '1' : '0')
   }, [autoRoll])
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
   // loss/decisions = STRICT XG (obvious+forced hariç, PR'ın kendisi). cubeLoss/cubeDecisions =
@@ -2730,12 +2726,9 @@ export default function App() {
       '--wm-color',
       wmLight ? `rgba(12,18,45,${wmAlpha})` : `rgba(255,255,255,${wmAlpha})`,
     )
-    try {
-      localStorage.setItem('tavla.theme', theme)
-      localStorage.setItem('tavla.board', boardTheme)
-    } catch {
-      /* yok */
-    }
+    // Tercih senkronu: localStorage + (giriş varsa) hesaba yaz (web↔app aynı tahta/tema).
+    setPref('tavla.theme', theme)
+    setPref('tavla.board', boardTheme)
   }, [theme, boardTheme, boardDesignsRev])
 
   // Lobiye girildiginde aktif turnuvalari cek (bitmis olanlar haric)
@@ -4653,13 +4646,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, interactive, diceRolled, gameWon, turnsPlayed, cubePending, turnStart, match, online, myColor])
 
-  // Ogrenme modu tercihini sakla
+  // Ogrenme modu tercihini sakla (hesaba bağlı)
   useEffect(() => {
-    try {
-      localStorage.setItem('tavla.learn', learnMode ? '1' : '0')
-    } catch {
-      /* yok */
-    }
+    setPref('tavla.learn', learnMode ? '1' : '0')
   }, [learnMode])
 
   // YENİ TUR: ipucu sıfırla (analiz effect tur başı için tazeler).
@@ -6675,12 +6664,37 @@ export default function App() {
   })
   useEffect(() => {
     document.documentElement.setAttribute('data-anim', animOn ? 'on' : 'off')
+    setPref('tavla.animoff', animOn ? '0' : '1')
+  }, [animOn])
+  // HYDRATE: girişte sunucudaki tercihleri (users.prefs) uygula -> web'de seçtiğin tahta/tema/
+  // ses/dil app'te de gelir (ve tersi). Kullanıcı başına BİR kez (ref); sonraki setUser çağrıları
+  // (coin/rating tazeleme) canlı değişikliği EZMESİN. Boş prefs = ilk kez; yerel değerler zaten
+  // yazma effektlerince yüklenir (ref set ETMEyiz ki prefs dolunca hydrate çalışsın).
+  const prefsHydratedRef = useRef<number | null>(null)
+  useEffect(() => {
+    const p = user?.prefs
+    if (!user?.id || !p || prefsHydratedRef.current === user.id) return
+    prefsHydratedRef.current = user.id
+    writePrefsToStorage(p)
+    if (p['tavla.theme'] === 'dark' || p['tavla.theme'] === 'light') setTheme(p['tavla.theme'])
+    if (p['tavla.board']) setBoardTheme(p['tavla.board'])
+    if (typeof p['tavla.autoRoll'] === 'string') setAutoRoll(p['tavla.autoRoll'] === '1')
+    if (typeof p['tavla.learn'] === 'string') setLearnMode(p['tavla.learn'] === '1')
+    if (typeof p['tavla.animoff'] === 'string') setAnimOn(p['tavla.animoff'] !== '1')
+    if (typeof p['tavla.soundoff'] === 'string') setMuted(p['tavla.soundoff'] === '1')
+    if (typeof p['tavla.soundvol'] === 'string') {
+      const v = parseFloat(p['tavla.soundvol'])
+      if (Number.isFinite(v)) setVolume(v)
+    }
+    if (p['tavla.lang'] && LANGS.some((l) => l.code === p['tavla.lang'])) setLang(p['tavla.lang'] as Lang)
+    // boarddir + swapstones: localStorage yazıldı; kendi custom-event'leriyle bileşenleri tazele.
     try {
-      localStorage.setItem('tavla.animoff', animOn ? '0' : '1')
+      window.dispatchEvent(new CustomEvent('tavla-boarddir'))
+      window.dispatchEvent(new CustomEvent('tavla-swapstones'))
     } catch {
       /* yok */
     }
-  }, [animOn])
+  }, [user])
   // OYUN SESİ (zar/pul/kazan-kaybet) — kalıcı kullanıcı tercihi (sound.ts muted state'i).
   // Efekt çağrıları (Sound.dice/move/win…) zaten oyun akışına bağlı; bu bayrak yalnız susturur.
   const [soundOn, setSoundOn] = useState<boolean>(() => !isMuted())

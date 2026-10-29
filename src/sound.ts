@@ -5,6 +5,7 @@ import moveUrl from './assets/checker-move.mp3' // tas oynama (her hamlede)
 import hitUrl from './assets/checker-hit.ogg' // tas kirma (vurus)
 import winUrl from './assets/win.wav' // kazanma marsi (gercek kayit, fade-out)
 import loseUrl from './assets/lose.wav' // kaybetme (womp-womp, gercek kayit, fade-out)
+import { setPref } from './prefs' // ses tercihi hesaba bağlı (web↔app senkron)
 
 let ctx: AudioContext | null = null
 // Ses kullanıcı tercihi (kalıcı): VARSAYILAN AÇIK (misafirlere de standart açık gelir).
@@ -35,11 +36,7 @@ export function getVolume(): number {
 }
 export function setVolume(v: number): void {
   volume = Math.min(1, Math.max(0, v))
-  try {
-    localStorage.setItem('tavla.soundvol', String(volume))
-  } catch {
-    /* yok */
-  }
+  setPref('tavla.soundvol', String(volume))
 }
 
 export function isMuted(): boolean {
@@ -47,11 +44,7 @@ export function isMuted(): boolean {
 }
 export function setMuted(v: boolean): void {
   muted = v
-  try {
-    localStorage.setItem('tavla.soundoff', v ? '1' : '0')
-  } catch {
-    /* yok */
-  }
+  setPref('tavla.soundoff', v ? '1' : '0')
   // Açılışta AudioContext'i (kullanıcı jesti içinde) hazırla -> ilk efekt gecikmesiz çalsın.
   if (!v) {
     ac()

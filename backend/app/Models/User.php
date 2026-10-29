@@ -110,6 +110,7 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
             'password' => 'hashed',
             'game_state' => 'array',
             'unlocks' => 'array',
+            'prefs' => 'array', // cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) — web↔app senkron
             'badges' => 'array',
             'featured_badges' => 'array',
             'plan_until' => 'datetime',

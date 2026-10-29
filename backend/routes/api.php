@@ -210,6 +210,8 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/push/register', [PushController::class, 'register']);
     Route::post('/push/unregister', [PushController::class, 'unregister']);
     Route::get('/me', [AuthController::class, 'me']);
+    // Cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) -> hesaba bağlı (web↔app senkron).
+    Route::post('/me/prefs', [AuthController::class, 'savePrefs']);
     // Arkadaş davet (referral): durum (kod/link/kalan hak) + davet maili gönder (günlük sınır).
     Route::get('/me/referral', [ReferralController::class, 'status']);
     Route::post('/me/referral/invite', [ReferralController::class, 'invite'])

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { BRAND } from './brand'
+import { setPref } from './prefs'
 
 export type Lang = 'tr' | 'en' | 'es' | 'de' | 'fr' | 'el' | 'ru' | 'fa'
 
@@ -15538,11 +15539,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
   })
   const setLang = (l: Lang) => {
     setLangState(l)
-    try {
-      localStorage.setItem('tavla.lang', l)
-    } catch {
-      /* yok */
-    }
+    setPref('tavla.lang', l) // dil tercihi hesaba bağlı (web↔app senkron)
   }
   useEffect(() => {
     document.documentElement.lang = lang

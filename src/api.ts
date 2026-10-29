@@ -103,6 +103,7 @@ export interface ServerUser {
   rating?: number
   coins?: number
   unlocks?: string[]
+  prefs?: Record<string, string> | null // cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) — web↔app senkron
   avatar_frame?: string | null
   checker?: string | null
   badges?: string[]
@@ -535,6 +536,16 @@ export async function selectFrame(id: string | null): Promise<{ avatar_frame: st
 }
 export async function selectChecker(id: string | null): Promise<{ checker: string | null }> {
   return req('/shop/checker', { method: 'POST', body: JSON.stringify({ id: id ?? 'none' }) })
+}
+
+// Cihazdan-bağımsız tercihleri (tahta/tema/ses/dil...) sunucuya yansıt (merge). Best-effort:
+// kozmetik senkron, hata UX'i bozmasın. Yalnız giriş yapılmışsa çağrılır (prefs.ts gate'ler).
+export async function savePrefs(prefs: Record<string, string>): Promise<void> {
+  try {
+    await req('/me/prefs', { method: 'POST', body: JSON.stringify({ prefs }) })
+  } catch {
+    /* best-effort kozmetik sync */
+  }
 }
 
 export async function leaderboard(limit = 100, by: 'rating' | 'coins' | 'wxp' = 'rating'): Promise<LeaderRow[]> {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { setPref } from '../prefs' // pul takası hesaba bağlı (web↔app senkron)
 
 // PUL RENKLERI: oyuncu kendi pullarini beyaz (varsayilan) ya da siyah gorebilir.
 //  false = normal (oyuncu = beyaz/acik pul)
@@ -17,11 +18,7 @@ export function readSwapStones(): boolean {
 }
 
 export function writeSwapStones(v: boolean) {
-  try {
-    localStorage.setItem(KEY, v ? '1' : '0')
-  } catch {
-    /* kota/private-mode: yoksay */
-  }
+  setPref(KEY, v ? '1' : '0')
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

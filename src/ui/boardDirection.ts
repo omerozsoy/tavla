@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { setPref } from '../prefs' // oyun yönü hesaba bağlı (web↔app senkron)
 
 // OYUN YONU: pullarin toplandigi (ev tahtasinin bulundugu) taraf.
 //  'right' = varsayilan, ev tahtasi SAGDA (saga topla)
@@ -20,11 +21,7 @@ export function readBoardDir(): BoardDir {
 }
 
 export function writeBoardDir(dir: BoardDir) {
-  try {
-    localStorage.setItem(KEY, dir)
-  } catch {
-    /* kota/private-mode: yoksay */
-  }
+  setPref(KEY, dir)
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
