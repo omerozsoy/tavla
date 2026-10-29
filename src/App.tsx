@@ -5107,17 +5107,18 @@ export default function App() {
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
         const code = room?.code ?? null
-        let oppPr = r.pr_opponent ?? null
-        // KENDİ PR'ım: r.pr_self = backend prFromLog = WILDBG türevi -> TOHUMLAMA (direktif: wildbg
-        // sayısı ekrana ASLA yazılmaz, yalnız gnubg). self/checker/cube self NULL kalır, pollGnubgPr
-        // gnubg gelince doldurur (gelene dek loader). Rakip tarafı otoriter modda zaten gnubg (backend).
+        // SADECE GNUBG (direktif): rapor yanıtındaki pr_self/pr_opponent + pr_cube_*/pr_checker_* hepsi
+        // istemci LOG türevidir (gnubg DEĞİL — "230.25 küp PR" gibi çöp değerlerin kökü). HİÇBİRİ ekrana
+        // basılmaz. Tüm hücreler gnubg gelene kadar NULL (loader); yalnız pollGnubgPr + matchPr poll'u
+        // (ikisi de gnubg-otoriter) doldurur. gnubg hiç gelmezse ~90sn sonra dürüst "—".
+        let oppPr: number | null = null
         setServerPr({
           self: null,
-          opp: oppPr,
+          opp: null,
           checkerSelf: null,
-          checkerOpp: r.pr_checker_opponent ?? null,
+          checkerOpp: null,
           cubeSelf: null,
-          cubeOpp: r.pr_cube_opponent ?? null,
+          cubeOpp: null,
         })
         // Rakip PR'ı online insan maçında ayrı/geç gelir -> gelene kadar onun hücresinde "…" tut
         // (boş "—" değil). Bot/terk/forfeit'te rakip satırı olmayabilir; aşağıdaki poll ~90sn'de
@@ -6996,6 +6997,9 @@ export default function App() {
     tc?: TimeControl,
     classic = false, // KLASIK TAVLA: bota karsi (kup yok + mars=2)
   ) {
+    // YAPAY ZEKA ÜCRETLİ (coin): misafir oynayamaz -> round-trip'siz giriş akışı aç.
+    // (Backend 401 'login_required' ile de korur; bu yalnız UX kısa yolu.)
+    if (!user) { requireLogin(); return }
     roomLeavingRef.current = null
     rollConflictRef.current = false
     setRoomBusy(true)
@@ -7084,8 +7088,14 @@ export default function App() {
     } catch (e) {
       // Premium bot (Seviye 11/12) gate: sunucu 403 döndürürse üyelik ekranını aç (yedek kalkan;
       // UI zaten seçtirmez ama eski istemci / doğrudan istek buradan yakalanır).
-      if ((e as { status?: number })?.status === 403) {
+      const status = (e as { status?: number })?.status
+      if (status === 403) {
         setMemOpen(true)
+      } else if (status === 401) {
+        requireLogin() // misafir (login_required): giriş akışı
+      } else if (status === 402) {
+        // Yetersiz coin: sunucu mesajı gerekli coin'i içerir ("...en az N coin gerekir").
+        notify.error((e as { message?: string })?.message || t('products.needCoins'))
       } else {
         notify.error(t('mp.connError'))
       }
@@ -11644,7 +11654,6 @@ export default function App() {
         <MatchReport
           mode={resultView}
           log={analysisGnubgLog ?? (matchLog as unknown as LogEntry[])}
-          pr={prShown(prHumanColor)}
           humanColor={prHumanColor}
           matchLength={match.target}
           whiteName={whiteName}

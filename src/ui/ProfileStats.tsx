@@ -517,10 +517,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                                   : t('mh.moneyGame')}
                             </span>
                             {(() => {
-                              // TEK-KAYNAK: kendi PR'ı DAİMA otoriter gnubg değeri (gnubg_pr); yoksa eski kolon.
-                              const selfPr = m.gnubg_pr ?? m.pr
+                              // SADECE GNUBG (direktif): yalnız otoriter gnubg_pr göster; log türevi eski
+                              // `pr` kolonuna ASLA düşme (gnubg yoksa PR satırı hiç gösterilmez).
+                              const selfPr = m.gnubg_pr ?? null
                               if (selfPr == null) return null
-                              const o = m.opponent_gnubg_pr ?? m.opponent_pr
+                              const o = m.opponent_gnubg_pr ?? null
                               return (
                                 <span className="psm-pr">
                                   PR {selfPr.toFixed(1)}

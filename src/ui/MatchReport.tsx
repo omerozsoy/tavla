@@ -49,7 +49,6 @@ export interface LogEntry {
 interface Props {
   mode: 'stats' | 'analysis'
   log: LogEntry[]
-  pr: number | null
   humanColor?: Player // istatistik yalnizca insanin hamlelerini saysin (bot haric)
   matchLength?: number // .mat basligi icin mac hedefi ( or. "3 point match")
   whiteName?: string // .mat oyuncu adlari
@@ -98,7 +97,6 @@ function loseGammonPct(probs?: number[]): number | null {
 export default function MatchReport({
   mode,
   log: rawLog,
-  pr,
   authPr,
   humanColor,
   matchLength = 1,
@@ -355,9 +353,10 @@ export default function MatchReport({
             <div className="report-stats">
               {(() => {
                 // Ana PR başlığı TEK-KAYNAK: sunucu-otoriter (gnubg) overall PR varsa ONU göster
-                // (pul/küp split + Maç Özeti ile birebir); yoksa prop'tan gelen eski pr'a düş.
+                // SADECE GNUBG (direktif): yalnız otoriter authPr; log türevi `pr` fallback KALDIRILDI
+                // (gnubg yoksa PR başlığı hiç gösterilmez).
                 const hc = effHuman ?? humanColor
-                const headPr = (hc && authPr ? authPr[hc]?.pr : null) ?? pr
+                const headPr = hc && authPr ? (authPr[hc]?.pr ?? null) : null
                 return headPr != null && (
                   <div className="rep-pr">
                     <span className="rep-pr-num">

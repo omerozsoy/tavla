@@ -95,7 +95,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<
     {
-      id: number; log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
+      id: number; log: LogEntry[]; hc: Player; matchLength?: number; whiteName?: string; blackName?: string
       classic?: boolean // Klasik Tavla: .mat indirme gizlenir
       matchResult?: { winner: Player; score: { white: number; black: number } }
       luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null }
@@ -173,10 +173,10 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       // TEK-KAYNAK PR: self kendi satırının gnubg_*'ı, rakip karşı satırın gnubg_*'ı (backend verir).
       // renge (hc) eşle -> Maç Özeti Performans/Pul/Küp sonuç kartıyla AYNI otoriter değeri gösterir.
       const prNz = (n: number | null | undefined): number | null => (n != null && n !== 0 ? n : null)
-      const authSelf = { pr: prNz(m.gnubg_pr ?? m.pr), checker: prNz(m.gnubg_checker_pr), cube: m.gnubg_cube_pr ?? null }
+      const authSelf = { pr: prNz(m.gnubg_pr), checker: prNz(m.gnubg_checker_pr), cube: m.gnubg_cube_pr ?? null }
       const authOpp = { pr: prNz(m.opponent_gnubg_pr), checker: prNz(m.opponent_gnubg_checker_pr), cube: m.opponent_gnubg_cube_pr ?? null }
       const authPr = hc === 'white' ? { white: authSelf, black: authOpp } : { white: authOpp, black: authSelf }
-      setReport({ id: m.id, log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, classic: m.classic, matchResult, luck, authPr })
+      setReport({ id: m.id, log, hc, matchLength, whiteName, blackName, classic: m.classic, matchResult, luck, authPr })
     } catch {
       /* yoksay */
     } finally {
@@ -381,11 +381,11 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                         <span className="mh-info">
                           <span className="mh-nm">{oppName}</span>
                           <span className="mh-tags">
-                            {/* TEK-KAYNAK PR: rakip PR'ı rakibin KENDİ satırındaki otoriter gnubg değeri
-                                (opponent_gnubg_pr); yoksa eski opponent_pr fallback. SAHTE-0 KALKANI:
+                            {/* SADECE GNUBG (direktif): rakip PR'ı yalnız otoriter opponent_gnubg_pr;
+                                log türevi opponent_pr fallback KALDIRILDI. SAHTE-0 KALKANI:
                                 tam 0 => "hesaplanamadı" sentinel'i -> gösterme. */}
                             {(() => {
-                              const oppPr = m.opponent_gnubg_pr ?? m.opponent_pr
+                              const oppPr = m.opponent_gnubg_pr ?? null
                               return oppPr != null && oppPr !== 0 ? (
                                 <span className={`mh-prc ${prCls(oppPr)}`}>PR {oppPr.toFixed(1)}</span>
                               ) : null
@@ -534,7 +534,6 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
         <MatchReport
           mode="analysis"
           log={report.log}
-          pr={report.pr}
           humanColor={report.hc}
           matchLength={report.matchLength}
           whiteName={report.whiteName}
