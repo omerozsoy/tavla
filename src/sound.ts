@@ -200,4 +200,11 @@ export const Sound = {
     tone(1976, 0.01, 0.4, 'sine', 0.13) // B6 harmonik (parlaklik)
     tone(1318, 0.2, 0.6, 'sine', 0.22) // ikinci vurus
   },
+  // DÜELLO baslangici (online insan maci baslayinca): yukselen uc-notali "boru" cagrisi (A4->D5->A5)
+  // triangle ile sicak/net. Asset gerektirmez. Maç-basi yenilgi sesinin yerine calar.
+  duel() {
+    tone(440, 0, 0.16, 'triangle', 0.2) // A4
+    tone(587, 0.15, 0.2, 'triangle', 0.2) // D5
+    tone(880, 0.34, 0.34, 'triangle', 0.18) // A5 final fanfar
+  },
 }

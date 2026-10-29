@@ -6431,6 +6431,12 @@ export default function App() {
     // sonra uçuştaki bir poll/serverMove yanıtı applyServerBoard ile gameEnd'i (sm.done+winner)
     // yeniden kurup null->dolu geçişi tetikleyebilir -> home iken win/lose sesi ÇALMASIN.
     if (home) return
+    // MAÇ BAŞINDA SIZAN BAYAT gameEnd: "Oyun Arayanlar"dan maç başlatınca (önceki maçtan kalan
+    // sm.done/winner veya oda-geçiş yarışı) gameEnd null->dolu geçip YENİLGİ sesi çalıyordu. Gerçek
+    // oyun-sonu DAİMA turnsPlayed>0; turnsPlayed===0 = henüz hamle yok (maç başı) -> win/lose BASTIR
+    // (yerine düello sesi çalar; home guard'ının kardeşi). prevRef yukarıda güncellendi -> gerçek
+    // oyun-sonu (turnsPlayed>0) etkilenmez.
+    if (turnsPlayed === 0) return
     if (!has || !wasNull) return // yalnız null->dolu geçişinde çal (dolu kalırken tekrar etme)
     const now = performance.now()
     // İMZA guard (bot pes raporu: "pes ettim çıkınca kaybetme sesini 2 kez duydum"): pes/maç-sonu
@@ -6450,11 +6456,30 @@ export default function App() {
         else if (gameEnd!.mult === 2) achGammonRef.current += 1
       }
     } else Sound.lose()
+    // turnsPlayed/match.score GUARD/İMZA olarak okunur; effect yalnız gameEnd/mode/room/home'da çalmalı
+    // (wasNull guard'ı tekrar-çalmayı zaten önler) -> deps'e ekleme.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameEnd, mode, room, home])
   // Ses: kup teklifi
   useEffect(() => {
     if (cubePending) Sound.double()
   }, [cubePending])
+
+  // DÜELLO SESİ: online insan maçı başlayınca (rakip hazır + oda 'playing') maç başına BİR KEZ çal.
+  // "Oyun Arayanlar"dan maç başlatınca eskiden yanlışlıkla yenilgi sesi geliyordu (bkz turnsPlayed
+  // guard'ı); onun yerine olumlu "kapışma başladı" geri bildirimi. Bot/lobi/sonuç ekranında çalmaz;
+  // iki tarafta da (seeker + katılan) çalar. oppStarted false→true ile yeni maçta tekrar tetiklenir.
+  const duelPlayedRef = useRef(false)
+  useEffect(() => {
+    const started = online && !botMatch && !home && room?.status === 'playing' && oppStarted && !gameEnd
+    if (started && !duelPlayedRef.current) {
+      duelPlayedRef.current = true
+      if (!resultShowingRef.current && !inLobbyRef.current) Sound.duel()
+    } else if (!online || home || !oppStarted) {
+      duelPlayedRef.current = false // yeni maç / lobi -> sonraki maçta tekrar çalabilsin
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, botMatch, home, room?.status, oppStarted, gameEnd])
 
   // Acilista takilma fix: kayitli oyun bot yarim-animasyonda kaydedildiyse
   // (sira bot + played>0) played temizlenir ki bot turunu bastan oynasin.
