@@ -2466,15 +2466,36 @@ export default function App() {
   // sunucuda token'a takas et -> giriş. URL'i HEMEN temizle (code tek-kullanımlık, geri/yenile tekrarlamasın).
   useEffect(() => {
     if (window.location.pathname !== '/auth/google/app-return') return
-    const q = new URLSearchParams(window.location.search)
+    const search = window.location.search
+    const q = new URLSearchParams(search)
     const code = q.get('code')
+    if (!code) {
+      try {
+        window.history.replaceState(null, '', '/')
+        window.dispatchEvent(new PopStateEvent('popstate'))
+      } catch {
+        /* yok say */
+      }
+      return
+    }
+    // Capacitor APK WebView'da mıyız? (UA 'wv'). DEĞİLSEK (Samsung Internet / Chrome App-Link'i AÇMADI —
+    // Samsung Internet App-Link'leri çoğu kez onurlandırmaz) -> intent:// ile TavlaTV app'ini ZORLA AÇ
+    // (code URL'de). Android app'i açınca MainActivity URL'i WebView'a yükler -> aşağıdaki app dalı takas eder.
+    const inApp = /;\s*wv\)/i.test(navigator.userAgent)
+    if (!inApp) {
+      window.location.href =
+        'intent://tavlatv.com/auth/google/app-return' + search + '#Intent;scheme=https;package=com.tavlatv.app;end'
+      return
+    }
+    // App içindeyiz: ÖNCE router'ı ana sayfaya al (yoksa /auth/google/app-return 404 view'ında kalır —
+    // replaceState tek başına applyFromPath'i tetiklemez), SONRA code'u takas edip giriş yap.
     const retState = q.get('state')
     try {
       window.history.replaceState(null, '', '/')
+      window.dispatchEvent(new PopStateEvent('popstate'))
     } catch {
       /* yok say */
     }
-    if (!code) return
     let saved: string | null = null
     try {
       saved = sessionStorage.getItem('g_oauth_state')
