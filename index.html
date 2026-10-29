@@ -11,6 +11,8 @@
         var KEY = '__tavla_recover'
         function attempt() { try { return +(sessionStorage.getItem(KEY) || 0) } catch (e) { return 0 } }
         function bump(n) { try { sessionStorage.setItem(KEY, n) } catch (e) {} }
+        // TANI: self-heal reload nedenini isaretle (reloadDiag acilista okuyup sunucuya beacon'lar).
+        function mark(r) { try { sessionStorage.setItem('tavla.rr', r) } catch (e) {} }
         // YALNIZ kurulu APK (Capacitor WebView) icinde: beyaz ekranin GERCEK sebebini ekrana yaz
         // (web/PC/mobil-Chrome kullanicilari window.Capacitor olmadigindan ASLA gormez). App'te
         // reload hatayi gizler + WebView ayni sekilde patlar -> bunun yerine hatayi GOSTER, fotograflanabilsin.
@@ -74,8 +76,8 @@
           // App icinde: reload etme (WebView ayni patlar + hatayi gizler) -> tanisi GOSTER.
           if (INAPP) { note('#root BOS kaldi (React mount OLMADI).'); return }
           var n = attempt()
-          if (n === 0) { bump(1); location.reload(); return }
-          if (n === 1) { bump(2); nukeAndReload(); return }
+          if (n === 0) { bump(1); mark('selfheal-boot'); location.reload(); return }
+          if (n === 1) { bump(2); mark('selfheal-boot'); nukeAndReload(); return }
           showRetry()
         }
         // App bundle'i (/assets/*.js) yuklenemezse VE app henuz ayakta DEGILSE kurtar.
@@ -114,7 +116,7 @@
           if (INAPP) { note('#root mount SONRASI bosaldi (React unmount).'); return }
           var n = attempt()
           if (n >= 2) { showRetry(); return } // her mount'ta aninda cokuyorsa dongu yapma -> elle
-          bump(n + 1); location.reload()
+          bump(n + 1); mark('selfheal-midmount'); location.reload()
         }, 1500)
       })()
     </script>

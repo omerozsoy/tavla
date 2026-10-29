@@ -43,6 +43,7 @@ import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { divisionOfPR } from './badges'
 import { subscribeRankThresholds, rankThresholdsVersion } from './rankConfig'
+import { setInMatch } from './reloadDiag'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
@@ -159,6 +160,7 @@ import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
+import BottomNav from './ui/BottomNav'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
@@ -1892,6 +1894,8 @@ export default function App() {
   const statusChangedAtRef = useRef(0)
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
+  // TANI: maç ekranı açık mı (reload beacon in_match bayrağı için). Oda var + lobide değil.
+  useEffect(() => { setInMatch(!home && !!room) }, [home, room])
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
   const [timeControl, setTimeControl] = useState<TimeControl>('normal')
   const [rankedMatch, setRankedMatch] = useState(true) // false = casual (puana etki etmez)

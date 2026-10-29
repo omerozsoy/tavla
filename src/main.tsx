@@ -18,6 +18,7 @@ import OfflineBanner from './ui/LoadError.tsx'
 import { initGoogleTag } from './analytics.ts'
 import { applyCachedRankThresholds, initRankThresholds } from './rankConfig.ts'
 import { installAutoUpdate } from './autoUpdate.ts'
+import { reportReloadDiag } from './reloadDiag.ts'
 import { installScrollRestore } from './scrollRestore.ts'
 import { BRAND } from './brand.ts'
 
@@ -84,6 +85,10 @@ createRoot(document.getElementById('root')!).render(
 // BAYAT BUNDLE ÇÖZÜMÜ: yeni deploy'u algıla; kendiliğinden YENİLEME -> güvenli anda UpdateBanner
 // ile "yeni sürüm var, güncelleyin" de. Reload yalnız kullanıcı "Güncelle"ye basınca olur.
 installAutoUpdate()
+
+// GEÇİCİ TANI: bu yükleme bir reload ise nedenini (chunk/selfheal/update/ptr/browser) + maç-içi mi
+// sunucuya beacon'la -> "maç içinde F5" şikayetinin gerçek kaynağını topla. Yalnız prod.
+if (import.meta.env.PROD) reportReloadDiag()
 
 // Google Etiketi (gtag.js): admin panelden yönetilen ID ile dinamik yükle (aktifse). Ana sayfa
 // statik servis edildiğinden server-side enjeksiyon home'a ulaşmaz -> client-side tek kaynak.
