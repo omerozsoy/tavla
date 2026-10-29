@@ -21,6 +21,7 @@ use App\Services\MoveValidatorService;
 use App\Services\PlayerStatisticsService;
 use App\Services\WalletService;
 use App\Services\WxpService;
+use App\Support\AvatarStore;
 use App\Support\Brand;
 use App\Support\EmailVerification;
 use App\Support\MatchFinalize;
@@ -84,6 +85,11 @@ class AuthController extends Controller
         // province kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
             unset($data['province']);
+        }
+
+        // AVATAR: base64 (data:) gelirse WebP dosyaya + kısa URL'e çevir (poll/ping şişmesin). URL ise dokunmaz.
+        if (array_key_exists('avatar', $data)) {
+            $data['avatar'] = AvatarStore::store($data['avatar']);
         }
 
         // Baslangic puani: TÜM yeni üyeler admin ayarı 'starting_rating' (varsayılan 1400; seviye
@@ -415,6 +421,10 @@ class AuthController extends Controller
         // kullanici (veya oturum ele geciren) B'yi hic OTP girmeden "dogrulanmis" gosterir.
         if (array_key_exists('phone', $data) && (string) $user->phone !== (string) ($data['phone'] ?? '')) {
             $user->phone_verified_at = null;
+        }
+        // AVATAR: base64 (data:) gelirse WebP dosyaya + kısa URL'e çevir (poll/ping şişmesin). URL ise dokunmaz.
+        if (array_key_exists('avatar', $data)) {
+            $data['avatar'] = AvatarStore::store($data['avatar']);
         }
         $user->update($data);
 
