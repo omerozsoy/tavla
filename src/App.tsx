@@ -4991,20 +4991,41 @@ export default function App() {
   // Yalniz bekleyen (status='waiting') turnuva macinda calisir; opponent odaya girince
   // status 'playing' olur -> effect cleanup timer'i iptal eder. Sunucu 60sn esigini +
   // rakibin gercekten girmedigini (slot token bos) DOGRULAR (istemci saati otoriter degil).
+  // TEK ATIS DEGIL (1521/7XXVB kok cozumu): ilk deneme 65sn'de, sonra hukmen TUTANA ya da
+  // rakip gelip status degisene (effect cleanup) kadar her 8sn'de TEKRAR dene. Tek atis sunucu
+  // tarafindan reddedilince (saat marji "sure dolmadi" / rakip token gecici dolu) eskiden
+  // .catch() sessizce yutup bir daha denemiyordu -> oyuncu sonsuza dek bekliyordu. Retry ile
+  // sart olusan ilk anda (60sn gecti + rakip hic girmedi) hukmen yazilir.
   useEffect(() => {
     const tm = tournMatchRef.current
     if (!online || !tm || room?.status !== 'waiting' || !room?.code) return
-    const id = window.setTimeout(() => {
+    let inFlight = false
+    let done = false
+    let iv = 0
+    const attempt = () => {
+      if (inFlight || done) return // ayni anda tek istek; tutunca dur
+      inFlight = true
       tournamentNoShow(tm.tid, tm.matchKey)
         .then(() => {
+          done = true
           notify.success(t('tourn.walkover'))
           handleLeaveRoom()
         })
         .catch(() => {
-          // rakip bu arada girdi / sure dolmadi -> sessizce beklemeye devam
+          // rakip henuz girmedi / sure dolmadi -> sonraki denemeyi bekle (sessiz)
         })
-    }, 65000) // 60sn sunucu esigi + ag payi
-    return () => window.clearTimeout(id)
+        .finally(() => {
+          inFlight = false
+        })
+    }
+    const first = window.setTimeout(() => {
+      attempt() // ilk deneme: 60sn sunucu esigi + ag payi
+      iv = window.setInterval(attempt, 8000) // biri tutana/status degisene kadar tekrar dene
+    }, 65000)
+    return () => {
+      window.clearTimeout(first)
+      window.clearInterval(iv)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.status, room?.code])
 
