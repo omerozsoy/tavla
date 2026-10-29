@@ -175,6 +175,7 @@ export default function Messages({
   const [search, setSearch] = useState('') // sol listede sohbet arama
   const [pane, setPane] = useState<'chats' | 'requests' | 'blocked'>('chats') // sol liste: sohbetler / istekler / engelliler
   const [menuFor, setMenuFor] = useState<number | null>(null) // kebab menüsü açık olan sohbet (user.id)
+  const [headMenu, setHeadMenu] = useState(false) // aktif sohbet başlığındaki üç-nokta menüsü (Şikayet / Blokla)
   // Uygulama-içi onay penceresi (native window.confirm yerine): onaylanınca run() çalışır.
   const [confirmBox, setConfirmBox] = useState<null | {
     title: string
@@ -315,6 +316,7 @@ export default function Messages({
   useEffect(() => {
     setPartnerTyping(false)
     setActiveRequest(false)
+    setHeadMenu(false) // konusma degisti -> baslik menusu acik kalmasin
     pendingRef.current = [] // konusma degisti -> onceki sohbetin bekleyen iyimser mesajlari
     if (activeId != null && activeId !== NOTIF_ID) loadThread(activeId)
   }, [activeId, loadThread])
@@ -792,29 +794,46 @@ export default function Messages({
                       {activeUser.online ? t('friends.online') : t('friends.offline')}
                     </span>
                   )}
+                  {/* Şikayet Et + Blokla: başlıkta inline değil, sağdaki üç-nokta menüsünde
+                     (mobilde isim+rütbe+durum+iki pill tek satıra sığmıyordu -> taşma/bozulma). */}
                   {activeUser && (
-                    <button
-                      type="button"
-                      className="messages-head-report"
-                      onClick={() => handleReport(activeUser.id, activeUser.name)}
-                      aria-label={t('dm.report')}
-                      title={t('dm.report')}
-                    >
-                      <Icon name="flag" size={15} /> {t('dm.report')}
-                    </button>
-                  )}
-                  {/* ENGELLE: Şikayet Et yanında. Tavla TV Yönetim (system) hesabı engellenemez -> buton gizli
-                     (yönetim mesajları herkese ulaşsın); sunucu-tarafı guard da var (MessageController::block). */}
-                  {activeUser && !activeUser.system && (
-                    <button
-                      type="button"
-                      className={`messages-head-block ${activeBlocked ? 'is-blocked' : ''}`}
-                      onClick={() => handleBlockToggle(activeUser.id, activeBlocked)}
-                      aria-label={activeBlocked ? t('dm.unblock') : t('dm.block')}
-                      title={activeBlocked ? t('dm.unblock') : t('dm.block')}
-                    >
-                      <Icon name="ban" size={15} /> {activeBlocked ? t('dm.unblock') : t('dm.block')}
-                    </button>
+                    <div className="messages-head-menu-wrap">
+                      <button
+                        type="button"
+                        className="messages-head-kebab"
+                        aria-label={t('dm.menuAria')}
+                        aria-haspopup="menu"
+                        aria-expanded={headMenu}
+                        onClick={() => setHeadMenu((o) => !o)}
+                      >
+                        <Icon name="dots-vertical" size={18} />
+                      </button>
+                      {headMenu && (
+                        <>
+                          <div className="messages-menu-backdrop" onClick={() => setHeadMenu(false)} />
+                          <div className="messages-thread-menu messages-head-menu" role="menu">
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => { setHeadMenu(false); handleReport(activeUser.id, activeUser.name) }}
+                            >
+                              <Icon name="flag" size={15} /> {t('dm.report')}
+                            </button>
+                            {/* Tavla TV Yönetim (system) hesabı engellenemez -> öğe gizli; sunucu guard'ı da var. */}
+                            {!activeUser.system && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                className={activeBlocked ? '' : 'danger'}
+                                onClick={() => { setHeadMenu(false); handleBlockToggle(activeUser.id, activeBlocked) }}
+                              >
+                                <Icon name="ban" size={15} /> {activeBlocked ? t('dm.unblock') : t('dm.block')}
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
 

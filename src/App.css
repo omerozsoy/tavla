@@ -24360,51 +24360,35 @@ body.has-bottom-nav {
 .messages-head-status.on {
   color: var(--color-success, #1a7f37);
 }
-/* Konuşma başlığı: Şikayet Et (flag) butonu — en sağda, soluk kırmızı */
-.messages-head-report {
+/* Konuşma başlığı: Şikayet Et / Blokla üç-nokta menüsü (en sağda). Inline iki pill mobilde
+   taşıyordu -> kebab. Açılır menü .messages-thread-menu stillerini paylaşır (wrap relative). */
+.messages-head-menu-wrap {
+  position: relative;
   margin-left: auto;
   flex: none;
+}
+.messages-head-kebab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #b91c1c;
-  background: color-mix(in srgb, #b91c1c 8%, transparent);
-  border: 1px solid color-mix(in srgb, #b91c1c 24%, transparent);
-  border-radius: 999px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: color-mix(in srgb, var(--text, #333) 60%, transparent);
   cursor: pointer;
-  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
 }
-.messages-head-report:hover {
-  background: color-mix(in srgb, #b91c1c 16%, transparent);
+.messages-head-kebab:hover,
+.messages-head-kebab[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-text);
 }
-/* ENGELLE butonu (Şikayet Et yanında): nötr gri; engelliyken "Engeli Kaldır" uyarı tonu. */
-.messages-head-block {
-  flex: none;
-  margin-left: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--muted);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.messages-head-block:hover {
-  color: var(--text);
-  border-color: var(--text);
-}
-.messages-head-block.is-blocked {
-  color: #b91c1c;
-  background: color-mix(in srgb, #b91c1c 8%, transparent);
-  border-color: color-mix(in srgb, #b91c1c 24%, transparent);
+.messages-head-menu {
+  top: 40px;
+  right: 0;
 }
 /* Bildirimler satırı: yuvarlak zil rozeti */
 .messages-notif-ava {
@@ -31596,6 +31580,11 @@ select:-webkit-autofill {
     bottom: calc(14px + env(safe-area-inset-bottom));
     right: calc(14px + env(safe-area-inset-right));
   }
+}
+/* Alt gezinme çubuğu (mobil) varken yukarı-git düğmesi çubuğun ÜSTÜNDE dursun — üstüne
+   binip Profil sekmesini kapatmasın. Çubuk ~56px + safe-area; üzerine ~14px boşluk bırak. */
+body.has-bottom-nav .to-top {
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
 }
 @media (prefers-reduced-motion: reduce) {
   .to-top {
