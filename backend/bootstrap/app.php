@@ -83,6 +83,15 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($e instanceof \Illuminate\Queue\MaxAttemptsExceededException) {
                 return;
             }
+            // LIVEWIRE/FILAMENT istemci-kaynaklı "kilitli özellik" ihlali: `/livewire/update`'e gelen
+            // BAYAT snapshot (deploy anında admin'in açık Filament sayfası release rotasyonuyla
+            // uyumsuz kalır) VEYA endpoint'e bot/tamper isteği @locked bir özelliği güncellemeye
+            // çalışınca Livewire bunu GÜVENLİK guard'ı olarak fırlatır. Bu SUNUCU HATASI DEĞİL
+            // (düzeltilecek kod yok; sayfa yenileyince geçer) -> loglanır ama "🔴 500" alarmı + Sentry
+            // GÖNDERİLMEZ (sahte 500 gürültüsü; 157180076). Gerçek 500'ler etkilenmez.
+            if ($e instanceof \Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException) {
+                return;
+            }
             // GEÇİCİ DB kilit hataları (InnoDB deadlock 1213 / lock-wait timeout 1205 / SQLSTATE 40001):
             // database queue sürücüsünde worker'ın `SELECT ... FOR UPDATE` yoklaması ile eşzamanlı
             // job INSERT'i arasında BEKLENEN + kendiliğinden düzelen çakışmadır (kaybeden işlem geri
