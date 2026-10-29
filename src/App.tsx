@@ -782,7 +782,7 @@ const BOT_CUBE_RAND = 1400 // + 0..bu kadar rastgele -> ~1.1-2.5sn dogal "dusunu
 // (half). Kendi turum (played), rakip canlı (oppLive) VE rakip replay (oppReplay adımları) ortak
 // kullanır -> rakip zarı da tıpkı bottaki gibi oynandıkça adım adım solar.
 function faceStates(dice: number[], steps: { die: number }[]): { value: number; used: boolean; half?: boolean }[] {
-  if (dice.length === 0) return []
+  if (!dice || dice.length === 0) return [] // GÜVENLİK: malformed server state'te dice undefined -> çökme yok
   if (dice.length === 4) {
     return [0, 1].map((i) => {
       const h = Math.min(2, Math.max(0, steps.length - i * 2))
@@ -5614,6 +5614,22 @@ export default function App() {
   // cagirilir (mid-move'u ezmemek icin poll'da korunur). Otorite SUNUCU: tahta + skor + KUP +
   // Crawford + mac-bitti hepsi sunucudan gelir; istemci yalniz yansitir (forge edemez).
   function applyServerBoard(gs: GameState, sm?: ServerMatch | null) {
+    // MID-MAÇ ÇÖKME KALKANI (kök): sunucudan gelen state null/eksik-alanlı gelebilir (poll yarışı,
+    // geçiş anı, hatalı/kısmi yanıt). Normalize edilmezse setTurnStart(gs) sonrası render'da
+    // faceStates(dice.length) / Board(state.bar.white, state.off.black, points[i]) undefined'da
+    // THROW eder -> maç ekranı çöker (ErrorBoundary kartı veya boş-root otomatik F5). Tek giriş
+    // noktası burada; tüm maç tahta render yolu bununla korunur. Tamamen geçersizse local'i EZME.
+    if (!gs || typeof gs !== 'object') return
+    const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
+    gs = {
+      ...gs,
+      points: Array.isArray(gs.points) && gs.points.length === 24 ? gs.points : Array(24).fill(0),
+      dice: Array.isArray(gs.dice) ? gs.dice : [],
+      diceUsed: Array.isArray(gs.diceUsed) ? gs.diceUsed : [],
+      bar: { white: num(gs.bar?.white), black: num(gs.bar?.black) },
+      off: { white: num(gs.off?.white), black: num(gs.off?.black) },
+      turn: gs.turn === 'black' ? 'black' : 'white',
+    }
     // Önceki hamlenin replay'i (varsa) bitmeden yeni otoriter durum geldi -> replay'i bitir (truth göster).
     if (oppReplayRef.current) clearOppReplay()
     // RAKIBIN HAMLESINI GERI URET. Otoriter modda applyOnlineState CALISMAZ; rakip
