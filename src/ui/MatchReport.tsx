@@ -185,7 +185,17 @@ export default function MatchReport({
   // O anki hamlenin oyunu BAŞLAMADAN önceki maç skoru (tahta üstünde "oyun kaç kaç"). gameResults
   // (canlı maç) verilmişse otoriter, yoksa log'dan türetilir (geçmiş analizler). Tek oyunlu/1-puanlık
   // maçta anlamsız (hep 0-0) -> yalnız çok oyunlu ya da 1'den uzun maçta göster.
-  const gameScores = useMemo(() => gameStartScores(log, matchLength, gameResults), [log, matchLength, gameResults])
+  // GÜVENLİK: tahta-üstü skor türetmesi (kozmetik) bazı çok-oyunlu loglarda throw edebiliyordu ->
+  // TÜM analiz ekranını çökertiyordu ("Bir şeyler ters gitti"). try/catch ile izole: hata olursa
+  // skor overlay'i gizlenir ama analiz AÇILIR. (ponytail: kozmetik alt-özellik ana görünümü düşürmemeli.)
+  const gameScores = useMemo(() => {
+    try {
+      return gameStartScores(log, matchLength, gameResults)
+    } catch (e) {
+      console.error('gameStartScores failed', e)
+      return [] as { white: number; black: number }[]
+    }
+  }, [log, matchLength, gameResults])
   const showScore = matchLength > 1 || gameCount > 1
 
   // Kup tavsiyesi etiketi (take/drop veya double-* icin dogru anahtar)

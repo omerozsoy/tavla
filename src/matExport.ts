@@ -212,7 +212,9 @@ function outcomeOf(acts: Act[]): { winner: Player; points: number; cube: number 
   }
   if (dropWinner) return { winner: dropWinner, points: cube, cube }
   if (!last?.player || !last.pos) return null
-  const s = cloneState(last.pos)
+  // gnubg review-log pos'u yalnız points/bar/off/turn/cube içerir (dice/diceUsed YOK) -> cloneState
+  // `.slice()`'ta patlardı (TÜM analiz çökerdi). Sonuç sadece tahtadan türetildiğinden boş zar yeter.
+  const s = cloneState({ ...last.pos, dice: last.pos.dice ?? [], diceUsed: last.pos.diceUsed ?? [] })
   for (const st of last.playedSteps ?? last.steps ?? []) applyStep(s, st, last.player)
   const oc = gameOutcome(s)
   return oc ? { winner: oc.winner, points: cube * oc.multiplier, cube } : null
