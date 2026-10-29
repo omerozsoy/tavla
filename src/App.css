@@ -10120,6 +10120,27 @@ html.fs-active .account-bar {
 .gm-switch.on .gm-knob {
   left: 21px;
 }
+/* Otomatik Zar uyarısı (küplü maçta, Otomatik Zar satırının hemen altı). */
+.gm-warn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 2px 2px 4px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--tv-brick, #a83a2b) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-brick, #a83a2b) 30%, transparent);
+}
+.gm-warn-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 55%, var(--text));
+}
+.gm-warn-body {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
 /* Ses seviyesi kaydırıcısı satırı (site stili: koyu track + aksan dolgu/thumb). */
 .gm-volrow {
   cursor: default;

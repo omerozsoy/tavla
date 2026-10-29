@@ -84,11 +84,22 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
 // Sira gelen oyuncu icin zar otomatik atilmali mi?
 // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyor veya
 // ilk el) beklemenin anlami yok -> otomatik at.
-export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number, pos?: GameState, isMoney = false): boolean {
-  // KUP TEKLIF EDEBILIYORSAM ASLA OTO-ZAR (kullanici direktifi): katlama sansi olan HICBIR
-  // pozisyonda zar otomatik atilmaz -> dans/kapali-bar dahil oyuncu "Zar At"/"Katla" secebilsin.
-  if (turnsPlayed > 0 && canDouble(m, turn, false, isMoney)) return false
-  // Kup teklifi yok (1 puanlik/Crawford/rakip kupu tutuyor/ilk el): beklemenin anlami yok.
+// pref = Oyun Menüsü "Otomatik Zar" kullanıcı tercihi: true = küp teklif edebilsen DE oto-at (küp
+// fırsatını atlar — menüde uyarı); false = HİÇ oto-atma (elle at); null/undefined = akıllı varsayılan
+// (küplü maçta bekle, küpsüz 1-puanlıkta oto-at — mevcut davranış, verilmezse hiçbir şey değişmez).
+export function shouldAutoRoll(
+  m: MatchState,
+  turn: Player,
+  turnsPlayed: number,
+  pos?: GameState,
+  isMoney = false,
+  pref?: boolean | null,
+): boolean {
+  if (pref === false) return false // kullanıcı kapattı: her zaman elle at
+  // KUP TEKLIF EDEBILIYORSAM oto-zar YOK (kullanici direktifi) — AMA kullanıcı pref=true ile açıkça
+  // istediyse küp fırsatını atlayıp oto-atmaya razıdır (menüdeki uyarı bunu belirtir).
+  if (pref !== true && turnsPlayed > 0 && canDouble(m, turn, false, isMoney)) return false
+  // Kup teklifi yok (1 puanlik/Crawford/rakip kupu tutuyor/ilk el) VEYA kullanıcı pref=true: oto-at.
   // BARDA (pozisyon verilmisse): rakip ev bolgesi tamamen kapaliysa hicbir zarla giremem
   // -> kesin dans, oto-at. En az bir giris aciksa (girebilecek duruma geldim) ELLE at -> false.
   if (pos && pos.bar[turn] > 0) return closedOutOnBar(pos, turn)

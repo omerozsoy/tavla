@@ -2080,6 +2080,25 @@ export default function App() {
       return false
     }
   })
+  // Otomatik Zar (Oyun Menüsü) kullanıcı tercihi — ÜÇ DURUMLU: null = ayar yapılmadı (akıllı
+  // varsayılan: küpsüz 1-puanlıkta açık, küplü maçta kapalı); true = küp olsa da oto-at; false =
+  // hiç oto-atma. Açıkça seçilince kalıcı (localStorage), seçilmezse maç tipine göre varsayılan.
+  const [autoRoll, setAutoRoll] = useState<boolean | null>(() => {
+    try {
+      const v = localStorage.getItem('tavla.autoRoll')
+      return v === '1' ? true : v === '0' ? false : null
+    } catch {
+      return null
+    }
+  })
+  useEffect(() => {
+    try {
+      if (autoRoll === null) localStorage.removeItem('tavla.autoRoll')
+      else localStorage.setItem('tavla.autoRoll', autoRoll ? '1' : '0')
+    } catch {
+      /* yoksay */
+    }
+  }, [autoRoll])
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
   // loss/decisions = STRICT XG (obvious+forced hariç, PR'ın kendisi). cubeLoss/cubeDecisions =
   // yalnız küp (kırılım). allLoss/allDecisions = TÜM kaydedilen kararlar (obvious dahil) -> strict
@@ -2805,6 +2824,11 @@ export default function App() {
   // PARA OYUNU (Tek Oyun): online + sabit bahis (stake>0, % bahis değil) + tek oyun (target≤1).
   // Küp CANLI (coin stake×küp×gammon ile ölçeklenir); cubeAvailability/shouldAutoRoll'a geçilir.
   const isMoneyGame = online && stakeRef.current > 0 && betPctRef.current === 0 && match.target <= 1
+  // Otomatik Zar: bu maçta KÜP (katlama) var mı? Klasik değil + (para oyunu VEYA çok puanlı maç).
+  // Varsayılan: küpsüz 1-puanlıkta AÇIK, küplü maçta KAPALI. autoRollEff = menü geçişinin gösterdiği
+  // efektif değer (kullanıcı tercihi varsa o, yoksa akıllı varsayılan). Uyarı yalnız küplü maçta.
+  const cubeInPlay = !match.classic && (isMoneyGame || match.target > 1)
+  const autoRollEff = autoRoll ?? !cubeInPlay
 
   // Oynadigin online macin IZLEME linkini adres cubugunda goster: /izle/<KOD>. Kopyalanip
   // paylasilinca baskalari maci canli izler. replaceState -> geri tusu/yeniden-baglanmayi bozmaz.
@@ -6846,7 +6870,7 @@ export default function App() {
     // OTO-ZAR yalnız shouldAutoRoll iken (küp hakkı yok -> seçim yok). Küpü OLAN oyuncu MANUEL atar
     // (shouldAutoRoll=false) ama KURTARMA AĞI ikisinde de kurulur (eskiden burada return edilip manuel
     // atan oyuncu transient mandalda 30sn kilitli kalıyordu — "hemen Zar At'a bastım, zar gelmedi").
-    const canAuto = shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)
+    const canAuto = shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame, autoRoll)
     setAutoRollStuck(false)
     // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Poll BENİM zarsız turumda
@@ -6880,7 +6904,7 @@ export default function App() {
       window.clearTimeout(reveal)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match, oppReplay, oppDance])
+  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match, oppReplay, oppDance, autoRoll])
 
   // NOT: Eski "telefonunu yan cevir" bloklayici uyari EKRANI kaldirildi (kullanici istegi).
   // Oyun artik hem DIKEY hem YATAY oynanabilir: portre'de @media (max-width:900px) sutun
@@ -8272,7 +8296,7 @@ export default function App() {
     !gameWon &&
     !oppReplay && // §5.2: rakip hamlesi oynanırken "Atılıyor…" gösterme (replay bitince devreye girer)
     !oppDance && // rakip gele "Hamle Yok" gösterilirken benim oto-zarımı beklet
-    shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame)
+    shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame, autoRoll)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0
@@ -11400,6 +11424,9 @@ export default function App() {
         toggleSound={toggleSound}
         soundVol={soundVol}
         setSoundVol={setSoundVol}
+        autoRoll={autoRollEff}
+        toggleAutoRoll={() => setAutoRoll(!autoRollEff)}
+        autoRollWarn={cubeInPlay}
         canAnalyze={botMatch}
         canResign={!matchOver}
         loggedIn={!!user}

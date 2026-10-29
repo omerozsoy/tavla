@@ -30,6 +30,11 @@ interface Props {
   /** Ses seviyesi 0..100 (kalıcı). Slider ile ayarlanır; 0 = kapalı. */
   soundVol: number
   setSoundVol: (v: number) => void
+  /** Otomatik Zar — sıra gelince zar otomatik atılsın mı (efektif değer; küplü maçta varsayılan kapalı). */
+  autoRoll: boolean
+  toggleAutoRoll: () => void
+  /** Otomatik Zar uyarısını göster (yalnız KÜPLÜ maçta: oto-zar küp teklif fırsatını kaçırabilir). */
+  autoRollWarn: boolean
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
       Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
   canAnalyze?: boolean
@@ -59,6 +64,7 @@ export default function GameMenu(p: Props) {
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
     { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
+    { label: t('gm.autoRoll'), on: p.autoRoll, toggle: p.toggleAutoRoll },
     // NOT: "Oyun yönü" (Sağa/Sola) ve "Pul renkleri" (Siyah/Beyaz) buradan KALDIRILDI —
     // artık PROFİL > Tavla Tasarımları kartından ayarlanır (kalıcı, canlı önizlemeli).
   ]
@@ -88,6 +94,13 @@ export default function GameMenu(p: Props) {
               )}
             </button>
           ))}
+          {/* Otomatik Zar uyarısı — yalnız küplü maçta (oto-zar açıkken küp teklif fırsatı kaçabilir). */}
+          {p.autoRollWarn && (
+            <div className="gm-warn" role="note">
+              <span className="gm-warn-title">{t('gm.autoRollWarnTitle')}</span>
+              <span className="gm-warn-body">{t('gm.autoRollWarnBody')}</span>
+            </div>
+          )}
           {/* Ses seviyesi kaydırıcısı: hoparlör + slider + yüzde. 0 = kapalı. */}
           <div className="gm-row gm-volrow">
             <span className="gm-vol-ic" aria-hidden="true">

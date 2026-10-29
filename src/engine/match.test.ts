@@ -262,6 +262,32 @@ describe('barda oto-zar (rakip board kapali/acik)', () => {
   })
 })
 
+// Otomatik Zar (Oyun Menüsü) kullanıcı tercihi: pref parametresi.
+describe('Otomatik Zar kullanıcı tercihi (pref)', () => {
+  const turnsPlayed = 3
+  it('pref=true: küp teklif edilebilse DE oto-at (küp fırsatı atlanır)', () => {
+    const m = newMatch(7) // küp mevcut -> varsayılan BEKLE
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false)).toBe(false) // varsayılan
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false, true)).toBe(true) // kullanıcı açtı
+  })
+  it('pref=false: küpsüz 1-puanlıkta bile HİÇ oto-atma (elle)', () => {
+    const m = newMatch(1) // küp yok -> varsayılan OTO-AT
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false)).toBe(true) // varsayılan
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false, false)).toBe(false) // kullanıcı kapattı
+  })
+  it('pref=null/undefined: mevcut varsayılan AYNEN korunur', () => {
+    expect(shouldAutoRoll(newMatch(7), WHITE, turnsPlayed, undefined, false, null)).toBe(false)
+    expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, undefined, false, null)).toBe(true)
+  })
+  it('pref=true ama barda bir giriş AÇIK -> yine elle (bar nüansı korunur)', () => {
+    const s = emptyBoard()
+    s.bar.white = 1
+    for (let i = 18; i <= 23; i++) s.points[i] = -2
+    s.points[20] = -1 // bir giriş açık -> girebilirim
+    expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, s, false, true)).toBe(false)
+  })
+})
+
 // cubeAvailability: net GEREKCE (reason) kodlari — backend cubeAvailability ile ayni kume.
 describe('cubeAvailability (reason kodlari)', () => {
   it('merkez kup teklif edilebilir -> allowed', () => {
