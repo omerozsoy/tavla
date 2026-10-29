@@ -228,6 +228,25 @@ class MatchClockTest extends TestCase
         $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c2, self::T0 + 123)['end']['reason']);
     }
 
+    // ---- 8b) TUR-DEVRİ PRESENCE GRACE: sira sahibi TAM PRESENCE_TIMEOUT'u turun-basindan alir ----
+    public function test_turn_owner_gets_full_presence_from_turn_start(): void
+    {
+        // D7KXE/8MSFY koku: oyuncu RAKIBIN turunda uygulamayi arka plana aldi -> _seen bayatladi; sira
+        // KENDISINE gecince presence TAM PRESENCE_TIMEOUT'u turun-basindan (started_at) almali (seen'den DEGIL).
+        $c = $this->started('normal', 5); // aktif p1 (beyaz), started_at=T0, running
+        $c['moved'] = true;
+        $c['p1_seen'] = self::T0 - 10;  // p1 (aktif) sira gecmeden 10sn once gorulmus (sonra bayat)
+        $c['p2_seen'] = self::T0 + 50;  // p2 (bekleyen) present
+
+        // now=T0+55: ESKI mantik p1'i terk sayardi (55-(-10)=65>60); YENI: max(seen,started_at)=T0 -> 55<60 -> KORUNUR
+        $this->assertNull(MatchClock::maybeEnd($c, self::T0 + 55)['end'], 'tur-devri grace: 55sn icinde terk YOK');
+
+        // now=T0+65: turun-basindan 65sn gecti -> mesru ABANDON (p2 kazanir)
+        $end = MatchClock::maybeEnd($c, self::T0 + 65)['end'];
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertSame('p2', $end['winner']);
+    }
+
     // ---- 9) Sahiplik-koruma: rakip forge ile AFK'yi yonlendiremez ----
     public function test_non_owner_cannot_reset_or_redirect_clock(): void
     {

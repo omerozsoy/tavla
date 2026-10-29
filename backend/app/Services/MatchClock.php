@@ -292,8 +292,18 @@ class MatchClock
         $p1s = $clock['p1_seen'] ?? null;
         $p2s = $clock['p2_seen'] ?? null;
         $limit = self::PRESENCE_TIMEOUT + self::GRACE;
-        $p1Gone = $p1s !== null && ($now - (float) $p1s) > $limit;
-        $p2Gone = $p2s !== null && ($now - (float) $p2s) > $limit;
+        // TUR-DEVRİ PRESENCE GRACE (D7KXE/8MSFY mobil bfcache/arka-plan ABANDON koku): SIRA SAHİBİNİN
+        // presence'i, turun BAŞLADIĞI andan (started_at) itibaren ölçülür. Rakibin turunda uygulamayı
+        // arka plana alıp _seen'i bayatlayan oyuncu, sıra KENDİSİNE geçtiğinde TAM PRESENCE_TIMEOUT alır
+        // (rakibin turu boyunca yokluğu kendi aleyhine sayılmaz). ANTI-STALL ZAYIFLAMAZ: oyuncu kendi
+        // turunda zaten PRESENCE_TIMEOUT alıyordu; bu yalnız ölçüm başlangıcını turun-başına çeker
+        // (seen >= started_at ise HİÇBİR etkisi yok). Bekleyen tarafın presence'i + staller-shield AYNI.
+        $turnActive = $clock['turn_slot'] ?? null;
+        $turnStartTs = (float) ($clock['started_at'] ?? $now);
+        $p1Eff = ($turnActive === 'p1' && $p1s !== null) ? max((float) $p1s, $turnStartTs) : $p1s;
+        $p2Eff = ($turnActive === 'p2' && $p2s !== null) ? max((float) $p2s, $turnStartTs) : $p2s;
+        $p1Gone = $p1Eff !== null && ($now - (float) $p1Eff) > $limit;
+        $p2Gone = $p2Eff !== null && ($now - (float) $p2Eff) > $limit;
         if ($p1Gone !== $p2Gone) {
             // KOK FIX (J9N5R, 2026-10-26; RAFINE 2026-10-26): presence-ABANDON kararini saatin kimde
             // oldugu + BEKLEYENIN NE ZAMAN kayboldugu belirler:

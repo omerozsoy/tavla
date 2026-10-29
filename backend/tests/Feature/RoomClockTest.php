@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\MatchMove;
 use App\Models\Room;
+use App\Models\Tournament;
 use App\Models\User;
+use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -16,6 +19,7 @@ class RoomClockTest extends TestCase
     use RefreshDatabase;
 
     private ?User $p1 = null;
+
     private ?User $p2 = null;
 
     protected function setUp(): void
@@ -29,6 +33,7 @@ class RoomClockTest extends TestCase
         $this->p1 = User::factory()->create();
         $this->p2 = User::factory()->create();
         Sanctum::actingAs($this->p1);
+
         return Room::create([
             'code' => $code,
             'p1_token' => 't1', 'p1_user_id' => $this->p1->id,
@@ -138,7 +143,7 @@ class RoomClockTest extends TestCase
         $this->p1 = User::factory()->create();
         $this->p2 = User::factory()->create();
         $now = microtime(true);
-        $state = array_merge(\App\Support\Backgammon::initialState(), [
+        $state = array_merge(Backgammon::initialState(), [
             'turn' => 'white', 'dice' => [6, 2], 'diceUsed' => [false, false],
         ]);
         Room::create([
@@ -171,7 +176,7 @@ class RoomClockTest extends TestCase
         $room = Room::where('code', 'CLKROLL')->first();
         $this->assertSame('finished', $room->status);
 
-        $moves = \App\Models\MatchMove::where('room_code', 'CLKROLL')->where('kind', 'move')->get();
+        $moves = MatchMove::where('room_code', 'CLKROLL')->where('kind', 'move')->get();
         $this->assertCount(1, $moves);               // atılan zar kaydedildi
         $this->assertSame([6, 2], $moves[0]->dice);
         $this->assertSame('white', $moves[0]->player); // kaybeden (sıra sahibi) beyaz
@@ -185,7 +190,7 @@ class RoomClockTest extends TestCase
         $this->p1 = User::factory()->create();
         $this->p2 = User::factory()->create();
         $now = microtime(true);
-        $state = array_merge(\App\Support\Backgammon::initialState(), [
+        $state = array_merge(Backgammon::initialState(), [
             'turn' => 'white', 'dice' => [6, 2], 'diceUsed' => [false, false],
         ]);
         Room::create([
@@ -213,12 +218,12 @@ class RoomClockTest extends TestCase
         Sanctum::actingAs($this->p2);
         $this->getJson('/api/rooms/CLKEND')->assertOk();
 
-        $end = \App\Models\MatchMove::where('room_code', 'CLKEND')->where('kind', 'end')->first();
+        $end = MatchMove::where('room_code', 'CLKEND')->where('kind', 'end')->first();
         $this->assertNotNull($end, 'terk/timeout sonrasi end satiri yazilmali');
         $this->assertSame('black', $end->winner); // sıra sahibi beyaz süreden düştü -> siyah kazanır
 
         // buildMat artık sonuç satırı üretir (gnubg native: düz "Wins", ayrı "Resigns" anahtarı yok).
-        $mat = \App\Models\MatchMove::buildMat('CLKEND', ['matchLength' => 1, 'whiteName' => 'W', 'blackName' => 'B']);
+        $mat = MatchMove::buildMat('CLKEND', ['matchLength' => 1, 'whiteName' => 'W', 'blackName' => 'B']);
         $this->assertStringContainsString('Wins 1 point', $mat);
     }
 
@@ -299,7 +304,7 @@ class RoomClockTest extends TestCase
         $room = $this->playingRoom('GHST', 'normal', 3);
         $this->putJson('/api/rooms/GHST', ['token' => 't1', 'state' => $this->state(3)])->assertOk();
         // SUNUCU-OTORİTER hamle kaydı: yalnız white (p1 = terk edecek olan) oynadı; black (p2) HİÇ.
-        \App\Models\MatchMove::create([
+        MatchMove::create([
             'room_id' => $room->id, 'room_code' => 'GHST', 'game_no' => 1, 'seq' => 0, 'ord' => 0,
             'player' => 'white', 'kind' => 'move', 'dice' => [3, 1], 'notation' => '8/5 6/5',
         ]);
@@ -319,11 +324,11 @@ class RoomClockTest extends TestCase
     // ---- KORUMA: maç ZATEN sonuçlandıysa geç terk KAZANANI ters çevirmesin (DrBakır bug'ı) ----
     public function test_leave_does_not_overturn_decided_match(): void
     {
-        $winner = \App\Models\User::create([
+        $winner = User::create([
             'first_name' => 'Win', 'last_name' => 'T', 'country' => '', 'nickname' => 'Winner',
             'email' => 'win@t.co', 'password' => bcrypt('secret123'),
         ]);
-        $loser = \App\Models\User::create([
+        $loser = User::create([
             'first_name' => 'Los', 'last_name' => 'T', 'country' => '', 'nickname' => 'Loser',
             'email' => 'los@t.co', 'password' => bcrypt('secret123'),
         ]);
@@ -391,7 +396,10 @@ class RoomClockTest extends TestCase
         $room->refresh();
         $clock = $room->clock;
         $now = microtime(true);
-        $clock['started_at'] = $now - 5;
+        // GERÇEKÇİ "ikisi de terk": son devir de ESKİ (started_at seen'lerden önce). Turu geçiren
+        // oyuncu o an görülür (seen>=started_at) -> "tur az önce geçti ama ikisi de 70-80sn görülmedi"
+        // olamaz; tur-devri presence grace'i (aktif=started_at) de bu eski started_at ile etkisiz.
+        $clock['started_at'] = $now - 90;
         $clock['p1_seen'] = $now - 70; // ikisi de terk (70 > 60+3)
         $clock['p2_seen'] = $now - 80;
         $room->clock = $clock;
@@ -451,9 +459,9 @@ class RoomClockTest extends TestCase
         $this->assertNotSame('ABANDON', $room->end_reason); // no-contest DEGIL: gercek galibiyet
     }
 
-    private function user(string $email): \App\Models\User
+    private function user(string $email): User
     {
-        return \App\Models\User::create([
+        return User::create([
             'first_name' => 'U', 'last_name' => 'T', 'country' => '', 'nickname' => $email,
             'email' => $email, 'password' => bcrypt('secret123'),
         ]);
@@ -471,7 +479,7 @@ class RoomClockTest extends TestCase
         $room->clock = ['p1_seen' => $now - 70, 'p2_seen' => $now - 80]; // IKISI DE terk (>48)
         $room->save();
 
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $res = $this->getJson('/api/me/active-rooms')->assertOk();
         $this->assertCount(0, $res->json('rooms')); // hayalet banner ANINDA dustu
 
@@ -494,7 +502,7 @@ class RoomClockTest extends TestCase
         $room->clock = ['p1_seen' => $now - 70, 'p2_seen' => $now - 1]; // ben uzaktayim, rakip present
         $room->save();
 
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $res = $this->getJson('/api/me/active-rooms')->assertOk();
         $this->assertCount(1, $res->json('rooms')); // "Maça dön" icin banner KALIR
 
@@ -518,7 +526,7 @@ class RoomClockTest extends TestCase
         $room->clock = ['running' => true, 'turn_slot' => 'p1', 'p1_seen' => $now - 30, 'p2_seen' => $now - 1];
         $room->save();
 
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $this->getJson('/api/me/active-rooms')->assertOk();
 
         $room->refresh();
@@ -542,14 +550,14 @@ class RoomClockTest extends TestCase
         $room->save();
 
         // Süren turnuva: bracket'te bu oda kodunu taşıyan aktif maç.
-        \App\Models\Tournament::create([
+        Tournament::create([
             'name' => 'T', 'status' => 'running', 'size' => 2,
             'players' => [['id' => $me->id], ['id' => $opp->id]],
             'bracket' => [[['key' => 'r0m0', 'room' => 'TRM1',
                 'p1' => ['id' => $me->id], 'p2' => ['id' => $opp->id]]]],
         ]);
 
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $r = $this->getJson('/api/me/active-rooms')->assertOk()->json('rooms.0');
         $this->assertTrue($r['tournament']);
         $this->assertSame('r0m0', $r['tmatch']);
@@ -561,7 +569,7 @@ class RoomClockTest extends TestCase
         $room2->p2_user_id = $opp->id;
         $room2->clock = ['p1_seen' => $now - 1, 'p2_seen' => $now - 1];
         $room2->save();
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $rows = collect($this->getJson('/api/me/active-rooms')->assertOk()->json('rooms'));
         $cas = $rows->firstWhere('code', 'CAS1');
         $this->assertFalse($cas['tournament']);
@@ -581,14 +589,14 @@ class RoomClockTest extends TestCase
         $room->save();
 
         // Oyuncunun ŞU AN hazır (kazananı belirsiz) turnuva maçı var.
-        \App\Models\Tournament::create([
+        Tournament::create([
             'name' => 'T', 'status' => 'running', 'size' => 2,
             'players' => [['id' => $me->id], ['id' => $opp->id]],
             'bracket' => [[['key' => 'r0m0',
                 'p1' => ['id' => $me->id], 'p2' => ['id' => $opp->id]]]],
         ]);
 
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $this->postJson('/api/rooms/NCR1/leave', ['token' => 'tk1', 'tournament' => true])->assertOk();
 
         $room->refresh();
@@ -608,7 +616,7 @@ class RoomClockTest extends TestCase
         $room->save();
         // Hazır turnuva maçı YOK -> tournament flag'i onurlanmaz -> normal ABANDON (rakip=p2 kazanır).
 
-        \Laravel\Sanctum\Sanctum::actingAs($me);
+        Sanctum::actingAs($me);
         $this->postJson('/api/rooms/NCR2/leave', ['token' => 'tk1', 'tournament' => true])->assertOk();
 
         $room->refresh();
@@ -638,7 +646,7 @@ class RoomClockTest extends TestCase
             'bot_level' => 10,
             'version' => 1,
             'server_version' => 2,
-            'server_state' => \App\Support\Backgammon::initialState(),
+            'server_state' => Backgammon::initialState(),
             'server_match' => [
                 'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
                 'done' => false, 'winner' => null,
@@ -694,7 +702,7 @@ class RoomClockTest extends TestCase
             'bot_level' => 12,
             'version' => 1,
             'server_version' => 2,
-            'server_state' => \App\Support\Backgammon::initialState(),
+            'server_state' => Backgammon::initialState(),
             'server_match' => [
                 'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
                 'done' => false, 'winner' => null,
