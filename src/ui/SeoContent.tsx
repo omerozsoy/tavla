@@ -12,6 +12,7 @@
  */
 
 import { Icon } from './Icon'
+import { IS_NATIVE_APP } from '../appEnv'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { useInfoPageBody } from './useInfoPage'
@@ -580,6 +581,10 @@ export default function SeoContent({ variant, onClose }: Props) {
   const { t } = useT()
   // Ana sayfa + backgammon(EN) icin DB body cekmeyiz (hep hardcoded).
   const dbBody = useInfoPageBody(variant === 'home' || variant === 'backgammon' ? null : variant)
+
+  // Kurulu APK'da SEO içeriğini ASLA gösterme (arama motoru için; app kullanıcısına gereksiz).
+  // Hook'lardan SONRA (hook sırası bozulmasın).
+  if (IS_NATIVE_APP) return null
 
   if (variant === 'home') {
     return <HomeContent />

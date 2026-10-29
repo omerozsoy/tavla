@@ -10,6 +10,8 @@
  * LANDING (noscript) — ikisi birlikte JS'li/JS'siz tüm botları kapsar.
  */
 
+import { IS_NATIVE_APP } from '../appEnv'
+
 export type SeoAppPage = 'yeni-oyun' | 'yz-ile-oyna' | 'arkadasinla-oyna'
 
 function YeniOyun() {
@@ -93,6 +95,7 @@ const PAGES: Record<SeoAppPage, () => React.JSX.Element> = {
 }
 
 export default function SeoAppSection({ page }: { page: SeoAppPage }) {
+  if (IS_NATIVE_APP) return null // kurulu APK'da SEO içeriği gösterme (arama motoru için)
   const Body = PAGES[page]
   if (!Body) return null
   return (

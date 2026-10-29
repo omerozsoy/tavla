@@ -161,6 +161,7 @@ const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
+import { IS_NATIVE_APP } from './appEnv'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
@@ -861,13 +862,6 @@ const OVER_TOTAL = CLOCK_PRESETS.normal.over
 
 // Arkadaş davet: /?ref=KOD ile gelen ziyaretçinin kodunu kayda kadar sakla (modül yüklenince bir kez).
 captureRef()
-
-// Kurulu APK WebView mi? (sadece-app alt gezinme çubuğu için). Android WebView UA'sı 'wv' içerir;
-// Facebook/Instagram in-app tarayıcıları HARİÇ tutulur (onlar bizim app değil). Tarayıcı/masaüstünde false.
-const IS_NATIVE_APP =
-  typeof navigator !== 'undefined' &&
-  /;\s*wv\)/i.test(navigator.userAgent) &&
-  !/FBAN|FBAV|FB_IAB|Instagram|GSA\//i.test(navigator.userAgent)
 
 export default function App() {
   const { t, lang, setLang } = useT()
@@ -10789,37 +10783,36 @@ export default function App() {
         onHome={menuProps.onHome}
       />
     ),
-          footer: <Footer columns={footerColsRendered} />,
+          // Kurulu APK'da footer GİZLE: alt gezinme çubuğu (BottomNav) footer'ın yerini alır,
+          // uzun footer app'te gereksiz + alt menüyle çakışır.
+          footer: IS_NATIVE_APP ? undefined : <Footer columns={footerColsRendered} />,
     // sponsors: SADECE ana sayfada (home dalinda ayrica gecilir); diger lobi sayfalarinda gosterme.
   }
   // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
+  // Alt gezinme çubuğu (BottomNav): YALNIZ kurulu APK'da (IS_NATIVE_APP) + maç DIŞI (home). body'ye
+  // portal'landığından TÜM lobi trailing'lerine koyulabilir (home/online/alt-sayfa). Oyun görünümünde
+  // home=false -> gizli. Profil = kendi profilim (onMyStats). TEK yerde tanımlanıp her trailing'de kullanılır.
+  const bottomNavEl =
+    IS_NATIVE_APP && home ? (
+      <BottomNav
+        active={
+          activeKey === 'tournaments' ? 'turnuvalar' : editProfile ? 'profil' : activeKey === '' ? 'ana' : undefined
+        }
+        items={[
+          { key: 'ana', label: 'Ana Sayfa', icon: 'home', onClick: menuProps.onHome },
+          { key: 'oyna', label: 'Oyna', icon: 'play', onClick: menuProps.onNewGame },
+          { key: 'turnuvalar', label: 'Turnuvalar', icon: 'trophy', onClick: menuProps.onTournaments },
+          { key: 'profil', label: 'Profil', icon: 'user', onClick: menuProps.onMyStats },
+        ]}
+      />
+    ) : null
   const lobbyTrailing = (
     <>
       {menuPages}
       {authModal}
       {menuOverlays}
       {bugReport}
-      {/* Alt gezinme çubuğu: YALNIZ kurulu APK'da + maç DIŞI (home). Oyun görünümü farklı trailing
-          kullandığından burada home guard'ı maçta gizler. Profil = kendi profilim (onMyStats). */}
-      {IS_NATIVE_APP && home && (
-        <BottomNav
-          active={
-            activeKey === 'tournaments'
-              ? 'turnuvalar'
-              : editProfile
-                ? 'profil'
-                : activeKey === ''
-                  ? 'ana'
-                  : undefined
-          }
-          items={[
-            { key: 'ana', label: 'Ana Sayfa', icon: 'home', onClick: menuProps.onHome },
-            { key: 'oyna', label: 'Oyna', icon: 'play', onClick: menuProps.onNewGame },
-            { key: 'turnuvalar', label: 'Turnuvalar', icon: 'trophy', onClick: menuProps.onTournaments },
-            { key: 'profil', label: 'Profil', icon: 'user', onClick: menuProps.onMyStats },
-          ]}
-        />
-      )}
+      {bottomNavEl}
     </>
   )
 
@@ -11038,6 +11031,7 @@ export default function App() {
                 (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
             {menuOverlays}
             {bugReport}
+            {bottomNavEl}
             {/* Siteye ilk giriste KARE reklam pop-up'i (panelden yonetilir; sikligi/kitlesi admin). */}
             <EntryPopupModal loggedIn={!!user} />
             {/* Cerez onay banner'i + tercih modali (consent teknik olarak uygulanir; bkz consent.ts) */}
@@ -11336,6 +11330,7 @@ export default function App() {
             {authModal}
             {menuOverlays}
             {bugReport}
+            {bottomNavEl}
           </>
         }
       >
