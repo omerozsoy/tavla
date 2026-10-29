@@ -388,10 +388,23 @@ export default function Auth({
 
   async function doLogin(e?: React.FormEvent) {
     e?.preventDefault()
+    // Android/iOS OTOMATİK-DOLDURMA desync: kontrollü input'ta (şifre yöneticisi doldurunca) onChange
+    // tetiklenmeyip state BOŞ kalabilir -> ekranda dolu görünür ama giriş "boş" sanılır. DOM değerini
+    // source-of-truth al (state'i de güncelle ki UI/validasyon doğru olsun).
+    const idEl = document.getElementById('login-id') as HTMLInputElement | null
+    const pwEl = document.getElementById('login-pw') as HTMLInputElement | null
+    const idVal = (idEl?.value ?? loginId).trim()
+    const pwVal = pwEl?.value ?? loginPw
+    if (idEl && idEl.value !== loginId) setLoginId(idEl.value)
+    if (pwEl && pwEl.value !== loginPw) setLoginPw(pwEl.value)
+    if (!idVal || !pwVal) {
+      setError(t('auth.badLogin'))
+      return
+    }
     setError('')
     setBusy(true)
     try {
-      const user = await api.login(loginId.trim(), loginPw)
+      const user = await api.login(idVal, pwVal)
       onAuthed(user)
     } catch (err) {
       // Giriste alan bazli mesaj yerine tek anlasilir uyari: yalniz inline banner (formun
@@ -792,8 +805,10 @@ export default function Auth({
               <label>
                 {t('auth.loginId')}
                 <input
+                  id="login-id"
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
+                  onBlur={(e) => setLoginId(e.target.value)} // otomatik-doldurma desync senkronu
                   onKeyDown={loginOnEnter}
                   autoComplete="username"
                   enterKeyHint="next"
@@ -803,9 +818,11 @@ export default function Auth({
                 {t('reg.password')}
                 <div className="pw-field">
                   <input
+                    id="login-pw"
                     type={showLoginPw ? 'text' : 'password'}
                     value={loginPw}
                     onChange={(e) => setLoginPw(e.target.value)}
+                    onBlur={(e) => setLoginPw(e.target.value)} // otomatik-doldurma desync senkronu
                     onKeyDown={loginOnEnter}
                     autoComplete="current-password"
                     enterKeyHint="go"

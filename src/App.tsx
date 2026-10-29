@@ -8241,10 +8241,14 @@ export default function App() {
   }
 
   function handleLogout() {
-    apiLogout()
     setCartItems([]) // A-30: bellekteki sepet de (effect onu yeniden localStorage'a yazmasın)
     setUser(null)
     setGuestProfile(null)
+    // Çıkıştan sonra GİRİŞ sayfasına (/giris) yönlen. apiLogout sunucuda token'ı iptal edip YEREL
+    // token'ı sildikten SONRA sert yönlendir -> yeniden yüklenen uygulama token'ı görmez (deep-link
+    // /giris token varsa '/'e atardı) ve tüm bellekteki oturum durumu (oyun/sepet/profil) temizlenir.
+    // .finally: sunucu POST başarısız olsa da yönlendirme yapılır (yerel token zaten silinir).
+    void apiLogout().finally(() => window.location.assign('/giris'))
   }
 
   function nextGame() {
@@ -10796,12 +10800,21 @@ export default function App() {
     IS_NATIVE_APP && home ? (
       <BottomNav
         active={
-          activeKey === 'tournaments' ? 'turnuvalar' : editProfile ? 'profil' : activeKey === '' ? 'ana' : undefined
+          activeKey === 'tournaments'
+            ? 'turnuvalar'
+            : activeKey === 'shop'
+              ? 'magaza'
+              : editProfile
+                ? 'profil'
+                : activeKey === ''
+                  ? 'ana'
+                  : undefined
         }
         items={[
           { key: 'ana', label: 'Ana Sayfa', icon: 'home', onClick: menuProps.onHome },
           { key: 'oyna', label: 'Oyna', icon: 'play', onClick: menuProps.onNewGame },
           { key: 'turnuvalar', label: 'Turnuvalar', icon: 'trophy', onClick: menuProps.onTournaments },
+          { key: 'magaza', label: 'Mağaza', icon: 'shop', onClick: menuProps.onShop },
           { key: 'profil', label: 'Profil', icon: 'user', onClick: menuProps.onMyStats },
         ]}
       />
