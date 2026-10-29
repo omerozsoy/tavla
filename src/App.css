@@ -16310,6 +16310,38 @@ body:has(.spectate-view) .app.lobby {
 .an-view-label.you {
   color: var(--tv-gold);
 }
+/* Tahta üstü maç skoru ("oyun kaç kaç"): adlar + puanlar, ortalı, tahtadan hemen önce. */
+.an-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.an-score-side {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.an-score-nm {
+  max-width: 10ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.an-score b {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.an-score-sep {
+  opacity: 0.5;
+}
+.an-score-len {
+  opacity: 0.6;
+  font-size: 0.74rem;
+}
 .register-sub.small {
   font-size: 0.85rem;
   padding: 20px 8px;

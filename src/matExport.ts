@@ -586,3 +586,33 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
 
   return out.join('\n') + '\n'
 }
+
+// Oyun başı maç skorları: her oyun index'i (0-tabanlı, withGameIndex/splitGames ile AYNI numaralama)
+// için O OYUN BAŞLAMADAN önceki {white,black} skoru. buildMatXg ile TEK kaynak — aynı splitGames +
+// resolveGameResult (gamePointsWon = cube×mult); yalnız .mat string yerine skor dizisi döner.
+// Sonucu türetilemeyen oyun (eksik/truncated log) skoru İLERLETMEZ (best-effort; sonraki oyunlar son
+// bilinen skoru gösterir). MatchReport o anki hamlenin oyununun skorunu tahta üstünde gösterir.
+export function gameStartScores(
+  log: MoveLogEntry[],
+  matchLength: number,
+  results?: GameResultInput[],
+): { white: number; black: number }[] {
+  const loggedLen = log.find((e) => typeof e.mctx?.matchLen === 'number' && e.mctx.matchLen > 0)?.mctx?.matchLen
+  const len = loggedLen ?? matchLength
+  const games = splitGames(log)
+  const aligned = !!results && results.length === games.length
+  const out: { white: number; black: number }[] = []
+  let sw = 0
+  let sb = 0
+  games.forEach((rawGame, gi) => {
+    out[gi] = { white: sw, black: sb } // bu oyun BAŞLAMADAN önceki skor
+    const res = resolveGameResult(actsOf(dedupeTurns(rawGame)), aligned ? (results as GameResultInput[])[gi] : null)
+    if (!res) return
+    const before = res.winner === 'white' ? sw : sb
+    const won = capPoints(res.gamePointsWon, len, before, res.cubeValue)
+    const after = len > 0 ? Math.min(len, before + won) : before + won
+    if (res.winner === 'white') sw = after
+    else sb = after
+  })
+  return out
+}

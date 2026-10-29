@@ -11,7 +11,7 @@ import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
-import { buildMatXg, withGameIndex, type GameResultInput } from '../matExport'
+import { buildMatXg, withGameIndex, gameStartScores, type GameResultInput } from '../matExport'
 import { fetchGameLogMat, fetchMatchMat } from '../api'
 import type { GameState, Player, Step } from '../engine/types'
 
@@ -184,6 +184,11 @@ export default function MatchReport({
   const rows = worstFirst ? mistakes.slice().sort((a, b) => lossOf(b.e) - lossOf(a.e)) : ordered
   // Maç kaç oyun sürdü? (game index'leri) -> 1'den fazlaysa oyun ayracı/rozeti göster.
   const gameCount = new Set(log.filter((e) => e.game != null).map((e) => e.game)).size
+  // O anki hamlenin oyunu BAŞLAMADAN önceki maç skoru (tahta üstünde "oyun kaç kaç"). gameResults
+  // (canlı maç) verilmişse otoriter, yoksa log'dan türetilir (geçmiş analizler). Tek oyunlu/1-puanlık
+  // maçta anlamsız (hep 0-0) -> yalnız çok oyunlu ya da 1'den uzun maçta göster.
+  const gameScores = useMemo(() => gameStartScores(log, matchLength, gameResults), [log, matchLength, gameResults])
+  const showScore = matchLength > 1 || gameCount > 1
 
   // Kup tavsiyesi etiketi (take/drop veya double-* icin dogru anahtar)
   const recLabel = (rec: string) =>
@@ -537,6 +542,19 @@ export default function MatchReport({
 
               {/* Sag: secili kararin tahtasi + (pul) siralı adaylar VEYA (küp) XG-stili küp analizi */}
               <div className="analysis-detail">
+                {/* TAHTA ÜSTÜNDE MAÇ SKORU: o hamlenin oyunu başlamadan önceki "oyun kaç kaç". */}
+                {showScore && boardState && (() => {
+                  const s = gameScores[cur?.game ?? 0]
+                  if (!s) return null
+                  return (
+                    <div className="an-score">
+                      <span className="an-score-side"><span className="an-score-nm">{whiteName}</span><b>{s.white}</b></span>
+                      <span className="an-score-sep">–</span>
+                      <span className="an-score-side"><b>{s.black}</b><span className="an-score-nm">{blackName}</span></span>
+                      {matchLength > 1 && <span className="an-score-len">/ {matchLength}</span>}
+                    </div>
+                  )
+                })()}
                 {cur?.cube ? (
                   <>
                     {/* KÜP kararı: karar anındaki tahta (varsa) + küpün değeri/sahibi, ardından
