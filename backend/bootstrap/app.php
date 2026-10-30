@@ -1,8 +1,25 @@
 <?php
 
+use App\Exceptions\TransientAnalysisException;
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\ShieldTracker;
+use App\Http\Middleware\SiteGate;
+use App\Support\Alert;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Queue\MaxAttemptsExceededException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
+use Psy\Exception\Exception;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,15 +30,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'admin' => EnsureAdmin::class,
         ]);
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(SecurityHeaders::class);
         // "Kapali test" sifre kapisi: SITE_PASSWORD doluysa tum /api istekleri X-Site-Gate ister.
         // En basta kossun ki reddedilen istek hicbir controller'a/hataya ulasmasin.
-        $middleware->prependToGroup('api', \App\Http\Middleware\SiteGate::class);
+        $middleware->prependToGroup('api', SiteGate::class);
         // Guvenlik Kalkani izleyicisi: TUM /api isteklerini yanit-sonrasi kaydeder (kim, nerede,
         // kac istek, hata/spin/tarama, risk). Sona eklenir ki auth cozulmus + durum kodu belli olsun.
-        $middleware->appendToGroup('api', \App\Http\Middleware\ShieldTracker::class);
+        $middleware->appendToGroup('api', ShieldTracker::class);
         // KÖK FIX ("Route [login] not defined" 500'leri — 1/2): Laravel 11 VARSAYILAN olarak
         // redirectGuestsTo(fn () => route('login')) kurar. Bu backend SPA/mobil API'dir; 'login' ADLI
         // web rotası YOKTUR. auth:sanctum'a takılan kimliksiz + JSON-beklemeyen istek (crawler / adres
@@ -40,24 +57,35 @@ return Application::configure(basePath: dirname(__DIR__))
         // route('login')) yoluna GİRMEZ -> RouteNotFoundException (500) yerine 401 JSON döner. Filament
         // /admin kendi guard'ını (filament.admin.auth.login) kullanır -> etkilenmez.
         $exceptions->shouldRenderJsonWhen(
-            fn ($request, \Throwable $e) => $request->is('api/*') || $request->expectsJson()
+            fn ($request, Throwable $e) => $request->is('api/*') || $request->expectsJson()
         );
+        // SENTRY SUSTURMA (kök — issue 157231002/157180076): Aşağıdaki report() callback'i VOID döner
+        // -> yalnız ÖZEL alarmı (e-posta/WA) atlar; Sentry (sentry-laravel) AYRI raporlar ve void dönüş
+        // onu DURDURMAZ -> Sentry alarmı atmaya devam ediyordu. dontReport Laravel'in shouldntReport
+        // listesine girer; sentry-laravel bunu RESPECT eder -> hem Sentry hem log gürültüsü kesilir.
+        // CannotUpdateLockedPropertyException = Livewire'ın @locked guard'ı: `/livewire/update`'e gelen
+        // BAYAT snapshot (deploy anında admin'in açık Filament sayfası) VEYA bot/tamper isteği kilitli
+        // bir özelliği güncellemeye çalışınca fırlar. SUNUCU HATASI DEĞİL (düzeltilecek kod yok; sayfa
+        // yenileyince geçer) -> gürültü. Gerçek 500'ler ETKİLENMEZ.
+        $exceptions->dontReport([
+            CannotUpdateLockedPropertyException::class,
+        ]);
         // AKSAMA UYARISI: canlı bir istek SUNUCU HATASI (500) ile patlarsa admin'e e-posta +
         // WhatsApp. Beklenen/istemci hataları (validation 422, auth 401/403, 404, throttle 429)
         // ATLANIR -> yalnız gerçek 500'ler uyarır. 15 dk spam-limit. Test'te + normal loglama bozulmaz.
-        $exceptions->report(function (\Throwable $e): void {
+        $exceptions->report(function (Throwable $e): void {
             if (app()->environment('testing')) {
                 return;
             }
             // Beklenen (500 olmayan) hataları atla.
-            if ($e instanceof \Illuminate\Validation\ValidationException
-                || $e instanceof \Illuminate\Auth\AuthenticationException
-                || $e instanceof \Illuminate\Auth\Access\AuthorizationException
-                || $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
-                || $e instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException) {
+            if ($e instanceof ValidationException
+                || $e instanceof AuthenticationException
+                || $e instanceof AuthorizationException
+                || $e instanceof ModelNotFoundException
+                || $e instanceof ThrottleRequestsException) {
                 return;
             }
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+            if ($e instanceof HttpExceptionInterface
                 && $e->getStatusCode() < 500) {
                 return;
             }
@@ -65,14 +93,14 @@ return Application::configure(basePath: dirname(__DIR__))
             // geçici erişilemez/degrade iken SAHTE 0.0 yazmamak için BİLEREK fırlatır -> $tries/backoff
             // retry + heal cron temiz rerun'da gerçek PR'ı yazar. Bu SUNUCU HATASI DEĞİL: loglanır ama
             // "cli/queue" 🔴 500 alarmı GÖNDERİLMEZ (deadlock ile aynı mantık). Gerçek 500'ler etkilenmez.
-            if ($e instanceof \App\Exceptions\TransientAnalysisException) {
+            if ($e instanceof TransientAnalysisException) {
                 return;
             }
             // `php artisan tinker` oturumunda girilen hatalı PHP (ör. satır başında `\App\...`) PsySH'in
             // ParseErrorException'ını fırlatır -> "cli/queue" 🔴 500 alarmı spam ediyordu (12 kez, hep
             // elle tinker serilerinde). Psy YALNIZ interaktif tinker'da çalışır (prod istek/kuyruk yolunda
             // ASLA) -> hiçbir Psy exception'ı gerçek SUNUCU HATASI DEĞİL: loglanır ama alarm GÖNDERİLMEZ.
-            if ($e instanceof \Psy\Exception\Exception) {
+            if ($e instanceof Exception) {
                 return;
             }
             // KUYRUK-worker MaxAttemptsExceededException: bir iş worker --timeout'unu aşınca (ör. yavaş
@@ -80,7 +108,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // yeniden alınınca framework bunu fırlatır. Bu bir İSTEK 500'ü DEĞİL (yalnız cli/queue'da olur)
             // -> "🔴 Sunucu HATASI (500)" spam'i. Gerçek job hataları ZATEN Queue::failing ile (kendi
             // per-job filtresiyle; best-effort WarmMatchAnalysisJob orada atlanır) alarmlanır -> bu yolda sus.
-            if ($e instanceof \Illuminate\Queue\MaxAttemptsExceededException) {
+            if ($e instanceof MaxAttemptsExceededException) {
                 return;
             }
             // LIVEWIRE/FILAMENT istemci-kaynaklı "kilitli özellik" ihlali: `/livewire/update`'e gelen
@@ -89,7 +117,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // çalışınca Livewire bunu GÜVENLİK guard'ı olarak fırlatır. Bu SUNUCU HATASI DEĞİL
             // (düzeltilecek kod yok; sayfa yenileyince geçer) -> loglanır ama "🔴 500" alarmı + Sentry
             // GÖNDERİLMEZ (sahte 500 gürültüsü; 157180076). Gerçek 500'ler etkilenmez.
-            if ($e instanceof \Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException) {
+            if ($e instanceof CannotUpdateLockedPropertyException) {
                 return;
             }
             // GEÇİCİ DB kilit hataları (InnoDB deadlock 1213 / lock-wait timeout 1205 / SQLSTATE 40001):
@@ -97,7 +125,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // job INSERT'i arasında BEKLENEN + kendiliğinden düzelen çakışmadır (kaybeden işlem geri
             // alınır, worker devam eder, iş kaybı YOK). Loglanır ama UYARI (e-posta/WA) GÖNDERİLMEZ
             // -> "cli/queue" 500 spam'i olmaz. Gerçek 500'ler etkilenmez.
-            if ($e instanceof \Illuminate\Database\QueryException) {
+            if ($e instanceof QueryException) {
                 // MESAJ-tabanlı (kurşun geçirmez): getCode/errorInfo sürüme göre değişebilir; hata
                 // metni deadlock imzasını DAİMA taşır ("SQLSTATE[40001] ... 1213 Deadlock ...").
                 $m = $e->getMessage();
@@ -132,10 +160,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 \Sentry\captureException($e);
             }
             try {
-                if (\Illuminate\Support\Facades\Cache::get('alert:http500:last')) {
+                if (Cache::get('alert:http500:last')) {
                     return; // 15 dk penceresi -> spam bastır
                 }
-                \Illuminate\Support\Facades\Cache::put('alert:http500:last', time(), now()->addMinutes(15));
+                Cache::put('alert:http500:last', time(), now()->addMinutes(15));
                 // Query string room/PAT/reset token'ları alert kanallarına taşınmasın.
                 $url = app()->runningInConsole()
                     ? 'cli/queue'
@@ -145,11 +173,11 @@ return Application::configure(basePath: dirname(__DIR__))
                     '$1[REDACTED]',
                     (string) $e->getMessage()
                 ) ?: 'redacted-error';
-                \App\Support\Alert::send(
-                    "🔴 Sunucu HATASI (500): ".get_class($e)."\n".$error."\nURL: ".$url,
+                Alert::send(
+                    '🔴 Sunucu HATASI (500): '.get_class($e)."\n".$error."\nURL: ".$url,
                     'TavlaTV — Sunucu Hatası (500)'
                 );
-            } catch (\Throwable $x) {
+            } catch (Throwable $x) {
                 // uyarı mekanizması istek akışını asla bozmasın
             }
         });
