@@ -10131,19 +10131,20 @@ html.fs-active .account-bar {
   background: color-mix(in srgb, var(--tv-brick, #a83a2b) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--tv-brick, #a83a2b) 42%, transparent);
 }
-/* KONTRAST: koyu-kırmızı zemin üzerinde metin okunabilir olsun -> başlık açık terracotta,
-   gövde neredeyse tam metin rengi (eski brick%55 başlık + --muted gövde zemine karışıyordu). */
+/* KONTRAST: menü paneli HER TEMADA koyu (rgba(20,24,40)) -> metin --text'e BAĞLANAMAZ
+   (açık/parşömen temasında --text koyu mürekkep olur = koyu-üstüne-koyu, okunmaz). Panel
+   gibi tema-bağımsız açık renk (--tv-white) kullan. */
 .gm-warn-title {
   font-size: 0.82rem;
   font-weight: 700;
-  /* açık warm başlık (çoğu metin + az brick) -> koyu-kırmızı zeminde net. */
-  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 18%, var(--text));
+  /* açık warm başlık (çoğu beyaz + az brick) -> koyu panelde her temada net. */
+  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 22%, var(--tv-white, #fff));
 }
 .gm-warn-body {
   font-size: 0.78rem;
   line-height: 1.45;
-  /* SOLID (transparent DEĞİL) -> metin kırmızı zemini ememez, soluklaşmaz. */
-  color: color-mix(in srgb, var(--text) 88%, var(--tv-brick, #a83a2b));
+  /* neredeyse tam beyaz (az brick tint) -> koyu panelde her temada okunur. */
+  color: color-mix(in srgb, var(--tv-white, #fff) 86%, var(--tv-brick, #a83a2b));
 }
 /* Ses seviyesi kaydırıcısı satırı (site stili: koyu track + aksan dolgu/thumb). */
 .gm-volrow {
