@@ -10,6 +10,7 @@ use App\Support\AccountClosure;
 use App\Support\ChatModeration;
 use App\Support\CheatScan;
 use App\Support\Geo;
+use App\Support\NicknameFilter;
 use App\Support\OfficialMessenger;
 use App\Support\UserEraser;
 use App\Support\WalletBreakdown;
@@ -27,6 +28,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class UserResource extends Resource
@@ -375,6 +377,10 @@ class UserResource extends Resource
                 ]),
                 Tables\Filters\TernaryFilter::make('is_admin')->label('Yönetici'),
                 Tables\Filters\TernaryFilter::make('is_support')->label('Destek'),
+                // KÜFÜR ŞÜPHESİ: takma adı NicknameFilter'a (küfür süzgeci) takılan üyeler. Süzgeç
+                // PHP'de normalize+substring çalışır -> SQL'de süzülemez; flaggedNicknameIds() tarar.
+                Tables\Filters\Filter::make('profanity')->label('Küfür şüphesi')->toggle()
+                    ->query(fn (Builder $q) => $q->whereIn('id', static::flaggedNicknameIds())),
                 // Admin notu olan üyeleri süz (kimde not var kolayca bulunur).
                 Tables\Filters\TernaryFilter::make('admin_note')->label('Admin notu')
                     ->placeholder('Hepsi')->trueLabel('Notu olanlar')->falseLabel('Notu olmayanlar')
@@ -710,6 +716,25 @@ class UserResource extends Resource
                         ->view('filament.user.matches'),
                 ]),
         ]);
+    }
+
+    /**
+     * Mevcut takma adı küfür süzgecine (NicknameFilter) takılan AKTİF üye ID'leri.
+     * Süzgeç PHP'de normalize + leetspeak + substring çalışır -> SQL'de süzülemez; id+nickname
+     * taranır. Silinmiş/anonimleştirilmiş hesaplar hariç (nickname='silinmisN').
+     * ponytail: O(n) tam tarama; 60sn cache -> sayfalama/sıralama tekrar taramaz. Liste büyürse
+     * (ör. >100k üye) chunk'a veya nickname'i kaydederken flag kolonuna taşı.
+     *
+     * @return int[]
+     */
+    public static function flaggedNicknameIds(): array
+    {
+        return Cache::remember('profanity_nick_ids_v1', 60, fn () => User::query()
+            ->whereNotNull('nickname')->where('nickname', '!=', '')
+            ->where(fn (Builder $w) => $w->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted'))
+            ->pluck('nickname', 'id')
+            ->reject(fn ($nick) => NicknameFilter::isAllowed((string) $nick))
+            ->keys()->map(fn ($id) => (int) $id)->all());
     }
 
     /**
