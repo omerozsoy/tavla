@@ -8,13 +8,7 @@
 // `Capacitor.nativePromise(pluginName, method, opts)` (metot cagrisi) + `Capacitor.addListener(
 // pluginName, eventName, cb)` (olay) saglar; plugin native tarafta kayitli (APK). Bunlari kullaniyoruz;
 // bundle'li kurulumlar icin Plugins proxy fallback korundu. (Bkz orientation.ts ayni desen.)
-import { registerPushToken, diagPush } from './api'
-
-// GEÇİCİ TANI: yalnız Android WebView app'ten beacon at (web tarayıcıyı boğma). WebView UA'sı "; wv)" taşır.
-const isWebViewApp = typeof navigator !== 'undefined' && /;\s*wv\)/.test(navigator.userAgent)
-function diag(ev: string, d: Record<string, unknown> = {}): void {
-  if (isWebViewApp) diagPush(ev, d)
-}
+import { registerPushToken } from './api'
 
 interface PushPlugin {
   checkPermissions(): Promise<{ receive: string }>
@@ -57,29 +51,18 @@ let started = false
 // Giris yapildiktan SONRA cagir (token gerekli). Birden cok cagri guvenli (started guard).
 export async function initPush(): Promise<void> {
   if (started) return
-  const g = (globalThis as unknown as { Capacitor?: CapacitorGlobal }).Capacitor
-  diag('init', {
-    hasCap: !!g,
-    isNative: !!g?.isNativePlatform?.(),
-    platform: g?.getPlatform?.() ?? '',
-    hasNativePromise: !!g?.nativePromise,
-    hasPluginsProxy: !!g?.Plugins?.PushNotifications,
-  })
   const cap = capacitor()
-  if (!cap) { diag('exit', { why: 'no-capacitor' }); return }
-  if (!cap.nativePromise && !cap.Plugins?.PushNotifications) { diag('exit', { why: 'no-bridge-no-plugin' }); return } // kopru/eklenti yok
+  if (!cap) return
+  if (!cap.nativePromise && !cap.Plugins?.PushNotifications) return // kopru/eklenti yok
   started = true
 
   try {
     // Izin: verilmemisse iste. Kullanici reddederse sessizce vazgec.
     let perm = await callPush<{ receive: string }>(cap, 'checkPermissions')
-    diag('perm-check', { receive: perm?.receive ?? 'null' })
     if (perm && (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale')) {
       perm = await callPush<{ receive: string }>(cap, 'requestPermissions')
-      diag('perm-request', { receive: perm?.receive ?? 'null' })
     }
     if (!perm || perm.receive !== 'granted') {
-      diag('exit', { why: 'perm-not-granted', receive: perm?.receive ?? 'null' })
       started = false // ileride tekrar denenebilsin
       return
     }
@@ -87,26 +70,18 @@ export async function initPush(): Promise<void> {
     // FCM token geldiginde sunucuya kaydet.
     onPush(cap, 'registration', (data) => {
       const token = (data as { value?: string })?.value
-      diag('registration', { tokenLen: token?.length ?? 0 })
       if (!token) return
       const platform = cap.getPlatform?.() === 'ios' ? 'ios' : 'android'
-      registerPushToken(token, platform)
-        .then(() => diag('token-saved', { platform }))
-        .catch((e) => {
-          diag('token-save-fail', { err: String((e as Error)?.message ?? e) })
-          /* gecici hata: bir sonraki acilista tekrar kaydolur */
-        })
+      registerPushToken(token, platform).catch(() => {
+        /* gecici hata: bir sonraki acilista tekrar kaydolur */
+      })
     })
-    onPush(cap, 'registrationError', (data) => {
-      diag('registration-error', { err: JSON.stringify(data)?.slice(0, 280) ?? '' })
+    onPush(cap, 'registrationError', () => {
       /* FCM kaydi basarisiz (google-services.json/ag) -> sessiz */
     })
 
-    diag('register-call')
     await callPush(cap, 'register')
-    diag('register-called-ok')
-  } catch (e) {
-    diag('exit', { why: 'exception', err: String((e as Error)?.message ?? e) })
+  } catch {
     started = false // native hata -> sonra tekrar denenebilir
   }
 }

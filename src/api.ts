@@ -242,25 +242,6 @@ export async function unregisterPushToken(token: string): Promise<void> {
   await req('/push/unregister', { method: 'POST', body: JSON.stringify({ token }) })
 }
 
-// GEÇİCİ TANI: native app'te push token'ı neden kaydolmuyor — push.ts karar noktalarından
-// çağrılır. Best-effort beacon (hata yutulur, akışı bozmaz). Çözülünce silinecek.
-export function diagPush(ev: string, d: Record<string, unknown> = {}): void {
-  try {
-    const token = getToken()
-    void fetch(`${API_URL}/diag/push`, {
-      method: 'POST',
-      keepalive: true,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ ev, d }),
-    }).catch(() => {})
-  } catch {
-    /* yok */
-  }
-}
-
 // GERÇEK-ZAMANLI PUSH yapılandırması (public): Reverb açık mı + public app key. enabled=false
 // (varsayılan) iken istemci Echo'yu HİÇ kurmaz -> saf poll (dormant). SECRET dönmez.
 export async function getRealtimeConfig(): Promise<{ enabled: boolean; key: string }> {
