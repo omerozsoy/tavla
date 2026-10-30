@@ -11630,6 +11630,10 @@ export default function App() {
           centerRight={centerRight}
           centerMain={centerMain}
           flip={flipBoard}
+          // GÖRELİ HANE NUMARASI: her oyuncu KENDİ evini 1-6 görür (standart tavla). numberFrom
+          // geçilmezse Board varsayılanı 'white' -> siyah kendi evini 19-24 görüyordu (asimetrik,
+          // "1 olması gereken yerde 24" şikayeti). myColor='black' -> numFor 24-i -> siyah evi 1-6.
+          numberFrom={myColor}
           mirror={boardMirror}
           swapStones={swapStones}
           showPip={showPip}
