@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\RoomController;
 use App\Models\Room;
+use App\Models\User;
 use App\Services\BotMoveService;
 use App\Services\BotUnavailableException;
 use App\Services\MatchClock;
 use App\Support\Backgammon;
+use App\Support\MatchBackstop;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -22,9 +27,71 @@ class BotRoomTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function command(string $code, string $token, string $uri, array $payload = []): \Illuminate\Testing\TestResponse
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Varsayılan: YZ ücreti kapalı -> mevcut testler (misafir/oynanış) etkilenmez.
+        // Ücret davranışını ayrıca test eden metodlar bunu 10'a çeker.
+        config()->set('game.bot_match_cost', 0);
+    }
+
+    /** E-postası doğrulanmış, coin'li insan olarak oturum aç (YZ ücreti için gerekli). */
+    private function actingHuman(int $coins = 100): User
+    {
+        $u = User::create([
+            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'insan_'.Str::random(6), 'email' => Str::random(8).'@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+        $u->forceFill(['coins' => $coins, 'email_verified_at' => now()])->save();
+        Sanctum::actingAs($u);
+
+        return $u;
+    }
+
+    public function test_bot_match_charges_coins_for_logged_in_user(): void
+    {
+        config()->set('game.bot_match_cost', 10);
+        $u = $this->actingHuman(100);
+
+        $this->postJson('/api/bot/rooms', [
+            'token' => 'human-tok', 'name' => 'İnsan', 'level' => 5, 'target' => 1,
+        ])->assertOk();
+
+        $this->assertSame(90, (int) $u->fresh()->coins); // 100 - 10
+        $this->assertDatabaseHas('wallet_transactions', [
+            'user_id' => $u->id, 'type' => 'bot_match_fee', 'amount' => -10,
+        ]);
+    }
+
+    public function test_bot_match_blocks_guest_with_login_required(): void
+    {
+        config()->set('game.bot_match_cost', 10);
+
+        $this->postJson('/api/bot/rooms', [
+            'token' => 'human-tok', 'name' => 'Misafir', 'level' => 5, 'target' => 1,
+        ])->assertStatus(401)->assertJsonPath('code', 'login_required');
+
+        $this->assertDatabaseCount('rooms', 0); // oda kurulmadı
+    }
+
+    public function test_bot_match_blocks_insufficient_balance(): void
+    {
+        config()->set('game.bot_match_cost', 10);
+        $u = $this->actingHuman(3); // 3 < 10
+
+        $this->postJson('/api/bot/rooms', [
+            'token' => 'human-tok', 'name' => 'İnsan', 'level' => 5, 'target' => 1,
+        ])->assertStatus(402)->assertJsonPath('code', 'insufficient_coins');
+
+        $this->assertSame(3, (int) $u->fresh()->coins); // hiç kesilmedi
+        $this->assertDatabaseCount('rooms', 0);         // oda kurulmadı
+    }
+
+    private function command(string $code, string $token, string $uri, array $payload = []): TestResponse
     {
         $room = Room::where('code', $code)->first()->fresh();
+
         return $this->postJson($uri, array_merge([
             'token' => $token,
             'command_id' => (string) Str::uuid(),
@@ -297,7 +364,7 @@ class BotRoomTest extends TestCase
     public function test_backstop_never_writes_rating_for_bot_room(): void
     {
         // Bot maçı terk/yenileme -> sunucu YEDEK satırı YAZMAMALI (haksız rating kaybı yok).
-        $u = \App\Models\User::create([
+        $u = User::create([
             'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
             'nickname' => 'insan', 'email' => 'insan@example.com', 'password' => bcrypt('secret123'),
         ]);
@@ -314,7 +381,7 @@ class BotRoomTest extends TestCase
             ],
         ]);
 
-        $written = \App\Support\MatchBackstop::ensure($room->fresh());
+        $written = MatchBackstop::ensure($room->fresh());
         $this->assertSame(0, $written); // bot odası -> hiçbir satır yazılmaz
         $this->assertDatabaseMissing('match_results', ['room_code' => 'BOTZZ', 'user_id' => $u->id]);
         $this->assertSame(1500, (int) $u->fresh()->rating); // rating DEĞİŞMEDİ
@@ -323,7 +390,7 @@ class BotRoomTest extends TestCase
     public function test_bot_room_appears_in_my_active_rooms_for_resume(): void
     {
         // Devam eden bot maçı "Maça Dön" banner'ında (myActiveRooms) görünmeli + bot bayrağı taşımalı.
-        $u = \App\Models\User::create([
+        $u = User::create([
             'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
             'nickname' => 'insan2', 'email' => 'insan2@example.com', 'password' => bcrypt('secret123'),
         ]);
@@ -340,7 +407,7 @@ class BotRoomTest extends TestCase
             'clock' => ['p1_seen' => microtime(true), 'segment' => 'p1'], // taze -> canlı say
         ]);
 
-        \Laravel\Sanctum\Sanctum::actingAs($u);
+        Sanctum::actingAs($u);
         $res = $this->getJson('/api/me/active-rooms')->assertOk();
         $row = collect($res->json('rooms'))->firstWhere('code', 'BOTYY');
         $this->assertNotNull($row);
@@ -418,7 +485,7 @@ class BotRoomTest extends TestCase
         ];
         $room->save();
 
-        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), 'p1');
+        app(RoomController::class)->tickClock($room->fresh(), 'p1');
 
         $room->refresh();
         $this->assertSame('p1', $room->clock['turn_slot']); // oyun sırasına (white) resync -> kilit açıldı
@@ -443,7 +510,7 @@ class BotRoomTest extends TestCase
         ];
         $room->save();
 
-        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), 'p1');
+        app(RoomController::class)->tickClock($room->fresh(), 'p1');
 
         $room->refresh();
         $this->assertSame('p1', $room->clock['turn_slot']); // pending=black -> yanıt insanın -> p1
@@ -468,7 +535,7 @@ class BotRoomTest extends TestCase
         $room->save();
 
         // Poll insanı slot=null (blip) veya reaper ile tick'lesin: her iki yolda da forfeit OLMAMALI.
-        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), null);
+        app(RoomController::class)->tickClock($room->fresh(), null);
 
         $room->refresh();
         $this->assertNull($room->clock['end']);          // ABANDON/TIMEOUT/AFK YOK -> haksız kayıp yok
@@ -492,7 +559,7 @@ class BotRoomTest extends TestCase
         ];
         $room->save();
 
-        app(\App\Http\Controllers\RoomController::class)->tickClock($room->fresh(), null);
+        app(RoomController::class)->tickClock($room->fresh(), null);
 
         $room->refresh();
         $this->assertNull($room->clock['end']);          // saat dururken de ABANDON yok

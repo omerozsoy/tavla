@@ -4404,6 +4404,26 @@ class RoomController extends Controller
             'classic' => ['nullable', 'boolean'], // Klasik Tavla'da bota karşı (küp yok + mars=2)
         ]);
 
+        // YAPAY ZEKA ÜCRETİ: bota karşı oynamak coin'e tabidir (admin ayarı 'bot_match_cost', vars. 10).
+        // Misafir oynayamaz (giriş şart); ücret oda kurulduktan SONRA peşin kesilir (iade yok).
+        $player = $request->user('sanctum');
+        $botCost = max(0, Setting::int('bot_match_cost', (int) config('game.bot_match_cost', 10)));
+        if ($botCost > 0) {
+            if (! $player) {
+                return response()->json([
+                    'message' => 'Yapay zekâya karşı oynamak için giriş yapmalısınız.',
+                    'code' => 'login_required',
+                ], 401);
+            }
+            // Peşin bakiye kontrolü (hızlı ret); asıl otoriter guard aşağıdaki debit'tir.
+            if (app(WalletService::class)->spendable($player) < $botCost) {
+                return response()->json([
+                    'message' => 'Yapay zekâya karşı oynamak için en az '.$botCost.' coin gerekir.',
+                    'code' => 'insufficient_coins', 'cost' => $botCost,
+                ], 402);
+            }
+        }
+
         $code = $this->generateCode();
         $level = (int) $data['level'];
         // FEATURE FLAG kırpması: istenen derin seviye kapalıysa en yüksek AÇIK seviyeye düşür.
@@ -4460,6 +4480,21 @@ class RoomController extends Controller
         $room->server_match = $this->initServerMatch($room);
         $room->server_state = Backgammon::initialState();
         $room->save();
+
+        // Ücreti oda kurulduktan SONRA kes (room referanslı + idempotent). Eşzamanlı drenaj debit'i
+        // düşürürse (spendable guard) odayı iptal edip 402 dön — bedava maç sızıntısı olmaz.
+        if ($botCost > 0 && $player) {
+            try {
+                app(WalletService::class)->debit($player, $botCost, 'bot_match_fee', Room::class, $room->id);
+            } catch (\Throwable $e) {
+                $room->delete();
+
+                return response()->json([
+                    'message' => 'Yapay zekâya karşı oynamak için en az '.$botCost.' coin gerekir.',
+                    'code' => 'insufficient_coins', 'cost' => $botCost,
+                ], 402);
+            }
+        }
 
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1']);
     }

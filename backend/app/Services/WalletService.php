@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Room;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class WalletService
 {
@@ -14,6 +16,7 @@ class WalletService
         if ($amount < 0) {
             throw new \InvalidArgumentException('Wallet credit must be non-negative.');
         }
+
         return $this->move($user, $amount, $type, $referenceType, $referenceId, $idempotencyKey, $actorUserId);
     }
 
@@ -24,13 +27,13 @@ class WalletService
      */
     public const DISCRETIONARY_SPEND = [
         'dice_slot_spin', 'lucky_wheel_spin', 'tournament_entry',
-        'product_purchase', 'cart_purchase', 'shop_purchase',
+        'product_purchase', 'cart_purchase', 'shop_purchase', 'bot_match_fee',
     ];
 
     /** Harcanabilir bakiye: coins − rezerv (sabit bahis emaneti) − sonuçlanmamış %-bahis kilidi (A-03). */
     public function spendable(User $user): int
     {
-        return (int) ($user->coins ?? 0) - (int) ($user->coins_reserved ?? 0) - \App\Models\Room::pctLockedCoins((int) $user->id);
+        return (int) ($user->coins ?? 0) - (int) ($user->coins_reserved ?? 0) - Room::pctLockedCoins((int) $user->id);
     }
 
     public function debit(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null, ?string $idempotencyKey = null, ?int $actorUserId = null): User
@@ -45,6 +48,7 @@ class WalletService
                 throw new \RuntimeException('Insufficient spendable balance (reserved/locked coins).');
             }
         }
+
         return $this->move($user, -$amount, $type, $referenceType, $referenceId, $idempotencyKey, $actorUserId);
     }
 
@@ -101,7 +105,7 @@ class WalletService
 
             if ($ledgerAvailable) {
                 WalletTransaction::create([
-                    'transaction_id' => (string) \Illuminate\Support\Str::uuid(),
+                    'transaction_id' => (string) Str::uuid(),
                     'idempotency_key' => $effectiveKey,
                     'user_id' => $locked->id,
                     'amount' => $amount,

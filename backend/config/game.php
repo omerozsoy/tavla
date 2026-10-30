@@ -28,6 +28,10 @@ return [
     // Galaxy ≈ %15; biz %10. 0..90 aralığına kırpılır. Değişiklik: env + config:clear + FPM restart.
     'commission_pct' => max(0, min(90, (int) env('COMMISSION_PCT', 5))),
 
+    // YAPAY ZEKA ÜCRETİ: bota karşı maç başlatmak bu kadar coin'e mal olur (admin 'bot_match_cost'
+    // ile ezilebilir). 0 = bedava. Oda kurulurken peşin kesilir (iade yok); misafir oynayamaz.
+    'bot_match_cost' => max(0, (int) env('BOT_MATCH_COST', 10)),
+
     // HOŞGELDİN coin'i: yeni üye (e-posta + Google) bu kadar coin ile başlar. 0 = yok.
     // NOT: bu coin bahse yatırılabilir (bedava değer) -> WELCOME_COINS env ile ayarla.
     'welcome_coins' => max(0, (int) env('WELCOME_COINS', 100)),
