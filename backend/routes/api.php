@@ -79,6 +79,23 @@ Route::post('/diag/reload', function (\Illuminate\Http\Request $r) {
 
     return response()->json(['ok' => true]);
 })->middleware('throttle:120,1,diag-reload');
+// GEÇİCİ TANI (push beacon): native app'te FCM token'ı neden kaydolmuyor — push.ts her karar
+// noktasında buraya yazar (hasCap/izin/registration/hata). Yalnız WebView app'ten çağrılır.
+// Log'a yazar (migration yok), best-effort. Çözülünce bu route + push.ts beacon'ları silinir.
+Route::post('/diag/push', function (\Illuminate\Http\Request $r) {
+    try {
+        \Illuminate\Support\Facades\Log::channel('single')->info('push-diag', [
+            'uid' => optional($r->user('sanctum'))->id,
+            'ev' => mb_substr((string) $r->input('ev', ''), 0, 24),
+            'd' => array_map(fn ($v) => is_scalar($v) ? mb_substr((string) $v, 0, 60) : null, (array) $r->input('d', [])),
+            'ua' => mb_substr((string) $r->userAgent(), 0, 160),
+        ]);
+    } catch (\Throwable $e) {
+        // best-effort
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('throttle:240,1,diag-push');
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/leaderboard/pr', [AuthController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
 Route::get('/leaderboard/search', [AuthController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
