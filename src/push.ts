@@ -98,7 +98,7 @@ export async function initPush(): Promise<void> {
         })
     })
     onPush(cap, 'registrationError', (data) => {
-      diag('registration-error', { err: JSON.stringify(data)?.slice(0, 60) ?? '' })
+      diag('registration-error', { err: JSON.stringify(data)?.slice(0, 280) ?? '' })
       /* FCM kaydi basarisiz (google-services.json/ag) -> sessiz */
     })
 

@@ -94,7 +94,7 @@ Route::post('/diag/push', function (\Illuminate\Http\Request $r) {
         ])->debug('push-diag', [
             'uid' => optional($r->user('sanctum'))->id,
             'ev' => mb_substr((string) $r->input('ev', ''), 0, 24),
-            'd' => array_map(fn ($v) => is_scalar($v) ? mb_substr((string) $v, 0, 60) : null, (array) $r->input('d', [])),
+            'd' => array_map(fn ($v) => is_scalar($v) ? mb_substr((string) $v, 0, 300) : null, (array) $r->input('d', [])),
             'ua' => mb_substr((string) $r->userAgent(), 0, 160),
         ]);
     } catch (\Throwable $e) {
