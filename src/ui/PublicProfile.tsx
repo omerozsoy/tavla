@@ -305,6 +305,14 @@ export default function PublicProfile({
               </div>
             </div>
 
+            {/* Turnuva şampiyonlukları — yalnız kazananlarda göster (çoğu oyuncu 0). */}
+            {(p.tournaments_won ?? 0) > 0 && (
+              <div className="champ-row">
+                <span className="champ-row-lbl"><Icon name="trophy" size={15} /> {t('stats.championships')}</span>
+                <span className="champ-row-val">{p.tournaments_won}</span>
+              </div>
+            )}
+
             {/* PR (Career PR): analiz edilmiş maçlardan havuzlanan hata oranı (düşük=iyi) + kaç maç
                 sayıldığı. Henüz analiz edilmiş maç yoksa "henüz yok" gösterilir. */}
             <div className="pp-pr">

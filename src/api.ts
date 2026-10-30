@@ -116,6 +116,7 @@ export interface ServerUser {
   wins?: number
   losses?: number
   games_played?: number
+  tournaments_won?: number // kazanilan online turnuva sayisi (user_stats)
   is_admin?: boolean
   is_support?: boolean
   email_verified_at?: string | null
@@ -1121,6 +1122,7 @@ export interface PublicProfile {
   wins: number
   losses: number
   games: number
+  tournaments_won?: number // kazanilan online turnuva sayisi (user_stats)
   rank: number
   career_pr?: number | null // Career PR (dusuk=iyi); null/0 maç = veri yok
   career_pr_matches?: number // PR'a sayilan (analiz edilmis) maç sayisi

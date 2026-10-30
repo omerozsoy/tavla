@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\Room;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\UserStat;
 use App\Models\UserWxpTransaction;
 use App\Services\Achievements\AchievementService;
 use App\Services\Achievements\StatsUpdater;
@@ -338,6 +339,8 @@ class AuthController extends Controller
         // Kendi rating siralamasi (kacinci sirada)
         $rank = User::where('rating', '>', $user->rating ?? 1500)->count() + 1;
         $total = User::count();
+        // Turnuva sampiyonlugu sayisi (user_stats; turnuva bitince idempotent guncellenir).
+        $user->tournaments_won = (int) UserStat::forUser($user->id)->tournaments_won;
 
         return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
     }
@@ -1732,6 +1735,8 @@ class AuthController extends Controller
             'wins' => $wins,
             'losses' => $losses,
             'games' => $games,
+            // Turnuva sampiyonlugu sayisi (user_stats; turnuva bitince idempotent guncellenir).
+            'tournaments_won' => (int) UserStat::forUser($user->id)->tournaments_won,
             'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'is_admin' => (bool) $user->is_admin, // yönetici -> isim yanı kırmızı kalkan + "Hata Bildir"
             'is_support' => (bool) $user->is_support, // destek -> isim yanı krem kalkan + "Hata Bildir"

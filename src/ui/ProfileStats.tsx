@@ -193,6 +193,14 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             </div>
 
+            {/* Turnuva şampiyonlukları — yalnız kazananlarda göster (çoğu oyuncu 0). */}
+            {(u?.tournaments_won ?? 0) > 0 && (
+              <div className="champ-row">
+                <span className="champ-row-lbl"><Icon name="trophy" size={15} /> {t('stats.championships')}</span>
+                <span className="champ-row-val">{u?.tournaments_won}</span>
+              </div>
+            )}
+
             {/* Kariyer PR (PR Sıralaması): belirgin kart — üst özetin hemen altında. */}
             <div className="career-pr-card">
               <div className="career-pr-card-l">
