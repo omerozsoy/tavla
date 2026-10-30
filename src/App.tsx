@@ -10900,6 +10900,7 @@ export default function App() {
             classic={classicSetup}
             targets={classicSetup ? CLASSIC_TARGETS : TARGETS}
             coins={user?.coins ?? 0}
+            botCost={user?.bot_match_cost ?? 0}
             initial={{ target: classicSetup ? 7 : match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
             board={(() => {
               const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]

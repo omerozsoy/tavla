@@ -92,6 +92,7 @@ interface Props {
   targets: readonly number[]
   initial: Omit<MatchOptions, 'mode'>
   coins?: number
+  botCost?: number // bota karsi oynama ucreti (coin); pvb modunda Basla ustunde gosterilir
   board: BoardColors
   onChangeBoard: () => void
   onConfirm: (opts: MatchOptions) => void
@@ -112,6 +113,7 @@ export default function MatchSetup({
   targets,
   initial,
   coins = 0,
+  botCost = 0,
   board,
   onChangeBoard,
   onConfirm,
@@ -303,6 +305,16 @@ export default function MatchSetup({
 
         {/* Bota karsi: her mac PUANLI + pip ACIK. Canli "Analizi goster" KALDIRILDI
             (mac sonu analizi yeterli). */}
+
+        {/* Bota karsi oynama ucreti: maci baslatmadan ONCE goster (coin yetmezse uyari). */}
+        {mode === 'pvb' && botCost > 0 && (
+          <div className={`setup-botfee ${coins < botCost ? 'insufficient' : ''}`}>
+            <Icon name="robot-face" size={16} />
+            <span className="setup-botfee-lbl">{t('setup.botFee')}</span>
+            <Coins amount={botCost} size={15} />
+            {coins < botCost && <span className="setup-botfee-warn">{t('setup.botFeeShort')}</span>}
+          </div>
+        )}
 
         <div className="setup-actions">
           <Button variant="secondary" onClick={onCancel}>

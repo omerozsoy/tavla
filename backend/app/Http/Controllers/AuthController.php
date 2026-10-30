@@ -341,6 +341,9 @@ class AuthController extends Controller
         $total = User::count();
         // Turnuva sampiyonlugu sayisi (user_stats; turnuva bitince idempotent guncellenir).
         $user->tournaments_won = (int) UserStat::forUser($user->id)->tournaments_won;
+        // Bota karsi oynama ucreti (admin ayari; RoomController::createBotRoom ile AYNI ifade)
+        // -> UI maci baslatmadan ONCE pesin gosterir (otoriter kesinti yine sunucuda).
+        $user->bot_match_cost = max(0, Setting::int('bot_match_cost', (int) config('game.bot_match_cost', 10)));
 
         return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
     }

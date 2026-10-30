@@ -1677,6 +1677,30 @@ button[aria-disabled='true'],
 /* Mac kurulum alt aksiyonlari: tek belirgin CTA + net ikincil dugme.
    YAPISKAN (sticky) alt cubuk: 12 bot karti + puan + sure secimlerinden sonra "Basla" 1280-1440px
    masaustunde ve tum telefonlarda ilk ekranin ALTINDA kaliyordu -> kaydirmadan gorunsun. */
+/* Bota karsi oynama ucreti satiri (MatchSetup pvb) — Basla'nin hemen ustunde. */
+.setup-botfee {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  font-size: 0.92rem;
+}
+.setup-botfee-lbl {
+  color: var(--muted);
+}
+.setup-botfee.insufficient {
+  border-color: color-mix(in srgb, var(--danger-fg) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger-fg) 8%, var(--card-bg));
+}
+.setup-botfee-warn {
+  margin-left: auto;
+  color: var(--danger-fg);
+  font-weight: 600;
+}
 .setup-actions {
   display: flex;
   gap: 10px;

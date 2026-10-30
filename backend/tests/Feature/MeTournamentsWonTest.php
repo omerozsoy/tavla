@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserStat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,6 +47,17 @@ class MeTournamentsWonTest extends TestCase
         $this->getJson('/api/me')
             ->assertOk()
             ->assertJsonPath('user.tournaments_won', 0);
+    }
+
+    public function test_me_returns_bot_match_cost(): void
+    {
+        $u = $this->makeUser('player');
+        Sanctum::actingAs($u);
+        // Varsayilan (config/game.php => 10) + admin Setting override'i yansir.
+        $this->getJson('/api/me')->assertOk()->assertJsonPath('user.bot_match_cost', 10);
+
+        Setting::put('bot_match_cost', 25);
+        $this->getJson('/api/me')->assertOk()->assertJsonPath('user.bot_match_cost', 25);
     }
 
     public function test_public_profile_returns_tournaments_won(): void
