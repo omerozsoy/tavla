@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 /**
  * "Hata Bildirimleri": kullanicilarin sag kenar "Hata Bildir" formundan gonderdigi bildirimler.
@@ -35,7 +36,7 @@ class BugReportResource extends Resource
     // Yeni (incelenmemis) bildirim sayisini menu rozetinde goster.
     public static function getNavigationBadge(): ?string
     {
-        $count = static::getModel()::where('status', 'new')->count();
+        $count = static::getModel()::where('status', 'new')->whereNull('archived_at')->count();
 
         return $count > 0 ? (string) $count : null;
     }
@@ -94,7 +95,7 @@ class BugReportResource extends Resource
             // yazılır + e-postalanır). Burada son gönderilen yanıt SALT-OKUNUR gösterilir.
             Forms\Components\Placeholder::make('admin_reply')->label('Bildirene gönderilen yanıt')
                 ->content(fn (?BugReport $record) => $record?->admin_reply
-                    ? new \Illuminate\Support\HtmlString(nl2br(e($record->admin_reply))
+                    ? new HtmlString(nl2br(e($record->admin_reply))
                         .($record->replied_at
                             ? '<div style="margin-top:8px;font-size:12px;color:#6b6154;">Gönderildi: '
                                 .$record->replied_at->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i').'</div>'
@@ -105,7 +106,7 @@ class BugReportResource extends Resource
             // Yanıta eklenen görsel (varsa) — bildirene gönderilen e-postada görünen görsel.
             Forms\Components\Placeholder::make('admin_reply_image')->label('Yanıta eklenen görsel')
                 ->visible(fn (?BugReport $record) => (bool) $record?->admin_reply_image)
-                ->content(fn (?BugReport $record) => new \Illuminate\Support\HtmlString(
+                ->content(fn (?BugReport $record) => new HtmlString(
                     '<img src="'.e(rtrim(config('app.url'), '/').'/uploads/'.$record->admin_reply_image)
                     .'" alt="Yanıt görseli" style="max-width:280px;height:auto;border-radius:10px;border:1px solid #e2dbcd;">'
                 ))
@@ -151,12 +152,34 @@ class BugReportResource extends Resource
                         'in_progress' => 'İnceleniyor',
                         'resolved' => 'Çözüldü',
                     ]),
+                // Varsayilan (blank): arsivlenmemis gosterilir. Istege gore arsiv okunur.
+                Tables\Filters\TernaryFilter::make('archived')->label('Arşiv')
+                    ->placeholder('Arşivlenmemiş')
+                    ->trueLabel('Arşivlenenler')
+                    ->falseLabel('Tümü')
+                    ->queries(
+                        true: fn ($q) => $q->whereNotNull('archived_at'),
+                        false: fn ($q) => $q,
+                        blank: fn ($q) => $q->whereNull('archived_at'),
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('İncele'),
+                Tables\Actions\Action::make('archive')->label('Arşivle')
+                    ->icon('heroicon-o-archive-box')->color('gray')
+                    ->visible(fn (BugReport $r) => $r->archived_at === null)
+                    ->action(fn (BugReport $r) => $r->update(['archived_at' => now()])),
+                Tables\Actions\Action::make('unarchive')->label('Arşivden çıkar')
+                    ->icon('heroicon-o-archive-box-x-mark')->color('gray')
+                    ->visible(fn (BugReport $r) => $r->archived_at !== null)
+                    ->action(fn (BugReport $r) => $r->update(['archived_at' => null])),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
             ->bulkActions([
+                Tables\Actions\BulkAction::make('archive')->label('Seçilenleri arşivle')
+                    ->icon('heroicon-o-archive-box')
+                    ->action(fn ($records) => $records->each->update(['archived_at' => now()]))
+                    ->deselectRecordsAfterCompletion(),
                 Tables\Actions\DeleteBulkAction::make()->label('Seçilenleri sil'),
             ]);
     }

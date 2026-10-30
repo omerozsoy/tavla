@@ -12,11 +12,12 @@ class BugReport extends Model
     protected $fillable = [
         'user_id', 'name', 'email', 'page', 'url', 'message',
         'screenshot', 'user_agent', 'status', 'admin_note',
-        'admin_reply', 'admin_reply_image', 'replied_at',
+        'admin_reply', 'admin_reply_image', 'replied_at', 'archived_at',
     ];
 
     protected $casts = [
         'replied_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public const STATUSES = ['new', 'in_progress', 'resolved'];
