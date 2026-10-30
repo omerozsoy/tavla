@@ -3077,9 +3077,15 @@ class RoomController extends Controller
             $ghost = $user && $user->is_admin && $user->presence_status === 'ghost';
             if (! $ghost) {
                 $name = $user?->nickname ?: ($user?->first_name ?: (($data['name'] ?? '') ?: 'Misafir'));
-                DB::table('room_viewers')->updateOrInsert(
-                    ['room_code' => $codeU, 'token' => $data['token']],
-                    ['user_id' => $user?->id, 'name' => mb_substr((string) $name, 0, 60), 'last_seen' => $now, 'updated_at' => now()],
+                // ATOMİK upsert (INSERT ... ON DUPLICATE KEY UPDATE): updateOrInsert SELECT→INSERT
+                // olduğundan atomik DEĞİL; aynı (room_code, token) iki eşzamanlı watch'ta (çift sekme
+                // aynı token / 5sn heartbeat çakışması / retry) ikisi de INSERT edip room_code_token
+                // unique'ine 1062 ile çarpıp 500 veriyordu (Y38VR/myyldzr). upsert tek atomik komut.
+                DB::table('room_viewers')->upsert(
+                    [['room_code' => $codeU, 'token' => $data['token'], 'user_id' => $user?->id,
+                        'name' => mb_substr((string) $name, 0, 60), 'last_seen' => $now, 'updated_at' => now()]],
+                    ['room_code', 'token'],
+                    ['user_id', 'name', 'last_seen', 'updated_at'],
                 );
             }
         }
