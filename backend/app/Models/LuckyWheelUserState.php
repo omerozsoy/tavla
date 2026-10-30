@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 
 /**
  * Kullanıcının çark durumu: günlük ücretsiz hak kullanımı + bonus (ekstra) haklar.
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 class LuckyWheelUserState extends Model
 {
     protected $primaryKey = 'user_id';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -29,9 +31,15 @@ class LuckyWheelUserState extends Model
 
     public static function forUser(int $userId): self
     {
-        return static::firstOrCreate(['user_id' => $userId], [
-            'daily_free_spins_used' => 0,
-            'bonus_spins' => 0,
-        ]);
+        // firstOrCreate SELECT→INSERT (atomik DEĞİL): ilk-erişim yarışı nadiren user_id unique'ine
+        // 1062 verebilir -> yakala+tekrar oku (GameLog deseni).
+        try {
+            return static::firstOrCreate(['user_id' => $userId], [
+                'daily_free_spins_used' => 0,
+                'bonus_spins' => 0,
+            ]);
+        } catch (QueryException $e) {
+            return static::where('user_id', $userId)->firstOrFail();
+        }
     }
 }

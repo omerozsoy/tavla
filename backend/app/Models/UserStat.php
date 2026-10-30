@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\QueryException;
 
 /**
  * UserStat — basarim motorunun incremental sayac satiri (1:1 users).
@@ -27,13 +28,20 @@ class UserStat extends Model
     /** Kullanicinin sayac satirini getir/olustur (idempotent). */
     public static function forUser(int $userId): self
     {
-        return static::firstOrCreate(['user_id' => $userId]);
+        // firstOrCreate SELECT→INSERT (atomik DEĞİL): aynı user için ilk-erişim yarışı (iki eşzamanlı
+        // istek) nadiren user_id unique'ine 1062 verebilir -> yakala+tekrar oku (GameLog deseni).
+        try {
+            return static::firstOrCreate(['user_id' => $userId]);
+        } catch (QueryException $e) {
+            return static::where('user_id', $userId)->firstOrFail();
+        }
     }
 
     /** meta.flags icinde bir bayrak var mi (ornek: 'seen_66'). */
     public function hasFlag(string $flag): bool
     {
         $flags = $this->meta['flags'] ?? [];
+
         return in_array($flag, $flags, true);
     }
 
