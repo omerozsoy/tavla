@@ -22,6 +22,7 @@ use App\Services\FairDiceService;
 use App\Services\MatchClock;
 use App\Services\MoveValidatorService;
 use App\Services\WalletService;
+use App\Support\AvatarStore;
 use App\Support\Backgammon;
 use App\Support\ChatModeration;
 use App\Support\ForfeitLoss;
@@ -206,7 +207,7 @@ class RoomController extends Controller
             'p1_user_id' => $request->user('sanctum')?->id, // avatar cerceve lookup (bahis stake=0 -> settle'i etkilemez)
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
-            'p1_avatar' => $data['avatar'] ?? null,
+            'p1_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL (guest/eski istemci)
             'status' => 'waiting',
             'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
             'unrated' => (bool) ($data['unrated'] ?? false),
@@ -4416,7 +4417,7 @@ class RoomController extends Controller
             'p1_user_id' => $request->user('sanctum')?->id,
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
-            'p1_avatar' => $data['avatar'] ?? null,
+            'p1_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL
             // Bot slotu: TAHMİN EDİLEMEZ gizli token (toClient token döndürmez) -> istemci bot
             // slotunu impersonate edemez. Ayrıca roll/move/cube/resign'da p2 slotu HTTP'den reddedilir.
             'p2_token' => bin2hex(random_bytes(24)),
