@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Ana sayfa -->
   <url>
-    <loc>https://www.tavlatv.com/</loc>
+    <loc>https://tavlatv.com/</loc>
     <lastmod>2026-10-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -10,19 +10,19 @@
 
   <!-- SEO landing sayfalari -->
   <url>
-    <loc>https://www.tavlatv.com/online-tavla</loc>
+    <loc>https://tavlatv.com/online-tavla</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/backgammon</loc>
+    <loc>https://tavlatv.com/backgammon</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tavla-oyna</loc>
+    <loc>https://tavlatv.com/tavla-oyna</loc>
     <lastmod>2026-10-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -30,31 +30,31 @@
 
   <!-- Turnuva organizasyonu (hizmet) + iletisim -->
   <url>
-    <loc>https://www.tavlatv.com/tavla-turnuvasi-organizasyonu</loc>
+    <loc>https://tavlatv.com/tavla-turnuvasi-organizasyonu</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/kurumsal-tavla-turnuvasi</loc>
+    <loc>https://tavlatv.com/kurumsal-tavla-turnuvasi</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/belediye-tavla-turnuvasi</loc>
+    <loc>https://tavlatv.com/belediye-tavla-turnuvasi</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/avm-tavla-turnuvasi</loc>
+    <loc>https://tavlatv.com/avm-tavla-turnuvasi</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/iletisim</loc>
+    <loc>https://tavlatv.com/iletisim</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
@@ -62,25 +62,25 @@
 
   <!-- Oyun modlari (giris gerektirmeden oynanabilir) -->
   <url>
-    <loc>https://www.tavlatv.com/yz-ile-oyna</loc>
+    <loc>https://tavlatv.com/yz-ile-oyna</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/yeni-oyun</loc>
+    <loc>https://tavlatv.com/yeni-oyun</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/arkadasinla-oyna</loc>
+    <loc>https://tavlatv.com/arkadasinla-oyna</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tek-oyun</loc>
+    <loc>https://tavlatv.com/tek-oyun</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -88,25 +88,25 @@
 
   <!-- Rekabet ve topluluk -->
   <url>
-    <loc>https://www.tavlatv.com/lider-tablosu</loc>
+    <loc>https://tavlatv.com/lider-tablosu</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/online-turnuvalar</loc>
+    <loc>https://tavlatv.com/online-turnuvalar</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/turnuva-takvimi</loc>
+    <loc>https://tavlatv.com/turnuva-takvimi</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/kulupler</loc>
+    <loc>https://tavlatv.com/kulupler</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -114,31 +114,31 @@
 
   <!-- Icerik -->
   <url>
-    <loc>https://www.tavlatv.com/makaleler</loc>
+    <loc>https://tavlatv.com/makaleler</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/haberler</loc>
+    <loc>https://tavlatv.com/haberler</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tavla-magazin</loc>
+    <loc>https://tavlatv.com/tavla-magazin</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/nasil-oynanir</loc>
+    <loc>https://tavlatv.com/nasil-oynanir</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/sikca-sorulan-sorular</loc>
+    <loc>https://tavlatv.com/sikca-sorulan-sorular</loc>
     <lastmod>2026-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -146,37 +146,37 @@
 
   <!-- Tavla Rehberi blog -->
   <url>
-    <loc>https://www.tavlatv.com/tavla-rehberi</loc>
+    <loc>https://tavlatv.com/tavla-rehberi</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/turnuva-kurallari</loc>
+    <loc>https://tavlatv.com/turnuva-kurallari</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tavla-rehberi/tavla-acilis-stratejileri</loc>
+    <loc>https://tavlatv.com/tavla-rehberi/tavla-acilis-stratejileri</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tavla-rehberi/tavla-kupu-doubling-cube</loc>
+    <loc>https://tavlatv.com/tavla-rehberi/tavla-kupu-doubling-cube</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tavla-rehberi/tavla-kazanma-taktikleri</loc>
+    <loc>https://tavlatv.com/tavla-rehberi/tavla-kazanma-taktikleri</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/tavla-rehberi/mars-gammon-backgammon-nedir</loc>
+    <loc>https://tavlatv.com/tavla-rehberi/mars-gammon-backgammon-nedir</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -184,13 +184,13 @@
 
   <!-- Analiz araclari -->
   <url>
-    <loc>https://www.tavlatv.com/pozisyon-analizi</loc>
+    <loc>https://tavlatv.com/pozisyon-analizi</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/mat-analiz</loc>
+    <loc>https://tavlatv.com/mat-analiz</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -198,19 +198,19 @@
 
   <!-- Eglence -->
   <url>
-    <loc>https://www.tavlatv.com/sans-carki</loc>
+    <loc>https://tavlatv.com/sans-carki</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/zar-slotu</loc>
+    <loc>https://tavlatv.com/zar-slotu</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bahane-makinesi</loc>
+    <loc>https://tavlatv.com/bahane-makinesi</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
@@ -218,7 +218,7 @@
 
   <!-- Uyelik -->
   <url>
-    <loc>https://www.tavlatv.com/uyelik</loc>
+    <loc>https://tavlatv.com/uyelik</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -226,43 +226,43 @@
 
   <!-- Bilgi sayfalari -->
   <url>
-    <loc>https://www.tavlatv.com/bilgi/hakkinda</loc>
+    <loc>https://tavlatv.com/bilgi/hakkinda</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/hizmetler</loc>
+    <loc>https://tavlatv.com/bilgi/hizmetler</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/rutbeler</loc>
+    <loc>https://tavlatv.com/bilgi/rutbeler</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/puanlama</loc>
+    <loc>https://tavlatv.com/bilgi/puanlama</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/basarilarim</loc>
+    <loc>https://tavlatv.com/bilgi/basarilarim</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/adil-zar</loc>
+    <loc>https://tavlatv.com/bilgi/adil-zar</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/sozluk</loc>
+    <loc>https://tavlatv.com/bilgi/sozluk</loc>
     <lastmod>2026-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

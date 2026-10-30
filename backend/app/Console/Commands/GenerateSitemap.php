@@ -122,7 +122,7 @@ class GenerateSitemap extends Command
             }
             $seen[$slug] = true;
             $lastmod = $row->updated_at?->toDateString() ?: now()->toDateString();
-            $url = 'https://www.tavlatv.com/haberler/'.$slug;
+            $url = 'https://tavlatv.com/haberler/'.$slug;
             $urls[] = "  <url>\n    <loc>".htmlspecialchars($url, ENT_XML1, 'UTF-8')."</loc>\n    <lastmod>{$lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>";
         }
 
@@ -152,7 +152,7 @@ class GenerateSitemap extends Command
             }
             $seen[$slug] = true;
             $lastmod = $row->updated_at?->toDateString() ?: now()->toDateString();
-            $url = 'https://www.tavlatv.com/makaleler/'.$slug;
+            $url = 'https://tavlatv.com/makaleler/'.$slug;
             $urls[] = "  <url>\n    <loc>".htmlspecialchars($url, ENT_XML1, 'UTF-8')."</loc>\n    <lastmod>{$lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>";
         }
 

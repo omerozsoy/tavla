@@ -55,7 +55,8 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 // ise .htaccess ile bu rotalara yonlendirilir -> kendi origin'iyle robots + dinamik sitemap.
 Route::get('/robots.txt', function (Request $request) {
     $b = Brand::fromHost($request->getHost());
-    $origin = rtrim((string) ($b['origin'] ?? ''), '/');
+    // KANONİK host www'SUZ (SEO): robots Sitemap satırı yönlendiren (www 301) adresi değil hedefi göstersin.
+    $origin = rtrim((string) preg_replace('~://www\.~', '://', (string) ($b['origin'] ?? '')), '/');
 
     return response("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: {$origin}/sitemap.xml\n", 200, [
         'Content-Type' => 'text/plain; charset=UTF-8',

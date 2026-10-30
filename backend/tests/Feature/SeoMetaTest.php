@@ -26,7 +26,7 @@ class SeoMetaTest extends TestCase
             ->assertSee('<h2>Online tavla nasıl oynanır?</h2>', false)
             ->assertSee('Gerçek rakiplerle canlı maçlara katılabilir', false)
             ->assertSee('"@type":"WebPage"', false)
-            ->assertSee('"url":"https://www.tavlatv.com/online-tavla"', false)
+            ->assertSee('"url":"https://tavlatv.com/online-tavla"', false)
             ->assertSee('href="/tavla-rehberi"', false)
             ->assertSee('"@type":"BreadcrumbList"', false);
     }
@@ -39,10 +39,10 @@ class SeoMetaTest extends TestCase
             ->assertSee('Play Backgammon Online Free - Live Multiplayer | TavlaTv', false)
             ->assertSee('<html lang="en"', false)
             ->assertSee('property="og:locale" content="en_US"', false)
-            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/backgammon"', false)
-            ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/online-tavla"', false)
-            ->assertSee('rel="alternate" hreflang="x-default" href="https://www.tavlatv.com/online-tavla"', false)
-            ->assertSee('rel="canonical" href="https://www.tavlatv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="en" href="https://gammontv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="tr" href="https://tavlatv.com/online-tavla"', false)
+            ->assertSee('rel="alternate" hreflang="x-default" href="https://tavlatv.com/online-tavla"', false)
+            ->assertSee('rel="canonical" href="https://tavlatv.com/backgammon"', false)
             ->assertSee('"@type":"VideoGame"', false)
             ->assertSee('"inLanguage":"en"', false)
             ->assertSee('Play backgammon online for free', false);
@@ -52,8 +52,8 @@ class SeoMetaTest extends TestCase
     {
         $this->get('/online-tavla')
             ->assertOk()
-            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/backgammon"', false)
-            ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/online-tavla"', false);
+            ->assertSee('rel="alternate" hreflang="en" href="https://gammontv.com/backgammon"', false)
+            ->assertSee('rel="alternate" hreflang="tr" href="https://tavlatv.com/online-tavla"', false);
     }
 
     public function test_tournament_landing_contains_keyword_relevant_content(): void
@@ -70,8 +70,8 @@ class SeoMetaTest extends TestCase
         $this->get('/tavla-rehberi/tavla-acilis-stratejileri')
             ->assertOk()
             ->assertSee('"@type":"BlogPosting"', false)
-            ->assertSee('https://www.tavlatv.com/og-image.jpg', false)
-            ->assertSee('https://www.tavlatv.com/icon-512.png', false)
+            ->assertSee('https://tavlatv.com/og-image.jpg', false)
+            ->assertSee('https://tavlatv.com/icon-512.png', false)
             ->assertSee('"datePublished":"2026-09-22T18:24:48+03:00"', false)
             ->assertSee('"dateModified":"2026-09-22T18:24:48+03:00"', false);
     }
@@ -111,7 +111,7 @@ class SeoMetaTest extends TestCase
                 ->assertOk()
                 ->assertSee('"@type":"Article"', false)
                 ->assertSee('"datePublished":"2026-09-20T12:00:00+03:00"', false) // app.timezone Europe/Istanbul
-                ->assertSee('https://www.tavlatv.com/og-image.jpg', false)
+                ->assertSee('https://tavlatv.com/og-image.jpg', false)
                 ->assertSee('SEO Haber Denemesi', false);
         } finally {
             Schema::dropIfExists('contents');
@@ -122,7 +122,7 @@ class SeoMetaTest extends TestCase
     {
         $sitemap = file_get_contents(public_path('sitemap.xml'));
         $this->assertNotFalse($sitemap);
-        preg_match_all('~<loc>(https://www\\.tavlatv\\.com/[^<]*)</loc>~', (string) $sitemap, $matches);
+        preg_match_all('~<loc>(https://tavlatv\\.com/[^<]*)</loc>~', (string) $sitemap, $matches);
         $this->assertNotEmpty($matches[1]);
         $sitemapUrls = array_fill_keys($matches[1], true);
 
@@ -186,73 +186,73 @@ class SeoMetaTest extends TestCase
 
     public function test_brand_resolves_from_host(): void
     {
-        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('www.tavlatv.com'));
         $this->assertSame('tavla', \App\Support\Brand::keyFromHost('tavlatv.com'));
-        $this->assertSame('gammon', \App\Support\Brand::keyFromHost('www.gammontv.com'));
+        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('tavlatv.com'));
+        $this->assertSame('gammon', \App\Support\Brand::keyFromHost('gammontv.com'));
         $this->assertSame('gammon', \App\Support\Brand::keyFromHost('gammontv.com'));
         $this->assertSame('tavla', \App\Support\Brand::keyFromHost('localhost')); // varsayılan
-        $this->assertSame('en', \App\Support\Brand::fromHost('www.gammontv.com')['locale']);
-        $this->assertSame('tr', \App\Support\Brand::fromHost('www.tavlatv.com')['locale']);
+        $this->assertSame('en', \App\Support\Brand::fromHost('gammontv.com')['locale']);
+        $this->assertSame('tr', \App\Support\Brand::fromHost('tavlatv.com')['locale']);
     }
 
     public function test_gammon_host_serves_english_branded_landing(): void
     {
-        $this->get('http://www.gammontv.com/online-tavla')
+        $this->get('http://gammontv.com/online-tavla')
             ->assertOk()
             ->assertSee('Play Backgammon Online - Free Live Backgammon | GammonTV', false)
             ->assertSee('<html lang="en"', false)
             ->assertSee('property="og:locale" content="en_US"', false)
-            ->assertSee('rel="canonical" href="https://www.gammontv.com/online-tavla"', false)
+            ->assertSee('rel="canonical" href="https://gammontv.com/online-tavla"', false)
             ->assertSee('property="og:site_name" content="GammonTV"', false)
             ->assertSee('rel="manifest" href="/manifest.en.webmanifest"', false)
             ->assertSee('Play Backgammon Online</a>', false); // noscript nav İngilizce
-        // NOT: www.tavlatv.com çapraz-domain hreflang'da (tr alternatifi) KASITLI görünür — leak değil.
+        // NOT: tavlatv.com çapraz-domain hreflang'da (tr alternatifi) KASITLI görünür — leak değil.
     }
 
     public function test_tavla_host_still_turkish_and_unchanged(): void
     {
         // Regresyon: varsayılan marka (tavlatv) eskisi gibi Türkçe + tavlatv kanonik.
-        $this->get('http://www.tavlatv.com/online-tavla')
+        $this->get('http://tavlatv.com/online-tavla')
             ->assertOk()
             ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false)
             ->assertSee('<html lang="tr"', false)
             ->assertSee('property="og:locale" content="tr_TR"', false)
-            ->assertSee('rel="canonical" href="https://www.tavlatv.com/online-tavla"', false)
+            ->assertSee('rel="canonical" href="https://tavlatv.com/online-tavla"', false)
             // NOT: tavla /online-tavla artık çapraz-domain reciprocal hreflang en -> gammontv.com
             // İÇERİR (kasıtlı); eski assertDontSee('gammontv.com') kaldırıldı.
-            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/backgammon"', false);
+            ->assertSee('rel="alternate" hreflang="en" href="https://gammontv.com/backgammon"', false);
     }
 
     public function test_gammon_homepage_is_english(): void
     {
-        $this->get('http://www.gammontv.com/')
+        $this->get('http://gammontv.com/')
             ->assertOk()
             ->assertSee('GammonTV — Play Backgammon Online Free | Live Multiplayer', false)
             ->assertSee('<html lang="en"', false)
             ->assertSee('"name":"GammonTV"', false)
-            ->assertSee('rel="canonical" href="https://www.gammontv.com/"', false);
+            ->assertSee('rel="canonical" href="https://gammontv.com/"', false);
     }
 
     public function test_cross_domain_hreflang_on_standard_route(): void
     {
-        $this->get('http://www.gammontv.com/turnuva-takvimi')
+        $this->get('http://gammontv.com/turnuva-takvimi')
             ->assertOk()
-            ->assertSee('rel="alternate" hreflang="tr" href="https://www.tavlatv.com/turnuva-takvimi"', false)
-            ->assertSee('rel="alternate" hreflang="en" href="https://www.gammontv.com/turnuva-takvimi"', false);
+            ->assertSee('rel="alternate" hreflang="tr" href="https://tavlatv.com/turnuva-takvimi"', false)
+            ->assertSee('rel="alternate" hreflang="en" href="https://gammontv.com/turnuva-takvimi"', false);
     }
 
     public function test_host_aware_robots_and_sitemap(): void
     {
-        $this->get('http://www.gammontv.com/robots.txt')
+        $this->get('http://gammontv.com/robots.txt')
             ->assertOk()
-            ->assertSee('Sitemap: https://www.gammontv.com/sitemap.xml', false);
+            ->assertSee('Sitemap: https://gammontv.com/sitemap.xml', false);
 
-        $this->get('http://www.tavlatv.com/robots.txt')
+        $this->get('http://tavlatv.com/robots.txt')
             ->assertOk()
-            ->assertSee('Sitemap: https://www.tavlatv.com/sitemap.xml', false);
+            ->assertSee('Sitemap: https://tavlatv.com/sitemap.xml', false);
 
-        $this->get('http://www.gammontv.com/sitemap.xml')
+        $this->get('http://gammontv.com/sitemap.xml')
             ->assertOk()
-            ->assertSee('<loc>https://www.gammontv.com/online-tavla</loc>', false);
+            ->assertSee('<loc>https://gammontv.com/online-tavla</loc>', false);
     }
 }

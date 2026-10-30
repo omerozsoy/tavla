@@ -33,7 +33,9 @@ const BRANDS: Record<BrandKey, Brand> = {
     key: 'tavla',
     name: 'TavlaTv',
     locale: 'tr',
-    origin: 'https://www.tavlatv.com',
+    // KANONİK host www'SUZ: canlı www.tavlatv.com 301 ile tavlatv.com'a gider -> SEO (canonical/
+    // og:url) yönlendiren adresi DEĞİL hedefi göstermeli. origin yalnız SEO/canonical için kullanılır.
+    origin: 'https://tavlatv.com',
     logoText: 'TAVLATV',
     manifest: '/manifest.webmanifest',
     requirePhone: true,

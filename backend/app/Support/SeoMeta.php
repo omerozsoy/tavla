@@ -27,7 +27,7 @@ final class SeoMeta
 {
     /** Geçerli isteğin kanonik kökü (sonunda '/'); varsayılan TavlaTv. Çoklu-domain'de
      *  istek host'una göre inject() tarafından güncellenir. Slug bununla birleşir. */
-    private static string $base = 'https://www.tavlatv.com/';
+    private static string $base = 'https://tavlatv.com/'; // KANONİK host www'SUZ (SEO; bkz originFor)
 
     /** Geçerli isteğin markası (App\Support\Brand::fromHost çıktısı). */
     private static array $brand = [
@@ -50,6 +50,11 @@ final class SeoMeta
     private static function originFor(string $key): string
     {
         $o = (string) config("brands.brands.$key.origin", self::$base);
+        // KANONİK host www'SUZ (SEO): canlı www.tavlatv.com 301 ile tavlatv.com'a gider -> canonical/
+        // og/sitemap/hreflang YÖNLENDİREN adresi değil HEDEFİ göstermeli (Google "asıl sayfa bu" diye
+        // yönlendiren URL vermesin). YALNIZ SEO çıktısını etkiler; fonksiyonel origin (OAuth/frontend_url/
+        // CORS/Reverb) config/brands'te www olarak KALIR — bu metot yalnız SeoMeta içinde kullanılır.
+        $o = preg_replace('~://www\.~', '://', $o) ?? $o;
 
         return rtrim($o, '/').'/';
     }
@@ -632,7 +637,10 @@ final class SeoMeta
     {
         // Çoklu-domain: istek host'u markayı (dil + kanonik kök) belirler.
         self::$brand = Brand::fromHost($host);
-        self::$base = Brand::base(self::$brand);
+        // KANONİK host www'SUZ (SEO): canonical/og:url/JSON-LD url self::$base'den türer; Brand::base
+        // config origin'i (www'li) döndürür ama SEO çıktısı yönlendiren değil HEDEF host'u göstermeli.
+        // Yalnız SeoMeta-local self::$base'i strip et; Brand::base'in fonksiyonel kullanımları korunur.
+        self::$base = preg_replace('~://www\.~', '://', Brand::base(self::$brand)) ?? Brand::base(self::$brand);
 
         $slug = trim($path, '/');
         $html = self::injectRoute($slug, $html);
@@ -932,8 +940,12 @@ final class SeoMeta
         //    (canonical/og:url/og:image/JSON-LD @id/url/logo). Per-route etiketler zaten marka
         //    base'iyle yazıldığından etkilenmez.
         $defaultKey = (string) config('brands.default', 'tavla');
-        $defaultHost = (string) parse_url((string) config("brands.brands.$defaultKey.origin", 'https://www.tavlatv.com'), PHP_URL_HOST);
-        $brandHost = (string) parse_url((string) ($b['origin'] ?? ''), PHP_URL_HOST);
+        // KANONİK host www'SUZ (bkz originFor): statik index.html artık non-www host taşır -> marka
+        // host-swap'i de www'SUZ hostlarla eşleşmeli (yoksa str_replace 'www.tavlatv.com' arar, HTML'de
+        // 'tavlatv.com' var -> eşleşmez, GammonTV sayfaları yanlış host'ta kalırdı).
+        $stripWww = static fn (string $h): string => preg_replace('~^www\.~', '', $h) ?? $h;
+        $defaultHost = $stripWww((string) parse_url((string) config("brands.brands.$defaultKey.origin", 'https://www.tavlatv.com'), PHP_URL_HOST));
+        $brandHost = $stripWww((string) parse_url((string) ($b['origin'] ?? ''), PHP_URL_HOST));
         if ($defaultHost !== '' && $brandHost !== '' && $defaultHost !== $brandHost) {
             $html = str_replace($defaultHost, $brandHost, $html);
         }
