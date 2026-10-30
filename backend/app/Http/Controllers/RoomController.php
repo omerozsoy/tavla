@@ -31,6 +31,7 @@ use App\Support\MoveNotation;
 use App\Support\RatingPolicy;
 use App\Support\RoomAccess;
 use App\Support\SeededOpening;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -1643,7 +1644,14 @@ class RoomController extends Controller
                 return $this->fail('Bu turnuva maçında değilsin.', 403);
             }
         }
-        $room = Room::firstOrCreate(['code' => $code], $createAttrs);
+        // firstOrCreate SELECT→INSERT (atomik DEĞİL): iki oyuncu aynı turnuva/rövanş koduyla aynı
+        // anda enter edince ikisi de INSERT edip rooms.code unique'ine 1062 ile çarpıp 500 verirdi
+        // (tur-başı yarışı; watch upsert fix'iyle aynı sınıf). Yakalayıp tekrar oku (GameLog deseni).
+        try {
+            $room = Room::firstOrCreate(['code' => $code], $createAttrs);
+        } catch (QueryException $e) {
+            $room = Room::where('code', $code)->firstOrFail();
+        }
 
         $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
