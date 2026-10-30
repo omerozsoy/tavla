@@ -84,7 +84,14 @@ Route::post('/diag/reload', function (\Illuminate\Http\Request $r) {
 // Log'a yazar (migration yok), best-effort. Çözülünce bu route + push.ts beacon'ları silinir.
 Route::post('/diag/push', function (\Illuminate\Http\Request $r) {
     try {
-        \Illuminate\Support\Facades\Log::channel('single')->info('push-diag', [
+        // Ayri debug dosyasi (Log::build anlik kanal): 'single' kanali 'error' seviyesinde
+        // oldugundan info/debug eleniyordu; bu kanal kendi debug seviyesinde yazar, ana log'u
+        // kirletmez, alarm tetiklemez. storage/logs/push-diag.log.
+        \Illuminate\Support\Facades\Log::build([
+            'driver' => 'single',
+            'path' => storage_path('logs/push-diag.log'),
+            'level' => 'debug',
+        ])->debug('push-diag', [
             'uid' => optional($r->user('sanctum'))->id,
             'ev' => mb_substr((string) $r->input('ev', ''), 0, 24),
             'd' => array_map(fn ($v) => is_scalar($v) ? mb_substr((string) $v, 0, 60) : null, (array) $r->input('d', [])),
