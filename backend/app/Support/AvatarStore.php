@@ -63,12 +63,13 @@ class AvatarStore
 
             $hash = sha1($webp); // içerik-adresli → immutable, aynı görsel = aynı dosya (dedup)
             $dir = public_path('uploads/avatars');
-            if (! is_dir($dir)) {
-                @mkdir($dir, 0775, true);
+            if (! is_dir($dir) && ! @mkdir($dir, 0775, true) && ! is_dir($dir)) {
+                return $value; // dizin yok/yaratılamadı (izin) → base64 KALSIN, kırık URL yazma
             }
             $file = $dir.DIRECTORY_SEPARATOR.$hash.'.webp';
-            if (! is_file($file)) {
-                file_put_contents($file, $webp);
+            // KRİTİK: dosya gerçekten diske yazılmadıysa URL DÖNME (yoksa 404 kırık avatar).
+            if (! is_file($file) && @file_put_contents($file, $webp) === false) {
+                return $value; // yazılamadı → base64 kalsın
             }
 
             return '/uploads/avatars/'.$hash.'.webp';
