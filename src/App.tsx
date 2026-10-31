@@ -2459,6 +2459,17 @@ export default function App() {
             })
             return
           }
+          // GUARD'LI FIX (hayalet "Devam Eden Maç" + "Maça dön" SİYAH EKRAN): yerel ONLINE kayıt var
+          // ama sunucu bu odanın OYNANMADIĞINI (finished / terk-ABANDON) KESİN söylüyorsa (showRoom
+          // yanıt verdi + status != 'playing'), bayat yerel kaydı YÜKLEME -> SİL + lobide kal. Yoksa
+          // aşağıdaki `else if (local) applySavedGame(local)` bitmiş online maçı yükler -> hasActiveGame
+          // true + aktif oda 0 -> hayalet banner; "Maça dön"de gone-room'u render edince siyah ekran.
+          // ⚠ VERİ KAYBI KALKANI: yalnız rv KESİN non-playing dediğinde temizle. rv null (ağ hatası/404)
+          // ise DOKUNMA -> mevcut güvenli davranış (aşağı düş) kalır; gerçekten aktif maç silinmez.
+          if (rv && rv.status && rv.status !== 'playing') {
+            clearGame()
+            return // finally -> finish(); home=true varsayılan -> lobi (applySavedGame çalışmaz)
+          }
         }
         if (localActive) {
           applySavedGame(local!) // taze yerel aktif oyun -> sunucuyu bekleme/ezdirme
