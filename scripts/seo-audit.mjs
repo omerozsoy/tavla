@@ -16,7 +16,8 @@ if (/<meta\s+name=["']keywords["']/i.test(index)) {
 }
 
 const canonical = index.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']/i)?.[1]
-if (canonical !== 'https://www.tavlatv.com/') {
+// KANONİK host www'SUZ (bkz SeoMeta/brand.ts): canlı www.tavlatv.com 301 ile tavlatv.com'a gider.
+if (canonical !== 'https://tavlatv.com/') {
   fail(`homepage canonical is ${canonical ?? 'missing'}`)
 }
 
@@ -26,7 +27,7 @@ if (!description || description.length < 70 || description.length > 170) {
 }
 
 const sitemapUrl = robots.match(/^Sitemap:\s*(\S+)\s*$/im)?.[1]
-if (sitemapUrl !== 'https://www.tavlatv.com/sitemap.xml') {
+if (sitemapUrl !== 'https://tavlatv.com/sitemap.xml') {
   fail(`robots.txt sitemap is ${sitemapUrl ?? 'missing'}`)
 }
 
@@ -38,7 +39,7 @@ function sitemapLocs(xml, label) {
   if (locs.length === 0) fail(`${label} contains no URLs`)
   if (new Set(locs).size !== locs.length) fail(`${label} contains duplicate URLs`)
   for (const loc of locs) {
-    if (!/^https:\/\/www\.tavlatv\.com\/[A-Za-z0-9/_-]*$/.test(loc)) {
+    if (!/^https:\/\/tavlatv\.com\/[A-Za-z0-9/_-]*$/.test(loc)) {
       fail(`${label} contains an invalid URL: ${loc}`)
     }
   }
