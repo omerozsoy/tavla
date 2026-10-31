@@ -77,6 +77,9 @@ class AdminPanelProvider extends PanelProvider
                     .'.tiptap-editor:not(.tiptap-fullscreen) .tiptap-prosemirror-wrapper{max-height:420px;overflow-y:auto}'
                     .'.filepond--root[data-style-panel-layout=grid] .filepond--item{width:calc(25% - .5rem)!important}'
                     .'@media(min-width:1024px){.filepond--root[data-style-panel-layout=grid] .filepond--item{width:calc(16.66% - .5rem)!important}}'
+                    // Elle işaretli üye satırı (UserResource admin_flag) — kırmızı zemin + sol şerit.
+                    .'.tv-flag-row{background:rgba(239,68,68,.10)!important;box-shadow:inset 3px 0 0 #ef4444}'
+                    .'.dark .tv-flag-row{background:rgba(239,68,68,.16)!important}'
                     .'</style>',
             );
     }

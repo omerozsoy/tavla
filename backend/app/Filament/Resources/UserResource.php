@@ -49,6 +49,13 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nickname';
 
+    /** Elle moderasyon işaretleri: anahtar => panel etiketi. Boş/temizle = null. */
+    public const FLAG_LABELS = [
+        'supheli' => '⚠ Şüpheli',
+        'sorunlu' => '⚠ Sorunlu',
+        'kufurbaz' => '🤬 Küfürbaz',
+    ];
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -295,6 +302,8 @@ class UserResource extends Resource
     {
         return $table
             ->defaultSort('id', 'desc')
+            // İşaretli üyeler kırmızı satır (CSS head.end'de .tv-flag-row — AdminPanelProvider).
+            ->recordClasses(fn ($record) => $record->admin_flag ? 'tv-flag-row' : null)
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
@@ -344,6 +353,11 @@ class UserResource extends Resource
                         return $s ? "Motor-yardımı şüphesi: {$s['flags']} uzun-düşük PR maç, en kötü PR {$s['worst_pr']}" : null;
                     })
                     ->placeholder('—')->toggleable(),
+                // ELLE moderasyon işareti (şüpheli/sorunlu/küfürbaz) — kebab'taki "İşaretle" ile atanır,
+                // satırı da kırmızı yapar (recordClasses + head.end CSS). cheat_suspect OTOMATİK iken bu ELLE.
+                Tables\Columns\TextColumn::make('admin_flag')->label('İşaret')->badge()->color('danger')
+                    ->formatStateUsing(fn ($state) => self::FLAG_LABELS[$state] ?? null)
+                    ->placeholder('—')->toggleable(),
                 // Admin notu: listede görünür (kimde not var bir bakışta belli) + içerikte arama.
                 Tables\Columns\TextColumn::make('admin_note')->label('Admin Notu')
                     ->limit(40)->tooltip(fn ($record) => $record->admin_note)
@@ -381,6 +395,9 @@ class UserResource extends Resource
                 // PHP'de normalize+substring çalışır -> SQL'de süzülemez; flaggedNicknameIds() tarar.
                 Tables\Filters\Filter::make('profanity')->label('Küfür şüphesi')->toggle()
                     ->query(fn (Builder $q) => $q->whereIn('id', static::flaggedNicknameIds())),
+                // ELLE işaret süzgeci (kolon adı admin_flag -> otomatik where uygular).
+                Tables\Filters\SelectFilter::make('admin_flag')->label('İşaret')
+                    ->options(self::FLAG_LABELS),
                 // Admin notu olan üyeleri süz (kimde not var kolayca bulunur).
                 Tables\Filters\TernaryFilter::make('admin_note')->label('Admin notu')
                     ->placeholder('Hepsi')->trueLabel('Notu olanlar')->falseLabel('Notu olmayanlar')
@@ -450,6 +467,29 @@ class UserResource extends Resource
                     ->action(function ($record) {
                         $record->email_verified_at = $record->email_verified_at ? null : now();
                         $record->save();
+                    }),
+                // İŞARETLE: profiline girmeden listeden kategori ata (şüpheli/sorunlu/küfürbaz) veya temizle.
+                // forceFill: admin_flag fillable DEĞİL (mass-assignment dışı). Kırmızıysa gri bayrak = işaretli.
+                Tables\Actions\Action::make('flag')
+                    ->label(fn ($record) => $record->admin_flag ? 'İşareti Değiştir' : 'İşaretle')
+                    ->tooltip(fn ($record) => $record->admin_flag
+                        ? ('İşaret: '.(self::FLAG_LABELS[$record->admin_flag] ?? $record->admin_flag))
+                        : 'İşaretle (şüpheli/sorunlu/küfürbaz)')
+                    ->iconButton()
+                    ->icon('heroicon-m-flag')
+                    ->color(fn ($record) => $record->admin_flag ? 'danger' : 'gray')
+                    ->form([
+                        Forms\Components\Select::make('admin_flag')->label('İşaret')
+                            ->options(self::FLAG_LABELS)
+                            ->placeholder('İşareti kaldır (temizle)')
+                            ->default(fn ($record) => $record->admin_flag),
+                    ])
+                    ->modalHeading('Üyeyi işaretle')
+                    ->modalSubmitActionLabel('Kaydet')
+                    ->action(function ($record, array $data) {
+                        $record->forceFill(['admin_flag' => $data['admin_flag'] ?: null])->save();
+                        Notification::make()->success()
+                            ->title($data['admin_flag'] ? 'İşaretlendi' : 'İşaret kaldırıldı')->send();
                     }),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
