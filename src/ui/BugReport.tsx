@@ -157,10 +157,6 @@ export default function BugReport({ currentPage, loggedIn, hideFab }: Props) {
         >
           <Icon name="flag" size={20} />
           <span className="bug-fab-txt">{t('bug.button')}</span>
-          <span className="bug-fab-coin" aria-hidden="true">
-            <Icon name="coins" size={13} />
-            10.000
-          </span>
         </button>
       )}
 

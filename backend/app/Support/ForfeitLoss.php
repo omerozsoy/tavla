@@ -2,7 +2,11 @@
 
 namespace App\Support;
 
+use App\Jobs\AnalyzeMatchLuckJob;
+use App\Jobs\AnalyzeMatchPrJob;
+use App\Models\MatchMove;
 use App\Models\MatchResult;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -22,11 +26,11 @@ use Illuminate\Support\Facades\Schema;
 class ForfeitLoss
 {
     /**
-     * @param  string  $roomCode   oda kodu (match_results.room_code -> idempotent anahtar)
-     * @param  int  $loserId       kaybeden kullanici id
-     * @param  int  $oppRating     rakibin (kazananin) rating'i (Elo icin)
+     * @param  string  $roomCode  oda kodu (match_results.room_code -> idempotent anahtar)
+     * @param  int  $loserId  kaybeden kullanici id
+     * @param  int  $oppRating  rakibin (kazananin) rating'i (Elo icin)
      * @param  int|null  $matchLength  mac uzunlugu (puan)
-     * @param  string  $matchType   'coin' | 'match'
+     * @param  string  $matchType  'coin' | 'match'
      * @param  string|null  $winnerName  rakip (kazanan) adi -> gecmiste gorunsun
      * @param  bool  $ranked  false ise CASUAL (arkadas/kilic): rating+istatistik DEGISMEZ,
      *                        yalniz gecmis satiri delta=0 ile yazilir (haksiz puan kaybi olmaz).
@@ -53,7 +57,7 @@ class ForfeitLoss
         // sonucundan coz (RoomResult). Cozulemezse null kalir (eski davranis).
         $selfScore = null;
         $oppScore = null;
-        $room = \App\Models\Room::where('code', $roomCode)->first();
+        $room = Room::where('code', $roomCode)->first();
         if ($room) {
             $res = RoomResult::resolve($room, $loserId);
             if ($res !== null) {
@@ -82,8 +86,9 @@ class ForfeitLoss
             $ra = (int) ($loser->rating ?? 1500);
             $rb = $oppRating > 0 ? $oppRating : 1500;
             if ($ranked) {
-                $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
-                $newRating = max(100, (int) round($ra + 32 * (0 - $expected))); // skor=0 (kayip)
+                // Terk/timeout = KAYIP (skor 0). reportRating ile AYNI merkezi formül: K=32, taban 100,
+                // uzunluk katsayısı C=sqrt(L/3) -> kaybeden, rakibin tam kazancı kadar kaybeder (simetri).
+                $newRating = RatingPolicy::eloNewRating($ra, $rb, false, max(1, (int) ($matchLength ?? 1)));
                 $loser->rating = $newRating;
                 $loser->losses = (int) ($loser->losses ?? 0) + 1;
                 $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
@@ -131,9 +136,9 @@ class ForfeitLoss
         // PR + Sans + Hata Gunlugu (SUNUCU-OTORITER kaynak, DOGRU renk analysisHc ile). Boylece rapor
         // gondermeyen kaybenin satiri "Mac Analizleri"nde bos kalmaz. gnubg down ise job retry/heal eder.
         // KLASIK TAVLA: gnubg analiz edemez -> PR/şans job'u dispatch ETME (satır zaten yazıldı).
-        if ($createdId !== null && ! ($room && $room->classic) && \App\Models\MatchMove::existsForRoom($roomCode)) {
-            \App\Jobs\AnalyzeMatchPrJob::dispatch($createdId)->onConnection('database');
-            \App\Jobs\AnalyzeMatchLuckJob::dispatch($createdId)->onConnection('database');
+        if ($createdId !== null && ! ($room && $room->classic) && MatchMove::existsForRoom($roomCode)) {
+            AnalyzeMatchPrJob::dispatch($createdId)->onConnection('database');
+            AnalyzeMatchLuckJob::dispatch($createdId)->onConnection('database');
         }
     }
 }

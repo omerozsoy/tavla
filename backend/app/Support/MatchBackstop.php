@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\MatchResult;
 use App\Models\Room;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -137,8 +138,9 @@ class MatchBackstop
                 $ra = (int) ($u->rating ?? 1500);
                 $rb = $oppRating > 0 ? $oppRating : 1500;
                 if ($ranked) {
-                    $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
-                    $newRating = max(100, (int) round($ra + 32 * (($won ? 1 : 0) - $expected))); // k=32
+                    // reportRating/ForfeitLoss ile AYNI merkezi formül: K=32, taban 100,
+                    // uzunluk katsayısı C=sqrt(L/3) (L=hedef puan).
+                    $newRating = RatingPolicy::eloNewRating($ra, $rb, $won, max(1, (int) ($matchLength ?? 1)));
                     $u->rating = $newRating;
                     $u->games_played = (int) ($u->games_played ?? 0) + 1;
                     if ($won) {
@@ -186,7 +188,7 @@ class MatchBackstop
 
                 return true;
             });
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+        } catch (UniqueConstraintViolationException $e) {
             // Gerçek yarış: aynı anda istemci raporu / başka sweep satırı yazdı. Transaction
             // geri alındı -> rating TEKRAR uygulanmadı; istemcinin (zengin) satırı korunur.
             return false;

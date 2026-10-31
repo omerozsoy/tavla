@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MatchResult;
 use App\Models\Room;
 use App\Models\User;
+use App\Support\RatingPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -336,7 +337,8 @@ class MatchResultAuthoritativeTest extends TestCase
     public function test_invite_preview_matches_recorded_delta(): void
     {
         // Ekran görüntüsü senaryosu: davet eden 1389, rakip (Zgrclskn91) 1501.
-        $preview = \App\Support\RatingPolicy::eloPreview(1389, 1501);
+        // L=3 (makeFinishedRoom/PREVL target=3) -> C=sqrt(3/3)=1 -> uzunluk katsayısı etkisiz, değerler aynı.
+        $preview = RatingPolicy::eloPreview(1389, 1501, 3);
         $this->assertSame(21, $preview['win'], 'önizleme: Kazanırsan +21');
         $this->assertSame(-11, $preview['loss'], 'önizleme: Kaybedersen −11');
 
@@ -412,7 +414,7 @@ class MatchResultAuthoritativeTest extends TestCase
         ])->assertOk();
 
         // DB'de istemci luck'ı SAKLANMADI (gnubg luck_mwc/emg async -> henüz null).
-        $row = \App\Models\MatchResult::where('room_code', 'AUTHR')->where('user_id', $white->id)->first();
+        $row = MatchResult::where('room_code', 'AUTHR')->where('user_id', $white->id)->first();
         $this->assertNull($row->luck, 'istemci HAM luck DB\'ye yazılmamalı');
 
         // /me/match-pr: luck_self/luck_opp alanları YOK; yalnız gnubg luck_mwc (burada null) var.

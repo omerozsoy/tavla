@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\TourneyBots;
+use App\Models\Message;
+use App\Models\Notification;
 use App\Models\Room;
+use App\Models\Setting;
+use App\Models\Tournament;
 use App\Models\User;
 use App\Support\RatingPolicy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -31,7 +38,7 @@ class PresenceController extends Controller
             ->where(fn ($q) => $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid))
             ->pluck('code');
         foreach ($codes as $c) {
-            if (\Illuminate\Support\Facades\Cache::has(TournamentController::roomTargetKey((string) $c))) {
+            if (Cache::has(TournamentController::roomTargetKey((string) $c))) {
                 return true;
             }
         }
@@ -45,13 +52,13 @@ class PresenceController extends Controller
         $me = $request->user();
         $me->last_seen = now();
         $me->save();
-        \App\Console\Commands\TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
+        TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
 
         // OYUNDAYKEN DAVET GELMEZ: aktif maçta (tek oyun / turnuva / YZ dahil) olan oyuncuya
         // gelen oyun daveti banner'ı GÖSTERİLMEZ. Davet oluşturulurken hedef müsaitti ama sonra
         // hızlı eşleşmeyle maça giren oyuncu, maç ortasında bekleyen davetin banner'ını/sesini
         // almasın. (onlinePlayers/seekers 'in_game' deseniyle aynı: status=playing + p1/p2 + <5dk.)
-        $inGame = \App\Models\Room::where('status', 'playing')
+        $inGame = Room::where('status', 'playing')
             ->where('updated_at', '>', now()->subMinutes(5))
             ->where(fn ($q) => $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id))
             ->exists()
@@ -93,7 +100,7 @@ class PresenceController extends Controller
                 'unrated' => (bool) ($r->unrated ?? false),
                 'classic' => (bool) ($r->classic ?? false), // Klasik Tavla daveti rozeti
                 // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
-                'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated)),
+                'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated), (int) ($r->target ?? 1)),
             ]);
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
@@ -102,7 +109,7 @@ class PresenceController extends Controller
         // (bir sonraki rakibim henüz belli değil). Her sayfada gösterilecek global bant için
         // ({tid,tname}); rakip belli olunca tmatches'e düşer -> bant kalkar, oda oto-açılır.
         $waiting = [];
-        $running = \App\Models\Tournament::where('status', 'running')->get();
+        $running = Tournament::where('status', 'running')->get();
         foreach ($running as $tr) {
             $inThis = false;
             foreach (($tr->players ?? []) as $p) {
@@ -134,7 +141,7 @@ class PresenceController extends Controller
                             $tp = $round[1] ?? null;
                             if ($tp && ! empty($tp['third_place'])) {
                                 $gated = empty($tp['winner'])
-                                    || (! empty($m['opens_at']) && now()->lt(\Illuminate\Support\Carbon::parse($m['opens_at'])));
+                                    || (! empty($m['opens_at']) && now()->lt(Carbon::parse($m['opens_at'])));
                                 if ($gated) {
                                     continue;
                                 }
@@ -177,14 +184,14 @@ class PresenceController extends Controller
 
         // 6 saatlik odul hazir mi + sonraki odule kalan saniye
         // abs(): Carbon 3'te diffInSeconds isaretli doner -> mutlak gecen sure al
-        $last = $me->last_reward ? \Illuminate\Support\Carbon::parse($me->last_reward) : null;
+        $last = $me->last_reward ? Carbon::parse($me->last_reward) : null;
         $elapsed = $last ? (int) abs(now()->diffInSeconds($last)) : PHP_INT_MAX;
         $rewardReady = $elapsed >= 6 * 3600;
         $rewardSeconds = $rewardReady ? 0 : (6 * 3600 - $elapsed);
         // 6 saatlik ödül MİKTARI (plana + admin ayarına göre): premium 50, normal 25 (Site Ayarları).
         $rewardCoins = $me->plan_active === 'premium'
-            ? \App\Models\Setting::int('reward_premium', 50)
-            : \App\Models\Setting::int('reward_normal', 25);
+            ? Setting::int('reward_premium', 50)
+            : Setting::int('reward_normal', 25);
 
         // Bildirimler (son 20) + okunmamis sayisi. action/actor_id kolonu canlida henuz migrate
         // edilmemis olabilir -> varsa sec (eyleme donuk "Kabul Et" butonu icin).
@@ -192,7 +199,7 @@ class PresenceController extends Controller
         $notifCols = $hasAction
             ? ['id', 'title', 'body', 'icon', 'action', 'actor_id', 'read', 'created_at']
             : ['id', 'title', 'body', 'icon', 'read', 'created_at'];
-        $notifications = \App\Models\Notification::where('user_id', $me->id)
+        $notifications = Notification::where('user_id', $me->id)
             ->orderByDesc('id')
             ->limit(20)
             ->get($notifCols)
@@ -206,9 +213,9 @@ class PresenceController extends Controller
                 'read' => (bool) $n->read,
                 'created_at' => optional($n->created_at)->toIso8601String(),
             ]);
-        $unread = \App\Models\Notification::where('user_id', $me->id)->where('read', false)->count();
+        $unread = Notification::where('user_id', $me->id)->where('read', false)->count();
         // Okunmamis ozel mesaj sayisi (mesaj rozeti)
-        $dmUnread = \App\Models\Message::where('receiver_id', $me->id)->whereNull('read_at')->count();
+        $dmUnread = Message::where('receiver_id', $me->id)->whereNull('read_at')->count();
 
         return response()->json([
             'invites' => $invites,
@@ -257,7 +264,7 @@ class PresenceController extends Controller
             'ids' => ['nullable', 'array'],
             'ids.*' => ['integer'],
         ]);
-        $q = \App\Models\Notification::where('user_id', $me->id)->where('read', false);
+        $q = Notification::where('user_id', $me->id)->where('read', false);
         if (! empty($data['ids'])) {
             $q->whereIn('id', $data['ids']);
         }
@@ -274,7 +281,7 @@ class PresenceController extends Controller
             'ids' => ['nullable', 'array'],
             'ids.*' => ['integer'],
         ]);
-        $q = \App\Models\Notification::where('user_id', $me->id);
+        $q = Notification::where('user_id', $me->id);
         if (! empty($data['ids'])) {
             $q->whereIn('id', $data['ids']);
         }
@@ -292,7 +299,7 @@ class PresenceController extends Controller
      *
      * @return array{win:int, loss:int}|null
      */
-    private function ratingPreview(User $self, int $oppId, int $oppRating, bool $unrated): ?array
+    private function ratingPreview(User $self, int $oppId, int $oppRating, bool $unrated, int $length = 1): ?array
     {
         if ($unrated) {
             return null;
@@ -302,7 +309,8 @@ class PresenceController extends Controller
             return null;
         }
 
-        return RatingPolicy::eloPreview((int) ($self->rating ?? 1500), $oppRating);
+        // L = davetin hedef puanı -> uzunluk katsayısı C=sqrt(L/3) önizlemeye de yansır (maç sonu ile tutarlı).
+        return RatingPolicy::eloPreview((int) ($self->rating ?? 1500), $oppRating, max(1, $length));
     }
 
     public function invite(Request $request, int $userId)
@@ -327,7 +335,7 @@ class PresenceController extends Controller
         // oyuncu maça davet edilemez -> davet eden dostça uyarilir.
         // A-29: engelleme (iki yönden) davetleri de keser; eskiden engellenen kullanıcı davet
         // banner'ı göndermeye devam edebiliyordu.
-        if (\Illuminate\Support\Facades\Schema::hasTable('user_blocks') && \Illuminate\Support\Facades\DB::table('user_blocks')
+        if (Schema::hasTable('user_blocks') && DB::table('user_blocks')
             ->where(fn ($q) => $q->where('blocker_id', $me->id)->where('blocked_id', $userId))
             ->orWhere(fn ($q) => $q->where('blocker_id', $userId)->where('blocked_id', $me->id))->exists()) {
             return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
@@ -381,7 +389,7 @@ class PresenceController extends Controller
         return response()->json([
             'code' => $code,
             // Davet eden bekleme ekraninda: davetliye karsi kazanirsa/kaybederse (null = puansiz).
-            'ratingPreview' => $this->ratingPreview($me, (int) $target->id, (int) ($target->rating ?? 1500), (bool) ($settings['unrated'] ?? false)),
+            'ratingPreview' => $this->ratingPreview($me, (int) $target->id, (int) ($target->rating ?? 1500), (bool) ($settings['unrated'] ?? false), (int) ($settings['target'] ?? 1)),
         ]);
     }
 
@@ -400,6 +408,7 @@ class PresenceController extends Controller
                 'status' => 'declined',
                 'updated_at' => now(),
             ]);
+
             return response()->json([
                 'code' => null,
                 'target' => (int) ($invite->target ?? 1),
@@ -427,7 +436,7 @@ class PresenceController extends Controller
         // SÜRE: davet yalnız /ping'in gösterdiği pencerede (2 dk) kabul edilebilir. Eskiden yaş
         // denetlenmiyordu; davetlinin artık GÖREMEDİĞİ bir davet 10 dk'lık temizliğe kadar kabul
         // edilip davet edenin çoktan terk ettiği odaya girilebiliyordu.
-        if (\Illuminate\Support\Carbon::parse($invite->created_at)->lt(now()->subMinutes(self::INVITE_TTL_MINUTES))) {
+        if (Carbon::parse($invite->created_at)->lt(now()->subMinutes(self::INVITE_TTL_MINUTES))) {
             DB::table('game_invites')->where('id', $inviteId)->update(['status' => 'expired', 'updated_at' => now()]);
 
             return $this->fail('Davetin süresi doldu. Tekrar davet iste.', 409);
@@ -442,6 +451,7 @@ class PresenceController extends Controller
                 'status' => 'expired',
                 'updated_at' => now(),
             ]);
+
             return $this->fail('Davet eden oyundan ayrıldı. Tekrar davet iste.', 409);
         }
 
@@ -462,6 +472,7 @@ class PresenceController extends Controller
             'status' => 'accepted',
             'updated_at' => now(),
         ]);
+
         return response()->json([
             'code' => $invite->room_code,
             // Kabulde AYNI ayarla odaya gir: davet edenin sectigi Tek Oyun/Mac uzunlugu + saat.

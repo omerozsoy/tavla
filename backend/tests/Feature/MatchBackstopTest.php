@@ -25,6 +25,7 @@ class MatchBackstopTest extends TestCase
             'password' => bcrypt('secret123'),
         ]);
         $u->forceFill(['rating' => $rating])->save(); // rating fillable degil
+
         return $u;
     }
 
@@ -70,11 +71,12 @@ class MatchBackstopTest extends TestCase
         $this->assertSame(0, (int) $rowA->score_opp);
         $this->assertSame(0, (int) $rowB->score_self);
         $this->assertSame(1, (int) $rowB->score_opp);
-        // Rating: kazanan artar, kaybeden azalir (k=32, esit rating -> +-16).
+        // Rating: kazanan artar, kaybeden azalir. K=32, esit rating, L=1 (target=1) ->
+        // C=sqrt(1/3)≈0.577 -> transfer=round(32*C*0.5)=9 -> +9/-9.
         $a->refresh();
         $b->refresh();
-        $this->assertSame(1516, (int) $a->rating);
-        $this->assertSame(1484, (int) $b->rating);
+        $this->assertSame(1509, (int) $a->rating);
+        $this->assertSame(1491, (int) $b->rating);
         $this->assertSame(1, (int) $a->wins);
         $this->assertSame(1, (int) $b->losses);
         // Bare satir: analiz log'u yok (istemci raporlamadi).

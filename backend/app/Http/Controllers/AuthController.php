@@ -622,7 +622,8 @@ class AuthController extends Controller
 
         if ($ranked) {
             // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
-            $newRating = RatingPolicy::eloNewRating((int) $ra, $rb, $won); // K=32, taban 100
+            // K=32, taban 100, maç uzunluğu katsayısı C=sqrt(L/3) (L=hedef puan, odadan).
+            $newRating = RatingPolicy::eloNewRating((int) $ra, $rb, $won, max(1, (int) $data['match_length']));
 
             $user->rating = $newRating;
             $user->games_played = ($user->games_played ?? 0) + 1;
