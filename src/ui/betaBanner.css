@@ -15,7 +15,7 @@
   align-items: stretch;
   /* Kayan yazi zemini SIYAH (beyaz yazi). Sol BETA rozeti kiremit kalir. */
   background: #141413;
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* Sol sabit blok: kiremit zemin + koyu daire + BETA */
