@@ -61,6 +61,8 @@ class ServiceStatus extends Widget
                         ...array_map(fn ($r) => $r + ['group' => 'Maç-içi Isıtma İşçileri (warm)'], $this->warmRows()),
                         // Altyapı.
                         $this->checkDatabase() + ['group' => 'Altyapı'],
+                        // Redis: cache (DB1) + session (DB0). Düşerse giriş/cache çöker -> kritik, ayrı lamba.
+                        $this->checkRedis() + ['group' => 'Altyapı'],
                         // Kuyruk işçileri KUYRUK-BAZLI ayrı lamba (default/reviews/backfill): tek 'queue' lambası
                         // herhangi bir worker'ın nabzına bakıp bir kuyruk ölse de yeşil kalıyordu (kör nokta).
                         ...$this->queueRows(),
@@ -258,6 +260,37 @@ class ServiceStatus extends Widget
             return $this->svc('db', 'Veritabanı', true, true, $name !== '' ? $name : config('database.default'));
         } catch (\Throwable $e) {
             return $this->svc('db', 'Veritabanı', true, false, 'Bağlanılamadı');
+        }
+    }
+
+    /** Redis (cache DB1 + session DB0): socket/TCP PING + bellek. Düşerse giriş+cache çöker. Restart YOK (systemd Restart=always). */
+    private function checkRedis(): array
+    {
+        if (config('cache.default') !== 'redis' && config('session.driver') !== 'redis') {
+            return $this->svc('redis', 'Redis (cache + session)', false, null, 'Kullanılmıyor (cache/session redis değil)');
+        }
+        try {
+            $conn = app('redis')->connection();
+            $pong = $conn->ping();
+            $ok = $pong === true || (is_string($pong) && stripos($pong, 'PONG') !== false);
+            if (! $ok) {
+                return $this->svc('redis', 'Redis (cache + session)', true, false, 'PING yanıtı yok');
+            }
+            $detail = 'cache + oturum deposu';
+            try {
+                $info = $conn->info();
+                $mem = $info['used_memory_human'] ?? ($info['Memory']['used_memory_human'] ?? null);
+                $cl = $info['connected_clients'] ?? ($info['Clients']['connected_clients'] ?? null);
+                if ($mem) {
+                    $detail .= " · {$mem}".($cl !== null ? ", {$cl} bağlantı" : '');
+                }
+            } catch (\Throwable $e) {
+                // info alınamazsa ping yeterli -> yine yeşil
+            }
+
+            return $this->svc('redis', 'Redis (cache + session)', true, true, $detail);
+        } catch (\Throwable $e) {
+            return $this->svc('redis', 'Redis (cache + session)', true, false, 'Erişilemiyor — SSH: systemctl restart redis-server');
         }
     }
 

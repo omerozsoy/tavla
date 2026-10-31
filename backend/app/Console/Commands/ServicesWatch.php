@@ -44,8 +44,8 @@ class ServicesWatch extends Command
 
                     return ! empty($r['ok']);
                 },
-                'down' => "🔴 VALIDATOR DÜŞTÜ — sunucu-otoriter maçlarda hamleler REDDEDİLİYOR. Admin panel > Servis Durumu > Yeniden Başlat.",
-                'up' => "🟢 VALIDATOR tekrar ÇALIŞIYOR.",
+                'down' => '🔴 VALIDATOR DÜŞTÜ — sunucu-otoriter maçlarda hamleler REDDEDİLİYOR. Admin panel > Servis Durumu > Yeniden Başlat.',
+                'up' => '🟢 VALIDATOR tekrar ÇALIŞIYOR.',
             ];
         }
 
@@ -103,8 +103,8 @@ class ServicesWatch extends Command
             'key' => 'queue', 'name' => 'Queue worker',
             'probe' => fn () => $this->probeQueue(),
             'recover' => fn () => $this->systemctlRestart('tavla-queue'),
-            'down' => "🔴 QUEUE WORKER DÜŞTÜ — arka plan işleri (PR/Şans analizi) birikiyor. `systemctl restart tavla-queue`.",
-            'up' => "🟢 Queue worker tekrar ÇALIŞIYOR.",
+            'down' => '🔴 QUEUE WORKER DÜŞTÜ — arka plan işleri (PR/Şans analizi) birikiyor. `systemctl restart tavla-queue`.',
+            'up' => '🟢 Queue worker tekrar ÇALIŞIYOR.',
         ];
 
         // 4) Veritabanı — OTOMATİK RESTART YOK (riskli); yalnız uyarı.
@@ -112,8 +112,22 @@ class ServicesWatch extends Command
             'key' => 'database', 'name' => 'Veritabanı',
             'probe' => fn () => $this->probeDatabase(),
             'recover' => null,
-            'down' => "🔴 VERİTABANI ERİŞİLEMİYOR — site büyük ölçüde çalışmaz. ACİL: DB sunucusunu kontrol et.",
-            'up' => "🟢 Veritabanı tekrar erişilebilir.",
+            'down' => '🔴 VERİTABANI ERİŞİLEMİYOR — site büyük ölçüde çalışmaz. ACİL: DB sunucusunu kontrol et.',
+            'up' => '🟢 Veritabanı tekrar erişilebilir.',
+        ];
+
+        // 5) Redis — cache (DB1) + session (DB0) buradan tutulur; düşerse login+cache çöker. OTOMATİK
+        //    RESTART YOK: systemd `Restart=always` zaten kaldırır + redis-server için sudo -n izni yok
+        //    (NOPASSWD yalnız supervisorctl/fpm/nginx). Yalnız uyarı. Probe socket üzerinden ping.
+        //    NOT: cache=redis olduğundan redis TAM down ise bu komutun kendi Cache çağrıları da patlar;
+        //    probe try/catch'li, en kötü ihtimalle komut log'a hata düşer ama DOWN tespiti yapılır.
+        $services[] = [
+            'key' => 'redis', 'name' => 'Redis (cache + session)',
+            'probe' => fn () => $this->probeRedis(),
+            'recover' => null,
+            'down' => '🔴 REDIS ERİŞİLEMİYOR — cache + oturumlar çalışmaz (girişler düşer, site yavaşlar). '
+                .'ACİL: `systemctl restart redis-server` + `redis-cli -s /run/redis/redis.sock ping`.',
+            'up' => '🟢 Redis tekrar erişilebilir.',
         ];
 
         // DE-FLAP (2026-10-11 SAHTE "düştü" KÖK ÇÖZÜM): TEK bir geçici probe ıskası ALARM VERMEZ.
@@ -224,6 +238,18 @@ class ServicesWatch extends Command
             DB::select('select 1');
 
             return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /** Redis canlı mı: socket/TCP üzerinden PING. phpredis true, bazı sürümler 'PONG'/'+PONG' döner. */
+    private function probeRedis(): bool
+    {
+        try {
+            $r = app('redis')->connection()->ping();
+
+            return $r === true || (is_string($r) && stripos($r, 'PONG') !== false);
         } catch (\Throwable $e) {
             return false;
         }
