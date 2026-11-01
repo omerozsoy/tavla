@@ -1850,6 +1850,7 @@ export default function App() {
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   // Cevrimici listeden "kilic" ile secilen rakip -> FriendGameSetup davet modu (oyun turu/sure sec)
   const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
+  const [inviteRanked, setInviteRanked] = useState(false) // PUANLI davet mi (Çevrimiçi Oyuncular play tuşu): maç oyunu + unrated=false
   // "Oyun Arayanlar" para/bahis onayı: native window.confirm yerine uygulama-içi stilli modal
   // (markasız tarayıcı popup'ı yerine). msg = onay metni, run = onaylanınca çalışacak eşleşme.
   const [seekerConfirm, setSeekerConfirm] = useState<{ msg: ReactNode; run: () => void; title?: string } | null>(null)
@@ -7704,9 +7705,10 @@ export default function App() {
 
   // Arkadasi oyuna davet et (kilic ikonu): ONCE oyun turu/uzunluk/sure sec (FriendGameSetup
   // davet modu). Secili rakip orada gorunur; "Davet Gönder" -> handleSendInvite.
-  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null; rating?: number | null }) {
+  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null; rating?: number | null }, ranked = false) {
     setFriendsOpen(false)
     setInviteTarget(p)
+    setInviteRanked(ranked) // PUANLI davet yalnız Çevrimiçi Oyuncular play tuşundan gelir (ranked=true)
     setFriendClassic(false) // çevrimiçi listeden davet = modern (klasik değil)
     setHome(false)
     setFriendSetupOpen(true)
@@ -7773,6 +7775,7 @@ export default function App() {
     if (!tgt) return
     setFriendSetupOpen(false)
     setInviteTarget(null)
+    setInviteRanked(false)
     setInviteWaitName(tgt.name) // bekleme ekrani "kod paylas" yerine "{ad} bekleniyor" gostersin
     setInviteWaitRating(tgt.rating ?? null)
     setInviteWaitPreview(null) // onceki davetin tahmini kalmasin; yanit gelince set edilir
@@ -10950,11 +10953,13 @@ export default function App() {
             onChangeBoard={() => setBoardPickerOpen(true)}
             invitee={inviteTarget}
             defaultClassic={friendClassic}
+            ranked={inviteRanked}
             titleOverride={menuTitle(friendClassic ? 'klassikFriend' : 'playFriend')}
             onInvite={handleSendInvite}
             onCancel={() => {
               setFriendSetupOpen(false)
               setInviteTarget(null)
+              setInviteRanked(false)
               setFriendClassic(false)
             }}
             onCreate={({ target, timeControl, unrated, classic }) => {
@@ -11347,7 +11352,8 @@ export default function App() {
                 currentName={profile.nickname}
                 currentId={user?.id}
                 onProfile={(id) => setHomeProfileId(id)}
-                onInvite={user ? handleInviteFriend : undefined}
+                // Çevrimiçi Oyuncular play tuşu = PUANLI davet (ranked=true): maç oyunu + rating değişir.
+                onInvite={user ? (p) => handleInviteFriend(p, true) : undefined}
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}

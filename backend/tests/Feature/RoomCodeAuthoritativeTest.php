@@ -80,6 +80,7 @@ class RoomCodeAuthoritativeTest extends TestCase
             'room_code' => $code,
             'target' => 5,
             'time_control' => 'normal',
+            'unrated' => true, // arkadaşlık daveti = puansız (friendly); puanlı davet AÇIK unrated=false gönderir
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),

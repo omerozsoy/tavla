@@ -1618,9 +1618,15 @@ class RoomController extends Controller
         // gizliliğini (katılımcı olmayan seyredemez) uygular. Turnuva/rematch enter'ında davet
         // yoktur -> mode dokunulmaz (mevcut davranış korunur).
         if ($invite) {
-            $createAttrs['mode'] = 'friendly';
+            // Davet PUANLI mı: davet eden puansız SEÇMEDİYSE (unrated=false) oda 'ranked' olur -> isRanked
+            // puanlı sayar (friendly mode gate'ini aşar). Yalnız Çevrimiçi Oyuncular play tuşu unrated=false
+            // gönderir (2026-11-01-b direktifi); arkadaş listesi/Oyun Arayanlar/menü daveti hâlâ unrated=true
+            // -> 'friendly' (puansız). UYARI: puanlı davet rakip-seçtiği için rating farming'e açıktır
+            // (bilinçli kabul; sunucu online-play tuşu ile arkadaş davetini AYIRT EDEMEZ, tek sinyal unrated).
+            $inviteUnrated = (bool) ($invite->unrated ?? true);
+            $createAttrs['mode'] = $inviteUnrated ? 'friendly' : 'ranked';
             // Puansız bayrağı davetten (davet eden seçti). Oda zaten varsa firstOrCreate dokunmaz.
-            $createAttrs['unrated'] = (bool) ($invite->unrated ?? false);
+            $createAttrs['unrated'] = $inviteUnrated;
             // KLASIK TAVLA bayrağı da davetten gelir (davet eden klasik seçtiyse oda klasik olur).
             if (Schema::hasColumn('rooms', 'classic')) {
                 $createAttrs['classic'] = (bool) ($invite->classic ?? false);

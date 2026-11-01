@@ -51,19 +51,23 @@ interface Props {
   onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
   defaultClassic?: boolean // KLASIK TAVLA girişi: klasik varsayılan ON + Maç Oyunu sekmesi açık
   titleOverride?: string // admin "Sayfa Metni" baslik override'i (davet modu HARIÇ; bos -> i18n varsayilani)
+  // PUANLI DAVET (yalnız Çevrimiçi Oyuncular play tuşu): maç HER ZAMAN Maç Oyunu + puanlı (unrated=false).
+  // Tek Oyun seçeneği gizlenir, "hep puansız" notu yerine "puanlı" notu gösterilir. Varsayılan false.
+  ranked?: boolean
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false, titleOverride }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false }: Props) {
   const { t } = useT()
   useEscape(onCancel)
-  // KLASIK girişte Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı).
-  const [tab, setTab] = useState<'single' | 'match'>(defaultClassic ? 'match' : 'single')
+  // KLASIK girişte + PUANLI davette Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı;
+  // puanlı davet HER ZAMAN maç oyunu -> Tek Oyun gizli).
+  const [tab, setTab] = useState<'single' | 'match'>(defaultClassic || ranked ? 'match' : 'single')
   const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
-  // TÜM arkadaşlık/kılıç maçları PUANSIZ (2026-11-01): rating değişmez, PR maç analizinde hesaplanır
-  // ama genel PR/sıralamaya girmez. Puanlı seçeneği + eski 24h limiti kaldırıldı -> sabit true.
-  const unrated = true
+  // Arkadaşlık/kılıç maçları PUANSIZ (2026-11-01): rating değişmez, PR yalnız analizde. İSTİSNA: puanlı
+  // davet (ranked=true, yalnız Çevrimiçi Oyuncular play tuşu) -> unrated=false, sonuç rating'i değiştirir.
+  const unrated = !ranked
   // KLASIK TAVLA: kup yok + mars=2. Mod SAYFAYA gore SABIT (Modern /arkadasinla-oyna vs
   // Klasik /klasik-arkadasinla-oyna) -> tek sayfada Modern/Klasik gecisi YOK, ayri sayfalar.
   const classic = defaultClassic
@@ -91,24 +95,26 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           )}
 
-          {/* Oyun türü: Tek Oyun / Maç Oyunu */}
-          <div className="setup-row">
-            <div className="setup-label">{t('friend.type')}</div>
-            <div className="setup-tiles">
-              <button
-                className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
-                onClick={() => setTab('single')}
-              >
-                {t('friend.single')}
-              </button>
-              <button
-                className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
-                onClick={() => setTab('match')}
-              >
-                {t('friend.match')}
-              </button>
+          {/* Oyun türü: Tek Oyun / Maç Oyunu. PUANLI davette gizli (her zaman Maç Oyunu). */}
+          {!ranked && (
+            <div className="setup-row">
+              <div className="setup-label">{t('friend.type')}</div>
+              <div className="setup-tiles">
+                <button
+                  className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
+                  onClick={() => setTab('single')}
+                >
+                  {t('friend.single')}
+                </button>
+                <button
+                  className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
+                  onClick={() => setTab('match')}
+                >
+                  {t('friend.match')}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Uzunluk (yalnizca Maç Oyunu) */}
           {tab === 'match' && (
@@ -145,8 +151,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
-          {/* Arkadaşlık/kılıç maçları HER ZAMAN puansız -> seçici yok, yalnız bilgi notu. */}
-          <p className="setup-unrated-hint">{t('friend.alwaysUnrated')}</p>
+          {/* Puanlı davet -> "puanlı" notu; aksi halde arkadaşlık maçı "hep puansız" notu. Seçici yok. */}
+          <p className="setup-unrated-hint">{t(ranked ? 'friend.rankedNote' : 'friend.alwaysUnrated')}</p>
 
           {/* KLASIK TAVLA sayfasi (yalniz Mac Oyunu'nda anlamli): mod sabit, sadece bilgi notu. */}
           {classic && tab === 'match' && <p className="setup-unrated-hint">{t('classic.note')}</p>}

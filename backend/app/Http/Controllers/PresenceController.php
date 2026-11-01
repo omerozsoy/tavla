@@ -304,7 +304,9 @@ class PresenceController extends Controller
         if ($unrated) {
             return null;
         }
-        $room = new Room(['mode' => 'friendly', 'unrated' => false]); // davet odası = friendly (enter())
+        // Puanlı davet (unrated=false) -> enter() odayı 'ranked' kurar; önizleme de AYNI modla hesaplanmalı
+        // (friendly olsaydı isRanked false döner, puanlı davette önizleme yanlışlıkla null çıkardı).
+        $room = new Room(['mode' => 'ranked', 'unrated' => false]);
         if (! RatingPolicy::isRanked($room, (int) $self->id, $oppId)) {
             return null;
         }
@@ -379,7 +381,7 @@ class PresenceController extends Controller
             'room_code' => $code,
             'target' => $settings['target'] ?? 1,
             'time_control' => $settings['time_control'] ?? null,
-            'unrated' => (bool) ($settings['unrated'] ?? false),
+            'unrated' => (bool) ($settings['unrated'] ?? true),
             'classic' => (bool) ($settings['classic'] ?? false),
             'status' => 'pending',
             'created_at' => now(),
@@ -389,7 +391,7 @@ class PresenceController extends Controller
         return response()->json([
             'code' => $code,
             // Davet eden bekleme ekraninda: davetliye karsi kazanirsa/kaybederse (null = puansiz).
-            'ratingPreview' => $this->ratingPreview($me, (int) $target->id, (int) ($target->rating ?? 1500), (bool) ($settings['unrated'] ?? false), (int) ($settings['target'] ?? 1)),
+            'ratingPreview' => $this->ratingPreview($me, (int) $target->id, (int) ($target->rating ?? 1500), (bool) ($settings['unrated'] ?? true), (int) ($settings['target'] ?? 1)),
         ]);
     }
 
