@@ -13176,6 +13176,12 @@ button.acct-row-logout:hover:not(:disabled) {
 .seek-chip-tc {
   color: color-mix(in srgb, var(--text, currentColor) 60%, transparent);
 }
+/* "Puanlı": havuz maçı rating'i etkiler -> accent renkli bilgi rozeti. */
+.seek-chip-rated {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  font-weight: 600;
+}
 /* Kendi aramam: "Rakip Bekleniyor…" -> vurgulu, hafif nabız (aktif bekleyiş hissi). */
 .seek-chip.seek-waiting {
   color: var(--accent);

@@ -728,6 +728,9 @@ export function SeekersPanel({
                           <span className="seek-chip seek-chip-free">{t('tourn.free')}</span>
                         )}
                         {tcKey && <span className="seek-chip seek-chip-tc">{t(tcKey)}</span>}
+                        {/* Havuz eşleşmeleri her zaman puanlı (RoomController::matchmaking mode='ranked').
+                            Bilgi amaçlı rozet: bu maç rating'i etkiler. */}
+                        <span className="seek-chip seek-chip-rated">{t('seekers.rated')}</span>
                       </span>
                     ) : (
                       <span className="seek-avail">{t('online.st.ready')}</span>
