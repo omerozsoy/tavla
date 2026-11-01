@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Commission;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Support\WalletBreakdown;
@@ -13,8 +14,9 @@ use Illuminate\Support\HtmlString;
 /**
  * Site coin ekonomisi özeti (admin ana sayfa). Kısa cache'li.
  *  - Sitedeki toplam coin + düne göre (bugünkü net) değişim
- *  - Bugün sistemden dağıtılan coin, kaynak kaynak (defter type'ına göre; oyuncu-arası
- *    maç transferi hariç = "sistemden edinilmiş")
+ *  - Bugün ÜRETİLEN coin (sistem kredileri, kaynak kaynak; maç = oyuncu-arası, hariç)
+ *  - Bugün YAKILAN coin (sistem borçları + maç komisyonu, kaynak kaynak)
+ *  - Coin Akışı (net = üretilen − yakılan). Net < 0 = dolaşım küçülüyor (hedef).
  */
 class CoinStats extends BaseWidget
 {
@@ -26,58 +28,87 @@ class CoinStats extends BaseWidget
             $todayStart = now()->startOfDay();
 
             $totalCoins = (int) User::query()->sum('coins');
-            // Bugünkü net değişim = bugünkü tüm defter hareketlerinin toplamı (maç net=0, kalan=mint/yakım).
-            $todayDelta = (int) WalletTransaction::query()
-                ->where('created_at', '>=', $todayStart)
-                ->sum('amount');
 
-            // Bugün sistemden dağıtılan coin: pozitif krediler, kaynak (type) bazında.
-            // 'match' kategorisi oyuncular arası transferdir → "sistemden" değil, hariç tut.
+            // Bugünkü tüm defter hareketleri, type bazında kredi/borç ayrı.
             $rows = WalletTransaction::query()
                 ->where('created_at', '>=', $todayStart)
-                ->where('amount', '>', 0)
-                ->selectRaw('type, SUM(amount) as credited')
+                ->selectRaw('type,
+                    SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as credited,
+                    SUM(CASE WHEN amount < 0 THEN -amount ELSE 0 END) as debited')
                 ->groupBy('type')
                 ->get();
 
-            $dist = [];
-            $distTotal = 0;
+            // 'match' kategorisi oyuncular arası transferdir (net=0; gerçek yakım = komisyon).
+            // Bu yüzden maç kredi/borçlarını atla, komisyonu ayrı yakım satırı olarak ekle.
+            $mint = [];
+            $mintTotal = 0;
+            $burn = [];
+            $burnTotal = 0;
             foreach ($rows as $r) {
                 $type = (string) $r->type;
                 if (WalletBreakdown::categoryOf($type) === 'match') {
                     continue;
                 }
-                $amt = (int) $r->credited;
-                $distTotal += $amt;
-                $dist[] = [WalletBreakdown::typeLabel($type), $amt];
+                $label = WalletBreakdown::typeLabel($type);
+                $cr = (int) $r->credited;
+                $db = (int) $r->debited;
+                if ($cr > 0) {
+                    $mint[] = [$label, $cr];
+                    $mintTotal += $cr;
+                }
+                if ($db > 0) {
+                    $burn[] = [$label, $db];
+                    $burnTotal += $db;
+                }
             }
-            usort($dist, fn ($a, $b) => $b[1] <=> $a[1]);
+
+            $commToday = (int) Commission::query()->where('created_at', '>=', $todayStart)->sum('commission');
+            if ($commToday > 0) {
+                $burn[] = ['Maç komisyonu', $commToday];
+                $burnTotal += $commToday;
+            }
+
+            usort($mint, fn ($a, $b) => $b[1] <=> $a[1]);
+            usort($burn, fn ($a, $b) => $b[1] <=> $a[1]);
 
             return [
                 'totalCoins' => $totalCoins,
-                'todayDelta' => $todayDelta,
-                'dist' => $dist,
-                'distTotal' => $distTotal,
+                'mint' => $mint,
+                'mintTotal' => $mintTotal,
+                'burn' => $burn,
+                'burnTotal' => $burnTotal,
+                'net' => $mintTotal - $burnTotal, // == bugünkü toplam coin değişimi (düne göre)
             ];
         });
 
-        $up = $data['todayDelta'] >= 0;
-        $delta = ($up ? '+' : '').number_format($data['todayDelta'], 0, ',', '.');
-
-        $lines = array_map(
-            fn ($d) => e($d[0]).': '.number_format($d[1], 0, ',', '.'),
-            $data['dist']
+        $n = fn ($v) => number_format($v, 0, ',', '.');
+        $lines = fn (array $items) => new HtmlString(
+            $items
+                ? implode('<br>', array_map(fn ($d) => e($d[0]).': '.$n($d[1]), $items))
+                : 'henüz yok'
         );
 
+        $net = $data['net'];
+        $shrinking = $net <= 0; // dolaşım küçülüyor → hedef (yeşil)
+        $netStr = ($net > 0 ? '+' : '').$n($net);
+
         return [
-            Stat::make('Sitedeki Toplam Coin', number_format($data['totalCoins'], 0, ',', '.'))
-                ->description($delta.' bugün (düne göre)')
-                ->descriptionIcon($up ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($up ? 'success' : 'danger'),
-            Stat::make('Bugün Dağıtılan Coin', number_format($data['distTotal'], 0, ',', '.'))
-                ->description(new HtmlString($lines ? implode('<br>', $lines) : 'henüz yok'))
+            Stat::make('Sitedeki Toplam Coin', $n($data['totalCoins']))
+                ->description($netStr.' bugün (düne göre)')
+                ->descriptionIcon($shrinking ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
+                ->color($shrinking ? 'success' : 'danger'),
+            Stat::make('Bugün Dağıtılan Coin', $n($data['mintTotal']))
+                ->description($lines($data['mint']))
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
+            Stat::make('Bugün Yakılan Coin', $n($data['burnTotal']))
+                ->description($lines($data['burn']))
+                ->descriptionIcon('heroicon-m-fire')
+                ->color('success'),
+            Stat::make('Coin Akışı (bugün net)', $netStr)
+                ->description('üretilen '.$n($data['mintTotal']).' · yakılan '.$n($data['burnTotal']))
+                ->descriptionIcon($shrinking ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
+                ->color($shrinking ? 'success' : 'danger'),
         ];
     }
 }
