@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Jobs\AnalyzeMatchLuckJob;
 use App\Jobs\AnalyzeMatchPrJob;
+use App\Jobs\AnalyzeMatchSnowieJob;
 use App\Models\MatchMove;
 use App\Models\MatchResult;
 use App\Models\Room;
@@ -59,6 +60,8 @@ class MatchFinalize
                 // PR: hiç denenmemişse (gnubg_pr_at NULL) kuyruğa al. (Mezar taşı varsa döngü kurma.)
                 if ($r->gnubg_pr === null && $r->gnubg_pr_at === null) {
                     AnalyzeMatchPrJob::dispatch($r->id)->onConnection('database');
+                    // TEK PR KAYNAĞI: backstop satırının otoriter PR'ı da Snowie'den (idempotent).
+                    AnalyzeMatchSnowieJob::dispatch($r->id)->onConnection('database');
                 }
                 // Şans: boş ve karantina (UNAVAILABLE) değilse kuyruğa al.
                 if ($r->luck_mwc === null && $r->luck_method !== 'TAVLAI_LUCK_UNAVAILABLE') {

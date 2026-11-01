@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Jobs\AnalyzeMatchLuckJob;
 use App\Jobs\AnalyzeMatchPrJob;
+use App\Jobs\AnalyzeMatchSnowieJob;
 use App\Models\MatchMove;
 use App\Models\MatchResult;
 use App\Models\Room;
@@ -139,6 +140,8 @@ class ForfeitLoss
         if ($createdId !== null && ! ($room && $room->classic) && MatchMove::existsForRoom($roomCode)) {
             AnalyzeMatchPrJob::dispatch($createdId)->onConnection('database');
             AnalyzeMatchLuckJob::dispatch($createdId)->onConnection('database');
+            // TEK PR KAYNAĞI: hükmen satırının otoriter PR'ı da Snowie'den (per-pozisyon placeholder kalmasın).
+            AnalyzeMatchSnowieJob::dispatch($createdId)->onConnection('database');
         }
     }
 }

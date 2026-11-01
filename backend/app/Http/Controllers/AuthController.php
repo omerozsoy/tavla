@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\AnalyzeMatchPrJob;
+use App\Jobs\AnalyzeMatchSnowieJob;
 use App\Jobs\CacheMatchReviewJob;
 use App\Models\MatchMove;
 use App\Models\MatchResult;
@@ -811,6 +812,13 @@ class AuthController extends Controller
             } catch (\Throwable $e) {
                 Log::warning('review önbellek dispatch hata', ['err' => $e->getMessage()]);
             }
+            // TEK PR KAYNAĞI: otoriter PR = Snowie. Review mat-build düşerse Snowie onun içinden
+            // dispatch EDİLMEZ -> burada DOĞRUDAN da dispatch et (idempotent: WithoutOverlapping).
+            try {
+                AnalyzeMatchSnowieJob::dispatch($result->id)->onConnection('database');
+            } catch (\Throwable $e) {
+                Log::warning('snowie dispatch hata', ['err' => $e->getMessage()]);
+            }
         }
 
         // WXP odullendir (kazanan + desteklenen tur/uzunluk). Idempotent + transaction-safe.
@@ -1201,6 +1209,12 @@ class AuthController extends Controller
             // Analiz ekranı review'ini de ARKA PLANDA önden ısıt (best-effort; gnubg down ise atlar).
             try {
                 CacheMatchReviewJob::dispatch($row->id)->onConnection('database');
+            } catch (\Throwable $e) {
+                // best-effort
+            }
+            // TEK PR KAYNAĞI: otoriter PR = Snowie (review düşse bile doğrudan dispatch; idempotent).
+            try {
+                AnalyzeMatchSnowieJob::dispatch($row->id)->onConnection('database');
             } catch (\Throwable $e) {
                 // best-effort
             }

@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Widgets\ServiceStatus;
 use App\Jobs\AnalyzeMatchPrJob;
 use App\Models\MatchResult;
 use App\Models\User;
 use App\Services\Analysis\AnalysisOrchestrator;
 use App\Services\GnuBg\GnuBgClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
@@ -177,6 +181,30 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertEqualsWithDelta(0.048, (float) $mr->pr_equity_lost, 1e-6);
         $this->assertSame(6, (int) $mr->pr_decisions);
         $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6);
+    }
+
+    /**
+     * TEK PR KAYNAĞI: Otoriter PR'ı Snowie (AnalyzeMatchSnowieJob) yazar. Snowie bu satırı işlediyse
+     * (pr_shield_at dolu), per-pozisyon AnalyzeMatchPrJob SONRADAN koşsa bile onu EZMEMELİ -> kullanıcı
+     * tek PR (Snowie) görür; per-pozisyon (farklı cetvel) sızmaz.
+     */
+    public function test_per_position_defers_to_snowie_when_shield_set(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $mr = $this->matchWithLog(clientPr: 12.0);
+        // Snowie otoriter yazmış gibi: gnubg_pr=20.5 + pr_shield_at damgası.
+        MatchResult::where('id', $mr->id)->update([
+            'gnubg_pr' => 20.5, 'gnubg_checker_pr' => 20.5, 'pr' => 20.5,
+            'pr_equity_lost' => 1.0, 'pr_decisions' => 10, 'pr_shield_at' => now(),
+        ]);
+
+        // Per-pozisyon FARKLI değer (4.0) üretir ama Snowie'yi EZMEMELİ.
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
+
+        $mr->refresh();
+        $this->assertEqualsWithDelta(20.5, (float) $mr->gnubg_pr, 1e-6, 'Snowie (pr_shield_at) otoriter -> per-pozisyon 4.0 ile EZMEZ');
+        $this->assertEqualsWithDelta(20.5, (float) $mr->pr, 1e-6, 'gösterilen pr da Snowie değerinde kalmalı');
+        $this->assertSame(10, (int) $mr->pr_decisions, 'kariyer havuz totalleri de Snowie değerinde kalmalı');
     }
 
     /**
@@ -420,7 +448,7 @@ class PrGnubgAuthoritativeTest extends TestCase
                 return true;
             }
         });
-        \Illuminate\Support\Facades\Queue::fake();
+        Queue::fake();
 
         $scarred = $this->matchWithLog(clientPr: 12.0); // gnubg_pr_at NULL + log dolu -> heal hedefi
         $done = $this->matchWithLog(clientPr: 5.0);      // zaten dolmuş -> heal ATLAMALI
@@ -428,8 +456,8 @@ class PrGnubgAuthoritativeTest extends TestCase
 
         $this->artisan('tavla:gnubg-pr-heal')->assertExitCode(0);
 
-        \Illuminate\Support\Facades\Queue::assertPushed(AnalyzeMatchPrJob::class, 1);
-        \Illuminate\Support\Facades\Queue::assertPushed(
+        Queue::assertPushed(AnalyzeMatchPrJob::class, 1);
+        Queue::assertPushed(
             AnalyzeMatchPrJob::class,
             fn (AnalyzeMatchPrJob $job) => $job->matchResultId === $scarred->id
         );
@@ -446,13 +474,13 @@ class PrGnubgAuthoritativeTest extends TestCase
                 return false;
             }
         });
-        \Illuminate\Support\Facades\Queue::fake();
+        Queue::fake();
 
         $this->matchWithLog(clientPr: 12.0); // yaralı maç var ama gnubg down -> dispatch YOK
 
         $this->artisan('tavla:gnubg-pr-heal')->assertExitCode(0);
 
-        \Illuminate\Support\Facades\Queue::assertNothingPushed();
+        Queue::assertNothingPushed();
     }
 
     /** FAILOVER: birincil analyze instance düşükse (5xx/erişilemez) yedek instance devreye girer. */
@@ -462,9 +490,9 @@ class PrGnubgAuthoritativeTest extends TestCase
             'gnubg.url' => 'http://127.0.0.1:8092',
             'gnubg.url_backup' => 'http://127.0.0.1:8093',
         ]);
-        \Illuminate\Support\Facades\Http::fake([
-            '127.0.0.1:8092/analyze' => \Illuminate\Support\Facades\Http::response('down', 500),
-            '127.0.0.1:8093/analyze' => \Illuminate\Support\Facades\Http::response(
+        Http::fake([
+            '127.0.0.1:8092/analyze' => Http::response('down', 500),
+            '127.0.0.1:8093/analyze' => Http::response(
                 ['result' => ['hint' => []], 'played' => ['loss' => 0.12]], 200
             ),
         ]);
@@ -482,9 +510,9 @@ class PrGnubgAuthoritativeTest extends TestCase
             'gnubg.url' => 'http://127.0.0.1:8092',
             'gnubg.url_backup' => 'http://127.0.0.1:8093',
         ]);
-        \Illuminate\Support\Facades\Http::fake([
-            '127.0.0.1:8092/health' => \Illuminate\Support\Facades\Http::response('down', 500),
-            '127.0.0.1:8093/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
+        Http::fake([
+            '127.0.0.1:8092/health' => Http::response('down', 500),
+            '127.0.0.1:8093/health' => Http::response(['ok' => true], 200),
         ]);
 
         $this->assertTrue($this->app->make(GnuBgClient::class)->analyzeHealthy(), 'yedek ayaktaysa analyzeHealthy true olmali');
@@ -499,11 +527,11 @@ class PrGnubgAuthoritativeTest extends TestCase
             'gnubg.analysis_urls' => 'http://127.0.0.1:8094,http://127.0.0.1:8095',        // arka plan (PR/heal)
         ]);
         // Ön plan loss=9.9, arka plan loss=0.2 -> hangi havuzun kullanıldığını dönen değerden anlarız.
-        \Illuminate\Support\Facades\Http::fake([
-            '127.0.0.1:8092/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 9.9]], 200),
-            '127.0.0.1:8093/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 9.9]], 200),
-            '127.0.0.1:8094/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 0.2]], 200),
-            '127.0.0.1:8095/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 0.2]], 200),
+        Http::fake([
+            '127.0.0.1:8092/analyze' => Http::response(['result' => ['hint' => []], 'played' => ['loss' => 9.9]], 200),
+            '127.0.0.1:8093/analyze' => Http::response(['result' => ['hint' => []], 'played' => ['loss' => 9.9]], 200),
+            '127.0.0.1:8094/analyze' => Http::response(['result' => ['hint' => []], 'played' => ['loss' => 0.2]], 200),
+            '127.0.0.1:8095/analyze' => Http::response(['result' => ['hint' => []], 'played' => ['loss' => 0.2]], 200),
         ]);
         $client = $this->app->make(GnuBgClient::class);
 
@@ -522,15 +550,15 @@ class PrGnubgAuthoritativeTest extends TestCase
             'gnubg.url_backup' => 'http://127.0.0.1:8093,http://127.0.0.1:8094,http://127.0.0.1:8095',
             'gnubg.units' => 'gnubg-analysis,gnubg-analysis-heavy,gnubg-analysis-3,gnubg-analysis-4',
         ]);
-        \Illuminate\Support\Facades\Cache::flush();
-        \Illuminate\Support\Facades\Http::fake([
-            '127.0.0.1:8092/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
-            '127.0.0.1:8093/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
-            '127.0.0.1:8094/health' => \Illuminate\Support\Facades\Http::response('down', 500), // yedek #2 down
-            '127.0.0.1:8095/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
+        Cache::flush();
+        Http::fake([
+            '127.0.0.1:8092/health' => Http::response(['ok' => true], 200),
+            '127.0.0.1:8093/health' => Http::response(['ok' => true], 200),
+            '127.0.0.1:8094/health' => Http::response('down', 500), // yedek #2 down
+            '127.0.0.1:8095/health' => Http::response(['ok' => true], 200),
         ]);
 
-        $status = (new \App\Filament\Widgets\ServiceStatus)->status();
+        $status = (new ServiceStatus)->status();
         // Panel gnubg havuzlarını rol gruplarına ayırır; satır anahtarı 'gnubgp-{port}'. url + url_backup
         // = ön plan (Canlı YZ) havuzu -> o grubun satırları.
         $gnubgRows = collect($status['services'])

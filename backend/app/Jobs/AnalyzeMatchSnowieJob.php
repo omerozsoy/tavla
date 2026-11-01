@@ -3,9 +3,12 @@
 namespace App\Jobs;
 
 use App\Models\MatchResult;
+use App\Models\User;
 use App\Services\Analysis\AnalysisOrchestrator;
 use App\Services\Analysis\GnubgSnowieService;
+use App\Services\CareerPrService;
 use App\Services\GnuBg\GnuBgClient;
+use App\Services\PlayerStatisticsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -51,9 +54,12 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
             return;
         }
         $mr = MatchResult::find($this->matchResultId);
-        if (! $mr || empty($mr->log) || empty($mr->room_code)) {
-            return; // analiz edilecek log yok
+        if (! $mr) {
+            return;
         }
+        // TEK PR KAYNAĞI: Snowie HER maçta koşmalı (bot/pvb + hükmen/backstop satırları dahil). log şartını
+        // KALDIRDIK -> matText() match_moves'tan .mat kurar (client log boş olsa bile); .mat boşsa aşağıda
+        // (trim==='') zaten güvenle çıkar. room_code boş (bot) satırlar tek-satır işlenir (aşağıdaki döngü).
         $client = $gnubg ?? app(GnuBgClient::class);
         if (! $client->analyzeHealthy()) {
             return; // gnubg DOWN -> dokunma (backfill/maç-sonu dönünce tekrar dener)
@@ -77,7 +83,12 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
         }
 
         try {
-            foreach (MatchResult::where('room_code', $mr->room_code)->get() as $row) {
+            // room_code VARSA odanın iki satırı (self+kardeş); YOKSA (bot/pvb) yalnız bu satır.
+            $rows = ! empty($mr->room_code)
+                ? MatchResult::where('room_code', $mr->room_code)->get()
+                : collect([$mr]);
+            $invalidateUsers = [];
+            foreach ($rows as $row) {
                 $hc = $row->analysisHc();
                 if (! in_array($hc, ['white', 'black'], true)) {
                     continue;
@@ -103,6 +114,7 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
                     $upd['pr_equity_lost'] = $self['equity_lost'] ?? null;     // kariyer: overall err EMG (Snowie pay)
                     $upd['pr_decisions'] = $self['decisions'] ?? 0;            // kariyer: tüm hamle+küp (Snowie payda)
                     $upd['gnubg_pr_at'] = now();
+                    $invalidateUsers[(int) $row->user_id] = true; // Snowie otoriter PR yazdı -> havuz/kariyer tazelensin
                 }
                 if ($oppPr !== null) {
                     $upd['gnubg_opponent_pr'] = $oppPr;
@@ -115,8 +127,26 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
                 }
             }
             // RESUMABLE imleç: işlenen odayı damgala -> tavla:snowie-pr re-run bunu atlar.
+            // (room_code boş bot satırı için tek satır damgalanır.)
             if (Schema::hasColumn('match_results', 'pr_shield_at')) {
-                MatchResult::where('room_code', $mr->room_code)->update(['pr_shield_at' => now()]);
+                if (! empty($mr->room_code)) {
+                    MatchResult::where('room_code', $mr->room_code)->update(['pr_shield_at' => now()]);
+                } else {
+                    MatchResult::where('id', $mr->id)->update(['pr_shield_at' => now()]);
+                }
+            }
+            // TEK PR KAYNAĞI: PR'ı artık otoriter olarak Snowie yazdığı için havuz ("Maç Tipine Göre PR")
+            // ve kariyer PR cache'lerini BURADA tazele (eskiden AnalyzeMatchPrJob yapıyordu; o artık
+            // placeholder). 6 saatlik TTL beklemeden sonraki görüntüleme güncel gelir.
+            foreach (array_keys($invalidateUsers) as $uid) {
+                try {
+                    app(PlayerStatisticsService::class)->invalidate($uid);
+                    if ($u = User::find($uid)) {
+                        app(CareerPrService::class)->recalc($u);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('snowie sonrasi stats/kariyer tazeleme hata (yok sayildi)', ['uid' => $uid, 'err' => $e->getMessage()]);
+                }
             }
             Log::info('snowie PR yazildi', ['id' => $mr->id, 'room' => $mr->room_code]);
         } catch (\Throwable $e) {

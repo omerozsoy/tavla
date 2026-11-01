@@ -2,8 +2,17 @@
 
 namespace App\Jobs;
 
+use App\Exceptions\TransientAnalysisException;
+use App\Models\MatchMove;
 use App\Models\MatchResult;
+use App\Models\User;
 use App\Services\Analysis\AnalysisOrchestrator;
+use App\Services\CareerPrService;
+use App\Services\DiceStatisticsService;
+use App\Services\ErrorJournalService;
+use App\Services\GnuBg\GnuBgClient;
+use App\Services\PlayerStatisticsService;
+use App\Support\StatsConfig;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -49,14 +58,14 @@ class AnalyzeMatchPrJob implements ShouldQueue
         ];
     }
 
-    public function handle(AnalysisOrchestrator $orch, ?\App\Services\GnuBg\GnuBgClient $gnubg = null): void
+    public function handle(AnalysisOrchestrator $orch, ?GnuBgClient $gnubg = null): void
     {
         $mr = MatchResult::find($this->matchResultId);
         if (! $mr) {
             return;
         }
         // SUNUCU-OTORİTER kaynak varsa client log boş olsa bile analiz edilir.
-        $hasServer = ! empty($mr->room_code) && \App\Models\MatchMove::existsForRoom($mr->room_code);
+        $hasServer = ! empty($mr->room_code) && MatchMove::existsForRoom($mr->room_code);
         if (! $hasServer && empty($mr->log)) {
             return;
         }
@@ -68,7 +77,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // $gnubg YALNIZ container çağrısında dolu (testler handle($orch) ile çağırır -> null -> precheck
         // atlanır; o yolda aşağıdaki mid-run guard mock'lanabilir skipReasons ile devrededir).
         if ($gnubg !== null && ! $gnubg->analyzeHealthy()) {
-            throw new \App\Exceptions\TransientAnalysisException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
+            throw new TransientAnalysisException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
         }
         // ŞANS (luck) PR ile AYNI JOB'DA, ağır PR döngüsünden ÖNCE hesaplanır -> AYRI kuyruk beklemesi
         // YOK (eskiden luck ayrı job'da PR'ın arkasında bekliyordu -> geç geliyordu). luck = TEK hızlı
@@ -98,7 +107,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // Böylece ikinci oyuncunun GÖSTERİLEN PR'ı ~anında gelir + rakip-tarafı tekrar hesaplanmaz
         // (gnubg yükü ~yarıya iner). KENDİ tarafımı yine analiz ederim (kariyer pr_equity_lost/
         // pr_decisions + Hata Günlüğü perDecision bunu gerektirir). pvb (bot) maçında sibling yok.
-        $sibling = (! empty($mr->room_code) && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI)
+        $sibling = (! empty($mr->room_code) && ($mr->match_type ?? null) !== StatsConfig::MATCH_TYPE_AI)
             ? MatchResult::where('room_code', $mr->room_code)
                 ->where('user_id', '!=', $mr->user_id)
                 ->whereNotNull('gnubg_pr_at')
@@ -117,7 +126,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // (self + mirror değilse opp) -> yüzde = analiz edilen / toplam. Her pencere (chunk) bitince
         // closure Cache'e yazar; matchGnubgPr ucu okuyup istemciye verir (prefix tavlatv-cache-,
         // worker->web paylaşımlı store). Önbellek isabetleri de "bitmiş" sayılır (dürüst: iş bitmiş).
-        $computeOppPr = ($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI
+        $computeOppPr = ($mr->match_type ?? null) === StatsConfig::MATCH_TYPE_AI
             || ! empty($mr->room_code);
         $oppColor = $player === 'white' ? 'black' : 'white';
         $prTotal = $orch->countPositions($log, $player)
@@ -144,7 +153,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
             // GÖRÜNÜR + tavla:gnubg-pr-heal gnubg düzelince gerçek PR'ı yazar. TAM outage zaten yukarıda
             // health-precheck'te fırlar; buraya YALNIZ "health geçti ama analizde patladı" (bu olayın
             // degrade senaryosu) düşer -> retry üretken. TransientAnalysisException 500-alarm'dan muaf.
-            throw new \App\Exceptions\TransientAnalysisException('gnubg PR analiz hatasi (checkerPr/cubePr): '.$e->getMessage(), 0, $e);
+            throw new TransientAnalysisException('gnubg PR analiz hatasi (checkerPr/cubePr): '.$e->getMessage(), 0, $e);
         }
 
         $totLoss = $chk['loss'] + $cube['loss'];
@@ -168,7 +177,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         $cubeDec = (int) ($cube['decisions'] ?? 0);
         $selfGnubgNull = (int) ($chk['skipReasons']['gnubg_null'] ?? 0);
         if ($totEval === 0 && $selfGnubgNull > 0) {
-            throw new \App\Exceptions\TransientAnalysisException('gnubg PR: self kararlar skorlanamadi (gnubg_null='.$selfGnubgNull.', eval=0) -> retry');
+            throw new TransientAnalysisException('gnubg PR: self kararlar skorlanamadi (gnubg_null='.$selfGnubgNull.', eval=0) -> retry');
         }
         // KÖK FIX (2026-09-25 #4D5Z7 "sahte 0.00 PR"): gnubg maçı skorladı ama 0 SAYILAN karar
         // (decisions=0) buldu. Eski kod bu durumda loose fallback'i ($chk['pr']=allLoss/evaluated ≈ 0)
@@ -179,7 +188,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         //  - deneme hakkı varken FIRLAT -> retry/backoff + heal -> temiz rerun GERÇEK PR'ı yazar.
         //  - son denemede (nadir: gerçekten kısa/forced maç) tombstone (gnubg_pr null = dürüst "—").
         if ($totDec === 0 && $totEval > 0 && $this->job !== null && $this->attempts() < $this->tries) {
-            throw new \App\Exceptions\TransientAnalysisException('gnubg PR: 0 sayilan karar (eval='.$totEval.') = degrade run -> retry (temiz rerun gercek PR yazar)');
+            throw new TransientAnalysisException('gnubg PR: 0 sayilan karar (eval='.$totEval.') = degrade run -> retry (temiz rerun gercek PR yazar)');
         }
         // PR = Σloss / SAYILAN karar. decisions=0 -> PR TANIMSIZ (null/"—"); ASLA 0 sentinel yazma.
         $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : null;
@@ -267,7 +276,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
                 // job'unun opponent_pr update'i) bunu EZER (o daha doğru).
                 if ($oTotDec > 0 && $oOverall !== null
                     && ! empty($mr->room_code)
-                    && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI
+                    && ($mr->match_type ?? null) !== StatsConfig::MATCH_TYPE_AI
                     && $mr->opponent_pr === null
                     && Schema::hasColumn('match_results', 'opponent_pr')) {
                     $upd['opponent_pr'] = round((float) $oOverall, 2);
@@ -306,10 +315,16 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // kalıp maç kalıcı "—" oluyordu (sitede ~yarı satır; oyuncular PR sıralamasından düşüyordu).
         // ARTIK: review bu satırı GERÇEKTEN skorladıysa (gnubg_pr dolu) ONA bırak; review bu tarafı
         // skorlayamayıp null bıraktıysa per-pozisyon (doğru) değerlerimiz YAZILSIN.
-        $reviewAuthoritative = Schema::hasColumn('match_results', 'gnubg_review')
-            && $mr->gnubg_pr !== null
-            && MatchResult::where('id', $mr->id)->whereNotNull('gnubg_review')->exists();
-        if ($reviewAuthoritative) {
+        // TEK PR KAYNAĞI (güvenli): PR'ın otoritesi Snowie'dir (AnalyzeMatchSnowieJob). Bu job'un
+        // per-pozisyon değeri YALNIZCA Snowie henüz yazmadıysa geçici placeholder'dır; Snowie yazdıktan
+        // SONRA bu job koşarsa onu EZMEMELİ. İki fresh sinyal (job başındaki $mr bayat olabilir -> DB'den):
+        //  - pr_shield_at dolu  -> Snowie bu odayı işledi (otoriter)
+        //  - gnubg_pr + gnubg_review dolu -> review otoriter skorladı (eski guard; korunur)
+        $prAuthoritative = (Schema::hasColumn('match_results', 'pr_shield_at')
+                && MatchResult::where('id', $mr->id)->whereNotNull('pr_shield_at')->exists())
+            || (Schema::hasColumn('match_results', 'gnubg_review')
+                && MatchResult::where('id', $mr->id)->whereNotNull('gnubg_pr')->whereNotNull('gnubg_review')->exists());
+        if ($prAuthoritative) {
             foreach (['gnubg_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'pr', 'pr_equity_lost', 'pr_decisions',
                 'gnubg_opponent_pr', 'gnubg_opponent_checker_pr', 'gnubg_opponent_cube_pr'] as $k) {
                 unset($upd[$k]);
@@ -326,7 +341,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // $upd'te) burada da invalidate et -> sonraki profil görüntülemesi TTL beklemeden tazelenir.
         if (array_key_exists('pr_decisions', $upd)) {
             try {
-                app(\App\Services\PlayerStatisticsService::class)->invalidate((int) $mr->user_id);
+                app(PlayerStatisticsService::class)->invalidate((int) $mr->user_id);
             } catch (\Throwable $e) {
                 Log::warning('gnubg sonrasi havuz PR invalidate hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
             }
@@ -337,11 +352,11 @@ class AnalyzeMatchPrJob implements ShouldQueue
         //  (a) ONLINE rakip satırının opponent_pr'ı = bu satırın gnubg PR'ı (iki oyuncu özdeş görsün).
         //  (b) Bu oyuncunun KARİYER PR havuzu (pr_equity_lost/pr_decisions artık gnubg) -> yeniden hesap;
         //      yoksa maç, reportRating'te null totallerle recalc edildiğinden havuza HİÇ girmez.
-        if (! $reviewAuthoritative && (string) config('gnubg.pr_mode', 'off') === 'authoritative' && $totDec > 0) {
+        if (! $prAuthoritative && (string) config('gnubg.pr_mode', 'off') === 'authoritative' && $totDec > 0) {
             try {
                 $prVal = round((float) $overall, 2);
                 if (! empty($mr->room_code)
-                    && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI
+                    && ($mr->match_type ?? null) !== StatsConfig::MATCH_TYPE_AI
                     && Schema::hasColumn('match_results', 'opponent_pr')) {
                     MatchResult::where('room_code', $mr->room_code)
                         ->where('user_id', '!=', $mr->user_id)
@@ -351,9 +366,9 @@ class AnalyzeMatchPrJob implements ShouldQueue
                 Log::warning('gnubg opponent_pr senkron hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
             }
             try {
-                $u = \App\Models\User::find($mr->user_id);
+                $u = User::find($mr->user_id);
                 if ($u) {
-                    app(\App\Services\CareerPrService::class)->recalc($u);
+                    app(CareerPrService::class)->recalc($u);
                 }
             } catch (\Throwable $e) {
                 Log::warning('gnubg sonrasi kariyer PR recalc hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
@@ -379,8 +394,8 @@ class AnalyzeMatchPrJob implements ShouldQueue
             }
             if ($lossByIndex !== []) {
                 $freshMr = MatchResult::find($mr->id) ?? $mr;
-                app(\App\Services\ErrorJournalService::class)->analyzeMatch($freshMr, true, $lossByIndex);
-                app(\App\Services\DiceStatisticsService::class)->invalidate((int) $mr->user_id);
+                app(ErrorJournalService::class)->analyzeMatch($freshMr, true, $lossByIndex);
+                app(DiceStatisticsService::class)->invalidate((int) $mr->user_id);
             }
         } catch (\Throwable $e) {
             Log::warning('gnubg Hata Günlüğü re-gen hata', ['id' => $mr->id, 'err' => $e->getMessage()]);
