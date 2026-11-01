@@ -6,6 +6,7 @@ use App\Models\MatchResult;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\MatchClock;
+use App\Support\ForfeitLoss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -24,6 +25,7 @@ class ForfeitLossTest extends TestCase
             'password' => bcrypt('secret123'),
         ]);
         $u->forceFill(['rating' => $rating])->save(); // rating fillable degil
+
         return $u;
     }
 
@@ -128,7 +130,7 @@ class ForfeitLossTest extends TestCase
         ])->save();
 
         // Yanlışlıkla gerçek kazananı (p2/siyah) kaybeden olarak yazmaya çalış -> hiçbir şey olmamalı.
-        \App\Support\ForfeitLoss::record('D5R', $winner->id, 1400, 3, 'match', 'l', true, $loser->id);
+        ForfeitLoss::record('D5R', $winner->id, 1400, 3, 'match', 'l', true, $loser->id);
 
         $winner->refresh();
         $this->assertSame(1403, (int) $winner->rating);        // Elo değişmedi
@@ -136,7 +138,7 @@ class ForfeitLossTest extends TestCase
         $this->assertNull(MatchResult::where('room_code', 'D5R')->where('user_id', $winner->id)->first());
 
         // Gerçek kaybeden (p1/beyaz) hâlâ yazılabilir.
-        \App\Support\ForfeitLoss::record('D5R', $loser->id, 1403, 3, 'match', 'w', true, $winner->id);
+        ForfeitLoss::record('D5R', $loser->id, 1403, 3, 'match', 'w', true, $winner->id);
         $loser->refresh();
         $this->assertSame(1, (int) $loser->losses);
         $this->assertFalse((bool) MatchResult::where('room_code', 'D5R')->where('user_id', $loser->id)->first()->won);
@@ -151,7 +153,7 @@ class ForfeitLossTest extends TestCase
         $room = $this->rankedRoom('FLS', $a, $b);
         $room->forceFill(['stake' => 500])->save();
 
-        \App\Support\ForfeitLoss::record('FLS', $a->id, 1500, 1, 'coin', 'b', true, $b->id);
+        ForfeitLoss::record('FLS', $a->id, 1500, 1, 'coin', 'b', true, $b->id);
 
         $row = MatchResult::where('room_code', 'FLS')->where('user_id', $a->id)->first();
         $this->assertSame(500, (int) $row->stake);
@@ -160,11 +162,11 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(500, (int) MatchResult::find($row->id)->stake);
     }
 
-    // GÜNCEL kural (kullanıcı direktifi): davet (friendly/kılıç) maçları PUANLIDIR (aynı-rakip 24h
-    // limiti altında). Terk edilince KAYBEDEN puan/mağlubiyet KAYBEDER (ilk maç -> limit altı).
-    public function test_friendly_forfeit_within_cap_is_rated(): void
+    // GÜNCEL kural (2026-11-01): davet (friendly/kılıç) maçları HER ZAMAN PUANSIZ. Terk edilince
+    // satır yazılır (maç geçmişte görünür) ama rating/mağlubiyet DEĞİŞMEZ (delta=0, rated=false).
+    public function test_friendly_forfeit_is_unrated(): void
     {
-        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
+        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince "kaybeder" ama puansız
         $b = $this->user('b');
         $room = $this->rankedRoom('FL3', $a, $b);
         $room->mode = 'friendly';
@@ -179,11 +181,11 @@ class ForfeitLossTest extends TestCase
         $this->getJson('/api/rooms/FL3')->assertOk();
 
         $a->refresh();
-        $this->assertLessThan(1500, (int) $a->rating);    // PUANLI: kaybeden rating düştü
-        $this->assertSame(1, (int) $a->losses);           // mağlubiyet arttı
+        $this->assertSame(1500, (int) $a->rating);        // PUANSIZ: rating değişmedi
+        $this->assertSame(0, (int) $a->losses);           // mağlubiyet artmadı
         $row = MatchResult::where('room_code', 'FL3')->where('user_id', $a->id)->first();
-        $this->assertNotNull($row);
-        $this->assertLessThan(0, (int) $row->delta);      // delta<0 (puan kaybı)
-        $this->assertTrue((bool) $row->rated);            // rated=true (limit altı)
+        $this->assertNotNull($row);                       // satır yine yazılır
+        $this->assertSame(0, (int) $row->delta);          // delta=0 (puansız)
+        $this->assertFalse((bool) $row->rated);           // rated=false
     }
 }

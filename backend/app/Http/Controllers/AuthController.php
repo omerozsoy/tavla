@@ -494,12 +494,10 @@ class AuthController extends Controller
         // puanlı; arkadaş/kılıç (friendly) PUANLI ama aynı-rakiple 24h limiti (Site Ayarları,
         // varsayılan 3) — sonrası casual. (Eski kural mode!=='friendly' idi; friendly artık puanlı.)
         $ranked = RatingPolicy::isRanked($room, (int) $user->id, $opponentId);
-        // Friendly + 24h limit AŞILDI -> casual: rating YOK + PR/istatistik KREDİLENMEZ (analiz job'ı atlanır).
-        // Puansız oda (unrated) limit aşımı DEĞİL: PR/luck analizi yine çalışır (maç analizinde görünür),
-        // yalnız rated=false yazıldığından kariyer PR/sıralamaya girmez (CareerPrService).
-        // Misafir rakip de limit aşımı DEĞİL: puansız ama PR/luck analizi çalışır (rated=false -> kariyere girmez).
+        // Puansız maçlar (bot / unrated oda / misafir rakip / arkadaş-kılıç=friendly): rating değişmez
+        // ama PR/luck analizi yine çalışır (maç analizinde görünür), yalnız rated=false -> kariyer
+        // PR/sıralamaya girmez (CareerPrService). Arkadaşlık maçları 2026-11-01'den beri hep puansız.
         $guestOpponent = ! $room->bot && $opponentId <= 0;
-        $friendlyOverCap = ! $room->bot && ! $room->unrated && ! $guestOpponent && $room->mode === 'friendly' && ! $ranked;
         // KLASIK TAVLA: küp yok + gnubg bu varyantı analiz EDEMEZ -> PR hesabı anlamsız. gnubg PR/review
         // JOB'UNU HİÇ DISPATCH ETME (boşuna worker/gnubg yükü) + gnubg_authoritative=false (istemci
         // poll etmez, sonuç ekranı zaten !classic ile PR satırlarını gizler). Kaynak: otoriter oda bayrağı.
@@ -800,7 +798,7 @@ class AuthController extends Controller
         // sonra PR. İstemci poll'u önce ŞANS'ı, sonra PR'ı doldurur -> ekran ADIM ADIM dolar. (Ayrı
         // AnalyzeMatchLuckJob yalnız MatchFinalize/ForfeitLoss/heal BACKSTOP'larında kalır — luck_mwc null gate.)
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log']) && ! $friendlyOverCap && ! $isClassic) {
+            && ! empty($mr['log']) && ! $isClassic) {
             // PR job: önce ŞANS (inline), sonra ağır PR. (bkz AnalyzeMatchPrJob::handle inline luck.)
             try {
                 AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
@@ -942,7 +940,7 @@ class AuthController extends Controller
         if (! $ranked) {
             $ratingReason = $room->bot
                 ? 'bot'
-                : ($room->unrated ? 'unrated' : ($guestOpponent ? 'guest' : ($friendlyOverCap ? 'friendly_cap' : ($room->mode === 'friendly' ? 'friendly' : 'casual'))));
+                : ($room->unrated ? 'unrated' : ($guestOpponent ? 'guest' : ($room->mode === 'friendly' ? 'friendly' : 'casual')));
         }
 
         return response()->json([
@@ -950,9 +948,8 @@ class AuthController extends Controller
             'rating_before' => (int) $ra,     // OTORİTER maç-öncesi rating; istemci delta'yı bundan çizer (yerel user.rating drift edebilir -> sahte +1)
             'user' => $user,
             'achievements' => $unlocked,
-            'rated' => $ranked,               // maç Elo/PR ürettiyse true; casual/kılıç-limit -> false
-            'rating_reason' => $ratingReason, // false ise sebep: bot|unrated|guest|friendly_cap|friendly|casual
-            'friendly_rating_limit' => RatingPolicy::friendlyDailyLimit(), // "limit doldu (N)" metni için
+            'rated' => $ranked,               // maç Elo/PR ürettiyse true; puansız (bot/unrated/guest/friendly) -> false
+            'rating_reason' => $ratingReason, // false ise sebep: bot|unrated|guest|friendly|casual
             'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
             // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı
             // yalnız fallback; ekran "analiz ediliyor" gösterip gnubg gelince yerine koyar.

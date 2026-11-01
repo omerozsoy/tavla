@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use App\Models\Setting;
 use App\Support\NicknameFilter;
-use App\Support\RatingPolicy;
 use App\Support\Referral;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -99,7 +98,6 @@ class SiteSettings extends Page implements HasForms
             'referral_daily_limit' => Setting::int('referral_daily_limit', Referral::DEFAULT_DAILY_LIMIT),
             'pr_min_matches' => Setting::int('pr_min_matches', 5),
             'pr_min_decisions' => Setting::int('pr_min_decisions', 100),
-            'friendly_rating_daily_limit' => Setting::int('friendly_rating_daily_limit', RatingPolicy::DEFAULT_LIMIT),
             'gtag_enabled' => Setting::bool('gtag_enabled', false),
             'gtag_id' => Setting::get('gtag_id', ''),
             'banned_nicknames' => NicknameFilter::rawList(),
@@ -136,13 +134,6 @@ class SiteSettings extends Page implements HasForms
                         TextInput::make('bot_match_cost')->label('Yapay Zeka Maç Ücreti')
                             ->numeric()->required()->minValue(0)->suffix('GC')
                             ->helperText('Bota karşı maç başlatma ücreti (peşin kesilir, iade yok). Misafir oynayamaz. 0 = bedava.'),
-                    ]),
-                Section::make('Arkadaş / Kılıç Maçı Puan Limiti')
-                    ->description('Arkadaşınla oyna (özel oda) ve Kılıç meydan okuma maçları PUANLIDIR; ancak farm’ı önlemek için AYNI rakiple 24 saat içinde en fazla bu kadar kez rating/PR kazanılır. Sonraki maçlar puansız (casual) olur. Eşleşme ve turnuva bu limite tabi DEĞİLDİR. 0 = arkadaş/kılıç hiç puanlanmaz.')
-                    ->schema([
-                        TextInput::make('friendly_rating_daily_limit')->label('Aynı rakiple 24 saatte puanlı maç')
-                            ->numeric()->required()->minValue(0)->maxValue(50)
-                            ->helperText('Varsayılan 3.'),
                     ]),
                 Section::make('Arkadaş Davet (Referral)')
                     ->description('Davet et, arkadaşın İLK puanlı online maçını yapınca hem davet eden hem davet edilen bu kadar coin kazanır. 0 = ödül yok.')
@@ -188,7 +179,7 @@ class SiteSettings extends Page implements HasForms
     public function save(): void
     {
         $data = $this->form->getState();
-        foreach (['starting_rating', 'welcome_coins', 'reward_normal', 'reward_premium', 'commission_pct', 'bot_match_cost', 'referral_coins', 'referral_daily_limit', 'pr_min_matches', 'pr_min_decisions', 'friendly_rating_daily_limit'] as $k) {
+        foreach (['starting_rating', 'welcome_coins', 'reward_normal', 'reward_premium', 'commission_pct', 'bot_match_cost', 'referral_coins', 'referral_daily_limit', 'pr_min_matches', 'pr_min_decisions'] as $k) {
             if (array_key_exists($k, $data)) {
                 Setting::put($k, (int) $data[$k]);
             }

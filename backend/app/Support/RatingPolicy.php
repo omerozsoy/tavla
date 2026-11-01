@@ -2,10 +2,7 @@
 
 namespace App\Support;
 
-use App\Models\MatchResult;
 use App\Models\Room;
-use App\Models\Setting;
-use Illuminate\Support\Facades\Schema;
 
 /**
  * PUANLI (rating + PR) MI? — TEK doğruluk kaynağı. Üç yazım yolu (reportRating, MatchBackstop,
@@ -13,21 +10,14 @@ use Illuminate\Support\Facades\Schema;
  *
  * KURAL:
  *  - Bot (PvB): puansız.
- *  - Misafir (hesapsız) rakip/oyuncu: puansız. Misafir arkadaş odasına kodla girebilir; eskiden
- *    "limit sayılamaz, puanlı say" deniyordu -> kendi ikinci tarayıcısındaki misafire bilerek
- *    kaybettirip SINIRSIZ rating/PR kasılabiliyordu (misafir rating'i de istemciden geliyor).
- *  - Eşleşme (mode='ranked') + Turnuva (mode=NULL): PUANLI, limitsiz (rakip rastgele -> farm yok).
- *  - Arkadaş/Kılıç (mode='friendly', SEÇİLEN rakip): PUANLI ama ANTI-FARM limiti — aynı rakiple
- *    son 24 SAATTE en fazla `friendly_rating_daily_limit` (Site Ayarları, varsayılan 3) kez
- *    rating/PR kazanılır; sonrası CASUAL (delta=0, PR kredilenmez). Kılıç ve özel oda AYNI kurala
- *    tabidir (ikisi de seçilen-rakip -> farm riski aynı).
+ *  - Misafir (hesapsız) rakip/oyuncu: puansız.
+ *  - Eşleşme (mode='ranked') + Turnuva (mode=NULL): PUANLI (rakip rastgele -> farm yok).
+ *  - Arkadaş/Kılıç/özel oda (mode='friendly'): HER ZAMAN PUANSIZ (2026-11-01 kullanıcı direktifi).
+ *    Eskiden aynı-rakiple 24h "puanlı maç" limiti (varsayılan 3) vardı; KALDIRILDI — tüm arkadaşlık
+ *    maçları artık puansız (rating değişmez, kariyer PR/sıralamaya girmez; maç yine analiz edilir).
  */
 class RatingPolicy
 {
-    public const SETTING_KEY = 'friendly_rating_daily_limit';
-
-    public const DEFAULT_LIMIT = 3;
-
     /** Elo K katsayısı (maç uzunluğundan BAĞIMSIZ; uzunluk etkisi C katsayısıyla gelir). */
     public const ELO_K = 32;
 
@@ -99,12 +89,6 @@ class RatingPolicy
         ];
     }
 
-    /** Site Ayarları'ndaki 24 saatlik aynı-rakip limiti (>=0). */
-    public static function friendlyDailyLimit(): int
-    {
-        return max(0, Setting::int(self::SETTING_KEY, self::DEFAULT_LIMIT));
-    }
-
     /**
      * Bu maç, bu oyuncu için PUANLI mı (rating + PR kredisi uygulanmalı mı)?
      *
@@ -118,30 +102,14 @@ class RatingPolicy
             return false; // PvB puansız
         }
         if ($room->unrated) {
-            return false; // oda kurucusu "puansız" seçti (Arkadaşınla Oyna) -> rating yok, PR kariyere girmez
+            return false; // "puansız" oda bayrağı -> rating yok, PR kariyere girmez
         }
         if ($userId <= 0 || $opponentId <= 0) {
-            return false; // misafir (hesapsız) taraf -> puansız: anti-farm, misafir rating'i doğrulanamaz
+            return false; // misafir (hesapsız) taraf -> puansız: misafir rating'i doğrulanamaz
         }
-        if ($room->mode !== 'friendly') {
-            return true; // eşleşme (ranked) + turnuva (NULL) -> limitsiz puanlı
-        }
-        // Friendly (kılıç + özel oda): aynı-rakip 24h limiti (iki taraf da hesaplı; misafir yukarıda elendi).
-        // Migration henüz koşmadıysa (kolonlar yok) eski-uyumlu: puanlı say (deploy migrate ile düzelir).
-        if (! Schema::hasColumn('match_results', 'opponent_user_id') || ! Schema::hasColumn('match_results', 'rated')) {
-            return true;
-        }
-        $limit = self::friendlyDailyLimit();
-        if ($limit <= 0) {
-            return false; // 0 -> friendly hiç puanlanmaz
-        }
-        $recent = MatchResult::query()
-            ->where('user_id', $userId)
-            ->where('opponent_user_id', $opponentId)
-            ->where('rated', true)
-            ->where('created_at', '>', now()->subDay())
-            ->count();
 
-        return $recent < $limit;
+        // Arkadaş/Kılıç/özel oda (mode='friendly'): HER ZAMAN puansız (2026-11-01 direktifi; eski
+        // aynı-rakip 24h limiti kaldırıldı). PUANLI yalnız: eşleşme (ranked) + turnuva (mode=NULL).
+        return $room->mode !== 'friendly';
     }
 }

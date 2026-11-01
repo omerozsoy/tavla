@@ -61,8 +61,9 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
-  // PUANSIZ mac: rating degismez, PR hesaplanir (mac analizinde) ama genel PR/siralamaya girmez.
-  const [unrated, setUnrated] = useState(false)
+  // TÜM arkadaşlık/kılıç maçları PUANSIZ (2026-11-01): rating değişmez, PR maç analizinde hesaplanır
+  // ama genel PR/sıralamaya girmez. Puanlı seçeneği + eski 24h limiti kaldırıldı -> sabit true.
+  const unrated = true
   // KLASIK TAVLA: kup yok + mars=2. Mod SAYFAYA gore SABIT (Modern /arkadasinla-oyna vs
   // Klasik /klasik-arkadasinla-oyna) -> tek sayfada Modern/Klasik gecisi YOK, ayri sayfalar.
   const classic = defaultClassic
@@ -144,27 +145,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
-          {/* Puanli / Puansiz: diger satirlarla ayni karo secici (checkbox gozden kaciyordu). */}
-          <div className="setup-row">
-            <div className="setup-label">{t('friend.ratingMode')}</div>
-            <div className="setup-tiles">
-              <button
-                className={`setup-tile ${!unrated ? 'active' : ''}`}
-                onClick={() => setUnrated(false)}
-                aria-pressed={!unrated}
-              >
-                {t('friend.ratedChip')}
-              </button>
-              <button
-                className={`setup-tile ${unrated ? 'active' : ''}`}
-                onClick={() => setUnrated(true)}
-                aria-pressed={unrated}
-              >
-                {t('friend.unratedChip')}
-              </button>
-            </div>
-            {unrated && <p className="setup-unrated-hint">{t('friend.unratedHint')}</p>}
-          </div>
+          {/* Arkadaşlık/kılıç maçları HER ZAMAN puansız -> seçici yok, yalnız bilgi notu. */}
+          <p className="setup-unrated-hint">{t('friend.alwaysUnrated')}</p>
 
           {/* KLASIK TAVLA sayfasi (yalniz Mac Oyunu'nda anlamli): mod sabit, sadece bilgi notu. */}
           {classic && tab === 'match' && <p className="setup-unrated-hint">{t('classic.note')}</p>}

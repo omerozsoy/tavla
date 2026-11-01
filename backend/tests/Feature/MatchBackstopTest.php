@@ -124,9 +124,9 @@ class MatchBackstopTest extends TestCase
         $this->assertSame(0, MatchResult::where('room_code', 'BS3')->count());
     }
 
-    // GÜNCEL kural: arkadaş/kılıç (friendly) maçları PUANLIDIR (aynı-rakip 24h limiti altında).
-    // Backstop yedeği de rating uygular (ilk maç -> limit altı). Eşleşme/turnuva zaten puanlı.
-    public function test_backstop_friendly_within_cap_is_rated(): void
+    // GÜNCEL kural (2026-11-01): arkadaş/kılıç (friendly) maçları HER ZAMAN PUANSIZ.
+    // Backstop yedeği satırı yazar ama rating/istatistik DEĞİŞMEZ (delta=0, rated=false).
+    public function test_backstop_friendly_is_unrated(): void
     {
         $a = $this->user('a');
         $b = $this->user('b');
@@ -135,12 +135,11 @@ class MatchBackstopTest extends TestCase
         Artisan::call('matches:backstop-finished');
 
         $rowA = MatchResult::where('room_code', 'BS4')->where('user_id', $a->id)->first();
-        $this->assertNotNull($rowA);
-        $this->assertNotSame(0, (int) $rowA->delta);     // PUANLI: rating hareket etti
-        $this->assertTrue((bool) $rowA->rated);          // rated=true (limit altı)
+        $this->assertNotNull($rowA);               // satır yazılır (maç geçmişte görünür)
+        $this->assertSame(0, (int) $rowA->delta);  // PUANSIZ: rating hareket etmez
+        $this->assertFalse((bool) $rowA->rated);   // rated=false
         $a->refresh();
-        $this->assertNotSame(1500, (int) $a->rating);    // rating DEĞİŞTİ
-        $this->assertSame(1, (int) $a->games_played);    // istatistik işlendi
+        $this->assertSame(1500, (int) $a->rating); // rating DEĞİŞMEDİ
     }
 
     // GEC gelen istemci raporu: bare yedek satiri log/PR ile ZENGINLESTIRIR (rating'e dokunmadan).
