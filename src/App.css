@@ -26604,6 +26604,18 @@ input:not([type='range']), select, textarea {
   padding: 8px 6px 26px;
   align-items: stretch;
 }
+/* Ust senkron kaydirma cubugu: bracket ile AYNI genislik; yalniz ince yatay scrollbar gorunur.
+   Alttaki scrollbar'in aynisi -> genis bracket'i yukaridan da kaydirmak icin (kullanici istegi). */
+.tourn-bracket-topscroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 14px;
+  margin-bottom: 2px;
+  scrollbar-width: thin;
+}
+.tourn-bracket-topscroll::-webkit-scrollbar {
+  height: 10px;
+}
 .tourn-round {
   min-width: 212px;
   display: flex;

@@ -293,6 +293,45 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   // CANLI SKOR (oda icine girmeden bracket'te): ODA_KODU -> { userId: kazanilan oyun }. Izleyici
   // poll'uyla AYNI uctan (tournamentViewers) gelir -> ekstra istek yok.
   const [liveScores, setLiveScores] = useState<Record<string, Record<string, number>>>({})
+  // BRACKET yatay kaydirma: cok genis bracket'te ALTTA scrollbar var; AYNISINI USTE de koy (senkron)
+  // -> kullanici yukaridan da kaydirabilir. Ust cubuk yalniz scrollWidth > clientWidth iken gorunur.
+  const bracketRef = useRef<HTMLDivElement>(null)
+  const topScrollRef = useRef<HTMLDivElement>(null)
+  const [bracketW, setBracketW] = useState(0)
+  const [bracketClientW, setBracketClientW] = useState(0)
+  useEffect(() => {
+    const measure = () => {
+      const el = bracketRef.current
+      if (el) {
+        setBracketW(el.scrollWidth)
+        setBracketClientW(el.clientWidth)
+      }
+    }
+    measure()
+    const el = bracketRef.current
+    let ro: ResizeObserver | undefined
+    if (el && 'ResizeObserver' in window) {
+      ro = new ResizeObserver(measure)
+      ro.observe(el)
+      for (const c of Array.from(el.children)) ro.observe(c)
+    }
+    window.addEventListener('resize', measure)
+    return () => {
+      ro?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [active])
+  // Cift yonlu senkron (!== guard -> echo jitter yok).
+  const syncTopToBracket = () => {
+    const b = bracketRef.current
+    const tsp = topScrollRef.current
+    if (b && tsp && tsp.scrollLeft !== b.scrollLeft) tsp.scrollLeft = b.scrollLeft
+  }
+  const syncBracketToTop = () => {
+    const b = bracketRef.current
+    const tsp = topScrollRef.current
+    if (b && tsp && b.scrollLeft !== tsp.scrollLeft) b.scrollLeft = tsp.scrollLeft
+  }
   const hasRooms = !!active?.bracket?.some((r) => r.some((m) => m.room && !m.winner))
   // FINAL gate geri sayımı için saniyelik tik (3.'lük bitince final opens_at'e kadar sayar).
   const [nowTick, setNowTick] = useState(() => Date.now())
@@ -899,7 +938,14 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               : null
           })()}
           {active.status !== 'open' && active.type !== 'swiss_triple' && (
-            <div className="tourn-bracket">
+            <>
+            {/* Ust senkron kaydirma cubugu: bracket tasiyorsa (scrollWidth > clientWidth) gorunur. */}
+            {bracketW > bracketClientW + 1 && (
+              <div className="tourn-bracket-topscroll" ref={topScrollRef} onScroll={syncBracketToTop} aria-hidden="true">
+                <div style={{ width: bracketW, height: 1 }} />
+              </div>
+            )}
+            <div className="tourn-bracket" ref={bracketRef} onScroll={syncTopToBracket}>
               {active.bracket?.map((round, ri) => {
                 const rounds = active.bracket!.length
                 const isFinal = ri === rounds - 1
@@ -1058,6 +1104,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 </div>
               )}
             </div>
+            </>
           )}
         </div>
         {confirm && active && (
