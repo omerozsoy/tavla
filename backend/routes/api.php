@@ -232,6 +232,10 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::get('/me/wxp-breakdown', [AuthController::class, 'wxpBreakdown']); // WXP kategori kirilimi (coin/1/3/5/7)
     Route::get('/me/dice-stats', [AuthController::class, 'diceStats']); // Zar Ortalamalari (zar-basina Sen/Rakip)
     Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
+    // Oda koduyla ÇAĞIRANIN otoriter sonucu (rating + match_result_id). Sonuc ekrani, bitisi POLL ile
+    // goren (rapor ETMEYEN) taraf icin de rating/PR'i SUNUCUDAN okur -> istemcinin kendi raporuna
+    // bagimlilik kalkar (veri room_code+user_id ile sunucuda hazir).
+    Route::get('/me/room-result/{code}', [AuthController::class, 'roomResult']);
     // Canlı ekran: maç-sonu PR hazır mı (poll). Görünen ad 'match-pr-tavlatv' (marka).
     Route::get('/me/match-pr-tavlatv/{match}', [AuthController::class, 'matchGnubgPr']);
     // Eski istemci sürümleri için geriye dönük alias; aynı auth/policy zincirini kullanır.

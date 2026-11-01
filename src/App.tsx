@@ -595,6 +595,7 @@ import {
   messagesUnread,
   matchPr,
   matchGnubgPr,
+  roomResult,
   matchGnubgReview,
   analyzePosition,
   type GnuMove,
@@ -5449,6 +5450,45 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, matchOver, mWinner, room?.code, room?.bot, serverPr?.opp])
+
+  // RAPOR ETMEYEN TARAF — SONUÇ TAMAMEN SUNUCUDAN: sonuç ekranı açık ama bu istemci maçı rapor
+  // etmediğinden (bitişi POLL ile gördü) rating + match_result_id'si yok -> eskiden "—" + rating
+  // değişimi gösterilemiyordu (legacy: veri yalnız kendi rapor yanıtından geliyordu). Veri SUNUCUDA
+  // hazır (room_code+user_id) -> /me/room-result ile çek: match_result_id'yi set edip pollGnubgPr'ı
+  // başlat (loader + self PR; serverPr dolunca yukarıdaki rakip-PR effect'i de açılır) + rating'i
+  // doldur. Rapor eden tarafta zaten dolu -> guard ile atlanır (kullanıcıdan hiçbir şey beklenmez).
+  useEffect(() => {
+    const code = room?.code
+    if (!online || !matchOver || !mWinner || room?.bot || !code) return
+    if (ratingChange != null && matchResultIdRef.current != null) return // rapor eden taraf: zaten dolu
+    let cancelled = false
+    void (async () => {
+      for (let i = 0; i < 40 && !cancelled; i++) {
+        await new Promise((res) => setTimeout(res, 1500))
+        if (cancelled) return
+        if (ratingChange != null && matchResultIdRef.current != null) return // bu arada rapor doldurdu
+        const r = await roomResult(code)
+        if (cancelled) return
+        if (r.pending) continue // henüz settle olmadı (rapor/backstop) -> tekrar dene
+        if (matchResultIdRef.current == null && r.match_result_id) {
+          matchResultIdRef.current = r.match_result_id
+          void pollGnubgPr(r.match_result_id) // loader + self PR (rakip PR effect'i serverPr dolunca açılır)
+        }
+        if (ratingChange == null && r.rating_before != null) {
+          setRatingChange({
+            before: r.rating_before,
+            after: r.rating_after ?? r.rating_before,
+            reason: r.rated ? null : 'casual', // rating_reason saklanmaz -> genel "puansız" notu
+          })
+        }
+        return // dolduruldu
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, matchOver, mWinner, room?.code, room?.bot, ratingChange])
 
   // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).
   // Casual (rankedMatch=false) macta puana/lig'e etki yok; PR + hata gunlugu kalir.

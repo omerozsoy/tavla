@@ -985,6 +985,42 @@ class AuthController extends Controller
     }
 
     /**
+     * GET /me/room-result/{code} — ÇAĞIRANIN bu odadaki OTORİTER sonucu. Sonuç ekranı, maç bitişini
+     * POLL ile gören (rapor ETMEYEN) taraf için de rating + match_result_id'yi SUNUCUDAN okur; böylece
+     * istemcinin kendi "rapor" yanıtına bağımlılığı kalkar (veri room_code+user_id ile sunucuda hazır).
+     * Salt-okunur: settle/rating'i DEĞİŞTİRMEZ (settlement raporu veren veya MatchBackstop cron'u yapar);
+     * satır henüz yoksa {pending:true} döner -> istemci kısa aralıkla tekrar poll'lar. PR ayrı poll'lanır
+     * (match_result_id ile /me/match-pr-tavlatv). rating_reason match_results'ta SAKLANMAZ (rapor anında
+     * hesaplanır) -> burada dönmez; istemci rated=false ise genel "puansız" notu gösterir.
+     */
+    public function roomResult(Request $request, string $code)
+    {
+        $me = $request->user();
+        $row = MatchResult::where('room_code', strtoupper($code))
+            ->where('user_id', $me->id)
+            ->orderByDesc('id')
+            ->first();
+        if (! $row) {
+            return response()->json(['pending' => true]); // henüz settle olmadı (rapor/backstop bekleniyor)
+        }
+
+        return response()->json([
+            'pending' => false,
+            'match_result_id' => (int) $row->id,
+            'won' => (bool) $row->won,
+            'rated' => (bool) $row->rated,
+            'rating_before' => $row->rating_before !== null ? (int) $row->rating_before : null,
+            'rating_after' => $row->rating_after !== null ? (int) $row->rating_after : null,
+            'delta' => $row->delta !== null ? (int) $row->delta : null,
+            'opponent_rating' => $row->opponent_rating !== null ? (int) $row->opponent_rating : null,
+            'score_self' => $row->score_self !== null ? (int) $row->score_self : null,
+            'score_opp' => $row->score_opp !== null ? (int) $row->score_opp : null,
+            'match_length' => (int) $row->match_length,
+            'coins_after' => $row->coins_after !== null ? (int) $row->coins_after : null,
+        ]);
+    }
+
+    /**
      * HAKEM=gnubg: canlı sonuç ekranı, maç bitince gnubg PR'ı (async job) hazır olana kadar bu ucu
      * poll'lar. Hazır olunca gösterilen PR wildbg yerine gnubg olur. Yalnız KENDİ maçın (pvb/online).
      */

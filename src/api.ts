@@ -2488,6 +2488,30 @@ export async function matchPr(
   }
 }
 
+// ÇAĞIRANIN bu odadaki OTORİTER sonucu (rating + match_result_id). Maç bitişini POLL ile gören
+// (rapor ETMEYEN) taraf, rating/PR'ı kendi raporu yerine SUNUCUDAN okur. pending=true -> henüz settle
+// olmadı (kısa aralıkla tekrar poll'la). Hata -> pending gibi davran (tekrar dene).
+export async function roomResult(code: string): Promise<{
+  pending: boolean
+  match_result_id?: number
+  won?: boolean
+  rated?: boolean
+  rating_before?: number | null
+  rating_after?: number | null
+  delta?: number | null
+  opponent_rating?: number | null
+  score_self?: number | null
+  score_opp?: number | null
+  match_length?: number
+  coins_after?: number | null
+}> {
+  try {
+    return await req(`/me/room-result/${encodeURIComponent(code)}`)
+  } catch {
+    return { pending: true }
+  }
+}
+
 // ---- Pozisyon Analizi: GNU Backgammon motoru (sunucu) ----
 // PositionAnalyzer "GNU" motorunu secince cagrilir. Tarayicidaki wildbg'ye EK; gnubg sunucuda.
 // probs = 6'li DISLAYAN [wn,wg,wb,ln,lg,lb] (wildbg ile ayni) -> mevcut gosterim aynen calisir.
