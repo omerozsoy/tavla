@@ -628,6 +628,13 @@ export default function Auth({
     e.preventDefault()
     setError('')
     if (!validProfile()) return
+    // Profil TAMAMLAMA kapısı (yeni Google üyesi burada iner): kurallar kabul edilmeden kayıt YOK.
+    // Normal profil düzenlemede (requireComplete=false) istenmez — zaten üye olurken kabul edildi.
+    if (requireComplete && !termsOk) {
+      setTriedSubmit(true)
+      document.getElementById('reg-terms')?.focus()
+      return
+    }
     const p: Profile = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -1112,6 +1119,29 @@ export default function Auth({
 
         {editing && error && <div className="register-error" role="alert">{error}</div>}
 
+        {/* Profil TAMAMLAMA kapısı (yeni Google üyesi): kullanım koşulları zorunlu onayı. Normal
+            profil düzenlemede gösterilmez (üye olurken zaten kabul edildi). */}
+        {editing && requireComplete && (
+          <div className="reg-terms">
+            <label className="reg-terms-check">
+              <input
+                id="reg-terms"
+                type="checkbox"
+                checked={termsOk}
+                onChange={(e) => setTermsOk(e.target.checked)}
+                aria-invalid={(triedSubmit && !termsOk) || undefined}
+              />
+              <span>{termsText.accept}</span>
+            </label>
+            <button type="button" className="reg-terms-link" onClick={() => setTermsOpen(true)}>
+              {termsText.read}
+            </button>
+            {triedSubmit && !termsOk && (
+              <span className="text-xs text-destructive" role="alert">{termsText.required}</span>
+            )}
+          </div>
+        )}
+
         {/* Ana aksiyon grubu: [Vazgeç] [Kaydet] birlikte, sag hizali */}
         {editing && (
           <div className="mt-1 flex flex-wrap justify-end gap-3">
@@ -1120,7 +1150,7 @@ export default function Auth({
                 {t('reg.cancel')}
               </Button>
             )}
-            <Button type="submit" disabled={busy || nickBad}>
+            <Button type="submit" disabled={busy || nickBad || (requireComplete && !termsOk)}>
               {t('reg.submitEdit')}
             </Button>
           </div>
