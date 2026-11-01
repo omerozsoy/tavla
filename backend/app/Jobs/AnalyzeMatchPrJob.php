@@ -320,6 +320,18 @@ class AnalyzeMatchPrJob implements ShouldQueue
             MatchResult::where('id', $mr->id)->update($upd); // query-builder -> fillable gerekmez
         }
 
+        // PROFİL "Maç Tipine Göre PR" havuzu (PlayerStatisticsService, 6h cache) pr_equity_lost/
+        // pr_decisions okur -> bunları ANCAK bu async job yazar. reportRating'teki invalidate PR
+        // yazılmadan önce koştuğundan havuz cache'i 6h bayat kalıyordu. PR yazıldıysa (pr_decisions
+        // $upd'te) burada da invalidate et -> sonraki profil görüntülemesi TTL beklemeden tazelenir.
+        if (array_key_exists('pr_decisions', $upd)) {
+            try {
+                app(\App\Services\PlayerStatisticsService::class)->invalidate((int) $mr->user_id);
+            } catch (\Throwable $e) {
+                Log::warning('gnubg sonrasi havuz PR invalidate hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
+            }
+        }
+
         // gnubg-authoritative DOLUM SONRASI (PR'ın tek yetkilisi gnubg): reportRating artık istemci PR'ı
         // seed etmiyor (pending) -> burada iki türev de gnubg'den tamamlanmalı:
         //  (a) ONLINE rakip satırının opponent_pr'ı = bu satırın gnubg PR'ı (iki oyuncu özdeş görsün).
