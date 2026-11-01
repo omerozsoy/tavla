@@ -193,7 +193,7 @@ Route::fallback(function (Request $request) {
         'online-tavla', 'tavla-oyna', 'backgammon',
         'tavla-turnuvasi-organizasyonu', 'kurumsal-tavla-turnuvasi',
         'belediye-tavla-turnuvasi', 'avm-tavla-turnuvasi', 'iletisim',
-        'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna',
+        'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna', 'maca-davet',
         'klasik-tavla', 'klasik-yapay-zeka', 'klasik-arkadasinla-oyna',
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi', 'kiz-tavlasi',
