@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\User;
 use App\Support\RatingPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -62,5 +63,31 @@ class RankedInviteTest extends TestCase
         $this->assertSame('friendly', $room->mode);
         $this->assertTrue((bool) $room->unrated);
         $this->assertFalse(RatingPolicy::isRanked($room, $from->id, $to->id), 'arkadaş daveti puansız kalmalı');
+    }
+
+    // REGRESYON: puanlı davet odası mode='ranked' -> RoomAccess::requiresAccount true; davetli YENİ
+    // katılımcı olarak enter() edince eskiden "eşleşme akışını kullan" 403'üne takılıyordu. Geçerli
+    // davetlisi guard'ı atlamalı, p2 koltuğuna oturmalı.
+    public function test_invitee_can_join_ranked_invite_room(): void
+    {
+        $from = $this->user('from');
+        $to = $this->user('to');
+
+        Sanctum::actingAs($from);
+        $code = $this->postJson("/api/friends/{$to->id}/invite", [
+            'target' => 5, 'time_control' => 'normal', 'unrated' => false,
+        ])->assertOk()->json('code');
+        $this->postJson("/api/rooms/{$code}/enter", ['token' => 'p1-'.$code, 'name' => 'FROM', 'target' => 5])->assertOk();
+
+        $inviteId = DB::table('game_invites')->where('room_code', $code)->value('id');
+
+        Sanctum::actingAs($to);
+        $this->postJson("/api/invites/{$inviteId}/respond", ['accept' => true])->assertOk();
+        // ESKIDEN BURADA 403: davetli ranked odaya katilamiyordu.
+        $this->postJson("/api/rooms/{$code}/enter", ['token' => 'p2-'.$code, 'name' => 'TO', 'target' => 5])->assertOk();
+
+        $room = Room::where('code', $code)->firstOrFail();
+        $this->assertSame('ranked', $room->mode);
+        $this->assertSame($to->id, (int) $room->p2_user_id, 'davetli p2 koltuğuna oturmalı');
     }
 }

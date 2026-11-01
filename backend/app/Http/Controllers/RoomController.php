@@ -143,6 +143,26 @@ class RoomController extends Controller
     }
 
     /**
+     * Bu kullanıcının bu odaya GEÇERLİ (bekleyen/kabul edilmiş) bir daveti var mı? PUANLI davet odası
+     * mode='ranked' olduğundan RoomAccess::requiresAccount true döner ve davetliyi "eşleşme akışını
+     * kullan" ile haksız bloklar (o guard matchmaking HAVUZU için); gerçek davetlisi bu kontrolü atlar.
+     * Para/escrow odası davetle kurulmaz (stake=0) -> bu bypass yalnız ücretsiz davet odalarını kapsar.
+     */
+    private function hasPendingInvite(string $code, ?int $userId): bool
+    {
+        if (! $userId || ! Schema::hasTable('game_invites')) {
+            return false;
+        }
+
+        return DB::table('game_invites')
+            ->where('room_code', $code)
+            ->where('to_user_id', $userId)
+            ->whereIn('status', ['pending', 'accepted'])
+            ->where('created_at', '>', now()->subMinutes(10))
+            ->exists();
+    }
+
+    /**
      * Bir odanın oyuncu başına REZERVE edilen escrow tutarı. Para oyununda (Tek Oyun: sabit bahis +
      * target 1, küp canlı) en kötü senaryo = stake × 48 (küp 16 × backgammon 3); diğer sabit-stake
      * maçlarda = stake. REZERV + BIRAKMA tüm yollarda AYNI tutarı kullanmalı (yoksa coins_reserved sızar).
@@ -1478,8 +1498,8 @@ class RoomController extends Controller
 
         $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
-            if (RoomAccess::requiresAccount($room)) {
-                return $this->fail('Bu odaya yeni katılım için eşleşme akışını kullanmalısın.', 403);
+            if (! $this->hasPendingInvite($room->code, $authUser?->id) && RoomAccess::requiresAccount($room)) {
+                return $this->fail('Bu maça katılamazsın; sadece izleyebilirsin.', 403);
             }
             if ($this->tournamentSeatDenied($room->code, $authUser?->id)) {
                 return $this->fail('Bu turnuva maçında değilsin.', 403);
@@ -1661,8 +1681,8 @@ class RoomController extends Controller
 
         $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
-            if (RoomAccess::requiresAccount($room)) {
-                return $this->fail('Bu odaya yeni katılım için eşleşme akışını kullanmalısın.', 403);
+            if (! $this->hasPendingInvite($room->code, $authUser?->id) && RoomAccess::requiresAccount($room)) {
+                return $this->fail('Bu maça katılamazsın; sadece izleyebilirsin.', 403);
             }
             if ($room->status !== 'waiting' || $room->bot) {
                 return $this->fail('Bu odaya yeni oyuncu alınamaz.', 409);
