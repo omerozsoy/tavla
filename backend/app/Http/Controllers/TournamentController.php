@@ -314,7 +314,25 @@ class TournamentController extends Controller
             return $this->fail('Yalnızca yönetici.', 403);
         }
         $data = $request->validate(['user_id' => ['required', 'integer']]);
-        $uid = (int) $data['user_id'];
+        $out = $this->adminDisqualify($tournament, (int) $data['user_id']);
+        if (isset($out['err'])) {
+            return $this->fail($out['err'], $out['code']);
+        }
+
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
+    /**
+     * Yönetici diskalifiye ÇEKİRDEĞİ — HTTP disqualify() + Filament "Şüpheli Kullanıcılar" paneli ORTAK
+     * tek kaynak (iade/walkover/bracket mantığı kopyalanmasın). Kilitli transaction: open=iade+çıkar,
+     * running-Swiss=hükmen (SwissRuntime), running-eleme=bekleyen maç rakibe walkover. awardChampionIfFinished
+     * (diskalifiye turnuvayı bitirmiş olabilir) transaction DIŞINDA — orijinal disqualify() davranışı.
+     * ÇAĞIRAN admin yetkisini KENDİ doğrular (HTTP: is_admin; Filament: panel erişimi zaten admin).
+     *
+     * @return array{t?:Tournament,err?:string,code?:int}
+     */
+    public function adminDisqualify(Tournament $tournament, int $uid): array
+    {
         $out = DB::transaction(function () use ($tournament, $uid) {
             $t = Tournament::lockForUpdate()->find($tournament->id);
             if (! $t) {
@@ -334,12 +352,11 @@ class TournamentController extends Controller
 
             return ['t' => $t];
         });
-        if (isset($out['err'])) {
-            return $this->fail($out['err'], $out['code']);
+        if (! isset($out['err'])) {
+            $this->awardChampionIfFinished($out['t']);
         }
-        $this->awardChampionIfFinished($out['t']);
 
-        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+        return $out;
     }
 
     // Bir macin sonucunu bildir. GUVENLIK: istemcinin winner_id beyanina KORU KORUNE

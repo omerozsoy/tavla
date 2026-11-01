@@ -3,6 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\UserResource;
+use App\Http\Controllers\TournamentController;
+use App\Models\Tournament;
 use App\Models\User;
 use App\Support\AccountClosure;
 use App\Support\CheatScan;
@@ -193,6 +195,74 @@ class SupheliMaclar extends Page
         $names = User::whereIn('id', $ids)->pluck('nickname', 'id');
 
         return array_map(fn ($id) => ['id' => $id, 'nickname' => $names[$id] ?? ('#'.$id)], $ids);
+    }
+
+    /**
+     * TURNUVADAKİ ŞÜPHELİLER: aktif turnuvalarda (kayıt açık / sürüyor) yer alan motor-yardımı
+     * şüphelisi oyuncular — turnuvadan atmak için AYRI bölüm. Kaynak: CheatScan::suspectIds (1 saat
+     * cache) ∩ tournaments.players (JSON). Kesin (motor doğrulanmış) üstte.
+     *
+     * @return array<int,array{tournament_id:int,tournament_name:string,status:string,user_id:int,nickname:string,flags:int,worst_pr:mixed,certain:bool,url:?string}>
+     */
+    public function tournamentSuspects(): array
+    {
+        $ids = CheatScan::suspectIds(); // {uid => {flags, worst_pr}}
+        if ($ids === []) {
+            return [];
+        }
+        $out = [];
+        $tournaments = Tournament::whereIn('status', ['open', 'running'])
+            ->orderByDesc('id')
+            ->get(['id', 'name', 'status', 'players']);
+        foreach ($tournaments as $t) {
+            foreach ($t->players ?? [] as $p) {
+                $uid = (int) ($p['id'] ?? 0);
+                if ($uid <= 0 || ! isset($ids[$uid])) {
+                    continue;
+                }
+                $out[] = [
+                    'tournament_id' => (int) $t->id,
+                    'tournament_name' => (string) $t->name,
+                    'status' => (string) $t->status,
+                    'user_id' => $uid,
+                    'nickname' => $p['name'] ?? ('#'.$uid),
+                    'flags' => (int) ($ids[$uid]['flags'] ?? 0),
+                    'worst_pr' => $ids[$uid]['worst_pr'] ?? null,
+                    'certain' => CheatScan::confirmation($uid)['certain'] ?? false,
+                    'url' => self::editUrl($uid),
+                ];
+            }
+        }
+        // Kesin (motor doğrulanmış) üstte; sonra şüpheli maç sayısı çok olan.
+        usort($out, fn ($a, $b) => (($b['certain'] <=> $a['certain']) ?: ($b['flags'] <=> $a['flags'])));
+
+        return $out;
+    }
+
+    /**
+     * Şüpheliyi turnuvadan AT (yönetici diskalifiye — TournamentController::adminDisqualify ile ortak:
+     * open=iade+çıkar, running=rakibe hükmen walkover / Swiss hükmen). $ban=true ise ayrıca hesabı engelle.
+     */
+    public function kickFromTournament(int $tournamentId, int $userId, bool $ban = false): void
+    {
+        $t = Tournament::find($tournamentId);
+        if (! $t) {
+            Notification::make()->title('Turnuva bulunamadı.')->danger()->send();
+
+            return;
+        }
+        $out = app(TournamentController::class)->adminDisqualify($t, $userId);
+        if (isset($out['err'])) {
+            Notification::make()->title($out['err'])->danger()->send();
+
+            return;
+        }
+        if ($ban) {
+            $this->block($userId); // kendi bildirimini + config-admin/kendini-koru guard'ını yapar
+        }
+        CheatScan::forget();
+        $name = User::whereKey($userId)->value('nickname') ?: ('#'.$userId);
+        Notification::make()->title($name.' "'.$t->name.'" turnuvasından atıldı.')->success()->send();
     }
 
     /** Hamle-hamle motor eşleşmesini aç/kapa (on-demand — yalnız tıklanan maçın review'ını parse eder). */

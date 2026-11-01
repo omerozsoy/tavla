@@ -70,6 +70,53 @@
             </div>
         </div>
 
+        {{-- TURNUVADAKİ ŞÜPHELİLER: aktif turnuvalarda yer alan motor-yardımı şüphelileri AYRI göster +
+             doğrudan turnuvadan at (open=ücret iade, running=rakibe hükmen). Turnuvada hile istemiyoruz. --}}
+        @php $tsus = $this->tournamentSuspects(); @endphp
+        <div class="rounded-xl ring-1 overflow-hidden {{ $tsus ? 'ring-red-600/50 bg-red-600/5' : 'ring-emerald-500/30 bg-emerald-500/5' }}">
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex items-center gap-2 flex-wrap {{ $tsus ? 'bg-red-600/10' : '' }}">
+                <x-filament::icon icon="heroicon-m-trophy" class="h-5 w-5 {{ $tsus ? 'text-red-500' : 'text-emerald-500' }}" />
+                <span class="font-semibold">Turnuvadaki Şüpheliler</span>
+                @if ($tsus)
+                    <span class="inline-flex items-center rounded-full bg-red-600 text-white px-2 py-0.5 text-xs font-bold">{{ count($tsus) }}</span>
+                @endif
+                <span class="text-xs text-gray-500">— aktif turnuvalarda (kayıt açık / sürüyor) motor-yardımı şüphelisi oyuncular. Turnuvada hile = turnuvadan at.</span>
+            </div>
+            @if (empty($tsus))
+                <div class="px-4 py-4 text-sm text-emerald-700 dark:text-emerald-300">Aktif turnuvalarda şüpheli oyuncu yok.</div>
+            @else
+                <div class="divide-y divide-gray-100 dark:divide-white/10">
+                    @foreach ($tsus as $ts)
+                        <div class="flex items-center justify-between gap-3 px-4 py-3 flex-wrap">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                @if ($ts['certain'])
+                                    <span class="inline-flex items-center rounded-lg bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold uppercase tracking-wide">⚠ KESİN</span>
+                                @endif
+                                <span class="font-semibold">{{ $ts['nickname'] }}</span>
+                                <span class="text-xs text-gray-400">#{{ $ts['user_id'] }}</span>
+                                <span class="inline-flex items-center rounded-full bg-red-500/20 text-red-700 dark:text-red-300 px-2 py-0.5 text-xs font-bold">{{ $ts['flags'] }} şüpheli maç</span>
+                                <span class="text-xs text-gray-500">en kötü PR {{ $ts['worst_pr'] }}</span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-xs">
+                                    🏆 {{ $ts['tournament_name'] }} <span class="opacity-70">· {{ $ts['status'] === 'open' ? 'kayıt açık' : 'sürüyor' }}</span>
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                @if ($ts['url'])
+                                    <a href="{{ $ts['url'] }}" class="text-primary-600 dark:text-primary-400 text-xs font-medium hover:underline">İncele</a>
+                                @endif
+                                <x-filament::button size="xs" color="warning" icon="heroicon-m-arrow-right-on-rectangle"
+                                    wire:click="kickFromTournament({{ $ts['tournament_id'] }}, {{ $ts['user_id'] }}, false)"
+                                    wire:confirm="{{ $ts['nickname'] }} '{{ $ts['tournament_name'] }}' turnuvasından atılsın mı? (Kayıt açıksa giriş ücreti iade; turnuva sürüyorsa rakibe hükmen galibiyet.)">Turnuvadan At</x-filament::button>
+                                <x-filament::button size="xs" color="danger" icon="heroicon-m-no-symbol"
+                                    wire:click="kickFromTournament({{ $ts['tournament_id'] }}, {{ $ts['user_id'] }}, true)"
+                                    wire:confirm="{{ $ts['nickname'] }} turnuvadan atılıp hesabı ENGELLENSİN mi? (Motor-yardımı hile şüphesi — erişimi kesilir.)">At + Engelle</x-filament::button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
         @if (empty($rows))
             <div class="rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/30 p-6 text-center text-emerald-700 dark:text-emerald-300">
                 @if ($onlyCertain)
