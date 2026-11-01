@@ -757,6 +757,11 @@ class AuthController extends Controller
         if (Schema::hasColumn('match_results', 'rated')) {
             $mr['rated'] = $ranked;
         }
+        // Puansızsa sebep (bot/unrated/guest/friendly/casual) -> satıra sakla. Aşağıdaki yanıt (947)
+        // AYNI değeri üretir (RatingPolicy::unratedReason tek kaynak). Puanlı -> NULL.
+        if (Schema::hasColumn('match_results', 'rating_reason')) {
+            $mr['rating_reason'] = $ranked ? null : RatingPolicy::unratedReason($room, $opponentId);
+        }
         if (Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
         }
@@ -990,8 +995,8 @@ class AuthController extends Controller
      * istemcinin kendi "rapor" yanıtına bağımlılığı kalkar (veri room_code+user_id ile sunucuda hazır).
      * Salt-okunur: settle/rating'i DEĞİŞTİRMEZ (settlement raporu veren veya MatchBackstop cron'u yapar);
      * satır henüz yoksa {pending:true} döner -> istemci kısa aralıkla tekrar poll'lar. PR ayrı poll'lanır
-     * (match_result_id ile /me/match-pr-tavlatv). rating_reason match_results'ta SAKLANMAZ (rapor anında
-     * hesaplanır) -> burada dönmez; istemci rated=false ise genel "puansız" notu gösterir.
+     * (match_result_id ile /me/match-pr-tavlatv). rating_reason artık KOLON (settlement yazar) -> puansız
+     * sebebi (bot/unrated/guest/friendly/casual) burada da döner.
      */
     public function roomResult(Request $request, string $code)
     {
@@ -1009,6 +1014,7 @@ class AuthController extends Controller
             'match_result_id' => (int) $row->id,
             'won' => (bool) $row->won,
             'rated' => (bool) $row->rated,
+            'rating_reason' => $row->rated ? null : ($row->rating_reason ?? null), // saklanan sebep (artık kolon)
             'rating_before' => $row->rating_before !== null ? (int) $row->rating_before : null,
             'rating_after' => $row->rating_after !== null ? (int) $row->rating_after : null,
             'delta' => $row->delta !== null ? (int) $row->delta : null,

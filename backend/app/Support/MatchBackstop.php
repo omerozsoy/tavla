@@ -67,8 +67,9 @@ class MatchBackstop
             $oppName = $room->{$oppSlot.'_name'} ?? null;
             $oppId = (int) ($room->{$oppSlot.'_user_id'} ?? 0);
             $ranked = RatingPolicy::isRanked($room, $uid, $oppId); // per-oyuncu (friendly 24h limiti)
+            $reason = $ranked ? null : RatingPolicy::unratedReason($room, $oppId); // puansızsa sebebi sakla
             $matchLength = $room->target !== null ? (int) $room->target : null;
-            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake)) {
+            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason)) {
                 $written++;
             }
         }
@@ -123,9 +124,10 @@ class MatchBackstop
         bool $ranked,
         int $opponentUserId = 0,
         int $stake = 0,
+        ?string $ratingReason = null,
     ): bool {
         try {
-            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake) {
+            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason) {
                 $u = User::lockForUpdate()->find($userId);
                 if (! $u) {
                     return false;
@@ -179,6 +181,9 @@ class MatchBackstop
                 }
                 if (Schema::hasColumn('match_results', 'rated')) {
                     $row['rated'] = $ranked;
+                }
+                if (Schema::hasColumn('match_results', 'rating_reason')) {
+                    $row['rating_reason'] = $ratingReason; // puansızsa sebep (bot/unrated/guest/friendly/casual)
                 }
                 if (Schema::hasColumn('match_results', 'stake')) {
                     $row['stake'] = $stake; // oda purge edilse de oynanan bahis kalsın

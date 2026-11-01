@@ -5478,7 +5478,7 @@ export default function App() {
           setRatingChange({
             before: r.rating_before,
             after: r.rating_after ?? r.rating_before,
-            reason: r.rated ? null : 'casual', // rating_reason saklanmaz -> genel "puansız" notu
+            reason: r.rated ? null : (r.rating_reason ?? 'casual'), // sunucudan gelen spesifik sebep
           })
         }
         return // dolduruldu

@@ -112,4 +112,26 @@ class RatingPolicy
         // aynı-rakip 24h limiti kaldırıldı). PUANLI yalnız: eşleşme (ranked) + turnuva (mode=NULL).
         return $room->mode !== 'friendly';
     }
+
+    /**
+     * Bir PUANSIZ maçın sebebi (rating_reason kolonu): bot|unrated|guest|friendly|casual. Sonuç ekranı
+     * "rating neden değişmedi" notunu buna göre yazar. Yalnız rated=false satır yazılırken çağrılır
+     * (puanlı maçta çağırma -> NULL sakla). isRanked GATE'İ YOK: çağıran zaten puansız olduğunu bilir.
+     * reportRating'teki aynı sıra/mantık (AuthController) burada merkezileşir -> tüm settlement yolları
+     * (reportRating/MatchBackstop/ForfeitLoss) AYNI sebebi yazar.
+     */
+    public static function unratedReason(Room $room, int $opponentId): string
+    {
+        if ($room->bot) {
+            return 'bot';
+        }
+        if ($room->unrated) {
+            return 'unrated';
+        }
+        if ($opponentId <= 0) {
+            return 'guest'; // rakip hesapsız (misafir)
+        }
+
+        return $room->mode === 'friendly' ? 'friendly' : 'casual';
+    }
 }

@@ -2496,6 +2496,7 @@ export async function roomResult(code: string): Promise<{
   match_result_id?: number
   won?: boolean
   rated?: boolean
+  rating_reason?: 'bot' | 'unrated' | 'guest' | 'friendly' | 'casual' | null
   rating_before?: number | null
   rating_after?: number | null
   delta?: number | null

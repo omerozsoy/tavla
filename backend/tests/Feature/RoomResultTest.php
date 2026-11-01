@@ -59,6 +59,21 @@ class RoomResultTest extends TestCase
             ->assertJsonStructure(['match_result_id']);
     }
 
+    public function test_unrated_row_returns_rating_reason(): void
+    {
+        $u = $this->user();
+        MatchResult::create([
+            'user_id' => $u->id, 'room_code' => 'FR7ND', 'won' => false, 'rated' => false,
+            'rating_reason' => 'friendly', 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0,
+            'opponent_rating' => 1500, 'opponent_name' => 'opp', 'match_length' => 5, 'match_type' => 'match',
+        ]);
+
+        Sanctum::actingAs($u);
+        $this->getJson('/api/me/room-result/FR7ND')
+            ->assertOk()
+            ->assertJson(['pending' => false, 'rated' => false, 'rating_reason' => 'friendly']);
+    }
+
     public function test_only_callers_own_row(): void
     {
         $me = $this->user();
