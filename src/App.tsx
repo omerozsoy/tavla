@@ -1646,10 +1646,22 @@ export default function App() {
           setSpectate({ code: c, p1: '', p2: '' }) // misafir de izleyebilir (salt-okunur)
           break
         }
-        case 'maca-davet':
-          // Oyuncu MAÇ daveti ekrani: davet edilen hedef yalniz hafizada tutulur; dogrudan
-          // URL ile acilamaz (hedef yok) -> ana sayfaya dus (break = hicbir sayfa acilmaz).
+        case 'maca-davet': {
+          if (!getToken()) { requireLogin(); break } // misafir davet edemez
+          // Refresh'te davet edilen kişi bellekten kaybolur -> sessionStorage'dan geri yükle (aynı
+          // sekme). Yoksa ana sayfaya dus (break -> currentSlug='' -> URL '/' olur, boş /maca-davet'te
+          // asılı kalmaz).
+          try {
+            const ctx = JSON.parse(sessionStorage.getItem('inviteCtx') || 'null')
+            if (ctx?.p?.id) {
+              setInviteTarget(ctx.p)
+              setInviteRanked(ctx.ranked !== false)
+              setFriendClassic(false)
+              setFriendSetupOpen(true)
+            }
+          } catch { /* yoksay -> ana sayfa */ }
           break
+        }
         case 'arkadasinla-oyna':
           if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setInviteTarget(null) // menuden acilis = normal mod (davet degil)
@@ -7719,6 +7731,9 @@ export default function App() {
     setFriendClassic(false) // çevrimiçi listeden davet = modern (klasik değil)
     setHome(false)
     setFriendSetupOpen(true)
+    // /maca-davet refresh'inde davet edilen kişi + mod kaybolmasın (bellek-içi state) -> sessionStorage
+    // (aynı sekme). applyFromPath case 'maca-davet' buradan geri yükler; gönder/vazgeç temizler.
+    try { sessionStorage.setItem('inviteCtx', JSON.stringify({ p, ranked })) } catch { /* yoksay */ }
   }
   // "Oyun Arayanlar": seeker'in kriterleriyle (uzunluk + bahis + tempo) eslesme havuzuna
   // gir -> backend'in kesisim mantigi seni ANINDA onunla (ya da ayni kriterli en eski uygun
@@ -7783,6 +7798,7 @@ export default function App() {
     setFriendSetupOpen(false)
     setInviteTarget(null)
     setInviteRanked(false)
+    try { sessionStorage.removeItem('inviteCtx') } catch { /* yoksay */ }
     setInviteWaitName(tgt.name) // bekleme ekrani "kod paylas" yerine "{ad} bekleniyor" gostersin
     setInviteWaitRating(tgt.rating ?? null)
     setInviteWaitPreview(null) // onceki davetin tahmini kalmasin; yanit gelince set edilir
@@ -10968,6 +10984,7 @@ export default function App() {
               setInviteTarget(null)
               setInviteRanked(false)
               setFriendClassic(false)
+              try { sessionStorage.removeItem('inviteCtx') } catch { /* yoksay */ }
             }}
             onCreate={({ target, timeControl, unrated, classic }) => {
               setFriendSetupOpen(false)
