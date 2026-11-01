@@ -191,7 +191,9 @@ class AnalyzeMatchPrJob implements ShouldQueue
             throw new TransientAnalysisException('gnubg PR: 0 sayilan karar (eval='.$totEval.') = degrade run -> retry (temiz rerun gercek PR yazar)');
         }
         // PR = Σloss / SAYILAN karar. decisions=0 -> PR TANIMSIZ (null/"—"); ASLA 0 sentinel yazma.
-        $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : null;
+        // Snowie/XG gibi 100'e TAVANLA: az-kararlı maçta per-pozisyon ×500 absürt (ör. 1 kararda 179) olur;
+        // Snowie null döner/skorlayamazsa bu placeholder ekrana düşebilir -> 100'ü AŞMASIN (tek PR cetveli).
+        $overall = $totDec > 0 ? min(100.0, ($totLoss / $totDec) * 500) : null;
 
         $upd = [];
         // Her kova SAYILAN kararına göre: decisions>0 -> gerçek değer; yoksa NULL (varsa eski sentinel
@@ -258,7 +260,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
                 // decisions bazlı (self ile AYNI kural): SAYILAN karar yoksa PR yok -> NULL (sahte 0
                 // yazma; varsa eski sentinel'i temizle). Reconstructed rakip skorlanamazsa (oTotDec=0)
                 // ekran dürüst "—"; rakip GERÇEKTEN raporlarsa kendi satırının PR'ı otoriter olur.
-                $oOverall = $oTotDec > 0 ? ($oTotLoss / $oTotDec) * 500 : null;
+                $oOverall = $oTotDec > 0 ? min(100.0, ($oTotLoss / $oTotDec) * 500) : null;
                 if (Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr')) {
                     $upd['gnubg_opponent_checker_pr'] = $oChkDec > 0 ? round((float) $oChk['pr'], 2) : null;
                 }

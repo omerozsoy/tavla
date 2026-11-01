@@ -183,6 +183,17 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6);
     }
 
+    /** Per-pozisyon PR 100'e TAVANLANIR: az-kararlı maçta ×500 absürt olur (Snowie/XG gibi cap). */
+    public function test_per_position_pr_capped_at_100(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $mr = $this->matchWithLog(clientPr: 12.0);
+        // loss 0.5 / 1 karar -> ×500 = 250 -> 100'e tavanlanmalı.
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 250.0, chkLoss: 0.5, chkDec: 1));
+        $mr->refresh();
+        $this->assertEqualsWithDelta(100.0, (float) $mr->gnubg_pr, 1e-6, 'per-pozisyon PR 100 tavanını aşmamalı');
+    }
+
     /**
      * TEK PR KAYNAĞI: Otoriter PR'ı Snowie (AnalyzeMatchSnowieJob) yazar. Snowie bu satırı işlediyse
      * (pr_shield_at dolu), per-pozisyon AnalyzeMatchPrJob SONRADAN koşsa bile onu EZMEMELİ -> kullanıcı
