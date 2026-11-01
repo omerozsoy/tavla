@@ -110,3 +110,19 @@ backup_*.sql
 
 # Paylaşım (og:image) JPEG variant önbelleği (SeoMeta sunucuda üretir; repoya girmez)
 /backend/public/uploads/og/
+
+# gecici teshis/demo/veri artiklari (kalici degil, repoya girmez)
+TAVLATV_OYUN_AKISI_TEST_RAPORU.md
+dice-3d-physics.html
+dice-animations-demo.html
+playwright.audit.config.ts
+scripts/board-inspect.mjs
+scripts/webview-diag.mjs
+backend/heal_referral_*.php
+# android/app koku: elle birakilan scratch gorsel/veri (res/ icindeki gercek varliklar etkilenmez)
+android/app/*.jpg
+android/app/*.jpeg
+android/app/*.png
+android/app/*.pdf
+android/app/*.xls
+android/app/*.xlsx
