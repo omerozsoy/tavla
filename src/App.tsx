@@ -7703,12 +7703,14 @@ export default function App() {
       .catch(() => {})
   }
 
-  // Arkadasi oyuna davet et (kilic ikonu): ONCE oyun turu/uzunluk/sure sec (FriendGameSetup
-  // davet modu). Secili rakip orada gorunur; "Davet Gönder" -> handleSendInvite.
-  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null; rating?: number | null }, ranked = false) {
+  // Bir oyuncuyu MAÇA davet et (çevrimiçi oyuncular / arkadaş listesi / Oyun Arayanlar): ONCE
+  // oyun turu/uzunluk/sure sec (FriendGameSetup davet modu, "Maça Davet Et"), "Davet Gönder" ->
+  // handleSendInvite. TÜM davetler artık PUANLI maç davetidir (ranked=true varsayılan). Arkadaşlık
+  // (puansız) maçı yalnızca oda-kodu paylaşarak oynanır (menü "Arkadaşınla Oyna" -> onCreate).
+  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null; rating?: number | null }, ranked = true) {
     setFriendsOpen(false)
     setInviteTarget(p)
-    setInviteRanked(ranked) // PUANLI davet yalnız Çevrimiçi Oyuncular play tuşundan gelir (ranked=true)
+    setInviteRanked(ranked)
     setFriendClassic(false) // çevrimiçi listeden davet = modern (klasik değil)
     setHome(false)
     setFriendSetupOpen(true)
@@ -11352,8 +11354,8 @@ export default function App() {
                 currentName={profile.nickname}
                 currentId={user?.id}
                 onProfile={(id) => setHomeProfileId(id)}
-                // Çevrimiçi Oyuncular play tuşu = PUANLI davet (ranked=true): maç oyunu + rating değişir.
-                onInvite={user ? (p) => handleInviteFriend(p, true) : undefined}
+                // Play tuşu = PUANLI maç daveti (handleInviteFriend varsayılan ranked=true).
+                onInvite={user ? handleInviteFriend : undefined}
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
