@@ -27,10 +27,10 @@
 
 // ---- Kademe (tier) coin odulleri (rarity'den BAGIMSIZ; sadece odul olcegi) ----
 $TIER = [
-    'bronze'  => ['coin' => 15],
-    'silver'  => ['coin' => 30],
-    'gold'    => ['coin' => 50],
-    'diamond' => ['coin' => 75],
+    'bronze' => ['coin' => 10],
+    'silver' => ['coin' => 20],
+    'gold' => ['coin' => 35],
+    'diamond' => ['coin' => 50],
 ];
 
 /**
@@ -57,14 +57,15 @@ $fam = function (string $prefix, string $category, string $icon, string $metric,
             'value' => $value,
         ];
     }
+
     return $out;
 };
 
-/** Tekil event/gizli rozet kisayolu. Coin odulu 100'de SINIRLI (makul + farm onlemi). */
-$ev = function (string $slug, string $category, string $name, string $desc, string $icon, string $metric, string $rarity = 'rare', int $coin = 50, bool $hidden = false): array {
+/** Tekil event/gizli rozet kisayolu. Coin odulu 60'ta SINIRLI (makul + farm onlemi). */
+$ev = function (string $slug, string $category, string $name, string $desc, string $icon, string $metric, string $rarity = 'rare', int $coin = 30, bool $hidden = false): array {
     return [
         'slug' => $slug, 'category' => $category, 'name' => $name, 'desc' => $desc,
-        'icon' => $icon, 'tier' => null, 'rarity' => $rarity, 'reward_coin' => min($coin, 100),
+        'icon' => $icon, 'tier' => null, 'rarity' => $rarity, 'reward_coin' => min($coin, 60),
         'hidden' => $hidden, 'type' => 'event', 'metric' => $metric, 'value' => 1,
     ];
 };
@@ -100,7 +101,7 @@ $list = array_merge($list, $fam('streak', 'streak', 'flame', 'best_win_streak', 
     [3,  'bronze',  'common',    'Seri Başladı',   'Üst üste 3 maç kazan.'],
     [5,  'bronze',  'uncommon',  'Alev Aldı',      'Üst üste 5 maç kazan.'],
     [10, 'silver',  'rare',      'Durdurulamıyor', 'Üst üste 10 maç kazan.'],
-    [20, 'gold',    'epic',      'Kim Tutar Seni?','Üst üste 20 maç kazan.'],
+    [20, 'gold',    'epic',      'Kim Tutar Seni?', 'Üst üste 20 maç kazan.'],
     [30, 'gold',    'legendary', 'Makine',         'Üst üste 30 maç kazan.'],
     [50, 'diamond', 'mythic',    'Dokunulmaz',     'Üst üste 50 maç kazan.'],
 ]));
@@ -110,7 +111,7 @@ $list = array_merge($list, $fam('gammon', 'tavla', 'target', 'total_gammons', [
     [1,    'bronze',  'common',    'Marslı',         'İlk kez rakibini marsla (gammon) yen.'],
     [10,   'silver',  'uncommon',  'Mars Avcısı',    '10 mars galibiyeti elde et.'],
     [100,  'gold',    'rare',      'Mars Fatihi',    '100 mars galibiyeti elde et.'],
-    [1000, 'diamond', 'legendary', 'Mars İmparatoru','1.000 mars galibiyeti elde et.'],
+    [1000, 'diamond', 'legendary', 'Mars İmparatoru', '1.000 mars galibiyeti elde et.'],
 ]));
 $list = array_merge($list, $fam('backgammon', 'tavla', 'target', 'total_backgammons', [
     [1,   'silver',  'uncommon', 'Katmerli', 'İlk kez katmerli marsla (backgammon) yen.'],
@@ -131,7 +132,7 @@ $list[] = $ev('dice_win_high_luck', 'dice', 'Şans mı Dediniz?', 'Çok yüksek 
 $list = array_merge($list, $fam('doubles', 'dice', 'dice', 'total_doubles', [
     [10,   'bronze',  'common',   'Zar Isındı',       '10 çift zar at.'],
     [100,  'silver',  'uncommon', 'Dubleci',          '100 çift zar at.'],
-    [1000, 'gold',    'rare',     'Zarların Efendisi','1.000 çift zar at.'],
+    [1000, 'gold',    'rare',     'Zarların Efendisi', '1.000 çift zar at.'],
     [5000, 'diamond', 'epic',     'Zar Kâhini',       '5.000 çift zar at.'],
 ]));
 
@@ -238,12 +239,12 @@ return [
     // yukarida). Bu bant tablosu yalnizca "oyuncularin %X'i kazandi" gibi ISTATISTIK
     // gostermek isteyen yerler icin referans olarak korunur.
     'rarity_bands' => [
-        'common'    => 0.40,
-        'uncommon'  => 0.20,
-        'rare'      => 0.05,
-        'epic'      => 0.01,
+        'common' => 0.40,
+        'uncommon' => 0.20,
+        'rare' => 0.05,
+        'epic' => 0.01,
         'legendary' => 0.001,
-        'mythic'    => 0.0,
+        'mythic' => 0.0,
     ],
 
     // Event/gizli rozet esikleri — koda gomulu degil (#6, #19).
