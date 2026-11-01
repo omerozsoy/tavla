@@ -20066,6 +20066,55 @@ body:has(.spectate-view) .app.lobby {
 .scoring-table-len {
   max-width: 340px;
 }
+
+/* Kayıt: kullanım koşulları onayı */
+.reg-terms {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 4px;
+}
+.reg-terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--muted);
+  cursor: pointer;
+}
+.reg-terms-check input {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  accent-color: var(--terracotta, #c9563f);
+}
+.reg-terms-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--terracotta, #c9563f);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.terms-card {
+  max-width: 540px;
+}
+.terms-list {
+  margin: 8px 0 16px;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--text);
+  text-align: left;
+}
 .scoring-table {
   width: 100%;
   border-collapse: collapse;

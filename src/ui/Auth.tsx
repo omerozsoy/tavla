@@ -69,6 +69,147 @@ const DANGER_I18N: Record<string, { zone: string; desc: string }> = {
   fr: { zone: 'Zone dangereuse', desc: 'Cette action est irréversible. Votre compte et toutes vos données sont définitivement supprimés.' },
 }
 
+// Kullanım koşulları + topluluk kuralları (ilk kayıtta zorunlu onay). i18n.tsx fallback'siz
+// olduğundan (eksik anahtar ham görünür) DANGER_I18N ile AYNI yerel-harita deseni; lang yoksa en.
+interface TermsText {
+  title: string
+  rules: string[]
+  accept: string // onay kutusu metni
+  read: string // "Kuralları oku" linki
+  modalAccept: string // modaldaki onay butonu
+  required: string // kabul edilmeden gönderince uyarı
+}
+const TERMS_I18N: Record<string, TermsText> = {
+  tr: {
+    title: 'Kullanım koşulları ve topluluk kuralları',
+    rules: [
+      'Tavla eğlence amaçlı bir oyundur. Coinler gerçek para değildir, paraya çevrilemez ve devredilemez.',
+      'Oyuncu adın ve açıklaman diğer oyunculara görünür. Küfür, hakaret, nefret söylemi, cinsel içerik, taciz ya da başkasını taklit eden adlar yasaktır.',
+      'Uygunsuz içeriğe ve kötü davranışa hiçbir hoşgörü yoktur. Bir oyuncunun kartına dokunarak onu bildirebilir ya da engelleyebilirsin.',
+      'Şikayetler 24 saat içinde incelenir. Kuralları çiğneyen adlar değiştirilir, içerik kaldırılır ve ihlalleri tekrarlayan hesaplar kapatılır.',
+      'Hile, otomatik oynama ya da hataları kötüye kullanma yasaktır.',
+      'Hesabını istediğin zaman Ayarlar > Hesabı sil ile silebilirsin. Verilerin gizlilik politikasında anlatıldığı gibi işlenir.',
+      'Soru ve şikayetlerin için: bilgi@tavlatv.com',
+    ],
+    accept: 'Kullanım koşulları ve topluluk kurallarını okudum, kabul ediyorum.',
+    read: 'Kuralları oku',
+    modalAccept: 'Okudum, kabul ediyorum',
+    required: 'Üye olmak için kuralları kabul etmelisin.',
+  },
+  en: {
+    title: 'Terms of use and community rules',
+    rules: [
+      'Backgammon is a game for fun. Coins are not real money; they cannot be cashed out or transferred.',
+      'Your player name and description are visible to other players. Names with profanity, insults, hate speech, sexual content, harassment, or impersonation are forbidden.',
+      "There is zero tolerance for inappropriate content and bad behavior. Tap a player's card to report or block them.",
+      'Reports are reviewed within 24 hours. Rule-breaking names are changed, content is removed, and repeat-offender accounts are closed.',
+      'Cheating, automated play, or abusing bugs is forbidden.',
+      'You can delete your account anytime from Settings > Delete account. Your data is processed as described in the privacy policy.',
+      'For questions and complaints: bilgi@tavlatv.com',
+    ],
+    accept: 'I have read and accept the terms of use and community rules.',
+    read: 'Read the rules',
+    modalAccept: 'I have read and accept',
+    required: 'You must accept the rules to register.',
+  },
+  es: {
+    title: 'Condiciones de uso y normas de la comunidad',
+    rules: [
+      'El backgammon es un juego de entretenimiento. Las monedas no son dinero real; no se pueden cobrar ni transferir.',
+      'Tu nombre de jugador y tu descripción son visibles para los demás. Se prohíben los nombres con insultos, discurso de odio, contenido sexual, acoso o suplantación de identidad.',
+      'No hay tolerancia con el contenido inapropiado ni el mal comportamiento. Toca la tarjeta de un jugador para denunciarlo o bloquearlo.',
+      'Las denuncias se revisan en 24 horas. Los nombres que incumplen las normas se cambian, el contenido se elimina y las cuentas reincidentes se cierran.',
+      'Están prohibidas las trampas, el juego automatizado y el abuso de errores.',
+      'Puedes eliminar tu cuenta cuando quieras en Ajustes > Eliminar cuenta. Tus datos se tratan según la política de privacidad.',
+      'Para preguntas y quejas: bilgi@tavlatv.com',
+    ],
+    accept: 'He leído y acepto las condiciones de uso y las normas de la comunidad.',
+    read: 'Leer las normas',
+    modalAccept: 'He leído y acepto',
+    required: 'Debes aceptar las normas para registrarte.',
+  },
+  de: {
+    title: 'Nutzungsbedingungen und Community-Regeln',
+    rules: [
+      'Backgammon ist ein Spiel zur Unterhaltung. Coins sind kein echtes Geld; sie können nicht ausgezahlt oder übertragen werden.',
+      'Dein Spielername und deine Beschreibung sind für andere sichtbar. Namen mit Beleidigungen, Hassrede, sexuellen Inhalten, Belästigung oder Identitätsnachahmung sind verboten.',
+      'Für unangemessene Inhalte und schlechtes Verhalten gibt es keine Toleranz. Tippe auf die Karte eines Spielers, um ihn zu melden oder zu blockieren.',
+      'Meldungen werden innerhalb von 24 Stunden geprüft. Regelwidrige Namen werden geändert, Inhalte entfernt und wiederholt auffällige Konten geschlossen.',
+      'Betrug, automatisiertes Spielen oder das Ausnutzen von Fehlern sind verboten.',
+      'Du kannst dein Konto jederzeit unter Einstellungen > Konto löschen entfernen. Deine Daten werden gemäß der Datenschutzerklärung verarbeitet.',
+      'Für Fragen und Beschwerden: bilgi@tavlatv.com',
+    ],
+    accept: 'Ich habe die Nutzungsbedingungen und Community-Regeln gelesen und akzeptiere sie.',
+    read: 'Regeln lesen',
+    modalAccept: 'Ich habe gelesen und akzeptiere',
+    required: 'Du musst die Regeln akzeptieren, um dich zu registrieren.',
+  },
+  fr: {
+    title: 'Conditions d’utilisation et règles de la communauté',
+    rules: [
+      'Le backgammon est un jeu de divertissement. Les pièces ne sont pas de l’argent réel ; elles ne peuvent être ni retirées ni transférées.',
+      'Ton nom de joueur et ta description sont visibles par les autres. Les noms contenant insultes, discours haineux, contenu sexuel, harcèlement ou usurpation d’identité sont interdits.',
+      'Aucune tolérance pour les contenus inappropriés et les mauvais comportements. Touche la carte d’un joueur pour le signaler ou le bloquer.',
+      'Les signalements sont examinés sous 24 heures. Les noms non conformes sont modifiés, les contenus supprimés et les comptes récidivistes fermés.',
+      'Tricher, jouer de façon automatisée ou exploiter des bugs est interdit.',
+      'Tu peux supprimer ton compte à tout moment via Paramètres > Supprimer le compte. Tes données sont traitées comme décrit dans la politique de confidentialité.',
+      'Pour toute question ou réclamation : bilgi@tavlatv.com',
+    ],
+    accept: 'J’ai lu et j’accepte les conditions d’utilisation et les règles de la communauté.',
+    read: 'Lire les règles',
+    modalAccept: 'J’ai lu et j’accepte',
+    required: 'Tu dois accepter les règles pour t’inscrire.',
+  },
+  el: {
+    title: 'Όροι χρήσης και κανόνες κοινότητας',
+    rules: [
+      'Το τάβλι είναι παιχνίδι ψυχαγωγίας. Τα νομίσματα δεν είναι πραγματικά χρήματα· δεν εξαργυρώνονται ούτε μεταβιβάζονται.',
+      'Το όνομα και η περιγραφή σου είναι ορατά στους άλλους παίκτες. Απαγορεύονται ονόματα με βρισιές, ρητορική μίσους, σεξουαλικό περιεχόμενο, παρενόχληση ή πλαστοπροσωπία.',
+      'Δεν υπάρχει καμία ανοχή σε ακατάλληλο περιεχόμενο και κακή συμπεριφορά. Πάτα την κάρτα ενός παίκτη για να τον αναφέρεις ή να τον μπλοκάρεις.',
+      'Οι αναφορές εξετάζονται εντός 24 ωρών. Τα ονόματα που παραβιάζουν τους κανόνες αλλάζουν, το περιεχόμενο αφαιρείται και οι λογαριασμοί που υποτροπιάζουν κλείνουν.',
+      'Απαγορεύονται η εξαπάτηση, το αυτοματοποιημένο παιχνίδι και η κατάχρηση σφαλμάτων.',
+      'Μπορείς να διαγράψεις τον λογαριασμό σου οποτεδήποτε από Ρυθμίσεις > Διαγραφή λογαριασμού. Τα δεδομένα σου επεξεργάζονται όπως περιγράφεται στην πολιτική απορρήτου.',
+      'Για ερωτήσεις και παράπονα: bilgi@tavlatv.com',
+    ],
+    accept: 'Διάβασα και αποδέχομαι τους όρους χρήσης και τους κανόνες της κοινότητας.',
+    read: 'Διάβασε τους κανόνες',
+    modalAccept: 'Διάβασα και αποδέχομαι',
+    required: 'Πρέπει να αποδεχτείς τους κανόνες για να εγγραφείς.',
+  },
+  ru: {
+    title: 'Условия использования и правила сообщества',
+    rules: [
+      'Нарды — развлекательная игра. Монеты не являются реальными деньгами; их нельзя вывести или передать.',
+      'Твоё имя игрока и описание видны другим игрокам. Запрещены имена с нецензурной лексикой, оскорблениями, разжиганием ненависти, сексуальным содержанием, домогательствами или выдачей себя за другого.',
+      'Нулевая терпимость к неприемлемому контенту и плохому поведению. Нажми на карточку игрока, чтобы пожаловаться или заблокировать его.',
+      'Жалобы рассматриваются в течение 24 часов. Имена, нарушающие правила, изменяются, контент удаляется, а аккаунты повторных нарушителей закрываются.',
+      'Запрещены читерство, автоматическая игра и использование ошибок.',
+      'Ты можешь удалить аккаунт в любое время в Настройки > Удалить аккаунт. Твои данные обрабатываются согласно политике конфиденциальности.',
+      'По вопросам и жалобам: bilgi@tavlatv.com',
+    ],
+    accept: 'Я прочитал(а) и принимаю условия использования и правила сообщества.',
+    read: 'Читать правила',
+    modalAccept: 'Я прочитал(а) и принимаю',
+    required: 'Чтобы зарегистрироваться, нужно принять правила.',
+  },
+  fa: {
+    title: 'شرایط استفاده و قوانین انجمن',
+    rules: [
+      'تخته‌نرد یک بازی سرگرمی است. سکه‌ها پول واقعی نیستند؛ قابل نقد شدن یا انتقال نیستند.',
+      'نام بازیکن و توضیحات تو برای دیگران قابل مشاهده است. نام‌هایی با فحاشی، توهین، نفرت‌پراکنی، محتوای جنسی، آزار یا جعل هویت ممنوع است.',
+      'هیچ‌گونه تحملی برای محتوای نامناسب و رفتار بد وجود ندارد. برای گزارش یا مسدود کردن یک بازیکن روی کارت او بزن.',
+      'شکایات ظرف ۲۴ ساعت بررسی می‌شوند. نام‌های ناقض قوانین تغییر می‌کنند، محتوا حذف می‌شود و حساب‌های متخلف تکراری بسته می‌شوند.',
+      'تقلب، بازی خودکار یا سوءاستفاده از باگ‌ها ممنوع است.',
+      'می‌توانی هر زمان از تنظیمات > حذف حساب، حسابت را حذف کنی. داده‌های تو طبق سیاست حریم خصوصی پردازش می‌شود.',
+      'برای سؤال و شکایت: bilgi@tavlatv.com',
+    ],
+    accept: 'شرایط استفاده و قوانین انجمن را خوانده‌ام و می‌پذیرم.',
+    read: 'خواندن قوانین',
+    modalAccept: 'خواندم و می‌پذیرم',
+    required: 'برای ثبت‌نام باید قوانین را بپذیری.',
+  },
+}
+
 // Dosyayi tam cozunurluklu data URL olarak oku (kirpici icin)
 function fileToDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -148,6 +289,11 @@ export default function Auth({
   const nickBad = nickStatus === 'taken' || nickStatus === 'blocked' || nickStatus === 'invalid' // kirmizi + gonderim engellenir
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
+  // Kullanım koşulları onayı (yalnız kayıtta ZORUNLU). Modalde "Okudum, kabul ediyorum" ya da
+  // kutuyu işaretleyince true. Kabul edilmeden kayıt butonu pasif + Enter ile gönderim engellenir.
+  const [termsOk, setTermsOk] = useState(false)
+  const [termsOpen, setTermsOpen] = useState(false)
+  const termsText = TERMS_I18N[lang] ?? TERMS_I18N.en
   const [forgot, setForgot] = useState(!!initialForgot) // sifremi unuttum modu (/sifremi-unuttum)
   const [forgotSent, setForgotSent] = useState(false)
   // Mod degistir + URL'i senkronla (App /giris <-> /sifremi-unuttum). URL'den (geri/ileri)
@@ -448,6 +594,12 @@ export default function Auth({
     if (!validProfile()) return
     if (!api.pwValid(password)) {
       document.getElementById('pf-password')?.focus()
+      return
+    }
+    // Kullanım koşulları zorunlu: kabul edilmeden kayıt YOK (buton pasif ama Enter'ı da engelle).
+    if (!termsOk) {
+      setTriedSubmit(true)
+      document.getElementById('reg-terms')?.focus()
       return
     }
     setBusy(true)
@@ -896,7 +1048,26 @@ export default function Auth({
                   <span className="pw-hint text-xs text-destructive">{t('reg.pwShort')}</span>
                 )}
               </label>
-              <Button type="submit" className="w-full" disabled={busy || nickBad}>
+              {/* Kullanım koşulları + topluluk kuralları — ilk kayıtta ZORUNLU onay. */}
+              <div className="reg-terms">
+                <label className="reg-terms-check">
+                  <input
+                    id="reg-terms"
+                    type="checkbox"
+                    checked={termsOk}
+                    onChange={(e) => setTermsOk(e.target.checked)}
+                    aria-invalid={(triedSubmit && !termsOk) || undefined}
+                  />
+                  <span>{termsText.accept}</span>
+                </label>
+                <button type="button" className="reg-terms-link" onClick={() => setTermsOpen(true)}>
+                  {termsText.read}
+                </button>
+                {triedSubmit && !termsOk && (
+                  <span className="text-xs text-destructive" role="alert">{termsText.required}</span>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={busy || nickBad || !termsOk}>
                 {t('reg.submitNew')}
               </Button>
             </div>
@@ -1003,6 +1174,47 @@ export default function Auth({
           </>
         )}
       </form>
+      {/* Kullanım koşulları & topluluk kuralları modalı: "Kuralları oku" ile açılır; alttaki
+          "Okudum, kabul ediyorum" kutuyu işaretleyip kapatır. createPortal (fixed overlay güvenli). */}
+      {termsOpen &&
+        createPortal(
+          <div
+            className="register-overlay modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setTermsOpen(false)}
+          >
+            <div className="register-card terms-card" onClick={(e) => e.stopPropagation()}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="modal-close"
+                onClick={() => setTermsOpen(false)}
+                aria-label={t('common.close')}
+              >
+                <Icon name="x" size={16} />
+              </Button>
+              <h2>{termsText.title}</h2>
+              <ol className="terms-list">
+                {termsText.rules.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ol>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => {
+                  setTermsOk(true)
+                  setTermsOpen(false)
+                }}
+              >
+                {termsText.modalAccept}
+              </Button>
+            </div>
+          </div>,
+          document.body,
+        )}
       {/* Hesap silme onayi: inline yerine site-tasarimli modal (register-overlay). Auth
           tam-sayfa overlay icinde oldugundan position:fixed guvenli olsun diye createPortal
           ile body'ye tasinir. Bkz [[fixed-portal-transform-tuzagi]]. */}
