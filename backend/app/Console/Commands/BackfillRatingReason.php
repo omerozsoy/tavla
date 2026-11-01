@@ -37,7 +37,10 @@ class BackfillRatingReason extends Command
 
         $done = 0;
         $byReason = [];
-        $q->orderBy('id')->chunkById($chunk, function ($rows) use (&$done, &$byReason, $dry) {
+        // YALNIZ gerekli kolonlar: log/gnubg_review gibi dev JSON kolonlarını YÜKLEME (500 satır × büyük
+        // JSON = OOM). id chunkById için şart.
+        $q->select(['id', 'room_code', 'opponent_user_id', 'match_type'])
+            ->orderBy('id')->chunkById($chunk, function ($rows) use (&$done, &$byReason, $dry) {
             // Oda context'ini TOPLU yükle (N+1 yok): bu chunk'taki kodlar.
             $codes = $rows->pluck('room_code')->filter()->unique()->values()->all();
             $rooms = $codes
