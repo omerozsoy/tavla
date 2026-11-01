@@ -63,7 +63,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   // TÜM seçenekler açık (Tek Oyun=1 puanlık dahil) -> normal akışla birebir aynı, yalnız puanlı.
   const [tab, setTab] = useState<'single' | 'match'>(defaultClassic ? 'match' : 'single')
   const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
-  const [length, setLength] = useState(5)
+  const [length, setLength] = useState(3)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   // Arkadaşlık/kılıç maçları PUANSIZ (2026-11-01): rating değişmez, PR yalnız analizde. İSTİSNA: puanlı
   // davet (ranked=true, yalnız Çevrimiçi Oyuncular play tuşu) -> unrated=false, sonuç rating'i değiştirir.
