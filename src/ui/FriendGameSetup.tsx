@@ -79,7 +79,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
       <div className="setup-split">
         <div className="register-card setup-card">
           <h2>
-            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t('friend.inviteTitle') : titleOverride || (classic ? t('classic.title') : t('friend.title'))}
+            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t(ranked ? 'friend.inviteMatchTitle' : 'friend.inviteTitle') : titleOverride || (classic ? t('classic.title') : t('friend.title'))}
           </h2>
 
           {/* Davet modu: KIMI davet ettigin net gorunsun */}
