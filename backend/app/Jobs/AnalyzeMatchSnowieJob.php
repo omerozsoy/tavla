@@ -98,6 +98,19 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
                 $opp = $hc === 'white' ? $snow[1] : $snow[0];
                 $selfPr = is_array($self) ? ($self['pr'] ?? null) : null;
                 $oppPr = is_array($opp) ? ($opp['pr'] ?? null) : null;
+                // ÇÖP-KALKANI (SnowieBackfill ile aynı mantık): overall (Snowie) = checker+küp havuzlaması
+                // -> MEVCUT (review) checker/cube'un ÇOK üstünde olamaz (overall ∈ [min,max]). Terk/timeout
+                // gibi bozuk .mat (resign'de zar düşer) yeniden-analizde ŞİŞMİŞ çöp üretir (ör. 1.1 PR'lık
+                // kusursuz oyuna 88 — pr>100 guard'ını AŞAR). Mevcut DOĞRU review checker/cube varsa ve
+                // Snowie overall onların +2'sini aşıyorsa self'i YAZMA (iyi değeri bozma).
+                if ($selfPr !== null && $row->gnubg_checker_pr !== null) {
+                    $exMax = max((float) $row->gnubg_checker_pr,
+                        $row->gnubg_cube_pr !== null ? (float) $row->gnubg_cube_pr : (float) $row->gnubg_checker_pr);
+                    if ($selfPr > $exMax + 2.0) {
+                        Log::warning('snowie imkansiz overall atlandi (cop-kalkani)', ['id' => $row->id, 'self' => $selfPr, 'exMax' => $exMax]);
+                        $selfPr = null;
+                    }
+                }
                 // KÖK FIX (kalıcı "—" + kariyer yarılanması): Snowie bir tarafı skorlayamazsa (pr>100 çöp
                 // ya da .mat p2/siyah çıkarımı boş -> null) o tarafın PR kolonlarını NULL ile EZME. Eskiden
                 // koşulsuz yazılıyordu -> AnalyzeMatchPrJob'ın DOĞRU per-pozisyon değeri silinip mezar taşı
