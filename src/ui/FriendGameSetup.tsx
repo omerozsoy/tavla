@@ -51,17 +51,17 @@ interface Props {
   onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
   defaultClassic?: boolean // KLASIK TAVLA girişi: klasik varsayılan ON + Maç Oyunu sekmesi açık
   titleOverride?: string // admin "Sayfa Metni" baslik override'i (davet modu HARIÇ; bos -> i18n varsayilani)
-  // PUANLI DAVET (yalnız Çevrimiçi Oyuncular play tuşu): maç HER ZAMAN Maç Oyunu + puanlı (unrated=false).
-  // Tek Oyun seçeneği gizlenir, "hep puansız" notu yerine "puanlı" notu gösterilir. Varsayılan false.
+  // PUANLI DAVET (yalnız Çevrimiçi Oyuncular play tuşu): maç puanlı (unrated=false). TÜM seçenekler açık
+  // (Tek Oyun=1 puanlık + tüm uzunluk/süreler); fark yalnız puanlı + "puanlı" notu. Varsayılan false.
   ranked?: boolean
 }
 
 export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false }: Props) {
   const { t } = useT()
   useEscape(onCancel)
-  // KLASIK girişte + PUANLI davette Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı;
-  // puanlı davet HER ZAMAN maç oyunu -> Tek Oyun gizli).
-  const [tab, setTab] = useState<'single' | 'match'>(defaultClassic || ranked ? 'match' : 'single')
+  // KLASIK girişte Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı). PUANLI davette
+  // TÜM seçenekler açık (Tek Oyun=1 puanlık dahil) -> normal akışla birebir aynı, yalnız puanlı.
+  const [tab, setTab] = useState<'single' | 'match'>(defaultClassic ? 'match' : 'single')
   const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
@@ -95,26 +95,24 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           )}
 
-          {/* Oyun türü: Tek Oyun / Maç Oyunu. PUANLI davette gizli (her zaman Maç Oyunu). */}
-          {!ranked && (
-            <div className="setup-row">
-              <div className="setup-label">{t('friend.type')}</div>
-              <div className="setup-tiles">
-                <button
-                  className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
-                  onClick={() => setTab('single')}
-                >
-                  {t('friend.single')}
-                </button>
-                <button
-                  className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
-                  onClick={() => setTab('match')}
-                >
-                  {t('friend.match')}
-                </button>
-              </div>
+          {/* Oyun türü: Tek Oyun (1 puanlık) / Maç Oyunu. PUANLI davette de ikisi de açık. */}
+          <div className="setup-row">
+            <div className="setup-label">{t('friend.type')}</div>
+            <div className="setup-tiles">
+              <button
+                className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
+                onClick={() => setTab('single')}
+              >
+                {t('friend.single')}
+              </button>
+              <button
+                className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
+                onClick={() => setTab('match')}
+              >
+                {t('friend.match')}
+              </button>
             </div>
-          )}
+          </div>
 
           {/* Uzunluk (yalnizca Maç Oyunu) */}
           {tab === 'match' && (
