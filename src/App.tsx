@@ -10161,7 +10161,7 @@ export default function App() {
                       : matAnalyzerOpen
                         ? 'matAnalyzer'
                       : friendSetupOpen
-                        ? (friendClassic ? 'klassikFriend' : 'playFriend')
+                        ? (inviteTarget ? '' : friendClassic ? 'klassikFriend' : 'playFriend') // maç daveti = menü öğesi değil (vurgu yok)
                       : clubsOpen
                         ? 'clubs'
                         : lessonsOpen
