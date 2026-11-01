@@ -29,6 +29,7 @@ import {
 import { Button } from '@/components/ui/button'
 import ConfirmModal from './ConfirmModal'
 import { Sound } from '../sound'
+import { tournamentPlayerStatus } from '../tournamentStatus'
 
 // SEO-dostu URL: /online-turnuvalar/{isim-slug}-{id}. Id sonda kalir -> derin link cozumu
 // (applyFromPath son '-' parcasini id olarak alir). Eski /turnuvalar/... de calisir.
@@ -419,6 +420,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     const onlineSet = new Set(active.online_ids ?? [])
     const prFor = (room: string | null | undefined, uid: number | null | undefined) =>
       room && uid != null ? active.match_prs?.[room.toUpperCase()]?.[String(uid)] : undefined
+    // KATILIMCI DURUMU (elendi / su an oynuyor+canli skor) bracket'ten turetilir -> tournamentStatus.ts.
+    const pStatus = tournamentPlayerStatus(active.bracket, active.players, liveScores)
     // Bracket oyuncu adi: online noktasi + ad + (varsa) onceki tur PR'i.
     // hidePr: hukmen (walkover) maclarda PR yazilmaz -> isim tam gorunsun (kullanici istegi).
     // PR'i tm-name DISINA ayri kardes olarak dondururuz (flex:none) -> uzun adda tm-name
@@ -432,10 +435,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       const pr = hidePr ? null : prFor(room, p?.id)
       // Ad: oyuncunun id'si + onProfile varsa TIKLANABILIR (profilini/standart bilgisini acar).
       const clickable = p?.id != null && !!onProfile
+      // KENDI ismim KIRMIZI + kalin (uzun bracket'te kendimi kolay bulayim - kullanici istegi).
+      const isMe = p?.id != null && p.id === myId
       return (
         <>
           <span
-            className={`tm-name${clickable ? ' tm-name-link' : ''}`}
+            className={`tm-name${clickable ? ' tm-name-link' : ''}${isMe ? ' tm-name-mine' : ''}`}
             {...(clickable && {
               role: 'button',
               tabIndex: 0,
@@ -691,11 +696,26 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             {active.players && active.players.length > 0 ? (
               [...active.players]
                 .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }))
-                .map((p) => (
-                <div key={p.id} className="tourn-prow">
+                .map((p) => {
+                const st = pStatus.get(p.id)
+                return (
+                <div key={p.id} className={`tourn-prow${p.id === myId ? ' tourn-prow-mine' : ''}${st?.out ? ' tourn-prow-out' : ''}`}>
                   <span className={`tm-dot ${onlineSet.has(p.id) ? 'on' : 'off'}`} title={onlineSet.has(p.id) ? 'online' : 'offline'} />
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
                   <b>{p.rating}</b>
+                  {/* Durum: su an oynuyor -> canli skor (tiklayinca o masayi izle); elendi -> "Elendi". */}
+                  {st?.play ? (
+                    onSpectate ? (
+                      <button type="button" className="tourn-prow-live" title={t('tourn.watch')}
+                        onClick={() => onSpectate(st.play!.room, p.name, st.play!.oppName ?? '')}>
+                        <Icon name="eye" size={13} /> {st.play.a}–{st.play.b}
+                      </button>
+                    ) : (
+                      <span className="tourn-prow-live static">{st.play.a}–{st.play.b}</span>
+                    )
+                  ) : st?.out ? (
+                    <span className="tourn-prow-outlbl">{t('tourn.eliminated')}</span>
+                  ) : null}
                   {isAdmin && active.status !== 'finished' && (
                     <Button variant="default" size="icon" className="tourn-dq-btn" disabled={busy}
                       title={t('tourn.disqualify')} onClick={() => disqualify(active.id, p.id, p.name)}>
@@ -703,7 +723,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     </Button>
                   )}
                 </div>
-              ))
+                )
+              })
             ) : (
               <div className="tourn-wait">{t('tourn.noPlayers')}</div>
             )}

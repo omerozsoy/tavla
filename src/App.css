@@ -26528,6 +26528,40 @@ input:not([type='range']), select, textarea {
   color: var(--success-fg);
   font-variant-numeric: tabular-nums;
 }
+/* KENDI satirim: ismim KIRMIZI + kalin (uzun listede kendimi bulayim). .tourn-prow * font-weight:400'u ezer. */
+.tourn-card .tourn-prow-mine .player-id-name-text {
+  color: var(--danger-fg);
+  font-weight: 700;
+}
+/* Elenen katilimci: satir silik + "Elendi" etiketi. */
+.tourn-prow-out {
+  opacity: 0.5;
+}
+.tourn-card .tourn-prow-outlbl {
+  flex: none;
+  font-size: 0.72rem;
+  color: var(--danger-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* Su an oynayan katilimci: canli skor cipi (tiklayinca o masayi izle). */
+.tourn-card .tourn-prow-live {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--success-fg) 40%, var(--border));
+  background: color-mix(in srgb, var(--success-fg) 10%, transparent);
+  color: var(--success-fg);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.tourn-card .tourn-prow-live.static {
+  cursor: default;
+}
 /* Yonetici diskalifiye butonu (oyuncu satiri): kompakt KARE, site renginde.
    Ozgul secici (0,3,0) Button tabanindaki w/min-h/rounded utility'lerini (0,1,0) ezer. */
 .tourn-card .tourn-prow .tourn-dq-btn {
@@ -27081,6 +27115,11 @@ input:not([type='range']), select, textarea {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* KENDI ismim bracket'te KIRMIZI + kalin (kazanan/kaybeden renklerini ezer -> kendimi hemen bulurum). */
+.tm-name-mine {
+  color: var(--danger-fg) !important;
+  font-weight: 700;
 }
 /* Tiklanabilir oyuncu adi (profili acar): isaretci + hover'da vurgu. */
 .tm-name-link {
