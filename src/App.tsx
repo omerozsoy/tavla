@@ -1062,6 +1062,9 @@ export default function App() {
   const [infoTab, setInfoTab] = useState<InfoTab>('about') // aktif Bilgi sekmesi (URL'e bagli)
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
+  // Cevrimici listeden secilen rakip -> FriendGameSetup davet modu. URL slug hesabinda (maca-davet)
+  // kullanildigi icin erken tanimli olmali (TDZ).
+  const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
   const [friendClassic, setFriendClassic] = useState(false) // KLASIK TAVLA arkadas kurulumu (klasik varsayilan ON)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
   // RAKİP ZAR GÖSTERGESİ: OTO-KAYBOLMA KALDIRILDI (kök fix). Eskiden 3.5sn sonra setOppRoll(null)
@@ -1308,7 +1311,7 @@ export default function App() {
                                       : achOpen
                                         ? 'basarimlar'
                                       : friendSetupOpen
-                                        ? (friendClassic ? 'klasik-arkadasinla-oyna' : 'arkadasinla-oyna')
+                                        ? (inviteTarget ? 'maca-davet' : friendClassic ? 'klasik-arkadasinla-oyna' : 'arkadasinla-oyna')
                                       : servicePage
                                         ? servicePage
                                       : onlineTavlaOpen
@@ -1643,6 +1646,10 @@ export default function App() {
           setSpectate({ code: c, p1: '', p2: '' }) // misafir de izleyebilir (salt-okunur)
           break
         }
+        case 'maca-davet':
+          // Oyuncu MAÇ daveti ekrani: davet edilen hedef yalniz hafizada tutulur; dogrudan
+          // URL ile acilamaz (hedef yok) -> ana sayfaya dus (break = hicbir sayfa acilmaz).
+          break
         case 'arkadasinla-oyna':
           if (!getToken()) { requireLogin(); break } // misafir oynayamaz
           setInviteTarget(null) // menuden acilis = normal mod (davet degil)
@@ -1848,8 +1855,6 @@ export default function App() {
   }, [currentSlug])
 
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
-  // Cevrimici listeden "kilic" ile secilen rakip -> FriendGameSetup davet modu (oyun turu/sure sec)
-  const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
   const [inviteRanked, setInviteRanked] = useState(false) // PUANLI davet mi (Çevrimiçi Oyuncular play tuşu): maç oyunu + unrated=false
   // "Oyun Arayanlar" para/bahis onayı: native window.confirm yerine uygulama-içi stilli modal
   // (markasız tarayıcı popup'ı yerine). msg = onay metni, run = onaylanınca çalışacak eşleşme.
@@ -10982,8 +10987,9 @@ export default function App() {
               handleJoinRoom(code)
             }}
           />
-          {/* Kurulum altına taranabilir SEO içeriği (ince sayfa düzeltmesi). */}
-          <SeoAppSection page="arkadasinla-oyna" />
+          {/* Kurulum altına taranabilir SEO içeriği (ince sayfa düzeltmesi). Davet modunda
+              (maç daveti) gösterme — "arkadaşınla oyna" içeriği davet ekranına ait değil. */}
+          {!inviteTarget && <SeoAppSection page="arkadasinla-oyna" />}
         </div>
       </LobbyLayout>
     )
