@@ -6,6 +6,7 @@ use App\Models\Tournament;
 use App\Models\TournamentAnnouncement;
 use App\Models\User;
 use App\Services\WalletService;
+use App\Support\PrizeDistribution;
 use App\Support\TournamentModeration;
 
 /**
@@ -256,17 +257,41 @@ class SwissRuntime
         $wallet = app(WalletService::class);
 
         if (! empty($prizes)) {
-            foreach ($prizes as $i => $pr) {
-                $coins = (int) ($pr['coins'] ?? 0);
-                if ($coins > 0 && isset($standings[$i])) {
-                    $u = User::lockForUpdate()->find($standings[$i]);
-                    if ($u) {
-                        $wallet->credit($u, $coins, 'tournament_prize', Tournament::class, $t->id);
+            // TIE-FARKINDA (denetim R2): finalStandings ORTAK rütbe verir (aynı turda elenen = aynı
+            // derece). Ortak-rütbe grupları, kapsadıkları ödül dilimlerini EŞİT paylaşır (eskiden
+            // düz index prizes[i] -> keyfi seed sırası ödül veriyordu).
+            $state = $t->swiss_state;
+            $parts = is_array($state) ? ($state['participants'] ?? []) : [];
+            $groups = [];
+            $curRank = null;
+            $cur = [];
+            foreach (SwissEngine::finalStandings($parts) as $r) {
+                if ($r['rank'] === null) {
+                    continue; // çekilen/DQ/aktif: sportif derece yok -> ödül yok
+                }
+                if ($r['rank'] !== $curRank) {
+                    if ($cur) {
+                        $groups[] = $cur;
                     }
+                    $cur = [];
+                    $curRank = $r['rank'];
+                }
+                $cur[] = (int) $r['id'];
+            }
+            if ($cur) {
+                $groups[] = $cur;
+            }
+            foreach (PrizeDistribution::payouts($groups, $prizes) as $uid => $coins) {
+                if ($coins <= 0) {
+                    continue;
+                }
+                $u = User::lockForUpdate()->find($uid);
+                if ($u) {
+                    $wallet->credit($u, $coins, 'tournament_prize', Tournament::class, $t->id);
                 }
             }
             if ($pool > 0) {
-                $u = User::lockForUpdate()->find($standings[0]);
+                $u = User::lockForUpdate()->find($standings[0]); // havuz -> şampiyon (rank 1)
                 if ($u) {
                     $wallet->credit($u, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
                 }

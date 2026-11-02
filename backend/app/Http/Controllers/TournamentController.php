@@ -13,6 +13,7 @@ use App\Models\UserStat;
 use App\Services\Achievements\AchievementService;
 use App\Services\WalletService;
 use App\Support\ForfeitLoss;
+use App\Support\PrizeDistribution;
 use App\Support\RoomAccess;
 use App\Support\Swiss\SwissRuntime;
 use App\Support\TournamentModeration;
@@ -1162,19 +1163,21 @@ class TournamentController extends Controller
         $pool = (int) ($t->prize_coins ?? 0); // giris ucretleri burada birikir
 
         if (! empty($prizes)) {
-            $standings = $this->standingsFromBracket($bracket);
-            foreach ($prizes as $i => $pr) {
-                $coins = (int) ($pr['coins'] ?? 0);
-                if ($coins > 0 && isset($standings[$i])) {
-                    $winner = User::lockForUpdate()->find($standings[$i]);
-                    if ($winner) {
-                        app(WalletService::class)->credit($winner, $coins, 'tournament_prize', Tournament::class, $t->id);
-                    }
+            // TIE-FARKINDA (denetim R2): ortak-rütbe grupları, kapsadıkları ödül dilimlerini EŞİT paylaşır.
+            $groups = $this->standingGroupsFromBracket($bracket);
+            $payouts = PrizeDistribution::payouts($groups, $prizes);
+            foreach ($payouts as $uid => $coins) {
+                if ($coins <= 0) {
+                    continue;
+                }
+                $winner = User::lockForUpdate()->find($uid);
+                if ($winner) {
+                    app(WalletService::class)->credit($winner, $coins, 'tournament_prize', Tournament::class, $t->id);
                 }
             }
-            // Giris ucreti havuzu -> 1.lige (sampiyon)
+            // Giris ucreti havuzu -> 1.lige (sampiyon = grup 0'ın tek üyesi)
             if ($pool > 0) {
-                $first = $standings[0] ?? $winnerId;
+                $first = $groups[0][0] ?? $winnerId;
                 $winner = User::lockForUpdate()->find($first);
                 if ($winner) {
                     app(WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
@@ -1193,10 +1196,12 @@ class TournamentController extends Controller
         }
     }
 
-    // Bracket'ten nihai siralamayi (oyuncu id'leri, 1.den sonuncuya) cikar.
-    // 1. = final kazanani; sonra son turdan ilk tura dogru her turun KAYBEDENLERI
-    // eklenir (gec turda elenen daha ustte). Ayni turdakiler rating'e gore siralanir.
-    private function standingsFromBracket(array $bracket): array
+    // Bracket'ten nihai sıralamayı RÜTBE GRUPLARI olarak çıkar (grup 0 = 1.'lik, sonra 2./3./4.,
+    // ardından her turun KAYBEDENLERİ). AYNI TURDA elenenler ORTAK dereceyi paylaşır -> TEK grup
+    // (denetim R2): payPrizes bu grubun kapsadığı ödül dilimlerini toplayıp EŞİT böler, keyfi
+    // rating-sırası ödül vermez. Final/3.'lük ayrık dereceler -> tek kişilik gruplar. Her oyuncu
+    // bir kez görünür (grup-arası dedup).
+    private function standingGroupsFromBracket(array $bracket): array
     {
         if (empty($bracket)) {
             return [];
@@ -1205,31 +1210,48 @@ class TournamentController extends Controller
         $final = $bracket[$lastRi][0] ?? null;
         $championId = isset($final['winner']) ? (int) $final['winner'] : null;
 
-        $standings = [];
+        $groups = [];
+        $seen = [];
+        // Bir grubu (id listesi) dedup edip boş değilse ekler.
+        $push = function (array $ids) use (&$groups, &$seen) {
+            $g = [];
+            foreach ($ids as $id) {
+                $id = (int) $id;
+                if ($id > 0 && ! isset($seen[$id])) {
+                    $seen[$id] = true;
+                    $g[] = $id;
+                }
+            }
+            if ($g) {
+                $groups[] = $g;
+            }
+        };
+
         if ($championId) {
-            $standings[] = $championId; // 1.
+            $push([$championId]); // 1.
         }
         // 2. = final kaybedeni
         if ($final && $championId && isset($final['p1']['id'], $final['p2']['id'])) {
             $ru = (int) $final['p1']['id'] === $championId ? $final['p2'] : $final['p1'];
             if (isset($ru['id'])) {
-                $standings[] = (int) $ru['id'];
+                $push([(int) $ru['id']]);
             }
         }
-        // 3./4. = 3.'LÜK MAÇI sonucu (varsa+bittiyse). Yoksa eski davranış: yarı final kaybedenleri
-        // rating'e göre (aşağıdaki döngü). $startRi döngünün başlayacağı tur (yarı final = lastRi-1).
+        // 3./4. = 3.'LÜK MAÇI sonucu (varsa+bittiyse) -> AYRIK dereceler. Yoksa yarı final kaybedenleri
+        // aşağıdaki döngüde ORTAK derece (tek grup) olur. $startRi döngünün başlayacağı tur.
         $tp = $bracket[$lastRi][1] ?? null;
         $startRi = $lastRi - 1;
         if ($tp && ! empty($tp['third_place']) && ! empty($tp['winner'])) {
             $tw = (int) $tp['winner'];
-            $standings[] = $tw; // 3.
+            $push([$tw]); // 3.
             if (isset($tp['p1']['id'], $tp['p2']['id'])) {
                 $tl = (int) $tp['p1']['id'] === $tw ? (int) $tp['p2']['id'] : (int) $tp['p1']['id'];
-                $standings[] = $tl; // 4.
+                $push([$tl]); // 4.
             }
             $startRi = $lastRi - 2; // 3./4. yazıldı -> yarı finalleri atla
         }
-        // Kalan turların kaybedenleri (rating azalan). Son tur (final + 3.'lük) yukarıda ele alındı.
+        // Kalan turların kaybedenleri: AYNI TURDA elenenler ORTAK derece -> TEK grup (rating yalnız
+        // grup-içi sıra/kalan dağıtımı için; ödül eşit bölünür). Son tur yukarıda ele alındı.
         for ($ri = $startRi; $ri >= 0; $ri--) {
             $losers = [];
             foreach ($bracket[$ri] as $m) {
@@ -1248,12 +1270,10 @@ class TournamentController extends Controller
                 }
             }
             usort($losers, fn ($a, $b) => ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0));
-            foreach ($losers as $l) {
-                $standings[] = (int) $l['id'];
-            }
+            $push(array_map(fn ($l) => (int) $l['id'], $losers)); // bu turun TÜM kaybedenleri = tek ortak-derece grup
         }
 
-        return array_values(array_unique($standings));
+        return $groups;
     }
 
     /** $feePaid: bu kayıt için GERÇEKTEN tahsil edilen giriş ücreti (iade bunu kullanır; A-09). */

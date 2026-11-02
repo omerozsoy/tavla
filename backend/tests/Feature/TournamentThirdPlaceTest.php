@@ -36,10 +36,13 @@ class TournamentThirdPlaceTest extends TestCase
     private function standings(Tournament $t): array
     {
         $c = new TournamentController();
-        $ref = new \ReflectionMethod($c, 'standingsFromBracket');
+        // standingsFromBracket -> standingGroupsFromBracket (rütbe grupları; denetim R2 tie-fair ödül).
+        // Düz sıra iddiaları için grupları aç — sıra birebir aynı (grup-içi order korunur).
+        $ref = new \ReflectionMethod($c, 'standingGroupsFromBracket');
         $ref->setAccessible(true);
+        $groups = $ref->invoke($c, $t->bracket);
 
-        return $ref->invoke($c, $t->bracket);
+        return $groups ? array_merge(...$groups) : [];
     }
 
     private function callPrivate(Tournament $t, string $method): mixed
