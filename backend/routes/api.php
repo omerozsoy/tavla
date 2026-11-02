@@ -41,7 +41,12 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsureEmailVerified;
 use App\Http\Middleware\EnsurePremium;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 // Halka acik — kimlik dogrulama uclari kaba kuvvete karsi hiz sinirli (IP basi/dk)
 // Sifre/token brute-force hedefleri daha siki (10/dk); digerleri 20/dk.
@@ -59,12 +64,12 @@ Route::middleware('throttle:20,1,auth-register')->group(function () {
 Route::middleware('throttle:10,1,nickname')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 // GEÇİCİ TANI (reload beacon): "maç içinde F5" şikayetinin nedenini topla. Halka açık (beacon
 // token taşımaz), hız sınırlı, best-effort (hata yutulur). reload_events tablosu yoksa no-op.
-Route::post('/diag/reload', function (\Illuminate\Http\Request $r) {
+Route::post('/diag/reload', function (Request $r) {
     try {
-        if (! \Illuminate\Support\Facades\Schema::hasTable('reload_events')) {
+        if (! Schema::hasTable('reload_events')) {
             return response()->json(['ok' => false]);
         }
-        \Illuminate\Support\Facades\DB::table('reload_events')->insert([
+        DB::table('reload_events')->insert([
             'reason' => mb_substr((string) $r->input('reason', ''), 0, 40),
             'in_match' => $r->boolean('in_match'),
             'is_mobile' => $r->boolean('is_mobile'),
@@ -73,12 +78,41 @@ Route::post('/diag/reload', function (\Illuminate\Http\Request $r) {
             'user_id' => optional($r->user('sanctum'))->id,
             'created_at' => now(),
         ]);
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         // best-effort: tanı yazımı asla istek/akışı bozmasın
     }
 
     return response()->json(['ok' => true]);
 })->middleware('throttle:120,1,diag-reload');
+// CSP İHLAL RAPORU: report-only fazında tarayıcı policy ihlallerini (violated-directive + blocked-uri)
+// buraya POST eder. Enforce'a geçmeden ÖNCE neyin bloklanacağını sunucuda görünür kılar. Public
+// (tarayıcı rapor POST'u token taşımaz), throttle + ihlal-imzası başına 10dk dedupe -> log flood YOK
+// (distinct ihlaller görünür). Best-effort: parse/log hatası asla 500 vermesin (tarayıcı yok sayar).
+Route::post('/csp-report', function (Request $r) {
+    try {
+        $json = json_decode($r->getContent() ?: '[]', true);
+        // Eski (application/csp-report): {"csp-report": {...}}. Yeni (reports+json): [{"body": {...}}].
+        $rep = $json['csp-report'] ?? ($json[0]['body'] ?? ($json['body'] ?? (is_array($json) ? $json : [])));
+        $directive = mb_substr((string) ($rep['violated-directive'] ?? $rep['effectiveDirective'] ?? ''), 0, 80);
+        $blocked = mb_substr((string) ($rep['blocked-uri'] ?? $rep['blockedURL'] ?? ''), 0, 160);
+        $docFull = (string) ($rep['document-uri'] ?? $rep['documentURL'] ?? '');
+        $doc = mb_substr((string) (parse_url($docFull, PHP_URL_PATH) ?: $docFull), 0, 100);
+        if ($directive !== '' || $blocked !== '') {
+            // İhlal imzası (directive+blocked) başına 10dk'da bir kez logla -> aynı ihlal binlerce
+            // kullanıcıdan gelse de log'u boğmaz; farklı ihlaller ayrı ayrı görünür.
+            $sig = sha1($directive.'|'.$blocked);
+            if (Cache::add('csp:rep:'.$sig, 1, now()->addMinutes(10))) {
+                Log::info('csp_violation', [
+                    'directive' => $directive, 'blocked' => $blocked, 'doc' => $doc,
+                ]);
+            }
+        }
+    } catch (Throwable $e) {
+        // best-effort: rapor toplama asla istek akışını bozmasın
+    }
+
+    return response()->noContent();
+})->middleware('throttle:120,1,csp-report');
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/leaderboard/pr', [AuthController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
 Route::get('/leaderboard/search', [AuthController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)

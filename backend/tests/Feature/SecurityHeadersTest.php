@@ -32,4 +32,18 @@ class SecurityHeadersTest extends TestCase
             ->assertHeader('Content-Security-Policy')
             ->assertHeaderMissing('Content-Security-Policy-Report-Only');
     }
+
+    public function test_csp_report_endpoint_accepts_violation_and_is_best_effort(): void
+    {
+        // Gecerli ihlal raporu -> 204 (toplandi).
+        $this->postJson('/api/csp-report', ['csp-report' => [
+            'violated-directive' => 'script-src',
+            'blocked-uri' => 'https://evil.example/x.js',
+            'document-uri' => 'https://tavlatv.com/online-tavla',
+        ]])->assertNoContent();
+
+        // Bozuk/bos govde -> yine 204 (best-effort, akisi bozmaz).
+        $this->call('POST', '/api/csp-report', [], [], [], ['CONTENT_TYPE' => 'application/csp-report'], 'not-json')
+            ->assertNoContent();
+    }
 }

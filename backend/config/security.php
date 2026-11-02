@@ -30,5 +30,10 @@ return [
         // Google Sign-In (GSI) One Tap/buton iframe'i accounts.google.com'dan yüklenir -> frame-src şart.
         // td.doubleclick.net = Google Ads dönüşüm linker gizli iframe'i; googletagmanager = GTM iframe.
         "frame-src 'self' https://accounts.google.com https://td.doubleclick.net https://www.googletagmanager.com",
+        // İHLAL RAPORLAMA: report-only fazında (ve enforce'ta) tarayıcı policy ihlallerini buraya POST
+        // eder -> sunucuda toplanır (bkz routes/api.php POST /csp-report). Enforce'a GEÇMEDEN ÖNCE
+        // neyin bloklanacağını görünür kılar (kör enforce = site kırılması riski). report-uri eski ama
+        // tüm güncel tarayıcılarda çalışır; report-to ayrı Reporting-Endpoints başlığı ister (YAGNI).
+        'report-uri /api/csp-report',
     ]),
 ];
