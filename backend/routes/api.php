@@ -39,6 +39,7 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SiteTagController;
 use App\Http\Controllers\TournamentAdController;
 use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\VerificationController;
 use App\Http\Middleware\EnsureActiveAccount;
 use App\Http\Middleware\EnsureEmailVerified;
 use App\Http\Middleware\EnsurePremium;
@@ -302,13 +303,13 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     // test maclari 12/dk'yi asip 429 -> "puanin kaydedilemedi" verebiliyordu; 30/dk yeterli
     // headroom (reportRating oda+kullanici basi IDEMPOTENT -> yuksek limit guvenli).
     Route::middleware('throttle:30,1,rating-report')->post('/rating/report', [AuthController::class, 'reportRating']);
-    Route::post('/email/resend', [AuthController::class, 'resendVerification'])->middleware('throttle:6,1,email-resend');
-    Route::post('/email/verify-code', [AuthController::class, 'verifyEmailCode'])->middleware('throttle:10,1,email-verify');
+    Route::post('/email/resend', [VerificationController::class, 'resendVerification'])->middleware('throttle:6,1,email-resend');
+    Route::post('/email/verify-code', [VerificationController::class, 'verifyEmailCode'])->middleware('throttle:10,1,email-verify');
     // Telefon OTP: kod gonder (60sn cooldown + 6/dk) ve dogrula (5/dk). Islemsel SMS.
     // verify 10->5/dk + AuthController'da hesap-bazli kalici kilit (kod yenilense de
     // toplam deneme sayilir) -> 6 haneli kod brute-force ile ele gecirilemez.
-    Route::post('/phone/send-otp', [AuthController::class, 'sendPhoneOtp'])->middleware('throttle:6,1,phone-otp');
-    Route::post('/phone/verify-otp', [AuthController::class, 'verifyPhoneOtp'])->middleware('throttle:5,1,phone-verify');
+    Route::post('/phone/send-otp', [VerificationController::class, 'sendPhoneOtp'])->middleware('throttle:6,1,phone-otp');
+    Route::post('/phone/verify-otp', [VerificationController::class, 'verifyPhoneOtp'])->middleware('throttle:5,1,phone-verify');
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
     // Ödeme/promo başlangıçlarında kullanıcı başına ayrı kova: pending ödeme ve promo

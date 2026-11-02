@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PanelController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\VerificationController;
 use App\Models\MenuItem;
 use App\Models\Payment;
 use App\Support\Brand;
@@ -46,7 +46,7 @@ Route::post('/admin/enter', function (Request $request) {
 })->middleware('throttle:10,1,admin-sso');
 
 // E-posta dogrulama linki (imzali URL). Dogrular ve SPA'ya yonlendirir.
-Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verifyEmail'])
     ->middleware('signed')
     ->name('verification.verify');
 

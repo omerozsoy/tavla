@@ -21,7 +21,7 @@ use App\Services\DiceStatisticsService;
 use App\Services\ErrorJournalService;
 use App\Services\MoveValidatorService;
 use App\Services\PlayerStatisticsService;
-use App\Services\WalletService;
+use App\Services\WelcomeGrant;
 use App\Services\WxpService;
 use App\Support\AvatarStore;
 use App\Support\Brand;
@@ -108,7 +108,7 @@ class AuthController extends Controller
         // E-posta dogrulama: kayitta HEMEN tek e-postada kod + link gonder (teslim icin gercek
         // SMTP gerekir; MAIL_MAILER). Kullanici kodu/linki an'inda alir -> ekstra "Tekrar gonder" gereksiz.
         try {
-            $this->sendVerificationEmail($user);
+            EmailVerification::send($user); // hosgeldin dogrulama (kod + imzali link) — VerificationController ile ortak kaynak
         } catch (\Throwable $e) {
             // Mail gonderilemezse kayit yine de tamamlanir (kullanici sonra tekrar gonderebilir)
             Log::warning('register: verification mail failed', [
@@ -294,10 +294,10 @@ class AuthController extends Controller
                 $user->tokens()->delete();
             }
             $user->markEmailAsVerified(); // fillable disi, guvenli
-            $this->grantWelcomeCoins($user->id); // Google = doğrulanmış -> hoşgeldin coin'i (idempotent)
+            app(WelcomeGrant::class)->coins($user->id); // Google = doğrulanmış -> hoşgeldin coin'i (idempotent)
         }
         if ($isNew) {
-            $this->grantWelcomePremium($user->id); // Google ile YENİ kayıt -> 3 ay hoşgeldin Premium (bir kez)
+            app(WelcomeGrant::class)->premium($user->id); // Google ile YENİ kayıt -> 3 ay hoşgeldin Premium (bir kez)
         }
 
         if ($user->isBanned()) {
@@ -2180,266 +2180,6 @@ class AuthController extends Controller
         }
 
         return $this->fail('Sıfırlama başarısız. Link geçersiz veya süresi dolmuş.', 400);
-    }
-
-    // E-posta dogrulama linki (imzali). Basari/hata sonrasi SPA'ya yonlendirir.
-    public function verifyEmail(Request $request, int $id, string $hash)
-    {
-        // Çoklu-domain: doğrulama linki hangi markada tıklandıysa SPA'ya oraya dön.
-        $base = rtrim((string) (Brand::current()['origin'] ?? config('app.frontend_url', config('app.url'))), '/');
-        $user = User::find($id);
-        if (! $user || ! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
-            return redirect("{$base}/?verified=0");
-        }
-        $this->completeEmailVerification($user); // TEK KAYNAK: damgala + hoşgeldin ödülleri (idempotent)
-
-        return redirect("{$base}/?verified=1");
-    }
-
-    /**
-     * E-POSTA DOĞRULAMASININ TEK TAMAMLAYICISI — e-postayı damgala + hoşgeldin ödüllerini
-     * (coin + 3 ay Premium) ver. TÜM e-posta doğrulama yolları BUNU çağırmalı:
-     *   • verifyEmail  (doğrulama LİNKİ)
-     *   • verifyEmailCode (6-haneli KOD)
-     * Böylece bir yol ödül vermeyi "UNUTAMAZ" -> 2026-10'daki kod-yolu welcome bug'ı
-     * (kodla doğrulayan coin+premium alamıyordu) BİR DAHA OLMAZ. Hepsi idempotent:
-     * markEmailAsVerified + welcome_granted + trial_used flag'leri çift-vermeyi engeller.
-     * YENİ bir e-posta doğrulama yolu eklersen YALNIZ bunu çağır; grant'ları ELLE EKLEME.
-     * (Google OAuth bilinçli olarak AYRI: premium yalnız YENİ kayıtta verilir — bkz google().)
-     */
-    private function completeEmailVerification(User $user): void
-    {
-        if ($user->hasVerifiedEmail()) {
-            return; // zaten doğrulanmış -> tekrar damgalama/ödül yok
-        }
-        $user->markEmailAsVerified();
-        event(new Verified($user));
-        $this->grantWelcomeCoins($user->id);   // hoşgeldin coin'i (idempotent: welcome_granted)
-        $this->grantWelcomePremium($user->id); // 3 ay hoşgeldin Premium (idempotent: trial_used)
-    }
-
-    /**
-     * HOŞGELDİN coin'ini BİR KEZ ver (atomik idempotent): welcome_granted=false ise coins += welcome
-     * + flag=true. Yalnız e-posta doğrulayan / Google (doğrulanmış) kullanıcıya çağrılır. Eski
-     * (zaten doğrulanmış) kullanıcılar doğrulama geçişi yaşamadığı için almaz (retroaktif değil).
-     */
-    private function grantWelcomeCoins(int $userId): void
-    {
-        if (! Schema::hasColumn('users', 'welcome_granted')) {
-            return;
-        }
-        $amount = Setting::int('welcome_coins', (int) config('game.welcome_coins', 100));
-        if ($amount <= 0) {
-            return;
-        }
-        DB::transaction(function () use ($userId, $amount) {
-            $user = User::lockForUpdate()->find($userId);
-            if (! $user || (bool) $user->welcome_granted) {
-                return;
-            }
-            app(WalletService::class)->credit($user, $amount, 'welcome_reward', User::class, $user->id);
-            $user->welcome_granted = true;
-            $user->save();
-        });
-    }
-
-    /**
-     * HOŞGELDİN premium'unu BİR KEZ ver (atomik idempotent): yeni üye e-postasını DOĞRULAYINCA veya
-     * Google ile kaydolunca 2 Ocak 2027'ye kadar ücretsiz Premium. trial_used=false + süresi geçerli ücretli
-     * planı OLMAYAN (free/lapsed) kullanıcıya uygulanır -> mevcut ödemeli üyeliği KISALTMAZ, ikinci
-     * kez verilmez. Query-builder update (fillable dışı plan alanlarını güvenle yazar).
-     */
-    private function grantWelcomePremium(int $userId): void
-    {
-        if (! Schema::hasColumn('users', 'trial_used') || ! Schema::hasColumn('users', 'plan_until')) {
-            return;
-        }
-        // HEDİYE ÜYELİK DÖNEMİ (sabit tarih, kullanıcı kararı 2026-10-19): yeni üyeler 2 Ocak
-        // 2027 00:00'a kadar ücretsiz Premium ile başlar. 31 Aralık 2026'dan SONRA kayıt olana
-        // hediye YOK (dönem bitti) -> normal (free) üye olur, Premium satın alır. Tarihler koda
-        // SABİT (admin Setting'i değil) — owner açıkça böyle istedi. Uzatmak gerekirse buradaki
-        // iki tarihi değiştir + yeni deploy.
-        $now = now();
-        $giftUntil = Carbon::parse('2027-01-02 00:00:00'); // hediye premium bitişi
-        $giftCutoff = Carbon::parse('2026-12-31 23:59:59'); // son hediye tarihi
-        if ($now->gt($giftCutoff)) {
-            // Hediye dönemi kapandı: trial_used'ı yine işaretle ki mantık tutarlı kalsın, premium verme.
-            User::where('id', $userId)->where('trial_used', false)->update(['trial_used' => true]);
-
-            return;
-        }
-        $update = [
-            'plan' => 'premium',
-            'plan_until' => $giftUntil,
-            'trial_used' => true,
-        ];
-        if (Schema::hasColumn('users', 'plan_since')) {
-            $update['plan_since'] = $now;
-        }
-        // premium KAYNAĞI = hoşgeldin (e-posta doğrulama) — panel Cüzdan/Üyelik sekmesinde görünür.
-        if (Schema::hasColumn('users', 'plan_source')) {
-            $update['plan_source'] = 'welcome';
-            $update['plan_source_at'] = $now;
-        }
-        // trial_used=false AND (plan free VEYA süresi geçmiş) -> yeni üyeye ver. Atomik: WHERE ile yarış yok.
-        User::where('id', $userId)
-            ->where('trial_used', false)
-            ->where(function ($q) use ($now) {
-                $q->where('plan', 'free')
-                    ->orWhereNull('plan_until')
-                    ->orWhere('plan_until', '<=', $now);
-            })
-            ->update($update);
-    }
-
-    // Dogrulama e-postasini tekrar gonder (giris yapmis kullanici)
-    public function resendVerification(Request $request)
-    {
-        $user = $request->user();
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'already_verified']);
-        }
-        // 60sn cooldown (tekrar-gonder spam'i) — telefon OTP ile ayni desen.
-        $cd = 'eotp-cd:'.$user->id;
-        if (Cache::has($cd)) {
-            return response()->json(['message' => 'cooldown'], 429);
-        }
-        Cache::put($cd, 1, now()->addSeconds(60));
-        // TEK e-postada kod + imzali link (eskiden "Doğrulama Kodun" + "Adresini Doğrula" iki ayri
-        // e-posta gidiyordu; birlestirildi). Mail patlarsa sessiz -> kullanici tekrar deneyebilir.
-        try {
-            $this->sendVerificationEmail($user);
-        } catch (\Throwable $e) {
-            Log::warning('email verify mail failed', ['e' => $e->getMessage()]);
-        }
-
-        return response()->json(['message' => 'sent']);
-    }
-
-    // Tek e-postada HEM 6 haneli kod HEM imzali dogrulama linkini gonderir. Kod 15 dk cache'lenir
-    // ('eotp:{id}'); verifyEmailCode bunu dogrular. Link = temporarySignedRoute('verification.verify')
-    // (sendEmailVerificationNotification ile ayni URL). Kayit + "Tekrar gonder" ikisi de bunu cagirir.
-    private function sendVerificationEmail(User $user): void
-    {
-        EmailVerification::send($user); // TEK kaynak (Filament toplu aksiyonu da kullanır)
-    }
-
-    // E-posta kodu dogrula: dogruysa email_verified_at damgalanir. 5 yanlista kod iptal.
-    // Telefon OTP (verifyPhoneOtp) ile birebir ayni desen; kod cache'te 'eotp:{id}'.
-    public function verifyEmailCode(Request $request)
-    {
-        $data = $request->validate([
-            'code' => ['required', 'string', 'regex:/^\d{6}$/'],
-        ]);
-        $user = $request->user();
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['user' => $user, 'message' => 'already_verified']);
-        }
-        $key = 'eotp:'.$user->id;
-        $rec = Cache::get($key);
-        // A-13: kod GÖNDERİLDİĞİ e-postaya bağlı. Kod alındıktan sonra e-posta değiştirildiyse eski
-        // kod yeni (sahipliği kanıtlanmamış) adresi doğrulayamaz. (Eski kayıtlar 'email' taşımaz -> geçersiz.)
-        if (! $rec || ($rec['email'] ?? null) !== strtolower((string) $user->email)) {
-            Cache::forget($key);
-
-            return response()->json(['message' => 'expired'], 422);
-        }
-        if (($rec['tries'] ?? 0) >= 5) {
-            Cache::forget($key);
-
-            return response()->json(['message' => 'too_many'], 422);
-        }
-        if (! hash_equals((string) $rec['code'], $data['code'])) {
-            $rec['tries'] = ($rec['tries'] ?? 0) + 1;
-            Cache::put($key, $rec, now()->addMinutes(15));
-
-            return response()->json(['message' => 'wrong'], 422);
-        }
-        Cache::forget($key);
-        // TEK KAYNAK: link yolu (verifyEmail) ile BİREBİR aynı -> damgala + hoşgeldin ödülleri.
-        // (Eskiden burada grant'lar UNUTULMUŞTU; kodla doğrulayan coin+premium alamıyordu. Artık ortak metot.)
-        $this->completeEmailVerification($user);
-
-        return response()->json(['user' => $user->fresh(), 'message' => 'verified']);
-    }
-
-    // Telefon OTP gonder: kullanicinin kayitli cep numarasina 6 haneli kod (5 dk gecerli).
-    // 60sn cooldown (tekrar-gonder spam'i). IYS MUAF islemsel dogrulama SMS'i. Kod ASLA
-    // yanitta donmez (yalniz SMS ile gider). Netgsm yapilandirilmamissa Sms::send loglar.
-    public function sendPhoneOtp(Request $request)
-    {
-        $user = $request->user();
-        if ($user->phone_verified_at) {
-            return response()->json(['message' => 'already_verified']);
-        }
-        $phone = (string) ($user->phone ?? '');
-        if (! preg_match('/^0?5\d{9}$/', $phone)) {
-            return response()->json(['message' => 'no_phone'], 422);
-        }
-        // Hesap-bazli kilit: cok yanlis denemede yeni kod uretimi de durur (aksi halde
-        // saldirgan cooldown sonrasi surekli yeni kod uretip her birine 5 deneme yapar).
-        if (Cache::has('otp-lock:'.$user->id)) {
-            return response()->json(['message' => 'locked'], 429);
-        }
-        $cd = 'otp-cd:'.$user->id;
-        if (Cache::has($cd)) {
-            return response()->json(['message' => 'cooldown'], 429);
-        }
-        $code = (string) random_int(100000, 999999);
-        Cache::put('otp:'.$user->id, ['code' => $code, 'tries' => 0], now()->addMinutes(5));
-        Cache::put($cd, 1, now()->addSeconds(60));
-        Sms::send($phone, 'Tavla TV dogrulama kodunuz: '.$code.'. Kod 5 dakika gecerlidir.');
-
-        return response()->json(['message' => 'sent']);
-    }
-
-    // Telefon OTP dogrula: dogruysa phone_verified_at damgalanir. 5 yanlista kod iptal.
-    public function verifyPhoneOtp(Request $request)
-    {
-        $data = $request->validate([
-            'code' => ['required', 'string', 'regex:/^\d{6}$/'],
-        ]);
-        $user = $request->user();
-        if ($user->phone_verified_at) {
-            return response()->json(['user' => $user, 'message' => 'already_verified']);
-        }
-        // Kalici kilit: kod yenilense bile toplam yanlis denemeyi sayar. Esik asilinca
-        // 30 dk hem dogrulama hem yeni kod uretimi durur -> 10^6 kod brute-force edilemez.
-        $lock = 'otp-lock:'.$user->id;
-        $fails = 'otp-fails:'.$user->id;
-        if (Cache::has($lock)) {
-            return response()->json(['message' => 'locked'], 429);
-        }
-        $key = 'otp:'.$user->id;
-        $rec = Cache::get($key);
-        if (! $rec) {
-            return response()->json(['message' => 'expired'], 422);
-        }
-        if (($rec['tries'] ?? 0) >= 5) {
-            Cache::forget($key);
-
-            return response()->json(['message' => 'too_many'], 422);
-        }
-        if (! hash_equals((string) $rec['code'], $data['code'])) {
-            $rec['tries'] = ($rec['tries'] ?? 0) + 1;
-            Cache::put($key, $rec, now()->addMinutes(5));
-            $total = (int) Cache::get($fails, 0) + 1;
-            Cache::put($fails, $total, now()->addMinutes(30));
-            if ($total >= 10) {
-                Cache::put($lock, 1, now()->addMinutes(30));
-                Cache::forget($key);
-
-                return response()->json(['message' => 'locked'], 429);
-            }
-
-            return response()->json(['message' => 'wrong'], 422);
-        }
-        Cache::forget($fails);
-        $user->phone_verified_at = now(); // fillable disi -> guvenli dogrudan atama
-        $user->save();
-        Cache::forget($key);
-
-        return response()->json(['user' => $user, 'message' => 'verified']);
     }
 
     // Takma isim musait mi? (kayit formu icin, halka acik)
