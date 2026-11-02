@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -382,13 +383,20 @@ class Room extends Model
     // Istemciye donen guvenli gorunum (token'lar gizli)
     public function toClient(): array
     {
-        // Iki oyuncunun cerceve + premium'unu TEK sorguda cek (N+1 yok). plan+plan_until ->
-        // plan_active accessor -> premium (isim yaninda PREMIUM; oyun-ici rakip + Spectate).
-        $ids = array_values(array_filter([$this->p1_user_id, $this->p2_user_id]));
-        $users = $ids
-            ? User::whereIn('id', $ids)->get(['id', 'avatar_frame', 'plan', 'plan_until', 'country'])->keyBy('id')
-            : collect();
-        $prem = fn ($uid) => $uid && isset($users[$uid]) ? $users[$uid]->plan_active !== 'free' : false;
+        // Iki oyuncunun cerceve/premium/ulke gorunum alanlari NADIR degisir ama toClient HER donen
+        // poll'da (saat calisirken 204 yok) cagrilir -> eskiden her poll'da User::whereIn (1 SELECT).
+        // Kullanici basina 10sn onbellek: sicak poll'da 0 DB sorgusu. Alanlar gorunumlik (frame/premium/
+        // ulke); <=10sn bayatlik kozmetik (premium/frame mac-ortasi nadiren degisir). Per-user anahtar ->
+        // ayni oyuncu birden cok oda/izleyicide paylasir. Ham plan/plan_until istemciye GITMEZ.
+        $uinfo = fn ($uid) => $uid
+            ? Cache::remember("room_user:{$uid}", 10, function () use ($uid) {
+                $u = User::find($uid, ['id', 'avatar_frame', 'plan', 'plan_until', 'country']);
+
+                return $u ? ['frame' => $u->avatar_frame, 'country' => $u->country, 'premium' => $u->plan_active !== 'free'] : null;
+            })
+            : null;
+        $u1 = $uinfo($this->p1_user_id);
+        $u2 = $uinfo($this->p2_user_id);
         $clientServerMatch = $this->server_match;
         // OYNANAN POT: yüzde-bahis (bet_pct) maçta gerçek tutar = iki oyuncunun snapshot
         // bahsinin KÜÇÜĞÜ (küçük limit belirler; settle de min alır). Sabit-stake'te = stake.
@@ -408,17 +416,17 @@ class Room extends Model
             'p1_name' => $this->p1_name,
             'p1_rating' => $this->p1_rating,
             'p1_avatar' => $this->p1_avatar,
-            'p1_frame' => $this->p1_user_id && isset($users[$this->p1_user_id]) ? $users[$this->p1_user_id]->avatar_frame : null,
-            'p1_country' => $this->p1_user_id && isset($users[$this->p1_user_id]) ? $users[$this->p1_user_id]->country : null,
-            'p1_premium' => $prem($this->p1_user_id),
+            'p1_frame' => $u1['frame'] ?? null,
+            'p1_country' => $u1['country'] ?? null,
+            'p1_premium' => (bool) ($u1['premium'] ?? false),
             // Oyun-içi/izleme: avatara tıklayınca herkese açık profili aç (misafirde null).
             'p1_user_id' => $this->p1_user_id,
             'p2_name' => $this->p2_name,
             'p2_rating' => $this->p2_rating,
             'p2_avatar' => $this->p2_avatar,
-            'p2_frame' => $this->p2_user_id && isset($users[$this->p2_user_id]) ? $users[$this->p2_user_id]->avatar_frame : null,
-            'p2_country' => $this->p2_user_id && isset($users[$this->p2_user_id]) ? $users[$this->p2_user_id]->country : null,
-            'p2_premium' => $prem($this->p2_user_id),
+            'p2_frame' => $u2['frame'] ?? null,
+            'p2_country' => $u2['country'] ?? null,
+            'p2_premium' => (bool) ($u2['premium'] ?? false),
             'p2_user_id' => $this->p2_user_id,
             'state' => $this->state,
             'messages' => $this->messages ?? [],
