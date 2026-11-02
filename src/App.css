@@ -12856,6 +12856,24 @@ button.acct-row-logout:hover:not(:disabled) {
 .rfr-wrap.rfr-duo .rfr-card {
   max-width: none; /* grid kolonu boyutlar; kartın kendi yarı-genişlik cap'i kalksın */
 }
+/* Android uygulama indirme banner'ı (eski "Arkadaşını Davet Et" kartının yerine). Grid stretch'ini
+   EZ -> doğal en-boy (720×300), kolonun üstünde; yanındaki turnuva paneli daha uzunsa gerilmez. */
+.rfr-wrap.rfr-duo .app-dl-banner {
+  display: block;
+  width: 100%;
+  align-self: start;
+  border-radius: 10px;
+  overflow: hidden;
+  line-height: 0;
+}
+.rfr-wrap.rfr-duo .app-dl-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 720px) {
+  .rfr-wrap.rfr-duo .app-dl-banner { align-self: auto; }
+}
 @media (max-width: 720px) {
   .rfr-wrap.rfr-duo {
     grid-template-columns: 1fr;
