@@ -136,7 +136,7 @@ class TournamentScheduleResource extends Resource
                             ->label('Coin')->numeric()->minValue(0)->default(0)->required(),
                         Forms\Components\TextInput::make('desc')
                             ->label('Açıklama (opsiyonel)')
-                            ->placeholder('ör. Star üyelik 1 ay')
+                            ->placeholder('ör. Premium üyelik 1 ay')
                             ->maxLength(120),
                     ])
                     ->columns(2)

@@ -73,7 +73,7 @@ export const PAGES: PageDef[] = [
   { key: 'matchHistory', slug: 'mac-analizleri', labelKey: 'menu.matchHistory', icon: 'chart-line', group: 'tools' },
 
   // --- HESAP ---
-  { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },
+  { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'crown', group: 'account' },
   // Mağaza: coin + fiziksel ürünler + tahta/çerçeve tek sayfada (Shop bileşeni, Ürünler sekmesi).
   // Sol menüde HESAP grubunda HERKESE GÖRÜNÜR (misafir dahil; gate YOK — mağazayı gezmek serbest,
   // satın alma tıklanınca giriş istenir). ÇİFT yerleşim: sağ üst storefront ikonu da kalır.

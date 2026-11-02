@@ -123,7 +123,7 @@ class SiteSettings extends Page implements HasForms
                     ->schema([
                         TextInput::make('reward_normal')->label('Normal kullanıcı')
                             ->numeric()->required()->minValue(0)->suffix('GC'),
-                        TextInput::make('reward_premium')->label('Premium üye (Star)')
+                        TextInput::make('reward_premium')->label('Premium üye')
                             ->numeric()->required()->minValue(0)->suffix('GC'),
                     ])->columns(2),
                 Section::make('Bahis')

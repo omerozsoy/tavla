@@ -326,7 +326,7 @@ class TournamentResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make('desc')
                             ->label('Açıklama (opsiyonel)')
-                            ->placeholder('ör. Star üyelik 1 ay')
+                            ->placeholder('ör. Premium üyelik 1 ay')
                             ->maxLength(120),
                     ])
                     ->columns(2)

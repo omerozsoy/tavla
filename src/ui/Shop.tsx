@@ -189,6 +189,31 @@ export default function Shop({
 
         {landing ? (
           <>
+            {/* --- Premium Üyelik: dükkanda EN ÜSTTE; tıklayınca mevcut Üyelik akışını
+                 (subscribe -> Garanti/havale) açar. Premium KARGOSUZ otomatik aktive olur
+                 (PaymentController::activateMembership). Fiyat plans.ts'ten (Üyelik ekranıyla aynı). --- */}
+            {onMembership && (
+              <section className="shop-section coin-store" aria-label={t('shop.memTitle')}>
+                <h3 className="shop-section-t">{t('shop.memTitle')}</h3>
+                <div className="coin-grid">
+                  <button type="button" className="coin-card" data-popular onClick={() => onMembership()}>
+                    <span className="coin-card-badge">{t('plan.premium')}</span>
+                    <span className="coin-card-name">{t('shop.memTitle')}</span>
+                    <span className="coin-card-amount">
+                      <Icon name="crown" size={26} />
+                    </span>
+                    <span className="coin-card-price">{fmtTL(PREMIUM_YEARLY_TL)}</span>
+                    <span className="coin-card-meta">
+                      <span className="coin-card-per">/ {t('mem.perYear')}</span>
+                    </span>
+                    <span className="coin-card-cta">
+                      {t('shop.buy')} <Icon name="arrow-right" size={14} />
+                    </span>
+                  </button>
+                </div>
+              </section>
+            )}
+
             {/* --- Kategoriler: gercek sayfalara goturen kartlar --- */}
             {onAddToCart && cats.length > 0 && (
               <section className="shop-section" aria-label={t('shop.categories')}>
@@ -261,31 +286,6 @@ export default function Shop({
                       </button>
                     )
                   })}
-                </div>
-              </section>
-            )}
-
-            {/* --- Premium Üyelik: dükkandan da satın alınır; tıklayınca mevcut Üyelik akışını
-                 (subscribe -> Garanti/havale) açar. Premium KARGOSUZ otomatik aktive olur
-                 (PaymentController::activateMembership). Fiyat plans.ts'ten (Üyelik ekranıyla aynı). --- */}
-            {onMembership && (
-              <section className="shop-section coin-store" aria-label={t('shop.memTitle')}>
-                <h3 className="shop-section-t">{t('shop.memTitle')}</h3>
-                <div className="coin-grid">
-                  <button type="button" className="coin-card" data-popular onClick={() => onMembership()}>
-                    <span className="coin-card-badge">{t('plan.premium')}</span>
-                    <span className="coin-card-name">{t('shop.memTitle')}</span>
-                    <span className="coin-card-amount">
-                      <Icon name="crown" size={26} />
-                    </span>
-                    <span className="coin-card-price">{fmtTL(PREMIUM_YEARLY_TL)}</span>
-                    <span className="coin-card-meta">
-                      <span className="coin-card-per">/ {t('mem.perYear')}</span>
-                    </span>
-                    <span className="coin-card-cta">
-                      {t('shop.buy')} <Icon name="arrow-right" size={14} />
-                    </span>
-                  </button>
                 </div>
               </section>
             )}
