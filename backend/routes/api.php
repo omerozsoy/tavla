@@ -21,6 +21,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameLogController;
 use App\Http\Controllers\InfoPageController;
+use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\LuckyWheelAdminController;
 use App\Http\Controllers\LuckyWheelController;
@@ -113,10 +114,10 @@ Route::post('/csp-report', function (Request $r) {
 
     return response()->noContent();
 })->middleware('throttle:120,1,csp-report');
-Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
-Route::get('/leaderboard/pr', [AuthController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
-Route::get('/leaderboard/search', [AuthController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
-Route::get('/top-ranks', [AuthController::class, 'topRanks']); // site geneli top-3 rozet haritası (PR madalya + Rating kupa)
+Route::get('/leaderboard', [LeaderboardController::class, 'leaderboard']);
+Route::get('/leaderboard/pr', [LeaderboardController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
+Route::get('/leaderboard/search', [LeaderboardController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
+Route::get('/top-ranks', [LeaderboardController::class, 'topRanks']); // site geneli top-3 rozet haritası (PR madalya + Rating kupa)
 Route::get('/roles', [AuthController::class, 'roles']); // site geneli rol haritası (yönetici + destek id'leri -> isim yanı kalkan)
 Route::get('/achievements', [AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
