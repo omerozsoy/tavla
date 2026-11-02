@@ -48,7 +48,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 
 // Halka acik — kimlik dogrulama uclari kaba kuvvete karsi hiz sinirli (IP basi/dk)
 // Sifre/token brute-force hedefleri daha siki (10/dk); digerleri 20/dk.
@@ -64,28 +63,6 @@ Route::middleware('throttle:20,1,auth-register')->group(function () {
 });
 // Kullanici numaralama (enumeration) yavaslatma: halka acik + hiz sinirli
 Route::middleware('throttle:10,1,nickname')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
-// GEÇİCİ TANI (reload beacon): "maç içinde F5" şikayetinin nedenini topla. Halka açık (beacon
-// token taşımaz), hız sınırlı, best-effort (hata yutulur). reload_events tablosu yoksa no-op.
-Route::post('/diag/reload', function (Request $r) {
-    try {
-        if (! Schema::hasTable('reload_events')) {
-            return response()->json(['ok' => false]);
-        }
-        DB::table('reload_events')->insert([
-            'reason' => mb_substr((string) $r->input('reason', ''), 0, 40),
-            'in_match' => $r->boolean('in_match'),
-            'is_mobile' => $r->boolean('is_mobile'),
-            'nav_type' => mb_substr((string) $r->input('nav_type', ''), 0, 20),
-            'path' => mb_substr((string) $r->input('path', ''), 0, 160),
-            'user_id' => optional($r->user('sanctum'))->id,
-            'created_at' => now(),
-        ]);
-    } catch (Throwable $e) {
-        // best-effort: tanı yazımı asla istek/akışı bozmasın
-    }
-
-    return response()->json(['ok' => true]);
-})->middleware('throttle:120,1,diag-reload');
 // CSP İHLAL RAPORU: report-only fazında tarayıcı policy ihlallerini (violated-directive + blocked-uri)
 // buraya POST eder. Enforce'a geçmeden ÖNCE neyin bloklanacağını sunucuda görünür kılar. Public
 // (tarayıcı rapor POST'u token taşımaz), throttle + ihlal-imzası başına 10dk dedupe -> log flood YOK

@@ -43,7 +43,6 @@ import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { divisionOfPR } from './badges'
 import { subscribeRankThresholds, rankThresholdsVersion } from './rankConfig'
-import { setInMatch } from './reloadDiag'
 import { Sound, isMuted, setMuted, getVolume, setVolume } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
@@ -1914,8 +1913,6 @@ export default function App() {
   const statusChangedAtRef = useRef(0)
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
-  // TANI: maç ekranı açık mı (reload beacon in_match bayrağı için). Oda var + lobide değil.
-  useEffect(() => { setInMatch(!home && !!room) }, [home, room])
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
   const [timeControl, setTimeControl] = useState<TimeControl>('normal')
   const [rankedMatch, setRankedMatch] = useState(true) // false = casual (puana etki etmez)

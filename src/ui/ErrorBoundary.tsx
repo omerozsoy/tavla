@@ -1,6 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { markReload } from '../reloadDiag'
 
 interface Props {
   children: ReactNode
@@ -63,13 +62,11 @@ export class ErrorBoundary extends Component<Props, State> {
       } catch {
         // storage yazilamadi -> yine de bir kez dene; kalkan olmasa da tek reload zararsiz
       }
-      markReload('chunk') // TANI: deploy-sonrası bayat chunk -> otomatik reload
       window.location.reload()
     }
   }
 
   handleReload = (): void => {
-    markReload('eb-manual') // TANI: kullanıcı "Yenile" butonuna bastı (render hatası kartı)
     window.location.reload()
   }
 
