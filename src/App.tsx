@@ -10404,6 +10404,12 @@ export default function App() {
             setCartOpen(true)
           }}
           onMembership={() => {
+            // Misafir: üyelik satın alma giriş ister -> mağazayı kapat, giriş ekranını aç (coin ile aynı).
+            if (!user) {
+              setShopOpen(false)
+              setShowAuth(true)
+              return
+            }
             setShopOpen(false)
             setMemOpen(true)
           }}
