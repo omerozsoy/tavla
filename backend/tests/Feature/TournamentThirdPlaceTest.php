@@ -116,6 +116,51 @@ class TournamentThirdPlaceTest extends TestCase
         $this->assertSame([$a->id, $cc->id, $b->id, $d->id], array_slice($this->standings($t), 0, 4));
     }
 
+    // 3.'LÜK KAPALI (third_place_match=false): 3.'lük maçı HİÇ kurulmaz, final beklemeden açılır,
+    // 3./4. sıra yarı final kaybedenlerinden rating'e göre belirlenir.
+    public function test_third_place_disabled_skips_match_and_ranks_semi_losers_by_rating(): void
+    {
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $cc = $this->user('c');
+        $d = $this->user('d');
+        $p = fn (User $u, int $r) => ['id' => $u->id, 'name' => strtoupper($u->nickname), 'rating' => $r];
+
+        $t = Tournament::create([
+            'name' => 'T', 'size' => 4, 'status' => 'running', 'active' => true,
+            'third_place_match' => false,
+            'players' => [$p($a, 1500), $p($b, 1600), $p($cc, 1500), $p($d, 1400)],
+            'bracket' => [
+                [
+                    ['key' => 'r0m0', 'p1' => $p($a, 1500), 'p2' => $p($b, 1600), 'winner' => null],
+                    ['key' => 'r0m1', 'p1' => $p($cc, 1500), 'p2' => $p($d, 1400), 'winner' => null],
+                ],
+                [
+                    ['key' => 'r1m0', 'p1' => null, 'p2' => null, 'winner' => null],
+                ],
+            ],
+        ]);
+
+        // A yener B, C yener D. 3.'lük KAPALI -> hücre (r1m1) hiç oluşmaz.
+        $this->apply($t, 0, 0, $a->id);
+        $this->apply($t, 0, 1, $cc->id);
+        $t->refresh();
+        $this->assertArrayNotHasKey(1, $t->bracket[1], '3.lük maçı hücresi kurulmamalı');
+
+        // Final GATE YOK -> hemen açılabilir (3.'lük beklemeden).
+        Sanctum::actingAs($a);
+        $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'r1m0'])->assertOk();
+
+        // Final oynanır: A şampiyon -> turnuva kapanır.
+        $this->apply($t, 1, 0, $a->id);
+        $t->refresh();
+        $this->assertSame($a->id, (int) $t->champion_id);
+        $this->assertSame('finished', $t->status);
+
+        // Sıralama: 1=A, 2=C(final kaybedeni), 3=B(rating 1600 > D 1400), 4=D.
+        $this->assertSame([$a->id, $cc->id, $b->id, $d->id], array_slice($this->standings($t), 0, 4));
+    }
+
     public function test_bye_semifinal_gives_walkover_third_place(): void
     {
         // Bir yarı final bye (tek oyuncu) -> 3.'lük maçı tek oyunculu kalır -> diğer yarı final

@@ -50,6 +50,7 @@ class CreateScheduledTournaments extends Command
                 'prizes' => $s->prizes,
                 'entry_fee' => $s->entry_fee,
                 'premium_only' => $s->premium_only,
+                'third_place_match' => $s->third_place_match,
                 'match_length' => $s->match_length,
                 'semi_length' => $s->semi_length,
                 'final_length' => $s->final_length,

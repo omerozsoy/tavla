@@ -153,6 +153,10 @@ class TournamentScheduleResource extends Resource
                 Forms\Components\Toggle::make('premium_only')
                     ->label('Sadece Premium üyeler katılabilir')
                     ->default(true),
+                Forms\Components\Toggle::make('third_place_match')
+                    ->label('Üçüncülük (3-4) maçı oynansın')
+                    ->helperText('Açık: yarı final kaybedenleri 3.’lük maçı oynar. Kapalı: finale direkt geçilir; 3./4. rating’e göre belirlenir. Yalnızca Bracket tipinde geçerli.')
+                    ->default(true),
                 Forms\Components\TextInput::make('entry_fee')
                     ->label('Giriş ücreti (coin)')
                     ->helperText('0 = ücretsiz. Toplanan ücretler ödül havuzuna eklenir.')

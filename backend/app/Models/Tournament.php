@@ -19,6 +19,7 @@ class Tournament extends Model
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
         'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
         'round_minutes', 'semi_minutes', 'final_minutes', // mac sureleri (dk, oyuncu basina); bkz roundMinutes()
+        'third_place_match', // true: 3.'luk (3-4) maci oynanir; false: finale direkt gecilir (3./4. rating'e gore)
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class Tournament extends Model
         'prizes' => 'array',
         'active' => 'boolean',
         'premium_only' => 'boolean',
+        'third_place_match' => 'boolean',
         'register_until' => 'datetime',
         'match_length' => 'integer',
         'semi_length' => 'integer',

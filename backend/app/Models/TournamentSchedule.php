@@ -18,6 +18,7 @@ class TournamentSchedule extends Model
         'match_length', 'semi_length', 'final_length',
         'round_minutes', 'semi_minutes', 'final_minutes',
         'prize_coins', 'prizes', 'prize_desc', 'entry_fee', 'premium_only',
+        'third_place_match',
         'creator_id', 'last_created_on',
     ];
 
@@ -26,6 +27,7 @@ class TournamentSchedule extends Model
         'weekdays' => 'array',
         'prizes' => 'array',
         'premium_only' => 'boolean',
+        'third_place_match' => 'boolean',
         'last_created_on' => 'date',
         'size' => 'integer',
         'match_length' => 'integer',

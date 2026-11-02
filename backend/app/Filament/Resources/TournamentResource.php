@@ -3,15 +3,19 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TournamentResource\Pages;
-use App\Filament\Resources\TournamentResource\RelationManagers;
 use App\Models\Tournament;
+use App\Support\Swiss\SwissRuntime;
+use App\Support\TournamentModeration;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TournamentResource extends Resource
 {
@@ -73,13 +77,13 @@ class TournamentResource extends Resource
                 : 'Oyuncu adına çekilme kaydeder (örn. "devam edemeyeceğim" diyen oyuncu). Kayıt açıksa listeden çıkarılır + giriş ücreti iade; turnuva sürüyorsa sıradaki maçı rakibine verilir. Diskalifiyeden farkı: durum "çekildi" (ceza değil) olarak işaretlenir. Geri alınamaz.')
             ->action(function (Tournament $record, array $data) use ($mode, $isDq): void {
                 $uid = (int) $data['user_id'];
-                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $uid, $mode): void {
+                DB::transaction(function () use ($record, $uid, $mode): void {
                     $t = Tournament::lockForUpdate()->find($record->id);
                     if ($t) {
-                        \App\Support\TournamentModeration::remove($t, $uid, $mode);
+                        TournamentModeration::remove($t, $uid, $mode);
                     }
                 });
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title($isDq ? 'Oyuncu diskalifiye edildi' : 'Oyuncu turnuvadan çekildi')
                     ->success()
                     ->send();
@@ -118,7 +122,7 @@ class TournamentResource extends Resource
             ->modalDescription('Bekleyen bir maçı hükmen çözer (galip ilan veya çift mağlubiyet). Çift mağlubiyet: iki oyuncuya da birer mağlubiyet yazılır, galip yok. Uygulanmış (sonraki tur üretilmiş) sonuçlar buradan düzeltilemez.')
             ->action(function (Tournament $record, array $data): void {
                 $ok = false;
-                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data, &$ok): void {
+                DB::transaction(function () use ($record, $data, &$ok): void {
                     $t = Tournament::lockForUpdate()->find($record->id);
                     if (! $t) {
                         return;
@@ -129,9 +133,9 @@ class TournamentResource extends Resource
                     }
                     $outcome = $data['outcome'] === 'double_loss' ? 0
                         : (int) ($data['outcome'] === 'p1' ? ($cell['p1']['id'] ?? 0) : ($cell['p2']['id'] ?? 0));
-                    $ok = \App\Support\Swiss\SwissRuntime::resolveMatch($t, $data['match'], $outcome);
+                    $ok = SwissRuntime::resolveMatch($t, $data['match'], $outcome);
                 });
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title($ok ? 'Maç sonucu düzeltildi' : 'Maç düzeltilemedi (zaten çözülmüş olabilir)')
                     ->{$ok ? 'success' : 'warning'}()
                     ->send();
@@ -256,6 +260,10 @@ class TournamentResource extends Resource
                     ->numeric()->integer()->minValue(1)->maxValue(180)
                     ->suffix('dk')
                     ->nullable(),
+                Forms\Components\Toggle::make('third_place_match')
+                    ->label('Üçüncülük (3-4) maçı oynansın')
+                    ->helperText('Açık: yarı final kaybedenleri 3.’lük maçı oynar. Kapalı: 3.’lük maçı hiç kurulmaz, finale direkt geçilir; 3./4. sıra yarı final kaybedenlerinden rating’e göre belirlenir (3-4 aynı ödülü alıyorsa maça gerek yok). Yalnızca Bracket tipinde geçerli.')
+                    ->default(true),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')
                     ->relationship('creator', 'nickname')
@@ -435,11 +443,11 @@ class TournamentResource extends Resource
                         // Tipe göre başlat: 3 Haklı Swiss -> SwissRuntime (kura + eşleştirme + kilitli
                         // kural seti); eleme ağacı -> model startBracket. (Controller start() ile aynı dal.)
                         if (($record->type ?? 'bracket') === 'swiss_triple') {
-                            \App\Support\Swiss\SwissRuntime::start($record);
+                            SwissRuntime::start($record);
                         } else {
                             $record->startBracket();
                         }
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Turnuva başlatıldı')
                             ->success()
                             ->send();
@@ -460,10 +468,10 @@ class TournamentResource extends Resource
                     ->action(function (Tournament $record): void {
                         // A-22: ödül ödenmediyse katılımcıların ödediği giriş ücretleri iade edilir
                         // (eskiden sıfırlamada ücretler kayboluyor, yeniden katılan iki kez ödüyordu).
-                        \App\Support\TournamentModeration::cancelWithRefund($record, function (Tournament $t): void {
+                        TournamentModeration::cancelWithRefund($record, function (Tournament $t): void {
                             $t->players = [];
                             $t->bracket = [];
-                            if (\Illuminate\Support\Facades\Schema::hasColumn('tournaments', 'swiss_state')) {
+                            if (Schema::hasColumn('tournaments', 'swiss_state')) {
                                 $t->swiss_state = null;
                             }
                             $t->champion_id = null;
@@ -471,7 +479,7 @@ class TournamentResource extends Resource
                             $t->status = 'open';
                             $t->save();
                         });
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Turnuva sıfırlandı (açık)')
                             ->body('Katılımcılar temizlendi. Katılım açık; başlatınca kura yeniden çekilir.')
                             ->success()
@@ -482,8 +490,8 @@ class TournamentResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->before(fn (\Illuminate\Support\Collection $records) => $records->each(
-                            fn (Tournament $r) => \App\Support\TournamentModeration::cancelWithRefund($r, fn () => null)
+                        ->before(fn (Collection $records) => $records->each(
+                            fn (Tournament $r) => TournamentModeration::cancelWithRefund($r, fn () => null)
                         )), // A-22: silmeden önce ücret iadesi
                 ]),
             ]);

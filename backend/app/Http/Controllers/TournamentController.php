@@ -161,6 +161,7 @@ class TournamentController extends Controller
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'register_until' => ['nullable', 'date'],
             'premium_only' => ['nullable', 'boolean'], // varsayilan true (Premium'a ozel)
+            'third_place_match' => ['nullable', 'boolean'], // varsayilan true (3.'luk maci oynanir)
             'match_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
             'semi_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
             'final_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
@@ -184,6 +185,7 @@ class TournamentController extends Controller
             'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
             'premium_only' => (bool) ($data['premium_only'] ?? true),
+            'third_place_match' => (bool) ($data['third_place_match'] ?? true),
             'match_length' => $data['match_length'] ?? 1,
             'semi_length' => $data['semi_length'] ?? null,
             'final_length' => $data['final_length'] ?? null,
@@ -483,8 +485,10 @@ class TournamentController extends Controller
             $dqNext = $bracket[$ri + 1][$nextIndex];
             // YARI FINAL (üst tur = SON tur = final) -> kaybedeni 3.'lük maçına yerleştir. Bye maçında
             // gerçek kaybeden yok (null) -> yazılmaz; iki yarı final de bitince tek-oyunculu 3.'lük
-            // walkover ile çözülür (final o durumda beklemeden açılır).
-            if ($ri + 1 === count($bracket) - 1) {
+            // walkover ile çözülür (final o durumda beklemeden açılır). 3.'lük KAPALIYSA (third_place_match
+            // false) hücre hiç kurulmaz: final direkt açılır (gate yok), 3./4. standingsFromBracket'te
+            // yarı final kaybedenlerinden rating'e göre belirlenir.
+            if ($ri + 1 === count($bracket) - 1 && ($t->third_place_match ?? true)) {
                 if ($loser && isset($loser['id'])) {
                     $bracket = $this->placeThirdPlaceLoser($bracket, $mi, $loser);
                 }
