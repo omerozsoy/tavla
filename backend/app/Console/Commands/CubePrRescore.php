@@ -125,7 +125,7 @@ class CubePrRescore extends Command
         }
 
         foreach ($pick as $id) {
-            CacheMatchReviewJob::dispatch($id, 2, true)->onConnection('database')->onQueue('reviews-bulk');
+            CacheMatchReviewJob::dispatch($id, 2, true)->onConnection(config('queue.analysis_connection'))->onQueue('reviews-bulk');
         }
         $this->info(count($pick)." mac force-rescore kuyruga alindi (reviews-bulk). Toplam kalan ~{$remaining}. Worker isleyecek.");
 

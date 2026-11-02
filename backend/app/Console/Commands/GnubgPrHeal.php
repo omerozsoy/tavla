@@ -87,14 +87,14 @@ class GnubgPrHeal extends Command
         }
 
         foreach ($rows as $row) {
-            AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database')->onQueue('bulk');
+            AnalyzeMatchPrJob::dispatch($row->id)->onConnection(config('queue.analysis_connection'))->onQueue('bulk');
             // TEK PR KAYNAĞI: otoriter PR = Snowie. Heal'de per-pozisyon (PrJob) placeholder + ErrorJournal/
             // luck için; asıl PR'ı Snowie yazsın (reviews-bulk, canlı reviews kuyruğunu boğmaz).
-            AnalyzeMatchSnowieJob::dispatch($row->id)->onConnection('database')->onQueue('reviews-bulk');
+            AnalyzeMatchSnowieJob::dispatch($row->id)->onConnection(config('queue.analysis_connection'))->onQueue('reviews-bulk');
             // Log'suz yedek satırların ŞANSI da eksiktir; luck yoksa onu da kuyruğa al (job idempotent,
             // bozuk kaydı TAVLAI_LUCK_UNAVAILABLE ile karantinaya alır -> döngü yok).
             if ($row->luck_mwc === null) {
-                AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database')->onQueue('bulk');
+                AnalyzeMatchLuckJob::dispatch($row->id)->onConnection(config('queue.analysis_connection'))->onQueue('bulk');
             }
         }
 
@@ -120,7 +120,7 @@ class GnubgPrHeal extends Command
             ->limit($limit)
             ->pluck('id');
         foreach ($luckOnly as $id) {
-            AnalyzeMatchLuckJob::dispatch($id)->onConnection('database')->onQueue('bulk');
+            AnalyzeMatchLuckJob::dispatch($id)->onConnection(config('queue.analysis_connection'))->onQueue('bulk');
         }
 
         $this->info($rows->count().' PR + '.$luckOnly->count().' luck-only mac heal kuyruga alindi. Worker isleyecek.');

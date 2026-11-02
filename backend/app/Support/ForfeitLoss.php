@@ -148,10 +148,10 @@ class ForfeitLoss
         // gondermeyen kaybenin satiri "Mac Analizleri"nde bos kalmaz. gnubg down ise job retry/heal eder.
         // KLASIK TAVLA: gnubg analiz edemez -> PR/şans job'u dispatch ETME (satır zaten yazıldı).
         if ($createdId !== null && ! ($room && $room->classic) && MatchMove::existsForRoom($roomCode)) {
-            AnalyzeMatchPrJob::dispatch($createdId)->onConnection('database');
-            AnalyzeMatchLuckJob::dispatch($createdId)->onConnection('database');
+            AnalyzeMatchPrJob::dispatch($createdId)->onConnection(config('queue.analysis_connection'));
+            AnalyzeMatchLuckJob::dispatch($createdId)->onConnection(config('queue.analysis_connection'));
             // TEK PR KAYNAĞI: hükmen satırının otoriter PR'ı da Snowie'den (per-pozisyon placeholder kalmasın).
-            AnalyzeMatchSnowieJob::dispatch($createdId)->onConnection('database');
+            AnalyzeMatchSnowieJob::dispatch($createdId)->onConnection(config('queue.analysis_connection'));
         }
     }
 }

@@ -222,7 +222,7 @@ class RoomController extends Controller
             'classic' => ['nullable', 'boolean'], // Klasik Tavla (küp yok + mars=2)
             // Yüzde bahis: potsuz maç YASAK (kullanıcı direktifi) -> gelmezse/0 ise min %10.
             // p2 join()'inde pct_stake_snapshot üretilir (enter ile aynı).
-            'bet_pct' => ['nullable', 'integer', 'in:10,30,50,100'],
+            'bet_pct' => ['nullable', 'integer', 'in:10,20,30,50,75,100'],
         ]);
 
         $room = Room::create([
@@ -315,7 +315,7 @@ class RoomController extends Controller
             // NOT: user_id ISTEMCIDEN alinmaz (guvenlik). Sanctum token'indan gelir; asagida
             // $authUser->id kullanilir. Bu yuzden burada validate/kabul EDILMEZ (olu parametre kaldirildi).
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
-            'bet_pct' => ['nullable', 'integer', 'in:0,10,30,50,100'],
+            'bet_pct' => ['nullable', 'integer', 'in:0,10,20,30,50,75,100'],
             'targets' => ['nullable', 'array'],
             'targets.*' => ['integer', 'in:1,3,5,7,9,11,13'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
@@ -3447,7 +3447,7 @@ class RoomController extends Controller
             && (bool) config('gnubg.analysis_cache', true)
             && Cache::add('warm:gate:'.$room->code, 1, 12)) {
             try {
-                WarmMatchAnalysisJob::dispatch($room->code)->onConnection('database')->onQueue('warm');
+                WarmMatchAnalysisJob::dispatch($room->code)->onConnection(config('queue.analysis_connection'))->onQueue('warm');
             } catch (\Throwable $e) {
                 Log::debug('warm dispatch hata (bastırıldı)', ['room' => $room->code, 'err' => $e->getMessage()]);
             }

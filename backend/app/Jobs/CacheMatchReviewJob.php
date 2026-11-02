@@ -143,6 +143,7 @@ class CacheMatchReviewJob implements ShouldQueue
             // worker'ı boğuyordu (reviews 3->400, 2026-10-18). Böylece izolasyon tam: canlı 'reviews'
             // yalnız canlı maç-sonu snowie'yi görür. $this->job yoksa (sync/test) 'reviews' varsayılanı.
             \App\Jobs\AnalyzeMatchSnowieJob::dispatch($mr->id)
+                ->onConnection(config('queue.analysis_connection'))
                 ->onQueue($this->job?->getQueue() ?: 'reviews');
         }
     }

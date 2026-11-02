@@ -221,7 +221,7 @@ class ServicesWatch extends Command
             $backlog = $oldest && (time() - (int) $oldest) > 180;
             // Sonraki tur için nabız bırak (worker up ise hızlıca tüketir + cache tazeler; down ise birikir).
             try {
-                QueueHeartbeatJob::dispatch()->onConnection('database');
+                QueueHeartbeatJob::dispatch()->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 // dispatch edemezsek (DB?) queue zaten sorunlu; database probe yakalar
             }

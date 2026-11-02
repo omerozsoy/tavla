@@ -55,7 +55,7 @@ class SnowiePr extends Command
             return self::SUCCESS;
         }
         foreach ($pick as $id) {
-            AnalyzeMatchSnowieJob::dispatch($id)->onConnection('database')->onQueue('reviews-bulk');
+            AnalyzeMatchSnowieJob::dispatch($id)->onConnection(config('queue.analysis_connection'))->onQueue('reviews-bulk');
         }
         $this->info(count($pick)." maç Snowie-PR için kuyruğa alındı (reviews-bulk). Kalan ~{$remaining}. Worker işleyecek.");
 

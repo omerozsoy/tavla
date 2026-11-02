@@ -59,13 +59,13 @@ class MatchFinalize
                 }
                 // PR: hiç denenmemişse (gnubg_pr_at NULL) kuyruğa al. (Mezar taşı varsa döngü kurma.)
                 if ($r->gnubg_pr === null && $r->gnubg_pr_at === null) {
-                    AnalyzeMatchPrJob::dispatch($r->id)->onConnection('database');
+                    AnalyzeMatchPrJob::dispatch($r->id)->onConnection(config('queue.analysis_connection'));
                     // TEK PR KAYNAĞI: backstop satırının otoriter PR'ı da Snowie'den (idempotent).
-                    AnalyzeMatchSnowieJob::dispatch($r->id)->onConnection('database');
+                    AnalyzeMatchSnowieJob::dispatch($r->id)->onConnection(config('queue.analysis_connection'));
                 }
                 // Şans: boş ve karantina (UNAVAILABLE) değilse kuyruğa al.
                 if ($r->luck_mwc === null && $r->luck_method !== 'TAVLAI_LUCK_UNAVAILABLE') {
-                    AnalyzeMatchLuckJob::dispatch($r->id)->onConnection('database');
+                    AnalyzeMatchLuckJob::dispatch($r->id)->onConnection(config('queue.analysis_connection'));
                 }
             }
         } catch (\Throwable $e) {

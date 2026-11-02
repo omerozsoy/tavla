@@ -17,6 +17,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Analiz/PR kuyruk bağlantısı (gnubg ağır işleri)
+    |--------------------------------------------------------------------------
+    |
+    | AnalyzeMatchPr/Snowie/Luck, CacheMatchReview, WarmMatchAnalysis işleri bu
+    | bağlantıya dispatch edilir. Varsayılan 'database' => DAVRANIŞ DEĞİŞMEZ
+    | (deploy güvenli). Cutover: .env ANALYSIS_QUEUE_CONNECTION=redis + worker
+    | daemon'larını 'redis'e çevir -> jobs tablosu satır-kilit çekişmesi biter.
+    | Geri alma: env'i 'database' yap + config:cache + worker restart (redeploy YOK).
+    |
+    */
+
+    'analysis_connection' => env('ANALYSIS_QUEUE_CONNECTION', 'database'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |

@@ -82,7 +82,7 @@ class WarmMatchReviews extends Command
         }
 
         foreach ($ids as $id) {
-            CacheMatchReviewJob::dispatch($id)->onConnection('database')->onQueue('reviews-bulk');
+            CacheMatchReviewJob::dispatch($id)->onConnection(config('queue.analysis_connection'))->onQueue('reviews-bulk');
         }
         $this->info(count($ids).' mac review warmup kuyruga alindi. Worker isleyecek (aninda acilir olacak).');
 

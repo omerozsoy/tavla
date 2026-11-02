@@ -69,7 +69,7 @@ class GnubgPrBackfill extends Command
                 return self::SUCCESS;
             }
             foreach ($ids as $id) {
-                AnalyzeMatchPrJob::dispatch($id)->onConnection('database')->onQueue('bulk');
+                AnalyzeMatchPrJob::dispatch($id)->onConnection(config('queue.analysis_connection'))->onQueue('bulk');
             }
             $this->info('Dispatch edildi. Worker calisiyor olmali; ilerlemeyi tavla:gnubg-status ile izle.');
 

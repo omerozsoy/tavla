@@ -801,8 +801,9 @@ class AuthController extends Controller
             ]);
         }
 
-        // gnubg ARKA PLAN (database kuyruğu) analizleri. Yalnız pr_mode!=off + log + !overcap.
-        // onConnection('database') -> global QUEUE_CONNECTION'a dokunmadan queue worker'a düşer.
+        // gnubg ARKA PLAN analizleri. Yalnız pr_mode!=off + log + !overcap.
+        // onConnection(config('queue.analysis_connection')) -> analiz kuyruğu bağlantısı (varsayılan
+        // 'database'; .env ANALYSIS_QUEUE_CONNECTION=redis ile global QUEUE_CONNECTION'a dokunmadan Redis'e).
         // ŞANS (luck) ARTIK PR JOB'UNUN İÇİNDE (ağır PR döngüsünden ÖNCE, tek matchluck çağrısı) hesaplanır
         // -> AYRI kuyruk beklemesi YOK, PR ile AYNI job'da; job başlar başlamaz önce luck_mwc/emg yazılır,
         // sonra PR. İstemci poll'u önce ŞANS'ı, sonra PR'ı doldurur -> ekran ADIM ADIM dolar. (Ayrı
@@ -811,20 +812,20 @@ class AuthController extends Controller
             && ! empty($mr['log']) && ! $isClassic) {
             // PR job: önce ŞANS (inline), sonra ağır PR. (bkz AnalyzeMatchPrJob::handle inline luck.)
             try {
-                AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
+                AnalyzeMatchPrJob::dispatch($result->id)->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 Log::warning('gnubg PR dispatch hata', ['err' => $e->getMessage()]);
             }
             // Analiz ekranı review'ini ARKA PLANDA önden ısıt (reviews kuyruğu, best-effort).
             try {
-                CacheMatchReviewJob::dispatch($result->id)->onConnection('database');
+                CacheMatchReviewJob::dispatch($result->id)->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 Log::warning('review önbellek dispatch hata', ['err' => $e->getMessage()]);
             }
             // TEK PR KAYNAĞI: otoriter PR = Snowie. Review mat-build düşerse Snowie onun içinden
             // dispatch EDİLMEZ -> burada DOĞRUDAN da dispatch et (idempotent: WithoutOverlapping).
             try {
-                AnalyzeMatchSnowieJob::dispatch($result->id)->onConnection('database');
+                AnalyzeMatchSnowieJob::dispatch($result->id)->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 Log::warning('snowie dispatch hata', ['err' => $e->getMessage()]);
             }
@@ -1248,19 +1249,19 @@ class AuthController extends Controller
         if (! $isClassic // KLASIK TAVLA: gnubg analiz edemez -> dispatch etme (bkz reportRating $isClassic)
             && in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
             try {
-                AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
+                AnalyzeMatchPrJob::dispatch($row->id)->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 // best-effort
             }
             // Analiz ekranı review'ini de ARKA PLANDA önden ısıt (best-effort; gnubg down ise atlar).
             try {
-                CacheMatchReviewJob::dispatch($row->id)->onConnection('database');
+                CacheMatchReviewJob::dispatch($row->id)->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 // best-effort
             }
             // TEK PR KAYNAĞI: otoriter PR = Snowie (review düşse bile doğrudan dispatch; idempotent).
             try {
-                AnalyzeMatchSnowieJob::dispatch($row->id)->onConnection('database');
+                AnalyzeMatchSnowieJob::dispatch($row->id)->onConnection(config('queue.analysis_connection'));
             } catch (\Throwable $e) {
                 // best-effort
             }

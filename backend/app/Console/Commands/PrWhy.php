@@ -167,7 +167,7 @@ class PrWhy extends Command
             } else {
                 foreach ($rows as $mr) {
                     if (! empty($mr->log)) {
-                        AnalyzeMatchPrJob::dispatch($mr->id)->onConnection('database');
+                        AnalyzeMatchPrJob::dispatch($mr->id)->onConnection(config('queue.analysis_connection'));
                         $this->info('  yeniden kuyruğa alındı: satır #'.$mr->id);
                     }
                 }
