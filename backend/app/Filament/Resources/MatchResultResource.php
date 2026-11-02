@@ -95,6 +95,22 @@ class MatchResultResource extends Resource
                     'stake', 'opponent_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'luck_emg',
                     'rating_after', 'delta', 'room_code',
                 ])->selectRaw("(log IS NOT NULL AND log <> '') AS has_log");
+                // COIN KAZANÇ/KAYIP: match_results.stake GÜVENİLMEZ (potluda bile 0). Gerçek ödeme
+                // wallet_transactions'ta (reference_id = rooms.id, match_settlement_debit/credit).
+                // Satırın oyuncusunun (user_id) ve rakibinin (opponent_user_id) o odadaki NET coin'i.
+                // user_id indeksli -> subquery önce onunla daralır (reference_id indekssiz ama kullanıcı
+                // başı ~40 satır); sayfa başına ~25 satır = ucuz. coin maçı değilse satır yok -> NULL -> '—'.
+                $settle = function ($q, string $userCol) {
+                    $q->selectRaw('SUM(wt.amount)')
+                        ->from('wallet_transactions as wt')
+                        ->whereColumn('wt.user_id', $userCol)
+                        ->whereIn('wt.type', ['match_settlement_debit', 'match_settlement_credit'])
+                        ->whereIn('wt.reference_id', function ($r) {
+                            $r->select('id')->from('rooms')->whereColumn('rooms.code', 'match_results.room_code');
+                        });
+                };
+                $query->selectSub(fn ($q) => $settle($q, 'match_results.user_id'), 'coin_change');
+                $query->selectSub(fn ($q) => $settle($q, 'match_results.opponent_user_id'), 'coin_change_opp');
                 static::dedupeOnlineRows($query);
             })
             ->columns([
@@ -163,6 +179,16 @@ class MatchResultResource extends Resource
                     ->state(fn (MatchResult $r) => (int) ($r->stake ?? ($r->room?->stake ?? 0)))
                     ->formatStateUsing(fn ($state) => $state ? number_format((int) $state).' coin' : '—')
                     ->color(fn ($state) => $state ? 'warning' : 'gray')
+                    ->alignEnd(),
+                // Gerçek coin sonucu (wallet_transactions'tan; bkz modifyQueryUsing). Üst satır = bu
+                // satırın oyuncusunun net coin'i, alt satır = rakibinin. Rake nedeniyle kazanan+ ile
+                // kaybeden− birebir ters DEĞİLDİR. Para maçı değilse '—'.
+                Tables\Columns\TextColumn::make('coin_change')->label('Coin (kazanç/kayıp)')
+                    ->formatStateUsing(fn ($state) => $state === null
+                        ? '—' : (($state > 0 ? '+' : '').number_format((int) $state).' coin'))
+                    ->color(fn ($state) => $state > 0 ? 'success' : ($state < 0 ? 'danger' : 'gray'))
+                    ->description(fn (MatchResult $r) => $r->coin_change_opp === null ? null
+                        : 'Rakip: '.(($r->coin_change_opp > 0 ? '+' : '').number_format((int) $r->coin_change_opp)))
                     ->alignEnd(),
                 Tables\Columns\TextColumn::make('opponent_pr')->label('Rakip PR')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))

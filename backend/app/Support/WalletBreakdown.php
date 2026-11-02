@@ -22,39 +22,39 @@ class WalletBreakdown
     /** type → [okunur etiket, ikon, kategori anahtarı] */
     public const TYPES = [
         'match_settlement_credit' => ['Tavla maçı kazancı', '🎲', 'match'],
-        'match_settlement_debit'  => ['Tavla maçı kaybı', '🎲', 'match'],
-        'dice_slot_payout'        => ['Zar Slotu kazancı', '🎰', 'slot'],
-        'dice_slot_spin'          => ['Zar Slotu çevirme', '🎰', 'slot'],
-        'lucky_wheel_reward'      => ['Çark ödülü', '🎡', 'wheel'],
-        'lucky_wheel_spin'        => ['Çark çevirme', '🎡', 'wheel'],
-        'daily_reward'            => ['Günlük ödül', '🎁', 'daily'],
-        'achievement_reward'      => ['Rozet ödülü', '🏅', 'achievement'],
-        'welcome_reward'          => ['Hoş geldin bonusu', '🎉', 'welcome'],
-        'tournament_prize'        => ['Turnuva ödülü', '🏆', 'tournament'],
-        'tournament_pool_prize'   => ['Turnuva havuz ödülü', '🏆', 'tournament'],
-        'tournament_refund'       => ['Turnuva iadesi', '🏆', 'tournament'],
-        'tournament_entry'        => ['Turnuva katılım', '🏆', 'tournament'],
-        'shop_purchase'           => ['Mağaza alışverişi', '🛒', 'shop'],
-        'product_purchase'        => ['Ürün alımı', '🛒', 'shop'],
-        'payment'                 => ['Ödeme (gerçek para)', '💳', 'payment'],
-        'payment_cart'            => ['Ödeme · sepet (gerçek para)', '💳', 'payment'],
-        'admin_adjustment'        => ['Admin bakiye düzenleme', '🛠️', 'admin'],
-        'admin_reset_coins'       => ['Admin toplu sıfırlama', '🛠️', 'admin'],
+        'match_settlement_debit' => ['Tavla maçı kaybı', '🎲', 'match'],
+        'dice_slot_payout' => ['Zar Slotu kazancı', '🎰', 'slot'],
+        'dice_slot_spin' => ['Zar Slotu çevirme', '🎰', 'slot'],
+        'lucky_wheel_reward' => ['Çark ödülü', '🎡', 'wheel'],
+        'lucky_wheel_spin' => ['Çark çevirme', '🎡', 'wheel'],
+        'daily_reward' => ['Günlük ödül', '🎁', 'daily'],
+        'achievement_reward' => ['Rozet ödülü', '🏅', 'achievement'],
+        'welcome_reward' => ['Hoş geldin bonusu', '🎉', 'welcome'],
+        'tournament_prize' => ['Turnuva ödülü', '🏆', 'tournament'],
+        'tournament_pool_prize' => ['Turnuva havuz ödülü', '🏆', 'tournament'],
+        'tournament_refund' => ['Turnuva iadesi', '🏆', 'tournament'],
+        'tournament_entry' => ['Turnuva katılım', '🏆', 'tournament'],
+        'shop_purchase' => ['Mağaza alışverişi', '🛒', 'shop'],
+        'product_purchase' => ['Ürün alımı', '🛒', 'shop'],
+        'payment' => ['Ödeme (gerçek para)', '💳', 'payment'],
+        'payment_cart' => ['Ödeme · sepet (gerçek para)', '💳', 'payment'],
+        'admin_adjustment' => ['Admin bakiye düzenleme', '🛠️', 'admin'],
+        'admin_reset_coins' => ['Admin toplu sıfırlama', '🛠️', 'admin'],
     ];
 
     /** kategori anahtarı → [okunur etiket, ikon] (döküm sırası da budur) */
     public const CATEGORIES = [
-        'match'       => ['Tavla (para maçı)', '🎲'],
-        'slot'        => ['Zar Slotu', '🎰'],
-        'wheel'       => ['Şans Çarkı', '🎡'],
-        'daily'       => ['Günlük ödül', '🎁'],
+        'match' => ['Tavla (para maçı)', '🎲'],
+        'slot' => ['Zar Slotu', '🎰'],
+        'wheel' => ['Şans Çarkı', '🎡'],
+        'daily' => ['Günlük ödül', '🎁'],
         'achievement' => ['Rozet / başarım', '🏅'],
-        'welcome'     => ['Hoş geldin', '🎉'],
-        'tournament'  => ['Turnuva', '🏆'],
-        'shop'        => ['Mağaza harcaması', '🛒'],
-        'payment'     => ['Gerçek para ile alım', '💳'],
-        'admin'       => ['⚠ ADMIN müdahalesi', '🛠️'],
-        'other'       => ['Diğer / sınıflandırılmamış', '❔'],
+        'welcome' => ['Hoş geldin', '🎉'],
+        'tournament' => ['Turnuva', '🏆'],
+        'shop' => ['Mağaza harcaması', '🛒'],
+        'payment' => ['Gerçek para ile alım', '💳'],
+        'admin' => ['⚠ ADMIN müdahalesi', '🛠️'],
+        'other' => ['Diğer / sınıflandırılmamış', '❔'],
     ];
 
     public static function typeLabel(string $type): string
@@ -194,6 +194,7 @@ class WalletBreakdown
             if ($id === null) {
                 return null;
             }
+
             return $actorMap[$id]->nickname ?? ('#'.$id);
         };
 
@@ -211,9 +212,33 @@ class WalletBreakdown
             ])->all();
 
         // --- Son işlemler ---
-        $recent = WalletTransaction::query()
+        $recentTx = WalletTransaction::query()
             ->where('user_id', $uid)
-            ->orderByDesc('id')->limit(100)->get()
+            ->orderByDesc('id')->limit(100)->get();
+
+        // Maç uzlaşmaları için "Room#45826" yerine okunur döküm: oda KODU + iki TARAF.
+        // reference_id = rooms.id; taraflar match_results'tan (bir satır self+opponent'ı verir).
+        $roomIds = $recentTx
+            ->filter(fn (WalletTransaction $t) => self::categoryOf((string) $t->type) === 'match' && $t->reference_id)
+            ->pluck('reference_id')->unique()->all();
+        $matchRefs = []; // room id => "KOD · A — B"
+        if (! empty($roomIds)) {
+            $codes = DB::table('rooms')->whereIn('id', $roomIds)->pluck('code', 'id'); // id => code
+            $sides = $codes->isEmpty() ? collect() : DB::table('match_results as mr')
+                ->leftJoin('users as u', 'u.id', '=', 'mr.user_id')
+                ->whereIn('mr.room_code', $codes->values()->all())
+                ->orderBy('mr.id')
+                ->get(['mr.room_code', 'u.nickname as self_name', 'mr.opponent_name'])
+                ->keyBy('room_code');
+            foreach ($codes as $rid => $code) {
+                $s = $sides[$code] ?? null;
+                $matchRefs[$rid] = $s
+                    ? $code.' · '.($s->self_name ?: '?').' — '.($s->opponent_name ?: '?')
+                    : $code;
+            }
+        }
+
+        $recent = $recentTx
             ->map(fn (WalletTransaction $t) => [
                 'date' => $t->created_at,
                 'type' => self::typeLabel((string) $t->type),
@@ -221,7 +246,9 @@ class WalletBreakdown
                 'amount' => (int) $t->amount,
                 'balance_after' => (int) $t->balance_after,
                 'actor' => $actorName($t->actor_user_id),
-                'ref' => $t->reference_type ? (class_basename($t->reference_type).'#'.$t->reference_id) : null,
+                'ref' => (self::categoryOf((string) $t->type) === 'match' && isset($matchRefs[$t->reference_id]))
+                    ? $matchRefs[$t->reference_id]
+                    : ($t->reference_type ? (class_basename($t->reference_type).'#'.$t->reference_id) : null),
             ])->all();
 
         // --- Doğrudan DB kurcalama denetimi (MySQL trigger audit) ---
