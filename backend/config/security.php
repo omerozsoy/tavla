@@ -17,16 +17,20 @@ return [
         // bunu script-src'ta 'wasm-unsafe-eval' (veya daha geniş 'unsafe-eval') olmadan İHLAL sayar
         // (Report-Only'de konsol hatası; CSP zorunlu olursa motor HİÇ yüklenmez). 'wasm-unsafe-eval'
         // yalnız WebAssembly derlemeye izin verir, JS eval()'a DEĞİL -> WASM için güvenli seçim.
-        "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net",
-        "style-src 'self' 'unsafe-inline' https://accounts.google.com",
-        "font-src 'self' data:",
+        // static.cloudflareinsights.com: Cloudflare Web Analytics beacon.min.js (CF otomatik enjekte eder).
+        "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://static.cloudflareinsights.com",
+        // fonts.googleapis.com: canlı site Google Fonts CSS (Spectral+Outfit) yüklüyor. Self-hosting
+        // CANLIYA çıkınca (index.html'den link kalkınca) bu + fonts.gstatic.com geri çıkarılabilir.
+        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com",
+        "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' data: blob: https:",
         // Google Etiketi (gtag/Ads dönüşüm) beacon/collect uçları -> connect-src'e eklendi (aksi halde
         // CSP enforce iken dönüşüm ölçümü bloklanır). .htaccess CSP ile senkron.
         // wss://www.tavlatv.com: Reverb WebSocket (gerçek-zamanlı oda push). `'self'` çoğu modern
         // tarayıcıda same-origin wss'i zaten kapsar; AÇIK eklemek bazı edge tarayıcı/proxy durumlarında
         // WS'in CSP'ye takılma ihtimalini sıfırlar (yalnız WS için izin ekler, başka şeyi bozmaz).
-        "connect-src 'self' https://www.tavlatv.com wss://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://stats.g.doubleclick.net https://www.google.com",
+        // cloudflareinsights.com: CF Web Analytics beacon POST'u (RUM) -> connect-src.
+        "connect-src 'self' https://www.tavlatv.com wss://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://stats.g.doubleclick.net https://www.google.com https://cloudflareinsights.com",
         // Google Sign-In (GSI) One Tap/buton iframe'i accounts.google.com'dan yüklenir -> frame-src şart.
         // td.doubleclick.net = Google Ads dönüşüm linker gizli iframe'i; googletagmanager = GTM iframe.
         "frame-src 'self' https://accounts.google.com https://td.doubleclick.net https://www.googletagmanager.com",
