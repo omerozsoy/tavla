@@ -14233,6 +14233,8 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   white-space: nowrap;
 }
+/* Uzunluk + pot artık üst rozet satırında: tip rozetinin karşısına (sağa) hizalanır. */
+.lm-types .lm-len { margin-left: auto; }
 .lm-avatar {
   width: 26px;
   height: 26px;
