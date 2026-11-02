@@ -133,83 +133,18 @@ class CacheMatchReviewJob implements ShouldQueue
                 Log::warning('review gnubg_review yazımı başarısız (deadlock/retry tükendi, yok sayıldı; on-demand telafi eder)', ['id' => $mr->id, 'err' => $e->getMessage()]);
             }
             Log::info('review önden önbelleğe alındı', ['id' => $mr->id, 'decisions' => $res['decisions'] ?? null]);
-            // PR'ı REVIEW'DAN türet (provisional) -> buggy per-pozisyon cubePr'ı devreden çıkar.
-            $this->writePrFromReview($mr, is_array($res['log'] ?? null) ? $res['log'] : []);
-            // OTORİTER PR = gnubg Snowie (XG-birebir). Review-log equity-toplamı match-play'de şişiyor;
-            // ayrı /analyzematch ile Snowie PR'ı yazılır (provisional değeri EZER). Best-effort; gnubg
-            // down/başarısızsa review-log değeri kalır. Bkz AnalyzeMatchSnowieJob + GnubgSnowieService.
+            // TEK PR KAYNAĞI = gnubg Snowie (XG-birebir). Review-log equity-toplamı match-play'de şişerdi;
+            // artık PR kolonlarını (self+opp) YALNIZ AnalyzeMatchSnowieJob yazar -> çapraz tutarlılık
+            // GARANTİ (iki satır tek snow dizisinden renk-eşlemeli). Bu job review'i önbelleğe alıp Snowie'yi
+            // dispatch eder; PR hazır olana dek ekranda otoriter değer VEYA "—" çıkar (şişen provisional YOK).
+            // Best-effort; gnubg down/başarısızsa PR "—" kalır, heal (tavla:gnubg-pr-heal) sonra doldurur.
             // KUYRUK = beni doğuran işin kuyruğu: backfill (reviews-bulk) -> snowie de reviews-bulk'ta
             // kalsın; yoksa 3 backfill worker'ı ~9/dk snowie işini CANLI 'reviews'e sızdırıp tek canlı
             // worker'ı boğuyordu (reviews 3->400, 2026-10-18). Böylece izolasyon tam: canlı 'reviews'
             // yalnız canlı maç-sonu snowie'yi görür. $this->job yoksa (sync/test) 'reviews' varsayılanı.
-            \App\Jobs\AnalyzeMatchSnowieJob::dispatch($mr->id)
+            AnalyzeMatchSnowieJob::dispatch($mr->id)
                 ->onConnection(config('queue.analysis_connection'))
                 ->onQueue($this->job?->getQueue() ?: 'reviews');
-        }
-    }
-
-    /**
-     * PR/küp PR'ı reviewMatch log'undan (tam .mat = SUNUCU match_moves) türetip odadaki İKİ satıra
-     * (self + kardeş) renk-eşlemeli yaz. reviewMatch DOĞRU; per-pozisyon cubePr küp kararlarında runtime
-     * hatalıydı (EU6CD). Böylece tüm raporlar yalnız sunucu verisiyle + DOĞRU (kullanıcı direktifi).
-     */
-    private function writePrFromReview(MatchResult $mr, array $reviewLog): void
-    {
-        if ($reviewLog === [] || empty($mr->room_code) || ! Schema::hasColumn('match_results', 'gnubg_pr')) {
-            return;
-        }
-        try {
-            $orch = app(\App\Services\Analysis\AnalysisOrchestrator::class);
-            $prW = $orch->prFromReviewLog($reviewLog, 'white');
-            $prB = $orch->prFromReviewLog($reviewLog, 'black');
-            foreach (MatchResult::where('room_code', $mr->room_code)->get() as $row) {
-                $hc = $row->analysisHc();
-                if (! in_array($hc, ['white', 'black'], true)) {
-                    continue;
-                }
-                $self = $hc === 'white' ? $prW : $prB;
-                $opp = $hc === 'white' ? $prB : $prW;
-                // SAHTE-0 KALKANI + MİN-KARAR KAPISI: skorlanan karar MIN_PR_DECISIONS'tan azsa maç PR'ı
-                // istatistiksel gürültü (2-3 kararda 300+) -> gnubg_pr/pr=null ("—"), career'a katılmaz.
-                // round(0)=0 YAZMA; meşru "—" satırını 0'a çevirmesin. checker/cube ayrıca saklanır.
-                $min = \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS;
-                $selfPr = ($self['decisions'] ?? 0) >= $min ? round($self['pr'], 2) : null;
-                $oppPr = ($opp['decisions'] ?? 0) >= $min ? round($opp['pr'], 2) : null;
-                // KÖK FIX (kalıcı "—" + kariyer maç sayısı yarılanması): review bir tarafı skorlayamazsa
-                // (p2/siyah .mat sağ-sütun çıkarımı boş -> decisions<min -> null) o tarafın PR kolonlarını
-                // NULL ile EZME. Eskiden koşulsuz yazılıyordu -> AnalyzeMatchPrJob'ın DOĞRU per-pozisyon
-                // değeri silinip mezar taşı (gnubg_pr_at) konuyordu -> heal bir daha denemezdi -> KALICI
-                // "—". Artık review SALT-EKLEYİCİ: yalnız GERÇEKTEN skorladığı tarafı yazar; skorlayamadığı
-                // taraf per-pozisyon değerinde kalır (bu tekrar eden backfill'in kök nedeniydi).
-                $upd = [];
-                if ($selfPr !== null) {
-                    $upd['gnubg_pr'] = $selfPr;
-                    $upd['pr'] = $selfPr;
-                    $upd['pr_equity_lost'] = round($self['equity_lost'], 4);
-                    $upd['pr_decisions'] = $self['decisions'];
-                    $upd['gnubg_checker_pr'] = $self['checker_pr'] !== null ? round($self['checker_pr'], 2) : null;
-                    // GÖSTERİLEN küp PR'ı BİLEREK YAZMA (provizyonel review-log yöntemi): az küp kararlı
-                    // maçta (ör. 1 karar) gnubg_cube_pr = (küpKaybı/kararSayısı)×500 absürt şişiyordu (VPARU:
-                    // 145.50 → izleyici o ~birkaç sn transient'i görüyordu). Otoriter küp PR = gnubg Snowie
-                    // (AnalyzeMatchSnowieJob, saniyeler sonra gnubg_cube_pr'ı 2.88 gibi DOĞRU değerle yazar).
-                    // Böylece küp PR Snowie gelene dek "—"/yükleniyor kalır, çöp transient HİÇ görünmez.
-                    // Kariyer küp alanları (cube_equity_lost/cube_decisions) Snowie'nin de yazdığı aggregate.
-                    $upd['cube_equity_lost'] = round((float) ($self['cube_equity_lost'] ?? 0), 4); // kariyer küp PR için
-                    $upd['cube_decisions'] = (int) ($self['cube_decisions'] ?? 0);
-                    $upd['gnubg_pr_at'] = now();
-                }
-                if ($oppPr !== null) {
-                    $upd['gnubg_opponent_pr'] = $oppPr;
-                    $upd['opponent_pr'] = $oppPr; // legacy fallback kolonu = otoriter opp PR (drift birikmesin)
-                    $upd['gnubg_opponent_checker_pr'] = $opp['checker_pr'] !== null ? round($opp['checker_pr'], 2) : null;
-                    // GÖSTERİLEN rakip küp PR'ı da YAZMA (yukarıdaki self ile aynı gerekçe) -> Snowie otoriter.
-                }
-                if ($upd !== []) {
-                    MatchResult::where('id', $row->id)->update($upd);
-                }
-            }
-        } catch (\Throwable $e) {
-            Log::warning('review-based PR yazımı hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
         }
     }
 }
