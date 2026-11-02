@@ -19051,6 +19051,7 @@ body:has(.spectate-view) .app.lobby {
 .mem-title {
   text-align: center;
   margin: 0 0 16px;
+  font-weight: normal;
 }
 .mem-toggle {
   display: flex;
