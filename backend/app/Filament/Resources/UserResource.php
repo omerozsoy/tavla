@@ -620,6 +620,12 @@ class UserResource extends Resource
             ISection::make('Bilgiler')->icon('heroicon-o-identification')->collapsible()->schema([
                 TextEntry::make('id')->label('#'),
                 TextEntry::make('nickname')->label('Takma ad'),
+                TextEntry::make('nickname_history')->label('Eski takma adlar')
+                    ->placeholder('—')
+                    ->state(fn (User $r) => collect($r->nickname_history ?? [])
+                        ->reverse()
+                        ->map(fn ($h) => ($h['nickname'] ?? '?').' ('.substr((string) ($h['at'] ?? ''), 0, 10).')')
+                        ->implode(', ') ?: null),
                 TextEntry::make('email')->label('E-posta')->copyable(),
                 TextEntry::make('phone')->label('Cep telefonu')->copyable()->placeholder('—'),
                 TextEntry::make('full_name')->label('Ad Soyad')

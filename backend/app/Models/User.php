@@ -111,6 +111,7 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
             'game_state' => 'array',
             'unlocks' => 'array',
             'prefs' => 'array', // cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) — web↔app senkron
+            'nickname_history' => 'array', // eski takma adlar [{nickname, at}] — isim değiştirenleri izle
             'badges' => 'array',
             'featured_badges' => 'array',
             'plan_until' => 'datetime',
@@ -231,6 +232,21 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
             if (! self::$financialDeleteGuardOff && $user->hasFinancialHistory()) {
                 throw new \RuntimeException('Mali geçmişi olan hesap silinemez; UserEraser ile anonimleştirilir.');
             }
+        });
+
+        // Takma ad DEĞİŞİNCE eski adı geçmişe ekle (tek guard → updateProfile/admin/Filament/tinker
+        // hepsi buradan geçer). Üyeler isim değiştirip kim olduğu kaybolmasın.
+        static::updating(function (User $user) {
+            if (! $user->isDirty('nickname') || ! Schema::hasColumn('users', 'nickname_history')) {
+                return;
+            }
+            $old = $user->getOriginal('nickname');
+            if ($old === null || $old === '' || $old === $user->nickname) {
+                return;
+            }
+            $history = $user->nickname_history ?? [];
+            $history[] = ['nickname' => $old, 'at' => now()->toDateTimeString()];
+            $user->nickname_history = $history;
         });
     }
 
