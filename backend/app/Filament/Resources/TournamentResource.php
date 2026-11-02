@@ -262,8 +262,8 @@ class TournamentResource extends Resource
                     ->nullable(),
                 Forms\Components\Toggle::make('third_place_match')
                     ->label('Üçüncülük (3-4) maçı oynansın')
-                    ->helperText('Açık: yarı final kaybedenleri 3.’lük maçı oynar. Kapalı: 3.’lük maçı hiç kurulmaz, finale direkt geçilir; 3./4. sıra yarı final kaybedenlerinden rating’e göre belirlenir (3-4 aynı ödülü alıyorsa maça gerek yok). Yalnızca Bracket tipinde geçerli.')
-                    ->default(true),
+                    ->helperText('Açık: yarı final kaybedenleri 3.’lük maçı oynar. Kapalı (varsayılan): 3.’lük maçı hiç kurulmaz, finale direkt geçilir; 3./4. sıra yarı final kaybedenlerinden rating’e göre belirlenir (3-4 aynı ödülü alıyorsa maça gerek yok). Yalnızca Bracket tipinde geçerli.')
+                    ->default(false),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')
                     ->relationship('creator', 'nickname')

@@ -185,7 +185,7 @@ class TournamentController extends Controller
             'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
             'premium_only' => (bool) ($data['premium_only'] ?? true),
-            'third_place_match' => (bool) ($data['third_place_match'] ?? true),
+            'third_place_match' => (bool) ($data['third_place_match'] ?? false),
             'match_length' => $data['match_length'] ?? 1,
             'semi_length' => $data['semi_length'] ?? null,
             'final_length' => $data['final_length'] ?? null,
