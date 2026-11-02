@@ -66,6 +66,23 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
         if (! $mr) {
             return;
         }
+        // TEK ANALİZ / ODA (SIRALI dedup — oda kilidinin tamamlayıcısı): Snowie bu maç yolunda SATIR-başına
+        // 2 kez dispatch edilir. Oda kilidi (middleware) yalnız EŞ ZAMANLI ikinciyi düşürür; ikisi SIRAYLA
+        // (tek 'reviews' worker'ında art arda) koşarsa kilit boş olur -> ikinci iş yeniden analiz edip
+        // çöp-kalkanı yüzünden KISMİ yazar (self atlanır ama opp yazılır) -> ÇAPRAZ TUTARSIZLIK (BTS9U:
+        // 30082.opp=12.94 ≠ 30083.self=8.61). Kardeş bu odayı AZ ÖNCE otoriter skorladıysa (pr_shield_at
+        // < 300sn + gnubg_pr dolu) YENİDEN ANALİZ ETME -> tek yazar kalır, iki satır tutarlı. Backfill/heal
+        // shielded OLMAYAN satırları hedefler (eski maç = shield yok/bayat) -> bu kapı onları etkilemez.
+        if (! empty($mr->room_code) && Schema::hasColumn('match_results', 'pr_shield_at')) {
+            $freshlyScored = MatchResult::where('room_code', $mr->room_code)
+                ->whereNotNull('pr_shield_at')
+                ->where('pr_shield_at', '>=', now()->subSeconds(300))
+                ->whereNotNull('gnubg_pr')
+                ->exists();
+            if ($freshlyScored) {
+                return; // kardeş iş bu odayı taze+otoriter yazdı; mükerrer analiz = kısmi ezme riski
+            }
+        }
         // TEK PR KAYNAĞI: Snowie HER maçta koşmalı (bot/pvb + hükmen/backstop satırları dahil). log şartını
         // KALDIRDIK -> matText() match_moves'tan .mat kurar (client log boş olsa bile); .mat boşsa aşağıda
         // (trim==='') zaten güvenle çıkar. room_code boş (bot) satırlar tek-satır işlenir (aşağıdaki döngü).

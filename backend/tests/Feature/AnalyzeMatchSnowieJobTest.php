@@ -125,4 +125,27 @@ class AnalyzeMatchSnowieJobTest extends TestCase
         $this->assertEqualsWithDelta((float) $w->gnubg_pr, (float) $b->gnubg_opponent_pr, 1e-6, 'white.self == black.opp');
         $this->assertEqualsWithDelta((float) $b->gnubg_pr, (float) $w->gnubg_opponent_pr, 1e-6, 'black.self == white.opp');
     }
+
+    /**
+     * SIRALI DEDUP: aynı odanın iki Snowie işi sırayla koşarsa (oda kilidi boşken) ikincisi YENİDEN
+     * analiz edip çöp-kalkanı ile KISMİ yazıp çapraz tutarsızlık bırakıyordu (BTS9U). Kardeş TAZE+otoriter
+     * skorladıysa (pr_shield_at < 300sn + gnubg_pr dolu) ikinci iş erken çıkmalı -> mükerrer yazma yok.
+     */
+    public function test_skips_reanalysis_when_room_freshly_scored(): void
+    {
+        $w = $this->row('FRESH1', 'white');
+        $this->row('FRESH1', 'black');
+        // Kardeş zaten taze+otoriter yazdı.
+        MatchResult::where('room_code', 'FRESH1')->update(['gnubg_pr' => 7.0, 'pr_shield_at' => now()]);
+        // Koşsaydı 50.0 yazardı; taze shield yüzünden ATLAMALI.
+        $this->fakeSnowie(
+            ['pr' => 50.0, 'checker_pr' => 50.0, 'cube_pr' => 0.0, 'cube_equity_lost' => 0, 'cube_decisions' => 0, 'equity_lost' => 5.0, 'decisions' => 50],
+            ['pr' => 50.0, 'checker_pr' => 50.0, 'cube_pr' => 0.0, 'cube_equity_lost' => 0, 'cube_decisions' => 0, 'equity_lost' => 5.0, 'decisions' => 50],
+        );
+
+        (new AnalyzeMatchSnowieJob($w->id))->handle($this->healthyGnubg());
+
+        $w->refresh();
+        $this->assertEqualsWithDelta(7.0, (float) $w->gnubg_pr, 1e-6, 'taze shield -> mükerrer analiz atlanmalı (50 yazılmamalı)');
+    }
 }
