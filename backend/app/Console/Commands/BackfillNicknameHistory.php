@@ -26,6 +26,17 @@ class BackfillNicknameHistory extends Command
     {
         $dry = (bool) $this->option('dry-run');
 
+        // KVKK silme/anonimleştirilmiş hesaplara önceden yazılmış GERÇEK adları temizle (bu komutun
+        // ilk sürümü deleted hesapları da doldurmuştu -> gizlilik geriletmesi). Self-healing.
+        $purgeQ = User::where('ban_reason', 'account_deleted')->whereNotNull('nickname_history');
+        $purged = (clone $purgeQ)->count();
+        if ($purged > 0) {
+            $this->warn(($dry ? '[DRY] ' : '')."Silinmiş hesaptan temizlenen eski-ad kaydı: $purged");
+            if (! $dry) {
+                $purgeQ->update(['nickname_history' => null]);
+            }
+        }
+
         // (üye, eski-ad) -> o adın son görüldüğü tarih. GROUP BY = her çift tek satır.
         $pairs = DB::table('match_results')
             ->where('opponent_user_id', '>', 0)
@@ -52,7 +63,10 @@ class BackfillNicknameHistory extends Command
             $currentOwner[mb_strtolower(trim((string) $u->nickname))] = $u->id;
         }
 
-        $users = User::whereIn('id', array_keys($byUser))->get(['id', 'nickname', 'nickname_history']);
+        // Silinmiş/anonimleştirilmiş hesaplara GERÇEK adlarını YAZMA (KVKK).
+        $users = User::whereIn('id', array_keys($byUser))
+            ->where(fn ($w) => $w->whereNull('ban_reason')->orWhere('ban_reason', '!=', 'account_deleted'))
+            ->get(['id', 'nickname', 'nickname_history']);
         $usersTouched = 0;
         $nicksAdded = 0;
 

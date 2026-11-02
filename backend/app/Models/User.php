@@ -243,6 +243,11 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
             if (! $user->isDirty('nickname') || ! Schema::hasColumn('users', 'nickname_history')) {
                 return;
             }
+            // KVKK silme/anonimleştirme (UserEraser nickname -> 'silinmisN') GERÇEK adı geçmişe YAZMASIN
+            // -> silme işlemini bozardı. Deleted/anonim hesapta hiç iz tutulmaz.
+            if ($user->ban_reason === 'account_deleted') {
+                return;
+            }
             $old = $user->getOriginal('nickname');
             if ($old === null || $old === '' || $old === $user->nickname) {
                 return;

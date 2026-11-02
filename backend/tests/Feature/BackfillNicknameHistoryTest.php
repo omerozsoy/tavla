@@ -61,4 +61,27 @@ class BackfillNicknameHistoryTest extends TestCase
         $this->artisan('tavla:backfill-nickname-history')->assertSuccessful();
         $this->assertNull($victim->fresh()->nickname_history);
     }
+
+    public function test_deleted_account_is_excluded_and_purged(): void
+    {
+        // KVKK silinmiş hesap: gerçek adı match snapshot'ında + yanlışlıkla history'ye yazılmış.
+        $deleted = User::factory()->create([
+            'nickname' => 'silinmis5',
+            'ban_reason' => 'account_deleted',
+            'nickname_history' => [['nickname' => 'gercekisim', 'at' => '2026-01-01 00:00:00', 'backfill' => true]],
+        ]);
+        DB::table('match_results')->insert([
+            'user_id' => User::factory()->create()->id,
+            'opponent_user_id' => $deleted->id,
+            'opponent_name' => 'gercekisim',
+            'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
+            'created_at' => '2026-01-01 10:00:00', 'updated_at' => '2026-01-01 10:00:00',
+        ]);
+
+        $this->artisan('tavla:backfill-nickname-history')->assertSuccessful();
+
+        // Hem temizlenmiş hem tekrar yazılmamış.
+        $this->assertNull($deleted->fresh()->nickname_history);
+    }
 }

@@ -27,4 +27,13 @@ class NicknameHistoryTest extends TestCase
 
         $this->assertNull($user->fresh()->nickname_history);
     }
+
+    public function test_anonymization_does_not_record_real_nickname(): void
+    {
+        // UserEraser deseni: nickname -> 'silinmisN' + ban_reason='account_deleted' aynı save'de.
+        $user = User::factory()->create(['nickname' => 'gercekisim']);
+        $user->forceFill(['nickname' => 'silinmis'.$user->id, 'ban_reason' => 'account_deleted'])->save();
+
+        $this->assertNull($user->fresh()->nickname_history);
+    }
 }
