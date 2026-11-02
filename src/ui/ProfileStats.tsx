@@ -316,8 +316,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             </div>
 
-            {/* Şans Ortalaması (Puan gibi): geçmiş maçların gnubg luck_mwc (MWC%) ortalaması.
-                + = ortalama şanslı oynadı, − = şanssız. Tam genişlik kart (Maç Tipine Göre PR'dan önce). */}
+            {/* Şans Ortalaması (Bakiye grafiği gibi): geçmiş maçların gnubg luck_mwc (MWC%) zaman-serisi.
+                + = o maçta şanslı oynadı, − = şanssız. Başlıkta ortalama; altta çizgi grafik. Tam genişlik. */}
             <div className="stats-dash">
               <div className="sd-card sd-card-wide">
                 <div className="sd-head">
@@ -332,6 +332,13 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                     </div>
                   </div>
                 </div>
+                {an && an.luck_history.length >= 2 ? (
+                  <LineChart data={an.luck_history} dates={an.luck_dates} color="#3b9ae1" />
+                ) : !an ? (
+                  <Skeleton w="100%" h={80} r={8} />
+                ) : (
+                  <div className="sd-empty">–</div>
+                )}
                 {perf?.luck?.matches ? <div className="sd-sub">{t('med.matches', { n: perf.luck.matches })}</div> : null}
               </div>
             </div>

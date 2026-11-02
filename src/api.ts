@@ -851,6 +851,8 @@ export interface Analytics {
   coins_dates?: string[] // coins_history ile hizali gun (YYYY-MM-DD)
   pr_history: number[] // OTORITER havuzlanmis gnubg_pr gecmisi (dusuk=iyi)
   pr_dates?: string[] // pr_history ile hizali gun (YYYY-MM-DD)
+  luck_history: number[] // gnubg luck_mwc (MWC%) gecmisi (+ = sansli)
+  luck_dates?: string[] // luck_history ile hizali gun (YYYY-MM-DD)
   by_length: ByLength[]
   wxp: number
   games: number
