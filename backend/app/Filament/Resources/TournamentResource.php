@@ -296,7 +296,15 @@ class TournamentResource extends Resource
                     ->relationship('champion', 'nickname')
                     ->searchable()
                     ->preload()
-                    ->nullable(),
+                    ->nullable()
+                    // Turnuva BİTTİKTEN sonra şampiyon elle değiştirilemez: sıralama/ödüller bracket/
+                    // swiss_state'ten HESAPLANIR (standingsFromBracket/finalStandings), champion_id'yi
+                    // ayrıca düzenlemek gösterilen şampiyonu hesaplanan sıralamayla ÇELİŞTİRİR (denetim
+                    // R1). disabled -> UI'da kilitli; dehydrated(false, finished iken) -> kurcalansa bile
+                    // kaydedilmez. Bitmeden önce (kurulum/düzeltme) serbest.
+                    ->disabled(fn ($record) => $record && $record->status === 'finished')
+                    ->dehydrated(fn ($record) => ! ($record && $record->status === 'finished'))
+                    ->helperText('Otomatik belirlenir; turnuva bitince buradan DEĞİŞTİRİLEMEZ (sıralama/ödülle tutarlı kalır).'),
                 Forms\Components\TextInput::make('prize_coins')
                     ->label('Ödül havuzu (coin)')
                     ->helperText('Giriş ücretleri burada birikir; turnuva bitince 1.’liğe eklenir. Elle de ekleyebilirsin.')
