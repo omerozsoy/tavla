@@ -70,7 +70,9 @@ export default function ErrorDetail({
         diceUsed: fullDice.map(() => false),
       }
     : null
-  const [view, setView] = useState<'played' | 'best'>('played')
+  // Kartlar (BlunderLog cardMove) en iyi hamleyi okla gösterir; modal da aynı: en iyi hamle
+  // varsa varsayılan "best" (oynanan hamlede çoğu kayıtta playedSteps boş → hiç ok çıkmazdı).
+  const [view, setView] = useState<'played' | 'best'>(entry.bestMove ? 'best' : 'played')
   // TEK MOTOR = gnubg (hakem). Saklı en iyi hamleye yalnız gnubg'den geldiyse ('gnubg-best') güvenilir;
   // eski kayıtlarda 'best' wildbg önerisiydi (kayıp gnubg'den) -> "Senin Hamlen = En İyi Hamle"
   // çelişkisi. Bu kayıtlarda en iyi hamle gnubg'ye (analyze-position) canlı sorulur.
