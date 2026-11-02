@@ -36,13 +36,13 @@ export const PLANS: Plan[] = [
     color: '#a06bd4',
     yearly: 499, // TL/yil
     features: [
-      { key: 'feat.deepAnalysis', on: true }, // derin analiz
-      { key: 'feat.bonus50', on: true }, // gunluk 50 bonus
-      { key: 'feat.unlimitedLessons', on: true },
-      { key: 'feat.chat', on: true },
-      { key: 'feat.errorDb', on: true },
-      { key: 'feat.errorJournal', on: true },
-      { key: 'feat.premiumTournaments', on: true },
+      { key: 'feat.deepAnalysis', on: true }, // Derin Pozisyon Analizi
+      { key: 'feat.matAnalysis', on: true }, // Mat Analiz
+      { key: 'feat.errorJournal', on: true }, // Hata Günlüğü
+      { key: 'feat.matchAnalysis', on: true }, // Maç Analizleri
+      { key: 'feat.bonus50', on: true }, // Günlük yüksek bonuslar
+      { key: 'feat.chat', on: true }, // Serbest yazılı sohbet
+      { key: 'feat.premiumTournaments', on: true }, // Premium'a özel turnuvalar & büyük ödüller
     ],
   },
 ]

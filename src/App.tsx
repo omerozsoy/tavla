@@ -10856,6 +10856,11 @@ export default function App() {
         <Membership
           titleOverride={menuTitle('membership')}
           current={(user.plan_active ?? 'free') as PlanId}
+          daysLeft={
+            user.plan_until
+              ? Math.max(0, Math.ceil((new Date(user.plan_until).getTime() - Date.now()) / 86400000))
+              : undefined
+          }
           onClose={() => setMemOpen(false)}
           onExtend={() => {
             // "Üyeliğini Uzat": 1 yillik premium tek urun sepeti -> /sepet -> odeme

@@ -1,66 +1,32 @@
-import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
-import { subscribe, getBankTransferInfo, isBankTransfer, type BankTransferResult, type PayMethod } from '../api'
+import { type BankTransferResult } from '../api'
 import { Button } from '@/components/ui/button'
-import { useToast } from './Toast'
 
 export default function Membership({
   current,
   onClose,
   onExtend,
-  onBankTransfer,
+  daysLeft,
   titleOverride,
 }: {
   current: PlanId
   onClose: () => void
-  onExtend?: () => void // "Üyeliğini Uzat" -> 1 yillik premium sepete eklenir (odeme akisi)
-  onBankTransfer?: (r: BankTransferResult) => void // havale seçildiğinde talimat ekranını aç
+  onExtend?: () => void // premiumu 1 yillik SEPETE ekler; odeme (kart/havale) SEPETTE secilir
+  daysLeft?: number // aktif premium: uyeligin bitmesine kalan gun (buton alti "hemen uzat" notu)
+  // onBankTransfer: artik kullanilmiyor (odeme sepette yonetiliyor); App uyumu icin opsiyonel tutuldu
+  onBankTransfer?: (r: BankTransferResult) => void
   // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
   titleOverride?: string
 }) {
   const { t } = useT()
-  const notify = useToast()
   useEscape(onClose)
-  const [busy, setBusy] = useState<PlanId | null>(null)
-  const [err, setErr] = useState('')
-  const [bankEnabled, setBankEnabled] = useState(false)
-  const [method, setMethod] = useState<PayMethod>('card')
   // Zaten premium olan uyeye "Üyeliği Yükselt" + Ücretsiz plan kiyaslamasi saçma; bu ekran
   // onlar icin "Üyeliğini Uzat" (yalniz mevcut plan + uzatma). Ucretsiz/misafir icin degismez.
   const premium = current === 'premium'
   const plans = premium ? PLANS.filter((p) => p.id !== 'free') : PLANS
-
-  useEffect(() => {
-    let alive = true
-    getBankTransferInfo()
-      .then((info) => alive && setBankEnabled(!!info.enabled))
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [])
-
-  async function pay(plan: 'premium') {
-    setErr('')
-    setBusy(plan)
-    try {
-      const r = await subscribe(plan, 'yearly', method)
-      if (isBankTransfer(r)) {
-        onBankTransfer?.(r) // havale: kart yerine IBAN talimat ekranı
-        return
-      }
-      window.location.href = (r as { url: string }).url // Garanti kart sayfasina yonlendir
-    } catch (e) {
-      const m = e as { message?: string }
-      const msg = m?.message || t('mem.err')
-      setErr(msg)
-      notify.error(msg)
-      setBusy(null)
-    }
-  }
 
   return (
     <div className="register-overlay modal mem-overlay">
@@ -69,35 +35,6 @@ export default function Membership({
           <Icon name="x" size={16} />
         </Button>
         <h2 className="mem-title"><Icon name="crown" size={20} /> {titleOverride || (premium ? t('mem.status.renew') : t('mem.title'))}</h2>
-
-        {err && <div className="register-error mem-err">{err}</div>}
-
-        {bankEnabled && (
-          <div className="mem-paymethod" role="radiogroup" aria-label="Ödeme yöntemi">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={method === 'card'}
-              className={`cart2-pm ${method === 'card' ? 'on' : ''}`}
-              onClick={() => setMethod('card')}
-            >
-              <Icon name="credit-card" size={16} />
-              <span>Kart</span>
-              <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={method === 'bank_transfer'}
-              className={`cart2-pm ${method === 'bank_transfer' ? 'on' : ''}`}
-              onClick={() => setMethod('bank_transfer')}
-            >
-              <Icon name="money" size={16} />
-              <span>Havale / EFT</span>
-              <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
-            </button>
-          </div>
-        )}
 
         <div className={`mem-grid ${premium ? 'mem-grid--single' : ''}`}>
           {plans.map((p) => {
@@ -127,34 +64,32 @@ export default function Membership({
                   ))}
                 </ul>
                 <div className="mem-cta">
-                  {isCurrent && p.id !== 'free' ? (
-                    // Aktif (odemeli) plan: "Üyeliğini Uzat" -> 1 yillik premium SEPETE eklenir,
-                    // odeme sonrasi bitis tarihine +1 yil eklenir (onExtend App'te sepeti acar).
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled={busy !== null}
-                      onClick={() => (onExtend ? onExtend() : pay(p.id as 'premium'))}
-                    >
-                      {t('mem.status.renew')}
-                    </Button>
-                  ) : isCurrent ? (
-                    <Button variant="secondary" className="w-full" disabled>
-                      {t('mem.current')}
-                    </Button>
-                  ) : p.id === 'free' ? (
+                  {p.id === 'free' ? (
                     <span className="mem-free-note">—</span>
                   ) : (
-                    // NOT: "7 gün ücretsiz dene" (trial) butonu KALDIRILDI — sitede gerçek bir
-                    // deneme süreci yok, yanıltıcıydı. Yalnız doğrudan abonelik bırakıldı.
-                    <Button
-                      variant="default"
-                      className="w-full"
-                      disabled={busy !== null}
-                      onClick={() => pay(p.id as 'premium')}
-                    >
-                      {busy === p.id ? <span className="btn-spinner" aria-hidden="true" /> : t('mem.subscribe')}
-                    </Button>
+                    // Premium: HER ZAMAN sepete ekle (kart/havale SEPETTE secilir, modalde degil).
+                    // Etiket: aktif uyelikte "Üyeliğini Uzat", degilse "Sepete Ekle". onExtend App'te
+                    // premiumu sepete koyup sepeti acar.
+                    <>
+                      <Button
+                        variant={isCurrent ? 'secondary' : 'default'}
+                        className="w-full"
+                        onClick={() => onExtend?.()}
+                      >
+                        {isCurrent ? t('mem.status.renew') : t('products.addToCart')}
+                      </Button>
+                      {/* Aktif premium: buton alti "Üyeliğin bitmesine X gün kaldı, hemen uzat" -> sepete */}
+                      {isCurrent && daysLeft != null && (
+                        <button
+                          type="button"
+                          className="mem-renew-note"
+                          onClick={() => onExtend?.()}
+                          style={{ marginTop: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--muted)', textAlign: 'center' }}
+                        >
+                          {t('mem.daysLeft', { n: daysLeft })}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
