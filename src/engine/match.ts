@@ -95,7 +95,11 @@ export function shouldAutoRoll(
   isMoney = false,
   pref?: boolean | null,
 ): boolean {
-  if (pref === false) return false // kullanıcı kapattı: her zaman elle at
+  // Kullanıcı oto-zarı kapattı: elle at — AMA yalnız küp teklif edebildiğin turlarda. Küp kararı
+  // veremiyorsan (ölü küp / küp rakipte / 1-puan / Crawford) elle atmanın anlamı yok (tek
+  // yapabildiğin zaten zar atmak), tercih ne olursa olsun oto-at. (3'lük maç, küp 4, skor 0-0 ->
+  // ölü küp -> katlama yok -> "Zar At"a basmak gereksiz tık; otomatik atılsın.)
+  if (pref === false && canDouble(m, turn, false, isMoney)) return false
   // KUP TEKLIF EDEBILIYORSAM oto-zar YOK (kullanici direktifi) — AMA kullanıcı pref=true ile açıkça
   // istediyse küp fırsatını atlayıp oto-atmaya razıdır (menüdeki uyarı bunu belirtir).
   if (pref !== true && turnsPlayed > 0 && canDouble(m, turn, false, isMoney)) return false

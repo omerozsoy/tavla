@@ -270,10 +270,17 @@ describe('Otomatik Zar kullanıcı tercihi (pref)', () => {
     expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false)).toBe(false) // varsayılan
     expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false, true)).toBe(true) // kullanıcı açtı
   })
-  it('pref=false: küpsüz 1-puanlıkta bile HİÇ oto-atma (elle)', () => {
-    const m = newMatch(1) // küp yok -> varsayılan OTO-AT
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false)).toBe(true) // varsayılan
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, undefined, false, false)).toBe(false) // kullanıcı kapattı
+  it('pref=false: elle at YALNIZ gerçek küp fırsatında; küp kararı yoksa yine oto-at', () => {
+    // Gerçek küp fırsatı: pref=false elle attırır (değişmedi).
+    const live = newMatch(7)
+    expect(canDouble(live, WHITE, false)).toBe(true)
+    expect(shouldAutoRoll(live, WHITE, turnsPlayed, undefined, false, false)).toBe(false)
+    // Küpsüz 1-puanlık: katlama yok -> elle atmanın anlamı yok -> oto-at.
+    expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, undefined, false, false)).toBe(true)
+    // Ölü küp (3'lük maç, küp 4, skor 0-0): 4>=3 -> DEAD_CUBE -> oto-at.
+    const dead = { ...newMatch(3), cube: { value: 4, owner: 'white' as const } }
+    expect(canDouble(dead, WHITE, false)).toBe(false)
+    expect(shouldAutoRoll(dead, WHITE, turnsPlayed, undefined, false, false)).toBe(true)
   })
   it('pref=null/undefined: mevcut varsayılan AYNEN korunur', () => {
     expect(shouldAutoRoll(newMatch(7), WHITE, turnsPlayed, undefined, false, null)).toBe(false)
