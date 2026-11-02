@@ -14131,7 +14131,7 @@ button.acct-row-logout:hover:not(:disabled) {
   flex: none;
   padding: 2px 8px;
   border-radius: var(--radius-pill, 999px);
-  font-size: 0.62rem;
+  font-size: 0.72rem; /* PUAN MAÇI = puanlık = Pot aynı boy (lm-len/lm-pot ile eşit) */
   font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -14218,7 +14218,7 @@ button.acct-row-logout:hover:not(:disabled) {
   line-height: 1.1;
 }
 .lm-len {
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--accent-text);
   letter-spacing: 0.02em;
@@ -14228,7 +14228,7 @@ button.acct-row-logout:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
