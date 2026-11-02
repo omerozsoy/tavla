@@ -186,7 +186,7 @@ export function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: st
           <span className="lm-vs">vs</span>
         )}
         <span className="lm-len">{t('resume.point', { n: m.target ?? 1 })}</span>
-        {m.pot != null && m.pot > 0 && (
+        {m.pot != null && (
           <span className="lm-pot">Pot: <Coins amount={m.pot} size={11} /></span>
         )}
       </span>
