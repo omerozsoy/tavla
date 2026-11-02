@@ -42,4 +42,23 @@ class BackfillNicknameHistoryTest extends TestCase
         $this->artisan('tavla:backfill-nickname-history')->assertSuccessful();
         $this->assertCount(2, $user->fresh()->nickname_history);
     }
+
+    public function test_name_belonging_to_another_active_user_is_not_attributed(): void
+    {
+        $victim = User::factory()->create(['nickname' => 'kurban']);
+        // 'baskasi' BAŞKA aktif üyenin şimdiki nick'i -> yanlış opponent_user_id eşleşmesi.
+        User::factory()->create(['nickname' => 'baskasi']);
+
+        DB::table('match_results')->insert([
+            'user_id' => User::factory()->create()->id,
+            'opponent_user_id' => $victim->id,
+            'opponent_name' => 'baskasi',
+            'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1510, 'delta' => 10,
+            'created_at' => '2026-01-01 10:00:00', 'updated_at' => '2026-01-01 10:00:00',
+        ]);
+
+        $this->artisan('tavla:backfill-nickname-history')->assertSuccessful();
+        $this->assertNull($victim->fresh()->nickname_history);
+    }
 }

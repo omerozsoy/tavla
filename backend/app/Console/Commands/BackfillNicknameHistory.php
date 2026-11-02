@@ -44,6 +44,14 @@ class BackfillNicknameHistory extends Command
             $byUser[(int) $p->uid][] = $p;
         }
 
+        // Şimdiki tüm nick'ler: lower(nick) -> user_id. Bir eski-ad snapshot'ı BAŞKA bir üyenin
+        // ŞİMDİKİ nick'iyse, opponent_user_id yanlış eşleşmiştir (ör. aynı ad iki üyeye atanır) ->
+        // o ada gerçekten sahip olana ait say, yanlış üyeye YAZMA.
+        $currentOwner = [];
+        foreach (User::query()->whereNotNull('nickname')->where('nickname', '!=', '')->get(['id', 'nickname']) as $u) {
+            $currentOwner[mb_strtolower(trim((string) $u->nickname))] = $u->id;
+        }
+
         $users = User::whereIn('id', array_keys($byUser))->get(['id', 'nickname', 'nickname_history']);
         $usersTouched = 0;
         $nicksAdded = 0;
@@ -63,6 +71,9 @@ class BackfillNicknameHistory extends Command
                 $key = mb_strtolower($nick);
                 if ($key === '' || $key === $current || isset($have[$key])) {
                     continue; // şimdiki ad veya zaten kayıtlı -> atla
+                }
+                if (isset($currentOwner[$key]) && $currentOwner[$key] !== $user->id) {
+                    continue; // bu ad BAŞKA aktif üyenin şimdiki nick'i -> yanlış eşleşme, atla
                 }
                 $have[$key] = true;
                 $added[] = ['nickname' => $nick, 'at' => (string) $p->last_at, 'backfill' => true];
