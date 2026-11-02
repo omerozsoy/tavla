@@ -168,7 +168,7 @@ export function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: st
         {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
         {/* Kaç puanlık maç + pot: tip rozetinin YANINDA (üst satır sağı), ortadan taşındı. */}
         <span className="lm-len">{t('resume.point', { n: m.target ?? 1 })}</span>
-        {m.pot != null && (
+        {m.pot != null && m.pot > 0 && (
           <span className="lm-pot">Pot: <Coins amount={m.pot} size={12} /></span>
         )}
       </span>
