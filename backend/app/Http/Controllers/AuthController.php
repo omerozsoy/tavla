@@ -750,6 +750,10 @@ class AuthController extends Controller
         if (Schema::hasColumn('match_results', 'stake')) {
             $mr['stake'] = $room ? (int) $room->stake : 0;
         }
+        // Klasik Tavla bayrağını SABITLE: oda purge edilse de admin/geçmiş klasik↔modern ayırabilsin.
+        if (Schema::hasColumn('match_results', 'classic')) {
+            $mr['classic'] = $isClassic;
+        }
         // Aynı-rakip 24h limiti için: rakip hesap id + bu satır puanlı mı (rated).
         if (Schema::hasColumn('match_results', 'opponent_user_id')) {
             $mr['opponent_user_id'] = $opponentId > 0 ? $opponentId : null;

@@ -91,7 +91,7 @@ class MatchResultResource extends Resource
                 // .mat butonu icin hafif has_log bayragi. Tam log indirme aninda ayri cekilir (asagi).
                 $query->select([
                     'id', 'created_at', 'user_id', 'opponent_name', 'opponent_rating', 'won',
-                    'score_self', 'score_opp', 'match_type', 'match_length', 'pr', 'gnubg_pr',
+                    'score_self', 'score_opp', 'match_type', 'match_length', 'classic', 'pr', 'gnubg_pr',
                     'stake', 'opponent_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'luck_emg',
                     'rating_after', 'delta', 'room_code',
                 ])->selectRaw("(log IS NOT NULL AND log <> '') AS has_log");
@@ -144,12 +144,19 @@ class MatchResultResource extends Resource
                 Tables\Columns\TextColumn::make('match_type')->label('Tür')->badge()
                     ->formatStateUsing(fn ($state, MatchResult $r) => static::matchTypeLabel($state, $r->match_length))
                     ->color(fn ($state) => $state === 'coin' ? 'warning' : 'info'),
+                // KLASIK TAVLA (küp yok + mars=2): modern maçtan ayırt edilebilsin. Klasikte gnubg PR
+                // analizi atlanır -> pr/gnubg_pr NULL kalır (eksiklik değil). Boş = Modern.
+                Tables\Columns\TextColumn::make('classic')->label('Mod')
+                    ->state(fn (MatchResult $r) => $r->classic ? 'Klasik' : null)
+                    ->badge()->color('indigo')->icon('heroicon-o-sparkles')
+                    ->tooltip('Klasik Tavla: küp yok, mars 2 puan. Bu modda gnubg analiz yapamadığı için PR/şans boş (—) kalır.'),
                 // TERK / YEDEK KAYIT: oyuncu raporlamadan ayrildiginda (terk/kopma) sunucu yalniz
                 // sonuc+puani "yedek satir" (MatchBackstop) olarak yazar; PR/sans/skor/log HESAPLANMAZ
                 // -> o kolonlar bos (—) kalir. PR asla-bos-olmasin direktifi geregi gercek raporlanan
                 // macta pr HER ZAMAN dolu; dolayisiyla pr === null = raporlanmamis (terk) kayit.
                 Tables\Columns\TextColumn::make('forfeit_flag')->label('Kayıt')
-                    ->state(fn (MatchResult $r) => $r->pr === null ? 'Terk / Yedek' : null)
+                    // KLASIK maçta pr HER ZAMAN null (analiz atlanır) -> terk sanma; yalnız modernde flag.
+                    ->state(fn (MatchResult $r) => ($r->pr === null && ! $r->classic) ? 'Terk / Yedek' : null)
                     ->badge()->color('warning')->icon('heroicon-o-exclamation-triangle')
                     ->tooltip('Terk/kopma ile bitti: oyuncu raporlamadan ayrıldı. Sunucu sonucu + puanı sakladı; PR / şans / skor hesaplanmadığı için boş (—) görünür. Veri kaybı değildir.'),
                 Tables\Columns\TextColumn::make('stake')->label('Bahis (coin)')
@@ -197,6 +204,8 @@ class MatchResultResource extends Resource
                     'match' => 'Puanlık maç',
                     'ai' => 'Yapay Zeka',
                 ]),
+                Tables\Filters\TernaryFilter::make('classic')->label('Mod')
+                    ->trueLabel('Klasik Tavla')->falseLabel('Modern Tavla'),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         DatePicker::make('from')->label('Başlangıç'),

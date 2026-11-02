@@ -15,7 +15,7 @@ class MatchResult extends Model
 {
     protected $fillable = [
         'user_id', 'won', 'opponent_rating', 'opponent_name', 'opponent_user_id', 'opponent_pr', 'room_code', 'rating_before', 'rating_after', 'delta', 'rated', 'rating_reason',
-        'match_length', 'match_type', 'pr', 'coins_after', 'stake', 'score_self', 'score_opp', 'log',
+        'match_length', 'match_type', 'classic', 'pr', 'coins_after', 'stake', 'score_self', 'score_opp', 'log',
         'analyzed_at', 'analysis_version',
         // XG-style havuzlama totalleri (§13): dogru lifetime PR icin ham toplamlar.
         'pr_equity_lost', 'pr_decisions',
@@ -24,6 +24,7 @@ class MatchResult extends Model
     protected $casts = [
         'won' => 'boolean',
         'rated' => 'boolean', // bu satır rating/PR kazandırdı mı (friendly 24h limiti için sayım anahtarı)
+        'classic' => 'boolean', // Klasik Tavla maçı mı (küp yok + mars=2; PR analizi atlanır -> pr NULL)
         'analyzed_at' => 'datetime',
         'pr_equity_lost' => 'float',
         'pr_decisions' => 'integer',

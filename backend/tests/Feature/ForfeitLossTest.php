@@ -162,6 +162,24 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(500, (int) MatchResult::find($row->id)->stake);
     }
 
+    // KLASIK TAVLA bayrağı forfeit satırına SABITLENİR ve oda purge edilse de kalır (admin "Mod"
+    // kolonu/filtresi rooms.classic yerine bu snapshot'tan okur -> klasik↔modern ayrımı kalıcı).
+    public function test_forfeit_snapshots_classic_surviving_room_purge(): void
+    {
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $room = $this->rankedRoom('FLC', $a, $b);
+        $room->forceFill(['classic' => true])->save();
+
+        ForfeitLoss::record('FLC', $a->id, 1500, 1, 'match', 'b', true, $b->id);
+
+        $row = MatchResult::where('room_code', 'FLC')->where('user_id', $a->id)->first();
+        $this->assertTrue((bool) $row->classic);
+
+        $room->delete(); // oda purge edildi -> klasik bayrağı yine durur
+        $this->assertTrue((bool) MatchResult::find($row->id)->classic);
+    }
+
     // GÜNCEL kural (2026-11-01): davet (friendly/kılıç) maçları HER ZAMAN PUANSIZ. Terk edilince
     // satır yazılır (maç geçmişte görünür) ama rating/mağlubiyet DEĞİŞMEZ (delta=0, rated=false).
     public function test_friendly_forfeit_is_unrated(): void

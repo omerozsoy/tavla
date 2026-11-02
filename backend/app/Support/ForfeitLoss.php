@@ -74,10 +74,11 @@ class ForfeitLoss
         }
 
         $roomStake = $room ? (int) $room->stake : 0;
+        $roomClassic = $room ? (bool) $room->classic : false;
         // Puansızsa sebep (bot/unrated/guest/friendly/casual) -> satıra sakla. $room yüklenemezse null
         // (nadir; sebep belirlenemez). Puanlı (ranked) satırda NULL.
         $reason = (! $ranked && $room) ? RatingPolicy::unratedReason($room, $opponentUserId) : null;
-        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId, $selfScore, $oppScore, $roomStake, $reason) {
+        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId, $selfScore, $oppScore, $roomStake, $reason, $roomClassic) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
                 return null;
@@ -134,6 +135,9 @@ class ForfeitLoss
             }
             if (Schema::hasColumn('match_results', 'stake')) {
                 $row['stake'] = $roomStake; // oda purge edilse de oynanan bahis kalsın
+            }
+            if (Schema::hasColumn('match_results', 'classic')) {
+                $row['classic'] = $roomClassic; // oda purge edilse de klasik↔modern ayrımı kalsın
             }
 
             return MatchResult::create($row)->id;

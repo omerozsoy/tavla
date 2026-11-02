@@ -69,7 +69,7 @@ class MatchBackstop
             $ranked = RatingPolicy::isRanked($room, $uid, $oppId); // per-oyuncu (friendly 24h limiti)
             $reason = $ranked ? null : RatingPolicy::unratedReason($room, $oppId); // puansızsa sebebi sakla
             $matchLength = $room->target !== null ? (int) $room->target : null;
-            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason)) {
+            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason, (bool) ($room->classic ?? false))) {
                 $written++;
             }
         }
@@ -125,9 +125,10 @@ class MatchBackstop
         int $opponentUserId = 0,
         int $stake = 0,
         ?string $ratingReason = null,
+        bool $classic = false,
     ): bool {
         try {
-            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason) {
+            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason, $classic) {
                 $u = User::lockForUpdate()->find($userId);
                 if (! $u) {
                     return false;
@@ -187,6 +188,9 @@ class MatchBackstop
                 }
                 if (Schema::hasColumn('match_results', 'stake')) {
                     $row['stake'] = $stake; // oda purge edilse de oynanan bahis kalsın
+                }
+                if (Schema::hasColumn('match_results', 'classic')) {
+                    $row['classic'] = $classic; // oda purge edilse de klasik↔modern ayrımı kalsın
                 }
 
                 MatchResult::create($row); // yarış -> UniqueConstraintViolation -> tx rollback (Elo geri alınır)
