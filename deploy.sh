@@ -1,4 +1,12 @@
 #!/bin/sh
+# ============================================================================
+# ⚠️ DİKKAT — BU SCRIPT ESKİ PLESK KUTUSU İÇİNDİR (DEKOMİSYON). CANLI ÇALIŞTIRMA.
+# Üretim artık Laravel FORGE (148.251.126.242), PHP 8.4 (systemd php8.4-fpm).
+# Aşağıdaki `PHP=/opt/plesk/php/8.2/bin/php` + `plesk-php8.2-fpm` soketleri Forge'da YOKTUR.
+# Forge deploy akışı: `npm run deploy:build` → git add backend/public → commit → push →
+# Forge panel "Deploy Now" (veya deploy-hook URL). Ayrıntı: kök CLAUDE.md "Deploy" bölümü.
+# Bu dosya geçmiş referans için duruyor; Forge'a taşımadan ÇALIŞTIRMA.
+# ============================================================================
 # Plesk "Additional deployment actions" tarafindan git pull sonrasi calistirilir.
 # Frontend derlemesi (backend/public/assets) repoya commit'lendigi icin sunucuda
 # build GEREKMEZ; sadece Laravel cache temizlenir ve migration'lar uygulanir.

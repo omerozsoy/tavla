@@ -50,8 +50,12 @@ class PresenceController extends Controller
     public function ping(Request $request)
     {
         $me = $request->user();
-        $me->last_seen = now();
-        $me->save();
+        // last_seen HER ping'de yazilmasin: online tespiti 2dk penceresi kullanir, 15sn'den sik
+        // yazmak gereksiz. Bu guard 1000 oyuncuda ~100 user-row UPDATE/sn'yi (DB yazma yuku) keser.
+        if (! $me->last_seen || Carbon::parse($me->last_seen)->lt(now()->subSeconds(15))) {
+            $me->last_seen = now();
+            $me->save();
+        }
         TourneyBots::kick(); // turnuva test botlari (bot turnuvasi yoksa no-op)
 
         // OYUNDAYKEN DAVET GELMEZ: aktif maçta (tek oyun / turnuva / YZ dahil) olan oyuncuya

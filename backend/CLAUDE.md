@@ -6,7 +6,8 @@ servis edilir (tek domain). Genel proje kuralları için kök `../CLAUDE.md`.
 ## Komutlar
 - Test: `php artisan test` (sqlite `:memory:`, `.env.testing`). Tekil: `php artisan test --filter=XxxTest`.
 - Format: `./vendor/bin/pint` (Laravel Pint — commit öncesi çalıştır).
-- Üretimde PHP yolu: `/opt/plesk/php/8.2/bin/php` (gerekli `^8.2`).
+- Üretimde PHP: **Laravel Forge'da PHP 8.4 (systemd `php8.4-fpm`)**. `composer.json` `^8.2` ister ama
+  canlı 8.4 çalışır. ⚠ Eski `/opt/plesk/php/8.2/bin/php` yolu DEKOMİSYON Plesk kutusuna aitti — KULLANMA.
 
 ## Kuyruk mimarisi (database driver) — DİKKAT
 - `QUEUE_CONNECTION=database`. Worker'lar systemd ile **kuyruk-adına göre izole** (bkz `../deploy/*.service`):
@@ -28,7 +29,10 @@ servis edilir (tek domain). Genel proje kuralları için kök `../CLAUDE.md`.
 - `redirectGuestsTo`: `api/*` → `null` (401 JSON). `'login'` adlı web rotası YOK — redirect eklersen `RouteNotFoundException` (500 spam) olur.
 
 ## Güvenlik / erişim
-- Admin erişimi SADECE `ADMIN_EMAILS` env'den — **kaynak koda gömülü admin YOK**. Boşsa panel/admin API'ye kimse giremez.
+- Admin yetkisi = **`ADMIN_EMAILS` env (config-admin) VEYA DB `users.is_admin` grant'i** (`EnsureAdmin` `is_admin`e bakar).
+  Kaynak koda gömülü admin YOK; `ADMIN_EMAILS` boş + hiç `is_admin=1` yoksa panele kimse giremez. `is_admin`
+  `$fillable` DEĞİL → yalnız admin-korumalı `PATCH /admin/users/{user}` ile verilir (grant/revoke `Shield::audit` 'admin_role_change').
+  ⚠ `ADMIN_EMAILS`'i değiştirmek DB-grant admin'leri GERİ ALMAZ (config-admin yalnız kendi düşürülmesini engeller).
 - `SiteGate` (SITE_PASSWORD doluysa tüm `/api` için `X-Site-Gate`), `SecurityHeaders`, `ShieldTracker` middleware'leri `bootstrap/app.php`'de kurulu.
 - Auth: Sanctum. Google giriş `/auth/google` (web ve native app aynı endpoint). Ödeme: Garanti 3D Sanal POS (`GARANTI_*`, boşsa kapalı).
 

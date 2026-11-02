@@ -1510,16 +1510,20 @@ class AuthController extends Controller
         // Siralama kriteri: rating (varsayilan) | coins | wxp (cached users.total_wxp)
         $by = $request->query('by');
         $sortCol = $by === 'coins' ? 'coins' : ($by === 'wxp' ? 'total_wxp' : 'rating');
-        $users = User::orderByDesc($sortCol)
-            // Resmi/sistem hesabı ("Tavla TV Yönetim") liderlik tablosunda görünmesin.
-            ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
-            ->notDeleted()
-            ->orderByDesc('wins')
-            ->limit($limit)
-            // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+        // Liderlik tablosu TÜM bakanlar için AYNI (herkese açık, kimliksiz). Her poll'de full-table
+        // filesort yerine 30sn önbellek: binlerce kullanıcıda tekrarlanan sıralama maliyetini keser.
+        // online/status alanları ≤30sn bayatlar (presence penceresi 2dk -> kabul). (topRanks/roles ile aynı desen.)
+        $rows = Cache::remember("leaderboard:{$sortCol}:{$limit}", 30, function () use ($sortCol, $limit) {
+            $users = User::orderByDesc($sortCol)
+                // Resmi/sistem hesabı ("Tavla TV Yönetim") liderlik tablosunda görünmesin.
+                ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
+                ->notDeleted()
+                ->orderByDesc('wins')
+                ->limit($limit)
+                // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
-        $rows = $users->values()->map(function ($u, $i) {
+            return $users->values()->map(function ($u, $i) {
             // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
             // 'ghost' (yönetici hayalet modu) de 'offline' gibi gri -> hiçbir yerde çevrimiçi görünmez.
             $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
@@ -1543,6 +1547,7 @@ class AuthController extends Controller
                 'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
                 'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
+            });
         });
 
         return response()->json(['players' => $rows]);
@@ -1559,18 +1564,21 @@ class AuthController extends Controller
         $minM = CareerPrService::minMatches();
         $minD = CareerPrService::minDecisions();
 
-        $users = User::whereNotNull('career_pr')
-            ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") listede görünmesin
-            ->notDeleted()
-            ->where('career_pr_matches', '>=', $minM)
-            ->where('career_pr_decisions', '>=', $minD)
-            ->orderBy('career_pr', 'asc')                 // dusuk PR = iyi -> 1. sira
-            ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
-            ->orderByDesc('career_pr_matches')            // sonra daha cok maç
-            ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+        // PR Sıralaması da herkese açık + viewer-bağımsız: 30sn önbellek (iki range filtre + career_pr
+        // sort full-table filesort maliyetini tekrarlı poll'de keser). online ≤30sn bayatlar (kabul).
+        $rows = Cache::remember("leaderboard:pr:{$minM}:{$minD}:{$limit}", 30, function () use ($minM, $minD, $limit) {
+            $users = User::whereNotNull('career_pr')
+                ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") listede görünmesin
+                ->notDeleted()
+                ->where('career_pr_matches', '>=', $minM)
+                ->where('career_pr_decisions', '>=', $minD)
+                ->orderBy('career_pr', 'asc')                 // dusuk PR = iyi -> 1. sira
+                ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
+                ->orderByDesc('career_pr_matches')            // sonra daha cok maç
+                ->limit($limit)
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
-        $rows = $users->values()->map(function ($u, $i) {
+            return $users->values()->map(function ($u, $i) {
             $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
                 && Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
 
@@ -1590,6 +1598,7 @@ class AuthController extends Controller
                 'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
                 'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
             ];
+            });
         });
 
         return response()->json(['players' => $rows, 'min_matches' => $minM, 'min_decisions' => $minD]);

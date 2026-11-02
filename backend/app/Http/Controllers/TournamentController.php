@@ -544,7 +544,14 @@ class TournamentController extends Controller
         if ($has1 !== $has2) { // tek oyunculu -> walkover 3.
             $tp['winner'] = $has1 ? (int) $tp['p1']['id'] : (int) $tp['p2']['id'];
             $tp['score'] = ['walkover' => true];
-            $bracket[$lastRi][1] = $tp; // opens_at YOK -> final hemen açılır
+            $bracket[$lastRi][1] = $tp;
+            // Final OYNANMADAN rating ile hükmedilmesini önle: walkover 3.'lük gerçek maç değil ama
+            // final yine standart gate + grace almalı. opens_at yoksa resolveStalledMatches finalin
+            // ready_at'ini HEMEN damgalar ve finalistler oturmazsa 3 dk sonra rating ile şampiyon
+            // ilan eder. Normal 3.'lük bitiş yolu (applyWinnerToBracket:476) ile aynı 1 dk gate.
+            if (! empty($final) && empty($final['winner']) && empty($final['opens_at'])) {
+                $bracket[$lastRi][0]['opens_at'] = now()->addMinute()->toIso8601String();
+            }
         } elseif ($has1 && $has2 && empty($tp['ready_at'])) {
             // İki oyunculu 3.'lük HAZIR -> damga (takılma-önleme resolveStalledThirdPlace bunu kullanır).
             $tp['ready_at'] = now()->toIso8601String();

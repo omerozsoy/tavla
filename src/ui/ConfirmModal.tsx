@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
+import { useEscape } from './useEscape'
 import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 
@@ -28,6 +29,9 @@ export default function ConfirmModal({
   onCancel: () => void
 }) {
   const { t } = useT()
+  // Klavye kullanıcıları: Esc ile iptal (backdrop-click'e ek standart çıkış) + açılışta odak
+  // güvenli seçenek olan İptal butonuna gider (özellikle destructive onaylarda yanlış tetiği önler).
+  useEscape(onCancel)
   return createPortal(
     <div className="register-overlay modal confirm-overlay" role="dialog" aria-modal="true" onClick={onCancel}>
       <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
@@ -38,7 +42,7 @@ export default function ConfirmModal({
         <Button variant={destructive ? 'destructive' : 'default'} onClick={onConfirm}>
           {confirmLabel ?? t('btn.confirm')}
         </Button>
-        <Button variant="secondary" onClick={onCancel}>
+        <Button variant="secondary" onClick={onCancel} autoFocus>
           {cancelLabel ?? t('mp.cancel')}
         </Button>
       </div>

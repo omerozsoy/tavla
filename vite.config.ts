@@ -55,6 +55,22 @@ export default defineConfig({
     // bu operatorleri eski sozdizimine indirger, eski cihazlarda site/uygulama acilir.
     // Uygulama canli siteyi yukledigi icin bu fix sadece dist deploy ister (yeni APK GEREKMEZ).
     target: 'es2019',
+    // Vendor ayristirma: React + Radix UI gibi STATIK + nadir degisen kutuphaneleri ayri chunk'a
+    // al -> ana app chunk kuculur + deploy'lar arasi vendor chunk hash'i sabit kalir (SW/tarayici
+    // onbellegi korunur, her deploy'da 1MB yeniden inmez). onnxruntime/gsap/tsparticles ZATEN
+    // dinamik import -> kendi lazy chunk'lari; burada DOKUNMA (undefined don = rollup varsayilani).
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('onnxruntime') || id.includes('gsap') || id.includes('tsparticles')) return
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react-vendor'
+          }
+          if (id.includes('@radix-ui') || id.includes('radix-ui')) return 'ui-vendor'
+        },
+      },
+    },
   },
   // onnxruntime-web'i esbuild on-paketlemesinden hariç tut: import.meta.url tabanli
   // wasm cozumlemesi bozulmasin (Vite native asset olarak servis etsin).

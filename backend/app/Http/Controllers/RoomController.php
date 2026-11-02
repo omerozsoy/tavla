@@ -515,7 +515,7 @@ class RoomController extends Controller
                 $cand->p2_user_id = $userId;
                 $cand->p2_name = $data['name'];
                 $cand->p2_rating = $data['rating'] ?? null;
-                $cand->p2_avatar = $data['avatar'] ?? null;
+                $cand->p2_avatar = AvatarStore::store($data['avatar'] ?? null); // base64 -> WebP URL (poll gövdesi şişmesin)
                 $cand->stake = $agreedStake;   // anlasilan sabit bahis (settle bunu kullanir)
                 $cand->target = max($commonTargets); // ortak uzunluklardan en uzunu
                 $cand->status = 'playing';
@@ -597,7 +597,7 @@ class RoomController extends Controller
             'p1_user_id' => $userId,
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
-            'p1_avatar' => $data['avatar'] ?? null,
+            'p1_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL (poll gövdesi şişmesin)
             'status' => 'mm_waiting',
             // stakes kolonu VARSA: tek secimde sabit, coklu secimde placeholder 0 (eslesmede yazilir).
             // Kolon YOKSA (migration kosmadi): coklu secim tek temsile (en yuksek) duser.
@@ -1098,21 +1098,24 @@ class RoomController extends Controller
             $cols[] = 'classic';
         }
 
-        $rooms = Room::where('status', 'mm_waiting')
-            ->whereNotNull('p1_user_id')
-            ->when($me, fn ($q) => $q->where('p1_user_id', '!=', $me->id))
-            ->where('updated_at', '>', now()->subMinutes(2)) // cleanupStale esigiyle ayni: canli (heartbeat) aramalar
-            ->orderBy('created_at') // sira adaleti: en eski arama once
-            ->limit(100)
-            ->get($cols);
+        // Oyun Arayanlar listesi TÜM bakanlar için AYNI (risk arayanın kendi bakiyesine bağlı, bakanın
+        // DEĞİL). Tek viewer-farkı "beni hariç tut" -> onu önbellek SONRASI PHP'de uygula. Home paneli
+        // bunu ~3sn'de bir poll eder; 5sn önbellek 1000 oyuncuda tekrarlanan sorgu+User::whereIn'i keser.
+        $seeking = Cache::remember('seekers:list', 5, function () use ($cols) {
+            $rooms = Room::where('status', 'mm_waiting')
+                ->whereNotNull('p1_user_id')
+                ->where('updated_at', '>', now()->subMinutes(2)) // cleanupStale esigiyle ayni: canli (heartbeat) aramalar
+                ->orderBy('created_at') // sira adaleti: en eski arama once
+                ->limit(100)
+                ->get($cols);
 
-        // Bayrak/cerceve/premium icin tek sorguyla User lookup (onlinePlayers deseni).
-        $uids = $rooms->pluck('p1_user_id')->filter()->unique()->values();
-        $userMap = $uids->isEmpty()
-            ? collect()
-            : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until', 'coins', 'coins_reserved'])->keyBy('id');
+            // Bayrak/cerceve/premium icin tek sorguyla User lookup (onlinePlayers deseni).
+            $uids = $rooms->pluck('p1_user_id')->filter()->unique()->values();
+            $userMap = $uids->isEmpty()
+                ? collect()
+                : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until', 'coins', 'coins_reserved'])->keyBy('id');
 
-        $seeking = $rooms->map(function ($r) use ($userMap) {
+            return $rooms->map(function ($r) use ($userMap) {
             $u = $userMap->get($r->p1_user_id);
             $targets = is_array($r->targets) ? array_values(array_map('intval', $r->targets)) : [(int) ($r->target ?? 1)];
             $stakes = is_array($r->stakes) ? array_values(array_map('intval', $r->stakes)) : [(int) $r->stake];
@@ -1142,12 +1145,13 @@ class RoomController extends Controller
                 'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
                 'since' => optional($r->created_at)->toIso8601String(),
             ];
+            });
         });
 
         // YALNIZCA aktif arayanlar (havuzda "eslesme" bekleyen). "Oyuna Hazir" (presence_status
         // ='ready') oyuncular bu listede GOSTERILMEZ — onlar Cevrimici Oyuncular panelinden davet
-        // edilir, Oyun Arayanlar kuyrugu degildir.
-        $all = $seeking->values();
+        // edilir, Oyun Arayanlar kuyrugu degildir. Önbellek SONRASI "beni hariç tut" (viewer-farkı).
+        $all = collect($seeking)->when($me, fn ($c) => $c->reject(fn ($s) => (int) ($s['id'] ?? 0) === (int) $me->id))->values();
 
         return response()->json(['seekers' => $all->values(), 'count' => $all->count()]);
     }
@@ -1537,7 +1541,7 @@ class RoomController extends Controller
                     'p2_user_id' => $joinUserId,
                     'p2_name' => $data['name'],
                     'p2_rating' => $data['rating'] ?? null,
-                    'p2_avatar' => $data['avatar'] ?? null,
+                    'p2_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL (poll gövdesi şişmesin)
                     'status' => 'playing',
                     'updated_at' => now(),
                 ]);
@@ -1626,7 +1630,7 @@ class RoomController extends Controller
             'p1_user_id' => $authUser?->id,
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
-            'p1_avatar' => $data['avatar'] ?? null,
+            'p1_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL (poll gövdesi şişmesin)
             'status' => 'waiting',
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? ($invite->time_control ?? null)),
             // Turnuva maci: uzunluk sunucuda (matchRoom cache'e yazar; tur/yari final/final) ->
@@ -1717,7 +1721,7 @@ class RoomController extends Controller
                 'p2_user_id' => $enterUserId,
                 'p2_name' => $data['name'],
                 'p2_rating' => $data['rating'] ?? null,
-                'p2_avatar' => $data['avatar'] ?? null,
+                'p2_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL (poll gövdesi şişmesin)
                 'status' => 'playing',
             ];
             if (Schema::hasColumn('rooms', 'authoritative')
@@ -4081,6 +4085,11 @@ class RoomController extends Controller
             $slot = $this->slotOf($room, $data['token'], $request);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            // GÜVENLİK: bot odasında p2 (bot) slotu HTTP ile küp TEKLİF EDEMEZ — botu yalnız sunucu
+            // sürer (move/roll/cubeRespond/resign ile aynı derinlemesine-savunma guard'ı).
+            if ($room->bot && $slot === 'p2') {
+                return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
             }
             if (! $room->acceptsGameActions()) {
                 return $this->fail('Oyun aktif değil.', 409);

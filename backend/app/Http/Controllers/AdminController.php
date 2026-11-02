@@ -66,6 +66,7 @@ class AdminController extends Controller
         }
 
         $beforeCoins = (int) ($user->coins ?? 0);
+        $beforeAdmin = (bool) $user->is_admin;
         $user = DB::transaction(function () use ($data, $user, $me) {
             $locked = User::lockForUpdate()->findOrFail($user->id);
             if (array_key_exists('coins', $data)) {
@@ -94,6 +95,16 @@ class AdminController extends Controller
                 (int) $me->id,
                 'admin_wallet_adjustment',
                 sprintf('target_user=%d balance_before=%d balance_after=%d', $user->id, $beforeCoins, (int) $user->coins),
+                3
+            );
+        }
+        // Yönetici yetkisi verme/alma = coin ayarı kadar hassas: grant/revoke audit'lensin (eskiden
+        // yalnız coin audit'leniyordu). ADMIN_EMAILS değişince DB-grant admin'ler görünür kalsın.
+        if (array_key_exists('is_admin', $data) && (bool) $user->is_admin !== $beforeAdmin) {
+            \App\Support\Shield::audit(
+                (int) $me->id,
+                'admin_role_change',
+                sprintf('target_user=%d is_admin_before=%d is_admin_after=%d', $user->id, $beforeAdmin ? 1 : 0, (bool) $user->is_admin ? 1 : 0),
                 3
             );
         }
