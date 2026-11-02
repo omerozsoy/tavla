@@ -2731,6 +2731,11 @@ export interface PerformanceStats {
     cube_decisions: number
     cube_decisions_needed: number // küp PR için gereken ek küp kararı
   }
+  // Luck ortalaması: geçmiş maçların gnubg native luck_mwc (MWC%) ortalaması (+ = şanslı). null = veri yok.
+  luck?: {
+    avg_mwc: number | null
+    matches: number
+  }
 }
 export async function performanceStats(period: MedianFilter = 'all'): Promise<PerformanceStats> {
   return req<PerformanceStats>(`/me/performance-stats?period=${period}`)

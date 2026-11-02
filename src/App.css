@@ -19483,6 +19483,8 @@ body:has(.spectate-view) .app.lobby {
   line-height: 1.05;
   color: var(--text);
 }
+.sd-val.good { color: var(--success-fg); } /* + şans (şanslı) */
+.sd-val.bad { color: var(--danger-fg); } /* − şans (şanssız) */
 .sd-val.gold {
   color: #d9a417;
 }

@@ -316,6 +316,26 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             </div>
 
+            {/* Şans Ortalaması (Puan gibi): geçmiş maçların gnubg luck_mwc (MWC%) ortalaması.
+                + = ortalama şanslı oynadı, − = şanssız. Tam genişlik kart (Maç Tipine Göre PR'dan önce). */}
+            <div className="stats-dash">
+              <div className="sd-card sd-card-wide">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="dice" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('stats.luckAvg')}</div>
+                    <div className={`sd-val ${perf?.luck?.avg_mwc != null ? (perf.luck.avg_mwc >= 0 ? 'good' : 'bad') : ''}`}>
+                      {perfErr ? '–'
+                        : !perf ? <Skeleton w={64} h={34} r={6} />
+                        : perf.luck?.avg_mwc != null ? `${perf.luck.avg_mwc > 0 ? '+' : ''}${perf.luck.avg_mwc.toFixed(2)}%`
+                        : '–'}
+                    </div>
+                  </div>
+                </div>
+                {perf?.luck?.matches ? <div className="sd-sub">{t('med.matches', { n: perf.luck.matches })}</div> : null}
+              </div>
+            </div>
+
             {/* ===== Alt satır (2 sütun, yarı yarıya):
                  üst çift: Maç Tipine Göre PR · Maç Tipine Göre Kazanma %
                  alt çift: Zar Ortalamaları · WXP ===== */}

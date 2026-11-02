@@ -6,6 +6,8 @@ use App\Models\MatchResult;
 use App\Models\User;
 use App\Support\StatsConfig;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Profil performans istatistiklerini birlestirir (tek endpoint):
@@ -42,6 +44,29 @@ class PlayerStatisticsService
             'wxp' => $this->wxpBlock($user),
             // Career PR (PR Sıralaması): oyuncunun havuzlanmis kariyer PR'ı + leaderboard uygunlugu.
             'career' => $this->careerBlock($user),
+            // Luck ortalaması: geçmiş maçların gnubg native luck_mwc (MWC%) ortalaması (+ = şanslı).
+            'luck' => $this->luckBlock($user),
+        ];
+    }
+
+    /**
+     * Luck bloğu: oyuncunun analiz edilmiş (luck_mwc dolu) gerçek maçlarının ortalama şansı (MWC%).
+     * luck_mwc display değeridir (ör. +8.4 = bu oyuncu ortalama %8.4 şanslı oynadı). Zaman içinde
+     * ~0'a yakınsar (zero-sum). avg_mwc null = henüz luck analizli maç yok.
+     *
+     * @return array{avg_mwc: ?float, matches: int}
+     */
+    private function luckBlock(User $user): array
+    {
+        if (! Schema::hasColumn('match_results', 'luck_mwc')) {
+            return ['avg_mwc' => null, 'matches' => 0];
+        }
+        $q = MatchResult::where('user_id', $user->id)->real()->whereNotNull('luck_mwc');
+        $matches = (int) $q->count();
+
+        return [
+            'avg_mwc' => $matches > 0 ? round((float) $q->avg('luck_mwc'), 2) : null,
+            'matches' => $matches,
         ];
     }
 
@@ -53,7 +78,7 @@ class PlayerStatisticsService
      */
     private function careerBlock(User $user): array
     {
-        $hasCol = \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr');
+        $hasCol = Schema::hasColumn('users', 'career_pr');
         $pr = $hasCol ? $user->career_pr : null;
         $m = (int) ($user->career_pr_matches ?? 0);
         $d = (int) ($user->career_pr_decisions ?? 0);
@@ -61,7 +86,7 @@ class PlayerStatisticsService
         $minD = CareerPrService::minDecisions();
 
         // KARİYER KÜP PR: tek maçta anlamsız; yeterli küp kararı birikince (>= MIN) gösterilir.
-        $hasCube = \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_cube_pr');
+        $hasCube = Schema::hasColumn('users', 'career_cube_pr');
         $cubePr = $hasCube ? $user->career_cube_pr : null;
         $cubeDec = (int) ($hasCube ? ($user->career_cube_decisions ?? 0) : 0);
         $cubeMin = CareerPrService::MIN_CAREER_CUBE_DECISIONS;
@@ -91,7 +116,7 @@ class PlayerStatisticsService
                 fn () => $this->median->pooledCategoriesFor($userId, $period),
             );
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('pooled PR stats failed', [
+            Log::warning('pooled PR stats failed', [
                 'user_id' => $userId, 'err' => $e->getMessage(),
             ]);
             $out = [];
@@ -112,7 +137,7 @@ class PlayerStatisticsService
         try {
             return $this->medianCached($userId, $period);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('median stats failed', [
+            Log::warning('median stats failed', [
                 'user_id' => $userId, 'err' => $e->getMessage(),
             ]);
 
