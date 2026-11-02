@@ -76,6 +76,9 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
         'admin_note',
         'admin_note_by',
         'admin_note_at',
+        // Eski takma adlar yalnız admin paneli içindir (panel attribute accessor ile okur, $hidden
+        // yalnız API serileştirmesini etkiler) -> başka kullanıcıya sızmasın.
+        'nickname_history',
     ];
 
     // is_admin + is_support (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
