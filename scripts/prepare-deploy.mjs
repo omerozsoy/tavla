@@ -40,6 +40,7 @@ for (const item of [
   'apple-touch-icon.png', // iOS ana ekran ikonu (180x180)
   'assets',
   'models',
+  'fonts', // self-hosted Google Fonts woff2 (Spectral+Outfit); src/fonts.css -> /fonts/*.woff2
   'flags', // ulke bayraklari (circle-flags, CountryFlag -> /flags/xx.svg)
   'checker-demo.html', // animasyon demo (gecici)
   'dice-demo.html', // animasyon demo (gecici)

@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './fonts.css' // self-hosted Google Fonts (Spectral+Outfit); 3. taraf fonts.gstatic yok
 import './index.css'
 import App from './App.tsx'
 // shadcn/ui + Tailwind katmani App.css'ten SONRA yuklenir (utility'ler oncelikli olsun)
