@@ -89,26 +89,27 @@ class CoinStats extends BaseWidget
         );
 
         $net = $data['net'];
-        $shrinking = $net <= 0; // dolaşım küçülüyor → hedef (yeşil)
+        // Sezgisel renk (kullanıcı direktifi): artı=yeşil, eksi=kırmızı; dağıtım=yeşil, yakım=kırmızı.
+        $positive = $net >= 0;
         $netStr = ($net > 0 ? '+' : '').$n($net);
 
         return [
             Stat::make('Sitedeki Toplam Coin', $n($data['totalCoins']))
                 ->description($netStr.' bugün (düne göre)')
-                ->descriptionIcon($shrinking ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
-                ->color($shrinking ? 'success' : 'danger'),
+                ->descriptionIcon($positive ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->color($positive ? 'success' : 'danger'),
             Stat::make('Bugün Dağıtılan Coin', $n($data['mintTotal']))
                 ->description($lines($data['mint']))
                 ->descriptionIcon('heroicon-m-banknotes')
-                ->color('warning'),
+                ->color('success'),
             Stat::make('Bugün Yakılan Coin', $n($data['burnTotal']))
                 ->description($lines($data['burn']))
                 ->descriptionIcon('heroicon-m-fire')
-                ->color('success'),
+                ->color('danger'),
             Stat::make('Coin Akışı (bugün net)', $netStr)
                 ->description('üretilen '.$n($data['mintTotal']).' · yakılan '.$n($data['burnTotal']))
-                ->descriptionIcon($shrinking ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
-                ->color($shrinking ? 'success' : 'danger'),
+                ->descriptionIcon($positive ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->color($positive ? 'success' : 'danger'),
         ];
     }
 }

@@ -14224,6 +14224,15 @@ button.acct-row-logout:hover:not(:disabled) {
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
+.lm-pot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .lm-avatar {
   width: 26px;
   height: 26px;

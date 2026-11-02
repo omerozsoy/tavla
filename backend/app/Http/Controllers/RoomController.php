@@ -969,6 +969,12 @@ class RoomController extends Controller
                 // MAÇ SKORU (kaç kaç): server_match.score (p1=beyaz, p2=siyah). Otoriter tek kaynak.
                 $sm = is_array($r->server_match) ? $r->server_match : null;
                 $score = is_array($sm['score'] ?? null) ? $sm['score'] : null;
+                // POT (kazananın alacağı coin): yüzde bahiste pct_stake_snapshot'ın iki oyuncu MIN'i
+                // (her biri bu kadar riske eder, settle min'i transfer eder); sabit para oyununda stake;
+                // potsuz eski maçta 0 (gösterilmez). settleRoom :786 ile aynı mantık.
+                $snap = is_array($sm['pct_stake_snapshot'] ?? null) ? array_map('intval', array_values($sm['pct_stake_snapshot'])) : [];
+                $pot = (int) $r->bet_pct > 0 && count($snap) >= 2 ? min($snap)
+                    : ((int) $r->stake > 0 ? (int) $r->stake : 0);
 
                 return [
                     'code' => $r->code,
@@ -986,6 +992,7 @@ class RoomController extends Controller
                     'p2_score' => $score !== null ? (int) ($score['black'] ?? 0) : null,
                     'stake' => (int) $r->stake,
                     'bet_pct' => (int) $r->bet_pct,
+                    'pot' => $pot, // kazananın alacağı coin (0 = potsuz eski maç, gösterilmez)
                     'target' => $r->target !== null ? (int) $r->target : null,
                     'classic' => (bool) ($r->classic ?? false), // Klasik Tavla rozeti (canlı maç listesi)
                     // Etiket icin tip. TURNUVA: turnuva mac odasi mode=NULL kurulur (enter(), davetsiz) ve

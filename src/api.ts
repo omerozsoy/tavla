@@ -2279,6 +2279,7 @@ export interface LiveMatch {
   p2_score?: number | null // maç skoru (server_match.score.black)
   stake: number
   bet_pct: number
+  pot?: number // kazananin alacagi coin (0 = potsuz eski mac)
   target?: number | null
   mode?: 'ranked' | 'friendly' | 'tournament'
   classic?: boolean // Klasik Tavla (kup yok + mars=2) -> canli mac listesinde rozet
