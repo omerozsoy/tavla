@@ -43,13 +43,20 @@ export function LineChart({
   color = 'var(--accent)',
   height = 88,
   zeroLine = false,
+  decimals = 0,
 }: {
   data: number[]
   dates?: string[] // data ile hizali gun (YYYY-MM-DD) — X ekseninde gosterilir
   color?: string
   height?: number
   zeroLine?: boolean // kirmizi y=0 referans cizgisi (sans gibi +/- metrikler icin)
+  decimals?: number // Y ekseni etiket ondalik basamagi (sans gibi kucuk/ondalik metrikler icin)
 }) {
+  // Y bareminde ondalik: istenirse toFixed, yoksa tamsayiya yuvarla (coin/rating gibi).
+  const fmtTick = (n: number) =>
+    decimals > 0
+      ? n.toLocaleString('tr-TR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+      : fmtAxis(Math.round(n))
   const { t } = useT()
   const ref = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(320)
@@ -146,7 +153,7 @@ export function LineChart({
             <g key={k}>
               <line className="lc-grid" x1={padL} y1={y} x2={w - padR} y2={y} />
               <text className="lc-tick lc-tick-y" x={padL - 6} y={y} dominantBaseline="middle" textAnchor="end">
-                {fmtAxis(Math.round(v))}
+                {fmtTick(v)}
               </text>
             </g>
           )

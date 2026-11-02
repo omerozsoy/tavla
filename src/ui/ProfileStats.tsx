@@ -335,7 +335,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   </div>
                 </div>
                 {an && an.luck_history.length >= 2 ? (
-                  <LineChart data={an.luck_history} dates={an.luck_dates} color="#3b9ae1" zeroLine />
+                  <LineChart data={an.luck_history} dates={an.luck_dates} color="#3b9ae1" zeroLine decimals={1} />
                 ) : !an ? (
                   <Skeleton w="100%" h={80} r={8} />
                 ) : (
