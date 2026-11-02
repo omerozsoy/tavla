@@ -47,37 +47,6 @@ class PrGnubgAuthoritativeTest extends TestCase
         };
     }
 
-    /**
-     * RENK-DUYARLI sahte orkestrator: her renk için FARKLI PR döndürür -> SWAP'ı yakalayabilir.
-     * (Eski fakeOrch renkten bağımsız sabit döner; swap'ı GÖREMEZ.) $byColor =
-     * ['white'=>['loss'=>x,'dec'=>n], 'black'=>[...]]; PR = (loss/dec)*500.
-     */
-    private function colorOrch(array $byColor): AnalysisOrchestrator
-    {
-        return new class($this->app->make(GnuBgClient::class), $byColor) extends AnalysisOrchestrator
-        {
-            public function __construct(GnuBgClient $g, private array $m)
-            {
-                parent::__construct($g);
-            }
-
-            public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2, ?callable $onProgress = null): array
-            {
-                $c = $this->m[$player] ?? ['loss' => 0.0, 'dec' => 0];
-                $pr = $c['dec'] > 0 ? ($c['loss'] / $c['dec']) * 500 : 0.0;
-
-                return ['pr' => $pr, 'loss' => $c['loss'], 'decisions' => $c['dec'], 'evaluated' => $c['dec'],
-                    'skipped' => 0, 'strictPr' => $pr, 'loosePr' => $pr, 'skipReasons' => [], 'firstSkip' => null, 'perDecision' => []];
-            }
-
-            public function cubePr(array $log, string $player, int $matchLength = 0, ?callable $onProgress = null): array
-            {
-                return ['pr' => 0.0, 'loss' => 0.0, 'decisions' => 0, 'evaluated' => 0, 'skipped' => 0,
-                    'strictPr' => null, 'loosePr' => null, 'perDecision' => []];
-            }
-        };
-    }
-
     /** İki-oyunculu ONLINE maçın iki satırını kurar (her iki renk de log'da). Kazanan = white. */
     private function onlineMatchRows(string $room): array
     {
@@ -102,55 +71,26 @@ class PrGnubgAuthoritativeTest extends TestCase
     }
 
     /**
-     * 5EPMC AYNEN TEKRAR (bug'ın GERÇEK koşulu): KAYBEDEN'in (black) işi ÖNCE, YARIM logda koşup
-     * kazananı (white) YANLIŞ KÖTÜ (29.0) hesaplar -> black.gnubg_opponent_pr = 29.0 (yanlış). Sonra
-     * KAZANAN'ın (white) işi TAM logda kendi 3.0'ını bulur. ESKİ KOD: white.gnubg_pr = black'in yanlış
-     * opponent'ı (29.0) ile aynalanır -> KAZANANIN EKRANINDA RAKİBİN PR'ı (tam 5EPMC şikayeti). YENİ KOD:
-     * white kendi self 3.0'ını yazar. Bu test ESKİ KODDA KIRILIR, yeni kodda geçer -> gerçek kalkan.
+     * TEK PR KAYNAĞI (2026-11-03): online maçın İKİ satırında da PrJob koşsa bile hiçbir PR DEĞERİ (self
+     * veya opponent) YAZILMAZ -> iki satır Snowie'den gelecek değere kadar "—" kalır; per-pozisyonun
+     * Snowie ile çelişen çapraz değerleri (DRHK8) artık OLUŞMAZ. Snowie tek analizden iki satırı tutarlı
+     * doldurur (bkz AnalyzeMatchSnowieJobTest::test_both_rows_cross_consistent_from_single_analysis).
      */
-    public function test_winner_second_job_keeps_own_pr_when_sibling_miscomputed_opponent(): void
+    public function test_prjob_inert_on_both_online_rows(): void
     {
         config(['gnubg.pr_mode' => 'authoritative']);
-        [$w, $b] = $this->onlineMatchRows('SWAP5EPMC');
+        [$w, $b] = $this->onlineMatchRows('NOWRITE2');
 
-        // (1) KAYBEDEN önce + YARIM log -> kazananı YANLIŞ 29.0 hesaplar (white'ı kötü sanır).
-        (new AnalyzeMatchPrJob($b->id))->handle(
-            $this->colorOrch(['white' => ['loss' => 0.29, 'dec' => 5], 'black' => ['loss' => 0.29, 'dec' => 5]])
-        );
-        $b->refresh();
-        $this->assertEqualsWithDelta(29.0, (float) $b->gnubg_opponent_pr, 0.01, 'kurulum: sibling kazananı YANLIŞ 29.0 hesapladı');
-
-        // (2) KAZANAN sonra + TAM log -> kendi gerçek 3.0'ını bulur.
-        (new AnalyzeMatchPrJob($w->id))->handle(
-            $this->colorOrch(['white' => ['loss' => 0.03, 'dec' => 5], 'black' => ['loss' => 0.29, 'dec' => 5]])
-        );
-        $w->refresh();
-
-        $this->assertEqualsWithDelta(3.0, (float) $w->gnubg_pr, 0.01,
-            '5EPMC KALKANI: kazanan KENDİ self 3.0 PR\'ını görür; sibling\'in yanlış 29.0\'ı ASLA sızmaz');
-        $this->assertGreaterThan(5.0, abs((float) $w->gnubg_pr - (float) $w->gnubg_opponent_pr), 'swap imzası (self==opponent) OLUŞMAZ');
-    }
-
-    /**
-     * Ters sıra + çapraz tutarlılık: kazanan ÖNCE koşsa da (self doğru yazılır), kaybeden SONRA mirror
-     * yapsa da her oyuncu KENDİ rengini görür. İki renk FARKLI PR -> renk filtresi doğru atamazsa kırılır.
-     */
-    public function test_consistent_run_assigns_each_color_its_own_pr_and_cross_consistent(): void
-    {
-        config(['gnubg.pr_mode' => 'authoritative']);
-        $orch = $this->colorOrch(['white' => ['loss' => 0.03, 'dec' => 5], 'black' => ['loss' => 0.29, 'dec' => 5]]);
-        [$w, $b] = $this->onlineMatchRows('SWAPGUARD2');
-
-        (new AnalyzeMatchPrJob($w->id))->handle($orch); // kazanan önce
-        (new AnalyzeMatchPrJob($b->id))->handle($orch); // kaybeden sonra (mirror)
+        (new AnalyzeMatchPrJob($w->id))->handle($this->fakeOrch(chkPr: 3.0, chkLoss: 0.03, chkDec: 5));
+        (new AnalyzeMatchPrJob($b->id))->handle($this->fakeOrch(chkPr: 29.0, chkLoss: 0.29, chkDec: 5));
 
         $w->refresh();
         $b->refresh();
-        $this->assertEqualsWithDelta(3.0, (float) $w->gnubg_pr, 0.01, 'white KENDİ 3.0');
-        $this->assertEqualsWithDelta(29.0, (float) $b->gnubg_pr, 0.01, 'black KENDİ 29.0');
-        // Çapraz: benim self'im = rakibin bana bakışı (iki satır aynı maçı anlatır).
-        $this->assertEqualsWithDelta((float) $w->gnubg_pr, (float) $b->gnubg_opponent_pr, 0.01);
-        $this->assertEqualsWithDelta((float) $b->gnubg_pr, (float) $w->gnubg_opponent_pr, 0.01);
+        foreach ([$w, $b] as $row) {
+            $this->assertNull($row->gnubg_pr, 'PrJob self PR YAZMAMALI (Snowie otoriter)');
+            $this->assertNull($row->gnubg_opponent_pr, 'PrJob rakip PR YAZMAMALI');
+            $this->assertNull($row->opponent_pr, 'PrJob opponent_pr fallback YAZMAMALI');
+        }
     }
 
     private function matchWithLog(float $clientPr): MatchResult
@@ -168,30 +108,29 @@ class PrGnubgAuthoritativeTest extends TestCase
         ]);
     }
 
-    public function test_authoritative_overwrites_pr_with_gnubg(): void
-    {
-        config(['gnubg.pr_mode' => 'authoritative']);
-        $mr = $this->matchWithLog(clientPr: 12.0); // istemci wildbg: 12 (sisirilmis)
-
-        // gnubg: checker loss 0.048 / 6 karar -> overall = (0.048/6)*500 = 4.0
-        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
-
-        $mr->refresh();
-        $this->assertEqualsWithDelta(4.0, (float) $mr->pr, 1e-6, 'otoriter PR gnubg olmali');
-        $this->assertEqualsWithDelta(0.048, (float) $mr->pr_equity_lost, 1e-6);
-        $this->assertSame(6, (int) $mr->pr_decisions);
-        $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6);
-    }
-
-    /** Per-pozisyon PR 100'e TAVANLANIR: az-kararlı maçta ×500 absürt olur (Snowie/XG gibi cap). */
-    public function test_per_position_pr_capped_at_100(): void
+    /**
+     * TEK PR KAYNAĞI (2026-11-03): AnalyzeMatchPrJob ARTIK hiçbir PR DEĞERİ yazmaz — PR'ın tek otoritesi
+     * Snowie (AnalyzeMatchSnowieJob). Kalkan yokken (taze satır) bile per-pozisyon değer YAZILMAZ; böylece
+     * Snowie'ninkiyle çelişen ikinci bir PR asla oluşmaz (DRHK8 kök neden). Bu job yalnız Hata Günlüğü +
+     * şans + mezar taşı bırakır; gösterilen PR'ı Snowie doldurur.
+     */
+    public function test_prjob_writes_no_pr_value_single_source_is_snowie(): void
     {
         config(['gnubg.pr_mode' => 'authoritative']);
         $mr = $this->matchWithLog(clientPr: 12.0);
-        // loss 0.5 / 1 karar -> ×500 = 250 -> 100'e tavanlanmalı.
-        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 250.0, chkLoss: 0.5, chkDec: 1));
+        // Taze: Snowie henüz koşmadı (gnubg_pr NULL, pr_shield_at NULL). İstemci totallerini de boşalt.
+        MatchResult::where('id', $mr->id)->update([
+            'pr' => null, 'pr_equity_lost' => null, 'pr_decisions' => null,
+        ]);
+
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
+
         $mr->refresh();
-        $this->assertEqualsWithDelta(100.0, (float) $mr->gnubg_pr, 1e-6, 'per-pozisyon PR 100 tavanını aşmamalı');
+        $this->assertNull($mr->gnubg_pr, 'PrJob gnubg_pr YAZMAMALI (Snowie otoriter)');
+        $this->assertNull($mr->gnubg_checker_pr, 'PrJob gnubg_checker_pr YAZMAMALI');
+        $this->assertNull($mr->pr, 'PrJob otoriter pr YAZMAMALI');
+        $this->assertNull($mr->gnubg_opponent_pr, 'PrJob rakip PR YAZMAMALI (Snowie iki tarafı birden yazar)');
+        $this->assertNotNull($mr->gnubg_pr_at, 'skorlanabilir maç mezar taşı alır (heal döngüsü yok)');
     }
 
     /**
@@ -218,52 +157,6 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertSame(10, (int) $mr->pr_decisions, 'kariyer havuz totalleri de Snowie değerinde kalmalı');
     }
 
-    /**
-     * KÖK FIX (5EPMC "yanlış PR" / self-opponent SWAP): Gösterilen gnubg_pr DAİMA bu satırın KENDİ
-     * self-analizinden gelir — sibling'in "opponent" hesabından ASLA aynalanmaz. Eskiden mirror
-     * kendi gnubg_pr'ı sibling.gnubg_opponent_pr ile yazıyordu; sibling maç-sonu YARIM match_moves /
-     * client-log fallback'te koşmuşsa o değer YANLIŞtı -> kazananın ekranına RAKİBİN PR'ı düşüyordu
-     * (miayke süper oynadı ama 29.2 göründü). Bu test: sibling'de BİLEREK yanlış opponent değeri (10.67)
-     * dururken, B'nin kendi self-analizi (4.0) gnubg_pr'ı belirlemeli; sibling değeri ASLA sızmamalı.
-     * DEDUPE korunur: yalnız RAKİP (gnubg_opponent_pr) sibling'in SELF'inden aynalanır (pahalı yarı atlanır).
-     */
-    public function test_self_pr_is_authoritative_and_never_taken_from_sibling_mirror(): void
-    {
-        config(['gnubg.pr_mode' => 'authoritative']);
-        $a = User::factory()->create();
-        $b = User::factory()->create();
-        $aRow = MatchResult::create([
-            'user_id' => $a->id, 'won' => true, 'opponent_rating' => 1500,
-            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
-            'match_length' => 3, 'match_type' => 'match', 'room_code' => 'MIRROR1', 'pr' => 7.07,
-            'log' => json_encode(['hc' => 'white', 'log' => []]),
-        ]);
-        // sibling (A): self 7.07; B hakkındaki "opponent" hesabı BİLEREK YANLIŞ (10.67) — ör. A yarım
-        // logda koşmuş. B'nin GÖSTERİLEN PR'ı bu yanlış değeri ASLA almamalı.
-        MatchResult::where('id', $aRow->id)->update([
-            'gnubg_pr' => 7.07, 'gnubg_checker_pr' => 7.07,
-            'gnubg_opponent_pr' => 10.67, 'gnubg_opponent_checker_pr' => 10.67,
-            'gnubg_pr_at' => now(),
-        ]);
-        $mrB = MatchResult::create([
-            'user_id' => $b->id, 'won' => false, 'opponent_rating' => 1500,
-            'rating_before' => 1500, 'rating_after' => 1484, 'delta' => -16,
-            'match_length' => 3, 'match_type' => 'match', 'room_code' => 'MIRROR1', 'pr' => 12.0,
-            'log' => json_encode(['hc' => 'black', 'log' => [
-                ['player' => 'black', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [3, 1], 'playedSteps' => [[8, 5]]],
-            ]]),
-        ]);
-
-        // B'nin kendi self-analizi: loss 0.048 / 6 karar -> overall = (0.048/6)*500 = 4.0.
-        (new AnalyzeMatchPrJob($mrB->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
-
-        $mrB->refresh();
-        $this->assertEqualsWithDelta(4.0, (float) $mrB->gnubg_pr, 1e-6, 'KENDİ PR self-analizden (4.0) — sibling.opponent (10.67) ASLA sızmamalı (swap kök fix)');
-        $this->assertEqualsWithDelta(4.0, (float) $mrB->gnubg_checker_pr, 1e-6, 'checker PR de kendi self-analizden');
-        $this->assertEqualsWithDelta(7.07, (float) $mrB->gnubg_opponent_pr, 1e-6, 'RAKİP PR sibling.self (7.07) ile aynalanır (dedupe korunur)');
-        $this->assertNotNull($mrB->gnubg_pr_at);
-    }
-
     public function test_match_pr_gnubg_endpoint_ready_flag(): void
     {
         $u = User::factory()->create();
@@ -285,33 +178,6 @@ class PrGnubgAuthoritativeTest extends TestCase
         // baskasinin maci -> 403
         $other = User::factory()->create();
         $this->actingAs($other)->getJson("/api/me/match-pr-gnubg/{$mr->id}")->assertStatus(403);
-    }
-
-    public function test_online_opponent_pr_filled_from_own_log_when_opponent_never_reported(): void
-    {
-        // Rakip (kaybeden) HİÇ raporlamadı: karşı satır YOK. Kazananın log'u rakibin reconstructed
-        // hamlelerini de içerir -> gnubg rakip PR'ını AYNI log'dan hesaplar. Sonuç ekranı (gnubg_opponent_pr)
-        // + tarihsel "Maç Analizleri" (opponent_pr) artık "—" yerine sayı gösterir.
-        config(['gnubg.pr_mode' => 'authoritative']);
-        $u = User::factory()->create();
-        $mr = MatchResult::create([
-            'user_id' => $u->id, 'won' => true, 'opponent_rating' => 1500,
-            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
-            'match_length' => 3, 'match_type' => 'match', 'pr' => 12.0,
-            'room_code' => 'ABCDE', // ONLINE maç
-            'log' => json_encode(['hc' => 'white', 'log' => [
-                ['player' => 'white', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [3, 1], 'playedSteps' => [[8, 5]]],
-                ['player' => 'black', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [6, 2], 'playedSteps' => [[24, 18]]],
-            ]]),
-        ]);
-
-        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
-
-        $mr->refresh();
-        $this->assertNotNull($mr->gnubg_opponent_pr, 'online rakip gnubg PR log\'dan dolmali (sonuç ekranı)');
-        $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_opponent_pr, 1e-6);
-        $this->assertNotNull($mr->opponent_pr, 'online rakip opponent_pr fallback dolmali (Maç Analizleri)');
-        $this->assertEqualsWithDelta(4.0, (float) $mr->opponent_pr, 1e-6);
     }
 
     /** gnubg HİÇBİR pozisyon değerlendiremeyen (evaluated=0) sahte orkestrator -> pr 0.0 fallback. */
@@ -359,32 +225,6 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertNull($mr->gnubg_checker_pr, 'değerlendirme yoksa sahte 0.0 gnubg_checker_pr YAZILMAMALI');
         $this->assertNull($mr->gnubg_opponent_pr, 'rakip skorlanamadıysa gnubg_opponent_pr YAZILMAMALI (0.00+Super GM bug)');
         $this->assertNull($mr->opponent_pr, 'rakip opponent_pr fallback da yazılmamalı');
-    }
-
-    /** Küpü hiç olmayan maçta (cube evaluated=0) gnubg_cube_pr sahte 0.00 yerine NULL kalmalı -> "—". */
-    public function test_cube_pr_null_when_no_cube_positions(): void
-    {
-        config(['gnubg.pr_mode' => 'authoritative']);
-        $mr = $this->matchWithLog(clientPr: 12.0);
-
-        // fakeOrch: checker evaluated=6 (dolu), cube evaluated=0 (küp kararı yok).
-        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
-
-        $mr->refresh();
-        $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_checker_pr, 1e-6, 'pul PR yazılmalı');
-        $this->assertNull($mr->gnubg_cube_pr, 'küp kararı yoksa gnubg_cube_pr sahte 0.00 değil NULL olmalı');
-    }
-
-    public function test_shadow_does_not_touch_authoritative_pr(): void
-    {
-        config(['gnubg.pr_mode' => 'shadow']);
-        $mr = $this->matchWithLog(clientPr: 12.0);
-
-        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
-
-        $mr->refresh();
-        $this->assertEqualsWithDelta(12.0, (float) $mr->pr, 1e-6, 'shadow: otoriter PR degismemeli');
-        $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6, 'shadow: gnubg_pr yine dolmali');
     }
 
     /** gnubg mid-run erişilemez (skorlanacak içerik VAR ama hepsi gnubg_null): eval=0, skip=gnubg_null. */

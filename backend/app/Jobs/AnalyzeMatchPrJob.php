@@ -126,8 +126,12 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // (self + mirror değilse opp) -> yüzde = analiz edilen / toplam. Her pencere (chunk) bitince
         // closure Cache'e yazar; matchGnubgPr ucu okuyup istemciye verir (prefix tavlatv-cache-,
         // worker->web paylaşımlı store). Önbellek isabetleri de "bitmiş" sayılır (dürüst: iş bitmiş).
-        $computeOppPr = ($mr->match_type ?? null) === StatsConfig::MATCH_TYPE_AI
-            || ! empty($mr->room_code);
+        // TEK PR KAYNAĞI (2026-11-03): rakip PR'ını ARTIK yalnız Snowie (AnalyzeMatchSnowieJob) yazar.
+        // Snowie TEK gnubg analizinden İKİ oyuncuyu birlikte skorlar -> çapraz değerler (white.gnubg_pr ==
+        // black.gnubg_opponent_pr) YAPISAL olarak tutarlı. Bu job'un ayrı per-pozisyon rakip hesabı,
+        // Snowie'nin self'iyle çelişen FARKLI opponent PR yazıp iki satırı tutarsız bırakan İKİNCİ motordu
+        // (DRHK8 kök neden) -> KAPATILDI. Rakip gnubg'de yeniden hesaplanmaz (arka plan yükü de ~yarıya iner).
+        $computeOppPr = false;
         $oppColor = $player === 'white' ? 'black' : 'white';
         $prTotal = $orch->countPositions($log, $player)
             + (($computeOppPr && ! $mirror) ? $orch->countPositions($log, $oppColor) : 0);
@@ -322,10 +326,14 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // SONRA bu job koşarsa onu EZMEMELİ. İki fresh sinyal (job başındaki $mr bayat olabilir -> DB'den):
         //  - pr_shield_at dolu  -> Snowie bu odayı işledi (otoriter)
         //  - gnubg_pr + gnubg_review dolu -> review otoriter skorladı (eski guard; korunur)
-        $prAuthoritative = (Schema::hasColumn('match_results', 'pr_shield_at')
-                && MatchResult::where('id', $mr->id)->whereNotNull('pr_shield_at')->exists())
-            || (Schema::hasColumn('match_results', 'gnubg_review')
-                && MatchResult::where('id', $mr->id)->whereNotNull('gnubg_pr')->whereNotNull('gnubg_review')->exists());
+        // TEK PR KAYNAĞI (2026-11-03): PR'ın TEK yetkilisi Snowie (AnalyzeMatchSnowieJob). Bu job ARTIK
+        // hiçbir PR DEĞERİ yazmaz (gnubg_pr/checker/cube, pr, pr_equity_lost/decisions, gnubg_opponent_*,
+        // opponent_pr) -> yalnız Hata Günlüğü (per-karar loss) + şans + mezar taşını bırakır. Eskiden
+        // pr_shield_at yarış penceresinde per-pozisyon değerleri Snowie'ninkini ezip FARKLI PR (self=Snowie /
+        // opponent=per-pozisyon) bırakıyordu — DRHK8 kök neden. Koşulsuz true: aşağıdaki strip PR kolonlarını
+        // HER ZAMAN $upd'den düşürür. (gnubg_pr_at mezar taşı strip listesinde DEĞİL -> heal döngü kalkanı
+        // aynen korunur; Snowie her maç yolunda + heal'de de dispatch edilir -> otoriter PR'ı O yazar.)
+        $prAuthoritative = true;
         if ($prAuthoritative) {
             foreach (['gnubg_pr', 'gnubg_checker_pr', 'gnubg_cube_pr', 'pr', 'pr_equity_lost', 'pr_decisions',
                 'gnubg_opponent_pr', 'gnubg_opponent_checker_pr', 'gnubg_opponent_cube_pr'] as $k) {

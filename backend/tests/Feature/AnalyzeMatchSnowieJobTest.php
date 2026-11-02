@@ -100,4 +100,29 @@ class AnalyzeMatchSnowieJobTest extends TestCase
         $this->assertEqualsWithDelta(20.5, (float) $mr->gnubg_pr, 1e-6, 'geçerli Snowie otoriter -> per-pozisyon 16.0yı EZER');
         $this->assertNotNull($mr->pr_shield_at, 'işlendi -> damga konmalı (resumable)');
     }
+
+    /**
+     * TEK PR KAYNAĞI'nın ÇEKİRDEK garantisi: Snowie TEK analizden odanın İKİ satırını renk-eşlemeli yazar
+     * -> white.gnubg_pr == black.gnubg_opponent_pr ve tersi DAİMA tutar. (DRHK8'de bu çapraz tutmuyordu:
+     * opp'u ayrı per-pozisyon motor yazıyordu; o motor artık PR yazmıyor -> tek yazar Snowie.)
+     */
+    public function test_both_rows_cross_consistent_from_single_analysis(): void
+    {
+        $w = $this->row('XROOM', 'white');
+        $b = $this->row('XROOM', 'black');
+        $this->fakeSnowie(
+            ['pr' => 6.0, 'checker_pr' => 6.0, 'cube_pr' => 0.0, 'cube_equity_lost' => 0, 'cube_decisions' => 0, 'equity_lost' => 0.6, 'decisions' => 50],
+            ['pr' => 18.0, 'checker_pr' => 18.0, 'cube_pr' => 0.0, 'cube_equity_lost' => 0, 'cube_decisions' => 0, 'equity_lost' => 1.8, 'decisions' => 50],
+        );
+
+        (new AnalyzeMatchSnowieJob($w->id))->handle($this->healthyGnubg());
+
+        $w->refresh();
+        $b->refresh();
+        $this->assertEqualsWithDelta(6.0, (float) $w->gnubg_pr, 1e-6, 'white self = snow[white]');
+        $this->assertEqualsWithDelta(18.0, (float) $b->gnubg_pr, 1e-6, 'black self = snow[black]');
+        // Çapraz: tek analiz -> self == rakibin bana bakışı (her iki yön).
+        $this->assertEqualsWithDelta((float) $w->gnubg_pr, (float) $b->gnubg_opponent_pr, 1e-6, 'white.self == black.opp');
+        $this->assertEqualsWithDelta((float) $b->gnubg_pr, (float) $w->gnubg_opponent_pr, 1e-6, 'black.self == white.opp');
+    }
 }
