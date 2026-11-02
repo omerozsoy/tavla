@@ -208,7 +208,7 @@ export function LineChart({
           className="lc-tip"
           style={{ left: `${tipLeftPct}%`, top: `${Y(data[hover])}px` }}
         >
-          <strong>{fmtAxis(data[hover])}</strong>
+          <strong>{decimals > 0 ? fmtTick(data[hover]) : fmtAxis(data[hover])}</strong>
           {hasDates && <span>{fmtDay(dates![hover])}</span>}
         </div>
       )}
