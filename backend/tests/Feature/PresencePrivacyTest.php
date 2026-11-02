@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,7 @@ class PresencePrivacyTest extends TestCase
     public function test_blocked_user_cannot_send_game_invite(): void
     {
         [$a, $b] = User::factory()->count(2)->create(['presence_status' => 'available'])->all();
+        $a->forceFill(['coins' => 100000])->save(); // potsuz maç yasak -> davet eden coinli olmalı (coins fillable DEĞİL)
         DB::table('user_blocks')->insert(['blocker_id' => $b->id, 'blocked_id' => $a->id, 'created_at' => now()]);
         Sanctum::actingAs($a);
         $this->postJson("/api/friends/{$b->id}/invite")->assertStatus(409);
@@ -60,7 +62,7 @@ class PresencePrivacyTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true, 'presence_status' => 'ghost', 'last_seen' => now()]);
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
-        $room = \App\Models\Room::create([
+        $room = Room::create([
             'code' => 'GHOSTR', 'status' => 'playing', 'mode' => 'friendly',
             'p1_token' => 'p1t', 'p1_user_id' => $p1->id, 'p1_name' => 'P1',
             'p2_token' => 'p2t', 'p2_user_id' => $p2->id, 'p2_name' => 'P2',

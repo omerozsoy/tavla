@@ -54,11 +54,17 @@ class RoomStakeGuardTest extends TestCase
         // ya da bahissiz) varken yeni eşleşme REDDEDİLİR -> tek aktif maç. Eskiden bahisli maçtayken
         // bahissiz oyun serbestti; o allowance kaldırıldı (userInAnyPlaying + atomik koltuk kilidi).
         $a = $this->user('stakeB');
-        $this->playingStakedRoom($a, 'PLAY2');
+        // Mevcut maç BAHİSSİZ (bedava): yeni arama (potsuz yasak -> bet_pct:10) userInStakedPlaying'e
+        // TAKILMADAN userInAnyPlaying 409'una ulaşır -> "herhangi aktif maç varken ikinci maç yok".
+        Room::create([
+            'code' => 'PLAY2', 'p1_token' => 'ptok', 'p1_user_id' => $a->id, 'p1_name' => $a->nickname,
+            'p2_token' => 'p2tok', 'p2_user_id' => null, 'p2_name' => 'X',
+            'status' => 'playing', 'stake' => 0, 'bet_pct' => 0, 'target' => 1, 'version' => 1,
+        ]);
 
         Sanctum::actingAs($a);
         $this->postJson('/api/matchmaking', [
-            'token' => 'freetok', 'name' => 'stakeB', 'stake' => 0, 'targets' => [1],
+            'token' => 'freetok', 'name' => 'stakeB', 'bet_pct' => 10, 'targets' => [1],
         ])->assertStatus(409); // zaten bir maçtasın -> engellenir
     }
 

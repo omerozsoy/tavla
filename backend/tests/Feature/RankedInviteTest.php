@@ -24,7 +24,7 @@ class RankedInviteTest extends TestCase
             'nickname' => $tag.uniqid(), 'email' => uniqid().'@x.com',
             'password' => bcrypt('secret123'), 'rating' => 1500,
         ]);
-        $u->forceFill(['email_verified_at' => now()])->save(); // email_verified_at fillable DEĞİL
+        $u->forceFill(['email_verified_at' => now(), 'coins' => 100000])->save(); // email_verified_at + coins fillable DEĞİL; potsuz maç yasak
 
         return $u;
     }

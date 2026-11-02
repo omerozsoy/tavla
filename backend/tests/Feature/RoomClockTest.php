@@ -67,18 +67,21 @@ class RoomClockTest extends TestCase
         $a = User::factory()->create();
         $b = User::factory()->create();
         $c = User::factory()->create();
+        foreach ([$a, $b, $c] as $u) {
+            $u->forceFill(['coins' => 100000])->save(); // potsuz maç yasak -> coinli + bet_pct şart
+        }
         Sanctum::actingAs($a);
-        $this->postJson('/api/matchmaking', ['token' => 'A', 'name' => 'A', 'targets' => [5], 'time_control' => 'normal'])
+        $this->postJson('/api/matchmaking', ['token' => 'A', 'name' => 'A', 'targets' => [5], 'time_control' => 'normal', 'bet_pct' => 10])
             ->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
 
         // Farkli tempo -> A ile ESLESMEZ, kendi havuzuna girer
         Sanctum::actingAs($b);
-        $this->postJson('/api/matchmaking', ['token' => 'B', 'name' => 'B', 'targets' => [5], 'time_control' => 'speed'])
+        $this->postJson('/api/matchmaking', ['token' => 'B', 'name' => 'B', 'targets' => [5], 'time_control' => 'speed', 'bet_pct' => 10])
             ->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
 
         // Ayni tempo -> A ile eslesir
         Sanctum::actingAs($c);
-        $this->postJson('/api/matchmaking', ['token' => 'C', 'name' => 'C', 'targets' => [5], 'time_control' => 'normal'])
+        $this->postJson('/api/matchmaking', ['token' => 'C', 'name' => 'C', 'targets' => [5], 'time_control' => 'normal', 'bet_pct' => 10])
             ->assertOk()->assertJson(['matched' => true, 'slot' => 'p2']);
     }
 

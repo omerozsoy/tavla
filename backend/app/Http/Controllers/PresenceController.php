@@ -332,7 +332,17 @@ class PresenceController extends Controller
             'time_control' => ['nullable', 'in:casual,normal,speed'],
             'unrated' => ['nullable', 'boolean'], // puansız arkadaş maçı (rating yok, PR kariyere girmez)
             'classic' => ['nullable', 'boolean'], // Klasik Tavla daveti (küp yok + mars=2)
+            // Yüzde bahis (bakiyenin %'si). Potsuz maç YASAK (kullanıcı direktifi): gelmezse/0 ise
+            // min %10'a düşer -> hiçbir insan-insan maçı bedava kurulamaz. enter() p2 katılımında
+            // odaya taşınır + pct_stake_snapshot üretilir.
+            'bet_pct' => ['nullable', 'integer', 'in:10,30,50,100'],
         ]);
+        // Davet eden en az 1 kullanılabilir coin'e sahip olmalı (yüzde bahis min pot). Gerçek iki-taraflı
+        // yeterlilik enter()'da; bu erken uyarı 0 coin'le anlamsız (snapshot=0) davet atılmasını önler.
+        $betPct = (int) ($settings['bet_pct'] ?? 10) ?: 10;
+        if ((int) (($me->coins ?? 0) - ($me->coins_reserved ?? 0)) < 1) {
+            return $this->fail('Bahisli maç için yeterli coin\'in yok.', 422);
+        }
         $target = User::find($userId);
         if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
@@ -387,6 +397,7 @@ class PresenceController extends Controller
             'time_control' => $settings['time_control'] ?? null,
             'unrated' => (bool) ($settings['unrated'] ?? true),
             'classic' => (bool) ($settings['classic'] ?? false),
+            'bet_pct' => $betPct, // yüzde bahis (enter() odaya taşır + snapshot)
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
@@ -419,6 +430,7 @@ class PresenceController extends Controller
                 'code' => null,
                 'target' => (int) ($invite->target ?? 1),
                 'timeControl' => $invite->time_control,
+                'bet_pct' => (int) ($invite->bet_pct ?? 0),
             ]);
         }
 
@@ -434,6 +446,7 @@ class PresenceController extends Controller
                 'target' => (int) ($invite->target ?? 1),
                 'timeControl' => $invite->time_control,
                 'classic' => (bool) ($invite->classic ?? false),
+                'bet_pct' => (int) ($invite->bet_pct ?? 0),
             ]);
         }
         if (($invite->status ?? 'pending') !== 'pending') {
@@ -485,6 +498,7 @@ class PresenceController extends Controller
             'target' => (int) ($invite->target ?? 1),
             'timeControl' => $invite->time_control,
             'classic' => (bool) ($invite->classic ?? false),
+            'bet_pct' => (int) ($invite->bet_pct ?? 0),
         ]);
     }
 

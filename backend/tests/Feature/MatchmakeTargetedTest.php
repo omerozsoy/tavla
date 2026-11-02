@@ -43,17 +43,17 @@ class MatchmakeTargetedTest extends TestCase
         // her ikisiyle de kesisir: hedefsiz olsa en eski (bob) secilirdi.
         Sanctum::actingAs($bob);
         $this->postJson('/api/matchmaking', [
-            'token' => 'B', 'name' => 'B', 'stakes' => [0], 'targets' => [3], 'time_control' => 'normal',
+            'token' => 'B', 'name' => 'B', 'stakes' => [0], 'targets' => [3], 'time_control' => 'normal', 'bet_pct' => 10,
         ])->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
         Sanctum::actingAs($carol);
         $this->postJson('/api/matchmaking', [
-            'token' => 'C', 'name' => 'C', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal',
+            'token' => 'C', 'name' => 'C', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal', 'bet_pct' => 10,
         ])->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
 
         // Alice carol'u SECER. Hedefsiz olsa en eski (bob) secilirdi; opponent_id ile carol'la eslesmeli.
         Sanctum::actingAs($alice);
         $this->postJson('/api/matchmaking', [
-            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1, 3], 'time_control' => 'normal',
+            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1, 3], 'time_control' => 'normal', 'bet_pct' => 10,
             'opponent_id' => $carol->id,
         ])->assertOk()
             ->assertJson(['matched' => true, 'slot' => 'p2'])
@@ -72,7 +72,7 @@ class MatchmakeTargetedTest extends TestCase
 
         Sanctum::actingAs($alice);
         $this->postJson('/api/matchmaking', [
-            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal',
+            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal', 'bet_pct' => 10,
             'opponent_id' => $ghostId,
         ])->assertStatus(409);
 

@@ -80,7 +80,7 @@ class DoubleGameGuardTest extends TestCase
         $this->playingRoom($me, 'BUSY1');
 
         Sanctum::actingAs($me);
-        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'busyseek'])
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'busyseek', 'bet_pct' => 10])
             ->assertStatus(409);
     }
 

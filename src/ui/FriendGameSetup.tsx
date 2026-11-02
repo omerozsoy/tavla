@@ -1,10 +1,19 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import type { TimeControl } from './MatchSetup'
+
+// Yüzde bahis (bakiyenin %'si). Potsuz maç YOK -> min %10 (Dikkatli). MatchSetup (eşleşme) ile AYNI.
+const BETS: { pct: number; key: string }[] = [
+  { pct: 10, key: 'setup.betCareful' },
+  { pct: 30, key: 'setup.betNormal' },
+  { pct: 50, key: 'setup.betAggr' },
+  { pct: 100, key: 'setup.betAll' },
+]
 
 // "Özel Oyun Oluştur" (arkadasinla oyna). Tasarim MatchSetup (YZ ile Oyna) ile AYNI:
 // sol ayar karti (Oyun turu / Uzunluk / Saat) + sag board onizleme.
@@ -40,15 +49,16 @@ interface BoardColors {
 }
 
 interface Props {
-  onCreate: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
+  onCreate: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean; betPct: number }) => void
   onJoin: (code: string) => void // arkadasin verdigi kodla odaya katil
   onCancel: () => void
   board: BoardColors
   onChangeBoard: () => void
+  coins?: number // kullanıcının coin'i (pot önizlemesi: bakiyenin %'si)
   // Belirli bir oyuncuyu DAVET etme modu (cevrimici listeden kilic ikonu): secili rakip
   // gosterilir, "Oda Oluştur" yerine "Davet Gönder" -> onInvite; kod-ile-katil kutusu gizlenir.
   invitee?: { id: number; name: string; avatar?: string | null } | null
-  onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean }) => void
+  onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean; betPct: number }) => void
   defaultClassic?: boolean // KLASIK TAVLA girişi: klasik varsayılan ON + Maç Oyunu sekmesi açık
   titleOverride?: string // admin "Sayfa Metni" baslik override'i (davet modu HARIÇ; bos -> i18n varsayilani)
   // PUANLI DAVET (yalnız Çevrimiçi Oyuncular play tuşu): maç puanlı (unrated=false). TÜM seçenekler açık
@@ -56,9 +66,11 @@ interface Props {
   ranked?: boolean
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, coins = 0, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false }: Props) {
   const { t } = useT()
   useEscape(onCancel)
+  const [betPct, setBetPct] = useState(10) // yüzde bahis (min %10, potsuz maç yok)
+  const pot = Math.floor((coins * betPct) / 100) // bu bahiste riske edilen coin
   // KLASIK girişte Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı). PUANLI davette
   // TÜM seçenekler açık (Tek Oyun=1 puanlık dahil) -> normal akışla birebir aynı, yalnız puanlı.
   const [tab, setTab] = useState<'single' | 'match'>(defaultClassic ? 'match' : 'single')
@@ -149,6 +161,25 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
+          {/* Maks bahis (yüzde): potsuz maç YOK -> min %10. Riske edilen coin = bakiyenin %'si. */}
+          <div className="setup-row">
+            <div className="setup-label">
+              {t('setup.maxBet')} · <Coins amount={pot} size={13} />
+            </div>
+            <div className="setup-tiles bets">
+              {BETS.map((b) => (
+                <button
+                  key={b.pct}
+                  className={`setup-tile ${betPct === b.pct ? 'active' : ''}`}
+                  onClick={() => setBetPct(b.pct)}
+                >
+                  <span>{t(b.key)}</span>
+                  <span className="bet-pct">%{b.pct}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Puanlı davet -> "puanlı" notu; aksi halde arkadaşlık maçı "hep puansız" notu. Seçici yok. */}
           <p className="setup-unrated-hint">{t(ranked ? 'friend.rankedNote' : 'friend.alwaysUnrated')}</p>
 
@@ -160,11 +191,11 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
               {t('setup.cancel')}
             </Button>
             {inviting ? (
-              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated, classic: tab === 'match' && classic })}>
+              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated, classic: tab === 'match' && classic, betPct })}>
                 <Icon name="sword" size={18} /> {t('friend.inviteBtn')}
               </Button>
             ) : (
-              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc, unrated, classic: tab === 'match' && classic })}>
+              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc, unrated, classic: tab === 'match' && classic, betPct })}>
                 <Icon name="play" size={18} /> {t('friend.create')}
               </Button>
             )}

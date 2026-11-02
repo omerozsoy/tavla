@@ -21,8 +21,15 @@ class RoomCodeAuthoritativeTest extends TestCase
     public function test_join_makes_room_authoritative_when_global_on(): void
     {
         config()->set('game.server_authoritative', true);
+        // Potsuz maç yasak -> create potlu (bet_pct=10) oda kurar; join iki tarafın da coin'ini ister.
+        $host = User::factory()->create();
+        $joiner = User::factory()->create();
+        $host->forceFill(['coins' => 100000])->save();
+        $joiner->forceFill(['coins' => 100000])->save();
+        Sanctum::actingAs($host);
         $code = $this->postJson('/api/rooms', ['token' => 'p1tok', 'name' => 'A'])
             ->assertOk()->json('room.code');
+        Sanctum::actingAs($joiner);
         $this->postJson("/api/rooms/{$code}/join", ['token' => 'p2tok', 'name' => 'B'])->assertOk();
 
         $room = Room::where('code', $code)->first();
@@ -112,8 +119,15 @@ class RoomCodeAuthoritativeTest extends TestCase
         // bekçisi (biri env-gating'i geri getirirse yakalar).
         config()->set('game.server_authoritative', false);
         config()->set('game.authoritative_users', []);
+        // Potsuz maç yasak -> create potlu (bet_pct=10) oda kurar; join iki tarafın da coin'ini ister.
+        $host = User::factory()->create();
+        $joiner = User::factory()->create();
+        $host->forceFill(['coins' => 100000])->save();
+        $joiner->forceFill(['coins' => 100000])->save();
+        Sanctum::actingAs($host);
         $code = $this->postJson('/api/rooms', ['token' => 'p1tok', 'name' => 'A'])
             ->assertOk()->json('room.code');
+        Sanctum::actingAs($joiner);
         $this->postJson("/api/rooms/{$code}/join", ['token' => 'p2tok', 'name' => 'B'])->assertOk();
 
         $this->assertTrue(
@@ -126,6 +140,9 @@ class RoomCodeAuthoritativeTest extends TestCase
     {
         $owner = User::factory()->create(['rating' => 1500, 'nickname' => 'Owner']);
         $joiner = User::factory()->create(['rating' => 1825, 'nickname' => 'Verified Player']);
+        // Potsuz maç yasak -> potlu oda join iki tarafın da coin'ini ister (coins fillable DEĞİL).
+        $owner->forceFill(['coins' => 100000])->save();
+        $joiner->forceFill(['coins' => 100000])->save();
 
         Sanctum::actingAs($owner);
         $code = $this->postJson('/api/rooms', [

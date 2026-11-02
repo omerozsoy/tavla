@@ -25,6 +25,7 @@ class MatchmakingStartStateTest extends TestCase
         ]);
         // User::$fillable does not include the verification column.
         $user->email_verified_at = now();
+        $user->coins = 100000; // potsuz maç yasak -> eşleşen iki oyuncu da coinli olmalı
         $user->save();
 
         return $user;
@@ -41,6 +42,7 @@ class MatchmakingStartStateTest extends TestCase
             'name' => 'P1',
             'targets' => [1],
             'time_control' => 'normal',
+            'bet_pct' => 10,
         ])->assertOk()->json();
 
         $code = $waiting['room']['code'];
@@ -52,6 +54,7 @@ class MatchmakingStartStateTest extends TestCase
             'name' => 'P2',
             'targets' => [1],
             'time_control' => 'normal',
+            'bet_pct' => 10,
         ])->assertOk()->assertJsonPath('room.status', 'playing');
 
         $room = Room::where('code', $code)->firstOrFail();

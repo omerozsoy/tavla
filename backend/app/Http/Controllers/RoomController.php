@@ -220,12 +220,15 @@ class RoomController extends Controller
             'target' => ['nullable', 'integer', 'min:1', 'max:25'],
             'unrated' => ['nullable', 'boolean'], // puansız arkadaş maçı
             'classic' => ['nullable', 'boolean'], // Klasik Tavla (küp yok + mars=2)
+            // Yüzde bahis: potsuz maç YASAK (kullanıcı direktifi) -> gelmezse/0 ise min %10.
+            // p2 join()'inde pct_stake_snapshot üretilir (enter ile aynı).
+            'bet_pct' => ['nullable', 'integer', 'in:10,30,50,100'],
         ]);
 
         $room = Room::create([
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
-            'p1_user_id' => $request->user('sanctum')?->id, // avatar cerceve lookup (bahis stake=0 -> settle'i etkilemez)
+            'p1_user_id' => $request->user('sanctum')?->id, // avatar cerceve lookup
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
             'p1_avatar' => AvatarStore::store($data['avatar'] ?? null), // base64 -> WebP URL (guest/eski istemci)
@@ -233,6 +236,7 @@ class RoomController extends Controller
             'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
             'unrated' => (bool) ($data['unrated'] ?? false),
             'classic' => (bool) ($data['classic'] ?? false),
+            'bet_pct' => (int) ($data['bet_pct'] ?? 10) ?: 10, // potsuz yok -> min %10
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
             'target' => (int) ($data['target'] ?? 1),
             'version' => 0,
@@ -363,6 +367,11 @@ class RoomController extends Controller
         // Bahisli oyun (sabit stake VEYA % bahis): dogrulanmis giris + coin sart.
         // Coklu bahiste EN YUKSEK secilen tutari karsilayabilmeli (eslesme o tutarda olabilir).
         $maxStake = max($stakes);
+        // POTSUZ MAÇ YASAK (kullanıcı direktifi): eşleşme havuzu insan-insandır (bot ayrı akış).
+        // Hiç bahis yoksa (ne sabit stake ne % bahis) maç kurulamaz -> bedava maç engellenir.
+        if ($maxStake === 0 && $betPct === 0) {
+            return $this->fail('Potsuz maç kurulamaz; bir bahis oranı seç.', 422);
+        }
         // PARA OYUNU (Tek Oyun: sabit bahis + target 1): küp CANLI -> en kötü (stake×48) baştan şart.
         $moneyMult = ($maxStake > 0 && $betPct === 0 && max($targets) <= 1) ? self::MONEY_WORST_MULT : 1;
         if ($maxStake > 0 || $betPct > 0) {
@@ -1116,35 +1125,35 @@ class RoomController extends Controller
                 : User::whereIn('id', $uids)->get(['id', 'country', 'avatar_frame', 'plan', 'plan_until', 'coins', 'coins_reserved'])->keyBy('id');
 
             return $rooms->map(function ($r) use ($userMap) {
-            $u = $userMap->get($r->p1_user_id);
-            $targets = is_array($r->targets) ? array_values(array_map('intval', $r->targets)) : [(int) ($r->target ?? 1)];
-            $stakes = is_array($r->stakes) ? array_values(array_map('intval', $r->stakes)) : [(int) $r->stake];
-            // Oyun Arayanlar POT: arayanın riske ettiği GERÇEK tutar. %-bahis -> arayanın
-            // kullanılabilir bakiyesinin bet_pct'si (settle snapshot ile aynı formül: floor,
-            // coins-reserved). Sabit bahis -> stake (çoklu seçimde en yüksek). İstemci bunu
-            // KENDİ riskiyle min'ler -> gerçek pot (bkz. Room.php min(snapshot)).
-            $seekerAvail = $u ? max(0, (int) ($u->coins ?? 0) - (int) ($u->coins_reserved ?? 0)) : 0;
-            $maxStake = $stakes ? max($stakes) : (int) $r->stake;
-            $risk = (int) $r->bet_pct > 0 ? (int) floor($seekerAvail * (int) $r->bet_pct / 100) : $maxStake;
+                $u = $userMap->get($r->p1_user_id);
+                $targets = is_array($r->targets) ? array_values(array_map('intval', $r->targets)) : [(int) ($r->target ?? 1)];
+                $stakes = is_array($r->stakes) ? array_values(array_map('intval', $r->stakes)) : [(int) $r->stake];
+                // Oyun Arayanlar POT: arayanın riske ettiği GERÇEK tutar. %-bahis -> arayanın
+                // kullanılabilir bakiyesinin bet_pct'si (settle snapshot ile aynı formül: floor,
+                // coins-reserved). Sabit bahis -> stake (çoklu seçimde en yüksek). İstemci bunu
+                // KENDİ riskiyle min'ler -> gerçek pot (bkz. Room.php min(snapshot)).
+                $seekerAvail = $u ? max(0, (int) ($u->coins ?? 0) - (int) ($u->coins_reserved ?? 0)) : 0;
+                $maxStake = $stakes ? max($stakes) : (int) $r->stake;
+                $risk = (int) $r->bet_pct > 0 ? (int) floor($seekerAvail * (int) $r->bet_pct / 100) : $maxStake;
 
-            return [
-                'kind' => 'seeking', // havuzda aktif arayan -> "eslesme"ye tiklanabilir
-                'id' => (int) $r->p1_user_id,
-                'name' => $r->p1_name,
-                'rating' => $r->p1_rating,
-                'avatar' => $r->p1_avatar,
-                'frame' => $u?->avatar_frame,
-                'country' => $u?->country,
-                'premium' => $u ? $u->plan_active !== 'free' : false,
-                'targets' => $targets ?: [1],
-                'stake' => (int) $r->stake,
-                'stakes' => $stakes,
-                'bet_pct' => (int) $r->bet_pct,
-                'risk' => $risk, // arayanın riske ettiği tutar (istemci kendi riskiyle min'ler = gerçek pot)
-                'classic' => (bool) ($r->classic ?? false), // Klasik Tavla: rozet + "eşleş" aynı moda katar
-                'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
-                'since' => optional($r->created_at)->toIso8601String(),
-            ];
+                return [
+                    'kind' => 'seeking', // havuzda aktif arayan -> "eslesme"ye tiklanabilir
+                    'id' => (int) $r->p1_user_id,
+                    'name' => $r->p1_name,
+                    'rating' => $r->p1_rating,
+                    'avatar' => $r->p1_avatar,
+                    'frame' => $u?->avatar_frame,
+                    'country' => $u?->country,
+                    'premium' => $u ? $u->plan_active !== 'free' : false,
+                    'targets' => $targets ?: [1],
+                    'stake' => (int) $r->stake,
+                    'stakes' => $stakes,
+                    'bet_pct' => (int) $r->bet_pct,
+                    'risk' => $risk, // arayanın riske ettiği tutar (istemci kendi riskiyle min'ler = gerçek pot)
+                    'classic' => (bool) ($r->classic ?? false), // Klasik Tavla: rozet + "eşleş" aynı moda katar
+                    'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
+                    'since' => optional($r->created_at)->toIso8601String(),
+                ];
             });
         });
 
@@ -1502,7 +1511,12 @@ class RoomController extends Controller
 
         $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
-            if (! $this->hasPendingInvite($room->code, $authUser?->id) && RoomAccess::requiresAccount($room)) {
+            // requiresAccount (bet_pct>0/stake>0/ranked) normalde kod ile rastgele katılımı engeller.
+            // İSTİSNA: kod-paylaşımlı ÖZEL arkadaş odası (mode='friendly') artık potlu (min %10) kuruluyor
+            // -> kodu paylaşan arkadaşın HESAPLI rakibi kodla girebilmeli. Misafir (authUser null) yine
+            // giremez; snapshot + coin ön-kontrolü (aşağıda) iki tarafı da hesaba bağlar.
+            $friendlyCodeJoin = $room->mode === 'friendly' && $authUser;
+            if (! $friendlyCodeJoin && ! $this->hasPendingInvite($room->code, $authUser?->id) && RoomAccess::requiresAccount($room)) {
                 return $this->fail('Bu maça katılamazsın; sadece izleyebilirsin.', 403);
             }
             if ($this->tournamentSeatDenied($room->code, $authUser?->id)) {
@@ -1521,6 +1535,17 @@ class RoomController extends Controller
             $joinUserId = $authUser?->id;
             if ($this->userInAnyPlaying($joinUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            }
+            // YÜZDE BAHİS ÖN-KONTROL (enter() ile aynı): potlu kod-paylaşımlı oda -> iki oyuncunun da
+            // en az 1 kullanılabilir coin'i olmalı. Kesin tutar snapshot'ta anlık okunur.
+            $joinBetPct = (int) ($room->bet_pct ?? 0);
+            if ($joinBetPct > 0) {
+                $jHost = $room->p1_user_id ? User::find($room->p1_user_id) : null;
+                $jP2 = $joinUserId ? User::find($joinUserId) : null;
+                $jAvail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+                if (! $jHost || ! $jP2 || $jAvail($jHost) < 1 || $jAvail($jP2) < 1) {
+                    return $this->fail('Bahisli maç için iki oyuncunun da yeterli coin\'i olmalı.', 422);
+                }
             }
             // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE) — enter() ile AYNI.
             $joinHostId = (int) ($room->p1_user_id ?? 0);
@@ -1553,6 +1578,10 @@ class RoomController extends Controller
             $room->refresh();
             // Bu maça bağlandım -> bekleyen eşleşme havuzum + diğer davetlerim iptal (iki-oyun yarışı).
             $this->clearOtherPending($joinUserId, $room->code);
+            // YÜZDE BAHİS SNAPSHOT (enter() ile aynı): kod-paylaşımlı potlu maçta pct_stake_snapshot üret.
+            if ($joinBetPct > 0) {
+                $this->seedPctStakeSnapshot($room, (int) $room->p1_user_id, (int) $joinUserId, $joinBetPct);
+            }
             // Rakip hazir: odayi kurup bekleyen host (p1) uzaktaysa "rakibin geldi" push'u.
             $this->pushToUser((int) $room->p1_user_id, 'Rakibin hazır', ($room->p2_name ?: 'Rakibin').' maça katıldı — başlıyor!', [
                 'type' => 'match_ready', 'room' => $room->code,
@@ -1562,7 +1591,7 @@ class RoomController extends Controller
             // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
             // authoritative=true. Böylece arkadaş + turnuva maçlarında da zar/hamle/skor sunucuda.
             if (Schema::hasColumn('rooms', 'authoritative')
-                && $this->shouldAuthoritative($room->p1_user_id, $room->p2_user_id, false)) {
+                && $this->shouldAuthoritative($room->p1_user_id, $room->p2_user_id, $joinBetPct > 0)) {
                 $room->authoritative = true;
                 $room->dice_authority = false;
             }
@@ -1655,6 +1684,9 @@ class RoomController extends Controller
             if (Schema::hasColumn('rooms', 'classic')) {
                 $createAttrs['classic'] = (bool) ($invite->classic ?? false);
             }
+            // YÜZDE BAHİS: davet eden pot seçti (min %10). p2 enter()'ında snapshot + coin kontrolü
+            // yapılır (matchmaking para-yolu ile aynı). Potsuz davet maçı YASAK (kullanıcı direktifi).
+            $createAttrs['bet_pct'] = (int) ($invite->bet_pct ?? 0);
         } elseif (! Cache::has(TournamentController::roomTargetKey($code))) {
             // Davetsiz + turnuva dışı: rastgele kodla kurulan özel oda = arkadaşlık maçı (A-04).
             // Eskiden mode NULL kalıyor ve RatingPolicy NULL'u "dereceli, limitsiz" sayıyordu ->
@@ -1700,6 +1732,18 @@ class RoomController extends Controller
             if ($this->userInAnyPlaying($enterUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
+            // YÜZDE BAHİS ÖN-KONTROL: bu oda potlu (davet/play min %10) ise iki oyuncunun da en az
+            // 1 kullanılabilir coin'i olmalı (matchmaking :491-494 ile aynı). Yetmezse maça HİÇ sokma
+            // (snapshot 0 / tek-taraflı pot anlamsız). Kesin tutar snapshot'ta anlık okunur.
+            $enterBetPct = (int) ($room->bet_pct ?? 0);
+            if ($enterBetPct > 0) {
+                $hostUser = $room->p1_user_id ? User::find($room->p1_user_id) : null;
+                $p2User = $enterUserId ? User::find($enterUserId) : null;
+                $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+                if (! $hostUser || ! $p2User || $avail($hostUser) < 1 || $avail($p2User) < 1) {
+                    return $this->fail('Bahisli maç için iki oyuncunun da yeterli coin\'i olmalı.', 422);
+                }
+            }
             // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE). userInAnyPlaying yarışı
             // kaçırsa bile (sub-sn eşzamanlı match+accept) bu kesin engeller. p2 kapmadan ÖNCE kilitle;
             // oda kapılamazsa (başkası aldı) kendi koltuğumu geri bırak (host'unki kazananındır).
@@ -1725,7 +1769,7 @@ class RoomController extends Controller
                 'status' => 'playing',
             ];
             if (Schema::hasColumn('rooms', 'authoritative')
-                && $this->shouldAuthoritative($room->p1_user_id, $enterUserId, false)) {
+                && $this->shouldAuthoritative($room->p1_user_id, $enterUserId, $enterBetPct > 0)) {
                 $upd['authoritative'] = true;
                 $upd['dice_authority'] = false;
             }
@@ -1748,6 +1792,12 @@ class RoomController extends Controller
             // Bu maça bağlandım -> bekleyen eşleşme havuzum + diğer davetlerim iptal (iki-oyun yarışı).
             $this->clearOtherPending($enterUserId, $code);
             $slot = 'p2';
+            // YÜZDE BAHİS SNAPSHOT: davet/play potlu maçında iki oyuncunun anlık kullanılabilir
+            // bakiyesinin %'sini pct_stake_snapshot'a yaz (matchmaking :505 ile AYNI formül). settle
+            // bunu kullanır; yoksa 409 PENDING'e düşer. initServerMatch (aşağıda) snapshot'ı KORUR.
+            if ($enterBetPct > 0) {
+                $this->seedPctStakeSnapshot($room, (int) $room->p1_user_id, (int) $enterUserId, $enterBetPct);
+            }
             // MAVI EKRAN KÖK FIX (turnuva/arkadaş "çekmiyor/giremedi"): otoriter oda AÇILIŞ tahtasını
             // SEED et. Matchmaking/bot yolu zaten server_state=initialState() ile kurar; enter() yolu
             // (turnuva + davet) authoritative=true yapıp tahtayı HİÇ kurmuyordu -> otoriter istemci
@@ -1763,6 +1813,30 @@ class RoomController extends Controller
         }
 
         return response()->json(['room' => $room->toClient(), 'slot' => $slot]);
+    }
+
+    /**
+     * Yüzde-bahis (bet_pct) maçında pct_stake_snapshot'ı üret: iki oyuncunun ANLIK kullanılabilir
+     * bakiyesinin (coins - coins_reserved) bet_pct %'si. settle (settleRoom :786) bunu okur; kazanan
+     * min(iki bahis) alır. Davet/play yolu (enter) için; matchmaking kendi inline snapshot'ını yazar
+     * (:505, AYNI formül). lockForUpdate ile eşzamanlı bakiye okuma tutarlı. server_match'e merge eder
+     * (initServerMatch snapshot'ı korur). ponytail: ortak helper yalnız enter'da; matchmaking inline
+     * çalışıyor, para-yolunu bozmamak için birleştirme ertelendi.
+     */
+    private function seedPctStakeSnapshot(Room $room, int $p1Id, int $p2Id, int $betPct): void
+    {
+        DB::transaction(function () use ($room, $p1Id, $p2Id, $betPct) {
+            $p1 = User::lockForUpdate()->find($p1Id);
+            $p2 = User::lockForUpdate()->find($p2Id);
+            $avail = fn ($u) => (int) max(0, ($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+            $sm = is_array($room->server_match) ? $room->server_match : [];
+            $sm['pct_stake_snapshot'] = [
+                (string) $p1Id => (int) floor(($p1 ? $avail($p1) : 0) * $betPct / 100),
+                (string) $p2Id => (int) floor(($p2 ? $avail($p2) : 0) * $betPct / 100),
+            ];
+            $room->server_match = $sm;
+            $room->save();
+        });
     }
 
     // Oda durumunu getir (polling). ?since=version verilirse degismediyse 204.

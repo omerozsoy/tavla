@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -111,9 +112,9 @@ class MatchmakeStakesTest extends TestCase
         $a = $this->makeUser('alice', 100000);
         Sanctum::actingAs($a);
         $this->postJson('/api/matchmaking', [
-            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal',
+            'token' => 'A', 'name' => 'A', 'stakes' => [0], 'targets' => [1], 'time_control' => 'normal', 'bet_pct' => 10,
         ])->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
-        $room = \App\Models\Room::where('p1_user_id', $a->id)->where('status', 'mm_waiting')->firstOrFail();
+        $room = Room::where('p1_user_id', $a->id)->where('status', 'mm_waiting')->firstOrFail();
 
         // Arayan poll etmeyi birakti: son yasam belirtisi (updated_at) 3 dk once. created_at TAZE
         // birakilir -> eski created_at mantigi bu odayi tutardi; artik updated_at belirler.
@@ -131,9 +132,9 @@ class MatchmakeStakesTest extends TestCase
         $c = $this->makeUser('carol', 100000);
         Sanctum::actingAs($c);
         $this->postJson('/api/matchmaking', [
-            'token' => 'C', 'name' => 'C', 'stakes' => [0], 'targets' => [9], 'time_control' => 'normal', // target kesismez -> eslesmez
+            'token' => 'C', 'name' => 'C', 'stakes' => [0], 'targets' => [9], 'time_control' => 'normal', 'bet_pct' => 10, // target kesismez -> eslesmez
         ])->assertOk()->assertJson(['matched' => false]);
-        $cRoom = \App\Models\Room::where('p1_user_id', $c->id)->where('status', 'mm_waiting')->firstOrFail();
+        $cRoom = Room::where('p1_user_id', $c->id)->where('status', 'mm_waiting')->firstOrFail();
 
         Sanctum::actingAs($b);
         $res = $this->getJson('/api/seekers')->assertOk();

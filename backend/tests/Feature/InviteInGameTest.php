@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\TournamentController;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -66,14 +68,15 @@ class InviteInGameTest extends TestCase
     public function test_stale_tournament_match_player_is_not_invitable(): void
     {
         $from = $this->user('from');
+        $from->forceFill(['coins' => 100000])->save(); // potsuz maç yasak -> davet eden coinli olmalı
         $me = $this->user('me');
         // Turnuva maçı odası, updated_at 10 DK ÖNCE (bayat) -> normal 5dk guard'ı KAÇIRIR.
         $room = Room::create(['code' => 'TRNM1', 'p1_token' => 't1', 'p1_user_id' => $me->id,
             'p1_name' => 'ME', 'status' => 'playing', 'mode' => '', 'version' => 0]);
         $room->forceFill(['updated_at' => now()->subMinutes(10)])->saveQuietly();
         // Bu odayı TURNUVA maçı yap (RoomController mode türetimiyle aynı anahtar).
-        \Illuminate\Support\Facades\Cache::put(
-            \App\Http\Controllers\TournamentController::roomTargetKey('TRNM1'), [$me->id, $from->id], now()->addHour()
+        Cache::put(
+            TournamentController::roomTargetKey('TRNM1'), [$me->id, $from->id], now()->addHour()
         );
 
         // 1) invite(): from -> me reddedilir (turnuva maçında).

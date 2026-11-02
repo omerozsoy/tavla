@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Commission;
 use App\Models\Room;
 use App\Models\User;
+use App\Services\MatchClock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -172,9 +175,9 @@ class RoomEscrowTest extends TestCase
         $this->assertSame(190, (int) $p1->fresh()->coins, 'kazanan stake×0.9 = 90 alır');
         $this->assertSame(0, (int) $p2->fresh()->coins, 'kaybeden TAM stake 100 öder');
         $resp->assertJsonPath('won_amount', 90)->assertJsonPath('commission', 10);
-        $this->assertSame(1, \App\Models\Commission::count());
-        $this->assertSame(10, (int) \App\Models\Commission::first()->commission);
-        $this->assertSame(100, (int) \App\Models\Commission::first()->stake);
+        $this->assertSame(1, Commission::count());
+        $this->assertSame(10, (int) Commission::first()->commission);
+        $this->assertSame(100, (int) Commission::first()->stake);
     }
 
     public function test_no_contest_finalize_releases_escrow(): void
@@ -187,7 +190,7 @@ class RoomEscrowTest extends TestCase
         User::where('id', $p1->id)->update(['coins_reserved' => 50]);
         User::where('id', $p2->id)->update(['coins_reserved' => 50]);
         $now = microtime(true);
-        $clock = \App\Services\MatchClock::init('casual', 1, $now);
+        $clock = MatchClock::init('casual', 1, $now);
         $clock['started_at'] = $now - 5;   // timeout değil
         $clock['running'] = true;
         $clock['p1_seen'] = $now - 70;     // ikisi de terk (>60+3) -> no-contest
@@ -223,13 +226,14 @@ class RoomEscrowTest extends TestCase
             'p2_token' => 't2', 'p2_user_id' => $p2->id, 'p2_name' => 'clnB',
             'status' => 'playing', 'stake' => 40, 'bet_pct' => 0, 'version' => 1, 'settled' => false, 'escrowed' => true,
         ]);
-        \Illuminate\Support\Facades\DB::table('rooms')->where('code', 'STAL')
+        DB::table('rooms')->where('code', 'STAL')
             ->update(['updated_at' => now()->subDays(2)]); // bayat (raw -> Eloquent timestamp'i ezmesin)
 
-        // cleanupStale bir matchmaking çağrısıyla tetiklenir (private). Üçüncü kullanıcı bahissiz arar.
-        $c = $this->user('clnC', 0);
+        // cleanupStale bir matchmaking çağrısıyla tetiklenir (private). Potsuz maç yasak -> üçüncü
+        // kullanıcı coinli + bet_pct ile arar (amaç yalnız cleanup'ı tetiklemek).
+        $c = $this->user('clnC', 100000);
         Sanctum::actingAs($c);
-        $this->postJson('/api/matchmaking', ['token' => 'tokC', 'name' => 'clnC', 'stake' => 0, 'targets' => [1]])->assertOk();
+        $this->postJson('/api/matchmaking', ['token' => 'tokC', 'name' => 'clnC', 'stake' => 0, 'targets' => [1], 'bet_pct' => 10])->assertOk();
 
         // Bayat oda silindi + rezerv bırakıldı; coin hiç düşmediği için tam iade (coins 100, reserved 0).
         $this->assertNotNull(Room::where('code', 'STAL')->first());

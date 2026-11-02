@@ -1231,17 +1231,17 @@ export async function deleteNotifications(ids?: number[]): Promise<void> {
 }
 export async function inviteFriend(
   userId: number,
-  opts?: { target?: number; timeControl?: string; unrated?: boolean; classic?: boolean },
+  opts?: { target?: number; timeControl?: string; unrated?: boolean; classic?: boolean; betPct?: number },
 ): Promise<{ code: string; ratingPreview?: { win: number; loss: number } | null }> {
   return req(`/friends/${userId}/invite`, {
     method: 'POST',
-    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated, classic: !!opts?.classic }),
+    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated, classic: !!opts?.classic, bet_pct: opts?.betPct ?? 10 }),
   })
 }
 export async function respondInvite(
   id: number,
   accept: boolean,
-): Promise<{ code: string | null; target: number; timeControl?: string | null; classic?: boolean }> {
+): Promise<{ code: string | null; target: number; timeControl?: string | null; classic?: boolean; bet_pct?: number }> {
   return req(`/invites/${id}/respond`, { method: 'POST', body: JSON.stringify({ accept }) })
 }
 // Davet EDEN daveti iptal eder (bekleme ekraninda "Oyunu Iptal Et"): oda koduna ait KENDI
@@ -2133,6 +2133,7 @@ export async function createRoom(
   target = 1,
   unrated = false, // puansiz arkadas maci
   classic = false, // Klasik Tavla (kup yok + mars=2)
+  betPct = 10, // yuzde bahis (potsuz mac yok -> min %10)
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
@@ -2145,6 +2146,7 @@ export async function createRoom(
       target,
       unrated,
       classic,
+      bet_pct: betPct,
     }),
   })
 }

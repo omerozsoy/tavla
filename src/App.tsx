@@ -7126,7 +7126,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.slot, room?.status])
 
-  async function handleCreateRoom(target = 1, tc?: TimeControl, unrated = false, classic = false) {
+  async function handleCreateRoom(target = 1, tc?: TimeControl, unrated = false, classic = false, betPct = 10) {
     roomLeavingRef.current = null
     rollConflictRef.current = false
     setRoomBusy(true)
@@ -7138,12 +7138,12 @@ export default function App() {
     setTurnsPlayed(0)
     setMatch(newMatch(target))
     try {
-      friendlyRef.current = true // davet ile kurulan oda = arkadaslik maci (puan/coin YOK)
+      friendlyRef.current = true // arkadaslik maci (rating YOK; coin VAR -> yüzde bahis)
       stakeRef.current = 0
-      betPctRef.current = 0
+      betPctRef.current = betPct // potsuz maç yok -> min %10 (FriendGameSetup/çağırandan)
       const tcUse = tc ?? timeControl // FriendGameSetup'tan gelen saat (state stale olmasin)
       classicRef.current = classic // KLASIK TAVLA arkadaş odası (rematch/HUD için sakla)
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target, unrated, classic)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target, unrated, classic, betPct)
       resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -7831,7 +7831,7 @@ export default function App() {
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
-  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean; classic?: boolean }) {
+  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean; classic?: boolean; betPct?: number }) {
     const tgt = inviteTarget
     if (!tgt) return
     setFriendSetupOpen(false)
@@ -7858,7 +7858,7 @@ export default function App() {
     setMatch(newMatch(opts.target))
     try {
       classicRef.current = !!opts.classic // KLASIK TAVLA daveti: davet eden oda klasik olur
-      const { code, ratingPreview } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated, classic: opts.classic })
+      const { code, ratingPreview } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated, classic: opts.classic, betPct: opts.betPct ?? 10 })
       setInviteWaitPreview(ratingPreview ?? null)
       const ok = await enterOnlineByCode(code, opts.target, opts.timeControl)
       if (!ok) {
@@ -11013,6 +11013,7 @@ export default function App() {
               return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB, pointImgs: bt.pointImgs, pointFits: bt.pointFits, surfaceImgLeft: bt.surfaceImgLeft, surfaceImgRight: bt.surfaceImgRight, surfaceOpacity: bt.surfaceOpacity, pointTexts: bt.pointTexts }
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
+            coins={user?.coins ?? 0}
             invitee={inviteTarget}
             defaultClassic={friendClassic}
             ranked={inviteRanked}
@@ -11025,7 +11026,7 @@ export default function App() {
               setFriendClassic(false)
               try { sessionStorage.removeItem('inviteCtx') } catch { /* yoksay */ }
             }}
-            onCreate={({ target, timeControl, unrated, classic }) => {
+            onCreate={({ target, timeControl, unrated, classic, betPct }) => {
               setFriendSetupOpen(false)
               setFriendClassic(false)
               setTimeControl(timeControl)
@@ -11034,7 +11035,7 @@ export default function App() {
               targetsRef.current = [target]
               setMode('online')
               setHome(false)
-              handleCreateRoom(target, timeControl, unrated, classic)
+              handleCreateRoom(target, timeControl, unrated, classic, betPct)
             }}
             onJoin={(code) => {
               // Arkadasin kodu: navigasyonu ERKEN yapma. Kod gecerliyse handleJoinRoom
