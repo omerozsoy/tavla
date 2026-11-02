@@ -929,77 +929,80 @@ class RoomController extends Controller
         // devam eden mac banner'i (myActiveRooms) zaten "Maça Dön" ile oyuncu girisini sunar.
         $me = $request->user('sanctum');
 
-        $rooms = Room::where('status', 'playing')
-            // Kullanıcı direktifi: BOT hariç TÜM maçlar izlenebilir. Davet (friendly) maçları da
-            // Canlı Maçlar'da listelenir (eski gizlilik filtresi kaldırıldı).
-            ->where('bot', false) // BOT maçları özel: Canlı Maçlar'da listelenmez/izlenmez
-            ->whereNotNull('p1_name')
-            ->whereNotNull('p2_name')
-            ->when($me, function ($q) use ($me) {
-                // NULL-guvenli: SQL'de `NULL != x` -> NULL (false) oldugundan duz `!=`
-                // misafir (user_id NULL) maclarini da eler. "kendisi degil VEYA null" ile
-                // yalnizca gercekten KENDI oldugu odalari cikar.
-                $q->where(function ($w) use ($me) {
-                    $w->where('p1_user_id', '!=', $me->id)->orWhereNull('p1_user_id');
-                })->where(function ($w) use ($me) {
-                    $w->where('p2_user_id', '!=', $me->id)->orWhereNull('p2_user_id');
-                });
-            })
-            // Tahta durumu VAR: legacy `state` (istemci PUT) VEYA `server_state` (AUTHORITATIVE).
-            // Otoriter modda istemci tam-state PUT etmez (App.tsx: authoritative -> updateRoom atlanir)
-            // -> `state` NULL kalir. Sadece whereNotNull('state') derse tum otoriter maclar listeden
-            // DUSER (ana sayfa "Canli Maclar" bombos). Ikisinden biri doluysa mac aktiftir.
-            ->where(function ($q) {
-                $q->whereNotNull('state')->orWhereNotNull('server_state');
-            })
-            ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
-            // SIRALAMA: maç boyunca DEĞİŞMEYEN alanlara göre -> liste izlerken kaymaz (eskiden
-            // updated_at'e göreydi, her hamle sırayı değiştiriyordu). Önce yüksek stake (para maçı
-            // başta), sonra oyuncuların toplam puanı (güçlü maç üstte), eşitlikte en yeni maç.
-            ->orderByDesc('stake')
-            ->orderByRaw('(COALESCE(p1_rating, 0) + COALESCE(p2_rating, 0)) DESC')
-            ->orderByDesc('id')
-            ->limit(30)
-            ->get(array_merge(
-                ['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match'],
-                Schema::hasColumn('rooms', 'classic') ? ['classic'] : [],
-            ));
+        // Canlı Maçlar listesi TÜM bakanlar için AYNI (tek viewer-farkı "kendi maçını listede görme").
+        // Home paneli bunu poll eder; 6sn önbellek tekrarlanan ana sorgu + User::whereIn premium lookup +
+        // per-row tournament-tag cache okumasını keser. "Kendini hariç tut" önbellek SONRASI PHP'de
+        // uygulanır -> liste viewer-bağımsız kalır (seekers ile aynı desen).
+        $list = Cache::remember('live_matches:list', 6, function () {
+            $rooms = Room::where('status', 'playing')
+                // Kullanıcı direktifi: BOT hariç TÜM maçlar izlenebilir. Davet (friendly) maçları da
+                // Canlı Maçlar'da listelenir (eski gizlilik filtresi kaldırıldı).
+                ->where('bot', false) // BOT maçları özel: Canlı Maçlar'da listelenmez/izlenmez
+                ->whereNotNull('p1_name')
+                ->whereNotNull('p2_name')
+                // Tahta durumu VAR: legacy `state` (istemci PUT) VEYA `server_state` (AUTHORITATIVE).
+                // Otoriter modda istemci tam-state PUT etmez (App.tsx: authoritative -> updateRoom atlanir)
+                // -> `state` NULL kalir. Sadece whereNotNull('state') derse tum otoriter maclar listeden
+                // DUSER (ana sayfa "Canli Maclar" bombos). Ikisinden biri doluysa mac aktiftir.
+                ->where(function ($q) {
+                    $q->whereNotNull('state')->orWhereNotNull('server_state');
+                })
+                ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
+                // SIRALAMA: maç boyunca DEĞİŞMEYEN alanlara göre -> liste izlerken kaymaz (eskiden
+                // updated_at'e göreydi, her hamle sırayı değiştiriyordu). Önce yüksek stake (para maçı
+                // başta), sonra oyuncuların toplam puanı (güçlü maç üstte), eşitlikte en yeni maç.
+                ->orderByDesc('stake')
+                ->orderByRaw('(COALESCE(p1_rating, 0) + COALESCE(p2_rating, 0)) DESC')
+                ->orderByDesc('id')
+                ->limit(30)
+                ->get(array_merge(
+                    ['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match'],
+                    Schema::hasColumn('rooms', 'classic') ? ['classic'] : [],
+                ));
 
-        // Premium: iki oyuncunun user_id'lerinden TEK sorguyla plan lookup (süresi geçerli ücretli).
-        $uids = $rooms->flatMap(fn ($r) => [$r->p1_user_id, $r->p2_user_id])->filter()->unique()->values();
-        $premiumMap = $uids->isEmpty() ? [] : User::whereIn('id', $uids)->get(['id', 'plan', 'plan_until'])
-            ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
+            // Premium: iki oyuncunun user_id'lerinden TEK sorguyla plan lookup (süresi geçerli ücretli).
+            $uids = $rooms->flatMap(fn ($r) => [$r->p1_user_id, $r->p2_user_id])->filter()->unique()->values();
+            $premiumMap = $uids->isEmpty() ? [] : User::whereIn('id', $uids)->get(['id', 'plan', 'plan_until'])
+                ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
 
-        $list = $rooms->map(function ($r) use ($premiumMap) {
-            // MAÇ SKORU (kaç kaç): server_match.score (p1=beyaz, p2=siyah). Otoriter tek kaynak.
-            $sm = is_array($r->server_match) ? $r->server_match : null;
-            $score = is_array($sm['score'] ?? null) ? $sm['score'] : null;
+            return $rooms->map(function ($r) use ($premiumMap) {
+                // MAÇ SKORU (kaç kaç): server_match.score (p1=beyaz, p2=siyah). Otoriter tek kaynak.
+                $sm = is_array($r->server_match) ? $r->server_match : null;
+                $score = is_array($sm['score'] ?? null) ? $sm['score'] : null;
 
-            return [
-                'code' => $r->code,
-                'p1_id' => $r->p1_user_id !== null ? (int) $r->p1_user_id : null, // top-3 rozeti için
-                'p1_name' => $r->p1_name,
-                'p1_rating' => $r->p1_rating,
-                'p1_avatar' => $r->p1_avatar,
-                'p1_premium' => $premiumMap[$r->p1_user_id] ?? false,
-                'p1_score' => $score !== null ? (int) ($score['white'] ?? 0) : null,
-                'p2_id' => $r->p2_user_id !== null ? (int) $r->p2_user_id : null,
-                'p2_name' => $r->p2_name,
-                'p2_rating' => $r->p2_rating,
-                'p2_avatar' => $r->p2_avatar,
-                'p2_premium' => $premiumMap[$r->p2_user_id] ?? false,
-                'p2_score' => $score !== null ? (int) ($score['black'] ?? 0) : null,
-                'stake' => (int) $r->stake,
-                'bet_pct' => (int) $r->bet_pct,
-                'target' => $r->target !== null ? (int) $r->target : null,
-                'classic' => (bool) ($r->classic ?? false), // Klasik Tavla rozeti (canlı maç listesi)
-                // Etiket icin tip. TURNUVA: turnuva mac odasi mode=NULL kurulur (enter(), davetsiz) ve
-                // TournamentController::matchRoom oda koduna tur-uzunlugu cache anahtari yazar -> ikisi
-                // birden = turnuva maci. Yalniz NULL'a guvenilmez (davetsiz enter ile kurulan baska oda).
-                // Diger eski (null) kayitlar 'ranked' varsayilir.
-                'mode' => $r->mode ?: (Cache::has(TournamentController::roomTargetKey($r->code)) ? 'tournament' : 'ranked'),
-            ];
+                return [
+                    'code' => $r->code,
+                    'p1_id' => $r->p1_user_id !== null ? (int) $r->p1_user_id : null, // top-3 rozeti için
+                    'p1_name' => $r->p1_name,
+                    'p1_rating' => $r->p1_rating,
+                    'p1_avatar' => $r->p1_avatar,
+                    'p1_premium' => $premiumMap[$r->p1_user_id] ?? false,
+                    'p1_score' => $score !== null ? (int) ($score['white'] ?? 0) : null,
+                    'p2_id' => $r->p2_user_id !== null ? (int) $r->p2_user_id : null,
+                    'p2_name' => $r->p2_name,
+                    'p2_rating' => $r->p2_rating,
+                    'p2_avatar' => $r->p2_avatar,
+                    'p2_premium' => $premiumMap[$r->p2_user_id] ?? false,
+                    'p2_score' => $score !== null ? (int) ($score['black'] ?? 0) : null,
+                    'stake' => (int) $r->stake,
+                    'bet_pct' => (int) $r->bet_pct,
+                    'target' => $r->target !== null ? (int) $r->target : null,
+                    'classic' => (bool) ($r->classic ?? false), // Klasik Tavla rozeti (canlı maç listesi)
+                    // Etiket icin tip. TURNUVA: turnuva mac odasi mode=NULL kurulur (enter(), davetsiz) ve
+                    // TournamentController::matchRoom oda koduna tur-uzunlugu cache anahtari yazar -> ikisi
+                    // birden = turnuva maci. Yalniz NULL'a guvenilmez (davetsiz enter ile kurulan baska oda).
+                    // Diger eski (null) kayitlar 'ranked' varsayilir.
+                    'mode' => $r->mode ?: (Cache::has(TournamentController::roomTargetKey($r->code)) ? 'tournament' : 'ranked'),
+                ];
+            });
         });
+
+        // "Kendini hariç tut": önbellekli liste viewer-bağımsız; kendi (p1/p2) olduğun odaları PHP'de
+        // ele (misafir maçları NULL -> etkilenmez). Devam Eden Maç banner'ı (myActiveRooms) zaten
+        // "Maça Dön" ile oyuncu girişini sunar; izleyici olarak kendi maçını görme.
+        if ($me) {
+            $list = collect($list)->reject(fn ($m) => ($m['p1_id'] ?? null) === $me->id || ($m['p2_id'] ?? null) === $me->id)->values();
+        }
 
         return response()->json(['matches' => $list]);
     }
