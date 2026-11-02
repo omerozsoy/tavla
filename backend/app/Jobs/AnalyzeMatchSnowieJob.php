@@ -43,8 +43,17 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
 
     public function middleware(): array
     {
+        // TEK ANALİZ / ODA (2026-11-03): Snowie her maç yolunda SATIR-başına dispatch edilir (oda = 2 satır
+        // -> 2 iş). Her iş kendi matText()'inden .mat kurup İKİ satırı birden yazar. İki iş aynı anda koşup
+        // yazımları interleave ederse (ve client-log fallback'te .mat satıra göre azıcık saparsa) aynı
+        // oyuncu iki farklı skorlanıp ÇAPRAZ TUTARSIZLIK çıkar (CN736: white bir işte 5.4, diğerinde 9.21).
+        // Kilidi ODA bazına al -> kardeş iş düşürülür (dontRelease): oda başına TEK analiz TEK yazar, iki
+        // satır DAİMA tutarlı. room_code yoksa (bot/pvb, tek satır) matchResultId anahtarına düş.
+        $room = MatchResult::where('id', $this->matchResultId)->value('room_code');
+        $key = ! empty($room) ? 'match-snowie-room:'.$room : 'match-snowie:'.$this->matchResultId;
+
         return [
-            (new WithoutOverlapping('match-snowie:'.$this->matchResultId))->expireAfter(600)->dontRelease(),
+            (new WithoutOverlapping($key))->expireAfter(600)->dontRelease(),
         ];
     }
 
