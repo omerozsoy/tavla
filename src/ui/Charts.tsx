@@ -42,11 +42,13 @@ export function LineChart({
   dates,
   color = 'var(--accent)',
   height = 88,
+  zeroLine = false,
 }: {
   data: number[]
   dates?: string[] // data ile hizali gun (YYYY-MM-DD) — X ekseninde gosterilir
   color?: string
   height?: number
+  zeroLine?: boolean // kirmizi y=0 referans cizgisi (sans gibi +/- metrikler icin)
 }) {
   const { t } = useT()
   const ref = useRef<HTMLDivElement>(null)
@@ -149,6 +151,18 @@ export function LineChart({
             </g>
           )
         })}
+        {/* Kirmizi y=0 referans cizgisi: yalniz 0 olcek icindeyse (sans + / - ayrimi). */}
+        {zeroLine && min <= 0 && max >= 0 && (
+          <line
+            x1={padL}
+            y1={Y(0)}
+            x2={w - padR}
+            y2={Y(0)}
+            stroke="#e5484d"
+            strokeWidth="1.5"
+            strokeDasharray="4 3"
+          />
+        )}
         <path d={area} fill={`url(#lcg-${uid})`} />
         <path
           d={line}

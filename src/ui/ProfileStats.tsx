@@ -316,10 +316,12 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             </div>
 
-            {/* Şans Ortalaması (Bakiye grafiği gibi): geçmiş maçların gnubg luck_mwc (MWC%) zaman-serisi.
-                + = o maçta şanslı oynadı, − = şanssız. Başlıkta ortalama; altta çizgi grafik. Tam genişlik. */}
-            <div className="stats-dash">
-              <div className="sd-card sd-card-wide">
+            {/* ===== 3'lü satır: Şans Ortalaması · Maç Tipine Göre PR · Maç Tipine Göre Kazanma % ===== */}
+            <div className="stats-dash stats-dash-3">
+
+              {/* Şans Ortalaması (Bakiye grafiği gibi): geçmiş maçların gnubg luck_mwc (MWC%) zaman-serisi.
+                  + = o maçta şanslı oynadı, − = şanssız. Kırmızı y=0 referans çizgisi ile. */}
+              <div className="sd-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="dice" size={18} /></span>
                   <div className="sd-head-txt">
@@ -333,7 +335,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   </div>
                 </div>
                 {an && an.luck_history.length >= 2 ? (
-                  <LineChart data={an.luck_history} dates={an.luck_dates} color="#3b9ae1" />
+                  <LineChart data={an.luck_history} dates={an.luck_dates} color="#3b9ae1" zeroLine />
                 ) : !an ? (
                   <Skeleton w="100%" h={80} r={8} />
                 ) : (
@@ -341,12 +343,6 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                 )}
                 {perf?.luck?.matches ? <div className="sd-sub">{t('med.matches', { n: perf.luck.matches })}</div> : null}
               </div>
-            </div>
-
-            {/* ===== Alt satır (2 sütun, yarı yarıya):
-                 üst çift: Maç Tipine Göre PR · Maç Tipine Göre Kazanma %
-                 alt çift: Zar Ortalamaları · WXP ===== */}
-            <div className="stats-dash">
 
               {/* Maç Tipine Göre PR — bar chart */}
               <div className="sd-card">
@@ -419,6 +415,10 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   />
                 </div>
               )}
+            </div>
+
+            {/* ===== Alt satır (2 sütun): Zar Ortalamaları · WXP ===== */}
+            <div className="stats-dash">
 
               {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı */}
               <div className="sd-card dice-card">
