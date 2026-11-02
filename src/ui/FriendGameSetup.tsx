@@ -6,14 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import type { TimeControl } from './MatchSetup'
-
-// Yüzde bahis (bakiyenin %'si). Potsuz maç YOK -> min %10 (Dikkatli). MatchSetup (eşleşme) ile AYNI.
-const BETS: { pct: number; key: string }[] = [
-  { pct: 10, key: 'setup.betCareful' },
-  { pct: 30, key: 'setup.betNormal' },
-  { pct: 50, key: 'setup.betAggr' },
-  { pct: 100, key: 'setup.betAll' },
-]
+import { BET_PCTS } from '../betOptions'
 
 // "Özel Oyun Oluştur" (arkadasinla oyna). Tasarim MatchSetup (YZ ile Oyna) ile AYNI:
 // sol ayar karti (Oyun turu / Uzunluk / Saat) + sag board onizleme.
@@ -167,14 +160,13 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
               {t('setup.maxBet')} · <Coins amount={pot} size={13} />
             </div>
             <div className="setup-tiles bets">
-              {BETS.map((b) => (
+              {BET_PCTS.map((pct) => (
                 <button
-                  key={b.pct}
-                  className={`setup-tile ${betPct === b.pct ? 'active' : ''}`}
-                  onClick={() => setBetPct(b.pct)}
+                  key={pct}
+                  className={`setup-tile ${betPct === pct ? 'active' : ''}`}
+                  onClick={() => setBetPct(pct)}
                 >
-                  <span>{t(b.key)}</span>
-                  <span className="bet-pct">%{b.pct}</span>
+                  <span className="bet-pct">%{pct}</span>
                 </button>
               ))}
             </div>

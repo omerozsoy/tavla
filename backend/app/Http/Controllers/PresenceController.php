@@ -335,7 +335,7 @@ class PresenceController extends Controller
             // Yüzde bahis (bakiyenin %'si). Potsuz maç YASAK (kullanıcı direktifi): gelmezse/0 ise
             // min %10'a düşer -> hiçbir insan-insan maçı bedava kurulamaz. enter() p2 katılımında
             // odaya taşınır + pct_stake_snapshot üretilir.
-            'bet_pct' => ['nullable', 'integer', 'in:10,30,50,100'],
+            'bet_pct' => ['nullable', 'integer', 'in:10,20,30,50,75,100'],
         ]);
         // Davet eden en az 1 kullanılabilir coin'e sahip olmalı (yüzde bahis min pot). Gerçek iki-taraflı
         // yeterlilik enter()'da; bu erken uyarı 0 coin'le anlamsız (snapshot=0) davet atılmasını önler.

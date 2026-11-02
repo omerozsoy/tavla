@@ -1599,7 +1599,7 @@ button[aria-disabled='true'],
   gap: 8px;
 }
 .setup-tiles.bets {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3'erli 2 sıra (6 yüzde seçeneği) */
 }
 .setup-tile {
   display: flex;

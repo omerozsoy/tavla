@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 import PremiumCrown from './PremiumCrown'
 import { PR_TARGET_LABELS } from '../botPr'
+import { BET_PCTS } from '../betOptions'
 import { botPersona } from '../botPersonas'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
@@ -31,13 +32,7 @@ const CLOCKS: { id: TimeControl; key: string }[] = [
   { id: 'normal', key: 'setup.clockNormal' },
   { id: 'speed', key: 'setup.clockSpeed' },
 ]
-// Maks bahis: bakiyenin yuzdesi
-const BETS: { pct: number; key: string }[] = [
-  { pct: 10, key: 'setup.betCareful' },
-  { pct: 30, key: 'setup.betNormal' },
-  { pct: 50, key: 'setup.betAggr' },
-  { pct: 100, key: 'setup.betAll' },
-]
+// Maks bahis: bakiyenin yuzdesi (tek kaynak src/betOptions.ts, 3'erli 2 sira)
 
 const AI_LEVELS = [
   'Beginner',
@@ -287,14 +282,13 @@ export default function MatchSetup({
                 {t('setup.maxBet')} · <Coins amount={stake} size={13} />
               </div>
               <div className="setup-tiles bets">
-                {BETS.map((b) => (
+                {BET_PCTS.map((pct) => (
                   <button
-                    key={b.pct}
-                    className={`setup-tile ${betPct === b.pct ? 'active' : ''}`}
-                    onClick={() => setBetPct(b.pct)}
+                    key={pct}
+                    className={`setup-tile ${betPct === pct ? 'active' : ''}`}
+                    onClick={() => setBetPct(pct)}
                   >
-                    <span>{t(b.key)}</span>
-                    <span className="bet-pct">%{b.pct}</span>
+                    <span className="bet-pct">%{pct}</span>
                   </button>
                 ))}
               </div>
