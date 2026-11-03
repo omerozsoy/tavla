@@ -1401,8 +1401,10 @@ export interface SwissStanding {
   losses: number
   wins: number // ilerleme galibiyeti (bay + hükmen dahil)
   realWins: number // gerçekten oynanıp kazanılan
+  played: number // gerçek oynanan maç (= realWins + gerçek mağlubiyet)
   byes: number
-  lives: number // kalan hak = max(0, 3 - losses)
+  averaj: number // puan averajı: gerçek maçlarda alınan − verilen
+  lives: number // kalan hak = max(0, livesCap - losses)
 }
 
 /** 3 Haklı Swiss canlı durumu (yalnız type='swiss_triple' turnuvalarda dolu). */
@@ -1411,7 +1413,7 @@ export interface SwissState {
   active: number
   total: number
   standings: SwissStanding[]
-  final?: { id: number; name: string; rank: number | null; status: string; losses: number; wins: number; realWins: number }[] | null
+  final?: { id: number; name: string; rank: number | null; status: string; losses: number; wins: number; realWins: number; played: number; byes: number; averaj: number; lives: number }[] | null
   note?: string | null // 'no_champion' vb.
   config?: { match_length: number; final_length: number | null; round_minutes: number | null; final_minutes: number | null } | null
   optimal_last?: boolean

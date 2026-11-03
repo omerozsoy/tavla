@@ -335,6 +335,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   const hasRooms = !!active?.bracket?.some((r) => r.some((m) => m.room && !m.winner))
   // FINAL gate geri sayımı için saniyelik tik (3.'lük bitince final opens_at'e kadar sayar).
   const [nowTick, setNowTick] = useState(() => Date.now())
+  // Swiss eşleşme görüntüleyici: seçili tur (null = en son tur). Kullanıcı seçimi poll'lerde korunur.
+  const [swissRoundSel, setSwissRoundSel] = useState<number | null>(null)
   useEffect(() => {
     if (detailId == null || active?.status !== 'running') return
     const id = window.setInterval(() => setNowTick(Date.now()), 1000)
@@ -883,6 +885,50 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   </div>
                 </div>
 
+                {sw && bracket.length > 0 && (() => {
+                  const rounds = bracket.length
+                  const shown = Math.min(Math.max(swissRoundSel ?? rounds, 1), rounds)
+                  const cells = bracket[shown - 1] || []
+                  return (
+                    <div className="swiss-pairings">
+                      <div className="swiss-st-head">
+                        <Icon name="users" size={16} /> {t('swiss.pairingsTitle')}
+                        <select
+                          className="swiss-round-sel"
+                          value={shown}
+                          onChange={(e) => setSwissRoundSel(Number(e.target.value))}
+                          aria-label={t('swiss.pairingsTitle')}
+                        >
+                          {bracket.map((_, ri) => (
+                            <option key={ri} value={ri + 1}>{t('swiss.round', { n: ri + 1 })}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="swiss-pair-list">
+                        {cells.map((m) => {
+                          const isBye = !m.p2 && !!m.winner
+                          const sc = m.score || null
+                          let result
+                          if (isBye) result = <span className="swiss-pair-bye">{t('swiss.byeBadge')}</span>
+                          else if (m.double_loss || sc?.double_loss) result = <span className="swiss-pair-dl">{t('swiss.doubleLossBadge')}</span>
+                          else if (sc?.walkover) result = <span className="swiss-pair-wo">{t('swiss.walkover')}</span>
+                          else if (sc && sc.p1 != null && sc.p2 != null) result = <span className="swiss-pair-score">{sc.p1} - {sc.p2}</span>
+                          else result = <span className="swiss-pair-pending">{t('swiss.pairPending')}</span>
+                          const p1win = !!m.winner && !!m.p1 && m.winner === m.p1.id
+                          const p2win = !!m.winner && !!m.p2 && m.winner === m.p2.id
+                          return (
+                            <div key={m.key} className="swiss-pair-row">
+                              <span className={`swiss-pair-p${p1win ? ' win' : ''}`}>{m.p1?.name ?? '—'}</span>
+                              <span className="swiss-pair-mid">{result}</span>
+                              <span className={`swiss-pair-p${p2win ? ' win' : ''}`}>{isBye ? '—' : (m.p2?.name ?? '—')}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 {sw && (
                   <div className="swiss-standings">
                     <div className="swiss-st-head">
@@ -891,7 +937,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     {active.status === 'finished' && sw.note === 'no_champion' && <div className="swiss-nochamp">{t('swiss.noChampion')}</div>}
                     <table className="swiss-table">
                       <thead>
-                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th>{t('swiss.colWins')}</th><th>{t('swiss.colLosses')}</th></tr>
+                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th title={t('swiss.colPlayedFull')}>{t('swiss.colPlayed')}</th><th title={t('swiss.colWinsFull')}>{t('swiss.colWins')}</th><th title={t('swiss.colLossesFull')}>{t('swiss.colLosses')}</th><th title={t('swiss.colByesFull')}>{t('swiss.colByes')}</th><th title={t('swiss.colAverajFull')}>{t('swiss.colAveraj')}</th></tr>
                       </thead>
                       <tbody>
                         {rows.map((row, i) => {
@@ -899,13 +945,17 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           const rank = row.rank != null ? Number(row.rank) : null
                           const losses = Number(row.losses ?? 0)
                           const lives = row.lives != null ? Number(row.lives) : Math.max(0, maxLives - losses)
+                          const averaj = Number(row.averaj ?? 0)
                           return (
                             <tr key={String(row.id)} className={`swiss-tr swiss-tr-${status}`}>
                               <td className="swiss-td-rank">{rank ? `${rank}.` : active.status === 'finished' ? '—' : i + 1}</td>
                               <td className="swiss-td-name">{String(row.name ?? '')}{status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}</td>
                               <td className="swiss-td-lives">{lives}</td>
-                              <td>{Number(row.wins ?? 0)}</td>
+                              <td>{Number(row.played ?? 0)}</td>
+                              <td>{Number(row.realWins ?? 0)}</td>
                               <td>{losses}</td>
+                              <td>{Number(row.byes ?? 0)}</td>
+                              <td className="swiss-td-averaj">{averaj > 0 ? `+${averaj}` : averaj}</td>
                             </tr>
                           )
                         })}

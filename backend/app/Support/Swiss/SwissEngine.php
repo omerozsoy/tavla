@@ -627,7 +627,9 @@ class SwissEngine
             'losses' => (int) $p['losses'],
             'wins' => (int) $p['wins'],
             'realWins' => (int) $p['realWins'],
+            'played' => count($p['opponents'] ?? []), // gerçek oynanan maç (= realWins + gerçek mağlubiyet)
             'byes' => (int) $p['byes'],
+            'averaj' => self::pointDiff($p),           // gerçek maçlarda alınan − verilen
             'lives' => self::remainingLives($p),
         ], $rows);
     }
@@ -724,7 +726,7 @@ class SwissEngine
     private static function standRow(?array $p, ?int $rank): array
     {
         if (! $p) {
-            return ['id' => 0, 'name' => '', 'rank' => $rank, 'status' => 'unknown', 'losses' => 0, 'wins' => 0, 'realWins' => 0];
+            return ['id' => 0, 'name' => '', 'rank' => $rank, 'status' => 'unknown', 'losses' => 0, 'wins' => 0, 'realWins' => 0, 'played' => 0, 'byes' => 0, 'averaj' => 0, 'lives' => 0];
         }
 
         return [
@@ -735,6 +737,10 @@ class SwissEngine
             'losses' => (int) $p['losses'],
             'wins' => (int) $p['wins'],
             'realWins' => (int) $p['realWins'],
+            'played' => count($p['opponents'] ?? []),
+            'byes' => (int) $p['byes'],
+            'averaj' => self::pointDiff($p),
+            'lives' => self::remainingLives($p),
         ];
     }
 
