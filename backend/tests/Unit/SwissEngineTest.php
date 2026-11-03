@@ -383,6 +383,37 @@ class SwissEngineTest extends TestCase
         $this->assertSame(3, $byId[3]['rank'], 'R5 elenenler ortak 3.');
     }
 
+    public function test_final_standings_bye_players_rank_below_non_bye_in_same_round(): void
+    {
+        // 5 oyuncu; 2,3,4 ve 5 aynı turda (R5) elendi; içlerinden 5 daha önce 1 bay çekti.
+        // Şampiyon (1) hariç geç-elenen yok -> ilk grup 2.'den başlar.
+        // Beklenti: bay çekmeyen 2,3,4 ORTAK 2.; bay çeken 5 onların ALTINDA 5.
+        $p = SwissEngine::initParticipants($this->players(5), 'fsbye');
+        foreach ($p as &$x) {
+            $id = (int) $x['id'];
+            if (in_array($id, [2, 3, 4, 5], true)) {
+                $x['losses'] = 3;
+                $x['status'] = 'eliminated';
+                $x['eliminatedRound'] = 5;
+            }
+            if ($id === 5) {
+                $x['byes'] = 1;
+            }
+        }
+        unset($x);
+        $this->assertSame(1, SwissEngine::championId($p));
+        $st = SwissEngine::finalStandings($p);
+        $byId = [];
+        foreach ($st as $row) {
+            $byId[$row['id']] = $row;
+        }
+        $this->assertSame(1, $byId[1]['rank'], 'Şampiyon 1.');
+        $this->assertSame(2, $byId[2]['rank'], 'Bay çekmeyen ortak 2.');
+        $this->assertSame(2, $byId[3]['rank'], 'Bay çekmeyen ortak 2.');
+        $this->assertSame(2, $byId[4]['rank'], 'Bay çekmeyen ortak 2.');
+        $this->assertSame(5, $byId[5]['rank'], 'Bay çeken aynı turda olsa da ALTTA (5.)');
+    }
+
     public function test_property_full_simulations_hold_invariants(): void
     {
         foreach ([2, 3, 5, 7, 8, 11, 16, 24, 32] as $n) {

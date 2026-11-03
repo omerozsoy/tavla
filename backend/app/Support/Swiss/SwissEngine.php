@@ -6,7 +6,9 @@ namespace App\Support\Swiss;
  * "3 Haklı Swiss" / Swiss Triple Elimination — SAF (stateless) motor.
  *
  * TavlaTV ürün sözleşmesi (bu tür için; evrensel federasyon standardı DEĞİL):
- *  - Her katılımcı 3 hakla başlar; 3. maç mağlubiyetinde elenir. remainingLives = max(0, 3 - losses).
+ *  - Hak sayısı turnuva başına seçilir (1/2/3; MAX_LIVES=3 tavandır), kura anında kilitlenir ve her
+ *    katılımcıyla taşınır (eski kayıtta yoksa MAX_LIVES). Oyuncu kendi hakkı kadar maç kaybedince
+ *    elenir (losses >= livesCap). remainingLives = max(0, livesCap - losses).
  *  - Hak, tamamlanmış bir TURNUVA MAÇI sonucuyla azalır (tavla eliyle/mars/hedef puanla değil).
  *  - Bay: turnuva galibiyeti verir, mağlubiyet/hak kaybı YOK, gerçek maç galibiyeti sayılmaz.
  *  - Kazanmak kaybedilen hakkı geri getirmez. Beraberlik yok.
@@ -599,8 +601,9 @@ class SwissEngine
 
     /**
      * Kesin sonuç (contract §12): şampiyon 1; sonra elendikleri tur DAHA GEÇ olanlar önce; aynı turda
-     * elenenler ORTAK derece (iki oyuncu ortak 3. ise sonraki 5.). Çekilen/DQ ayrı gösterilir (uydurma
-     * derece yok). Hiç aktif yoksa şampiyon uydurma.
+     * elenenler arasında BAY ÇEKMİŞ olan bay çekmeyenin ALTINDA (az bay = üst sıra — bay bedava
+     * ilerleme sayıldığı için). Aynı tur VE aynı bay sayısı => ORTAK derece (ikisi ortak 3. ise
+     * sonraki 5.). Çekilen/DQ ayrı gösterilir (uydurma derece yok). Hiç aktif yoksa şampiyon uydurma.
      *
      * @return array<int,array<string,mixed>> her satır: id,name,rank(int|null),status,losses,wins,realWins
      */
@@ -615,21 +618,26 @@ class SwissEngine
             $rows[] = self::standRow($p, 1);
         }
 
-        // 2) Elenenler: eliminatedRound DESC; aynı tur ortak derece.
+        // 2) Elenenler: eliminatedRound DESC; aynı tur içinde AZ BAY üstte (bay = bedava ilerleme);
+        //    aynı tur + aynı bay sayısı => ortak derece; seed yalnız gösterim sırası.
         $elim = array_values(array_filter($participants, fn ($p) => ($p['status'] ?? '') === 'eliminated'));
         usort($elim, fn ($a, $b) => (int) $b['eliminatedRound'] <=> (int) $a['eliminatedRound']
+            ?: (int) ($a['byes'] ?? 0) <=> (int) ($b['byes'] ?? 0)
             ?: (int) $a['seed'] <=> (int) $b['seed']);
         $rank = $champ !== null ? 2 : 1;
         $i = 0;
         while ($i < count($elim)) {
             $round = (int) $elim[$i]['eliminatedRound'];
+            $byes = (int) ($elim[$i]['byes'] ?? 0);
             $group = [];
-            while ($i < count($elim) && (int) $elim[$i]['eliminatedRound'] === $round) {
+            while ($i < count($elim)
+                && (int) $elim[$i]['eliminatedRound'] === $round
+                && (int) ($elim[$i]['byes'] ?? 0) === $byes) {
                 $group[] = $elim[$i];
                 $i++;
             }
             foreach ($group as $g) {
-                $rows[] = self::standRow($g, $rank); // aynı turda elenenler ORTAK derece
+                $rows[] = self::standRow($g, $rank); // aynı tur + aynı bay => ORTAK derece
             }
             $rank += count($group); // sonraki derece grup boyutu kadar atlar
         }

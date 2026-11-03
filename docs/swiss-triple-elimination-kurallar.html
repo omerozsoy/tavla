@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Swiss Triple Elimination — Kurallar</title>
+<style>
+  @page { margin: 18mm; }
+  body { font: 15px/1.55 -apple-system, "Segoe UI", Arial, sans-serif; color: #111; max-width: 820px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 26px; border-bottom: 3px solid #111; padding-bottom: 8px; margin-bottom: 6px; }
+  h2 { font-size: 18px; margin: 22px 0 8px; color: #222; page-break-after: avoid; }
+  blockquote { color: #555; font-size: 13px; border-left: 3px solid #ccc; margin: 8px 0 20px; padding: 4px 12px; }
+  ul { margin: 6px 0 6px 2px; padding-left: 20px; }
+  li { margin: 4px 0; }
+  ol { margin: 6px 0 6px 2px; padding-left: 22px; }
+  code { background: #f2f2f2; padding: 1px 5px; border-radius: 3px; font-size: 13px; font-family: Consolas, monospace; }
+  strong { color: #000; }
+  section { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<h1>Swiss Triple Elimination — Tam Kurallar</h1>
+<blockquote>TavlaTV ürün kuralı (bu tür için; evrensel federasyon standardı değil).<br>Kaynak: <code>SwissEngine.php</code> + <code>SwissRuntime.php</code>.</blockquote>
+
+<section>
+<h2>1. Can / eleme</h2>
+<ul>
+<li>Hak sayısı <strong>turnuva başına seçilir: 1, 2 veya 3</strong> (<code>swiss_lives</code>; [1,3]'e kırpılır, <code>MAX_LIVES=3</code> = tavan).</li>
+<li>Seçilen hak <strong>kura anında kilitlenir</strong>, her katılımcıyla taşınır. Eski kayıtta yoksa → 3.</li>
+<li>Oyuncu <strong>kendi hakkı kadar maç kaybedince elenir</strong> (<code>losses &gt;= livesCap</code>): 1-haklıda ilk yenilgide, 3-haklıda 3. yenilgide.</li>
+<li><code>remainingLives = livesCap − losses</code>. Hak yalnız <strong>tamamlanmış turnuva maçıyla</strong> azalır (tavla eli/mars/hedef puan DEĞİL).</li>
+<li>Kazanmak kaybedilen hakkı geri getirmez. <strong>Beraberlik yok.</strong></li>
+</ul>
+</section>
+
+<section>
+<h2>2. Turnuva sonu</h2>
+<ul>
+<li><strong>Sabit tur sayısı yok</strong> — tek aktif oyuncu kalana kadar devam (<code>isComplete = aktif ≤ 1</code>).</li>
+<li>Son 2/3 oyuncuda da aynı Swiss + bay politikası.</li>
+</ul>
+</section>
+
+<section>
+<h2>3. İki ayrı galibiyet sayacı</h2>
+<ul>
+<li><strong>wins (ilerleme galibiyeti):</strong> bay + hükmen dahil.</li>
+<li><strong>realWins (gerçek maç):</strong> yalnız oynanıp kazanılan. Rakip geçmişi (<code>opponents</code>) de yalnız gerçek maçta işlenir.</li>
+</ul>
+</section>
+
+<section>
+<h2>4. Bay (bye)</h2>
+<ul>
+<li>Tek sayıda aktif oyuncu varsa <strong>bir</strong> bay verilir.</li>
+<li>Bay = ilerleme galibiyeti; <strong>mağlubiyet/hak kaybı YOK</strong>, gerçek galibiyet sayılmaz.</li>
+<li><strong>Bay seçim önceliği:</strong> ① en az bay almış → ② en çok mağlubiyeti olan → ③ en az turnuva galibiyeti → ④ bayı en eski turda almış → ⑤ seed.</li>
+</ul>
+</section>
+
+<section>
+<h2>5. Eşleştirme (Swiss pairing)</h2>
+<p>Maliyet <strong>bu öncelik sırasıyla</strong> minimize edilir (lexicographic):</p>
+<ol>
+<li><strong>Tekrar rakip</strong> sayısı (mümkünse hiç)</li>
+<li><strong>max</strong> mağlubiyet farkı → sonra <strong>toplam</strong> mağlubiyet farkı (aynı can-grubunu eşle)</li>
+<li><strong>max</strong> galibiyet farkı → sonra <strong>toplam</strong></li>
+<li><strong>Ardışık float cezası</strong> (geçen tur üst gruba çıkan tekrar çıkmasın, düşen tekrar düşmesin)</li>
+<li><strong>seed dizisi</strong> (nihai tie-break, deterministik)</li>
+</ol>
+<ul>
+<li><strong>≤14 oyuncu:</strong> tüm eşleşmeler taranır → <strong>global-optimal</strong>. 1.5 sn aşılırsa sezgisele düşer.</li>
+<li><strong>&gt;14 oyuncu:</strong> mağlubiyet grubuna göre sırala, grup içi (−wins, seed), ardışık eşle, tek kalan alt gruba float; sonra tekrar-rakip çiftlerini yerel takasla azalt — <strong>optimal değil</strong>, raporlanır.</li>
+</ul>
+</section>
+
+<section>
+<h2>6. Özel sonuçlar</h2>
+<ul>
+<li><strong>Hükmen / no-show</strong> (<code>realMatch=false</code>): kazanana ilerleme galibiyeti, kaybedene mağlubiyet; gerçek-maç sayaçları ve rakip geçmişi <strong>artmaz</strong>.</li>
+<li><strong>Çift mağlubiyet</strong> (iki taraf da gelmedi): ikisine birer mağlubiyet, galip yok.</li>
+<li><strong>Çekilme (withdraw):</strong> aktif maç ayrıca kesinleşecekse mağlubiyet yazma; durum <code>withdrawn</code>.</li>
+<li><strong>Diskalifiye (dq):</strong> yapay mağlubiyet yazmaz; ayrı <code>dq</code> durumu.</li>
+</ul>
+</section>
+
+<section>
+<h2>7. Sıralama</h2>
+<ul>
+<li><strong>Canlı tablo:</strong> aktif önce → az mağlubiyet → çok galibiyet → çok gerçek galibiyet → seed.</li>
+<li><strong>Kesin sonuç:</strong> şampiyon=1 → sonra <strong>geç elenen önce</strong> (<code>eliminatedRound</code> DESC); aynı turda elenenler arasında <strong>bay çekmeyen üstte, bay çeken altta</strong> (az bay = üst sıra; bay bedava ilerleme sayılır) → <strong>aynı tur + aynı bay sayısı ORTAK derece</strong> (üçü ortak 2. ise sonraki 5.). Çekilen/DQ'ya sportif derece verilmez (rank=null).</li>
+</ul>
+</section>
+
+<section>
+<h2>8. Determinizm</h2>
+<ul>
+<li>Kura ve eşleştirme <code>random</code> kullanmaz; <strong>seed'li SHA-256 shuffle</strong>. Aynı girdi + seed + <code>ALGO_VERSION</code> → aynı eşleştirme (resume/tekrar-üretilebilir).</li>
+</ul>
+</section>
+
+</body>
+</html>
