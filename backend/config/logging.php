@@ -65,6 +65,17 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // CSP ihlal raporlari icin AYRI kanal: level 'info' SABIT -> global LOG_LEVEL=error
+        // (uretim) csp_violation (info) kayitlarini DUSURUYORDU. Kendi dosyasi (csp.log) -> error
+        // log'unu kirletmez + enforce oncesi report-only ihlalleri gorunur. 7 gun rotasyon.
+        'csp' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/csp.log'),
+            'level' => 'info',
+            'days' => 7,
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

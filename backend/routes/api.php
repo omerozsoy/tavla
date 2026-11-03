@@ -81,7 +81,9 @@ Route::post('/csp-report', function (Request $r) {
             // kullanıcıdan gelse de log'u boğmaz; farklı ihlaller ayrı ayrı görünür.
             $sig = sha1($directive.'|'.$blocked);
             if (Cache::add('csp:rep:'.$sig, 1, now()->addMinutes(10))) {
-                Log::info('csp_violation', [
+                // AYRI 'csp' kanali (storage/logs/csp.log): global LOG_LEVEL=error, Log::info'yi
+                // dusururdu -> csp kanali level'i 'info' sabit, ihlaller daima yazilir.
+                Log::channel('csp')->info('csp_violation', [
                     'directive' => $directive, 'blocked' => $blocked, 'doc' => $doc,
                 ]);
             }
