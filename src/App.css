@@ -3164,63 +3164,90 @@ button[aria-disabled='true'],
   text-align: center;
 }
 
-/* Tavla sözlüğü: makale tahtasıyla aynı yüzey ve geometri kullanılır. */
+/* Tavla sözlüğü — Swiss / Uluslararası Tipografik Stil: sert ızgara çizgileri,
+   kare köşe, gölge yok, grotesk + versal başlık, tek kırmızı accent, tablo rakamı.
+   Tema değişkenleri (--text/--card-bg) korunur → dark/light legible; accent sabit Swiss kırmızı. */
 .glossary-view {
+  --sw-red: #e4002b;
+  --sw-ink: var(--text);
+  --sw-line: color-mix(in srgb, var(--text) 80%, transparent);
+  --sw-faint: color-mix(in srgb, var(--text) 52%, transparent);
   --glossary-ink: var(--text);
-  --glossary-soft: color-mix(in srgb, var(--text) 72%, transparent);
-  /* Editoryal hero/eyebrow (seo-*) glossary içinde de SİTE accent'iyle çalışsın. */
-  --seo-accent: var(--accent-text);
-  padding: clamp(18px, 3vw, 42px) clamp(16px, 3vw, 38px) 42px;
-  background: color-mix(in srgb, var(--card-bg) 82%, var(--accent));
+  --glossary-soft: color-mix(in srgb, var(--text) 78%, transparent);
+  --sw-grotesk: 'Helvetica Neue', Helvetica, Arial, 'Inter', sans-serif;
+  padding: clamp(20px, 4vw, 64px) clamp(16px, 4vw, 56px) 64px;
+  background: var(--card-bg);
+  font-variant-numeric: tabular-nums;
 }
-/* Editoryal ton: liste etiketleri/başlıkları ince (400) — site landing dili. */
-.glossary-view .glossary-alphabet button,
-.glossary-view .glossary-group-letter,
-.glossary-view .glossary-entry h2,
-.glossary-view .glossary-english,
-.glossary-view .glossary-aliases span {
-  font-weight: 400;
-}
-/* Hero: SİTE seo-hero desenini kullanır (eyebrow + başlık + alt metin); yalnız
-   okuma genişliğine ortalanır. Kenarlık/padding/hiza seo-hero'dan gelir. */
+/* Hero: büyük, flush-left grotesk başlık + ince versal eyebrow; üstte sert kural çizgisi. */
 .glossary-hero {
-  max-width: 1060px;
-  margin: 0 auto clamp(18px, 3vw, 28px);
+  max-width: 1200px;
+  margin: 0 auto clamp(28px, 4vw, 48px);
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 3px solid var(--sw-ink);
+  text-align: left;
+}
+.glossary-hero .seo-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sw-red);
 }
 .glossary-hero .seo-hero-title {
-  max-width: 760px;
+  max-width: 20ch;
+  margin: 14px 0 0;
+  font-family: var(--sw-grotesk);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  color: var(--sw-ink);
+}
+.glossary-hero .seo-hero-sub {
+  max-width: 48ch;
+  margin: 18px 0 0;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--glossary-soft);
 }
 .glossary-eyebrow-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+  background: var(--sw-red);
 }
+/* Araç çubuğu: üst/alt sert kural çizgisi arasında arama + sayaç (dikey ayraçla). */
 .glossary-toolbar {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  gap: 16px;
-  max-width: 1060px;
-  margin: 0 auto 16px;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-top: 1px solid var(--sw-line);
+  border-bottom: 1px solid var(--sw-line);
 }
 .glossary-search {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: min(100%, 520px);
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 92%, var(--text));
-  color: var(--muted);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  flex: 1 1 auto;
+  min-height: 54px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sw-faint);
 }
-.glossary-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
-.glossary-search > svg { flex: none; color: var(--muted); }
-/* KRİTİK: .register-card input:not([type=…]) çok yüksek specificity ile input'a beyaz kutu +
-   kenarlık dayatıyordu (arama kutusu bozuk görünüyordu). !important ile sıfırla — şeffaf, satır-içi. */
+.glossary-search:focus-within { box-shadow: none; }
+.glossary-search:focus-within > svg { color: var(--sw-red); }
+.glossary-search > svg { flex: none; color: var(--sw-faint); }
+/* KRİTİK: .register-card input:not([type=…]) yüksek specificity ile kutu+kenarlık dayatır. */
 .glossary-search input {
   flex: 1 1 auto !important;
   min-width: 0 !important;
@@ -3232,182 +3259,207 @@ button[aria-disabled='true'],
   outline: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  color: var(--text) !important;
-  font: inherit !important;
+  color: var(--sw-ink) !important;
+  font: 500 0.95rem var(--sw-grotesk) !important;
 }
-.glossary-search input::placeholder { color: var(--muted); opacity: 1; }
+.glossary-search input::placeholder { color: var(--sw-faint); opacity: 1; }
 .glossary-search-clear {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--sw-faint);
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: color 120ms ease;
 }
-.glossary-search-clear:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-text); }
+.glossary-search-clear:hover { color: var(--sw-red); }
 .glossary-count {
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
+  padding: 0 4px 0 22px;
+  border-left: 1px solid var(--sw-line);
+  color: var(--sw-faint);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   white-space: nowrap;
+  align-self: center;
 }
-.glossary-count strong { color: var(--accent-text); font-size: 1.15rem; font-weight: 600; }
+.glossary-count strong { color: var(--sw-red); font-family: var(--sw-grotesk); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+/* Alfabe: sert gridli, kare düğmeler; aktif = dolu kırmızı blok. */
 .glossary-alphabet {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  max-width: 1060px;
-  margin: 0 auto 34px;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto clamp(30px, 4vw, 48px);
   position: sticky;
   top: 0;
   z-index: 3;
-  padding: 10px 0;
-  background: color-mix(in srgb, var(--card-bg) 94%, var(--accent));
+  padding: 8px 0;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--sw-line);
 }
 .glossary-alphabet button {
-  /* 31px -> 38px: harf dugmeleri dar telefonda birbirine yakin ve kucuktu (yanlis harf). */
-  min-width: 38px;
-  height: 38px;
-  padding: 0 7px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
   background: transparent;
-  color: var(--text);
+  color: var(--sw-ink);
   cursor: pointer;
-  font: 400 0.78rem inherit;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+  font: 700 0.8rem var(--sw-grotesk);
+  text-transform: uppercase;
+  transition: background 120ms ease, color 120ms ease;
 }
-.glossary-alphabet button:hover:not(:disabled), .glossary-alphabet button:focus-visible { border-color: var(--accent); color: var(--accent-text); transform: translateY(-1px); }
-.glossary-alphabet button.active { border-color: var(--accent); background: var(--accent); color: var(--accent-contrast, #fff); }
-.glossary-alphabet button.empty { opacity: 0.3; cursor: not-allowed; }
-.glossary-groups { max-width: 1060px; margin: 0 auto; }
+.glossary-alphabet button:hover:not(:disabled), .glossary-alphabet button:focus-visible { color: var(--sw-red); transform: none; }
+.glossary-alphabet button.active { background: var(--sw-red); color: #fff; }
+.glossary-alphabet button.empty { opacity: 0.22; cursor: not-allowed; }
+.glossary-groups { max-width: 1200px; margin: 0 auto; }
 .glossary-group { scroll-margin-top: 24px; }
-.glossary-group + .glossary-group { margin-top: 36px; }
-.glossary-group-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; color: var(--accent-text); }
-.glossary-group-letter { font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1; }
-.glossary-group-rule { height: 1px; flex: 1; background: var(--border); }
+.glossary-group + .glossary-group { margin-top: clamp(40px, 6vw, 72px); }
+/* Harf başlığı: oversized grotesk harf + sert 3px kural, sayaç sağa itilir (kırmızı). */
+.glossary-group-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid var(--sw-ink);
+  color: var(--sw-ink);
+}
+.glossary-group-letter { font-family: var(--sw-grotesk); font-weight: 800; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 0.9; letter-spacing: -0.03em; }
+.glossary-group-rule { display: none; }
 .glossary-group-count {
   flex: none;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  margin-left: auto;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent-text);
-  font-size: 0.74rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  align-items: baseline;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sw-red);
+  font-family: var(--sw-grotesk);
+  font-size: 0.95rem;
+  font-weight: 700;
 }
-.glossary-entries { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+/* Modüler ızgara: hücreler dolgusuz/gölgesiz, 1px kurallarla ayrılır (tablo hissi). */
+.glossary-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 0;
+  align-items: stretch;
+  border-top: 1px solid var(--sw-line);
+  border-left: 1px solid var(--sw-line);
+}
 .glossary-entry {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 20px 22px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--card-bg) 96%, var(--accent));
+  padding: 22px 24px;
+  border: 0;
+  border-right: 1px solid var(--sw-line);
+  border-bottom: 1px solid var(--sw-line);
+  border-radius: 0;
+  background: transparent;
   scroll-margin-top: 24px;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition: background 120ms ease;
 }
 .glossary-entry:hover {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  box-shadow: 0 8px 24px -16px rgba(0, 0, 0, 0.5);
-  transform: translateY(-2px);
+  border-color: var(--sw-line);
+  box-shadow: none;
+  transform: none;
+  background: color-mix(in srgb, var(--sw-ink) 4%, transparent);
 }
 .glossary-entry.is-highlight {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
-  animation: glossaryPulse 1.8s ease;
+  background: color-mix(in srgb, var(--sw-red) 10%, transparent);
+  box-shadow: inset 0 0 0 2px var(--sw-red);
+  animation: glossaryPulse 1.6s ease;
 }
 @keyframes glossaryPulse {
-  0% { background: color-mix(in srgb, var(--accent) 18%, var(--card-bg)); }
-  100% { background: color-mix(in srgb, var(--card-bg) 96%, var(--accent)); }
+  0% { background: color-mix(in srgb, var(--sw-red) 24%, transparent); }
+  100% { background: transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
   .glossary-entry, .glossary-entry:hover { transition: none; transform: none; }
   .glossary-entry.is-highlight { animation: none; }
 }
-.glossary-entry-head { margin-bottom: 10px; }
-.glossary-entry h2 { margin: 0; color: var(--glossary-ink); font-size: 1.12rem; line-height: 1.25; letter-spacing: -0.01em; }
-/* İngilizce karşılık: küçük, italik, accent alt-etiket (başlıktan KÜÇÜK -> doğru hiyerarşi). */
-.glossary-english { margin: 2px 0 0; color: var(--accent-text); font-size: 0.8rem; font-style: italic; line-height: 1.3; letter-spacing: 0.01em; }
-.glossary-definition { margin: 0; color: var(--glossary-soft); font-size: 0.94rem; line-height: 1.65; }
-.glossary-aliases { margin: 12px 0 0; color: var(--muted); font-size: 0.77rem; line-height: 1.45; }
-.glossary-aliases span { color: var(--text); font-weight: 500; }
-/* Terim pozisyonu (mini tahta): tek-sütun kartta TAM sığar (ArticleBoard container-query
-   ile 100cqw'e göre ölçeklenir). max-width kartı taşırmaz; ortalanır. */
-.glossary-board { margin-top: 14px; }
-.glossary-board .article-board { width: 100%; max-width: 288px; margin: 0 auto; padding: 8px; border-radius: 10px; }
+.glossary-entry-head { margin-bottom: 12px; }
+.glossary-entry h2 { margin: 0; font-family: var(--sw-grotesk); font-weight: 700; color: var(--sw-ink); font-size: 1.1rem; line-height: 1.15; letter-spacing: -0.01em; }
+/* İngilizce karşılık: küçük, düz (italik değil), kırmızı alt-etiket. */
+.glossary-english { margin: 4px 0 0; color: var(--sw-red); font-size: 0.78rem; font-style: normal; font-weight: 500; line-height: 1.3; letter-spacing: 0.01em; }
+.glossary-definition { margin: 0; color: var(--glossary-soft); font-size: 0.92rem; line-height: 1.62; }
+.glossary-aliases { margin: 14px 0 0; color: var(--sw-faint); font-size: 0.72rem; line-height: 1.45; text-transform: uppercase; letter-spacing: 0.04em; }
+.glossary-aliases span { color: var(--sw-ink); font-weight: 700; }
+.glossary-board { margin-top: 16px; }
+.glossary-board .article-board { width: 100%; max-width: 288px; margin: 0 auto; padding: 8px; border-radius: 0; }
 .glossary-board .article-board-caption { margin-top: 7px; font-size: 0.72rem; line-height: 1.35; text-align: center; }
 .glossary-related {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 7px 8px;
-  margin: 12px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-  color: var(--muted);
-  font-size: 0.77rem;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding-top: 13px;
+  border-top: 1px solid var(--sw-line);
+  color: var(--sw-faint);
+  font-size: 0.76rem;
 }
-.glossary-related-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; font-weight: 600; color: var(--muted); }
+.glossary-related-label { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.66rem; font-weight: 700; color: var(--sw-faint); }
 .glossary-related-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .glossary-related-link {
-  padding: 3px 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  color: var(--accent-text);
-  font: inherit;
-  font-size: 0.76rem;
+  padding: 3px 9px;
+  border: 1px solid var(--sw-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sw-ink);
+  font: 500 0.76rem var(--sw-grotesk);
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 .glossary-related-link:hover, .glossary-related-link:focus-visible {
-  background: var(--accent);
-  color: var(--accent-contrast, #fff);
-  border-color: var(--accent);
-  transform: translateY(-1px);
+  background: var(--sw-red);
+  color: #fff;
+  border-color: var(--sw-red);
+  transform: none;
 }
-.glossary-empty { max-width: 520px; margin: 50px auto; padding: 34px 30px; border: 1px dashed var(--border); border-radius: 14px; text-align: center; color: var(--muted); }
-.glossary-empty h2 { margin: 12px 0 6px; color: var(--text); font-size: 1.1rem; }
+.glossary-empty { max-width: 520px; margin: 60px auto; padding: 36px 30px; border: 1px solid var(--sw-line); border-radius: 0; text-align: center; color: var(--sw-faint); }
+.glossary-empty h2 { margin: 12px 0 6px; font-family: var(--sw-grotesk); font-weight: 700; color: var(--sw-ink); font-size: 1.1rem; }
 .glossary-empty p { margin: 0; font-size: 0.9rem; }
 .glossary-empty-reset {
   margin-top: 16px;
-  padding: 8px 18px;
-  border: 1px solid var(--accent);
-  border-radius: 999px;
+  padding: 9px 20px;
+  border: 1px solid var(--sw-ink);
+  border-radius: 0;
   background: transparent;
-  color: var(--accent-text);
-  font: inherit;
+  color: var(--sw-ink);
+  font: 600 0.82rem var(--sw-grotesk);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-.glossary-empty-reset:hover { background: var(--accent); color: var(--accent-contrast, #fff); }
-.glossary-source { max-width: 1060px; margin: 38px auto 0; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
-.glossary-source a { color: var(--accent-text); }
+.glossary-empty-reset:hover { background: var(--sw-red); color: #fff; border-color: var(--sw-red); }
+.glossary-source { max-width: 1200px; margin: 48px auto 0; padding-top: 18px; border-top: 1px solid var(--sw-line); color: var(--sw-faint); font-size: 0.76rem; line-height: 1.6; }
+.glossary-source a { color: var(--sw-red); }
 @media (max-width: 520px) {
-  .glossary-view { padding: 20px 12px 30px; }
-  .glossary-alphabet { margin-right: -12px; margin-left: -12px; padding: 10px 12px; }
+  .glossary-view { padding: 20px 14px 32px; }
+  .glossary-alphabet { margin-right: -14px; margin-left: -14px; padding: 8px 14px; }
   .glossary-toolbar { align-items: stretch; flex-direction: column; }
-  .glossary-search { width: 100%; }
+  .glossary-count { align-self: stretch; padding: 10px 4px 0; border-left: 0; border-top: 1px solid var(--sw-line); }
   .glossary-entries { grid-template-columns: 1fr; }
-  .glossary-entry { padding: 15px 16px; }
+  .glossary-entry { padding: 18px 16px; }
 }
 
 @media (max-width: 640px) {
