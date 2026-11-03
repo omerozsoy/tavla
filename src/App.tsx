@@ -10110,6 +10110,11 @@ export default function App() {
               <span className="invite-chip">
                 <Icon name={isMatch ? 'target' : 'play'} size={14} /> {typeLabel}
               </span>
+              {inv.pot != null && inv.pot > 0 && (
+                <span className="invite-chip invite-chip-pot">
+                  <Icon name="coin" size={14} /> {t('invite.pot', { n: inv.pot.toLocaleString() })}
+                </span>
+              )}
               {inv.classic && (
                 <span className="invite-chip invite-chip-classic">
                   <Icon name="dice" size={14} /> {t('classic.badge')}

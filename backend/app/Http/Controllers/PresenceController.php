@@ -92,20 +92,39 @@ class PresenceController extends Controller
                 'users.nickname',
                 'users.avatar',
                 'users.rating', // davetli, davet edenin rating'ini + rütbesini görsün
+                'users.coins as from_coins',       // pot önizlemesi: davet edenin bakiyesi
+                'users.coins_reserved as from_reserved',
+                'rooms.bet_pct',                   // Maç Oyunu yüzde bahis (pot = iki tarafın %'si)
+                'rooms.stake',                     // Tek Oyun sabit bahis (pot = stake×2)
             ])
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'code' => $r->code,
-                'from' => $r->nickname ?: $r->first_name ?: 'Oyuncu',
-                'avatar' => $r->avatar,
-                'rating' => $r->rating !== null ? (int) $r->rating : null,
-                'target' => (int) ($r->target ?? 1),
-                'timeControl' => $r->time_control,
-                'unrated' => (bool) ($r->unrated ?? false),
-                'classic' => (bool) ($r->classic ?? false), // Klasik Tavla daveti rozeti
-                // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
-                'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated), (int) ($r->target ?? 1)),
-            ]);
+            ->map(function ($r) use ($me) {
+                // POT ÖNİZLEMESİ (coin): Maç Oyunu yüzde-bahiste her oyuncu kullanılabilir bakiyesinin
+                // bet_pct%'ini yatırır (maç başında pct_stake_snapshot ile AYNI formül: floor(avail*pct/100)).
+                // Davetli KABUL ETMEDEN pot'u görsün. Tek Oyun sabit bahis -> stake×2. Bahissiz -> 0 (gizli).
+                // Bakiyeler kabule kadar değişebilir -> TAHMİN.
+                $pct = (int) ($r->bet_pct ?? 0);
+                $fixed = (int) ($r->stake ?? 0);
+                $myAvail = max(0, (int) ($me->coins ?? 0) - (int) ($me->coins_reserved ?? 0));
+                $fromAvail = max(0, (int) ($r->from_coins ?? 0) - (int) ($r->from_reserved ?? 0));
+                $pot = $pct > 0
+                    ? (int) (floor($fromAvail * $pct / 100) + floor($myAvail * $pct / 100))
+                    : ($fixed > 0 ? $fixed * 2 : 0);
+
+                return [
+                    'id' => $r->id,
+                    'code' => $r->code,
+                    'from' => $r->nickname ?: $r->first_name ?: 'Oyuncu',
+                    'avatar' => $r->avatar,
+                    'rating' => $r->rating !== null ? (int) $r->rating : null,
+                    'target' => (int) ($r->target ?? 1),
+                    'timeControl' => $r->time_control,
+                    'unrated' => (bool) ($r->unrated ?? false),
+                    'classic' => (bool) ($r->classic ?? false), // Klasik Tavla daveti rozeti
+                    'pot' => $pot, // tahmini coin pot (0 = bahissiz -> istemci göstermez)
+                    // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
+                    'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated), (int) ($r->target ?? 1)),
+                ];
+            });
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
         $tmatches = [];
