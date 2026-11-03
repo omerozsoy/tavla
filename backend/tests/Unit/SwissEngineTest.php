@@ -456,6 +456,34 @@ class SwissEngineTest extends TestCase
         $this->assertSame(6, $byId[6]['rank'], 'En az galibiyet 6.');
     }
 
+    public function test_final_two_asymmetric_lives_more_lives_player_advantaged(): void
+    {
+        // 3 haklı: A(id1) 1 mağlubiyet (2 hak), B(id2) 2 mağlubiyet (1 hak) ile finalde.
+        $base = SwissEngine::initParticipants($this->players(2), 'asym'); // lives=3
+        $base = SwissEngine::applyResult($base, 1, 2, 1, true); // B 1. mağlubiyet
+        $base = SwissEngine::applyResult($base, 1, 2, 2, true); // B 2. mağlubiyet
+        $base = SwissEngine::applyResult($base, 2, 1, 3, true); // A 1. mağlubiyet
+        $this->assertSame(2, SwissEngine::remainingLives(SwissEngine::find($base, 1)), 'A 2 hak');
+        $this->assertSame(1, SwissEngine::remainingLives(SwissEngine::find($base, 2)), 'B 1 hak');
+        $this->assertNull(SwissEngine::championId($base), 'İkisi de aktif -> final sürüyor');
+
+        // Dal 1: A kazanır -> B 3. mağlubiyet -> elenir -> A TEK maçta şampiyon.
+        $a = SwissEngine::applyResult($base, 1, 2, 4, true);
+        $this->assertSame('eliminated', SwissEngine::find($a, 2)['status']);
+        $this->assertSame(1, SwissEngine::championId($a), 'A tek maçta şampiyon');
+
+        // Dal 2: B kazanır -> A 2. mağlubiyet -> ikisi de 1 hakla kalır, şampiyon YOK (tekrar oynanır).
+        $b = SwissEngine::applyResult($base, 2, 1, 4, true);
+        $this->assertSame(1, SwissEngine::remainingLives(SwissEngine::find($b, 1)), 'A artık 1 hak');
+        $this->assertSame(1, SwissEngine::remainingLives(SwissEngine::find($b, 2)), 'B hâlâ 1 hak');
+        $this->assertNull(SwissEngine::championId($b), 'Eşit hak -> tekrar maç, henüz şampiyon yok');
+
+        // Tekrar maçı: kazanan (B) şampiyon.
+        $b2 = SwissEngine::applyResult($b, 2, 1, 5, true);
+        $this->assertSame('eliminated', SwissEngine::find($b2, 1)['status']);
+        $this->assertSame(2, SwissEngine::championId($b2), 'Tekrar maçını kazanan B şampiyon');
+    }
+
     public function test_zero_active_fallback_champion_by_rating(): void
     {
         // Son iki oyuncu çift mağlubiyetle aynı anda elenir -> 0 aktif. TavlaTV: rating yüksek şampiyon.
