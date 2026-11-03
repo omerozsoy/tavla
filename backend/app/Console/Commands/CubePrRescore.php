@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Schema;
  * hesaplıyordu (gnubg_service._review_cube score=None) -> maçın 2+. oyunundaki küp kararları yanlış
  * equity/kayıp -> şişik küp PR (ör. 1-away'de "too-good" redouble "hata" sayılıyordu). Fix skoru
  * geçirir; bu komut KÜP KARARI OLAN geçmiş maçları force ile YENİDEN review'a alır. CacheMatchReviewJob
- * taze review üretir + PR'ı review'dan yeniden yazar (writePrFromReview) -> hem review hem gnubg_pr düzelir.
+ * taze (skor-farkında) review üretir + Snowie'yi dispatch eder; PR'ı (self+opp) YALNIZ
+ * AnalyzeMatchSnowieJob yazar -> hem review hem gnubg_pr düzelir.
  *
  * TEKRAR-ÇALIŞTIRILABİLİR: --before cutoff'tan ESKİ gnubg_review_at olanları seçer; job bitince _at=now()
  * olur -> sonraki çalışma onu atlar (imleç hep ilerler, çift-iş yok). --limit ile throttle (deep review
