@@ -176,6 +176,7 @@ import Friends from './ui/Friends'
 import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
+const LeagueView = lazy(() => import('./ui/LeagueView'))
 import BannerSlider from './ui/BannerSlider'
 import { AdStrip } from './ui/AdStrip'
 import { EntryPopupModal } from './ui/EntryPopupModal'
@@ -1092,6 +1093,8 @@ export default function App() {
   const [dmUnread, setDmUnread] = useState(0) // okunmamis ozel mesaj sayisi (menu rozeti)
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
+  const [leagueOpen, setLeagueOpen] = useState(false) // Türkiye Online Tavla Ligi (bağımsız §1)
+  const [leagueSeasonId, setLeagueSeasonId] = useState<number | null>(null) // derin-link sezon id
   const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (fetch id)
   const [tournDetailSlug, setTournDetailSlug] = useState<string | null>(null) // SEO URL slug (/online-turnuvalar/isim-{id})
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
@@ -1230,6 +1233,10 @@ export default function App() {
     ? 'lider-tablosu'
     : ranksOpen
     ? 'rutbeler'
+    : leagueOpen
+    ? leagueSeasonId != null
+      ? 'turkiye-online-tavla-ligi/' + leagueSeasonId
+      : 'turkiye-online-tavla-ligi'
     : tournOpen
       ? tournDetailId != null
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
@@ -1484,6 +1491,12 @@ export default function App() {
             setInfoTab(INFO_URL_TAB[seg[1] ?? ''] ?? 'about')
             setInfoOpen(true)
           }
+          break
+        }
+        case 'turkiye-online-tavla-ligi': {
+          setLeagueOpen(true)
+          const last = (seg[1] || '').split('-').pop() || ''
+          setLeagueSeasonId(/^\d+$/.test(last) ? parseInt(last, 10) : null)
           break
         }
         case 'online-turnuvalar':
@@ -7639,6 +7652,73 @@ export default function App() {
     }
   }
 
+  // LİG MAÇINA GİR (§4/§9): lig maç odası kodu (ready/room uçlarından) alınmış; sunucu-otoriter odaya
+  // gir ve oyun ekranına geç. Sonuç yakalama SUNUCUDA (league:tick captureRoomResult) -> frontend ayrıca
+  // rapor etmez. ponytail: handlePlayTournamentMatch'in genel giriş gövdesini aynalar (turnuva ref'leri
+  // YOK); canlı turnuva yolunu bozmamak için ayrı tutuldu, ileride ortak enterServerRoom'a çıkarılabilir.
+  async function handleEnterLeagueRoom(code: string, target: number) {
+    setLeagueOpen(false)
+    setRoomBusy(true)
+    setRoomError('')
+    try {
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl, target)
+      clockBankRef.current = res.room.clock_bank ?? null
+      const tgt = res.room.target ?? target
+      onlineTargetRef.current = tgt
+      targetsRef.current = [tgt]
+      matchTargetSyncedRef.current = true
+      resetRoomSync()
+      lastSyncRef.current = ''
+      syncEnabledRef.current = false
+      fairRef.current = new FairDice()
+      setOppStarted(false)
+      setChat([])
+      ratingReportedRef.current = false
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+      setPrLuck({ white: 0, black: 0 })
+      setCoinDelta(null)
+      setCoinPair(null)
+      setMatchLog([])
+      oppLoggedRef.current = ''
+      setRatingChange(null)
+      setClock(freshMatchClock(tgt))
+      setMatch(newMatch(tgt))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
+      setOpening('roll')
+      closeAllPages()
+      setHome(false)
+      setMode('online')
+      authoritativeRef.current = res.room.authoritative ?? authoritativeRef.current
+      diceAuthorityRef.current = res.room.dice_authority ?? diceAuthorityRef.current
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
+        oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
+        oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppCountry: res.slot === 'p2' ? (res.room.p1_country ?? null) : (res.room.p2_country ?? null),
+        oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
+        status: res.room.status,
+        classic: res.room.classic ?? false,
+        authoritative: res.room.authoritative,
+        dice_authority: res.room.dice_authority,
+      })
+    } catch {
+      setRoomError(t('mp.connError'))
+      setLeagueOpen(true)
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
   // AKTIF OYUNDAYKEN turnuva macina gec: once mevcut (turnuva disi) maci NO-CONTEST kapat
   // (kazanan/kaybeden YOK, puan/coin degismez, stake iade -> leaveRoom(code, true); sunucu hazir
   // turnuva maci olunca onurlar), SONRA turnuva odasina gir. KULLANICIYA SORULMAZ ("direk al").
@@ -9577,6 +9657,8 @@ export default function App() {
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
+    setLeagueOpen(false)
+    setLeagueSeasonId(null)
     setShopOpen(false)
     setLuckyWheelOpen(false)
     setDiceSlotOpen(false)
@@ -9692,6 +9774,8 @@ export default function App() {
       else setHome(true)
     },
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
+    // Türkiye Online Tavla Ligi HERKESE açık (misafir dahil görür); başvuru Premium (sunucuda).
+    onLeague: () => goPage(() => { setLeagueSeasonId(null); setLeagueOpen(true) }),
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
     onAchievements: () => goPage(() => setAchOpen(true)),
@@ -9766,6 +9850,7 @@ export default function App() {
     klassikFriend: menuProps.onKlassikFriend,
     klassikAi: menuProps.onKlassikAi,
     tournaments: menuProps.onTournaments,
+    league: menuProps.onLeague,
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
     diceslot: menuProps.onDiceSlot,
@@ -10590,6 +10675,24 @@ export default function App() {
             setTournDetailSlug(null)
           }}
         />
+        </Suspense>
+      )}
+      {leagueOpen && (
+        <Suspense fallback={null}>
+          <LeagueView
+            myId={user?.id ?? null}
+            premium={premium}
+            seasonId={leagueSeasonId}
+            onRequireLogin={() => setShowAuth(true)}
+            onRequirePremium={() => setMemOpen(true)}
+            onEnterRoom={handleEnterLeagueRoom}
+            onProfile={(id) => setHomeProfileId(id)}
+            onOpenSeason={(id) => setLeagueSeasonId(id)}
+            onClose={() => {
+              setLeagueOpen(false)
+              setLeagueSeasonId(null)
+            }}
+          />
         </Suspense>
       )}
       {soloOpen && (

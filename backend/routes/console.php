@@ -120,6 +120,13 @@ Schedule::command('tournaments:tick')
     ->name('tournaments-tick')
     ->withoutOverlapping();
 
+// TÜRKİYE ONLINE TAVLA LİGİ nöbetçisi (§9/§14/§4): oda sonucu yakala, 15dk hükmen, eleme ilerlet,
+// 24s/1s hatırlatma. Idempotent + tekrar-çalıştırılabilir (league_notifications defteri mükerrer engel).
+Schedule::command('league:tick')
+    ->everyMinute()
+    ->name('league-tick')
+    ->withoutOverlapping();
+
 // PERİYODİK TURNUVA KURUCU: her gece tam 00:00'da, bugüne denk gelen aktif periyodik turnuva
 // şablonlarından birer turnuva kurar (admin -> "Periyodik Turnuva" menüsü). Kurulan turnuva gün
 // boyu "kayıt açık" kalır; şablonun start_time saatinde mevcut autoStartDue() ile otomatik başlar.

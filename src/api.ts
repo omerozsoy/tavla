@@ -1479,6 +1479,66 @@ export async function listTournaments(): Promise<Tournament[]> {
   return d.tournaments
 }
 
+// ---- Türkiye Online Tavla Ligi (bağımsız modül) -------------------------------
+export interface LeagueUserBrief { id: number; nickname: string; avatar?: string | null; rating: number }
+export interface LeagueSeasonSummary {
+  id: number; name: string; status: string; current_round: number; rounds_total: number
+  champion?: LeagueUserBrief | null
+}
+export interface LeagueSeasonMeta extends LeagueSeasonSummary {
+  league_match_length: number; knockout_match_length: number
+  applications_open_at?: string | null; applications_close_at?: string | null
+  prizes: Array<{ key: string; coins?: number; badge?: string; desc?: string }>
+  min_players: number; max_players: number
+}
+export interface LeagueStandingRow {
+  rank: number | null; user: LeagueUserBrief; points: number; wins: number; losses: number
+  byes: number; opp_points: number; beaten_points: number; rating: number; status: string
+}
+export interface LeagueMatchRow {
+  id: number; p1: LeagueUserBrief | null; p2: LeagueUserBrief | null; result: string
+  winner_user_id: number | null; bye: boolean; mandatory_at?: string | null
+  deadline_at?: string | null; start_at?: string | null; room_code?: string | null
+}
+export interface LeagueMyMatch extends LeagueMatchRow {
+  phase: string; round: number; target: number
+  appointment: { confirmed_at?: string | null; proposal?: { at: string; by: number } | null; history?: unknown[] } | null
+  am_p1: boolean; ready_p1?: string | null; ready_p2?: string | null
+}
+
+export async function getLeague(): Promise<{ active: LeagueSeasonMeta | null; finished: LeagueSeasonSummary[] }> {
+  return req('/league')
+}
+export async function getLeagueSeason(id: number): Promise<{
+  season: LeagueSeasonMeta
+  standings: LeagueStandingRow[]
+  fixtures: Array<{ round: number; matches: LeagueMatchRow[] }>
+  bracket: Record<string, LeagueMatchRow[]>
+}> {
+  return req(`/league/${id}`)
+}
+export async function getLeagueMe(seasonId: number): Promise<{
+  participation: { status: string; seed: number | null; reserve_order: number | null } | null
+  next_match: LeagueMyMatch | null
+}> {
+  return req(`/league/${seasonId}/me`)
+}
+export async function applyToLeague(seasonId: number): Promise<{ ok: boolean }> {
+  return req(`/league/${seasonId}/apply`, { method: 'POST' })
+}
+export async function proposeLeagueTime(matchId: number, at: string): Promise<{ ok: boolean }> {
+  return req(`/league/match/${matchId}/propose`, { method: 'POST', body: JSON.stringify({ at }) })
+}
+export async function confirmLeagueTime(matchId: number): Promise<{ ok: boolean }> {
+  return req(`/league/match/${matchId}/confirm`, { method: 'POST' })
+}
+export async function readyLeagueMatch(matchId: number): Promise<{ ok: boolean; room: string | null }> {
+  return req(`/league/match/${matchId}/ready`, { method: 'POST' })
+}
+export async function leagueMatchRoom(matchId: number): Promise<{ code: string; target: number }> {
+  return req(`/league/match/${matchId}/room`, { method: 'POST' })
+}
+
 /** Ana sayfa turnuva reklam gorseli (panelden, en fazla 3). Tiklaninca turnuva detayi acilir. */
 export interface TournamentAd {
   id: number

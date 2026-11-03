@@ -22,6 +22,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameLogController;
 use App\Http\Controllers\InfoPageController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\LuckyWheelAdminController;
 use App\Http\Controllers\LuckyWheelController;
@@ -137,6 +138,13 @@ Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}',
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
+
+// TÜRKİYE ONLINE TAVLA LİGİ — liste/detay/puan tablosu/fikstür/ağaç HERKESE AÇIK (misafir dahil, §16).
+Route::get('/league', [LeagueController::class, 'index']);
+Route::get('/league/{season}', [LeagueController::class, 'show']);
+Route::get('/league/{season}/standings', [LeagueController::class, 'standings']);
+Route::get('/league/{season}/fixtures', [LeagueController::class, 'fixtures']);
+Route::get('/league/{season}/bracket', [LeagueController::class, 'bracket']);
 
 // Şans Çarkı durumu (misafir de çarkı görebilir; çevirmek için giriş gerekir).
 Route::get('/lucky-wheel', [LuckyWheelController::class, 'show']);
@@ -363,9 +371,31 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/tournaments/{tournament}/finish', [TournamentController::class, 'finish']);
     Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy']);
 
+    // TÜRKİYE ONLINE TAVLA LİGİ — kullanıcı eylemleri (başvuru/randevu/hazır-olma/oda). Premium kapısı
+    // apply içinde sunucu tarafında (§2). Misafir: auth:sanctum zaten bu grupta.
+    Route::post('/league/{season}/apply', [LeagueController::class, 'apply']);
+    Route::get('/league/{season}/me', [LeagueController::class, 'me']);
+    Route::post('/league/match/{match}/propose', [LeagueController::class, 'propose']);
+    Route::post('/league/match/{match}/confirm', [LeagueController::class, 'confirm']);
+    Route::post('/league/match/{match}/ready', [LeagueController::class, 'ready']);
+    Route::post('/league/match/{match}/room', [LeagueController::class, 'room']);
+
     // Yonetim: 'admin' middleware ile route katmaninda korunur (savunma-derinligi;
     // controller'larda da is_admin kontrolu ayrica durur -> biri unutulursa acik kalmaz).
     Route::middleware('admin')->group(function () {
+        // TÜRKİYE ONLINE TAVLA LİGİ — yönetim (yalnız admin; §13 helper YETKİSİZ). Controller'da da is_admin.
+        Route::post('/league', [LeagueController::class, 'create']);
+        Route::patch('/league/{season}', [LeagueController::class, 'update']);
+        Route::post('/league/{season}/open-applications', [LeagueController::class, 'openApplications']);
+        Route::post('/league/{season}/decide', [LeagueController::class, 'decide']);
+        Route::post('/league/{season}/start', [LeagueController::class, 'start']);
+        Route::post('/league/{season}/draw', [LeagueController::class, 'draw']);
+        Route::post('/league/{season}/confirm-league', [LeagueController::class, 'confirmLeague']);
+        Route::post('/league/{season}/build-knockout', [LeagueController::class, 'buildKnockout']);
+        Route::post('/league/{season}/withdraw', [LeagueController::class, 'withdraw']);
+        Route::post('/league/match/{match}/correct', [LeagueController::class, 'correct']);
+        Route::post('/league/match/{match}/postpone', [LeagueController::class, 'postpone']);
+
         Route::get('/admin/users', [AdminController::class, 'users']);
         Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
         Route::get('/admin/users/{user}/matches', [AdminController::class, 'userMatches']);
