@@ -28,13 +28,20 @@ class LeagueRuntimeTest extends TestCase
         return User::factory()->create(['plan' => 'free', 'plan_until' => null]);
     }
 
-    /** @return LeagueSeason sezon + $n premium başvuru (hepsi pending) */
+    /**
+     * @return LeagueSeason sezon + $n premium başvuru (hepsi pending). Her oyuncuya AYRIK rating
+     *                      verilir: §5 4. ölçüt (rating) sıralama eşitliklerini kırsın -> deterministik "küçük id kazanır"
+     *                      senaryosu 8/9/24/25 sınırında çözülemez kritik eşitlik üretip confirm'i kilitlemesin.
+     */
     private function seasonWithApplicants(int $n): LeagueSeason
     {
         $s = LeagueRuntime::createSeason();
         LeagueRuntime::openApplications($s, now()->subMinute(), now()->addDay());
         for ($i = 0; $i < $n; $i++) {
-            LeagueRuntime::apply($s, $this->premium());
+            $u = User::factory()->create([
+                'plan' => 'premium', 'plan_until' => now()->addYear(), 'rating' => 2000 - $i,
+            ]);
+            LeagueRuntime::apply($s, $u);
         }
 
         return $s->refresh();
