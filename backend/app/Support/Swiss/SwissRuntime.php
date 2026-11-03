@@ -41,6 +41,7 @@ class SwissRuntime
             'final_length' => (int) ($t->final_length ?: 0) ?: null,
             'round_minutes' => (int) ($t->round_minutes ?: 0) ?: null,
             'final_minutes' => (int) ($t->final_minutes ?: 0) ?: null,
+            'lives' => max(1, min(SwissEngine::MAX_LIVES, (int) ($t->swiss_lives ?: SwissEngine::MAX_LIVES))),
         ];
     }
 
@@ -52,7 +53,8 @@ class SwissRuntime
     {
         $players = array_values(array_filter($t->players ?? [], fn ($p) => $p !== null && ! empty($p['id'])));
         $seed = self::makeSeed($t);
-        $participants = SwissEngine::initParticipants($players, $seed);
+        $config = self::lockedConfig($t);
+        $participants = SwissEngine::initParticipants($players, $seed, (int) $config['lives']);
 
         $state = [
             'version' => self::RULE_VERSION,
@@ -60,7 +62,7 @@ class SwissRuntime
             'seed' => $seed,
             'round' => 0,
             'participants' => $participants,
-            'config' => self::lockedConfig($t),
+            'config' => $config,
             'reports' => [],
             'note' => null,
         ];
@@ -344,7 +346,7 @@ class SwissRuntime
             'note' => $state['note'] ?? null,
             'config' => $state['config'] ?? null,
             'optimal_last' => $lastReport['optimal'] ?? true,
-            'max_lives' => SwissEngine::MAX_LIVES,
+            'max_lives' => (int) ($state['config']['lives'] ?? SwissEngine::MAX_LIVES),
         ];
     }
 

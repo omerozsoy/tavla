@@ -36,10 +36,12 @@ class SwissEngine
 
     /**
      * @param  array<int,array{id:int,name?:string,rating?:int,avatar?:string|null,premium?:bool}>  $players
+     * @param  int  $lives  her oyuncunun başlangıç hakkı (1/2/3); katılımcıyla taşınır, kura anında kilitlenir
      * @return array<int,array<string,mixed>> seed sırasına göre katılımcılar (deterministik kura)
      */
-    public static function initParticipants(array $players, string $seed): array
+    public static function initParticipants(array $players, string $seed, int $lives = self::MAX_LIVES): array
     {
+        $lives = max(1, min(self::MAX_LIVES, $lives));
         $players = array_values(array_filter($players, fn ($p) => ! empty($p['id'])));
         $ordered = self::seededShuffle($players, $seed, fn ($p) => (string) $p['id']);
         $out = [];
@@ -51,6 +53,7 @@ class SwissEngine
                 'avatar' => $p['avatar'] ?? null,
                 'premium' => (bool) ($p['premium'] ?? false),
                 'seed' => $i,          // kura sırası — nihai tie-break
+                'lives' => $lives,     // başlangıç hakkı (turnuva bazında; eski kayıtlarda yok -> MAX_LIVES)
                 'losses' => 0,
                 'wins' => 0,           // ilerleme galibiyeti (bay + hükmen dahil)
                 'realWins' => 0,       // gerçekten oynanıp kazanılan
@@ -75,9 +78,15 @@ class SwissEngine
         return array_values(array_filter($participants, fn ($p) => ($p['status'] ?? 'active') === 'active'));
     }
 
+    /** Oyuncunun başlangıç hak tavanı (turnuva bazında; eski kayıtlarda yoksa MAX_LIVES). */
+    public static function livesCap(array $p): int
+    {
+        return max(1, min(self::MAX_LIVES, (int) ($p['lives'] ?? self::MAX_LIVES)));
+    }
+
     public static function remainingLives(array $p): int
     {
-        return max(0, self::MAX_LIVES - (int) ($p['losses'] ?? 0));
+        return max(0, self::livesCap($p) - (int) ($p['losses'] ?? 0));
     }
 
     /** Turnuva bitti mi? Bittiyse şampiyon id (tek aktif) yoksa null; hiç aktif kalmadıysa null. */
@@ -116,7 +125,7 @@ class SwissEngine
                 if ($realMatch) {
                     $p['opponents'] = array_values(array_unique(array_merge($p['opponents'], [$winnerId])));
                 }
-                if ((int) $p['losses'] >= self::MAX_LIVES && ($p['status'] ?? 'active') === 'active') {
+                if ((int) $p['losses'] >= self::livesCap($p) && ($p['status'] ?? 'active') === 'active') {
                     $p['status'] = 'eliminated';
                     $p['eliminatedRound'] = $roundNo;
                 }
@@ -134,7 +143,7 @@ class SwissEngine
             foreach ($participants as &$p) {
                 if ((int) $p['id'] === $id) {
                     $p['losses'] = (int) $p['losses'] + 1;
-                    if ((int) $p['losses'] >= self::MAX_LIVES && ($p['status'] ?? 'active') === 'active') {
+                    if ((int) $p['losses'] >= self::livesCap($p) && ($p['status'] ?? 'active') === 'active') {
                         $p['status'] = 'eliminated';
                         $p['eliminatedRound'] = $roundNo;
                     }

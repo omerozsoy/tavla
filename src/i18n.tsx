@@ -892,7 +892,7 @@ const TR: Dict = {
   'tourn.champion': 'Şampiyon',
   // ---- 3 Haklı Swiss (Swiss Triple Elimination) ----
   'swiss.title': '3 Haklı Swiss',
-  'swiss.rulesShort': '3 hakkın var. Üçüncü maç yenilginde elenirsin. Kazanmak kaybedilen hakkı geri getirmez. Bay hak kaybettirmez.',
+  'swiss.rulesShort': '{n} hakkın var. {n}. maç yenilgisinde elenirsin. Kazanmak kaybedilen hakkı geri getirmez. Bay hak kaybettirmez.',
   'swiss.round': '{n}. Tur',
   'swiss.currentRound': 'Aktif Tur',
   'swiss.activeCount': 'Kalan oyuncu: {n}',
@@ -2870,7 +2870,7 @@ const EN: Dict = {
   'tourn.champion': 'Champion',
   // ---- Swiss Triple Elimination ----
   'swiss.title': 'Swiss Triple Elimination',
-  'swiss.rulesShort': 'You have 3 lives. A third match loss eliminates you. Winning does not restore a lost life. A bye costs no life.',
+  'swiss.rulesShort': 'You have {n} lives. Losing {n} matches eliminates you. Winning does not restore a lost life. A bye costs no life.',
   'swiss.round': 'Round {n}',
   'swiss.currentRound': 'Current Round',
   'swiss.activeCount': 'Players left: {n}',

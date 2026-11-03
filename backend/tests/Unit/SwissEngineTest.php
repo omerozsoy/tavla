@@ -134,6 +134,29 @@ class SwissEngineTest extends TestCase
         $this->assertSame(1, SwissEngine::championId($p));
     }
 
+    public function test_lives_count_is_configurable(): void
+    {
+        // 1 haklı: ilk yenilgide elenir (tek-eleme gibi).
+        $p = SwissEngine::initParticipants($this->players(2), 's', 1);
+        $this->assertSame(1, SwissEngine::remainingLives(SwissEngine::find($p, 2)));
+        $p = SwissEngine::applyResult($p, 1, 2, 1, true);
+        $this->assertSame('eliminated', SwissEngine::find($p, 2)['status'], '1 haklı: ilk yenilgide elenir');
+        $this->assertSame(1, SwissEngine::championId($p));
+
+        // 2 haklı: 2. yenilgide elenir, 1. yenilgide değil.
+        $p = SwissEngine::initParticipants($this->players(2), 's', 2);
+        $this->assertSame(2, SwissEngine::remainingLives(SwissEngine::find($p, 2)));
+        $p = SwissEngine::applyResult($p, 1, 2, 1, true);
+        $this->assertSame('active', SwissEngine::find($p, 2)['status'], '2 haklı: 1. yenilgi elemez');
+        $p = SwissEngine::applyResult($p, 1, 2, 2, true);
+        $this->assertSame('eliminated', SwissEngine::find($p, 2)['status'], '2 haklı: 2. yenilgide elenir');
+
+        // Sınır dışı değer kıstırılır (0 -> 1, 9 -> 3).
+        $this->assertSame(1, SwissEngine::livesCap(['lives' => 0]));
+        $this->assertSame(3, SwissEngine::livesCap(['lives' => 9]));
+        $this->assertSame(3, SwissEngine::livesCap([]), 'Eski kayıt (lives yok) -> MAX_LIVES');
+    }
+
     public function test_winning_does_not_restore_a_life(): void
     {
         $p = SwissEngine::initParticipants($this->players(2), 's');

@@ -264,6 +264,12 @@ class TournamentResource extends Resource
                     ->label('Üçüncülük (3-4) maçı oynansın')
                     ->helperText('Açık: yarı final kaybedenleri 3.’lük maçı oynar. Kapalı (varsayılan): 3.’lük maçı hiç kurulmaz, finale direkt geçilir; 3./4. sıra yarı final kaybedenlerinden rating’e göre belirlenir (3-4 aynı ödülü alıyorsa maça gerek yok). Yalnızca Bracket tipinde geçerli.')
                     ->default(false),
+                Forms\Components\Select::make('swiss_lives')
+                    ->label('Hak sayısı (Swiss)')
+                    ->helperText('Her oyuncu kaç hakla başlar: 1 = tek-eleme gibi (ilk yenilgide elenir), 2, veya 3 (varsayılan). Bu kadar yenilgide oyuncu elenir. Başlangıçta kilitlenir. Yalnızca Swiss tipinde geçerli.')
+                    ->options([1 => '1 haklı', 2 => '2 haklı', 3 => '3 haklı'])
+                    ->required()
+                    ->default(3),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')
                     ->relationship('creator', 'nickname')

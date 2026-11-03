@@ -791,7 +791,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   {sw && <span className="swiss-round">{t('swiss.round', { n: sw.round })}</span>}
                   {sw && active.status === 'running' && <span className="swiss-left">{t('swiss.activeCount', { n: sw.active })}</span>}
                 </div>
-                <div className="swiss-rules">{t('swiss.rulesShort')}</div>
+                <div className="swiss-rules">{t('swiss.rulesShort', { n: maxLives })}</div>
 
                 {myRow && active.status === 'running' && (
                   <div className={`swiss-me swiss-me-${myRow.status}`}>
