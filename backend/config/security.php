@@ -19,10 +19,10 @@ return [
         // yalnız WebAssembly derlemeye izin verir, JS eval()'a DEĞİL -> WASM için güvenli seçim.
         // static.cloudflareinsights.com: Cloudflare Web Analytics beacon.min.js (CF otomatik enjekte eder).
         "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://static.cloudflareinsights.com",
-        // fonts.googleapis.com: canlı site Google Fonts CSS (Spectral+Outfit) yüklüyor. Self-hosting
-        // CANLIYA çıkınca (index.html'den link kalkınca) bu + fonts.gstatic.com geri çıkarılabilir.
-        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com",
-        "font-src 'self' data: https://fonts.gstatic.com",
+        // Fontlar SELF-HOSTED (src/fonts.css -> /fonts/*.woff2); Google Fonts CSS/woff2 kaldirildi
+        // -> style-src'tan fonts.googleapis, font-src'tan fonts.gstatic cikarildi (3. taraf yok).
+        "style-src 'self' 'unsafe-inline' https://accounts.google.com",
+        "font-src 'self' data:",
         "img-src 'self' data: blob: https:",
         // Google Etiketi (gtag/Ads dönüşüm) beacon/collect uçları -> connect-src'e eklendi (aksi halde
         // CSP enforce iken dönüşüm ölçümü bloklanır). .htaccess CSP ile senkron.
