@@ -51,7 +51,7 @@ class MessageResource extends Resource
         $match = DB::table('rooms')
             ->whereNotNull('messages')
             ->whereRaw('JSON_LENGTH(messages) > 0')
-            ->selectRaw("(0 - id) as id, 'match' as kind, p1_user_id as u1, p2_user_id as u2, p1_name as n1, p2_name as n2, code as room_code, JSON_LENGTH(messages) as msg_count, updated_at as last_at");
+            ->selectRaw("(0 - CAST(id AS SIGNED)) as id, 'match' as kind, p1_user_id as u1, p2_user_id as u2, p1_name as n1, p2_name as n2, code as room_code, JSON_LENGTH(messages) as msg_count, updated_at as last_at");
 
         return Message::query()->fromSub($dm->unionAll($match), 'conv')->select('conv.*');
     }
