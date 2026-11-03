@@ -99,12 +99,38 @@ class SwissEngine
         return (int) ($p['pointsFor'] ?? 0) - (int) ($p['pointsAgainst'] ?? 0);
     }
 
-    /** Turnuva bitti mi? Bittiyse şampiyon id (tek aktif) yoksa null; hiç aktif kalmadıysa null. */
+    /**
+     * Şampiyon id. Tek aktif varsa O. Birden çok aktifse null (turnuva bitmedi). HİÇ aktif kalmadıysa
+     * (herkes elendi — ör. son iki oyuncu çift mağlubiyetle) TavlaTV kuralı: EN SON turda elenenler
+     * arasından RATING'i en yüksek olan şampiyon olur (eşitse seed). Hiç elenen de yoksa (ör. hepsi
+     * çekildi/DQ) null — o zaman gerçekten şampiyon yoktur.
+     */
     public static function championId(array $participants): ?int
     {
         $act = self::active($participants);
+        if (count($act) === 1) {
+            return (int) $act[0]['id'];
+        }
+        if (count($act) > 1) {
+            return null; // turnuva bitmedi
+        }
 
-        return count($act) === 1 ? (int) $act[0]['id'] : null;
+        return self::fallbackChampionId($participants); // 0 aktif -> son elenenlerden rating'i en yüksek
+    }
+
+    /** 0 aktif kaldığında şampiyon: en son turda elenenler arasından rating en yüksek (eşitse seed). */
+    private static function fallbackChampionId(array $participants): ?int
+    {
+        $elim = array_values(array_filter($participants, fn ($p) => ($p['status'] ?? '') === 'eliminated'));
+        if (empty($elim)) {
+            return null; // elenen yok (hepsi çekildi/DQ) -> şampiyon yok
+        }
+        $maxRound = max(array_map(fn ($p) => (int) $p['eliminatedRound'], $elim));
+        $finalists = array_values(array_filter($elim, fn ($p) => (int) $p['eliminatedRound'] === $maxRound));
+        usort($finalists, fn ($a, $b) => (int) ($b['rating'] ?? 0) <=> (int) ($a['rating'] ?? 0)
+            ?: (int) ($a['seed'] ?? 0) <=> (int) ($b['seed'] ?? 0));
+
+        return (int) $finalists[0]['id'];
     }
 
     public static function isComplete(array $participants): bool
@@ -622,7 +648,8 @@ class SwissEngine
      * elenenler şu kademeyle sıralanır (üstteki daha iyi): bay ÇEKMEYEN > çok galibiyet (wins) >
      * çok gerçek galibiyet (realWins) > yüksek puan averajı (pointDiff) > yüksek rating. Bütün bu
      * alanlar da eşitse => ORTAK derece (ikisi ortak 3. ise sonraki 5.; seed yalnız gösterim sırası).
-     * Çekilen/DQ ayrı gösterilir (uydurma derece yok). Hiç aktif yoksa şampiyon uydurma.
+     * Çekilen/DQ ayrı gösterilir (uydurma derece yok). 0 aktif + elenen varsa championId fallback
+     * şampiyon seçer (rank 1); hiç elenen de yoksa şampiyon yok.
      *
      * @return array<int,array<string,mixed>> her satır: id,name,rank(int|null),status,losses,wins,realWins
      */
@@ -631,7 +658,7 @@ class SwissEngine
         $champ = self::championId($participants);
         $rows = [];
 
-        // 1) Şampiyon
+        // 1) Şampiyon (0 aktif durumunda fallback şampiyon da olabilir — statüsü 'eliminated').
         if ($champ !== null) {
             $p = self::find($participants, $champ);
             $rows[] = self::standRow($p, 1);
@@ -639,8 +666,8 @@ class SwissEngine
 
         // 2) Elenenler: eliminatedRound DESC; sonra tie-break kademesi (üstte olan daha iyi):
         //    bay ÇEKMEYEN > wins > realWins > puan averajı > rating. Tüm bu alanlar eşitse ORTAK derece
-        //    (seed yalnız gösterim sırası, dereceyi değiştirmez).
-        $elim = array_values(array_filter($participants, fn ($p) => ($p['status'] ?? '') === 'eliminated'));
+        //    (seed yalnız gösterim sırası, dereceyi değiştirmez). Fallback şampiyon burada tekrar GÖSTERİLMEZ.
+        $elim = array_values(array_filter($participants, fn ($p) => ($p['status'] ?? '') === 'eliminated' && (int) $p['id'] !== $champ));
         $rankKey = fn ($p) => [
             (int) ($p['byes'] ?? 0),           // az bay üstte (ASC)
             -(int) ($p['wins'] ?? 0),          // çok galibiyet üstte (DESC)

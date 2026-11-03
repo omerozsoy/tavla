@@ -36,8 +36,9 @@
 <section>
 <h2>2. Turnuva sonu</h2>
 <ul>
-<li><strong>Sabit tur sayısı yok</strong> — tek aktif oyuncu kalana kadar devam (<code>isComplete = aktif ≤ 1</code>).</li>
+<li><strong>Sabit tur sayısı yok</strong> — tek aktif oyuncu kalana kadar devam (<code>isComplete = aktif ≤ 1</code>). Tek kalan = şampiyon.</li>
 <li>Son 2/3 oyuncuda da aynı Swiss + bay politikası.</li>
+<li><strong>Şampiyon her zaman olur:</strong> Son iki oyuncu çift mağlubiyetle aynı anda elenip 0 aktif kalırsa, <strong>en son turda elenenler arasından rating'i en yüksek olan</strong> şampiyon ilan edilir (eşitse seed) ve havuzu alır. (Yalnız hiç elenen yoksa — herkes çekildi/DQ — şampiyon olmaz, ücretler iade edilir.)</li>
 </ul>
 </section>
 

@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\TournamentController;
+use App\Models\Room;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Support\Swiss\SwissEngine;
 use App\Support\Swiss\SwissRuntime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -232,10 +236,12 @@ class SwissTournamentTest extends TestCase
         $this->assertFalse(SwissRuntime::resolveMatch($t, 'yokboyle', 0), 'Bilinmeyen maç → false');
     }
 
-    public function test_double_loss_both_eliminated_yields_no_champion(): void
+    public function test_double_loss_both_eliminated_picks_higher_rated_champion(): void
     {
-        // 2 oyuncu (final-iki): her ikisi de 2 kez çift-mağlubiyet olursa 3. mağlubiyette ikisi de elenir.
-        $t = $this->makeTournament(2);
+        // 2 oyuncu her tur çift-mağlubiyet -> 3. mağlubiyette ikisi de aynı anda elenir (0 aktif).
+        // TavlaTV kuralı: şampiyon mutlaka olur -> rating'i yüksek olan (eşitse seed).
+        $t = $this->makeTournament(2); // rating: idx1=1501, idx2=1502
+        $higher = collect($t->players)->sortByDesc('rating')->first()['id'];
         SwissRuntime::start($t);
         $t->refresh();
         for ($r = 0; $r < 3; $r++) {
@@ -248,8 +254,8 @@ class SwissTournamentTest extends TestCase
         }
         $t->refresh();
         $this->assertSame('finished', $t->status);
-        $this->assertNull($t->champion_id, 'İki taraf da elendi → şampiyon yok');
-        $this->assertSame('no_champion', $t->swiss_state['note'] ?? null);
+        $this->assertSame((int) $higher, (int) $t->champion_id, 'Rating yüksek oyuncu fallback şampiyon');
+        $this->assertNotSame('no_champion', $t->swiss_state['note'] ?? null);
     }
 
     public function test_rounds_never_pair_a_player_twice_in_same_round(): void
@@ -282,13 +288,13 @@ class SwissTournamentTest extends TestCase
         $this->assertTrue(SwissRuntime::resolveMatch($t, $key, 0));
         $t->refresh();
 
-        \Laravel\Sanctum\Sanctum::actingAs(User::find($a));
+        Sanctum::actingAs(User::find($a));
         $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => $key])->assertStatus(422);
 
         foreach ($t->bracket as $ri => $cells) {
             foreach ($cells as $mi => $m) {
                 if ($m['key'] === $key) {
-                    \Illuminate\Support\Facades\DB::transaction(fn () => SwissRuntime::applyResult($t, $ri, $mi, $a, null, true));
+                    DB::transaction(fn () => SwissRuntime::applyResult($t, $ri, $mi, $a, null, true));
                 }
             }
         }
@@ -320,11 +326,11 @@ class SwissTournamentTest extends TestCase
                         $bk[0][$i]['room'] = 'RACE2';
                     }
                 }
-                \Illuminate\Support\Facades\DB::table('tournaments')->where('id', $t->id)->update(['bracket' => json_encode($bk)]);
+                DB::table('tournaments')->where('id', $t->id)->update(['bracket' => json_encode($bk)]);
             }
         });
 
-        \Laravel\Sanctum\Sanctum::actingAs(User::find((int) $m1['p1']['id']));
+        Sanctum::actingAs(User::find((int) $m1['p1']['id']));
         $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => $m1['key']])->assertOk();
 
         $rooms = collect(Tournament::find($t->id)->bracket[0])->pluck('room', 'key');
@@ -332,19 +338,15 @@ class SwissTournamentTest extends TestCase
         $this->assertNotEmpty($rooms[$m1['key']]);
     }
 
-    public function test_no_champion_finish_refunds_paid_fees(): void
+    public function test_double_loss_fallback_champion_receives_pool(): void
     {
-        // A-33: şampiyonsuz bitişte giriş ücretleri kayboluyordu.
-        $t = $this->makeTournament(2, ['entry_fee' => 100, 'prize_coins' => 200]);
-        $players = $t->players;
-        foreach ($players as $i => $pl) {
-            $players[$i]['fee_paid'] = 100;
-        }
-        $t->players = $players;
-        $t->save();
+        // 0 aktif (çift mağlubiyet) durumunda artık fallback şampiyon var -> havuz ŞAMPİYONA ödenir,
+        // kimseye iade YOK; kaybeden hiçbir şey almaz.
+        $t = $this->makeTournament(2, ['prize_coins' => 200]);
+        $higher = (int) collect($t->players)->sortByDesc('rating')->first()['id'];
         SwissRuntime::start($t);
         $t->refresh();
-        $before = User::whereIn('id', array_column($players, 'id'))->pluck('coins', 'id');
+        $before = User::whereIn('id', array_column($t->players, 'id'))->pluck('coins', 'id');
         $guard = 0;
         while ($t->status === 'running' && $guard++ < 10) {
             [$key] = $this->firstPending($t);
@@ -352,15 +354,18 @@ class SwissTournamentTest extends TestCase
             $t->refresh();
         }
         $this->assertSame('finished', $t->status);
-        $this->assertNull($t->champion_id);
+        $this->assertSame($higher, (int) $t->champion_id);
+        $this->assertSame((int) $before[$higher] + 200, (int) User::find($higher)->coins, 'havuz şampiyona');
         foreach ($before as $id => $c) {
-            $this->assertSame((int) $c + 100, (int) User::find($id)->coins, 'ödenen ücret iade edilmeli');
+            if ((int) $id !== $higher) {
+                $this->assertSame((int) $c, (int) User::find($id)->coins, 'kaybeden iade/ödül almaz');
+            }
         }
     }
 
     private function stall(Tournament $t): void
     {
-        $c = new \App\Http\Controllers\TournamentController();
+        $c = new TournamentController;
         $m = new \ReflectionMethod($c, 'resolveStalledMatches');
         $m->setAccessible(true);
         $m->invoke($c, $t);
@@ -376,7 +381,7 @@ class SwissTournamentTest extends TestCase
         [$m1, $m2] = $cells;
         // Maç 1: yalnız p1 odaya oturdu. Maç 2: kimse gelmedi.
         $a = (int) $m1['p1']['id'];
-        \App\Models\Room::create(['code' => 'SWNS1', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
+        Room::create(['code' => 'SWNS1', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
             'status' => 'waiting', 'version' => 0]);
         $bk = $t->bracket;
         foreach ($bk[0] as $i => $c) {
@@ -407,7 +412,7 @@ class SwissTournamentTest extends TestCase
         SwissRuntime::start($t);
         $t->refresh();
         [$key, $a, $b] = $this->firstPending($t);
-        \App\Models\Room::create(['code' => 'SWNS2', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
+        Room::create(['code' => 'SWNS2', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
             'p2_token' => 'tb', 'p2_user_id' => $b, 'p2_name' => 'B', 'status' => 'playing', 'version' => 0]);
         $bk = $t->bracket;
         $bk[0][0]['room'] = 'SWNS2';

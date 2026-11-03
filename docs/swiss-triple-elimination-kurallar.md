@@ -11,8 +11,9 @@
 - Kazanmak kaybedilen hakkı geri getirmez. **Beraberlik yok.**
 
 ## 2. Turnuva sonu
-- **Sabit tur sayısı yok** — tek aktif oyuncu kalana kadar devam (`isComplete = aktif ≤ 1`).
+- **Sabit tur sayısı yok** — tek aktif oyuncu kalana kadar devam (`isComplete = aktif ≤ 1`). Tek kalan = şampiyon.
 - Son 2/3 oyuncuda da aynı Swiss + bay politikası.
+- **Şampiyon her zaman olur:** Son iki oyuncu çift mağlubiyetle aynı anda elenip 0 aktif kalırsa, **en son turda elenenler arasından rating'i en yüksek olan** şampiyon ilan edilir (eşitse seed) ve havuzu alır. (Yalnız hiç elenen yoksa — herkes çekildi/DQ — şampiyon olmaz, ücretler iade edilir.)
 
 ## 3. İki ayrı galibiyet sayacı
 - **`wins` (ilerleme galibiyeti):** bay + hükmen dahil.

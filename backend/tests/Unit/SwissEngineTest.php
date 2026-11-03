@@ -456,6 +456,29 @@ class SwissEngineTest extends TestCase
         $this->assertSame(6, $byId[6]['rank'], 'En az galibiyet 6.');
     }
 
+    public function test_zero_active_fallback_champion_by_rating(): void
+    {
+        // Son iki oyuncu çift mağlubiyetle aynı anda elenir -> 0 aktif. TavlaTV: rating yüksek şampiyon.
+        $p = SwissEngine::initParticipants($this->players(2), 'fb'); // rating: id1=1501, id2=1502
+        $p = SwissEngine::applyResult($p, 1, 2, 1, true);
+        $p = SwissEngine::applyResult($p, 2, 1, 2, true);
+        $p = SwissEngine::applyResult($p, 1, 2, 3, true);
+        $p = SwissEngine::applyResult($p, 2, 1, 4, true); // ikisi de 2-2, ikisi aktif
+        $this->assertNull(SwissEngine::championId($p), 'Henüz ikisi aktif');
+        $p = SwissEngine::applyDoubleLoss($p, 1, 2, 5); // ikisi de 3 mağlubiyet -> 0 aktif
+        $this->assertTrue(SwissEngine::isComplete($p));
+        $this->assertSame(2, SwissEngine::championId($p), 'Rating yüksek (id2=1502) fallback şampiyon');
+
+        $st = SwissEngine::finalStandings($p);
+        $byId = [];
+        foreach ($st as $row) {
+            $byId[$row['id']] = $row;
+        }
+        $this->assertSame(1, $byId[2]['rank'], 'Fallback şampiyon rank 1');
+        $this->assertSame(2, $byId[1]['rank'], 'Diğer finalist rank 2');
+        $this->assertCount(2, $st, 'Şampiyon elenen listesinde tekrar GÖSTERİLMEZ');
+    }
+
     public function test_property_full_simulations_hold_invariants(): void
     {
         foreach ([2, 3, 5, 7, 8, 11, 16, 24, 32] as $n) {
