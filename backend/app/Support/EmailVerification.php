@@ -19,7 +19,7 @@ class EmailVerification
         Cache::put(
             'eotp:'.$user->id,
             ['code' => $code, 'tries' => 0, 'email' => strtolower((string) $user->email)],
-            now()->addMinutes(15),
+            now()->addMinutes(60), // kod 60 dk geçerli (eski 15 dk Hotmail/Outlook gecikmesinde dolup "geçersiz" oluyordu)
         );
         // Çoklu-domain: imzalı link ZİYARET EDİLEN marka domaininde üretilir (aynı backend her iki
         // host'a hizmet eder; 'signed' middleware tıklanan host'a göre doğrular). Dil de markaya göre.
@@ -42,14 +42,14 @@ class EmailVerification
             'code' => $code,
             'url' => $url,
             'buttonText' => 'Verify Email Address',
-            'outro' => 'The code is valid for 15 minutes. If you did not create an account, you can ignore this email.',
+            'outro' => 'The code is valid for 60 minutes. If you did not create an account, you can ignore this email.',
         ] : [
             'heading' => 'Merhaba!',
             'intro' => "{$name} hesabını doğrulamak için aşağıdaki 6 haneli kodu siteye gir — veya butona tıkla.",
             'code' => $code,
             'url' => $url,
             'buttonText' => 'E-posta Adresini Doğrula',
-            'outro' => 'Kod 15 dakika geçerlidir. Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
+            'outro' => 'Kod 60 dakika geçerlidir. Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
         ];
         $subject = $en ? "{$name} — Email Verification" : "{$name} — E-posta Doğrulama";
         $payload['brand'] = $brand; // şablon logo/dil/footer'ı markaya göre çizsin
