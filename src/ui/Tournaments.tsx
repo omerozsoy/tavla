@@ -194,6 +194,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   const [detailReload, setDetailReload] = useState(0)
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState<null | 'join' | 'leave'>(null) // katıl/çık onay dialogu
+  const [joinPw, setJoinPw] = useState('') // şifreli turnuvada katılım şifresi (dialog)
+  const [pwError, setPwError] = useState(false) // son denemede şifre hatalıydı
   const [dqTarget, setDqTarget] = useState<null | { id: number; userId: number; name: string }>(null) // diskalifiye onayı
   // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
   // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
@@ -397,19 +399,29 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
 
 
-  async function join(id: number) {
+  async function join(id: number, password?: string) {
     mutSeq.current++
     setBusy(true)
     try {
-      setActive(await joinTournament(id))
+      setActive(await joinTournament(id, password))
       refreshList()
+      setConfirm(null)
+      setJoinPw('')
+      setPwError(false)
     } catch (e) {
-      // Sunucu kapisi (premium_only): plan bu arada dustuyse vb. -> uyelik ekrani.
-      if (e instanceof ApiError && e.status === 403) onRequirePremium?.()
-      else if (e instanceof ApiError && e.status === 401) onRequireLogin?.()
+      // Yanlis/eksik turnuva sifresi: dialogda kal, hatayi goster (tekrar dene).
+      if (e instanceof ApiError && e.status === 403 && (e.data as { code?: string } | undefined)?.code === 'password_required') {
+        setPwError(true)
+      } else if (e instanceof ApiError && e.status === 403) {
+        // Sunucu kapisi (premium_only): plan bu arada dustuyse vb. -> uyelik ekrani.
+        onRequirePremium?.()
+        setConfirm(null)
+      } else {
+        if (e instanceof ApiError && e.status === 401) onRequireLogin?.()
+        setConfirm(null)
+      }
     } finally {
       setBusy(false)
-      setConfirm(null)
     }
   }
 
@@ -1177,11 +1189,29 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   <div className="tourn-confirm-amt">
                     <Coins amount={active.entry_fee ?? 0} size={22} suffix="GC" />
                   </div>
+                  {active.has_password && (
+                    <div className="tourn-pw">
+                      <input
+                        type="password"
+                        className="tourn-pw-input"
+                        autoComplete="off"
+                        placeholder={t('tourn.pwPlaceholder')}
+                        value={joinPw}
+                        onChange={(e) => { setJoinPw(e.target.value); setPwError(false) }}
+                        aria-invalid={pwError}
+                      />
+                      {pwError && <p className="tourn-pw-error">{t('tourn.pwWrong')}</p>}
+                    </div>
+                  )}
                   <div className="tourn-confirm-actions">
-                    <Button variant="secondary" onClick={() => setConfirm(null)}>
+                    <Button variant="secondary" onClick={() => { setConfirm(null); setJoinPw(''); setPwError(false) }}>
                       {t('reg.cancel')}
                     </Button>
-                    <Button variant="default" disabled={busy} onClick={() => join(active.id)}>
+                    <Button
+                      variant="default"
+                      disabled={busy || (!!active.has_password && !joinPw.trim())}
+                      onClick={() => join(active.id, active.has_password ? joinPw : undefined)}
+                    >
                       {t('tourn.join')}
                     </Button>
                   </div>

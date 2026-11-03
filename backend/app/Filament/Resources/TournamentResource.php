@@ -442,6 +442,12 @@ class TournamentResource extends Resource
                     ->numeric()
                     ->minValue(0)
                     ->default(0),
+                Forms\Components\TextInput::make('join_password')
+                    ->label('Katılım şifresi')
+                    ->helperText('Boş bırak = turnuva HALKA AÇIK (şifresiz). Doldurursan turnuva ŞİFRELİ olur: katılmak için üyeler bu şifreyi girmek zorunda. Şifreyi katılacaklara sen paylaşırsın.')
+                    ->maxLength(60)
+                    ->autocomplete(false)
+                    ->placeholder('Boş = halka açık'),
             ]);
     }
 

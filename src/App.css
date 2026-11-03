@@ -21209,6 +21209,27 @@ body:has(.spectate-view) .app.lobby {
 .tourn-confirm-actions > * {
   flex: 1;
 }
+/* Sifreli turnuva katilim sifresi (join onay dialogu) */
+.tourn-pw {
+  margin: 10px 0 4px;
+}
+.tourn-pw-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #d0d4dc);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: var(--card, #fff);
+  color: inherit;
+}
+.tourn-pw-input[aria-invalid='true'] {
+  border-color: #e05353;
+}
+.tourn-pw-error {
+  margin: 6px 0 0;
+  color: #e05353;
+  font-size: 0.85rem;
+}
 /* Arkadaslıktan cıkar onay dialogu (tourn-confirm ile ayni kalip) */
 .friends-confirm {
   max-width: 380px;

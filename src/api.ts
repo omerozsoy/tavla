@@ -1445,6 +1445,7 @@ export interface Tournament {
   /** Siralamaya gore odul tablosu: index 0 = 1.lik. Turnuva bitince otomatik odenir. */
   prizes?: { coins: number; desc?: string | null }[]
   entry_fee?: number
+  has_password?: boolean // true = sifreli turnuva; katilmak icin sifre gerekir (sifrenin kendisi sizdirilmaz)
   premium_only?: boolean // katilim: true = yalniz Premium, false = tum uyeler (misafir asla)
   rev?: string // canli guncelleme surumu (kayitta katilimcilar, basladiktan sonra yalniz mac sonuclari)
   /** Son katilim tarihi (ISO); turnuva tam bu anda otomatik baslar. */
@@ -1946,8 +1947,11 @@ export async function createTournament(
   })
   return d.tournament
 }
-export async function joinTournament(id: number): Promise<Tournament> {
-  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/join`, { method: 'POST' })
+export async function joinTournament(id: number, password?: string): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/join`, {
+    method: 'POST',
+    body: password ? JSON.stringify({ password }) : undefined,
+  })
   return d.tournament
 }
 export async function leaveTournament(id: number): Promise<Tournament> {

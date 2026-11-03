@@ -160,6 +160,7 @@ class TournamentController extends Controller
             'prizes.*.coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prizes.*.desc' => ['nullable', 'string', 'max:120'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'join_password' => ['nullable', 'string', 'max:60'], // bos = halka acik
             'register_until' => ['nullable', 'date'],
             'premium_only' => ['nullable', 'boolean'], // varsayilan true (Premium'a ozel)
             'third_place_match' => ['nullable', 'boolean'], // varsayilan true (3.'luk maci oynanir)
@@ -185,6 +186,7 @@ class TournamentController extends Controller
             'prize_desc' => $data['prize_desc'] ?? null,
             'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
+            'join_password' => ($data['join_password'] ?? '') !== '' ? $data['join_password'] : null,
             'premium_only' => (bool) ($data['premium_only'] ?? true),
             'third_place_match' => (bool) ($data['third_place_match'] ?? false),
             'match_length' => $data['match_length'] ?? 1,
@@ -213,6 +215,16 @@ class TournamentController extends Controller
             return response()->json([
                 'message' => 'Bu turnuva Premium üyelere özeldir.',
                 'code' => 'premium_required',
+            ], 403);
+        }
+
+        // Katilim sifresi (opsiyonel): doluysa dogru sifre girilmeden katilinamaz. Zaten kayitli
+        // oyuncuya (idempotent re-join) sifre sorulmaz. Paylasilan turnuva sifresi -> duz karsilastirma.
+        $pw = (string) ($tournament->join_password ?? '');
+        if ($pw !== '' && ! $alreadyIn && ! hash_equals($pw, (string) $request->input('password', ''))) {
+            return response()->json([
+                'message' => 'Turnuva şifresi hatalı.',
+                'code' => 'password_required',
             ], 403);
         }
 
@@ -1643,6 +1655,7 @@ class TournamentController extends Controller
                 ->values()
                 ->all(),
             'entry_fee' => $t->entry_fee ?? 0,
+            'has_password' => ((string) ($t->join_password ?? '')) !== '', // sifreyi SIZDIRMA, yalniz var/yok
             'premium_only' => (bool) ($t->premium_only ?? true), // katilim: true=Premium, false=tum uyeler
             'register_until' => $t->register_until?->toIso8601String(),
             'starts_at' => $this->startsAt($t),

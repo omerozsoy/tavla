@@ -16,6 +16,8 @@ class Tournament extends Model
     protected $fillable = [
         'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'swiss_state', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
+        'join_password', // opsiyonel katilim sifresi; null/'' = halka acik
+
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
         'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
         'round_minutes', 'semi_minutes', 'final_minutes', // mac sureleri (dk, oyuncu basina); bkz roundMinutes()
