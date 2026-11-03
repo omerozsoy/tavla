@@ -5683,18 +5683,14 @@ export default function App() {
       animOn && moveStyle !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!canAnim || steps.length === 0) return
     if (resultShowingRef.current || inLobbyRef.current) return
-    // Canlı önizleme (oppLive) otoriter sonuç TAHTASINA ulaştıysa replay YAPMA ("aynı hamle 2. kez"
-    // raporu): replayStartIndex die-SIRASINA bağlıdır, ama reconstruct kendi decomposition'ını seçer
-    // (örn. 6-2'yi 2-6 çözer) -> canlı adımlarla stepEq tutmaz, start=0 döner ve ZATEN gösterilen
-    // hamleyi tahtayı geri sıçratıp baştan oynatır. Tahta-eşitliği die-sırasından BAĞIMSIZ kesin
-    // ölçüt: canlı tahta == sonuç tahta ise hamle tamamen gösterilmiştir -> replay gereksiz.
-    if (
-      oppLiveShownRef.current.length > 0 &&
-      boardKey(applyPlayed(base, oppLiveShownRef.current)) === boardKey(applyPlayed(base, steps))
-    )
-      return
     const start = replayStartIndex(oppLiveShownRef.current, steps)
     if (start >= steps.length) return // canlı önizleme (room.live) zaten tamamını gösterdi
+    // Canlı önizleme (oppLive) bu turda adım gösterdi ama reconstruct FARKLI decomposition seçtiyse
+    // (örn. 6-2'yi 2-6) replayStartIndex 0 döner ve tahtayı base'e GERİ SARIP baştan oynatırdı ->
+    // kullanıcı raporu "rakip oynarken oyun geriye sarıp zarları tekrar oynuyor". Önizleme zaten
+    // devredeyse rewind YOK: otoriter sonuca snap et. Baştan replay YALNIZ hiç önizleme olmayan tur
+    // içindir (kaçan ara-poll: hızlı oyuncu/çift zar). shown kısmî-ama-prefiks ise start>0 -> devam.
+    if (start === 0 && oppLiveShownRef.current.length > 0) return
     clearOppReplay()
     setOppReplay({ base, steps, shown: start, color: oc })
     oppReplayRef.current = { base, steps, shown: start, color: oc }

@@ -116,6 +116,21 @@ describe('aynı hamle 2. kez: die-sırası farkında tahta-eşitliği dedup', ()
     // App.tsx maybeReplayOppMove tam bu eşitlikte return eder (çift oynatma engellenir).
     expect(boardKey(frameAt(base, live, live.length))).toBe(boardKey(frameAt(base, recon, recon.length)))
   })
+
+  // KISMÎ/SAPMALI ÖNİZLEME REWIND (kullanıcı: "rakip oynarken oyun geriye sarıp zarları tekrar
+  // oynuyor"): canlı önizleme hamlenin YALNIZ bir kısmını, üstelik reconstruct'tan farklı sırayla
+  // göstermiş olabilir (otoriter tahta tüm adımlar animate olmadan gelirse). Tahta HENÜZ eşit DEĞİL
+  // (snap tamamlanmadı) -> eski tahta-eşitliği guard'ı yakalamaz; replayStartIndex 0 döner -> rewind.
+  // App.tsx guard'ı artık `start === 0 && shown.length > 0` ile bunu da atlar (rewind yok, snap).
+  it('FIX2: kısmî+sapmalı önizleme (board eşit DEĞİL) -> start 0 ama shown>0 => App rewind etmez', () => {
+    const { base, recon } = found!
+    const partialDivergent = [recon[1]] // tek adım gösterildi, reconstruct ilk adımından sapıyor
+    expect(replayStartIndex(partialDivergent, recon)).toBe(0) // "hiç gösterilmedi" sanır (die sapması)
+    expect(boardKey(frameAt(base, partialDivergent, 1))).not.toBe(boardKey(frameAt(base, recon, recon.length))) // board eşit değil
+    // App guard koşulu: start===0 && shown>0 -> replay atlanır (rewind yerine otoriter sonuca snap).
+    const start = replayStartIndex(partialDivergent, recon)
+    expect(start === 0 && partialDivergent.length > 0).toBe(true)
+  })
 })
 
 // RAKIP ZAR/HAMLE GECIKMESI — KÖK NEDEN YENİDEN ÜRETİMİ + FIX (RAKIP_ZAR_HAMLE_GECIKMESI_RAPORU).
