@@ -160,6 +160,7 @@ class TournamentController extends Controller
             'prizes.*.coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prizes.*.desc' => ['nullable', 'string', 'max:120'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'entry_fee_try' => ['nullable', 'integer', 'min:0', 'max:100000000'], // KURUS; >0 ise TL'li turnuva
             'join_password' => ['nullable', 'string', 'max:60'], // bos = halka acik
             'register_until' => ['nullable', 'date'],
             'premium_only' => ['nullable', 'boolean'], // varsayilan true (Premium'a ozel)
@@ -186,6 +187,7 @@ class TournamentController extends Controller
             'prize_desc' => $data['prize_desc'] ?? null,
             'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
+            'entry_fee_try' => ((int) ($data['entry_fee_try'] ?? 0)) > 0 ? (int) $data['entry_fee_try'] : null,
             'join_password' => ($data['join_password'] ?? '') !== '' ? $data['join_password'] : null,
             'premium_only' => (bool) ($data['premium_only'] ?? true),
             'third_place_match' => (bool) ($data['third_place_match'] ?? false),
@@ -226,6 +228,16 @@ class TournamentController extends Controller
                 'message' => 'Turnuva şifresi hatalı.',
                 'code' => 'password_required',
             ], 403);
+        }
+
+        // TL'li turnuva: coinle/doğrudan katılım YOK. Kayıt yalnız başarılı TL ödemesi callback'inde
+        // (PaymentController::tournamentEntry -> fulfillTournamentEntry) yapılır. Bu guard ödeme atlanıp
+        // join'le bedava katılmayı engeller. Frontend TL'li turnuvada /pay ucuna yönlendirir.
+        if (((int) ($tournament->entry_fee_try ?? 0)) > 0 && ! $alreadyIn) {
+            return response()->json([
+                'message' => 'Bu turnuvaya katılım TL iledir. Ödeme ile katıl.',
+                'code' => 'tl_payment_required',
+            ], 422);
         }
 
         // ATOMIK: turnuva satirini kilitle -> kapasite/kayit/ucret kontrolu tutarli
@@ -303,6 +315,10 @@ class TournamentController extends Controller
             }
             if ($t->status !== 'open') {
                 return ['err' => 'Turnuva başladı, çıkılamaz.', 'code' => 422];
+            }
+            // TL'li turnuvadan kendiliğinden ayrılma YOK: TL iadesi coin değil, gerçek para -> manuel.
+            if (((int) ($t->entry_fee_try ?? 0)) > 0 && $this->isRegistered($t, $me->id)) {
+                return ['err' => 'TL ile katıldığın turnuvadan kendin ayrılamazsın; iade için yöneticiyle iletişime geç.', 'code' => 422];
             }
             $wasIn = $this->isRegistered($t, $me->id);
             $this->removeRegistered($t, $me->id); // idempotent: kayitli degilse no-op
@@ -1291,25 +1307,8 @@ class TournamentController extends Controller
     /** $feePaid: bu kayıt için GERÇEKTEN tahsil edilen giriş ücreti (iade bunu kullanır; A-09). */
     private function addPlayer(Tournament $t, $user, int $feePaid = 0): bool
     {
-        $players = $t->players ?? [];
-        foreach ($players as $p) {
-            if (($p['id'] ?? null) === $user->id) {
-                return false; // zaten kayitli
-            }
-        }
-        $players[] = [
-            'id' => $user->id,
-            'name' => $user->nickname ?: $user->first_name ?: 'Oyuncu',
-            'rating' => $user->rating ?? 1500,
-            'avatar' => $user->avatar,
-            'premium' => $user->plan_active !== 'free', // kayıt anındaki premium (snapshot)
-            'fee_paid' => max(0, $feePaid),
-            'entry' => bin2hex(random_bytes(6)), // kayıt kimliği: iptal iadesi idempotency anahtarı (A-22)
-        ];
-        $t->players = $players;
-        $t->save();
-
-        return true;
+        // Tek kaynak: TournamentModeration::register (HTTP join + TL ödeme callback'i ortak kullanır).
+        return TournamentModeration::register($t, $user, $feePaid);
     }
 
     // Kullanici bu turnuvaya kayitli mi? (ortak kaynak: TournamentModeration)
@@ -1655,6 +1654,7 @@ class TournamentController extends Controller
                 ->values()
                 ->all(),
             'entry_fee' => $t->entry_fee ?? 0,
+            'entry_fee_try' => (int) ($t->entry_fee_try ?? 0), // TL katilim ucreti (KURUS); >0 ise TL'li turnuva
             'has_password' => ((string) ($t->join_password ?? '')) !== '', // sifreyi SIZDIRMA, yalniz var/yok
             'premium_only' => (bool) ($t->premium_only ?? true), // katilim: true=Premium, false=tum uyeler
             'register_until' => $t->register_until?->toIso8601String(),

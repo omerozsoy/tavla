@@ -1445,6 +1445,7 @@ export interface Tournament {
   /** Siralamaya gore odul tablosu: index 0 = 1.lik. Turnuva bitince otomatik odenir. */
   prizes?: { coins: number; desc?: string | null }[]
   entry_fee?: number
+  entry_fee_try?: number // TL katilim ucreti (KURUS); >0 ise turnuva TL'li (kart/3D ile katilinir, coin yok)
   has_password?: boolean // true = sifreli turnuva; katilmak icin sifre gerekir (sifrenin kendisi sizdirilmaz)
   premium_only?: boolean // katilim: true = yalniz Premium, false = tum uyeler (misafir asla)
   rev?: string // canli guncelleme surumu (kayitta katilimcilar, basladiktan sonra yalniz mac sonuclari)
@@ -1953,6 +1954,15 @@ export async function joinTournament(id: number, password?: string): Promise<Tou
     body: password ? JSON.stringify({ password }) : undefined,
   })
   return d.tournament
+}
+// TL'li turnuvaya katilim odemesi baslat (YALNIZ kart/3D). Donus: uygulama-ici kart formu (submitUrl).
+// Sifreli turnuvada password gonderilir (odeme baslamadan dogrulanir). Basarili odeme callback'inde
+// oyuncu turnuvaya kaydedilir (coinle/join ile katilim YOK).
+export async function payTournamentEntry(id: number, password?: string): Promise<CardCheckoutResult> {
+  return req(`/tournaments/${id}/pay`, {
+    method: 'POST',
+    body: password ? JSON.stringify({ password }) : undefined,
+  })
 }
 export async function leaveTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/leave`, { method: 'POST' })

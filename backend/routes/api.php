@@ -353,6 +353,7 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/tournaments', [TournamentController::class, 'create']);
     // Online Turnuvalar: liste/detay herkese acik (misafir dahil). Katilim kapisi turnuva basina (premium_only) -> TournamentController::join. Misafir: auth:sanctum.
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
+    Route::post('/tournaments/{tournament}/pay', [PaymentController::class, 'tournamentEntry']); // TL'li turnuva: kart/3D ile katilim odemesi
     Route::post('/tournaments/{tournament}/leave', [TournamentController::class, 'leave']);
     Route::post('/tournaments/{tournament}/disqualify', [TournamentController::class, 'disqualify']); // diskalifiye (yalniz yonetici)
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);

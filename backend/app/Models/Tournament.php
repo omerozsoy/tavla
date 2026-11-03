@@ -17,6 +17,7 @@ class Tournament extends Model
         'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'swiss_state', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
         'join_password', // opsiyonel katilim sifresi; null/'' = halka acik
+        'entry_fee_try', // TL katilim ucreti (KURUS); >0 ise turnuva TL'li (coin entry_fee yok sayilir)
 
         'premium_only', // true: yalniz Premium katilir; false: tum uyeler (misafir hicbir zaman)
         'match_length', 'semi_length', 'final_length', // mac uzunluklari (puan); bkz roundTarget()
@@ -41,6 +42,7 @@ class Tournament extends Model
         'semi_minutes' => 'integer',
         'final_minutes' => 'integer',
         'swiss_lives' => 'integer',
+        'entry_fee_try' => 'integer',
     ];
 
     /**

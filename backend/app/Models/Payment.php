@@ -9,6 +9,7 @@ class Payment extends Model
     protected $fillable = [
         'user_id', 'kind', 'payment_method', 'order_id', 'plan', 'period', 'amount', 'coins', 'package_id', 'currency', 'status', 'bank_msg',
         'discount_code', 'discount_kurus', 'product_order_id', 'product_order_ids',
+        'tournament_id', // kind='tournament_entry' -> hangi turnuva (callback'te kayit icin)
     ];
 
     protected function casts(): array

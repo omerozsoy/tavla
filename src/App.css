@@ -21230,6 +21230,12 @@ body:has(.spectate-view) .app.lobby {
   color: #e05353;
   font-size: 0.85rem;
 }
+/* TL katilim ucreti tutari (coin yerine) */
+.tourn-tl-amt {
+  font-weight: 800;
+  color: #1f7a3d;
+  letter-spacing: 0.01em;
+}
 /* Arkadaslıktan cıkar onay dialogu (tourn-confirm ile ayni kalip) */
 .friends-confirm {
   max-width: 380px;

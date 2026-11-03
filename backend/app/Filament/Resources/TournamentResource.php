@@ -437,11 +437,23 @@ class TournamentResource extends Resource
                     ->default(true),
                 Forms\Components\TextInput::make('entry_fee')
                     ->label('Giriş ücreti (coin)')
-                    ->helperText('0 = ücretsiz. Toplanan ücretler ödül havuzuna eklenir.')
+                    ->helperText('0 = ücretsiz. Toplanan ücretler ödül havuzuna eklenir. NOT: Aşağıya TL ücreti girersen bu coin ücreti YOK SAYILIR (turnuva TL’li olur).')
                     ->required()
                     ->numeric()
                     ->minValue(0)
                     ->default(0),
+                Forms\Components\TextInput::make('entry_fee_try')
+                    ->label('Giriş ücreti (TL)')
+                    ->helperText('Boş/0 = TL ile katılım YOK. Bir tutar girersen (ör. 250) turnuva TL’li olur: üyeler kredi kartıyla (3D) öder, coin ücreti yok sayılır. TL iadesi otomatik DEĞİL (DQ/iptalde yönetici elle iade eder; oyuncu kendiliğinden ayrılamaz).')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(1000000)
+                    ->step(1)
+                    ->suffix('₺')
+                    ->nullable()
+                    // Kolon KURUŞ saklar; admin TL görür/girer (×100 kaydet, ÷100 göster).
+                    ->formatStateUsing(fn ($state) => $state !== null && $state !== '' ? $state / 100 : null)
+                    ->dehydrateStateUsing(fn ($state) => $state !== null && $state !== '' && (float) $state > 0 ? (int) round((float) $state * 100) : null),
                 Forms\Components\TextInput::make('join_password')
                     ->label('Katılım şifresi')
                     ->helperText('Boş bırak = turnuva HALKA AÇIK (şifresiz). Doldurursan turnuva ŞİFRELİ olur: katılmak için üyeler bu şifreyi girmek zorunda. Şifreyi katılacaklara sen paylaşırsın.')
@@ -520,6 +532,11 @@ class TournamentResource extends Resource
                     ->boolean(),
                 Tables\Columns\TextColumn::make('entry_fee')
                     ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('entry_fee_try')
+                    ->label('Giriş (TL)')
+                    ->placeholder('—')
+                    ->formatStateUsing(fn ($state) => $state ? number_format($state / 100, 2, ',', '.').' ₺' : null)
                     ->sortable(),
             ])
             ->filters([

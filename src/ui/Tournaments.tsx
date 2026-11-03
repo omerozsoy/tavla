@@ -18,6 +18,7 @@ import {
   pollTournament,
   tournamentViewers,
   joinTournament,
+  payTournamentEntry,
   leaveTournament,
   disqualifyTournament,
   tournamentRoundMinutes,
@@ -176,10 +177,12 @@ interface Props {
   onProfile?: (userId: number) => void
   // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
   titleOverride?: string
+  /** TL'li turnuva katilim odemesi -> uygulama-ici kart formu (App'in Checkout overlay'i). */
+  onCardCheckout?: (d: { submitUrl: string; amount: number; demo?: boolean; title: string }) => void
 }
 
 
-export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate, onProfile, titleOverride }: Props) {
+export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate, onProfile, titleOverride, onCardCheckout }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
@@ -425,6 +428,31 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     }
   }
 
+  // TL'li turnuva: coinle/join ile KATILIM YOK -> kart ödemesi başlat. Başarılı ödeme callback'inde
+  // sunucu oyuncuyu kaydeder. Şifreli turnuvada password önce doğrulanır (join ile aynı kapı).
+  async function payTl(id: number, password?: string) {
+    setBusy(true)
+    try {
+      const r = await payTournamentEntry(id, password)
+      setConfirm(null)
+      setJoinPw('')
+      setPwError(false)
+      onCardCheckout?.({ submitUrl: r.submitUrl, amount: r.amount, demo: r.demo, title: active?.name ?? '' })
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403 && (e.data as { code?: string } | undefined)?.code === 'password_required') {
+        setPwError(true)
+      } else if (e instanceof ApiError && e.status === 403) {
+        onRequirePremium?.()
+        setConfirm(null)
+      } else {
+        if (e instanceof ApiError && e.status === 401) onRequireLogin?.()
+        setConfirm(null)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function leave(id: number) {
     mutSeq.current++
     setBusy(true)
@@ -462,6 +490,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     // "Katil" misafire ve Premium olmayan uyeye de GORUNUR; basinca giris/uyelik ekranina yonlenir.
     const canJoin = active.status === 'open' && !joined
     const premiumLocked = !!active.premium_only && !premium
+    // TL'li turnuva: entry_fee_try (KURUS) > 0. Katilim kartla/3D (coin yok). fmtTL: kurus -> "250,00 ₺".
+    const isTl = (active.entry_fee_try ?? 0) > 0
+    const fmtTL = (kurus: number) => `${(kurus / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`
     const onJoinClick = () =>
       myId == null ? onRequireLogin?.() : premiumLocked ? onRequirePremium?.() : setConfirm('join')
     // Hero ozet: toplam odul havuzu + katilim doluluk yuzdesi
@@ -599,7 +630,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <div className="th-stat">
               <span className="th-lbl">{t('tourn.entry')}</span>
               <span className="th-val">
-                {active.entry_fee ? <Coins amount={active.entry_fee} size={32} /> : t('tourn.free')}
+                {isTl ? (
+                  <b className="tourn-tl-amt tnum">{fmtTL(active.entry_fee_try!)}</b>
+                ) : active.entry_fee ? (
+                  <Coins amount={active.entry_fee} size={32} />
+                ) : (
+                  t('tourn.free')
+                )}
               </span>
             </div>
           </div>
@@ -638,7 +675,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 <Button variant="default" className="tourn-join-btn" disabled={busy} onClick={onJoinClick}>
                   {premiumLocked && <PremiumCrown size={16} />}
                   {t('tourn.join')}
-                  {!!active.entry_fee && (
+                  {isTl ? (
+                    <span className="tourn-join-fee tnum">{fmtTL(active.entry_fee_try!)}</span>
+                  ) : !!active.entry_fee && (
                     <span className="tourn-join-fee">
                       <Coins amount={active.entry_fee} size={28} />
                     </span>
@@ -1185,9 +1224,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               {confirm === 'join' ? (
                 <>
                   <h3>{t('tourn.joinTitle')}</h3>
-                  <p className="tourn-confirm-desc">{t('tourn.joinDesc')}</p>
+                  <p className="tourn-confirm-desc">{isTl ? t('tourn.joinDescTl') : t('tourn.joinDesc')}</p>
                   <div className="tourn-confirm-amt">
-                    <Coins amount={active.entry_fee ?? 0} size={22} suffix="GC" />
+                    {isTl ? (
+                      <b className="tourn-tl-amt tnum">{fmtTL(active.entry_fee_try!)}</b>
+                    ) : (
+                      <Coins amount={active.entry_fee ?? 0} size={22} suffix="GC" />
+                    )}
                   </div>
                   {active.has_password && (
                     <div className="tourn-pw">
@@ -1210,9 +1253,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     <Button
                       variant="default"
                       disabled={busy || (!!active.has_password && !joinPw.trim())}
-                      onClick={() => join(active.id, active.has_password ? joinPw : undefined)}
+                      onClick={() => {
+                        const pw = active.has_password ? joinPw : undefined
+                        isTl ? payTl(active.id, pw) : join(active.id, pw)
+                      }}
                     >
-                      {t('tourn.join')}
+                      {isTl ? t('tourn.payAndJoin') : t('tourn.join')}
                     </Button>
                   </div>
                 </>
@@ -1309,9 +1355,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <AccessBadge premiumOnly={!!tr.premium_only} />
             {/* Katilim ucreti: rozet satirinin AKISINDA (eskiden kartin sag ustune mutlak
                 konumluydu; dar kartta "KAYIT ACIK"/"KATILIMCILAR" ustune biniyordu). */}
-            <span className={`tourn-fee ${tr.entry_fee ? '' : 'free'}`}>
+            <span className={`tourn-fee ${(tr.entry_fee_try ?? 0) > 0 || tr.entry_fee ? '' : 'free'}`}>
               <Icon name="ticket" size={15} />
-              {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+              {(tr.entry_fee_try ?? 0) > 0
+                ? `${(tr.entry_fee_try! / 100).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ₺`
+                : tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
             </span>
             {/* Katilimcilar: UST SATIRDA, durum rozetinin yaninda (kompakt). */}
             <span className="tourn-players">

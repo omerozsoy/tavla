@@ -29,6 +29,7 @@ export default function Checkout({
   coins,
   items,
   demo,
+  title,
   onBack,
 }: {
   submitUrl: string
@@ -36,6 +37,7 @@ export default function Checkout({
   coins: number
   items: CartItem[]
   demo?: boolean // true: banka yapilandirilmadi; "Öde" gercek para cekmez (onizleme/test)
+  title?: string // coin/uyelik olmayan tek-kalem odeme (ör. turnuva TL katilimi) -> bu ad + TL toplam
   onBack: () => void
 }) {
   const { t } = useT()
@@ -73,7 +75,14 @@ export default function Checkout({
             <Icon name="shop" size={20} /> {t('co.summary')}
           </h2>
           <div className="co-list">
-            {isMembership ? (
+            {title ? (
+              <div className="co-row">
+                <span className="co-name">
+                  <Icon name="trophy" size={15} /> {title}
+                </span>
+                <span className="co-price tnum">{fmtTL(amount)}</span>
+              </div>
+            ) : isMembership ? (
               <div className="co-row">
                 <span className="co-name">
                   <Icon name="crown" size={15} /> {t('co.premiumYear')}
@@ -96,7 +105,7 @@ export default function Checkout({
           </div>
           <div className="co-total">
             <span>
-              {isMembership ? (
+              {title || isMembership ? (
                 t('co.total')
               ) : (
                 <>

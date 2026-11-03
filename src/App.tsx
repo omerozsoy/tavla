@@ -1139,6 +1139,7 @@ export default function App() {
     coins: number
     items: CartItem[]
     demo?: boolean
+    title?: string // genel tek-satir ozet (turnuva TL katilimi gibi coin/uyelik olmayan odemeler)
   } | null>(null)
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
@@ -10533,9 +10534,11 @@ export default function App() {
           coins={checkoutData.coins}
           items={checkoutData.items}
           demo={checkoutData.demo}
+          title={checkoutData.title}
           onBack={() => {
             setCheckoutOpen(false)
-            setCartOpen(true)
+            // Turnuva TL ödemesinde (title var, sepet yok) sepete DÖNME; coin/sepet akışında sepeti aç.
+            if (!checkoutData.title) setCartOpen(true)
           }}
         />
       )}
@@ -10572,6 +10575,10 @@ export default function App() {
           onPlayMatch={handlePlayTournamentMatch}
           onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
           onProfile={(id) => setHomeProfileId(id)}
+          onCardCheckout={(d) => {
+            setCheckoutData({ submitUrl: d.submitUrl, amount: d.amount, coins: 0, items: [], demo: d.demo, title: d.title })
+            setCheckoutOpen(true)
+          }}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)

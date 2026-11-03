@@ -21,6 +21,35 @@ use Illuminate\Support\Facades\DB;
  */
 class TournamentModeration
 {
+    /**
+     * Oyuncuyu turnuvaya kaydet (coin / TL / ücretsiz ORTAK tek kaynak: HTTP join + TL ödeme callback'i).
+     * $feePaid = ödenen COIN tutarı (iptal/çıkışta coin iadesi bundan hesaplanır). TL ödemede feePaid=0
+     * verilmeli: TL iadesi coin cüzdanına yapılmaz (manueldir) -> removeRegistered/refundAll coin mint
+     * etmesin. Idempotent: zaten kayıtlıysa false. Çağıran turnuva satırını kilitli tutmalı.
+     */
+    public static function register(Tournament $t, User $u, int $feePaid = 0): bool
+    {
+        foreach ($t->players ?? [] as $p) {
+            if (($p['id'] ?? null) === $u->id) {
+                return false; // zaten kayitli
+            }
+        }
+        $players = $t->players ?? [];
+        $players[] = [
+            'id' => $u->id,
+            'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+            'rating' => $u->rating ?? 1500,
+            'avatar' => $u->avatar,
+            'premium' => $u->plan_active !== 'free', // kayıt anındaki premium (snapshot)
+            'fee_paid' => max(0, $feePaid),
+            'entry' => bin2hex(random_bytes(6)), // kayıt kimliği: iptal iadesi idempotency anahtarı (A-22)
+        ];
+        $t->players = $players;
+        $t->save();
+
+        return true;
+    }
+
     /** Kayıt açıkken oyuncuyu listeden çıkar + giriş ücreti iadesi. Idempotent: kayıtlı değilse no-op. */
     public static function removeRegistered(Tournament $t, int $uid): void
     {
