@@ -98,17 +98,18 @@ class PresenceController extends Controller
                 'rooms.stake',                     // Tek Oyun sabit bahis (pot = stake×2)
             ])
             ->map(function ($r) use ($me) {
-                // POT ÖNİZLEMESİ (coin): Maç Oyunu yüzde-bahiste her oyuncu kullanılabilir bakiyesinin
-                // bet_pct%'ini yatırır (maç başında pct_stake_snapshot ile AYNI formül: floor(avail*pct/100)).
-                // Davetli KABUL ETMEDEN pot'u görsün. Tek Oyun sabit bahis -> stake×2. Bahissiz -> 0 (gizli).
-                // Bakiyeler kabule kadar değişebilir -> TAHMİN.
+                // POT (coin) — settle + live-matches ile BİREBİR AYNI derivasyon (RoomController :976):
+                // yüzde-bahiste her oyuncu floor(kullanılabilir_bakiye * bet_pct/100) riske eder; GERÇEK pot
+                // = ikisinin MİN'i (kazanan min'i alır, kaybeden min'i öder). Sabit para oyunu -> stake.
+                // Davetli KABUL ETMEDEN gerçek eşleşme tutarını görür. Canlı bakiyeden hesaplanır; kabul
+                // anında AYNI formülle kesinleşir (aradaki pencerede bakiye değişirse ufak sapabilir).
                 $pct = (int) ($r->bet_pct ?? 0);
                 $fixed = (int) ($r->stake ?? 0);
                 $myAvail = max(0, (int) ($me->coins ?? 0) - (int) ($me->coins_reserved ?? 0));
                 $fromAvail = max(0, (int) ($r->from_coins ?? 0) - (int) ($r->from_reserved ?? 0));
                 $pot = $pct > 0
-                    ? (int) (floor($fromAvail * $pct / 100) + floor($myAvail * $pct / 100))
-                    : ($fixed > 0 ? $fixed * 2 : 0);
+                    ? (int) min(floor($fromAvail * $pct / 100), floor($myAvail * $pct / 100))
+                    : ($fixed > 0 ? $fixed : 0);
 
                 return [
                     'id' => $r->id,

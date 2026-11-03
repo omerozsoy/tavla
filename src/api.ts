@@ -1181,8 +1181,9 @@ export interface GameInvite {
   classic?: boolean // Klasik Tavla daveti (kup yok + mars=2) -> davetli kartinda rozet
   // Davetli bu macta kazanirsa/kaybederse rating degisimi (sunucu Elo'su). null = mac puansiz.
   ratingPreview?: { win: number; loss: number } | null
-  // Tahmini coin POT (0/undefined = bahissiz -> gosterilmez). Mac Oyunu yuzde-bahiste iki tarafin
-  // kullanilabilir bakiyesinin bet_pct%'i toplami; kabule kadar degisebilir (sunucu tahmini).
+  // Coin POT (0/undefined = bahissiz -> gosterilmez). settle/live-matches ile AYNI derivasyon:
+  // yuzde-bahiste iki tarafin floor(bakiye*bet_pct/100) degerinin MIN'i; sabit oyunda stake. Kabul
+  // aninda ayni formulle kesinlesir (canli bakiyeden -> aradaki pencerede bakiye degisirse ufak sapar).
   pot?: number
 }
 export interface TournNotice {
