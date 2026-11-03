@@ -42,14 +42,16 @@ class MessageResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
+        // Satir anahtari TAM SAYI olmali (Message int PK): DM pozitif MIN(id), maç NEGATIF -rooms.id
+        // → iki kaynak asla cakismaz, Filament satir-tikla dogru kaydi acar. Tur ayrimi `kind` ile.
         $dm = DB::table('messages')
-            ->selectRaw("CONCAT('dm-', MIN(id)) as id, 'dm' as kind, LEAST(sender_id, receiver_id) as u1, GREATEST(sender_id, receiver_id) as u2, CAST(NULL AS CHAR) as n1, CAST(NULL AS CHAR) as n2, CAST(NULL AS CHAR) as room_code, COUNT(*) as msg_count, MAX(created_at) as last_at")
+            ->selectRaw("MIN(id) as id, 'dm' as kind, LEAST(sender_id, receiver_id) as u1, GREATEST(sender_id, receiver_id) as u2, CAST(NULL AS CHAR) as n1, CAST(NULL AS CHAR) as n2, CAST(NULL AS CHAR) as room_code, COUNT(*) as msg_count, MAX(created_at) as last_at")
             ->groupByRaw('LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)');
 
         $match = DB::table('rooms')
             ->whereNotNull('messages')
             ->whereRaw('JSON_LENGTH(messages) > 0')
-            ->selectRaw("CONCAT('rm-', id) as id, 'match' as kind, p1_user_id as u1, p2_user_id as u2, p1_name as n1, p2_name as n2, code as room_code, JSON_LENGTH(messages) as msg_count, updated_at as last_at");
+            ->selectRaw("(0 - id) as id, 'match' as kind, p1_user_id as u1, p2_user_id as u2, p1_name as n1, p2_name as n2, code as room_code, JSON_LENGTH(messages) as msg_count, updated_at as last_at");
 
         return Message::query()->fromSub($dm->unionAll($match), 'conv')->select('conv.*');
     }
