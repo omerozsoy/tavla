@@ -4,6 +4,13 @@ return [
     // Enforcing is opt-in until the deployed source inventory is reviewed.
     'csp_enforce' => (bool) env('CSP_ENFORCE', false),
     'csp_report_only' => (bool) env('CSP_REPORT_ONLY', false),
+    // ⚠ KANONİK CSP KAYNAĞI — ama CANLI değer nginx'te DUPLİKE (elle senkron şart). SPA ana HTML'i
+    // nginx STATİK servis eder (location / -> index.html, Laravel'i ATLAR) + report-only <meta> ile
+    // verilemez -> HTML'in CSP'si `forge-conf/3451057/site.conf` içindeki
+    // `add_header Content-Security-Policy-Report-Only "..." always;` satırından gelir (nginx inheritance
+    // ile PHP/API yanıtlarına da geçer -> orada Laravel'inkiyle ÇİFT ama aynı = zararsız). Buradaki
+    // policy'yi DEĞİŞTİRİNCE o nginx satırını da ELLE güncelle; `nginx -t` + `systemctl reload nginx`.
+    // (Forge site.conf'u yeniden üretirse add_header kaybolabilir -> deploy sonrası CSP'yi doğrula.)
     'csp_report_only_policy' => implode('; ', [
         "default-src 'self'",
         "base-uri 'self'",

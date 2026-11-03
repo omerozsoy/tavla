@@ -34,6 +34,7 @@ servis edilir (tek domain). Genel proje kuralları için kök `../CLAUDE.md`.
   `$fillable` DEĞİL → yalnız admin-korumalı `PATCH /admin/users/{user}` ile verilir (grant/revoke `Shield::audit` 'admin_role_change').
   ⚠ `ADMIN_EMAILS`'i değiştirmek DB-grant admin'leri GERİ ALMAZ (config-admin yalnız kendi düşürülmesini engeller).
 - `SiteGate` (SITE_PASSWORD doluysa tüm `/api` için `X-Site-Gate`), `SecurityHeaders`, `ShieldTracker` middleware'leri `bootstrap/app.php`'de kurulu.
+- **CSP İKİ YERDE — senkron ŞART (yoksa config düzenlemen canlıyı DEĞİŞTİRMEZ).** Kanonik policy `config/security.php` (`SecurityHeaders` → PHP/API yanıtları, `CSP_REPORT_ONLY=true`). AMA SPA ana HTML'i nginx **statik** servis eder (`location / → index.html`, Laravel'i ATLAR) → canlı HTML CSP'si `forge-conf/3451057/site.conf` `add_header Content-Security-Policy-Report-Only "..." always;` satırından gelir (nginx inheritance ile PHP'de de → Laravel'inkiyle çift ama aynı = zararsız). Policy değişince **İKİSİNİ** de güncelle: config + o nginx satırı (`sudo sed`/elle → `sudo nginx -t` → `sudo systemctl reload nginx`). Doğrula: `curl -sI https://tavlatv.com/ | grep -i content-security`. ⚠ Laravel tarafı config değişimi config:cache **+ php-fpm restart** ister (opcache); nginx tarafı reload yeter. Forge site.conf'u yenilerse add_header düşebilir → deploy sonrası CSP'yi doğrula.
 - Auth: Sanctum. Google giriş `/auth/google` (web ve native app aynı endpoint). Ödeme: Garanti 3D Sanal POS (`GARANTI_*`, boşsa kapalı).
 
 ## Deploy (`../deploy.sh`)
