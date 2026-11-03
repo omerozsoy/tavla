@@ -59,6 +59,8 @@ class SwissEngine
                 'losses' => 0,
                 'wins' => 0,           // ilerleme galibiyeti (bay + hükmen dahil)
                 'realWins' => 0,       // gerçekten oynanıp kazanılan
+                'pointsFor' => 0,      // gerçek maçlarda ALINAN toplam puan (averaj payı)
+                'pointsAgainst' => 0,  // gerçek maçlarda VERİLEN toplam puan
                 'byes' => 0,
                 'byeRounds' => [],
                 'opponents' => [],     // gerçek maç oynanan rakip id'leri
@@ -91,6 +93,12 @@ class SwissEngine
         return max(0, self::livesCap($p) - (int) ($p['losses'] ?? 0));
     }
 
+    /** Puan averajı: gerçek maçlarda alınan − verilen (eski kayıtta alan yoksa 0). */
+    public static function pointDiff(array $p): int
+    {
+        return (int) ($p['pointsFor'] ?? 0) - (int) ($p['pointsAgainst'] ?? 0);
+    }
+
     /** Turnuva bitti mi? Bittiyse şampiyon id (tek aktif) yoksa null; hiç aktif kalmadıysa null. */
     public static function championId(array $participants): ?int
     {
@@ -109,12 +117,14 @@ class SwissEngine
     /**
      * Tek maç sonucunu uygular (SAF). $realMatch=false => hükmen (no-show/çekilme) galibiyeti:
      * kazanana ilerleme galibiyeti + kaybedene bir mağlubiyet ama "gerçek maç" sayaçları/rakip
-     * geçmişi ARTMAZ (contract §7, §9, §10).
+     * geçmişi ARTMAZ (contract §7, §9, §10). $winnerPts/$loserPts verilir + $realMatch ise puan
+     * averajına (pointsFor/pointsAgainst) işlenir; hükmen/bay/stall skorsuz → averaj etkilenmez.
      *
      * @return array<int,array<string,mixed>>
      */
-    public static function applyResult(array $participants, int $winnerId, int $loserId, int $roundNo, bool $realMatch): array
+    public static function applyResult(array $participants, int $winnerId, int $loserId, int $roundNo, bool $realMatch, ?int $winnerPts = null, ?int $loserPts = null): array
     {
+        $trackPts = $realMatch && $winnerPts !== null && $loserPts !== null;
         foreach ($participants as &$p) {
             if ((int) $p['id'] === $winnerId) {
                 $p['wins'] = (int) $p['wins'] + 1;
@@ -122,10 +132,18 @@ class SwissEngine
                     $p['realWins'] = (int) $p['realWins'] + 1;
                     $p['opponents'] = array_values(array_unique(array_merge($p['opponents'], [$loserId])));
                 }
+                if ($trackPts) {
+                    $p['pointsFor'] = (int) ($p['pointsFor'] ?? 0) + $winnerPts;
+                    $p['pointsAgainst'] = (int) ($p['pointsAgainst'] ?? 0) + $loserPts;
+                }
             } elseif ((int) $p['id'] === $loserId) {
                 $p['losses'] = (int) $p['losses'] + 1;
                 if ($realMatch) {
                     $p['opponents'] = array_values(array_unique(array_merge($p['opponents'], [$winnerId])));
+                }
+                if ($trackPts) {
+                    $p['pointsFor'] = (int) ($p['pointsFor'] ?? 0) + $loserPts;
+                    $p['pointsAgainst'] = (int) ($p['pointsAgainst'] ?? 0) + $winnerPts;
                 }
                 if ((int) $p['losses'] >= self::livesCap($p) && ($p['status'] ?? 'active') === 'active') {
                     $p['status'] = 'eliminated';
@@ -600,10 +618,11 @@ class SwissEngine
     }
 
     /**
-     * Kesin sonuç (contract §12): şampiyon 1; sonra elendikleri tur DAHA GEÇ olanlar önce; aynı turda
-     * elenenler arasında BAY ÇEKMİŞ olan bay çekmeyenin ALTINDA (az bay = üst sıra — bay bedava
-     * ilerleme sayıldığı için). Aynı tur VE aynı bay sayısı => ORTAK derece (ikisi ortak 3. ise
-     * sonraki 5.). Çekilen/DQ ayrı gösterilir (uydurma derece yok). Hiç aktif yoksa şampiyon uydurma.
+     * Kesin sonuç (contract §12): şampiyon 1; sonra elendikleri tur DAHA GEÇ olanlar önce. Aynı turda
+     * elenenler şu kademeyle sıralanır (üstteki daha iyi): bay ÇEKMEYEN > çok galibiyet (wins) >
+     * çok gerçek galibiyet (realWins) > yüksek puan averajı (pointDiff) > yüksek rating. Bütün bu
+     * alanlar da eşitse => ORTAK derece (ikisi ortak 3. ise sonraki 5.; seed yalnız gösterim sırası).
+     * Çekilen/DQ ayrı gösterilir (uydurma derece yok). Hiç aktif yoksa şampiyon uydurma.
      *
      * @return array<int,array<string,mixed>> her satır: id,name,rank(int|null),status,losses,wins,realWins
      */
@@ -618,26 +637,41 @@ class SwissEngine
             $rows[] = self::standRow($p, 1);
         }
 
-        // 2) Elenenler: eliminatedRound DESC; aynı tur içinde AZ BAY üstte (bay = bedava ilerleme);
-        //    aynı tur + aynı bay sayısı => ortak derece; seed yalnız gösterim sırası.
+        // 2) Elenenler: eliminatedRound DESC; sonra tie-break kademesi (üstte olan daha iyi):
+        //    bay ÇEKMEYEN > wins > realWins > puan averajı > rating. Tüm bu alanlar eşitse ORTAK derece
+        //    (seed yalnız gösterim sırası, dereceyi değiştirmez).
         $elim = array_values(array_filter($participants, fn ($p) => ($p['status'] ?? '') === 'eliminated'));
-        usort($elim, fn ($a, $b) => (int) $b['eliminatedRound'] <=> (int) $a['eliminatedRound']
-            ?: (int) ($a['byes'] ?? 0) <=> (int) ($b['byes'] ?? 0)
-            ?: (int) $a['seed'] <=> (int) $b['seed']);
+        $rankKey = fn ($p) => [
+            (int) ($p['byes'] ?? 0),           // az bay üstte (ASC)
+            -(int) ($p['wins'] ?? 0),          // çok galibiyet üstte (DESC)
+            -(int) ($p['realWins'] ?? 0),      // çok gerçek galibiyet üstte
+            -self::pointDiff($p),              // yüksek averaj üstte
+            -(int) ($p['rating'] ?? 0),        // yüksek rating üstte
+        ];
+        usort($elim, function ($a, $b) use ($rankKey) {
+            if (($c = (int) $b['eliminatedRound'] <=> (int) $a['eliminatedRound']) !== 0) {
+                return $c; // geç elenen üstte
+            }
+            if (($c = self::compareCost($rankKey($a), $rankKey($b))) !== 0) {
+                return $c; // tie-break kademesi
+            }
+
+            return (int) $a['seed'] <=> (int) $b['seed']; // yalnız gösterim sırası
+        });
         $rank = $champ !== null ? 2 : 1;
         $i = 0;
         while ($i < count($elim)) {
             $round = (int) $elim[$i]['eliminatedRound'];
-            $byes = (int) ($elim[$i]['byes'] ?? 0);
+            $key = $rankKey($elim[$i]);
             $group = [];
             while ($i < count($elim)
                 && (int) $elim[$i]['eliminatedRound'] === $round
-                && (int) ($elim[$i]['byes'] ?? 0) === $byes) {
+                && self::compareCost($rankKey($elim[$i]), $key) === 0) {
                 $group[] = $elim[$i];
                 $i++;
             }
             foreach ($group as $g) {
-                $rows[] = self::standRow($g, $rank); // aynı tur + aynı bay => ORTAK derece
+                $rows[] = self::standRow($g, $rank); // aynı tur + tüm tie-break eşit => ORTAK derece
             }
             $rank += count($group); // sonraki derece grup boyutu kadar atlar
         }

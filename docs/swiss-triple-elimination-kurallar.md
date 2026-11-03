@@ -42,7 +42,14 @@ Maliyet **bu öncelik sırasıyla** minimize edilir (lexicographic):
 
 ## 7. Sıralama
 - **Canlı tablo:** aktif önce → az mağlubiyet → çok galibiyet → çok gerçek galibiyet → seed.
-- **Kesin sonuç:** şampiyon=1 → sonra **geç elenen önce** (`eliminatedRound` DESC); aynı turda elenenler arasında **bay çekmeyen üstte, bay çeken altta** (az bay = üst sıra; bay bedava ilerleme sayılır) → **aynı tur + aynı bay sayısı ORTAK derece** (üçü ortak 2. ise sonraki 5.). Çekilen/DQ'ya sportif derece verilmez (rank=null).
+- **Kesin sonuç:** şampiyon=1 → sonra **geç elenen önce** (`eliminatedRound` DESC). Aynı turda elenenler şu kademeyle sıralanır (üstteki daha iyi):
+  1. **Bay çekmeyen** üstte (az bay = üst sıra; bay bedava ilerleme sayılır)
+  2. **Galibiyet** (`wins`) çok olan üstte
+  3. **Gerçek maç galibiyeti** (`realWins`) çok olan üstte
+  4. **Puan averajı** (gerçek maçlarda alınan − verilen) yüksek olan üstte
+  5. **Rating** yüksek olan üstte
+
+  Bu alanların **hepsi eşitse ORTAK derece** (ikisi ortak 3. ise sonraki 5.; seed yalnız gösterim sırası). Çekilen/DQ'ya sportif derece verilmez (rank=null).
 
 ## 8. Determinizm
 - Kura ve eşleştirme `random` kullanmaz; **seed'li SHA-256 shuffle**. Aynı girdi + seed + `ALGO_VERSION` → aynı eşleştirme (resume/tekrar-üretilebilir).

@@ -103,10 +103,18 @@ class SwissRuntime
         }
         $t->bracket = $bracket;
 
-        // 2) Katılımcı durumunu güncelle (haklar/galibiyet/eleme).
+        // 2) Katılımcı durumunu güncelle (haklar/galibiyet/eleme + puan averajı).
+        // Gerçek maç skoru {p1,p2} ise kazanan/kaybeden puanına çevir (hükmen/bay/stall skorsuz → null).
+        $winnerPts = null;
+        $loserPts = null;
+        if ($realMatch && is_array($score) && isset($score['p1'], $score['p2'])) {
+            $p1Id = (int) ($m['p1']['id'] ?? 0);
+            $winnerPts = $winnerId === $p1Id ? (int) $score['p1'] : (int) $score['p2'];
+            $loserPts = $winnerId === $p1Id ? (int) $score['p2'] : (int) $score['p1'];
+        }
         $state = $t->swiss_state;
         $round = (int) ($m['round'] ?? $state['round'] ?? ($ri + 1));
-        $state['participants'] = SwissEngine::applyResult($state['participants'], $winnerId, $loserId, $round, $realMatch);
+        $state['participants'] = SwissEngine::applyResult($state['participants'], $winnerId, $loserId, $round, $realMatch, $winnerPts, $loserPts);
         $t->swiss_state = $state;
 
         // 3) Tur tamamlandıysa ilerlet / sonlandır.

@@ -364,6 +364,7 @@ class SwissEngineTest extends TestCase
                 $x['losses'] = 3;
                 $x['status'] = 'eliminated';
                 $x['eliminatedRound'] = 5;
+                $x['rating'] = 1500; // eşit rating -> tie-break kademesi tamamen eşit -> ORTAK derece
             } elseif ($id === 4) {
                 $x['losses'] = 3;
                 $x['status'] = 'eliminated';
@@ -395,6 +396,7 @@ class SwissEngineTest extends TestCase
                 $x['losses'] = 3;
                 $x['status'] = 'eliminated';
                 $x['eliminatedRound'] = 5;
+                $x['rating'] = 1500; // eşit rating -> bay çekmeyenler kendi aralarında ORTAK
             }
             if ($id === 5) {
                 $x['byes'] = 1;
@@ -412,6 +414,46 @@ class SwissEngineTest extends TestCase
         $this->assertSame(2, $byId[3]['rank'], 'Bay çekmeyen ortak 2.');
         $this->assertSame(2, $byId[4]['rank'], 'Bay çekmeyen ortak 2.');
         $this->assertSame(5, $byId[5]['rank'], 'Bay çeken aynı turda olsa da ALTTA (5.)');
+    }
+
+    public function test_final_standings_tiebreak_cascade_wins_realwins_averaj_rating(): void
+    {
+        // 6 oyuncu; 2..6 aynı turda (R4) elendi, hepsi bay YOK. Kademe: wins > realWins > averaj > rating.
+        $p = SwissEngine::initParticipants($this->players(6), 'fscascade');
+        $set = [
+            // id => [wins, realWins, pointsFor, pointsAgainst, rating]
+            2 => [3, 3, 9, 3, 1000],   // en çok galibiyet -> 2.
+            3 => [2, 2, 5, 0, 1500],   // wins2 rw2 averaj+5 -> 3.
+            4 => [2, 2, 5, 0, 1000],   // 3 ile her şey eşit, rating düşük -> 4.
+            5 => [2, 2, 2, 0, 9999],   // averaj +2 (düşük) rating çok yüksek olsa da -> 5.
+            6 => [1, 1, 9, 0, 9999],   // en az galibiyet -> 6.
+        ];
+        foreach ($p as &$x) {
+            $id = (int) $x['id'];
+            if (isset($set[$id])) {
+                [$w, $rw, $pf, $pa, $r] = $set[$id];
+                $x['losses'] = 3;
+                $x['status'] = 'eliminated';
+                $x['eliminatedRound'] = 4;
+                $x['wins'] = $w;
+                $x['realWins'] = $rw;
+                $x['pointsFor'] = $pf;
+                $x['pointsAgainst'] = $pa;
+                $x['rating'] = $r;
+            }
+        }
+        unset($x);
+        $this->assertSame(1, SwissEngine::championId($p));
+        $byId = [];
+        foreach (SwissEngine::finalStandings($p) as $row) {
+            $byId[$row['id']] = $row;
+        }
+        $this->assertSame(1, $byId[1]['rank'], 'Şampiyon 1.');
+        $this->assertSame(2, $byId[2]['rank'], 'En çok galibiyet 2.');
+        $this->assertSame(3, $byId[3]['rank'], 'wins/rw/averaj eşit, rating yüksek 3.');
+        $this->assertSame(4, $byId[4]['rank'], 'Aynı ama rating düşük 4.');
+        $this->assertSame(5, $byId[5]['rank'], 'Averaj düşük (rating yüksek olsa da) 5.');
+        $this->assertSame(6, $byId[6]['rank'], 'En az galibiyet 6.');
     }
 
     public function test_property_full_simulations_hold_invariants(): void

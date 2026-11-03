@@ -88,7 +88,15 @@
 <h2>7. Sıralama</h2>
 <ul>
 <li><strong>Canlı tablo:</strong> aktif önce → az mağlubiyet → çok galibiyet → çok gerçek galibiyet → seed.</li>
-<li><strong>Kesin sonuç:</strong> şampiyon=1 → sonra <strong>geç elenen önce</strong> (<code>eliminatedRound</code> DESC); aynı turda elenenler arasında <strong>bay çekmeyen üstte, bay çeken altta</strong> (az bay = üst sıra; bay bedava ilerleme sayılır) → <strong>aynı tur + aynı bay sayısı ORTAK derece</strong> (üçü ortak 2. ise sonraki 5.). Çekilen/DQ'ya sportif derece verilmez (rank=null).</li>
+<li><strong>Kesin sonuç:</strong> şampiyon=1 → sonra <strong>geç elenen önce</strong> (<code>eliminatedRound</code> DESC). Aynı turda elenenler şu kademeyle sıralanır (üstteki daha iyi):
+<ol>
+<li><strong>Bay çekmeyen</strong> üstte (az bay = üst sıra; bay bedava ilerleme sayılır)</li>
+<li><strong>Galibiyet</strong> (<code>wins</code>) çok olan üstte</li>
+<li><strong>Gerçek maç galibiyeti</strong> (<code>realWins</code>) çok olan üstte</li>
+<li><strong>Puan averajı</strong> (gerçek maçlarda alınan − verilen) yüksek olan üstte</li>
+<li><strong>Rating</strong> yüksek olan üstte</li>
+</ol>
+Bu alanların <strong>hepsi eşitse ORTAK derece</strong> (ikisi ortak 3. ise sonraki 5.; seed yalnız gösterim sırası). Çekilen/DQ'ya sportif derece verilmez (rank=null).</li>
 </ul>
 </section>
 
