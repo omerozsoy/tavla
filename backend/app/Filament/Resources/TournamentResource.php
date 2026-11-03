@@ -142,6 +142,87 @@ class TournamentResource extends Resource
             });
     }
 
+    /**
+     * Sıradaki turun tarih/saatini ayarla (yalnız sürüyor + Swiss). Kura çekmenin ön şartı:
+     * tarih/saati girilmemiş turun kurası çekilemez (manuel akış).
+     */
+    private static function scheduleRoundAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('scheduleRound')
+            ->label('Tur Tarih/Saati')
+            ->icon('heroicon-o-calendar-days')
+            ->color('info')
+            ->visible(fn (Tournament $record): bool => $record->status === 'running'
+                && ($record->type ?? 'bracket') === 'swiss_triple')
+            ->form([
+                Forms\Components\Placeholder::make('nextInfo')
+                    ->label('Sıradaki tur')
+                    ->content(fn (Tournament $record): string => SwissRuntime::nextRoundNo($record).'. tur — bu turun oynanacağı tarih/saati girin. Kura, tarih/saat girilmeden ÇEKİLEMEZ.'),
+                Forms\Components\DateTimePicker::make('round_at')
+                    ->label('Tur başlangıç tarih/saati')
+                    ->seconds(false)
+                    ->required()
+                    ->default(fn (Tournament $record) => $record->swiss_state['next_at'] ?? null)
+                    ->helperText('Sunucu saati (Türkiye, GMT+3).'),
+            ])
+            ->modalHeading('Tur tarih/saatini ayarla')
+            ->action(function (Tournament $record, array $data): void {
+                DB::transaction(function () use ($record, $data): void {
+                    $t = Tournament::lockForUpdate()->find($record->id);
+                    if ($t) {
+                        SwissRuntime::setNextRoundAt($t, (string) $data['round_at']);
+                    }
+                });
+                Notification::make()->title('Tur tarih/saati kaydedildi')->success()->send();
+            });
+    }
+
+    /**
+     * MANUEL KURA ÇEK (yalnız sürüyor + Swiss): sıradaki turu üretir. Şartlar: o anki turun TÜM maçları
+     * bitmiş OLACAK + sıradaki turun tarih/saati girilmiş OLACAK. Aksi halde reddeder ve nedenini bildirir.
+     */
+    private static function drawRoundAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('drawRound')
+            ->label('Kura Çek')
+            ->icon('heroicon-o-sparkles')
+            ->color('success')
+            ->visible(fn (Tournament $record): bool => $record->status === 'running'
+                && ($record->type ?? 'bracket') === 'swiss_triple')
+            ->requiresConfirmation()
+            ->modalHeading('Sıradaki turun kurasını çek')
+            ->modalDescription(function (Tournament $record): string {
+                $st = SwissRuntime::drawStatus($record);
+                $n = SwissRuntime::nextRoundNo($record);
+                $at = $record->swiss_state['next_at'] ?? null;
+
+                return match ($st['reason']) {
+                    'ok' => $n.'. tur eşleştirmesi çekilecek (planlanan: '.$at.'). Aynı haklılar eşleşir, daha önce oynamışlar mümkünse eşleşmez.',
+                    'round_incomplete' => '⛔ Bu turdaki TÜM maçlar bitmeden kura ÇEKİLEMEZ. Önce bekleyen maçları bitir/çöz (Sonuç düzelt).',
+                    'no_datetime' => '⛔ Önce '.$n.'. turun tarih/saatini girin ("Tur Tarih/Saati"). Tarih/saati belli olmayan turun kurası çekilmez.',
+                    'finished' => 'Turnuva bitti; çekilecek tur yok.',
+                    default => 'Kura şu an çekilemez.',
+                };
+            })
+            ->action(function (Tournament $record): void {
+                $res = ['ok' => false, 'reason' => 'x'];
+                DB::transaction(function () use ($record, &$res): void {
+                    $t = Tournament::lockForUpdate()->find($record->id);
+                    if ($t) {
+                        $res = SwissRuntime::drawRound($t);
+                    }
+                });
+                $msg = match ($res['reason']) {
+                    'ok' => 'Kura çekildi — sıradaki tur oluşturuldu.',
+                    'round_incomplete' => 'Çekilemedi: bu turdaki tüm maçlar bitmedi.',
+                    'no_datetime' => 'Çekilemedi: önce tur tarih/saatini girin.',
+                    'finished' => 'Çekilemedi: turnuva bitti.',
+                    default => 'Kura çekilemedi.',
+                };
+                Notification::make()->title($msg)->{$res['ok'] ? 'success' : 'warning'}()->send();
+            });
+    }
+
     /** Bekleyen (çözülmemiş) gerçek Swiss maçları: ["r0m1" => "1) Ali — 2) Veli · Tur 2"]. */
     private static function pendingSwissMatches(Tournament $record): array
     {
@@ -449,7 +530,7 @@ class TournamentResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Turnuvayı başlat')
-                    ->modalDescription('Eşleşme ağacı oluşturulup turnuva başlatılacak. Bu işlem geri alınamaz.')
+                    ->modalDescription('Turnuva başlatılacak. Eleme ağacında eşleşmeler hemen oluşur. 3 Haklı Swiss\'te KURA OTOMATİK ÇEKİLMEZ: başlattıktan sonra "Tur Tarih/Saati" ile 1. turun tarih/saatini girip "Kura Çek"e basmalısın. Bu işlem geri alınamaz.')
                     // Yalnizca kayit acik ve en az 2 oyuncu varken gorunur
                     ->visible(fn (Tournament $record): bool => $record->status === 'open'
                         && count(array_filter($record->players ?? [], fn ($p) => $p !== null)) >= 2)
@@ -466,6 +547,8 @@ class TournamentResource extends Resource
                             ->success()
                             ->send();
                     }),
+                self::scheduleRoundAction(),
+                self::drawRoundAction(),
                 self::moderationAction('dq'),
                 self::moderationAction('withdraw'),
                 self::resultCorrectionAction(),

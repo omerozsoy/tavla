@@ -52,17 +52,45 @@ class SwissTournamentTest extends TestCase
         ], $extra));
     }
 
-    /** Turnuvayı sonuna kadar sürer; her turdaki gerçek maçlara deterministik kazanan verir. */
+    /** Manuel kura: sıradaki turun tarih/saatini ver + Kura Çek. */
+    private function draw(Tournament $t): void
+    {
+        DB::transaction(function () use ($t): void {
+            $x = Tournament::lockForUpdate()->find($t->id);
+            if ($x) {
+                SwissRuntime::setNextRoundAt($x, '2026-01-01 20:00:00');
+                SwissRuntime::drawRound($x);
+            }
+        });
+        $t->refresh();
+    }
+
+    /** Başlat + 1. tur kurasını çek (manuel akış). */
+    private function startDrawn(Tournament $t): void
+    {
+        SwissRuntime::start($t);
+        $this->draw($t);
+    }
+
+    /** Turnuvayı sonuna kadar sürer; tur bitince manuel kura çeker, maçlara deterministik kazanan verir. */
     private function runToEnd(Tournament $t): Tournament
     {
         $guard = 0;
-        while ($t->status === 'running' && $guard++ < 2000) {
+        while ($t->status === 'running' && $guard++ < 4000) {
             $t->refresh();
+            if (SwissRuntime::currentRoundComplete($t)) {
+                $this->draw($t); // sıradaki turu çek (bitmişse finalize olur)
+                if ($t->status !== 'running') {
+                    break;
+                }
+
+                continue;
+            }
             $bracket = $t->bracket;
             $lastRi = count($bracket) - 1;
             $applied = false;
             foreach ($bracket[$lastRi] as $mi => $m) {
-                if (! empty($m['winner'])) {
+                if (! empty($m['winner']) || ! empty($m['double_loss'])) {
                     continue; // bay veya işlenmiş
                 }
                 $x = (int) $m['p1']['id'];
@@ -72,7 +100,7 @@ class SwissTournamentTest extends TestCase
                 SwissRuntime::applyResult($t, $lastRi, $mi, $winner, ['p1' => $winner === $x ? 5 : 0, 'p2' => $winner === $y ? 5 : 0], true);
                 $t->refresh();
                 $applied = true;
-                break; // her sonuçtan sonra yeniden değerlendir (tur ilerlemiş olabilir)
+                break; // her sonuçtan sonra yeniden değerlendir
             }
             if (! $applied) {
                 break;
@@ -85,8 +113,7 @@ class SwissTournamentTest extends TestCase
     public function test_start_builds_first_round_and_locks_config(): void
     {
         $t = $this->makeTournament(8, ['final_length' => 7]);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
 
         $this->assertSame('running', $t->status);
         $this->assertIsArray($t->bracket);
@@ -103,8 +130,7 @@ class SwissTournamentTest extends TestCase
     public function test_odd_field_gets_exactly_one_bye_cell(): void
     {
         $t = $this->makeTournament(5);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         $round = $t->bracket[0];
         $byes = array_filter($round, fn ($m) => ! empty($m['bye']));
         $reals = array_filter($round, fn ($m) => empty($m['bye']));
@@ -142,8 +168,7 @@ class SwissTournamentTest extends TestCase
     {
         // 2 oyuncu: final-iki hemen. final_length kullanılmalı.
         $t = $this->makeTournament(2, ['final_length' => 9]);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         $this->assertSame(9, $t->bracket[0][0]['target'], 'Son iki oyuncu final uzunluğunu kullanır');
 
         $t = $this->runToEnd($t);
@@ -190,8 +215,7 @@ class SwissTournamentTest extends TestCase
     public function test_resolve_match_double_loss_marks_both(): void
     {
         $t = $this->makeTournament(4);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         [$key, $a, $b] = $this->firstPending($t);
 
         $this->assertTrue(SwissRuntime::resolveMatch($t, $key, 0), 'Çift mağlubiyet uygulanmalı');
@@ -209,8 +233,7 @@ class SwissTournamentTest extends TestCase
     public function test_resolve_match_force_winner(): void
     {
         $t = $this->makeTournament(4);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         [$key, $a, $b] = $this->firstPending($t);
 
         $this->assertTrue(SwissRuntime::resolveMatch($t, $key, $a));
@@ -226,8 +249,7 @@ class SwissTournamentTest extends TestCase
     public function test_resolve_match_rejects_already_resolved(): void
     {
         $t = $this->makeTournament(4);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         [$key, $a] = $this->firstPending($t);
         SwissRuntime::resolveMatch($t, $key, $a);
         $t->refresh();
@@ -242,15 +264,21 @@ class SwissTournamentTest extends TestCase
         // TavlaTV kuralı: şampiyon mutlaka olur -> rating'i yüksek olan (eşitse seed).
         $t = $this->makeTournament(2); // rating: idx1=1501, idx2=1502
         $higher = collect($t->players)->sortByDesc('rating')->first()['id'];
-        SwissRuntime::start($t);
-        $t->refresh();
-        for ($r = 0; $r < 3; $r++) {
+        $this->startDrawn($t);
+        $guard = 0;
+        while ($t->status === 'running' && $guard++ < 12) {
             $t->refresh();
-            if ($t->status !== 'running') {
-                break;
+            if (SwissRuntime::currentRoundComplete($t)) {
+                $this->draw($t); // sıradaki turu çek
+                if ($t->status !== 'running') {
+                    break;
+                }
+
+                continue;
             }
             [$key] = $this->firstPending($t);
             SwissRuntime::resolveMatch($t, $key, 0); // çift mağlubiyet
+            $t->refresh();
         }
         $t->refresh();
         $this->assertSame('finished', $t->status);
@@ -282,8 +310,7 @@ class SwissTournamentTest extends TestCase
         // A-21: çift mağlubiyetle kapanan maç "winner" boş kaldığı için oda açılıp tekrar oynanabiliyor
         // ve sonucu İKİNCİ kez işleniyordu (ek galibiyet/mağlubiyet + tur iki kez ilerliyordu).
         $t = $this->makeTournament(4);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         [$key, $a, $b] = $this->firstPending($t);
         $this->assertTrue(SwissRuntime::resolveMatch($t, $key, 0));
         $t->refresh();
@@ -309,8 +336,7 @@ class SwissTournamentTest extends TestCase
         // A-20: matchRoom bracket JSON'u kilitsiz oku-değiştir-yaz yapıyordu; eşzamanlı iki istekte son
         // yazan diğer maçın oda kodunu siliyordu.
         $t = $this->makeTournament(4);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         $cells = array_values(array_filter($t->bracket[0], fn ($m) => ! empty($m['p1']['id']) && ! empty($m['p2']['id'])));
         [$m1, $m2] = [$cells[0], $cells[1]];
 
@@ -344,11 +370,19 @@ class SwissTournamentTest extends TestCase
         // kimseye iade YOK; kaybeden hiçbir şey almaz.
         $t = $this->makeTournament(2, ['prize_coins' => 200]);
         $higher = (int) collect($t->players)->sortByDesc('rating')->first()['id'];
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         $before = User::whereIn('id', array_column($t->players, 'id'))->pluck('coins', 'id');
         $guard = 0;
-        while ($t->status === 'running' && $guard++ < 10) {
+        while ($t->status === 'running' && $guard++ < 12) {
+            $t->refresh();
+            if (SwissRuntime::currentRoundComplete($t)) {
+                $this->draw($t);
+                if ($t->status !== 'running') {
+                    break;
+                }
+
+                continue;
+            }
             [$key] = $this->firstPending($t);
             SwissRuntime::resolveMatch($t, $key, 0);
             $t->refresh();
@@ -363,6 +397,44 @@ class SwissTournamentTest extends TestCase
         }
     }
 
+    public function test_manual_draw_requires_datetime_and_completed_round(): void
+    {
+        $t = $this->makeTournament(4);
+        SwissRuntime::start($t);
+        $t->refresh();
+        $this->assertCount(0, $t->bracket ?? [], 'Başlatınca kura OTOMATİK çekilmez');
+
+        // (1) Tarih/saat girilmeden kura çekilemez.
+        $r = SwissRuntime::drawRound($t->fresh());
+        $this->assertFalse($r['ok']);
+        $this->assertSame('no_datetime', $r['reason']);
+        $t->refresh();
+        $this->assertCount(0, $t->bracket ?? [], 'Hâlâ tur yok');
+
+        // (2) Tarih/saat girilince çekilebilir; planlanan tarih kaydedilir, next_at temizlenir.
+        DB::transaction(function () use ($t): void {
+            $x = Tournament::lockForUpdate()->find($t->id);
+            SwissRuntime::setNextRoundAt($x, '2026-01-01 20:00:00');
+            $res = SwissRuntime::drawRound($x);
+            $this->assertTrue($res['ok']);
+        });
+        $t->refresh();
+        $this->assertCount(1, $t->bracket, '1. tur çekildi');
+        $this->assertSame('2026-01-01 20:00:00', $t->swiss_state['schedule']['1'] ?? null, 'planlanan tarih kaydedildi');
+        $this->assertNull($t->swiss_state['next_at'], 'next_at temizlendi');
+
+        // (3) Bu turun maçları bitmeden sonraki turun kurası çekilemez (tarih verilse bile).
+        DB::transaction(function () use ($t): void {
+            $x = Tournament::lockForUpdate()->find($t->id);
+            SwissRuntime::setNextRoundAt($x, '2026-01-02 20:00:00');
+            $res = SwissRuntime::drawRound($x);
+            $this->assertFalse($res['ok']);
+            $this->assertSame('round_incomplete', $res['reason']);
+        });
+        $t->refresh();
+        $this->assertCount(1, $t->bracket, 'Tur bitmeden yeni tur eklenmedi');
+    }
+
     private function stall(Tournament $t): void
     {
         $c = new TournamentController;
@@ -375,8 +447,7 @@ class SwissTournamentTest extends TestCase
     {
         // A-35: Swiss'te gelmeyen oyuncu çözücüsü yoktu; tur yöneticiyi bekliyordu.
         $t = $this->makeTournament(4);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         $cells = array_values(array_filter($t->bracket[0], fn ($m) => ! empty($m['p1']['id']) && ! empty($m['p2']['id'])));
         [$m1, $m2] = $cells;
         // Maç 1: yalnız p1 odaya oturdu. Maç 2: kimse gelmedi.
@@ -403,14 +474,13 @@ class SwissTournamentTest extends TestCase
         $c2 = collect($t->bracket[0])->firstWhere('key', $m2['key']);
         $this->assertSame($a, (int) $c1['winner'], 'gelen oyuncu hükmen kazanmalı');
         $this->assertTrue((bool) ($c2['double_loss'] ?? false), 'iki taraf da gelmezse çift mağlubiyet');
-        $this->assertGreaterThan(1, count($t->bracket), 'tur tamamlanınca sonraki tur üretilmeli');
+        $this->assertCount(1, $t->bracket, 'manuel kura: tur bitse de sonraki tur OTOMATİK üretilmez (admin çeker)');
     }
 
     public function test_swiss_no_show_resolver_leaves_played_match_alone(): void
     {
         $t = $this->makeTournament(2);
-        SwissRuntime::start($t);
-        $t->refresh();
+        $this->startDrawn($t);
         [$key, $a, $b] = $this->firstPending($t);
         Room::create(['code' => 'SWNS2', 'p1_token' => 'ta', 'p1_user_id' => $a, 'p1_name' => 'A',
             'p2_token' => 'tb', 'p2_user_id' => $b, 'p2_name' => 'B', 'status' => 'playing', 'version' => 0]);

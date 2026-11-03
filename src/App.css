@@ -27013,6 +27013,25 @@ input:not([type='range']), select, textarea {
   color: var(--danger-fg);
   font-size: 0.82rem;
 }
+.swiss-awaiting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 7px 11px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 7%, var(--card-bg));
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.swiss-round-date {
+  margin-left: 10px;
+  font-weight: 500;
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 .swiss-pairings {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

@@ -784,6 +784,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             const opp = myMatch ? (myMatch.p1?.id === myId ? myMatch.p2 : myMatch.p1) : null
             const stLabel = (s: string) => t(`swiss.st${s.charAt(0).toUpperCase()}${s.slice(1)}`)
             const maxLives = sw?.max_lives ?? 3
+            const sched = sw?.schedule || {}
+            const fmtDt = (s?: string | null) => (s ? s.slice(0, 16).replace('T', ' ') : '')
             const rows: Array<Record<string, unknown>> =
               (active.status === 'finished' && sw?.final ? sw.final : sw?.standings) as Array<Record<string, unknown>> ?? []
             return (
@@ -794,6 +796,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   {sw && active.status === 'running' && <span className="swiss-left">{t('swiss.activeCount', { n: sw.active })}</span>}
                 </div>
                 <div className="swiss-rules">{t('swiss.rulesShort', { n: maxLives })}</div>
+
+                {sw && active.status === 'running' && sw.awaiting_draw && (
+                  <div className="swiss-awaiting">
+                    <Icon name="calendar-dots" size={14} /> {t('swiss.awaitingDraw', { n: sw.next_round ?? (sw.round + 1) })}
+                    {sw.next_at ? ' · ' + t('swiss.roundScheduled', { at: fmtDt(sw.next_at) }) : ' · ' + t('swiss.roundNoDate')}
+                  </div>
+                )}
 
                 {myRow && active.status === 'running' && (
                   <div className={`swiss-me swiss-me-${myRow.status}`}>
@@ -903,6 +912,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                             <option key={ri} value={ri + 1}>{t('swiss.round', { n: ri + 1 })}</option>
                           ))}
                         </select>
+                        {sched[String(shown)] && <span className="swiss-round-date">{fmtDt(sched[String(shown)])}</span>}
                       </div>
                       <div className="swiss-pair-list">
                         {cells.map((m) => {

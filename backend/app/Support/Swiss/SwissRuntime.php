@@ -65,6 +65,8 @@ class SwissRuntime
             'config' => $config,
             'reports' => [],
             'note' => null,
+            'schedule' => [],   // çekilmiş turların planlanan tarih/saati: { "1": "Y-m-d H:i:s", ... }
+            'next_at' => null,  // sıradaki (henüz çekilmemiş) turun tarih/saati — admin girer, kura şartı
         ];
 
         $t->bracket = [];
@@ -72,11 +74,107 @@ class SwissRuntime
         $t->status = 'running';
         $t->save();
 
-        // İlk tur.
+        // MANUEL KURA: 1. tur dahil hiçbir tur otomatik üretilmez. Admin önce tarih/saat girer
+        // (setNextRoundAt), sonra "Kura Çek" (drawRound) ile turu üretir (contract: manuel akış).
+        TournamentAnnouncement::publishStandard($t, 'tournament_std_swiss');
+    }
+
+    /**
+     * Sıradaki (henüz çekilmemiş) turun planlanan tarih/saatini ayarlar (admin paneli). Kura çekmenin
+     * ön şartı: tarih/saat girilmemiş turun kurası çekilemez. $datetime null/'' => temizler.
+     */
+    public static function setNextRoundAt(Tournament $t, ?string $datetime): void
+    {
+        $state = $t->swiss_state;
+        if (! is_array($state)) {
+            return;
+        }
+        $state['next_at'] = ($datetime !== null && trim($datetime) !== '') ? trim($datetime) : null;
+        $t->swiss_state = $state;
+        $t->save();
+    }
+
+    /** Bir sonraki çekilecek tur numarası (1-tabanlı). */
+    public static function nextRoundNo(Tournament $t): int
+    {
+        $state = $t->swiss_state;
+
+        return (int) (is_array($state) ? ($state['round'] ?? 0) : 0) + 1;
+    }
+
+    /** O anki (son) tur TAMAMLANDI mı? Hiç tur yoksa (ilk kura öncesi) true. */
+    public static function currentRoundComplete(Tournament $t): bool
+    {
+        $bracket = is_array($t->bracket) ? $t->bracket : [];
+        if (empty($bracket)) {
+            return true; // ilk tur çekilebilir
+        }
+        $last = $bracket[count($bracket) - 1] ?? [];
+        foreach ($last as $m) {
+            if (empty($m['winner']) && empty($m['double_loss'])) {
+                return false; // bu turda çözülmemiş maç var
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Kura çekilebilir mi? ['can'=>bool, 'reason'=>string]. reason: ok | not_running | finished |
+     * round_incomplete (tur maçları bitmedi) | no_datetime (tarih/saat girilmemiş).
+     */
+    public static function drawStatus(Tournament $t): array
+    {
+        if ($t->status !== 'running') {
+            return ['can' => false, 'reason' => $t->status === 'finished' ? 'finished' : 'not_running'];
+        }
+        $state = $t->swiss_state;
+        if (is_array($state) && SwissEngine::isComplete($state['participants'] ?? [])) {
+            return ['can' => false, 'reason' => 'finished'];
+        }
+        if (! self::currentRoundComplete($t)) {
+            return ['can' => false, 'reason' => 'round_incomplete'];
+        }
+        if (empty($state['next_at'] ?? null)) {
+            return ['can' => false, 'reason' => 'no_datetime'];
+        }
+
+        return ['can' => true, 'reason' => 'ok'];
+    }
+
+    /**
+     * MANUEL KURA ÇEK: sıradaki turu üretir. Şartlar (drawStatus): turnuva sürüyor + bitmemiş +
+     * o anki turun TÜM maçları bitmiş + sıradaki turun tarih/saati girilmiş. Üretilen turun planlanan
+     * tarih/saati schedule'a yazılır, next_at temizlenir. Çağıran lockForUpdate transaction sağlamalı.
+     *
+     * @return array{ok:bool, reason:string}
+     */
+    public static function drawRound(Tournament $t): array
+    {
+        $st = self::drawStatus($t);
+        if (! $st['can']) {
+            return ['ok' => false, 'reason' => $st['reason']];
+        }
+        $plannedAt = (string) $t->swiss_state['next_at'];
+        $before = count(is_array($t->bracket) ? $t->bracket : []);
+
         self::generateRound($t);
+
+        // Yeni tur gerçekten eklendiyse planlanan tarihi kaydet + next_at temizle (generateRound
+        // finalize etmiş olabilir -> tur eklenmez).
+        $after = count(is_array($t->bracket) ? $t->bracket : []);
+        $state = $t->swiss_state;
+        if ($after > $before) {
+            $roundNo = (int) $state['round']; // generateRound güncelledi
+            $schedule = is_array($state['schedule'] ?? null) ? $state['schedule'] : [];
+            $schedule[(string) $roundNo] = $plannedAt;
+            $state['schedule'] = $schedule;
+        }
+        $state['next_at'] = null;
+        $t->swiss_state = $state;
         $t->save();
 
-        TournamentAnnouncement::publishStandard($t, 'tournament_std_swiss');
+        return ['ok' => true, 'reason' => 'ok'];
     }
 
     /**
@@ -137,10 +235,8 @@ class SwissRuntime
         $state = $t->swiss_state;
         if (SwissEngine::isComplete($state['participants'])) {
             self::finalize($t);
-
-            return;
         }
-        self::generateRound($t);
+        // MANUEL KURA: tur bitince sıradaki tur OTOMATİK üretilmez; admin "Kura Çek" ile üretir.
     }
 
     /** Sonraki turu (eşleştirme + bay) üretip bracket'e ekle; swiss_state'i güncelle. */
@@ -355,6 +451,10 @@ class SwissRuntime
             'config' => $state['config'] ?? null,
             'optimal_last' => $lastReport['optimal'] ?? true,
             'max_lives' => (int) ($state['config']['lives'] ?? SwissEngine::MAX_LIVES),
+            'schedule' => is_array($state['schedule'] ?? null) ? $state['schedule'] : [], // {tur: "Y-m-d H:i:s"}
+            'next_at' => $state['next_at'] ?? null,            // sıradaki (çekilmemiş) turun tarih/saati
+            'next_round' => self::nextRoundNo($t),             // sıradaki tur numarası
+            'awaiting_draw' => $t->status === 'running' && ! SwissEngine::isComplete($participants) && self::currentRoundComplete($t),
         ];
     }
 

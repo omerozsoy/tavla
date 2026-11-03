@@ -59,6 +59,8 @@ class TournamentResourceDqTest extends TestCase
     {
         [$t] = $this->swiss(4);
         SwissRuntime::start($t);
+        SwissRuntime::setNextRoundAt($t, '2026-01-01 20:00:00'); // manuel kura: tarih + çek
+        SwissRuntime::drawRound($t);
         $t->refresh();
         // Bekleyen gerçek maçtan bir oyuncu seç.
         $p1 = null;
@@ -85,6 +87,8 @@ class TournamentResourceDqTest extends TestCase
     {
         [$t] = $this->swiss(4);
         SwissRuntime::start($t);
+        SwissRuntime::setNextRoundAt($t, '2026-01-01 20:00:00'); // manuel kura: tarih + çek
+        SwissRuntime::drawRound($t);
         $t->refresh();
         $p1 = null;
         foreach ($t->bracket as $cells) {
@@ -111,6 +115,8 @@ class TournamentResourceDqTest extends TestCase
     {
         [$t] = $this->swiss(4);
         SwissRuntime::start($t);
+        SwissRuntime::setNextRoundAt($t, '2026-01-01 20:00:00'); // manuel kura: tarih + çek
+        SwissRuntime::drawRound($t);
         $t->refresh();
         $key = $a = $b = null;
         foreach ($t->bracket as $cells) {

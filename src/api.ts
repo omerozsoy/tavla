@@ -1418,6 +1418,10 @@ export interface SwissState {
   config?: { match_length: number; final_length: number | null; round_minutes: number | null; final_minutes: number | null } | null
   optimal_last?: boolean
   max_lives?: number
+  schedule?: Record<string, string> // { "1": "2026-11-05 20:00:00", ... } tur başlangıç tarih/saatleri
+  next_at?: string | null // sıradaki (henüz çekilmemiş) turun planlanan tarih/saati
+  next_round?: number // sıradaki tur numarası
+  awaiting_draw?: boolean // o anki tur bitti, sıradaki turun kurası yönetim tarafından çekilecek
 }
 
 export interface Tournament {

@@ -119,6 +119,8 @@ class TournamentParticipationTest extends TestCase
     {
         [$t, $users] = $this->swiss(4);
         SwissRuntime::start($t);
+        SwissRuntime::setNextRoundAt($t, '2026-01-01 20:00:00'); // manuel kura: tarih + çek
+        SwissRuntime::drawRound($t);
         $t->refresh();
         [$ri, $mi, $p1, $p2] = $this->firstPendingMatch($t);
         Sanctum::actingAs($this->user('ref', true));
