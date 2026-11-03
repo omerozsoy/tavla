@@ -8,7 +8,7 @@ import type { IconName } from './ui/Icon'
  * NOT: Oyun akisi (home/setup/online/game) BURAYA GIRMEZ — onlar sayfa degil, oyun durumu.
  */
 
-export type MenuGroup = 'play' | 'klassik' | 'league' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
+export type MenuGroup = 'play' | 'klassik' | 'league' | 'teams' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
 
 export interface PageDef {
   key: string // aktif-vurgu + binding anahtari
@@ -39,6 +39,9 @@ export const PAGES: PageDef[] = [
   // --- TÜRKİYE ONLINE TAVLA LİGİ: turnuvalardan BAĞIMSIZ ana menü başlığı (ürün direktifi §1).
   // Grup başlığı tam ad; tek öğe lig ana sayfasını açar (içinde sekmeli ekranlar). ---
   { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'trophy', group: 'league' },
+
+  // --- TAKIMLAR LİGİ: turnuva/bireysel ligden BAĞIMSIZ ana menü başlığı (ürün direktifi §1). ---
+  { key: 'teams', slug: 'takimlar-ligi', labelKey: 'teams.menu', icon: 'users', group: 'teams' },
 
   // --- TURNUVALAR: rekabet + sosyal ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
@@ -104,7 +107,7 @@ export const PAGES: PageDef[] = [
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
 export const PAGE_BY_SLUG: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.slug, p]))
-export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'league', 'compete', 'fun', 'content', 'tools', 'account', 'info']
+export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'league', 'teams', 'compete', 'fun', 'content', 'tools', 'account', 'info']
 
 // Grup basligi i18n anahtari (sol menude gorunur, silik buyuk-harf). null -> baslik cizilmez.
 // NOT: bunlar VARSAYILAN; admin "Sol Menu" panelinden grup/ad/sira override edilebilir.
@@ -112,6 +115,7 @@ export const MENU_GROUP_LABELS: Record<MenuGroup, string | null> = {
   play: 'menu.group.play', // "Modern Tavla Oyna" (eski "Tavla Oyna")
   klassik: 'menu.group.klassik', // "Klasik Tavla Oyna" ana dalı
   league: 'menu.group.league', // "Türkiye Online Tavla Ligi" — bağımsız başlık (§1)
+  teams: 'menu.group.teams', // "Takımlar Ligi" — bağımsız başlık (§1)
   compete: 'menu.group.compete',
   fun: 'menu.group.fun',
   content: 'menu.group.content',

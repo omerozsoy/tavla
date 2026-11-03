@@ -1539,6 +1539,148 @@ export async function leagueMatchRoom(matchId: number): Promise<{ code: string; 
   return req(`/league/match/${matchId}/room`, { method: 'POST' })
 }
 
+// ---- Takımlar Ligi (turnuva/league'den bağımsız) ---------------------------
+export interface TeamBrief {
+  id: number; name: string; tag: string; logo?: string | null
+  color1: string; color2: string; rating_avg: number; member_count: number; is_champion: boolean
+}
+export interface TeamUserBrief { id: number; nickname?: string; avatar?: string | null; rating?: number; tag?: string | null }
+export interface TeamRankRow extends TeamBrief { rank: number }
+export interface TeamMonthlyRow {
+  rank: number; team: TeamBrief | null; points: number; match_diff: number; team_wins: number; played: number
+}
+export interface TeamRulesInfo {
+  found_cost: number; min_rated: number; capacity: number; max_assistants: number
+  min_rank_members: number; lineup_size: number; rename_cost: number; cooldown_hours: number
+  points: { win: number; draw: number; loss: number }
+}
+export interface TeamMatchGameRow {
+  slot: number; status: string; result: string | null
+  home_user: TeamUserBrief | null; away_user: TeamUserBrief | null; room_code: string | null
+}
+export interface TeamMatchRow {
+  id: number; status: string; result: string | null; home: TeamBrief | null; away: TeamBrief | null
+  scheduled_at: string | null; home_score: number; away_score: number; month_key: string | null
+  lineup_revealed: boolean; games?: TeamMatchGameRow[]
+}
+export interface TeamMyMatch extends TeamMatchRow {
+  my_team_id?: number; my_lineup?: Array<{ slot: number; user: TeamUserBrief }>
+  my_game?: { slot: number; status: string; result: string | null; room_code: string | null; ready_home: boolean; ready_away: boolean } | null
+}
+export interface TeamMe {
+  membership: { team: TeamBrief; role: string; premium_grace_until?: string | null } | null
+  managed?: { team_id: number; applications: Array<{ id: number; user: TeamUserBrief }> } | null
+  transfer_offer?: number | null
+  applications: Array<{ id: number; team: TeamBrief | null }>
+  invites: Array<{ id: number; team: TeamBrief | null }>
+  eligibility: { premium: boolean; rated_matches: number; min_rated: number; cooldown_until?: string | null; can_create: boolean; found_cost: number }
+}
+export interface TeamDetail {
+  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; awards: Array<{ month_key: string; rank: number; kind: string }> }
+  members: Array<{ role: string; user: TeamUserBrief; premium_grace_until?: string | null }>
+  matches: TeamMatchRow[]
+}
+
+export async function getTeams(q?: string): Promise<{ ranking?: TeamRankRow[]; results?: TeamBrief[]; rules?: TeamRulesInfo }> {
+  return req('/teams' + (q ? '?q=' + encodeURIComponent(q) : ''))
+}
+export async function getTeamsMonthly(month?: string): Promise<{ month: string; past_months: string[]; table: TeamMonthlyRow[] }> {
+  return req('/teams/monthly' + (month ? '?month=' + encodeURIComponent(month) : ''))
+}
+export async function getTeam(id: number): Promise<TeamDetail> {
+  return req(`/teams/${id}`)
+}
+export async function getMyTeam(): Promise<TeamMe> {
+  return req('/my-team')
+}
+export async function createTeam(data: { name: string; tag: string; color1?: string; color2?: string; description?: string; logo?: string }): Promise<{ team: TeamBrief }> {
+  return req('/teams', { method: 'POST', body: JSON.stringify(data) })
+}
+export async function updateTeamIdentity(id: number, data: Record<string, unknown>): Promise<{ team: TeamBrief }> {
+  return req(`/teams/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+export async function renameTeam(id: number, name?: string | null, tag?: string | null): Promise<{ team: TeamBrief }> {
+  return req(`/teams/${id}/rename`, { method: 'POST', body: JSON.stringify({ name, tag }) })
+}
+export async function applyTeam(id: number): Promise<{ id: number }> {
+  return req(`/teams/${id}/apply`, { method: 'POST' })
+}
+export async function cancelTeamApplication(id: number): Promise<{ ok: boolean }> {
+  return req(`/team-applications/${id}/cancel`, { method: 'POST' })
+}
+export async function decideTeamApplication(id: number, accept: boolean): Promise<{ ok: boolean }> {
+  return req(`/team-applications/${id}/decide`, { method: 'POST', body: JSON.stringify({ accept }) })
+}
+export async function inviteToTeam(id: number, userId: number): Promise<{ id: number }> {
+  return req(`/teams/${id}/invite`, { method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}
+export async function acceptTeamInvite(id: number): Promise<{ ok: boolean }> {
+  return req(`/team-invites/${id}/accept`, { method: 'POST' })
+}
+export async function declineTeamInvite(id: number): Promise<{ ok: boolean }> {
+  return req(`/team-invites/${id}/decline`, { method: 'POST' })
+}
+export async function revokeTeamInvite(id: number): Promise<{ ok: boolean }> {
+  return req(`/team-invites/${id}/revoke`, { method: 'POST' })
+}
+export async function leaveTeam(teamId: number): Promise<{ ok: boolean }> {
+  return req(`/teams/${teamId}/leave`, { method: 'POST' })
+}
+export async function kickTeamMember(id: number, userId: number): Promise<{ ok: boolean }> {
+  return req(`/teams/${id}/kick`, { method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}
+export async function promoteTeamMember(id: number, userId: number): Promise<{ ok: boolean }> {
+  return req(`/teams/${id}/promote`, { method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}
+export async function demoteTeamMember(id: number, userId: number): Promise<{ ok: boolean }> {
+  return req(`/teams/${id}/demote`, { method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}
+export async function transferTeam(id: number, userId: number): Promise<{ ok: boolean }> {
+  return req(`/teams/${id}/transfer`, { method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}
+export async function acceptTeamTransfer(id: number): Promise<{ ok: boolean }> {
+  return req(`/teams/${id}/transfer/accept`, { method: 'POST' })
+}
+export async function closeTeam(id: number, confirm: boolean): Promise<{ ok: boolean }> {
+  return req(`/teams/${id}/close`, { method: 'POST', body: JSON.stringify({ confirm }) })
+}
+export async function getTeamAudits(id: number): Promise<{ audits: Array<{ action: string; actor_id: number | null; target_user_id: number | null; meta: unknown; at: string | null }> }> {
+  return req(`/teams/${id}/audits`)
+}
+export async function getTeamChat(id: number): Promise<{ messages: Array<{ id: number; body: string; pinned: boolean; user: TeamUserBrief | null; at: string | null }> }> {
+  return req(`/teams/${id}/chat`)
+}
+export async function postTeamChat(id: number, body: string): Promise<{ message: unknown }> {
+  return req(`/teams/${id}/chat`, { method: 'POST', body: JSON.stringify({ body }) })
+}
+export async function pinTeamMessage(id: number, pinned: boolean): Promise<{ ok: boolean }> {
+  return req(`/team-messages/${id}/pin`, { method: 'POST', body: JSON.stringify({ pinned }) })
+}
+export async function challengeTeam(id: number, opponentTeamId: number, at: string): Promise<{ id: number }> {
+  return req(`/teams/${id}/challenge`, { method: 'POST', body: JSON.stringify({ opponent_team_id: opponentTeamId, at }) })
+}
+export async function getTeamMatch(id: number): Promise<{ match: TeamMatchRow }> {
+  return req(`/team-matches/${id}`)
+}
+export async function getMyTeamMatch(id: number): Promise<{ match: TeamMyMatch }> {
+  return req(`/team-matches/${id}/mine`)
+}
+export async function acceptTeamMatch(id: number): Promise<{ ok: boolean }> {
+  return req(`/team-matches/${id}/accept`, { method: 'POST' })
+}
+export async function rescheduleTeamMatch(id: number, at: string): Promise<{ ok: boolean }> {
+  return req(`/team-matches/${id}/reschedule`, { method: 'POST', body: JSON.stringify({ at }) })
+}
+export async function cancelTeamMatch(id: number, reason?: string): Promise<{ status: string }> {
+  return req(`/team-matches/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) })
+}
+export async function setTeamLineup(matchId: number, teamId: number, userIds: number[]): Promise<{ ok: boolean }> {
+  return req(`/team-matches/${matchId}/lineup`, { method: 'POST', body: JSON.stringify({ team_id: teamId, user_ids: userIds }) })
+}
+export async function readyTeamMatch(matchId: number): Promise<{ ok: boolean; room: string | null }> {
+  return req(`/team-matches/${matchId}/ready`, { method: 'POST' })
+}
+
 /** Ana sayfa turnuva reklam gorseli (panelden, en fazla 3). Tiklaninca turnuva detayi acilir. */
 export interface TournamentAd {
   id: number

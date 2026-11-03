@@ -177,6 +177,7 @@ import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
 const LeagueView = lazy(() => import('./ui/LeagueView'))
+const TeamsView = lazy(() => import('./ui/TeamsView'))
 import BannerSlider from './ui/BannerSlider'
 import { AdStrip } from './ui/AdStrip'
 import { EntryPopupModal } from './ui/EntryPopupModal'
@@ -1095,6 +1096,8 @@ export default function App() {
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [leagueOpen, setLeagueOpen] = useState(false) // Türkiye Online Tavla Ligi (bağımsız §1)
   const [leagueSeasonId, setLeagueSeasonId] = useState<number | null>(null) // derin-link sezon id
+  const [teamsOpen, setTeamsOpen] = useState(false) // Takımlar Ligi (bağımsız §1)
+  const [teamsArg, setTeamsArg] = useState<string | null>(null) // derin-link alt yol (takim/{id} | mac/{id})
   const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (fetch id)
   const [tournDetailSlug, setTournDetailSlug] = useState<string | null>(null) // SEO URL slug (/online-turnuvalar/isim-{id})
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
@@ -1237,6 +1240,10 @@ export default function App() {
     ? leagueSeasonId != null
       ? 'turkiye-online-tavla-ligi/' + leagueSeasonId
       : 'turkiye-online-tavla-ligi'
+    : teamsOpen
+    ? teamsArg
+      ? 'takimlar-ligi/' + teamsArg
+      : 'takimlar-ligi'
     : tournOpen
       ? tournDetailId != null
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
@@ -1497,6 +1504,12 @@ export default function App() {
           setLeagueOpen(true)
           const last = (seg[1] || '').split('-').pop() || ''
           setLeagueSeasonId(/^\d+$/.test(last) ? parseInt(last, 10) : null)
+          break
+        }
+        case 'takimlar-ligi': {
+          setTeamsOpen(true)
+          // /takimlar-ligi/takim/5 veya /takimlar-ligi/mac/12 → alt yolu TeamsView'e aktar
+          setTeamsArg(seg[1] ? seg.slice(1).join('/') : null)
           break
         }
         case 'online-turnuvalar':
@@ -7652,7 +7665,7 @@ export default function App() {
   // gir ve oyun ekranına geç. Sonuç yakalama SUNUCUDA (league:tick captureRoomResult) -> frontend ayrıca
   // rapor etmez. ponytail: handlePlayTournamentMatch'in genel giriş gövdesini aynalar (turnuva ref'leri
   // YOK); canlı turnuva yolunu bozmamak için ayrı tutuldu, ileride ortak enterServerRoom'a çıkarılabilir.
-  async function handleEnterLeagueRoom(code: string, target: number) {
+  async function handleEnterLeagueRoom(code: string, target: number, reopenOnError: () => void = () => setLeagueOpen(true)) {
     setLeagueOpen(false)
     setRoomBusy(true)
     setRoomError('')
@@ -7709,7 +7722,7 @@ export default function App() {
       })
     } catch {
       setRoomError(t('mp.connError'))
-      setLeagueOpen(true)
+      reopenOnError()
     } finally {
       setRoomBusy(false)
     }
@@ -9655,6 +9668,8 @@ export default function App() {
     setTournDetailSlug(null)
     setLeagueOpen(false)
     setLeagueSeasonId(null)
+    setTeamsOpen(false)
+    setTeamsArg(null)
     setShopOpen(false)
     setLuckyWheelOpen(false)
     setDiceSlotOpen(false)
@@ -9772,6 +9787,8 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     // Türkiye Online Tavla Ligi HERKESE açık (misafir dahil görür); başvuru Premium (sunucuda).
     onLeague: () => goPage(() => { setLeagueSeasonId(null); setLeagueOpen(true) }),
+    // Takımlar Ligi HERKESE açık (misafir dahil görür); kurma/katılım Premium (sunucuda).
+    onTeams: () => goPage(() => { setTeamsArg(null); setTeamsOpen(true) }),
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
     onAchievements: () => goPage(() => setAchOpen(true)),
@@ -9847,6 +9864,7 @@ export default function App() {
     klassikAi: menuProps.onKlassikAi,
     tournaments: menuProps.onTournaments,
     league: menuProps.onLeague,
+    teams: menuProps.onTeams,
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
     diceslot: menuProps.onDiceSlot,
@@ -10687,6 +10705,24 @@ export default function App() {
             onClose={() => {
               setLeagueOpen(false)
               setLeagueSeasonId(null)
+            }}
+          />
+        </Suspense>
+      )}
+      {teamsOpen && (
+        <Suspense fallback={null}>
+          <TeamsView
+            myId={user?.id ?? null}
+            premium={premium}
+            initialPath={teamsArg}
+            onRequireLogin={() => setShowAuth(true)}
+            onRequirePremium={() => setMemOpen(true)}
+            onEnterRoom={(code, target) => handleEnterLeagueRoom(code, target, () => setTeamsOpen(true))}
+            onProfile={(id) => setHomeProfileId(id)}
+            onPathChange={(p) => setTeamsArg(p)}
+            onClose={() => {
+              setTeamsOpen(false)
+              setTeamsArg(null)
             }}
           />
         </Suspense>

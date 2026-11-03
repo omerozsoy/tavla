@@ -127,6 +127,21 @@ Schedule::command('league:tick')
     ->name('league-tick')
     ->withoutOverlapping();
 
+// TAKIMLAR LİGİ nöbetçisi (§8/§9/§11): kadro kilidi (başlangıca 10dk), oda sonucu yakala, 5dk hazır-olma/
+// no-show/çift-hükmen, maçı kesinleştir, 30dk/5dk hatırlatma. Idempotent + tekrar-çalıştırılabilir
+// (team_notifications defteri mükerrer bildirim engeli; sunucu restart'ında kaçırılan kilit/başlangıç toparlanır).
+Schedule::command('teamleague:tick')
+    ->everyMinute()
+    ->name('teamleague-tick')
+    ->withoutOverlapping();
+
+// TAKIMLAR LİGİ günlük bakımı (§5/§10): Premium 7g yenileme süresi süpürme, kurucu 60g inaktiflik devri,
+// geçen ayın ödül dağıtımı (o aya ait bekleyen maç kalmadıysa; idempotent — mükerrer kupa/rozet yok).
+Schedule::command('teamleague:maintenance')
+    ->dailyAt('00:30')
+    ->name('teamleague-maintenance')
+    ->withoutOverlapping();
+
 // PERİYODİK TURNUVA KURUCU: her gece tam 00:00'da, bugüne denk gelen aktif periyodik turnuva
 // şablonlarından birer turnuva kurar (admin -> "Periyodik Turnuva" menüsü). Kurulan turnuva gün
 // boyu "kayıt açık" kalır; şablonun start_time saatinde mevcut autoStartDue() ile otomatik başlar.

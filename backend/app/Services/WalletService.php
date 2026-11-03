@@ -28,6 +28,9 @@ class WalletService
     public const DISCRETIONARY_SPEND = [
         'dice_slot_spin', 'lucky_wheel_spin', 'tournament_entry',
         'product_purchase', 'cart_purchase', 'shop_purchase', 'bot_match_fee',
+        // Takımlar Ligi: kuruluş + isim/etiket değişimi yalnız HARCANABİLİR coin'den (bahis
+        // rezervi/kilitli coin ile takım fonlanamaz).
+        'team_create', 'team_rename',
     ];
 
     /** Harcanabilir bakiye: coins − rezerv (sabit bahis emaneti) − sonuçlanmamış %-bahis kilidi (A-03). */

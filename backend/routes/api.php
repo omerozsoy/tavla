@@ -38,6 +38,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SiteTagController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentAdController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\VerificationController;
@@ -145,6 +146,15 @@ Route::get('/league/{season}', [LeagueController::class, 'show']);
 Route::get('/league/{season}/standings', [LeagueController::class, 'standings']);
 Route::get('/league/{season}/fixtures', [LeagueController::class, 'fixtures']);
 Route::get('/league/{season}/bracket', [LeagueController::class, 'bracket']);
+
+// TAKIMLAR LİGİ — herkese açık (misafir dahil): sıralama/arama, aylık tablo, takım detayı, karşılaşma sayfası.
+// '/teams/monthly' DİNAMİK '/teams/{team}'DEN ÖNCE (yoksa {team}='monthly' yakalar).
+Route::middleware('throttle:120,1,team-read')->group(function () {
+    Route::get('/teams', [TeamController::class, 'index']);
+    Route::get('/teams/monthly', [TeamController::class, 'monthly']);
+    Route::get('/teams/{team}', [TeamController::class, 'show']);
+    Route::get('/team-matches/{match}', [TeamController::class, 'matchShow']);
+});
 
 // Şans Çarkı durumu (misafir de çarkı görebilir; çevirmek için giriş gerekir).
 Route::get('/lucky-wheel', [LuckyWheelController::class, 'show']);
@@ -380,6 +390,38 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/league/match/{match}/ready', [LeagueController::class, 'ready']);
     Route::post('/league/match/{match}/room', [LeagueController::class, 'room']);
 
+    // TAKIMLAR LİGİ — üyelik + yönetim + karşılaşma akışı (sunucu-otoriter; TÜM kural TeamService/Runtime'da).
+    Route::get('/my-team', [TeamController::class, 'me']); // '/teams/{team}' ile çakışmaması için ayrı yol
+    Route::post('/teams', [TeamController::class, 'create']);
+    Route::patch('/teams/{team}', [TeamController::class, 'updateIdentity']);
+    Route::post('/teams/{team}/rename', [TeamController::class, 'rename']);
+    Route::post('/teams/{team}/apply', [TeamController::class, 'apply']);
+    Route::post('/teams/{team}/invite', [TeamController::class, 'invite']);
+    Route::post('/teams/{team}/leave', [TeamController::class, 'leave']);
+    Route::post('/teams/{team}/kick', [TeamController::class, 'kick']);
+    Route::post('/teams/{team}/promote', [TeamController::class, 'promote']);
+    Route::post('/teams/{team}/demote', [TeamController::class, 'demote']);
+    Route::post('/teams/{team}/transfer', [TeamController::class, 'transfer']);
+    Route::post('/teams/{team}/transfer/accept', [TeamController::class, 'acceptTransfer']);
+    Route::post('/teams/{team}/close', [TeamController::class, 'close']);
+    Route::get('/teams/{team}/audits', [TeamController::class, 'audits']);
+    Route::get('/teams/{team}/chat', [TeamController::class, 'chatList']);
+    Route::middleware('throttle:40,1,team-chat')->post('/teams/{team}/chat', [TeamController::class, 'chatPost']);
+    Route::post('/team-messages/{message}/pin', [TeamController::class, 'pinMessage']);
+    Route::post('/team-applications/{application}/cancel', [TeamController::class, 'cancelApplication']);
+    Route::post('/team-applications/{application}/decide', [TeamController::class, 'decideApplication']);
+    Route::post('/team-invites/{invite}/accept', [TeamController::class, 'acceptInvite']);
+    Route::post('/team-invites/{invite}/decline', [TeamController::class, 'declineInvite']);
+    Route::post('/team-invites/{invite}/revoke', [TeamController::class, 'revokeInvite']);
+    // Karşılaşma (§7-§9)
+    Route::post('/teams/{team}/challenge', [TeamController::class, 'challenge']);
+    Route::get('/team-matches/{match}/mine', [TeamController::class, 'myMatch']);
+    Route::post('/team-matches/{match}/accept', [TeamController::class, 'acceptMatch']);
+    Route::post('/team-matches/{match}/reschedule', [TeamController::class, 'rescheduleMatch']);
+    Route::post('/team-matches/{match}/cancel', [TeamController::class, 'cancelMatch']);
+    Route::post('/team-matches/{match}/lineup', [TeamController::class, 'setLineup']);
+    Route::middleware('throttle:120,1,team-ready')->post('/team-matches/{match}/ready', [TeamController::class, 'ready']);
+
     // Yonetim: 'admin' middleware ile route katmaninda korunur (savunma-derinligi;
     // controller'larda da is_admin kontrolu ayrica durur -> biri unutulursa acik kalmaz).
     Route::middleware('admin')->group(function () {
@@ -395,6 +437,13 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
         Route::post('/league/{season}/withdraw', [LeagueController::class, 'withdraw']);
         Route::post('/league/match/{match}/correct', [LeagueController::class, 'correct']);
         Route::post('/league/match/{match}/postpone', [LeagueController::class, 'postpone']);
+
+        // TAKIMLAR LİGİ — yönetim (yalnız admin; controller'da da is_admin — savunma-derinliği).
+        Route::get('/admin/teams', [TeamController::class, 'adminIndex']);
+        Route::post('/admin/teams/{team}/logo-approve', [TeamController::class, 'approveLogo']);
+        Route::post('/admin/teams/{team}/logo-reject', [TeamController::class, 'rejectLogo']);
+        Route::post('/admin/team-matches/{match}/cancel', [TeamController::class, 'adminCancelMatch']);
+        Route::post('/admin/team-matches/{match}/correct', [TeamController::class, 'adminCorrectMatch']);
 
         Route::get('/admin/users', [AdminController::class, 'users']);
         Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
