@@ -10,12 +10,18 @@ sunucu gnubg** (`SERVER_BOT=true`). Mimari ve kurulum için README.md.
 - **Yalnızca `src/*` commit'lemek canlıyı DEĞİŞTİRMEZ.** Akış:
   `npm run deploy:build` → `git add backend/public` → commit → push → **Forge panel "Deploy Now"**
   (veya deploy-hook URL'ini curl'le). Forge zero-downtime: `current` → `releases/<N>` symlink.
-- **Push sonrası canlıyı DOĞRULA, Quick Deploy'a körü körüne güvenme.** 2026-10-26: bir push QD'yi
-  hiç tetiklemedi (~1.5sa release oluşmadı) → elle "Deploy Now" gerekti; sonraki push'ta QD 41sn'de
-  otomatik çalıştı. Doğrulama: Forge `current` HEAD = commit'in mi + `curl https://tavlatv.com/`.
+- **Push sonrası doğrula ama QD'ye ~5dk ver — QD ÖLÜ DEĞİL, gecikmesi OYNAK.** Akış:
+  push → CI (~2dk, GitHub Actions) → QD CI sonrası sn-dk arası deploy eder (2026-11-03 ölçüm:
+  CI yeşilinden +2.5dk, push'tan +4.5dk). **90sn'de pes etmek = yanlış-negatif** ("QD ölü" sanıp
+  gereksiz elle-stopgap yapılıyordu). Reçete: `gh run watch` → CI yeşil → 2-5dk BEKLE → Forge
+  `current` HEAD = commit'in mi (`readlink current` + `git rev-parse HEAD`) + `curl https://tavlatv.com/`.
+  Elle "Deploy Now" YALNIZCA: CI-yeşilinden >10dk release yok (nadir App teslimat düşmesi, ~1.5sa
+  vakası) VEYA **CI KIRMIZI** (Forge deploy ETMEZ; frontend CI flakey'liği backend-only push'u da bloklar).
 - Deploy edemiyorsan: `forge` user sudo'su ŞİFRE ister (passwordless YOK), site dosyaları `tavla:tavla`
   (forge yazamaz) → SSH'tan elle deploy edilemez; panel/hook şart. SSH anahtar: `~/.ssh/tavla`.
-- QD takılırsa GitHub → Settings → Webhooks → Forge → Recent Deliveries'e bak (webhook gitti mi).
+- QD gelmezse ÖNCE CI'ya bak: `gh run list --branch main --limit 1` — kırmızıysa Forge deploy ETMEZ.
+  Forge GitHub **App** ile bağlı; repoda KLASİK WEBHOOK YOK (`gh api repos/omerozsoy/tavla/hooks` → `[]`)
+  → "Settings → Webhooks → Recent Deliveries" BOŞTUR, oraya bakma (eski/yanlış tavsiyeydi).
 - ⚠ `backend/public/uploads` shared storage'da → git'te "deleted" görünür (dirty tree); gelecekte
   in-place `git pull` denersen çakışabilir (ama release-tabanlı Forge deploy'u bundan etkilenmez).
 
