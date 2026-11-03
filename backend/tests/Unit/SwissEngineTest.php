@@ -456,6 +456,26 @@ class SwissEngineTest extends TestCase
         $this->assertSame(6, $byId[6]['rank'], 'En az galibiyet 6.');
     }
 
+    public function test_played_counts_every_real_match_including_rematches(): void
+    {
+        // Aynı iki oyuncu üst üste oynarsa (final tekrarı): played HER maçı sayar, opponents distinct kalır.
+        $p = SwissEngine::initParticipants($this->players(2), 'pl');
+        $p = SwissEngine::applyResult($p, 1, 2, 1, true, 5, 2);
+        $p = SwissEngine::applyResult($p, 1, 2, 2, true, 5, 3); // tekrar maç (aynı rakip)
+        $p1 = SwissEngine::find($p, 1);
+        $p2 = SwissEngine::find($p, 2);
+        $this->assertSame(2, (int) $p1['played'], 'played = gerçek maç sayısı (2)');
+        $this->assertSame(2, (int) $p2['played']);
+        $this->assertCount(1, $p1['opponents'], 'distinct rakip hâlâ 1');
+        $this->assertSame(2, (int) $p1['realWins'], 'realWins 2');
+        // Hükmen/bay played saymaz.
+        $p = SwissEngine::applyResult($p, 1, 2, 3, false); // hükmen
+        $this->assertSame(2, (int) SwissEngine::find($p, 1)['played'], 'hükmen played saymaz');
+        $std = SwissEngine::liveStandings($p); // aktif önce (id1 0 mağlubiyet) -> ilk satır id1
+        $this->assertSame(1, (int) $std[0]['id']);
+        $this->assertSame(2, (int) $std[0]['played']);
+    }
+
     public function test_final_two_asymmetric_lives_more_lives_player_advantaged(): void
     {
         // 3 haklı: A(id1) 1 mağlubiyet (2 hak), B(id2) 2 mağlubiyet (1 hak) ile finalde.

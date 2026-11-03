@@ -59,6 +59,7 @@ class SwissEngine
                 'losses' => 0,
                 'wins' => 0,           // ilerleme galibiyeti (bay + hükmen dahil)
                 'realWins' => 0,       // gerçekten oynanıp kazanılan
+                'played' => 0,         // gerçek oynanan maç (galibiyet + mağlubiyet; tekrar rakip dahil, bay/hükmen hariç)
                 'pointsFor' => 0,      // gerçek maçlarda ALINAN toplam puan (averaj payı)
                 'pointsAgainst' => 0,  // gerçek maçlarda VERİLEN toplam puan
                 'byes' => 0,
@@ -156,6 +157,7 @@ class SwissEngine
                 $p['wins'] = (int) $p['wins'] + 1;
                 if ($realMatch) {
                     $p['realWins'] = (int) $p['realWins'] + 1;
+                    $p['played'] = (int) ($p['played'] ?? 0) + 1; // gerçek oynanan maç (tekrar rakip dahil)
                     $p['opponents'] = array_values(array_unique(array_merge($p['opponents'], [$loserId])));
                 }
                 if ($trackPts) {
@@ -165,6 +167,7 @@ class SwissEngine
             } elseif ((int) $p['id'] === $loserId) {
                 $p['losses'] = (int) $p['losses'] + 1;
                 if ($realMatch) {
+                    $p['played'] = (int) ($p['played'] ?? 0) + 1; // gerçek oynanan maç (tekrar rakip dahil)
                     $p['opponents'] = array_values(array_unique(array_merge($p['opponents'], [$winnerId])));
                 }
                 if ($trackPts) {
@@ -627,7 +630,7 @@ class SwissEngine
             'losses' => (int) $p['losses'],
             'wins' => (int) $p['wins'],
             'realWins' => (int) $p['realWins'],
-            'played' => count($p['opponents'] ?? []), // gerçek oynanan maç (= realWins + gerçek mağlubiyet)
+            'played' => (int) ($p['played'] ?? count($p['opponents'] ?? [])), // gerçek oynanan maç (eski kayıt: ~distinct)
             'byes' => (int) $p['byes'],
             'averaj' => self::pointDiff($p),           // gerçek maçlarda alınan − verilen
             'lives' => self::remainingLives($p),
@@ -737,7 +740,7 @@ class SwissEngine
             'losses' => (int) $p['losses'],
             'wins' => (int) $p['wins'],
             'realWins' => (int) $p['realWins'],
-            'played' => count($p['opponents'] ?? []),
+            'played' => (int) ($p['played'] ?? count($p['opponents'] ?? [])),
             'byes' => (int) $p['byes'],
             'averaj' => self::pointDiff($p),
             'lives' => self::remainingLives($p),
