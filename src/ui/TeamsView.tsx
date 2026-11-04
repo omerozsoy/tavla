@@ -3,6 +3,7 @@ import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import {
   acceptTeamInvite,
   acceptTeamMatch,
@@ -90,16 +91,16 @@ export default function TeamsView(props: Props) {
   }, [t])
 
   return (
-    <div className="teams-view" style={{ maxWidth: 980, margin: '0 auto', padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <button className="icon-btn" onClick={props.onClose} aria-label={t('common.close')}>
-          <Icon name="x" />
-        </button>
-        <h1 style={{ margin: 0, color: 'var(--med-terracotta-dark, #A83A2B)', fontSize: 22 }}>{t('teams.title')}</h1>
-      </div>
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      <div className="register-card teams-card" onClick={(e) => e.stopPropagation()}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={props.onClose} aria-label={t('common.close')}>
+          <Icon name="x" size={16} />
+        </Button>
+        <Breadcrumb items={[homeCrumb(t), { name: t('teams.title') }]} />
+        <h2><Icon name="users-group" size={20} /> {t('teams.title')}</h2>
 
       {notice && (
-        <div className="teams-notice" style={{ background: '#2b2b2b', padding: '8px 12px', borderRadius: 8, marginBottom: 10 }}
+        <div className="teams-notice" style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', borderRadius: 2, marginBottom: 10, cursor: 'pointer' }}
           onClick={() => setNotice(null)}>{notice}</div>
       )}
 
@@ -107,11 +108,9 @@ export default function TeamsView(props: Props) {
         <>
           <nav style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
             {(['overview', 'monthly', 'myteam', 'rules'] as Tab[]).map((k) => (
-              <button key={k} onClick={() => setTab(k)}
-                className={tab === k ? 'tab active' : 'tab'}
-                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #444', background: tab === k ? 'var(--med-terracotta-dark, #A83A2B)' : 'transparent', color: '#fff', cursor: 'pointer' }}>
+              <Button key={k} variant={tab === k ? 'default' : 'outline'} onClick={() => setTab(k)}>
                 {t('teams.tab.' + k)}
-              </button>
+              </Button>
             ))}
           </nav>
           {tab === 'overview' && <Overview {...props} go={go} setNotice={setNotice} errText={errText} />}
@@ -126,6 +125,7 @@ export default function TeamsView(props: Props) {
         <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'home' })}
           onEnterRoom={props.onEnterRoom} setNotice={setNotice} errText={errText} />
       )}
+      </div>
     </div>
   )
 }
@@ -164,7 +164,7 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
       )}
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('teams.search')}
-          style={{ flex: 1, padding: 8, borderRadius: 8, border: '1px solid #444', background: '#1b1b1b', color: '#fff' }} />
+          style={{ flex: 1 }} />
         <Button onClick={search}>{t('teams.search')}</Button>
       </div>
       {results !== null ? (
@@ -172,18 +172,18 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
       ) : ranking.length === 0 ? (
         // Hiç takım yok: açıklama + kur düğmesi. Girişli uygun kullanıcıya üstteki CreateTeam
         // kutusu zaten düğmeyi verir; misafire burada giriş-kapılı "Takım Kur" düğmesi gösterilir.
-        <div style={{ textAlign: 'center', padding: '28px 12px', opacity: 0.9 }}>
-          <div style={{ fontSize: 15, marginBottom: 12 }}>{t('teams.noneYet')}</div>
+        <div className="lb-empty">
+          <div style={{ marginBottom: 12 }}>{t('teams.noneYet')}</div>
           {!props.myId && <Button onClick={props.onRequireLogin}>{t('teams.create')}</Button>}
         </div>
       ) : (
         <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left', opacity: 0.7 }}>
+          <thead><tr>
             <th>#</th><th>{t('teams.team')}</th><th>{t('teams.avg')}</th><th>{t('teams.members')}</th>
           </tr></thead>
           <tbody>
             {ranking.map((r) => (
-              <tr key={r.id} style={{ borderTop: '1px solid #333', cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.id })}>
+              <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.id })}>
                 <td>{r.rank}</td><td><TeamChip team={r} /></td><td>{r.rating_avg.toFixed(1)}</td><td>{r.member_count}</td>
               </tr>
             ))}
@@ -204,14 +204,14 @@ function CreateTeam(props: { eligibility: TeamMe['eligibility']; onRequirePremiu
 
   if (!el.can_create) {
     return (
-      <div style={{ background: '#222', padding: 12, borderRadius: 8, marginBottom: 14, fontSize: 14 }}>
+      <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', padding: 12, borderRadius: 8, marginBottom: 14, fontSize: 14 }}>
         {t('teams.create.requirements', { cost: el.found_cost.toLocaleString(), rated: el.min_rated })}
         {!el.premium && <div style={{ marginTop: 6 }}><Button onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button></div>}
       </div>
     )
   }
   return (
-    <div style={{ background: '#222', padding: 12, borderRadius: 8, marginBottom: 14 }}>
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', padding: 12, borderRadius: 8, marginBottom: 14 }}>
       {!open ? (
         <Button onClick={() => setOpen(true)}>{t('teams.create')} ({el.found_cost.toLocaleString()} 🪙)</Button>
       ) : (
@@ -259,13 +259,13 @@ function Monthly(props: { go: (v: View) => void }) {
           {[month, ...months.filter((m) => m !== month)].map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr style={{ textAlign: 'left', opacity: 0.7 }}>
+      <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead><tr>
           <th>#</th><th>{t('teams.team')}</th><th>{t('teams.points')}</th><th>{t('teams.diff')}</th><th>{t('teams.wins')}</th><th>{t('teams.played')}</th>
         </tr></thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.team?.id ?? r.rank} style={{ borderTop: '1px solid #333', cursor: r.team ? 'pointer' : 'default' }}
+            <tr key={r.team?.id ?? r.rank} style={{ cursor: r.team ? 'pointer' : 'default' }}
               onClick={() => r.team && props.go({ kind: 'team', id: r.team.id })}>
               <td>{r.rank}</td><td>{r.team ? <TeamChip team={r.team} /> : '—'}</td>
               <td>{r.points}</td><td>{r.match_diff}</td><td>{r.team_wins}</td><td>{r.played}</td>
@@ -417,7 +417,7 @@ function AcceptTransferMaybe(props: { teamId: number; setNotice: (s: string) => 
   const { t } = useT()
   const [busy, setBusy] = useState(false)
   return (
-    <details style={{ background: '#222', padding: 8, borderRadius: 8 }}>
+    <details style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', padding: 8, borderRadius: 8 }}>
       <summary style={{ cursor: 'pointer' }}>{t('teams.transferAccept')}</summary>
       <Button disabled={busy} style={{ marginTop: 6 }} onClick={async () => {
         setBusy(true)
@@ -500,7 +500,7 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
   return (
     <section>
       <h3>{t('teams.chat')}</h3>
-      <div style={{ maxHeight: 200, overflowY: 'auto', background: '#1b1b1b', borderRadius: 8, padding: 8 }}>
+      <div style={{ maxHeight: 200, overflowY: 'auto', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 8 }}>
         {msgs.map((m) => (
           <div key={m.id} style={{ marginBottom: 4 }}>
             {m.pinned && <Icon name="pin" />} <b>{m.user?.nickname ?? '—'}:</b> {m.body}
@@ -665,6 +665,6 @@ function TeamList(props: { teams: TeamBrief[]; onOpen: (id: number) => void }) {
   )
 }
 
-const inp: React.CSSProperties = { padding: 8, borderRadius: 8, border: '1px solid #444', background: '#1b1b1b', color: '#fff', flex: 1 }
+const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: 2, border: '1px solid var(--btn-border)', background: 'var(--input-bg)', color: 'var(--text)', flex: 1 }
 const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', borderTop: '1px solid #2a2a2a' }
-const tagStyle: React.CSSProperties = { display: 'inline-block', padding: '1px 6px', borderRadius: 6, background: '#333', fontSize: 12, fontWeight: 700, marginRight: 4 }
+const tagStyle: React.CSSProperties = { display: 'inline-block', padding: '1px 6px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 700, marginRight: 4 }

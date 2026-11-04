@@ -21066,6 +21066,49 @@ body:has(.spectate-view) .app.lobby {
   max-height: 88vh;
   overflow-y: auto;
 }
+
+/* ===== Türkiye Online Tavla Ligi + Takımlar Ligi — standart sayfa kartı (Swiss/terracotta) =====
+   LeagueView / TeamsView, Turnuvalar & Liderlik ile ayni modal-sayfa kabugunu (.register-card)
+   kullanir; register-card'in 380px cap'ini tablolar icin ezer, kart-ici tablolara ortak gorunum. */
+.league-card,
+.teams-card {
+  width: 100%;
+  max-width: 820px;
+  text-align: left;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.league-card .register-sub {
+  margin-top: -4px;
+}
+/* Kart-ici standings / takim siralama tablosu (Liderlik estetigiyle uyumlu, token-tabanli) */
+.teams-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.teams-table th {
+  text-align: left;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.teams-table td {
+  padding: 9px 10px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+.teams-table tbody tr {
+  transition: background 0.12s ease;
+}
+.teams-table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
 /* ===== Turnuva detay redesign: alt-satir + hero ozet band ===== */
 .tourn-subline {
   display: flex;

@@ -3,6 +3,7 @@ import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import {
   applyToLeague,
   confirmLeagueTime,
@@ -148,23 +149,19 @@ export default function LeagueView(props: Props) {
       props.onEnterRoom(r.code, r.target)
     })
 
-  if (loading) return <Loading />
-
   const season = detail?.season ?? active
   const S = (k: string) => t('league.status.' + k)
 
   return (
-    <div className="league-view" style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <Icon name="trophy" size={28} />
-        <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 22 }}>{t('league.title')}</h1>
-          <div style={{ opacity: 0.7, fontSize: 13 }}>{t('league.subtitle')}</div>
-        </div>
-        <Button variant="ghost" size="icon" onClick={props.onClose} aria-label="close">
-          <Icon name="x" size={20} />
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      <div className="register-card league-card" onClick={(e) => e.stopPropagation()}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={props.onClose} aria-label={t('common.close')}>
+          <Icon name="x" size={16} />
         </Button>
-      </div>
+        <Breadcrumb items={[homeCrumb(t), { name: t('league.title') }]} />
+        <h2><Icon name="laurel-wreath" size={20} /> {t('league.title')}</h2>
+        <p className="register-sub">{t('league.subtitle')}</p>
+        {loading ? <Loading /> : <>
 
       {!season && <div style={cardStyle}>{t('league.noActive')}</div>}
 
@@ -242,6 +239,8 @@ export default function LeagueView(props: Props) {
           ))}
         </div>
       )}
+        </>}
+      </div>
     </div>
   )
 }
@@ -251,7 +250,7 @@ function Participants({ parts, onProfile }: { parts?: { accepted: LeagueUserBrie
   if (!parts || (parts.accepted.length === 0 && parts.reserve.length === 0)) return null
   const chip = (u: LeagueUserBrief) => (
     <span key={u.id} onClick={() => onProfile?.(u.id)}
-      style={{ ...badgeStyle, background: '#f1f5f9', color: '#0f172a', cursor: onProfile ? 'pointer' : 'default' }}>
+      style={{ ...badgeStyle, background: 'color-mix(in srgb, var(--text) 7%, transparent)', color: 'var(--text)', cursor: onProfile ? 'pointer' : 'default' }}>
       {u.nickname} · {u.rating}
     </span>
   )
@@ -441,8 +440,8 @@ function Rules({ prizes }: { prizes: Array<{ key: string; coins?: number; badge?
   )
 }
 
-const cardStyle: CSSProperties = { background: 'var(--card,#fff)', border: '1px solid #e5e7eb', borderRadius: 10, padding: 12, marginBottom: 8 }
-const badgeStyle: CSSProperties = { background: '#eef2ff', color: '#3730a3', borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 600 }
-const tableStyle: CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 14 }
-const thStyle: CSSProperties = { textAlign: 'left', padding: '6px 8px', borderBottom: '2px solid #e5e7eb', opacity: 0.7, fontSize: 12 }
-const tdStyle: CSSProperties = { padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }
+const cardStyle: CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 2, padding: '12px 14px', marginBottom: 8 }
+const badgeStyle: CSSProperties = { display: 'inline-block', background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)', borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 600, letterSpacing: '0.02em' }
+const tableStyle: CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }
+const thStyle: CSSProperties = { textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--border)', color: 'var(--muted)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 500 }
+const tdStyle: CSSProperties = { padding: '9px 10px', borderBottom: '1px solid var(--border)' }
