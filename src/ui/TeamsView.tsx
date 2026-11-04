@@ -28,9 +28,11 @@ import {
   promoteTeamMember,
   readyTeamMatch,
   renameTeam,
+  searchLeaderboard,
   setTeamLineup,
   transferTeam,
   updateTeamIdentity,
+  type LeaderRow,
   type TeamBrief,
   type TeamDetail,
   type TeamMe,
@@ -66,6 +68,14 @@ function parsePath(p: string | null): View {
   if (seg[0] === 'takim' && id) return { kind: 'team', id }
   if (seg[0] === 'mac' && id) return { kind: 'match', id }
   return { kind: 'home' }
+}
+
+// Türkçe tarih: gün.ay.yıl saat:dk (ör. 05.11.2026 19:30). Geçersiz/boş → '—'.
+function fmtTR(s?: string | null): string {
+  if (!s) return '—'
+  const d = new Date(s)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function TeamsView(props: Props) {
@@ -490,33 +500,71 @@ function AcceptTransferMaybe(props: { teamId: number; setNotice: (s: string) => 
 
 function InviteBox(props: { teamId: number; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean }) {
   const { t } = useT()
-  const [uid, setUid] = useState('')
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<LeaderRow[]>([])
+  const [searching, setSearching] = useState(false)
+  const search = async () => {
+    if (!q.trim()) { setResults([]); return }
+    setSearching(true)
+    try { setResults(((await searchLeaderboard(q.trim(), 'rating')) as LeaderRow[]).filter((u) => u.id)) }
+    catch { setResults([]) } finally { setSearching(false) }
+  }
   return (
     <section>
       <h3>{t('teams.invite')}</h3>
+      {/* ID yerine ad ile ara → listeden davet et. */}
       <div style={{ display: 'flex', gap: 6 }}>
-        <input value={uid} onChange={(e) => setUid(e.target.value)} placeholder={t('teams.userId')} style={inp} />
-        <Button disabled={props.busy || !uid} onClick={() => props.act(() => inviteToTeam(props.teamId, parseInt(uid, 10)), t('teams.invited'))}>{t('teams.invite')}</Button>
+        <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search() }} placeholder={t('teams.searchUser')} style={inp} />
+        <Button variant="outline" disabled={searching || !q.trim()} onClick={search}>{t('teams.search')}</Button>
       </div>
+      {results.length > 0 && (
+        <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
+          {results.map((u) => (
+            <div key={u.id} style={row}>
+              <span>{u.name} <span style={{ opacity: 0.6 }}>· {u.rating}</span></span>
+              <span style={{ flex: 1 }} />
+              <Button disabled={props.busy} onClick={() => { props.act(() => inviteToTeam(props.teamId, u.id!), t('teams.invited')); setResults([]); setQ('') }}>{t('teams.invite')}</Button>
+            </div>
+          ))}
+        </div>
+      )}
+      {!searching && q.trim() !== '' && results.length === 0 && <div style={{ opacity: 0.6, fontSize: 13, marginTop: 6 }}>{t('teams.noResults')}</div>}
     </section>
   )
 }
 
 function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean }) {
   const { t } = useT()
+  const [editing, setEditing] = useState(false)
   const [desc, setDesc] = useState(props.detail?.team.description ?? '')
   const [open, setOpen] = useState(props.detail?.team.applications_open ?? true)
   const [name, setName] = useState('')
   const [tag, setTag] = useState('')
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
   const id = props.detail?.team.id
   if (!id) return null
+  // Varsayılan: "Düzenle" düğmesi. Tıkla → ad/etiket/logo/açıklama düzenleme açılır.
+  if (!editing) {
+    return <Button variant="outline" onClick={() => setEditing(true)}>{t('teams.edit')}</Button>
+  }
+  const onLogoFile = (file?: File) => {
+    if (!file) return
+    const r = new FileReader()
+    r.onload = () => { if (typeof r.result === 'string') setCropSrc(r.result) }
+    r.readAsDataURL(file)
+  }
   return (
     <section>
       <h3>{t('teams.identity')}</h3>
-      <div style={{ display: 'grid', gap: 6 }}>
+      <div style={{ display: 'grid', gap: 8 }}>
         <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('teams.desc')} maxLength={500} style={{ ...inp, minHeight: 60 }} />
         <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input type="checkbox" checked={open} onChange={(e) => setOpen(e.target.checked)} /> {t('teams.applicationsOpen')}
+        </label>
+        {/* Logo güncelle (avatar gibi kırp → admin onayına) */}
+        <label className="teams-logo-upload" style={{ alignSelf: 'flex-start' }}>
+          <input type="file" accept="image/*" onChange={(e) => { onLogoFile(e.target.files?.[0]); e.currentTarget.value = '' }} hidden />
+          <Icon name="users-group" size={16} /> {t('teams.logoUpdate')}
         </label>
         <Button disabled={props.busy} onClick={() => props.act(() => updateTeamIdentity(id, { description: desc, applications_open: open }), t('teams.saved'))}>{t('teams.save')}</Button>
         <hr style={{ opacity: 0.2 }} />
@@ -526,26 +574,64 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
           <input value={tag} onChange={(e) => setTag(e.target.value)} placeholder={t('teams.tag')} maxLength={5} style={inp} />
           <Button disabled={props.busy || (!name && !tag)} onClick={() => props.act(() => renameTeam(id, name || null, tag || null), t('teams.renamed'))}>{t('teams.rename')}</Button>
         </div>
+        <Button variant="ghost" onClick={() => setEditing(false)}>{t('teams.cancel')}</Button>
       </div>
+      {cropSrc && (
+        <AvatarCropper src={cropSrc} size={256}
+          onApply={(d) => { setCropSrc(null); props.act(() => updateTeamIdentity(id, { logo_upload: d }), t('teams.logoPending')) }}
+          onCancel={() => setCropSrc(null)} />
+      )}
     </section>
   )
 }
 
 function ChallengeBox(props: { teamId: number; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean }) {
   const { t } = useT()
-  const [opp, setOpp] = useState('')
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState<TeamBrief[]>([])
+  const [picked, setPicked] = useState<TeamBrief | null>(null)
   const [at, setAt] = useState('')
+  const [searching, setSearching] = useState(false)
+  const search = async () => {
+    if (!q.trim()) { setResults([]); return }
+    setSearching(true)
+    try { setResults(((await getTeams(q.trim())).results ?? []).filter((tm) => tm.id !== props.teamId)) }
+    catch { setResults([]) } finally { setSearching(false) }
+  }
   return (
     <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
       <div style={{ fontSize: 13, opacity: 0.7 }}>{t('teams.challenge.hint')}</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <input value={opp} onChange={(e) => setOpp(e.target.value)} placeholder={t('teams.opponentId')} style={inp} />
-        <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} style={inp} />
-        <Button disabled={props.busy || !opp || !at}
-          onClick={() => props.act(() => challengeTeam(props.teamId, parseInt(opp, 10), new Date(at).toISOString()), t('teams.challengeSent'))}>
-          {t('teams.challenge')}
-        </Button>
-      </div>
+      {/* ID yerine takım ara → seç → tarih belirle. */}
+      {!picked ? (
+        <>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search() }} placeholder={t('teams.searchOpponent')} style={inp} />
+            <Button variant="outline" disabled={searching || !q.trim()} onClick={search}>{t('teams.search')}</Button>
+          </div>
+          {results.map((tm) => (
+            <div key={tm.id} style={row}>
+              <TeamChip team={tm} /><span style={{ flex: 1 }} />
+              <Button variant="outline" onClick={() => { setPicked(tm); setResults([]) }}>{t('teams.challenge')}</Button>
+            </div>
+          ))}
+          {!searching && q.trim() !== '' && results.length === 0 && <div style={{ opacity: 0.6, fontSize: 13 }}>{t('teams.noResults')}</div>}
+        </>
+      ) : (
+        <div style={{ display: 'grid', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <TeamChip team={picked} />
+            <Button variant="ghost" onClick={() => setPicked(null)}>✕</Button>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} style={inp} aria-label={t('teams.pickTime')} />
+            {at && <span style={{ fontSize: 13, opacity: 0.7 }}>{fmtTR(at)}</span>}
+            <Button disabled={props.busy || !at}
+              onClick={() => props.act(() => challengeTeam(props.teamId, picked.id, new Date(at).toISOString()), t('teams.challengeSent'))}>
+              {t('teams.challenge')}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -560,13 +646,18 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
   return (
     <section>
       <h3>{t('teams.chat')}</h3>
-      <div style={{ maxHeight: 200, overflowY: 'auto', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 8 }}>
+      <div className="teams-chat-box">
         {msgs.map((m) => (
-          <div key={m.id} style={{ marginBottom: 4 }}>
-            {m.pinned && <Icon name="pin" />} <b>{m.user?.nickname ?? '—'}:</b> {m.body}
+          <div key={m.id} className="teams-chat-msg">
+            <div className="teams-chat-meta">
+              {m.pinned && <Icon name="pin" size={12} />}
+              <b>{m.user?.nickname ?? '—'}</b>
+              <span className="teams-chat-time">{fmtTR(m.at)}</span>
+            </div>
+            <div className="teams-chat-body">{m.body}</div>
           </div>
         ))}
-        {msgs.length === 0 && <div style={{ opacity: 0.5 }}>{t('teams.chat.empty')}</div>}
+        {msgs.length === 0 && <div style={{ opacity: 0.5, padding: 4 }}>{t('teams.chat.empty')}</div>}
       </div>
       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
         <input value={body} onChange={(e) => setBody(e.target.value)} placeholder={t('teams.chat')} maxLength={1000} style={inp} />
@@ -673,7 +764,7 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
     <div>
       <Button variant="ghost" onClick={props.back}>← {t('common.back')}</Button>
       <h2 style={{ margin: '10px 0' }}>{m.home?.tag} {m.home_score}–{m.away_score} {m.away?.tag}</h2>
-      <div style={{ opacity: 0.6 }}>{m.status} · {m.scheduled_at ? new Date(m.scheduled_at).toLocaleString() : '—'}</div>
+      <div style={{ opacity: 0.6 }}>{m.status} · {fmtTR(m.scheduled_at)}</div>
 
       {/* Proposed → kabul/iptal */}
       {m.status === 'proposed' && (

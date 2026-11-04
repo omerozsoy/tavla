@@ -21296,6 +21296,19 @@ body:has(.spectate-view) .app.lobby {
   border-radius: 10px; object-fit: cover;
   border: 1px solid var(--border);
 }
+
+/* Takım sohbeti — daha büyük pencere + okunur satırlar */
+.teams-chat-box {
+  max-height: 340px; overflow-y: auto;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.teams-chat-msg { display: flex; flex-direction: column; gap: 2px; }
+.teams-chat-msg + .teams-chat-msg { border-top: 1px solid var(--border); padding-top: 8px; }
+.teams-chat-meta { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text); }
+.teams-chat-time { margin-left: auto; font-size: 0.72rem; color: var(--muted); }
+.teams-chat-body { font-size: 0.92rem; line-height: 1.45; color: var(--text); word-break: break-word; white-space: pre-wrap; }
 .teams-create-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 /* ===== Turnuva detay redesign: alt-satir + hero ozet band ===== */

@@ -198,9 +198,16 @@ class TeamController extends Controller
             'description' => ['sometimes', 'nullable', 'string', 'max:500'],
             'logo_preset' => ['sometimes', 'string', 'max:255'],   // hazır logo → anında
             'logo_pending' => ['sometimes', 'nullable', 'string', 'max:255'], // yüklenen → admin onayı
+            'logo_upload' => ['sometimes', 'nullable', 'string'],  // base64 yüklenen görsel → logo_pending
             'applications_open' => ['sometimes', 'boolean'],
             'min_apply_rating' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:4000'],
         ]);
+
+        // Yüklenen logo: base64 → WebP URL, admin onayına kadar logo_pending.
+        if (! empty($data['logo_upload'])) {
+            $data['logo_pending'] = AvatarStore::store($data['logo_upload']);
+        }
+        unset($data['logo_upload']);
 
         return $this->guard(fn () => response()->json([
             'team' => $this->teamBrief($this->svc->updateIdentity($request->user(), $team, $data)),
