@@ -196,7 +196,7 @@ class MatchBackstop
                 MatchResult::create($row); // yarış -> UniqueConstraintViolation -> tx rollback (Elo geri alınır)
 
                 return true;
-            });
+            }, 3); // deadlock (1213) kurbanı olursa 3 kez yeniden dene — sıcak settlement çekişmesi geçicidir
         } catch (UniqueConstraintViolationException $e) {
             // Gerçek yarış: aynı anda istemci raporu / başka sweep satırı yazdı. Transaction
             // geri alındı -> rating TEKRAR uygulanmadı; istemcinin (zengin) satırı korunur.
