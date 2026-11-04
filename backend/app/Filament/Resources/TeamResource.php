@@ -9,6 +9,7 @@ use App\Models\TeamMember;
 use App\Models\User;
 use App\Support\TeamLeague\TeamException;
 use App\Support\TeamLeague\TeamService;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
@@ -50,6 +51,30 @@ class TeamResource extends Resource
     {
         return $table
             ->defaultSort('id', 'desc')
+            ->headerActions([
+                // Admin takım kurar (§12): Premium/puanlı-maç/coin ŞARTI YOK. Seçilen kurucu başka
+                // takımda olmamalı (adminCreateTeam kontrol eder); ad/etiket benzersizliği korunur.
+                Tables\Actions\Action::make('adminCreate')->label('Takım Kur (Admin)')
+                    ->icon('heroicon-o-plus')->color('primary')
+                    ->modalWidth('lg')
+                    ->form([
+                        Forms\Components\Select::make('founder_id')->label('Kurucu (kullanıcı)')
+                            ->required()->searchable()
+                            ->getSearchResultsUsing(fn (string $search) => User::where('nickname', 'like', "%{$search}%")->orderBy('nickname')->limit(30)->pluck('nickname', 'id'))
+                            ->getOptionLabelUsing(fn ($value) => User::whereKey($value)->value('nickname')),
+                        Forms\Components\TextInput::make('name')->label('Takım adı')->required()->minLength(3)->maxLength(40),
+                        Forms\Components\TextInput::make('tag')->label('Etiket')->required()->minLength(2)->maxLength(10),
+                        Forms\Components\ColorPicker::make('color1')->label('Ana renk')->default('#A83A2B'),
+                        Forms\Components\ColorPicker::make('color2')->label('İkincil renk')->default('#1f2933'),
+                        Forms\Components\Textarea::make('description')->label('Açıklama')->maxLength(500),
+                    ])
+                    ->action(function (array $data) {
+                        self::run(function () use ($data) {
+                            $founder = User::findOrFail($data['founder_id']);
+                            app(TeamService::class)->adminCreateTeam($founder, $data);
+                        }, 'Takım kuruldu.');
+                    }),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('tag')->label('Etiket')->badge()->searchable(),
                 Tables\Columns\TextColumn::make('name')->label('Ad')->searchable()->limit(30),
