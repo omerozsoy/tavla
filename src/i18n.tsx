@@ -262,7 +262,36 @@ const TR: Dict = {
   'teams.err.team_full': 'Takım dolu.',
   'teams.err.too_many_applications': 'En fazla 3 açık başvuru.',
   'teams.err.rename_cooldown': 'İsim değişimi için 30 gün beklemelisin.',
-  'teams.rules.body': 'Takım kur (Premium + 20 puanlı maç + 50.000 coin), 24 kişiye kadar üye al, 5’e 5 karşılaşmalara çık. Takım puanı üyelerin rating ortalamasıdır (sıralama için en az 8 üye). Aylık meydan okumalarda galibiyet 3, beraberlik 1 puandır; ilk üçe kupa, şampiyona rozet.',
+  'teams.rules.body':
+    'Takım kurma\n' +
+    '• Premium üyelik + en az 20 tamamlanmış puanlı maç + 50.000 coin gerekir; coin yalnız kuruluş başarılı olursa bir kez kesilir.\n' +
+    '• Takım adı 3-30, etiket 2-5 karakter (harf/rakam) ve benzersiz olmalıdır.\n' +
+    '• Bir kişi aynı anda yalnızca tek takımda olabilir. Ayrılma, çıkarılma, Premium bitişi veya takım kapanması sonrası 72 saat yeni takıma giremezsin.\n' +
+    '• Ad/etiket değişikliği yalnız kurucuya aittir: 10.000 coin + 30 gün bekleme.\n\n' +
+    'Üyelik ve roller\n' +
+    '• Takım kurucu dahil en fazla 24 üye alır.\n' +
+    '• Roller: 1 kurucu + en fazla 2 yardımcı. Yöneticiler (kurucu + yardımcılar) maç ve kadro işlerini yürütür.\n' +
+    '• Aynı anda en fazla 3 açık başvurun olabilir.\n' +
+    '• Kurucu 60 gün giriş yapmazsa kuruluş otomatik devredilir.\n\n' +
+    'Karşılaşmalar (5’e 5)\n' +
+    '• Yöneticiler meydan okur, karşı takımın yöneticisi onaylar. Onay anında başlangıca en az 1 saat olmalıdır.\n' +
+    '• Takım başına aynı anda en fazla 3 onaylı maç; aynı iki takım bir maç bittikten sonra 72 saat tekrar oynayamaz.\n' +
+    '• İptal: onaydan sonra karşılıklı rıza gerekir. Kadro kilitlendiyse veya başlangıca 1 saatten az kaldıysa yalnız yönetim iptal edebilir.\n\n' +
+    'Kadro\n' +
+    '• Her takım 5 oyunculuk kadro belirler; kadro gizlidir, kilide kadar rakibe görünmez.\n' +
+    '• Kadro başlangıçtan 10 dk önce kilitlenir. Kilit anında her oyuncu takım üyesi + aktif Premium olmalıdır.\n' +
+    '• Beş geçerli oyuncusu olmayan takım karşılaşmayı hükmen kaybeder (0-5); iki taraf da eksikse maç iptal edilir.\n\n' +
+    'Oyun ve hazır olma\n' +
+    '• Kilit sonrası her oyuncu maç saatinde “Hazırım” der. İki taraf hazır olunca 5 puanlık oda açılır.\n' +
+    '• Maç saatinden 5 dk sonra gelmeyen oyuncu o oyunu hükmen kaybeder; iki taraf da gelmezse oyun berabere sayılır.\n' +
+    '• Hükmen ve oynanmayan oyunlar bireysel rating’i etkilemez; yalnız gerçekten oynanan oyunlar rating’e işler.\n\n' +
+    'Puan ve sıralama\n' +
+    '• Her oyun: galibiyet 1, beraberlik ½, mağlubiyet 0 → beş oyunun toplamı takım skorudur.\n' +
+    '• Kalıcı sıralamada takım puanı üyelerin rating ortalamasıdır; sıralamaya girmek için en az 8 üye gerekir.\n\n' +
+    'Aylık lig\n' +
+    '• Maç sonucu: galibiyet 3, beraberlik 1, mağlubiyet 0 puan. Hiçbir oyuncunun gelmediği maç çift hükmendir (iki tarafa da 0).\n' +
+    '• Eşitlikte sırasıyla: puan, skor farkı, galibiyet sayısı.\n' +
+    '• Ay sonunda ilk üçe kupa; şampiyona ayrıca bir ay boyunca şampiyon rozeti verilir.',
 
   // Türkiye Online Tavla Ligi (bağımsız modül §1)
   'menu.group.league': 'Tavla Ligi',
@@ -2433,7 +2462,36 @@ const EN: Dict = {
   'teams.err.team_full': 'Team is full.',
   'teams.err.too_many_applications': 'Up to 3 open applications.',
   'teams.err.rename_cooldown': 'You must wait 30 days to rename.',
-  'teams.rules.body': 'Create a team (Premium + 20 rated matches + 50,000 coins), recruit up to 24 members, and play 5-v-5 matches. Team rating is the members’ average rating (ranking needs at least 8 members). In monthly challenges a win is 3 points, a draw 1; top three earn cups, the champion a badge.',
+  'teams.rules.body':
+    'Creating a team\n' +
+    '• Requires Premium + at least 20 completed rated matches + 50,000 coins; coins are charged once, only if creation succeeds.\n' +
+    '• Team name 3-30, tag 2-5 characters (letters/digits), and must be unique.\n' +
+    '• A person can be in only one team at a time. After leaving, being removed, Premium expiring, or the team closing you cannot join a new team for 72 hours.\n' +
+    '• Name/tag changes belong to the founder only: 10,000 coins + 30-day cooldown.\n\n' +
+    'Membership and roles\n' +
+    '• A team holds up to 24 members including the founder.\n' +
+    '• Roles: 1 founder + up to 2 assistants. Managers (founder + assistants) handle matches and lineups.\n' +
+    '• You can have at most 3 open applications at a time.\n' +
+    '• If the founder does not log in for 60 days, leadership is transferred automatically.\n\n' +
+    'Matches (5-v-5)\n' +
+    '• Managers issue the challenge, the opposing team’s manager accepts. At acceptance there must be at least 1 hour until start.\n' +
+    '• At most 3 confirmed matches per team at once; the same two teams cannot replay for 72 hours after a match ends.\n' +
+    '• Cancellation: after acceptance requires mutual consent. Once the lineup is locked or less than 1 hour remains, only admins can cancel.\n\n' +
+    'Lineup\n' +
+    '• Each team sets a 5-player lineup; it is secret and hidden from the opponent until lock.\n' +
+    '• The lineup locks 10 minutes before start. At lock each player must be a team member + active Premium.\n' +
+    '• A team without five valid players loses the match by forfeit (0-5); if both sides fall short the match is cancelled.\n\n' +
+    'Play and readiness\n' +
+    '• After lock each player taps “Ready” at match time. When both sides are ready a 5-point room opens.\n' +
+    '• A player who is absent 5 minutes after start forfeits that game; if both sides are absent the game is a draw.\n' +
+    '• Forfeited and unplayed games do not affect individual rating; only genuinely played games count toward rating.\n\n' +
+    'Scoring and ranking\n' +
+    '• Each game: win 1, draw ½, loss 0 → the sum of five games is the team score.\n' +
+    '• In the permanent ranking the team score is the members’ average rating; a team needs at least 8 members to rank.\n\n' +
+    'Monthly league\n' +
+    '• Match result: win 3, draw 1, loss 0 points. A match where no one shows up is a double forfeit (0 to both).\n' +
+    '• Ties are broken by, in order: points, score difference, number of wins.\n' +
+    '• At month end the top three earn cups; the champion also gets a champion badge for one month.',
 
   // Turkey Online Backgammon League (independent module §1)
   'menu.group.league': 'Backgammon League',
