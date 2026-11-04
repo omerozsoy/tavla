@@ -2706,6 +2706,8 @@ export async function matchPr(
 ): Promise<{
   self: number | null
   opponent: number | null
+  self_settled?: boolean // analiz KESİN bitti mi (PR çıksa da çıkmasa da — mezar taşı)
+  opponent_settled?: boolean // rakip analizi bitti mi -> null+settled = kalıcı "—" (loader durdur)
   checker_self?: number | null // XG kirilimi: pul-yalniz PR
   cube_self?: number | null // XG kirilimi: kup-yalniz PR (kup karari yoksa null)
   checker_opponent?: number | null

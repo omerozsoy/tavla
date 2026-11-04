@@ -146,8 +146,11 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getTeams().then((r) => setRanking(r.ranking ?? [])).catch(() => {}).finally(() => setLoading(false))
-    if (props.myId) getMyTeam().then(setMe).catch(() => {})
+    void (async () => {
+      try { setRanking((await getTeams()).ranking ?? []) } catch { /* ağ */ }
+      if (props.myId) { try { setMe(await getMyTeam()) } catch { /* takımsız/ağ */ } }
+      setLoading(false)
+    })()
   }, [props.myId])
 
   const search = async () => {
@@ -158,8 +161,11 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   if (loading) return <Loading />
   return (
     <div>
-      {props.myId && me && !me.membership && (
-        <CreateTeam eligibility={me.eligibility} onRequirePremium={props.onRequirePremium}
+      {/* "Takım Kur" HER ZAMAN görünür (takımda olanlar hariç). Tıkla: misafir→giriş,
+          uygun değil→şartlar, uygun→form. */}
+      {!me?.membership && (
+        <CreateTeam myId={props.myId} eligibility={me?.eligibility ?? null}
+          onRequireLogin={props.onRequireLogin} onRequirePremium={props.onRequirePremium}
           setNotice={props.setNotice} errText={props.errText} />
       )}
       {me?.membership && (
@@ -180,12 +186,8 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
       {results !== null ? (
         <TeamList teams={results} onOpen={(id) => props.go({ kind: 'team', id })} />
       ) : ranking.length === 0 ? (
-        // Hiç takım yok: açıklama + kur düğmesi. Girişli uygun kullanıcıya üstteki CreateTeam
-        // kutusu zaten düğmeyi verir; misafire burada giriş-kapılı "Takım Kur" düğmesi gösterilir.
-        <div className="lb-empty">
-          <div style={{ marginBottom: 12 }}>{t('teams.noneYet')}</div>
-          {!props.myId && <Button onClick={props.onRequireLogin}>{t('teams.create')}</Button>}
-        </div>
+        // Hiç takım yok: "Takım Kur" CTA'sı zaten üstte her zaman görünür.
+        <div className="lb-empty">{t('teams.noneYet')}</div>
       ) : (
         <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>
@@ -204,7 +206,7 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   )
 }
 
-function CreateTeam(props: { eligibility: TeamMe['eligibility']; onRequirePremium: () => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
+function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibility'] | null; onRequireLogin: () => void; onRequirePremium: () => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -216,21 +218,10 @@ function CreateTeam(props: { eligibility: TeamMe['eligibility']; onRequirePremiu
   const [busy, setBusy] = useState(false)
   const el = props.eligibility
 
-  if (!el.can_create) {
-    return (
-      <div className="teams-gate">
-        <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
-        <div>
-          <div className="teams-gate-title">{t('teams.createTitle')}</div>
-          <div className="teams-gate-text">{t('teams.create.requirements', { cost: el.found_cost.toLocaleString(), rated: el.min_rated })}</div>
-          {!el.premium && <Button style={{ marginTop: 8 }} onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
-        </div>
-      </div>
-    )
-  }
+  // Kapalı: "Takım Kur" CTA'sı HER ZAMAN görünür. Tıkla: misafir→giriş, girişliyse form/şartlar açılır.
   if (!open) {
     return (
-      <button className="teams-create-cta" onClick={() => setOpen(true)}>
+      <button className="teams-create-cta" onClick={() => (props.myId ? setOpen(true) : props.onRequireLogin())}>
         <span className="teams-create-cta-emblem" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
           <Icon name="users-group" size={18} />
         </span>
@@ -238,8 +229,25 @@ function CreateTeam(props: { eligibility: TeamMe['eligibility']; onRequirePremiu
           <strong>{t('teams.create')}</strong>
           <small>{t('teams.createLead')}</small>
         </span>
-        <span className="teams-create-cta-cost">{el.found_cost.toLocaleString()} 🪙</span>
+        {el && <span className="teams-create-cta-cost">{el.found_cost.toLocaleString()} 🪙</span>}
       </button>
+    )
+  }
+
+  // Açık ama uygun değil → şartlar kartı (Premium + puanlı maç + coin).
+  if (!el?.can_create) {
+    return (
+      <div className="teams-gate">
+        <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
+        <div>
+          <div className="teams-gate-title">{t('teams.createTitle')}</div>
+          <div className="teams-gate-text">{t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            {el && !el.premium && <Button onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
+            <Button variant="ghost" onClick={() => setOpen(false)}>{t('teams.cancel')}</Button>
+          </div>
+        </div>
+      </div>
     )
   }
 

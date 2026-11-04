@@ -5472,6 +5472,13 @@ export default function App() {
             setOppPrPending(false)
             return
           }
+          // ANALİZ BİTTİ AMA RAKİP PR YOK (çok kısa/forfeit = karar yok -> mezar taşı). Eskiden settled
+          // bilgisi olmadığından poll 3 DK boyunca dönüp kullanıcıyı "hesaplanıyor"da bekletiyordu
+          // (K2WZU: iki taraf da kısa maç -> opp hücresi 3dk "…"). settled gelince hemen "—"ya düş.
+          if (pair.opponent_settled) {
+            setOppPrPending(false)
+            return
+          }
         } catch {
           /* geçici hata -> tekrar dene */
         }
