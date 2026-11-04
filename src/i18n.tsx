@@ -176,7 +176,7 @@ const TR: Dict = {
   'menu.lessons': 'Nasıl Oynanır?',
   'menu.tournaments': 'Online Turnuvalar',
   // Takımlar Ligi (bağımsız modül §1)
-  'teams.menu': 'Takımlar',
+  'teams.menu': 'Takımlar Ligi',
   'teams.title': 'Takımlar Ligi',
   'teams.tab.overview': 'Genel Sıralama',
   'teams.tab.create': 'Takım Kur',
@@ -2405,7 +2405,7 @@ const EN: Dict = {
   'menu.lessons': 'How to Play',
   'menu.tournaments': 'Online Tournaments',
   // Teams League (independent module §1)
-  'teams.menu': 'Teams',
+  'teams.menu': 'Teams League',
   'teams.title': 'Teams League',
   'teams.tab.overview': 'Rankings',
   'teams.tab.create': 'Create Team',
