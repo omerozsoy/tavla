@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -277,11 +277,7 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
 
       {/* Canlı amblem önizleme (renk + etiket + yüklenen logo) */}
       <div className="teams-create-preview">
-        <div className="teams-emblem teams-emblem-lg" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
-          <div className="teams-emblem-face">
-            {logo ? <img src={logo} alt="" /> : <span>{(tag || '?').slice(0, 5).toUpperCase()}</span>}
-          </div>
-        </div>
+        <TeamEmblem color1={color1} color2={color2} logo={logo || undefined} label={tag} size={76} />
         <div className="teams-create-preview-name">
           <strong>{name || t('teams.name')}</strong>
           <span className="teams-tagchip" style={{ background: color1 }}>{tag ? tag.toUpperCase() : t('teams.tag')}</span>
@@ -818,6 +814,36 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
 }
 
 // ---- Ortak ------------------------------------------------------------------
+// Kalkan (shield) amblem: logo kalkana kırpılır, çerçeve takım renkleri gradyanı (stroke).
+const SHIELD_PATH = 'M50 6 L90 16 Q94 17 94 22 V54 C94 84 76 106 50 116 C24 106 6 84 6 54 V22 Q6 17 10 16 Z'
+function TeamEmblem({ color1, color2, logo, label, size = 72 }: { color1: string; color2: string; logo?: string; label?: string; size?: number }) {
+  const uid = useId().replace(/[:]/g, '')
+  return (
+    <svg viewBox="-6 -6 112 132" width={size} height={Math.round(size * 1.18)}
+      style={{ display: 'block', flexShrink: 0, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.25))' }}>
+      <defs>
+        <linearGradient id={`tg${uid}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={color1} />
+          <stop offset="100%" stopColor={color2} />
+        </linearGradient>
+        <clipPath id={`tc${uid}`}><path d={SHIELD_PATH} /></clipPath>
+      </defs>
+      <g clipPath={`url(#tc${uid})`}>
+        {logo ? (
+          <image href={logo} x="0" y="0" width="100" height="120" preserveAspectRatio="xMidYMid slice" />
+        ) : (
+          <>
+            <rect x="0" y="0" width="100" height="120" fill="#141922" />
+            <text x="50" y="68" textAnchor="middle" fill="#fff" fontSize="34" fontWeight="800"
+              fontFamily="system-ui, sans-serif">{(label || '?').slice(0, 4).toUpperCase()}</text>
+          </>
+        )}
+      </g>
+      <path d={SHIELD_PATH} fill="none" stroke={`url(#tg${uid})`} strokeWidth="7" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function TeamChip(props: { team: TeamBrief; big?: boolean }) {
   const t = props.team
   return (
