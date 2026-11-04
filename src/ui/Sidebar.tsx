@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
 import RoleBadge from './RoleBadge'
+import TeamTag from './TeamTag'
 import { CountryFlag } from './Flag'
 import { useT } from '../i18n'
 
@@ -118,6 +119,8 @@ function Name({ p }: { p: PlayerInfo }) {
       <div className="player-name">
         <RoleBadge userId={p.id} size={24} style={{ marginRight: 4 }} />
         {p.name}
+        {/* Takım etiketi (maç ekranı; site geneli haritadan userId ile). */}
+        <TeamTag userId={p.id} size={12} />
         {p.country && <CountryFlag code={p.country} size={20} className="player-flag" />}
         {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
         {p.onAddFriend && (

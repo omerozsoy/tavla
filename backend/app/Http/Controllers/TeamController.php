@@ -21,6 +21,7 @@ use App\Support\TeamLeague\TeamStandings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Takımlar Ligi API. Sıralama/arama/detay/karşılaşma sayfası HERKESE AÇIK; üyelik/yönetim/maç akışı
@@ -103,6 +104,22 @@ class TeamController extends Controller
     public function matchShow(TeamMatch $match): JsonResponse
     {
         return response()->json(['match' => $this->matchPublic($match)]);
+    }
+
+    /**
+     * Site geneli takım etiketi haritası (userId → tag) — isim yanında [ETİKET] göstermek için (§2).
+     * /roles ile aynı desen: tek harita, frontend her isim-render noktasında overlay eder. 60s cache.
+     * ponytail: tüm aktif üyeleri döndürür; üye sayısı çok büyürse per-görünür-set'e daraltılır.
+     */
+    public function tags(): JsonResponse
+    {
+        $tags = Cache::remember('team_tags_v1', 60, fn () => TeamMember::query()
+            ->join('teams', 'teams.id', '=', 'team_members.team_id')
+            ->where('teams.status', 'active')
+            ->pluck('teams.tag', 'team_members.user_id')
+            ->all());
+
+        return response()->json(['tags' => $tags]);
     }
 
     // ---- Kullanıcı (auth) ----------------------------------------------------

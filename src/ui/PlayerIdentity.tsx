@@ -4,6 +4,7 @@ import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
 import TopRankBadge from './TopRankBadge'
 import RoleBadge from './RoleBadge'
+import TeamTag from './TeamTag'
 import { useOnline } from '../presence'
 import { useRole } from '../roles'
 
@@ -95,6 +96,8 @@ export default function PlayerIdentity({
               Veri site geneli RolesProvider'dan (userId); prop override da kabul eder. */}
           <RoleBadge userId={userId} admin={admin || undefined} support={support || undefined} size={21} className="player-id-role" style={{ marginRight: 4 }} />
           <span className={`player-id-name-text${isAdmin || isSupport ? ' role-name' : ''}`}>{name}</span>
+          {/* Takım etiketi (userId ile site geneli haritadan; takımsızda null). */}
+          <TeamTag userId={userId} />
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
           {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}

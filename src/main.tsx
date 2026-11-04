@@ -10,6 +10,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 import { TopRanksProvider } from './topRanks.tsx'
 import { RolesProvider } from './roles.tsx'
+import { TeamTagsProvider } from './teamTags.tsx'
 import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
@@ -61,6 +62,7 @@ createRoot(document.getElementById('root')!).render(
         <ToastProvider>
           <TopRanksProvider>
            <RolesProvider>
+            <TeamTagsProvider>
             <PresenceProvider>
               <App />
               {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
@@ -74,6 +76,7 @@ createRoot(document.getElementById('root')!).render(
               {/* Bağlantı koptuğunda üstte ince "Çevrimdışısın" şeridi (geri gelince kısa bildirim) */}
               <OfflineBanner />
             </PresenceProvider>
+            </TeamTagsProvider>
            </RolesProvider>
           </TopRanksProvider>
         </ToastProvider>

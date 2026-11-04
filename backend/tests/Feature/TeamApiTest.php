@@ -54,6 +54,12 @@ class TeamApiTest extends TestCase
         $this->getJson('/api/teams')->assertOk()->assertJsonStructure(['ranking', 'rules']);
     }
 
+    public function test_team_tags_map_is_public(): void
+    {
+        [, $members] = $this->teamWithMembers('Evciler', 'EV');
+        $this->getJson('/api/team-tags')->assertOk()->assertJsonPath('tags.'.$members[0]->id, 'EV');
+    }
+
     public function test_my_team_requires_auth(): void
     {
         $this->getJson('/api/my-team')->assertUnauthorized();
