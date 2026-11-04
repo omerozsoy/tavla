@@ -38,13 +38,13 @@ export const PAGES: PageDef[] = [
 
   // --- TURNUVALAR: rekabet + sosyal (Takımlar + Tavla Ligi bu grupta — ayrı başlıklar kaldırıldı) ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
-  { key: 'teams', slug: 'takimlar-ligi', labelKey: 'teams.menu', icon: 'users', group: 'compete' },
+  { key: 'teams', slug: 'takimlar-ligi', labelKey: 'teams.menu', icon: 'users', group: 'info' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },
   // Türkiye Online Tavla Ligi: TURNUVALAR grubunun EN ALTINDA (ürün isteği; eski bağımsız 'league' başlığı kaldırıldı).
-  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'trophy', group: 'compete' },
+  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'trophy', group: 'info' },
 
   // --- EGLENCE: sans/ekonomi oyunlari. Sol menude EĞLENCE grubunda GORUNUR (kullanici istegi);
   // ayrica SAG UST bar ikonlari + /sans-carki + /zar-slotu URL'leri de calisir (ikisi birden). ---
