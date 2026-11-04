@@ -292,6 +292,9 @@ const TR: Dict = {
     '• Maç sonucu: galibiyet 3, beraberlik 1, mağlubiyet 0 puan. Hiçbir oyuncunun gelmediği maç çift hükmendir (iki tarafa da 0).\n' +
     '• Eşitlikte sırasıyla: puan, skor farkı, galibiyet sayısı.\n' +
     '• Ay sonunda ilk üçe kupa; şampiyona ayrıca bir ay boyunca şampiyon rozeti verilir.',
+  // ponytail: asset-rev — TR chunk hash'ini değiştirip canlı bundle'ı taze URL'ye yönlendirir
+  // (deploy öncesi CDN'e zehirlenmiş 404'ü dereferans etmek için). Hiçbir yerde okunmaz.
+  '__asset_rev': '2026-11-04a',
 
   // Türkiye Online Tavla Ligi (bağımsız modül §1)
   'menu.group.league': 'Tavla Ligi',
