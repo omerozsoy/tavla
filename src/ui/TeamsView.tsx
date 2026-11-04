@@ -278,7 +278,9 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
       {/* Canlı amblem önizleme (renk + etiket + yüklenen logo) */}
       <div className="teams-create-preview">
         <div className="teams-emblem teams-emblem-lg" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
-          {logo ? <img src={logo} alt="" /> : <span>{(tag || '?').slice(0, 5).toUpperCase()}</span>}
+          <div className="teams-emblem-face">
+            {logo ? <img src={logo} alt="" /> : <span>{(tag || '?').slice(0, 5).toUpperCase()}</span>}
+          </div>
         </div>
         <div className="teams-create-preview-name">
           <strong>{name || t('teams.name')}</strong>

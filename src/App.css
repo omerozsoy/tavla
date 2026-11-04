@@ -21247,9 +21247,16 @@ body:has(.spectate-view) .app.lobby {
 .teams-emblem {
   display: grid; place-items: center;
   border-radius: 50%; color: #fff; font-weight: 800;
-  flex-shrink: 0; overflow: hidden;
+  flex-shrink: 0;
+  padding: 3px; /* 3px dairesel halka: dış gradyan = takım renkleri border'ı */
+  box-sizing: border-box;
 }
-.teams-emblem img { width: 100%; height: 100%; object-fit: cover; }
+.teams-emblem-face {
+  width: 100%; height: 100%;
+  border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center;
+}
+.teams-emblem-face img { width: 100%; height: 100%; object-fit: cover; }
 .teams-emblem-lg { width: 64px; height: 64px; font-size: 1.1rem; }
 .teams-create-preview-name { display: flex; flex-direction: column; gap: 6px; }
 .teams-create-preview-name strong { font-size: 1.05rem; color: var(--text); }
