@@ -43,7 +43,7 @@ import { ApiError } from '../api'
  * aylık/karşılaşma herkese açık; kurma/katılım/yönetim yetkili kullanıcıya (sunucu-otoriter). Gizli kadro
  * kilide kadar rakibe gösterilmez (backend gate + bu ekran yalnız kendi kadrosunu düzenletir).
  */
-type Tab = 'overview' | 'myteam' | 'rules'
+type Tab = 'overview' | 'create' | 'myteam' | 'rules'
 type View = { kind: 'home' } | { kind: 'team'; id: number } | { kind: 'match'; id: number }
 
 interface Props {
@@ -72,14 +72,18 @@ export default function TeamsView(props: Props) {
   const [view, setView] = useState<View>(() => parsePath(props.initialPath))
   const [tab, setTab] = useState<Tab>('overview')
   const [notice, setNotice] = useState<string | null>(null)
-  const [hasTeam, setHasTeam] = useState(false)
+  const [me, setMe] = useState<TeamMe | null>(null)
+  const hasTeam = !!me?.membership
 
-  // "Takımım" sekmesi yalnız takımı olan kullanıcıya görünür.
+  // Üyelik durumu: takımsız → "Takım Kur" sekmesi, takımlı → "Takımım" sekmesi.
   useEffect(() => {
-    if (!props.myId) { setHasTeam(false); return }
-    getMyTeam().then((m) => setHasTeam(!!m.membership)).catch(() => {})
+    if (!props.myId) { setMe(null); return }
+    getMyTeam().then(setMe).catch(() => setMe(null))
   }, [props.myId])
-  useEffect(() => { if (tab === 'myteam' && !hasTeam) setTab('overview') }, [tab, hasTeam])
+  useEffect(() => {
+    if (tab === 'myteam' && !hasTeam) setTab('overview')
+    if (tab === 'create' && hasTeam) setTab('myteam')
+  }, [tab, hasTeam])
 
   const go = useCallback((v: View) => {
     setView(v)
@@ -114,13 +118,18 @@ export default function TeamsView(props: Props) {
       {view.kind === 'home' && (
         <>
           <nav className="teams-tabs" role="tablist">
-            {(['overview', ...(hasTeam ? (['myteam'] as Tab[]) : []), 'rules'] as Tab[]).map((k) => (
+            {(['overview', ...(hasTeam ? (['myteam'] as Tab[]) : (['create'] as Tab[])), 'rules'] as Tab[]).map((k) => (
               <button key={k} role="tab" aria-selected={tab === k} className={'teams-tab' + (tab === k ? ' is-active' : '')} onClick={() => setTab(k)}>
                 {t('teams.tab.' + k)}
               </button>
             ))}
           </nav>
           {tab === 'overview' && <Overview {...props} go={go} setNotice={setNotice} errText={errText} />}
+          {tab === 'create' && !hasTeam && (
+            <CreateTeam myId={props.myId} eligibility={me?.eligibility ?? null}
+              onRequireLogin={props.onRequireLogin} onRequirePremium={props.onRequirePremium}
+              setNotice={setNotice} errText={errText} />
+          )}
           {tab === 'myteam' && hasTeam && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
           {tab === 'rules' && <Rules />}
         </>
@@ -140,18 +149,13 @@ export default function TeamsView(props: Props) {
 function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
   const [ranking, setRanking] = useState<TeamRankRow[]>([])
-  const [me, setMe] = useState<TeamMe | null>(null)
   const [q, setQ] = useState('')
   const [results, setResults] = useState<TeamBrief[] | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    void (async () => {
-      try { setRanking((await getTeams()).ranking ?? []) } catch { /* ağ */ }
-      if (props.myId) { try { setMe(await getMyTeam()) } catch { /* takımsız/ağ */ } }
-      setLoading(false)
-    })()
-  }, [props.myId])
+    getTeams().then((r) => setRanking(r.ranking ?? [])).catch(() => {}).finally(() => setLoading(false))
+  }, [])
 
   const search = async () => {
     if (!q.trim()) { setResults(null); return }
@@ -161,19 +165,6 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   if (loading) return <Loading />
   return (
     <div>
-      {/* "Takım Kur" HER ZAMAN görünür (takımda olanlar hariç). Tıkla: misafir→giriş,
-          uygun değil→şartlar, uygun→form. */}
-      {!me?.membership && (
-        <CreateTeam myId={props.myId} eligibility={me?.eligibility ?? null}
-          onRequireLogin={props.onRequireLogin} onRequirePremium={props.onRequirePremium}
-          setNotice={props.setNotice} errText={props.errText} />
-      )}
-      {me?.membership && (
-        <div style={{ marginBottom: 14 }}>
-          <TeamChip team={me.membership.team} /> — {t('teams.my.role.' + me.membership.role)}
-          <Button style={{ marginLeft: 8 }} onClick={() => props.go({ kind: 'home' })}>{t('teams.tab.myteam')}</Button>
-        </div>
-      )}
       <div className="teams-create-head" style={{ marginBottom: 10 }}>
         <h3>{t('teams.rankTitle')}</h3>
         <p>{t('teams.rankLead')}</p>
@@ -208,7 +199,6 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
 
 function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibility'] | null; onRequireLogin: () => void; onRequirePremium: () => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
-  const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [tag, setTag] = useState('')
   const [color1, setColor1] = useState('#A83A2B')
@@ -218,23 +208,20 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
   const [busy, setBusy] = useState(false)
   const el = props.eligibility
 
-  // Kapalı: "Takım Kur" CTA'sı HER ZAMAN görünür. Tıkla: misafir→giriş, girişliyse form/şartlar açılır.
-  if (!open) {
+  // Misafir → giriş iste (sekme içeriği; modal arkasında kaybolmasın).
+  if (!props.myId) {
     return (
-      <button className="teams-create-cta" onClick={() => (props.myId ? setOpen(true) : props.onRequireLogin())}>
-        <span className="teams-create-cta-emblem" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
-          <Icon name="users-group" size={18} />
-        </span>
-        <span className="teams-create-cta-text">
-          <strong>{t('teams.create')}</strong>
-          <small>{t('teams.createLead')}</small>
-        </span>
-        {el && <span className="teams-create-cta-cost">{el.found_cost.toLocaleString()} 🪙</span>}
-      </button>
+      <div className="teams-gate">
+        <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
+        <div>
+          <div className="teams-gate-title">{t('teams.createTitle')}</div>
+          <div className="teams-gate-text">{t('teams.createLead')}</div>
+          <Button style={{ marginTop: 8 }} onClick={props.onRequireLogin}>{t('teams.needLogin')}</Button>
+        </div>
+      </div>
     )
   }
-
-  // Açık ama uygun değil → şartlar kartı (Premium + puanlı maç + coin).
+  // Uygun değil → şartlar kartı (Premium + puanlı maç + coin).
   if (!el?.can_create) {
     return (
       <div className="teams-gate">
@@ -242,10 +229,7 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
         <div>
           <div className="teams-gate-title">{t('teams.createTitle')}</div>
           <div className="teams-gate-text">{t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}</div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            {el && !el.premium && <Button onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
-            <Button variant="ghost" onClick={() => setOpen(false)}>{t('teams.cancel')}</Button>
-          </div>
+          {el && !el.premium && <Button style={{ marginTop: 8 }} onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
         </div>
       </div>
     )
@@ -319,9 +303,8 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
 
       <div className="teams-create-actions">
         <Button disabled={busy || name.trim().length < 3 || tag.trim().length < 2} onClick={submit}>
-          {t('teams.create')} · {el.found_cost.toLocaleString()} 🪙
+          {t('teams.create')} · {el.found_cost.toLocaleString()} <Icon name="coin" size={13} />
         </Button>
-        <Button variant="ghost" disabled={busy} onClick={() => setOpen(false)}>{t('teams.cancel')}</Button>
       </div>
     </div>
   )
