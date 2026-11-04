@@ -439,7 +439,7 @@ function Rules({ prizes }: { prizes: Array<{ key: string; coins?: number; badge?
           <ul>
             {prizes.map((pr, i) => (
               <li key={i}>
-                {t('league.prize.' + pr.key)}: {pr.coins ? pr.coins + ' 🪙' : ''} {pr.desc ?? ''}
+                {t('league.prize.' + pr.key)}: {pr.coins ? <>{pr.coins.toLocaleString()} <Icon name="coin" size={12} /></> : ''} {pr.desc ?? ''}
               </li>
             ))}
           </ul>
