@@ -53,6 +53,7 @@ export default function LeagueView(props: Props) {
   const [detail, setDetail] = useState<Detail | null>(null)
   const [me, setMe] = useState<Me | null>(null)
   const [tab, setTab] = useState<Tab>('standings')
+  const [showRules, setShowRules] = useState(false) // sezon yokken kurallar düğme ardında (girişte değil)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [proposeAt, setProposeAt] = useState('')
@@ -163,11 +164,14 @@ export default function LeagueView(props: Props) {
         <p className="register-sub">{t('league.subtitle')}</p>
         {loading ? <Loading /> : <>
 
-      {/* Aktif sezon yokken de katılım şartları + kurallar görünsün (boş sayfa olmasın). */}
+      {/* Aktif sezon yokken: kurallar girişte DEĞİL, düğme ardında (istenince açılır). */}
       {!season && (
         <>
           <div style={cardStyle}>{t('league.noActive')}</div>
-          <Rules prizes={[]} />
+          <Button variant="outline" onClick={() => setShowRules((s) => !s)} style={{ marginBottom: 8 }}>
+            {t('league.tab.rules')}
+          </Button>
+          {showRules && <Rules prizes={[]} />}
         </>
       )}
 

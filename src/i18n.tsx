@@ -366,9 +366,9 @@ const TR: Dict = {
   'league.prize.quarterfinalist': 'Çeyrek Finalist',
   'league.prize.last16': 'Son 16',
   'league.rulesText': `## Katılım
-Lig Premium üyelere özeldir. Başvurular açıkken başvurursun; asıl ve yedek oyuncuları adminler seçer. Bir sezon 33–48 oyuncuyla başlar ve aynı anda yalnız bir aktif sezon olur.
+Lig Premium üyelere özeldir. Başvurular açıkken başvurursun; asıl ve yedek oyuncuları TavlaTV Yönetimi seçer. Bir sezon 48 oyuncuyla başlar ve aynı anda yalnız bir aktif sezon olur.
 ## Lig Aşaması (8 Tur)
-İsviçre usulü 8 tur oynanır. Her turda benzer puanlı oyuncular eşleşir; aynı iki oyuncu lig aşamasında tekrar eşleşmez. Oyuncu sayısı tek kalırsa bir oyuncu "bay" geçer (otomatik 1 puan).
+Swiss usulü 8 tur oynanır. Her turda benzer puanlı oyuncular eşleşir; aynı iki oyuncu lig aşamasında tekrar eşleşmez. Oyuncu sayısı tek kalırsa bir oyuncu "bay" geçer (otomatik 1 puan).
 ## Puanlama ve Sıralama
 Galibiyet, hükmen galibiyet ve bay 1 puan; mağlubiyet, hükmen mağlubiyet ve çift gelmeme 0 puandır. Eşitlikte sıralama: 1) lig puanı, 2) karşılaşılan rakiplerin toplam puanı, 3) yenilen rakiplerin toplam puanı, 4) güncel rating, 5) admin sırası.
 ## Eleme
@@ -378,7 +378,7 @@ Maç saatini rakibinle teklif edip onaylayarak belirlersin; saat turun son oynan
 ## Çekilme
 Çekilen oyuncunun topladığı puanlar silinmez; o anki açık maçını rakibi hükmen kazanır. Çekilenin yerine yedek alınmaz.
 ## Rating ve Ödüller
-Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay rating'i değiştirmez. Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları coin ve rozet ödülü kazanır.`,
+Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay rating'i değiştirmez. Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları açıklanacak ödülleri, coin ve rozet ödülü kazanır.`,
   'menu.admin': 'Yönetim',
   'menu.more': 'Daha fazla',
   'menu.tools': 'Araçlar',
@@ -2566,7 +2566,7 @@ const EN: Dict = {
   'league.prize.quarterfinalist': 'Quarterfinalist',
   'league.prize.last16': 'Last 16',
   'league.rulesText': `## Eligibility
-The league is for Premium members. You apply while applications are open; admins select the main and reserve players. A season starts with 33–48 players, and only one season is active at a time.
+The league is for Premium members. You apply while applications are open; TavlaTV Management selects the main and reserve players. A season starts with 48 players, and only one season is active at a time.
 ## League Stage (8 Rounds)
 8 Swiss-style rounds are played. Each round pairs players with similar points; the same two players never meet twice in the league stage. If the player count is odd, one player gets a "bye" (an automatic 1 point).
 ## Scoring and Ranking
@@ -2578,7 +2578,7 @@ You set the match time by proposing and confirming it with your opponent; the ti
 ## Withdrawal
 A player who withdraws keeps the points they earned; their current open match is won by the opponent by walkover. Withdrawn players are not replaced by a reserve.
 ## Rating and Prizes
-Only actually played matches affect your TavlaTV rating; walkovers and byes do not. Matches are 9 points by default. The champion, runner-up, semifinalists, quarterfinalists and Last 16 players win coin and badge prizes.`,
+Only actually played matches affect your TavlaTV rating; walkovers and byes do not. Matches are 9 points by default. The champion, runner-up, semifinalists, quarterfinalists and Last 16 players win the prizes to be announced, plus coins and badges.`,
   'menu.admin': 'Admin',
   'menu.more': 'More',
   'menu.tools': 'Tools',
