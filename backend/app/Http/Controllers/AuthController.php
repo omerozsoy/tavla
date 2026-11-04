@@ -1417,9 +1417,19 @@ class AuthController extends Controller
         $checkerOpp = $col($opp, 'gnubg_checker_pr') ?? $col($mine, 'gnubg_opponent_checker_pr');
         $cubeOpp = $col($opp, 'gnubg_cube_pr') ?? $col($mine, 'gnubg_opponent_cube_pr');
 
+        // SETTLED: analiz KESİN bitti mi (PR çıksa da çıkmasa da — gnubg_pr_at mezar taşı). Rakip-PR
+        // emniyet poll'u (istemci oppPrPending) bu bayrağa bakar: rakip analizi bitti ama PR null
+        // (çok kısa/forfeit maç = karar yok) ise istemci SONSUZA dek "…" döndürmez -> dürüst "—".
+        // Rakip KENDİ satırı varsa onun gnubg_pr_at'i; yoksa (pvb/terk) reconstructed benim satırımın.
+        $prAt = fn ($m) => $m && $has('gnubg_pr_at') && $m->gnubg_pr_at !== null;
+        $selfSettled = $selfPr !== null || $prAt($mine);
+        $oppSettled = $oppPr !== null || ($opp ? $prAt($opp) : $prAt($mine));
+
         return response()->json([
             'self' => $selfPr,
             'opponent' => $oppPr,
+            'self_settled' => $selfSettled,
+            'opponent_settled' => $oppSettled,
             // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — GNUBG-otoriter (yukarı bkz).
             'checker_self' => $col($mine, 'gnubg_checker_pr'),
             'cube_self' => $col($mine, 'gnubg_cube_pr'),

@@ -355,6 +355,14 @@ export default function MatchResult({
                   </div>
                 </div>
               )}
+              {/* ANALİZ BİTTİ AMA PR "—": çok kısa / zorunlu-hamleli maçta gnubg'nin skorlayacağı karar
+                  yoktur (mezar taşı). Eskiden kullanıcı boş "—"ya bakıp "hesaplanıyor mu?" diye bekliyordu
+                  -> dürüst açıklama göster (loader zaten durdu). */}
+              {!analyzingAny && !finishing && (winnerPr == null || loserPr == null) && (
+                <div className="mr-pr-note" role="note">
+                  <Icon name="info" size={14} aria-hidden="true" /> {t('mr.prUnavailable')}
+                </div>
+              )}
             </>
           )}
           <div className="mr-row">
