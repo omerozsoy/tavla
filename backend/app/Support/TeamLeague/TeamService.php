@@ -210,6 +210,7 @@ class TeamService
                     'name' => $name, 'name_key' => $nameKey,
                     'tag' => $tag, 'tag_key' => $tagKey,
                     'logo' => $data['logo'] ?? null,
+                    'logo_pending' => $data['logo_pending'] ?? null, // yüklenen logo → admin onayına
                     'color1' => $data['color1'] ?? '#A83A2B',
                     'color2' => $data['color2'] ?? '#1f2933',
                     'description' => $data['description'] ?? null,

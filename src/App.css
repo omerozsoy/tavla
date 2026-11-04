@@ -21109,6 +21109,179 @@ body:has(.spectate-view) .app.lobby {
 .teams-table tbody tr:hover {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
+
+/* ===== Takımlar modülü: segment sekmeler + kurallar + kurma ekranı ===== */
+.teams-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.teams-tab {
+  flex: 1;
+  min-width: 92px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.teams-tab:hover { color: var(--text); }
+.teams-tab.is-active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Kurallar sayfası */
+.teams-rules-lead { color: var(--muted); font-size: 0.95rem; margin: 0 0 16px; }
+.teams-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: 12px;
+}
+.teams-rule-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.teams-rule-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.teams-rule-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-radius: 6px;
+  padding: 3px 7px;
+  letter-spacing: 0.04em;
+}
+.teams-rule-head h3 { margin: 0; font-size: 0.98rem; color: var(--text); }
+.teams-rule-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.teams-rule-list li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text) 86%, transparent);
+}
+.teams-rule-list li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Takım Kur — kapalı CTA */
+.teams-create-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--card-bg)), var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.teams-create-cta:hover { transform: translateY(-1px); border-color: var(--accent); }
+.teams-create-cta-emblem {
+  display: grid; place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 10px; color: #fff; flex-shrink: 0;
+}
+.teams-create-cta-text { display: flex; flex-direction: column; flex: 1; }
+.teams-create-cta-text strong { color: var(--text); font-size: 0.98rem; }
+.teams-create-cta-text small { color: var(--muted); font-size: 0.8rem; }
+.teams-create-cta-cost { font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+/* Uygunluk kapısı */
+.teams-gate {
+  display: flex; gap: 12px;
+  padding: 14px 16px; margin-bottom: 16px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+}
+.teams-gate-icon {
+  display: grid; place-items: center;
+  width: 42px; height: 42px; flex-shrink: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+.teams-gate-title { font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.teams-gate-text { color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+
+/* Kurma formu */
+.teams-create {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 14px;
+}
+.teams-create-head h3 { margin: 0 0 2px; font-size: 1.1rem; color: var(--text); }
+.teams-create-head p { margin: 0; color: var(--muted); font-size: 0.86rem; }
+.teams-create-preview {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px; border-radius: 12px;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--border);
+}
+.teams-emblem {
+  display: grid; place-items: center;
+  border-radius: 12px; color: #fff; font-weight: 800;
+  flex-shrink: 0; overflow: hidden;
+}
+.teams-emblem img { width: 100%; height: 100%; object-fit: cover; }
+.teams-emblem-lg { width: 64px; height: 64px; font-size: 1.1rem; }
+.teams-create-preview-name { display: flex; flex-direction: column; gap: 6px; }
+.teams-create-preview-name strong { font-size: 1.05rem; color: var(--text); }
+.teams-tagchip {
+  display: inline-block; align-self: flex-start;
+  padding: 2px 8px; border-radius: 6px;
+  color: #fff; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+}
+.teams-field { display: grid; gap: 5px; }
+.teams-field > span {
+  font-size: 0.78rem; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.teams-field small { font-size: 0.76rem; color: var(--muted); }
+.teams-colors { display: flex; gap: 14px; }
+.teams-color { display: flex; align-items: center; gap: 8px; }
+.teams-color input[type="color"] {
+  width: 40px; height: 34px; padding: 0;
+  border: 1px solid var(--btn-border); border-radius: 8px;
+  background: none; cursor: pointer;
+}
+.teams-color small { color: var(--text); }
+.teams-logo-upload {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+  padding: 8px 14px;
+  border: 1px dashed var(--btn-border); border-radius: 8px;
+  color: var(--text); font-size: 0.86rem; cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.teams-logo-upload:hover { border-color: var(--accent); }
+.teams-create-actions { display: flex; gap: 8px; margin-top: 4px; }
+
 /* ===== Turnuva detay redesign: alt-satir + hero ozet band ===== */
 .tourn-subline {
   display: flex;

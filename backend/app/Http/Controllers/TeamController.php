@@ -12,6 +12,7 @@ use App\Models\TeamMatchLineup;
 use App\Models\TeamMember;
 use App\Models\TeamMessage;
 use App\Models\User;
+use App\Support\AvatarStore;
 use App\Support\ChatModeration;
 use App\Support\TeamLeague\TeamException;
 use App\Support\TeamLeague\TeamMatchRuntime;
@@ -174,7 +175,15 @@ class TeamController extends Controller
             'color2' => ['nullable', 'string', 'max:9'],
             'description' => ['nullable', 'string', 'max:500'],
             'logo' => ['nullable', 'string', 'max:255'], // hazır logo kimliği/URL'si
+            'logo_upload' => ['sometimes', 'nullable', 'string'], // base64 yüklenen görsel
         ]);
+
+        // Yüklenen logo: base64 → 128² WebP URL (AvatarStore). Admin onayına kadar logo_pending'e yazılır
+        // (herkese açıkta GÖSTERİLMEZ); kuruluşta görünen kimlik renk/tag amblemidir.
+        if (! empty($data['logo_upload'])) {
+            $data['logo_pending'] = AvatarStore::store($data['logo_upload']);
+        }
+        unset($data['logo_upload']);
 
         return $this->guard(fn () => response()->json([
             'team' => $this->teamBrief($this->svc->createTeam($request->user(), $data)),

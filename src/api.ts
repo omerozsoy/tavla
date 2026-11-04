@@ -1598,7 +1598,7 @@ export async function getTeam(id: number): Promise<TeamDetail> {
 export async function getMyTeam(): Promise<TeamMe> {
   return req('/my-team')
 }
-export async function createTeam(data: { name: string; tag: string; color1?: string; color2?: string; description?: string; logo?: string }): Promise<{ team: TeamBrief }> {
+export async function createTeam(data: { name: string; tag: string; color1?: string; color2?: string; description?: string; logo?: string; logo_upload?: string }): Promise<{ team: TeamBrief }> {
   return req('/teams', { method: 'POST', body: JSON.stringify(data) })
 }
 export async function updateTeamIdentity(id: number, data: Record<string, unknown>): Promise<{ team: TeamBrief }> {

@@ -21,7 +21,6 @@ import {
   getMyTeamMatch,
   getTeam,
   getTeams,
-  getTeamsMonthly,
   inviteToTeam,
   kickTeamMember,
   leaveTeam,
@@ -44,7 +43,7 @@ import { ApiError } from '../api'
  * aylık/karşılaşma herkese açık; kurma/katılım/yönetim yetkili kullanıcıya (sunucu-otoriter). Gizli kadro
  * kilide kadar rakibe gösterilmez (backend gate + bu ekran yalnız kendi kadrosunu düzenletir).
  */
-type Tab = 'overview' | 'monthly' | 'myteam' | 'rules'
+type Tab = 'overview' | 'myteam' | 'rules'
 type View = { kind: 'home' } | { kind: 'team'; id: number } | { kind: 'match'; id: number }
 
 interface Props {
@@ -73,6 +72,14 @@ export default function TeamsView(props: Props) {
   const [view, setView] = useState<View>(() => parsePath(props.initialPath))
   const [tab, setTab] = useState<Tab>('overview')
   const [notice, setNotice] = useState<string | null>(null)
+  const [hasTeam, setHasTeam] = useState(false)
+
+  // "Takımım" sekmesi yalnız takımı olan kullanıcıya görünür.
+  useEffect(() => {
+    if (!props.myId) { setHasTeam(false); return }
+    getMyTeam().then((m) => setHasTeam(!!m.membership)).catch(() => {})
+  }, [props.myId])
+  useEffect(() => { if (tab === 'myteam' && !hasTeam) setTab('overview') }, [tab, hasTeam])
 
   const go = useCallback((v: View) => {
     setView(v)
@@ -106,16 +113,15 @@ export default function TeamsView(props: Props) {
 
       {view.kind === 'home' && (
         <>
-          <nav style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-            {(['overview', 'monthly', 'myteam', 'rules'] as Tab[]).map((k) => (
-              <Button key={k} variant={tab === k ? 'default' : 'outline'} onClick={() => setTab(k)}>
+          <nav className="teams-tabs" role="tablist">
+            {(['overview', ...(hasTeam ? (['myteam'] as Tab[]) : []), 'rules'] as Tab[]).map((k) => (
+              <button key={k} role="tab" aria-selected={tab === k} className={'teams-tab' + (tab === k ? ' is-active' : '')} onClick={() => setTab(k)}>
                 {t('teams.tab.' + k)}
-              </Button>
+              </button>
             ))}
           </nav>
           {tab === 'overview' && <Overview {...props} go={go} setNotice={setNotice} errText={errText} />}
-          {tab === 'monthly' && <Monthly go={go} />}
-          {tab === 'myteam' && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
+          {tab === 'myteam' && hasTeam && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
           {tab === 'rules' && <Rules />}
         </>
       )}
@@ -162,9 +168,13 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
           <Button style={{ marginLeft: 8 }} onClick={() => props.go({ kind: 'home' })}>{t('teams.tab.myteam')}</Button>
         </div>
       )}
+      <div className="teams-create-head" style={{ marginBottom: 10 }}>
+        <h3>{t('teams.rankTitle')}</h3>
+        <p>{t('teams.rankLead')}</p>
+      </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('teams.search')}
-          style={{ flex: 1 }} />
+          style={{ ...inp, flex: 1 }} />
         <Button onClick={search}>{t('teams.search')}</Button>
       </div>
       {results !== null ? (
@@ -199,81 +209,112 @@ function CreateTeam(props: { eligibility: TeamMe['eligibility']; onRequirePremiu
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [tag, setTag] = useState('')
+  const [color1, setColor1] = useState('#A83A2B')
+  const [color2, setColor2] = useState('#1f2933')
+  const [logo, setLogo] = useState('') // base64 data-URI (yüklenirse)
+  const [desc, setDesc] = useState('')
   const [busy, setBusy] = useState(false)
   const el = props.eligibility
 
   if (!el.can_create) {
     return (
-      <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', padding: 12, borderRadius: 8, marginBottom: 14, fontSize: 14 }}>
-        {t('teams.create.requirements', { cost: el.found_cost.toLocaleString(), rated: el.min_rated })}
-        {!el.premium && <div style={{ marginTop: 6 }}><Button onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button></div>}
+      <div className="teams-gate">
+        <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
+        <div>
+          <div className="teams-gate-title">{t('teams.createTitle')}</div>
+          <div className="teams-gate-text">{t('teams.create.requirements', { cost: el.found_cost.toLocaleString(), rated: el.min_rated })}</div>
+          {!el.premium && <Button style={{ marginTop: 8 }} onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
+        </div>
       </div>
     )
   }
-  return (
-    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', padding: 12, borderRadius: 8, marginBottom: 14 }}>
-      {!open ? (
-        <Button onClick={() => setOpen(true)}>{t('teams.create')} ({el.found_cost.toLocaleString()} 🪙)</Button>
-      ) : (
-        <div style={{ display: 'grid', gap: 8 }}>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('teams.name') + ' (3-30)'}
-            maxLength={30} style={inp} />
-          <input value={tag} onChange={(e) => setTag(e.target.value)} placeholder={t('teams.tag') + ' (2-5)'}
-            maxLength={5} style={inp} />
-          <div style={{ display: 'flex', gap: 6 }}>
-            <Button disabled={busy} onClick={async () => {
-              setBusy(true)
-              try {
-                await createTeam({ name, tag })
-                props.setNotice(t('teams.created'))
-                setTimeout(() => location.reload(), 600)
-              } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
-            }}>{t('teams.create')}</Button>
-            <Button variant="ghost" onClick={() => setOpen(false)}>{t('teams.cancel')}</Button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ---- Aylık sıralama -----------------------------------------------------------
-function Monthly(props: { go: (v: View) => void }) {
-  const { t } = useT()
-  const [month, setMonth] = useState('')
-  const [months, setMonths] = useState<string[]>([])
-  const [rows, setRows] = useState<Awaited<ReturnType<typeof getTeamsMonthly>>['table']>([])
-  const [loading, setLoading] = useState(true)
-
-  const load = (m?: string) => {
-    setLoading(true)
-    getTeamsMonthly(m).then((r) => { setMonth(r.month); setMonths(r.past_months); setRows(r.table) }).finally(() => setLoading(false))
+  if (!open) {
+    return (
+      <button className="teams-create-cta" onClick={() => setOpen(true)}>
+        <span className="teams-create-cta-emblem" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
+          <Icon name="users-group" size={18} />
+        </span>
+        <span className="teams-create-cta-text">
+          <strong>{t('teams.create')}</strong>
+          <small>{t('teams.createLead')}</small>
+        </span>
+        <span className="teams-create-cta-cost">{el.found_cost.toLocaleString()} 🪙</span>
+      </button>
+    )
   }
-  useEffect(() => { load() }, [])
 
-  if (loading) return <Loading />
+  const onLogoFile = (file?: File) => {
+    if (!file) return
+    const r = new FileReader()
+    r.onload = () => setLogo(typeof r.result === 'string' ? r.result : '')
+    r.readAsDataURL(file)
+  }
+  const submit = async () => {
+    setBusy(true)
+    try {
+      await createTeam({ name, tag, color1, color2, description: desc || undefined, logo_upload: logo || undefined })
+      props.setNotice(logo ? t('teams.created') + ' ' + t('teams.logoPending') : t('teams.created'))
+      setTimeout(() => location.reload(), 700)
+    } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
+  }
+
   return (
-    <div>
-      <div style={{ marginBottom: 10 }}>
-        <select value={month} onChange={(e) => load(e.target.value)} style={inp}>
-          {[month, ...months.filter((m) => m !== month)].map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
+    <div className="teams-create">
+      <header className="teams-create-head">
+        <h3>{t('teams.createTitle')}</h3>
+        <p>{t('teams.createLead')}</p>
+      </header>
+
+      {/* Canlı amblem önizleme (renk + etiket + yüklenen logo) */}
+      <div className="teams-create-preview">
+        <div className="teams-emblem teams-emblem-lg" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
+          {logo ? <img src={logo} alt="" /> : <span>{(tag || '?').slice(0, 5).toUpperCase()}</span>}
+        </div>
+        <div className="teams-create-preview-name">
+          <strong>{name || t('teams.name')}</strong>
+          <span className="teams-tagchip" style={{ background: color1 }}>{tag ? tag.toUpperCase() : t('teams.tag')}</span>
+        </div>
       </div>
-      <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr>
-          <th>#</th><th>{t('teams.team')}</th><th>{t('teams.points')}</th><th>{t('teams.diff')}</th><th>{t('teams.wins')}</th><th>{t('teams.played')}</th>
-        </tr></thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.team?.id ?? r.rank} style={{ cursor: r.team ? 'pointer' : 'default' }}
-              onClick={() => r.team && props.go({ kind: 'team', id: r.team.id })}>
-              <td>{r.rank}</td><td>{r.team ? <TeamChip team={r.team} /> : '—'}</td>
-              <td>{r.points}</td><td>{r.match_diff}</td><td>{r.team_wins}</td><td>{r.played}</td>
-            </tr>
-          ))}
-          {rows.length === 0 && <tr><td colSpan={6} style={{ opacity: 0.6, padding: 12 }}>{t('teams.empty')}</td></tr>}
-        </tbody>
-      </table>
+
+      <label className="teams-field">
+        <span>{t('teams.name')}</span>
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} style={inp} placeholder="Örn. İstanbul Pulları" />
+        <small>{t('teams.nameUnique')}</small>
+      </label>
+      <label className="teams-field">
+        <span>{t('teams.tag')}</span>
+        <input value={tag} onChange={(e) => setTag(e.target.value)} maxLength={5} style={inp} placeholder="IST" />
+        <small>{t('teams.tagHint')}</small>
+      </label>
+
+      <div className="teams-field">
+        <span>{t('teams.colors')}</span>
+        <div className="teams-colors">
+          <label className="teams-color"><input type="color" value={color1} onChange={(e) => setColor1(e.target.value)} /><small>{t('teams.colorPrimary')}</small></label>
+          <label className="teams-color"><input type="color" value={color2} onChange={(e) => setColor2(e.target.value)} /><small>{t('teams.colorSecondary')}</small></label>
+        </div>
+      </div>
+
+      <div className="teams-field">
+        <span>{t('teams.logo')}</span>
+        <label className="teams-logo-upload">
+          <input type="file" accept="image/*" onChange={(e) => onLogoFile(e.target.files?.[0])} hidden />
+          <Icon name="users-group" size={16} /> {t('teams.logoUpload')}
+        </label>
+        <small>{t('teams.logoHint')}</small>
+      </div>
+
+      <label className="teams-field">
+        <span>{t('teams.desc')}</span>
+        <textarea value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={500} style={{ ...inp, minHeight: 64 }} />
+      </label>
+
+      <div className="teams-create-actions">
+        <Button disabled={busy || name.trim().length < 3 || tag.trim().length < 2} onClick={submit}>
+          {t('teams.create')} · {el.found_cost.toLocaleString()} 🪙
+        </Button>
+        <Button variant="ghost" disabled={busy} onClick={() => setOpen(false)}>{t('teams.cancel')}</Button>
+      </div>
     </div>
   )
 }
@@ -521,7 +562,31 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
 
 function Rules() {
   const { t } = useT()
-  return <div style={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}>{t('teams.rules.body')}</div>
+  // teams.rules.body: bloklar \n\n ile ayrılır; blok ilk satır = başlık, '•' satırları = madde.
+  const blocks = t('teams.rules.body').split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean)
+  return (
+    <div className="teams-rules">
+      <p className="teams-rules-lead">{t('teams.rulesLead')}</p>
+      <div className="teams-rules-grid">
+        {blocks.map((block, i) => {
+          const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
+          const heading = lines[0]
+          const items = lines.slice(1).map((l) => l.replace(/^•\s*/, ''))
+          return (
+            <section key={i} className="teams-rule-card">
+              <header className="teams-rule-head">
+                <span className="teams-rule-num">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{heading}</h3>
+              </header>
+              <ul className="teams-rule-list">
+                {items.map((it, j) => <li key={j}>{it}</li>)}
+              </ul>
+            </section>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 // ---- Takım detay (herkese açık) ----------------------------------------------
