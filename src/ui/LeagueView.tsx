@@ -421,9 +421,16 @@ function MyMatch(p: {
 
 function Rules({ prizes }: { prizes: Array<{ key: string; coins?: number; badge?: string; desc?: string }> }) {
   const { t } = useT()
+  const lines = t('league.rulesText').split('\n').map((l) => l.trim()).filter(Boolean)
   return (
     <div style={cardStyle}>
-      <p style={{ marginTop: 0, lineHeight: 1.6 }}>{t('league.rulesText')}</p>
+      {lines.map((ln, i) =>
+        ln.startsWith('## ') ? (
+          <h4 key={i} style={{ margin: i === 0 ? '0 0 4px' : '14px 0 4px' }}>{ln.slice(3)}</h4>
+        ) : (
+          <p key={i} style={{ margin: '0 0 8px', lineHeight: 1.6 }}>{ln}</p>
+        ),
+      )}
       {prizes.length > 0 && (
         <>
           <h4>{t('league.prizes')}</h4>
