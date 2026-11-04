@@ -236,6 +236,57 @@ class TeamService
         }
     }
 
+    /**
+     * ADMIN (§12): takımı seçilen kurucu adına kurar. Premium/rating/coin ŞARTI YOK (yönetici kararı).
+     * Yine de ad/etiket doğrulama + benzersizlik + "zaten takımda değil" korunur (veri bütünlüğü).
+     */
+    public function adminCreateTeam(User $founder, array $data): Team
+    {
+        $name = trim((string) ($data['name'] ?? ''));
+        $tag = trim((string) ($data['tag'] ?? ''));
+        $this->validateName($name);
+        $this->validateTag($tag);
+        $nameKey = self::keyify($name);
+        $tagKey = self::keyify($tag);
+
+        if (Team::where('name_key', $nameKey)->exists()) {
+            throw new TeamException('name_taken', 409);
+        }
+        if (Team::where('tag_key', $tagKey)->exists()) {
+            throw new TeamException('tag_taken', 409);
+        }
+
+        try {
+            return DB::transaction(function () use ($founder, $data, $name, $tag, $nameKey, $tagKey) {
+                $locked = User::query()->lockForUpdate()->findOrFail($founder->id);
+                if (TeamMember::where('user_id', $locked->id)->exists()) {
+                    throw new TeamException('already_in_team', 409);
+                }
+                $team = Team::create([
+                    'name' => $name, 'name_key' => $nameKey,
+                    'tag' => $tag, 'tag_key' => $tagKey,
+                    'color1' => $data['color1'] ?? '#A83A2B',
+                    'color2' => $data['color2'] ?? '#1f2933',
+                    'description' => $data['description'] ?? null,
+                    'founder_id' => $locked->id,
+                    'status' => 'active',
+                    'applications_open' => true,
+                    'member_count' => 1,
+                    'rating_avg' => (float) ($locked->rating ?? 1500),
+                ]);
+                TeamMember::create([
+                    'team_id' => $team->id, 'user_id' => $locked->id,
+                    'role' => 'founder', 'joined_at' => now(),
+                ]);
+                $this->audit($team, $locked->id, 'team_created_admin');
+
+                return $team;
+            });
+        } catch (QueryException $e) {
+            throw new TeamException('name_or_tag_taken', 409);
+        }
+    }
+
     /** Yalnız kurucu; ≥30 gün + 10.000 coin; gerçek değişiklik yoksa ücretsiz + dokunma. */
     public function rename(Team $team, User $actor, ?string $name, ?string $tag): Team
     {

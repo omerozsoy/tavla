@@ -102,4 +102,25 @@ class TeamFilamentTest extends TestCase
         $this->assertSame('home_win', $finished->result);
         $this->assertEqualsWithDelta(5.0, $finished->home_score, 1e-9);
     }
+
+    public function test_admin_creates_team_for_user_bypassing_eligibility(): void
+    {
+        // Premium YOK, puanlı maç YOK, coin YOK — kullanıcı kendi KURAMAZ ama admin kurabilir.
+        $founder = User::factory()->create(['coins' => 0, 'rating' => 1500]);
+
+        Livewire::actingAs($this->admin())->test(ListTeams::class)
+            ->callAction('adminCreate', data: [
+                'founder_id' => $founder->id, 'name' => 'Yıldızlar', 'tag' => 'YLD',
+            ]);
+
+        $team = Team::where('tag_key', 'yld')->first();
+        $this->assertNotNull($team);
+        $this->assertSame($founder->id, $team->founder_id);
+        $this->assertSame(1, $team->member_count);
+        $this->assertDatabaseHas('team_members', [
+            'team_id' => $team->id, 'user_id' => $founder->id, 'role' => 'founder',
+        ]);
+        // Coin kesilmedi (admin ücretsiz kurdu).
+        $this->assertSame(0, (int) $founder->fresh()->coins);
+    }
 }

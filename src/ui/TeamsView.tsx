@@ -169,6 +169,13 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
       </div>
       {results !== null ? (
         <TeamList teams={results} onOpen={(id) => props.go({ kind: 'team', id })} />
+      ) : ranking.length === 0 ? (
+        // Hiç takım yok: açıklama + kur düğmesi. Girişli uygun kullanıcıya üstteki CreateTeam
+        // kutusu zaten düğmeyi verir; misafire burada giriş-kapılı "Takım Kur" düğmesi gösterilir.
+        <div style={{ textAlign: 'center', padding: '28px 12px', opacity: 0.9 }}>
+          <div style={{ fontSize: 15, marginBottom: 12 }}>{t('teams.noneYet')}</div>
+          {!props.myId && <Button onClick={props.onRequireLogin}>{t('teams.create')}</Button>}
+        </div>
       ) : (
         <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr style={{ textAlign: 'left', opacity: 0.7 }}>
@@ -180,7 +187,6 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
                 <td>{r.rank}</td><td><TeamChip team={r} /></td><td>{r.rating_avg.toFixed(1)}</td><td>{r.member_count}</td>
               </tr>
             ))}
-            {ranking.length === 0 && <tr><td colSpan={4} style={{ opacity: 0.6, padding: 12 }}>{t('teams.empty')}</td></tr>}
           </tbody>
         </table>
       )}
