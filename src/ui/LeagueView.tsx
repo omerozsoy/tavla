@@ -163,7 +163,13 @@ export default function LeagueView(props: Props) {
         <p className="register-sub">{t('league.subtitle')}</p>
         {loading ? <Loading /> : <>
 
-      {!season && <div style={cardStyle}>{t('league.noActive')}</div>}
+      {/* Aktif sezon yokken de katılım şartları + kurallar görünsün (boş sayfa olmasın). */}
+      {!season && (
+        <>
+          <div style={cardStyle}>{t('league.noActive')}</div>
+          <Rules prizes={[]} />
+        </>
+      )}
 
       {season && (
         <>
