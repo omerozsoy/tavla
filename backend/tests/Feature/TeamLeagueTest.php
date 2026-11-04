@@ -52,8 +52,10 @@ class TeamLeagueTest extends TestCase
     private function makeTeam(?User $founder = null, string $name = 'Kartallar', string $tag = 'KRT'): Team
     {
         $founder = $founder ?: $this->eligibleUser();
+        $team = $this->svc()->createTeam($founder, ['name' => $name, 'tag' => $tag]);
+        $team->update(['status' => 'active']); // yönetim onayı simülasyonu (pending→active)
 
-        return $this->svc()->createTeam($founder, ['name' => $name, 'tag' => $tag]);
+        return $team;
     }
 
     // ---- §2 Kuruluş & ücret -------------------------------------------------
@@ -63,11 +65,30 @@ class TeamLeagueTest extends TestCase
         $founder = $this->eligibleUser(['coins' => 100_000]);
         $team = $this->svc()->createTeam($founder, ['name' => 'Kartallar', 'tag' => 'KRT']);
 
-        $this->assertSame('active', $team->status);
+        $this->assertSame('pending', $team->status); // kuruluş YÖNETİM ONAYINA kadar pending
         $this->assertSame(100_000 - TeamRules::FOUND_COST, (int) $founder->fresh()->coins);
         $this->assertSame(1, WalletTransaction::where('user_id', $founder->id)->where('type', 'team_create')->count());
         $this->assertSame('founder', TeamMember::where('user_id', $founder->id)->value('role'));
         $this->assertSame(1, (int) $team->member_count);
+    }
+
+    public function test_pending_team_approve_and_reject(): void
+    {
+        // Onay: pending → active.
+        $founder = $this->eligibleUser(['coins' => 100_000]);
+        $team = $this->svc()->createTeam($founder, ['name' => 'Kartallar', 'tag' => 'KRT']);
+        $this->assertSame('pending', $team->status);
+        $this->svc()->approveTeam($team, 1);
+        $this->assertSame('active', $team->fresh()->status);
+
+        // Ret: ücret İADE + takım + üyelik silinir.
+        $founder2 = $this->eligibleUser(['coins' => 100_000]);
+        $team2 = $this->svc()->createTeam($founder2, ['name' => 'Baskalari', 'tag' => 'BSK']);
+        $this->assertSame(100_000 - TeamRules::FOUND_COST, (int) $founder2->fresh()->coins);
+        $this->svc()->rejectTeam($team2);
+        $this->assertSame(100_000, (int) $founder2->fresh()->coins);
+        $this->assertNull(Team::find($team2->id));
+        $this->assertSame(0, TeamMember::where('user_id', $founder2->id)->count());
     }
 
     public function test_double_create_does_not_double_charge(): void
@@ -281,6 +302,7 @@ class TeamLeagueTest extends TestCase
     {
         $founder = $this->eligibleUser(['last_login_at' => now()->subDays(61)]);
         $team = $this->svc()->createTeam($founder, ['name' => 'Kartallar', 'tag' => 'KRT']);
+        $team->update(['status' => 'active']); // yönetim onayı simülasyonu (sweep aktif takımları işler)
         $asst = User::factory()->create(['plan' => 'premium', 'plan_until' => now()->addYear(), 'rating' => 1500]);
         TeamMember::create(['team_id' => $team->id, 'user_id' => $asst->id, 'role' => 'assistant', 'appointed_seq' => 1, 'joined_at' => now()]);
         $this->svc()->recompute($team);

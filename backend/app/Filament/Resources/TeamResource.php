@@ -79,7 +79,12 @@ class TeamResource extends Resource
                 Tables\Columns\TextColumn::make('tag')->label('Etiket')->badge()->searchable(),
                 Tables\Columns\TextColumn::make('name')->label('Ad')->searchable()->limit(30),
                 Tables\Columns\TextColumn::make('status')->label('Durum')->badge()
-                    ->color(fn (string $state) => $state === 'active' ? 'success' : 'gray'),
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'active' => 'Aktif', 'pending' => 'Onay bekliyor', 'closed' => 'Kapalı', default => $state,
+                    })
+                    ->color(fn (string $state) => match ($state) {
+                        'active' => 'success', 'pending' => 'warning', default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('member_count')->label('Üye')->sortable(),
                 Tables\Columns\TextColumn::make('rating_avg')->label('Ortalama')->numeric(1)->sortable(),
                 Tables\Columns\IconColumn::make('logo_pending')->label('Logo onayı')
@@ -90,12 +95,24 @@ class TeamResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Durum')
-                    ->options(['active' => 'Aktif', 'closed' => 'Kapalı']),
+                    ->options(['active' => 'Aktif', 'pending' => 'Onay bekliyor', 'closed' => 'Kapalı']),
                 Tables\Filters\Filter::make('logo_pending')->label('Logo onayı bekleyen')
                     ->query(fn ($q) => $q->whereNotNull('logo_pending')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('İncele'),
+                Tables\Actions\Action::make('approve')->label('Onayla')
+                    ->icon('heroicon-o-check-badge')->color('success')
+                    ->visible(fn (Team $r) => $r->status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalDescription('Takım aktifleştirilecek; sıralama/arama/maçlarda görünür olacak.')
+                    ->action(fn (Team $r) => self::run(fn () => app(TeamService::class)->approveTeam($r, (int) auth()->id()), 'Takım onaylandı.')),
+                Tables\Actions\Action::make('reject')->label('Reddet')
+                    ->icon('heroicon-o-x-circle')->color('danger')
+                    ->visible(fn (Team $r) => $r->status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalDescription('Takım reddedilecek; kuruluş ücreti kurucuya İADE edilip takım silinir.')
+                    ->action(fn (Team $r) => self::run(fn () => app(TeamService::class)->rejectTeam($r), 'Takım reddedildi, ücret iade edildi.')),
                 Tables\Actions\Action::make('approveLogo')->label('Logo Onayla')
                     ->icon('heroicon-o-check')->color('success')
                     ->visible(fn (Team $r) => ! empty($r->logo_pending))

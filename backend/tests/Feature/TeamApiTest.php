@@ -38,6 +38,7 @@ class TeamApiTest extends TestCase
     {
         $founder = $this->eligibleUser();
         $team = app(TeamService::class)->createTeam($founder, ['name' => $name, 'tag' => $tag]);
+        $team->update(['status' => 'active']); // yönetim onayı simülasyonu (pending→active)
         $users = [$founder];
         for ($i = 0; $i < 5; $i++) {
             $u = User::factory()->create(['plan' => 'premium', 'plan_until' => now()->addYear(), 'rating' => 1500]);

@@ -1544,6 +1544,7 @@ export async function leagueMatchRoom(matchId: number): Promise<{ code: string; 
 export interface TeamBrief {
   id: number; name: string; tag: string; logo?: string | null
   color1: string; color2: string; rating_avg: number; member_count: number; is_champion: boolean
+  status?: string // 'active' | 'pending' (yönetim onayında) | 'closed'
 }
 export interface TeamUserBrief { id: number; nickname?: string; avatar?: string | null; rating?: number; tag?: string | null }
 export interface TeamRankRow extends TeamBrief { rank: number }

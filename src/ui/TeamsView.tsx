@@ -248,8 +248,8 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
     setBusy(true)
     try {
       await createTeam({ name, tag, color1, color2, description: desc || undefined, logo_upload: logo || undefined })
-      props.setNotice(logo ? t('teams.created') + ' ' + t('teams.logoPending') : t('teams.created'))
-      setTimeout(() => location.reload(), 700)
+      props.setNotice(t('teams.pendingApproval'))
+      setTimeout(() => location.reload(), 1100)
     } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
 
@@ -338,7 +338,7 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
         </p>
       )}
       {cropSrc && (
-        <AvatarCropper src={cropSrc} size={256}
+        <AvatarCropper src={cropSrc} size={256} title={t('teams.cropTitle')} maskPath={SHIELD_PATH}
           onApply={(d) => { setLogo(d); setCropSrc(null) }}
           onCancel={() => setCropSrc(null)} />
       )}
@@ -390,6 +390,19 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
             <Button variant="ghost" disabled={busy} onClick={() => act(() => cancelTeamApplication(a.id))}>{t('teams.cancel')}</Button>
           </div>
         ))}
+      </div>
+    )
+  }
+
+  // Takım yönetim onayında → yönetim ekranı yerine bilgilendirme (henüz aktif değil).
+  if (me.membership.team.status === 'pending') {
+    return (
+      <div className="teams-gate">
+        <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
+        <div>
+          <div className="teams-gate-title">{me.membership.team.name} · {t('teams.my.role.' + me.membership.role)}</div>
+          <div className="teams-gate-text">{t('teams.pendingBanner')}</div>
+        </div>
       </div>
     )
   }
@@ -575,7 +588,7 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
         <Button variant="ghost" onClick={() => setEditing(false)}>{t('teams.cancel')}</Button>
       </div>
       {cropSrc && (
-        <AvatarCropper src={cropSrc} size={256}
+        <AvatarCropper src={cropSrc} size={256} title={t('teams.cropTitle')} maskPath={SHIELD_PATH}
           onApply={(d) => { setCropSrc(null); props.act(() => updateTeamIdentity(id, { logo_upload: d }), t('teams.logoPending')) }}
           onCancel={() => setCropSrc(null)} />
       )}
@@ -815,11 +828,12 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
 
 // ---- Ortak ------------------------------------------------------------------
 // Kalkan (shield) amblem: logo kalkana kırpılır, çerçeve takım renkleri gradyanı (stroke).
-const SHIELD_PATH = 'M50 6 L90 16 Q94 17 94 22 V54 C94 84 76 106 50 116 C24 106 6 84 6 54 V22 Q6 17 10 16 Z'
+// Path 100×100 kutuya sığar (cropper maskesiyle aynı → hizalı önizleme).
+export const SHIELD_PATH = 'M50 4 L86 13 Q90 14 90 19 L90 52 C90 78 74 94 50 98 C26 94 10 78 10 52 L10 19 Q10 14 14 13 Z'
 function TeamEmblem({ color1, color2, logo, label, size = 72 }: { color1: string; color2: string; logo?: string; label?: string; size?: number }) {
   const uid = useId().replace(/[:]/g, '')
   return (
-    <svg viewBox="-6 -6 112 132" width={size} height={Math.round(size * 1.18)}
+    <svg viewBox="-5 -5 110 110" width={size} height={size}
       style={{ display: 'block', flexShrink: 0, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.25))' }}>
       <defs>
         <linearGradient id={`tg${uid}`} x1="0" y1="0" x2="1" y2="1">
@@ -830,16 +844,16 @@ function TeamEmblem({ color1, color2, logo, label, size = 72 }: { color1: string
       </defs>
       <g clipPath={`url(#tc${uid})`}>
         {logo ? (
-          <image href={logo} x="0" y="0" width="100" height="120" preserveAspectRatio="xMidYMid slice" />
+          <image href={logo} x="10" y="4" width="80" height="94" preserveAspectRatio="xMidYMid slice" />
         ) : (
           <>
-            <rect x="0" y="0" width="100" height="120" fill="#141922" />
-            <text x="50" y="68" textAnchor="middle" fill="#fff" fontSize="34" fontWeight="800"
+            <rect x="10" y="4" width="80" height="94" fill="#141922" />
+            <text x="50" y="58" textAnchor="middle" fill="#fff" fontSize="30" fontWeight="800"
               fontFamily="system-ui, sans-serif">{(label || '?').slice(0, 4).toUpperCase()}</text>
           </>
         )}
       </g>
-      <path d={SHIELD_PATH} fill="none" stroke={`url(#tg${uid})`} strokeWidth="7" strokeLinejoin="round" />
+      <path d={SHIELD_PATH} fill="none" stroke={`url(#tg${uid})`} strokeWidth="6" strokeLinejoin="round" />
     </svg>
   )
 }

@@ -12,13 +12,17 @@ interface Props {
   size?: number
   onApply: (dataUrl: string) => void
   onCancel: () => void
+  /** baslik override (yoksa 'crop.title' = daire metni) */
+  title?: string
+  /** 0..100 viewBox SVG path; verilirse daire yerine bu sekil maskelenir (orn. takim kalkan amblemi) */
+  maskPath?: string
 }
 
 const VIEW = 260 // ekrandaki kare onizleme (px)
 
 // Fotografi cembere yerlestirme: zoom (kaydirici/tekerlek) + surukle (pan), sonra kare kirp.
 // Cikti kare JPEG; dairesel cerceve zaten maskeliyor.
-export default function AvatarCropper({ src, size = 256, onApply, onCancel }: Props) {
+export default function AvatarCropper({ src, size = 256, onApply, onCancel, title, maskPath }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   const imgRef = useRef<HTMLImageElement | null>(null)
@@ -98,10 +102,10 @@ export default function AvatarCropper({ src, size = 256, onApply, onCancel }: Pr
   return (
     <div className="avc-overlay" role="dialog" aria-modal="true" onPointerUp={onPointerUp}>
       <div className="avc-panel">
-        <h3 className="avc-title">{t('crop.title')}</h3>
+        <h3 className="avc-title">{title ?? t('crop.title')}</h3>
         <div
           className="avc-view"
-          style={{ width: VIEW, height: VIEW }}
+          style={{ width: VIEW, height: VIEW, position: 'relative' }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -120,7 +124,15 @@ export default function AvatarCropper({ src, size = 256, onApply, onCancel }: Pr
               }}
             />
           )}
-          <div className="avc-mask" />
+          {maskPath ? (
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" width={VIEW} height={VIEW}
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              <path fillRule="evenodd" fill="rgba(0,0,0,0.5)" d={`M0 0H100V100H0Z ${maskPath}`} />
+              <path d={maskPath} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="0.9" />
+            </svg>
+          ) : (
+            <div className="avc-mask" />
+          )}
         </div>
         <div className="avc-zoom">
           <Icon name="camera" size={16} />

@@ -605,6 +605,7 @@ class TeamController extends Controller
             'color1' => $t->color1, 'color2' => $t->color2,
             'rating_avg' => round((float) $t->rating_avg, 1), 'member_count' => (int) $t->member_count,
             'is_champion' => $t->isChampionNow(),
+            'status' => $t->status, // pending = yönetim onayında (frontend bilgilendirmesi)
         ];
     }
 

@@ -220,7 +220,7 @@ class TeamService
                     'color2' => $data['color2'] ?? '#1f2933',
                     'description' => $data['description'] ?? null,
                     'founder_id' => $locked->id,
-                    'status' => 'active',
+                    'status' => 'pending', // YÖNETİM ONAYINA KADAR beklemede (listelerde gizli); onayla→active
                     'applications_open' => true,
                     'member_count' => 1,
                     'rating_avg' => (float) ($locked->rating ?? 1500),
@@ -793,6 +793,33 @@ class TeamService
             // Test kolaylığı: üyelerin bekleme süresini de temizle (hemen yeni takım kurabilsinler).
             TeamCooldown::whereIn('user_id', array_merge($memberIds, [(int) $team->founder_id]))->delete();
             $team->delete();
+        });
+    }
+
+    /** ADMIN ONAY: beklemedeki takımı aktifleştirir (artık listelerde görünür, maç yapabilir). */
+    public function approveTeam(Team $team, int $adminId): void
+    {
+        if ($team->status !== 'pending') {
+            throw new TeamException('not_pending', 409);
+        }
+        DB::transaction(function () use ($team, $adminId) {
+            $team->update(['status' => 'active']);
+            $this->audit($team, $adminId, 'team_approved');
+        });
+    }
+
+    /** ADMIN RET: beklemedeki takımı reddeder → kuruluş ücreti kurucuya İADE + takım silinir. */
+    public function rejectTeam(Team $team): void
+    {
+        if ($team->status !== 'pending') {
+            throw new TeamException('not_pending', 409);
+        }
+        DB::transaction(function () use ($team) {
+            $founder = User::find($team->founder_id);
+            if ($founder) {
+                $this->wallet->credit($founder, TeamRules::FOUND_COST, 'team_create_refund', 'team', $team->id);
+            }
+            $this->adminDeleteTeam($team); // ücret iade edildi → takım + ilişkili satırlar silinir
         });
     }
 
