@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\LeagueMatch;
+use App\Models\LeagueNotification;
 use App\Models\LeagueParticipant;
 use App\Models\LeagueSeason;
 use App\Models\User;
 use App\Support\League\LeagueRuntime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
@@ -166,5 +169,20 @@ class LeagueMatchFlowTest extends TestCase
         $this->assertSame(0, LeagueParticipant::where('season_id', $s->id)->where('user_id', $p1)->first()->state['points']);
         $this->assertSame(1, LeagueParticipant::where('season_id', $s->id)->where('user_id', $p2)->first()->state['points']);
         $this->assertSame('yanlış bildirim', $m->refresh()->admin_note);
+    }
+
+    public function test_appointment_propose_and_confirm_notify_both_players(): void
+    {
+        Mail::fake();
+        Queue::fake();
+        $s = $this->startedSeason();
+        $m = $this->firstRealMatch($s);
+
+        LeagueRuntime::proposeAppointment($m, (int) $m->p1_user_id, now()->addHours(5));
+        // §14: site + push kanalı defteri (e-posta randevu olaylarında YOK -> istek gecikmesi engeli).
+        $this->assertSame(2, LeagueNotification::where('match_id', $m->id)->where('kind', 'appt_proposed')->count());
+
+        LeagueRuntime::confirmAppointment($m->refresh(), (int) $m->p2_user_id);
+        $this->assertSame(2, LeagueNotification::where('match_id', $m->id)->where('kind', 'appt_confirmed')->count());
     }
 }

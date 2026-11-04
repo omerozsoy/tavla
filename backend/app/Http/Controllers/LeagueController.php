@@ -42,7 +42,20 @@ class LeagueController extends Controller
             'standings' => $this->standingsPayload($season),
             'fixtures' => $this->fixturesPayload($season),
             'bracket' => $this->bracketPayload($season),
+            'participants' => $this->participantsPayload($season),
         ]);
+    }
+
+    /** Seçilen oyuncular + yedekler (§16 "Seçilen oyuncular" ekranı; lig öncesinde de görünür). Açık-güvenli. */
+    private function participantsPayload(LeagueSeason $season): array
+    {
+        $rows = LeagueParticipant::where('season_id', $season->id)
+            ->whereIn('status', ['accepted', 'reserve'])->orderBy('reserve_order')->orderBy('seed')->get();
+        $users = $this->userMap($rows->pluck('user_id')->all());
+        $map = fn (string $st) => $rows->where('status', $st)
+            ->map(fn ($r) => $users[(int) $r->user_id] ?? null)->filter()->values()->all();
+
+        return ['accepted' => $map('accepted'), 'reserve' => $map('reserve')];
     }
 
     public function standings(LeagueSeason $season): JsonResponse

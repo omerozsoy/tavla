@@ -331,6 +331,8 @@ class LeagueRuntime
         $appt['proposal'] = ['at' => $at->toIso8601String(), 'by' => $byUserId];
         $appt['history'][] = ['action' => 'propose', 'by' => $byUserId, 'at' => $at->toIso8601String(), 'ts' => now()->toIso8601String()];
         $m->update(['appointment' => $appt]);
+        // §14: saat teklifi bildirimi (site+push anlık; e-posta cron hatırlatmalarında). Best-effort.
+        self::notifySafe($m, 'appt_proposed', $at, 'Lig: saat teklifi', 'Rakibin bir maç saati teklif etti. Lig maç sayfandan onayla.');
     }
 
     /**
@@ -356,6 +358,9 @@ class LeagueRuntime
         $appt['proposal'] = null;
         $appt['history'][] = ['action' => 'confirm', 'by' => $byUserId, 'at' => $prop['at'], 'ts' => now()->toIso8601String()];
         $m->update(['appointment' => $appt]);
+        // §14: kesinleşmiş saat bildirimi. Eski (farklı anchor'lı) hatırlatmalar league:tick'te yeni
+        // effectiveStartAt'e göre yeniden planlanır -> bayat hatırlatma gönderilmez.
+        self::notifySafe($m, 'appt_confirmed', $at, 'Lig: maç saati kesinleşti', 'Maç saatiniz onaylandı: '.$at->format('d.m.Y H:i').'. Saatinde hazır ol.');
     }
 
     // ---- Hazır olma + otomatik başlama (§9) ----------------------------------
@@ -526,6 +531,23 @@ class LeagueRuntime
         }
         $m->update($upd);
         Shield::audit($adminId, 'league_postpone', 'match='.$m->id.' reason='.$reason, 3);
+        // §14: admin ertelemesi bildirimi (finalde "yeni final tarihi" §9 dahil). Yeni geçerli saate göre.
+        $start = $m->fresh()?->effectiveStartAt();
+        if ($start) {
+            self::notifySafe($m, 'rescheduled', $start, 'Lig: maç ertelendi', 'Maçının tarihi güncellendi: '.$start->format('d.m.Y H:i').'.');
+        }
+    }
+
+    /** §14 bildirim — best-effort; asla maç/tur akışını bozmaz (push/e-posta hatası yutulur). */
+    private static function notifySafe(LeagueMatch $m, string $kind, Carbon $anchor, string $title, string $body): void
+    {
+        try {
+            if ($m->p1_user_id && $m->p2_user_id) {
+                LeagueNotifier::fire($m, $kind, $anchor, $title, $body, 'bell', ['site', 'push']);
+            }
+        } catch (\Throwable $e) {
+            // yut
+        }
     }
 
     /**

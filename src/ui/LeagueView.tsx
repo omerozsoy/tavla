@@ -16,6 +16,7 @@ import {
   type LeagueSeasonMeta,
   type LeagueSeasonSummary,
   type LeagueStandingRow,
+  type LeagueUserBrief,
 } from '../api'
 
 /**
@@ -203,7 +204,14 @@ export default function LeagueView(props: Props) {
             ))}
           </div>
 
-          {tab === 'standings' && <Standings rows={detail?.standings ?? []} onProfile={props.onProfile} />}
+          {tab === 'standings' && (
+            <>
+              {(detail?.standings?.length ?? 0) === 0 && (
+                <Participants parts={detail?.participants} onProfile={props.onProfile} />
+              )}
+              <Standings rows={detail?.standings ?? []} onProfile={props.onProfile} />
+            </>
+          )}
           {tab === 'fixtures' && <Fixtures rounds={detail?.fixtures ?? []} />}
           {tab === 'bracket' && <Bracket bracket={detail?.bracket ?? {}} />}
           {tab === 'my' && (
@@ -232,6 +240,33 @@ export default function LeagueView(props: Props) {
               {f.name} — {f.champion ? '🏆 ' + f.champion.nickname : S(f.status)}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Participants({ parts, onProfile }: { parts?: { accepted: LeagueUserBrief[]; reserve: LeagueUserBrief[] }; onProfile?: (id: number) => void }) {
+  const { t } = useT()
+  if (!parts || (parts.accepted.length === 0 && parts.reserve.length === 0)) return null
+  const chip = (u: LeagueUserBrief) => (
+    <span key={u.id} onClick={() => onProfile?.(u.id)}
+      style={{ ...badgeStyle, background: '#f1f5f9', color: '#0f172a', cursor: onProfile ? 'pointer' : 'default' }}>
+      {u.nickname} · {u.rating}
+    </span>
+  )
+  return (
+    <div style={{ marginBottom: 10 }}>
+      {parts.accepted.length > 0 && (
+        <div style={cardStyle}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('league.selectedPlayers')} ({parts.accepted.length})</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{parts.accepted.map(chip)}</div>
+        </div>
+      )}
+      {parts.reserve.length > 0 && (
+        <div style={cardStyle}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('league.reserves')} ({parts.reserve.length})</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{parts.reserve.map(chip)}</div>
         </div>
       )}
     </div>

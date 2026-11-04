@@ -265,8 +265,8 @@ const TR: Dict = {
   'teams.rules.body': 'Takım kur (Premium + 20 puanlı maç + 50.000 coin), 24 kişiye kadar üye al, 5’e 5 karşılaşmalara çık. Takım puanı üyelerin rating ortalamasıdır (sıralama için en az 8 üye). Aylık meydan okumalarda galibiyet 3, beraberlik 1 puandır; ilk üçe kupa, şampiyona rozet.',
 
   // Türkiye Online Tavla Ligi (bağımsız modül §1)
-  'menu.group.league': 'Türkiye Online Tavla Ligi',
-  'league.menu': 'Lig',
+  'menu.group.league': 'Tavla Ligi',
+  'league.menu': 'Türkiye Online Tavla Ligi',
   'league.title': 'Türkiye Online Tavla Ligi',
   'league.subtitle': 'Premium üyelere özel sezonluk lig',
   'league.noActive': 'Şu an aktif sezon yok.',
@@ -275,6 +275,8 @@ const TR: Dict = {
   'league.premiumRequired': 'Başvuru için Premium üyelik gerekir.',
   'league.loginRequired': 'Başvurmak için giriş yap.',
   'league.finishedSeasons': 'Tamamlanan Sezonlar',
+  'league.selectedPlayers': 'Seçilen Oyuncular',
+  'league.reserves': 'Yedekler',
   'league.tab.standings': 'Puan Tablosu',
   'league.tab.fixtures': 'Fikstür',
   'league.tab.bracket': 'Eleme Ağacı',
@@ -2422,8 +2424,8 @@ const EN: Dict = {
   'teams.rules.body': 'Create a team (Premium + 20 rated matches + 50,000 coins), recruit up to 24 members, and play 5-v-5 matches. Team rating is the members’ average rating (ranking needs at least 8 members). In monthly challenges a win is 3 points, a draw 1; top three earn cups, the champion a badge.',
 
   // Turkey Online Backgammon League (independent module §1)
-  'menu.group.league': 'Türkiye Online Tavla Ligi',
-  'league.menu': 'League',
+  'menu.group.league': 'Backgammon League',
+  'league.menu': 'Türkiye Online Tavla Ligi',
   'league.title': 'Türkiye Online Tavla Ligi',
   'league.subtitle': 'Seasonal league for Premium members',
   'league.noActive': 'No active season right now.',
@@ -2432,6 +2434,8 @@ const EN: Dict = {
   'league.premiumRequired': 'Premium membership is required to apply.',
   'league.loginRequired': 'Log in to apply.',
   'league.finishedSeasons': 'Finished Seasons',
+  'league.selectedPlayers': 'Selected Players',
+  'league.reserves': 'Reserves',
   'league.tab.standings': 'Standings',
   'league.tab.fixtures': 'Fixtures',
   'league.tab.bracket': 'Bracket',

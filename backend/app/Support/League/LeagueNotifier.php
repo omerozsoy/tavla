@@ -25,10 +25,10 @@ class LeagueNotifier
      * Bir olayı iki oyuncuya gönder. $anchorAt olayın zaman çıpası (hatırlatma=randevu saati; eşleşme=
      * sabit referans) -> randevu değişince yeni çıpa yeni hatırlatmaya izin verir, eskisi tekrarlanmaz.
      */
-    public static function fire(LeagueMatch $m, string $kind, Carbon $anchorAt, string $title, string $body, string $icon = 'trophy'): void
+    public static function fire(LeagueMatch $m, string $kind, Carbon $anchorAt, string $title, string $body, string $icon = 'trophy', ?array $channels = null): void
     {
         $users = array_values(array_filter([(int) $m->p1_user_id, (int) $m->p2_user_id]));
-        foreach (self::CHANNELS as $channel) {
+        foreach ($channels ?? self::CHANNELS as $channel) {
             $exists = LeagueNotification::where('match_id', $m->id)->where('kind', $kind)
                 ->where('channel', $channel)->where('anchor_at', $anchorAt)->exists();
             if ($exists) {

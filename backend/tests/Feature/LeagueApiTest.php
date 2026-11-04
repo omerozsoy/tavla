@@ -77,4 +77,18 @@ class LeagueApiTest extends TestCase
         // Açık yanıtta e-posta anahtarı hiçbir yerde olmamalı (§16).
         $this->assertStringNotContainsString('@', json_encode($body));
     }
+
+    public function test_show_includes_selected_players(): void
+    {
+        $season = LeagueRuntime::createSeason();
+        LeagueRuntime::openApplications($season, now()->subMinute(), now()->addDay());
+        $u = $this->premium();
+        LeagueRuntime::apply($season, $u);
+        LeagueRuntime::decide($season, [$u->id => 'accepted']);
+
+        $body = $this->getJson("/api/league/{$season->id}")->assertOk()->json();
+        $this->assertCount(1, $body['participants']['accepted']); // §16 "Seçilen oyuncular"
+        $this->assertSame($u->id, $body['participants']['accepted'][0]['id']);
+        $this->assertStringNotContainsString('@', json_encode($body)); // e-posta sızmaz
+    }
 }

@@ -3,8 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LeagueSeasonResource\Pages;
+use App\Models\LeagueMatch;
 use App\Models\LeagueSeason;
 use App\Models\User;
+use App\Support\League\LeagueEngine;
 use App\Support\League\LeagueRuntime;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -93,6 +95,9 @@ class LeagueSeasonResource extends Resource
                 self::confirmLeagueAction(),
                 self::buildKnockoutAction(),
                 self::withdrawAction(),
+                self::tiesAction(),
+                self::correctAction(),
+                self::postponeAction(),
                 Tables\Actions\EditAction::make(),
             ])
             ->defaultSort('id', 'desc');
@@ -187,6 +192,116 @@ class LeagueSeasonResource extends Resource
                     ->options(fn () => self::activePlayerOptions($r))->searchable()->required(),
             ])
             ->action(fn (LeagueSeason $r, array $data) => self::run(fn () => LeagueRuntime::withdraw($r, (int) $data['user_id'], auth()->id()), 'Oyuncu çekildi.'));
+    }
+
+    /** §5: çözülemeyen kritik eşitlikleri AÇIKÇA göster (admin tiebreak_manual girsin diye). */
+    private static function tiesAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('ties')->label('Kritik Eşitlikler')
+            ->icon('heroicon-o-scale')->color('warning')
+            ->visible(fn (LeagueSeason $r) => $r->status === 'league')
+            ->action(function (LeagueSeason $r): void {
+                $parts = LeagueRuntime::engineParticipants($r);
+                $order = is_array($r->tiebreak_manual) ? $r->tiebreak_manual : [];
+                $ties = LeagueEngine::unresolvedCriticalTies($parts, $order);
+                if (empty($ties)) {
+                    Notification::make()->title('Çözülmemiş kritik eşitlik yok')->success()->send();
+
+                    return;
+                }
+                $names = User::whereIn('id', collect($ties)->flatMap(fn ($t) => $t['ids'])->unique()->all())
+                    ->pluck('nickname', 'id');
+                $lines = collect($ties)->map(fn ($t) => ($t['boundary'] === 8 ? '8|9' : '24|25').' sınırı: '
+                    .collect($t['ids'])->map(fn ($id) => ($names[$id] ?? $id).' (#'.$id.')')->implode(', '))->implode(' — ');
+                Notification::make()->title('Admin eşitlik sırası gerekli (sezon formundaki "tiebreak_manual")')
+                    ->body($lines)->warning()->persistent()->send();
+            });
+    }
+
+    /** §13: yanlış maç sonucunu gerekçeyle düzelt (hem lig hem eleme maçı). */
+    private static function correctAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('correctResult')->label('Sonuç Düzelt')
+            ->icon('heroicon-o-pencil-square')->color('warning')
+            ->visible(fn (LeagueSeason $r) => in_array($r->status, ['league', 'knockout', 'finished'], true))
+            ->form(fn (LeagueSeason $r) => [
+                Forms\Components\Select::make('match_id')->label('Maç')->options(self::matchOptions($r))
+                    ->searchable()->required()->live(),
+                Forms\Components\Select::make('type')->label('Yeni sonuç')->required()->options([
+                    'played' => 'Oynandı (galip seç)',
+                    'p1_forfeit' => '1. oyuncu hükmen mağlup',
+                    'p2_forfeit' => '2. oyuncu hükmen mağlup',
+                    'double_noshow' => 'İki taraf da gelmedi',
+                ]),
+                Forms\Components\Select::make('winner_user_id')->label('Galip (yalnız "Oynandı")')
+                    ->options(fn (Forms\Get $get) => self::matchPlayerOptions((int) $get('match_id')))
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'played'),
+                Forms\Components\Textarea::make('reason')->label('Gerekçe (zorunlu)')->required()->maxLength(255),
+            ])
+            ->action(function (array $data): void {
+                $m = LeagueMatch::find((int) $data['match_id']);
+                if (! $m) {
+                    Notification::make()->title('Maç bulunamadı')->danger()->send();
+
+                    return;
+                }
+                self::run(fn () => LeagueRuntime::correctResult($m, $data['type'], $data['winner_user_id'] ?? null, auth()->id(), $data['reason']), 'Sonuç düzeltildi.');
+            });
+    }
+
+    /** §10/§13 + §9 (finalde yeni tarih): maç erteleme (zorunlu saat + son tarih). */
+    private static function postponeAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('postpone')->label('Maç Ertele')
+            ->icon('heroicon-o-clock')->color('info')
+            ->visible(fn (LeagueSeason $r) => in_array($r->status, ['league', 'knockout'], true))
+            ->form(fn (LeagueSeason $r) => [
+                Forms\Components\Select::make('match_id')->label('Maç (bekleyen)')
+                    ->options(self::matchOptions($r, true))->searchable()->required(),
+                Forms\Components\DateTimePicker::make('mandatory_at')->label('Yeni zorunlu saat')->seconds(false),
+                Forms\Components\DateTimePicker::make('deadline_at')->label('Yeni son oynanma')->seconds(false),
+                Forms\Components\Textarea::make('reason')->label('Gerekçe (zorunlu)')->required()->maxLength(255),
+            ])
+            ->action(function (array $data): void {
+                $m = LeagueMatch::find((int) $data['match_id']);
+                if (! $m) {
+                    Notification::make()->title('Maç bulunamadı')->danger()->send();
+
+                    return;
+                }
+                self::run(fn () => LeagueRuntime::postpone($m, $data['mandatory_at'] ?? null, $data['deadline_at'] ?? null, auth()->id(), $data['reason']), 'Maç ertelendi.');
+            });
+    }
+
+    /** Maç seçenekleri: id => "R{tur}/{faz} A vs B [sonuç]". $pendingOnly=true -> yalnız bekleyen. */
+    private static function matchOptions(LeagueSeason $r, bool $pendingOnly = false): array
+    {
+        $q = LeagueMatch::where('season_id', $r->id)->orderBy('round')->orderBy('bracket_pos');
+        if ($pendingOnly) {
+            $q->where('result', 'pending');
+        }
+        $ms = $q->get();
+        $users = User::whereIn('id', $ms->flatMap(fn ($m) => [$m->p1_user_id, $m->p2_user_id])->filter()->unique()->all())
+            ->pluck('nickname', 'id');
+        $out = [];
+        foreach ($ms as $m) {
+            $a = $m->p1_user_id ? ($users[(int) $m->p1_user_id] ?? $m->p1_user_id) : '—';
+            $b = $m->p2_user_id ? ($users[(int) $m->p2_user_id] ?? $m->p2_user_id) : '(bay)';
+            $out[$m->id] = 'R'.$m->round.'/'.$m->phase.' '.$a.' vs '.$b.' ['.$m->result.']';
+        }
+
+        return $out;
+    }
+
+    private static function matchPlayerOptions(int $matchId): array
+    {
+        $m = LeagueMatch::find($matchId);
+        if (! $m) {
+            return [];
+        }
+        $ids = array_values(array_filter([$m->p1_user_id, $m->p2_user_id]));
+
+        return User::whereIn('id', $ids)->pluck('nickname', 'id')->all();
     }
 
     /** Başvuranlar + seçilmişler (checkbox seçenekleri): userId => "nickname (rating)". */

@@ -1514,6 +1514,7 @@ export async function getLeagueSeason(id: number): Promise<{
   standings: LeagueStandingRow[]
   fixtures: Array<{ round: number; matches: LeagueMatchRow[] }>
   bracket: Record<string, LeagueMatchRow[]>
+  participants: { accepted: LeagueUserBrief[]; reserve: LeagueUserBrief[] }
 }> {
   return req(`/league/${id}`)
 }
@@ -1586,6 +1587,10 @@ export async function getTeams(q?: string): Promise<{ ranking?: TeamRankRow[]; r
 }
 export async function getTeamsMonthly(month?: string): Promise<{ month: string; past_months: string[]; table: TeamMonthlyRow[] }> {
   return req('/teams/monthly' + (month ? '?month=' + encodeURIComponent(month) : ''))
+}
+/** Site geneli id→etiket haritası (isim yanında [ETİKET]) — /roles deseni. */
+export async function teamTags(): Promise<{ tags: Record<string, string> }> {
+  return req('/team-tags')
 }
 export async function getTeam(id: number): Promise<TeamDetail> {
   return req(`/teams/${id}`)
