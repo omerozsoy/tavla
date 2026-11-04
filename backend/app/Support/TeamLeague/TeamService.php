@@ -7,10 +7,15 @@ use App\Models\Notification;
 use App\Models\Team;
 use App\Models\TeamApplication;
 use App\Models\TeamAudit;
+use App\Models\TeamAward;
 use App\Models\TeamCooldown;
 use App\Models\TeamInvite;
 use App\Models\TeamMatch;
+use App\Models\TeamMatchGame;
+use App\Models\TeamMatchLineup;
 use App\Models\TeamMember;
+use App\Models\TeamMessage;
+use App\Models\TeamNotification;
 use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Database\QueryException;
@@ -760,6 +765,34 @@ class TeamService
             TeamInvite::where('team_id', $team->id)->where('status', 'pending')->update(['status' => 'revoked', 'responded_at' => now()]);
             $team->update(['status' => 'closed', 'closed_at' => now(), 'closed_by' => $adminId, 'member_count' => 0]);
             $this->audit($team, $adminId, 'team_closed_by_admin');
+        });
+    }
+
+    /**
+     * KALICI SİL (admin/test): takımı ve TÜM ilişkili satırları siler (soft-close değil). FK yok →
+     * orphan kalmasın diye elle temizlenir. Kurucunun bekleme süresi de silinir (hemen yeniden kurabilsin).
+     */
+    public function adminDeleteTeam(Team $team): void
+    {
+        DB::transaction(function () use ($team) {
+            $id = $team->id;
+            $matchIds = TeamMatch::where('home_team_id', $id)->orWhere('away_team_id', $id)->pluck('id');
+            if ($matchIds->isNotEmpty()) {
+                TeamMatchLineup::whereIn('match_id', $matchIds)->delete();
+                TeamMatchGame::whereIn('match_id', $matchIds)->delete();
+                TeamNotification::whereIn('match_id', $matchIds)->delete();
+                TeamMatch::whereIn('id', $matchIds)->delete();
+            }
+            $memberIds = TeamMember::where('team_id', $id)->pluck('user_id')->all();
+            TeamMember::where('team_id', $id)->delete();
+            TeamApplication::where('team_id', $id)->delete();
+            TeamInvite::where('team_id', $id)->delete();
+            TeamMessage::where('team_id', $id)->delete();
+            TeamAward::where('team_id', $id)->delete();
+            TeamAudit::where('team_id', $id)->delete();
+            // Test kolaylığı: üyelerin bekleme süresini de temizle (hemen yeni takım kurabilsinler).
+            TeamCooldown::whereIn('user_id', array_merge($memberIds, [(int) $team->founder_id]))->delete();
+            $team->delete();
         });
     }
 

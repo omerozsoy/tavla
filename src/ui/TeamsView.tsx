@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
+import AvatarCropper from './AvatarCropper'
 import {
   acceptTeamInvite,
   acceptTeamMatch,
@@ -207,6 +208,7 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
   const [desc, setDesc] = useState('')
   const [busy, setBusy] = useState(false)
   const [showForm, setShowForm] = useState(false) // "Takım Kur" düğmesine basınca form açılır
+  const [cropSrc, setCropSrc] = useState<string | null>(null) // seçilen ham görsel → avatar gibi kırp/hizala
   const el = props.eligibility
 
   // Misafir → giriş iste (sekme içeriği; modal arkasında kaybolmasın).
@@ -225,10 +227,11 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
   // Uygun değilse de FORM görünür (kullanıcı alanları görsün); "Takım Kur" düğmesi pasif + üstte şart uyarısı.
   const canCreate = !!el?.can_create
 
+  // Dosya seçilince ham görseli cropper'a ver (avatar gibi: zoom + sürükle → kare).
   const onLogoFile = (file?: File) => {
     if (!file) return
     const r = new FileReader()
-    r.onload = () => setLogo(typeof r.result === 'string' ? r.result : '')
+    r.onload = () => { if (typeof r.result === 'string') setCropSrc(r.result) }
     r.readAsDataURL(file)
   }
   const submit = async () => {
@@ -300,10 +303,13 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
 
       <div className="teams-field">
         <span>{t('teams.logo')}</span>
-        <label className="teams-logo-upload">
-          <input type="file" accept="image/*" onChange={(e) => onLogoFile(e.target.files?.[0])} hidden />
-          <Icon name="users-group" size={16} /> {t('teams.logoUpload')}
-        </label>
+        <div className="teams-logo-row">
+          {logo && <img className="teams-logo-thumb" src={logo} alt="" />}
+          <label className="teams-logo-upload">
+            <input type="file" accept="image/*" onChange={(e) => { onLogoFile(e.target.files?.[0]); e.currentTarget.value = '' }} hidden />
+            <Icon name="users-group" size={16} /> {t('teams.logoUpload')}
+          </label>
+        </div>
         <small>{t('teams.logoHint')}</small>
       </div>
 
@@ -322,6 +328,11 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
           {t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}
           {el && !el.premium && <> · <button type="button" className="teams-req-link" onClick={props.onRequirePremium}>{t('teams.needPremium')}</button></>}
         </p>
+      )}
+      {cropSrc && (
+        <AvatarCropper src={cropSrc} size={256}
+          onApply={(d) => { setLogo(d); setCropSrc(null) }}
+          onCancel={() => setCropSrc(null)} />
       )}
     </div>
   )

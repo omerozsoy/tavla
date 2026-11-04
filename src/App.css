@@ -21290,6 +21290,12 @@ body:has(.spectate-view) .app.lobby {
   transition: border-color 0.15s ease;
 }
 .teams-logo-upload:hover { border-color: var(--accent); }
+.teams-logo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.teams-logo-thumb {
+  width: 48px; height: 48px;
+  border-radius: 10px; object-fit: cover;
+  border: 1px solid var(--border);
+}
 .teams-create-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 /* ===== Turnuva detay redesign: alt-satir + hero ozet band ===== */

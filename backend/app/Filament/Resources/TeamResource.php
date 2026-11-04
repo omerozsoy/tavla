@@ -112,6 +112,11 @@ class TeamResource extends Resource
                     ->requiresConfirmation()
                     ->modalDescription('Üyelikler sonlanır, 72 saat bekleme başlar. Tarihsel maçlar/ödüller korunur. Sonuçlanmamış karşılaşma varsa önce çözülmeli.')
                     ->action(fn (Team $r) => self::run(fn () => app(TeamService::class)->adminClose($r, (int) auth()->id()), 'Takım kapatıldı.')),
+                Tables\Actions\Action::make('deleteTeam')->label('Sil (Kalıcı)')
+                    ->icon('heroicon-o-trash')->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('Takım ve TÜM verileri (üyeler, başvurular, maçlar, sohbet, ödüller) KALICI silinir. Geri alınamaz. (Test/temizlik içindir.)')
+                    ->action(fn (Team $r) => self::run(fn () => app(TeamService::class)->adminDeleteTeam($r), 'Takım kalıcı silindi.')),
             ]);
     }
 
