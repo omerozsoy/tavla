@@ -38,15 +38,15 @@ export const PAGES: PageDef[] = [
 
   // --- TURNUVALAR: rekabet + sosyal (Takımlar + Tavla Ligi bu grupta — ayrı başlıklar kaldırıldı) ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
+  // Türkiye Online Tavla Ligi: Online Turnuvalar'in HEMEN ALTINDA (urun istegi). Grup-ici siralama
+  // fallback = PAGES index -> tournaments'tan sonra, leaderboard'dan once gelir (admin override yoksa).
+  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'laurel-wreath', group: 'compete' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },
-  // Türkiye Online Tavla Ligi: TURNUVALAR grubunun EN ALTINDA (ürün isteği; eski bağımsız 'league' başlığı kaldırıldı).
-  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'trophy', group: 'info' },
-  // Takımlar: PAGES'te league'den SONRA -> grup-içi fallback sort (pages index) Liderlik Tablosu'nun
-  // (admin sort=9) altına düşer; kullanıcı isteği "Takımlar liderlik tablosunun altında".
-  { key: 'teams', slug: 'takimlar-ligi', labelKey: 'teams.menu', icon: 'users', group: 'info' },
+  // Takımlar: info grubunda (ayri; kullanici istegi uzerine lig compete'e tasindi).
+  { key: 'teams', slug: 'takimlar-ligi', labelKey: 'teams.menu', icon: 'users-group', group: 'info' },
 
   // --- EGLENCE: sans/ekonomi oyunlari. Sol menude EĞLENCE grubunda GORUNUR (kullanici istegi);
   // ayrica SAG UST bar ikonlari + /sans-carki + /zar-slotu URL'leri de calisir (ikisi birden). ---

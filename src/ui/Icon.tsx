@@ -13,6 +13,8 @@ import {
   IconPlayerPlay,
   IconBroadcast,
   IconTrophy,
+  IconLaurelWreath1,
+  IconUsersGroup,
   IconMedal,
   IconRosette,
   IconRosetteFilled,
@@ -135,6 +137,8 @@ export type IconName =
   | 'play'
   | 'live'
   | 'trophy'
+  | 'laurel-wreath'
+  | 'users-group'
   | 'medal'
   | 'ranking'
   | 'coins'
@@ -251,6 +255,8 @@ const MAP: Record<IconName, TablerIcon> = {
   play: IconPlayerPlay,
   live: IconBroadcast,
   trophy: IconTrophy,
+  'laurel-wreath': IconLaurelWreath1,
+  'users-group': IconUsersGroup,
   medal: IconMedal,
   ranking: IconRosette,
   coins: IconCoins,
