@@ -15,10 +15,14 @@ class PctStakeSpendLockTest extends TestCase
 {
     use RefreshDatabase;
 
+    private static int $codeSeq = 0;
+
     private function pctRoom(User $a, User $b, string $status, ?string $winner, int $snapA, int $snapB, bool $settled = false): Room
     {
+        // Benzersiz kod: random_int(100,999) tek testte 3 oda üretince (900 uzayda) doğum-günü
+        // çakışması → rooms.code UNIQUE 1062 → flaky CI. Sayaç çakışmayı imkânsız kılar.
         return Room::create([
-            'code' => 'PCT'.random_int(100, 999), 'p1_token' => 'a', 'p2_token' => 'b',
+            'code' => 'PCT'.(++self::$codeSeq), 'p1_token' => 'a', 'p2_token' => 'b',
             'p1_user_id' => $a->id, 'p2_user_id' => $b->id, 'p1_name' => 'A', 'p2_name' => 'B',
             'status' => $status, 'mode' => 'ranked', 'stake' => 0, 'bet_pct' => 100, 'settled' => $settled,
             'authoritative' => true, 'version' => 0, 'server_version' => 0,

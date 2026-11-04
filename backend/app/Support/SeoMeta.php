@@ -223,6 +223,16 @@ final class SeoMeta
             'Türkiye’nin en iyi online tavla oyuncuları ve güncel rating sıralaması. TavlaTv lider tablosunda yerini al.',
             'Tavla Lider Tablosu',
         ],
+        'turkiye-online-tavla-ligi' => [
+            'Türkiye Online Tavla Ligi | TavlaTv',
+            'Türkiye Online Tavla Ligi: sezonluk lig formatında eşleşmeler, puan tablosu, eleme ağacı ve şampiyonluk. Lig sıralamasını takip et, maçlarını oyna, zirveye tırman.',
+            'Türkiye Online Tavla Ligi',
+        ],
+        'takimlar-ligi' => [
+            'Takımlar Ligi — 5v5 Tavla | TavlaTv',
+            'Takımlar Ligi: 5 kişilik takımlar kur, takımınla eşleş, takım sıralamasında yüksel. Takım kurma, katılım ve aylık ödüllerle rekabetçi takım tavlası.',
+            'Takımlar Ligi',
+        ],
         'uyelik' => [
             'Üyelik ve Premium | TavlaTv',
             'TavlaTv Premium üyelik: reklamsız oyun, gelişmiş analiz ve ayrıcalıklar. Üyelik seçeneklerini incele.',
@@ -345,6 +355,16 @@ final class SeoMeta
             'Online tavla turnuvalarına katılın',
             'TavlaTV online tavla turnuvalarında kayıt, eşleşme, fikstür ve sonuçları tek ekrandan takip edin. Açık turnuvaları ve yaklaşan maçları keşfedin.',
             ['Açık online tavla turnuvalarını inceleyin.', 'Kayıt ve katılım şartlarını kontrol edin.', 'Eşleşmeleri ve turnuva sonuçlarını takip edin.'],
+        ],
+        'turkiye-online-tavla-ligi' => [
+            'Türkiye Online Tavla Ligi',
+            'Türkiye Online Tavla Ligi, turnuvalardan bağımsız, sezonluk lig formatında oynanan bir rekabet modülüdür. Ön eleme turları, puan tablosu ve eleme ağacıyla şampiyon belirlenir; lig puanı rating’ten ayrı tutulur.',
+            ['Sezonluk lig: eşleşmeler, puan tablosu ve eleme ağacı.', 'Lig puanı rating’ten ayrıdır; sıralamanı takip et.', 'Maçlarını zamanında oyna, zirveye tırman.'],
+        ],
+        'takimlar-ligi' => [
+            'Takımlar Ligi',
+            'Takımlar Ligi, 5 kişilik takımların yarıştığı bağımsız bir modüldür. Takımını kur veya mevcut bir takıma katıl, takım sıralamasında yüksel ve aylık ödüller kazan. Takım sıralaması üyelerin rating ortalamasına göre belirlenir.',
+            ['5 kişilik takımlar kur veya mevcut takıma katıl.', 'Takım sıralaması üye rating ortalamasına göre.', 'Aylık ödüller ve rekabetçi takım maçları.'],
         ],
         'turnuva-takvimi' => [
             'Yaklaşan tavla turnuvaları ve takvim',
@@ -479,6 +499,8 @@ final class SeoMeta
         'yz-ile-oyna' => ['Play Backgammon Against AI | GammonTV', 'Play free online backgammon against a powerful neural-network AI bot. Choose a level, analyze your moves and improve your game.', 'Play Backgammon Against AI'],
         'online-turnuvalar' => ['Online Backgammon Tournaments | GammonTV', 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.', 'Online Backgammon Tournaments'],
         'lider-tablosu' => ['Leaderboard — Top Backgammon Players | GammonTV', 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.', 'Backgammon Leaderboard'],
+        'turkiye-online-tavla-ligi' => ['Türkiye Online Backgammon League | GammonTV', 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.', 'Türkiye Online Backgammon League'],
+        'takimlar-ligi' => ['Teams League — 5v5 Backgammon | GammonTV', 'Teams League: build 5-player teams, match up as a team and climb the team standings. Competitive backgammon with team creation, membership and monthly rewards.', 'Teams League'],
         'uyelik' => ['Membership and Premium | GammonTV', 'GammonTV Premium membership: ad-free play, advanced analysis and exclusive perks. Explore the membership options.', 'Membership and Premium'],
         'turnuva-takvimi' => ['Backgammon Tournament Calendar | GammonTV', 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.', 'Backgammon Tournament Calendar'],
         'kulupler' => ['Backgammon Clubs | GammonTV', 'Discover backgammon clubs, join a club or start your own. The GammonTV club directory.', 'Backgammon Clubs'],
@@ -505,6 +527,8 @@ final class SeoMeta
         'nasil-oynanir' => ['Backgammon rules and getting-started guide', 'In the GammonTV guide, learn how to use the dice, move your checkers, and handle hits and bearing off, step by step.', ['Learn the board\'s starting setup.', 'Review the basic rules for dice and checker movement.', 'Learn gammon and backgammon scoring.']],
         'tavla-rehberi' => ['Backgammon strategy guide', 'Read clear backgammon articles on opening moves, building points and primes, pip counting, the doubling cube, and winning tactics.', ['Explore backgammon opening strategy.', 'Learn how to use the doubling cube.', 'Discover the difference between a gammon and a backgammon.']],
         'online-turnuvalar' => ['Join online backgammon tournaments', 'Follow registration, pairings, brackets and results on a single screen in GammonTV online backgammon tournaments. Explore open tournaments and upcoming matches.', ['Browse open online backgammon tournaments.', 'Check the registration and entry requirements.', 'Follow the pairings and tournament results.']],
+        'turkiye-online-tavla-ligi' => ['Türkiye Online Backgammon League', 'The Türkiye Online Backgammon League is a standalone, seasonal league-format competition, separate from tournaments. Preliminary rounds, a standings table and a knockout bracket decide the champion; the league score is kept separate from your rating.', ['Seasonal league: pairings, standings and a knockout bracket.', 'League points are separate from rating; follow your rank.', 'Play your matches on time and climb to the top.']],
+        'takimlar-ligi' => ['Teams League', 'Teams League is a standalone module where 5-player teams compete. Build your own team or join an existing one, climb the team standings and earn monthly rewards. Team ranking is based on the members\' average rating.', ['Build a 5-player team or join an existing one.', 'Team ranking is based on members\' average rating.', 'Monthly rewards and competitive team matches.']],
         'turnuva-takvimi' => ['Upcoming backgammon tournaments and calendar', 'Follow backgammon tournament dates, online and live events, registration windows and results in the up-to-date tournament calendar.', ['Find upcoming backgammon tournaments by date.', 'Compare online and live tournaments.', 'Check registration dates and prizes.']],
         'tavla-turnuvasi-organizasyonu' => ['Turnkey backgammon tournament organization', 'GammonTV provides backgammon tournament hosting, digital pairings, refereeing and live result management for companies, municipalities and shopping centers.', ['Design the format, bracket and participation plan.', 'Plan refereeing, scoring and pairing management.', 'Request a quote for your corporate event.']],
         'kurumsal-tavla-turnuvasi' => ['Corporate backgammon tournament organization', 'Plan an in-house or inter-company backgammon tournament with employee participation, team spirit and measurable results.', ['Choose an office, hotel or hybrid event format.', 'Manage employee registrations and pairings.', 'Plan the final and the awards process.']],
