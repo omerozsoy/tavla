@@ -53,7 +53,9 @@ class MessageResource extends Resource
             ->whereRaw('JSON_LENGTH(messages) > 0')
             ->selectRaw("(0 - CAST(id AS SIGNED)) as id, 'match' as kind, p1_user_id as u1, p2_user_id as u2, p1_name as n1, p2_name as n2, code as room_code, JSON_LENGTH(messages) as msg_count, updated_at as last_at");
 
-        return Message::query()->fromSub($dm->unionAll($match), 'conv')->select('conv.*');
+        // Alt-sorgu alias'i MODEL TABLOSUYLA ('messages') ayni: Filament kaydi nitelikli anahtarla
+        // (messages.id) cozuyor (resolveTableRecord); alias 'conv' olsaydi 'messages.id' bulunamaz → 500.
+        return Message::query()->fromSub($dm->unionAll($match), 'messages')->select('messages.*');
     }
 
     /** Oyuncu id -> nickname (sayfa icinde memoize; az satir → ucuz). */
