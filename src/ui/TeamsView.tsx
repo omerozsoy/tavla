@@ -206,6 +206,7 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
   const [logo, setLogo] = useState('') // base64 data-URI (yüklenirse)
   const [desc, setDesc] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showForm, setShowForm] = useState(false) // "Takım Kur" düğmesine basınca form açılır
   const el = props.eligibility
 
   // Misafir → giriş iste (sekme içeriği; modal arkasında kaybolmasın).
@@ -239,18 +240,23 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
     } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
 
+  // "Takım Kur" düğmesi: tıklanınca form alanları açılır (üstte Premium Al bandı yok).
+  if (!showForm) {
+    return (
+      <button className="teams-create-cta teams-create-cta-lg" onClick={() => setShowForm(true)}>
+        <span className="teams-create-cta-emblem" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
+          <Icon name="users-group" size={20} />
+        </span>
+        <span className="teams-create-cta-text">
+          <strong>{t('teams.create')}</strong>
+          <small>{t('teams.createLead')}</small>
+        </span>
+      </button>
+    )
+  }
+
   return (
     <div className="teams-create">
-      {!canCreate && (
-        <div className="teams-gate" style={{ marginBottom: 2 }}>
-          <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
-          <div>
-            <div className="teams-gate-title">{t('teams.needPremium')}</div>
-            <div className="teams-gate-text">{t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}</div>
-            {el && !el.premium && <Button style={{ marginTop: 8 }} onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
-          </div>
-        </div>
-      )}
       <header className="teams-create-head">
         <h3>{t('teams.createTitle')}</h3>
         <p>{t('teams.createLead')}</p>
@@ -281,8 +287,14 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
       <div className="teams-field">
         <span>{t('teams.colors')}</span>
         <div className="teams-colors">
-          <label className="teams-color"><input type="color" value={color1} onChange={(e) => setColor1(e.target.value)} /><small>{t('teams.colorPrimary')}</small></label>
-          <label className="teams-color"><input type="color" value={color2} onChange={(e) => setColor2(e.target.value)} /><small>{t('teams.colorSecondary')}</small></label>
+          <label className="teams-color">
+            <input type="color" value={color1} onChange={(e) => setColor1(e.target.value)} />
+            <span className="teams-color-meta"><small>{t('teams.colorPrimary')}</small><code>{color1.toUpperCase()}</code></span>
+          </label>
+          <label className="teams-color">
+            <input type="color" value={color2} onChange={(e) => setColor2(e.target.value)} />
+            <span className="teams-color-meta"><small>{t('teams.colorSecondary')}</small><code>{color2.toUpperCase()}</code></span>
+          </label>
         </div>
       </div>
 
@@ -305,6 +317,12 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
           {t('teams.create')} · {(el?.found_cost ?? 50000).toLocaleString()} <Icon name="coin" size={13} />
         </Button>
       </div>
+      {!canCreate && (
+        <p className="teams-create-req">
+          {t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}
+          {el && !el.premium && <> · <button type="button" className="teams-req-link" onClick={props.onRequirePremium}>{t('teams.needPremium')}</button></>}
+        </p>
+      )}
     </div>
   )
 }

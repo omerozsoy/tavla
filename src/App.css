@@ -21264,14 +21264,24 @@ body:has(.spectate-view) .app.lobby {
   text-transform: uppercase; letter-spacing: 0.03em;
 }
 .teams-field small { font-size: 0.76rem; color: var(--muted); }
-.teams-colors { display: flex; gap: 14px; }
-.teams-color { display: flex; align-items: center; gap: 8px; }
+.teams-colors { display: flex; gap: 22px; flex-wrap: wrap; }
+.teams-color { display: flex; align-items: center; gap: 10px; }
 .teams-color input[type="color"] {
-  width: 40px; height: 34px; padding: 0;
-  border: 1px solid var(--btn-border); border-radius: 8px;
+  width: 72px; height: 54px; padding: 0;
+  border: 2px solid var(--btn-border); border-radius: 10px;
   background: none; cursor: pointer;
 }
-.teams-color small { color: var(--text); }
+.teams-color-meta { display: flex; flex-direction: column; gap: 2px; }
+.teams-color-meta small { color: var(--text); font-weight: 600; }
+.teams-color-meta code { color: var(--muted); font-size: 0.74rem; letter-spacing: 0.05em; }
+
+/* Takım Kur büyük CTA (form açılmadan önce) */
+.teams-create-cta-lg { padding: 18px; }
+.teams-create-cta-lg .teams-create-cta-emblem { width: 48px; height: 48px; }
+
+/* Şart notu (form altında, küçük) */
+.teams-create-req { font-size: 0.8rem; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+.teams-req-link { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
 .teams-logo-upload {
   display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
   padding: 8px 14px;
