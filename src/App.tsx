@@ -10252,6 +10252,8 @@ export default function App() {
     ranksOpen ||
     infoOpen ||
     tournOpen ||
+    leagueOpen ||
+    teamsOpen ||
     shopOpen ||
     luckyWheelOpen ||
     diceSlotOpen ||
@@ -10299,6 +10301,10 @@ export default function App() {
     ? 'leaderboard'
     : tournOpen
       ? 'tournaments'
+      : leagueOpen
+        ? 'league'
+      : teamsOpen
+        ? 'teams'
       : shopOpen
         ? 'shop'
           : friendsOpen
