@@ -38,9 +38,12 @@ export const PAGES: PageDef[] = [
 
   // --- TURNUVALAR: rekabet + sosyal (Takımlar + Tavla Ligi bu grupta — ayrı başlıklar kaldırıldı) ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
-  // Türkiye Online Tavla Ligi: Online Turnuvalar'in HEMEN ALTINDA (urun istegi). Grup-ici siralama
-  // fallback = PAGES index -> tournaments'tan sonra, leaderboard'dan once gelir (admin override yoksa).
-  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'laurel-wreath', group: 'compete' },
+  // Türkiye Online Tavla Ligi: canli "Turnuvalar" grubu = info (admin tournaments+leaderboard'i
+  // oraya tasimis; compete grubu DB'de visible=false=gizli). Online Turnuvalar'in HEMEN ALTINDA
+  // olmasi icin DB'de league satiri var (group=info, sort=8 -> tournaments ile esit, PAGES'te league
+  // tournaments'in hemen ardinda oldugundan stabil siralama onu ardina koyar). Buradaki group=info
+  // yalniz DB satiri silinirse gizli gruba dusmesin diye guvenli fallback.
+  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'laurel-wreath', group: 'info' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
