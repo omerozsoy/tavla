@@ -37,7 +37,9 @@ return [
         // tarayıcıda same-origin wss'i zaten kapsar; AÇIK eklemek bazı edge tarayıcı/proxy durumlarında
         // WS'in CSP'ye takılma ihtimalini sıfırlar (yalnız WS için izin ekler, başka şeyi bozmaz).
         // cloudflareinsights.com: CF Web Analytics beacon POST'u (RUM) -> connect-src.
-        "connect-src 'self' https://www.tavlatv.com wss://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://stats.g.doubleclick.net https://www.google.com https://cloudflareinsights.com",
+        // googleadservices.com + google.com.tr: report-only CANLI yakaladı (2026-11-04) — set_partitioned_cookie
+        // + ga-audiences remarketing beacon'u (TR Google domaini) connect-src'te YOKTU, enforce'ta Ads ölçümü bloklanırdı.
+        "connect-src 'self' https://www.tavlatv.com wss://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://ad.doubleclick.net https://stats.g.doubleclick.net https://www.google.com https://www.google.com.tr https://www.googleadservices.com https://cloudflareinsights.com",
         // Google Sign-In (GSI) One Tap/buton iframe'i accounts.google.com'dan yüklenir -> frame-src şart.
         // td.doubleclick.net = Google Ads dönüşüm linker gizli iframe'i; googletagmanager = GTM iframe.
         "frame-src 'self' https://accounts.google.com https://td.doubleclick.net https://www.googletagmanager.com",
