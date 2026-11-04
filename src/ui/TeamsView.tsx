@@ -221,19 +221,8 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
       </div>
     )
   }
-  // Uygun değil → şartlar kartı (Premium + puanlı maç + coin).
-  if (!el?.can_create) {
-    return (
-      <div className="teams-gate">
-        <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
-        <div>
-          <div className="teams-gate-title">{t('teams.createTitle')}</div>
-          <div className="teams-gate-text">{t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}</div>
-          {el && !el.premium && <Button style={{ marginTop: 8 }} onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
-        </div>
-      </div>
-    )
-  }
+  // Uygun değilse de FORM görünür (kullanıcı alanları görsün); "Takım Kur" düğmesi pasif + üstte şart uyarısı.
+  const canCreate = !!el?.can_create
 
   const onLogoFile = (file?: File) => {
     if (!file) return
@@ -252,6 +241,16 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
 
   return (
     <div className="teams-create">
+      {!canCreate && (
+        <div className="teams-gate" style={{ marginBottom: 2 }}>
+          <div className="teams-gate-icon"><Icon name="users-group" size={22} /></div>
+          <div>
+            <div className="teams-gate-title">{t('teams.needPremium')}</div>
+            <div className="teams-gate-text">{t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}</div>
+            {el && !el.premium && <Button style={{ marginTop: 8 }} onClick={props.onRequirePremium}>{t('teams.needPremium')}</Button>}
+          </div>
+        </div>
+      )}
       <header className="teams-create-head">
         <h3>{t('teams.createTitle')}</h3>
         <p>{t('teams.createLead')}</p>
@@ -302,8 +301,8 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
       </label>
 
       <div className="teams-create-actions">
-        <Button disabled={busy || name.trim().length < 3 || tag.trim().length < 2} onClick={submit}>
-          {t('teams.create')} · {el.found_cost.toLocaleString()} <Icon name="coin" size={13} />
+        <Button disabled={busy || !canCreate || name.trim().length < 3 || tag.trim().length < 2} onClick={submit}>
+          {t('teams.create')} · {(el?.found_cost ?? 50000).toLocaleString()} <Icon name="coin" size={13} />
         </Button>
       </div>
     </div>
