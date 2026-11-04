@@ -53,7 +53,6 @@ export default function LeagueView(props: Props) {
   const [detail, setDetail] = useState<Detail | null>(null)
   const [me, setMe] = useState<Me | null>(null)
   const [tab, setTab] = useState<Tab>('standings')
-  const [showRules, setShowRules] = useState(false) // sezon yokken kurallar düğme ardında (girişte değil)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [proposeAt, setProposeAt] = useState('')
@@ -164,17 +163,7 @@ export default function LeagueView(props: Props) {
         <p className="register-sub">{t('league.subtitle')}</p>
         {loading ? <Loading /> : <>
 
-      {/* Aktif sezon yokken: kurallar girişte DEĞİL, düğme ardında (istenince açılır). */}
-      {!season && (
-        <>
-          <div style={cardStyle}>{t('league.noActive')}</div>
-          <Button variant="outline" onClick={() => setShowRules((s) => !s)} style={{ marginBottom: 8 }}>
-            {t('league.tab.rules')}
-          </Button>
-          {showRules && <Rules prizes={[]} />}
-        </>
-      )}
-
+      {/* Sezon başlığı — yalnız aktif sezon varken (sekme çubuğunun üstünde). */}
       {season && (
         <>
           <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -201,42 +190,45 @@ export default function LeagueView(props: Props) {
           {me?.participation && (
             <div style={{ ...cardStyle, fontSize: 14 }}>{t('league.part.' + me.participation.status)}</div>
           )}
-          {notice && <div style={{ ...cardStyle, color: '#b45309' }}>{notice}</div>}
-
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
-            {(['standings', 'fixtures', 'bracket', 'my', 'rules'] as Tab[]).map((tb) => (
-              <Button key={tb} variant={tab === tb ? 'default' : 'outline'} onClick={() => setTab(tb)}>
-                {t('league.tab.' + tb)}
-              </Button>
-            ))}
-          </div>
-
-          {tab === 'standings' && (
-            <>
-              {(detail?.standings?.length ?? 0) === 0 && (
-                <Participants parts={detail?.participants} onProfile={props.onProfile} />
-              )}
-              <Standings rows={detail?.standings ?? []} onProfile={props.onProfile} />
-            </>
-          )}
-          {tab === 'fixtures' && <Fixtures rounds={detail?.fixtures ?? []} />}
-          {tab === 'bracket' && <Bracket bracket={detail?.bracket ?? {}} />}
-          {tab === 'my' && (
-            <MyMatch
-              me={me}
-              myId={props.myId}
-              busy={busy}
-              proposeAt={proposeAt}
-              setProposeAt={setProposeAt}
-              onPropose={doPropose}
-              onConfirm={doConfirm}
-              onReady={doReady}
-              onPlay={doPlay}
-            />
-          )}
-          {tab === 'rules' && <Rules prizes={season.prizes ?? []} />}
         </>
       )}
+      {notice && <div style={{ ...cardStyle, color: '#b45309' }}>{notice}</div>}
+
+      {/* Sekme çubuğu HER ZAMAN görünür (sezon yoksa da); giriş 'Mevcut Sezon' seçili, Kurallar sekmede. */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '12px 0' }}>
+        {(['standings', 'fixtures', 'bracket', 'my', 'rules'] as Tab[]).map((tb) => (
+          <Button key={tb} variant={tab === tb ? 'default' : 'outline'} onClick={() => setTab(tb)}>
+            {t('league.tab.' + tb)}
+          </Button>
+        ))}
+      </div>
+
+      {tab === 'standings' && (!season ? (
+        <div style={cardStyle}>{t('league.noActive')}</div>
+      ) : (
+        <>
+          {(detail?.standings?.length ?? 0) === 0 && (
+            <Participants parts={detail?.participants} onProfile={props.onProfile} />
+          )}
+          <Standings rows={detail?.standings ?? []} onProfile={props.onProfile} />
+        </>
+      ))}
+      {tab === 'fixtures' && <Fixtures rounds={detail?.fixtures ?? []} />}
+      {tab === 'bracket' && <Bracket bracket={detail?.bracket ?? {}} />}
+      {tab === 'my' && (
+        <MyMatch
+          me={me}
+          myId={props.myId}
+          busy={busy}
+          proposeAt={proposeAt}
+          setProposeAt={setProposeAt}
+          onPropose={doPropose}
+          onConfirm={doConfirm}
+          onReady={doReady}
+          onPlay={doPlay}
+        />
+      )}
+      {tab === 'rules' && <Rules prizes={season?.prizes ?? []} />}
 
       {finished.length > 0 && (
         <div style={{ marginTop: 20 }}>
