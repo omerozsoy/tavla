@@ -85,16 +85,18 @@ export default function TeamsView(props: Props) {
   const [notice, setNotice] = useState<string | null>(null)
   const [me, setMe] = useState<TeamMe | null>(null)
   const hasTeam = !!me?.membership
+  // Bekleyen davet/başvuru varsa (takımsız olsa da) "Takımım" sekmesi görünür → kabul/ret orada.
+  const hasPending = (me?.invites?.length ?? 0) > 0 || (me?.applications?.length ?? 0) > 0
 
-  // Üyelik durumu: takımsız → "Takım Kur" sekmesi, takımlı → "Takımım" sekmesi.
+  // Üyelik durumu: takımsız → "Takım Kur" sekmesi, takımlı/davetli → "Takımım" sekmesi.
   useEffect(() => {
     if (!props.myId) { setMe(null); return }
     getMyTeam().then(setMe).catch(() => setMe(null))
   }, [props.myId])
   useEffect(() => {
-    if (tab === 'myteam' && !hasTeam) setTab('overview')
+    if (tab === 'myteam' && !hasTeam && !hasPending) setTab('overview')
     if (tab === 'create' && hasTeam) setTab('myteam')
-  }, [tab, hasTeam])
+  }, [tab, hasTeam, hasPending])
 
   const go = useCallback((v: View) => {
     setView(v)
@@ -129,7 +131,7 @@ export default function TeamsView(props: Props) {
       {view.kind === 'home' && (
         <>
           <nav className="teams-tabs" role="tablist">
-            {(['overview', ...(hasTeam ? (['myteam'] as Tab[]) : (['create'] as Tab[])), 'rules'] as Tab[]).map((k) => (
+            {(['overview', ...((hasTeam || hasPending) ? (['myteam'] as Tab[]) : []), ...(!hasTeam ? (['create'] as Tab[]) : []), 'rules'] as Tab[]).map((k) => (
               <button key={k} role="tab" aria-selected={tab === k} className={'teams-tab' + (tab === k ? ' is-active' : '')} onClick={() => setTab(k)}>
                 {t('teams.tab.' + k)}
               </button>
@@ -141,7 +143,7 @@ export default function TeamsView(props: Props) {
               onRequireLogin={props.onRequireLogin} onRequirePremium={props.onRequirePremium}
               setNotice={setNotice} errText={errText} />
           )}
-          {tab === 'myteam' && hasTeam && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
+          {tab === 'myteam' && (hasTeam || hasPending) && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
           {tab === 'rules' && <Rules />}
         </>
       )}
