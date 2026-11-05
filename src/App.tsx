@@ -219,7 +219,7 @@ const DEFAULT_DOC_TITLE =
     : 'TavlaTv - Ücretsiz Online Tavla Oyna | Bedava Tavla'
 const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
-  'uyelik-sozlesmesi', 'sifre-sifirla',
+  'uyelik-sozlesmesi', 'teslimat-ve-iade-sartlari', 'mesafeli-satis-sozlesmesi', 'sifre-sifirla',
 ])
 // Kanonik origin = ziyaret edilen marka (eskiden sabit tavlatv.com). Canonical/og:url per-brand.
 const SITE_ORIGIN = BRAND.origin
@@ -490,10 +490,12 @@ function setCanonical(url: string): void {
 // Hukuki sayfalar icin H1 (LegalView title'i DB'den async gelir; H1'i statik veriyoruz).
 const LEGAL_H1: Record<string, string> = {
   kvkk: 'KVKK Aydınlatma Metni',
-  'gizlilik-politikasi': 'Gizlilik Politikası',
+  'gizlilik-politikasi': 'Gizlilik Sözleşmesi',
   'cerez-politikasi': 'Çerez Politikası',
   'kullanim-kosullari': 'Kullanım Koşulları',
   'uyelik-sozlesmesi': 'Üyelik Sözleşmesi',
+  'teslimat-ve-iade-sartlari': 'Teslimat ve İade Şartları',
+  'mesafeli-satis-sozlesmesi': 'Mesafeli Satış Sözleşmesi',
   'sifre-sifirla': 'Şifre Sıfırla',
 }
 
@@ -1795,6 +1797,8 @@ export default function App() {
         case 'cerez-politikasi':
         case 'kullanim-kosullari':
         case 'uyelik-sozlesmesi':
+        case 'teslimat-ve-iade-sartlari':
+        case 'mesafeli-satis-sozlesmesi':
           setLegalSlug(root) // hukuki sayfa (slug == URL)
           break
         default:
@@ -9997,10 +10001,12 @@ export default function App() {
     titleKey: 'foot.legal',
     items: [
       { key: 'legal-kvkk', labelKey: '', label: 'KVKK Aydınlatma Metni', href: '/kvkk', onClick: () => openLegalPage('kvkk') },
-      { key: 'legal-gizlilik', labelKey: '', label: 'Gizlilik Politikası', href: '/gizlilik-politikasi', onClick: () => openLegalPage('gizlilik-politikasi') },
+      { key: 'legal-gizlilik', labelKey: '', label: 'Gizlilik Sözleşmesi', href: '/gizlilik-politikasi', onClick: () => openLegalPage('gizlilik-politikasi') },
       { key: 'legal-cerez', labelKey: '', label: 'Çerez Politikası', href: '/cerez-politikasi', onClick: () => openLegalPage('cerez-politikasi') },
       { key: 'legal-kullanim', labelKey: '', label: 'Kullanım Koşulları', href: '/kullanim-kosullari', onClick: () => openLegalPage('kullanim-kosullari') },
       { key: 'legal-uyelik', labelKey: '', label: 'Üyelik Sözleşmesi', href: '/uyelik-sozlesmesi', onClick: () => openLegalPage('uyelik-sozlesmesi') },
+      { key: 'legal-teslimat', labelKey: '', label: 'Teslimat ve İade Şartları', href: '/teslimat-ve-iade-sartlari', onClick: () => openLegalPage('teslimat-ve-iade-sartlari') },
+      { key: 'legal-mesafeli', labelKey: '', label: 'Mesafeli Satış Sözleşmesi', href: '/mesafeli-satis-sozlesmesi', onClick: () => openLegalPage('mesafeli-satis-sozlesmesi') },
       { key: 'legal-cerez-tercih', labelKey: '', label: 'Çerez Tercihleri', onClick: () => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS)) },
     ],
   })

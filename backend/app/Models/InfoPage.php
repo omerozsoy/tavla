@@ -24,6 +24,8 @@ class InfoPage extends Model
         'cerez-politikasi',
         'kullanim-kosullari',
         'uyelik-sozlesmesi',
+        'teslimat-ve-iade-sartlari',
+        'mesafeli-satis-sozlesmesi',
     ];
 
     // "Bilgi" modal sekmesi olan (duzenlenebilir metin) slug'lar — hukuki sayfalar HARIC.
