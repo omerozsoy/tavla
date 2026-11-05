@@ -141,14 +141,17 @@ class TeamController extends Controller
         $rated = $this->svc->ratedMatchCount($u);
         $premium = $this->svc->isPremium($u);
 
-        // Yönetici ise takımına gelen bekleyen başvurular (kabul/ret için).
+        // Yönetici ise takımına gelen bekleyen başvurular (kabul/ret için) + GÖNDERDİĞİ bekleyen
+        // davetler ("davet edildi, cevap bekleniyor" olarak göstermek için).
         $managed = null;
         if ($m && $m->isManager()) {
             $apps = TeamApplication::where('team_id', $m->team_id)->where('status', 'pending')->get();
-            $umap = $this->userMap($apps->pluck('user_id')->all());
+            $sent = TeamInvite::where('team_id', $m->team_id)->where('status', 'pending')->get();
+            $umap = $this->userMap(array_merge($apps->pluck('user_id')->all(), $sent->pluck('user_id')->all()));
             $managed = [
                 'team_id' => $m->team_id,
                 'applications' => $apps->map(fn ($a) => ['id' => $a->id, 'user' => $umap[$a->user_id] ?? ['id' => $a->user_id]])->all(),
+                'sent_invites' => $sent->map(fn ($i) => ['id' => $i->id, 'user' => $umap[$i->user_id] ?? ['id' => $i->user_id]])->all(),
             ];
         }
         // Bana yapılmış kuruculuk devri teklifi (varsa) → "Kuruculuğu Kabul Et".

@@ -31,6 +31,7 @@ import {
   promoteTeamMember,
   readyTeamMatch,
   renameTeam,
+  revokeTeamInvite,
   searchLeaderboard,
   setTeamLineup,
   transferTeam,
@@ -180,7 +181,7 @@ export default function TeamsView(props: Props) {
         </>
       )}
 
-      {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} setNotice={setNotice} errText={errText} />}
+      {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} hasTeam={hasTeam} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} setNotice={setNotice} errText={errText} />}
       {view.kind === 'match' && (
         <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })}
           onEnterRoom={props.onEnterRoom} setNotice={setNotice} errText={errText} />
@@ -483,7 +484,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
                   {isFounder && m.role === 'assistant' && <Button disabled={busy} onClick={() => act(() => demoteTeamMember(team.id, m.user.id))}>{t('teams.demote')}</Button>}
                   {isFounder && m.role !== 'founder' && <Button variant="outline" disabled={busy} onClick={() => act(() => transferTeam(team.id, m.user.id), t('teams.transferSent'))}>{t('teams.transfer')}</Button>}
                   {isManager && m.role === 'member' && m.user.id !== props.myId &&
-                    <Button variant="ghost" disabled={busy} onClick={() => act(() => kickTeamMember(team.id, m.user.id))}>{t('teams.kick')}</Button>}
+                    <Button variant="ghost" disabled={busy} onClick={() => { if (confirm(m.user.nickname + ' ' + t('teams.kickConfirm'))) act(() => kickTeamMember(team.id, m.user.id)) }}>{t('teams.kick')}</Button>}
                 </div>
               </div>
             )
@@ -491,16 +492,32 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
         </div>
       </section>
 
-      {/* Başvurular (yönetici) — gelen bekleyen başvurular (§4) */}
+      {/* Başvurular (yönetici) — gelen bekleyen başvurular (§4). "Cevap bekliyor" = karar senin. */}
       {isManager && me.managed && me.managed.applications.length > 0 && (
         <section>
           <SLabel count={me.managed.applications.length}>{t('teams.applications')}</SLabel>
           {me.managed.applications.map((a) => (
             <div key={a.id} style={row}>
               <span style={{ display: 'inline-flex', alignItems: 'center' }}>{a.user.nickname} <TeamTag userId={a.user.id} size={20} /></span>
+              <span style={microTag}>{t('teams.awaitingReply')}</span>
               <span style={{ flex: 1 }} />
               <Button disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, true), t('teams.joined'))}>{t('teams.accept')}</Button>
               <Button variant="ghost" disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, false))}>{t('teams.decline')}</Button>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Davet ettiklerim (yönetici) — gönderilmiş bekleyen davetler: "davet edildi, cevap bekleniyor". */}
+      {isManager && me.managed && (me.managed.sent_invites?.length ?? 0) > 0 && (
+        <section>
+          <SLabel count={me.managed.sent_invites!.length}>{t('teams.sentInvites')}</SLabel>
+          {me.managed.sent_invites!.map((iv) => (
+            <div key={iv.id} style={row}>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{iv.user.nickname} <TeamTag userId={iv.user.id} size={20} /></span>
+              <span style={microTag}>{t('teams.inviteAwaiting')}</span>
+              <span style={{ flex: 1 }} />
+              <Button variant="ghost" disabled={busy} onClick={() => act(() => revokeTeamInvite(iv.id))}>{t('teams.revoke')}</Button>
             </div>
           ))}
         </section>
@@ -789,7 +806,7 @@ function Rules() {
 }
 
 // ---- Takım detay (herkese açık) ----------------------------------------------
-function TeamDetailView(props: { id: number; myId: number | null; back: () => void; onProfile?: (id: number) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
+function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boolean; back: () => void; onProfile?: (id: number) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
   const [d, setD] = useState<TeamDetail | null>(null)
   const [busy, setBusy] = useState(false)
@@ -809,7 +826,8 @@ function TeamDetailView(props: { id: number; myId: number | null; back: () => vo
         {d.team.is_champion && <span title={t('teams.awards')}>🏆</span>}
         <span style={{ flex: 1 }} />
         <span style={microTag}>{d.team.rating_avg.toFixed(1)} · {d.members.length}</span>
-        {props.myId && d.team.applications_open && (
+        {/* Başvur yalnız takımsız kullanıcıya: takımdayken (kendi/başka takım) başvurulamaz */}
+        {props.myId && !props.hasTeam && d.team.applications_open && (
           <Button disabled={busy} onClick={apply}>{t('teams.apply')}</Button>
         )}
       </div>

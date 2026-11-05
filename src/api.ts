@@ -1571,7 +1571,7 @@ export interface TeamMyMatch extends TeamMatchRow {
 }
 export interface TeamMe {
   membership: { team: TeamBrief; role: string; premium_grace_until?: string | null } | null
-  managed?: { team_id: number; applications: Array<{ id: number; user: TeamUserBrief }> } | null
+  managed?: { team_id: number; applications: Array<{ id: number; user: TeamUserBrief }>; sent_invites?: Array<{ id: number; user: TeamUserBrief }> } | null
   transfer_offer?: number | null
   applications: Array<{ id: number; team: TeamBrief | null }>
   invites: Array<{ id: number; team: TeamBrief | null }>
