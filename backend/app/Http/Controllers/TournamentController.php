@@ -266,8 +266,19 @@ class TournamentController extends Controller
                 }
                 // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta rezerve
                 // edilmiş coin turnuva ücretine harcanamaz (stake maç sonuna kadar kilitli).
-                if (app(WalletService::class)->spendable($u) < $fee) {
-                    return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
+                $spendable = app(WalletService::class)->spendable($u);
+                if ($spendable < $fee) {
+                    // Mesaj TOPLAM değil KULLANILABİLİR coin'i ayırt etsin: kullanıcı 110k coin görüp
+                    // "yetersiz" mesajına şaşırıyordu (coin'leri bir maçta rezerve/kilitliyken). Kilitli
+                    // varsa onu da söyle ki "param var ama olmuyor" karışıklığı çözülsün + teşhis kolaylaşsın.
+                    $locked = max(0, (int) ($u->coins ?? 0) - $spendable);
+                    $msg = 'Giriş ücreti için yetersiz kullanılabilir coin (gerekli '.number_format((int) $fee, 0, ',', '.')
+                        .', kullanılabilir '.number_format(max(0, $spendable), 0, ',', '.').').';
+                    if ($locked > 0) {
+                        $msg .= ' Bir maçta rezerve/kilitli: '.number_format($locked, 0, ',', '.').' coin.';
+                    }
+
+                    return ['err' => $msg, 'code' => 422];
                 }
                 // Entry/leave cycles are legitimate. The player-list lock is
                 // the idempotency guard, so do not reuse the tournament ID as
