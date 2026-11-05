@@ -20561,14 +20561,52 @@ body:has(.spectate-view) .app.lobby {
   gap: 8px;
   margin: 0 0 16px;
 }
-/* Yonetici/Destek resmi aksiyonlari (Hata Bildir / Yardim Iste): tam-genislik STACK.
-   Butonlarin inline width:100%'u flex-row'da yan yana sikisiyordu -> alt alta tam genislik. */
+/* Yonetici/Destek resmi aksiyonlari (Hata Bildir / Yardim Iste): YAN YANA esit genislik. */
 .pp-actions-admin {
-  flex-direction: column;
+  flex-direction: row;
 }
-/* Yonetici konusma yasagi bloku: toggle + sure butonlari (grid) + sonuc mesaji. */
+.pp-actions-admin > * {
+  flex: 1;
+  min-width: 0;
+}
+/* Yonetici konusma yasagi bloku: ana butonlar satiri + (genisleyen) sure/not formlari dikey. */
 .pp-mod {
   flex-direction: column;
+}
+/* Konusma Yasagi + Not Ekle YAN YANA tek satir; genisleyen formlar asagida tam genislik. */
+.pp-mod-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.pp-mod-actions:empty {
+  display: none;
+}
+.pp-mod-actions > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Takim satiri: amblem + ad acik acik (isim-yani kucuk rozet yetmez). */
+.pp-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 2px;
+}
+.pp-team-name {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* Durum + puan siralamasi TEK satir (en ustte). */
+.pp-topline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
 }
 .pp-mute-opts {
   display: grid;

@@ -6,6 +6,8 @@ import { userProfile, adminChatMute, adminSetNote, type PublicProfile as Profile
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankMedals from './TopRankMedals'
+import { TeamEmblem } from './TeamEmblem'
+import { useTeamTag } from '../teamTags'
 import { useOnline } from '../presence'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
@@ -52,6 +54,7 @@ export default function PublicProfile({
   // noktasını site geneli CANLI presence'tan (useOnline, 70sn pencere, oto-tazelenen) türet;
   // busy/available ayrımı için yine snapshot p.status kullanılır ama YALNIZ canlı online ise.
   const { online: liveOnline, known: onlineKnown } = useOnline(id)
+  const team = useTeamTag(id) // takım amblem + ad (açık satır); takımsızda null
   const [p, setP] = useState<Profile | null>(null)
   const [error, setError] = useState(false)
   const [friendSent, setFriendSent] = useState(false)
@@ -138,14 +141,22 @@ export default function PublicProfile({
                 </div>
               </div>
             </div>
-            {/* Top-3 madalyaları (PR/Puan ilk 3): belirgin etiketli blok (isim-yani rozetin buyugu). */}
-            <TopRankMedals userId={p.id} />
-            <div className="pp-rank">
+            {/* Takım: amblem + ad açık açık, kendi satırında (isim-yanı küçük rozet yetmez). */}
+            {team && (
+              <div className="pp-team">
+                <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={22} />
+                <span className="pp-team-name">{team.name || team.tag}</span>
+              </div>
+            )}
+            {/* Durum + puan sıralaması TEK satırda, en başta (durum solda, sıralama yanında). */}
+            <div className="pp-topline">
               {/* busy = "Oyun Kabul Etmiyor" -> kirmizi; diger cevrimici -> yesil; degilse gri. */}
               <span className={`pp-status ${!isOnline ? 'off' : p.status === 'busy' ? 'busy' : 'on'}`}>
                 <span className="pp-status-dot" aria-hidden="true" />
                 {!isOnline ? t('online.statusOff') : p.status === 'busy' ? t('online.st.busy') : t('online.statusOn')}
               </span>
+              {/* Top-3 madalyaları (PR/Puan ilk 3): durumun yanında. */}
+              <TopRankMedals userId={p.id} />
             </div>
 
             {/* Yönetici VEYA Destek profili: resmi iletişim aksiyonları.
@@ -157,7 +168,7 @@ export default function PublicProfile({
                 <Button
                   variant="default"
                   className="pp-report"
-                  style={{ background: '#A83A2B', borderColor: '#A83A2B', color: '#fff', width: '100%' }}
+                  style={{ background: '#A83A2B', borderColor: '#A83A2B', color: '#fff' }}
                   onClick={() => {
                     onClose()
                     window.dispatchEvent(new CustomEvent('tavla:open-bug-report'))
@@ -169,7 +180,7 @@ export default function PublicProfile({
                   <Button
                     variant="default"
                     className="pp-help"
-                    style={{ background: '#C9563F', borderColor: '#C9563F', color: '#fff', width: '100%' }}
+                    style={{ background: '#C9563F', borderColor: '#C9563F', color: '#fff' }}
                     onClick={() => {
                       onClose()
                       onMessage()
@@ -189,17 +200,26 @@ export default function PublicProfile({
                     <Icon name="ban" size={14} /> {t('mod.chatBan.active', { until: mutedUntilLabel })}
                   </div>
                 )}
-                {!showMute ? (
-                  <Button
-                    variant="outline"
-                    className="pp-mute-toggle"
-                    disabled={muteBusy}
-                    onClick={() => { setShowMute(true); setMuteMsg(null) }}
-                    style={{ width: '100%' }}
-                  >
-                    <Icon name="chat" size={14} /> {t('mod.chatBan')}
-                  </Button>
-                ) : (
+                {/* Konuşma Yasağı + Not Ekle ana butonları YAN YANA tek satır; genişleyen
+                    formlar (süre seçenekleri / not editörü) aşağıda tam genişlik. */}
+                <div className="pp-mod-actions">
+                  {!showMute && (
+                    <Button
+                      variant="outline"
+                      className="pp-mute-toggle"
+                      disabled={muteBusy}
+                      onClick={() => { setShowMute(true); setMuteMsg(null) }}
+                    >
+                      <Icon name="chat" size={14} /> {t('mod.chatBan')}
+                    </Button>
+                  )}
+                  {noteEdit == null && !adminNote && (
+                    <Button variant="outline" className="pp-note-add" onClick={() => setNoteEdit('')}>
+                      <Icon name="pencil" size={14} /> {t('mod.note.add')}
+                    </Button>
+                  )}
+                </div>
+                {showMute && (
                   <div className="pp-mute-opts">
                     <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(1440)}>{t('chat.ban.24h')}</Button>
                     <Button variant="outline" disabled={muteBusy} onClick={() => applyMute(10080)}>{t('chat.ban.1w')}</Button>
@@ -210,30 +230,25 @@ export default function PublicProfile({
                 )}
                 {muteMsg && <div className="pp-mute-msg">{muteMsg}</div>}
 
-                {/* ADMIN NOTU: varsa oku (tıkla-düzenle), yoksa "Not Ekle". Yalnız yönetici görür. */}
-                {noteEdit == null ? (
-                  adminNote ? (
-                    <div className="pp-note">
-                      <div className="pp-note-head">
-                        <span className="pp-note-lbl"><Icon name="pencil" size={13} /> {t('mod.note')}</span>
-                        <button type="button" className="pp-note-edit" onClick={() => setNoteEdit(adminNote)}>
-                          {t('mod.note.edit')}
-                        </button>
-                      </div>
-                      <div className="pp-note-body">{adminNote}</div>
-                      {noteBy && (
-                        <div className="pp-note-by">
-                          {noteBy}
-                          {noteAt ? ' · ' + new Date(noteAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
-                        </div>
-                      )}
+                {/* ADMIN NOTU: varsa oku (tıkla-düzenle). "Not Ekle" butonu üstteki satırda. */}
+                {noteEdit == null && adminNote && (
+                  <div className="pp-note">
+                    <div className="pp-note-head">
+                      <span className="pp-note-lbl"><Icon name="pencil" size={13} /> {t('mod.note')}</span>
+                      <button type="button" className="pp-note-edit" onClick={() => setNoteEdit(adminNote)}>
+                        {t('mod.note.edit')}
+                      </button>
                     </div>
-                  ) : (
-                    <Button variant="outline" className="pp-note-add" style={{ width: '100%' }} onClick={() => setNoteEdit('')}>
-                      <Icon name="pencil" size={14} /> {t('mod.note.add')}
-                    </Button>
-                  )
-                ) : (
+                    <div className="pp-note-body">{adminNote}</div>
+                    {noteBy && (
+                      <div className="pp-note-by">
+                        {noteBy}
+                        {noteAt ? ' · ' + new Date(noteAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {noteEdit != null && (
                   <div className="pp-note-editor">
                     <textarea
                       className="pp-note-input"
@@ -305,16 +320,8 @@ export default function PublicProfile({
               </div>
             </div>
 
-            {/* Turnuva şampiyonlukları — yalnız kazananlarda göster (çoğu oyuncu 0). */}
-            {(p.tournaments_won ?? 0) > 0 && (
-              <div className="champ-row">
-                <span className="champ-row-lbl"><Icon name="trophy" size={15} /> {t('stats.championships')}</span>
-                <span className="champ-row-val">{p.tournaments_won}</span>
-              </div>
-            )}
-
             {/* PR (Career PR): analiz edilmiş maçlardan havuzlanan hata oranı (düşük=iyi) + kaç maç
-                sayıldığı. Henüz analiz edilmiş maç yoksa "henüz yok" gösterilir. */}
+                sayıldığı. Üstte; Turnuva Şampiyonluğu bir alt satırda (kullanıcı direktifi). */}
             <div className="pp-pr">
               <span className="pp-pr-lbl">
                 <Icon name="target" size={14} /> {t('lb.byPr')}
@@ -331,6 +338,14 @@ export default function PublicProfile({
                 <span className="pp-pr-sub">{t('pp.prNone')}</span>
               )}
             </div>
+
+            {/* Turnuva şampiyonlukları — yalnız kazananlarda göster (çoğu oyuncu 0). */}
+            {(p.tournaments_won ?? 0) > 0 && (
+              <div className="champ-row">
+                <span className="champ-row-lbl"><Icon name="trophy" size={15} /> {t('stats.championships')}</span>
+                <span className="champ-row-val">{p.tournaments_won}</span>
+              </div>
+            )}
 
             {p.form.length > 0 && (
               <div className="pp-form">
