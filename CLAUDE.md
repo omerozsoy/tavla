@@ -5,11 +5,25 @@ wildbg ONNX motoru tarayıcıda SADECE ipucu/analiz içindir. **Gerçek bot raki
 sunucu gnubg** (`SERVER_BOT=true`). Mimari ve kurulum için README.md.
 
 ## Deploy — en sık yapılan hata
+- **🚫 KURAL (kullanıcı direktifi): Forge panel "Deploy Now" / force-deploy'a YALNIZ KULLANICI basar — Claude BASMAZ.**
+  Deploy-hook URL'ini curl'leme, panelden elle deploy tetikleme de YASAK. Claude'un işi: commit →
+  push → CI izle → deploy'un geçtiğini DOĞRULA. Elle zorlama gerekiyorsa (CI kırmızı / >10dk
+  release yok) kullanıcıya SÖYLE, tuşa kullanıcı basar.
+- **🚫 KURAL (kullanıcı direktifi): deploy doğrularken KÖR POLL DÖNGÜSÜNE GİRME.** Önce TEK kontrol:
+  `current` HEAD zaten commit'ine eşitse deploy TAMAM — bekleme, döngü kurma. Karşılaştırmada İKİ tarafı
+  da AYNI uzunlukta al (ikisi de `--short` veya ikisi de tam SHA) — `4d5ad7ff` (tam) vs `4d5ad7f`
+  (`--short` 7 hane) uzunluk uyumsuzluğunu "eşleşmedi" sanıp 6dk boşuna poll etme (2026-11-05 hatası).
+  Eşleşmezse 30-60sn aralıkla EN FAZLA birkaç poll, eşleşince DUR.
+- **"QD" = Forge "Quick Deploy"** (panel → site → Apps sekmesindeki anahtar): açıkken `main`'e her
+  push'ta Forge otomatik build+deploy script'i çalıştırır — ayrı cron/hook YOK. Gözlemlenen davranış:
+  push → CI → otomatik release (aşağıdaki ölçümler). ⚠ Kullanıcı bunu bilinçli kurduğunu hatırlamıyor
+  (Forge site kurulumunda varsayılan açık gelmiş olabilir); kesin teyit panelde Apps→Quick Deploy anahtarı.
 - **Üretim artık Laravel FORGE (148.251.126.242), Hetzner/Plesk DEĞİL.** Cloudflare origin=Forge.
 - Frontend sunucuda DERLENMEZ. `dist/` → `backend/public`'e commit'lenir.
 - **Yalnızca `src/*` commit'lemek canlıyı DEĞİŞTİRMEZ.** Akış:
-  `npm run deploy:build` → `git add backend/public` → commit → push → **Forge panel "Deploy Now"**
-  (veya deploy-hook URL'ini curl'le). Forge zero-downtime: `current` → `releases/<N>` symlink.
+  `npm run deploy:build` → `git add backend/public` → commit → push → QD otomatik deploy eder
+  (elle zorlama gerekirse **Forge panel "Deploy Now"'a KULLANICI basar**, Claude değil). Forge
+  zero-downtime: `current` → `releases/<N>` symlink.
 - **Push sonrası doğrula ama QD'ye ~5dk ver — QD ÖLÜ DEĞİL, gecikmesi OYNAK.** Akış:
   push → CI (~2dk, GitHub Actions) → QD CI sonrası sn-dk arası deploy eder (2026-11-03 ölçüm:
   CI yeşilinden +2.5dk, push'tan +4.5dk). **90sn'de pes etmek = yanlış-negatif** ("QD ölü" sanıp
