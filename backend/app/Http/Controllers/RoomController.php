@@ -67,6 +67,13 @@ class RoomController extends Controller
     // görünmemiş/oynamamış host hükmen kaybetse de galip RATING KAZANMAZ.
     private const HOST_PRESENCE_MAX_S = 30;
 
+    // BOT ODASI TERK PENCERESİ (sn): bot maçı insanı hükmen kaybettirmez (bot gerçek rakip değil)
+    // -> insan çıkınca oda sonsuza 'playing' kalır. Bu pencere boyunca (insanın son GERÇEK oyun
+    // poll'u = clock p1_seen) banner'da "Devam Eden Maç" GÖSTERİLİR (insan DÖNEBİLİR); aşılırsa oda
+    // no-contest kapatılır (ceza yok) -> hayalet + "Maça dön" siyah ekranı biter. Homepage poll'u
+    // bot odasının _seen'ini TAZELEMEZ (pencere gerçek oyun yokluğunu ölçsün). Kullanıcı: 2 dk.
+    private const BOT_ABANDON_S = 120;
+
     // Benzersiz oda kodu (karisik olmayan karakterler)
     private function generateCode(): string
     {
@@ -1291,10 +1298,10 @@ class RoomController extends Controller
             return response()->json(['rooms' => []]);
         }
         $rooms = Room::where('status', 'playing')
-            // BOT maçları banner'da GÖSTERİLMEZ (kullanıcı direktifi): "Devam Eden Maç / Maça dön"
-            // yalnız gerçek insan maçları içindir. Yarım kalan bot maçı cezasız (MatchBackstop bot
-            // odalarını atlar) -> banner'da tutup kullanıcıyı "sistem beni bota soktu" sanısına itmeye gerek yok.
-            ->where('bot', false)
+            // BOT maçları da banner'da GÖSTERİLİR (kullanıcı direktifi 2026-11-05): insan aktif bir bot
+            // maçına "Maça dön" ile dönebilsin. Terk edilen bot odası (insan >2dk görülmedi) aşağıdaki
+            // reject döngüsünde no-contest kapatılır -> hayalet/siyah-ekran olmaz. (Eskiden bot hepten
+            // hariçti -> aktif maça dönülemiyor + terk edilen oda sonsuza 'playing' kalıp hayalet oluyordu.)
             ->where(function ($q) use ($me) {
                 $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
             })
@@ -1317,6 +1324,24 @@ class RoomController extends Controller
         // kullanici donebilsin diye KENDI sorgusu onu forfeit etmesin -> o, rakibin poll'u/
         // presence 48sn ile islenir). Olu odalar listeden de cikarilir.
         $rooms = $rooms->reject(function ($r) {
+            // BOT ODASI: insan (p1) son GERÇEK oyun poll'u (clock p1_seen) > BOT_ABANDON_S ise TERK ->
+            // no-contest kapat (bot cezasız, coin/rating yok), banner'dan düş. Aksi halde (pencere içinde)
+            // banner'da KALSIN -> "Maça dön" ile dönülebilir. updated_at bot clock tick'iyle taze tutulduğu
+            // için güvenilmez; p1_seen insanın gerçek varlığını gösterir (homepage poll'u bot'ta tazelemez).
+            if ($r->bot) {
+                $clock = is_array($r->clock) ? $r->clock : [];
+                $seen = (float) ($clock['p1_seen'] ?? 0);
+                if ($seen <= 0 || (microtime(true) - $seen) > self::BOT_ABANDON_S) {
+                    $r->status = 'finished';
+                    $r->end_reason = $r->end_reason ?? 'ABANDON';
+                    $r->version = (int) $r->version + 1;
+                    $r->save();
+
+                    return true;
+                }
+
+                return false; // aktif bot maçı -> banner'da göster (dönülebilir)
+            }
             $reason = $this->deadRoomReason($r);
             if ($reason === null) {
                 return false; // canli / tek-taraf -> banner'da kalsin
@@ -1335,6 +1360,12 @@ class RoomController extends Controller
         // Sira-bazli AFK/TIMEOUT started_at'tan bagimsiz isler; bu yalniz "gercekten gitti mi".
         $nowSeen = microtime(true);
         foreach ($rooms as $r) {
+            // BOT odasının _seen'ini homepage poll'u TAZELEMEZ: terk penceresi (BOT_ABANDON_S) insanın
+            // GERÇEK oyun yokluğunu ölçsün. Aksi halde lobide beklerken p1_seen tazelenir, pencere hiç
+            // dolmaz ve terk edilen bot maçı banner'da sonsuza kalır.
+            if ($r->bot) {
+                continue;
+            }
             $clock = $r->clock;
             if (! is_array($clock) || empty($clock) || ! empty($clock['end'])) {
                 continue;

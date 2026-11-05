@@ -2490,11 +2490,10 @@ export default function App() {
             rejoinRoom(rm)
             return
           }
-          // SUNUCU-OTORİTER BOT: bot odaları myActiveRooms'tan HARİÇ tutulur (banner'da görünmesin).
-          // Bu yüzden refresh/ikinci sekmede rm=undefined kalır -> rejoin edilmez -> room=null ->
-          // poll effect'i `if (!online || !room) return` ile ANINDA çıkar -> sekme eski server_state'te
-          // DONAR ("iki pencere farklı state"). Bot odasını doğrudan koddan çek: hâlâ oynanan bir bot
-          // maçıysa rejoin et (poll yeniden bağlanır -> güncel server_state'e YAKALAR + bot turlarını uygular).
+          // SUNUCU-OTORİTER BOT: AKTİF bot odası artık myActiveRooms'ta döner (yukarıda rm bulunur →
+          // rejoin). Buraya yalnız TERK edilmiş/kapanmış bot odası (listede yok) düşer; yine de yerel
+          // kayıt tazeyse (aynı cihaz hızlı reload) doğrudan koddan çekip hâlâ 'playing' ise rejoin et,
+          // değilse (finished/terk) aşağıdaki guard yerel kaydı siler → hayalet/siyah ekran olmaz.
           const rv = await showRoom(code).catch(() => null)
           if (cancelled) return
           if (rv && rv.bot && rv.status === 'playing') {
@@ -8236,7 +8235,10 @@ export default function App() {
           // ping bildirimi (maç bitene dek sürer) normal 3sn modunda dogru girisi yapar.
           const nonTourn = rs.filter((r) => !r.tournament)
           setActiveRooms(nonTourn)
-          if (!autoResumedRef.current && !room && nonTourn.length === 1) {
+          // BOT odasını OTO-resume ETME: banner'da "Maça dön" görünür ama kullanıcı kendi dönsün
+          // (homepage'de aniden bot maçına atılıp "hiç girmedim" şaşkınlığı olmasın). İnsan maçında
+          // oto-resume korunur (rakip bekliyor). nonTourn tek + bot değilse oto-gir.
+          if (!autoResumedRef.current && !room && nonTourn.length === 1 && !nonTourn[0].bot) {
             autoResumedRef.current = true
             rejoinRoom(nonTourn[0])
           }

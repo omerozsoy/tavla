@@ -387,17 +387,11 @@ class BotRoomTest extends TestCase
         $this->assertSame(1500, (int) $u->fresh()->rating); // rating DEĞİŞMEDİ
     }
 
-    public function test_bot_room_excluded_from_my_active_rooms(): void
+    private function activeBotRoom(string $code, int $uid, float $p1Seen): void
     {
-        // Devam eden bot maçı "Maça Dön" banner'ında (myActiveRooms) GÖRÜNMEZ (kullanıcı direktifi):
-        // banner yalnız gerçek insan maçları için. Yarım bot maçı cezasız, hatırlatmaya gerek yok.
-        $u = User::create([
-            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
-            'nickname' => 'insan2', 'email' => 'insan2@example.com', 'password' => bcrypt('secret123'),
-        ]);
         Room::create([
-            'code' => 'BOTYY',
-            'p1_token' => 'human-tok', 'p1_name' => 'İnsan', 'p1_user_id' => $u->id,
+            'code' => $code,
+            'p1_token' => 'human-tok', 'p1_name' => 'İnsan', 'p1_user_id' => $uid,
             'p2_token' => 'secret-bot', 'p2_name' => 'Seviye 7 · Neural AI',
             'status' => 'playing', 'authoritative' => true, 'bot' => true, 'bot_level' => 7, 'target' => 1,
             'server_state' => Backgammon::initialState(),
@@ -405,13 +399,46 @@ class BotRoomTest extends TestCase
                 'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
                 'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null], 'opened' => true, 'turns' => 1,
             ],
-            'clock' => ['p1_seen' => microtime(true), 'segment' => 'p1'], // taze -> canlı say
+            'clock' => ['p1_seen' => $p1Seen, 'segment' => 'p1'],
         ]);
+    }
+
+    public function test_active_bot_room_shown_in_my_active_rooms(): void
+    {
+        // AKTİF bot maçı (insan son ~birkaç sn görüldü) "Maça Dön" banner'ında GÖRÜNÜR (kullanıcı
+        // direktifi 2026-11-05): insan aktif bot maçına dönebilsin.
+        $u = User::create([
+            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'insan2', 'email' => 'insan2@example.com', 'password' => bcrypt('secret123'),
+        ]);
+        $this->activeBotRoom('BOTYY', $u->id, microtime(true) - 5); // taze -> aktif
 
         Sanctum::actingAs($u);
         $res = $this->getJson('/api/me/active-rooms')->assertOk();
         $row = collect($res->json('rooms'))->firstWhere('code', 'BOTYY');
-        $this->assertNull($row); // bot maçı banner'da GÖSTERİLMEZ
+        $this->assertNotNull($row, 'aktif bot maçı banner\'da görünmeli');
+        $this->assertTrue($row['bot']);
+        // Homepage poll'u bot odasının p1_seen'ini TAZELEMEZ (terk penceresi gerçek yokluğu ölçsün).
+        $this->assertEqualsWithDelta(microtime(true) - 5, (float) (Room::where('code', 'BOTYY')->first()->clock['p1_seen']), 2.0);
+    }
+
+    public function test_abandoned_bot_room_finalized_and_excluded(): void
+    {
+        // TERK edilmiş bot maçı (insan > 2 dk görülmedi) banner'dan DÜŞER + no-contest kapatılır
+        // (hayalet "Devam Eden Maç" + "Maça dön" siyah ekranı biter). Bot cezasız: sonuç yazılmaz.
+        $u = User::create([
+            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'insan3', 'email' => 'insan3@example.com', 'password' => bcrypt('secret123'),
+        ]);
+        $this->activeBotRoom('BOTZZ', $u->id, microtime(true) - 130); // > BOT_ABANDON_S (120) -> terk
+
+        Sanctum::actingAs($u);
+        $res = $this->getJson('/api/me/active-rooms')->assertOk();
+        $this->assertNull(collect($res->json('rooms'))->firstWhere('code', 'BOTZZ')); // banner'da yok
+        $room = Room::where('code', 'BOTZZ')->first();
+        $this->assertSame('finished', $room->status);      // kapatıldı
+        $this->assertNull($room->p1_result);               // no-contest (ceza yok)
+        $this->assertNull($room->p2_result);
     }
 
     /** target=3 (küp açık), sıra verilen renkte, açılış oynanmış (turns=1), küp ortada. */
