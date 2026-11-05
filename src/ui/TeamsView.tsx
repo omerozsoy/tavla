@@ -526,7 +526,7 @@ function InviteBox(props: { teamId: number; act: (fn: () => Promise<unknown>, ms
       {/* ID yerine ad ile ara → listeden davet et. */}
       <div style={{ display: 'flex', gap: 6 }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search() }} placeholder={t('teams.searchUser')} style={inp} />
-        <Button variant="outline" disabled={searching || !q.trim()} onClick={search}>{t('teams.search')}</Button>
+        <Button variant="outline" disabled={searching || !q.trim()} onClick={search}>{t('teams.searchUserBtn')}</Button>
       </div>
       {results.length > 0 && (
         <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
