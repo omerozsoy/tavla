@@ -25,7 +25,7 @@ class LeagueSeason extends Model
     protected $fillable = [
         'name', 'status', 'active_lock', 'applications_open_at', 'applications_close_at',
         'league_match_length', 'knockout_match_length', 'current_round', 'rounds_total',
-        'standings_final', 'bracket', 'tiebreak_manual', 'prizes', 'prizes_paid', 'config',
+        'standings_final', 'bracket', 'tiebreak_manual', 'prizes', 'prizes_paid', 'config', 'rules',
     ];
 
     protected $casts = [

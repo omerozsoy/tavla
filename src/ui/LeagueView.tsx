@@ -228,7 +228,7 @@ export default function LeagueView(props: Props) {
           onPlay={doPlay}
         />
       )}
-      {tab === 'rules' && <Rules prizes={season?.prizes ?? []} />}
+      {tab === 'rules' && <Rules prizes={season?.prizes ?? []} rules={season?.rules} />}
 
       {finished.length > 0 && (
         <div style={{ marginTop: 20 }}>
@@ -421,9 +421,10 @@ function MyMatch(p: {
   )
 }
 
-function Rules({ prizes }: { prizes: Array<{ key: string; coins?: number; badge?: string; desc?: string }> }) {
+function Rules({ prizes, rules }: { prizes: Array<{ key: string; coins?: number; badge?: string; desc?: string }>; rules?: string | null }) {
   const { t } = useT()
-  const lines = t('league.rulesText').split('\n').map((l) => l.trim()).filter(Boolean)
+  // Admin panelden girilen sezon kuralları varsa onu, yoksa sitedeki varsayılan i18n metnini göster.
+  const lines = (rules?.trim() || t('league.rulesText')).split('\n').map((l) => l.trim()).filter(Boolean)
   return (
     <div style={cardStyle}>
       {lines.map((ln, i) =>

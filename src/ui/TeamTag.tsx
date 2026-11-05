@@ -5,7 +5,7 @@
  */
 import { type CSSProperties } from 'react'
 import { useTeamTag } from '../teamTags'
-import { TeamEmblem } from './TeamsView'
+import { TeamEmblem } from './TeamEmblem'
 
 export default function TeamTag({
   userId,

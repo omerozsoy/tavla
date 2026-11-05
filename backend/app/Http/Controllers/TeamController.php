@@ -114,10 +114,17 @@ class TeamController extends Controller
      */
     public function tags(): JsonResponse
     {
-        $tags = Cache::remember('team_tags_v1', 60, fn () => TeamMember::query()
+        $tags = Cache::remember('team_tags_v2', 60, fn () => TeamMember::query()
             ->join('teams', 'teams.id', '=', 'team_members.team_id')
             ->where('teams.status', 'active')
-            ->pluck('teams.tag', 'team_members.user_id')
+            ->get(['team_members.user_id', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2'])
+            ->keyBy('user_id')
+            ->map(fn ($r) => [
+                'tag' => $r->tag,
+                'logo' => $r->logo, // onaylı logo (/uploads/... veya null) — kalkana kırpılır
+                'color1' => $r->color1,
+                'color2' => $r->color2,
+            ])
             ->all());
 
         return response()->json(['tags' => $tags]);

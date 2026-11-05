@@ -170,6 +170,7 @@ class LeagueController extends Controller
             'league_match_length' => ['sometimes', 'integer', 'min:1', 'max:25'],
             'knockout_match_length' => ['sometimes', 'integer', 'min:1', 'max:25'],
             'prizes' => ['sometimes', 'array'],
+            'rules' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'tiebreak_manual' => ['sometimes', 'array'],
         ]);
         $season->update($data);
@@ -331,6 +332,7 @@ class LeagueController extends Controller
             'applications_open_at' => $s->applications_open_at?->toIso8601String(),
             'applications_close_at' => $s->applications_close_at?->toIso8601String(),
             'prizes' => $s->prizes ?? [],
+            'rules' => $s->rules,
             'min_players' => LeagueSeason::MIN_PLAYERS,
             'max_players' => LeagueSeason::MAX_PLAYERS,
         ]);
