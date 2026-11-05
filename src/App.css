@@ -13754,10 +13754,15 @@ button.acct-row-logout:hover:not(:disabled) {
   .rank-row.online-row {
     grid-template-columns: minmax(56px, 1fr) auto auto auto;
   }
-  .online-row .player-id-name,
+  /* Çok rozetli satırda (takım amblemi + taç + onay kalkanı + rütbe rozeti) boşluksuz isim
+     HARF-HARF sarıyordu: overflow-wrap:anywhere kutunun min-content'ini 1 karaktere düşürüp
+     1fr yarışında ismi eziyordu (ÖmerÖzsoy/CanerÇELİK mobilde dikey "bozuk"). nowrap + ellipsis:
+     isim tek satır, sığmazsa "…" (rozetler korunur; tam ad için profile dokun) — seek-panel ile aynı. */
   .online-row .player-id-name-text {
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 }
 /* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
