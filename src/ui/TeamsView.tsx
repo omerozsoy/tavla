@@ -658,6 +658,11 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
   const [busy, setBusy] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
   const load = useCallback(() => { import('../api').then((a) => a.getTeamChat(props.teamId).then((r) => setMsgs(r.messages)).catch(() => {})) }, [props.teamId])
+  const send = async () => {
+    if (busy || !body.trim()) return
+    setBusy(true)
+    try { const a = await import('../api'); await a.postTeamChat(props.teamId, body); setBody(''); load() } finally { setBusy(false) }
+  }
   useEffect(() => { load() }, [load])
   // Backend en-yeni-üstte (DESC) döndürür; sohbet kronolojik AKMALI → id'ye göre artan sırala (en yeni en altta).
   const ordered = [...msgs].sort((a, b) => a.id - b.id)
@@ -680,11 +685,8 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
         {ordered.length === 0 && <div style={{ opacity: 0.5, padding: 4 }}>{t('teams.chat.empty')}</div>}
       </div>
       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-        <input value={body} onChange={(e) => setBody(e.target.value)} placeholder={t('teams.chat')} maxLength={1000} style={inp} />
-        <Button disabled={busy || !body} onClick={async () => {
-          setBusy(true)
-          try { const a = await import('../api'); await a.postTeamChat(props.teamId, body); setBody(''); load() } finally { setBusy(false) }
-        }}>{t('teams.chat.send')}</Button>
+        <input value={body} onChange={(e) => setBody(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); send() } }} placeholder={t('teams.chat')} maxLength={1000} style={inp} />
+        <Button disabled={busy || !body} onClick={send}>{t('teams.chat.send')}</Button>
       </div>
     </section>
   )
@@ -837,11 +839,20 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
 
 // ---- Ortak ------------------------------------------------------------------
 
+// Takım kimliği DAİMA amblem (kalkan) — asla metin kısaltma (kullanıcı direktifi 2026-11-05).
+// label yalnız logosuz takımda kalkan-içi harf fallback'idir (TeamEmblem), ayrı metin etiket DEĞİL.
+function TeamMark(props: { team: TeamBrief | null | undefined; size?: number }) {
+  const t = props.team
+  if (!t) return null
+
+  return <TeamEmblem color1={t.color1} color2={t.color2} logo={t.logo || undefined} label={t.tag} size={props.size ?? 20} />
+}
+
 function TeamChip(props: { team: TeamBrief; big?: boolean }) {
   const t = props.team
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: props.big ? 18 : 14 }}>
-      <span style={{ ...tagStyle, background: t.color1, color: '#fff' }}>{t.tag}</span>
+      <TeamMark team={t} size={props.big ? 34 : 24} />
       <b>{t.name}</b>
     </span>
   )
