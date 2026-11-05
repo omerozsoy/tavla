@@ -14,7 +14,8 @@
  * hub↔alt sayfalar (hub-and-spoke). Bkz [[seo-online-tavla-tavla-oyna-landing]].
  */
 
-import { Icon, type IconName } from './Icon'
+import { Icon } from './Icon'
+import { ContactChannels } from './ContactChannels'
 import { useEscape } from './useEscape'
 import { useInfoPage } from './useInfoPage'
 import { InfoPane } from './Info'
@@ -304,50 +305,6 @@ function AvmBody() {
         teklifle size dönelim.
       </p>
     </>
-  )
-}
-
-// /iletisim sayfasi ust bilgi kartlari: e-posta, GSM, Instagram, YouTube. Sadece
-// iletisim slug'inda hero altinda (ust) render edilir; form asagida kalir.
-const CHANNELS: { icon: IconName; label: string; value: string; href: string; ext?: boolean }[] = [
-  { icon: 'mail', label: 'E-posta', value: 'bilgi@tavlatv.com', href: 'mailto:bilgi@tavlatv.com' },
-  { icon: 'phone', label: 'GSM', value: '+90 537 389 1907', href: 'tel:+905373891907' },
-  {
-    icon: 'instagram',
-    label: 'Instagram',
-    value: 'instagram.com/tavlatv',
-    href: 'https://instagram.com/tavlatv',
-    ext: true,
-  },
-  {
-    icon: 'youtube',
-    label: 'YouTube',
-    value: 'youtube.com/@TavlaTV',
-    href: 'https://www.youtube.com/@TavlaTV',
-    ext: true,
-  },
-]
-
-function ContactChannels() {
-  return (
-    <div className="contact-channels" aria-label="İletişim kanalları">
-      {CHANNELS.map((c) => (
-        <a
-          key={c.label}
-          className="contact-channel"
-          href={c.href}
-          {...(c.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-        >
-          <span className="cc-icon">
-            <Icon name={c.icon} size={20} />
-          </span>
-          <span className="cc-text">
-            <span className="cc-label">{c.label}</span>
-            <span className="cc-value">{c.value}</span>
-          </span>
-        </a>
-      ))}
-    </div>
   )
 }
 

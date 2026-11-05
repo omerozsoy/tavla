@@ -416,7 +416,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'menu.tools': 'Araçlar',
   'menu.info': 'Bilgi',
   'info.title': 'Bilgi',
-  'info.tab.about': 'Hakkında',
+  'info.tab.about': 'Hakkımızda',
   'info.tab.glossary': 'Sözlük',
   'info.intro':
     'TavlaTV, tarayıcıda oynanan modern bir tavla platformudur. Yapay zekaya karşı antrenman yapabilir, gerçek rakiplerle eşleşebilir, turnuvalara katılabilir ve her maçının analizini görebilirsin.',

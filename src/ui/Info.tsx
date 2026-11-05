@@ -23,6 +23,7 @@ import Scoring from './Scoring'
 import GlossaryView from './GlossaryView'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { RawHtml } from './RawHtml'
+import { ContactChannels, ContactLegal } from './ContactChannels'
 
 export type InfoTab = InfoPageSlug
 
@@ -94,6 +95,13 @@ export default function Info({ onClose, tab, currentRating, loggedIn = false }: 
         {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}
         {EDITABLE.includes(tab) && (
           <div className="info-tab-pane">
+            {/* Hakkımızda: EN ÜSTTE iletişim kartları (e-posta/GSM/Instagram/YouTube) + firma künyesi. */}
+            {tab === 'about' && (
+              <>
+                <ContactChannels />
+                <ContactLegal />
+              </>
+            )}
             <InfoPane page={pages[tab]} />
           </div>
         )}
