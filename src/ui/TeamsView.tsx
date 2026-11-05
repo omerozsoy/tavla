@@ -764,30 +764,65 @@ function TeamDetailView(props: { id: number; myId: number | null; back: () => vo
     try { await applyTeam(props.id); props.setNotice(t('teams.invited')) } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
   return (
-    <div>
+    <div style={{ display: 'grid', gap: 22 }}>
       <Button variant="ghost" onClick={props.back}>← {t('common.back')}</Button>
-      <div style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <TeamChip team={d.team} big /> {d.team.is_champion && '🏆'}
+
+      {/* Amblem başlık + kalın alt-kural (Swiss, Takımım görünümüyle tutarlı) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, borderBottom: '2px solid var(--text)' }}>
+        <TeamChip team={d.team} big />
+        {d.team.is_champion && <span title={t('teams.awards')}>🏆</span>}
         <span style={{ flex: 1 }} />
+        <span style={microTag}>{d.team.rating_avg.toFixed(1)} · {d.members.length}</span>
         {props.myId && d.team.applications_open && (
           <Button disabled={busy} onClick={apply}>{t('teams.apply')}</Button>
         )}
       </div>
-      {d.team.description && <p style={{ opacity: 0.85 }}>{d.team.description}</p>}
-      <h3>{t('teams.members')} ({d.members.length})</h3>
-      {d.members.map((m) => (
-        <div key={m.user.id} style={row}>
-          <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: '#fff', cursor: 'pointer' }}>
-            {m.user.nickname}
-          </button>
-          <span style={{ opacity: 0.6, marginLeft: 6 }}>{t('teams.my.role.' + m.role)}</span>
-        </div>
-      ))}
+      {d.team.description && <p style={{ opacity: 0.85, margin: 0, lineHeight: 1.5 }}>{d.team.description}</p>}
+
+      {/* Üyeler — isim var(--text) ile OKUNUR (eski #fff açık temada görünmezdi) */}
+      <section>
+        <SLabel count={d.members.length}>{t('teams.members')}</SLabel>
+        {d.members.map((m) => (
+          <div key={m.user.id} style={row}>
+            <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', padding: 0 }}>
+              {m.user.nickname}
+            </button>
+            <TeamTag userId={m.user.id} size={20} />
+            <span style={microTag}>{t('teams.my.role.' + m.role)}</span>
+            <span style={{ flex: 1 }} />
+            {m.user.rating != null && <span style={{ opacity: 0.6, fontSize: 13 }}>{m.user.rating}</span>}
+          </div>
+        ))}
+      </section>
+
+      {/* Karşılaşmalar */}
+      {d.matches.length > 0 && (
+        <section>
+          <SLabel count={d.matches.length}>{t('teams.matches')}</SLabel>
+          {d.matches.map((mt) => (
+            <div key={mt.id} style={row}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <TeamMark team={mt.home} size={22} /> {mt.home_score}–{mt.away_score} <TeamMark team={mt.away} size={22} />
+              </span>
+              <span style={{ flex: 1 }} />
+              <span style={microTag}>{mt.status}</span>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Ödüller */}
       {d.team.awards.length > 0 && (
-        <>
-          <h3>{t('teams.awards')}</h3>
-          {d.team.awards.map((a, i) => <div key={i}>{a.month_key} — {a.kind} #{a.rank}</div>)}
-        </>
+        <section>
+          <SLabel count={d.team.awards.length}>{t('teams.awards')}</SLabel>
+          {d.team.awards.map((a, i) => (
+            <div key={i} style={row}>
+              <span style={{ fontWeight: 600 }}>{a.month_key}</span>
+              <span style={{ flex: 1 }} />
+              <span style={microTag}>{a.kind} · #{a.rank}</span>
+            </div>
+          ))}
+        </section>
       )}
     </div>
   )
