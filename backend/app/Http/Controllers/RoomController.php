@@ -60,9 +60,12 @@ class RoomController extends Controller
 
     // HOST TERK EŞİĞİ (sn): davetli/arkadaş odasında p2 katılırken oda sahibinin (p1) son
     // aktivitesi (users.last_seen) bundan eski ise "ayrılmış" sayılır -> maç BAŞLAMAZ. Canlı host
-    // global /ping (10sn) + enter() ile last_seen'i en çok ~20sn bayat tutar; 45sn bol pay bırakır
-    // (yanlış-pozitif yok) ve terk eden host'u maç başlamadan yakalar. Bkz enter() 58MJ7 kök fix.
-    private const HOST_PRESENCE_MAX_S = 45;
+    // global /ping (10sn) + enter() ile last_seen'i en çok ~20sn bayat tutar; 30sn pay bırakır
+    // (canlı host yanlış-engellenmez) ve terk eden host'u maç başlamadan yakalar. Bkz enter() 58MJ7
+    // kök fix. enter() TEK an'a bakar (host, kabulden hemen önce gittiyse maç yine başlayabilir);
+    // runtime backstop (applyClockEnd no-contest) deliği tamamlar: davet/arkadaş odasında hiç
+    // görünmemiş/oynamamış host hükmen kaybetse de galip RATING KAZANMAZ.
+    private const HOST_PRESENCE_MAX_S = 30;
 
     // Benzersiz oda kodu (karisik olmayan karakterler)
     private function generateCode(): string
@@ -2839,6 +2842,26 @@ class RoomController extends Controller
             $lColor = $winnerSlot === 'p1' ? 'black' : 'white';
             if (! MatchMove::colorPlayed($room->code, $wColor)
                 && MatchMove::colorPlayed($room->code, $lColor)) {
+                $winnerSlot = null;
+            }
+        }
+        // HOST TERK NO-CONTEST (58MJ7 runtime backstop): DAVET/arkadaş odasında forfeit ile "kazanan"
+        // ilan edilen taraf oynamış olsa BİLE, KAYBEDEN (forfeit edilen host) maça HİÇ bağlanmadıysa
+        // (clock _seen damgası YOK = tek poll bile atmadı) bu ADİL bir galibiyet DEĞİL -> no-contest
+        // (rating/coin YOK). enter() host-canlılık gate'i TEK an'a bakar; host kabulden hemen önce
+        // gidip hiç bağlanmazsa maç yine başlayabiliyor, p2 tek açılış hamlesiyle bedava rating
+        // farm'ı yapıyordu (ghost-win shield yukarıda yalnız KAZANANIN oynamadığı durumu yakalar;
+        // burada kazanan oynadı, KAYBEDEN hiç gelmedi). Yalnız DAVET odaları (game_invites satırı;
+        // forfeit ~2-3dk'da olur, hygiene-sil 10dk -> satır settlement anında VAR); MATCHMAKING
+        // no-show forfeit kuralı (QT5XF) DOKUNULMAZ (havuzda bekleyen rakip hak eder). _seen ileri-only
+        // + her poll'da yazılır -> gerçekten bağlanmış kaybeden ETKİLENMEZ (yalnız hiç-bağlanmayan
+        // no-contest'e döner). Bot/decided/force yukarıda zaten ayrışır.
+        if (! $force && $winnerSlot !== null && $decidedColor === null && $reason === 'ABANDON') {
+            $loserSlot = $winnerSlot === 'p1' ? 'p2' : 'p1';
+            $loserNeverSeen = ($clock[$loserSlot.'_seen'] ?? null) === null;
+            if ($loserNeverSeen
+                && Schema::hasTable('game_invites')
+                && DB::table('game_invites')->where('room_code', $room->code)->exists()) {
                 $winnerSlot = null;
             }
         }

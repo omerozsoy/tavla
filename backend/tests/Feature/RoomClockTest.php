@@ -8,6 +8,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -460,6 +461,59 @@ class RoomClockTest extends TestCase
         $this->assertSame('won', $room->p1_result);   // beyaz(p1) hedefe ulasti
         $this->assertSame('lost', $room->p2_result);
         $this->assertNotSame('ABANDON', $room->end_reason); // no-contest DEGIL: gercek galibiyet
+    }
+
+    // 58MJ7 RUNTIME BACKSTOP: DAVET odasında, forfeit ile "kazanan" ilan edilen misafir (p2) oynamış
+    // olsa bile, host (p1) maça HİÇ bağlanmadıysa (p1_seen YOK) bu no-contest olmalı -> p2 bedava
+    // rating KAZANMAZ. (enter() gate tek an'a bakar; host kabulden hemen önce gidip hiç bağlanmazsa
+    // maç yine başlayabilir -> bu backstop deliği kapatır.)
+    public function test_invite_room_never_connected_host_is_no_contest_not_forfeit_win(): void
+    {
+        $room = $this->playingRoom('GHNOC', 'normal', 5);
+        DB::table('game_invites')->insert([
+            'from_user_id' => $this->p1->id, 'to_user_id' => $this->p2->id, 'room_code' => 'GHNOC',
+            'target' => 5, 'status' => 'accepted', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $now = microtime(true);
+        // Sıra host'ta (p1); host HİÇ bağlanmadı (p1_seen YOK), misafir (p2) present + AFK süresi aştı.
+        // Normalde NO-SHOW FORFEIT p2'yi kazanan yapardı; davet odasında no-contest'e iner.
+        $room->clock = [
+            'running' => true, 'turn_slot' => 'p1', 'started_at' => $now - 130,
+            'p1_bank' => 300, 'p2_bank' => 300, 'delay' => 10, 'moved' => true,
+            'p2_seen' => $now - 1,
+        ];
+        $room->save();
+
+        Sanctum::actingAs($this->p2);
+        $this->getJson('/api/rooms/GHNOC?token=t2')->assertStatus(200);
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        $this->assertNull($room->p1_result, 'host hic baglanmadi -> no-contest');
+        $this->assertNull($room->p2_result, 'misafir bedava rating KAZANMAZ');
+    }
+
+    // KONTROL: AYNI senaryo ama davet YOK (matchmaking/rastgele oda) -> QT5XF korunur: hazır bekleyen
+    // misafir (p2) KAZANIR, host hükmen kaybeder (no-show forfeit DOKUNULMAZ).
+    public function test_non_invite_never_connected_host_still_forfeits_qt5xf(): void
+    {
+        $room = $this->playingRoom('MMNOC', 'normal', 5); // game_invites satırı YOK
+        $now = microtime(true);
+        $room->clock = [
+            'running' => true, 'turn_slot' => 'p1', 'started_at' => $now - 130,
+            'p1_bank' => 300, 'p2_bank' => 300, 'delay' => 10, 'moved' => true,
+            'p2_seen' => $now - 1,
+        ];
+        $room->save();
+
+        Sanctum::actingAs($this->p2);
+        $this->getJson('/api/rooms/MMNOC?token=t2')->assertStatus(200);
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('lost', $room->p1_result);  // no-show forfeit korunur
+        $this->assertSame('won', $room->p2_result);
     }
 
     private function user(string $email): User
