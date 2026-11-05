@@ -255,9 +255,9 @@ class TeamLeagueTest extends TestCase
         $this->assertThrowsCode('cannot_kick_founder', fn () => $this->svc()->kick($asst, $team->fresh(), $founder->id));
     }
 
-    // ---- §4 72 saat bekleme -------------------------------------------------
+    // ---- §4 24 saat bekleme -------------------------------------------------
 
-    public function test_leave_starts_72h_cooldown_blocking_rejoin(): void
+    public function test_leave_starts_24h_cooldown_blocking_rejoin(): void
     {
         $team = $this->makeTeam();
         $member = $this->eligibleUser();
@@ -269,7 +269,7 @@ class TeamLeagueTest extends TestCase
 
         $until = $this->svc()->cooldownUntil($member->id);
         $this->assertNotNull($until);
-        $this->assertTrue($until->between(now()->addHours(71), now()->addHours(73)));
+        $this->assertTrue($until->between(now()->addHours(23), now()->addHours(25)));
 
         // Bekleme bitmeden başka takıma katılamaz.
         $other = $this->makeTeam(name: 'Baska', tag: 'BSK');

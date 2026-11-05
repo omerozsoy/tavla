@@ -232,7 +232,7 @@ const TR: Dict = {
   'teams.view': 'Görüntüle',
   'teams.leave': 'Ayrıl',
   'teams.left': 'Takımdan ayrıldın.',
-  'teams.leaveConfirm': 'Takımdan ayrılmak istediğine emin misin? 72 saat yeni takıma giremezsin.',
+  'teams.leaveConfirm': 'Takımdan ayrılmak istediğine emin misin? 24 saat yeni takıma giremezsin.',
   'teams.promote': 'Yardımcı Yap',
   'teams.demote': 'Yardımcılığı Al',
   'teams.transfer': 'Kuruculuğu Devret',
@@ -267,7 +267,7 @@ const TR: Dict = {
   'teams.noResults': 'Sonuç yok',
   'teams.pickTime': 'Tarih/saat seç',
   'teams.close': 'Takımı Kapat',
-  'teams.closeConfirm': 'Takımı kapatmak istediğine emin misin? Üyelikler sonlanır, 72 saat bekleme başlar.',
+  'teams.closeConfirm': 'Takımı kapatmak istediğine emin misin? Üyelikler sonlanır, 24 saat bekleme başlar.',
   'teams.closed': 'Takım kapatıldı.',
   'teams.awards': 'Ödüller',
   'teams.match.accept': 'Kabul Et',
@@ -285,7 +285,7 @@ const TR: Dict = {
   'teams.err.already_in_team': 'Zaten bir takımdasın.',
   'teams.err.name_taken': 'Bu ad kullanılıyor.',
   'teams.err.tag_taken': 'Bu etiket kullanılıyor.',
-  'teams.err.on_cooldown': '72 saatlik bekleme sürüyor.',
+  'teams.err.on_cooldown': '24 saatlik bekleme sürüyor.',
   'teams.err.team_full': 'Takım dolu.',
   'teams.err.too_many_applications': 'En fazla 3 açık başvuru.',
   'teams.err.rename_cooldown': 'İsim değişimi için 30 gün beklemelisin.',
@@ -293,7 +293,7 @@ const TR: Dict = {
     'Takım kurma\n' +
     '• Premium üyelik + en az 20 tamamlanmış puanlı maç + 50.000 coin gerekir; coin yalnız kuruluş başarılı olursa bir kez kesilir.\n' +
     '• Takım adı 3-30, etiket 2-5 karakter (harf/rakam) ve benzersiz olmalıdır.\n' +
-    '• Bir kişi aynı anda yalnızca tek takımda olabilir. Ayrılma, çıkarılma, Premium bitişi veya takım kapanması sonrası 72 saat yeni takıma giremezsin.\n' +
+    '• Bir kişi aynı anda yalnızca tek takımda olabilir. Ayrılma, çıkarılma, Premium bitişi veya takım kapanması sonrası 24 saat yeni takıma giremezsin.\n' +
     '• Ad/etiket değişikliği yalnız kurucuya aittir: 10.000 coin + 30 gün bekleme.\n\n' +
     'Üyelik ve roller\n' +
     '• Takım kurucu dahil en fazla 24 üye alır.\n' +
@@ -2467,7 +2467,7 @@ const EN: Dict = {
   'teams.view': 'View',
   'teams.leave': 'Leave',
   'teams.left': 'You left the team.',
-  'teams.leaveConfirm': 'Leave the team? You can\'t join a new team for 72 hours.',
+  'teams.leaveConfirm': 'Leave the team? You can\'t join a new team for 24 hours.',
   'teams.promote': 'Make Assistant',
   'teams.demote': 'Remove Assistant',
   'teams.transfer': 'Transfer Ownership',
@@ -2501,7 +2501,7 @@ const EN: Dict = {
   'teams.noResults': 'No results',
   'teams.pickTime': 'Pick date/time',
   'teams.close': 'Close Team',
-  'teams.closeConfirm': 'Close the team? Memberships end and a 72-hour cooldown starts.',
+  'teams.closeConfirm': 'Close the team? Memberships end and a 24-hour cooldown starts.',
   'teams.closed': 'Team closed.',
   'teams.awards': 'Awards',
   'teams.match.accept': 'Accept',
@@ -2519,7 +2519,7 @@ const EN: Dict = {
   'teams.err.already_in_team': 'You are already in a team.',
   'teams.err.name_taken': 'That name is taken.',
   'teams.err.tag_taken': 'That tag is taken.',
-  'teams.err.on_cooldown': 'A 72-hour cooldown is active.',
+  'teams.err.on_cooldown': 'A 24-hour cooldown is active.',
   'teams.err.team_full': 'Team is full.',
   'teams.err.too_many_applications': 'Up to 3 open applications.',
   'teams.err.rename_cooldown': 'You must wait 30 days to rename.',
@@ -2527,7 +2527,7 @@ const EN: Dict = {
     'Creating a team\n' +
     '• Requires Premium + at least 20 completed rated matches + 50,000 coins; coins are charged once, only if creation succeeds.\n' +
     '• Team name 3-30, tag 2-5 characters (letters/digits), and must be unique.\n' +
-    '• A person can be in only one team at a time. After leaving, being removed, Premium expiring, or the team closing you cannot join a new team for 72 hours.\n' +
+    '• A person can be in only one team at a time. After leaving, being removed, Premium expiring, or the team closing you cannot join a new team for 24 hours.\n' +
     '• Name/tag changes belong to the founder only: 10,000 coins + 30-day cooldown.\n\n' +
     'Membership and roles\n' +
     '• A team holds up to 24 members including the founder.\n' +
