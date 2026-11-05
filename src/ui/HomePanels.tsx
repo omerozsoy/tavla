@@ -276,7 +276,9 @@ export function LiveMatchesPanel({
         .then((m) => alive && setMatches(m))
         .catch(() => alive && setMatches([]))
     load()
-    const id = window.setInterval(load, 30000)
+    // 10sn: maç bitince listeden hızlı düşsün (eskiden 30sn -> bitmiş maç ~yarım dakika "canlı"
+    // görünüp tıklayınca bitmiş maça giriliyordu). Backend 6sn cache'i tekrar sorguyu soğurur.
+    const id = window.setInterval(load, 10000)
     return () => {
       alive = false
       window.clearInterval(id)
