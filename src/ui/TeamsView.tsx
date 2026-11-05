@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { SHIELD_PATH, TeamEmblem } from './TeamEmblem'
+import TeamTag from './TeamTag'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
@@ -283,7 +284,6 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
         <TeamEmblem color1={color1} color2={color2} logo={logo || undefined} label={tag} size={76} />
         <div className="teams-create-preview-name">
           <strong>{name || t('teams.name')}</strong>
-          <span className="teams-tagchip" style={{ background: color1 }}>{tag ? tag.toUpperCase() : t('teams.tag')}</span>
         </div>
       </div>
 
@@ -436,7 +436,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
             <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', padding: 0 }}>
               {m.user.nickname}
             </button>
-            {m.user.tag ? <span style={tagStyle}>{m.user.tag}</span> : null}
+            <TeamTag userId={m.user.id} size={16} />
             <span style={microTag}>{t('teams.my.role.' + m.role)}</span>
             <span style={{ flex: 1 }} />
             {isFounder && m.role === 'member' && <Button disabled={busy} onClick={() => act(() => promoteTeamMember(team.id, m.user.id))}>{t('teams.promote')}</Button>}
@@ -454,7 +454,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
           <SLabel count={me.managed.applications.length}>{t('teams.applications')}</SLabel>
           {me.managed.applications.map((a) => (
             <div key={a.id} style={row}>
-              <span>{a.user.nickname} {a.user.tag ? <span style={tagStyle}>{a.user.tag}</span> : null}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{a.user.nickname} <TeamTag userId={a.user.id} size={16} /></span>
               <span style={{ flex: 1 }} />
               <Button disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, true), t('teams.joined'))}>{t('teams.accept')}</Button>
               <Button variant="ghost" disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, false))}>{t('teams.decline')}</Button>
@@ -474,7 +474,9 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
         <SLabel>{t('teams.matches')}</SLabel>
         {detail?.matches.map((mt) => (
           <div key={mt.id} style={row}>
-            <span>{mt.home?.tag} {mt.home_score}–{mt.away_score} {mt.away?.tag}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <TeamMark team={mt.home} size={18} /> {mt.home_score}–{mt.away_score} <TeamMark team={mt.away} size={18} />
+            </span>
             <span style={{ opacity: 0.6, marginLeft: 8 }}>{mt.status}</span>
             <span style={{ flex: 1 }} />
             <Button variant="ghost" onClick={() => props.go({ kind: 'match', id: mt.id })}>{t('teams.view')}</Button>
@@ -785,7 +787,9 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
   return (
     <div>
       <Button variant="ghost" onClick={props.back}>← {t('common.back')}</Button>
-      <h2 style={{ margin: '10px 0' }}>{m.home?.tag} {m.home_score}–{m.away_score} {m.away?.tag}</h2>
+      <h2 style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <TeamMark team={m.home} size={28} /> {m.home_score}–{m.away_score} <TeamMark team={m.away} size={28} />
+      </h2>
       <div style={{ opacity: 0.6 }}>{m.status} · {fmtTR(m.scheduled_at)}</div>
 
       {/* Proposed → kabul/iptal */}

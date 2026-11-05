@@ -31,6 +31,7 @@ import Loading from './Loading'
 import { chatWarnText, chatMuteText } from './chatNotice'
 import PlayerIdentity from './PlayerIdentity'
 import AvatarFrame from './AvatarFrame'
+import { TeamEmblem } from './TeamEmblem'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { type IconName } from './Icon'
@@ -642,7 +643,7 @@ export default function Messages({
                       ))}
                       {teamInvites.map((iv) => (
                         <div key={'ti' + iv.id} className="messages-invite-row">
-                          <span className="messages-invite-tag" style={{ background: iv.team?.color1 || 'var(--accent)' }}>{iv.team?.tag ?? '—'}</span>
+                          <span className="messages-invite-ava">{iv.team ? <TeamEmblem color1={iv.team.color1} color2={iv.team.color2} logo={iv.team.logo || undefined} label={iv.team.tag} size={40} /> : null}</span>
                           <span className="messages-invite-body"><b>{iv.team?.name ?? '—'}</b><small>{t('dm.teamInvite')}</small></span>
                           <button type="button" className="mrb-btn mrb-accept" disabled={inviteBusy} onClick={() => doAcceptTeam(iv.id)}>{t('dm.accept')}</button>
                           <button type="button" className="mrb-btn mrb-decline" disabled={inviteBusy} onClick={() => doDeclineTeam(iv.id)}>{t('dm.decline')}</button>
