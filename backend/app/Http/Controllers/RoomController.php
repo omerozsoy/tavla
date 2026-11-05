@@ -58,6 +58,12 @@ class RoomController extends Controller
     // ~4× azaltır. Komut yolu (stampActed/driveAuthoritativeClock) _seen'i zaten anında tazeler.
     private const PRESENCE_WRITE_THROTTLE_S = 15.0;
 
+    // HOST TERK EŞİĞİ (sn): davetli/arkadaş odasında p2 katılırken oda sahibinin (p1) son
+    // aktivitesi (users.last_seen) bundan eski ise "ayrılmış" sayılır -> maç BAŞLAMAZ. Canlı host
+    // global /ping (10sn) + enter() ile last_seen'i en çok ~20sn bayat tutar; 45sn bol pay bırakır
+    // (yanlış-pozitif yok) ve terk eden host'u maç başlamadan yakalar. Bkz enter() 58MJ7 kök fix.
+    private const HOST_PRESENCE_MAX_S = 45;
+
     // Benzersiz oda kodu (karisik olmayan karakterler)
     private function generateCode(): string
     {
@@ -1657,6 +1663,13 @@ class RoomController extends Controller
             $data['name'] = $authUser->nickname ?: trim(($authUser->first_name ?? '').' '.($authUser->last_name ?? ''));
             $data['rating'] = (int) ($authUser->rating ?? 1500);
             $data['avatar'] = $authUser->avatar;
+            // Odaya girmek = aktivite: last_seen'i tazele (ping gibi 15sn throttle). Böylece oda
+            // SAHİBİ odayı kurar kurmaz "canlı" olur ve HOST TERK KALKANI (aşağıda) yeni kurulan
+            // odayı yanlışlıkla "sahip ayrılmış" sanmaz; sahip gidince ping durar, last_seen bayatlar.
+            if (! $authUser->last_seen || strtotime((string) $authUser->last_seen) < now()->getTimestamp() - 15) {
+                $authUser->last_seen = now();
+                $authUser->save();
+            }
         }
         $code = strtoupper($code);
 
@@ -1742,6 +1755,27 @@ class RoomController extends Controller
             $enterUserId = $authUser?->id;
             if ($this->userInAnyPlaying($enterUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            }
+            // HOST TERK KALKANI (58MJ7 kök fix): davet eden / oda sahibi (p1) odayı kurup AYRILDIYSA
+            // (browser kapatma -> /leave ve cancelInvite çağrılmaz, davet 2dk askıda kalır), kabul eden
+            // p2 bu HAYALET odaya girip maçı başlatıyordu; MrOkay tek açılış hamlesini oynuyor, sıra
+            // gelmeyen host'a geçiyor ve host NO-SHOW forfeit (MatchClock :427) ile hükmen kaybedip
+            // RATING veriyordu -> p2 bedava rating farm'ı. Maçı BAŞLATMADAN host'un canlı olduğunu
+            // users.last_seen (her /ping 10sn + enter'da tazelenir) ile doğrula. Bayatsa (HOST gitmiş)
+            // maça SOKMA, bekleyen daveti 'expired' yap (banner geri gelmesin), p2'yi dostça uyar.
+            // Turnuva HARİÇ (kendi no-show akışı var). Host kendi odasına reconnect ederse slot!=null
+            // -> bu dala hiç girmez; eşleşme (matchmake) ve bot yolu da bu p2-claim dalını kullanmaz.
+            $hostId = (int) ($room->p1_user_id ?? 0);
+            $isTournamentRoom = Cache::has(TournamentController::roomTargetKey($code));
+            if ($hostId && $enterUserId !== $hostId && ! $isTournamentRoom) {
+                $host = User::find($hostId);
+                $hostSeenTs = $host && $host->last_seen ? strtotime((string) $host->last_seen) : 0;
+                if ($hostSeenTs < now()->getTimestamp() - self::HOST_PRESENCE_MAX_S) {
+                    DB::table('game_invites')->where('room_code', $room->code)
+                        ->where('status', 'pending')->update(['status' => 'expired', 'updated_at' => now()]);
+
+                    return $this->fail('Davet eden oyundan ayrıldı. Tekrar davet iste.', 409);
+                }
             }
             // YÜZDE BAHİS ÖN-KONTROL: bu oda potlu (davet/play min %10) ise iki oyuncunun da en az
             // 1 kullanılabilir coin'i olmalı (matchmaking :491-494 ile aynı). Yetmezse maça HİÇ sokma

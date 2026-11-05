@@ -20,11 +20,14 @@ class InviteLifecycleTest extends TestCase
 
     private function user(string $tag): User
     {
-        return User::create([
+        $u = User::create([
             'first_name' => $tag, 'last_name' => 'T', 'country' => '',
             'nickname' => $tag.uniqid(), 'email' => uniqid().'@x.com',
             'password' => bcrypt('secret123'), 'rating' => 1500,
         ]);
+        $u->forceFill(['email_verified_at' => now()])->save(); // enter() e-posta doğrulama gate'ini geçsin
+
+        return $u;
     }
 
     /** Davet + davet edenin bekleyen odası. */
@@ -76,6 +79,45 @@ class InviteLifecycleTest extends TestCase
         $this->assertCount(0, $this->postJson('/api/ping')->assertOk()->json('invites'));
         $this->postJson("/api/invites/{$id}/respond", ['accept' => true])->assertStatus(409);
         $this->assertSame('expired', DB::table('game_invites')->where('id', $id)->value('status'));
+    }
+
+    // 58MJ7: davet eden (host/p1) odayı kurup browser'ı kapattı (/leave + cancelInvite YOK -> davet
+    // 2dk askıda). p2 kabul edip HAYALET odaya giriyordu; host gelmeyince NO-SHOW forfeit ile hükmen
+    // kaybedip RATING veriyordu (p2 bedava farm). Maç BAŞLAMADAN host canlılığı (last_seen) denetlenir.
+    public function test_match_does_not_start_when_inviter_has_left(): void
+    {
+        $from = $this->user('from');
+        $to = $this->user('to');
+        $id = $this->invite($from, $to, 'GHST1');
+        // Host son aktivitesi eşiğin ötesinde = ayrılmış (browser kapalı, ping durmuş).
+        $from->last_seen = now()->subMinutes(2);
+        $from->save();
+
+        Sanctum::actingAs($to);
+        $this->postJson('/api/rooms/GHST1/enter', ['token' => 'guest-GHST1', 'name' => 'TO'])
+            ->assertStatus(409);
+
+        $room = Room::where('code', 'GHST1')->first();
+        $this->assertSame('waiting', $room->status, 'host yokken maç başlamamalı');
+        $this->assertNull($room->p2_token, 'p2 koltuğu kapılmamalı');
+        $this->assertSame('expired', DB::table('game_invites')->where('id', $id)->value('status'));
+    }
+
+    public function test_match_starts_when_inviter_is_present(): void
+    {
+        $from = $this->user('from');
+        $to = $this->user('to');
+        $this->invite($from, $to, 'LIVE1');
+        $from->last_seen = now(); // host canlı (az önce ping'ledi / odayı kurdu)
+        $from->save();
+
+        Sanctum::actingAs($to);
+        $this->postJson('/api/rooms/LIVE1/enter', ['token' => 'guest-LIVE1', 'name' => 'TO'])
+            ->assertOk();
+
+        $room = Room::where('code', 'LIVE1')->first();
+        $this->assertSame('playing', $room->status);
+        $this->assertSame($to->id, (int) $room->p2_user_id);
     }
 
     public function test_declined_invite_cannot_be_accepted_later_but_accept_retry_is_idempotent(): void
