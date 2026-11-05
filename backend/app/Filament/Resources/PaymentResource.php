@@ -42,12 +42,12 @@ class PaymentResource extends Resource
     protected static function grantInfo(Payment $r): string
     {
         return match ($r->kind) {
-            'coins'        => number_format((int) $r->coins, 0, ',', '.').' coin',
-            'cart'         => ((int) $r->coins > 0 ? number_format((int) $r->coins, 0, ',', '.').' coin + ' : '').'sipariş(ler)',
+            'coins' => number_format((int) $r->coins, 0, ',', '.').' coin',
+            'cart' => ((int) $r->coins > 0 ? number_format((int) $r->coins, 0, ',', '.').' coin + ' : '').'sipariş(ler)',
             'subscription' => 'Premium ('.($r->plan ?: 'premium').') — '.($r->period === 'monthly' ? '1 ay' : '1 yıl'),
-            'renew'        => 'Premium uzatma — '.($r->period === 'monthly' ? '1 ay' : '1 yıl'),
-            'product'      => 'Fiziksel ürün siparişi',
-            default        => '—',
+            'renew' => 'Premium uzatma — '.($r->period === 'monthly' ? '1 ay' : '1 yıl'),
+            'product' => 'Fiziksel ürün siparişi',
+            default => '—',
         };
     }
 
@@ -68,8 +68,8 @@ class PaymentResource extends Resource
                     Forms\Components\Select::make('status')->label('Durum')
                         ->options([
                             'pending' => 'Bekliyor',
-                            'paid'    => 'Ödendi',
-                            'failed'  => 'Başarısız',
+                            'paid' => 'Ödendi',
+                            'failed' => 'Başarısız',
                         ])
                         ->required(),
                     Forms\Components\TextInput::make('bank_msg')->label('Not (dahili)')
@@ -133,6 +133,13 @@ class PaymentResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make()->label('Onayla / Düzenle')
                     ->visible(fn (Payment $r) => $r->payment_method === 'bank_transfer'),
+            ])
+            // Seçili ödeme kayıtlarını toplu sil (onay modallı). Kayıt silmek coin/premium grant'ını
+            // GERİ ALMAZ (yalnız kayıt/audit satırını kaldırır) — genelde test/başarısız kayıt temizliği.
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()->label('Seçilenleri Sil'),
+                ]),
             ]);
     }
 
@@ -140,7 +147,7 @@ class PaymentResource extends Resource
     {
         return [
             'index' => Pages\ListPayments::route('/'),
-            'edit'  => Pages\EditPayment::route('/{record}/edit'),
+            'edit' => Pages\EditPayment::route('/{record}/edit'),
         ];
     }
 }
