@@ -105,7 +105,6 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
                 {ranked && (
                   <span className="invite-target-est">
                     <span className="est-win">{t('friend.rankedWin', { win: estWin })}</span>
-                    {' · '}
                     <span className="est-loss">{t('friend.rankedLoss', { loss: estLoss })}</span>
                   </span>
                 )}

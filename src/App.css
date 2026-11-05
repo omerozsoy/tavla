@@ -28118,6 +28118,10 @@ input:not([type='range']), select, textarea {
   font-size: 0.85rem;
   font-weight: 400;
 }
+.invite-target-est .est-win,
+.invite-target-est .est-loss {
+  display: block;
+}
 .invite-target-est .est-win {
   color: var(--success-fg);
 }
