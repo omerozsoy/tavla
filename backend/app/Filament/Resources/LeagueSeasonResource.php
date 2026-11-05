@@ -56,9 +56,6 @@ class LeagueSeasonResource extends Resource
                     Forms\Components\TextInput::make('badge')->label('Rozet anahtarı')->maxLength(40),
                     Forms\Components\TextInput::make('desc')->label('Açıklama')->maxLength(120),
                 ])->columns(4)->default([])->reorderable(false),
-            Forms\Components\Textarea::make('rules')->label('Kurallar metni (§16 Kurallar sekmesi)')
-                ->rows(14)->columnSpanFull()
-                ->helperText('Lig ekranındaki "Kurallar" sekmesinde gösterilir. "## " ile başlayan satır başlık olur, diğer satırlar paragraf. Boş bırakırsan sitedeki varsayılan kurallar metni gösterilir. (Ödüller otomatik eklenir — buraya yazma.)'),
             Forms\Components\KeyValue::make('tiebreak_manual')->label('Admin eşitlik sırası (userId => sıra; düşük=üst) §5')
                 ->keyLabel('Kullanıcı ID')->valueLabel('Sıra')->default([]),
             Forms\Components\Placeholder::make('status_info')->label('Durum')

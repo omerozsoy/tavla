@@ -22,10 +22,32 @@ class LeagueSeason extends Model
     /** §2 "aktif" sayılan (aynı anda yalnız bir tane olabilen) durumlar. */
     public const ACTIVE_STATES = ['applications', 'selection', 'league', 'knockout'];
 
+    /**
+     * §16 Kurallar sekmesi — TEK global metin (tüm sezonlara uygulanır). Admin panelden
+     * (Setting 'league_rules') düzenlenebilir; kayıt yoksa bu varsayılan gösterilir. Frontend
+     * i18n 'league.rulesText' yalnız ağ/boş hâli için son-çare fallback. "## " = başlık.
+     */
+    public const DEFAULT_RULES = <<<'TR'
+## Katılım
+Lig Premium üyelere özeldir. Başvurular açıkken başvurursun; asıl ve yedek oyuncuları TavlaTV Yönetimi seçer. Bir sezon 48 oyuncuyla başlar ve aynı anda yalnız bir aktif sezon olur.
+## Lig Aşaması (8 Tur)
+Swiss usulü 8 tur oynanır. Her turda benzer puanlı oyuncular eşleşir; aynı iki oyuncu lig aşamasında tekrar eşleşmez. Oyuncu sayısı tek kalırsa bir oyuncu "bay" geçer (otomatik 1 puan).
+## Puanlama ve Sıralama
+Galibiyet, hükmen galibiyet ve bay 1 puan; mağlubiyet, hükmen mağlubiyet ve çift gelmeme 0 puandır. Eşitlikte sıralama: 1) lig puanı, 2) karşılaşılan rakiplerin toplam puanı, 3) yenilen rakiplerin toplam puanı, 4) güncel rating, 5) admin sırası.
+## Eleme
+İlk 8 doğrudan Son 16'ya gider; 9–24 arası ön eleme oynar; 25 ve sonrası elenir. Son 16 → Çeyrek Final → Yarı Final → Final şeklinde ilerler. Tüm eleme maçları (final dahil) tek maçtır; kaybeden elenir, üçüncülük maçı yoktur.
+## Maç Saati ve Hazır Olma
+Maç saatini rakibinle teklif edip onaylayarak belirlersin; saat turun son oynanma zamanını aşamaz. Geçerli saatten 15 dakika sonra: iki oyuncu da hazırsa maç otomatik başlar, yalnız biri hazırsa diğeri hükmen kaybeder, ikisi de gelmezse çift gelmeme sayılır. Finalde iki taraf da gelmezse otomatik şampiyon ilan edilmez; admin yeni tarih belirler.
+## Çekilme
+Çekilen oyuncunun topladığı puanlar silinmez; o anki açık maçını rakibi hükmen kazanır. Çekilenin yerine yedek alınmaz.
+## Rating ve Ödüller
+Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay rating'i değiştirmez. Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları açıklanacak ödülleri, coin ve rozet ödülü kazanır.
+TR;
+
     protected $fillable = [
         'name', 'status', 'active_lock', 'applications_open_at', 'applications_close_at',
         'league_match_length', 'knockout_match_length', 'current_round', 'rounds_total',
-        'standings_final', 'bracket', 'tiebreak_manual', 'prizes', 'prizes_paid', 'config', 'rules',
+        'standings_final', 'bracket', 'tiebreak_manual', 'prizes', 'prizes_paid', 'config',
     ];
 
     protected $casts = [

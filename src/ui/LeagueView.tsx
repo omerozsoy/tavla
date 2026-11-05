@@ -50,6 +50,7 @@ export default function LeagueView(props: Props) {
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<LeagueSeasonMeta | null>(null)
   const [finished, setFinished] = useState<LeagueSeasonSummary[]>([])
+  const [rules, setRules] = useState<string>('')
   const [detail, setDetail] = useState<Detail | null>(null)
   const [me, setMe] = useState<Me | null>(null)
   const [tab, setTab] = useState<Tab>('standings')
@@ -66,6 +67,7 @@ export default function LeagueView(props: Props) {
       const d = await getLeague()
       setActive(d.active)
       setFinished(d.finished)
+      setRules(d.rules ?? '')
       const id = props.seasonId ?? d.active?.id ?? null
       if (id) {
         setDetail(await getLeagueSeason(id))
@@ -228,7 +230,7 @@ export default function LeagueView(props: Props) {
           onPlay={doPlay}
         />
       )}
-      {tab === 'rules' && <Rules prizes={season?.prizes ?? []} rules={season?.rules} />}
+      {tab === 'rules' && <Rules prizes={season?.prizes ?? []} rules={rules} />}
 
       {finished.length > 0 && (
         <div style={{ marginTop: 20 }}>

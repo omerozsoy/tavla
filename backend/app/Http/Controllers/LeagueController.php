@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LeagueMatch;
 use App\Models\LeagueParticipant;
 use App\Models\LeagueSeason;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\League\LeagueEngine;
 use App\Support\League\LeagueRuntime;
@@ -31,6 +32,7 @@ class LeagueController extends Controller
         return response()->json([
             'active' => $active ? $this->seasonSummary($active) : null,
             'finished' => $finished->map(fn ($s) => $this->seasonSummary($s))->all(),
+            'rules' => self::rulesText(), // §16 TEK global kural metni (tüm sezonlar)
         ]);
     }
 
@@ -170,7 +172,6 @@ class LeagueController extends Controller
             'league_match_length' => ['sometimes', 'integer', 'min:1', 'max:25'],
             'knockout_match_length' => ['sometimes', 'integer', 'min:1', 'max:25'],
             'prizes' => ['sometimes', 'array'],
-            'rules' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'tiebreak_manual' => ['sometimes', 'array'],
         ]);
         $season->update($data);
@@ -332,10 +333,15 @@ class LeagueController extends Controller
             'applications_open_at' => $s->applications_open_at?->toIso8601String(),
             'applications_close_at' => $s->applications_close_at?->toIso8601String(),
             'prizes' => $s->prizes ?? [],
-            'rules' => $s->rules,
             'min_players' => LeagueSeason::MIN_PLAYERS,
             'max_players' => LeagueSeason::MAX_PLAYERS,
         ]);
+    }
+
+    /** §16 global kural metni: admin ayarı (Setting 'league_rules') varsa o, yoksa varsayılan. */
+    public static function rulesText(): string
+    {
+        return Setting::get('league_rules', LeagueSeason::DEFAULT_RULES);
     }
 
     /** Lig fazında canlı sıralama; dondurulduysa (knockout/finished) nihai sıralama. */

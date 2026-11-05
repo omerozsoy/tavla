@@ -1489,7 +1489,6 @@ export interface LeagueSeasonMeta extends LeagueSeasonSummary {
   league_match_length: number; knockout_match_length: number
   applications_open_at?: string | null; applications_close_at?: string | null
   prizes: Array<{ key: string; coins?: number; badge?: string; desc?: string }>
-  rules?: string | null
   min_players: number; max_players: number
 }
 export interface LeagueStandingRow {
@@ -1507,7 +1506,7 @@ export interface LeagueMyMatch extends LeagueMatchRow {
   am_p1: boolean; ready_p1?: string | null; ready_p2?: string | null
 }
 
-export async function getLeague(): Promise<{ active: LeagueSeasonMeta | null; finished: LeagueSeasonSummary[] }> {
+export async function getLeague(): Promise<{ active: LeagueSeasonMeta | null; finished: LeagueSeasonSummary[]; rules: string }> {
   return req('/league')
 }
 export async function getLeagueSeason(id: number): Promise<{
