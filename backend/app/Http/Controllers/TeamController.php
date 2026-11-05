@@ -137,7 +137,7 @@ class TeamController extends Controller
     {
         $u = $request->user();
         $m = TeamMember::where('user_id', $u->id)->first();
-        $cooldown = $this->svc->cooldownUntil((int) $u->id);
+        $cooldown = $u->is_admin ? null : $this->svc->cooldownUntil((int) $u->id); // yönetici bekleme süresinden muaf
         $rated = $this->svc->ratedMatchCount($u);
         $premium = $this->svc->isPremium($u);
 

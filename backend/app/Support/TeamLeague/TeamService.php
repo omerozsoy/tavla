@@ -90,7 +90,7 @@ class TeamService
         if (TeamMember::where('user_id', $u->id)->exists()) {
             throw new TeamException('already_in_team', 409);
         }
-        if ($this->cooldownUntil($u->id)) {
+        if (! $u->is_admin && $this->cooldownUntil($u->id)) { // yönetici 72s bekleme yasağından muaf
             throw new TeamException('on_cooldown', 403);
         }
         if ($minRating !== null && (int) ($u->rating ?? 0) < $minRating) {
