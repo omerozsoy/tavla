@@ -1282,9 +1282,10 @@ class RoomController extends Controller
             return response()->json(['rooms' => []]);
         }
         $rooms = Room::where('status', 'playing')
-            // BOT maçları DA banner'da görünür (yenileme/geri dönüş): devam edenler kalır, bitenler
-            // deadRoomReason (server_match.done) ile aşağıda düşer. Bot terkinde ceza YOK (MatchBackstop
-            // bot odalarını atlar) -> banner yalnız "kaldığın yerden devam" içindir.
+            // BOT maçları banner'da GÖSTERİLMEZ (kullanıcı direktifi): "Devam Eden Maç / Maça dön"
+            // yalnız gerçek insan maçları içindir. Yarım kalan bot maçı cezasız (MatchBackstop bot
+            // odalarını atlar) -> banner'da tutup kullanıcıyı "sistem beni bota soktu" sanısına itmeye gerek yok.
+            ->where('bot', false)
             ->where(function ($q) use ($me) {
                 $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
             })
@@ -1294,8 +1295,8 @@ class RoomController extends Controller
             ->whereNull('end_reason')       // resign/timeout/abandon etiketlenmis
             ->whereNull('p1_result')        // taraflardan biri mac sonucu beyan etmis (won/lost)
             ->whereNull('p2_result')
-            // Yalnizca GERCEKTEN canli maclar: son 4 dk icinde guncellenmis (terk/timeout eleme)
-            ->where('updated_at', '>', now()->subMinutes(4))
+            // Yalnizca GERCEKTEN canli maclar: son 1 dk icinde guncellenmis (terk/timeout eleme)
+            ->where('updated_at', '>', now()->subMinutes(1))
             ->orderByDesc('updated_at')
             ->limit(10)
             ->get();

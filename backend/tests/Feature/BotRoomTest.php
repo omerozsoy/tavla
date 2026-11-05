@@ -387,9 +387,10 @@ class BotRoomTest extends TestCase
         $this->assertSame(1500, (int) $u->fresh()->rating); // rating DEĞİŞMEDİ
     }
 
-    public function test_bot_room_appears_in_my_active_rooms_for_resume(): void
+    public function test_bot_room_excluded_from_my_active_rooms(): void
     {
-        // Devam eden bot maçı "Maça Dön" banner'ında (myActiveRooms) görünmeli + bot bayrağı taşımalı.
+        // Devam eden bot maçı "Maça Dön" banner'ında (myActiveRooms) GÖRÜNMEZ (kullanıcı direktifi):
+        // banner yalnız gerçek insan maçları için. Yarım bot maçı cezasız, hatırlatmaya gerek yok.
         $u = User::create([
             'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
             'nickname' => 'insan2', 'email' => 'insan2@example.com', 'password' => bcrypt('secret123'),
@@ -410,9 +411,7 @@ class BotRoomTest extends TestCase
         Sanctum::actingAs($u);
         $res = $this->getJson('/api/me/active-rooms')->assertOk();
         $row = collect($res->json('rooms'))->firstWhere('code', 'BOTYY');
-        $this->assertNotNull($row);
-        $this->assertTrue((bool) $row['bot']);
-        $this->assertSame(7, (int) $row['bot_level']);
+        $this->assertNull($row); // bot maçı banner'da GÖSTERİLMEZ
     }
 
     /** target=3 (küp açık), sıra verilen renkte, açılış oynanmış (turns=1), küp ortada. */
