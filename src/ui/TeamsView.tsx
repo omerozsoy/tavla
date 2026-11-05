@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { SHIELD_PATH, TeamEmblem } from './TeamEmblem'
 import { Button } from '@/components/ui/button'
@@ -416,8 +416,8 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
   const isManager = isFounder || myRole === 'assistant'
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <div style={row}>
+    <div style={{ display: 'grid', gap: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, borderBottom: '2px solid var(--text)' }}>
         <TeamChip team={team} big /><span style={{ flex: 1 }} />
         <Button variant="ghost" onClick={() => props.go({ kind: 'team', id: team.id })}>{t('teams.view')}</Button>
         {!isFounder && <Button variant="ghost" disabled={busy} onClick={() => { if (confirm(t('teams.leaveConfirm'))) act(() => leaveTeam(team.id), t('teams.left')) }}>{t('teams.leave')}</Button>}
@@ -430,13 +430,14 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
 
       {/* Üyeler + rol aksiyonları */}
       <section>
-        <h3>{t('teams.members')} ({detail?.members.length ?? 0})</h3>
+        <SLabel count={detail?.members.length ?? 0}>{t('teams.members')}</SLabel>
         {detail?.members.map((m) => (
           <div key={m.user.id} style={row}>
-            <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: '#fff', cursor: 'pointer' }}>
-              {m.user.nickname} {m.user.tag ? <span style={tagStyle}>{m.user.tag}</span> : null}
+            <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', padding: 0 }}>
+              {m.user.nickname}
             </button>
-            <span style={{ opacity: 0.6, marginLeft: 6 }}>{t('teams.my.role.' + m.role)}</span>
+            {m.user.tag ? <span style={tagStyle}>{m.user.tag}</span> : null}
+            <span style={microTag}>{t('teams.my.role.' + m.role)}</span>
             <span style={{ flex: 1 }} />
             {isFounder && m.role === 'member' && <Button disabled={busy} onClick={() => act(() => promoteTeamMember(team.id, m.user.id))}>{t('teams.promote')}</Button>}
             {isFounder && m.role === 'assistant' && <Button disabled={busy} onClick={() => act(() => demoteTeamMember(team.id, m.user.id))}>{t('teams.demote')}</Button>}
@@ -450,7 +451,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
       {/* Başvurular (yönetici) — gelen bekleyen başvurular (§4) */}
       {isManager && me.managed && me.managed.applications.length > 0 && (
         <section>
-          <h3>{t('teams.applications')} ({me.managed.applications.length})</h3>
+          <SLabel count={me.managed.applications.length}>{t('teams.applications')}</SLabel>
           {me.managed.applications.map((a) => (
             <div key={a.id} style={row}>
               <span>{a.user.nickname} {a.user.tag ? <span style={tagStyle}>{a.user.tag}</span> : null}</span>
@@ -470,7 +471,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
 
       {/* Karşılaşmalar + meydan okuma */}
       <section>
-        <h3>{t('teams.matches')}</h3>
+        <SLabel>{t('teams.matches')}</SLabel>
         {detail?.matches.map((mt) => (
           <div key={mt.id} style={row}>
             <span>{mt.home?.tag} {mt.home_score}–{mt.away_score} {mt.away?.tag}</span>
@@ -525,7 +526,7 @@ function InviteBox(props: { teamId: number; act: (fn: () => Promise<unknown>, ms
   }
   return (
     <section>
-      <h3>{t('teams.invite')}</h3>
+      <SLabel>{t('teams.invite')}</SLabel>
       {/* ID yerine ad ile ara → listeden davet et. */}
       <div style={{ display: 'flex', gap: 6 }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search() }} placeholder={t('teams.searchUser')} style={inp} />
@@ -569,7 +570,7 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
   }
   return (
     <section>
-      <h3>{t('teams.identity')}</h3>
+      <SLabel>{t('teams.identity')}</SLabel>
       <div style={{ display: 'grid', gap: 8 }}>
         <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('teams.desc')} maxLength={500} style={{ ...inp, minHeight: 60 }} />
         <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -655,13 +656,18 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
   const [msgs, setMsgs] = useState<Array<{ id: number; body: string; pinned: boolean; user: { nickname?: string } | null; at: string | null }>>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
+  const boxRef = useRef<HTMLDivElement>(null)
   const load = useCallback(() => { import('../api').then((a) => a.getTeamChat(props.teamId).then((r) => setMsgs(r.messages)).catch(() => {})) }, [props.teamId])
   useEffect(() => { load() }, [load])
+  // Backend en-yeni-üstte (DESC) döndürür; sohbet kronolojik AKMALI → id'ye göre artan sırala (en yeni en altta).
+  const ordered = [...msgs].sort((a, b) => a.id - b.id)
+  // Yeni mesaj/ilk yüklemede kutuyu en alta kaydır (site mesajlaşması gibi: son mesaj görünür).
+  useEffect(() => { const el = boxRef.current; if (el) el.scrollTop = el.scrollHeight }, [msgs])
   return (
     <section>
-      <h3>{t('teams.chat')}</h3>
-      <div className="teams-chat-box">
-        {msgs.map((m) => (
+      <SLabel>{t('teams.chat')}</SLabel>
+      <div className="teams-chat-box" ref={boxRef}>
+        {ordered.map((m) => (
           <div key={m.id} className="teams-chat-msg">
             <div className="teams-chat-meta">
               {m.pinned && <Icon name="pin" size={12} />}
@@ -671,7 +677,7 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
             <div className="teams-chat-body">{m.body}</div>
           </div>
         ))}
-        {msgs.length === 0 && <div style={{ opacity: 0.5, padding: 4 }}>{t('teams.chat.empty')}</div>}
+        {ordered.length === 0 && <div style={{ opacity: 0.5, padding: 4 }}>{t('teams.chat.empty')}</div>}
       </div>
       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
         <input value={body} onChange={(e) => setBody(e.target.value)} placeholder={t('teams.chat')} maxLength={1000} style={inp} />
@@ -856,5 +862,20 @@ function TeamList(props: { teams: TeamBrief[]; onOpen: (id: number) => void }) {
 }
 
 const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: 2, border: '1px solid var(--btn-border)', background: 'var(--input-bg)', color: 'var(--text)', flex: 1 }
-const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', borderTop: '1px solid #2a2a2a' }
-const tagStyle: React.CSSProperties = { display: 'inline-block', padding: '1px 6px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 700, marginRight: 4 }
+const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: '1px solid var(--border)' }
+const tagStyle: React.CSSProperties = { display: 'inline-block', padding: '1px 6px', borderRadius: 2, background: 'var(--accent)', color: 'var(--accent-text, #fff)', fontSize: 12, fontWeight: 700, marginRight: 4 }
+
+// Swiss tipografi: bölüm başlığı — küçük, uppercase, harf-aralıklı, kalın alt-kural (rule).
+const sectionLabel: React.CSSProperties = { fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', margin: '0 0 2px', paddingBottom: 8, borderBottom: '2px solid var(--text)' }
+// Rol/durum mikro-etiketi (muted, uppercase).
+const microTag: React.CSSProperties = { fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }
+
+/** Swiss bölüm başlığı: etiket + sayaç (opsiyonel), kalın alt-kural. */
+function SLabel({ children, count }: { children: React.ReactNode; count?: number }) {
+  return (
+    <div style={{ ...sectionLabel, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+      <span>{children}</span>
+      {count != null && <span style={{ fontWeight: 700, color: 'var(--text)' }}>{count}</span>}
+    </div>
+  )
+}
