@@ -89,16 +89,26 @@ class RoomController extends Controller
     }
 
     /**
-     * C1: Kullanıcının ŞU AN OYNANAN (status=playing) bir bahisli maçı (stake>0 veya bet_pct>0)
-     * var mı? Eşzamanlı bahisli maçları engellemek için (coin drain/shortchange exploit'i kapatır).
+     * C1: Kullanıcının SONUÇLANMAMIŞ (settled=false) bir bahisli maçı (stake>0 veya bet_pct>0) var mı?
+     * Yalnız 'playing' DEĞİL, 'finished-ama-settle-olmamış' da sayılır (KÖK FIX): oyun bitip settle
+     * gecikirken (client-drop / backstop penceresi) kullanıcı İKİNCİ bir bahisli maça girip aynı
+     * coin'leri iki maça stake'liyordu -> ilk maç settle olunca ikincisi "underwater" kalıp settlement
+     * deadlock'una düşüyordu (yasar1729 vakası). Artık ilk bahisli maç settle olana dek yenisi açılamaz.
+     * GÜVENLİ: settle-olmamış odalar backstop + kısmi-settle ile ~2dk'da kapanır -> blok KALICI değil.
+     * friendly/bot (coin taşımaz, settleRoom atlar -> kalıcı settled=false) HARİÇ: yoksa kalıcı bloklar.
      */
-    private function userInStakedPlaying(?int $uid, ?int $excludeRoomId = null): bool
+    private function userInUnsettledStakedMatch(?int $uid, ?int $excludeRoomId = null): bool
     {
         if (! $uid) {
             return false;
         }
 
-        return Room::where('status', 'playing')
+        return Room::whereIn('status', ['playing', 'finished'])
+            ->where('settled', false)
+            ->where('mode', '!=', 'friendly') // arkadaşlık maçı coin taşımaz -> engellemez
+            ->where('bot', false)
+            ->whereNotNull('p1_user_id')
+            ->whereNotNull('p2_user_id')
             ->when($excludeRoomId, fn ($q) => $q->where('id', '!=', $excludeRoomId))
             ->where(function ($q) {
                 $q->where('stake', '>', 0)->orWhere('bet_pct', '>', 0);
@@ -399,10 +409,11 @@ class RoomController extends Controller
             if ((($authUser->coins ?? 0) - ($authUser->coins_reserved ?? 0)) < max($maxStake * $moneyMult, 1)) {
                 return $this->fail('Yetersiz coin.', 422);
             }
-            // C1: Zaten OYNANAN bahisli bir maçı varsa yeni bahisli arama/eşleşme REDDEDİLİR ->
-            // eşzamanlı bahisli maçlarla coin drain/shortchange exploit'i kapanır (tek aktif bahisli maç).
-            if ($this->userInStakedPlaying($userId)) {
-                return $this->fail('Zaten devam eden bahisli bir maçın var. Önce onu bitir.', 422);
+            // C1: Henüz SONUÇLANMAMIŞ (oynanan VEYA bitmiş-ama-settle-olmamış) bahisli bir maçı varsa
+            // yeni bahisli arama/eşleşme REDDEDİLİR -> aynı coin'leri iki maça stake'leyip underwater
+            // deadlock oluşturan eşzamanlı bahisli maçlar kapanır (tek aktif bahisli maç; yasar1729 kökü).
+            if ($this->userInUnsettledStakedMatch($userId)) {
+                return $this->fail('Henüz sonuçlanmamış bahisli bir maçın var. Önce onun bitip hesaplanmasını bekle.', 422);
             }
         }
 
@@ -491,10 +502,11 @@ class RoomController extends Controller
                         continue;
                     }
                 }
-                // C1: eşzamanlı bahisli maç YOK. Aday (p1) VEYA arayan (userId) zaten OYNANAN bir
-                // bahisli maçtaysa bu eşleşmeyi atla (create-time guard yarışına karşı transaction-içi).
+                // C1: eşzamanlı bahisli maç YOK. Aday (p1) VEYA arayan (userId) henüz SONUÇLANMAMIŞ
+                // (oynanan/bitmiş-settle-olmamış) bir bahisli maçtaysa bu eşleşmeyi atla (create-time
+                // guard yarışına karşı transaction-içi).
                 if (($agreedStake > 0 || $betPct > 0)
-                    && ($this->userInStakedPlaying($cand->p1_user_id) || $this->userInStakedPlaying($userId))) {
+                    && ($this->userInUnsettledStakedMatch($cand->p1_user_id) || $this->userInUnsettledStakedMatch($userId))) {
                     continue;
                 }
                 // ESCROW (rezervasyon): SABİT bahis -> iki oyuncunun stake'ini REZERVE et (coins DÜŞMEZ).

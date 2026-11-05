@@ -84,6 +84,43 @@ class DoubleGameGuardTest extends TestCase
             ->assertStatus(409);
     }
 
+    // Bitmiş-ama-settle-olmamış bahisli (ranked) maç varken yeni bahisli eşleşme REDDEDİLİR (B fix):
+    // aynı coin'i iki maça stake'leyip underwater settlement-deadlock oluşturan eşzamanlılık kapanır
+    // (yasar1729 vakası: ilk maç settle gecikirken ikinci %100 bahis açılmıştı).
+    public function test_matchmaking_bet_rejected_while_prior_bet_unsettled(): void
+    {
+        $me = $this->user('unsettledseek');
+        $opp = $this->user('unsettledopp');
+        Room::create([
+            'code' => 'UNS1', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $me->id, 'p2_user_id' => $opp->id, 'p1_name' => 'A', 'p2_name' => 'B',
+            'status' => 'finished', 'mode' => 'ranked', 'stake' => 0, 'bet_pct' => 10,
+            'settled' => false, 'target' => 1, 'version' => 1,
+        ]);
+
+        Sanctum::actingAs($me);
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'unsettledseek', 'bet_pct' => 10])
+            ->assertStatus(422);
+    }
+
+    // FRIENDLY (arkadaşlık) bitmiş-settle-olmamış oda bahisli eşleşmeyi ENGELLEMEZ: coin taşımaz,
+    // settleRoom atladığı için kalıcı settled=false kalır -> kullanıcıyı sonsuza dek bloklamamalı.
+    public function test_friendly_unsettled_room_does_not_block_bet_matchmaking(): void
+    {
+        $me = $this->user('friendlyseek');
+        $opp = $this->user('friendlyopp');
+        Room::create([
+            'code' => 'FRN1', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $me->id, 'p2_user_id' => $opp->id, 'p1_name' => 'A', 'p2_name' => 'B',
+            'status' => 'finished', 'mode' => 'friendly', 'stake' => 0, 'bet_pct' => 20,
+            'settled' => false, 'target' => 1, 'version' => 1,
+        ]);
+
+        Sanctum::actingAs($me);
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'friendlyseek', 'bet_pct' => 10])
+            ->assertOk();
+    }
+
     // Zaten oynarken gelen daveti kabul REDDEDİLİR; davet 'pending' kalır (maç bitince kabul edilebilir).
     public function test_accept_invite_rejected_while_playing(): void
     {
