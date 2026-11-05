@@ -121,6 +121,28 @@ class DoubleGameGuardTest extends TestCase
             ->assertOk();
     }
 
+    // ESKİ bitmiş-settle-olmamış bahisli oda (kazananı belli olmayan terk edilmiş mezar) yeni bahisli
+    // eşleşmeyi ENGELLEMEZ: settle akışı taze (dk); 15dk'dan eski finished oda hiç settle olmayacak
+    // (server_winner NULL) -> settled=0 kalıcı, zamansız sayarsak katılımcıyı sonsuza bloklardı
+    // (124 kullanıcı vakası). Settle penceresi (dk) güvende, mezar bloklamıyor.
+    public function test_stale_finished_unsettled_room_does_not_block(): void
+    {
+        $me = $this->user('staleseek');
+        $opp = $this->user('staleopp');
+        $r = Room::create([
+            'code' => 'STL1', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $me->id, 'p2_user_id' => $opp->id, 'p1_name' => 'A', 'p2_name' => 'B',
+            'status' => 'finished', 'mode' => 'ranked', 'stake' => 0, 'bet_pct' => 10,
+            'settled' => false, 'target' => 1, 'version' => 1,
+        ]);
+        // updated_at'i 15dk sınırının gerisine zorla (create timestamp'i tazeler -> query ile ez).
+        Room::where('id', $r->id)->update(['updated_at' => now()->subMinutes(30)]);
+
+        Sanctum::actingAs($me);
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'staleseek', 'bet_pct' => 10])
+            ->assertOk();
+    }
+
     // Zaten oynarken gelen daveti kabul REDDEDİLİR; davet 'pending' kalır (maç bitince kabul edilebilir).
     public function test_accept_invite_rejected_while_playing(): void
     {

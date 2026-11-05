@@ -96,14 +96,25 @@ class RoomController extends Controller
      * deadlock'una düşüyordu (yasar1729 vakası). Artık ilk bahisli maç settle olana dek yenisi açılamaz.
      * GÜVENLİ: settle-olmamış odalar backstop + kısmi-settle ile ~2dk'da kapanır -> blok KALICI değil.
      * friendly/bot (coin taşımaz, settleRoom atlar -> kalıcı settled=false) HARİÇ: yoksa kalıcı bloklar.
+     * ⚠ 'finished' dalı ZAMAN SINIRLI: settle akışı taze (~dk), ama kazananı-belli-olmayan/terk edilmiş
+     * ESKİ finished odalar hiç settle olmaz (server_winner NULL) -> settled=0 kalıcı. Zamansız sayarsak
+     * o mezarlar katılımcılarını SONSUZA bloklar (124 kullanıcı vakası). Son STALE_UNSETTLED_MIN dk ile
+     * sınırlı -> exploit penceresi (dk) tam kapsanır, ölü mezarlar bloklamaz.
      */
+    private const STALE_UNSETTLED_MIN = 15;
+
     private function userInUnsettledStakedMatch(?int $uid, ?int $excludeRoomId = null): bool
     {
         if (! $uid) {
             return false;
         }
 
-        return Room::whereIn('status', ['playing', 'finished'])
+        return Room::where(function ($q) {
+            // playing: aktif maç, her zaman sayılır. finished: yalnız settle HENÜZ akıştaysa (taze).
+            $q->where('status', 'playing')
+                ->orWhere(fn ($q2) => $q2->where('status', 'finished')
+                    ->where('updated_at', '>=', now()->subMinutes(self::STALE_UNSETTLED_MIN)));
+        })
             ->where('settled', false)
             ->where('mode', '!=', 'friendly') // arkadaşlık maçı coin taşımaz -> engellemez
             ->where('bot', false)
