@@ -1769,8 +1769,12 @@ class RoomController extends Controller
             $isTournamentRoom = Cache::has(TournamentController::roomTargetKey($code));
             if ($hostId && $enterUserId !== $hostId && ! $isTournamentRoom) {
                 $host = User::find($hostId);
-                $hostSeenTs = $host && $host->last_seen ? strtotime((string) $host->last_seen) : 0;
-                if ($hostSeenTs < now()->getTimestamp() - self::HOST_PRESENCE_MAX_S) {
+                // last_seen YOKSA (hiç aktivite damgası) "gitti mi / hiç gelmedi mi" ayrılamaz ->
+                // presence ATLA (izin ver), codebase presence felsefesiyle tutarlı. Üretimde gerçek
+                // host odayı enter() ile kurarken last_seen damgalanır (+ app ping) -> daima dolu;
+                // yalnız GERÇEKTEN görünüp sonra bayatlayan host bloklanır (sentetik null host değil).
+                $hostSeen = $host?->last_seen;
+                if ($hostSeen && strtotime((string) $hostSeen) < now()->getTimestamp() - self::HOST_PRESENCE_MAX_S) {
                     DB::table('game_invites')->where('room_code', $room->code)
                         ->where('status', 'pending')->update(['status' => 'expired', 'updated_at' => now()]);
 
