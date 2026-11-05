@@ -11315,7 +11315,7 @@ button.acct-row-logout:hover:not(:disabled) {
      klemplenip UZUN icerigi (kulupler/anasayfa) buyutemiyor -> footer viewport dibinde
      kalip icerigin ustune biniyordu. 'auto' = satir icerige gore buyur, footer daima
      altta. Kisa sayfada main'in min-height'i viewport'u doldurur (asagida). */
-  /* Bar satiri AUTO: .topbar-stack (account-bar + BETA bandi) yuksekligine gore buyur. */
+  /* Bar satiri AUTO: .topbar-stack (account-bar) yuksekligine gore buyur. */
   grid-template-rows: auto auto;
   grid-template-areas:
     'bar bar'
@@ -11337,8 +11337,7 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 0;
   /* Scrollbar GORUNUR: marka renkli global kural (bkz. dosya basi) gecerlidir. */
 }
-/* Ust yigin = account-bar + BETA bandi (bar'in ALTINDA, bitisik). Grid'de 'bar' alani.
-   Sticky: bar + bant birlikte tepede sabit kalir (tek sticky eleman -> cakisma yok). */
+/* Ust yigin = account-bar. Grid'de 'bar' alani. */
 .app.lobby > .topbar-stack {
   grid-area: bar;
   display: flex;
@@ -11472,45 +11471,10 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Logo + slogan kilidi: genisligi WORDMARK'a buzulur; slogan (SVG textLength=100%)
    TEK SATIR halinde tam logo genisliginde yaslanir. (Footer'daki .foot-brandlock esi.) */
 .ab-brandlock {
-  position: relative; /* .ab-beta rozeti sag-ust koseye gore konumlanir */
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   width: fit-content;
-}
-/* Gecici BETA rozeti: logonun (wordmark) bittigi yerin sag ustunde kucuk pill.
-   .ab-brandlock fit-content -> sag kenari = logonun bitis noktasi. */
-.ab-beta {
-  position: absolute;
-  top: -3px;
-  left: 100%;
-  transform: translateX(-4px);
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--accent); /* site ana rengi (kiremit) pill */
-  color: #fff;
-  font-family: 'Outfit', system-ui, sans-serif;
-  font-size: 10px; /* 9px -> 10px (rozet; yer darligi nedeniyle etiket tabaninin altinda) */
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1.4;
-  text-transform: uppercase;
-  pointer-events: none;
-  white-space: nowrap;
-}
-@media (max-width: 560px) {
-  /* Dar telefonda rozet logonun SAGINA asili kalinca "Giris / Kayit" metninin ustune
-     biniyordu (390/430px). Logonun ALTINA, wordmark'in sag kenarina hizali al -> yatayda
-     yer kaplamaz, komsu dugmeyle cakismaz. */
-  .ab-beta {
-    top: auto;
-    bottom: -13px;
-    left: auto;
-    right: 0;
-    transform: none;
-    font-size: 9px;
-    padding: 0 5px;
-  }
 }
 .ab-tag {
   display: block;
@@ -11579,9 +11543,6 @@ button.acct-row-logout:hover:not(:disabled) {
      `.ab-wordmark{font-size:20px!important}` kaynak-sirasi geregi bunu eziyordu. */
   .account-bar .ab-wordmark {
     font-size: 16px !important;
-  }
-  .ab-beta {
-    display: none;
   }
   .ab-login {
     padding-left: 10px;
@@ -28049,10 +28010,9 @@ input:not([type='range']), select, textarea {
 }
 .invite-stack {
   position: fixed;
-  /* Üst yığının (account-bar var(--header-h) + varsa beta bandı --beta-h) TAM ALTINA konumlan;
-     aksi halde beta bandı davetin başını (kimin davet ettiği) örtüyordu. --beta-h BetaBanner'dan
-     dinamik gelir (kapatılınca 0). z-index üst yığından (105) yüksek -> asla altında kalmaz. */
-  top: calc(var(--header-h) + var(--beta-h, 0px) + 6px + env(safe-area-inset-top));
+  /* Üst yığının (account-bar var(--header-h)) TAM ALTINA konumlan.
+     z-index üst yığından (105) yüksek -> asla altında kalmaz. */
+  top: calc(var(--header-h) + 6px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   /* Davet zaman kritik: maç sonucu (120), çekmece ve sayfa katmanlarının ÜSTÜNDE; modal
