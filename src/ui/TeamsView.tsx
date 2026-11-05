@@ -420,7 +420,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
       <div style={row}>
         <TeamChip team={team} big /><span style={{ flex: 1 }} />
         <Button variant="ghost" onClick={() => props.go({ kind: 'team', id: team.id })}>{t('teams.view')}</Button>
-        {!isFounder && <Button variant="ghost" disabled={busy} onClick={() => act(() => leaveTeam(team.id), t('teams.left'))}>{t('teams.leave')}</Button>}
+        {!isFounder && <Button variant="ghost" disabled={busy} onClick={() => { if (confirm(t('teams.leaveConfirm'))) act(() => leaveTeam(team.id), t('teams.left')) }}>{t('teams.leave')}</Button>}
       </div>
 
       {/* Bana yapılmış kuruculuk devri teklifi → kabul (§5) */}

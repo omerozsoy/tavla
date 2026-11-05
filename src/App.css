@@ -24511,7 +24511,7 @@ body.has-bottom-nav {
 /* Tek gövde: kenarlıklı-yuvarlak kabuk, içeride dikey ayraç (iki ayrı kutu yerine) */
 .messages-split {
   display: grid;
-  grid-template-columns: 324px minmax(0, 1fr);
+  grid-template-columns: 384px minmax(0, 1fr);
   height: min(64vh, 560px);
   margin-top: 10px;
   border: 1px solid var(--line);
@@ -24577,12 +24577,12 @@ body.has-bottom-nav {
 .messages-pane-tab {
   position: relative;
   flex: 1;
+  white-space: nowrap;
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 600;
-  padding: 11px 10px;
+  font-size: 0.9rem;
+  padding: 11px 6px;
   border-radius: 10px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -24595,7 +24595,6 @@ body.has-bottom-nav {
   background: color-mix(in srgb, var(--accent) 20%, transparent);
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--accent-text);
-  font-weight: 700;
 }
 .messages-pane-badge {
   display: inline-flex;
