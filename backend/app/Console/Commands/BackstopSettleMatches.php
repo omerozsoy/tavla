@@ -41,6 +41,7 @@ class BackstopSettleMatches extends Command
         $controller = app(RoomController::class);
         $settled = 0;
         $pending = 0;
+        $voided = 0;
         $skipped = 0;
         $scanned = 0;
 
@@ -63,8 +64,10 @@ class BackstopSettleMatches extends Command
                         $res = $controller->settleRoom($room);
                         if (isset($res['amount'])) {
                             $settled++; // coin transferi yapıldı + kilit açıldı
+                        } elseif ($res['voided'] ?? false) {
+                            $voided++; // kazanansız eski maç HÜKÜMSÜZ: rezerv bırakıldı + kapatıldı (mezar önleme)
                         } elseif ($res['pending'] ?? false) {
-                            $pending++; // kazanan çözülemedi (ör. non-authoritative eski maç)
+                            $pending++; // kazanan çözülemedi + henüz void eşiğinin altında (grace)
                         } else {
                             $skipped++; // already (zaten settled) | skip (bahissiz/arkadaş)
                         }
@@ -76,7 +79,7 @@ class BackstopSettleMatches extends Command
                 }
             });
 
-        $this->info("Backstop-settle: {$scanned} oda tarandı -> {$settled} settle, {$pending} pending, {$skipped} atlandı.");
+        $this->info("Backstop-settle: {$scanned} oda tarandı -> {$settled} settle, {$voided} void, {$pending} pending, {$skipped} atlandı.");
 
         return self::SUCCESS;
     }

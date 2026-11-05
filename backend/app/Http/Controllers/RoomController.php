@@ -51,6 +51,11 @@ class RoomController extends Controller
 
     private const MONEY_WORST_MULT = 48; // = MONEY_CUBE_MAX × 3 (backgammon)
 
+    // Bitmiş-ama-kazanansız bahisli oda bu kadar dk ESKİYSE settleRoom onu HÜKÜMSÜZ (void) sayar:
+    // kazanan kalıcı çözülemez (abort/çift-terk) -> transfer yok, rezerv bırak + settled=1. Canlı yeni
+    // biten maç (server_match yazımı ~sn) bu eşiğin altında kalır -> yanlışlıkla void edilmez.
+    private const VOID_GRACE_MIN = 60;
+
     // POLL YAZIM THROTTLE (anlık yavaşlık / DB yük fix): her poll (~1.2sn) presence _seen için
     // ağır `rooms.clock` JSON'unu yazıyordu (eski 4sn -> turnuvada N oyuncu × ~0.25 yazım/sn).
     // _seen yalnız presence (terk) tespiti için gerekir; eşik MatchClock::PRESENCE_TIMEOUT (45sn).
@@ -784,6 +789,33 @@ class RoomController extends Controller
         // verified authoritative match (resolveWinnerSlot); unresolved -> pending (no transfer).
         $winnerSlot = $this->resolveWinnerSlot($room->fresh());
         if ($winnerSlot === null) {
+            // Kazanan HENÜZ çözülemedi. Oda bitmiş + yeterince ESKİ ise (server_match yazımı çoktan
+            // bitmiştir, canlı settle yarışı değil) bu KALICI çözülemez bir maçtır: abort / çift-terk /
+            // eksik otoriter sonuç. Transfer yapılamaz (kazanan yok) -> HÜKÜMSÜZ say (void): rezervi
+            // bırak + settled=1 + koltukları aç. Böylece "finished + settled=0 + winner-null" mezarları
+            // KAYNAĞINDA kapanır (yoksa sonsuza pending kalıp katılımcıyı C1 guard'ıyla bloklardı; 124
+            // kullanıcı vakasının kökü). Canlı yeni biten maça DOKUNMAZ (VOID_GRACE_MIN grace).
+            if ($room->status === 'finished'
+                && $room->updated_at
+                && $room->updated_at->lt(now()->subMinutes(self::VOID_GRACE_MIN))) {
+                $this->releaseEscrow($room);
+                $voided = DB::transaction(function () use ($room) {
+                    $claimed = Room::where('id', $room->id)->where('settled', false)
+                        ->update(['settled' => true, 'version' => DB::raw('version + 1')]);
+                    if (! $claimed) {
+                        return false;
+                    }
+                    if (Schema::hasTable('active_money_match_claims')) {
+                        Room::releaseActiveMoneyClaims((int) $room->id);
+                    }
+                    Room::releaseMatchSeats((int) $room->id);
+
+                    return true;
+                });
+
+                return $voided ? ['voided' => true] : ['already' => true];
+            }
+
             return ['pending' => true];
         }
         $winnerId = $winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id;

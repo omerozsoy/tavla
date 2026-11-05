@@ -89,7 +89,8 @@ class BackstopSettleTest extends TestCase
         $this->assertSame(1200, (int) $winner->fresh()->coins, 'kazanan fiilen tahsil edileni (200) almalı');
     }
 
-    // Kazananı çözülemeyen (non-authoritative / no-winner) oda PENDING kalır, coin taşınmaz.
+    // Kazananı çözülemeyen (non-authoritative / no-winner) oda GRACE içinde (yeni bitmiş) PENDING kalır,
+    // coin taşınmaz: server_match yazımı henüz oturmamış olabilir -> erken void etme.
     public function test_backstop_leaves_undecided_room_pending(): void
     {
         $a = User::factory()->create(['coins' => 1000]);
@@ -99,8 +100,25 @@ class BackstopSettleTest extends TestCase
 
         $this->artisan('matches:backstop-settle', ['--minutes' => 2])->assertSuccessful();
 
-        $this->assertFalse((bool) $room->refresh()->settled, 'kazanansız oda settle EDİLMEMELİ');
+        $this->assertFalse((bool) $room->refresh()->settled, 'kazanansız TAZE oda settle EDİLMEMELİ');
         $this->assertSame(1000, (int) $a->fresh()->coins);
         $this->assertSame(1000, (int) $b->fresh()->coins);
+    }
+
+    // MEZAR ÖNLEME: kazananı KALICI çözülemeyen (abort/çift-terk) bahisli oda VOID_GRACE_MIN'den (60dk)
+    // eskiyse HÜKÜMSÜZ (void) yapılır: settled=1 + rezerv bırakılır, coin TAŞINMAZ (kazanan yok). Böylece
+    // oda sonsuza pending kalıp katılımcıyı C1 guard'ıyla bloklamaz (124 kullanıcı vakasının kökü).
+    public function test_backstop_voids_permanently_undecided_old_room(): void
+    {
+        $a = User::factory()->create(['coins' => 1000]);
+        $b = User::factory()->create(['coins' => 1000]);
+        $room = $this->pctRoom($a, $b, null, 300, 300); // winner yok
+        Room::whereKey($room->id)->update(['updated_at' => now()->subMinutes(90)]); // void eşiğini geç
+
+        $this->artisan('matches:backstop-settle', ['--minutes' => 2])->assertSuccessful();
+
+        $this->assertTrue((bool) $room->refresh()->settled, 'eski kazanansız oda VOID edilmeli (mezar kalmamalı)');
+        $this->assertSame(1000, (int) $a->fresh()->coins, 'void transfer yapmaz');
+        $this->assertSame(1000, (int) $b->fresh()->coins, 'void transfer yapmaz');
     }
 }
