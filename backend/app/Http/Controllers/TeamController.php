@@ -114,13 +114,14 @@ class TeamController extends Controller
      */
     public function tags(): JsonResponse
     {
-        $tags = Cache::remember('team_tags_v2', 60, fn () => TeamMember::query()
+        $tags = Cache::remember('team_tags_v3', 60, fn () => TeamMember::query()
             ->join('teams', 'teams.id', '=', 'team_members.team_id')
             ->where('teams.status', 'active')
-            ->get(['team_members.user_id', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2'])
+            ->get(['team_members.user_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2'])
             ->keyBy('user_id')
             ->map(fn ($r) => [
                 'tag' => $r->tag,
+                'name' => $r->name, // amblem hover tooltip'i (tam takım adı)
                 'logo' => $r->logo, // onaylı logo (/uploads/... veya null) — kalkana kırpılır
                 'color1' => $r->color1,
                 'color2' => $r->color2,

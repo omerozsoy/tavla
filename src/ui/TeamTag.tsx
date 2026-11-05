@@ -24,7 +24,7 @@ export default function TeamTag({
   return (
     <span
       className={`team-tag${className ? ' ' + className : ''}`}
-      title={info.tag}
+      title={info.name || info.tag}
       style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 4, verticalAlign: 'middle', ...style }}
     >
       <TeamEmblem color1={info.color1} color2={info.color2} logo={info.logo || undefined} label={info.tag} size={size} />

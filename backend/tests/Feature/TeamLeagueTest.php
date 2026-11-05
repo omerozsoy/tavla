@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MatchResult;
 use App\Models\Team;
 use App\Models\TeamApplication;
+use App\Models\TeamInvite;
 use App\Models\TeamMatch;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -116,6 +117,24 @@ class TeamLeagueTest extends TestCase
 
         $broke = $this->eligibleUser(['coins' => 10_000]);
         $this->assertThrowsCode('insufficient_coins', fn () => $this->svc()->createTeam($broke, ['name' => 'C Takimi', 'tag' => 'CT']));
+    }
+
+    // Davetle katılım: 20 puanlı maç şartı YALNIZ kuruluşta; kaptanın davet ettiği premium oyuncu
+    // 0 puanlı maçla da kabul edebilir (Premium yine gerekir). (kullanıcı kararı: "sadece Premium kalsın")
+    public function test_invited_premium_without_rated_matches_can_accept(): void
+    {
+        $founder = $this->eligibleUser();
+        $team = $this->makeTeam($founder);
+
+        $invitee = User::factory()->create(['plan' => 'premium', 'plan_until' => now()->addYear(), 'rating' => 1500]);
+        $inv = $this->svc()->invite($founder, $team, $invitee->id);
+        $this->svc()->acceptInvite($invitee->fresh(), $inv);
+        $this->assertSame('member', TeamMember::where('user_id', $invitee->id)->value('role'));
+
+        // Premium OLMAYAN davetli yine reddedilir.
+        $freeInvitee = User::factory()->create(['plan' => 'free', 'plan_until' => null, 'rating' => 1500]);
+        $inv2 = $this->svc()->invite($founder, $team, $freeInvitee->id);
+        $this->assertThrowsCode('premium_required', fn () => $this->svc()->acceptInvite($freeInvitee->fresh(), $inv2));
     }
 
     public function test_name_and_tag_uniqueness_is_normalized(): void

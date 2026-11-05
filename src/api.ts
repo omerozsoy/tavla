@@ -1590,7 +1590,7 @@ export async function getTeamsMonthly(month?: string): Promise<{ month: string; 
   return req('/teams/monthly' + (month ? '?month=' + encodeURIComponent(month) : ''))
 }
 /** Site geneli id→etiket haritası (isim yanında [ETİKET]) — /roles deseni. */
-export interface TeamTagInfo { tag: string; logo?: string | null; color1: string; color2: string }
+export interface TeamTagInfo { tag: string; name?: string | null; logo?: string | null; color1: string; color2: string }
 export async function teamTags(): Promise<{ tags: Record<string, TeamTagInfo> }> {
   return req('/team-tags')
 }

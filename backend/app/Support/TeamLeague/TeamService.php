@@ -74,13 +74,17 @@ class TeamService
             ->value('until');
     }
 
-    /** Katılım/kuruluş uygunluğu (§2/§4): Premium + ≥20 puanlı maç + başka takımda değil + bekleme yok. */
-    public function assertCanJoin(User $u, ?int $minRating = null): void
+    /**
+     * Katılım/kuruluş uygunluğu (§2/§4): Premium + başka takımda değil + bekleme yok (+ ops. min rating).
+     * $requireRated=true (kuruluş): ayrıca ≥20 puanlı maç. Davetle katılımda false → kurucu şartı
+     * yalnız kurucuda; kaptanın davet ettiği oyuncu 20 maç şartına takılmaz (Premium yine gerekir).
+     */
+    public function assertCanJoin(User $u, ?int $minRating = null, bool $requireRated = true): void
     {
         if (! $this->isPremium($u)) {
             throw new TeamException('premium_required', 403);
         }
-        if ($this->ratedMatchCount($u) < TeamRules::MIN_RATED_MATCHES) {
+        if ($requireRated && $this->ratedMatchCount($u) < TeamRules::MIN_RATED_MATCHES) {
             throw new TeamException('not_enough_rated_matches', 403);
         }
         if (TeamMember::where('user_id', $u->id)->exists()) {
@@ -505,7 +509,9 @@ class TeamService
             if ($team->member_count >= TeamRules::CAPACITY) {
                 throw new TeamException('team_full', 409);
             }
-            $this->assertCanJoin($user, $team->min_apply_rating); // kabul anında yeniden doğrula (§4)
+            // Davetle katılım: kurucu şartı (20 puanlı maç) GEÇERSİZ — kaptan davet ettiyse
+            // oyuncu 20 maça takılmaz; Premium + başka-takımda-değil + cooldown + min-rating yine aranır.
+            $this->assertCanJoin($user, $team->min_apply_rating, requireRated: false);
             $this->addMember($team, $user->id, 'member');
             $freshInv->update(['status' => 'accepted', 'responded_at' => now()]);
             $this->invalidateOtherPending($user->id, $team->id);

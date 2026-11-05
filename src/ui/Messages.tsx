@@ -519,7 +519,16 @@ export default function Messages({
   // Takım davetleri (Davetler sekmesi): getMyTeam().invites. Arkadaşlık istekleriyle birlikte listelenir.
   const reloadTeamInvites = () => { getMyTeam().then((m) => setTeamInvites(m.invites)).catch(() => {}) }
   useEffect(() => { getMyTeam().then((m) => setTeamInvites(m.invites)).catch(() => {}) }, [])
-  const inviteErr = (e: unknown) => toast.error(e instanceof ApiError && e.message ? e.message : t('dm.reqFail'))
+  // Takım hata kodunu (backend {error:'kod'} → e.data.error) teams.err.<kod> ile okunur mesaja çevir.
+  const inviteErr = (e: unknown) => {
+    if (e instanceof ApiError) {
+      const code = (e.data as { error?: string } | undefined)?.error
+      const key = code ? 'teams.err.' + code : ''
+      if (key && t(key) !== key) return toast.error(t(key))
+      if (e.message && e.message !== 'Hata') return toast.error(e.message)
+    }
+    toast.error(t('dm.reqFail'))
+  }
   // Davetler sekmesi — satır-içi kabul/ret (arkadaşlık isteği + takım daveti).
   const doAcceptFriend = async (uid: number) => { setInviteBusy(true); try { await acceptRequest(uid); refreshThreads() } catch (e) { inviteErr(e) } finally { setInviteBusy(false) } }
   const doDeclineFriend = async (uid: number) => { setInviteBusy(true); try { await declineRequest(uid); refreshThreads() } catch (e) { inviteErr(e) } finally { setInviteBusy(false) } }
