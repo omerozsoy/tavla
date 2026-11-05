@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChatReport;
 use App\Models\Message;
 use App\Models\User;
+use App\Support\ChatModeration;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -109,7 +112,7 @@ class MessageController extends Controller
     private function pub(User $u): array
     {
         $online = $u->last_seen && ($u->presence_status ?? null) !== 'offline' // A-29
-            && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
+            && Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
 
         return [
             'id' => $u->id,
@@ -341,14 +344,14 @@ class MessageController extends Controller
 
         // KÜFÜR YAPTIRIMI (oyun içi sohbetle ortak): yasaklıysa engelle; değilse metni süz,
         // küfür varsa **** maskele + artan konuşma yasağı uygula + uyarı döndür.
-        if (($left = \App\Support\ChatModeration::mutedSeconds($me)) !== null) {
+        if (($left = ChatModeration::mutedSeconds($me)) !== null) {
             return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $me->chat_offenses], 403);
         }
         $warning = null;
         if ($body !== '') {
-            [$body, $hit, $word] = \App\Support\ChatModeration::filter($body, $me);
+            [$body, $hit, $word] = ChatModeration::filter($body, $me);
             if ($hit) {
-                $warning = \App\Support\ChatModeration::penalize($me, $word);
+                $warning = ChatModeration::penalize($me, $word);
             }
         }
         if ($userId === $me->id) {
@@ -434,7 +437,7 @@ class MessageController extends Controller
             return $this->fail('Mesaj boş olamaz.', 422);
         }
         // Konuşma yasağı (send ile ortak): yasaklıyken düzenlenemez de.
-        if (($left = \App\Support\ChatModeration::mutedSeconds($me)) !== null) {
+        if (($left = ChatModeration::mutedSeconds($me)) !== null) {
             return response()->json(['error' => 'muted', 'muted_seconds' => $left, 'level' => (int) $me->chat_offenses], 403);
         }
         // Yalnız KENDİ mesajım (gönderen = ben) + bu konuşmadaki satır.
@@ -451,9 +454,9 @@ class MessageController extends Controller
         }
         // Küfür süzgeci (send ile ortak): küfür varsa maskele + yaptırım uygula.
         $warning = null;
-        [$body, $hit, $word] = \App\Support\ChatModeration::filter($body, $me);
+        [$body, $hit, $word] = ChatModeration::filter($body, $me);
         if ($hit) {
-            $warning = \App\Support\ChatModeration::penalize($me, $word);
+            $warning = ChatModeration::penalize($me, $word);
         }
         $msg->body = $body;
         if (Schema::hasColumn('messages', 'edited_at')) {
@@ -617,7 +620,7 @@ class MessageController extends Controller
             return response()->json(['ok' => true]); // migration beklemede -> sessiz ok
         }
         $roomCode = 'DM-'.$userId; // konuşma-özel işaret (16 char sınırı içinde) + spam kalkanı anahtarı
-        $recent = \App\Models\ChatReport::where('room_code', $roomCode)
+        $recent = ChatReport::where('room_code', $roomCode)
             ->where('reporter_user_id', $me->id)
             ->where('created_at', '>', now()->subMinutes(2))
             ->exists();
@@ -647,7 +650,7 @@ class MessageController extends Controller
             return ['slot' => $mine ? 'me' : 'them', 'name' => $mine ? $myName : $peerName, 'text' => $text];
         })->all();
 
-        \App\Models\ChatReport::create([
+        ChatReport::create([
             'room_code' => $roomCode,
             'reporter_user_id' => $me->id,
             'reporter_name' => $myName,
@@ -666,8 +669,8 @@ class MessageController extends Controller
     public function unread(Request $request)
     {
         $me = $request->user()->id;
-        $count = Message::where('receiver_id', $me)->whereNull('read_at')->count();
 
-        return response()->json(['unread' => $count]);
+        // TEK KAYNAK: thread listesinin gizlediği mesajları saymaz (hayalet rozet önleme). Bkz Message::unreadCountFor.
+        return response()->json(['unread' => Message::unreadCountFor($me)]);
     }
 }

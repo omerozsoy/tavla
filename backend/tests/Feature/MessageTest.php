@@ -103,6 +103,43 @@ class MessageTest extends TestCase
         $this->getJson('/api/messages/unread')->assertOk()->assertJsonPath('unread', 0);
     }
 
+    // HAYALET ROZET FIX (ÖmerÖzsoy #4): reddettiğim gelen istek konuşması thread listesinde GÖRÜNMEZ
+    // -> o konuşmadaki okunmamış mesaj rozete (unread) sayılMAMALI, yoksa açılıp okunamayan kalıcı "1".
+    public function test_declined_request_message_not_counted_in_unread_badge(): void
+    {
+        $me = $this->makeUser('me');
+        $stranger = $this->makeUser('st');
+
+        // Yabancı bana yazar -> istek kutusuna düşer (okunmamış).
+        Sanctum::actingAs($stranger);
+        $this->postJson("/api/messages/{$me->id}", ['body' => 'merhaba'])->assertOk();
+
+        // Ben isteği reddederim -> konuşma listede gizlenir.
+        DB::table('message_requests')
+            ->where('requester_id', $stranger->id)->where('target_id', $me->id)
+            ->update(['status' => 'declined']);
+
+        Sanctum::actingAs($me);
+        $this->getJson('/api/messages')->assertOk()->assertJsonCount(0, 'threads'); // thread gizli
+        $this->getJson('/api/messages/unread')->assertOk()->assertJsonPath('unread', 0); // rozet de 0 (hayalet yok)
+    }
+
+    // HAYALET ROZET FIX (2. dal): "Sohbeti sil" ile gizlenen (cleared_msg_id altı) okunmamış mesaj rozete sayılmaz.
+    public function test_cleared_conversation_unread_not_counted_in_badge(): void
+    {
+        $me = $this->makeUser('me');
+        $friend = $this->makeUser('fr');
+        $this->befriend($me, $friend);
+
+        Sanctum::actingAs($friend);
+        $this->postJson("/api/messages/{$me->id}", ['body' => 'okunmadan silinecek'])->assertOk();
+
+        Sanctum::actingAs($me);
+        $this->getJson('/api/messages/unread')->assertOk()->assertJsonPath('unread', 1); // önce 1
+        $this->deleteJson("/api/messages/{$friend->id}")->assertOk(); // sohbeti sil (cleared çizgisi)
+        $this->getJson('/api/messages/unread')->assertOk()->assertJsonPath('unread', 0); // gizli -> rozet 0
+    }
+
     public function test_read_receipt_flips_after_receiver_opens_thread(): void
     {
         $me = $this->makeUser('me');

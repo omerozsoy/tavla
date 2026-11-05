@@ -238,8 +238,9 @@ class PresenceController extends Controller
                 'created_at' => optional($n->created_at)->toIso8601String(),
             ]);
         $unread = Notification::where('user_id', $me->id)->where('read', false)->count();
-        // Okunmamis ozel mesaj sayisi (mesaj rozeti)
-        $dmUnread = Message::where('receiver_id', $me->id)->whereNull('read_at')->count();
+        // Okunmamis ozel mesaj sayisi (mesaj rozeti) — TEK KAYNAK: thread'in gizlediği mesajları saymaz
+        // (reddedilen istek / silinen sohbet) -> açılıp okunamayan hayalet rozet olmaz (ÖmerÖzsoy #4).
+        $dmUnread = Message::unreadCountFor($me->id);
 
         return response()->json([
             'invites' => $invites,
