@@ -120,7 +120,7 @@ function Name({ p }: { p: PlayerInfo }) {
         <RoleBadge userId={p.id} size={24} style={{ marginRight: 4 }} />
         {p.name}
         {/* Takım etiketi (maç ekranı; site geneli haritadan userId ile). */}
-        <TeamTag userId={p.id} size={18} />
+        <TeamTag userId={p.id} size={22} />
         {p.country && <CountryFlag code={p.country} size={20} className="player-flag" />}
         {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
         {p.onAddFriend && (

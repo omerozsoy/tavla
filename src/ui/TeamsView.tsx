@@ -48,8 +48,13 @@ import { ApiError } from '../api'
  * aylık/karşılaşma herkese açık; kurma/katılım/yönetim yetkili kullanıcıya (sunucu-otoriter). Gizli kadro
  * kilide kadar rakibe gösterilmez (backend gate + bu ekran yalnız kendi kadrosunu düzenletir).
  */
-type Tab = 'overview' | 'create' | 'myteam' | 'rules'
-type View = { kind: 'home' } | { kind: 'team'; id: number } | { kind: 'match'; id: number }
+// Bölümler artık AYRI URL'li alt-sayfa (kullanıcı direktifi 2026-11-05): /takimlar-ligi (genel
+// sıralama), /takimlar-ligi/takimim, /takimlar-ligi/kurallar, /takimlar-ligi/kur. Eski sekme-state
+// yerine tek 'view' hem bölümü hem drill-in'i (takim/mac) tutar -> bookmark + geri-tuşu çalışır.
+type Section = 'overview' | 'create' | 'myteam' | 'rules'
+type View = { kind: Section } | { kind: 'team'; id: number } | { kind: 'match'; id: number }
+const SECTIONS: readonly Section[] = ['overview', 'create', 'myteam', 'rules']
+const isSection = (v: View): v is { kind: Section } => (SECTIONS as readonly string[]).includes(v.kind)
 
 interface Props {
   myId: number | null
@@ -64,12 +69,27 @@ interface Props {
 }
 
 function parsePath(p: string | null): View {
-  if (!p) return { kind: 'home' }
+  if (!p) return { kind: 'overview' }
   const seg = p.split('/')
   const id = parseInt(seg[1] ?? '', 10)
   if (seg[0] === 'takim' && id) return { kind: 'team', id }
   if (seg[0] === 'mac' && id) return { kind: 'match', id }
-  return { kind: 'home' }
+  if (seg[0] === 'takimim') return { kind: 'myteam' }
+  if (seg[0] === 'kurallar') return { kind: 'rules' }
+  if (seg[0] === 'kur') return { kind: 'create' }
+  return { kind: 'overview' }
+}
+
+// view -> TeamsView alt-yolu (App teamsArg; null = /takimlar-ligi tabanı). parsePath'in tersi.
+function pathFor(v: View): string | null {
+  switch (v.kind) {
+    case 'overview': return null
+    case 'myteam': return 'takimim'
+    case 'rules': return 'kurallar'
+    case 'create': return 'kur'
+    case 'team': return 'takim/' + v.id
+    case 'match': return 'mac/' + v.id
+  }
 }
 
 // Türkçe tarih: gün.ay.yıl saat:dk (ör. 05.11.2026 19:30). Geçersiz/boş → '—'.
@@ -83,27 +103,36 @@ function fmtTR(s?: string | null): string {
 export default function TeamsView(props: Props) {
   const { t } = useT()
   const [view, setView] = useState<View>(() => parsePath(props.initialPath))
-  const [tab, setTab] = useState<Tab>('overview')
   const [notice, setNotice] = useState<string | null>(null)
   const [me, setMe] = useState<TeamMe | null>(null)
+  const [meLoaded, setMeLoaded] = useState(false) // getMyTeam döndü mü (yükleniyor ↔ takımsız ayrımı)
   const hasTeam = !!me?.membership
   // Bekleyen davet/başvuru varsa (takımsız olsa da) "Takımım" sekmesi görünür → kabul/ret orada.
   const hasPending = (me?.invites?.length ?? 0) > 0 || (me?.applications?.length ?? 0) > 0
 
   // Üyelik durumu: takımsız → "Takım Kur" sekmesi, takımlı/davetli → "Takımım" sekmesi.
   useEffect(() => {
-    if (!props.myId) { setMe(null); return }
-    getMyTeam().then(setMe).catch(() => setMe(null))
+    if (!props.myId) { setMe(null); setMeLoaded(true); return } // misafir: kesin takımsız
+    setMeLoaded(false)
+    getMyTeam().then(setMe).catch(() => setMe(null)).finally(() => setMeLoaded(true))
   }, [props.myId])
-  useEffect(() => {
-    if (tab === 'myteam' && !hasTeam && !hasPending) setTab('overview')
-    if (tab === 'create' && hasTeam) setTab('myteam')
-  }, [tab, hasTeam, hasPending])
-
   const go = useCallback((v: View) => {
     setView(v)
-    props.onPathChange?.(v.kind === 'team' ? 'takim/' + v.id : v.kind === 'match' ? 'mac/' + v.id : null)
+    props.onPathChange?.(pathFor(v))
   }, [props])
+  // Tarayıcı geri/ileri (dış URL değişimi App→teamsArg→initialPath) view'i izlesin. go() kendi
+  // yazdığında parsePath eşit → no-op (döngü yok); yalnız dıştan farklı gelirse senkronlar.
+  useEffect(() => {
+    const parsed = parsePath(props.initialPath)
+    setView((cur) => (pathFor(cur) === pathFor(parsed) ? cur : parsed))
+  }, [props.initialPath])
+  // Üyelik durumu bölüm erişimini belirler: takımsız+davetsiz "Takımım" → genel sıralamaya;
+  // takımlıyken "Takım Kur" → Takımım'a yönlendir (URL de düzelir, hayalet alt-sayfa kalmaz).
+  useEffect(() => {
+    if (!meLoaded) return // me yüklenmeden yönlendirme yok (doğrudan /takimim girişinde hatalı redirect önlenir)
+    if (view.kind === 'myteam' && !hasTeam && !hasPending) go({ kind: 'overview' })
+    if (view.kind === 'create' && hasTeam) go({ kind: 'myteam' })
+  }, [view, hasTeam, hasPending, go, meLoaded])
 
   // Hata kodunu okunur mesaja çevir (backend TeamException.error).
   const errText = useCallback((e: unknown): string => {
@@ -130,29 +159,29 @@ export default function TeamsView(props: Props) {
           onClick={() => setNotice(null)}>{notice}</div>
       )}
 
-      {view.kind === 'home' && (
+      {isSection(view) && (
         <>
           <nav className="teams-tabs" role="tablist">
-            {(['overview', ...((hasTeam || hasPending) ? (['myteam'] as Tab[]) : []), ...(!hasTeam ? (['create'] as Tab[]) : []), 'rules'] as Tab[]).map((k) => (
-              <button key={k} role="tab" aria-selected={tab === k} className={'teams-tab' + (tab === k ? ' is-active' : '')} onClick={() => setTab(k)}>
+            {(['overview', ...((hasTeam || hasPending) ? (['myteam'] as Section[]) : []), ...(!hasTeam ? (['create'] as Section[]) : []), 'rules'] as Section[]).map((k) => (
+              <button key={k} role="tab" aria-selected={view.kind === k} className={'teams-tab' + (view.kind === k ? ' is-active' : '')} onClick={() => go({ kind: k })}>
                 {t('teams.tab.' + k)}
               </button>
             ))}
           </nav>
-          {tab === 'overview' && <Overview {...props} go={go} setNotice={setNotice} errText={errText} />}
-          {tab === 'create' && !hasTeam && (
+          {view.kind === 'overview' && <Overview {...props} go={go} setNotice={setNotice} errText={errText} />}
+          {view.kind === 'create' && !hasTeam && (
             <CreateTeam myId={props.myId} eligibility={me?.eligibility ?? null}
               onRequireLogin={props.onRequireLogin} onRequirePremium={props.onRequirePremium}
               setNotice={setNotice} errText={errText} />
           )}
-          {tab === 'myteam' && (hasTeam || hasPending) && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
-          {tab === 'rules' && <Rules />}
+          {view.kind === 'myteam' && (hasTeam || hasPending) && <MyTeam {...props} go={go} setNotice={setNotice} errText={errText} />}
+          {view.kind === 'rules' && <Rules />}
         </>
       )}
 
-      {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} back={() => go({ kind: 'home' })} onProfile={props.onProfile} setNotice={setNotice} errText={errText} />}
+      {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} setNotice={setNotice} errText={errText} />}
       {view.kind === 'match' && (
-        <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'home' })}
+        <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })}
           onEnterRoom={props.onEnterRoom} setNotice={setNotice} errText={errText} />
       )}
       </div>
@@ -436,7 +465,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
             <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', padding: 0 }}>
               {m.user.nickname}
             </button>
-            <TeamTag userId={m.user.id} size={16} />
+            <TeamTag userId={m.user.id} size={20} />
             <span style={microTag}>{t('teams.my.role.' + m.role)}</span>
             <span style={{ flex: 1 }} />
             {isFounder && m.role === 'member' && <Button disabled={busy} onClick={() => act(() => promoteTeamMember(team.id, m.user.id))}>{t('teams.promote')}</Button>}
@@ -454,7 +483,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
           <SLabel count={me.managed.applications.length}>{t('teams.applications')}</SLabel>
           {me.managed.applications.map((a) => (
             <div key={a.id} style={row}>
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{a.user.nickname} <TeamTag userId={a.user.id} size={16} /></span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{a.user.nickname} <TeamTag userId={a.user.id} size={20} /></span>
               <span style={{ flex: 1 }} />
               <Button disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, true), t('teams.joined'))}>{t('teams.accept')}</Button>
               <Button variant="ghost" disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, false))}>{t('teams.decline')}</Button>
@@ -475,7 +504,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
         {detail?.matches.map((mt) => (
           <div key={mt.id} style={row}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <TeamMark team={mt.home} size={18} /> {mt.home_score}–{mt.away_score} <TeamMark team={mt.away} size={18} />
+              <TeamMark team={mt.home} size={22} /> {mt.home_score}–{mt.away_score} <TeamMark team={mt.away} size={22} />
             </span>
             <span style={{ opacity: 0.6, marginLeft: 8 }}>{mt.status}</span>
             <span style={{ flex: 1 }} />
@@ -788,7 +817,7 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
     <div>
       <Button variant="ghost" onClick={props.back}>← {t('common.back')}</Button>
       <h2 style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <TeamMark team={m.home} size={28} /> {m.home_score}–{m.away_score} <TeamMark team={m.away} size={28} />
+        <TeamMark team={m.home} size={34} /> {m.home_score}–{m.away_score} <TeamMark team={m.away} size={34} />
       </h2>
       <div style={{ opacity: 0.6 }}>{m.status} · {fmtTR(m.scheduled_at)}</div>
 
@@ -856,7 +885,7 @@ function TeamChip(props: { team: TeamBrief; big?: boolean }) {
   const t = props.team
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: props.big ? 18 : 14 }}>
-      <TeamMark team={t} size={props.big ? 34 : 24} />
+      <TeamMark team={t} size={props.big ? 40 : 28} />
       <b>{t.name}</b>
     </span>
   )
