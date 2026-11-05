@@ -102,6 +102,13 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
               <span className="invite-target-txt">
                 <span className="invite-target-label">{t('friend.inviteWho')}</span>
                 <strong>{invitee!.name}</strong>
+                {ranked && (
+                  <span className="invite-target-est">
+                    <span className="est-win">{t('friend.rankedWin', { win: estWin })}</span>
+                    {' · '}
+                    <span className="est-loss">{t('friend.rankedLoss', { loss: estLoss })}</span>
+                  </span>
+                )}
               </span>
             </div>
           )}
@@ -178,15 +185,9 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
-          {/* Puanlı davet -> "puanlı" notu; aksi halde arkadaşlık maçı "hep puansız" notu. Seçici yok. */}
+          {/* Puanlı davet -> "puanlı" notu; aksi halde arkadaşlık maçı "hep puansız" notu. Seçici yok.
+              Kazanç/kayıp tahmini isim kutusunun altında (invite-target-est). */}
           <p className="setup-unrated-hint">{t(ranked ? 'friend.rankedNote' : 'friend.alwaysUnrated')}</p>
-
-          {/* Puanlı davette: seçili uzunluğa göre kazanırsan +X / kaybedersen −Y tahmini. */}
-          {ranked && (
-            <p className="setup-rating-est">
-              {t('friend.rankedEstimate', { win: estWin, loss: estLoss })}
-            </p>
-          )}
 
           {/* KLASIK TAVLA sayfasi (yalniz Mac Oyunu'nda anlamli): mod sabit, sadece bilgi notu. */}
           {classic && tab === 'match' && <p className="setup-unrated-hint">{t('classic.note')}</p>}

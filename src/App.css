@@ -28112,11 +28112,17 @@ input:not([type='range']), select, textarea {
   font-size: 0.8rem;
   line-height: 1.35;
 }
-.setup-rating-est {
-  margin: 4px 0 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text);
+/* Puanlı davet kazanç/kayıp tahmini — isim kutusunun altında, renkli, bold DEĞİL. */
+.invite-target-est {
+  margin-top: 3px;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+.invite-target-est .est-win {
+  color: var(--success-fg);
+}
+.invite-target-est .est-loss {
+  color: var(--danger-fg);
 }
 .invite-wait-rank {
   justify-content: center;
