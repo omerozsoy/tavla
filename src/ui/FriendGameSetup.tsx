@@ -7,6 +7,7 @@ import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import type { TimeControl } from './MatchSetup'
 import { BET_PCTS } from '../betOptions'
+import { winDelta, lossDelta } from './Scoring'
 
 // "Özel Oyun Oluştur" (arkadasinla oyna). Tasarim MatchSetup (YZ ile Oyna) ile AYNI:
 // sol ayar karti (Oyun turu / Uzunluk / Saat) + sag board onizleme.
@@ -50,8 +51,9 @@ interface Props {
   coins?: number // kullanıcının coin'i (pot önizlemesi: bakiyenin %'si)
   // Belirli bir oyuncuyu DAVET etme modu (cevrimici listeden kilic ikonu): secili rakip
   // gosterilir, "Oda Oluştur" yerine "Davet Gönder" -> onInvite; kod-ile-katil kutusu gizlenir.
-  invitee?: { id: number; name: string; avatar?: string | null } | null
+  invitee?: { id: number; name: string; avatar?: string | null; rating?: number | null } | null
   onInvite?: (opts: { target: number; timeControl: TimeControl; unrated: boolean; classic: boolean; betPct: number }) => void
+  myRating?: number // kendi puanın (puanlı davette kazanç/kayıp tahmini için)
   defaultClassic?: boolean // KLASIK TAVLA girişi: klasik varsayılan ON + Maç Oyunu sekmesi açık
   titleOverride?: string // admin "Sayfa Metni" baslik override'i (davet modu HARIÇ; bos -> i18n varsayilani)
   // PUANLI DAVET (yalnız Çevrimiçi Oyuncular play tuşu): maç puanlı (unrated=false). TÜM seçenekler açık
@@ -59,7 +61,7 @@ interface Props {
   ranked?: boolean
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, coins = 0, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, coins = 0, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false, myRating }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   const [betPct, setBetPct] = useState(10) // yüzde bahis (min %10, potsuz maç yok)
@@ -78,6 +80,10 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const classic = defaultClassic
   const target = tab === 'single' ? 1 : length
   const inviting = !!invitee // davet modu mu?
+  // Puanlı davette seçili uzunluğa göre kazanç/kayıp tahmini (backend RatingPolicy ile birebir formül,
+  // Scoring.tsx'ten). Rating yoksa 1500 varsayılan. Uzunluk değişince C katsayısıyla canlı güncellenir.
+  const estWin = ranked ? winDelta(myRating ?? 1500, invitee?.rating ?? 1500, target) : 0
+  const estLoss = ranked ? Math.abs(lossDelta(myRating ?? 1500, invitee?.rating ?? 1500, target)) : 0
 
   return (
     <div className="register-overlay page setup-page">
@@ -174,6 +180,13 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
 
           {/* Puanlı davet -> "puanlı" notu; aksi halde arkadaşlık maçı "hep puansız" notu. Seçici yok. */}
           <p className="setup-unrated-hint">{t(ranked ? 'friend.rankedNote' : 'friend.alwaysUnrated')}</p>
+
+          {/* Puanlı davette: seçili uzunluğa göre kazanırsan +X / kaybedersen −Y tahmini. */}
+          {ranked && (
+            <p className="setup-rating-est">
+              {t('friend.rankedEstimate', { win: estWin, loss: estLoss })}
+            </p>
+          )}
 
           {/* KLASIK TAVLA sayfasi (yalniz Mac Oyunu'nda anlamli): mod sabit, sadece bilgi notu. */}
           {classic && tab === 'match' && <p className="setup-unrated-hint">{t('classic.note')}</p>}

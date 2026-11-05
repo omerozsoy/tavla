@@ -28152,6 +28152,12 @@ input:not([type='range']), select, textarea {
   font-size: 0.8rem;
   line-height: 1.35;
 }
+.setup-rating-est {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
 .invite-wait-rank {
   justify-content: center;
   margin-block: 4px 12px;

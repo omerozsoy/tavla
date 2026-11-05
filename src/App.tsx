@@ -11166,6 +11166,7 @@ export default function App() {
             onChangeBoard={() => setBoardPickerOpen(true)}
             coins={user?.coins ?? 0}
             invitee={inviteTarget}
+            myRating={user?.rating ?? undefined}
             defaultClassic={friendClassic}
             ranked={inviteRanked}
             titleOverride={menuTitle(friendClassic ? 'klassikFriend' : 'playFriend')}

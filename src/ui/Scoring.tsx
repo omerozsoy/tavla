@@ -28,10 +28,10 @@ function lengthFactor(l: number) {
 function transfer(winnerR: number, loserR: number, l: number) {
   return Math.round(K * lengthFactor(l) * (1 - expected(winnerR, loserR)))
 }
-function winDelta(ra: number, rb: number, l: number) {
+export function winDelta(ra: number, rb: number, l: number) {
   return transfer(ra, rb, l) // self = kazanan
 }
-function lossDelta(ra: number, rb: number, l: number) {
+export function lossDelta(ra: number, rb: number, l: number) {
   return -transfer(rb, ra, l) // self = kaybeden -> rakip kazanan, eksi uygula
 }
 
