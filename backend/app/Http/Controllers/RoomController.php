@@ -843,9 +843,13 @@ class RoomController extends Controller
             }
             // Para oyununda escrow bırakma tutarı = rezerve edilen EN KÖTÜ (stake×48); diğerinde stake.
             $relAmt = $isMoneyCube ? $stake * self::MONEY_WORST_MULT : $stake;
-            // Never make a silent partial payout when the locked stake is unavailable.
-            // Throwing here rolls back the earlier settled claim in the same transaction.
-            if ($loser && (int) ($loser->coins ?? 0) < $amount) {
+            // SABİT STAKE (betPct=0): stake×48 escrow baştan rezerve edilir -> kaybeden bakiyesi
+            // DAİMA stake'i karşılar. Karşılamıyorsa anomali -> pending bırak (retry), kısmi ödeme YAPMA.
+            // %-BAHİS (betPct>0): escrow YOK -> kaybeden bakiyesi, eşzamanlı maç drenajıyla stake'in
+            // altına düşebilir (ör. %100 bahis kaybı). Bu KALICI bir durumdur; 409 pending'de tutmak
+            // settlement'ı sonsuza dek kilitler (orphan pct-lock -> hesap deadlock). Bunun yerine
+            // AŞAĞIDAKİ min()-kapsamıyla fiilen alınabilen kadar settle et (coin korunumlu, mint YOK).
+            if ($loser && $betPct === 0 && (int) ($loser->coins ?? 0) < $amount) {
                 throw new HttpException(
                     409, 'Loser balance is below the locked stake; settlement is pending.'
                 );

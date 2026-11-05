@@ -69,6 +69,26 @@ class BackstopSettleTest extends TestCase
         $this->assertSame(1300, app(WalletService::class)->spendable($winner->fresh()));
     }
 
+    // UNDERWATER %-KAYIP: kaybeden bakiyesi stake'in altındaysa (eşzamanlı maç drenajı) settle
+    // KALICI 409'da KİLİTLENMEMELİ -> fiilen alınabilen kadar settle et (kaybeden→0, kazanan o kadarını
+    // alır), kilit açılır. (Eskiden sonsuz pending -> hesap deadlock; yasar1729 vakası.)
+    public function test_backstop_settles_underwater_pct_loss_partially(): void
+    {
+        Setting::put('commission_pct', '0');
+        $winner = User::factory()->create(['coins' => 1000]);
+        $loser = User::factory()->create(['coins' => 200]); // stake 500'den AZ -> underwater
+        // winner=p1 (beyaz) kazandı; snapshot min(1000,500)=500 ama kaybedende yalnız 200 var.
+        $room = $this->pctRoom($winner, $loser, 'white', 1000, 500);
+        Room::whereKey($room->id)->update(['updated_at' => now()->subMinutes(5)]);
+
+        $this->artisan('matches:backstop-settle', ['--minutes' => 2])->assertSuccessful();
+
+        $room->refresh();
+        $this->assertTrue((bool) $room->settled, 'underwater oda settle edilmeli (pending kalmamalı)');
+        $this->assertSame(0, (int) $loser->fresh()->coins, 'kaybeden alınabilen her şeyi (200) ödemeli');
+        $this->assertSame(1200, (int) $winner->fresh()->coins, 'kazanan fiilen tahsil edileni (200) almalı');
+    }
+
     // Kazananı çözülemeyen (non-authoritative / no-winner) oda PENDING kalır, coin taşınmaz.
     public function test_backstop_leaves_undecided_room_pending(): void
     {
