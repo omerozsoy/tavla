@@ -16,12 +16,16 @@ import {
   unblockUser,
   acceptRequest,
   declineRequest,
+  acceptTeamInvite,
+  declineTeamInvite,
+  getMyTeam,
   chatMuteFromError,
   ApiError,
   type ChatThread,
   type ChatMessage,
   type ChatUser,
   type AppNotification,
+  type TeamBrief,
 } from '../api'
 import Loading from './Loading'
 import { chatWarnText, chatMuteText } from './chatNotice'
@@ -155,7 +159,7 @@ export default function Messages({
   const toast = useToast()
   useEscape(onClose)
   const [threads, setThreads] = useState<ChatThread[]>([])
-  const [activeId, setActiveId] = useState<number | null>(focusUserId ?? null)
+  const [activeId, setActiveId] = useState<number | null>(focusUserId && focusUserId !== NOTIF_ID ? focusUserId : null)
   const [activeUser, setActiveUser] = useState<ChatUser | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loadingThreads, setLoadingThreads] = useState(true)
@@ -173,7 +177,9 @@ export default function Messages({
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const [search, setSearch] = useState('') // sol listede sohbet arama
-  const [pane, setPane] = useState<'chats' | 'requests' | 'blocked'>('chats') // sol liste: sohbetler / istekler / engelliler
+  const [pane, setPane] = useState<'chats' | 'invites' | 'notifs' | 'blocked'>(focusUserId === NOTIF_ID ? 'notifs' : 'chats') // Sohbetler / Davetler / Bildirimler / Engelliler
+  const [teamInvites, setTeamInvites] = useState<Array<{ id: number; team: TeamBrief | null }>>([])
+  const [inviteBusy, setInviteBusy] = useState(false)
   const [menuFor, setMenuFor] = useState<number | null>(null) // kebab menüsü açık olan sohbet (user.id)
   const [headMenu, setHeadMenu] = useState(false) // aktif sohbet başlığındaki üç-nokta menüsü (Şikayet / Blokla)
   // Uygulama-içi onay penceresi (native window.confirm yerine): onaylanınca run() çalışır.
@@ -278,8 +284,8 @@ export default function Messages({
     onNotifReadRef.current = onNotifRead
   }, [onNotifRead])
   useEffect(() => {
-    if (activeId === NOTIF_ID) onNotifReadRef.current?.()
-  }, [activeId])
+    if (activeId === NOTIF_ID || pane === 'notifs') onNotifReadRef.current?.()
+  }, [activeId, pane])
 
   // Gonderilmis ama sunucuda henuz onaylanmamis (iyimser) mesajlar. 3sn'lik sessiz tazeleme
   // setMessages(server) ile diziyi TAMAMEN degistirdiginden, gonderim uctugu an tazeleme
@@ -510,8 +516,17 @@ export default function Messages({
     })
   }
 
-  // Sol liste iki bolme: normal sohbetler ve onay bekleyen istekler.
-  // Engelliler AYRI sekmede (Sohbetler/İstekler'den çıkarılır; kullanıcı oradan engeli kaldırabilir).
+  // Takım davetleri (Davetler sekmesi): getMyTeam().invites. Arkadaşlık istekleriyle birlikte listelenir.
+  const reloadTeamInvites = () => { getMyTeam().then((m) => setTeamInvites(m.invites)).catch(() => {}) }
+  useEffect(() => { getMyTeam().then((m) => setTeamInvites(m.invites)).catch(() => {}) }, [])
+  const inviteErr = (e: unknown) => toast.error(e instanceof ApiError && e.message ? e.message : t('dm.reqFail'))
+  // Davetler sekmesi — satır-içi kabul/ret (arkadaşlık isteği + takım daveti).
+  const doAcceptFriend = async (uid: number) => { setInviteBusy(true); try { await acceptRequest(uid); refreshThreads() } catch (e) { inviteErr(e) } finally { setInviteBusy(false) } }
+  const doDeclineFriend = async (uid: number) => { setInviteBusy(true); try { await declineRequest(uid); refreshThreads() } catch (e) { inviteErr(e) } finally { setInviteBusy(false) } }
+  const doAcceptTeam = async (id: number) => { setInviteBusy(true); try { await acceptTeamInvite(id); reloadTeamInvites() } catch (e) { inviteErr(e) } finally { setInviteBusy(false) } }
+  const doDeclineTeam = async (id: number) => { setInviteBusy(true); try { await declineTeamInvite(id); reloadTeamInvites() } catch (e) { inviteErr(e) } finally { setInviteBusy(false) } }
+
+  // Sol liste bolmeleri: sohbetler + onay bekleyen istekler (Davetler) + engelliler.
   const blockedThreads = threads.filter((th) => th.blocked)
   const requestThreads = threads.filter((th) => th.request && !th.blocked)
   const chatThreads = threads.filter((th) => !th.request && !th.blocked)
@@ -574,34 +589,28 @@ export default function Messages({
                 </button>
               )}
             </div>
-            {/* Sohbetler / İstekler bölmeleri (arkadaş olmayanların mesajı istek olarak düşer) */}
+            {/* Bölmeler: Sohbetler · Davetler (arkadaşlık isteği + takım daveti) · Bildirimler · Engelliler */}
             <div className="messages-panes" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={pane === 'chats'}
+              <button type="button" role="tab" aria-selected={pane === 'chats'}
                 className={`messages-pane-tab ${pane === 'chats' ? 'active' : ''}`}
-                onClick={() => setPane('chats')}
-              >
+                onClick={() => setPane('chats')}>
                 {t('dm.tabChats')}
               </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={pane === 'requests'}
-                className={`messages-pane-tab ${pane === 'requests' ? 'active' : ''}`}
-                onClick={() => setPane('requests')}
-              >
-                {t('dm.tabRequests')}
-                {reqCount > 0 && <span className="messages-pane-badge">{reqCount > 9 ? '9+' : reqCount}</span>}
+              <button type="button" role="tab" aria-selected={pane === 'invites'}
+                className={`messages-pane-tab ${pane === 'invites' ? 'active' : ''}`}
+                onClick={() => { setPane('invites'); setActiveId(null) }}>
+                {t('dm.tabInvites')}
+                {reqCount + teamInvites.length > 0 && <span className="messages-pane-badge">{reqCount + teamInvites.length > 9 ? '9+' : reqCount + teamInvites.length}</span>}
               </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={pane === 'blocked'}
+              <button type="button" role="tab" aria-selected={pane === 'notifs'}
+                className={`messages-pane-tab ${pane === 'notifs' ? 'active' : ''}`}
+                onClick={() => { setPane('notifs'); setActiveId(null) }}>
+                {t('notif.title')}
+                {unreadNotif > 0 && <span className="messages-pane-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
+              </button>
+              <button type="button" role="tab" aria-selected={pane === 'blocked'}
                 className={`messages-pane-tab ${pane === 'blocked' ? 'active' : ''}`}
-                onClick={() => setPane('blocked')}
-              >
+                onClick={() => setPane('blocked')}>
                 {t('dm.tabBlocked')}
                 {blockedCount > 0 && <span className="messages-pane-badge">{blockedCount > 9 ? '9+' : blockedCount}</span>}
               </button>
@@ -609,26 +618,60 @@ export default function Messages({
             <div className="messages-thread-scroll">
               {/* Kebab menüsü açıkken dışarı tıklama menüyü kapatır */}
               {menuFor != null && <div className="messages-menu-backdrop" onClick={() => setMenuFor(null)} />}
-              {pane === 'chats' && (
-                <button
-                  type="button"
-                  className={`messages-thread messages-thread-notif ${activeId === NOTIF_ID ? 'active' : ''}`}
-                  onClick={() => setActiveId(NOTIF_ID)}
-                >
-                  <span className="messages-notif-ava">
-                    <Icon name="bell" size={18} />
-                  </span>
-                  <span className="messages-thread-body">
-                    <span className="messages-thread-top">
-                      <span className="messages-thread-name">{t('notif.title')}</span>
-                    </span>
-                    <span className="messages-thread-last">{notifications[0]?.title ?? t('notif.empty')}</span>
-                  </span>
-                  {unreadNotif > 0 && <span className="messages-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
-                </button>
+              {/* DAVETLER: arkadaşlık istekleri + takım davetleri — satır-içi kabul/ret */}
+              {pane === 'invites' && (
+                requestThreads.length === 0 && teamInvites.length === 0
+                  ? <div className="lb-empty">{t('dm.invitesEmpty')}</div>
+                  : <div className="messages-invites">
+                      {requestThreads.map((th) => (
+                        <div key={'fr' + th.user.id} className="messages-invite-row">
+                          <span className="messages-invite-ava"><AvatarFrame src={th.user.avatar} frame={th.user.frame} size={40} name={th.user.name} /></span>
+                          <span className="messages-invite-body"><b>{th.user.name}</b><small>{t('dm.friendRequest')}</small></span>
+                          <button type="button" className="mrb-btn mrb-accept" disabled={inviteBusy} onClick={() => doAcceptFriend(th.user.id)}>{t('dm.accept')}</button>
+                          <button type="button" className="mrb-btn mrb-decline" disabled={inviteBusy} onClick={() => doDeclineFriend(th.user.id)}>{t('dm.decline')}</button>
+                        </div>
+                      ))}
+                      {teamInvites.map((iv) => (
+                        <div key={'ti' + iv.id} className="messages-invite-row">
+                          <span className="messages-invite-tag" style={{ background: iv.team?.color1 || 'var(--accent)' }}>{iv.team?.tag ?? '—'}</span>
+                          <span className="messages-invite-body"><b>{iv.team?.name ?? '—'}</b><small>{t('dm.teamInvite')}</small></span>
+                          <button type="button" className="mrb-btn mrb-accept" disabled={inviteBusy} onClick={() => doAcceptTeam(iv.id)}>{t('dm.accept')}</button>
+                          <button type="button" className="mrb-btn mrb-decline" disabled={inviteBusy} onClick={() => doDeclineTeam(iv.id)}>{t('dm.decline')}</button>
+                        </div>
+                      ))}
+                    </div>
               )}
-              {(() => {
-                const source = pane === 'requests' ? requestThreads : pane === 'blocked' ? blockedThreads : chatThreads
+
+              {/* BİLDİRİMLER: ayrı sekme (eskiden sohbet-listesinde gömülüydü) */}
+              {pane === 'notifs' && (
+                notifications.length === 0
+                  ? <div className="lb-empty">{t('notif.empty')}</div>
+                  : <div className="messages-notifs">
+                      {onNotifDeleteAll && <button type="button" className="notif-clear messages-notif-clear" onClick={onNotifDeleteAll}>{t('notif.clearAll')}</button>}
+                      <ul className="notif-list notif-list-inline">
+                        {notifications.map((n) => (
+                          <li key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
+                            <span className="notif-ic"><Icon name={NOTIF_ICONS[n.icon ?? 'bell'] ?? 'bell'} size={16} /></span>
+                            <span className="notif-txt">
+                              <span className="notif-t">{n.title}</span>
+                              {n.body && <span className="notif-b">{n.body}</span>}
+                              {n.action === 'friend_request' && n.actor_id != null && onAcceptFriend && (
+                                <button type="button" className="notif-accept" onClick={() => onAcceptFriend(n.actor_id!, n.id)}>
+                                  <Icon name="user-plus" size={13} /> {t('friends.accept')}
+                                </button>
+                              )}
+                            </span>
+                            <span className="notif-time">{timeAgo(n.created_at, t)}</span>
+                            {onNotifDelete && <button type="button" className="notif-del" title={t('notif.delete')} aria-label={t('notif.delete')} onClick={() => onNotifDelete(n.id)}><Icon name="x" size={14} /></button>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+              )}
+
+              {/* SOHBETLER / ENGELLİLER: konuşma listesi */}
+              {(pane === 'chats' || pane === 'blocked') && (() => {
+                const source = pane === 'blocked' ? blockedThreads : chatThreads
                 const q = search.trim().toLowerCase()
                 // EN SON KONUSULAN EN USTTE: son mesaj zamanina gore azalan sirala (recency birincil);
                 // esitlikte (son mesaj yok/ayni an) cevrimici oncelikli. Array.sort kararli.
@@ -637,7 +680,6 @@ export default function Messages({
                   (a, b) => lastTs(b) - lastTs(a) || Number(!!b.user.online) - Number(!!a.user.online),
                 )
                 if (loadingThreads) return <Loading />
-                if (pane === 'requests' && source.length === 0) return <div className="lb-empty">{t('dm.requestsEmpty')}</div>
                 if (pane === 'blocked' && source.length === 0) return <div className="lb-empty">{t('dm.blockedEmpty')}</div>
                 if (pane === 'chats' && chatThreads.length === 0 && !q) return <div className="lb-empty">{t('dm.empty')}</div>
                 if (list.length === 0) return <div className="lb-empty">{t('dm.searchEmpty')}</div>

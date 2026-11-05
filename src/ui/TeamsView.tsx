@@ -832,7 +832,7 @@ function MatchView(props: { id: number; myId: number | null; back: () => void; o
 // Kalkan (shield) amblem: logo kalkana kırpılır, çerçeve takım renkleri gradyanı (stroke).
 // Path 100×100 kutuya sığar (cropper maskesiyle aynı → hizalı önizleme).
 export const SHIELD_PATH = 'M50 4 L86 13 Q90 14 90 19 L90 52 C90 78 74 94 50 98 C26 94 10 78 10 52 L10 19 Q10 14 14 13 Z'
-function TeamEmblem({ color1, color2, logo, label, size = 72 }: { color1: string; color2: string; logo?: string; label?: string; size?: number }) {
+export function TeamEmblem({ color1, color2, logo, label, size = 72 }: { color1: string; color2: string; logo?: string; label?: string; size?: number }) {
   const uid = useId().replace(/[:]/g, '')
   return (
     <svg viewBox="-5 -5 110 110" width={size} height={size}

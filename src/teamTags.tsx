@@ -6,15 +6,15 @@
  * Kullanım: <TeamTagsProvider> ile sarmalanır (main.tsx), sonra useTeamTag(userId) -> string | null.
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { teamTags as fetchTeamTags } from './api'
+import { teamTags as fetchTeamTags, type TeamTagInfo } from './api'
 
-const TeamTagsContext = createContext<Map<number, string>>(new Map())
+const TeamTagsContext = createContext<Map<number, TeamTagInfo>>(new Map())
 
 // 3 dakikada bir tazele (üyelik nadir değişir; backend 60s cache'liyor).
 const REFRESH_MS = 3 * 60 * 1000
 
 export function TeamTagsProvider({ children }: { children: ReactNode }) {
-  const [tags, setTags] = useState<Record<string, string>>({})
+  const [tags, setTags] = useState<Record<string, TeamTagInfo>>({})
 
   useEffect(() => {
     let alive = true
@@ -34,7 +34,7 @@ export function TeamTagsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(() => {
-    const m = new Map<number, string>()
+    const m = new Map<number, TeamTagInfo>()
     for (const [k, v] of Object.entries(tags)) m.set(Number(k), v)
     return m
   }, [tags])
@@ -42,8 +42,8 @@ export function TeamTagsProvider({ children }: { children: ReactNode }) {
   return <TeamTagsContext.Provider value={value}>{children}</TeamTagsContext.Provider>
 }
 
-/** Bir oyuncunun takım etiketi (yoksa null). */
-export function useTeamTag(userId?: number | null): string | null {
+/** Bir oyuncunun takım amblem bilgisi (tag + logo + renk; takımsızda null). */
+export function useTeamTag(userId?: number | null): TeamTagInfo | null {
   const map = useContext(TeamTagsContext)
   if (userId == null) return null
   return map.get(userId) ?? null
