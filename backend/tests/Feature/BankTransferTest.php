@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductOrder;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -44,7 +46,7 @@ class BankTransferTest extends TestCase
         $u = User::factory()->create(['coins' => 0]);
         Sanctum::actingAs($u);
 
-        $items = [['id' => array_key_first(config('garanti.coin_packages')), 'qty' => 1]];
+        $items = [['id' => array_key_first(config('paytr.coin_packages')), 'qty' => 1]];
         $res = $this->postJson('/api/shop/coins', ['items' => $items, 'method' => 'bank_transfer'])
             ->assertOk()
             ->assertJson(['bankTransfer' => true, 'iban' => 'TR000000000000000000000000']);
@@ -66,7 +68,7 @@ class BankTransferTest extends TestCase
     {
         $u = User::factory()->create();
         Sanctum::actingAs($u);
-        $items = [['id' => array_key_first(config('garanti.coin_packages')), 'qty' => 1]];
+        $items = [['id' => array_key_first(config('paytr.coin_packages')), 'qty' => 1]];
         $this->postJson('/api/shop/coins', ['items' => $items, 'method' => 'bank_transfer'])
             ->assertStatus(503);
     }
@@ -74,7 +76,7 @@ class BankTransferTest extends TestCase
     public function test_money_product_bank_transfer_creates_pending_order(): void
     {
         $this->enableBank();
-        $cat = \App\Models\ProductCategory::firstOrCreate(['slug' => 'tavla'], ['name' => 'Tavla']);
+        $cat = ProductCategory::firstOrCreate(['slug' => 'tavla'], ['name' => 'Tavla']);
         $p = Product::create([
             'name' => 'Ceviz Tavla', 'slug' => 'ceviz-'.uniqid(), 'category_id' => $cat->id,
             'payment_type' => 'money', 'money_price' => 150000, 'stock' => 5, 'published' => true,
@@ -103,7 +105,7 @@ class BankTransferTest extends TestCase
             'order_id' => 'TC-x', 'amount' => 5000, 'coins' => 100, 'currency' => '949', 'status' => 'pending',
         ]);
         // GEÇERLİ imzalı URL bile olsa havale kaydında kart sayfası açılmaz (abort 404).
-        $signed = \Illuminate\Support\Facades\URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
+        $signed = URL::temporarySignedRoute('pay.iframe', now()->addMinutes(30), ['payment' => $payment->id]);
         $this->get($signed)->assertNotFound();
     }
 }

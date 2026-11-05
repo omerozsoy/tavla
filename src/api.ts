@@ -873,7 +873,7 @@ export async function setAutoRenew(enabled: boolean): Promise<{ user: ServerUser
   return req('/membership/auto-renew', { method: 'POST', body: JSON.stringify({ enabled }) })
 }
 
-// Ödeme yöntemi: kart (Garanti 3D) veya havale/EFT (IBAN'a manuel gönderim).
+// Ödeme yöntemi: kart (PayTR) veya havale/EFT (IBAN'a manuel gönderim).
 export type PayMethod = 'card' | 'bank_transfer'
 
 // Havale ödemesi dönüşü (kart URL'si YERİNE): IBAN + referans (açıklamaya yazılır).
@@ -888,10 +888,9 @@ export interface BankTransferResult {
   note?: string
   coins?: number
 }
-// Kart ödemesi dönüşü (uygulama-içi kart formu -> Garanti 3D).
+// Kart ödemesi dönüşü: SPA bu `url`'e YÖNLENDİRİR (PayTR iframe sayfası; kart formunu PayTR barındırır).
 export interface CardCheckoutResult {
   url: string
-  submitUrl: string
   amount: number
   coins?: number
   discount?: number
@@ -933,7 +932,7 @@ export async function buyCoins(
   return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items, code: code || undefined, method }) })
 }
 
-// "Üyeliğini Uzat" -> 1 yillik Premium uzatma satin al. Fiyat SUNUCUDA (config/garanti.renew).
+// "Üyeliğini Uzat" -> 1 yillik Premium uzatma satin al. Fiyat SUNUCUDA (config/paytr.renew).
 // Kart: submitUrl -> uygulama-ici kart formu. Havale: IBAN + referans. amount: kurus.
 export async function buyMembership(method: PayMethod = 'card'): Promise<CheckoutResult> {
   return req('/shop/membership', { method: 'POST', body: JSON.stringify({ method }) })
@@ -957,7 +956,7 @@ export async function validatePromo(
 }
 
 // ---- Fiziksel urun magazasi (Tavla, zar, kitap, zar kulesi vb.) ----
-// Odeme tipi urun bazinda: coin (aninda) veya money (Garanti 3D). Renk = gorsel varyant.
+// Odeme tipi urun bazinda: coin (aninda) veya money (PayTR). Renk = gorsel varyant.
 export interface ProductColor {
   name: string
   hex: string
@@ -1006,14 +1005,14 @@ export interface ProductOrder {
   ship_city: string
   created_at?: string | null
 }
-// Coin siparis: {ok, kind:'coin', coins, order}. Money siparis: {ok, kind:'money', submitUrl, amount, order_id, demo}.
+// Coin siparis: {ok, kind:'coin', coins, order}. Money siparis: {ok, kind:'money', url, amount, order_id, demo}.
+// Money'de SPA `url`'e yönlendirir (PayTR iframe sayfası).
 export interface OrderResult {
   ok: boolean
   kind: 'coin' | 'money'
   coins?: number
   order?: ProductOrder
   url?: string
-  submitUrl?: string
   amount?: number // kurus
   order_id?: number
   demo?: boolean
@@ -1100,7 +1099,7 @@ export async function cartCoinOrder(
     }),
   })
 }
-// Sepetin PARA kısmı (coin paketleri + para-ürünleri) -> tek Garanti ödemesi.
+// Sepetin PARA kısmı (coin paketleri + para-ürünleri) -> tek PayTR ödemesi.
 export async function cartCheckout(input: {
   coin_items?: { id: string; qty: number }[]
   products?: CartProductLine[]

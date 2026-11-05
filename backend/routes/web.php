@@ -4,7 +4,6 @@ use App\Http\Controllers\PanelController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VerificationController;
 use App\Models\MenuItem;
-use App\Models\Payment;
 use App\Support\Brand;
 use App\Support\SeoMeta;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -146,25 +145,21 @@ Route::prefix('panel')->group(function () {
     });
 });
 
-// ---- Odeme (Garanti Sanal POS 3D) ----
-Route::get('/pay/card/{payment}', [PaymentController::class, 'card'])
-    ->name('pay.card')->middleware('signed');
-Route::post('/pay/submit/{payment}', [PaymentController::class, 'submit'])
-    ->name('pay.submit')->middleware('signed') // imzali: baskasinin bekleyen odemesine POST engellenir
-    // CSRF muaf: uygulama-ici (SPA) kart formu da bu uca POST edebilsin. Imza (30 dk, odemeye
-    // ozel) zaten sahtecilik korumasi saglar; blade formundaki @csrf zararsizca yok sayilir.
+// ---- Odeme (PayTR iframe API) ----
+// Imzali iframe sayfasi: sunucu PayTR token'i alip kart formu iframe'ini gosterir (demo'da aninda fulfill).
+Route::get('/pay/iframe/{payment}', [PaymentController::class, 'iframe'])
+    ->name('pay.iframe')->middleware('signed');
+// PayTR bildirim (sunucu->sunucu). HMAC dogrulanir; CSRF muaf (dis POST) + throttle (forged flood).
+Route::post('/pay/paytr-callback', [PaymentController::class, 'paytrCallback'])
+    ->name('pay.paytr.callback')
+    ->middleware('throttle:60,1')
     ->withoutMiddleware([ValidateCsrfToken::class]);
-Route::post('/pay/callback', [PaymentController::class, 'callback'])
-    ->name('pay.callback')
-    ->middleware('throttle:30,1') // forged callback flood'una karsi
-    ->withoutMiddleware([ValidateCsrfToken::class]);
-Route::get('/pay/result', fn () => view('pay.result', ['ok' => false, 'msg' => '']))->name('pay.result');
-// Kredi karti arayuzu ONIZLEMESI (gercek tahsilat yok; tasarimi gormek icin).
-Route::get('/pay/onizleme', fn () => view('pay.card', [
-    'payment' => new Payment(['kind' => 'coins', 'coins' => 5000, 'amount' => 400000, 'currency' => '949']),
-    'submitUrl' => '#',
-    'preview' => true,
-]))->name('pay.preview');
+// Kullanici donus sayfasi (PayTR merchant_ok_url/fail_url): ?ok=1/0. Gercek fulfillment async callback'te.
+Route::get('/pay/result', fn (Request $r) => view('pay.result', [
+    'ok' => (string) $r->query('ok') === '1',
+    'msg' => '',
+    'okMsg' => (string) $r->query('ok') === '1' ? 'Ödemen alındı; birkaç saniye içinde hesabına işlenir.' : '',
+]))->name('pay.result');
 
 // SPA: API disindaki tum yollar React uygulamasini (public/index.html) servis eder.
 // Statik dosyalar (assets/, models/) web sunucusu tarafindan dogrudan sunulur.

@@ -11,7 +11,7 @@ use App\Models\Setting;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Models\UserStat;
-use App\Services\GarantiService;
+use App\Services\PayTRService;
 use App\Services\WalletService;
 use App\Support\TournamentModeration;
 use Illuminate\Http\Request;
@@ -60,19 +60,26 @@ class PaymentController extends Controller
         ]);
     }
 
-    // Checkout ön-kontrol: havale -> açık olmalı; kart -> Garanti hazır olmalı. Uygunsa null.
-    private function checkoutGuard(string $method, GarantiService $garanti)
+    // Checkout ön-kontrol: havale -> açık olmalı; kart -> PayTR hazır olmalı. Uygunsa null.
+    private function checkoutGuard(string $method, PayTRService $paytr)
     {
         if ($method === 'bank_transfer') {
             return self::bankEnabled() ? null : $this->fail('Havale/EFT ödemesi şu an kapalı.', 503);
         }
 
-        return $garanti->isAvailable() ? null : $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+        return $paytr->isAvailable() ? null : $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
     }
 
-    // Ödeme kaydı oluşturulduktan sonra dönen JSON: havale -> IBAN + referans; kart -> imzalı
-    // kart/submit URL + demo. $extra: akışa özel alanlar (coins, discount, code...).
-    private function checkoutResponse(Payment $payment, string $method, GarantiService $garanti, array $extra = [])
+    // Kart ödemesi için imzalı PayTR iframe sayfası URL'i (hem PaymentController hem ProductController
+    // kullanır). Sayfa açılınca sunucu PayTR token'ı alıp kart formu iframe'ini gösterir.
+    public static function cardCheckoutUrl(Payment $payment): string
+    {
+        return URL::temporarySignedRoute('pay.iframe', now()->addMinutes(30), ['payment' => $payment->id]);
+    }
+
+    // Ödeme kaydı oluşturulduktan sonra dönen JSON: havale -> IBAN + referans; kart -> imzalı PayTR
+    // iframe sayfası URL'i + demo. $extra: akışa özel alanlar (coins, discount, code...).
+    private function checkoutResponse(Payment $payment, string $method, PayTRService $paytr, array $extra = [])
     {
         if ($method === 'bank_transfer') {
             $i = self::bankTransferInfo();
@@ -87,19 +94,16 @@ class PaymentController extends Controller
                 'note' => $i['note'],
             ], $extra));
         }
-        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
-        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
 
         return response()->json(array_merge([
-            'url' => $url,
-            'submitUrl' => $submitUrl,
+            'url' => self::cardCheckoutUrl($payment), // SPA bu URL'e YÖNLENDİRİR (PayTR iframe sayfası)
             'amount' => (int) $payment->amount,
-            'demo' => $garanti->isDemo(),
+            'demo' => $paytr->isDemo(),
         ], $extra));
     }
 
     // SPA: abonelik baslat -> odeme kaydi olustur, kart sayfasi (imzali) linki / havale bilgisi don.
-    public function subscribe(Request $request, GarantiService $garanti)
+    public function subscribe(Request $request, PayTRService $paytr)
     {
         $data = $request->validate([
             'plan' => ['required', 'in:premium'],
@@ -107,10 +111,10 @@ class PaymentController extends Controller
             'method' => ['nullable', 'in:card,bank_transfer'],
         ]);
         $method = $data['method'] ?? 'card';
-        if ($guard = $this->checkoutGuard($method, $garanti)) {
+        if ($guard = $this->checkoutGuard($method, $paytr)) {
             return $guard;
         }
-        $amount = config("garanti.prices.{$data['plan']}.{$data['period']}");
+        $amount = config("paytr.prices.{$data['plan']}.{$data['period']}");
         if (! $amount) {
             return $this->fail('Geçersiz plan.', 422);
         }
@@ -127,13 +131,13 @@ class PaymentController extends Controller
             'status' => 'pending',
         ]);
 
-        return $this->checkoutResponse($payment, $method, $garanti);
+        return $this->checkoutResponse($payment, $method, $paytr);
     }
 
     // SPA: sepetteki coin paketlerini satin al -> tek odeme kaydi, kart sayfasi linki don.
     // Sepet [{id, qty}] gelir; FIYAT SUNUCUDA (config/garanti coin_packages) hesaplanir,
     // frontend'den gelen tutara ASLA guvenilmez.
-    public function buyCoins(Request $request, GarantiService $garanti)
+    public function buyCoins(Request $request, PayTRService $paytr)
     {
         $data = $request->validate([
             'items' => ['required', 'array', 'min:1', 'max:20'],
@@ -143,7 +147,7 @@ class PaymentController extends Controller
             'method' => ['nullable', 'in:card,bank_transfer'],
         ]);
         $method = $data['method'] ?? 'card';
-        if ($guard = $this->checkoutGuard($method, $garanti)) {
+        if ($guard = $this->checkoutGuard($method, $paytr)) {
             return $guard;
         }
 
@@ -194,7 +198,7 @@ class PaymentController extends Controller
 
         // Kart: url (eski ayrı sayfa) + submitUrl (uygulama-içi form) -> Garanti 3D.
         // Havale: IBAN + referans (order_id) döner; ödeme admin panelden elle onaylanır.
-        return $this->checkoutResponse($payment, $method, $garanti, [
+        return $this->checkoutResponse($payment, $method, $paytr, [
             'amount' => $chargeKurus,
             'coins' => $totalCoins,
             'discount' => $discountKurus,
@@ -206,16 +210,16 @@ class PaymentController extends Controller
     // SUNUCUDA (config/garanti.renew), client'a guvenilmez. buyCoins ile ayni donus sekli
     // (url/submitUrl/amount/demo) -> ayni uygulama-ici odeme sayfasi kullanilir. kind='renew':
     // callback'te plan_until'a +1 yil EKLENIR (sifirlanmaz).
-    public function buyMembership(Request $request, GarantiService $garanti)
+    public function buyMembership(Request $request, PayTRService $paytr)
     {
         $data = $request->validate([
             'method' => ['nullable', 'in:card,bank_transfer'],
         ]);
         $method = $data['method'] ?? 'card';
-        if ($guard = $this->checkoutGuard($method, $garanti)) {
+        if ($guard = $this->checkoutGuard($method, $paytr)) {
             return $guard;
         }
-        $amount = (int) config('garanti.renew.yearly', 49900);
+        $amount = (int) config('paytr.renew.yearly', 49900);
         if ($amount <= 0) {
             return $this->fail('Üyelik fiyatı yapılandırılmamış.', 422);
         }
@@ -232,7 +236,7 @@ class PaymentController extends Controller
             'status' => 'pending',
         ]);
 
-        return $this->checkoutResponse($payment, $method, $garanti);
+        return $this->checkoutResponse($payment, $method, $paytr);
     }
 
     // kind='product' odemesi basariliysa bagli siparisi 'paid' yap + stok dus (idempotent:
@@ -361,49 +365,35 @@ class PaymentController extends Controller
         ]);
     }
 
-    // Kart giris sayfasi (imzali). Kart verisi sunucuda saklanmaz; dogrudan bankaya gider.
-    public function card(Request $request, Payment $payment)
+    // PayTR iframe sayfasi (imzali). Sunucu PayTR token'i alir ve kart formu iframe'ini gosterir.
+    // Kart verisi PayTR tarafinda girilir; bize ASLA ulasmaz (PCI yuku PayTR'de). Demo'da aninda fulfill.
+    public function iframe(Request $request, Payment $payment, PayTRService $paytr)
     {
-        abort_if($payment->payment_method === 'bank_transfer', 404); // havale kart sayfasıyla ödenmez
+        abort_if($payment->payment_method === 'bank_transfer', 404); // havale iframe'le ödenmez
         abort_unless($request->hasValidSignature() && $payment->status === 'pending', 403);
-        // Form submit URL'i de imzali uretilir (bu sayfa zaten imza dogruladi) -> yalnizca
-        // bu odemenin sahibi submit edebilir; baskasinin pending odemesine POST engellenir.
-        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
 
-        return view('pay.card', ['payment' => $payment, 'submitUrl' => $submitUrl]);
-    }
-
-    // Kart formu -> Garanti 3D formunu olustur ve bankaya auto-submit et.
-    public function submit(Request $request, Payment $payment, GarantiService $garanti)
-    {
-        abort_if($payment->payment_method === 'bank_transfer', 404); // havale kart formuyla ödenmez
-        abort_unless($payment->status === 'pending', 403);
-        $card = $request->validate([
-            'number' => ['required', 'string', 'max:25'],
-            'month' => ['required', 'string', 'max:2'],
-            'year' => ['required', 'string', 'max:4'],
-            'cvv' => ['required', 'string', 'max:4'],
-        ]);
-
-        // DEMO: banka yapilandirilmadi. Gercek POS'a GITME; odemeyi basarili say, coin/plani ver.
-        // (Kart bilgileri hicbir yere gonderilmez/saklanmaz.) Gercek POS acilinca bu dal calismaz.
-        if ($garanti->isDemo()) {
+        // DEMO: PayTR yapilandirilmadi. Gercek odeme YOK; odemeyi basarili say, coin/plani ver.
+        if ($paytr->isDemo()) {
             return $this->fulfillDemo($payment);
         }
 
-        $success = route('pay.callback');
-        $error = route('pay.callback');
-        $user = $payment->user;
-        $form = $garanti->buildThreeDForm(
-            $payment,
-            $card,
-            $success,
-            $error,
-            $user->email ?? '',
-            $request->ip(),
-        );
+        $okUrl = route('pay.result', ['ok' => 1]);
+        $failUrl = route('pay.result', ['ok' => 0]);
+        try {
+            $token = $paytr->createToken(
+                $payment,
+                $payment->user->email ?? '',
+                (string) $request->ip(),
+                $okUrl,
+                $failUrl,
+            );
+        } catch (\Throwable $e) {
+            Log::error('pay.iframe: PayTR token alinamadi', ['payment_id' => $payment->id, 'err' => $e->getMessage()]);
 
-        return view('pay.redirect', ['action' => $form['action'], 'fields' => $form['fields']]);
+            return view('pay.result', ['ok' => false, 'msg' => 'Ödeme başlatılamadı. Lütfen tekrar deneyin.', 'okMsg' => '']);
+        }
+
+        return view('pay.paytr', ['iframeUrl' => $paytr->iframeUrl($token)]);
     }
 
     // DEMO tahsilat: banka olmadan odemeyi basarili say ve coin/uyeligi ATOMIK (tek kez) ver.
@@ -444,7 +434,7 @@ class PaymentController extends Controller
     // SPA: TL'li turnuvaya katilim odemesi baslat (YALNIZ KART/3D; havale yok). Fiyat SUNUCU-OTORITER
     // (tournament.entry_fee_try, KURUS). Basarili callback'te oyuncu turnuvaya kaydedilir
     // (fulfillTournamentEntry). Kapasite/kayit son soz callback'te; buradaki kontroller erken-ret icin.
-    public function tournamentEntry(Request $request, Tournament $tournament, GarantiService $garanti)
+    public function tournamentEntry(Request $request, Tournament $tournament, PayTRService $paytr)
     {
         $me = $request->user();
         $price = (int) ($tournament->entry_fee_try ?? 0);
@@ -469,7 +459,7 @@ class PaymentController extends Controller
         if ($tournament->size > 0 && $count >= $tournament->size) {
             return $this->fail('Turnuva dolu.', 422);
         }
-        if ($guard = $this->checkoutGuard('card', $garanti)) { // YALNIZ kart
+        if ($guard = $this->checkoutGuard('card', $paytr)) { // YALNIZ kart
             return $guard;
         }
 
@@ -483,58 +473,52 @@ class PaymentController extends Controller
             'status' => 'pending',
         ]);
 
-        return $this->checkoutResponse($payment, 'card', $garanti);
+        return $this->checkoutResponse($payment, 'card', $paytr);
     }
 
-    // Banka 3D donusu -> dogrula, basariliysa plani aktive et.
-    public function callback(Request $request, GarantiService $garanti)
+    // PayTR bildirim (sunucu->sunucu callback). HMAC dogrula -> basariliysa fulfill. PayTR, govdede
+    // DÜZ "OK" bekler; aksi halde bildirimi tekrar tekrar yollar. Bu yuzden imzasi GEÇERLİ her
+    // bildirime 'OK' doneriz (isimizi yaptik); yalniz hash BOZUK ise reddederiz (sahte/forged).
+    public function paytrCallback(Request $request, PayTRService $paytr)
     {
         $post = $request->all();
-        $res = $garanti->verifyCallback($post);
-        $payment = Payment::where('order_id', $res['order_id'])->first();
+        $res = $paytr->verifyCallback($post);
 
-        // Tutar dogrulamasi. Fiyatlar KURUS tam sayi (config/garanti); bankaya (string)amount
-        // gonderilir ve banka txnamount'u ayni kurus degerini echo eder -> TAM SAYI karsilastir
-        // (ondalik/bosluk/sifir-dolgu format varyantlarina dayanikli; TL/kurus belirsizligi YOK).
-        // Uyumsuz tutar HER ZAMAN reddedilir. Bos txnamount: hash zaten sahteciligi engeller;
-        // strict degilse gecirilir ama LOGLANIR, strict ise (banka test sonrasi) reddedilir.
-        $strict = (bool) config('garanti.strict_amount', false);
-        $bankRaw = trim((string) ($post['txnamount'] ?? ''));
-        $amountMissing = ($bankRaw === '');
-        $amountMatches = ! $amountMissing
-            && is_numeric($bankRaw)
-            && $payment
-            && (int) round((float) $bankRaw) === (int) $payment->amount;
-        $amountOk = $amountMatches || ($amountMissing && ! $strict);
-
-        // Denetim gunlugu: her callback + tutar karari (anlasmazlik/inceleme icin).
-        Log::info('payment.callback', [
-            'order_id' => $res['order_id'] ?? null,
-            'user_id' => $payment->user_id ?? null,
-            'ok' => $res['ok'] ?? false,
-            'hash_ok' => $res['hash_ok'] ?? false,
-            'bank_amount' => $post['txnamount'] ?? null,
-            'record_amount' => $payment->amount ?? null,
-            'amount_ok' => $amountOk,
-            'amount_missing' => $amountMissing,
-            'strict' => $strict,
-            'ip' => $request->ip(),
-        ]);
-        if ($amountMissing) {
-            Log::warning('payment.callback: txnamount bos -> tutar dogrulanamadi', [
+        // Sahte/imzasiz bildirim: ASLA fulfill etme, OK deme (PayTR gecerli imzayla tekrar dener).
+        if (! $res['hash_ok']) {
+            Log::warning('paytr.callback: hash dogrulanamadi (sahte/forged?)', [
                 'order_id' => $res['order_id'] ?? null,
-                'strict' => $strict,
+                'ip' => $request->ip(),
             ]);
+
+            return response('PAYTR notification failed: bad hash', 400);
         }
 
+        $payment = Payment::where('order_id', $res['order_id'])->first();
+
+        // Tutar: PayTR total_amount (KURUS). Taksit komisyonu EKLEYEBILIR -> kayitli tutardan AZ olamaz
+        // (az ise suphe -> fulfill etme). hash zaten total_amount'u imzaladigindan sahtelenemez.
+        $recAmount = $payment ? (int) $payment->amount : 0;
+        $bankAmount = (int) round((float) $res['amount']);
+        $amountOk = $payment && $bankAmount >= $recAmount;
+
+        Log::info('payment.callback.paytr', [
+            'order_id' => $res['order_id'] ?? null,
+            'user_id' => $payment->user_id ?? null,
+            'paid' => $res['paid'] ?? false,
+            'bank_amount' => $res['amount'] ?? null,
+            'record_amount' => $recAmount ?: null,
+            'amount_ok' => $amountOk,
+            'ip' => $request->ip(),
+        ]);
+
         if ($payment) {
-            if ($res['ok'] && $amountOk) {
-                // ATOMIK idempotency: yalnizca ILK basarili callback plani aktive eder.
-                // (Banka retry'i / replay / yaris kosulunda cift aktivasyon olmaz.)
-                $claimed = DB::transaction(function () use ($payment, $res) {
+            if ($res['paid'] && $amountOk) {
+                // ATOMIK idempotency: yalnizca ILK basarili bildirim fulfill eder (retry/replay'de cift yok).
+                DB::transaction(function () use ($payment, $res) {
                     $locked = Payment::where('id', $payment->id)->lockForUpdate()->first();
                     if (! $locked || $locked->status !== 'pending') {
-                        return false;
+                        return;
                     }
                     $u = User::lockForUpdate()->find($locked->user_id);
                     if (! $u) {
@@ -545,33 +529,23 @@ class PaymentController extends Controller
                     $locked->setRelation('user', $u);
                     $locked->save();
                     $this->fulfillPayment($locked);
-
-                    return true;
                 });
-                if ($claimed) {
-                    $payment->status = 'paid';
-                }
-            } elseif ($payment->status === 'pending' && ($res['hash_ok'] ?? false)) {
-                // Yalniz BANKA IMZALI (hash_ok) bir red ödemeyi 'failed' yapabilir. Eskiden imzasiz/sahte
-                // bir callback de bekleyen ödemeyi düşürüyordu; sonra gelen GERÇEK onay 'pending değil'
-                // diye reddedilip kart çekildiği halde coin/üyelik verilmiyordu (denetim A-07).
-                // A failed callback must not overwrite a concurrent successful callback.
-                // Re-read and lock the payment row before changing its terminal status.
+            } elseif ($payment->status === 'pending') {
+                // Imzali ama basarisiz (status=failed) VEYA tutar uyumsuz -> bekleyen odemeyi dusur.
                 DB::transaction(function () use ($payment, $amountOk, $res) {
                     $locked = Payment::whereKey($payment->id)->lockForUpdate()->first();
                     if (! $locked || $locked->status !== 'pending') {
                         return;
                     }
                     $locked->status = 'failed';
-                    $locked->bank_msg = $amountOk ? $res['msg'] : 'Tutar uyusmuyor';
+                    $locked->bank_msg = ! $amountOk && $res['paid'] ? 'Tutar uyusmuyor' : $res['msg'];
                     $locked->save();
                 });
             }
         }
 
-        $okMsg = $payment ? $this->fulfillMessage($payment) : 'İşlem tamamlandı.';
-
-        return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg'], 'okMsg' => $okMsg]);
+        // Imza gecerli -> isimizi yaptik: PayTR'ye DÜZ "OK" (yoksa bildirimi tekrarlar).
+        return response('OK');
     }
 
     /** Apply one already-claimed payment while its payment and user rows are locked. */
@@ -660,7 +634,7 @@ class PaymentController extends Controller
     // POST /shop/cart-checkout — ortak sepetin PARA kısmı (coin paketleri + para-ürünleri)
     // TEK Garanti ödemesi (kind='cart'). Para-ürünleri için 'pending' sipariş oluşturulur;
     // ödeme başarılıysa callback fulfillCart ile hepsini karşılar. Fiyatlar SUNUCU-OTORİTER.
-    public function cartCheckout(Request $request, GarantiService $garanti)
+    public function cartCheckout(Request $request, PayTRService $paytr)
     {
         $data = $request->validate([
             'coin_items' => ['nullable', 'array', 'max:20'],
@@ -677,7 +651,7 @@ class PaymentController extends Controller
             'method' => ['nullable', 'in:card,bank_transfer'],
         ]);
         $method = $data['method'] ?? 'card';
-        if ($guard = $this->checkoutGuard($method, $garanti)) {
+        if ($guard = $this->checkoutGuard($method, $paytr)) {
             return $guard;
         }
 
@@ -788,7 +762,7 @@ class PaymentController extends Controller
         $discountKurus = (int) $payment->discount_kurus;
         $discountCode = $payment->discount_code;
 
-        return $this->checkoutResponse($payment, $method, $garanti, [
+        return $this->checkoutResponse($payment, $method, $paytr, [
             'amount' => $chargeKurus,
             'coins' => $packageCoins,
             'discount' => $discountKurus,

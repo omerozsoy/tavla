@@ -18,7 +18,7 @@ class PromoCodeTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['garanti.demo' => true]); // odeme "available" (demo) -> buyCoins calisir
+        config(['paytr.demo' => true]); // odeme "available" (demo) -> buyCoins calisir
     }
 
     private function user(): User

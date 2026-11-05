@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductOrder;
 use App\Models\User;
-use App\Services\GarantiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -19,29 +19,29 @@ class ProductOrderTest extends TestCase
 
     private function product(array $attrs = []): Product
     {
-        $cat = \App\Models\ProductCategory::firstOrCreate(['slug' => 'tavla'], ['name' => 'Tavla']);
+        $cat = ProductCategory::firstOrCreate(['slug' => 'tavla'], ['name' => 'Tavla']);
 
         return Product::create(array_merge([
-            'name'         => 'Ceviz Tavla',
-            'slug'         => 'ceviz-tavla-'.uniqid(),
-            'category_id'  => $cat->id,
+            'name' => 'Ceviz Tavla',
+            'slug' => 'ceviz-tavla-'.uniqid(),
+            'category_id' => $cat->id,
             'payment_type' => 'both',
-            'coin_price'   => 300,
-            'money_price'  => 150000, // 1500 TL (kurus)
-            'stock'        => 5,
-            'published'    => true,
-            'colors'       => [['name' => 'Ceviz', 'hex' => '#5a3a22'], ['name' => 'Siyah', 'hex' => '#111111']],
+            'coin_price' => 300,
+            'money_price' => 150000, // 1500 TL (kurus)
+            'stock' => 5,
+            'published' => true,
+            'colors' => [['name' => 'Ceviz', 'hex' => '#5a3a22'], ['name' => 'Siyah', 'hex' => '#111111']],
         ], $attrs));
     }
 
     private function ship(): array
     {
         return [
-            'ship_name'    => 'Ömer Özsoy',
-            'ship_phone'   => '5551112233',
+            'ship_name' => 'Ömer Özsoy',
+            'ship_phone' => '5551112233',
             'ship_address' => 'Örnek Mah. 1. Sk. No:2',
-            'ship_city'    => 'İstanbul',
-            'ship_postal'  => '34000',
+            'ship_city' => 'İstanbul',
+            'ship_postal' => '34000',
         ];
     }
 
@@ -64,9 +64,9 @@ class ProductOrderTest extends TestCase
         Sanctum::actingAs($u);
 
         $this->postJson('/api/products/order', array_merge($this->ship(), [
-            'product_id'   => $p->id,
-            'qty'          => 2,
-            'color'        => 'Siyah',
+            'product_id' => $p->id,
+            'qty' => 2,
+            'color' => 'Siyah',
             'payment_type' => 'coin',
         ]))->assertOk()->assertJson(['ok' => true, 'kind' => 'coin', 'coins' => 400]);
 
@@ -149,7 +149,7 @@ class ProductOrderTest extends TestCase
 
     public function test_money_order_creates_pending_order_and_payment(): void
     {
-        config(['garanti.demo' => true]); // isAvailable + isDemo true
+        config(['paytr.demo' => true]); // isAvailable + isDemo true
         $u = User::factory()->create();
         $p = $this->product();
         Sanctum::actingAs($u);
@@ -177,20 +177,19 @@ class ProductOrderTest extends TestCase
             'user_id' => $u->id, 'product_id' => $p->id, 'product_name' => $p->name,
             'color' => 'Ceviz', 'qty' => 2, 'payment_type' => 'money', 'amount' => 300000, 'status' => 'pending',
         ]));
+        config(['paytr.merchant_key' => 'K', 'paytr.merchant_salt' => 'S']);
+        $oid = 'TP'.$u->id; // merchant_oid alfanumerik olmali (order_id = oid)
         $payment = Payment::create([
-            'user_id' => $u->id, 'kind' => 'product', 'order_id' => 'TP-'.$u->id,
+            'user_id' => $u->id, 'kind' => 'product', 'order_id' => $oid,
             'amount' => 300000, 'product_order_id' => $order->id, 'currency' => '949', 'status' => 'pending',
         ]);
         $order->payment_id = $payment->id;
         $order->save();
 
-        $this->mock(GarantiService::class, function ($m) use ($payment) {
-            $m->shouldReceive('verifyCallback')->andReturn([
-                'ok' => true, 'hash_ok' => true, 'msg' => 'Onaylandı', 'order_id' => $payment->order_id,
-            ]);
-        });
-
-        $this->post('/pay/callback', ['txnamount' => '300000'])->assertOk();
+        $hash = base64_encode(hash_hmac('sha256', $oid.'S'.'success'.'300000', 'K', true));
+        $this->post('/pay/paytr-callback', [
+            'merchant_oid' => $oid, 'status' => 'success', 'total_amount' => '300000', 'hash' => $hash,
+        ])->assertOk();
 
         $this->assertSame('paid', $payment->fresh()->status);
         $this->assertSame('paid', $order->fresh()->status);
@@ -219,22 +218,22 @@ class ProductOrderTest extends TestCase
         Sanctum::actingAs($u);
 
         // 1) buyCoins havale (kind=coins) -> gorunmeli
-        \App\Models\Payment::create([
+        Payment::create([
             'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => 'bank_transfer',
             'order_id' => 'TCTEST1', 'amount' => 10000, 'coins' => 100, 'currency' => '949', 'status' => 'pending',
         ]);
         // 2) SEPET coin paketi havale (kind=cart, coins>0) -> gorunmeli (asil bug buydu)
-        \App\Models\Payment::create([
+        Payment::create([
             'user_id' => $u->id, 'kind' => 'cart', 'payment_method' => 'bank_transfer',
             'order_id' => 'TKTEST1', 'amount' => 20000, 'coins' => 200, 'currency' => '949', 'status' => 'pending',
         ]);
         // 3) Kart ile coin (aninda biter) -> GORUNMEMELI
-        \App\Models\Payment::create([
+        Payment::create([
             'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => null,
             'order_id' => 'TCTEST2', 'amount' => 5000, 'coins' => 50, 'currency' => '949', 'status' => 'paid',
         ]);
         // 4) Fiziksel-only sepet havale (coins=0) -> coin satiri GORUNMEMELI (urun ProductOrder'da)
-        \App\Models\Payment::create([
+        Payment::create([
             'user_id' => $u->id, 'kind' => 'cart', 'payment_method' => 'bank_transfer',
             'order_id' => 'TKTEST2', 'amount' => 30000, 'coins' => 0, 'currency' => '949', 'status' => 'pending',
         ]);

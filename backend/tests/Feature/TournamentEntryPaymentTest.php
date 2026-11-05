@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Payment;
 use App\Models\Tournament;
 use App\Models\User;
-use App\Services\GarantiService;
 use App\Support\TournamentModeration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -35,13 +34,15 @@ class TournamentEntryPaymentTest extends TestCase
         ]);
     }
 
-    private function mockBankApproved(string $orderId): void
+    /** PayTR bildirimini GERCEK HMAC ile imzala + /pay/paytr-callback'e POST et. */
+    private function paytrNotify(string $oid, string $total)
     {
-        $this->mock(GarantiService::class, function ($m) use ($orderId) {
-            $m->shouldReceive('verifyCallback')->andReturn([
-                'ok' => true, 'hash_ok' => true, 'msg' => 'Onaylandı', 'order_id' => $orderId,
-            ]);
-        });
+        config(['paytr.merchant_key' => 'K', 'paytr.merchant_salt' => 'S']);
+        $hash = base64_encode(hash_hmac('sha256', $oid.'S'.'success'.$total, 'K', true));
+
+        return $this->post('/pay/paytr-callback', [
+            'merchant_oid' => $oid, 'status' => 'success', 'total_amount' => $total, 'hash' => $hash,
+        ]);
     }
 
     public function test_join_rejects_tl_tournament_without_payment(): void
@@ -59,12 +60,11 @@ class TournamentEntryPaymentTest extends TestCase
         $u = $this->user();
         $t = $this->tlTournament(25000);
         $p = Payment::create([
-            'user_id' => $u->id, 'kind' => 'tournament_entry', 'order_id' => 'TT-'.$u->id,
+            'user_id' => $u->id, 'kind' => 'tournament_entry', 'order_id' => 'TT'.$u->id,
             'amount' => 25000, 'tournament_id' => $t->id, 'currency' => '949', 'status' => 'pending',
         ]);
-        $this->mockBankApproved($p->order_id);
 
-        $this->post('/pay/callback', ['txnamount' => '25000'])->assertOk();
+        $this->paytrNotify($p->order_id, '25000')->assertOk();
 
         $this->assertSame('paid', $p->fresh()->status);
         $players = $t->fresh()->players ?? [];
@@ -78,12 +78,11 @@ class TournamentEntryPaymentTest extends TestCase
         $u = $this->user();
         $t = $this->tlTournament(25000);
         $p = Payment::create([
-            'user_id' => $u->id, 'kind' => 'tournament_entry', 'order_id' => 'TT2-'.$u->id,
+            'user_id' => $u->id, 'kind' => 'tournament_entry', 'order_id' => 'TT2'.$u->id,
             'amount' => 25000, 'tournament_id' => $t->id, 'currency' => '949', 'status' => 'pending',
         ]);
-        $this->mockBankApproved($p->order_id);
 
-        $this->post('/pay/callback', ['txnamount' => '100'])->assertOk(); // uyumsuz tutar
+        $this->paytrNotify($p->order_id, '100')->assertOk(); // uyumsuz (az) tutar
 
         $this->assertSame('failed', $p->fresh()->status);
         $this->assertCount(0, $t->fresh()->players ?? []);

@@ -4,28 +4,42 @@ namespace Tests\Feature;
 
 use App\Models\Payment;
 use App\Models\User;
-use App\Services\GarantiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// Odeme callback TUTAR dogrulamasi (#16): banka txnamount'u kayitli KURUS tutarla
-// tam sayi eslesmeli. Uyumsuz -> plan aktive OLMAZ. Bos -> strict bayragina gore.
+// PayTR bildirim (callback) TUTAR + fulfillment dogrulamasi. PayTR total_amount (KURUS) kayitli
+// tutardan AZ olamaz (taksit komisyonu EKLEYEBILIR -> >= kabul). Imza GERCEK HMAC ile uretilir.
 class PaymentCallbackTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makePayment(int $amount = 200000): Payment
+    private const KEY = 'test-merchant-key';
+
+    private const SALT = 'test-merchant-salt';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['paytr.merchant_id' => 'MID', 'paytr.merchant_key' => self::KEY, 'paytr.merchant_salt' => self::SALT]);
+    }
+
+    private function makePayment(int $amount = 200000, string $order = 'ORD1'): Payment
     {
         $u = User::factory()->create(['plan' => 'free']);
 
         return Payment::create([
-            'user_id' => $u->id,
-            'order_id' => 'ORD-'.$u->id,
-            'plan' => 'premium',
-            'period' => 'yearly',
-            'amount' => $amount,
-            'currency' => '949',
-            'status' => 'pending',
+            'user_id' => $u->id, 'order_id' => $order, 'plan' => 'premium', 'period' => 'yearly',
+            'amount' => $amount, 'currency' => '949', 'status' => 'pending',
+        ]);
+    }
+
+    /** PayTR bildirimini GERCEK gibi imzala + /pay/paytr-callback'e POST et. */
+    private function paytrNotify(string $oid, string $status, string $totalAmount)
+    {
+        $hash = base64_encode(hash_hmac('sha256', $oid.self::SALT.$status.$totalAmount, self::KEY, true));
+
+        return $this->post('/pay/paytr-callback', [
+            'merchant_oid' => $oid, 'status' => $status, 'total_amount' => $totalAmount, 'hash' => $hash,
         ]);
     }
 
@@ -34,14 +48,8 @@ class PaymentCallbackTest extends TestCase
     {
         $u = User::factory()->create(['plan' => 'free']);
         $p = Payment::create([
-            'user_id' => $u->id,
-            'kind' => 'coins',
-            'order_id' => 'TC-'.$u->id,
-            'amount' => 20000,
-            'coins' => 200,
-            'package_id' => 'baslangicx2',
-            'currency' => '949',
-            'status' => 'pending',
+            'user_id' => $u->id, 'kind' => 'coins', 'order_id' => 'TC1', 'amount' => 20000,
+            'coins' => 200, 'package_id' => 'baslangicx2', 'currency' => '949', 'status' => 'pending',
         ]);
 
         $this->assertNull($p->fresh()->plan);
@@ -49,73 +57,40 @@ class PaymentCallbackTest extends TestCase
         $this->assertSame(200, (int) $p->fresh()->coins);
     }
 
-    // Banka hash/3D dogrulamasini onaylanmis kabul et (tutar karari controller'da kalir).
-    private function mockBankApproved(string $orderId): void
-    {
-        $this->mock(GarantiService::class, function ($m) use ($orderId) {
-            $m->shouldReceive('verifyCallback')->andReturn([
-                'ok' => true,
-                'hash_ok' => true,
-                'msg' => 'Onaylandı',
-                'order_id' => $orderId,
-            ]);
-        });
-    }
-
     public function test_matching_amount_activates_plan(): void
     {
-        $p = $this->makePayment(200000);
-        $this->mockBankApproved($p->order_id);
-
-        $this->post('/pay/callback', ['txnamount' => '200000'])->assertOk();
+        $p = $this->makePayment(200000, 'ORDA');
+        $this->paytrNotify('ORDA', 'success', '200000')->assertOk()->assertSee('OK');
 
         $this->assertSame('paid', $p->fresh()->status);
         $this->assertSame('premium', User::find($p->user_id)->plan);
     }
 
-    public function test_mismatched_amount_is_rejected(): void
+    public function test_lower_amount_is_rejected(): void
     {
-        $p = $this->makePayment(200000);
-        $this->mockBankApproved($p->order_id);
-
-        // Banka daha dusuk tutar bildirdi -> plan aktive OLMAMALI.
-        $this->post('/pay/callback', ['txnamount' => '100000'])->assertOk();
+        $p = $this->makePayment(200000, 'ORDB');
+        $this->paytrNotify('ORDB', 'success', '100000')->assertOk(); // kayitlidan AZ -> reddet
 
         $this->assertSame('failed', $p->fresh()->status);
         $this->assertSame('free', User::find($p->user_id)->plan);
     }
 
-    public function test_decimal_format_variant_still_matches(): void
+    // Taksit komisyonu toplam tutari BUYUTEBILIR (>= kayit) -> yine onaylanir.
+    public function test_higher_amount_installment_commission_accepted(): void
     {
-        $p = $this->makePayment(200000);
-        $this->mockBankApproved($p->order_id);
-
-        // Ayni tutar farkli ondalik formatta ("200000.00") -> yine eslesmeli.
-        $this->post('/pay/callback', ['txnamount' => '200000.00'])->assertOk();
+        $p = $this->makePayment(200000, 'ORDC');
+        $this->paytrNotify('ORDC', 'success', '213000')->assertOk();
 
         $this->assertSame('paid', $p->fresh()->status);
     }
 
-    public function test_empty_amount_passes_when_not_strict(): void
+    public function test_failed_status_marks_failed(): void
     {
-        config(['garanti.strict_amount' => false]);
-        $p = $this->makePayment(200000);
-        $this->mockBankApproved($p->order_id);
-
-        $this->post('/pay/callback', [])->assertOk(); // txnamount yok
-
-        $this->assertSame('paid', $p->fresh()->status);
-    }
-
-    public function test_empty_amount_rejected_when_strict(): void
-    {
-        config(['garanti.strict_amount' => true]);
-        $p = $this->makePayment(200000);
-        $this->mockBankApproved($p->order_id);
-
-        $this->post('/pay/callback', [])->assertOk();
+        $p = $this->makePayment(200000, 'ORDD');
+        $this->paytrNotify('ORDD', 'failed', '200000')->assertOk();
 
         $this->assertSame('failed', $p->fresh()->status);
+        $this->assertSame('free', User::find($p->user_id)->plan);
     }
 
     // "Üyeliğini Uzat" (kind=renew): mevcut GELECEK bitis tarihine +1 yil EKLENIR (sifirlanmaz).
@@ -124,27 +99,15 @@ class PaymentCallbackTest extends TestCase
         $until = now()->addDays(30);
         $u = User::factory()->create(['plan' => 'premium', 'plan_until' => $until]);
         $p = Payment::create([
-            'user_id' => $u->id,
-            'kind' => 'renew',
-            'order_id' => 'TM-'.$u->id,
-            'plan' => 'premium',
-            'period' => 'yearly',
-            'amount' => 49900,
-            'currency' => '949',
-            'status' => 'pending',
+            'user_id' => $u->id, 'kind' => 'renew', 'order_id' => 'TMA', 'plan' => 'premium',
+            'period' => 'yearly', 'amount' => 49900, 'currency' => '949', 'status' => 'pending',
         ]);
-        $this->mockBankApproved($p->order_id);
 
-        $this->post('/pay/callback', ['txnamount' => '49900'])->assertOk();
+        $this->paytrNotify('TMA', 'success', '49900')->assertOk();
 
         $this->assertSame('paid', $p->fresh()->status);
-        // Yeni bitis ~ eski bitis + 1 yil (bugunden degil).
         $expected = $until->copy()->addYear();
-        $this->assertEqualsWithDelta(
-            $expected->timestamp,
-            User::find($u->id)->plan_until->timestamp,
-            60,
-        );
+        $this->assertEqualsWithDelta($expected->timestamp, User::find($u->id)->plan_until->timestamp, 60);
     }
 
     // Suresi DOLMUS uyelikte uzatma bugunden baslar (gecmis tarihe eklenmez).
@@ -152,23 +115,12 @@ class PaymentCallbackTest extends TestCase
     {
         $u = User::factory()->create(['plan' => 'premium', 'plan_until' => now()->subDays(10)]);
         $p = Payment::create([
-            'user_id' => $u->id,
-            'kind' => 'renew',
-            'order_id' => 'TM2-'.$u->id,
-            'plan' => 'premium',
-            'period' => 'yearly',
-            'amount' => 49900,
-            'currency' => '949',
-            'status' => 'pending',
+            'user_id' => $u->id, 'kind' => 'renew', 'order_id' => 'TMB', 'plan' => 'premium',
+            'period' => 'yearly', 'amount' => 49900, 'currency' => '949', 'status' => 'pending',
         ]);
-        $this->mockBankApproved($p->order_id);
 
-        $this->post('/pay/callback', ['txnamount' => '49900'])->assertOk();
+        $this->paytrNotify('TMB', 'success', '49900')->assertOk();
 
-        $this->assertEqualsWithDelta(
-            now()->addYear()->timestamp,
-            User::find($u->id)->plan_until->timestamp,
-            60,
-        );
+        $this->assertEqualsWithDelta(now()->addYear()->timestamp, User::find($u->id)->plan_until->timestamp, 60);
     }
 }

@@ -536,7 +536,6 @@ import { CHECKER_BY_ID } from './checkers'
 import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
-import Checkout from './ui/Checkout'
 import BankTransfer from './ui/BankTransfer'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
@@ -1147,16 +1146,8 @@ export default function App() {
   const [kizOpen, setKizOpen] = useState(false) // Kız Tavlası oyun sayfasi (ayri kural motoru)
   const [checkerShopOpen, setCheckerShopOpen] = useState(false) // Pul Tasarimlari (checker) sayfasi
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
-  // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [checkoutData, setCheckoutData] = useState<{
-    submitUrl: string
-    amount: number
-    coins: number
-    items: CartItem[]
-    demo?: boolean
-    title?: string // genel tek-satir ozet (turnuva TL katilimi gibi coin/uyelik olmayan odemeler)
-  } | null>(null)
+  // Kart ödemesi artık PayTR iframe sayfasında (sunucu /pay/iframe) — in-app kart formu kaldırıldı;
+  // kart akışı window.location ile o sayfaya YÖNLENDİRİR.
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
@@ -1260,8 +1251,6 @@ export default function App() {
         : 'online-turnuvalar'
       : bankData
         ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
-      : checkoutOpen
-        ? 'sepet' // odeme adimi URL'de /sepet gosterir: yenileme/geri guvenle sepete doner
       : cartOpen
         ? 'sepet'
       : shopOpen
@@ -9696,7 +9685,6 @@ export default function App() {
     setKizOpen(false)
     setCheckerShopOpen(false)
     setCartOpen(false)
-    setCheckoutOpen(false)
     setFrameGalleryOpen(false)
     setFriendsOpen(false)
     setMessagesOpen(false)
@@ -10281,7 +10269,6 @@ export default function App() {
     productsOpen ||
     myOrdersOpen ||
     cartOpen ||
-    checkoutOpen ||
     !!bankData ||
     frameGalleryOpen ||
     friendsOpen ||
@@ -10600,8 +10587,7 @@ export default function App() {
                 setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
                 setBankData(r)
               } else {
-                setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: 0, items: its, demo: r.demo })
-                setCheckoutOpen(true)
+                window.location.href = r.url // PayTR iframe sayfasına yönlen (kart formu PayTR'de)
               }
               return
             }
@@ -10639,8 +10625,7 @@ export default function App() {
                 )
                 setBankData(r)
               } else {
-                setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins ?? 0, items: its, demo: r.demo })
-                setCheckoutOpen(true)
+                window.location.href = r.url // PayTR iframe sayfasına yönlen
               }
             } else {
               // Yalnız coin ürünleri vardı -> sipariş tamam.
@@ -10648,21 +10633,6 @@ export default function App() {
               notify.success('Siparişin alındı.')
               setMyOrdersOpen(true)
             }
-          }}
-        />
-      )}
-      {checkoutOpen && user && checkoutData && (
-        <Checkout
-          submitUrl={checkoutData.submitUrl}
-          amount={checkoutData.amount}
-          coins={checkoutData.coins}
-          items={checkoutData.items}
-          demo={checkoutData.demo}
-          title={checkoutData.title}
-          onBack={() => {
-            setCheckoutOpen(false)
-            // Turnuva TL ödemesinde (title var, sepet yok) sepete DÖNME; coin/sepet akışında sepeti aç.
-            if (!checkoutData.title) setCartOpen(true)
           }}
         />
       )}
@@ -10699,10 +10669,7 @@ export default function App() {
           onPlayMatch={handlePlayTournamentMatch}
           onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
           onProfile={(id) => setHomeProfileId(id)}
-          onCardCheckout={(d) => {
-            setCheckoutData({ submitUrl: d.submitUrl, amount: d.amount, coins: 0, items: [], demo: d.demo, title: d.title })
-            setCheckoutOpen(true)
-          }}
+          onCardCheckout={(d) => { window.location.href = d.url }}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)

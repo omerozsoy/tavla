@@ -29,12 +29,14 @@ class AddressCartTest extends TestCase
         ]);
         $u->coins = $coins; // coins fillable değil -> doğrudan ata
         $u->save();
+
         return [$u, ['Authorization' => 'Bearer '.$u->createToken('t')->plainTextToken]];
     }
 
     private function product(array $over = []): Product
     {
         $cat = ProductCategory::firstOrCreate(['slug' => 'test'], ['name' => 'Test', 'sort' => 1]);
+
         return Product::create(array_merge([
             'name' => 'Ürün', 'slug' => 'urun-'.(++self::$seq), 'category_id' => $cat->id,
             'description' => '', 'images' => [], 'colors' => [], 'payment_type' => 'both',
@@ -125,7 +127,7 @@ class AddressCartTest extends TestCase
 
     public function test_cart_checkout_money_creates_pending_orders_and_cart_payment(): void
     {
-        config(['garanti.demo' => true, 'garanti.merchant_id' => 'X', 'garanti.terminal_id' => 'X', 'garanti.store_key' => 'X', 'garanti.prov_user' => 'X', 'garanti.prov_pass' => 'X']);
+        config(['paytr.demo' => true]);
         [$u, $h] = $this->user(0);
         $p = $this->product(['money_price' => 5000, 'stock' => 5]);
         $addr = $this->postJson('/api/addresses', ['type' => 'shipping', 'name' => 'Ali', 'phone' => '5551112233', 'address' => 'Cadde 1', 'city' => 'İstanbul'], $h)->json('address.id');
@@ -134,9 +136,9 @@ class AddressCartTest extends TestCase
             'products' => [['product_id' => $p->id, 'qty' => 2]], // 2 x 5000 = 10000 kuruş
             'shipping_address_id' => $addr,
         ], $h);
-        // Garanti demo/available ise url döner; değilse 503. Her iki durumda da pending sipariş kurulmuş olabilir.
+        // PayTR demo/available ise url döner; değilse 503. Her iki durumda da pending sipariş kurulmuş olabilir.
         if ($res->status() === 503) {
-            $this->markTestSkipped('Garanti yapılandırılmadı (test ortamı).');
+            $this->markTestSkipped('PayTR yapılandırılmadı (test ortamı).');
         }
         $res->assertOk();
         $payment = Payment::where('kind', 'cart')->first();
