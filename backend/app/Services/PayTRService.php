@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Payment;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -17,6 +18,24 @@ class PayTRService
     public function __construct()
     {
         $this->cfg = config('paytr');
+        // Admin panel (Setting/DB) env'in ÖNÜNDE: panelden girilen bilgi .env'i ezer (config:clear
+        // + fpm restart GEREKMEZ, canlı okunur). Panelde boşsa .env'e düşer.
+        $id = Setting::get('paytr_merchant_id');
+        $key = Setting::get('paytr_merchant_key');
+        $salt = Setting::get('paytr_merchant_salt');
+        if ($id !== null && $id !== '') {
+            $this->cfg['merchant_id'] = $id;
+        }
+        if ($key !== null && $key !== '') {
+            $this->cfg['merchant_key'] = $key;
+        }
+        if ($salt !== null && $salt !== '') {
+            $this->cfg['merchant_salt'] = $salt;
+        }
+        $tm = Setting::get('paytr_test_mode');
+        if ($tm !== null && $tm !== '') {
+            $this->cfg['test_mode'] = (bool) ((int) $tm);
+        }
     }
 
     public function isConfigured(): bool
