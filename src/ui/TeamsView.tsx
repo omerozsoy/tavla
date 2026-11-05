@@ -362,12 +362,12 @@ function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibili
 
       <div className="teams-create-actions">
         <Button disabled={busy || !canCreate || name.trim().length < 3 || tag.trim().length < 2} onClick={submit}>
-          {t('teams.create')} · {(el?.found_cost ?? 50000).toLocaleString()} <Icon name="coin" size={13} />
+          {t('teams.create')} · {(el?.found_cost ?? 10000).toLocaleString()} <Icon name="coin" size={13} />
         </Button>
       </div>
       {!canCreate && (
         <p className="teams-create-req">
-          {t('teams.create.requirements', { cost: (el?.found_cost ?? 50000).toLocaleString(), rated: el?.min_rated ?? 20 })}
+          {t('teams.create.requirements', { cost: (el?.found_cost ?? 10000).toLocaleString(), rated: el?.min_rated ?? 20 })}
           {el && !el.premium && <> · <button type="button" className="teams-req-link" onClick={props.onRequirePremium}>{t('teams.needPremium')}</button></>}
         </p>
       )}

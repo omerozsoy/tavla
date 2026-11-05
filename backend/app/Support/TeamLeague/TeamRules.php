@@ -9,7 +9,7 @@ namespace App\Support\TeamLeague;
 final class TeamRules
 {
     // §2 Kuruluş
-    public const FOUND_COST = 50_000;          // coin, yalnız başarılı kuruluşta bir kez
+    public const FOUND_COST = 10_000;          // coin, yalnız başarılı kuruluşta bir kez
 
     public const MIN_RATED_MATCHES = 20;       // tamamlanmış puanlı maç
 
@@ -24,7 +24,7 @@ final class TeamRules
     public const TAG_MAX = 5;
 
     // §2 İsim/etiket değişikliği (yalnız kurucu)
-    public const RENAME_COST = 10_000;         // işlem başına
+    public const RENAME_COST = 2_500;          // işlem başına
 
     public const RENAME_COOLDOWN_DAYS = 30;
 

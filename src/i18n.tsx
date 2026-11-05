@@ -253,7 +253,7 @@ const TR: Dict = {
   'teams.save': 'Kaydet',
   'teams.saved': 'Kaydedildi.',
   'teams.rename': 'Ad/Etiket Değiştir',
-  'teams.rename.hint': 'Yalnız kurucu; 30 günde bir, 10.000 coin.',
+  'teams.rename.hint': 'Yalnız kurucu; 30 günde bir, 2.500 coin.',
   'teams.renamed': 'Değiştirildi.',
   'teams.matches': 'Karşılaşmalar',
   'teams.challenge': 'Meydan Oku',
@@ -296,10 +296,10 @@ const TR: Dict = {
   'teams.err.rename_cooldown': 'İsim değişimi için 30 gün beklemelisin.',
   'teams.rules.body':
     'Takım kurma\n' +
-    '• Premium üyelik + en az 20 tamamlanmış puanlı maç + 50.000 coin gerekir; coin yalnız kuruluş başarılı olursa bir kez kesilir.\n' +
+    '• Premium üyelik + en az 20 tamamlanmış puanlı maç + 10.000 coin gerekir; coin yalnız kuruluş başarılı olursa bir kez kesilir.\n' +
     '• Takım adı 3-30, etiket 2-5 karakter (harf/rakam) ve benzersiz olmalıdır.\n' +
     '• Bir kişi aynı anda yalnızca tek takımda olabilir. Ayrılma, çıkarılma, Premium bitişi veya takım kapanması sonrası 24 saat yeni takıma giremezsin.\n' +
-    '• Ad/etiket değişikliği yalnız kurucuya aittir: 10.000 coin + 30 gün bekleme.\n\n' +
+    '• Ad/etiket değişikliği yalnız kurucuya aittir: 2.500 coin + 30 gün bekleme.\n\n' +
     'Üyelik ve roller\n' +
     '• Takım kurucu dahil en fazla 24 üye alır.\n' +
     '• Roller: 1 kurucu + en fazla 2 yardımcı. Yöneticiler (kurucu + yardımcılar) maç ve kadro işlerini yürütür.\n' +
@@ -2495,7 +2495,7 @@ const EN: Dict = {
   'teams.save': 'Save',
   'teams.saved': 'Saved.',
   'teams.rename': 'Change Name/Tag',
-  'teams.rename.hint': 'Founder only; once per 30 days, 10,000 coins.',
+  'teams.rename.hint': 'Founder only; once per 30 days, 2,500 coins.',
   'teams.renamed': 'Updated.',
   'teams.matches': 'Matches',
   'teams.challenge': 'Challenge',
@@ -2537,10 +2537,10 @@ const EN: Dict = {
   'teams.err.rename_cooldown': 'You must wait 30 days to rename.',
   'teams.rules.body':
     'Creating a team\n' +
-    '• Requires Premium + at least 20 completed rated matches + 50,000 coins; coins are charged once, only if creation succeeds.\n' +
+    '• Requires Premium + at least 20 completed rated matches + 10,000 coins; coins are charged once, only if creation succeeds.\n' +
     '• Team name 3-30, tag 2-5 characters (letters/digits), and must be unique.\n' +
     '• A person can be in only one team at a time. After leaving, being removed, Premium expiring, or the team closing you cannot join a new team for 24 hours.\n' +
-    '• Name/tag changes belong to the founder only: 10,000 coins + 30-day cooldown.\n\n' +
+    '• Name/tag changes belong to the founder only: 2,500 coins + 30-day cooldown.\n\n' +
     'Membership and roles\n' +
     '• A team holds up to 24 members including the founder.\n' +
     '• Roles: 1 founder + up to 2 assistants. Managers (founder + assistants) handle matches and lineups.\n' +

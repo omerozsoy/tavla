@@ -115,7 +115,7 @@ class TeamLeagueTest extends TestCase
         $fewRated = User::factory()->create(['plan' => 'premium', 'plan_until' => now()->addYear(), 'coins' => 100_000, 'rating' => 1500]);
         $this->assertThrowsCode('not_enough_rated_matches', fn () => $this->svc()->createTeam($fewRated, ['name' => 'B Takimi', 'tag' => 'BT']));
 
-        $broke = $this->eligibleUser(['coins' => 10_000]);
+        $broke = $this->eligibleUser(['coins' => TeamRules::FOUND_COST - 1]);
         $this->assertThrowsCode('insufficient_coins', fn () => $this->svc()->createTeam($broke, ['name' => 'C Takimi', 'tag' => 'CT']));
     }
 
