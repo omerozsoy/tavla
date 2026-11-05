@@ -21304,19 +21304,62 @@ body:has(.spectate-view) .app.lobby {
   border: 1px solid var(--border);
 }
 
-/* Takım sohbeti — daha büyük pencere + okunur satırlar */
+/* Takım sohbeti — WhatsApp stili baloncuklar (çizgi YOK): kendi mesajım sağda accent, diğerleri solda */
 .teams-chat-box {
   height: 340px; overflow-y: auto;
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 10px; padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.teams-chat-msg { display: flex; flex-direction: column; gap: 2px; }
-.teams-chat-msg + .teams-chat-msg { border-top: 1px solid var(--border); padding-top: 8px; }
-.teams-chat-meta { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text); }
-.teams-chat-time { margin-left: auto; font-size: 0.72rem; color: var(--muted); }
-.teams-chat-body { font-size: 0.92rem; line-height: 1.45; color: var(--text); word-break: break-word; white-space: pre-wrap; }
+.teams-chat-msg {
+  display: flex; flex-direction: column; gap: 2px;
+  max-width: 78%; padding: 6px 10px; border-radius: 12px;
+  background: var(--input-bg); align-self: flex-start;
+}
+.teams-chat-msg.is-mine { align-self: flex-end; background: var(--accent); color: #fff; }
+.teams-chat-meta { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; opacity: 0.8; }
+.teams-chat-time { margin-left: auto; font-size: 0.68rem; opacity: 0.75; }
+.teams-chat-body { font-size: 0.92rem; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
 .teams-create-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* Üye listesi — avatar kartı (düz metin satır yerine) */
+.teams-members { display: grid; gap: 8px; }
+.teams-member {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+.teams-member:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+/* Kurucu satırı: sol accent şeridiyle vurgulanır */
+.teams-member.is-founder { border-left: 3px solid var(--accent); }
+.teams-member-ava { flex-shrink: 0; cursor: pointer; }
+.teams-member-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.teams-member-name {
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
+  font-size: 0.98rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.teams-member-name:hover { color: var(--accent); }
+.teams-member-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.teams-member-role {
+  font-size: 0.64rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+  padding: 2px 7px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.teams-member-role.is-mgr {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.teams-member-rating { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.teams-member-rating b { color: var(--text); font-weight: 700; }
+.teams-member-actions { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
+.teams-member-you {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent); align-self: center;
+}
 
 /* ===== Turnuva detay redesign: alt-satir + hero ozet band ===== */
 .tourn-subline {

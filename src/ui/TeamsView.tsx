@@ -7,6 +7,7 @@ import { Icon } from './Icon'
 import Loading from './Loading'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import AvatarCropper from './AvatarCropper'
+import AvatarFrame from './AvatarFrame'
 import {
   acceptTeamInvite,
   acceptTeamMatch,
@@ -457,24 +458,37 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
         <AcceptTransferMaybe teamId={team.id} setNotice={props.setNotice} errText={props.errText} reload={reload} />
       )}
 
-      {/* Üyeler + rol aksiyonları */}
+      {/* Üyeler + rol aksiyonları — avatar kartı listesi */}
       <section>
         <SLabel count={detail?.members.length ?? 0}>{t('teams.members')}</SLabel>
-        {detail?.members.map((m) => (
-          <div key={m.user.id} style={row}>
-            <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', padding: 0 }}>
-              {m.user.nickname}
-            </button>
-            <TeamTag userId={m.user.id} size={20} />
-            <span style={microTag}>{t('teams.my.role.' + m.role)}</span>
-            <span style={{ flex: 1 }} />
-            {isFounder && m.role === 'member' && <Button disabled={busy} onClick={() => act(() => promoteTeamMember(team.id, m.user.id))}>{t('teams.promote')}</Button>}
-            {isFounder && m.role === 'assistant' && <Button disabled={busy} onClick={() => act(() => demoteTeamMember(team.id, m.user.id))}>{t('teams.demote')}</Button>}
-            {isFounder && m.role !== 'founder' && <Button disabled={busy} onClick={() => act(() => transferTeam(team.id, m.user.id), t('teams.transferSent'))}>{t('teams.transfer')}</Button>}
-            {isManager && m.role === 'member' && m.user.id !== props.myId &&
-              <Button variant="ghost" disabled={busy} onClick={() => act(() => kickTeamMember(team.id, m.user.id))}>{t('teams.kick')}</Button>}
-          </div>
-        ))}
+        <div className="teams-members">
+          {detail?.members.map((m) => {
+            const mgr = m.role === 'founder' || m.role === 'assistant'
+            return (
+              <div key={m.user.id} className={'teams-member' + (m.role === 'founder' ? ' is-founder' : '')}>
+                <span className="teams-member-ava" onClick={() => props.onProfile?.(m.user.id)}>
+                  <AvatarFrame src={m.user.avatar} size={42} name={m.user.nickname} animated={false} />
+                </span>
+                <div className="teams-member-main">
+                  <button className="teams-member-name" onClick={() => props.onProfile?.(m.user.id)}>{m.user.nickname}</button>
+                  <span className="teams-member-meta">
+                    <span className={'teams-member-role' + (mgr ? ' is-mgr' : '')}>{t('teams.my.role.' + m.role)}</span>
+                    <TeamTag userId={m.user.id} size={18} />
+                    {m.user.rating != null && <span className="teams-member-rating"><b>{m.user.rating}</b></span>}
+                    {m.user.id === props.myId && <span className="teams-member-you">{t('player.you')}</span>}
+                  </span>
+                </div>
+                <div className="teams-member-actions">
+                  {isFounder && m.role === 'member' && <Button disabled={busy} onClick={() => act(() => promoteTeamMember(team.id, m.user.id))}>{t('teams.promote')}</Button>}
+                  {isFounder && m.role === 'assistant' && <Button disabled={busy} onClick={() => act(() => demoteTeamMember(team.id, m.user.id))}>{t('teams.demote')}</Button>}
+                  {isFounder && m.role !== 'founder' && <Button variant="outline" disabled={busy} onClick={() => act(() => transferTeam(team.id, m.user.id), t('teams.transferSent'))}>{t('teams.transfer')}</Button>}
+                  {isManager && m.role === 'member' && m.user.id !== props.myId &&
+                    <Button variant="ghost" disabled={busy} onClick={() => act(() => kickTeamMember(team.id, m.user.id))}>{t('teams.kick')}</Button>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </section>
 
       {/* Başvurular (yönetici) — gelen bekleyen başvurular (§4) */}
@@ -515,7 +529,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
       </section>
 
       {/* Sohbet */}
-      <TeamChat teamId={team.id} canManage={isManager} />
+      <TeamChat teamId={team.id} canManage={isManager} myId={props.myId} />
 
       {/* Kapat (kurucu) */}
       {isFounder && (
@@ -549,19 +563,28 @@ function InviteBox(props: { teamId: number; act: (fn: () => Promise<unknown>, ms
   const [q, setQ] = useState('')
   const [results, setResults] = useState<LeaderRow[]>([])
   const [searching, setSearching] = useState(false)
-  const search = async () => {
-    if (!q.trim()) { setResults([]); return }
+  const search = useCallback(async (term: string) => {
+    const s = term.trim()
+    if (!s) { setResults([]); return }
     setSearching(true)
-    try { setResults(((await searchLeaderboard(q.trim(), 'rating')) as LeaderRow[]).filter((u) => u.id)) }
+    try { setResults(((await searchLeaderboard(s, 'rating')) as LeaderRow[]).filter((u) => u.id)) }
     catch { setResults([]) } finally { setSearching(false) }
-  }
+  }, [])
+  // 3 harften sonra OTOMATİK listele (debounce 300ms); <3 harf → temizle. Buton kısa sorgu için kalır.
+  useEffect(() => {
+    const s = q.trim()
+    if (s.length < 3) { setResults([]); return }
+    const id = setTimeout(() => search(s), 300)
+
+    return () => clearTimeout(id)
+  }, [q, search])
   return (
     <section>
       <SLabel>{t('teams.invite')}</SLabel>
-      {/* ID yerine ad ile ara → listeden davet et. */}
+      {/* ID yerine ad ile ara → 3 harften sonra oto-liste → davet et. */}
       <div style={{ display: 'flex', gap: 6 }}>
-        <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search() }} placeholder={t('teams.searchUser')} style={inp} />
-        <Button variant="outline" disabled={searching || !q.trim()} onClick={search}>{t('teams.searchUserBtn')}</Button>
+        <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(q) }} placeholder={t('teams.searchUser')} style={inp} />
+        <Button variant="outline" disabled={searching || !q.trim()} onClick={() => search(q)}>{t('teams.searchUserBtn')}</Button>
       </div>
       {results.length > 0 && (
         <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
@@ -638,12 +661,21 @@ function ChallengeBox(props: { teamId: number; act: (fn: () => Promise<unknown>,
   const [picked, setPicked] = useState<TeamBrief | null>(null)
   const [at, setAt] = useState('')
   const [searching, setSearching] = useState(false)
-  const search = async () => {
-    if (!q.trim()) { setResults([]); return }
+  const search = useCallback(async (term: string) => {
+    const s = term.trim()
+    if (!s) { setResults([]); return }
     setSearching(true)
-    try { setResults(((await getTeams(q.trim())).results ?? []).filter((tm) => tm.id !== props.teamId)) }
+    try { setResults(((await getTeams(s)).results ?? []).filter((tm) => tm.id !== props.teamId)) }
     catch { setResults([]) } finally { setSearching(false) }
-  }
+  }, [props.teamId])
+  // 3 harften sonra OTOMATİK listele (debounce 300ms); <3 harf → temizle. Takım ADIYLA aranır (ID değil).
+  useEffect(() => {
+    const s = q.trim()
+    if (s.length < 3) { setResults([]); return }
+    const id = setTimeout(() => search(s), 300)
+
+    return () => clearTimeout(id)
+  }, [q, search])
   return (
     <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
       <div style={{ fontSize: 13, opacity: 0.7 }}>{t('teams.challenge.hint')}</div>
@@ -651,8 +683,8 @@ function ChallengeBox(props: { teamId: number; act: (fn: () => Promise<unknown>,
       {!picked ? (
         <>
           <div style={{ display: 'flex', gap: 6 }}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search() }} placeholder={t('teams.searchOpponent')} style={inp} />
-            <Button variant="outline" disabled={searching || !q.trim()} onClick={search}>{t('teams.search')}</Button>
+            <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(q) }} placeholder={t('teams.searchOpponent')} style={inp} />
+            <Button variant="outline" disabled={searching || !q.trim()} onClick={() => search(q)}>{t('teams.search')}</Button>
           </div>
           {results.map((tm) => (
             <div key={tm.id} style={row}>
@@ -682,9 +714,9 @@ function ChallengeBox(props: { teamId: number; act: (fn: () => Promise<unknown>,
   )
 }
 
-function TeamChat(props: { teamId: number; canManage: boolean }) {
+function TeamChat(props: { teamId: number; canManage: boolean; myId: number | null }) {
   const { t } = useT()
-  const [msgs, setMsgs] = useState<Array<{ id: number; body: string; pinned: boolean; user: { nickname?: string } | null; at: string | null }>>([])
+  const [msgs, setMsgs] = useState<Array<{ id: number; body: string; pinned: boolean; user: { id?: number; nickname?: string } | null; at: string | null }>>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -703,16 +735,20 @@ function TeamChat(props: { teamId: number; canManage: boolean }) {
     <section>
       <SLabel>{t('teams.chat')}</SLabel>
       <div className="teams-chat-box" ref={boxRef}>
-        {ordered.map((m) => (
-          <div key={m.id} className="teams-chat-msg">
-            <div className="teams-chat-meta">
-              {m.pinned && <Icon name="pin" size={12} />}
-              <b>{m.user?.nickname ?? '—'}</b>
-              <span className="teams-chat-time">{fmtTR(m.at)}</span>
+        {ordered.map((m) => {
+          const mine = props.myId != null && m.user?.id === props.myId
+          return (
+            <div key={m.id} className={'teams-chat-msg' + (mine ? ' is-mine' : '')}>
+              <div className="teams-chat-meta">
+                {m.pinned && <Icon name="pin" size={12} />}
+                {/* Kendi mesajımda ad gösterme (WhatsApp grup deseni); karşı tarafın adını göster. */}
+                {!mine && <b>{m.user?.nickname ?? '—'}</b>}
+                <span className="teams-chat-time">{fmtTR(m.at)}</span>
+              </div>
+              <div className="teams-chat-body">{m.body}</div>
             </div>
-            <div className="teams-chat-body">{m.body}</div>
-          </div>
-        ))}
+          )
+        })}
         {ordered.length === 0 && <div style={{ opacity: 0.5, padding: 4 }}>{t('teams.chat.empty')}</div>}
       </div>
       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
@@ -779,20 +815,29 @@ function TeamDetailView(props: { id: number; myId: number | null; back: () => vo
       </div>
       {d.team.description && <p style={{ opacity: 0.85, margin: 0, lineHeight: 1.5 }}>{d.team.description}</p>}
 
-      {/* Üyeler — isim var(--text) ile OKUNUR (eski #fff açık temada görünmezdi) */}
+      {/* Üyeler — avatar kartı (isimler var(--text), okunur) */}
       <section>
         <SLabel count={d.members.length}>{t('teams.members')}</SLabel>
-        {d.members.map((m) => (
-          <div key={m.user.id} style={row}>
-            <button className="linklike" onClick={() => props.onProfile?.(m.user.id)} style={{ background: 'none', border: 0, color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', padding: 0 }}>
-              {m.user.nickname}
-            </button>
-            <TeamTag userId={m.user.id} size={20} />
-            <span style={microTag}>{t('teams.my.role.' + m.role)}</span>
-            <span style={{ flex: 1 }} />
-            {m.user.rating != null && <span style={{ opacity: 0.6, fontSize: 13 }}>{m.user.rating}</span>}
-          </div>
-        ))}
+        <div className="teams-members">
+          {d.members.map((m) => {
+            const mgr = m.role === 'founder' || m.role === 'assistant'
+            return (
+              <div key={m.user.id} className={'teams-member' + (m.role === 'founder' ? ' is-founder' : '')}>
+                <span className="teams-member-ava" onClick={() => props.onProfile?.(m.user.id)}>
+                  <AvatarFrame src={m.user.avatar} size={42} name={m.user.nickname} animated={false} />
+                </span>
+                <div className="teams-member-main">
+                  <button className="teams-member-name" onClick={() => props.onProfile?.(m.user.id)}>{m.user.nickname}</button>
+                  <span className="teams-member-meta">
+                    <span className={'teams-member-role' + (mgr ? ' is-mgr' : '')}>{t('teams.my.role.' + m.role)}</span>
+                    <TeamTag userId={m.user.id} size={18} />
+                    {m.user.rating != null && <span className="teams-member-rating"><b>{m.user.rating}</b></span>}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </section>
 
       {/* Karşılaşmalar */}
