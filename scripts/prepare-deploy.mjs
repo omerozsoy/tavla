@@ -38,6 +38,8 @@ for (const item of [
   'icon-192.png',
   'icon-512.png',
   'apple-touch-icon.png', // iOS ana ekran ikonu (180x180)
+  'iyzico-band.svg', // footer "iyzico ile Öde" kabul-kartı bandı
+  'iyzico-band.png', // ^ raster yedek
   'assets',
   'models',
   'fonts', // self-hosted Google Fonts woff2 (Spectral+Outfit); src/fonts.css -> /fonts/*.woff2

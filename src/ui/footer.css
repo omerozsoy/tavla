@@ -95,6 +95,19 @@
   background: linear-gradient(90deg, transparent, var(--foot-gold), var(--foot-amber), transparent);
   opacity: 0.85;
 }
+/* iyzico "ile Öde" kabul-kartı bandı: renkli/koyu-metinli olduğundan koyu footer'da
+   okunur olsun diye beyaz yuvarlak zemine oturur (marka kolonu genişliğinde). */
+.foot-pay {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 244px;
+  height: auto;
+  margin-top: 14px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #fff;
+}
 /* Ilk 3 kurum logosu: markanin altinda beyaz yuvarlak cipler (koyu footer'da okunur). */
 .foot-partners {
   display: flex;
