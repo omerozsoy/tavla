@@ -690,7 +690,9 @@ export async function getFooterConfig(): Promise<{ columns: FooterColumnCfg[]; l
 export async function getCoinPackages(): Promise<CoinPackage[]> {
   try {
     const d = await req<{ packages?: CoinPackage[] }>('/shop/coin-packages')
-    return d.packages && d.packages.length ? d.packages : COIN_PACKAGES
+    // BOŞ dizi = admin TÜM paketleri yayından kaldırdı -> boş göster (mağazadan gizle). Yalnız
+    // yanıt bozuk (packages yok) ya da ağ hatasında statik COIN_PACKAGES'e düş (dükkân yine açılır).
+    return d.packages ?? COIN_PACKAGES
   } catch {
     return COIN_PACKAGES
   }

@@ -290,7 +290,9 @@ export default function Shop({
               </section>
             )}
 
-            {/* --- Jeton paketleri: vitrinde akista (kart tiklaninca sepete) --- */}
+            {/* --- Jeton paketleri: vitrinde akista (kart tiklaninca sepete). Admin TUM paketleri
+                 yayindan kaldirdiysa (bos liste) bolumu komple gizle (baslik dahil). --- */}
+            {coinPackages.length > 0 && (
             <section className="shop-section coin-store" aria-label={coinLabel || t('shop.buyCoins')}>
               <h3 className="shop-section-t">{coinLabel || t('shop.buyCoins')}</h3>
               <div className="coin-grid">
@@ -331,6 +333,7 @@ export default function Shop({
                 })}
               </div>
             </section>
+            )}
           </>
         ) : (
           /* --- Kategori sayfasi: o kategorinin urunleri (izgara) + urun detayi --- */
