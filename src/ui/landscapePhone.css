@@ -100,3 +100,36 @@
     transition: none;
   }
 }
+
+/* Bear-off tepsisi yatay telefonda: kısa yükseklikte toplanan taşlar (off-checker)
+   SAYIYI örtüyor, KÜP alttan kesiliyordu. Düzeltme (kullanıcı yönü):
+   1) Küp EN ALTTA/ÜSTTE kendi ayrı alanında (.cube-area, slot DIŞI) -> kesilmez.
+   2) Toplanan taşlar İNCE -> daha çoğu sığar, küpün alanını yemez.
+   3) Sayı tepsi ortasında ABSOLUTE + BOLD + büyük -> taşların üstünde net görünür. */
+#root.lsphone .bearoff-slot {
+  position: relative;
+}
+#root.lsphone .off-checker {
+  height: calc(var(--checker) * 0.13);
+  min-height: 3px;
+}
+#root.lsphone .bearoff-count {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  z-index: 3;
+  pointer-events: none;
+  font-weight: 700;
+  font-size: calc(var(--checker) * 0.72);
+}
+#root.lsphone .cube-area {
+  padding: 1px 0;
+}
+#root.lsphone .cube.cube-tray {
+  width: min(var(--cube-size), calc(var(--tray-w) - 10px));
+  height: min(var(--cube-size), calc(var(--tray-w) - 10px));
+  margin: 2px auto;
+}

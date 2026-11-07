@@ -7720,6 +7720,14 @@ html[data-board='yilbasi'] .checker.black {
 }
 /* Sahiplenmiş küp bear-off tepsisinde (sahibin ucunda): mutlak değil, slot içinde normal
    akışta bir çocuk; genişliğe sığar, kare kalır. Toplanan pulların yanında yer açılır. */
+/* Küp AYRI alan: bear-off slot'larının (overflow:hidden) DIŞINDA, tepsinin alt/üst ucunda
+   kendi bölgesi. Toplanan taşlarla karışmaz, slot kırpmasından etkilenmez (küp kesilme fix). */
+.cube-area {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .cube.cube-tray {
   position: static;
   left: auto;

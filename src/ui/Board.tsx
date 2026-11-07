@@ -866,9 +866,9 @@ function Board({
         data-slot="off"
         onClick={() => offTarget && onSelectTarget('off')}
       >
+        {/* Küp üst oyuncunundaysa: tepsinin EN ÜSTÜNde AYRI alan (slot overflow:hidden DIŞI → kırpılmaz). */}
+        {cubeTraySide === 'top' && <div className="cube-area top">{cubeTrayEl}</div>}
         <div className="bearoff-slot top">
-          {/* Küp üst oyuncunundaysa: tepsinin EN ÜSTÜNde (ilk çocuk). */}
-          {cubeTraySide === 'top' && cubeTrayEl}
           {Array.from({ length: topOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
@@ -885,9 +885,9 @@ function Board({
           {Array.from({ length: bottomOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
-          {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda (son çocuk). */}
-          {cubeTraySide === 'bottom' && cubeTrayEl}
         </div>
+        {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda AYRI alan (slot DIŞI → kırpılmaz). */}
+        {cubeTraySide === 'bottom' && <div className="cube-area bottom">{cubeTrayEl}</div>}
       </div>
 
       {/* Surukleme proxy'si: document.body'ye portal (tema <html>'de -> gorunum korunur).
