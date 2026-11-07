@@ -4,17 +4,23 @@ import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
 import { type BankTransferResult } from '../api'
 import { Button } from '@/components/ui/button'
+import { iapAvailable, iapCustomerCenter } from '../nativeIAP'
 
 export default function Membership({
   current,
   onClose,
   onExtend,
+  onNativeBuy,
+  onNativeRestore,
   daysLeft,
   titleOverride,
 }: {
   current: PlanId
   onClose: () => void
   onExtend?: () => void // premiumu 1 yillik SEPETE ekler; odeme (kart/havale) SEPETTE secilir
+  // NATIVE app (Android): web sepeti yerine RevenueCat paywall -> App paywall'u açar + sunucu sync + user yeniler.
+  onNativeBuy?: () => void
+  onNativeRestore?: () => void // satın almaları geri yükle (cihaz değişimi) -> sync + user yeniler
   daysLeft?: number // aktif premium: uyeligin bitmesine kalan gun (buton alti "hemen uzat" notu)
   // onBankTransfer: artik kullanilmiyor (odeme sepette yonetiliyor); App uyumu icin opsiyonel tutuldu
   onBankTransfer?: (r: BankTransferResult) => void
@@ -23,6 +29,9 @@ export default function Membership({
 }) {
   const { t } = useT()
   useEscape(onClose)
+  // NATIVE APK'da Play Billing eklentisi varsa dijital satış ZORUNLU olarak IAP'tan (Play politikası):
+  // CTA web sepeti yerine RevenueCat paywall'u açar. Web/PWA'da native=false -> mevcut sepet akışı.
+  const native = iapAvailable()
   // Zaten premium olan uyeye "Üyeliği Yükselt" + Ücretsiz plan kiyaslamasi saçma; bu ekran
   // onlar icin "Üyeliğini Uzat" (yalniz mevcut plan + uzatma). Ucretsiz/misafir icin degismez.
   const premium = current === 'premium'
@@ -74,16 +83,16 @@ export default function Membership({
                       <Button
                         variant={isCurrent ? 'secondary' : 'default'}
                         className="w-full"
-                        onClick={() => onExtend?.()}
+                        onClick={() => (native ? onNativeBuy?.() : onExtend?.())}
                       >
-                        {isCurrent ? t('mem.status.renew') : t('products.addToCart')}
+                        {native ? t('mem.goPremium') : isCurrent ? t('mem.status.renew') : t('products.addToCart')}
                       </Button>
-                      {/* Aktif premium: buton alti "Üyeliğin bitmesine X gün kaldı, hemen uzat" -> sepete */}
+                      {/* Aktif premium: buton alti "Üyeliğin bitmesine X gün kaldı, hemen uzat" */}
                       {isCurrent && daysLeft != null && (
                         <button
                           type="button"
                           className="mem-renew-note"
-                          onClick={() => onExtend?.()}
+                          onClick={() => (native ? onNativeBuy?.() : onExtend?.())}
                           style={{ marginTop: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--muted)', textAlign: 'center' }}
                         >
                           {t('mem.daysLeft', { n: daysLeft })}
@@ -96,6 +105,20 @@ export default function Membership({
             )
           })}
         </div>
+
+        {/* NATIVE (Android IAP): App Store/Play gereği "Satın almaları geri yükle" + abonelik yönetimi
+            (RevenueCat Müşteri Merkezi). Web'de gizli (sepet/kart akışı). */}
+        {native && (
+          <div className="mem-iap-actions">
+            <button type="button" className="mem-iap-link" onClick={() => onNativeRestore?.()}>
+              {t('mem.restore')}
+            </button>
+            <span className="mem-iap-sep" aria-hidden="true">·</span>
+            <button type="button" className="mem-iap-link" onClick={() => { iapCustomerCenter().catch(() => {}) }}>
+              {t('mem.manage')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

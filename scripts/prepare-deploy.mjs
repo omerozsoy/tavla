@@ -38,6 +38,8 @@ for (const item of [
   'icon-192.png',
   'icon-512.png',
   'apple-touch-icon.png', // iOS ana ekran ikonu (180x180)
+  'tavlatv-logo.png', // marka logosu — acik zemin (TavlaTvLogo tone=auto/light)
+  'tavlatv-logo-dark.png', // marka logosu — koyu zemin (beyaz, tone=auto/dark)
   'iyzico-band.svg', // footer "iyzico ile Öde" kabul-kartı bandı
   'iyzico-band.png', // ^ raster yedek
   'assets',

@@ -12,6 +12,8 @@ dependencies {
     implementation project(':capacitor-push-notifications')
     implementation project(':capacitor-screen-orientation')
     implementation project(':capgo-capacitor-social-login')
+    implementation project(':revenuecat-purchases-capacitor')
+    implementation project(':revenuecat-purchases-capacitor-ui')
 
 }
 

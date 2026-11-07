@@ -38,8 +38,8 @@ return [
     // Netgsm SMS (telefon OTP + islemsel bildirim). usercode/password hesaptan,
     // header = onayli gonderici basligi (orn 'TAVLATV'). Uretimde .env'de tanimla.
     'netgsm' => [
-        'user'   => env('NETGSM_USER', ''),
-        'pass'   => env('NETGSM_PASS', ''),
+        'user' => env('NETGSM_USER', ''),
+        'pass' => env('NETGSM_PASS', ''),
         'header' => env('NETGSM_HEADER', ''),
     ],
 
@@ -73,6 +73,16 @@ return [
     // Uretimde .env FIREBASE_CREDENTIALS ile mutlak yol verilir; varsayilan storage/app/firebase.
     'firebase' => [
         'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/service-account.json')),
+    ],
+
+    // RevenueCat (Android Play Billing -> Premium üyelik). secret_key = RC panel > API keys > Secret
+    // (sk_...); REST ile abonelik durumu çekilir (sync/webhook SUNUCU-OTORİTER). webhook_auth = RC
+    // panel > Webhooks > Authorization header değeri (bizim doğruladığımız paylaşılan sır). İkisi de
+    // boşsa /iap endpoint'leri no-op/401 -> özellik kapalı (site etkilenmez).
+    'revenuecat' => [
+        'secret_key' => env('REVENUECAT_SECRET_KEY', ''),
+        'webhook_auth' => env('REVENUECAT_WEBHOOK_AUTH', ''),
+        'entitlement' => env('REVENUECAT_ENTITLEMENT', 'tavlatv_premium'),
     ],
 
 ];

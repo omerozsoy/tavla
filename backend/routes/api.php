@@ -35,6 +35,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\RankDivisionController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\RevenueCatController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SiteTagController;
@@ -135,6 +136,9 @@ Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [BugReportCont
 // yapmissa ContactController Bearer token'dan kullaniciyi iliskilendirir. IP basi 5/dk.
 Route::middleware('throttle:5,1,contact')->post('/contact', [ContactController::class, 'store']);
 Route::get('/pay/bank-transfer', [PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
+// RevenueCat webhook: RC sunucudan yenileme/iptal/süre-dolumu push'u. Auth header paylaşılan sır ile
+// doğrulanır (controller içinde); gövdeye güvenmez, app_user_id'den RC'ye taze sorar. HALKA AÇIK rota.
+Route::middleware('throttle:120,1,iap-webhook')->post('/iap/revenuecat/webhook', [RevenueCatController::class, 'webhook']);
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}', [TournamentController::class, 'show']); // acik poll + autoStartDue -> IP basi sinir
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
 Route::get('/clubs', [ClubController::class, 'index']);
@@ -310,6 +314,9 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/phone/verify-otp', [VerificationController::class, 'verifyPhoneOtp'])->middleware('throttle:5,1,phone-verify');
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
+    // RevenueCat (Android Play Billing) Premium senkron: app satın alma sonrası + açılışta çağrılır,
+    // RC REST'ten abone durumu SUNUCU-OTORİTER okunur (bkz RevenueCatController::sync).
+    Route::middleware('throttle:20,1,iap-sync')->post('/iap/revenuecat/sync', [RevenueCatController::class, 'sync']);
     // Ödeme/promo başlangıçlarında kullanıcı başına ayrı kova: pending ödeme ve promo
     // doğrulama satırlarının spam ile büyümesini engeller; callback limiti ayrıdır.
     Route::middleware('throttle:10,1,payment-checkout')->group(function () {

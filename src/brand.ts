@@ -22,6 +22,8 @@ export interface Brand {
   logoText: string
   /** Gerçek logo görseli gelince doldurulur; verilirse wordmark yerine <img> kullanılır. */
   logoSrc?: string
+  /** Koyu zemin varyantı (beyaz logo); verilmezse logoSrc her zeminde kullanılır. */
+  logoSrcDark?: string
   /** PWA manifest yolu (host'a göre). */
   manifest: string
   /** Cep telefonu zorunlu mu + sorulsun mu? TavlaTv (TR) evet; GammonTV (yabancı) hayır. */
@@ -37,6 +39,8 @@ const BRANDS: Record<BrandKey, Brand> = {
     // og:url) yönlendiren adresi DEĞİL hedefi göstermeli. origin yalnız SEO/canonical için kullanılır.
     origin: 'https://tavlatv.com',
     logoText: 'TAVLATV',
+    logoSrc: '/tavlatv-logo.png', // açık zemin (gri harf + kiremit üçgen)
+    logoSrcDark: '/tavlatv-logo-dark.png', // koyu zemin (beyaz)
     manifest: '/manifest.webmanifest',
     requirePhone: true,
   },

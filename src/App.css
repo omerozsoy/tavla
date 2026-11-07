@@ -11434,6 +11434,20 @@ button.acct-row-logout:hover:not(:disabled) {
     font-size: 11px;
   }
 }
+/* TavlaTv PNG logosu (tone="auto"): acik temada renkli, koyu temada beyaz varyant. */
+.ttv-logo-light,
+.ttv-logo-dark {
+  vertical-align: middle;
+}
+.ttv-logo-dark {
+  display: none;
+}
+:root:not([data-theme='light']) .ttv-logo-light {
+  display: none;
+}
+:root:not([data-theme='light']) .ttv-logo-dark {
+  display: inline-block;
+}
 /* Logo sola, hesap kontrolleri saga (auto margin bosluÄŸu doldurur). */
 .ab-brand {
   margin-right: auto;
@@ -19241,6 +19255,26 @@ body:has(.spectate-view) .app.lobby {
 }
 .mem-cta {
   text-align: center;
+}
+/* NATIVE (Android IAP): grid altında "Geri Yükle · Aboneliği Yönet" bağlantıları. */
+.mem-iap-actions {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.mem-iap-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted);
+  text-decoration: underline;
+}
+.mem-iap-sep {
+  color: var(--muted);
 }
 /* Ucretli planin "Abone Ol" alani kaydirma kabinda (.mem-card) yapiskan: plan karti gorunurken
    dugme her zaman altta gorunur (yatay telefonda ilk ekranda kaliyordu). */

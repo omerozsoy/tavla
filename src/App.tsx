@@ -616,8 +616,11 @@ import {
   type FooterLinkCfg,
   type SponsorCfg,
   type ServerUser,
+  syncRevenueCat,
+  me,
 } from './api'
 import { initPush } from './push'
+import { iapIdentify, iapLogout, iapPresentPaywall, iapRestore } from './nativeIAP'
 import { lockLandscape, lockPortrait } from './orientation'
 
 // Geri sayim bicimi: saniye -> "S:DD:SS"
@@ -2619,6 +2622,21 @@ export default function App() {
   useEffect(() => {
     if (user) void initPush()
   }, [user])
+
+  // NATIVE uygulamada: giriş yapınca RevenueCat'i kullanıcıyla tanıt + sunucu-sync (abonelik
+  // yenileme/süre dolumu webhook gecikse bile premium güncel kalsın), sonra planı yansıtmak için
+  // user'ı yenile. Web/PWA'da iap bridge yok -> iapIdentify fırlatır, catch ile sessizce atlanır.
+  useEffect(() => {
+    if (!user) return
+    void (async () => {
+      try {
+        await iapIdentify(user.id)
+        const r = await syncRevenueCat()
+        if (r.plan !== user.plan_active) setUser(await me())
+      } catch { /* native değil / bridge yok -> yoksay */ }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   // Giris yapmissa oyunu sunucuya da kaydet (debounce)
   useEffect(() => {
@@ -8475,8 +8493,42 @@ export default function App() {
     setMessage(t('msg.newMatch'))
   }
 
+  // NATIVE (Android IAP): RevenueCat paywall -> satın alma sonrası SUNUCU sync (RC REST otoriter) ->
+  // user yenile. Web'de bu yollar hiç çağrılmaz (Membership native=false -> sepet akışı).
+  async function handleNativeBuy() {
+    if (!user) return
+    try {
+      await iapIdentify(user.id)
+      const r = await iapPresentPaywall()
+      if (r === 'PURCHASED' || r === 'RESTORED') {
+        await syncRevenueCat().catch(() => {})
+        try { setUser(await me()) } catch { /* yoksay: webhook yine de yazar */ }
+        setMemOpen(false)
+        notify.success(t('mem.iapRestored'))
+      } else if (r === 'ERROR') {
+        notify.error(t('mem.iapFailed'))
+      }
+      // CANCELLED / NOT_PRESENTED: sessiz (kullanıcı vazgeçti)
+    } catch {
+      notify.error(t('mem.iapFailed'))
+    }
+  }
+  async function handleNativeRestore() {
+    if (!user) return
+    try {
+      const ok = await iapRestore()
+      await syncRevenueCat().catch(() => {})
+      try { setUser(await me()) } catch { /* yoksay */ }
+      notify[ok ? 'success' : 'info'](t(ok ? 'mem.iapRestored' : 'mem.iapNone'))
+      if (ok) setMemOpen(false)
+    } catch {
+      notify.error(t('mem.iapFailed'))
+    }
+  }
+
   function handleLogout() {
     setCartItems([]) // A-30: bellekteki sepet de (effect onu yeniden localStorage'a yazmasın)
+    void iapLogout() // RevenueCat kullanıcısını da anonimleştir (sonraki kullanıcı karışmasın)
     setUser(null)
     setGuestProfile(null)
     // Çıkıştan sonra GİRİŞ sayfasına (/giris) yönlen. apiLogout sunucuda token'ı iptal edip YEREL
@@ -11005,6 +11057,8 @@ export default function App() {
               : undefined
           }
           onClose={() => setMemOpen(false)}
+          onNativeBuy={handleNativeBuy}
+          onNativeRestore={handleNativeRestore}
           onExtend={() => {
             // "Üyeliğini Uzat": 1 yillik premium tek urun sepeti -> /sepet -> odeme
             setCartItems([{ id: MEMBERSHIP_ITEM_ID, qty: 1, kind: 'membership' }])

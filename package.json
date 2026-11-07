@@ -27,6 +27,8 @@
     "@capacitor/screen-orientation": "^8.0.2",
     "@capgo/capacitor-social-login": "^8.7.3",
     "@hookform/resolvers": "^5.9.1",
+    "@revenuecat/purchases-capacitor": "^14.1.0",
+    "@revenuecat/purchases-capacitor-ui": "^14.1.0",
     "@tabler/icons-react": "^3.48.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tsparticles/engine": "^4.3.2",

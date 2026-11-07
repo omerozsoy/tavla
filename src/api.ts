@@ -408,6 +408,12 @@ export async function me(timeoutMs = 10_000): Promise<ServerUser> {
   return data.user
 }
 
+// RevenueCat (Android Play Billing) Premium senkronu: app satın alma sonrası + açılışta çağrılır.
+// Sunucu RC REST'ten abone durumunu OTORİTER okur, premium'u uygular. Döner: güncel plan durumu.
+export async function syncRevenueCat(): Promise<{ ok: boolean; premium: boolean; plan: string; plan_until: string | null }> {
+  return req('/iap/revenuecat/sync', { method: 'POST' })
+}
+
 // Acilista oturumu coz: gecici hatada (ag kopuk, 5xx) kisa geri-cekilmeyle tekrar dene
 // (1s, 2s, 4s). 401 (gecersiz token) aninda firlar; deneme bitince son hata firlar.
 export async function meWithRetry(isCancelled: () => boolean, tries = 4): Promise<ServerUser> {
