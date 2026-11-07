@@ -40,7 +40,7 @@ const BRANDS: Record<BrandKey, Brand> = {
     origin: 'https://tavlatv.com',
     logoText: 'TAVLATV',
     logoSrc: '/tavlatv-logo.png', // açık tema (gri harf + kiremit üçgen, şeffaf)
-    logoSrcDark: '/tavlatv-logo-dishi.png', // koyu tema dişi (beyaz harf + kiremit üçgen, şeffaf); yeni ad = CF cache-bust (eski -dark.png 04'tü)
+    logoSrcDark: '/tavlatv-logo-dishi2.png', // koyu tema dişi (beyaz harf + kiremit üçgen, şeffaf); açık logoyla aynı içerik/tuval oranı (eşit boyut) + CF cache-bust
     manifest: '/manifest.webmanifest',
     requirePhone: true,
   },
