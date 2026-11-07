@@ -20,8 +20,10 @@ export interface Brand {
   origin: string // kanonik origin (mutlak URL üretimi)
   /** Wordmark harfleri. 'A'→yukarı üçgen, 'V'→aşağı üçgen; diğer harfler düz. */
   logoText: string
-  /** Gerçek logo görseli (şeffaf PNG); verilirse wordmark yerine <img> kullanılır. */
+  /** Gerçek logo görseli (şeffaf PNG, açık tema); verilirse wordmark yerine <img> kullanılır. */
   logoSrc?: string
+  /** Koyu tema "dişi" varyantı (beyaz harf + turuncu üçgen, şeffaf); yoksa logoSrc kullanılır. */
+  logoSrcDark?: string
   /** PWA manifest yolu (host'a göre). */
   manifest: string
   /** Cep telefonu zorunlu mu + sorulsun mu? TavlaTv (TR) evet; GammonTV (yabancı) hayır. */
@@ -37,7 +39,8 @@ const BRANDS: Record<BrandKey, Brand> = {
     // og:url) yönlendiren adresi DEĞİL hedefi göstermeli. origin yalnız SEO/canonical için kullanılır.
     origin: 'https://tavlatv.com',
     logoText: 'TAVLATV',
-    logoSrc: '/tavlatv-logo.png', // şeffaf, her temada (gri harf + kiremit üçgen)
+    logoSrc: '/tavlatv-logo.png', // açık tema (gri harf + kiremit üçgen, şeffaf)
+    logoSrcDark: '/tavlatv-logo-dark.png', // koyu tema dişi (beyaz harf + kiremit üçgen, şeffaf)
     manifest: '/manifest.webmanifest',
     requirePhone: true,
   },
