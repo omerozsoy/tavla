@@ -252,11 +252,19 @@ export default function MatchResult({
   // yaratıyordu. Hazır olana kadar render'da loader; analiz yoksa "—" (bkz. aşağıdaki Şans satırı).
   const useGnubgPct = winnerLuckPct != null && loserLuckPct != null
   const luckAnalyzing = analyzing || analyzingBoth || oppAnalyzing
-  const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(0)}%`
+  // Yuvarlanmış değere göre işaret/renk: -0.3 gibi küçük negatif "-0%" veriyordu
+  // (toFixed(0) === "-0" + v>=0 false). round==0 -> işaretsiz "0%" + nötr renk.
+  const fmtPct = (v: number) => {
+    const r = Math.round(v)
+    return `${r > 0 ? '+' : r < 0 ? '-' : ''}${Math.abs(r)}%`
+  }
+  const luckCls = (v: number | null | undefined) => {
+    if (!useGnubgPct || v == null) return ''
+    const r = Math.round(v)
+    return r > 0 ? 'mr-pos' : r < 0 ? 'mr-neg' : ''
+  }
   const wLuckText = useGnubgPct ? fmtPct(winnerLuckPct as number) : null
   const lLuckText = useGnubgPct ? fmtPct(loserLuckPct as number) : null
-  const wLuckPos = useGnubgPct ? (winnerLuckPct as number) >= 0 : false
-  const lLuckPos = useGnubgPct ? (loserLuckPct as number) >= 0 : false
   // Komisyon (asimetrik): kazanan +won / kaybeden -lost. Yoksa simetrik coinAmount.
   const asymCoin = winnerCoin != null && loserCoin != null
   const fmtCoins = (isWinner: boolean) => {
@@ -402,11 +410,11 @@ export default function MatchResult({
             </div>
           )}
           <div className="mr-row">
-            <span className={`mr-a ${useGnubgPct ? (wLuckPos ? 'mr-pos' : 'mr-neg') : ''}`}>
+            <span className={`mr-a ${luckCls(winnerLuckPct)}`}>
               {wLuckText ?? (luckAnalyzing ? dots() : '—')}
             </span>
             <span className="mr-label">{t('mr.luck')}</span>
-            <span className={`mr-b ${useGnubgPct ? (lLuckPos ? 'mr-pos' : 'mr-neg') : ''}`}>
+            <span className={`mr-b ${luckCls(loserLuckPct)}`}>
               {lLuckText ?? (luckAnalyzing ? dots() : '—')}
             </span>
           </div>

@@ -39,7 +39,10 @@ function prCls(pr: number | null | undefined): string {
 // yoksa ham equity luck'ini okunur isaretli skora olcekle (x100). Ikisi de null -> gosterme.
 // Şans = yalnız gnubg NATIVE MWC% (istemci HAM luck fallback KALDIRILDI). Yoksa null -> "—".
 function luckLabel(mwc?: number | null): { text: string; pos: boolean } | null {
-  if (mwc != null) return { text: `${mwc >= 0 ? '+' : ''}${mwc.toFixed(0)}%`, pos: mwc >= 0 }
+  if (mwc != null) {
+    const r = Math.round(mwc) // -0.3 "-0%" veriyordu (toFixed(0)==="-0"); yuvarla + işaret yeniden
+    return { text: `${r > 0 ? '+' : r < 0 ? '-' : ''}${Math.abs(r)}%`, pos: r >= 0 }
+  }
   return null
 }
 

@@ -19,7 +19,12 @@ const fmtPR = (n: number | null) => (fin(n) ? n.toFixed(2) : DASH)
 const fmtCount = (n: number | null) => (fin(n) ? String(Math.round(n)) : DASH)
 // Equity kaybı = "cost": pozitif loss'u negatif gösterir (GNU/XG konvansiyonu). Gerçek 0 -> 0.000.
 const fmtCost = (n: number | null) => (fin(n) ? (n === 0 ? '0.000' : `−${n.toFixed(3)}`) : DASH)
-const fmtLuck = (n: number | null) => (fin(n) ? `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(0)}%` : DASH)
+// Yuvarlanmış değere göre işaret: -0.3 "−0%" veriyordu (işaret yuvarlamadan önce n'e bakıyordu).
+const fmtLuck = (n: number | null) => {
+  if (!fin(n)) return DASH
+  const r = Math.round(n as number)
+  return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r)}%`
+}
 // "2 (1)" = hata (blunder)
 const fmtErr = (errors: number, blunders: number) => `${errors} (${blunders})`
 
