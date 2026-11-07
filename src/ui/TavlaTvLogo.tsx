@@ -51,26 +51,17 @@ export function TavlaTvLogo({
   const down = color ?? (c ? c.down : 'var(--text)')
   const textColor = color ?? (c ? c.text : 'var(--text)')
 
-  // Gercek marka logosu (PNG) tanimliysa wordmark yerine <img>.
-  // Istisna: `color` verilen kullanimlar (tahta filigrani, mono) tek-renk ister -> img
-  // renklendirilemez, bu yuzden CSS wordmark'ta kalirlar.
+  // Gercek marka logosu (seffaf PNG) tanimliysa wordmark yerine <img> — her temada ayni
+  // renkli logo. Istisna: `color` verilen kullanimlar (tahta filigrani, mono) tek-renk ister
+  // -> img renklendirilemez, bu yuzden CSS wordmark'ta kalirlar.
   if (BRAND.logoSrc && !color && tone !== 'mono') {
-    const dark = BRAND.logoSrcDark ?? BRAND.logoSrc
-    const fixed = { height: size, width: 'auto', display: 'inline-block' } as const
-    // Koyu zemin garantili (dark/brick) -> beyaz logo; acik zemin (light) -> renkli.
-    if (tone === 'dark' || tone === 'brick') {
-      return <img src={dark} alt={BRAND.name} className={className} style={fixed} />
-    }
-    if (tone === 'light') {
-      return <img src={BRAND.logoSrc} alt={BRAND.name} className={className} style={fixed} />
-    }
-    // auto: zemin uygulama temasini izler -> iki img, CSS data-theme ile toggle.
-    const cls = (extra: string) => `${extra}${className ? ' ' + className : ''}`
     return (
-      <>
-        <img src={BRAND.logoSrc} alt={BRAND.name} className={cls('ttv-logo-light')} style={{ height: size, width: 'auto' }} />
-        <img src={dark} alt="" aria-hidden className={cls('ttv-logo-dark')} style={{ height: size, width: 'auto' }} />
-      </>
+      <img
+        src={BRAND.logoSrc}
+        alt={BRAND.name}
+        className={className}
+        style={{ height: size, width: 'auto', display: 'inline-block' }}
+      />
     )
   }
 

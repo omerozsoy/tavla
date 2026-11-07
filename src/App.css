@@ -11434,20 +11434,6 @@ button.acct-row-logout:hover:not(:disabled) {
     font-size: 11px;
   }
 }
-/* TavlaTv PNG logosu (tone="auto"): acik temada renkli, koyu temada beyaz varyant. */
-.ttv-logo-light,
-.ttv-logo-dark {
-  vertical-align: middle;
-}
-.ttv-logo-dark {
-  display: none;
-}
-:root:not([data-theme='light']) .ttv-logo-light {
-  display: none;
-}
-:root:not([data-theme='light']) .ttv-logo-dark {
-  display: inline-block;
-}
 /* Logo sola, hesap kontrolleri saga (auto margin bosluÄŸu doldurur). */
 .ab-brand {
   margin-right: auto;
