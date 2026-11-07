@@ -6082,8 +6082,11 @@ button[aria-disabled='true'],
   left: calc(10px + env(safe-area-inset-left));
   z-index: 80;
   display: inline-flex;
+  /* İki satır: "MAÇ ID" etiketi üstte, #kod + kopya ikonu altta (kullanıcı isteği). */
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  column-gap: 5px;
+  row-gap: 1px;
   padding: 3px 7px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--game-scene) 60%, transparent);
@@ -6108,9 +6111,11 @@ button[aria-disabled='true'],
   color: var(--accent-text);
 }
 .match-id-hud__label {
+  flex-basis: 100%; /* etiket tek başına ilk satır -> kod alt satıra iner */
   opacity: 0.66;
   text-transform: uppercase;
   font-size: 0.6rem;
+  line-height: 1;
 }
 .match-id-hud__code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -10708,12 +10713,15 @@ html.fs-active .account-bar {
     padding-top: 4px;
     gap: 4px;
   }
-  /* Yatay: max-width:900 kurali game-area'yi column yapiyordu -> geri ROW (panel|saat|board) */
+  /* Yatay: max-width:900 kurali game-area'yi column yapiyordu -> geri ROW (panel|saat|board).
+     SOLA HİZALA + sağda sabit rail (hamburger/sohbet) için boşluk: board cluster'ı sola çeker,
+     sağdaki game-ham + chat düğmeleri board'un / bear-off tepsisinin ÜSTÜNE binmez. */
   .game-area {
     flex-direction: row;
+    justify-content: flex-start;
     align-items: center;
     gap: 6px;
-    padding: 4px;
+    padding: 4px calc(52px + env(safe-area-inset-right)) 4px calc(4px + env(safe-area-inset-left));
   }
   .sidebar {
     width: 104px;
@@ -10750,6 +10758,47 @@ html.fs-active .account-bar {
     width: 40px;
     height: 32px;
     font-size: 1.2rem;
+  }
+  /* Yatay telefonda yan panel yazıları KÜÇÜLSÜN. Taban .main.game-scene kuralları (0,3,0)
+     düşük-özgüllüklü .player-name/.player-rating'i (0,1,0) eziyordu -> burada da game-scene
+     öneki ile yaz: eşit özgüllük + kaynakta SONRA geldiği için kazanır (kullanıcı: isimler/
+     rating/maç uzunluğu/pot BÜYÜK -> azıcık küçült). */
+  .main.game-scene .player-name {
+    font-size: 0.82rem;
+  }
+  .main.game-scene .player-rating {
+    font-size: 0.78rem;
+  }
+  .main.game-scene .player-rating > svg {
+    width: 15px;
+    height: 15px;
+  }
+  .main.game-scene .pc-pr .pr-val {
+    font-size: 0.72rem;
+  }
+  /* Maç Uzunluğu + Pot (sm-lbl/sm-val) büyüktü -> kompakt. */
+  .main.game-scene .sm-lbl {
+    font-size: 0.74rem;
+  }
+  .main.game-scene .sm-val {
+    font-size: 0.88rem;
+  }
+  .main.game-scene .sidebar-meta {
+    gap: 4px;
+    padding: 8px 6px;
+    margin: 4px 0;
+  }
+  /* Maç ID rozeti: kompakt + 2 satır (etiket/koda); üst oyuncu kartına değmesin. */
+  .main.game-scene .sidebar {
+    padding-top: 40px;
+  }
+  .match-id-hud {
+    font-size: 0.6rem;
+    min-height: 0;
+    padding: 2px 6px;
+  }
+  .match-id-hud__label {
+    font-size: 0.48rem;
   }
 }
 
