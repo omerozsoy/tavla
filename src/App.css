@@ -10800,6 +10800,23 @@ html.fs-active .account-bar {
   .match-id-hud__label {
     font-size: 0.48rem;
   }
+  /* Genişliği >900px olan yatay telefonlarda (S25 FE gibi) max-width:900 kuralı tetiklenmeyip
+     .game-ham AKIŞTA kalıyor -> board'un hemen sağına, bear-off (toplanan taş: 7/2) tepsisinin
+     ÜSTÜNE biniyordu. Yatay-telefonda DAİMA sabitle: board flex-start ile sola yaslı, hamburger +
+     sohbet sağ boşlukta durur, hiçbir şeyin üstüne gelmez. */
+  .game-ham {
+    position: fixed;
+    right: calc(6px + env(safe-area-inset-right));
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+  /* Tam ekran düğmesi: APK zaten tam ekran açılıyor -> gereksiz, gizle (kullanıcı isteği). */
+  .fs-toggle {
+    display: none;
+  }
 }
 
 /* ÇOK KISA yatay (≤420px: iPhone SE 568×320, iPhone mini 812×375): iki oyuncu kartının
