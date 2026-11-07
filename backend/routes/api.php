@@ -100,6 +100,7 @@ Route::post('/csp-report', function (Request $r) {
 Route::get('/leaderboard', [LeaderboardController::class, 'leaderboard']);
 Route::get('/leaderboard/pr', [LeaderboardController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
 Route::get('/leaderboard/search', [LeaderboardController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
+Route::get('/duels/leaderboard', [LeaderboardController::class, 'duelLeaderboard']); // Bireysel Düello sıralaması (bireysel + takım)
 Route::get('/top-ranks', [LeaderboardController::class, 'topRanks']); // site geneli top-3 rozet haritası (PR madalya + Rating kupa)
 Route::get('/roles', [AuthController::class, 'roles']); // site geneli rol haritası (yönetici + destek id'leri -> isim yanı kalkan)
 Route::get('/achievements', [AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)

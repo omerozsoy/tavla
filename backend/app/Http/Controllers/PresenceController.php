@@ -357,11 +357,18 @@ class PresenceController extends Controller
             // min %10'a düşer -> hiçbir insan-insan maçı bedava kurulamaz. enter() p2 katılımında
             // odaya taşınır + pct_stake_snapshot üretilir.
             'bet_pct' => ['nullable', 'integer', 'in:10,20,30,50,75,100'],
+            // BIREYSEL DUELLO: coin/bahis YOK, puansız (unrated). target yalnız 1/3/5. duel yoksa
+            // davranış AYNEN (bahisli arkadaş maçı) kalır.
+            'duel' => ['nullable', 'boolean'],
         ]);
-        // Davet eden en az 1 kullanılabilir coin'e sahip olmalı (yüzde bahis min pot). Gerçek iki-taraflı
-        // yeterlilik enter()'da; bu erken uyarı 0 coin'le anlamsız (snapshot=0) davet atılmasını önler.
-        $betPct = (int) ($settings['bet_pct'] ?? 10) ?: 10;
-        if ((int) (($me->coins ?? 0) - ($me->coins_reserved ?? 0)) < 1) {
+        $isDuel = (bool) ($settings['duel'] ?? false);
+        if ($isDuel && ! in_array((int) ($settings['target'] ?? 0), [1, 3, 5], true)) {
+            return $this->fail('Düello uzunluğu 1, 3 veya 5 puan olmalı.', 422);
+        }
+        // Düello: potsuz (bahis/coin yok). Normal davet: en az 1 kullanılabilir coin (yüzde bahis min pot).
+        // Gerçek iki-taraflı yeterlilik enter()'da; bu erken uyarı 0 coin'le anlamsız davet atılmasını önler.
+        $betPct = $isDuel ? 0 : ((int) ($settings['bet_pct'] ?? 10) ?: 10);
+        if (! $isDuel && (int) (($me->coins ?? 0) - ($me->coins_reserved ?? 0)) < 1) {
             return $this->fail('Bahisli maç için yeterli coin\'in yok.', 422);
         }
         $target = User::find($userId);
@@ -416,9 +423,11 @@ class PresenceController extends Controller
             'room_code' => $code,
             'target' => $settings['target'] ?? 1,
             'time_control' => $settings['time_control'] ?? null,
-            'unrated' => (bool) ($settings['unrated'] ?? true),
+            // Düello DAIMA puansız (unrated=true); enter() bunu odaya taşır (RatingPolicy puansız sayar).
+            'unrated' => $isDuel ? true : (bool) ($settings['unrated'] ?? true),
             'classic' => (bool) ($settings['classic'] ?? false),
-            'bet_pct' => $betPct, // yüzde bahis (enter() odaya taşır + snapshot)
+            'bet_pct' => $betPct, // yüzde bahis (enter() odaya taşır + snapshot); düello = 0 (potsuz)
+            'duel' => $isDuel,
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),

@@ -190,7 +190,7 @@ class TeamLeagueTest extends TestCase
     public function test_capacity_guard_on_accept(): void
     {
         $team = $this->makeTeam();
-        // Doldur: kurucu + 23 üye = 24 (kapasite).
+        // Doldur: kurucu + (CAPACITY-1) üye = CAPACITY (kapasite).
         for ($i = 0; $i < TeamRules::CAPACITY - 1; $i++) {
             $u = User::factory()->create(['rating' => 1500]);
             TeamMember::create(['team_id' => $team->id, 'user_id' => $u->id, 'role' => 'member', 'joined_at' => now()]);

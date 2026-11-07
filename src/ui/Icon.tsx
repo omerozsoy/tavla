@@ -129,6 +129,7 @@ import {
   IconSend,
   IconSpeakerphone,
   IconSword,
+  IconSwords,
   IconHeart,
   IconHeartFilled,
 } from '@tabler/icons-react'
@@ -247,6 +248,7 @@ export type IconName =
   | 'smiley-sad'
   | 'megaphone'
   | 'sword'
+  | 'swords'
   | 'heart'
   | 'chart-bar-popular'
 
@@ -365,6 +367,7 @@ const MAP: Record<IconName, TablerIcon> = {
   'paper-plane-right': IconSend,
   megaphone: IconSpeakerphone,
   sword: IconSword,
+  swords: IconSwords,
   heart: IconHeart,
   'chart-bar-popular': IconChartBar,
 }

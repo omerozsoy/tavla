@@ -451,14 +451,18 @@ export function OnlinePlayersPanel({
   currentId,
   onProfile,
   onInvite,
+  onDuel,
 }: {
   currentName?: string
   currentId?: number // giris yapan kullanici -> listede en uste sabitlenir (kendini gor)
   onProfile: (id: number) => void
   onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void // maca davet et (giris yapmis kullanici)
+  // Düello daveti: Play'in yanında IconSwords -> tıklayınca 1/3/5 uzunluk seçici -> puansız düello daveti.
+  onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }, points: 1 | 3 | 5) => void
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
+  const [duelFor, setDuelFor] = useState<number | null>(null) // hangi satırda düello uzunluk seçici açık
   const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (Liderlik Tablosu gibi)
   const PAGE_SIZE = 10
   const MAX_PAGES = 10 // en fazla 100 kisi
@@ -577,6 +581,37 @@ export function OnlinePlayersPanel({
                     </span>
                   ) : !self && onInvite && p.status !== 'busy' ? (
                     <span className="online-actions">
+                      {/* Düello: IconSwords -> 1/3/5 uzunluk seçici -> puansız düello daveti (galibiyet sıralaması). */}
+                      {onDuel &&
+                        (duelFor === p.id ? (
+                          <span className="online-duel-pick">
+                            {([1, 3, 5] as const).map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                className="online-duel-len"
+                                title={t('duel.points', { n })}
+                                onClick={() => {
+                                  setDuelFor(null)
+                                  onDuel({ id: p.id, name: p.name, avatar: p.avatar, rating: p.rating }, n)
+                                }}
+                              >
+                                {n}
+                              </button>
+                            ))}
+                          </span>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="online-act online-duel-btn"
+                            title={t('online.duel')}
+                            aria-label={t('online.duel')}
+                            onClick={() => setDuelFor(p.id)}
+                          >
+                            <Icon name="swords" size={18} />
+                          </Button>
+                        ))}
                       <Button
                         variant="default"
                         size="icon"

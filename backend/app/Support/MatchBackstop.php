@@ -76,6 +76,16 @@ class MatchBackstop
 
         self::backfillScores($room);
 
+        // BIREYSEL DUELLO: oda bitmiş ama istemci raporlamamış olabilir -> düello galibiyetini
+        // SUNUCUDA tamamla (idempotent; reportRating da aynı çağrıyı yapar). best-effort.
+        if ($room->duel) {
+            try {
+                app(DuelService::class)->record($room);
+            } catch (\Throwable $e) {
+                // düello hatası backstop akışını (match_results yazımını) bozmasın
+            }
+        }
+
         return $written;
     }
 

@@ -30,6 +30,8 @@ export const PAGES: PageDef[] = [
   { key: 'match', slug: 'yeni-oyun', labelKey: 'menu.match', icon: 'chart-bar-popular', group: 'play', hideInGame: true },
   { key: 'aiGame', slug: 'yz-ile-oyna', labelKey: 'menu.aiGame', icon: 'robot-face', group: 'play', hideInGame: true },
   { key: 'playFriend', slug: 'arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'play', hideInGame: true },
+  // Bireysel Düello: çevrimiçi oyuncuyu puansız 1/3/5 düelloya davet et + 3 sekmeli sıralama.
+  { key: 'duel', slug: 'duello', labelKey: 'menu.duel', icon: 'sword', group: 'play', hideInGame: true },
 
   // --- KLASIK TAVLA OYNA: ayrı ana dal (Modern Tavla Oyna'nın ALTINDA). Küp yok + mars=2.
   // İKİ öğe: Arkadaşınla Oyna (klasik davet/oda) + Yapay Zeka ile Oyna (klasik bot).

@@ -25,6 +25,7 @@ use App\Services\WelcomeGrant;
 use App\Services\WxpService;
 use App\Support\AvatarStore;
 use App\Support\Brand;
+use App\Support\DuelService;
 use App\Support\EmailVerification;
 use App\Support\MatchFinalize;
 use App\Support\NicknameFilter;
@@ -951,6 +952,15 @@ class AuthController extends Controller
         // kapandı/ağ) verisi 5-20 dk cron beklemeden saniyeler içinde dolar. Best-effort (akışı kırmaz).
         if ($room) {
             MatchFinalize::run($room->fresh() ?? $room);
+            // BIREYSEL DUELLO: düello odası bitince galibiyeti yaz (rating'e dokunmaz; idempotent).
+            // try/catch: düello hatası rating/sonuç yanıtını ASLA bozmasın (best-effort).
+            if ($room->duel) {
+                try {
+                    app(DuelService::class)->record($room->fresh() ?? $room);
+                } catch (\Throwable $e) {
+                    Log::warning('duel record hata (yok sayildi)', ['room' => $room->code ?? null, 'err' => $e->getMessage()]);
+                }
+            }
         }
         // Sonuç ekranı "puansız maç" etiketi için: bu maç PUANLI mı + değilse SEBEP. Kullanıcı,
         // kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu -> açıklayıcı not göster.

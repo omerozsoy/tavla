@@ -1804,6 +1804,13 @@ class RoomController extends Controller
             // YÜZDE BAHİS: davet eden pot seçti (min %10). p2 enter()'ında snapshot + coin kontrolü
             // yapılır (matchmaking para-yolu ile aynı). Potsuz davet maçı YASAK (kullanıcı direktifi).
             $createAttrs['bet_pct'] = (int) ($invite->bet_pct ?? 0);
+            // BIREYSEL DUELLO: davet düello ise oda duel=true + puansız (unrated zaten davetten geldi).
+            // Normal arkadaş maçı davranışı DEĞİŞMEZ (duel yoksa/false kolon default 0).
+            if (Schema::hasColumn('rooms', 'duel') && ! empty($invite->duel)) {
+                $createAttrs['duel'] = true;
+                $createAttrs['unrated'] = true;
+                $createAttrs['mode'] = 'friendly';
+            }
         } elseif (! Cache::has(TournamentController::roomTargetKey($code))) {
             // Davetsiz + turnuva dışı: rastgele kodla kurulan özel oda = arkadaşlık maçı (A-04).
             // Eskiden mode NULL kalıyor ve RatingPolicy NULL'u "dereceli, limitsiz" sayıyordu ->

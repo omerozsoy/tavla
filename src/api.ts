@@ -583,6 +583,27 @@ export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[
   return { players: d.players, minMatches: d.min_matches, minDecisions: d.min_decisions }
 }
 
+// Bireysel Düello sıralaması: bireysel galibiyet + takım (üyelerin toplam düello galibiyeti).
+export interface DuelIndividualRow {
+  user_id: number
+  nickname: string
+  avatar?: string | null
+  rating: number
+  wins: number
+}
+export interface DuelTeamRow {
+  team_id: number
+  name: string
+  tag: string
+  logo?: string | null
+  color1: string
+  color2: string
+  wins: number
+}
+export async function duelLeaderboard(limit = 100): Promise<{ individual: DuelIndividualRow[]; teams: DuelTeamRow[] }> {
+  return req<{ individual: DuelIndividualRow[]; teams: DuelTeamRow[] }>(`/duels/leaderboard?limit=${limit}`)
+}
+
 // Liderlik araması (ilk 100'de olmayanlar kendini bulur): isme göre eşleşen oyuncular + GERÇEK sırası.
 // Dönen satır by'a göre LeaderRow (rating/coins/wxp) veya PrLeaderRow (pr) — çağıran bildiği için cast eder.
 export async function searchLeaderboard(q: string, by: 'rating' | 'coins' | 'wxp' | 'pr'): Promise<(LeaderRow | PrLeaderRow)[]> {
@@ -1244,12 +1265,17 @@ export async function deleteNotifications(ids?: number[]): Promise<void> {
 }
 export async function inviteFriend(
   userId: number,
-  opts?: { target?: number; timeControl?: string; unrated?: boolean; classic?: boolean; betPct?: number },
+  opts?: { target?: number; timeControl?: string; unrated?: boolean; classic?: boolean; betPct?: number; duel?: boolean },
 ): Promise<{ code: string; ratingPreview?: { win: number; loss: number } | null }> {
-  return req(`/friends/${userId}/invite`, {
-    method: 'POST',
-    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated, classic: !!opts?.classic, bet_pct: opts?.betPct ?? 10 }),
-  })
+  // Düello: potsuz + puansız -> bet_pct GÖNDERME (backend 0'a zorlar), duel:true işaretle.
+  const body = opts?.duel
+    ? { target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, duel: true }
+    : { target: opts?.target ?? 1, time_control: opts?.timeControl ?? null, unrated: !!opts?.unrated, classic: !!opts?.classic, bet_pct: opts?.betPct ?? 10 }
+  return req(`/friends/${userId}/invite`, { method: 'POST', body: JSON.stringify(body) })
+}
+// Bireysel Düello daveti: çevrimiçi oyuncuyu 1/3/5 puanlık puansız düelloya çağır (coin/bahis yok).
+export async function inviteDuel(userId: number, points: 1 | 3 | 5): Promise<{ code: string }> {
+  return inviteFriend(userId, { target: points, duel: true }) as Promise<{ code: string }>
 }
 export async function respondInvite(
   id: number,

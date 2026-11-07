@@ -13,7 +13,7 @@ final class TeamRules
 
     public const MIN_RATED_MATCHES = 20;       // tamamlanmış puanlı maç
 
-    public const CAPACITY = 24;                 // kurucu + yardımcılar dahil
+    public const CAPACITY = 12;                 // kurucu + yardımcılar dahil
 
     public const NAME_MIN = 3;
 

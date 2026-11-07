@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\CareerPrService;
+use App\Support\DuelService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -62,6 +63,19 @@ class LeaderboardController extends Controller
         });
 
         return response()->json(['players' => $rows]);
+    }
+
+    // Herkese acik: BIREYSEL DUELLO SIRALAMASI + takım düello sıralaması. 30sn cache (rating gibi).
+    // individual: düello galibiyeti (duels.winner_id COUNT); teams: kazananın takımı toplamı.
+    public function duelLeaderboard(Request $request)
+    {
+        $limit = min(100, max(1, (int) $request->query('limit', 100)));
+        $data = Cache::remember("duel_leaderboard:{$limit}", 30, fn () => [
+            'individual' => DuelService::individualLeaderboard($limit),
+            'teams' => DuelService::teamLeaderboard($limit),
+        ]);
+
+        return response()->json($data);
     }
 
     // Herkese acik: PR SIRALAMASI (Career PR). Havuzlanmis PR (dusuk=iyi). Asgari maç + karar

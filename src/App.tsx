@@ -169,6 +169,7 @@ import ConfirmModal from './ui/ConfirmModal'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
+import DuelView from './ui/DuelView'
 import RankInfo from './ui/RankInfo'
 import FairnessModal from './ui/FairnessModal'
 import DiceCheck from './ui/DiceCheck'
@@ -1071,6 +1072,7 @@ export default function App() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [matAnalyzerOpen, setMatAnalyzerOpen] = useState(false) // Mat Analiz: .mat yukle + gnubg tam analiz
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
+  const [duelOpen, setDuelOpen] = useState(false) // Bireysel Düello sayfası
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
   const [legalSlug, setLegalSlug] = useState<string | null>(null) // hukuki sayfa (KVKK/gizlilik/...)
@@ -1240,6 +1242,8 @@ export default function App() {
     ? 'bilgi/' + INFO_TAB_URL[infoTab]
     : leaderboardOpen
     ? 'lider-tablosu'
+    : duelOpen
+    ? 'duello'
     : ranksOpen
     ? 'rutbeler'
     : leagueOpen
@@ -1489,6 +1493,9 @@ export default function App() {
       switch (root) {
         case 'lider-tablosu':
           setLeaderboardOpen(true)
+          break
+        case 'duello':
+          setDuelOpen(true)
           break
         case 'rutbeler':
           setRanksOpen(true)
@@ -7945,8 +7952,9 @@ export default function App() {
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
-  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean; classic?: boolean; betPct?: number }) {
-    const tgt = inviteTarget
+  async function handleSendInvite(opts: { target: number; timeControl: TimeControl; unrated: boolean; classic?: boolean; betPct?: number; duel?: boolean; targetPlayer?: { id: number; name: string; avatar?: string | null; rating?: number | null } }) {
+    // Düello gibi doğrudan çağrılarda hedef explicit gelir (setInviteTarget asenkron -> state'e güvenme).
+    const tgt = opts.targetPlayer ?? inviteTarget
     if (!tgt) return
     setFriendSetupOpen(false)
     setInviteTarget(null)
@@ -7972,7 +7980,9 @@ export default function App() {
     setMatch(newMatch(opts.target))
     try {
       classicRef.current = !!opts.classic // KLASIK TAVLA daveti: davet eden oda klasik olur
-      const { code, ratingPreview } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated, classic: opts.classic, betPct: opts.betPct ?? 10 })
+      const { code, ratingPreview } = opts.duel
+        ? await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, duel: true }) // düello: potsuz + puansız
+        : await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl, unrated: opts.unrated, classic: opts.classic, betPct: opts.betPct ?? 10 })
       setInviteWaitPreview(ratingPreview ?? null)
       const ok = await enterOnlineByCode(code, opts.target, opts.timeControl)
       if (!ok) {
@@ -7998,6 +8008,12 @@ export default function App() {
       setInviteWaitName(null) // davet basarisiz -> bekleme etiketini birakma
       setHome(true)
     }
+  }
+  // Bireysel Düello daveti: puansız 1/3/5 düello (coin/bahis yok). handleSendInvite akışını
+  // (davet -> oda -> bekleme -> kabulde başla) duel:true ile yeniden kullanır.
+  function handleSendDuel(p: { id: number; name: string; avatar?: string | null; rating?: number | null }, points: 1 | 3 | 5) {
+    setDuelOpen(false)
+    void handleSendInvite({ target: points, timeControl: 'normal', unrated: true, duel: true, targetPlayer: p })
   }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
   // damgayı HEMEN vur (uçuştaki heartbeat optimistik değeri ezmesin); POST onayında değeri + damgayı
@@ -9713,6 +9729,7 @@ export default function App() {
     setAuthForgot(false)
     setMemOpen(false)
     setLeaderboardOpen(false)
+    setDuelOpen(false)
     setRanksOpen(false)
     setInfoOpen(false)
     setAchOpen(false)
@@ -9836,6 +9853,7 @@ export default function App() {
       setFriendClassic(false) // Modern arkadas maci (klasik degil)
       setFriendSetupOpen(true)
     },
+    onDuel: () => goPage(() => setDuelOpen(true)),
     onResume: () => {
       closeAllPages() // acik menu sayfasi (turnuvalar vb.) kalmasin, oyuna don
       setHome(false)
@@ -9921,6 +9939,7 @@ export default function App() {
     match: menuProps.onNewGame,
     aiGame: menuProps.onAiGame,
     playFriend: menuProps.onPlayFriend,
+    duel: menuProps.onDuel,
     klassikFriend: menuProps.onKlassikFriend,
     klassikAi: menuProps.onKlassikAi,
     tournaments: menuProps.onTournaments,
@@ -10312,6 +10331,7 @@ export default function App() {
   // Menuden acilan sayfa acik mi (ana sayfada icerik alanina AKIS ICINDE gomulur)
   const anyPageOpen =
     leaderboardOpen ||
+    duelOpen ||
     ranksOpen ||
     infoOpen ||
     tournOpen ||
@@ -10361,6 +10381,8 @@ export default function App() {
     ? 'ranks'
     : leaderboardOpen
     ? 'leaderboard'
+    : duelOpen
+    ? 'duel'
     : tournOpen
       ? 'tournaments'
       : leagueOpen
@@ -10491,6 +10513,16 @@ export default function App() {
             setMessagesFocusId(id)
             setMessagesOpen(true)
           }}
+        />
+      )}
+      {duelOpen && (
+        <DuelView
+          titleOverride={menuTitle('duel')}
+          currentName={profile.nickname}
+          currentId={user?.id}
+          onClose={() => setDuelOpen(false)}
+          onProfile={(id) => setHomeProfileId(id)}
+          onDuel={handleSendDuel}
         />
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
@@ -11633,6 +11665,8 @@ export default function App() {
                 onProfile={(id) => setHomeProfileId(id)}
                 // Play tuşu = PUANLI maç daveti (handleInviteFriend varsayılan ranked=true).
                 onInvite={user ? handleInviteFriend : undefined}
+                // IconSwords = puansız düello daveti (1/3/5 puan seçilir, galibiyet sıralamasına sayılır).
+                onDuel={user ? handleSendDuel : undefined}
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}

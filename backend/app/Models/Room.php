@@ -7,6 +7,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class Room extends Model
 {
@@ -34,6 +35,9 @@ class Room extends Model
         'mode',
         // PUANSIZ arkadaş maçı: rating yok + PR kariyer/sıralamaya işlenmez (bkz RatingPolicy).
         'unrated',
+        // BIREYSEL DUELLO: puansız (unrated) ÜSTÜNE eklenen bayrak. Bitince DuelService düello
+        // galibiyeti yazar (rating'e dokunmadan). Normal arkadaş maçı duel=false.
+        'duel',
         // KLASIK TAVLA: küp YOK + mars sabit 2 (backgammon-3 yok). Diğer tüm kurallar normal maçla aynı.
         'classic',
         'time_control',
@@ -157,16 +161,16 @@ class Room extends Model
         if ($excludeRoomId !== null) {
             $query->whereKeyNot($excludeRoomId);
         }
-            $query->where(function ($q) {
-                // Only rooms with an actual economic stake reserve the single
-                // money-game slot. A zero-stake ranked/friendly match must
-                // remain available while another money match is active.
-                $q->where('stake', '>', 0)
-                    ->orWhere('bet_pct', '>', 0);
-                if (Schema::hasColumn('rooms', 'escrowed')) {
-                    $q->orWhere('escrowed', true);
-                }
-            });
+        $query->where(function ($q) {
+            // Only rooms with an actual economic stake reserve the single
+            // money-game slot. A zero-stake ranked/friendly match must
+            // remain available while another money match is active.
+            $q->where('stake', '>', 0)
+                ->orWhere('bet_pct', '>', 0);
+            if (Schema::hasColumn('rooms', 'escrowed')) {
+                $q->orWhere('escrowed', true);
+            }
+        });
 
         return $query->exists();
     }
@@ -202,7 +206,7 @@ class Room extends Model
     public static function claimActiveMoneySlot(int $userId, int $roomId): bool
     {
         if (! Schema::hasTable('active_money_match_claims')) {
-            throw new \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException(
+            throw new ServiceUnavailableHttpException(
                 null,
                 'Money match claim storage is not ready.'
             );
@@ -233,6 +237,7 @@ class Room extends Model
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
             return true;
         } catch (QueryException $e) {
             if (in_array((string) $e->getCode(), ['23000', '23505'], true)) {
@@ -351,6 +356,7 @@ class Room extends Model
             'dice_authority' => 'boolean',
             'bot' => 'boolean',
             'unrated' => 'boolean',
+            'duel' => 'boolean',
             'classic' => 'boolean',
             'bot_level' => 'integer',
             'live' => 'array',
@@ -443,6 +449,7 @@ class Room extends Model
             // yollar, botun cevabı server_state'ten gelir. bot_level = zorluk (HUD + rating için).
             'bot' => (bool) $this->bot,
             'unrated' => (bool) $this->unrated, // puansız arkadaş maçı (HUD/sonuç notu)
+            'duel' => (bool) $this->duel, // bireysel düello (HUD/sonuç rozeti)
             'classic' => (bool) $this->classic, // Klasik Tavla (küp yok + mars=2) — HUD/rozet/kural için
             'bot_level' => $this->bot_level !== null ? (int) $this->bot_level : null,
             'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
