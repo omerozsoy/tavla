@@ -548,13 +548,19 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
       {/* Sohbet */}
       <TeamChat teamId={team.id} canManage={isManager} myId={props.myId} />
 
-      {/* Kapat (kurucu) */}
-      {isFounder && (
-        <Button variant="ghost" disabled={busy}
-          onClick={() => { if (confirm(t('teams.closeConfirm'))) act(() => closeTeam(team.id, true), t('teams.closed')) }}>
-          {t('teams.close')}
-        </Button>
-      )}
+      {/* Kapat (kurucu) — kurucudan başka üye varken kapatılamaz (backend guard + buton kilidi). */}
+      {isFounder && (() => {
+        const hasOthers = (team.member_count ?? 1) > 1
+        return (
+          <>
+            <Button variant="ghost" disabled={busy || hasOthers}
+              onClick={() => { if (confirm(t('teams.closeConfirm'))) act(() => closeTeam(team.id, true), t('teams.closed')) }}>
+              {t('teams.close')}
+            </Button>
+            {hasOthers && <p style={{ fontSize: 13, opacity: 0.7, marginTop: 6 }}>{t('teams.err.has_other_members')}</p>}
+          </>
+        )
+      })()}
     </div>
   )
 }

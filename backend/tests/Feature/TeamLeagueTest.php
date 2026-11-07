@@ -349,7 +349,7 @@ class TeamLeagueTest extends TestCase
 
     // ---- §12 Kapatma --------------------------------------------------------
 
-    public function test_close_team_requires_confirmation_and_cools_down_members(): void
+    public function test_close_team_requires_confirmation_and_blocks_with_members(): void
     {
         $team = $this->makeTeam();
         $founder = User::find($team->founder_id);
@@ -358,8 +358,28 @@ class TeamLeagueTest extends TestCase
         $this->svc()->recompute($team);
 
         $this->assertThrowsCode('confirmation_required', fn () => $this->svc()->closeTeam($founder, $team->fresh(), false));
+        // Kurucudan başka üye varken kurucu takımı kapatamaz.
+        $this->assertThrowsCode('has_other_members', fn () => $this->svc()->closeTeam($founder, $team->fresh(), true));
 
+        // Üye çıkınca kurucu tek başına kapatabilir.
+        TeamMember::where('team_id', $team->id)->where('user_id', $member->id)->delete();
+        $this->svc()->recompute($team->fresh());
         $this->svc()->closeTeam($founder, $team->fresh(), true);
+        $this->assertSame('closed', $team->fresh()->status);
+        $this->assertSame(0, TeamMember::where('team_id', $team->id)->count());
+        $this->assertNotNull($this->svc()->cooldownUntil($founder->id));
+    }
+
+    public function test_admin_close_cools_down_all_members(): void
+    {
+        $team = $this->makeTeam();
+        $founder = User::find($team->founder_id);
+        $member = User::factory()->create(['rating' => 1500]);
+        TeamMember::create(['team_id' => $team->id, 'user_id' => $member->id, 'role' => 'member', 'joined_at' => now()]);
+        $this->svc()->recompute($team);
+
+        // Admin, üyeli takımı da kapatabilir (kurucu engeli admin'i bağlamaz) → herkese cooldown.
+        $this->svc()->adminClose($team->fresh(), 1);
         $this->assertSame('closed', $team->fresh()->status);
         $this->assertSame(0, TeamMember::where('team_id', $team->id)->count());
         $this->assertNotNull($this->svc()->cooldownUntil($member->id));

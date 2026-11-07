@@ -723,6 +723,12 @@ class TeamService
         if (! $confirmed) {
             throw new TeamException('confirmation_required', 422);
         }
+        // Kurucudan başka üye varsa kapatılamaz: önce üyeler çıkmalı/çıkarılmalı (admin close override eder).
+        $others = TeamMember::where('team_id', $team->id)
+            ->where('user_id', '!=', $founderUser->id)->exists();
+        if ($others) {
+            throw new TeamException('has_other_members', 422);
+        }
         $active = TeamMatch::where(function ($q) use ($team) {
             $q->where('home_team_id', $team->id)->orWhere('away_team_id', $team->id);
         })->whereIn('status', ['proposed', 'scheduled', 'live'])->exists();
