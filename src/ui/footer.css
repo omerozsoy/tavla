@@ -95,25 +95,6 @@
   background: linear-gradient(90deg, transparent, var(--foot-gold), var(--foot-amber), transparent);
   opacity: 0.85;
 }
-/* iyzico "ile Öde" kabul-kartı bandı: telifin hemen üstünde ORTALI satır. */
-.foot-payrow {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  padding: 16px clamp(16px, 4vw, 56px) 4px;
-}
-/* Band ORİJİNAL boyutta (429×32); koyu footer'da okunur olsun diye beyaz yuvarlak zemin.
-   Dar ekranda taşmasın diye yalnız max-width:100% (büyütmez, orijinalden küçültmez). */
-.foot-pay {
-  display: block;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  padding: 7px 12px;
-  border-radius: 8px;
-  background: #fff;
-}
 /* Ilk 3 kurum logosu: markanin altinda beyaz yuvarlak cipler (koyu footer'da okunur). */
 .foot-partners {
   display: flex;

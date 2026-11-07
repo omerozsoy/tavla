@@ -106,15 +106,6 @@ export default function Footer({ columns }: Props) {
             ))}
         </nav>
         </div>
-        {/* iyzico ile Öde — kabul edilen kart bandı (telifin hemen üstünde, ORİJİNAL boyut). */}
-        <div className="foot-payrow">
-          <img
-            className="foot-pay"
-            src="/iyzico-band.svg"
-            alt="iyzico ile Öde — Mastercard, Visa, American Express, Troy"
-            loading="lazy"
-          />
-        </div>
         <div className="foot-bottom">© {year} TavlaTV</div>
       </footer>
   )
