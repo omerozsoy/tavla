@@ -10764,10 +10764,10 @@ html.fs-active .account-bar {
      öneki ile yaz: eşit özgüllük + kaynakta SONRA geldiği için kazanır (kullanıcı: isimler/
      rating/maç uzunluğu/pot BÜYÜK -> azıcık küçült). */
   .main.game-scene .player-name {
-    font-size: 0.82rem;
+    font-size: 0.72rem;
   }
   .main.game-scene .player-rating {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
   }
   .main.game-scene .player-rating > svg {
     width: 15px;
