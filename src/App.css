@@ -10505,22 +10505,42 @@ html.fs-active .account-bar {
 /* YATAY telefon (kısa): aksiyon kartları en büyük dikey yük -> iyice kısalt, menü taşmasın. */
 @media (max-height: 560px) and (orientation: landscape) {
   .game-menu {
-    gap: 11px;
+    gap: 8px;
   }
   .gm-head {
-    padding: 0 0 9px;
+    padding: 0 0 7px;
+  }
+  /* KAYDIRMA: ayar satırları alanı esner + kendi içinde scroll eder; başlık ve aksiyonlar sabit.
+     Önceden kısa yatayda tüm satırlar + büyük aksiyonlar sığmayıp alt satırlara (Ses/Oto-Zar/ses
+     seviyesi) erişilemiyordu ("aşağı kaydırılamıyor"). */
+  .gm-rows {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
   .gm-row {
-    padding: 9px 13px;
+    padding: 8px 13px;
+    font-size: 0.86rem;
+  }
+  /* Lobi / Zar Kontrol / Pes Et: kısa yatayda çok yer kaplıyordu -> iyice küçült. */
+  .gm-actions {
+    gap: 7px;
+    padding-top: 8px;
   }
   .gm-circle {
-    min-height: 54px;
-    padding: 8px 6px;
-    gap: 5px;
+    min-height: 40px;
+    padding: 6px 4px;
+    gap: 3px;
+    border-radius: 11px;
   }
   .gm-circle-ic {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+  }
+  .gm-circle-lbl {
+    font-size: 0.72rem;
+    line-height: 1.05;
   }
 }
 
