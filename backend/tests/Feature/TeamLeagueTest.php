@@ -401,13 +401,13 @@ class TeamLeagueTest extends TestCase
         // Eşit ortalama, daha çok üye → üstte (2. ölçüt).
         $big = $this->teamWith('Buyuk', 'BYK', array_fill(0, 10, 1550));
         $small = $this->teamWith('Kucuk', 'KCK', array_fill(0, 8, 1550));
-        // <8 üye → sıralamada yok.
-        $this->teamWith('Eksik', 'EKS', array_fill(0, 5, 2000));
+        // eşik altı üye → sıralamada yok.
+        $this->teamWith('Eksik', 'EKS', array_fill(0, TeamRules::MIN_RANK_MEMBERS - 1, 2000));
 
         $table = app(TeamStandings::class)->mainTable();
         $ids = array_map(fn ($r) => $r['team']->id, $table);
 
-        $this->assertCount(4, $table, 'yalnız ≥8 üyeli takımlar');
+        $this->assertCount(4, $table, 'yalnız eşik üstü üyeli takımlar');
         $this->assertSame($high->id, $ids[0], 'en yüksek ortalama birinci');
         // 1550 ortalamalı iki takım arasında üye sayısı fazla olan önce.
         $posBig = array_search($big->id, $ids, true);

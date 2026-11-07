@@ -42,7 +42,7 @@ final class TeamRules
     public const FOUNDER_INACTIVE_DAYS = 60;   // son girişten → otomatik devir
 
     // §6 Sıralama
-    public const MIN_RANK_MEMBERS = 8;
+    public const MIN_RANK_MEMBERS = 5;
 
     // §7 Karşılaşma
     public const MATCH_MIN_LEAD_HOURS = 1;     // onay anında başlangıca en az

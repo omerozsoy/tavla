@@ -319,7 +319,7 @@ const TR: Dict = {
     '• Hükmen ve oynanmayan oyunlar bireysel rating’i etkilemez; yalnız gerçekten oynanan oyunlar rating’e işler.\n\n' +
     'Puan ve sıralama\n' +
     '• Her oyun: galibiyet 1, beraberlik ½, mağlubiyet 0 → beş oyunun toplamı takım skorudur.\n' +
-    '• Kalıcı sıralamada takım puanı üyelerin rating ortalamasıdır; sıralamaya girmek için en az 8 üye gerekir.\n\n' +
+    '• Kalıcı sıralamada takım puanı üyelerin rating ortalamasıdır; sıralamaya girmek için en az 5 üye gerekir.\n\n' +
     'Aylık lig\n' +
     '• Maç sonucu: galibiyet 3, beraberlik 1, mağlubiyet 0 puan. Hiçbir oyuncunun gelmediği maç çift hükmendir (iki tarafa da 0).\n' +
     '• Eşitlikte sırasıyla: puan, skor farkı, galibiyet sayısı.\n' +
@@ -2566,7 +2566,7 @@ const EN: Dict = {
     '• Forfeited and unplayed games do not affect individual rating; only genuinely played games count toward rating.\n\n' +
     'Scoring and ranking\n' +
     '• Each game: win 1, draw ½, loss 0 → the sum of five games is the team score.\n' +
-    '• In the permanent ranking the team score is the members’ average rating; a team needs at least 8 members to rank.\n\n' +
+    '• In the permanent ranking the team score is the members’ average rating; a team needs at least 5 members to rank.\n\n' +
     'Monthly league\n' +
     '• Match result: win 3, draw 1, loss 0 points. A match where no one shows up is a double forfeit (0 to both).\n' +
     '• Ties are broken by, in order: points, score difference, number of wins.\n' +
