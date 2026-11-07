@@ -10788,17 +10788,22 @@ html.fs-active .account-bar {
     padding: 8px 6px;
     margin: 4px 0;
   }
-  /* Maç ID rozeti: kompakt + 2 satır (etiket/koda); üst oyuncu kartına değmesin. */
+  /* Maç ID rozeti: EN SOL ALT KÖŞE (kullanıcı isteği) + kompakt 2 satır (etiket üstte / kod altta).
+     Üstten alta taşındı -> sidebar üst payı kalktı, alt oyuncu kartı rozete değmesin diye alt pay. */
   .main.game-scene .sidebar {
-    padding-top: 40px;
+    padding-top: 6px;
+    padding-bottom: 34px;
   }
   .match-id-hud {
-    font-size: 0.6rem;
+    top: auto;
+    bottom: calc(6px + env(safe-area-inset-bottom));
+    left: calc(6px + env(safe-area-inset-left));
+    font-size: 0.56rem;
     min-height: 0;
     padding: 2px 6px;
   }
   .match-id-hud__label {
-    font-size: 0.48rem;
+    font-size: 0.46rem;
   }
   /* Genişliği >900px olan yatay telefonlarda (S25 FE gibi) max-width:900 kuralı tetiklenmeyip
      .game-ham AKIŞTA kalıyor -> board'un hemen sağına, bear-off (toplanan taş: 7/2) tepsisinin
