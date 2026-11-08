@@ -164,6 +164,20 @@ class DuelTest extends TestCase
         $this->assertSame(0, DB::table('duels')->where('room_code', 'DUEL3')->count());
     }
 
+    public function test_record_skips_same_team(): void
+    {
+        // İki oyuncu AYNI takımda: düello kaydı YAZILMAZ (puan farming önlenir; backstop re-record de
+        // yazmaz -> silinen kayıt geri gelmez). Guard DuelService::record içinde (tek nokta).
+        $a = $this->user('sta');
+        $b = $this->user('stb');
+        $teamId = $this->giveTeam($a, 'ST');
+        TeamMember::create(['team_id' => $teamId, 'user_id' => $b->id, 'role' => 'member', 'joined_at' => now()]);
+
+        $room = $this->duelRoom('DUELST', $a, $b, 3, 'white');
+        app(DuelService::class)->record($room);
+        $this->assertSame(0, DB::table('duels')->where('room_code', 'DUELST')->count());
+    }
+
     public function test_report_rating_writes_duel_without_rating_change(): void
     {
         config(['gnubg.pr_mode' => 'authoritative']); // MatchFinalize/düello kancası bu modda çalışır

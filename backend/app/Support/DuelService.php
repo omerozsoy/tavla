@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Room;
+use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,15 @@ class DuelService
         $p2 = (int) ($room->p2_user_id ?? 0);
         if ($p1 <= 0 || $p2 <= 0 || $p1 === $p2) {
             return; // iki gerçek hesap şart (misafir/bot/tek-taraf -> düello sayılmaz)
+        }
+        // AYNI takım üyeleri arası düello KAYDEDİLMEZ (puan farming/kendini-şişirme). Bu guard
+        // invite guard'ını atlayan TÜM yolları kapatır: rematch, MatchBackstop re-record, sonradan
+        // aynı takıma geçiş. Üyelik anlık okunur (sıralamalar da anlık üyelikle hesaplanır) -> silinen
+        // kayıt backstop'la geri gelmez. (TEK NOKTA: tüm record() çağıranları buradan geçer.)
+        $t1 = TeamMember::where('user_id', $p1)->value('team_id');
+        $t2 = TeamMember::where('user_id', $p2)->value('team_id');
+        if ($t1 && $t2 && (int) $t1 === (int) $t2) {
+            return;
         }
 
         // Kazananı ODANIN sunucu-otoriter durumundan çıkar (istemci beyanına değil). p1 perspektifi.
