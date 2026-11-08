@@ -8009,6 +8009,7 @@ html[data-board='yilbasi'] .checker.black {
 .bearoff {
   grid-column: 2;
   grid-row: 2; /* board-inner ile ayni hizada (numara satirlarina tasmaz) */
+  min-height: 0; /* grid/flex item icerige gore BUYUMESIN (pul birikince tepsi uzuyordu) */
   background: var(--tray-bg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
@@ -8020,6 +8021,10 @@ html[data-board='yilbasi'] .checker.black {
 }
 .bearoff-slot {
   flex: 1;
+  /* min-height:0 ŞART: flex item default min-height:auto -> icerik (pullar) min-content'ten
+     kucuk olamaz -> pul birikince slot BUYUR -> tepsi asagi uzardi. 0 ile SABIT kalir,
+     overflow:hidden fazla pulu keser. Reserve alani artik uzamaz/kisalmaz. */
+  min-height: 0;
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-xs);
@@ -8037,9 +8042,9 @@ html[data-board='yilbasi'] .checker.black {
 }
 .off-checker {
   width: 100%;
-  height: calc(var(--checker) * 0.2);
-  min-height: 5px;
-  border-radius: 3px;
+  height: calc(var(--checker) * 0.14); /* ince: 15 pul sabit reserve alanina sigar, uzatmaz */
+  min-height: 4px;
+  border-radius: 2px;
   flex: none;
 }
 .off-checker.white {
