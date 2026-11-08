@@ -28,6 +28,7 @@ import {
   inviteToTeam,
   kickTeamMember,
   leaveTeam,
+  onlinePlayers,
   promoteTeamMember,
   readyTeamMatch,
   renameTeam,
@@ -836,13 +837,30 @@ function Rules() {
 }
 
 // ---- Takım detay (herkese açık) ----------------------------------------------
-function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boolean; back: () => void; onProfile?: (id: number) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
+function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boolean; back: () => void; onProfile?: (id: number) => void; onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
   const [d, setD] = useState<TeamDetail | null>(null)
   const [busy, setBusy] = useState(false)
+  // Düello için: müsait/oyuna hazır (meşgul veya oyunda DEĞİL) online oyuncu id'leri. 20sn tazele.
+  const [duelReady, setDuelReady] = useState<Set<number>>(new Set())
   useEffect(() => { getTeam(props.id).then(setD).catch(() => {}) }, [props.id])
+  useEffect(() => {
+    if (!props.onDuel || !props.hasTeam) return // düello yalnız takımlı kullanıcıda
+    let alive = true
+    const load = () => onlinePlayers()
+      .then((ps) => alive && setDuelReady(new Set(
+        ps.filter((x) => !x.in_game && (x.status === 'available' || x.status === 'ready' || x.status == null)).map((x) => x.id),
+      )))
+      .catch(() => {})
+    load()
+    const h = window.setInterval(load, 20000)
+    return () => { alive = false; window.clearInterval(h) }
+  }, [props.onDuel, props.hasTeam])
   if (!d) return <Loading />
   const isFounder = !!props.myId && d.members.some((m) => m.role === 'founder' && m.user.id === props.myId)
+  // Düello butonu: davet eden takımlı + bu takım BENİM takımım DEĞİL (aynı takımla düello olmaz).
+  const sameTeam = !!props.myId && d.members.some((m) => m.user.id === props.myId)
+  const canDuel = !!props.onDuel && props.hasTeam && !sameTeam
   const apply = async () => {
     setBusy(true)
     try { await applyTeam(props.id); props.setNotice(t('teams.invited')) } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
@@ -892,6 +910,18 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
                     {m.user.rating != null && <span className="teams-member-rating"><b>{m.user.rating}</b></span>}
                   </span>
                 </div>
+                {/* Düelloya çağır: yalnız başka takımın MÜSAİT online üyesine (DuelView o rakip ön-seçili açılır). */}
+                {canDuel && duelReady.has(m.user.id) && (
+                  <button
+                    type="button"
+                    className="teams-member-duel"
+                    title={t('duel.invite')}
+                    aria-label={t('duel.invite')}
+                    onClick={() => props.onDuel?.({ id: m.user.id, name: m.user.nickname ?? '', avatar: m.user.avatar, rating: m.user.rating })}
+                  >
+                    <Icon name="swords" size={18} />
+                  </button>
+                )}
               </div>
             )
           })}

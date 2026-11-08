@@ -10830,6 +10830,7 @@ export default function App() {
             onRequirePremium={() => setMemOpen(true)}
             onEnterRoom={(code, target) => handleEnterLeagueRoom(code, target, () => setTeamsOpen(true))}
             onProfile={(id) => setHomeProfileId(id)}
+            onDuel={user ? (p) => { setDuelPreselect(p); goPage(() => setDuelOpen(true)) } : undefined}
             onPathChange={(p) => setTeamsArg(p)}
             onClose={() => {
               setTeamsOpen(false)

@@ -21722,7 +21722,16 @@ body:has(.spectate-view) .app.lobby {
 /* Kurucu satırı: sol accent şeridiyle vurgulanır */
 .teams-member.is-founder { border-left: 3px solid var(--accent); }
 .teams-member-ava { flex-shrink: 0; cursor: pointer; }
-.teams-member-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.teams-member-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+/* Düelloya çağır butonu (online + müsait üyede) — satırın sağında kılıç ikonu */
+.teams-member-duel {
+  flex-shrink: 0; margin-left: auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 9px; cursor: pointer;
+  background: var(--accent); color: var(--on-accent, #fff); border: 0;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.teams-member-duel:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .teams-member-name {
   background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
   font-size: 0.98rem; font-weight: 700; color: var(--text);
