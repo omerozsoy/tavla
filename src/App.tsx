@@ -8001,8 +8001,10 @@ export default function App() {
         setHome(true)
       }
     } catch (e) {
-      // "Oyun Kabul Etmiyor" (409) gibi durumlarda sunucu mesajini dostça göster.
-      if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
+      // Sunucu-tarafı iş kuralı hataları (409 "oyun kabul etmiyor", 422 "düello için takım gerekir"
+      // vb.) kullanıcıya DOSTÇA sunucu mesajıyla gösterilir; yalnız GERÇEK ağ/5xx hatasında generic
+      // "Sunucuya ulaşılamadı". Eskiden 422 de generic'e düşüp "takıma katıl" uyarısı gizleniyordu.
+      if (e instanceof ApiErr && e.status >= 400 && e.status < 500 && e.message) notify.info(e.message)
       else notify.error(t('mp.connError'))
       setRoomBusy(false) // spinner'i kapat -> home dalina temiz don
       setInviteWaitName(null) // davet basarisiz -> bekleme etiketini birakma

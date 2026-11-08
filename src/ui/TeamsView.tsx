@@ -21,11 +21,13 @@ import {
   decideTeamApplication,
   declineTeamInvite,
   demoteTeamMember,
+  duelLeaderboard,
   getMyTeam,
   getMyTeamMatch,
   getTeam,
   getTeams,
   inviteToTeam,
+  leaderboard,
   kickTeamMember,
   leaveTeam,
   promoteTeamMember,
@@ -36,12 +38,13 @@ import {
   setTeamLineup,
   transferTeam,
   updateTeamIdentity,
+  type DuelIndividualRow,
+  type DuelTeamRow,
   type LeaderRow,
   type TeamBrief,
   type TeamDetail,
   type TeamMe,
   type TeamMyMatch,
-  type TeamRankRow,
 } from '../api'
 import { ApiError } from '../api'
 
@@ -194,14 +197,23 @@ export default function TeamsView(props: Props) {
 // ---- Genel bakış: sıralama + arama + takımım özeti/kurma -----------------------
 function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
-  const [ranking, setRanking] = useState<TeamRankRow[]>([])
   const [q, setQ] = useState('')
   const [results, setResults] = useState<TeamBrief[] | null>(null)
   const [loading, setLoading] = useState(true)
+  // Sıralamalar (kullanıcı direktifi: Bireysel düello / Takımlar düello / Rating bu sayfada).
+  const [rankTab, setRankTab] = useState<'teams' | 'individual' | 'rating'>('teams')
+  const [duelBoard, setDuelBoard] = useState<{ individual: DuelIndividualRow[]; teams: DuelTeamRow[] } | null>(null)
+  const [ratingRows, setRatingRows] = useState<LeaderRow[] | null>(null)
 
   useEffect(() => {
-    getTeams().then((r) => setRanking(r.ranking ?? [])).catch(() => {}).finally(() => setLoading(false))
+    duelLeaderboard(100).then(setDuelBoard).catch(() => setDuelBoard({ individual: [], teams: [] })).finally(() => setLoading(false))
   }, [])
+
+  // Rating sekmesi: mevcut genel rating liderlik tablosundan (tembel: ilk geçişte çek).
+  useEffect(() => {
+    if (rankTab !== 'rating' || ratingRows) return
+    leaderboard(100, 'rating').then(setRatingRows).catch(() => setRatingRows([]))
+  }, [rankTab, ratingRows])
 
   const search = async () => {
     if (!q.trim()) { setResults(null); return }
@@ -222,22 +234,73 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
       </div>
       {results !== null ? (
         <TeamList teams={results} onOpen={(id) => props.go({ kind: 'team', id })} />
-      ) : ranking.length === 0 ? (
-        // Hiç takım yok: "Takım Kur" CTA'sı zaten üstte her zaman görünür.
-        <div className="lb-empty">{t('teams.noneYet')}</div>
       ) : (
-        <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>
-            <th>#</th><th>{t('teams.team')}</th><th>{t('teams.avg')}</th><th>{t('teams.members')}</th>
-          </tr></thead>
-          <tbody>
-            {ranking.map((r) => (
-              <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.id })}>
-                <td>{r.rank}</td><td><TeamChip team={r} /></td><td>{r.rating_avg.toFixed(1)}</td><td>{r.member_count}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          {/* 3 sıralama sekmesi: Takımlar (düello galibiyeti) / Bireysel (düello) / Rating (genel). */}
+          <div className="rank-tabs" style={{ marginBottom: 10 }}>
+            <Button variant={rankTab === 'teams' ? 'default' : 'ghost'} aria-pressed={rankTab === 'teams'} onClick={() => setRankTab('teams')}>{t('duel.tab.teams')}</Button>
+            <Button variant={rankTab === 'individual' ? 'default' : 'ghost'} aria-pressed={rankTab === 'individual'} onClick={() => setRankTab('individual')}>{t('duel.tab.individual')}</Button>
+            <Button variant={rankTab === 'rating' ? 'default' : 'ghost'} aria-pressed={rankTab === 'rating'} onClick={() => setRankTab('rating')}>{t('duel.tab.rating')}</Button>
+          </div>
+
+          {rankTab === 'teams' && (
+            (duelBoard?.teams.length ?? 0) === 0 ? (
+              <div className="lb-empty">{t('duel.emptyTeams')}</div>
+            ) : (
+              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.wins')}</th></tr></thead>
+                <tbody>
+                  {duelBoard!.teams.map((r, i) => (
+                    <tr key={r.team_id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.team_id })}>
+                      <td>{i + 1}</td>
+                      <td>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <TeamEmblem color1={r.color1} color2={r.color2} logo={r.logo || undefined} label={r.tag} size={28} />
+                          <b>{r.name}</b>
+                        </span>
+                      </td>
+                      <td>{r.wins}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          )}
+
+          {rankTab === 'individual' && (
+            (duelBoard?.individual.length ?? 0) === 0 ? (
+              <div className="lb-empty">{t('duel.empty')}</div>
+            ) : (
+              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.wins')}</th></tr></thead>
+                <tbody>
+                  {duelBoard!.individual.map((r, i) => (
+                    <tr key={r.user_id} style={{ cursor: 'pointer' }} onClick={() => props.onProfile?.(r.user_id)}>
+                      <td>{i + 1}</td><td><b>{r.nickname}</b></td><td>{r.wins}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          )}
+
+          {rankTab === 'rating' && (
+            ratingRows === null ? <Loading /> : ratingRows.length === 0 ? (
+              <div className="lb-empty">{t('duel.empty')}</div>
+            ) : (
+              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.tab.rating')}</th></tr></thead>
+                <tbody>
+                  {ratingRows.map((r) => (
+                    <tr key={r.id ?? r.rank} style={{ cursor: r.id ? 'pointer' : 'default' }} onClick={() => r.id && props.onProfile?.(r.id)}>
+                      <td>{r.rank}</td><td><b>{r.name}</b></td><td>{r.rating}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          )}
+        </>
       )}
     </div>
   )
