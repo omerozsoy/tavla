@@ -1079,6 +1079,7 @@ export default function App() {
   const [infoTab, setInfoTab] = useState<InfoTab>('about') // aktif Bilgi sekmesi (URL'e bagli)
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
+  const [friendSetupDuel, setFriendSetupDuel] = useState(false) // kurulum DÜELLO modu mu (kılıç -> /yeni-oyun benzeri sayfa)
   // Cevrimici listeden secilen rakip -> FriendGameSetup davet modu. URL slug hesabinda (maca-davet)
   // kullanildigi icin erken tanimli olmali (TDZ).
   const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
@@ -1693,6 +1694,7 @@ export default function App() {
             if (ctx?.p?.id) {
               setInviteTarget(ctx.p)
               setInviteRanked(ctx.ranked !== false)
+              setFriendSetupDuel(!!ctx.duel) // düello kurulumu yenilemede mod kaybolmasın
               setFriendClassic(false)
               setFriendSetupOpen(true)
             }
@@ -8011,11 +8013,19 @@ export default function App() {
       setHome(true)
     }
   }
-  // Bireysel Düello daveti: puansız 1/3/5 düello (coin/bahis yok). handleSendInvite akışını
-  // (davet -> oda -> bekleme -> kabulde başla) duel:true ile yeniden kullanır.
-  function handleSendDuel(p: { id: number; name: string; avatar?: string | null; rating?: number | null }, points: 1 | 3 | 5) {
+  // Bireysel Düello: kılıç -> /yeni-oyun benzeri KURULUM SAYFASI (FriendGameSetup duel modu) açılır.
+  // Uzunluk (1/3/5) orada seçilir -> "Düelloya Davet Et" -> handleSendInvite(duel:true). Küçük inline
+  // picker KALDIRILDI (kullanıcı direktifi: düello sayfası /yeni-oyun gibi olsun).
+  function handleOpenDuel(p: { id: number; name: string; avatar?: string | null; rating?: number | null }) {
     setDuelOpen(false)
-    void handleSendInvite({ target: points, timeControl: 'normal', unrated: true, duel: true, targetPlayer: p })
+    setFriendsOpen(false)
+    setInviteTarget(p)
+    setInviteRanked(false)
+    setFriendClassic(false)
+    setFriendSetupDuel(true)
+    setHome(false)
+    setFriendSetupOpen(true)
+    try { sessionStorage.setItem('inviteCtx', JSON.stringify({ p, ranked: false, duel: true })) } catch { /* yoksay */ }
   }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
   // damgayı HEMEN vur (uçuştaki heartbeat optimistik değeri ezmesin); POST onayında değeri + damgayı
@@ -10524,7 +10534,7 @@ export default function App() {
           currentId={user?.id}
           onClose={() => setDuelOpen(false)}
           onProfile={(id) => setHomeProfileId(id)}
-          onDuel={handleSendDuel}
+          onDuel={handleOpenDuel}
         />
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
@@ -11257,10 +11267,12 @@ export default function App() {
             myRating={user?.rating ?? undefined}
             defaultClassic={friendClassic}
             ranked={inviteRanked}
+            duel={friendSetupDuel}
             titleOverride={menuTitle(friendClassic ? 'klassikFriend' : 'playFriend')}
-            onInvite={handleSendInvite}
+            onInvite={(opts) => { const d = friendSetupDuel; setFriendSetupDuel(false); void handleSendInvite({ ...opts, duel: d }) }}
             onCancel={() => {
               setFriendSetupOpen(false)
+              setFriendSetupDuel(false)
               setInviteTarget(null)
               setInviteRanked(false)
               setFriendClassic(false)
@@ -11668,7 +11680,7 @@ export default function App() {
                 // Play tuşu = PUANLI maç daveti (handleInviteFriend varsayılan ranked=true).
                 onInvite={user ? handleInviteFriend : undefined}
                 // IconSwords = puansız düello daveti (1/3/5 puan seçilir, galibiyet sıralamasına sayılır).
-                onDuel={user ? handleSendDuel : undefined}
+                onDuel={user ? handleOpenDuel : undefined}
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}

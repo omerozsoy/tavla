@@ -458,14 +458,14 @@ export function OnlinePlayersPanel({
   currentId?: number // giris yapan kullanici -> listede en uste sabitlenir (kendini gor)
   onProfile: (id: number) => void
   onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void // maca davet et (giris yapmis kullanici)
-  // Düello daveti: Play'in yanında IconSwords -> tıklayınca 1/3/5 uzunluk seçici -> puansız düello daveti.
-  onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }, points: 1 | 3 | 5) => void
+  // Düello daveti: Play'in yanında IconSwords -> düello KURULUM sayfası (/yeni-oyun benzeri) açılır
+  // (uzunluk orada seçilir; inline picker YOK).
+  onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void
   // /duello sayfası: YALNIZ takımı olan oyuncuları listele (düello takımlılar arası).
   duelTeamOnly?: boolean
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
-  const [duelFor, setDuelFor] = useState<number | null>(null) // hangi satırda düello uzunluk seçici açık
   const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (Liderlik Tablosu gibi)
   const PAGE_SIZE = 10
   const MAX_PAGES = 10 // en fazla 100 kisi
@@ -586,39 +586,20 @@ export function OnlinePlayersPanel({
                     </span>
                   ) : !self && onInvite && p.status !== 'busy' ? (
                     <span className="online-actions">
-                      {/* Düello: IconSwords -> 1/3/5 uzunluk seçici. YALNIZ takımı olan oyuncuya
-                          (düello takımlılar arası; takımsızla yapılamaz). */}
-                      {onDuel &&
-                        p.has_team &&
-                        (duelFor === p.id ? (
-                          <span className="online-duel-pick">
-                            {([1, 3, 5] as const).map((n) => (
-                              <button
-                                key={n}
-                                type="button"
-                                className="online-duel-len"
-                                title={t('duel.points', { n })}
-                                onClick={() => {
-                                  setDuelFor(null)
-                                  onDuel({ id: p.id, name: p.name, avatar: p.avatar, rating: p.rating }, n)
-                                }}
-                              >
-                                {n}
-                              </button>
-                            ))}
-                          </span>
-                        ) : (
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="online-act online-duel-btn"
-                            title={t('online.duel')}
-                            aria-label={t('online.duel')}
-                            onClick={() => setDuelFor(p.id)}
-                          >
-                            <Icon name="swords" size={18} />
-                          </Button>
-                        ))}
+                      {/* Düello: IconSwords -> düello KURULUM sayfası açılır (uzunluk orada). YALNIZ
+                          takımı olan oyuncuya (düello takımlılar arası; takımsızla yapılamaz). */}
+                      {onDuel && p.has_team && (
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="online-act online-duel-btn"
+                          title={t('online.duel')}
+                          aria-label={t('online.duel')}
+                          onClick={() => onDuel({ id: p.id, name: p.name, avatar: p.avatar, rating: p.rating })}
+                        >
+                          <Icon name="swords" size={18} />
+                        </Button>
+                      )}
                       <Button
                         variant="default"
                         size="icon"

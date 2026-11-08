@@ -59,12 +59,19 @@ interface Props {
   // PUANLI DAVET (yalnız Çevrimiçi Oyuncular play tuşu): maç puanlı (unrated=false). TÜM seçenekler açık
   // (Tek Oyun=1 puanlık + tüm uzunluk/süreler); fark yalnız puanlı + "puanlı" notu. Varsayılan false.
   ranked?: boolean
+  // DÜELLO modu (çevrimiçi takımlı oyuncuya kılıç): puansız + coin YOK; uzunluk yalnız 1/3/5.
+  // Tek/Maç sekmeleri, bahis satırı ve kod-ile-katıl kutusu gizlenir. onInvite betPct=0 ile çağrılır.
+  duel?: boolean
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, coins = 0, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false, myRating }: Props) {
+// Düello uzunlukları (puan): 1 / 3 / 5.
+const DUEL_LENGTHS = [1, 3, 5]
+
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, coins = 0, invitee, onInvite, defaultClassic = false, titleOverride, ranked = false, myRating, duel = false }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   const [betPct, setBetPct] = useState(10) // yüzde bahis (min %10, potsuz maç yok)
+  const [duelLen, setDuelLen] = useState(3) // düello uzunluğu (1/3/5)
   const pot = Math.floor((coins * betPct) / 100) // bu bahiste riske edilen coin
   // KLASIK girişte Maç Oyunu sekmesi açık başlar (klasik yalnız maç oyununda anlamlı). PUANLI davette
   // TÜM seçenekler açık (Tek Oyun=1 puanlık dahil) -> normal akışla birebir aynı, yalnız puanlı.
@@ -74,11 +81,11 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   // Arkadaşlık/kılıç maçları PUANSIZ (2026-11-01): rating değişmez, PR yalnız analizde. İSTİSNA: puanlı
   // davet (ranked=true, yalnız Çevrimiçi Oyuncular play tuşu) -> unrated=false, sonuç rating'i değiştirir.
-  const unrated = !ranked
+  const unrated = duel ? true : !ranked // düello DAİMA puansız
   // KLASIK TAVLA: kup yok + mars=2. Mod SAYFAYA gore SABIT (Modern /arkadasinla-oyna vs
   // Klasik /klasik-arkadasinla-oyna) -> tek sayfada Modern/Klasik gecisi YOK, ayri sayfalar.
   const classic = defaultClassic
-  const target = tab === 'single' ? 1 : length
+  const target = duel ? duelLen : (tab === 'single' ? 1 : length)
   const inviting = !!invitee // davet modu mu?
   // Puanlı davette seçili uzunluğa göre kazanç/kayıp tahmini (backend RatingPolicy ile birebir formül,
   // Scoring.tsx'ten). Rating yoksa 1500 varsayılan. Uzunluk değişince C katsayısıyla canlı güncellenir.
@@ -90,7 +97,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
       <div className="setup-split">
         <div className="register-card setup-card">
           <h2>
-            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t(ranked ? 'friend.inviteMatchTitle' : 'friend.inviteTitle') : titleOverride || (classic ? t('classic.title') : t('friend.title'))}
+            <Icon name={duel ? 'swords' : inviting ? 'sword' : 'users'} size={24} /> {duel ? t('duel.title') : inviting ? t(ranked ? 'friend.inviteMatchTitle' : 'friend.inviteTitle') : titleOverride || (classic ? t('classic.title') : t('friend.title'))}
           </h2>
 
           {/* Davet modu: KIMI davet ettigin net gorunsun */}
@@ -112,27 +119,45 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           )}
 
-          {/* Oyun türü: Tek Oyun (1 puanlık) / Maç Oyunu. PUANLI davette de ikisi de açık. */}
-          <div className="setup-row">
-            <div className="setup-label">{t('friend.type')}</div>
-            <div className="setup-tiles">
-              <button
-                className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
-                onClick={() => setTab('single')}
-              >
-                {t('friend.single')}
-              </button>
-              <button
-                className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
-                onClick={() => setTab('match')}
-              >
-                {t('friend.match')}
-              </button>
+          {/* DÜELLO: uzunluk doğrudan 1/3/5 (tür sekmesi/bahis yok). Normal davet: Tek/Maç sekmeleri. */}
+          {duel ? (
+            <div className="setup-row">
+              <div className="setup-label">{t('duel.pickPoints')}</div>
+              <div className="target-grid">
+                {DUEL_LENGTHS.map((n) => (
+                  <button
+                    key={n}
+                    className={`target-chip ${duelLen === n ? 'active' : ''}`}
+                    onClick={() => setDuelLen(n)}
+                    aria-pressed={duelLen === n}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="setup-row">
+              <div className="setup-label">{t('friend.type')}</div>
+              <div className="setup-tiles">
+                <button
+                  className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
+                  onClick={() => setTab('single')}
+                >
+                  {t('friend.single')}
+                </button>
+                <button
+                  className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
+                  onClick={() => setTab('match')}
+                >
+                  {t('friend.match')}
+                </button>
+              </div>
+            </div>
+          )}
 
-          {/* Uzunluk (yalnizca Maç Oyunu) */}
-          {tab === 'match' && (
+          {/* Uzunluk (yalnizca Maç Oyunu; düelloda yukarıda 1/3/5) */}
+          {!duel && tab === 'match' && (
             <div className="setup-row">
               <div className="setup-label">{t('setup.length')}</div>
               <div className="target-grid">
@@ -166,27 +191,28 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             </div>
           </div>
 
-          {/* Maks bahis (yüzde): potsuz maç YOK -> min %10. Riske edilen coin = bakiyenin %'si. */}
-          <div className="setup-row">
-            <div className="setup-label">
-              {t('setup.maxBet')} · <Coins amount={pot} size={13} />
+          {/* Maks bahis (yüzde): potsuz maç YOK -> min %10. DÜELLOda coin/bahis YOK -> gizli. */}
+          {!duel && (
+            <div className="setup-row">
+              <div className="setup-label">
+                {t('setup.maxBet')} · <Coins amount={pot} size={13} />
+              </div>
+              <div className="setup-tiles bets">
+                {BET_PCTS.map((pct) => (
+                  <button
+                    key={pct}
+                    className={`setup-tile ${betPct === pct ? 'active' : ''}`}
+                    onClick={() => setBetPct(pct)}
+                  >
+                    <span className="bet-pct">%{pct}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="setup-tiles bets">
-              {BET_PCTS.map((pct) => (
-                <button
-                  key={pct}
-                  className={`setup-tile ${betPct === pct ? 'active' : ''}`}
-                  onClick={() => setBetPct(pct)}
-                >
-                  <span className="bet-pct">%{pct}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
-          {/* Puanlı davet -> "puanlı" notu; aksi halde arkadaşlık maçı "hep puansız" notu. Seçici yok.
-              Kazanç/kayıp tahmini isim kutusunun altında (invite-target-est). */}
-          <p className="setup-unrated-hint">{t(ranked ? 'friend.rankedNote' : 'friend.alwaysUnrated')}</p>
+          {/* DÜELLO: puansız + galibiyet sıralaması notu. Normal davet: puanlı/puansız notu. */}
+          <p className="setup-unrated-hint">{duel ? t('duel.intro') : t(ranked ? 'friend.rankedNote' : 'friend.alwaysUnrated')}</p>
 
           {/* KLASIK TAVLA sayfasi (yalniz Mac Oyunu'nda anlamli): mod sabit, sadece bilgi notu. */}
           {classic && tab === 'match' && <p className="setup-unrated-hint">{t('classic.note')}</p>}
@@ -196,8 +222,8 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
               {t('setup.cancel')}
             </Button>
             {inviting ? (
-              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated, classic: tab === 'match' && classic, betPct })}>
-                <Icon name="sword" size={18} /> {t('friend.inviteBtn')}
+              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc, unrated, classic: duel ? false : tab === 'match' && classic, betPct: duel ? 0 : betPct })}>
+                <Icon name={duel ? 'swords' : 'sword'} size={18} /> {duel ? t('duel.invite') : t('friend.inviteBtn')}
               </Button>
             ) : (
               <Button variant="default" onClick={() => onCreate({ target, timeControl: tc, unrated, classic: tab === 'match' && classic, betPct })}>
