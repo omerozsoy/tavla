@@ -10520,11 +10520,14 @@ export default function App() {
       {duelOpen && (
         <DuelView
           titleOverride={menuTitle('duel')}
-          currentName={profile.nickname}
           currentId={user?.id}
           onClose={() => setDuelOpen(false)}
-          onProfile={(id) => setHomeProfileId(id)}
           onDuel={handleSendDuel}
+          onChangeBoard={() => setBoardPickerOpen(true)}
+          board={(() => {
+            const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+            return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface, checkerStyle: bt.checkerStyle, pointImgA: bt.pointImgA, pointImgB: bt.pointImgB, pointFitA: bt.pointFitA, pointFitB: bt.pointFitB, pointImgs: bt.pointImgs, pointFits: bt.pointFits, surfaceImgLeft: bt.surfaceImgLeft, surfaceImgRight: bt.surfaceImgRight, surfaceOpacity: bt.surfaceOpacity, pointTexts: bt.pointTexts }
+          })()}
         />
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}

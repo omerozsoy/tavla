@@ -145,7 +145,7 @@ export default function PublicProfile({
             {team && (
               <div className="pp-team">
                 <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={22} />
-                <span className="pp-team-name">{team.name || team.tag}</span>
+                <span className="pp-team-name"><span className="pp-team-label">{t('teams.team')}:</span> {team.name || team.tag}</span>
               </div>
             )}
             {/* Durum + puan sıralaması TEK satırda, en başta (durum solda, sıralama yanında). */}

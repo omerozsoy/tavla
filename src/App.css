@@ -17149,6 +17149,75 @@ body:has(.spectate-view) .app.lobby {
   text-align: left;
 }
 
+/* Düello (/duello) rakip seçici: setup-card içinde kaydırılır çevrimiçi takımlı oyuncu listesi. */
+.duel-opp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  padding: 6px;
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+.duel-opp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+.duel-opp:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.duel-opp.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.duel-opp-av {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.duel-opp-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.duel-opp-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.duel-opp-rating {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent-text, #d8805a);
+}
+.duel-opp-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 /* ===== Kurulum split: sol ayarlar/grid | sag board onizleme =====
    Onizleme kolonu board'u KUCUMSER (1fr yerine sabit genislik) -> board genis
    bos bir kolonun ortasinda asili kalmaz; secenklerin hemen yaninda oturur.
@@ -20749,9 +20818,13 @@ body:has(.spectate-view) .app.lobby {
   margin: 10px 0 2px;
 }
 .pp-team-name {
-  font-weight: 700;
+  font-weight: 400; /* kullanıcı: takım ismi bold OLMASIN */
   color: var(--text);
   font-size: 0.95rem;
+}
+.pp-team-label {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 /* Durum + puan siralamasi TEK satir (en ustte). */

@@ -1,70 +1,163 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
-import { useT } from '../i18n'
-import { OnlinePlayersPanel } from './HomePanels'
+import SetupBoard from './SetupBoard'
+import { onlinePlayers, type OnlinePlayer } from '../api'
+import { CountryFlag } from './Flag'
+import Loading from './Loading'
 
 type Target = { id: number; name: string; avatar?: string | null; rating?: number | null }
+const DUEL_LENGTHS = [1, 3, 5]
+
+interface BoardColors {
+  id?: string
+  panel: string
+  a: string
+  b: string
+  checker: string
+  light?: string
+  pointStyle?: 'sharp' | 'rounded'
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood'
+  checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
+  pointImgA?: string
+  pointImgB?: string
+  pointFitA?: import('../boardThemes').PointFit
+  pointFitB?: import('../boardThemes').PointFit
+  pointImgs?: Record<number, string>
+  pointFits?: Record<number, import('../boardThemes').PointFit>
+  surfaceImgLeft?: string
+  surfaceImgRight?: string
+  surfaceOpacity?: number
+  pointTexts?: Record<number, string>
+}
 
 interface Props {
-  currentName?: string
   currentId?: number
   onClose: () => void
-  onProfile: (id: number) => void
-  // Düello davetini gönder (App.tsx davet+bekleme akışına bağlar). points ∈ {1,3,5}.
+  // Düello davetini gönder (App davet+bekleme akışına bağlar). points ∈ {1,3,5}.
   onDuel: (p: Target, points: 1 | 3 | 5) => void
+  board: BoardColors
+  onChangeBoard: () => void
   titleOverride?: string
 }
 
-// Bireysel Düello sayfası (/duello): çevrimiçi takımlı oyuncu seç -> uzunluk (1/3/5) -> davet.
-// Oyun kurma TAMAMEN burada (ayrı /maca-davet sayfasına yönlendirme YOK). Sıralamalar Takımlar Ligi'nde.
-export default function DuelView({ currentName, currentId, onClose, onProfile, onDuel, titleOverride }: Props) {
+// Bireysel Düello sayfası (/duello) — /yeni-oyun (MatchSetup) ile AYNI tasarım: sol ayar kartı
+// (rakip seç + uzunluk + davet) + sağ board önizleme. Düello YALNIZ takımlılar arası; coin/bahis yok.
+export default function DuelView({ currentId, onClose, onDuel, board, onChangeBoard, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const [pick, setPick] = useState<Target | null>(null) // uzunluk seçimi bekleyen rakip
+  const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
+  const [sel, setSel] = useState<Target | null>(null) // seçili rakip
+  const [len, setLen] = useState(3) // düello uzunluğu (1/3/5)
+
+  // Çevrimiçi TAKIMLI oyuncular (düello takımlılar arası) — kendini hariç tut, 15sn tazele.
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      onlinePlayers()
+        .then((p) => alive && setPlayers(p.filter((x) => x.has_team && x.id !== currentId)))
+        .catch(() => alive && setPlayers([]))
+    load()
+    const id = window.setInterval(load, 15000)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+    }
+  }, [currentId])
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card duel-card" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={16} />
-        </Button>
-        <div className="lb-header">
-          <h2><Icon name="swords" size={20} /> {titleOverride || t('duel.title')}</h2>
-        </div>
-        <p className="duel-intro">{t('duel.intro')}</p>
+    <div className="register-overlay page setup-page">
+      <div className="setup-split">
+        <div className="register-card setup-card">
+          <h2>
+            <Icon name="swords" size={24} /> {titleOverride || t('duel.title')}
+          </h2>
+          <p className="setup-unrated-hint">{t('duel.intro')}</p>
 
-        {/* Çevrimiçi (takımlı) oyuncular: kılıç -> uzunluk seçici -> davet gönder (hepsi bu sayfada). */}
-        <section className="duel-online">
-          <h3>{t('duel.online')}</h3>
-          <OnlinePlayersPanel
-            currentName={currentName}
-            currentId={currentId}
-            onProfile={onProfile}
-            onDuel={currentId ? (p) => setPick(p) : undefined}
-            duelTeamOnly
-          />
-        </section>
-      </div>
+          {/* Rakip seç: çevrimiçi takımlı oyuncular (kaydırılır liste) */}
+          <div className="setup-row">
+            <div className="setup-label">{t('duel.online')}</div>
+            <div className="duel-opp-list">
+              {players === null ? (
+                <Loading />
+              ) : players.length === 0 ? (
+                <div className="duel-opp-empty">{t('duel.noOnline')}</div>
+              ) : (
+                players.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`duel-opp ${sel?.id === p.id ? 'active' : ''}`}
+                    onClick={() => setSel({ id: p.id, name: p.name, avatar: p.avatar, rating: p.rating })}
+                  >
+                    <span className="duel-opp-av" aria-hidden="true">
+                      {p.avatar ? <img src={p.avatar} alt="" /> : <Icon name="user" size={16} />}
+                    </span>
+                    <span className="duel-opp-name">{p.name}</span>
+                    <CountryFlag code={p.country} size={18} />
+                    <span className="duel-opp-rating">{p.rating}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
 
-      {/* Uzunluk seçici (oyun kurma): 1/3/5 puan -> davet gönder */}
-      {pick && (
-        <div className="duel-picker-backdrop" onClick={() => setPick(null)}>
-          <div className="register-card duel-picker" onClick={(e) => e.stopPropagation()}>
-            <h3>{pick.name}</h3>
-            <p>{t('duel.pickPoints')}</p>
-            <div className="duel-picker-row">
-              {([1, 3, 5] as const).map((n) => (
-                <Button key={n} variant="default" onClick={() => { const p = pick; setPick(null); onDuel(p, n) }}>
-                  {t('duel.points', { n })}
-                </Button>
+          {/* Uzunluk (puan): 1 / 3 / 5 */}
+          <div className="setup-row">
+            <div className="setup-label">{t('duel.pickPoints')}</div>
+            <div className="target-grid">
+              {DUEL_LENGTHS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`target-chip ${len === n ? 'active' : ''}`}
+                  onClick={() => setLen(n)}
+                  aria-pressed={len === n}
+                >
+                  {n}
+                </button>
               ))}
             </div>
-            <Button variant="ghost" onClick={() => setPick(null)}>{t('common.close')}</Button>
+          </div>
+
+          <div className="setup-actions">
+            <Button variant="secondary" onClick={onClose}>
+              {t('setup.cancel')}
+            </Button>
+            <Button variant="default" disabled={!sel} onClick={() => sel && onDuel(sel, len as 1 | 3 | 5)}>
+              <Icon name="swords" size={18} /> {t('duel.invite')}
+            </Button>
           </div>
         </div>
-      )}
+
+        <div className="setup-preview">
+          <SetupBoard
+            panel={board.panel}
+            a={board.a}
+            b={board.b}
+            checker={board.checker}
+            cream={board.light}
+            pointStyle={board.pointStyle}
+            surface={board.surface}
+            checkerStyle={board.checkerStyle}
+            pointImgA={board.pointImgA}
+            pointImgB={board.pointImgB}
+            pointFitA={board.pointFitA}
+            pointFitB={board.pointFitB}
+            pointImgs={board.pointImgs}
+            pointFits={board.pointFits}
+            surfaceImgLeft={board.surfaceImgLeft}
+            surfaceImgRight={board.surfaceImgRight}
+            surfaceOpacity={board.surfaceOpacity}
+            pointTexts={board.pointTexts}
+            themeId={board.id}
+            onChangeBoard={onChangeBoard}
+            changeLabel={t('setup.changeBoard')}
+          />
+        </div>
+      </div>
     </div>
   )
 }
