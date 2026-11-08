@@ -443,6 +443,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
   const [me, setMe] = useState<TeamMe | null>(null)
   const [detail, setDetail] = useState<TeamDetail | null>(null)
   const [busy, setBusy] = useState(false)
+  const [editOpen, setEditOpen] = useState(false) // başlıktaki "Düzenle" → kimlik editörü inline açılır
 
   const reload = useCallback(async () => {
     if (!props.myId) return
@@ -507,10 +508,16 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
     <div style={{ display: 'grid', gap: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, borderBottom: '2px solid var(--text)' }}>
         <TeamChip team={team} big /><span style={{ flex: 1 }} />
-        {/* Kurucu: "Düzenle" → takım sayfasında logo/renk/ad/açıklama editörü. Diğerleri: "Görüntüle". */}
-        <Button variant={isFounder ? 'outline' : 'ghost'} onClick={() => props.go({ kind: 'team', id: team.id })}>{t(isFounder ? 'teams.edit' : 'teams.view')}</Button>
+        {/* Kurucu: "Düzenle" → logo/renk/ad/açıklama editörünü inline aç (tek tık). Diğerleri: "Görüntüle". */}
+        {isFounder
+          ? <Button variant="outline" onClick={() => setEditOpen((v) => !v)} aria-expanded={editOpen}>{t('teams.edit')}</Button>
+          : <Button variant="ghost" onClick={() => props.go({ kind: 'team', id: team.id })}>{t('teams.view')}</Button>}
         {!isFounder && <Button variant="ghost" disabled={busy} onClick={() => { if (confirm(t('teams.leaveConfirm'))) act(() => leaveTeam(team.id), t('teams.left')) }}>{t('teams.leave')}</Button>}
       </div>
+
+      {/* Kimlik editörü — başlıktaki "Düzenle" ile açılır (kurucu). detail hazır olunca mount: form
+          gerçek renk/açıklamayla başlar (IdentityBox başlangıç state'i mount'ta okunur). */}
+      {isFounder && editOpen && detail && <IdentityBox detail={detail} act={act} busy={busy} defaultEditing onClose={() => setEditOpen(false)} />}
 
       {/* Bana yapılmış kuruculuk devri teklifi → kabul (§5) */}
       {me.transfer_offer === team.id && (
@@ -664,10 +671,12 @@ function InviteBox(props: { teamId: number; act: (fn: () => Promise<unknown>, ms
   )
 }
 
-function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean }) {
+// defaultEditing: dışarıdaki düğme açtı → doğrudan form (kendi "Düzenle" düğmesini gösterme).
+// onClose: "Vazgeç"te dış sahibe haber ver (açan bileşen kapatsın).
+function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean; defaultEditing?: boolean; onClose?: () => void }) {
   const { t } = useT()
   const team = props.detail?.team
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(props.defaultEditing ?? false)
   const [desc, setDesc] = useState(team?.description ?? '')
   const [open, setOpen] = useState(team?.applications_open ?? true)
   const [color1, setColor1] = useState(team?.color1 ?? '#A83A2B')
@@ -678,7 +687,8 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
   const id = team?.id
   if (!id) return null
   // Varsayılan: "Düzenle" düğmesi. Tıkla → ad/etiket/logo/renk/açıklama düzenleme açılır.
-  if (!editing) {
+  // defaultEditing modunda bu daralmış hal kullanılmaz (dış düğme açar, Vazgeç onClose çağırır).
+  if (!editing && !props.defaultEditing) {
     return <Button variant="outline" onClick={() => setEditing(true)}>{t('teams.edit')}</Button>
   }
   const onLogoFile = (file?: File) => {
@@ -726,7 +736,7 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
           <input value={tag} onChange={(e) => setTag(e.target.value)} placeholder={t('teams.tag')} maxLength={5} style={inp} />
           <Button disabled={props.busy || (!name && !tag)} onClick={() => props.act(() => renameTeam(id, name || null, tag || null), t('teams.renamed'))}>{t('teams.rename')}</Button>
         </div>
-        <Button variant="ghost" onClick={() => setEditing(false)}>{t('teams.cancel')}</Button>
+        <Button variant="ghost" onClick={() => { setEditing(false); props.onClose?.() }}>{t('teams.cancel')}</Button>
       </div>
       {cropSrc && (
         <AvatarCropper src={cropSrc} size={256} title={t('teams.cropTitle')} maskPath={SHIELD_PATH}
