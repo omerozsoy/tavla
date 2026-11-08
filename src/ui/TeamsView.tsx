@@ -507,7 +507,8 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
     <div style={{ display: 'grid', gap: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, borderBottom: '2px solid var(--text)' }}>
         <TeamChip team={team} big /><span style={{ flex: 1 }} />
-        <Button variant="ghost" onClick={() => props.go({ kind: 'team', id: team.id })}>{t('teams.view')}</Button>
+        {/* Kurucu: "Düzenle" → takım sayfasında logo/renk/ad/açıklama editörü. Diğerleri: "Görüntüle". */}
+        <Button variant={isFounder ? 'outline' : 'ghost'} onClick={() => props.go({ kind: 'team', id: team.id })}>{t(isFounder ? 'teams.edit' : 'teams.view')}</Button>
         {!isFounder && <Button variant="ghost" disabled={busy} onClick={() => { if (confirm(t('teams.leaveConfirm'))) act(() => leaveTeam(team.id), t('teams.left')) }}>{t('teams.leave')}</Button>}
       </div>
 
@@ -582,9 +583,6 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
 
       {/* Davet (yönetici) */}
       {isManager && <InviteBox teamId={team.id} act={act} busy={busy} />}
-
-      {/* Kimlik + ayarlar (kurucu) */}
-      {isFounder && <IdentityBox detail={detail} act={act} busy={busy} />}
 
       {/* Sohbet */}
       <TeamChat teamId={team.id} canManage={isManager} myId={props.myId} />
