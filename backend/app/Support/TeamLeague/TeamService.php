@@ -317,7 +317,25 @@ class TeamService
                     'color1' => $data['color1'] ?? $team->color1,
                     'color2' => $data['color2'] ?? $team->color2,
                     'description' => $data['description'] ?? null,
-                ])->save();
+                ]);
+                // Admin TÜM özellikleri değiştirebilir: logo DOĞRUDAN geçerli olur (onay beklemez),
+                // başvuru açık/kapalı ve min başvuru rating'i. Logo YALNIZCA yeni değer varsa güncellenir
+                // (boşken preset/base64 logo kazara silinmesin). Filament disk-göreli yol -> /uploads/ URL.
+                if (! empty($data['logo'])) {
+                    $logo = (string) $data['logo'];
+                    if (! preg_match('#^(/uploads/|https?://|data:)#', $logo)) {
+                        $logo = '/uploads/'.ltrim($logo, '/');
+                    }
+                    $team->logo = $logo;
+                    $team->logo_pending = null;
+                }
+                if (array_key_exists('applications_open', $data)) {
+                    $team->applications_open = (bool) $data['applications_open'];
+                }
+                if (array_key_exists('min_apply_rating', $data)) {
+                    $team->min_apply_rating = ($data['min_apply_rating'] === null || $data['min_apply_rating'] === '') ? null : (int) $data['min_apply_rating'];
+                }
+                $team->save();
                 $this->audit($team, $adminId, 'team_edited_admin');
 
                 return $team;

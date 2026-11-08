@@ -108,6 +108,11 @@ class TeamResource extends Resource
                         'name' => $r->name, 'tag' => $r->tag,
                         'color1' => $r->color1, 'color2' => $r->color2,
                         'description' => $r->description,
+                        // FileUpload disk('uploads') disk-göreli yol bekler; kayıtlı logo '/uploads/..' ->
+                        // öneki sıyır. Preset/base64 (non-/uploads) logolar önizlenemez -> null (save'de korunur).
+                        'logo' => ($r->logo && str_starts_with($r->logo, '/uploads/')) ? ltrim(substr($r->logo, 9), '/') : null,
+                        'applications_open' => (bool) $r->applications_open,
+                        'min_apply_rating' => $r->min_apply_rating,
                     ])
                     ->form([
                         Forms\Components\TextInput::make('name')->label('Takım adı')->required()->minLength(3)->maxLength(40),
@@ -115,6 +120,14 @@ class TeamResource extends Resource
                         Forms\Components\ColorPicker::make('color1')->label('Ana renk'),
                         Forms\Components\ColorPicker::make('color2')->label('İkincil renk'),
                         Forms\Components\Textarea::make('description')->label('Açıklama')->maxLength(500),
+                        // Logo: admin yüklerse DOĞRUDAN geçerli olur (onay beklemez). Boşaltınca logo kalkar.
+                        Forms\Components\FileUpload::make('logo')->label('Logo')
+                            ->image()->disk('uploads')->directory('team-logos')
+                            ->imageResizeMode('cover')->imageResizeTargetWidth(256)->imageResizeTargetHeight(256)
+                            ->helperText('Admin yüklediği logo onay beklemeden geçerli olur.'),
+                        Forms\Components\Toggle::make('applications_open')->label('Başvurular açık'),
+                        Forms\Components\TextInput::make('min_apply_rating')->label('Min. başvuru rating\'i')
+                            ->numeric()->minValue(0)->maxValue(4000)->helperText('Boş = sınır yok'),
                     ])
                     ->action(fn (Team $r, array $data) => self::run(fn () => app(TeamService::class)->adminEditTeam($r, (int) auth()->id(), $data), 'Takım güncellendi.')),
                 Tables\Actions\Action::make('approve')->label('Onayla')
