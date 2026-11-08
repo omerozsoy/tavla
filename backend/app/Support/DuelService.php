@@ -54,14 +54,15 @@ class DuelService
     }
 
     /**
-     * Bireysel düello sıralaması: kazanan başına galibiyet sayısı (DESC). + oyuncu bilgisi.
+     * Bireysel düello sıralaması: kazanan başına TOPLAM DÜELLO PUANI (DESC). Puan = kazanılan maçların
+     * uzunluğu toplamı (1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan). + oyuncu bilgisi.
      *
      * @return array<int,array{user_id:int,nickname:string,avatar:?string,rating:int,wins:int}>
      */
     public static function individualLeaderboard(int $limit = 100): array
     {
         $rows = DB::table('duels')
-            ->select('winner_id', DB::raw('COUNT(*) as wins'))
+            ->select('winner_id', DB::raw('SUM(target_points) as wins'))
             ->whereNotNull('winner_id')
             ->groupBy('winner_id')
             ->orderByDesc('wins')
@@ -87,8 +88,8 @@ class DuelService
     }
 
     /**
-     * Takım düello sıralaması: kazananın takımı (team_members) başına toplam düello galibiyeti (DESC).
-     * Üyesiz kazanan (takımsız) puana saymaz (JOIN eler).
+     * Takım düello sıralaması: kazananın takımı (team_members) başına TOPLAM DÜELLO PUANI (DESC).
+     * Puan = üyelerin kazandığı maçların uzunluğu toplamı (1/3/5). Üyesiz kazanan puana saymaz (JOIN eler).
      *
      * @return array<int,array{team_id:int,name:string,tag:string,logo:?string,color1:string,color2:string,wins:int}>
      */
@@ -99,7 +100,7 @@ class DuelService
             ->join('teams', 'teams.id', '=', 'team_members.team_id')
             ->whereNotNull('duels.winner_id')
             ->groupBy('teams.id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2')
-            ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', DB::raw('COUNT(*) as wins'))
+            ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', DB::raw('SUM(duels.target_points) as wins'))
             ->orderByDesc('wins')
             ->limit($limit)
             ->get();

@@ -21367,6 +21367,80 @@ body:has(.spectate-view) .app.lobby {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
+/* Takım sıralaması (liderlik tablosu stili): başlık + sağ üstte küçük "Takım ara" + madalyalı satırlar. */
+.trank-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.trank-head h3 { margin: 0; }
+.trank-search {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.trank-search input {
+  width: 170px;
+  max-width: 44vw;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg, transparent);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.trank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.trank-row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card-bg, transparent);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.trank-row:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.trank-row.top {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.trank-pos {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--muted);
+}
+.trank-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.trank-team b {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trank-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-text, #d8805a);
+}
+
 /* ===== Takımlar modülü: segment sekmeler + kurallar + kurma ekranı ===== */
 .teams-tabs {
   display: flex;

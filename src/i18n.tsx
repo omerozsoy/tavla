@@ -218,8 +218,8 @@ const TR: Dict = {
   'teams.preview': 'Önizleme',
   'teams.rankTitle': 'Takım Sıralaması',
   'teams.rankLead': 'Takımlar üyelerinin rating ortalamasına göre sıralanır.',
-  'teams.rank.rating': 'Rating',
-  'teams.rank.duel': 'Düello',
+  'teams.rank.rating': 'Rating Ort.',
+  'teams.rank.duel': 'Düello Puanı',
   'teams.rank.league': 'Lig Puanı',
   'teams.monthlyEmpty': 'Bu ay henüz lig maçı yok.',
   'teams.rulesLead': 'Takımlar Ligi’nin tüm kuralları — kuruluştan aylık lige.',
@@ -311,17 +311,13 @@ const TR: Dict = {
     '• Aynı anda en fazla 3 açık başvurun olabilir.\n' +
     '• Kurucu 60 gün giriş yapmazsa kuruluş otomatik devredilir.\n\n' +
     'Takım sıralamaları\n' +
-    '• Takımlar üç ayrı listede sıralanır: Rating, Düello ve Lig Puanı.\n' +
-    '• Rating: takımın üye rating ortalaması.\n' +
-    '• Düello: üyelerin topladığı toplam düello galibiyeti.\n' +
-    '• Lig Puanı: aylık takım karşılaşmalarından kazanılan puan (galibiyet 3, beraberlik 1, mağlubiyet 0).\n\n' +
+    '• Takımlar iki ayrı listede sıralanır: Düello Puanı ve Rating Ortalaması.\n' +
+    '• Düello Puanı: üyelerin topladığı toplam düello puanı.\n' +
+    '• Rating Ortalaması: takımın üye rating ortalaması.\n\n' +
     'Düello\n' +
     '• Üyeler çevrimiçi başka bir takımlı oyuncuyu bireysel düelloya davet eder (1v1); düello yalnız takımı olanlar arasında oynanır.\n' +
     '• Coin/bahis yoktur ve maç bireysel rating’i etkilemez. Uzunluk 1, 3 veya 5 puandır (davet eden seçer).\n' +
-    '• Her galibiyet oyuncuya ve takımına 1 düello puanı kazandırır.\n\n' +
-    'Takım karşılaşmaları (aylık lig)\n' +
-    '• Takımlar 5’e 5 karşılaşır; her karşılaşma galibiyet 3, beraberlik 1, mağlubiyet 0 puan verir.\n' +
-    '• Aylık Lig Puanı tablosu bu karşılaşmaların sonuçlarından oluşur.',
+    '• Kazanan, maç uzunluğu kadar düello puanı alır: 1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan. Bu puan oyuncuya ve takımına eklenir.',
   // ponytail: asset-rev — TR chunk hash'ini değiştirip canlı bundle'ı taze URL'ye yönlendirir
   // (deploy öncesi CDN'e zehirlenmiş 404'ü dereferans etmek için). Hiçbir yerde okunmaz.
   '__asset_rev': '2026-11-04a',
@@ -2478,8 +2474,8 @@ const EN: Dict = {
   'teams.preview': 'Preview',
   'teams.rankTitle': 'Team Rankings',
   'teams.rankLead': 'Teams are ranked by their members’ average rating.',
-  'teams.rank.rating': 'Rating',
-  'teams.rank.duel': 'Duel',
+  'teams.rank.rating': 'Avg Rating',
+  'teams.rank.duel': 'Duel Points',
   'teams.rank.league': 'League Points',
   'teams.monthlyEmpty': 'No league matches yet this month.',
   'teams.rulesLead': 'Everything about the Teams League — from founding to the monthly league.',
@@ -2571,17 +2567,13 @@ const EN: Dict = {
     '• You can have at most 3 open applications at a time.\n' +
     '• If the founder does not log in for 60 days, leadership is transferred automatically.\n\n' +
     'Team rankings\n' +
-    '• Teams appear in three separate lists: Rating, Duel and League Points.\n' +
-    '• Rating: the team’s average member rating.\n' +
-    '• Duel: the total duel wins collected by members.\n' +
-    '• League Points: points earned from monthly team matches (win 3, draw 1, loss 0).\n\n' +
+    '• Teams appear in two separate lists: Duel Points and Average Rating.\n' +
+    '• Duel Points: the total duel points collected by members.\n' +
+    '• Average Rating: the team’s average member rating.\n\n' +
     'Duels\n' +
     '• A member invites another online player who has a team to a 1v1 duel; duels are only played between players who have a team.\n' +
     '• There is no coin/stake and the match does not affect individual rating. Length is 1, 3 or 5 points (the inviter chooses).\n' +
-    '• Each win earns the player and their team 1 duel point.\n\n' +
-    'Team matches (monthly league)\n' +
-    '• Teams meet 5-v-5; each match awards win 3, draw 1, loss 0 points.\n' +
-    '• The monthly League Points table is built from these match results.',
+    '• The winner earns duel points equal to the match length: a 1-point match 1, a 3-point match 3, a 5-point match 5. These points are added to the player and their team.',
 
   // Turkey Online Backgammon League (independent module §1)
   'menu.group.league': 'Backgammon League',

@@ -15,7 +15,6 @@ import {
   applyTeam,
   cancelTeamApplication,
   cancelTeamMatch,
-  challengeTeam,
   closeTeam,
   createTeam,
   decideTeamApplication,
@@ -26,7 +25,6 @@ import {
   getMyTeamMatch,
   getTeam,
   getTeams,
-  getTeamsMonthly,
   inviteToTeam,
   kickTeamMember,
   leaveTeam,
@@ -43,7 +41,6 @@ import {
   type TeamBrief,
   type TeamDetail,
   type TeamMe,
-  type TeamMonthlyRow,
   type TeamMyMatch,
   type TeamRankRow,
 } from '../api'
@@ -200,109 +197,74 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   const { t } = useT()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<TeamBrief[] | null>(null)
-  // 3 sıralama sekmesi — hepsi takım odaklı (kullanıcı direktifi 2026-11-08, lider-tablosu gibi):
-  // Rating (üye rating ortalaması) / Düello (düello galibiyeti) / Lig Puanı (aylık 3-1-0 tablosu).
-  const [rankTab, setRankTab] = useState<'rating' | 'duel' | 'league'>('rating')
+  // 2 sıralama sekmesi (kullanıcı direktifi): Düello (takım düello puanı) + Rating (üye rating ort.).
+  const [rankTab, setRankTab] = useState<'duel' | 'rating'>('duel')
   const [teamRank, setTeamRank] = useState<TeamRankRow[] | null>(null)
   const [duelTeams, setDuelTeams] = useState<DuelTeamRow[] | null>(null)
-  const [monthly, setMonthly] = useState<TeamMonthlyRow[] | null>(null)
 
   // Aktif sekmenin verisini tembel çek (ilk geçişte); yüklenmişse tekrar çekme.
   useEffect(() => {
     if (rankTab === 'rating' && teamRank === null) getTeams().then((r) => setTeamRank(r.ranking ?? [])).catch(() => setTeamRank([]))
     if (rankTab === 'duel' && duelTeams === null) duelLeaderboard(100).then((r) => setDuelTeams(r.teams)).catch(() => setDuelTeams([]))
-    if (rankTab === 'league' && monthly === null) getTeamsMonthly().then((r) => setMonthly(r.table)).catch(() => setMonthly([]))
-  }, [rankTab, teamRank, duelTeams, monthly])
+  }, [rankTab, teamRank, duelTeams])
 
   const search = async () => {
     if (!q.trim()) { setResults(null); return }
     try { setResults((await getTeams(q)).results ?? []) } catch { setResults([]) }
   }
 
+  const medal = (n: number) => (n === 1 ? '🥇' : n === 2 ? '🥈' : n === 3 ? '🥉' : '')
+  // Leaderboard-stili sıralama satırı: derece (madalya) + amblem+ad + sağda değer.
+  const rankRow = (key: number, pos: number, team: { name: string; tag: string; logo?: string | null; color1: string; color2: string }, val: string, onOpen: () => void) => (
+    <div key={key} className={`trank-row ${pos <= 3 ? 'top' : ''}`} onClick={onOpen}>
+      <span className="trank-pos">{medal(pos) || pos}</span>
+      <span className="trank-team">
+        <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={28} />
+        <b>{team.name}</b>
+      </span>
+      <span className="trank-val">{val}</span>
+    </div>
+  )
+
   return (
     <div>
-      <div className="teams-create-head" style={{ marginBottom: 10 }}>
+      {/* Başlık + sağ üstte küçük "Takım ara" (liderlik tablosu düzeni). */}
+      <div className="trank-head">
         <h3>{t('teams.rankTitle')}</h3>
-      </div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('teams.search')}
-          style={{ ...inp, flex: 1 }} />
-        <Button onClick={search}>{t('teams.search')}</Button>
+        <div className="trank-search">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('teams.search')}
+            onKeyDown={(e) => { if (e.key === 'Enter') void search() }} />
+          <Button onClick={() => void search()}>{t('teams.search')}</Button>
+        </div>
       </div>
       {results !== null ? (
         <TeamList teams={results} onOpen={(id) => props.go({ kind: 'team', id })} />
       ) : (
         <>
           <div className="rank-tabs" style={{ marginBottom: 10 }}>
-            <Button variant={rankTab === 'rating' ? 'default' : 'ghost'} aria-pressed={rankTab === 'rating'} onClick={() => setRankTab('rating')}>{t('teams.rank.rating')}</Button>
             <Button variant={rankTab === 'duel' ? 'default' : 'ghost'} aria-pressed={rankTab === 'duel'} onClick={() => setRankTab('duel')}>{t('teams.rank.duel')}</Button>
-            <Button variant={rankTab === 'league' ? 'default' : 'ghost'} aria-pressed={rankTab === 'league'} onClick={() => setRankTab('league')}>{t('teams.rank.league')}</Button>
+            <Button variant={rankTab === 'rating' ? 'default' : 'ghost'} aria-pressed={rankTab === 'rating'} onClick={() => setRankTab('rating')}>{t('teams.rank.rating')}</Button>
           </div>
 
-          {/* Rating: takımların üye rating ortalaması sıralaması. */}
-          {rankTab === 'rating' && (
-            teamRank === null ? <Loading /> : teamRank.length === 0 ? (
-              <div className="lb-empty">{t('teams.empty')}</div>
-            ) : (
-              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('teams.rank.rating')}</th></tr></thead>
-                <tbody>
-                  {teamRank.map((r) => (
-                    <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.id })}>
-                      <td>{r.rank}</td>
-                      <td><TeamRankCell team={r} /></td>
-                      <td>{r.rating_avg.toFixed(1)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-          )}
-
-          {/* Düello: takımların düello galibiyeti sıralaması. */}
+          {/* Takım Düello Puanı: üyelerin topladığı toplam düello puanı (1/3/5). */}
           {rankTab === 'duel' && (
             duelTeams === null ? <Loading /> : duelTeams.length === 0 ? (
               <div className="lb-empty">{t('duel.emptyTeams')}</div>
             ) : (
-              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.wins')}</th></tr></thead>
-                <tbody>
-                  {duelTeams.map((r, i) => (
-                    <tr key={r.team_id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.team_id })}>
-                      <td>{i + 1}</td>
-                      <td>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          <TeamEmblem color1={r.color1} color2={r.color2} logo={r.logo || undefined} label={r.tag} size={28} />
-                          <b>{r.name}</b>
-                        </span>
-                      </td>
-                      <td>{r.wins}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="trank-list">
+                {duelTeams.map((r, i) => rankRow(r.team_id, i + 1, r, String(r.wins), () => props.go({ kind: 'team', id: r.team_id })))}
+              </div>
             )
           )}
 
-          {/* Lig Puanı: aylık karşılaşma puan tablosu (galibiyet 3, beraberlik 1). */}
-          {rankTab === 'league' && (
-            monthly === null ? <Loading /> : monthly.length === 0 ? (
-              <div className="lb-empty">{t('teams.monthlyEmpty')}</div>
+          {/* Takım Rating Ortalaması. */}
+          {rankTab === 'rating' && (
+            teamRank === null ? <Loading /> : teamRank.length === 0 ? (
+              <div className="lb-empty">{t('teams.empty')}</div>
             ) : (
-              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('teams.played')}</th><th>{t('teams.diff')}</th><th>{t('teams.points')}</th></tr></thead>
-                <tbody>
-                  {monthly.map((r) => (
-                    <tr key={r.rank} style={{ cursor: r.team ? 'pointer' : 'default' }} onClick={() => r.team && props.go({ kind: 'team', id: r.team.id })}>
-                      <td>{r.rank}</td>
-                      <td>{r.team ? <TeamRankCell team={r.team} /> : '—'}</td>
-                      <td>{r.played}</td>
-                      <td>{r.match_diff > 0 ? '+' + r.match_diff : r.match_diff}</td>
-                      <td><b>{r.points}</b></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="trank-list">
+                {teamRank.map((r) => rankRow(r.id, r.rank, r, r.rating_avg.toFixed(1), () => props.go({ kind: 'team', id: r.id })))}
+              </div>
             )
           )}
         </>
@@ -311,15 +273,6 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   )
 }
 
-// Sıralama satırı: amblem + takım adı (tekrarlanan inline blok → tek yer).
-function TeamRankCell({ team }: { team: TeamBrief }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={28} />
-      <b>{team.name}</b>
-    </span>
-  )
-}
 
 function CreateTeam(props: { myId: number | null; eligibility: TeamMe['eligibility'] | null; onRequireLogin: () => void; onRequirePremium: () => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
@@ -607,22 +560,6 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
       {/* Kimlik + ayarlar (kurucu) */}
       {isFounder && <IdentityBox detail={detail} act={act} busy={busy} />}
 
-      {/* Karşılaşmalar + meydan okuma */}
-      <section>
-        <SLabel>{t('teams.matches')}</SLabel>
-        {detail?.matches.map((mt) => (
-          <div key={mt.id} style={row}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <TeamMark team={mt.home} size={22} /> {mt.home_score}–{mt.away_score} <TeamMark team={mt.away} size={22} />
-            </span>
-            <span style={{ opacity: 0.6, marginLeft: 8 }}>{mt.status}</span>
-            <span style={{ flex: 1 }} />
-            <Button variant="ghost" onClick={() => props.go({ kind: 'match', id: mt.id })}>{t('teams.view')}</Button>
-          </div>
-        ))}
-        {isManager && <ChallengeBox teamId={team.id} act={act} busy={busy} />}
-      </section>
-
       {/* Sohbet */}
       <TeamChat teamId={team.id} canManage={isManager} myId={props.myId} />
 
@@ -705,15 +642,18 @@ function InviteBox(props: { teamId: number; act: (fn: () => Promise<unknown>, ms
 
 function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean }) {
   const { t } = useT()
+  const team = props.detail?.team
   const [editing, setEditing] = useState(false)
-  const [desc, setDesc] = useState(props.detail?.team.description ?? '')
-  const [open, setOpen] = useState(props.detail?.team.applications_open ?? true)
+  const [desc, setDesc] = useState(team?.description ?? '')
+  const [open, setOpen] = useState(team?.applications_open ?? true)
+  const [color1, setColor1] = useState(team?.color1 ?? '#A83A2B')
+  const [color2, setColor2] = useState(team?.color2 ?? '#1f2933')
   const [name, setName] = useState('')
   const [tag, setTag] = useState('')
   const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const id = props.detail?.team.id
+  const id = team?.id
   if (!id) return null
-  // Varsayılan: "Düzenle" düğmesi. Tıkla → ad/etiket/logo/açıklama düzenleme açılır.
+  // Varsayılan: "Düzenle" düğmesi. Tıkla → ad/etiket/logo/renk/açıklama düzenleme açılır.
   if (!editing) {
     return <Button variant="outline" onClick={() => setEditing(true)}>{t('teams.edit')}</Button>
   }
@@ -727,16 +667,34 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
     <section>
       <SLabel>{t('teams.identity')}</SLabel>
       <div style={{ display: 'grid', gap: 8 }}>
+        {/* Canlı amblem önizleme (renk + etiket + onaylı logo) */}
+        <div className="teams-create-preview">
+          <TeamEmblem color1={color1} color2={color2} logo={team?.logo || undefined} label={team?.tag} size={76} />
+        </div>
         <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t('teams.desc')} maxLength={500} style={{ ...inp, minHeight: 60 }} />
         <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input type="checkbox" checked={open} onChange={(e) => setOpen(e.target.checked)} /> {t('teams.applicationsOpen')}
         </label>
+        {/* Renkler (kurucu düzenler → anında) */}
+        <div className="teams-field">
+          <span>{t('teams.colors')}</span>
+          <div className="teams-colors">
+            <label className="teams-color">
+              <input type="color" value={color1} onChange={(e) => setColor1(e.target.value)} />
+              <span className="teams-color-meta"><small>{t('teams.colorPrimary')}</small><code>{color1.toUpperCase()}</code></span>
+            </label>
+            <label className="teams-color">
+              <input type="color" value={color2} onChange={(e) => setColor2(e.target.value)} />
+              <span className="teams-color-meta"><small>{t('teams.colorSecondary')}</small><code>{color2.toUpperCase()}</code></span>
+            </label>
+          </div>
+        </div>
         {/* Logo güncelle (avatar gibi kırp → admin onayına) */}
         <label className="teams-logo-upload" style={{ alignSelf: 'flex-start' }}>
           <input type="file" accept="image/*" onChange={(e) => { onLogoFile(e.target.files?.[0]); e.currentTarget.value = '' }} hidden />
           <Icon name="users-group" size={16} /> {t('teams.logoUpdate')}
         </label>
-        <Button disabled={props.busy} onClick={() => props.act(() => updateTeamIdentity(id, { description: desc, applications_open: open }), t('teams.saved'))}>{t('teams.save')}</Button>
+        <Button disabled={props.busy} onClick={() => props.act(() => updateTeamIdentity(id, { description: desc, applications_open: open, color1, color2 }), t('teams.saved'))}>{t('teams.save')}</Button>
         <hr style={{ opacity: 0.2 }} />
         <div style={{ fontSize: 13, opacity: 0.7 }}>{t('teams.rename.hint')}</div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -752,66 +710,6 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
           onCancel={() => setCropSrc(null)} />
       )}
     </section>
-  )
-}
-
-function ChallengeBox(props: { teamId: number; act: (fn: () => Promise<unknown>, msg?: string) => void; busy: boolean }) {
-  const { t } = useT()
-  const [q, setQ] = useState('')
-  const [results, setResults] = useState<TeamBrief[]>([])
-  const [picked, setPicked] = useState<TeamBrief | null>(null)
-  const [at, setAt] = useState('')
-  const [searching, setSearching] = useState(false)
-  const search = useCallback(async (term: string) => {
-    const s = term.trim()
-    if (!s) { setResults([]); return }
-    setSearching(true)
-    try { setResults(((await getTeams(s)).results ?? []).filter((tm) => tm.id !== props.teamId)) }
-    catch { setResults([]) } finally { setSearching(false) }
-  }, [props.teamId])
-  // 3 harften sonra OTOMATİK listele (debounce 300ms); <3 harf → temizle. Takım ADIYLA aranır (ID değil).
-  useEffect(() => {
-    const s = q.trim()
-    if (s.length < 3) { setResults([]); return }
-    const id = setTimeout(() => search(s), 300)
-
-    return () => clearTimeout(id)
-  }, [q, search])
-  return (
-    <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
-      <div style={{ fontSize: 13, opacity: 0.7 }}>{t('teams.challenge.hint')}</div>
-      {/* ID yerine takım ara → seç → tarih belirle. */}
-      {!picked ? (
-        <>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(q) }} placeholder={t('teams.searchOpponent')} style={inp} />
-            <Button variant="outline" disabled={searching || !q.trim()} onClick={() => search(q)}>{t('teams.search')}</Button>
-          </div>
-          {results.map((tm) => (
-            <div key={tm.id} style={row}>
-              <TeamChip team={tm} /><span style={{ flex: 1 }} />
-              <Button variant="outline" onClick={() => { setPicked(tm); setResults([]) }}>{t('teams.challenge')}</Button>
-            </div>
-          ))}
-          {!searching && q.trim() !== '' && results.length === 0 && <div style={{ opacity: 0.6, fontSize: 13 }}>{t('teams.noResults')}</div>}
-        </>
-      ) : (
-        <div style={{ display: 'grid', gap: 6 }}>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <TeamChip team={picked} />
-            <Button variant="ghost" onClick={() => setPicked(null)}>✕</Button>
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} style={inp} aria-label={t('teams.pickTime')} />
-            {at && <span style={{ fontSize: 13, opacity: 0.7 }}>{fmtTR(at)}</span>}
-            <Button disabled={props.busy || !at}
-              onClick={() => props.act(() => challengeTeam(props.teamId, picked.id, new Date(at).toISOString()), t('teams.challengeSent'))}>
-              {t('teams.challenge')}
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
   )
 }
 

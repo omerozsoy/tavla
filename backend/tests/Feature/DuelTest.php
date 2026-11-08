@@ -185,11 +185,14 @@ class DuelTest extends TestCase
         $svc->record($this->duelRoom('L2', $a, $c, 1, 'white'));
         $svc->record($this->duelRoom('L3', $b, $c, 5, 'black')); // c kazanır
 
+        // Puan = kazanılan maçların uzunluğu toplamı: a = 3+1 = 4, c = 5. En yüksek puan (c) önde.
         $indiv = DuelService::individualLeaderboard();
-        $this->assertSame($a->id, $indiv[0]['user_id']);
-        $this->assertSame(2, $indiv[0]['wins']);
+        $this->assertSame($c->id, $indiv[0]['user_id']);
+        $this->assertSame(5, $indiv[0]['wins']);
+        $this->assertSame($a->id, $indiv[1]['user_id']);
+        $this->assertSame(4, $indiv[1]['wins']);
 
-        // Takım: a bir takımda, c başka takımda. a=2 galibiyet -> takımı 1., c=1 -> 2.
+        // Takım: a bir takımda (teamA=4 puan), c başka takımda (teamC=5 puan) -> teamC 1., teamA 2.
         $teamA = DB::table('teams')->insertGetId([
             'name' => 'Alfa', 'name_key' => 'alfa', 'tag' => 'AL', 'tag_key' => 'al',
             'founder_id' => $a->id, 'created_at' => now(), 'updated_at' => now(),
@@ -202,9 +205,9 @@ class DuelTest extends TestCase
         TeamMember::create(['team_id' => $teamC, 'user_id' => $c->id, 'role' => 'founder', 'joined_at' => now()]);
 
         $teams = DuelService::teamLeaderboard();
-        $this->assertSame($teamA, $teams[0]['team_id']);
-        $this->assertSame(2, $teams[0]['wins']);
-        $this->assertSame($teamC, $teams[1]['team_id']);
-        $this->assertSame(1, $teams[1]['wins']);
+        $this->assertSame($teamC, $teams[0]['team_id']); // teamC = 5 puan (1 maç ×5)
+        $this->assertSame(5, $teams[0]['wins']);
+        $this->assertSame($teamA, $teams[1]['team_id']); // teamA = 4 puan (3+1)
+        $this->assertSame(4, $teams[1]['wins']);
     }
 }
