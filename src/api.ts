@@ -1611,7 +1611,7 @@ export interface TeamMe {
   eligibility: { premium: boolean; rated_matches: number; min_rated: number; cooldown_until?: string | null; can_create: boolean; found_cost: number }
 }
 export interface TeamDetail {
-  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; awards: Array<{ month_key: string; rank: number; kind: string }> }
+  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; has_pending_logo?: boolean; awards: Array<{ month_key: string; rank: number; kind: string }> }
   members: Array<{ role: string; user: TeamUserBrief; premium_grace_until?: string | null }>
   matches: TeamMatchRow[]
 }

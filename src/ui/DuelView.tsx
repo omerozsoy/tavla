@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
-import { onlinePlayers, type OnlinePlayer } from '../api'
+import { onlinePlayers, getMyTeam, type OnlinePlayer } from '../api'
 import { CountryFlag } from './Flag'
 import Loading from './Loading'
 
@@ -40,17 +40,28 @@ interface Props {
   onDuel: (p: Target, points: 1 | 3 | 5) => void
   board: BoardColors
   onChangeBoard: () => void
+  // Takımsız kullanıcı "Takım Kur" uyarısındaki butona basınca → Takımlar Ligi (kur) sayfasına git.
+  onCreateTeam: () => void
   titleOverride?: string
 }
 
 // Bireysel Düello sayfası (/duello) — /yeni-oyun (MatchSetup) ile AYNI tasarım: sol ayar kartı
 // (rakip seç + uzunluk + davet) + sağ board önizleme. Düello YALNIZ takımlılar arası; coin/bahis yok.
-export default function DuelView({ currentId, onClose, onDuel, board, onChangeBoard, titleOverride }: Props) {
+export default function DuelView({ currentId, onClose, onDuel, board, onChangeBoard, onCreateTeam, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
   const [sel, setSel] = useState<Target | null>(null) // seçili rakip
   const [len, setLen] = useState(3) // düello uzunluğu (1/3/5)
+  const [hasTeam, setHasTeam] = useState<boolean | null>(null) // kullanıcının takımı var mı (null=yükleniyor/misafir)
+
+  // Takım kontrolü: düello YALNIZ takımlılar arası -> takımsız kullanıcıya "Takım Kur" uyarısı.
+  useEffect(() => {
+    if (!currentId) { setHasTeam(null); return }
+    let alive = true
+    getMyTeam().then((r) => alive && setHasTeam(!!r.membership)).catch(() => alive && setHasTeam(null))
+    return () => { alive = false }
+  }, [currentId])
 
   // Çevrimiçi TAKIMLI oyuncular (düello takımlılar arası) — kendini hariç tut, 15sn tazele.
   useEffect(() => {
@@ -75,6 +86,15 @@ export default function DuelView({ currentId, onClose, onDuel, board, onChangeBo
             <Icon name="swords" size={24} /> {titleOverride || t('duel.title')}
           </h2>
           <p className="setup-unrated-hint">{t('duel.intro')}</p>
+
+          {/* Takımsız kullanıcı: düello takımlılar arası -> "Takım Kur" uyarısı. */}
+          {currentId && hasTeam === false && (
+            <div className="duel-needteam" role="note">
+              <Icon name="warning-circle" size={18} />
+              <span>{t('duel.needTeam')}</span>
+              <Button variant="default" onClick={onCreateTeam}>{t('duel.createTeam')}</Button>
+            </div>
+          )}
 
           {/* Rakip seç: çevrimiçi takımlı oyuncular (kaydırılır liste) */}
           <div className="setup-row">

@@ -701,6 +701,12 @@ function IdentityBox(props: { detail: TeamDetail | null; act: (fn: () => Promise
     <section>
       <SLabel>{t('teams.identity')}</SLabel>
       <div style={{ display: 'grid', gap: 8 }}>
+        {/* Bekleyen (onaylanmamış) logo uyarısı — düzenlerken görünür */}
+        {team?.has_pending_logo && (
+          <div className="teams-logo-pending-warn" role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 2, background: 'color-mix(in srgb, var(--warning, #c47f17) 15%, transparent)', border: '1px solid color-mix(in srgb, var(--warning, #c47f17) 45%, transparent)', color: 'var(--text)', fontSize: 13 }}>
+            <Icon name="clock" size={15} /> {t('teams.logoPendingWarn')}
+          </div>
+        )}
         {/* Canlı amblem önizleme (renk + etiket + onaylı logo) */}
         <div className="teams-create-preview">
           <TeamEmblem color1={color1} color2={color2} logo={team?.logo || undefined} label={team?.tag} size={76} />

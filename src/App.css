@@ -17141,6 +17141,25 @@ body:has(.spectate-view) .app.lobby {
   text-align: left;
 }
 
+/* Düello: takımsız kullanıcı uyarısı ("Takım Kur"). */
+.duel-needteam {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.duel-needteam > span {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
 /* Düello (/duello) rakip seçici: setup-card içinde kaydırılır çevrimiçi takımlı oyuncu listesi. */
 .duel-opp-list {
   display: flex;

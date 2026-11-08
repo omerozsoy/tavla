@@ -10523,6 +10523,7 @@ export default function App() {
           currentId={user?.id}
           onClose={() => setDuelOpen(false)}
           onDuel={handleSendDuel}
+          onCreateTeam={() => { setDuelOpen(false); goPage(() => { setTeamsArg('kur'); setTeamsOpen(true) }) }}
           onChangeBoard={() => setBoardPickerOpen(true)}
           board={(() => {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
