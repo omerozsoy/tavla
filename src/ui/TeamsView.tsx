@@ -26,8 +26,8 @@ import {
   getMyTeamMatch,
   getTeam,
   getTeams,
+  getTeamsMonthly,
   inviteToTeam,
-  leaderboard,
   kickTeamMember,
   leaveTeam,
   promoteTeamMember,
@@ -38,13 +38,14 @@ import {
   setTeamLineup,
   transferTeam,
   updateTeamIdentity,
-  type DuelIndividualRow,
   type DuelTeamRow,
   type LeaderRow,
   type TeamBrief,
   type TeamDetail,
   type TeamMe,
+  type TeamMonthlyRow,
   type TeamMyMatch,
+  type TeamRankRow,
 } from '../api'
 import { ApiError } from '../api'
 
@@ -199,33 +200,29 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   const { t } = useT()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<TeamBrief[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  // Sıralamalar (kullanıcı direktifi: Bireysel düello / Takımlar düello / Rating bu sayfada).
-  const [rankTab, setRankTab] = useState<'teams' | 'individual' | 'rating'>('teams')
-  const [duelBoard, setDuelBoard] = useState<{ individual: DuelIndividualRow[]; teams: DuelTeamRow[] } | null>(null)
-  const [ratingRows, setRatingRows] = useState<LeaderRow[] | null>(null)
+  // 3 sıralama sekmesi — hepsi takım odaklı (kullanıcı direktifi 2026-11-08, lider-tablosu gibi):
+  // Rating (üye rating ortalaması) / Düello (düello galibiyeti) / Lig Puanı (aylık 3-1-0 tablosu).
+  const [rankTab, setRankTab] = useState<'rating' | 'duel' | 'league'>('rating')
+  const [teamRank, setTeamRank] = useState<TeamRankRow[] | null>(null)
+  const [duelTeams, setDuelTeams] = useState<DuelTeamRow[] | null>(null)
+  const [monthly, setMonthly] = useState<TeamMonthlyRow[] | null>(null)
 
+  // Aktif sekmenin verisini tembel çek (ilk geçişte); yüklenmişse tekrar çekme.
   useEffect(() => {
-    duelLeaderboard(100).then(setDuelBoard).catch(() => setDuelBoard({ individual: [], teams: [] })).finally(() => setLoading(false))
-  }, [])
-
-  // Rating sekmesi: mevcut genel rating liderlik tablosundan (tembel: ilk geçişte çek).
-  useEffect(() => {
-    if (rankTab !== 'rating' || ratingRows) return
-    leaderboard(100, 'rating').then(setRatingRows).catch(() => setRatingRows([]))
-  }, [rankTab, ratingRows])
+    if (rankTab === 'rating' && teamRank === null) getTeams().then((r) => setTeamRank(r.ranking ?? [])).catch(() => setTeamRank([]))
+    if (rankTab === 'duel' && duelTeams === null) duelLeaderboard(100).then((r) => setDuelTeams(r.teams)).catch(() => setDuelTeams([]))
+    if (rankTab === 'league' && monthly === null) getTeamsMonthly().then((r) => setMonthly(r.table)).catch(() => setMonthly([]))
+  }, [rankTab, teamRank, duelTeams, monthly])
 
   const search = async () => {
     if (!q.trim()) { setResults(null); return }
     try { setResults((await getTeams(q)).results ?? []) } catch { setResults([]) }
   }
 
-  if (loading) return <Loading />
   return (
     <div>
       <div className="teams-create-head" style={{ marginBottom: 10 }}>
         <h3>{t('teams.rankTitle')}</h3>
-        <p>{t('teams.rankLead')}</p>
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('teams.search')}
@@ -236,21 +233,41 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
         <TeamList teams={results} onOpen={(id) => props.go({ kind: 'team', id })} />
       ) : (
         <>
-          {/* 3 sıralama sekmesi: Takımlar (düello galibiyeti) / Bireysel (düello) / Rating (genel). */}
           <div className="rank-tabs" style={{ marginBottom: 10 }}>
-            <Button variant={rankTab === 'teams' ? 'default' : 'ghost'} aria-pressed={rankTab === 'teams'} onClick={() => setRankTab('teams')}>{t('duel.tab.teams')}</Button>
-            <Button variant={rankTab === 'individual' ? 'default' : 'ghost'} aria-pressed={rankTab === 'individual'} onClick={() => setRankTab('individual')}>{t('duel.tab.individual')}</Button>
-            <Button variant={rankTab === 'rating' ? 'default' : 'ghost'} aria-pressed={rankTab === 'rating'} onClick={() => setRankTab('rating')}>{t('duel.tab.rating')}</Button>
+            <Button variant={rankTab === 'rating' ? 'default' : 'ghost'} aria-pressed={rankTab === 'rating'} onClick={() => setRankTab('rating')}>{t('teams.rank.rating')}</Button>
+            <Button variant={rankTab === 'duel' ? 'default' : 'ghost'} aria-pressed={rankTab === 'duel'} onClick={() => setRankTab('duel')}>{t('teams.rank.duel')}</Button>
+            <Button variant={rankTab === 'league' ? 'default' : 'ghost'} aria-pressed={rankTab === 'league'} onClick={() => setRankTab('league')}>{t('teams.rank.league')}</Button>
           </div>
 
-          {rankTab === 'teams' && (
-            (duelBoard?.teams.length ?? 0) === 0 ? (
+          {/* Rating: takımların üye rating ortalaması sıralaması. */}
+          {rankTab === 'rating' && (
+            teamRank === null ? <Loading /> : teamRank.length === 0 ? (
+              <div className="lb-empty">{t('teams.empty')}</div>
+            ) : (
+              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('teams.rank.rating')}</th></tr></thead>
+                <tbody>
+                  {teamRank.map((r) => (
+                    <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.id })}>
+                      <td>{r.rank}</td>
+                      <td><TeamRankCell team={r} /></td>
+                      <td>{r.rating_avg.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          )}
+
+          {/* Düello: takımların düello galibiyeti sıralaması. */}
+          {rankTab === 'duel' && (
+            duelTeams === null ? <Loading /> : duelTeams.length === 0 ? (
               <div className="lb-empty">{t('duel.emptyTeams')}</div>
             ) : (
               <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.wins')}</th></tr></thead>
                 <tbody>
-                  {duelBoard!.teams.map((r, i) => (
+                  {duelTeams.map((r, i) => (
                     <tr key={r.team_id} style={{ cursor: 'pointer' }} onClick={() => props.go({ kind: 'team', id: r.team_id })}>
                       <td>{i + 1}</td>
                       <td>
@@ -267,33 +284,21 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
             )
           )}
 
-          {rankTab === 'individual' && (
-            (duelBoard?.individual.length ?? 0) === 0 ? (
-              <div className="lb-empty">{t('duel.empty')}</div>
+          {/* Lig Puanı: aylık karşılaşma puan tablosu (galibiyet 3, beraberlik 1). */}
+          {rankTab === 'league' && (
+            monthly === null ? <Loading /> : monthly.length === 0 ? (
+              <div className="lb-empty">{t('teams.monthlyEmpty')}</div>
             ) : (
               <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.wins')}</th></tr></thead>
+                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('teams.played')}</th><th>{t('teams.diff')}</th><th>{t('teams.points')}</th></tr></thead>
                 <tbody>
-                  {duelBoard!.individual.map((r, i) => (
-                    <tr key={r.user_id} style={{ cursor: 'pointer' }} onClick={() => props.onProfile?.(r.user_id)}>
-                      <td>{i + 1}</td><td><b>{r.nickname}</b></td><td>{r.wins}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-          )}
-
-          {rankTab === 'rating' && (
-            ratingRows === null ? <Loading /> : ratingRows.length === 0 ? (
-              <div className="lb-empty">{t('duel.empty')}</div>
-            ) : (
-              <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr><th>#</th><th>{t('teams.team')}</th><th>{t('duel.tab.rating')}</th></tr></thead>
-                <tbody>
-                  {ratingRows.map((r) => (
-                    <tr key={r.id ?? r.rank} style={{ cursor: r.id ? 'pointer' : 'default' }} onClick={() => r.id && props.onProfile?.(r.id)}>
-                      <td>{r.rank}</td><td><b>{r.name}</b></td><td>{r.rating}</td>
+                  {monthly.map((r) => (
+                    <tr key={r.rank} style={{ cursor: r.team ? 'pointer' : 'default' }} onClick={() => r.team && props.go({ kind: 'team', id: r.team.id })}>
+                      <td>{r.rank}</td>
+                      <td>{r.team ? <TeamRankCell team={r.team} /> : '—'}</td>
+                      <td>{r.played}</td>
+                      <td>{r.match_diff > 0 ? '+' + r.match_diff : r.match_diff}</td>
+                      <td><b>{r.points}</b></td>
                     </tr>
                   ))}
                 </tbody>
@@ -303,6 +308,16 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
         </>
       )}
     </div>
+  )
+}
+
+// Sıralama satırı: amblem + takım adı (tekrarlanan inline blok → tek yer).
+function TeamRankCell({ team }: { team: TeamBrief }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={28} />
+      <b>{team.name}</b>
+    </span>
   )
 }
 

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\MatchResult;
 use App\Models\Team;
 use App\Models\TeamApplication;
-use App\Models\TeamInvite;
 use App\Models\TeamMatch;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -301,7 +300,7 @@ class TeamLeagueTest extends TestCase
         $this->svc()->premiumGraceSweep($t0->copy()->addDays(10)); // grace set
         $this->assertSame(1, $this->svc()->premiumGraceSweep($t0->copy()->addDays(18)));
         $this->assertNull(TeamMember::where('user_id', $member->id)->first());
-        $this->assertNotNull($this->svc()->cooldownUntil($member->id));
+        $this->assertNull($this->svc()->cooldownUntil($member->id)); // cooldown KALDIRILDI (JOIN_COOLDOWN_HOURS=0)
     }
 
     public function test_founder_premium_lapse_does_not_remove_founder(): void
@@ -364,10 +363,9 @@ class TeamLeagueTest extends TestCase
         $this->svc()->closeTeam($founder, $team->fresh(), true);
         $this->assertSame('closed', $team->fresh()->status);
         $this->assertSame(0, TeamMember::where('team_id', $team->id)->count());
-        $this->assertNotNull($this->svc()->cooldownUntil($founder->id));
     }
 
-    public function test_admin_close_cools_down_all_members(): void
+    public function test_admin_close_removes_members_despite_other_members(): void
     {
         $team = $this->makeTeam();
         $founder = User::find($team->founder_id);
@@ -375,12 +373,10 @@ class TeamLeagueTest extends TestCase
         TeamMember::create(['team_id' => $team->id, 'user_id' => $member->id, 'role' => 'member', 'joined_at' => now()]);
         $this->svc()->recompute($team);
 
-        // Admin, üyeli takımı da kapatabilir (kurucu engeli admin'i bağlamaz) → herkese cooldown.
+        // Admin, üyeli takımı da kapatabilir (kurucu "başka üye" engeli admin'i bağlamaz).
         $this->svc()->adminClose($team->fresh(), 1);
         $this->assertSame('closed', $team->fresh()->status);
         $this->assertSame(0, TeamMember::where('team_id', $team->id)->count());
-        $this->assertNotNull($this->svc()->cooldownUntil($member->id));
-        $this->assertNotNull($this->svc()->cooldownUntil($founder->id));
     }
 
     public function test_close_blocked_with_active_match(): void
