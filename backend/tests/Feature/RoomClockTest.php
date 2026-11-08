@@ -6,6 +6,7 @@ use App\Models\MatchMove;
 use App\Models\Room;
 use App\Models\Tournament;
 use App\Models\User;
+use App\Services\MatchClock;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -281,6 +282,56 @@ class RoomClockTest extends TestCase
         $room->refresh();
         $this->assertEqualsWithDelta($startWas, $room->clock['started_at'], 0.5);
         $this->assertSame('p1', $room->clock['turn_slot']);
+    }
+
+    // ---- KÖK FIX (GAHQZ): authoritative saat turn_slot'u TAHTANIN turn'üne SENKRONLANMALI ----
+    // Sırası gelen oyuncu bir önceki turn_slot'tan FARKLIYSA (yeni-oyun açılışı / tur devri) saat
+    // DONMAMALI. Eskiden onUpdate'in forge-kalkanı (requester===current) authoritative geçişi
+    // "yetkisiz" sayıp turn_slot'u ESKİ oyuncuda donduruyordu -> started_at eski kalıp AFK/süre
+    // SIRASI OLMAYAN oyuncuyu yakıyordu (abuzerkadayıf, sırası ramazan'dayken backgammon'la hükmen
+    // kaybetti). Fix: driveAuthoritativeClock guard'ı BYPASS eder (state sunucu-hesaplı, forge yok).
+    public function test_authoritative_clock_resyncs_turn_slot_to_board_turn(): void
+    {
+        $this->p1 = User::factory()->create();
+        $this->p2 = User::factory()->create();
+        $now = microtime(true);
+        // Sıra SİYAHta (p2) — siyah zar atacak; ama saat turn_slot'u bir önceki turdan p1(beyaz)'de ASILI.
+        $state = array_merge(Backgammon::initialState(), ['turn' => 'black', 'dice' => [], 'diceUsed' => []]);
+        Room::create([
+            'code' => 'CLKRSY',
+            'p1_token' => 't1', 'p1_user_id' => $this->p1->id, 'p1_name' => 'P1',
+            'p2_token' => 't2', 'p2_user_id' => $this->p2->id, 'p2_name' => 'P2',
+            'status' => 'playing', 'mode' => 'friendly', 'time_control' => 'normal',
+            'target' => 5, 'authoritative' => true, 'dice_authority' => true,
+            'version' => 1, 'server_version' => 5,
+            'server_state' => $state,
+            'server_match' => [
+                'target' => 5, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null,
+                'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 2,
+            ],
+            'dice_seed' => 'seed', 'dice_commit' => 'c', 'dice_client_seed' => 'cs', 'dice_roll_index' => 0,
+            // STALE: turn_slot bir önceki oyuncuda (p1/white) donmuş; started_at eski.
+            'clock' => [
+                'mode' => 'normal', 'target' => 5, 'delay' => 10,
+                'p1_bank' => 300.0, 'p2_bank' => 300.0,
+                'turn_slot' => 'p1', 'started_at' => $now - 50,
+                'sig' => 'stale', 'running' => true, 'moved' => true,
+                'p1_seen' => $now - 1, 'p2_seen' => $now - 1,
+            ],
+        ]);
+
+        // Sırası gelen SİYAH (p2) zar atar -> authoritative saat turn_slot'u p2'ye SENKRONLAMALI.
+        Sanctum::actingAs($this->p2);
+        $this->postJson('/api/rooms/CLKRSY/roll', ['token' => 't2', 'command_id' => '11111111-1111-4111-8111-111111111111', 'expected_version' => 5])->assertOk();
+
+        $room = Room::where('code', 'CLKRSY')->first();
+        // Düzeltme ÖNCESİ burası 'p1'de donardı (forge-kalkanı p2'nin geçişini reddederdi).
+        $this->assertSame('p2', $room->clock['turn_slot'], 'saat sırası gelen oyuncuya (siyah/p2) senkronlanmalı');
+        // AFK/süre artık DOĞRU oyuncuyu (sırası geleni) ölçer -> aktif renk siyah.
+        $view = MatchClock::clientView($room->clock, microtime(true));
+        $this->assertSame('black', $view['active']);
     }
 
     // ---- leave: TERK EDEN KAYBEDER (anlik forfeit) ----

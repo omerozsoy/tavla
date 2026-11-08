@@ -2758,7 +2758,17 @@ class RoomController extends Controller
             'gameEnd' => $winner ? ['winner' => $winner] : null,
             'matchOver' => ! empty($sm['done']),
         ];
-        $clock = MatchClock::onUpdate($clock, $clockState, $slot, $now);
+        // FORGE-KALKANI BYPASS (null requester): authoritative state SUNUCU-hesaplıdır — her komut
+        // (roll/move/cube) server_state'i mutasyondan ÖNCE sıra-sahipliğini doğrular, istemci forge
+        // EDEMEZ. onUpdate'in "yalnız mevcut sıra sahibi saati ilerletebilir" guard'ı (requester===
+        // current) burada GEREKSİZ ve ZARARLIDIR: yeni-oyun açılışını "ilk çağıran" tetikler (SIRA
+        // KONTROLÜ YOK) ve çağıran bir önceki oyunun turn_slot'undan FARKLIYSA guard geçişi yetkisiz
+        // sayıp turn_slot'u ESKİ oyuncuda DONDURUYORDU -> started_at eski kalıp AFK/süre SIRASI OLMAYAN
+        // oyuncuyu yakıyordu (GAHQZ: ramazan açılış 6-5'i beklerken abuzerkadayıf backgammon'la hükmen
+        // kaybetti). null -> her meşru authoritative geçiş yetkili; turn_slot daima tahtanın turn'üne
+        // senkronlanır. Legacy PUT yolu (update(), ~2487) $slot'u KORUR -> client-authored state için
+        // forge kalkanı aynen durur (bkz. test_non_owner_update_does_not_reset_afk).
+        $clock = MatchClock::onUpdate($clock, $clockState, null, $now);
         $clock = MatchClock::seen($clock, $slot, $now);
         if (! empty($clock['end'])) {
             $this->applyClockEnd($room, $clock);
