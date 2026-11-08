@@ -116,6 +116,7 @@ class PresenceController extends Controller
                 return [
                     'id' => $r->id,
                     'code' => $r->code,
+                    'fromUserId' => (int) $r->from_user_id, // davet edenin takım etiketi (useTeamTag) için
                     'from' => $r->nickname ?: $r->first_name ?: 'Oyuncu',
                     'avatar' => $r->avatar,
                     'rating' => $r->rating !== null ? (int) $r->rating : null,
@@ -123,7 +124,7 @@ class PresenceController extends Controller
                     'timeControl' => $r->time_control,
                     'unrated' => (bool) ($r->unrated ?? false),
                     'classic' => (bool) ($r->classic ?? false), // Klasik Tavla daveti rozeti
-                    'duel' => (bool) ($r->duel ?? false), // DÜELLO daveti -> istemci OTOMATİK kabul eder (anında eşleşme)
+                    'duel' => (bool) ($r->duel ?? false), // DÜELLO daveti -> banner'da kılıç ikonu + "düelloya çağırıyor" etiketi
                     'pot' => $pot, // tahmini coin pot (0 = bahissiz -> istemci göstermez)
                     // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
                     'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated), (int) ($r->target ?? 1)),

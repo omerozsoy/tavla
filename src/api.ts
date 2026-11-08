@@ -1207,7 +1207,8 @@ export interface GameInvite {
   timeControl?: string | null // casual | normal | speed
   unrated?: boolean // puansiz arkadas maci (rating yok, PR genel siralamaya girmez)
   classic?: boolean // Klasik Tavla daveti (kup yok + mars=2) -> davetli kartinda rozet
-  duel?: boolean // DÜELLO daveti -> istemci OTOMATİK kabul eder (banner yok, anında eşleşme)
+  duel?: boolean // DÜELLO daveti -> banner'da kılıç ikonu + "düelloya çağırıyor" etiketi
+  fromUserId?: number // davet edenin kullanıcı id'si (takım etiketi/amblem için useTeamTag)
   // Davetli bu macta kazanirsa/kaybederse rating degisimi (sunucu Elo'su). null = mac puansiz.
   ratingPreview?: { win: number; loss: number } | null
   // Coin POT (0/undefined = bahissiz -> gosterilmez). settle/live-matches ile AYNI derivasyon:

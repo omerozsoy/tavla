@@ -28472,6 +28472,21 @@ input:not([type='range']), select, textarea {
 .invite-who b {
   font-weight: 700;
 }
+/* DÜELLO davet banner'ında davet edenin takımı (amblem + ad). */
+.invite-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.invite-team > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .invite-who {
   display: flex;
   flex-direction: column;

@@ -170,6 +170,8 @@ import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import DuelView from './ui/DuelView'
+import { TeamEmblem } from './ui/TeamEmblem'
+import { useTeamTag } from './teamTags'
 import RankInfo from './ui/RankInfo'
 import FairnessModal from './ui/FairnessModal'
 import DiceCheck from './ui/DiceCheck'
@@ -201,6 +203,20 @@ const TournamentRules = lazy(() => import('./ui/TournamentRules'))
 const FaqView = lazy(() => import('./ui/FaqView'))
 const Info = lazy(() => import('./ui/Info'))
 import type { InfoTab } from './ui/Info'
+
+// DÜELLO davet banner'ında davet edenin takımı (amblem + ad). useTeamTag hook döngüde
+// çağrılamaz -> ayrı bileşen (her biri hook'u BİR kez çağırır → geçerli).
+function InviteTeam({ userId }: { userId?: number }) {
+  const info = useTeamTag(userId)
+  if (!info) return null
+  return (
+    <span className="invite-team" title={info.name || info.tag}>
+      <TeamEmblem color1={info.color1} color2={info.color2} logo={info.logo || undefined} label={info.tag} size={14} />
+      <span>{info.name || info.tag}</span>
+    </span>
+  )
+}
+
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
   about: 'hakkinda', services: 'hizmetler', glossary: 'sozluk', ranks: 'rutbeler',
@@ -1940,7 +1956,6 @@ export default function App() {
   const seenNotifRef = useRef<Set<number>>(new Set()) // toast'landi mi (yeni bildirim tespiti)
   const notifPrimedRef = useRef(false) // ilk ping'te eski bildirimleri toast'lama
   const seenInviteIdsRef = useRef<Set<number>>(new Set()) // yeni oyun daveti tespiti (ses uyarisi)
-  const autoDuelRef = useRef<Set<number>>(new Set()) // DÜELLO daveti: anında eşleşme -> her daveti BİR kez oto-kabul
   const invitePrimedRef = useRef(false) // ilk ping'te mevcut davetleri ses ile uyarma
   const luckyWheelOpenRef = useRef(false) // cark modali acikken bildirim toast'unu bastir (erken gelmesin)
   useEffect(() => {
@@ -6657,13 +6672,7 @@ export default function App() {
       ping()
         .then((r) => {
           if (!cancelled) {
-            const allInv = r.invites ?? []
-            // DÜELLO = anında eşleşme: davet banner'ı YOK, davet gelir gelmez oto-kabul (odaya gir).
-            // Her daveti BİR kez kabul et (autoDuelRef); banner'da yalnız normal davetler kalır.
-            allInv
-              .filter((i) => i.duel && !autoDuelRef.current.has(i.id))
-              .forEach((i) => { autoDuelRef.current.add(i.id); void handleAcceptInvite(i) })
-            const inv = allInv.filter((i) => !i.duel)
+            const inv = r.invites ?? []
             // Yeni (daha once gorulmemis) oyun daveti -> SES ile uyar. Ilk ping'te (primed=false)
             // mevcut davetleri calma (sayfa yenileme/girişte eski davet ses cikarmasin).
             const freshInvite = inv.some((i) => !seenInviteIdsRef.current.has(i.id))
@@ -10264,9 +10273,11 @@ export default function App() {
       {invites.map((inv) => {
         // Davetli NEYE davet edildigini gorsun: oyun turu (Tek Oyun / Mac + puan) + sure.
         const isMatch = (inv.target ?? 1) > 1
-        const typeLabel = isMatch
-          ? `${t('friend.match')} · ${t('invite.points', { n: inv.target })}`
-          : t('friend.single')
+        const typeLabel = inv.duel
+          ? `${t('duel.title')} · ${t('invite.points', { n: inv.target })}`
+          : isMatch
+            ? `${t('friend.match')} · ${t('invite.points', { n: inv.target })}`
+            : t('friend.single')
         const clockKey =
           inv.timeControl === 'casual'
             ? 'setup.clockCasual'
@@ -10283,8 +10294,10 @@ export default function App() {
               </span>
               <span className="invite-who">
                 <span>
-                  <b>{inv.from}</b> {t('friends.invitedYou')}
+                  <b>{inv.from}</b> {inv.duel ? t('duel.invitedYou') : t('friends.invitedYou')}
                 </span>
+                {/* DÜELLO: davet eden hangi takımdan — amblem + ad net göster. */}
+                {inv.duel && <InviteTeam userId={inv.fromUserId} />}
                 {/* Davet edenin gucu: rating sayisi + ana sayfadaki gibi isim altinda rutbe. */}
                 {inv.rating != null && (
                   <span className="invite-rank">
@@ -10303,7 +10316,7 @@ export default function App() {
             </div>
             <div className="invite-meta">
               <span className="invite-chip">
-                <Icon name={isMatch ? 'target' : 'play'} size={14} /> {typeLabel}
+                <Icon name={inv.duel ? 'swords' : isMatch ? 'target' : 'play'} size={14} /> {typeLabel}
               </span>
               {inv.pot != null && inv.pot > 0 && (
                 <span className="invite-chip invite-chip-pot">
