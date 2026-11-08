@@ -47,6 +47,22 @@ class DuelService
         }
         $winnerId = $res['won'] ? $p1 : $p2;
 
+        // HİÇ OYNAMAYAN KAYBEDENE HÜKMEN GALİBİYET YOK (düello oto-kabul adaletsizliği): düello
+        // daveti istemcide otomatik kabul edilir; ekranda olmayan oyuncu maça çekilip ABANDON ile
+        // kaybedebiliyordu. Kaybeden HİÇ gerçek hamle (kind=move + dolu notation) yapmadıysa düello
+        // VOID -> puan yazılmaz (gerçek oyunda iki taraf da hamle yapar; 0 hamle = hiç oynamadı).
+        $loserColor = ($winnerId === $p1) ? 'black' : 'white'; // p1=white, p2=black
+        $loserMoves = DB::table('match_moves')
+            ->where('room_code', $room->code)
+            ->where('player', $loserColor)
+            ->where('kind', 'move')
+            ->whereNotNull('notation')
+            ->where('notation', '!=', '')
+            ->count();
+        if ($loserMoves === 0) {
+            return; // kaybeden hiç oynamadı -> düello geçersiz (kimse kaybetmez, puan yok)
+        }
+
         try {
             DB::table('duels')->insert([
                 'room_code' => $room->code,

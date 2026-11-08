@@ -31,7 +31,9 @@ class DuelTest extends TestCase
     }
 
     // p1 (beyaz) hedefe ulaşmış TAMAMLANMIŞ bir DÜELLO odası (iki gerçek oyuncu).
-    private function duelRoom(string $code, User $a, User $b, int $target = 3, string $winner = 'white'): Room
+    // $withMoves=true: iki tarafın da gerçek hamle logu yazılır (record() "hiç oynamadı" void guard'ını
+    // geçsin). false: hamle YOK -> abandon/no-show simülasyonu (kaybeden hiç oynamamış).
+    private function duelRoom(string $code, User $a, User $b, int $target = 3, string $winner = 'white', bool $withMoves = true): Room
     {
         $wScore = $winner === 'white' ? $target : 0;
         $bScore = $winner === 'white' ? 0 : $target;
@@ -45,6 +47,14 @@ class DuelTest extends TestCase
             'version' => 3,
         ]);
         Room::where('code', $code)->update(['updated_at' => now()->subMinutes(10)]);
+        if ($withMoves) {
+            foreach (['white', 'black'] as $i => $color) {
+                DB::table('match_moves')->insert([
+                    'room_id' => $room->id, 'room_code' => $code, 'game_no' => 1, 'seq' => $i, 'ord' => $i,
+                    'player' => $color, 'kind' => 'move', 'notation' => '24/23 13/8', 'created_at' => now(),
+                ]);
+            }
+        }
 
         return $room->refresh();
     }
@@ -176,6 +186,22 @@ class DuelTest extends TestCase
         $room = $this->duelRoom('DUELST', $a, $b, 3, 'white');
         app(DuelService::class)->record($room);
         $this->assertSame(0, DB::table('duels')->where('room_code', 'DUELST')->count());
+    }
+
+    public function test_record_voids_abandon_when_loser_never_moved(): void
+    {
+        // Düello oto-kabul: ekranda olmayan oyuncu maça çekilip ABANDON ile kaybetti; HİÇ hamle yok.
+        // Kaybeden 0 gerçek hamle -> düello VOID (puan yazılmaz, kimse kaybetmez).
+        $a = $this->user('mva');
+        $b = $this->user('mvb');
+        $room = $this->duelRoom('DUELNM', $a, $b, 3, 'white', withMoves: false);
+        app(DuelService::class)->record($room);
+        $this->assertSame(0, DB::table('duels')->where('room_code', 'DUELNM')->count());
+
+        // Kontrol: aynı oda GERÇEK hamlelerle olsaydı kaydedilirdi.
+        $room2 = $this->duelRoom('DUELYM', $a, $b, 3, 'white', withMoves: true);
+        app(DuelService::class)->record($room2);
+        $this->assertSame(1, DB::table('duels')->where('room_code', 'DUELYM')->count());
     }
 
     public function test_report_rating_writes_duel_without_rating_change(): void
