@@ -153,24 +153,23 @@ class TeamLeagueTest extends TestCase
         $this->assertThrowsCode('name_length', fn () => $this->svc()->createTeam($this->eligibleUser(), ['name' => 'ab', 'tag' => 'OKK']));
     }
 
-    public function test_rename_cooldown_and_fee_and_noop(): void
+    public function test_rename_is_free_and_repeatable_and_noop(): void
     {
         $founder = $this->eligibleUser(['coins' => 100_000]);
         $team = $this->svc()->createTeam($founder, ['name' => 'Kartallar', 'tag' => 'KRT']);
         $afterCreate = (int) $founder->fresh()->coins;
 
-        // Gerçek değişiklik yok → ücretsiz.
+        // Gerçek değişiklik yok → no-op.
         $this->svc()->rename($team->fresh(), $founder->fresh(), 'Kartallar', 'KRT');
         $this->assertSame($afterCreate, (int) $founder->fresh()->coins);
 
-        // Gerçek değişiklik → 10.000 coin.
+        // SERBEST: ad değişimi ÜCRETSİZ (coin kesilmez) ve istenildiği kadar tekrarlanabilir.
         $this->svc()->rename($team->fresh(), $founder->fresh(), 'Sahinler', null);
-        $this->assertSame($afterCreate - TeamRules::RENAME_COST, (int) $founder->fresh()->coins);
         $this->assertSame('Sahinler', $team->fresh()->name);
-
-        // 30 gün bekleme → ikinci değişiklik reddedilir, ücret alınmaz.
-        $this->assertThrowsCode('rename_cooldown', fn () => $this->svc()->rename($team->fresh(), $founder->fresh(), 'Baykuslar', null));
-        $this->assertSame($afterCreate - TeamRules::RENAME_COST, (int) $founder->fresh()->coins);
+        $this->svc()->rename($team->fresh(), $founder->fresh(), 'Baykuslar', null);
+        $this->assertSame('Baykuslar', $team->fresh()->name);
+        // Hiç coin kesilmedi (bekleme yok, ücret yok).
+        $this->assertSame($afterCreate, (int) $founder->fresh()->coins);
     }
 
     // ---- §3 Roller & §4 Üyelik ---------------------------------------------

@@ -23,10 +23,10 @@ final class TeamRules
 
     public const TAG_MAX = 5;
 
-    // §2 İsim/etiket değişikliği (yalnız kurucu)
-    public const RENAME_COST = 2_500;          // işlem başına
+    // §2 İsim/etiket değişikliği (yalnız kurucu) — SERBEST: ücretsiz + bekleme yok (kullanıcı direktifi).
+    public const RENAME_COST = 0;              // 0 = ücretsiz (coin kesilmez, tekrar tekrar değiştirilebilir)
 
-    public const RENAME_COOLDOWN_DAYS = 30;
+    public const RENAME_COOLDOWN_DAYS = 0;      // KALDIRILDI (kullanıcı direktifi): ad/etiket değişimi serbest, bekleme yok
 
     // §3 Roller
     public const MAX_ASSISTANTS = 2;

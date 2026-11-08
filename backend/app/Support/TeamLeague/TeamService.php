@@ -363,14 +363,19 @@ class TeamService
                     && $lockedTeam->name_changed_at->gt(now()->subDays(TeamRules::RENAME_COOLDOWN_DAYS))) {
                     throw new TeamException('rename_cooldown', 429);
                 }
-                $locked = User::query()->lockForUpdate()->findOrFail($actor->id);
-                if ($this->wallet->spendable($locked) < TeamRules::RENAME_COST) {
-                    throw new TeamException('insufficient_coins', 422);
+                // Ücret yalnız RENAME_COST>0 iken alınır. SERBEST (0) modda coin kesilmez; ayrıca
+                // wallet_transactions (reference_type,reference_id,type,user_id) UNIQUE'i tekrar
+                // rename'i engelleyeceğinden debit ATLANMALI (yoksa ikinci değişiklik DB'de patlar).
+                if (TeamRules::RENAME_COST > 0) {
+                    $locked = User::query()->lockForUpdate()->findOrFail($actor->id);
+                    if ($this->wallet->spendable($locked) < TeamRules::RENAME_COST) {
+                        throw new TeamException('insufficient_coins', 422);
+                    }
+                    $this->wallet->debit(
+                        $locked, TeamRules::RENAME_COST, 'team_rename', 'team', $team->id,
+                        'team_rename:'.$team->id.':'.$nameKey.':'.$tagKey
+                    );
                 }
-                $this->wallet->debit(
-                    $locked, TeamRules::RENAME_COST, 'team_rename', 'team', $team->id,
-                    'team_rename:'.$team->id.':'.$nameKey.':'.$tagKey
-                );
                 $lockedTeam->name = $newName;
                 $lockedTeam->name_key = $nameKey;
                 $lockedTeam->tag = $newTag;

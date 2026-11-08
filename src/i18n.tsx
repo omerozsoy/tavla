@@ -262,7 +262,7 @@ const TR: Dict = {
   'teams.save': 'Kaydet',
   'teams.saved': 'Kaydedildi.',
   'teams.rename': 'Ad/Etiket Değiştir',
-  'teams.rename.hint': 'Yalnız kurucu; 30 günde bir, 2.500 coin.',
+  'teams.rename.hint': 'Yalnız kurucu; ücretsiz ve istediğin zaman değiştirebilirsin.',
   'teams.renamed': 'Değiştirildi.',
   'teams.matches': 'Karşılaşmalar',
   'teams.challenge': 'Meydan Oku',
@@ -309,7 +309,7 @@ const TR: Dict = {
     '• Premium üyelik + en az 20 tamamlanmış puanlı maç + 10.000 coin gerekir; coin yalnız kuruluş başarılı olursa bir kez kesilir.\n' +
     '• Takım adı 3-30, etiket 2-5 karakter (harf/rakam) ve benzersiz olmalıdır.\n' +
     '• Bir kişi aynı anda yalnızca tek takımda olabilir. Ayrıldıktan sonra bekleme yoktur; istersen hemen başka bir takıma katılabilirsin.\n' +
-    '• Ad/etiket değişikliği yalnız kurucuya aittir: 2.500 coin + 30 gün bekleme.\n\n' +
+    '• Ad/etiket değişikliği yalnız kurucuya aittir; ücretsizdir ve istediğin zaman yapabilirsin (bekleme/ücret yok).\n\n' +
     'Üyelik ve roller\n' +
     '• Takım kurucu dahil en fazla 12 üye alır.\n' +
     '• Roller: 1 kurucu + en fazla 2 yardımcı. Kurucu ve yardımcılar takımı yönetir (üye kabul, çıkarma, davet).\n' +
@@ -2524,7 +2524,7 @@ const EN: Dict = {
   'teams.save': 'Save',
   'teams.saved': 'Saved.',
   'teams.rename': 'Change Name/Tag',
-  'teams.rename.hint': 'Founder only; once per 30 days, 2,500 coins.',
+  'teams.rename.hint': 'Founder only; free and can be changed anytime.',
   'teams.renamed': 'Updated.',
   'teams.matches': 'Matches',
   'teams.challenge': 'Challenge',
@@ -2570,7 +2570,7 @@ const EN: Dict = {
     '• Requires Premium + at least 20 completed rated matches + 10,000 coins; coins are charged once, only if creation succeeds.\n' +
     '• Team name 3-30, tag 2-5 characters (letters/digits), and must be unique.\n' +
     '• A person can be in only one team at a time. There is no waiting period after leaving; you can join another team right away.\n' +
-    '• Name/tag changes belong to the founder only: 2,500 coins + 30-day cooldown.\n\n' +
+    '• Name/tag changes belong to the founder only; they are free and can be done anytime (no cooldown, no cost).\n\n' +
     'Membership and roles\n' +
     '• A team holds up to 12 members including the founder.\n' +
     '• Roles: 1 founder + up to 2 assistants. The founder and assistants manage the team (accept members, remove, invite).\n' +
