@@ -21738,6 +21738,12 @@ body:has(.spectate-view) .app.lobby {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .teams-member-name:hover { color: var(--accent); }
+/* Online üye: isim önünde yeşil nokta (üstte sıralanır) */
+.teams-member-online {
+  display: inline-block; width: 8px; height: 8px; margin-right: 6px;
+  border-radius: 50%; background: #2ecc71; vertical-align: middle;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #2ecc71 35%, transparent);
+}
 .teams-member-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .teams-member-role {
   font-size: 0.64rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;

@@ -841,26 +841,32 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
   const { t } = useT()
   const [d, setD] = useState<TeamDetail | null>(null)
   const [busy, setBusy] = useState(false)
-  // Düello için: müsait/oyuna hazır (meşgul veya oyunda DEĞİL) online oyuncu id'leri. 20sn tazele.
+  // Online üyeler (üstte sıralamak için) + düelloya müsait olanlar (oyunda/meşgul DEĞİL). 20sn tazele.
+  const [onlineIds, setOnlineIds] = useState<Set<number>>(new Set())
   const [duelReady, setDuelReady] = useState<Set<number>>(new Set())
   useEffect(() => { getTeam(props.id).then(setD).catch(() => {}) }, [props.id])
   useEffect(() => {
-    if (!props.onDuel || !props.hasTeam) return // düello yalnız takımlı kullanıcıda
     let alive = true
     const load = () => onlinePlayers()
-      .then((ps) => alive && setDuelReady(new Set(
-        ps.filter((x) => !x.in_game && (x.status === 'available' || x.status === 'ready' || x.status == null)).map((x) => x.id),
-      )))
+      .then((ps) => {
+        if (!alive) return
+        setOnlineIds(new Set(ps.map((x) => x.id))) // listede dönen = online
+        setDuelReady(new Set(
+          ps.filter((x) => !x.in_game && (x.status === 'available' || x.status === 'ready' || x.status == null)).map((x) => x.id),
+        ))
+      })
       .catch(() => {})
     load()
     const h = window.setInterval(load, 20000)
     return () => { alive = false; window.clearInterval(h) }
-  }, [props.onDuel, props.hasTeam])
+  }, [])
   if (!d) return <Loading />
   const isFounder = !!props.myId && d.members.some((m) => m.role === 'founder' && m.user.id === props.myId)
   // Düello butonu: davet eden takımlı + bu takım BENİM takımım DEĞİL (aynı takımla düello olmaz).
   const sameTeam = !!props.myId && d.members.some((m) => m.user.id === props.myId)
   const canDuel = !!props.onDuel && props.hasTeam && !sameTeam
+  // Online üyeler üstte (grup içinde mevcut sıra korunur — kurucu/rol sırası bozulmaz).
+  const members = [...d.members].sort((a, b) => Number(onlineIds.has(b.user.id)) - Number(onlineIds.has(a.user.id)))
   const apply = async () => {
     setBusy(true)
     try { await applyTeam(props.id); props.setNotice(t('teams.invited')) } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
@@ -895,15 +901,18 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
       <section>
         <SLabel count={d.members.length}>{t('teams.members')}</SLabel>
         <div className="teams-members">
-          {d.members.map((m) => {
+          {members.map((m) => {
             const mgr = m.role === 'founder' || m.role === 'assistant'
+            const online = onlineIds.has(m.user.id)
             return (
-              <div key={m.user.id} className={'teams-member' + (m.role === 'founder' ? ' is-founder' : '')}>
+              <div key={m.user.id} className={'teams-member' + (m.role === 'founder' ? ' is-founder' : '') + (online ? ' is-online' : '')}>
                 <span className="teams-member-ava" onClick={() => props.onProfile?.(m.user.id)}>
                   <AvatarFrame src={m.user.avatar} size={42} name={m.user.nickname} animated={false} />
                 </span>
                 <div className="teams-member-main">
-                  <button className="teams-member-name" onClick={() => props.onProfile?.(m.user.id)}>{m.user.nickname}</button>
+                  <button className="teams-member-name" onClick={() => props.onProfile?.(m.user.id)}>
+                    {online && <span className="teams-member-online" aria-hidden="true" />}{m.user.nickname}
+                  </button>
                   <span className="teams-member-meta">
                     <span className={'teams-member-role' + (mgr ? ' is-mgr' : '')}>{t('teams.my.role.' + m.role)}</span>
                     <TeamTag userId={m.user.id} size={18} />
