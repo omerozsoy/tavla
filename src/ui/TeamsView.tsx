@@ -539,7 +539,7 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
                 <div className="teams-member-actions">
                   {isFounder && m.role === 'member' && <Button disabled={busy} onClick={() => act(() => promoteTeamMember(team.id, m.user.id))}>{t('teams.promote')}</Button>}
                   {isFounder && m.role === 'assistant' && <Button disabled={busy} onClick={() => act(() => demoteTeamMember(team.id, m.user.id))}>{t('teams.demote')}</Button>}
-                  {isFounder && m.role !== 'founder' && <Button variant="outline" disabled={busy} onClick={() => act(() => transferTeam(team.id, m.user.id), t('teams.transferSent'))}>{t('teams.transfer')}</Button>}
+                  {isFounder && m.role !== 'founder' && <Button variant="outline" disabled={busy} onClick={() => { if (confirm(m.user.nickname + ' ' + t('teams.transferConfirm'))) act(() => transferTeam(team.id, m.user.id), t('teams.transferDone')) }}>{t('teams.transfer')}</Button>}
                   {isManager && m.role === 'member' && m.user.id !== props.myId &&
                     <Button variant="ghost" disabled={busy} onClick={() => { if (confirm(m.user.nickname + ' ' + t('teams.kickConfirm'))) act(() => kickTeamMember(team.id, m.user.id)) }}>{t('teams.kick')}</Button>}
                 </div>

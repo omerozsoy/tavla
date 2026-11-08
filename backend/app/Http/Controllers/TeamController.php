@@ -345,7 +345,9 @@ class TeamController extends Controller
         $data = $request->validate(['user_id' => ['required', 'integer']]);
 
         return $this->guard(function () use ($request, $team, $data) {
-            $this->svc->proposeTransfer($request->user(), $team, (int) $data['user_id']);
+            // ANINDA devir (kullanıcı direktifi: "Devret" tıklanınca kurucu hemen değişsin; eski
+            // iki-aşamalı teklif/kabul akışı kaldırıldı). Premium şartı doTransfer içinde korunur.
+            $this->svc->transferFounder($request->user(), $team, (int) $data['user_id']);
 
             return response()->json(['ok' => true]);
         });
