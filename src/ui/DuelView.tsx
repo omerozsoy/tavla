@@ -61,6 +61,7 @@ export default function DuelView({ currentName, currentId, onClose, onProfile, o
             currentId={currentId}
             onProfile={onProfile}
             onInvite={currentId ? (p) => setPick(p) : undefined}
+            duelTeamOnly
           />
         </section>
 

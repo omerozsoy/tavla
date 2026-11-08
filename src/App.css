@@ -13836,12 +13836,24 @@ button.acct-row-logout:hover:not(:disabled) {
   /* Çok rozetli satırda (takım amblemi + taç + onay kalkanı + rütbe rozeti) boşluksuz isim
      HARF-HARF sarıyordu: overflow-wrap:anywhere kutunun min-content'ini 1 karaktere düşürüp
      1fr yarışında ismi eziyordu (ÖmerÖzsoy/CanerÇELİK mobilde dikey "bozuk"). nowrap + ellipsis:
-     isim tek satır, sığmazsa "…" (rozetler korunur; tam ad için profile dokun) — seek-panel ile aynı. */
+     isim tek satır, sığmazsa "…" (rozetler korunur; tam ad için profile dokun) — seek-panel ile aynı.
+     NOT: Çevrimiçi Oyuncular paneli `.online-panel`; konteyner nowrap'ı eskiden yalnız `.seek-panel`e
+     uygulanmış, bu panel kapsanmıyordu → yüksek özgüllükle hem konteyner hem metin + overflow-wrap/
+     word-break sıfırla (takım amblemli isimde harf-harf sarma kesin bitsin). */
+  .online-panel .online-row .player-id-name {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .online-panel .online-row .player-id-name-text,
   .online-row .player-id-name-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    overflow-wrap: normal;
+    word-break: normal;
     min-width: 0;
+    flex: 1 1 auto;
   }
 }
 /* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
@@ -13873,9 +13885,14 @@ button.acct-row-logout:hover:not(:disabled) {
   display: block;
   filter: brightness(0) invert(1);
 }
-/* Düello (IconSwords) butonu: Play'in yanında, ikincil görünüm + aksan ikon rengi. */
-.online-act.online-duel-btn {
-  color: var(--accent-text, #d8805a);
+/* Düello (IconSwords) butonu: Play turuncu -> düello LACİVERT zemin + BEYAZ ikon (ayırt edilir +
+   ikon accent zeminde kaybolmaz). `.online-panel .online-act{background:accent}` kuralını özgüllükle ez. */
+.online-panel .online-act.online-duel-btn {
+  background: var(--navy, #2e4372);
+  color: #fff;
+}
+.online-act.online-duel-btn svg {
+  color: #fff;
 }
 /* Düello uzunluk seçici: swords'a basınca açılan 1/3/5 kompakt kareler. */
 .online-duel-pick {

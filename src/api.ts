@@ -2574,6 +2574,7 @@ export interface OnlinePlayer {
   is_support?: boolean // destek -> isim yanında krem kalkan rozeti
   status?: PresenceStatus // durum noktasi rengi (offline olanlar listede gelmez)
   in_game?: boolean // aktif maçta (YZ/normal) -> "Oyna" (davet) butonu gizlenir
+  has_team?: boolean // takımı var mı -> düello uygunluğu (düello yalnız takımlılar arası)
 }
 export async function onlinePlayers(): Promise<OnlinePlayer[]> {
   const data = await req<{ players: OnlinePlayer[] }>('/online-players')

@@ -49,11 +49,25 @@ class DuelTest extends TestCase
         return $room->refresh();
     }
 
+    // Düello YALNIZ takımlılar arası -> davet eden + hedef bir takıma üye olmalı.
+    private function giveTeam(User $u, string $tag): int
+    {
+        $id = DB::table('teams')->insertGetId([
+            'name' => 'Takim'.$tag, 'name_key' => 'takim'.strtolower($tag), 'tag' => $tag, 'tag_key' => strtolower($tag),
+            'founder_id' => $u->id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        TeamMember::create(['team_id' => $id, 'user_id' => $u->id, 'role' => 'founder', 'joined_at' => now()]);
+
+        return $id;
+    }
+
     public function test_duel_invite_sets_room_duel_and_unrated(): void
     {
         $a = $this->user('inviter');
         $b = $this->user('invitee');
         $b->forceFill(['last_seen' => now(), 'presence_status' => 'available'])->save();
+        $this->giveTeam($a, 'AA'); // düello iki taraf da takımlı olmalı
+        $this->giveTeam($b, 'BB');
 
         Sanctum::actingAs($a);
         $res = $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 3])->assertOk();
@@ -82,6 +96,23 @@ class DuelTest extends TestCase
 
         Sanctum::actingAs($a);
         $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 2])->assertStatus(422);
+    }
+
+    public function test_duel_requires_both_players_have_team(): void
+    {
+        $a = $this->user('dteam1');
+        $b = $this->user('dteam2');
+        $b->forceFill(['last_seen' => now(), 'presence_status' => 'available'])->save();
+        Sanctum::actingAs($a);
+
+        // ikisi de takımsız -> red
+        $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 3])->assertStatus(422);
+        // davet eden takımlı, hedef takımsız -> red
+        $this->giveTeam($a, 'AA');
+        $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 3])->assertStatus(422);
+        // ikisi de takımlı -> başarı
+        $this->giveTeam($b, 'BB');
+        $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 3])->assertOk();
     }
 
     public function test_record_is_idempotent(): void

@@ -14,6 +14,7 @@ use App\Models\Notification;
 use App\Models\Room;
 use App\Models\RoomCommand;
 use App\Models\Setting;
+use App\Models\TeamMember;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Services\BotMoveService;
@@ -1154,6 +1155,15 @@ class RoomController extends Controller
                     });
             }
 
+            // Takımı olanlar: düello YALNIZ takımlılar arası (galibiyet takım puanına da sayılır) ->
+            // frontend düello listesini bununla filtreler + swords düğmesini yalnız takımlılara gösterir.
+            // Tek sorgu (team_members tablosu yoksa guard -> boş küme).
+            $teamSet = [];
+            if ($userIds->isNotEmpty() && Schema::hasTable('team_members')) {
+                $teamSet = TeamMember::whereIn('user_id', $userIds)
+                    ->pluck('user_id')->map(fn ($x) => (int) $x)->flip()->all();
+            }
+
             $list = $users->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
@@ -1166,6 +1176,7 @@ class RoomController extends Controller
                 'is_support' => (bool) $u->is_support, // destek -> isim yanı krem kalkan
                 'status' => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
                 'in_game' => isset($inGameSet[(int) $u->id]), // aktif maçta -> "Oyna" butonu gizlenir
+                'has_team' => isset($teamSet[(int) $u->id]), // takımı var mı -> düello uygunluğu
             ])->values()->all();
 
             return ['players' => $list, 'count' => count($list)];

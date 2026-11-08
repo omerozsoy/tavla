@@ -452,6 +452,7 @@ export function OnlinePlayersPanel({
   onProfile,
   onInvite,
   onDuel,
+  duelTeamOnly,
 }: {
   currentName?: string
   currentId?: number // giris yapan kullanici -> listede en uste sabitlenir (kendini gor)
@@ -459,6 +460,8 @@ export function OnlinePlayersPanel({
   onInvite?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void // maca davet et (giris yapmis kullanici)
   // Düello daveti: Play'in yanında IconSwords -> tıklayınca 1/3/5 uzunluk seçici -> puansız düello daveti.
   onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }, points: 1 | 3 | 5) => void
+  // /duello sayfası: YALNIZ takımı olan oyuncuları listele (düello takımlılar arası).
+  duelTeamOnly?: boolean
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
@@ -506,7 +509,9 @@ export function OnlinePlayersPanel({
   useEffect(() => setPage(0), [tab])
 
   // Aktif sekmenin listesi: Arkadaşlar -> online oyuncuları arkadaş id'leriyle filtrele (kesişim).
-  const base = players ? (tab === 'friends' && friendIds ? players.filter((p) => friendIds.has(p.id)) : players) : null
+  const baseAll = players ? (tab === 'friends' && friendIds ? players.filter((p) => friendIds.has(p.id)) : players) : null
+  // /duello sayfası: yalnız takımı olan oyuncular (düello takımlılar arası).
+  const base = baseAll && duelTeamOnly ? baseAll.filter((p) => p.has_team) : baseAll
   // Kendini HER ZAMAN gor: liste rating'e gore siralanir (Cevrimdisi Gorun degilsen
   // listedesin) ama dusuk rating'de 2. sayfaya dusersin -> kendini en uste SABITLE.
   // (Arkadaşlar sekmesinde kendin arkadaşın olmadığından base'de yoksun -> sabitlenmez, dogru.)
@@ -581,8 +586,10 @@ export function OnlinePlayersPanel({
                     </span>
                   ) : !self && onInvite && p.status !== 'busy' ? (
                     <span className="online-actions">
-                      {/* Düello: IconSwords -> 1/3/5 uzunluk seçici -> puansız düello daveti (galibiyet sıralaması). */}
+                      {/* Düello: IconSwords -> 1/3/5 uzunluk seçici. YALNIZ takımı olan oyuncuya
+                          (düello takımlılar arası; takımsızla yapılamaz). */}
                       {onDuel &&
+                        p.has_team &&
                         (duelFor === p.id ? (
                           <span className="online-duel-pick">
                             {([1, 3, 5] as const).map((n) => (

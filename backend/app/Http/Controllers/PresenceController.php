@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\Notification;
 use App\Models\Room;
 use App\Models\Setting;
+use App\Models\TeamMember;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Support\RatingPolicy;
@@ -374,6 +375,16 @@ class PresenceController extends Controller
         $target = User::find($userId);
         if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
+        }
+        // DÜELLO yalnız TAKIMLILAR arası (galibiyet takım puanına da sayılır): iki taraf da bir
+        // takımın üyesi olmalı. Takımsız oyuncuyla düello YAPILAMAZ (frontend de listeyi filtreler).
+        if ($isDuel && Schema::hasTable('team_members')) {
+            if (! TeamMember::where('user_id', $me->id)->exists()) {
+                return $this->fail('Düello için önce bir takıma katılmalısın.', 422);
+            }
+            if (! TeamMember::where('user_id', $userId)->exists()) {
+                return $this->fail('Takımı olmayan bir oyuncuyla düello yapamazsın.', 422);
+            }
         }
         // "Oyun Kabul Etmiyor" (busy) veya "Çevrimdışı Görün" (offline) durumundaki
         // oyuncu maça davet edilemez -> davet eden dostça uyarilir.
