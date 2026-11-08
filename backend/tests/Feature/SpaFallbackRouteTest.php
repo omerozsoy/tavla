@@ -13,7 +13,7 @@ class SpaFallbackRouteTest extends TestCase
 {
     public function test_league_and_teams_routes_serve_spa_shell_not_404(): void
     {
-        foreach (['turkiye-online-tavla-ligi', 'takimlar-ligi', 'turkiye-online-tavla-ligi/5'] as $slug) {
+        foreach (['turkiye-online-tavla-ligi', 'takimlar-ligi', 'turkiye-online-tavla-ligi/5', 'duello'] as $slug) {
             $res = $this->get('/'.$slug);
             $res->assertStatus(200);
             $res->assertDontSee('Sayfa Bulunamadı');

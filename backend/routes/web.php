@@ -188,7 +188,7 @@ Route::fallback(function (Request $request) {
         'online-tavla', 'tavla-oyna', 'backgammon',
         'tavla-turnuvasi-organizasyonu', 'kurumsal-tavla-turnuvasi',
         'belediye-tavla-turnuvasi', 'avm-tavla-turnuvasi', 'iletisim',
-        'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna', 'maca-davet',
+        'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna', 'maca-davet', 'duello',
         'klasik-tavla', 'klasik-yapay-zeka', 'klasik-arkadasinla-oyna',
         'turkiye-online-tavla-ligi', 'takimlar-ligi',
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
