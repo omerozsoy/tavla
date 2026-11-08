@@ -127,8 +127,8 @@ class DuelService
             ->leftJoin('team_members', 'team_members.team_id', '=', 'teams.id')
             ->leftJoin('duels', 'duels.winner_id', '=', 'team_members.user_id')
             ->where('teams.status', 'active')
-            ->groupBy('teams.id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2')
-            ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', DB::raw('COALESCE(SUM(duels.target_points), 0) as wins'))
+            ->groupBy('teams.id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', 'teams.member_count')
+            ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', 'teams.member_count', DB::raw('COALESCE(SUM(duels.target_points), 0) as wins'))
             ->orderByDesc('wins')
             ->orderBy('teams.name')
             ->limit($limit)
@@ -141,6 +141,7 @@ class DuelService
             'logo' => $r->logo,
             'color1' => $r->color1,
             'color2' => $r->color2,
+            'member_count' => (int) $r->member_count,
             'wins' => (int) $r->wins,
         ])->values()->all();
     }

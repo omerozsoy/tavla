@@ -21496,6 +21496,17 @@ body:has(.spectate-view) .app.lobby {
   font-variant-numeric: tabular-nums;
   color: var(--accent-text, #d8805a);
 }
+/* Sıralama satırında takımın oyuncu sayısı: isim yanında küçük muted çip. */
+.trank-members {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ===== Takımlar modülü: segment sekmeler + kurallar + kurma ekranı ===== */
 .teams-tabs {

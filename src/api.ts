@@ -598,6 +598,7 @@ export interface DuelTeamRow {
   logo?: string | null
   color1: string
   color2: string
+  member_count?: number
   wins: number
 }
 export async function duelLeaderboard(limit = 100): Promise<{ individual: DuelIndividualRow[]; teams: DuelTeamRow[] }> {

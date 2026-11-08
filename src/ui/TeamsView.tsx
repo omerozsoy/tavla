@@ -223,12 +223,16 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
 
   const medal = (n: number) => (n === 1 ? '🥇' : n === 2 ? '🥈' : n === 3 ? '🥉' : '')
   // Leaderboard-stili sıralama satırı: derece (madalya) + amblem+ad + sağda değer.
-  const rankRow = (key: number, pos: number, team: { name: string; tag: string; logo?: string | null; color1: string; color2: string }, val: string, onOpen: () => void) => (
+  const rankRow = (key: number, pos: number, team: { name: string; tag: string; logo?: string | null; color1: string; color2: string; member_count?: number }, val: string, onOpen: () => void) => (
     <div key={key} className={`trank-row ${pos <= 3 ? 'top' : ''}`} onClick={onOpen}>
       <span className="trank-pos">{medal(pos) || pos}</span>
       <span className="trank-team">
         <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={28} />
         <b>{team.name}</b>
+        {/* Takımın oyuncu sayısı */}
+        {team.member_count != null && (
+          <span className="trank-members" title={t('teams.members')}><Icon name="user" size={12} /> {team.member_count}</span>
+        )}
       </span>
       <span className="trank-val">{val}</span>
     </div>
