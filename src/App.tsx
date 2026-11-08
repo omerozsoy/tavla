@@ -1073,6 +1073,8 @@ export default function App() {
   const [matAnalyzerOpen, setMatAnalyzerOpen] = useState(false) // Mat Analiz: .mat yukle + gnubg tam analiz
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [duelOpen, setDuelOpen] = useState(false) // Bireysel Düello sayfası
+  // Çevrimiçi Oyuncular'dan düelloya davet edilen oyuncu -> /duello sayfasında ÖN-SEÇİLİ gelir.
+  const [duelPreselect, setDuelPreselect] = useState<{ id: number; name: string; avatar?: string | null; rating?: number | null } | null>(null)
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
   const [legalSlug, setLegalSlug] = useState<string | null>(null) // hukuki sayfa (KVKK/gizlilik/...)
@@ -1495,6 +1497,7 @@ export default function App() {
           setLeaderboardOpen(true)
           break
         case 'duello':
+          setDuelPreselect(null)
           setDuelOpen(true)
           break
         case 'rutbeler':
@@ -1937,6 +1940,7 @@ export default function App() {
   const seenNotifRef = useRef<Set<number>>(new Set()) // toast'landi mi (yeni bildirim tespiti)
   const notifPrimedRef = useRef(false) // ilk ping'te eski bildirimleri toast'lama
   const seenInviteIdsRef = useRef<Set<number>>(new Set()) // yeni oyun daveti tespiti (ses uyarisi)
+  const autoDuelRef = useRef<Set<number>>(new Set()) // DÜELLO daveti: anında eşleşme -> her daveti BİR kez oto-kabul
   const invitePrimedRef = useRef(false) // ilk ping'te mevcut davetleri ses ile uyarma
   const luckyWheelOpenRef = useRef(false) // cark modali acikken bildirim toast'unu bastir (erken gelmesin)
   useEffect(() => {
@@ -6653,7 +6657,13 @@ export default function App() {
       ping()
         .then((r) => {
           if (!cancelled) {
-            const inv = r.invites ?? []
+            const allInv = r.invites ?? []
+            // DÜELLO = anında eşleşme: davet banner'ı YOK, davet gelir gelmez oto-kabul (odaya gir).
+            // Her daveti BİR kez kabul et (autoDuelRef); banner'da yalnız normal davetler kalır.
+            allInv
+              .filter((i) => i.duel && !autoDuelRef.current.has(i.id))
+              .forEach((i) => { autoDuelRef.current.add(i.id); void handleAcceptInvite(i) })
+            const inv = allInv.filter((i) => !i.duel)
             // Yeni (daha once gorulmemis) oyun daveti -> SES ile uyar. Ilk ping'te (primed=false)
             // mevcut davetleri calma (sayfa yenileme/girişte eski davet ses cikarmasin).
             const freshInvite = inv.some((i) => !seenInviteIdsRef.current.has(i.id))
@@ -8015,6 +8025,7 @@ export default function App() {
   // düello davetini DOĞRUDAN gönder (coin/bahis yok). /maca-davet'e YÖNLENDİRME YOK (kullanıcı direktifi).
   function handleSendDuel(p: { id: number; name: string; avatar?: string | null; rating?: number | null }, points: 1 | 3 | 5) {
     setDuelOpen(false)
+    setDuelPreselect(null)
     void handleSendInvite({ target: points, timeControl: 'normal', unrated: true, duel: true, targetPlayer: p })
   }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
@@ -9855,7 +9866,7 @@ export default function App() {
       setFriendClassic(false) // Modern arkadas maci (klasik degil)
       setFriendSetupOpen(true)
     },
-    onDuel: () => goPage(() => setDuelOpen(true)),
+    onDuel: () => { setDuelPreselect(null); goPage(() => setDuelOpen(true)) },
     onResume: () => {
       closeAllPages() // acik menu sayfasi (turnuvalar vb.) kalmasin, oyuna don
       setHome(false)
@@ -10521,7 +10532,8 @@ export default function App() {
         <DuelView
           titleOverride={menuTitle('duel')}
           currentId={user?.id}
-          onClose={() => setDuelOpen(false)}
+          preselect={duelPreselect}
+          onClose={() => { setDuelOpen(false); setDuelPreselect(null) }}
           onDuel={handleSendDuel}
           onCreateTeam={() => { setDuelOpen(false); goPage(() => { setTeamsArg('kur'); setTeamsOpen(true) }) }}
           onChangeBoard={() => setBoardPickerOpen(true)}
@@ -11672,7 +11684,7 @@ export default function App() {
                 // Play tuşu = PUANLI maç daveti (handleInviteFriend varsayılan ranked=true).
                 onInvite={user ? handleInviteFriend : undefined}
                 // IconSwords (düello) = /duello sayfasına git (oyun kurma + gönderim orada; kullanıcı direktifi).
-                onDuel={user ? () => goPage(() => setDuelOpen(true)) : undefined}
+                onDuel={user ? (p) => { setDuelPreselect(p); goPage(() => setDuelOpen(true)) } : undefined}
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}

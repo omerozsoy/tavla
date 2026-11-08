@@ -89,6 +89,7 @@ class PresenceController extends Controller
                 'game_invites.time_control',
                 'game_invites.unrated',
                 'game_invites.classic',
+                'game_invites.duel',
                 'users.first_name',
                 'users.nickname',
                 'users.avatar',
@@ -122,6 +123,7 @@ class PresenceController extends Controller
                     'timeControl' => $r->time_control,
                     'unrated' => (bool) ($r->unrated ?? false),
                     'classic' => (bool) ($r->classic ?? false), // Klasik Tavla daveti rozeti
+                    'duel' => (bool) ($r->duel ?? false), // DÜELLO daveti -> istemci OTOMATİK kabul eder (anında eşleşme)
                     'pot' => $pot, // tahmini coin pot (0 = bahissiz -> istemci göstermez)
                     // Davetli bu maçta kaç puan kazanır/kaybeder (null = puansız). Bkz ratingPreview.
                     'ratingPreview' => $this->ratingPreview($me, (int) $r->from_user_id, (int) ($r->rating ?? 1500), ! empty($r->unrated), (int) ($r->target ?? 1)),

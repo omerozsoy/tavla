@@ -50,6 +50,8 @@ interface BoardColors {
 
 interface Props {
   currentId?: number
+  // Çevrimiçi Oyuncular'dan düelloya davet edilen oyuncu -> sayfa açılınca ÖN-SEÇİLİ gelir.
+  preselect?: Target | null
   onClose: () => void
   // Düello davetini gönder (App davet+bekleme akışına bağlar). points ∈ {1,3,5}.
   onDuel: (p: Target, points: 1 | 3 | 5) => void
@@ -62,11 +64,11 @@ interface Props {
 
 // Bireysel Düello sayfası (/duello) — /yeni-oyun (MatchSetup) ile AYNI tasarım: sol ayar kartı
 // (rakip seç + uzunluk + davet) + sağ board önizleme. Düello YALNIZ takımlılar arası; coin/bahis yok.
-export default function DuelView({ currentId, onClose, onDuel, board, onChangeBoard, onCreateTeam, titleOverride }: Props) {
+export default function DuelView({ currentId, preselect, onClose, onDuel, board, onChangeBoard, onCreateTeam, titleOverride }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
-  const [sel, setSel] = useState<Target | null>(null) // seçili rakip
+  const [sel, setSel] = useState<Target | null>(preselect ?? null) // seçili rakip (dışarıdan davetle ön-seçili gelebilir)
   const [len, setLen] = useState(3) // düello uzunluğu (1/3/5)
   const [hasTeam, setHasTeam] = useState<boolean | null>(null) // kullanıcının takımı var mı (null=yükleniyor/misafir)
 
