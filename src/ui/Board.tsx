@@ -867,27 +867,26 @@ function Board({
         onClick={() => offTarget && onSelectTarget('off')}
       >
         {/* Küp üst oyuncunundaysa: tepsinin EN ÜSTÜNde AYRI alan (slot overflow:hidden DIŞI → kırpılmaz). */}
-        {cubeTraySide === 'top' && <div className="cube-area top">{cubeTrayEl}</div>}
         <div className="bearoff-slot top">
           {Array.from({ length: topOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
           {/* Sayi ic (merkez) kenara: cubuklar ustten dizilir, "6" tepsinin ortasina yakin */}
-          {topOffCount > 0 && (
-            <span className={`bearoff-count ${topOffPlayer}`}>{topOffCount}</span>
-          )}
         </div>
+        {topOffCount > 0 && (
+          <span className={`bearoff-count ${topOffPlayer}`}>{topOffCount}</span>
+        )}
+        {cubeTraySide && <div className="cube-area">{cubeTrayEl}</div>}
+        {bottomOffCount > 0 && (
+          <span className={`bearoff-count ${bottomOffPlayer}`}>{bottomOffCount}</span>
+        )}
         <div className="bearoff-slot bottom">
           {/* Sayi ic (merkez) kenara: "4" tepsinin ortasina yakin, cubuklar alttan dizilir */}
-          {bottomOffCount > 0 && (
-            <span className={`bearoff-count ${bottomOffPlayer}`}>{bottomOffCount}</span>
-          )}
           {Array.from({ length: bottomOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
         </div>
         {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda AYRI alan (slot DIŞI → kırpılmaz). */}
-        {cubeTraySide === 'bottom' && <div className="cube-area bottom">{cubeTrayEl}</div>}
       </div>
 
       {/* Surukleme proxy'si: document.body'ye portal (tema <html>'de -> gorunum korunur).

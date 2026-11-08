@@ -19,9 +19,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 
 /**
- * Takımlar Ligi — ADMIN (§12): takım arama/inceleme, logo onay/ret, gerekçeli kapatma. Takım kimliğini
- * admin DÜZENLEMEZ (kullanıcı yönetir) → create/edit kapalı; yalnız moderasyon aksiyonları. Panel zaten
- * EnsureAdmin; aksiyonlar TeamService (transaction + audit) üzerinden. Bağımsız navigasyon grubu.
+ * Takımlar Ligi — ADMIN (§12): takım arama/inceleme, kimlik düzenleme (ad/etiket/renk/açıklama), logo
+ * onay/ret, gerekçeli kapatma. CreatePage/EditPage YOK → düzenleme modal aksiyonuyla (adminEditTeam). Panel
+ * zaten EnsureAdmin; aksiyonlar TeamService (transaction + audit) üzerinden. Bağımsız navigasyon grubu.
  */
 class TeamResource extends Resource
 {
@@ -101,6 +101,22 @@ class TeamResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('İncele'),
+                Tables\Actions\Action::make('edit')->label('Düzenle')
+                    ->icon('heroicon-o-pencil-square')->color('warning')
+                    ->modalWidth('lg')
+                    ->fillForm(fn (Team $r) => [
+                        'name' => $r->name, 'tag' => $r->tag,
+                        'color1' => $r->color1, 'color2' => $r->color2,
+                        'description' => $r->description,
+                    ])
+                    ->form([
+                        Forms\Components\TextInput::make('name')->label('Takım adı')->required()->minLength(3)->maxLength(40),
+                        Forms\Components\TextInput::make('tag')->label('Etiket')->required()->minLength(2)->maxLength(10),
+                        Forms\Components\ColorPicker::make('color1')->label('Ana renk'),
+                        Forms\Components\ColorPicker::make('color2')->label('İkincil renk'),
+                        Forms\Components\Textarea::make('description')->label('Açıklama')->maxLength(500),
+                    ])
+                    ->action(fn (Team $r, array $data) => self::run(fn () => app(TeamService::class)->adminEditTeam($r, (int) auth()->id(), $data), 'Takım güncellendi.')),
                 Tables\Actions\Action::make('approve')->label('Onayla')
                     ->icon('heroicon-o-check-badge')->color('success')
                     ->visible(fn (Team $r) => $r->status === 'pending')

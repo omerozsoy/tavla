@@ -103,6 +103,33 @@ class TeamFilamentTest extends TestCase
         $this->assertEqualsWithDelta(5.0, $finished->home_score, 1e-9);
     }
 
+    public function test_admin_edits_team_identity(): void
+    {
+        $team = $this->founderTeam('Kartallar', 'KRT');
+
+        Livewire::actingAs($this->admin())->test(ListTeams::class)
+            ->callTableAction('edit', $team, data: [
+                'name' => 'Şahinler', 'tag' => 'SHN', 'color1' => '#112233', 'description' => 'yeni',
+            ]);
+
+        $team->refresh();
+        $this->assertSame('Şahinler', $team->name);
+        $this->assertSame('shn', $team->tag_key);
+        $this->assertSame('#112233', $team->color1);
+        $this->assertSame('yeni', $team->description);
+    }
+
+    public function test_admin_edit_rejects_duplicate_tag(): void
+    {
+        $a = $this->founderTeam('Alfa', 'ALF');
+        $this->founderTeam('Beta', 'BET');
+
+        Livewire::actingAs($this->admin())->test(ListTeams::class)
+            ->callTableAction('edit', $a, data: ['name' => 'Alfa', 'tag' => 'BET']);
+
+        $this->assertSame('ALF', $a->fresh()->tag); // çakışma reddedildi, değişmedi
+    }
+
     public function test_admin_creates_team_for_user_bypassing_eligibility(): void
     {
         // Premium YOK, puanlı maç YOK, coin YOK — kullanıcı kendi KURAMAZ ama admin kurabilir.

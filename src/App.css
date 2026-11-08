@@ -8053,23 +8053,15 @@ html[data-board='yilbasi'] .checker.black {
 .off-checker.black {
   background: var(--navy);
 }
-/* Toplanan pul SAYISI (bear-off tepsisinde). Pul rengiyle (board'a uyar) + okunur halo. */
+/* Toplanan pul SAYISI (Backgammon Galaxy düzeni): reserve tüp ile küp ARASINDA, flow'da
+   (slot DIŞI), temiz + BOLD. Pul rengiyle (board'a uyar) + okunur halo. */
 .bearoff-count {
   flex: none;
   text-align: center;
-  font-weight: 400;
-  font-size: calc(var(--checker) * 0.6);
-  line-height: 1.05;
-  margin: 1px 0;
-}
-/* Toplanan pul sayilari tepsinin ORTASINDA toplanir: ust sayi ust-yarinin altina,
-   alt sayi alt-yarinin ustune itilir -> ikisi merkez sinirinda bulusur (cubuklar
-   dista kalir). */
-.bearoff-slot.top .bearoff-count {
-  margin-top: auto;
-}
-.bearoff-slot.bottom .bearoff-count {
-  margin-bottom: auto;
+  font-weight: 700;
+  font-size: calc(var(--checker) * 0.62);
+  line-height: 1;
+  margin: 2px 0;
 }
 .bearoff-count.white {
   color: var(--cream);

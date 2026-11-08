@@ -65,13 +65,10 @@ class TeamService
         return TeamMember::where('user_id', $userId)->first();
     }
 
-    /** Aktif 72 saat yasağının bitişi (yoksa null). En geç biten kayıt bağlayıcı. */
+    /** Katılım bekleme süresi KALDIRILDI (kullanıcı direktifi) -> hiçbir zaman yasak yok. */
     public function cooldownUntil(int $userId): ?Carbon
     {
-        return TeamCooldown::where('user_id', $userId)
-            ->where('until', '>', now())
-            ->orderByDesc('until')
-            ->value('until');
+        return null;
     }
 
     /**
@@ -136,15 +133,10 @@ class TeamService
         ]);
     }
 
+    // Katılım bekleme süresi KALDIRILDI (kullanıcı direktifi) -> no-op (ceza kaydı oluşturulmaz).
     public function startCooldown(int $userId, string $reason, ?Carbon $now = null): void
     {
-        $now = $now ? $now->copy() : now();
-        TeamCooldown::create([
-            'user_id' => $userId,
-            'until' => $now->copy()->addHours(TeamRules::JOIN_COOLDOWN_HOURS),
-            'reason' => $reason,
-            'created_at' => $now,
-        ]);
+        // intentionally empty
     }
 
     public function managerOrFail(Team $team, int $actorId, bool $founderOnly = false): TeamMember
@@ -289,6 +281,44 @@ class TeamService
                     'role' => 'founder', 'joined_at' => now(),
                 ]);
                 $this->audit($team, $locked->id, 'team_created_admin');
+
+                return $team;
+            });
+        } catch (QueryException $e) {
+            throw new TeamException('name_or_tag_taken', 409);
+        }
+    }
+
+    /**
+     * Admin takım kimliği düzenler (§12): ad/etiket/renk/açıklama. Kurucu rename'inin aksine ücret/bekleme
+     * YOK (admin yetkili). Benzersizlik self-hariç kontrol edilir; key'ler yeniden üretilir.
+     */
+    public function adminEditTeam(Team $team, int $adminId, array $data): Team
+    {
+        $name = trim((string) ($data['name'] ?? $team->name));
+        $tag = trim((string) ($data['tag'] ?? $team->tag));
+        $this->validateName($name);
+        $this->validateTag($tag);
+        $nameKey = self::keyify($name);
+        $tagKey = self::keyify($tag);
+
+        if (Team::where('name_key', $nameKey)->where('id', '!=', $team->id)->exists()) {
+            throw new TeamException('name_taken', 409);
+        }
+        if (Team::where('tag_key', $tagKey)->where('id', '!=', $team->id)->exists()) {
+            throw new TeamException('tag_taken', 409);
+        }
+
+        try {
+            return DB::transaction(function () use ($team, $adminId, $data, $name, $tag, $nameKey, $tagKey) {
+                $team->fill([
+                    'name' => $name, 'name_key' => $nameKey,
+                    'tag' => $tag, 'tag_key' => $tagKey,
+                    'color1' => $data['color1'] ?? $team->color1,
+                    'color2' => $data['color2'] ?? $team->color2,
+                    'description' => $data['description'] ?? null,
+                ])->save();
+                $this->audit($team, $adminId, 'team_edited_admin');
 
                 return $team;
             });

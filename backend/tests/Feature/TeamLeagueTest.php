@@ -255,9 +255,9 @@ class TeamLeagueTest extends TestCase
         $this->assertThrowsCode('cannot_kick_founder', fn () => $this->svc()->kick($asst, $team->fresh(), $founder->id));
     }
 
-    // ---- §4 24 saat bekleme -------------------------------------------------
+    // ---- §4 Üyelik: katılım bekleme süresi KALDIRILDI --------------------------
 
-    public function test_leave_starts_24h_cooldown_blocking_rejoin(): void
+    public function test_leave_has_no_cooldown_allows_immediate_rejoin(): void
     {
         $team = $this->makeTeam();
         $member = $this->eligibleUser();
@@ -267,13 +267,10 @@ class TeamLeagueTest extends TestCase
         $this->svc()->leave($member->fresh());
         $this->assertNull(TeamMember::where('user_id', $member->id)->first());
 
-        $until = $this->svc()->cooldownUntil($member->id);
-        $this->assertNotNull($until);
-        $this->assertTrue($until->between(now()->addHours(23), now()->addHours(25)));
-
-        // Bekleme bitmeden başka takıma katılamaz.
+        // Bekleme süresi KALDIRILDI -> cooldown yok, apply 'on_cooldown' atmaz.
+        $this->assertNull($this->svc()->cooldownUntil($member->id));
         $other = $this->makeTeam(name: 'Baska', tag: 'BSK');
-        $this->assertThrowsCode('on_cooldown', fn () => $this->svc()->apply($member->fresh(), $other));
+        $this->svc()->apply($member->fresh(), $other); // istisna ATMAMALI (eskiden on_cooldown)
 
         // Founder ayrılamaz (devir/kapatma şart).
         $founder = User::find($team->founder_id);

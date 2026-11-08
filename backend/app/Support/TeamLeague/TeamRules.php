@@ -34,7 +34,7 @@ final class TeamRules
     // §4 Üyelik
     public const MAX_OPEN_APPLICATIONS = 3;
 
-    public const JOIN_COOLDOWN_HOURS = 24;     // ayrılma/çıkarılma/premium-düşme/kapanma sonrası
+    public const JOIN_COOLDOWN_HOURS = 0;      // KALDIRILDI (kullanıcı direktifi): ayrıldıktan sonra hemen yeni takıma girilebilir
 
     // §5 Premium devamlılığı
     public const PREMIUM_GRACE_DAYS = 7;       // normal üye/yardımcı yenileme süresi
