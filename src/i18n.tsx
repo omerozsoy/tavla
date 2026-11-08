@@ -240,7 +240,7 @@ const TR: Dict = {
   'teams.view': 'Görüntüle',
   'teams.leave': 'Ayrıl',
   'teams.left': 'Takımdan ayrıldın.',
-  'teams.leaveConfirm': 'Takımdan ayrılmak istediğine emin misin? 24 saat yeni takıma giremezsin.',
+  'teams.leaveConfirm': 'Takımdan ayrılmak istediğine emin misin? İstersen hemen başka bir takıma katılabilirsin.',
   'teams.promote': 'Yardımcı Yap',
   'teams.demote': 'Yardımcılığı Al',
   'teams.transfer': 'Kuruculuğu Devret',
@@ -310,13 +310,18 @@ const TR: Dict = {
     '• Roller: 1 kurucu + en fazla 2 yardımcı. Kurucu ve yardımcılar takımı yönetir (üye kabul, çıkarma, davet).\n' +
     '• Aynı anda en fazla 3 açık başvurun olabilir.\n' +
     '• Kurucu 60 gün giriş yapmazsa kuruluş otomatik devredilir.\n\n' +
-    'Düello ve takım puanı\n' +
-    '• Takım rekabeti bireysel düellolarla olur: üyeler çevrimiçi başka bir takımlı oyuncuyu düelloya davet eder (1v1).\n' +
-    '• Düello yalnız takımı olan oyuncular arasında oynanır; coin/bahis yoktur ve maç bireysel rating’i etkilemez.\n' +
-    '• Maç uzunluğu 1, 3 veya 5 puandır (davet eden seçer).\n\n' +
-    'Puan ve sıralama\n' +
-    '• Her düello: galibiyet 1, mağlubiyet 0 puan. Kazanan oyuncu takımına 1 galibiyet puanı kazandırır.\n' +
-    '• Takımlar üyelerinin toplam düello galibiyetine (takım galibiyet puanı) göre sıralanır.',
+    'Takım sıralamaları\n' +
+    '• Takımlar üç ayrı listede sıralanır: Rating, Düello ve Lig Puanı.\n' +
+    '• Rating: takımın üye rating ortalaması.\n' +
+    '• Düello: üyelerin topladığı toplam düello galibiyeti.\n' +
+    '• Lig Puanı: aylık takım karşılaşmalarından kazanılan puan (galibiyet 3, beraberlik 1, mağlubiyet 0).\n\n' +
+    'Düello\n' +
+    '• Üyeler çevrimiçi başka bir takımlı oyuncuyu bireysel düelloya davet eder (1v1); düello yalnız takımı olanlar arasında oynanır.\n' +
+    '• Coin/bahis yoktur ve maç bireysel rating’i etkilemez. Uzunluk 1, 3 veya 5 puandır (davet eden seçer).\n' +
+    '• Her galibiyet oyuncuya ve takımına 1 düello puanı kazandırır.\n\n' +
+    'Takım karşılaşmaları (aylık lig)\n' +
+    '• Takımlar 5’e 5 karşılaşır; her karşılaşma galibiyet 3, beraberlik 1, mağlubiyet 0 puan verir.\n' +
+    '• Aylık Lig Puanı tablosu bu karşılaşmaların sonuçlarından oluşur.',
   // ponytail: asset-rev — TR chunk hash'ini değiştirip canlı bundle'ı taze URL'ye yönlendirir
   // (deploy öncesi CDN'e zehirlenmiş 404'ü dereferans etmek için). Hiçbir yerde okunmaz.
   '__asset_rev': '2026-11-04a',
@@ -2496,7 +2501,7 @@ const EN: Dict = {
   'teams.view': 'View',
   'teams.leave': 'Leave',
   'teams.left': 'You left the team.',
-  'teams.leaveConfirm': 'Leave the team? You can\'t join a new team for 24 hours.',
+  'teams.leaveConfirm': 'Leave the team? You can join a new team right away.',
   'teams.promote': 'Make Assistant',
   'teams.demote': 'Remove Assistant',
   'teams.transfer': 'Transfer Ownership',
@@ -2565,13 +2570,18 @@ const EN: Dict = {
     '• Roles: 1 founder + up to 2 assistants. The founder and assistants manage the team (accept members, remove, invite).\n' +
     '• You can have at most 3 open applications at a time.\n' +
     '• If the founder does not log in for 60 days, leadership is transferred automatically.\n\n' +
-    'Duels and team points\n' +
-    '• Team competition happens through individual duels: a member invites another online player who has a team to a duel (1v1).\n' +
-    '• Duels are only played between players who have a team; there is no coin/stake and the match does not affect individual rating.\n' +
-    '• Match length is 1, 3 or 5 points (the inviter chooses).\n\n' +
-    'Scoring and ranking\n' +
-    '• Each duel: win 1, loss 0 points. The winner earns their team 1 victory point.\n' +
-    '• Teams are ranked by their members’ total duel wins (team victory points).',
+    'Team rankings\n' +
+    '• Teams appear in three separate lists: Rating, Duel and League Points.\n' +
+    '• Rating: the team’s average member rating.\n' +
+    '• Duel: the total duel wins collected by members.\n' +
+    '• League Points: points earned from monthly team matches (win 3, draw 1, loss 0).\n\n' +
+    'Duels\n' +
+    '• A member invites another online player who has a team to a 1v1 duel; duels are only played between players who have a team.\n' +
+    '• There is no coin/stake and the match does not affect individual rating. Length is 1, 3 or 5 points (the inviter chooses).\n' +
+    '• Each win earns the player and their team 1 duel point.\n\n' +
+    'Team matches (monthly league)\n' +
+    '• Teams meet 5-v-5; each match awards win 3, draw 1, loss 0 points.\n' +
+    '• The monthly League Points table is built from these match results.',
 
   // Turkey Online Backgammon League (independent module §1)
   'menu.group.league': 'Backgammon League',
