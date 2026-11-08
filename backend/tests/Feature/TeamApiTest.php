@@ -66,6 +66,25 @@ class TeamApiTest extends TestCase
         $this->getJson('/api/my-team')->assertUnauthorized();
     }
 
+    public function test_pending_logo_flag_only_for_managers(): void
+    {
+        [$team, $members] = $this->teamWithMembers('Bayrak', 'BYR');
+        $team->update(['logo_pending' => 'uploads/pending.webp']);
+
+        // Misafir: bayrak false (gerçek logo_pending URL'i hiç sızmaz).
+        $this->getJson('/api/teams/'.$team->id)
+            ->assertOk()->assertJsonPath('team.has_pending_logo', false)
+            ->assertJsonMissingPath('team.logo_pending');
+
+        // Sıradan üye: yönetici değil → false.
+        Sanctum::actingAs($members[1]);
+        $this->getJson('/api/teams/'.$team->id)->assertJsonPath('team.has_pending_logo', false);
+
+        // Kurucu (yönetici): true.
+        Sanctum::actingAs($members[0]);
+        $this->getJson('/api/teams/'.$team->id)->assertJsonPath('team.has_pending_logo', true);
+    }
+
     public function test_create_team_via_api(): void
     {
         Sanctum::actingAs($this->eligibleUser());

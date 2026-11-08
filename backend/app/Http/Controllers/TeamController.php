@@ -77,17 +77,24 @@ class TeamController extends Controller
         ]);
     }
 
-    public function show(Team $team): JsonResponse
+    public function show(Request $request, Team $team): JsonResponse
     {
         $members = TeamMember::where('team_id', $team->id)->get();
         $users = $this->userMap($members->pluck('user_id')->all());
         $roleRank = ['founder' => 0, 'assistant' => 1, 'member' => 2];
+
+        // Yöneticiye (kurucu/yardımcı) bekleyen logo bayrağı: gerçek logo_pending URL'i sızdırılmaz,
+        // yalnız "onay bekliyor" bilgisi düzenleme formunda gösterilsin diye. Route public (auth
+        // middleware YOK) + default guard 'web' Bearer'ı okumaz → sanctum guard'ını açıkça kullan.
+        $viewer = $request->user('sanctum');
+        $isManager = $viewer && $members->firstWhere(fn ($m) => $m->user_id === $viewer->id && in_array($m->role, ['founder', 'assistant'], true)) !== null;
 
         return response()->json([
             'team' => array_merge($this->teamBrief($team), [
                 'description' => $team->description,
                 'applications_open' => (bool) $team->applications_open,
                 'min_apply_rating' => $team->min_apply_rating,
+                'has_pending_logo' => $isManager && ! empty($team->logo_pending),
                 'awards' => $team->awards()->orderByDesc('month_key')->get()
                     ->map(fn ($a) => ['month_key' => $a->month_key, 'rank' => $a->rank, 'kind' => $a->kind])->all(),
             ]),
