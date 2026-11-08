@@ -378,12 +378,19 @@ class PresenceController extends Controller
         }
         // DÜELLO yalnız TAKIMLILAR arası (galibiyet takım puanına da sayılır): iki taraf da bir
         // takımın üyesi olmalı. Takımsız oyuncuyla düello YAPILAMAZ (frontend de listeyi filtreler).
+        // AYNI takım üyeleri birbiriyle DÜELLO yapamaz: galibiyet aynı takıma puan yazar (anlamsız +
+        // kendi takımını şişirme). Farklı takımlar arası olmalı.
         if ($isDuel && Schema::hasTable('team_members')) {
-            if (! TeamMember::where('user_id', $me->id)->exists()) {
+            $myTeam = TeamMember::where('user_id', $me->id)->value('team_id');
+            $targetTeam = TeamMember::where('user_id', $userId)->value('team_id');
+            if (! $myTeam) {
                 return $this->fail('Düello için önce bir takıma katılmalısın.', 422);
             }
-            if (! TeamMember::where('user_id', $userId)->exists()) {
+            if (! $targetTeam) {
                 return $this->fail('Takımı olmayan bir oyuncuyla düello yapamazsın.', 422);
+            }
+            if ((int) $myTeam === (int) $targetTeam) {
+                return $this->fail('Aynı takımdaki oyuncuyla düello yapamazsın.', 422);
             }
         }
         // "Oyun Kabul Etmiyor" (busy) veya "Çevrimdışı Görün" (offline) durumundaki

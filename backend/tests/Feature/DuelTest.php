@@ -115,6 +115,20 @@ class DuelTest extends TestCase
         $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 3])->assertOk();
     }
 
+    public function test_duel_rejects_same_team(): void
+    {
+        $a = $this->user('same1');
+        $b = $this->user('same2');
+        $b->forceFill(['last_seen' => now(), 'presence_status' => 'available'])->save();
+        // İkisi de AYNI takımda: a takımı kurar, b aynı takıma üye.
+        $teamId = $this->giveTeam($a, 'SM');
+        TeamMember::create(['team_id' => $teamId, 'user_id' => $b->id, 'role' => 'member', 'joined_at' => now()]);
+
+        Sanctum::actingAs($a);
+        $this->postJson("/api/friends/{$b->id}/invite", ['duel' => true, 'target' => 3])
+            ->assertStatus(422)->assertJsonPath('message', 'Aynı takımdaki oyuncuyla düello yapamazsın.');
+    }
+
     public function test_record_is_idempotent(): void
     {
         $a = $this->user('wa');
