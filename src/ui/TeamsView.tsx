@@ -563,7 +563,10 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
           <SLabel count={me.managed.applications.length}>{t('teams.applications')}</SLabel>
           {me.managed.applications.map((a) => (
             <div key={a.id} style={row}>
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{a.user.nickname} <TeamTag userId={a.user.id} size={20} /></span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <button className="teams-member-name" onClick={() => props.onProfile?.(a.user.id)}>{a.user.nickname}</button>
+                <TeamTag userId={a.user.id} size={20} />
+              </span>
               <span style={microTag}>{t('teams.awaitingReply')}</span>
               <span style={{ flex: 1 }} />
               <Button disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, true), t('teams.joined'))}>{t('teams.accept')}</Button>
@@ -579,7 +582,10 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
           <SLabel count={me.managed.sent_invites!.length}>{t('teams.sentInvites')}</SLabel>
           {me.managed.sent_invites!.map((iv) => (
             <div key={iv.id} style={row}>
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>{iv.user.nickname} <TeamTag userId={iv.user.id} size={20} /></span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <button className="teams-member-name" onClick={() => props.onProfile?.(iv.user.id)}>{iv.user.nickname}</button>
+                <TeamTag userId={iv.user.id} size={20} />
+              </span>
               <span style={microTag}>{t('teams.inviteAwaiting')}</span>
               <span style={{ flex: 1 }} />
               <Button variant="ghost" disabled={busy} onClick={() => act(() => revokeTeamInvite(iv.id))}>{t('teams.revoke')}</Button>
