@@ -2553,6 +2553,7 @@ export interface LiveMatch {
   target?: number | null
   mode?: 'ranked' | 'friendly' | 'tournament'
   classic?: boolean // Klasik Tavla (kup yok + mars=2) -> canli mac listesinde rozet
+  duel?: boolean // Bireysel Düello -> canli mac listesinde "Düello" kategorisi
 }
 export async function liveMatches(): Promise<LiveMatch[]> {
   const data = await req<{ matches: LiveMatch[] }>('/live-matches')

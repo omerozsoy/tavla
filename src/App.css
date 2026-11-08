@@ -14345,6 +14345,11 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--coin-gold);
   background: color-mix(in srgb, var(--coin-gold) 16%, transparent);
 }
+/* DÜELLO rozeti: mor ton — diğer kategorilerden (navy/yeşil/altın/kiremit) ayrışsın. */
+.lm-type-duel {
+  color: var(--duel-purple, #7c4dbe);
+  background: color-mix(in srgb, var(--duel-purple, #7c4dbe) 14%, transparent);
+}
 /* KLASIK TAVLA rozeti: kiremit tonu — canlı maç listesi + Oyun Arayanlar + davet kartı ortak renk. */
 .lm-type-classic,
 .seek-classic,

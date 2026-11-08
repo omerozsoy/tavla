@@ -68,6 +68,8 @@ interface Props {
   onRequirePremium: () => void
   onEnterRoom: (code: string, target: number) => void
   onProfile?: (id: number) => void
+  // Takım detayında online üyeyi düelloya çağır (DuelView'i o rakip ön-seçili açar).
+  onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void
   onPathChange?: (p: string | null) => void
   onClose: () => void
 }
@@ -183,7 +185,7 @@ export default function TeamsView(props: Props) {
         </>
       )}
 
-      {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} hasTeam={hasTeam} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} setNotice={setNotice} errText={errText} />}
+      {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} hasTeam={hasTeam} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} onDuel={props.onDuel} setNotice={setNotice} errText={errText} />}
       {view.kind === 'match' && (
         <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })}
           onEnterRoom={props.onEnterRoom} setNotice={setNotice} errText={errText} />

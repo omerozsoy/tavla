@@ -1034,6 +1034,7 @@ class RoomController extends Controller
                 ->get(array_merge(
                     ['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode', 'server_match'],
                     Schema::hasColumn('rooms', 'classic') ? ['classic'] : [],
+                    Schema::hasColumn('rooms', 'duel') ? ['duel'] : [],
                 ));
 
             // Premium: iki oyuncunun user_id'lerinden TEK sorguyla plan lookup (süresi geçerli ücretli).
@@ -1071,6 +1072,7 @@ class RoomController extends Controller
                     'pot' => $pot, // kazananın alacağı coin (0 = potsuz eski maç, gösterilmez)
                     'target' => $r->target !== null ? (int) $r->target : null,
                     'classic' => (bool) ($r->classic ?? false), // Klasik Tavla rozeti (canlı maç listesi)
+                    'duel' => (bool) ($r->duel ?? false), // Düello rozeti (canlı maç listesi)
                     // Etiket icin tip. TURNUVA: turnuva mac odasi mode=NULL kurulur (enter(), davetsiz) ve
                     // TournamentController::matchRoom oda koduna tur-uzunlugu cache anahtari yazar -> ikisi
                     // birden = turnuva maci. Yalniz NULL'a guvenilmez (davetsiz enter ile kurulan baska oda).

@@ -18,9 +18,10 @@ import playerPlayIcon from '../assets/player-play.svg'
 import diceSpinIcon from '../assets/dice-spin.gif'
 
 // Canli mac tipi: Turnuva | Arkadaslik | Puan Maci (N-puan) | Tek Mac (1 oyun)
-type LiveCat = 'single' | 'match' | 'friendly' | 'tournament'
+type LiveCat = 'single' | 'match' | 'friendly' | 'duel' | 'tournament'
 function liveCat(m: LiveMatch): LiveCat {
   if (m.mode === 'tournament') return 'tournament'
+  if (m.duel) return 'duel' // Düello (mode=friendly üstüne duel bayrağı) -> "Düello" etiketi
   if (m.mode === 'friendly') return 'friendly'
   return (m.target ?? 1) > 1 ? 'match' : 'single'
 }
@@ -28,6 +29,7 @@ const LIVE_CAT_KEY: Record<LiveCat, string> = {
   single: 'live.catSingle',
   match: 'live.catPoint',
   friendly: 'live.catFriendly',
+  duel: 'live.catDuel',
   tournament: 'live.catTournament',
 }
 
