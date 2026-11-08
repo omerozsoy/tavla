@@ -6,7 +6,22 @@ import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import { onlinePlayers, getMyTeam, type OnlinePlayer } from '../api'
 import { CountryFlag } from './Flag'
+import { useTeamTag } from '../teamTags'
+import { TeamEmblem } from './TeamEmblem'
 import Loading from './Loading'
+
+// Oyuncunun takımı (amblem + ad) — /duello listesinde "hangi takımda" göstergesi. useTeamTag hook
+// döngüde çağrılamaz; bu yüzden satır başına bir bileşen (her biri hook'u BİR kez çağırır → geçerli).
+function PlayerTeam({ userId }: { userId: number }) {
+  const info = useTeamTag(userId)
+  if (!info) return null
+  return (
+    <span className="duel-opp-team" title={info.name || info.tag}>
+      <TeamEmblem color1={info.color1} color2={info.color2} logo={info.logo || undefined} label={info.tag} size={15} />
+      <span>{info.name || info.tag}</span>
+    </span>
+  )
+}
 
 type Target = { id: number; name: string; avatar?: string | null; rating?: number | null }
 const DUEL_LENGTHS = [1, 3, 5]
@@ -64,11 +79,20 @@ export default function DuelView({ currentId, onClose, onDuel, board, onChangeBo
   }, [currentId])
 
   // Çevrimiçi TAKIMLI oyuncular (düello takımlılar arası) — kendini hariç tut, 15sn tazele.
+  // YALNIZ müsait/oyuna hazır olanlar (meşgul 'busy' veya aktif maçtaki 'in_game' listelenmez),
+  // puana göre azalan sıralı.
   useEffect(() => {
     let alive = true
     const load = () =>
       onlinePlayers()
-        .then((p) => alive && setPlayers(p.filter((x) => x.has_team && x.id !== currentId)))
+        .then((p) => alive && setPlayers(
+          p.filter((x) =>
+            x.has_team &&
+            x.id !== currentId &&
+            !x.in_game &&
+            (x.status === 'available' || x.status === 'ready' || x.status == null),
+          ).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+        ))
         .catch(() => alive && setPlayers([]))
     load()
     const id = window.setInterval(load, 15000)
@@ -115,7 +139,13 @@ export default function DuelView({ currentId, onClose, onDuel, board, onChangeBo
                     <span className="duel-opp-av" aria-hidden="true">
                       {p.avatar ? <img src={p.avatar} alt="" /> : <Icon name="user" size={16} />}
                     </span>
-                    <span className="duel-opp-name">{p.name}</span>
+                    <span className="duel-opp-main">
+                      <span className="duel-opp-name">
+                        <span className={`presence-dot status-dot--${p.status ?? 'available'}`} aria-hidden="true" />
+                        {p.name}
+                      </span>
+                      <PlayerTeam userId={p.id} />
+                    </span>
                     <CountryFlag code={p.country} size={18} />
                     <span className="duel-opp-rating">{p.rating}</span>
                   </button>

@@ -17209,9 +17209,34 @@ body:has(.spectate-view) .app.lobby {
   height: 100%;
   object-fit: cover;
 }
-.duel-opp-name {
+/* İsim + takım satırı (dikey): isim üstte, takım altında küçük. */
+.duel-opp-main {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+}
+.duel-opp-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Oyuncunun takımı (amblem + ad), ismin altında küçük muted. */
+.duel-opp-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.duel-opp-team > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
