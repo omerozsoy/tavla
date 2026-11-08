@@ -95,13 +95,16 @@ class DuelService
      */
     public static function teamLeaderboard(int $limit = 100): array
     {
-        $rows = DB::table('duels')
-            ->join('team_members', 'team_members.user_id', '=', 'duels.winner_id')
-            ->join('teams', 'teams.id', '=', 'team_members.team_id')
-            ->whereNotNull('duels.winner_id')
+        // TÜM aktif takımlar listelenir (puanı olmayan takım 0 ile görünür — kullanıcı direktifi):
+        // teams'ten başla, LEFT JOIN ile üyelerin kazandığı düello puanlarını topla (yoksa 0).
+        $rows = DB::table('teams')
+            ->leftJoin('team_members', 'team_members.team_id', '=', 'teams.id')
+            ->leftJoin('duels', 'duels.winner_id', '=', 'team_members.user_id')
+            ->where('teams.status', 'active')
             ->groupBy('teams.id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2')
-            ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', DB::raw('SUM(duels.target_points) as wins'))
+            ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', DB::raw('COALESCE(SUM(duels.target_points), 0) as wins'))
             ->orderByDesc('wins')
+            ->orderBy('teams.name')
             ->limit($limit)
             ->get();
 

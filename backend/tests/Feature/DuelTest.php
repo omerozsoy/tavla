@@ -194,11 +194,11 @@ class DuelTest extends TestCase
 
         // Takım: a bir takımda (teamA=4 puan), c başka takımda (teamC=5 puan) -> teamC 1., teamA 2.
         $teamA = DB::table('teams')->insertGetId([
-            'name' => 'Alfa', 'name_key' => 'alfa', 'tag' => 'AL', 'tag_key' => 'al',
+            'name' => 'Alfa', 'name_key' => 'alfa', 'tag' => 'AL', 'tag_key' => 'al', 'status' => 'active',
             'founder_id' => $a->id, 'created_at' => now(), 'updated_at' => now(),
         ]);
         $teamC = DB::table('teams')->insertGetId([
-            'name' => 'Ceta', 'name_key' => 'ceta', 'tag' => 'CT', 'tag_key' => 'ct',
+            'name' => 'Ceta', 'name_key' => 'ceta', 'tag' => 'CT', 'tag_key' => 'ct', 'status' => 'active',
             'founder_id' => $c->id, 'created_at' => now(), 'updated_at' => now(),
         ]);
         TeamMember::create(['team_id' => $teamA, 'user_id' => $a->id, 'role' => 'founder', 'joined_at' => now()]);

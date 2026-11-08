@@ -21435,6 +21435,13 @@ body:has(.spectate-view) .app.lobby {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.trank-ava {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
 .trank-val {
   font-weight: 700;
   font-variant-numeric: tabular-nums;

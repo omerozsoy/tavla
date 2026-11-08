@@ -36,6 +36,7 @@ import {
   setTeamLineup,
   transferTeam,
   updateTeamIdentity,
+  type DuelIndividualRow,
   type DuelTeamRow,
   type LeaderRow,
   type TeamBrief,
@@ -197,16 +198,20 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
   const { t } = useT()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<TeamBrief[] | null>(null)
-  // 2 sıralama sekmesi (kullanıcı direktifi): Düello (takım düello puanı) + Rating (üye rating ort.).
-  const [rankTab, setRankTab] = useState<'duel' | 'rating'>('duel')
+  // 3 sıralama sekmesi (kullanıcı direktifi): Düello Puanı (takım) + Rating Ort. (takım) + En İyi Düellocu (bireysel).
+  const [rankTab, setRankTab] = useState<'duel' | 'rating' | 'best'>('duel')
   const [teamRank, setTeamRank] = useState<TeamRankRow[] | null>(null)
   const [duelTeams, setDuelTeams] = useState<DuelTeamRow[] | null>(null)
+  const [duelBest, setDuelBest] = useState<DuelIndividualRow[] | null>(null)
 
-  // Aktif sekmenin verisini tembel çek (ilk geçişte); yüklenmişse tekrar çekme.
+  // Aktif sekmenin verisini tembel çek (ilk geçişte); yüklenmişse tekrar çekme. Düello çağrısı
+  // hem takım hem bireysel sıralamayı döndürür -> tek istekle ikisini de doldur.
   useEffect(() => {
     if (rankTab === 'rating' && teamRank === null) getTeams().then((r) => setTeamRank(r.ranking ?? [])).catch(() => setTeamRank([]))
-    if (rankTab === 'duel' && duelTeams === null) duelLeaderboard(100).then((r) => setDuelTeams(r.teams)).catch(() => setDuelTeams([]))
-  }, [rankTab, teamRank, duelTeams])
+    if ((rankTab === 'duel' || rankTab === 'best') && (duelTeams === null || duelBest === null)) {
+      duelLeaderboard(100).then((r) => { setDuelTeams(r.teams); setDuelBest(r.individual) }).catch(() => { setDuelTeams([]); setDuelBest([]) })
+    }
+  }, [rankTab, teamRank, duelTeams, duelBest])
 
   const search = async () => {
     if (!q.trim()) { setResults(null); return }
@@ -244,6 +249,7 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
           <div className="rank-tabs" style={{ marginBottom: 10 }}>
             <Button variant={rankTab === 'duel' ? 'default' : 'ghost'} aria-pressed={rankTab === 'duel'} onClick={() => setRankTab('duel')}>{t('teams.rank.duel')}</Button>
             <Button variant={rankTab === 'rating' ? 'default' : 'ghost'} aria-pressed={rankTab === 'rating'} onClick={() => setRankTab('rating')}>{t('teams.rank.rating')}</Button>
+            <Button variant={rankTab === 'best' ? 'default' : 'ghost'} aria-pressed={rankTab === 'best'} onClick={() => setRankTab('best')}>{t('teams.rank.best')}</Button>
           </div>
 
           {/* Takım Düello Puanı: üyelerin topladığı toplam düello puanı (1/3/5). */}
@@ -264,6 +270,26 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
             ) : (
               <div className="trank-list">
                 {teamRank.map((r) => rankRow(r.id, r.rank, r, r.rating_avg.toFixed(1), () => props.go({ kind: 'team', id: r.id })))}
+              </div>
+            )
+          )}
+
+          {/* En İyi Düellocu: bireysel düello puanı sıralaması (en çok puan kazanan oyuncu). */}
+          {rankTab === 'best' && (
+            duelBest === null ? <Loading /> : duelBest.length === 0 ? (
+              <div className="lb-empty">{t('duel.empty')}</div>
+            ) : (
+              <div className="trank-list">
+                {duelBest.map((r, i) => (
+                  <div key={r.user_id} className={`trank-row ${i < 3 ? 'top' : ''}`} onClick={() => props.onProfile?.(r.user_id)}>
+                    <span className="trank-pos">{medal(i + 1) || (i + 1)}</span>
+                    <span className="trank-team">
+                      {r.avatar ? <img className="trank-ava" src={r.avatar} alt="" /> : <Icon name="user" size={18} />}
+                      <b>{r.nickname}</b>
+                    </span>
+                    <span className="trank-val">{r.wins}</span>
+                  </div>
+                ))}
               </div>
             )
           )}
@@ -794,9 +820,16 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
   const [busy, setBusy] = useState(false)
   useEffect(() => { getTeam(props.id).then(setD).catch(() => {}) }, [props.id])
   if (!d) return <Loading />
+  const isFounder = !!props.myId && d.members.some((m) => m.role === 'founder' && m.user.id === props.myId)
   const apply = async () => {
     setBusy(true)
     try { await applyTeam(props.id); props.setNotice(t('teams.invited')) } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
+  }
+  // IdentityBox'ın beklediği act: çalıştır → bildir → takımı yeniden çek (logo/renk anında yansısın).
+  const act = async (fn: () => Promise<unknown>, msg?: string) => {
+    setBusy(true)
+    try { await fn(); if (msg) props.setNotice(msg); setD(await getTeam(props.id)) }
+    catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -814,6 +847,9 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
         )}
       </div>
       {d.team.description && <p style={{ opacity: 0.85, margin: 0, lineHeight: 1.5 }}>{d.team.description}</p>}
+
+      {/* Kurucuysan: logo/renk/ad/açıklama düzenle (Takımım'daki ile aynı editör) */}
+      {isFounder && <IdentityBox detail={d} act={act} busy={busy} />}
 
       {/* Üyeler — avatar kartı (isimler var(--text), okunur) */}
       <section>
