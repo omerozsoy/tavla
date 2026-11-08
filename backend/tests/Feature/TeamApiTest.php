@@ -85,6 +85,24 @@ class TeamApiTest extends TestCase
         $this->getJson('/api/teams/'.$team->id)->assertJsonPath('team.has_pending_logo', true);
     }
 
+    public function test_pending_logo_flag_clears_after_approval(): void
+    {
+        [$team, $members] = $this->teamWithMembers('Onay', 'ONY');
+        $team->update(['logo_pending' => 'uploads/pending.webp']);
+
+        // Onay öncesi: kurucu bayrağı görür (uyarı görünür).
+        Sanctum::actingAs($members[0]);
+        $this->getJson('/api/teams/'.$team->id)->assertJsonPath('team.has_pending_logo', true);
+
+        // Admin onaylar: logo_pending → logo, bayrak temizlenir.
+        app(TeamService::class)->approveLogo($team->fresh(), $members[0]->id);
+
+        // Onay sonrası: bayrak false (uyarı kaybolur), yeni logo onaylı.
+        $this->getJson('/api/teams/'.$team->id)
+            ->assertJsonPath('team.has_pending_logo', false)
+            ->assertJsonPath('team.logo', 'uploads/pending.webp');
+    }
+
     public function test_create_team_via_api(): void
     {
         Sanctum::actingAs($this->eligibleUser());
