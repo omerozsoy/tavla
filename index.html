@@ -35,6 +35,9 @@
             (LOG.length ? LOG.join('\n\n') : '(JS hatasi yakalanmadi -> React sessizce mount olmadi)')
         }
         function note(s) { if (INAPP) { LOG.push(s); renderDiag() } }
+        // App (React) icinden tani ekranina satir eklemek icin kopru: createRoot onUncaughtError
+        // bunu cagirir -> kok sessizce unmount olsa bile GERCEK hata/stack ekrana yazilir.
+        window.__tavlaDiag = function (s) { try { note(String(s)) } catch (e) {} }
         window.addEventListener('error', function (e) {
           if (!INAPP) return
           var t = e.target

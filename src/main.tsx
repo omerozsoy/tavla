@@ -55,7 +55,20 @@ try {
   /* yok */
 }
 
-createRoot(document.getElementById('root')!).render(
+// APK beyaz-ekran tanisi: React 19 kok hata kancalari. Kok SESSIZCE unmount olunca (hicbir
+// ErrorBoundary yakalamazsa React tum agaci söker -> #root cocuk=0, window.onerror bazen
+// tetiklenmez) gercek hata/stack'i index.html'deki tani ekranina yaz -> fotograflanip teshis
+// edilebilsin. Web'de __tavlaDiag no-op (yalniz Capacitor WebView'de gorunur).
+const __diag = (window as unknown as { __tavlaDiag?: (s: string) => void }).__tavlaDiag
+function reportRootError(label: string, error: unknown, info?: { componentStack?: string }) {
+  const e = error as { stack?: string; message?: string } | null
+  __diag?.(label + ': ' + ((e && (e.stack || e.message)) || String(error)) + (info?.componentStack ? '\n' + info.componentStack : ''))
+}
+
+createRoot(document.getElementById('root')!, {
+  onUncaughtError: (error, info) => reportRootError('REACT UNCAUGHT', error, info),
+  onCaughtError: (error, info) => reportRootError('REACT CAUGHT', error, info),
+}).render(
   <StrictMode>
     <ErrorBoundary>
       <LangProvider>
