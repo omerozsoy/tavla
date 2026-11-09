@@ -183,53 +183,13 @@ export default function MagazaSwiss({
     flashAdded('mem')
   }
 
-  const cartCount = cartItems.reduce((s, c) => s + c.qty, 0)
-
   return (
     <div className="mgz">
       <button type="button" className="mgz-close" onClick={onClose} aria-label="Kapat">
         <Icon name="x" size={18} />
       </button>
 
-      {/* 1 — ÜST MENÜ */}
-      <header className="mgz-nav">
-        <a
-          className="mgz-logo"
-          href="#ust"
-          onClick={(e) => {
-            e.preventDefault()
-            scrollTo('ust')
-          }}
-        >
-          TAVLA<span className="mgz-logo-dot">.</span>
-        </a>
-        <nav className="mgz-nav-links" aria-label="Sayfa bölümleri">
-          {[
-            ['urunler', 'Ürünler'],
-            ['hikaye', 'Hikâye'],
-            ['sepet', 'Sepet'],
-          ].map(([id, label]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              onClick={(e) => {
-                e.preventDefault()
-                scrollTo(id)
-              }}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-        <button type="button" className="mgz-cart-pill" onClick={() => scrollTo('sepet')} aria-label="Sepete git">
-          <Icon name="cart" size={16} />
-          <span className="tnum">{cartCount}</span>
-        </button>
-      </header>
-
-      <span id="ust" className="mgz-anchor" aria-hidden="true" />
-
-      {/* 2 — GİRİŞ / HERO */}
+      {/* GİRİŞ / HERO */}
       <section className="mgz-hero" aria-label="Giriş">
         <div className="mgz-hero-text">
           <p className="mgz-eyebrow">TAVLATV · SEÇKİN TAVLA ATÖLYESİ</p>
@@ -373,7 +333,7 @@ export default function MagazaSwiss({
 
         {/* Jeton & Üyelik — aynı akışta (üyelik kartı her zaman; jeton paketleri varsa) */}
         <div className="mgz-sub">
-            <h3 className="mgz-h3">Jeton &amp; Üyelik</h3>
+            <h3 className="mgz-h3">{coinPackages.length > 0 ? 'Jeton & Üyelik' : 'Üyelik'}</h3>
             <div className="mgz-coins">
               <article className="mgz-coin mgz-coin-prem">
                 <span className="mgz-coin-badge">PREMIUM</span>
@@ -471,71 +431,6 @@ export default function MagazaSwiss({
         onCoinsChange={onCoinsChange}
         onContinue={() => scrollTo('urunler')}
       />
-
-      {/* 6 — FOOTER */}
-      <footer className="mgz-foot" aria-label="İletişim ve yasal">
-        <div className="mgz-foot-grid">
-          <div className="mgz-foot-brand">
-            <span className="mgz-logo mgz-logo-foot">
-              TAVLA<span className="mgz-logo-dot">.</span>
-            </span>
-            <p>Seçkin tavla atölyesi — tavlatv.com</p>
-          </div>
-          <div className="mgz-foot-col">
-            <h4>İletişim</h4>
-            <a href="mailto:destek@tavlatv.com">destek@tavlatv.com</a>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                onManageAddresses()
-              }}
-            >
-              Adreslerim
-            </a>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                onOrders()
-              }}
-            >
-              Siparişlerim
-            </a>
-          </div>
-          <div className="mgz-foot-col">
-            <h4>Takip</h4>
-            <a href="https://instagram.com/tavlatv" target="_blank" rel="noreferrer noopener">
-              Instagram
-            </a>
-            <a href="https://x.com/tavlatv" target="_blank" rel="noreferrer noopener">
-              X / Twitter
-            </a>
-            <a href="https://youtube.com/@tavlatv" target="_blank" rel="noreferrer noopener">
-              YouTube
-            </a>
-          </div>
-        </div>
-
-        <div className="mgz-legal">
-          {[
-            ['Mesafeli Satış Sözleşmesi', 'Siparişlerde 6502 sayılı Tüketicinin Korunması Hakkında Kanun kapsamında mesafeli satış hükümleri geçerlidir. Satıcı bilgileri, teslimat süresi ve cayma hakkı sipariş onayında ayrıca iletilir.'],
-            ['İade ve İptal Koşulları', 'Teslimattan itibaren 14 gün içinde koşulsuz cayma hakkınız vardır. Ürün hasarsız ve kullanılmamış olmalıdır. İade onayından sonra ödeme aynı yöntemle iade edilir.'],
-            ['Teslimat ve Kargo', 'Siparişler 1–3 iş günü içinde kargoya verilir. Kargo takip numarası sipariş durumunuza işlenir. Teslimat yalnızca Türkiye içine yapılır.'],
-            ['Gizlilik ve KVKK', 'Kişisel verileriniz yalnızca sipariş ve teslimat amacıyla işlenir, üçüncü taraflarla paylaşılmaz. Detaylar için KVKK aydınlatma metnini inceleyebilirsiniz.'],
-          ].map(([title, body]) => (
-            <details key={title} className="mgz-acc">
-              <summary>
-                {title}
-                <Icon name="chevron" size={16} />
-              </summary>
-              <p>{body}</p>
-            </details>
-          ))}
-        </div>
-
-        <p className="mgz-copy">© 2026 TavlaTv — Tüm hakları saklıdır.</p>
-      </footer>
     </div>
   )
 }
