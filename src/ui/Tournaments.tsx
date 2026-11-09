@@ -925,7 +925,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                         return null
                       }
                       return (
-                        <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}${isDoubleLoss ? ' dloss' : ''}`}>
+                        <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}${isDoubleLoss ? ' dloss' : ''}${watchable ? ' watchable' : ''}`}>
                           {isBye ? (
                             <div className="tm-p win">{tmName(m.p1, m.room)}<span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
                           ) : (

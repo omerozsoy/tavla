@@ -27956,6 +27956,11 @@ input:not([type='range']), select, textarea {
 .swiss-match .tm-watch {
   top: 50%;
 }
+/* Izleyici rozeti (goz) swiss-match satirinda skorun/ismin uzerine binmesin:
+   tourn-match'teki gibi sag tarafta yer ayir. */
+.swiss-match.watchable .tm-p {
+  padding-right: 52px;
+}
 .swiss-nochamp {
   padding: 8px 12px;
   color: var(--danger-fg);
