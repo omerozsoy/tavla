@@ -33644,6 +33644,8 @@ body.has-bottom-nav .to-top {
   align-items: center;
   flex: 0 0 auto;
   vertical-align: middle;
+  /* isim satırının gap:6px ritmini taç çevresinde daralt (sağ+sol ekstra boşluğu al). */
+  margin-inline: -2px;
   color: var(--coin-gold);
   /* okunurluk: koyu isimlerin yanında altın ince bir kontur hissi */
   filter: drop-shadow(0 0 0.5px color-mix(in srgb, var(--coin-gold) 60%, #000));

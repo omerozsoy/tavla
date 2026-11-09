@@ -31,6 +31,7 @@ export default function PlayerIdentity({
   admin = false,
   support = false,
   hidePresence = false,
+  hideTeam = false,
   statusDot,
   className,
 }: {
@@ -58,6 +59,8 @@ export default function PlayerIdentity({
   support?: boolean
   /** true: isim onundeki cevrimici/cevrimdisi presence noktasini CIZME. */
   hidePresence?: boolean
+  /** true: isim yanindaki takim etiketini (TeamTag) CIZME (Cevrimici Oyuncular paneli icin). */
+  hideTeam?: boolean
   /** Verilirse: isim BASINDA (presence noktasi yerine) DURUM rengi nokta cizilir
    *  (available yesil / ready mavi / busy sari). Cevrimici oyuncular panelinde
    *  durum noktasini ismin onune tasimak icin. */
@@ -97,9 +100,9 @@ export default function PlayerIdentity({
           <RoleBadge userId={userId} admin={admin || undefined} support={support || undefined} size={21} className="player-id-role" style={{ marginRight: 4 }} />
           <span className={`player-id-name-text${isAdmin || isSupport ? ' role-name' : ''}`}>{name}</span>
           {/* Takım etiketi (userId ile site geneli haritadan; takımsızda null). */}
-          <TeamTag userId={userId} />
+          {!hideTeam && <TeamTag userId={userId} />}
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
-          {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
+          {premium && <PremiumCrown size={20} />}
           {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}
           {userId != null && <TopRankBadge userId={userId} size={20} />}
           {flagInline && country && (
