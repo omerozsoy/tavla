@@ -24,7 +24,8 @@ class InfoPage extends Model
         'cerez-politikasi',
         'kullanim-kosullari',
         'uyelik-sozlesmesi',
-        'teslimat-ve-iade-sartlari',
+        'iptal-ve-iade',
+        'teslimat',
         'mesafeli-satis-sozlesmesi',
     ];
 

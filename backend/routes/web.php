@@ -202,7 +202,7 @@ Route::fallback(function (Request $request) {
         'giris', 'sifremi-unuttum',
         'bilgi', 'izle',
         'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
-        'uyelik-sozlesmesi', 'teslimat-ve-iade-sartlari', 'mesafeli-satis-sozlesmesi', 'sifre-sifirla',
+        'uyelik-sozlesmesi', 'iptal-ve-iade', 'teslimat', 'mesafeli-satis-sozlesmesi', 'sifre-sifirla',
         // backend eslesen rotalar (normalde fallback'e dusmez; guvenlik icin allowlist'te)
         'admin', 'panel', 'pay', 'email',
     ];

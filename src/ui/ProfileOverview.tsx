@@ -392,7 +392,7 @@ export default function ProfileOverview({
         {tab === 'addresses' && (
           <div className="prof-ov-subhead">
             <button type="button" className="prof-ov-subback" onClick={() => setTab('stats')}>
-              <Icon name="arrow-right" size={15} /> {t('stats.title')}
+              <Icon name="arrow-right" size={15} /> {t('prof.tabInfo')}
             </button>
             <span className="prof-ov-subtitle">
               <Icon name="pin" size={16} /> {t('prof.addresses')}

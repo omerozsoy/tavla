@@ -73,7 +73,8 @@ class FooterLink extends Model
         ['key' => 'legal-cerez', 'column' => 'legal', 'label' => 'Çerez Politikası'],
         ['key' => 'legal-kullanim', 'column' => 'legal', 'label' => 'Kullanım Koşulları'],
         ['key' => 'legal-uyelik', 'column' => 'legal', 'label' => 'Üyelik Sözleşmesi'],
-        ['key' => 'legal-teslimat', 'column' => 'legal', 'label' => 'Teslimat ve İade Şartları'],
+        ['key' => 'legal-iptal-iade', 'column' => 'legal', 'label' => 'İptal ve İade'],
+        ['key' => 'legal-teslimat', 'column' => 'legal', 'label' => 'Teslimat'],
         ['key' => 'legal-mesafeli', 'column' => 'legal', 'label' => 'Mesafeli Satış Sözleşmesi'],
         ['key' => 'legal-cerez-tercih', 'column' => 'legal', 'label' => 'Çerez Tercihleri'],
     ];
