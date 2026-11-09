@@ -1165,6 +1165,11 @@ export default function App() {
   // (status 'playing') yakalayınca auto-enter effect'i oyuna sokar.
   const awaitingMatchRef = useRef(false)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
+  // "Mağaza" düğmesi DAİMA mağaza ANA sayfasını açar (son görülen ürün overlay'ini DEĞİL). shopProduct/
+  // shopTab state'i önceki gezintiden kalıp URL'i /magaza/<kat>/<ürün>'e kuruyordu -> düğmeyle girince
+  // eski ürün detayı geri geliyordu (kullanıcı şikayeti: "tekrar o zara döndü"). Her DÜĞME girişinde
+  // coin sekmesine + ürünsüz sıfırla. (URL deep-link yolu ayrı; doğrudan link korunur.)
+  const openShop = () => { setShopTab('coin'); setShopProduct(null); setShopOpen(true) }
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
   const [excusesOpen, setExcusesOpen] = useState(false) // Bahane Makinesi modali (salt eğlence)
@@ -1213,6 +1218,7 @@ export default function App() {
             name: line.name,
             image: line.image,
             color: line.color,
+            category: line.category,
             payment: line.payment,
             coinPrice: line.coinPrice,
             moneyPrice: line.moneyPrice,
@@ -1669,8 +1675,7 @@ export default function App() {
           break
         case 'ayarlar':
         case 'tahta-ayarlari': // eski slug -> Magaza (Tahta Rengi sekmesi kaldirildi -> coin)
-          setShopTab('coin')
-          setShopOpen(true)
+          openShop()
           break
         case 'bulmaca':
           setQuizOpen(true)
@@ -6793,7 +6798,7 @@ export default function App() {
       const r = await handleDaily()
       if (r.claimed) Sound.win()
     } else {
-      setShopOpen(true)
+      openShop()
     }
   }
 
@@ -9212,10 +9217,7 @@ export default function App() {
         onOpenShop={() => {
           // (legacy; ProfileOverview'de kullanilmiyor) -> Magaza coin sayfasi
           setEditProfile(false)
-          goPage(() => {
-            setShopTab('coin')
-            setShopOpen(true)
-          })
+          goPage(openShop)
         }}
         onOpenOrders={() => {
           setEditProfile(false)
@@ -9324,7 +9326,7 @@ export default function App() {
             <button
               type="button"
               className="stat-chip stat-chip-coin"
-              onClick={() => goPage(() => setShopOpen(true))}
+              onClick={() => goPage(openShop)}
               title={t('shop.title')}
             >
               <span className="stat-chip-ic">
@@ -9387,7 +9389,7 @@ export default function App() {
             variant="ghost"
             size="icon"
             className="[&_svg]:size-[24px]!"
-            onClick={() => goPage(() => setShopOpen(true))}
+            onClick={() => goPage(openShop)}
             title={t('shop.title')}
             aria-label={t('shop.title')}
           >
@@ -9524,7 +9526,7 @@ export default function App() {
                 role="menuitem"
                 onClick={() => {
                   setAcctMenuOpen(false)
-                  goPage(() => setShopOpen(true))
+                  goPage(openShop)
                 }}
               >
                 <Icon name="coin" size={18} className="acct-row-ic acct-ic-coin" />
@@ -9582,7 +9584,7 @@ export default function App() {
                 role="menuitem"
                 onClick={() => {
                   setAcctMenuOpen(false)
-                  goPage(() => setShopOpen(true))
+                  goPage(openShop)
                 }}
               >
                 <Icon name="shop" size={18} className="acct-row-ic" />
@@ -9907,7 +9909,7 @@ export default function App() {
         setTournDetailSlug(String(id))
         setTournOpen(true)
       }),
-    onShop: () => goPage(() => setShopOpen(true)),
+    onShop: () => goPage(openShop),
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
     onExcuses: () => goPage(() => setExcusesOpen(true)),
@@ -10684,10 +10686,9 @@ export default function App() {
           setItems={setCartItems}
           onClose={() => setCartOpen(false)}
           onContinue={() => {
-            // "Alışverişe devam" -> Mağaza coin sekmesi
+            // "Alışverişe devam" -> Mağaza coin ana sayfası (son ürün overlay'i değil)
             setCartOpen(false)
-            setShopTab('coin')
-            setShopOpen(true)
+            openShop()
           }}
           onManageAddresses={() => {
             // Adres ekle/yönet -> profil Adreslerim sekmesi (sepet açık kalır: kapatıp profili aç).
