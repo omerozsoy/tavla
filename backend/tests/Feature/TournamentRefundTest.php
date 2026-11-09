@@ -135,8 +135,8 @@ class TournamentRefundTest extends TestCase
         Sanctum::actingAs($p);
         $this->postJson("/api/tournaments/{$t->id}/join")->assertSuccessful();
         $before = (int) $p->fresh()->coins;
-        \Livewire\Livewire::actingAs($admin)->test(\App\Filament\Resources\TournamentResource\Pages\ListTournaments::class)
-            ->callTableAction('resetTournament', $t);
+        \Livewire\Livewire::actingAs($admin)->test(\App\Filament\Resources\TournamentResource\Pages\ManageTournament::class, ['record' => $t->id])
+            ->callAction('resetTournament');
         $this->assertSame($before + 120, (int) $p->fresh()->coins, 'sıfırlamada ödenen ücret iade edilmeli');
         $this->assertSame([], $t->fresh()->players);
     }

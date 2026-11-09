@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\TournamentResource\Pages\ListTournaments;
+use App\Filament\Resources\TournamentResource\Pages\ManageTournament;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Support\Swiss\SwissRuntime;
@@ -61,23 +61,23 @@ class TournamentSwissDrawPanelTest extends TestCase
 
         // (1) Tarih/saat girilmeden "Kura Çek" → tur oluşmaz (guard: no_datetime).
         Livewire::actingAs($admin)
-            ->test(ListTournaments::class)
-            ->callTableAction('drawRound', $t->id)
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('drawRound')
+            ->assertHasNoActionErrors();
         $this->assertCount(0, $t->fresh()->bracket ?? [], 'Tarihsiz kura çekilmemeli');
 
         // (2) "Tur Tarih/Saati" ile 1. turun tarih/saatini gir.
         Livewire::actingAs($admin)
-            ->test(ListTournaments::class)
-            ->callTableAction('scheduleRound', $t->id, data: ['round_at' => '2026-11-05 20:00:00'])
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('scheduleRound', data: ['round_at' => '2026-11-05 20:00:00'])
+            ->assertHasNoActionErrors();
         $this->assertNotEmpty($t->fresh()->swiss_state['next_at'] ?? null, 'Tarih kaydedilmeli');
 
         // (3) "Kura Çek" → 1. tur oluşur, planlanan tarih schedule'a yazılır, next_at temizlenir.
         Livewire::actingAs($admin)
-            ->test(ListTournaments::class)
-            ->callTableAction('drawRound', $t->id)
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('drawRound')
+            ->assertHasNoActionErrors();
         $t->refresh();
         $this->assertCount(1, $t->bracket, '1. tur çekildi');
         $this->assertStringStartsWith('2026-11-05 20:00', (string) ($t->swiss_state['schedule']['1'] ?? ''), 'Planlanan tarih kaydedildi');
@@ -85,13 +85,13 @@ class TournamentSwissDrawPanelTest extends TestCase
 
         // (4) Tur maçları bitmeden "Kura Çek" → yeni tur ÇEKİLMEZ (guard: round_incomplete), tarih verilse bile.
         Livewire::actingAs($admin)
-            ->test(ListTournaments::class)
-            ->callTableAction('scheduleRound', $t->id, data: ['round_at' => '2026-11-06 20:00:00'])
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('scheduleRound', data: ['round_at' => '2026-11-06 20:00:00'])
+            ->assertHasNoActionErrors();
         Livewire::actingAs($admin)
-            ->test(ListTournaments::class)
-            ->callTableAction('drawRound', $t->id)
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('drawRound')
+            ->assertHasNoActionErrors();
         $this->assertCount(1, $t->fresh()->bracket, 'Tur bitmeden 2. tur çekilmemeli');
     }
 
@@ -100,9 +100,9 @@ class TournamentSwissDrawPanelTest extends TestCase
         // Açık (henüz başlamamış) Swiss turnuvada aksiyonlar gizli.
         $open = $this->swiss(4);
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->assertTableActionHidden('drawRound', $open->id)
-            ->assertTableActionHidden('scheduleRound', $open->id);
+            ->test(ManageTournament::class, ['record' => $open->id])
+            ->assertActionHidden('drawRound')
+            ->assertActionHidden('scheduleRound');
 
         // Sürüyor ama ELEME AĞACI turnuvada aksiyonlar gizli (yalnız Swiss).
         $br = Tournament::create([
@@ -111,8 +111,8 @@ class TournamentSwissDrawPanelTest extends TestCase
         ]);
         $br->startBracket();
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->assertTableActionHidden('drawRound', $br->id)
-            ->assertTableActionHidden('scheduleRound', $br->id);
+            ->test(ManageTournament::class, ['record' => $br->id])
+            ->assertActionHidden('drawRound')
+            ->assertActionHidden('scheduleRound');
     }
 }

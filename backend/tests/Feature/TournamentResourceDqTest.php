@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\TournamentResource\Pages\ListTournaments;
+use App\Filament\Resources\TournamentResource\Pages\ManageTournament;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Support\Swiss\SwissRuntime;
@@ -75,9 +75,9 @@ class TournamentResourceDqTest extends TestCase
         $this->assertNotNull($p1);
 
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->callTableAction('disqualify', $t->id, data: ['user_id' => $p1])
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('disqualify', data: ['user_id' => $p1])
+            ->assertHasNoActionErrors();
 
         $part = collect($t->fresh()->swiss_state['participants'])->firstWhere('id', $p1);
         $this->assertSame('dq', $part['status']);
@@ -102,9 +102,9 @@ class TournamentResourceDqTest extends TestCase
         $this->assertNotNull($p1);
 
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->callTableAction('withdrawPlayer', $t->id, data: ['user_id' => $p1])
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('withdrawPlayer', data: ['user_id' => $p1])
+            ->assertHasNoActionErrors();
 
         // Diskalifiyeden farkı: durum 'withdrawn' (ceza değil).
         $part = collect($t->fresh()->swiss_state['participants'])->firstWhere('id', $p1);
@@ -132,9 +132,9 @@ class TournamentResourceDqTest extends TestCase
         $this->assertNotNull($key);
 
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->callTableAction('correctResult', $t->id, data: ['match' => $key, 'outcome' => 'double_loss'])
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('correctResult', data: ['match' => $key, 'outcome' => 'double_loss'])
+            ->assertHasNoActionErrors();
 
         $parts = collect($t->fresh()->swiss_state['participants']);
         $this->assertSame(1, (int) $parts->firstWhere('id', $a)['losses']);
@@ -145,8 +145,8 @@ class TournamentResourceDqTest extends TestCase
     {
         [$t] = $this->swiss(4); // open
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->assertTableActionHidden('correctResult', $t->id);
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->assertActionHidden('correctResult');
     }
 
     public function test_disqualify_action_hidden_for_running_bracket(): void
@@ -155,8 +155,8 @@ class TournamentResourceDqTest extends TestCase
         $t->startBracket(); // eleme ağacı başlat (status=running)
 
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->assertTableActionHidden('disqualify', $t->fresh()->id);
+            ->test(ManageTournament::class, ['record' => $t->fresh()->id])
+            ->assertActionHidden('disqualify');
     }
 
     public function test_disqualify_before_start_removes_player_via_panel(): void
@@ -166,9 +166,9 @@ class TournamentResourceDqTest extends TestCase
         $target = $ids[1];
 
         Livewire::actingAs($this->admin())
-            ->test(ListTournaments::class)
-            ->callTableAction('disqualify', $t->id, data: ['user_id' => $target])
-            ->assertHasNoTableActionErrors();
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('disqualify', data: ['user_id' => $target])
+            ->assertHasNoActionErrors();
 
         $ids2 = collect($t->fresh()->players)->pluck('id')->all();
         $this->assertNotContains($target, $ids2);

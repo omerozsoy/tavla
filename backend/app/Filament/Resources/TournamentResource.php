@@ -4,18 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TournamentResource\Pages;
 use App\Models\Tournament;
-use App\Support\Swiss\SwissRuntime;
 use App\Support\TournamentModeration;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class TournamentResource extends Resource
 {
@@ -44,187 +40,8 @@ class TournamentResource extends Resource
         return $out;
     }
 
-    /**
-     * Moderasyon tablo aksiyonu (Diskalifiye / Çekilme). İkisi de aynı iş: oyuncuyu turnuvadan çıkar
-     * (TournamentModeration::remove). Fark SADECE $mode (Swiss durumu 'dq' vs 'withdrawn') + etiket/metin.
-     * GÖRÜNÜR: kayıt açık (her tip) VEYA sürüyor+Swiss; sürüyor+eleme ağacında GİZLİ (bracket walkover
-     * ilerletmesi HTTP controller'a özel, remove() false döner).
-     */
-    private static function moderationAction(string $mode): Tables\Actions\Action
-    {
-        $isDq = $mode === 'dq';
-
-        return Tables\Actions\Action::make($isDq ? 'disqualify' : 'withdrawPlayer')
-            ->label($isDq ? 'Diskalifiye' : 'Çekilme (hükmen)')
-            ->icon($isDq ? 'heroicon-o-no-symbol' : 'heroicon-o-arrow-right-start-on-rectangle')
-            ->color($isDq ? 'danger' : 'warning')
-            ->visible(fn (Tournament $record): bool => $record->status === 'open'
-                || ($record->status === 'running' && ($record->type ?? 'bracket') === 'swiss_triple'))
-            ->form([
-                Forms\Components\Select::make('user_id')
-                    ->label('Oyuncu')
-                    ->options(fn (Tournament $record): array => collect($record->players ?? [])
-                        ->filter()
-                        ->mapWithKeys(fn ($p) => [(int) $p['id'] => ($p['name'] ?? ('#'.$p['id']))])
-                        ->all())
-                    ->searchable()
-                    ->required(),
-            ])
-            ->requiresConfirmation()
-            ->modalHeading($isDq ? 'Oyuncuyu diskalifiye et' : 'Oyuncuyu turnuvadan çek')
-            ->modalDescription($isDq
-                ? 'Kayıt açıksa oyuncu listeden çıkarılır + giriş ücreti iade edilir. Turnuva sürüyorsa hükmen uygulanır: sıradaki maçı rakibine verilir ve bir daha eşleşmeye alınmaz. Bu işlem geri alınamaz.'
-                : 'Oyuncu adına çekilme kaydeder (örn. "devam edemeyeceğim" diyen oyuncu). Kayıt açıksa listeden çıkarılır + giriş ücreti iade; turnuva sürüyorsa sıradaki maçı rakibine verilir. Diskalifiyeden farkı: durum "çekildi" (ceza değil) olarak işaretlenir. Geri alınamaz.')
-            ->action(function (Tournament $record, array $data) use ($mode, $isDq): void {
-                $uid = (int) $data['user_id'];
-                DB::transaction(function () use ($record, $uid, $mode): void {
-                    $t = Tournament::lockForUpdate()->find($record->id);
-                    if ($t) {
-                        TournamentModeration::remove($t, $uid, $mode);
-                    }
-                });
-                Notification::make()
-                    ->title($isDq ? 'Oyuncu diskalifiye edildi' : 'Oyuncu turnuvadan çekildi')
-                    ->success()
-                    ->send();
-            });
-    }
-
-    /**
-     * Yönetici sonuç düzeltme (yalnız sürüyor + Swiss): bekleyen bir maçı hükmen çöz — galip ilan veya
-     * çift mağlubiyet (iki taraf da gelmedi). Eleme ağacında bracket JSON elle düzenlenir (burada yok).
-     */
-    private static function resultCorrectionAction(): Tables\Actions\Action
-    {
-        return Tables\Actions\Action::make('correctResult')
-            ->label('Sonuç düzelt')
-            ->icon('heroicon-o-pencil-square')
-            ->color('warning')
-            ->visible(fn (Tournament $record): bool => $record->status === 'running'
-                && ($record->type ?? 'bracket') === 'swiss_triple')
-            ->form([
-                Forms\Components\Select::make('match')
-                    ->label('Maç (bekleyen)')
-                    ->options(fn (Tournament $record): array => self::pendingSwissMatches($record))
-                    ->required()
-                    ->helperText('Yalnızca henüz sonuçlanmamış gerçek maçlar listelenir.'),
-                Forms\Components\Radio::make('outcome')
-                    ->label('Sonuç')
-                    ->options([
-                        'p1' => '1. oyuncu kazandı (hükmen)',
-                        'p2' => '2. oyuncu kazandı (hükmen)',
-                        'double_loss' => 'Çift mağlubiyet (ikisi de gelmedi)',
-                    ])
-                    ->required(),
-            ])
-            ->requiresConfirmation()
-            ->modalHeading('Maç sonucunu düzelt')
-            ->modalDescription('Bekleyen bir maçı hükmen çözer (galip ilan veya çift mağlubiyet). Çift mağlubiyet: iki oyuncuya da birer mağlubiyet yazılır, galip yok. Uygulanmış (sonraki tur üretilmiş) sonuçlar buradan düzeltilemez.')
-            ->action(function (Tournament $record, array $data): void {
-                $ok = false;
-                DB::transaction(function () use ($record, $data, &$ok): void {
-                    $t = Tournament::lockForUpdate()->find($record->id);
-                    if (! $t) {
-                        return;
-                    }
-                    $cell = self::findCell($t, $data['match']);
-                    if (! $cell) {
-                        return;
-                    }
-                    $outcome = $data['outcome'] === 'double_loss' ? 0
-                        : (int) ($data['outcome'] === 'p1' ? ($cell['p1']['id'] ?? 0) : ($cell['p2']['id'] ?? 0));
-                    $ok = SwissRuntime::resolveMatch($t, $data['match'], $outcome);
-                });
-                Notification::make()
-                    ->title($ok ? 'Maç sonucu düzeltildi' : 'Maç düzeltilemedi (zaten çözülmüş olabilir)')
-                    ->{$ok ? 'success' : 'warning'}()
-                    ->send();
-            });
-    }
-
-    /**
-     * Sıradaki turun tarih/saatini ayarla (yalnız sürüyor + Swiss). Kura çekmenin ön şartı:
-     * tarih/saati girilmemiş turun kurası çekilemez (manuel akış).
-     */
-    private static function scheduleRoundAction(): Tables\Actions\Action
-    {
-        return Tables\Actions\Action::make('scheduleRound')
-            ->label('Tur Tarih/Saati')
-            ->icon('heroicon-o-calendar-days')
-            ->color('info')
-            ->visible(fn (Tournament $record): bool => $record->status === 'running'
-                && ($record->type ?? 'bracket') === 'swiss_triple')
-            ->form([
-                Forms\Components\Placeholder::make('nextInfo')
-                    ->label('Sıradaki tur')
-                    ->content(fn (Tournament $record): string => SwissRuntime::nextRoundNo($record).'. tur — bu turun oynanacağı tarih/saati girin. Kura, tarih/saat girilmeden ÇEKİLEMEZ.'),
-                Forms\Components\DateTimePicker::make('round_at')
-                    ->label('Tur başlangıç tarih/saati')
-                    ->seconds(false)
-                    ->required()
-                    ->default(fn (Tournament $record) => $record->swiss_state['next_at'] ?? null)
-                    ->helperText('Sunucu saati (Türkiye, GMT+3).'),
-            ])
-            ->modalHeading('Tur tarih/saatini ayarla')
-            ->action(function (Tournament $record, array $data): void {
-                DB::transaction(function () use ($record, $data): void {
-                    $t = Tournament::lockForUpdate()->find($record->id);
-                    if ($t) {
-                        SwissRuntime::setNextRoundAt($t, (string) $data['round_at']);
-                    }
-                });
-                Notification::make()->title('Tur tarih/saati kaydedildi')->success()->send();
-            });
-    }
-
-    /**
-     * MANUEL KURA ÇEK (yalnız sürüyor + Swiss): sıradaki turu üretir. Şartlar: o anki turun TÜM maçları
-     * bitmiş OLACAK + sıradaki turun tarih/saati girilmiş OLACAK. Aksi halde reddeder ve nedenini bildirir.
-     */
-    private static function drawRoundAction(): Tables\Actions\Action
-    {
-        return Tables\Actions\Action::make('drawRound')
-            ->label('Kura Çek')
-            ->icon('heroicon-o-sparkles')
-            ->color('success')
-            ->visible(fn (Tournament $record): bool => $record->status === 'running'
-                && ($record->type ?? 'bracket') === 'swiss_triple')
-            ->requiresConfirmation()
-            ->modalHeading('Sıradaki turun kurasını çek')
-            ->modalDescription(function (Tournament $record): string {
-                $st = SwissRuntime::drawStatus($record);
-                $n = SwissRuntime::nextRoundNo($record);
-                $at = $record->swiss_state['next_at'] ?? null;
-
-                return match ($st['reason']) {
-                    'ok' => $n.'. tur eşleştirmesi çekilecek (planlanan: '.$at.'). Aynı haklılar eşleşir, daha önce oynamışlar mümkünse eşleşmez.',
-                    'round_incomplete' => '⛔ Bu turdaki TÜM maçlar bitmeden kura ÇEKİLEMEZ. Önce bekleyen maçları bitir/çöz (Sonuç düzelt).',
-                    'no_datetime' => '⛔ Önce '.$n.'. turun tarih/saatini girin ("Tur Tarih/Saati"). Tarih/saati belli olmayan turun kurası çekilmez.',
-                    'finished' => 'Turnuva bitti; çekilecek tur yok.',
-                    default => 'Kura şu an çekilemez.',
-                };
-            })
-            ->action(function (Tournament $record): void {
-                $res = ['ok' => false, 'reason' => 'x'];
-                DB::transaction(function () use ($record, &$res): void {
-                    $t = Tournament::lockForUpdate()->find($record->id);
-                    if ($t) {
-                        $res = SwissRuntime::drawRound($t);
-                    }
-                });
-                $msg = match ($res['reason']) {
-                    'ok' => 'Kura çekildi — sıradaki tur oluşturuldu.',
-                    'round_incomplete' => 'Çekilemedi: bu turdaki tüm maçlar bitmedi.',
-                    'no_datetime' => 'Çekilemedi: önce tur tarih/saatini girin.',
-                    'finished' => 'Çekilemedi: turnuva bitti.',
-                    default => 'Kura çekilemedi.',
-                };
-                Notification::make()->title($msg)->{$res['ok'] ? 'success' : 'warning'}()->send();
-            });
-    }
-
     /** Bekleyen (çözülmemiş) gerçek Swiss maçları: ["r0m1" => "1) Ali — 2) Veli · Tur 2"]. */
-    private static function pendingSwissMatches(Tournament $record): array
+    public static function pendingSwissMatches(Tournament $record): array
     {
         $out = [];
         foreach ((is_array($record->bracket) ? $record->bracket : []) as $cells) {
@@ -244,7 +61,7 @@ class TournamentResource extends Resource
     }
 
     /** Bracket hücresini key ile bul (p1/p2 id eşlemesi için). */
-    private static function findCell(Tournament $t, string $key): ?array
+    public static function findCell(Tournament $t, string $key): ?array
     {
         foreach ((is_array($t->bracket) ? $t->bracket : []) as $cells) {
             foreach ($cells as $m) {
@@ -547,65 +364,13 @@ class TournamentResource extends Resource
                     ->falseLabel('Pasif'),
             ])
             ->actions([
-                Tables\Actions\Action::make('start')
-                    ->label('Başlat')
-                    ->icon('heroicon-o-play')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Turnuvayı başlat')
-                    ->modalDescription('Turnuva başlatılacak. Eleme ağacında eşleşmeler hemen oluşur. 3 Haklı Swiss\'te KURA OTOMATİK ÇEKİLMEZ: başlattıktan sonra "Tur Tarih/Saati" ile 1. turun tarih/saatini girip "Kura Çek"e basmalısın. Bu işlem geri alınamaz.')
-                    // Yalnizca kayit acik ve en az 2 oyuncu varken gorunur
-                    ->visible(fn (Tournament $record): bool => $record->status === 'open'
-                        && count(array_filter($record->players ?? [], fn ($p) => $p !== null)) >= 2)
-                    ->action(function (Tournament $record): void {
-                        // Tipe göre başlat: 3 Haklı Swiss -> SwissRuntime (kura + eşleştirme + kilitli
-                        // kural seti); eleme ağacı -> model startBracket. (Controller start() ile aynı dal.)
-                        if (($record->type ?? 'bracket') === 'swiss_triple') {
-                            SwissRuntime::start($record);
-                        } else {
-                            $record->startBracket();
-                        }
-                        Notification::make()
-                            ->title('Turnuva başlatıldı')
-                            ->success()
-                            ->send();
-                    }),
-                self::scheduleRoundAction(),
-                self::drawRoundAction(),
-                self::moderationAction('dq'),
-                self::moderationAction('withdraw'),
-                self::resultCorrectionAction(),
-                // KATILIMCILARI TEMİZLE (sıfırla -> açık): test turnuvasını baştan oynamak için.
-                // Katılımcılar + eşleşme ağacı + Swiss durumu + şampiyon silinir, durum 'açık'a döner
-                // -> yeniden katılıma açılır. Başlatınca kura (shuffle) YENİDEN çekilir (yeni eşleşme).
-                Tables\Actions\Action::make('resetTournament')
-                    ->label('Katılımcıları Temizle')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Turnuvayı sıfırla (açık)')
-                    ->modalDescription('TÜM katılımcılar, eşleşme ağacı ve şampiyon silinir; turnuva "açık" durumuna döner (yeniden katılıma açılır). Yeniden başlatıldığında eşleşme KURA ile yeniden çekilir. Oynanmış maç sonuçları/ödüller GERİ ALINMAZ. Test turnuvaları için — geri alınamaz.')
-                    ->action(function (Tournament $record): void {
-                        // A-22: ödül ödenmediyse katılımcıların ödediği giriş ücretleri iade edilir
-                        // (eskiden sıfırlamada ücretler kayboluyor, yeniden katılan iki kez ödüyordu).
-                        TournamentModeration::cancelWithRefund($record, function (Tournament $t): void {
-                            $t->players = [];
-                            $t->bracket = [];
-                            if (Schema::hasColumn('tournaments', 'swiss_state')) {
-                                $t->swiss_state = null;
-                            }
-                            $t->champion_id = null;
-                            $t->prize_paid = false;
-                            $t->status = 'open';
-                            $t->save();
-                        });
-                        Notification::make()
-                            ->title('Turnuva sıfırlandı (açık)')
-                            ->body('Katılımcılar temizlendi. Katılım açık; başlatınca kura yeniden çekilir.')
-                            ->success()
-                            ->send();
-                    }),
-                Tables\Actions\EditAction::make(),
+                // Tüm yönetici işlemleri (başlat / diskalifiye / çekilme / sonuç düzelt / tur tarih-saati /
+                // kura çek / sıfırla / düzenle) + canlı istatistikler TEK "Yönetim Paneli" sayfasında toplandı.
+                Tables\Actions\Action::make('manage')
+                    ->label('Yönetim Paneli')
+                    ->icon('heroicon-o-adjustments-horizontal')
+                    ->color('primary')
+                    ->url(fn (Tournament $record): string => Pages\ManageTournament::getUrl(['record' => $record])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -630,6 +395,7 @@ class TournamentResource extends Resource
             'index' => Pages\ListTournaments::route('/'),
             'create' => Pages\CreateTournament::route('/create'),
             'edit' => Pages\EditTournament::route('/{record}/edit'),
+            'manage' => Pages\ManageTournament::route('/{record}/manage'),
         ];
     }
 }
