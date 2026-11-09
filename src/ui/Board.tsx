@@ -876,7 +876,6 @@ function Board({
         {topOffCount > 0 && (
           <span className={`bearoff-count ${topOffPlayer}`}>{topOffCount}</span>
         )}
-        {cubeTraySide && <div className="cube-area">{cubeTrayEl}</div>}
         {bottomOffCount > 0 && (
           <span className={`bearoff-count ${bottomOffPlayer}`}>{bottomOffCount}</span>
         )}
@@ -886,7 +885,10 @@ function Board({
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
         </div>
-        {/* Küp alt oyuncunundaysa: tepsinin EN ALTINda AYRI alan (slot DIŞI → kırpılmaz). */}
+        {/* ÇEKİLMİŞ (sahiplenilmiş) küp: tepsinin EN ALT köşesinde (kullanıcı direktifi — sahipten
+            bağımsız hep alt). Sahipsiz küp orta bar'da kalır (yukarıda cube-center). cube-area en son
+            çocuk + flex:none -> iki flex:1 slot onu en alta iter. */}
+        {cubeTraySide && <div className="cube-area">{cubeTrayEl}</div>}
       </div>
 
       {/* Surukleme proxy'si: document.body'ye portal (tema <html>'de -> gorunum korunur).
