@@ -7728,6 +7728,11 @@ html[data-board='yilbasi'] .checker.black {
   align-items: center;
   justify-content: center;
 }
+/* Sahiplenilmiş küp SAHİBİNİN tarafında dursun (tepsi dikey flex): üst oyuncu küpü aldıysa
+   tepsinin ÜSTÜ (order:-1 -> slotlardan önce), alt oyuncu aldıysa ALTI (order:1 -> en son).
+   Eski "hep alt" davranışı küp sahipliğini gizliyordu ("rakibe çektim, küp bana düştü"). */
+.cube-area-top { order: -1; }
+.cube-area-bottom { order: 1; }
 .cube.cube-tray {
   position: static;
   left: auto;

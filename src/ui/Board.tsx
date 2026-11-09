@@ -885,10 +885,10 @@ function Board({
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
         </div>
-        {/* ÇEKİLMİŞ (sahiplenilmiş) küp: tepsinin EN ALT köşesinde (kullanıcı direktifi — sahipten
-            bağımsız hep alt). Sahipsiz küp orta bar'da kalır (yukarıda cube-center). cube-area en son
-            çocuk + flex:none -> iki flex:1 slot onu en alta iter. */}
-        {cubeTraySide && <div className="cube-area">{cubeTrayEl}</div>}
+        {/* ÇEKİLMİŞ (sahiplenilmiş) küp SAHİBİNİN tarafında: üst oyuncu küpü aldıysa tepsinin ÜSTÜNde,
+            alt oyuncu aldıysa ALTINDA (cube-area-top/-bottom + CSS order). Böylece "rakibe küp çektim
+            ama küp benim tarafıma düştü" olmaz — küp sahipliği görsel yansır. Sahipsiz küp orta bar'da. */}
+        {cubeTraySide && <div className={`cube-area cube-area-${cubeTraySide}`}>{cubeTrayEl}</div>}
       </div>
 
       {/* Surukleme proxy'si: document.body'ye portal (tema <html>'de -> gorunum korunur).
