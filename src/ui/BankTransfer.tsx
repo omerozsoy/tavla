@@ -91,7 +91,7 @@ export default function BankTransfer({
 
         <div className="bt-actions">
           <Button onClick={onDone}>
-            <Icon name="check" size={16} /> Anladım
+            <Icon name="check" size={16} /> Siparişi Onayla
           </Button>
         </div>
       </div>
