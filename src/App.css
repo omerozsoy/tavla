@@ -24271,6 +24271,124 @@ body.has-bottom-nav {
   color: var(--on-accent);
 }
 
+/* ==================== Kart ile Ödeme (CardForm) ==================== */
+.cardpay-card {
+  max-width: 440px;
+  width: 100%;
+}
+.cardpay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.cardpay-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.cardpay-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+.cardpay-amount span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.cardpay-amount b {
+  font-size: 18px;
+  color: var(--accent);
+}
+.cardpay-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cardpay-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cardpay-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cardpay-form input {
+  height: 44px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.cardpay-form input:focus {
+  border-color: var(--accent);
+}
+.cardpay-form input[aria-invalid='true'] {
+  border-color: var(--destructive, #c0392b);
+}
+.cardpay-input-wrap {
+  position: relative;
+}
+.cardpay-brand {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  pointer-events: none;
+}
+.cardpay-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.cardpay-exp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cardpay-exp input {
+  text-align: center;
+  padding: 0 6px;
+}
+.cardpay-exp-sep {
+  color: var(--muted);
+}
+.cardpay-err {
+  font-size: 11.5px;
+  color: var(--destructive, #c0392b);
+}
+.cardpay-secure {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.cardpay-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.cardpay-actions > * {
+  flex: 1;
+}
+
 /* Havale / EFT talimat ekranı */
 .bt-card {
   max-width: 560px;
@@ -32935,13 +33053,36 @@ body.has-bottom-nav .to-top {
   color: var(--text);
 }
 @media (hover: hover) and (pointer: fine) {
-  .product-card:hover:not(:disabled) {
+  .product-card:hover:not(:disabled):not(.is-out) {
     box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--accent) 70%, transparent);
+    border-color: var(--accent);
+    transform: translateY(-2px);
   }
-  .product-card:hover:not(:disabled) .product-thumb img {
+  .product-card:hover:not(:disabled):not(.is-out) .product-thumb img {
     transform: scale(1.05);
   }
 }
+/* ---- E-ticaret ürün kartı: tıklanır görsel/isim + Detay/Hemen Satın Al aksiyonları ---- */
+.product-card.is-out { opacity: 0.6; }
+.product-card .product-thumb { cursor: pointer; }
+.product-name-link {
+  background: none; border: 0; padding: 0; text-align: left; cursor: pointer;
+  color: var(--text); font-size: 0.98rem; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.product-name-link:hover { color: var(--accent); }
+/* "Son N adet" rozeti (kart görseli üstü) */
+.product-badge-low {
+  position: absolute; inset: 8px 8px auto auto;
+  background: color-mix(in srgb, var(--accent) 92%, #000);
+  color: #fff; font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+}
+.product-actions { display: flex; gap: 8px; margin-top: 10px; }
+.product-actions .product-detail-btn,
+.product-actions .product-buy-btn {
+  flex: 1 1 0; min-width: 0; height: 38px; padding: 0 10px; font-size: 0.85rem; gap: 5px;
+}
+.product-actions .product-detail-btn { flex: 0 0 auto; width: auto; padding: 0 12px; }
 @media (prefers-reduced-motion: reduce) {
   .product-card,
   .product-thumb img {
@@ -33406,6 +33547,38 @@ body.has-bottom-nav .to-top {
   height: 48px;
   font-size: 1rem;
 }
+/* Sepete Ekle + Hemen Satın Al yan yana (e-ticaret) -> "Sepete Git" alt satır tam genişlik */
+.pdp-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.pdp-actions .pdp-add,
+.pdp-actions .pdp-buynow {
+  flex: 1 1 150px;
+  width: auto;
+  border-radius: 12px !important;
+  height: 48px;
+  font-size: 1rem;
+}
+.pdp-actions .pdp-gocart { flex: 1 0 100%; }
+/* Güven şeridi: güvenli ödeme / kargo / iade */
+.pdp-trust {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.pdp-trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.pdp-trust li svg { color: var(--accent); flex-shrink: 0; }
 /* ================= /PDP ================= */
 
 .product-shipping h3 {

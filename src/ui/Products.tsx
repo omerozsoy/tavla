@@ -61,6 +61,22 @@ export function ProductsInner({
     if (controlledSel) onSelect?.(p?.slug ?? null)
     else setSelInner(p)
   }
+  // "Hemen Satın Al": varsayılan (ilk renk + tek adet + varsayılan ödeme) sepete ekle -> sepete git.
+  // Renk/adet yanlışsa kullanıcı SEPETTE (ödeme öncesi inceleme adımı) görüp düzeltebilir.
+  const buyNow = (p: Product) => {
+    if (p.stock <= 0) return
+    onAddToCart({
+      productId: p.id,
+      name: p.name,
+      image: p.images[0] ?? null,
+      color: p.colors?.[0]?.name ?? null,
+      payment: p.money_price != null ? 'money' : 'coin',
+      coinPrice: p.coin_price,
+      moneyPrice: p.money_price,
+      qty: 1,
+    })
+    onGoCart()
+  }
 
   useEffect(() => {
     if (productsProp !== undefined) return
@@ -118,15 +134,18 @@ export function ProductsInner({
       <div className="products-grid">
         {visible.map((p) => {
           const out = p.stock <= 0
+          const low = !out && p.stock <= 5
           return (
-            <button key={p.id} type="button" className="product-card" disabled={out} onClick={() => select(p)}>
-              <div className="product-thumb">
+            <article key={p.id} className={`product-card${out ? ' is-out' : ''}`}>
+              <div className="product-thumb" role="button" tabIndex={0} onClick={() => select(p)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(p) } }}>
                 {p.images[0] ? <img src={imageUrl(p.images[0])} alt={p.name} /> : <Icon name="shop" size={32} />}
                 {out && <span className="product-out">{t('products.soldOut')}</span>}
+                {low && <span className="product-badge-low">{t('products.inStock', { n: p.stock })}</span>}
               </div>
               <div className="product-info">
                 <span className="product-cat">{p.category_name ?? ''}</span>
-                <span className="product-name">{p.name}</span>
+                <button type="button" className="product-name product-name-link" onClick={() => select(p)}>{p.name}</button>
                 <span className="product-price">
                   {p.money_price != null && <span>{fmtTL(p.money_price)}</span>}
                   {p.coin_price != null && (
@@ -135,8 +154,16 @@ export function ProductsInner({
                     </span>
                   )}
                 </span>
+                <div className="product-actions">
+                  <Button variant="outline" className="product-detail-btn" onClick={() => select(p)}>
+                    <Icon name="eye" size={15} /> {t('products.detailBtn')}
+                  </Button>
+                  <Button className="product-buy-btn" onClick={() => buyNow(p)} disabled={out}>
+                    <Icon name="cart" size={15} /> {out ? t('products.soldOut') : t('products.buyNow')}
+                  </Button>
+                </div>
               </div>
-            </button>
+            </article>
           )
         })}
       </div>
@@ -206,10 +233,10 @@ function ProductDetail({
   const canMoney = product.money_price != null
   const valid = colors.length === 0 || !!color
 
-  const add = () => {
+  const addLine = (): boolean => {
     if (!valid) {
       toast.error(t('products.pickColor'))
-      return
+      return false
     }
     onAddToCart({
       productId: product.id,
@@ -221,9 +248,12 @@ function ProductDetail({
       moneyPrice: product.money_price,
       qty,
     })
-    setAdded(true)
+    return true
     // Toast'ı çağıran (App.addProductToCart) gösterir -> burada tekrar gösterme (çift bildirim).
   }
+  const add = () => { if (addLine()) setAdded(true) }
+  // "Hemen Satın Al": sepete ekle + doğrudan sepete git (ödeme adımına).
+  const buyNow = () => { if (addLine()) onGoCart() }
 
   const out = product.stock <= 0
   const low = !out && product.stock <= 5
@@ -339,15 +369,25 @@ function ProductDetail({
           </div>
 
           <div className="pdp-actions">
-            <Button className="pdp-add" onClick={add} disabled={out}>
+            <Button variant="outline" className="pdp-add" onClick={add} disabled={out}>
               <Icon name="cart" size={16} /> {out ? t('products.soldOut') : t('products.addToCart')}
             </Button>
+            <Button className="pdp-buynow" onClick={buyNow} disabled={out}>
+              {t('products.buyNow')}
+            </Button>
             {added && !out && (
-              <Button variant="outline" onClick={onGoCart}>
-                {t('products.goToCart')}
+              <Button variant="ghost" className="pdp-gocart" onClick={onGoCart}>
+                <Icon name="cart" size={15} /> {t('products.goToCart')}
               </Button>
             )}
           </div>
+
+          {/* Güven şeridi (gerçek mağaza hissi): güvenli ödeme / kargo / iade */}
+          <ul className="pdp-trust">
+            <li><Icon name="shield-check" size={16} /> {t('products.trustPay')}</li>
+            <li><Icon name="package" size={16} /> {t('products.trustShip')}</li>
+            <li><Icon name="check" size={16} /> {t('products.trustReturn')}</li>
+          </ul>
         </aside>
       </div>
     </div>

@@ -178,10 +178,10 @@ export default function Shop({
             )}
           </div>
           <div className="shop-head-actions">
-            {onOpenCart && cartCount > 0 && (
+            {onOpenCart && (
               <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title={t('shop.cart')}>
                 <Icon name="cart" size={16} /> <span className="shop-cart-lbl">{t('shop.cart')}</span>
-                <span className="shop-cart-count tnum">{cartCount}</span>
+                {cartCount > 0 && <span className="shop-cart-count tnum">{cartCount}</span>}
               </Button>
             )}
           </div>
