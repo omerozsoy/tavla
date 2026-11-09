@@ -10,7 +10,7 @@ class Tournament extends Model
     /** Turnuva tipleri. bracket = klasik eleme ağacı; swiss_triple = Swiss Triple Elimination (TBD). */
     public const TYPES = [
         'bracket' => 'Bracket System',
-        'swiss_triple' => 'Swiss Triple Elimination',
+        'swiss_triple' => 'Swiss System',
     ];
 
     protected $fillable = [
