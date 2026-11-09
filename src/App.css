@@ -22592,6 +22592,29 @@ body:has(.spectate-view) .app.lobby {
   color: var(--accent-text);
   font-size: 1rem;
 }
+/* Yönetici duyuru yazma kutusu (duyuru listesinin üstünde). */
+.tourn-announce-compose {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin: 0 0 10px;
+}
+.tourn-announce-input {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.tourn-announce-send {
+  flex: none;
+  white-space: nowrap;
+}
 .tourn-announce-list {
   list-style: none;
   margin: 0;
@@ -22599,6 +22622,17 @@ body:has(.spectate-view) .app.lobby {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* Yeni gelen duyuru: ~6sn yanıp söner (dikkat çeksin). */
+.tourn-announce-item.is-flash {
+  animation: tournAnnFlash 0.9s ease-in-out 0s 6;
+}
+@keyframes tournAnnFlash {
+  0%, 100% { background: transparent; }
+  50% { background: color-mix(in srgb, var(--accent) 38%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tourn-announce-item.is-flash { animation: none; background: color-mix(in srgb, var(--accent) 22%, transparent); }
 }
 .tourn-announce-item {
   display: flex;

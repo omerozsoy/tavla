@@ -2224,6 +2224,13 @@ export async function disqualifyTournament(id: number, userId: number): Promise<
   })
   return d.tournament
 }
+export async function announceTournament(id: number, message: string): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/announce`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  })
+  return d.tournament
+}
 export async function reportTournament(
   id: number,
   matchKey: string,

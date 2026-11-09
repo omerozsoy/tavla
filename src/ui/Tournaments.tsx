@@ -21,6 +21,7 @@ import {
   payTournamentEntry,
   leaveTournament,
   disqualifyTournament,
+  announceTournament,
   tournamentRoundMinutes,
   tournamentRoundTarget,
   type Tournament,
@@ -50,7 +51,7 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
 
 // Lobi duyuru satiri. Standart metinler (bracket/swiss) 3000 karaktere dek uzun olabilir ->
 // lobiyi sisirmesin: ~3 satira clamp'lenir, chevron ile ac/kapa (akordion). Kisa duyuru oldugu gibi.
-function TournAnnounceItem({ a }: { a: { id: number; message: string; at: string | null } }) {
+function TournAnnounceItem({ a, flash }: { a: { id: number; message: string; at: string | null }; flash?: boolean }) {
   const [open, setOpen] = useState(false)
   // TipTap/RTE ile yazılmış duyuru HTML içerir (kalın/italik/RENK) -> güvenli-render (RawHtml, admin-authored,
   // makale/haber ile aynı model). Düz metin eski duyurular olduğu gibi. Uzunluk/clamp etiketsiz metinden.
@@ -58,7 +59,7 @@ function TournAnnounceItem({ a }: { a: { id: number; message: string; at: string
   const plain = html ? a.message.replace(/<[^>]*>/g, ' ') : a.message
   const long = plain.length > 200 || (plain.match(/\n/g)?.length ?? 0) >= 3
   return (
-    <li className="tourn-announce-item">
+    <li className={`tourn-announce-item${flash ? ' is-flash' : ''}`}>
       <Icon name="bell" size={15} className="tourn-announce-ic" />
       <div
         className={`tourn-announce-body${long ? ' is-toggle' : ''}`}
@@ -200,6 +201,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   const [joinPw, setJoinPw] = useState('') // şifreli turnuvada katılım şifresi (dialog)
   const [pwError, setPwError] = useState(false) // son denemede şifre hatalıydı
   const [dqTarget, setDqTarget] = useState<null | { id: number; userId: number; name: string }>(null) // diskalifiye onayı
+  const [annText, setAnnText] = useState('') // admin duyuru yazma kutusu
+  const [flashAnnId, setFlashAnnId] = useState<number | null>(null) // yeni gelen duyuru -> yanıp söner
   // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
   // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
   const busyRef = useRef(false)
@@ -397,8 +400,16 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     if (maxId > seen.maxId) {
       annSeenRef.current = { tid: active.id, maxId }
       Sound.bell()
+      setFlashAnnId(maxId) // en yeni duyuru ~6sn yanıp söner
     }
   }, [active])
+
+  // Yanıp sönen duyuruyu 6sn sonra durdur.
+  useEffect(() => {
+    if (flashAnnId == null) return
+    const h = setTimeout(() => setFlashAnnId(null), 6000)
+    return () => clearTimeout(h)
+  }, [flashAnnId])
 
 
 
@@ -480,6 +491,21 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     }
   }
 
+  // Yonetici lobi duyurusu ekler (turnuva detay sayfasindan). Basarida kutuyu temizler;
+  // yeni duyuru en yuksek id olur -> annSeenRef efekti onu yakalayip yanip-sonmeyi tetikler.
+  async function submitAnnounce(id: number) {
+    const msg = annText.trim()
+    if (!msg || busy) return
+    mutSeq.current++
+    setBusy(true)
+    try {
+      setActive(await announceTournament(id, msg))
+      setAnnText('')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   // ---- Detay/bracket gorunumu ----
   if (active) {
     const champ = active.champion_id
@@ -549,6 +575,40 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
         </>
       )
     }
+    // Duyuru penceresi: liste (en yeni yanıp söner) + YALNIZ yönetici yazma kutusu. Swiss'te
+    // "Tur Eşleşmeleri" varken onun üstünde, aksi halde lobi başında gösterilir (tek yerde).
+    const swissPairingsShown = active.type === 'swiss_triple' && !!active.swiss && (active.bracket?.length ?? 0) > 0
+    const hasAnn = !!active.announcements && active.announcements.length > 0
+    const announceBox = (hasAnn || isAdmin) && (
+      <div className="tourn-announce">
+        <h3>
+          <Icon name="megaphone" size={16} /> {t('tourn.announcements')}
+        </h3>
+        {isAdmin && (
+          <div className="tourn-announce-compose">
+            <textarea
+              className="tourn-announce-input"
+              value={annText}
+              onChange={(e) => setAnnText(e.target.value)}
+              placeholder={t('tourn.announcePlaceholder')}
+              rows={2}
+              maxLength={3000}
+            />
+            <Button variant="default" className="tourn-announce-send" disabled={busy || !annText.trim()}
+              onClick={() => submitAnnounce(active.id)}>
+              <Icon name="paper-plane-right" size={16} /> {t('tourn.announceSend')}
+            </Button>
+          </div>
+        )}
+        {hasAnn && (
+          <ul className="tourn-announce-list">
+            {active.announcements!.map((a) => (
+              <TournAnnounceItem key={a.id} a={a} flash={a.id === flashAnnId} />
+            ))}
+          </ul>
+        )}
+      </div>
+    )
     return (
       <div className="register-overlay modal page" role="dialog" aria-modal="true">
         <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
@@ -781,20 +841,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             )
           )}
 
-          {/* Turnuva duyurulari (admin panelden): lobi en ustunde, en yeni ilk sirada.
-              Yeni duyuru geldiginde zil calar (annSeenRef efekti). */}
-          {active.announcements && active.announcements.length > 0 && (
-            <div className="tourn-announce">
-              <h3>
-                <Icon name="megaphone" size={16} /> {t('tourn.announcements')}
-              </h3>
-              <ul className="tourn-announce-list">
-                {active.announcements.map((a) => (
-                  <TournAnnounceItem key={a.id} a={a} />
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Turnuva duyurulari: Swiss'te "Tur Eşleşmeleri" üstünde (aşağıda), diğerlerinde lobi başında.
+              Yeni duyuru geldiginde zil calar + yanıp söner (annSeenRef/flashAnnId efekti). */}
+          {!swissPairingsShown && announceBox}
 
           {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
           <div className="tourn-players">
@@ -964,6 +1013,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   </div>
                 </div>
                 )}
+
+                {/* Duyuru penceresi: Tur Eşleşmeleri'nin hemen üstünde (yönetici yazar, yeni duyuru yanıp söner). */}
+                {swissPairingsShown && announceBox}
 
                 {sw && bracket.length > 0 && (() => {
                   const rounds = bracket.length

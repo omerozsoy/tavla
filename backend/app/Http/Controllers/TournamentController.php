@@ -350,6 +350,22 @@ class TournamentController extends Controller
     // Diskalifiye (yalniz yonetici): bir oyuncuyu turnuvadan cikar. Kayit acikken = iade + listeden
     // cikar. Turnuva baslamissa = hukmen: bekleyen mac rakibe walkover; Swiss'te durum 'dq' (ayri,
     // maglubiyet uydurmaz — contract §3/§10).
+    /** Yönetici lobi duyurusu ekler (turnuva detay sayfasından; Filament'e ek canlı yol). */
+    public function announce(Request $request, Tournament $tournament)
+    {
+        if (! $request->user()?->is_admin) {
+            return $this->fail('Yalnızca yönetici.', 403);
+        }
+        $data = $request->validate(['message' => ['required', 'string', 'max:3000']]);
+        $msg = trim($data['message']);
+        if ($msg === '') {
+            return $this->fail('Boş duyuru.', 422);
+        }
+        TournamentAnnouncement::create(['tournament_id' => $tournament->id, 'message' => $msg]);
+
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
     public function disqualify(Request $request, Tournament $tournament)
     {
         if (! $request->user()?->is_admin) {
