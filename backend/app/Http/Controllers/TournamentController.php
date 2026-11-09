@@ -1644,6 +1644,7 @@ class TournamentController extends Controller
             // Giris yapan uye bu turnuvaya kayitli mi? (ana sayfa Katil/Iptal butonu). Misafir -> false.
             'joined' => $meId ? $this->isRegistered($t, $meId) : false,
             'type' => $t->type ?? 'bracket', // 'bracket' | 'swiss_triple'
+            'swiss_lives' => (int) ($t->swiss_lives ?: 3), // 3 Haklı Swiss hak sayısı (liste rozetinde göster)
             'venue' => $t->venue,
             'organizer' => $t->organizer ? [
                 'id' => $t->organizer->id,

@@ -1155,6 +1155,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'tourn.finalAfterThird': 'Final, üçüncülük maçından sonra oynanır',
   'tourn.finalOpensIn': 'Final {s} sn sonra başlar',
   'tourn.lengthLabel': 'Maçlar',
+  'tourn.typeBracket': 'Eleme Ağacı',
   'tourn.champion': 'Şampiyon',
   // ---- 3 Haklı Swiss (Swiss Triple Elimination) ----
   'swiss.title': '{n} Haklı Swiss',
@@ -3420,6 +3421,7 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   'tourn.finalAfterThird': 'Final is played after the 3rd-place match',
   'tourn.finalOpensIn': 'Final starts in {s}s',
   'tourn.lengthLabel': 'Matches',
+  'tourn.typeBracket': 'Bracket',
   'tourn.champion': 'Champion',
   // ---- Swiss Triple Elimination ----
   'swiss.title': 'Swiss ({n} lives)',

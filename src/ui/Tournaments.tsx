@@ -1370,6 +1370,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             <span className={`tcard-status tcard-status-${tr.status}`}>
               {t(`tourn.status.${tr.status}`)}
             </span>
+            {/* Turnuva tipi: Swiss -> "{n} Haklı Swiss" (hak sayısı dahil), eleme -> "Eleme Ağacı". */}
+            <span className={`tourn-type tourn-type-${tr.type ?? 'bracket'}`}>
+              <Icon name={tr.type === 'swiss_triple' ? 'heart' : 'swords'} size={13} />
+              {tr.type === 'swiss_triple'
+                ? t('swiss.title', { n: tr.swiss_lives ?? 3 })
+                : t('tourn.typeBracket')}
+            </span>
             <AccessBadge premiumOnly={!!tr.premium_only} />
             {/* Katilim ucreti: rozet satirinin AKISINDA (eskiden kartin sag ustune mutlak
                 konumluydu; dar kartta "KAYIT ACIK"/"KATILIMCILAR" ustune biniyordu). */}
@@ -1401,6 +1408,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             </div>
           )}
           <div className="event-title">{tr.name}</div>
+          {/* Maç detayı: "Maçlar: 3 puan · 3 dk" (liste kartında özet). */}
+          <div className="tourn-card-matches">
+            <Icon name="target" size={13} /> {t('tourn.lengthLabel')}: <b>{lenLabel(tr.match_length || 1)}</b>
+            {!!tr.round_minutes && <b>{` · ${t('tourn.minutes', { n: tr.round_minutes })}`}</b>}
+          </div>
           {/* Organizasyon = katkida bulunan kurum (varsa); Duzenleyen = HER online
               turnuvada TavlaTv (sabit kural). Iki ayri satir. */}
           <div className="event-meta">

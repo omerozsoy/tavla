@@ -1466,6 +1466,8 @@ export interface Tournament {
   name: string
   /** Turnuva tipi: klasik eleme ağacı veya 3 Haklı Swiss. */
   type?: 'bracket' | 'swiss_triple'
+  /** 3 Haklı Swiss hak sayısı (1/2/3). Liste rozetinde "{n} Haklı Swiss" için. */
+  swiss_lives?: number
   /** 3 Haklı Swiss canlı durumu (yalnız type='swiss_triple'). */
   swiss?: SwissState | null
   /** Duzenlenme yeri / otel adi (fiziksel mekan). */
