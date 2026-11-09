@@ -170,6 +170,7 @@ import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import DuelView from './ui/DuelView'
+import CardForm, { type CardPayData } from './ui/CardForm'
 import { TeamEmblem } from './ui/TeamEmblem'
 import { useTeamTag } from './teamTags'
 import RankInfo from './ui/RankInfo'
@@ -236,7 +237,7 @@ const DEFAULT_DOC_TITLE =
     : 'TavlaTv - Ücretsiz Online Tavla Oyna | Bedava Tavla'
 const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
-  'uyelik-sozlesmesi', 'teslimat-ve-iade-sartlari', 'mesafeli-satis-sozlesmesi', 'sifre-sifirla',
+  'uyelik-sozlesmesi', 'iptal-ve-iade', 'teslimat', 'mesafeli-satis-sozlesmesi', 'sifre-sifirla',
 ])
 // Kanonik origin = ziyaret edilen marka (eskiden sabit tavlatv.com). Canonical/og:url per-brand.
 const SITE_ORIGIN = BRAND.origin
@@ -511,7 +512,8 @@ const LEGAL_H1: Record<string, string> = {
   'cerez-politikasi': 'Çerez Politikası',
   'kullanim-kosullari': 'Kullanım Koşulları',
   'uyelik-sozlesmesi': 'Üyelik Sözleşmesi',
-  'teslimat-ve-iade-sartlari': 'Teslimat ve İade Şartları',
+  'iptal-ve-iade': 'İptal ve İade',
+  teslimat: 'Teslimat',
   'mesafeli-satis-sozlesmesi': 'Mesafeli Satış Sözleşmesi',
   'sifre-sifirla': 'Şifre Sıfırla',
 }
@@ -1180,6 +1182,10 @@ export default function App() {
   // kart akışı window.location ile o sayfaya YÖNLENDİRİR.
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
+  // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
+  // oluşur (cartCheckout, imzalı URL) -> amount+url burada tutulur; kart gönderilince kullanılır.
+  const [cardPay, setCardPay] = useState<{ amount: number; url: string; demo: boolean } | null>(null)
+  const [cardBusy, setCardBusy] = useState(false)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
   // A-30: coin sipariş idempotency anahtarı AYNI sepet+adres için yeniden denemelerde KORUNUR
   // (eskiden her denemede yeni anahtar -> yanıtı kaybolan başarılı istek tekrarında çift düşüm).
@@ -1831,7 +1837,8 @@ export default function App() {
         case 'cerez-politikasi':
         case 'kullanim-kosullari':
         case 'uyelik-sozlesmesi':
-        case 'teslimat-ve-iade-sartlari':
+        case 'iptal-ve-iade':
+        case 'teslimat':
         case 'mesafeli-satis-sozlesmesi':
           setLegalSlug(root) // hukuki sayfa (slug == URL)
           break
@@ -8042,6 +8049,15 @@ export default function App() {
     setDuelPreselect(null)
     void handleSendInvite({ target: points, timeControl: 'normal', unrated: true, duel: true, targetPlayer: p })
   }
+  // Kart ödeme formu "Öde": Payment sunucuda zaten oluştu (cartCheckout, imzalı URL döndü).
+  // ponytail: GERÇEK tahsilat PayTR Direct API ile bağlanacak (kart -> sunucuya POST -> 3D). O
+  // gelene kadar imzalı rotaya git (PayTR iframe sayfası; yapılandırılmamış/demo'da auto-fulfill).
+  // Kart verisi (_card) SUNUCUYA GÖNDERİLMEZ, loglanmaz — Direct API eklenince kullanılacak.
+  function handleCardPay(_card: CardPayData) {
+    if (!cardPay) return
+    setCardBusy(true)
+    window.location.href = cardPay.url
+  }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
   // damgayı HEMEN vur (uçuştaki heartbeat optimistik değeri ezmesin); POST onayında değeri + damgayı
   // tazele. POST başarısızsa damgayı sıfırla -> bir sonraki heartbeat GERÇEK (server) durumu yansıtsın.
@@ -10098,7 +10114,8 @@ export default function App() {
       { key: 'legal-cerez', labelKey: '', label: 'Çerez Politikası', href: '/cerez-politikasi', onClick: () => openLegalPage('cerez-politikasi') },
       { key: 'legal-kullanim', labelKey: '', label: 'Kullanım Koşulları', href: '/kullanim-kosullari', onClick: () => openLegalPage('kullanim-kosullari') },
       { key: 'legal-uyelik', labelKey: '', label: 'Üyelik Sözleşmesi', href: '/uyelik-sozlesmesi', onClick: () => openLegalPage('uyelik-sozlesmesi') },
-      { key: 'legal-teslimat', labelKey: '', label: 'Teslimat ve İade Şartları', href: '/teslimat-ve-iade-sartlari', onClick: () => openLegalPage('teslimat-ve-iade-sartlari') },
+      { key: 'legal-iptal-iade', labelKey: '', label: 'İptal ve İade', href: '/iptal-ve-iade', onClick: () => openLegalPage('iptal-ve-iade') },
+      { key: 'legal-teslimat', labelKey: '', label: 'Teslimat', href: '/teslimat', onClick: () => openLegalPage('teslimat') },
       { key: 'legal-mesafeli', labelKey: '', label: 'Mesafeli Satış Sözleşmesi', href: '/mesafeli-satis-sozlesmesi', onClick: () => openLegalPage('mesafeli-satis-sozlesmesi') },
       { key: 'legal-cerez-tercih', labelKey: '', label: 'Çerez Tercihleri', onClick: () => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS)) },
     ],
@@ -10707,7 +10724,7 @@ export default function App() {
                 setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
                 setBankData(r)
               } else {
-                window.location.href = r.url // PayTR iframe sayfasına yönlen (kart formu PayTR'de)
+                setCardPay({ amount: r.amount, url: r.url, demo: !!r.demo }) // uygulama-içi kart formu
               }
               return
             }
@@ -10745,7 +10762,7 @@ export default function App() {
                 )
                 setBankData(r)
               } else {
-                window.location.href = r.url // PayTR iframe sayfasına yönlen
+                setCardPay({ amount: r.amount, url: r.url, demo: !!r.demo }) // uygulama-içi kart formu
               }
             } else {
               // Yalnız coin ürünleri vardı -> sipariş tamam.
@@ -10768,6 +10785,14 @@ export default function App() {
             setBankData(null)
             setMyOrdersOpen(true)
           }}
+        />
+      )}
+      {cardPay && (
+        <CardForm
+          amount={cardPay.amount}
+          busy={cardBusy}
+          onClose={() => setCardPay(null)}
+          onSubmit={handleCardPay}
         />
       )}
       {frameGalleryOpen && (

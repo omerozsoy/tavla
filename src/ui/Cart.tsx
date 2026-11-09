@@ -19,6 +19,7 @@ export interface CartItem {
     name: string
     image?: string | null
     color?: string | null
+    category?: string | null // 'kitap' KDV'siz
     payment: 'coin' | 'money'
     coinPrice?: number | null
     moneyPrice?: number | null // kurus
@@ -122,6 +123,14 @@ export default function Cart({
 
   const discountTL = applied ? applied.discount / 100 : 0
   const finalTL = Math.max(0, moneyTotalTL - discountTL)
+
+  // KDV %20, fiyata DAHİL (TR perakende KDV-dahil zorunlu) -> toplamı değiştirmez, bilgi satırı.
+  // Kitaplar (category 'kitap') KDV'siz -> matrahtan çıkar. Dahil KDV = matrah × 20/120.
+  const bookTL = moneyProductRows
+    .filter((i) => i.product!.category === 'kitap')
+    .reduce((s, i) => s + (i.product!.moneyPrice ?? 0) / 100 * i.qty, 0)
+  const vatBaseTL = Math.max(0, finalTL - bookTL)
+  const vatTL = vatBaseTL * 20 / 120
 
   const clearPromo = () => {
     setApplied(null)
@@ -389,6 +398,12 @@ export default function Cart({
                       <div className="cart2-row cart2-row-disc">
                         <span>İndirim · {applied.code}</span>
                         <span className="tnum">−{fmtTL(discountTL)}</span>
+                      </div>
+                    )}
+                    {vatTL > 0 && (
+                      <div className="cart2-row cart2-row-vat">
+                        <span>KDV (%20 dahil){bookTL > 0 ? ' · kitaplar hariç' : ''}</span>
+                        <span className="tnum">{fmtTL(vatTL)}</span>
                       </div>
                     )}
                     {moneyTotalTL > 0 && (

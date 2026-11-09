@@ -13,6 +13,7 @@ export interface CartAddLine {
   name: string
   image?: string | null
   color?: string | null
+  category?: string | null // kategori slug — 'kitap' KDV'siz
   payment: 'coin' | 'money'
   coinPrice?: number | null
   moneyPrice?: number | null // kurus
@@ -70,6 +71,7 @@ export function ProductsInner({
       name: p.name,
       image: p.images[0] ?? null,
       color: p.colors?.[0]?.name ?? null,
+      category: p.category,
       payment: p.money_price != null ? 'money' : 'coin',
       coinPrice: p.coin_price,
       moneyPrice: p.money_price,
@@ -243,6 +245,7 @@ function ProductDetail({
       name: product.name,
       image: product.images[0] ?? null,
       color: colors.length ? color : null,
+      category: product.category,
       payment: pay,
       coinPrice: product.coin_price,
       moneyPrice: product.money_price,
