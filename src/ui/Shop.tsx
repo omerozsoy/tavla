@@ -20,7 +20,7 @@ interface Props {
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
   onBuyCoins?: (pkgId: string) => void // gercek para ile jeton paketi al
   cartCount?: number // sepetteki toplam adet (0 ise buton gizli)
-  onOpenCart?: () => void // sepeti ac
+  onOpenCart?: (checkout?: boolean) => void // sepeti ac (checkout=true -> ödeme/kart tetikle)
   onMembership?: () => void // Star Uyelik kartindan uyelik ekranini ac
   // NOT: Tahta Rengi + Avatar Cercevesi sekmeleri Magaza'dan KALDIRILDI (profil'de yonetilir).
   // Bu proplar geriye donuk uyum icin duruyor (App hala geciyor); Magaza'da kullanilmiyor.
@@ -179,7 +179,7 @@ export default function Shop({
           </div>
           <div className="shop-head-actions">
             {onOpenCart && (
-              <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title={t('shop.cart')}>
+              <Button variant="outline" className="shop-cart-btn" onClick={() => onOpenCart()} title={t('shop.cart')}>
                 <Icon name="cart" size={16} /> <span className="shop-cart-lbl">{t('shop.cart')}</span>
                 {cartCount > 0 && <span className="shop-cart-count tnum">{cartCount}</span>}
               </Button>
@@ -342,7 +342,7 @@ export default function Shop({
               products={products}
               category={tab}
               onAddToCart={onAddToCart}
-              onGoCart={() => onOpenCart?.()}
+              onGoCart={(checkout) => onOpenCart?.(checkout)}
               selectedSlug={productSlug ?? null}
               onSelect={onSelectProduct}
             />

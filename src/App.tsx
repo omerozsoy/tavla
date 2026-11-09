@@ -1178,6 +1178,8 @@ export default function App() {
   const [kizOpen, setKizOpen] = useState(false) // Kız Tavlası oyun sayfasi (ayri kural motoru)
   const [checkerShopOpen, setCheckerShopOpen] = useState(false) // Pul Tasarimlari (checker) sayfasi
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
+  // "Hemen Satın Al" -> sepet açılınca adres hazırsa ödemeyi (kart) OTOMATİK başlat (CardForm çıkar).
+  const [cartAutoCheckout, setCartAutoCheckout] = useState(false)
   // Kart ödemesi artık PayTR iframe sayfasında (sunucu /pay/iframe) — in-app kart formu kaldırıldı;
   // kart akışı window.location ile o sayfaya YÖNLENDİRİR.
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
@@ -10611,8 +10613,9 @@ export default function App() {
             setCartOpen(true)
           }}
           cartCount={cartItems.reduce((s, c) => s + c.qty, 0)}
-          onOpenCart={() => {
+          onOpenCart={(checkout) => {
             setShopOpen(false)
+            setCartAutoCheckout(!!checkout) // "Hemen Satın Al" -> sepette ödemeyi otomatik başlat
             setCartOpen(true)
           }}
           onMembership={() => {
@@ -10661,7 +10664,8 @@ export default function App() {
         <Cart
           items={cartItems}
           setItems={setCartItems}
-          onClose={() => setCartOpen(false)}
+          autoCheckout={cartAutoCheckout}
+          onClose={() => { setCartOpen(false); setCartAutoCheckout(false) }}
           onContinue={() => {
             // "Alışverişe devam" -> Mağaza coin ana sayfası (son ürün overlay'i değil)
             setCartOpen(false)

@@ -39,7 +39,7 @@ export function ProductsInner({
   onSelect,
 }: {
   onAddToCart: (line: CartAddLine) => void
-  onGoCart: () => void
+  onGoCart: (checkout?: boolean) => void // checkout=true -> sepet açılınca ödeme (kart) tetiklensin
   products?: Product[] | null // dışarıdan verilirse fetch etme (Mağaza kategori sekmeleri)
   category?: string // dış kategori filtresi -> iç kategori çipleri gizlenir
   onCategories?: (cats: { slug: string; name: string }[]) => void
@@ -77,7 +77,7 @@ export function ProductsInner({
       moneyPrice: p.money_price,
       qty: 1,
     })
-    onGoCart()
+    onGoCart(true)
   }
 
   useEffect(() => {
@@ -180,7 +180,7 @@ export default function Products({
   onClose,
 }: {
   onAddToCart: (line: CartAddLine) => void
-  onGoCart: () => void
+  onGoCart: (checkout?: boolean) => void // checkout=true -> sepet açılınca ödeme (kart) tetiklensin
   onClose: () => void
 }) {
   const { t } = useT()
@@ -198,7 +198,7 @@ export default function Products({
             </h2>
             <p className="register-sub">{t('products.sub')}</p>
           </div>
-          <Button variant="outline" onClick={onGoCart} title={t('shop.cart')}>
+          <Button variant="outline" onClick={() => onGoCart()} title={t('shop.cart')}>
             <Icon name="cart" size={16} /> {t('shop.cart')}
           </Button>
         </div>
@@ -218,7 +218,7 @@ function ProductDetail({
 }: {
   product: Product
   onAddToCart: (line: CartAddLine) => void
-  onGoCart: () => void
+  onGoCart: (checkout?: boolean) => void // checkout=true -> sepet açılınca ödeme (kart) tetiklensin
   onBack: () => void
   toast: ReturnType<typeof useToast>
 }) {
@@ -256,7 +256,7 @@ function ProductDetail({
   }
   const add = () => { if (addLine()) setAdded(true) }
   // "Hemen Satın Al": sepete ekle + doğrudan sepete git (ödeme adımına).
-  const buyNow = () => { if (addLine()) onGoCart() }
+  const buyNow = () => { if (addLine()) onGoCart(true) }
 
   const out = product.stock <= 0
   const low = !out && product.stock <= 5
@@ -379,7 +379,7 @@ function ProductDetail({
               {t('products.buyNow')}
             </Button>
             {added && !out && (
-              <Button variant="ghost" className="pdp-gocart" onClick={onGoCart}>
+              <Button variant="ghost" className="pdp-gocart" onClick={() => onGoCart()}>
                 <Icon name="cart" size={15} /> {t('products.goToCart')}
               </Button>
             )}

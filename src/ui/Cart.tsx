@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { CoinPackage } from '../coinPackages'
@@ -45,6 +45,7 @@ export default function Cart({
   onContinue,
   onCheckout,
   onManageAddresses,
+  autoCheckout = false,
 }: {
   items: CartItem[]
   setItems: (updater: (prev: CartItem[]) => CartItem[]) => void
@@ -52,6 +53,7 @@ export default function Cart({
   onContinue: () => void
   onCheckout: (items: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod) => Promise<void>
   onManageAddresses: () => void // "Adres ekle/yönet" -> profil Adreslerim
+  autoCheckout?: boolean // "Hemen Satın Al" -> adres hazırsa ödemeyi (kart) bir kez otomatik başlat
 }) {
   useEscape(onClose)
   const notify = useToast()
@@ -185,6 +187,18 @@ export default function Cart({
       setBusy(false)
     }
   }
+
+  // "Hemen Satın Al" -> sepet açılır açılmaz ödemeyi (kart) bir kez otomatik başlat. Yalnız adres
+  // hazırsa (fiziksel üründe teslimat adresi seçili) tetiklenir; adres yoksa sepet görünür kalır ki
+  // kullanıcı adres eklesin (adresler async yüklenir -> shipId oturunca effect yeniden değerlendirir).
+  const autoRanRef = useRef(false)
+  useEffect(() => {
+    if (!autoCheckout || autoRanRef.current) return
+    if (nothingToPay || shippingRequired) return
+    autoRanRef.current = true
+    void checkout()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCheckout, addresses, shipId, nothingToPay, shippingRequired])
 
   const totalItems = memItem ? 1 : coinRows.reduce((s, r) => s + r.it.qty, 0) + productRows.reduce((s, i) => s + i.qty, 0)
   const ctaLabel = memItem || moneyTotalTL > 0 ? 'Ödemeye Geç' : 'Siparişi Tamamla'
