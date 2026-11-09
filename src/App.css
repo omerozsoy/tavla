@@ -27453,7 +27453,7 @@ input:not([type='range']), select, textarea {
    responsive grid ile cok kolona yay. Baslik + bekleme notu tum kolonlari kaplar. */
 .tourn-card .tourn-players {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px 12px;
   align-items: stretch;
 }
