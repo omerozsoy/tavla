@@ -279,9 +279,6 @@ export default function Cart({
                           <span className="cart2-item-name">{p.name}</span>
                           <span className="cart2-item-meta">
                             {p.color && <span className="cart2-chip">{p.color}</span>}
-                            <span className={`cart2-chip cart2-chip-${p.payment}`}>
-                              {p.payment === 'coin' ? 'Coin ile' : 'Kart ile'}
-                            </span>
                           </span>
                         </div>
                         {qtyStepper(it.id, it.qty)}
