@@ -11,7 +11,10 @@
   --ink-40: #16130f66;
   --paper: #f4f0e8;
   --paper-2: #ebe5d9;
-  --line: #16130f;
+  /* --line eskiden #16130f (siyah) -> grid zemini + tüm ayraçlar SİYAH blok oluşturuyordu
+     (kullanıcı: "siyah zeminler çok kötü"). Açık krem-gri hairline'a çekildi; koyu vurgu
+     yalnız --ink (butonlar) ile kalır. */
+  --line: #ddd5c5;
   --accent: #a83a2b;
   --accent-ink: #fff;
 
@@ -327,9 +330,11 @@
 .mgz-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
+  /* Eskiden gap:1px + background:var(--line)(SİYAH) -> boş hücreler koca siyah panel yapıyordu.
+     Artık kart arası nefes boşluğu + şeffaf zemin: boş alan sayfa kremine karışır, siyah blok YOK. */
+  gap: clamp(0.85rem, 1.8vw, 1.3rem);
+  background: transparent;
+  border: none;
 }
 .mgz-cell {
   display: contents;
@@ -338,6 +343,8 @@
   display: flex;
   flex-direction: column;
   background: var(--paper);
+  /* Siyah grid çizgileri kalkınca kartları ince açık kenarlık tanımlar (sayfa kremiyle ayrışsın) */
+  border: 1px solid var(--line);
 }
 .mgz-card.is-open {
   outline: 2px solid var(--accent);

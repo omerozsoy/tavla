@@ -378,46 +378,7 @@ export default function MagazaSwiss({
       </section>
 
       {/* 4 — HİKÂYE + TESLİMAT */}
-      <section id="hikaye" className="mgz-section mgz-story" aria-label="Marka hikâyesi ve teslimat">
-        <div className="mgz-story-grid">
-          <div className="mgz-story-main">
-            <h2 className="mgz-h2">
-              <span className="mgz-idx">02</span> Hikâye
-            </h2>
-            <p className="mgz-story-lead">
-              TavlaTv, dijital tavlayı milyonlara ulaştırırken fiziksel oyunun dokusunu da unutmadı. Bu atölye;
-              oranı, dengeyi ve el işçiliğini önemseyen küçük bir seçkidir.
-            </p>
-            <p className="mgz-story-body">
-              Her tavla, kapandığında bir kitap gibi rafta durur; açıldığında oyunun ritmini taşır. Zarlar denge
-              için ağırlıklandırılır, kuleler tek parça meşeden işlenir.
-            </p>
-          </div>
-          <ul className="mgz-delivery">
-            <li>
-              <Icon name="package" size={20} />
-              <div>
-                <b>Hızlı Teslimat</b>
-                <span>Siparişler 1–3 iş gününde kargoda.</span>
-              </div>
-            </li>
-            <li>
-              <Icon name="shield-check" size={20} />
-              <div>
-                <b>Güvenli Ödeme</b>
-                <span>Havale/EFT ile onaylı sipariş.</span>
-              </div>
-            </li>
-            <li>
-              <Icon name="check" size={20} />
-              <div>
-                <b>Kolay İade</b>
-                <span>14 gün içinde koşulsuz cayma hakkı.</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {/* Marka hikâyesi (#hikaye) bölümü kullanıcı isteğiyle KALDIRILDI. */}
 
       {/* 5 — SEPET + ÖDEME */}
       <CartSection
