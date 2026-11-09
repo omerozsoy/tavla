@@ -506,6 +506,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       room && uid != null ? active.match_prs?.[room.toUpperCase()]?.[String(uid)] : undefined
     // KATILIMCI DURUMU (elendi / su an oynuyor+canli skor) bracket'ten turetilir -> tournamentStatus.ts.
     const pStatus = tournamentPlayerStatus(active.bracket, active.players, liveScores)
+    // 3 Haklı Swiss'te elenme bracket'ten DEĞİL otoriter swiss standing'den turetilir: tek maç kaybı
+    // eleme değildir, oyuncu hakları (lives) bitene kadar elenmez. swiss_triple'da bracket "out"u YOK SAY.
+    const swissOut = active.type === 'swiss_triple' && active.swiss
+      ? new Set(active.swiss.standings.filter((s) => s.status === 'eliminated' || s.lives <= 0).map((s) => s.id))
+      : null
+    const isOut = (id: number) =>
+      active.type === 'swiss_triple' ? !!swissOut?.has(id) : !!pStatus.get(id)?.out
     // Bracket oyuncu adi: online noktasi + ad + (varsa) onceki tur PR'i.
     // hidePr: hukmen (walkover) maclarda PR yazilmaz -> isim tam gorunsun (kullanici istegi).
     // PR'i tm-name DISINA ayri kardes olarak dondururuz (flex:none) -> uzun adda tm-name
@@ -790,8 +797,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr', { sensitivity: 'base' }))
                 .map((p) => {
                 const st = pStatus.get(p.id)
+                const out = isOut(p.id)
                 return (
-                <div key={p.id} className={`tourn-prow${p.id === myId ? ' tourn-prow-mine' : ''}${st?.out ? ' tourn-prow-out' : ''}`}>
+                <div key={p.id} className={`tourn-prow${p.id === myId ? ' tourn-prow-mine' : ''}${out ? ' tourn-prow-out' : ''}`}>
                   <span className={`tm-dot ${onlineSet.has(p.id) ? 'on' : 'off'}`} title={onlineSet.has(p.id) ? 'online' : 'offline'} />
                   <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
                   <b>{p.rating}</b>
@@ -805,7 +813,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     ) : (
                       <span className="tourn-prow-live static">{st.play.a}–{st.play.b}</span>
                     )
-                  ) : st?.out ? (
+                  ) : out ? (
                     <span className="tourn-prow-outlbl">{t('tourn.eliminated')}</span>
                   ) : null}
                   {isAdmin && active.status !== 'finished' && (
@@ -842,7 +850,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             return (
               <div className="swiss-view">
                 <div className="swiss-head">
-                  <span className="swiss-badge">{t('swiss.title')}</span>
+                  <span className="swiss-badge">{t('swiss.title', { n: maxLives })}</span>
                   {sw && <span className="swiss-round">{t('swiss.round', { n: sw.round })}</span>}
                   {sw && active.status === 'running' && <span className="swiss-left">{t('swiss.activeCount', { n: sw.active })}</span>}
                 </div>

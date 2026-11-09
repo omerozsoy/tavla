@@ -1157,7 +1157,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'tourn.lengthLabel': 'Maçlar',
   'tourn.champion': 'Şampiyon',
   // ---- 3 Haklı Swiss (Swiss Triple Elimination) ----
-  'swiss.title': '3 Haklı Swiss',
+  'swiss.title': '{n} Haklı Swiss',
   'swiss.rulesShort': '{n} hakkın var. {n}. maç yenilgisinde elenirsin. Kazanmak kaybedilen hakkı geri getirmez. Bay hak kaybettirmez.',
   'swiss.round': '{n}. Tur',
   'swiss.currentRound': 'Aktif Tur',
@@ -3422,7 +3422,7 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   'tourn.lengthLabel': 'Matches',
   'tourn.champion': 'Champion',
   // ---- Swiss Triple Elimination ----
-  'swiss.title': 'Swiss Triple Elimination',
+  'swiss.title': 'Swiss ({n} lives)',
   'swiss.rulesShort': 'You have {n} lives. Losing {n} matches eliminates you. Winning does not restore a lost life. A bye costs no life.',
   'swiss.round': 'Round {n}',
   'swiss.currentRound': 'Current Round',

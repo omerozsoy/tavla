@@ -1,0 +1,1246 @@
+/* ============================================================================
+   Magaza — Swiss / International Typographic Style storefront.
+   Tum stiller .mgz altinda kapsanir (global sızma yok). Fontlar yalniz burada
+   kullanilir (Archivo grotesk + Space Mono). Modal/overlay YOK — duz akis.
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@700;800;900&family=Space+Mono:wght@400;700&display=swap');
+
+.mgz {
+  --ink: #16130f;
+  --ink-60: #16130f99;
+  --ink-40: #16130f66;
+  --paper: #f4f0e8;
+  --paper-2: #ebe5d9;
+  --line: #16130f;
+  --accent: #a83a2b;
+  --accent-ink: #fff;
+
+  position: relative;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+.mgz *,
+.mgz *::before,
+.mgz *::after {
+  box-sizing: border-box;
+}
+.mgz button {
+  font-family: inherit;
+  cursor: pointer;
+}
+.mgz .tnum {
+  font-variant-numeric: tabular-nums;
+}
+.mgz :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Kapat (mobil/masaustu kose) --- */
+.mgz-close {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 40;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+}
+.mgz-close:hover {
+  background: var(--accent);
+}
+/* Sayfa-host'ta (ana sayfa) sol menüden gezilir -> kose kapat gizli (eski .modal-close deseni). */
+.page-host .mgz-close {
+  display: none;
+}
+
+/* --- Ortak baslik olcekleri --- */
+.mgz-h2 {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin: 0 0 2rem;
+  text-transform: uppercase;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.mgz-idx {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0;
+  align-self: flex-start;
+}
+.mgz-h3 {
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0 0 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mgz-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+.mgz-note {
+  font-size: 0.9rem;
+  color: var(--ink-60);
+}
+.mgz-err {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0.4rem 0 0;
+}
+
+/* --- Butonlar (duz koseli) --- */
+.mgz-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 0.7rem 1.2rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  transition: background 0.14s, color 0.14s, transform 0.14s;
+}
+.mgz-btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.mgz-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.mgz-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mgz-btn-sm {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+}
+.mgz-btn-lg {
+  padding: 0.85rem 1.4rem;
+  font-size: 0.95rem;
+}
+.mgz-btn-xl {
+  padding: 1rem 1.8rem;
+  font-size: 1rem;
+}
+
+.mgz-anchor {
+  display: block;
+  height: 0;
+}
+
+/* --- 1. NAV --- (statik: page-host'ta global sabit header ile çakışmasın) */
+.mgz-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem clamp(1.2rem, 4vw, 4rem);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.mgz-logo {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: 1.35rem;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+.mgz-logo-dot {
+  color: var(--accent);
+}
+.mgz-nav-links {
+  display: flex;
+  gap: 1.8rem;
+  margin-left: auto;
+}
+.mgz-nav-links a {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+.mgz-nav-links a:hover {
+  border-color: var(--accent);
+}
+.mgz-cart-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 0.5rem 0.8rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.mgz-cart-pill:hover {
+  background: var(--accent);
+}
+
+/* --- 2. HERO --- */
+.mgz-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.2rem, 4vw, 4rem);
+  border-bottom: 1px solid var(--line);
+}
+.mgz-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  align-items: flex-start;
+}
+.mgz-hero-title {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.8rem, 9vw, 6.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  margin: 0;
+}
+.mgz-hero-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.mgz-hero-sub {
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  max-width: 44ch;
+  color: var(--ink-60);
+  margin: 0;
+}
+.mgz-hero-media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.mgz-hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(1.02);
+}
+.mgz-hero-ph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-40);
+}
+.mgz-hero-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 0.4rem 0.8rem;
+}
+
+/* --- 3. BOLUM cercevesi --- */
+.mgz-section {
+  padding: clamp(2.5rem, 6vw, 5rem) clamp(1.2rem, 4vw, 4rem);
+  border-bottom: 1px solid var(--line);
+}
+.mgz-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+.mgz-section-head .mgz-h2 {
+  margin: 0;
+}
+.mgz-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.mgz-chip {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.mgz-chip:hover {
+  background: var(--paper-2);
+}
+.mgz-chip.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- Urun izgarasi --- */
+.mgz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.mgz-cell {
+  display: contents;
+}
+.mgz-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.mgz-card.is-open {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.mgz-card-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--paper-2);
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--ink-40);
+}
+.mgz-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.mgz-card:hover .mgz-card-media img {
+  transform: scale(1.04);
+}
+.mgz-flag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+}
+.mgz-card.is-out .mgz-card-media img {
+  opacity: 0.5;
+}
+.mgz-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.1rem;
+  flex: 1;
+}
+.mgz-card-cat {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.mgz-card-name {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-weight: 800;
+  font-size: 1.1rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.mgz-card-name:hover {
+  color: var(--accent);
+}
+.mgz-card-desc {
+  font-size: 0.85rem;
+  color: var(--ink-60);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mgz-card-foot {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-top: 1px solid var(--paper-2);
+}
+.mgz-price {
+  display: flex;
+  flex-direction: column;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+.mgz-price-coin {
+  font-size: 0.85rem;
+  color: var(--ink-60);
+}
+.mgz-card-cta {
+  flex-shrink: 0;
+}
+.mgz-added {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.mgz-added-lg {
+  font-size: 0.95rem;
+}
+
+/* --- Inline urun detayi (satir alti, grid genisligi) --- */
+.mgz-detail {
+  grid-column: 1 / -1;
+  position: relative;
+  background: var(--paper-2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: clamp(1.4rem, 3vw, 2.5rem);
+  animation: mgz-expand 0.3s ease;
+}
+@keyframes mgz-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mgz-detail-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+}
+.mgz-detail-x:hover {
+  background: var(--accent);
+}
+.mgz-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.4rem, 3vw, 3rem);
+  align-items: start;
+}
+.mgz-detail-media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.mgz-detail-main {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--ink-40);
+}
+.mgz-detail-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mgz-detail-thumbs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.mgz-detail-thumb {
+  width: 60px;
+  height: 60px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0;
+  overflow: hidden;
+}
+.mgz-detail-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mgz-detail-thumb.on {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.mgz-detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.mgz-detail-title {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.mgz-detail-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+.mgz-detail-price .mgz-price-coin {
+  font-size: 1rem;
+}
+.mgz-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.mgz-stock span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-40);
+}
+.mgz-stock.in span {
+  background: #2e7d32;
+}
+.mgz-stock.low span {
+  background: var(--accent);
+}
+.mgz-stock.out span {
+  background: var(--ink);
+}
+.mgz-detail-desc {
+  font-size: 0.92rem;
+  color: var(--ink-60);
+  margin: 0;
+  max-width: 54ch;
+}
+.mgz-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mgz-flabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.mgz-flabel span {
+  color: var(--ink);
+}
+.mgz-swatches {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.mgz-swatch {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  padding: 0;
+}
+.mgz-swatch.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.mgz-detail-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.mgz-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+}
+.mgz-qty button {
+  width: 36px;
+  height: 36px;
+  background: var(--paper);
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.mgz-qty button:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+.mgz-qty button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.mgz-qty span {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 700;
+}
+.mgz-qty-sm button {
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+}
+.mgz-qty-sm span {
+  min-width: 32px;
+}
+.mgz-paytoggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+.mgz-paytoggle button {
+  padding: 0.5rem 1rem;
+  background: var(--paper);
+  border: none;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.mgz-paytoggle button + button {
+  border-left: 1px solid var(--line);
+}
+.mgz-paytoggle button.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+.mgz-detail-actions {
+  margin-top: 0.4rem;
+}
+
+/* --- Jeton & Uyelik --- */
+.mgz-sub {
+  margin-top: 3.5rem;
+}
+.mgz-coins {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.mgz-coin {
+  position: relative;
+  background: var(--paper);
+  padding: 1.6rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.mgz-coin.is-pop,
+.mgz-coin-prem {
+  background: var(--paper-2);
+}
+.mgz-coin-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0.2rem 0.5rem;
+}
+.mgz-coin-name {
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+.mgz-coin-ico {
+  color: var(--accent);
+  margin: 0.2rem 0;
+}
+.mgz-coin-price {
+  font-weight: 800;
+  font-size: 1.3rem;
+}
+.mgz-coin-per {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-60);
+  margin-bottom: 0.4rem;
+}
+.mgz-coin .mgz-btn,
+.mgz-coin .mgz-added {
+  margin-top: auto;
+}
+
+/* --- 4. HIKAYE --- */
+.mgz-story-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: clamp(1.5rem, 5vw, 5rem);
+  align-items: start;
+}
+.mgz-story-lead {
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.2rem;
+  max-width: 30ch;
+}
+.mgz-story-body {
+  font-size: 0.98rem;
+  color: var(--ink-60);
+  margin: 0;
+  max-width: 48ch;
+}
+.mgz-delivery {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.mgz-delivery li {
+  display: flex;
+  gap: 1rem;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+}
+.mgz-delivery li div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: var(--ink);
+}
+.mgz-delivery b {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+}
+.mgz-delivery span {
+  font-size: 0.85rem;
+  color: var(--ink-60);
+}
+
+/* --- 5. SEPET --- */
+.mgz-cart-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--ink-60);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.mgz-cart-empty {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 2rem 0;
+  font-size: 1.1rem;
+  color: var(--ink-60);
+}
+.mgz-cart-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+}
+.mgz-cart-items {
+  border-top: 1px solid var(--line);
+}
+.mgz-ci {
+  display: grid;
+  grid-template-columns: 56px 1fr auto auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.mgz-ci-ico {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  overflow: hidden;
+}
+.mgz-ci-ico img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mgz-ci-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.mgz-ci-info b {
+  font-weight: 800;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+.mgz-ci-info span {
+  font-size: 0.8rem;
+  color: var(--ink-60);
+}
+.mgz-ci-price {
+  font-weight: 800;
+  font-size: 0.98rem;
+  white-space: nowrap;
+}
+.mgz-ci-del {
+  background: none;
+  border: none;
+  color: var(--ink-40);
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+}
+.mgz-ci-del:hover {
+  color: var(--accent);
+}
+.mgz-cart-continue {
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.1rem 0;
+}
+.mgz-cart-continue:hover {
+  color: var(--accent);
+}
+
+/* --- Ozet / odeme --- */
+.mgz-summary {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  padding: 1.6rem;
+  position: sticky;
+  top: 84px;
+}
+.mgz-sum-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 1px solid var(--line);
+}
+.mgz-summary select,
+.mgz-promo input {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.55rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+.mgz-addr-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0;
+  align-self: flex-start;
+}
+.mgz-promo {
+  display: flex;
+  gap: 0.5rem;
+}
+.mgz-promo input {
+  flex: 1;
+}
+.mgz-promo-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #2e7d32;
+  font-weight: 600;
+}
+.mgz-promo-ok .tnum {
+  margin-left: auto;
+  color: var(--accent);
+}
+.mgz-promo-ok button {
+  background: none;
+  border: none;
+  color: var(--ink-40);
+  display: grid;
+  place-items: center;
+}
+.mgz-sum-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.mgz-sum-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-60);
+}
+.mgz-sum-disc {
+  color: var(--accent);
+}
+.mgz-sum-vat {
+  font-size: 0.78rem;
+  color: var(--ink-40);
+}
+.mgz-sum-total {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+}
+.mgz-pm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.6rem 0.8rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: left;
+}
+.mgz-pm.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+.mgz-checkout {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+.mgz-secure {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: var(--ink-60);
+  margin: 0.8rem 0 0;
+  line-height: 1.4;
+}
+
+/* --- Odeme sonucu (akis ici) --- */
+.mgz-result {
+  margin-top: 2.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+  animation: mgz-expand 0.3s ease;
+}
+.mgz-result .mgz-h3 {
+  color: var(--paper);
+}
+.mgz-result-lead {
+  margin: 0;
+  max-width: 60ch;
+  color: #f4f0e8cc;
+  line-height: 1.5;
+}
+.mgz-result b {
+  color: var(--paper);
+}
+.mgz-result .mgz-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.mgz-result .mgz-btn:hover {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+.mgz-result .mgz-note {
+  color: #f4f0e899;
+}
+.mgz-bank {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: #ffffff22;
+  border: 1px solid #ffffff22;
+  width: 100%;
+  margin: 0;
+}
+.mgz-bank div {
+  background: var(--ink);
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.mgz-bank dt {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f4f0e899;
+}
+.mgz-bank dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.mgz-mono {
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+/* --- 6. FOOTER --- */
+.mgz-foot {
+  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.2rem, 4vw, 4rem) 2rem;
+  background: var(--ink);
+  color: var(--paper);
+}
+.mgz-foot-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 2rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid #ffffff2a;
+}
+.mgz-foot-brand p {
+  color: #f4f0e899;
+  font-size: 0.88rem;
+  margin: 0.8rem 0 0;
+}
+.mgz-logo-foot {
+  color: var(--paper);
+  font-size: 1.6rem;
+}
+.mgz-foot-col h4 {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f4f0e899;
+  margin: 0 0 1rem;
+}
+.mgz-foot-col a {
+  display: block;
+  color: var(--paper);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.3rem 0;
+}
+.mgz-foot-col a:hover {
+  color: var(--accent);
+}
+.mgz-legal {
+  padding: 2rem 0 0;
+}
+.mgz-acc {
+  border-bottom: 1px solid #ffffff2a;
+}
+.mgz-acc summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  list-style: none;
+}
+.mgz-acc summary::-webkit-details-marker {
+  display: none;
+}
+.mgz-acc summary svg {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.mgz-acc[open] summary svg {
+  transform: rotate(180deg);
+}
+.mgz-acc p {
+  margin: 0;
+  padding: 0 0 1.2rem;
+  color: #f4f0e8bb;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 72ch;
+}
+.mgz-copy {
+  margin: 2rem 0 0;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  color: #f4f0e877;
+  letter-spacing: 0.05em;
+}
+
+/* ============================ RESPONSIVE ============================ */
+@media (max-width: 960px) {
+  .mgz-hero {
+    grid-template-columns: 1fr;
+  }
+  .mgz-hero-media {
+    aspect-ratio: 16 / 10;
+    order: -1;
+  }
+  .mgz-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .mgz-cart-grid,
+  .mgz-story-grid,
+  .mgz-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .mgz-summary {
+    position: static;
+  }
+}
+@media (max-width: 620px) {
+  .mgz-nav-links {
+    display: none;
+  }
+  .mgz-grid {
+    grid-template-columns: 1fr;
+  }
+  .mgz-foot-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .mgz-ci {
+    grid-template-columns: 44px 1fr auto;
+    grid-template-areas:
+      'ico info del'
+      'ico qty price';
+    row-gap: 0.5rem;
+  }
+  .mgz-ci-ico {
+    grid-area: ico;
+    width: 44px;
+    height: 44px;
+  }
+  .mgz-ci-info {
+    grid-area: info;
+  }
+  .mgz-ci-del {
+    grid-area: del;
+  }
+  .mgz-ci .mgz-qty {
+    grid-area: qty;
+  }
+  .mgz-ci-price {
+    grid-area: price;
+    text-align: right;
+  }
+}
+
+/* --- Azaltilmis hareket --- */
+@media (prefers-reduced-motion: reduce) {
+  .mgz *,
+  .mgz *::before,
+  .mgz *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

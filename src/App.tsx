@@ -547,7 +547,7 @@ import AchievementUnlock from './ui/AchievementUnlock'
 import FriendGameSetup from './ui/FriendGameSetup'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
-import Shop from './ui/Shop'
+import MagazaSwiss from './ui/MagazaSwiss'
 import LuckyWheel from './ui/LuckyWheel'
 import DiceSlot from './ui/DiceSlot'
 import ExcuseMachine from './ui/ExcuseMachine'
@@ -10585,76 +10585,29 @@ export default function App() {
         </Suspense>
       )}
       {shopOpen && (
-        <Shop
-          titleOverride={menuTitle('shop')}
-          // Misafir de mağazayı gezebilir (gate yok): cüzdan 0 görünür, satın alma girişe yönlendirir.
-          coins={user?.coins ?? 0}
-          rewardReady={rewardReady}
-          rewardSecs={rewardSecs}
-          onDaily={handleDaily}
-          onBuyCoins={(pkgId) => {
-            // Misafir: sepet/ödeme giriş ister -> mağazayı kapat, giriş ekranını aç.
-            if (!user) {
-              setShopOpen(false)
-              setShowAuth(true)
-              return
-            }
-            // Coin paketini sepete ekle (varsa adedini arttir) -> sepete yonlendir.
-            // Uyelik ogesi coin ile karismaz: coin eklenince sepetten cikarilir (tek-tip sepet).
-            setCartItems((prev) => {
-              const coins = prev.filter((c) => c.kind !== 'membership')
-              const ex = coins.find((c) => c.id === pkgId)
-              return ex
-                ? coins.map((c) => (c.id === pkgId ? { ...c, qty: c.qty + 1 } : c))
-                : [...coins, { id: pkgId, qty: 1 }]
-            })
+        <MagazaSwiss
+          titleOverride={menuTitle('shop') || undefined}
+          user={user ? { coins: user.coins } : null}
+          cartItems={cartItems}
+          setCartItems={setCartItems}
+          onRequireAuth={() => {
             setShopOpen(false)
-            setCartOpen(true)
+            setShowAuth(true)
           }}
-          cartCount={cartItems.reduce((s, c) => s + c.qty, 0)}
-          onOpenCart={(checkout) => {
+          onManageAddresses={() => {
             setShopOpen(false)
-            setCartAutoCheckout(!!checkout) // "Hemen Satın Al" -> sepette ödemeyi otomatik başlat
-            setCartOpen(true)
+            setProfileEditMode(false)
+            setProfileTab('addresses')
+            setEditProfile(true)
           }}
-          onMembership={() => {
-            // Misafir: üyelik satın alma giriş ister -> mağazayı kapat, giriş ekranını aç (coin ile aynı).
-            if (!user) {
-              setShopOpen(false)
-              setShowAuth(true)
-              return
-            }
+          onOrders={() => {
             setShopOpen(false)
-            setMemOpen(true)
+            setMyOrdersOpen(true)
           }}
-          onAddToCart={user ? addProductToCart : () => { setShopOpen(false); setShowAuth(true) }}
-          tab={shopTab}
-          onTabChange={(slug) => {
-            setShopTab(slug)
-            setShopProduct(null) // sekme degisince acik urun detayini kapat
-          }}
-          productSlug={shopProduct}
-          onSelectProduct={setShopProduct}
-          boardTheme={boardTheme}
-          setBoardTheme={setBoardTheme}
-          boardThemes={boardThemeList}
-          onBuyItem={handleBuy}
-          framesSlot={
-            user ? (
-              <FrameShop
-                coins={user.coins ?? 0}
-                unlocks={user.unlocks ?? []}
-                currentFrame={user.avatar_frame ?? null}
-                avatar={profile.avatar ?? null}
-                name={profile.nickname}
-                onBuy={handleBuy}
-                onEquip={handleEquipFrame}
-              />
-            ) : undefined
-          }
+          onCoinsChange={(coins) => setUser((u) => (u ? { ...u, coins } : u))}
           onClose={() => {
             setShopOpen(false)
-            setShopTab('coin') // sonraki normal acilis coin sekmesinden baslasin
+            setShopTab('coin')
             setShopProduct(null)
           }}
         />
