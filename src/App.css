@@ -22258,6 +22258,10 @@ body:has(.spectate-view) .app.lobby {
   border-color: color-mix(in srgb, var(--accent, #2563eb) 40%, var(--border));
   background: color-mix(in srgb, var(--accent, #2563eb) 10%, transparent);
 }
+/* Detay sayfasi tip rozeti satiri (mac uzunluklarinin ustunde). */
+.tourn-type-row {
+  margin: 6px 0 2px;
+}
 /* Mac detayi satiri (liste karti): "Maclar: 3 puan · 3 dk". */
 .tourn-card-matches {
   display: flex;

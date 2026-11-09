@@ -1155,7 +1155,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'tourn.finalAfterThird': 'Final, üçüncülük maçından sonra oynanır',
   'tourn.finalOpensIn': 'Final {s} sn sonra başlar',
   'tourn.lengthLabel': 'Maçlar',
-  'tourn.typeBracket': 'Eleme Ağacı',
+  'tourn.typeBracket': 'Eleme Tablosu',
   'tourn.champion': 'Şampiyon',
   // ---- 3 Haklı Swiss (Swiss Triple Elimination) ----
   'swiss.title': '{n} Haklı Swiss',

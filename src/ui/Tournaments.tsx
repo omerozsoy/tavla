@@ -648,6 +648,16 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             </div>
           </div>
 
+          {/* Turnuva tipi: Swiss -> "{n} Haklı Swiss" (hak dahil) / Eleme Ağacı. Liste kartıyla aynı rozet. */}
+          <div className="tourn-type-row">
+            <span className={`tourn-type tourn-type-${active.type ?? 'bracket'}`}>
+              <Icon name={active.type === 'swiss_triple' ? 'heart' : 'swords'} size={14} />
+              {active.type === 'swiss_triple'
+                ? t('swiss.title', { n: active.swiss?.max_lives ?? active.swiss_lives ?? 3 })
+                : t('tourn.typeBracket')}
+            </span>
+          </div>
+
           {/* Mac uzunluklari: normal turlar + (farkliysa) yari final / final */}
           <div className="tourn-lengths">
             <Icon name="target" size={14} />
