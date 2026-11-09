@@ -2231,6 +2231,19 @@ export async function announceTournament(id: number, message: string): Promise<T
   })
   return d.tournament
 }
+export async function updateTournamentAnnounce(id: number, annId: number, message: string): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/announce/${annId}`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  })
+  return d.tournament
+}
+export async function deleteTournamentAnnounce(id: number, annId: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/announce/${annId}`, {
+    method: 'DELETE',
+  })
+  return d.tournament
+}
 export async function reportTournament(
   id: number,
   matchKey: string,

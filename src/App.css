@@ -22623,6 +22623,27 @@ body:has(.spectate-view) .app.lobby {
   flex-direction: column;
   gap: 8px;
 }
+/* Duyuru satırı yönetici aksiyonları (düzenle/sil) + satır-içi düzenleme. */
+.tourn-announce-actions {
+  flex: none;
+  display: inline-flex;
+  gap: 2px;
+  align-self: flex-start;
+}
+.tourn-announce-act.del {
+  color: var(--danger-fg, #dc2626);
+}
+.tourn-announce-edit {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tourn-announce-edit-btns {
+  display: flex;
+  gap: 6px;
+}
 /* Yeni gelen duyuru: ~6sn yanıp söner (dikkat çeksin). */
 .tourn-announce-item.is-flash {
   animation: tournAnnFlash 0.9s ease-in-out 0s 6;

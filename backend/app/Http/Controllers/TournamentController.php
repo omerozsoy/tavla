@@ -366,6 +366,37 @@ class TournamentController extends Controller
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
+    /** Yönetici mevcut duyuruyu düzenler. */
+    public function updateAnnounce(Request $request, Tournament $tournament, int $announcement)
+    {
+        if (! $request->user()?->is_admin) {
+            return $this->fail('Yalnızca yönetici.', 403);
+        }
+        $data = $request->validate(['message' => ['required', 'string', 'max:3000']]);
+        $msg = trim($data['message']);
+        if ($msg === '') {
+            return $this->fail('Boş duyuru.', 422);
+        }
+        $a = TournamentAnnouncement::where('tournament_id', $tournament->id)->find($announcement);
+        if (! $a) {
+            return $this->fail('Duyuru bulunamadı.', 404);
+        }
+        $a->update(['message' => $msg]);
+
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
+    /** Yönetici duyuruyu siler. */
+    public function deleteAnnounce(Request $request, Tournament $tournament, int $announcement)
+    {
+        if (! $request->user()?->is_admin) {
+            return $this->fail('Yalnızca yönetici.', 403);
+        }
+        TournamentAnnouncement::where('tournament_id', $tournament->id)->where('id', $announcement)->delete();
+
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
     public function disqualify(Request $request, Tournament $tournament)
     {
         if (! $request->user()?->is_admin) {

@@ -22,6 +22,8 @@ import {
   leaveTournament,
   disqualifyTournament,
   announceTournament,
+  updateTournamentAnnounce,
+  deleteTournamentAnnounce,
   tournamentRoundMinutes,
   tournamentRoundTarget,
   type Tournament,
@@ -51,13 +53,44 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
 
 // Lobi duyuru satiri. Standart metinler (bracket/swiss) 3000 karaktere dek uzun olabilir ->
 // lobiyi sisirmesin: ~3 satira clamp'lenir, chevron ile ac/kapa (akordion). Kisa duyuru oldugu gibi.
-function TournAnnounceItem({ a, flash }: { a: { id: number; message: string; at: string | null }; flash?: boolean }) {
+function TournAnnounceItem({ a, flash, admin, busy, onSave, onDelete }: {
+  a: { id: number; message: string; at: string | null }
+  flash?: boolean
+  admin?: boolean
+  busy?: boolean
+  onSave?: (id: number, msg: string) => void
+  onDelete?: (id: number) => void
+}) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(a.message)
   // TipTap/RTE ile yazılmış duyuru HTML içerir (kalın/italik/RENK) -> güvenli-render (RawHtml, admin-authored,
   // makale/haber ile aynı model). Düz metin eski duyurular olduğu gibi. Uzunluk/clamp etiketsiz metinden.
   const html = /<[a-z][\s\S]*>/i.test(a.message)
   const plain = html ? a.message.replace(/<[^>]*>/g, ' ') : a.message
   const long = plain.length > 200 || (plain.match(/\n/g)?.length ?? 0) >= 3
+  if (editing) {
+    return (
+      <li className="tourn-announce-item is-editing">
+        <Icon name="pencil" size={15} className="tourn-announce-ic" />
+        <div className="tourn-announce-edit">
+          <textarea className="tourn-announce-input" value={draft} rows={3} maxLength={3000}
+            onChange={(e) => setDraft(e.target.value)} />
+          <div className="tourn-announce-edit-btns">
+            <Button variant="default" className="tourn-announce-savebtn" disabled={busy || !draft.trim()}
+              onClick={() => { onSave?.(a.id, draft.trim()); setEditing(false) }}>
+              <Icon name="check" size={14} /> {t('common.save')}
+            </Button>
+            <Button variant="ghost" className="tourn-announce-savebtn" disabled={busy}
+              onClick={() => { setDraft(a.message); setEditing(false) }}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </div>
+      </li>
+    )
+  }
   return (
     <li className={`tourn-announce-item${flash ? ' is-flash' : ''}`}>
       <Icon name="bell" size={15} className="tourn-announce-ic" />
@@ -101,6 +134,18 @@ function TournAnnounceItem({ a, flash }: { a: { id: number; message: string; at:
             minute: '2-digit',
           })}
         </time>
+      )}
+      {admin && (
+        <span className="tourn-announce-actions">
+          <Button variant="ghost" size="icon" className="tourn-announce-act" title={t('common.edit')}
+            disabled={busy} onClick={() => { setDraft(a.message); setEditing(true) }}>
+            <Icon name="pencil" size={14} />
+          </Button>
+          <Button variant="ghost" size="icon" className="tourn-announce-act del" title={t('common.delete')}
+            disabled={busy} onClick={() => { if (confirm(t('tourn.announceDeleteConfirm'))) onDelete?.(a.id) }}>
+            <Icon name="trash" size={14} />
+          </Button>
+        </span>
       )}
     </li>
   )
@@ -505,6 +550,26 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       setBusy(false)
     }
   }
+  async function saveAnnounce(id: number, annId: number, msg: string) {
+    if (!msg || busy) return
+    mutSeq.current++
+    setBusy(true)
+    try {
+      setActive(await updateTournamentAnnounce(id, annId, msg))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function removeAnnounce(id: number, annId: number) {
+    if (busy) return
+    mutSeq.current++
+    setBusy(true)
+    try {
+      setActive(await deleteTournamentAnnounce(id, annId))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   // ---- Detay/bracket gorunumu ----
   if (active) {
@@ -603,7 +668,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
         {hasAnn && (
           <ul className="tourn-announce-list">
             {active.announcements!.map((a) => (
-              <TournAnnounceItem key={a.id} a={a} flash={a.id === flashAnnId} />
+              <TournAnnounceItem key={a.id} a={a} flash={a.id === flashAnnId}
+                admin={isAdmin} busy={busy}
+                onSave={(annId, msg) => saveAnnounce(active.id, annId, msg)}
+                onDelete={(annId) => removeAnnounce(active.id, annId)} />
             ))}
           </ul>
         )}

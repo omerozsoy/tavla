@@ -384,6 +384,8 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/tournaments/{tournament}/leave', [TournamentController::class, 'leave']);
     Route::post('/tournaments/{tournament}/disqualify', [TournamentController::class, 'disqualify']); // diskalifiye (yalniz yonetici)
     Route::post('/tournaments/{tournament}/announce', [TournamentController::class, 'announce']); // lobi duyurusu ekle (yalniz yonetici)
+    Route::post('/tournaments/{tournament}/announce/{announcement}', [TournamentController::class, 'updateAnnounce']); // duyuru duzenle (yalniz yonetici)
+    Route::delete('/tournaments/{tournament}/announce/{announcement}', [TournamentController::class, 'deleteAnnounce']); // duyuru sil (yalniz yonetici)
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/no-show', [TournamentController::class, 'noShow']); // rakip gelmedi -> hukmen
     Route::post('/tournaments/{tournament}/match-room', [TournamentController::class, 'matchRoom']);
