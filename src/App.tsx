@@ -1291,6 +1291,8 @@ export default function App() {
         : 'online-turnuvalar'
       : bankData
         ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
+      : cardPay
+        ? 'kart-odeme' // Kart ödeme formu; URL'den kurulamaz (ödeme state'i geçici) -> yenilemede sepete döner
       : cartOpen
         ? 'sepet'
       : shopOpen
@@ -1606,6 +1608,7 @@ export default function App() {
         case 'sepet':
           setCartOpen(true)
           break
+        case 'kart-odeme': // Kart ödeme formu geçici (ödeme state'i bellekte); yenileme/doğrudan link -> sepete dön
         case 'odeme':
           // Odeme adimi gecici (imzali submitUrl bellekte); dogrudan/yenileme ile gelince sepete don.
           setCartOpen(true)
@@ -10352,6 +10355,7 @@ export default function App() {
     myOrdersOpen ||
     cartOpen ||
     !!bankData ||
+    !!cardPay || // kart ödeme formu (CardForm) = açık sayfa; yoksa sepet kapanınca "home" sanıp cardPay'i temizliyordu
     frameGalleryOpen ||
     friendsOpen ||
     messagesOpen ||
