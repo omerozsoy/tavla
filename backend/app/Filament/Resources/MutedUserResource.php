@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * "Yasaklılar": sohbet küfür yaptırımıyla konuşma yasağı almış kullanıcılar (ChatModeration).
@@ -74,6 +75,22 @@ class MutedUserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                // Yasağı bitmiş (süresi dolmuş) + ihlal geçmişli kullanıcıları TOPLU arşivle: listede
+                // gizlenir ama ceza geçmişi (chat_offenses) KORUNUR -> tekrar ederse yine artan ceza.
+                // Aktif yasaklılar etkilenmez.
+                Tables\Actions\Action::make('archiveExpired')->label('Yasağı Bitenleri Arşivle')
+                    ->icon('heroicon-o-archive-box')->color('gray')
+                    ->requiresConfirmation()
+                    ->modalDescription('Yasağı bitmiş tüm kullanıcılar arşivlenir (listede gizlenir, ihlal geçmişi korunur). Aktif yasaklılar etkilenmez.')
+                    ->action(function () {
+                        $n = User::whereNull('chat_mute_archived_at')
+                            ->where('chat_offenses', '>', 0)
+                            ->where(fn (Builder $q) => $q->whereNull('chat_muted_until')->orWhere('chat_muted_until', '<=', now()))
+                            ->update(['chat_mute_archived_at' => now()]);
+                        Notification::make()->title($n.' kullanıcı arşivlendi')->success()->send();
+                    }),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('nickname')->label('Kullanıcı')
                     ->searchable()->sortable(),
@@ -96,8 +113,12 @@ class MutedUserResource extends Resource
                     ->placeholder('—')->color('gray'),
                 Tables\Columns\TextColumn::make('status')->label('Durum')
                     ->badge()
-                    ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture() ? 'Aktif yasak' : 'Süresi doldu')
-                    ->color(fn (string $state) => $state === 'Aktif yasak' ? 'danger' : 'gray'),
+                    ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture()
+                        ? 'Aktif yasak'
+                        : ($u->chat_mute_archived_at ? 'Arşivlendi' : 'Süresi doldu'))
+                    ->color(fn (string $state) => match ($state) {
+                        'Aktif yasak' => 'danger', 'Arşivlendi' => 'info', default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('chat_muted_until')->label('Bitiş')
                     ->dateTime('d.m.Y H:i')->timezone('Europe/Istanbul')
                     ->description(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture()
@@ -108,8 +129,31 @@ class MutedUserResource extends Resource
             ->filters([
                 Tables\Filters\Filter::make('active')->label('Yalnız aktif yasaklı')
                     ->query(fn (Builder $q) => $q->where('chat_muted_until', '>', now())),
+                // Varsayılan AÇIK: arşivlenenleri gizle (aktif yasaklılar her halükârda görünür).
+                // Kapatınca arşivlenenler de listelenir (durumu "Arşivlendi").
+                Tables\Filters\Filter::make('hideArchived')->label('Arşivlenenleri gizle')->default()
+                    ->query(fn (Builder $q) => $q->whereRaw('(chat_mute_archived_at IS NULL OR chat_muted_until > ?)', [now()])),
             ])
             ->actions([
+                // Arşivle: yasağı bitmiş tek kullanıcıyı gizle (geçmiş korunur).
+                Tables\Actions\Action::make('archive')->label('Arşivle')
+                    ->icon('heroicon-o-archive-box')->color('gray')
+                    ->visible(fn (User $u) => $u->chat_mute_archived_at === null
+                        && (! $u->chat_muted_until || ! $u->chat_muted_until->isFuture()))
+                    ->action(function (User $u) {
+                        $u->chat_mute_archived_at = now();
+                        $u->save();
+                        Notification::make()->title('Arşivlendi')->success()->send();
+                    }),
+                // Arşivden Çıkar: tekrar listede görünür.
+                Tables\Actions\Action::make('unarchive')->label('Arşivden Çıkar')
+                    ->icon('heroicon-o-arrow-uturn-left')->color('gray')
+                    ->visible(fn (User $u) => $u->chat_mute_archived_at !== null)
+                    ->action(function (User $u) {
+                        $u->chat_mute_archived_at = null;
+                        $u->save();
+                        Notification::make()->title('Arşivden çıkarıldı')->success()->send();
+                    }),
                 // Yasağı Kaldır: aktif yasağı bitir (ihlal geçmişi KALIR -> tekrarında yine artar).
                 Tables\Actions\Action::make('unmute')->label('Yasağı Kaldır')
                     ->icon('heroicon-o-speaker-wave')->color('success')
@@ -118,7 +162,7 @@ class MutedUserResource extends Resource
                     ->action(function (User $u) {
                         // chat_* alanları fillable DEĞİL -> doğrudan ata + save (ChatModeration ile aynı desen).
                         $u->chat_muted_until = null;
-                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+                        if (Schema::hasColumn('users', 'chat_muted_by')) {
                             $u->chat_muted_by = null;
                         }
                         $u->save();
@@ -132,11 +176,14 @@ class MutedUserResource extends Resource
                     ->action(function (User $u) {
                         $u->chat_muted_until = null;
                         $u->chat_offenses = 0;
-                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_offense_word')) {
+                        if (Schema::hasColumn('users', 'chat_offense_word')) {
                             $u->chat_offense_word = null;
                         }
-                        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'chat_muted_by')) {
+                        if (Schema::hasColumn('users', 'chat_muted_by')) {
                             $u->chat_muted_by = null;
+                        }
+                        if (Schema::hasColumn('users', 'chat_mute_archived_at')) {
+                            $u->chat_mute_archived_at = null; // temiz başlangıç: arşiv de temizlenir
                         }
                         $u->save();
                         Notification::make()->title('İhlal geçmişi sıfırlandı')->success()->send();

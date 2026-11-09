@@ -128,6 +128,7 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
             'banned_at' => 'datetime',
             'last_login_at' => 'datetime',
             'chat_muted_until' => 'datetime', // sohbet küfür yasağı bitişi (ChatModeration)
+            'chat_mute_archived_at' => 'datetime', // Yasaklılar listesi arşivi (yasağı biteni gizle, geçmiş kalır)
             'admin_note_at' => 'datetime', // admin notunu son yazan zaman
         ];
     }
