@@ -161,7 +161,7 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
           </div>
 
           <div className="cardpay-secure">
-            <Icon name="lock" size={14} /> 256-bit SSL ile şifreli ödeme. Kart bilgileriniz saklanmaz.
+            <Icon name="lock" size={16} /> 256-bit SSL ile şifreli ödeme. Kart bilgileriniz saklanmaz.
           </div>
 
           <div className="cardpay-actions">
