@@ -12,7 +12,7 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 // Fiziksel urun magazasi siparis akisi: coin (aninda stok+coin dusumu) ve money
-// (Garanti callback fulfill) + stok/renk/odeme-tipi korumalari.
+// (kart PayTR'siz -> PENDING, admin isler) + stok/renk/odeme-tipi korumalari.
 class ProductOrderTest extends TestCase
 {
     use RefreshDatabase;
@@ -149,14 +149,16 @@ class ProductOrderTest extends TestCase
 
     public function test_money_order_creates_pending_order_and_payment(): void
     {
-        config(['paytr.demo' => true]); // isAvailable + isDemo true
         $u = User::factory()->create();
         $p = $this->product();
         Sanctum::actingAs($u);
 
+        // Kart PayTR'siz: card=true + payment_id doner (url/demo YOK), siparis PENDING.
         $res = $this->postJson('/api/products/order', array_merge($this->ship(), [
             'product_id' => $p->id, 'qty' => 2, 'color' => 'Ceviz', 'payment_type' => 'money',
-        ]))->assertOk()->assertJson(['ok' => true, 'kind' => 'money', 'amount' => 300000]);
+        ]))->assertOk()->assertJson(['ok' => true, 'kind' => 'money', 'card' => true, 'amount' => 300000]);
+        $this->assertNull($res->json('url'));
+        $this->assertNotNull($res->json('payment_id'));
 
         $order = ProductOrder::first();
         $this->assertSame('pending', $order->status);
@@ -167,33 +169,6 @@ class ProductOrderTest extends TestCase
         $payment = Payment::find($order->payment_id);
         $this->assertSame('product', $payment->kind);
         $this->assertSame($order->id, (int) $payment->product_order_id);
-    }
-
-    public function test_money_callback_marks_order_paid_and_decrements_stock(): void
-    {
-        $u = User::factory()->create();
-        $p = $this->product();
-        $order = ProductOrder::create(array_merge($this->ship(), [
-            'user_id' => $u->id, 'product_id' => $p->id, 'product_name' => $p->name,
-            'color' => 'Ceviz', 'qty' => 2, 'payment_type' => 'money', 'amount' => 300000, 'status' => 'pending',
-        ]));
-        config(['paytr.merchant_key' => 'K', 'paytr.merchant_salt' => 'S']);
-        $oid = 'TP'.$u->id; // merchant_oid alfanumerik olmali (order_id = oid)
-        $payment = Payment::create([
-            'user_id' => $u->id, 'kind' => 'product', 'order_id' => $oid,
-            'amount' => 300000, 'product_order_id' => $order->id, 'currency' => '949', 'status' => 'pending',
-        ]);
-        $order->payment_id = $payment->id;
-        $order->save();
-
-        $hash = base64_encode(hash_hmac('sha256', $oid.'S'.'success'.'300000', 'K', true));
-        $this->post('/pay/paytr-callback', [
-            'merchant_oid' => $oid, 'status' => 'success', 'total_amount' => '300000', 'hash' => $hash,
-        ])->assertOk();
-
-        $this->assertSame('paid', $payment->fresh()->status);
-        $this->assertSame('paid', $order->fresh()->status);
-        $this->assertSame(3, (int) $p->fresh()->stock);
     }
 
     public function test_my_orders_returns_own_orders(): void

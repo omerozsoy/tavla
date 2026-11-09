@@ -178,7 +178,7 @@ interface Props {
   // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
   titleOverride?: string
   /** TL'li turnuva katilim odemesi -> PayTR iframe sayfasina yonlendir (url). */
-  onCardCheckout?: (d: { url: string; amount: number; title: string }) => void
+  onCardCheckout?: (d: { amount: number; paymentId: number }) => void
 }
 
 
@@ -437,7 +437,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       setConfirm(null)
       setJoinPw('')
       setPwError(false)
-      onCardCheckout?.({ url: r.url, amount: r.amount, title: active?.name ?? '' })
+      onCardCheckout?.({ amount: r.amount, paymentId: r.payment_id })
     } catch (e) {
       if (e instanceof ApiError && e.status === 403 && (e.data as { code?: string } | undefined)?.code === 'password_required') {
         setPwError(true)

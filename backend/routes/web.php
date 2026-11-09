@@ -1,12 +1,10 @@
 <?php
 
 use App\Http\Controllers\PanelController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VerificationController;
 use App\Models\MenuItem;
 use App\Support\Brand;
 use App\Support\SeoMeta;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -145,16 +143,8 @@ Route::prefix('panel')->group(function () {
     });
 });
 
-// ---- Odeme (PayTR iframe API) ----
-// Imzali iframe sayfasi: sunucu PayTR token'i alip kart formu iframe'ini gosterir (demo'da aninda fulfill).
-Route::get('/pay/iframe/{payment}', [PaymentController::class, 'iframe'])
-    ->name('pay.iframe')->middleware('signed');
-// PayTR bildirim (sunucu->sunucu). HMAC dogrulanir; CSRF muaf (dis POST) + throttle (forged flood).
-Route::post('/pay/paytr-callback', [PaymentController::class, 'paytrCallback'])
-    ->name('pay.paytr.callback')
-    ->middleware('throttle:60,1')
-    ->withoutMiddleware([ValidateCsrfToken::class]);
-// Kullanici donus sayfasi (PayTR merchant_ok_url/fail_url): ?ok=1/0. Gercek fulfillment async callback'te.
+// ---- Odeme donus sayfasi ----
+// Kullanici donus sayfasi: ?ok=1/0. Gercek fulfillment admin onayinda (kart/havale PENDING).
 Route::get('/pay/result', fn (Request $r) => view('pay.result', [
     'ok' => (string) $r->query('ok') === '1',
     'msg' => '',

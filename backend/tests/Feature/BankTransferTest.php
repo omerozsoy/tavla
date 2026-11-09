@@ -9,13 +9,11 @@ use App\Models\ProductOrder;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 // Havale/EFT ödeme yöntemi: açık/kapalı denetimi + kart yerine IBAN dönmesi + ödemenin
-// 'pending' kalıp OTOMATİK fulfill EDİLMEMESİ (admin elle onaylar) + kart uçlarının
-// havale ödemesine kapalı olması.
+// 'pending' kalıp OTOMATİK fulfill EDİLMEMESİ (admin elle onaylar).
 class BankTransferTest extends TestCase
 {
     use RefreshDatabase;
@@ -46,7 +44,7 @@ class BankTransferTest extends TestCase
         $u = User::factory()->create(['coins' => 0]);
         Sanctum::actingAs($u);
 
-        $items = [['id' => array_key_first(config('paytr.coin_packages')), 'qty' => 1]];
+        $items = [['id' => array_key_first(config('pricing.coin_packages')), 'qty' => 1]];
         $res = $this->postJson('/api/shop/coins', ['items' => $items, 'method' => 'bank_transfer'])
             ->assertOk()
             ->assertJson(['bankTransfer' => true, 'iban' => 'TR000000000000000000000000']);
@@ -68,7 +66,7 @@ class BankTransferTest extends TestCase
     {
         $u = User::factory()->create();
         Sanctum::actingAs($u);
-        $items = [['id' => array_key_first(config('paytr.coin_packages')), 'qty' => 1]];
+        $items = [['id' => array_key_first(config('pricing.coin_packages')), 'qty' => 1]];
         $this->postJson('/api/shop/coins', ['items' => $items, 'method' => 'bank_transfer'])
             ->assertStatus(503);
     }
@@ -94,18 +92,5 @@ class BankTransferTest extends TestCase
         $this->assertSame('bank_transfer', $order->payment_method);
         $this->assertSame(5, (int) $p->fresh()->stock); // stok düşmez (ödeme onaylanmadı)
         $this->assertSame($order->id, $res->json('order_id'));
-    }
-
-    public function test_card_page_blocked_for_bank_transfer_payment(): void
-    {
-        $this->enableBank();
-        $u = User::factory()->create();
-        $payment = Payment::create([
-            'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => 'bank_transfer',
-            'order_id' => 'TC-x', 'amount' => 5000, 'coins' => 100, 'currency' => '949', 'status' => 'pending',
-        ]);
-        // GEÇERLİ imzalı URL bile olsa havale kaydında kart sayfası açılmaz (abort 404).
-        $signed = URL::temporarySignedRoute('pay.iframe', now()->addMinutes(30), ['payment' => $payment->id]);
-        $this->get($signed)->assertNotFound();
     }
 }

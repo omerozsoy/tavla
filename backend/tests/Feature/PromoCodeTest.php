@@ -15,12 +15,6 @@ class PromoCodeTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        config(['paytr.demo' => true]); // odeme "available" (demo) -> buyCoins calisir
-    }
-
     private function user(): User
     {
         $u = User::create([

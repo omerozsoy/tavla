@@ -9,17 +9,15 @@ use App\Models\ProductOrder;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\UserAddress;
-use App\Services\PayTRService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
 
 /**
  * Fiziksel magaza (Tavla, zar, kitap, zar kulesi vb.). Katalog halka acik; siparis authed.
- * Odeme tipi urun bazinda: coin -> aninda 'paid' (atomik stok+coin dusumu), money -> Garanti
- * odemesi (kind='product', callback'te fulfill). Fiyat/stok SUNUCU-OTORITER (client'a guvenilmez).
+ * Odeme tipi urun bazinda: coin -> aninda 'paid' (atomik stok+coin dusumu), money -> PENDING
+ * Payment (kind='product', admin/ileride isler). Fiyat/stok SUNUCU-OTORITER (client'a guvenilmez).
  */
 class ProductController extends Controller
 {
@@ -104,7 +102,7 @@ class ProductController extends Controller
     }
 
     // POST /products/order — tek urun + adet + secili renk siparisi. Odeme tipi 'coin' | 'money'.
-    public function order(Request $request, PayTRService $paytr)
+    public function order(Request $request)
     {
         $data = $request->validate([
             'product_id' => ['required', 'integer'],
@@ -161,7 +159,7 @@ class ProductController extends Controller
 
         return $paymentType === 'coin'
             ? $this->orderWithCoins($request, $product, $qty, $color, $ship, $data['idempotency_key'] ?? null)
-            : $this->orderWithMoney($request, $product, $qty, $color, $ship, $paytr, $data['method'] ?? 'card');
+            : $this->orderWithMoney($request, $product, $qty, $color, $ship, $data['method'] ?? 'card');
     }
 
     // Coin ile: ATOMIK stok + coin dusumu, siparis aninda 'paid'. ShopController::buy ile ayni
@@ -232,17 +230,13 @@ class ProductController extends Controller
         ]);
     }
 
-    // Gercek para ile: siparis 'pending' + Payment kind='product'; kart sayfasi/submit imzali
-    // URL doner (buyCoins ile ayni akis). Odeme basariliysa callback/demo siparisi 'paid' yapar.
-    private function orderWithMoney(Request $request, Product $product, int $qty, ?string $color, array $ship, PayTRService $paytr, string $method = 'card')
+    // Gercek para ile: siparis 'pending' + Payment kind='product'. Kart PayTR'siz -> PENDING
+    // (card=true + payment_id); havale -> IBAN + referans. Her iki durumda da admin elle onaylar.
+    private function orderWithMoney(Request $request, Product $product, int $qty, ?string $color, array $ship, string $method = 'card')
     {
         $bank = $method === 'bank_transfer';
-        if ($bank) {
-            if (! PaymentController::bankEnabled()) {
-                return $this->fail('Havale/EFT ödemesi şu an kapalı.', 503);
-            }
-        } elseif (! $paytr->isAvailable()) {
-            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+        if ($bank && ! PaymentController::bankEnabled()) {
+            return $this->fail('Havale/EFT ödemesi şu an kapalı.', 503);
         }
 
         $amount = (int) $product->money_price * $qty; // KURUS
@@ -297,10 +291,10 @@ class ProductController extends Controller
         return response()->json([
             'ok' => true,
             'kind' => 'money',
-            'url' => PaymentController::cardCheckoutUrl($payment), // SPA bu URL'e yönlendirir (PayTR iframe)
+            'card' => true,
             'amount' => $amount,
             'order_id' => $order->id,
-            'demo' => $paytr->isDemo(),
+            'payment_id' => $payment->id,
         ]);
     }
 

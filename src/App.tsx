@@ -1186,8 +1186,7 @@ export default function App() {
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
   // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
   // oluşur (cartCheckout, imzalı URL) -> amount+url burada tutulur; kart gönderilince kullanılır.
-  const [cardPay, setCardPay] = useState<{ amount: number; url: string; demo: boolean } | null>(null)
-  const [cardBusy, setCardBusy] = useState(false)
+  const [cardPay, setCardPay] = useState<{ amount: number; paymentId: number } | null>(null)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
   // A-30: coin sipariş idempotency anahtarı AYNI sepet+adres için yeniden denemelerde KORUNUR
   // (eskiden her denemede yeni anahtar -> yanıtı kaybolan başarılı istek tekrarında çift düşüm).
@@ -8010,14 +8009,14 @@ export default function App() {
     setDuelPreselect(null)
     void handleSendInvite({ target: points, timeControl: 'normal', unrated: true, duel: true, targetPlayer: p })
   }
-  // Kart ödeme formu "Öde": Payment sunucuda zaten oluştu (cartCheckout, imzalı URL döndü).
-  // ponytail: GERÇEK tahsilat PayTR Direct API ile bağlanacak (kart -> sunucuya POST -> 3D). O
-  // gelene kadar imzalı rotaya git (PayTR iframe sayfası; yapılandırılmamış/demo'da auto-fulfill).
-  // Kart verisi (_card) SUNUCUYA GÖNDERİLMEZ, loglanmaz — Direct API eklenince kullanılacak.
+  // Kart ödeme formu "Öde": Payment sunucuda zaten PENDING oluştu (checkout). PayTR KALDIRILDI ->
+  // online tahsilat yok; sipariş pending kalır (admin/ileride işler, Havale gibi). Kart verisi (_card)
+  // sunucuya GÖNDERİLMEZ, loglanmaz. Kullanıcıya "alındı, onay bekleniyor" + Siparişlerim.
   function handleCardPay(_card: CardPayData) {
     if (!cardPay) return
-    setCardBusy(true)
-    window.location.href = cardPay.url
+    setCardPay(null)
+    notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
+    setMyOrdersOpen(true)
   }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
   // damgayı HEMEN vur (uçuştaki heartbeat optimistik değeri ezmesin); POST onayında değeri + damgayı
@@ -10688,7 +10687,7 @@ export default function App() {
                 setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
                 setBankData(r)
               } else {
-                setCardPay({ amount: r.amount, url: r.url, demo: !!r.demo }) // uygulama-içi kart formu
+                setCardPay({ amount: r.amount, paymentId: r.payment_id }) // uygulama-içi kart formu
               }
               return
             }
@@ -10726,7 +10725,7 @@ export default function App() {
                 )
                 setBankData(r)
               } else {
-                setCardPay({ amount: r.amount, url: r.url, demo: !!r.demo }) // uygulama-içi kart formu
+                setCardPay({ amount: r.amount, paymentId: r.payment_id }) // uygulama-içi kart formu
               }
             } else {
               // Yalnız coin ürünleri vardı -> sipariş tamam.
@@ -10754,7 +10753,6 @@ export default function App() {
       {cardPay && (
         <CardForm
           amount={cardPay.amount}
-          busy={cardBusy}
           onClose={() => setCardPay(null)}
           onSubmit={handleCardPay}
         />
@@ -10778,7 +10776,7 @@ export default function App() {
           onPlayMatch={handlePlayTournamentMatch}
           onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
           onProfile={(id) => setHomeProfileId(id)}
-          onCardCheckout={(d) => { window.location.href = d.url }}
+          onCardCheckout={(d) => setCardPay({ amount: d.amount, paymentId: d.paymentId })}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
             setTournDetailId(id)

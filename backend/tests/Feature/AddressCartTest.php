@@ -127,20 +127,16 @@ class AddressCartTest extends TestCase
 
     public function test_cart_checkout_money_creates_pending_orders_and_cart_payment(): void
     {
-        config(['paytr.demo' => true]);
         [$u, $h] = $this->user(0);
         $p = $this->product(['money_price' => 5000, 'stock' => 5]);
         $addr = $this->postJson('/api/addresses', ['type' => 'shipping', 'name' => 'Ali', 'phone' => '5551112233', 'address' => 'Cadde 1', 'city' => 'İstanbul'], $h)->json('address.id');
 
+        // Kart PayTR'siz: card=true doner (url YOK), pending sipariş + cart ödemesi kurulur.
         $res = $this->postJson('/api/shop/cart-checkout', [
             'products' => [['product_id' => $p->id, 'qty' => 2]], // 2 x 5000 = 10000 kuruş
             'shipping_address_id' => $addr,
-        ], $h);
-        // PayTR demo/available ise url döner; değilse 503. Her iki durumda da pending sipariş kurulmuş olabilir.
-        if ($res->status() === 503) {
-            $this->markTestSkipped('PayTR yapılandırılmadı (test ortamı).');
-        }
-        $res->assertOk();
+        ], $h)->assertOk()->assertJson(['card' => true]);
+        $this->assertNull($res->json('url'));
         $payment = Payment::where('kind', 'cart')->first();
         $this->assertNotNull($payment);
         $this->assertSame(10000, (int) $payment->amount);

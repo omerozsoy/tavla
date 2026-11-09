@@ -918,17 +918,18 @@ export interface BankTransferResult {
   note?: string
   coins?: number
 }
-// Kart ödemesi dönüşü: SPA bu `url`'e YÖNLENDİRİR (PayTR iframe sayfası; kart formunu PayTR barındırır).
+// Kart ödemesi dönüşü: PayTR kaldırıldı -> uygulama-içi CardForm açılır. Sunucuda PENDING Payment
+// oluşur (card=true); SPA formu amount ile gösterir. Online tahsilat yok (admin/ileride işler).
 export interface CardCheckoutResult {
-  url: string
+  card: true
+  payment_id: number
   amount: number
   coins?: number
   discount?: number
   code?: string | null
-  demo?: boolean
 }
 export type CheckoutResult = CardCheckoutResult | BankTransferResult
-export function isBankTransfer(r: CheckoutResult | { url?: string }): r is BankTransferResult {
+export function isBankTransfer(r: CheckoutResult): r is BankTransferResult {
   return (r as BankTransferResult).bankTransfer === true
 }
 
@@ -949,7 +950,7 @@ export async function subscribe(
   plan: 'premium',
   period: 'yearly' = 'yearly', // yalnız yıllık üyelik (aylık kaldırıldı)
   method: PayMethod = 'card',
-): Promise<{ url: string } | BankTransferResult> {
+): Promise<CheckoutResult> {
   return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period, method }) })
 }
 // Sepetteki coin paketlerini satin al -> odeme kaydi olusur.
@@ -1035,17 +1036,17 @@ export interface ProductOrder {
   ship_city: string
   created_at?: string | null
 }
-// Coin siparis: {ok, kind:'coin', coins, order}. Money siparis: {ok, kind:'money', url, amount, order_id, demo}.
-// Money'de SPA `url`'e yönlendirir (PayTR iframe sayfası).
+// Coin siparis: {ok, kind:'coin', coins, order}. Money siparis: {ok, kind:'money', card, amount, order_id, payment_id}.
+// Money'de (kart) uygulama-içi CardForm açılır (PayTR kaldırıldı); pending Payment oluşur.
 export interface OrderResult {
   ok: boolean
   kind: 'coin' | 'money'
   coins?: number
   order?: ProductOrder
-  url?: string
+  card?: true
   amount?: number // kurus
   order_id?: number
-  demo?: boolean
+  payment_id?: number
 }
 export async function getProducts(): Promise<Product[]> {
   const r = await req<{ products: Product[] }>('/products')
