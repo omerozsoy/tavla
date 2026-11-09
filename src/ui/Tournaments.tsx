@@ -908,6 +908,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   )
                 )}
 
+                {active.status === 'running' && (
                 <div className="swiss-round-box">
                   <div className="swiss-rb-head">{t('swiss.currentRound')}</div>
                   <div className="swiss-matches">
@@ -952,6 +953,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     })}
                   </div>
                 </div>
+                )}
 
                 {sw && bracket.length > 0 && (() => {
                   const rounds = bracket.length
@@ -1015,8 +1017,16 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           const losses = Number(row.losses ?? 0)
                           const lives = row.lives != null ? Number(row.lives) : Math.max(0, maxLives - losses)
                           const averaj = Number(row.averaj ?? 0)
+                          // Zemin rengi: 0 yenilgi yeşil, yenilgi arttıkça koyulaşan kırmızı (en koyu = hak bitti),
+                          // şampiyon altın. maxLives'a göre ölçeklenir (lmax = losses >= maxLives).
+                          const isChamp = active.champion_id != null && Number(row.id) === active.champion_id
+                          const bgClass = isChamp ? 'swiss-bg-champ'
+                            : losses <= 0 ? 'swiss-bg-l0'
+                            : losses >= maxLives ? 'swiss-bg-lmax'
+                            : losses === 1 ? 'swiss-bg-l1'
+                            : 'swiss-bg-l2'
                           return (
-                            <tr key={String(row.id)} className={`swiss-tr swiss-tr-${status}`}>
+                            <tr key={String(row.id)} className={`swiss-tr swiss-tr-${status} ${bgClass}`}>
                               <td className="swiss-td-rank">{rank ? `${rank}.` : active.status === 'finished' ? '—' : i + 1}</td>
                               <td className="swiss-td-name">{String(row.name ?? '')}{status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}</td>
                               <td className="swiss-td-lives">{lives}</td>

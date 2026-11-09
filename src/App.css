@@ -28052,6 +28052,13 @@ input:not([type='range']), select, textarea {
 .swiss-td-averaj {
   font-variant-numeric: tabular-nums;
 }
+/* Sıralama satırı zemini: yenilgiye göre yeşil -> koyulaşan kırmızı; şampiyon altın.
+   Hak 2/3 fark etmez: lmax (hak bitti) en koyu, ara tonlar yenilgi sayısına göre. */
+.swiss-tr.swiss-bg-l0 { background: color-mix(in srgb, #22c55e 15%, transparent); }
+.swiss-tr.swiss-bg-l1 { background: color-mix(in srgb, #ef4444 12%, transparent); }
+.swiss-tr.swiss-bg-l2 { background: color-mix(in srgb, #ef4444 22%, transparent); }
+.swiss-tr.swiss-bg-lmax { background: color-mix(in srgb, #dc2626 36%, transparent); }
+.swiss-tr.swiss-bg-champ { background: color-mix(in srgb, var(--tv-gold, #c9a227) 32%, transparent); }
 .swiss-table {
   width: 100%;
   border-collapse: collapse;
