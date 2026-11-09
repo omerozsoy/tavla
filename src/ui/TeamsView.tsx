@@ -227,7 +227,7 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
     <div key={key} className={`trank-row ${pos <= 3 ? 'top' : ''}`} onClick={onOpen}>
       <span className="trank-pos">{medal(pos) || pos}</span>
       <span className="trank-team">
-        <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={28} />
+        <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={56} />
         <b>{team.name}</b>
         {/* Takımın oyuncu sayısı */}
         {team.member_count != null && (
