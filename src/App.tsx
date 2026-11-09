@@ -66,7 +66,7 @@ import {
   isDuplicateSubmit,
   nextSubmittedKey,
 } from './online/authSync'
-import { liveMoveDelta } from './online/liveMoves'
+import { liveMoveDelta, replayStartIndex } from './online/liveMoves'
 import { interpClock } from './online/clockView'
 import { subscribeRoom, onRealtimeConn } from './online/realtime'
 import { botPersona } from './botPersonas'
@@ -5752,11 +5752,55 @@ export default function App() {
     }
   }
 
-  // §5.2 ONAYLI rakip hamlesi COSMETIC replay'i KALDIRILDI (kullanıcı raporu LL9H3): canlı önizleme
-  // (oppLive) rakip oynarken hamleyi zaten gösteriyor; sıra bana geçtikten sonra aynı hamleyi yeniden
-  // oynatmak "sıra bende ama rakip tekrar oynuyor" algısı yaratıyordu. Artık sıra geçince tahta otoriter
-  // sonuca ANINDA snap eder (oppReplay state'i hiç set edilmez -> aşağıdaki oppReplay guard'ları inert).
-  // clearOppReplay korunur (bekleyen önizleme/zar sesi guard'ları onu çağırır).
+  // §5.2 ONAYLI rakip hamlesini adım adım oynat (COSMETIC). `base` = rakibin tur-başı tahtası (zarlı),
+  // `steps` = reconstruct edilen hamle, `oc` = rakip rengi. Otoriteye (turnStart/skor/saat) DOKUNMAZ;
+  // tahta gösterimini (boardDisplay) kısa süre base+adımlar olarak tutar, bitince otoriter sonuca döner.
+  function maybeReplayOppMove(base: GameState, steps: Step[], oc: Player) {
+    if (!online || room?.bot) return // bot'un kendi reveal animasyonu var (botAnim) — çift oynatma yok
+    const canAnim =
+      animOn && moveStyle !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!canAnim || steps.length === 0) return
+    if (resultShowingRef.current || inLobbyRef.current) return
+    const start = replayStartIndex(oppLiveShownRef.current, steps)
+    if (start >= steps.length) return // canlı önizleme (room.live) zaten tamamını gösterdi
+    // Canlı önizleme (oppLive) bu turda adım gösterdi ama reconstruct FARKLI decomposition seçtiyse
+    // (örn. 6-2'yi 2-6) replayStartIndex 0 döner ve tahtayı base'e GERİ SARIP baştan oynatırdı ->
+    // kullanıcı raporu "rakip oynarken oyun geriye sarıp zarları tekrar oynuyor". Önizleme zaten
+    // devredeyse rewind YOK: otoriter sonuca snap et. Baştan replay YALNIZ hiç önizleme olmayan tur
+    // içindir (kaçan ara-poll: hızlı oyuncu/çift zar). shown kısmî-ama-prefiks ise start>0 -> devam.
+    if (start === 0 && oppLiveShownRef.current.length > 0) return
+    clearOppReplay()
+    setOppReplay({ base, steps, shown: start, color: oc })
+    oppReplayRef.current = { base, steps, shown: start, color: oc }
+    const timers: number[] = []
+    for (let i = start; i < steps.length; i++) {
+      timers.push(
+        window.setTimeout(
+          () => {
+            const st = steps[i]
+            const r = sourceRect(st.from) // o anki (replay) tahtada kaynağı yakala -> hedefe uçur
+            if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r, offColor: oc }
+            if (!resultShowingRef.current && !inLobbyRef.current) {
+              const pre = applyPlayed(base, steps.slice(0, i))
+              const moverSign = oc === 'white' ? 1 : -1
+              const hit =
+                typeof st.to === 'number' &&
+                pre.points[st.to] !== 0 &&
+                Math.sign(pre.points[st.to]) !== moverSign &&
+                Math.abs(pre.points[st.to]) === 1
+              if (hit) Sound.hit()
+              else Sound.move()
+            }
+            setOppReplay((cur) => (cur ? { ...cur, shown: i + 1 } : cur))
+          },
+          (i - start + 1) * 450,
+        ),
+      )
+    }
+    // GÜVENLİK: her koşulda temizle (stick engeli) — son adımdan ~0.6sn sonra otoriter sonuca dön.
+    timers.push(window.setTimeout(() => clearOppReplay(), (steps.length - start) * 450 + 600))
+    oppReplayTimersRef.current = timers
+  }
 
   // Sunucu-otoriter durumu (server_state + server_match) uygula (Faz 2). Yalniz TUR SINIRINDA
   // cagirilir (mid-move'u ezmemek icin poll'da korunur). Otorite SUNUCU: tahta + skor + KUP +
@@ -5841,12 +5885,9 @@ export default function App() {
               m: turnNotation(steps, oc),
             })
           }
-          // §5.2 REPLAY ANİMASYONU KALDIRILDI (kullanıcı raporu LL9H3): canlı önizleme (oppLive) rakip
-          // OYNARKEN hamleyi zaten gösteriyor. Sıra bana geçtikten SONRA aynı hamleyi otoriter tahtadan
-          // adım adım yeniden oynatmak, poll rakibin turunu kaçırdığında (oppLiveShownRef boş) "sıra bende
-          // ama rakibin hamlesi tekrar oynanıyor" algısı yaratıyordu. Artık sıra geçince tahta otoriter
-          // sonuca ANINDA snap eder. Rekonstrüksiyon + matchLog/.mat kaydı YUKARIDA korunur (yalnız
-          // kozmetik replay gider). oppReplay state'i artık hiç set edilmez (replay fonksiyonu silindi).
+          // §5.2: onaylı rakip hamlesini adım adım OYNAT (snap yerine). Oyun bittiyse (ended) ATLA —
+          // maç/oyun sonu ekranı ayrı akış; bitiren hamleyi replay'e bağlamak kırılgan olur.
+          if (!ended) maybeReplayOppMove(oppBase, steps, oc)
           // ONLINE RAKİP DANCE: 0 adım (gele/bardan giremedi) -> replay tetiklenmez. Rakibin zarı +
           // ortada silik "Hamle Yok" overlay'ini kısa süre göster (turnStart bana döndüğü için noMove
           // koşulu yakalayamaz). SERVER_BOT bot odası da (mode='online' + room.bot) sunucu-sync ile
