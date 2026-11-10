@@ -20,7 +20,9 @@ const LOCAL_INDEX = 'backend/public/index.html'
 const TIMEOUT_MS = 10 * 60 * 1000 // QD "oynak" gecikme: CI-yesilinden +2-5dk (bkz CLAUDE.md)
 const POLL_MS = 15 * 1000
 
-const assetsOf = (html) => [...html.matchAll(/\/assets\/[^"']+\.(?:js|css)/g)].map((m) => m[0])
+// Yalniz src="/assets/..." / href="/assets/..." attribute'larini al — index.html'deki inline
+// yorum/glob (orn. "/assets/*.js yuklenemezse") gercek asset sanilmasin (CI false-404 bug'i).
+const assetsOf = (html) => [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.(?:js|css))"/g)].map((m) => m[1])
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const expected = assetsOf(readFileSync(LOCAL_INDEX, 'utf8'))
