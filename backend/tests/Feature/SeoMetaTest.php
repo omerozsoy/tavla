@@ -58,7 +58,21 @@ class SeoMetaTest extends TestCase
             ->assertSee('rel="canonical" href="https://tavlatv.com/backgammon"', false)
             ->assertSee('"@type":"VideoGame"', false)
             ->assertSee('"inLanguage":"en"', false)
-            ->assertSee('Play backgammon online for free', false);
+            ->assertSee('Play backgammon online for free', false)
+            // Zengin İngilizce sunucu-render noscript gövdesi (landingNoscript).
+            ->assertSee('<h2>What is online backgammon?</h2>', false)
+            ->assertSee('<h3>Are the dice fair?</h3>', false);
+    }
+
+    /** /tavla-oyna da zengin sunucu-render noscript gövdesi taşır (JS'siz crawler + AI). */
+    public function test_tavla_oyna_has_rich_noscript_body(): void
+    {
+        $this->get('/tavla-oyna')
+            ->assertOk()
+            ->assertSee('name="robots" content="index, follow"', false)
+            ->assertSee('<h2>Tavla nasıl bir oyun?</h2>', false)
+            ->assertSee('<h2>Kazanma türleri: tekli, mars ve backgammon</h2>', false)
+            ->assertSee('<h3>Telefondan tavla oynanır mı?</h3>', false);
     }
 
     public function test_online_tavla_has_reciprocal_hreflang_to_backgammon(): void

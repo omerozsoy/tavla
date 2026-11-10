@@ -712,7 +712,7 @@ final class SeoMeta
         if ($slug === 'backgammon' && ($row = self::metaRow($slug)) !== null) {
             [$title, $desc, $h1] = $row;
             $url = self::$base . $slug;
-            $html = self::apply($html, $title, $desc, $h1, $url, null, 'website', self::landingRow($slug));
+            $html = self::apply($html, $title, $desc, $h1, $url, null, 'website', self::landingRow($slug), self::landingNoscript($slug));
             $html = self::applyEnglishLocale($html);
             $html = self::injectHreflang($html);
             $html = self::injectVideoGameJsonLd($html, $h1, $desc, $url, 'en');
@@ -1092,13 +1092,85 @@ final class SeoMeta
     /**
      * JS'siz crawler + AI fetcher (ChatGPT/Perplexity/Bing ham-HTML) için sunucu-render landing
      * gövdesi. Görünür içerik SeoContent.tsx'te JS ile gelir; ham HTML yalnız bunu görür -> AI
-     * alıntılanabilirliği için gerçek metin lazım. ponytail: SeoContent.tsx OnlineTavlaContent'in
-     * ÖZETİ, elle senkron (JSX PHP'den okunamaz, tek-kaynak yok); landing sayısı artarsa ortak bir
-     * veri dosyasına taşı. Yalnız varsayılan marka (TR); gammon/EN için null (thin landing'e düşer).
+     * alıntılanabilirliği için gerçek metin lazım. ponytail: SeoContent.tsx landing'lerinin (online-tavla,
+     * tavla-oyna TR + backgammon EN) ÖZETİ, elle senkron (JSX PHP'den okunamaz, tek-kaynak yok); landing
+     * sayısı artarsa ortak bir veri dosyasına taşı. backgammon her markada EN; TR landing'ler yalnız
+     * varsayılan marka (gammon'da online-tavla/tavla-oyna İngilizce metaRow'a düşer -> null).
      */
     private static function landingNoscript(string $slug): ?string
     {
-        if (! self::isDefaultBrand() || $slug !== 'online-tavla') {
+        // /backgammon: her markada İngilizce landing -> İngilizce zengin gövde.
+        if ($slug === 'backgammon') {
+            return <<<'HTML'
+        <h2>What is online backgammon?</h2>
+        <p>Online backgammon is the classic board game played over the internet, against real opponents or a computer. You do not need a physical board, dice or someone across the table; you match with players from all over the world in seconds. At TavlaTv the dice are generated server-side with secure randomness (CSPRNG), so every roll is transparent and provably fair. The board is set up automatically, the rules are enforced inside the game and illegal moves are rejected, so you focus only on playing.</p>
+        <h2>How to play backgammon online</h2>
+        <p>Playing backgammon online at TavlaTv needs no installation or signup; everything runs in your browser:</p>
+        <ul>
+        <li>Open the site and start a new match instantly, even as a guest.</li>
+        <li>Pick your opponent: a live human, the AI bot for practice, or a private room with a friend.</li>
+        <li>Choose the match length, time control and doubling-cube setting.</li>
+        <li>Roll the dice, move your checkers and bear them all off — the first to finish wins.</li>
+        </ul>
+        <h2>TavlaTv features</h2>
+        <ul>
+        <li><strong>Free and no signup:</strong> start as a guest; playing costs nothing.</li>
+        <li><strong>Live games and tournaments:</strong> play rated matches against real players and join online tournaments.</li>
+        <li><strong>Strong AI:</strong> practice against a neural-network backgammon bot and choose its level.</li>
+        <li><strong>Match analysis (PR):</strong> after every game see a performance rating showing how close your moves were to the best play, and learn from your mistakes.</li>
+        <li><strong>Mobile friendly:</strong> plays in the browser on phones and tablets with no app to install.</li>
+        </ul>
+        <h3>Is online backgammon free?</h3>
+        <p>Yes, backgammon is completely free at TavlaTv. An optional Premium membership adds advanced analysis and an ad-free experience.</p>
+        <h3>Can I play without signing up?</h3>
+        <p>Yes, you can play instantly as a guest. A free account is recommended for rating, match history and tournaments.</p>
+        <h3>Are the dice fair?</h3>
+        <p>Dice rolls are generated server-side with secure randomness (CSPRNG) and are provably fair; no player can change the outcome.</p>
+        <h3>Can I play backgammon on mobile?</h3>
+        <p>Yes, TavlaTv is mobile-friendly and runs in the browser on phones and tablets without installing any app.</p>
+        HTML;
+        }
+
+        // TR landing'ler yalnız varsayılan marka (gammon'da /online-tavla,/tavla-oyna İngilizce
+        // metaRow'a düşer; onlara TR gövde basmak yanlış -> null = thin landing).
+        if (! self::isDefaultBrand()) {
+            return null;
+        }
+
+        if ($slug === 'tavla-oyna') {
+            return <<<'HTML'
+        <h2>Tavla nasıl bir oyun?</h2>
+        <p>Tavla, iki oyuncunun on beşer taşla oynadığı, hem şans hem stratejinin birlikte belirleyici olduğu klasik bir masa oyunudur. Amaç, tüm taşlarını kendi ev bölgene getirip tahtadan ilk toplayan (bear off) oyuncu olmaktır. Zarlar şansı, hangi taşı nasıl oynayacağın ise stratejiyi temsil eder. TavlaTV'de tahta otomatik kurulur ve kurallar oyunun içinde uygulanır; sen yalnızca en iyi hamleyi düşünmeye odaklanırsın.</p>
+        <h2>Nasıl tavla oynanır?</h2>
+        <p>Tavla oynamaya başlamak sandığından kolaydır; temel akış şöyle işler:</p>
+        <ul>
+        <li>Sıra sende iki zar atarsın; her zar bir taşın kaç hane ilerleyeceğini gösterir.</li>
+        <li>İki farklı taşı ayrı oynayabilir ya da uygunsa tek taşı iki zarın toplamı kadar ilerletebilirsin.</li>
+        <li>Aynı sayıyı atarsan (çift) o değeri dört kez oynarsın.</li>
+        <li>Rakibin tek taşı olan haneye gelirsen onu vurursun; vurulan taş bara gider ve yeniden girmesi gerekir.</li>
+        <li>Tüm taşların evine ulaşınca toplamaya başlarsın; hepsini ilk toplayan kazanır.</li>
+        </ul>
+        <h2>Kime karşı tavla oynarsın?</h2>
+        <ul>
+        <li><strong>Yapay zekâya karşı:</strong> sinir ağı tabanlı tavla botuyla seviye seçerek pratik yap.</li>
+        <li><strong>Gerçek rakiplerle:</strong> dünyanın her yerinden oyuncularla puanlı canlı maçlar yap.</li>
+        <li><strong>Arkadaşınla:</strong> özel oda kur, davet kodunu paylaş ve dilediğin ayarlarla oyna.</li>
+        <li><strong>Turnuvalarda:</strong> online turnuvalara katılıp eleme tablolarında yüksel.</li>
+        </ul>
+        <h2>Kazanma türleri: tekli, mars ve backgammon</h2>
+        <p>Tavlada her galibiyet aynı değerde değildir. Rakip en az bir taş toplayabildiyse normal (tekli) galibiyet alırsın, oyun bir puandır. Rakip hiç taş toplayamadan biterse bu mars (gammon) olur ve iki puan kazanırsın. Rakibin hâlâ barda ya da senin evinde taşı varsa backgammon olur ve üç puan alırsın; küp devredeyse bu puanlar katlanır. TavlaTV bunların hepsini otomatik hesaplar.</p>
+        <h3>Tavla oynamak ücretsiz mi?</h3>
+        <p>Evet, TavlaTV'de tavla oynamak tamamen bedavadır. Dilersen Premium üyelikle ekstra analiz ve reklamsız deneyim edinebilirsin.</p>
+        <h3>Yeni başlayanlar için uygun mu?</h3>
+        <p>Kesinlikle. Kurallar oyunun içinde uygulandığı için hata yapmadan öğrenirsin; tavla nasıl oynanır rehberimiz her adımı sade dille anlatır.</p>
+        <h3>Tek başıma tavla oynayabilir miyim?</h3>
+        <p>Evet, yapay zekâ botuna karşı tek başına oynayarak pratik yapabilir, açılışları ve stratejileri deneyebilirsin.</p>
+        <h3>Telefondan tavla oynanır mı?</h3>
+        <p>Evet, TavlaTV mobil uyumludur; telefon ve tabletlerde uygulama indirmeden tarayıcıdan oynanır.</p>
+        HTML;
+        }
+
+        if ($slug !== 'online-tavla') {
             return null;
         }
 
