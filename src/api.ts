@@ -1505,6 +1505,7 @@ export interface Tournament {
   champion_id?: number | null
   /** Biten turnuvanin sampiyonu — ozet listede (index) de gelir (ana sayfa Top List kolonu). */
   champion?: { id: number; name: string; avatar?: string | null; premium?: boolean } | null
+  finished_at?: string | null // bitiş zamanı (status 'finished'); Top List "Turnuva Birincileri" en son biten sırası
   /** Lobi duyurulari (admin panelden; en yeni ustte). Yeni duyuruda istemci zil calar. */
   announcements?: { id: number; message: string; at: string | null }[]
   /** Son 90sn icinde aktif (online) oyuncu id'leri — bracket/katilimci online noktasi. */

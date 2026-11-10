@@ -45,7 +45,8 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
         if (!alive) return
         const rows = ts
           .filter((tr) => tr.status === 'finished' && tr.champion)
-          .sort((a, b) => b.id - a.id)
+          // EN SON BİTEN turnuva 1. sırada: bitiş zamanına göre (yoksa id'ye düş).
+          .sort((a, b) => (b.finished_at ?? '').localeCompare(a.finished_at ?? '') || b.id - a.id)
           .slice(0, 3)
           .map((tr) => ({
             id: tr.champion!.id,

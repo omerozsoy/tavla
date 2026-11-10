@@ -1704,6 +1704,9 @@ class TournamentController extends Controller
             // Ana sayfa "Top List" Turnuva Birincileri kolonu: biten turnuvanin sampiyon kimligi
             // (ozet listede tam players dizisi tasinmaz -> sadece sampiyon). full()'da champion_id ayrica var.
             'champion' => $this->championSummary($t),
+            // Ana sayfa "Turnuva Birincileri": EN SON BİTEN turnuva 1. sırada olsun diye bitiş zamanı
+            // (status 'finished' olunca güncellenen updated_at) — frontend buna göre sıralar (id değil).
+            'finished_at' => $t->status === 'finished' ? optional($t->updated_at)->toIso8601String() : null,
             'prize_coins' => $t->prize_coins ?? 0,
             'prize_desc' => $t->prize_desc,
             // coins int'e zorlanir: JSON'da string kalirsa frontend toplama '+' ile
