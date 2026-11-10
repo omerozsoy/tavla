@@ -1132,7 +1132,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                 onClick={() => onSpectate?.(m.room!, m.p1!.name, m.p2!.name)}
                                 aria-label={t('tourn.watch')}
                               >
-                                <Icon name="eye" size={13} /> {t('swiss.pairLive')}{(viewerCounts[(m.room || '').toUpperCase()] ?? 0) > 0 && <span className="swiss-pair-vn"> · {viewerCounts[(m.room || '').toUpperCase()]}</span>}
+                                {t('swiss.pairLive')}{(viewerCounts[(m.room || '').toUpperCase()] ?? 0) > 0 && <span className="swiss-pair-vn"> · <Icon name="eye" size={12} /> {viewerCounts[(m.room || '').toUpperCase()]}</span>}
                               </button>
                             )
                           else result = <span className="swiss-pair-pending">{t('swiss.pairPending')}</span>
