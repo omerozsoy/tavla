@@ -1511,13 +1511,13 @@
 .mgz-card-add {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   background: var(--ink);
   color: var(--paper);
   border: 1px solid var(--ink);
-  padding: 0.5rem 0.85rem;
+  padding: 0.32rem 0.55rem;
   font-weight: 400;
-  font-size: 0.74rem;
+  font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   white-space: nowrap;

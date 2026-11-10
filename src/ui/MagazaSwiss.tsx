@@ -332,7 +332,7 @@ export default function MagazaSwiss({
                         disabled={out}
                         aria-label={`${p.name} sepete ekle`}
                       >
-                        <Icon name="cart" size={15} /> {out ? 'Tükendi' : 'Sepete Ekle'}
+                        <Icon name="cart" size={13} /> {out ? 'Tükendi' : 'Sepete Ekle'}
                       </button>
                     )}
                   </div>

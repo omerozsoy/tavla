@@ -1403,7 +1403,7 @@ export default function App() {
       : cardPay
         ? 'kart-odeme/' + cardPay.paymentId // Kart ödeme GERÇEK sayfa; state sessionStorage'da -> yenilemede kurulur
       : deliveryOpen
-        ? 'odeme' // Teslimat & Ödeme adımı
+        ? 'teslimat-bilgileri' // Teslimat adımı (ödeme AYRI: /kart-odeme). /teslimat yasal sayfa → çakışmasın.
       : cartOpen
         ? 'sepet'
       : shopOpen
@@ -1738,8 +1738,9 @@ export default function App() {
           if (!restored) setCartOpen(true)
           break
         }
-        case 'odeme':
-          // Teslimat & Ödeme adımı: sepet localStorage'da -> yenileme/geri ile gelince adım açılır
+        case 'teslimat-bilgileri':
+        case 'odeme': // eski URL (geriye uyumlu): teslimat adımına düşer, currentSlug /teslimat-bilgileri'ye normalize eder
+          // Teslimat adımı: sepet localStorage'da -> yenileme/geri ile gelince adım açılır
           // (adres/yöntem yeniden seçilir). Sepet boşsa DeliveryStep boş-özet gösterir.
           setDeliveryOpen(true)
           break
@@ -5886,11 +5887,56 @@ export default function App() {
     }
   }
 
-  // §5.2 ONAYLI rakip hamlesi COSMETIC replay'i KALDIRILDI (kullanıcı raporu LL9H3): canlı önizleme
-  // (oppLive) rakip oynarken hamleyi zaten gösteriyor; sıra bana geçtikten sonra aynı hamleyi yeniden
-  // oynatmak "sıra bende ama rakip tekrar oynuyor" algısı yaratıyordu. Artık sıra geçince tahta otoriter
-  // sonuca ANINDA snap eder (oppReplay state'i hiç set edilmez -> aşağıdaki oppReplay guard'ları inert).
-  // clearOppReplay korunur (bekleyen önizleme/zar sesi guard'ları onu çağırır).
+  // §5.2 ONAYLI rakip hamlesini adım adım oynat (COSMETIC). `base` = rakibin tur-başı tahtası (zarlı),
+  // `steps` = reconstruct edilen hamle, `oc` = rakip rengi. Otoriteye (turnStart/skor/saat) DOKUNMAZ;
+  // tahta gösterimini (boardDisplay) kısa süre base+adımlar olarak tutar, bitince otoriter sonuca döner.
+  //
+  // ÇİFT-OYNATMA vs SNAP dengesi (kullanıcı raporları LL9H3 "iki kez oynanıyor" ⇄ "hamleyi hiç
+  // göremiyorum, snap"): TEK guard — canlı önizleme (oppLive) bu tur ADIM GÖSTERDİYSE replay YAPMA
+  // (snap). Rakip oynarken room.live zaten gösterdi; üstüne replay = çift animasyon (LL9H3). Replay
+  // YALNIZCA önizleme TAMAMEN kaçtığında (oppLiveShownRef boş: hızlı oyuncu / çift zar / kaçan ara-poll)
+  // devreye girer — o turda ekran snap ediyordu, kullanıcı hamleyi göremiyordu. Böylece die-sırası
+  // sapmasına (6-2 vs 2-6) dayanan kırılgan replayStartIndex karşılaştırması hiç gerekmez.
+  function maybeReplayOppMove(base: GameState, steps: Step[], oc: Player) {
+    if (!online || room?.bot) return // bot'un kendi reveal animasyonu var (botAnim) — çift oynatma yok
+    if (steps.length === 0) return // dance (0 adım) ayrı ele alınır (oppDance overlay)
+    if (oppLiveShownRef.current.length > 0) return // önizleme bu tur gösterdi -> snap (çift oynatma yok)
+    const canAnim =
+      animOn && moveStyle !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!canAnim) return
+    if (resultShowingRef.current || inLobbyRef.current) return
+    clearOppReplay()
+    setOppReplay({ base, steps, shown: 0, color: oc })
+    oppReplayRef.current = { base, steps, shown: 0, color: oc }
+    const timers: number[] = []
+    for (let i = 0; i < steps.length; i++) {
+      timers.push(
+        window.setTimeout(
+          () => {
+            const st = steps[i]
+            const r = sourceRect(st.from) // o anki (replay) tahtada kaynağı yakala -> hedefe uçur
+            if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r, offColor: oc }
+            if (!resultShowingRef.current && !inLobbyRef.current) {
+              const pre = applyPlayed(base, steps.slice(0, i))
+              const moverSign = oc === 'white' ? 1 : -1
+              const hit =
+                typeof st.to === 'number' &&
+                pre.points[st.to] !== 0 &&
+                Math.sign(pre.points[st.to]) !== moverSign &&
+                Math.abs(pre.points[st.to]) === 1
+              if (hit) Sound.hit()
+              else Sound.move()
+            }
+            setOppReplay((cur) => (cur ? { ...cur, shown: i + 1 } : cur))
+          },
+          (i + 1) * 450,
+        ),
+      )
+    }
+    // GÜVENLİK: her koşulda temizle (stick engeli) — son adımdan ~0.6sn sonra otoriter sonuca dön.
+    timers.push(window.setTimeout(() => clearOppReplay(), steps.length * 450 + 600))
+    oppReplayTimersRef.current = timers
+  }
 
   // Sunucu-otoriter durumu (server_state + server_match) uygula (Faz 2). Yalniz TUR SINIRINDA
   // cagirilir (mid-move'u ezmemek icin poll'da korunur). Otorite SUNUCU: tahta + skor + KUP +
@@ -5975,12 +6021,11 @@ export default function App() {
               m: turnNotation(steps, oc),
             })
           }
-          // §5.2 REPLAY ANİMASYONU KALDIRILDI (kullanıcı raporu LL9H3): canlı önizleme (oppLive) rakip
-          // OYNARKEN hamleyi zaten gösteriyor. Sıra bana geçtikten SONRA aynı hamleyi otoriter tahtadan
-          // adım adım yeniden oynatmak, poll rakibin turunu kaçırdığında (oppLiveShownRef boş) "sıra bende
-          // ama rakibin hamlesi tekrar oynanıyor" algısı yaratıyordu. Artık sıra geçince tahta otoriter
-          // sonuca ANINDA snap eder. Rekonstrüksiyon + matchLog/.mat kaydı YUKARIDA korunur (yalnız
-          // kozmetik replay gider). oppReplay state'i artık hiç set edilmez (replay fonksiyonu silindi).
+          // §5.2 KOŞULLU REPLAY (kullanıcı raporu: "rakibin hamlelerini göremiyorum, oynanmış hali
+          // geliyor"): canlı önizleme (oppLive) rakip oynarken hamleyi gösteriyorsa tekrar oynatma (snap,
+          // çift-oynatma LL9H3 yok); önizleme KAÇTIYSA (hızlı oyuncu/çift zar/ara-poll) maybeReplayOppMove
+          // otoriter tahtadan adım adım oynatır. Guard maybeReplayOppMove içinde (oppLiveShownRef boş mu).
+          if (!ended) maybeReplayOppMove(oppBase, steps, oc)
           // ONLINE RAKİP DANCE: 0 adım (gele/bardan giremedi) -> replay tetiklenmez. Rakibin zarı +
           // ortada silik "Hamle Yok" overlay'ini kısa süre göster (turnStart bana döndüğü için noMove
           // koşulu yakalayamaz). SERVER_BOT bot odası da (mode='online' + room.bot) sunucu-sync ile

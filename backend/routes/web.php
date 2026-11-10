@@ -187,7 +187,7 @@ Route::fallback(function (Request $request) {
         'urunler', 'hizmetler', 'nasil-oynanir', 'tavla-rehberi', 'turnuva-kurallari', 'sikca-sorulan-sorular', 'dersler', 'bulmaca',
         'pozisyon-analizi', 'mat-analiz', 'basarimlar', 'hata-gunlugu', 'mac-analizleri',
         'oyun-onizleme', 'cerceve-anim', 'adillik',
-        'uyelik', 'magaza', 'pul-tasarimlari', 'siparislerim', 'sepet', 'odeme', 'kart-odeme', 'cerceveler',
+        'uyelik', 'magaza', 'pul-tasarimlari', 'siparislerim', 'sepet', 'teslimat-bilgileri', 'odeme', 'kart-odeme', 'cerceveler',
         'istatistiklerim', 'profil', 'profil-duzenle', 'ayarlar', 'tahta-ayarlari',
         'giris', 'sifremi-unuttum',
         'bilgi', 'izle',
