@@ -139,7 +139,8 @@ class AddressCartTest extends TestCase
         $this->assertNull($res->json('url'));
         $payment = Payment::where('kind', 'cart')->first();
         $this->assertNotNull($payment);
-        $this->assertSame(10000, (int) $payment->amount);
+        // 10000 ürün + 25000 KARGO (fiziksel ürün sabit 250 TL) = 35000 kuruş.
+        $this->assertSame(35000, (int) $payment->amount);
         $this->assertCount(1, (array) $payment->product_order_ids);
         $this->assertSame('pending', ProductOrder::first()->status);
         $this->assertSame(5, $p->fresh()->stock); // ödeme öncesi stok düşmez

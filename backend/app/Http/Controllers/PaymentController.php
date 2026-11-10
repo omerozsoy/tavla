@@ -560,7 +560,9 @@ class PaymentController extends Controller
             }
         }
 
-        $totalKurus = $packagesKurus + $productsKurus;
+        // Kargo: fiziksel ürün varsa SABİT 250 TL (25000 kuruş). Coin paketi/üyelik kargosuz.
+        $shippingKurus = count($products) > 0 ? 25000 : 0;
+        $totalKurus = $packagesKurus + $productsKurus + $shippingKurus;
         if ($totalKurus <= 0) {
             return $this->fail('Sepet tutarı geçersiz.', 422);
         }

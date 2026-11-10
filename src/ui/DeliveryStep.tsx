@@ -2,24 +2,34 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useCoinPackages } from '../useCoinPackages'
-import { getAddresses, getBankTransferInfo, type Address, type BankInfo, type PayMethod } from '../api'
+import {
+  getAddresses,
+  getBankTransferInfo,
+  createAddress,
+  updateAddress,
+  type Address,
+  type AddressInput,
+  type BankInfo,
+  type PayMethod,
+} from '../api'
+import { PROVINCES } from '../provinces'
+import { districtsOf } from '../districts'
 import { MEMBERSHIP_PRICE_TL, type CartItem, type CartAddressSel } from './Cart'
 import './CheckoutSwiss.css'
 
+const SHIPPING_TL = 250 // Kargo: fiziksel ürün varsa SABİT (backend ile aynı: 25000 kuruş).
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₺`
 
-// TESLİMAT & ÖDEME adımı (/odeme) — GERÇEK sayfa (page-host, modal YOK). Sepet ile Kart Ödeme
-// arasında: teslimat/fatura adresi + ödeme yöntemi seçilir, sonra onPay -> sunucu siparişi (pending)
-// -> /kart-odeme (kart) veya havale talimatı.
+// TESLİMAT & ÖDEME adımı (/odeme) — GERÇEK sayfa (page-host, modal YOK). Teslimat + fatura adresi
+// (yan yana, buradan girilebilir/düzenlenebilir) + kargo + ödeme yöntemi -> onPay -> /kart-odeme.
 export default function DeliveryStep({
   items,
   onBack,
-  onManageAddresses,
   onPay,
 }: {
   items: CartItem[]
   onBack: () => void
-  onManageAddresses: () => void
+  onManageAddresses?: () => void
   onPay: (sel: CartAddressSel, method: PayMethod) => Promise<void>
 }) {
   useEscape(onBack)
@@ -36,12 +46,12 @@ export default function DeliveryStep({
   const memItem = items.find((i) => i.kind === 'membership')
   const productRows = items.filter((i) => i.kind === 'product' && i.product)
   const hasProducts = productRows.length > 0
-  const coinRows = items.filter((i) => (i.kind === 'coins' || i.kind === undefined))
+  const coinRows = items.filter((i) => i.kind === 'coins' || i.kind === undefined)
 
   const shippingAddrs = useMemo(() => addresses.filter((a) => a.type === 'shipping'), [addresses])
   const billingAddrs = useMemo(() => addresses.filter((a) => a.type === 'billing'), [addresses])
 
-  // Ödenecek tutar (TL): para-ürünleri + coin paketleri + üyelik.
+  // Tutarlar (TL): para-ürünleri + coin paketleri + üyelik + KARGO (fiziksel üründe).
   const moneyProductsTL = productRows
     .filter((i) => i.product!.payment === 'money')
     .reduce((s, i) => s + ((i.product!.moneyPrice ?? 0) / 100) * i.qty, 0)
@@ -49,9 +59,13 @@ export default function DeliveryStep({
     const pkg = coinPackages.find((p) => p.id === it.id)
     return s + (pkg ? pkg.price * it.qty : 0)
   }, 0)
-  const totalTL = memItem ? MEMBERSHIP_PRICE_TL : moneyProductsTL + packagesTL
+  const subtotalTL = memItem ? MEMBERSHIP_PRICE_TL : moneyProductsTL + packagesTL
+  const shippingTL = hasProducts ? SHIPPING_TL : 0
+  const totalTL = subtotalTL + shippingTL
   const itemCount = memItem ? 1 : productRows.reduce((s, i) => s + i.qty, 0) + coinRows.reduce((s, i) => s + i.qty, 0)
-  const moneyDue = !!memItem || totalTL > 0
+  const moneyDue = !!memItem || subtotalTL > 0
+
+  const reload = () => getAddresses().then(setAddresses).catch(() => {})
 
   useEffect(() => {
     if (!hasProducts) return
@@ -85,7 +99,7 @@ export default function DeliveryStep({
 
   async function pay() {
     if (shippingRequired) {
-      setErr('Lütfen bir teslimat adresi seç (ya da ekle).')
+      setErr('Lütfen bir teslimat adresi seç veya gir.')
       return
     }
     setErr('')
@@ -101,7 +115,7 @@ export default function DeliveryStep({
   return (
     // GERÇEK SAYFA (modal değil): page-host akışında statik Swiss teslimat & ödeme adımı.
     <div className="register-overlay page">
-      <div className="ckw ckw-pay">
+      <div className="ckw ckw-delivery">
         <header className="ckw-pay-head">
           <div>
             <p className="ckw-eyebrow">Adım 2 / 3 · Teslimat</p>
@@ -115,12 +129,45 @@ export default function DeliveryStep({
           </div>
         </header>
 
-        {/* Sipariş özeti (salt-okunur) */}
+        {/* Teslimat + Fatura adresi — YAN YANA, buradan girilebilir/düzenlenebilir */}
+        {hasProducts && (
+          <div className="ckw-addr-grid">
+            <AddressField
+              label="Teslimat adresi"
+              type="shipping"
+              addresses={shippingAddrs}
+              selectedId={shipId}
+              onSelect={setShipId}
+              onReload={reload}
+            />
+            <AddressField
+              label="Fatura adresi (isteğe bağlı)"
+              type="billing"
+              addresses={billingAddrs}
+              selectedId={billId}
+              onSelect={setBillId}
+              onReload={reload}
+              optional
+            />
+          </div>
+        )}
+
+        {/* Sipariş özeti (kargo dahil) */}
         <div className="ckw-block">
           <label className="ckw-label">Sipariş Özeti</label>
           <div className="ckw-rows">
             <div className="ckw-row">
-              <span>{memItem ? '1 Yıllık Premium Üyelik' : `${itemCount} ürün`}</span>
+              <span>{memItem ? '1 Yıllık Premium Üyelik' : `Ara toplam · ${itemCount} ürün`}</span>
+              <span className="tnum">{fmtTL(subtotalTL)}</span>
+            </div>
+            {hasProducts && (
+              <div className="ckw-row">
+                <span>Kargo</span>
+                <span className="tnum">{fmtTL(SHIPPING_TL)}</span>
+              </div>
+            )}
+            <div className="ckw-row ckw-row-total">
+              <span>Ödenecek</span>
               <span className="tnum">{fmtTL(totalTL)}</span>
             </div>
           </div>
@@ -128,37 +175,6 @@ export default function DeliveryStep({
             <Icon name="caret-left" size={13} /> Sepeti düzenle
           </button>
         </div>
-
-        {/* Teslimat + fatura adresi (yalnız fiziksel ürün varsa) */}
-        {hasProducts && (
-          <div className="ckw-block">
-            <label className="ckw-label">Teslimat adresi</label>
-            {shippingAddrs.length > 0 ? (
-              <select value={shipId ?? ''} onChange={(e) => setShipId(e.target.value ? Number(e.target.value) : null)}>
-                <option value="">Seç…</option>
-                {shippingAddrs.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {(a.title ? a.title + ' — ' : '') + a.name + ', ' + a.city}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="ckw-unit">Kayıtlı adres yok — lütfen bir adres ekle.</span>
-            )}
-            <label className="ckw-label">Fatura adresi (isteğe bağlı)</label>
-            <select value={billId ?? ''} onChange={(e) => setBillId(e.target.value ? Number(e.target.value) : null)}>
-              <option value="">Teslimat ile aynı</option>
-              {billingAddrs.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {(a.title ? a.title + ' — ' : '') + (a.company || a.name) + ', ' + a.city}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="ckw-addr-link" onClick={onManageAddresses}>
-              <Icon name="pin" size={13} /> Adres ekle / yönet
-            </button>
-          </div>
-        )}
 
         {/* Ödeme yöntemi (para ödemesi varsa ve havale açıksa) */}
         {moneyDue && bankInfo?.enabled && (
@@ -212,6 +228,147 @@ export default function DeliveryStep({
             : 'Ödemen onaylanınca siparişin işleme alınır. Kart bilgilerin saklanmaz.'}
         </p>
       </div>
+    </div>
+  )
+}
+
+// ---- Adres alanı: kayıtlıdan seç VEYA buradan gir/düzenle (inline form) ----
+function AddressField({
+  label,
+  type,
+  addresses,
+  selectedId,
+  onSelect,
+  onReload,
+  optional = false,
+}: {
+  label: string
+  type: 'shipping' | 'billing'
+  addresses: Address[]
+  selectedId: number | null
+  onSelect: (id: number | null) => void
+  onReload: () => Promise<void>
+  optional?: boolean
+}) {
+  const empty = (): AddressInput => ({ type, title: '', name: '', phone: '', address: '', city: '', district: '', postal: '' })
+  // Zorunlu alanda kayıtlı adres yoksa form doğrudan açık gelsin.
+  const [editing, setEditing] = useState(!optional && addresses.length === 0)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [f, setF] = useState<AddressInput>(empty())
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const set = (k: keyof AddressInput, v: string) => setF((p) => ({ ...p, [k]: v }))
+  const ilceler = districtsOf(f.city)
+
+  const startNew = () => {
+    setEditId(null)
+    setF(empty())
+    setErr('')
+    setEditing(true)
+  }
+  const startEdit = () => {
+    const a = addresses.find((x) => x.id === selectedId)
+    if (!a) return
+    setEditId(a.id)
+    setF({ ...a })
+    setErr('')
+    setEditing(true)
+  }
+  async function save() {
+    if (!f.name.trim() || !f.phone.trim() || !f.city || !f.address.trim()) {
+      setErr('Ad, telefon, il ve adres zorunlu.')
+      return
+    }
+    setBusy(true)
+    setErr('')
+    try {
+      const saved = editId ? await updateAddress(editId, f) : await createAddress(f)
+      await onReload()
+      onSelect(saved.id)
+      setEditing(false)
+    } catch (e) {
+      setErr((e as { message?: string })?.message || 'Adres kaydedilemedi.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="ckw-addr-field">
+      <label className="ckw-label">{label}</label>
+
+      {!editing ? (
+        <>
+          {addresses.length > 0 ? (
+            <select value={selectedId ?? ''} onChange={(e) => onSelect(e.target.value ? Number(e.target.value) : null)}>
+              <option value="">{optional ? 'Teslimat ile aynı' : 'Seç…'}</option>
+              {addresses.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {(a.title ? a.title + ' — ' : '') + a.name + ', ' + (a.district ? a.district + '/' : '') + a.city}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="ckw-unit">Kayıtlı adres yok</span>
+          )}
+          <div className="ckw-addr-acts">
+            <button type="button" className="ckw-addr-link" onClick={startNew}>
+              <Icon name="plus" size={13} /> Yeni adres
+            </button>
+            {selectedId != null && (
+              <button type="button" className="ckw-addr-link" onClick={startEdit}>
+                <Icon name="pencil" size={13} /> Düzenle
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="ckw-addr-form">
+          <input placeholder="Ad Soyad" value={f.name} onChange={(e) => set('name', e.target.value)} maxLength={120} autoComplete="name" />
+          <input placeholder="Telefon" value={f.phone} onChange={(e) => set('phone', e.target.value)} maxLength={40} inputMode="tel" autoComplete="tel" />
+          <div className="ckw-addr-row">
+            <select value={f.city} onChange={(e) => setF((p) => ({ ...p, city: e.target.value, district: '' }))}>
+              <option value="">İl seç…</option>
+              {PROVINCES.map((il) => (
+                <option key={il} value={il}>
+                  {il}
+                </option>
+              ))}
+            </select>
+            {ilceler.length > 0 ? (
+              <select value={f.district ?? ''} onChange={(e) => set('district', e.target.value)} disabled={!f.city}>
+                <option value="">İlçe</option>
+                {ilceler.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input placeholder="İlçe" value={f.district ?? ''} onChange={(e) => set('district', e.target.value)} maxLength={80} />
+            )}
+          </div>
+          <textarea
+            placeholder="Mahalle, sokak, kapı/daire no"
+            value={f.address}
+            onChange={(e) => set('address', e.target.value)}
+            rows={2}
+            maxLength={1000}
+          />
+          <input placeholder="Posta kodu (ops.)" value={f.postal ?? ''} onChange={(e) => set('postal', e.target.value)} maxLength={20} inputMode="numeric" />
+          {err && <p className="ckw-err">{err}</p>}
+          <div className="ckw-addr-acts">
+            {(addresses.length > 0 || optional) && (
+              <button type="button" className="ckw-btn ckw-btn-ghost ckw-btn-sm" onClick={() => setEditing(false)}>
+                Vazgeç
+              </button>
+            )}
+            <button type="button" className="ckw-btn ckw-btn-sm" onClick={save} disabled={busy}>
+              {busy ? 'Kaydediliyor…' : 'Adresi Kaydet'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

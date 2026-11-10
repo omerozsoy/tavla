@@ -562,6 +562,68 @@
   }
 }
 
+/* ===================== TESLİMAT & ÖDEME ADIMI ===================== */
+.ckw-delivery {
+  max-width: 820px;
+}
+/* Teslimat + Fatura YAN YANA */
+.ckw-addr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 1px solid var(--line);
+}
+.ckw-addr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ckw-addr-acts {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+.ckw-addr-acts .ckw-addr-link {
+  padding: 0.1rem 0;
+}
+.ckw-addr-acts .ckw-btn {
+  flex: 1;
+}
+.ckw-addr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ckw-addr-form input,
+.ckw-addr-form textarea,
+.ckw-addr-form select {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.55rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+.ckw-addr-form input:focus,
+.ckw-addr-form textarea:focus,
+.ckw-addr-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ckw-addr-form input::placeholder,
+.ckw-addr-form textarea::placeholder {
+  color: var(--ink-40);
+}
+.ckw-addr-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 900px) {
   .ckw-grid {
@@ -569,6 +631,11 @@
   }
   .ckw-summary {
     position: static;
+  }
+}
+@media (max-width: 640px) {
+  .ckw-addr-grid {
+    grid-template-columns: 1fr;
   }
 }
 @media (max-width: 560px) {
