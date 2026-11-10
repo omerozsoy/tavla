@@ -43,7 +43,6 @@ for (const item of [
   'iyzico-band.svg', // footer "iyzico ile Öde" kabul-kartı bandı
   'iyzico-band.png', // ^ raster yedek
   'pay-visa-mastercard.png', // footer ödeme rozeti: Visa + Mastercard
-  'pay-garanti.png', // footer ödeme rozeti: Garanti BBVA
   'assets',
   'models',
   'fonts', // self-hosted Google Fonts woff2 (Spectral+Outfit); src/fonts.css -> /fonts/*.woff2
