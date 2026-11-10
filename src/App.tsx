@@ -1190,7 +1190,13 @@ export default function App() {
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
   // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
   // oluşur (cartCheckout, imzalı URL) -> amount+url burada tutulur; kart gönderilince kullanılır.
-  const [cardPay, setCardPay] = useState<{ amount: number; paymentId: number; breakdown?: CardBreakdown } | null>(null)
+  const [cardPay, setCardPay] = useState<{
+    amount: number
+    paymentId?: number // pending akışta yok (sipariş "Öde"de oluşur); eski/çözülen akışta set edilir
+    breakdown?: CardBreakdown
+    pending?: { its: CartItem[]; code: string | null; sel: CartAddressSel } // "Öde"de executeCheckout'a verilecek sipariş
+  } | null>(null)
+  const [cardBusy, setCardBusy] = useState(false) // CardForm "Öde" -> executeCheckout sırasında spinner
   // Kart ödeme GERÇEK sayfa (modal değil): /kart-odeme/<id>. State sessionStorage'da tutulur ->
   // YENİLEMEDE korunur. YALNIZ YAZ: cardPay null olunca SİLME (applyFromPath başta closeAllPages
   // ile cardPay'i null'lar, SONRA route-case sessionStorage'dan geri kurar -> burada silseydik
@@ -1264,19 +1270,29 @@ export default function App() {
   // Siparişi sunucuda oluştur (pending) -> kart formu (/kart-odeme) veya havale talimatı.
   // DeliveryStep (Teslimat & Ödeme adımı) çağırır: adres/yöntem seçildikten sonra. Üyelik tek
   // başına / coin ürünleri (anında) / para kısmı (kart|havale) aynı eski akış.
-  async function runCheckout(its: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod, breakdown?: CardBreakdown) {
+  // ASIL sipariş oluşturma (sunucu). KART ödemesinde "Öde" (handleCardPay) çağırır -> sipariş ancak
+  // ödeme aksiyonundan SONRA düşer (kullanıcı direktifi: ödeme yapılmadan pending sipariş oluşmasın).
+  // Havale/coin: runCheckout doğrudan çağırır (talimat/anında). card tamamlanınca CardForm kapanır + onay.
+  async function executeCheckout(its: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod) {
     const closeSteps = () => {
       setDeliveryOpen(false)
       setCartOpen(false)
     }
+    // KART: sipariş+ödeme oluştu (pending; gerçek tahsilat gateway bağlanınca). CardForm kapat + onay.
+    const cardDone = () => {
+      clearCardPay()
+      closeSteps()
+      notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
+      setMyOrdersOpen(true)
+    }
     if (its.some((i) => i.kind === 'membership')) {
       const r = await buyMembership(method)
-      closeSteps()
+      setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
       if (isBankTransfer(r)) {
-        setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
+        closeSteps()
         setBankData(r)
       } else {
-        setCardPay({ amount: r.amount, paymentId: r.payment_id, breakdown })
+        cardDone()
       }
       return
     }
@@ -1303,20 +1319,38 @@ export default function App() {
         code,
         method,
       })
-      closeSteps()
+      setCartItems((prev) =>
+        prev.filter((i) => !(i.kind === 'coins' || i.kind === undefined) && !(i.kind === 'product' && i.product?.payment === 'money')),
+      )
       if (isBankTransfer(r)) {
-        setCartItems((prev) =>
-          prev.filter((i) => !(i.kind === 'coins' || i.kind === undefined) && !(i.kind === 'product' && i.product?.payment === 'money')),
-        )
+        closeSteps()
         setBankData(r)
       } else {
-        setCardPay({ amount: r.amount, paymentId: r.payment_id, breakdown })
+        cardDone()
       }
     } else {
       closeSteps()
       notify.success('Siparişin alındı.')
       setMyOrdersOpen(true)
     }
+  }
+
+  // DeliveryStep "Kart Ödemeye Geç" çağırır. KART + para ödemesi: siparişi ŞİMDİ oluşturma -> CardForm'u
+  // aç; sipariş "Öde"de (handleCardPay -> executeCheckout) düşer. Havale/coin-only: hemen executeCheckout.
+  async function runCheckout(its: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod, breakdown?: CardBreakdown) {
+    const hasMoneyCharge = its.some(
+      (i) =>
+        i.kind === 'membership' ||
+        (i.kind === 'product' && i.product?.payment === 'money') ||
+        i.kind === 'coins' ||
+        i.kind === undefined,
+    )
+    if (method === 'card' && hasMoneyCharge) {
+      const amountKurus = Math.round((breakdown?.totalTL ?? 0) * 100)
+      setCardPay({ amount: amountKurus, breakdown, pending: { its, code, sel } })
+      return
+    }
+    await executeCheckout(its, code, sel, method)
   }
 
   // Checkout adım göstergesi (Sepet → Teslimat → Ödeme) — adımlar arası ileri/geri gezinme.
@@ -1401,7 +1435,7 @@ export default function App() {
       : bankData
         ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
       : cardPay
-        ? 'kart-odeme/' + cardPay.paymentId // Kart ödeme GERÇEK sayfa; state sessionStorage'da -> yenilemede kurulur
+        ? 'kart-odeme' + (cardPay.paymentId != null ? '/' + cardPay.paymentId : '') // GERÇEK sayfa; state sessionStorage'da. pending akışta paymentId yok (sipariş "Öde"de oluşur) -> id'siz /kart-odeme
       : deliveryOpen
         ? 'teslimat-bilgileri' // Teslimat adımı (ödeme AYRI: /kart-odeme). /teslimat yasal sayfa → çakışmasın.
       : cartOpen
@@ -1726,8 +1760,9 @@ export default function App() {
           try {
             const saved = sessionStorage.getItem('cardPay')
             if (saved) {
-              const cp = JSON.parse(saved) as { amount: number; paymentId: number }
-              if (cp && typeof cp.amount === 'number' && typeof cp.paymentId === 'number') {
+              const cp = JSON.parse(saved) as typeof cardPay
+              // pending akışta paymentId YOK (sipariş "Öde"de oluşur) -> amount + (paymentId VEYA pending) yeterli.
+              if (cp && typeof cp.amount === 'number' && (typeof cp.paymentId === 'number' || cp.pending)) {
                 setCardPay(cp)
                 restored = true
               }
@@ -8227,11 +8262,27 @@ export default function App() {
   // Kart ödeme formu "Öde": Payment sunucuda zaten PENDING oluştu (checkout). PayTR KALDIRILDI ->
   // online tahsilat yok; sipariş pending kalır (admin/ileride işler, Havale gibi). Kart verisi (_card)
   // sunucuya GÖNDERİLMEZ, loglanmaz. Kullanıcıya "alındı, onay bekleniyor" + Siparişlerim.
-  function handleCardPay(_card: CardPayData) {
+  // CardForm "Öde": sipariş ARTIK BURADA oluşur (kullanıcı direktifi: ödeme yapılmadan pending düşmesin).
+  // _card ile gerçek tahsilat (Garanti 3D) henüz bağlı DEĞİL -> executeCheckout pending sipariş+ödeme
+  // oluşturur ("ödeme onayı bekleniyor"); gateway bağlanınca gerçek charge bu noktada eklenecek.
+  async function handleCardPay(_card: CardPayData) {
     if (!cardPay) return
-    clearCardPay()
-    notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
-    setMyOrdersOpen(true)
+    const pending = cardPay.pending
+    if (!pending) {
+      // Eski/çözülen akış (paymentId'li) ya da pending yok -> güvenli onay.
+      clearCardPay()
+      notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
+      setMyOrdersOpen(true)
+      return
+    }
+    setCardBusy(true)
+    try {
+      await executeCheckout(pending.its, pending.code, pending.sel, 'card')
+    } catch (e) {
+      notify.error((e as { message?: string })?.message || 'Ödeme başlatılamadı.')
+    } finally {
+      setCardBusy(false)
+    }
   }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz. Yarış koruması:
   // damgayı HEMEN vur (uçuştaki heartbeat optimistik değeri ezmesin); POST onayında değeri + damgayı
@@ -10894,6 +10945,7 @@ export default function App() {
         <CardForm
           amount={cardPay.amount}
           breakdown={cardPay.breakdown}
+          busy={cardBusy}
           onClose={clearCardPay}
           onBack={() => {
             // "Geri Dön" -> ödeme adımından TESLİMAT adımına dön (bekleyen kart ödemesini kapat).
