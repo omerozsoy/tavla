@@ -118,10 +118,10 @@ class SwissRuntime
         }
         ksort($clean, SORT_NUMERIC);
         $state['schedule'] = $clean;
+        // next_at DAİMA sıradaki turun schedule'ına eşitlenir: saat silinirse next_at da temizlenir
+        // (aksi halde silinen turun kura şartı stale next_at ile hâlâ sağlanıyordu).
         $next = (string) self::nextRoundNo($t);
-        if (isset($clean[$next])) {
-            $state['next_at'] = $clean[$next];
-        }
+        $state['next_at'] = $clean[$next] ?? null;
         $t->swiss_state = $state;
         $t->save();
     }

@@ -39,7 +39,7 @@
                                 <span class="text-gray-500">Planlanıyor</span>
                             @endif
                         </div>
-                        <div class="w-28">
+                        <div class="flex w-40 items-center gap-2">
                             @if ($row['canStart'])
                                 <x-filament::button wire:click="startRound({{ $row['round'] }})" size="sm" color="success" icon="heroicon-o-play">
                                     Başlat
@@ -49,6 +49,17 @@
                                     :tooltip="$row['hasTime'] ? 'Önceki tur maçları bitmeli' : 'Önce saati girip kaydet'">
                                     Başlat
                                 </x-filament::button>
+                            @endif
+
+                            @if ($row['status'] !== 'drawn' && $row['hasTime'])
+                                <x-filament::icon-button
+                                    wire:click="clearTime({{ $row['round'] }})"
+                                    icon="heroicon-o-trash"
+                                    color="danger"
+                                    size="sm"
+                                    label="Saati sil"
+                                    tooltip="Bu turun saatini sil"
+                                />
                             @endif
                         </div>
                     </div>

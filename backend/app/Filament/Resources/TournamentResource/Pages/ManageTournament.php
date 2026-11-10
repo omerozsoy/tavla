@@ -176,6 +176,22 @@ class ManageTournament extends Page
         $this->maxRow++;
     }
 
+    /** Bir turun saatini sil (çekilmemiş turlar için). Kalan plan kaydedilir. */
+    public function clearTime(int $round): void
+    {
+        unset($this->roundTimes[(string) $round]);
+        $times = $this->normalizedTimes();
+        DB::transaction(function () use ($times): void {
+            $t = Tournament::lockForUpdate()->find($this->t()->id);
+            if ($t && SwissRuntime::isSwiss($t)) {
+                SwissRuntime::setSchedule($t, $times);
+            }
+        });
+        $this->record = $this->t()->fresh();
+        $this->syncRoundTimes();
+        Notification::make()->title($round.'. tur saati silindi')->success()->send();
+    }
+
     /** Girilen tüm tur saatlerini kaydet (Swiss). */
     public function saveTimes(): void
     {

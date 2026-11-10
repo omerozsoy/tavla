@@ -110,6 +110,33 @@ class TournamentSwissDrawPanelTest extends TestCase
         $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null, '2. tur planı korunur');
     }
 
+    public function test_clear_time_removes_round_schedule_and_next_at(): void
+    {
+        $t = $this->swiss(4);
+        SwissRuntime::start($t);
+        // 1. ve 2. tur planlı.
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->set('roundTimes', ['1' => '2026-11-05T20:00', '2' => '2026-11-06T20:00'])
+            ->call('saveTimes');
+        $this->assertSame('2026-11-05 20:00:00', $t->fresh()->swiss_state['next_at'] ?? null);
+
+        // 1. turun saatini SİL → schedule'dan düşer + next_at temizlenir (kura şartı kalkar).
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->call('clearTime', 1);
+        $t->refresh();
+        $this->assertArrayNotHasKey('1', $t->swiss_state['schedule'] ?? [], '1. tur saati silindi');
+        $this->assertNull($t->swiss_state['next_at'] ?? null, 'silinince next_at temizlenir');
+        $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null, '2. tur korunur');
+
+        // Saati silinen 1. tur artık çekilemez (no_datetime).
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->call('startRound', 1);
+        $this->assertCount(0, $t->fresh()->bracket ?? [], 'saatsiz tur çekilmez');
+    }
+
     public function test_schedule_before_start_is_preserved_on_start(): void
     {
         // Open (başlamamış) turnuvada tur saatleri girilir → partial swiss_state'te tutulur, serialize null.
