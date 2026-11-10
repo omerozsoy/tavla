@@ -1114,6 +1114,18 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           else if (m.double_loss || sc?.double_loss) result = <span className="swiss-pair-dl">{t('swiss.doubleLossBadge')}</span>
                           else if (sc?.walkover) result = <span className="swiss-pair-wo">{t('swiss.walkover')}</span>
                           else if (sc && sc.p1 != null && sc.p2 != null) result = <span className="swiss-pair-score">{sc.p1} - {sc.p2}</span>
+                          else if (m.room && m.p1 && m.p2)
+                            // Maç OYNANIYOR (oda var, sonuç yok) -> "Bekliyor" değil "Oynanıyor" + maça (izle) link.
+                            result = (
+                              <button
+                                type="button"
+                                className="swiss-pair-live"
+                                onClick={() => onSpectate?.(m.room!, m.p1!.name, m.p2!.name)}
+                                aria-label={t('tourn.watch')}
+                              >
+                                <Icon name="eye" size={13} /> {t('swiss.pairLive')}
+                              </button>
+                            )
                           else result = <span className="swiss-pair-pending">{t('swiss.pairPending')}</span>
                           const p1win = !!m.winner && !!m.p1 && m.winner === m.p1.id
                           const p2win = !!m.winner && !!m.p2 && m.winner === m.p2.id

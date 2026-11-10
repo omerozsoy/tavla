@@ -28031,6 +28031,23 @@ input:not([type='range']), select, textarea {
   border: 1px solid var(--border);
   color: var(--muted);
 }
+/* "Oynanıyor" — maça (izle) link; accent renkli, tıklanabilir. */
+.swiss-pair-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.swiss-pair-live:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
 .swiss-td-averaj {
   font-variant-numeric: tabular-nums;
 }
