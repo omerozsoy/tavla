@@ -1159,7 +1159,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'tourn.champion': 'Şampiyon',
   // ---- 3 Haklı Swiss (Swiss Triple Elimination) ----
   'swiss.title': '{n} Haklı Swiss',
-  'swiss.rulesShort': '{n} hakkın var. {n}. maç yenilgisinde elenirsin. Kazanmak kaybedilen hakkı geri getirmez. Bay hak kaybettirmez.',
+  'swiss.rulesShort': '{n} hakkın var. {n}. maç yenilgisinde elenirsin. Kazanmak kaybedilen hakkı geri getirmez. Bye hak kaybettirmez.',
   'swiss.round': '{n}. Tur',
   'swiss.currentRound': 'Aktif Tur',
   'swiss.activeCount': 'Kalan oyuncu: {n}',
