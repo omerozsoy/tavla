@@ -1,6 +1,6 @@
 /**
  * RoleBadge — isim yanında site geneli ROL kalkanı.
- *   Yönetici (is_admin)  -> dolu KİREMİT kalkan (#A83A2B), hover "Yönetici"
+ *   Yönetici (is_admin)  -> dolu KİREMİT kalkan (#D14E24), hover "Yönetici"
  *   Destek   (is_support) -> dolu kalkan (#78716C), hover "Destek"
  * Veri RolesProvider'dan gelir (useRole); rolü olmayan oyuncuda hiçbir şey render
  * edilmez. Premium tacı gösterilen her yere userId ile eklenir -> [[TopRankBadge]] deseni.
@@ -42,7 +42,7 @@ export default function RoleBadge({
           role="img"
           aria-label={t('role.admin')}
           title={t('role.admin')}
-          style={{ color: '#A83A2B', display: 'inline-flex' }}
+          style={{ color: '#D14E24', display: 'inline-flex' }}
         >
           <Icon name="shield-check" size={size} weight="fill" />
         </span>

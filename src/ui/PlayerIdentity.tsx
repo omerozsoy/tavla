@@ -71,7 +71,7 @@ export default function PlayerIdentity({
   // veya kırmızı (offline) nokta. İlk fetch tamamlanana kadar (known=false) çizilmez.
   const { online, known } = useOnline(userId)
   // Yönetici + Destek ismi site geneli .role-name sınıfıyla boyanır (gece modu krem #F4EFE6,
-  // açık mod kiremit #A83A2B — bkz App.css). admin/support prop verilmişse onu, yoksa context rolü.
+  // açık mod kiremit #D14E24 — bkz App.css). admin/support prop verilmişse onu, yoksa context rolü.
   const ctxRole = useRole(userId)
   const isAdmin = admin || ctxRole.admin
   const isSupport = support || ctxRole.support

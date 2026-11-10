@@ -36,7 +36,7 @@ const COLORS: { name: string; token: string; hex: string; use: string }[] = [
   { name: 'Ink', token: '--navy-brand', hex: '#1C1A17', use: 'PRIMARY/yapısal koyu + metin' },
   { name: 'Ink Deep', token: '--med-blue-deep', hex: '#100E0C', use: 'Primary hover' },
   { name: 'Kiremit (brick)', token: '--coral', hex: '#C9563F', use: 'ACCENT — sıcak vurgu' },
-  { name: 'Brick Deep', token: '--coral-hover', hex: '#A83A2B', use: 'Açık zeminde accent + hover' },
+  { name: 'Brick Deep', token: '--coral-hover', hex: '#D14E24', use: 'Açık zeminde accent + hover' },
   { name: 'Amber-gold', token: '--sky', hex: '#D99A3F', use: 'İkincil sıcak aksan / dekor' },
   { name: 'Soft Krem', token: '--powder', hex: '#EFE7D9', use: 'Soft yüzey / tint' },
   { name: 'Amber', token: '--orange', hex: '#D98B3A', use: 'Sıcak tersiyer (coin/puan)' },

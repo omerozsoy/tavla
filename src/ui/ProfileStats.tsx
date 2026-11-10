@@ -307,7 +307,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   </div>
                 </div>
                 {an && an.pr_history.length >= 2 ? (
-                  <LineChart data={an.pr_history} dates={an.pr_dates} color="#A83A2B" />
+                  <LineChart data={an.pr_history} dates={an.pr_dates} color="#D14E24" />
                 ) : !an ? (
                   <Skeleton w="100%" h={80} r={8} />
                 ) : (

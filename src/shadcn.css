@@ -136,7 +136,7 @@
   --sc-card-foreground: #1c1a17;
   --sc-popover: #ffffff;
   --sc-popover-foreground: #1c1a17;
-  --sc-primary: #a83a2b; /* Kiremit (brick) — primary CTA (acik zeminde okunur) */
+  --sc-primary: #d14e24; /* Kiremit (brick) — primary CTA (acik zeminde okunur) */
   --sc-primary-foreground: #f8f1e7; /* sicak ivory metin */
   --sc-secondary: #f4efe6; /* krem yuzey */
   --sc-secondary-foreground: #1c1a17; /* ink metin */
@@ -148,7 +148,7 @@
   --sc-destructive-foreground: #f8f1e7;
   --sc-border: #ded7ca; /* kiremit-line border */
   --sc-input: #ded7ca;
-  --sc-ring: #a83a2b; /* Brick odak halkasi */
+  --sc-ring: #d14e24; /* Brick odak halkasi */
   /* ---- Buton hover paleti (light) ---- */
   --sc-primary-hover: #8f3124; /* Brick deep */
   --sc-tint: #efe7d9; /* secondary/outline hover: soft krem */
@@ -157,7 +157,7 @@
   --sc-ivory: #f8f1e7; /* primary hover metin: sicak ivory */
   /* ---- Marka ekstra: brick (ozel CTA) + amber ---- */
   --sc-terracotta: #c9563f;
-  --sc-terracotta-hover: #a83a2b;
+  --sc-terracotta-hover: #d14e24;
   --sc-terracotta-foreground: #fff7f3;
   --sc-sage: #d99a3f;
 }

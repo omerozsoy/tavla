@@ -1,7 +1,7 @@
 :root {
   /* ===== TERRACOTTA (KREM/KIREMIT) â€” merkezi renk sistemi =====
      Sicak + zamansiz + editoryal. Kullanici paletine SADIK:
-       Krem #f4efe6 Â· Krem-deep #efeae1 Â· Kiremit(brick) #c9563f/#a83a2b
+       Krem #f4efe6 Â· Krem-deep #efeae1 Â· Kiremit(brick) #c9563f/#d14e24
        Ink #1c1a17 Â· Line #ded7ca Â· Amber #d98b3a Â· Gold #ffd76a
      PRIMARY/yapisal = Ink (koyu), ACCENT = Kiremit (brick), sicak tersiyer = Amber.
      Zemin Krem (sicak). Primitive isimleri (--med-x) legacy â€” degerler TERRACOTTA.
@@ -12,7 +12,7 @@
   --med-blue: #1c1a17; /* INK â€” PRIMARY/yapisal koyu [isim legacy] */
   --med-blue-deep: #100e0c; /* ink deep â€” primary hover */
   --med-terracotta: #c9563f; /* KIREMIT (brick) â€” ACCENT (karakter vurgusu) */
-  --med-terracotta-dark: #a83a2b; /* brick deep â€” acik zeminde accent + hover */
+  --med-terracotta-dark: #d14e24; /* brick deep â€” acik zeminde accent + hover */
   --med-sage: #d99a3f; /* sicak amber-gold â€” ikincil aksan [isim legacy] */
   --med-ink: #1c1a17; /* ink â€” ana metin */
   --med-slate: #5e574c; /* ink-muted â€” ikincil metin */
@@ -267,7 +267,7 @@
   --bar: #ded7ca; /* orta bar / cerceve (board) */
   --navy: #1c1a17; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas (board) */
-  --accent: var(--med-terracotta-dark); /* Kiremit (brick) â€” acik zeminde okunur #a83a2b */
+  --accent: var(--med-terracotta-dark); /* Kiremit (brick) â€” acik zeminde okunur #d14e24 */
   --text: var(--med-ink); /* Ink metin #1c1a17 */
   --muted: var(--med-slate); /* ink-muted ikincil metin #5e574c */
   --card-bg: var(--med-porcelain); /* beyaz kart #ffffff */
@@ -2560,7 +2560,7 @@ button[aria-disabled='true'],
   cursor: pointer;
 }
 .bl-card[role='button']:focus-visible {
-  outline: 2px solid var(--accent, #a83a2b);
+  outline: 2px solid var(--accent, #d14e24);
   outline-offset: 2px;
 }
 
@@ -4636,12 +4636,12 @@ button[aria-disabled='true'],
 }
 /* ============================================================
    SEO landing + ana sayfa blogu — design-eng cila (Emil Kowalski)
-   Tema: kiremit #A83A2B + krem; tipografi ritmi, kart-listeler, ince
+   Tema: kiremit #D14E24 + krem; tipografi ritmi, kart-listeler, ince
    mikro-animasyonlar. Renkler var(--*) ile dark/light uyumlu.
    ============================================================ */
 :root {
   /* Metin + ince zemin tonu olarak kullanilir -> tema-duyarli metin vurgusu (koyu temada
-     sabit #a83a2b koyu zeminde 2.5:1 kaliyordu). */
+     sabit #d14e24 koyu zeminde 2.5:1 kaliyordu). */
   --seo-accent: var(--accent-text);
   --seo-ease: cubic-bezier(0.23, 1, 0.32, 1); /* guclu ease-out */
 }
@@ -10233,8 +10233,8 @@ html.fs-active .account-bar {
   margin: 2px 2px 4px;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--tv-brick, #a83a2b) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tv-brick, #a83a2b) 42%, transparent);
+  background: color-mix(in srgb, var(--tv-brick, #d14e24) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-brick, #d14e24) 42%, transparent);
 }
 /* KONTRAST: menü paneli HER TEMADA koyu (rgba(20,24,40)) -> metin --text'e BAĞLANAMAZ
    (açık/parşömen temasında --text koyu mürekkep olur = koyu-üstüne-koyu, okunmaz). Panel
@@ -10243,13 +10243,13 @@ html.fs-active .account-bar {
   font-size: 0.82rem;
   font-weight: 700;
   /* açık warm başlık (çoğu beyaz + az brick) -> koyu panelde her temada net. */
-  color: color-mix(in srgb, var(--tv-brick, #a83a2b) 22%, var(--tv-white, #fff));
+  color: color-mix(in srgb, var(--tv-brick, #d14e24) 22%, var(--tv-white, #fff));
 }
 .gm-warn-body {
   font-size: 0.78rem;
   line-height: 1.45;
   /* neredeyse tam beyaz (az brick tint) -> koyu panelde her temada okunur. */
-  color: color-mix(in srgb, var(--tv-white, #fff) 86%, var(--tv-brick, #a83a2b));
+  color: color-mix(in srgb, var(--tv-white, #fff) 86%, var(--tv-brick, #d14e24));
 }
 /* Ses seviyesi kaydırıcısı satırı (site stili: koyu track + aksan dolgu/thumb). */
 .gm-volrow {
@@ -14566,7 +14566,7 @@ button.acct-row-logout:hover:not(:disabled) {
   right: -39px;
   width: 120px;
   padding: 3px 0;
-  background: #A83A2B;
+  background: #D14E24;
   transform: rotate(45deg);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   text-align: center;
@@ -18710,13 +18710,13 @@ body:has(.spectate-view) .app.lobby {
   white-space: nowrap;
   min-width: 0;
 }
-/* Yetkili (yönetici + destek) ismi: GECE MODU krem (#F4EFE6), AÇIK MOD kiremit (#A83A2B).
+/* Yetkili (yönetici + destek) ismi: GECE MODU krem (#F4EFE6), AÇIK MOD kiremit (#D14E24).
    Kaynak PlayerIdentity .role-name sınıfı -> site genelinde tek yerden. */
 .player-id-name-text.role-name {
   color: #F4EFE6;
 }
 :root[data-theme='light'] .player-id-name-text.role-name {
-  color: #A83A2B;
+  color: #D14E24;
 }
 .player-id-name-flag {
   flex: 0 0 auto;
@@ -19326,8 +19326,8 @@ body:has(.spectate-view) .app.lobby {
 }
 /* YÖNETİCİ rozeti (Rozetler'de 1. sırada): site rengi (kiremit) zemin + beyaz yazı + başında kalkan. */
 .badge-item-admin {
-  background: #a83a2b;
-  border-color: #a83a2b;
+  background: #d14e24;
+  border-color: #d14e24;
   color: #fff;
   font-weight: 600;
 }
@@ -30327,17 +30327,17 @@ input:not([type='range']), select, textarea {
   color: var(--success-fg, #2f9e44);
 }
 /* İzleyen yönetici/destek mesajı: diğer balonlarla AYNI ebatta balon (base .chat-msg) —
-   krem zemin (#F4EFE6), isim + çerçeve yönetici kırmızısı (#A83A2B). İsim KENDİ satırında
+   krem zemin (#F4EFE6), isim + çerçeve yönetici kırmızısı (#D14E24). İsim KENDİ satırında
    (display:flex); eski inline-flex metni isme yapıştırıyordu ("CanerÇELİKiyi oyunlar"). */
 .chat-msg.admin {
   align-self: flex-start;
   background: #f4efe6;
   color: #3a2622;
-  border: 1px solid #a83a2b;
+  border: 1px solid #d14e24;
   border-bottom-left-radius: 3px;
 }
 .chat-msg.admin .chat-name {
-  color: #a83a2b;
+  color: #d14e24;
   font-weight: 700;
   font-size: 13px; /* base 10px çok küçüktü -> yönetici ismi okunur büyüklük */
   opacity: 1;
@@ -32452,7 +32452,7 @@ select:-webkit-autofill {
   border: 0;
   padding: 0;
   font: inherit;
-  color: var(--accent-text, #a83a2b);
+  color: var(--accent-text, #d14e24);
   font-weight: 600;
   cursor: pointer;
 }
@@ -32485,11 +32485,11 @@ select:-webkit-autofill {
   padding-inline: 8px;
 }
 .ej-drow-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent, #a83a2b) 8%, transparent);
+  background: color-mix(in srgb, var(--accent, #d14e24) 8%, transparent);
 }
 .ej-drow-btn.active {
-  background: color-mix(in srgb, var(--accent, #a83a2b) 14%, transparent);
-  box-shadow: inset 3px 0 0 var(--accent, #a83a2b);
+  background: color-mix(in srgb, var(--accent, #d14e24) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent, #d14e24);
 }
 .ej-drow-btn:disabled {
   cursor: default;
@@ -35304,7 +35304,7 @@ body.has-bottom-nav .to-top {
    --accent hem metin rengi hem dugme/rozet zemini olarak kullaniliyordu. Koyu temada tek
    renk (#c9563f) ikisini birden saglayamiyordu: koyu zeminde metin 3.1-3.7:1, uzerindeki
    acik metin 3.8:1. Metin kullanimlari --accent-text'e alindi:
-   - Acik tema: ikisi ayni (#a83a2b; beyaz uzerinde ~6.6:1, uzerinde krem metin ~6:1).
+   - Acik tema: ikisi ayni (#d14e24; beyaz uzerinde ~6.6:1, uzerinde krem metin ~6:1).
    - Koyu tema: metin acik mercan #e07a63 (~5.4:1), zemin koyu kiremit #b04a35 (krem metin ~4.8:1). */
 :root {
   --accent-text: var(--accent);
@@ -35384,7 +35384,7 @@ body.has-bottom-nav .to-top {
   --rar-rare: #2f5ea8;
   --rar-epic: #5a4fb8;
   --rar-legendary: #8a5a10;
-  --rar-mythic: #a83a2b;
+  --rar-mythic: #d14e24;
 }
 :root[data-theme='light'] .lb-wl .lb-win {
   color: #186a42;

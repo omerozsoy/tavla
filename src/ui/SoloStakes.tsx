@@ -23,7 +23,7 @@ export interface SoloLevel {
 
 // 9 sabit bahis seviyesi; her biri farkli bir tahta temasi (3x3 dizilim).
 export const SOLO_LEVELS: SoloLevel[] = [
-  { level: 1, stake: 10, theme: 'tavla', panel: '#efeae1', a: '#d98b7a', b: '#a83a2b' },
+  { level: 1, stake: 10, theme: 'tavla', panel: '#efeae1', a: '#d98b7a', b: '#d14e24' },
   { level: 2, stake: 25, theme: 'walnut', panel: '#7a5230', a: '#caa06a', b: '#5c3a20' },
   { level: 3, stake: 50, theme: 'green', panel: '#2f7d4f', a: '#56b37a', b: '#22633e' },
   { level: 4, stake: 100, theme: 'purple', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c' },

@@ -1,7 +1,7 @@
 /* ============================================================================
    Checkout (Sepet + Teslimat/Ödeme + Kart Ödeme) — SADE, temiz, modern.
    (Swiss/grotesk DEĞİL: sistem fontu, yuvarlak köşeler, beyaz kart, yumuşak
-   çizgiler, normal-case.) Tüm stiller .ckw altında kapsanır. Marka vurgusu #A83A2B.
+   çizgiler, normal-case.) Tüm stiller .ckw altında kapsanır. Marka vurgusu #D14E24.
    ========================================================================== */
 .ckw {
   --ink: #1f2024;
@@ -10,7 +10,7 @@
   --line: #e7e7ec;
   --card: #ffffff;
   --soft: #f6f6f8;
-  --accent: #a83a2b;
+  --accent: #d14e24;
   --accent-soft: #fbece9;
   --ok: #15803d;
   --r: 10px;

@@ -168,7 +168,7 @@ export default function PublicProfile({
                 <Button
                   variant="default"
                   className="pp-report"
-                  style={{ background: '#A83A2B', borderColor: '#A83A2B', color: '#fff' }}
+                  style={{ background: '#D14E24', borderColor: '#D14E24', color: '#fff' }}
                   onClick={() => {
                     onClose()
                     window.dispatchEvent(new CustomEvent('tavla:open-bug-report'))
