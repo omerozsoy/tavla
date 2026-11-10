@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\WalletService;
 use App\Support\PrizeDistribution;
 use App\Support\TournamentModeration;
+use Illuminate\Support\Facades\DB;
 
 /**
  * "3 Haklı Swiss" — saf SwissEngine ile Tournament kalıcı durumu (bracket + swiss_state) arasında
@@ -539,12 +540,38 @@ class SwissRuntime
         }
         $participants = $state['participants'];
         $lastReport = end($state['reports']) ?: null;
+        $standings = SwissEngine::liveStandings($participants);
+        // Turnuvadaki ORTALAMA PR: bracket odalarından (match_results) oyuncu başına AVG(gnubg_pr) ->
+        // her standings satırına enjekte (frontend "PR" kolonu). PR yoksa null (henüz analiz edilmemiş).
+        $rooms = [];
+        foreach ((is_array($t->bracket) ? $t->bracket : []) as $cells) {
+            if (is_array($cells)) {
+                foreach ($cells as $m) {
+                    if (! empty($m['room'])) {
+                        $rooms[] = $m['room'];
+                    }
+                }
+            }
+        }
+        if (! empty($rooms)) {
+            $prMap = DB::table('match_results')
+                ->whereIn('room_code', array_values(array_unique($rooms)))
+                ->whereNotNull('gnubg_pr')
+                ->groupBy('user_id')
+                ->selectRaw('user_id, AVG(gnubg_pr) AS avg_pr')
+                ->pluck('avg_pr', 'user_id');
+            foreach ($standings as &$s) {
+                $pr = $prMap[(int) ($s['id'] ?? 0)] ?? null;
+                $s['pr'] = $pr !== null ? round((float) $pr, 2) : null;
+            }
+            unset($s);
+        }
 
         return [
             'round' => (int) ($state['round'] ?? 0),
             'active' => count(SwissEngine::active($participants)),
             'total' => count($participants),
-            'standings' => SwissEngine::liveStandings($participants),
+            'standings' => $standings,
             'final' => $t->status === 'finished' ? SwissEngine::finalStandings($participants) : null,
             'note' => $state['note'] ?? null,
             'config' => $state['config'] ?? null,
