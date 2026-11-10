@@ -174,19 +174,13 @@ export default function DeliveryStep({
           <label className="ckw-label">Sipariş Özeti</label>
           <div className="ckw-rows">
             <div className="ckw-row">
-              <span>{memItem ? '1 Yıllık Premium Üyelik' : 'Ürün tutarı'}</span>
+              <span>{memItem ? '1 Yıllık Premium Üyelik (KDV dahil)' : 'Ürün tutarı (KDV dahil)'}</span>
               <span className="tnum">{fmtTL(subtotalTL)}</span>
             </div>
             {shippingTL > 0 && (
               <div className="ckw-row">
                 <span>Kargo · {SHIPPING_CARRIER}</span>
                 <span className="tnum">{fmtTL(shippingTL)}</span>
-              </div>
-            )}
-            {vatTL > 0 && (
-              <div className="ckw-row ckw-row-vat">
-                <span>KDV (%20 dahil){bookTL > 0 ? ' · kitaplar hariç' : ''}</span>
-                <span className="tnum">{fmtTL(vatTL)}</span>
               </div>
             )}
             <div className="ckw-row ckw-row-total">

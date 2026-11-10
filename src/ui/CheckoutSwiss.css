@@ -644,6 +644,11 @@
 .ckw-step.on {
   color: var(--ink);
 }
+/* Aktif adım label'ı NET olsun: .ckw-step button color:faint, inner label'ı eziyordu (kullanıcı:
+   "bulunduğum adım silik gözükmesin"). Aktif button'ı koyu (ink) yaz. */
+.ckw-step.on button {
+  color: var(--ink);
+}
 .ckw-step.on .ckw-step-ic {
   border-color: var(--accent);
   background: var(--accent);
