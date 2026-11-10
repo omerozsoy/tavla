@@ -28003,13 +28003,33 @@ input:not([type='range']), select, textarea {
   background: var(--card-bg);
   color: var(--text);
 }
+.swiss-pair-no {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.swiss-pair-hrow {
+  display: grid;
+  grid-template-columns: 56px 1fr auto 1fr;
+  gap: 8px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.swiss-pair-hrow .swiss-pair-no {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
 .swiss-pair-list {
   display: flex;
   flex-direction: column;
 }
 .swiss-pair-row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 56px 1fr auto 1fr;
   align-items: center;
   gap: 8px;
   padding: 7px 12px;

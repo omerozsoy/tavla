@@ -1109,8 +1109,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                         </select>
                         {sched[String(shown)] && <span className="swiss-round-date">{fmtDt(sched[String(shown)])}</span>}
                       </div>
-                      <div className="swiss-pair-list">
-                        {cells.map((m) => {
+                      <div className="swiss-pair-list"><div className="swiss-pair-hrow"><span className="swiss-pair-no">Masa No</span></div>
+                        {cells.map((m, pi) => {
                           const isBye = !m.p2 && !!m.winner
                           const sc = m.score || null
                           let result
@@ -1132,14 +1132,14 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                 onClick={() => onSpectate?.(m.room!, m.p1!.name, m.p2!.name)}
                                 aria-label={t('tourn.watch')}
                               >
-                                <Icon name="eye" size={13} /> {t('swiss.pairLive')}
+                                <Icon name="eye" size={13} /> {t('swiss.pairLive')}{(viewerCounts[(m.room || '').toUpperCase()] ?? 0) > 0 && <span className="swiss-pair-vn"> · {viewerCounts[(m.room || '').toUpperCase()]}</span>}
                               </button>
                             )
                           else result = <span className="swiss-pair-pending">{t('swiss.pairPending')}</span>
                           const p1win = !!m.winner && !!m.p1 && m.winner === m.p1.id
                           const p2win = !!m.winner && !!m.p2 && m.winner === m.p2.id
                           return (
-                            <div key={m.key} className="swiss-pair-row">
+                            <div key={m.key} className="swiss-pair-row"><span className="swiss-pair-no">{pi + 1}</span>
                               <span className={`swiss-pair-p${p1win ? ' win' : ''}`}>{m.p1?.name ?? '—'}</span>
                               <span className="swiss-pair-mid">{result}</span>
                               <span className={`swiss-pair-p${p2win ? ' win' : ''}`}>{isBye ? '—' : (m.p2?.name ?? '—')}</span>
