@@ -7,21 +7,30 @@ use App\Models\User;
 use App\Support\AccountClosure;
 use App\Support\NicknameFilter;
 use App\Support\OfficialMessenger;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Küfürlü Takmaisim — NicknameFilter'a takılan (küfür/uygunsuz) takma adlı AKTİF hesapları listeler.
  * Admin satırdan "Uyarı Gönder" ile oyuncuya resmi DM yollar + son tarih verir (varsayılan 24 saat).
- * Süre dolup takma ad hâlâ uygunsuzsa tavla:nickname-enforce nöbetçisi hesabı kapatır; oyuncu takma
- * adını düzeltirse uyarı otomatik temizlenir (ban yok). "Şimdi Banla" bekletmeden kapatır.
+ * Süre dolup takma ad DEĞİŞMEMİŞSE tavla:nickname-enforce nöbetçisi hesabı kapatır; oyuncu takma
+ * adını değiştirirse uyarı otomatik temizlenir (ban yok). "Şimdi Banla" bekletmeden kapatır.
  *
- * Yasaklı liste panelden yönetilir (Site Ayarları > Yasaklı Takma Adlar); burası onun CANLI sonucudur.
+ * Filtrenin YAKALAMADIĞI birini admin ELLE ekleyebilir (alttaki arama) -> aynı uyarı+süre+takip akışı
+ * işler; ad değişmediği için süre dolunca kapatılır. Yasaklı liste panelden yönetilir
+ * (Site Ayarları > Yasaklı Takma Adlar); otomatik tespit onun CANLI sonucudur.
  */
-class KufurluTakmaAdlar extends Page
+class KufurluTakmaAdlar extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static ?string $navigationIcon = 'heroicon-o-no-symbol';
 
     protected static ?string $navigationLabel = 'Küfürlü Takmaisim';
@@ -37,8 +46,50 @@ class KufurluTakmaAdlar extends Page
     /** Uyarıda verilecek süre (saat). Admin blade'den değiştirir; en az 1. */
     public int $hours = 24;
 
+    /** Elle ekleme formu state'i (searchable oyuncu seçimi). */
+    public ?array $data = [];
+
     /** Tek render'da offenders()+stats() ikisi de çağırır -> instance'ta bir kez hesapla. */
     private ?array $memo = null;
+
+    public function mount(): void
+    {
+        $this->form->fill();
+    }
+
+    /** Elle ekleme: filtrenin yakalamadığı bir oyuncuyu seç (nickname/ad/e-posta ile ara). */
+    public function form(Form $form): Form
+    {
+        return $form->schema([
+            Select::make('user_id')
+                ->label('Oyuncu ara ve ekle')
+                ->placeholder('Takma ad, ad veya e-posta...')
+                ->searchable()
+                ->getSearchResultsUsing(fn (string $search) => self::searchUsers($search))
+                ->getOptionLabelUsing(fn ($value) => optional(User::find($value))->nickname)
+                ->helperText('Filtrenin yakalamadığı ama uygunsuz bulduğun bir oyuncuyu ekle; aynı uyarı+süre akışı işler.'),
+        ])->statePath('data');
+    }
+
+    /** Oyuncu arama (sistem/banlı hariç). */
+    public static function searchUsers(string $search): array
+    {
+        $search = trim($search);
+        if ($search === '') {
+            return [];
+        }
+
+        return User::query()
+            ->whereNull('banned_at')
+            ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
+            ->where(fn ($q) => $q->where('nickname', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('first_name', 'like', "%{$search}%"))
+            ->orderBy('nickname')
+            ->limit(30)
+            ->pluck('nickname', 'id')
+            ->all();
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -88,7 +139,10 @@ class KufurluTakmaAdlar extends Page
             ->orderBy('id')
             ->chunkById(1000, function ($users) use (&$rows) {
                 foreach ($users as $u) {
-                    if (NicknameFilter::isAllowed((string) $u->nickname)) {
+                    $flagged = ! NicknameFilter::isAllowed((string) $u->nickname);
+                    $tracked = $u->nickname_ban_at !== null;
+                    // Filtre yakalamadıysa VE takip de edilmiyorsa atla; elle eklenenler (takipte) kalır.
+                    if (! $flagged && ! $tracked) {
                         continue;
                     }
                     $rows[] = [
@@ -96,6 +150,8 @@ class KufurluTakmaAdlar extends Page
                         'name' => $u->nickname ?: ($u->first_name ?: ('#'.$u->id)),
                         'email' => $u->email,
                         'rating' => $u->rating,
+                        'flagged' => $flagged,            // filtre yakaladı mı
+                        'manual' => $tracked && ! $flagged, // elle eklenmiş (filtre yakalamadı)
                         'warnedAt' => $u->nickname_warned_at ? (string) $u->nickname_warned_at : null,
                         'banAt' => $u->nickname_ban_at ? (string) $u->nickname_ban_at : null,
                         'overdue' => $u->nickname_ban_at && $u->nickname_ban_at < now(),
@@ -111,6 +167,17 @@ class KufurluTakmaAdlar extends Page
         return $rows;
     }
 
+    /** Oyuncuya uyarı DM'i gönder + son tarih + uyarı anındaki adı işle. Tek yazar (warn/warnAll/addManual). */
+    private function applyWarning(User $u, Carbon $deadline, string $body): void
+    {
+        OfficialMessenger::sendTo($u, $body);
+        $u->forceFill([
+            'nickname_warned_at' => now(),
+            'nickname_ban_at' => $deadline,
+            'nickname_warned_nick' => $u->nickname,
+        ])->save();
+    }
+
     /** Oyuncuya uyarı DM'i gönder + son tarih işle (varsayılan $this->hours saat). */
     public function warn(int $id): void
     {
@@ -120,8 +187,7 @@ class KufurluTakmaAdlar extends Page
         }
         $hours = max(1, (int) $this->hours);
         $deadline = now()->addHours($hours);
-        OfficialMessenger::sendTo($u, $this->warningBody($deadline, $hours));
-        $u->forceFill(['nickname_warned_at' => now(), 'nickname_ban_at' => $deadline])->save();
+        $this->applyWarning($u, $deadline, $this->warningBody($deadline, $hours));
         $this->bust();
         Notification::make()->title(($u->nickname ?: $u->email)." uyarıldı — {$hours} saat süre verildi.")->success()->send();
     }
@@ -141,12 +207,39 @@ class KufurluTakmaAdlar extends Page
             if (! $u || $u->isBanned()) {
                 continue;
             }
-            OfficialMessenger::sendTo($u, $body);
-            $u->forceFill(['nickname_warned_at' => now(), 'nickname_ban_at' => $deadline])->save();
+            $this->applyWarning($u, $deadline, $body);
             $sent++;
         }
         $this->bust();
         Notification::make()->title("{$sent} oyuncuya uyarı gönderildi ({$hours} saat süre).")->success()->send();
+    }
+
+    /** ELLE EKLE: filtrenin yakalamadığı seçili oyuncuya uyarı gönder + takibe al. */
+    public function addManual(): void
+    {
+        $id = (int) ($this->data['user_id'] ?? 0);
+        $u = User::find($id);
+        if (! $u) {
+            Notification::make()->title('Oyuncu bulunamadı.')->danger()->send();
+
+            return;
+        }
+        if ($u->isBanned()) {
+            Notification::make()->title('Bu hesap zaten kapalı.')->danger()->send();
+
+            return;
+        }
+        if (Schema::hasColumn('users', 'is_system') && $u->is_system) {
+            Notification::make()->title('Sistem hesabı eklenemez.')->danger()->send();
+
+            return;
+        }
+        $hours = max(1, (int) $this->hours);
+        $deadline = now()->addHours($hours);
+        $this->applyWarning($u, $deadline, $this->warningBody($deadline, $hours));
+        $this->form->fill(); // seçimi temizle
+        $this->bust();
+        Notification::make()->title(($u->nickname ?: $u->email)." eklendi ve uyarıldı — {$hours} saat süre verildi.")->success()->send();
     }
 
     /** Beklemeden şimdi kapat (AccountClosure — token iptali + denetim kaydı). */
@@ -174,7 +267,7 @@ class KufurluTakmaAdlar extends Page
         if (! $u) {
             return;
         }
-        $u->forceFill(['nickname_warned_at' => null, 'nickname_ban_at' => null])->save();
+        $u->forceFill(['nickname_warned_at' => null, 'nickname_ban_at' => null, 'nickname_warned_nick' => null])->save();
         $this->bust();
         Notification::make()->title('Uyarı iptal edildi.')->success()->send();
     }

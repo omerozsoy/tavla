@@ -10,11 +10,13 @@ use Illuminate\Console\Command;
 
 /**
  * Küfürlü takma ad SON-TARİH nöbetçisi. Admin "Küfürlü Takmaisim" sayfasından uyarı gönderince
- * nickname_ban_at (son tarih) işlenir; bu komut:
- *  - Takma ad artık UYGUNSA (kullanıcı düzeltmiş) -> uyarı alanlarını temizle (ban yok).
- *  - Son tarih GEÇMİŞ + takma ad hâlâ uygunsuz + hesap açık -> AccountClosure ile kapat.
+ * nickname_ban_at (son tarih) + nickname_warned_nick (uyarı anındaki ad) işlenir; bu komut:
+ *  - Takma ad uyarıdan bu yana DEĞİŞMİŞSE (kullanıcı düzeltmiş) -> uyarı alanlarını temizle (ban yok).
+ *  - Son tarih GEÇMİŞ + takma ad DEĞİŞMEMİŞ + hesap açık -> AccountClosure ile kapat.
  *  - Son tarih henüz gelmemişse dokunma (bekle).
- * Idempotent; saatte bir koşar (routes/console.php). Son tarihi olmayan hesaba dokunmaz.
+ * "Değişti mi?" ölçütü filtreye takılmayan ELLE eklenen hesapları da kapsar (admin uygunsuz bulmuş;
+ * ad değişmediyse süre dolunca kapatılır). nickname_warned_nick boş olan eski kayıtlarda filtre
+ * uygunluğuna düşülür (geriye dönük güvenli). Idempotent; saatte bir koşar (routes/console.php).
  */
 class NicknameEnforce extends Command
 {
@@ -34,23 +36,28 @@ class NicknameEnforce extends Command
             ->orderBy('id')
             ->chunkById(200, function ($users) use ($dry, $actorId, &$cleared, &$banned) {
                 foreach ($users as $u) {
-                    // Düzeltilmiş -> uyarıyı kaldır.
-                    if (NicknameFilter::isAllowed((string) $u->nickname)) {
+                    $warnedNick = $u->nickname_warned_nick;
+                    // Düzeltildi mi? Uyarı anındaki addan farklıysa DEĞİŞMİŞ; warned_nick yoksa
+                    // (eski kayıt) filtre uygunluğuna düş.
+                    $corrected = $warnedNick !== null
+                        ? ((string) $u->nickname !== (string) $warnedNick)
+                        : NicknameFilter::isAllowed((string) $u->nickname);
+                    if ($corrected) {
                         if (! $dry) {
-                            $u->forceFill(['nickname_warned_at' => null, 'nickname_ban_at' => null])->save();
+                            $u->forceFill(['nickname_warned_at' => null, 'nickname_ban_at' => null, 'nickname_warned_nick' => null])->save();
                         }
                         $cleared++;
 
                         continue;
                     }
-                    // Hâlâ uygunsuz ama süre dolmamış -> bekle.
+                    // Düzeltilmemiş ama süre dolmamış -> bekle.
                     if ($u->nickname_ban_at->isFuture()) {
                         continue;
                     }
-                    // Süre doldu + hâlâ uygunsuz -> kapat.
+                    // Süre doldu + düzeltilmemiş -> kapat.
                     if (! $dry) {
                         try {
-                            AccountClosure::close($u, $actorId, 'Küfürlü/uygunsuz takma ad (verilen süre doldu)', 'tavla:nickname-enforce');
+                            AccountClosure::close($u, $actorId, 'Uygunsuz takma ad (verilen süre doldu)', 'tavla:nickname-enforce');
                         } catch (\Throwable $e) {
                             // Kök yönetici vb. kapatılamaz -> atla; nöbetçi diğerlerini kapatmaya devam etsin.
                             $this->warn("#{$u->id} kapatılamadı: {$e->getMessage()}");

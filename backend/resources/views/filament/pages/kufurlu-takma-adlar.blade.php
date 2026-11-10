@@ -30,6 +30,15 @@
             </x-filament::button>
         </div>
 
+        {{-- Elle ekleme: filtrenin yakalamadığı bir oyuncuyu uyar + takibe al --}}
+        <form wire:submit="addManual" class="rounded-xl bg-white dark:bg-gray-900 ring-1 ring-gray-200 dark:ring-white/10 p-4 space-y-3">
+            <div class="text-sm font-medium">Elle oyuncu ekle</div>
+            {{ $this->form }}
+            <x-filament::button type="submit" color="warning" icon="heroicon-m-user-plus">
+                Ekle ve uyar ({{ $this->hours }} saat)
+            </x-filament::button>
+        </form>
+
         {{-- Üst kartlar --}}
         <div class="grid grid-cols-3 gap-4">
             <div class="rounded-xl bg-white dark:bg-gray-900 ring-1 ring-gray-200 dark:ring-white/10 p-4">
@@ -61,6 +70,9 @@
                                 <span class="text-xs text-gray-400">#{{ $row['id'] }}</span>
                                 @if ($row['rating'])
                                     <span class="text-xs text-gray-400">· {{ $row['rating'] }}</span>
+                                @endif
+                                @if ($row['manual'])
+                                    <span class="inline-flex items-center rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 px-2 py-0.5 text-[11px] font-medium">elle eklendi</span>
                                 @endif
                                 <span class="text-xs text-gray-500 truncate">· {{ $row['email'] ?: '—' }}</span>
 

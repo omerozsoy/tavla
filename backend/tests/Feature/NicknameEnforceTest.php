@@ -57,4 +57,37 @@ class NicknameEnforceTest extends TestCase
         $this->assertNull($fresh->banned_at);          // süre gelmemiş -> ban yok
         $this->assertNotNull($fresh->nickname_ban_at); // uyarı duruyor
     }
+
+    // Elle eklenen (filtreye TAKILMAYAN temiz ad) ama ad DEĞİŞMEMİŞ -> süre dolunca banlanır.
+    public function test_manual_entry_banned_when_nickname_unchanged(): void
+    {
+        $u = $this->user('TemizAmaUygunsuz');
+        $u->forceFill([
+            'nickname_warned_at' => now()->subDay(),
+            'nickname_ban_at' => now()->subHour(),
+            'nickname_warned_nick' => 'TemizAmaUygunsuz', // uyarı anındaki ad = şu anki ad
+        ])->save();
+
+        $this->artisan('tavla:nickname-enforce')->assertSuccessful();
+
+        $this->assertNotNull($u->fresh()->banned_at);
+    }
+
+    // Takma ad uyarıdan bu yana DEĞİŞMİŞ -> ban yok, uyarı temizlenir (yeni ad kirli olsa bile).
+    public function test_changed_nickname_clears_warning(): void
+    {
+        $u = $this->user('yenisikik'); // yeni ad hâlâ filtreye takılır
+        $u->forceFill([
+            'nickname_warned_at' => now()->subDay(),
+            'nickname_ban_at' => now()->subHour(),
+            'nickname_warned_nick' => 'eskiuygunsuzad', // farklı -> değişmiş
+        ])->save();
+
+        $this->artisan('tavla:nickname-enforce')->assertSuccessful();
+
+        $fresh = $u->fresh();
+        $this->assertNull($fresh->banned_at);
+        $this->assertNull($fresh->nickname_ban_at);
+        $this->assertNull($fresh->nickname_warned_nick);
+    }
 }
