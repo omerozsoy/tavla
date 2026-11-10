@@ -220,6 +220,66 @@ class SwissRuntime
      * Tek maç sonucunu uygular. $realMatch=false => hükmen (walkover/no-show). Tur tamamlanınca bir
      * sonraki tur üretilir veya turnuva sonlandırılır. Çağıran lockForUpdate transaction sağlar.
      */
+    /**
+     * KAZANAN averaj puanı EN FAZLA 3 kuralını (kullanıcı direktifi: "kazanan maximum 3") GEÇMİŞE dönük
+     * uygular: bracket'teki tüm GERÇEK maç skorlarından participants pointsFor/pointsAgainst'ı sıfırdan
+     * cap'li (min(3, kazananPuanı)) yeniden kurar. İleriki maçlar zaten SwissEngine::applyResult cap'iyle
+     * gelir; bu yalnız MEVCUT turnuvaları hizalar. wins/losses/eleme sayaçlarına DOKUNMAZ (yalnız averaj
+     * payları). Hükmen(walkover)/bay/çift-mağlubiyet skorsuz → averaj etkilemez (atlanır).
+     *
+     * @return int güncellenen oyuncu sayısı (0 = swiss değil / katılımcı yok)
+     */
+    public static function recomputePoints(Tournament $t): int
+    {
+        if (! self::isSwiss($t)) {
+            return 0;
+        }
+        $state = $t->swiss_state;
+        if (empty($state['participants']) || ! is_array($state['participants'])) {
+            return 0;
+        }
+        $byId = [];
+        foreach ($state['participants'] as $i => $p) {
+            $state['participants'][$i]['pointsFor'] = 0;
+            $state['participants'][$i]['pointsAgainst'] = 0;
+            $byId[(int) $p['id']] = $i;
+        }
+        $bracket = is_array($t->bracket) ? $t->bracket : [];
+        foreach ($bracket as $cells) {
+            if (! is_array($cells)) {
+                continue;
+            }
+            foreach ($cells as $m) {
+                $winner = (int) ($m['winner'] ?? 0);
+                $score = $m['score'] ?? null;
+                if (! $winner || ! is_array($score) || ! isset($score['p1'], $score['p2'])) {
+                    continue; // skorsuz (hükmen/bay/çift-mağlubiyet) → averaj etkilemez
+                }
+                if (! empty($score['walkover']) || ! empty($m['double_loss']) || ! empty($m['bye'])) {
+                    continue;
+                }
+                $p1Id = (int) ($m['p1']['id'] ?? 0);
+                $p2Id = (int) ($m['p2']['id'] ?? 0);
+                $winnerPts = $winner === $p1Id ? (int) $score['p1'] : (int) $score['p2'];
+                $loserPts = $winner === $p1Id ? (int) $score['p2'] : (int) $score['p1'];
+                $loserId = $winner === $p1Id ? $p2Id : $p1Id;
+                $capWin = min(3, $winnerPts); // KAZANAN averajda EN FAZLA 3
+                if (isset($byId[$winner])) {
+                    $state['participants'][$byId[$winner]]['pointsFor'] += $capWin;
+                    $state['participants'][$byId[$winner]]['pointsAgainst'] += $loserPts;
+                }
+                if (isset($byId[$loserId])) {
+                    $state['participants'][$byId[$loserId]]['pointsFor'] += $loserPts;
+                    $state['participants'][$byId[$loserId]]['pointsAgainst'] += $capWin;
+                }
+            }
+        }
+        $t->swiss_state = $state;
+        $t->save();
+
+        return count($state['participants']);
+    }
+
     public static function applyResult(Tournament $t, int $ri, int $mi, int $winnerId, ?array $score, bool $realMatch): void
     {
         $bracket = is_array($t->bracket) ? $t->bracket : [];

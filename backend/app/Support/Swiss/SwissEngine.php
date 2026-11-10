@@ -152,6 +152,9 @@ class SwissEngine
     public static function applyResult(array $participants, int $winnerId, int $loserId, int $roundNo, bool $realMatch, ?int $winnerPts = null, ?int $loserPts = null): array
     {
         $trackPts = $realMatch && $winnerPts !== null && $loserPts !== null;
+        // KAZANAN puanı averajda EN FAZLA 3 sayılır (kullanıcı direktifi: "kazanan maximum 3, fazlası
+        // yazılmaz"; 7-2 -> averajda 3-2). Kaybeden puanı olduğu gibi (örneklerde zaten < 3).
+        $capWin = $trackPts ? min(3, (int) $winnerPts) : 0;
         foreach ($participants as &$p) {
             if ((int) $p['id'] === $winnerId) {
                 $p['wins'] = (int) $p['wins'] + 1;
@@ -161,7 +164,7 @@ class SwissEngine
                     $p['opponents'] = array_values(array_unique(array_merge($p['opponents'], [$loserId])));
                 }
                 if ($trackPts) {
-                    $p['pointsFor'] = (int) ($p['pointsFor'] ?? 0) + $winnerPts;
+                    $p['pointsFor'] = (int) ($p['pointsFor'] ?? 0) + $capWin;
                     $p['pointsAgainst'] = (int) ($p['pointsAgainst'] ?? 0) + $loserPts;
                 }
             } elseif ((int) $p['id'] === $loserId) {
@@ -172,7 +175,7 @@ class SwissEngine
                 }
                 if ($trackPts) {
                     $p['pointsFor'] = (int) ($p['pointsFor'] ?? 0) + $loserPts;
-                    $p['pointsAgainst'] = (int) ($p['pointsAgainst'] ?? 0) + $winnerPts;
+                    $p['pointsAgainst'] = (int) ($p['pointsAgainst'] ?? 0) + $capWin;
                 }
                 if ((int) $p['losses'] >= self::livesCap($p) && ($p['status'] ?? 'active') === 'active') {
                     $p['status'] = 'eliminated';

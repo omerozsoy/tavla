@@ -27932,6 +27932,25 @@ input:not([type='range']), select, textarea {
 .swiss-match.mine {
   border-color: var(--accent);
 }
+/* Maç sıra numarası (1,2,3…) — sol üst köşe rozeti (kullanıcı isteği). */
+.swiss-match-no {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--border) 55%, var(--card-bg));
+  border-bottom-right-radius: var(--radius-sm);
+  line-height: 1;
+}
 .swiss-match.isbye {
   opacity: 0.85;
 }

@@ -1039,7 +1039,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 <div className="swiss-round-box">
                   <div className="swiss-rb-head">{t('swiss.currentRound')}</div>
                   <div className="swiss-matches">
-                    {curRound.map((m) => {
+                    {curRound.map((m, mi) => {
                       const isBye = !!(m as { bye?: boolean }).bye
                       const isDoubleLoss = !!m.double_loss
                       const mine = m.p1?.id === myId || m.p2?.id === myId
@@ -1065,6 +1065,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                       }
                       return (
                         <div key={m.key} className={`swiss-match${mine ? ' mine' : ''}${isBye ? ' isbye' : ''}${isDoubleLoss ? ' dloss' : ''}${watchable ? ' watchable' : ''}`}>
+                          <span className="swiss-match-no" aria-hidden="true">{mi + 1}</span>
                           {isBye ? (
                             <div className="tm-p win">{tmName(m.p1, m.room)}<span className="tm-score wo">{t('swiss.byeBadge')}</span></div>
                           ) : (
