@@ -1,0 +1,618 @@
+/* ============================================================================
+   Checkout (Sepet + Kart Ödeme) — Swiss / International Typographic Style.
+   MagazaSwiss ile AYNI dil (Archivo grotesk + Space Mono, krem zemin, #A83A2B
+   vurgu, ince hairline, düz köşe). Modal YOK — page-host içinde gerçek sayfa.
+   Tüm stiller .ckw altında kapsanır (global sızma yok).
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@700;800;900&family=Space+Mono:wght@400;700&display=swap');
+
+.ckw {
+  --ink: #16130f;
+  --ink-60: #16130f99;
+  --ink-40: #16130f66;
+  --paper: #f4f0e8;
+  --paper-2: #ebe5d9;
+  --line: #ddd5c5;
+  --accent: #a83a2b;
+  --ok: #2e7d32;
+
+  /* register-card temel stilini NÖTRLE (düz Swiss) */
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--ink);
+  font-family: 'Archivo', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  width: 100%;
+}
+.ckw *,
+.ckw *::before,
+.ckw *::after {
+  box-sizing: border-box;
+}
+.ckw button {
+  font-family: inherit;
+  cursor: pointer;
+}
+.ckw .tnum {
+  font-variant-numeric: tabular-nums;
+}
+.ckw :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* page-host kart ödeme sayfasında kendi 'X' kapatması gizli (menüden gezilir) zaten;
+   sepette de gizle -> gerçek sayfa hissi. */
+.page-host .ckw .modal-close {
+  display: none;
+}
+
+/* --- Başlık --- */
+.ckw-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.8rem;
+  border-bottom: 1px solid var(--line);
+}
+.ckw-title {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.ckw-title svg {
+  color: var(--accent);
+}
+.ckw-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--ink-60);
+}
+.ckw-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+
+/* --- Butonlar (düz köşe) --- */
+.ckw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 0.75rem 1.3rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  transition: background 0.14s, color 0.14s, transform 0.12s;
+}
+.ckw-btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ckw-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.ckw-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ckw-btn-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+.ckw-btn-ghost:hover:not(:disabled) {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+.ckw-btn-block {
+  width: 100%;
+}
+
+/* --- Boş sepet --- */
+.ckw-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.2rem;
+  padding: 2rem 0;
+}
+.ckw-empty p {
+  font-size: 1.2rem;
+  color: var(--ink-60);
+  margin: 0;
+}
+
+/* --- Sepet düzeni --- */
+.ckw-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+}
+.ckw-items {
+  border-top: 1px solid var(--line);
+}
+.ckw-item {
+  display: grid;
+  grid-template-columns: 76px 1fr auto auto auto;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.3rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.ckw-thumb {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  overflow: hidden;
+}
+.ckw-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ckw-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.ckw-name {
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.ckw-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--ink-60);
+}
+.ckw-chip {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--line);
+  color: var(--ink-60);
+}
+.ckw-unit {
+  font-size: 0.78rem;
+  color: var(--ink-40);
+}
+.ckw-line-price {
+  font-weight: 800;
+  font-size: 1rem;
+  white-space: nowrap;
+  text-align: right;
+}
+.ckw-del {
+  background: none;
+  border: none;
+  color: var(--ink-40);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+}
+.ckw-del:hover {
+  color: var(--accent);
+}
+
+/* --- Adet stepper --- */
+.ckw-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.ckw-qty button {
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ckw-qty button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.ckw-qty span {
+  min-width: 36px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.ckw-continue {
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.2rem 0;
+}
+.ckw-continue:hover {
+  color: var(--accent);
+}
+
+/* --- Özet (sepet sağ sütun) --- */
+.ckw-summary {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  padding: 1.6rem;
+  position: sticky;
+  top: 84px;
+}
+.ckw-summary-t {
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0 0 1.3rem;
+}
+.ckw-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 1px solid var(--line);
+}
+.ckw-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.ckw select,
+.ckw-promo input {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.6rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.ckw select:focus,
+.ckw-promo input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ckw-addr-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0;
+  align-self: flex-start;
+}
+.ckw-promo {
+  display: flex;
+  gap: 0.5rem;
+}
+.ckw-promo input {
+  flex: 1;
+}
+.ckw-promo-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ok);
+  font-weight: 600;
+}
+.ckw-promo-ok .tnum {
+  margin-left: auto;
+  color: var(--accent);
+}
+.ckw-promo-ok button {
+  background: none;
+  border: none;
+  color: var(--ink-40);
+  display: grid;
+  place-items: center;
+}
+.ckw-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.ckw-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-60);
+}
+.ckw-row-disc {
+  color: var(--accent);
+}
+.ckw-row-vat {
+  font-size: 0.78rem;
+  color: var(--ink-40);
+}
+.ckw-row-total {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--ink);
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.ckw-pm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.65rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.86rem;
+  text-align: left;
+}
+.ckw-pm svg {
+  flex: 0 0 auto;
+}
+.ckw-pm.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+.ckw-err {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0.2rem 0 0;
+}
+.ckw-cta {
+  margin-top: 0.4rem;
+}
+.ckw-secure {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: var(--ink-60);
+  line-height: 1.4;
+  margin: 0.8rem 0 0;
+}
+.ckw-secure svg {
+  flex: 0 0 auto;
+  color: var(--ok);
+  margin-top: 1px;
+}
+
+/* ===================== KART ÖDEME SAYFASI ===================== */
+.ckw-pay {
+  max-width: 560px;
+}
+.ckw-pay-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.6rem;
+  border-bottom: 1px solid var(--line);
+}
+.ckw-pay-amount {
+  text-align: right;
+  line-height: 1.1;
+}
+.ckw-pay-amount span {
+  display: block;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.ckw-pay-amount b {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.ckw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.ckw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.ckw-input-wrap {
+  position: relative;
+}
+.ckw-form input {
+  height: 46px;
+  width: 100%;
+  padding: 0 0.85rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1rem;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  outline: none;
+  transition: border-color 0.14s;
+}
+.ckw-form input::placeholder {
+  color: var(--ink-40);
+}
+.ckw-form input:focus {
+  border-color: var(--accent);
+}
+.ckw-form input[aria-invalid='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ckw-brand {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-60);
+  pointer-events: none;
+}
+.ckw-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.ckw-exp {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ckw-exp input {
+  text-align: center;
+  padding: 0 0.4rem;
+}
+.ckw-exp-sep {
+  color: var(--ink-40);
+  font-weight: 700;
+}
+.ckw-field-err {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+.ckw-pay-secure {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--ink);
+  padding: 0.7rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--line));
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+}
+.ckw-pay-secure svg {
+  color: var(--ok);
+  flex: 0 0 auto;
+}
+.ckw-pay-actions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 0.3rem;
+}
+.ckw-pay-actions > * {
+  flex: 1;
+}
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: ckw-spin 0.7s linear infinite;
+}
+@keyframes ckw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 900px) {
+  .ckw-grid {
+    grid-template-columns: 1fr;
+  }
+  .ckw-summary {
+    position: static;
+  }
+}
+@media (max-width: 560px) {
+  .ckw-item {
+    grid-template-columns: 56px 1fr auto;
+    grid-template-areas:
+      'thumb info del'
+      'thumb qty price';
+    row-gap: 0.6rem;
+    column-gap: 0.9rem;
+  }
+  .ckw-thumb {
+    grid-area: thumb;
+    width: 56px;
+    height: 56px;
+    align-self: start;
+  }
+  .ckw-info {
+    grid-area: info;
+  }
+  .ckw-del {
+    grid-area: del;
+    align-self: start;
+  }
+  .ckw-item .ckw-qty {
+    grid-area: qty;
+  }
+  .ckw-line-price {
+    grid-area: price;
+    align-self: center;
+  }
+  .ckw-row2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ckw-pay-actions {
+    flex-direction: column-reverse;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ckw *,
+  .ckw *::before,
+  .ckw *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

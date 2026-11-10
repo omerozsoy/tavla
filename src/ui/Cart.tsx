@@ -7,6 +7,7 @@ import { validatePromo, getAddresses, getBankTransferInfo, type PromoResult, typ
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
+import './CheckoutSwiss.css'
 
 // Sepet ogesi. kind: coins (paket) | membership (uyelik uzat) | product (fiziksel urun).
 // product ogesi kendi gosterim verisini tasir (sepet yeniden fetch etmeden cizsin).
@@ -204,7 +205,7 @@ export default function Cart({
   const ctaLabel = memItem || moneyTotalTL > 0 ? 'Ödemeye Geç' : 'Siparişi Tamamla'
 
   const qtyStepper = (id: string, qty: number) => (
-    <div className="cart2-qty" aria-label="adet">
+    <div className="ckw-qty" aria-label="adet">
       <button type="button" onClick={() => setQty(id, qty - 1)} aria-label="azalt">
         −
       </button>
@@ -216,47 +217,45 @@ export default function Cart({
   )
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card cart2-card" onClick={(e) => e.stopPropagation()}>
+    // GERÇEK SAYFA (modal değil): page-host akışında statik Swiss sepet.
+    <div className="register-overlay page">
+      <div className="ckw ckw-cart">
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
         </Button>
 
-        <header className="cart2-head">
-          <h2>
-            <Icon name="cart" size={22} /> Sepetim
+        <header className="ckw-head">
+          <h2 className="ckw-title">
+            <Icon name="cart" size={26} /> Sepet
           </h2>
-          {!nothingToPay && <span className="cart2-count">{totalItems} ürün</span>}
+          {!nothingToPay && <span className="ckw-count">{totalItems} ürün</span>}
         </header>
 
         {nothingToPay ? (
-          <div className="cart2-empty">
-            <div className="cart2-empty-ic">
-              <Icon name="cart" size={40} />
-            </div>
-            <p className="cart2-empty-t">Sepetin boş</p>
-            <p className="cart2-empty-s">Coin paketleri, tavla ürünleri, kitaplar ve daha fazlası Mağaza'da seni bekliyor.</p>
-            <Button onClick={onContinue}>
+          <div className="ckw-empty">
+            <p className="ckw-eyebrow">Sepetin boş</p>
+            <p>Coin paketleri, tavla ürünleri, kitaplar ve daha fazlası Mağaza'da seni bekliyor.</p>
+            <button type="button" className="ckw-btn" onClick={onContinue}>
               <Icon name="shop" size={16} /> Mağaza'ya git
-            </Button>
+            </button>
           </div>
         ) : (
-          <div className="cart2-grid">
+          <div className="ckw-grid">
             {/* SOL: sepet öğeleri */}
-            <div className="cart2-main">
+            <div className="ckw-items">
               {memItem ? (
-                <div className="cart2-item">
-                  <div className="cart2-thumb cart2-thumb-mem">
+                <div className="ckw-item">
+                  <div className="ckw-thumb">
                     <Icon name="crown" size={26} />
                   </div>
-                  <div className="cart2-item-info">
-                    <span className="cart2-item-name">1 Yıllık Premium Üyelik</span>
-                    <span className="cart2-item-meta">Üyelik bitişine +1 yıl eklenir</span>
+                  <div className="ckw-info">
+                    <span className="ckw-name">1 Yıllık Premium Üyelik</span>
+                    <span className="ckw-meta">Üyelik bitişine +1 yıl eklenir</span>
                   </div>
-                  <span className="cart2-item-price tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
+                  <span className="ckw-line-price tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
                   <button
                     type="button"
-                    className="cart2-del"
+                    className="ckw-del"
                     onClick={() => setItems((prev) => prev.filter((p) => p.kind !== 'membership'))}
                     aria-label="kaldır"
                   >
@@ -266,17 +265,18 @@ export default function Cart({
               ) : (
                 <>
                   {coinRows.map(({ it, pkg }) => (
-                    <div className="cart2-item" key={it.id}>
-                      <div className="cart2-thumb cart2-thumb-coin">
+                    <div className="ckw-item" key={it.id}>
+                      <div className="ckw-thumb">
                         <Icon name="coin" size={24} />
                       </div>
-                      <div className="cart2-item-info">
-                        <span className="cart2-item-name">{pkg.name}</span>
-                        <span className="cart2-item-meta">{fmtCoin(pkg.gc)} jeton</span>
+                      <div className="ckw-info">
+                        <span className="ckw-name">{pkg.name}</span>
+                        <span className="ckw-meta">{fmtCoin(pkg.gc)} jeton</span>
+                        <span className="ckw-unit">Birim: {fmtTL(pkg.price)}</span>
                       </div>
                       {qtyStepper(it.id, it.qty)}
-                      <span className="cart2-item-price tnum">{fmtTL(pkg.price * it.qty)}</span>
-                      <button type="button" className="cart2-del" onClick={() => remove(it.id)} aria-label="kaldır">
+                      <span className="ckw-line-price tnum">{fmtTL(pkg.price * it.qty)}</span>
+                      <button type="button" className="ckw-del" onClick={() => remove(it.id)} aria-label="kaldır">
                         <Icon name="trash" size={16} />
                       </button>
                     </div>
@@ -284,26 +284,28 @@ export default function Cart({
 
                   {productRows.map((it) => {
                     const p = it.product!
+                    const unit = p.payment === 'coin' ? p.coinPrice ?? 0 : (p.moneyPrice ?? 0) / 100
                     return (
-                      <div className="cart2-item" key={it.id}>
-                        <div className="cart2-thumb">
+                      <div className="ckw-item" key={it.id}>
+                        <div className="ckw-thumb">
                           {p.image ? <img src={imageUrl(p.image)} alt="" /> : <Icon name="package" size={22} />}
                         </div>
-                        <div className="cart2-item-info">
-                          <span className="cart2-item-name">{p.name}</span>
-                          <span className="cart2-item-meta">
-                            {p.color && <span className="cart2-chip">{p.color}</span>}
+                        <div className="ckw-info">
+                          <span className="ckw-name">{p.name}</span>
+                          <span className="ckw-meta">{p.color && <span className="ckw-chip">{p.color}</span>}</span>
+                          <span className="ckw-unit">
+                            Birim: {p.payment === 'coin' ? `${fmtCoin(unit)} jeton` : fmtTL(unit)}
                           </span>
                         </div>
                         {qtyStepper(it.id, it.qty)}
-                        <span className="cart2-item-price tnum">
+                        <span className="ckw-line-price tnum">
                           {p.payment === 'coin' ? (
                             <Coins amount={(p.coinPrice ?? 0) * it.qty} size={15} />
                           ) : (
                             fmtTL(((p.moneyPrice ?? 0) / 100) * it.qty)
                           )}
                         </span>
-                        <button type="button" className="cart2-del" onClick={() => remove(it.id)} aria-label="kaldır">
+                        <button type="button" className="ckw-del" onClick={() => remove(it.id)} aria-label="kaldır">
                           <Icon name="trash" size={16} />
                         </button>
                       </div>
@@ -312,19 +314,19 @@ export default function Cart({
                 </>
               )}
 
-              <button type="button" className="cart2-continue" onClick={onContinue}>
+              <button type="button" className="ckw-continue" onClick={onContinue}>
                 <Icon name="caret-left" size={15} /> Alışverişe devam et
               </button>
             </div>
 
             {/* SAĞ: özet + ödeme */}
-            <aside className="cart2-summary">
-              <h3 className="cart2-summary-t">Sipariş Özeti</h3>
+            <aside className="ckw-summary">
+              <h3 className="ckw-summary-t">Sipariş Özeti</h3>
 
               {/* Adres (fiziksel ürün varsa) */}
               {hasProducts && (
-                <div className="cart2-block cart2-addr">
-                  <label>Teslimat adresi</label>
+                <div className="ckw-block">
+                  <label className="ckw-label">Teslimat adresi</label>
                   {shippingAddrs.length > 0 ? (
                     <select value={shipId ?? ''} onChange={(e) => setShipId(e.target.value ? Number(e.target.value) : null)}>
                       <option value="">Seç…</option>
@@ -335,9 +337,9 @@ export default function Cart({
                       ))}
                     </select>
                   ) : (
-                    <span className="cart2-addr-empty">Kayıtlı adres yok</span>
+                    <span className="ckw-unit">Kayıtlı adres yok</span>
                   )}
-                  <label>Fatura adresi (isteğe bağlı)</label>
+                  <label className="ckw-label">Fatura adresi (isteğe bağlı)</label>
                   <select value={billId ?? ''} onChange={(e) => setBillId(e.target.value ? Number(e.target.value) : null)}>
                     <option value="">Teslimat ile aynı</option>
                     {billingAddrs.map((a) => (
@@ -346,7 +348,7 @@ export default function Cart({
                       </option>
                     ))}
                   </select>
-                  <button type="button" className="cart2-addr-link" onClick={onManageAddresses}>
+                  <button type="button" className="ckw-addr-link" onClick={onManageAddresses}>
                     <Icon name="pin" size={13} /> Adres ekle / yönet
                   </button>
                 </div>
@@ -354,18 +356,18 @@ export default function Cart({
 
               {/* İndirim kodu (yalnız coin paketi varsa) */}
               {!memItem && coinRows.length > 0 && (
-                <div className="cart2-block cart2-promo">
+                <div className="ckw-block">
                   {applied ? (
-                    <div className="cart2-promo-ok">
+                    <div className="ckw-promo-ok">
                       <Icon name="check" size={15} />
-                      <b>{applied.code}</b> uygulandı
-                      <span className="cart2-promo-off tnum">−{fmtTL(discountTL)}</span>
+                      <b>{applied.code}</b>
+                      <span className="tnum">−{fmtTL(discountTL)}</span>
                       <button type="button" onClick={clearPromo} aria-label="kodu kaldır">
                         <Icon name="x" size={13} />
                       </button>
                     </div>
                   ) : (
-                    <div className="cart2-promo-form">
+                    <div className="ckw-promo">
                       <input
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -373,26 +375,26 @@ export default function Cart({
                         aria-label="İndirim kodu"
                         onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
                       />
-                      <Button variant="outline" disabled={promoBusy || !code.trim()} onClick={applyPromo}>
+                      <button type="button" className="ckw-btn ckw-btn-ghost" disabled={promoBusy || !code.trim()} onClick={applyPromo}>
                         Uygula
-                      </Button>
+                      </button>
                     </div>
                   )}
-                  {promoErr && <div className="cart2-promo-err">{promoErr}</div>}
+                  {promoErr && <div className="ckw-err">{promoErr}</div>}
                 </div>
               )}
 
               {/* Toplamlar */}
-              <div className="cart2-rows">
+              <div className="ckw-rows">
                 {memItem ? (
-                  <div className="cart2-row cart2-row-total">
+                  <div className="ckw-row ckw-row-total">
                     <span>Toplam</span>
                     <span className="tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
                   </div>
                 ) : (
                   <>
                     {coinProductRows.length > 0 && (
-                      <div className="cart2-row">
+                      <div className="ckw-row">
                         <span>Coin ile ödenecek</span>
                         <span>
                           <Coins amount={coinProductsCoins} size={14} />
@@ -400,25 +402,25 @@ export default function Cart({
                       </div>
                     )}
                     {moneyTotalTL > 0 && (
-                      <div className="cart2-row">
+                      <div className="ckw-row">
                         <span>Ara toplam{totalCoinsPkg > 0 ? ` · ${fmtCoin(totalCoinsPkg)} coin` : ''}</span>
                         <span className="tnum">{fmtTL(moneyTotalTL)}</span>
                       </div>
                     )}
                     {applied && (
-                      <div className="cart2-row cart2-row-disc">
+                      <div className="ckw-row ckw-row-disc">
                         <span>İndirim · {applied.code}</span>
                         <span className="tnum">−{fmtTL(discountTL)}</span>
                       </div>
                     )}
                     {vatTL > 0 && (
-                      <div className="cart2-row cart2-row-vat">
+                      <div className="ckw-row ckw-row-vat">
                         <span>KDV (%20 dahil){bookTL > 0 ? ' · kitaplar hariç' : ''}</span>
                         <span className="tnum">{fmtTL(vatTL)}</span>
                       </div>
                     )}
                     {moneyTotalTL > 0 && (
-                      <div className="cart2-row cart2-row-total">
+                      <div className="ckw-row ckw-row-total">
                         <span>Ödenecek tutar</span>
                         <span className="tnum">{fmtTL(finalTL)}</span>
                       </div>
@@ -429,46 +431,42 @@ export default function Cart({
 
               {/* Ödeme yöntemi (yalnız para ödemesi varsa ve havale açıksa) */}
               {(memItem || moneyTotalTL > 0) && bankInfo?.enabled && (
-                <div className="cart2-block cart2-paymethod" role="radiogroup" aria-label="Ödeme yöntemi">
-                  <label className="cart2-paymethod-t">Ödeme yöntemi</label>
+                <div className="ckw-block" role="radiogroup" aria-label="Ödeme yöntemi">
+                  <label className="ckw-label">Ödeme yöntemi</label>
                   <button
                     type="button"
                     role="radio"
                     aria-checked={payMethod === 'card'}
-                    className={`cart2-pm ${payMethod === 'card' ? 'on' : ''}`}
+                    className={`ckw-pm ${payMethod === 'card' ? 'on' : ''}`}
                     onClick={() => setPayMethod('card')}
                   >
-                    <Icon name="credit-card" size={16} />
-                    <span>Kredi / Banka Kartı</span>
-                    <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
+                    <Icon name="credit-card" size={16} /> Kredi / Banka Kartı
                   </button>
                   <button
                     type="button"
                     role="radio"
                     aria-checked={payMethod === 'bank_transfer'}
-                    className={`cart2-pm ${payMethod === 'bank_transfer' ? 'on' : ''}`}
+                    className={`ckw-pm ${payMethod === 'bank_transfer' ? 'on' : ''}`}
                     onClick={() => setPayMethod('bank_transfer')}
                   >
-                    <Icon name="money" size={16} />
-                    <span>Havale / EFT</span>
-                    <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
+                    <Icon name="money" size={16} /> Havale / EFT
                   </button>
                 </div>
               )}
 
-              {err && <div className="cart2-err">{err}</div>}
+              {err && <div className="ckw-err" role="alert">{err}</div>}
 
-              <Button className="cart2-cta" disabled={busy || shippingRequired} onClick={checkout}>
-                <Icon name={moneyTotalTL > 0 || memItem ? 'lock' : 'check'} size={16} /> {ctaLabel}
-              </Button>
+              <button type="button" className="ckw-btn ckw-btn-block ckw-cta" disabled={busy || shippingRequired} onClick={checkout}>
+                <Icon name={moneyTotalTL > 0 || memItem ? 'lock' : 'check'} size={16} /> {busy ? 'İşleniyor…' : ctaLabel}
+              </button>
 
-              <p className="cart2-secure">
+              <p className="ckw-secure">
                 <Icon name="shield-check" size={14} />
                 {moneyTotalTL > 0 || memItem
                   ? payMethod === 'bank_transfer' && bankInfo?.enabled
-                    ? ' Havale/EFT bilgileri sonraki adımda; ödemen onaylanınca işleme alınır'
-                    : ' Garanti BBVA 3D Secure ile güvenli ödeme'
-                  : ' Coin ürünleri anında hesabından düşülür'}
+                    ? 'Havale/EFT bilgileri sonraki adımda; ödemen onaylanınca işleme alınır.'
+                    : 'Ödemen onaylanınca siparişin işleme alınır.'
+                  : 'Coin ürünleri anında hesabından düşülür.'}
               </p>
             </aside>
           </div>

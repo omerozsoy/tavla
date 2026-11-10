@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { detectBrand, formatCardNumber, cvvLength, luhnValid, expiryValid, cardFormValid, type CardBrand } from './cardValidation'
-import './CardForm.css'
+import './CheckoutSwiss.css'
 
 export interface CardPayData {
   number: string // yalnız haneler
@@ -64,29 +63,32 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
   }
 
   return (
-    // GERÇEK SAYFA (modal değil): page-host akışında statik render; modal/dialog semantiği YOK.
+    // GERÇEK SAYFA (modal değil): page-host akışında statik Swiss kart ödeme sayfası.
     <div className="register-overlay page">
-      <div className="register-card cardpay-card">
-        <div className="cardpay-head">
-          <h2>
-            <Icon name="credit-card" size={22} /> {title || 'Kart ile Ödeme'}
-          </h2>
-          <div className="cardpay-amount">
+      <div className="ckw ckw-pay">
+        <header className="ckw-pay-head">
+          <div>
+            <p className="ckw-eyebrow">Güvenli Ödeme</p>
+            <h2 className="ckw-title">
+              <Icon name="credit-card" size={24} /> {title || 'Kart ile Ödeme'}
+            </h2>
+          </div>
+          <div className="ckw-pay-amount">
             <span>Ödenecek</span>
             <b className="tnum">{fmtTL(amount)}</b>
           </div>
-        </div>
+        </header>
 
         <form
-          className="cardpay-form"
+          className="ckw-form"
           onSubmit={(e) => {
             e.preventDefault()
             submit()
           }}
         >
-          <label className="cardpay-field">
-            <span className="cardpay-label">Kart Numarası</span>
-            <div className="cardpay-input-wrap">
+          <label className="ckw-field">
+            <span className="ckw-label">Kart Numarası</span>
+            <div className="ckw-input-wrap">
               <input
                 inputMode="numeric"
                 autoComplete="cc-number"
@@ -96,13 +98,13 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
                 onBlur={() => setTouched(true)}
                 aria-invalid={!!err.number}
               />
-              {BRAND_LABEL[brand] && <span className={`cardpay-brand brand-${brand}`}>{BRAND_LABEL[brand]}</span>}
+              {BRAND_LABEL[brand] && <span className={`ckw-brand brand-${brand}`}>{BRAND_LABEL[brand]}</span>}
             </div>
-            {err.number && <span className="cardpay-err">{err.number}</span>}
+            {err.number && <span className="ckw-field-err">{err.number}</span>}
           </label>
 
-          <label className="cardpay-field">
-            <span className="cardpay-label">Kart Üzerindeki İsim</span>
+          <label className="ckw-field">
+            <span className="ckw-label">Kart Üzerindeki İsim</span>
             <input
               autoComplete="cc-name"
               placeholder="AD SOYAD"
@@ -111,13 +113,13 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
               onBlur={() => setTouched(true)}
               aria-invalid={!!err.name}
             />
-            {err.name && <span className="cardpay-err">{err.name}</span>}
+            {err.name && <span className="ckw-field-err">{err.name}</span>}
           </label>
 
-          <div className="cardpay-row2">
-            <label className="cardpay-field">
-              <span className="cardpay-label">Son Kullanma</span>
-              <div className="cardpay-exp">
+          <div className="ckw-row2">
+            <label className="ckw-field">
+              <span className="ckw-label">Son Kullanma</span>
+              <div className="ckw-exp">
                 <input
                   inputMode="numeric"
                   autoComplete="cc-exp-month"
@@ -128,7 +130,7 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
                   onBlur={() => setTouched(true)}
                   aria-invalid={!!err.exp}
                 />
-                <span className="cardpay-exp-sep">/</span>
+                <span className="ckw-exp-sep">/</span>
                 <input
                   inputMode="numeric"
                   autoComplete="cc-exp-year"
@@ -140,11 +142,11 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
                   aria-invalid={!!err.exp}
                 />
               </div>
-              {err.exp && <span className="cardpay-err">{err.exp}</span>}
+              {err.exp && <span className="ckw-field-err">{err.exp}</span>}
             </label>
 
-            <label className="cardpay-field">
-              <span className="cardpay-label">CVV</span>
+            <label className="ckw-field">
+              <span className="ckw-label">CVV</span>
               <input
                 inputMode="numeric"
                 autoComplete="cc-csc"
@@ -155,19 +157,19 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
                 onBlur={() => setTouched(true)}
                 aria-invalid={!!err.cvv}
               />
-              {err.cvv && <span className="cardpay-err">{err.cvv}</span>}
+              {err.cvv && <span className="ckw-field-err">{err.cvv}</span>}
             </label>
           </div>
 
-          <div className="cardpay-secure">
-            <Icon name="lock" size={16} /> 256-bit SSL ile şifreli ödeme. Kart bilgileriniz saklanmaz.
+          <div className="ckw-pay-secure">
+            <Icon name="lock" size={16} /> 256-bit SSL ile şifreli bağlantı. Kart bilgileriniz saklanmaz.
           </div>
 
-          <div className="cardpay-actions">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
+          <div className="ckw-pay-actions">
+            <button type="button" className="ckw-btn ckw-btn-ghost" onClick={onClose} disabled={busy}>
               Vazgeç
-            </Button>
-            <Button type="submit" variant="default" disabled={!valid || busy}>
+            </button>
+            <button type="submit" className="ckw-btn" disabled={!valid || busy}>
               {busy ? (
                 <>
                   <span className="btn-spinner" aria-hidden="true" /> İşleniyor…
@@ -177,7 +179,7 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
                   <Icon name="lock" size={16} /> {fmtTL(amount)} Öde
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
