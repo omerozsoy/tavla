@@ -153,7 +153,7 @@
   --bar: #12100e; /* orta bar / cerceve (board) */
   --navy: #100e0c; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas - krem (board) */
-  --accent: var(--coral); /* dark zeminde coral pop (karakter) */
+  --accent: #d14e24; /* dark zeminde de ana marka rengi (kullanici istegi) */
   --text: var(--ivory); /* ice white metin */
   --muted: var(--rn-muted);
   /* Coastal dark yuzeyler */
@@ -35305,17 +35305,17 @@ body.has-bottom-nav .to-top {
    renk (#c9563f) ikisini birden saglayamiyordu: koyu zeminde metin 3.1-3.7:1, uzerindeki
    acik metin 3.8:1. Metin kullanimlari --accent-text'e alindi:
    - Acik tema: ikisi ayni (#d14e24; beyaz uzerinde ~6.6:1, uzerinde krem metin ~6:1).
-   - Koyu tema: metin acik mercan #e07a63 (~5.4:1), zemin koyu kiremit #b04a35 (krem metin ~4.8:1). */
+   - Koyu tema: zemin ana marka #d14e24, metin acik tint #ec7a52 (~5:1, kullanici koyuda da d14e24 istedi). */
 :root {
   --accent-text: var(--accent);
 }
 :root:not([data-theme='light']) {
-  --accent: #b04a35;
-  --accent-text: #e07a63;
-  --sc-primary: #b04a35;
-  --sc-primary-hover: #c25640;
-  --sc-ring: #e07a63;
-  --sc-terracotta: #b04a35;
+  --accent: #d14e24; /* koyu temada da ana marka rengi (kullanici istegi) */
+  --accent-text: #ec7a52; /* d14e24'un acik tinti — koyu zeminde metin okunurlugu (~5:1 AA) */
+  --sc-primary: #d14e24;
+  --sc-primary-hover: #b8421f;
+  --sc-ring: #ec7a52;
+  --sc-terracotta: #d14e24;
 }
 
 /* ---- Acik tema kontrast duzeltmeleri (WCAG AA) ----
