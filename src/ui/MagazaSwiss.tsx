@@ -48,6 +48,9 @@ type Props = {
   onCoinsChange?: (coins: number) => void
   onClose: () => void
   titleOverride?: string
+  // URL-otoriter seçili ürün (/magaza/<kat>/<slug>). Verilince ürün DETAY SAYFASI (ayrı) açılır.
+  productSlug?: string | null
+  onSelectProduct?: (slug: string | null, category?: string | null) => void
 }
 
 type Result =
@@ -65,6 +68,8 @@ export default function MagazaSwiss({
   onOpenCart,
   onCoinsChange,
   onClose,
+  productSlug,
+  onSelectProduct,
 }: Props) {
   const coinPackages = useCoinPackages()
 
@@ -95,10 +100,9 @@ export default function MagazaSwiss({
     }
   }, [])
 
-  // --- Filtre + sıralama + seçili ürün (inline detay) ---
+  // --- Filtre + sıralama ---
   const [cat, setCat] = useState('all')
   const [sort, setSort] = useState<'default' | 'price-asc' | 'price-desc' | 'name'>('default')
-  const [selId, setSelId] = useState<number | null>(null)
   // Sıralama fiyatı: TL (kuruş) varsa onu; yoksa coin'i büyük ofsetle sona iter (karışık katalog
   // için naif ama küçük katalogda yeterli — ponytail).
   const priceOf = (p: Product) => (p.money_price != null ? p.money_price : p.coin_price != null ? 1e12 + p.coin_price : 1e15)
@@ -109,28 +113,17 @@ export default function MagazaSwiss({
     if (sort === 'name') return [...list].sort((a, b) => a.name.localeCompare(b.name, 'tr'))
     return list
   }, [products, cat, sort])
-  useEffect(() => {
-    setSelId(null)
-  }, [cat, sort])
 
-  // --- Grid sütun sayısı (satır-altı detay yerleşimi için) ---
-  const gridRef = useRef<HTMLDivElement>(null)
-  const [cols, setCols] = useState(1)
-  useEffect(() => {
-    const el = gridRef.current
-    if (!el) return
-    const measure = () => {
-      const tpl = getComputedStyle(el).gridTemplateColumns
-      setCols(Math.max(1, tpl.split(' ').filter(Boolean).length))
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [visible.length])
+  // Seçili ürün = URL slug'ı (AYRI DETAY SAYFASI). Verilmezse grid görünür.
+  const selectedProduct = productSlug ? (products ?? []).find((p) => p.slug === productSlug) ?? null : null
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: prefersReduced() ? 'auto' : 'smooth', block: 'start' })
+  }
+  // Ürün detay sayfasını aç (URL /magaza/<kat>/<slug>). Detaya girince en üste çık.
+  const openProduct = (p: Product) => {
+    onSelectProduct?.(p.slug, p.category)
+    window.scrollTo({ top: 0, behavior: prefersReduced() ? 'auto' : 'smooth' })
   }
 
   // --- Sepete ekleme (inline geri bildirim) ---
@@ -195,6 +188,20 @@ export default function MagazaSwiss({
         </button>
       )}
 
+      {selectedProduct ? (
+        /* ÜRÜN DETAY SAYFASI — ayrı sayfa (satır-altı inline DEĞİL). */
+        <ProductDetailPage
+          product={selectedProduct}
+          added={!!added[`p${selectedProduct.id}`]}
+          onAdd={(o) => addProduct(selectedProduct, o)}
+          onBuyNow={(o) => {
+            addProduct(selectedProduct, o)
+            onOpenCart()
+          }}
+          onBack={() => onSelectProduct?.(null)}
+        />
+      ) : (
+        <>
       {/* PREMIUM ÜYELİK — BİRİNCİ SIRADA (kullanıcı isteği). */}
       <section className="mgz-mem" aria-label="Premium Üyelik">
         <div className="mgz-mem-inner">
@@ -288,75 +295,57 @@ export default function MagazaSwiss({
           </div>
         ) : null}
 
-        <div className="mgz-grid" ref={gridRef}>
-          {visible.map((p, i) => {
+        <div className="mgz-grid">
+          {visible.map((p) => {
             const out = p.stock <= 0
-            const open = selId === p.id
-            const isRowEnd = i % cols === cols - 1 || i === visible.length - 1
-            const selIndex = visible.findIndex((x) => x.id === selId)
-            const detailRowEnd =
-              selIndex >= 0 && Math.floor(i / cols) === Math.floor(selIndex / cols) && isRowEnd
             return (
-              <div key={p.id} className="mgz-cell">
-                <article className={`mgz-card ${out ? 'is-out' : ''} ${open ? 'is-open' : ''}`}>
-                  <button
-                    type="button"
-                    className="mgz-card-media"
-                    onClick={() => setSelId(open ? null : p.id)}
-                    aria-expanded={open}
-                    aria-label={`${p.name} detayını ${open ? 'kapat' : 'aç'}`}
-                  >
-                    {p.images[0] ? <img src={imgUrl(p.images[0])} alt={p.name} loading="lazy" /> : <Icon name="dice" size={40} />}
-                    {out ? (
-                      <span className="mgz-flag">Tükendi</span>
-                    ) : (
-                      p.stock <= 5 && <span className="mgz-flag mgz-flag-low">Son {p.stock}</span>
-                    )}
+              <article key={p.id} className={`mgz-card ${out ? 'is-out' : ''}`}>
+                <button
+                  type="button"
+                  className="mgz-card-media"
+                  onClick={() => openProduct(p)}
+                  aria-label={`${p.name} — ürün detayı`}
+                >
+                  {p.images[0] ? <img src={imgUrl(p.images[0])} alt={p.name} loading="lazy" /> : <Icon name="dice" size={40} />}
+                  {out ? (
+                    <span className="mgz-flag">Tükendi</span>
+                  ) : (
+                    p.stock <= 5 && <span className="mgz-flag mgz-flag-low">Son {p.stock}</span>
+                  )}
+                </button>
+                <div className="mgz-card-body">
+                  <span className="mgz-card-cat">{p.category_name ?? '—'}</span>
+                  <button type="button" className="mgz-card-name" onClick={() => openProduct(p)}>
+                    {p.name}
                   </button>
-                  <div className="mgz-card-body">
-                    <span className="mgz-card-cat">{p.category_name ?? '—'}</span>
-                    <button type="button" className="mgz-card-name" onClick={() => setSelId(open ? null : p.id)}>
-                      {p.name}
-                    </button>
-                    {p.description && <p className="mgz-card-desc">{p.description}</p>}
-                    <div className="mgz-card-foot">
-                      <span className="mgz-price">
-                        {p.money_price != null && <span className="tnum">{fmtTLk(p.money_price)}</span>}
+                  <div className="mgz-card-foot">
+                    <span className="mgz-price tnum">
+                      {fmtTLk(p.money_price ?? p.coin_price ?? 0)}
+                    </span>
+                    {added[`p${p.id}`] ? (
+                      <span className="mgz-added" role="status">
+                        <Icon name="check" size={14} /> Eklendi
                       </span>
-                      <div className="mgz-card-cta">
-                        {added[`p${p.id}`] ? (
-                          <span className="mgz-added" role="status">
-                            <Icon name="check" size={14} /> Eklendi
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="mgz-btn mgz-btn-sm"
-                            onClick={() => addProduct(p)}
-                            disabled={out}
-                          >
-                            {out ? 'Tükendi' : 'Sepete Ekle'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="mgz-card-add"
+                        onClick={() => addProduct(p)}
+                        disabled={out}
+                        aria-label={`${p.name} sepete ekle`}
+                      >
+                        <Icon name="cart" size={15} /> {out ? 'Tükendi' : 'Sepete Ekle'}
+                      </button>
+                    )}
                   </div>
-                </article>
-
-                {detailRowEnd && selIndex >= 0 && (
-                  <ProductDetail
-                    product={visible[selIndex]}
-                    added={!!added[`p${visible[selIndex].id}`]}
-                    onAdd={(o) => addProduct(visible[selIndex], o)}
-                    onClose={() => setSelId(null)}
-                  />
-                )}
-              </div>
+                </div>
+              </article>
             )
           })}
         </div>
-
       </section>
+        </>
+      )}
 
       {/* Jeton satışı YOK (kullanıcı: "jeton satmıyoruz") -> jeton bölümü kaldırıldı; Premium üyelik
           en üstte banner olarak. Hikâye bölümü de kaldırıldı. Inline Sepet bölümü CSS ile GİZLİ (.mgz-cart{display:none}) —
@@ -379,63 +368,64 @@ export default function MagazaSwiss({
   )
 }
 
-// ---- Inline ürün detayı (grid genişliğinde, satır altında) ----
-function ProductDetail({
+// ---- ÜRÜN DETAY SAYFASI (ayrı sayfa — satır-altı inline DEĞİL) ----
+function ProductDetailPage({
   product,
   added,
   onAdd,
-  onClose,
+  onBuyNow,
+  onBack,
 }: {
   product: Product
   added: boolean
   onAdd: (o: { color?: string | null; qty?: number; pay?: 'coin' | 'money' }) => void
-  onClose: () => void
+  onBuyNow: (o: { color?: string | null; qty?: number; pay?: 'coin' | 'money' }) => void
+  onBack: () => void
 }) {
   const colors: ProductColor[] = product.colors ?? []
   const [color, setColor] = useState<string | null>(colors[0]?.name ?? null)
   const [qty, setQty] = useState(1)
-  // Ödeme tipi: TL varsa TL, yoksa coin (jeton seçimi UI'dan kaldırıldı — jeton satışı yok).
   const [pay] = useState<'coin' | 'money'>(product.money_price != null ? 'money' : 'coin')
   const [img, setImg] = useState(0)
   const [err, setErr] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    ref.current?.scrollIntoView({ behavior: prefersReduced() ? 'auto' : 'smooth', block: 'nearest' })
-  }, [])
 
   const out = product.stock <= 0
   const maxQty = Math.min(10, product.stock)
   const canMoney = product.money_price != null
   const hasImg = product.images.length > 0
 
-  const add = () => {
+  const validate = () => {
     if (colors.length > 0 && !color) {
       setErr('Lütfen bir renk seç.')
-      return
+      return false
     }
     setErr('')
-    onAdd({ color: colors.length ? color : null, qty, pay })
+    return true
   }
+  const opts = () => ({ color: colors.length ? color : null, qty, pay })
+  const add = () => validate() && onAdd(opts())
+  const buy = () => validate() && onBuyNow(opts())
 
   return (
-    <div className="mgz-detail" ref={ref} role="region" aria-label={`${product.name} detay`}>
-      <button type="button" className="mgz-detail-x" onClick={onClose} aria-label="Detayı kapat">
-        <Icon name="x" size={16} />
+    <section className="mgz-pdp" aria-label={`${product.name} ürün detayı`}>
+      <button type="button" className="mgz-pdp-back" onClick={onBack}>
+        <Icon name="caret-left" size={16} /> Mağazaya dön
       </button>
-      <div className="mgz-detail-grid">
-        <div className="mgz-detail-media">
-          <div className="mgz-detail-main">
-            {hasImg ? <img src={imgUrl(product.images[img])} alt={product.name} /> : <Icon name="dice" size={72} />}
+
+      <div className="mgz-pdp-grid">
+        {/* Medya galerisi */}
+        <div className="mgz-pdp-media">
+          <div className="mgz-pdp-main">
+            {hasImg ? <img src={imgUrl(product.images[img])} alt={product.name} /> : <Icon name="dice" size={96} />}
             {out && <span className="mgz-flag">Tükendi</span>}
           </div>
           {product.images.length > 1 && (
-            <div className="mgz-detail-thumbs">
+            <div className="mgz-pdp-thumbs">
               {product.images.map((im, i) => (
                 <button
                   key={i}
                   type="button"
-                  className={`mgz-detail-thumb ${i === img ? 'on' : ''}`}
+                  className={`mgz-pdp-thumb ${i === img ? 'on' : ''}`}
                   onClick={() => setImg(i)}
                   aria-label={`${product.name} görsel ${i + 1}`}
                 >
@@ -446,21 +436,16 @@ function ProductDetail({
           )}
         </div>
 
-        <div className="mgz-detail-info">
+        {/* Bilgi + satın alma */}
+        <div className="mgz-pdp-info">
           {product.category_name && <span className="mgz-eyebrow">{product.category_name}</span>}
-          <h3 className="mgz-detail-title">{product.name}</h3>
-          <div className="mgz-detail-price">
-            {canMoney ? (
-              <span className="tnum">{fmtTLk(product.money_price!)}</span>
-            ) : (
-              <span className="tnum">{fmtTLk(product.coin_price ?? 0)}</span>
-            )}
-          </div>
+          <h1 className="mgz-pdp-title">{product.name}</h1>
+          <div className="mgz-pdp-price tnum">{fmtTLk(canMoney ? product.money_price! : product.coin_price ?? 0)}</div>
           <div className={`mgz-stock ${out ? 'out' : product.stock <= 5 ? 'low' : 'in'}`}>
             <span aria-hidden="true" />
             {out ? 'Tükendi' : `Stokta ${product.stock} adet`}
           </div>
-          {product.description && <p className="mgz-detail-desc">{product.description}</p>}
+          {product.description && <p className="mgz-pdp-desc">{product.description}</p>}
 
           {colors.length > 0 && (
             <div className="mgz-field">
@@ -484,25 +469,22 @@ function ProductDetail({
             </div>
           )}
 
-          <div className="mgz-detail-row">
-            <div className="mgz-field">
-              <label className="mgz-flabel">Adet</label>
-              <div className="mgz-qty">
-                <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="azalt">
-                  −
-                </button>
-                <span className="tnum">{qty}</span>
-                <button type="button" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty} aria-label="arttır">
-                  +
-                </button>
-              </div>
+          <div className="mgz-field">
+            <label className="mgz-flabel">Adet</label>
+            <div className="mgz-qty">
+              <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="azalt">
+                −
+              </button>
+              <span className="tnum">{qty}</span>
+              <button type="button" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty} aria-label="arttır">
+                +
+              </button>
             </div>
-
           </div>
 
           {err && <p className="mgz-err">{err}</p>}
 
-          <div className="mgz-detail-actions">
+          <div className="mgz-pdp-actions">
             {added ? (
               <span className="mgz-added mgz-added-lg" role="status">
                 <Icon name="check" size={16} /> Sepete eklendi
@@ -512,10 +494,19 @@ function ProductDetail({
                 <Icon name="cart" size={16} /> {out ? 'Tükendi' : 'Sepete Ekle'}
               </button>
             )}
+            <button type="button" className="mgz-btn mgz-btn-lg mgz-pdp-buy" onClick={buy} disabled={out}>
+              Hemen Satın Al <Icon name="arrow-right" size={16} />
+            </button>
           </div>
+
+          <ul className="mgz-pdp-trust">
+            <li><Icon name="shield-check" size={16} /> Güvenli ödeme</li>
+            <li><Icon name="package" size={16} /> 1–3 iş günü kargo</li>
+            <li><Icon name="check" size={16} /> 14 gün içinde iade</li>
+          </ul>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

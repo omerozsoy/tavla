@@ -10724,6 +10724,12 @@ export default function App() {
             setShopTab('coin')
             setShopProduct(null)
           }}
+          productSlug={shopProduct}
+          onSelectProduct={(slug, cat) => {
+            // Ürün detay sayfası -> /magaza/<kat>/<slug>. Geri -> /magaza.
+            setShopProduct(slug)
+            setShopTab(slug ? cat || 'diger' : 'coin')
+          }}
         />
       )}
       {cartOpen && user && (
