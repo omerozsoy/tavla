@@ -1159,7 +1159,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     {active.status === 'finished' && sw.note === 'no_champion' && <div className="swiss-nochamp">{t('swiss.noChampion')}</div>}
                     <table className="swiss-table">
                       <thead>
-                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th title={t('swiss.colPlayedFull')}>{t('swiss.colPlayed')}</th><th title={t('swiss.colWinsFull')}>{t('swiss.colWins')}</th><th title={t('swiss.colLossesFull')}>{t('swiss.colLosses')}</th><th title={t('swiss.colByesFull')}>{t('swiss.colByes')}</th><th title={t('swiss.colWalkoverFull')}>{t('swiss.colWalkover')}</th><th title={t('swiss.colAverajFull')}>{t('swiss.colAveraj')}</th><th title="Turnuvadaki ortalama PR">PR</th></tr>
+                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th title={t('swiss.colPlayedFull')}>{t('swiss.colPlayed')}</th><th title={t('swiss.colWinsFull')}>{t('swiss.colWins')}</th><th title={t('swiss.colLossesFull')}>{t('swiss.colLosses')}</th><th title={t('swiss.colByesFull')}>{t('swiss.colByes')}</th><th title={t('swiss.colWalkoverFull')}>{t('swiss.colWalkover')}</th><th title={t('swiss.colAverajFull')}>{t('swiss.colAveraj')}</th><th title="Turnuvadaki ortalama PR">Ort PR</th></tr>
                       </thead>
                       <tbody>
                         {rows.map((row, i) => {
