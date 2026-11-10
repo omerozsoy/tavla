@@ -170,7 +170,7 @@ import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import DuelView from './ui/DuelView'
-import CardForm, { type CardPayData } from './ui/CardForm'
+import CardForm, { type CardPayData, type CardBreakdown } from './ui/CardForm'
 import { TeamEmblem } from './ui/TeamEmblem'
 import { useTeamTag } from './teamTags'
 import RankInfo from './ui/RankInfo'
@@ -1190,7 +1190,7 @@ export default function App() {
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
   // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
   // oluşur (cartCheckout, imzalı URL) -> amount+url burada tutulur; kart gönderilince kullanılır.
-  const [cardPay, setCardPay] = useState<{ amount: number; paymentId: number } | null>(null)
+  const [cardPay, setCardPay] = useState<{ amount: number; paymentId: number; breakdown?: CardBreakdown } | null>(null)
   // Kart ödeme GERÇEK sayfa (modal değil): /kart-odeme/<id>. State sessionStorage'da tutulur ->
   // YENİLEMEDE korunur. YALNIZ YAZ: cardPay null olunca SİLME (applyFromPath başta closeAllPages
   // ile cardPay'i null'lar, SONRA route-case sessionStorage'dan geri kurar -> burada silseydik
@@ -1264,7 +1264,7 @@ export default function App() {
   // Siparişi sunucuda oluştur (pending) -> kart formu (/kart-odeme) veya havale talimatı.
   // DeliveryStep (Teslimat & Ödeme adımı) çağırır: adres/yöntem seçildikten sonra. Üyelik tek
   // başına / coin ürünleri (anında) / para kısmı (kart|havale) aynı eski akış.
-  async function runCheckout(its: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod) {
+  async function runCheckout(its: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod, breakdown?: CardBreakdown) {
     const closeSteps = () => {
       setDeliveryOpen(false)
       setCartOpen(false)
@@ -1276,7 +1276,7 @@ export default function App() {
         setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
         setBankData(r)
       } else {
-        setCardPay({ amount: r.amount, paymentId: r.payment_id })
+        setCardPay({ amount: r.amount, paymentId: r.payment_id, breakdown })
       }
       return
     }
@@ -1310,7 +1310,7 @@ export default function App() {
         )
         setBankData(r)
       } else {
-        setCardPay({ amount: r.amount, paymentId: r.payment_id })
+        setCardPay({ amount: r.amount, paymentId: r.payment_id, breakdown })
       }
     } else {
       closeSteps()
@@ -10835,7 +10835,7 @@ export default function App() {
             setProfileTab('addresses')
             setEditProfile(true)
           }}
-          onPay={(sel, method) => runCheckout(cartItems, null, sel, method)}
+          onPay={(sel, method, bd) => runCheckout(cartItems, null, sel, method, bd)}
           stepsSlot={renderCheckoutSteps('delivery')}
         />
       )}
@@ -10856,7 +10856,13 @@ export default function App() {
       {cardPay && (
         <CardForm
           amount={cardPay.amount}
+          breakdown={cardPay.breakdown}
           onClose={clearCardPay}
+          onBack={() => {
+            // "Geri Dön" -> ödeme adımından TESLİMAT adımına dön (bekleyen kart ödemesini kapat).
+            clearCardPay()
+            setDeliveryOpen(true)
+          }}
           onSubmit={handleCardPay}
           stepsSlot={renderCheckoutSteps('payment')}
         />

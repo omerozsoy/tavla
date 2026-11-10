@@ -15,10 +15,10 @@ import {
 import { PROVINCES } from '../provinces'
 import { districtsOf } from '../districts'
 import { MEMBERSHIP_PRICE_TL, type CartItem, type CartAddressSel } from './Cart'
+import { type CardBreakdown } from './CardForm'
 import './CheckoutSwiss.css'
 
-const SHIPPING_TL = 250 // Kargo: fiziksel ürün varsa SABİT (backend ile aynı: 25000 kuruş).
-const fmtTL = (n: number) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₺`
+const SHIPPING_TL = 250 // Kargo: premium hariç her sipariş SABİT (backend ile aynı: 25000 kuruş).
 
 // TESLİMAT & ÖDEME adımı (/odeme) — GERÇEK sayfa (page-host, modal YOK). Teslimat + fatura adresi
 // (yan yana, buradan girilebilir/düzenlenebilir) + kargo + ödeme yöntemi -> onPay -> /kart-odeme.
@@ -31,7 +31,7 @@ export default function DeliveryStep({
   items: CartItem[]
   onBack: () => void
   onManageAddresses?: () => void
-  onPay: (sel: CartAddressSel, method: PayMethod) => Promise<void>
+  onPay: (sel: CartAddressSel, method: PayMethod, breakdown?: CardBreakdown) => Promise<void>
   stepsSlot?: ReactNode // üstte adım göstergesi
 }) {
   useEscape(onBack)
@@ -62,15 +62,17 @@ export default function DeliveryStep({
     return s + (pkg ? pkg.price * it.qty : 0)
   }, 0)
   const subtotalTL = memItem ? MEMBERSHIP_PRICE_TL : moneyProductsTL + packagesTL
-  const shippingTL = hasProducts ? SHIPPING_TL : 0
+  const moneyDue = !!memItem || subtotalTL > 0
+  // Kargo: premium üyelik (dijital) HARİÇ her ödemeli sipariş kargolu (kullanıcı direktifi "premium
+  // dijital, onun dışında her şeyde kargo"). Backend PaymentController ile senkron: cartCheckout'taki
+  // coin paketi + fiziksel ürün kargolu; premium ayrı akış (buyMembership) -> kargosuz.
+  const shippingTL = !memItem && moneyDue ? SHIPPING_TL : 0
   const totalTL = subtotalTL + shippingTL
-  // KDV %20 DAHİL (kitaplar hariç). Toplam DEĞİŞMEZ — sadece fiyatın içindeki KDV gösterilir (Cart ile aynı mantık).
+  // KDV %20 DAHİL (kitaplar hariç). Toplam DEĞİŞMEZ — sadece fiyatın içindeki KDV (ödeme adımında gösterilir).
   const bookTL = productRows
     .filter((i) => i.product!.category === 'kitap')
     .reduce((s, i) => s + ((i.product!.moneyPrice ?? 0) / 100) * i.qty, 0)
   const vatTL = (Math.max(0, subtotalTL - bookTL) * 20) / 120
-  const itemCount = memItem ? 1 : productRows.reduce((s, i) => s + i.qty, 0) + coinRows.reduce((s, i) => s + i.qty, 0)
-  const moneyDue = !!memItem || subtotalTL > 0
 
   const reload = () => getAddresses().then(setAddresses).catch(() => {})
 
@@ -112,7 +114,12 @@ export default function DeliveryStep({
     setErr('')
     setBusy(true)
     try {
-      await onPay({ shippingId: shipId, billingId: billId }, moneyDue ? method : 'card')
+      await onPay({ shippingId: shipId, billingId: billId }, moneyDue ? method : 'card', {
+        subtotalTL,
+        shippingTL,
+        vatTL,
+        totalTL,
+      })
     } catch (e) {
       setErr((e as { message?: string })?.message || 'Ödeme başlatılamadı.')
       setBusy(false)
@@ -130,10 +137,6 @@ export default function DeliveryStep({
             <h2 className="ckw-title">
               <Icon name="pin" size={24} /> Teslimat
             </h2>
-          </div>
-          <div className="ckw-pay-amount">
-            <span>Ödenecek</span>
-            <b className="tnum">{fmtTL(totalTL)}</b>
           </div>
         </header>
 
@@ -163,35 +166,8 @@ export default function DeliveryStep({
           </div>
         )}
 
-        {/* Sipariş özeti (kargo dahil) */}
-        <div className="ckw-block">
-          <label className="ckw-label">Sipariş Özeti</label>
-          <div className="ckw-rows">
-            <div className="ckw-row">
-              <span>{memItem ? '1 Yıllık Premium Üyelik' : `Ara toplam · ${itemCount} ürün`}</span>
-              <span className="tnum">{fmtTL(subtotalTL)}</span>
-            </div>
-            {hasProducts && (
-              <div className="ckw-row">
-                <span>Kargo</span>
-                <span className="tnum">{fmtTL(SHIPPING_TL)}</span>
-              </div>
-            )}
-            {vatTL > 0 && (
-              <div className="ckw-row ckw-row-vat">
-                <span>KDV (%20 dahil){bookTL > 0 ? ' · kitaplar hariç' : ''}</span>
-                <span className="tnum">{fmtTL(vatTL)}</span>
-              </div>
-            )}
-            <div className="ckw-row ckw-row-total">
-              <span>Ödenecek</span>
-              <span className="tnum">{fmtTL(totalTL)}</span>
-            </div>
-          </div>
-          <button type="button" className="ckw-addr-link" onClick={onBack}>
-            <Icon name="caret-left" size={13} /> Sepeti düzenle
-          </button>
-        </div>
+        {/* Fiyat özeti (ara toplam/kargo/KDV/ödenecek) KULLANICI İSTEĞİYLE bu adımdan kaldırıldı ->
+            ÖDEME adımında (CardForm breakdown) gösterilir. Teslimat adımı = yalnız adres + ödeme yöntemi. */}
 
         {/* Ödeme yöntemi (para ödemesi varsa ve havale açıksa) */}
         {moneyDue && bankInfo?.enabled && (

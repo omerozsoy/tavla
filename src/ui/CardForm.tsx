@@ -11,6 +11,13 @@ export interface CardPayData {
   cvv: string
 }
 
+export interface CardBreakdown {
+  subtotalTL: number
+  shippingTL: number
+  vatTL: number
+  totalTL: number
+}
+
 interface Props {
   amount: number // kuruş
   title?: string
@@ -18,6 +25,8 @@ interface Props {
   onClose: () => void
   onSubmit: (card: CardPayData) => void
   stepsSlot?: ReactNode // üstte adım göstergesi
+  breakdown?: CardBreakdown // fiyat özeti (ara toplam/kargo/KDV) — ödeme adımında gösterilir
+  onBack?: () => void // "Geri Dön" -> teslimat adımı (verilmezse onClose kullanılır)
 }
 
 const BRAND_LABEL: Record<CardBrand, string> = {
@@ -34,7 +43,10 @@ function fmtTL(kurus: number): string {
 
 // Kredi/Banka Kartı ile ödeme sayfası (biçim). GÜVENLİK: kart verisi YALNIZ bu bileşenin
 // state'inde; loglanmaz, localStorage'a yazılmaz. Gönderim onSubmit ile üst akışa verilir.
-export default function CardForm({ amount, title, busy = false, onClose, onSubmit, stepsSlot }: Props) {
+const fmtTLnum = (n: number): string =>
+  n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' ₺'
+
+export default function CardForm({ amount, title, busy = false, onClose, onSubmit, stepsSlot, breakdown, onBack }: Props) {
   const [number, setNumber] = useState('')
   const [name, setName] = useState('')
   const [mm, setMm] = useState('')
@@ -80,6 +92,31 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
             <b className="tnum">{fmtTL(amount)}</b>
           </div>
         </header>
+
+        {breakdown && (
+          <div className="ckw-rows ckw-pay-breakdown">
+            <div className="ckw-row">
+              <span>Ara toplam</span>
+              <span className="tnum">{fmtTLnum(breakdown.subtotalTL)}</span>
+            </div>
+            {breakdown.shippingTL > 0 && (
+              <div className="ckw-row">
+                <span>Kargo</span>
+                <span className="tnum">{fmtTLnum(breakdown.shippingTL)}</span>
+              </div>
+            )}
+            {breakdown.vatTL > 0 && (
+              <div className="ckw-row ckw-row-vat">
+                <span>KDV (%20 dahil)</span>
+                <span className="tnum">{fmtTLnum(breakdown.vatTL)}</span>
+              </div>
+            )}
+            <div className="ckw-row ckw-row-total">
+              <span>Ödenecek</span>
+              <span className="tnum">{fmtTLnum(breakdown.totalTL)}</span>
+            </div>
+          </div>
+        )}
 
         <form
           className="ckw-form"
@@ -168,8 +205,8 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
           </div>
 
           <div className="ckw-pay-actions">
-            <button type="button" className="ckw-btn ckw-btn-ghost" onClick={onClose} disabled={busy}>
-              Vazgeç
+            <button type="button" className="ckw-btn ckw-btn-ghost" onClick={onBack ?? onClose} disabled={busy}>
+              <Icon name="caret-left" size={16} /> Geri Dön
             </button>
             <button type="submit" className="ckw-btn" disabled={!valid || busy}>
               {busy ? (
