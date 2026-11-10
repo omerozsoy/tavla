@@ -87,10 +87,10 @@
 /* Ödeme yöntemi rozetleri (logonun altında): beyaz pill -> her footer temasında görünür. */
 .foot-pay {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   margin-top: 14px;
-  flex-wrap: wrap;
 }
 .foot-pay img {
   height: 20px;
