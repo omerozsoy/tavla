@@ -205,12 +205,17 @@ export default function MagazaSwiss({
             <span className="mgz-mem-badge"><Icon name="crown" size={15} /> PREMIUM ÜYELİK</span>
             <h2 className="mgz-mem-title">Oyunu bir üst seviyeye taşı.</h2>
             <p className="mgz-mem-sub">
-              Reklamsız deneyim, özel çerçeve &amp; rozetler, gelişmiş maç analizi ve daha fazlası — bir yıl boyunca.
+              Yapay zekâ, turnuvalar ve gelişmiş analizlerle tam erişim — bir yıl boyunca.
             </p>
             <ul className="mgz-mem-perks">
-              <li><Icon name="check" size={15} /> Reklamsız oyun</li>
-              <li><Icon name="check" size={15} /> Özel çerçeve &amp; rozetler</li>
-              <li><Icon name="check" size={15} /> Gelişmiş maç analizi</li>
+              <li><Icon name="check" size={15} /> Yapay Zeka ile Oyna</li>
+              <li><Icon name="check" size={15} /> Online Turnuvalar</li>
+              <li><Icon name="check" size={15} /> Ulusal Turnuva Takvimi</li>
+              <li><Icon name="check" size={15} /> Pozisyon Analizi</li>
+              <li><Icon name="check" size={15} /> Mat Analizi</li>
+              <li><Icon name="check" size={15} /> Maç Analizleri</li>
+              <li><Icon name="check" size={15} /> Kanıtlanabilir Adil Zar — Provably Fair</li>
+              <li><Icon name="check" size={15} /> Detaylı Oyuncu İstatistikleri</li>
             </ul>
           </div>
           <div className="mgz-mem-cta">

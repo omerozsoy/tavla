@@ -330,11 +330,12 @@
   grid-template-columns: 1fr auto;
   gap: clamp(1.2rem, 4vw, 3rem);
   align-items: center;
-  background: linear-gradient(135deg, var(--accent) 0%, #8f2f22 100%);
+  /* 2 ana marka rengi: terracotta (--accent) -> koyu (--ink) diyagonal geçiş (tek renk değil). */
+  background: linear-gradient(120deg, var(--accent) 0%, var(--accent) 42%, var(--ink) 100%);
   color: var(--accent-ink);
   padding: clamp(1.4rem, 3vw, 2.4rem) clamp(1.4rem, 3.5vw, 2.8rem);
   border-radius: 16px;
-  box-shadow: 0 22px 46px -26px rgba(168, 58, 43, 0.6);
+  box-shadow: 0 22px 46px -26px rgba(22, 19, 15, 0.5);
 }
 .mgz-mem-badge {
   display: inline-flex;
@@ -365,18 +366,28 @@
 }
 .mgz-mem-perks {
   list-style: none;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem 1.4rem;
   margin: 0;
   padding: 0;
 }
 .mgz-mem-perks li {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   font-size: 0.9rem;
   font-weight: 600;
+  min-width: 0;
+}
+.mgz-mem-perks li svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+@media (max-width: 520px) {
+  .mgz-mem-perks {
+    grid-template-columns: 1fr;
+  }
 }
 .mgz-mem-cta {
   display: flex;
