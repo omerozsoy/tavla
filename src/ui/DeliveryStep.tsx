@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useCoinPackages } from '../useCoinPackages'
@@ -26,11 +26,13 @@ export default function DeliveryStep({
   items,
   onBack,
   onPay,
+  stepsSlot,
 }: {
   items: CartItem[]
   onBack: () => void
   onManageAddresses?: () => void
   onPay: (sel: CartAddressSel, method: PayMethod) => Promise<void>
+  stepsSlot?: ReactNode // üstte adım göstergesi
 }) {
   useEscape(onBack)
   const coinPackages = useCoinPackages()
@@ -116,6 +118,7 @@ export default function DeliveryStep({
     // GERÇEK SAYFA (modal değil): page-host akışında statik Swiss teslimat & ödeme adımı.
     <div className="register-overlay page">
       <div className="ckw ckw-delivery">
+        {stepsSlot}
         <header className="ckw-pay-head">
           <div>
             <p className="ckw-eyebrow">Adım 2 / 3 · Teslimat</p>

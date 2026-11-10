@@ -558,6 +558,7 @@ import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, type CartAddressSel, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import DeliveryStep from './ui/DeliveryStep'
+import CheckoutSteps, { type CheckoutStep } from './ui/CheckoutSteps'
 import BankTransfer from './ui/BankTransfer'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
@@ -1317,6 +1318,32 @@ export default function App() {
       setMyOrdersOpen(true)
     }
   }
+
+  // Checkout adım göstergesi (Sepet → Teslimat → Ödeme) — adımlar arası ileri/geri gezinme.
+  const goCheckoutStep = (step: CheckoutStep) => {
+    if (step === 'cart') {
+      setCardPay(null)
+      setDeliveryOpen(false)
+      setCartOpen(true)
+    } else if (step === 'delivery') {
+      setCardPay(null)
+      setCartOpen(false)
+      setDeliveryOpen(true)
+    } else {
+      // payment: cardPay zaten aktif (geri-nav); emniyet için sessionStorage'dan kur.
+      try {
+        const s = sessionStorage.getItem('cardPay')
+        if (s && !cardPay) setCardPay(JSON.parse(s))
+      } catch {
+        /* yoksay */
+      }
+      setCartOpen(false)
+      setDeliveryOpen(false)
+    }
+  }
+  const renderCheckoutSteps = (current: CheckoutStep) => (
+    <CheckoutSteps current={current} canDelivery={cartCount > 0} canPayment={!!cardPay} onGo={goCheckoutStep} />
+  )
 
   const [frameGalleryOpen, setFrameGalleryOpen] = useState(false) // avatar cerceve galerisi
 
@@ -10749,6 +10776,7 @@ export default function App() {
             setCartOpen(false)
             setDeliveryOpen(true)
           }}
+          stepsSlot={renderCheckoutSteps('cart')}
         />
       )}
       {deliveryOpen && user && (
@@ -10763,6 +10791,7 @@ export default function App() {
             setEditProfile(true)
           }}
           onPay={(sel, method) => runCheckout(cartItems, null, sel, method)}
+          stepsSlot={renderCheckoutSteps('delivery')}
         />
       )}
       {bankData && (
@@ -10784,6 +10813,7 @@ export default function App() {
           amount={cardPay.amount}
           onClose={clearCardPay}
           onSubmit={handleCardPay}
+          stepsSlot={renderCheckoutSteps('payment')}
         />
       )}
       {frameGalleryOpen && (

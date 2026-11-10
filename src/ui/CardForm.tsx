@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { detectBrand, formatCardNumber, cvvLength, luhnValid, expiryValid, cardFormValid, type CardBrand } from './cardValidation'
 import './CheckoutSwiss.css'
@@ -17,6 +17,7 @@ interface Props {
   busy?: boolean
   onClose: () => void
   onSubmit: (card: CardPayData) => void
+  stepsSlot?: ReactNode // üstte adım göstergesi
 }
 
 const BRAND_LABEL: Record<CardBrand, string> = {
@@ -33,7 +34,7 @@ function fmtTL(kurus: number): string {
 
 // Kredi/Banka Kartı ile ödeme sayfası (biçim). GÜVENLİK: kart verisi YALNIZ bu bileşenin
 // state'inde; loglanmaz, localStorage'a yazılmaz. Gönderim onSubmit ile üst akışa verilir.
-export default function CardForm({ amount, title, busy = false, onClose, onSubmit }: Props) {
+export default function CardForm({ amount, title, busy = false, onClose, onSubmit, stepsSlot }: Props) {
   const [number, setNumber] = useState('')
   const [name, setName] = useState('')
   const [mm, setMm] = useState('')
@@ -66,6 +67,7 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
     // GERÇEK SAYFA (modal değil): page-host akışında statik Swiss kart ödeme sayfası.
     <div className="register-overlay page">
       <div className="ckw ckw-pay">
+        {stepsSlot}
         <header className="ckw-pay-head">
           <div>
             <p className="ckw-eyebrow">Güvenli Ödeme</p>

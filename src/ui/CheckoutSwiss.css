@@ -562,6 +562,110 @@
   }
 }
 
+/* ===================== CHECKOUT ADIM GÖSTERGESİ (STEPPER) ===================== */
+.ckw-steps {
+  margin: 0 0 2rem;
+}
+.ckw-steps ol {
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ckw-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  text-align: center;
+}
+/* Bağlantı çizgisi: her adımın merkezinden önceki adıma kadar. */
+.ckw-step::before {
+  content: '';
+  position: absolute;
+  top: 22px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line);
+  z-index: 0;
+}
+.ckw-step:first-child::before {
+  display: none;
+}
+.ckw-step.on::before,
+.ckw-step.done::before {
+  background: var(--accent);
+}
+.ckw-step button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink-40);
+  font-family: inherit;
+}
+.ckw-step.can button {
+  cursor: pointer;
+}
+.ckw-step-ic {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink-40);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.ckw-step-l {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ckw-step.done {
+  color: var(--ink-60);
+}
+.ckw-step.done .ckw-step-ic {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ckw-step.on {
+  color: var(--ink);
+}
+.ckw-step.on .ckw-step-ic {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.ckw-step.can button:hover {
+  color: var(--accent);
+}
+.ckw-step.can button:hover .ckw-step-ic {
+  border-color: var(--accent);
+}
+@media (max-width: 480px) {
+  .ckw-step-l {
+    font-size: 0.66rem;
+  }
+  .ckw-step-ic {
+    width: 38px;
+    height: 38px;
+  }
+  .ckw-step::before {
+    top: 19px;
+  }
+}
+
 /* ===================== TESLİMAT & ÖDEME ADIMI ===================== */
 .ckw-delivery {
   max-width: 820px;

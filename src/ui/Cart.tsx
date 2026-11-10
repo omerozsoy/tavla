@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { CoinPackage } from '../coinPackages'
@@ -48,6 +48,7 @@ export default function Cart({
   onContinue,
   onProceed,
   autoCheckout = false,
+  stepsSlot,
 }: {
   items: CartItem[]
   setItems: (updater: (prev: CartItem[]) => CartItem[]) => void
@@ -55,6 +56,7 @@ export default function Cart({
   onContinue: () => void
   onProceed: () => void // "Devam Et" -> Teslimat & Ödeme adımı (/odeme)
   autoCheckout?: boolean // "Hemen Satın Al" -> adım akışını bir kez otomatik başlat
+  stepsSlot?: ReactNode // üstte adım göstergesi (Sepet → Teslimat → Ödeme)
 }) {
   useEscape(onClose)
   const notify = useToast()
@@ -152,6 +154,8 @@ export default function Cart({
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
         </Button>
+
+        {stepsSlot}
 
         <header className="ckw-head">
           <h2 className="ckw-title">
