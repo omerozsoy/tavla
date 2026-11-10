@@ -64,7 +64,7 @@
 }
 .ckw-title {
   font-size: clamp(1.4rem, 2.5vw, 1.8rem);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: -0.01em;
   margin: 0;
   display: flex;
@@ -210,7 +210,7 @@
   color: var(--faint);
 }
 .ckw-line-price {
-  font-weight: 700;
+  font-weight: 400;
   font-size: 0.98rem;
   white-space: nowrap;
   text-align: right;
@@ -282,7 +282,7 @@
   top: 84px;
 }
 .ckw-summary-t {
-  font-weight: 700;
+  font-weight: 400;
   font-size: 1.05rem;
   margin: 0 0 1.1rem;
 }
@@ -380,7 +380,7 @@
 }
 .ckw-row-total {
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--ink);
   padding-top: 0.7rem;
   margin-top: 0.1rem;
@@ -457,7 +457,7 @@
 }
 .ckw-pay-amount b {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--accent);
 }
 .ckw-form {
@@ -502,7 +502,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--muted);
   pointer-events: none;
 }

@@ -70,7 +70,7 @@ export default function DeliveryStep({
   const reload = () => getAddresses().then(setAddresses).catch(() => {})
 
   useEffect(() => {
-    if (!hasProducts) return
+    if (!moneyDue) return // para ödemesi olan HER checkout'ta adresleri yükle (dijital üyelik/coin dahil)
     let alive = true
     getAddresses()
       .then((list) => {
@@ -85,7 +85,7 @@ export default function DeliveryStep({
     return () => {
       alive = false
     }
-  }, [hasProducts])
+  }, [moneyDue])
 
   useEffect(() => {
     let alive = true
@@ -132,16 +132,19 @@ export default function DeliveryStep({
           </div>
         </header>
 
-        {/* Teslimat + Fatura adresi — YAN YANA, buradan girilebilir/düzenlenebilir */}
-        {hasProducts && (
+        {/* Teslimat + Fatura adresi — YAN YANA, buradan girilebilir/düzenlenebilir. Para ödemesi
+            olan HER checkout'ta görünür (dijital üyelik/coin dahil). Teslimat adresi YALNIZ fiziksel
+            üründe zorunlu; dijitalde opsiyonel (kayıtlı adres seç/düzenle için yine gösterilir). */}
+        {moneyDue && (
           <div className="ckw-addr-grid">
             <AddressField
-              label="Teslimat adresi"
+              label={hasProducts ? 'Teslimat adresi' : 'Adresim (isteğe bağlı)'}
               type="shipping"
               addresses={shippingAddrs}
               selectedId={shipId}
               onSelect={setShipId}
               onReload={reload}
+              optional={!hasProducts}
             />
             <AddressField
               label="Fatura adresi (isteğe bağlı)"
