@@ -99,8 +99,9 @@
   width: fit-content;
 }
 .foot-pay img {
-  height: 30px;
-  width: auto;
+  /* İki logo AYNI genişlikte (yükseklik orana göre değişir). */
+  width: 130px;
+  height: auto;
   display: block;
 }
 /* Slogan altinda ince altin -> saydam kısa ayrac (premium detay). */
