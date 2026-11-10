@@ -59,9 +59,12 @@
 
 /* ---- Marka blogu (sol) ---- */
 .foot-brand {
-  /* Marka+3 logo SOL'da kompakt kalir (BUYUMEZ) -> 7 kolon yanindaki bosluğu doldurur. */
+  /* Marka sütunu: logo + slogan + ödeme rozetleri ORTALI (ödeme logoları logoyla aynı merkezde). */
   flex: 0 1 244px;
   min-width: 244px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .foot-brandlock {
   display: inline-flex;
