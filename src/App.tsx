@@ -10608,6 +10608,11 @@ export default function App() {
             setShopOpen(false)
             setMyOrdersOpen(true)
           }}
+          onOpenCart={() => {
+            // Mağaza Swiss inline sepet kaldırıldı -> "Sepete git" eski Sepet modalını (SEPETİM) açar.
+            setShopOpen(false)
+            setCartOpen(true)
+          }}
           onCoinsChange={(coins) => setUser((u) => (u ? { ...u, coins } : u))}
           onClose={() => {
             setShopOpen(false)

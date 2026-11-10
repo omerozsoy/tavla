@@ -62,6 +62,39 @@
 .mgz-close:hover {
   background: var(--accent);
 }
+/* Sepete git (sabit, close butonunun solunda) -> eski Sepet modalını açar. Accent renkli (siyah DEĞİL). */
+.mgz-cart-fab {
+  position: fixed;
+  top: 14px;
+  right: 66px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 40px;
+  padding: 0 0.9rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px -8px rgba(22, 19, 15, 0.4);
+}
+.mgz-cart-fab:hover {
+  filter: brightness(1.07);
+}
+.mgz-cart-fab-n {
+  background: var(--accent-ink);
+  color: var(--accent);
+  border-radius: 999px;
+  min-width: 1.4em;
+  text-align: center;
+  padding: 0 0.3em;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
 /* Sayfa-host'ta (ana sayfa) sol menüden gezilir -> kose kapat gizli (eski .modal-close deseni). */
 .page-host .mgz-close {
   display: none;
@@ -803,6 +836,11 @@
 }
 
 /* --- 5. SEPET --- */
+/* Inline Sepet bölümü kullanıcı isteğiyle GİZLENDİ — sepet/ödeme "Sepete git" fab'ı ile
+   eski Sepet modalında (SEPETİM) yapılır. (Render korunur; yalnız görünüm kapatılır.) */
+.mgz-cart {
+  display: none;
+}
 .mgz-cart-count {
   font-family: 'Space Mono', monospace;
   font-size: 0.85rem;

@@ -44,6 +44,7 @@ type Props = {
   onRequireAuth: () => void
   onManageAddresses: () => void
   onOrders: () => void
+  onOpenCart: () => void // "Sepete git" -> eski Sepet modalı (inline sepet kaldırıldı)
   onCoinsChange?: (coins: number) => void
   onClose: () => void
   titleOverride?: string
@@ -61,6 +62,7 @@ export default function MagazaSwiss({
   onRequireAuth,
   onManageAddresses,
   onOrders,
+  onOpenCart,
   onCoinsChange,
   onClose,
   titleOverride,
@@ -183,11 +185,19 @@ export default function MagazaSwiss({
     flashAdded('mem')
   }
 
+  const cartCount = cartItems.reduce((s, c) => s + c.qty, 0)
+
   return (
     <div className="mgz">
       <button type="button" className="mgz-close" onClick={onClose} aria-label="Kapat">
         <Icon name="x" size={18} />
       </button>
+      {/* Sepete git: inline sepet kaldırıldı -> eski Sepet modalını (SEPETİM) açar. */}
+      {cartCount > 0 && (
+        <button type="button" className="mgz-cart-fab" onClick={onOpenCart} aria-label="Sepete git">
+          <Icon name="cart" size={18} /> Sepet <span className="mgz-cart-fab-n">{cartCount}</span>
+        </button>
+      )}
 
       {/* GİRİŞ / HERO */}
       <section className="mgz-hero" aria-label="Giriş">
@@ -377,16 +387,17 @@ export default function MagazaSwiss({
           </div>
       </section>
 
-      {/* 4 — HİKÂYE + TESLİMAT */}
-      {/* Marka hikâyesi (#hikaye) bölümü kullanıcı isteğiyle KALDIRILDI. */}
-
-      {/* 5 — SEPET + ÖDEME */}
+      {/* Hikâye bölümü kaldırıldı. Inline Sepet bölümü CSS ile GİZLİ (.mgz-cart{display:none}) —
+          kullanıcı isteğiyle sayfadan çıkarıldı; sepet/ödeme "Sepete git" fab'ı ile eski Sepet
+          modalında (SEPETİM) yapılır (onOpenCart). Render korunur ki checkout mantığı/tipler
+          "kullanılıyor" kalsın (ponytail: gizleme < büyük söküm; çöp temizliği gerekirse CartSection
+          + yalnız-onun import'ları sökülür). */}
       <CartSection
         items={cartItems}
         setItems={setCartItems}
         coinPackages={coinPackages}
-        onRequireAuth={onRequireAuth}
         user={user}
+        onRequireAuth={onRequireAuth}
         onManageAddresses={onManageAddresses}
         onOrders={onOrders}
         onCoinsChange={onCoinsChange}
