@@ -556,7 +556,8 @@ import CheckerShop from './ui/CheckerShop'
 import { CHECKER_BY_ID } from './checkers'
 import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
-import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
+import Cart, { type CartItem, type CartAddressSel, MEMBERSHIP_ITEM_ID } from './ui/Cart'
+import DeliveryStep from './ui/DeliveryStep'
 import BankTransfer from './ui/BankTransfer'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
@@ -1178,6 +1179,8 @@ export default function App() {
   const [kizOpen, setKizOpen] = useState(false) // Kız Tavlası oyun sayfasi (ayri kural motoru)
   const [checkerShopOpen, setCheckerShopOpen] = useState(false) // Pul Tasarimlari (checker) sayfasi
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
+  // Teslimat & Ödeme adımı (adres/kargo + yöntem): /sepet -> /odeme -> /kart-odeme GERÇEK sayfa akışı.
+  const [deliveryOpen, setDeliveryOpen] = useState(false)
   // "Hemen Satın Al" -> sepet açılınca adres hazırsa ödemeyi (kart) OTOMATİK başlat (CardForm çıkar).
   const [cartAutoCheckout, setCartAutoCheckout] = useState(false)
   // Kart ödemesi artık PayTR iframe sayfasında (sunucu /pay/iframe) — in-app kart formu kaldırıldı;
@@ -1256,6 +1259,65 @@ export default function App() {
     notify.success(t('products.addedToCart'))
   }
   const cartCount = cartItems.reduce((s, c) => s + c.qty, 0) // üst bar sepet rozeti + Mağaza
+
+  // Siparişi sunucuda oluştur (pending) -> kart formu (/kart-odeme) veya havale talimatı.
+  // DeliveryStep (Teslimat & Ödeme adımı) çağırır: adres/yöntem seçildikten sonra. Üyelik tek
+  // başına / coin ürünleri (anında) / para kısmı (kart|havale) aynı eski akış.
+  async function runCheckout(its: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod) {
+    const closeSteps = () => {
+      setDeliveryOpen(false)
+      setCartOpen(false)
+    }
+    if (its.some((i) => i.kind === 'membership')) {
+      const r = await buyMembership(method)
+      closeSteps()
+      if (isBankTransfer(r)) {
+        setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
+        setBankData(r)
+      } else {
+        setCardPay({ amount: r.amount, paymentId: r.payment_id })
+      }
+      return
+    }
+    const coinProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'coin')
+    const moneyProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'money')
+    const coinPackages = its.filter((i) => i.kind === 'coins' || i.kind === undefined)
+
+    if (coinProducts.length) {
+      const lines = coinProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null }))
+      const sig = JSON.stringify([lines, sel.shippingId, sel.billingId ?? null])
+      if (coinOrderKeyRef.current?.sig !== sig) coinOrderKeyRef.current = { sig, key: newCommandId() }
+      const r = await cartCoinOrder(lines, sel.shippingId as number, sel.billingId, undefined, coinOrderKeyRef.current.key)
+      coinOrderKeyRef.current = null
+      setUser((u) => (u ? { ...u, coins: r.coins } : u))
+      setCartItems((prev) => prev.filter((i) => !(i.kind === 'product' && i.product?.payment === 'coin')))
+    }
+
+    if (coinPackages.length || moneyProducts.length) {
+      const r = await cartCheckout({
+        coin_items: coinPackages.map((i) => ({ id: i.id, qty: i.qty })),
+        products: moneyProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null })),
+        shipping_address_id: sel.shippingId,
+        billing_address_id: sel.billingId,
+        code,
+        method,
+      })
+      closeSteps()
+      if (isBankTransfer(r)) {
+        setCartItems((prev) =>
+          prev.filter((i) => !(i.kind === 'coins' || i.kind === undefined) && !(i.kind === 'product' && i.product?.payment === 'money')),
+        )
+        setBankData(r)
+      } else {
+        setCardPay({ amount: r.amount, paymentId: r.payment_id })
+      }
+    } else {
+      closeSteps()
+      notify.success('Siparişin alındı.')
+      setMyOrdersOpen(true)
+    }
+  }
+
   const [frameGalleryOpen, setFrameGalleryOpen] = useState(false) // avatar cerceve galerisi
 
   // --- URL yonlendirme (hash tabanli) ---
@@ -1313,6 +1375,8 @@ export default function App() {
         ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
       : cardPay
         ? 'kart-odeme/' + cardPay.paymentId // Kart ödeme GERÇEK sayfa; state sessionStorage'da -> yenilemede kurulur
+      : deliveryOpen
+        ? 'odeme' // Teslimat & Ödeme adımı
       : cartOpen
         ? 'sepet'
       : shopOpen
@@ -1648,8 +1712,9 @@ export default function App() {
           break
         }
         case 'odeme':
-          // Odeme adimi gecici (imzali submitUrl bellekte); dogrudan/yenileme ile gelince sepete don.
-          setCartOpen(true)
+          // Teslimat & Ödeme adımı: sepet localStorage'da -> yenileme/geri ile gelince adım açılır
+          // (adres/yöntem yeniden seçilir). Sepet boşsa DeliveryStep boş-özet gösterir.
+          setDeliveryOpen(true)
           break
         case 'cerceveler':
           setFrameGalleryOpen(true)
@@ -9813,6 +9878,7 @@ export default function App() {
     setMyOrdersOpen(false)
     setBankData(null) // Havale/EFT talimat ekrani da yuzen overlay; navigasyonda kapansin (baska sayfaya sizmasin)
     setCardPay(null) // Kart odeme formu (CardForm) tam-ekran koyu overlay; yarim kalan odeme resume/navigasyonda MACI KAPLAMASIN ("maca don -> karanlik ekran" bug'i, bankData ile ayni desen)
+    setDeliveryOpen(false) // Teslimat & Ödeme adımı da navigasyonda kapansın
     setContentView(null)
     setNewsSlug(null)
     setQuizOpen(false)
@@ -10392,6 +10458,7 @@ export default function App() {
     productsOpen ||
     myOrdersOpen ||
     cartOpen ||
+    deliveryOpen ||
     !!bankData ||
     !!cardPay || // kart ödeme formu (CardForm) = açık sayfa; yoksa sepet kapanınca "home" sanıp cardPay'i temizliyordu
     frameGalleryOpen ||
@@ -10666,74 +10733,30 @@ export default function App() {
           autoCheckout={cartAutoCheckout}
           onClose={() => { setCartOpen(false); setCartAutoCheckout(false) }}
           onContinue={() => {
-            // "Alışverişe devam" -> Mağaza coin ana sayfası (son ürün overlay'i değil)
+            // "Alışverişe devam" -> Mağaza ana sayfası
             setCartOpen(false)
             openShop()
           }}
-          onManageAddresses={() => {
-            // Adres ekle/yönet -> profil Adreslerim sekmesi (sepet açık kalır: kapatıp profili aç).
+          onProceed={() => {
+            // Sepet -> Teslimat & Ödeme adımı (/odeme)
+            setCartAutoCheckout(false)
             setCartOpen(false)
+            setDeliveryOpen(true)
+          }}
+        />
+      )}
+      {deliveryOpen && user && (
+        <DeliveryStep
+          items={cartItems}
+          onBack={() => { setDeliveryOpen(false); setCartOpen(true) }}
+          onManageAddresses={() => {
+            // Adres ekle/yönet -> profil Adreslerim (adım kapanır, profil açılır).
+            setDeliveryOpen(false)
             setProfileEditMode(false)
             setProfileTab('addresses')
             setEditProfile(true)
           }}
-          onCheckout={async (its, code, sel, method: PayMethod) => {
-            // Üyelik uzatma tek başına (mevcut akış).
-            if (its.some((i) => i.kind === 'membership')) {
-              const r = await buyMembership(method)
-              setCartOpen(false)
-              if (isBankTransfer(r)) {
-                // Havale: sipariş sunucuda oluştu (pending) -> üyelik öğesini sepetten çıkar.
-                setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
-                setBankData(r)
-              } else {
-                setCardPay({ amount: r.amount, paymentId: r.payment_id }) // uygulama-içi kart formu
-              }
-              return
-            }
-            const coinProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'coin')
-            const moneyProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'money')
-            const coinPackages = its.filter((i) => i.kind === 'coins' || i.kind === undefined)
-
-            // 1) Coin ödemeli ürünler -> ANINDA sipariş (atomik). Başarınca sepetten çıkar.
-            if (coinProducts.length) {
-              const lines = coinProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null }))
-              const sig = JSON.stringify([lines, sel.shippingId, sel.billingId ?? null])
-              if (coinOrderKeyRef.current?.sig !== sig) coinOrderKeyRef.current = { sig, key: newCommandId() }
-              const r = await cartCoinOrder(lines, sel.shippingId as number, sel.billingId, undefined, coinOrderKeyRef.current.key)
-              coinOrderKeyRef.current = null // başarı -> sonraki sipariş yeni anahtar
-              setUser((u) => (u ? { ...u, coins: r.coins } : u))
-              setCartItems((prev) => prev.filter((i) => !(i.kind === 'product' && i.product?.payment === 'coin')))
-            }
-
-            // 2) Para kısmı (coin paketleri + para-ürünleri) -> TEK ödeme (kart veya havale).
-            if (coinPackages.length || moneyProducts.length) {
-              const r = await cartCheckout({
-                coin_items: coinPackages.map((i) => ({ id: i.id, qty: i.qty })),
-                products: moneyProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null })),
-                shipping_address_id: sel.shippingId,
-                billing_address_id: sel.billingId,
-                code,
-                method,
-              })
-              setCartOpen(false)
-              if (isBankTransfer(r)) {
-                // Havale: para siparişleri sunucuda oluştu (pending) -> sepetten çıkar
-                // (coin ürünleri zaten anında işlendi ve yukarıda çıkarıldı).
-                setCartItems((prev) =>
-                  prev.filter((i) => !(i.kind === 'coins' || i.kind === undefined) && !(i.kind === 'product' && i.product?.payment === 'money')),
-                )
-                setBankData(r)
-              } else {
-                setCardPay({ amount: r.amount, paymentId: r.payment_id }) // uygulama-içi kart formu
-              }
-            } else {
-              // Yalnız coin ürünleri vardı -> sipariş tamam.
-              setCartOpen(false)
-              notify.success('Siparişin alındı.')
-              setMyOrdersOpen(true)
-            }
-          }}
+          onPay={(sel, method) => runCheckout(cartItems, null, sel, method)}
         />
       )}
       {bankData && (
