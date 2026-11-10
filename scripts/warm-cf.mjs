@@ -14,6 +14,7 @@
 // sart (creds yok). Bulletproof istenirse: CF_API_TOKEN secret + bu asamada purge cagrisi ekle.
 
 import { readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 
 const ORIGIN = process.env.WARM_ORIGIN ?? 'https://tavlatv.com'
 const LOCAL_INDEX = 'backend/public/index.html'
@@ -49,7 +50,24 @@ while (Date.now() < deadline) {
   await sleep(POLL_MS)
 }
 if (!landed) {
-  console.error(`✗ ${TIMEOUT_MS / 60000}dk icinde deploy inmedi — isitma atlandi (QD/CI'yi kontrol et).`)
+  // BURST: hizli pes-pese push'ta Forge QD daima HEAD'i deployer, ARA commit'leri atlar ->
+  // bizim build canliya hic cikmaz, isitacak sey yok. Bunu "gercek deploy kacagi"ndan ayir:
+  // main tepesi bizim commit'ten ilerlemisse = superseded -> YESIL skip (red degil). Hala biz
+  // HEAD'ken inmediyse = gercek kacak (QD stuck/CI) -> RED (bilgilendirici; continue-on-error
+  // zaten CI'yi bloklamaz).
+  const sha = process.env.GITHUB_SHA
+  let tip = ''
+  if (sha) {
+    try {
+      execSync('git fetch origin main --depth=1 -q', { stdio: 'ignore' })
+      tip = execSync('git rev-parse FETCH_HEAD', { encoding: 'utf8' }).trim()
+    } catch { /* fetch basarisizsa asagida red'e dus */ }
+  }
+  if (tip && tip !== sha) {
+    console.log(`ℹ Burst: main tepesi ilerledi (${tip.slice(0, 8)} != ${sha.slice(0, 8)}) — QD daha yeni commit'i deploy edecek. Isitma atlandi (superseded, red degil).`)
+    process.exit(0)
+  }
+  console.error(`✗ ${TIMEOUT_MS / 60000}dk icinde deploy inmedi (biz hala HEAD'iz) — gercek kacak, QD/CI'yi kontrol et.`)
   process.exit(1)
 }
 console.log('✓ Deploy canli. Asset\'ler isitiliyor…')
