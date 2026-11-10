@@ -285,9 +285,10 @@ a.foot-partner:hover {
   font-size: 0.82rem;
   letter-spacing: 0.02em;
 }
-/* Telifin iki yaninda kucuk altin nokta ayrac (ince premium detay). */
-.foot-bottom::before,
-.foot-bottom::after {
+/* Telifin iki yaninda kucuk altin nokta ayrac (ince premium detay) — yalniz "© ... TavlaTV"
+   satirini sarar; alt satirdaki hak-sakli metni DISINDA kalir. */
+.foot-copy::before,
+.foot-copy::after {
   content: '';
   display: inline-block;
   width: 4px;
@@ -378,8 +379,8 @@ a.foot-partner:hover {
   text-transform: uppercase;
   font-size: 0.72rem;
 }
-.foot-bottom::before,
-.foot-bottom::after { background: var(--accent); opacity: 1; }
+.foot-copy::before,
+.foot-copy::after { background: var(--accent); opacity: 1; }
 /* Telif altı küçük hak-saklı metni: düz cümle (uppercase DEĞİL), ortalı, ufak. */
 .foot-legal {
   margin: 9px auto 0;

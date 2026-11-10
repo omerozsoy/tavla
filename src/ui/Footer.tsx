@@ -112,7 +112,7 @@ export default function Footer({ columns }: Props) {
         </nav>
         </div>
         <div className="foot-bottom">
-          © {year} TavlaTV
+          <span className="foot-copy">© {year} TavlaTV</span>
           <p className="foot-legal">
             Tavlatv internet sitesinde yer alan tüm içeriğin her türlü hakkı Tavlatv'ye aittir. İzin
             alınmadan, kaynak gösterilerek dahi alıntı yapılamaz.
