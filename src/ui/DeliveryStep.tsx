@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useCoinPackages } from '../useCoinPackages'
@@ -254,8 +254,10 @@ function AddressField({
   optional?: boolean
 }) {
   const empty = (): AddressInput => ({ type, title: '', name: '', phone: '', address: '', city: '', district: '', postal: '' })
-  // Zorunlu alanda kayıtlı adres yoksa form doğrudan açık gelsin.
-  const [editing, setEditing] = useState(!optional && addresses.length === 0)
+  // Kayıtlı adres YOKSA (zorunlu) form açık; VARSA dropdown göster. Adresler ASYNC yüklenir (ilk
+  // render'da boş) -> editing'i effect ile adres gelince güncelle; yoksa kayıtlı adres gizli kalırdı.
+  const [editing, setEditing] = useState(false)
+  const manualRef = useRef(false) // kullanıcı formu elle açtı/kapattı -> otomatik override etme
   const [editId, setEditId] = useState<number | null>(null)
   const [f, setF] = useState<AddressInput>(empty())
   const [busy, setBusy] = useState(false)
@@ -263,7 +265,13 @@ function AddressField({
   const set = (k: keyof AddressInput, v: string) => setF((p) => ({ ...p, [k]: v }))
   const ilceler = districtsOf(f.city)
 
+  useEffect(() => {
+    if (manualRef.current) return
+    setEditing(!optional && addresses.length === 0)
+  }, [addresses.length, optional])
+
   const startNew = () => {
+    manualRef.current = true
     setEditId(null)
     setF(empty())
     setErr('')
@@ -272,6 +280,7 @@ function AddressField({
   const startEdit = () => {
     const a = addresses.find((x) => x.id === selectedId)
     if (!a) return
+    manualRef.current = true
     setEditId(a.id)
     setF({ ...a })
     setErr('')
