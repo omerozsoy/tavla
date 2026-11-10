@@ -85,21 +85,23 @@
   color: var(--foot-cream-soft);
 }
 /* Ödeme yöntemi rozetleri (logonun altında): beyaz pill -> her footer temasında görünür. */
+/* Per-logo pill çerçeveleri kaldırıldı -> logolar tek sade beyaz şeritte (koyu footer'da
+   siyah Garanti logosu görünür kalsın diye ince beyaz zemin; gölge/kenarlık yok). Biraz büyütüldü. */
 .foot-pay {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   margin-top: 14px;
+  background: #fff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  width: fit-content;
 }
 .foot-pay img {
-  height: 20px;
+  height: 30px;
   width: auto;
   display: block;
-  background: #fff;
-  border-radius: 5px;
-  padding: 5px 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 /* Slogan altinda ince altin -> saydam kısa ayrac (premium detay). */
 .foot-brandlock::after {
