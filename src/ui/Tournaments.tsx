@@ -1052,7 +1052,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                         if (isDoubleLoss) return <span className="tm-score wo dloss">{t('swiss.doubleLossBadge')}</span>
                         if (sc) {
                           if (sc.walkover) return m.winner === m[side]?.id ? <span className="tm-score wo">{t('tourn.wo')}</span> : null
-                          return <span className="tm-score tnum">{sc[side] ?? 0}</span>
+                          // Gösterimde KAZANAN skoru EN FAZLA 3 (kullanıcı: "kazanan maximum 3, fazlası yazılmaz" — 7-2 -> 3-2).
+                          const raw = sc[side] ?? 0
+                          const shown = m.winner === m[side]?.id ? Math.min(raw, 3) : raw
+                          return <span className="tm-score tnum">{shown}</span>
                         }
                         const uid = m[side]?.id
                         if (liveSc && uid != null && liveSc[String(uid)] != null) {
@@ -1113,7 +1116,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           if (isBye) result = <span className="swiss-pair-bye">{t('swiss.byeBadge')}</span>
                           else if (m.double_loss || sc?.double_loss) result = <span className="swiss-pair-dl">{t('swiss.doubleLossBadge')}</span>
                           else if (sc?.walkover) result = <span className="swiss-pair-wo">{t('swiss.walkover')}</span>
-                          else if (sc && sc.p1 != null && sc.p2 != null) result = <span className="swiss-pair-score">{sc.p1} - {sc.p2}</span>
+                          else if (sc && sc.p1 != null && sc.p2 != null) {
+                            // KAZANAN skoru gösterimde EN FAZLA 3 (kullanıcı: 7-2 -> 3-2, 13-0 -> 3-0).
+                            const s1 = m.winner === m.p1?.id ? Math.min(sc.p1, 3) : sc.p1
+                            const s2 = m.winner === m.p2?.id ? Math.min(sc.p2, 3) : sc.p2
+                            result = <span className="swiss-pair-score">{s1} - {s2}</span>
+                          }
                           else if (m.room && m.p1 && m.p2)
                             // Maç OYNANIYOR (oda var, sonuç yok) -> "Bekliyor" değil "Oynanıyor" + maça (izle) link.
                             result = (
