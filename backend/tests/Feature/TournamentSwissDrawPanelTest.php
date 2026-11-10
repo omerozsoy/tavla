@@ -59,34 +59,28 @@ class TournamentSwissDrawPanelTest extends TestCase
 
         $admin = $this->admin();
 
-        // (1) Tarih/saat girilmeden "Kura Çek" → tur oluşmaz (guard: no_datetime).
+        // (1) Saat girilmeden "Başlat" → tur oluşmaz (guard: no_datetime).
         Livewire::actingAs($admin)
             ->test(ManageTournament::class, ['record' => $t->id])
-            ->callAction('drawRound')
-            ->assertHasNoActionErrors();
-        $this->assertCount(0, $t->fresh()->bracket ?? [], 'Tarihsiz kura çekilmemeli');
+            ->set('roundTimes', [])
+            ->call('startRound', 1);
+        $this->assertCount(0, $t->fresh()->bracket ?? [], 'Saatsiz tur başlamamalı');
 
-        // (2) 1. turun saatini planla (schedule). Form DateTimePicker'ı headless testte hydrate olmaz;
-        // servis katmanı (setSchedule) doğrudan test edilir — panel formu ince glue.
-        SwissRuntime::setSchedule($t->fresh(), ['1' => '2026-11-05 20:00:00']);
-        $this->assertNotEmpty($t->fresh()->swiss_state['next_at'] ?? null, 'Sıradaki tur saati next_at\'e yansımalı');
-
-        // (3) "Kura Çek" → 1. tur oluşur, planlanan tarih schedule'a yazılır, next_at temizlenir.
+        // (2+3) 1. turun saatini gir + "Başlat" → 1. tur çekilir, planlanan tarih schedule'a yazılır.
         Livewire::actingAs($admin)
             ->test(ManageTournament::class, ['record' => $t->id])
-            ->callAction('drawRound')
-            ->assertHasNoActionErrors();
+            ->set('roundTimes', ['1' => '2026-11-05T20:00'])
+            ->call('startRound', 1);
         $t->refresh();
         $this->assertCount(1, $t->bracket, '1. tur çekildi');
         $this->assertStringStartsWith('2026-11-05 20:00', (string) ($t->swiss_state['schedule']['1'] ?? ''), 'Planlanan tarih kaydedildi');
         $this->assertNull($t->swiss_state['next_at'] ?? null, 'next_at temizlendi');
 
-        // (4) Tur maçları bitmeden "Kura Çek" → yeni tur ÇEKİLMEZ (guard: round_incomplete), tarih verilse bile.
-        SwissRuntime::setSchedule($t->fresh(), ['1' => '2026-11-05 20:00:00', '2' => '2026-11-06 20:00:00']);
+        // (4) Tur maçları bitmeden 2. turu "Başlat" → ÇEKİLMEZ (guard: round_incomplete), saat verilse bile.
         Livewire::actingAs($admin)
             ->test(ManageTournament::class, ['record' => $t->id])
-            ->callAction('drawRound')
-            ->assertHasNoActionErrors();
+            ->set('roundTimes', ['1' => '2026-11-05T20:00', '2' => '2026-11-06T20:00'])
+            ->call('startRound', 2);
         $this->assertCount(1, $t->fresh()->bracket, 'Tur bitmeden 2. tur çekilmemeli');
     }
 
@@ -95,19 +89,21 @@ class TournamentSwissDrawPanelTest extends TestCase
         $t = $this->swiss(4);
         SwissRuntime::start($t);
 
-        // Tüm turları (1 ve 2) TEK seferde planla. Panel "Tur Saatleri" formu setSchedule çağırır;
-        // burada servis doğrudan test edilir (DateTimePicker repeater headless hydrate olmaz).
-        SwissRuntime::setSchedule($t, ['1' => '2026-11-05 20:00:00', '2' => '2026-11-06 20:00:00']);
+        // Tüm turları (1 ve 2) TEK seferde liste üzerinden kaydet ("Saatleri Kaydet").
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->set('roundTimes', ['1' => '2026-11-05T20:00', '2' => '2026-11-06T20:00'])
+            ->call('saveTimes');
         $t->refresh();
         $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['schedule']['1'] ?? null);
         $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null);
         $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['next_at'] ?? null, 'sıradaki turun saati next_at\'e yansır');
 
-        // 1. tur, ayrıca next_at girmeye gerek kalmadan schedule[1] ile çekilir; 2. tur planı korunur.
+        // 1. turu "Başlat" → schedule[1] ile çekilir; 2. tur planı korunur.
         Livewire::actingAs($this->admin())
             ->test(ManageTournament::class, ['record' => $t->id])
-            ->callAction('drawRound')
-            ->assertHasNoActionErrors();
+            ->set('roundTimes', ['1' => '2026-11-05T20:00', '2' => '2026-11-06T20:00'])
+            ->call('startRound', 1);
         $t->refresh();
         $this->assertCount(1, $t->bracket, '1. tur çekildi');
         $this->assertNull($t->swiss_state['next_at'] ?? null, 'çekildikten sonra next_at temizlenir');
@@ -132,24 +128,29 @@ class TournamentSwissDrawPanelTest extends TestCase
         $this->assertNotEmpty($t->swiss_state['participants'] ?? null, 'başlatma katılımcıları kurar');
     }
 
-    public function test_draw_actions_hidden_for_non_running_or_bracket(): void
+    public function test_open_swiss_round1_start_begins_tournament_and_draws(): void
     {
-        // Açık (henüz başlamamış) Swiss turnuvada "Kura Çek" gizli; "Tur Saatleri" GÖRÜNÜR (plan ön-girişi).
-        $open = $this->swiss(4);
+        // Açık (başlamamış) Swiss: 1. tura saat gir + "Başlat" → turnuva başlar + 1. tur çekilir (tek tık).
+        $sw = $this->swiss(4);
         Livewire::actingAs($this->admin())
-            ->test(ManageTournament::class, ['record' => $open->id])
-            ->assertActionHidden('drawRound')
-            ->assertActionVisible('scheduleRound');
+            ->test(ManageTournament::class, ['record' => $sw->id])
+            ->set('roundTimes', ['1' => '2026-11-05T20:00'])
+            ->call('startRound', 1);
+        $sw->refresh();
+        $this->assertSame('running', $sw->status, 'open 1. tur Başlat turnuvayı başlatır');
+        $this->assertCount(1, $sw->bracket, '1. tur çekildi');
 
-        // Sürüyor ama ELEME AĞACI turnuvada aksiyonlar gizli (yalnız Swiss).
+        // ELEME AĞACI turnuvada Swiss listesi yok → startRound dokunmaz (yalnız Swiss).
         $br = Tournament::create([
             'name' => 'Br', 'type' => 'bracket', 'size' => 0, 'status' => 'open',
-            'players' => $open->players, 'match_length' => 5,
+            'players' => $sw->players, 'match_length' => 5,
         ]);
         $br->startBracket();
+        $before = $br->fresh()->bracket;
         Livewire::actingAs($this->admin())
             ->test(ManageTournament::class, ['record' => $br->id])
-            ->assertActionHidden('drawRound')
-            ->assertActionHidden('scheduleRound');
+            ->set('roundTimes', ['1' => '2026-11-05T20:00'])
+            ->call('startRound', 1);
+        $this->assertSame($before, $br->fresh()->bracket, 'bracket startRound\'a dokunmaz');
     }
 }
