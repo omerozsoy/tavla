@@ -33,8 +33,11 @@ class SeoMetaTest extends TestCase
             ->assertOk()
             ->assertSee('name="robots" content="index, follow"', false)
             ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false)
-            ->assertSee('<h2>Online tavla nasıl oynanır?</h2>', false)
-            ->assertSee('Gerçek rakiplerle canlı maçlara katılabilir', false)
+            // Zengin sunucu-render noscript gövdesi (landingNoscript): JS'siz crawler tam içeriği görür.
+            ->assertSee('<h2>Online tavla nedir?</h2>', false)
+            ->assertSee('<h2>Nasıl online tavla oynanır?</h2>', false)
+            ->assertSee('kanıtlanabilir biçimde adildir', false)
+            ->assertSee('<h3>Zarlar adil mi?</h3>', false)
             ->assertSee('"@type":"WebPage"', false)
             ->assertSee('"url":"https://tavlatv.com/online-tavla"', false)
             ->assertSee('href="/tavla-rehberi"', false)

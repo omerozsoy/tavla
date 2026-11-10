@@ -725,7 +725,7 @@ final class SeoMeta
         if (($row = self::metaRow($slug)) !== null) {
             [$title, $desc, $h1] = $row;
 
-            $html = self::apply($html, $title, $desc, $h1, self::$base . $slug, null, 'website', self::landingRow($slug));
+            $html = self::apply($html, $title, $desc, $h1, self::$base . $slug, null, 'website', self::landingRow($slug), self::landingNoscript($slug));
 
             $html = self::injectWebPageJsonLd($html, $h1, $desc, self::$base . $slug, self::brandLang());
             if ($slug === 'tavla-oyna') {
@@ -892,6 +892,7 @@ final class SeoMeta
         ?string $image,
         string $type,
         ?array $landing = null,
+        ?string $noscriptRich = null,
     ): string {
         $tTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         $tDesc  = htmlspecialchars($desc, ENT_QUOTES, 'UTF-8');
@@ -911,7 +912,7 @@ final class SeoMeta
             '~<meta\s+name="twitter:title"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:title\" content=\"{$tTitle}\" />",
             '~<meta\s+name="twitter:description"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:description\" content=\"{$tDesc}\" />",
             // JS'siz tarayıcıların gördüğü H1 + açıklama: per-route yap.
-            '~<noscript>.*?</noscript>~s' => self::renderNoscript($tH1, $tDesc, $landing),
+            '~<noscript>.*?</noscript>~s' => self::renderNoscript($tH1, $tDesc, $landing, $noscriptRich),
         ];
 
         if ($image) {
@@ -1088,11 +1089,57 @@ final class SeoMeta
         return $out ?? $html;
     }
 
+    /**
+     * JS'siz crawler + AI fetcher (ChatGPT/Perplexity/Bing ham-HTML) için sunucu-render landing
+     * gövdesi. Görünür içerik SeoContent.tsx'te JS ile gelir; ham HTML yalnız bunu görür -> AI
+     * alıntılanabilirliği için gerçek metin lazım. ponytail: SeoContent.tsx OnlineTavlaContent'in
+     * ÖZETİ, elle senkron (JSX PHP'den okunamaz, tek-kaynak yok); landing sayısı artarsa ortak bir
+     * veri dosyasına taşı. Yalnız varsayılan marka (TR); gammon/EN için null (thin landing'e düşer).
+     */
+    private static function landingNoscript(string $slug): ?string
+    {
+        if (! self::isDefaultBrand() || $slug !== 'online-tavla') {
+            return null;
+        }
+
+        return <<<'HTML'
+        <h2>Online tavla nedir?</h2>
+        <p>Online tavla, klasik masa tavlasının internet üzerinden gerçek rakiplere veya bilgisayara karşı oynanan halidir. Fiziksel tahta, zar ya da karşında oturan bir rakip gerekmez; dünyanın her yerinden oyuncularla saniyeler içinde eşleşirsin. TavlaTV'de zar atışları sunucu tarafında güvenli rastgelelikle (CSPRNG) üretilir, yani her atış şeffaf ve kanıtlanabilir biçimde adildir. Tahta otomatik kurulur, kurallar oyunun içinde uygulanır ve geçersiz hamlelere izin verilmez; sen yalnızca oyuna odaklanırsın.</p>
+        <h2>Nasıl online tavla oynanır?</h2>
+        <p>TavlaTV'de online tavla oynamak için kurulum ya da üyelik gerekmez; her şey tarayıcında çalışır:</p>
+        <ul>
+        <li>Siteye gir ve misafir olarak dahi anında yeni bir maç kur.</li>
+        <li>Rakibini seç: canlı gerçek oyuncu, pratik için yapay zekâ botu ya da arkadaşınla özel oda.</li>
+        <li>Maç uzunluğunu, süre kontrolünü ve küp (doubling) ayarını belirle.</li>
+        <li>Zarını at, taşlarını oyna ve tüm pullarını evine toplayıp ilk bitiren ol.</li>
+        </ul>
+        <h2>TavlaTV'nin öne çıkan özellikleri</h2>
+        <ul>
+        <li><strong>Ücretsiz ve kayıtsız:</strong> Misafir olarak hemen başlarsın; oynamak için cebinden para çıkmaz.</li>
+        <li><strong>Canlı maçlar ve turnuvalar:</strong> Gerçek oyuncularla puanlı (rating) maçlar yap, online turnuvalara katıl.</li>
+        <li><strong>Güçlü yapay zekâ:</strong> Sinir ağı tabanlı tavla botuna karşı seviye seçerek pratik yap.</li>
+        <li><strong>Maç analizi (PR):</strong> Her maç sonunda hamlelerinin en iyi oynanışa ne kadar yakın olduğunu gösteren performans reytingini gör, hatalarından öğren.</li>
+        <li><strong>Mobil uyumlu:</strong> Telefon ve tabletlerde uygulama indirmeden tarayıcıdan oynanır.</li>
+        </ul>
+        <h3>Online tavla ücretsiz mi?</h3>
+        <p>Evet, TavlaTV'de online tavla tamamen ücretsizdir. İstersen Premium üyelikle gelişmiş analiz ve reklamsız deneyim edinebilirsin.</p>
+        <h3>Kayıt olmadan online tavla oynayabilir miyim?</h3>
+        <p>Evet, misafir olarak anında oynayabilirsin. Rating, maç geçmişi ve turnuvalardan yararlanmak için ücretsiz hesap oluşturman önerilir.</p>
+        <h3>Zarlar adil mi?</h3>
+        <p>Zar atışları sunucu tarafında güvenli rastgelelik (CSPRNG) ile üretilir ve kanıtlanabilir adildir; hiçbir oyuncu zar sonucunu değiştiremez.</p>
+        <h3>Telefondan online tavla oynanır mı?</h3>
+        <p>Evet, TavlaTV mobil uyumludur ve telefon/tabletlerde tarayıcı üzerinden uygulama indirmeden çalışır.</p>
+        HTML;
+    }
+
     /** JS kapalı crawler için başlık, açıklama ve landing içeriği üretir. */
-    private static function renderNoscript(string $h1, string $desc, ?array $landing): string
+    private static function renderNoscript(string $h1, string $desc, ?array $landing, ?string $rich = null): string
     {
         $body = '';
-        if ($landing !== null) {
+        if ($rich !== null) {
+            // Zengin sunucu-render gövde (landingNoscript): JS'siz crawler + AI fetcher tam içeriği görür.
+            $body = $rich;
+        } elseif ($landing !== null) {
             [$heading, $paragraph, $items] = $landing;
             $heading = htmlspecialchars($heading, ENT_QUOTES, 'UTF-8');
             $paragraph = htmlspecialchars($paragraph, ENT_QUOTES, 'UTF-8');
