@@ -84,6 +84,23 @@
   letter-spacing: 0.03em;
   color: var(--foot-cream-soft);
 }
+/* Ödeme yöntemi rozetleri (logonun altında): beyaz pill -> her footer temasında görünür. */
+.foot-pay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.foot-pay img {
+  height: 20px;
+  width: auto;
+  display: block;
+  background: #fff;
+  border-radius: 5px;
+  padding: 5px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
 /* Slogan altinda ince altin -> saydam kısa ayrac (premium detay). */
 .foot-brandlock::after {
   content: '';
