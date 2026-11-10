@@ -928,7 +928,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 return (
                 <div key={p.id} className={`tourn-prow${p.id === myId ? ' tourn-prow-mine' : ''}${out ? ' tourn-prow-out' : ''}`}>
                   <span className={`tm-dot ${onlineSet.has(p.id) ? 'on' : 'off'}`} title={onlineSet.has(p.id) ? 'online' : 'offline'} />
-                  <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} />
+                  <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} size={24} rankSize="sm" premium={p.premium} onClick={onProfile ? () => onProfile(p.id) : undefined} />
                   <b>{p.rating}</b>
                   {/* Durum: su an oynuyor -> canli skor (tiklayinca o masayi izle); elendi -> "Elendi". */}
                   {st?.play ? (
@@ -1179,7 +1179,19 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           return (
                             <tr key={String(row.id)} className={`swiss-tr swiss-tr-${status} ${bgClass}`}>
                               <td className="swiss-td-rank">{rank ? `${rank}.` : active.status === 'finished' ? '—' : i + 1}</td>
-                              <td className="swiss-td-name">{String(row.name ?? '')}{status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}</td>
+                              <td className="swiss-td-name">
+                                {onProfile && row.id != null ? (
+                                  <span
+                                    className="tm-name-link"
+                                    role="button"
+                                    tabIndex={0}
+                                    title={String(row.name ?? '')}
+                                    onClick={() => onProfile(Number(row.id))}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onProfile(Number(row.id)) } }}
+                                  >{String(row.name ?? '')}</span>
+                                ) : String(row.name ?? '')}
+                                {status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}
+                              </td>
                               <td className="swiss-td-lives">{lives}</td>
                               <td>{Number(row.played ?? 0)}</td>
                               <td>{Number(row.realWins ?? 0)}</td>

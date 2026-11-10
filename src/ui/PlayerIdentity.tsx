@@ -34,6 +34,7 @@ export default function PlayerIdentity({
   hideTeam = false,
   statusDot,
   className,
+  onClick,
 }: {
   name: string
   /** Oyuncu id — verilirse isim yanında site geneli top-3 rozeti (PR madalya / Rating kupa). */
@@ -66,6 +67,8 @@ export default function PlayerIdentity({
    *  durum noktasini ismin onune tasimak icin. */
   statusDot?: 'available' | 'ready' | 'busy' | 'offline' | 'ghost' | null
   className?: string
+  /** Verilirse: kimlik bloğu tıklanabilir olur (örn. profil kartını açmak için). */
+  onClick?: () => void
 }) {
   // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)
   // veya kırmızı (offline) nokta. İlk fetch tamamlanana kadar (known=false) çizilmez.
@@ -76,7 +79,14 @@ export default function PlayerIdentity({
   const isAdmin = admin || ctxRole.admin
   const isSupport = support || ctxRole.support
   return (
-    <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
+    <span
+      className={`player-id${lg ? ' lg' : ''}${onClick ? ' player-id-clickable' : ''}${className ? ' ' + className : ''}`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
+      style={onClick ? { cursor: 'pointer' } : undefined}
+    >
       <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
       <span className="player-id-col">
         <span className="player-id-name">
