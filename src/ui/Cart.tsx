@@ -289,10 +289,16 @@ export default function Cart({
               {/* Toplamlar */}
               <div className="ckw-rows">
                 {memItem ? (
-                  <div className="ckw-row ckw-row-total">
-                    <span>Toplam</span>
-                    <span className="tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
-                  </div>
+                  <>
+                    <div className="ckw-row ckw-row-vat">
+                      <span>KDV (%20 dahil)</span>
+                      <span className="tnum">{fmtTL((MEMBERSHIP_PRICE_TL * 20) / 120)}</span>
+                    </div>
+                    <div className="ckw-row ckw-row-total">
+                      <span>Toplam</span>
+                      <span className="tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
+                    </div>
+                  </>
                 ) : (
                   <>
                     {coinProductRows.length > 0 && (

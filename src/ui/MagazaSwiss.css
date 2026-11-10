@@ -15,7 +15,7 @@
      (kullanıcı: "siyah zeminler çok kötü"). Açık krem-gri hairline'a çekildi; koyu vurgu
      yalnız --ink (butonlar) ile kalır. */
   --line: #ddd5c5;
-  --accent: #a83a2b;
+  --accent: #d14e24;
   --accent-ink: #fff;
 
   position: relative;
@@ -1580,6 +1580,12 @@
   width: 100%;
   height: 100%;
   object-fit: contain; /* ürün detay resmi KESİLMESİN (kullanıcı isteği) */
+}
+.mgz-vat-inline {
+  font-size: 0.55em;
+  color: var(--ink-60);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .mgz-pdp-thumbs {
   display: flex;

@@ -64,6 +64,11 @@ export default function DeliveryStep({
   const subtotalTL = memItem ? MEMBERSHIP_PRICE_TL : moneyProductsTL + packagesTL
   const shippingTL = hasProducts ? SHIPPING_TL : 0
   const totalTL = subtotalTL + shippingTL
+  // KDV %20 DAHİL (kitaplar hariç). Toplam DEĞİŞMEZ — sadece fiyatın içindeki KDV gösterilir (Cart ile aynı mantık).
+  const bookTL = productRows
+    .filter((i) => i.product!.category === 'kitap')
+    .reduce((s, i) => s + ((i.product!.moneyPrice ?? 0) / 100) * i.qty, 0)
+  const vatTL = (Math.max(0, subtotalTL - bookTL) * 20) / 120
   const itemCount = memItem ? 1 : productRows.reduce((s, i) => s + i.qty, 0) + coinRows.reduce((s, i) => s + i.qty, 0)
   const moneyDue = !!memItem || subtotalTL > 0
 
@@ -170,6 +175,12 @@ export default function DeliveryStep({
               <div className="ckw-row">
                 <span>Kargo</span>
                 <span className="tnum">{fmtTL(SHIPPING_TL)}</span>
+              </div>
+            )}
+            {vatTL > 0 && (
+              <div className="ckw-row ckw-row-vat">
+                <span>KDV (%20 dahil){bookTL > 0 ? ' · kitaplar hariç' : ''}</span>
+                <span className="tnum">{fmtTL(vatTL)}</span>
               </div>
             )}
             <div className="ckw-row ckw-row-total">

@@ -164,7 +164,7 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
           </div>
 
           <div className="ckw-pay-secure">
-            <Icon name="lock" size={16} /> 256-bit SSL ile şifreli bağlantı. Kart bilgileriniz saklanmaz.
+            <Icon name="lock" size={16} /> 256-bit SSL ile şifreli bağlantı. Kart bilgileriniz saklanmaz. Ödenecek tutara %20 KDV dahildir.
           </div>
 
           <div className="ckw-pay-actions">

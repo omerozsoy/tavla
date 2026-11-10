@@ -438,7 +438,10 @@ function ProductDetailPage({
         <div className="mgz-pdp-info">
           {product.category_name && <span className="mgz-eyebrow">{product.category_name}</span>}
           <h1 className="mgz-pdp-title">{product.name}</h1>
-          <div className="mgz-pdp-price tnum">{fmtTLk(canMoney ? product.money_price! : product.coin_price ?? 0)}</div>
+          <div className="mgz-pdp-price tnum">
+            {fmtTLk(canMoney ? product.money_price! : product.coin_price ?? 0)}
+            {canMoney && product.category !== 'kitap' && <span className="mgz-vat-inline"> · %20 KDV dahil</span>}
+          </div>
           <div className={`mgz-stock ${out ? 'out' : product.stock <= 5 ? 'low' : 'in'}`}>
             <span aria-hidden="true" />
             {out ? 'Tükendi' : `Stokta ${product.stock} adet`}
