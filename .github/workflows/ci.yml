@@ -27,6 +27,31 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  # Deploy indikten sonra CF cache'ini isit: QD, CI yesili sonrasi (2-5dk "oynak" gecikme)
+  # deploy eder. Bu job canli index.html commit'li hash'e gelene kadar bekler, sonra yeni
+  # asset'leri fetch'leyip CF'e 200 yazdirir -> gecici-404'un immutable cache'lenme yarisini
+  # kazanir ("TavlaTv yuklenemedi" tuzagi). Yalniz main push'ta; build yesilse (QD da oyle).
+  warm-cf:
+    name: Warm Cloudflare cache (post-deploy)
+    needs: [frontend, backend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # Isitma best-effort onleme: hata verse de CI'yi KIRMIZI yapma (yoksa "CI kirmizi ->
+    # Forge deploy etmez" yanlis-okumasini tetikler; deploy zaten bu job'dan ONCE inmistir).
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Secret'lar varsa oto-purge devreye girer (stale-404 tedavisi); yoksa sadece isitma
+      # (onleme). GitHub: Settings -> Secrets and variables -> Actions -> CF_API_TOKEN (Cache
+      # Purge izinli token) + CF_ZONE_ID.
+      - run: npm run deploy:warm
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+
   backend:
     name: Backend (Laravel / PHPUnit)
     runs-on: ubuntu-latest
