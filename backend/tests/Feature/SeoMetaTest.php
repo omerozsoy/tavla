@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Support\Brand;
 use App\Support\SeoMeta;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
 
 class SeoMetaTest extends TestCase
 {
@@ -15,6 +15,16 @@ class SeoMetaTest extends TestCase
         $this->get('/giris')
             ->assertOk()
             ->assertSee('name="robots" content="noindex, follow"', false);
+    }
+
+    /** İşlem/özel ekranlar + çok-parçalı alt-yolları (profil/<user>, kart-odeme/<id>) indekslenmemeli. */
+    public function test_app_subpaths_are_not_indexable(): void
+    {
+        foreach (['/kart-odeme', '/kart-odeme/abc123', '/profil/omer', '/teslimat-bilgileri'] as $path) {
+            $this->get($path)
+                ->assertOk()
+                ->assertSee('name="robots" content="noindex, follow"', false);
+        }
     }
 
     public function test_public_landing_route_remains_indexable(): void
@@ -135,7 +145,7 @@ class SeoMetaTest extends TestCase
             $response = $this->get($path);
             $response->assertOk();
             $response->assertSee('name="robots" content="index, follow"', false);
-            $response->assertSee('rel="canonical" href="' . $url . '"', false);
+            $response->assertSee('rel="canonical" href="'.$url.'"', false);
         }
     }
 
@@ -186,13 +196,13 @@ class SeoMetaTest extends TestCase
 
     public function test_brand_resolves_from_host(): void
     {
-        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('tavlatv.com'));
-        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('tavlatv.com'));
-        $this->assertSame('gammon', \App\Support\Brand::keyFromHost('gammontv.com'));
-        $this->assertSame('gammon', \App\Support\Brand::keyFromHost('gammontv.com'));
-        $this->assertSame('tavla', \App\Support\Brand::keyFromHost('localhost')); // varsayılan
-        $this->assertSame('en', \App\Support\Brand::fromHost('gammontv.com')['locale']);
-        $this->assertSame('tr', \App\Support\Brand::fromHost('tavlatv.com')['locale']);
+        $this->assertSame('tavla', Brand::keyFromHost('tavlatv.com'));
+        $this->assertSame('tavla', Brand::keyFromHost('tavlatv.com'));
+        $this->assertSame('gammon', Brand::keyFromHost('gammontv.com'));
+        $this->assertSame('gammon', Brand::keyFromHost('gammontv.com'));
+        $this->assertSame('tavla', Brand::keyFromHost('localhost')); // varsayılan
+        $this->assertSame('en', Brand::fromHost('gammontv.com')['locale']);
+        $this->assertSame('tr', Brand::fromHost('tavlatv.com')['locale']);
     }
 
     public function test_gammon_host_serves_english_branded_landing(): void

@@ -107,6 +107,7 @@ final class SeoMeta
         'profil', 'profil-duzenle', 'ayarlar', 'tahta-ayarlari',
         'istatistiklerim', 'mac-analizleri', 'hata-gunlugu', 'basarimlar',
         'arkadaslar', 'mesajlar', 'magaza', 'siparislerim', 'sepet', 'odeme',
+        'teslimat-bilgileri', 'kart-odeme',
         'pul-tasarimlari', 'cerceveler', 'oyun-onizleme',
     ];
 
@@ -694,6 +695,15 @@ final class SeoMeta
         }
 
         if (in_array($slug, self::NOINDEX, true)) {
+            return self::applyNoIndex($html);
+        }
+
+        // Çok-parçalı uygulama/işlem rotaları (profil/<kullanıcı>, kart-odeme/<id>): ilk segment
+        // NOINDEX ise indekslenmesin. Yukarıdaki exact-match YALNIZ tek-parça slug'ı yakalar; alt-yol
+        // hiçbir dala uymadan en sonda $html'i DEĞİŞMEDEN döndürüp statik index.html'in "index,follow"
+        // + ana sayfa canonical'ıyla her profil için AYNI ince içeriği indeksletiyordu. İndekslenebilir
+        // çok-parçalı yollar (tavla-rehberi/, haberler/, makaleler/, bilgi/) NOINDEX'te değil, etkilenmez.
+        if (str_contains($slug, '/') && in_array(explode('/', $slug)[0], self::NOINDEX, true)) {
             return self::applyNoIndex($html);
         }
 
