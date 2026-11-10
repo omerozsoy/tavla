@@ -73,10 +73,9 @@ export default function Footer({ columns }: Props) {
             {/* Slogan: duz HTML metin (SVG textLength=%100 Firefox'ta bozuluyordu). */}
             <span className="foot-tag">{t('foot.tag')}</span>
           </div>
-          {/* Ödeme yöntemleri: logonun altında güven rozetleri (Visa/Mastercard + Garanti BBVA). */}
+          {/* Ödeme yöntemleri: logonun altında güven rozetleri (Visa/Mastercard). */}
           <div className="foot-pay" aria-label="Ödeme yöntemleri">
             <img src="/pay-visa-mastercard.png" alt="Visa, Mastercard" loading="lazy" />
-            <img src="/pay-garanti.png" alt="Garanti BBVA" loading="lazy" />
           </div>
         </div>
         <nav className="foot-cols">
