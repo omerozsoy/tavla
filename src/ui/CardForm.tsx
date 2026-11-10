@@ -43,10 +43,7 @@ function fmtTL(kurus: number): string {
 
 // Kredi/Banka Kartı ile ödeme sayfası (biçim). GÜVENLİK: kart verisi YALNIZ bu bileşenin
 // state'inde; loglanmaz, localStorage'a yazılmaz. Gönderim onSubmit ile üst akışa verilir.
-const fmtTLnum = (n: number): string =>
-  n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' ₺'
-
-export default function CardForm({ amount, title, busy = false, onClose, onSubmit, stepsSlot, breakdown, onBack }: Props) {
+export default function CardForm({ amount, title, busy = false, onClose, onSubmit, stepsSlot, onBack }: Props) {
   const [number, setNumber] = useState('')
   const [name, setName] = useState('')
   const [mm, setMm] = useState('')
@@ -93,30 +90,8 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
           </div>
         </header>
 
-        {breakdown && (
-          <div className="ckw-rows ckw-pay-breakdown">
-            <div className="ckw-row">
-              <span>Ara toplam</span>
-              <span className="tnum">{fmtTLnum(breakdown.subtotalTL)}</span>
-            </div>
-            {breakdown.shippingTL > 0 && (
-              <div className="ckw-row">
-                <span>Kargo</span>
-                <span className="tnum">{fmtTLnum(breakdown.shippingTL)}</span>
-              </div>
-            )}
-            {breakdown.vatTL > 0 && (
-              <div className="ckw-row ckw-row-vat">
-                <span>KDV (%20 dahil)</span>
-                <span className="tnum">{fmtTLnum(breakdown.vatTL)}</span>
-              </div>
-            )}
-            <div className="ckw-row ckw-row-total">
-              <span>Ödenecek</span>
-              <span className="tnum">{fmtTLnum(breakdown.totalTL)}</span>
-            </div>
-          </div>
-        )}
+        {/* Fiyat dökümü (ara toplam/kargo/KDV) KULLANICI İSTEĞİYLE kaldırıldı — döküm SEPETTE
+            gösteriliyor, ödeme adımında tekrarlanmıyor. Üstteki tek "Ödenecek" tutarı + "… Öde" butonu kalır. */}
 
         <form
           className="ckw-form"
