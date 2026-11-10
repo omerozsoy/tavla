@@ -156,6 +156,24 @@ class AnalyzeMatchLuckJobTest extends TestCase
         $this->assertEqualsWithDelta(5.0, (float) $wRow->fresh()->luck_mwc, 1e-6);
     }
 
+    /**
+     * N6E7E regresyonu: ONLINE maçta rakip satırı VARKEN bile matchGnubgPr endpoint'i opponent_luck_mwc'yi
+     * OTORİTER döndürmeli. (PR reconstructed -> rakip satırı varsa gizlenir; AMA luck birleşik .mat'ten
+     * yazılır = otoriter -> gizlenmemeli. Rapor etmeyen taraf yalnız bu ucu poll'lar -> null dönerse "—".)
+     */
+    public function test_match_gnubg_pr_returns_opponent_luck_when_opp_row_exists(): void
+    {
+        [$wRow, $bRow] = $this->rows('N6E7E');
+        // Luck job'ı iki satırı da self + opponent OTORİTER yazdı (birleşik .mat).
+        MatchResult::where('id', $wRow->id)->update(['luck_mwc' => 29.986, 'luck_method' => 'TAVLAI_LUCK_V1', 'opponent_luck_mwc' => -38.441]);
+        MatchResult::where('id', $bRow->id)->update(['luck_mwc' => -38.441, 'luck_method' => 'TAVLAI_LUCK_V1', 'opponent_luck_mwc' => 29.986]);
+
+        \Laravel\Sanctum\Sanctum::actingAs(User::find($bRow->user_id)); // kaybeden (rapor etmeyen) tarafı
+        $this->getJson('/api/me/match-pr-tavlatv/'.$bRow->id)
+            ->assertOk()
+            ->assertJson(['luck_ready' => true, 'luck_mwc' => -38.441, 'opponent_luck_mwc' => 29.986]);
+    }
+
     public function test_malformed_historical_mat_is_quarantined_without_retry_failure(): void
     {
         $w = $this->user('badlog');

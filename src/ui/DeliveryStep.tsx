@@ -19,6 +19,8 @@ import { type CardBreakdown } from './CardForm'
 import './CheckoutSwiss.css'
 
 const SHIPPING_TL = 250 // Kargo: premium hariç her sipariş SABİT (backend ile aynı: 25000 kuruş).
+const SHIPPING_CARRIER = 'Yurtiçi Kargo' // Teslimat özetinde gösterilen kargo firması.
+const fmtTL = (n: number) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₺`
 
 // TESLİMAT & ÖDEME adımı (/odeme) — GERÇEK sayfa (page-host, modal YOK). Teslimat + fatura adresi
 // (yan yana, buradan girilebilir/düzenlenebilir) + kargo + ödeme yöntemi -> onPay -> /kart-odeme.
@@ -166,8 +168,33 @@ export default function DeliveryStep({
           </div>
         )}
 
-        {/* Fiyat özeti (ara toplam/kargo/KDV/ödenecek) KULLANICI İSTEĞİYLE bu adımdan kaldırıldı ->
-            ÖDEME adımında (CardForm breakdown) gösterilir. Teslimat adımı = yalnız adres + ödeme yöntemi. */}
+        {/* Sipariş özeti — ürün tutarı + kargo firması/ücreti + KDV + ödenecek (kullanıcı isteğiyle
+            teslimat adımında gösterilir; ödeme adımında tekrarlanmaz). */}
+        <div className="ckw-block">
+          <label className="ckw-label">Sipariş Özeti</label>
+          <div className="ckw-rows">
+            <div className="ckw-row">
+              <span>{memItem ? '1 Yıllık Premium Üyelik' : 'Ürün tutarı'}</span>
+              <span className="tnum">{fmtTL(subtotalTL)}</span>
+            </div>
+            {shippingTL > 0 && (
+              <div className="ckw-row">
+                <span>Kargo · {SHIPPING_CARRIER}</span>
+                <span className="tnum">{fmtTL(shippingTL)}</span>
+              </div>
+            )}
+            {vatTL > 0 && (
+              <div className="ckw-row ckw-row-vat">
+                <span>KDV (%20 dahil){bookTL > 0 ? ' · kitaplar hariç' : ''}</span>
+                <span className="tnum">{fmtTL(vatTL)}</span>
+              </div>
+            )}
+            <div className="ckw-row ckw-row-total">
+              <span>Ödenecek</span>
+              <span className="tnum">{fmtTL(totalTL)}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Ödeme yöntemi (para ödemesi varsa ve havale açıksa) */}
         {moneyDue && bankInfo?.enabled && (

@@ -5573,7 +5573,10 @@ export default function App() {
     setPrAnalyzing(true)
     setPrProgressPct(null) // yeni analiz -> önceki yüzdeyi temizle (ilk poll gerçeğini getirir)
     let prDone = false
-    let luckDone = false
+    // ŞANS PVB'YE DARALTILDI: online'da luck TEK KAYNAK = matchPr (oda-anahtarlı, DB-otoriter, self+opp
+    // renge doğru) -> aşağıdaki ONLINE ÇİFT SENKRON effect'i doldurur. pvb'nin oda'sı YOK -> şans yalnız
+    // bu id-anahtarlı uçtan gelebilir, orada işlenir. online iken luckDone=true -> döngü PR bitince durur.
+    let luckDone = online
     // gnubg hazır olana kadar poll et (~3 dk). wildbg'ye ASLA düşme; hazır değilse LOADER kalır.
     for (let i = 0; i < 90 && !(prDone && luckDone); i++) {
       await new Promise((res) => setTimeout(res, 2000))
@@ -5606,12 +5609,24 @@ export default function App() {
           setPrAnalyzing(false)
           prDone = true
         }
-        // ADIM 4: gnubg NATIVE şans (Luck V1) hazır olunca swap. pvb: insan=beyaz, bot=siyah.
+        // ADIM 4 (YALNIZ PVB — online'da luckDone baştan true): gnubg NATIVE şans. pvb'nin oda'sı yok,
+        // matchPr kullanılamaz -> şans bu id-anahtarlı uçtan gelir. RENK-FARKINDA (self->myColor; pvb'de
+        // myColor=beyaz). Merge (prev) ile ezmeden doldur.
         if (!luckDone && g.luck_ready) {
-          setServerLuckMwc({ white: g.luck_mwc, black: g.opponent_luck_mwc })
-          // Maç Özeti: luck cost (emg) + joker — aynı renk eşlemesi (pvb: insan=beyaz, bot=siyah).
-          setServerLuckEmg({ white: g.luck_emg ?? null, black: g.opponent_luck_emg ?? null })
-          setServerLuckJokers({ white: g.luck_jokers ?? null, black: g.opponent_luck_jokers ?? null })
+          const applyPair = <T,>(
+            setter: React.Dispatch<React.SetStateAction<{ white: T | null; black: T | null } | null>>,
+            selfV: T | null | undefined,
+            oppV: T | null | undefined,
+          ) =>
+            setter((prev) => {
+              const next = { white: prev?.white ?? null, black: prev?.black ?? null }
+              if (selfV != null) next[myColor] = selfV
+              if (oppV != null) next[opponent(myColor)] = oppV
+              return next
+            })
+          applyPair(setServerLuckMwc, g.luck_mwc, g.opponent_luck_mwc)
+          applyPair(setServerLuckEmg, g.luck_emg ?? null, g.opponent_luck_emg ?? null)
+          applyPair(setServerLuckJokers, g.luck_jokers ?? null, g.opponent_luck_jokers ?? null)
           luckDone = true
         }
       } catch {
@@ -5624,25 +5639,47 @@ export default function App() {
     if (prPollRef.current === token && !prDone) setPrAnalyzing(false)
   }
 
-  // RAKİP PR EMNİYET AĞI (kök fix "rakip gene yok"): sonuç ekranı açıkken rakip PR hâlâ gelmemişse
-  // matchPr'ı BAĞIMSIZ poll et. doReport içindeki tek-atış inline döngüsü (effect re-run / oda kodu
-  // yarışı / token yok) rakip değerini KAÇIRABİLİYORDU -> ekran "—"da kalıyordu (oysa DB'de hazır:
-  // rakibin kendi satırı VEYA benim gnubg_opponent_pr'ım). Bu effect, serverPr.opp null olduğu sürece
-  // (online, bot değil, oda kodu var) ~3 dk boyunca poll eder; geldiğinde serverPr.opp'u + kırılımı
-  // yazar ve oppPrPending'i kapatır. Geldi/gelmedi 3dk sonra pending kapanır (sonsuz "…" yok).
+  // ONLINE ÇİFT SENKRON (tek otoriter kaynak = matchPr, ODA-ANAHTARLI): rakip PR + self/opp ŞANS (ve
+  // Maç Özeti maliyet/joker) hepsi DB'den simetrik okunur -> "kim raporladı" ÖNEMSİZ, iki istemci de
+  // AYNI değerleri görür. pollGnubgPr online'da luck'a DOKUNMAZ (pvb'ye daraltıldı) + yalnız self PR /
+  // ilerleme verir; rakip PR (satır-reconstructed gizlendiği için) + şans bu effect'ten gelir. Hem
+  // raporlayan (doReport inline döngüsüne yedek) hem rapor etmeyen taraf için çalışır; matchPr idempotent
+  // + otoriter (opp.luck_mwc her oyuncunun KENDİ satırından) -> çift poll zararsız. PR+şans dolunca durur.
+  const applyLuckFromPair = (pair: Awaited<ReturnType<typeof matchPr>>) => {
+    const put = <T,>(
+      setter: React.Dispatch<React.SetStateAction<{ white: T | null; black: T | null } | null>>,
+      selfV: T | null | undefined,
+      oppV: T | null | undefined,
+    ) =>
+      setter((prev) => {
+        const next = { white: prev?.white ?? null, black: prev?.black ?? null }
+        if (selfV != null) next[myColor] = selfV
+        if (oppV != null) next[opponent(myColor)] = oppV
+        return next
+      })
+    put(setServerLuckMwc, pair.luck_mwc_self, pair.luck_mwc_opp)
+    put(setServerLuckEmg, pair.luck_emg_self, pair.luck_emg_opp)
+    put(setServerLuckJokers, pair.luck_jokers_self, pair.luck_jokers_opp)
+  }
   useEffect(() => {
     const code = room?.code
     if (!online || !matchOver || !mWinner || room?.bot || !code) return
-    if (!serverPr || serverPr.opp != null) return // zaten var -> poll gereksiz
     let cancelled = false
-    setOppPrPending(true)
+    let prDone = serverPr?.opp != null
+    setOppPrPending(!prDone)
     void (async () => {
-      for (let i = 0; i < 60 && !cancelled; i++) {
+      let luckDone = false
+      for (let i = 0; i < 60 && !cancelled && !(prDone && luckDone); i++) {
         await new Promise((res) => setTimeout(res, 3000))
         if (cancelled) return
+        let pair
         try {
-          const pair = await matchPr(code)
-          if (cancelled) return
+          pair = await matchPr(code)
+        } catch {
+          continue // geçici hata -> tekrar dene
+        }
+        if (cancelled) return
+        if (!prDone) {
           if (pair.opponent != null) {
             setServerPr((prev) => ({
               self: pair.self ?? prev?.self ?? null,
@@ -5653,33 +5690,33 @@ export default function App() {
               cubeOpp: pair.cube_opponent ?? prev?.cubeOpp ?? null,
             }))
             setOppPrPending(false)
-            return
-          }
-          // ANALİZ BİTTİ AMA RAKİP PR YOK (çok kısa/forfeit = karar yok -> mezar taşı). Eskiden settled
-          // bilgisi olmadığından poll 3 DK boyunca dönüp kullanıcıyı "hesaplanıyor"da bekletiyordu
-          // (K2WZU: iki taraf da kısa maç -> opp hücresi 3dk "…"). settled gelince hemen "—"ya düş.
-          if (pair.opponent_settled) {
+            prDone = true
+          } else if (pair.opponent_settled) {
+            // analiz bitti ama rakip PR yok (çok kısa/forfeit = karar yok -> mezar taşı) -> dürüst "—".
             setOppPrPending(false)
-            return
+            prDone = true
           }
-        } catch {
-          /* geçici hata -> tekrar dene */
+        }
+        // ŞANS self+opp (renge göre); ikisi de gelince tamam. Maliyet/joker de aynı eşlemeyle.
+        if (pair.luck_mwc_self != null || pair.luck_mwc_opp != null) {
+          applyLuckFromPair(pair)
+          if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) luckDone = true
         }
       }
-      if (!cancelled) setOppPrPending(false) // ~3dk geldi gelmedi -> dürüst "—" (loader sonsuz dönmesin)
+      if (!cancelled) setOppPrPending(false) // bitti (geldi / ~3dk tavan) -> sonsuz "…" bırakma
     })()
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, matchOver, mWinner, room?.code, room?.bot, serverPr?.opp])
+  }, [online, matchOver, mWinner, room?.code, room?.bot])
 
   // RAPOR ETMEYEN TARAF — SONUÇ TAMAMEN SUNUCUDAN: sonuç ekranı açık ama bu istemci maçı rapor
   // etmediğinden (bitişi POLL ile gördü) rating + match_result_id'si yok -> eskiden "—" + rating
   // değişimi gösterilemiyordu (legacy: veri yalnız kendi rapor yanıtından geliyordu). Veri SUNUCUDA
   // hazır (room_code+user_id) -> /me/room-result ile çek: match_result_id'yi set edip pollGnubgPr'ı
-  // başlat (loader + self PR; serverPr dolunca yukarıdaki rakip-PR effect'i de açılır) + rating'i
-  // doldur. Rapor eden tarafta zaten dolu -> guard ile atlanır (kullanıcıdan hiçbir şey beklenmez).
+  // başlat (loader + self PR + ilerleme; rakip PR + şans yukarıdaki ONLINE ÇİFT SENKRON effect'inden,
+  // oda koduyla, koşulsuz gelir) + rating'i doldur. Rapor eden tarafta dolu -> guard ile atlanır.
   useEffect(() => {
     const code = room?.code
     if (!online || !matchOver || !mWinner || room?.bot || !code) return

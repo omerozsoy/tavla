@@ -1079,7 +1079,11 @@ class AuthController extends Controller
             && MatchResult::where('room_code', $match->room_code)
                 ->where('user_id', '!=', $match->user_id)->exists();
         $oppRecon = $ready && $hasOppPr && ! $oppRowExists; // reconstructed rakip PR'ı yalnız burada ver
-        $oppReconLuck = $luckReady && ! $oppRowExists;
+        // ŞANS PR'DAN FARKLI: opponent_luck_* RECONSTRUCTED DEĞİL — AnalyzeMatchLuckJob iki satırı da
+        // BİRLEŞİK/sunucu .mat'inden OTORİTER yazar (writeOpponent / handlePvb). Dolayısıyla PR'daki gibi
+        // "rakip satırı varsa gizle" gerekmez; DEĞER VARSA ver. (Rapor etmeyen taraf sonuç ekranında
+        // yalnız matchGnubgPr'ı poll eder; burada null dönersek şans hücresi "—"da kalır — N6E7E hatası.)
+        $oppLuckReady = $hasOppMwc && $match->opponent_luck_mwc !== null;
 
         // İLERLEME ÇUBUĞU: AnalyzeMatchPrJob her pencere bitince gnubg'ye giden pozisyonların
         // done/total'ını Cache'e yazar (gerçek per-pozisyon). Hazır değilken istemci bununla yüzde
@@ -1108,12 +1112,12 @@ class AuthController extends Controller
             'opponent_cube_pr' => $oppRecon ? $num($match->gnubg_opponent_cube_pr) : null,
             'luck_ready' => $luckReady,
             'luck_mwc' => $luckReady ? $num($match->luck_mwc) : null, // insan (satır sahibi)
-            'opponent_luck_mwc' => ($oppReconLuck && $hasOppMwc) ? $num($match->opponent_luck_mwc) : null, // bot/terk
+            'opponent_luck_mwc' => $oppLuckReady ? $num($match->opponent_luck_mwc) : null, // OTORİTER (pvb/terk/online)
             // Maç Özeti: Luck (Equity=emg) + Joker sayısı — kolon/veri varsa (yoksa null -> '—')
             'luck_emg' => $luckReady ? $num($match->luck_emg) : null,
             'luck_jokers' => $luckReady ? $match->luck_jokers : null,
-            'opponent_luck_emg' => $oppReconLuck ? $num($match->opponent_luck_emg) : null,
-            'opponent_luck_jokers' => $oppReconLuck ? $match->opponent_luck_jokers : null,
+            'opponent_luck_emg' => $oppLuckReady ? $num($match->opponent_luck_emg) : null,
+            'opponent_luck_jokers' => $oppLuckReady ? $match->opponent_luck_jokers : null,
         ]);
     }
 
