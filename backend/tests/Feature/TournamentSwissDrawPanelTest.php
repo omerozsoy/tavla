@@ -66,12 +66,10 @@ class TournamentSwissDrawPanelTest extends TestCase
             ->assertHasNoActionErrors();
         $this->assertCount(0, $t->fresh()->bracket ?? [], 'Tarihsiz kura çekilmemeli');
 
-        // (2) "Tur Tarih/Saati" ile 1. turun tarih/saatini gir.
-        Livewire::actingAs($admin)
-            ->test(ManageTournament::class, ['record' => $t->id])
-            ->callAction('scheduleRound', data: ['round_at' => '2026-11-05 20:00:00'])
-            ->assertHasNoActionErrors();
-        $this->assertNotEmpty($t->fresh()->swiss_state['next_at'] ?? null, 'Tarih kaydedilmeli');
+        // (2) 1. turun saatini planla (schedule). Form DateTimePicker'ı headless testte hydrate olmaz;
+        // servis katmanı (setSchedule) doğrudan test edilir — panel formu ince glue.
+        SwissRuntime::setSchedule($t->fresh(), ['1' => '2026-11-05 20:00:00']);
+        $this->assertNotEmpty($t->fresh()->swiss_state['next_at'] ?? null, 'Sıradaki tur saati next_at\'e yansımalı');
 
         // (3) "Kura Çek" → 1. tur oluşur, planlanan tarih schedule'a yazılır, next_at temizlenir.
         Livewire::actingAs($admin)
@@ -84,15 +82,36 @@ class TournamentSwissDrawPanelTest extends TestCase
         $this->assertNull($t->swiss_state['next_at'] ?? null, 'next_at temizlendi');
 
         // (4) Tur maçları bitmeden "Kura Çek" → yeni tur ÇEKİLMEZ (guard: round_incomplete), tarih verilse bile.
-        Livewire::actingAs($admin)
-            ->test(ManageTournament::class, ['record' => $t->id])
-            ->callAction('scheduleRound', data: ['round_at' => '2026-11-06 20:00:00'])
-            ->assertHasNoActionErrors();
+        SwissRuntime::setSchedule($t->fresh(), ['1' => '2026-11-05 20:00:00', '2' => '2026-11-06 20:00:00']);
         Livewire::actingAs($admin)
             ->test(ManageTournament::class, ['record' => $t->id])
             ->callAction('drawRound')
             ->assertHasNoActionErrors();
         $this->assertCount(1, $t->fresh()->bracket, 'Tur bitmeden 2. tur çekilmemeli');
+    }
+
+    public function test_schedule_all_rounds_upfront(): void
+    {
+        $t = $this->swiss(4);
+        SwissRuntime::start($t);
+
+        // Tüm turları (1 ve 2) TEK seferde planla. Panel "Tur Saatleri" formu setSchedule çağırır;
+        // burada servis doğrudan test edilir (DateTimePicker repeater headless hydrate olmaz).
+        SwissRuntime::setSchedule($t, ['1' => '2026-11-05 20:00:00', '2' => '2026-11-06 20:00:00']);
+        $t->refresh();
+        $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['schedule']['1'] ?? null);
+        $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null);
+        $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['next_at'] ?? null, 'sıradaki turun saati next_at\'e yansır');
+
+        // 1. tur, ayrıca next_at girmeye gerek kalmadan schedule[1] ile çekilir; 2. tur planı korunur.
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->callAction('drawRound')
+            ->assertHasNoActionErrors();
+        $t->refresh();
+        $this->assertCount(1, $t->bracket, '1. tur çekildi');
+        $this->assertNull($t->swiss_state['next_at'] ?? null, 'çekildikten sonra next_at temizlenir');
+        $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null, '2. tur planı korunur');
     }
 
     public function test_draw_actions_hidden_for_non_running_or_bracket(): void

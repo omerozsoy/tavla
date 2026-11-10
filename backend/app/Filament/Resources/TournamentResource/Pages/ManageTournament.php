@@ -94,32 +94,76 @@ class ManageTournament extends Page
     private function scheduleRoundAction(): Actions\Action
     {
         return Actions\Action::make('scheduleRound')
-            ->label('Tur Tarih/Saati')
+            ->label('Tur Saatleri')
             ->icon('heroicon-o-calendar-days')
             ->color('info')
             ->visible(fn (): bool => $this->t()->status === 'running' && $this->isSwiss())
+            ->fillForm(fn (): array => ['rounds' => $this->scheduleRows()])
             ->form([
                 Forms\Components\Placeholder::make('nextInfo')
-                    ->label('Sıradaki tur')
-                    ->content(fn (): string => SwissRuntime::nextRoundNo($this->t()).'. tur — bu turun oynanacağı tarih/saati girin. Kura, tarih/saat girilmeden ÇEKİLEMEZ.'),
-                Forms\Components\DateTimePicker::make('round_at')
-                    ->label('Tur başlangıç tarih/saati')
-                    ->seconds(false)
-                    ->required()
-                    ->default(fn () => $this->t()->swiss_state['next_at'] ?? null)
-                    ->helperText('Sunucu saati (Türkiye, GMT+3).'),
+                    ->label('Bilgi')
+                    ->content(fn (): string => 'Sıradaki çekilecek tur: '.SwissRuntime::nextRoundNo($this->t()).'. tur. Her tur için başlangıç tarih/saatini girebilirsin; "Kura Çek" sıradaki turun saatini otomatik kullanır. İleri turları şimdiden planlayabilirsin.'),
+                Forms\Components\Repeater::make('rounds')
+                    ->label('Tur başlangıç saatleri')
+                    ->schema([
+                        Forms\Components\TextInput::make('round')
+                            ->label('Tur')
+                            ->numeric()
+                            ->integer()
+                            ->minValue(1)
+                            ->required()
+                            ->columnSpan(1),
+                        Forms\Components\DateTimePicker::make('at')
+                            ->label('Başlangıç (GMT+3)')
+                            ->seconds(false)
+                            ->required()
+                            ->columnSpan(2),
+                    ])
+                    ->columns(3)
+                    ->addActionLabel('Tur ekle')
+                    ->reorderable(false)
+                    ->defaultItems(1),
             ])
-            ->modalHeading('Tur tarih/saatini ayarla')
+            ->modalHeading('Tur saatlerini ayarla')
             ->action(function (array $data): void {
-                DB::transaction(function () use ($data): void {
+                $times = [];
+                foreach ($data['rounds'] ?? [] as $row) {
+                    $r = (int) ($row['round'] ?? 0);
+                    if ($r > 0 && ! empty($row['at'])) {
+                        $times[(string) $r] = (string) $row['at'];
+                    }
+                }
+                DB::transaction(function () use ($times): void {
                     $t = Tournament::lockForUpdate()->find($this->t()->id);
                     if ($t) {
-                        SwissRuntime::setNextRoundAt($t, (string) $data['round_at']);
+                        SwissRuntime::setSchedule($t, $times);
                     }
                 });
                 $this->record = $this->t()->fresh();
-                Notification::make()->title('Tur tarih/saati kaydedildi')->success()->send();
+                Notification::make()->title('Tur saatleri kaydedildi')->success()->send();
             });
+    }
+
+    /**
+     * Repeater ön-dolgusu: mevcut schedule (çekilmiş turlar) + sıradaki tur (next_at) satırları.
+     *
+     * @return list<array{round:int,at:?string}>
+     */
+    private function scheduleRows(): array
+    {
+        $ss = is_array($this->t()->swiss_state) ? $this->t()->swiss_state : [];
+        $schedule = is_array($ss['schedule'] ?? null) ? $ss['schedule'] : [];
+        $rows = [];
+        foreach ($schedule as $r => $at) {
+            $rows[(int) $r] = ['round' => (int) $r, 'at' => $at];
+        }
+        $next = SwissRuntime::nextRoundNo($this->t());
+        if (! isset($rows[$next])) {
+            $rows[$next] = ['round' => $next, 'at' => $ss['next_at'] ?? null];
+        }
+        ksort($rows);
+
+        return array_values($rows);
     }
 
     private function drawRoundAction(): Actions\Action

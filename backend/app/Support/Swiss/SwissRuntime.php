@@ -94,6 +94,35 @@ class SwissRuntime
         $t->save();
     }
 
+    /**
+     * TÜM turların başlangıç saatlerini tek seferde ayarla. $schedule = ["1"=>"2026-11-05 20:00", ...].
+     * Boş/0 girdiler atılır. Sıradaki çekilecek turun saati schedule'da varsa next_at'e yansıtılır
+     * (böylece "Kura Çek" ayrıca tarih girmeden o saati kullanır). Geçmiş/ileri tüm turlar planlanabilir.
+     */
+    public static function setSchedule(Tournament $t, array $schedule): void
+    {
+        $state = $t->swiss_state;
+        if (! is_array($state)) {
+            return;
+        }
+        $clean = [];
+        foreach ($schedule as $r => $at) {
+            $r = (int) $r;
+            $at = trim((string) $at);
+            if ($r > 0 && $at !== '') {
+                $clean[(string) $r] = $at;
+            }
+        }
+        ksort($clean, SORT_NUMERIC);
+        $state['schedule'] = $clean;
+        $next = (string) self::nextRoundNo($t);
+        if (isset($clean[$next])) {
+            $state['next_at'] = $clean[$next];
+        }
+        $t->swiss_state = $state;
+        $t->save();
+    }
+
     /** Bir sonraki çekilecek tur numarası (1-tabanlı). */
     public static function nextRoundNo(Tournament $t): int
     {
@@ -135,7 +164,10 @@ class SwissRuntime
         if (! self::currentRoundComplete($t)) {
             return ['can' => false, 'reason' => 'round_incomplete'];
         }
-        if (empty($state['next_at'] ?? null)) {
+        // Sıradaki turun saati: ya next_at ya da önceden planlanmış schedule[nextRoundNo].
+        $next = (string) self::nextRoundNo($t);
+        $hasTime = ! empty($state['next_at'] ?? null) || ! empty($state['schedule'][$next] ?? null);
+        if (! $hasTime) {
             return ['can' => false, 'reason' => 'no_datetime'];
         }
 
@@ -155,7 +187,11 @@ class SwissRuntime
         if (! $st['can']) {
             return ['ok' => false, 'reason' => $st['reason']];
         }
-        $plannedAt = (string) $t->swiss_state['next_at'];
+        $plannedAt = (string) ($t->swiss_state['next_at'] ?? '');
+        if ($plannedAt === '') {
+            $next = (string) self::nextRoundNo($t);
+            $plannedAt = (string) ($t->swiss_state['schedule'][$next] ?? '');
+        }
         $before = count(is_array($t->bracket) ? $t->bracket : []);
 
         self::generateRound($t);
