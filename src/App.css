@@ -28095,6 +28095,10 @@ input:not([type='range']), select, textarea {
 .swiss-pair-live:hover {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
+.swiss-td-pr {
+  text-align: center;
+  white-space: nowrap;
+}
 .swiss-td-averaj {
   font-variant-numeric: tabular-nums;
 }
@@ -28111,6 +28115,7 @@ input:not([type='range']), select, textarea {
   font-size: 0.8rem;
 }
 .swiss-table th {
+  white-space: nowrap;
   text-align: left;
   padding: 6px 10px;
   color: var(--muted);
