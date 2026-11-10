@@ -1140,9 +1140,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           const p2win = !!m.winner && !!m.p2 && m.winner === m.p2.id
                           return (
                             <div key={m.key} className="swiss-pair-row"><span className="swiss-pair-no">{pi + 1}</span>
-                              <span className={`swiss-pair-p${p1win ? ' win' : ''}`}>{m.p1?.name ?? '—'}</span>
+                              <span className={`swiss-pair-p${p1win ? ' win' : ''}${m.p1?.id === myId ? ' mine' : ''}`}>{m.p1?.name ?? '—'}</span>
                               <span className="swiss-pair-mid">{result}</span>
-                              <span className={`swiss-pair-p${p2win ? ' win' : ''}`}>{isBye ? '—' : (m.p2?.name ?? '—')}</span>
+                              <span className={`swiss-pair-p${p2win ? ' win' : ''}${m.p2?.id === myId ? ' mine' : ''}`}>{isBye ? '—' : (m.p2?.name ?? '—')}</span>
                             </div>
                           )
                         })}

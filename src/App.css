@@ -28004,6 +28004,7 @@ input:not([type='range']), select, textarea {
   color: var(--text);
 }
 .swiss-pair-no {
+  text-align: center;
   font-size: 0.74rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -28017,6 +28018,7 @@ input:not([type='range']), select, textarea {
   border-bottom: 1px solid var(--border);
 }
 .swiss-pair-hrow .swiss-pair-no {
+  text-align: center;
   font-weight: 700;
   color: var(--text);
   font-size: 0.64rem;
@@ -28047,6 +28049,10 @@ input:not([type='range']), select, textarea {
 }
 .swiss-pair-p:last-child {
   text-align: right;
+}
+.swiss-pair-p.mine {
+  color: #ee0000;
+  font-weight: 700;
 }
 .swiss-pair-p.win {
   font-weight: 700;
