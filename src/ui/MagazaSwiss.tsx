@@ -65,7 +65,6 @@ export default function MagazaSwiss({
   onOpenCart,
   onCoinsChange,
   onClose,
-  titleOverride,
 }: Props) {
   const coinPackages = useCoinPackages()
 
@@ -199,41 +198,33 @@ export default function MagazaSwiss({
         </button>
       )}
 
-      {/* GİRİŞ / HERO */}
-      <section className="mgz-hero" aria-label="Giriş">
-        <div className="mgz-hero-text">
-          <p className="mgz-eyebrow">TAVLATV · SEÇKİN TAVLA ATÖLYESİ</p>
-          <h1 className="mgz-hero-title">
-            {titleOverride || (
-              <>
-                Oyun,
-                <br />
-                bir <em>tasarım</em>
-                <br />
-                nesnesidir.
-              </>
-            )}
-          </h1>
-          <p className="mgz-hero-sub">
-            Elde bitirilmiş tavlalar, ağırlıklı zarlar, meşe zar kuleleri ve usta işi kitaplar. Her parça; denge,
-            oran ve dokunuşun İsviçre disiplininde buluştuğu bir seçki.
-          </p>
-          <button className="mgz-btn mgz-btn-xl" onClick={() => scrollTo('urunler')}>
-            Alışverişe Başla <Icon name="arrow-right" size={18} />
-          </button>
-        </div>
-        <div className="mgz-hero-media" aria-hidden="true">
-          {(() => {
-            const heroImg = (products ?? []).find((p) => p.images?.[0])?.images[0]
-            return heroImg ? (
-              <img src={imgUrl(heroImg)} alt="" />
+      {/* ÜYELİK — en üstte öne çıkan premium banner (hero yerine, kullanıcı isteği). */}
+      <section className="mgz-mem" aria-label="Premium Üyelik">
+        <div className="mgz-mem-inner">
+          <div className="mgz-mem-text">
+            <span className="mgz-mem-badge"><Icon name="crown" size={15} /> PREMIUM ÜYELİK</span>
+            <h2 className="mgz-mem-title">Oyunu bir üst seviyeye taşı.</h2>
+            <p className="mgz-mem-sub">
+              Reklamsız deneyim, özel çerçeve &amp; rozetler, gelişmiş maç analizi ve daha fazlası — bir yıl boyunca.
+            </p>
+            <ul className="mgz-mem-perks">
+              <li><Icon name="check" size={15} /> Reklamsız oyun</li>
+              <li><Icon name="check" size={15} /> Özel çerçeve &amp; rozetler</li>
+              <li><Icon name="check" size={15} /> Gelişmiş maç analizi</li>
+            </ul>
+          </div>
+          <div className="mgz-mem-cta">
+            <span className="mgz-mem-ico"><Icon name="crown" size={40} /></span>
+            <span className="mgz-mem-price tnum">{fmtTL(PREMIUM_YEARLY_TL)}</span>
+            <span className="mgz-mem-per">/ yıl</span>
+            {added['mem'] ? (
+              <span className="mgz-added" role="status"><Icon name="check" size={14} /> Sepete eklendi</span>
             ) : (
-              <span className="mgz-hero-ph">
-                <Icon name="dice" size={120} />
-              </span>
-            )
-          })()}
-          <span className="mgz-hero-tag">EST. KOLEKSİYON</span>
+              <button type="button" className="mgz-btn mgz-btn-lg mgz-mem-btn" onClick={addMembership}>
+                Üye Ol <Icon name="arrow-right" size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -341,28 +332,11 @@ export default function MagazaSwiss({
           })}
         </div>
 
-        {/* Jeton & Üyelik — aynı akışta (üyelik kartı her zaman; jeton paketleri varsa) */}
+        {/* Jeton paketleri (Üyelik en üste taşındı). Paket yoksa bölüm gizli. */}
+        {coinPackages.length > 0 && (
         <div className="mgz-sub">
-            <h3 className="mgz-h3">{coinPackages.length > 0 ? 'Jeton & Üyelik' : 'Üyelik'}</h3>
+            <h3 className="mgz-h3">Jeton</h3>
             <div className="mgz-coins">
-              <article className="mgz-coin mgz-coin-prem">
-                <span className="mgz-coin-badge">PREMIUM</span>
-                <span className="mgz-coin-name">1 Yıllık Üyelik</span>
-                <span className="mgz-coin-ico">
-                  <Icon name="crown" size={28} />
-                </span>
-                <span className="mgz-coin-price tnum">{fmtTL(PREMIUM_YEARLY_TL)}</span>
-                <span className="mgz-coin-per">/ yıl</span>
-                {added['mem'] ? (
-                  <span className="mgz-added" role="status">
-                    <Icon name="check" size={14} /> Eklendi
-                  </span>
-                ) : (
-                  <button type="button" className="mgz-btn mgz-btn-sm" onClick={addMembership}>
-                    Sepete Ekle
-                  </button>
-                )}
-              </article>
               {coinPackages.map((pk) => (
                 <article key={pk.id} className={`mgz-coin ${pk.popular ? 'is-pop' : ''}`}>
                   {pk.popular && <span className="mgz-coin-badge">POPÜLER</span>}
@@ -385,6 +359,7 @@ export default function MagazaSwiss({
               ))}
             </div>
           </div>
+        )}
       </section>
 
       {/* Hikâye bölümü kaldırıldı. Inline Sepet bölümü CSS ile GİZLİ (.mgz-cart{display:none}) —

@@ -320,6 +320,112 @@
   padding: 0.4rem 0.8rem;
 }
 
+/* --- ÜYELİK banner (en üstte, premium CTA — accent gradyan, siyah DEĞİL) --- */
+.mgz-mem {
+  padding: clamp(1.4rem, 4vw, 2.6rem) clamp(1.2rem, 4vw, 4rem);
+  border-bottom: 1px solid var(--line);
+}
+.mgz-mem-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: clamp(1.2rem, 4vw, 3rem);
+  align-items: center;
+  background: linear-gradient(135deg, var(--accent) 0%, #8f2f22 100%);
+  color: var(--accent-ink);
+  padding: clamp(1.4rem, 3vw, 2.4rem) clamp(1.4rem, 3.5vw, 2.8rem);
+  border-radius: 16px;
+  box-shadow: 0 22px 46px -26px rgba(168, 58, 43, 0.6);
+}
+.mgz-mem-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+}
+.mgz-mem-title {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.5rem, 3.6vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin: 0.8rem 0 0.6rem;
+}
+.mgz-mem-sub {
+  font-size: clamp(0.92rem, 1.3vw, 1.05rem);
+  opacity: 0.92;
+  max-width: 52ch;
+  margin: 0 0 1rem;
+}
+.mgz-mem-perks {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  margin: 0;
+  padding: 0;
+}
+.mgz-mem-perks li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.mgz-mem-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  text-align: center;
+  min-width: 180px;
+  padding: 1.3rem 1.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+}
+.mgz-mem-ico {
+  opacity: 0.95;
+  margin-bottom: 0.3rem;
+}
+.mgz-mem-price {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+.mgz-mem-per {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-bottom: 0.9rem;
+}
+.mgz-mem-btn.mgz-btn {
+  background: var(--accent-ink);
+  color: var(--accent);
+  border-color: var(--accent-ink);
+}
+.mgz-mem-btn.mgz-btn:hover:not(:disabled) {
+  background: var(--paper);
+  color: var(--accent);
+  border-color: var(--paper);
+}
+.mgz-mem .mgz-added {
+  color: var(--accent-ink);
+}
+@media (max-width: 680px) {
+  .mgz-mem-inner {
+    grid-template-columns: 1fr;
+  }
+  .mgz-mem-cta {
+    min-width: 0;
+  }
+}
+
 /* --- 3. BOLUM cercevesi --- */
 .mgz-section {
   padding: clamp(2.5rem, 6vw, 5rem) clamp(1.2rem, 4vw, 4rem);
