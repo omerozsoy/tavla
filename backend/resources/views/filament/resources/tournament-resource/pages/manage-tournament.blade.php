@@ -25,6 +25,7 @@
                         <div class="w-16 font-medium">{{ $row['round'] }}. tur</div>
                         <input
                             type="datetime-local"
+                            lang="tr"
                             wire:model="roundTimes.{{ $row['round'] }}"
                             @disabled($row['status'] === 'drawn')
                             class="fi-input block rounded-lg border-gray-300 text-sm shadow-sm disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800"
