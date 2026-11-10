@@ -12,7 +12,12 @@
 
 import { IS_NATIVE_APP } from '../appEnv'
 
-export type SeoAppPage = 'yeni-oyun' | 'yz-ile-oyna' | 'arkadasinla-oyna'
+export type SeoAppPage =
+  | 'yeni-oyun'
+  | 'yz-ile-oyna'
+  | 'arkadasinla-oyna'
+  | 'turkiye-online-tavla-ligi'
+  | 'takimlar-ligi'
 
 function YeniOyun() {
   return (
@@ -88,10 +93,79 @@ function ArkadasinlaOyna() {
   )
 }
 
+function LigContent() {
+  return (
+    <div className="info-rich rich">
+      <h2>Türkiye Online Tavla Ligi Nedir?</h2>
+      <p>
+        Türkiye Online Tavla Ligi, turnuvalardan bağımsız olarak sezonluk lig formatında oynanan
+        bir rekabet modülüdür. Belirlenen sezon boyunca oyuncular her turda birer rakiple eşleşir;
+        alınan sonuçlar bir puan tablosuna işlenir. Sezon sonunda üst sıradaki oyuncular eleme
+        ağacında (play-off) karşılaşarak lig şampiyonunu belirler. Amaç, tek bir maçın değil, tüm
+        sezona yayılan istikrarlı performansın ödüllendirildiği uzun soluklu bir yarış sunmaktır.
+      </p>
+      <ul>
+        <li><strong>Sezonluk format:</strong> Her tur yeni bir eşleşme, güncel puan tablosu ve play-off.</li>
+        <li><strong>Rating’ten ayrı:</strong> Lig puanı, normal <a href="/online-tavla">online tavla</a> rating’inden ayrı tutulur; ligdeki sonuç günlük rating’ini doğrudan değiştirmez.</li>
+        <li><strong>Adil eşleşme:</strong> Her turda daha önce karşılaşmadığın rakiplerle eşleşmeye çalışılır.</li>
+        <li><strong>Şampiyonluk:</strong> Sezon sonu play-off’larıyla lig birincisi belirlenir.</li>
+      </ul>
+      <h3>Lig, turnuvadan ne farklı?</h3>
+      <p>
+        Turnuva genellikle tek seferde tamamlanan bir elemeyken, lig tüm sezona yayılır: istikrar
+        ödüllendirilir, kötü bir maç her şeyi bitirmez. Dilersen aynı anda{' '}
+        <a href="/online-turnuvalar">online tavla turnuvalarına</a> da katılmaya devam edebilirsin.
+      </p>
+      <h3>Lige nasıl katılırım?</h3>
+      <p>
+        Aktif sezon açıkken lig sayfasından katılır, turların geldikçe maçlarını zamanında oynarsın.
+        Güncel sıralamanı buradan, genel sıralamayı ise <a href="/lider-tablosu">lider tablosundan</a>{' '}
+        takip edebilirsin. Oyununu geliştirmek için <a href="/tavla-rehberi">tavla stratejileri</a>{' '}
+        rehberimize göz atabilirsin.
+      </p>
+    </div>
+  )
+}
+
+function TakimlarContent() {
+  return (
+    <div className="info-rich rich">
+      <h2>Takımlar Ligi: 5v5 Online Tavla</h2>
+      <p>
+        Takımlar Ligi, beş kişilik takımların birbirine karşı yarıştığı, bireysel lig ve
+        turnuvalardan bağımsız bir takım modülüdür. Kendi takımını kurabilir ya da mevcut bir takıma
+        katılabilirsin. Takımlar eşleştiğinde her oyuncu kendi karşılaşmasını oynar; sonuçların
+        toplamı takımının sıralamadaki yerini belirler. Bireysel yeteneğin yanında kadro uyumu ve
+        düzenli katılım da önem kazanır.
+      </p>
+      <ul>
+        <li><strong>Takım kur veya katıl:</strong> Beş kişilik bir kadro oluştur ya da hazır bir takıma dahil ol.</li>
+        <li><strong>Ortalama rating:</strong> Takım sıralaması, yeterli üyeye sahip takımların üye <a href="/lider-tablosu">rating</a> ortalamasına göre belirlenir.</li>
+        <li><strong>Aylık ödüller:</strong> Her ay sıralamaya göre ödüller dağıtılır; takımlar yeni ay için yeniden yarışır.</li>
+        <li><strong>Gerçek maçlar:</strong> Takım karşılaşmaları canlı <a href="/online-tavla">online tavla</a> maçlarıyla oynanır.</li>
+      </ul>
+      <h3>Takım sıralaması nasıl belirlenir?</h3>
+      <p>
+        Sıralama, takımın belirli bir üye sayısına ulaştıktan sonra üyelerinin rating ortalamasına ve
+        oynanan takım maçlarının sonuçlarına göre hesaplanır. Böylece hem güçlü bir kadro kurmak hem
+        de düzenli maç yapmak önemlidir.
+      </p>
+      <h3>Takım kurmak ücretli mi?</h3>
+      <p>
+        Takım kurma ve yönetim işlemleri oyun içi jeton ekonomisiyle yürür; ayrıntıları takım kurma
+        ekranında görürsün. Tavlanı geliştirmek istersen <a href="/nasil-oynanir">tavla nasıl oynanır</a>{' '}
+        rehberiyle temelleri tazeleyebilirsin.
+      </p>
+    </div>
+  )
+}
+
 const PAGES: Record<SeoAppPage, () => React.JSX.Element> = {
   'yeni-oyun': YeniOyun,
   'yz-ile-oyna': YzIleOyna,
   'arkadasinla-oyna': ArkadasinlaOyna,
+  'turkiye-online-tavla-ligi': LigContent,
+  'takimlar-ligi': TakimlarContent,
 }
 
 export default function SeoAppSection({ page }: { page: SeoAppPage }) {

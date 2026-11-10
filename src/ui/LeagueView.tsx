@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
+import SeoAppSection from './SeoAppSection'
 import {
   applyToLeague,
   confirmLeagueTime,
@@ -244,6 +245,7 @@ export default function LeagueView(props: Props) {
         </div>
       )}
         </>}
+        <SeoAppSection page="turkiye-online-tavla-ligi" />
       </div>
     </div>
   )

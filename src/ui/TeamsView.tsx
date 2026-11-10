@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
 import Breadcrumb, { homeCrumb } from './Breadcrumb'
+import SeoAppSection from './SeoAppSection'
 import AvatarCropper from './AvatarCropper'
 import AvatarFrame from './AvatarFrame'
 import {
@@ -191,6 +192,7 @@ export default function TeamsView(props: Props) {
         <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })}
           onEnterRoom={props.onEnterRoom} setNotice={setNotice} errText={errText} />
       )}
+      <SeoAppSection page="takimlar-ligi" />
       </div>
     </div>
   )
