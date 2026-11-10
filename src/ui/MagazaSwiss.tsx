@@ -95,16 +95,23 @@ export default function MagazaSwiss({
     }
   }, [])
 
-  // --- Filtre + seçili ürün (inline detay) ---
+  // --- Filtre + sıralama + seçili ürün (inline detay) ---
   const [cat, setCat] = useState('all')
+  const [sort, setSort] = useState<'default' | 'price-asc' | 'price-desc' | 'name'>('default')
   const [selId, setSelId] = useState<number | null>(null)
-  const visible = useMemo(
-    () => (products ?? []).filter((p) => cat === 'all' || p.category === cat),
-    [products, cat],
-  )
+  // Sıralama fiyatı: TL (kuruş) varsa onu; yoksa coin'i büyük ofsetle sona iter (karışık katalog
+  // için naif ama küçük katalogda yeterli — ponytail).
+  const priceOf = (p: Product) => (p.money_price != null ? p.money_price : p.coin_price != null ? 1e12 + p.coin_price : 1e15)
+  const visible = useMemo(() => {
+    const list = (products ?? []).filter((p) => cat === 'all' || p.category === cat)
+    if (sort === 'price-asc') return [...list].sort((a, b) => priceOf(a) - priceOf(b))
+    if (sort === 'price-desc') return [...list].sort((a, b) => priceOf(b) - priceOf(a))
+    if (sort === 'name') return [...list].sort((a, b) => a.name.localeCompare(b.name, 'tr'))
+    return list
+  }, [products, cat, sort])
   useEffect(() => {
     setSelId(null)
-  }, [cat])
+  }, [cat, sort])
 
   // --- Grid sütun sayısı (satır-altı detay yerleşimi için) ---
   const gridRef = useRef<HTMLDivElement>(null)
@@ -198,47 +205,18 @@ export default function MagazaSwiss({
         </button>
       )}
 
-      {/* ÜYELİK — en üstte öne çıkan premium banner (hero yerine, kullanıcı isteği). */}
-      <section className="mgz-mem" aria-label="Premium Üyelik">
-        <div className="mgz-mem-inner">
-          <div className="mgz-mem-text">
-            <span className="mgz-mem-badge"><Icon name="crown" size={15} /> PREMIUM ÜYELİK</span>
-            <h2 className="mgz-mem-title">Oyunu bir üst seviyeye taşı.</h2>
-            <p className="mgz-mem-sub">
-              Yapay zekâ, turnuvalar ve gelişmiş analizlerle tam erişim — bir yıl boyunca.
-            </p>
-            <ul className="mgz-mem-perks">
-              <li><Icon name="check" size={15} /> Yapay Zeka ile Oyna</li>
-              <li><Icon name="check" size={15} /> Online Turnuvalar</li>
-              <li><Icon name="check" size={15} /> Ulusal Turnuva Takvimi</li>
-              <li><Icon name="check" size={15} /> Pozisyon Analizi</li>
-              <li><Icon name="check" size={15} /> Mat Analizi</li>
-              <li><Icon name="check" size={15} /> Maç Analizleri</li>
-              <li><Icon name="check" size={15} /> Kanıtlanabilir Adil Zar — Provably Fair</li>
-              <li><Icon name="check" size={15} /> Detaylı Oyuncu İstatistikleri</li>
-            </ul>
-          </div>
-          <div className="mgz-mem-cta">
-            <span className="mgz-mem-ico"><Icon name="crown" size={40} /></span>
-            <span className="mgz-mem-price tnum">{fmtTL(PREMIUM_YEARLY_TL)}</span>
-            <span className="mgz-mem-per">/ yıl</span>
-            {added['mem'] ? (
-              <span className="mgz-added" role="status"><Icon name="check" size={14} /> Sepete eklendi</span>
-            ) : (
-              <button type="button" className="mgz-btn mgz-btn-lg mgz-mem-btn" onClick={addMembership}>
-                Üye Ol <Icon name="arrow-right" size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Kompakt başlık — hero YOK (ürünler odakta, kullanıcı isteği). */}
+      <header className="mgz-top">
+        <p className="mgz-eyebrow">TAVLATV ATÖLYESİ</p>
+        <h1 className="mgz-top-title">Mağaza</h1>
+        <p className="mgz-top-sub">
+          Seçkin tavlalar, ağırlıklı zarlar, meşe zar kuleleri ve usta işi kitaplar — ayrıca jeton paketleri ve Premium üyelik.
+        </p>
+      </header>
 
-      {/* 3 — ÜRÜNLER */}
+      {/* ÜRÜNLER — sayfanın odağı */}
       <section id="urunler" className="mgz-section" aria-label="Ürünler">
         <div className="mgz-section-head">
-          <h2 className="mgz-h2">
-            <span className="mgz-idx">01</span> Ürünler
-          </h2>
           <div className="mgz-filters" role="tablist" aria-label="Kategori filtresi">
             <button
               type="button"
@@ -262,11 +240,37 @@ export default function MagazaSwiss({
               </button>
             ))}
           </div>
+          <label className="mgz-sort">
+            <span>Sırala</span>
+            <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} aria-label="Sıralama">
+              <option value="default">Önerilen</option>
+              <option value="price-asc">Fiyat ↑</option>
+              <option value="price-desc">Fiyat ↓</option>
+              <option value="name">İsim (A–Z)</option>
+            </select>
+          </label>
         </div>
 
-        {loadErr && <p className="mgz-note">Ürünler yüklenemedi. Lütfen sayfayı yenile.</p>}
-        {!loadErr && products && visible.length === 0 && <p className="mgz-note">Bu kategoride henüz ürün yok.</p>}
-        {!products && !loadErr && <p className="mgz-note">Yükleniyor…</p>}
+        {loadErr ? (
+          <p className="mgz-note mgz-state">Ürünler yüklenemedi. Lütfen sayfayı yenile.</p>
+        ) : !products ? (
+          <div className="mgz-grid" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="mgz-cell">
+                <div className="mgz-skel" />
+              </div>
+            ))}
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="mgz-state">
+            <p className="mgz-note">{cat === 'all' ? 'Henüz ürün yok.' : 'Bu kategoride ürün bulunamadı.'}</p>
+            {cat !== 'all' && (
+              <button type="button" className="mgz-btn mgz-btn-sm" onClick={() => setCat('all')}>
+                Tüm ürünler
+              </button>
+            )}
+          </div>
+        ) : null}
 
         <div className="mgz-grid" ref={gridRef}>
           {visible.map((p, i) => {
@@ -287,7 +291,11 @@ export default function MagazaSwiss({
                     aria-label={`${p.name} detayını ${open ? 'kapat' : 'aç'}`}
                   >
                     {p.images[0] ? <img src={imgUrl(p.images[0])} alt={p.name} loading="lazy" /> : <Icon name="dice" size={40} />}
-                    {out && <span className="mgz-flag">Tükendi</span>}
+                    {out ? (
+                      <span className="mgz-flag">Tükendi</span>
+                    ) : (
+                      p.stock <= 5 && <span className="mgz-flag mgz-flag-low">Son {p.stock}</span>
+                    )}
                   </button>
                   <div className="mgz-card-body">
                     <span className="mgz-card-cat">{p.category_name ?? '—'}</span>
@@ -337,34 +345,51 @@ export default function MagazaSwiss({
           })}
         </div>
 
-        {/* Jeton paketleri (Üyelik en üste taşındı). Paket yoksa bölüm gizli. */}
-        {coinPackages.length > 0 && (
-        <div className="mgz-sub">
-            <h3 className="mgz-h3">Jeton</h3>
-            <div className="mgz-coins">
-              {coinPackages.map((pk) => (
-                <article key={pk.id} className={`mgz-coin ${pk.popular ? 'is-pop' : ''}`}>
-                  {pk.popular && <span className="mgz-coin-badge">POPÜLER</span>}
-                  <span className="mgz-coin-name">{pk.name}</span>
-                  <span className="mgz-coin-ico">
-                    <Coins amount={pk.gc} size={20} suffix="coin" />
-                  </span>
-                  <span className="mgz-coin-price tnum">{fmtTL(pk.price)}</span>
-                  {pk.discount > 0 && <span className="mgz-coin-per">%{pk.discount} avantaj</span>}
-                  {added[`c${pk.id}`] ? (
-                    <span className="mgz-added" role="status">
-                      <Icon name="check" size={14} /> Eklendi
-                    </span>
-                  ) : (
-                    <button type="button" className="mgz-btn mgz-btn-sm" onClick={() => addCoinPkg(pk.id)}>
-                      Sepete Ekle
-                    </button>
-                  )}
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
+      </section>
+
+      {/* ÜYELİK & JETON — dijital ürünler, fiziksel ürünlerin ALTINDA (onları aşağı itmez). */}
+      <section className="mgz-section mgz-digital" aria-label="Üyelik ve Jeton">
+        <div className="mgz-digital-head">
+          <p className="mgz-eyebrow">Dijital</p>
+          <h2 className="mgz-h3">Üyelik &amp; Jeton</h2>
+        </div>
+        <div className="mgz-coins">
+          {/* Premium üyelik — kompakt kart */}
+          <article className="mgz-coin mgz-coin-prem">
+            <span className="mgz-coin-badge"><Icon name="crown" size={13} /> PREMIUM</span>
+            <span className="mgz-coin-name">1 Yıllık Üyelik</span>
+            <span className="mgz-coin-ico"><Icon name="crown" size={24} /></span>
+            <span className="mgz-coin-price tnum">{fmtTL(PREMIUM_YEARLY_TL)}</span>
+            <span className="mgz-coin-per">/ yıl · tam erişim</span>
+            {added['mem'] ? (
+              <span className="mgz-added" role="status"><Icon name="check" size={14} /> Eklendi</span>
+            ) : (
+              <button type="button" className="mgz-btn mgz-btn-sm" onClick={addMembership}>
+                Sepete Ekle
+              </button>
+            )}
+          </article>
+          {coinPackages.map((pk) => (
+            <article key={pk.id} className={`mgz-coin ${pk.popular ? 'is-pop' : ''}`}>
+              {pk.popular && <span className="mgz-coin-badge">POPÜLER</span>}
+              <span className="mgz-coin-name">{pk.name}</span>
+              <span className="mgz-coin-ico">
+                <Coins amount={pk.gc} size={20} suffix="coin" />
+              </span>
+              <span className="mgz-coin-price tnum">{fmtTL(pk.price)}</span>
+              {pk.discount > 0 && <span className="mgz-coin-per">%{pk.discount} avantaj</span>}
+              {added[`c${pk.id}`] ? (
+                <span className="mgz-added" role="status">
+                  <Icon name="check" size={14} /> Eklendi
+                </span>
+              ) : (
+                <button type="button" className="mgz-btn mgz-btn-sm" onClick={() => addCoinPkg(pk.id)}>
+                  Sepete Ekle
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
       </section>
 
       {/* Hikâye bölümü kaldırıldı. Inline Sepet bölümü CSS ile GİZLİ (.mgz-cart{display:none}) —

@@ -1394,6 +1394,113 @@
   }
 }
 
+/* --- Kompakt başlık (büyük hero YOK — ürünler odakta) --- */
+.mgz-top {
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.2rem, 4vw, 4rem) 1.4rem;
+}
+.mgz-top-title {
+  font-family: 'Archivo Expanded', 'Archivo', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin: 0.4rem 0 0.6rem;
+}
+.mgz-top-sub {
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  color: var(--ink-60);
+  max-width: 62ch;
+  margin: 0;
+}
+
+/* --- Sıralama --- */
+.mgz-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+  white-space: nowrap;
+}
+.mgz-sort select {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: 'Archivo', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 0.4rem 0.6rem;
+}
+.mgz-sort select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* --- Düşük stok rozeti (mgz-flag varyantı) --- */
+.mgz-flag-low {
+  background: var(--paper);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+/* --- Yükleme iskeleti + boş/hata durumu --- */
+.mgz-skel {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  background: linear-gradient(100deg, var(--paper-2) 30%, #f0ebe0 50%, var(--paper-2) 70%);
+  background-size: 200% 100%;
+  animation: mgz-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes mgz-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.mgz-state {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 2.5rem 0;
+}
+.mgz-state .mgz-note {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* --- Dijital bölüm (Üyelik & Jeton) — ürünlerin altında --- */
+.mgz-digital {
+  background: var(--paper-2);
+}
+.mgz-digital-head {
+  margin-bottom: 1.5rem;
+}
+.mgz-digital-head .mgz-h3 {
+  margin: 0.3rem 0 0;
+  font-size: 1.4rem;
+}
+.mgz-coin-prem .mgz-coin-ico {
+  color: var(--accent);
+}
+.mgz-coin-prem .mgz-coin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+@media (max-width: 560px) {
+  .mgz-section-head {
+    align-items: flex-start;
+  }
+}
+
 /* --- Azaltilmis hareket --- */
 @media (prefers-reduced-motion: reduce) {
   .mgz *,
