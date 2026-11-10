@@ -114,14 +114,32 @@ class TournamentSwissDrawPanelTest extends TestCase
         $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null, '2. tur planı korunur');
     }
 
+    public function test_schedule_before_start_is_preserved_on_start(): void
+    {
+        // Open (başlamamış) turnuvada tur saatleri girilir → partial swiss_state'te tutulur, serialize null.
+        $t = $this->swiss(4); // status=open, swiss_state=null
+        SwissRuntime::setSchedule($t, ['1' => '2026-11-05 20:00:00', '2' => '2026-11-06 20:00:00']);
+        $t->refresh();
+        $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['schedule']['1'] ?? null, 'open\'da plan saklanır');
+        $this->assertNull(SwissRuntime::serialize($t), 'participants yok → frontend swiss paneli null (güvenli)');
+
+        // Başlatınca plan KORUNUR; 1. tur planı next_at\'e yansır (kura şartı hazır).
+        SwissRuntime::start($t);
+        $t->refresh();
+        $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['schedule']['1'] ?? null, 'plan başlatınca korunur');
+        $this->assertSame('2026-11-06 20:00:00', $t->swiss_state['schedule']['2'] ?? null);
+        $this->assertSame('2026-11-05 20:00:00', $t->swiss_state['next_at'] ?? null, '1. tur planı next_at\'e geçer');
+        $this->assertNotEmpty($t->swiss_state['participants'] ?? null, 'başlatma katılımcıları kurar');
+    }
+
     public function test_draw_actions_hidden_for_non_running_or_bracket(): void
     {
-        // Açık (henüz başlamamış) Swiss turnuvada aksiyonlar gizli.
+        // Açık (henüz başlamamış) Swiss turnuvada "Kura Çek" gizli; "Tur Saatleri" GÖRÜNÜR (plan ön-girişi).
         $open = $this->swiss(4);
         Livewire::actingAs($this->admin())
             ->test(ManageTournament::class, ['record' => $open->id])
             ->assertActionHidden('drawRound')
-            ->assertActionHidden('scheduleRound');
+            ->assertActionVisible('scheduleRound');
 
         // Sürüyor ama ELEME AĞACI turnuvada aksiyonlar gizli (yalnız Swiss).
         $br = Tournament::create([

@@ -56,6 +56,10 @@ class SwissRuntime
         $config = self::lockedConfig($t);
         $participants = SwissEngine::initParticipants($players, $seed, (int) $config['lives']);
 
+        // Başlamadan ÖNCE (open) admin "Tur Saatleri" ile plan girdiyse koru (partial swiss_state'te tutulur).
+        $prior = is_array($t->swiss_state) ? $t->swiss_state : [];
+        $priorSchedule = is_array($prior['schedule'] ?? null) ? $prior['schedule'] : [];
+
         $state = [
             'version' => self::RULE_VERSION,
             'algo' => SwissEngine::ALGO_VERSION,
@@ -65,8 +69,8 @@ class SwissRuntime
             'config' => $config,
             'reports' => [],
             'note' => null,
-            'schedule' => [],   // çekilmiş turların planlanan tarih/saati: { "1": "Y-m-d H:i:s", ... }
-            'next_at' => null,  // sıradaki (henüz çekilmemiş) turun tarih/saati — admin girer, kura şartı
+            'schedule' => $priorSchedule, // çekilmiş/planlanmış turların tarih/saati: { "1": "Y-m-d H:i:s", ... }
+            'next_at' => $priorSchedule['1'] ?? null, // 1. tur planlandıysa kura şartı hazır
         ];
 
         $t->bracket = [];
@@ -101,10 +105,9 @@ class SwissRuntime
      */
     public static function setSchedule(Tournament $t, array $schedule): void
     {
-        $state = $t->swiss_state;
-        if (! is_array($state)) {
-            return;
-        }
+        // Open (henüz başlamamış) turnuvada swiss_state null olabilir → sadece schedule tutan partial
+        // state oluştur (serialize participants yoksa null döner, güvenli). start() bu planı korur.
+        $state = is_array($t->swiss_state) ? $t->swiss_state : [];
         $clean = [];
         foreach ($schedule as $r => $at) {
             $r = (int) $r;

@@ -97,7 +97,8 @@ class ManageTournament extends Page
             ->label('Tur Saatleri')
             ->icon('heroicon-o-calendar-days')
             ->color('info')
-            ->visible(fn (): bool => $this->t()->status === 'running' && $this->isSwiss())
+            // Open (başlamadan plan) + running. Başlamadan girilen plan start()'ta korunur.
+            ->visible(fn (): bool => $this->t()->status !== 'finished' && $this->isSwiss())
             ->fillForm(fn (): array => ['rounds' => $this->scheduleRows()])
             ->form([
                 Forms\Components\Placeholder::make('nextInfo')
