@@ -178,11 +178,21 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         }
 
         // Birleştirilmiş .mat AUTHORITATIVE (tam) -> iki satırı da (yalnız gerçek değerle) yaz/ez.
+        // SELF (write) + RAKİP (writeOpponent) İKİSİNİ de yaz: matchGnubgPr ucu rakip şansını satırın KENDİ
+        // opponent_luck_mwc kolonundan okur (kardeş satırdan DEĞİL). Cross-fill yoksa İKİ oyuncu da
+        // raporlayınca (merged path) opp NULL kalır -> sonuç ekranı şansı "—" gösterir. Tek-raporlu
+        // writeLuckFromMat/handlePvb zaten writeOpponent yapar; merged yol bunu atlıyordu (kök neden).
         if (! $suspicious($white)) {
             $this->write($whiteRow->id, $white);
+            if (! $suspicious($black)) {
+                $this->writeOpponent($whiteRow->id, $black); // beyaz satırın rakibi = siyah şansı
+            }
         }
         if (! $suspicious($black)) {
             $this->write($blackRow->id, $black);
+            if (! $suspicious($white)) {
+                $this->writeOpponent($blackRow->id, $white); // siyah satırın rakibi = beyaz şansı
+            }
         }
 
         Log::info('gnubg luck V1 (merged)', [

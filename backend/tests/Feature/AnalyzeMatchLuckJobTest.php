@@ -66,6 +66,12 @@ class AnalyzeMatchLuckJobTest extends TestCase
         $this->assertEqualsWithDelta(0.78, (float) $wRow->luck_emg, 1e-6);
         $this->assertEqualsWithDelta(-13.0, (float) $bRow->luck_mwc, 1e-6, 'siyah satırı black (p1) luck');
         $this->assertSame('TAVLAI_LUCK_V1', $wRow->luck_method);
+        // CROSS-FILL (kök fix): merged path her satıra RAKİP şansını da yazmalı -> matchGnubgPr ucu
+        // opponent_luck_mwc'yi okur; cross-fill yoksa iki oyuncu da raporlayınca şans "—" kalıyordu.
+        $this->assertEqualsWithDelta(-13.0, (float) $wRow->opponent_luck_mwc, 1e-6, 'beyazın rakibi = siyah luck');
+        $this->assertEqualsWithDelta(-0.26, (float) $wRow->opponent_luck_emg, 1e-6);
+        $this->assertEqualsWithDelta(39.0, (float) $bRow->opponent_luck_mwc, 1e-6, 'siyahın rakibi = beyaz luck');
+        $this->assertEqualsWithDelta(0.78, (float) $bRow->opponent_luck_emg, 1e-6);
     }
 
     public function test_waits_when_opponent_not_reported_and_no_game_log(): void
