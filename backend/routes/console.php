@@ -61,6 +61,14 @@ Schedule::command('security:cheat-scan --flag')
     ->name('cheat-scan')
     ->withoutOverlapping();
 
+// KÜFÜRLÜ TAKMA AD NÖBETÇİSİ: admin "Küfürlü Takmaisim" sayfasından uyarı gönderip son tarih verdiği
+// hesapları süpürür. Süre dolup takma ad hâlâ uygunsuzsa hesabı kapatır (AccountClosure); takma adını
+// düzeltenlerin uyarısını temizler. Idempotent -> saatte bir yeterli (son-tarih çözünürlüğü ~1 saat).
+Schedule::command('tavla:nickname-enforce')
+    ->hourly()
+    ->name('nickname-enforce')
+    ->withoutOverlapping();
+
 // MAKALE/HABER OKUNMASI ORGANİK ARTIŞ: yayındaki makale+haber okunma sayaçları zamanla
 // kendiliğinden büyüsün (yalnız gerçek detay-açılışına bağlı kalmasın). Saatte bir, yaşa göre
 // azalan küçük rastgele adımlar (taze yazı hızlı, eskiler yavaş plato). Kullanıcı direktifi.

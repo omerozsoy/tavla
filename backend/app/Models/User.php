@@ -115,6 +115,8 @@ class User extends Authenticatable implements FilamentUser, HasName, MustVerifyE
             'unlocks' => 'array',
             'prefs' => 'array', // cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) — web↔app senkron
             'nickname_history' => 'array', // eski takma adlar [{nickname, at}] — isim değiştirenleri izle
+            'nickname_warned_at' => 'datetime', // küfürlü takma ad uyarısının gönderildiği an
+            'nickname_ban_at' => 'datetime', // bu tarihe kadar düzeltmezse hesap kapatılır (son tarih)
             'badges' => 'array',
             'featured_badges' => 'array',
             'plan_until' => 'datetime',
