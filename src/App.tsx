@@ -245,7 +245,7 @@ const SITE_ORIGIN = BRAND.origin
 const DEFAULT_DESC =
   BRAND.key === 'gammon'
     ? 'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.'
-    : 'TavlaTv, gerçek rakiplerle canlı tavla oynayabileceğin ücretsiz platform. Turnuvalar, lig, yapay zekâ botu ve hamle hamle maç analizi (PR) — tarayıcıda, kayıt gerektirmez.'
+    : 'TavlaTv, gerçek rakiplerle canlı tavla oynayabileceğin ücretsiz platform. Turnuvalar, lig, yapay zekâ botu ve maç analizi (PR) — tarayıcıda, kayıt gerektirmez.'
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
