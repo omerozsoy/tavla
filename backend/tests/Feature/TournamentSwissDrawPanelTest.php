@@ -128,22 +128,46 @@ class TournamentSwissDrawPanelTest extends TestCase
         $this->assertNotEmpty($t->swiss_state['participants'] ?? null, 'başlatma katılımcıları kurar');
     }
 
-    public function test_open_swiss_round1_start_begins_tournament_and_draws(): void
+    public function test_start_tournament_action_draws_round1_when_time_set(): void
     {
-        // Açık (başlamamış) Swiss: 1. tura saat gir + "Başlat" → turnuva başlar + 1. tur çekilir (tek tık).
+        // Açık Swiss: 1. tur saatini listeye gir + "Turnuvayı Başlat" → turnuva başlar VE 1. tur çekilir (tek tık).
         $sw = $this->swiss(4);
         Livewire::actingAs($this->admin())
             ->test(ManageTournament::class, ['record' => $sw->id])
             ->set('roundTimes', ['1' => '2026-11-05T20:00'])
-            ->call('startRound', 1);
+            ->callAction('start');
         $sw->refresh();
-        $this->assertSame('running', $sw->status, 'open 1. tur Başlat turnuvayı başlatır');
-        $this->assertCount(1, $sw->bracket, '1. tur çekildi');
+        $this->assertSame('running', $sw->status, 'turnuva başlar');
+        $this->assertCount(1, $sw->bracket, '1. tur kurası da çekilir');
+    }
 
+    public function test_start_tournament_without_round1_time_starts_only(): void
+    {
+        // 1. tur saati girilmeden "Turnuvayı Başlat" → turnuva başlar ama 1. tur çekilmez; sonra listeden.
+        $sw = $this->swiss(4);
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $sw->id])
+            ->set('roundTimes', [])
+            ->callAction('start');
+        $sw->refresh();
+        $this->assertSame('running', $sw->status);
+        $this->assertCount(0, $sw->bracket ?? [], 'saat yoksa 1. tur çekilmez');
+
+        // Şimdi 1. turu listeden saat girip "Başlat".
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $sw->id])
+            ->set('roundTimes', ['1' => '2026-11-05T20:00'])
+            ->call('startRound', 1);
+        $this->assertCount(1, $sw->fresh()->bracket, '1. tur çekildi');
+    }
+
+    public function test_round_start_is_swiss_only(): void
+    {
         // ELEME AĞACI turnuvada Swiss listesi yok → startRound dokunmaz (yalnız Swiss).
+        $base = $this->swiss(4);
         $br = Tournament::create([
             'name' => 'Br', 'type' => 'bracket', 'size' => 0, 'status' => 'open',
-            'players' => $sw->players, 'match_length' => 5,
+            'players' => $base->players, 'match_length' => 5,
         ]);
         $br->startBracket();
         $before = $br->fresh()->bracket;

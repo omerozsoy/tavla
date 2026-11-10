@@ -87,18 +87,37 @@ class ManageTournament extends Page
             ->color('success')
             ->requiresConfirmation()
             ->modalHeading('Turnuvayı başlat')
-            ->modalDescription('Turnuva başlatılacak. Eleme ağacında eşleşmeler hemen oluşur. 3 Haklı Swiss\'te KURA OTOMATİK ÇEKİLMEZ: başlattıktan sonra "Tur Tarih/Saati" ile 1. turun tarih/saatini girip "Kura Çek"e basmalısın. Bu işlem geri alınamaz.')
+            ->modalDescription('Turnuva başlatılacak. Eleme ağacında eşleşmeler hemen oluşur. 3 Haklı Swiss\'te: 1. turun saatini aşağıdaki listeye girdiysen 1. tur kurası da hemen çekilir (girmediysen turnuva başlar, 1. turu listeden başlatırsın). Bu işlem geri alınamaz.')
             ->visible(fn (): bool => $this->t()->status === 'open'
                 && count(array_filter($this->t()->players ?? [], fn ($p) => $p !== null)) >= 2)
             ->action(function (): void {
-                $record = $this->t();
-                if (($record->type ?? 'bracket') === 'swiss_triple') {
-                    SwissRuntime::start($record);
-                } else {
-                    $record->startBracket();
+                if (! $this->isSwiss()) {
+                    $this->t()->startBracket();
+                    $this->record = $this->t()->fresh();
+                    Notification::make()->title('Turnuva başlatıldı')->success()->send();
+
+                    return;
                 }
-                $this->record = $record->fresh();
-                Notification::make()->title('Turnuva başlatıldı')->success()->send();
+                // Swiss: başlat + (1. tur saati girildiyse) 1. tur kurasını çek — tek tık.
+                $times = $this->normalizedTimes();
+                $drew = false;
+                DB::transaction(function () use ($times, &$drew): void {
+                    $t = Tournament::lockForUpdate()->find($this->t()->id);
+                    if (! $t) {
+                        return;
+                    }
+                    SwissRuntime::setSchedule($t, $times); // 1. tur saati partial state'e yazılır
+                    SwissRuntime::start($t);               // schedule korunur, next_at = schedule[1]
+                    $t->refresh();
+                    $drew = SwissRuntime::drawRound($t)['ok']; // 1. tur saati varsa çekilir
+                });
+                $this->record = $this->t()->fresh();
+                $this->syncRoundTimes();
+                Notification::make()
+                    ->title($drew ? 'Turnuva başlatıldı — 1. tur kurası çekildi.' : 'Turnuva başlatıldı.')
+                    ->body($drew ? null : '1. turun saatini listeye girip "Başlat"a bas.')
+                    ->success()
+                    ->send();
             });
     }
 
@@ -186,18 +205,15 @@ class ManageTournament extends Page
                 return;
             }
             SwissRuntime::setSchedule($t, $times);
-            // Bu turun saati girilmemişse ne başlat ne de çek.
-            if (empty($times[(string) $round])) {
-                $res = ['ok' => false, 'reason' => 'no_datetime'];
+            // Turnuva başlamadıysa turu başlatma (önce "Turnuvayı Başlat").
+            if ($t->status !== 'running') {
+                $res = ['ok' => false, 'reason' => 'not_running'];
 
                 return;
             }
-            if ($t->status === 'open' && $round === 1) {
-                SwissRuntime::start($t); // 1. tur: önce turnuvayı başlat (schedule korunur)
-                $t->refresh();
-            }
-            if ($t->status !== 'running') {
-                $res = ['ok' => false, 'reason' => 'not_running'];
+            // Bu turun saati girilmemişse çekme.
+            if (empty($times[(string) $round])) {
+                $res = ['ok' => false, 'reason' => 'no_datetime'];
 
                 return;
             }
@@ -234,14 +250,14 @@ class ManageTournament extends Page
         $drawn = count(is_array($t->bracket) ? $t->bracket : []);
         $next = $drawn + 1;
         $running = $t->status === 'running';
-        $open = $t->status === 'open';
         $complete = $running ? SwissRuntime::currentRoundComplete($t) : true;
         $rows = [];
         $top = max($this->maxRow, $next);
         for ($r = 1; $r <= $top; $r++) {
             $status = $r <= $drawn ? 'drawn' : ($r === $next ? 'next' : 'future');
             $hasTime = ! empty($this->roundTimes[(string) $r] ?? null);
-            $canStart = $r === $next && $hasTime && (($running && $complete) || ($open && $r === 1));
+            // Tur "Başlat": yalnız turnuva running + sıradaki tur + önceki tur tamam + saat girilmiş.
+            $canStart = $running && $r === $next && $complete && $hasTime;
             $rows[] = ['round' => $r, 'status' => $status, 'isNext' => $r === $next, 'canStart' => $canStart, 'hasTime' => $hasTime];
         }
 
