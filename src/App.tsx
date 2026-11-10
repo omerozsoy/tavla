@@ -234,7 +234,7 @@ const INFO_URL_TAB: Record<string, InfoTab> = {
 const DEFAULT_DOC_TITLE =
   BRAND.key === 'gammon'
     ? 'GammonTV — Play Backgammon Online Free | Live Multiplayer'
-    : 'TavlaTv - Ücretsiz Online Tavla Oyna | Bedava Tavla'
+    : 'TavlaTv — Canlı Tavla, Turnuva ve Maç Analizi Platformu'
 const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
   'uyelik-sozlesmesi', 'iptal-ve-iade', 'teslimat', 'mesafeli-satis-sozlesmesi', 'sifre-sifirla',
@@ -245,7 +245,7 @@ const SITE_ORIGIN = BRAND.origin
 const DEFAULT_DESC =
   BRAND.key === 'gammon'
     ? 'Play backgammon online for free. Live matches against real opponents, a strong AI bot, tournaments and move-by-move analysis. No download, no signup — start in your browser.'
-    : 'Ücretsiz online tavla oyna. Gerçek rakiplerle, arkadaşınla veya yapay zekâya karşı tavla oynayabilir; turnuvalara katılıp maçlarını analiz edebilirsin.'
+    : 'TavlaTv, gerçek rakiplerle canlı tavla oynayabileceğin ücretsiz platform. Turnuvalar, lig, yapay zekâ botu ve hamle hamle maç analizi (PR) — tarayıcıda, kayıt gerektirmez.'
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
@@ -521,7 +521,7 @@ const LEGAL_H1: Record<string, string> = {
 // Rota basligi -> gorsel-gizli <h1> metni (SPA'da her sayfa DOM'da benzersiz H1 tasisin;
 // JS render eden crawler'lar (Google) icin. JS'siz crawler'lar SeoMeta <noscript> H1'ini alir).
 function seoH1(slug: string): string {
-  if (!slug) return 'Online Tavla Oyna — Ücretsiz ve Bedava Tavla'
+  if (!slug) return 'TavlaTv — Canlı Tavla, Turnuva ve Maç Analizi Platformu'
   if (LEGAL_H1[slug]) return LEGAL_H1[slug]
   const { title } = seoLookup(slug)
   // " | TavlaTv" / " - TavlaTv…" markasal son eki at.
