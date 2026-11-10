@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
-import { useEscape } from './useEscape'
 import { detectBrand, formatCardNumber, cvvLength, luhnValid, expiryValid, cardFormValid, type CardBrand } from './cardValidation'
 import './CardForm.css'
 
@@ -36,7 +35,6 @@ function fmtTL(kurus: number): string {
 // Kredi/Banka Kartı ile ödeme sayfası (biçim). GÜVENLİK: kart verisi YALNIZ bu bileşenin
 // state'inde; loglanmaz, localStorage'a yazılmaz. Gönderim onSubmit ile üst akışa verilir.
 export default function CardForm({ amount, title, busy = false, onClose, onSubmit }: Props) {
-  useEscape(onClose)
   const [number, setNumber] = useState('')
   const [name, setName] = useState('')
   const [mm, setMm] = useState('')
@@ -66,8 +64,9 @@ export default function CardForm({ amount, title, busy = false, onClose, onSubmi
   }
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card cardpay-card" onClick={(e) => e.stopPropagation()}>
+    // GERÇEK SAYFA (modal değil): page-host akışında statik render; modal/dialog semantiği YOK.
+    <div className="register-overlay page">
+      <div className="register-card cardpay-card">
         <div className="cardpay-head">
           <h2>
             <Icon name="credit-card" size={22} /> {title || 'Kart ile Ödeme'}

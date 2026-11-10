@@ -1187,6 +1187,26 @@ export default function App() {
   // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
   // oluşur (cartCheckout, imzalı URL) -> amount+url burada tutulur; kart gönderilince kullanılır.
   const [cardPay, setCardPay] = useState<{ amount: number; paymentId: number } | null>(null)
+  // Kart ödeme GERÇEK sayfa (modal değil): /kart-odeme/<id>. State sessionStorage'da tutulur ->
+  // YENİLEMEDE korunur. YALNIZ YAZ: cardPay null olunca SİLME (applyFromPath başta closeAllPages
+  // ile cardPay'i null'lar, SONRA route-case sessionStorage'dan geri kurar -> burada silseydik
+  // kurmadan önce silinirdi). Temizlik açıkça clearCardPay() ile (ödeme biter / Vazgeç).
+  useEffect(() => {
+    try {
+      if (cardPay) sessionStorage.setItem('cardPay', JSON.stringify(cardPay))
+    } catch {
+      /* yoksay */
+    }
+  }, [cardPay])
+  // Kart ödeme sayfasını KAPAT + sessionStorage'ı temizle (yeniden kurulmasın).
+  const clearCardPay = () => {
+    try {
+      sessionStorage.removeItem('cardPay')
+    } catch {
+      /* yoksay */
+    }
+    setCardPay(null)
+  }
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
   // A-30: coin sipariş idempotency anahtarı AYNI sepet+adres için yeniden denemelerde KORUNUR
   // (eskiden her denemede yeni anahtar -> yanıtı kaybolan başarılı istek tekrarında çift düşüm).
@@ -1292,7 +1312,7 @@ export default function App() {
       : bankData
         ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
       : cardPay
-        ? 'kart-odeme' // Kart ödeme formu; URL'den kurulamaz (ödeme state'i geçici) -> yenilemede sepete döner
+        ? 'kart-odeme/' + cardPay.paymentId // Kart ödeme GERÇEK sayfa; state sessionStorage'da -> yenilemede kurulur
       : cartOpen
         ? 'sepet'
       : shopOpen
@@ -1608,7 +1628,25 @@ export default function App() {
         case 'sepet':
           setCartOpen(true)
           break
-        case 'kart-odeme': // Kart ödeme formu geçici (ödeme state'i bellekte); yenileme/doğrudan link -> sepete dön
+        case 'kart-odeme': {
+          // Kart ödeme GERÇEK sayfa: state sessionStorage'da -> yenileme/geri ile kur. Yoksa (yeni
+          // sekme / temizlenmiş) sepete dön.
+          let restored = false
+          try {
+            const saved = sessionStorage.getItem('cardPay')
+            if (saved) {
+              const cp = JSON.parse(saved) as { amount: number; paymentId: number }
+              if (cp && typeof cp.amount === 'number' && typeof cp.paymentId === 'number') {
+                setCardPay(cp)
+                restored = true
+              }
+            }
+          } catch {
+            /* yoksay */
+          }
+          if (!restored) setCartOpen(true)
+          break
+        }
         case 'odeme':
           // Odeme adimi gecici (imzali submitUrl bellekte); dogrudan/yenileme ile gelince sepete don.
           setCartOpen(true)
@@ -8017,7 +8055,7 @@ export default function App() {
   // sunucuya GÖNDERİLMEZ, loglanmaz. Kullanıcıya "alındı, onay bekleniyor" + Siparişlerim.
   function handleCardPay(_card: CardPayData) {
     if (!cardPay) return
-    setCardPay(null)
+    clearCardPay()
     notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
     setMyOrdersOpen(true)
   }
@@ -10715,7 +10753,7 @@ export default function App() {
       {cardPay && (
         <CardForm
           amount={cardPay.amount}
-          onClose={() => setCardPay(null)}
+          onClose={clearCardPay}
           onSubmit={handleCardPay}
         />
       )}
