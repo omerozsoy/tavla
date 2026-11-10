@@ -123,7 +123,7 @@ export default function DeliveryStep({
           <div>
             <p className="ckw-eyebrow">Adım 2 / 3 · Teslimat</p>
             <h2 className="ckw-title">
-              <Icon name="package" size={24} /> Teslimat &amp; Ödeme
+              <Icon name="pin" size={24} /> Teslimat
             </h2>
           </div>
           <div className="ckw-pay-amount">

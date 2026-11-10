@@ -106,12 +106,16 @@ export default function MagazaSwiss({
   // Sıralama fiyatı: TL (kuruş) varsa onu; yoksa coin'i büyük ofsetle sona iter (karışık katalog
   // için naif ama küçük katalogda yeterli — ponytail).
   const priceOf = (p: Product) => (p.money_price != null ? p.money_price : p.coin_price != null ? 1e12 + p.coin_price : 1e15)
+  // Tükenen ürünler (stok ≤ 0) seçili sıralamadan BAĞIMSIZ her zaman en sona (stable: eşit stokta
+  // ikincil kriter korunur).
+  const outRank = (p: Product) => (p.stock <= 0 ? 1 : 0)
   const visible = useMemo(() => {
     const list = (products ?? []).filter((p) => cat === 'all' || p.category === cat)
-    if (sort === 'price-asc') return [...list].sort((a, b) => priceOf(a) - priceOf(b))
-    if (sort === 'price-desc') return [...list].sort((a, b) => priceOf(b) - priceOf(a))
-    if (sort === 'name') return [...list].sort((a, b) => a.name.localeCompare(b.name, 'tr'))
-    return list
+    const byOut = (a: Product, b: Product) => outRank(a) - outRank(b)
+    if (sort === 'price-asc') return [...list].sort((a, b) => byOut(a, b) || priceOf(a) - priceOf(b))
+    if (sort === 'price-desc') return [...list].sort((a, b) => byOut(a, b) || priceOf(b) - priceOf(a))
+    if (sort === 'name') return [...list].sort((a, b) => byOut(a, b) || a.name.localeCompare(b.name, 'tr'))
+    return [...list].sort(byOut)
   }, [products, cat, sort])
 
   // Seçili ürün = URL slug'ı (AYRI DETAY SAYFASI). Verilmezse grid görünür.
@@ -174,19 +178,13 @@ export default function MagazaSwiss({
     flashAdded('mem')
   }
 
-  const cartCount = cartItems.reduce((s, c) => s + c.qty, 0)
-
   return (
     <div className="mgz">
       <button type="button" className="mgz-close" onClick={onClose} aria-label="Kapat">
         <Icon name="x" size={18} />
       </button>
-      {/* Sepete git: inline sepet kaldırıldı -> eski Sepet modalını (SEPETİM) açar. */}
-      {cartCount > 0 && (
-        <button type="button" className="mgz-cart-fab" onClick={onOpenCart} aria-label="Sepete git">
-          <Icon name="cart" size={18} /> Sepet <span className="mgz-cart-fab-n">{cartCount}</span>
-        </button>
-      )}
+      {/* Yüzen "Sepet" fab'ı KALDIRILDI (kullanıcı: "havada duruyor"): üst bardaki sepet ikonu
+          (cartCount>0 iken görünür) zaten aynı sepeti açar — çift buton kafa karıştırıyordu. */}
 
       {selectedProduct ? (
         /* ÜRÜN DETAY SAYFASI — ayrı sayfa (satır-altı inline DEĞİL). */
@@ -230,7 +228,7 @@ export default function MagazaSwiss({
               <span className="mgz-added" role="status"><Icon name="check" size={14} /> Sepete eklendi</span>
             ) : (
               <button type="button" className="mgz-btn mgz-btn-lg mgz-mem-btn" onClick={addMembership}>
-                Üye Ol <Icon name="arrow-right" size={16} />
+                Premium Satın Al <Icon name="arrow-right" size={16} />
               </button>
             )}
           </div>
