@@ -7310,9 +7310,12 @@ export default function App() {
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Poll BENİM zarsız turumda
     // server_version'i ilerletmez -> bu effect yeniden çalışmaz, retry/timer'lar kesintisiz işler;
     // zar atılınca / tur değişince cleanup temizler. serverRoll idempotent. (Yalnız canAuto'da.)
-    // Rakip zar echo'su KALDIRILDI (kullanıcı isteği) -> reveal-hold yok; oto-zar normal 500ms'de
-    // (eskiden echo'yu ~1.5sn göstermek için beklerdi; echo gidince boşuna bekleme olurdu).
-    const first = canAuto ? window.setTimeout(() => doRoll(), 500) : 0
+    // Rakip zar echo'su KALDIRILDI (kullanıcı isteği) -> reveal-hold yok; oto-zar hızlı atılır.
+    // İlk deneme 200ms (kullanıcı isteği: "daha erken") — snappy. Authoritative/bot yolunda ilk
+    // deneme bayat srvTurn'e takılırsa 600ms'de HIZLI ikinci deneme (poll genelde <600ms'de sıra
+    // senkronunu getirir) -> 2.5sn retry'ı beklemeden toparlar. Hepsi serverRoll idempotent.
+    const first = canAuto ? window.setTimeout(() => doRoll(), 200) : 0
+    const firstFast = canAuto ? window.setTimeout(() => doRoll(), 600) : 0
     const retry = canAuto ? window.setInterval(() => doRoll(), 2500) : 0
     // KURTARMA AĞI (HEM oto HEM MANUEL): transient mandal (rollConflict / in-flight / bayat sıra / 429)
     // kıstırırsa kurtarılabilir mandalları temizle + otoriter durumu zorla çek (version=-1 -> poll
@@ -7334,6 +7337,7 @@ export default function App() {
           )
     return () => {
       window.clearTimeout(first)
+      window.clearTimeout(firstFast)
       window.clearInterval(retry)
       window.clearTimeout(reveal)
     }
