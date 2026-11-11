@@ -1403,7 +1403,12 @@ class RoomController extends Controller
             if ($r->bot) {
                 $clock = is_array($r->clock) ? $r->clock : [];
                 $seen = (float) ($clock['p1_seen'] ?? 0);
-                if ($seen <= 0 || (microtime(true) - $seen) > self::BOT_ABANDON_S) {
+                // p1_seen HENÜZ damgalanmadıysa (taze oda, clock NULL) "hiç görülmedi" demek,
+                // "uzun süre önce görüldü" DEĞİL. Referansı odanın created_at'ine düşür -> yeni
+                // kurulan bot maçı (ilk oyun poll'u p1_seen'i yazmadan önce bu sorgu koşarsa)
+                // açılış zarından ÖNCE ABANDON ile kapanmasın (PK6JZ: 0-1sn'de finished bug'ı).
+                $ref = $seen > 0 ? $seen : (float) optional($r->created_at)->timestamp;
+                if ($ref <= 0 || (microtime(true) - $ref) > self::BOT_ABANDON_S) {
                     $r->status = 'finished';
                     $r->end_reason = $r->end_reason ?? 'ABANDON';
                     $r->version = (int) $r->version + 1;

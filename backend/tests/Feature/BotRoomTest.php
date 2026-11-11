@@ -422,6 +422,31 @@ class BotRoomTest extends TestCase
         $this->assertEqualsWithDelta(microtime(true) - 5, (float) (Room::where('code', 'BOTYY')->first()->clock['p1_seen']), 2.0);
     }
 
+    public function test_fresh_bot_room_with_unstamped_clock_not_abandoned(): void
+    {
+        // KÖK BUG (PK6JZ): yeni kurulan bot maçı (clock henüz NULL -> p1_seen=0) açılış zarı
+        // atılmadan önce homepage active-rooms sorgusu koşarsa "terk" sayılıp 0-1sn'de ABANDON ile
+        // kapanıyordu. seen<=0 = "hiç görülmedi" (taze), "uzun süre önce görüldü" DEĞİL -> created_at
+        // referansıyla genç oda KORUNUR.
+        $u = User::create([
+            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'insan4', 'email' => 'insan4@example.com', 'password' => bcrypt('secret123'),
+        ]);
+        Room::create([
+            'code' => 'BOTFR',
+            'p1_token' => 'human-tok', 'p1_name' => 'İnsan', 'p1_user_id' => $u->id,
+            'p2_token' => 'secret-bot', 'p2_name' => 'Seviye 7 · Neural AI',
+            'status' => 'playing', 'authoritative' => true, 'bot' => true, 'bot_level' => 7, 'target' => 1,
+            'server_state' => Backgammon::initialState(),
+            // clock KASITLI YOK (NULL) -> taze oda, p1_seen hiç damgalanmadı.
+        ]);
+
+        Sanctum::actingAs($u);
+        $res = $this->getJson('/api/me/active-rooms')->assertOk();
+        $this->assertNotNull(collect($res->json('rooms'))->firstWhere('code', 'BOTFR'), 'taze bot maçı banner\'da görünmeli');
+        $this->assertSame('playing', Room::where('code', 'BOTFR')->first()->status); // ABANDON YOK
+    }
+
     public function test_abandoned_bot_room_finalized_and_excluded(): void
     {
         // TERK edilmiş bot maçı (insan > 2 dk görülmedi) banner'dan DÜŞER + no-contest kapatılır
