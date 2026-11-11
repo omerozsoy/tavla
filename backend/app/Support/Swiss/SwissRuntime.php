@@ -541,8 +541,10 @@ class SwissRuntime
         $participants = $state['participants'];
         $lastReport = end($state['reports']) ?: null;
         $standings = SwissEngine::liveStandings($participants);
+        $final = $t->status === 'finished' ? SwissEngine::finalStandings($participants) : null;
         // Turnuvadaki ORTALAMA PR: bracket odalarından (match_results) oyuncu başına AVG(gnubg_pr) ->
-        // her standings satırına enjekte (frontend "PR" kolonu). PR yoksa null (henüz analiz edilmemiş).
+        // HEM canlı (standings) HEM final (bitmiş turnuvada frontend 'final'i gösterir) satırlarına enjekte.
+        // PR yoksa null (henüz analiz edilmemiş).
         $rooms = [];
         foreach ((is_array($t->bracket) ? $t->bracket : []) as $cells) {
             if (is_array($cells)) {
@@ -560,11 +562,20 @@ class SwissRuntime
                 ->groupBy('user_id')
                 ->selectRaw('user_id, AVG(gnubg_pr) AS avg_pr')
                 ->pluck('avg_pr', 'user_id');
-            foreach ($standings as &$s) {
-                $pr = $prMap[(int) ($s['id'] ?? 0)] ?? null;
-                $s['pr'] = $pr !== null ? round((float) $pr, 2) : null;
-            }
-            unset($s);
+            $injectPr = function (?array $list) use ($prMap): ?array {
+                if ($list === null) {
+                    return null;
+                }
+                foreach ($list as &$s) {
+                    $pr = $prMap[(int) ($s['id'] ?? 0)] ?? null;
+                    $s['pr'] = $pr !== null ? round((float) $pr, 2) : null;
+                }
+                unset($s);
+
+                return $list;
+            };
+            $standings = $injectPr($standings) ?? [];
+            $final = $injectPr($final);
         }
 
         return [
@@ -572,7 +583,7 @@ class SwissRuntime
             'active' => count(SwissEngine::active($participants)),
             'total' => count($participants),
             'standings' => $standings,
-            'final' => $t->status === 'finished' ? SwissEngine::finalStandings($participants) : null,
+            'final' => $final,
             'note' => $state['note'] ?? null,
             'config' => $state['config'] ?? null,
             'optimal_last' => $lastReport['optimal'] ?? true,
