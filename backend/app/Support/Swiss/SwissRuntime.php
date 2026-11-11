@@ -542,9 +542,10 @@ class SwissRuntime
         $lastReport = end($state['reports']) ?: null;
         $standings = SwissEngine::liveStandings($participants);
         $final = $t->status === 'finished' ? SwissEngine::finalStandings($participants) : null;
-        // Turnuvadaki ORTALAMA PR: bracket odalarından (match_results) oyuncu başına AVG(gnubg_pr) ->
-        // HEM canlı (standings) HEM final (bitmiş turnuvada frontend 'final'i gösterir) satırlarına enjekte.
-        // PR yoksa null (henüz analiz edilmemiş).
+        // Turnuvadaki PR: KARAR-HAVUZLU doğru yöntem -> Σ(pr_equity_lost)/Σ(pr_decisions)×500 (maç
+        // ortalaması DEĞİL; az-maç/az-karar çarpıtmasını önler). Her oyuncuya pr + pr_decisions +
+        // pr_matches (tooltip) enjekte; HEM canlı HEM final satırlara. PR ŞAMPİYONU: en az 3 maç
+        // oynamışlar arasında en düşük havuzlu PR (tek-maç şans parlamalarını eler).
         $rooms = [];
         foreach ((is_array($t->bracket) ? $t->bracket : []) as $cells) {
             if (is_array($cells)) {
@@ -556,19 +557,32 @@ class SwissRuntime
             }
         }
         if (! empty($rooms)) {
-            $prMap = DB::table('match_results')
+            $prRows = DB::table('match_results')
                 ->whereIn('room_code', array_values(array_unique($rooms)))
-                ->whereNotNull('gnubg_pr')
+                ->where('pr_decisions', '>', 0)
                 ->groupBy('user_id')
-                ->selectRaw('user_id, AVG(gnubg_pr) AS avg_pr')
-                ->pluck('avg_pr', 'user_id');
-            $injectPr = function (?array $list) use ($prMap): ?array {
+                ->selectRaw('user_id, SUM(pr_equity_lost)/SUM(pr_decisions)*500 AS pooled_pr, SUM(pr_decisions) AS decisions, COUNT(*) AS matches')
+                ->get()
+                ->keyBy('user_id');
+            $champId = null;
+            $champPr = null;
+            foreach ($prRows as $uid => $r) {
+                if ((int) $r->matches >= 3 && ($champPr === null || (float) $r->pooled_pr < $champPr)) {
+                    $champPr = (float) $r->pooled_pr;
+                    $champId = (int) $uid;
+                }
+            }
+            $injectPr = function (?array $list) use ($prRows, $champId): ?array {
                 if ($list === null) {
                     return null;
                 }
                 foreach ($list as &$s) {
-                    $pr = $prMap[(int) ($s['id'] ?? 0)] ?? null;
-                    $s['pr'] = $pr !== null ? round((float) $pr, 2) : null;
+                    $id = (int) ($s['id'] ?? 0);
+                    $r = $prRows[$id] ?? null;
+                    $s['pr'] = $r ? round((float) $r->pooled_pr, 2) : null;
+                    $s['pr_decisions'] = $r ? (int) $r->decisions : 0;
+                    $s['pr_matches'] = $r ? (int) $r->matches : 0;
+                    $s['pr_champion'] = ($champId !== null && $id === $champId);
                 }
                 unset($s);
 

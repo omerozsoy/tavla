@@ -23117,10 +23117,6 @@ body.has-bottom-nav {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tp-winner {
-  color: var(--text);
-  font-weight: 700;
-}
 .tp-note {
   margin-top: 8px;
   color: var(--muted);
@@ -28098,6 +28094,18 @@ input:not([type='range']), select, textarea {
 }
 .swiss-pair-live:hover {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.swiss-pr-champ {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 999px;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 .swiss-td-pr {
   text-align: center;

@@ -884,11 +884,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
           {/* Odul dagilimi (siralamaya gore) — bittiyse her siraya kazananin adi eklenir */}
           {active.prizes && active.prizes.length > 0 ? (() => {
-            // Bitmis turnuvada siralama->isim (swiss: final/standings sirasi; diger: bracket sirasi)
-            const winners: string[] = active.status === 'finished'
+            // Bitmis turnuvada siralama->kazanan id (swiss: final/standings sirasi; diger: bracket sirasi).
+            // Oyuncu nesnesi active.players'tan bulunur (avatar/rating/premium -> PlayerIdentity, podyumla ayni dil).
+            const winnerIds: number[] = active.status === 'finished'
               ? active.type === 'swiss_triple'
-                ? (active.swiss?.final || active.swiss?.standings || []).map((r) => r.name || '')
-                : tournStandings(active.bracket).map((id) => active.players?.find((p) => p.id === id)?.name || '')
+                ? (active.swiss?.final || active.swiss?.standings || []).map((r) => r.id)
+                : tournStandings(active.bracket)
               : []
             return (
             <div className="tourn-prizes">
@@ -896,18 +897,21 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 <Icon name="medal" size={16} /> {t('tourn.breakdown')}
               </div>
               <ol className="tp-list">
-                {active.prizes.map((pr, i) => (
+                {active.prizes.map((pr, i) => {
+                  const w = winnerIds[i] ? active.players?.find((p) => p.id === winnerIds[i]) : undefined
+                  return (
                   <li key={i} className="tp-row">
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
-                    <span className="tp-desc">
-                      {pr.desc || t('tourn.prizeCoinLbl')}
-                      {winners[i] && <b className="tp-winner"> · {winners[i]}</b>}
-                    </span>
+                    {w ? (
+                      <PlayerIdentity userId={w.id} name={w.name} rating={w.rating} avatar={w.avatar} size={28} rankSize="sm" premium={w.premium} onClick={onProfile ? () => onProfile(w.id) : undefined} />
+                    ) : null}
+                    <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
                       <Coins amount={pr.coins} gain suffix="coin" size={28} />
                     </span>
                   </li>
-                ))}
+                  )
+                })}
               </ol>
               {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
             </div>
@@ -1170,7 +1174,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     {active.status === 'finished' && sw.note === 'no_champion' && <div className="swiss-nochamp">{t('swiss.noChampion')}</div>}
                     <table className="swiss-table">
                       <thead>
-                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th title={t('swiss.colPlayedFull')}>{t('swiss.colPlayed')}</th><th title={t('swiss.colWinsFull')}>{t('swiss.colWins')}</th><th title={t('swiss.colLossesFull')}>{t('swiss.colLosses')}</th><th title={t('swiss.colByesFull')}>{t('swiss.colByes')}</th><th title={t('swiss.colWalkoverFull')}>{t('swiss.colWalkover')}</th><th title={t('swiss.colAverajFull')}>{t('swiss.colAveraj')}</th><th title="Turnuvadaki ortalama PR">Ort PR</th></tr>
+                        <tr><th /><th>{t('swiss.colPlayer')}</th><th>{t('swiss.colLives')}</th><th title={t('swiss.colPlayedFull')}>{t('swiss.colPlayed')}</th><th title={t('swiss.colWinsFull')}>{t('swiss.colWins')}</th><th title={t('swiss.colLossesFull')}>{t('swiss.colLosses')}</th><th title={t('swiss.colByesFull')}>{t('swiss.colByes')}</th><th title={t('swiss.colWalkoverFull')}>{t('swiss.colWalkover')}</th><th title={t('swiss.colAverajFull')}>{t('swiss.colAveraj')}</th><th title="Turnuvadaki karar-havuzlu PR (Σequity/Σkarar×500)">PR</th></tr>
                       </thead>
                       <tbody>
                         {rows.map((row, i) => {
@@ -1209,7 +1213,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                               <td>{losses}</td>
                               <td>{Number(row.byes ?? 0)}</td>
                               <td>{Math.max(0, Number(row.wins ?? 0) - Number(row.realWins ?? 0) - Number(row.byes ?? 0))}</td>
-                              <td className="swiss-td-averaj">{averaj > 0 ? `+${averaj}` : averaj}</td><td className="swiss-td-pr">{row.pr != null ? Number(row.pr).toFixed(2) : '—'}</td>
+                              <td className="swiss-td-averaj">{averaj > 0 ? `+${averaj}` : averaj}</td><td className="swiss-td-pr" title={row.pr != null ? `${row.pr_matches} maç · ${row.pr_decisions} karar (karar-havuzlu PR)` : undefined}>{row.pr != null ? Number(row.pr).toFixed(2) : '—'}{(row.pr_champion as boolean) ? <span className="swiss-pr-champ" title="En az 3 maç oynayanlar arasında en düşük karar-havuzlu PR">PR Şampiyonu</span> : null}</td>
                             </tr>
                           )
                         })}
