@@ -3213,6 +3213,12 @@ class RoomController extends Controller
             }
         }
 
+        // SOHBET KAPALI: oyunculardan biri kapattiysa iki taraf da yazamaz (yalniz yonetici/destek
+        // izlerken yazabilir). Kapatan slot chat_off_by'da; istemci de kutuyu gizler, bu sunucu kalkani.
+        if ($slot !== null && $room->chat_off_by !== null) {
+            return response()->json(['error' => 'chat_off', 'chat_off_by' => $room->chat_off_by], 403);
+        }
+
         $messages = $room->messages ?? [];
         $warning = null;
         if ($isAdminSender) {
@@ -3263,6 +3269,42 @@ class RoomController extends Controller
         $room->save();
 
         return response()->json(['messages' => $messages, 'warning' => $warning]);
+    }
+
+    // SOHBETI AC/KAPA (oyun menusu "Sohbeti Kapat"): bir oyuncu kapatinca iki taraf da yazamaz.
+    // chat_off_by = kapatan slot. Geri acmayi YALNIZ kapatan slot yapabilir (digeri acamaz).
+    public function chatToggle(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'off' => ['required', 'boolean'],
+        ]);
+        if (! $request->user('sanctum')) {
+            return $this->fail('Giris yapmalisin.', 401);
+        }
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return $this->fail('Oda bulunamadi.', 404);
+        }
+        $slot = $this->slotOf($room, $data['token'], $request);
+        if ($slot === null) {
+            return $this->fail('Bu odada degilsin.', 403);
+        }
+        if ($data['off']) {
+            // Kapat: zaten kapaliysa (digeri kapattiysa) dokunma, degilse benim slot'uma yaz.
+            if ($room->chat_off_by === null) {
+                $room->chat_off_by = $slot;
+                $room->save();
+            }
+        } else {
+            // Ac: yalniz kapatan slot geri acabilir.
+            if ($room->chat_off_by === $slot) {
+                $room->chat_off_by = null;
+                $room->save();
+            }
+        }
+
+        return response()->json(['chat_off_by' => $room->chat_off_by]);
     }
 
     // KÜFÜR / SOHBET ŞİKAYETİ: oyuncu sohbetteki "Şikayet Et" butonuna basınca o anki SON 10 sohbet

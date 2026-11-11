@@ -214,6 +214,8 @@ Route::middleware([EnsureActiveAccount::class, 'throttle:600,1,rooms'])->group(f
 Route::middleware([EnsureActiveAccount::class, 'throttle:1200,1,room-read'])
     ->get('/rooms/{code}', [RoomController::class, 'show']);
 Route::middleware([EnsureActiveAccount::class, 'throttle:40,1,chat'])->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
+// Sohbeti ac/kapa (oyun menusu): bir oyuncu kapatinca iki taraf da yazamaz.
+Route::middleware([EnsureActiveAccount::class, 'throttle:30,1,chattoggle'])->post('/rooms/{code}/chat-toggle', [RoomController::class, 'chatToggle']);
 // Kufur/sohbet sikayeti: son 10 satiri yonetime kaydeder (spam kalkani controller'da).
 Route::middleware([EnsureActiveAccount::class, 'throttle:10,1,chatreport'])->post('/rooms/{code}/report-chat', [RoomController::class, 'reportChat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.

@@ -131,6 +131,7 @@ import {
   myActiveRooms,
   type ActiveRoom,
   sendChat,
+  toggleChat,
   reportChat,
   chatMuteFromError,
   reportRating,
@@ -1064,6 +1065,10 @@ export default function App() {
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [chatNotice, setChatNotice] = useState<string | null>(null) // küfür uyarısı/konuşma yasağı (kırmızı)
+  // Sohbeti kapatan slot ('p1'/'p2') — biri kapatinca iki taraf da yazamaz; null = acik. Odadan gelir.
+  const [chatOffBy, setChatOffBy] = useState<Slot | null>(null)
+  // Yeni odaya girince sifirla (ilk poll dogru degeri getirene kadar onceki macin durumu kalmasin).
+  useEffect(() => { setChatOffBy(null) }, [room?.code])
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]) // maçı izleyenler (oyuncular da görsün)
   const [viewerCount, setViewerCount] = useState(0)
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
@@ -6420,6 +6425,7 @@ export default function App() {
             : r,
         )
         if (rv.messages) setChat(rv.messages)
+        setChatOffBy(rv.chat_off_by ?? null) // sohbet kapatma durumu (rakip kapatirsa bende de kapanir)
         // ROVANS: rakibin cevabini yansit; kod gelince (iki taraf da 'yes') ayni ayarlarla
         // acilan YENI odaya gec. Ayar ref'leri once set edilir -> puan/bahis/tempo korunur.
         if (rv.rematch) {
@@ -8572,6 +8578,18 @@ export default function App() {
       const mute = chatMuteFromError(e) // konuşma yasaklı -> gönderim engellendi, kalan süre
       if (mute) setChatNotice(chatMuteText(t, mute.seconds))
       /* diğer hatalar: yoksay - sonraki yoklamada gelir */
+    }
+  }
+
+  // Oyun menusu "Sohbeti Kapat": off=true kapat, off=false ac. Iyimser guncelle; sunucu
+  // (kapatan slot kurali) nihai karar -> poll ile dogru chat_off_by geri gelir.
+  async function handleToggleChat(off: boolean) {
+    if (!room) return
+    try {
+      const res = await toggleChat(room.code, off)
+      setChatOffBy(res.chat_off_by)
+    } catch {
+      /* yut: sonraki poll dogru durumu getirir */
     }
   }
 
@@ -12077,6 +12095,9 @@ export default function App() {
         autoRoll={autoRollEff}
         toggleAutoRoll={() => setAutoRoll(!autoRollEff)}
         autoRollWarn={cubeInPlay}
+        showChatToggle={online && !!room && !room.bot}
+        chatOff={chatOffBy != null}
+        toggleChatOff={() => handleToggleChat(chatOffBy == null)}
         canAnalyze={botMatch}
         canResign={!matchOver}
         loggedIn={!!user}
@@ -12241,6 +12262,8 @@ export default function App() {
           onLogin={() => setShowAuth(true)}
           behindMenu={gameMenuOpen}
           notice={chatNotice}
+          chatOff={chatOffBy != null}
+          chatOffName={chatOffBy == null ? null : chatOffBy === room.slot ? (user?.nickname ?? t('chat.you')) : (room.oppName ?? t('chat.opponent'))}
           onReport={room.bot ? undefined : handleReportChat}
         />
       )}

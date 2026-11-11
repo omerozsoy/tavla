@@ -35,6 +35,12 @@ interface Props {
   toggleAutoRoll: () => void
   /** Otomatik Zar uyarısını göster (yalnız KÜPLÜ maçta: oto-zar küp teklif fırsatını kaçırabilir). */
   autoRollWarn: boolean
+  /** "Sohbeti Kapat" satırı gösterilsin mi — yalnız online insan maçında (bot/yerelde sohbet yok). */
+  showChatToggle?: boolean
+  /** Sohbet kapalı mı (biri kapatmış) — açık/kapalı switch durumu. */
+  chatOff?: boolean
+  /** Sohbeti aç/kapa — kapatan slot geri açabilir (sunucu kuralı). */
+  toggleChatOff?: () => void
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
       Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
   canAnalyze?: boolean
@@ -65,6 +71,8 @@ export default function GameMenu(p: Props) {
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
     { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
     { label: t('gm.autoRoll'), on: p.autoRoll, toggle: p.toggleAutoRoll },
+    // Sohbeti Kapat: yalniz online insan macinda. Biri kapatinca iki taraf da yazamaz.
+    ...(p.showChatToggle ? [{ label: t('gm.chatOff'), on: !!p.chatOff, toggle: () => p.toggleChatOff?.() }] : []),
     // NOT: "Oyun yönü" (Sağa/Sola) ve "Pul renkleri" (Siyah/Beyaz) buradan KALDIRILDI —
     // artık PROFİL > Tavla Tasarımları kartından ayarlanır (kalıcı, canlı önizlemeli).
   ]

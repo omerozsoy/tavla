@@ -25,6 +25,9 @@ class Room extends Model
         'p2_avatar',
         'state',
         'messages',
+        // Sohbet kapatma: hangi slot ('p1'/'p2') kapattiysa o; null = sohbet acik. Biri
+        // kapatinca iki taraf da yazamaz; yalniz kapatan slot geri acabilir.
+        'chat_off_by',
         'version',
         'status',
         'stake',
@@ -436,6 +439,7 @@ class Room extends Model
             'p2_user_id' => $this->p2_user_id,
             'state' => $this->state,
             'messages' => $this->messages ?? [],
+            'chat_off_by' => $this->chat_off_by, // 'p1'/'p2' = sohbeti kapatan; null = acik
             'version' => $this->version,
             'status' => $this->status,
             'stake' => (int) $this->stake,

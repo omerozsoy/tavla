@@ -18,6 +18,10 @@ interface Props {
   behindMenu?: boolean
   /** Küfür uyarısı / konuşma yasağı (kırmızı küçük yazı). null -> gösterilmez. */
   notice?: string | null
+  /** Sohbet kapalı mı (oyunculardan biri oyun menüsünden kapatmış). true -> yazma kutusu gizlenir. */
+  chatOff?: boolean
+  /** Sohbeti kapatan oyuncunun adı -> "{ad} sohbet etmek istemiyor" uyarısı. */
+  chatOffName?: string | null
   /** SALT OKUNUR (yönetici izleme): yalnız mesaj listesi; emoji/yazma kutusu çizilmez. */
   readOnly?: boolean
   /** İZLEMEDE sohbet varsa KENDİLİĞİNDEN açık gelsin (bir kez). Yönetici yazabilir (canText)
@@ -32,7 +36,7 @@ interface Props {
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, readOnly = false, autoOpen = false, onNameClick, onReport }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, chatOff = false, chatOffName = null, readOnly = false, autoOpen = false, onNameClick, onReport }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Küfür şikayeti iki adımlı: idle -> (Şikayet Et) -> confirm (Son 10 satır gönderilir: Gönder/Vazgeç) -> sent.
@@ -178,7 +182,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             )}
           </div>
 
-          {!readOnly && loggedIn && emojiOpen && (
+          {!readOnly && loggedIn && emojiOpen && !chatOff && (
             <div className="chat-emojis">
               {EMOJIS.map((e) => (
                 <button
@@ -194,7 +198,9 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
           )}
 
           {notice && <div className="chat-notice" role="alert">{notice}</div>}
-          {!readOnly && <div className="chat-input">
+          {/* Sohbet kapalı: kapatan oyuncunun adıyla uyarı + yazma kutusu gizli (iki taraf da yazamaz). */}
+          {chatOff && <div className="chat-notice chat-off" role="alert">{t('chat.disabledBy', { name: chatOffName || '' })}</div>}
+          {!readOnly && !chatOff && <div className="chat-input">
             {!loggedIn ? (
               // MİSAFİR: sohbet edemez -> giriş prompt'u (emoji/yazma yok).
               <Button variant="secondary" className="flex-1" onClick={onLogin}>

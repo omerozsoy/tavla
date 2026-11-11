@@ -2378,6 +2378,8 @@ export interface RoomView {
   p2_user_id?: number | null
   state: unknown
   messages: ChatMsg[]
+  /** Sohbeti kapatan slot ('p1'/'p2'); null = sohbet acik. Biri kapatinca iki taraf da yazamaz. */
+  chat_off_by?: Slot | null
   version: number
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
   target?: number | null
@@ -3459,6 +3461,15 @@ export async function sendChat(code: string, text: string): Promise<{ messages: 
   return req(`/rooms/${encodeURIComponent(code)}/chat`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), text }),
+  })
+}
+
+// SOHBETI AC/KAPA: oyun menusu "Sohbeti Kapat". off=true kapatir (iki taraf da yazamaz),
+// off=false acar (yalniz kapatan slot acabilir). Donus: guncel chat_off_by.
+export async function toggleChat(code: string, off: boolean): Promise<{ chat_off_by: Slot | null }> {
+  return req(`/rooms/${encodeURIComponent(code)}/chat-toggle`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), off }),
   })
 }
 
