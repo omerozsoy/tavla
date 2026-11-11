@@ -8046,14 +8046,14 @@ html[data-board='yilbasi'] .checker.black {
 .bearoff-slot.bottom {
   justify-content: flex-start;
 }
-/* Tepsi zemini SAHİBİNİN pul rengini alır (rakip beyaz -> açık tepsi, ben siyah -> koyu tepsi).
-   --cream/--navy kullanıldığı için TÜM temalarda + pul-takasında (stones-swapped) tutarlı;
-   her zaman uygulanır (boş tepsi de sahibine göre renklenir). */
+/* Tepsi zemini pul renginin ZITTI (kullanıcı: "siyaha beyaz, beyaza siyah"): beyaz pul -> KOYU
+   tepsi, siyah pul -> AÇIK tepsi (pullar tepside net okunur). --navy/--cream kullanıldığı için
+   TÜM temalarda + pul-takasında (stones-swapped) tutarlı; her zaman uygulanır (boş tepsi de). */
 .bearoff-slot.off-white {
-  background: color-mix(in srgb, var(--cream) 60%, var(--tray-bg));
+  background: color-mix(in srgb, var(--navy) 52%, var(--tray-bg));
 }
 .bearoff-slot.off-black {
-  background: color-mix(in srgb, var(--navy) 52%, var(--tray-bg));
+  background: color-mix(in srgb, var(--cream) 60%, var(--tray-bg));
 }
 .off-checker {
   width: 100%;
