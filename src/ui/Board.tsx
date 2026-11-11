@@ -867,7 +867,7 @@ function Board({
         onClick={() => offTarget && onSelectTarget('off')}
       >
         {/* Küp üst oyuncunundaysa: tepsinin EN ÜSTÜNde AYRI alan (slot overflow:hidden DIŞI → kırpılmaz). */}
-        <div className="bearoff-slot top">
+        <div className={`bearoff-slot top off-${topOffPlayer}`}>
           {Array.from({ length: topOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
@@ -879,7 +879,7 @@ function Board({
         {bottomOffCount > 0 && (
           <span className={`bearoff-count ${bottomOffPlayer}`}>{bottomOffCount}</span>
         )}
-        <div className="bearoff-slot bottom">
+        <div className={`bearoff-slot bottom off-${bottomOffPlayer}`}>
           {/* Sayi ic (merkez) kenara: "4" tepsinin ortasina yakin, cubuklar alttan dizilir */}
           {Array.from({ length: bottomOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />

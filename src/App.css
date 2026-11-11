@@ -8039,17 +8039,21 @@ html[data-board='yilbasi'] .checker.black {
   gap: 2px;
   overflow: hidden;
 }
+/* Toplanan pullar HER İKİ tepside de ÜSTTEN dizilir (kullanıcı: "en üstte dizsin"). */
 .bearoff-slot.top {
   justify-content: flex-start;
 }
 .bearoff-slot.bottom {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
+/* Tepsi zemini SAHİBİNİN pul rengini alır (rakip beyaz -> açık tepsi, ben siyah -> koyu tepsi).
+   --cream/--navy kullanıldığı için TÜM temalarda + pul-takasında (stones-swapped) tutarlı;
+   her zaman uygulanır (boş tepsi de sahibine göre renklenir). */
 .bearoff-slot.off-white {
-  background: rgba(8, 16, 12, 0.5);
+  background: color-mix(in srgb, var(--cream) 60%, var(--tray-bg));
 }
 .bearoff-slot.off-black {
-  background: rgba(238, 240, 235, 0.62);
+  background: color-mix(in srgb, var(--navy) 52%, var(--tray-bg));
 }
 .off-checker {
   width: 100%;
@@ -8058,11 +8062,14 @@ html[data-board='yilbasi'] .checker.black {
   border-radius: 2px;
   flex: none;
 }
+/* Pul çubukları tepsiyle AYNI renk ailesinde (sahibin rengi) -> kaybolmasın diye ince zıt kontur. */
 .off-checker.white {
   background: var(--cream);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--navy) 40%, transparent);
 }
 .off-checker.black {
   background: var(--navy);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cream) 42%, transparent);
 }
 /* Toplanan pul SAYISI (Backgammon Galaxy düzeni): reserve tüp ile küp ARASINDA, flow'da
    (slot DIŞI), temiz + BOLD. Pul rengiyle (board'a uyar) + okunur halo. */
