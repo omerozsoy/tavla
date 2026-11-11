@@ -30486,11 +30486,13 @@ input:not([type='range']), select, textarea {
 }
 .chat-foot-btn {
   flex: 1;
+  min-width: 0; /* dar telefonda esit paylas, tasma yerine sigdir */
+  white-space: nowrap; /* "Sohbeti Kapat" iki satira kirilmasin */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 7px 12px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--text) 5%, transparent);
   border: 1px solid var(--border);
