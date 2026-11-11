@@ -17,6 +17,7 @@ class Team extends Model
         'color1', 'color2', 'description', 'founder_id', 'status',
         'applications_open', 'min_apply_rating', 'member_count', 'rating_avg',
         'pending_transfer_to', 'name_changed_at', 'champion_badge_until', 'closed_at', 'closed_by',
+        'coin_balance',
     ];
 
     protected $casts = [
@@ -24,6 +25,7 @@ class Team extends Model
         'min_apply_rating' => 'integer',
         'member_count' => 'integer',
         'rating_avg' => 'float',
+        'coin_balance' => 'integer',
         'name_changed_at' => 'datetime',
         'champion_badge_until' => 'datetime',
         'closed_at' => 'datetime',

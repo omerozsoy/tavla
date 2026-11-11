@@ -135,16 +135,8 @@ Schedule::command('league:tick')
     ->name('league-tick')
     ->withoutOverlapping();
 
-// TAKIMLAR LİGİ nöbetçisi (§8/§9/§11): kadro kilidi (başlangıca 10dk), oda sonucu yakala, 5dk hazır-olma/
-// no-show/çift-hükmen, maçı kesinleştir, 30dk/5dk hatırlatma. Idempotent + tekrar-çalıştırılabilir
-// (team_notifications defteri mükerrer bildirim engeli; sunucu restart'ında kaçırılan kilit/başlangıç toparlanır).
-Schedule::command('teamleague:tick')
-    ->everyMinute()
-    ->name('teamleague-tick')
-    ->withoutOverlapping();
-
 // TAKIMLAR LİGİ günlük bakımı (§5/§10): Premium 7g yenileme süresi süpürme, kurucu 60g inaktiflik devri,
-// geçen ayın ödül dağıtımı (o aya ait bekleyen maç kalmadıysa; idempotent — mükerrer kupa/rozet yok).
+// biten sezonun ödül dağıtımı (düello puanı sıralaması; idempotent — mükerrer kupa/rozet/coin yok).
 Schedule::command('teamleague:maintenance')
     ->dailyAt('00:30')
     ->name('teamleague-maintenance')

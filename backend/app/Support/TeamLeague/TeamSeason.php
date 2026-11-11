@@ -14,8 +14,8 @@ use Illuminate\Support\Carbon;
  *   Yaz      : Tem-Ağu-Eyl   (07-09)
  *   Sonbahar : Eki-Kas-Ara   (10-12)
  *
- * Puan/sıralama month_key maçlarından ANLIK hesaplanır (TeamStandings::seasonTable); sezon değişince
- * yeni maçlar farklı month_key'lere düştüğü için puan OTOMATİK 0'dan başlar (ekstra sıfırlama yok).
+ * Düello puanı sıralaması ANLIK hesaplanır (DuelService, [start, endExclusive) penceresiyle); sezon
+ * değişince pencere kaydığı için takım/oyuncu düello puanı OTOMATİK 0'dan başlar (ekstra sıfırlama yok).
  */
 class TeamSeason
 {
@@ -91,6 +91,12 @@ class TeamSeason
     public static function end(string $seasonKey): Carbon
     {
         return self::start($seasonKey)->addMonthsNoOverflow(3)->subSecond();
+    }
+
+    /** Sezonun DIŞLAYICI üst sınırı (sonraki sezonun 1'i 00:00) — "created_at < bu" düello filtresi için. */
+    public static function endExclusive(string $seasonKey): Carbon
+    {
+        return self::start($seasonKey)->addMonthsNoOverflow(3);
     }
 
     /** Verilen ana göre BİTMİŞ (bir önceki) sezonun anahtarı — maintenance ödül dağıtımı için. */

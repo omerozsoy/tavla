@@ -1,0 +1,47 @@
+/* Sezon düello lideri (1. takım) amblemi için animasyonlu şampiyon halkası.
+   Ana sayfa ilk-3 parıltısının büyütülmüş hâli: dönen altın konik gradyan + nabız gibi glow. */
+.team-champ-ring {
+  position: relative;
+  display: inline-flex;
+  border-radius: 50%;
+  padding: 4px; /* halka ile amblem arası boşluk */
+}
+.team-champ-ring::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #fde047, #f59e0b, #fffbeb, #f59e0b, #fde047);
+  animation: tcr-spin 5s linear infinite;
+  z-index: 0;
+}
+.team-champ-ring::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.55);
+  animation: tcr-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+/* Amblem gradyanın üstünde, merkezde; etrafında ince krem halka boşluğu kalır. */
+.team-champ-ring > * {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  background: var(--card, #fff);
+}
+
+@keyframes tcr-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes tcr-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-champ-ring::before,
+  .team-champ-ring::after { animation: none; }
+}

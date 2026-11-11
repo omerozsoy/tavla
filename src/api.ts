@@ -1588,26 +1588,10 @@ export interface TeamBrief {
 }
 export interface TeamUserBrief { id: number; nickname?: string; avatar?: string | null; rating?: number; tag?: string | null }
 export interface TeamRankRow extends TeamBrief { rank: number }
-export interface TeamMonthlyRow {
-  rank: number; team: TeamBrief | null; points: number; match_diff: number; team_wins: number; played: number
-}
 export interface TeamRulesInfo {
   found_cost: number; min_rated: number; capacity: number; max_assistants: number
   min_rank_members: number; lineup_size: number; rename_cost: number; cooldown_hours: number
   points: { win: number; draw: number; loss: number }
-}
-export interface TeamMatchGameRow {
-  slot: number; status: string; result: string | null
-  home_user: TeamUserBrief | null; away_user: TeamUserBrief | null; room_code: string | null
-}
-export interface TeamMatchRow {
-  id: number; status: string; result: string | null; home: TeamBrief | null; away: TeamBrief | null
-  scheduled_at: string | null; home_score: number; away_score: number; month_key: string | null
-  lineup_revealed: boolean; games?: TeamMatchGameRow[]
-}
-export interface TeamMyMatch extends TeamMatchRow {
-  my_team_id?: number; my_lineup?: Array<{ slot: number; user: TeamUserBrief }>
-  my_game?: { slot: number; status: string; result: string | null; room_code: string | null; ready_home: boolean; ready_away: boolean } | null
 }
 export interface TeamMe {
   membership: { team: TeamBrief; role: string; premium_grace_until?: string | null } | null
@@ -1618,23 +1602,12 @@ export interface TeamMe {
   eligibility: { premium: boolean; rated_matches: number; min_rated: number; cooldown_until?: string | null; can_create: boolean; found_cost: number }
 }
 export interface TeamDetail {
-  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; has_pending_logo?: boolean; awards: Array<{ season: string; season_name: string; rank: number; points: number }> }
+  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; has_pending_logo?: boolean; coin_balance?: number; can_grant?: boolean; awards: Array<{ season: string; season_name: string; rank: number; points: number }> }
   members: Array<{ role: string; user: TeamUserBrief; premium_grace_until?: string | null }>
-  matches: TeamMatchRow[]
 }
 
 export async function getTeams(q?: string): Promise<{ ranking?: TeamRankRow[]; results?: TeamBrief[]; rules?: TeamRulesInfo }> {
   return req('/teams' + (q ? '?q=' + encodeURIComponent(q) : ''))
-}
-export interface TeamSeasonChampionRow {
-  season: string; season_name: string; team_id: number; team_name: string | null; points: number
-}
-// Takımlar Ligi SEZON sıralaması (3 aylık). Endpoint adı /teams/monthly (geriye uyum) ama içerik sezon.
-export async function getTeamsMonthly(season?: string): Promise<{
-  season: string; season_name: string; season_start: string; season_end: string
-  past_seasons: string[]; champions: TeamSeasonChampionRow[]; table: TeamMonthlyRow[]
-}> {
-  return req('/teams/monthly' + (season ? '?season=' + encodeURIComponent(season) : ''))
 }
 /** Site geneli id→etiket haritası (isim yanında [ETİKET]) — /roles deseni. */
 export interface TeamTagInfo { tag: string; name?: string | null; logo?: string | null; color1: string; color2: string }
@@ -1710,29 +1683,9 @@ export async function postTeamChat(id: number, body: string): Promise<{ message:
 export async function pinTeamMessage(id: number, pinned: boolean): Promise<{ ok: boolean }> {
   return req(`/team-messages/${id}/pin`, { method: 'POST', body: JSON.stringify({ pinned }) })
 }
-export async function challengeTeam(id: number, opponentTeamId: number, at: string): Promise<{ id: number }> {
-  return req(`/teams/${id}/challenge`, { method: 'POST', body: JSON.stringify({ opponent_team_id: opponentTeamId, at }) })
-}
-export async function getTeamMatch(id: number): Promise<{ match: TeamMatchRow }> {
-  return req(`/team-matches/${id}`)
-}
-export async function getMyTeamMatch(id: number): Promise<{ match: TeamMyMatch }> {
-  return req(`/team-matches/${id}/mine`)
-}
-export async function acceptTeamMatch(id: number): Promise<{ ok: boolean }> {
-  return req(`/team-matches/${id}/accept`, { method: 'POST' })
-}
-export async function rescheduleTeamMatch(id: number, at: string): Promise<{ ok: boolean }> {
-  return req(`/team-matches/${id}/reschedule`, { method: 'POST', body: JSON.stringify({ at }) })
-}
-export async function cancelTeamMatch(id: number, reason?: string): Promise<{ status: string }> {
-  return req(`/team-matches/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) })
-}
-export async function setTeamLineup(matchId: number, teamId: number, userIds: number[]): Promise<{ ok: boolean }> {
-  return req(`/team-matches/${matchId}/lineup`, { method: 'POST', body: JSON.stringify({ team_id: teamId, user_ids: userIds }) })
-}
-export async function readyTeamMatch(matchId: number): Promise<{ ok: boolean; room: string | null }> {
-  return req(`/team-matches/${matchId}/ready`, { method: 'POST' })
+/** Takım bakiyesinden bir üyeye coin aktar (kurucu/yardımcı). Döner: yeni bakiye. */
+export async function grantTeamCoins(teamId: number, userId: number, amount: number): Promise<{ ok: boolean; coin_balance: number }> {
+  return req(`/teams/${teamId}/grant`, { method: 'POST', body: JSON.stringify({ user_id: userId, amount }) })
 }
 
 /** Ana sayfa turnuva reklam gorseli (panelden, en fazla 3). Tiklaninca turnuva detayi acilir. */

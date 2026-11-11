@@ -4,10 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\MatchResult;
 use App\Models\Team;
-use App\Models\TeamMatch;
 use App\Models\TeamMember;
 use App\Models\User;
-use App\Support\TeamLeague\TeamMatchRuntime;
 use App\Support\TeamLeague\TeamRules;
 use App\Support\TeamLeague\TeamService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -125,39 +123,6 @@ class TeamApiTest extends TestCase
         $this->getJson('/api/admin/teams')->assertStatus(403);
     }
 
-    public function test_secret_lineup_hidden_until_lock(): void
-    {
-        [$home, $hu] = $this->teamWithMembers('Evciler', 'EV');
-        [$away, $au] = $this->teamWithMembers('Deplas', 'DEP');
-        $rt = app(TeamMatchRuntime::class);
-        $m = TeamMatch::create(['home_team_id' => $home->id, 'away_team_id' => $away->id, 'proposed_by_team_id' => $home->id,
-            'scheduled_at' => now()->addMinutes(8), 'status' => 'scheduled', 'accepted_at' => now()]);
-        $five = fn ($users) => array_slice(array_map(fn ($u) => $u->id, $users), 0, 5);
-        $rt->setLineup($m, $home->id, $hu[0]->id, $five($hu));
-        $rt->setLineup($m, $away->id, $au[0]->id, $five($au));
-
-        // Kilitten ÖNCE: herkese açık sayfada kadro/oyun YOK (gizli).
-        $pre = $this->getJson("/api/team-matches/{$m->id}")->assertOk()->json('match');
-        $this->assertFalse($pre['lineup_revealed']);
-        $this->assertArrayNotHasKey('games', $pre);
-
-        // Rakip yöneticisinin görünümünde de rakip (ev) kadrosu SIZMAZ (yalnız kendi kadrosu + oyun yok).
-        Sanctum::actingAs($au[0]);
-        $mine = $this->getJson("/api/team-matches/{$m->id}/mine")->assertOk()->json('match');
-        $this->assertSame($away->id, $mine['my_team_id']);
-        $this->assertArrayNotHasKey('games', $mine); // kilit yok → eşleşmeler açılmadı (rakip kadro taşıyan tek alan)
-        // my_lineup YALNIZ kendi (deplasman) oyuncularını taşır; hiçbir ev oyuncusu sızmaz.
-        $myLineupIds = array_map(fn ($r) => $r['user']['id'], $mine['my_lineup']);
-        $homeIds = $five($hu);
-        $this->assertEmpty(array_intersect($myLineupIds, $homeIds), 'rakip (ev) kadro oyuncusu sızdı');
-        $this->assertEqualsCanonicalizing($five($au), $myLineupIds);
-
-        // Kilitten SONRA: kadrolar + 5 oyun herkese açık.
-        $rt->lockMatch($m->fresh(), now());
-        $post = $this->getJson("/api/team-matches/{$m->id}")->assertOk()->json('match');
-        $this->assertTrue($post['lineup_revealed']);
-        $this->assertCount(5, $post['games']);
-    }
 
     public function test_application_flow_over_http(): void
     {

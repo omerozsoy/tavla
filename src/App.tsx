@@ -264,7 +264,7 @@ const SEO_TITLES: Record<string, string> = {
   'online-turnuvalar': 'Online Tavla Turnuvaları | TavlaTv',
   'lider-tablosu': 'Lider Tablosu — En İyi Tavla Oyuncuları | TavlaTv',
   'turkiye-online-tavla-ligi': 'Türkiye Online Tavla Ligi | TavlaTv',
-  'takimlar-ligi': 'Takımlar Ligi — 5v5 Tavla | TavlaTv',
+  'takimlar-ligi': 'Takımlar Ligi — Takım Halinde Online Tavla | TavlaTv',
   'uyelik': 'Üyelik ve Premium | TavlaTv',
   'magaza': 'Mağaza | TavlaTv',
   'turnuva-takvimi': 'Tavla Turnuva Takvimi | TavlaTv',
@@ -337,7 +337,7 @@ const SEO_DESCS: Record<string, string> = {
   'turkiye-online-tavla-ligi':
     'Türkiye Online Tavla Ligi: sezonluk lig formatında eşleşmeler, puan tablosu, eleme ağacı ve şampiyonluk. Lig sıralamasını takip et, maçlarını oyna, zirveye tırman.',
   'takimlar-ligi':
-    'Takımlar Ligi: 5 kişilik takımlar kur, takımınla eşleş, takım sıralamasında yüksel. Takım kurma, katılım ve aylık ödüllerle rekabetçi takım tavlası.',
+    'Takımlar Ligi: takımını kur, üyelerinle düello puanı topla, sezon sıralamasında yüksel. 3 aylık sezonlar, en yüksek düello puanlı takıma şampiyonluk ve coin ödülü.',
   'uyelik':
     'TavlaTv üyelik ve Premium avantajları: detaylı analiz, ekstra özellikler ve reklamsız deneyim.',
   'turnuva-takvimi':
@@ -417,7 +417,7 @@ const SEO_TITLES_EN: Record<string, string> = {
   'online-turnuvalar': 'Online Backgammon Tournaments | GammonTV',
   'lider-tablosu': 'Leaderboard — Top Backgammon Players | GammonTV',
   'turkiye-online-tavla-ligi': 'Türkiye Online Backgammon League | GammonTV',
-  'takimlar-ligi': 'Teams League — 5v5 Backgammon | GammonTV',
+  'takimlar-ligi': 'Teams League — Team Backgammon | GammonTV',
   'uyelik': 'Membership and Premium | GammonTV',
   'magaza': 'Store | GammonTV',
   'turnuva-takvimi': 'Backgammon Tournament Calendar | GammonTV',
@@ -457,7 +457,7 @@ const SEO_DESCS_EN: Record<string, string> = {
   'online-turnuvalar': 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.',
   'lider-tablosu': 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.',
   'turkiye-online-tavla-ligi': 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.',
-  'takimlar-ligi': 'Teams League: build 5-player teams, match up as a team and climb the team standings. Competitive backgammon with team creation, membership and monthly rewards.',
+  'takimlar-ligi': 'Teams League: build your team, collect duel points with your members, climb the season standings. 3-month seasons, with championship and coin rewards for the team with the most duel points.',
   'yz-ile-oyna': 'Play free online backgammon against a powerful neural-network AI bot. Choose a level, analyze your moves and improve your game.',
   'turnuva-takvimi': 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.',
   'kulupler': 'Discover backgammon clubs, join a club or start your own. The GammonTV club directory.',

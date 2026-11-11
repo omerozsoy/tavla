@@ -67,4 +67,9 @@ final class TeamRules
     public const PTS_DRAW = 1;
 
     public const PTS_LOSS = 0;
+
+    // §10 Sezon ödülleri (coin) — sezon sonu (TeamStandings::distributeSeasonAwards) dağıtır.
+    public const CHAMPION_COIN = 30_000;      // sezon şampiyonu takımın BAKİYESİNE
+
+    public const BEST_DUELIST_COIN = 5_000;   // sezon "En İyi Düellocu" oyuncunun KİŞİSEL cüzdanına
 }

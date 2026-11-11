@@ -6,9 +6,6 @@ use App\Models\Team;
 use App\Models\TeamApplication;
 use App\Models\TeamAudit;
 use App\Models\TeamInvite;
-use App\Models\TeamMatch;
-use App\Models\TeamMatchGame;
-use App\Models\TeamMatchLineup;
 use App\Models\TeamMember;
 use App\Models\TeamMessage;
 use App\Models\TeamSeasonChampion;
@@ -16,25 +13,23 @@ use App\Models\User;
 use App\Support\AvatarStore;
 use App\Support\ChatModeration;
 use App\Support\TeamLeague\TeamException;
-use App\Support\TeamLeague\TeamMatchRuntime;
 use App\Support\TeamLeague\TeamRules;
 use App\Support\TeamLeague\TeamSeason;
 use App\Support\TeamLeague\TeamService;
 use App\Support\TeamLeague\TeamStandings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Takımlar Ligi API. Sıralama/arama/detay/karşılaşma sayfası HERKESE AÇIK; üyelik/yönetim/maç akışı
- * yalnız ilgili kullanıcı (sunucu-otoriter — TÜM kural TeamService/TeamMatchRuntime'da). Admin uçları
- * hem route ('admin' mw) hem burada is_admin ile korunur (savunma-derinliği). Kişisel bilgi (e-posta)
- * sızmaz; GİZLİ KADRO kilide kadar rakibe/herkese AÇILMAZ (serileştirme gate'i).
+ * Takımlar Ligi API. Sıralama/arama/detay HERKESE AÇIK; üyelik/yönetim/bakiye akışı yalnız ilgili
+ * kullanıcı (sunucu-otoriter — TÜM kural TeamService'te). Admin uçları hem route ('admin' mw) hem
+ * burada is_admin ile korunur (savunma-derinliği). Kişisel bilgi (e-posta) sızmaz.
+ * Takım rekabeti DÜELLO puanıyla yürür (5v5 TeamMatch sökülmüştür).
  */
 class TeamController extends Controller
 {
-    public function __construct(private TeamService $svc, private TeamMatchRuntime $rt) {}
+    public function __construct(private TeamService $svc) {}
 
     // ---- Herkese açık --------------------------------------------------------
 
@@ -60,46 +55,6 @@ class TeamController extends Controller
         ]);
     }
 
-    /** SEZON meydan okuma sıralaması (3 aylık) + geçmiş sezonlar + sezon şampiyonları (§10). */
-    public function monthly(Request $request): JsonResponse
-    {
-        $season = (string) $request->query('season', $request->query('month', TeamSeason::currentKey()));
-        // Eski istemci "month" (YYYY-MM) gönderirse ilgili sezona çevir (geriye uyum).
-        if (preg_match('/^\d{4}-\d{2}$/', $season)) {
-            $season = TeamSeason::keyOf(Carbon::createFromFormat('Y-m', $season));
-        }
-        $rows = app(TeamStandings::class)->seasonTable($season);
-        $teams = Team::whereIn('id', array_map(fn ($r) => $r['team_id'], $rows))->get()->keyBy('id');
-
-        // Geçmiş sezonlar: maçı olan ay anahtarlarından türetilmiş benzersiz sezonlar (yeni -> eski).
-        $pastSeasons = collect(TeamMatch::where('status', 'finished')->whereNotNull('month_key')->distinct()->pluck('month_key'))
-            ->map(fn ($mk) => TeamSeason::keyOf(Carbon::createFromFormat('Y-m', $mk)))
-            ->unique()->sortDesc()->values()->all();
-
-        // Geçmiş sezon ŞAMPİYONLARI (kalıcı kayıt, puanıyla) — en yeni sezon üstte.
-        $champions = TeamSeasonChampion::where('rank', 1)->orderByDesc('season_key')->limit(12)->get()
-            ->map(fn ($c) => [
-                'season' => $c->season_key,
-                'season_name' => TeamSeason::name($c->season_key),
-                'team_id' => (int) $c->team_id,
-                'team_name' => $c->team_name,
-                'points' => (int) $c->points,
-            ])->all();
-
-        return response()->json([
-            'season' => $season,
-            'season_name' => TeamSeason::name($season),
-            'season_start' => TeamSeason::start($season)->toIso8601String(),
-            'season_end' => TeamSeason::end($season)->toIso8601String(),
-            'past_seasons' => $pastSeasons,
-            'champions' => $champions,
-            'table' => array_map(fn ($r) => [
-                'rank' => $r['rank'], 'team' => isset($teams[$r['team_id']]) ? $this->teamBrief($teams[$r['team_id']]) : null,
-                'points' => $r['pts'], 'match_diff' => $r['diff'], 'team_wins' => $r['wins'], 'played' => $r['played'],
-            ], $rows),
-        ]);
-    }
-
     public function show(Request $request, Team $team): JsonResponse
     {
         $members = TeamMember::where('team_id', $team->id)->get();
@@ -118,6 +73,8 @@ class TeamController extends Controller
                 'applications_open' => (bool) $team->applications_open,
                 'min_apply_rating' => $team->min_apply_rating,
                 'has_pending_logo' => $isManager && ! empty($team->logo_pending),
+                'coin_balance' => (int) $team->coin_balance,       // ortak kasa (sezon ödülü + dağıtım)
+                'can_grant' => $isManager,                          // kurucu/yardımcı → bakiyeden dağıtım UI'ı
                 'awards' => TeamSeasonChampion::where('team_id', $team->id)->orderByDesc('season_key')->get()
                     ->map(fn ($c) => ['season' => $c->season_key, 'season_name' => TeamSeason::name($c->season_key), 'rank' => (int) $c->rank, 'points' => (int) $c->points])->all(),
             ]),
@@ -125,16 +82,7 @@ class TeamController extends Controller
                 'role' => $m->role, 'user' => $users[$m->user_id] ?? ['id' => $m->user_id],
                 'premium_grace_until' => $m->premium_grace_until?->toIso8601String(),
             ])->all(),
-            'matches' => TeamMatch::betweenPair($team->id, $team->id)->orWhere('home_team_id', $team->id)
-                ->orWhere('away_team_id', $team->id)->orderByDesc('scheduled_at')->limit(20)->get()
-                ->map(fn ($m) => $this->matchPublic($m))->all(),
         ]);
-    }
-
-    /** Herkese açık karşılaşma sayfası (§11): takımlar/renk/logo, açıklanmış kadro, skorlar, izleme linkleri. */
-    public function matchShow(TeamMatch $match): JsonResponse
-    {
-        return response()->json(['match' => $this->matchPublic($match)]);
     }
 
     /**
@@ -464,101 +412,21 @@ class TeamController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    // ---- Karşılaşma akışı (§7-§9) -------------------------------------------
+    // ---- Takım bakiyesi (coin kasası) ---------------------------------------
 
-    public function challenge(Request $request, Team $team): JsonResponse
+    /** Kurucu/yardımcı bakiyeden bir ÜYEYE coin aktarır (kişisel cüzdana). Bakiye yetersizse 422. */
+    public function grantCoins(Request $request, Team $team): JsonResponse
     {
         $data = $request->validate([
-            'opponent_team_id' => ['required', 'integer'],
-            'at' => ['required', 'date'],
+            'user_id' => ['required', 'integer'],
+            'amount' => ['required', 'integer', 'min:1', 'max:1000000'],
         ]);
 
         return $this->guard(function () use ($request, $team, $data) {
-            $opp = Team::findOrFail((int) $data['opponent_team_id']);
-            $m = $this->rt->proposeMatch($team, $opp, Carbon::parse($data['at']), (int) $request->user()->id);
+            $this->svc->grantFromBalance($team, (int) $request->user()->id, (int) $data['user_id'], (int) $data['amount']);
 
-            return response()->json(['id' => $m->id], 201);
+            return response()->json(['ok' => true, 'coin_balance' => (int) $team->fresh()->coin_balance]);
         });
-    }
-
-    public function acceptMatch(Request $request, TeamMatch $match): JsonResponse
-    {
-        return $this->guard(function () use ($request, $match) {
-            $this->rt->acceptMatch($match, (int) $request->user()->id);
-
-            return response()->json(['ok' => true]);
-        });
-    }
-
-    public function rescheduleMatch(Request $request, TeamMatch $match): JsonResponse
-    {
-        $data = $request->validate(['at' => ['required', 'date']]);
-
-        return $this->guard(function () use ($request, $match, $data) {
-            $this->rt->reschedule($match, (int) $request->user()->id, Carbon::parse($data['at']));
-
-            return response()->json(['ok' => true]);
-        });
-    }
-
-    public function cancelMatch(Request $request, TeamMatch $match): JsonResponse
-    {
-        $data = $request->validate(['reason' => ['nullable', 'string', 'max:160']]);
-
-        return $this->guard(fn () => response()->json([
-            'status' => $this->rt->cancelMatch($match, (int) $request->user()->id, $data['reason'] ?? null),
-        ]));
-    }
-
-    public function setLineup(Request $request, TeamMatch $match): JsonResponse
-    {
-        $data = $request->validate([
-            'team_id' => ['required', 'integer'],
-            'user_ids' => ['required', 'array', 'size:'.TeamRules::LINEUP_SIZE],
-            'user_ids.*' => ['integer'],
-        ]);
-
-        return $this->guard(function () use ($request, $match, $data) {
-            $this->rt->setLineup($match, (int) $data['team_id'], (int) $request->user()->id, $data['user_ids']);
-
-            return response()->json(['ok' => true]);
-        });
-    }
-
-    /** "Hazırım" (§9): iki taraf taze hazır + başlangıç geçtiyse oda kodu döner. */
-    public function ready(Request $request, TeamMatch $match): JsonResponse
-    {
-        return $this->guard(fn () => response()->json([
-            'ok' => true, 'room' => $this->rt->markReady($match, (int) $request->user()->id),
-        ]));
-    }
-
-    /** Oyuncunun/yöneticinin karşılaşma görünümü: KENDİ kadrosu görünür; rakip kadro KİLİDE kadar gizli. */
-    public function myMatch(Request $request, TeamMatch $match): JsonResponse
-    {
-        $uid = (int) $request->user()->id;
-        $out = $this->matchPublic($match);
-        $myTeamId = null;
-        foreach ([(int) $match->home_team_id, (int) $match->away_team_id] as $tid) {
-            if (TeamMember::where('team_id', $tid)->where('user_id', $uid)->exists()) {
-                $myTeamId = $tid;
-                break;
-            }
-        }
-        if ($myTeamId) {
-            $out['my_team_id'] = $myTeamId;
-            // KENDİ kadrosu her zaman görünür (rakibinki matchPublic'te yalnız kilit sonrası gelir).
-            $out['my_lineup'] = $this->lineupPayload($match, $myTeamId);
-            $g = TeamMatchGame::where('match_id', $match->id)
-                ->where(fn ($q) => $q->where('home_user_id', $uid)->orWhere('away_user_id', $uid))->first();
-            $out['my_game'] = $g ? [
-                'slot' => $g->slot, 'status' => $g->status, 'result' => $g->result,
-                'room_code' => $g->room_code,
-                'ready_home' => $this->fresh($g->ready_home_at), 'ready_away' => $this->fresh($g->ready_away_at),
-            ] : null;
-        }
-
-        return response()->json(['match' => $out]);
     }
 
     // ---- Admin (§12) ---------------------------------------------------------
@@ -601,39 +469,6 @@ class TeamController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function adminCancelMatch(Request $request, TeamMatch $match): JsonResponse
-    {
-        if ($d = $this->denyNonAdmin($request)) {
-            return $d;
-        }
-        $data = $request->validate(['reason' => ['required', 'string', 'max:160']]);
-
-        return $this->guard(function () use ($request, $match, $data) {
-            $this->rt->adminCancel($match, (int) $request->user()->id, $data['reason']);
-
-            return response()->json(['ok' => true]);
-        });
-    }
-
-    public function adminCorrectMatch(Request $request, TeamMatch $match): JsonResponse
-    {
-        if ($d = $this->denyNonAdmin($request)) {
-            return $d;
-        }
-        $data = $request->validate([
-            'result' => ['required', 'in:home_win,away_win,draw,double_forfeit'],
-            'home_score' => ['required', 'numeric', 'min:0', 'max:5'],
-            'away_score' => ['required', 'numeric', 'min:0', 'max:5'],
-            'reason' => ['required', 'string', 'max:255'],
-        ]);
-
-        return $this->guard(function () use ($request, $match, $data) {
-            $this->rt->adminCorrectResult($match, $data, (int) $request->user()->id, $data['reason']);
-
-            return response()->json(['ok' => true]);
-        });
-    }
-
     // ---- Serileştirme --------------------------------------------------------
 
     private function teamBrief(?Team $t): ?array
@@ -650,39 +485,6 @@ class TeamController extends Controller
             'is_champion' => $t->isChampionNow(),
             'status' => $t->status, // pending = yönetim onayında (frontend bilgilendirmesi)
         ];
-    }
-
-    private function matchPublic(TeamMatch $m): array
-    {
-        $revealed = $m->lineupRevealed();
-        $out = [
-            'id' => $m->id, 'status' => $m->status, 'result' => $m->result,
-            'home' => $this->teamBrief(Team::find($m->home_team_id)),
-            'away' => $this->teamBrief(Team::find($m->away_team_id)),
-            'scheduled_at' => $m->scheduled_at?->toIso8601String(),
-            'home_score' => (float) $m->home_score, 'away_score' => (float) $m->away_score,
-            'month_key' => $m->month_key, 'lineup_revealed' => $revealed,
-        ];
-        if ($revealed) {
-            // Kilit sonrası: kadrolar + oyunlar herkese açık (izleme linki = room_code).
-            $users = $this->userMap(TeamMatchLineup::where('match_id', $m->id)->pluck('user_id')->all());
-            $out['games'] = TeamMatchGame::where('match_id', $m->id)->orderBy('slot')->get()->map(fn ($g) => [
-                'slot' => $g->slot, 'status' => $g->status, 'result' => $g->result,
-                'home_user' => $users[$g->home_user_id] ?? null, 'away_user' => $users[$g->away_user_id] ?? null,
-                'room_code' => $g->room_code, // izleme bağlantısı (mevcut izleme/gizlilik kuralları geçerli)
-            ])->all();
-        }
-
-        return $out;
-    }
-
-    /** @return list<array<string,mixed>> */
-    private function lineupPayload(TeamMatch $m, int $teamId): array
-    {
-        $rows = TeamMatchLineup::where('match_id', $m->id)->where('team_id', $teamId)->orderBy('slot')->get();
-        $users = $this->userMap($rows->pluck('user_id')->all());
-
-        return $rows->map(fn ($r) => ['slot' => $r->slot, 'user' => $users[$r->user_id] ?? ['id' => $r->user_id]])->all();
     }
 
     private function messagePayload(TeamMessage $m): array
@@ -730,11 +532,6 @@ class TeamController extends Controller
         $m = TeamMember::where('team_id', $team->id)->where('user_id', $userId)->first();
 
         return $m && $m->isManager();
-    }
-
-    private function fresh(?Carbon $t): bool
-    {
-        return $t !== null && $t->gte(now()->subSeconds(TeamMatchRuntime::PRESENCE_SEC));
     }
 
     private function denyNonAdmin(Request $request): ?JsonResponse

@@ -294,6 +294,15 @@ const TR: Dict = {
   'teams.closeConfirm': 'Takımı kapatmak istediğine emin misin? Üyelikler sonlanır, 24 saat bekleme başlar.',
   'teams.closed': 'Takım kapatıldı.',
   'teams.awards': 'Ödüller',
+  'teams.balance': 'Takım Bakiyesi',
+  'teams.grant.pick': 'Üye seç',
+  'teams.grant.amount': 'Coin miktarı',
+  'teams.grant.send': 'Aktar',
+  'teams.grant.done': 'Coin aktarıldı.',
+  'teams.err.insufficient_team_balance': 'Takım bakiyesi yetersiz.',
+  'teams.err.not_a_manager': 'Bu işlem için kurucu veya yardımcı olmalısın.',
+  'teams.err.not_a_member': 'Oyuncu bu takımın üyesi değil.',
+  'teams.err.invalid_amount': 'Geçersiz miktar.',
   'teams.match.accept': 'Kabul Et',
   'teams.match.accepted': 'Karşılaşma onaylandı.',
   'teams.match.cancel': 'İptal',
@@ -327,12 +336,21 @@ const TR: Dict = {
     '• Kurucu 60 gün giriş yapmazsa kuruluş otomatik devredilir.\n\n' +
     'Takım sıralamaları\n' +
     '• Takımlar iki ayrı listede sıralanır: Düello Puanı ve Rating Ortalaması.\n' +
-    '• Düello Puanı: üyelerin topladığı toplam düello puanı.\n' +
+    '• Düello Puanı: üyelerin o sezon topladığı toplam düello puanı (her sezon sıfırdan başlar).\n' +
     '• Rating Ortalaması: takımın üye rating ortalaması.\n\n' +
     'Düello\n' +
     '• Üyeler çevrimiçi başka bir takımlı oyuncuyu bireysel düelloya davet eder (1v1); düello yalnız takımı olanlar arasında oynanır.\n' +
     '• Coin/bahis yoktur ve maç bireysel rating’i etkilemez. Uzunluk 1, 3 veya 5 puandır (davet eden seçer).\n' +
-    '• Kazanan, maç uzunluğu kadar düello puanı alır: 1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan. Bu puan oyuncuya ve takımına eklenir.',
+    '• Kazanan, maç uzunluğu kadar düello puanı alır: 1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan. Bu puan oyuncuya ve takımına eklenir.\n\n' +
+    'Sezon ve ödüller\n' +
+    '• Sezonlar 3 aylıktır (Kış: Oca-Mar, İlkbahar: Nis-Haz, Yaz: Tem-Eyl, Sonbahar: Eki-Ara).\n' +
+    '• Sezon sonunda en yüksek düello puanına sahip takım ŞAMPİYON olur; takım adı ve puanı kalıcı kaydedilir.\n' +
+    '• Şampiyon takım 30.000 coin kazanır (takım bakiyesine yazılır) ve bir sonraki sezon boyunca şampiyon rozeti taşır.\n' +
+    '• Sezonun “En İyi Düellocusu” (en çok düello puanı toplayan oyuncu) 5.000 coin kazanır (kişisel cüzdanına).\n' +
+    '• Yeni sezonda düello puanları sıfırlanır; herkes eşit başlar.\n\n' +
+    'Takım bakiyesi\n' +
+    '• Her takımın ortak bir coin bakiyesi (kasası) vardır; sezon ödülleri buraya yazılır.\n' +
+    '• Kurucu ve yardımcılar bu bakiyeden üyelerin kişisel cüzdanına istedikleri gibi coin dağıtabilir.',
   // ponytail: asset-rev — TR chunk hash'ini değiştirip canlı bundle'ı taze URL'ye yönlendirir
   // (deploy öncesi CDN'e zehirlenmiş 404'ü dereferans etmek için). Hiçbir yerde okunmaz.
   '__asset_rev': '2026-11-04a',
@@ -2590,6 +2608,15 @@ const EN: Dict = {
   'teams.closeConfirm': 'Close the team? Memberships end and a 24-hour cooldown starts.',
   'teams.closed': 'Team closed.',
   'teams.awards': 'Awards',
+  'teams.balance': 'Team Balance',
+  'teams.grant.pick': 'Pick member',
+  'teams.grant.amount': 'Coin amount',
+  'teams.grant.send': 'Transfer',
+  'teams.grant.done': 'Coins transferred.',
+  'teams.err.insufficient_team_balance': 'Insufficient team balance.',
+  'teams.err.not_a_manager': 'You must be the founder or an assistant for this action.',
+  'teams.err.not_a_member': 'That player is not a member of this team.',
+  'teams.err.invalid_amount': 'Invalid amount.',
   'teams.match.accept': 'Accept',
   'teams.match.accepted': 'Match scheduled.',
   'teams.match.cancel': 'Cancel',
@@ -2623,12 +2650,21 @@ const EN: Dict = {
     '• If the founder does not log in for 60 days, leadership is transferred automatically.\n\n' +
     'Team rankings\n' +
     '• Teams appear in two separate lists: Duel Points and Average Rating.\n' +
-    '• Duel Points: the total duel points collected by members.\n' +
+    '• Duel Points: the total duel points collected by members this season (resets each season).\n' +
     '• Average Rating: the team’s average member rating.\n\n' +
     'Duels\n' +
     '• A member invites another online player who has a team to a 1v1 duel; duels are only played between players who have a team.\n' +
     '• There is no coin/stake and the match does not affect individual rating. Length is 1, 3 or 5 points (the inviter chooses).\n' +
-    '• The winner earns duel points equal to the match length: a 1-point match 1, a 3-point match 3, a 5-point match 5. These points are added to the player and their team.',
+    '• The winner earns duel points equal to the match length: a 1-point match 1, a 3-point match 3, a 5-point match 5. These points are added to the player and their team.\n\n' +
+    'Season and rewards\n' +
+    '• Seasons are 3 months long (Winter: Jan-Mar, Spring: Apr-Jun, Summer: Jul-Sep, Autumn: Oct-Dec).\n' +
+    '• At the end of a season, the team with the highest duel points becomes CHAMPION; the team name and points are saved permanently.\n' +
+    '• The champion team earns 30,000 coins (added to the team balance) and wears a champion badge throughout the next season.\n' +
+    '• The season’s “Top Duelist” (the player with the most duel points) earns 5,000 coins (to their personal wallet).\n' +
+    '• Duel points reset at the start of a new season; everyone starts equal.\n\n' +
+    'Team balance\n' +
+    '• Every team has a shared coin balance (treasury); season rewards are paid into it.\n' +
+    '• The founder and assistants can distribute coins from this balance to members’ personal wallets as they wish.',
 
   // Turkey Online Backgammon League (independent module §1)
   'menu.group.league': 'Backgammon League',

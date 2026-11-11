@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\MatchResult;
 use App\Models\Team;
 use App\Models\TeamApplication;
-use App\Models\TeamMatch;
 use App\Models\TeamMember;
 use App\Models\User;
 use App\Models\WalletTransaction;
@@ -15,6 +14,8 @@ use App\Support\TeamLeague\TeamService;
 use App\Support\TeamLeague\TeamStandings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -378,14 +379,6 @@ class TeamLeagueTest extends TestCase
         $this->assertSame(0, TeamMember::where('team_id', $team->id)->count());
     }
 
-    public function test_close_blocked_with_active_match(): void
-    {
-        $team = $this->makeTeam();
-        $founder = User::find($team->founder_id);
-        TeamMatch::create(['home_team_id' => $team->id, 'away_team_id' => 999, 'status' => 'scheduled']);
-        $this->assertThrowsCode('active_matches_pending', fn () => $this->svc()->closeTeam($founder, $team->fresh(), true));
-    }
-
     // ---- §6 Ana sıralama ----------------------------------------------------
 
     private function teamWith(string $name, string $tag, array $ratings): Team
@@ -427,58 +420,85 @@ class TeamLeagueTest extends TestCase
         $this->assertLessThan($posSmall, $posBig, 'eşit ortalamada çok üyeli üstte');
     }
 
-    // ---- §10 Aylık sıralama & ödüller --------------------------------------
+    // ---- §10 Sezon şampiyonu & ödüller (düello puanı) ----------------------
 
-    public function test_monthly_points_double_forfeit_and_idempotent_awards(): void
+    /** Bir düello galibiyeti yaz: kazanan takımına (üyeyse) + bireysele target_points ekler. now()=sezon içi. */
+    private function duelWin(User $winner, User $loser, int $points): void
     {
-        $a = $this->teamWith('A', 'AAA', [1500]);
-        $b = $this->teamWith('B', 'BBB', [1500]);
-        $c = $this->teamWith('C', 'CCC', [1500]);
-        $mk = '2026-11';
-
-        // A, B'yi 4-1 yener.
-        TeamMatch::create(['home_team_id' => $a->id, 'away_team_id' => $b->id, 'status' => 'finished',
-            'result' => 'home_win', 'home_score' => 4, 'away_score' => 1, 'month_key' => $mk]);
-        // A ve C çift-hükmen → ikisine de 0 puan (beraberlik DEĞİL).
-        TeamMatch::create(['home_team_id' => $a->id, 'away_team_id' => $c->id, 'status' => 'finished',
-            'result' => 'double_forfeit', 'home_score' => 0, 'away_score' => 0, 'month_key' => $mk]);
-
-        $table = app(TeamStandings::class)->seasonTable('2026-sonbahar');
-        $byId = [];
-        foreach ($table as $r) {
-            $byId[$r['team_id']] = $r;
-        }
-        $this->assertSame(3, $byId[$a->id]['pts']); // tek galibiyet; çift-hükmen 0 eklemez
-        $this->assertEqualsWithDelta(3.0, $byId[$a->id]['diff'], 1e-9);
-        $this->assertSame(0, $byId[$b->id]['pts']);
-        $this->assertSame(0, $byId[$c->id]['pts']);
-        $this->assertSame(2, $byId[$a->id]['played']); // çift-hükmen de oynanmış sayılır
-        $this->assertSame(1, $byId[$a->id]['rank']);
-
-        // Ödül dağıtımı idempotent: ikinci çalıştırma yeni kupa üretmez.
-        $std = app(TeamStandings::class);
-        $first = $std->distributeSeasonAwards('2026-sonbahar');
-        $this->assertGreaterThan(0, $first);
-        $this->assertSame(0, $std->distributeSeasonAwards('2026-sonbahar'), 'tekrar çalışınca mükerrer ödül yok');
-        $this->assertTrue($a->fresh()->isChampionNow(), 'şampiyon rozeti aktif');
+        DB::table('duels')->insert([
+            'room_code' => 'r'.Str::random(10),
+            'player1_id' => $winner->id, 'player2_id' => $loser->id,
+            'winner_id' => $winner->id, 'target_points' => $points,
+            'finished_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
     }
 
-    public function test_tied_champions_both_get_badge(): void
+    public function test_season_champion_from_duel_points_and_rewards(): void
     {
         $a = $this->teamWith('A', 'AAA', [1500]);
         $b = $this->teamWith('B', 'BBB', [1500]);
-        $mk = '2026-11';
-        // İki ayrı rakibe karşı aynı skorla galip → A ve B ortak birinci.
-        $x = $this->teamWith('X', 'XXX', [1500]);
-        $y = $this->teamWith('Y', 'YYY', [1500]);
-        TeamMatch::create(['home_team_id' => $a->id, 'away_team_id' => $x->id, 'status' => 'finished',
-            'result' => 'home_win', 'home_score' => 3, 'away_score' => 2, 'month_key' => $mk]);
-        TeamMatch::create(['home_team_id' => $b->id, 'away_team_id' => $y->id, 'status' => 'finished',
-            'result' => 'home_win', 'home_score' => 3, 'away_score' => 2, 'month_key' => $mk]);
+        $fa = User::find($a->founder_id);
+        $fb = User::find($b->founder_id);
+        $opp = User::factory()->create(); // takımsız rakip (puanı kimseye yazılmaz)
+        $season = '2026-sonbahar';        // now()=2026-11 bu sezonun içinde
+
+        // A: 5+3 = 8 düello puanı, B: 3 → A şampiyon; En İyi Düellocu = fa (8).
+        $this->duelWin($fa, $opp, 5);
+        $this->duelWin($fa, $opp, 3);
+        $this->duelWin($fb, $opp, 3);
+
+        $std = app(TeamStandings::class);
+        $balBefore = (int) $a->fresh()->coin_balance;
+        $coinsBefore = (int) $fa->fresh()->coins;
+
+        $created = $std->distributeSeasonAwards($season);
+        $this->assertGreaterThan(0, $created);
+
+        $this->assertTrue($a->fresh()->isChampionNow(), 'şampiyon rozeti aktif');
+        $this->assertSame($balBefore + TeamRules::CHAMPION_COIN, (int) $a->fresh()->coin_balance, 'şampiyon takım +30k bakiye');
+        $this->assertSame($coinsBefore + TeamRules::BEST_DUELIST_COIN, (int) $fa->fresh()->coins, 'En İyi Düellocu +5k cüzdan');
+
+        // Idempotent: tekrar çalışınca ne kupa ne coin tekrarı.
+        $this->assertSame(0, $std->distributeSeasonAwards($season), 'mükerrer ödül yok');
+        $this->assertSame($balBefore + TeamRules::CHAMPION_COIN, (int) $a->fresh()->coin_balance);
+        $this->assertSame($coinsBefore + TeamRules::BEST_DUELIST_COIN, (int) $fa->fresh()->coins);
+    }
+
+    public function test_tied_duel_champions_both_get_badge(): void
+    {
+        $a = $this->teamWith('A', 'AAA', [1500]);
+        $b = $this->teamWith('B', 'BBB', [1500]);
+        $fa = User::find($a->founder_id);
+        $fb = User::find($b->founder_id);
+        $opp = User::factory()->create();
+        // İkisi de 5 puan → ortak birinci.
+        $this->duelWin($fa, $opp, 5);
+        $this->duelWin($fb, $opp, 5);
 
         app(TeamStandings::class)->distributeSeasonAwards('2026-sonbahar');
         $this->assertTrue($a->fresh()->isChampionNow());
         $this->assertTrue($b->fresh()->isChampionNow());
+    }
+
+    public function test_grant_from_balance_moves_coins_and_guards(): void
+    {
+        $team = $this->makeTeam();
+        $founder = User::find($team->founder_id);
+        $member = User::factory()->create();
+        TeamMember::create(['team_id' => $team->id, 'user_id' => $member->id, 'role' => 'member', 'joined_at' => now()]);
+        $team->coin_balance = 1000;
+        $team->save();
+        $before = (int) $member->fresh()->coins;
+
+        $this->svc()->grantFromBalance($team->fresh(), $founder->id, $member->id, 300);
+        $this->assertSame(700, (int) $team->fresh()->coin_balance, 'bakiye düştü');
+        $this->assertSame($before + 300, (int) $member->fresh()->coins, 'üye cüzdanı arttı');
+
+        // Bakiye yetersiz → hata + değişiklik yok.
+        $this->assertThrowsCode('insufficient_team_balance', fn () => $this->svc()->grantFromBalance($team->fresh(), $founder->id, $member->id, 999999));
+        $this->assertSame(700, (int) $team->fresh()->coin_balance);
+        // Yönetici olmayan (düz üye) dağıtamaz.
+        $this->assertThrowsCode('not_a_manager', fn () => $this->svc()->grantFromBalance($team->fresh(), $member->id, $founder->id, 100));
     }
 
     // ---- yardımcı ----------------------------------------------------------

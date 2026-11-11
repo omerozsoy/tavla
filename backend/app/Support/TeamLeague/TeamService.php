@@ -10,12 +10,8 @@ use App\Models\TeamAudit;
 use App\Models\TeamAward;
 use App\Models\TeamCooldown;
 use App\Models\TeamInvite;
-use App\Models\TeamMatch;
-use App\Models\TeamMatchGame;
-use App\Models\TeamMatchLineup;
 use App\Models\TeamMember;
 use App\Models\TeamMessage;
-use App\Models\TeamNotification;
 use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Database\QueryException;
@@ -119,6 +115,38 @@ class TeamService
         $team->member_count = (int) ($row->c ?? 0);
         $team->rating_avg = (float) ($row->avg ?? 0);
         $team->save();
+    }
+
+    /**
+     * Takım BAKİYESİNDEN bir üyeye coin aktar (yalnız kurucu/yardımcı). Bakiye atomik kilitlenip
+     * yeterlilik kontrol edilir; hedef aynı takımın üyesi olmalı. Üyenin KİŞİSEL cüzdanına WalletService
+     * ile yazılır (referans YOK → her aktarım ayrı; aynı üyeye tekrar verilebilir) + denetim kaydı.
+     * Bakiye yetersiz → insufficient_team_balance (422).
+     */
+    public function grantFromBalance(Team $team, int $actorUserId, int $targetUserId, int $amount): void
+    {
+        $actor = TeamMember::where('team_id', $team->id)->where('user_id', $actorUserId)->first();
+        if (! $actor || ! $actor->isManager()) {
+            throw new TeamException('not_a_manager', 403);
+        }
+        if (! TeamMember::where('team_id', $team->id)->where('user_id', $targetUserId)->exists()) {
+            throw new TeamException('not_a_member', 422);
+        }
+        if ($amount < 1) {
+            throw new TeamException('invalid_amount', 422);
+        }
+        DB::transaction(function () use ($team, $actorUserId, $targetUserId, $amount) {
+            $locked = Team::query()->lockForUpdate()->findOrFail($team->id);
+            if ((int) $locked->coin_balance < $amount) {
+                throw new TeamException('insufficient_team_balance', 422);
+            }
+            $locked->coin_balance = (int) $locked->coin_balance - $amount;
+            $locked->save();
+            // referans NULL (otomatik idempotency anahtarı üretilmesin; dağıtım tekrarlanabilir hareket).
+            $this->wallet->credit(User::findOrFail($targetUserId), $amount, 'team_grant', null, null, null, $actorUserId);
+            $this->audit($team, $actorUserId, 'coin_grant', $targetUserId, ['amount' => $amount]);
+            $team->coin_balance = $locked->coin_balance; // çağırana taze bakiye yansısın
+        });
     }
 
     private function audit(Team $team, ?int $actorId, string $action, ?int $targetUserId = null, array $meta = []): void
@@ -782,12 +810,6 @@ class TeamService
         if ($others) {
             throw new TeamException('has_other_members', 422);
         }
-        $active = TeamMatch::where(function ($q) use ($team) {
-            $q->where('home_team_id', $team->id)->orWhere('away_team_id', $team->id);
-        })->whereIn('status', ['proposed', 'scheduled', 'live'])->exists();
-        if ($active) {
-            throw new TeamException('active_matches_pending', 409);
-        }
         DB::transaction(function () use ($founderUser, $team) {
             $memberIds = TeamMember::where('team_id', $team->id)->pluck('user_id')->all();
             TeamMember::where('team_id', $team->id)->delete();
@@ -814,12 +836,6 @@ class TeamService
         if ($team->status !== 'active') {
             throw new TeamException('already_closed', 409);
         }
-        $active = TeamMatch::where(function ($q) use ($team) {
-            $q->where('home_team_id', $team->id)->orWhere('away_team_id', $team->id);
-        })->whereIn('status', ['proposed', 'scheduled', 'live'])->exists();
-        if ($active) {
-            throw new TeamException('active_matches_pending', 409);
-        }
         DB::transaction(function () use ($adminId, $team) {
             $memberIds = TeamMember::where('team_id', $team->id)->pluck('user_id')->all();
             TeamMember::where('team_id', $team->id)->delete();
@@ -841,13 +857,6 @@ class TeamService
     {
         DB::transaction(function () use ($team) {
             $id = $team->id;
-            $matchIds = TeamMatch::where('home_team_id', $id)->orWhere('away_team_id', $id)->pluck('id');
-            if ($matchIds->isNotEmpty()) {
-                TeamMatchLineup::whereIn('match_id', $matchIds)->delete();
-                TeamMatchGame::whereIn('match_id', $matchIds)->delete();
-                TeamNotification::whereIn('match_id', $matchIds)->delete();
-                TeamMatch::whereIn('id', $matchIds)->delete();
-            }
             $memberIds = TeamMember::where('team_id', $id)->pluck('user_id')->all();
             TeamMember::where('team_id', $id)->delete();
             TeamApplication::where('team_id', $id)->delete();

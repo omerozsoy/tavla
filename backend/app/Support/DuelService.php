@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -82,14 +83,17 @@ class DuelService
     /**
      * Bireysel düello sıralaması: kazanan başına TOPLAM DÜELLO PUANI (DESC). Puan = kazanılan maçların
      * uzunluğu toplamı (1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan). + oyuncu bilgisi.
+     * $from/$to verilirse yalnız o pencere içinde biten düellolar sayılır (sezonluk → her sezon sıfırdan).
      *
      * @return array<int,array{user_id:int,nickname:string,avatar:?string,rating:int,wins:int}>
      */
-    public static function individualLeaderboard(int $limit = 100): array
+    public static function individualLeaderboard(int $limit = 100, ?Carbon $from = null, ?Carbon $to = null): array
     {
         $rows = DB::table('duels')
             ->select('winner_id', DB::raw('SUM(target_points) as wins'))
             ->whereNotNull('winner_id')
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<', $to))
             ->groupBy('winner_id')
             ->orderByDesc('wins')
             ->limit($limit)
@@ -116,16 +120,26 @@ class DuelService
     /**
      * Takım düello sıralaması: kazananın takımı (team_members) başına TOPLAM DÜELLO PUANI (DESC).
      * Puan = üyelerin kazandığı maçların uzunluğu toplamı (1/3/5). Üyesiz kazanan puana saymaz (JOIN eler).
+     * $from/$to verilirse yalnız o pencere içinde biten düellolar sayılır (sezonluk → her sezon sıfırdan).
+     * Tarih koşulu LEFT JOIN'in ON'una konur ki penceresiz takım 0 ile listede kalsın (WHERE'e koyarsak elenir).
      *
      * @return array<int,array{team_id:int,name:string,tag:string,logo:?string,color1:string,color2:string,wins:int}>
      */
-    public static function teamLeaderboard(int $limit = 100): array
+    public static function teamLeaderboard(int $limit = 100, ?Carbon $from = null, ?Carbon $to = null): array
     {
         // TÜM aktif takımlar listelenir (puanı olmayan takım 0 ile görünür — kullanıcı direktifi):
         // teams'ten başla, LEFT JOIN ile üyelerin kazandığı düello puanlarını topla (yoksa 0).
         $rows = DB::table('teams')
             ->leftJoin('team_members', 'team_members.team_id', '=', 'teams.id')
-            ->leftJoin('duels', 'duels.winner_id', '=', 'team_members.user_id')
+            ->leftJoin('duels', function ($join) use ($from, $to) {
+                $join->on('duels.winner_id', '=', 'team_members.user_id');
+                if ($from) {
+                    $join->where('duels.created_at', '>=', $from);
+                }
+                if ($to) {
+                    $join->where('duels.created_at', '<', $to);
+                }
+            })
             ->where('teams.status', 'active')
             ->groupBy('teams.id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', 'teams.member_count')
             ->select('teams.id as team_id', 'teams.name', 'teams.tag', 'teams.logo', 'teams.color1', 'teams.color2', 'teams.member_count', DB::raw('COALESCE(SUM(duels.target_points), 0) as wins'))

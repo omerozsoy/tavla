@@ -3,8 +3,10 @@
 namespace App\Support\TeamLeague;
 
 use App\Models\Team;
-use App\Models\TeamMatch;
 use App\Models\TeamSeasonChampion;
+use App\Models\User;
+use App\Services\WalletService;
+use App\Support\DuelService;
 use Illuminate\Support\Carbon;
 
 /**
@@ -47,109 +49,77 @@ class TeamStandings
     }
 
     /**
-     * Aylık meydan okuma sıralaması (§10). Puan: galibiyet 3 / beraberlik 1 / mağlubiyet 0.
-     * Çift-hükmen → iki tarafa 0, skor farkı yok (beraberlik DEĞİL). Eşitlik: 1) puan,
-     * 2) eşleşme puanı farkı (takım skoru farkı toplamı), 3) takım galibiyeti, 4) ortak derece.
+     * SEZON SONU ödül/kayıt (§10). Sıralama = DÜELLO PUANI (o sezon penceresinde kazanılan düello
+     * puanı toplamı; TeamMatch/5v5 YOK). İlk 3 takım team_season_champions'a KALICI yazılır. Ödüller:
+     *   • Şampiyon (1.): +30.000 coin TAKIM BAKİYESİNE + SONRAKİ SEZON boyunca rozet.
+     *   • "En İyi Düellocu" (bireysel 1.): +5.000 coin KİŞİSEL cüzdanına (WalletService idempotent key).
+     * Idempotent: unique(season_key, team_id) firstOrCreate → coin yalnız kayıt İLK oluşunca verilir;
+     * bireysel ödül wallet idempotency_key='duel_best:<sezon>' ile tekrarlanmaz. Düello puanı penceresi
+     * kaydığı için yeni sezon 0'dan başlar (ekstra sıfırlama yok).
      *
-     * @return list<array{team_id: int, pts: int, diff: int, wins: int, played: int, rank: int}>
-     */
-    public function seasonTable(string $seasonKey): array
-    {
-        $matches = TeamMatch::whereIn('month_key', TeamSeason::monthKeys($seasonKey))
-            ->where('status', 'finished')
-            ->whereNotNull('result')
-            ->get();
-
-        $agg = [];
-        $touch = function (int $teamId) use (&$agg) {
-            if (! isset($agg[$teamId])) {
-                $agg[$teamId] = ['team_id' => $teamId, 'pts' => 0, 'diff' => 0, 'wins' => 0, 'played' => 0];
-            }
-        };
-
-        foreach ($matches as $m) {
-            $home = (int) $m->home_team_id;
-            $away = (int) $m->away_team_id;
-            $touch($home);
-            $touch($away);
-            $agg[$home]['played']++;
-            $agg[$away]['played']++;
-
-            if ($m->result === 'double_forfeit') {
-                continue; // iki tarafa da 0 puan; skor farkı/galibiyet yok
-            }
-
-            $hs = (float) $m->home_score;
-            $as = (float) $m->away_score;
-            $agg[$home]['diff'] += ($hs - $as); // yarım puan dahil (2.5-2.5 → 0)
-            $agg[$away]['diff'] += ($as - $hs);
-
-            if ($m->result === 'home_win') {
-                $agg[$home]['pts'] += TeamRules::PTS_WIN;
-                $agg[$home]['wins']++;
-            } elseif ($m->result === 'away_win') {
-                $agg[$away]['pts'] += TeamRules::PTS_WIN;
-                $agg[$away]['wins']++;
-            } elseif ($m->result === 'draw') {
-                $agg[$home]['pts'] += TeamRules::PTS_DRAW;
-                $agg[$away]['pts'] += TeamRules::PTS_DRAW;
-            }
-        }
-
-        $rows = array_values($agg);
-        usort($rows, function ($a, $b) {
-            if ($a['pts'] !== $b['pts']) {
-                return $b['pts'] <=> $a['pts'];
-            }
-            if (abs($a['diff'] - $b['diff']) > self::EPS) {
-                return $b['diff'] <=> $a['diff'];
-            }
-
-            return $b['wins'] <=> $a['wins'];
-        });
-
-        return $this->assignRanks(
-            $rows,
-            fn ($a, $b) => $a['pts'] === $b['pts'] && abs($a['diff'] - $b['diff']) <= self::EPS && $a['wins'] === $b['wins']
-        );
-    }
-
-    /**
-     * SEZON SONU ödül/kayıt (§10): ilk 3 takım + final puanı team_season_champions'a KALICI yazılır,
-     * şampiyona (1.) SONRAKİ SEZON boyunca rozet. Ortak dereceler hepsi alır. Idempotent:
-     * unique(season_key, team_id) + firstOrCreate → tekrar çalışınca mükerrer kayıt yok. Sezon puanı
-     * runtime (seasonTable) olduğu için sıfırlama GEREKMEZ — yeni sezon farklı month_key'lerle 0'dan.
-     *
-     * @return int yeni oluşturulan kayıt sayısı
+     * @return int yeni oluşturulan takım kaydı sayısı
      */
     public function distributeSeasonAwards(string $seasonKey, ?Carbon $now = null): int
     {
         $now = $now ? $now->copy() : now();
+        $from = TeamSeason::start($seasonKey);
+        $to = TeamSeason::endExclusive($seasonKey);
         $created = 0;
-        foreach ($this->seasonTable($seasonKey) as $r) {
-            if ($r['rank'] > 3) {
-                continue;
+
+        // İlk 3 takım (düello puanı > 0 olanlar; 0 puanlı takım derece almaz). teamLeaderboard zaten
+        // düello puanı (wins) DESC sıralı; eşit puan = ortak derece (rekabet rankı).
+        $ranked = array_values(array_filter(
+            DuelService::teamLeaderboard(100, $from, $to),
+            fn ($r) => (int) $r['wins'] > 0
+        ));
+        $rank = 0;
+        $prevPts = null;
+        foreach ($ranked as $i => $r) {
+            $pts = (int) $r['wins'];
+            if ($prevPts === null || $pts !== $prevPts) {
+                $rank = $i + 1;
+            }
+            $prevPts = $pts;
+            if ($rank > 3) {
+                break;
             }
             $team = Team::find($r['team_id']);
+            if (! $team) {
+                continue;
+            }
             $champ = TeamSeasonChampion::firstOrCreate(
-                ['season_key' => $seasonKey, 'team_id' => $r['team_id']],
+                ['season_key' => $seasonKey, 'team_id' => (int) $r['team_id']],
                 [
-                    'rank' => $r['rank'],
-                    'points' => $r['pts'],
-                    'diff' => (int) round($r['diff']),
-                    'wins' => $r['wins'],
-                    'played' => $r['played'],
-                    'team_name' => $team?->name,
+                    'rank' => $rank,
+                    'points' => $pts,
+                    'diff' => 0,
+                    'wins' => $pts,
+                    'played' => 0,
+                    'team_name' => $team->name,
                     'created_at' => $now,
                 ]
             );
-            if ($champ->wasRecentlyCreated) {
-                $created++;
+            if (! $champ->wasRecentlyCreated) {
+                continue; // zaten dağıtılmış (idempotent) → coin tekrar verme
             }
-            if ($r['rank'] === 1 && $team) {
-                // Şampiyon rozeti SONRAKİ SEZON boyunca (bu sezon bitişi + 3 ay).
+            $created++;
+            if ($rank === 1) {
+                // Şampiyon: +30.000 coin takım bakiyesine + sonraki sezon rozeti (tek save).
+                $team->coin_balance = (int) ($team->coin_balance ?? 0) + TeamRules::CHAMPION_COIN;
                 $team->champion_badge_until = TeamSeason::end($seasonKey)->addMonthsNoOverflow(3);
                 $team->save();
+            }
+        }
+
+        // En İyi Düellocu (bireysel 1.): +5.000 coin oyuncu cüzdanına. Idempotent key = sezon.
+        $best = DuelService::individualLeaderboard(1, $from, $to);
+        if (! empty($best) && (int) $best[0]['wins'] > 0) {
+            $user = User::find((int) $best[0]['user_id']);
+            if ($user) {
+                app(WalletService::class)->credit(
+                    $user, TeamRules::BEST_DUELIST_COIN, 'duel_best_season', 'duel_season', null,
+                    'duel_best:'.$seasonKey
+                );
             }
         }
 

@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\TeamMatch;
 use App\Support\TeamLeague\TeamSeason;
 use App\Support\TeamLeague\TeamService;
 use App\Support\TeamLeague\TeamStandings;
@@ -12,13 +11,14 @@ use Illuminate\Console\Command;
  * Takımlar Ligi günlük bakımı (§5/§10). İdempotent:
  *  - Premium 7 günlük yenileme süresi süpürmesi (süre geçen üyeyi çıkar, 72s bekleme).
  *  - Kurucu 60 gün inaktifse aktif-Premium en kıdemli yardımcıya otomatik devir.
- *  - Geçen ayın ödülleri: o aya ait bekleyen karşılaşma kalmadıysa kalıcı kupa/rozet dağıt (mükerrer yok).
+ *  - BİTEN sezonun ödülleri: düello puanı sıralamasından ilk 3 + şampiyon rozeti/coin + En İyi Düellocu
+ *    coin'i. prevKey DAİMA tamamen bitmiş sezonu gösterir (now−3ay). Idempotent → her gün güvenle.
  */
 class TeamLeagueMaintenance extends Command
 {
     protected $signature = 'teamleague:maintenance';
 
-    protected $description = 'Takımlar Ligi: Premium süresi + kurucu inaktiflik devri + aylık ödül dağıtımı';
+    protected $description = 'Takımlar Ligi: Premium süresi + kurucu inaktiflik devri + sezon ödül dağıtımı';
 
     public function handle(): int
     {
@@ -26,14 +26,9 @@ class TeamLeagueMaintenance extends Command
         $this->safe(fn () => $svc->premiumGraceSweep());
         $this->safe(fn () => $svc->founderInactivitySweep());
 
-        // BİTEN sezon: önceki sezonun süren karşılaşması kalmadıysa şampiyon kaydı + ödülleri
-        // kesinleştir (§10 "sonuçlanınca", sezon sonu). Idempotent (firstOrCreate) → her gün güvenle.
-        $prevSeason = TeamSeason::prevKey();
-        $pending = TeamMatch::whereIn('month_key', TeamSeason::monthKeys($prevSeason))
-            ->whereIn('status', ['proposed', 'scheduled', 'live'])->exists();
-        if (! $pending) {
-            $this->safe(fn () => app(TeamStandings::class)->distributeSeasonAwards($prevSeason));
-        }
+        // BİTEN (önceki) sezonun şampiyon kaydı + ödülleri (düello puanı). Idempotent (firstOrCreate +
+        // wallet idempotency_key) → coin yalnız bir kez verilir.
+        $this->safe(fn () => app(TeamStandings::class)->distributeSeasonAwards(TeamSeason::prevKey()));
 
         return self::SUCCESS;
     }

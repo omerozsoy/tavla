@@ -9,13 +9,12 @@ import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import SeoAppSection from './SeoAppSection'
 import AvatarCropper from './AvatarCropper'
 import AvatarFrame from './AvatarFrame'
+import './TeamChampionRing.css'
 import {
   acceptTeamInvite,
-  acceptTeamMatch,
   acceptTeamTransfer,
   applyTeam,
   cancelTeamApplication,
-  cancelTeamMatch,
   closeTeam,
   createTeam,
   decideTeamApplication,
@@ -23,19 +22,17 @@ import {
   demoteTeamMember,
   duelLeaderboard,
   getMyTeam,
-  getMyTeamMatch,
   getTeam,
   getTeams,
+  grantTeamCoins,
   inviteToTeam,
   kickTeamMember,
   leaveTeam,
   onlinePlayers,
   promoteTeamMember,
-  readyTeamMatch,
   renameTeam,
   revokeTeamInvite,
   searchLeaderboard,
-  setTeamLineup,
   transferTeam,
   updateTeamIdentity,
   type DuelIndividualRow,
@@ -44,7 +41,6 @@ import {
   type TeamBrief,
   type TeamDetail,
   type TeamMe,
-  type TeamMyMatch,
   type TeamRankRow,
 } from '../api'
 import { ApiError } from '../api'
@@ -58,7 +54,7 @@ import { ApiError } from '../api'
 // sıralama), /takimlar-ligi/takimim, /takimlar-ligi/kurallar, /takimlar-ligi/kur. Eski sekme-state
 // yerine tek 'view' hem bölümü hem drill-in'i (takim/mac) tutar -> bookmark + geri-tuşu çalışır.
 type Section = 'overview' | 'create' | 'myteam' | 'rules'
-type View = { kind: Section } | { kind: 'team'; id: number } | { kind: 'match'; id: number }
+type View = { kind: Section } | { kind: 'team'; id: number }
 const SECTIONS: readonly Section[] = ['overview', 'create', 'myteam', 'rules']
 const isSection = (v: View): v is { kind: Section } => (SECTIONS as readonly string[]).includes(v.kind)
 
@@ -81,7 +77,6 @@ function parsePath(p: string | null): View {
   const seg = p.split('/')
   const id = parseInt(seg[1] ?? '', 10)
   if (seg[0] === 'takim' && id) return { kind: 'team', id }
-  if (seg[0] === 'mac' && id) return { kind: 'match', id }
   if (seg[0] === 'takimim') return { kind: 'myteam' }
   if (seg[0] === 'kurallar') return { kind: 'rules' }
   if (seg[0] === 'kur') return { kind: 'create' }
@@ -96,7 +91,6 @@ function pathFor(v: View): string | null {
     case 'rules': return 'kurallar'
     case 'create': return 'kur'
     case 'team': return 'takim/' + v.id
-    case 'match': return 'mac/' + v.id
   }
 }
 
@@ -188,10 +182,6 @@ export default function TeamsView(props: Props) {
       )}
 
       {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} hasTeam={hasTeam} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} onDuel={props.onDuel} setNotice={setNotice} errText={errText} />}
-      {view.kind === 'match' && (
-        <MatchView id={view.id} myId={props.myId} back={() => go({ kind: 'overview' })}
-          onEnterRoom={props.onEnterRoom} setNotice={setNotice} errText={errText} />
-      )}
       <SeoAppSection page="takimlar-ligi" />
       </div>
     </div>
@@ -273,11 +263,14 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
 
   const medal = (n: number) => (n === 1 ? '🥇' : n === 2 ? '🥈' : n === 3 ? '🥉' : '')
   // Leaderboard-stili sıralama satırı: derece (madalya) + amblem+ad + sağda değer.
-  const rankRow = (key: number, pos: number, team: { name: string; tag: string; logo?: string | null; color1: string; color2: string; member_count?: number }, val: string, onOpen: () => void) => (
+  const rankRow = (key: number, pos: number, team: { name: string; tag: string; logo?: string | null; color1: string; color2: string; member_count?: number }, val: string, onOpen: () => void, champion = false) => (
     <div key={key} className={`trank-row ${pos <= 3 ? 'top' : ''}`} onClick={onOpen}>
       <span className="trank-pos">{medal(pos) || pos}</span>
       <span className="trank-team">
-        <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={56} />
+        {/* Sezon düello lideri (1.) → animasyonlu şampiyon halkası (ana sayfa ilk-3 stilinin büyüğü). */}
+        <span className={champion ? 'team-champ-ring' : undefined}>
+          <TeamEmblem color1={team.color1} color2={team.color2} logo={team.logo || undefined} label={team.tag} size={56} />
+        </span>
         <b>{team.name}</b>
         {/* Takımın oyuncu sayısı */}
         {team.member_count != null && (
@@ -316,7 +309,7 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
               <div className="lb-empty">{t('duel.emptyTeams')}</div>
             ) : (
               <div className="trank-list">
-                {duelTeams.map((r, i) => rankRow(r.team_id, i + 1, r, String(r.wins), () => props.go({ kind: 'team', id: r.team_id })))}
+                {duelTeams.map((r, i) => rankRow(r.team_id, i + 1, r, String(r.wins), () => props.go({ kind: 'team', id: r.team_id }), i === 0 && r.wins > 0))}
               </div>
             )
           )}
@@ -992,21 +985,9 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
         </div>
       </section>
 
-      {/* Karşılaşmalar */}
-      {d.matches.length > 0 && (
-        <section>
-          <SLabel count={d.matches.length}>{t('teams.matches')}</SLabel>
-          {d.matches.map((mt) => (
-            <div key={mt.id} style={row}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <TeamMark team={mt.home} size={22} /> {mt.home_score}–{mt.away_score} <TeamMark team={mt.away} size={22} />
-              </span>
-              <span style={{ flex: 1 }} />
-              <span style={microTag}>{mt.status}</span>
-            </div>
-          ))}
-        </section>
-      )}
+      {/* Takım bakiyesi + (yöneticiyse) üyeye coin dağıtımı */}
+      <TeamBalanceBox teamId={d.team.id} balance={d.team.coin_balance ?? 0} canGrant={d.team.can_grant ?? false}
+        members={members} setNotice={props.setNotice} errText={props.errText} />
 
       {/* Ödüller */}
       {d.team.awards.length > 0 && (
@@ -1023,80 +1004,47 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
   )
 }
 
-// ---- Karşılaşma detay --------------------------------------------------------
-function MatchView(props: { id: number; myId: number | null; back: () => void; onEnterRoom: (c: string, t: number) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
+// ---- Takım bakiyesi + dağıtım -----------------------------------------------
+// Ortak coin kasası: sezon ödülü (şampiyon +30k) buraya yazılır. Kurucu/yardımcı (canGrant)
+// bakiyeden bir üyenin KİŞİSEL cüzdanına coin aktarır (backend atomik + bakiye<0 engel).
+function TeamBalanceBox(props: { teamId: number; balance: number; canGrant: boolean; members: TeamDetail['members']; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
-  const [m, setM] = useState<TeamMyMatch | null>(null)
+  const [bal, setBal] = useState(props.balance)
+  const [uid, setUid] = useState<string>('')
+  const [amt, setAmt] = useState('')
   const [busy, setBusy] = useState(false)
-  const [lineup, setLineup] = useState('')
+  useEffect(() => { setBal(props.balance) }, [props.balance])
 
-  const load = useCallback(() => {
-    const fn = props.myId ? getMyTeamMatch(props.id).then((r) => r.match) : (async () => (await (await import('../api')).getTeamMatch(props.id)).match as TeamMyMatch)()
-    fn.then(setM).catch(() => {})
-  }, [props.id, props.myId])
-  useEffect(() => { load(); const h = setInterval(load, 5000); return () => clearInterval(h) }, [load])
-
-  const act = async (fn: () => Promise<unknown>, msg?: string) => {
+  const grant = async () => {
+    const amount = parseInt(amt, 10)
+    if (!uid || !amount || amount < 1) return
     setBusy(true)
-    try { await fn(); if (msg) props.setNotice(msg); load() }
-    catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
+    try {
+      const r = await grantTeamCoins(props.teamId, Number(uid), amount)
+      setBal(r.coin_balance); setAmt(''); setUid('')
+      props.setNotice(t('teams.grant.done'))
+    } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
-  if (!m) return <Loading />
 
   return (
-    <div>
-      <Button variant="ghost" onClick={props.back}>← {t('common.back')}</Button>
-      <h2 style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <TeamMark team={m.home} size={34} /> {m.home_score}–{m.away_score} <TeamMark team={m.away} size={34} />
-      </h2>
-      <div style={{ opacity: 0.6 }}>{m.status} · {fmtTR(m.scheduled_at)}</div>
-
-      {/* Proposed → kabul/iptal */}
-      {m.status === 'proposed' && (
-        <div style={{ marginTop: 10, display: 'flex', gap: 6 }}>
-          <Button disabled={busy} onClick={() => act(() => acceptTeamMatch(m.id), t('teams.match.accepted'))}>{t('teams.match.accept')}</Button>
-          <Button variant="ghost" disabled={busy} onClick={() => act(() => cancelTeamMatch(m.id))}>{t('teams.match.cancel')}</Button>
+    <section>
+      <SLabel>{t('teams.balance')}</SLabel>
+      <div style={row}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 18, fontWeight: 700 }}>
+          <Icon name="coin" size={20} /> {bal.toLocaleString('tr-TR')}
+        </span>
+      </div>
+      {props.canGrant && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          <select value={uid} onChange={(e) => setUid(e.target.value)} style={{ ...inp, flex: '1 1 150px' }}>
+            <option value="">{t('teams.grant.pick')}</option>
+            {props.members.map((m) => <option key={m.user.id} value={m.user.id}>{m.user.nickname}</option>)}
+          </select>
+          <input value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder={t('teams.grant.amount')} style={{ ...inp, flex: '1 1 110px' }} />
+          <Button disabled={busy || !uid || !amt} onClick={grant}>{t('teams.grant.send')}</Button>
         </div>
       )}
-
-      {/* Scheduled + kilit öncesi: KENDİ kadronu gir (gizli) */}
-      {m.status === 'scheduled' && !m.lineup_revealed && m.my_team_id && (
-        <div style={{ marginTop: 12 }}>
-          <h3>{t('teams.match.lineup')}</h3>
-          {m.my_lineup && m.my_lineup.length > 0 ? (
-            <div>{m.my_lineup.map((l) => <span key={l.slot} style={tagStyle}>{l.slot}. {l.user.nickname}</span>)}</div>
-          ) : (
-            <div style={{ fontSize: 13, opacity: 0.7 }}>{t('teams.match.lineupHint')}</div>
-          )}
-          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-            <input value={lineup} onChange={(e) => setLineup(e.target.value)} placeholder="id,id,id,id,id" style={inp} />
-            <Button disabled={busy} onClick={() => act(() => setTeamLineup(m.id, m.my_team_id!, lineup.split(',').map((s) => parseInt(s.trim(), 10)).filter(Boolean)), t('teams.saved'))}>{t('teams.save')}</Button>
-          </div>
-          <Button variant="ghost" style={{ marginTop: 6 }} disabled={busy} onClick={() => act(() => cancelTeamMatch(m.id))}>{t('teams.match.cancel')}</Button>
-        </div>
-      )}
-
-      {/* Kilit sonrası: eşleşmeler + Hazırım */}
-      {m.lineup_revealed && (
-        <div style={{ marginTop: 12 }}>
-          <h3>{t('teams.match.games')}</h3>
-          {m.games?.map((g) => (
-            <div key={g.slot} style={row}>
-              <span>{g.slot}. {g.home_user?.nickname ?? '—'} vs {g.away_user?.nickname ?? '—'}</span>
-              <span style={{ opacity: 0.6, marginLeft: 8 }}>{g.result ?? g.status}</span>
-              <span style={{ flex: 1 }} />
-              {g.room_code && <Button variant="ghost" onClick={() => props.onEnterRoom(g.room_code!, 5)}>{t('teams.match.watch')}</Button>}
-            </div>
-          ))}
-          {m.my_game && m.my_game.status !== 'finished' && (
-            <Button style={{ marginTop: 8 }} disabled={busy} onClick={() => act(async () => {
-              const r = await readyTeamMatch(m.id)
-              if (r.room) props.onEnterRoom(r.room, 5)
-            }, t('teams.match.ready'))}>{t('teams.match.ready')}</Button>
-          )}
-        </div>
-      )}
-    </div>
+    </section>
   )
 }
 
@@ -1137,7 +1085,6 @@ function TeamList(props: { teams: TeamBrief[]; onOpen: (id: number) => void }) {
 
 const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: 2, border: '1px solid var(--btn-border)', background: 'var(--input-bg)', color: 'var(--text)', flex: 1 }
 const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: '1px solid var(--border)' }
-const tagStyle: React.CSSProperties = { display: 'inline-block', padding: '1px 6px', borderRadius: 2, background: 'var(--accent)', color: 'var(--accent-text, #fff)', fontSize: 12, fontWeight: 700, marginRight: 4 }
 
 // Swiss tipografi: bölüm başlığı — küçük, uppercase, harf-aralıklı, kalın alt-kural (rule).
 const sectionLabel: React.CSSProperties = { fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', margin: '0 0 2px', paddingBottom: 8, borderBottom: '2px solid var(--text)' }

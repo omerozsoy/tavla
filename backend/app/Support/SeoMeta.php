@@ -230,8 +230,8 @@ final class SeoMeta
             'Türkiye Online Tavla Ligi',
         ],
         'takimlar-ligi' => [
-            'Takımlar Ligi — 5v5 Tavla | TavlaTv',
-            'Takımlar Ligi: 5 kişilik takımlar kur, takımınla eşleş, takım sıralamasında yüksel. Takım kurma, katılım ve aylık ödüllerle rekabetçi takım tavlası.',
+            'Takımlar Ligi — Takım Halinde Online Tavla | TavlaTv',
+            'Takımlar Ligi: takımını kur, üyelerinle düello puanı topla, sezon sıralamasında yüksel. 3 aylık sezonlar, en yüksek düello puanlı takıma şampiyonluk ve coin ödülü.',
             'Takımlar Ligi',
         ],
         'uyelik' => [
@@ -364,8 +364,8 @@ final class SeoMeta
         ],
         'takimlar-ligi' => [
             'Takımlar Ligi',
-            'Takımlar Ligi, 5 kişilik takımların yarıştığı bağımsız bir modüldür. Takımını kur veya mevcut bir takıma katıl, takım sıralamasında yüksel ve aylık ödüller kazan. Takım sıralaması üyelerin rating ortalamasına göre belirlenir.',
-            ['5 kişilik takımlar kur veya mevcut takıma katıl.', 'Takım sıralaması üye rating ortalamasına göre.', 'Aylık ödüller ve rekabetçi takım maçları.'],
+            'Takımlar Ligi, oyuncuların takım kurup düellolarla puan topladığı bağımsız bir modüldür. Takımını kur veya mevcut bir takıma katıl; üyeler 1v1 düello kazandıkça takıma düello puanı eklenir. 3 aylık sezon sonunda en yüksek düello puanlı takım şampiyon olur, 30.000 coin kazanır; sezonun en iyi düellocusu 5.000 coin alır.',
+            ['Takımını kur veya mevcut takıma katıl.', 'Üyeler düello kazandıkça takıma düello puanı eklenir.', '3 aylık sezon; şampiyon takıma ve en iyi düellocuya coin ödülü.'],
         ],
         'turnuva-takvimi' => [
             'Yaklaşan tavla turnuvaları ve takvim',
@@ -501,7 +501,7 @@ final class SeoMeta
         'online-turnuvalar' => ['Online Backgammon Tournaments | GammonTV', 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.', 'Online Backgammon Tournaments'],
         'lider-tablosu' => ['Leaderboard — Top Backgammon Players | GammonTV', 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.', 'Backgammon Leaderboard'],
         'turkiye-online-tavla-ligi' => ['Türkiye Online Backgammon League | GammonTV', 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.', 'Türkiye Online Backgammon League'],
-        'takimlar-ligi' => ['Teams League — 5v5 Backgammon | GammonTV', 'Teams League: build 5-player teams, match up as a team and climb the team standings. Competitive backgammon with team creation, membership and monthly rewards.', 'Teams League'],
+        'takimlar-ligi' => ['Teams League — Team Backgammon | GammonTV', 'Teams League: build your team, collect duel points with your members, climb the season standings. 3-month seasons, with championship and coin rewards for the team with the most duel points.', 'Teams League'],
         'uyelik' => ['Membership and Premium | GammonTV', 'GammonTV Premium membership: ad-free play, advanced analysis and exclusive perks. Explore the membership options.', 'Membership and Premium'],
         'turnuva-takvimi' => ['Backgammon Tournament Calendar | GammonTV', 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.', 'Backgammon Tournament Calendar'],
         'kulupler' => ['Backgammon Clubs | GammonTV', 'Discover backgammon clubs, join a club or start your own. The GammonTV club directory.', 'Backgammon Clubs'],
@@ -529,7 +529,7 @@ final class SeoMeta
         'tavla-rehberi' => ['Backgammon strategy guide', 'Read clear backgammon articles on opening moves, building points and primes, pip counting, the doubling cube, and winning tactics.', ['Explore backgammon opening strategy.', 'Learn how to use the doubling cube.', 'Discover the difference between a gammon and a backgammon.']],
         'online-turnuvalar' => ['Join online backgammon tournaments', 'Follow registration, pairings, brackets and results on a single screen in GammonTV online backgammon tournaments. Explore open tournaments and upcoming matches.', ['Browse open online backgammon tournaments.', 'Check the registration and entry requirements.', 'Follow the pairings and tournament results.']],
         'turkiye-online-tavla-ligi' => ['Türkiye Online Backgammon League', 'The Türkiye Online Backgammon League is a standalone, seasonal league-format competition, separate from tournaments. Preliminary rounds, a standings table and a knockout bracket decide the champion; the league score is kept separate from your rating.', ['Seasonal league: pairings, standings and a knockout bracket.', 'League points are separate from rating; follow your rank.', 'Play your matches on time and climb to the top.']],
-        'takimlar-ligi' => ['Teams League', 'Teams League is a standalone module where 5-player teams compete. Build your own team or join an existing one, climb the team standings and earn monthly rewards. Team ranking is based on the members\' average rating.', ['Build a 5-player team or join an existing one.', 'Team ranking is based on members\' average rating.', 'Monthly rewards and competitive team matches.']],
+        'takimlar-ligi' => ['Teams League', 'Teams League is a standalone module where players build teams and collect points through duels. Build your own team or join an existing one; members add duel points as they win 1v1 duels. At the end of each 3-month season the team with the most duel points becomes champion and earns 30,000 coins; the season\'s top duelist earns 5,000 coins.', ['Build your team or join an existing one.', 'Members add duel points as they win duels.', '3-month seasons; coin rewards for the champion team and top duelist.']],
         'turnuva-takvimi' => ['Upcoming backgammon tournaments and calendar', 'Follow backgammon tournament dates, online and live events, registration windows and results in the up-to-date tournament calendar.', ['Find upcoming backgammon tournaments by date.', 'Compare online and live tournaments.', 'Check registration dates and prizes.']],
         'tavla-turnuvasi-organizasyonu' => ['Turnkey backgammon tournament organization', 'GammonTV provides backgammon tournament hosting, digital pairings, refereeing and live result management for companies, municipalities and shopping centers.', ['Design the format, bracket and participation plan.', 'Plan refereeing, scoring and pairing management.', 'Request a quote for your corporate event.']],
         'kurumsal-tavla-turnuvasi' => ['Corporate backgammon tournament organization', 'Plan an in-house or inter-company backgammon tournament with employee participation, team spirit and measurable results.', ['Choose an office, hotel or hybrid event format.', 'Manage employee registrations and pairings.', 'Plan the final and the awards process.']],

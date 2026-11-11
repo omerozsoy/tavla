@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\CareerPrService;
 use App\Support\DuelService;
+use App\Support\TeamLeague\TeamSeason;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -70,9 +71,17 @@ class LeaderboardController extends Controller
     public function duelLeaderboard(Request $request)
     {
         $limit = min(100, max(1, (int) $request->query('limit', 100)));
-        $data = Cache::remember("duel_leaderboard:{$limit}", 30, fn () => [
-            'individual' => DuelService::individualLeaderboard($limit),
-            'teams' => DuelService::teamLeaderboard($limit),
+        // Düello puanı SEZONLUK (kullanıcı direktifi): yalnız içinde bulunulan sezonun düelloları sayılır,
+        // sezon değişince pencere kayar → puan 0'dan başlar. Pencere [start, endExclusive).
+        $season = TeamSeason::currentKey();
+        $from = TeamSeason::start($season);
+        $to = TeamSeason::endExclusive($season);
+        $data = Cache::remember("duel_leaderboard:{$season}:{$limit}", 30, fn () => [
+            'season' => $season,
+            'season_name' => TeamSeason::name($season),
+            'season_end' => TeamSeason::end($season)->toIso8601String(),
+            'individual' => DuelService::individualLeaderboard($limit, $from, $to),
+            'teams' => DuelService::teamLeaderboard($limit, $from, $to),
         ]);
 
         return response()->json($data);
