@@ -30474,49 +30474,23 @@ input:not([type='range']), select, textarea {
   padding: 4px 10px 0;
 }
 /* Küfür şikayeti (iki adımlı): sohbet altında küçük, araya girmeyen satır. */
-.chat-report {
-  padding: 6px 10px 10px;
-  display: flex;
-  justify-content: center;
+/* (.chat-report / .chat-report-btn kaldırıldı -> artık .chat-foot satırında tek stil, bkz yukarı.) */
+/* Panel alt aksiyonları: "Sohbeti Kapat/Aç" + "Şikayet Et" YAN YANA, aynı boy/stil (eşit genişlik). */
+.chat-foot {
+  padding: 4px 10px 10px;
   min-height: 30px;
 }
-/* Şikayet Et: belirgin ama agresif olmayan pill (danger tonlu çerçeve + hafif zemin). */
-.chat-report-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--danger-fg, #d14343) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--danger-fg, #d14343) 32%, transparent);
-  color: var(--danger-fg, #d14343);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background 160ms var(--ease-out),
-    border-color 160ms var(--ease-out),
-    transform 120ms var(--ease-out);
-}
-.chat-report-btn:hover {
-  background: color-mix(in srgb, var(--danger-fg, #d14343) 16%, transparent);
-  border-color: color-mix(in srgb, var(--danger-fg, #d14343) 58%, transparent);
-  color: var(--danger-fg, #d14343);
-}
-.chat-report-btn:active {
-  transform: scale(0.97);
-}
-/* Panel içi "Sohbeti Kapat/Aç" — nötr pill (şikayet butonuyla aynı dil, danger tonu yok). */
-.chat-closebar {
-  padding: 2px 10px 0;
+.chat-foot-row {
   display: flex;
-  justify-content: center;
+  gap: 8px;
 }
-.chat-close-toggle {
+.chat-foot-btn {
+  flex: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 7px 14px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--text) 5%, transparent);
   border: 1px solid var(--border);
@@ -30529,11 +30503,11 @@ input:not([type='range']), select, textarea {
     border-color 160ms var(--ease-out),
     transform 120ms var(--ease-out);
 }
-.chat-close-toggle:hover {
+.chat-foot-btn:hover {
   background: color-mix(in srgb, var(--text) 10%, transparent);
   color: var(--text);
 }
-.chat-close-toggle:active {
+.chat-foot-btn:active {
   transform: scale(0.97);
 }
 .chat-report-confirm {

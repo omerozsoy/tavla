@@ -261,25 +261,24 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             )}
           </div>}
 
-          {/* Sohbeti Kapat/Aç (panel içi): açıkken "Kapat", ben kapattıysam "Aç". Rakip kapattıysa
-              buton verilmez (açamam), yalnız yukarıdaki uyarı görünür. Oyun menüsündeki toggle ile aynı. */}
-          {!readOnly && loggedIn && onChatToggle && (
-            <div className="chat-closebar">
-              <button type="button" className="chat-close-toggle" onClick={onChatToggle}>
-                <Icon name={chatOff ? 'chat' : 'x'} size={14} /> {chatOff ? t('chat.reopen') : t('chat.close')}
-              </button>
-            </div>
-          )}
-
-          {/* KÜFÜR ŞİKAYETİ (iki adımlı): yalnız oyuncu (readOnly değil) + giriş + onReport verilmişse. */}
-          {!readOnly && loggedIn && onReport && (
-            <div className="chat-report">
-              {reportState === 'idle' && (
-                <button type="button" className="chat-report-btn" onClick={() => setReportState('confirm')}>
-                  <Icon name="flag" size={15} /> {t('chat.report')}
-                </button>
-              )}
-              {reportState === 'confirm' && (
+          {/* Alt aksiyonlar: "Sohbeti Kapat/Aç" + "Şikayet Et" YAN YANA, aynı boy/stil. Rakip
+              sohbeti kapattıysa Kapat butonu gelmez (açamam). Şikayet onay adımı tüm satırı alır. */}
+          {!readOnly && loggedIn && (onChatToggle || onReport) && (
+            <div className="chat-foot">
+              {reportState === 'idle' ? (
+                <div className="chat-foot-row">
+                  {onChatToggle && (
+                    <button type="button" className="chat-foot-btn" onClick={onChatToggle}>
+                      <Icon name={chatOff ? 'chat' : 'x'} size={14} /> {chatOff ? t('chat.reopen') : t('chat.close')}
+                    </button>
+                  )}
+                  {onReport && (
+                    <button type="button" className="chat-foot-btn" onClick={() => setReportState('confirm')}>
+                      <Icon name="flag" size={14} /> {t('chat.report')}
+                    </button>
+                  )}
+                </div>
+              ) : reportState === 'confirm' ? (
                 <div className="chat-report-confirm">
                   <span className="chat-report-hint">{t('chat.reportHint')}</span>
                   <div className="chat-report-actions">
@@ -288,7 +287,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                       className="chat-report-send"
                       onClick={async () => {
                         try {
-                          await onReport()
+                          await onReport?.()
                         } catch {
                           /* yut: hata olsa da kullanıcıya gönderildi görünümü vermeyelim */
                         }
@@ -302,8 +301,9 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                     </button>
                   </div>
                 </div>
+              ) : (
+                <span className="chat-report-sent">✓ {t('chat.reportSent')}</span>
               )}
-              {reportState === 'sent' && <span className="chat-report-sent">✓ {t('chat.reportSent')}</span>}
             </div>
           )}
         </>
