@@ -8061,6 +8061,9 @@ html[data-board='yilbasi'] .checker.black {
 /* Toplanan pul SAYISI (Backgammon Galaxy düzeni): reserve tüp ile küp ARASINDA, flow'da
    (slot DIŞI), temiz + BOLD. Pul rengiyle (board'a uyar) + okunur halo. */
 .bearoff-count {
+  color: #fff;
+  -webkit-text-stroke: 1.5px #000;
+  paint-order: stroke fill;
   flex: none;
   text-align: center;
   font-weight: 700;
@@ -8069,14 +8072,10 @@ html[data-board='yilbasi'] .checker.black {
   margin: 2px 0;
 }
 .bearoff-count.white {
-  color: var(--cream);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+  color: #fff;
 }
 .bearoff-count.black {
-  color: var(--navy);
-  text-shadow:
-    0 0 3px rgba(255, 255, 255, 0.95),
-    0 0 6px rgba(255, 255, 255, 0.6);
+  color: #fff;
 }
 .bearoff.target {
   box-shadow: inset 0 0 0 3px #35d07a;
@@ -30458,6 +30457,12 @@ input:not([type='range']), select, textarea {
   line-height: 1.3;
   padding: 5px 10px;
   text-align: center;
+}
+/* Sohbet kapatma bilgisi (küfür uyarısı değil) -> nötr/gri. */
+.chat-notice.chat-off {
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 10px;
 }
 .dm-notice {
   padding: 4px 10px 0;
