@@ -1644,6 +1644,27 @@ button[aria-disabled='true'],
   grid-auto-columns: minmax(0, 1fr);
   gap: 8px;
 }
+.duel-len-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 54px;
+  padding: 7px 6px;
+}
+.duel-len-n {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.duel-len-pts {
+  font-size: 0.62rem;
+  opacity: 0.85;
+  text-align: center;
+  line-height: 1.12;
+  white-space: normal;
+}
 .target-chip {
   min-height: 44px;
   display: grid;

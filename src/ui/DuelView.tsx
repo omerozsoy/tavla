@@ -164,11 +164,12 @@ export default function DuelView({ currentId, preselect, onClose, onDuel, board,
                 <button
                   key={n}
                   type="button"
-                  className={`target-chip ${len === n ? 'active' : ''}`}
+                  className={`target-chip duel-len-chip ${len === n ? 'active' : ''}`}
                   onClick={() => setLen(n)}
                   aria-pressed={len === n}
                 >
-                  {n}
+                  <span className="duel-len-n">{n}</span>
+                  <span className="duel-len-pts">{n} Takım Puanı Eklenir</span>
                 </button>
               ))}
             </div>
