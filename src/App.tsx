@@ -12264,6 +12264,8 @@ export default function App() {
           notice={chatNotice}
           chatOff={chatOffBy != null}
           chatOffName={chatOffBy == null ? null : chatOffBy === room.slot ? (user?.nickname ?? t('chat.you')) : (room.oppName ?? t('chat.opponent'))}
+          // Aç/kapa butonu: sohbet açıksa (kapat) veya BEN kapattıysam (aç). Rakip kapattıysa undefined -> buton yok.
+          onChatToggle={chatOffBy == null || chatOffBy === room.slot ? () => handleToggleChat(chatOffBy == null) : undefined}
           onReport={room.bot ? undefined : handleReportChat}
         />
       )}

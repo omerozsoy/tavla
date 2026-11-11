@@ -22,6 +22,8 @@ interface Props {
   chatOff?: boolean
   /** Sohbeti kapatan oyuncunun adı -> "{ad} sohbet etmek istemiyor" uyarısı. */
   chatOffName?: string | null
+  /** Sohbeti aç/kapa (panel içi buton). undefined -> buton yok (ör. rakip kapattıysa açamam). */
+  onChatToggle?: () => void
   /** SALT OKUNUR (yönetici izleme): yalnız mesaj listesi; emoji/yazma kutusu çizilmez. */
   readOnly?: boolean
   /** İZLEMEDE sohbet varsa KENDİLİĞİNDEN açık gelsin (bir kez). Yönetici yazabilir (canText)
@@ -36,7 +38,7 @@ interface Props {
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, chatOff = false, chatOffName = null, readOnly = false, autoOpen = false, onNameClick, onReport }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false, notice = null, chatOff = false, chatOffName = null, onChatToggle, readOnly = false, autoOpen = false, onNameClick, onReport }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Küfür şikayeti iki adımlı: idle -> (Şikayet Et) -> confirm (Son 10 satır gönderilir: Gönder/Vazgeç) -> sent.
@@ -258,6 +260,16 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
               </>
             )}
           </div>}
+
+          {/* Sohbeti Kapat/Aç (panel içi): açıkken "Kapat", ben kapattıysam "Aç". Rakip kapattıysa
+              buton verilmez (açamam), yalnız yukarıdaki uyarı görünür. Oyun menüsündeki toggle ile aynı. */}
+          {!readOnly && loggedIn && onChatToggle && (
+            <div className="chat-closebar">
+              <button type="button" className="chat-close-toggle" onClick={onChatToggle}>
+                <Icon name={chatOff ? 'chat' : 'x'} size={14} /> {chatOff ? t('chat.reopen') : t('chat.close')}
+              </button>
+            </div>
+          )}
 
           {/* KÜFÜR ŞİKAYETİ (iki adımlı): yalnız oyuncu (readOnly değil) + giriş + onReport verilmişse. */}
           {!readOnly && loggedIn && onReport && (

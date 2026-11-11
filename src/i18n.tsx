@@ -2110,6 +2110,8 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'chat.disabledBy': '{name} sohbet etmek istemiyor',
   'chat.you': 'Sen',
   'chat.opponent': 'Rakip',
+  'chat.close': 'Sohbeti Kapat',
+  'chat.reopen': 'Sohbeti Aç',
   // Küfür yaptırımı (kırmızı küçük uyarı)
   'chat.profanityFirst': '⚠️ Küfür yasak. Mesajın sansürlendi. Tekrar edersen 24 saat konuşma yasağı alırsın (sonra 1 hafta, 1 ay, 1 yıl).',
   'chat.profanity': '⚠️ Küfür yasak. Mesajın sansürlendi ve {ban} konuşma yasağı aldın. Tekrarında sırasıyla 1 hafta, 1 ay, 1 yıl yasak uygulanır.',
@@ -4361,6 +4363,8 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   'chat.disabledBy': '{name} doesn’t want to chat',
   'chat.you': 'You',
   'chat.opponent': 'Opponent',
+  'chat.close': 'Disable chat',
+  'chat.reopen': 'Enable chat',
   // Profanity enforcement (small red warning)
   'chat.profanityFirst': '⚠️ Profanity is not allowed. Your message was censored. Do it again and you get a 24-hour chat ban (then 1 week, 1 month, 1 year).',
   'chat.profanity': '⚠️ Profanity is not allowed. Your message was censored and you received a {ban} chat ban. Repeats escalate to 1 week, 1 month, 1 year.',
