@@ -15,6 +15,11 @@ export default defineConfig({
   },
   plugins: [react(), tailwindcss()],
   server: {
+    // Tek dev server garantisi: 5173 doluysa sessizce 5174'e KAYMA, hata ver.
+    // Aksi halde her 'npm run dev' eskisini öldürmeden yeni server açar -> zombi vite birikir
+    // -> commit/pagefile tükenir -> PhpStorm native-OOM ile kendini kapatır (2026-11-12 vakası).
+    port: 5173,
+    strictPort: true,
     // Yalnız DEV: giriş modülünü sunucu açılınca önceden derle -> ilk goto soğuk-derleme beklemesin
     // (E2E ilk navigasyon 45 sn timeout'u). Üretim build'ini etkilemez.
     warmup: { clientFiles: ['./src/main.tsx'] },
