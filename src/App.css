@@ -1650,8 +1650,8 @@ button[aria-disabled='true'],
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 54px;
-  padding: 7px 6px;
+  min-height: 66px;
+  padding: 14px 6px;
 }
 .duel-len-n {
   font-size: 1.15rem;
