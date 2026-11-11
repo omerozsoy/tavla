@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\TeamMatch;
+use App\Support\TeamLeague\TeamSeason;
 use App\Support\TeamLeague\TeamService;
 use App\Support\TeamLeague\TeamStandings;
 use Illuminate\Console\Command;
@@ -25,11 +26,13 @@ class TeamLeagueMaintenance extends Command
         $this->safe(fn () => $svc->premiumGraceSweep());
         $this->safe(fn () => $svc->founderInactivitySweep());
 
-        // Geçen ay: o aya ait süren karşılaşma kalmadıysa ödülleri kesinleştir (§10 "sonuçlanınca").
-        $prev = now()->subMonthNoOverflow()->format('Y-m');
-        $pending = TeamMatch::where('month_key', $prev)->whereIn('status', ['proposed', 'scheduled', 'live'])->exists();
+        // BİTEN sezon: önceki sezonun süren karşılaşması kalmadıysa şampiyon kaydı + ödülleri
+        // kesinleştir (§10 "sonuçlanınca", sezon sonu). Idempotent (firstOrCreate) → her gün güvenle.
+        $prevSeason = TeamSeason::prevKey();
+        $pending = TeamMatch::whereIn('month_key', TeamSeason::monthKeys($prevSeason))
+            ->whereIn('status', ['proposed', 'scheduled', 'live'])->exists();
         if (! $pending) {
-            $this->safe(fn () => app(TeamStandings::class)->distributeMonthlyAwards($prev));
+            $this->safe(fn () => app(TeamStandings::class)->distributeSeasonAwards($prevSeason));
         }
 
         return self::SUCCESS;

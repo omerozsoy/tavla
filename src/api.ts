@@ -1618,7 +1618,7 @@ export interface TeamMe {
   eligibility: { premium: boolean; rated_matches: number; min_rated: number; cooldown_until?: string | null; can_create: boolean; found_cost: number }
 }
 export interface TeamDetail {
-  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; has_pending_logo?: boolean; awards: Array<{ month_key: string; rank: number; kind: string }> }
+  team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; has_pending_logo?: boolean; awards: Array<{ season: string; season_name: string; rank: number; points: number }> }
   members: Array<{ role: string; user: TeamUserBrief; premium_grace_until?: string | null }>
   matches: TeamMatchRow[]
 }
@@ -1626,8 +1626,15 @@ export interface TeamDetail {
 export async function getTeams(q?: string): Promise<{ ranking?: TeamRankRow[]; results?: TeamBrief[]; rules?: TeamRulesInfo }> {
   return req('/teams' + (q ? '?q=' + encodeURIComponent(q) : ''))
 }
-export async function getTeamsMonthly(month?: string): Promise<{ month: string; past_months: string[]; table: TeamMonthlyRow[] }> {
-  return req('/teams/monthly' + (month ? '?month=' + encodeURIComponent(month) : ''))
+export interface TeamSeasonChampionRow {
+  season: string; season_name: string; team_id: number; team_name: string | null; points: number
+}
+// Takımlar Ligi SEZON sıralaması (3 aylık). Endpoint adı /teams/monthly (geriye uyum) ama içerik sezon.
+export async function getTeamsMonthly(season?: string): Promise<{
+  season: string; season_name: string; season_start: string; season_end: string
+  past_seasons: string[]; champions: TeamSeasonChampionRow[]; table: TeamMonthlyRow[]
+}> {
+  return req('/teams/monthly' + (season ? '?season=' + encodeURIComponent(season) : ''))
 }
 /** Site geneli id→etiket haritası (isim yanında [ETİKET]) — /roles deseni. */
 export interface TeamTagInfo { tag: string; name?: string | null; logo?: string | null; color1: string; color2: string }

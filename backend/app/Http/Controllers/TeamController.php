@@ -11,12 +11,14 @@ use App\Models\TeamMatchGame;
 use App\Models\TeamMatchLineup;
 use App\Models\TeamMember;
 use App\Models\TeamMessage;
+use App\Models\TeamSeasonChampion;
 use App\Models\User;
 use App\Support\AvatarStore;
 use App\Support\ChatModeration;
 use App\Support\TeamLeague\TeamException;
 use App\Support\TeamLeague\TeamMatchRuntime;
 use App\Support\TeamLeague\TeamRules;
+use App\Support\TeamLeague\TeamSeason;
 use App\Support\TeamLeague\TeamService;
 use App\Support\TeamLeague\TeamStandings;
 use Illuminate\Http\JsonResponse;
@@ -58,18 +60,39 @@ class TeamController extends Controller
         ]);
     }
 
-    /** Aylık meydan okuma sıralaması + geçmiş aylar listesi. */
+    /** SEZON meydan okuma sıralaması (3 aylık) + geçmiş sezonlar + sezon şampiyonları (§10). */
     public function monthly(Request $request): JsonResponse
     {
-        $month = (string) $request->query('month', now()->format('Y-m'));
-        $rows = app(TeamStandings::class)->monthlyTable($month);
+        $season = (string) $request->query('season', $request->query('month', TeamSeason::currentKey()));
+        // Eski istemci "month" (YYYY-MM) gönderirse ilgili sezona çevir (geriye uyum).
+        if (preg_match('/^\d{4}-\d{2}$/', $season)) {
+            $season = TeamSeason::keyOf(Carbon::createFromFormat('Y-m', $season));
+        }
+        $rows = app(TeamStandings::class)->seasonTable($season);
         $teams = Team::whereIn('id', array_map(fn ($r) => $r['team_id'], $rows))->get()->keyBy('id');
-        $months = TeamMatch::where('status', 'finished')->whereNotNull('month_key')
-            ->distinct()->orderByDesc('month_key')->limit(24)->pluck('month_key')->all();
+
+        // Geçmiş sezonlar: maçı olan ay anahtarlarından türetilmiş benzersiz sezonlar (yeni -> eski).
+        $pastSeasons = collect(TeamMatch::where('status', 'finished')->whereNotNull('month_key')->distinct()->pluck('month_key'))
+            ->map(fn ($mk) => TeamSeason::keyOf(Carbon::createFromFormat('Y-m', $mk)))
+            ->unique()->sortDesc()->values()->all();
+
+        // Geçmiş sezon ŞAMPİYONLARI (kalıcı kayıt, puanıyla) — en yeni sezon üstte.
+        $champions = TeamSeasonChampion::where('rank', 1)->orderByDesc('season_key')->limit(12)->get()
+            ->map(fn ($c) => [
+                'season' => $c->season_key,
+                'season_name' => TeamSeason::name($c->season_key),
+                'team_id' => (int) $c->team_id,
+                'team_name' => $c->team_name,
+                'points' => (int) $c->points,
+            ])->all();
 
         return response()->json([
-            'month' => $month,
-            'past_months' => $months,
+            'season' => $season,
+            'season_name' => TeamSeason::name($season),
+            'season_start' => TeamSeason::start($season)->toIso8601String(),
+            'season_end' => TeamSeason::end($season)->toIso8601String(),
+            'past_seasons' => $pastSeasons,
+            'champions' => $champions,
             'table' => array_map(fn ($r) => [
                 'rank' => $r['rank'], 'team' => isset($teams[$r['team_id']]) ? $this->teamBrief($teams[$r['team_id']]) : null,
                 'points' => $r['pts'], 'match_diff' => $r['diff'], 'team_wins' => $r['wins'], 'played' => $r['played'],
@@ -95,8 +118,8 @@ class TeamController extends Controller
                 'applications_open' => (bool) $team->applications_open,
                 'min_apply_rating' => $team->min_apply_rating,
                 'has_pending_logo' => $isManager && ! empty($team->logo_pending),
-                'awards' => $team->awards()->orderByDesc('month_key')->get()
-                    ->map(fn ($a) => ['month_key' => $a->month_key, 'rank' => $a->rank, 'kind' => $a->kind])->all(),
+                'awards' => TeamSeasonChampion::where('team_id', $team->id)->orderByDesc('season_key')->get()
+                    ->map(fn ($c) => ['season' => $c->season_key, 'season_name' => TeamSeason::name($c->season_key), 'rank' => (int) $c->rank, 'points' => (int) $c->points])->all(),
             ]),
             'members' => $members->sortBy(fn ($m) => $roleRank[$m->role] ?? 9)->values()->map(fn ($m) => [
                 'role' => $m->role, 'user' => $users[$m->user_id] ?? ['id' => $m->user_id],

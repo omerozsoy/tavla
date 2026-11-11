@@ -159,9 +159,8 @@ class TeamMatchRuntime
                 $this->teams->recompute($t);
             }
         }
-        if ($m->month_key) {
-            app(TeamStandings::class)->distributeMonthlyAwards($m->month_key);
-        }
+        // Sezon ödülü/şampiyon kaydı maç başına DEĞİL, SEZON SONU dağıtılır (TeamLeagueMaintenance).
+        // Sıralama/puan canlı (TeamStandings::seasonTable) olduğundan burada ödül tetiklemeye gerek yok.
     }
 
     // ---- Kadro (§8) --------------------------------------------------------

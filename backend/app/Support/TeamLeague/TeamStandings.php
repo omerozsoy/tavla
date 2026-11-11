@@ -3,8 +3,8 @@
 namespace App\Support\TeamLeague;
 
 use App\Models\Team;
-use App\Models\TeamAward;
 use App\Models\TeamMatch;
+use App\Models\TeamSeasonChampion;
 use Illuminate\Support\Carbon;
 
 /**
@@ -53,9 +53,9 @@ class TeamStandings
      *
      * @return list<array{team_id: int, pts: int, diff: int, wins: int, played: int, rank: int}>
      */
-    public function monthlyTable(string $monthKey): array
+    public function seasonTable(string $seasonKey): array
     {
-        $matches = TeamMatch::where('month_key', $monthKey)
+        $matches = TeamMatch::whereIn('month_key', TeamSeason::monthKeys($seasonKey))
             ->where('status', 'finished')
             ->whereNotNull('result')
             ->get();
@@ -115,41 +115,41 @@ class TeamStandings
     }
 
     /**
-     * Aylık ödül dağıtımı (§10): ilk üçe kupa, şampiyona bir ay rozet. Ortak dereceler hepsi alır.
-     * Idempotent: unique(team_id, month_key, kind) + firstOrCreate → tekrar çalışınca mükerrer üretmez.
+     * SEZON SONU ödül/kayıt (§10): ilk 3 takım + final puanı team_season_champions'a KALICI yazılır,
+     * şampiyona (1.) SONRAKİ SEZON boyunca rozet. Ortak dereceler hepsi alır. Idempotent:
+     * unique(season_key, team_id) + firstOrCreate → tekrar çalışınca mükerrer kayıt yok. Sezon puanı
+     * runtime (seasonTable) olduğu için sıfırlama GEREKMEZ — yeni sezon farklı month_key'lerle 0'dan.
      *
-     * @return int yeni oluşturulan ödül satırı sayısı
+     * @return int yeni oluşturulan kayıt sayısı
      */
-    public function distributeMonthlyAwards(string $monthKey, ?Carbon $now = null): int
+    public function distributeSeasonAwards(string $seasonKey, ?Carbon $now = null): int
     {
         $now = $now ? $now->copy() : now();
         $created = 0;
-        foreach ($this->monthlyTable($monthKey) as $r) {
+        foreach ($this->seasonTable($seasonKey) as $r) {
             if ($r['rank'] > 3) {
                 continue;
             }
-            $cup = TeamAward::firstOrCreate(
-                ['team_id' => $r['team_id'], 'month_key' => $monthKey, 'kind' => 'cup'],
-                ['rank' => $r['rank'], 'created_at' => $now]
+            $team = Team::find($r['team_id']);
+            $champ = TeamSeasonChampion::firstOrCreate(
+                ['season_key' => $seasonKey, 'team_id' => $r['team_id']],
+                [
+                    'rank' => $r['rank'],
+                    'points' => $r['pts'],
+                    'diff' => (int) round($r['diff']),
+                    'wins' => $r['wins'],
+                    'played' => $r['played'],
+                    'team_name' => $team?->name,
+                    'created_at' => $now,
+                ]
             );
-            if ($cup->wasRecentlyCreated) {
+            if ($champ->wasRecentlyCreated) {
                 $created++;
             }
-            if ($r['rank'] === 1) {
-                $badge = TeamAward::firstOrCreate(
-                    ['team_id' => $r['team_id'], 'month_key' => $monthKey, 'kind' => 'champion_badge'],
-                    ['rank' => 1, 'created_at' => $now]
-                );
-                if ($badge->wasRecentlyCreated) {
-                    $created++;
-                }
-                // Şampiyon rozeti SONRAKİ takvim ayı boyunca (ay+2'nin başına kadar).
-                $team = Team::find($r['team_id']);
-                if ($team) {
-                    $team->champion_badge_until = Carbon::createFromFormat('Y-m', $monthKey)
-                        ->startOfMonth()->addMonthsNoOverflow(2)->startOfMonth();
-                    $team->save();
-                }
+            if ($r['rank'] === 1 && $team) {
+                // Şampiyon rozeti SONRAKİ SEZON boyunca (bu sezon bitişi + 3 ay).
+                $team->champion_badge_until = TeamSeason::end($seasonKey)->addMonthsNoOverflow(3);
+                $team->save();
             }
         }
 

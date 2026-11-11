@@ -443,7 +443,7 @@ class TeamLeagueTest extends TestCase
         TeamMatch::create(['home_team_id' => $a->id, 'away_team_id' => $c->id, 'status' => 'finished',
             'result' => 'double_forfeit', 'home_score' => 0, 'away_score' => 0, 'month_key' => $mk]);
 
-        $table = app(TeamStandings::class)->monthlyTable($mk);
+        $table = app(TeamStandings::class)->seasonTable('2026-sonbahar');
         $byId = [];
         foreach ($table as $r) {
             $byId[$r['team_id']] = $r;
@@ -457,9 +457,9 @@ class TeamLeagueTest extends TestCase
 
         // Ödül dağıtımı idempotent: ikinci çalıştırma yeni kupa üretmez.
         $std = app(TeamStandings::class);
-        $first = $std->distributeMonthlyAwards($mk);
+        $first = $std->distributeSeasonAwards('2026-sonbahar');
         $this->assertGreaterThan(0, $first);
-        $this->assertSame(0, $std->distributeMonthlyAwards($mk), 'tekrar çalışınca mükerrer ödül yok');
+        $this->assertSame(0, $std->distributeSeasonAwards('2026-sonbahar'), 'tekrar çalışınca mükerrer ödül yok');
         $this->assertTrue($a->fresh()->isChampionNow(), 'şampiyon rozeti aktif');
     }
 
@@ -476,7 +476,7 @@ class TeamLeagueTest extends TestCase
         TeamMatch::create(['home_team_id' => $b->id, 'away_team_id' => $y->id, 'status' => 'finished',
             'result' => 'home_win', 'home_score' => 3, 'away_score' => 2, 'month_key' => $mk]);
 
-        app(TeamStandings::class)->distributeMonthlyAwards($mk);
+        app(TeamStandings::class)->distributeSeasonAwards('2026-sonbahar');
         $this->assertTrue($a->fresh()->isChampionNow());
         $this->assertTrue($b->fresh()->isChampionNow());
     }

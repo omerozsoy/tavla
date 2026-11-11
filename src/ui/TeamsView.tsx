@@ -965,9 +965,7 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
           <SLabel count={d.team.awards.length}>{t('teams.awards')}</SLabel>
           {d.team.awards.map((a, i) => (
             <div key={i} style={row}>
-              <span style={{ fontWeight: 600 }}>{a.month_key}</span>
-              <span style={{ flex: 1 }} />
-              <span style={microTag}>{a.kind} · #{a.rank}</span>
+              <span style={{ fontWeight: 600 }}>{a.season_name}</span><span style={{ flex: 1 }} /><span style={microTag}>#{a.rank} . {a.points} puan</span>
             </div>
           ))}
         </section>
