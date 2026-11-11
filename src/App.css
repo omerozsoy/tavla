@@ -23117,6 +23117,10 @@ body.has-bottom-nav {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tp-winner {
+  color: var(--text);
+  font-weight: 700;
+}
 .tp-note {
   margin-top: 8px;
   color: var(--muted);

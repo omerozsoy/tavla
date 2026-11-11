@@ -882,8 +882,15 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               })()
             : null}
 
-          {/* Odul dagilimi (siralamaya gore) */}
-          {active.prizes && active.prizes.length > 0 ? (
+          {/* Odul dagilimi (siralamaya gore) — bittiyse her siraya kazananin adi eklenir */}
+          {active.prizes && active.prizes.length > 0 ? (() => {
+            // Bitmis turnuvada siralama->isim (swiss: final/standings sirasi; diger: bracket sirasi)
+            const winners: string[] = active.status === 'finished'
+              ? active.type === 'swiss_triple'
+                ? (active.swiss?.final || active.swiss?.standings || []).map((r) => r.name || '')
+                : tournStandings(active.bracket).map((id) => active.players?.find((p) => p.id === id)?.name || '')
+              : []
+            return (
             <div className="tourn-prizes">
               <div className="tp-head">
                 <Icon name="medal" size={16} /> {t('tourn.breakdown')}
@@ -892,7 +899,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 {active.prizes.map((pr, i) => (
                   <li key={i} className="tp-row">
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
-                    <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
+                    <span className="tp-desc">
+                      {pr.desc || t('tourn.prizeCoinLbl')}
+                      {winners[i] && <b className="tp-winner"> · {winners[i]}</b>}
+                    </span>
                     <span className="tp-coins">
                       <Coins amount={pr.coins} gain suffix="coin" size={28} />
                     </span>
@@ -901,7 +911,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </ol>
               {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
             </div>
-          ) : (
+            )
+          })() : (
             active.prize_desc && (
               <div className="tourn-prize">
                 <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}: <span>{active.prize_desc}</span>
