@@ -841,8 +841,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               listesi tek blokta). Sıralama backend payPrizes ile birebir (kim ne kazandıysa o). */}
           {active.status === 'finished' && active.type !== 'swiss_triple'
             ? (() => {
+                // Podyumda gosterilecek sira sayisi = dagitilan odul sayisi (yoksa ilk 3)
+                const podiumN = active.prizes?.length || 3
                 const top = tournStandings(active.bracket)
-                  .slice(0, 3)
+                  .slice(0, podiumN)
                   .map((id) => active.players?.find((pl) => pl.id === id))
                   .filter((p): p is NonNullable<typeof p> => !!p)
                 if (top.length === 0) {
@@ -1205,7 +1207,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onProfile(Number(row.id)) } }}
                                   >{String(row.name ?? '')}</span>
                                 ) : String(row.name ?? '')}
-                                {status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}
+                                {isChamp ? <span className="swiss-champ-badge" title="Turnuva şampiyonu">Şampiyon</span> : null}{(row.pr_champion as boolean) ? <span className="swiss-pr-champ" title="En az 3 maç oynayanlar arasında en düşük karar-havuzlu PR">PR Şampiyonu</span> : null}{status !== 'active' && <span className={`swiss-tag swiss-tag-${status}`}>{stLabel(status)}</span>}
                               </td>
                               <td className="swiss-td-lives">{lives}</td>
                               <td>{Number(row.played ?? 0)}</td>
@@ -1213,7 +1215,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                               <td>{losses}</td>
                               <td>{Number(row.byes ?? 0)}</td>
                               <td>{Math.max(0, Number(row.wins ?? 0) - Number(row.realWins ?? 0) - Number(row.byes ?? 0))}</td>
-                              <td className="swiss-td-averaj">{averaj > 0 ? `+${averaj}` : averaj}</td><td className="swiss-td-pr" title={row.pr != null ? `${row.pr_matches} maç · ${row.pr_decisions} karar (karar-havuzlu PR)` : undefined}>{row.pr != null ? Number(row.pr).toFixed(2) : '—'}{(row.pr_champion as boolean) ? <span className="swiss-pr-champ" title="En az 3 maç oynayanlar arasında en düşük karar-havuzlu PR">PR Şampiyonu</span> : null}</td>
+                              <td className="swiss-td-averaj">{averaj > 0 ? `+${averaj}` : averaj}</td><td className="swiss-td-pr" title={row.pr != null ? `${row.pr_matches} maç · ${row.pr_decisions} karar (karar-havuzlu PR)` : undefined}>{row.pr != null ? Number(row.pr).toFixed(2) : '—'}</td>
                             </tr>
                           )
                         })}

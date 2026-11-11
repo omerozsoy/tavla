@@ -28095,6 +28095,18 @@ input:not([type='range']), select, textarea {
 .swiss-pair-live:hover {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
+.swiss-champ-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #4a3600;
+  background: #f5c518;
+  border-radius: 999px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
 .swiss-pr-champ {
   display: inline-block;
   margin-left: 6px;
