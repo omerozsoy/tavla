@@ -8045,6 +8045,12 @@ html[data-board='yilbasi'] .checker.black {
 .bearoff-slot.bottom {
   justify-content: flex-end;
 }
+.bearoff-slot.off-white {
+  background: rgba(8, 16, 12, 0.5);
+}
+.bearoff-slot.off-black {
+  background: rgba(238, 240, 235, 0.62);
+}
 .off-checker {
   width: 100%;
   height: calc(var(--checker) * 0.14); /* ince: 15 pul sabit reserve alanina sigar, uzatmaz */
