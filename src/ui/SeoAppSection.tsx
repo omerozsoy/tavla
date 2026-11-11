@@ -130,31 +130,31 @@ function LigContent() {
 function TakimlarContent() {
   return (
     <div className="info-rich rich">
-      <h2>Takımlar Ligi: 5v5 Online Tavla</h2>
+      <h2>Takımlar Ligi: Takımınla Rekabetçi Online Tavla</h2>
       <p>
-        Takımlar Ligi, beş kişilik takımların birbirine karşı yarıştığı, bireysel lig ve
+        Takımlar Ligi, oyuncuların takım kurup düellolarla puan toplayarak yarıştığı, bireysel lig ve
         turnuvalardan bağımsız bir takım modülüdür. Kendi takımını kurabilir ya da mevcut bir takıma
-        katılabilirsin. Takımlar eşleştiğinde her oyuncu kendi karşılaşmasını oynar; sonuçların
-        toplamı takımının sıralamadaki yerini belirler. Bireysel yeteneğin yanında kadro uyumu ve
-        düzenli katılım da önem kazanır.
+        katılabilirsin. Çevrimiçi başka bir takımlı oyuncuya düello açarsın; kazandığın maç uzunluğu
+        kadar düello puanı hem sana hem takımına eklenir. Takımlar iki ayrı listede sıralanır: toplam
+        düello puanı ve üye <a href="/lider-tablosu">rating</a> ortalaması.
       </p>
       <ul>
-        <li><strong>Takım kur veya katıl:</strong> Beş kişilik bir kadro oluştur ya da hazır bir takıma dahil ol.</li>
-        <li><strong>Ortalama rating:</strong> Takım sıralaması, yeterli üyeye sahip takımların üye <a href="/lider-tablosu">rating</a> ortalamasına göre belirlenir.</li>
-        <li><strong>Aylık ödüller:</strong> Her ay sıralamaya göre ödüller dağıtılır; takımlar yeni ay için yeniden yarışır.</li>
-        <li><strong>Gerçek maçlar:</strong> Takım karşılaşmaları canlı <a href="/online-tavla">online tavla</a> maçlarıyla oynanır.</li>
+        <li><strong>Takım kur veya katıl:</strong> Premium üyelik + en az 20 tamamlanmış puanlı maç + 10.000 coin ile takım kurabilir ya da hazır bir takıma katılabilirsin. Bir takım en fazla 12 üye alır (1 kurucu + 2 yardımcı).</li>
+        <li><strong>Düello puanı:</strong> Üyeler çevrimiçi takımlı oyunculara 1v1 düello açar (1, 3 veya 5 puanlık); kazanan, maç uzunluğu kadar puanı takımına kazandırır.</li>
+        <li><strong>Rating ortalaması:</strong> Takım, yeterli üyeye ulaştığında üyelerinin <a href="/lider-tablosu">rating</a> ortalamasıyla da sıralanır.</li>
+        <li><strong>Gerçek maçlar:</strong> Düellolar canlı <a href="/online-tavla">online tavla</a> maçlarıyla oynanır; coin veya bahis yoktur, bireysel rating etkilenmez.</li>
       </ul>
       <h3>Takım sıralaması nasıl belirlenir?</h3>
       <p>
-        Sıralama, takımın belirli bir üye sayısına ulaştıktan sonra üyelerinin rating ortalamasına ve
-        oynanan takım maçlarının sonuçlarına göre hesaplanır. Böylece hem güçlü bir kadro kurmak hem
-        de düzenli maç yapmak önemlidir.
+        İki ayrı liste tutulur: üyelerin topladığı toplam düello puanı ve takımın üye rating ortalaması.
+        Böylece hem düzenli düello yapmak hem de güçlü bir kadro kurmak önem kazanır.
       </p>
       <h3>Takım kurmak ücretli mi?</h3>
       <p>
-        Takım kurma ve yönetim işlemleri oyun içi jeton ekonomisiyle yürür; ayrıntıları takım kurma
-        ekranında görürsün. Tavlanı geliştirmek istersen <a href="/nasil-oynanir">tavla nasıl oynanır</a>{' '}
-        rehberiyle temelleri tazeleyebilirsin.
+        Takım kurmak için Premium üyelik, en az 20 tamamlanmış puanlı maç ve 10.000 coin gerekir; coin
+        yalnız kuruluş başarılı olursa bir kez kesilir. Ad ve etiket değişikliği kurucuya ücretsizdir.
+        Tavlanı geliştirmek istersen <a href="/nasil-oynanir">tavla nasıl oynanır</a> rehberiyle
+        temelleri tazeleyebilirsin.
       </p>
     </div>
   )

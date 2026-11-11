@@ -198,6 +198,54 @@ export default function TeamsView(props: Props) {
   )
 }
 
+// ---- Sezon başlığı + bitişe geri sayım -----------------------------------------
+// Sezon = takvim çeyreği (Kış Oca-Mar, İlkbahar Nis-Haz, Yaz Tem-Eyl, Sonbahar Eki-Ara).
+// Bitiş = sonraki çeyreğin 1'i 00:00 (ör. Sonbahar 2026 -> 1 Oca 2027 00:00). Backend
+// TeamSeason.php ile aynı sınır; istemcide hesaplanır, ekstra istek yok.
+function SeasonBanner() {
+  const { t } = useT()
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const q = Math.floor(now.getMonth() / 3)
+  const names = [t('teams.season.q0'), t('teams.season.q1'), t('teams.season.q2'), t('teams.season.q3')]
+  const seasonName = `${names[q]} ${now.getFullYear()}`
+  const end = new Date(now.getFullYear(), q * 3 + 3, 1, 0, 0, 0, 0)
+  const ms = Math.max(0, end.getTime() - now.getTime())
+  const d = Math.floor(ms / 86400000)
+  const h = Math.floor((ms % 86400000) / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  const s = Math.floor((ms % 60000) / 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(168,58,43,0.14), rgba(168,58,43,0.04))',
+      border: '1px solid rgba(168,58,43,0.35)', borderRadius: 12,
+      padding: '12px 16px', marginBottom: 14,
+      display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 auto' }}>
+        <Icon name="laurel-wreath" size={26} />
+        <div>
+          <div style={{ fontSize: 11, opacity: 0.7, textTransform: 'uppercase', letterSpacing: 0.6 }}>{t('teams.season.active')}</div>
+          <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.1 }}>{seasonName}</div>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 11, opacity: 0.7 }}>{t('teams.season.endsIn')}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+          {d > 0 ? `${d} ${t('teams.season.days')} ` : ''}{pad(h)}:{pad(m)}:{pad(s)}
+        </div>
+      </div>
+      <div style={{ flexBasis: '100%', fontSize: 12.5, opacity: 0.75, textAlign: 'center' }}>
+        {t('teams.season.champNote')}
+      </div>
+    </div>
+  )
+}
+
 // ---- Genel bakış: sıralama + arama + takımım özeti/kurma -----------------------
 function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
@@ -242,6 +290,7 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
 
   return (
     <div>
+      <SeasonBanner />
       {/* Başlık + sağ üstte küçük "Takım ara" (liderlik tablosu düzeni). */}
       <div className="trank-head">
         <h3>{t('teams.rankTitle')}</h3>
