@@ -839,11 +839,15 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
           {/* PODYUM: finalde ilk 3 — altın/gümüş/bronz taç + kazandıkları ödül (bracket + kazanan
               listesi tek blokta). Sıralama backend payPrizes ile birebir (kim ne kazandıysa o). */}
-          {active.status === 'finished' && active.type !== 'swiss_triple'
+          {active.status === 'finished'
             ? (() => {
                 // Podyumda gosterilecek sira sayisi = dagitilan odul sayisi (yoksa ilk 3)
                 const podiumN = active.prizes?.length || 3
-                const top = tournStandings(active.bracket)
+                // Siralama: swiss -> final/standings (rank sirasi); diger -> bracket
+                const rankedIds = active.type === 'swiss_triple'
+                  ? (active.swiss?.final || active.swiss?.standings || []).map((r) => r.id)
+                  : tournStandings(active.bracket)
+                const top = rankedIds
                   .slice(0, podiumN)
                   .map((id) => active.players?.find((pl) => pl.id === id))
                   .filter((p): p is NonNullable<typeof p> => !!p)
@@ -884,41 +888,26 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               })()
             : null}
 
-          {/* Odul dagilimi (siralamaya gore) — bittiyse her siraya kazananin adi eklenir */}
-          {active.prizes && active.prizes.length > 0 ? (() => {
-            // Bitmis turnuvada siralama->kazanan id (swiss: final/standings sirasi; diger: bracket sirasi).
-            // Oyuncu nesnesi active.players'tan bulunur (avatar/rating/premium -> PlayerIdentity, podyumla ayni dil).
-            const winnerIds: number[] = active.status === 'finished'
-              ? active.type === 'swiss_triple'
-                ? (active.swiss?.final || active.swiss?.standings || []).map((r) => r.id)
-                : tournStandings(active.bracket)
-              : []
-            return (
+          {/* Odul dagilimi (siralamaya gore) — yalniz odul listesi, isim YOK (kazananlar podyumda) */}
+          {active.prizes && active.prizes.length > 0 ? (
             <div className="tourn-prizes">
               <div className="tp-head">
                 <Icon name="medal" size={16} /> {t('tourn.breakdown')}
               </div>
               <ol className="tp-list">
-                {active.prizes.map((pr, i) => {
-                  const w = winnerIds[i] ? active.players?.find((p) => p.id === winnerIds[i]) : undefined
-                  return (
+                {active.prizes.map((pr, i) => (
                   <li key={i} className="tp-row">
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
-                    {w ? (
-                      <PlayerIdentity userId={w.id} name={w.name} rating={w.rating} avatar={w.avatar} size={28} rankSize="sm" premium={w.premium} onClick={onProfile ? () => onProfile(w.id) : undefined} />
-                    ) : null}
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
                       <Coins amount={pr.coins} gain suffix="coin" size={28} />
                     </span>
                   </li>
-                  )
-                })}
+                ))}
               </ol>
               {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
             </div>
-            )
-          })() : (
+          ) : (
             active.prize_desc && (
               <div className="tourn-prize">
                 <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}: <span>{active.prize_desc}</span>
