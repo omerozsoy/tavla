@@ -1237,7 +1237,7 @@ export default function Auth({
         {editUser && onResetProfile && (
           <>
             <Separator className="my-6" />
-            <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
               <h3 className="flex items-center gap-1.5 text-sm font-normal text-destructive">
                 <Icon name="alert" size={15} /> {resetTx.title}
               </h3>
@@ -1263,7 +1263,7 @@ export default function Auth({
         {editUser && onDeleteAccount && (
           <>
             <Separator className="my-6" />
-            <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
               <h3 className="text-sm font-normal text-destructive">{danger.zone}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{danger.desc}</p>
               <div className="mt-4">
