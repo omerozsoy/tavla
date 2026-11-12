@@ -25,8 +25,10 @@ function PlayerTeam({ userId }: { userId: number }) {
 
 type Target = { id: number; name: string; avatar?: string | null; rating?: number | null }
 const DUEL_LENGTHS = [1, 3, 5]
-// Sabit düello bahsi — backend config/game.php `duel_stake` ile AYNI tutulmalı (değişirse ikisini de güncelle).
+// Sabit düello bahsi + rating deltası — backend config/game.php `duel_stake` / `duel_rating_delta`
+// ile AYNI tutulmalı (değişirse ikisini de güncelle).
 const DUEL_STAKE = 25
+const DUEL_RATING = 10
 
 interface BoardColors {
   id?: string
@@ -115,11 +117,18 @@ export default function DuelView({ currentId, preselect, onClose, onDuel, board,
           </h2>
           <p className="setup-unrated-hint">{t('duel.intro')}</p>
 
-          {/* Belirgin bahis rozeti: telefonda da "25 coin" net görünsün (paragraf gözden kaçmasın). */}
+          {/* Belirgin bahis + rating rozeti: telefonda da net görünsün (paragraf gözden kaçmasın). */}
           <div className="duel-stake-badge" role="note">
-            <Icon name="coin" size={22} aria-hidden="true" />
-            <span className="duel-stake-amt">{DUEL_STAKE} coin</span>
-            <span className="duel-stake-note">{t('duel.stakeNote')}</span>
+            <span className="duel-stake-item">
+              <Icon name="coin" size={20} aria-hidden="true" />
+              <span className="duel-stake-amt">{DUEL_STAKE} coin</span>
+              <span className="duel-stake-note">{t('duel.stakeNote')}</span>
+            </span>
+            <span className="duel-stake-item duel-stake-rating">
+              <Icon name="chart-line" size={18} aria-hidden="true" />
+              <span className="duel-stake-amt">+{DUEL_RATING} / −{DUEL_RATING}</span>
+              <span className="duel-stake-note">{t('duel.ratingNote')}</span>
+            </span>
           </div>
 
           {/* Takımsız kullanıcı: düello takımlılar arası -> "Takım Kur" uyarısı. */}
