@@ -343,7 +343,7 @@ export default function MatchReport({
   }
 
   return (
-    <div className="register-overlay modal report-overlay" onClick={onClose}>
+    <div className={`register-overlay modal report-overlay${mode === 'analysis' ? ' report-full' : ''}`} onClick={onClose}>
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
         <div className="report-head">
           <h2>
