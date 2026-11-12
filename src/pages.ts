@@ -67,9 +67,8 @@ export const PAGES: PageDef[] = [
 
   // --- DERSLER VE EĞİTİM: interaktif tavla eğitimi (herkese açık, giriş gerekmez) ---
   // Tavla Eğitimi: zar atılır, oyuncu hamlesini oynar; en iyi hamleye (sinir ağı) yakınsa geçer,
-  // değilse doğru hamle tahtada oklarla gösterilir. Nasıl Oynanır: mevcut statik Lessons dersi.
+  // değilse doğru hamle tahtada oklarla gösterilir.
   { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
-  { key: 'lessons', slug: 'dersler', labelKey: 'menu.lessons', icon: 'book', group: 'lessons', hideInGame: true },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },
@@ -116,7 +115,7 @@ export const PAGES: PageDef[] = [
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
 export const PAGE_BY_SLUG: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.slug, p]))
-export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'league', 'compete', 'fun', 'lessons', 'content', 'tools', 'account', 'info']
+export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'league', 'compete', 'lessons', 'fun', 'content', 'tools', 'account', 'info']
 
 // Grup basligi i18n anahtari (sol menude gorunur, silik buyuk-harf). null -> baslik cizilmez.
 // NOT: bunlar VARSAYILAN; admin "Sol Menu" panelinden grup/ad/sira override edilebilir.

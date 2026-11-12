@@ -190,7 +190,7 @@ Route::fallback(function (Request $request) {
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi', 'kiz-tavlasi',
         'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'makaleler', 'haberler', 'blog', 'tavla-magazin',
-        'urunler', 'hizmetler', 'nasil-oynanir', 'tavla-rehberi', 'turnuva-kurallari', 'sikca-sorulan-sorular', 'dersler', 'bulmaca',
+        'urunler', 'hizmetler', 'nasil-oynanir', 'tavla-rehberi', 'turnuva-kurallari', 'sikca-sorulan-sorular', 'dersler', 'tavla-egitimi', 'bulmaca',
         'pozisyon-analizi', 'mat-analiz', 'basarimlar', 'hata-gunlugu', 'mac-analizleri', 'mac-analizleri-detay',
         'oyun-onizleme', 'cerceve-anim', 'adillik',
         'uyelik', 'magaza', 'pul-tasarimlari', 'siparislerim', 'sepet', 'teslimat-bilgileri', 'odeme', 'kart-odeme', 'cerceveler',
