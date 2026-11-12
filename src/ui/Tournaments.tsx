@@ -1487,7 +1487,14 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   }
 
   // Aktif (open/running) ile BİTEN (finished) turnuvalari ayir: biten "Geçmiş"te.
-  const activeList = list.filter((tr) => tr.status !== 'finished')
+  // Aktifler: başlama zamanı EN YAKIN olan (süresi en az kalan) en üstte (starts_at artan).
+  const activeList = list
+    .filter((tr) => tr.status !== 'finished')
+    .sort(
+      (a, b) =>
+        (a.starts_at ? new Date(a.starts_at).getTime() : Infinity) -
+        (b.starts_at ? new Date(b.starts_at).getTime() : Infinity),
+    )
   const pastList = list.filter((tr) => tr.status === 'finished')
 
   // Tek turnuva karti (aktif + gecmis listelerinde ortak render).
@@ -1784,7 +1791,11 @@ function WeekCalendar({ list, lang, onOpen }: {
                       </div>
                       <span className="twc-name">{tr.name}</span>
                       <div className="twc-foot">
-                        <span className="twc-left tnum"><Icon name="clock" size={11} /> {left}</span>
+                        {tr.status === 'open' && ms > 0 ? (
+                          <Countdown target={tr.starts_at!} className="twc-left twc-cd tnum" />
+                        ) : (
+                          <span className="twc-left tnum"><Icon name="clock" size={11} /> {left}</span>
+                        )}
                         <button
                           type="button"
                           className="twc-go"

@@ -15075,10 +15075,17 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  flex-wrap: wrap; /* canli sayac genis olabilir -> dugme alt satira sarsin, tasmasin */
+  gap: 4px 6px;
   width: 100%;
   margin-top: 2px;
 }
+/* Takvim chip'inde canli geri sayim: ufak + accent (tiklayan sayac). */
+.twc-cd {
+  font-size: 0.62rem;
+  color: var(--accent);
+}
+.twc-cd.starting { color: var(--color-success); }
 .twc-left {
   display: inline-flex;
   align-items: center;
