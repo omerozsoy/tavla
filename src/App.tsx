@@ -1813,12 +1813,19 @@ export default function App() {
           setMatchHistOpen(true)
           break
         }
-        case 'mac-analizleri-detay':
-          // Hamle Analizi detayı: seçili maç verisi bellekte -> taze yüklemede yok.
-          // Maç Analizleri LİSTESİNE düş (home değil), URL'i düzelt.
-          setMatchHistOpen(true)
-          try { window.history.replaceState(null, '', '/mac-analizleri') } catch { /* no-op */ }
+        case 'mac-analizleri-detay': {
+          // GERÇEK sayfa: /mac-analizleri-detay/<id> -> o maçı initialMatchId ile aç (MatchAnalytics
+          // log varsa raporu otomatik açar). id yoksa (çıplak) -> liste + URL'i düzelt.
+          const mid = /^\d+$/.test(seg[1] || '') ? parseInt(seg[1], 10) : null
+          if (mid != null) {
+            setMatchHistInitialId(mid)
+            setMatchHistOpen(true)
+          } else {
+            setMatchHistOpen(true)
+            try { window.history.replaceState(null, '', '/mac-analizleri') } catch { /* no-op */ }
+          }
           break
+        }
         case 'cerceve-anim':
           setFrameAnimOpen(true)
           break
@@ -10770,7 +10777,9 @@ export default function App() {
     analysisPrevHomeRef.current = home
     setResultView('analysis')
     setHome(true)
-    try { window.history.pushState(null, '', '/mac-analizleri-detay') } catch { /* no-op */ }
+    // Sunucu analiz id'si varsa GERÇEK sayfa (refresh -> Maç Analizleri'nde o maçı açar); yoksa çıplak.
+    const id = matchResultIdRef.current
+    try { window.history.pushState(null, '', id ? `/mac-analizleri-detay/${id}` : '/mac-analizleri-detay') } catch { /* no-op */ }
   }
   const closeAnalysisPage = () => {
     const backToGame = analysisPrevHomeRef.current === false

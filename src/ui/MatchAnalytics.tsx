@@ -180,9 +180,11 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const authOpp = { pr: prNz(m.opponent_gnubg_pr), checker: prNz(m.opponent_gnubg_checker_pr), cube: m.opponent_gnubg_cube_pr ?? null }
       const authPr = hc === 'white' ? { white: authSelf, black: authOpp } : { white: authOpp, black: authSelf }
       setReport({ id: m.id, log, hc, matchLength, whiteName, blackName, classic: m.classic, matchResult, luck, authPr })
-      // Hamle Analizi = sayfa içi detay -> URL'i /mac-analizleri-detay yap (yalnız tam analiz görünümü).
+      // Hamle Analizi = GERÇEK sayfa (refresh'te açılır): URL maç id'si taşır -> /mac-analizleri-detay/<id>.
+      // applyFromPath bu id ile MatchAnalytics'i initialMatchId'le açar -> otomatik bu maçın raporu.
       if (v === 'report') {
-        try { window.history.pushState(null, '', '/mac-analizleri-detay') } catch { /* no-op */ }
+        const target = `/mac-analizleri-detay/${m.id}`
+        try { if (window.location.pathname !== target) window.history.pushState(null, '', target) } catch { /* no-op */ }
       }
     } catch {
       /* yoksay */
@@ -195,7 +197,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const closeReport = () => {
     setReport(null)
     try {
-      if (window.location.pathname === '/mac-analizleri-detay') {
+      if (window.location.pathname.startsWith('/mac-analizleri-detay')) {
         window.history.replaceState(null, '', '/mac-analizleri')
       }
     } catch { /* no-op */ }
