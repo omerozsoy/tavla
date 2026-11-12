@@ -1,0 +1,150 @@
+/* ============================================================================
+   MOBIL PORTRAIT OYUN EKRANI — YENIDEN TASARIM (prototip v2)
+   Backgammon Galaxy benzeri. YALNIZ .gb-redesign kapsaminda -> production'a sizmaz.
+   Yapi:
+     [ust kontrol: #id ....... hamburger]            (tam ekran YOK)
+     [KIMLIKLER: ust oyuncu | minik Mac Uzunlugu | alt oyuncu]
+     [UST satir:  skor SOL | saat ORTA | tepsi SAG]
+     [BOARD tam genislik, dikeyi doldur]
+     [ALT satir:  skor SOL | saat ORTA | tepsi SAG]
+   ============================================================================ */
+.game-area.gb-redesign {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;   /* dikey ortala (mevcut .game-view .main de ortaladigi icin guvenli) */
+  gap: 5px;
+  width: 100%;
+  padding: 4px 0 8px;   /* YATAY padding YOK -> board enlemesine tam otursun (edge-to-edge) */
+  /* Board'u KARE'ye yaklastir + DIKEYI DOLDUR: sutunlari DARALT (ucgenler ince, pullar genis) ->
+     genislik/yukseklik orani ~1.07 -> tahta hem TAM GENISLIK hem daha UZUN.
+     ⚠ KRITIK: --checker'i da KENDI board-h'imizdan turet. Yoksa App.css :root'ta --checker'i
+     ORIJINAL board-h ile hesaplar, col/bar o eski checker'i kullanir -> board kuculur (279px bug). */
+  /* board-inner genisligi = board-h * 1.073. Viewport'tan 14px pay birak (7px/yan) ->
+     container ne olursa olsun SAGDAN TASMAZ, yine de tam oturur. */
+  --board-h: min(calc((100vw - 14px) / 1.073), calc(100dvh - 160px));
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 0.9);
+  --bar-w: calc(var(--checker) * 1.0);
+}
+
+/* ---- Ust kontrol seridi (mac ID solda, hamburger sagda; TAM EKRAN YOK) ---- */
+.gb-topctl { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px 0; }
+/* NOT: oyun sahnesi (.main.game-scene) DAIMA koyu (#06090f) — site light temada bile. Bu yuzden
+   koyu-zemin uzeri metinler var(--text) DEGIL, acik SABIT renk (gercek .main.game-scene .player-name
+   #f2f5ff ile ayni). Aksi halde light temada metin koyu->gorunmez. */
+.gb-matchid {
+  font-size: 0.72rem; font-weight: 600; color: rgba(230, 238, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px; padding: 3px 10px;
+}
+.gb-ham {
+  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff;
+}
+
+/* ---- Kimlik basligi (Backgammon Galaxy benzeri): sol oyuncu | orta VS kutu | sag oyuncu.
+   BIZDE: AVATAR ustte, ISIM altta, istatistik en altta. ---- */
+.gb-identity {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 10px;
+  padding: 4px 10px 2px;
+}
+.gb-player { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
+
+/* Buyuk yuvarlak avatar + gradyan HALKA cerceve */
+.gb-pav { width: 84px; height: 84px; border-radius: 50%; padding: 3px; flex: none; display: flex; }
+.gb-pav.ring-blue { background: conic-gradient(from 220deg, #8fbcff, #30508f 34%, #121a30 64%, #8fbcff); }
+.gb-pav.ring-gold { background: conic-gradient(from 220deg, #ffda70, #9a771f 40%, #3a2e0e 68%, #ffda70); }
+.gb-pav-inner {
+  flex: 1; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: #121725; border: 2px solid #0a0e18; color: #e8eeff;
+}
+.gb-pav-inner img { width: 100%; height: 100%; object-fit: cover; }
+
+.gb-pname { font-weight: 800; font-size: 0.92rem; color: #f2f5ff; text-align: center; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gb-pstats { display: flex; align-items: center; gap: 9px; font-size: 0.78rem; font-weight: 700; color: rgba(220, 230, 255, 0.78); }
+.gb-pstats .gb-stat { display: flex; align-items: center; gap: 3px; }
+.gb-pstats .gb-stat svg { opacity: 0.9; }
+.gb-aipill {
+  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px; padding: 2px 11px; font-size: 0.72rem; font-weight: 700; color: #dfe8ff;
+}
+
+/* Orta: skor/uzunluk kutusu + VS pullar */
+.gb-center { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 6px; }
+.gb-vsbox {
+  background: rgba(255, 255, 255, 0.055); border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px; padding: 7px 15px; display: flex; flex-direction: column; gap: 3px; align-items: center;
+}
+.gb-vsrow { display: flex; align-items: center; gap: 6px; color: #f2f5ff; font-weight: 800; font-size: 0.92rem; }
+.gb-vsrow .gb-vslbl { color: rgba(220, 230, 255, 0.55); font-weight: 600; font-size: 0.72rem; }
+.gb-vs { display: flex; align-items: center; gap: 9px; }
+.gb-vs-chk { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.gb-vs-chk.white { background: #f4efe6; }
+.gb-vs-chk.navy { background: #2b3a66; }
+.gb-vs-txt { color: rgba(220, 230, 255, 0.7); font-weight: 800; font-size: 0.82rem; }
+
+/* ---- Oyuncu satiri: skor SOL | saat ORTA | tepsi SAG ---- */
+.gb-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;   /* skor(sol) | saat(orta, kesin) | tepsi(sag) */
+  align-items: center;
+  width: 100%;
+  padding: 0 8px;
+}
+.gb-scorewrap { justify-self: start; display: flex; align-items: center; gap: 7px; }
+.gb-score {
+  min-width: 40px; text-align: center; font-weight: 800; font-size: 1.25rem;
+  background: #f4f1ea; border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 9px; padding: 3px 11px; color: #1a1a1a;   /* beyaz kutu + koyu metin (tema-bagimsiz) */
+}
+/* KUP alininca sahibin SKORUNUN YANINDA belirir (board merkezinden buraya duser). */
+.gb-cube {
+  width: 34px; height: 34px; border-radius: 7px;
+  background: var(--cube-bg, #f4efe6); color: var(--cube-text, #1a1a1a);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1.05rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Saat: TAM ORTA (board merkeziyle hizali). TUR SURESI (yesil) SOLDA, bank sagda (image #9 gibi). */
+.gbc {
+  justify-self: center;
+  display: flex; align-items: stretch; overflow: hidden;
+  background: #2a2f3a; color: #fff;
+  border-radius: 9px;
+}
+.gbc-move {   /* SOL: tur/hamle suresi — yesil kutu */
+  display: flex; align-items: center; justify-content: center;
+  background: #2ea043; color: #fff;
+  font-size: 1.02rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  padding: 4px 10px; min-width: 26px;
+}
+.gbc-bank {   /* SAG: rezerv (bank) suresi */
+  display: flex; align-items: center;
+  font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  padding: 4px 11px;
+}
+.gbc.low .gbc-move { background: #c0392b; }
+.gbc:not(.on) { opacity: 0.6; }
+.gbc:not(.on) .gbc-move { background: #566; }
+
+/* Tepsi SAG. ZIT ZEMIN: beyaz toplayan -> SIYAH zemin, siyah toplayan -> BEYAZ zemin. */
+.gbt {
+  justify-self: end;
+  display: flex; align-items: center; gap: 5px;
+  border-radius: 8px; padding: 3px 7px;
+}
+.gbt-white { background: var(--navy); }   /* beyaz pullar siyah zeminde */
+.gbt-black { background: var(--cream); }   /* siyah pullar beyaz zeminde */
+.gbt-stack { display: flex; align-items: center; }
+.gbt-chk { width: 5px; height: 18px; border-radius: 2px; margin-left: -1px; flex: none; }
+.gbt-chk.white { background: var(--cream); box-shadow: 0 0 0 1px color-mix(in srgb, var(--navy) 35%, transparent); }
+.gbt-chk.black { background: var(--navy); box-shadow: 0 0 0 1px color-mix(in srgb, var(--cream) 38%, transparent); }
+.gbt-count { font-weight: 800; font-size: 0.82rem; min-width: 14px; text-align: right; }
+.gbt-white .gbt-count { color: var(--cream); }
+.gbt-black .gbt-count { color: var(--navy); }
+
+/* BOARD tam genislik: sag bearoff kolonunu kaldir */
+.gb-redesign .board { grid-template-columns: 1fr; width: 100%; }
+.gb-redesign .bearoff { display: none; }

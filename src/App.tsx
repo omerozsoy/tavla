@@ -546,6 +546,7 @@ function setSeoH1(text: string): void {
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
 import FriendGameSetup from './ui/FriendGameSetup'
+import { GameHudHeader, GameHudRow, useMobilePortrait } from './ui/GameHud'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import MagazaSwiss from './ui/MagazaSwiss'
@@ -7377,6 +7378,10 @@ export default function App() {
     return () => mq.removeEventListener('change', apply)
   }, [])
 
+  // Mobil portrait: oyun ekrani YENIDEN TASARIM HUD'u (avatarlar ustte, skor/saat/tepsi oyuncu
+  // satirlarinda, board tam genislik). Masaustu/yatay klasik Sidebar + ClockStack kullanir.
+  const mobilePortrait = useMobilePortrait()
+
   // NATIVE (Capacitor app): OYUNDA (home=false -> board/mac ekrani) yon kilidi ACIK -> isteyen
   // telefonu DIK tutup oynar, YAN cevirince aninda yatay duzene gecer (web/CSS her iki yonu de
   // destekler). Oyun DISINDA (lobi/menu/sayfalar) DIKEY kilit (mobil tasarim dikey). Tarayici/PWA'da
@@ -12119,7 +12124,7 @@ export default function App() {
       />
 
       <main className="main game-scene">
-      <div className="game-area">
+      <div className={`game-area${mobilePortrait ? ' gb-redesign' : ''}`}>
         {isTournWaiting && (
           <div className="tourn-wait-banner" role="status" aria-live="polite">
             <span className="tourn-wait-spin" aria-hidden="true" />
@@ -12155,31 +12160,69 @@ export default function App() {
             <Icon name={matchCodeCopied ? 'check' : 'copy'} size={13} />
           </button>
         )}
-        {/* Board flip'lendiginde (yerel oyuncu siyah) kartlar da cevrilir: SEN hep altta */}
-        <Sidebar
-          top={flipBoard ? bottomInfo : topInfo}
-          bottom={flipBoard ? topInfo : bottomInfo}
-          length={match.target}
-          stake={(potRef.current || stakeRef.current) * (isMoneyGame ? match.cube.value : 1)}
-          crawford={match.isCrawford && !gameEnd}
-        />
-        {clockOn && (
-          <ClockStack
-            active={
-              gameWon || gameEnd || opening
-                ? null
-                : cubePending // kup karari bekleniyor -> vurgu yanitlayanda (saati o harciyor)
-                  ? opponent(cubePending)
-                  : turnStart.turn
-            }
-            delay={clock.delay}
-            white={clock.white}
-            black={clock.black}
-            final={FINAL_STAGE}
-            flip={flipBoard}
-            topScore={flipBoard ? match.score.white : match.score.black}
-            bottomScore={flipBoard ? match.score.black : match.score.white}
-          />
+        {/* Board flip'lendiginde (yerel oyuncu siyah) kartlar da cevrilir: SEN hep altta.
+           MOBIL PORTRAIT: yeniden tasarim HUD (avatarlar ustte + ust-oyuncu satiri); board'un ALTINA
+           alt-oyuncu satiri ayrica eklenir. MASAUSTU/YATAY: klasik Sidebar + ClockStack. */}
+        {mobilePortrait ? (() => {
+          const selfCard = flipBoard ? topInfo : bottomInfo // SEN hep altta -> self = alt kart
+          const oppCard = flipBoard ? bottomInfo : topInfo // rakip = ust kart
+          const hudActive = gameWon || gameEnd || opening ? null : cubePending ? opponent(cubePending) : turnStart.turn
+          const oc = oppCard.color
+          const cubeFor = (c: 'white' | 'black') => (match.cube.owner === c && match.cube.value > 1 ? match.cube.value : null)
+          return (
+            <>
+              <GameHudHeader
+                self={selfCard}
+                opp={oppCard}
+                selfCoins={user?.coins ?? null}
+                target={match.target}
+                selfScore={match.score[selfCard.color]}
+                oppScore={match.score[oppCard.color]}
+                selfColor={selfCard.color}
+                crawford={match.isCrawford && !gameEnd}
+              />
+              {clockOn && (
+                <GameHudRow
+                  score={match.score[oc]}
+                  bankSecs={clock[oc]}
+                  moveSecs={hudActive === oc ? clock.delay : null}
+                  active={hudActive === oc}
+                  low={clock[oc] <= FINAL_STAGE}
+                  trayColor={oc}
+                  trayCount={boardDisplay.off[oc]}
+                  cubeValue={cubeFor(oc)}
+                />
+              )}
+            </>
+          )
+        })() : (
+          <>
+            <Sidebar
+              top={flipBoard ? bottomInfo : topInfo}
+              bottom={flipBoard ? topInfo : bottomInfo}
+              length={match.target}
+              stake={(potRef.current || stakeRef.current) * (isMoneyGame ? match.cube.value : 1)}
+              crawford={match.isCrawford && !gameEnd}
+            />
+            {clockOn && (
+              <ClockStack
+                active={
+                  gameWon || gameEnd || opening
+                    ? null
+                    : cubePending // kup karari bekleniyor -> vurgu yanitlayanda (saati o harciyor)
+                      ? opponent(cubePending)
+                      : turnStart.turn
+                }
+                delay={clock.delay}
+                white={clock.white}
+                black={clock.black}
+                final={FINAL_STAGE}
+                flip={flipBoard}
+                topScore={flipBoard ? match.score.white : match.score.black}
+                bottomScore={flipBoard ? match.score.black : match.score.white}
+              />
+            )}
+          </>
         )}
         <Board
           state={boardDisplay}
@@ -12218,6 +12261,24 @@ export default function App() {
           }
           pointTexts={ALL_THEMES.find((x) => x.id === boardTheme)?.pointTexts}
         />
+        {/* MOBIL PORTRAIT: board'un ALTINA alt-oyuncu (self) satiri: skor+kup | saat | tepsi */}
+        {mobilePortrait && clockOn && (() => {
+          const selfCard = flipBoard ? topInfo : bottomInfo
+          const hudActive = gameWon || gameEnd || opening ? null : cubePending ? opponent(cubePending) : turnStart.turn
+          const c = selfCard.color
+          return (
+            <GameHudRow
+              score={match.score[c]}
+              bankSecs={clock[c]}
+              moveSecs={hudActive === c ? clock.delay : null}
+              active={hudActive === c}
+              low={clock[c] <= FINAL_STAGE}
+              trayColor={c}
+              trayCount={boardDisplay.off[c]}
+              cubeValue={match.cube.owner === c && match.cube.value > 1 ? match.cube.value : null}
+            />
+          )
+        })()}
         {showAnalysis && botMatch && (
           <AnalysisPanel
             loading={analysisLoading}
