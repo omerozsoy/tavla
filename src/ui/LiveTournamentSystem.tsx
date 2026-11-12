@@ -29,8 +29,10 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
   const [done, setDone] = useState(false)
 
   const title = titleOverride || t('menu.liveTournSystem')
-  const q3Answered = ttype === 'swiss' ? lives != null : ttype === 'bracket' ? size != null : false
-  const complete = !!where && !!ttype && q3Answered
+  // Swiss: hak + kişi sayısı; Bracket: yalnız kişi sayısı. Swiss'te hak seçilince kişi sayısı sorulur.
+  const complete =
+    !!where &&
+    (ttype === 'swiss' ? lives != null && size != null : ttype === 'bracket' ? size != null : false)
 
   // Turnuva tipi değişince 3. soru cevabını sıfırla (Swiss hak ≠ Bracket kişi).
   const pickType = (v: TType) => {
@@ -75,9 +77,13 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
               <li>
                 <b>{t('lts.q2')}</b> {ttype === 'swiss' ? 'Swiss' : 'Bracket'}
               </li>
+              {ttype === 'swiss' && (
+                <li>
+                  <b>{t('lts.q3.swiss')}</b> {lives}
+                </li>
+              )}
               <li>
-                <b>{ttype === 'swiss' ? t('lts.q3.swiss') : t('lts.q3.bracket')}</b>{' '}
-                {ttype === 'swiss' ? lives : size != null ? sizeLabel(size) : ''}
+                <b>{t('lts.q3.bracket')}</b> {size != null ? sizeLabel(size) : ''}
               </li>
             </ul>
             <Button type="button" variant="outline" onClick={reset}>
@@ -127,6 +133,20 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                   {SWISS_LIVES.map((n) => (
                     <Opt key={n} active={lives === n} onClick={() => setLives(n)}>
                       {n}
+                    </Opt>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Swiss: hak seçilince kişi sayısı da sorulur (Bracket ile aynı seçenekler). */}
+            {ttype === 'swiss' && lives != null && (
+              <div className="lts-q">
+                <h3 className="lts-q-label">4. {t('lts.q3.bracket')}</h3>
+                <div className="lts-opts">
+                  {BRACKET_SIZES.map((s) => (
+                    <Opt key={String(s)} active={size === s} onClick={() => setSize(s)}>
+                      {sizeLabel(s)}
                     </Opt>
                   ))}
                 </div>
