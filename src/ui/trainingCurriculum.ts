@@ -1,77 +1,104 @@
-// Tavla Eğitimi müfredatı (BackgammonGalaxy "Mastery Path" düzeni).
-// Kullanıcı yol haritasını verdi; her bölümün SORU İÇERİĞİ sonra eklenecek (authored pozisyonlar).
-// Şimdilik yalnız "fundamentals" (Temel Kavramlar) oynanabilir (rastgele puzzle üreten trainer);
-// diğerleri `ready:false` = kilitli ("içerik yakında"). İçerik geldikçe lesson.questions doldurulur.
+// Tavla Egitimi mufredati — 3 seviye: KOLAY / ORTA / ZOR, her biri 10 soru.
+// Her soru SABIT bir pozisyon + zar. Dogru hamleyi motor (wildbg) anlik hesaplar; aciklama da
+// motorun sectigi hamleden (explainMove) uretilir -> aciklama her zaman cevapla tutarli.
+//
+// KOLAY = 10 klasik acilis zari (standart dizilis + zar) — authored ipucu metinli.
+// ORTA / ZOR = tohumlanmis (deterministik) kendi-kendine-oyun ile uretilmis sabit ara/gec oyun
+// pozisyonlari (seed sabit -> her yuklemede AYNI 10 soru). Karar olmasi icin >=N farkli legal hamle sarti.
 
-export type LessonLevel = 'beginner' | 'intermediate' | 'advanced'
+import type { GameState, Move } from '../engine/types'
+import { initialState } from '../engine/board'
+import { generateMoves, hasNoMove } from '../engine/moves'
+import { applyMove, newTurn } from '../engine/game'
+import { HeuristicBot } from '../engine/engine'
+
+export type LessonLevel = 'easy' | 'medium' | 'hard'
+
+export interface Question {
+  state: GameState // zari atilmis, beyaz oynayacak pozisyon
+  intro?: string // opsiyonel authored ipucu (acilislarda). Yoksa aciklama motordan uretilir.
+}
 
 export interface Lesson {
-  id: string // kalıcı anahtar (ilerleme kaydı + derin-link)
-  title: string
-  questions: number // bölümdeki soru sayısı (yol haritası etiketinde gösterilir)
-  ready?: boolean // true: oynanabilir (içerik/mekanik hazır). yoksa kilitli.
-}
-
-export interface LessonSection {
+  id: LessonLevel
   level: LessonLevel
-  titleKey: string // i18n başlık anahtarı (ör. "BAŞLANGIÇ SEVİYESİ")
-  lessons: Lesson[]
+  titleKey: string
+  descKey: string
+  questions: Question[]
 }
 
-// NOT: başlıklar şimdilik Türkçe gömülü (kullanıcının verdiği liste). İleride i18n'e taşınabilir.
-export const CURRICULUM: LessonSection[] = [
-  {
-    level: 'beginner',
-    titleKey: 'tr.level.beginner',
-    lessons: [
-      { id: 'fundamentals', title: 'Temel Kavramlar', questions: 10, ready: true },
-      { id: 'opening-rolls', title: 'Açılış Zarları', questions: 15 },
-      { id: 'building-sixprime', title: 'Altılı Blok Oluşturma', questions: 10 },
-      { id: 'to-hit-or-not', title: 'Kırmalı mı, Kırmamalı mı?', questions: 11 },
-      { id: 'midgame-strategies', title: 'Oyun Ortası Stratejileri', questions: 10 },
-      { id: 'endgame-strategies', title: 'Oyun Sonu Stratejileri', questions: 10 },
-    ],
-  },
-  {
-    level: 'intermediate',
-    titleKey: 'tr.level.intermediate',
-    lessons: [
-      { id: 'im-double5-blitz', title: 'Ders 1: Çift 5 ile Saldırı', questions: 12 },
-      { id: 'im-early-cube', title: 'Ders 2: Oyunun Başında Küp Kararları', questions: 12 },
-      { id: 'im-high-anchor', title: 'Ders 3: Yüksek Çapalı Bekleme Oyunları', questions: 10 },
-      { id: 'im-deep-anchor', title: 'Ders 4: Derin Çapalı Bekleme Oyunları', questions: 9 },
-      { id: 'im-holding-goalie', title: 'Ders 5: Bekleme Oyunları ve Kaleci Taş', questions: 10 },
-      { id: 'im-back-checker-cube', title: 'Ders 6: Geride Tek Taş Varken Küp Kararları', questions: 10 },
-      { id: 'im-anchor-21', title: 'Ders 7: 21 Hanesindeki Çapa — Kalmalı mı, Çıkmalı mı?', questions: 18 },
-      { id: 'im-anchor-22', title: 'Ders 8: 22 Hanesindeki Çapa — Kalmalı mı, Çıkmalı mı?', questions: 20 },
-      { id: 'im-risk-now-later', title: 'Ders 9: Riski Şimdi mi, Sonra mı Almalı? — 13 Hanesinden Oynamak', questions: 26 },
-      { id: 'im-midgame-reference', title: 'Ders 10: Oyun Ortası Referans Pozisyonları', questions: 25 },
-      { id: 'im-section-test', title: 'Bölüm Sonu Testi', questions: 16 },
-    ],
-  },
-  {
-    level: 'advanced',
-    titleKey: 'tr.level.advanced',
-    lessons: [
-      { id: 'adv-michy-ubc', title: 'Michy’nin UBC’deki 20 Büyük Hatası', questions: 16 },
-      { id: 'adv-bgwc2025-final', title: 'BGWC 2025 Final Testi (Monte Carlo)', questions: 20 },
-      { id: 'adv-ubc2025-gm', title: 'UBC Online 2025 Büyükustalar Hataları', questions: 30 },
-      { id: 'adv-bgwc-test3', title: 'BGWC Testi 3', questions: 10 },
-      { id: 'adv-bgwc-test2', title: 'BGWC Testi 2', questions: 8 },
-      { id: 'adv-bgwc-test1', title: 'BGWC Testi 1', questions: 10 },
-      { id: 'adv-sebastian-ubc', title: 'Sebastian Wilkinson’ın UBC’deki 20 Büyük Hatası', questions: 20 },
-      { id: 'adv-simon-ubc', title: 'Simon Barget’ın UBC’deki 20 Büyük Hatası', questions: 19 },
-      { id: 'adv-bar-double5', title: 'Üçüncü Zar Atışında Bardan Çift 5 ile Giriş', questions: 19 },
-      { id: 'adv-ian-terry-49', title: 'Ian Terry’nin 49 Büyük Hatası (Marc’ın Analiziyle)', questions: 49 },
-      { id: 'adv-marc-olsen', title: 'Marc Olsen’ın Oyun Ortasındaki Büyük Hataları', questions: 22 },
-      { id: 'adv-sixprime-or-blitz', title: 'Altılı Blok mu, Saldırı mı?', questions: 14 },
-      { id: 'adv-ryan-rebelo-cube', title: 'Ryan Rebelo’nun Küp Hataları', questions: 11 },
-      { id: 'adv-john-ohagan', title: 'John O’Hagan’ın Taş Oynama Kararları', questions: 11 },
-    ],
-  },
+// --- Deterministik RNG (mulberry32) -> ORTA/ZOR pozisyonlari her yuklemede ayni ---
+function mulberry32(seed: number): () => number {
+  let a = seed
+  return () => {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const heur = new HeuristicBot()
+
+function diceOf(d: [number, number]): number[] {
+  return d[0] === d[1] ? [d[0], d[0], d[0], d[0]] : [d[0], d[1]]
+}
+
+function seededRoll(rng: () => number): [number, number] {
+  return [1 + Math.floor(rng() * 6), 1 + Math.floor(rng() * 6)]
+}
+
+// Rakip (ve ara) hamleleri sezgisel botla oyna + sirayi cevir (tohumlanmis zar).
+function seededAdvance(state: GameState, rng: () => number): GameState {
+  const s = newTurn(state, diceOf(seededRoll(rng)))
+  const moves = generateMoves(s)
+  const mv: Move = moves.length ? (heur.chooseMove(s) ?? moves[0]) : { steps: [], resultKey: '' }
+  return applyMove(s, mv)
+}
+
+// Beyazin karar verecegi, >=minMoves farkli legal hamlesi olan `count` pozisyon uret (deterministik).
+function genQuestions(seed: number, minPlies: number, maxPlies: number, minMoves: number, count: number): Question[] {
+  const rng = mulberry32(seed)
+  const out: Question[] = []
+  let guard = 0
+  while (out.length < count && guard++ < 5000) {
+    let s = initialState()
+    const plies = minPlies + Math.floor(rng() * (maxPlies - minPlies + 1))
+    for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
+    if (s.turn !== 'white') s = seededAdvance(s, rng)
+    const st = newTurn(s, diceOf(seededRoll(rng)))
+    const moves = generateMoves(st)
+    if (hasNoMove(moves)) continue
+    if (new Set(moves.map((m) => m.resultKey)).size >= minMoves) out.push({ state: st })
+  }
+  return out
+}
+
+// --- KOLAY: 10 klasik acilis zari (standart dizilis) + authored ipucu ---
+const OPENINGS: { dice: [number, number]; intro: string }[] = [
+  { dice: [3, 1], intro: 'Altin nokta: ev tahtandaki 5 hanesini yap. Erken nokta kurmak rakibin bardan girisini zorlastirir.' },
+  { dice: [4, 2], intro: '4 hanesini yap. Ev tahtanda ikinci guvenli noktani kurarak blok olusturmaya basla.' },
+  { dice: [6, 1], intro: 'Bogaz noktasini (7 hanesi) yap. Rakibin arka taslarini hapsetmek icin guclu bir engel.' },
+  { dice: [5, 3], intro: '3 hanesini yap. Ev tahtanda bir nokta daha kapat.' },
+  { dice: [2, 1], intro: 'Kucuk zar: 5 hanesine builder getirip bol ya da arka tasini ilerlet. Esnek gelisim.' },
+  { dice: [6, 5], intro: 'Arka tasini kacir (lovers leap). Tek hamlede rakibin bolgesinden kurtulmak guvenlidir.' },
+  { dice: [6, 4], intro: 'Arka tasini ilerlet / kac ve builder getir. Geride sikismamak icin one cik.' },
+  { dice: [6, 3], intro: 'Arka tasini kacirmaya basla ve bir builder indir — cifte amacli gelisim.' },
+  { dice: [5, 4], intro: 'Ileri capaya (20) oyna ya da builder getir. 20 capasi rakip evinde guclu bekleme saglar.' },
+  { dice: [4, 3], intro: 'Arka tasini bol ve builder indir — hem guvenlik hem gelisim.' },
 ]
 
-export const ALL_LESSONS: Lesson[] = CURRICULUM.flatMap((s) => s.lessons)
+function openingQuestions(): Question[] {
+  return OPENINGS.map((o) => ({ state: newTurn(initialState(), diceOf(o.dice)), intro: o.intro }))
+}
+
+export const LESSONS: Lesson[] = [
+  { id: 'easy', level: 'easy', titleKey: 'tr.lesson.easy', descKey: 'tr.lesson.easyDesc', questions: openingQuestions() },
+  { id: 'medium', level: 'medium', titleKey: 'tr.lesson.medium', descKey: 'tr.lesson.mediumDesc', questions: genQuestions(0x5eed01, 5, 11, 3, 10) },
+  { id: 'hard', level: 'hard', titleKey: 'tr.lesson.hard', descKey: 'tr.lesson.hardDesc', questions: genQuestions(0x5eed02, 13, 24, 4, 10) },
+]
+
 export function lessonById(id: string): Lesson | undefined {
-  return ALL_LESSONS.find((l) => l.id === id)
+  return LESSONS.find((l) => l.id === id)
 }
