@@ -49,6 +49,20 @@ class TournamentScheduleResource extends Resource
         return $out;
     }
 
+    /** Saat seçenekleri 00:00..23:45 (15 dk adım). Aranabilir Select -> buggy TimePicker yerine. */
+    private static function timeOptions(): array
+    {
+        $out = [];
+        for ($h = 0; $h < 24; $h++) {
+            foreach ([0, 15, 30, 45] as $m) {
+                $v = sprintf('%02d:%02d', $h, $m);
+                $out[$v] = $v;
+            }
+        }
+
+        return $out;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -61,22 +75,31 @@ class TournamentScheduleResource extends Resource
                     ->label('Aktif (çalışsın)')
                     ->helperText('Kapatınca bu şablondan otomatik turnuva KURULMAZ (silinmez, duraklatılır).')
                     ->default(true),
+                Forms\Components\Radio::make('frequency')
+                    ->label('Kurulma sıklığı')
+                    ->helperText('Günlük: seçili her gün, o gün 00:00\'da kurulur. Haftalık: Pazartesi 00:00\'da o haftanın TÜM seçili günlerinin turnuvaları birden kurulur (hafta başı tüm hafta önceden görünür/kayıt açık).')
+                    ->options([
+                        'daily' => 'Günlük (her gün o gün kurulur)',
+                        'weekly' => 'Haftalık (Pazartesi — o haftanın hepsi birden kurulur)',
+                    ])
+                    ->default('daily')
+                    ->required(),
                 Forms\Components\CheckboxList::make('weekdays')
                     ->label('Hangi günler kurulsun')
-                    ->helperText('Seçilen her gün gece 00:00\'da bu şablondan bir turnuva kurulur. "Tümünü seç" = her gün. Farklı günlere farklı saat istersen ayrı şablon oluştur.')
+                    ->helperText('Turnuvanın oynanacağı günler. Günlük modda her gün o gün kurulur; Haftalık modda hepsi Pazartesi kurulur. "Tümünü seç" = her gün.')
                     ->options(self::WEEKDAYS)
                     ->columns(3)
                     ->bulkToggleable() // "Tümünü seç / Tümünü kaldır" = her gün seçeneği
                     ->required(),
-                // Yalnız SAAT seçilir (tarih YOK) + 24 saatlik (AM/PM YOK). native=false Filament picker'ı
-                // displayFormat('H:i') ile 24h'e zorlar; native input tarayıcı diline göre AM/PM gösterirdi.
-                Forms\Components\TimePicker::make('start_time')
+                // Buggy TimePicker yerine aranabilir Select (00:00..23:45, 15 dk adım): 24 saatlik,
+                // tarih/AM-PM yok, mobilde de sağlam. Değer "HH:MM" string -> kolona birebir yazılır.
+                Forms\Components\Select::make('start_time')
                     ->label('Başlangıç saati (son katılım)')
-                    ->helperText('Sadece saat seç (tarih yok, 24 saatlik). Turnuva seçili günlerde bu saatte (Türkiye saati) otomatik başlar; gün boyu kayıt açık kalır.')
-                    ->seconds(false)
+                    ->helperText('Turnuva seçili günlerde bu saatte (Türkiye saati, 24 saatlik) otomatik başlar; o zamana kadar kayıt açık kalır. Yazarak ara (ör. "20").')
+                    ->options(self::timeOptions())
+                    ->searchable()
                     ->native(false)
-                    ->format('H:i')
-                    ->displayFormat('H:i')
+                    ->default('20:00')
                     ->required(),
                 Forms\Components\Select::make('type')
                     ->label('Turnuva tipi')
@@ -185,6 +208,10 @@ class TournamentScheduleResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Ad')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('frequency')
+                    ->label('Sıklık')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'weekly' ? 'Haftalık' : 'Günlük'),
                 Tables\Columns\TextColumn::make('weekdays')
                     ->label('Günler')
                     ->formatStateUsing(fn ($state) => collect(is_array($state) ? $state : [])

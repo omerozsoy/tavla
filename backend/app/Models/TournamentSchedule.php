@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TournamentSchedule extends Model
 {
     protected $fillable = [
-        'name', 'active', 'weekdays', 'start_time',
+        'name', 'active', 'frequency', 'weekdays', 'start_time',
         'type', 'venue', 'organizer_id', 'size',
         'match_length', 'semi_length', 'final_length',
         'round_minutes', 'semi_minutes', 'final_minutes',

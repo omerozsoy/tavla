@@ -26,46 +26,71 @@ class CreateScheduledTournaments extends Command
         $iso = $today->dayOfWeekIso;      // 1=Pzt .. 7=Paz
         $created = 0;
 
-        $schedules = TournamentSchedule::where('active', true)->get()
-            // weekdays Filament CheckboxList'ten STRING gelir (["1","2"]) -> strict in_array int $iso ile
-            // asla eşleşmezdi; intval'a normalize et (kurucu bu yüzden hiç çalışmıyordu).
-            ->filter(fn (TournamentSchedule $s) => in_array($iso, array_map('intval', $s->weekdays ?? []), true))
-            ->filter(fn (TournamentSchedule $s) => ! ($s->last_created_on && $s->last_created_on->isSameDay($today)));
+        foreach (TournamentSchedule::where('active', true)->get() as $s) {
+            // weekdays Filament CheckboxList'ten STRING gelir (["1","2"]) -> int'e normalize et.
+            $weekdays = array_filter(array_map('intval', $s->weekdays ?? []), fn ($d) => $d >= 1 && $d <= 7);
+            // Aynı gün (günlük) / aynı hafta-başı (haftalık) ikinci çalıştırmada tekrar kurma (idempotent).
+            if ($s->last_created_on && $s->last_created_on->isSameDay($today)) {
+                continue;
+            }
 
-        foreach ($schedules as $s) {
-            $registerUntil = $today->copy()->setTimeFromTimeString($s->start_time ?: '20:00');
-
-            Tournament::create([
-                'name' => $s->name.' — '.$today->format('d.m.Y'),
-                'type' => $s->type,
-                'venue' => $s->venue,
-                'organizer_id' => $s->organizer_id,
-                'size' => $s->size,
-                'status' => 'open',
-                'active' => true,
-                'register_until' => $registerUntil,
-                'creator_id' => $s->creator_id,
-                'prize_coins' => $s->prize_coins,
-                'prize_desc' => $s->prize_desc,
-                'prizes' => $s->prizes,
-                'entry_fee' => $s->entry_fee,
-                'premium_only' => $s->premium_only,
-                'third_place_match' => $s->third_place_match,
-                'match_length' => $s->match_length,
-                'semi_length' => $s->semi_length,
-                'final_length' => $s->final_length,
-                'round_minutes' => $s->round_minutes,
-                'semi_minutes' => $s->semi_minutes,
-                'final_minutes' => $s->final_minutes,
-            ]);
+            if (($s->frequency ?? 'daily') === 'weekly') {
+                // HAFTALIK: yalnız Pazartesi (hafta başı) koşar; o haftanın TÜM seçili günleri için
+                // birer turnuva kurar (her biri kendi gününün start_time saatinde başlar).
+                if ($iso !== 1) {
+                    continue;
+                }
+                $monday = $today->copy()->startOfWeek(Carbon::MONDAY);
+                foreach ($weekdays as $wd) {
+                    $registerUntil = $monday->copy()->addDays($wd - 1)->setTimeFromTimeString($s->start_time ?: '20:00');
+                    $this->makeTournament($s, $registerUntil);
+                    $created++;
+                }
+            } else {
+                // GÜNLÜK: bugüne denk gelen günde o günün turnuvasını kurar.
+                if (! in_array($iso, $weekdays, true)) {
+                    continue;
+                }
+                $registerUntil = $today->copy()->setTimeFromTimeString($s->start_time ?: '20:00');
+                $this->makeTournament($s, $registerUntil);
+                $created++;
+            }
 
             $s->update(['last_created_on' => $today->toDateString()]);
-            $created++;
-            $this->info("Kuruldu: {$s->name} (register_until {$registerUntil->format('d.m.Y H:i')})");
         }
 
         $this->info("Toplam {$created} periyodik turnuva kuruldu.");
 
         return self::SUCCESS;
+    }
+
+    /** Şablondan tek turnuva kurar; adına register_until'ın tarihini ekler. */
+    private function makeTournament(TournamentSchedule $s, Carbon $registerUntil): void
+    {
+        Tournament::create([
+            'name' => $s->name.' — '.$registerUntil->format('d.m.Y'),
+            'type' => $s->type,
+            'venue' => $s->venue,
+            'organizer_id' => $s->organizer_id,
+            'size' => $s->size,
+            'status' => 'open',
+            'active' => true,
+            'register_until' => $registerUntil,
+            'creator_id' => $s->creator_id,
+            'prize_coins' => $s->prize_coins,
+            'prize_desc' => $s->prize_desc,
+            'prizes' => $s->prizes,
+            'entry_fee' => $s->entry_fee,
+            'premium_only' => $s->premium_only,
+            'third_place_match' => $s->third_place_match,
+            'match_length' => $s->match_length,
+            'semi_length' => $s->semi_length,
+            'final_length' => $s->final_length,
+            'round_minutes' => $s->round_minutes,
+            'semi_minutes' => $s->semi_minutes,
+            'final_minutes' => $s->final_minutes,
+        ]);
+
+        $this->info("Kuruldu: {$s->name} (register_until {$registerUntil->format('d.m.Y H:i')})");
     }
 }

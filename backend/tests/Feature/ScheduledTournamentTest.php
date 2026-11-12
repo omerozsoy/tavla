@@ -56,4 +56,39 @@ class ScheduledTournamentTest extends TestCase
 
         Carbon::setTestNow();
     }
+
+    public function test_weekly_creates_all_week_tournaments_on_monday_and_skips_other_days(): void
+    {
+        // Pazartesi değil (2026-10-23 = Cuma) -> haftalık şablon kurulmamalı.
+        Carbon::setTestNow(Carbon::create(2026, 10, 23, 0, 0, 0));
+        $s = TournamentSchedule::create([
+            'name' => 'Hafta Turnuvası',
+            'active' => true,
+            'frequency' => 'weekly',
+            'weekdays' => ['3', '7'],   // Çarşamba + Pazar
+            'start_time' => '20:00',
+            'type' => 'bracket',
+            'size' => 8,
+            'match_length' => 1,
+            'prize_coins' => 0,
+            'entry_fee' => 0,
+            'premium_only' => true,
+        ]);
+        $this->artisan('tournaments:create-scheduled')->assertSuccessful();
+        $this->assertSame(0, Tournament::where('name', 'like', 'Hafta Turnuvası%')->count(), 'Cuma günü haftalık şablon kurulmamalı');
+
+        // Pazartesi (2026-10-26) -> o haftanın Çarşamba (28) ve Pazar (01.11) turnuvaları kurulmalı.
+        Carbon::setTestNow(Carbon::create(2026, 10, 26, 0, 0, 0));
+        $this->artisan('tournaments:create-scheduled')->assertSuccessful();
+        $rows = Tournament::where('name', 'like', 'Hafta Turnuvası%')->orderBy('register_until')->get();
+        $this->assertCount(2, $rows, 'Pazartesi 2 turnuva (Çarşamba + Pazar) kurulmalı');
+        $this->assertSame('2026-10-28 20:00', $rows[0]->register_until->format('Y-m-d H:i'));
+        $this->assertSame('2026-11-01 20:00', $rows[1]->register_until->format('Y-m-d H:i'));
+
+        // Aynı Pazartesi ikinci çalıştırma -> tekrar kurmamalı (idempotent).
+        $this->artisan('tournaments:create-scheduled')->assertSuccessful();
+        $this->assertSame(2, Tournament::where('name', 'like', 'Hafta Turnuvası%')->count());
+
+        Carbon::setTestNow();
+    }
 }
