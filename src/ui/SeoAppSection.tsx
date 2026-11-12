@@ -96,9 +96,9 @@ function ArkadasinlaOyna() {
 function LigContent() {
   return (
     <div className="info-rich rich">
-      <h2>Türkiye Online Tavla Ligi Nedir?</h2>
+      <h2>TavlaTV Süper Lig Nedir?</h2>
       <p>
-        Türkiye Online Tavla Ligi, turnuvalardan bağımsız olarak sezonluk lig formatında oynanan
+        TavlaTV Süper Lig, turnuvalardan bağımsız olarak sezonluk lig formatında oynanan
         bir rekabet modülüdür. Belirlenen sezon boyunca oyuncular her turda birer rakiple eşleşir;
         alınan sonuçlar bir puan tablosuna işlenir. Sezon sonunda üst sıradaki oyuncular eleme
         ağacında (play-off) karşılaşarak lig şampiyonunu belirler. Amaç, tek bir maçın değil, tüm

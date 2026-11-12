@@ -27,7 +27,7 @@ class LeagueSeasonResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-trophy';
 
-    protected static ?string $navigationGroup = 'Türkiye Online Tavla Ligi';
+    protected static ?string $navigationGroup = 'TavlaTV Süper Lig';
 
     protected static ?string $navigationLabel = 'Sezonlar';
 
@@ -38,7 +38,7 @@ class LeagueSeasonResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->label('Sezon adı')->default('Türkiye Online Tavla Ligi')->maxLength(120)->required(),
+            Forms\Components\TextInput::make('name')->label('Sezon adı')->default('TavlaTV Süper Lig')->maxLength(120)->required(),
             Forms\Components\TextInput::make('league_match_length')->label('Lig maç uzunluğu (sayı)')->numeric()->default(9)->minValue(1)->maxValue(25)->required(),
             Forms\Components\TextInput::make('knockout_match_length')->label('Eleme maç uzunluğu (sayı)')->numeric()->default(9)->minValue(1)->maxValue(25)->required(),
             Forms\Components\DateTimePicker::make('applications_open_at')->label('Başvuru açılış')->seconds(false),

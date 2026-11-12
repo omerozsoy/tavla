@@ -363,9 +363,9 @@ const TR: Dict = {
   // Türkiye Online Tavla Ligi (bağımsız modül §1)
   'menu.group.league': 'Tavla Ligi',
   'league.menu': 'TavlaTV Süper Lig',
-  'league.title': 'Türkiye Online Tavla Ligi',
+  'league.title': 'TavlaTV Süper Lig',
   'league.subtitle': 'Premium üyelere özel sezonluk lig',
-  'league.noActive': 'Türkiye Online Tavla Ligi sezonu henüz başlamadı. Kayıtlar kısa süre içinde açılacak.',
+  'league.noActive': 'TavlaTV Süper Lig sezonu henüz başlamadı. Kayıtlar kısa süre içinde açılacak.',
   'league.apply': 'Lige Başvur',
   'league.applyOk': 'Başvurun alındı. Katılımcıları adminler seçer.',
   'league.premiumRequired': 'Başvuru için Premium üyelik gerekir.',
@@ -2679,9 +2679,9 @@ const EN: Dict = {
   // Turkey Online Backgammon League (independent module §1)
   'menu.group.league': 'Backgammon League',
   'league.menu': 'TavlaTV Süper Lig',
-  'league.title': 'Türkiye Online Tavla Ligi',
+  'league.title': 'TavlaTV Süper Lig',
   'league.subtitle': 'Seasonal league for Premium members',
-  'league.noActive': 'The Türkiye Online Tavla League season has not started yet. Registrations will open shortly.',
+  'league.noActive': 'The TavlaTV Süper Lig season has not started yet. Registrations will open shortly.',
   'league.apply': 'Apply to League',
   'league.applyOk': 'Your application was received. Admins select participants.',
   'league.premiumRequired': 'Premium membership is required to apply.',

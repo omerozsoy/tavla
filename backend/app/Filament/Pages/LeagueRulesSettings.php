@@ -27,7 +27,7 @@ class LeagueRulesSettings extends Page implements HasForms
 
     protected static ?string $title = 'Lig Kuralları';
 
-    protected static ?string $navigationGroup = 'Türkiye Online Tavla Ligi';
+    protected static ?string $navigationGroup = 'TavlaTV Süper Lig';
 
     protected static ?int $navigationSort = 2;
 
