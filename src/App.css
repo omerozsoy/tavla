@@ -16393,6 +16393,37 @@ body:has(.spectate-view) .app.lobby {
 .report-overlay.page .analysis-rows {
   max-height: calc(100vh - 230px);
 }
+
+/* ===== Hamle Analizi GÖMÜLÜ (.report-embed) — Maç Analizleri sayfasının İÇİNDE, overlay DEĞİL.
+   İç-içe .page overlay (position:fixed tuzağı) yerine akan içerik: üst kartın alanını doldurur. ===== */
+.report-embed {
+  width: 100%;
+}
+.report-embed .report-card,
+.report-embed .report-card:has(.analysis-layout) {
+  position: static;
+  max-width: none;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  animation: none;
+  transform: none;
+}
+.report-embed .report-head {
+  background: transparent;
+  border-radius: 0;
+  padding: 0 0 12px;
+}
+.report-embed .report-body {
+  padding: 14px 0 0;
+}
+.report-embed .analysis-rows {
+  max-height: calc(100vh - 300px);
+}
 .analysis-layout {
   display: flex;
   gap: 14px;

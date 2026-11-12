@@ -66,6 +66,9 @@ interface Props {
   // TEK-KAYNAK PR: sunucu-otoriter (gnubg) PR — verilirse Maç Özeti Performans/Pul/Küp bu değerlerle
   // gösterilir (log'dan yeniden hesaplanmaz) -> sonuç kartı/analiz/istatistik AYNI tek doğru PR.
   authPr?: { white: import('../analysis/matchSummary').AuthPr | null; black: import('../analysis/matchSummary').AuthPr | null }
+  // GÖMÜLÜ: üst bir .register-overlay.page (ör. Maç Analizleri) İÇİNDE sayfa içeriği olarak render et.
+  // İç-içe .page overlay (position:fixed tuzağı) olmasın -> overlay yerine akan .report-embed sarmalı.
+  embedded?: boolean
   onClose: () => void
 }
 
@@ -106,6 +109,7 @@ export default function MatchReport({
   matchUid,
   matchDbId,
   classic,
+  embedded,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -343,7 +347,10 @@ export default function MatchReport({
   }
 
   return (
-    <div className={`register-overlay modal report-overlay${mode === 'analysis' ? ' page report-page' : ''}`} onClick={onClose}>
+    <div
+      className={embedded ? 'report-embed' : `register-overlay modal report-overlay${mode === 'analysis' ? ' page report-page' : ''}`}
+      onClick={embedded ? undefined : onClose}
+    >
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
         <div className="report-head">
           <h2>

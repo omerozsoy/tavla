@@ -1814,9 +1814,10 @@ export default function App() {
           break
         }
         case 'mac-analizleri-detay':
-          // Hamle Analizi: veri bellekte (maç-sonu), paylaşılabilir/taze-yüklenebilir değil.
-          // Doğrudan girişte analiz verisi yok -> lobiye düş, URL'i düzelt.
-          try { window.history.replaceState(null, '', '/') } catch { /* no-op */ }
+          // Hamle Analizi detayı: seçili maç verisi bellekte -> taze yüklemede yok.
+          // Maç Analizleri LİSTESİNE düş (home değil), URL'i düzelt.
+          setMatchHistOpen(true)
+          try { window.history.replaceState(null, '', '/mac-analizleri') } catch { /* no-op */ }
           break
         case 'cerceve-anim':
           setFrameAnimOpen(true)

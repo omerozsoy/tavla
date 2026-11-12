@@ -180,12 +180,32 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const authOpp = { pr: prNz(m.opponent_gnubg_pr), checker: prNz(m.opponent_gnubg_checker_pr), cube: m.opponent_gnubg_cube_pr ?? null }
       const authPr = hc === 'white' ? { white: authSelf, black: authOpp } : { white: authOpp, black: authSelf }
       setReport({ id: m.id, log, hc, matchLength, whiteName, blackName, classic: m.classic, matchResult, luck, authPr })
+      // Hamle Analizi = sayfa içi detay -> URL'i /mac-analizleri-detay yap (yalnız tam analiz görünümü).
+      if (v === 'report') {
+        try { window.history.pushState(null, '', '/mac-analizleri-detay') } catch { /* no-op */ }
+      }
     } catch {
       /* yoksay */
     } finally {
       setReportBusy(false)
     }
   }
+
+  // Hamle Analizi detayını kapat: liste görünümüne dön + URL'i /mac-analizleri'ye geri al.
+  const closeReport = () => {
+    setReport(null)
+    try {
+      if (window.location.pathname === '/mac-analizleri-detay') {
+        window.history.replaceState(null, '', '/mac-analizleri')
+      }
+    } catch { /* no-op */ }
+  }
+  // Tarayıcı geri tuşu (/mac-analizleri-detay) detayı kapatsın.
+  useEffect(() => {
+    const onPop = () => setReport(null)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   // reset=true -> filtre/ilk yukleme (bastan); false -> "Daha fazla goster" (ekle).
   const load = (reset: boolean) => {
@@ -268,7 +288,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card mh-card">
+      <div className="register-card mh-card" hidden={!!report && view === 'report'}>
         <Button
           variant="ghost"
           size="icon"
@@ -533,21 +553,26 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           </div>
         </div>
       )}
+      {/* Hamle Analizi: overlay DEĞİL -> Maç Analizleri'nin İÇİNDE sayfa içeriği (embedded).
+          Liste yukarıda hidden; bu kart içerik alanını doldurur (iç-içe .page tuzağı yok). */}
       {report && view === 'report' && (
-        <MatchReport
-          mode="analysis"
-          log={report.log}
-          humanColor={report.hc}
-          matchLength={report.matchLength}
-          whiteName={report.whiteName}
-          blackName={report.blackName}
-          matchResult={report.matchResult}
-          matchDbId={report.id}
-          classic={report.classic}
-          luck={report.luck}
-          authPr={report.authPr}
-          onClose={() => setReport(null)}
-        />
+        <div className="register-card mh-card mh-detail">
+          <MatchReport
+            mode="analysis"
+            embedded
+            log={report.log}
+            humanColor={report.hc}
+            matchLength={report.matchLength}
+            whiteName={report.whiteName}
+            blackName={report.blackName}
+            matchResult={report.matchResult}
+            matchDbId={report.id}
+            classic={report.classic}
+            luck={report.luck}
+            authPr={report.authPr}
+            onClose={closeReport}
+          />
+        </div>
       )}
       {report && view === 'summary' && (
         <MatchSummary
