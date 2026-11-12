@@ -14937,8 +14937,9 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 8px;
 }
 .tourn-week-day {
-  /* Sabit yukseklik: hafta degisince yukselip dusmesin. Fazla turnuva -> hucre ICINDE kaydirilir. */
-  height: 200px;
+  /* min-height: en az bu kadar; fazla turnuva olursa hucre BUYUR (scroll yok). Grid stretch ile
+     tum gunler en dolu gune hizalanir -> esit yukseklik, scrollbar cikmaz (kullanici istegi). */
+  min-height: 240px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--text) 2.5%, var(--card-bg));
@@ -14981,22 +14982,15 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-week-day.is-today .tourn-week-dnum {
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: var(--radius-circle);
+  border-radius: var(--radius-sm); /* yuvarlak degil kare (hafif kose) */
 }
 .tourn-week-items {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1;
-  min-height: 0; /* flex child'da overflow calissin */
-  overflow-y: auto;
-  margin-right: -3px; /* scrollbar icin hafif pay */
-  padding-right: 3px;
-}
-.tourn-week-items::-webkit-scrollbar { width: 5px; }
-.tourn-week-items::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--text) 20%, transparent);
-  border-radius: 3px;
+  /* flex:1 YOK -> icerik-boyutlu; hucre (min-height 240) icerige gore buyur, scrollbar cikmaz.
+     Grid stretch tum gunleri en dolu gune esitler. */
+  overflow: visible;
 }
 .tourn-week-chip {
   display: flex;
