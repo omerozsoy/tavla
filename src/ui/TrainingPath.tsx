@@ -73,9 +73,9 @@ export default function TrainingPath({ onPick, onClose, titleOverride }: Props) 
                   {done ? <Icon name="star" size={18} /> : <Icon name="dice" size={16} />}
                 </span>
                 <span className="tr-lesson-body">
-                  <span className="tr-lesson-title">{t(l.titleKey)}</span>
+                  <span className="tr-lesson-title">{l.title}</span>
                   <span className="tr-lesson-sub">
-                    {done ? `${l.questions.length} / ${l.questions.length}` : t('tr.questions', { n: l.questions.length })}
+                    {done ? `${l.count} / ${l.count}` : t('tr.questions', { n: l.count })}
                   </span>
                 </span>
                 {starCount(l) > 0 && (
@@ -94,7 +94,7 @@ export default function TrainingPath({ onPick, onClose, titleOverride }: Props) 
 
         {selLesson && (
           <div className="tr-path-foot">
-            <div className="tr-foot-title">{t(selLesson.titleKey)}</div>
+            <div className="tr-foot-title">{selLesson.title}</div>
             <div className="tr-foot-desc">{t(selLesson.descKey)}</div>
             <button className="bgx-btn green" onClick={() => onPick(selLesson.id)}>
               {t('tr.continue')}
