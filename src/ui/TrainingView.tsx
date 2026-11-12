@@ -16,7 +16,7 @@ import { pipCount } from '../engine/evaluate'
 import { NeuralBot, type RankedMove } from '../engine/neuralBot'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress } from './TrainingPath'
-import { lessonById, type Question } from './trainingCurriculum'
+import { lessonById, getQuestions, type Question } from './trainingCurriculum'
 
 interface Props {
   onClose: () => void
@@ -73,7 +73,7 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
-  const questions: Question[] = lesson?.questions ?? []
+  const questions: Question[] = useMemo(() => getQuestions(lessonId), [lessonId])
   const TOTAL = questions.length || 10
 
   const botRef = useRef<NeuralBot | null>(null)
@@ -316,7 +316,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
           <button className="bgx-back" onClick={onBack} aria-label={t('common.back')}>
             <Icon name="arrow-right" size={22} />
           </button>
-          <span className="bgx-title">{lesson ? t(lesson.titleKey) : t('tr.lessonTitle')}</span>
+          <span className="bgx-title">{lesson?.title || t('tr.lessonTitle')}</span>
           {streak > 1 && (
             <span className="bgx-streak" title={t('tr.streak')}>
               <Icon name="flame" size={16} /> {streak}
