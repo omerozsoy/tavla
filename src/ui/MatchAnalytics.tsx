@@ -290,7 +290,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card mh-card" hidden={!!report && view === 'report'}>
+      {/* Detay (Hamle Analizi) açıkken Maç Analizleri LİSTESİNİ tamamen gizle -> yalnız analiz kalsın.
+          inline display:none kesin (hidden attribute'u .register-overlay.page flex kuralı eziyordu). */}
+      <div className="register-card mh-card" style={report != null && view === 'report' ? { display: 'none' } : undefined}>
         <Button
           variant="ghost"
           size="icon"
