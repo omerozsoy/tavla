@@ -93,6 +93,71 @@ function openingQuestions(): Question[] {
   return OPENINGS.map((o) => ({ state: newTurn(initialState(), diceOf(o.dice)), intro: o.intro }))
 }
 
+// --- Elle (authored) referans pozisyonu kurucu. Mutlak 1-24 hane (beyaz +, siyah -).
+// w/b = {haneNo: tasSayisi}. Legallik (15/15 + karar) TrainingView.test.ts ile dogrulanir. ---
+function pos(
+  w: Record<number, number>,
+  b: Record<number, number>,
+  dice: [number, number],
+  intro: string,
+  extra?: { barW?: number; barB?: number; offW?: number; offB?: number },
+): Question {
+  const points = new Array(24).fill(0)
+  for (const k in w) points[+k - 1] += w[+k]
+  for (const k in b) points[+k - 1] -= b[+k]
+  const d = diceOf(dice)
+  return {
+    state: {
+      points,
+      bar: { white: extra?.barW ?? 0, black: extra?.barB ?? 0 },
+      off: { white: extra?.offW ?? 0, black: extra?.offB ?? 0 },
+      turn: 'white',
+      dice: d,
+      diceUsed: d.map(() => false),
+    },
+    intro,
+  }
+}
+
+// KLASIK REFERANS — ORTA (vurus + nokta yapma + capa). Hepsi beyaz oynar.
+const REF_MED: Question[] = [
+  pos({ 6: 4, 8: 3, 13: 4, 24: 2, 9: 1, 10: 1 }, { 1: 2, 12: 4, 17: 3, 19: 5, 5: 1 }, [4, 1],
+    'Kafadan vur: rakibin ev tahtandaki acik tasini vururken 5 noktasini yap.'),
+  pos({ 6: 5, 8: 3, 13: 3, 24: 2, 9: 1, 11: 1 }, { 1: 2, 12: 5, 17: 3, 19: 5 }, [6, 2],
+    'Bogaz noktasini (7) yap: rakibin arka taslarini hapseden guclu engel.'),
+  pos({ 6: 4, 8: 4, 13: 4, 24: 2, 10: 1 }, { 1: 2, 12: 5, 17: 3, 19: 5 }, [4, 2],
+    'Ev tahtanda 4 noktasini yap: blogu buyut.'),
+  pos({ 6: 5, 8: 3, 13: 4, 24: 2, 11: 1 }, { 1: 2, 12: 4, 17: 3, 19: 5, 10: 1 }, [3, 1],
+    'Dis sahada vur ve nokta yap (10 hanesi): hem tempo hem blok.'),
+  pos({ 24: 2, 13: 5, 8: 3, 6: 4, 22: 1 }, { 1: 2, 12: 5, 17: 3, 19: 5 }, [4, 2],
+    'Altin capayi (20) yap: rakip ev tahtasinda guclu bekleme saglar.'),
+  pos({ 6: 4, 8: 3, 13: 4, 24: 2, 10: 2 }, { 1: 2, 12: 4, 17: 3, 19: 4, 3: 1, 5: 1 }, [3, 1],
+    'Cifte vurus: iki acik tasi birden bara gonder, blitzi baslat.'),
+]
+
+// KLASIK REFERANS — ZOR (prime + temasli toplama + back game + blitz).
+const REF_HARD: Question[] = [
+  pos({ 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 13: 3, 24: 2 }, { 1: 3, 12: 4, 17: 3, 19: 5 }, [6, 3],
+    '5li primini koru ve builder getir: rakibin arka taslarini hapiste tut.'),
+  pos({ 6: 4, 5: 3, 4: 3, 3: 3, 2: 2 }, { 1: 2, 12: 4, 17: 3, 19: 4, 24: 2 }, [6, 1],
+    'Temasli toplama: rakibin 1 capasina ACIK (blot) verme — guvenli topla.'),
+  pos({ 20: 2, 22: 2, 13: 4, 8: 3, 6: 4 }, { 1: 2, 12: 5, 17: 3, 19: 3, 24: 2 }, [5, 2],
+    'Cifte capali back game: zamanlamani koru, on yapini erken kirma.'),
+  pos({ 6: 3, 8: 3, 13: 4, 24: 2, 5: 1, 4: 2 }, { 1: 2, 12: 4, 17: 3, 19: 4, 2: 1, 3: 1 }, [2, 1],
+    'Ev tahtanda cifte vurus: rakibi geriye at ve blitzi surdur.'),
+]
+
+const REFS: Record<string, Question[]> = { lvl3: REF_MED, lvl8: REF_HARD }
+
+// Bir dersin 10 sorusu: varsa referans pozisyonlari + kalani uretilmis (deterministik).
+function buildLesson(s: Spec): Question[] {
+  if (s.openings) return openingQuestions()
+  const ref = REFS[s.id] ?? []
+  const need = 10 - ref.length
+  const gen = need > 0 ? genQuestions(s.seed!, s.min!, s.max!, s.mv!, need) : []
+  return [...ref, ...gen].slice(0, 10)
+}
+
 // Seviye tanimlari: id, ad, uretim parametreleri (l1 = acilislar). Zorluk ply + dallanma ile artar.
 interface Spec {
   id: string
@@ -123,7 +188,7 @@ export function getQuestions(id: string): Question[] {
   const hit = cache.get(id)
   if (hit) return hit
   const s = SPECS.find((x) => x.id === id)
-  const qs = !s ? [] : s.openings ? openingQuestions() : genQuestions(s.seed!, s.min!, s.max!, s.mv!, 10)
+  const qs = s ? buildLesson(s) : []
   cache.set(id, qs)
   return qs
 }
