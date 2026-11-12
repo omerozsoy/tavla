@@ -114,10 +114,10 @@ class MutedUserResource extends Resource
                 Tables\Columns\TextColumn::make('status')->label('Durum')
                     ->badge()
                     ->getStateUsing(fn (User $u) => $u->chat_muted_until && $u->chat_muted_until->isFuture()
-                        ? 'Aktif yasak'
+                        ? ($u->chat_mute_archived_at ? 'Aktif yasak (arşivli)' : 'Aktif yasak')
                         : ($u->chat_mute_archived_at ? 'Arşivlendi' : 'Süresi doldu'))
                     ->color(fn (string $state) => match ($state) {
-                        'Aktif yasak' => 'danger', 'Arşivlendi' => 'info', default => 'gray',
+                        'Aktif yasak' => 'danger', 'Aktif yasak (arşivli)' => 'warning', 'Arşivlendi' => 'info', default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('chat_muted_until')->label('Bitiş')
                     ->dateTime('d.m.Y H:i')->timezone('Europe/Istanbul')
@@ -129,17 +129,17 @@ class MutedUserResource extends Resource
             ->filters([
                 Tables\Filters\Filter::make('active')->label('Yalnız aktif yasaklı')
                     ->query(fn (Builder $q) => $q->where('chat_muted_until', '>', now())),
-                // Varsayılan AÇIK: arşivlenenleri gizle (aktif yasaklılar her halükârda görünür).
+                // Varsayılan AÇIK: arşivlenenleri gizle (aktif yasak arşivlenmiş olsa bile gizlenir).
                 // Kapatınca arşivlenenler de listelenir (durumu "Arşivlendi").
                 Tables\Filters\Filter::make('hideArchived')->label('Arşivlenenleri gizle')->default()
-                    ->query(fn (Builder $q) => $q->whereRaw('(chat_mute_archived_at IS NULL OR chat_muted_until > ?)', [now()])),
+                    ->query(fn (Builder $q) => $q->whereNull('chat_mute_archived_at')),
             ])
             ->actions([
-                // Arşivle: yasağı bitmiş tek kullanıcıyı gizle (geçmiş korunur).
+                // Arşivle: kullanıcıyı listeden gizle (geçmiş korunur). Aktif yasak dahil arşivlenebilir;
+                // yasak kalkmaz, yalnız bu listeden gizlenir (gerekirse "Arşivden Çıkar" ile geri gelir).
                 Tables\Actions\Action::make('archive')->label('Arşivle')
                     ->icon('heroicon-o-archive-box')->color('gray')
-                    ->visible(fn (User $u) => $u->chat_mute_archived_at === null
-                        && (! $u->chat_muted_until || ! $u->chat_muted_until->isFuture()))
+                    ->visible(fn (User $u) => $u->chat_mute_archived_at === null)
                     ->action(function (User $u) {
                         $u->chat_mute_archived_at = now();
                         $u->save();

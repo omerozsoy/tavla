@@ -46,10 +46,27 @@ class MutedUserArchiveTest extends TestCase
         // Varsayılan liste (getEloquentQuery + hideArchived filtresi): arşivlenen GÖRÜNMEZ, aktif GÖRÜNÜR.
         $visible = User::query()
             ->where(fn ($q) => $q->where('chat_offenses', '>', 0)->orWhere('chat_muted_until', '>', now()))
-            ->whereRaw('(chat_mute_archived_at IS NULL OR chat_muted_until > ?)', [now()])
+            ->whereNull('chat_mute_archived_at')
             ->pluck('nickname');
         $this->assertNotContains('expired', $visible, 'arşivlenen listede görünmemeli');
         $this->assertContains('active', $visible, 'aktif yasaklı listede görünmeli');
+    }
+
+    public function test_active_ban_can_be_archived_and_is_hidden(): void
+    {
+        // Aktif yasaklı da arşivlenebilmeli; arşivlenince varsayılan listede (hideArchived) GİZLENİR.
+        $u = User::factory()->create(['nickname' => 'activearchive']);
+        $u->forceFill(['chat_offenses' => 1, 'chat_muted_until' => now()->addDay()])->save();
+
+        Livewire::actingAs($this->admin())->test(ListMutedUsers::class)
+            ->callTableAction('archive', $u);
+        $this->assertNotNull($u->fresh()->chat_mute_archived_at, 'aktif yasak arşivlenebilmeli');
+        // Yasak hâlâ yürürlükte (arşiv yalnız gizler).
+        $this->assertTrue($u->fresh()->chat_muted_until->isFuture(), 'arşiv yasağı kaldırmamalı');
+
+        // hideArchived filtresi: arşivlenen aktif yasak da gizlenmeli.
+        $visible = User::query()->whereNull('chat_mute_archived_at')->pluck('nickname');
+        $this->assertNotContains('activearchive', $visible, 'arşivlenen aktif yasak varsayılan listede görünmemeli');
     }
 
     public function test_per_row_archive(): void
