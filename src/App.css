@@ -13535,6 +13535,9 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Slider icinde satirlar yan yana: tam-bleed negatif margin + alt hairline KALKAR
    (yoksa komsu slide'a tasar / her kartin altinda cizgi kalir). */
 .swiss-panel.tourn-panel .tourn-slide .tourn-row { margin: 0; border-bottom: 0; padding: 10px 2px; }
+/* Slider'da satir yatay padding'i dar (2px) -> hover gri kutusu inset:5px icerigi
+   soluna/sagina tasiyordu. Slide'da gri kutuyu yatayda tam-genislik (0) yap: yazilar icinde kalsin. */
+.swiss-panel.tourn-panel .tourn-slide .tourn-row:hover::before { inset: 5px 0; }
 .swiss-panel.tourn-panel .tourn-cnav {
   display: flex;
   align-items: center;
