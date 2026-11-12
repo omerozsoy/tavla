@@ -157,6 +157,7 @@ Route::get('/league/{season}/bracket', [LeagueController::class, 'bracket']);
 Route::middleware('throttle:120,1,team-read')->group(function () {
     Route::get('/teams', [TeamController::class, 'index']);
     Route::get('/team-tags', [TeamController::class, 'tags']); // isim yanında [ETİKET] (id→tag haritası)
+    Route::get('/teams/champions', [TeamController::class, 'champions']); // geçmiş sezon şampiyonları ({team}'den ÖNCE)
     Route::get('/teams/{team}', [TeamController::class, 'show']);
 });
 

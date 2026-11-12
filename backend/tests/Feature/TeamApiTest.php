@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MatchResult;
 use App\Models\Team;
 use App\Models\TeamMember;
+use App\Models\TeamSeasonChampion;
 use App\Models\User;
 use App\Support\TeamLeague\TeamRules;
 use App\Support\TeamLeague\TeamService;
@@ -57,6 +58,18 @@ class TeamApiTest extends TestCase
     {
         [, $members] = $this->teamWithMembers('Evciler', 'EV');
         $this->getJson('/api/team-tags')->assertOk()->assertJsonPath('tags.'.$members[0]->id.'.tag', 'EV');
+    }
+
+    public function test_season_champions_are_public(): void
+    {
+        [$team] = $this->teamWithMembers('Kahramanlar', 'KHR');
+        TeamSeasonChampion::create([
+            'season_key' => '2026-sonbahar', 'team_id' => $team->id, 'rank' => 1,
+            'points' => 42, 'team_name' => $team->name, 'created_at' => now(),
+        ]);
+        $this->getJson('/api/teams/champions')->assertOk()
+            ->assertJsonPath('champions.0.points', 42)
+            ->assertJsonPath('champions.0.team.tag', 'KHR');
     }
 
     public function test_my_team_requires_auth(): void
@@ -122,7 +135,6 @@ class TeamApiTest extends TestCase
         Sanctum::actingAs($this->eligibleUser());
         $this->getJson('/api/admin/teams')->assertStatus(403);
     }
-
 
     public function test_application_flow_over_http(): void
     {

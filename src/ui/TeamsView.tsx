@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { SHIELD_PATH, TeamEmblem } from './TeamEmblem'
 import TeamTag from './TeamTag'
@@ -24,6 +24,7 @@ import {
   getMyTeam,
   getTeam,
   getTeams,
+  getTeamsChampions,
   grantTeamCoins,
   inviteToTeam,
   kickTeamMember,
@@ -39,6 +40,7 @@ import {
   type DuelTeamRow,
   type LeaderRow,
   type TeamBrief,
+  type TeamChampionRow,
   type TeamDetail,
   type TeamMe,
   type TeamRankRow,
@@ -53,9 +55,9 @@ import { ApiError } from '../api'
 // Bölümler artık AYRI URL'li alt-sayfa (kullanıcı direktifi 2026-11-05): /takimlar-ligi (genel
 // sıralama), /takimlar-ligi/takimim, /takimlar-ligi/kurallar, /takimlar-ligi/kur. Eski sekme-state
 // yerine tek 'view' hem bölümü hem drill-in'i (takim/mac) tutar -> bookmark + geri-tuşu çalışır.
-type Section = 'overview' | 'create' | 'myteam' | 'rules'
+type Section = 'overview' | 'champions' | 'create' | 'myteam' | 'rules'
 type View = { kind: Section } | { kind: 'team'; id: number }
-const SECTIONS: readonly Section[] = ['overview', 'create', 'myteam', 'rules']
+const SECTIONS: readonly Section[] = ['overview', 'champions', 'create', 'myteam', 'rules']
 const isSection = (v: View): v is { kind: Section } => (SECTIONS as readonly string[]).includes(v.kind)
 
 interface Props {
@@ -77,6 +79,7 @@ function parsePath(p: string | null): View {
   const seg = p.split('/')
   const id = parseInt(seg[1] ?? '', 10)
   if (seg[0] === 'takim' && id) return { kind: 'team', id }
+  if (seg[0] === 'sampiyonlar') return { kind: 'champions' }
   if (seg[0] === 'takimim') return { kind: 'myteam' }
   if (seg[0] === 'kurallar') return { kind: 'rules' }
   if (seg[0] === 'kur') return { kind: 'create' }
@@ -87,6 +90,7 @@ function parsePath(p: string | null): View {
 function pathFor(v: View): string | null {
   switch (v.kind) {
     case 'overview': return null
+    case 'champions': return 'sampiyonlar'
     case 'myteam': return 'takimim'
     case 'rules': return 'kurallar'
     case 'create': return 'kur'
@@ -164,13 +168,14 @@ export default function TeamsView(props: Props) {
       {isSection(view) && (
         <>
           <nav className="teams-tabs" role="tablist">
-            {(['overview', ...((hasTeam || hasPending) ? (['myteam'] as Section[]) : []), ...(!hasTeam ? (['create'] as Section[]) : []), 'rules'] as Section[]).map((k) => (
+            {(['overview', 'champions', ...((hasTeam || hasPending) ? (['myteam'] as Section[]) : []), ...(!hasTeam ? (['create'] as Section[]) : []), 'rules'] as Section[]).map((k) => (
               <button key={k} role="tab" aria-selected={view.kind === k} className={'teams-tab' + (view.kind === k ? ' is-active' : '')} onClick={() => go({ kind: k })}>
                 {t('teams.tab.' + k)}
               </button>
             ))}
           </nav>
           {view.kind === 'overview' && <Overview {...props} go={go} setNotice={setNotice} errText={errText} />}
+          {view.kind === 'champions' && <Champions go={go} />}
           {view.kind === 'create' && !hasTeam && (
             <CreateTeam myId={props.myId} eligibility={me?.eligibility ?? null}
               onRequireLogin={props.onRequireLogin} onRequirePremium={props.onRequirePremium}
@@ -184,6 +189,35 @@ export default function TeamsView(props: Props) {
       {view.kind === 'team' && <TeamDetailView id={view.id} myId={props.myId} hasTeam={hasTeam} back={() => go({ kind: 'overview' })} onProfile={props.onProfile} onDuel={props.onDuel} setNotice={setNotice} errText={errText} />}
       <SeoAppSection page="takimlar-ligi" />
       </div>
+    </div>
+  )
+}
+
+// Sezon ödülleri (coin) — backend TeamRules::CHAMPION_COIN / BEST_DUELIST_COIN ile EŞ TUTULMALI.
+// Sezon sonu TeamStandings::distributeSeasonAwards dağıtır. Değişirse iki yeri de güncelle.
+const CHAMPION_COIN = 30000     // şampiyon takımın ortak kasasına
+const BEST_DUELIST_COIN = 5000  // sezon "En İyi Düellocu"su oyuncunun kişisel cüzdanına
+
+// Aktif sezon ödülleri rozeti — SeasonBanner (genel bakış) + Sezon Şampiyonu sekmesinde ortak.
+function SeasonRewards() {
+  const { t } = useT()
+  const fmt = (n: number) => n.toLocaleString('tr-TR')
+  const chip: CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5,
+    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 999, padding: '5px 11px',
+  }
+  const amt: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 700 }
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+      <span style={chip}>
+        <Icon name="laurel-wreath" size={15} /> {t('teams.rewards.champion')}
+        <b style={amt}><Icon name="coin" size={13} /> {fmt(CHAMPION_COIN)}</b>
+      </span>
+      <span style={chip}>
+        <Icon name="swords" size={15} /> {t('teams.rewards.bestDuelist')}
+        <b style={amt}><Icon name="coin" size={13} /> {fmt(BEST_DUELIST_COIN)}</b>
+      </span>
     </div>
   )
 }
@@ -232,6 +266,44 @@ function SeasonBanner() {
       <div style={{ flexBasis: '100%', fontSize: 12.5, opacity: 0.75, textAlign: 'center' }}>
         {t('teams.season.champNote')}
       </div>
+      <div style={{ flexBasis: '100%' }}><SeasonRewards /></div>
+    </div>
+  )
+}
+
+// ---- Sezon Şampiyonu: aktif sezon + ödüller + geçmiş şampiyonlar ---------------
+function Champions({ go }: { go: (v: View) => void }) {
+  const { t } = useT()
+  const [rows, setRows] = useState<TeamChampionRow[] | null>(null)
+  useEffect(() => { getTeamsChampions().then((r) => setRows(r.champions)).catch(() => setRows([])) }, [])
+  return (
+    <div>
+      <SeasonBanner />
+      <h3>{t('teams.champions.title')}</h3>
+      {rows === null ? <Loading /> : rows.length === 0 ? (
+        <div className="lb-empty">{t('teams.champions.empty')}</div>
+      ) : (
+        <div className="trank-list">
+          {rows.map((c) => {
+            const open = c.team ? () => go({ kind: 'team', id: c.team!.id }) : undefined
+            return (
+              <div key={c.season} className="trank-row top" onClick={open} style={open ? undefined : { cursor: 'default' }}>
+                <span className="trank-pos"><Icon name="trophy" size={22} /></span>
+                <span className="trank-team">
+                  <span className="team-champ-ring">
+                    <TeamEmblem color1={c.team?.color1 ?? '#6b7280'} color2={c.team?.color2 ?? '#374151'} logo={c.team?.logo || undefined} label={c.team?.tag ?? '—'} size={56} />
+                  </span>
+                  <span>
+                    <b>{c.team?.name ?? c.team_name}</b>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>{c.season_name}</div>
+                  </span>
+                </span>
+                <span className="trank-val">{c.points} {t('teams.points')}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

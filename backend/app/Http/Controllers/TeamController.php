@@ -55,6 +55,23 @@ class TeamController extends Controller
         ]);
     }
 
+    /** Geçmiş SEZON ŞAMPİYONLARI (rank 1), en yeni sezon üstte. Takım silinmişse adı korunur. */
+    public function champions(): JsonResponse
+    {
+        $rows = TeamSeasonChampion::where('rank', 1)->orderByDesc('season_key')->limit(40)->get();
+        $teams = Team::whereIn('id', $rows->pluck('team_id'))->get()->keyBy('id');
+
+        return response()->json([
+            'champions' => $rows->map(fn ($c) => [
+                'season' => $c->season_key,
+                'season_name' => TeamSeason::name($c->season_key),
+                'team' => isset($teams[$c->team_id]) ? $this->teamBrief($teams[$c->team_id]) : null,
+                'team_name' => $c->team_name,
+                'points' => (int) $c->points,
+            ])->all(),
+        ]);
+    }
+
     public function show(Request $request, Team $team): JsonResponse
     {
         $members = TeamMember::where('team_id', $team->id)->get();

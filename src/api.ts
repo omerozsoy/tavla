@@ -1605,6 +1605,8 @@ export interface TeamDetail {
   team: TeamBrief & { description?: string | null; applications_open: boolean; min_apply_rating: number | null; has_pending_logo?: boolean; coin_balance?: number; can_grant?: boolean; awards: Array<{ season: string; season_name: string; rank: number; points: number }> }
   members: Array<{ role: string; user: TeamUserBrief; premium_grace_until?: string | null }>
 }
+// Geçmiş sezon şampiyonları (rank 1). team null = takım kapanmış (ad korunur).
+export interface TeamChampionRow { season: string; season_name: string; team: TeamBrief | null; team_name: string; points: number }
 
 export async function getTeams(q?: string): Promise<{ ranking?: TeamRankRow[]; results?: TeamBrief[]; rules?: TeamRulesInfo }> {
   return req('/teams' + (q ? '?q=' + encodeURIComponent(q) : ''))
@@ -1616,6 +1618,9 @@ export async function teamTags(): Promise<{ tags: Record<string, TeamTagInfo> }>
 }
 export async function getTeam(id: number): Promise<TeamDetail> {
   return req(`/teams/${id}`)
+}
+export async function getTeamsChampions(): Promise<{ champions: TeamChampionRow[] }> {
+  return req('/teams/champions')
 }
 export async function getMyTeam(): Promise<TeamMe> {
   return req('/my-team')
