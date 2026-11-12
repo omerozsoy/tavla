@@ -150,10 +150,10 @@
   --sc-input: #ded7ca;
   --sc-ring: #d14e24; /* Brick odak halkasi */
   /* ---- Buton hover paleti (light) ---- */
-  --sc-primary-hover: #8f3124; /* Brick deep */
+  --sc-primary-hover: #d03200; /* Brick deep */
   --sc-tint: #efe7d9; /* secondary/outline hover: soft krem */
   --sc-ghost-hover: #f4efe6; /* ghost hover: krem */
-  --sc-on-hover: #8f3124; /* secondary/outline hover metin: Brick deep */
+  --sc-on-hover: #d03200; /* secondary/outline hover metin: Brick deep */
   --sc-ivory: #f8f1e7; /* primary hover metin: sicak ivory */
   /* ---- Marka ekstra: brick (ozel CTA) + amber ---- */
   --sc-terracotta: #c9563f;
