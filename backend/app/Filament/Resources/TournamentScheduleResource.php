@@ -68,13 +68,15 @@ class TournamentScheduleResource extends Resource
                     ->columns(3)
                     ->bulkToggleable() // "Tümünü seç / Tümünü kaldır" = her gün seçeneği
                     ->required(),
-                // Yalnız SAAT seçilir (tarih YOK): native <input type="time"> -> her tarayıcıda HH:MM.
-                // Periyodik turnuva tarihe bağlı değil; o günün register_until saati budur.
+                // Yalnız SAAT seçilir (tarih YOK) + 24 saatlik (AM/PM YOK). native=false Filament picker'ı
+                // displayFormat('H:i') ile 24h'e zorlar; native input tarayıcı diline göre AM/PM gösterirdi.
                 Forms\Components\TimePicker::make('start_time')
                     ->label('Başlangıç saati (son katılım)')
-                    ->helperText('Sadece saat seç (tarih yok). Turnuva seçili günlerde bu saatte (Türkiye saati) otomatik başlar; gün boyu kayıt açık kalır.')
+                    ->helperText('Sadece saat seç (tarih yok, 24 saatlik). Turnuva seçili günlerde bu saatte (Türkiye saati) otomatik başlar; gün boyu kayıt açık kalır.')
                     ->seconds(false)
-                    ->native(true)
+                    ->native(false)
+                    ->format('H:i')
+                    ->displayFormat('H:i')
                     ->required(),
                 Forms\Components\Select::make('type')
                     ->label('Turnuva tipi')
