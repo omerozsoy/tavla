@@ -1748,23 +1748,53 @@ function WeekCalendar({ list, lang, onOpen }: {
             <div key={i} className={`tourn-week-day ${sameDay(d, today) ? 'is-today' : ''} ${items.length ? 'has' : ''}`}>
               <div className="tourn-week-dtop">
                 <span className="tourn-week-dname">{d.toLocaleDateString(lang, { weekday: 'short' })}</span>
-                <span className="tourn-week-dnum tnum">{d.getDate()}</span>
+                {/* Bugün rozeti = turnuva kartındaki tarih rozetiyle AYNI tasarım (gün + ay, kiremit kare). */}
+                <span className="tourn-week-dnum tnum">
+                  <span className="twd-d">{d.getDate()}</span>
+                  {sameDay(d, today) && <span className="twd-m">{monthUpper(d)}</span>}
+                </span>
               </div>
               <div className="tourn-week-items">
-                {items.map((tr) => (
-                  <button
-                    key={tr.id}
-                    type="button"
-                    className={`tourn-week-chip tcard-status-${tr.status}`}
-                    onClick={() => onOpen(tr.id, tournUrlSlug(tr))}
-                    title={tr.name}
-                  >
-                    <span className="twc-time tnum">
-                      {new Date(tr.starts_at!).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <span className="twc-name">{tr.name}</span>
-                  </button>
-                ))}
+                {items.map((tr) => {
+                  const isSwiss = tr.type === 'swiss_triple'
+                  const ms = tr.starts_at ? new Date(tr.starts_at).getTime() - Date.now() : 0
+                  // Kaç kaldı: en büyük birim (gün/saat/dk); başladıysa durum etiketi.
+                  const left = ms <= 0
+                    ? t('tourn.status.' + tr.status)
+                    : ms >= 86400000
+                      ? `${Math.floor(ms / 86400000)}${t('tourn.cal.d')}`
+                      : ms >= 3600000
+                        ? `${Math.floor(ms / 3600000)}${t('tourn.cal.h')}`
+                        : `${Math.max(1, Math.ceil(ms / 60000))}${t('tourn.cal.m')}`
+                  return (
+                    <div
+                      key={tr.id}
+                      className={`tourn-week-chip tcard-status-${tr.status}`}
+                      onClick={() => onOpen(tr.id, tournUrlSlug(tr))}
+                      title={tr.name}
+                    >
+                      <div className="twc-top">
+                        <span className="twc-time tnum">
+                          {new Date(tr.starts_at!).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className={`twc-type twc-type-${isSwiss ? 'swiss' : 'bracket'}`}>
+                          {isSwiss ? t('tourn.cal.swiss') : t('tourn.cal.bracket')}
+                        </span>
+                      </div>
+                      <span className="twc-name">{tr.name}</span>
+                      <div className="twc-foot">
+                        <span className="twc-left tnum"><Icon name="clock" size={11} /> {left}</span>
+                        <button
+                          type="button"
+                          className="twc-go"
+                          onClick={(e) => { e.stopPropagation(); onOpen(tr.id, tournUrlSlug(tr)) }}
+                        >
+                          {tr.status === 'open' ? t('tourn.join') : t('tourn.details')}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )

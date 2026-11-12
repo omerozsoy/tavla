@@ -14968,21 +14968,26 @@ button.acct-row-logout:hover:not(:disabled) {
   letter-spacing: 0.08em;
 }
 .tourn-week-dnum {
-  font-weight: 500;
-  color: var(--text);
-  font-size: 1.1rem;
-  line-height: 1;
-  min-width: 28px;
-  height: 28px;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 28px;
+  height: 28px;
   padding: 0 2px;
+  line-height: 1;
+  color: var(--text);
 }
+.twd-d { font-size: 1.1rem; font-weight: 500; }
+.twd-m { font-size: 0.5rem; font-weight: 600; letter-spacing: 0.08em; margin-top: 2px; }
+/* Bugün rozeti = turnuva kartı tarih rozetiyle AYNI tasarım: kiremit (accent) 9px kare, gün + ay. */
 .tourn-week-day.is-today .tourn-week-dnum {
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: var(--radius-sm); /* yuvarlak degil kare (hafif kose) */
+  border-radius: 9px;
+  height: auto;
+  min-width: 38px;
+  padding: 4px;
 }
 .tourn-week-items {
   display: flex;
@@ -15031,6 +15036,61 @@ button.acct-row-logout:hover:not(:disabled) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Üst satır: saat + tip rozeti (Swiss/Eleme). */
+.twc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+.twc-type {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+.twc-type-swiss {
+  background: color-mix(in srgb, var(--cal-green, #0f8a54) 15%, transparent);
+  color: var(--cal-green, #0f8a54);
+}
+/* Alt satır: kaç kaldı + Katıl/Detaylar düğmesi. */
+.twc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
+}
+.twc-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.twc-go {
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.12s;
+}
+.twc-go:hover { filter: brightness(1.08); }
 .tourn-week-empty {
   text-align: center;
   color: var(--muted);
