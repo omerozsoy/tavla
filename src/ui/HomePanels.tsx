@@ -965,6 +965,8 @@ export function TournamentsPanel({
 }) {
   const { t, lang } = useT()
   const [busy, setBusy] = useState<number | null>(null)
+  const [idx, setIdx] = useState(0) // kayan turnuva slider konumu (0-tabanlı)
+  const cur = Math.min(idx, Math.max(0, tourns.length - 1)) // liste kısalınca taşmayı önle
   const act = async (id: number, fn?: (id: number) => Promise<void> | void) => {
     if (!fn || busy) return
     setBusy(id)
@@ -981,8 +983,12 @@ export function TournamentsPanel({
         <Icon name="trophy" size={18} /> {t('menu.tournaments')}
         {tourns.length > 0 && <span className="panel-count">{tourns.length}</span>}
       </button>
-      {tourns.length === 0 && <div className="tourn-empty">{t('tourn.empty')}</div>}
-      <div className="tourn-list">
+      {tourns.length === 0 ? (
+        <div className="tourn-empty">{t('tourn.empty')}</div>
+      ) : (
+      <div className="tourn-carousel">
+      <div className="tourn-viewport">
+      <div className="tourn-track" style={{ transform: `translateX(-${cur * 100}%)` }}>
         {tourns.map((tr) => {
           // size 0 = sinirsiz kontenjan -> ASLA dolu degil (yoksa count>=0 hep dolu gorunur).
           const full = tr.size > 0 && tr.count >= tr.size
@@ -1005,8 +1011,8 @@ export function TournamentsPanel({
               })
             : null
           return (
+            <div className="tourn-slide" key={tr.id}>
             <div
-              key={tr.id}
               className="tourn-row"
               role="button"
               tabIndex={0}
@@ -1087,9 +1093,47 @@ export function TournamentsPanel({
                 </div>
               )}
             </div>
+            </div>
           )
         })}
       </div>
+      </div>
+      {tourns.length > 1 && (
+        <div className="tourn-cnav">
+          <button
+            type="button"
+            className="tourn-cnav-arrow"
+            disabled={cur <= 0}
+            onClick={() => setIdx(Math.max(0, cur - 1))}
+            aria-label={t('lb.prev')}
+          >
+            <Icon name="caret-left" size={16} />
+          </button>
+          <span className="tourn-dots">
+            {tourns.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`tourn-dot ${i === cur ? 'active' : ''}`}
+                aria-current={i === cur ? 'true' : undefined}
+                aria-label={`${i + 1}`}
+                onClick={() => setIdx(i)}
+              />
+            ))}
+          </span>
+          <button
+            type="button"
+            className="tourn-cnav-arrow"
+            disabled={cur >= tourns.length - 1}
+            onClick={() => setIdx(Math.min(tourns.length - 1, cur + 1))}
+            aria-label={t('lb.next')}
+          >
+            <Icon name="caret-right" size={16} />
+          </button>
+        </div>
+      )}
+      </div>
+      )}
     </div>
   )
 }
