@@ -14,7 +14,7 @@ type TType = 'swiss' | 'bracket'
 type Size = 8 | 16 | 32 | 64 | 128 | 'unlimited'
 
 const BRACKET_SIZES: Size[] = [8, 16, 32, 64, 128, 'unlimited']
-const SWISS_LIVES = [2, 3]
+const SWISS_LIVES = [1, 2, 3]
 
 // Canlı Turnuva Sistemi — dallanan kurulum formu. Maçların yeri + turnuva tipi; Swiss ise
 // hak sayısı, Bracket ise kişi sayısı sorulur. Gönderim backend'i henüz YOK -> şimdilik
