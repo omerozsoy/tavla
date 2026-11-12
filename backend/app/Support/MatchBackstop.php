@@ -59,6 +59,12 @@ class MatchBackstop
             if (MatchResult::where('room_code', $room->code)->where('user_id', $uid)->exists()) {
                 continue;
             }
+            // PROFİL SIFIRLAMA: kullanıcı maç geçmişini sildiyse, sıfırlama ANINDAN ÖNCE biten odayı
+            // backstop GERİ YAZMASIN -> yoksa son 2 günün eski online maçları clean-slate'e geri döner.
+            $resetAt = User::whereKey($uid)->value('profile_reset_at');
+            if ($resetAt !== null && $room->updated_at !== null && $room->updated_at->lte($resetAt)) {
+                continue;
+            }
             $res = RoomResult::resolve($room, $uid);
             if ($res === null) {
                 continue; // sonuç KESİN değil -> asla tahminle yazma

@@ -49,6 +49,8 @@ class UserProfileReset
             foreach ([
                 'rating' => Setting::int('starting_rating', 1400),
                 'wins' => 0, 'losses' => 0, 'games_played' => 0, 'total_wxp' => 0,
+                // Backstop sweep'i bu andan ÖNCE biten odaları geri yazmaktan alıkoy (bkz MatchBackstop::ensure).
+                'profile_reset_at' => now(),
             ] as $col => $val) {
                 if (Schema::hasColumn('users', $col)) {
                     $reset[$col] = $val;

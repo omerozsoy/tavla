@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\MatchResult;
+use App\Models\Room;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserStat;
+use App\Support\MatchBackstop;
 use App\Support\UserProfileReset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -45,6 +47,34 @@ class UserProfileResetTest extends TestCase
         $this->assertDatabaseMissing('user_stats', ['user_id' => $u->id]);
         // RAKİBİN maç kaydı DURUYOR (sıfırlama rakibi etkilemez).
         $this->assertDatabaseHas('match_results', ['user_id' => $opp->id, 'room_code' => 'ABC12']);
+    }
+
+    // KÖK NEDEN: reset match_results'u siler ama son 2 günün bitmiş online odaları kalır -> sweep
+    // (matches:backstop-finished) eksik satırı GERİ YAZARDI, eski maçlar clean-slate'te yeniden belirir.
+    public function test_reset_blocks_backstop_from_regenerating_old_online_matches(): void
+    {
+        $u = User::factory()->create(['rating' => 1400]);
+        $opp = User::factory()->create(['rating' => 1500]);
+        $room = Room::create([
+            'code' => 'RST01', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $u->id, 'p2_user_id' => $opp->id, 'p1_name' => 'Me', 'p2_name' => 'Opp',
+            'status' => 'finished', 'mode' => 'ranked', 'stake' => 0, 'target' => 1,
+            'authoritative' => true, 'version' => 0, 'server_version' => 0,
+            'server_match' => ['target' => 1, 'done' => true, 'winner' => 'black',
+                'score' => ['white' => 0, 'black' => 1]],
+        ]);
+        Room::whereKey($room->id)->update(['updated_at' => now()->subMinutes(5)]); // reset'ten ÖNCE bitmiş
+
+        // Reset YOKKEN backstop her iki oyuncuya satır yazar (beklenen davranış).
+        $this->assertSame(2, MatchBackstop::ensure($room->fresh()));
+        MatchResult::where('user_id', $u->id)->delete(); // $u'yu tekrar "eksik" yap
+
+        UserProfileReset::reset($u->fresh());
+
+        // Reset'ten SONRA aynı eski oda $u'ya satır YAZMAMALI (rakip zaten var, dokunulmaz).
+        MatchBackstop::ensure($room->fresh());
+        $this->assertDatabaseMissing('match_results', ['user_id' => $u->id, 'room_code' => 'RST01']);
+        $this->assertDatabaseHas('match_results', ['user_id' => $opp->id, 'room_code' => 'RST01']);
     }
 
     public function test_reset_invalidates_stats_caches(): void
