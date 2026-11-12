@@ -15,16 +15,16 @@
   gap: 5px;
   width: 100%;
   padding: 4px 0 8px;   /* YATAY padding YOK -> board enlemesine tam otursun (edge-to-edge) */
-  /* Board'u KARE'ye yaklastir + DIKEYI DOLDUR: sutunlari DARALT (ucgenler ince, pullar genis) ->
-     genislik/yukseklik orani ~1.07 -> tahta hem TAM GENISLIK hem daha UZUN.
-     ⚠ KRITIK: --checker'i da KENDI board-h'imizdan turet. Yoksa App.css :root'ta --checker'i
-     ORIJINAL board-h ile hesaplar, col/bar o eski checker'i kullanir -> board kuculur (279px bug). */
-  /* board-inner genisligi = board-h * 1.073. Viewport'tan 14px pay birak (7px/yan) ->
-     container ne olursa olsun SAGDAN TASMAZ, yine de tam oturur. */
-  --board-h: min(calc((100vw - 14px) / 1.073), calc(100dvh - 160px));
+  /* ⚠ DOGRU ORANTI: pul (--checker) KOLONA (--col) SIGMALI. ORIJINAL carpanlar col=checker*1.14,
+     bar=checker*1.4 -> pul kolonun %88'i (kenar payli sigar) + numaralar ucgenlere hizali.
+     (Eskiden col*0.9 denendi -> pullar hanelere BUYUK geldi + numaralar kaydi -> YANLIS, geri alindi.)
+     board-inner genisligi = board-h * ((1.14*12+1.4)/11) = board-h * 1.371.
+     ⚠ --checker'i KENDI board-h'imizdan turet (yoksa App.css :root eski board-h ile hesaplar -> kuculur).
+     100vw'den otomatik olcek (her telefon genisligine gore) + 12px pay -> sagdan TASMAZ. */
+  --board-h: min(calc((100vw - 12px) / 1.371), calc(100dvh - 150px));
   --checker: calc(var(--board-h) / 11);
-  --col: calc(var(--checker) * 0.9);
-  --bar-w: calc(var(--checker) * 1.0);
+  --col: calc(var(--checker) * 1.14);
+  --bar-w: calc(var(--checker) * 1.4);
 }
 
 /* ---- Ust kontrol seridi (mac ID solda, hamburger sagda; TAM EKRAN YOK) ---- */
