@@ -14893,7 +14893,8 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 8px;
 }
 .tourn-week-day {
-  min-height: 150px;
+  /* Sabit yukseklik: hafta degisince yukselip dusmesin. Fazla turnuva -> hucre ICINDE kaydirilir. */
+  height: 200px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--text) 2.5%, var(--card-bg));
@@ -14938,7 +14939,21 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--on-accent);
   border-radius: var(--radius-circle);
 }
-.tourn-week-items { display: flex; flex-direction: column; gap: 6px; }
+.tourn-week-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0; /* flex child'da overflow calissin */
+  overflow-y: auto;
+  margin-right: -3px; /* scrollbar icin hafif pay */
+  padding-right: 3px;
+}
+.tourn-week-items::-webkit-scrollbar { width: 5px; }
+.tourn-week-items::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text) 20%, transparent);
+  border-radius: 3px;
+}
 .tourn-week-chip {
   display: flex;
   flex-direction: column;
