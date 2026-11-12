@@ -1,13 +1,13 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import Board from './Board'
 import DiceRow from './Dice'
 import { useT } from '../i18n'
 import { initialState } from '../engine/board'
 import { pipCount } from '../engine/evaluate'
-import { CURRICULUM, type Lesson } from './trainingCurriculum'
+import { LESSONS, type Lesson } from './trainingCurriculum'
 
-// Ders ilerlemesi: localStorage'da { [id]: { done, stars } }. Trainer bitince yazar (ileride).
+// Ders ilerlemesi: localStorage'da { [id]: { done, stars } }. Ders bitince yazilir.
 export interface LessonProgress {
   done?: boolean
   stars?: number
@@ -39,19 +39,14 @@ interface Props {
 export default function TrainingPath({ onPick, onClose, titleOverride }: Props) {
   const { t } = useT()
   const progress = useMemo(() => loadProgress(), [])
+  const [sel, setSel] = useState<string>(LESSONS[0]?.id ?? 'easy')
   const board = initialState()
   const dice = <DiceRow faces={[{ value: 4, used: false }, { value: 2, used: false }]} owner="white" />
+  const selLesson = LESSONS.find((l) => l.id === sel) ?? LESSONS[0]
 
-  // İlk "hazır ama tamamlanmamış" ders = aktif (mavi). Öncesi done, sonrası kilitli görünür.
-  const firstActive = CURRICULUM.flatMap((s) => s.lessons).find((l) => l.ready && !progress[l.id]?.done)?.id
-
-  function nodeState(l: Lesson): 'done' | 'active' | 'locked' {
-    if (progress[l.id]?.done) return 'done'
-    if (l.id === firstActive) return 'active'
-    return 'locked'
+  function starCount(l: Lesson): number {
+    return progress[l.id]?.stars ?? 0
   }
-
-  const activeLesson = CURRICULUM.flatMap((s) => s.lessons).find((l) => l.id === firstActive)
 
   return (
     <div className="tr-view bgx tr-path">
@@ -63,55 +58,45 @@ export default function TrainingPath({ onPick, onClose, titleOverride }: Props) 
           <span className="bgx-title">{titleOverride || t('tr.masteryPath')}</span>
         </div>
 
+        <div className="tr-sec-head">{t('tr.levelsHead')}</div>
         <div className="tr-path-list">
-          {CURRICULUM.map((section) => {
-            const done = section.lessons.filter((l) => progress[l.id]?.done).length
+          {LESSONS.map((l) => {
+            const done = progress[l.id]?.done
             return (
-              <div key={section.level} className="tr-sec">
-                <div className="tr-sec-head">
-                  {t(section.titleKey)}: {done} / {section.lessons.length}
-                </div>
-                {section.lessons.map((l) => {
-                  const st = nodeState(l)
-                  const clickable = l.ready
-                  return (
-                    <button
-                      key={l.id}
-                      className={`tr-lesson ${st}${clickable ? '' : ' disabled'}`}
-                      onClick={() => clickable && onPick(l.id)}
-                      disabled={!clickable}
-                    >
-                      <span className={`tr-node ${st}`}>
-                        {st === 'done' ? (
-                          <Icon name="star" size={18} />
-                        ) : st === 'locked' && !l.ready ? (
-                          <Icon name="lock" size={14} />
-                        ) : null}
-                      </span>
-                      <span className="tr-lesson-body">
-                        <span className="tr-lesson-title">{l.title}</span>
-                        <span className="tr-lesson-sub">
-                          {progress[l.id]?.done
-                            ? `${l.questions} / ${l.questions}`
-                            : t('tr.questions', { n: l.questions })}
-                        </span>
-                      </span>
-                      {st === 'active' && <span className="tr-lesson-dot" aria-hidden="true" />}
-                    </button>
-                  )
-                })}
-              </div>
+              <button
+                key={l.id}
+                className={`tr-lesson ${l.id === sel ? 'active' : ''}`}
+                onClick={() => setSel(l.id)}
+                onDoubleClick={() => onPick(l.id)}
+              >
+                <span className={`tr-node ${done ? 'done' : l.id === sel ? 'active' : ''}`}>
+                  {done ? <Icon name="star" size={18} /> : <Icon name="dice" size={16} />}
+                </span>
+                <span className="tr-lesson-body">
+                  <span className="tr-lesson-title">{t(l.titleKey)}</span>
+                  <span className="tr-lesson-sub">
+                    {done ? `${l.questions.length} / ${l.questions.length}` : t('tr.questions', { n: l.questions.length })}
+                  </span>
+                </span>
+                {starCount(l) > 0 && (
+                  <span className="tr-lesson-stars">
+                    {Array.from({ length: starCount(l) }).map((_, i) => (
+                      <Icon key={i} name="star" size={13} />
+                    ))}
+                  </span>
+                )}
+              </button>
             )
           })}
         </div>
 
         <div className="bgx-spacer" />
 
-        {activeLesson && (
+        {selLesson && (
           <div className="tr-path-foot">
-            <div className="tr-foot-title">{activeLesson.title}</div>
-            <div className="tr-foot-desc">{t('tr.lessonDesc')}</div>
-            <button className="bgx-btn green" onClick={() => onPick(activeLesson.id)}>
+            <div className="tr-foot-title">{t(selLesson.titleKey)}</div>
+            <div className="tr-foot-desc">{t(selLesson.descKey)}</div>
+            <button className="bgx-btn green" onClick={() => onPick(selLesson.id)}>
               {t('tr.continue')}
             </button>
           </div>
