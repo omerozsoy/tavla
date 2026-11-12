@@ -643,7 +643,7 @@ import {
 } from './api'
 import { initPush } from './push'
 import { iapIdentify, iapLogout, iapPresentPaywall, iapRestore } from './nativeIAP'
-import { lockLandscape, lockPortrait } from './orientation'
+import { unlockOrientation, lockPortrait } from './orientation'
 
 // Geri sayim bicimi: saniye -> "S:DD:SS"
 function fmtCountdown(total: number): string {
@@ -7377,13 +7377,13 @@ export default function App() {
     return () => mq.removeEventListener('change', apply)
   }, [])
 
-  // NATIVE (Capacitor app): OYUNDA (home=false -> board/mac ekrani) YATAY kilit; oyun DISINDA
-  // (lobi/menu/sayfalar) DIKEY. Tarayici/PWA'da no-op (orientation.ts isNativePlatform guard) ->
-  // sitede responsive davranis AYNEN korunur. Oyun yatay tasarimli oldugundan native'de artik
-  // "telefonunu yan cevir" uyarisina gerek yok (ekran zaten yatay kilitli acilir).
+  // NATIVE (Capacitor app): OYUNDA (home=false -> board/mac ekrani) yon kilidi ACIK -> isteyen
+  // telefonu DIK tutup oynar, YAN cevirince aninda yatay duzene gecer (web/CSS her iki yonu de
+  // destekler). Oyun DISINDA (lobi/menu/sayfalar) DIKEY kilit (mobil tasarim dikey). Tarayici/PWA'da
+  // no-op (orientation.ts isNativePlatform guard) -> sitede responsive davranis AYNEN korunur.
   useEffect(() => {
     if (home) lockPortrait()
-    else lockLandscape()
+    else unlockOrientation()
   }, [home])
 
   // Tam ekran (browser Fullscreen API) — oyun ekraninda ac/kapa butonu.

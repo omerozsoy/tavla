@@ -34,14 +34,15 @@ function call(method: 'lock' | 'unlock', options?: { orientation: string }): Pro
 }
 
 // Istenen yonu tekrar-cagri'ya karsi hatirla (her render'da kopruyu dovmeyelim).
-let desired: 'landscape' | 'portrait' | null = null
+let desired: 'free' | 'portrait' | null = null
 
-/** OYUN ekrani: yatay'a kilitle. */
-export function lockLandscape(): void {
-  if (desired === 'landscape') return
+/** OYUN ekrani: yon KILIDINI ac — isteyen dik tutar, yan ceviren aninda yatay oynar.
+ * (Web/CSS zaten hem dikey hem yatay duzeni destekler; native'de de fiziksel yonu takip et.) */
+export function unlockOrientation(): void {
+  if (desired === 'free') return
   if (!cap()) return
-  desired = 'landscape'
-  const r = call('lock', { orientation: 'landscape' })
+  desired = 'free'
+  const r = call('unlock')
   if (r) r.catch(() => { desired = null })
 }
 
