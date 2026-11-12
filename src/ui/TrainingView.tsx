@@ -15,14 +15,14 @@ import { moveNotation } from '../engine/notation'
 import { pipCount } from '../engine/evaluate'
 import { NeuralBot, type RankedMove } from '../engine/neuralBot'
 import { Sound } from '../sound'
+import TrainingPath, { saveLessonProgress } from './TrainingPath'
+import { lessonById } from './trainingCurriculum'
 
 interface Props {
   onClose: () => void
   titleOverride?: string
 }
 
-// Bir ders = 10 soru (BackgammonGalaxy "Fundamental concepts" düzeni birebir).
-const TOTAL = 10
 // "Doğru" sayılma eşiği: en iyi hamleye göre izin verilen equity kaybı (money ~[-3,3]).
 const EPS = 0.02
 
@@ -87,14 +87,16 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
   )
 }
 
-export default function TrainingView({ onClose, titleOverride }: Props) {
+// Tek ders ekranı: zar at, oyna, otomatik değerlendir; yanlışsa doğru hamle oklarla gösterilir.
+function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void }) {
   const { t } = useT()
-  useEscape(onClose)
+  const lesson = lessonById(lessonId)
+  const TOTAL = lesson?.questions ?? 10
 
   const botRef = useRef<NeuralBot | null>(null)
   if (!botRef.current) botRef.current = new NeuralBot()
 
-  const [idx, setIdx] = useState(0) // 0..TOTAL-1
+  const [idx, setIdx] = useState(0)
   const [turnStart, setTurnStart] = useState<GameState>(() => makePuzzle())
   const [played, setPlayed] = useState<Step[]>([])
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
@@ -102,13 +104,13 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
   const [best, setBest] = useState<RankedMove | null>(null)
   const [checking, setChecking] = useState(false)
   const [hinted, setHinted] = useState(false)
-  const [reveal, setReveal] = useState(false) // en iyi hamle oklarını göster (ipucu / yanlış)
-  const [results, setResults] = useState<boolean[]>([]) // ilk denemede doğru mu (isabet için)
+  const [reveal, setReveal] = useState(false)
+  const [results, setResults] = useState<boolean[]>([])
   const [streak, setStreak] = useState(0)
   const [complete, setComplete] = useState(false)
 
   const interactive = phase === 'playing'
-  const gradedRef = useRef(-1) // en son puanlanan soru index'i (çift puanlamayı önle)
+  const gradedRef = useRef(-1)
 
   const nextSteps = useMemo(
     () => (interactive ? legalNextSteps(turnStart, played) : []),
@@ -140,7 +142,6 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
 
   const turnComplete = interactive && played.length > 0 && legalNextSteps(turnStart, played).length === 0
 
-  // Yanlış/ipucu: orijinal pozisyonda doğru hamleyi oklarla göster. Aksi halde oynanan hali.
   const showArrows = reveal && !!best
   const displayState = useMemo(
     () => (showArrows ? turnStart : applyPlayed(turnStart, played)),
@@ -189,14 +190,19 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
     setPhase('playing')
   }
 
+  const correctCount = results.filter(Boolean).length
+  const accuracy = Math.round((correctCount / TOTAL) * 100)
+
   const nextQuestion = useCallback(() => {
     if (idx + 1 >= TOTAL) {
+      const acc = Math.round((results.filter(Boolean).length / TOTAL) * 100)
+      saveLessonProgress(lessonId, { done: true, stars: acc === 100 ? 3 : acc >= 80 ? 2 : acc >= 50 ? 1 : 0 })
       setComplete(true)
       return
     }
     setIdx((i) => i + 1)
     resetQuestion(makePuzzle())
-  }, [idx])
+  }, [idx, TOTAL, results, lessonId])
 
   async function ensureBest(): Promise<RankedMove[] | null> {
     try {
@@ -207,7 +213,6 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
     }
   }
 
-  // Hamle tamamlanınca (BG: ayrı "Kontrol" butonu yok) otomatik değerlendir.
   const grade = useCallback(async () => {
     if (checking || gradedRef.current === idx) return
     gradedRef.current = idx
@@ -273,8 +278,6 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
   }
 
   const bestText = best ? moveNotation(best.move, 'white') : ''
-  const correctCount = results.filter(Boolean).length
-  const accuracy = Math.round((correctCount / TOTAL) * 100)
   const stars = accuracy === 100 ? 3 : accuracy >= 80 ? 2 : accuracy >= 50 ? 1 : 0
   const progressShown = complete ? TOTAL : idx + 1
   const mood: 'idle' | 'ok' | 'bad' = phase === 'wrong' ? 'bad' : phase === 'correct' || complete ? 'ok' : 'idle'
@@ -308,10 +311,10 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
     <div className="tr-view bgx">
       <aside className="bgx-side">
         <div className="bgx-head">
-          <button className="bgx-back" onClick={onClose} aria-label={t('common.back')}>
+          <button className="bgx-back" onClick={onBack} aria-label={t('common.back')}>
             <Icon name="arrow-right" size={22} />
           </button>
-          <span className="bgx-title">{titleOverride || t('tr.lessonTitle')}</span>
+          <span className="bgx-title">{lesson?.title || t('tr.lessonTitle')}</span>
           {streak > 1 && (
             <span className="bgx-streak" title={t('tr.streak')}>
               <Icon name="flame" size={16} /> {streak}
@@ -355,7 +358,7 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
             >
               {t('tr.replay')}
             </button>
-            <button className="bgx-btn green" onClick={onClose}>{t('tr.nextLesson')}</button>
+            <button className="bgx-btn green" onClick={onBack}>{t('tr.nextLesson')}</button>
           </div>
         ) : (
           <button className="bgx-hint" onClick={hint} disabled={!interactive || checking}>
@@ -403,4 +406,15 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
       </div>
     </div>
   )
+}
+
+// Konteyner: varsayılan "Ustalık Yolu" listesi; bir ders seçilince o dersin ekranı açılır.
+export default function TrainingView({ onClose, titleOverride }: Props) {
+  useEscape(onClose)
+  const [lessonId, setLessonId] = useState<string | null>(null)
+
+  if (!lessonId) {
+    return <TrainingPath onPick={setLessonId} onClose={onClose} titleOverride={titleOverride} />
+  }
+  return <LessonView lessonId={lessonId} onBack={() => setLessonId(null)} />
 }

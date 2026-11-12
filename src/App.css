@@ -13524,6 +13524,50 @@ button.acct-row-logout:hover:not(:disabled) {
   pointer-events: none;
 }
 .swiss-panel.tourn-panel .tourn-row > * { position: relative; }
+/* --- Kayan turnuva slider: tek turnuva yer kaplar, sag/sol ok + nokta ile gezilir.
+   Viewport tasmayi kirper; track yatay kayar; her slide tam genislik (flex 0 0 100%). --- */
+.swiss-panel.tourn-panel .tourn-viewport { overflow: hidden; }
+.swiss-panel.tourn-panel .tourn-track {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+.swiss-panel.tourn-panel .tourn-slide { flex: 0 0 100%; min-width: 0; }
+/* Slider icinde satirlar yan yana: tam-bleed negatif margin + alt hairline KALKAR
+   (yoksa komsu slide'a tasar / her kartin altinda cizgi kalir). */
+.swiss-panel.tourn-panel .tourn-slide .tourn-row { margin: 0; border-bottom: 0; padding: 10px 2px; }
+.swiss-panel.tourn-panel .tourn-cnav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 10px;
+}
+.swiss-panel.tourn-panel .tourn-cnav-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.swiss-panel.tourn-panel .tourn-cnav-arrow:disabled { opacity: 0.35; cursor: default; }
+.swiss-panel.tourn-panel .tourn-cnav-arrow:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+.swiss-panel.tourn-panel .tourn-dots { display: inline-flex; gap: 7px; }
+.swiss-panel.tourn-panel .tourn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: color-mix(in srgb, var(--text) 25%, transparent);
+  cursor: pointer;
+}
+.swiss-panel.tourn-panel .tourn-dot.active { background: var(--accent); }
 /* Ana sayfadan Katil/Iptal butonu — Swiss dili: keskin kose, uppercase, accent dolgu.
    Iptal = ters (outline). Satir acma tiklamasini yutar (stopPropagation JSX'te). */
 .swiss-panel.tourn-panel .tr-act {
@@ -18189,6 +18233,30 @@ body:has(.spectate-view) .app.lobby {
 .bgx-seg { flex: 1; border-radius: 2px; background: transparent; }
 .bgx-seg.on { background: #2fb36b; }
 .bgx-count { font-weight: 600; font-size: 0.92rem; color: #cfd6e4; }
+
+/* --- Ustalık Yolu (Mastery Path) listesi --- */
+.tr-path .bgx-side { width: 380px; }
+.tr-path-side { gap: 12px; }
+.tr-path-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; flex: 0 1 auto; max-height: calc(var(--board-h) - 120px); padding-right: 4px; }
+.tr-sec { display: flex; flex-direction: column; }
+.tr-sec-head { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; color: #8a94a8; text-align: center; margin: 14px 0 8px; }
+.tr-lesson { display: flex; align-items: center; gap: 12px; text-align: left; appearance: none; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: 10px; color: #e9edf5; position: relative; }
+.tr-lesson:not(.disabled):hover { background: rgba(255, 255, 255, 0.05); }
+.tr-lesson.active { background: #182138; }
+.tr-lesson.disabled { cursor: default; opacity: 0.6; }
+.tr-node { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #223049; color: #fff; }
+.tr-node.done { background: #f3b43b; color: #3a2a06; }
+.tr-node.active { background: #2f6bff; box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.22); }
+.tr-node.locked { background: #1d2740; color: #566078; }
+.tr-lesson-body { display: flex; flex-direction: column; min-width: 0; }
+.tr-lesson-title { font-weight: 600; font-size: 0.92rem; line-height: 1.25; }
+.tr-lesson-sub { font-size: 0.78rem; color: #8a94a8; }
+.tr-lesson.active .tr-lesson-title { color: #fff; }
+.tr-lesson-dot { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #2f6bff; flex: none; }
+.tr-path-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #1c2740; padding-top: 12px; }
+.tr-foot-title { font-weight: 700; font-size: 1rem; }
+.tr-foot-desc { font-size: 0.85rem; color: #9aa4b8; line-height: 1.4; }
+.tr-path-foot .bgx-btn { flex: none; margin-top: 4px; }
 
 /* Dar ekran: sol panel üste, tahta alta (tek kolon) */
 @media (max-width: 860px) {
