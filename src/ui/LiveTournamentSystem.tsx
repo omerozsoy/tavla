@@ -106,17 +106,19 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
               </div>
             </div>
 
-            <div className="lts-q">
-              <h3 className="lts-q-label">2. {t('lts.q2')}</h3>
-              <div className="lts-opts">
-                <Opt active={ttype === 'swiss'} onClick={() => pickType('swiss')}>
-                  Swiss
-                </Opt>
-                <Opt active={ttype === 'bracket'} onClick={() => pickType('bracket')}>
-                  Bracket
-                </Opt>
+            {where && (
+              <div className="lts-q">
+                <h3 className="lts-q-label">2. {t('lts.q2')}</h3>
+                <div className="lts-opts">
+                  <Opt active={ttype === 'swiss'} onClick={() => pickType('swiss')}>
+                    Swiss
+                  </Opt>
+                  <Opt active={ttype === 'bracket'} onClick={() => pickType('bracket')}>
+                    Bracket
+                  </Opt>
+                </div>
               </div>
-            </div>
+            )}
 
             {ttype === 'swiss' && (
               <div className="lts-q">
@@ -144,9 +146,11 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
               </div>
             )}
 
-            <Button type="submit" className="lts-submit" disabled={!complete}>
-              {t('lts.submit')}
-            </Button>
+            {complete && (
+              <Button type="submit" className="lts-submit">
+                {t('lts.submit')}
+              </Button>
+            )}
           </form>
         )}
       </div>

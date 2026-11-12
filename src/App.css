@@ -20744,7 +20744,12 @@ body:has(.spectate-view) .app.lobby {
 .lts-card .lts-form,
 .lts-card .lts-done { max-width: 620px; }
 .lts-intro { margin-bottom: 18px; }
-.lts-q { margin: 0 0 22px; }
+.lts-q { margin: 0 0 22px; animation: lts-reveal 0.28s ease both; }
+@keyframes lts-reveal {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { .lts-q { animation: none; } }
 .lts-q-label { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
 .lts-opts { display: flex; flex-wrap: wrap; gap: 10px; }
 .lts-opt { min-width: 64px; }
