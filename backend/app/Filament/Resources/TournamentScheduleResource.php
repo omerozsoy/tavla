@@ -79,8 +79,8 @@ class TournamentScheduleResource extends Resource
                     ->label('Kurulma sıklığı')
                     ->helperText('Günlük: seçili her gün, o gün 00:00\'da kurulur. Haftalık: Pazartesi 00:00\'da o haftanın TÜM seçili günlerinin turnuvaları birden kurulur (hafta başı tüm hafta önceden görünür/kayıt açık).')
                     ->options([
-                        'daily' => 'Günlük (her gün o gün kurulur)',
-                        'weekly' => 'Haftalık (Pazartesi — o haftanın hepsi birden kurulur)',
+                        'daily' => 'Günlük (her gün saat 00:00\'da o günün turnuvası kurulur)',
+                        'weekly' => 'Haftalık (Pazartesi saat 00:00\'da o haftanın hepsi birden kurulur)',
                     ])
                     ->default('daily')
                     ->required(),
