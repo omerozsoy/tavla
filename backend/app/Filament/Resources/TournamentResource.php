@@ -371,27 +371,6 @@ class TournamentResource extends Resource
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->color('primary')
                     ->url(fn (Tournament $record): string => Pages\ManageTournament::getUrl(['record' => $record])),
-                // Periyodik turnuvalar için: mevcut turnuvanın AYARLARINI yeni, boş bir turnuvaya kopyala.
-                // Çalışma zamanı durumu (katılımcılar, ağaç, swiss_state, şampiyon, sonuç, ödül-ödendi)
-                // KOPYALANMAZ → kopya sıfırdan "Kayıt açık" başlar. Yeni tarihi admin kopyada belirler.
-                Tables\Actions\ReplicateAction::make()
-                    ->label('Çoğalt')
-                    ->icon('heroicon-o-document-duplicate')
-                    ->color('gray')
-                    ->modalHeading('Turnuvayı çoğalt')
-                    ->modalDescription('Ayarlar yeni bir turnuvaya kopyalanır; katılımcılar, eşleşmeler ve sonuç kopyalanmaz (kopya "Kayıt açık" başlar). Son katılım tarihini kopyada belirleyebilirsin.')
-                    ->beforeReplicaSaved(function (Tournament $replica, Tournament $record): void {
-                        $replica->name = $record->name.' (kopya)';
-                        $replica->status = 'open';
-                        $replica->active = false; // kurulum bitene kadar yayından gizli
-                        $replica->players = [];
-                        $replica->bracket = null;
-                        $replica->swiss_state = null;
-                        $replica->champion_id = null;
-                        $replica->prize_paid = false;
-                        $replica->register_until = null;
-                    })
-                    ->successRedirectUrl(fn (Tournament $replica): string => Pages\EditTournament::getUrl(['record' => $replica])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

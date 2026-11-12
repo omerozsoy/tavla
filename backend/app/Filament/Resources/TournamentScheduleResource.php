@@ -232,6 +232,18 @@ class TournamentScheduleResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                // Şablonu çoğalt: tüm ayarları yeni bir periyodik turnuva şablonuna kopyalar; kopya
+                // pasif başlar ve "son kurulum" damgası sıfırlanır (hemen kurmasın, admin düzenlesin).
+                Tables\Actions\ReplicateAction::make()
+                    ->label('Çoğalt')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->color('gray')
+                    ->beforeReplicaSaved(function (TournamentSchedule $replica, TournamentSchedule $record): void {
+                        $replica->name = $record->name.' (kopya)';
+                        $replica->active = false;
+                        $replica->last_created_on = null;
+                    })
+                    ->successRedirectUrl(fn (TournamentSchedule $replica): string => Pages\EditTournamentSchedule::getUrl(['record' => $replica])),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
