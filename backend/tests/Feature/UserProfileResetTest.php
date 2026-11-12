@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserStat;
 use App\Support\UserProfileReset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 /**
@@ -44,6 +45,20 @@ class UserProfileResetTest extends TestCase
         $this->assertDatabaseMissing('user_stats', ['user_id' => $u->id]);
         // RAKİBİN maç kaydı DURUYOR (sıfırlama rakibi etkilemez).
         $this->assertDatabaseHas('match_results', ['user_id' => $opp->id, 'room_code' => 'ABC12']);
+    }
+
+    public function test_reset_invalidates_stats_caches(): void
+    {
+        // "Maç Tipine Göre PR" (median/pooled) ve "Zar Ortalamaları" cache'li -> reset temizlemezse
+        // veri silinse de bayat cache'ten gösterilir. Cache anahtarlarına değer koy, reset sonrası silinsin.
+        $u = User::factory()->create(['rating' => 1850]);
+        Cache::put("player:{$u->id}:median-pr2:all", ['stale' => true], 3600);
+        Cache::put("player:{$u->id}:dice-stats:v2:all", ['stale' => true], 3600);
+
+        UserProfileReset::reset($u);
+
+        $this->assertNull(Cache::get("player:{$u->id}:median-pr2:all"));
+        $this->assertNull(Cache::get("player:{$u->id}:dice-stats:v2:all"));
     }
 
     public function test_reset_endpoint_requires_auth_and_returns_user(): void

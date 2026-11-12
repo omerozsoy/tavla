@@ -5,6 +5,8 @@ namespace App\Support;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CareerPrService;
+use App\Services\DiceStatisticsService;
+use App\Services\PlayerStatisticsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -58,6 +60,12 @@ class UserProfileReset
 
             // Kariyer PR aggregate cache'ini maçlardan yeniden kur -> maç kalmadığı için null/0.
             (new CareerPrService)->recalc($user);
+
+            // İstatistik CACHE'leri de temizlensin -> yoksa "Maç Tipine Göre PR" (median/pooled) ve
+            // "Zar Ortalamaları" veriler silinse de bayat cache'ten gösterilmeye devam eder (maç-sonu
+            // analiz job'ı bu ikisini zaten invalidate ediyor; reset de etmeli).
+            app(PlayerStatisticsService::class)->invalidate($user->id);
+            app(DiceStatisticsService::class)->invalidate($user->id);
         });
     }
 }
