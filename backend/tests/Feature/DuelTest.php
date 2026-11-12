@@ -25,7 +25,9 @@ class DuelTest extends TestCase
             'nickname' => $nick, 'email' => $nick.'@example.com',
             'password' => bcrypt('secret123'),
         ]);
-        $u->forceFill(['rating' => $rating, 'email_verified_at' => now()])->save(); // enter() e-posta gate'i
+        // DÜELLO artık SABİT 25 coin stake ister -> test kullanıcılarına yeterli bakiye ver (yoksa
+        // invite() "Düello için en az 25 coin'in olmalı" 422 döner). rating + e-posta gate'i ile birlikte.
+        $u->forceFill(['rating' => $rating, 'email_verified_at' => now(), 'coins' => 1000])->save();
 
         return $u;
     }
