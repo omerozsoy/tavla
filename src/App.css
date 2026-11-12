@@ -15024,6 +15024,17 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--accent);
   letter-spacing: 0.01em;
 }
+/* Aktif (kayit acik) turnuva: yanip sonen yesil CANLI noktasi (zemin yesil DEGIL, yalniz nokta). */
+.twc-live {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--tv-green, #3f9e6a);
+  animation: tcard-blink 1.1s ease-in-out infinite;
+}
 .tourn-week-chip.twc-s-running .twc-time { color: var(--color-success); }
 .tourn-week-chip.twc-s-finished .twc-time { color: var(--muted); }
 .twc-name {
@@ -20719,6 +20730,19 @@ body:has(.spectate-view) .app.lobby {
 .info-card .info-rich.rich p {
   max-width: none;
 }
+
+/* --- Canlı Turnuva Sistemi kurulum formu --- */
+.lts-card .lts-form,
+.lts-card .lts-done { max-width: 620px; }
+.lts-intro { margin-bottom: 18px; }
+.lts-q { margin: 0 0 22px; }
+.lts-q-label { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+.lts-opts { display: flex; flex-wrap: wrap; gap: 10px; }
+.lts-opt { min-width: 64px; }
+.lts-submit { margin-top: 6px; }
+.lts-summary { list-style: none; margin: 14px 0 20px; padding: 0; display: grid; gap: 8px; }
+.lts-summary li { display: flex; gap: 8px; }
+.lts-summary b { color: var(--muted); font-weight: 500; }
 
 @media (max-width: 900px) {
   .info-card {

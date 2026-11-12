@@ -1775,6 +1775,7 @@ function WeekCalendar({ list, lang, onOpen }: {
                     >
                       <div className="twc-top">
                         <span className="twc-time tnum">
+                          {tr.status === 'open' && <span className="twc-live" aria-hidden="true" />}
                           {new Date(tr.starts_at!).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span className={`twc-type twc-type-${isSwiss ? 'swiss' : 'bracket'}`}>
