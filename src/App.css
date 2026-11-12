@@ -14984,7 +14984,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-week-day.is-today .tourn-week-dnum {
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: 9px;
+  border-radius: 4px; /* kucuk rozette 9px fazla yuvarlak duruyordu -> daha kare */
   height: auto;
   min-width: 38px;
   padding: 4px;
