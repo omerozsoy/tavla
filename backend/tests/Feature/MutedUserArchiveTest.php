@@ -52,6 +52,21 @@ class MutedUserArchiveTest extends TestCase
         $this->assertContains('active', $visible, 'aktif yasaklı listede görünmeli');
     }
 
+    public function test_archive_active_bulk(): void
+    {
+        $active = User::factory()->create(['nickname' => 'aktif']);
+        $active->forceFill(['chat_offenses' => 1, 'chat_muted_until' => now()->addDay()])->save();
+        $expired = User::factory()->create(['nickname' => 'bitmis']);
+        $expired->forceFill(['chat_offenses' => 1, 'chat_muted_until' => now()->subDay()])->save();
+
+        Livewire::actingAs($this->admin())->test(ListMutedUsers::class)
+            ->callTableAction('archiveActive');
+
+        $this->assertNotNull($active->fresh()->chat_mute_archived_at, 'aktif yasak arşivlenmeli');
+        $this->assertTrue($active->fresh()->chat_muted_until->isFuture(), 'yasak kalkmamalı');
+        $this->assertNull($expired->fresh()->chat_mute_archived_at, 'süresi dolmuş etkilenmemeli');
+    }
+
     public function test_active_ban_can_be_archived_and_is_hidden(): void
     {
         // Aktif yasaklı da arşivlenebilmeli; arşivlenince varsayılan listede (hideArchived) GİZLENİR.

@@ -90,6 +90,18 @@ class MutedUserResource extends Resource
                             ->update(['chat_mute_archived_at' => now()]);
                         Notification::make()->title($n.' kullanıcı arşivlendi')->success()->send();
                     }),
+                // Aktif (süresi dolmamış) yasaklıları TOPLU arşivle: yalnız listeden gizler, yasak
+                // YÜRÜRLÜKTE kalır. Geri almak için "Yalnız arşivlenenler" filtresi + "Arşivden Çıkar".
+                Tables\Actions\Action::make('archiveActive')->label('Aktif Yasakları Arşivle')
+                    ->icon('heroicon-o-archive-box')->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription('Şu an aktif tüm yasaklılar arşivlenir (listeden gizlenir). Yasak KALKMAZ, yalnız gizlenir.')
+                    ->action(function () {
+                        $n = User::whereNull('chat_mute_archived_at')
+                            ->where('chat_muted_until', '>', now())
+                            ->update(['chat_mute_archived_at' => now()]);
+                        Notification::make()->title($n.' aktif yasaklı arşivlendi')->success()->send();
+                    }),
             ])
             ->columns([
                 Tables\Columns\TextColumn::make('nickname')->label('Kullanıcı')
