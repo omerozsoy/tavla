@@ -12,6 +12,7 @@ interface Props {
 type Where = 'tavlatv' | 'self'
 type TType = 'swiss' | 'bracket'
 type Size = 8 | 16 | 32 | 64 | 128 | 'unlimited'
+type Bye = 'manual' | 'auto'
 
 const BRACKET_SIZES: Size[] = [8, 16, 32, 64, 128, 'unlimited']
 const SWISS_LIVES = [1, 2, 3]
@@ -26,19 +27,21 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
   const [ttype, setTtype] = useState<TType | null>(null)
   const [lives, setLives] = useState<number | null>(null)
   const [size, setSize] = useState<Size | null>(null)
+  const [bye, setBye] = useState<Bye | null>(null)
   const [done, setDone] = useState(false)
 
   const title = titleOverride || t('menu.liveTournSystem')
-  // Swiss: hak + kişi sayısı; Bracket: yalnız kişi sayısı. Swiss'te hak seçilince kişi sayısı sorulur.
-  const complete =
-    !!where &&
-    (ttype === 'swiss' ? lives != null && size != null : ttype === 'bracket' ? size != null : false)
+  // Swiss: hak + kişi sayısı; Bracket: yalnız kişi sayısı. Kişi sayısından sonra bay (bye) çekim usulü.
+  const sizeDone =
+    size != null && (ttype === 'swiss' ? lives != null : ttype === 'bracket' ? true : false)
+  const complete = !!where && sizeDone && bye != null
 
-  // Turnuva tipi değişince 3. soru cevabını sıfırla (Swiss hak ≠ Bracket kişi).
+  // Turnuva tipi değişince alt cevapları sıfırla (Swiss hak ≠ Bracket kişi).
   const pickType = (v: TType) => {
     setTtype(v)
     setLives(null)
     setSize(null)
+    setBye(null)
   }
 
   const reset = () => {
@@ -46,6 +49,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
     setTtype(null)
     setLives(null)
     setSize(null)
+    setBye(null)
     setDone(false)
   }
 
@@ -84,6 +88,9 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
               )}
               <li>
                 <b>{t('lts.q3.bracket')}</b> {size != null ? sizeLabel(size) : ''}
+              </li>
+              <li>
+                <b>{t('lts.q5')}</b> {bye ? t(bye === 'manual' ? 'lts.bye.manual' : 'lts.bye.auto') : ''}
               </li>
             </ul>
             <Button type="button" variant="outline" onClick={reset}>
@@ -162,6 +169,23 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                       {sizeLabel(s)}
                     </Opt>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Kişi sayısı seçilince bay (bye) çekim usulü. Numara dala göre (Swiss 5, Bracket 4). */}
+            {sizeDone && (
+              <div className="lts-q">
+                <h3 className="lts-q-label">
+                  {ttype === 'swiss' ? 5 : 4}. {t('lts.q5')}
+                </h3>
+                <div className="lts-opts">
+                  <Opt active={bye === 'manual'} onClick={() => setBye('manual')}>
+                    {t('lts.bye.manual')}
+                  </Opt>
+                  <Opt active={bye === 'auto'} onClick={() => setBye('auto')}>
+                    {t('lts.bye.auto')}
+                  </Opt>
                 </div>
               </div>
             )}
