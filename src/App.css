@@ -13538,7 +13538,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .swiss-panel.tourn-panel .tourn-cnav {
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* sola yasli: sag oklar yan panel kontrolune girmesin */
+  justify-content: center; /* nokta/ok navigasyonu ortada */
   gap: 12px;
   padding-top: 10px;
 }
@@ -13730,8 +13730,8 @@ button.acct-row-logout:hover:not(:disabled) {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-start; /* KATIL sag kenara yapismasin -> odulle birlikte sola */
+  gap: 14px;
   width: 100%;
   margin-top: 12px;
   padding-top: 12px;
@@ -15120,7 +15120,8 @@ button.acct-row-logout:hover:not(:disabled) {
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 1.15rem;
+  font-weight: 600;
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
 }
