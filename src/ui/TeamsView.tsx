@@ -281,7 +281,6 @@ function Champions({ go }: { go: (v: View) => void }) {
   useEffect(() => { getTeamsChampions().then((r) => setRows(r.champions)).catch(() => setRows([])) }, [])
   return (
     <div>
-      <SeasonBanner />
       <h3>{t('teams.champions.title')}</h3>
       {rows === null ? <Loading /> : rows.length === 0 ? (
         <div className="lb-empty">{t('teams.champions.empty')}</div>
