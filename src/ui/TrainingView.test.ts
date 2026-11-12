@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { LESSONS } from './trainingCurriculum'
+import { LESSONS, getQuestions } from './trainingCurriculum'
 import { generateMoves, hasNoMove } from '../engine/moves'
 import type { GameState } from '../engine/types'
 
@@ -10,15 +10,17 @@ function countCheckers(s: GameState, sign: 1 | -1): number {
   return n
 }
 
-describe('Tavla Egitimi mufredati (3 seviye)', () => {
-  it('her seviyede 10 soru var', () => {
-    expect(LESSONS.map((l) => l.id)).toEqual(['easy', 'medium', 'hard'])
-    for (const l of LESSONS) expect(l.questions.length).toBe(10)
+describe('Tavla Egitimi mufredati (10 seviye)', () => {
+  it('10 seviye var, hepsi 10 soruluk', () => {
+    expect(LESSONS.length).toBe(10)
+    for (const l of LESSONS) expect(l.count).toBe(10)
   })
 
-  it('her soru legal + beyaz sirasi + zarli + gercek karar (>=2 hamle)', () => {
+  it('her seviyenin uretilen 10 sorusu legal + beyaz sirasi + zarli + gercek karar (>=2 hamle)', () => {
     for (const l of LESSONS) {
-      for (const q of l.questions) {
+      const qs = getQuestions(l.id)
+      expect(qs.length).toBe(10)
+      for (const q of qs) {
         const s = q.state
         expect(countCheckers(s, 1)).toBe(15)
         expect(countCheckers(s, -1)).toBe(15)
