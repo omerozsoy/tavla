@@ -234,6 +234,11 @@ final class SeoMeta
             'Takımlar Ligi: takımını kur, üyelerinle düello puanı topla, sezon sıralamasında yüksel. 3 aylık sezonlar, en yüksek düello puanlı takıma şampiyonluk ve coin ödülü.',
             'Takımlar Ligi',
         ],
+        'canli-turnuva-sistemi' => [
+            'Canlı Turnuva Sistemi — Özel Tavla Turnuvası Kur | TavlaTv',
+            'Canlı Turnuva Sistemi ile kendi özel şifreli tavla turnuvanı kur: Swiss (3 Haklı) veya eleme (bracket) formatı, kapasite seçimi; maçlar TavlaTV platformunda online ya da kendi ortamında. Kurumsal, kulüp ve VIP organizasyonlar için.',
+            'Canlı Turnuva Sistemi',
+        ],
         'uyelik' => [
             'Üyelik ve Premium | TavlaTv',
             'TavlaTv Premium üyelik: reklamsız oyun, gelişmiş analiz ve ayrıcalıklar. Üyelik seçeneklerini incele.',
@@ -366,6 +371,11 @@ final class SeoMeta
             'Takımlar Ligi',
             'Takımlar Ligi, oyuncuların takım kurup düellolarla puan topladığı bağımsız bir modüldür. Takımını kur veya mevcut bir takıma katıl; üyeler 1v1 düello kazandıkça takıma düello puanı eklenir. 3 aylık sezon sonunda en yüksek düello puanlı takım şampiyon olur, 30.000 coin kazanır; sezonun en iyi düellocusu 5.000 coin alır.',
             ['Takımını kur veya mevcut takıma katıl.', 'Üyeler düello kazandıkça takıma düello puanı eklenir.', '3 aylık sezon; şampiyon takıma ve en iyi düellocuya coin ödülü.'],
+        ],
+        'canli-turnuva-sistemi' => [
+            'Canlı Turnuva Sistemi Nedir?',
+            'Canlı Turnuva Sistemi, kendi özel (şifreli) tavla turnuvanı birkaç adımda kurmanı sağlar. Maçların nerede oynanacağını (TavlaTV platformu veya kendi ortamın), turnuva tipini (3 Haklı Swiss veya eleme/bracket) ve kapasiteyi seçersin; sistem sana uygun turnuvayı oluşturur. Kurumsal etkinlikler, kulüp turnuvaları ve VIP özel organizasyonlar için idealdir.',
+            ['Özel şifreli turnuva: yalnız davet ettiklerin katılır.', 'Swiss (3 Haklı) veya eleme (bracket) formatı + kapasite seçimi.', 'Maçlar TavlaTV platformunda online ya da kendi ortamında.'],
         ],
         'turnuva-takvimi' => [
             'Yaklaşan tavla turnuvaları ve takvim',
@@ -502,6 +512,7 @@ final class SeoMeta
         'lider-tablosu' => ['Leaderboard — Top Backgammon Players | GammonTV', 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.', 'Backgammon Leaderboard'],
         'tavlatv-super-lig' => ['Türkiye Online Backgammon League | GammonTV', 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.', 'Türkiye Online Backgammon League'],
         'takimlar-ligi' => ['Teams League — Team Backgammon | GammonTV', 'Teams League: build your team, collect duel points with your members, climb the season standings. 3-month seasons, with championship and coin rewards for the team with the most duel points.', 'Teams League'],
+        'canli-turnuva-sistemi' => ['Live Tournament System — Create a Private Backgammon Tournament | GammonTV', 'Create your own private, password-protected backgammon tournament with the Live Tournament System: Swiss (3-life) or knockout (bracket) format, capacity selection; matches online on TavlaTV or at your own venue. For corporate, club and VIP events.', 'Live Tournament System'],
         'uyelik' => ['Membership and Premium | GammonTV', 'GammonTV Premium membership: ad-free play, advanced analysis and exclusive perks. Explore the membership options.', 'Membership and Premium'],
         'turnuva-takvimi' => ['Backgammon Tournament Calendar | GammonTV', 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.', 'Backgammon Tournament Calendar'],
         'kulupler' => ['Backgammon Clubs | GammonTV', 'Discover backgammon clubs, join a club or start your own. The GammonTV club directory.', 'Backgammon Clubs'],
@@ -530,6 +541,7 @@ final class SeoMeta
         'online-turnuvalar' => ['Join online backgammon tournaments', 'Follow registration, pairings, brackets and results on a single screen in GammonTV online backgammon tournaments. Explore open tournaments and upcoming matches.', ['Browse open online backgammon tournaments.', 'Check the registration and entry requirements.', 'Follow the pairings and tournament results.']],
         'tavlatv-super-lig' => ['Türkiye Online Backgammon League', 'The Türkiye Online Backgammon League is a standalone, seasonal league-format competition, separate from tournaments. Preliminary rounds, a standings table and a knockout bracket decide the champion; the league score is kept separate from your rating.', ['Seasonal league: pairings, standings and a knockout bracket.', 'League points are separate from rating; follow your rank.', 'Play your matches on time and climb to the top.']],
         'takimlar-ligi' => ['Teams League', 'Teams League is a standalone module where players build teams and collect points through duels. Build your own team or join an existing one; members add duel points as they win 1v1 duels. At the end of each 3-month season the team with the most duel points becomes champion and earns 30,000 coins; the season\'s top duelist earns 5,000 coins.', ['Build your team or join an existing one.', 'Members add duel points as they win duels.', '3-month seasons; coin rewards for the champion team and top duelist.']],
+        'canli-turnuva-sistemi' => ['What is the Live Tournament System?', 'The Live Tournament System lets you set up your own private (password-protected) backgammon tournament in a few steps. Choose where matches are played (the TavlaTV platform or your own venue), the tournament type (3-life Swiss or knockout/bracket) and the capacity; the system creates the tournament for you. Ideal for corporate events, club tournaments and VIP private organizations.', ['Private password tournament: only those you invite can join.', 'Swiss (3-life) or knockout (bracket) format with capacity selection.', 'Matches online on TavlaTV or at your own venue.']],
         'turnuva-takvimi' => ['Upcoming backgammon tournaments and calendar', 'Follow backgammon tournament dates, online and live events, registration windows and results in the up-to-date tournament calendar.', ['Find upcoming backgammon tournaments by date.', 'Compare online and live tournaments.', 'Check registration dates and prizes.']],
         'tavla-turnuvasi-organizasyonu' => ['Turnkey backgammon tournament organization', 'GammonTV provides backgammon tournament hosting, digital pairings, refereeing and live result management for companies, municipalities and shopping centers.', ['Design the format, bracket and participation plan.', 'Plan refereeing, scoring and pairing management.', 'Request a quote for your corporate event.']],
         'kurumsal-tavla-turnuvasi' => ['Corporate backgammon tournament organization', 'Plan an in-house or inter-company backgammon tournament with employee participation, team spirit and measurable results.', ['Choose an office, hotel or hybrid event format.', 'Manage employee registrations and pairings.', 'Plan the final and the awards process.']],
