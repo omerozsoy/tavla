@@ -35,6 +35,7 @@ use App\Support\RoomResult;
 use App\Support\Sms;
 use App\Support\StatsConfig;
 use App\Support\UserEraser;
+use App\Support\UserProfileReset;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -332,6 +333,16 @@ class AuthController extends Controller
         UserEraser::erase($request->user());
 
         return $this->ok();
+    }
+
+    // Profil sifirlama (temiz baslangic): kullanici KENDI maclarini/PR/istatistik/basarimlarini
+    // siler, rating yeni uye baslangicina doner. Hesap/jeton/odeme/kostum KORUNUR -> silme DEGIL.
+    public function resetProfile(Request $request)
+    {
+        $user = $request->user();
+        UserProfileReset::reset($user);
+
+        return response()->json(['user' => $user->fresh()]);
     }
 
     // Giris yapmis kullanici

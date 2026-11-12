@@ -69,6 +69,50 @@ const DANGER_I18N: Record<string, { zone: string; desc: string }> = {
   fr: { zone: 'Zone dangereuse', desc: 'Cette action est irréversible. Votre compte et toutes vos données sont définitivement supprimés.' },
 }
 
+// Profil sifirlama (temiz baslangic) metinleri — DANGER_I18N ile ayni yerel-harita deseni.
+const RESET_I18N: Record<string, { title: string; desc: string; button: string; confirm: string; yes: string; done: string }> = {
+  tr: {
+    title: 'Profili Sıfırla',
+    desc: 'Temiz bir sayfa aç: oynadığın tüm maçlar, PR’ların, istatistiklerin ve başarımların silinir, puanın başlangıç değerine döner. Hesabın, jetonların ve satın aldıkların korunur.',
+    button: 'Profili Sıfırla',
+    confirm: 'Tüm maçların, PR’ların, istatistiklerin ve başarımların kalıcı olarak silinecek, puanın başlangıç değerine dönecek. Bu işlem geri alınamaz. Devam edilsin mi?',
+    yes: 'Evet, sıfırla',
+    done: 'Profilin sıfırlandı — temiz başlangıç hazır.',
+  },
+  en: {
+    title: 'Reset Profile',
+    desc: 'Start fresh: all your matches, PR, statistics and achievements are deleted and your rating returns to the starting value. Your account, coins and purchases are kept.',
+    button: 'Reset Profile',
+    confirm: 'All your matches, PR, statistics and achievements will be permanently deleted and your rating reset to the starting value. This cannot be undone. Continue?',
+    yes: 'Yes, reset',
+    done: 'Your profile has been reset — a clean start.',
+  },
+  es: {
+    title: 'Restablecer perfil',
+    desc: 'Empieza de cero: todas tus partidas, PR, estadísticas y logros se eliminan y tu puntuación vuelve al valor inicial. Tu cuenta, monedas y compras se conservan.',
+    button: 'Restablecer perfil',
+    confirm: 'Todas tus partidas, PR, estadísticas y logros se eliminarán permanentemente y tu puntuación volverá al valor inicial. Esto no se puede deshacer. ¿Continuar?',
+    yes: 'Sí, restablecer',
+    done: 'Tu perfil se ha restablecido — un comienzo limpio.',
+  },
+  de: {
+    title: 'Profil zurücksetzen',
+    desc: 'Neu anfangen: alle Partien, PR, Statistiken und Erfolge werden gelöscht und deine Wertung auf den Startwert zurückgesetzt. Konto, Münzen und Käufe bleiben erhalten.',
+    button: 'Profil zurücksetzen',
+    confirm: 'Alle Partien, PR, Statistiken und Erfolge werden dauerhaft gelöscht und deine Wertung auf den Startwert zurückgesetzt. Dies kann nicht rückgängig gemacht werden. Fortfahren?',
+    yes: 'Ja, zurücksetzen',
+    done: 'Dein Profil wurde zurückgesetzt — ein sauberer Start.',
+  },
+  fr: {
+    title: 'Réinitialiser le profil',
+    desc: 'Repartez de zéro : toutes vos parties, PR, statistiques et succès sont supprimés et votre classement revient à la valeur de départ. Votre compte, vos jetons et vos achats sont conservés.',
+    button: 'Réinitialiser le profil',
+    confirm: 'Toutes vos parties, PR, statistiques et succès seront définitivement supprimés et votre classement réinitialisé à la valeur de départ. Action irréversible. Continuer ?',
+    yes: 'Oui, réinitialiser',
+    done: 'Votre profil a été réinitialisé — un nouveau départ.',
+  },
+}
+
 // Kullanım koşulları + topluluk kuralları (ilk kayıtta zorunlu onay). i18n.tsx fallback'siz
 // olduğundan (eksik anahtar ham görünür) DANGER_I18N ile AYNI yerel-harita deseni; lang yoksa en.
 interface TermsText {
@@ -227,6 +271,7 @@ interface Props {
   onGuest: (profile: Profile) => void
   onCancel?: () => void
   onDeleteAccount?: () => void // profil duzenlemede hesabi sil
+  onResetProfile?: () => Promise<void> | void // profili sifirla (temiz baslangic: mac/PR/istatistik)
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
   initialForgot?: boolean // /sifremi-unuttum deep-link: acilista "sifremi unuttum" modu
@@ -241,6 +286,7 @@ export default function Auth({
   onGuest,
   onCancel,
   onDeleteAccount,
+  onResetProfile,
   modal,
   page,
   initialForgot,
@@ -252,6 +298,8 @@ export default function Auth({
   useEscape(onCancel)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [resetting, setResetting] = useState(false)
   // Profil DUZENLEME = sadece form; sekme yok (istatistik/bildirim/üyelik ana sayfada).
   const editing = !!(editUser || editGuest)
   const seed = editUser
@@ -668,6 +716,7 @@ export default function Auth({
       ? t('auth.forgot')
       : t('brand.name')
   const danger = DANGER_I18N[lang] ?? DANGER_I18N.en
+  const resetTx = RESET_I18N[lang] ?? RESET_I18N.en
 
   // Profil fotografi blogu (yalnizca profil duzenlemede gorunur; grid disinda ust blok)
   const avatarBlock = (
@@ -1183,6 +1232,28 @@ export default function Auth({
           </div>
         )}
 
+        {/* Profili Sifirla (temiz baslangic): hesabi SILMEZ -> yalniz mac/PR/istatistik/basarim
+            sifirlanir, rating baslangica doner. Hesabi Sil'in HEMEN USTUNDE, daha yumusak ton. */}
+        {editUser && onResetProfile && (
+          <>
+            <Separator className="my-6" />
+            <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
+              <h3 className="text-sm font-normal">{resetTx.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{resetTx.desc}</p>
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={resetting}
+                  onClick={() => setConfirmReset(true)}
+                >
+                  <Icon name="refresh" size={16} /> {resetTx.button}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Hesap aksiyonlari: Cikis Yap profil ust basligina tasindi (ProfileOverview);
             burada yalniz Hesabi Sil (Tehlikeli Bolge). */}
         {editUser && onDeleteAccount && (
@@ -1273,6 +1344,46 @@ export default function Auth({
                 <Icon name="trash" size={16} /> {t('account.deleteYes')}
               </Button>
               <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
+                {t('reg.cancel')}
+              </Button>
+            </div>
+          </div>,
+          document.body,
+        )}
+      {/* Profil sifirlama onayi (silme modaliyla ayni desen, yumusak ton). */}
+      {confirmReset &&
+        editUser &&
+        onResetProfile &&
+        createPortal(
+          <div
+            className="register-overlay modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => !resetting && setConfirmReset(false)}
+          >
+            <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+              <h2>
+                <Icon name="refresh" size={20} /> {resetTx.title}
+              </h2>
+              <p className="register-sub">{resetTx.confirm}</p>
+              <Button
+                disabled={resetting}
+                onClick={async () => {
+                  setResetting(true)
+                  try {
+                    await onResetProfile()
+                    notify.success(resetTx.done)
+                    setConfirmReset(false)
+                  } catch {
+                    notify.error(t('common.loadError'))
+                  } finally {
+                    setResetting(false)
+                  }
+                }}
+              >
+                <Icon name="refresh" size={16} /> {resetting ? '…' : resetTx.yes}
+              </Button>
+              <Button variant="secondary" disabled={resetting} onClick={() => setConfirmReset(false)}>
                 {t('reg.cancel')}
               </Button>
             </div>

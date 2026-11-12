@@ -246,6 +246,8 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->withoutMiddleware(EnsureActiveAccount::class);
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
+    // Profil sifirlama (temiz baslangic): kendi mac/PR/istatistik/basarim sifirla, hesap/jeton korunur.
+    Route::post('/account/reset', [AuthController::class, 'resetProfile']);
     // Push bildirimi: cihaz FCM token'i kaydet/sil (uygulama kabugu - Capacitor native).
     Route::post('/push/register', [PushController::class, 'register']);
     Route::post('/push/unregister', [PushController::class, 'unregister']);

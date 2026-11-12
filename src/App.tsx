@@ -609,6 +609,7 @@ import {
   loadServerGame,
   logout as apiLogout,
   deleteAccount as apiDeleteAccount,
+  resetProfile as apiResetProfile,
   me as apiMe,
   meWithRetry,
   googleCodeLogin,
@@ -9386,6 +9387,11 @@ export default function App() {
         setShowAuth(false)
         setHome(true)
       })
+    },
+    // Profil sifirla (temiz baslangic): backend mac/PR/istatistik siler, guncel user'i doner.
+    onResetProfile: async () => {
+      const u = await apiResetProfile()
+      setUser(u)
     },
   }
   // Uyelik karti (ProfileOverview, baslik alti): "Uyeligi Yenile" -> odeme modali;

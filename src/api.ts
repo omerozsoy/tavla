@@ -489,6 +489,13 @@ export async function logout(): Promise<void> {
   }
 }
 
+// Profili sifirla (temiz baslangic): maclar/PR/istatistik/basarim silinir, rating baslangica doner.
+// Hesap/jeton/odeme/kostum KORUNUR. Guncel kullaniciyi doner.
+export async function resetProfile(): Promise<ServerUser> {
+  const data = await req<{ user: ServerUser }>('/account/reset', { method: 'POST' })
+  return data.user
+}
+
 // Hesabi kalici olarak sil
 export async function deleteAccount(): Promise<void> {
   try {
