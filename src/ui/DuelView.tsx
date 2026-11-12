@@ -25,6 +25,8 @@ function PlayerTeam({ userId }: { userId: number }) {
 
 type Target = { id: number; name: string; avatar?: string | null; rating?: number | null }
 const DUEL_LENGTHS = [1, 3, 5]
+// Sabit düello bahsi — backend config/game.php `duel_stake` ile AYNI tutulmalı (değişirse ikisini de güncelle).
+const DUEL_STAKE = 25
 
 interface BoardColors {
   id?: string
@@ -113,6 +115,13 @@ export default function DuelView({ currentId, preselect, onClose, onDuel, board,
           </h2>
           <p className="setup-unrated-hint">{t('duel.intro')}</p>
 
+          {/* Belirgin bahis rozeti: telefonda da "25 coin" net görünsün (paragraf gözden kaçmasın). */}
+          <div className="duel-stake-badge" role="note">
+            <Icon name="coin" size={22} aria-hidden="true" />
+            <span className="duel-stake-amt">{DUEL_STAKE} coin</span>
+            <span className="duel-stake-note">{t('duel.stakeNote')}</span>
+          </div>
+
           {/* Takımsız kullanıcı: düello takımlılar arası -> "Takım Kur" uyarısı. */}
           {currentId && hasTeam === false && (
             <div className="duel-needteam" role="note">
@@ -180,7 +189,7 @@ export default function DuelView({ currentId, preselect, onClose, onDuel, board,
               {t('setup.cancel')}
             </Button>
             <Button variant="default" disabled={!sel} onClick={() => sel && onDuel(sel, len as 1 | 3 | 5)}>
-              <Icon name="swords" size={18} /> {t('duel.invite')}
+              <Icon name="swords" size={18} /> {t('duel.invite')} · {DUEL_STAKE} coin
             </Button>
           </div>
         </div>

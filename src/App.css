@@ -17638,6 +17638,31 @@ body:has(.spectate-view) .app.lobby {
   color: var(--text);
   font-size: 0.9rem;
 }
+.duel-stake-badge {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--gold, #d4a017) 55%, var(--border));
+  background: color-mix(in srgb, var(--gold, #d4a017) 14%, transparent);
+  color: var(--text);
+}
+.duel-stake-badge svg {
+  color: var(--gold, #d4a017);
+  flex-shrink: 0;
+}
+.duel-stake-amt {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.2px;
+}
+.duel-stake-note {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
 .duel-needteam > span {
   flex: 1 1 180px;
   min-width: 0;
