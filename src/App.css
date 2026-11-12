@@ -18217,7 +18217,10 @@ body:has(.spectate-view) .app.lobby {
    Sol: bot maskotu + konuşma balonu + ipucu. Sağ: BG tahtası (yeşil çuha, turuncu/bej
    üçgen, düz pul, kahve çerçeve) + skor kutuları + ilerleme sayacı + "Devam" pili.
    Renkler YALNIZ bu alt-ağaçta override edilir (global tahta teması değişmez). */
-.register-overlay.page > .tr-view { background: #0a0e1a; padding: calc(var(--header-h) + 14px) 22px 20px; }
+/* Koyu arka plani ZORLA: .register-overlay.page > *:not(...) {background:transparent} (0,4,0)
+   kuralini yenmek icin .tr-view.bgx (0,4,0, sonra geldigi icin kazanir) + !important guvence.
+   Aksi halde ACIK (Sand) temada training ekrani krem zeminde kalir, acik yazilar okunmaz. */
+.register-overlay.page > .tr-view.bgx { background: #0a0e1a !important; padding: calc(var(--header-h) + 14px) 22px 20px; }
 .tr-view {
   --board-h: max(300px, min(74vh, calc((min(calc(100vw - 254px), 1500px) - 520px) / 1.5)));
   --checker: calc(var(--board-h) / 11);
@@ -18331,7 +18334,7 @@ body:has(.spectate-view) .app.lobby {
 
 /* Dar ekran: sol panel üste, tahta alta (tek kolon) */
 @media (max-width: 860px) {
-  .register-overlay.page > .tr-view { padding: calc(var(--header-h) + 10px) 12px 16px; }
+  .register-overlay.page > .tr-view.bgx { padding: calc(var(--header-h) + 10px) 12px 16px; }
   .tr-view { flex-direction: column; align-items: stretch; --board-h: max(260px, min(58vh, calc((100vw - 120px) / 1.5))); }
   .bgx-side { width: auto; align-self: auto; }
   .bgx-spacer { display: none; }
