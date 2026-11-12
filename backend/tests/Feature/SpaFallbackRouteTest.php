@@ -13,10 +13,17 @@ class SpaFallbackRouteTest extends TestCase
 {
     public function test_league_and_teams_routes_serve_spa_shell_not_404(): void
     {
-        foreach (['turkiye-online-tavla-ligi', 'takimlar-ligi', 'turkiye-online-tavla-ligi/5', 'duello'] as $slug) {
+        foreach (['tavlatv-super-lig', 'takimlar-ligi', 'tavlatv-super-lig/5', 'duello'] as $slug) {
             $res = $this->get('/'.$slug);
             $res->assertStatus(200);
             $res->assertDontSee('Sayfa Bulunamadı');
         }
+    }
+
+    /** Eski lig URL'i (slug yenilendi) 301 ile yeni slug'a yönlenir; alt yol (sezon) dahil. */
+    public function test_old_league_slug_redirects_to_new(): void
+    {
+        $this->get('/turkiye-online-tavla-ligi')->assertStatus(301)->assertRedirect('/tavlatv-super-lig');
+        $this->get('/turkiye-online-tavla-ligi/5')->assertStatus(301)->assertRedirect('/tavlatv-super-lig/5');
     }
 }
