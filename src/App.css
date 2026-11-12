@@ -16554,6 +16554,30 @@ body:has(.spectate-view) .app.lobby {
 .ej-detail-board .an-board-stage .pip {
   font-size: calc(var(--checker) * 0.66);
 }
+/* Hamle Analizi iki-kolon: board grubu | "En İyi Hamleler". Varsayılan (overlay/.page) DİKEY
+   yığılır (eski görünüm korunur); yalnız DETAY sayfasında (.report-embed) yan yana + board yarı. */
+.an-split,
+.an-split-board,
+.an-split-cands {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.report-embed .an-split {
+  flex-direction: row;
+  gap: 18px;
+  align-items: flex-start;
+}
+.report-embed .an-split-board {
+  /* board yarı boy: 100cqw bu ~yarı kolona iner (container-type) -> tahta ~yarıya düşer. */
+  flex: 0 0 48%;
+  max-width: 48%;
+  container-type: inline-size;
+}
+.report-embed .an-split-cands {
+  flex: 1 1 0;
+}
 .an-winbar {
   position: relative;
   height: 22px;

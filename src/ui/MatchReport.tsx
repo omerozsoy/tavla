@@ -600,7 +600,8 @@ export default function MatchReport({
                     <CubeAnalysis cube={cur.cube} />
                   </>
                 ) : cur?.pos && cur.player ? (
-                  <>
+                  <div className="an-split">
+                    <div className="an-split-board">
                     <div className="mrv-board-stage an-board-stage">
                       <Board
                         state={boardState!}
@@ -654,6 +655,8 @@ export default function MatchReport({
                         </div>
                       ) : null
                     })()}
+                    </div>
+                    <div className="an-split-cands">
                     <div className="an-cands-title">
                       {t('rep.bestN', {
                         n: Math.min(CAND_LIMIT, (cur.cands ?? []).length),
@@ -730,7 +733,8 @@ export default function MatchReport({
                         </button>
                       )}
                     </div>
-                  </>
+                    </div>
+                  </div>
                 ) : (
                   <p className="register-sub small">{t('rep.selectMove')}</p>
                 )}
