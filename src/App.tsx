@@ -1664,6 +1664,8 @@ export default function App() {
       closeAllPages()
       setAnalyzerOpen(false)
       setMemOpen(false)
+      setResultView(null) // URL gezintisi (geri/ileri/link) Hamle Analizi sayfasını da kapatır
+      analysisPrevHomeRef.current = null
       // URL navigasyonu (geri/ileri/link) HER ZAMAN lobi baglamidir — oyunun kendi URL
       // slug'i YOK. Aktif oyun yoksa bayat online/oyun state'ini temizle ki GERI tusunda
       // ekrana eski/bitmis board gelmesin (kullanici sikayeti). setHome(true) -> sayfa
@@ -1811,6 +1813,11 @@ export default function App() {
           setMatchHistOpen(true)
           break
         }
+        case 'mac-analizleri-detay':
+          // Hamle Analizi: veri bellekte (maç-sonu), paylaşılabilir/taze-yüklenebilir değil.
+          // Doğrudan girişte analiz verisi yok -> lobiye düş, URL'i düzelt.
+          try { window.history.replaceState(null, '', '/') } catch { /* no-op */ }
+          break
         case 'cerceve-anim':
           setFrameAnimOpen(true)
           break
@@ -2479,6 +2486,9 @@ export default function App() {
   const matchResultIdRef = useRef<number | null>(null) // reportRating'ten dönen id (gnubg analiz için)
   const [analysisGnubgLog, setAnalysisGnubgLog] = useState<LogEntry[] | null>(null) // maç-sonu gnubg analizi
   const [analysisBusy, setAnalysisBusy] = useState(false)
+  // Hamle Analizi artık modal DEĞİL, sol-menülü SAYFA (/mac-analizleri-detay). Kapanınca
+  // geldiği bağlama dön: oyun-sonuç ekranından geldiyse oraya (rovans korunur), değilse lobi.
+  const analysisPrevHomeRef = useRef<boolean | null>(null)
   // Maç-sonu rapor (stats/analysis) açılınca: hamle-hamle analizi GNUBG'den çek (loader). Yoksa/
   // başarısızsa yerel matchLog'a düşülür. Kapanınca sıfırla. (HAKEM=gnubg: analizde wildbg gösterme.)
   useEffect(() => {
@@ -10636,6 +10646,7 @@ export default function App() {
   // Menuden acilan tum modaller (her iki ekranda ortak)
   // Menuden acilan sayfa acik mi (ana sayfada icerik alanina AKIS ICINDE gomulur)
   const anyPageOpen =
+    resultView === 'analysis' || // Hamle Analizi sayfası (page-host + sol menü)
     leaderboardOpen ||
     duelOpen ||
     ranksOpen ||
@@ -10738,6 +10749,56 @@ export default function App() {
                                         : setup === 'pvb'
                                           ? (classicSetup ? 'klassikAi' : 'aiGame')
                                           : ''
+
+  // Hamle Analizi'ni SAYFA olarak aç (sol menü görünür): home=true -> LobbyLayout + page-host.
+  // Oda/mode'a DOKUNMA -> analiz verisi (match/isimler/log) korunur + kapanınca sonuç ekranına dönülebilir.
+  const openAnalysisPage = () => {
+    analysisPrevHomeRef.current = home
+    setResultView('analysis')
+    setHome(true)
+    try { window.history.pushState(null, '', '/mac-analizleri-detay') } catch { /* no-op */ }
+  }
+  const closeAnalysisPage = () => {
+    const backToGame = analysisPrevHomeRef.current === false
+    analysisPrevHomeRef.current = null
+    setResultView(null)
+    if (backToGame) setHome(false) // oyun-sonuç ekranına dön (rovans/yeni maç butonları korunur)
+    try { window.history.pushState(null, '', '/') } catch { /* no-op */ }
+  }
+  // Maç-sonu rapor: stats (game-view modal) ve analysis (sayfa) AYNI bileşen -> props tek yerde.
+  const resultLoaderNode = (
+    <div className="register-overlay modal" role="dialog" aria-modal="true">
+      <div className="register-card" style={{ textAlign: 'center', padding: '30px' }}>
+        <span className="btn-spinner" aria-hidden="true" /> {t('mr.prCalculating')}
+      </div>
+    </div>
+  )
+  const matchReportNode = resultView && !(analysisBusy && !analysisGnubgLog) ? (
+    <MatchReport
+      mode={resultView}
+      log={analysisGnubgLog ?? (matchLog as unknown as LogEntry[])}
+      humanColor={prHumanColor}
+      matchLength={match.target}
+      whiteName={whiteName}
+      blackName={blackName}
+      gameResults={gameResultsRef.current}
+      matchResult={(() => {
+        const w = matchWinner(match)
+        return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
+      })()}
+      matchUid={recordUid ?? gameRecordRef.current?.uid ?? undefined}
+      classic={match.classic}
+      luck={{
+        white: { mwc: luckPctOf('white'), cost: luckEmgOf('white'), jokers: jokersOf('white') },
+        black: { mwc: luckPctOf('black'), cost: luckEmgOf('black'), jokers: jokersOf('black') },
+      }}
+      authPr={{
+        white: { pr: prShown('white'), checker: prCheckerShown('white'), cube: prCubeShown('white') },
+        black: { pr: prShown('black'), checker: prCheckerShown('black'), cube: prCubeShown('black') },
+      }}
+      onClose={() => (resultView === 'analysis' ? closeAnalysisPage() : setResultView(null))}
+    />
+  ) : null
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
@@ -11146,6 +11207,9 @@ export default function App() {
         />
         </Suspense>
       )}
+      {/* Hamle Analizi = SAYFA (sol menü görünür). Verisi maç-sonu bellekte; game-view'daki
+          stats modalı ayrı (aşağıda). Loader analiz GNUBG gelene kadar. */}
+      {resultView === 'analysis' && (analysisBusy && !analysisGnubgLog ? resultLoaderNode : matchReportNode)}
       {frameAnimOpen && (
         // Kritik olmayan sus animasyon: chunk yuklenemezse (deploy sonrasi bayat) tum
         // uygulama cokmesin -> lokal sinir, fallback=null (sessizce kapan).
@@ -12461,7 +12525,7 @@ export default function App() {
           // terk, yeniden bağlanma) sunucuda gnubg review + PR varsa Maç Özeti açılabilir
           // (analysisGnubgLog matchResultId ile çekilir). PR non-null = sunucu gerçek hamle analiz etti.
           hasReport={matchLog.length > 0 || (!!matchResultIdRef.current && (prShown(mWinner) != null || prShown(opponent(mWinner)) != null))}
-          onAnalysis={() => setResultView('analysis')}
+          onAnalysis={openAnalysisPage}
           // Zar Kontrol: yalnız sunucu zarı olan maçlarda (commit var -> puanlı/paralı/bot).
           onDiceCheck={room?.dice_commit ? () => setDiceCheckOpen(true) : undefined}
           matchCode={online ? (room?.code ?? null) : null}
@@ -12469,43 +12533,10 @@ export default function App() {
         />
       )}
 
-      {/* HAKEM=gnubg: gnubg analizi gelene kadar loader (wildbg log GÖSTERME). gnubg yoksa/
-          başarısızsa yerel matchLog'a düşülür (analiz yine açılır). */}
-      {resultView && analysisBusy && !analysisGnubgLog && (
-        <div className="register-overlay modal" role="dialog" aria-modal="true">
-          <div className="register-card" style={{ textAlign: 'center', padding: '30px' }}>
-            <span className="btn-spinner" aria-hidden="true" /> {t('mr.prCalculating')}
-          </div>
-        </div>
-      )}
-      {resultView && !(analysisBusy && !analysisGnubgLog) && (
-        <MatchReport
-          mode={resultView}
-          log={analysisGnubgLog ?? (matchLog as unknown as LogEntry[])}
-          humanColor={prHumanColor}
-          matchLength={match.target}
-          whiteName={whiteName}
-          blackName={blackName}
-          gameResults={gameResultsRef.current}
-          matchResult={(() => {
-            const w = matchWinner(match)
-            return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
-          })()}
-          matchUid={recordUid ?? gameRecordRef.current?.uid ?? undefined}
-          classic={match.classic}
-          luck={{
-            white: { mwc: luckPctOf('white'), cost: luckEmgOf('white'), jokers: jokersOf('white') },
-            black: { mwc: luckPctOf('black'), cost: luckEmgOf('black'), jokers: jokersOf('black') },
-          }}
-          authPr={{
-            // TEK-KAYNAK PR: Maç Özeti Performans/Pul/Küp'ü sunucu-otoriter (gnubg) serverPr'dan göster
-            // (log'dan yeniden hesaplama sapması olmasın) -> sonuç kartı/analiz/istatistik AYNI değer.
-            white: { pr: prShown('white'), checker: prCheckerShown('white'), cube: prCubeShown('white') },
-            black: { pr: prShown('black'), checker: prCheckerShown('black'), cube: prCubeShown('black') },
-          }}
-          onClose={() => setResultView(null)}
-        />
-      )}
+      {/* İstatistik (stats) game-view'da ortalanmış modal kalır; Hamle Analizi (analysis)
+          home/page-host'ta SAYFA olarak render edilir (yukarı, menuPages). Loader+rapor paylaşılan
+          node'lar (matchReportNode/resultLoaderNode). */}
+      {resultView === 'stats' && (analysisBusy && !analysisGnubgLog ? resultLoaderNode : matchReportNode)}
 
       {resignOpen && (
         <div className="register-overlay modal" role="dialog" aria-modal="true">

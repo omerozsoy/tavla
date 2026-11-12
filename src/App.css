@@ -16367,34 +16367,31 @@ body:has(.spectate-view) .app.lobby {
 .report-card:has(.analysis-layout) {
   max-width: 820px;
 }
-/* ===== Hamle Analizi TAM SAYFA (mode='analysis', .report-full) — ortalanmış modal kart
-   DEĞİL, viewport'u doldurur. Raporun kendi head/body kromu korunur; yalnız ortalama
-   kaldırılır, kart büyütülür, liste tüm yüksekliği kullanır. ===== */
-.report-overlay.report-full {
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
+/* ===== Hamle Analizi SAYFA (mode='analysis', .page .report-page) — modal kart DEĞİL,
+   lobi kabuğu içinde SOL MENÜLÜ sayfa. Konum/sol-254px/responsive .register-overlay.page'ten
+   gelir; burada rapor kendi baş/gövde kromunu sadeleştirir (dolu bar -> sayfa başlığı hissi). ===== */
+.report-overlay.page .report-card,
+.report-overlay.page .report-card:has(.analysis-layout) {
+  overflow: visible; /* .page kuralı max-height:none verir; kart kırpmasın, sayfa scroll etsin */
 }
-.report-overlay.report-full .report-card,
-.report-overlay.report-full .report-card:has(.analysis-layout) {
-  max-width: none;
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  border: none;
+.report-overlay.page .report-head {
+  background: transparent;
   border-radius: 0;
+  padding-left: 0;
+  padding-right: 0; /* yatay boşluk .page kart padding'inden gelir -> bar değil başlık */
 }
-.report-overlay.report-full .report-head {
-  border-radius: 0;
+.report-overlay.page .report-body {
+  padding-left: 0;
+  padding-right: 0;
 }
-/* Tam-sayfada modal zoom (scale) yerine düz fade — sayfa hissi. */
-.report-overlay.report-full .report-card {
+/* Sayfada modal zoom (scale) yerine düz fade. */
+.report-overlay.page .report-card {
   animation: report-backdrop-in 180ms var(--ease-out) both;
   transform: none;
 }
-/* Liste kendi scroll'unu bırakıp tam yüksekliği kullansın (gövde zaten overflow:auto). */
-.report-overlay.report-full .analysis-rows {
-  max-height: calc(100vh - 170px);
+/* Liste sayfa yüksekliğini kullansın. */
+.report-overlay.page .analysis-rows {
+  max-height: calc(100vh - 230px);
 }
 .analysis-layout {
   display: flex;
