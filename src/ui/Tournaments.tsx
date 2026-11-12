@@ -1665,6 +1665,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           <>
             {/* En ustte 1 haftalik takvim (Pzt-Paz); ileri/geri ile haftalar arasi gezinti. */}
             <WeekCalendar list={list} lang={lang} onOpen={(id, slug) => onOpenDetail?.(id, slug)} />
+            {/* Takvim altinda CTA: ozel sifreli turnuva talebi -> iletisim sayfasi. */}
+            <a className="tourn-week-cta" href="/iletisim">
+              <Icon name="lock" size={16} />
+              <span>{t('tourn.ownPrivateCta')}</span>
+              <Icon name="arrow-right" size={14} />
+            </a>
             {activeList.length > 0 ? (
               <div className="tourn-list">{activeList.map(renderCard)}</div>
             ) : (
