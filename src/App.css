@@ -13549,14 +13549,23 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Dikkat çek: yalnız aktif "Katıl" (ayrılma/dolu/busy değil) yanıp söner. */
 .swiss-panel.tourn-panel .tr-act:not(.tr-act-leave):not(:disabled) {
-  animation: tr-act-pulse 1.4s ease-in-out infinite;
+  animation: tr-act-pulse 0.9s ease-in-out infinite;
+  transform-origin: center;
 }
 .swiss-panel.tourn-panel .tr-act:not(.tr-act-leave):not(:disabled):hover {
   animation: none;
 }
 @keyframes tr-act-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
-  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 0%, transparent); transform: scale(1.04); }
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 75%, transparent);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.14);
+    box-shadow: 0 0 14px 5px color-mix(in srgb, var(--accent) 65%, transparent);
+    filter: brightness(1.35);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .swiss-panel.tourn-panel .tr-act:not(.tr-act-leave):not(:disabled) { animation: none; }
