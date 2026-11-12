@@ -13730,11 +13730,12 @@ button.acct-row-logout:hover:not(:disabled) {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* KATIL sag kenara yapismasin -> odulle birlikte sola */
+  justify-content: space-between; /* odul sol, KATIL sag */
   gap: 14px;
   width: 100%;
   margin-top: 12px;
   padding-top: 12px;
+  padding-right: 20px; /* KATIL sagdan 20px uzak dursun */
 }
 .swiss-panel.tourn-panel .tr-foot::before {
   content: '';
