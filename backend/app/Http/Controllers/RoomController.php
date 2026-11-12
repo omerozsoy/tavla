@@ -213,7 +213,9 @@ class RoomController extends Controller
     private function escrowAmount(Room $room): int
     {
         $target = (int) (($room->server_match['target'] ?? null) ?? $room->target ?? 1);
-        $isMoney = (int) $room->stake > 0 && (int) $room->bet_pct === 0 && $target <= 1;
+        // DÜELLO: düz sabit stake (küp coine YANSIMAZ) -> ×1 rezerve. Para oyununda (Tek Oyun) ×48.
+        $isDuel = (bool) ($room->duel ?? false);
+        $isMoney = (int) $room->stake > 0 && (int) $room->bet_pct === 0 && $target <= 1 && ! $isDuel;
 
         return (int) $room->stake * ($isMoney ? self::MONEY_WORST_MULT : 1);
     }
@@ -729,7 +731,9 @@ class RoomController extends Controller
         $stake = (int) $room->stake;
         $betPct = (int) $room->bet_pct;
         // Arkadaslik (davet) odasi = coin transferi YOK (yetkili; stake zaten 0 ama kesinlestir).
-        if ($room->mode === 'friendly' || ($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
+        // İSTİSNA: DÜELLO friendly ama sabit stake'li -> settleRoom'a delege et (transfer + escrow).
+        $isDuelStaked = (bool) ($room->duel ?? false) && $stake > 0;
+        if ((($room->mode === 'friendly' && ! $isDuelStaked) || ($stake <= 0 && $betPct <= 0)) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return response()->json(['ok' => false]);
         }
         $callerSlot = $this->slotOf($room, $data['token'], $request);
@@ -783,7 +787,10 @@ class RoomController extends Controller
         $stake = (int) $room->stake;
         $betPct = (int) $room->bet_pct;
         // Arkadaslik (davet) / bahissiz / eksik oyuncu -> coin transferi YOK.
-        if ($room->mode === 'friendly' || ($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
+        // İSTİSNA: DÜELLO mode='friendly' AMA sabit stake'li -> transfer + escrow bırakma ŞART
+        // (atlanırsa rezerve 25 coin sonsuza kilitli kalır). Düelloyu guard'dan muaf tut.
+        $isDuelStaked = (bool) ($room->duel ?? false) && $stake > 0;
+        if ((($room->mode === 'friendly' && ! $isDuelStaked) || ($stake <= 0 && $betPct <= 0)) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return ['skip' => true];
         }
         // Money settlement never trusts the client `won` field. The winner comes from the
@@ -890,7 +897,9 @@ class RoomController extends Controller
             // gammon). Kazananın server_match skoru tek oyunun puanıdır (gamePoints×cube). Rezerv
             // (stake×48) bu en kötüyü baştan kapsadığından kazanan DAİMA tam alır.
             $smTarget = (int) (($room->server_match['target'] ?? null) ?? $room->target ?? 1);
-            $isMoneyCube = $stake > 0 && $betPct === 0 && $smTarget <= 1;
+            // DÜELLO: düz sabit stake (küp maç skorunu etkiler ama COİNİ etkilemez) -> isMoneyCube DEĞİL.
+            // Transfer daima düz stake; escrow da ×1 (escrowAmount `! duel`). Böylece "sabit 25 coin" korunur.
+            $isMoneyCube = $stake > 0 && $betPct === 0 && $smTarget <= 1 && ! (bool) ($room->duel ?? false);
             if ($isMoneyCube) {
                 $sm = is_array($room->server_match) ? $room->server_match : [];
                 $winColor = ((int) $winnerId === (int) $room->p1_user_id) ? 'white' : 'black';
@@ -1824,10 +1833,14 @@ class RoomController extends Controller
             $createAttrs['bet_pct'] = (int) ($invite->bet_pct ?? 0);
             // BIREYSEL DUELLO: davet düello ise oda duel=true + puansız (unrated zaten davetten geldi).
             // Normal arkadaş maçı davranışı DEĞİŞMEZ (duel yoksa/false kolon default 0).
+            // Düello SABİT STAKE ile oynanır (potsuz DEĞİL): bet_pct=0 (düz stake), stake=duel_stake.
+            // Escrow/settle düelloyu DÜZ tutar (küp çarpanı yok) — escrowAmount + isMoneyCube'de `! duel` guard'ı.
             if (Schema::hasColumn('rooms', 'duel') && ! empty($invite->duel)) {
                 $createAttrs['duel'] = true;
                 $createAttrs['unrated'] = true;
                 $createAttrs['mode'] = 'friendly';
+                $createAttrs['bet_pct'] = 0; // düz stake (yüzde değil)
+                $createAttrs['stake'] = (int) config('game.duel_stake', 25);
             }
         } elseif (! Cache::has(TournamentController::roomTargetKey($code))) {
             // Davetsiz + turnuva dışı: rastgele kodla kurulan özel oda = arkadaşlık maçı (A-04).
@@ -1911,6 +1924,20 @@ class RoomController extends Controller
                     return $this->fail('Bahisli maç için iki oyuncunun da yeterli coin\'i olmalı.', 422);
                 }
             }
+            // DÜELLO SABİT STAKE ÖN-KONTROL: iki oyuncunun da en az stake kadar KULLANILABİLİR
+            // (coins − coins_reserved) bakiyesi olmalı. Yetmezse maça HİÇ sokma (tek-taraflı escrow
+            // anlamsız). Gerçek rezerve seat-claim sonrası (aşağıda). claimMatchSeat tek-aktif-maç
+            // garantisi -> bu pencerede başka maç bakiyeyi drene edemez (rezerve güvenli).
+            $enterIsDuel = Schema::hasColumn('rooms', 'duel') && (bool) ($room->duel ?? false);
+            $enterStake = (int) ($room->stake ?? 0);
+            if ($enterIsDuel && $enterStake > 0) {
+                $hostUser = $room->p1_user_id ? User::find($room->p1_user_id) : null;
+                $p2User = $enterUserId ? User::find($enterUserId) : null;
+                $availD = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+                if (! $hostUser || ! $p2User || $availD($hostUser) < $enterStake || $availD($p2User) < $enterStake) {
+                    return $this->fail('Düello için iki oyuncunun da yeterli coin\'i olmalı.', 422);
+                }
+            }
             // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE). userInAnyPlaying yarışı
             // kaçırsa bile (sub-sn eşzamanlı match+accept) bu kesin engeller. p2 kapmadan ÖNCE kilitle;
             // oda kapılamazsa (başkası aldı) kendi koltuğumu geri bırak (host'unki kazananındır).
@@ -1964,6 +1991,26 @@ class RoomController extends Controller
             // bunu kullanır; yoksa 409 PENDING'e düşer. initServerMatch (aşağıda) snapshot'ı KORUR.
             if ($enterBetPct > 0) {
                 $this->seedPctStakeSnapshot($room, (int) $room->p1_user_id, (int) $enterUserId, $enterBetPct);
+            }
+            // DÜELLO SABİT STAKE ESCROW: iki oyuncudan da DÜZ stake rezerve et (küp çarpanı YOK ->
+            // escrowAmount `! duel` ile ×1). settle + releaseEscrow AYNI tutarı bırakır (drift yok).
+            // Bakiye ön-kontrolü yukarıda; claimMatchSeat tek-aktif-maç garantisi -> rezerve güvenli.
+            if ($enterIsDuel && $enterStake > 0 && Schema::hasColumn('users', 'coins_reserved')) {
+                DB::transaction(function () use ($room, $enterUserId, $enterStake) {
+                    $uids = array_values(array_unique(array_filter([(int) $room->p1_user_id, (int) $enterUserId])));
+                    sort($uids); // deterministik kilit sırası (deadlock önleme, settle ile aynı desen)
+                    foreach ($uids as $uid) {
+                        $u = User::lockForUpdate()->find($uid);
+                        if ($u) {
+                            $u->coins_reserved = (int) ($u->coins_reserved ?? 0) + $enterStake;
+                            $u->save();
+                        }
+                    }
+                    if (Schema::hasColumn('rooms', 'escrowed')) {
+                        Room::where('id', $room->id)->update(['escrowed' => true]);
+                    }
+                });
+                $room->refresh();
             }
             // MAVI EKRAN KÖK FIX (turnuva/arkadaş "çekmiyor/giremedi"): otoriter oda AÇILIŞ tahtasını
             // SEED et. Matchmaking/bot yolu zaten server_state=initialState() ile kurar; enter() yolu

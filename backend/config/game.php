@@ -36,6 +36,11 @@ return [
     // NOT: bu coin bahse yatırılabilir (bedava değer) -> WELCOME_COINS env ile ayarla.
     'welcome_coins' => max(0, (int) env('WELCOME_COINS', 100)),
 
+    // DÜELLO bahsi: takımlılar arası düello artık SABİT stake ile oynanır (potsuz DEĞİL).
+    // Her oyuncudan bu kadar coin DÜZ escrow'lanır (küp çarpanı YOK -> daima bu tutar); kazanan
+    // iki stake'i (komisyon düşülerek) alır. Bakiyesi < stake olan düello gönderemez/kabul edemez.
+    'duel_stake' => max(0, (int) env('DUEL_STAKE', 25)),
+
     // HOŞGELDİN premium'u artık SABİT TARİHLİ (AuthController::grantWelcomePremium): yeni üyeler
     // 2 Ocak 2027'ye kadar ücretsiz Premium; 31 Aralık 2026'dan sonra hediye YOK. Ay-bazlı ayar
     // (welcome_premium_months) KALDIRILDI — tarihler kodda sabit (owner kararı 2026-10-19).

@@ -369,10 +369,16 @@ class PresenceController extends Controller
         if ($isDuel && ! in_array((int) ($settings['target'] ?? 0), [1, 3, 5], true)) {
             return $this->fail('Düello uzunluğu 1, 3 veya 5 puan olmalı.', 422);
         }
-        // Düello: potsuz (bahis/coin yok). Normal davet: en az 1 kullanılabilir coin (yüzde bahis min pot).
-        // Gerçek iki-taraflı yeterlilik enter()'da; bu erken uyarı 0 coin'le anlamsız davet atılmasını önler.
+        // DÜELLO: sabit stake (potsuz DEĞİL). bet_pct=0 kalır (yüzde değil, düz stake). Normal davet:
+        // yüzde bahis (min %10). Her ikisinde de en az kullanılabilir bakiye şart; gerçek iki-taraflı
+        // escrow enter()'da (p2 katılımında). Bu erken uyarı yetersiz bakiyeyle anlamsız davet atmayı önler.
         $betPct = $isDuel ? 0 : ((int) ($settings['bet_pct'] ?? 10) ?: 10);
-        if (! $isDuel && (int) (($me->coins ?? 0) - ($me->coins_reserved ?? 0)) < 1) {
+        $duelStake = (int) config('game.duel_stake', 25);
+        $myAvailable = (int) (($me->coins ?? 0) - ($me->coins_reserved ?? 0));
+        if ($isDuel && $duelStake > 0 && $myAvailable < $duelStake) {
+            return $this->fail("Düello için en az {$duelStake} coin'in olmalı.", 422);
+        }
+        if (! $isDuel && $myAvailable < 1) {
             return $this->fail('Bahisli maç için yeterli coin\'in yok.', 422);
         }
         $target = User::find($userId);
