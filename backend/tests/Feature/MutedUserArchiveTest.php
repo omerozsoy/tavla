@@ -81,7 +81,7 @@ class MutedUserArchiveTest extends TestCase
 
     public function test_unarchive_restores(): void
     {
-        // Arşivli AMA aktif yasaklı -> varsayılan listede görünür (hideArchived aktif mute'u gizlemez).
+        // Arşivli kayıt varsayılan listede GİZLİ -> önce "Yalnız arşivlenenler" filtresini aç, sonra geri al.
         $u = User::factory()->create(['nickname' => 'back']);
         $u->forceFill([
             'chat_offenses' => 1,
@@ -90,6 +90,7 @@ class MutedUserArchiveTest extends TestCase
         ])->save();
 
         Livewire::actingAs($this->admin())->test(ListMutedUsers::class)
+            ->filterTable('archived', false) // yalnız arşivlenenler
             ->callTableAction('unarchive', $u);
         $this->assertNull($u->fresh()->chat_mute_archived_at);
     }

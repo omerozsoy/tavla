@@ -129,10 +129,18 @@ class MutedUserResource extends Resource
             ->filters([
                 Tables\Filters\Filter::make('active')->label('Yalnız aktif yasaklı')
                     ->query(fn (Builder $q) => $q->where('chat_muted_until', '>', now())),
-                // Varsayılan AÇIK: arşivlenenleri gizle (aktif yasak arşivlenmiş olsa bile gizlenir).
-                // Kapatınca arşivlenenler de listelenir (durumu "Arşivlendi").
-                Tables\Filters\Filter::make('hideArchived')->label('Arşivlenenleri gizle')->default()
-                    ->query(fn (Builder $q) => $q->whereNull('chat_mute_archived_at')),
+                // Arşiv görünürlüğü. Varsayılan (boş seçim) = arşivlenenleri GİZLE — TernaryFilter'ın
+                // blank sorgusu her zaman uygulanır (checkbox Filter ->default() güvenilir değil).
+                // "Arşivlenenler dahil" / "Yalnız arşivlenenler" ile admin arşivi görebilir.
+                Tables\Filters\TernaryFilter::make('archived')->label('Arşiv')
+                    ->placeholder('Arşivsizler')
+                    ->trueLabel('Arşivlenenler dahil')
+                    ->falseLabel('Yalnız arşivlenenler')
+                    ->queries(
+                        true: fn (Builder $q) => $q,
+                        false: fn (Builder $q) => $q->whereNotNull('chat_mute_archived_at'),
+                        blank: fn (Builder $q) => $q->whereNull('chat_mute_archived_at'),
+                    ),
             ])
             ->actions([
                 // Arşivle: kullanıcıyı listeden gizle (geçmiş korunur). Aktif yasak dahil arşivlenebilir;
