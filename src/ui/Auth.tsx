@@ -73,10 +73,10 @@ const DANGER_I18N: Record<string, { zone: string; desc: string }> = {
 const RESET_I18N: Record<string, { title: string; desc: string; button: string; confirm: string; yes: string; done: string }> = {
   tr: {
     title: 'Profili Sıfırla',
-    desc: 'Temiz bir sayfa aç: oynadığın tüm maçlar, PR’ların, istatistiklerin ve başarımların silinir, puanın başlangıç değerine döner. Hesabın, jetonların ve satın aldıkların korunur.',
+    desc: 'DİKKAT: Tüm geçmiş maçlarınız, PR’larınız, tüm istatistikleriniz ve başarımlarınız KALICI olarak silinecek, puanınız başlangıç değerine dönecek. Bu işlem geri alınamaz. (Daha önce karşılaştığınız rakipler o maçları kendi profillerinden görmeye devam eder.) Hesabınız, jetonlarınız ve satın aldıklarınız korunur.',
     button: 'Profili Sıfırla',
-    confirm: 'Tüm maçların, PR’ların, istatistiklerin ve başarımların kalıcı olarak silinecek, puanın başlangıç değerine dönecek. Bu işlem geri alınamaz. Devam edilsin mi?',
-    yes: 'Evet, sıfırla',
+    confirm: 'Tüm geçmiş maçlarınız, PR’larınız, tüm istatistikleriniz ve başarımlarınız KALICI olarak silinecek, puanınız başlangıç değerine dönecek. Bu işlem GERİ ALINAMAZ. Devam edilsin mi?',
+    yes: 'Evet, profilimi sıfırla',
     done: 'Profilin sıfırlandı — temiz başlangıç hazır.',
   },
   en: {
@@ -1237,13 +1237,17 @@ export default function Auth({
         {editUser && onResetProfile && (
           <>
             <Separator className="my-6" />
-            <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
-              <h3 className="text-sm font-normal">{resetTx.title}</h3>
+            <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+              <h3 className="flex items-center gap-1.5 text-sm font-normal text-destructive">
+                <Icon name="alert" size={15} /> {resetTx.title}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">{resetTx.desc}</p>
               <div className="mt-4">
+                {/* Uyari kutusu KIRMIZI (Tehlikeli Bolge) ama buton TEMA ANA RENGI (primary) —
+                    kullanici direktifi: hesabi-sil gibi kirmizi uyari, sifirlama rengi marka rengi. */}
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   disabled={resetting}
                   onClick={() => setConfirmReset(true)}
                 >
@@ -1362,8 +1366,8 @@ export default function Auth({
             onClick={() => !resetting && setConfirmReset(false)}
           >
             <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
-              <h2>
-                <Icon name="refresh" size={20} /> {resetTx.title}
+              <h2 className="text-destructive">
+                <Icon name="alert" size={20} /> {resetTx.title}
               </h2>
               <p className="register-sub">{resetTx.confirm}</p>
               <Button
