@@ -229,7 +229,7 @@ interface Props {
 
 
 export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClose, detailId, onOpenDetail, premium = false, onRequireLogin, onRequirePremium, onSpectate, onProfile, titleOverride, onCardCheckout }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
   useEscape(onClose)
   // Mac uzunlugu etiketi: 1 -> "Tek oyun", n -> "n puan"
   const lenLabel = (n: number) => (n <= 1 ? t('friend.single') : t('invite.points', { n }))
@@ -1663,6 +1663,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           <div className="lb-empty">{t('tourn.empty')}</div>
         ) : (
           <>
+            {/* En ustte 1 haftalik takvim (Pzt-Paz); ileri/geri ile haftalar arasi gezinti. */}
+            <WeekCalendar list={list} lang={lang} onOpen={(id, slug) => onOpenDetail?.(id, slug)} />
             {activeList.length > 0 ? (
               <div className="tourn-list">{activeList.map(renderCard)}</div>
             ) : (
@@ -1678,6 +1680,91 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// Haftanin Pazartesi'si (yerel saat, 00:00). getDay(): 0=Paz..6=Cmt -> (gün+6)%7 ile 0=Pzt.
+function startOfWeekMonday(d: Date): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7))
+  return x
+}
+
+// HAFTALIK TAKVIM: sayfanin en ustunde 1 haftalik (Pzt-Paz) gorunum; turnuvalari starts_at
+// gunune gore dagitir. Ileri/geri ile haftalar arasinda gezilir; "Bu hafta" bugune doner.
+function WeekCalendar({ list, lang, onOpen }: {
+  list: Tournament[]
+  lang: string
+  onOpen: (id: number, slug: string) => void
+}) {
+  const { t } = useT()
+  const [offset, setOffset] = useState(0)
+  const weekStart = startOfWeekMonday(new Date())
+  weekStart.setDate(weekStart.getDate() + offset * 7)
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    return d
+  })
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  const byDay = (d: Date) =>
+    list
+      .filter((tr) => tr.starts_at && sameDay(new Date(tr.starts_at!), d))
+      .sort((a, b) => new Date(a.starts_at!).getTime() - new Date(b.starts_at!).getTime())
+  const weekCount = days.reduce((n, d) => n + byDay(d).length, 0)
+  const fmtRange = `${weekStart.toLocaleDateString(lang, { day: 'numeric', month: 'short' })} – ${days[6].toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })}`
+
+  return (
+    <div className="tourn-week">
+      <div className="tourn-week-head">
+        <Button variant="ghost" size="icon" className="tourn-week-nav" onClick={() => setOffset((o) => o - 1)} aria-label="‹">
+          <Icon name="caret-left" size={18} />
+        </Button>
+        <div className="tourn-week-range">
+          <span className="tourn-week-title"><Icon name="calendar" size={15} /> {t('tourn.week.title')}</span>
+          <b className="tnum">{fmtRange}</b>
+          {offset !== 0 && (
+            <button type="button" className="tourn-week-today" onClick={() => setOffset(0)}>{t('tourn.week.this')}</button>
+          )}
+        </div>
+        <Button variant="ghost" size="icon" className="tourn-week-nav" onClick={() => setOffset((o) => o + 1)} aria-label="›">
+          <Icon name="caret-right" size={18} />
+        </Button>
+      </div>
+      <div className="tourn-week-grid">
+        {days.map((d, i) => {
+          const items = byDay(d)
+          return (
+            <div key={i} className={`tourn-week-day ${sameDay(d, today) ? 'is-today' : ''} ${items.length ? 'has' : ''}`}>
+              <div className="tourn-week-dtop">
+                <span className="tourn-week-dname">{d.toLocaleDateString(lang, { weekday: 'short' })}</span>
+                <span className="tourn-week-dnum tnum">{d.getDate()}</span>
+              </div>
+              <div className="tourn-week-items">
+                {items.map((tr) => (
+                  <button
+                    key={tr.id}
+                    type="button"
+                    className={`tourn-week-chip tcard-status-${tr.status}`}
+                    onClick={() => onOpen(tr.id, tournUrlSlug(tr))}
+                    title={tr.name}
+                  >
+                    <span className="twc-time tnum">
+                      {new Date(tr.starts_at!).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="twc-name">{tr.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {weekCount === 0 && <div className="tourn-week-empty">{t('tourn.week.none')}</div>}
     </div>
   )
 }

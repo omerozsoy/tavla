@@ -14837,6 +14837,116 @@ button.acct-row-logout:hover:not(:disabled) {
     max-height: 460px;
   }
 }
+
+/* ---- HAFTALIK TAKVIM (sayfa ustu, Pzt-Paz + ileri/geri) ---- */
+.tourn-week {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  padding: 10px;
+  margin-bottom: 14px;
+}
+.tourn-week-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tourn-week-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
+}
+.tourn-week-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.tourn-week-range b { color: var(--muted); font-weight: 600; }
+.tourn-week-nav { flex: 0 0 auto; }
+.tourn-week-today {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tourn-week-today:hover { background: var(--accent); color: var(--on-accent); }
+.tourn-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.tourn-week-day {
+  min-height: 72px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tourn-week-day.is-today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.tourn-week-dtop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+.tourn-week-dname { font-size: 0.7rem; color: var(--muted); text-transform: capitalize; }
+.tourn-week-dnum { font-weight: 700; color: var(--text); font-size: 0.95rem; }
+.tourn-week-day.is-today .tourn-week-dnum { color: var(--accent); }
+.tourn-week-items { display: flex; flex-direction: column; gap: 3px; }
+.tourn-week-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 3px 5px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.tourn-week-chip:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.tourn-week-chip.tcard-status-running { border-left-color: var(--color-success); background: color-mix(in srgb, var(--color-success) 14%, transparent); }
+.tourn-week-chip.tcard-status-finished { border-left-color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+.twc-time { font-size: 0.72rem; font-weight: 700; color: var(--text); }
+.twc-name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.tourn-week-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 6px 0 2px; }
+/* Dar ekran: 7 sutun sigmazsa yatay kaydir (gun sutunlari sabit genislik). */
+@media (max-width: 560px) {
+  .tourn-week-grid {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 40%;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tourn-week-day { scroll-snap-align: start; }
+}
 .tourn-row {
   display: flex;
   align-items: center;
