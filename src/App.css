@@ -22795,6 +22795,14 @@ body:has(.spectate-view) .app.lobby {
 body.has-bottom-nav {
   padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
 }
+/* .register-overlay.page = position:fixed, KENDI ic scroll'u (overflow-y:auto); body padding'i
+   ONA etki ETMEZ -> alt menu (bottom-nav) son ogeleri orter (friend-join / Oda Kodu kutusu vb).
+   KOK FIX: nav acikken bu sayfalarin ic icerigine nav yuksekligi + guvenli alan kadar EK alt
+   bosluk ekle (hem fixed overlay hem .page-host static modunu kapsar). Yalniz APK'da .has-bottom-nav
+   eklendiginden tarayici/PWA etkilenmez. */
+body.has-bottom-nav .register-overlay.page > *:not(.register-overlay):not(.dm-zoom-overlay) {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+}
 .tourn-announce-at {
   flex: none;
   color: var(--muted);
