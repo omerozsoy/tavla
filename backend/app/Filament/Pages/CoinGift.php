@@ -4,10 +4,12 @@ namespace App\Filament\Pages;
 
 use App\Models\User;
 use App\Services\WalletService;
+use App\Support\OfficialMessenger;
 use App\Support\Shield;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -54,6 +56,7 @@ class CoinGift extends Page implements HasForms
             'amount' => null,
             'min_matches' => 10,
             'max_balance' => 100,
+            'notify' => true,
         ]);
     }
 
@@ -84,6 +87,8 @@ class CoinGift extends Page implements HasForms
                             ->visible(fn (callable $get) => $get('target') === 'balance')
                             ->required(fn (callable $get) => $get('target') === 'balance')
                             ->helperText('Bakiyesi bu değerin ALTINDA olan kullanıcılar.'),
+                        Toggle::make('notify')->label('Hediye mesajı gönder')
+                            ->helperText('Tavla TV Yönetim hesabından "… coin hediye edildi" DM + bildirim atılır.'),
                     ])->columns(1),
             ])
             ->statePath('data');
@@ -130,18 +135,26 @@ class CoinGift extends Page implements HasForms
         // Tek gönderim = tek batch token. Livewire çift-submit'inde aynı key -> çift-kredit olmaz.
         $batch = (string) Str::uuid();
         $count = 0;
+        $recipientIds = [];
 
         $this->audience($data)
             ->select(['id', 'coins', 'coins_reserved'])
-            ->chunkById(500, function ($users) use ($wallet, $amount, $adminId, $batch, &$count) {
+            ->chunkById(500, function ($users) use ($wallet, $amount, $adminId, $batch, &$count, &$recipientIds) {
                 foreach ($users as $u) {
                     $wallet->credit($u, $amount, 'admin_gift', null, null, "gift:{$batch}:{$u->id}", $adminId);
+                    $recipientIds[] = (int) $u->id;
                     $count++;
                 }
             });
 
         Shield::audit($adminId, 'filament_coin_gift',
             sprintf('target=%s amount=%d recipients=%d batch=%s', $data['target'] ?? 'all', $amount, $count, $batch), 3);
+
+        // Hediye bildirimi: Tavla TV Yönetim hesabından DM + site-içi bildirim (toast).
+        if (! empty($data['notify']) && $recipientIds) {
+            $body = number_format($amount, 0, ',', '.').' coin yönetim tarafından hesabınıza hediye edilmiştir. İyi oyunlar! 🎁';
+            OfficialMessenger::sendToIds($recipientIds, $body);
+        }
 
         Notification::make()->title("{$amount} coin, {$count} kullanıcıya hediye edildi.")->success()->send();
     }

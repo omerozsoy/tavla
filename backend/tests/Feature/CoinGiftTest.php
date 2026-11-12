@@ -77,4 +77,26 @@ class CoinGiftTest extends TestCase
             'actor_user_id' => $admin->id,
         ]);
     }
+
+    public function test_notify_sends_gift_message_from_official_account(): void
+    {
+        $admin = $this->admin();
+        $user = User::factory()->create(['coins' => 0]);
+
+        $this->gift($admin, ['amount' => 1500, 'target' => 'all', 'notify' => true]);
+
+        $msg = \App\Models\Message::where('receiver_id', $user->id)->latest('id')->first();
+        $this->assertNotNull($msg);
+        $this->assertStringContainsString('1.500 coin', $msg->body);
+        $this->assertStringContainsString('hediye edilmiştir', $msg->body);
+    }
+
+    public function test_no_message_when_notify_off(): void
+    {
+        $user = User::factory()->create(['coins' => 0]);
+
+        $this->gift($this->admin(), ['amount' => 100, 'target' => 'all', 'notify' => false]);
+
+        $this->assertDatabaseMissing('messages', ['receiver_id' => $user->id]);
+    }
 }
