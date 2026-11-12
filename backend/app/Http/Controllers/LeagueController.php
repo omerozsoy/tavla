@@ -429,7 +429,7 @@ class LeagueController extends Controller
         ]);
     }
 
-    /** @return array<int,array{id:int,nickname:string,avatar:?string,rating:int}> açık-güvenli (e-posta YOK). */
+    /** @return array<int,array{id:int,nickname:string,name:string,avatar:?string,rating:int}> açık-güvenli (e-posta YOK). */
     private function userMap(array $ids): array
     {
         $ids = array_values(array_unique(array_filter($ids)));
@@ -437,9 +437,11 @@ class LeagueController extends Controller
             return [];
         }
 
-        return User::whereIn('id', $ids)->get(['id', 'nickname', 'avatar', 'rating'])
+        return User::whereIn('id', $ids)->get(['id', 'nickname', 'first_name', 'last_name', 'avatar', 'rating'])
             ->keyBy('id')->map(fn ($u) => [
-                'id' => $u->id, 'nickname' => $u->nickname, 'avatar' => $u->avatar, 'rating' => (int) $u->rating,
+                'id' => $u->id, 'nickname' => $u->nickname,
+                'name' => trim(($u->first_name ?? '').' '.($u->last_name ?? '')), // seçilen oyuncular listesi gerçek ad-soyadı gösterir
+                'avatar' => $u->avatar, 'rating' => (int) $u->rating,
             ])->all();
     }
 

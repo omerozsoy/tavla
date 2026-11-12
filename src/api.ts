@@ -1527,7 +1527,7 @@ export async function listTournaments(): Promise<Tournament[]> {
 }
 
 // ---- Türkiye Online Tavla Ligi (bağımsız modül) -------------------------------
-export interface LeagueUserBrief { id: number; nickname: string; avatar?: string | null; rating: number }
+export interface LeagueUserBrief { id: number; nickname: string; name?: string; avatar?: string | null; rating: number }
 export interface LeagueSeasonSummary {
   id: number; name: string; status: string; current_round: number; rounds_total: number
   champion?: LeagueUserBrief | null

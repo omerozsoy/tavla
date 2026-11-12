@@ -257,7 +257,7 @@ function Participants({ parts, onProfile }: { parts?: { accepted: LeagueUserBrie
   const chip = (u: LeagueUserBrief) => (
     <span key={u.id} onClick={() => onProfile?.(u.id)}
       style={{ ...badgeStyle, background: 'color-mix(in srgb, var(--text) 7%, transparent)', color: 'var(--text)', cursor: onProfile ? 'pointer' : 'default' }}>
-      {u.nickname} · {u.rating}
+      {u.name || u.nickname} · {u.rating}
     </span>
   )
   return (
