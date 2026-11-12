@@ -47,6 +47,10 @@ export const PAGES: PageDef[] = [
   // yalniz DB satiri silinirse gizli gruba dusmesin diye guvenli fallback.
   { key: 'league', slug: 'tavlatv-super-lig', labelKey: 'league.menu', icon: 'laurel-wreath', group: 'info' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
+  // Canlı Turnuva Sistemi: Turnuvalar (canli=info grubu) menüsünün EN ALTINDA. group='info' ->
+  // league/leaderboard ile aynı görünür grup; DB override yokken PAGES-index fallback sort'u
+  // leaderboard'dan büyük olduğu için en alta oturur. İçerik sonra doldurulacak (iskelet sayfa).
+  { key: 'liveTournSystem', slug: 'canli-turnuva-sistemi', labelKey: 'menu.liveTournSystem', icon: 'trophy', group: 'info' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },

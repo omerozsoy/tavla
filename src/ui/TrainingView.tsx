@@ -233,6 +233,8 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, turnStart, played, hinted, checking])
 
+  // Hamlesiz pozisyon (barda kapalı vb.) -> otomatik "Hamle yok". Diğer durumda OTOMATİK
+  // değerlendirme YOK: oyuncu adımlarını oynar, "Geri Al" ile düzeltir, "Onayla" ile gönderir.
   useEffect(() => {
     if (phase !== 'playing') return
     if (hasNoMove(generateMoves(turnStart))) {
@@ -242,10 +244,16 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
         setResults((r) => (r.length > idx ? r : [...r, false]))
         setStreak(0)
       }
-      return
     }
-    if (turnComplete) void grade()
-  }, [phase, turnComplete, turnStart, idx, grade])
+  }, [phase, turnStart, idx])
+
+  // Son oynanan adımı (bir zarı) geri al.
+  function handleUndo() {
+    if (!interactive || !played.length) return
+    Sound.move()
+    setPlayed((p) => p.slice(0, -1))
+    setSelectedFrom(null)
+  }
 
   async function hint() {
     if (!interactive || checking) return
@@ -354,9 +362,19 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             <button className="bgx-btn green" onClick={onBack}>{t('tr.nextLesson')}</button>
           </div>
         ) : (
-          <button className="bgx-hint" onClick={hint} disabled={!interactive || checking}>
-            {checking && interactive ? <Loading inline size={16} /> : t('tr.hintBtn')}
-          </button>
+          <div className="bgx-actions">
+            <div className="bgx-act-row">
+              <button className="bgx-btn ghost" onClick={handleUndo} disabled={!interactive || !played.length}>
+                <Icon name="refresh" size={16} /> {t('tr.undo')}
+              </button>
+              <button className="bgx-btn green" onClick={() => void grade()} disabled={!interactive || !turnComplete || checking}>
+                {checking && interactive ? <Loading inline size={16} /> : <><Icon name="check" size={16} /> {t('tr.confirm')}</>}
+              </button>
+            </div>
+            <button className="bgx-hint" onClick={hint} disabled={!interactive || checking}>
+              {t('tr.hintBtn')}
+            </button>
+          </div>
         )}
       </aside>
 

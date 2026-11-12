@@ -18268,6 +18268,11 @@ body:has(.spectate-view) .app.lobby {
 .bgx-spacer { flex: 1; }
 
 .bgx-hint { width: 100%; background: #1a2133; border: 1px solid #263150; color: #dfe6f2; padding: 14px; border-radius: 10px; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+/* Ders aksiyonları: Geri Al + Onayla satırı, altında İpucu */
+.bgx-actions { display: flex; flex-direction: column; gap: 10px; }
+.bgx-act-row { display: flex; gap: 10px; }
+.bgx-act-row .bgx-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.bgx-btn:disabled { opacity: 0.5; cursor: default; filter: none; }
 .bgx-hint:hover:not(:disabled) { background: #222c44; }
 .bgx-hint:disabled { opacity: 0.55; cursor: default; }
 

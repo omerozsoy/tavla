@@ -25,6 +25,8 @@ return [
         // --- TURNUVALAR: rekabet + sosyal ---
         ['key' => 'tournaments', 'group' => 'compete', 'label' => 'Online Turnuvalar'],
         ['key' => 'leaderboard', 'group' => 'compete', 'label' => 'Liderlik Tablosu'],
+        // Canlı Turnuva Sistemi: canli menüde 'info' (="Turnuvalar") grubunun altında görünür.
+        ['key' => 'liveTournSystem', 'group' => 'info', 'label' => 'Canlı Turnuva Sistemi'],
         ['key' => 'friends', 'group' => 'compete', 'label' => 'Arkadaşlar'],
         ['key' => 'messages', 'group' => 'compete', 'label' => 'Mesajlar'],
 

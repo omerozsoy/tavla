@@ -181,6 +181,7 @@ import Friends from './ui/Friends'
 import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
+const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
 const LeagueView = lazy(() => import('./ui/LeagueView'))
 const TeamsView = lazy(() => import('./ui/TeamsView'))
@@ -1140,6 +1141,7 @@ export default function App() {
   const [dmUnread, setDmUnread] = useState(0) // okunmamis ozel mesaj sayisi (menu rozeti)
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [trainingOpen, setTrainingOpen] = useState(false) // Tavla Eğitimi (interaktif trainer)
+  const [liveTournOpen, setLiveTournOpen] = useState(false) // Canlı Turnuva Sistemi (iskelet sayfa)
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [leagueOpen, setLeagueOpen] = useState(false) // Türkiye Online Tavla Ligi (bağımsız §1)
   const [leagueSeasonId, setLeagueSeasonId] = useState<number | null>(null) // derin-link sezon id
@@ -1489,6 +1491,8 @@ export default function App() {
                   ? 'dersler'
                   : trainingOpen
                     ? 'tavla-egitimi'
+                  : liveTournOpen
+                    ? 'canli-turnuva-sistemi'
                   : soloOpen
                     ? 'tek-oyun'
                     : contentView === 'event'
@@ -1844,6 +1848,9 @@ export default function App() {
           break
         case 'tavla-egitimi':
           setTrainingOpen(true)
+          break
+        case 'canli-turnuva-sistemi':
+          setLiveTournOpen(true)
           break
         case 'tek-oyun':
           // Misafir Tek Oyun oynayamaz (coin/hesap şart) -> üyelik iste. Yalnız Yapay Zeka ile
@@ -10105,6 +10112,7 @@ export default function App() {
     setFairOpen(false)
     setLessonsOpen(false)
     setTrainingOpen(false)
+    setLiveTournOpen(false)
     setSoloOpen(false)
     setProductsOpen(false)
     setMyOrdersOpen(false)
@@ -10251,6 +10259,7 @@ export default function App() {
     onMatchHistory: () => (premium ? goPage(() => setMatchHistOpen(true)) : setMemOpen(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onTraining: () => goPage(() => setTrainingOpen(true)),
+    onLiveTournSystem: () => goPage(() => setLiveTournOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
@@ -10304,6 +10313,7 @@ export default function App() {
     products: menuProps.onProducts,
     myOrders: menuProps.onMyOrders,
     training: menuProps.onTraining,
+    liveTournSystem: menuProps.onLiveTournSystem,
     lessons: menuProps.onLessons,
     analyzer: menuProps.onAnalyzer,
     matAnalyzer: menuProps.onMatAnalyzer,
@@ -10708,6 +10718,7 @@ export default function App() {
     diceCheckOpen ||
     lessonsOpen ||
     trainingOpen ||
+    liveTournOpen ||
     soloOpen ||
     !!contentView ||
     quizOpen ||
@@ -10767,6 +10778,8 @@ export default function App() {
                           ? 'lessons'
                           : trainingOpen
                             ? 'training'
+                          : liveTournOpen
+                            ? 'liveTournSystem'
                           : memOpen
                             ? 'membership'
                             : contentView === 'event'
@@ -10990,6 +11003,11 @@ export default function App() {
             <TrainingView titleOverride={menuTitle('training')} onClose={() => setTrainingOpen(false)} />
           </Suspense>
         </div>
+      )}
+      {liveTournOpen && (
+        <Suspense fallback={null}>
+          <LiveTournamentSystem titleOverride={menuTitle('liveTournSystem')} onClose={() => setLiveTournOpen(false)} />
+        </Suspense>
       )}
       {shopOpen && (
         <MagazaSwiss
