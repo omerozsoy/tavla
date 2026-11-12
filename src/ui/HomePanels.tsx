@@ -966,6 +966,12 @@ export function TournamentsPanel({
   const { t, lang } = useT()
   const [busy, setBusy] = useState<number | null>(null)
   const [idx, setIdx] = useState(0) // kayan turnuva slider konumu (0-tabanlı)
+  // Başlama zamanı EN YAKIN olan ilk sırada (starts_at artan); tarihsizler sona.
+  const ordered = [...tourns].sort(
+    (a, b) =>
+      (a.starts_at ? new Date(a.starts_at).getTime() : Infinity) -
+      (b.starts_at ? new Date(b.starts_at).getTime() : Infinity),
+  )
   const cur = Math.min(idx, Math.max(0, tourns.length - 1)) // liste kısalınca taşmayı önle
   const act = async (id: number, fn?: (id: number) => Promise<void> | void) => {
     if (!fn || busy) return
@@ -989,7 +995,7 @@ export function TournamentsPanel({
       <div className="tourn-carousel">
       <div className="tourn-viewport">
       <div className="tourn-track" style={{ transform: `translateX(-${cur * 100}%)` }}>
-        {tourns.map((tr) => {
+        {ordered.map((tr) => {
           // size 0 = sinirsiz kontenjan -> ASLA dolu degil (yoksa count>=0 hep dolu gorunur).
           const full = tr.size > 0 && tr.count >= tr.size
           // Odul tablosu: prizes varsa ilk 3 sira (1./2./3.), yoksa eski prize_coins
@@ -1110,7 +1116,7 @@ export function TournamentsPanel({
             <Icon name="caret-left" size={16} />
           </button>
           <span className="tourn-dots">
-            {tourns.map((_, i) => (
+            {ordered.map((_, i) => (
               <button
                 key={i}
                 type="button"

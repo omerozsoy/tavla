@@ -13538,7 +13538,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .swiss-panel.tourn-panel .tourn-cnav {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* sola yasli: sag oklar yan panel kontrolune girmesin */
   gap: 12px;
   padding-top: 10px;
 }
