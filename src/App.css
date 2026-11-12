@@ -15016,16 +15016,16 @@ button.acct-row-logout:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
 }
-.tourn-week-chip.tcard-status-running { border-left-color: var(--color-success); }
-.tourn-week-chip.tcard-status-finished { border-left-color: var(--muted); opacity: 0.7; }
+.tourn-week-chip.twc-s-running { border-left-color: var(--color-success); }
+.tourn-week-chip.twc-s-finished { border-left-color: var(--muted); opacity: 0.7; }
 .twc-time {
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--accent);
   letter-spacing: 0.01em;
 }
-.tourn-week-chip.tcard-status-running .twc-time { color: var(--color-success); }
-.tourn-week-chip.tcard-status-finished .twc-time { color: var(--muted); }
+.tourn-week-chip.twc-s-running .twc-time { color: var(--color-success); }
+.tourn-week-chip.twc-s-finished .twc-time { color: var(--muted); }
 .twc-name {
   font-size: 0.8rem;
   font-weight: 400;

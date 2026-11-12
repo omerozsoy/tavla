@@ -1769,7 +1769,7 @@ function WeekCalendar({ list, lang, onOpen }: {
                   return (
                     <div
                       key={tr.id}
-                      className={`tourn-week-chip tcard-status-${tr.status}`}
+                      className={`tourn-week-chip twc-s-${tr.status}`}
                       onClick={() => onOpen(tr.id, tournUrlSlug(tr))}
                       title={tr.name}
                     >
