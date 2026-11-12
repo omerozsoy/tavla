@@ -14951,7 +14951,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .tourn-week-day.has { background: var(--card-bg); }
 .tourn-week-day.is-today {
-  border-color: var(--accent);
+  border: 2px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
 }
 .tourn-week-dtop {
@@ -17640,23 +17640,31 @@ body:has(.spectate-view) .app.lobby {
 }
 .duel-stake-badge {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--gold, #d4a017) 50%, var(--border));
+  background: color-mix(in srgb, var(--gold, #d4a017) 12%, transparent);
+  color: var(--text);
+}
+.duel-stake-item {
+  display: flex;
   align-items: center;
   gap: 9px;
   flex-wrap: wrap;
-  padding: 10px 14px;
-  margin-bottom: 14px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--gold, #d4a017) 55%, var(--border));
-  background: color-mix(in srgb, var(--gold, #d4a017) 14%, transparent);
-  color: var(--text);
 }
-.duel-stake-badge svg {
+.duel-stake-item svg {
   color: var(--gold, #d4a017);
   flex-shrink: 0;
 }
+.duel-stake-rating svg {
+  color: var(--accent, #3b82f6);
+}
 .duel-stake-amt {
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   letter-spacing: 0.2px;
 }
 .duel-stake-note {
