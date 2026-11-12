@@ -198,26 +198,31 @@ export default function TeamsView(props: Props) {
 const CHAMPION_COIN = 30000     // şampiyon takımın ortak kasasına
 const BEST_DUELIST_COIN = 5000  // sezon "En İyi Düellocu"su oyuncunun kişisel cüzdanına
 
-// Aktif sezon ödülleri rozeti — SeasonBanner (genel bakış) + Sezon Şampiyonu sekmesinde ortak.
+// Swiss aksan rengi (marka terracotta) + ortak minik-etiket stili (uppercase, tracked).
+const SWISS_ACCENT = '#a8392b'
+const SWISS_LABEL: CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.55 }
+
+// Aktif sezon ödülleri — Swiss: sola yaslı mini tablo, kural çizgili, düz (kutu/pill yok).
 function SeasonRewards() {
   const { t } = useT()
   const fmt = (n: number) => n.toLocaleString('tr-TR')
-  const chip: CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5,
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 999, padding: '5px 11px',
-  }
-  const amt: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 700 }
+  const row: CSSProperties = { display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, padding: '6px 0', borderTop: '1px solid var(--border)' }
+  const amt: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 800, marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
-      <span style={chip}>
-        <Icon name="laurel-wreath" size={15} /> {t('teams.rewards.champion')}
-        <b style={amt}><Icon name="coin" size={13} /> {fmt(CHAMPION_COIN)}</b>
-      </span>
-      <span style={chip}>
-        <Icon name="swords" size={15} /> {t('teams.rewards.bestDuelist')}
-        <b style={amt}><Icon name="coin" size={13} /> {fmt(BEST_DUELIST_COIN)}</b>
-      </span>
+    <div style={{ marginTop: 16, maxWidth: 380 }}>
+      <div style={SWISS_LABEL}>{t('teams.awards')}</div>
+      <div style={{ marginTop: 4 }}>
+        <div style={row}>
+          <Icon name="laurel-wreath" size={15} />
+          <span style={{ opacity: 0.85 }}>{t('teams.rewards.champion')}</span>
+          <b style={amt}><Icon name="coin" size={13} /> {fmt(CHAMPION_COIN)}</b>
+        </div>
+        <div style={row}>
+          <Icon name="swords" size={15} />
+          <span style={{ opacity: 0.85 }}>{t('teams.rewards.bestDuelist')}</span>
+          <b style={amt}><Icon name="coin" size={13} /> {fmt(BEST_DUELIST_COIN)}</b>
+        </div>
+      </div>
     </div>
   )
 }
@@ -245,28 +250,26 @@ function SeasonBanner() {
   const pad = (n: number) => String(n).padStart(2, '0')
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(168,58,43,0.14), rgba(168,58,43,0.04))',
-      border: '1px solid rgba(168,58,43,0.35)', borderRadius: 12,
-      padding: '12px 16px', marginBottom: 14,
-      display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+      border: '1px solid var(--border)', borderTop: `3px solid ${SWISS_ACCENT}`, borderRadius: 0,
+      padding: '18px 20px', marginBottom: 16, background: 'var(--card-bg)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 auto' }}>
-        <Icon name="laurel-wreath" size={26} />
+      {/* Üst satır: sezon adı (sola yaslı) | geri sayım (sağ) — katı grid, ortalama YOK */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
         <div>
-          <div style={{ fontSize: 11, opacity: 0.7, textTransform: 'uppercase', letterSpacing: 0.6 }}>{t('teams.season.active')}</div>
-          <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.1 }}>{seasonName}</div>
+          <div style={SWISS_LABEL}>{t('teams.season.active')}</div>
+          <div style={{ fontSize: 27, fontWeight: 800, lineHeight: 1.02, letterSpacing: -0.6, marginTop: 2 }}>{seasonName}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={SWISS_LABEL}>{t('teams.season.endsIn')}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: -0.5, marginTop: 2 }}>
+            {d > 0 ? `${d} ${t('teams.season.days')} ` : ''}{pad(h)}:{pad(m)}:{pad(s)}
+          </div>
         </div>
       </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 11, opacity: 0.7 }}>{t('teams.season.endsIn')}</div>
-        <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-          {d > 0 ? `${d} ${t('teams.season.days')} ` : ''}{pad(h)}:{pad(m)}:{pad(s)}
-        </div>
-      </div>
-      <div style={{ flexBasis: '100%', fontSize: 12.5, opacity: 0.75, textAlign: 'center' }}>
+      <div style={{ fontSize: 12.5, opacity: 0.7, maxWidth: 560, marginTop: 14 }}>
         {t('teams.season.champNote')}
       </div>
-      <div style={{ flexBasis: '100%' }}><SeasonRewards /></div>
+      <SeasonRewards />
     </div>
   )
 }
