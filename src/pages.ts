@@ -8,7 +8,7 @@ import type { IconName } from './ui/Icon'
  * NOT: Oyun akisi (home/setup/online/game) BURAYA GIRMEZ — onlar sayfa degil, oyun durumu.
  */
 
-export type MenuGroup = 'play' | 'klassik' | 'league' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
+export type MenuGroup = 'play' | 'klassik' | 'league' | 'compete' | 'fun' | 'lessons' | 'content' | 'tools' | 'account' | 'info'
 
 export interface PageDef {
   key: string // aktif-vurgu + binding anahtari
@@ -65,6 +65,12 @@ export const PAGES: PageDef[] = [
   // burada yalnız route + deep-link + aktif-vurgu tanımlı (menüde ÇİFT görünmesin).
   { key: 'kiz', slug: 'kiz-tavlasi', labelKey: 'kiz.menu', icon: 'heart', group: 'fun', hideInGame: true },
 
+  // --- DERSLER VE EĞİTİM: interaktif tavla eğitimi (herkese açık, giriş gerekmez) ---
+  // Tavla Eğitimi: zar atılır, oyuncu hamlesini oynar; en iyi hamleye (sinir ağı) yakınsa geçer,
+  // değilse doğru hamle tahtada oklarla gösterilir. Nasıl Oynanır: mevcut statik Lessons dersi.
+  { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
+  { key: 'lessons', slug: 'dersler', labelKey: 'menu.lessons', icon: 'book', group: 'lessons', hideInGame: true },
+
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
@@ -110,7 +116,7 @@ export const PAGES: PageDef[] = [
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
 export const PAGE_BY_SLUG: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.slug, p]))
-export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'league', 'compete', 'fun', 'content', 'tools', 'account', 'info']
+export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'klassik', 'league', 'compete', 'fun', 'lessons', 'content', 'tools', 'account', 'info']
 
 // Grup basligi i18n anahtari (sol menude gorunur, silik buyuk-harf). null -> baslik cizilmez.
 // NOT: bunlar VARSAYILAN; admin "Sol Menu" panelinden grup/ad/sira override edilebilir.
@@ -120,6 +126,7 @@ export const MENU_GROUP_LABELS: Record<MenuGroup, string | null> = {
   league: null, // "Tavla Ligi" grup başlığı kaldırıldı (öğe başlıksız görünür — kullanıcı isteği)
   compete: 'menu.group.compete',
   fun: 'menu.group.fun',
+  lessons: 'menu.group.lessons', // "Dersler ve Eğitim"
   content: 'menu.group.content',
   tools: 'menu.group.tools',
   account: 'menu.group.account',

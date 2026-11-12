@@ -20,7 +20,7 @@ import { FairDice, sha256Hex, verifyRoll } from '../engine/fairDice'
 const PRESETS = [100, 1000, 10000, 100000]
 const MAX_ROLLS = 1_000_000
 const BATCH = 20000 // UI'yi bloklamamak icin parca buyuklugu
-const GITHUB_URL = 'https://github.com/Backgammon-Galaxy/dice_roller'
+const GITHUB_URL = 'https://gist.github.com/omerozsoy/bdebe5a96c899b56c1a75577cc81ade3'
 
 // Lang -> Intl locale (sayi/yuzde bicimleme yerel olsun: %16,67 vs 16.67%).
 const LOCALE: Record<string, string> = {

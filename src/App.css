@@ -17904,6 +17904,90 @@ body:has(.spectate-view) .app.lobby {
   padding: 16px 16px 18px;
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
 }
+
+/* Tavla Eğitimi (trainer): analyzer kabuğunu yeniden kullanır ama 3. "results" kolonu yok
+   -> board | controls iki kolon. Mobilde analyzer media query'leri tek kolona indirir. */
+.tr-view .analyzer-body {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-areas: 'board controls';
+}
+.tr-score {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--text);
+}
+.tr-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tr-prompt {
+  margin: 0;
+  color: var(--text-muted, #667);
+  font-size: 0.95rem;
+}
+.tr-btns {
+  display: flex;
+  gap: 10px;
+}
+.tr-btns [data-slot='button'] {
+  flex: 1;
+}
+.tr-skip {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--text-muted, #667);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 4px 0;
+  text-align: left;
+}
+.tr-skip:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+.tr-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.tr-result h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.tr-result [data-slot='button'] {
+  width: 100%;
+}
+.tr-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.tr-ok .tr-badge {
+  background: var(--success, #2e9e5b);
+}
+.tr-bad .tr-badge {
+  background: var(--danger, #d14343);
+}
+.tr-eq {
+  margin: 0;
+  color: var(--text-muted, #667);
+  font-size: 0.95rem;
+}
+.tr-loss {
+  color: var(--danger, #d14343);
+  font-weight: 600;
+}
 /* Kontrol paneli mikro-etiketleri: kucuk, izli buyuk-harf -> net bolum hiyerarsisi.
    Sadece analyzer'a scope'lu (genel .setup-label degismez). */
 .analyzer-controls .setup-label {
