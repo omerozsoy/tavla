@@ -572,7 +572,8 @@ export default function MatchReport({
                   )
                 })()}
                 {cur?.cube ? (
-                  <>
+                  <div className="an-split">
+                    <div className="an-split-board">
                     {/* KÜP kararı: karar anındaki tahta (varsa) + küpün değeri/sahibi, ardından
                         XG-benzeri aksiyon tablosu (Katlama yok / Katla,Pas / Katla,Kabul + verdict). */}
                     {boardState && (
@@ -597,8 +598,11 @@ export default function MatchReport({
                         />
                       </div>
                     )}
+                    </div>
+                    <div className="an-split-cands">
                     <CubeAnalysis cube={cur.cube} />
-                  </>
+                    </div>
+                  </div>
                 ) : cur?.pos && cur.player ? (
                   <div className="an-split">
                     <div className="an-split-board">
