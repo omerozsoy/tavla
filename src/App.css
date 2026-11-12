@@ -14838,142 +14838,141 @@ button.acct-row-logout:hover:not(:disabled) {
   }
 }
 
-/* ---- HAFTALIK TAKVIM — SWISS DESIGN (sert grid, grotesk, kirmizi aksan) ---- */
+/* ---- HAFTALIK TAKVIM (yumusak kart grid, tema-accent, hover) ---- */
 .tourn-week {
-  --sw-red: #e4002b;
-  --sw-line: var(--text);
-  --sw-hair: color-mix(in srgb, var(--text) 24%, transparent);
-  --sw-grotesk: 'Helvetica Neue', Helvetica, Arial, 'Inter', sans-serif;
-  border: 2px solid var(--sw-line);
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--card-bg);
-  padding: 0;
+  padding: 14px;
   margin-bottom: 18px;
-  font-family: var(--sw-grotesk);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
 }
 .tourn-week-head {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
-  gap: 0;
-  border-bottom: 2px solid var(--sw-line);
+  gap: 10px;
+  margin-bottom: 14px;
 }
 .tourn-week-range {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding: 13px 10px;
   text-align: center;
 }
 .tourn-week-title {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 0.98rem;
+  gap: 7px;
+  font-weight: 500;
+  font-size: 0.92rem;
   color: var(--text);
 }
-.tourn-week-range b {
-  color: var(--sw-red);
-  font-weight: 800;
-  font-size: 1.1rem;
-}
-.tourn-week-nav {
-  flex: 0 0 auto;
-  width: 50px;
-  border: 0 !important;
-  border-left: 2px solid var(--sw-line) !important;
-  border-radius: 0 !important;
-  color: var(--text);
-}
-.tourn-week-head > .tourn-week-nav:first-child {
-  border-left: 0 !important;
-  border-right: 2px solid var(--sw-line) !important;
-}
-.tourn-week-nav:hover { background: var(--sw-red) !important; color: #fff !important; }
+.tourn-week-title svg { color: var(--accent); }
+.tourn-week-range b { font-weight: 500; font-size: 0.95rem; color: var(--muted); }
+.tourn-week-nav { flex: 0 0 auto; color: var(--text); }
 .tourn-week-today {
-  border: 2px solid var(--sw-line);
+  border: 1px solid var(--border);
   background: transparent;
-  color: var(--text);
-  border-radius: 0;
-  padding: 3px 13px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.tourn-week-today:hover { background: var(--sw-red); color: #fff; border-color: var(--sw-red); }
+.tourn-week-today:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .tourn-week-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0;
+  gap: 8px;
 }
 .tourn-week-day {
-  min-height: 160px;
-  border-left: 1px solid var(--sw-hair);
-  background: var(--card-bg);
-  padding: 9px 8px 12px;
+  min-height: 150px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--text) 2.5%, var(--card-bg));
+  padding: 10px 9px 11px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 10px;
+  transition: border-color 0.15s;
 }
-.tourn-week-day:first-child { border-left: 0; }
-.tourn-week-day.is-today { background: color-mix(in srgb, var(--sw-red) 9%, var(--card-bg)); }
+.tourn-week-day.has { background: var(--card-bg); }
+.tourn-week-day.is-today {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+}
 .tourn-week-dtop {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 4px;
-  border-bottom: 2px solid var(--sw-line);
-  padding-bottom: 6px;
+  gap: 6px;
 }
 .tourn-week-dname {
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
 }
-.tourn-week-dnum { font-weight: 800; color: var(--text); font-size: 1.5rem; line-height: 1; }
-.tourn-week-day.is-today .tourn-week-dname,
-.tourn-week-day.is-today .tourn-week-dnum { color: var(--sw-red); }
-.tourn-week-items { display: flex; flex-direction: column; gap: 7px; }
+.tourn-week-dnum {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 1.1rem;
+  line-height: 1;
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+}
+.tourn-week-day.is-today .tourn-week-dnum {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--radius-circle);
+}
+.tourn-week-items { display: flex; flex-direction: column; gap: 6px; }
 .tourn-week-chip {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: 2px;
   width: 100%;
   text-align: left;
-  border: 0;
-  border-left: 4px solid var(--sw-red);
-  border-radius: 0;
-  background: color-mix(in srgb, var(--text) 7%, transparent);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--card-bg);
   padding: 6px 8px;
   cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
 }
-.tourn-week-chip:hover { background: color-mix(in srgb, var(--sw-red) 15%, transparent); }
+.tourn-week-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
+}
 .tourn-week-chip.tcard-status-running { border-left-color: var(--color-success); }
-.tourn-week-chip.tcard-status-finished { border-left-color: var(--sw-hair); opacity: 0.78; }
+.tourn-week-chip.tcard-status-finished { border-left-color: var(--muted); opacity: 0.7; }
 .twc-time {
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.01em;
 }
+.tourn-week-chip.tcard-status-running .twc-time { color: var(--color-success); }
+.tourn-week-chip.tcard-status-finished .twc-time { color: var(--muted); }
 .twc-name {
-  font-size: 0.84rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 400;
   color: var(--text);
-  line-height: 1.18;
+  line-height: 1.2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -14981,23 +14980,21 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .tourn-week-empty {
   text-align: center;
-  color: color-mix(in srgb, var(--text) 55%, transparent);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-size: 0.8rem;
-  padding: 14px 0;
-  border-top: 2px solid var(--sw-line);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  padding: 12px 0 2px;
 }
-/* Dar ekran: 7 sutun sigmazsa yatay kaydir (yuksek hucreler -> daha genis sutun). */
+/* Dar ekran: 7 sutun sigmazsa yatay kaydir (gun sutunlari genis). */
 @media (max-width: 640px) {
   .tourn-week-grid {
     grid-auto-flow: column;
     grid-template-columns: none;
-    grid-auto-columns: 47%;
+    grid-auto-columns: 44%;
     overflow-x: auto;
     scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
   }
   .tourn-week-day { scroll-snap-align: start; }
 }
