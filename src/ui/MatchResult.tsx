@@ -19,6 +19,7 @@ interface Props {
   analyzing?: boolean // HAKEM=gnubg: insanın PR'ı gnubg ile hesaplanıyor (async) -> sayı yerine "…"
   analyzingBoth?: boolean // pvb: tek gnubg job İKİ tarafı da (insan+bot) hesaplar -> ikisinde de "…"
   oppAnalyzing?: boolean // online: RAKİBİN PR'ı ayrı/geç gelir -> gelene kadar onun hücresinde de "…" (boş — değil)
+  luckPending?: boolean // online: ŞANS PR'dan GEÇ gelir (~9sn) -> poll sürerken şans hücresinde loader (yanlış "—" değil)
   // GERÇEK PR ilerleme yüzdesi (0-100): gnubg'ye giden pozisyonların analiz oranı (matchGnubgPr poll'u).
   // null -> gerçek veri yok (online rakip tarafı / eski maç) -> zaman-tabanlı tahmine düşülür.
   progressPct?: number | null
@@ -102,6 +103,7 @@ export default function MatchResult({
   analyzing = false,
   analyzingBoth = false,
   oppAnalyzing = false,
+  luckPending = false,
   progressPct = null,
   winnerBand,
   loserBand,
@@ -251,7 +253,7 @@ export default function MatchResult({
   // DÜŞME: ham değer yetkili gnubg ile TERS işaret verip "şanslıydım ama kaybettim" yanılgısı
   // yaratıyordu. Hazır olana kadar render'da loader; analiz yoksa "—" (bkz. aşağıdaki Şans satırı).
   const useGnubgPct = winnerLuckPct != null && loserLuckPct != null
-  const luckAnalyzing = analyzing || analyzingBoth || oppAnalyzing
+  const luckAnalyzing = analyzing || analyzingBoth || oppAnalyzing || luckPending
   // Yuvarlanmış değere göre işaret/renk: -0.3 gibi küçük negatif "-0%" veriyordu
   // (toFixed(0) === "-0" + v>=0 false). round==0 -> işaretsiz "0%" + nötr renk.
   const fmtPct = (v: number) => {

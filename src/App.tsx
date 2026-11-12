@@ -2433,6 +2433,10 @@ export default function App() {
   // Maç Özeti: gnubg luck EQUITY (cost) + JOKER sayısı (per renk). Async job doldurur.
   const [serverLuckEmg, setServerLuckEmg] = useState<{ white: number | null; black: number | null } | null>(null)
   const [serverLuckJokers, setServerLuckJokers] = useState<{ white: number | null; black: number | null } | null>(null)
+  // ŞANS BEKLENİYOR: online luck poll'u sürüyor (PR'dan GEÇ gelir, ~9sn). PR analiz bayrakları
+  // bu arada false olduğundan şans satırı yanlışlıkla "—" (loader değil) gösteriyordu -> "hesaplanmadı"
+  // izlenimi (YSKL2). Bu bayrak sürerken MatchResult şans hücresinde loader kalır.
+  const [luckPending, setLuckPending] = useState(false)
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
@@ -5720,6 +5724,8 @@ export default function App() {
     let cancelled = false
     let prDone = serverPr?.opp != null
     setOppPrPending(!prDone)
+    // Şans PR'dan geç gelir -> poll boyunca loader'ı açık tut (aşağıda ikisi de dolunca kapanır).
+    setLuckPending(true)
     void (async () => {
       let luckDone = false
       for (let i = 0; i < 60 && !cancelled && !(prDone && luckDone); i++) {
@@ -5753,13 +5759,20 @@ export default function App() {
         // ŞANS self+opp (renge göre); ikisi de gelince tamam. Maliyet/joker de aynı eşlemeyle.
         if (pair.luck_mwc_self != null || pair.luck_mwc_opp != null) {
           applyLuckFromPair(pair)
-          if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) luckDone = true
+          if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) {
+            luckDone = true
+            setLuckPending(false) // ikisi de geldi -> şans satırı değeri gösterir
+          }
         }
       }
-      if (!cancelled) setOppPrPending(false) // bitti (geldi / ~3dk tavan) -> sonsuz "…" bırakma
+      if (!cancelled) {
+        setOppPrPending(false) // bitti (geldi / ~3dk tavan) -> sonsuz "…" bırakma
+        setLuckPending(false) // tavana ulaştı: luck gelmediyse dürüst "—" (sonsuz loader değil)
+      }
     })()
     return () => {
       cancelled = true
+      setLuckPending(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, matchOver, mWinner, room?.code, room?.bot])
@@ -12428,6 +12441,7 @@ export default function App() {
           analyzing={prAnalyzing}
           oppAnalyzing={oppPrPending}
           analyzingBoth={botMatch}
+          luckPending={luckPending}
           progressPct={prProgressPct}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}
