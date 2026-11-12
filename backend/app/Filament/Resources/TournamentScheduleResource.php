@@ -63,15 +63,18 @@ class TournamentScheduleResource extends Resource
                     ->default(true),
                 Forms\Components\CheckboxList::make('weekdays')
                     ->label('Hangi günler kurulsun')
-                    ->helperText('Seçilen her gün gece 00:00\'da bu şablondan bir turnuva kurulur. Farklı günlere farklı saat istersen ayrı şablon oluştur.')
+                    ->helperText('Seçilen her gün gece 00:00\'da bu şablondan bir turnuva kurulur. "Tümünü seç" = her gün. Farklı günlere farklı saat istersen ayrı şablon oluştur.')
                     ->options(self::WEEKDAYS)
                     ->columns(3)
+                    ->bulkToggleable() // "Tümünü seç / Tümünü kaldır" = her gün seçeneği
                     ->required(),
+                // Yalnız SAAT seçilir (tarih YOK): native <input type="time"> -> her tarayıcıda HH:MM.
+                // Periyodik turnuva tarihe bağlı değil; o günün register_until saati budur.
                 Forms\Components\TimePicker::make('start_time')
                     ->label('Başlangıç saati (son katılım)')
-                    ->helperText('Turnuva o gün bu saatte (Türkiye saati) otomatik başlar. Gün boyu kayıt açık kalır.')
+                    ->helperText('Sadece saat seç (tarih yok). Turnuva seçili günlerde bu saatte (Türkiye saati) otomatik başlar; gün boyu kayıt açık kalır.')
                     ->seconds(false)
-                    ->native(false)
+                    ->native(true)
                     ->required(),
                 Forms\Components\Select::make('type')
                     ->label('Turnuva tipi')
