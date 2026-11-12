@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * Sunucu-otoriter, provably-fair (commit-reveal) zar üretimi. Para maçı güvenliği Faz 1.
+ * Sunucu-otoriter, provably-fair (commit-reveal) zar üretimi. Tek oyun güvenliği Faz 1.
  *
  * Akış:
  *  1) Oyun/oda: sunucu gizli `serverSeed` üretir; `commit = SHA256(serverSeed)` istemcilere verilir.
