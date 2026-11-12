@@ -105,7 +105,17 @@ class TournamentScheduleResource extends Resource
                     ->label('Turnuva tipi')
                     ->options(Tournament::TYPES)
                     ->required()
+                    ->live()
                     ->default('bracket'),
+                // 3 Haklı Swiss "hak sayısı" (1/2/3). Zorunlu; yalnız Swiss tipinde gösterilir
+                // (bracket bu değeri yok sayar). Kurulan turnuvaya CreateScheduledTournaments aktarır.
+                Forms\Components\Select::make('swiss_lives')
+                    ->label('Hak sayısı')
+                    ->helperText('3 Haklı Swiss: oyuncu kaç yenilgide elenir.')
+                    ->options([1 => '1 hak', 2 => '2 hak', 3 => '3 hak'])
+                    ->default(3)
+                    ->required()
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'swiss_triple'),
                 Forms\Components\TextInput::make('venue')
                     ->label('Düzenlenme yeri / Otel')
                     ->maxLength(160),

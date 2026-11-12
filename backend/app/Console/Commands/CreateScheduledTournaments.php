@@ -70,6 +70,7 @@ class CreateScheduledTournaments extends Command
         Tournament::create([
             'name' => $s->name.' — '.$registerUntil->format('d.m.Y'),
             'type' => $s->type,
+            'swiss_lives' => $s->swiss_lives ?? 3, // 3 Haklı Swiss hak sayısı (bracket yok sayar)
             'venue' => $s->venue,
             'organizer_id' => $s->organizer_id,
             'size' => $s->size,

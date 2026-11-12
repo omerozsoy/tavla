@@ -27,7 +27,8 @@ class ScheduledTournamentTest extends TestCase
             'active' => true,
             'weekdays' => ['5', '1'],     // Cuma + Pazartesi — Filament CheckboxList STRING saklar (regresyon kalkanı)
             'start_time' => '20:30',
-            'type' => 'bracket',
+            'type' => 'swiss_triple',
+            'swiss_lives' => 2, // şablondaki hak sayısı kurulan turnuvaya aktarılmalı
             'size' => 8,
             'match_length' => 1,
             'prize_coins' => 0,
@@ -40,6 +41,7 @@ class ScheduledTournamentTest extends TestCase
         $t = Tournament::where('name', 'like', 'Cuma Akşamı%')->first();
         $this->assertNotNull($t, 'Cuma günü turnuva kurulmalı');
         $this->assertSame('open', $t->status);
+        $this->assertSame(2, (int) $t->swiss_lives, 'Şablondaki hak sayısı turnuvaya aktarılmalı');
         $this->assertSame(50, $t->entry_fee);
         $this->assertSame('2026-10-23 20:30', $t->register_until->format('Y-m-d H:i'));
 

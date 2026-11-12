@@ -14,7 +14,7 @@ class TournamentSchedule extends Model
 {
     protected $fillable = [
         'name', 'active', 'frequency', 'weekdays', 'start_time',
-        'type', 'venue', 'organizer_id', 'size',
+        'type', 'swiss_lives', 'venue', 'organizer_id', 'size',
         'match_length', 'semi_length', 'final_length',
         'round_minutes', 'semi_minutes', 'final_minutes',
         'prize_coins', 'prizes', 'prize_desc', 'entry_fee', 'premium_only',
@@ -30,6 +30,7 @@ class TournamentSchedule extends Model
         'third_place_match' => 'boolean',
         'last_created_on' => 'date',
         'size' => 'integer',
+        'swiss_lives' => 'integer',
         'match_length' => 'integer',
         'semi_length' => 'integer',
         'final_length' => 'integer',
