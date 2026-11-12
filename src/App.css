@@ -32754,6 +32754,32 @@ select:-webkit-autofill {
   border-radius: var(--radius-sm, 6px);
   margin-bottom: 4px;
 }
+/* Tıklanabilir alternatif: played/best satırları gibi — tahtada o hamleyi oklarla gösterir. */
+.ej-alt-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--card-bg, transparent);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.ej-alt-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.ej-alt-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.ej-alt-eye {
+  margin-left: auto;
+  color: var(--muted);
+  flex: none;
+}
+.ej-alt-btn.active .ej-alt-eye {
+  color: var(--accent);
+}
 .ej-alt-rank {
   width: 18px;
   height: 18px;
@@ -32766,7 +32792,6 @@ select:-webkit-autofill {
   border-radius: var(--radius-pill, 999px);
 }
 .ej-alt-eq {
-  margin-left: auto;
   font-variant-numeric: tabular-nums;
   font-weight: var(--fw-semibold, 600);
 }

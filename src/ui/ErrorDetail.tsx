@@ -72,7 +72,8 @@ export default function ErrorDetail({
     : null
   // Kartlar (BlunderLog cardMove) en iyi hamleyi okla gösterir; modal da aynı: en iyi hamle
   // varsa varsayılan "best" (oynanan hamlede çoğu kayıtta playedSteps boş → hiç ok çıkmazdı).
-  const [view, setView] = useState<'played' | 'best'>(entry.bestMove ? 'best' : 'played')
+  // 'played' | 'best' | number(alternatif index) — satıra tıkla, o hamle tahtada oklarla görünsün.
+  const [view, setView] = useState<'played' | 'best' | number>(entry.bestMove ? 'best' : 'played')
   // TEK MOTOR = gnubg (hakem). Saklı en iyi hamleye yalnız gnubg'den geldiyse ('gnubg-best') güvenilir;
   // eski kayıtlarda 'best' wildbg önerisiydi (kayıp gnubg'den) -> "Senin Hamlen = En İyi Hamle"
   // çelişkisi. Bu kayıtlarda en iyi hamle gnubg'ye (analyze-position) canlı sorulur.
@@ -115,7 +116,10 @@ export default function ErrorDetail({
   }, [entry.id])
   // Eski/yeniden kurulan kayıtlarda playedSteps boş olabilir; en iyi hamle yoksa 'steps' oynananı tutar.
   const playedSteps = entry.playedSteps?.length ? entry.playedSteps : !entry.bestMove ? (entry.bestSteps ?? []) : []
-  const steps = view === 'best' ? (best?.steps ?? []) : playedSteps
+  // Alternatif seçiliyse (view=number) o notasyonu tahta pozisyonunda adımlara çöz (best/played ile aynı yol).
+  const altSel = typeof view === 'number' ? entry.alternatives?.[view] : null
+  const altSteps = altSel ? (fromNotation(altSel.notation)?.steps ?? []) : null
+  const steps = view === 'best' ? (best?.steps ?? []) : altSteps ?? playedSteps
   const sameAsBest = !!best && best.notation === entry.playedMove
   const froms = new Set<number | 'bar'>()
   const tos = new Set<number | 'off'>()
@@ -256,11 +260,18 @@ export default function ErrorDetail({
           <div className="ej-alts">
             <div className="ej-alts-title">{t('errorJournal.detail.alternatives')}</div>
             {entry.alternatives.slice(0, 3).map((a, i) => (
-              <div key={i} className="ej-alt">
+              <button
+                key={i}
+                type="button"
+                className={`ej-alt ej-alt-btn ${view === i ? 'active' : ''}`}
+                onClick={() => setView(i)}
+                aria-pressed={view === i}
+              >
                 <span className="ej-alt-rank">{i + 1}</span>
                 <code>{a.notation}</code>
+                <Icon name="eye" size={13} className="ej-alt-eye" />
                 <span className="ej-alt-eq">{a.equity.toFixed(3)}</span>
-              </div>
+              </button>
             ))}
           </div>
         )}
