@@ -41,6 +41,10 @@ return [
     // iki stake'i (komisyon düşülerek) alır. Bakiyesi < stake olan düello gönderemez/kabul edemez.
     'duel_stake' => max(0, (int) env('DUEL_STAKE', 25)),
 
+    // DÜELLO rating: düello SABİT rating deltası uygular (Elo DEĞİL). Kazanan +bu, kaybeden −bu.
+    // Maç uzunluğu/rakip rating'inden BAĞIMSIZ. 0 = düello rating'i etkilemez (eski puansız davranış).
+    'duel_rating_delta' => max(0, (int) env('DUEL_RATING_DELTA', 10)),
+
     // HOŞGELDİN premium'u artık SABİT TARİHLİ (AuthController::grantWelcomePremium): yeni üyeler
     // 2 Ocak 2027'ye kadar ücretsiz Premium; 31 Aralık 2026'dan sonra hediye YOK. Ay-bazlı ayar
     // (welcome_premium_months) KALDIRILDI — tarihler kodda sabit (owner kararı 2026-10-19).

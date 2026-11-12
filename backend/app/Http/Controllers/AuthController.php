@@ -631,6 +631,10 @@ class AuthController extends Controller
             }
         }
 
+        // DÜELLO: Elo DEĞİL ama rating'i SABİT ±delta etkiler (puanlı SAYILIR). $ratingApplied =
+        // normal puanlı (Elo) VEYA düello (sabit). rated/rating_reason bu birleşik bayrağı izler.
+        $isDuel = (bool) ($room->duel ?? false);
+        $ratingApplied = $ranked || $isDuel;
         if ($ranked) {
             // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
             // K=32, taban 100, maç uzunluğu katsayısı C=sqrt(L/3) (L=hedef puan, odadan).
@@ -645,6 +649,21 @@ class AuthController extends Controller
             }
             $user->save();
 
+            $this->awardBadges($user, $newRating);
+            $this->awardFrames($user);
+        } elseif ($isDuel) {
+            // DÜELLO: Elo DEĞİL -> SABİT ±duel_rating_delta (varsayılan ±10). Maç uzunluğu/rakip
+            // rating'inden BAĞIMSIZ. Taban 100'ün altına inmez. Galibiyet/oyun istatistiği sayılır.
+            $dd = (int) config('game.duel_rating_delta', 10);
+            $newRating = max(100, (int) $ra + ($won ? $dd : -$dd));
+            $user->rating = $newRating;
+            $user->games_played = ($user->games_played ?? 0) + 1;
+            if ($won) {
+                $user->wins = ($user->wins ?? 0) + 1;
+            } else {
+                $user->losses = ($user->losses ?? 0) + 1;
+            }
+            $user->save();
             $this->awardBadges($user, $newRating);
             $this->awardFrames($user);
         } else {
@@ -771,12 +790,12 @@ class AuthController extends Controller
             $mr['opponent_user_id'] = $opponentId > 0 ? $opponentId : null;
         }
         if (Schema::hasColumn('match_results', 'rated')) {
-            $mr['rated'] = $ranked;
+            $mr['rated'] = $ratingApplied; // düello da puanlı sayılır (sabit ±delta)
         }
         // Puansızsa sebep (bot/unrated/guest/friendly/casual) -> satıra sakla. Aşağıdaki yanıt (947)
         // AYNI değeri üretir (RatingPolicy::unratedReason tek kaynak). Puanlı -> NULL.
         if (Schema::hasColumn('match_results', 'rating_reason')) {
-            $mr['rating_reason'] = $ranked ? null : RatingPolicy::unratedReason($room, $opponentId);
+            $mr['rating_reason'] = $ratingApplied ? null : RatingPolicy::unratedReason($room, $opponentId);
         }
         if (Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
@@ -976,7 +995,7 @@ class AuthController extends Controller
         // Sonuç ekranı "puansız maç" etiketi için: bu maç PUANLI mı + değilse SEBEP. Kullanıcı,
         // kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu -> açıklayıcı not göster.
         $ratingReason = null;
-        if (! $ranked) {
+        if (! $ratingApplied) {
             $ratingReason = $room->bot
                 ? 'bot'
                 : ($room->unrated ? 'unrated' : ($guestOpponent ? 'guest' : ($room->mode === 'friendly' ? 'friendly' : 'casual')));
@@ -987,7 +1006,7 @@ class AuthController extends Controller
             'rating_before' => (int) $ra,     // OTORİTER maç-öncesi rating; istemci delta'yı bundan çizer (yerel user.rating drift edebilir -> sahte +1)
             'user' => $user,
             'achievements' => $unlocked,
-            'rated' => $ranked,               // maç Elo/PR ürettiyse true; puansız (bot/unrated/guest/friendly) -> false
+            'rated' => $ratingApplied,        // maç Elo VEYA düello (sabit ±delta) ürettiyse true; puansız -> false
             'rating_reason' => $ratingReason, // false ise sebep: bot|unrated|guest|friendly|casual
             'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
             // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı

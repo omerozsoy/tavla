@@ -206,27 +206,48 @@ class DuelTest extends TestCase
         $this->assertSame(1, DB::table('duels')->where('room_code', 'DUELYM')->count());
     }
 
-    public function test_report_rating_writes_duel_without_rating_change(): void
+    public function test_report_rating_writes_duel_with_fixed_delta(): void
     {
         config(['gnubg.pr_mode' => 'authoritative']); // MatchFinalize/düello kancası bu modda çalışır
+        config(['game.duel_rating_delta' => 10]);     // düello SABİT ±10 (Elo değil)
         $a = $this->user('ra', 1500);
         $b = $this->user('rb', 1500);
-        $this->duelRoom('DUEL4', $a, $b, 3, 'white');
+        $this->duelRoom('DUEL4', $a, $b, 3, 'white'); // a (beyaz) kazanır
 
         Sanctum::actingAs($a);
         $this->postJson('/api/rating/report', [
             'won' => true, 'opponent_rating' => 1500, 'match_length' => 3, 'room_code' => 'DUEL4',
             'score_self' => 3, 'score_opp' => 0,
-        ])->assertOk()->assertJson(['rated' => false]); // puansız
+        ])->assertOk()->assertJson(['rated' => true]); // düello artık PUANLI (sabit)
 
         // Düello yazıldı + kazanan a.
         $this->assertSame($a->id, (int) DB::table('duels')->where('room_code', 'DUEL4')->value('winner_id'));
-        // Rating DEĞİŞMEDİ (puansız).
-        $this->assertSame(1500, (int) $a->fresh()->rating);
-        $this->assertSame(1500, (int) $b->fresh()->rating);
-        // match_results satırı puansız (delta 0).
+        // Rating SABİT +10 (Elo değil, maç uzunluğu/rakip rating'inden bağımsız).
+        $this->assertSame(1510, (int) $a->fresh()->rating);
+        // match_results satırı rated + delta tam +10.
         $row = MatchResult::where('room_code', 'DUEL4')->where('user_id', $a->id)->first();
-        $this->assertSame(0, (int) $row->delta);
+        $this->assertSame(10, (int) $row->delta);
+        $this->assertTrue((bool) $row->rated);
+    }
+
+    public function test_report_rating_duel_loser_minus_ten(): void
+    {
+        config(['gnubg.pr_mode' => 'authoritative']);
+        config(['game.duel_rating_delta' => 10]);
+        $a = $this->user('la', 1500);
+        $b = $this->user('lb', 1500);
+        $this->duelRoom('DUELLZ', $a, $b, 3, 'black'); // b (siyah) kazanır -> a kaybeder
+
+        Sanctum::actingAs($a);
+        $this->postJson('/api/rating/report', [
+            'won' => false, 'opponent_rating' => 1500, 'match_length' => 3, 'room_code' => 'DUELLZ',
+            'score_self' => 0, 'score_opp' => 3,
+        ])->assertOk()->assertJson(['rated' => true]);
+
+        // Kaybeden SABİT −10.
+        $this->assertSame(1490, (int) $a->fresh()->rating);
+        $row = MatchResult::where('room_code', 'DUELLZ')->where('user_id', $a->id)->first();
+        $this->assertSame(-10, (int) $row->delta);
     }
 
     public function test_leaderboard_counts_individual_and_team(): void
