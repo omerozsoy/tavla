@@ -12172,7 +12172,9 @@ export default function App() {
           return (
             <>
               <GameHudHeader
-                self={selfCard}
+                // self = insan (SEN); anlik PR (bota karsi tahmin) bottomInfo.pr'da tutulur (flip'ten
+                // bagimsiz insanin PR'i) -> yatay Sidebar'daki gibi dikeyde de gorunsun.
+                self={{ ...selfCard, pr: bottomInfo.pr, prEstimate: bottomInfo.prEstimate }}
                 opp={oppCard}
                 selfCoins={user?.coins ?? null}
                 target={match.target}

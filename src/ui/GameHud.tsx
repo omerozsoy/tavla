@@ -1,10 +1,29 @@
 // Mobil portrait oyun ekrani YENIDEN TASARIM HUD'u (Backgammon Galaxy benzeri).
 // Yalniz mobil portrait'te render edilir (App.tsx mobilePortrait gate'i); masaustu/yatay
 // klasik Sidebar + ClockStack kullanmaya devam eder. Prototip boardshot.tsx ile birebir.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './gameRedesign.css'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
+
+// Anlik PR degisim yonu (Sidebar'daki ile ayni): PR yukseldi=kotu(kirmizi ok), dustu=iyi(yesil).
+function usePrTrend(pr: number | null | undefined): 'bad' | 'good' | null {
+  const prev = useRef<number | null>(null)
+  const [trend, setTrend] = useState<'bad' | 'good' | null>(null)
+  useEffect(() => {
+    if (pr == null) { prev.current = null; return }
+    const before = prev.current
+    prev.current = pr
+    if (before == null) return
+    const d = pr - before
+    const next: 'bad' | 'good' | null = d > 0.05 ? 'bad' : d < -0.05 ? 'good' : null
+    if (!next) return
+    setTrend(next)
+    const id = setTimeout(() => setTrend(null), 2600)
+    return () => clearTimeout(id)
+  }, [pr])
+  return trend
+}
 
 export function useMobilePortrait(): boolean {
   const [m, setM] = useState(false)
@@ -31,11 +50,14 @@ type Who = {
   isBot?: boolean
   rating?: number | null
   sub?: string
+  pr?: number | null // anlik PR (yalniz bota karsi self); null ise gizli
+  prEstimate?: boolean // true -> "~" (oyun-ici tahmin)
 }
 
 function Player({ who, ring, coins, onAvatar }: {
   who: Who; ring: 'blue' | 'gold'; coins?: number | null; onAvatar?: () => void
 }) {
+  const trend = usePrTrend(who.pr)
   return (
     <div className="gb-player">
       <div className={`gb-pav ring-${ring}`} onClick={onAvatar} style={onAvatar ? { cursor: 'pointer' } : undefined}>
@@ -49,6 +71,13 @@ function Player({ who, ring, coins, onAvatar }: {
         {who.rating != null && <span className="gb-stat"><Icon name="chart-bar-popular" size={14} />{who.rating}</span>}
         {coins != null && <span className="gb-stat"><Coins amount={coins} size={13} /></span>}
       </div>
+      {/* Anlik PR (bota karsi oyun-ici tahmin) — dusuk=iyi. Yatay Sidebar ile ayni; dikeyde de gorunsun. */}
+      {who.pr != null && (
+        <div className={`gb-pr ${trend ? 'pr-' + trend : ''}`}>
+          {trend && <span className="gb-pr-arw">{trend === 'bad' ? '▲' : '▼'}</span>}
+          PR {who.prEstimate ? '~' : ''}{who.pr.toFixed(1)}
+        </div>
+      )}
     </div>
   )
 }

@@ -39,7 +39,7 @@ function Harness() {
             <span className="gb-ham"><Icon name="menu" size={18} /></span>
           </div>
           <GameHudHeader
-            self={{ name: 'Zknkyc', rating: 1455 }}
+            self={{ name: 'Zknkyc', rating: 1455, pr: 10.7, prEstimate: true }}
             opp={{ name: 'Neural AI', isBot: true, rating: 2750, sub: 'Seviye 10' }}
             selfCoins={29600}
             target={5}
