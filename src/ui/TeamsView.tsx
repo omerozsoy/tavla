@@ -199,7 +199,7 @@ const CHAMPION_COIN = 30000     // şampiyon takımın ortak kasasına
 const BEST_DUELIST_COIN = 5000  // sezon "En İyi Düellocu"su oyuncunun kişisel cüzdanına
 
 // Swiss aksan rengi (marka terracotta) + ortak minik-etiket stili (uppercase, tracked).
-const SWISS_ACCENT = '#a8392b'
+const SWISS_ACCENT = '#d14e24'
 const SWISS_LABEL: CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.55 }
 
 // Aktif sezon ödülleri — Swiss: sola yaslı mini tablo, kural çizgili, düz (kutu/pill yok).
