@@ -8,6 +8,7 @@ use App\Support\OfficialMessenger;
 use App\Support\Shield;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -49,6 +50,11 @@ class CoinGift extends Page implements HasForms
 
     public ?array $data = [];
 
+    /** Hediye mesajı yer tutucusu: admin metne bunu yazar, coin miktarıyla değiştirilir. */
+    public const COIN_TOKEN = '*coin*';
+
+    public const DEFAULT_MESSAGE = self::COIN_TOKEN.' coin yönetim tarafından hesabınıza hediye edilmiştir. İyi oyunlar! 🎁';
+
     public function mount(): void
     {
         $this->form->fill([
@@ -57,6 +63,7 @@ class CoinGift extends Page implements HasForms
             'min_matches' => 10,
             'max_balance' => 100,
             'notify' => true,
+            'notify_message' => self::DEFAULT_MESSAGE,
         ]);
     }
 
@@ -88,7 +95,13 @@ class CoinGift extends Page implements HasForms
                             ->required(fn (callable $get) => $get('target') === 'balance')
                             ->helperText('Bakiyesi bu değerin ALTINDA olan kullanıcılar.'),
                         Toggle::make('notify')->label('Hediye mesajı gönder')
-                            ->helperText('Tavla TV Yönetim hesabından "… coin hediye edildi" DM + bildirim atılır.'),
+                            ->live()
+                            ->helperText('Tavla TV Yönetim hesabından DM + site-içi bildirim atılır.'),
+                        Textarea::make('notify_message')->label('Mesaj metni')
+                            ->rows(3)->maxLength(500)
+                            ->visible(fn (callable $get) => (bool) $get('notify'))
+                            ->helperText('Mesajı serbestçe yaz. Coin miktarının geleceği yere '.self::COIN_TOKEN
+                                .' yaz — otomatik olarak sayıyla değiştirilir (ör. '.self::COIN_TOKEN.' → 1.500). Boş bırakırsan varsayılan metin gönderilir.'),
                     ])->columns(1),
             ])
             ->statePath('data');
@@ -151,8 +164,13 @@ class CoinGift extends Page implements HasForms
             sprintf('target=%s amount=%d recipients=%d batch=%s', $data['target'] ?? 'all', $amount, $count, $batch), 3);
 
         // Hediye bildirimi: Tavla TV Yönetim hesabından DM + site-içi bildirim (toast).
+        // Admin metni serbest yazar; *coin* yer tutucusu miktarla değiştirilir (boşsa varsayılan).
         if (! empty($data['notify']) && $recipientIds) {
-            $body = number_format($amount, 0, ',', '.').' coin yönetim tarafından hesabınıza hediye edilmiştir. İyi oyunlar! 🎁';
+            $template = trim((string) ($data['notify_message'] ?? ''));
+            if ($template === '') {
+                $template = self::DEFAULT_MESSAGE;
+            }
+            $body = str_replace(self::COIN_TOKEN, number_format($amount, 0, ',', '.'), $template);
             OfficialMessenger::sendToIds($recipientIds, $body);
         }
 

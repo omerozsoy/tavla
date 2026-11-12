@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\CoinGift;
 use App\Models\MatchResult;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -85,9 +86,35 @@ class CoinGiftTest extends TestCase
 
         $this->gift($admin, ['amount' => 1500, 'target' => 'all', 'notify' => true]);
 
-        $msg = \App\Models\Message::where('receiver_id', $user->id)->latest('id')->first();
+        $msg = Message::where('receiver_id', $user->id)->latest('id')->first();
         $this->assertNotNull($msg);
         $this->assertStringContainsString('1.500 coin', $msg->body);
+        $this->assertStringContainsString('hediye edilmiştir', $msg->body);
+    }
+
+    public function test_custom_message_replaces_coin_token(): void
+    {
+        $user = User::factory()->create(['coins' => 0]);
+
+        $this->gift($this->admin(), [
+            'amount' => 2500, 'target' => 'all', 'notify' => true,
+            'notify_message' => 'Tebrikler! *coin* coin kazandın.',
+        ]);
+
+        $msg = Message::where('receiver_id', $user->id)->latest('id')->first();
+        $this->assertSame('Tebrikler! 2.500 coin kazandın.', $msg->body);
+    }
+
+    public function test_empty_custom_message_falls_back_to_default(): void
+    {
+        $user = User::factory()->create(['coins' => 0]);
+
+        $this->gift($this->admin(), [
+            'amount' => 400, 'target' => 'all', 'notify' => true, 'notify_message' => '',
+        ]);
+
+        $msg = Message::where('receiver_id', $user->id)->latest('id')->first();
+        $this->assertStringContainsString('400 coin', $msg->body);
         $this->assertStringContainsString('hediye edilmiştir', $msg->body);
     }
 
