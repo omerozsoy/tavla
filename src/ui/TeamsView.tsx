@@ -411,6 +411,8 @@ function Overview(props: Props & { go: (v: View) => void; setNotice: (s: string)
                     <span className="trank-team">
                       {r.avatar ? <img className="trank-ava" src={r.avatar} alt="" /> : <Icon name="user" size={18} />}
                       <b>{r.nickname}</b>
+                      {/* Oyuncunun takım amblemi (site geneli userId→takım haritası) — hangi takımda belli olsun. */}
+                      <TeamTag userId={r.user_id} size={18} />
                     </span>
                     <span className="trank-val">{r.wins}</span>
                   </div>
