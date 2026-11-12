@@ -264,7 +264,7 @@ const SEO_TITLES: Record<string, string> = {
   'arkadasinla-oyna': 'Arkadaşınla Tavla Oyna | TavlaTv',
   'online-turnuvalar': 'Online Tavla Turnuvaları | TavlaTv',
   'lider-tablosu': 'Lider Tablosu — En İyi Tavla Oyuncuları | TavlaTv',
-  'turkiye-online-tavla-ligi': 'Türkiye Online Tavla Ligi | TavlaTv',
+  'tavlatv-super-lig': 'Türkiye Online Tavla Ligi | TavlaTv',
   'takimlar-ligi': 'Takımlar Ligi — Takım Halinde Online Tavla | TavlaTv',
   'uyelik': 'Üyelik ve Premium | TavlaTv',
   'magaza': 'Mağaza | TavlaTv',
@@ -335,7 +335,7 @@ const SEO_DESCS: Record<string, string> = {
     'Online tavla turnuvalarına katıl: eleme tabloları, ödüller ve canlı sonuçlar. Turnuvalara ücretsiz kayıt.',
   'lider-tablosu':
     'En iyi tavla oyuncularının güncel sıralaması. Rating, performans (PR) ve istatistiklerle lider tablosu.',
-  'turkiye-online-tavla-ligi':
+  'tavlatv-super-lig':
     'Türkiye Online Tavla Ligi: sezonluk lig formatında eşleşmeler, puan tablosu, eleme ağacı ve şampiyonluk. Lig sıralamasını takip et, maçlarını oyna, zirveye tırman.',
   'takimlar-ligi':
     'Takımlar Ligi: takımını kur, üyelerinle düello puanı topla, sezon sıralamasında yüksel. 3 aylık sezonlar, en yüksek düello puanlı takıma şampiyonluk ve coin ödülü.',
@@ -417,7 +417,7 @@ const SEO_TITLES_EN: Record<string, string> = {
   'arkadasinla-oyna': 'Play Backgammon With a Friend | GammonTV',
   'online-turnuvalar': 'Online Backgammon Tournaments | GammonTV',
   'lider-tablosu': 'Leaderboard — Top Backgammon Players | GammonTV',
-  'turkiye-online-tavla-ligi': 'Türkiye Online Backgammon League | GammonTV',
+  'tavlatv-super-lig': 'Türkiye Online Backgammon League | GammonTV',
   'takimlar-ligi': 'Teams League — Team Backgammon | GammonTV',
   'uyelik': 'Membership and Premium | GammonTV',
   'magaza': 'Store | GammonTV',
@@ -457,7 +457,7 @@ const SEO_DESCS_EN: Record<string, string> = {
   'sikca-sorulan-sorular': 'Clear questions and answers about backgammon rules, the doubling cube, match play, different backgammon variants and the GammonTV rating system.',
   'online-turnuvalar': 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.',
   'lider-tablosu': 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.',
-  'turkiye-online-tavla-ligi': 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.',
+  'tavlatv-super-lig': 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.',
   'takimlar-ligi': 'Teams League: build your team, collect duel points with your members, climb the season standings. 3-month seasons, with championship and coin rewards for the team with the most duel points.',
   'yz-ile-oyna': 'Play free online backgammon against a powerful neural-network AI bot. Choose a level, analyze your moves and improve your game.',
   'turnuva-takvimi': 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.',
@@ -1431,8 +1431,8 @@ export default function App() {
     ? 'rutbeler'
     : leagueOpen
     ? leagueSeasonId != null
-      ? 'turkiye-online-tavla-ligi/' + leagueSeasonId
-      : 'turkiye-online-tavla-ligi'
+      ? 'tavlatv-super-lig/' + leagueSeasonId
+      : 'tavlatv-super-lig'
     : teamsOpen
     ? teamsArg
       ? 'takimlar-ligi/' + teamsArg
@@ -1703,7 +1703,7 @@ export default function App() {
           }
           break
         }
-        case 'turkiye-online-tavla-ligi': {
+        case 'tavlatv-super-lig': {
           setLeagueOpen(true)
           const last = (seg[1] || '').split('-').pop() || ''
           setLeagueSeasonId(/^\d+$/.test(last) ? parseInt(last, 10) : null)

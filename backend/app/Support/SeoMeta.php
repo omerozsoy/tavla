@@ -224,7 +224,7 @@ final class SeoMeta
             'Türkiye’nin en iyi online tavla oyuncuları ve güncel rating sıralaması. TavlaTv lider tablosunda yerini al.',
             'Tavla Lider Tablosu',
         ],
-        'turkiye-online-tavla-ligi' => [
+        'tavlatv-super-lig' => [
             'Türkiye Online Tavla Ligi | TavlaTv',
             'Türkiye Online Tavla Ligi: sezonluk lig formatında eşleşmeler, puan tablosu, eleme ağacı ve şampiyonluk. Lig sıralamasını takip et, maçlarını oyna, zirveye tırman.',
             'Türkiye Online Tavla Ligi',
@@ -357,7 +357,7 @@ final class SeoMeta
             'TavlaTV online tavla turnuvalarında kayıt, eşleşme, fikstür ve sonuçları tek ekrandan takip edin. Açık turnuvaları ve yaklaşan maçları keşfedin.',
             ['Açık online tavla turnuvalarını inceleyin.', 'Kayıt ve katılım şartlarını kontrol edin.', 'Eşleşmeleri ve turnuva sonuçlarını takip edin.'],
         ],
-        'turkiye-online-tavla-ligi' => [
+        'tavlatv-super-lig' => [
             'Türkiye Online Tavla Ligi',
             'Türkiye Online Tavla Ligi, turnuvalardan bağımsız, sezonluk lig formatında oynanan bir rekabet modülüdür. Ön eleme turları, puan tablosu ve eleme ağacıyla şampiyon belirlenir; lig puanı rating’ten ayrı tutulur.',
             ['Sezonluk lig: eşleşmeler, puan tablosu ve eleme ağacı.', 'Lig puanı rating’ten ayrıdır; sıralamanı takip et.', 'Maçlarını zamanında oyna, zirveye tırman.'],
@@ -500,7 +500,7 @@ final class SeoMeta
         'yz-ile-oyna' => ['Play Backgammon Against AI | GammonTV', 'Play free online backgammon against a powerful neural-network AI bot. Choose a level, analyze your moves and improve your game.', 'Play Backgammon Against AI'],
         'online-turnuvalar' => ['Online Backgammon Tournaments | GammonTV', 'Join online backgammon tournaments and win prizes. Explore the live backgammon tournaments hosted on GammonTV.', 'Online Backgammon Tournaments'],
         'lider-tablosu' => ['Leaderboard — Top Backgammon Players | GammonTV', 'The best online backgammon players and the current rating rankings. Claim your spot on the GammonTV leaderboard.', 'Backgammon Leaderboard'],
-        'turkiye-online-tavla-ligi' => ['Türkiye Online Backgammon League | GammonTV', 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.', 'Türkiye Online Backgammon League'],
+        'tavlatv-super-lig' => ['Türkiye Online Backgammon League | GammonTV', 'Türkiye Online Backgammon League: seasonal league pairings, standings, a knockout bracket and the championship. Follow the table, play your matches and climb to the top.', 'Türkiye Online Backgammon League'],
         'takimlar-ligi' => ['Teams League — Team Backgammon | GammonTV', 'Teams League: build your team, collect duel points with your members, climb the season standings. 3-month seasons, with championship and coin rewards for the team with the most duel points.', 'Teams League'],
         'uyelik' => ['Membership and Premium | GammonTV', 'GammonTV Premium membership: ad-free play, advanced analysis and exclusive perks. Explore the membership options.', 'Membership and Premium'],
         'turnuva-takvimi' => ['Backgammon Tournament Calendar | GammonTV', 'A calendar of upcoming backgammon tournaments. Do not miss national and online backgammon events.', 'Backgammon Tournament Calendar'],
@@ -528,7 +528,7 @@ final class SeoMeta
         'nasil-oynanir' => ['Backgammon rules and getting-started guide', 'In the GammonTV guide, learn how to use the dice, move your checkers, and handle hits and bearing off, step by step.', ['Learn the board\'s starting setup.', 'Review the basic rules for dice and checker movement.', 'Learn gammon and backgammon scoring.']],
         'tavla-rehberi' => ['Backgammon strategy guide', 'Read clear backgammon articles on opening moves, building points and primes, pip counting, the doubling cube, and winning tactics.', ['Explore backgammon opening strategy.', 'Learn how to use the doubling cube.', 'Discover the difference between a gammon and a backgammon.']],
         'online-turnuvalar' => ['Join online backgammon tournaments', 'Follow registration, pairings, brackets and results on a single screen in GammonTV online backgammon tournaments. Explore open tournaments and upcoming matches.', ['Browse open online backgammon tournaments.', 'Check the registration and entry requirements.', 'Follow the pairings and tournament results.']],
-        'turkiye-online-tavla-ligi' => ['Türkiye Online Backgammon League', 'The Türkiye Online Backgammon League is a standalone, seasonal league-format competition, separate from tournaments. Preliminary rounds, a standings table and a knockout bracket decide the champion; the league score is kept separate from your rating.', ['Seasonal league: pairings, standings and a knockout bracket.', 'League points are separate from rating; follow your rank.', 'Play your matches on time and climb to the top.']],
+        'tavlatv-super-lig' => ['Türkiye Online Backgammon League', 'The Türkiye Online Backgammon League is a standalone, seasonal league-format competition, separate from tournaments. Preliminary rounds, a standings table and a knockout bracket decide the champion; the league score is kept separate from your rating.', ['Seasonal league: pairings, standings and a knockout bracket.', 'League points are separate from rating; follow your rank.', 'Play your matches on time and climb to the top.']],
         'takimlar-ligi' => ['Teams League', 'Teams League is a standalone module where players build teams and collect points through duels. Build your own team or join an existing one; members add duel points as they win 1v1 duels. At the end of each 3-month season the team with the most duel points becomes champion and earns 30,000 coins; the season\'s top duelist earns 5,000 coins.', ['Build your team or join an existing one.', 'Members add duel points as they win duels.', '3-month seasons; coin rewards for the champion team and top duelist.']],
         'turnuva-takvimi' => ['Upcoming backgammon tournaments and calendar', 'Follow backgammon tournament dates, online and live events, registration windows and results in the up-to-date tournament calendar.', ['Find upcoming backgammon tournaments by date.', 'Compare online and live tournaments.', 'Check registration dates and prizes.']],
         'tavla-turnuvasi-organizasyonu' => ['Turnkey backgammon tournament organization', 'GammonTV provides backgammon tournament hosting, digital pairings, refereeing and live result management for companies, municipalities and shopping centers.', ['Design the format, bracket and participation plan.', 'Plan refereeing, scoring and pairing management.', 'Request a quote for your corporate event.']],
@@ -614,7 +614,7 @@ final class SeoMeta
         $base = self::originFor($brandKey);
         $urls = self::indexableUrls($brandKey);
         try {
-            $rows = \App\Models\Content::query()
+            $rows = Content::query()
                 ->where('type', 'news')->where('published', true)
                 ->orderByDesc('updated_at')->get(['title']);
             $seen = [];
@@ -711,7 +711,7 @@ final class SeoMeta
         // TavlaTV /online-tavla'dır.
         if ($slug === 'backgammon' && ($row = self::metaRow($slug)) !== null) {
             [$title, $desc, $h1] = $row;
-            $url = self::$base . $slug;
+            $url = self::$base.$slug;
             $html = self::apply($html, $title, $desc, $h1, $url, null, 'website', self::landingRow($slug), self::landingNoscript($slug));
             $html = self::applyEnglishLocale($html);
             $html = self::injectHreflang($html);
@@ -725,11 +725,11 @@ final class SeoMeta
         if (($row = self::metaRow($slug)) !== null) {
             [$title, $desc, $h1] = $row;
 
-            $html = self::apply($html, $title, $desc, $h1, self::$base . $slug, null, 'website', self::landingRow($slug), self::landingNoscript($slug));
+            $html = self::apply($html, $title, $desc, $h1, self::$base.$slug, null, 'website', self::landingRow($slug), self::landingNoscript($slug));
 
-            $html = self::injectWebPageJsonLd($html, $h1, $desc, self::$base . $slug, self::brandLang());
+            $html = self::injectWebPageJsonLd($html, $h1, $desc, self::$base.$slug, self::brandLang());
             if ($slug === 'tavla-oyna') {
-                $html = self::injectVideoGameJsonLd($html, $h1, $desc, self::$base . $slug, self::brandLang());
+                $html = self::injectVideoGameJsonLd($html, $h1, $desc, self::$base.$slug, self::brandLang());
             }
             // /online-tavla = /backgammon'un Türkçe eşi: karşılıklı hreflang (reciprocal şart).
             if ($slug === 'online-tavla') {
@@ -737,7 +737,7 @@ final class SeoMeta
             }
 
             // Statik landing/bilgi sayfaları: Ana Sayfa › <sayfa> (2 seviye).
-            return self::injectBreadcrumbJsonLd($html, [[$h1, self::$base . $slug]]);
+            return self::injectBreadcrumbJsonLd($html, [[$h1, self::$base.$slug]]);
         }
 
         // 2) Dinamik haber makalesi: /haberler/<slug>. Paylaşımda (WhatsApp/Twitter vb.)
@@ -749,7 +749,7 @@ final class SeoMeta
         //     BlogPosting JSON-LD (yalnız gerçek/doğru alanlarla). guides.ts ile senkron.
         if (count($parts) === 2 && $parts[0] === 'tavla-rehberi' && ($g = self::guideRow($parts[1])) !== null) {
             [$title, $desc, $h1] = $g;
-            $url = self::$base . $slug;
+            $url = self::$base.$slug;
             $html = self::apply($html, $title, $desc, $h1, $url, null, 'article');
 
             [$datePublished, $dateModified] = self::GUIDE_DATES[$parts[1]];
@@ -757,7 +757,7 @@ final class SeoMeta
 
             // Ana Sayfa › Tavla Rehberi › <yazı> (görünür Breadcrumb ile aynı).
             return self::injectBreadcrumbJsonLd($html, [
-                ['Tavla Rehberi', self::$base . 'tavla-rehberi'],
+                ['Tavla Rehberi', self::$base.'tavla-rehberi'],
                 [$h1, $url],
             ]);
         }
@@ -767,9 +767,9 @@ final class SeoMeta
             $article = self::findMakale($parts[1]);
             if ($article) {
                 [$title, $desc] = self::makaleRow($parts[1])
-                    ?? [(string) $article->title . ' | ' . self::brandName(), self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
-                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::$base . 'og-image.jpg';
-                $url = self::$base . $slug;
+                    ?? [(string) $article->title.' | '.self::brandName(), self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::$base.'og-image.jpg';
+                $url = self::$base.$slug;
 
                 $html = self::apply($html, $title, $desc, (string) $article->title, $url, $image, 'article');
                 $html = self::injectArticleJsonLd(
@@ -784,7 +784,7 @@ final class SeoMeta
 
                 // Ana Sayfa › Makaleler › <başlık> (görünür Breadcrumb ile aynı).
                 return self::injectBreadcrumbJsonLd($html, [
-                    ['Makaleler', self::$base . 'makaleler'],
+                    ['Makaleler', self::$base.'makaleler'],
                     [(string) $article->title, $url],
                 ]);
             }
@@ -795,17 +795,17 @@ final class SeoMeta
         if (count($parts) === 2 && $parts[0] === 'haberler') {
             $article = self::findNews($parts[1]);
             if ($article) {
-                $title = $article->title . ' | TavlaTv';
-                $desc  = self::excerpt($article->body)
+                $title = $article->title.' | TavlaTv';
+                $desc = self::excerpt($article->body)
                     ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
-                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::$base . 'og-image.jpg';
+                $image = self::ogVariant($article->image) ?: self::absImg($article->image) ?: self::$base.'og-image.jpg';
 
                 $html = self::apply(
                     $html,
                     $title,
                     $desc,
                     (string) $article->title,
-                    self::$base . $slug,
+                    self::$base.$slug,
                     $image,
                     'article',
                 );
@@ -814,7 +814,7 @@ final class SeoMeta
                     $html,
                     (string) $article->title,
                     $desc,
-                    self::$base . $slug,
+                    self::$base.$slug,
                     $image,
                     $article->event_at,
                     $article->updated_at,
@@ -822,8 +822,8 @@ final class SeoMeta
 
                 // Ana Sayfa › Haberler › <başlık> (görünür Breadcrumb ile aynı).
                 return self::injectBreadcrumbJsonLd($html, [
-                    ['Haberler', self::$base . 'haberler'],
-                    [(string) $article->title, self::$base . $slug],
+                    ['Haberler', self::$base.'haberler'],
+                    [(string) $article->title, self::$base.$slug],
                 ]);
             }
 
@@ -872,7 +872,7 @@ final class SeoMeta
             return $out;
         }
 
-        $out = preg_replace_callback('~</head>~i', static fn () => $replacement . '</head>', $html, 1);
+        $out = preg_replace_callback('~</head>~i', static fn () => $replacement.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -895,9 +895,9 @@ final class SeoMeta
         ?string $noscriptRich = null,
     ): string {
         $tTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-        $tDesc  = htmlspecialchars($desc, ENT_QUOTES, 'UTF-8');
-        $tH1    = htmlspecialchars($h1, ENT_QUOTES, 'UTF-8');
-        $tUrl   = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+        $tDesc = htmlspecialchars($desc, ENT_QUOTES, 'UTF-8');
+        $tH1 = htmlspecialchars($h1, ENT_QUOTES, 'UTF-8');
+        $tUrl = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
 
         // Her biri: etiket varsa değiştir, yoksa no-op. /s -> çok-satırlı <meta> (description,
         // og:description) de yakalanır. content="[^"]*" -> tek çift-tırnaklı değer.
@@ -954,10 +954,10 @@ final class SeoMeta
      */
     private static function injectHreflang(string $html): string
     {
-        $tags = '<link rel="alternate" hreflang="tr" href="' . self::originFor('tavla') . 'online-tavla" />'
-            . '<link rel="alternate" hreflang="en" href="' . self::originFor('gammon') . 'backgammon" />'
-            . '<link rel="alternate" hreflang="x-default" href="' . self::originFor('tavla') . 'online-tavla" />';
-        $out = preg_replace_callback('~</head>~i', static fn () => $tags . '</head>', $html, 1);
+        $tags = '<link rel="alternate" hreflang="tr" href="'.self::originFor('tavla').'online-tavla" />'
+            .'<link rel="alternate" hreflang="en" href="'.self::originFor('gammon').'backgammon" />'
+            .'<link rel="alternate" hreflang="x-default" href="'.self::originFor('tavla').'online-tavla" />';
+        $out = preg_replace_callback('~</head>~i', static fn () => $tags.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -990,18 +990,18 @@ final class SeoMeta
         //    bozar ve JS yüklenmez. JSON-LD adları (4) temel @graph yeniden kurularak düzelir;
         //    noscript marka metni renderNoscript içinde dile göre üretilir.
         $name = htmlspecialchars((string) ($b['name'] ?? 'TavlaTv'), ENT_QUOTES, 'UTF-8');
-        $html = preg_replace_callback('~<meta\s+property="og:site_name"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:site_name" content="' . $name . '" />', $html, 1) ?? $html;
-        $html = preg_replace_callback('~<meta\s+name="author"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="author" content="' . $name . '" />', $html, 1) ?? $html;
-        $html = preg_replace_callback('~<meta\s+name="apple-mobile-web-app-title"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="apple-mobile-web-app-title" content="' . $name . '" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+property="og:site_name"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:site_name" content="'.$name.'" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+name="author"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="author" content="'.$name.'" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+name="apple-mobile-web-app-title"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta name="apple-mobile-web-app-title" content="'.$name.'" />', $html, 1) ?? $html;
         $html = preg_replace_callback('~<meta\s+property="og:image:alt"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:image:alt" content="GammonTV — Free Online Backgammon" />', $html, 1) ?? $html;
 
         // 3) <html lang>, og:locale, manifest href
         $lang = self::brandLang();
         $ogLocale = (string) ($b['og_locale'] ?? 'tr_TR');
         $manifest = (string) ($b['manifest'] ?? '/manifest.webmanifest');
-        $html = preg_replace_callback('~<html\s+lang="[^"]*"~i', static fn () => '<html lang="' . $lang . '"', $html, 1) ?? $html;
-        $html = preg_replace_callback('~<meta\s+property="og:locale"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:locale" content="' . $ogLocale . '" />', $html, 1) ?? $html;
-        $html = preg_replace_callback('~<link\s+rel="manifest"\s+href="[^"]*"\s*/?>~i', static fn () => '<link rel="manifest" href="' . $manifest . '" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<html\s+lang="[^"]*"~i', static fn () => '<html lang="'.$lang.'"', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<meta\s+property="og:locale"\s+content="[^"]*"\s*/?>~i', static fn () => '<meta property="og:locale" content="'.$ogLocale.'" />', $html, 1) ?? $html;
+        $html = preg_replace_callback('~<link\s+rel="manifest"\s+href="[^"]*"\s*/?>~i', static fn () => '<link rel="manifest" href="'.$manifest.'" />', $html, 1) ?? $html;
 
         // 4) Temel @graph'ı İngilizce/marka sürümüyle değiştir (statik index'teki ilk ld+json).
         $graph = self::brandBaseJsonLd();
@@ -1025,30 +1025,30 @@ final class SeoMeta
         $base = self::$base;
         $name = self::brandName();
         $lang = self::brandLang();
-        $img = $base . ltrim((string) (self::$brand['og_image'] ?? '/og-image.jpg'), '/');
+        $img = $base.ltrim((string) (self::$brand['og_image'] ?? '/og-image.jpg'), '/');
         $graph = [
             '@context' => 'https://schema.org',
             '@graph' => [
                 [
                     '@type' => 'Organization',
-                    '@id' => $base . '#organization',
+                    '@id' => $base.'#organization',
                     'name' => $name,
                     'url' => $base,
-                    'logo' => $base . 'icon-512.png',
+                    'logo' => $base.'icon-512.png',
                     'image' => $img,
                 ],
                 [
                     '@type' => 'WebSite',
-                    '@id' => $base . '#website',
+                    '@id' => $base.'#website',
                     'name' => $name,
                     'alternateName' => 'Online Backgammon',
                     'url' => $base,
-                    'publisher' => ['@id' => $base . '#organization'],
+                    'publisher' => ['@id' => $base.'#organization'],
                     'inLanguage' => $lang,
                 ],
                 [
                     '@type' => 'VideoGame',
-                    'name' => $name . ' — Free Online Backgammon',
+                    'name' => $name.' — Free Online Backgammon',
                     'url' => $base,
                     'description' => 'Play backgammon online for free: live matches against real players, a strong AI bot, tournaments and move-by-move analysis.',
                     'inLanguage' => $lang,
@@ -1061,7 +1061,7 @@ final class SeoMeta
         ];
         $json = json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        return '<script type="application/ld+json">' . ($json !== false ? $json : '{}') . '</script>';
+        return '<script type="application/ld+json">'.($json !== false ? $json : '{}').'</script>';
     }
 
     /**
@@ -1079,12 +1079,12 @@ final class SeoMeta
         if (! $indexable) {
             return $html;
         }
-        $tr = self::originFor('tavla') . $slug;
-        $en = self::originFor('gammon') . $slug;
-        $tags = '<link rel="alternate" hreflang="tr" href="' . $tr . '" />'
-            . '<link rel="alternate" hreflang="en" href="' . $en . '" />'
-            . '<link rel="alternate" hreflang="x-default" href="' . $tr . '" />';
-        $out = preg_replace_callback('~</head>~i', static fn () => $tags . '</head>', $html, 1);
+        $tr = self::originFor('tavla').$slug;
+        $en = self::originFor('gammon').$slug;
+        $tags = '<link rel="alternate" hreflang="tr" href="'.$tr.'" />'
+            .'<link rel="alternate" hreflang="en" href="'.$en.'" />'
+            .'<link rel="alternate" hreflang="x-default" href="'.$tr.'" />';
+        $out = preg_replace_callback('~</head>~i', static fn () => $tags.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -1217,7 +1217,7 @@ final class SeoMeta
             $paragraph = htmlspecialchars($paragraph, ENT_QUOTES, 'UTF-8');
             $list = '';
             foreach ($items as $item) {
-                $list .= '<li>' . htmlspecialchars($item, ENT_QUOTES, 'UTF-8') . '</li>';
+                $list .= '<li>'.htmlspecialchars($item, ENT_QUOTES, 'UTF-8').'</li>';
             }
             $body = "<section><h2>{$heading}</h2><p>{$paragraph}</p><ul>{$list}</ul></section>";
         }
@@ -1227,7 +1227,7 @@ final class SeoMeta
             $nav = '<nav aria-label="TavlaTV bağlantıları"><a href="/online-tavla">Online Tavla Oyna</a> · <a href="/tavla-rehberi">Tavla Rehberi</a> · <a href="/nasil-oynanir">Tavla Kuralları</a> · <a href="/haberler">Tavla Haberleri</a></nav>';
         } else {
             $brand = htmlspecialchars(self::brandName(), ENT_QUOTES, 'UTF-8');
-            $nav = '<nav aria-label="' . $brand . ' links"><a href="/online-tavla">Play Backgammon Online</a> · <a href="/tavla-rehberi">Backgammon Guide</a> · <a href="/nasil-oynanir">Backgammon Rules</a> · <a href="/haberler">Backgammon News</a></nav>';
+            $nav = '<nav aria-label="'.$brand.' links"><a href="/online-tavla">Play Backgammon Online</a> · <a href="/tavla-rehberi">Backgammon Guide</a> · <a href="/nasil-oynanir">Backgammon Rules</a> · <a href="/haberler">Backgammon News</a></nav>';
         }
 
         return "<noscript><main><h1>{$h1}</h1><p>{$desc}</p>{$body}{$nav}</main></noscript>";
@@ -1245,8 +1245,7 @@ final class SeoMeta
         string $url,
         ?string $datePublished = null,
         ?string $dateModified = null,
-    ): string
-    {
+    ): string {
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'BlogPosting',
@@ -1254,13 +1253,13 @@ final class SeoMeta
             'description' => $desc,
             'url' => $url,
             'inLanguage' => self::brandLang(),
-            'image' => [self::$base . 'og-image.jpg'],
+            'image' => [self::$base.'og-image.jpg'],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
             'author' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => 'TavlaTv',
-                'logo' => ['@type' => 'ImageObject', 'url' => self::$base . 'icon-512.png'],
+                'logo' => ['@type' => 'ImageObject', 'url' => self::$base.'icon-512.png'],
             ],
         ];
         if ($datePublished !== null) {
@@ -1273,8 +1272,8 @@ final class SeoMeta
         if ($json === false) {
             return $html;
         }
-        $script = '<script type="application/ld+json">' . $json . '</script>';
-        $out = preg_replace_callback('~</head>~i', fn () => $script . '</head>', $html, 1);
+        $script = '<script type="application/ld+json">'.$json.'</script>';
+        $out = preg_replace_callback('~</head>~i', fn () => $script.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -1301,7 +1300,7 @@ final class SeoMeta
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => 'TavlaTV',
-                'logo' => ['@type' => 'ImageObject', 'url' => self::$base . 'icon-512.png'],
+                'logo' => ['@type' => 'ImageObject', 'url' => self::$base.'icon-512.png'],
             ],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
         ];
@@ -1319,8 +1318,8 @@ final class SeoMeta
         if ($json === false) {
             return $html;
         }
-        $script = '<script type="application/ld+json">' . $json . '</script>';
-        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
+        $script = '<script type="application/ld+json">'.$json.'</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -1344,14 +1343,14 @@ final class SeoMeta
             'description' => $description,
             'url' => $url,
             'inLanguage' => $inLanguage,
-            'isPartOf' => ['@type' => 'WebSite', '@id' => self::$base . '#website'],
+            'isPartOf' => ['@type' => 'WebSite', '@id' => self::$base.'#website'],
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
             return $html;
         }
-        $script = '<script type="application/ld+json">' . $json . '</script>';
-        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
+        $script = '<script type="application/ld+json">'.$json.'</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -1365,7 +1364,7 @@ final class SeoMeta
             'name' => $name,
             'description' => $description,
             'url' => $url,
-            'image' => [self::$base . 'og-image.jpg'],
+            'image' => [self::$base.'og-image.jpg'],
             'inLanguage' => $inLanguage,
             'genre' => ['Backgammon', 'Tavla', 'Board Game'],
             'applicationCategory' => 'Game',
@@ -1381,8 +1380,8 @@ final class SeoMeta
         if ($json === false) {
             return $html;
         }
-        $script = '<script type="application/ld+json">' . $json . '</script>';
-        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
+        $script = '<script type="application/ld+json">'.$json.'</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -1393,7 +1392,7 @@ final class SeoMeta
      * yalnız ARADAKI + mevcut basamakları içerir: [[ad, mutlakUrl], ...] (son = mevcut sayfa).
      * Örn. makale: [['Makaleler', BASE.'makaleler'], [başlık, url]] -> Ana Sayfa › Makaleler › Başlık.
      *
-     * @param array<int, array{0:string,1:string}> $trail
+     * @param  array<int, array{0:string,1:string}>  $trail
      */
     private static function injectBreadcrumbJsonLd(string $html, array $trail, string $homeLabel = 'Ana Sayfa'): string
     {
@@ -1420,8 +1419,8 @@ final class SeoMeta
         if ($json === false) {
             return $html;
         }
-        $script = '<script type="application/ld+json">' . $json . '</script>';
-        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
+        $script = '<script type="application/ld+json">'.$json.'</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script.'</head>', $html, 1);
 
         return $out ?? $html;
     }
@@ -1492,7 +1491,7 @@ final class SeoMeta
             return '';
         }
         if (mb_strlen($text) > 200) {
-            $text = mb_substr($text, 0, 197) . '…';
+            $text = mb_substr($text, 0, 197).'…';
         }
 
         return $text;
@@ -1509,7 +1508,7 @@ final class SeoMeta
         }
         $base = rtrim(self::$base, '/');
 
-        return $img[0] === '/' ? $base . $img : $base . '/uploads/' . $img;
+        return $img[0] === '/' ? $base.$img : $base.'/uploads/'.$img;
     }
 
     /**
@@ -1527,7 +1526,7 @@ final class SeoMeta
         if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg') || ! function_exists('getimagesize')) {
             return null;
         }
-        $rel = $img[0] === '/' ? ltrim($img, '/') : 'uploads/' . $img;
+        $rel = $img[0] === '/' ? ltrim($img, '/') : 'uploads/'.$img;
         $srcAbs = public_path($rel);
         if (! is_file($srcAbs)) {
             return null;
@@ -1540,8 +1539,8 @@ final class SeoMeta
         if ((int) ($info[0] ?? 0) * (int) ($info[1] ?? 0) > 40_000_000) {
             return null;
         }
-        $key = substr(md5($rel . '|' . (@filemtime($srcAbs) ?: 0)), 0, 24);
-        $outRel = 'uploads/og/' . $key . '.jpg';
+        $key = substr(md5($rel.'|'.(@filemtime($srcAbs) ?: 0)), 0, 24);
+        $outRel = 'uploads/og/'.$key.'.jpg';
         $outAbs = public_path($outRel);
         if (! is_file($outAbs)) {
             $data = @file_get_contents($srcAbs);
@@ -1584,6 +1583,6 @@ final class SeoMeta
             }
         }
 
-        return rtrim(self::$base, '/') . '/' . $outRel;
+        return rtrim(self::$base, '/').'/'.$outRel;
     }
 }

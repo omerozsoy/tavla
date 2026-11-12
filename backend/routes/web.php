@@ -151,6 +151,12 @@ Route::get('/pay/result', fn (Request $r) => view('pay.result', [
     'okMsg' => (string) $r->query('ok') === '1' ? 'Ödemen alındı; birkaç saniye içinde hesabına işlenir.' : '',
 ]))->name('pay.result');
 
+// TavlaTV Süper Lig: lig URL'i /turkiye-online-tavla-ligi -> /tavlatv-super-lig oldu.
+// Eski URL'leri 301 ile yeniye yonlendir (SEO equity transferi; alt yol = sezon dahil).
+Route::permanentRedirect('/turkiye-online-tavla-ligi', '/tavlatv-super-lig');
+Route::get('/turkiye-online-tavla-ligi/{rest}', fn (string $rest) => redirect('/tavlatv-super-lig/'.$rest, 301))
+    ->where('rest', '.*');
+
 // SPA: API disindaki tum yollar React uygulamasini (public/index.html) servis eder.
 // Statik dosyalar (assets/, models/) web sunucusu tarafindan dogrudan sunulur.
 // SEO soft-404: BILINMEYEN yollar index.html'i yine servis eder (SPA acilir) ama HTTP 404
@@ -180,7 +186,7 @@ Route::fallback(function (Request $request) {
         'belediye-tavla-turnuvasi', 'avm-tavla-turnuvasi', 'iletisim',
         'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna', 'maca-davet', 'duello',
         'klasik-tavla', 'klasik-yapay-zeka', 'klasik-arkadasinla-oyna',
-        'turkiye-online-tavla-ligi', 'takimlar-ligi',
+        'tavlatv-super-lig', 'takimlar-ligi',
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi', 'kiz-tavlasi',
         'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'makaleler', 'haberler', 'blog', 'tavla-magazin',

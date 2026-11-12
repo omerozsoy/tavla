@@ -45,7 +45,7 @@ export const PAGES: PageDef[] = [
   // olmasi icin DB'de league satiri var (group=info, sort=8 -> tournaments ile esit, PAGES'te league
   // tournaments'in hemen ardinda oldugundan stabil siralama onu ardina koyar). Buradaki group=info
   // yalniz DB satiri silinirse gizli gruba dusmesin diye guvenli fallback.
-  { key: 'league', slug: 'turkiye-online-tavla-ligi', labelKey: 'league.menu', icon: 'laurel-wreath', group: 'info' },
+  { key: 'league', slug: 'tavlatv-super-lig', labelKey: 'league.menu', icon: 'laurel-wreath', group: 'info' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.

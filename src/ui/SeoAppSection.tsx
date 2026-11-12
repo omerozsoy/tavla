@@ -16,7 +16,7 @@ export type SeoAppPage =
   | 'yeni-oyun'
   | 'yz-ile-oyna'
   | 'arkadasinla-oyna'
-  | 'turkiye-online-tavla-ligi'
+  | 'tavlatv-super-lig'
   | 'takimlar-ligi'
 
 function YeniOyun() {
@@ -164,7 +164,7 @@ const PAGES: Record<SeoAppPage, () => React.JSX.Element> = {
   'yeni-oyun': YeniOyun,
   'yz-ile-oyna': YzIleOyna,
   'arkadasinla-oyna': ArkadasinlaOyna,
-  'turkiye-online-tavla-ligi': LigContent,
+  'tavlatv-super-lig': LigContent,
   'takimlar-ligi': TakimlarContent,
 }
 

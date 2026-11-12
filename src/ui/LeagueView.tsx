@@ -245,7 +245,7 @@ export default function LeagueView(props: Props) {
         </div>
       )}
         </>}
-        <SeoAppSection page="turkiye-online-tavla-ligi" />
+        <SeoAppSection page="tavlatv-super-lig" />
       </div>
     </div>
   )
