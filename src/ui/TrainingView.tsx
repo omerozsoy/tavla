@@ -7,47 +7,24 @@ import DiceRow, { type DieFace } from './Dice'
 import { MoveArrows } from './MatReview'
 import { useT } from '../i18n'
 import type { GameState, Step } from '../engine/types'
-import { cloneState, initialState } from '../engine/board'
+import { cloneState } from '../engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from '../engine/moves'
-import { applyMove, legalNextSteps, newTurn, reachableFromChecker, rollDice } from '../engine/game'
-import { HeuristicBot } from '../engine/engine'
+import { legalNextSteps, reachableFromChecker } from '../engine/game'
 import { moveNotation } from '../engine/notation'
+import { explainMove } from '../engine/explain'
 import { pipCount } from '../engine/evaluate'
 import { NeuralBot, type RankedMove } from '../engine/neuralBot'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress } from './TrainingPath'
-import { lessonById } from './trainingCurriculum'
+import { lessonById, type Question } from './trainingCurriculum'
 
 interface Props {
   onClose: () => void
   titleOverride?: string
 }
 
-// "Doğru" sayılma eşiği: en iyi hamleye göre izin verilen equity kaybı (money ~[-3,3]).
+// "Dogru" sayilma esigi: en iyi hamleye gore izin verilen equity kaybi (money ~[-3,3]).
 const EPS = 0.02
-
-const heur = new HeuristicBot()
-function advance(state: GameState): GameState {
-  const s = newTurn(state, rollDice())
-  const moves = generateMoves(s)
-  const move = moves.length ? (heur.chooseMove(s) ?? moves[0]) : { steps: [], resultKey: '' }
-  return applyMove(s, move)
-}
-
-// Beyazın (oyuncu) karar vereceği, en az 2 farklı legal hamlesi olan bir pozisyon + zar üret.
-export function makePuzzle(): GameState {
-  for (let attempt = 0; attempt < 40; attempt++) {
-    let s = initialState()
-    const plies = 2 + Math.floor(Math.random() * 12)
-    for (let i = 0; i < plies; i++) s = advance(s)
-    if (s.turn !== 'white') s = advance(s)
-    const st = newTurn(s, rollDice())
-    const moves = generateMoves(st)
-    if (hasNoMove(moves)) continue
-    if (new Set(moves.map((m) => m.resultKey)).size >= 2) return st
-  }
-  return newTurn(initialState(), [3, 1])
-}
 
 function applyPlayed(base: GameState, played: Step[]): GameState {
   const s = cloneState(base)
@@ -55,9 +32,13 @@ function applyPlayed(base: GameState, played: Step[]): GameState {
   return s
 }
 
+function emptyState(): GameState {
+  return { points: new Array(24).fill(0), bar: { white: 0, black: 0 }, off: { white: 0, black: 0 }, turn: 'white', dice: [], diceUsed: [] }
+}
+
 type Phase = 'playing' | 'correct' | 'wrong' | 'nomove' | 'error'
 
-// Mavi zar-bot maskotu (BackgammonGalaxy'deki gibi sevimli yüz).
+// Mavi zar-bot maskotu (BackgammonGalaxy'deki gibi sevimli yuz).
 function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
   return (
     <svg className="bgx-face" viewBox="0 0 48 48" aria-hidden="true">
@@ -87,17 +68,20 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
   )
 }
 
-// Tek ders ekranı: zar at, oyna, otomatik değerlendir; yanlışsa doğru hamle oklarla gösterilir.
+// Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar at, oyna, otomatik degerlendir;
+// yanlissa dogru hamle oklarla gosterilir. Aciklama motorun sectigi hamleden (explainMove) uretilir.
 function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
-  const TOTAL = lesson?.questions ?? 10
+  const questions: Question[] = lesson?.questions ?? []
+  const TOTAL = questions.length || 10
 
   const botRef = useRef<NeuralBot | null>(null)
   if (!botRef.current) botRef.current = new NeuralBot()
 
   const [idx, setIdx] = useState(0)
-  const [turnStart, setTurnStart] = useState<GameState>(() => makePuzzle())
+  const q = questions[idx]
+  const [turnStart, setTurnStart] = useState<GameState>(() => cloneState(questions[0]?.state ?? emptyState()))
   const [played, setPlayed] = useState<Step[]>([])
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [phase, setPhase] = useState<Phase>('playing')
@@ -180,8 +164,8 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     setSelectedFrom(null)
   }
 
-  function resetQuestion(nextState: GameState) {
-    setTurnStart(nextState)
+  function loadQuestion(i: number) {
+    setTurnStart(cloneState(questions[i]?.state ?? emptyState()))
     setPlayed([])
     setSelectedFrom(null)
     setBest(null)
@@ -200,8 +184,10 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       setComplete(true)
       return
     }
-    setIdx((i) => i + 1)
-    resetQuestion(makePuzzle())
+    const ni = idx + 1
+    setIdx(ni)
+    loadQuestion(ni)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, TOTAL, results, lessonId])
 
   async function ensureBest(): Promise<RankedMove[] | null> {
@@ -282,6 +268,14 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   const progressShown = complete ? TOTAL : idx + 1
   const mood: 'idle' | 'ok' | 'bad' = phase === 'wrong' ? 'bad' : phase === 'correct' || complete ? 'ok' : 'idle'
 
+  const explanation = useMemo(() => {
+    if (!best) return q?.intro || t('tr.correctExplain')
+    const reasons = explainMove(turnStart, best.move, 'white').slice(0, 2).map((r) => t(r.key, r.params))
+    const eng = reasons.filter(Boolean).join(' ')
+    if (q?.intro) return eng ? `${q.intro} ${eng}` : q.intro
+    return eng || t('tr.correctExplain')
+  }, [best, turnStart, q, t])
+
   const bubble = complete ? (
     <>
       <h4>{t('tr.complete')}</h4>
@@ -290,19 +284,19 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   ) : phase === 'correct' ? (
     <>
       <h4>{bestText} {t('tr.correctSuffix')}</h4>
-      <p>{t('tr.correctExplain')}</p>
+      <p>{explanation}</p>
     </>
   ) : phase === 'wrong' ? (
     <>
       <h4>{t('tr.betterExists')}</h4>
-      <p>{t('tr.wrongExplain', { move: bestText })}</p>
+      <p>{t('tr.wrongExplain', { move: bestText })} {explanation}</p>
     </>
   ) : phase === 'nomove' ? (
     <p>{t('tr.noMove')}</p>
   ) : phase === 'error' ? (
     <p>{t('tr.engineErr')}</p>
   ) : (
-    <p>{t('tr.findBest')}</p>
+    <p>{q?.intro || t('tr.findBest')}</p>
   )
 
   const showNext = !complete && (phase === 'correct' || phase === 'wrong' || phase === 'nomove')
@@ -314,7 +308,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
           <button className="bgx-back" onClick={onBack} aria-label={t('common.back')}>
             <Icon name="arrow-right" size={22} />
           </button>
-          <span className="bgx-title">{lesson?.title || t('tr.lessonTitle')}</span>
+          <span className="bgx-title">{lesson ? t(lesson.titleKey) : t('tr.lessonTitle')}</span>
           {streak > 1 && (
             <span className="bgx-streak" title={t('tr.streak')}>
               <Icon name="flame" size={16} /> {streak}
@@ -337,7 +331,6 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
               ))}
             </div>
             <div className="bgx-acc">{t('tr.accuracy', { n: accuracy })}</div>
-            <div className="bgx-badge">{t('tr.intermediate')}</div>
           </div>
         )}
 
@@ -353,7 +346,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
                 setStreak(0)
                 setComplete(false)
                 gradedRef.current = -1
-                resetQuestion(makePuzzle())
+                loadQuestion(0)
               }}
             >
               {t('tr.replay')}
@@ -408,7 +401,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   )
 }
 
-// Konteyner: varsayılan "Ustalık Yolu" listesi; bir ders seçilince o dersin ekranı açılır.
+// Konteyner: varsayilan "Ustalik Yolu" listesi; bir ders secilince o dersin ekrani acilir.
 export default function TrainingView({ onClose, titleOverride }: Props) {
   useEscape(onClose)
   const [lessonId, setLessonId] = useState<string | null>(null)
