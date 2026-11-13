@@ -18329,15 +18329,17 @@ body:has(.spectate-view) .app.lobby {
 .bgx-btn:hover:not(:disabled) { filter: brightness(1.08); }
 
 /* --- Tahta sahnesi --- */
-.bgx-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.bgx-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.bgx-stage-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .bgx-scores { display: flex; flex-direction: column; justify-content: space-between; align-self: center; height: var(--board-h); padding: 4px 0; }
 .bgx-score-box { width: 46px; height: 46px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-md); display: grid; place-items: center; font-weight: var(--fw-bold); font-size: 1.3rem; }
 .bgx-board { position: relative; }
 .bgx-next { position: absolute; top: 50%; left: 64%; transform: translate(-50%, -50%); background: var(--accent); color: var(--on-accent); border: none; border-radius: var(--radius-pill); padding: 12px 34px; font-weight: var(--fw-bold); font-size: 1.02rem; cursor: pointer; z-index: 6; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); display: inline-flex; align-items: center; gap: 8px; }
 .bgx-next:hover:not(:disabled) { filter: brightness(1.08); }
 
-.bgx-progress { display: flex; flex-direction: column; align-items: center; gap: 8px; align-self: center; height: var(--board-h); justify-content: flex-start; }
-.bgx-meter { width: 24px; flex: 1; min-height: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 3px; padding: 4px; }
+/* İlerleme çubuğu: EN ÜSTTE yatay (board genişliğinde), eski sağ dikey konumdan taşındı. */
+.bgx-progress { display: flex; flex-direction: row; align-items: center; gap: 10px; width: calc(var(--board-h) * 1.53); max-width: 100%; justify-content: center; }
+.bgx-meter { height: 20px; flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; flex-direction: row; gap: 3px; padding: 4px; }
 .bgx-meter.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
 .bgx-seg { flex: 1; border-radius: 2px; background: transparent; }
 .bgx-seg.on { background: var(--color-success); }

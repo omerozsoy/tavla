@@ -9,7 +9,7 @@ import { useT } from '../i18n'
 import type { GameState, Step } from '../engine/types'
 import { cloneState } from '../engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from '../engine/moves'
-import { legalNextSteps, reachableFromChecker } from '../engine/game'
+import { legalNextSteps, reachableFromChecker, makePointTargets } from '../engine/game'
 import { moveNotation } from '../engine/notation'
 import { explainMove } from '../engine/explain'
 import { pipCount } from '../engine/evaluate'
@@ -126,6 +126,15 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     return dice
   }, [turnStart, played])
 
+  const makeTargets = useMemo(() => {
+    if (!interactive || remainingDice.length < 2) return new Map<number, Step[]>()
+    return makePointTargets(turnStart, played)
+  }, [interactive, remainingDice, turnStart, played])
+  const makePointSet = useMemo(
+    () => (selectedFrom === null ? new Set(makeTargets.keys()) : new Set<number>()),
+    [makeTargets, selectedFrom],
+  )
+
   const turnComplete = interactive && played.length > 0 && legalNextSteps(turnStart, played).length === 0
 
   const showArrows = reveal && !!best
@@ -177,6 +186,15 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       setPlayed([])
     }
     setTurnStart(s)
+    setSelectedFrom(null)
+  }
+
+  function handleMakePoint(to: number) {
+    if (!interactive) return
+    const seq = makeTargets.get(to)
+    if (!seq || !seq.length) return
+    Sound.move()
+    setPlayed((p) => [...p, ...seq])
     setSelectedFrom(null)
   }
 
@@ -501,6 +519,17 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       </aside>
 
       <div className="bgx-stage">
+        {/* İlerleme çubuğu EN ÜSTTE (yatay) — eski sağ dikey konumdan taşındı. */}
+        <div className="bgx-progress">
+          <div className={`bgx-meter${!complete ? ' active' : ''}`}>
+            {Array.from({ length: TOTAL }).map((_, i) => (
+              <span key={i} className={`bgx-seg${i < progressShown ? ' on' : ''}`} />
+            ))}
+          </div>
+          <div className="bgx-count">{progressShown}/{TOTAL}</div>
+        </div>
+
+        <div className="bgx-stage-row">
         <div className="bgx-scores">
           <div className="bgx-score-box">{q?.score ? q.score.opp : 0}</div>
           <div className="bgx-score-box">{q?.score ? q.score.my : 0}</div>
@@ -512,9 +541,12 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             selectableFroms={selectableFroms}
             targets={targets}
             selectedFrom={selectedFrom}
+            makePoints={makePointSet}
+            onMakePoint={handleMakePoint}
             onSelectFrom={handleSelectFrom}
             onSelectTarget={handleSelectTarget}
             onDragFrom={(f) => interactive && setSelectedFrom(f)}
+            onDragDrop={(to) => handleSelectTarget(to)}
             pipTop={pipCount(displayState, 'black')}
             pipBottom={pipCount(displayState, 'white')}
             cube={{ value: 1, owner: null }}
@@ -527,14 +559,6 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             <button className="bgx-next" onClick={nextQuestion}>{t('tr.next')}</button>
           )}
         </div>
-
-        <div className="bgx-progress">
-          <div className={`bgx-meter${!complete ? ' active' : ''}`}>
-            {Array.from({ length: TOTAL }).map((_, i) => (
-              <span key={i} className={`bgx-seg${i < progressShown ? ' on' : ''}`} />
-            ))}
-          </div>
-          <div className="bgx-count">{progressShown}/{TOTAL}</div>
         </div>
       </div>
     </div>
