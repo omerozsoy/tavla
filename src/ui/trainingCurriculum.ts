@@ -397,6 +397,27 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=---BdCBCB---A----b-ccBba--:1:-1:1:54:0:0:2:0:10', answer: '21/12', title: 'Chris Bray 2021-58', concept: 'Must run now.' },
   { xgid: 'XGID=-aBBBBB----AAA-d---cbBcb--:0:0:1:51:6:5:1:7:10', answer: '', title: 'Chris Bray 2020-84', concept: 'XG prefers 12/7 11/10.' },
   { xgid: 'XGID=-ABBABB--a---B-----ccCccb-:1:1:1:31:0:0:3:0:10', answer: '', title: 'Chris Bray 2023-18', concept: 'Simplest route to victory; accept gammon risk.' },
+  { xgid: 'XGID=--a-BCBbBB--cBB--abbbb----:1:-1:1:21:0:0:3:0:10', answer: '', title: 'Michy’s Lesson — Kageyama', concept: 'Michy’nin arka tas stratejisi: 21’i oyna.' },
+  { xgid: 'XGID=-BCBbBBBB---------abcbbba-:1:-1:1:51:0:0:3:0:10', answer: '', title: 'Michy Proverb 17 — Kageyama', concept: 'Michy atasözü 17: prime/arka tas 51 karari.' },
+  { xgid: 'XGID=------EbC---bE-A-bde----A-:0:0:1:32:0:0:0:7:10', answer: '', title: 'Mochy & Sander — UBC Final Açılışı', concept: 'UBC finali acilis 32.' },
+  { xgid: 'XGID=--bCBBCaCA------ab-bbAb-c-:1:-1:1:65:4:6:3:0:10', answer: '', title: 'Falafel Quiz #2', concept: '65 kacis/toplama karari (Falafel quiz).' },
+  { xgid: 'XGID=-ABBABCbB----B---a-bb-eba-:1:-1:1:62:6:12:3:0:10', answer: '', title: 'Falafel Quiz #4', concept: '62 tas hamlesi (Falafel quiz).' },
+  { xgid: 'XGID=-aCBC-CbA-B-----ab-cbbbA--:2:1:-1:63:26:26:3:0:10', answer: '', title: 'Falafel Quiz #7', concept: '63 toplama/kacis karari (Falafel quiz).' },
+  { xgid: 'XGID=--a-a-EAB---dD---c-e-a--BA:0:0:1:51:0:0:0:5:10', answer: '', title: 'Chris Bray — Make the Prime First', concept: 'Kacmadan once prime’i kur.' },
+  { xgid: 'XGID=-dB-B-DC---B---bba-bbBb---:1:-1:1:53:0:0:2:0:10', answer: '', title: 'Chris Bray — Hold that Anchor', concept: '53’te capayi koru.' },
+  { xgid: 'XGID=-a-bBBBaC----AA--cBbbbbAA-:1:-1:1:53:0:0:0:7:10', answer: '', title: 'Chris Bray — The Ultimate Duplication Play', concept: '53’te duplikasyon oyunu.' },
+  { xgid: 'XGID=-B-BCBBB-b---a-a-bcb--Bbb-:0:0:1:32:9:7:0:13:10', answer: '', title: 'Chris Bray — Is it Time to Go', concept: '32: kos mu tut mu karari.' },
+  { xgid: 'XGID=--a-C-CBC--AbB----bcc-Abb-:0:0:1:21:1:0:0:7:10', answer: '', title: 'Chris Bray — Complex Question', concept: '21 karmasik ara-oyun karari.' },
+  { xgid: 'XGID=-ba-B-D-B-A-cDAa-c-cb---A-:0:0:1:53:5:8:0:11:10', answer: '', title: 'Chris Bray 2024-144', concept: '53 tas hamlesi.' },
+  { xgid: 'XGID=-aBaB-D-B---cC---bBb-bbb--:0:0:1:52:0:0:3:0:10', answer: '', title: 'Chris Bray 2024-145', concept: '52 agresif vurus.' },
+  { xgid: 'XGID=-bbC-BD-B---aB--acAcb-a--A:1:-1:1:43:5:6:0:7:10', answer: '', title: 'Chris Bray 2024-62', concept: '43 ara-oyun karari.' },
+  { xgid: 'XGID=a-A--DDbBB--bB----ab-bcaa-:0:0:1:22:6:5:1:7:10', answer: '', title: 'Chris Bray 2024-151', concept: 'Cift 2 tas hamlesi.' },
+  { xgid: 'XGID=-a-B--D-C---bD---cdeA---A-:0:0:1:11:5:4:0:7:10', answer: '', title: 'Chris Bray 2024-21', concept: 'Cift 1 tas hamlesi.' },
+  { xgid: 'XGID=-a--aaEAA---cE-Aac-e----AA:0:0:1:43:0:1:3:0:10', answer: '', title: 'Four-Score Position (bgonline)', concept: 'Dort-skor 43 tas hamlesi.' },
+  { xgid: 'XGID=-DA-bBB-BB---------bbccBc-:1:1:1:52:2:2:0:5:10', answer: '', title: 'Chris Bray 2025-2', concept: '52 tas hamlesi.' },
+  { xgid: 'XGID=-BAA-BB-ba--bD--Cbbbbb----:1:1:1:44:6:2:0:13:10', answer: '', title: 'Chris Bray 2025-4', concept: 'Cift 4 tas hamlesi.' },
+  { xgid: 'XGID=-a---CC-Ba-A-D-b---bBbbbc-:0:0:1:65:4:4:0:5:10', answer: '', title: 'Chris Bray 2025-6', concept: '65 tas hamlesi.' },
+  { xgid: 'XGID=----abDBB-B-cB----Cbcb-b--:0:0:1:21:6:7:0:9:10', answer: '', title: 'Chris Bray 2025-3', concept: '21 tas hamlesi.' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
@@ -404,7 +425,10 @@ const REAL_POSITIONS: Famous[] = [
 // yerlesir (REAL_POSITIONS kolay->zor sirali, index = zorluk rank). Acilislar en kolay katmanda.
 function authorOf(p: Famous): { key: string; title: string } {
   const t = p.title.toLowerCase()
-  if (t.includes('chris bray')) return { key: 'bray', title: 'Chris Bray — Haftanın Pozisyonu' }
+  if (/michy|kageyama/.test(t)) return { key: 'michy', title: 'Michy Kageyama' }
+  if (/falafel/.test(t)) return { key: 'falafel', title: 'Falafel Natanzon' }
+  if (/mochy|sander/.test(t)) return { key: 'mochy', title: 'Mochy Mochizuki' }
+  if (t.includes('bray')) return { key: 'bray', title: 'Chris Bray — Haftanın Pozisyonu' }
   if (t.includes('euler')) return { key: 'euler', title: 'Euler — Günlük Hatalar' }
   if (t.includes('chow')) return { key: 'chow', title: 'Chow’un Dama Sınavı' }
   if (t.includes('marc olsen')) return { key: 'olsen', title: 'Marc Olsen' }
@@ -412,8 +436,8 @@ function authorOf(p: Famous): { key: string; title: string } {
   if (t.includes('wilkinson')) return { key: 'wilk', title: 'Sebastian Wilkinson' }
   if (t.includes('barget')) return { key: 'barget', title: 'Simon Barget' }
   if (/o.?hagan/.test(t)) return { key: 'ohagan', title: 'John O’Hagan' }
-  if (/mochy|michy|kageyama|banana split|ubc|usbgf|masters|bgwc|monte carlo|\b501\b|essential|chicago|festive|jlee|boot camp|falafel/.test(t))
-    return { key: 'champ', title: 'Mochy & Şampiyonlar' }
+  if (/ubc|usbgf|masters|bgwc|monte carlo|\b501\b|essential|chicago|festive|jlee|boot camp|four-score/.test(t))
+    return { key: 'champ', title: 'Turnuva & Şampiyonlar' }
   return { key: 'forum', title: 'Forum Klasikleri' }
 }
 
@@ -432,7 +456,7 @@ export interface RealTier {
 const AUTHOR_TIER: Record<string, number> = {
   euler: 0,
   forum: 1, olsen: 1, terry: 1, wilk: 1, barget: 1, ohagan: 1,
-  chow: 2, bray: 2, champ: 2,
+  chow: 2, bray: 2, champ: 2, michy: 2, falafel: 2, mochy: 2,
 }
 export const REAL_TIERS: RealTier[] = (() => {
   const items = REAL_POSITIONS.map((p) => ({ q: famousToQuestion(p), au: authorOf(p) })).filter(
