@@ -114,7 +114,7 @@ function genQuestions(seed: number, minMoves: number, contact: boolean, hardness
 }
 
 // KUP kararlari (money): ara-oyun pozisyonu uret, ZAR ATMADAN "katla mi?" sor (offer).
-function genCubeQuestions(seed: number, count: number): Question[] {
+function genCubeQuestions(seed: number, count: number, seen = new Set<string>()): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
   let guard = 0
@@ -127,13 +127,16 @@ function genCubeQuestions(seed: number, count: number): Question[] {
     const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
     if (wp < 4 || bp < 4) continue
+    const k = boardKey(s) // kup: zar yok -> board bazli dedup (tekrar eden kup pozisyonu gelmesin)
+    if (seen.has(k)) continue
+    seen.add(k)
     out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer' })
   }
   return out
 }
 
 // MAC kupu: ayni sekilde pozisyon + MAC SKORU baglamı (away 2..6). Degerlendirme matchCube.ts (match-equity).
-function genMatchCubeQuestions(seed: number, count: number): Question[] {
+function genMatchCubeQuestions(seed: number, count: number, seen = new Set<string>()): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
   let guard = 0
@@ -146,6 +149,9 @@ function genMatchCubeQuestions(seed: number, count: number): Question[] {
     const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
     if (wp < 4 || bp < 4) continue
+    const k = boardKey(s) // board bazli dedup (money-kup ile de cakismasin: paylasilan seen)
+    if (seen.has(k)) continue
+    seen.add(k)
     const myAway = 2 + Math.floor(rng() * 5)
     const oppAway = 2 + Math.floor(rng() * 5)
     const to = Math.max(myAway, oppAway) + 1 + Math.floor(rng() * 4)
@@ -345,8 +351,10 @@ export function lessonPlan(id: string): LessonPlan {
   const s = SPECS.find((x) => x.id === id)
   if (!s) return { base: [], pool: [], need: 0, hardness: 0 }
   if (s.openings) return { direct: openingQuestions(), base: [], pool: [], need: 0, hardness: 0 }
-  if (s.cube)
-    return { direct: [...genCubeQuestions(s.seed!, 5), ...genMatchCubeQuestions(s.seed! + 1, 5)], base: [], pool: [], need: 0, hardness: 0 }
+  if (s.cube) {
+    const cubeSeen = new Set<string>() // money + match kup ayni board'u paylasmasin
+    return { direct: [...genCubeQuestions(s.seed!, 5, cubeSeen), ...genMatchCubeQuestions(s.seed! + 1, 5, cubeSeen)], base: [], pool: [], need: 0, hardness: 0 }
+  }
   const base = [
     ...(FAMOUS[id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null),
     ...(REFS[id] ?? []),
