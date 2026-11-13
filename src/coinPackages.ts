@@ -7,6 +7,7 @@ export interface CoinPackage {
   price: number // TL
   discount: number // avantaj yuzdesi (coin basi indirim); 0 = yok
   popular?: boolean // "EN POPULER" (Kasa)
+  iap?: string | null // Play Billing urun ID ('coin_<slug>'); native APK'da satin alinabilir paket. null/yok = web-only.
 }
 
 // coin basi = price / gc  → Baslangic 1,00 · Kese 0,95 · Sandik 0,90 · Hazine 0,85

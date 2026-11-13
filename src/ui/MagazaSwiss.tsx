@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { useCoinPackages } from '../useCoinPackages'
 import type { CoinPackage } from '../coinPackages'
+import { iapAvailable, iapPurchaseCoin } from '../nativeIAP'
 import { PLANS } from '../plans'
 import { MEMBERSHIP_ITEM_ID, type CartItem } from './Cart'
 import {
@@ -14,6 +15,7 @@ import {
   cartCheckout,
   cartCoinOrder,
   buyMembership,
+  syncRevenueCatCoins,
   isBankTransfer,
   type Product,
   type ProductColor,
@@ -138,6 +140,12 @@ export default function MagazaSwiss({
     window.setTimeout(() => setAdded((a) => ({ ...a, [key]: Math.max(0, (a[key] ?? 1) - 1) })), 2200)
   }
 
+  // Native APK (Play Billing var mı): coin paketleri sepet/Garanti yerine Play'den satılır.
+  const nativeIap = iapAvailable()
+  const [coinBusy, setCoinBusy] = useState<string | null>(null)
+  // Native'de yalnız Play'de tanımlı (pkg.iap dolu) paketler gösterilir; web'de hepsi.
+  const visibleCoins = nativeIap ? coinPackages.filter((p) => p.iap) : coinPackages
+
   const addProduct = (p: Product, opts?: { color?: string | null; qty?: number; pay?: 'coin' | 'money' }) => {
     if (!user) return onRequireAuth()
     if (p.stock <= 0) return
@@ -181,6 +189,25 @@ export default function MagazaSwiss({
       return [...base, { id: pkg.id, qty: 1, kind: 'coins' }]
     })
     flashAdded(`coin:${pkg.id}`)
+  }
+
+  // NATIVE APK (Play Billing): coin paketini sepet/Garanti yerine DOĞRUDAN Play'den satın al (Play
+  // politikası: dijital mal APK'da Play Billing şart). Kaç coin verileceğini SUNUCU belirler
+  // (syncRevenueCatCoins -> RC REST non_subscriptions, idempotent). pkg.iap yoksa buton zaten gizli.
+  const buyCoinNative = async (pkg: CoinPackage) => {
+    if (!user) return onRequireAuth()
+    if (!pkg.iap || coinBusy) return
+    setCoinBusy(pkg.id)
+    try {
+      await iapPurchaseCoin(pkg.iap)
+      const r = await syncRevenueCatCoins()
+      onCoinsChange?.(r.coins)
+      flashAdded(`coin:${pkg.id}`)
+    } catch {
+      /* kullanıcı iptal / hata -> sessiz (native satın alma dialogu kendi mesajını gösterir) */
+    } finally {
+      setCoinBusy(null)
+    }
   }
 
   const addMembership = () => {
@@ -248,7 +275,7 @@ export default function MagazaSwiss({
 
       {/* JETON PAKETLERİ — ürünlerin ÜSTÜNDE, özel tasarım (Swiss değil). Admin tüm paketleri
           yayından kaldırdıysa (boş liste) bölüm komple gizlenir. */}
-      {coinPackages.length > 0 && (
+      {visibleCoins.length > 0 && (
         <section id="jeton" className="mgz-jeton" aria-label="Jeton Paketleri">
           <div className="mgz-jeton-head">
             <span className="mgz-jeton-eyebrow"><Icon name="coins" size={13} /> JETON</span>
@@ -256,7 +283,7 @@ export default function MagazaSwiss({
             <p className="mgz-jeton-sub">Online maçlar, bahisli oyunlar ve turnuva girişleri için jeton yükle.</p>
           </div>
           <div className="mgz-jeton-grid">
-            {coinPackages.map((p) => {
+            {visibleCoins.map((p) => {
               const per = (p.price / p.gc).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
               return (
                 <article key={p.id} className={`mgz-jeton-card ${p.popular ? 'is-pop' : ''}`}>
@@ -272,7 +299,18 @@ export default function MagazaSwiss({
                     <span className="mgz-jeton-per">jeton başına {per} ₺</span>
                   </div>
                   {added[`coin:${p.id}`] ? (
-                    <span className="mgz-jeton-added" role="status"><Icon name="check" size={15} /> Sepete eklendi</span>
+                    <span className="mgz-jeton-added" role="status">
+                      <Icon name="check" size={15} /> {nativeIap ? 'Jeton yüklendi' : 'Sepete eklendi'}
+                    </span>
+                  ) : nativeIap ? (
+                    <button
+                      type="button"
+                      className="mgz-jeton-btn"
+                      disabled={coinBusy === p.id}
+                      onClick={() => buyCoinNative(p)}
+                    >
+                      <Icon name="coins" size={15} /> {coinBusy === p.id ? 'İşleniyor…' : 'Satın Al'}
+                    </button>
                   ) : (
                     <button type="button" className="mgz-jeton-btn" onClick={() => addCoin(p)}>
                       <Icon name="cart" size={15} /> Sepete Ekle

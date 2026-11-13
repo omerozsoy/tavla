@@ -414,6 +414,12 @@ export async function syncRevenueCat(): Promise<{ ok: boolean; premium: boolean;
   return req('/iap/revenuecat/sync', { method: 'POST' })
 }
 
+// Tüketilir coin paketi satın alma sonrası: sunucu RC REST non_subscriptions'tan OTORİTER okur,
+// henüz kredilendirilmemiş satın almaları cüzdana ekler (idempotent). Döner: eklenen coin + bakiye.
+export async function syncRevenueCatCoins(): Promise<{ ok: boolean; granted: number; coins: number }> {
+  return req('/iap/revenuecat/coins', { method: 'POST' })
+}
+
 // Acilista oturumu coz: gecici hatada (ag kopuk, 5xx) kisa geri-cekilmeyle tekrar dene
 // (1s, 2s, 4s). 401 (gecersiz token) aninda firlar; deneme bitince son hata firlar.
 export async function meWithRetry(isCancelled: () => boolean, tries = 4): Promise<ServerUser> {

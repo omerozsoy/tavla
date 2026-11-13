@@ -327,6 +327,8 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     // RevenueCat (Android Play Billing) Premium senkron: app satın alma sonrası + açılışta çağrılır,
     // RC REST'ten abone durumu SUNUCU-OTORİTER okunur (bkz RevenueCatController::sync).
     Route::middleware('throttle:20,1,iap-sync')->post('/iap/revenuecat/sync', [RevenueCatController::class, 'sync']);
+    // Tüketilir coin paketi satın alma sonrası: RC REST non_subscriptions SUNUCU-OTORİTER kredilendirme.
+    Route::middleware('throttle:20,1,iap-sync')->post('/iap/revenuecat/coins', [RevenueCatController::class, 'coins']);
     // Ödeme/promo başlangıçlarında kullanıcı başına ayrı kova: pending ödeme ve promo
     // doğrulama satırlarının spam ile büyümesini engeller; callback limiti ayrıdır.
     Route::middleware('throttle:10,1,payment-checkout')->group(function () {

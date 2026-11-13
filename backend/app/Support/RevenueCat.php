@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Services\WalletService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -82,13 +83,68 @@ class RevenueCat
         return ['premium' => false, 'until' => null, 'ok' => true];
     }
 
-    /** Webhook/sync gövdesindeki app_user_id'den kullanıcıyı bul ve senkronla. */
+    /** Webhook/sync gövdesindeki app_user_id'den kullanıcıyı bul ve senkronla (premium + coin). */
     public static function syncByAppUserId(string $appUserId): void
     {
         $u = User::find((int) $appUserId);
         if ($u) {
             self::syncUser($u);
+            self::fulfillCoins($u);
         }
+    }
+
+    /**
+     * Tüketilir coin paketleri (consumable) — SUNUCU-OTORİTER kredilendirme. RC REST'ten
+     * non_subscriptions okunur; config'deki coin_products haritasında olan HER satın alma transaction'ı
+     * için cüzdana coin eklenir. Idempotent: WalletService replay anahtarı 'rc_coin:<transaction_id>'
+     * → aynı satın alma İKİNCİ KEZ coin VERMEZ (sync + webhook aynı tx'i görse bile). Client "kaç coin"
+     * demez; miktar config'den gelir, haritada olmayan ürün atlanır. Döner: bu çağrıda EKLENEN coin.
+     */
+    public static function fulfillCoins(User $u): int
+    {
+        if (! self::configured()) {
+            return 0;
+        }
+        $map = (array) config('services.revenuecat.coin_products', []);
+        if (! $map) {
+            return 0;
+        }
+
+        try {
+            $res = Http::withToken((string) config('services.revenuecat.secret_key'))
+                ->acceptJson()
+                ->timeout(10)
+                ->get(self::API.rawurlencode((string) $u->id));
+        } catch (\Throwable $e) {
+            Log::warning('revenuecat: coin REST erişilemedi', ['user' => $u->id, 'err' => $e->getMessage()]);
+
+            return 0;
+        }
+        if (! $res->successful()) {
+            // 404 = RC bu kullanıcıyı görmedi (satın alma yok) -> verilecek coin yok.
+            return 0;
+        }
+
+        $nonSubs = (array) data_get($res->json(), 'subscriber.non_subscriptions', []);
+        $wallet = app(WalletService::class);
+        $granted = 0;
+        foreach ($nonSubs as $productId => $txns) {
+            $coins = $map[$productId] ?? null;
+            if (! $coins || ! is_array($txns)) {
+                continue; // haritada olmayan/tanımsız ürün -> coin verme (güvenlik)
+            }
+            foreach ($txns as $txn) {
+                $tid = (string) (data_get($txn, 'id') ?? data_get($txn, 'store_transaction_id') ?? '');
+                if ($tid === '') {
+                    continue;
+                }
+                $before = (int) ($u->coins ?? 0);
+                $wallet->credit($u, (int) $coins, 'iap_coin_purchase', 'revenuecat', null, 'rc_coin:'.$tid);
+                $granted += max(0, (int) ($u->coins ?? 0) - $before);
+            }
+        }
+
+        return $granted;
     }
 
     private static function applyActive(User $u, ?Carbon $until): void

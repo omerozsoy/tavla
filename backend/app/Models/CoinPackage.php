@@ -13,25 +13,31 @@ class CoinPackage extends Model
     ];
 
     protected $casts = [
-        'price'     => 'integer',   // KURUS
-        'coins'     => 'integer',
-        'discount'  => 'integer',
-        'popular'   => 'boolean',
+        'price' => 'integer',   // KURUS
+        'coins' => 'integer',
+        'discount' => 'integer',
+        'popular' => 'boolean',
         'published' => 'boolean',
-        'sort'      => 'integer',
+        'sort' => 'integer',
     ];
 
     // Frontend katalog gorunumu (public). id=slug (sepet + odeme anahtari), price TL (kurus/100).
     // Frontend src/coinPackages.ts CoinPackage sekliyle BIREBIR (id/name/gc/price/discount/popular).
+    // iap = Play Billing urun ID'si ('coin_<slug>'), YALNIZ config coin_products'ta tanimliysa; yoksa
+    // null (native APK bu paketi Play'den satin alamaz -> native'de gizlenir, web'de normal satilir).
     public function toCatalog(): array
     {
+        $iapId = 'coin_'.$this->slug;
+        $hasIap = array_key_exists($iapId, (array) config('services.revenuecat.coin_products', []));
+
         return [
-            'id'       => $this->slug,
-            'name'     => $this->name,
-            'gc'       => (int) $this->coins,
-            'price'    => (int) $this->price / 100, // TL (frontend TL bekler; fmtTL/per-coin hesabi)
+            'id' => $this->slug,
+            'name' => $this->name,
+            'gc' => (int) $this->coins,
+            'price' => (int) $this->price / 100, // TL (frontend TL bekler; fmtTL/per-coin hesabi)
             'discount' => (int) $this->discount,
-            'popular'  => (bool) $this->popular,
+            'popular' => (bool) $this->popular,
+            'iap' => $hasIap ? $iapId : null,
         ];
     }
 }

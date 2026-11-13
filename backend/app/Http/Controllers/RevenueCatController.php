@@ -28,6 +28,24 @@ class RevenueCatController extends Controller
     }
 
     /**
+     * POST /iap/revenuecat/coins — native coin (consumable) satın alma sonrası app çağırır. RC REST'ten
+     * non_subscriptions SUNUCU-OTORİTER okunur, henüz kredilendirilmemiş satın almalar cüzdana eklenir
+     * (idempotent). Döner: bu çağrıda eklenen coin + güncel bakiye.
+     */
+    public function coins(Request $request)
+    {
+        $u = $request->user();
+        $granted = RevenueCat::fulfillCoins($u);
+        $u->refresh();
+
+        return response()->json([
+            'ok' => true,
+            'granted' => $granted,
+            'coins' => (int) $u->coins,
+        ]);
+    }
+
+    /**
      * POST /iap/revenuecat/webhook — RC sunucudan yenileme/iptal/süre-dolumu push'u. Authorization
      * header RC panelinde girdiğimiz paylaşılan sır ile EŞLEŞMELİ (hash_equals). Gövdeye GÜVENMEYİZ:
      * yalnız app_user_id'yi alıp RC'den TAZE çekip uygularız.

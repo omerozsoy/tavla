@@ -83,6 +83,14 @@ return [
         'secret_key' => env('REVENUECAT_SECRET_KEY', ''),
         'webhook_auth' => env('REVENUECAT_WEBHOOK_AUTH', ''),
         'entitlement' => env('REVENUECAT_ENTITLEMENT', 'tavlatv_premium'),
+        // Tüketilir (consumable) coin paketleri: Play ürün ID -> verilecek coin. SUNUCU-OTORİTER
+        // (client "kaç coin" DEMEZ). RC REST non_subscriptions'tan okunan ürün bu haritada yoksa
+        // coin VERİLMEZ. Play'de yeni coin ürünü açarsan buraya da ekle.
+        'coin_products' => [
+            'coin_baslangic' => 1000,
+            'coin_kese' => 5000,
+            'coin_sandik' => 10000,
+        ],
     ],
 
 ];

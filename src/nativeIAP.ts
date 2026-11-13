@@ -92,6 +92,23 @@ export async function iapCustomerCenter(): Promise<void> {
   await call<void>('RevenueCatUI', 'presentCustomerCenter', {})
 }
 
+/**
+ * Tüketilir coin paketi satın al (Play Billing). productId = Play ürün ID ('coin_baslangic' ...).
+ * Satın alma native tarafta tamamlanır; BAŞARILIYSA true döner. İptal/hata EXCEPTION fırlatır
+ * (çağıran yakalar). Kaç coin verileceğini SUNUCU belirler (RC REST non_subscriptions) — client
+ * sadece "bu ürün alındı" der, backend /iap/revenuecat/coins ile kredilendirir.
+ */
+export async function iapPurchaseCoin(productId: string): Promise<boolean> {
+  const got = await call<{ products?: unknown[] }>('Purchases', 'getProducts', {
+    productIdentifiers: [productId],
+    type: 'INAPP',
+  })
+  const product = got?.products?.[0]
+  if (!product) throw new Error('Ürün bulunamadı: ' + productId)
+  await call<unknown>('Purchases', 'purchaseStoreProduct', { product })
+  return true
+}
+
 interface CustomerInfoResp {
   customerInfo?: { entitlements?: { active?: Record<string, unknown> } }
 }
