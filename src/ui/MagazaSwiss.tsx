@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { useCoinPackages } from '../useCoinPackages'
 import type { CoinPackage } from '../coinPackages'
-import { iapAvailable, iapPurchaseCoin } from '../nativeIAP'
+import { iapAvailable } from '../nativeIAP'
 import { PLANS } from '../plans'
 import { MEMBERSHIP_ITEM_ID, type CartItem } from './Cart'
 import {
@@ -15,7 +15,6 @@ import {
   cartCheckout,
   cartCoinOrder,
   buyMembership,
-  syncRevenueCatCoins,
   isBankTransfer,
   type Product,
   type ProductColor,
@@ -49,6 +48,10 @@ type Props = {
   onOrders: () => void
   onOpenCart: () => void // "Sepete git" -> eski Sepet modalı (inline sepet kaldırıldı)
   onCoinsChange?: (coins: number) => void
+  // Native APK (Play Billing): premium paywall'ı aç / coin ürününü Play'den satın al. App.tsx
+  // iapIdentify + satın alma + sunucu sync + user yenilemeyi yönetir (user.id orada). Web'de verilmez.
+  onNativeBuy?: () => void
+  onNativeBuyCoin?: (productId: string) => Promise<boolean>
   onClose: () => void
   titleOverride?: string
   // URL-otoriter seçili ürün (/magaza/<kat>/<slug>). Verilince ürün DETAY SAYFASI (ayrı) açılır.
@@ -70,6 +73,8 @@ export default function MagazaSwiss({
   onOrders,
   onOpenCart,
   onCoinsChange,
+  onNativeBuy,
+  onNativeBuyCoin,
   onClose,
   productSlug,
   onSelectProduct,
@@ -196,15 +201,11 @@ export default function MagazaSwiss({
   // (syncRevenueCatCoins -> RC REST non_subscriptions, idempotent). pkg.iap yoksa buton zaten gizli.
   const buyCoinNative = async (pkg: CoinPackage) => {
     if (!user) return onRequireAuth()
-    if (!pkg.iap || coinBusy) return
+    if (!pkg.iap || coinBusy || !onNativeBuyCoin) return
     setCoinBusy(pkg.id)
     try {
-      await iapPurchaseCoin(pkg.iap)
-      const r = await syncRevenueCatCoins()
-      onCoinsChange?.(r.coins)
-      flashAdded(`coin:${pkg.id}`)
-    } catch {
-      /* kullanıcı iptal / hata -> sessiz (native satın alma dialogu kendi mesajını gösterir) */
+      // App.tsx: iapIdentify + Play satın alma + sunucu-otoriter coin kredisi + user yenile.
+      if (await onNativeBuyCoin(pkg.iap)) flashAdded(`coin:${pkg.id}`)
     } finally {
       setCoinBusy(null)
     }
@@ -212,6 +213,8 @@ export default function MagazaSwiss({
 
   const addMembership = () => {
     if (!user) return onRequireAuth()
+    // Native APK: Play politikası -> sepet/Garanti yerine RevenueCat paywall.
+    if (nativeIap && onNativeBuy) return onNativeBuy()
     setCartItems(() => [{ id: MEMBERSHIP_ITEM_ID, qty: 1, kind: 'membership' }])
     flashAdded('mem')
   }

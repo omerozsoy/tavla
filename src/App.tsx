@@ -650,10 +650,11 @@ import {
   type SponsorCfg,
   type ServerUser,
   syncRevenueCat,
+  syncRevenueCatCoins,
   me,
 } from './api'
 import { initPush } from './push'
-import { iapIdentify, iapLogout, iapPresentPaywall, iapRestore } from './nativeIAP'
+import { iapIdentify, iapLogout, iapPresentPaywall, iapPurchaseCoin, iapRestore } from './nativeIAP'
 import { unlockOrientation, lockPortrait } from './orientation'
 
 // Geri sayim bicimi: saniye -> "S:DD:SS"
@@ -8907,6 +8908,21 @@ export default function App() {
       notify.error(t('mem.iapFailed'))
     }
   }
+  // NATIVE (Android IAP): tüketilir coin paketi satın al -> SUNUCU kredilendirir (RC REST
+  // non_subscriptions, idempotent) -> user yenile. Döner: satın alma tamamlandı mı (UI geri bildirimi).
+  async function handleNativeBuyCoin(productId: string): Promise<boolean> {
+    if (!user) return false
+    try {
+      await iapIdentify(user.id)
+      await iapPurchaseCoin(productId)
+      const r = await syncRevenueCatCoins().catch(() => null)
+      try { setUser(await me()) } catch { /* yoksay: webhook yine de kredilendirir */ }
+      if (r && r.granted > 0) notify.success(`${r.granted.toLocaleString('tr-TR')} jeton hesabına yüklendi`)
+      return true
+    } catch {
+      return false // kullanıcı iptal / hata -> sessiz (native dialog kendi mesajını gösterir)
+    }
+  }
   async function handleNativeRestore() {
     if (!user) return
     try {
@@ -11082,6 +11098,8 @@ export default function App() {
             setCartOpen(true)
           }}
           onCoinsChange={(coins) => setUser((u) => (u ? { ...u, coins } : u))}
+          onNativeBuy={handleNativeBuy}
+          onNativeBuyCoin={handleNativeBuyCoin}
           onClose={() => {
             setShopOpen(false)
             setShopTab('coin')
