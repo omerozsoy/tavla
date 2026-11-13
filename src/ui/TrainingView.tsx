@@ -649,7 +649,7 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
   const [lessonId, setLessonId] = useState<string | null>(null)
 
   if (!lessonId) {
-    return <TrainingPath onPick={setLessonId} onClose={onClose} titleOverride={titleOverride} />
+    return <TrainingPath onPick={setLessonId} titleOverride={titleOverride} />
   }
   return <LessonView lessonId={lessonId} onBack={() => setLessonId(null)} />
 }

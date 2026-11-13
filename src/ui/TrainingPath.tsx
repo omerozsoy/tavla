@@ -32,11 +32,10 @@ export function saveLessonProgress(id: string, p: LessonProgress) {
 
 interface Props {
   onPick: (lessonId: string) => void
-  onClose: () => void
   titleOverride?: string
 }
 
-export default function TrainingPath({ onPick, onClose, titleOverride }: Props) {
+export default function TrainingPath({ onPick, titleOverride }: Props) {
   const { t } = useT()
   const progress = useMemo(() => loadProgress(), [])
   const [sel, setSel] = useState<string>(LESSONS[0]?.id ?? 'easy')
@@ -51,12 +50,11 @@ export default function TrainingPath({ onPick, onClose, titleOverride }: Props) 
   return (
     <div className="tr-view bgx tr-path">
       <aside className="bgx-side tr-path-side">
-        <div className="bgx-head">
-          <button className="bgx-back" onClick={onClose} aria-label={t('common.back')}>
-            <Icon name="arrow-right" size={22} />
-          </button>
-          {titleOverride && <span className="bgx-title">{titleOverride}</span>}
-        </div>
+        {titleOverride && (
+          <div className="bgx-head">
+            <span className="bgx-title">{titleOverride}</span>
+          </div>
+        )}
 
         <div className="tr-sec-head">{t('tr.levelsHead')}</div>
         <div className="tr-path-list">
