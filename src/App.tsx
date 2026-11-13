@@ -2449,6 +2449,9 @@ export default function App() {
   // olunca prAnalyzing kapanıp rakip hücresi boş "—" gösteriyordu ("rakibin PR'ı yok" sanılıyordu).
   // Bu bayrak rakip PR'ı gelene (ya da matchPr poll tavanına) kadar onun hücresinde "…" tutar.
   const [oppPrPending, setOppPrPending] = useState(false)
+  // PR ×2 ÖDÜLÜ: kazandım + PR'ım rakipten iyi -> sunucu ek rating verdi. matchPr poll'undan gelir;
+  // >0 ise sonuç kartının önünde "X2" tebrik penceresi açılır (yalnız kazanan görür).
+  const [ratingBonus, setRatingBonus] = useState<number | null>(null)
   const prPollRef = useRef(0) // aktif poll oturumu (yeni maç/yeni rapor eski poll'u iptal eder)
   // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
@@ -3364,6 +3367,7 @@ export default function App() {
     setPrAnalyzing(false)
     setPrProgressPct(null) // yeni mac -> onceki PR ilerleme yuzdesini sifirla
     setOppPrPending(false)
+    setRatingBonus(null) // yeni mac -> onceki X2 odul penceresini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
     setServerLuckJokers(null)
@@ -5764,6 +5768,9 @@ export default function App() {
           continue // geçici hata -> tekrar dene
         }
         if (cancelled) return
+        // PR ×2 ödülü (kazandım + PR daha iyi): sunucu Snowie'de ek rating verdi -> >0 gelince
+        // "X2" penceresini aç (sonuç kartının önünde). Yalnız KAZANAN satırda >0 döner.
+        if (pair.rating_bonus != null && pair.rating_bonus > 0) setRatingBonus(pair.rating_bonus)
         if (!prDone) {
           if (pair.opponent != null) {
             setServerPr((prev) => ({
@@ -12502,6 +12509,7 @@ export default function App() {
           ratingBefore={ratingChange?.before ?? null}
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
+          ratingBonus={ratingBonus} // PR ×2 ödülü (kazandım+PR iyi): >0 -> önde "X2" penceresi
           // Puansız maç açıklaması (kılıç casual / günlük limit / bot). Bot maçında not gösterme
           // (rakip AI olduğu zaten belli) -> yalnız insan maçında.
           ratingReason={botMatch ? null : (ratingChange?.reason ?? null)}

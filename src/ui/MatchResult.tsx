@@ -44,6 +44,10 @@ interface Props {
   ratingBefore: number | null
   ratingAfter: number | null
   ratingIsWinner: boolean // true: rating kazanan tarafta
+  // PR ×2 ÖDÜLÜ: yerel oyuncu HEM kazandı HEM PR'ı rakipten iyi -> sunucu ek rating verdi (= orijinal
+  // kazanç). >0 ise sonuç kartının ÖNÜNDE tebrik penceresi açılır + rating satırı ×2 gösterir. Yalnız
+  // kazanana döner (kaybeden null). null/0 -> pencere yok, normal rating.
+  ratingBonus?: number | null
   oppRating: number | null // rakip rating (online rakip / AI zorluga gore) — maç ÖNCESİ
   // Rakip rating değişimi (online puanlı maçta). Elo sıfır-toplamlı -> = -(kendi delta). null ->
   // gösterme (pvb/AI kalıcı rating yok, veya puansız). Her iki ekranda TUTARLI (deterministik).
@@ -115,6 +119,7 @@ export default function MatchResult({
   ratingBefore,
   ratingAfter,
   ratingIsWinner,
+  ratingBonus = null,
   oppRating,
   oppRatingDelta,
   ratingReason,
@@ -138,6 +143,9 @@ export default function MatchResult({
 }: Props) {
   const { t } = useT()
   const [codeCopied, setCodeCopied] = useState(false)
+  // PR ×2 tebrik penceresi: OK'e basana kadar sonuç kartının önünde durur, sonra arkadaki ekran görünür.
+  const [bonusSeen, setBonusSeen] = useState(false)
+  const showBonus = ratingBonus != null && ratingBonus > 0 && !bonusSeen
   const copyCode = () => {
     if (!matchCode) return
     navigator.clipboard
@@ -229,12 +237,16 @@ export default function MatchResult({
 
   // Rating: insan (rating raporlanan) tarafi degisimli; diger taraf = rakip (online
   // rakip rating / AI zorluk). ratingIsWinner: insan kazanan tarafta mi.
+  // PR ×2 ödülü: sunucu kazanca eşit ek rating verdi -> kendi tarafın rating satırında da ×2 göster
+  // (after + bonus; delta iki katına çıkar). Yalnız kazanana >0 gelir.
+  const ratingBonusVal = ratingBonus && ratingBonus > 0 ? ratingBonus : 0
   const ratingText = (winnerSide: boolean) => {
-    // KENDİ tarafı: sunucudan gelen before/after.
+    // KENDİ tarafı: sunucudan gelen before/after (+ varsa X2 bonusu).
     if (winnerSide === ratingIsWinner) {
       if (ratingBefore != null && ratingAfter != null) {
-        const d = Math.round(ratingAfter - ratingBefore)
-        return d !== 0 ? `${Math.round(ratingAfter)} (${d >= 0 ? '+' : ''}${d})` : String(Math.round(ratingAfter))
+        const after = ratingAfter + ratingBonusVal
+        const d = Math.round(after - ratingBefore)
+        return d !== 0 ? `${Math.round(after)} (${d >= 0 ? '+' : ''}${d})` : String(Math.round(after))
       }
       return oppRating != null ? String(Math.round(oppRating)) : '—'
     }
@@ -279,6 +291,19 @@ export default function MatchResult({
   const commission = asymCoin && winnerCoin != null && loserCoin != null ? loserCoin - winnerCoin : 0
 
   return (
+    <>
+    {/* PR ×2 ÖDÜL PENCERESİ: sonuç kartının ÖNÜNDE; OK -> kapanır, arkadaki sonuç ekranı görünür.
+        Yalnız kazanan + PR'ı daha iyi oyuncuya gösterilir (ratingBonus>0). */}
+    {showBonus && (
+      <div className="mr-bonus-overlay" role="dialog" aria-modal="true" onClick={() => setBonusSeen(true)}>
+        <div className="mr-bonus-card" onClick={(e) => e.stopPropagation()}>
+          <div className="mr-bonus-x2"><Icon name="crown" size={22} /> ×2</div>
+          <div className="mr-bonus-title">{t('mr.bonusTitle')}</div>
+          <div className="mr-bonus-body">{t('mr.bonusBody', { n: ratingBonus as number })}</div>
+          <Button variant="default" onClick={() => setBonusSeen(true)}>{t('mr.bonusOk')}</Button>
+        </div>
+      </div>
+    )}
     <div className="register-overlay modal mr-overlay">
       <div className="mr-card">
         <div className="mr-head">
@@ -506,5 +531,6 @@ export default function MatchResult({
         )}
       </div>
     </div>
+    </>
   )
 }

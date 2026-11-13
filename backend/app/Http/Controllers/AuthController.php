@@ -1474,6 +1474,9 @@ class AuthController extends Controller
             'opponent' => $oppPr,
             'self_settled' => $selfSettled,
             'opponent_settled' => $oppSettled,
+            // PR ×2 ÖDÜLÜ: bu oyuncu HEM kazandı HEM PR'ı daha iyiyse verilen ek rating (>0). Yalnız
+            // KAZANAN satırda dolar (kaybeden -> null). İstemci >0 görünce "X2" penceresini gösterir.
+            'rating_bonus' => ($has('pr_rating_bonus') && $mine) ? $mine->pr_rating_bonus : null,
             // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — GNUBG-otoriter (yukarı bkz).
             'checker_self' => $col($mine, 'gnubg_checker_pr'),
             'cube_self' => $col($mine, 'gnubg_cube_pr'),

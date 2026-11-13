@@ -17206,6 +17206,58 @@ body:has(.spectate-view) .app.lobby {
 .mr-overlay {
   z-index: 120;
 }
+/* PR ×2 ödül penceresi: sonuç kartının (z120) ÖNÜNDE tam ekran; OK ile kapanır. */
+.mr-bonus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+  animation: mr-bonus-fade 0.2s ease-out;
+}
+@keyframes mr-bonus-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mr-bonus-card {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid #ffd54a;
+  border-radius: var(--radius-xl);
+  padding: 28px 22px;
+  box-shadow: 0 0 0 1px rgba(255, 213, 74, 0.25), var(--shadow-xl);
+  animation: mr-bonus-pop 0.28s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+@keyframes mr-bonus-pop {
+  from { transform: scale(0.82); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.mr-bonus-x2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #ffd54a;
+  margin-bottom: 10px;
+}
+.mr-bonus-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.mr-bonus-body {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
 .mr-card {
   width: 100%;
   max-width: 560px;

@@ -9,6 +9,7 @@ use App\Services\Analysis\GnubgSnowieService;
 use App\Services\CareerPrService;
 use App\Services\GnuBg\GnuBgClient;
 use App\Services\PlayerStatisticsService;
+use App\Support\PrRatingBonus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -165,6 +166,13 @@ class AnalyzeMatchSnowieJob implements ShouldQueue
                     MatchResult::where('id', $row->id)->update($upd);
                 }
             }
+            // PR ×2 ÖDÜLÜ: iki oyuncunun otoriter PR'ı artık yazıldı -> kazanan + PR'ı daha iyiyse
+            // ek rating ver (idempotent; yalnız online iki-hesaplı puanlı maç). Sonuç ekranı /me/match-pr
+            // poll'uyla rating_bonus'u okuyup "X2" penceresini gösterir.
+            if (! empty($mr->room_code)) {
+                PrRatingBonus::apply((string) $mr->room_code);
+            }
+
             // RESUMABLE imleç: işlenen odayı damgala -> tavla:snowie-pr re-run bunu atlar.
             // (room_code boş bot satırı için tek satır damgalanır.)
             if (Schema::hasColumn('match_results', 'pr_shield_at')) {
