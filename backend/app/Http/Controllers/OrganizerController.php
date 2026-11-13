@@ -70,12 +70,20 @@ class OrganizerController extends Controller
     public function show(Request $request, Tournament $tournament)
     {
         $t = $this->managed($request, $tournament);
+        $playerCount = count(array_filter($t->players ?? [], fn ($p) => ! empty($p['id'])));
+        // Kura çek butonu: salon turnuvasında planlı saat gerekmez (draw anında next_at=now kurulur),
+        // o yüzden drawStatus'un 'no_datetime' sebebi de ÇEKİLEBİLİR sayılır.
+        $drawReason = Tournament::isSwissType($t->type) ? SwissRuntime::drawStatus($t)['reason'] : 'na';
+        $canDraw = $t->status === 'running' && in_array($drawReason, ['ok', 'no_datetime'], true);
 
         return response()->json([
             'id' => $t->id,
             'name' => $t->name,
             'type' => $t->type,
             'status' => $t->status,
+            'canStart' => $t->status === 'open' && Tournament::isSwissType($t->type) && $playerCount >= 2,
+            'canDraw' => $canDraw,
+            'round' => (int) ($t->swiss_state['round'] ?? 0),
             'players' => array_values(array_map(fn ($p) => [
                 'id' => (int) ($p['id'] ?? 0),
                 'name' => $p['name'] ?? '',
@@ -83,6 +91,83 @@ class OrganizerController extends Controller
             ], $t->players ?? [])),
             'pending' => $this->pendingMatches($t),
         ]);
+    }
+
+    /** Turnuvayı BAŞLAT (Swiss state kurulur; kura ayrı 'draw' ile çekilir). En az 2 katılımcı. */
+    public function start(Request $request, Tournament $tournament)
+    {
+        $t = $this->managed($request, $tournament);
+        if (! Tournament::isSwissType($t->type)) {
+            return $this->fail('Yalnızca Swiss turnuva başlatılır.', 422);
+        }
+        $ok = false;
+        DB::transaction(function () use ($t, &$ok) {
+            $locked = Tournament::lockForUpdate()->find($t->id);
+            if (! $locked || (int) $locked->manager_user_id !== (int) request()->user()->id) {
+                return;
+            }
+            if ($locked->status !== 'open') {
+                return;
+            }
+            $count = count(array_filter($locked->players ?? [], fn ($p) => ! empty($p['id'])));
+            if ($count < 2) {
+                return;
+            }
+            SwissRuntime::start($locked);
+            $ok = true;
+        });
+
+        return $ok ? response()->json(['ok' => true]) : $this->fail('Başlatılamadı: en az 2 katılımcı + kayıt açık olmalı.', 422);
+    }
+
+    /** Sıradaki turun kurasını çek. bye verilmezse ve bay gerekiyorsa uygun oyuncular döner (organizatör seçer). */
+    public function draw(Request $request, Tournament $tournament)
+    {
+        $t = $this->managed($request, $tournament);
+        $data = $request->validate(['bye' => ['nullable', 'integer', 'min:0']]);
+        if (! Tournament::isSwissType($t->type)) {
+            return $this->fail('Yalnızca Swiss turnuvada kura çekilir.', 422);
+        }
+        $res = ['ok' => false, 'reason' => 'x', 'needsBye' => null, 'round' => 0];
+        DB::transaction(function () use ($t, $data, &$res) {
+            $locked = Tournament::lockForUpdate()->find($t->id);
+            if (! $locked || (int) $locked->manager_user_id !== (int) request()->user()->id) {
+                $res['reason'] = 'forbidden';
+
+                return;
+            }
+            if ($locked->status !== 'running') {
+                $res['reason'] = 'not_running';
+
+                return;
+            }
+            // Salon: planlı saat yok -> sıradaki turun saatini şimdiye kur (drawStatus şartı).
+            SwissRuntime::setNextRoundAt($locked, now()->format('Y-m-d H:i:s'));
+            $elig = SwissRuntime::manualByeEligible($locked);
+            $byeProvided = array_key_exists('bye', $data) && $data['bye'] !== null;
+            if ($elig && ! $byeProvided) {
+                // Bay gerekiyor ama seçilmedi -> organizatöre uygun oyuncuları döndür (salonda kura çeksin).
+                $res = ['ok' => false, 'reason' => 'needs_bye', 'needsBye' => $elig, 'round' => SwissRuntime::nextRoundNo($locked)];
+
+                return;
+            }
+            $bye = $byeProvided ? (int) $data['bye'] : null;
+            if ($bye !== null && $elig && ! in_array($bye, array_column($elig, 'id'), true)) {
+                $res['reason'] = 'bye_invalid';
+
+                return;
+            }
+            $r = SwissRuntime::drawRound($locked, $bye);
+            $res['ok'] = (bool) $r['ok'];
+            $res['reason'] = $r['reason'];
+        });
+        if ($res['reason'] === 'needs_bye') {
+            return response()->json(['ok' => false, 'needsBye' => $res['needsBye'], 'round' => $res['round']]);
+        }
+
+        return $res['ok']
+            ? response()->json(['ok' => true])
+            : $this->fail('Kura çekilemedi ('.$res['reason'].').', 422);
     }
 
     /** Katılımcı ekle (salon: isimle; yalnız kayıt açıkken). Sentetik POZİTİF id (resolveMatch p1/p2>0). */

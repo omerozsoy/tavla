@@ -6584,9 +6584,6 @@ button[aria-disabled='true'],
   grid-template-columns: auto var(--bearoff-w);
   grid-template-rows: 24px 1fr 24px;
   gap: 3px;
-  /* Pul oynamak icin ayni noktaya iki kez dokununca tarayici "double-tap zoom"
-     yapmasin (pinch-zoom korunur). Point/bar/bearoff tap hedeflerinin TUMUNU kapsar. */
-  touch-action: manipulation;
 }
 .pt-numbers {
   grid-column: 1;
@@ -18405,11 +18402,10 @@ body:has(.spectate-view) .app.lobby {
 @keyframes bgx-correct-pop { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 @keyframes bgx-correct-ring { 0% { transform: scale(0.85); opacity: 0.8; } 100% { transform: scale(1.7); opacity: 0; } }
 /* Egitim: dogru oynanan hanenin uzerinde yesil tik (oynanan tasa yakin ic uc). */
-.pt-success { position: absolute; left: 50%; transform: translate(-50%, -50%); z-index: 9; width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #22c55e; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 9px rgba(0, 0, 0, 0.55); pointer-events: none; animation: pt-success-pop 0.3s ease-out both; }
-/* Tik oynanan (yigin tepesi) pulun TAM uzerinde: dis kenardan (derinlik-0.5)x pul capi. */
-.point.top .pt-success { top: calc((var(--pt-depth, 1) - 0.5) * var(--checker)); bottom: auto; }
-.point.bottom .pt-success { bottom: calc((var(--pt-depth, 1) - 0.5) * var(--checker)); top: auto; }
-@keyframes pt-success-pop { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+.pt-success { position: absolute; left: 50%; transform: translateX(-50%); z-index: 9; width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #22c55e; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 9px rgba(0, 0, 0, 0.55); pointer-events: none; animation: pt-success-pop 0.3s ease-out both; }
+.point.top .pt-success { bottom: 9%; }
+.point.bottom .pt-success { top: 9%; }
+@keyframes pt-success-pop { 0% { transform: translateX(-50%) scale(0.3); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
 /* Yanlis hamle: board uzerinde kirmizi X + nabiz halkalari (cozum GOSTERILMEZ). */
 .bgx-wrong { position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%); width: 58px; height: 58px; border-radius: 50%; background: #1a0f12; color: #ef4444; display: flex; align-items: center; justify-content: center; z-index: 7; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); animation: bgx-correct-pop 0.32s ease-out both; }
 .bgx-wrong::before, .bgx-wrong::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgba(239, 68, 68, 0.55); animation: bgx-correct-ring 1.25s ease-out infinite; }
@@ -18437,8 +18433,6 @@ body:has(.spectate-view) .app.lobby {
 /* "GERCEK POZISYONLAR" ana basligi (Seviyeler'den ayirir) + tier alt basliklari (Baslangic/Orta/Ileri). */
 .tr-sec-head.tr-sec-main { margin-top: 22px; color: var(--accent); font-size: var(--fs-xs); border-top: 1px solid var(--border); padding-top: 14px; }
 .tr-sec-tier { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); text-align: left; padding: 6px 10px; margin: 10px 0 4px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-/* Birlesik ustalik yolu: toplam soru sayisi (baslik altinda). */
-.tr-total { text-align: center; font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--accent); margin: 2px 0 6px; }
 .tr-lesson { display: flex; align-items: center; gap: 12px; text-align: left; appearance: none; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: var(--radius-md); color: var(--text); position: relative; }
 .tr-lesson:not(.disabled):hover { background: var(--rn-navy-700); }
 .tr-lesson.active { background: color-mix(in srgb, var(--accent) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent); }
@@ -21004,6 +20998,11 @@ body:has(.spectate-view) .app.lobby {
   color: var(--accent); font-weight: 600; cursor: pointer; padding: 4px 0; margin-bottom: 8px;
 }
 .org-detail-name { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+.org-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.org-bye {
+  margin-bottom: 16px; padding: 12px 14px; border: 1px solid var(--accent);
+  border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+}
 .org-sec { margin-bottom: 20px; }
 .org-sec-h { display: flex; align-items: center; gap: 7px; font-size: 1rem; margin: 0 0 10px; color: var(--text); }
 .org-add { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }

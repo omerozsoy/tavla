@@ -9,8 +9,11 @@ import {
   organizerAddParticipant,
   organizerRemoveParticipant,
   organizerEnterResult,
+  organizerStart,
+  organizerDraw,
   type OrganizerTournament,
   type OrganizerDetail,
+  type OrganizerByeEligible,
 } from '../api'
 
 interface Props {
@@ -30,6 +33,8 @@ export default function OrganizerPanel({ onClose, titleOverride }: Props) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [name, setName] = useState('')
+  const [byeChoices, setByeChoices] = useState<OrganizerByeEligible[] | null>(null) // bay seçimi bekleyen kura
+  const [byePick, setByePick] = useState<number | null>(null)
 
   useEffect(() => {
     organizerTournaments().then(setList).catch(() => setList([]))
@@ -92,6 +97,42 @@ export default function OrganizerPanel({ onClose, titleOverride }: Props) {
     }
   }
 
+  async function doStart() {
+    if (!sel || busy) return
+    setBusy(true)
+    setErr('')
+    try {
+      await organizerStart(sel.id)
+      await reload()
+    } catch {
+      setErr(t('org.startErr'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Kura çek. bye verilmezse ve bay gerekiyorsa uygun oyuncular açılır (salonda kura çekilir).
+  async function doDraw(bye?: number) {
+    if (!sel || busy) return
+    setBusy(true)
+    setErr('')
+    try {
+      const r = await organizerDraw(sel.id, bye)
+      if (!r.ok && r.needsBye && r.needsBye.length > 0) {
+        setByeChoices(r.needsBye)
+        setByePick(r.needsBye[0].id)
+      } else {
+        setByeChoices(null)
+        setByePick(null)
+        await reload()
+      }
+    } catch {
+      setErr(t('org.drawErr'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card info-card org-card">
@@ -131,6 +172,39 @@ export default function OrganizerPanel({ onClose, titleOverride }: Props) {
             <h3 className="org-detail-name">
               {sel.name} <span className={`org-badge org-st-${sel.status}`}>{t(`tourn.status.${sel.status}`)}</span>
             </h3>
+
+            {/* Başlat / Kura çek aksiyonları + (gerekiyorsa) elle bay seçimi */}
+            <div className="org-actions">
+              {sel.canStart && (
+                <Button variant="default" disabled={busy} onClick={doStart}>
+                  <Icon name="play" size={15} /> {t('org.start')}
+                </Button>
+              )}
+              {sel.status === 'running' && sel.canDraw && !byeChoices && (
+                <Button variant="default" disabled={busy} onClick={() => doDraw()}>
+                  <Icon name="dice" size={15} /> {t('org.draw')}
+                </Button>
+              )}
+            </div>
+            {byeChoices && (
+              <div className="org-bye">
+                <p className="org-sec-h"><Icon name="users" size={16} /> {t('org.byeTitle')}</p>
+                <p className="org-note">{t('org.byeHelp')}</p>
+                <div className="org-add">
+                  <select className="org-input" value={byePick ?? ''} onChange={(e) => setByePick(Number(e.target.value))}>
+                    {byeChoices.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <Button variant="default" disabled={busy || byePick == null} onClick={() => byePick != null && doDraw(byePick)}>
+                    {t('org.byeApply')}
+                  </Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => { setByeChoices(null); setByePick(null) }}>
+                    {t('common.cancel')}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Katılımcılar (yalnız kayıt açıkken ekle/çıkar) */}
             <section className="org-sec">

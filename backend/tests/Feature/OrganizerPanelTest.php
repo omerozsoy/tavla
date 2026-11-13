@@ -76,4 +76,37 @@ class OrganizerPanelTest extends TestCase
         $t->refresh();
         $this->assertSame(900000001, (int) $t->bracket[0][0]['winner']);
     }
+
+    public function test_organizer_can_start_and_draw_with_manual_bye(): void
+    {
+        $mgr = $this->user('org3');
+        $t = Tournament::create([
+            'name' => 'Salon 3', 'type' => 'swiss_outdoor', 'size' => 0, 'status' => 'open',
+            'manager_user_id' => $mgr->id, 'swiss_lives' => 3, 'match_length' => 1, 'players' => [],
+        ]);
+        // 3 katılımcı (tek sayı -> bay gerekir)
+        foreach (['A', 'B', 'C'] as $n) {
+            $this->actingAs($mgr)->postJson("/api/organizer/tournaments/{$t->id}/participants", ['name' => $n])->assertOk();
+        }
+
+        // Başlat
+        $this->actingAs($mgr)->postJson("/api/organizer/tournaments/{$t->id}/start")->assertOk();
+        $t->refresh();
+        $this->assertSame('running', $t->status);
+
+        // Kura (bay seçilmeden) -> uygun oyuncular döner (needsBye)
+        $r = $this->actingAs($mgr)->postJson("/api/organizer/tournaments/{$t->id}/draw")->assertOk()->json();
+        $this->assertFalse($r['ok']);
+        $this->assertNotEmpty($r['needsBye']);
+        $byeId = $r['needsBye'][0]['id'];
+
+        // Kura (bay seçilerek) -> tur üretilir
+        $this->actingAs($mgr)->postJson("/api/organizer/tournaments/{$t->id}/draw", ['bye' => $byeId])->assertOk()->assertJson(['ok' => true]);
+        $t->refresh();
+        $this->assertNotEmpty($t->bracket); // 1. tur çekildi
+        // Seçilen oyuncu o turda bay geçti
+        $byeCell = collect($t->bracket[0])->firstWhere('bye', true);
+        $this->assertNotNull($byeCell);
+        $this->assertSame((int) $byeId, (int) $byeCell['winner']);
+    }
 }

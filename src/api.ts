@@ -2217,9 +2217,13 @@ export interface OrganizerDetail {
   name: string
   type: string
   status: string
+  canStart: boolean
+  canDraw: boolean
+  round: number
   players: { id: number; name: string; offline: boolean }[]
   pending: { key: string; round: number | null; p1: { id: number; name: string }; p2: { id: number; name: string } }[]
 }
+export interface OrganizerByeEligible { id: number; name: string }
 
 export async function organizerTournaments(): Promise<OrganizerTournament[]> {
   const d = await req<{ tournaments: OrganizerTournament[] }>('/organizer/tournaments')
@@ -2236,6 +2240,19 @@ export async function organizerRemoveParticipant(id: number, playerId: number): 
 }
 export async function organizerEnterResult(id: number, match: string, winner: number): Promise<{ ok: boolean }> {
   return req(`/organizer/tournaments/${id}/result`, { method: 'POST', body: JSON.stringify({ match, winner }) })
+}
+export async function organizerStart(id: number): Promise<{ ok: boolean }> {
+  return req(`/organizer/tournaments/${id}/start`, { method: 'POST' })
+}
+// Kura çek. bye verilmezse ve bay gerekiyorsa {ok:false, needsBye:[...], round} döner (organizatör seçer).
+export async function organizerDraw(
+  id: number,
+  bye?: number,
+): Promise<{ ok: boolean; needsBye?: OrganizerByeEligible[]; round?: number }> {
+  return req(`/organizer/tournaments/${id}/draw`, {
+    method: 'POST',
+    body: JSON.stringify(bye != null ? { bye } : {}),
+  })
 }
 
 export async function joinTournament(id: number, password?: string): Promise<Tournament> {

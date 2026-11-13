@@ -246,45 +246,6 @@ export default function MagazaSwiss({
         </div>
       </section>
 
-      {/* JETON PAKETLERİ — ürünlerin ÜSTÜNDE, özel tasarım (Swiss değil). Admin tüm paketleri
-          yayından kaldırdıysa (boş liste) bölüm komple gizlenir. */}
-      {coinPackages.length > 0 && (
-        <section id="jeton" className="mgz-jeton" aria-label="Jeton Paketleri">
-          <div className="mgz-jeton-head">
-            <span className="mgz-jeton-eyebrow"><Icon name="coins" size={13} /> JETON</span>
-            <h2 className="mgz-jeton-title">Jeton Paketleri</h2>
-            <p className="mgz-jeton-sub">Online maçlar, bahisli oyunlar ve turnuva girişleri için jeton yükle.</p>
-          </div>
-          <div className="mgz-jeton-grid">
-            {coinPackages.map((p) => {
-              const per = (p.price / p.gc).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-              return (
-                <article key={p.id} className={`mgz-jeton-card ${p.popular ? 'is-pop' : ''}`}>
-                  {p.popular && <span className="mgz-jeton-ribbon">EN POPÜLER</span>}
-                  {p.discount > 0 && <span className="mgz-jeton-off">%{p.discount} AVANTAJ</span>}
-                  <span className="mgz-jeton-ico"><Icon name="coins" size={30} /></span>
-                  <span className="mgz-jeton-amt tnum">
-                    {p.gc.toLocaleString('tr-TR')} <small>jeton</small>
-                  </span>
-                  <span className="mgz-jeton-name">{p.name}</span>
-                  <div className="mgz-jeton-price">
-                    <span className="mgz-jeton-tl tnum">{fmtTL(p.price)}</span>
-                    <span className="mgz-jeton-per">jeton başına {per} ₺</span>
-                  </div>
-                  {added[`coin:${p.id}`] ? (
-                    <span className="mgz-jeton-added" role="status"><Icon name="check" size={15} /> Sepete eklendi</span>
-                  ) : (
-                    <button type="button" className="mgz-jeton-btn" onClick={() => addCoin(p)}>
-                      <Icon name="cart" size={15} /> Sepete Ekle
-                    </button>
-                  )}
-                </article>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
       {/* ÜRÜNLER */}
       <section id="urunler" className="mgz-section" aria-label="Ürünler">
         <div className="mgz-section-head">
@@ -392,6 +353,36 @@ export default function MagazaSwiss({
           })}
         </div>
       </section>
+
+      {/* JETON PAKETLERİ — admin tüm paketleri yayından kaldırdıysa (boş liste) komple gizle. */}
+      {coinPackages.length > 0 && (
+        <section id="jeton" className="mgz-section" aria-label="Jeton Paketleri">
+          <div className="mgz-section-head">
+            <h2 className="mgz-h2">Jeton Paketleri</h2>
+          </div>
+          <div className="mgz-coins">
+            {coinPackages.map((p) => {
+              const per = (p.price / p.gc).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              return (
+                <div key={p.id} className={`mgz-coin ${p.popular ? 'is-pop' : ''}`}>
+                  {p.popular && <span className="mgz-coin-badge">EN POPÜLER</span>}
+                  <span className="mgz-coin-name">{p.name}</span>
+                  <span className="mgz-coin-ico"><Coins amount={p.gc} size={22} suffix="coin" /></span>
+                  <span className="mgz-coin-price tnum">{fmtTL(p.price)}</span>
+                  <span className="mgz-coin-per">Jeton başına {per} ₺{p.discount > 0 ? ` · %${p.discount} avantaj` : ''}</span>
+                  {added[`coin:${p.id}`] ? (
+                    <span className="mgz-added" role="status"><Icon name="check" size={14} /> Sepete eklendi</span>
+                  ) : (
+                    <button type="button" className="mgz-btn" onClick={() => addCoin(p)}>
+                      Sepete Ekle <Icon name="arrow-right" size={14} />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
         </>
       )}
 

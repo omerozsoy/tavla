@@ -392,6 +392,8 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::get('/organizer/tournaments/{tournament}', [OrganizerController::class, 'show']);
     Route::post('/organizer/tournaments/{tournament}/participants', [OrganizerController::class, 'addParticipant']);
     Route::post('/organizer/tournaments/{tournament}/participants/remove', [OrganizerController::class, 'removeParticipant']);
+    Route::post('/organizer/tournaments/{tournament}/start', [OrganizerController::class, 'start']);
+    Route::post('/organizer/tournaments/{tournament}/draw', [OrganizerController::class, 'draw']);
     Route::post('/organizer/tournaments/{tournament}/result', [OrganizerController::class, 'enterResult']);
 
     Route::post('/tournaments', [TournamentController::class, 'create']);
