@@ -42,9 +42,9 @@ type Phase = 'playing' | 'correct' | 'wrong' | 'nomove' | 'error'
 function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
   return (
     <svg className="bgx-face" viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="2" y="2" width="44" height="44" rx="11" fill="#2f6bff" />
-      <circle cx="12" cy="10" r="2.4" fill="#cfe0ff" />
-      <circle cx="17.5" cy="8" r="1.5" fill="#cfe0ff" />
+      <rect x="2" y="2" width="44" height="44" rx="11" fill="#d14e24" />
+      <circle cx="12" cy="10" r="2.4" fill="#f7e2d4" />
+      <circle cx="17.5" cy="8" r="1.5" fill="#f7e2d4" />
       {mood === 'bad' ? (
         <>
           <circle cx="18" cy="24" r="2.6" fill="#0b1b45" />
@@ -161,6 +161,21 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     if (!seq || !seq.length) return
     Sound.move()
     setPlayed((p) => [...p, ...seq])
+    setSelectedFrom(null)
+  }
+
+  // Zar sırasını değiştir (ana oyundaki ile aynı): tek-tık hamlede hangi zarın önce
+  // kullanılacağını belirler. Tur ortasında da çalışır -> oynanan adımları geri alır.
+  const canSwapDice = interactive && turnStart.dice.length === 2 && turnStart.dice[0] !== turnStart.dice[1]
+  function handleSwapDice() {
+    if (!canSwapDice) return
+    const s = cloneState(turnStart)
+    s.dice = [turnStart.dice[1], turnStart.dice[0]]
+    if (played.length > 0) {
+      Sound.move()
+      setPlayed([])
+    }
+    setTurnStart(s)
     setSelectedFrom(null)
   }
 
@@ -420,7 +435,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             pipBottom={pipCount(displayState, 'white')}
             cube={{ value: 1, owner: null }}
             numberFrom="white"
-            centerRight={<DiceRow faces={faces} owner="white" />}
+            centerRight={<DiceRow faces={faces} owner="white" swappable={canSwapDice} onSwap={handleSwapDice} />}
             showPip
           />
           {showArrows && best && <MoveArrows steps={best.move.steps} dep={`best:${idx}:${best.move.resultKey}`} />}
