@@ -42,6 +42,13 @@ function emptyState(): GameState {
   return { points: new Array(24).fill(0), bar: { white: 0, black: 0 }, off: { white: 0, black: 0 }, turn: 'white', dice: [], diceUsed: [] }
 }
 
+// Soru yuklenince zari BUYUK-once diz (zar atisinda buyuk zar solda/once). Swap yine calisir; mantik degismez (eslesme deger bazli).
+function orderedStart(st: GameState): GameState {
+  const s = cloneState(st)
+  if (s.dice.length === 2 && s.dice[0] < s.dice[1]) s.dice = [s.dice[1], s.dice[0]]
+  return s
+}
+
 type Phase = 'playing' | 'correct' | 'wrong' | 'nomove' | 'error'
 
 // Mavi zar-bot maskotu (BackgammonGalaxy'deki gibi sevimli yuz).
@@ -87,7 +94,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
 
   const [idx, setIdx] = useState(0)
   const q = questions[idx]
-  const [turnStart, setTurnStart] = useState<GameState>(() => cloneState(questions[0]?.state ?? emptyState()))
+  const [turnStart, setTurnStart] = useState<GameState>(() => orderedStart(questions[0]?.state ?? emptyState()))
   const [played, setPlayed] = useState<Step[]>([])
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [phase, setPhase] = useState<Phase>('playing')
@@ -110,7 +117,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     const cached = QCACHE.get(lessonId)
     if (cached) {
       setQuestions(cached)
-      setTurnStart(cloneState(cached[0]?.state ?? emptyState()))
+      setTurnStart(orderedStart(cached[0]?.state ?? emptyState()))
       setIdx(0)
       setLoadingQ(false)
       return
@@ -119,7 +126,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     if (plan.direct) {
       QCACHE.set(lessonId, plan.direct)
       setQuestions(plan.direct)
-      setTurnStart(cloneState(plan.direct[0]?.state ?? emptyState()))
+      setTurnStart(orderedStart(plan.direct[0]?.state ?? emptyState()))
       setIdx(0)
       setLoadingQ(false)
       return
@@ -162,7 +169,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       if (cancelled) return
       QCACHE.set(lessonId, final)
       setQuestions(final)
-      setTurnStart(cloneState(final[0]?.state ?? emptyState()))
+      setTurnStart(orderedStart(final[0]?.state ?? emptyState()))
       setIdx(0)
       setLoadingQ(false)
     })()
@@ -284,7 +291,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   }
 
   function loadQuestion(i: number) {
-    setTurnStart(cloneState(questions[i]?.state ?? emptyState()))
+    setTurnStart(orderedStart(questions[i]?.state ?? emptyState()))
     setPlayed([])
     setSelectedFrom(null)
     setBest(null)
@@ -513,6 +520,12 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
 
   const showNext = !complete && (phase === 'correct' || phase === 'wrong' || phase === 'nomove')
 
+  // Dogru hamlede yesil tik: oynanan hedef hane(ler)in uzerinde goster (board geometrisi).
+  const successPoints =
+    phase === 'correct' && !q?.cube
+      ? new Set(played.filter((s) => typeof s.to === 'number').map((s) => s.to as number))
+      : undefined
+
   return (
     <div className="tr-view bgx">
       <aside className="bgx-side">
@@ -631,6 +644,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             selectedFrom={selectedFrom}
             makePoints={makePointSet}
             onMakePoint={handleMakePoint}
+            successPoints={successPoints}
             onSelectFrom={handleSelectFrom}
             onSelectTarget={handleSelectTarget}
             onDragFrom={(f) => interactive && setSelectedFrom(f)}
@@ -647,29 +661,24 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
               ) : undefined
             }
             centerRight={
-              !q?.cube && turnComplete ? (
+              showNext ? (
+                // "Sonraki Soru" Onayla ile AYNI yerde (centerRight slot).
+                <Button variant="default" onClick={nextQuestion}>{t('tr.next')}</Button>
+              ) : !q?.cube && turnComplete ? (
                 <Button variant="default" onClick={() => void grade()} disabled={!interactive || checking}>
                   {checking && interactive ? <Loading inline size={16} /> : <><Icon name="check" size={16} /> {t('tr.confirm')}</>}
                 </Button>
-              ) : showNext ? undefined : (
+              ) : (
                 <DiceRow faces={faces} owner="white" swappable={canSwapDice} onSwap={handleSwapDice} />
               )
             }
             showPip
           />
           {showArrows && best && <MoveArrows steps={best.move.steps} dep={`best:${idx}:${best.move.resultKey}`} />}
-          {phase === 'correct' && (
-            <div className="bgx-correct" aria-hidden="true">
-              <Icon name="check" size={30} />
-            </div>
-          )}
           {phase === 'wrong' && !q?.cube && (
             <div className="bgx-wrong" aria-hidden="true">
               <Icon name="x" size={28} />
             </div>
-          )}
-          {showNext && (
-            <button className="bgx-next" onClick={nextQuestion}>{t('tr.next')}</button>
           )}
         </div>
         </div>

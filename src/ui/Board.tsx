@@ -85,6 +85,8 @@ interface BoardProps {
   // Boş haneye dokununca eldeki iki zarla KAPI yapılabilen haneler (seçili kaynak yokken). Otomatik yapılır.
   makePoints?: Set<number>
   onMakePoint?: (to: number) => void
+  // Egitim: dogru oynanan hedef hane(ler)i -> ustune yesil tik rozeti.
+  successPoints?: Set<number>
   onSelectFrom: (from: number | 'bar') => void
   selectOnPointerDown?: boolean
   onSelectTarget: (to: number | 'off') => void
@@ -190,6 +192,7 @@ function Point({
   openCount = 0,
   showStackCount = false,
   text,
+  success = false,
 }: {
   index: number
   top: boolean
@@ -209,6 +212,7 @@ function Point({
   openCount?: number // Kız Tavlası: bu hanedeki UST 'openCount' tas "acik/indirilmis" gosterilir
   showStackCount?: boolean
   text?: string // hane üçgenine basılan opsiyonel metin (admin özel tahta)
+  success?: boolean // egitim: dogru oynanan hane -> yesil tik rozeti
 }) {
   const stack = checkersOf(state, index)
   const shade = index % 2 === 0 ? 'a' : 'b'
@@ -282,6 +286,11 @@ function Point({
           )
         })}
       </div>
+      {success && (
+        <span className="pt-success" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+      )}
     </div>
   )
 }
@@ -294,6 +303,7 @@ function Board({
   selectedFrom,
   makePoints,
   onMakePoint,
+  successPoints,
   onSelectFrom,
   selectOnPointerDown,
   onSelectTarget,
@@ -668,6 +678,7 @@ function Board({
       lift={drag?.from === index}
       makeTarget={makePoints?.has(index)}
       onMakePoint={onMakePoint}
+      success={successPoints?.has(index)}
       onSelectFrom={onSelectFrom}
       selectOnPointerDown={selectOnPointerDown}
       onSelectTarget={onSelectTarget}
