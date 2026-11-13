@@ -33,7 +33,7 @@ class RevenueCatCoinTest extends TestCase
                     'entitlements' => [],
                     'non_subscriptions' => [
                         $product => [
-                            ['id' => $txId, 'store' => 'play_store', 'purchase_date' => '2026-11-13T00:00:00Z'],
+                            ['id' => $txId, 'store' => 'play_store', 'purchase_date' => '2026-11-13T00:00:00Z', 'price' => ['amount' => 199.99, 'currency' => 'TRY']],
                         ],
                     ],
                 ],
@@ -58,6 +58,7 @@ class RevenueCatCoinTest extends TestCase
             'coins' => 5000,
             'payment_method' => 'google_play',
             'status' => 'paid',
+            'amount' => 19999, // RC gerçek ödenen 199.99 TRY -> kuruş
         ]);
 
         // Aynı transaction ikinci kez görülse de (sync + webhook) coin TEKRAR verilmez + sipariş çift olmaz.

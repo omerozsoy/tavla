@@ -145,11 +145,16 @@ class RevenueCat
                 $granted += max(0, (int) ($u->coins ?? 0) - $before);
 
                 // Admin görünürlüğü: her IAP satın almasını "Ödemeler"e (Payment) de yaz. order_id
-                // 'iap_<tx>' UNIQUE -> idempotent (sync+webhook aynı tx'i görse de tek sipariş). TL
-                // tutarı coin_packages'tan (Play'de ödenen gerçek fiyatın karşılığı). Koşulsuz: coin
-                // kredisi idempotent ama Payment ayrı anahtar -> geçmiş satış da sonraki sync'te yazılır.
+                // 'iap_<tx>' UNIQUE -> idempotent (sync+webhook aynı tx'i görse de tek sipariş). Koşulsuz:
+                // coin kredisi idempotent ama Payment ayrı anahtar -> geçmiş satış da sonraki sync'te yazılır.
                 $slug = substr($productId, 5); // 'coin_baslangic' -> 'baslangic'
-                $price = (int) (CoinPackage::query()->where('slug', $slug)->value('price') ?? 0);
+                // Tutar = RC'nin bildirdiği GERÇEK ödenen fiyat (Play otoriter; indirim/vergi/para birimi
+                // dahil). coin_packages web fiyatı Play'den farklı olabilir -> RC varsa ONA güven, yoksa fallback.
+                $rcAmount = (float) data_get($txn, 'price.amount', 0);
+                $rcCurrency = (string) data_get($txn, 'price.currency', '');
+                $price = $rcAmount > 0
+                    ? (int) round($rcAmount * 100)
+                    : (int) (CoinPackage::query()->where('slug', $slug)->value('price') ?? 0);
                 Payment::query()->firstOrCreate(
                     ['order_id' => 'iap_'.$tid],
                     [
@@ -159,7 +164,7 @@ class RevenueCat
                         'amount' => $price,
                         'coins' => (int) $coins,
                         'package_id' => $slug,
-                        'currency' => '949',
+                        'currency' => $rcCurrency === 'TRY' || $rcCurrency === '' ? '949' : $rcCurrency,
                         'status' => 'paid',
                     ]
                 );
