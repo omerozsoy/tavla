@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\Tournament;
+use App\Models\TournamentAnnouncement;
 use App\Models\TournamentSchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -55,6 +57,28 @@ class ScheduledTournamentTest extends TestCase
         $this->artisan('tournaments:create-scheduled')->assertSuccessful();
         $this->assertSame(0, Tournament::where('name', 'like', 'Pasif%')->count());
         $this->assertSame(0, Tournament::where('name', 'like', 'Salı%')->count());
+
+        Carbon::setTestNow();
+    }
+
+    public function test_standard_announcement_published_at_creation_by_type(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 10, 23, 0, 0, 0)); // Cuma (ISO 5)
+        Setting::put('tournament_std_swiss', 'Swiss standart duyuru');
+        Setting::put('tournament_std_bracket', 'Bracket standart duyuru');
+
+        TournamentSchedule::create([
+            'name' => 'Cuma Swiss', 'active' => true, 'weekdays' => ['5'], 'start_time' => '20:00',
+            'type' => 'swiss_triple', 'swiss_lives' => 2, 'size' => 8, 'match_length' => 1,
+            'prize_coins' => 0, 'entry_fee' => 0, 'premium_only' => false,
+        ]);
+
+        $this->artisan('tournaments:create-scheduled')->assertSuccessful();
+
+        $t = Tournament::where('name', 'like', 'Cuma Swiss%')->firstOrFail();
+        $ann = TournamentAnnouncement::where('tournament_id', $t->id)->get();
+        $this->assertCount(1, $ann, 'Kuruluşta tipine göre standart duyuru yayınlanmalı');
+        $this->assertSame('Swiss standart duyuru', $ann[0]->message);
 
         Carbon::setTestNow();
     }

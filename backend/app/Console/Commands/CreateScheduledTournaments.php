@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Tournament;
+use App\Models\TournamentAnnouncement;
 use App\Models\TournamentSchedule;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -67,7 +68,7 @@ class CreateScheduledTournaments extends Command
     /** Şablondan tek turnuva kurar; adına register_until'ın tarihini ekler. */
     private function makeTournament(TournamentSchedule $s, Carbon $registerUntil): void
     {
-        Tournament::create([
+        $t = Tournament::create([
             'name' => $s->name.' — '.$registerUntil->format('d.m.Y'),
             'type' => $s->type,
             'swiss_lives' => $s->swiss_lives ?? 3, // 3 Haklı Swiss hak sayısı (bracket yok sayar)
@@ -91,6 +92,10 @@ class CreateScheduledTournaments extends Command
             'semi_minutes' => $s->semi_minutes,
             'final_minutes' => $s->final_minutes,
         ]);
+
+        // Standart duyuru metnini KURULUŞTA yayınla (tipine göre) -> kayıt penceresi boyunca lobide görünür.
+        // Idempotent: başlayınca (startBracket/SwissRuntime::start) publishStandard zaten-duyuru-var deyip atlar.
+        TournamentAnnouncement::publishStandard($t, $s->type === 'bracket' ? 'tournament_std_bracket' : 'tournament_std_swiss');
 
         $this->info("Kuruldu: {$s->name} (register_until {$registerUntil->format('d.m.Y H:i')})");
     }
