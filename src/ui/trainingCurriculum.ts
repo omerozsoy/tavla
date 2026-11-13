@@ -1,13 +1,12 @@
-// Tavla Egitimi mufredati — 10 ZORLUK SEVIYESI (isimler satranc unvanlari gibi, iki dilde ayni).
-// Her seviye 10 soru. Dogru hamleyi motor (wildbg) anlik hesaplar; aciklama motorun hamlesinden uretilir.
+// Tavla Egitimi mufredati — 10 ZORLUK SEVIYESI + 1 KUP KARARLARI modulu.
+// Her seviye 10 soru. Dogru hamleyi/kup aksiyonunu motor (wildbg) anlik hesaplar.
 //
-// SEVIYE 1 (Beginner) = 10 klasik acilis zari (standart dizilis + zar) — authored ipucu metinli.
-// SEVIYE 2..10 = tohumlanmis (deterministik) kendi-kendine-oyun ile uretilmis sabit pozisyonlar.
-//   Zorluk ply-derinligi + karar dallanmasi ile kademeli artar. Sorular DERS ACILINCA uretilir
-//   (modul yuku hafif) ve onbellege alinir -> her acilista AYNI 10 soru.
+// SEVIYE 1 (Beginner) = 10 klasik acilis zari. 2..10 = tohumlanmis (deterministik) uretilmis pozisyonlar.
+// Intermediate (lvl3) + Ultimate Grandmaster (lvl8) = GERCEK UNLU pozisyonlar (XGID) + klasik referanslar.
+// Cube Decisions = ZAR ATMADAN "katla mi?" karari (motor cubeAdvice ile puanlar).
 
 import type { GameState, Move } from '../engine/types'
-import { initialState } from '../engine/board'
+import { initialState, winner } from '../engine/board'
 import { generateMoves, hasNoMove } from '../engine/moves'
 import { applyMove, newTurn } from '../engine/game'
 import { HeuristicBot } from '../engine/engine'
@@ -15,9 +14,11 @@ import { parseXgid } from '../engine/xgid'
 import { matchGnubgMove } from '../engine/gnubgMove'
 
 export interface Question {
-  state: GameState // zari atilmis, beyaz oynayacak pozisyon
+  state: GameState // zari atilmis, beyaz oynayacak pozisyon (kup sorularinda zar YOK)
   intro?: string // opsiyonel authored ipucu (acilislarda). Yoksa aciklama motordan uretilir.
-  answer?: Move // OTORITER dogru hamle (unlu pozisyonlarda XG cevabi). Varsa buna gore puanlanir (motora gerek yok).
+  answer?: Move // OTORITER dogru hamle (unlu pozisyonlarda XG cevabi). Varsa buna gore puanlanir.
+  title?: string // unlu pozisyon adi (oyun sirasinda gosterilir, or. "UBC 2023 Finali — banana split")
+  cube?: 'offer' | 'respond' // KUP karari sorusu: 'offer'=katla/katlama, 'respond'=al/birak. Motor puanlar.
 }
 
 export interface Lesson {
@@ -74,8 +75,27 @@ function genQuestions(seed: number, minPlies: number, maxPlies: number, minMoves
     }
     if (out.length >= count) return out.slice(0, count)
   }
-  // Son care: acilislarla doldur (pratikte ulasilmaz)
   return openingQuestions().slice(0, count)
+}
+
+// KUP kararlari: ara-oyun pozisyonu uret, ZAR ATMADAN beyaza "katla mi?" sor (offer). Motor
+// (evalPosition -> cubeAdvice) dogru aksiyonu belirler; oyun bitmis/asiri-uc pozisyonlar elenir.
+function genCubeQuestions(seed: number, count: number): Question[] {
+  const rng = mulberry32(seed)
+  const out: Question[] = []
+  let guard = 0
+  while (out.length < count && guard++ < 6000) {
+    let s = initialState()
+    const plies = 8 + Math.floor(rng() * 20)
+    for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
+    if (s.turn !== 'white') s = seededAdvance(s, rng)
+    if (winner(s)) continue
+    const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
+    const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
+    if (wp < 4 || bp < 4) continue // biri neredeyse topladi -> kup anlamsiz
+    out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer' })
+  }
+  return out
 }
 
 // --- SEVIYE 1: 10 klasik acilis zari (standart dizilis) + authored ipucu ---
@@ -96,8 +116,7 @@ function openingQuestions(): Question[] {
   return OPENINGS.map((o) => ({ state: newTurn(initialState(), diceOf(o.dice)), intro: o.intro }))
 }
 
-// --- Elle (authored) referans pozisyonu kurucu. Mutlak 1-24 hane (beyaz +, siyah -).
-// w/b = {haneNo: tasSayisi}. Legallik (15/15 + karar) TrainingView.test.ts ile dogrulanir. ---
+// --- Elle (authored) referans pozisyonu kurucu. Mutlak 1-24 hane (beyaz +, siyah -). ---
 function pos(
   w: Record<number, number>,
   b: Record<number, number>,
@@ -152,48 +171,49 @@ const REF_HARD: Question[] = [
 
 const REFS: Record<string, Question[]> = { lvl3: REF_MED, lvl8: REF_HARD }
 
-// --- UNLU / GERCEK PozISYONLAR (forum/XG kaynakli, XGID birebir). Cevabi dogrulanabilenlerde
-// XG cevabina (answer) gore puanlanir; dogrulanmayanlarda motora birakilir. XGID'ler gercek
-// forum gonderilerinden alinmistir (backgammonforums.com / chrisbraybackgammon.com). ---
+// --- UNLU / GERCEK POzISYONLAR (forum/XG kaynakli, XGID birebir). Cevabi dogrulanabilenlerde
+// XG cevabina (answer) gore puanlanir; dogrulanmayanlarda motora birakilir. ---
 interface Famous {
   xgid: string
-  answer: string // XG'nin verdigi en iyi hamle notasyonu ("5/1 5/4*"); cozulurse otoriter
+  answer: string // XG en iyi hamle notasyonu ("5/1 5/4*"); cozulurse otoriter
+  title: string // unlu pozisyon adi (oyun sirasinda gosterilir)
   concept: string
 }
 const FAMOUS_MED: Famous[] = [
   { xgid: 'XGID=-a-aBBC-A---cE-a-bbe----B-:0:0:1:52:0:0:3:0:10', answer: '8/3* 3/1*',
-    concept: 'Para oyunu: kurulu tahtada iki kez vurmak ortmekten iyi.' },
+    title: 'Para oyunu — cifte vurus', concept: 'Kurulu tahtada iki kez vurmak ortmekten iyi.' },
   { xgid: 'XGID=-b-B--DBA---cD---aadb--bB-:0:0:1:42:0:0:3:0:10', answer: '8/4 6/4',
-    concept: 'Nokta yapmak gevsek vurustan iyidir (24/18* bir hataydi).' },
+    title: 'Ic nokta mi, gevsek vurus mu?', concept: 'Nokta yapmak gevsek vurustan iyidir (24/18* bir hataydi).' },
   { xgid: 'XGID=-FBEa--A--A--------cbbcbb-:0:0:1:42:0:0:0:1:10', answer: '10/4*',
-    concept: 'Esit sut olsa da vur: bosa giden ev tahtasi ikinci sut birakmani onler.' },
+    title: 'Vur-vurma karari', concept: 'Esit sut olsa da vur: bosa giden ev tahtasi ikinci sut birakmani onler.' },
   { xgid: 'XGID=-bB-BBC-A--AcB---bAbbb--bA:0:0:1:21:0:0:3:0:10', answer: '',
-    concept: 'Para oyunu: bogaz noktasini slot la, primi uzat.' },
+    title: 'Para oyunu — bogaz slot', concept: 'Bogaz noktasini slot la, primi uzat.' },
   { xgid: 'XGID=-bB-CBC-AC-Aa-a--babbbb---:1:-1:1:61:0:0:3:0:10', answer: '',
-    concept: 'Arka tas stratejisi (Michy): fazla sut birakma.' },
+    title: 'Michy — arka tas stratejisi', concept: 'Arka tas stratejisi (Michy): fazla sut birakma.' },
 ]
 const FAMOUS_HARD: Famous[] = [
   { xgid: 'XGID=-ABCaBC-----bB-a--Bcbacb--:1:-1:1:41:0:0:0:7:10', answer: '5/1 5/4*',
-    concept: 'UBC 2023 Finali (Sander-Mochy) "banana split": dogal 6/1 yerine agresif vurus.' },
+    title: 'UBC 2023 Finali — banana split', concept: 'Sander-Mochy: dogal 6/1 yerine agresif vurus ("banana split").' },
   { xgid: 'XGID=-a-B--EaC---dC--ac-cb---B-:0:0:1:22:0:0:0:7:10', answer: '',
-    concept: 'Benzer-ikili #1: neredeyse ayni gorunen pozisyonda agresif oyun kazanir.' },
+    title: 'Benzer ikili #1', concept: 'Neredeyse ayni gorunen pozisyonda agresif oyun kazanir.' },
   { xgid: 'XGID=-a-B-aE-C---dC--ac-cb---B-:0:0:1:22:0:0:0:7:10', answer: '',
-    concept: 'Benzer-ikili #2: cok benzer ama cevap tersine doner — sessiz yapi kazanir.' },
+    title: 'Benzer ikili #2', concept: 'Cok benzer ama cevap tersine doner — sessiz yapi kazanir.' },
   { xgid: 'XGID=-CFCA--a-B----a----abcbcb-:0:0:1:42:6:3:1:7:10', answer: '',
-    concept: 'Vur-vurma karari: her zaman vurmak dogru degil; guvenlik de bir secenek.' },
+    title: 'Vur-vurma karari (ileri)', concept: 'Her zaman vurmak dogru degil; guvenlik de bir secenek.' },
 ]
 
 function famousToQuestion(f: Famous): Question | null {
   const r = parseXgid(f.xgid)
   if (!r || !r.dice) return null
   const mv = f.answer ? matchGnubgMove(r.state, 'white', f.answer) : null
-  return { state: r.state, intro: f.concept, answer: mv ?? undefined }
+  return { state: r.state, intro: f.concept, answer: mv ?? undefined, title: f.title }
 }
 const FAMOUS: Record<string, Famous[]> = { lvl3: FAMOUS_MED, lvl8: FAMOUS_HARD }
 
 // Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (deterministik).
 function buildLesson(s: Spec): Question[] {
   if (s.openings) return openingQuestions()
+  if (s.cube) return genCubeQuestions(s.seed!, 10)
   const famous = (FAMOUS[s.id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null)
   const ref = REFS[s.id] ?? []
   const need = 10 - famous.length - ref.length
@@ -210,6 +230,7 @@ interface Spec {
   max?: number
   mv?: number
   openings?: boolean
+  cube?: boolean // KUP kararlari modulu (zar yok, katla/katlama)
 }
 const SPECS: Spec[] = [
   { id: 'lvl1', title: 'Beginner', openings: true },
@@ -222,6 +243,7 @@ const SPECS: Spec[] = [
   { id: 'lvl8', title: 'Ultimate Grandmaster', seed: 0x5e08, min: 16, max: 22, mv: 4 },
   { id: 'lvl9', title: 'Legendary Grandmaster', seed: 0x5e09, min: 18, max: 24, mv: 4 },
   { id: 'lvl10', title: 'Lord of the Dice', seed: 0x5e0a, min: 20, max: 28, mv: 4 },
+  { id: 'cube', title: 'Cube Decisions', seed: 0x5ecb, cube: true },
 ]
 
 const cache = new Map<string, Question[]>()
