@@ -46,7 +46,7 @@ class LiveTournamentController extends Controller
         ]);
 
         $type = $data['type'] ?? 'bracket';
-        if ($type === 'swiss_triple' && ! config('tournament.swiss.enabled', true)) {
+        if (Tournament::isSwissType($type) && ! config('tournament.swiss.enabled', true)) {
             return $this->fail('3 Haklı Swiss şu an kapalı.', 422);
         }
 
@@ -61,7 +61,8 @@ class LiveTournamentController extends Controller
             'join_password' => ($data['join_password'] ?? '') !== '' ? $data['join_password'] : null,
             'premium_only' => false,         // dernek turnuvası: tüm üyeler katılabilir
             'match_length' => $data['match_length'] ?? 1,
-            'swiss_lives' => $type === 'swiss_triple' ? ($data['swiss_lives'] ?? 3) : 3,
+            'swiss_lives' => Tournament::isSwissType($type) ? ($data['swiss_lives'] ?? 3) : 3,
+            // Dışarda Swiss DAİMA elle (false); TavlaTV Swiss form değerini alır; bracket false.
             'swiss_auto_draw' => $type === 'swiss_triple' ? (bool) ($data['swiss_auto_draw'] ?? false) : false,
             'players' => [],
         ]);

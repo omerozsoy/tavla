@@ -63,7 +63,7 @@ class ManageTournament extends Page
 
     private function isSwiss(): bool
     {
-        return ($this->t()->type ?? 'bracket') === 'swiss_triple';
+        return Tournament::isSwissType($this->t()->type ?? 'bracket');
     }
 
     /** Blade: tur saatleri/başlatma listesi yalnız Swiss + bitmemiş turnuvada gösterilir. */

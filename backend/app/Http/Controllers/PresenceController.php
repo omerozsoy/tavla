@@ -194,7 +194,7 @@ class PresenceController extends Controller
                 continue; // hazır maç -> oto-giriş; bekleme bandı yok
             }
             // Swiss: sıralamada hâlâ 'active' isem bekliyorum. Bracket: bir sonraki rakibi bekliyorsam.
-            if ($tr->type === 'swiss_triple') {
+            if (Tournament::isSwissType($tr->type)) {
                 $alive = false;
                 foreach (($tr->swiss_state['participants'] ?? []) as $p) {
                     if (($p['id'] ?? null) === $me->id) {

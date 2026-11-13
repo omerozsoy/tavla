@@ -115,7 +115,7 @@ class TournamentScheduleResource extends Resource
                     ->options([1 => '1 hak', 2 => '2 hak', 3 => '3 hak'])
                     ->default(3)
                     ->required()
-                    ->visible(fn (Forms\Get $get) => $get('type') === 'swiss_triple'),
+                    ->visible(fn (Forms\Get $get) => Tournament::isSwissType($get('type'))),
                 Forms\Components\TextInput::make('venue')
                     ->label('Düzenlenme yeri / Otel')
                     ->maxLength(160),

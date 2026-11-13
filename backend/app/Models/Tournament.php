@@ -7,11 +7,31 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Tournament extends Model
 {
-    /** Turnuva tipleri. bracket = klasik eleme ağacı; swiss_triple = Swiss Triple Elimination (TBD). */
+    /**
+     * Turnuva tipleri. bracket = klasik eleme ağacı; swiss_triple = TavlaTV Swiss (sitede online oynanır);
+     * swiss_outdoor = Dışarda Swiss (salon turnuvası: sitede OYNANMAZ, site eşleşme/bye/sıralama yönetir,
+     * sonuçları admin girer, bye salonda elle çekilir).
+     */
     public const TYPES = [
         'bracket' => 'Bracket System',
-        'swiss_triple' => 'Swiss System',
+        'swiss_triple' => 'TavlaTV Swiss',
+        'swiss_outdoor' => 'Dışarda Swiss',
     ];
+
+    /** Swiss motorunu (eşleşme/hak/bye/sıralama) kullanan tipler. */
+    public const SWISS_TYPES = ['swiss_triple', 'swiss_outdoor'];
+
+    /** Verilen tip Swiss mi? (TavlaTV Swiss + Dışarda Swiss). */
+    public static function isSwissType(?string $type): bool
+    {
+        return in_array($type, self::SWISS_TYPES, true);
+    }
+
+    /** Dışarda (salon) Swiss mi? online oynanmaz, admin sonuç girer, bye elle. */
+    public static function isOutdoorType(?string $type): bool
+    {
+        return $type === 'swiss_outdoor';
+    }
 
     protected $fillable = [
         'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'swiss_state', 'champion_id',

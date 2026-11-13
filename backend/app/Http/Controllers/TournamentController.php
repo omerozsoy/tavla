@@ -173,7 +173,7 @@ class TournamentController extends Controller
             'final_minutes' => ['nullable', 'integer', 'min:1', 'max:180'],
         ]);
         $type = $data['type'] ?? 'bracket';
-        if ($type === 'swiss_triple' && ! config('tournament.swiss.enabled', true)) {
+        if (Tournament::isSwissType($type) && ! config('tournament.swiss.enabled', true)) {
             return $this->fail('3 Haklı Swiss şu an kapalı.', 422);
         }
         $t = Tournament::create([
@@ -1067,6 +1067,10 @@ class TournamentController extends Controller
             $tournament = Tournament::whereKey($tournament->id)->lockForUpdate()->firstOrFail();
             if ($tournament->status !== 'running') {
                 return $this->fail('Turnuva aktif değil.', 422);
+            }
+            // Dışarda (salon) Swiss: maçlar sitede OYNANMAZ; salonda oynanır, sonucu admin girer.
+            if (Tournament::isOutdoorType($tournament->type)) {
+                return $this->fail('Bu turnuva salonda oynanır; çevrimiçi maç açılmaz.', 422);
             }
             $me = $request->user()->id;
             $bracket = $tournament->bracket;

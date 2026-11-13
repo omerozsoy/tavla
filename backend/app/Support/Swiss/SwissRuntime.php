@@ -31,7 +31,7 @@ class SwissRuntime
 
     public static function isSwiss(Tournament $t): bool
     {
-        return ($t->type ?? 'bracket') === 'swiss_triple';
+        return Tournament::isSwissType($t->type ?? 'bracket');
     }
 
     /** Başlangıçta kural setini KİLİTLE (contract §4): süren turnuva yeni varsayılanlarla yorumlanmasın. */
@@ -194,7 +194,9 @@ class SwissRuntime
      */
     public static function manualByeEligible(Tournament $t): ?array
     {
-        if ((bool) $t->swiss_auto_draw) {
+        // Dışarda (salon) Swiss DAİMA elle; TavlaTV Swiss'te swiss_auto_draw belirler.
+        $manual = Tournament::isOutdoorType($t->type) || ! (bool) $t->swiss_auto_draw;
+        if (! $manual) {
             return null; // otomatik mod: sistem seçer
         }
         $state = $t->swiss_state;
