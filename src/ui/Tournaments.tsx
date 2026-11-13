@@ -1803,7 +1803,7 @@ function WeekCalendar({ list, lang, onOpen }: {
                           className="twc-go"
                           onClick={(e) => { e.stopPropagation(); onOpen(tr.id, tournUrlSlug(tr)) }}
                         >
-                          {tr.status === 'open' ? t('tourn.join') : t('tourn.details')}
+                          {tr.status === 'open' ? t('tourn.join') : t('tourn.lobby')}
                         </button>
                       </div>
                     </div>
