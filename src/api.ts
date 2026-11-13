@@ -1468,11 +1468,15 @@ export interface SwissState {
   awaiting_draw?: boolean // o anki tur bitti, sıradaki turun kurası yönetim tarafından çekilecek
 }
 
+/** Swiss motoru kullanan tipler: TavlaTV Swiss (online) + Dışarda Swiss (salon). */
+export type TournamentType = 'bracket' | 'swiss_triple' | 'swiss_outdoor'
+export const isSwissType = (t?: string | null): boolean => t === 'swiss_triple' || t === 'swiss_outdoor'
+
 export interface Tournament {
   id: number
   name: string
-  /** Turnuva tipi: klasik eleme ağacı veya 3 Haklı Swiss. */
-  type?: 'bracket' | 'swiss_triple'
+  /** Turnuva tipi: eleme ağacı / TavlaTV Swiss / Dışarda Swiss (salon). */
+  type?: TournamentType
   /** 3 Haklı Swiss hak sayısı (1/2/3). Liste rozetinde "{n} Haklı Swiss" için. */
   swiss_lives?: number
   /** 3 Haklı Swiss canlı durumu (yalnız type='swiss_triple'). */
@@ -2179,7 +2183,7 @@ export async function liveTournamentLogin(password: string): Promise<{ ok: boole
 
 export interface LiveTournamentForm {
   name: string
-  type: 'bracket' | 'swiss_triple'
+  type: TournamentType
   size: number
   match_length?: number
   swiss_lives?: number

@@ -3,7 +3,7 @@ import { useEscape } from './useEscape'
 import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useT } from '../i18n'
-import { liveTournamentLogin, liveTournamentCreate } from '../api'
+import { liveTournamentLogin, liveTournamentCreate, isSwissType, type TournamentType } from '../api'
 import TrDateTimePicker from './TrDateTimePicker'
 
 interface Props {
@@ -40,7 +40,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
   const [done, setDone] = useState<string | null>(null) // kurulan turnuva adı
   // Form alanları
   const [fName, setFName] = useState('')
-  const [fType, setFType] = useState<'bracket' | 'swiss_triple'>('bracket')
+  const [fType, setFType] = useState<TournamentType>('bracket')
   const [fSize, setFSize] = useState(8)
   const [fLen, setFLen] = useState(1)
   const [fLives, setFLives] = useState(3)
@@ -74,7 +74,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
         type: fType,
         size: fSize,
         match_length: fLen,
-        swiss_lives: fType === 'swiss_triple' ? fLives : undefined,
+        swiss_lives: isSwissType(fType) ? fLives : undefined,
         swiss_auto_draw: fType === 'swiss_triple' ? fAutoBye : undefined,
         register_until: fWhen || null,
         join_password: fJoinPw.trim() || null,
@@ -185,12 +185,13 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                 </label>
                 <label className="lts-field">
                   <span>{t('lts.gate.fType')}</span>
-                  <select className="lts-gate-input" value={fType} onChange={(e) => setFType(e.target.value as 'bracket' | 'swiss_triple')}>
+                  <select className="lts-gate-input" value={fType} onChange={(e) => setFType(e.target.value as TournamentType)}>
                     <option value="bracket">{t('tourn.typeBracket')}</option>
                     <option value="swiss_triple">{t('lts.gate.swiss')}</option>
+                    <option value="swiss_outdoor">{t('lts.gate.swissOutdoor')}</option>
                   </select>
                 </label>
-                {fType === 'swiss_triple' && (
+                {isSwissType(fType) && (
                   <label className="lts-field">
                     <span>{t('lts.gate.fLives')}</span>
                     <select className="lts-gate-input" value={fLives} onChange={(e) => setFLives(Number(e.target.value))}>

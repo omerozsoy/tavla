@@ -26,6 +26,7 @@ import {
   deleteTournamentAnnounce,
   tournamentRoundMinutes,
   tournamentRoundTarget,
+  isSwissType,
   type Tournament,
   type TMatch,
   ApiError,
@@ -599,11 +600,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     const pStatus = tournamentPlayerStatus(active.bracket, active.players, liveScores)
     // 3 Haklı Swiss'te elenme bracket'ten DEĞİL otoriter swiss standing'den turetilir: tek maç kaybı
     // eleme değildir, oyuncu hakları (lives) bitene kadar elenmez. swiss_triple'da bracket "out"u YOK SAY.
-    const swissOut = active.type === 'swiss_triple' && active.swiss
+    const swissOut = isSwissType(active.type) && active.swiss
       ? new Set(active.swiss.standings.filter((s) => s.status === 'eliminated' || s.lives <= 0).map((s) => s.id))
       : null
     const isOut = (id: number) =>
-      active.type === 'swiss_triple' ? !!swissOut?.has(id) : !!pStatus.get(id)?.out
+      isSwissType(active.type) ? !!swissOut?.has(id) : !!pStatus.get(id)?.out
     // Bracket oyuncu adi: online noktasi + ad + (varsa) onceki tur PR'i.
     // hidePr: hukmen (walkover) maclarda PR yazilmaz -> isim tam gorunsun (kullanici istegi).
     // PR'i tm-name DISINA ayri kardes olarak dondururuz (flex:none) -> uzun adda tm-name
@@ -642,7 +643,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     }
     // Duyuru penceresi: liste (en yeni yanıp söner) + YALNIZ yönetici yazma kutusu. Swiss'te
     // "Tur Eşleşmeleri" varken onun üstünde, aksi halde lobi başında gösterilir (tek yerde).
-    const swissPairingsShown = active.type === 'swiss_triple' && !!active.swiss && (active.bracket?.length ?? 0) > 0
+    const swissPairingsShown = isSwissType(active.type) && !!active.swiss && (active.bracket?.length ?? 0) > 0
     const hasAnn = !!active.announcements && active.announcements.length > 0
     const announceBox = (hasAnn || isAdmin) && (
       <div className="tourn-announce">
@@ -780,8 +781,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           {/* Turnuva tipi: Swiss -> "{n} Haklı Swiss" (hak dahil) / Eleme Ağacı. Liste kartıyla aynı rozet. */}
           <div className="tourn-type-row">
             <span className={`tourn-type tourn-type-${active.type ?? 'bracket'}`}>
-              <Icon name={active.type === 'swiss_triple' ? 'heart' : 'swords'} size={14} />
-              {active.type === 'swiss_triple'
+              <Icon name={isSwissType(active.type) ? 'heart' : 'swords'} size={14} />
+              {isSwissType(active.type)
                 ? t('swiss.title', { n: active.swiss?.max_lives ?? active.swiss_lives ?? 3 })
                 : t('tourn.typeBracket')}
             </span>
@@ -845,7 +846,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 // Podyumda gosterilecek sira sayisi = dagitilan odul sayisi (yoksa ilk 3)
                 const podiumN = active.prizes?.length || 3
                 // Siralama: swiss -> final/standings (rank sirasi); diger -> bracket
-                const rankedIds = active.type === 'swiss_triple'
+                const rankedIds = isSwissType(active.type)
                   ? (active.swiss?.final || active.swiss?.standings || []).map((r) => r.id)
                   : tournStandings(active.bracket)
                 const top = rankedIds
@@ -967,7 +968,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
           {/* 3 HAKLI SWISS: eleme ağacı yerine tur/hak/sıralama görünümü. Play/Watch aynı akışı
               (onPlayMatch/onSpectate) kullanır; maçlar bracket hücreleridir. */}
-          {active.status !== 'open' && active.type === 'swiss_triple' && (() => {
+          {active.status !== 'open' && isSwissType(active.type) && (() => {
             const sw = active.swiss
             const bracket = active.bracket || []
             const curRound = bracket.length ? bracket[bracket.length - 1] : []
@@ -1217,7 +1218,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             )
           })()}
 
-          {active.status !== 'open' && active.type !== 'swiss_triple' && (
+          {active.status !== 'open' && !isSwissType(active.type) && (
             <h3 className="tourn-bracket-title">
               {t('tourn.lobby')}
               <span className="tourn-bracket-hint">{t('tourn.scrollHint')}</span>
@@ -1226,7 +1227,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           {/* ELEME AĞACI: aktif oyuncu bu turda ilerledi ama bir sonraki rakibi henüz belli değil
               (rakip slotu boş, kazanan yok) ve oynanabilir maçı yoksa → "sıranı bekle" bilgi notu.
               Rakip belli olunca oyun odası TournMatchReady ile otomatik açılır. */}
-          {active.status === 'running' && active.type !== 'swiss_triple' && (() => {
+          {active.status === 'running' && !isSwissType(active.type) && (() => {
             let myPlayable = false, myPending = false
             active.bracket?.forEach((round, ri) => round.forEach((m) => {
               const meIs = m.p1?.id === myId || m.p2?.id === myId
@@ -1237,7 +1238,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               ? <div className="tourn-wait-banner">{t('tourn.waitNext')}</div>
               : null
           })()}
-          {active.status !== 'open' && active.type !== 'swiss_triple' && (
+          {active.status !== 'open' && !isSwissType(active.type) && (
             <>
             {/* Ust senkron kaydirma cubugu: bracket tasiyorsa (scrollWidth > clientWidth) gorunur. */}
             {bracketW > bracketClientW + 1 && (
@@ -1550,8 +1551,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             </span>
             {/* Turnuva tipi: Swiss -> "{n} Haklı Swiss" (hak sayısı dahil), eleme -> "Eleme Ağacı". */}
             <span className={`tourn-type tourn-type-${tr.type ?? 'bracket'}`}>
-              <Icon name={tr.type === 'swiss_triple' ? 'heart' : 'swords'} size={13} />
-              {tr.type === 'swiss_triple'
+              <Icon name={isSwissType(tr.type) ? 'heart' : 'swords'} size={13} />
+              {isSwissType(tr.type)
                 ? t('swiss.title', { n: tr.swiss_lives ?? 3 })
                 : t('tourn.typeBracket')}
             </span>
@@ -1764,7 +1765,7 @@ function WeekCalendar({ list, lang, onOpen }: {
               </div>
               <div className="tourn-week-items">
                 {items.map((tr) => {
-                  const isSwiss = tr.type === 'swiss_triple'
+                  const isSwiss = isSwissType(tr.type)
                   const ms = tr.starts_at ? new Date(tr.starts_at).getTime() - Date.now() : 0
                   // Kaç kaldı: en büyük birim (gün/saat/dk); başladıysa durum etiketi.
                   const left = ms <= 0
