@@ -6584,6 +6584,9 @@ button[aria-disabled='true'],
   grid-template-columns: auto var(--bearoff-w);
   grid-template-rows: 24px 1fr 24px;
   gap: 3px;
+  /* Pul oynamak icin ayni noktaya iki kez dokununca tarayici "double-tap zoom"
+     yapmasin (pinch-zoom korunur). Point/bar/bearoff tap hedeflerinin TUMUNU kapsar. */
+  touch-action: manipulation;
 }
 .pt-numbers {
   grid-column: 1;
