@@ -11961,18 +11961,9 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
-            {/* Android uygulama reklamı + Online Turnuvaları: üstte YAN YANA (iki yarı kolon, Swiss dili);
-                mobilde alt alta. Turnuva yoksa panel "aktif turnuva yok" notuyla YİNE görünür. */}
-            <div className="rfr-wrap rfr-duo">
-              <a
-                className="app-dl-banner"
-                href="https://play.google.com/store/apps/details?id=com.tavlatv.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TavlaTV Android uygulamasını Google Play'den indir"
-              >
-                <img src="/app-banner.png" alt="TavlaTV Android uygulaması yayında — Google Play'den indir" loading="lazy" />
-              </a>
+            {/* Online Turnuvalar: tüm satırı kaplar (Android reklamı kaldırıldı).
+                Turnuva yoksa panel "aktif turnuva yok" notuyla YİNE görünür. */}
+            <div className="rfr-wrap">
               <TournamentsPanel
                 tourns={lobbyTourns}
                 onOpen={menuProps.onTournaments}
