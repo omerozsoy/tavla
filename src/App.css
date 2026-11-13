@@ -33832,6 +33832,23 @@ select:-webkit-autofill {
 /* Biten kartlar gorsel olarak geri planda: hafif soluk, hover'da netlesir */
 .tourn-past .tcard { opacity: .78; }
 .tourn-past .tcard:hover { opacity: 1; }
+/* "Daha fazla goster": gecmis listeyi 10'ar acar */
+.tourn-more-btn {
+  display: block;
+  margin: 14px auto 0;
+  padding: 10px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tourn-more-btn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+  border-color: var(--accent);
+}
 
 
 /* ============================================================
