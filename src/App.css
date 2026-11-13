@@ -18257,123 +18257,114 @@ body:has(.spectate-view) .app.lobby {
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
 }
 
-/* ===== Tavla Eğitimi — BackgammonGalaxy "Fundamental concepts" düzeni (birebir) =====
-   Sol: bot maskotu + konuşma balonu + ipucu. Sağ: BG tahtası (yeşil çuha, turuncu/bej
-   üçgen, düz pul, kahve çerçeve) + skor kutuları + ilerleme sayacı + "Devam" pili.
-   Renkler YALNIZ bu alt-ağaçta override edilir (global tahta teması değişmez). */
+/* ===== Tavla Eğitimi — SİTE PALETİ (terracotta/sand/navy) + STANDART BOARD =====
+   Sol: eğitmen maskotu + konuşma balonu + ders listesi (kart yüzey). Sağ: sitenin
+   GERÇEK tahtası — board renk override'ı YOK, :root board temasını aynen kullanır.
+   Tüm chrome site token'larıyla (--bg/--card-bg/--accent/--border/--text...). */
 /* Koyu arka plani ZORLA: .register-overlay.page > *:not(...) {background:transparent} (0,4,0)
-   kuralini yenmek icin .tr-view.bgx (0,4,0, sonra geldigi icin kazanir) + !important guvence.
-   Aksi halde ACIK (Sand) temada training ekrani krem zeminde kalir, acik yazilar okunmaz. */
-.register-overlay.page > .tr-view.bgx { background: #0a0e1a !important; padding: calc(var(--header-h) + 14px) 22px 20px; }
+   kuralini yenmek icin .tr-view.bgx (0,4,0, sonra geldigi icin kazanir) + !important guvence. */
+.register-overlay.page > .tr-view.bgx { background: var(--bg) !important; padding: calc(var(--header-h) + 18px) 24px 24px; }
 .tr-view {
+  /* YALNIZ geometri override'ı (renk DEĞİL): --board-h bu layout'a göre, türevler
+     :root board oranlarıyla (satır 186-198) birebir yeniden türetilir → board site
+     standart temasını + gloss pullarını aynen gösterir. */
   --board-h: max(300px, min(74vh, calc((min(calc(100vw - 254px), 1500px) - 520px) / 1.5)));
   --checker: calc(var(--board-h) / 11);
-  --col: calc(var(--checker) * 1.12);
-  --bar-w: calc(var(--checker) * 1.3);
-  --bearoff-w: calc(var(--checker) * 1.1);
-  --tri-h: calc(var(--board-h) * 0.44);
-  --cube-size: clamp(30px, calc(var(--bar-w) * 0.82), 58px);
-  --panel: #4b6440;   /* yeşil çuha */
-  --tri-a: #d5532b;   /* turuncu üçgen */
-  --tri-b: #ccba96;   /* bej üçgen */
-  --bar: #44311e;     /* kahverengi çerçeve + orta bar */
-  --navy: #17171e;    /* koyu pul */
-  --cream: #f2eee2;   /* açık pul */
-  --cube-bg: #b1863f; /* 64 küpü */
-  --cube-text: #fff;
+  --col: calc(var(--checker) * 1.14);
+  --bar-w: calc(var(--checker) * 1.4);
+  --cube-size: clamp(34px, calc(var(--bar-w) * 0.82), 60px);
+  --tray-w: calc(var(--cube-size) * 1.5);
+  --bearoff-w: var(--tray-w);
+  --tri-h: calc(var(--board-h) * 0.35);
 
   display: flex;
-  gap: 28px;
+  gap: 32px;
   align-items: center;
-  color: #e9edf5;
+  color: var(--text);
 }
-/* Düz BG pulları (global tema gloss/ice olsa da trainer'da düz disk) */
-.tr-view .checker.white { background: var(--cream); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
-.tr-view .checker.black { background: var(--navy); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
 .tr-view .bgx-board .board { width: fit-content; max-width: 100%; margin: 0; }
-.tr-view .pt-numbers { color: rgba(233, 238, 245, 0.72); font-weight: 500; }
-.tr-view .pip { color: #f1ede1; font-weight: 600; }
+.tr-view .pt-numbers { color: color-mix(in srgb, var(--text) 62%, transparent); font-weight: 500; }
+.tr-view .pip { color: var(--cream); font-weight: 600; }
 
-/* --- Sol panel --- */
-.bgx-side { width: 340px; flex: none; align-self: stretch; display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+/* --- Sol panel (kart yüzey) --- */
+.bgx-side { width: 360px; flex: none; align-self: stretch; display: flex; flex-direction: column; gap: 18px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 20px; }
 .bgx-head { display: flex; align-items: center; gap: 12px; }
-.bgx-back { appearance: none; background: none; border: none; color: #e9edf5; cursor: pointer; display: grid; place-items: center; padding: 4px; border-radius: 8px; }
+.bgx-back { appearance: none; background: none; border: none; color: var(--text); cursor: pointer; display: grid; place-items: center; padding: 6px; border-radius: var(--radius-md); }
 .bgx-back svg { transform: scaleX(-1); } /* sağ oku sola çevir (geri) */
-.bgx-back:hover { background: rgba(255, 255, 255, 0.08); }
-.bgx-title { font-size: 1.18rem; font-weight: 700; }
-.bgx-streak { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: #ff8a3c; font-weight: 700; }
+.bgx-back:hover { background: var(--rn-navy-700); }
+.bgx-title { font-size: var(--fs-lg); font-weight: var(--fw-bold); }
+.bgx-streak { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--orange); font-weight: var(--fw-bold); }
 
-.bgx-talk { display: flex; gap: 10px; align-items: flex-start; }
+.bgx-talk { display: flex; gap: 12px; align-items: flex-start; }
 .bgx-avatar { width: 52px; height: 52px; flex: none; }
 .bgx-face { width: 100%; height: 100%; display: block; }
-.bgx-bubble { position: relative; flex: 1; background: #f3f5f9; color: #1a2130; border: 2px solid transparent; border-radius: 14px; padding: 11px 14px; font-size: 0.9rem; line-height: 1.42; }
-.bgx-bubble::before { content: ''; position: absolute; left: -8px; top: 16px; border: 7px solid transparent; border-right-color: #f3f5f9; }
-.bgx-bubble.ok { border-color: #37c08a; }
-.bgx-bubble.bad { border-color: #e06b4e; }
-.bgx-bubble h4 { margin: 0 0 6px; font-size: 1rem; }
+.bgx-bubble { position: relative; flex: 1; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius-lg); padding: 12px 14px; font-size: var(--fs-sm); line-height: 1.5; }
+.bgx-bubble.ok { border-left-color: var(--color-success); }
+.bgx-bubble.bad { border-left-color: var(--color-error); }
+.bgx-bubble h4 { margin: 0 0 6px; font-size: var(--fs-md); }
 .bgx-bubble p { margin: 0; }
 
 .bgx-spacer { flex: 1; }
 
-.bgx-hint { width: 100%; background: #1a2133; border: 1px solid #263150; color: #dfe6f2; padding: 14px; border-radius: 10px; font-weight: 600; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.bgx-hint { width: 100%; background: var(--btn-bg); border: 1px solid var(--border); color: var(--text); padding: 13px; border-radius: var(--radius-md); font-weight: var(--fw-semibold); font-size: var(--fs-sm); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 /* Ders aksiyonları: Geri Al + Onayla satırı, altında İpucu */
 .bgx-actions { display: flex; flex-direction: column; gap: 10px; }
 .bgx-act-row { display: flex; gap: 10px; }
 .bgx-act-row .bgx-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .bgx-btn:disabled { opacity: 0.5; cursor: default; filter: none; }
-.bgx-hint:hover:not(:disabled) { background: #222c44; }
+.bgx-hint:hover:not(:disabled) { background: var(--rn-navy-700); }
 .bgx-hint:disabled { opacity: 0.55; cursor: default; }
 
 /* --- Bitiş ekranı --- */
 .bgx-result { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .bgx-stars { display: flex; gap: 4px; }
-.bgx-stars svg.on { color: #f3c13b; }
-.bgx-stars svg.off { color: #2a3348; }
-.bgx-acc { display: flex; align-items: center; gap: 6px; font-weight: 600; }
-.bgx-badge { border: 2px solid #d9a93e; color: #ecc877; border-radius: 20px; padding: 6px 18px; font-weight: 700; }
+.bgx-stars svg.on { color: var(--coin-gold); }
+.bgx-stars svg.off { color: var(--border); }
+.bgx-acc { display: flex; align-items: center; gap: 6px; font-weight: var(--fw-semibold); }
+.bgx-badge { border: 2px solid var(--accent); color: var(--accent); border-radius: var(--radius-pill); padding: 6px 18px; font-weight: var(--fw-bold); }
 .bgx-done-btns { display: flex; gap: 10px; }
-.bgx-btn { flex: 1; appearance: none; border: none; cursor: pointer; border-radius: 10px; padding: 14px; font-weight: 700; font-size: 0.95rem; }
-.bgx-btn.ghost { background: #1a2133; color: #dfe6f2; }
-.bgx-btn.green { background: #1fb47a; color: #fff; }
-.bgx-btn:hover { filter: brightness(1.08); }
+.bgx-btn { flex: 1; appearance: none; border: none; cursor: pointer; border-radius: var(--radius-md); padding: 13px; font-weight: var(--fw-bold); font-size: var(--fs-sm); }
+.bgx-btn.ghost { background: var(--btn-bg); color: var(--text); border: 1px solid var(--border); }
+.bgx-btn.green { background: var(--color-success); color: #fff; }
+.bgx-btn:hover:not(:disabled) { filter: brightness(1.08); }
 
 /* --- Tahta sahnesi --- */
 .bgx-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
 .bgx-scores { display: flex; flex-direction: column; justify-content: space-between; align-self: center; height: var(--board-h); padding: 4px 0; }
-.bgx-score-box { width: 48px; height: 48px; background: #eceef4; color: #1a2130; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 1.35rem; }
+.bgx-score-box { width: 46px; height: 46px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius-md); display: grid; place-items: center; font-weight: var(--fw-bold); font-size: 1.3rem; }
 .bgx-board { position: relative; }
-.bgx-next { position: absolute; top: 50%; left: 64%; transform: translate(-50%, -50%); background: #1fb47a; color: #fff; border: none; border-radius: 24px; padding: 12px 34px; font-weight: 700; font-size: 1.02rem; cursor: pointer; z-index: 6; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); display: inline-flex; align-items: center; gap: 8px; }
+.bgx-next { position: absolute; top: 50%; left: 64%; transform: translate(-50%, -50%); background: var(--accent); color: var(--on-accent); border: none; border-radius: var(--radius-pill); padding: 12px 34px; font-weight: var(--fw-bold); font-size: 1.02rem; cursor: pointer; z-index: 6; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); display: inline-flex; align-items: center; gap: 8px; }
 .bgx-next:hover:not(:disabled) { filter: brightness(1.08); }
 
 .bgx-progress { display: flex; flex-direction: column; align-items: center; gap: 8px; align-self: center; height: var(--board-h); justify-content: flex-start; }
-.bgx-meter { width: 26px; flex: 1; min-height: 0; background: #2a2217; border: 1.5px solid #3a2f1e; border-radius: 7px; display: flex; flex-direction: column; gap: 3px; padding: 4px; }
-.bgx-meter.active { border-color: #b8923e; box-shadow: 0 0 0 1px rgba(184, 146, 62, 0.5); }
+.bgx-meter { width: 24px; flex: 1; min-height: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 3px; padding: 4px; }
+.bgx-meter.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
 .bgx-seg { flex: 1; border-radius: 2px; background: transparent; }
-.bgx-seg.on { background: #2fb36b; }
-.bgx-count { font-weight: 600; font-size: 0.92rem; color: #cfd6e4; }
+.bgx-seg.on { background: var(--color-success); }
+.bgx-count { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); }
 
 /* --- Ustalık Yolu (Mastery Path) listesi --- */
 .tr-path .bgx-side { width: 380px; }
 .tr-path-side { gap: 12px; }
 .tr-path-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; flex: 0 1 auto; max-height: calc(var(--board-h) - 120px); padding-right: 4px; }
 .tr-sec { display: flex; flex-direction: column; }
-.tr-sec-head { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; color: #8a94a8; text-align: center; margin: 14px 0 8px; }
-.tr-lesson { display: flex; align-items: center; gap: 12px; text-align: left; appearance: none; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: 10px; color: #e9edf5; position: relative; }
-.tr-lesson:not(.disabled):hover { background: rgba(255, 255, 255, 0.05); }
-.tr-lesson.active { background: #182138; }
+.tr-sec-head { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tv-ink-faint); text-align: center; margin: 12px 0 8px; }
+.tr-lesson { display: flex; align-items: center; gap: 12px; text-align: left; appearance: none; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: var(--radius-md); color: var(--text); position: relative; }
+.tr-lesson:not(.disabled):hover { background: var(--rn-navy-700); }
+.tr-lesson.active { background: color-mix(in srgb, var(--accent) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent); }
 .tr-lesson.disabled { cursor: default; opacity: 0.6; }
-.tr-node { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #223049; color: #fff; }
-.tr-node.done { background: #f3b43b; color: #3a2a06; }
-.tr-node.active { background: #2f6bff; box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.22); }
-.tr-node.locked { background: #1d2740; color: #566078; }
+.tr-node { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--rn-navy-700); color: var(--text); }
+.tr-node.done { background: var(--coin-gold); color: #3a2a06; }
+.tr-node.active { background: var(--accent); color: var(--on-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+.tr-node.locked { background: var(--input-bg); color: var(--tv-ink-faint); }
 .tr-lesson-body { display: flex; flex-direction: column; min-width: 0; }
-.tr-lesson-title { font-weight: 600; font-size: 0.92rem; line-height: 1.25; }
-.tr-lesson-sub { font-size: 0.78rem; color: #8a94a8; }
-.tr-lesson.active .tr-lesson-title { color: #fff; }
-.tr-lesson-dot { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #2f6bff; flex: none; }
-.tr-path-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #1c2740; padding-top: 12px; }
-.tr-foot-title { font-weight: 700; font-size: 1rem; }
-.tr-foot-desc { font-size: 0.85rem; color: #9aa4b8; line-height: 1.4; }
+.tr-lesson-title { font-weight: var(--fw-semibold); font-size: 0.92rem; line-height: 1.25; }
+.tr-lesson-sub { font-size: var(--fs-xs); color: var(--tv-ink-faint); }
+.tr-lesson-stars { margin-left: auto; display: inline-flex; gap: 2px; color: var(--coin-gold); flex: none; }
+.tr-lesson-dot { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
+.tr-path-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 12px; }
+.tr-foot-title { font-weight: var(--fw-bold); font-size: var(--fs-md); }
+.tr-foot-desc { font-size: var(--fs-sm); color: var(--muted); line-height: 1.4; }
 .tr-path-foot .bgx-btn { flex: none; margin-top: 4px; }
 
 /* Dar ekran: sol panel üste, tahta alta (tek kolon) */
