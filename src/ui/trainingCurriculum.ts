@@ -1,15 +1,17 @@
 // Tavla Egitimi mufredati — 10 ZORLUK SEVIYESI + 1 KUP KARARLARI modulu.
 // Her seviye 10 soru. Dogru hamleyi/kup aksiyonunu motor (wildbg) anlik hesaplar.
 //
-// SEVIYE 1 (Beginner) = 10 klasik acilis zari. 2..10 = tohumlanmis (deterministik) uretilmis pozisyonlar.
-// Intermediate (lvl3) + Ultimate Grandmaster (lvl8) = GERCEK UNLU pozisyonlar (XGID) + klasik referanslar.
-// Cube Decisions = ZAR ATMADAN "katla mi?" karari (motor cubeAdvice ile puanlar).
+// SEVIYE 1 (Beginner) = 10 klasik acilis zari. 2..10 = uretilmis pozisyonlar — ZORLUK = temas +
+// dallanma + sezgisel equity farki (ply-derinligi DEGIL: derin oyun = yaris = kolaydi).
+// Intermediate (lvl3) + Ultimate Grandmaster (lvl8) = GERCEK UNLU pozisyonlar (XGID) + referanslar.
+// Cube Decisions = ZAR ATMADAN "katla mi?" (5 money + 5 mac, motor cubeAdvice/matchCube ile puanlar).
 
 import type { GameState, Move } from '../engine/types'
-import { initialState, winner } from '../engine/board'
-import { generateMoves, hasNoMove } from '../engine/moves'
+import { initialState, winner, cloneState } from '../engine/board'
+import { generateMoves, hasNoMove, applyStep } from '../engine/moves'
 import { applyMove, newTurn } from '../engine/game'
 import { HeuristicBot } from '../engine/engine'
+import { evaluatePosition } from '../engine/evaluate'
 import { parseXgid } from '../engine/xgid'
 import { matchGnubgMove } from '../engine/gnubgMove'
 
@@ -58,29 +60,56 @@ function seededAdvance(state: GameState, rng: () => number): GameState {
   return applyMove(s, mv)
 }
 
-// Beyazin karar verecegi `count` pozisyon uret (deterministik). minMoves saglanamazsa gevset (>=2).
-function genQuestions(seed: number, minPlies: number, maxPlies: number, minMoves: number, count: number): Question[] {
-  for (let mm = minMoves; mm >= 2; mm--) {
-    const rng = mulberry32(seed)
-    const out: Question[] = []
-    let guard = 0
-    while (out.length < count && guard++ < 6000) {
-      let s = initialState()
-      const plies = minPlies + Math.floor(rng() * (maxPlies - minPlies + 1))
-      for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
-      if (s.turn !== 'white') s = seededAdvance(s, rng)
-      const st = newTurn(s, diceOf(seededRoll(rng)))
-      const moves = generateMoves(st)
-      if (hasNoMove(moves)) continue
-      if (new Set(moves.map((m) => m.resultKey)).size >= mm) out.push({ state: st })
-    }
-    if (out.length >= count) return out.slice(0, count)
+// TEMAS var mi (yoksa yaris = kolay)? Beyazin en-geri tasi, siyahin en-geri tasindan ileride mi.
+function hasContact(s: GameState): boolean {
+  let whiteMax = s.bar.white > 0 ? 24 : -1
+  let blackMin = s.bar.black > 0 ? -1 : 24
+  for (let i = 0; i < 24; i++) {
+    if (s.points[i] > 0) whiteMax = Math.max(whiteMax, i)
+    if (s.points[i] < 0) blackMin = Math.min(blackMin, i)
   }
-  return openingQuestions().slice(0, count)
+  return whiteMax > blackMin
 }
 
-// KUP kararlari: ara-oyun pozisyonu uret, ZAR ATMADAN beyaza "katla mi?" sor (offer). Motor
-// (evalPosition -> cubeAdvice) dogru aksiyonu belirler; oyun bitmis/asiri-uc pozisyonlar elenir.
+// Sezgisel equity farki: en iyi ile 2. en iyi hamle arasi. KUCUK gap = ince/zor karar.
+function moveGap(s: GameState, moves: Move[]): number {
+  if (moves.length < 2) return Infinity
+  const evals = moves
+    .map((m) => {
+      const c = cloneState(s)
+      for (const st of m.steps) applyStep(c, st, s.turn)
+      return evaluatePosition(c, s.turn)
+    })
+    .sort((a, b) => b - a)
+  return evals[0] - evals[1]
+}
+
+// ZORLUK-BANTLI uretim (deterministik): temas + dallanma sartli POOL uret, sezgisel gap'e gore
+// sirala; hardness 0=kolay (bariz en-iyi, buyuk gap) ... 1=zor (ince karar, kucuk gap) penceresi al.
+function genQuestions(seed: number, minMoves: number, contact: boolean, hardness: number, count: number): Question[] {
+  const rng = mulberry32(seed)
+  const pool: { state: GameState; gap: number }[] = []
+  let guard = 0
+  const POOL = Math.max(count * 4, 40)
+  while (pool.length < POOL && guard++ < 25000) {
+    let s = initialState()
+    const plies = 5 + Math.floor(rng() * 10) // orta oyun (temas korunur, yarisa dusmez)
+    for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
+    if (s.turn !== 'white') s = seededAdvance(s, rng)
+    const st = newTurn(s, diceOf(seededRoll(rng)))
+    if (contact && !hasContact(st)) continue
+    const moves = generateMoves(st)
+    if (hasNoMove(moves)) continue
+    if (new Set(moves.map((m) => m.resultKey)).size < minMoves) continue
+    pool.push({ state: st, gap: moveGap(st, moves) })
+  }
+  if (pool.length <= count) return pool.map((p) => ({ state: p.state }))
+  pool.sort((a, b) => a.gap - b.gap) // artan: en zor (kucuk gap) basta
+  const start = Math.round((pool.length - count) * (1 - hardness))
+  return pool.slice(start, start + count).map((p) => ({ state: p.state }))
+}
+
+// KUP kararlari (money): ara-oyun pozisyonu uret, ZAR ATMADAN "katla mi?" sor (offer).
 function genCubeQuestions(seed: number, count: number): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
@@ -93,14 +122,13 @@ function genCubeQuestions(seed: number, count: number): Question[] {
     if (winner(s)) continue
     const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
-    if (wp < 4 || bp < 4) continue // biri neredeyse topladi -> kup anlamsiz
+    if (wp < 4 || bp < 4) continue
     out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer' })
   }
   return out
 }
 
-// MAC kupu: ayni sekilde pozisyon uret ama bir MAC SKORU baglamı ekle (away 2..6, cube merkezi).
-// Degerlendirme TrainingView'da mac-equity (matchCube.ts) ile yapilir. Skor UI'da gosterilir.
+// MAC kupu: ayni sekilde pozisyon + MAC SKORU baglamı (away 2..6). Degerlendirme matchCube.ts (match-equity).
 function genMatchCubeQuestions(seed: number, count: number): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
@@ -114,7 +142,6 @@ function genMatchCubeQuestions(seed: number, count: number): Question[] {
     const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
     if (wp < 4 || bp < 4) continue
-    // away 2..6 (1-away Crawford karmasikligindan kacin); to = max(away)+random, skor = to - away
     const myAway = 2 + Math.floor(rng() * 5)
     const oppAway = 2 + Math.floor(rng() * 5)
     const to = Math.max(myAway, oppAway) + 1 + Math.floor(rng() * 4)
@@ -235,39 +262,39 @@ function famousToQuestion(f: Famous): Question | null {
 }
 const FAMOUS: Record<string, Famous[]> = { lvl3: FAMOUS_MED, lvl8: FAMOUS_HARD }
 
-// Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (deterministik).
+// Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (zorluk-bantli).
 function buildLesson(s: Spec): Question[] {
   if (s.openings) return openingQuestions()
   if (s.cube) return [...genCubeQuestions(s.seed!, 5), ...genMatchCubeQuestions(s.seed! + 1, 5)]
   const famous = (FAMOUS[s.id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null)
   const ref = REFS[s.id] ?? []
   const need = 10 - famous.length - ref.length
-  const gen = need > 0 ? genQuestions(s.seed!, s.min!, s.max!, s.mv!, need) : []
+  const gen = need > 0 ? genQuestions(s.seed!, s.mv ?? 2, s.contact ?? false, s.hardness ?? 0, need) : []
   return [...famous, ...ref, ...gen].slice(0, 10)
 }
 
-// Seviye tanimlari: id, ad, uretim parametreleri (l1 = acilislar). Zorluk ply + dallanma ile artar.
+// Seviye tanimlari: zorluk = TEMAS + dallanma (mv) + hardness (sezgisel gap penceresi). ply DEGIL.
 interface Spec {
   id: string
   title: string
   seed?: number
-  min?: number
-  max?: number
-  mv?: number
+  mv?: number // minMoves (farkli legal hamle alt siniri = dallanma)
+  contact?: boolean // temas sartli (yaris pozisyonlarini ele)
+  hardness?: number // 0..1 (sezgisel gap penceresi: 0 buyuk-gap/kolay, 1 kucuk-gap/zor)
   openings?: boolean
-  cube?: boolean // KUP kararlari modulu (zar yok, katla/katlama)
+  cube?: boolean
 }
 const SPECS: Spec[] = [
   { id: 'lvl1', title: 'Beginner', openings: true },
-  { id: 'lvl2', title: 'Developing', seed: 0x5e02, min: 3, max: 7, mv: 2 },
-  { id: 'lvl3', title: 'Intermediate', seed: 0x5e03, min: 5, max: 10, mv: 3 },
-  { id: 'lvl4', title: 'Advanced', seed: 0x5e04, min: 8, max: 13, mv: 3 },
-  { id: 'lvl5', title: 'Master', seed: 0x5e05, min: 10, max: 16, mv: 3 },
-  { id: 'lvl6', title: 'Grandmaster', seed: 0x5e06, min: 12, max: 18, mv: 3 },
-  { id: 'lvl7', title: 'Super Grandmaster', seed: 0x5e07, min: 14, max: 20, mv: 4 },
-  { id: 'lvl8', title: 'Ultimate Grandmaster', seed: 0x5e08, min: 16, max: 22, mv: 4 },
-  { id: 'lvl9', title: 'Legendary Grandmaster', seed: 0x5e09, min: 18, max: 24, mv: 4 },
-  { id: 'lvl10', title: 'Lord of the Dice', seed: 0x5e0a, min: 20, max: 28, mv: 4 },
+  { id: 'lvl2', title: 'Developing', seed: 0x5e02, mv: 2, contact: false, hardness: 0.0 },
+  { id: 'lvl3', title: 'Intermediate', seed: 0x5e03, mv: 3, contact: false, hardness: 0.15 },
+  { id: 'lvl4', title: 'Advanced', seed: 0x5e04, mv: 3, contact: true, hardness: 0.28 },
+  { id: 'lvl5', title: 'Master', seed: 0x5e05, mv: 3, contact: true, hardness: 0.42 },
+  { id: 'lvl6', title: 'Grandmaster', seed: 0x5e06, mv: 4, contact: true, hardness: 0.55 },
+  { id: 'lvl7', title: 'Super Grandmaster', seed: 0x5e07, mv: 4, contact: true, hardness: 0.68 },
+  { id: 'lvl8', title: 'Ultimate Grandmaster', seed: 0x5e08, mv: 4, contact: true, hardness: 0.8 },
+  { id: 'lvl9', title: 'Legendary Grandmaster', seed: 0x5e09, mv: 4, contact: true, hardness: 0.92 },
+  { id: 'lvl10', title: 'Lord of the Dice', seed: 0x5e0a, mv: 5, contact: true, hardness: 1.0 },
   { id: 'cube', title: 'Cube Decisions', seed: 0x5ecb, cube: true },
 ]
 
