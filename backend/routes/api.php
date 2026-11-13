@@ -24,6 +24,7 @@ use App\Http\Controllers\InfoPageController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\LiveTournamentController;
 use App\Http\Controllers\LuckyWheelAdminController;
 use App\Http\Controllers\LuckyWheelController;
 use App\Http\Controllers\MembershipController;
@@ -116,6 +117,10 @@ Route::get('/realtime-config', [RoomController::class, 'realtimeConfig']); // Re
 Route::get('/board-designs', [ShopController::class, 'designs']); // admin Tavla Tasarımı: grup/fiyat/özel tahtalar (acik)
 Route::get('/rank-divisions', [RankDivisionController::class, 'index']); // rutbe rating esikleri (acik)
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments', [TournamentController::class, 'index']); // acik poll (istemci 8-15sn) + autoStartDue bakim yazmasi -> IP basi 2/sn sinir
+// CANLI TURNUVA SİSTEMİ dernek/grup paneli (/canli-turnuva-sistemi): şifreli (auth YOK, gate=şifre).
+// Brute-force'a karşı sıkı throttle. Şifre admin "Canlı Turnuva Sistemi" menüsünden tanımlanır.
+Route::middleware('throttle:10,1')->post('/live-tournament/login', [LiveTournamentController::class, 'login']);
+Route::middleware('throttle:10,1')->post('/live-tournament/create', [LiveTournamentController::class, 'create']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/ad-slots', [AdSlotController::class, 'index']); // paneller arasi reklam seritleri
 Route::middleware('throttle:30,1,ad-click')->post('/ad-slots/{ad}/click', [AdSlotController::class, 'click']); // "saka reklami" tiklamasi (opsiyonel auth)
