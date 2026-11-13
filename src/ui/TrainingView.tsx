@@ -95,6 +95,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   const [checking, setChecking] = useState(false)
   const [hinted, setHinted] = useState(false)
   const [reveal, setReveal] = useState(false)
+  const [retried, setRetried] = useState(false) // "Tekrar Dene"den sonra: skor/seriyi etkileme
   const [results, setResults] = useState<boolean[]>([])
   const [streak, setStreak] = useState(0)
   const [complete, setComplete] = useState(false)
@@ -271,6 +272,17 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     setSelectedFrom(null)
   }
 
+  // "Tekrar Dene": yanlis hamleyi GERI AL, ayni soruyu bastan oynat (cozum gosterilmez; skor degismez).
+  function handleRetry() {
+    setPlayed([])
+    setSelectedFrom(null)
+    setBest(null)
+    setReveal(false)
+    setRetried(true)
+    gradedRef.current = -1
+    setPhase('playing')
+  }
+
   function loadQuestion(i: number) {
     setTurnStart(cloneState(questions[i]?.state ?? emptyState()))
     setPlayed([])
@@ -278,6 +290,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     setBest(null)
     setHinted(false)
     setReveal(false)
+    setRetried(false)
     setCubeMsg('')
     setPhase('playing')
   }
@@ -315,10 +328,10 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       const userKey = boardKey(applyPlayed(turnStart, played))
       const ok = userKey === q.answer.resultKey
       setBest({ move: q.answer, equity: 0, probs: [] })
-      const firstTryOk = ok && !hinted
+      const firstTryOk = ok && !hinted && !retried
       setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
       setStreak((s) => (firstTryOk ? s + 1 : 0))
-      setReveal(!ok)
+      setReveal(false) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir
       setPhase(ok ? 'correct' : 'wrong')
       if (ok) Sound.win()
       else Sound.lose()
@@ -337,23 +350,18 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       const mine = ranked.find((r) => r.move.resultKey === userKey)
       const ok = mine ? top.equity - mine.equity <= EPS : false
       setBest(top)
-      const firstTryOk = ok && !hinted
+      const firstTryOk = ok && !hinted && !retried
       setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
       setStreak((s) => (firstTryOk ? s + 1 : 0))
-      if (ok) {
-        setReveal(false)
-        setPhase('correct')
-        Sound.win()
-      } else {
-        setReveal(true)
-        setPhase('wrong')
-        Sound.lose()
-      }
+      setReveal(false) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene"
+      setPhase(ok ? 'correct' : 'wrong')
+      if (ok) Sound.win()
+      else Sound.lose()
     } finally {
       setChecking(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, turnStart, played, hinted, checking, q])
+  }, [idx, turnStart, played, hinted, retried, checking, q])
 
   // KUP karari puanlama: money ise cubeEquity, MAC skoru varsa matchCube (match-equity) ile.
   async function gradeCube(action: 'double' | 'nodouble' | 'take' | 'pass') {
@@ -480,8 +488,8 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       </>
     ) : (
       <>
-        <h4>{t('tr.betterExists')}</h4>
-        <p>{t('tr.wrongExplain', { move: bestText })} {explanation}</p>
+        <h4>{t('tr.wrongTitle')}</h4>
+        <p>{t('tr.wrongRetry')}</p>
       </>
     )
   ) : phase === 'nomove' ? (
@@ -513,6 +521,9 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             <Icon name="arrow-right" size={22} />
           </button>
           <span className="bgx-title">{lesson?.title || t('tr.lessonTitle')}</span>
+          <span className="bgx-score-chip" title={t('tr.scoreLabel')}>
+            <Icon name="check" size={14} /> {correctCount}/{TOTAL}
+          </span>
           {streak > 1 && (
             <span className="bgx-streak" title={t('tr.streak')}>
               <Icon name="flame" size={16} /> {streak}
@@ -577,6 +588,11 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
         ) : (
           <div className="bgx-actions">
             {/* Geri Al / Onayla artik board uzerinde "her zamanki yerinde" (centerLeft/centerRight slot). */}
+            {phase === 'wrong' && (
+              <button className="bgx-retry" onClick={handleRetry}>
+                <Icon name="refresh" size={16} /> {t('tr.retry')}
+              </button>
+            )}
             <button className="bgx-hint" onClick={hint} disabled={!interactive || checking}>
               {t('tr.hintBtn')}
             </button>
@@ -642,6 +658,16 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             showPip
           />
           {showArrows && best && <MoveArrows steps={best.move.steps} dep={`best:${idx}:${best.move.resultKey}`} />}
+          {phase === 'correct' && (
+            <div className="bgx-correct" aria-hidden="true">
+              <Icon name="check" size={30} />
+            </div>
+          )}
+          {phase === 'wrong' && !q?.cube && (
+            <div className="bgx-wrong" aria-hidden="true">
+              <Icon name="x" size={28} />
+            </div>
+          )}
           {showNext && (
             <button className="bgx-next" onClick={nextQuestion}>{t('tr.next')}</button>
           )}
