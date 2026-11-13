@@ -370,15 +370,22 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=--BbB-BAB--BcBb--c-d-B-a--:0:0:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P110', concept: 'Double 6s in a blockade.' },
 ]
 
-// "Gercek Pozisyonlar": BackgammonGalaxy tarzi -> ZORLUK KATMANI (Baslangic/Orta/Ileri) altinda
-// isimli TEMALI dersler (kaynak/koleksiyon bazli). Her ders degisken sayida pozisyon.
-function realGroupKey(p: Famous): string {
-  const t = p.title.toLowerCase()
-  if (t.includes('euler')) return 'euler'
-  if (t.includes('chow')) return 'chow'
-  if (t.includes('chris bray')) return 'bray'
-  if (/ubc|usbgf|mochy|501|boot camp|chicago|festive|master|dmp|jlee/.test(t)) return 'tournament'
-  return 'forum'
+// "Gercek Pozisyonlar": BackgammonGalaxy tarzi -> ZORLUK KATMANI (Baslangic/Orta/Ileri) + isimli TEMALI
+// dersler. REAL_POSITIONS zaten nöral-zorluk sirali (kolay->zor) -> 3 esit banda bol (tier=zorluk),
+// her banttaki pozisyonlari TEMA'ya gore grupla (ders=tema). Kucuk temalar "Karisik"ta birlesir.
+function themeOf(p: Famous): { key: string; title: string } {
+  const s = (p.title + ' ' + p.concept).toLowerCase()
+  if (/double 1s|double 2s|double 3s|double 4s|double 5s|double 6s|double ones|double deuces|aces|four-ace|four aces/.test(s))
+    return { key: 'doubles', title: 'Çift Zar Kararları' }
+  if (/blitz|double-hit|double hit|flood|pointing on|blitzing/.test(s)) return { key: 'blitz', title: 'Blitz ve Çifte Vuruş' }
+  if (/prime|blockade|blocking game|4-prime|full prime/.test(s)) return { key: 'prime', title: 'Prime ve Blok Kurma' }
+  if (/holding|anchor|\bhold\b/.test(s)) return { key: 'holding', title: 'Tutma Oyunları ve Çapa' }
+  if (/back game|escape|back checker|rear|runner|back men|\bdmp\b/.test(s)) return { key: 'backgame', title: 'Arka Oyun ve Kaçış' }
+  if (/bear|bearing|race|clearing|wastage|crunch/.test(s)) return { key: 'bearoff', title: 'Toplama ve Yarış' }
+  if (/make a point|point-making|golden|5pt|5-point|bar-point|bar point|slot|builder|make the/.test(s))
+    return { key: 'point', title: 'Nokta ve Builder Kurma' }
+  if (/hit|safety|\bsafe\b/.test(s)) return { key: 'hit', title: 'Vurmak ya da Vurmamak' }
+  return { key: 'misc', title: 'Karışık Pozisyonlar' }
 }
 
 export interface RealLesson {
@@ -392,36 +399,33 @@ export interface RealTier {
 }
 
 export const REAL_TIERS: RealTier[] = (() => {
-  const byKey: Record<string, Question[]> = {}
-  for (const p of REAL_POSITIONS) {
-    const q = famousToQuestion(p)
-    if (!q) continue
-    const k = realGroupKey(p)
-    ;(byKey[k] ??= []).push(q)
-  }
-  return [
-    {
-      label: 'BAŞLANGIÇ',
-      lessons: [
-        { id: 'rg-open', title: 'Açılış Zarları', questions: openingQuestions() },
-        { id: 'rg-euler', title: 'Euler: Günlük Hatalar', questions: byKey['euler'] ?? [] },
-      ],
-    },
-    {
-      label: 'ORTA',
-      lessons: [
-        { id: 'rg-forum', title: 'Forum Klasikleri', questions: byKey['forum'] ?? [] },
-        { id: 'rg-chow', title: 'Chow’un Dama Sınavı', questions: byKey['chow'] ?? [] },
-      ],
-    },
-    {
-      label: 'İLERİ',
-      lessons: [
-        { id: 'rg-bray', title: 'Chris Bray: Haftanın Pozisyonu', questions: byKey['bray'] ?? [] },
-        { id: 'rg-tourn', title: 'Turnuva Blunder’ları', questions: byKey['tournament'] ?? [] },
-      ],
-    },
+  const items = REAL_POSITIONS.map((p) => ({ q: famousToQuestion(p), th: themeOf(p) })).filter(
+    (x): x is { q: Question; th: { key: string; title: string } } => x.q !== null,
+  )
+  const n = items.length
+  const bands = [
+    { label: 'BAŞLANGIÇ', items: items.slice(0, Math.ceil(n / 3)) },
+    { label: 'ORTA', items: items.slice(Math.ceil(n / 3), Math.ceil((2 * n) / 3)) },
+    { label: 'İLERİ', items: items.slice(Math.ceil((2 * n) / 3)) },
   ]
+  return bands.map((b, bi) => {
+    const byTheme = new Map<string, { title: string; qs: Question[] }>()
+    for (const it of b.items) {
+      const g = byTheme.get(it.th.key) ?? { title: it.th.title, qs: [] }
+      g.qs.push(it.q)
+      byTheme.set(it.th.key, g)
+    }
+    const lessons: RealLesson[] = []
+    const small: Question[] = []
+    for (const [key, g] of byTheme) {
+      if (key !== 'misc' && g.qs.length >= 3) lessons.push({ id: `rg${bi}-${key}`, title: g.title, questions: g.qs })
+      else small.push(...g.qs)
+    }
+    if (small.length) lessons.push({ id: `rg${bi}-misc`, title: 'Karışık Pozisyonlar', questions: small })
+    // Acilislar en kolay bandin basinda.
+    if (bi === 0) lessons.unshift({ id: 'rg-open', title: 'Açılış Zarları', questions: openingQuestions() })
+    return { label: b.label, lessons }
+  })
 })()
 
 const REAL_LESSON_MAP: Record<string, RealLesson> = {}
