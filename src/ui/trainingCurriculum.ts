@@ -19,6 +19,7 @@ export interface Question {
   answer?: Move // OTORITER dogru hamle (unlu pozisyonlarda XG cevabi). Varsa buna gore puanlanir.
   title?: string // unlu pozisyon adi (oyun sirasinda gosterilir, or. "UBC 2023 Finali — banana split")
   cube?: 'offer' | 'respond' // KUP karari sorusu: 'offer'=katla/katlama, 'respond'=al/birak. Motor puanlar.
+  score?: { my: number; opp: number; to: number } // MAC kupu: skor baglami (varsa mac-equity ile puanlanir)
 }
 
 export interface Lesson {
@@ -94,6 +95,30 @@ function genCubeQuestions(seed: number, count: number): Question[] {
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
     if (wp < 4 || bp < 4) continue // biri neredeyse topladi -> kup anlamsiz
     out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer' })
+  }
+  return out
+}
+
+// MAC kupu: ayni sekilde pozisyon uret ama bir MAC SKORU baglamı ekle (away 2..6, cube merkezi).
+// Degerlendirme TrainingView'da mac-equity (matchCube.ts) ile yapilir. Skor UI'da gosterilir.
+function genMatchCubeQuestions(seed: number, count: number): Question[] {
+  const rng = mulberry32(seed)
+  const out: Question[] = []
+  let guard = 0
+  while (out.length < count && guard++ < 6000) {
+    let s = initialState()
+    const plies = 8 + Math.floor(rng() * 20)
+    for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
+    if (s.turn !== 'white') s = seededAdvance(s, rng)
+    if (winner(s)) continue
+    const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
+    const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
+    if (wp < 4 || bp < 4) continue
+    // away 2..6 (1-away Crawford karmasikligindan kacin); to = max(away)+random, skor = to - away
+    const myAway = 2 + Math.floor(rng() * 5)
+    const oppAway = 2 + Math.floor(rng() * 5)
+    const to = Math.max(myAway, oppAway) + 1 + Math.floor(rng() * 4)
+    out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer', score: { my: to - myAway, opp: to - oppAway, to } })
   }
   return out
 }
@@ -213,7 +238,7 @@ const FAMOUS: Record<string, Famous[]> = { lvl3: FAMOUS_MED, lvl8: FAMOUS_HARD }
 // Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (deterministik).
 function buildLesson(s: Spec): Question[] {
   if (s.openings) return openingQuestions()
-  if (s.cube) return genCubeQuestions(s.seed!, 10)
+  if (s.cube) return [...genCubeQuestions(s.seed!, 5), ...genMatchCubeQuestions(s.seed! + 1, 5)]
   const famous = (FAMOUS[s.id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null)
   const ref = REFS[s.id] ?? []
   const need = 10 - famous.length - ref.length
