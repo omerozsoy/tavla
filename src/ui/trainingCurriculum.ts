@@ -13,6 +13,7 @@ import { applyMove, newTurn } from '../engine/game'
 import { HeuristicBot } from '../engine/engine'
 import { evaluatePosition } from '../engine/evaluate'
 import { parseXgid } from '../engine/xgid'
+import { parseGnuId } from '../engine/gnubgId'
 import { matchGnubgMove } from '../engine/gnubgMove'
 
 export interface Question {
@@ -236,7 +237,9 @@ const REFS: Record<string, Question[]> = { lvl3: REF_MED, lvl8: REF_HARD }
 // --- UNLU / GERCEK POzISYONLAR (forum/XG kaynakli, XGID birebir). Cevabi dogrulanabilenlerde
 // XG cevabina (answer) gore puanlanir; dogrulanmayanlarda motora birakilir. ---
 interface Famous {
-  xgid: string
+  xgid?: string // XGID (ya bu ya da gnuPos)
+  gnuPos?: string // GNU Position ID (XGID yoksa; GNU-format forum/timothychow pozisyonlari)
+  gnuMatch?: string // GNU Match ID (zar/sira)
   answer: string // XG en iyi hamle notasyonu ("5/1 5/4*"); cozulurse otoriter
   title: string // unlu pozisyon adi (oyun sirasinda gosterilir)
   concept: string
@@ -265,7 +268,7 @@ const FAMOUS_HARD: Famous[] = [
 ]
 
 function famousToQuestion(f: Famous): Question | null {
-  const r = parseXgid(f.xgid)
+  const r = f.gnuPos ? parseGnuId(f.gnuPos, f.gnuMatch ?? '') : f.xgid ? parseXgid(f.xgid) : null
   if (!r || !r.dice) return null
   const mv = f.answer ? matchGnubgMove(r.state, 'white', f.answer) : null
   return { state: r.state, intro: f.concept, answer: mv ?? undefined, title: f.title }
