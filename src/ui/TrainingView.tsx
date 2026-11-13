@@ -615,7 +615,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             cube={{ value: 1, owner: null }}
             numberFrom="white"
             centerLeft={
-              !q?.cube && played.length ? (
+              !q?.cube && !showNext && played.length ? (
                 <Button variant="default" onClick={handleUndo} disabled={!interactive}>
                   <Icon name="refresh" size={16} /> {t('tr.undo')}
                 </Button>
@@ -626,7 +626,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
                 <Button variant="default" onClick={() => void grade()} disabled={!interactive || checking}>
                   {checking && interactive ? <Loading inline size={16} /> : <><Icon name="check" size={16} /> {t('tr.confirm')}</>}
                 </Button>
-              ) : (
+              ) : showNext ? undefined : (
                 <DiceRow faces={faces} owner="white" swappable={canSwapDice} onSwap={handleSwapDice} />
               )
             }
