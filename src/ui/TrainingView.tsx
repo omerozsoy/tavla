@@ -18,7 +18,10 @@ import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress } from './TrainingPath'
-import { lessonById, getQuestions, type Question } from './trainingCurriculum'
+import { lessonById, lessonPlan, type Question } from './trainingCurriculum'
+
+// Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
+const QCACHE = new Map<string, Question[]>()
 
 interface Props {
   onClose: () => void
@@ -74,7 +77,8 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
-  const questions: Question[] = useMemo(() => getQuestions(lessonId), [lessonId])
+  const [questions, setQuestions] = useState<Question[]>(() => QCACHE.get(lessonId) ?? [])
+  const [loadingQ, setLoadingQ] = useState(!QCACHE.has(lessonId))
   const TOTAL = questions.length || 10
 
   const botRef = useRef<NeuralBot | null>(null)
@@ -95,8 +99,60 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   const [complete, setComplete] = useState(false)
   const [cubeMsg, setCubeMsg] = useState('') // kup karari sonrasi dogru aksiyon metni
 
-  const interactive = phase === 'playing'
+  const interactive = phase === 'playing' && !loadingQ
   const gradedRef = useRef(-1)
+
+  // Ders sorularini yukle: direct (openings/cube) ya da aday havuzunu NOTRAL equity-gap ile sirala
+  // (en iyi ile 2. hamle arasi gercek fark kucuk = zor). Bir kez yapilir + onbellek.
+  useEffect(() => {
+    const cached = QCACHE.get(lessonId)
+    if (cached) {
+      setQuestions(cached)
+      setTurnStart(cloneState(cached[0]?.state ?? emptyState()))
+      setIdx(0)
+      setLoadingQ(false)
+      return
+    }
+    const plan = lessonPlan(lessonId)
+    if (plan.direct) {
+      QCACHE.set(lessonId, plan.direct)
+      setQuestions(plan.direct)
+      setTurnStart(cloneState(plan.direct[0]?.state ?? emptyState()))
+      setIdx(0)
+      setLoadingQ(false)
+      return
+    }
+    let cancelled = false
+    setLoadingQ(true)
+    ;(async () => {
+      const scored: { state: GameState; gap: number }[] = []
+      for (const st of plan.pool) {
+        if (cancelled) return
+        let gap = Infinity
+        try {
+          const ranked = await botRef.current!.analyzeMoves(st)
+          if (ranked.length >= 2) gap = ranked[0].equity - ranked[1].equity
+        } catch {
+          /* atla */
+        }
+        scored.push({ state: st, gap })
+      }
+      scored.sort((a, b) => a.gap - b.gap) // artan: en zor (kucuk gap) basta
+      const start = Math.max(0, Math.round((scored.length - plan.need) * (1 - plan.hardness)))
+      const gen = scored.slice(start, start + plan.need).map((x) => ({ state: x.state }))
+      const final = [...plan.base, ...gen].slice(0, 10)
+      if (cancelled) return
+      QCACHE.set(lessonId, final)
+      setQuestions(final)
+      setTurnStart(cloneState(final[0]?.state ?? emptyState()))
+      setIdx(0)
+      setLoadingQ(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonId])
 
   const nextSteps = useMemo(
     () => (interactive ? legalNextSteps(turnStart, played) : []),
@@ -324,7 +380,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
 
   // Hamlesiz pozisyon -> otomatik "Hamle yok". Kup sorularinda zar yok -> bu kontrol atlanir.
   useEffect(() => {
-    if (phase !== 'playing' || q?.cube) return
+    if (phase !== 'playing' || q?.cube || !q) return
     if (hasNoMove(generateMoves(turnStart))) {
       setPhase('nomove')
       if (gradedRef.current !== idx) {
@@ -536,6 +592,12 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
         </div>
 
         <div className="bgx-board">
+          {loadingQ && (
+            <div className="bgx-loading" role="status">
+              <Loading size={44} />
+              <span>{t('tr.preparing')}</span>
+            </div>
+          )}
           <Board
             state={displayState}
             selectableFroms={selectableFroms}
