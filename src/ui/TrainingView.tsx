@@ -602,12 +602,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
           </div>
         ) : (
           <div className="bgx-actions">
-            {/* Geri Al / Onayla artik board uzerinde "her zamanki yerinde" (centerLeft/centerRight slot). */}
-            {phase === 'wrong' && (
-              <button className="bgx-retry" onClick={handleRetry}>
-                <Icon name="refresh" size={16} /> {t('tr.retry')}
-              </button>
-            )}
+            {/* Geri Al / Onayla / Tekrar Dene artik board uzerinde (centerLeft/centerRight slot). */}
             <button className="bgx-hint" onClick={hint} disabled={!interactive || checking}>
               {t('tr.hintBtn')}
             </button>
@@ -669,8 +664,14 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             }
             centerRight={
               showNext ? (
-                // "Sonraki Soru" Onayla ile AYNI yerde (centerRight slot).
-                <Button variant="default" onClick={nextQuestion}>{t('tr.next')}</Button>
+                // Yanlista: "Tekrar Dene" (kirmizi) AYNI yerde. Dogru/nomove: "Sonraki Soru".
+                phase === 'wrong' && !q?.cube ? (
+                  <Button variant="destructive" onClick={handleRetry}>
+                    <Icon name="refresh" size={16} /> {t('tr.retry')}
+                  </Button>
+                ) : (
+                  <Button variant="default" onClick={nextQuestion}>{t('tr.next')}</Button>
+                )
               ) : !q?.cube && turnComplete ? (
                 <Button variant="default" onClick={() => void grade()} disabled={!interactive || checking}>
                   {checking && interactive ? <Loading inline size={16} /> : <><Icon name="check" size={16} /> {t('tr.confirm')}</>}

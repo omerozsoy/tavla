@@ -18402,10 +18402,11 @@ body:has(.spectate-view) .app.lobby {
 @keyframes bgx-correct-pop { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 @keyframes bgx-correct-ring { 0% { transform: scale(0.85); opacity: 0.8; } 100% { transform: scale(1.7); opacity: 0; } }
 /* Egitim: dogru oynanan hanenin uzerinde yesil tik (oynanan tasa yakin ic uc). */
-.pt-success { position: absolute; left: 50%; transform: translateX(-50%); z-index: 9; width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #22c55e; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 9px rgba(0, 0, 0, 0.55); pointer-events: none; animation: pt-success-pop 0.3s ease-out both; }
-.point.top .pt-success { bottom: 9%; }
-.point.bottom .pt-success { top: 9%; }
-@keyframes pt-success-pop { 0% { transform: translateX(-50%) scale(0.3); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
+.pt-success { position: absolute; left: 50%; transform: translate(-50%, -50%); z-index: 9; width: 30px; height: 30px; border-radius: 50%; background: #0f172a; color: #22c55e; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 9px rgba(0, 0, 0, 0.55); pointer-events: none; animation: pt-success-pop 0.3s ease-out both; }
+/* Tik oynanan (yigin tepesi) pulun TAM uzerinde: DIS kenardan (derinlik-0.5)x pul capi. */
+.point.top .pt-success { top: calc((var(--pt-depth, 1) - 0.5) * var(--checker)); bottom: auto; }
+.point.bottom .pt-success { bottom: calc((var(--pt-depth, 1) - 0.5) * var(--checker)); top: auto; }
+@keyframes pt-success-pop { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 /* Yanlis hamle: board uzerinde kirmizi X + nabiz halkalari (cozum GOSTERILMEZ). */
 .bgx-wrong { position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%); width: 58px; height: 58px; border-radius: 50%; background: #1a0f12; color: #ef4444; display: flex; align-items: center; justify-content: center; z-index: 7; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); animation: bgx-correct-pop 0.32s ease-out both; }
 .bgx-wrong::before, .bgx-wrong::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgba(239, 68, 68, 0.55); animation: bgx-correct-ring 1.25s ease-out infinite; }
@@ -18428,6 +18429,9 @@ body:has(.spectate-view) .app.lobby {
 .tr-path .bgx-side { width: 380px; }
 .tr-path-side { gap: 12px; }
 .tr-path-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; flex: 0 1 auto; max-height: calc(var(--board-h) - 120px); padding-right: 4px; }
+/* Birlesik ustalik yolu: TUM katman+dersler tek scroll -> panel board boyunda, board en ustte. */
+.tr-tiers-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+.tr-tiers-scroll .tr-path-list { max-height: none; overflow: visible; flex: none; padding-right: 0; }
 .tr-sec { display: flex; flex-direction: column; }
 .tr-sec-head { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tv-ink-faint); text-align: center; margin: 12px 0 8px; }
 /* "GERCEK POZISYONLAR" ana basligi (Seviyeler'den ayirir) + tier alt basliklari (Baslangic/Orta/Ileri). */

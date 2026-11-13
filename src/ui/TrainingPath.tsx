@@ -95,16 +95,17 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
         )}
         <div className="tr-total">{t('tr.totalQuestions', { n: TOTAL_QUESTIONS })}</div>
 
-        {MASTERY_TIERS.map((tier) => (
-          <Fragment key={tier.label}>
-            <div className="tr-sec-tier">{tier.label}</div>
-            <div className="tr-path-list">
-              {tier.lessons.map((l) => renderLesson({ id: l.id, title: l.title, count: l.count }))}
-            </div>
-          </Fragment>
-        ))}
-
-        <div className="bgx-spacer" />
+        {/* Tum katmanlar TEK scroll icinde -> panel board boyunda kalir, board en ustte durur. */}
+        <div className="tr-tiers-scroll">
+          {MASTERY_TIERS.map((tier) => (
+            <Fragment key={tier.label}>
+              <div className="tr-sec-tier">{tier.label}</div>
+              <div className="tr-path-list">
+                {tier.lessons.map((l) => renderLesson({ id: l.id, title: l.title, count: l.count }))}
+              </div>
+            </Fragment>
+          ))}
+        </div>
 
         {selLesson && (
           <div className="tr-path-foot">

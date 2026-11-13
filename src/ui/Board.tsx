@@ -240,7 +240,13 @@ function Point({
 
   const visible = stack ? Math.min(stack.count, 5) : 0
   return (
-    <div className={classes} data-point={index} onClick={selectOnPointerDown ? undefined : handleClick} onPointerDown={handlePointerDown}>
+    <div
+      className={classes}
+      data-point={index}
+      style={success ? ({ '--pt-depth': Math.max(1, visible) } as CSSProperties) : undefined}
+      onClick={selectOnPointerDown ? undefined : handleClick}
+      onPointerDown={handlePointerDown}
+    >
       {/* Hane resmi katmanı (admin özel tahta): üçgen klip SABİT, iç <i> döndürülür/aynalanır.
           Resimsiz tahtalarda CSS'le gizli (display:none) — boş kalır, maliyetsiz. */}
       <i className="pt-img" aria-hidden="true"><i /></i>
