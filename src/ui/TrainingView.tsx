@@ -18,7 +18,7 @@ import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress } from './TrainingPath'
-import { lessonById, lessonPlan, type Question } from './trainingCurriculum'
+import { lessonById, lessonPlan, obviousMoveKey, type Question } from './trainingCurriculum'
 
 // Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
 const QCACHE = new Map<string, Question[]>()
@@ -125,19 +125,26 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     let cancelled = false
     setLoadingQ(true)
     ;(async () => {
-      const scored: { state: GameState; gap: number }[] = []
+      // TUZAK metrigi: "bariz" (acgozlu/sezgisel) hamle ile NÖRAL en-iyi arasindaki equity farki.
+      // Buyuk fark = bariz oynayan BUYUK hata yapar = ogretici/zor pozisyon. (top1-top2 farki DEGIL:
+      // orada iki hamle de iyidir, yanlis yapmak zordur = aslinda kolay.)
+      const scored: { state: GameState; trap: number }[] = []
       for (const st of plan.pool) {
         if (cancelled) return
-        let gap = Infinity
+        let trap = -1
         try {
           const ranked = await botRef.current!.analyzeMoves(st)
-          if (ranked.length >= 2) gap = ranked[0].equity - ranked[1].equity
+          if (ranked.length >= 2) {
+            const obvKey = obviousMoveKey(st)
+            const obv = ranked.find((r) => r.move.resultKey === obvKey)
+            trap = obv ? ranked[0].equity - obv.equity : ranked[0].equity - ranked[ranked.length - 1].equity
+          }
         } catch {
           /* atla */
         }
-        scored.push({ state: st, gap })
+        scored.push({ state: st, trap })
       }
-      scored.sort((a, b) => a.gap - b.gap) // artan: en zor (kucuk gap) basta
+      scored.sort((a, b) => b.trap - a.trap) // azalan: en tuzakli (en zor) basta
       const start = Math.max(0, Math.round((scored.length - plan.need) * (1 - plan.hardness)))
       const gen = scored.slice(start, start + plan.need).map((x) => ({ state: x.state }))
       const final = [...plan.base, ...gen].slice(0, 10)

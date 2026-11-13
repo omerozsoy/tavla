@@ -300,6 +300,12 @@ const SPECS: Spec[] = [
 
 // Aday havuzu: temas + dallanma sartli `count` pozisyon (ZORLUK siralamasi NOTRAL motorla
 // LessonView'da yapilir — sezgisel gap yetersizdi). Ders acilinca bir kez puanlanir + onbellek.
+// "Bariz" (acgozlu/sezgisel) hamlenin resultKey'i — zorluk icin: nöral en-iyi ile BARIZ hamle
+// arasindaki equity farki BUYUKSE pozisyon bir TUZAK (bariz oynayan hata yapar) = ogretici/zor.
+export function obviousMoveKey(s: GameState): string {
+  return heur.chooseMove(s).resultKey
+}
+
 export function genPool(seed: number, minMoves: number, contact: boolean, count: number): GameState[] {
   const rng = mulberry32(seed)
   const out: GameState[] = []
