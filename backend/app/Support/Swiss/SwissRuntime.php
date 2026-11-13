@@ -185,7 +185,35 @@ class SwissRuntime
      *
      * @return array{ok:bool, reason:string}
      */
-    public static function drawRound(Tournament $t): array
+    /**
+     * Elle bay modunda (swiss_auto_draw=false) sıradaki tur kura çekilirken bay gerekiyorsa (aktif oyuncu
+     * TEK sayı) salonda kura çekilecek UYGUN oyuncuları döndürür [{id,name}]; bay gerekmiyor / otomatik
+     * mod ise null. Admin bu listeden birini seçer, drawRound($t, $byeId) ile o kişi bay geçer.
+     *
+     * @return array<int,array{id:int,name:string}>|null
+     */
+    public static function manualByeEligible(Tournament $t): ?array
+    {
+        if ((bool) $t->swiss_auto_draw) {
+            return null; // otomatik mod: sistem seçer
+        }
+        $state = $t->swiss_state;
+        if (! is_array($state) || empty($state['participants'])) {
+            return null;
+        }
+        $active = SwissEngine::active($state['participants']);
+        if (count($active) < 2 || count($active) % 2 === 0) {
+            return null; // bay gerekmez (çift sayı / yetersiz)
+        }
+        $nameById = [];
+        foreach ($active as $p) {
+            $nameById[(int) $p['id']] = $p['name'] ?? ('#'.$p['id']);
+        }
+
+        return array_map(fn ($id) => ['id' => $id, 'name' => $nameById[$id] ?? ('#'.$id)], SwissEngine::byeEligibleIds($active));
+    }
+
+    public static function drawRound(Tournament $t, ?int $forcedBye = null): array
     {
         $st = self::drawStatus($t);
         if (! $st['can']) {
@@ -198,7 +226,7 @@ class SwissRuntime
         }
         $before = count(is_array($t->bracket) ? $t->bracket : []);
 
-        self::generateRound($t);
+        self::generateRound($t, $forcedBye);
 
         // Yeni tur gerçekten eklendiyse planlanan tarihi kaydet + next_at temizle (generateRound
         // finalize etmiş olabilir -> tur eklenmez).
@@ -340,7 +368,7 @@ class SwissRuntime
     }
 
     /** Sonraki turu (eşleştirme + bay) üretip bracket'e ekle; swiss_state'i güncelle. */
-    private static function generateRound(Tournament $t): void
+    private static function generateRound(Tournament $t, ?int $forcedBye = null): void
     {
         $state = $t->swiss_state;
         $bracket = is_array($t->bracket) ? $t->bracket : [];
@@ -348,7 +376,7 @@ class SwissRuntime
         $ri = count($bracket);
         $seed = (string) $state['seed'];
 
-        $pr = SwissEngine::pairRound($state['participants'], $roundNo, $seed);
+        $pr = SwissEngine::pairRound($state['participants'], $roundNo, $seed, $forcedBye);
         if ($pr['complete']) {
             self::finalize($t);
 

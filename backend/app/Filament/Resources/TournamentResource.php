@@ -85,6 +85,7 @@ class TournamentResource extends Resource
                     ->helperText('Bracket System: klasik eleme ağacı (bugünkü). Swiss Triple Elimination: kuralları ayrıca tanımlanacak.')
                     ->options(Tournament::TYPES)
                     ->required()
+                    ->live()
                     ->default('bracket'),
                 Forms\Components\TextInput::make('venue')
                     ->label('Düzenlenme yeri / Otel')
@@ -168,6 +169,13 @@ class TournamentResource extends Resource
                     ->options([1 => '1 haklı', 2 => '2 haklı', 3 => '3 haklı'])
                     ->required()
                     ->default(3),
+                Forms\Components\Select::make('swiss_auto_draw')
+                    ->label('Bye çekme şekli (Swiss)')
+                    ->helperText('Otomatik: sistem bay alacak oyuncuyu kurallara göre (en az bay almış) seçer. Elle: her tur kura çekmeden önce bay çekebilecek uygun oyuncular gösterilir; salonda kura çekip bay olanı sen seçersin, sistem öyle devam eder. Yalnızca Swiss tipinde geçerli.')
+                    ->options([1 => 'Sistem otomatik çeksin', 0 => 'Elle çekilecek (salonda kura)'])
+                    ->required()
+                    ->default(1)
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'swiss_triple'),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')
                     ->relationship('creator', 'nickname')

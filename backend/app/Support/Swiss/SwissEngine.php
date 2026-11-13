@@ -273,7 +273,7 @@ class SwissEngine
      *   complete: bool                             // <=1 aktif => turnuva bitti
      * }
      */
-    public static function pairRound(array $participants, int $roundNo, string $seed): array
+    public static function pairRound(array $participants, int $roundNo, string $seed, ?int $forcedBye = null): array
     {
         $active = self::active($participants);
         $byId = [];
@@ -285,11 +285,12 @@ class SwissEngine
             return ['matches' => [], 'bye' => null, 'deltas' => [], 'optimal' => true, 'report' => [], 'complete' => true];
         }
 
-        // Bay: tek sayıda aktif oyuncu varsa tam bir bay ver.
+        // Bay: tek sayıda aktif oyuncu varsa tam bir bay ver. $forcedBye verildiyse (admin elle seçti)
+        // ve o oyuncu aktifse onu kullan; yoksa kurallara göre otomatik seç (selectBye).
         $bye = null;
         $pool = $active;
         if (count($active) % 2 === 1) {
-            $bye = self::selectBye($active);
+            $bye = ($forcedBye !== null && isset($byId[$forcedBye])) ? $forcedBye : self::selectBye($active);
             $pool = array_values(array_filter($active, fn ($p) => (int) $p['id'] !== $bye));
         }
 
@@ -344,6 +345,25 @@ class SwissEngine
         });
 
         return (int) $cand[0]['id'];
+    }
+
+    /**
+     * Elle bay çekiminde UYGUN oyuncu id'leri: contract §7 kural 1 gereği EN AZ bay almış aktif oyuncular
+     * (biri 2. bay'ı almadan önce herkes 1 bay almalı). Admin salonda bunların arasından kura çeker.
+     *
+     * @return list<int>
+     */
+    public static function byeEligibleIds(array $active): array
+    {
+        if (empty($active)) {
+            return [];
+        }
+        $minByes = min(array_map(fn ($p) => (int) ($p['byes'] ?? 0), $active));
+
+        return array_values(array_map(
+            fn ($p) => (int) $p['id'],
+            array_filter($active, fn ($p) => (int) ($p['byes'] ?? 0) === $minByes),
+        ));
     }
 
     // ---- Eşleştirme maliyeti (lexicographic) --------------------------------

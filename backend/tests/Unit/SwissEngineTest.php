@@ -563,4 +563,37 @@ class SwissEngineTest extends TestCase
         $this->assertNull($r['bye']);
         $this->assertPairingInvariants($p, $r);
     }
+
+    public function test_manual_bye_forces_chosen_player_and_eligible_is_min_byes(): void
+    {
+        // 5 oyuncu (tek) -> bay gerekir. Başta herkes byes=0 -> hepsi uygun.
+        $p = SwissEngine::initParticipants($this->players(5), 's1');
+        $elig = SwissEngine::byeEligibleIds($p);
+        sort($elig);
+        $this->assertSame([1, 2, 3, 4, 5], $elig); // başta herkes byes=0 -> hepsi uygun
+
+        // forcedBye = 3 -> bay 3 olmalı (otomatik seçim ne olursa olsun).
+        $r = SwissEngine::pairRound($p, 1, 's1', 3);
+        $this->assertSame(3, $r['bye']);
+        $this->assertCount(2, $r['matches']); // 4 oyuncu eşleşti
+        foreach ($r['matches'] as [$a, $b]) {
+            $this->assertNotSame(3, $a);
+            $this->assertNotSame(3, $b);
+        }
+
+        // Geçersiz/aktif-olmayan forcedBye -> otomatik seçime düşer (yine de bir bay verir).
+        $r2 = SwissEngine::pairRound($p, 1, 's1', 999);
+        $this->assertNotNull($r2['bye']);
+        $this->assertContains($r2['bye'], [1, 2, 3, 4, 5]);
+    }
+
+    public function test_bye_eligible_only_min_byes_after_a_bye(): void
+    {
+        // 3 oyuncuda P1 bir bay aldıysa, sonraki bay için yalnız P2/P3 uygun (byes=0).
+        $p = SwissEngine::initParticipants($this->players(3), 's2');
+        $p = SwissEngine::applyBye($p, 1, 1); // P1 1 bay aldı
+        $elig = SwissEngine::byeEligibleIds($p);
+        sort($elig);
+        $this->assertSame([2, 3], $elig);
+    }
 }

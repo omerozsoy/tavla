@@ -77,6 +77,30 @@
         </x-filament::section>
     @endif
 
+    @if ($manualByeRound !== null)
+        <x-filament::section>
+            <x-slot name="heading">{{ $manualByeRound }}. tur — Bay çekimi (elle)</x-slot>
+            <x-slot name="description">Aktif oyuncu tek sayı olduğundan bir kişi bay geçecek. Salonda kura çek, bay olan oyuncuyu aşağıdan seç, sonra kurayı çek. Liste yalnız bay çekebilecek (en az bay almış) oyuncuları gösterir.</x-slot>
+
+            <div class="space-y-3">
+                <select wire:model="selectedBye"
+                    class="fi-input block w-full max-w-sm rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-800">
+                    @foreach ($byeChoices as $c)
+                        <option value="{{ $c['id'] }}">{{ $c['name'] }}</option>
+                    @endforeach
+                </select>
+                <div class="flex gap-2">
+                    <x-filament::button wire:click="drawWithManualBye" color="success" icon="heroicon-o-play">
+                        Bayı uygula + kurayı çek
+                    </x-filament::button>
+                    <x-filament::button wire:click="cancelManualBye" color="gray" outlined>
+                        Vazgeç
+                    </x-filament::button>
+                </div>
+            </div>
+        </x-filament::section>
+    @endif
+
     <x-filament::section>
         <x-slot name="heading">Turlar</x-slot>
         <x-slot name="description">Her turdaki oyuncu sayısı ve biten / kalan maç dökümü.</x-slot>

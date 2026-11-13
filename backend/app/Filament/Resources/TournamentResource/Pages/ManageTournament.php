@@ -36,6 +36,15 @@ class ManageTournament extends Page
     /** Listede gösterilecek en yüksek tur no ("Tur ekle" artırır; ileri tur planlamak için). */
     public int $maxRow = 1;
 
+    /** Elle bay: seçim bekleyen tur no (null = seçim yok). Blade bay seçici bölümü bununla açılır. */
+    public ?int $manualByeRound = null;
+
+    /** Elle bay: o tur bay çekebilecek uygun oyuncular [{id,name}] (admin birini seçer). */
+    public array $byeChoices = [];
+
+    /** Elle bay: admin'in seçtiği bay oyuncu id'si (wire:model). */
+    public ?int $selectedBye = null;
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -109,7 +118,10 @@ class ManageTournament extends Page
                     SwissRuntime::setSchedule($t, $times); // 1. tur saati partial state'e yazılır
                     SwissRuntime::start($t);               // schedule korunur, next_at = schedule[1]
                     $t->refresh();
-                    $drew = SwissRuntime::drawRound($t)['ok']; // 1. tur saati varsa çekilir
+                    // Elle bay modunda 1. turu OTOMATİK çekme: bay gerekiyorsa admin listeden "Başlat"
+                    // ile çeker (önce bay çekecek oyuncuyu seçsin). Otomatik mod / bay yoksa normal çek.
+                    $needsManualBye = ! $t->swiss_auto_draw && SwissRuntime::manualByeEligible($t) !== null;
+                    $drew = $needsManualBye ? false : SwissRuntime::drawRound($t)['ok']; // 1. tur saati varsa çekilir
                 });
                 $this->record = $this->t()->fresh();
                 $this->syncRoundTimes();
@@ -214,6 +226,26 @@ class ManageTournament extends Page
     public function startRound(int $round): void
     {
         $times = $this->normalizedTimes();
+        // ELLE BAY: manuel modda + bay gereken turda kura çekmeden ÖNCE uygun oyuncuları göster, admin
+        // salonda kura çekip bay olanı seçsin (sonra drawWithManualBye kurayı o bay ile çeker).
+        $t0 = $this->t();
+        if (
+            SwissRuntime::isSwiss($t0) && $t0->status === 'running'
+            && $round === SwissRuntime::nextRoundNo($t0) && ! empty($times[(string) $round])
+        ) {
+            $elig = SwissRuntime::manualByeEligible($t0);
+            if ($elig) {
+                $this->manualByeRound = $round;
+                $this->byeChoices = $elig;
+                $this->selectedBye = $elig[0]['id'] ?? null;
+                Notification::make()
+                    ->title($round.'. tur — bay çekimi')
+                    ->body('Aktif oyuncu tek sayı: bir kişi bay geçecek. Salonda kura çek, bay olanı aşağıdan seç, "Bayı uygula + kurayı çek"e bas.')
+                    ->info()->send();
+
+                return;
+            }
+        }
         $res = ['ok' => false, 'reason' => 'x'];
         DB::transaction(function () use ($round, $times, &$res): void {
             $t = Tournament::lockForUpdate()->find($this->t()->id);
@@ -252,6 +284,69 @@ class ManageTournament extends Page
             default => 'Tur başlatılamadı.',
         };
         Notification::make()->title($msg)->{$res['ok'] ? 'success' : 'warning'}()->send();
+    }
+
+    /** Elle bay: admin salonda kura çekip seçtiği oyuncuyu bay yaparak turu çeker. */
+    public function drawWithManualBye(): void
+    {
+        $round = $this->manualByeRound;
+        $byeId = $this->selectedBye !== null ? (int) $this->selectedBye : null;
+        $this->manualByeRound = null;
+        $this->byeChoices = [];
+        if ($round === null || $byeId === null) {
+            return;
+        }
+        $times = $this->normalizedTimes();
+        $res = ['ok' => false, 'reason' => 'x'];
+        DB::transaction(function () use ($round, $byeId, $times, &$res): void {
+            $t = Tournament::lockForUpdate()->find($this->t()->id);
+            if (! $t || ! SwissRuntime::isSwiss($t)) {
+                return;
+            }
+            SwissRuntime::setSchedule($t, $times);
+            if ($t->status !== 'running') {
+                $res = ['ok' => false, 'reason' => 'not_running'];
+
+                return;
+            }
+            if (empty($times[(string) $round])) {
+                $res = ['ok' => false, 'reason' => 'no_datetime'];
+
+                return;
+            }
+            if ($round !== SwissRuntime::nextRoundNo($t)) {
+                $res = ['ok' => false, 'reason' => 'not_next'];
+
+                return;
+            }
+            // Seçilen oyuncu hâlâ bay çekebilir durumda mı? (yarış/değişim koruması)
+            $elig = SwissRuntime::manualByeEligible($t);
+            if (! $elig || ! in_array($byeId, array_column($elig, 'id'), true)) {
+                $res = ['ok' => false, 'reason' => 'bye_invalid'];
+
+                return;
+            }
+            $res = SwissRuntime::drawRound($t, $byeId);
+        });
+        $this->record = $this->t()->fresh();
+        $this->syncRoundTimes();
+        $msg = match ($res['reason']) {
+            'ok' => $round.'. tur kurası çekildi (bay elle seçildi).',
+            'bye_invalid' => 'Seçilen oyuncu artık bay çekemiyor; tekrar dene.',
+            'round_incomplete' => 'Çekilemedi: önceki turun maçları bitmedi.',
+            'not_next' => 'Çekilemedi: yalnızca sıradaki tur çekilebilir.',
+            'not_running' => 'Çekilemedi: turnuva uygun durumda değil.',
+            default => 'Kura çekilemedi.',
+        };
+        Notification::make()->title($msg)->{$res['ok'] ? 'success' : 'warning'}()->send();
+    }
+
+    /** Elle bay seçimini iptal et (kura çekmeden kapat). */
+    public function cancelManualBye(): void
+    {
+        $this->manualByeRound = null;
+        $this->byeChoices = [];
+        $this->selectedBye = null;
     }
 
     /**
