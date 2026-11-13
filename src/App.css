@@ -18348,7 +18348,7 @@ body:has(.spectate-view) .app.lobby {
 
   display: flex;
   gap: 32px;
-  align-items: center;
+  align-items: flex-start; /* board + panel USTTEN hizali (board asagi dusmesin) */
   color: var(--text);
 }
 .tr-view .bgx-board .board { width: fit-content; max-width: 100%; margin: 0; }
@@ -18440,7 +18440,7 @@ body:has(.spectate-view) .app.lobby {
 .bgx-count { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); }
 
 /* --- Ustalık Yolu (Mastery Path) listesi --- */
-.tr-path .bgx-side { width: 380px; }
+.tr-path .bgx-side { width: 380px; max-height: var(--board-h); } /* panel board boyunu asmaz -> ic scroll */
 .tr-path-side { gap: 12px; }
 .tr-path-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; flex: 0 1 auto; max-height: calc(var(--board-h) - 120px); padding-right: 4px; }
 /* Birlesik ustalik yolu: TUM katman+dersler tek scroll -> panel board boyunda, board en ustte. */
