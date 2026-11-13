@@ -52,6 +52,7 @@ type Who = {
   sub?: string
   pr?: number | null // anlik PR (yalniz bota karsi self); null ise gizli
   prEstimate?: boolean // true -> "~" (oyun-ici tahmin)
+  onOpenProfile?: () => void // rakip avatarina tikla -> herkese acik profil karti (self'te undefined)
 }
 
 function Player({ who, ring, coins, onAvatar }: {
@@ -91,7 +92,7 @@ export function GameHudHeader({ self, opp, selfCoins, target, selfScore, oppScor
   const oppColor = selfColor === 'white' ? 'black' : 'white'
   return (
     <div className="gb-identity">
-      <Player who={self} ring="blue" coins={selfCoins} />
+      <Player who={self} ring="blue" coins={selfCoins} onAvatar={self.onOpenProfile} />
       <div className="gb-center">
         <div className="gb-vsbox">
           <div className="gb-vsrow"><Icon name="crown-simple" size={14} />{selfScore}–{oppScore}<span className="gb-vslbl">skor</span></div>
@@ -106,7 +107,7 @@ export function GameHudHeader({ self, opp, selfCoins, target, selfScore, oppScor
           <span className={`gb-vs-chk ${oppColor === 'white' ? 'white' : 'navy'}`} />
         </div>
       </div>
-      <Player who={opp} ring="gold" onAvatar={opp.isBot ? undefined : undefined} />
+      <Player who={opp} ring="gold" onAvatar={opp.onOpenProfile} />
     </div>
   )
 }
