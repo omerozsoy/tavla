@@ -86,4 +86,69 @@ class RevenueCatCoinTest extends TestCase
         $this->assertSame(0, RevenueCat::fulfillCoins($u));
         $this->assertSame(0, (int) $u->fresh()->coins);
     }
+
+    public function test_premium_subscription_records_payment_idempotent(): void
+    {
+        $u = User::factory()->create();
+        Http::fake(['api.revenuecat.com/*' => Http::response([
+            'subscriber' => [
+                'entitlements' => [
+                    'tavlatv_premium' => [
+                        'expires_date' => '2027-11-13T00:00:00Z',
+                        'product_identifier' => 'premium_yearly:yearly',
+                    ],
+                ],
+                'subscriptions' => [
+                    'premium_yearly:yearly' => [
+                        'purchase_date' => '2026-11-13T00:00:00Z',
+                        'expires_date' => '2027-11-13T00:00:00Z',
+                        'period_type' => 'normal',
+                        'store' => 'play_store',
+                        'price' => ['amount' => 699.99, 'currency' => 'TRY'],
+                    ],
+                ],
+            ],
+        ], 200)]);
+
+        RevenueCat::syncUser($u);
+        $this->assertSame('premium', $u->fresh()->plan);
+        $this->assertDatabaseHas('payments', [
+            'user_id' => $u->id,
+            'kind' => 'subscription',
+            'plan' => 'premium',
+            'payment_method' => 'google_play',
+            'status' => 'paid',
+            'amount' => 69999, // RC 699.99 TRY -> kuruş
+        ]);
+
+        // Aynı dönem (açılış + webhook tekrar sync) -> tek ödeme kaydı.
+        RevenueCat::syncUser($u->fresh());
+        $this->assertSame(1, Payment::query()->where('user_id', $u->id)->where('kind', 'subscription')->count());
+    }
+
+    public function test_premium_trial_does_not_record_payment(): void
+    {
+        $u = User::factory()->create();
+        Http::fake(['api.revenuecat.com/*' => Http::response([
+            'subscriber' => [
+                'entitlements' => [
+                    'tavlatv_premium' => [
+                        'expires_date' => '2027-11-13T00:00:00Z',
+                        'product_identifier' => 'premium_yearly:yearly',
+                    ],
+                ],
+                'subscriptions' => [
+                    'premium_yearly:yearly' => [
+                        'purchase_date' => '2026-11-13T00:00:00Z',
+                        'expires_date' => '2027-11-13T00:00:00Z',
+                        'period_type' => 'trial',
+                        'store' => 'play_store',
+                    ],
+                ],
+            ],
+        ], 200)]);
+
+        RevenueCat::syncUser($u);
+        $this->assertSame(0, Payment::query()->where('user_id', $u->id)->where('kind', 'subscription')->count());
+    }
 }

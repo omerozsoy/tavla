@@ -77,6 +77,7 @@ class RevenueCat
 
         if ($active) {
             self::applyActive($u, $until);
+            self::recordSubscriptionPayment($u, (array) $res->json(), (array) $entitlement);
 
             return ['premium' => true, 'until' => $until?->toIso8601String(), 'ok' => true];
         }
@@ -172,6 +173,52 @@ class RevenueCat
         }
 
         return $granted;
+    }
+
+    /**
+     * Premium abonelik satın alma/yenileme -> "Ödemeler"e (Payment) yaz. Abonelik RC'de subscriptions
+     * altında TEK obje (coin'deki gibi liste DEĞİL); her DÖNEM purchase_date ile ayrışır -> order_id o
+     * döneme özel (açılış/webhook tekrarları tek kayıt; yenileme yeni purchase_date -> yeni kayıt).
+     * Trial (bedava deneme) ödeme değildir, atlanır. Tutar RC price varsa ondan, yoksa pricing config.
+     */
+    private static function recordSubscriptionPayment(User $u, array $json, array $entitlement): void
+    {
+        $productId = (string) data_get($entitlement, 'product_identifier', '');
+        if ($productId === '') {
+            return;
+        }
+        $sub = data_get($json, "subscriber.subscriptions.$productId");
+        if (! is_array($sub)) {
+            return;
+        }
+        if (data_get($sub, 'period_type') === 'trial') {
+            return; // bedava deneme -> ödeme yok
+        }
+        $purchaseDate = (string) data_get($sub, 'purchase_date', '');
+        if ($purchaseDate === '') {
+            return;
+        }
+
+        $order = 'iap_sub_'.substr(sha1($productId.'|'.$purchaseDate), 0, 48);
+        $rcAmount = (float) data_get($sub, 'price.amount', 0);
+        $rcCurrency = (string) data_get($sub, 'price.currency', '');
+        $amount = $rcAmount > 0
+            ? (int) round($rcAmount * 100)
+            : (int) (config('pricing.prices.premium.yearly') ?? 0);
+
+        Payment::query()->firstOrCreate(
+            ['order_id' => $order],
+            [
+                'user_id' => $u->id,
+                'kind' => 'subscription',
+                'payment_method' => 'google_play',
+                'plan' => 'premium',
+                'period' => 'yearly',
+                'amount' => $amount,
+                'currency' => $rcCurrency === 'TRY' || $rcCurrency === '' ? '949' : $rcCurrency,
+                'status' => 'paid',
+            ]
+        );
     }
 
     private static function applyActive(User $u, ?Carbon $until): void
