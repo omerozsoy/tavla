@@ -55,7 +55,7 @@ export default function TrainingPath({ onPick, onClose, titleOverride }: Props) 
           <button className="bgx-back" onClick={onClose} aria-label={t('common.back')}>
             <Icon name="arrow-right" size={22} />
           </button>
-          <span className="bgx-title">{titleOverride || t('tr.masteryPath')}</span>
+          {titleOverride && <span className="bgx-title">{titleOverride}</span>}
         </div>
 
         <div className="tr-sec-head">{t('tr.levelsHead')}</div>
