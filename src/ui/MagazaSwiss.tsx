@@ -3,6 +3,7 @@ import './MagazaSwiss.css'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { useCoinPackages } from '../useCoinPackages'
+import type { CoinPackage } from '../coinPackages'
 import { PLANS } from '../plans'
 import { MEMBERSHIP_ITEM_ID, type CartItem } from './Cart'
 import {
@@ -170,7 +171,17 @@ export default function MagazaSwiss({
     flashAdded(`p${p.id}`)
   }
 
-  // Jeton paketi ekleme KALDIRILDI (jeton satışı yok). coinPackages hâlâ gizli CartSection'a geçer.
+  // Jeton paketi sepete ekle (kullanıcı coinleri geri açtı). Membership tekil olduğu için onu temizler.
+  const addCoin = (pkg: CoinPackage) => {
+    if (!user) return onRequireAuth()
+    setCartItems((prev) => {
+      const base = prev.filter((c) => c.kind !== 'membership')
+      const ex = base.find((c) => c.id === pkg.id && (c.kind === 'coins' || c.kind === undefined))
+      if (ex) return base.map((c) => (c.id === pkg.id ? { ...c, qty: Math.min(10, c.qty + 1) } : c))
+      return [...base, { id: pkg.id, qty: 1, kind: 'coins' }]
+    })
+    flashAdded(`coin:${pkg.id}`)
+  }
 
   const addMembership = () => {
     if (!user) return onRequireAuth()
@@ -342,6 +353,36 @@ export default function MagazaSwiss({
           })}
         </div>
       </section>
+
+      {/* JETON PAKETLERİ — admin tüm paketleri yayından kaldırdıysa (boş liste) komple gizle. */}
+      {coinPackages.length > 0 && (
+        <section id="jeton" className="mgz-section" aria-label="Jeton Paketleri">
+          <div className="mgz-section-head">
+            <h2 className="mgz-h2">Jeton Paketleri</h2>
+          </div>
+          <div className="mgz-coins">
+            {coinPackages.map((p) => {
+              const per = (p.price / p.gc).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              return (
+                <div key={p.id} className={`mgz-coin ${p.popular ? 'is-pop' : ''}`}>
+                  {p.popular && <span className="mgz-coin-badge">EN POPÜLER</span>}
+                  <span className="mgz-coin-name">{p.name}</span>
+                  <span className="mgz-coin-ico"><Coins amount={p.gc} size={22} suffix="coin" /></span>
+                  <span className="mgz-coin-price tnum">{fmtTL(p.price)}</span>
+                  <span className="mgz-coin-per">Jeton başına {per} ₺{p.discount > 0 ? ` · %${p.discount} avantaj` : ''}</span>
+                  {added[`coin:${p.id}`] ? (
+                    <span className="mgz-added" role="status"><Icon name="check" size={14} /> Sepete eklendi</span>
+                  ) : (
+                    <button type="button" className="mgz-btn" onClick={() => addCoin(p)}>
+                      Sepete Ekle <Icon name="arrow-right" size={14} />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
         </>
       )}
 
