@@ -202,6 +202,20 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   const grade = useCallback(async () => {
     if (checking || gradedRef.current === idx) return
     gradedRef.current = idx
+    // OTORITER cevap (unlu pozisyon): motora gerek yok, dogrudan XG cevabina gore puanla.
+    if (q?.answer) {
+      const userKey = boardKey(applyPlayed(turnStart, played))
+      const ok = userKey === q.answer.resultKey
+      setBest({ move: q.answer, equity: 0, probs: [] })
+      const firstTryOk = ok && !hinted
+      setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
+      setStreak((s) => (firstTryOk ? s + 1 : 0))
+      setReveal(!ok)
+      setPhase(ok ? 'correct' : 'wrong')
+      if (ok) Sound.win()
+      else Sound.lose()
+      return
+    }
     setChecking(true)
     try {
       const ranked = await ensureBest()
@@ -231,7 +245,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       setChecking(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, turnStart, played, hinted, checking])
+  }, [idx, turnStart, played, hinted, checking, q])
 
   // Hamlesiz pozisyon (barda kapalı vb.) -> otomatik "Hamle yok". Diğer durumda OTOMATİK
   // değerlendirme YOK: oyuncu adımlarını oynar, "Geri Al" ile düzeltir, "Onayla" ile gönderir.
@@ -257,6 +271,15 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
 
   async function hint() {
     if (!interactive || checking) return
+    // Otoriter cevap varsa (unlu pozisyon) dogrudan onu goster.
+    if (q?.answer) {
+      setBest({ move: q.answer, equity: 0, probs: [] })
+      setHinted(true)
+      setPlayed([])
+      setSelectedFrom(null)
+      setReveal(true)
+      return
+    }
     setChecking(true)
     try {
       const ranked = await ensureBest()

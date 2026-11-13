@@ -11,10 +11,13 @@ import { initialState } from '../engine/board'
 import { generateMoves, hasNoMove } from '../engine/moves'
 import { applyMove, newTurn } from '../engine/game'
 import { HeuristicBot } from '../engine/engine'
+import { parseXgid } from '../engine/xgid'
+import { matchGnubgMove } from '../engine/gnubgMove'
 
 export interface Question {
   state: GameState // zari atilmis, beyaz oynayacak pozisyon
   intro?: string // opsiyonel authored ipucu (acilislarda). Yoksa aciklama motordan uretilir.
+  answer?: Move // OTORITER dogru hamle (unlu pozisyonlarda XG cevabi). Varsa buna gore puanlanir (motora gerek yok).
 }
 
 export interface Lesson {
@@ -149,13 +152,53 @@ const REF_HARD: Question[] = [
 
 const REFS: Record<string, Question[]> = { lvl3: REF_MED, lvl8: REF_HARD }
 
-// Bir dersin 10 sorusu: varsa referans pozisyonlari + kalani uretilmis (deterministik).
+// --- UNLU / GERCEK PozISYONLAR (forum/XG kaynakli, XGID birebir). Cevabi dogrulanabilenlerde
+// XG cevabina (answer) gore puanlanir; dogrulanmayanlarda motora birakilir. XGID'ler gercek
+// forum gonderilerinden alinmistir (backgammonforums.com / chrisbraybackgammon.com). ---
+interface Famous {
+  xgid: string
+  answer: string // XG'nin verdigi en iyi hamle notasyonu ("5/1 5/4*"); cozulurse otoriter
+  concept: string
+}
+const FAMOUS_MED: Famous[] = [
+  { xgid: 'XGID=-a-aBBC-A---cE-a-bbe----B-:0:0:1:52:0:0:3:0:10', answer: '8/3* 3/1*',
+    concept: 'Para oyunu: kurulu tahtada iki kez vurmak ortmekten iyi.' },
+  { xgid: 'XGID=-b-B--DBA---cD---aadb--bB-:0:0:1:42:0:0:3:0:10', answer: '8/4 6/4',
+    concept: 'Nokta yapmak gevsek vurustan iyidir (24/18* bir hataydi).' },
+  { xgid: 'XGID=-FBEa--A--A--------cbbcbb-:0:0:1:42:0:0:0:1:10', answer: '10/4*',
+    concept: 'Esit sut olsa da vur: bosa giden ev tahtasi ikinci sut birakmani onler.' },
+  { xgid: 'XGID=-bB-BBC-A--AcB---bAbbb--bA:0:0:1:21:0:0:3:0:10', answer: '',
+    concept: 'Para oyunu: bogaz noktasini slot la, primi uzat.' },
+  { xgid: 'XGID=-bB-CBC-AC-Aa-a--babbbb---:1:-1:1:61:0:0:3:0:10', answer: '',
+    concept: 'Arka tas stratejisi (Michy): fazla sut birakma.' },
+]
+const FAMOUS_HARD: Famous[] = [
+  { xgid: 'XGID=-ABCaBC-----bB-a--Bcbacb--:1:-1:1:41:0:0:0:7:10', answer: '5/1 5/4*',
+    concept: 'UBC 2023 Finali (Sander-Mochy) "banana split": dogal 6/1 yerine agresif vurus.' },
+  { xgid: 'XGID=-a-B--EaC---dC--ac-cb---B-:0:0:1:22:0:0:0:7:10', answer: '',
+    concept: 'Benzer-ikili #1: neredeyse ayni gorunen pozisyonda agresif oyun kazanir.' },
+  { xgid: 'XGID=-a-B-aE-C---dC--ac-cb---B-:0:0:1:22:0:0:0:7:10', answer: '',
+    concept: 'Benzer-ikili #2: cok benzer ama cevap tersine doner — sessiz yapi kazanir.' },
+  { xgid: 'XGID=-CFCA--a-B----a----abcbcb-:0:0:1:42:6:3:1:7:10', answer: '',
+    concept: 'Vur-vurma karari: her zaman vurmak dogru degil; guvenlik de bir secenek.' },
+]
+
+function famousToQuestion(f: Famous): Question | null {
+  const r = parseXgid(f.xgid)
+  if (!r || !r.dice) return null
+  const mv = f.answer ? matchGnubgMove(r.state, 'white', f.answer) : null
+  return { state: r.state, intro: f.concept, answer: mv ?? undefined }
+}
+const FAMOUS: Record<string, Famous[]> = { lvl3: FAMOUS_MED, lvl8: FAMOUS_HARD }
+
+// Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (deterministik).
 function buildLesson(s: Spec): Question[] {
   if (s.openings) return openingQuestions()
+  const famous = (FAMOUS[s.id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null)
   const ref = REFS[s.id] ?? []
-  const need = 10 - ref.length
+  const need = 10 - famous.length - ref.length
   const gen = need > 0 ? genQuestions(s.seed!, s.min!, s.max!, s.mv!, need) : []
-  return [...ref, ...gen].slice(0, 10)
+  return [...famous, ...ref, ...gen].slice(0, 10)
 }
 
 // Seviye tanimlari: id, ad, uretim parametreleri (l1 = acilislar). Zorluk ply + dallanma ile artar.
