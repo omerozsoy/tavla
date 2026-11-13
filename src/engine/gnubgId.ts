@@ -7,9 +7,12 @@
 // Match ID: zar/kup/sira/skor (9 byte, base64 12 karakter) — biz yalniz ZAR + SIRA alanlarini kullaniriz.
 
 import type { GameState } from './types'
-import { diceExpand } from './game'
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+function diceExpand(d: [number, number]): number[] {
+  return d[0] === d[1] ? [d[0], d[0], d[0], d[0]] : [d[0], d[1]]
+}
 
 function b64ToBytes(s: string): Uint8Array | null {
   const clean = s.trim().replace(/=+$/, '')
