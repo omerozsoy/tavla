@@ -40,7 +40,7 @@ class LiveTournamentController extends Controller
             'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'], // 0 = sınırsız
             'match_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
             'swiss_lives' => ['nullable', 'integer', 'in:1,2,3'], // Swiss hak sayısı (bracket yok sayar)
-            'register_until' => ['nullable', 'date'],
+            'register_until' => ['required', 'date'], // başlangıç ZORUNLU (turnuva o saatte başlar)
             'join_password' => ['nullable', 'string', 'max:60'], // boş = halka açık
         ]);
 

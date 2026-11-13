@@ -35,9 +35,14 @@ class LiveTournamentAccessTest extends TestCase
 
         // Yanlış şifre -> kurmaz
         $this->postJson('/api/live-tournament/create', [
-            'password' => 'yanlis', 'name' => 'Deneme', 'size' => 8,
+            'password' => 'yanlis', 'name' => 'Deneme', 'size' => 8, 'register_until' => '2026-12-01 20:00',
         ])->assertStatus(401);
         $this->assertSame(0, Tournament::count());
+
+        // Başlangıç ZORUNLU: register_until olmadan -> 422
+        $this->postJson('/api/live-tournament/create', [
+            'password' => 'fb456', 'name' => 'Deneme', 'size' => 8,
+        ])->assertStatus(422);
 
         // Doğru şifre -> turnuva kurulur (grup adı venue, premium_only false)
         $res = $this->postJson('/api/live-tournament/create', [
@@ -47,6 +52,7 @@ class LiveTournamentAccessTest extends TestCase
             'size' => 16,
             'match_length' => 3,
             'swiss_lives' => 2,
+            'register_until' => '2026-12-01 20:00',
             'join_password' => 'gizli',
         ])->assertOk()->json();
 
