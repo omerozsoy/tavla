@@ -14,6 +14,7 @@ import { moveNotation } from '../engine/notation'
 import { explainMove } from '../engine/explain'
 import { pipCount } from '../engine/evaluate'
 import { NeuralBot, type RankedMove } from '../engine/neuralBot'
+import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress } from './TrainingPath'
 import { lessonById, getQuestions, type Question } from './trainingCurriculum'
@@ -42,9 +43,9 @@ type Phase = 'playing' | 'correct' | 'wrong' | 'nomove' | 'error'
 function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
   return (
     <svg className="bgx-face" viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="2" y="2" width="44" height="44" rx="11" fill="#d14e24" />
-      <circle cx="12" cy="10" r="2.4" fill="#f7e2d4" />
-      <circle cx="17.5" cy="8" r="1.5" fill="#f7e2d4" />
+      <rect x="2" y="2" width="44" height="44" rx="11" fill="#2f6bff" />
+      <circle cx="12" cy="10" r="2.4" fill="#cfe0ff" />
+      <circle cx="17.5" cy="8" r="1.5" fill="#cfe0ff" />
       {mood === 'bad' ? (
         <>
           <circle cx="18" cy="24" r="2.6" fill="#0b1b45" />
@@ -68,8 +69,7 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
   )
 }
 
-// Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar at, oyna, otomatik degerlendir;
-// yanlissa dogru hamle oklarla gosterilir. Aciklama motorun sectigi hamleden (explainMove) uretilir.
+// Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar/kup karari, "Onayla" ile gonderilir.
 function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
@@ -92,6 +92,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   const [results, setResults] = useState<boolean[]>([])
   const [streak, setStreak] = useState(0)
   const [complete, setComplete] = useState(false)
+  const [cubeMsg, setCubeMsg] = useState('') // kup karari sonrasi dogru aksiyon metni
 
   const interactive = phase === 'playing'
   const gradedRef = useRef(-1)
@@ -164,8 +165,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     setSelectedFrom(null)
   }
 
-  // Zar sırasını değiştir (ana oyundaki ile aynı): tek-tık hamlede hangi zarın önce
-  // kullanılacağını belirler. Tur ortasında da çalışır -> oynanan adımları geri alır.
+  // Zar sirasini degistir (tek-tik hangi zari once oynar). Tur ortasinda adimlari geri alir.
   const canSwapDice = interactive && turnStart.dice.length === 2 && turnStart.dice[0] !== turnStart.dice[1]
   function handleSwapDice() {
     if (!canSwapDice) return
@@ -186,6 +186,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     setBest(null)
     setHinted(false)
     setReveal(false)
+    setCubeMsg('')
     setPhase('playing')
   }
 
@@ -262,10 +263,42 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, turnStart, played, hinted, checking, q])
 
-  // Hamlesiz pozisyon (barda kapalı vb.) -> otomatik "Hamle yok". Diğer durumda OTOMATİK
-  // değerlendirme YOK: oyuncu adımlarını oynar, "Geri Al" ile düzeltir, "Onayla" ile gönderir.
+  // KUP karari puanlama: motor (evalPosition -> probs) dogru aksiyonu belirler.
+  async function gradeCube(action: 'double' | 'nodouble' | 'take' | 'pass') {
+    if (checking || gradedRef.current === idx || !q?.cube) return
+    gradedRef.current = idx
+    setChecking(true)
+    try {
+      const probs = await botRef.current!.evalPosition(turnStart, 'white')
+      let ok: boolean
+      let msg: string
+      if (q.cube === 'respond') {
+        const r = takeLoss(probs, action === 'take' ? 'take' : 'pass')
+        ok = r.normalizedEquityLoss <= EPS
+        msg = t(r.bestAction === 'take' ? 'tr.cube.ansTake' : 'tr.cube.ansPass')
+      } else {
+        const r = offerLoss(probs, action === 'double' ? 'double' : 'no-double')
+        ok = r.normalizedEquityLoss <= EPS
+        msg = t(r.bestAction === 'double' ? 'tr.cube.ansDouble' : 'tr.cube.ansNoDouble')
+      }
+      setCubeMsg(msg)
+      const firstTryOk = ok && !hinted
+      setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
+      setStreak((s) => (firstTryOk ? s + 1 : 0))
+      setPhase(ok ? 'correct' : 'wrong')
+      if (ok) Sound.win()
+      else Sound.lose()
+    } catch {
+      setPhase('error')
+      gradedRef.current = -1
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  // Hamlesiz pozisyon -> otomatik "Hamle yok". Kup sorularinda zar yok -> bu kontrol atlanir.
   useEffect(() => {
-    if (phase !== 'playing') return
+    if (phase !== 'playing' || q?.cube) return
     if (hasNoMove(generateMoves(turnStart))) {
       setPhase('nomove')
       if (gradedRef.current !== idx) {
@@ -274,9 +307,9 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
         setStreak(0)
       }
     }
-  }, [phase, turnStart, idx])
+  }, [phase, turnStart, idx, q])
 
-  // Son oynanan adımı (bir zarı) geri al.
+  // Son oynanan adimi (bir zari) geri al.
   function handleUndo() {
     if (!interactive || !played.length) return
     Sound.move()
@@ -328,19 +361,43 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       <p>{t('tr.completeSub', { n: correctCount, total: TOTAL })}</p>
     </>
   ) : phase === 'correct' ? (
-    <>
-      <h4>{bestText} {t('tr.correctSuffix')}</h4>
-      <p>{explanation}</p>
-    </>
+    q?.cube ? (
+      <>
+        <h4>{t('tr.cube.correct')}</h4>
+        <p>{cubeMsg}{q.intro ? ` — ${q.intro}` : ''}</p>
+      </>
+    ) : (
+      <>
+        <h4>{bestText} {t('tr.correctSuffix')}</h4>
+        <p>{explanation}</p>
+      </>
+    )
   ) : phase === 'wrong' ? (
-    <>
-      <h4>{t('tr.betterExists')}</h4>
-      <p>{t('tr.wrongExplain', { move: bestText })} {explanation}</p>
-    </>
+    q?.cube ? (
+      <>
+        <h4>{t('tr.cube.wrong')}</h4>
+        <p>{cubeMsg}{q.intro ? ` — ${q.intro}` : ''}</p>
+      </>
+    ) : (
+      <>
+        <h4>{t('tr.betterExists')}</h4>
+        <p>{t('tr.wrongExplain', { move: bestText })} {explanation}</p>
+      </>
+    )
   ) : phase === 'nomove' ? (
     <p>{t('tr.noMove')}</p>
   ) : phase === 'error' ? (
     <p>{t('tr.engineErr')}</p>
+  ) : q?.cube ? (
+    <>
+      {q.title && <h4>{q.title}</h4>}
+      <p>{q.cube === 'respond' ? t('tr.cube.respondPrompt') : t('tr.cube.offerPrompt')}</p>
+    </>
+  ) : q?.title ? (
+    <>
+      <h4>{q.title}</h4>
+      <p>{t('tr.findBest')}</p>
+    </>
   ) : (
     <p>{q?.intro || t('tr.findBest')}</p>
   )
@@ -398,6 +455,23 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
               {t('tr.replay')}
             </button>
             <button className="bgx-btn green" onClick={onBack}>{t('tr.nextLesson')}</button>
+          </div>
+        ) : q?.cube ? (
+          <div className="bgx-actions">
+            <div className="bgx-act-row">
+              {q.cube === 'respond' ? (
+                <>
+                  <button className="bgx-btn green" onClick={() => void gradeCube('take')} disabled={!interactive || checking}>{t('tr.cube.take')}</button>
+                  <button className="bgx-btn ghost" onClick={() => void gradeCube('pass')} disabled={!interactive || checking}>{t('tr.cube.pass')}</button>
+                </>
+              ) : (
+                <>
+                  <button className="bgx-btn green" onClick={() => void gradeCube('double')} disabled={!interactive || checking}>{t('tr.cube.double')}</button>
+                  <button className="bgx-btn ghost" onClick={() => void gradeCube('nodouble')} disabled={!interactive || checking}>{t('tr.cube.nodouble')}</button>
+                </>
+              )}
+            </div>
+            {checking && interactive && <Loading inline size={16} />}
           </div>
         ) : (
           <div className="bgx-actions">
