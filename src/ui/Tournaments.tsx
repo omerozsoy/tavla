@@ -1586,7 +1586,15 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               <Countdown target={tr.starts_at} onExpire={refreshList} />
             </div>
           )}
-          <div className="event-title">{tr.name}</div>
+          <div className="event-title">
+            {tr.name}
+            {start && (
+              <span className="tourn-title-time">
+                {' · '}
+                {start.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
           {/* Maç detayı: "Maçlar: 3 puan · 3 dk" (liste kartında özet). */}
           <div className="tourn-card-matches">
             <Icon name="target" size={13} /> {t('tourn.lengthLabel')}: <b>{lenLabel(tr.match_length || 1)}</b>
