@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
 import { useEscape } from './useEscape'
@@ -566,14 +567,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
           </div>
         ) : (
           <div className="bgx-actions">
-            <div className="bgx-act-row">
-              <button className="bgx-btn ghost" onClick={handleUndo} disabled={!interactive || !played.length}>
-                <Icon name="refresh" size={16} /> {t('tr.undo')}
-              </button>
-              <button className="bgx-btn green" onClick={() => void grade()} disabled={!interactive || !turnComplete || checking}>
-                {checking && interactive ? <Loading inline size={16} /> : <><Icon name="check" size={16} /> {t('tr.confirm')}</>}
-              </button>
-            </div>
+            {/* Geri Al / Onayla artik board uzerinde "her zamanki yerinde" (centerLeft/centerRight slot). */}
             <button className="bgx-hint" onClick={hint} disabled={!interactive || checking}>
               {t('tr.hintBtn')}
             </button>
@@ -620,7 +614,22 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             pipBottom={pipCount(displayState, 'white')}
             cube={{ value: 1, owner: null }}
             numberFrom="white"
-            centerRight={<DiceRow faces={faces} owner="white" swappable={canSwapDice} onSwap={handleSwapDice} />}
+            centerLeft={
+              !q?.cube && played.length ? (
+                <Button variant="default" onClick={handleUndo} disabled={!interactive}>
+                  <Icon name="refresh" size={16} /> {t('tr.undo')}
+                </Button>
+              ) : undefined
+            }
+            centerRight={
+              !q?.cube && turnComplete ? (
+                <Button variant="default" onClick={() => void grade()} disabled={!interactive || checking}>
+                  {checking && interactive ? <Loading inline size={16} /> : <><Icon name="check" size={16} /> {t('tr.confirm')}</>}
+                </Button>
+              ) : (
+                <DiceRow faces={faces} owner="white" swappable={canSwapDice} onSwap={handleSwapDice} />
+              )
+            }
             showPip
           />
           {showArrows && best && <MoveArrows steps={best.move.steps} dep={`best:${idx}:${best.move.resultKey}`} />}
