@@ -45,6 +45,7 @@ class Tournament extends Model
         'third_place_match', // true: 3.'luk (3-4) maci oynanir; false: finale direkt gecilir (3./4. rating'e gore)
         'swiss_lives', // 3 Hakli Swiss hak sayisi (1/2/3); baslangicta swiss_state config'e kilitlenir
         'swiss_auto_draw', // Swiss bye/kura sekli: false=elle, true=sistem otomatik
+        'archived_at', // admin listesinden gizleme damgasi (sitede gosterim 'active' ile ayri)
     ];
 
     protected $casts = [
@@ -56,6 +57,7 @@ class Tournament extends Model
         'premium_only' => 'boolean',
         'third_place_match' => 'boolean',
         'register_until' => 'datetime',
+        'archived_at' => 'datetime',
         'match_length' => 'integer',
         'semi_length' => 'integer',
         'final_length' => 'integer',

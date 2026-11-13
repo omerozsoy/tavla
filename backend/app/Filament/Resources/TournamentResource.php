@@ -7,6 +7,7 @@ use App\Models\Tournament;
 use App\Support\TournamentModeration;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -298,6 +299,20 @@ class TournamentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                // 3 günden eski turnuvaları TOPLU arşivle: listede gizlenir (sitede gösterim 'active'
+                // ile ayrı — arşiv canlıyı DEĞİŞTİRMEZ). Görmek için "Arşiv" filtresi.
+                Tables\Actions\Action::make('archiveOld')->label('3 Günden Eskileri Arşivle')
+                    ->icon('heroicon-o-archive-box')->color('gray')
+                    ->requiresConfirmation()
+                    ->modalDescription('3 günden eski (oluşturulma) tüm turnuvalar arşivlenir: bu listede gizlenir, silinmez. Sitedeki yayın durumu (Aktif) etkilenmez. Görmek için "Arşiv" filtresini kullan.')
+                    ->action(function () {
+                        $n = Tournament::whereNull('archived_at')
+                            ->where('created_at', '<', now()->subDays(3))
+                            ->update(['archived_at' => now()]);
+                        Notification::make()->title($n.' turnuva arşivlendi')->success()->send();
+                    }),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -377,8 +392,33 @@ class TournamentResource extends Resource
                     ->placeholder('Tümü')
                     ->trueLabel('Aktif')
                     ->falseLabel('Pasif'),
+                // Arşiv görünürlüğü. Varsayılan (boş) = arşivlenenleri GİZLE — TernaryFilter blank
+                // sorgusu her zaman uygulanır (checkbox Filter ->default() güvenilir değil).
+                Tables\Filters\TernaryFilter::make('archived')->label('Arşiv')
+                    ->placeholder('Arşivsizler')
+                    ->trueLabel('Arşivlenenler dahil')
+                    ->falseLabel('Yalnız arşivlenenler')
+                    ->queries(
+                        true: fn (Builder $q) => $q,
+                        false: fn (Builder $q) => $q->whereNotNull('archived_at'),
+                        blank: fn (Builder $q) => $q->whereNull('archived_at'),
+                    ),
             ])
             ->actions([
+                Tables\Actions\Action::make('archive')->label('Arşivle')
+                    ->icon('heroicon-o-archive-box')->color('gray')
+                    ->visible(fn (Tournament $record) => $record->archived_at === null)
+                    ->action(function (Tournament $record) {
+                        $record->update(['archived_at' => now()]);
+                        Notification::make()->title('Arşivlendi')->success()->send();
+                    }),
+                Tables\Actions\Action::make('unarchive')->label('Arşivden Çıkar')
+                    ->icon('heroicon-o-arrow-uturn-left')->color('gray')
+                    ->visible(fn (Tournament $record) => $record->archived_at !== null)
+                    ->action(function (Tournament $record) {
+                        $record->update(['archived_at' => null]);
+                        Notification::make()->title('Arşivden çıkarıldı')->success()->send();
+                    }),
                 // Tüm yönetici işlemleri (başlat / diskalifiye / çekilme / sonuç düzelt / tur tarih-saati /
                 // kura çek / sıfırla / düzenle) + canlı istatistikler TEK "Yönetim Paneli" sayfasında toplandı.
                 Tables\Actions\Action::make('manage')
