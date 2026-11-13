@@ -277,7 +277,6 @@ export default function MatchResult({
   // (winnerCoin) alır -> fark = komisyon. Pot başına açıklayıcı not (kullanıcı neden +/- eşit
   // değil görsün). loserCoin = pot; pct = komisyon/pot. Yalnız para maçında (asymCoin) + >0.
   const commission = asymCoin && winnerCoin != null && loserCoin != null ? loserCoin - winnerCoin : 0
-  const commissionPct = commission > 0 && loserCoin ? Math.round((commission / loserCoin) * 100) : 0
 
   return (
     <div className="register-overlay modal mr-overlay">
@@ -408,7 +407,7 @@ export default function MatchResult({
           {commission > 0 && (
             <div className="mr-pr-note" role="note">
               <Icon name="info" size={14} aria-hidden="true" />{' '}
-              {t('mr.commission', { p: commissionPct, n: commission })}
+              {t('mr.commission', { n: commission })}
             </div>
           )}
           <div className="mr-row">
