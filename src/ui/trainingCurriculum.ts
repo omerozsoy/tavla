@@ -628,6 +628,20 @@ const REAL_POSITIONS: Famous[] = [
   { gnuPos: '4HPwYCDgc/ALAA', gnuMatch: 'cAn5ASAAQAAA', answer: '', title: 'bgonline — OLM Rollout 14/8 13/11', concept: 'Split and build' },
   { gnuPos: '0OvgYCDg88gHAA', gnuMatch: 'cAn1ASAAQAAA', answer: '13/11 6/1*', title: 'bgonline — OLM Rollout 13/11 6/1*', concept: 'Hit on ace point vs builder' },
   { gnuPos: 'sOvEYCDg8zEHAA', gnuMatch: 'cInoASAAQAAA', answer: '13/11 6/5', title: 'bgonline — OLM Rollout 13/11 6/5', concept: 'Slot 5pt vs safe' },
+  { gnuPos: 'mLfBATCMz4MBKA', gnuMatch: 'cInpACAAAAAE', answer: '', title: 'rgb — random9 (3-2 açılış)', concept: '3-2 acilis cevabi; rollout en iyi 24/22 23/20' },
+  { gnuPos: 'zE7wATCwt+ABMA', gnuMatch: 'cAlmAQAAQAAE', answer: '13/8', title: 'rgb — equities (13/8)', concept: 'Skora gore cubeless esitlik; 13/8' },
+  { gnuPos: '4HPwATDgc/ABMA', gnuMatch: 'cInyAAAAAAAE', answer: '24/20 13/8', title: 'rgb — opening 24/20 13/8', concept: '7p mac 0-0 acilis split+oyna' },
+  { gnuPos: 'OWbDgCHsbOABBg', gnuMatch: 'MAHrAAAAIAAE', answer: '', title: 'rgb — 6-2 checker play', concept: '0-4 skorda 6-2 checker-play' },
+  { gnuPos: 'sOfBAyDYzuABBg', gnuMatch: 'cAkPAAAAAAAA', answer: '13/10 13/7', title: 'rgb — 13/10 13/7 vs 13/4', concept: 'Hint derinligine gore degisen checker-play' },
+  { gnuPos: 'sOfBAyBsO+DBAA', gnuMatch: 'cAkPAAAAAAAA', answer: '13/4', title: 'rgb — 13/4 varyant', concept: 'Ayni kararin 13/4 sonucu' },
+  { gnuPos: 'dduAAQaNbRswAA', gnuMatch: 'cAkXAAAAAAAA', answer: '', title: 'rgb — 16/11 16/10 vs 7/1 7/2', concept: '2-ply vs rollout checker-play farki' },
+  { gnuPos: '4HPwAyDgc/ABMA', gnuMatch: '8IntAFAAMAAA', answer: '', title: 'rgb — Crawford 33 açılış cevabı', concept: 'Crawford macta 33; gammon-save anchor' },
+  { gnuPos: 'u+UBBAa7swMRAA', gnuMatch: 'QQkyAyAASAAE', answer: '', title: 'rgb — çift-4 15/3 12/8', concept: 'Cift-4 sonrasi vurus maruziyeti' },
+  { gnuPos: 'ZndmAAjG3pICIA', gnuMatch: 'cAkzAAAAAAAE', answer: '', title: 'rgb — 6-4 24/18 7/3*', concept: 'Derinlige gore degisen vuruslu checker-play' },
+  { gnuPos: 'eG8LBAhlAwB4Nw', gnuMatch: 'UommAAAAAAAE', answer: '', title: 'rgb — backgame 5-1 22/17*/16', concept: 'Backgame\'de 5-1 vuruslu checker-play' },
+  { gnuPos: '4WYYCDPm7gBkQA', gnuMatch: 'QYklAuAAKAAE', answer: '', title: 'rgb — biggest blunder (3-1 bar/22 16/15)', concept: '3-1 vurma blunder; en iyi bar/22 16/15' },
+  { gnuPos: '4PPIATDgc/ABMA', gnuMatch: 'MAG3AAAAAAAA', answer: '13/2', title: 'rgb — gBOT 65 -> 13/2', concept: '5p macta 6-5 ile 13/2' },
+  { gnuPos: 'jM/BATDYZvABMA', gnuMatch: 'cAkKAAAAAAAA', answer: '', title: 'rgb — money 24/20 13/11', concept: 'Moneyplay checker-play' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
