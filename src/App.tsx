@@ -12310,6 +12310,7 @@ export default function App() {
                 oppScore={match.score[oppCard.color]}
                 selfColor={selfCard.color}
                 crawford={match.isCrawford && !gameEnd}
+                stake={(potRef.current || stakeRef.current) * (isMoneyGame ? match.cube.value : 1)}
               />
               {clockOn && (
                 <GameHudRow

@@ -83,9 +83,10 @@ function Player({ who, ring, coins, onAvatar }: {
 }
 
 // Kimlik basligi: SOL=ben (self), SAG=rakip. Orta: skor + maç uzunlugu + VS pullar.
-export function GameHudHeader({ self, opp, selfCoins, target, selfScore, oppScore, selfColor, crawford }: {
+export function GameHudHeader({ self, opp, selfCoins, target, selfScore, oppScore, selfColor, crawford, stake }: {
   self: Who; opp: Who; selfCoins?: number | null; target: number
   selfScore: number; oppScore: number; selfColor: 'white' | 'black'; crawford?: boolean
+  stake?: number | null // bahis (pot); 0/null ise gizli
 }) {
   const oppColor = selfColor === 'white' ? 'black' : 'white'
   return (
@@ -95,6 +96,9 @@ export function GameHudHeader({ self, opp, selfCoins, target, selfScore, oppScor
         <div className="gb-vsbox">
           <div className="gb-vsrow"><Icon name="crown-simple" size={14} />{selfScore}–{oppScore}<span className="gb-vslbl">skor</span></div>
           <div className="gb-vsrow">{crawford ? 'CRAWFORD' : target}<span className="gb-vslbl">{crawford ? '' : 'maç'}</span></div>
+          {stake != null && stake > 0 && (
+            <div className="gb-vsrow gb-stakerow"><Coins amount={stake} size={14} /><span className="gb-vslbl">bahis</span></div>
+          )}
         </div>
         <div className="gb-vs">
           <span className={`gb-vs-chk ${selfColor === 'white' ? 'white' : 'navy'}`} />
