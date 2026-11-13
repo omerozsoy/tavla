@@ -1,11 +1,18 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import Board from './Board'
 import DiceRow from './Dice'
 import { useT } from '../i18n'
 import { initialState } from '../engine/board'
 import { pipCount } from '../engine/evaluate'
-import { LESSONS, REAL_LESSON_ID, type Lesson } from './trainingCurriculum'
+import { LESSONS, REAL_TIERS } from './trainingCurriculum'
+
+// Seviye + tier dersleri icin ortak minimal sekil.
+interface PathLesson {
+  id: string
+  title: string
+  count: number
+}
 
 // Ders ilerlemesi: localStorage'da { [id]: { done, stars } }. Ders bitince yazilir.
 export interface LessonProgress {
@@ -41,16 +48,18 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
   const [sel, setSel] = useState<string>(LESSONS[0]?.id ?? 'easy')
   const board = initialState()
   const dice = <DiceRow faces={[{ value: 4, used: false }, { value: 2, used: false }]} owner="white" />
-  const selLesson = LESSONS.find((l) => l.id === sel) ?? LESSONS[0]
+  // Seviyeler + tum tier dersleri tek listede (secili dersi bulmak icin).
+  const allLessons: PathLesson[] = [
+    ...LESSONS.map((l) => ({ id: l.id, title: l.title, count: l.count })),
+    ...REAL_TIERS.flatMap((tr) => tr.lessons.map((l) => ({ id: l.id, title: l.title, count: l.questions.length }))),
+  ]
+  const selLesson = allLessons.find((l) => l.id === sel) ?? allLessons[0]
 
-  function starCount(l: Lesson): number {
+  function starCount(l: PathLesson): number {
     return progress[l.id]?.stars ?? 0
   }
 
-  const levelLessons = LESSONS.filter((l) => l.id !== REAL_LESSON_ID)
-  const realLesson = LESSONS.find((l) => l.id === REAL_LESSON_ID)
-
-  const renderLesson = (l: Lesson) => {
+  const renderLesson = (l: PathLesson) => {
     const done = progress[l.id]?.done
     return (
       <button
@@ -89,21 +98,26 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
         )}
 
         <div className="tr-sec-head">{t('tr.levelsHead')}</div>
-        <div className="tr-path-list">{levelLessons.map(renderLesson)}</div>
+        <div className="tr-path-list">
+          {LESSONS.map((l) => renderLesson({ id: l.id, title: l.title, count: l.count }))}
+        </div>
 
-        {realLesson && (
-          <>
-            <div className="tr-sec-head">{t('tr.realHead')}</div>
-            <div className="tr-path-list">{renderLesson(realLesson)}</div>
-          </>
-        )}
+        <div className="tr-sec-head tr-sec-main">{t('tr.realHead')}</div>
+        {REAL_TIERS.map((tier) => (
+          <Fragment key={tier.label}>
+            <div className="tr-sec-tier">{tier.label}</div>
+            <div className="tr-path-list">
+              {tier.lessons.map((l) => renderLesson({ id: l.id, title: l.title, count: l.questions.length }))}
+            </div>
+          </Fragment>
+        ))}
 
         <div className="bgx-spacer" />
 
         {selLesson && (
           <div className="tr-path-foot">
             <div className="tr-foot-title">{selLesson.title}</div>
-            <div className="tr-foot-desc">{t(selLesson.descKey)}</div>
+            <div className="tr-foot-desc">{t('tr.lesson.desc')}</div>
             <button className="bgx-btn green" onClick={() => onPick(selLesson.id)}>
               {t('tr.continue')}
             </button>

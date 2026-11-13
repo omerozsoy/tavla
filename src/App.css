@@ -18430,6 +18430,9 @@ body:has(.spectate-view) .app.lobby {
 .tr-path-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; flex: 0 1 auto; max-height: calc(var(--board-h) - 120px); padding-right: 4px; }
 .tr-sec { display: flex; flex-direction: column; }
 .tr-sec-head { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tv-ink-faint); text-align: center; margin: 12px 0 8px; }
+/* "GERCEK POZISYONLAR" ana basligi (Seviyeler'den ayirir) + tier alt basliklari (Baslangic/Orta/Ileri). */
+.tr-sec-head.tr-sec-main { margin-top: 22px; color: var(--accent); font-size: var(--fs-xs); border-top: 1px solid var(--border); padding-top: 14px; }
+.tr-sec-tier { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); text-align: left; padding: 6px 10px; margin: 10px 0 4px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 .tr-lesson { display: flex; align-items: center; gap: 12px; text-align: left; appearance: none; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: var(--radius-md); color: var(--text); position: relative; }
 .tr-lesson:not(.disabled):hover { background: var(--rn-navy-700); }
 .tr-lesson.active { background: color-mix(in srgb, var(--accent) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent); }

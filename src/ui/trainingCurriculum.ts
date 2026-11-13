@@ -370,16 +370,68 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=--BbB-BAB--BcBb--c-d-B-a--:0:0:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P110', concept: 'Double 6s in a blockade.' },
 ]
 
-// "Gercek Pozisyonlar" bolumu: acilislar (en kolay) + REAL_POSITIONS (nöral sirali). Sabit 10 limiti YOK.
-function realQuestions(): Question[] {
-  return [...openingQuestions(), ...REAL_POSITIONS.map(famousToQuestion).filter((q): q is Question => q !== null)]
+// "Gercek Pozisyonlar": BackgammonGalaxy tarzi -> ZORLUK KATMANI (Baslangic/Orta/Ileri) altinda
+// isimli TEMALI dersler (kaynak/koleksiyon bazli). Her ders degisken sayida pozisyon.
+function realGroupKey(p: Famous): string {
+  const t = p.title.toLowerCase()
+  if (t.includes('euler')) return 'euler'
+  if (t.includes('chow')) return 'chow'
+  if (t.includes('chris bray')) return 'bray'
+  if (/ubc|usbgf|mochy|501|boot camp|chicago|festive|master|dmp|jlee/.test(t)) return 'tournament'
+  return 'forum'
 }
+
+export interface RealLesson {
+  id: string
+  title: string
+  questions: Question[]
+}
+export interface RealTier {
+  label: string
+  lessons: RealLesson[]
+}
+
+export const REAL_TIERS: RealTier[] = (() => {
+  const byKey: Record<string, Question[]> = {}
+  for (const p of REAL_POSITIONS) {
+    const q = famousToQuestion(p)
+    if (!q) continue
+    const k = realGroupKey(p)
+    ;(byKey[k] ??= []).push(q)
+  }
+  return [
+    {
+      label: 'BAŞLANGIÇ',
+      lessons: [
+        { id: 'rg-open', title: 'Açılış Zarları', questions: openingQuestions() },
+        { id: 'rg-euler', title: 'Euler: Günlük Hatalar', questions: byKey['euler'] ?? [] },
+      ],
+    },
+    {
+      label: 'ORTA',
+      lessons: [
+        { id: 'rg-forum', title: 'Forum Klasikleri', questions: byKey['forum'] ?? [] },
+        { id: 'rg-chow', title: 'Chow’un Dama Sınavı', questions: byKey['chow'] ?? [] },
+      ],
+    },
+    {
+      label: 'İLERİ',
+      lessons: [
+        { id: 'rg-bray', title: 'Chris Bray: Haftanın Pozisyonu', questions: byKey['bray'] ?? [] },
+        { id: 'rg-tourn', title: 'Turnuva Blunder’ları', questions: byKey['tournament'] ?? [] },
+      ],
+    },
+  ]
+})()
+
+const REAL_LESSON_MAP: Record<string, RealLesson> = {}
+for (const tier of REAL_TIERS) for (const l of tier.lessons) REAL_LESSON_MAP[l.id] = l
+
 const FAMOUS: Record<string, Famous[]> = { lvl3: FAMOUS_MED, lvl8: FAMOUS_HARD }
 
 // Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (zorluk-bantli).
 function buildLesson(s: Spec): Question[] {
   if (s.openings) return openingQuestions()
-  if (s.real) return realQuestions()
   if (s.cube) return [...genCubeQuestions(s.seed!, 5), ...genMatchCubeQuestions(s.seed! + 1, 5)]
   const famous = (FAMOUS[s.id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null)
   const ref = REFS[s.id] ?? []
@@ -398,7 +450,6 @@ interface Spec {
   hardness?: number // 0..1 (sezgisel gap penceresi: 0 buyuk-gap/kolay, 1 kucuk-gap/zor)
   openings?: boolean
   cube?: boolean
-  real?: boolean // "Gercek Pozisyonlar" bolumu (acilis + REAL_POSITIONS, sabit 10 limiti yok)
 }
 const SPECS: Spec[] = [
   { id: 'lvl1', title: 'Beginner', openings: true },
@@ -412,7 +463,6 @@ const SPECS: Spec[] = [
   { id: 'lvl9', title: 'Legendary Grandmaster', seed: 0x5e09, mv: 4, contact: true, hardness: 0.92 },
   { id: 'lvl10', title: 'Lord of the Dice', seed: 0x5e0a, mv: 5, contact: true, hardness: 1.0 },
   { id: 'cube', title: 'Cube Decisions', seed: 0x5ecb, cube: true },
-  { id: 'real', title: 'Gerçek Pozisyonlar', real: true },
 ]
 
 // Aday havuzu: temas + dallanma sartli `count` pozisyon (ZORLUK siralamasi NOTRAL motorla
@@ -456,9 +506,10 @@ export interface LessonPlan {
 // Dersin planini ver: direct (openings/cube) ya da base + aday havuzu (notral siralanacak).
 export function lessonPlan(id: string): LessonPlan {
   const s = SPECS.find((x) => x.id === id)
+  const rl = REAL_LESSON_MAP[id]
+  if (rl) return { direct: rl.questions, base: [], pool: [], need: 0, hardness: 0 }
   if (!s) return { base: [], pool: [], need: 0, hardness: 0 }
   if (s.openings) return { direct: openingQuestions(), base: [], pool: [], need: 0, hardness: 0 }
-  if (s.real) return { direct: realQuestions(), base: [], pool: [], need: 0, hardness: 0 }
   if (s.cube) {
     const cubeSeen = new Set<string>() // money + match kup ayni board'u paylasmasin
     return { direct: [...genCubeQuestions(s.seed!, 5, cubeSeen), ...genMatchCubeQuestions(s.seed! + 1, 5, cubeSeen)], base: [], pool: [], need: 0, hardness: 0 }
@@ -478,16 +529,19 @@ const cache = new Map<string, Question[]>()
 export function getQuestions(id: string): Question[] {
   const hit = cache.get(id)
   if (hit) return hit
+  const rl = REAL_LESSON_MAP[id]
+  if (rl) return rl.questions
   const s = SPECS.find((x) => x.id === id)
   const qs = s ? buildLesson(s) : []
   cache.set(id, qs)
   return qs
 }
 
-export const LESSONS: Lesson[] = SPECS.map((s) => ({ id: s.id, title: s.title, descKey: 'tr.lesson.desc', count: s.real ? realQuestions().length : 10 }))
-// Ayri bolum olarak gosterilecek "Gercek Pozisyonlar" dersi (TrainingPath seviye listesinden ayrilir).
-export const REAL_LESSON_ID = 'real'
+// Seviye listesi = uretilmis zorluk dersleri (Gercek Pozisyonlar AYRI: REAL_TIERS).
+export const LESSONS: Lesson[] = SPECS.map((s) => ({ id: s.id, title: s.title, descKey: 'tr.lesson.desc', count: 10 }))
 
 export function lessonById(id: string): Lesson | undefined {
+  const rl = REAL_LESSON_MAP[id]
+  if (rl) return { id: rl.id, title: rl.title, descKey: 'tr.lesson.desc', count: rl.questions.length }
   return LESSONS.find((l) => l.id === id)
 }
