@@ -43,7 +43,7 @@ export default function DeliveryStep({
   const [shipId, setShipId] = useState<number | null>(null)
   const [billId, setBillId] = useState<number | null>(null)
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null)
-  const [method, setMethod] = useState<PayMethod>('card')
+  const [method] = useState<PayMethod>('bank_transfer') // Kart kapatıldı: tek yöntem Havale/EFT.
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
@@ -65,10 +65,9 @@ export default function DeliveryStep({
   }, 0)
   const subtotalTL = memItem ? MEMBERSHIP_PRICE_TL : moneyProductsTL + packagesTL
   const moneyDue = !!memItem || subtotalTL > 0
-  // Kargo: premium üyelik (dijital) HARİÇ her ödemeli sipariş kargolu (kullanıcı direktifi "premium
-  // dijital, onun dışında her şeyde kargo"). Backend PaymentController ile senkron: cartCheckout'taki
-  // coin paketi + fiziksel ürün kargolu; premium ayrı akış (buyMembership) -> kargosuz.
-  const shippingTL = !memItem && moneyDue ? SHIPPING_TL : 0
+  // Kargo: YALNIZ fiziksel ürün kargolu. Coin paketi + premium üyelik dijital -> kargosuz
+  // (kullanıcı direktifi). Backend PaymentController ile senkron.
+  const shippingTL = hasProducts ? SHIPPING_TL : 0
   const totalTL = subtotalTL + shippingTL
   // KDV %20 DAHİL (kitaplar hariç). Toplam DEĞİŞMEZ — sadece fiyatın içindeki KDV (ödeme adımında gösterilir).
   const bookTL = productRows
@@ -79,7 +78,7 @@ export default function DeliveryStep({
   const reload = () => getAddresses().then(setAddresses).catch(() => {})
 
   useEffect(() => {
-    if (!moneyDue) return // para ödemesi olan HER checkout'ta adresleri yükle (dijital üyelik/coin dahil)
+    if (!hasProducts) return // adres YALNIZ fiziksel üründe -> dijital (coin/üyelik) için yükleme
     let alive = true
     getAddresses()
       .then((list) => {
@@ -94,7 +93,7 @@ export default function DeliveryStep({
     return () => {
       alive = false
     }
-  }, [moneyDue])
+  }, [hasProducts])
 
   useEffect(() => {
     let alive = true
@@ -142,19 +141,17 @@ export default function DeliveryStep({
           </div>
         </header>
 
-        {/* Teslimat + Fatura adresi — YAN YANA, buradan girilebilir/düzenlenebilir. Para ödemesi
-            olan HER checkout'ta görünür (dijital üyelik/coin dahil). Teslimat adresi YALNIZ fiziksel
-            üründe zorunlu; dijitalde opsiyonel (kayıtlı adres seç/düzenle için yine gösterilir). */}
-        {moneyDue && (
+        {/* Teslimat + Fatura adresi — YALNIZ fiziksel üründe sorulur. Coin paketi / premium üyelik
+            dijital -> adres sorulmaz (kullanıcı direktifi). */}
+        {hasProducts && (
           <div className="ckw-addr-grid">
             <AddressField
-              label={hasProducts ? 'Teslimat adresi' : 'Adresim (isteğe bağlı)'}
+              label="Teslimat adresi"
               type="shipping"
               addresses={shippingAddrs}
               selectedId={shipId}
               onSelect={setShipId}
               onReload={reload}
-              optional={!hasProducts}
             />
             <AddressField
               label="Fatura adresi (isteğe bağlı)"
@@ -190,28 +187,13 @@ export default function DeliveryStep({
           </div>
         </div>
 
-        {/* Ödeme yöntemi (para ödemesi varsa ve havale açıksa) */}
+        {/* Ödeme yöntemi: yalnız Havale/EFT (kart kaldırıldı, kullanıcı direktifi) */}
         {moneyDue && bankInfo?.enabled && (
-          <div className="ckw-block" role="radiogroup" aria-label="Ödeme yöntemi">
+          <div className="ckw-block">
             <label className="ckw-label">Ödeme yöntemi</label>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={method === 'card'}
-              className={`ckw-pm ${method === 'card' ? 'on' : ''}`}
-              onClick={() => setMethod('card')}
-            >
-              <Icon name="credit-card" size={16} /> Kredi / Banka Kartı
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={method === 'bank_transfer'}
-              className={`ckw-pm ${method === 'bank_transfer' ? 'on' : ''}`}
-              onClick={() => setMethod('bank_transfer')}
-            >
+            <div className="ckw-pm on">
               <Icon name="money" size={16} /> Havale / EFT
-            </button>
+            </div>
           </div>
         )}
 
