@@ -51,6 +51,9 @@ export const PAGES: PageDef[] = [
   // league/leaderboard ile aynı görünür grup; DB override yokken PAGES-index fallback sort'u
   // leaderboard'dan büyük olduğu için en alta oturur. İçerik sonra doldurulacak (iskelet sayfa).
   { key: 'liveTournSystem', slug: 'canli-turnuva-sistemi', labelKey: 'menu.liveTournSystem', icon: 'trophy', group: 'info' },
+  // Organizatör Paneli: YALNIZ organizatör atanmış kullanıcıya görünür (handler App'te isOrganizer
+  // ile koşullu -> başkasına menüde çıkmaz). Dışarda/salon Swiss: katılımcı ekle + sonuç gir.
+  { key: 'organizerPanel', slug: 'turnuva-yonetimi', labelKey: 'menu.organizerPanel', icon: 'settings', group: 'account', gate: 'user' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },

@@ -2203,6 +2203,41 @@ export async function liveTournamentCreate(
   })
 }
 
+// ---- Organizatör Paneli (Dışarda/salon Swiss: atanmış yetkili yönetir) ----
+export interface OrganizerTournament {
+  id: number
+  name: string
+  type: string
+  status: string
+  count: number
+  size: number
+}
+export interface OrganizerDetail {
+  id: number
+  name: string
+  type: string
+  status: string
+  players: { id: number; name: string; offline: boolean }[]
+  pending: { key: string; round: number | null; p1: { id: number; name: string }; p2: { id: number; name: string } }[]
+}
+
+export async function organizerTournaments(): Promise<OrganizerTournament[]> {
+  const d = await req<{ tournaments: OrganizerTournament[] }>('/organizer/tournaments')
+  return d.tournaments ?? []
+}
+export async function organizerTournament(id: number): Promise<OrganizerDetail> {
+  return req<OrganizerDetail>(`/organizer/tournaments/${id}`)
+}
+export async function organizerAddParticipant(id: number, name: string): Promise<{ ok: boolean; id: number }> {
+  return req(`/organizer/tournaments/${id}/participants`, { method: 'POST', body: JSON.stringify({ name }) })
+}
+export async function organizerRemoveParticipant(id: number, playerId: number): Promise<{ ok: boolean }> {
+  return req(`/organizer/tournaments/${id}/participants/remove`, { method: 'POST', body: JSON.stringify({ id: playerId }) })
+}
+export async function organizerEnterResult(id: number, match: string, winner: number): Promise<{ ok: boolean }> {
+  return req(`/organizer/tournaments/${id}/result`, { method: 'POST', body: JSON.stringify({ match, winner }) })
+}
+
 export async function joinTournament(id: number, password?: string): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/join`, {
     method: 'POST',

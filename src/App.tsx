@@ -150,6 +150,7 @@ import {
   type Seeker,
   listInfoPages,
   captureRef,
+  organizerTournaments,
 } from './api'
 import Chat from './ui/Chat'
 import ViewersBadge from './ui/ViewersBadge'
@@ -182,6 +183,7 @@ import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
 const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
+const OrganizerPanel = lazy(() => import('./ui/OrganizerPanel'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
 const LeagueView = lazy(() => import('./ui/LeagueView'))
 const TeamsView = lazy(() => import('./ui/TeamsView'))
@@ -1147,6 +1149,8 @@ export default function App() {
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [trainingOpen, setTrainingOpen] = useState(false) // Tavla Eğitimi (interaktif trainer)
   const [liveTournOpen, setLiveTournOpen] = useState(false) // Canlı Turnuva Sistemi (iskelet sayfa)
+  const [organizerPanelOpen, setOrganizerPanelOpen] = useState(false) // Organizatör Paneli (salon turnuva yönetimi)
+  const [isOrganizer, setIsOrganizer] = useState(false) // ≥1 turnuva yönetiyor mu (menü görünürlüğü)
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [leagueOpen, setLeagueOpen] = useState(false) // Türkiye Online Tavla Ligi (bağımsız §1)
   const [leagueSeasonId, setLeagueSeasonId] = useState<number | null>(null) // derin-link sezon id
@@ -1498,6 +1502,8 @@ export default function App() {
                     ? 'tavla-egitimi'
                   : liveTournOpen
                     ? 'canli-turnuva-sistemi'
+                  : organizerPanelOpen
+                    ? 'turnuva-yonetimi'
                   : soloOpen
                     ? 'tek-oyun'
                     : contentView === 'event'
@@ -1856,6 +1862,9 @@ export default function App() {
           break
         case 'canli-turnuva-sistemi':
           setLiveTournOpen(true)
+          break
+        case 'turnuva-yonetimi':
+          setOrganizerPanelOpen(true)
           break
         case 'tek-oyun':
           // Misafir Tek Oyun oynayamaz (coin/hesap şart) -> üyelik iste. Yalnız Yapay Zeka ile
@@ -2895,6 +2904,21 @@ export default function App() {
       } catch { /* native değil / bridge yok -> yoksay */ }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
+  // Organizatör mü? (≥1 turnuva yönetiyor) -> "Turnuva Yönetimi" menüsü yalnız ona görünür.
+  useEffect(() => {
+    if (!user) {
+      setIsOrganizer(false)
+      return
+    }
+    let alive = true
+    organizerTournaments()
+      .then((ts) => alive && setIsOrganizer(ts.length > 0))
+      .catch(() => alive && setIsOrganizer(false))
+    return () => {
+      alive = false
+    }
   }, [user?.id])
 
   // Giris yapmissa oyunu sunucuya da kaydet (debounce)
@@ -10125,6 +10149,7 @@ export default function App() {
     setLessonsOpen(false)
     setTrainingOpen(false)
     setLiveTournOpen(false)
+    setOrganizerPanelOpen(false)
     setSoloOpen(false)
     setProductsOpen(false)
     setMyOrdersOpen(false)
@@ -10272,6 +10297,7 @@ export default function App() {
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onTraining: () => goPage(() => setTrainingOpen(true)),
     onLiveTournSystem: () => goPage(() => setLiveTournOpen(true)),
+    onOrganizerPanel: () => goPage(() => setOrganizerPanelOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
@@ -10326,6 +10352,8 @@ export default function App() {
     myOrders: menuProps.onMyOrders,
     training: menuProps.onTraining,
     liveTournSystem: menuProps.onLiveTournSystem,
+    // YALNIZ organizatör atanmışsa handler tanımlı -> menüde yalnız ona görünür (başkasına çıkmaz).
+    organizerPanel: isOrganizer ? menuProps.onOrganizerPanel : undefined,
     lessons: menuProps.onLessons,
     analyzer: menuProps.onAnalyzer,
     matAnalyzer: menuProps.onMatAnalyzer,
@@ -10792,6 +10820,8 @@ export default function App() {
                             ? 'training'
                           : liveTournOpen
                             ? 'liveTournSystem'
+                          : organizerPanelOpen
+                            ? 'organizerPanel'
                           : memOpen
                             ? 'membership'
                             : contentView === 'event'
@@ -11019,6 +11049,11 @@ export default function App() {
       {liveTournOpen && (
         <Suspense fallback={null}>
           <LiveTournamentSystem titleOverride={menuTitle('liveTournSystem')} onClose={() => setLiveTournOpen(false)} />
+        </Suspense>
+      )}
+      {organizerPanelOpen && (
+        <Suspense fallback={null}>
+          <OrganizerPanel titleOverride={menuTitle('organizerPanel')} onClose={() => setOrganizerPanelOpen(false)} />
         </Suspense>
       )}
       {shopOpen && (
