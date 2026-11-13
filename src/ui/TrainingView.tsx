@@ -9,7 +9,7 @@ import { useT } from '../i18n'
 import type { GameState, Step } from '../engine/types'
 import { cloneState } from '../engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from '../engine/moves'
-import { legalNextSteps, reachableFromChecker } from '../engine/game'
+import { legalNextSteps, reachableFromChecker, makePointTargets } from '../engine/game'
 import { moveNotation } from '../engine/notation'
 import { explainMove } from '../engine/explain'
 import { pipCount } from '../engine/evaluate'
@@ -125,6 +125,16 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
     return dice
   }, [turnStart, played])
 
+  // Boş haneye dokununca eldeki iki zarla KAPI yap (ana oyundaki ile aynı; saf engine).
+  const makeTargets = useMemo(() => {
+    if (!interactive || remainingDice.length < 2) return new Map<number, Step[]>()
+    return makePointTargets(turnStart, played)
+  }, [interactive, remainingDice, turnStart, played])
+  const makePointSet = useMemo(
+    () => (selectedFrom === null ? new Set(makeTargets.keys()) : new Set<number>()),
+    [makeTargets, selectedFrom],
+  )
+
   const turnComplete = interactive && played.length > 0 && legalNextSteps(turnStart, played).length === 0
 
   const showArrows = reveal && !!best
@@ -176,6 +186,16 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       setPlayed([])
     }
     setTurnStart(s)
+    setSelectedFrom(null)
+  }
+
+  // Boş haneye dokun -> o haneye kapı yapan iki adımı otomatik oyna (tur bitmez, Onayla bekler).
+  function handleMakePoint(to: number) {
+    if (!interactive) return
+    const seq = makeTargets.get(to)
+    if (!seq || !seq.length) return
+    Sound.move()
+    setPlayed((p) => [...p, ...seq])
     setSelectedFrom(null)
   }
 
@@ -502,9 +522,12 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             selectableFroms={selectableFroms}
             targets={targets}
             selectedFrom={selectedFrom}
+            makePoints={makePointSet}
+            onMakePoint={handleMakePoint}
             onSelectFrom={handleSelectFrom}
             onSelectTarget={handleSelectTarget}
             onDragFrom={(f) => interactive && setSelectedFrom(f)}
+            onDragDrop={(to) => handleSelectTarget(to)}
             pipTop={pipCount(displayState, 'black')}
             pipBottom={pipCount(displayState, 'white')}
             cube={{ value: 1, owner: null }}
