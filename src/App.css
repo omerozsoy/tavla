@@ -15116,6 +15116,20 @@ button.acct-row-logout:hover:not(:disabled) {
   transition: filter 0.12s;
 }
 .twc-go:hover { filter: brightness(1.08); }
+/* Biten turnuva: tek satir sampiyon (buton yerine). */
+.twc-champ {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.twc-champ svg { flex: 0 0 auto; color: var(--coin-gold, #d4a017); }
 .tourn-week-empty {
   text-align: center;
   color: var(--muted);

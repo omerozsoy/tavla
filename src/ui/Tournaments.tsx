@@ -1793,18 +1793,27 @@ function WeekCalendar({ list, lang, onOpen }: {
                       </div>
                       <span className="twc-name">{tr.name}</span>
                       <div className="twc-foot">
-                        {tr.status === 'open' && ms > 0 ? (
-                          <Countdown target={tr.starts_at!} className="twc-left twc-cd tnum" />
+                        {tr.status === 'finished' ? (
+                          // Biten turnuva: lobi butonu yok, tek satır şampiyon.
+                          <span className="twc-champ tnum" title={tr.champion?.name || ''}>
+                            <Icon name="crown" size={11} /> {tr.champion ? `${t('tourn.champion')}: ${tr.champion.name}` : left}
+                          </span>
                         ) : (
-                          <span className="twc-left tnum"><Icon name="clock" size={11} /> {left}</span>
+                          <>
+                            {tr.status === 'open' && ms > 0 ? (
+                              <Countdown target={tr.starts_at!} className="twc-left twc-cd tnum" />
+                            ) : (
+                              <span className="twc-left tnum"><Icon name="clock" size={11} /> {left}</span>
+                            )}
+                            <button
+                              type="button"
+                              className="twc-go"
+                              onClick={(e) => { e.stopPropagation(); onOpen(tr.id, tournUrlSlug(tr)) }}
+                            >
+                              {tr.status === 'open' ? t('tourn.join') : t('tourn.lobby')}
+                            </button>
+                          </>
                         )}
-                        <button
-                          type="button"
-                          className="twc-go"
-                          onClick={(e) => { e.stopPropagation(); onOpen(tr.id, tournUrlSlug(tr)) }}
-                        >
-                          {tr.status === 'open' ? t('tourn.join') : t('tourn.lobby')}
-                        </button>
                       </div>
                     </div>
                   )
