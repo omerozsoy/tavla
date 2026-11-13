@@ -70,8 +70,10 @@ class CheatScan
     /** "Kesin" için havuzda en az bu kadar GERÇEK karar olmalı (küçük örneklem %90'ı rastgele aşabilir). */
     public const MOVE_MATCH_MIN_SAMPLE = 100;
 
-    /** confirmation() en düşük-PR kaç maçı havuzlar (maliyet tavanı — her maç ~244KB review parse). */
-    public const CONFIRM_MATCHES = 12;
+    /** confirmation() en düşük-CHECKER-PR kaç maçı tarar (maliyet tavanı — her maç ~244KB review parse).
+     *  Silinmiş odalar (renk belirlenemez → atlanır) örneklemi düşürdüğü için 12'den yükseltildi (2026-11-14):
+     *  MrOkay'ın en düşük-checker 12 maçının 8'i silinmiş-odaydı → 100 karar havuzuna ulaşılamıyordu. */
+    public const CONFIRM_MATCHES = 30;
 
     /** suspectIds() cache süresi (sn). Günlük security:cheat-scan tazeler; panel ucuz okur. */
     private const CACHE_TTL = 3600;
@@ -435,9 +437,15 @@ class CheatScan
     }
 
     /**
-     * KESİN KANIT özeti: HAVUZLANMIŞ hamle-hamle motor eşleşmesi. Oyuncunun EN DÜŞÜK-PR (en suçlayıcı)
-     * maçlarını, yeterli örnekleme (≥ MOVE_MATCH_MIN_SAMPLE gerçek karar) ulaşana dek havuzlar.
+     * KESİN KANIT özeti: HAVUZLANMIŞ hamle-hamle motor eşleşmesi. Oyuncunun EN DÜŞÜK-CHECKER-PR (en
+     * suçlayıcı) maçlarını, yeterli örnekleme (≥ MOVE_MATCH_MIN_SAMPLE gerçek karar) ulaşana dek havuzlar.
      * exact_pct ≥ MOVE_MATCH_CERTAIN && total ≥ MIN_SAMPLE ise 'certain' = true. Cache'li (ağır parse).
+     *
+     * ⚠ NEDEN CHECKER-PR SIRASI (2026-11-14 düzeltme): hamle-hamle eşleşme CHECKER oynayışını ölçer;
+     * seçilecek maçlar da en düşük CHECKER PR'lılar olmalı. GENEL PR ile sıralamak move-hint bot'u KAÇIRIR:
+     * onun genel PR'ı KÜP hatalarıyla şişik → "en düşük genel PR" maçları en suçlayıcı checker maçları
+     * DEĞİL → havuz seyrelir (MrOkay: genel-PR sırası %84/kesin-değil; checker-PR sırası %91/KESİN). Tam-motor
+     * cheat'çide checker PR de düşüktür → bu sıralama onu da kapsar, kayıp yok.
      *
      * ⚠ NEDEN HAVUZ (2026-10-27 kök düzeltme): TEK maçın top-move oranı güçlü İNSANI bottan AYIRAMAZ.
      * Küçük örneklem (bir maçta ~10-40 gerçek karar) + seçim yanlılığı (yüzlerce maçtan en iyisini
@@ -453,8 +461,8 @@ class CheatScan
             $rooms = DB::table('match_results')
                 ->where('user_id', $userId)
                 ->whereNotNull('gnubg_review')->whereNotNull('room_code')
-                ->whereNotNull('gnubg_pr')->where('gnubg_pr', '>', 0)
-                ->orderBy('gnubg_pr')              // en düşük PR = en suçlayıcı önce
+                ->whereNotNull('gnubg_checker_pr')->where('gnubg_checker_pr', '>', 0)
+                ->orderBy('gnubg_checker_pr')      // en düşük CHECKER PR = en suçlayıcı hamle oynayışı önce
                 ->limit(self::CONFIRM_MATCHES)     // maliyet tavanı (her maç ~244KB review parse)
                 ->pluck('room_code');
 
@@ -465,7 +473,7 @@ class CheatScan
                 if (! $mm['ok']) {
                     continue;
                 }
-                $worstRoom ??= $rc; // ilk işlenen = en düşük PR
+                $worstRoom ??= $rc; // ilk işlenen = en düşük checker PR
                 $exact += $mm['exact'];
                 $total += $mm['total'];
                 $matches++;

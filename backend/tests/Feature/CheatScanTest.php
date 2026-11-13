@@ -221,6 +221,52 @@ class CheatScanTest extends TestCase
         $this->assertSame('CF1', $c['room_code']);
     }
 
+    public function test_confirmation_pools_by_checker_pr_not_overall_pr(): void
+    {
+        // MOVE-HINT BOT (DoubleSix/MrOkay): hamle-hamle eşleşme CHECKER oynayışını ölçtüğünden, havuza
+        // seçilecek maçlar da en düşük CHECKER PR'lılar olmalı. GENEL PR sırası bot'u kaçırır (küp
+        // hataları genel PR'ı şişirir → yanlış maçlar seçilir → havuz seyrelir, %90 altında kalır).
+        $u = User::factory()->create();
+
+        // A: DÜŞÜK genel PR (0.5) ama YÜKSEK checker (5.0) + insani (~%50) eşleşme.
+        //    Eski GENEL-PR sırası bunu ÖNCE seçerdi → havuzu seyreltir.
+        DB::table('rooms')->insert(['code' => 'A_LOWPR', 'p1_token' => 'a', 'p1_name' => 'W', 'p1_user_id' => $u->id]);
+        $logA = [];
+        for ($i = 0; $i < 10; $i++) {
+            $logA[] = ['player' => 'white', 'notation' => $i < 5 ? '13/7' : '24/18', 'best' => '13/7',
+                'loss' => $i < 5 ? 0.0 : 0.1, 'dice' => [6, 1],
+                'cands' => [['notation' => '13/7', 'equity' => 0.50], ['notation' => '24/18', 'equity' => 0.30]]];
+        }
+        DB::table('match_results')->insert([
+            'user_id' => $u->id, 'won' => 1, 'opponent_rating' => 1500, 'rating_before' => 1500,
+            'rating_after' => 1510, 'delta' => 10, 'match_type' => 'match', 'match_length' => 5,
+            'gnubg_pr' => 0.5, 'gnubg_checker_pr' => 5.0, 'pr_decisions' => 80, 'cube_decisions' => 2,
+            'room_code' => 'A_LOWPR', 'gnubg_review' => json_encode(['log' => $logA]),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        // B: YÜKSEK genel PR (4.0, küp şişmiş) ama DÜŞÜK checker (0.3) + motor (~%100) eşleşme, 120 karar.
+        //    Yeni CHECKER-PR sırası bunu ÖNCE seçer → KESİN.
+        DB::table('rooms')->insert(['code' => 'B_LOWCHK', 'p1_token' => 'a', 'p1_name' => 'W', 'p1_user_id' => $u->id]);
+        $logB = [];
+        for ($i = 0; $i < 120; $i++) {
+            $logB[] = ['player' => 'white', 'notation' => '8/4', 'best' => '8/4', 'loss' => 0.0, 'dice' => [4, 2],
+                'cands' => [['notation' => '8/4', 'equity' => 0.50], ['notation' => '6/2', 'equity' => 0.30]]];
+        }
+        DB::table('match_results')->insert([
+            'user_id' => $u->id, 'won' => 1, 'opponent_rating' => 1500, 'rating_before' => 1500,
+            'rating_after' => 1510, 'delta' => 10, 'match_type' => 'match', 'match_length' => 5,
+            'gnubg_pr' => 4.0, 'gnubg_checker_pr' => 0.3, 'pr_decisions' => 130, 'cube_decisions' => 20,
+            'room_code' => 'B_LOWCHK', 'gnubg_review' => json_encode(['log' => $logB]),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $c = CheatScan::confirmation($u->id);
+        $this->assertNotNull($c);
+        $this->assertSame('B_LOWCHK', $c['room_code']); // checker-PR sırası motor maçını seçti (genel-PR sırası A'yı seçerdi)
+        $this->assertTrue($c['certain']);               // 120 motor karar ≥ %90 + ≥ 100 → KESİN
+    }
+
     public function test_forced_and_obvious_moves_do_not_inflate_match_rate(): void
     {
         // KÖK NEDEN REGRESYONU (ahselbah/AzadMamedov yanlış-pozitifi): zorunlu (tek legal) + bariz
