@@ -11,8 +11,8 @@
 import { isNativeApp } from './nativeGoogle'
 
 // RevenueCat Android public SDK anahtarı. Frontend'de (dist) yaşar -> deploy ile güncellenir, yeni
-// APK gerekmez. ⚠ Şu an TEST anahtarı; canlıda RC panel > Project > API keys > Android ('goog_...').
-const RC_ANDROID_KEY = 'test_nHecQlWjmcwCtpCuBtxTNhwMfQD'
+// APK gerekmez. RC panel > Project > API keys > TavlaTV Android ('goog_...'). Public key, paylaşımı güvenli.
+const RC_ANDROID_KEY = 'goog_QsEcmrzVzYhdINaNbMfhiVXJNLo'
 // Premium = bu entitlement aktifse. RC panelinde lifetime/yearly/monthly ürünleri buna bağlı.
 export const RC_PREMIUM_ENTITLEMENT = 'tavlatv_premium'
 
