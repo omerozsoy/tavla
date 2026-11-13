@@ -2169,6 +2169,34 @@ export async function createTournament(
   })
   return d.tournament
 }
+// Canlı Turnuva Sistemi (dernek/grup paneli): şifre doğrula -> formu aç.
+export async function liveTournamentLogin(password: string): Promise<{ ok: boolean; name: string }> {
+  return req<{ ok: boolean; name: string }>('/live-tournament/login', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  })
+}
+
+export interface LiveTournamentForm {
+  name: string
+  type: 'bracket' | 'swiss_triple'
+  size: number
+  match_length?: number
+  register_until?: string | null
+  join_password?: string | null
+}
+
+// Şifre + form -> turnuva kur (sunucu şifreyi tekrar doğrular).
+export async function liveTournamentCreate(
+  password: string,
+  form: LiveTournamentForm,
+): Promise<{ ok: boolean; id: number; name: string }> {
+  return req<{ ok: boolean; id: number; name: string }>('/live-tournament/create', {
+    method: 'POST',
+    body: JSON.stringify({ password, ...form }),
+  })
+}
+
 export async function joinTournament(id: number, password?: string): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/join`, {
     method: 'POST',
