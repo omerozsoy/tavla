@@ -965,14 +965,24 @@ export function TournamentsPanel({
 }) {
   const { t, lang } = useT()
   const [busy, setBusy] = useState<number | null>(null)
-  const [idx, setIdx] = useState(0) // kayan turnuva slider konumu (0-tabanlı)
+  const [idx, setIdx] = useState(0) // kayan slider SAYFA konumu (0-tabanlı; her sayfa `per` turnuva)
+  // Aynı anda kaç turnuva görünsün: masaüstü 3, dar ekran 1 (kartlar ezilmesin).
+  const [per, setPer] = useState(3)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    const apply = () => setPer(mq.matches ? 1 : 3)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
   // Başlama zamanı EN YAKIN olan ilk sırada (starts_at artan); tarihsizler sona.
   const ordered = [...tourns].sort(
     (a, b) =>
       (a.starts_at ? new Date(a.starts_at).getTime() : Infinity) -
       (b.starts_at ? new Date(b.starts_at).getTime() : Infinity),
   )
-  const cur = Math.min(idx, Math.max(0, tourns.length - 1)) // liste kısalınca taşmayı önle
+  const pages = Math.max(1, Math.ceil(ordered.length / per))
+  const cur = Math.min(idx, pages - 1) // liste/per değişince taşmayı önle
   const act = async (id: number, fn?: (id: number) => Promise<void> | void) => {
     if (!fn || busy) return
     setBusy(id)
@@ -1017,7 +1027,7 @@ export function TournamentsPanel({
               })
             : null
           return (
-            <div className="tourn-slide" key={tr.id}>
+            <div className="tourn-slide" key={tr.id} style={{ flex: `0 0 ${100 / per}%` }}>
             <div
               className="tourn-row"
               role="button"
@@ -1104,19 +1114,19 @@ export function TournamentsPanel({
         })}
       </div>
       </div>
-      {tourns.length > 1 && (
+      {pages > 1 && (
         <div className="tourn-cnav">
+          {/* Döngülü: başta/sonda kilitlenmez; sondan ileri -> en başa, baştan geri -> en sona. */}
           <button
             type="button"
             className="tourn-cnav-arrow"
-            disabled={cur <= 0}
-            onClick={() => setIdx(Math.max(0, cur - 1))}
+            onClick={() => setIdx((cur - 1 + pages) % pages)}
             aria-label={t('lb.prev')}
           >
             <Icon name="caret-left" size={16} />
           </button>
           <span className="tourn-dots">
-            {ordered.map((_, i) => (
+            {Array.from({ length: pages }).map((_, i) => (
               <button
                 key={i}
                 type="button"
@@ -1130,8 +1140,7 @@ export function TournamentsPanel({
           <button
             type="button"
             className="tourn-cnav-arrow"
-            disabled={cur >= tourns.length - 1}
-            onClick={() => setIdx(Math.min(tourns.length - 1, cur + 1))}
+            onClick={() => setIdx((cur + 1) % pages)}
             aria-label={t('lb.next')}
           >
             <Icon name="caret-right" size={16} />

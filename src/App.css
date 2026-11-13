@@ -13531,7 +13531,10 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   transition: transform 0.3s ease;
 }
-.swiss-panel.tourn-panel .tourn-slide { flex: 0 0 100%; min-width: 0; }
+/* flex-basis inline style ile gelir (per'e göre 100% / 33.33%); min-width:0 shrink taşmasını önler.
+   Aynı sayfadaki kartlar arası ince dikey ayraç + yatay nefes (border-box -> basis'i AŞMAZ). */
+.swiss-panel.tourn-panel .tourn-slide { min-width: 0; padding: 0 12px; }
+.swiss-panel.tourn-panel .tourn-slide + .tourn-slide { border-left: 1px solid var(--border); }
 /* Slider icinde satirlar yan yana: tam-bleed negatif margin + alt hairline KALKAR
    (yoksa komsu slide'a tasar / her kartin altinda cizgi kalir). */
 .swiss-panel.tourn-panel .tourn-slide .tourn-row { margin: 0; border-bottom: 0; padding: 10px 2px; }
