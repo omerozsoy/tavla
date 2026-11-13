@@ -2182,6 +2182,7 @@ export interface LiveTournamentForm {
   type: 'bracket' | 'swiss_triple'
   size: number
   match_length?: number
+  swiss_lives?: number
   register_until?: string | null
   join_password?: string | null
 }

@@ -42,6 +42,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
   const [fType, setFType] = useState<'bracket' | 'swiss_triple'>('bracket')
   const [fSize, setFSize] = useState(8)
   const [fLen, setFLen] = useState(1)
+  const [fLives, setFLives] = useState(3)
   const [fWhen, setFWhen] = useState('')
   const [fJoinPw, setFJoinPw] = useState('')
 
@@ -71,6 +72,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
         type: fType,
         size: fSize,
         match_length: fLen,
+        swiss_lives: fType === 'swiss_triple' ? fLives : undefined,
         register_until: fWhen || null,
         join_password: fJoinPw.trim() || null,
       })
@@ -185,6 +187,16 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                     <option value="swiss_triple">{t('lts.gate.swiss')}</option>
                   </select>
                 </label>
+                {fType === 'swiss_triple' && (
+                  <label className="lts-field">
+                    <span>{t('lts.gate.fLives')}</span>
+                    <select className="lts-gate-input" value={fLives} onChange={(e) => setFLives(Number(e.target.value))}>
+                      <option value={1}>{t('lts.gate.lives', { n: 1 })}</option>
+                      <option value={2}>{t('lts.gate.lives', { n: 2 })}</option>
+                      <option value={3}>{t('lts.gate.lives', { n: 3 })}</option>
+                    </select>
+                  </label>
+                )}
                 <label className="lts-field">
                   <span>{t('lts.gate.fSize')}</span>
                   <select className="lts-gate-input" value={fSize} onChange={(e) => setFSize(Number(e.target.value))}>
