@@ -298,6 +298,50 @@ const SPECS: Spec[] = [
   { id: 'cube', title: 'Cube Decisions', seed: 0x5ecb, cube: true },
 ]
 
+// Aday havuzu: temas + dallanma sartli `count` pozisyon (ZORLUK siralamasi NOTRAL motorla
+// LessonView'da yapilir — sezgisel gap yetersizdi). Ders acilinca bir kez puanlanir + onbellek.
+export function genPool(seed: number, minMoves: number, contact: boolean, count: number): GameState[] {
+  const rng = mulberry32(seed)
+  const out: GameState[] = []
+  let guard = 0
+  while (out.length < count && guard++ < 30000) {
+    let s = initialState()
+    const plies = 5 + Math.floor(rng() * 10)
+    for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
+    if (s.turn !== 'white') s = seededAdvance(s, rng)
+    const st = newTurn(s, diceOf(seededRoll(rng)))
+    if (contact && !hasContact(st)) continue
+    const moves = generateMoves(st)
+    if (hasNoMove(moves)) continue
+    if (new Set(moves.map((m) => m.resultKey)).size < minMoves) continue
+    out.push(st)
+  }
+  return out
+}
+
+export interface LessonPlan {
+  direct?: Question[] // openings/cube: dogrudan sorular (notral siralama yok)
+  base: Question[] // famous + ref (zaten zor/authored)
+  pool: GameState[] // aday pozisyonlar (LessonView notral equity-gap ile siralar)
+  need: number // base'den sonra kac uretilmis gerek
+  hardness: number // 0..1 (notral gap penceresi)
+}
+// Dersin planini ver: direct (openings/cube) ya da base + aday havuzu (notral siralanacak).
+export function lessonPlan(id: string): LessonPlan {
+  const s = SPECS.find((x) => x.id === id)
+  if (!s) return { base: [], pool: [], need: 0, hardness: 0 }
+  if (s.openings) return { direct: openingQuestions(), base: [], pool: [], need: 0, hardness: 0 }
+  if (s.cube)
+    return { direct: [...genCubeQuestions(s.seed!, 5), ...genMatchCubeQuestions(s.seed! + 1, 5)], base: [], pool: [], need: 0, hardness: 0 }
+  const base = [
+    ...(FAMOUS[id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null),
+    ...(REFS[id] ?? []),
+  ]
+  const need = Math.max(0, 10 - base.length)
+  const pool = genPool(s.seed!, s.mv ?? 2, s.contact ?? false, Math.max(need * 3, 24))
+  return { base, pool, need, hardness: s.hardness ?? 0 }
+}
+
 const cache = new Map<string, Question[]>()
 
 // Bir dersin sorularini uret (ilk cagrida; sonra onbellekten). DERS ACILINCA cagrilir.
