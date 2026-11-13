@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\CoinPackage;
+use App\Models\Payment;
 use App\Models\User;
 use App\Services\WalletService;
 use Carbon\Carbon;
@@ -141,6 +143,26 @@ class RevenueCat
                 $before = (int) ($u->coins ?? 0);
                 $wallet->credit($u, (int) $coins, 'iap_coin_purchase', 'revenuecat', null, 'rc_coin:'.$tid);
                 $granted += max(0, (int) ($u->coins ?? 0) - $before);
+
+                // Admin görünürlüğü: her IAP satın almasını "Ödemeler"e (Payment) de yaz. order_id
+                // 'iap_<tx>' UNIQUE -> idempotent (sync+webhook aynı tx'i görse de tek sipariş). TL
+                // tutarı coin_packages'tan (Play'de ödenen gerçek fiyatın karşılığı). Koşulsuz: coin
+                // kredisi idempotent ama Payment ayrı anahtar -> geçmiş satış da sonraki sync'te yazılır.
+                $slug = substr($productId, 5); // 'coin_baslangic' -> 'baslangic'
+                $price = (int) (CoinPackage::query()->where('slug', $slug)->value('price') ?? 0);
+                Payment::query()->firstOrCreate(
+                    ['order_id' => 'iap_'.$tid],
+                    [
+                        'user_id' => $u->id,
+                        'kind' => 'coins',
+                        'payment_method' => 'google_play',
+                        'amount' => $price,
+                        'coins' => (int) $coins,
+                        'package_id' => $slug,
+                        'currency' => '949',
+                        'status' => 'paid',
+                    ]
+                );
             }
         }
 

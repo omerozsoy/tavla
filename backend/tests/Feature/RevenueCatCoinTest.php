@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Payment;
 use App\Models\User;
 use App\Support\RevenueCat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,10 +50,21 @@ class RevenueCatCoinTest extends TestCase
         $this->assertSame(5000, $granted);
         $this->assertSame(5000, (int) $u->fresh()->coins);
 
-        // Aynı transaction ikinci kez görülse de (sync + webhook) coin TEKRAR verilmez.
+        // Admin görünürlüğü: "Ödemeler"e (Payment) tek sipariş yazıldı.
+        $this->assertDatabaseHas('payments', [
+            'order_id' => 'iap_TX123',
+            'user_id' => $u->id,
+            'kind' => 'coins',
+            'coins' => 5000,
+            'payment_method' => 'google_play',
+            'status' => 'paid',
+        ]);
+
+        // Aynı transaction ikinci kez görülse de (sync + webhook) coin TEKRAR verilmez + sipariş çift olmaz.
         $again = RevenueCat::fulfillCoins($u->fresh());
         $this->assertSame(0, $again);
         $this->assertSame(5000, (int) $u->fresh()->coins);
+        $this->assertSame(1, Payment::query()->where('order_id', 'iap_TX123')->count());
     }
 
     public function test_unknown_product_grants_nothing(): void
