@@ -249,7 +249,6 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
   const [dqTarget, setDqTarget] = useState<null | { id: number; userId: number; name: string }>(null) // diskalifiye onayı
   const [annText, setAnnText] = useState('') // admin duyuru yazma kutusu
   const [flashAnnId, setFlashAnnId] = useState<number | null>(null) // yeni gelen duyuru -> yanıp söner
-  const [pastLimit, setPastLimit] = useState(10) // Geçmiş turnuvalar: 10 göster, "daha fazla" ile 10'ar artır
   // Canli yenileme kalkani: katil/cik/sonuc istegi surerken (busy) veya poll ucusta iken bir
   // mutasyon olduysa (mutSeq degisti) gelen poll yaniti ESKI olabilir -> uygulanmaz.
   const busyRef = useRef(false)
@@ -1698,12 +1697,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             {pastList.length > 0 && (
               <div className="tourn-past">
                 <h3 className="tourn-past-title">{t('tourn.past')}</h3>
-                <div className="tourn-list">{pastList.slice(0, pastLimit).map(renderCard)}</div>
-                {pastList.length > pastLimit && (
-                  <button type="button" className="tourn-more-btn" onClick={() => setPastLimit((n) => n + 10)}>
-                    {t('mh.showMore')}
-                  </button>
-                )}
+                {/* Yalnız biten son 5 turnuva gösterilir (kullanıcı direktifi). */}
+                <div className="tourn-list">{pastList.slice(0, 5).map(renderCard)}</div>
               </div>
             )}
           </>
