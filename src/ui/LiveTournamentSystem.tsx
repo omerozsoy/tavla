@@ -4,6 +4,7 @@ import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useT } from '../i18n'
 import { liveTournamentLogin, liveTournamentCreate } from '../api'
+import TrDateTimePicker from './TrDateTimePicker'
 
 interface Props {
   onClose: () => void
@@ -215,7 +216,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                 </label>
                 <label className="lts-field">
                   <span>{t('lts.gate.fWhen')}</span>
-                  <input type="datetime-local" className="lts-gate-input" value={fWhen} onChange={(e) => setFWhen(e.target.value)} />
+                  <TrDateTimePicker value={fWhen} onChange={setFWhen} />
                 </label>
                 <label className="lts-field">
                   <span>{t('lts.gate.fJoinPw')}</span>

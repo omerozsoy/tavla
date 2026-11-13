@@ -20886,6 +20886,9 @@ body:has(.spectate-view) .app.lobby {
 }
 .lts-gate-input:focus { outline: none; border-color: var(--accent); }
 .lts-create-form { display: grid; gap: 12px; }
+/* Türkçe tarih+saat seçici: gün/ay/yıl/saat/dakika aynı satırda, dar ekranda sarar. */
+.lts-dt { display: flex; gap: 8px; flex-wrap: wrap; }
+.lts-dt > select { flex: 1 1 70px; min-width: 64px; }
 .lts-field { display: grid; gap: 5px; }
 .lts-field > span { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .lts-gate-err { margin: 10px 0 0; color: var(--color-error, #d33); font-size: 0.88rem; font-weight: 600; }
