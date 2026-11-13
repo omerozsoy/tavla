@@ -148,7 +148,16 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
       scored.sort((a, b) => b.trap - a.trap) // azalan: en tuzakli (en zor) basta
       const start = Math.max(0, Math.round((scored.length - plan.need) * (1 - plan.hardness)))
       const gen = scored.slice(start, start + plan.need).map((x) => ({ state: x.state }))
-      const final = [...plan.base, ...gen].slice(0, 10)
+      // Guvenlik dedup (board + zar): base<->gen cakismasina karsi ayni soru iki kez cikmasin.
+      const seen = new Set<string>()
+      const final = [...plan.base, ...gen]
+        .filter((q) => {
+          const k = boardKey(q.state) + '|' + [...q.state.dice].sort().join('-')
+          if (seen.has(k)) return false
+          seen.add(k)
+          return true
+        })
+        .slice(0, 10)
       if (cancelled) return
       QCACHE.set(lessonId, final)
       setQuestions(final)

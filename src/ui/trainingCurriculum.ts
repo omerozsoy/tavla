@@ -8,7 +8,7 @@
 
 import type { GameState, Move } from '../engine/types'
 import { initialState, winner, cloneState } from '../engine/board'
-import { generateMoves, hasNoMove, applyStep } from '../engine/moves'
+import { generateMoves, hasNoMove, applyStep, boardKey } from '../engine/moves'
 import { applyMove, newTurn } from '../engine/game'
 import { HeuristicBot } from '../engine/engine'
 import { evaluatePosition } from '../engine/evaluate'
@@ -89,6 +89,7 @@ function moveGap(s: GameState, moves: Move[]): number {
 function genQuestions(seed: number, minMoves: number, contact: boolean, hardness: number, count: number): Question[] {
   const rng = mulberry32(seed)
   const pool: { state: GameState; gap: number }[] = []
+  const seen = new Set<string>() // board + zar: tekrar eden ayni soru gelmesin
   let guard = 0
   const POOL = Math.max(count * 4, 40)
   while (pool.length < POOL && guard++ < 25000) {
@@ -101,6 +102,9 @@ function genQuestions(seed: number, minMoves: number, contact: boolean, hardness
     const moves = generateMoves(st)
     if (hasNoMove(moves)) continue
     if (new Set(moves.map((m) => m.resultKey)).size < minMoves) continue
+    const key = boardKey(st) + '|' + [...st.dice].sort().join('-')
+    if (seen.has(key)) continue
+    seen.add(key)
     pool.push({ state: st, gap: moveGap(st, moves) })
   }
   if (pool.length <= count) return pool.map((p) => ({ state: p.state }))
@@ -309,6 +313,7 @@ export function obviousMoveKey(s: GameState): string {
 export function genPool(seed: number, minMoves: number, contact: boolean, count: number): GameState[] {
   const rng = mulberry32(seed)
   const out: GameState[] = []
+  const seen = new Set<string>() // board + zar: ayni puzzle iki kez gelmesin (tekrar eden soru bug'i)
   let guard = 0
   while (out.length < count && guard++ < 30000) {
     let s = initialState()
@@ -320,6 +325,9 @@ export function genPool(seed: number, minMoves: number, contact: boolean, count:
     const moves = generateMoves(st)
     if (hasNoMove(moves)) continue
     if (new Set(moves.map((m) => m.resultKey)).size < minMoves) continue
+    const key = boardKey(st) + '|' + [...st.dice].sort().join('-')
+    if (seen.has(key)) continue
+    seen.add(key)
     out.push(st)
   }
   return out

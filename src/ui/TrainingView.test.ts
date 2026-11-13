@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { LESSONS, getQuestions } from './trainingCurriculum'
-import { generateMoves, hasNoMove } from '../engine/moves'
+import { generateMoves, hasNoMove, boardKey } from '../engine/moves'
 import type { GameState } from '../engine/types'
 
 // Her soru: 15 beyaz + 15 siyah (legal), beyazin sirasi. Taş-hamlesi sorularinda ayrica zar + >=2 karar.
@@ -35,6 +35,14 @@ describe('Tavla Egitimi mufredati', () => {
         expect(hasNoMove(moves)).toBe(false)
         expect(new Set(moves.map((m) => m.resultKey)).size).toBeGreaterThanOrEqual(2)
       }
+    }
+  })
+
+  it('bir seviyede ayni soru (board + zar) iki kez gelmez', () => {
+    for (const l of LESSONS) {
+      const qs = getQuestions(l.id)
+      const keys = qs.map((q) => boardKey(q.state) + '|' + [...q.state.dice].sort().join('-'))
+      expect(new Set(keys).size, l.id).toBe(keys.length)
     }
   })
 })
