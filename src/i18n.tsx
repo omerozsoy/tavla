@@ -656,7 +656,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'menu.group.account': 'HESAP',
   // Dersler ve Eğitim grubu
   'menu.group.lessons': 'DERSLER VE EĞİTİM',
-  'menu.training': 'Tavla Eğitimi',
+  'menu.training': 'En İyi Hamle',
   'menu.liveTournSystem': 'Canlı Turnuva Sistemi',
   'lts.desc1':
     'Canlı Turnuva Sistemi, TavlaTV’nin tavla dernekleri ve tavla gruplarına uyguladığı ücretli bir turnuva oluşturma hizmetidir. Buradan Bracket / Swiss formatlarında 8–256 kişi aralığında canlı ve online turnuvalar oluşturabilirsiniz.',
@@ -3068,7 +3068,7 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   'menu.group.account': 'ACCOUNT',
   // Lessons & Training group
   'menu.group.lessons': 'LESSONS & TRAINING',
-  'menu.training': 'Backgammon Trainer',
+  'menu.training': 'Best Move',
   'menu.liveTournSystem': 'Live Tournament System',
   'lts.desc1':
     'The Live Tournament System is a paid tournament-creation service that TavlaTV provides to backgammon clubs and groups. Here you can create live and online tournaments in Bracket / Swiss formats with 8–256 players.',
