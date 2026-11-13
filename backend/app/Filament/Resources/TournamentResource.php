@@ -182,6 +182,13 @@ class TournamentResource extends Resource
                     ->searchable()
                     ->preload()
                     ->default(fn () => auth()->id()),
+                Forms\Components\Select::make('manager_user_id')
+                    ->label('Organizatör (yetkili kullanıcı)')
+                    ->helperText('Bu kullanıcı siteye NORMAL girip "Organizatör Paneli"nden SADECE bu turnuvaya katılımcı ekler + sonuç girer (admin paneline erişmez). Dışarda/salon Swiss hizmetini alan dış müşteriyi buraya kullanıcı adıyla ata. Boş = organizatör yok.')
+                    ->relationship('manager', 'nickname')
+                    ->searchable()
+                    ->preload()
+                    ->nullable(),
                 // SALT GÖRÜNÜM: players/bracket JSON (array) kolonlarıdır. Düz Textarea olarak
                 // KAYDEDİLİRSE string -> array-cast ile BOZULUR; "saat/uzunluk değiştirip kaydedince
                 // katılımcılar atılıyor" bug'ının kökü buydu. dehydrated(false) => forma yazılır ama

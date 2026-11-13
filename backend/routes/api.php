@@ -30,6 +30,7 @@ use App\Http\Controllers\LuckyWheelController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProductController;
@@ -384,6 +385,14 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::post('/clubs', [ClubController::class, 'create']);
     Route::post('/clubs/{club}/join', [ClubController::class, 'join']);
     Route::post('/clubs/leave', [ClubController::class, 'leave']);
+
+    // ORGANİZATÖR PANELİ (Dışarda/salon Swiss): atanmış organizatör SADECE kendi turnuvalarına
+    // katılımcı ekler + sonuç girer. Sahiplik kontrolü controller'da (manager_user_id).
+    Route::get('/organizer/tournaments', [OrganizerController::class, 'index']);
+    Route::get('/organizer/tournaments/{tournament}', [OrganizerController::class, 'show']);
+    Route::post('/organizer/tournaments/{tournament}/participants', [OrganizerController::class, 'addParticipant']);
+    Route::post('/organizer/tournaments/{tournament}/participants/remove', [OrganizerController::class, 'removeParticipant']);
+    Route::post('/organizer/tournaments/{tournament}/result', [OrganizerController::class, 'enterResult']);
 
     Route::post('/tournaments', [TournamentController::class, 'create']);
     // Online Turnuvalar: liste/detay herkese acik (misafir dahil). Katilim kapisi turnuva basina (premium_only) -> TournamentController::join. Misafir: auth:sanctum.

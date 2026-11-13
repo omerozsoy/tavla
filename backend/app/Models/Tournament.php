@@ -34,7 +34,7 @@ class Tournament extends Model
     }
 
     protected $fillable = [
-        'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'players', 'bracket', 'swiss_state', 'champion_id',
+        'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'manager_user_id', 'players', 'bracket', 'swiss_state', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
         'join_password', // opsiyonel katilim sifresi; null/'' = halka acik
         'entry_fee_try', // TL katilim ucreti (KURUS); >0 ise turnuva TL'li (coin entry_fee yok sayilir)
@@ -109,6 +109,12 @@ class Tournament extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    // Organizatör: salon turnuvasını yöneten (katılımcı ekler + sonuç girer) yetkili kullanıcı.
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_user_id');
     }
 
     // Sampiyon kullanici
