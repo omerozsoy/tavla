@@ -11,7 +11,7 @@ import { Countdown } from './Countdown'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import PremiumCrown from './PremiumCrown'
-import { TavlaTvLogo, TavlaTvMark } from './TavlaTvLogo'
+import { TavlaTvLogo } from './TavlaTvLogo'
 import {
   listTournaments,
   showTournament,
@@ -685,7 +685,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
           </Button>
           <Breadcrumb items={[homeCrumb(t), { name: t('menu.tournaments'), href: '/online-turnuvalar' }, { name: active.name }]} />
           <h2>
-            {/* EN BAŞTA büyük yuvarlak logo: düzenleyenin logosu (varsa) yoksa TavlaTV marka işareti. */}
+            {/* EN BAŞTA büyük logo: düzenleyenin yüklediği logo (varsa) yoksa gerçek TavlaTV site
+                logosu (wordmark PNG, tema ile açık/koyu). */}
             {active.organizer?.logo ? (
               <img
                 className="tourn-title-logo"
@@ -693,7 +694,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 alt={active.organizer.name}
               />
             ) : (
-              <TavlaTvMark size={120} />
+              <TavlaTvLogo size={60} tone="auto" className="tourn-title-mark" />
             )}
             <Icon name="trophy" size={20} /> {active.name}
           </h2>
