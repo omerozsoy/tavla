@@ -34,27 +34,8 @@ class TournamentAnnouncementResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // Standart metinler Setting'te kalıcıdır; turnuva seçilince tipine göre aşağıdaki
-            // "Duyuru metni" alanına otomatik dolar. Sadece oluşturma ekranında görünür/kaydedilir
-            // (düzenlemede gizli -> model'e yazılmaz). Kaydetme: CreateTournamentAnnouncement::mutate.
-            Forms\Components\Section::make('Standart duyuru metinleri')
-                ->description('Buraya yazdığın metinler kaydedilir ve turnuva seçince tipine göre aşağıya otomatik dolar.')
-                ->collapsed()
-                ->visibleOn('create')
-                ->schema([
-                    TiptapEditor::make('std_bracket')
-                        ->label('Bracket standart metni')
-                        ->profile('default')
-                        ->disk('uploads')->directory('tournament-announce')->visibility('public')
-                        ->default(fn () => Setting::get('tournament_std_bracket'))
-                        ->columnSpanFull(),
-                    TiptapEditor::make('std_swiss')
-                        ->label('Swiss standart metni')
-                        ->profile('default')
-                        ->disk('uploads')->directory('tournament-announce')->visibility('public')
-                        ->default(fn () => Setting::get('tournament_std_swiss'))
-                        ->columnSpanFull(),
-                ]),
+            // Standart metinler ayrı "Duyuru Standart Metinleri" sayfasından (Ayarlar grubu) düzenlenir;
+            // turnuva seçilince tipine göre aşağıdaki "Duyuru metni" alanına Setting'ten otomatik dolar.
             Forms\Components\Select::make('tournament_id')
                 ->label('Turnuva')
                 ->relationship('tournament', 'name')
@@ -62,13 +43,13 @@ class TournamentAnnouncementResource extends Resource
                 ->preload()
                 ->required()
                 ->live()
-                ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                ->afterStateUpdated(function ($state, Forms\Set $set) {
                     $type = Tournament::whereKey($state)->value('type');
                     if ($type === null) {
                         return;
                     }
-                    // bracket -> std_bracket, aksi (swiss_triple vb.) -> std_swiss
-                    $set('message', $type === 'bracket' ? ($get('std_bracket') ?? '') : ($get('std_swiss') ?? ''));
+                    // bracket -> std_bracket, aksi (swiss_triple vb.) -> std_swiss (tek kaynak: Setting)
+                    $set('message', Setting::get($type === 'bracket' ? 'tournament_std_bracket' : 'tournament_std_swiss'));
                 }),
             // Zengin metin (TipTap): kalın, italik, RENK, hizalama, liste, link... (makale/haber ile aynı).
             // HTML olarak saklanır; lobide güvenli-render edilir (RawHtml, admin-authored).
