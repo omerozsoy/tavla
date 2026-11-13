@@ -560,11 +560,10 @@ class PaymentController extends Controller
             }
         }
 
-        // Kargo: SABİT 250 TL (25000 kuruş) — premium üyelik DIŞINDA her sipariş kargolu (kullanıcı
-        // direktifi: "premium dijital ürün, onun dışında her şeyde kargo"). Premium buyMembership ile
-        // AYRI akışta işlenir (buraya hiç girmez) -> cartCheckout'taki her şey (coin paketi + fiziksel
-        // ürün) kargolu. Sepet tamamen boşsa (tutar 0) kargo da 0.
-        $shippingKurus = ($packagesKurus + $productsKurus) > 0 ? 25000 : 0;
+        // Kargo: SABİT 250 TL (25000 kuruş) — YALNIZ fiziksel ürün kargolu (kullanıcı direktifi).
+        // Coin paketi dijital -> kargosuz; premium buyMembership AYRI akışta (buraya girmez). Coin'siz
+        // fiziksel ürün yoksa kargo 0.
+        $shippingKurus = $productsKurus > 0 ? 25000 : 0;
         $totalKurus = $packagesKurus + $productsKurus + $shippingKurus;
         if ($totalKurus <= 0) {
             return $this->fail('Sepet tutarı geçersiz.', 422);
