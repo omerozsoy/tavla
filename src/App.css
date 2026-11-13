@@ -5851,6 +5851,12 @@ button[aria-disabled='true'],
 .register-overlay.page > *:not(.register-overlay) .modal-close {
   display: none;
 }
+/* ISTISNA: Hamle Analizi SAYFASI oyun-sonu ekranindan acilir, sol menude kendi
+   girisi YOK -> X gizlenince masaustunde HIC cikis kalmiyordu (kullanici donemiyordu).
+   Bu sayfada kapatma X'ini masaustunde de goster (mobil zaten @media'da aciyor). */
+.register-overlay.page.report-page > .report-card .modal-close {
+  display: flex;
+}
 /* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
 @media (max-width: 900px) {
   .register-overlay.page {
