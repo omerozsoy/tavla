@@ -5,7 +5,7 @@ import DiceRow from './Dice'
 import { useT } from '../i18n'
 import { initialState } from '../engine/board'
 import { pipCount } from '../engine/evaluate'
-import { LESSONS, REAL_TIERS } from './trainingCurriculum'
+import { MASTERY_TIERS, TOTAL_QUESTIONS } from './trainingCurriculum'
 
 // Seviye + tier dersleri icin ortak minimal sekil.
 interface PathLesson {
@@ -45,14 +45,11 @@ interface Props {
 export default function TrainingPath({ onPick, titleOverride }: Props) {
   const { t } = useT()
   const progress = useMemo(() => loadProgress(), [])
-  const [sel, setSel] = useState<string>(LESSONS[0]?.id ?? 'easy')
   const board = initialState()
   const dice = <DiceRow faces={[{ value: 4, used: false }, { value: 2, used: false }]} owner="white" />
-  // Seviyeler + tum tier dersleri tek listede (secili dersi bulmak icin).
-  const allLessons: PathLesson[] = [
-    ...LESSONS.map((l) => ({ id: l.id, title: l.title, count: l.count })),
-    ...REAL_TIERS.flatMap((tr) => tr.lessons.map((l) => ({ id: l.id, title: l.title, count: l.questions.length }))),
-  ]
+  // Birlesik ustalik yolu: tum tier dersleri tek listede (secili dersi bulmak icin).
+  const allLessons: PathLesson[] = MASTERY_TIERS.flatMap((tr) => tr.lessons)
+  const [sel, setSel] = useState<string>(allLessons[0]?.id ?? 'rg-open')
   const selLesson = allLessons.find((l) => l.id === sel) ?? allLessons[0]
 
   function starCount(l: PathLesson): number {
@@ -96,18 +93,13 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
             <span className="bgx-title">{titleOverride}</span>
           </div>
         )}
+        <div className="tr-total">{t('tr.totalQuestions', { n: TOTAL_QUESTIONS })}</div>
 
-        <div className="tr-sec-head">{t('tr.levelsHead')}</div>
-        <div className="tr-path-list">
-          {LESSONS.map((l) => renderLesson({ id: l.id, title: l.title, count: l.count }))}
-        </div>
-
-        <div className="tr-sec-head tr-sec-main">{t('tr.realHead')}</div>
-        {REAL_TIERS.map((tier) => (
+        {MASTERY_TIERS.map((tier) => (
           <Fragment key={tier.label}>
             <div className="tr-sec-tier">{tier.label}</div>
             <div className="tr-path-list">
-              {tier.lessons.map((l) => renderLesson({ id: l.id, title: l.title, count: l.questions.length }))}
+              {tier.lessons.map((l) => renderLesson({ id: l.id, title: l.title, count: l.count }))}
             </div>
           </Fragment>
         ))}
