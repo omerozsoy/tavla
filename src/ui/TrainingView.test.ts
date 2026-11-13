@@ -11,16 +11,20 @@ function countCheckers(s: GameState, sign: 1 | -1): number {
 }
 
 describe('Tavla Egitimi mufredati', () => {
-  it('11 seviye (10 zorluk + Cube Decisions), hepsi 10 soruluk', () => {
-    expect(LESSONS.length).toBe(11)
-    expect(LESSONS[LESSONS.length - 1].id).toBe('cube')
-    for (const l of LESSONS) expect(l.count).toBe(10)
+  it('12 ders (10 zorluk + Cube + Gercek Pozisyonlar)', () => {
+    expect(LESSONS.length).toBe(12)
+    expect(LESSONS[LESSONS.length - 1].id).toBe('real')
+    for (const l of LESSONS) {
+      if (l.id === 'real') expect(l.count).toBeGreaterThan(10)
+      else expect(l.count).toBe(10)
+    }
   })
 
-  it('her seviyenin 10 sorusu legal; taş sorularinda zar + >=2 karar, kup sorularinda zar yok', () => {
+  it('her dersin sorulari legal; tas sorularinda zar + >=2 karar (real haric), kup sorularinda zar yok', () => {
     for (const l of LESSONS) {
       const qs = getQuestions(l.id)
-      expect(qs.length).toBe(10)
+      if (l.id === 'real') expect(qs.length).toBeGreaterThan(10)
+      else expect(qs.length).toBe(10)
       for (const q of qs) {
         const s = q.state
         expect(countCheckers(s, 1)).toBe(15)
@@ -31,9 +35,12 @@ describe('Tavla Egitimi mufredati', () => {
           continue
         }
         expect(s.dice.length).toBeGreaterThan(0)
-        const moves = generateMoves(s)
-        expect(hasNoMove(moves)).toBe(false)
-        expect(new Set(moves.map((m) => m.resultKey)).size).toBeGreaterThanOrEqual(2)
+        // real pozisyonlarda forced/tek-hamle olabilir; uretilmis seviyelerde >=2 karar sart.
+        if (l.id !== 'real') {
+          const moves = generateMoves(s)
+          expect(hasNoMove(moves)).toBe(false)
+          expect(new Set(moves.map((m) => m.resultKey)).size).toBeGreaterThanOrEqual(2)
+        }
       }
     }
   })

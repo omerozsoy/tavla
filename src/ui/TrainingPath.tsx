@@ -5,7 +5,7 @@ import DiceRow from './Dice'
 import { useT } from '../i18n'
 import { initialState } from '../engine/board'
 import { pipCount } from '../engine/evaluate'
-import { LESSONS, type Lesson } from './trainingCurriculum'
+import { LESSONS, REAL_LESSON_ID, type Lesson } from './trainingCurriculum'
 
 // Ders ilerlemesi: localStorage'da { [id]: { done, stars } }. Ders bitince yazilir.
 export interface LessonProgress {
@@ -47,6 +47,38 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
     return progress[l.id]?.stars ?? 0
   }
 
+  const levelLessons = LESSONS.filter((l) => l.id !== REAL_LESSON_ID)
+  const realLesson = LESSONS.find((l) => l.id === REAL_LESSON_ID)
+
+  const renderLesson = (l: Lesson) => {
+    const done = progress[l.id]?.done
+    return (
+      <button
+        key={l.id}
+        className={`tr-lesson ${l.id === sel ? 'active' : ''}`}
+        onClick={() => setSel(l.id)}
+        onDoubleClick={() => onPick(l.id)}
+      >
+        <span className={`tr-node ${done ? 'done' : l.id === sel ? 'active' : ''}`}>
+          {done ? <Icon name="star" size={18} /> : <Icon name="dice" size={16} />}
+        </span>
+        <span className="tr-lesson-body">
+          <span className="tr-lesson-title">{l.title}</span>
+          <span className="tr-lesson-sub">
+            {done ? `${l.count} / ${l.count}` : t('tr.questions', { n: l.count })}
+          </span>
+        </span>
+        {starCount(l) > 0 && (
+          <span className="tr-lesson-stars">
+            {Array.from({ length: starCount(l) }).map((_, i) => (
+              <Icon key={i} name="star" size={13} />
+            ))}
+          </span>
+        )}
+      </button>
+    )
+  }
+
   return (
     <div className="tr-view bgx tr-path">
       <aside className="bgx-side tr-path-side">
@@ -57,36 +89,14 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
         )}
 
         <div className="tr-sec-head">{t('tr.levelsHead')}</div>
-        <div className="tr-path-list">
-          {LESSONS.map((l) => {
-            const done = progress[l.id]?.done
-            return (
-              <button
-                key={l.id}
-                className={`tr-lesson ${l.id === sel ? 'active' : ''}`}
-                onClick={() => setSel(l.id)}
-                onDoubleClick={() => onPick(l.id)}
-              >
-                <span className={`tr-node ${done ? 'done' : l.id === sel ? 'active' : ''}`}>
-                  {done ? <Icon name="star" size={18} /> : <Icon name="dice" size={16} />}
-                </span>
-                <span className="tr-lesson-body">
-                  <span className="tr-lesson-title">{l.title}</span>
-                  <span className="tr-lesson-sub">
-                    {done ? `${l.count} / ${l.count}` : t('tr.questions', { n: l.count })}
-                  </span>
-                </span>
-                {starCount(l) > 0 && (
-                  <span className="tr-lesson-stars">
-                    {Array.from({ length: starCount(l) }).map((_, i) => (
-                      <Icon key={i} name="star" size={13} />
-                    ))}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
+        <div className="tr-path-list">{levelLessons.map(renderLesson)}</div>
+
+        {realLesson && (
+          <>
+            <div className="tr-sec-head">{t('tr.realHead')}</div>
+            <div className="tr-path-list">{renderLesson(realLesson)}</div>
+          </>
+        )}
 
         <div className="bgx-spacer" />
 

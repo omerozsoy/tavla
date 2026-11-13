@@ -18420,6 +18420,8 @@ body:has(.spectate-view) .app.lobby {
 .bgx-meter.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
 .bgx-seg { flex: 1; border-radius: 2px; background: transparent; }
 .bgx-seg.on { background: var(--color-success); }
+/* Gercek Pozisyonlar (cok soru): segment yerine tek dolgu cubugu. */
+.bgx-fill { border-radius: 3px; background: var(--color-success); min-width: 0; transition: width 0.25s ease; }
 .bgx-count { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); }
 
 /* --- Ustalık Yolu (Mastery Path) listesi --- */

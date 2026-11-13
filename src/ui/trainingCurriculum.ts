@@ -270,11 +270,116 @@ function famousToQuestion(f: Famous): Question | null {
   const mv = f.answer ? matchGnubgMove(r.state, 'white', f.answer) : null
   return { state: r.state, intro: f.concept, answer: mv ?? undefined, title: f.title }
 }
+
+// Gercek/unlu pozisyonlar (forum+kitap kaynakli, XGID birebir), NÖRAL trap-zorluguna gore KOLAY->ZOR sirali.
+// Cevabi cozulen otoriter; digerleri motora birakilir (famousToQuestion). 94 pozisyon. Agent harvest'i.
+const REAL_POSITIONS: Famous[] = [
+  { xgid: 'XGID=-acBBBBBB---------bebaBaA-:1:-1:1:42:6:7:0:11:10', answer: '', title: 'Oops, sorry about your prime (JLee vs Duquense, USBGF 2025)', concept: 'Keeping a prime together' },
+  { xgid: 'XGID=-a-a--E-C-A-cD---cbe--B---:0:0:1:43:1:0:0:5:10', answer: '13/10 6/2', title: 'Awkward 43 to play', concept: 'Make the 10-point and unstack the 6' },
+  { xgid: 'XGID=-a----E-CA-adD---d-e-A--A-:0:0:1:52:1:3:0:5:10', answer: '13/11* 6/1*', title: 'Hit once or twice? (gammon-go)', concept: 'At gammon-go, double-hit for gammons' },
+  { xgid: 'XGID=--a-BCB---A-bBb-Cc-dc-B---:1:1:1:53:5:0:0:13:10', answer: '', title: 'Chris Bray 2020-31', concept: 'Attack lone back checker then builder' },
+  { xgid: 'XGID=-cabBBCBB--A-A----bcbbB---:1:-1:1:54:0:0:3:0:10', answer: '', title: 'Chris Bray 2021-196', concept: 'Vs back games: leap the prime, hit with idle spare' },
+  { xgid: 'XGID=-BfBBBB-B----A-B----acbba-:1:-1:1:11:0:0:3:0:10', answer: '', title: 'Chris Bray 2020-222', concept: 'Double 1s: keep flexibility to hit escapers' },
+  { xgid: 'XGID=-a----E-C---fE---c-e----B-:0:0:1:62:3:5:0:7:10', answer: '13/11 13/7', title: 'Chris Bray 2024-18', concept: 'Score dictates priming/blitz aim' },
+  { xgid: 'XGID=-aa--BCBB---cD---d-db-A-A-:0:0:1:53:1:0:0:3:10', answer: '24/16', title: 'Chris Bray 2021-147', concept: 'Activate rear checkers, keep connectivity' },
+  { xgid: 'XGID=a--BB-B--aBBAA----ccAcBbb-:1:-1:1:32:4:6:0:7:10', answer: '', title: 'Chris Bray 2022-143', concept: 'Joker avoidance with 2 on bar' },
+  { xgid: 'XGID=-B-Bb-C-A---dE--ac-e----B-:1:1:1:64:0:0:3:0:10', answer: '', title: 'Chris Bray 2022-190', concept: 'Connected vs disconnected play' },
+  { xgid: 'XGID=-aBBa-CDA---bC-----bbbabb-:1:-1:1:53:1:2:0:5:10', answer: '', title: 'Chris Bray 2022-110', concept: 'Score dictates gammon-go play' },
+  { xgid: 'XGID=-a-B-BBbB-B-cCa--c-e-B----:0:0:1:64:0:0:3:0:10', answer: '', title: 'Chris Bray 2020-12', concept: 'Build a 4-prime before escaping' },
+  { xgid: 'XGID=c--cBcCBBBB--A-----bbAb---:1:-1:1:43:0:0:3:0:10', answer: '', title: 'Chris Bray 2019-231', concept: 'Build a full prime vs shuffling blots' },
+  { xgid: 'XGID=-BBBaBB-A--A-Ac--bAbcbbA--:1:1:1:21:4:4:0:7:10', answer: '', title: 'Chris Bray 2019-221', concept: 'Aggressive for closeout+gammon' },
+  { xgid: 'XGID=---cCCCBB----B---------dh-:1:-1:1:52:0:0:3:0:10', answer: '', title: 'Chris Bray 2019-5', concept: 'Strengthen board, let White escape with a 4' },
+  { xgid: 'XGID=-BBaBDE---------------b---:1:1:1:11:0:0:3:0:10', answer: '', title: 'A pretty pair (4-aces A)', concept: 'Bear-off contact double 1s: hit and bear off' },
+  { xgid: 'XGID=-BBaBDD---------------b---:1:1:1:11:0:0:3:0:10', answer: '', title: 'A pretty pair (4-aces B)', concept: 'Spare lower shifts best play' },
+  { xgid: 'XGID=a--AABBcC-a--B-b-AddC-----:1:-1:1:32:5:4:0:9:10', answer: '', title: 'A point is a point', concept: 'Make a point' },
+  { xgid: 'XGID=aB-BBBB-A-----AA---cdbcbB-:0:0:1:62:2:6:1:7:10', answer: '', title: 'Zorunlu kacis (26 vurulma)', concept: 'Forced escape' },
+  { xgid: 'XGID=----BBB-B----A-A-A-A--agC-:1:1:1:42:0:0:3:0:10', answer: '', title: 'Containment Checker Play (bgonline)', concept: 'Hit and cover the bar for board control.' },
+  { xgid: 'XGID=--a-CCDBB-------a---bAbbg-:1:1:1:62:0:0:3:0:10', answer: '', title: 'RO and comments (bgonline)', concept: 'Pointing on the deuce wins the most games.' },
+  { xgid: 'XGID=----bBCBA---dE--ac-e----B-:0:0:1:63:0:1:1:2:10', answer: '', title: 'Fourth Roll 63 Gammon-Go (bgonline)', concept: 'Gammon-go: escape a back checker, keep builders active.' },
+  { xgid: 'XGID=--BCBBBb-----D-----c-bbbd-:0:0:1:32:6:0:0:25:10', answer: '', title: 'Risk the hit or switch? (bgonline)', concept: 'Consolidating one checker beats switching points.' },
+  { xgid: 'XGID=-CBBBB------bB-----cBbcad-:0:0:1:53:0:0:0:1:10', answer: '', title: 'Should I stay or go (bgonline)', concept: 'Build strength with the 8-point run.' },
+  { xgid: 'XGID=-b--CBD-B--Ac--b-b-cbB-aA-:0:0:1:21:0:0:0:0:10', answer: '24/22 6/5', title: 'Chow\'s Challenge #3 — P9', concept: 'Split back checkers and slot the 5pt (21).' },
+  { xgid: 'XGID=-BCBB-B---------AA-cb-cBc-:1:1:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P24', concept: 'Double 6s in a bear-off race.' },
+  { xgid: 'XGID=---B-CCC--a-cBa--cbe--A-A-:0:0:1:32:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P44', concept: '32 point-making vs flexibility.' },
+  { xgid: 'XGID=aEDBB---A-------b--cbbAcb-:1:1:1:21:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P59', concept: '21 bear-in; minimize wastage.' },
+  { xgid: 'XGID=---b-BC-C-A-aC-b-cbeB-A---:0:0:1:43:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P148', concept: '43 distribution decision midgame.' },
+  { xgid: 'XGID=-CbCD-B--------a---cbbbab-:1:1:1:31:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P16', concept: '31 bearing in a race.' },
+  { xgid: 'XGID=---a-aD-CAB-dB---c-d-Bb--A:0:0:1:41:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P30', concept: '41 split-vs-build early middlegame.' },
+  { xgid: 'XGID=--Ba--C-Ba-bcC-A-cBcb--A-A:0:0:1:31:0:0:0:1:10', answer: '', title: '31 to play at DMP (bgonline)', concept: 'From the bar at DMP, enter on 24 and run 18/15.' },
+  { xgid: 'XGID=aa-aBBBBAAA-b-AaaaAc-bAbA-:1:-1:1:42:0:0:3:0:10', answer: '', title: 'PotD Bet ya hit something (bgonline)', concept: 'Blitz double-hit to flood opp home board, deny anchor.' },
+  { xgid: 'XGID=a-a-BaC-E---cC--a--bbbbB--:0:0:1:54:0:0:3:0:10', answer: '', title: 'Chris Bray 2023-107', concept: 'Run rear checker while opp on bar' },
+  { xgid: 'XGID=---a-BD-CA--eBa--c-cb--BA-:0:0:1:11:0:0:0:0:10', answer: '', title: 'Double ones does three jobs (bgonline)', concept: 'Clean a blot, make a 4-prime, split the back.' },
+  { xgid: 'XGID=-a--BAB-C---fD---c-d-a--BA:0:0:1:64:0:0:1:0:10', answer: '', title: '501 Essential #32 (main)', concept: 'Enter hitting then make bar' },
+  { xgid: 'XGID=--eCBCCC----A------bbbaab-:0:0:1:41:2:3:0:19:10', answer: '', title: 'A lot of checkers on your anchor (USBGF Masters 2025)', concept: 'Play 41 with five on the anchor' },
+  { xgid: 'XGID=-A-a-aE-BBB-dC---b-c-bb---:0:0:1:22:4:0:0:7:10', answer: '', title: 'Chow\'s Challenge #3 — P4', concept: 'Double 2s making two prime points.' },
+  { xgid: 'XGID=-BD-Cb--A---c--Bbc-eB----A:1:-1:1:55:0:0:0:5:10', answer: '', title: 'Ev tahtasini guclendir (55)', concept: 'Strengthen home board' },
+  { xgid: 'XGID=-a-B-AB-C---fD---c-d-a--BA:0:0:1:64:0:0:1:0:10', answer: '', title: '501 Essential #32 (variant)', concept: 'Variant shifts best 64' },
+  { xgid: 'XGID=---BBACbCB---B---aadabbaa-:0:0:1:11:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P103', concept: 'Double 1s close prime-vs-prime.' },
+  { xgid: 'XGID=----aAD-B--abC--cc-eC-A-A-:0:0:1:21:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P5', concept: 'Small 21; builder/slot distribution.' },
+  { xgid: 'XGID=---a-CCbBB--dC---b-ccA--A-:0:0:1:51:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P73', concept: '51 blocking game; slot vs safe.' },
+  { xgid: 'XGID=-bBBBBBAB---b----bbbB-aca-:0:0:1:45:2:1:0:5:10', answer: '', title: 'Didn\'t roll a 1 (Chicago Open blitz)', concept: 'Build toward bar-point over flashy play' },
+  { xgid: 'XGID=-aa---E-C---cE-A-cbe----A-:0:0:1:62:0:0:0:0:10', answer: '24/16', title: 'Fourth roll 62 features', concept: 'Strip midpoint, stay out of blitz range' },
+  { xgid: 'XGID=-aABBCBA--A-cB-aAc-cbb----:1:-1:1:32:1:0:0:5:10', answer: '', title: 'Chow\'s Challenge #3 — P6', concept: 'Quiet single-point play preserving structure.' },
+  { xgid: 'XGID=-aBBBbBB----b-BA-b-ccBb---:1:-1:1:64:0:0:0:0:10', answer: '', title: 'Chow\'s Challenge #3 — P7', concept: 'Run a single checker 64 to safety.' },
+  { xgid: 'XGID=-BbBCBCC----a--aabab-bba--:1:-1:1:42:2:2:0:11:10', answer: '', title: 'Bearing in against a 2-point anchor', concept: 'Leave a blot bearing in (+0.841)' },
+  { xgid: 'XGID=---a-AE-C--AbE--ac-ea--b--:0:0:1:41:0:0:0:0:10', answer: '13/9 6/5', title: 'Chow\'s Challenge #3 — P1', concept: 'Slot the 5pt while advancing a back builder (41).' },
+  { xgid: 'XGID=----BbD-C--abB-a---dcBb-AA:0:0:1:21:0:0:3:0:10', answer: '', title: 'Chris Bray 2019-234', concept: 'Steer for a 2-4 back game' },
+  { xgid: 'XGID=---aa-D-C-A-dDa--c-cbB---A:0:0:1:42:1:0:0:11:10', answer: '', title: 'Aggressive or button up? (USBGF)', concept: 'Hit 6/4* vs 10/8 button up' },
+  { xgid: 'XGID=--aB-CC-B---dBb--b-eB--a-A:0:0:1:32:0:0:3:0:10', answer: '', title: 'Chris Bray 2020-6', concept: 'Enter hitting then 23/20 for flexibility' },
+  { xgid: 'XGID=-a--CcC-C---bDb--bBbab----:0:0:1:64:0:0:0:5:10', answer: '13/3', title: 'Festive edition follow-up 21', concept: 'Slot 3-point for racing efficiency' },
+  { xgid: 'XGID=---B-bEbD---bB-Baaabaab---:0:0:1:61:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P135', concept: '61 holding game; make a point or run.' },
+  { xgid: 'XGID=-a----F-F--Cb-----ccbb-b--:1:1:1:51:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P84', concept: '51 high-anchor bear-in race.' },
+  { xgid: 'XGID=-a--a-E-C--BdCa--bBd--b---:0:0:1:65:0:0:3:0:10', answer: '13/2', title: 'Tricky 65 in the Early Game', concept: 'Run 13/2 to minimize shots with race lead' },
+  { xgid: 'XGID=--BBBCBA--------b--fbcCb--:1:1:1:42:0:0:3:0:10', answer: '', title: 'Chris Bray 2023-173', concept: 'Maximise contact on White\'s bad roll' },
+  { xgid: 'XGID=-b-aBBCA----cE---bad---bAA:0:0:1:65:8:0:0:11:10', answer: '', title: 'Primenin arkasinda tut (buyuk lead)', concept: 'Hold behind the prime' },
+  { xgid: 'XGID=--a-B-B-B--abB-Acb-dCAbA-A:0:0:1:55:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P6', concept: 'Double 5s in a mutual-holding position.' },
+  { xgid: 'XGID=-----bEC----cD-b-b-bCbb---:0:0:1:44:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P49', concept: 'Double 4s near-pure race; clearing order.' },
+  { xgid: 'XGID=---b-BC-D--AcD---c-db---aA:0:0:1:44:0:0:0:0:10', answer: '', title: 'Chow\'s Challenge #3 — P5', concept: 'Enter with 44 and distribute builders.' },
+  { xgid: 'XGID=-aaABCBBBb---A-A-cbbb-Ab--:2:-1:1:61:4:4:0:7:10', answer: '', title: 'Son arka tasi kacir (DMP)', concept: 'DMP escape last back checker' },
+  { xgid: 'XGID=-CFCA--a-B----a----abcbcb-:0:0:1:63:6:3:1:7:10', answer: '', title: 'How do I choose whether to hit? #2', concept: 'Safety beats the hit here' },
+  { xgid: 'XGID=--BBAABaBB-----A-cbbbbBab-:1:1:1:41:3:5:0:11:10', answer: '8/7* 8/4', title: 'Chris Bray 2023-203', concept: 'Complications favour at the score' },
+  { xgid: 'XGID=-B-bBBBC---Cc--a--bc-bb-A-:1:-1:1:41:0:0:0:5:10', answer: '', title: 'How can we best escape this checker?', concept: 'Keep an escape even if opp makes 5-point' },
+  { xgid: 'XGID=--bbbbG-DB------b--baAb-A-:0:0:1:61:0:0:0:7:10', answer: '', title: 'Chris Bray 2021-25', concept: 'Bot-level choice: 24/17 tied with 24/18 8/7' },
+  { xgid: 'XGID=-BBB--BA-Ab-bDb--d-cAb----:0:0:1:22:0:0:0:11:10', answer: '', title: 'Lots of choices for these ducks (JLee)', concept: 'Advance trailing checker and make a point' },
+  { xgid: 'XGID=-ba---EaCA--cB-A-c-cbA--B-:0:0:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P18', concept: 'Big double 6s; distribution subtlety.' },
+  { xgid: 'XGID=-a-aBBEA----aBa-bbBe--b--A:0:0:1:61:6:0:0:13:10', answer: '', title: 'A lot of choices for the six', concept: '61 with competing priorities' },
+  { xgid: 'XGID=-b---BD-CA--cC---c-c-bb-B-:0:0:1:64:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P10', concept: '64 clearing in a holding game.' },
+  { xgid: 'XGID=--a---EBB-BabB---bBb--cbb-:0:0:1:61:0:0:0:0:10', answer: '', title: 'Chow\'s Challenge #3 — P2', concept: 'Run a builder and slot the 5pt.' },
+  { xgid: 'XGID=-----bEBB---dD-A-c-db-A---:0:0:1:51:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P37', concept: '51 in a holding game; timing.' },
+  { xgid: 'XGID=------EbC---bBbA-c-eB-aB--:0:0:1:55:0:0:0:0:10', answer: '', title: 'Chow\'s Challenge #3 — P3', concept: 'Double 5s: escape back men and make an inner point.' },
+  { xgid: 'XGID=-cB-bBEB-AB-aA---cae------:1:-1:1:31:0:2:0:7:10', answer: '13/12* 6/3', title: 'Chris Bray 2024-28', concept: 'Develop 3-pt early vs weak board' },
+  { xgid: 'XGID=---bCBC-B---bC---c-d-dAA--:0:0:1:33:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P8', concept: 'Double 3s point-making vs priming.' },
+  { xgid: 'XGID=-----bDaD--BAA-Abc-e-b--B-:1:1:1:11:0:0:0:0:10', answer: '', title: 'Chow\'s Challenge #3 — P10', concept: 'Double 1s: hit on bar point and make a point.' },
+  { xgid: 'XGID=-aBCB-B-B---bB-B-bbbbbb---:0:0:1:63:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P92', concept: '63 breaking a full board without crunching.' },
+  { xgid: 'XGID=-a-B-BDAB-B-a-a---bcc-bBb-:1:-1:1:43:0:0:3:0:10', answer: '', title: 'Chris Bray 2022-20', concept: 'Priming the back checker' },
+  { xgid: 'XGID=----BbD-B--BeC-----d-bb-AA:0:0:1:55:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P1', concept: 'Double 5s in a priming/race position.' },
+  { xgid: 'XGID=-BB-a-CB----cCBaa-bc-b-bA-:1:1:1:22:2:1:0:5:10', answer: '', title: 'Chris Bray 2021-199', concept: 'Double 2s: hit and make the 5-pt' },
+  { xgid: 'XGID=-BabC-CAD--a-----bbcbbAA--:1:1:1:11:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P66', concept: 'Double 1s; small-number point-making.' },
+  { xgid: 'XGID=-BaEBCB-A---a-b-cc-e------:1:-1:1:64:0:0:0:0:10', answer: '8/2* 6/2', title: 'It\'s been a while (bgonline)', concept: 'Accept a rear shot to fill the gap (+1.18).' },
+  { xgid: 'XGID=-A-a-BE-B--adBB--abbbb--A-:1:1:1:65:0:0:0:0:10', answer: '8/2 6/1', title: 'Chow\'s Challenge #3 — P8', concept: 'Bury checkers to clear stacks bearing in.' },
+  { xgid: 'XGID=-B-BbBC-A---cC-a-d-e----B-:1:-1:1:61:0:0:3:0:10', answer: '', title: 'Boot Camp blitz 61 (bgonline)', concept: 'Advance a back checker aggressively with the 6.' },
+  { xgid: 'XGID=-a--B-CBC--AdB-a-c-db---B-:0:0:1:32:0:0:3:0:10', answer: '', title: 'Chris Bray 2022-209', concept: 'Make golden point and slot bar' },
+  { xgid: 'XGID=-B-BbBC-A---cC-a-d-e----B-:1:-1:1:41:0:0:3:0:10', answer: '', title: 'Boot Camp blitz 41 (bgonline)', concept: 'Activate back checkers while building home board.' },
+  { xgid: 'XGID=-b---BD-CA--cD-aaa-cbb--A-:0:0:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P122', concept: 'Double 6s vs multi-point board; escape vs build.' },
+  { xgid: 'XGID=-a-BBBBB----bC---dacb-bB--:0:0:1:63:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P21', concept: '63 with a near-complete prime; break safely.' },
+  { xgid: 'XGID=----b-E-C--AbC-BbcAcb-a---:0:0:1:63:4:9:0:11:10', answer: '', title: 'Not So Obvious 63 Blunder', concept: 'Safety over making the 5-point' },
+  { xgid: 'XGID=--aBaBBCA-B-bB---bbcbb-A--:0:0:1:11:10:5:1:11:10', answer: '', title: 'Chris Bray 2024-135', concept: 'Escaping the trapped checker over tempo' },
+  { xgid: 'XGID=--aBBBCBA----B-a-bbcbbb-A-:1:1:1:54:0:0:3:0:10', answer: '', title: 'PotD PvP Checker (bgonline)', concept: 'Aggressive hit on the deuce narrowly beats quiet building.' },
+  { xgid: 'XGID=-aBBBBB-C--Ab----bbbbca--A:2:-1:1:42:0:0:0:7:10', answer: '', title: 'UBC 2023 Final — Mochy banana split', concept: 'banana split' },
+  { xgid: 'XGID=-aB-CBBB-B--b---bc-c-bbB--:1:-1:1:51:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P3', concept: '51 in a prime-vs-prime money position.' },
+  { xgid: 'XGID=--BbB-BAB--BcBb--c-d-B-a--:0:0:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P110', concept: 'Double 6s in a blockade.' },
+]
+
+// "Gercek Pozisyonlar" bolumu: acilislar (en kolay) + REAL_POSITIONS (nöral sirali). Sabit 10 limiti YOK.
+function realQuestions(): Question[] {
+  return [...openingQuestions(), ...REAL_POSITIONS.map(famousToQuestion).filter((q): q is Question => q !== null)]
+}
 const FAMOUS: Record<string, Famous[]> = { lvl3: FAMOUS_MED, lvl8: FAMOUS_HARD }
 
 // Bir dersin 10 sorusu: once UNLU pozisyonlar, sonra REFERANS, sonra uretilmis (zorluk-bantli).
 function buildLesson(s: Spec): Question[] {
   if (s.openings) return openingQuestions()
+  if (s.real) return realQuestions()
   if (s.cube) return [...genCubeQuestions(s.seed!, 5), ...genMatchCubeQuestions(s.seed! + 1, 5)]
   const famous = (FAMOUS[s.id] ?? []).map(famousToQuestion).filter((q): q is Question => q !== null)
   const ref = REFS[s.id] ?? []
@@ -293,6 +398,7 @@ interface Spec {
   hardness?: number // 0..1 (sezgisel gap penceresi: 0 buyuk-gap/kolay, 1 kucuk-gap/zor)
   openings?: boolean
   cube?: boolean
+  real?: boolean // "Gercek Pozisyonlar" bolumu (acilis + REAL_POSITIONS, sabit 10 limiti yok)
 }
 const SPECS: Spec[] = [
   { id: 'lvl1', title: 'Beginner', openings: true },
@@ -306,6 +412,7 @@ const SPECS: Spec[] = [
   { id: 'lvl9', title: 'Legendary Grandmaster', seed: 0x5e09, mv: 4, contact: true, hardness: 0.92 },
   { id: 'lvl10', title: 'Lord of the Dice', seed: 0x5e0a, mv: 5, contact: true, hardness: 1.0 },
   { id: 'cube', title: 'Cube Decisions', seed: 0x5ecb, cube: true },
+  { id: 'real', title: 'Gerçek Pozisyonlar', real: true },
 ]
 
 // Aday havuzu: temas + dallanma sartli `count` pozisyon (ZORLUK siralamasi NOTRAL motorla
@@ -351,6 +458,7 @@ export function lessonPlan(id: string): LessonPlan {
   const s = SPECS.find((x) => x.id === id)
   if (!s) return { base: [], pool: [], need: 0, hardness: 0 }
   if (s.openings) return { direct: openingQuestions(), base: [], pool: [], need: 0, hardness: 0 }
+  if (s.real) return { direct: realQuestions(), base: [], pool: [], need: 0, hardness: 0 }
   if (s.cube) {
     const cubeSeen = new Set<string>() // money + match kup ayni board'u paylasmasin
     return { direct: [...genCubeQuestions(s.seed!, 5, cubeSeen), ...genMatchCubeQuestions(s.seed! + 1, 5, cubeSeen)], base: [], pool: [], need: 0, hardness: 0 }
@@ -376,7 +484,9 @@ export function getQuestions(id: string): Question[] {
   return qs
 }
 
-export const LESSONS: Lesson[] = SPECS.map((s) => ({ id: s.id, title: s.title, descKey: 'tr.lesson.desc', count: 10 }))
+export const LESSONS: Lesson[] = SPECS.map((s) => ({ id: s.id, title: s.title, descKey: 'tr.lesson.desc', count: s.real ? realQuestions().length : 10 }))
+// Ayri bolum olarak gosterilecek "Gercek Pozisyonlar" dersi (TrainingPath seviye listesinden ayrilir).
+export const REAL_LESSON_ID = 'real'
 
 export function lessonById(id: string): Lesson | undefined {
   return LESSONS.find((l) => l.id === id)

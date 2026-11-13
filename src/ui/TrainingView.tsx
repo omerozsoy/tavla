@@ -617,9 +617,14 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
         {/* İlerleme çubuğu EN ÜSTTE (yatay) — eski sağ dikey konumdan taşındı. */}
         <div className="bgx-progress">
           <div className={`bgx-meter${!complete ? ' active' : ''}`}>
-            {Array.from({ length: TOTAL }).map((_, i) => (
-              <span key={i} className={`bgx-seg${i < progressShown ? ' on' : ''}`} />
-            ))}
+            {TOTAL > 20 ? (
+              // Cok soru (Gercek Pozisyonlar): segment yerine tek dolgu cubugu.
+              <span className="bgx-fill" style={{ width: `${Math.round((progressShown / TOTAL) * 100)}%` }} />
+            ) : (
+              Array.from({ length: TOTAL }).map((_, i) => (
+                <span key={i} className={`bgx-seg${i < progressShown ? ' on' : ''}`} />
+              ))
+            )}
           </div>
           <div className="bgx-count">{progressShown}/{TOTAL}</div>
         </div>
