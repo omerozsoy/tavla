@@ -40,6 +40,7 @@ class LiveTournamentController extends Controller
             'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'], // 0 = sınırsız
             'match_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
             'swiss_lives' => ['nullable', 'integer', 'in:1,2,3'], // Swiss hak sayısı (bracket yok sayar)
+            'swiss_auto_draw' => ['nullable', 'boolean'], // Swiss bye/kura: false=elle, true=otomatik
             'register_until' => ['required', 'date'], // başlangıç ZORUNLU (turnuva o saatte başlar)
             'join_password' => ['nullable', 'string', 'max:60'], // boş = halka açık
         ]);
@@ -61,6 +62,7 @@ class LiveTournamentController extends Controller
             'premium_only' => false,         // dernek turnuvası: tüm üyeler katılabilir
             'match_length' => $data['match_length'] ?? 1,
             'swiss_lives' => $type === 'swiss_triple' ? ($data['swiss_lives'] ?? 3) : 3,
+            'swiss_auto_draw' => $type === 'swiss_triple' ? (bool) ($data['swiss_auto_draw'] ?? false) : false,
             'players' => [],
         ]);
 

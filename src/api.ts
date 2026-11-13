@@ -2183,6 +2183,7 @@ export interface LiveTournamentForm {
   size: number
   match_length?: number
   swiss_lives?: number
+  swiss_auto_draw?: boolean
   register_until?: string | null
   join_password?: string | null
 }

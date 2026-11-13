@@ -24,6 +24,7 @@ class Tournament extends Model
         'round_minutes', 'semi_minutes', 'final_minutes', // mac sureleri (dk, oyuncu basina); bkz roundMinutes()
         'third_place_match', // true: 3.'luk (3-4) maci oynanir; false: finale direkt gecilir (3./4. rating'e gore)
         'swiss_lives', // 3 Hakli Swiss hak sayisi (1/2/3); baslangicta swiss_state config'e kilitlenir
+        'swiss_auto_draw', // Swiss bye/kura sekli: false=elle, true=sistem otomatik
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class Tournament extends Model
         'semi_minutes' => 'integer',
         'final_minutes' => 'integer',
         'swiss_lives' => 'integer',
+        'swiss_auto_draw' => 'boolean',
         'entry_fee_try' => 'integer',
     ];
 

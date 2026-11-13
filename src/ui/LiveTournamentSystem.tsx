@@ -44,6 +44,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
   const [fSize, setFSize] = useState(8)
   const [fLen, setFLen] = useState(1)
   const [fLives, setFLives] = useState(3)
+  const [fAutoBye, setFAutoBye] = useState(false) // Swiss bye: false=elle, true=otomatik
   const [fWhen, setFWhen] = useState('')
   const [fJoinPw, setFJoinPw] = useState('')
 
@@ -74,6 +75,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
         size: fSize,
         match_length: fLen,
         swiss_lives: fType === 'swiss_triple' ? fLives : undefined,
+        swiss_auto_draw: fType === 'swiss_triple' ? fAutoBye : undefined,
         register_until: fWhen || null,
         join_password: fJoinPw.trim() || null,
       })
@@ -218,6 +220,15 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                   <span>{t('lts.gate.fWhen')}</span>
                   <TrDateTimePicker value={fWhen} onChange={setFWhen} />
                 </label>
+                {fType === 'swiss_triple' && (
+                  <label className="lts-field">
+                    <span>{t('lts.gate.fBye')}</span>
+                    <select className="lts-gate-input" value={fAutoBye ? '1' : '0'} onChange={(e) => setFAutoBye(e.target.value === '1')}>
+                      <option value="0">{t('lts.gate.byeManual')}</option>
+                      <option value="1">{t('lts.gate.byeAuto')}</option>
+                    </select>
+                  </label>
+                )}
                 <label className="lts-field">
                   <span>{t('lts.gate.fJoinPw')}</span>
                   <input className="lts-gate-input" value={fJoinPw} onChange={(e) => setFJoinPw(e.target.value)} maxLength={60} placeholder={t('lts.gate.fJoinPwPh')} autoComplete="off" />
