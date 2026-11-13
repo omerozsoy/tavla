@@ -678,6 +678,11 @@ const REAL_POSITIONS: Famous[] = [
   { gnuPos: '2G4LAwLg62AALQ', gnuMatch: 'AYGlAAAAEAAA', answer: '', title: 'Falafel to play 31', concept: '31 expert-level decision' },
   { gnuPos: 'jj0PBgDatsAAIw', gnuMatch: 'UYkVADAACAAA', answer: '', title: 'What do I concede? 35', concept: '35 which point to give up' },
   { gnuPos: 'xnYzAEjZbaAACw', gnuMatch: 'cIn4AYAAQAAA', answer: '', title: 'OLM 08/13/10 B', concept: 'Online-league checker play' },
+  { gnuPos: '4HnkATDa3CbAAA', gnuMatch: 'EQHrAAAAAAAE', answer: '', title: 'rgb — 6-2 18/10', concept: '6-2 running play for gammon value vs safe 10/2' },
+  { gnuPos: 'jGfwCQSDz4MBKA', gnuMatch: 'MAGnAQAAKAAA', answer: '8/2 6/5', title: 'rgb — 6-1 8/2 6/5', concept: '6-1 behind in score; builder vs anchor split' },
+  { gnuPos: '4HPkASjgc+QBKA', gnuMatch: 'cAnzAEAAIAAA', answer: '24/14*', title: 'rgb — early 6-4 24/14*', concept: '6-4 double-run hit beats making bar/2-point' },
+  { xgid: 'XGID=-aBCB-BbC----C----acabbba-:0:0:1:33:2:0:0:9:10', answer: '', title: 'Chris Bray 2024 POTW7', concept: '33 tas hamlesi' },
+  { xgid: 'XGID=-A-BCCBb----aB-----cBbbcb-:0:0:1:21:0:0:0:0:10', answer: '4/1', title: 'Marc Olsen — Masterclass', concept: '21 nokta yapma; 4/1' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
