@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { CoinPackage } from '../coinPackages'
 import { useCoinPackages } from '../useCoinPackages'
+import { useMembershipPrice } from '../useMembershipPrice'
 import { validatePromo, type PromoResult } from '../api'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
@@ -27,7 +28,6 @@ export interface CartItem {
 }
 
 export const MEMBERSHIP_ITEM_ID = 'premium-yil'
-export const MEMBERSHIP_PRICE_TL = 499
 
 export interface CartAddressSel {
   shippingId: number | null
@@ -61,6 +61,7 @@ export default function Cart({
   useEscape(onClose)
   const notify = useToast()
   const coinPackages = useCoinPackages()
+  const MEMBERSHIP_PRICE_TL = useMembershipPrice() // panelden yonetilen premium fiyati (gosterim)
   const [code, setCode] = useState('')
   const [applied, setApplied] = useState<PromoResult | null>(null)
   const [promoErr, setPromoErr] = useState('')

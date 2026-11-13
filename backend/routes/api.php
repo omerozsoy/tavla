@@ -134,6 +134,7 @@ Route::get('/cookies', [CookieController::class, 'entries']); // Cerez Politikas
 Route::get('/cookie-consent', [CookieController::class, 'consent']); // banner/modal metin + surum + script ID
 Route::get('/products', [ProductController::class, 'index']); // fiziksel magaza katalogu (acik)
 Route::get('/shop/coin-packages', [PaymentController::class, 'coinPackagesCatalog']); // coin paketleri katalogu (acik; panelden yonetilir)
+Route::get('/shop/membership-price', [PaymentController::class, 'membershipPrice']); // premium yillik fiyati (acik; panelden yonetilir)
 // Hata Bildir: sag kenar butonundan gonderilen kullanici hata bildirimi. HALKA ACIK
 // (misafir de bildirebilir); giris yapmissa BugReportController Bearer token'dan kullaniciyi
 // iliskilendirir. Spam/flood korumasi icin IP basi 6/dk (ekran goruntusu 8 MB'a kadar).

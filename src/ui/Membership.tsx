@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
 import { type BankTransferResult } from '../api'
+import { useMembershipPrice } from '../useMembershipPrice'
 import { Button } from '@/components/ui/button'
 import { iapAvailable, iapCustomerCenter } from '../nativeIAP'
 
@@ -36,6 +37,7 @@ export default function Membership({
   // onlar icin "Üyeliğini Uzat" (yalniz mevcut plan + uzatma). Ucretsiz/misafir icin degismez.
   const premium = current === 'premium'
   const plans = premium ? PLANS.filter((p) => p.id !== 'free') : PLANS
+  const premiumYearly = useMembershipPrice() // panelden yonetilen premium fiyati (gosterim)
 
   return (
     <div className="register-overlay modal mem-overlay">
@@ -48,7 +50,7 @@ export default function Membership({
         <div className={`mem-grid ${premium ? 'mem-grid--single' : ''}`}>
           {plans.map((p) => {
             const isCurrent = current === p.id
-            const price = p.yearly
+            const price = p.id === 'premium' ? premiumYearly : p.yearly
             return (
               <div key={p.id} className={`mem-plan ${p.id !== 'free' ? 'paid' : ''}`}>
                 <div className="mem-plan-name" style={{ color: p.color }}>

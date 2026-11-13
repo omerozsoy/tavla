@@ -21,6 +21,9 @@ class Setting extends Model
         'reward_normal' => 25,
         'reward_premium' => 50,
         'commission_pct' => 5,
+        // Premium yıllık üyelik fiyatı (KURUŞ = TL×100). Admin panel: Mağaza > Coin ve Premium >
+        // "Premium Fiyatı". Hem sitede gösterilen hem tahsil edilen tutar (subscribe + buyMembership).
+        'premium_yearly_price' => 49900, // 499,00 TL
         'bot_match_cost' => 10,    // Yapay zekâya karşı maç ücreti (coin); 0 = bedava
         'pr_min_matches' => 5,     // PR Sıralaması: minimum analiz edilmiş maç
         'pr_min_decisions' => 100, // PR Sıralaması: minimum analiz edilmiş karar

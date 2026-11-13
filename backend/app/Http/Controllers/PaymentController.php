@@ -105,8 +105,10 @@ class PaymentController extends Controller
         if ($guard = $this->checkoutGuard($method)) {
             return $guard;
         }
-        $amount = config("pricing.prices.{$data['plan']}.{$data['period']}");
-        if (! $amount) {
+        // Premium yillik fiyati panelden (Magaza > Coin ve Premium > Premium Fiyati) yonetilir;
+        // kayit yoksa config'e duser. Tek kaynak -> subscribe + buyMembership + SPA gosterimi ayni.
+        $amount = Setting::int('premium_yearly_price', (int) config('pricing.renew.yearly', 49900));
+        if ($amount <= 0) {
             return $this->fail('Geçersiz plan.', 422);
         }
 
@@ -210,7 +212,8 @@ class PaymentController extends Controller
         if ($guard = $this->checkoutGuard($method)) {
             return $guard;
         }
-        $amount = (int) config('pricing.renew.yearly', 49900);
+        // Fiyat panelden yonetilir (Magaza > Coin ve Premium > Premium Fiyati); yoksa config.
+        $amount = Setting::int('premium_yearly_price', (int) config('pricing.renew.yearly', 49900));
         if ($amount <= 0) {
             return $this->fail('Üyelik fiyatı yapılandırılmamış.', 422);
         }
@@ -312,6 +315,15 @@ class PaymentController extends Controller
             ->values();
 
         return response()->json(['packages' => $packages]);
+    }
+
+    // Premium yillik uyelik fiyati (TL) — SPA gosterimi icin. Satin alma fiyati yine sunucu-otoriter
+    // (subscribe/buyMembership ayni Setting'i okur) -> gosterilen ile tahsil edilen HER ZAMAN esit.
+    public function membershipPrice()
+    {
+        $kurus = Setting::int('premium_yearly_price', (int) config('pricing.renew.yearly', 49900));
+
+        return response()->json(['yearly_try' => $kurus / 100]);
     }
 
     // Promo dogrulama gerekce -> kullanici mesaji.

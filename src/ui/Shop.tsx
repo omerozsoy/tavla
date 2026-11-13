@@ -8,10 +8,7 @@ import { Button } from '@/components/ui/button'
 import { type BoardThemeOpt } from './BoardPicker'
 import { ProductsInner, type CartAddLine } from './Products'
 import { getShopCatalog, type Product } from '../api'
-import { PLANS } from '../plans'
-
-// Premium yillik fiyat (TL) — Uyelik ekrani ile AYNI kaynak (plans.ts); fiyat burada cogaltilmaz.
-const PREMIUM_YEARLY_TL = PLANS.find((p) => p.id === 'premium')?.yearly ?? 499
+import { useMembershipPrice } from '../useMembershipPrice'
 
 interface Props {
   coins: number
@@ -83,6 +80,7 @@ export default function Shop({
   const { t } = useT()
   useEscape(onClose)
   const coinPackages = useCoinPackages()
+  const PREMIUM_YEARLY_TL = useMembershipPrice()
   const initial = initialTab === 'board' || initialTab === 'frame' ? 'coin' : initialTab
   const [tabInner, setTabInner] = useState<string>(controlledTab ?? initial)
   // Kontrollu (URL-otoriter) sekme varsa onu kullan; yoksa ic state. Sekme secince App'e bildir.

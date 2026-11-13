@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useCoinPackages } from '../useCoinPackages'
+import { useMembershipPrice } from '../useMembershipPrice'
 import {
   getAddresses,
   getBankTransferInfo,
@@ -14,7 +15,7 @@ import {
 } from '../api'
 import { PROVINCES } from '../provinces'
 import { districtsOf } from '../districts'
-import { MEMBERSHIP_PRICE_TL, type CartItem, type CartAddressSel } from './Cart'
+import { type CartItem, type CartAddressSel } from './Cart'
 import { type CardBreakdown } from './CardForm'
 import './CheckoutSwiss.css'
 
@@ -38,6 +39,7 @@ export default function DeliveryStep({
 }) {
   useEscape(onBack)
   const coinPackages = useCoinPackages()
+  const MEMBERSHIP_PRICE_TL = useMembershipPrice() // panelden yonetilen premium fiyati (gosterim)
 
   const [addresses, setAddresses] = useState<Address[]>([])
   const [shipId, setShipId] = useState<number | null>(null)

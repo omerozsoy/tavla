@@ -3,9 +3,9 @@ import './MagazaSwiss.css'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { useCoinPackages } from '../useCoinPackages'
+import { useMembershipPrice } from '../useMembershipPrice'
 import type { CoinPackage } from '../coinPackages'
 import { iapAvailable } from '../nativeIAP'
-import { PLANS } from '../plans'
 import { MEMBERSHIP_ITEM_ID, type CartItem } from './Cart'
 import {
   getShopCatalog,
@@ -29,8 +29,6 @@ import {
 // sepet, ödeme, sonuç, yasal metinler) aynı sayfanın doğal akışında. Metinler bu sayfaya
 // özel Türkçe (bespoke storefront) — i18n'e bağlanmadı. Ödeme altyapısı tahsilat YAPMAZ:
 // havale = IBAN talimatı, kart = PENDING sipariş (sahte "ödendi" mesajı YOK).
-
-const PREMIUM_YEARLY_TL = PLANS.find((p) => p.id === 'premium')?.yearly ?? 499
 
 const fmtTL = (n: number) =>
   `${n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })} ₺`
@@ -80,6 +78,7 @@ export default function MagazaSwiss({
   onSelectProduct,
 }: Props) {
   const coinPackages = useCoinPackages()
+  const PREMIUM_YEARLY_TL = useMembershipPrice()
 
   // --- Katalog ---
   const [products, setProducts] = useState<Product[] | null>(null)
@@ -624,6 +623,7 @@ function CartSection({
   onCoinsChange?: (coins: number) => void
   onContinue: () => void
 }) {
+  const PREMIUM_YEARLY_TL = useMembershipPrice()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [result, setResult] = useState<Result | null>(null)

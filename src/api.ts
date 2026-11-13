@@ -739,6 +739,17 @@ export async function getCoinPackages(): Promise<CoinPackage[]> {
   }
 }
 
+// Premium yillik uyelik fiyati (TL) — admin panelden (Magaza > Coin ve Premium > Premium Fiyati)
+// yonetilir. Satin alma fiyati sunucu-otoriter; bu uc yalniz GOSTERIM icin. Hata/bos ise null.
+export async function getMembershipPrice(): Promise<number | null> {
+  try {
+    const d = await req<{ yearly_try?: number }>('/shop/membership-price')
+    return typeof d.yearly_try === 'number' ? d.yearly_try : null
+  } catch {
+    return null
+  }
+}
+
 // Google Etiketi (gtag.js) yapilandirmasi — admin panelden (Ayarlar > Site Ayarlari) yonetilir.
 // enabled=false / id=null ise hicbir Google script'i yuklenmez (bkz analytics.ts).
 export async function getSiteTags(): Promise<{ gtag: { enabled: boolean; id: string | null } }> {

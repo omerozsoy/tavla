@@ -24,11 +24,11 @@ class CoinPackageResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static ?string $navigationLabel = 'Coin Paketleri';
+    protected static ?string $navigationLabel = 'Coin ve Premium';
 
     protected static ?string $modelLabel = 'coin paketi';
 
-    protected static ?string $pluralModelLabel = 'Coin Paketleri';
+    protected static ?string $pluralModelLabel = 'Coin ve Premium';
 
     protected static ?string $navigationGroup = 'Mağaza';
 
@@ -127,9 +127,9 @@ class CoinPackageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCoinPackages::route('/'),
+            'index' => Pages\ListCoinPackages::route('/'),
             'create' => Pages\CreateCoinPackage::route('/create'),
-            'edit'   => Pages\EditCoinPackage::route('/{record}/edit'),
+            'edit' => Pages\EditCoinPackage::route('/{record}/edit'),
         ];
     }
 }
