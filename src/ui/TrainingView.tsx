@@ -218,7 +218,9 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
 
   const turnComplete = interactive && played.length > 0 && legalNextSteps(turnStart, played).length === 0
 
-  const showArrows = reveal && !!best
+  // Ipucu oklari YALNIZ oyuncu henuz oynamadan goster -> ilk hamlede temizlenir ki oynayabilsin
+  // (eskiden reveal=true board'u turnStart'ta kilitliyordu, oyuncu oynayamiyordu).
+  const showArrows = reveal && !!best && played.length === 0
   const displayState = useMemo(
     () => (showArrows ? turnStart : applyPlayed(turnStart, played)),
     [showArrows, turnStart, played],

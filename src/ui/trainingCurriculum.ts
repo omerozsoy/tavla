@@ -549,3 +549,27 @@ export function lessonById(id: string): Lesson | undefined {
   if (rl) return { id: rl.id, title: rl.title, descKey: 'tr.lesson.desc', count: rl.questions.length }
   return LESSONS.find((l) => l.id === id)
 }
+
+// BIRLESIK USTALIK YOLU: uretilmis zorluk dersleri + gercek-pozisyon tema dersleri TEK yapida,
+// kolay->zor (3 zorluk katmani). Uretilmis seviyeler zorluga gore katmanlara eslenir (lvl1=Beginner
+// acilis, "Acilis Zarlari" ile cakistigi icin HARIC). cube -> Ileri.
+const GEN_TIER: Record<string, number> = {
+  lvl2: 0, lvl3: 0,
+  lvl4: 1, lvl5: 1, lvl6: 1, lvl7: 1,
+  lvl8: 2, lvl9: 2, lvl10: 2, cube: 2,
+}
+export interface MasteryLesson {
+  id: string
+  title: string
+  count: number
+}
+export interface MasteryTier {
+  label: string
+  lessons: MasteryLesson[]
+}
+export const MASTERY_TIERS: MasteryTier[] = REAL_TIERS.map((tier, i) => {
+  const real = tier.lessons.map((l) => ({ id: l.id, title: l.title, count: l.questions.length }))
+  const gen = LESSONS.filter((l) => GEN_TIER[l.id] === i).map((l) => ({ id: l.id, title: l.title, count: l.count }))
+  return { label: tier.label, lessons: [...real, ...gen] }
+})
+export const TOTAL_QUESTIONS = MASTERY_TIERS.reduce((a, t) => a + t.lessons.reduce((b, l) => b + l.count, 0), 0)
