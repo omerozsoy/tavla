@@ -222,7 +222,7 @@ export default function LiveTournamentSystem({ onClose, titleOverride }: Props) 
                   <span>{t('lts.gate.fJoinPw')}</span>
                   <input className="lts-gate-input" value={fJoinPw} onChange={(e) => setFJoinPw(e.target.value)} maxLength={60} placeholder={t('lts.gate.fJoinPwPh')} autoComplete="off" />
                 </label>
-                <Button type="submit" variant="default" disabled={busy || !fName.trim()}>
+                <Button type="submit" variant="default" disabled={busy || !fName.trim() || !fWhen}>
                   {t('lts.gate.create')}
                 </Button>
                 {err && <p className="lts-gate-err">{err}</p>}
