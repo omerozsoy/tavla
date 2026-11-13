@@ -25,7 +25,7 @@ class CheatScanTest extends TestCase
         }
     }
 
-    private function match(int $userId, float $pr, int $decisions): void
+    private function match(int $userId, float $pr, int $decisions, ?float $checkerPr = null): void
     {
         DB::table('match_results')->insert([
             'user_id' => $userId,
@@ -37,7 +37,7 @@ class CheatScanTest extends TestCase
             'match_type' => 'match',
             'match_length' => 5,
             'gnubg_pr' => $pr,
-            'gnubg_checker_pr' => $pr,
+            'gnubg_checker_pr' => $checkerPr ?? $pr,
             'pr_decisions' => $decisions,
             'cube_decisions' => 2,
             'room_code' => 'R'.(++$this->roomSeq),
@@ -53,7 +53,33 @@ class CheatScanTest extends TestCase
 
         $flags = CheatScan::flaggedMatches($u->id);
         $this->assertCount(1, $flags);
-        $this->assertSame('mutlak', $flags[0]['reason']);
+        // checker PR de (== pr 0.70) < 1.5 → mutlak sinyaline checker eklenir.
+        $this->assertStringContainsString('mutlak', $flags[0]['reason']);
+    }
+
+    public function test_engine_checker_with_human_overall_pr_is_flagged_checker(): void
+    {
+        // Move-hint bot deseni (DoubleSix/BTHDF): hamle PR makine (<1.5) ama küp hataları genel PR'ı
+        // insan gibi (4.5) şişirmiş → mutlak DEĞİL, bimodal DEĞİL, ama checker-motor olarak flag'lenir.
+        $u = User::factory()->create();
+        $this->match($u->id, 4.5, 90, 0.3);
+
+        $flags = CheatScan::flaggedMatches($u->id);
+        $this->assertCount(1, $flags);
+        $this->assertSame('checker', $flags[0]['reason']);
+    }
+
+    public function test_profile_verdict_checker_engine_when_moves_perfect_but_cube_inflates_pr(): void
+    {
+        // Genel PR medyanı normal (~4, küp hatalarından) AMA checker PR medyanı makine (<1.5) -> HAMLE motoru.
+        $u = User::factory()->create();
+        foreach ([[4.5, 0.3], [3.8, 0.4], [4.2, 0.2], [3.5, 0.5], [4.0, 0.3], [3.9, 0.6], [4.1, 0.4], [3.7, 0.3]] as [$pr, $chk]) {
+            $this->match($u->id, $pr, 90, $chk);
+        }
+        $pf = CheatScan::profile($u->id);
+        $this->assertSame('checker_engine', $pf['verdict']);
+        $this->assertGreaterThan(CheatScan::PR_WORLD_CHAMPION, $pf['median']); // genel medyan "insan gibi"
+        $this->assertLessThan(CheatScan::CHK_PR_ABSOLUTE, $pf['checker_median']);
     }
 
     public function test_short_lowpr_match_is_ignored(): void

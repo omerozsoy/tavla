@@ -16,7 +16,7 @@
                 eliti uzun örneklemde ~2.5-4.5). Kesin kanıt için maçın <b>hamle-hamle motor eşleşmesine</b> bakılmalı.
                 Her hesabın altında iki tür şüpheli maç <b>ayrı</b> listelenir:
             </div>
-            <div class="grid sm:grid-cols-2 gap-3">
+            <div class="grid sm:grid-cols-3 gap-3">
                 <div class="rounded-lg bg-red-500/10 ring-1 ring-red-500/30 p-3 text-red-700 dark:text-red-300">
                     <div class="font-bold mb-1">🔴 Mutlak</div>
                     <div class="text-xs leading-relaxed">
@@ -33,6 +33,15 @@
                         (&lt; medyan × {{ \App\Support\CheatScan::BIMODAL_RATIO }}). Tutarlı insan kendi seviyesi
                         etrafında kümelenir; biri bazı maçta 7, bazı maçta 0.8 oynuyorsa “iki ayrı oyuncu” gibidir =
                         <b>bazı maçta motor açık, bazısında kapalı</b>. Mutlak'ın kaçırdığı, medyanı iyi olan hesabı yakalar.
+                    </div>
+                </div>
+                <div class="rounded-lg bg-fuchsia-500/10 ring-1 ring-fuchsia-500/30 p-3 text-fuchsia-700 dark:text-fuchsia-300">
+                    <div class="font-bold mb-1">🟣 Checker (hamle) motoru</div>
+                    <div class="text-xs leading-relaxed">
+                        <b>Hamle (checker) PR</b>'ı &lt; {{ \App\Support\CheatScan::CHK_PR_ABSOLUTE }} ama genel PR
+                        "insan gibi". Bir <b>"en iyi hamle" ipucu botu</b> (move-hint) imzası: motor hamleyi veriyor,
+                        <b>küp (cube) kararlarını</b> oyuncu kendi (zayıf) eliyle yapıyor → küp hataları genel PR'ı
+                        şişirip gizliyor. Mutlak + Bimodal'ın <b>kaçırdığı</b> hesabı yakalar.
                     </div>
                 </div>
             </div>
@@ -182,10 +191,11 @@
                             $pf = $row['profile'];
                             $vClass = [
                                 'consistent' => 'bg-red-500/20 text-red-700 dark:text-red-300',
+                                'checker_engine' => 'bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-300',
                                 'selective' => 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
                                 'borderline' => 'bg-gray-500/20 text-gray-700 dark:text-gray-300',
                             ][$pf['verdict']] ?? 'bg-gray-500/20 text-gray-700';
-                            $vLabel = ['consistent' => 'SÜREKLİ motor', 'selective' => 'SEÇİCİ motor', 'borderline' => 'Sınırda'][$pf['verdict']] ?? '—';
+                            $vLabel = ['consistent' => 'SÜREKLİ motor', 'checker_engine' => 'HAMLE motoru', 'selective' => 'SEÇİCİ motor', 'borderline' => 'Sınırda'][$pf['verdict']] ?? '—';
                         @endphp
                         <div class="px-4 py-3 space-y-3 border-b border-gray-200 dark:border-white/10">
                             {{-- Neden anlatısı --}}
@@ -201,6 +211,7 @@
                                 <span>std <b>{{ $pf['std'] }}</b></span>
                                 <span style="color:#ef4444">● motor&lt;{{ \App\Support\CheatScan::PR_ABSOLUTE }}: <b>{{ $pf['below_engine'] }}</b></span>
                                 <span style="color:#f59e0b">🏆 şampiyon&lt;{{ \App\Support\CheatScan::PR_WORLD_CHAMPION }}: <b>{{ $pf['below_wc'] }}</b></span>
+                                <span style="color:#d946ef">🟣 hamle(checker) medyanı <b>{{ $pf['checker_median'] }}</b> · &lt;{{ \App\Support\CheatScan::CHK_PR_ABSOLUTE }}: <b>{{ $pf['checker_below'] }}</b></span>
                             </div>
                             {{-- KARŞILAŞTIRMA GRAFİĞİ (en anlaşılır): oyuncunun hamle hatası (PR) referanslarla
                                  yan yana. KISA çubuk = daha iyi oyuncu. Oyuncu çubuğu şampiyon kadar kısa = insani değil. --}}
@@ -236,12 +247,15 @@
                             </div>
                         </div>
 
-                        {{-- Şüpheli maçlar: MUTLAK ve BİMODAL ayrı. 'mutlak+bimodal' mutlak grubuna düşer. --}}
+                        {{-- Şüpheli maçlar 3 grup: MUTLAK (reason'da 'mutlak') / CHECKER (checker ama mutlak değil) /
+                             BİMODAL (yalnız bimodal). Her maç tam bir gruba düşer; mutlak+X mutlağa, bimodal+checker checker'a. --}}
                         @php
-                            $abs = array_values(array_filter($row['matches'], fn ($m) => $m['reason'] !== 'bimodal'));
+                            $abs = array_values(array_filter($row['matches'], fn ($m) => str_contains($m['reason'], 'mutlak')));
+                            $chk = array_values(array_filter($row['matches'], fn ($m) => str_contains($m['reason'], 'checker') && ! str_contains($m['reason'], 'mutlak')));
                             $bim = array_values(array_filter($row['matches'], fn ($m) => $m['reason'] === 'bimodal'));
                             $groups = [];
                             if ($abs) $groups[] = ['title' => '🔴 Mutlak — herkese göre motor-seviyesi (≥'.\App\Support\CheatScan::MIN_DECISIONS.' kararda PR < '.\App\Support\CheatScan::PR_ABSOLUTE.')', 'rows' => $abs, 'head' => 'bg-red-500/10 text-red-700 dark:text-red-300'];
+                            if ($chk) $groups[] = ['title' => '🟣 Checker motoru — hamle PR < '.\App\Support\CheatScan::CHK_PR_ABSOLUTE.' (genel PR küp hatalarıyla insan gibi görünüyor)', 'rows' => $chk, 'head' => 'bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300'];
                             if ($bim) $groups[] = ['title' => '🟠 Bimodal — kendi medyanının çok altı (iki-tepeli)', 'rows' => $bim, 'head' => 'bg-amber-500/10 text-amber-700 dark:text-amber-300'];
                         @endphp
                         @foreach ($groups as $g)
@@ -270,7 +284,7 @@
                                             <tr @class(['bg-red-500/5' => $open])>
                                                 <td class="px-3 py-2 font-mono text-xs">{{ $m['room_code'] ?: '—' }}</td>
                                                 <td class="px-3 py-2 text-right font-bold {{ $m['pr'] < 2 ? 'text-red-600 dark:text-red-400' : '' }}">{{ $m['pr'] }}</td>
-                                                <td class="px-3 py-2 text-right text-gray-500">{{ $m['checker_pr'] }}</td>
+                                                <td class="px-3 py-2 text-right {{ $m['checker_pr'] > 0 && $m['checker_pr'] < \App\Support\CheatScan::CHK_PR_ABSOLUTE ? 'text-fuchsia-600 dark:text-fuchsia-400 font-bold' : 'text-gray-500' }}">{{ $m['checker_pr'] }}</td>
                                                 <td class="px-3 py-2 text-right">{{ $m['decisions'] }}+{{ $m['cube_decisions'] }}c</td>
                                                 <td class="px-3 py-2 text-center">{{ $m['match_length'] ?? '—' }}p</td>
                                                 <td class="px-3 py-2 text-center">{{ $m['won'] ? 'W' : 'L' }}</td>

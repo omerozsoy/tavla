@@ -42,6 +42,13 @@ class CheatScan
      *  ~2.5-4.5 PR ortalar; bu çizginin ALTINA düzenli inmek insani değildir (motor sinyali). */
     public const PR_WORLD_CHAMPION = 2.5;
 
+    /** CHECKER (hamle) PR'ı bu altında = "en iyi hamle" ipucu botu (move-hint) imzası. Küp (cube)
+     *  kararları oyuncunun kendi (zayıf) elinden sızıp GENEL PR'ı "insan gibi" (3-5) şişirse bile,
+     *  hamle oynayışı sürekli makine seviyesi kalır → genel-PR sinyalinin KAÇIRDIĞI motor-yardımı.
+     *  Canlı kalibrasyon (2026-11-14): checkerPR<1.5 = maçların yalnız %1.3'ü, ≥5-maçlı 11 kullanıcı
+     *  (DoubleSix ort. checker 0.57 @ rating 1774; MrOkay ort. 0.82 @ 51 maç). TUNABLE. */
+    public const CHK_PR_ABSOLUTE = 1.5;
+
     /** Maç PR'ı, oyuncunun kendi medyanının bu oranından düşükse bimodal-şüpheli. */
     public const BIMODAL_RATIO = 0.40;
 
@@ -92,14 +99,28 @@ class CheatScan
             }
 
             $median = $medians[$r->user_id] ?? 0.0;
+            $checkerPr = (float) ($r->gnubg_checker_pr ?? 0);
             $absolute = $pr < self::PR_ABSOLUTE;
             $bimodal = $median > 0
                 && ($medians['__n__'][$r->user_id] ?? 0) >= self::MIN_MEDIAN_SAMPLE
                 && $pr < $median * self::BIMODAL_RATIO
                 && $pr < self::BIMODAL_PR_CEILING;
+            // Move-hint bot: hamle oynayışı makine (<1.5) ama küp hataları genel PR'ı insan gibi şişirmiş.
+            $checkerEngine = $checkerPr > 0 && $checkerPr < self::CHK_PR_ABSOLUTE;
 
-            if (! $absolute && ! $bimodal) {
+            if (! $absolute && ! $bimodal && ! $checkerEngine) {
                 continue;
+            }
+
+            $reasons = [];
+            if ($absolute) {
+                $reasons[] = 'mutlak';
+            }
+            if ($bimodal) {
+                $reasons[] = 'bimodal';
+            }
+            if ($checkerEngine) {
+                $reasons[] = 'checker';
             }
 
             $flagged[] = [
@@ -116,7 +137,7 @@ class CheatScan
                 'won' => (bool) $r->won,
                 'created_at' => $r->created_at,
                 'median' => round($median, 1),
-                'reason' => $absolute && $bimodal ? 'mutlak+bimodal' : ($absolute ? 'mutlak' : 'bimodal'),
+                'reason' => implode('+', $reasons),
             ];
         }
 
@@ -197,13 +218,15 @@ class CheatScan
      * medyan referans çizgileri) + neden anlatısı çizer.
      *
      * @return array{n:int,median:float,mean:float,std:float,min:float,max:float,below_wc:int,below_engine:int,
-     *               verdict:string,reason:string,points:array<int,array{pr:float,decisions:int,won:bool,
+     *               checker_median:float,checker_below:int,verdict:string,reason:string,
+     *               points:array<int,array{pr:float,decisions:int,won:bool,
      *               match_length:?int,room_code:?string,created_at:?string,zone:string}>}
      */
     public static function profile(int $userId): array
     {
         $rows = self::load($userId);
         $pts = [];
+        $chkPrs = []; // checker (hamle) PR'ları — move-hint bot verdict'i için (genel PR'dan bağımsız)
         foreach ($rows as $r) {
             $dec = (int) ($r->pr_decisions ?? 0);
             $pr = (float) $r->gnubg_pr;
@@ -216,6 +239,10 @@ class CheatScan
                 'match_length' => $r->match_length !== null ? (int) $r->match_length : null,
                 'room_code' => $r->room_code, 'created_at' => $r->created_at, 'zone' => $zone,
             ];
+            $chk = (float) ($r->gnubg_checker_pr ?? 0);
+            if ($chk > 0) {
+                $chkPrs[] = $chk;
+            }
         }
         usort($pts, fn ($a, $b) => $a['pr'] <=> $b['pr']);
 
@@ -235,9 +262,19 @@ class CheatScan
         $belowWc = count(array_filter($prs, fn ($p) => $p < self::PR_WORLD_CHAMPION));
         $belowEngine = count(array_filter($prs, fn ($p) => $p < self::PR_ABSOLUTE));
 
-        // VERDICT: medyan dünya-şampiyonu seviyesinin altındaysa -> TÜM oyun elit = SÜREKLİ motor.
-        // Medyan normal ama birden çok maç çizginin çok altındaysa -> SEÇİCİ (bazı maçta motor açık).
-        if ($n >= self::MIN_MEDIAN_SAMPLE && $median < self::PR_WORLD_CHAMPION) {
+        // CHECKER (hamle) PR istatistiği — genel PR'dan AYRI eksen. Küp hataları genel PR'ı şişirse de
+        // hamle oynayışının makine olup olmadığını gösterir (move-hint bot teşhisi).
+        sort($chkPrs);
+        $chkN = count($chkPrs);
+        $chkMedian = $chkN ? $chkPrs[intdiv($chkN, 2)] : 0.0;
+        $chkBelow = count(array_filter($chkPrs, fn ($p) => $p < self::CHK_PR_ABSOLUTE));
+
+        // VERDICT: ÖNCE hamle (checker) ekseni — en spesifik imza. Hamle PR medyanı makine seviyesiyse
+        // (küp hatalarıyla genel PR insan gibi görünse bile) = "EN İYİ HAMLE" ipucu botu.
+        if ($chkN >= self::MIN_MEDIAN_SAMPLE && $chkMedian > 0 && $chkMedian < self::CHK_PR_ABSOLUTE) {
+            $verdict = 'checker_engine';
+            $reason = 'HAMLE (checker) motoru şüphesi: hamle PR medyanı '.round($chkMedian, 1).' — oyuncu '.$chkBelow.'/'.$chkN.' maçta hamlelerini makine seviyesinde (< '.self::CHK_PR_ABSOLUTE.') oynuyor. Genel PR medyanı '.round($median, 1).' "insan gibi" görünse de bunu KÜP (cube) hataları şişiriyor; checker oynayışı sürekli motor. Bu, "en iyi hamle" ipucu botunun imzasıdır (motor hamleyi veriyor, küp kararı oyuncunun kendi elinden).';
+        } elseif ($n >= self::MIN_MEDIAN_SAMPLE && $median < self::PR_WORLD_CHAMPION) {
             $verdict = 'consistent';
             $reason = 'SÜREKLİ motor şüphesi: medyan PR '.round($median, 1).' — oyuncu ~TÜM maçlarında dünya-şampiyonu ('.self::PR_WORLD_CHAMPION.') seviyesinin altında oynuyor. Bu rating/seviyede bir insan 60+ kararlı maçlarda bunu tutturamaz; düşük varyans (std '.round($std, 1).') makine tutarlılığıdır.';
             // Verdict eşiği liste barından (SUSPECT_MIN_FLAGS) BAĞIMSIZ: 2+ motor-eşiği ya da 4+ şampiyon-altı
@@ -254,6 +291,7 @@ class CheatScan
             'n' => $n, 'median' => round($median, 2), 'mean' => round($mean, 2), 'std' => round($std, 2),
             'min' => $n ? min($prs) : 0.0, 'max' => $n ? max($prs) : 0.0,
             'below_wc' => $belowWc, 'below_engine' => $belowEngine,
+            'checker_median' => round($chkMedian, 2), 'checker_below' => $chkBelow,
             'verdict' => $verdict, 'reason' => $reason, 'points' => $pts,
         ];
     }
