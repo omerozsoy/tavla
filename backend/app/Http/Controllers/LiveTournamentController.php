@@ -39,6 +39,7 @@ class LiveTournamentController extends Controller
             'type' => ['nullable', 'string', 'in:'.implode(',', array_keys(Tournament::TYPES))],
             'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'], // 0 = sınırsız
             'match_length' => ['nullable', 'integer', 'in:'.implode(',', Tournament::LENGTHS)],
+            'swiss_lives' => ['nullable', 'integer', 'in:1,2,3'], // Swiss hak sayısı (bracket yok sayar)
             'register_until' => ['nullable', 'date'],
             'join_password' => ['nullable', 'string', 'max:60'], // boş = halka açık
         ]);
@@ -59,6 +60,7 @@ class LiveTournamentController extends Controller
             'join_password' => ($data['join_password'] ?? '') !== '' ? $data['join_password'] : null,
             'premium_only' => false,         // dernek turnuvası: tüm üyeler katılabilir
             'match_length' => $data['match_length'] ?? 1,
+            'swiss_lives' => $type === 'swiss_triple' ? ($data['swiss_lives'] ?? 3) : 3,
             'players' => [],
         ]);
 

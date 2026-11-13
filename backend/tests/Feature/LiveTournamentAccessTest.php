@@ -46,6 +46,7 @@ class LiveTournamentAccessTest extends TestCase
             'type' => 'swiss_triple',
             'size' => 16,
             'match_length' => 3,
+            'swiss_lives' => 2,
             'join_password' => 'gizli',
         ])->assertOk()->json();
 
@@ -54,6 +55,7 @@ class LiveTournamentAccessTest extends TestCase
         $this->assertSame('FB Kış Turnuvası', $t->name);
         $this->assertSame('swiss_triple', $t->type);
         $this->assertSame(16, $t->size);
+        $this->assertSame(2, (int) $t->swiss_lives);
         $this->assertSame('open', $t->status);
         $this->assertFalse((bool) $t->premium_only);
         $this->assertSame('Fenerbahçe Tavla', $t->venue);
