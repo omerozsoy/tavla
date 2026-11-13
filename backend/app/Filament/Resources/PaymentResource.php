@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Payment;
+use App\Models\Setting;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -25,6 +26,21 @@ class PaymentResource extends Resource
     protected static ?string $navigationGroup = 'Finans';
 
     protected static ?int $navigationSort = 1;
+
+    // Menüde kırmızı rozet: son görülenden (ListPayments açılışında damgalanır) sonra gelen YENİ
+    // ödeme sayısı. Yeni ödeme gelince admin menüde "N" görür; Ödeme Kayıtları'nı açınca sıfırlanır.
+    public static function getNavigationBadge(): ?string
+    {
+        $seen = (int) Setting::get('admin_seen_payment_id', '0');
+        $new = static::getModel()::query()->where('id', '>', $seen)->count();
+
+        return $new > 0 ? (string) $new : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger'; // kırmızı
+    }
 
     // Kayitlar elle olusturulmaz (banka callback'i / checkout olusturur).
     public static function canCreate(): bool

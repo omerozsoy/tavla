@@ -46,8 +46,8 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Güvenlik',
                 'İletişim', // turnuva organizasyonu / iletişim formu talepleri (İletişim Talepleri)
+                'Finans',   // Ödeme Kayıtları: İletişim ile Oyun ARASINDA (yeni ödeme badge'i buradan görünür)
                 'Oyun',
-                'Finans',
                 'Mağaza',
                 'İçerik',
                 'Destek',
