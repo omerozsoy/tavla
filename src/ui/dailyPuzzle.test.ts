@@ -19,7 +19,7 @@ describe('dailyQuestion', () => {
   })
 
   it('always returns a playable position (state with checkers)', () => {
-    const q = dailyQuestion(19675 * DAY)
+    const q = dailyQuestion(1_700_000_000_000)
     expect(q.state).toBeTruthy()
     expect(q.state.points.length).toBe(24)
   })
