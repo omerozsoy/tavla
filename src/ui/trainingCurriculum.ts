@@ -1015,6 +1015,14 @@ function tierOf(h: number): number {
   return h < TIER_CUT[0] ? 0 : h < TIER_CUT[1] ? 1 : h < TIER_CUT[2] ? 2 : h < TIER_CUT[3] ? 3 : 4
 }
 
+// Saldiri ve Blok konulari YOGUN -> zorluk alt-bandina gore iki bolume ayrilir (temel / ileri).
+function attackSection(tier: number): string {
+  return tier >= 3 ? 'a-attack' : 'i-attack'
+} // Saldiri Oyunu (ORTA) / İleri Saldırı (İLERİ)
+function blockSection(tier: number): string {
+  return tier >= 2 ? 'i-blocks' : 'd-blocks'
+} // Blok Oluşturma (GELİŞEN) / İleri Blok (ORTA)
+
 // MOTOR/BOARD analizi: metin konu vermeyen jenerik pozisyonlarin KONUSUNU board-state'ten cikarir
 // (temas, kendi evi/gucu, capa, prime, geri pullar, toplama). Neural DEGIL (build-time 500 poz donar) —
 // engine heuristikleri (hasContact + nokta sayimi), ucuz ve deterministik. null = state de belirsiz.
@@ -1053,9 +1061,9 @@ function classifyByState(q: Question, tier: number): string | null {
   if (whiteAnchorCount >= 2) return 'a-backgame'
   // 4) SALDIRI/VURMA — siyah barda + beyaz ev GUCLU (3+ kapali nokta = blitz) ya da ev tablomda 2+ blot.
   //    Tier dusukse temel "Vurmak mi", yuksekse "Saldiri Oyunu".
-  if ((st.bar.black > 0 && whiteHomePoints >= 3) || blackBlotsInWhiteHome >= 2) return tier <= 1 ? 'b-hitornot' : 'i-attack'
+  if ((st.bar.black > 0 && whiteHomePoints >= 3) || blackBlotsInWhiteHome >= 2) return tier <= 1 ? 'b-hitornot' : attackSection(tier)
   // 5) BLOK — 5+ ardisik yapili nokta (guclu prime; 4 cok sik -> 5).
-  if (maxRun >= 5) return 'd-blocks'
+  if (maxRun >= 5) return blockSection(tier)
   return null // net tema yok -> zorluk-bantli genel bolum (son care)
 }
 
@@ -1089,24 +1097,24 @@ function classifySection(q: Question): string | null {
   // --- PRIME / BLOK / (ileri) BLOK-MU-SALDIRI ---
   if (/prime|block|blok|contain|hapis|bar ?point|bogaz|boğaz/.test(s)) {
     if (/attack|blitz|hit|point/.test(s) && tier >= 3) return 'a-primeattack'
-    return 'd-blocks'
+    return blockSection(tier)
   }
   // --- SALDIRI / BLITZ / CLOSEOUT / BASKI ---
-  if (/blitz|attack|closeout|close ?out|double-?hit|double hit|pressure|baski|baskı|saldır|saldir/.test(s)) return tier >= 1 ? 'i-attack' : 'b-hitornot'
+  if (/blitz|attack|closeout|close ?out|double-?hit|double hit|pressure|baski|baskı|saldır|saldir/.test(s)) return tier >= 1 ? attackSection(tier) : 'b-hitornot'
   // --- VURMAK --- (hit/hitting/vur)
-  if (/hit|vur/.test(s)) return tier >= 2 ? 'i-attack' : 'b-hitornot'
+  if (/hit|vur/.test(s)) return tier >= 2 ? attackSection(tier) : 'b-hitornot'
   // --- PUL TOPLAMA / CLEARING / BEARING / EV TAHTASI ---
   if (/bear|clear|shift|wastage|crunch|\bpip\b|home board|ev tahta|toplama|topla/.test(s)) return tier >= 3 ? 'a-bearoff' : 'b-bearoff'
   // --- YARIS / HOLDING ---
   if (/\brace|racing|holding game|yarış|yaris/.test(s)) return 'd-race'
   // --- NOKTA YAPMA / KAPI ALMA ---
-  if (/point|make the|nokta|kapı|kapi/.test(s)) return tier >= 2 ? 'i-attack' : 'b-points'
+  if (/point|make the|nokta|kapı|kapi/.test(s)) return tier >= 2 ? attackSection(tier) : 'b-points'
   // --- KACIS / GERI PUL (escape/running/split/trapped) ---
   if (/escap|\brun|split|back checker|rear checker|lover'?s? leap|trapped|kaçır|kacir|kaç|kac/.test(s)) return 'd-escape'
   // --- GUVENLI / RISK / BOLD ---
   if (/\bsafe|safety|\bbold|\brisk|güven|guven/.test(s)) return 'd-safe'
   // --- BUILDER / DAGILIM / ESNEKLIK / BAGLANTI / GELISIM ---
-  if (/builder|\bslot|distribut|flexib|connect|communicat|develop|esnek|gelişim|gelisim/.test(s)) return 'd-blocks'
+  if (/builder|\bslot|distribut|flexib|connect|communicat|develop|esnek|gelişim|gelisim/.test(s)) return blockSection(tier)
   // --- Belirgin konu YOK: zorluga gore GENEL orta-oyun (jenerik "checker play" burada dengeli dagilir).
   //     Metin gercekten zayifsa (çok kisa) "siniflandirma bekliyor". ---
   // Metin konu vermedi -> MOTOR (board-state) analizi ile gercek konuyu cikar (yaris/toplama/saldiri/
@@ -1150,6 +1158,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'd-test', title: 'Seviye Testi', tier: 1, isTest: true },
   // ORTA
   { id: 'i-attack', title: 'Saldırı Oyunu', tier: 2 },
+  { id: 'i-blocks', title: 'İleri Blok Oyunu', tier: 2 },
   { id: 'i-highanchor', title: 'Yüksek Çapa Oyunları', tier: 2 },
   { id: 'i-deepanchor', title: 'Derin Çapa Oyunları', tier: 2 },
   { id: 'i-anchordecide', title: 'Çapayı Korumak veya Bırakmak', tier: 2 },
@@ -1158,6 +1167,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'i-test', title: 'Seviye Testi', tier: 2, isTest: true },
   // İLERİ
   { id: 'a-primeattack', title: 'Blok mu, Saldırı mı?', tier: 3 },
+  { id: 'a-attack', title: 'İleri Saldırı Oyunu', tier: 3 },
   { id: 'a-timing', title: 'Zamanlama', tier: 3 },
   { id: 'a-backgame', title: 'Geri Oyun', tier: 3 },
   { id: 'a-midgame', title: 'Zor Orta Oyun Kararları', tier: 3 },
