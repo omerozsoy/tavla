@@ -80,6 +80,20 @@ class RoomController extends Controller
     // bot odasının _seen'ini TAZELEMEZ (pencere gerçek oyun yokluğunu ölçsün). Kullanıcı: 2 dk.
     private const BOT_ABANDON_S = 120;
 
+    // MİNİMUM EFEKTİF BAHİS (coin). Tüm bahisli-maç giriş noktaları bunu uygular -> düşük bakiyenin
+    // yüzdesi 0'a yuvarlanıp "bedava para maçı" açan açık kapanır. Admin MIN_STAKE env ile ezer.
+    private function minStake(): int
+    {
+        return (int) config('game.min_stake', 10);
+    }
+
+    // Yüzde bahiste bir oyuncunun EFEKTİF bahsi = floor(kullanılabilir_bakiye × % / 100). settle
+    // (pct_stake_snapshot) ile AYNI formül -> giriş kontrolü ile ödeme tutarı tutarlı kalır.
+    private function pctStake(int $available, int $betPct): int
+    {
+        return (int) floor(max(0, $available) * $betPct / 100);
+    }
+
     // Benzersiz oda kodu (karisik olmayan karakterler)
     private function generateCode(): string
     {
@@ -270,6 +284,18 @@ class RoomController extends Controller
             'bet_pct' => ['nullable', 'integer', 'in:10,20,30,50,75,100'],
         ]);
 
+        // MİNİMUM EFEKTİF BAHİS: davet odası potlu (min %10) -> host giriş yapmış olmalı ve
+        // floor(bakiye×%/100) >= min_stake olmalı (yoksa snapshot 0'a düşer, oda bedava-para olur /
+        // misafir host'ta rakip hiç katılamaz). Kesin tutar join/enter'da anlık snapshot'tan okunur.
+        $inviteBetPct = (int) ($data['bet_pct'] ?? 10) ?: 10;
+        if ($inviteBetPct > 0) {
+            $host = $request->user('sanctum');
+            $hostAvail = $host ? (int) (($host->coins ?? 0) - ($host->coins_reserved ?? 0)) : 0;
+            if (! $host || $this->pctStake($hostAvail, $inviteBetPct) < $this->minStake()) {
+                return $this->fail('Bahisli oda için en az '.$this->minStake().' coin değerinde bahis gerekir.', 422);
+            }
+        }
+
         $room = Room::create([
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
@@ -425,7 +451,13 @@ class RoomController extends Controller
             }
             // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Rezerve edilmiş coin yeni
             // bahse sayılmaz (o an başka maçta kilitli). Para oyununda en kötü (×48) karşılanmalı.
-            if ((($authUser->coins ?? 0) - ($authUser->coins_reserved ?? 0)) < max($maxStake * $moneyMult, 1)) {
+            $avail = (int) (($authUser->coins ?? 0) - ($authUser->coins_reserved ?? 0));
+            // MİNİMUM EFEKTİF BAHİS: sabit bahiste stake, yüzde bahiste floor(bakiye×%/100) >= min_stake.
+            $effective = $betPct > 0 ? $this->pctStake($avail, $betPct) : $maxStake;
+            if ($effective < $this->minStake()) {
+                return $this->fail('Bahisli maç için en az '.$this->minStake().' coin değerinde bahis gerekir.', 422);
+            }
+            if ($avail < max($maxStake * $moneyMult, 1)) {
                 return $this->fail('Yetersiz coin.', 422);
             }
             // C1: Henüz SONUÇLANMAMIŞ (oynanan VEYA bitmiş-ama-settle-olmamış) bahisli bir maçı varsa
@@ -544,10 +576,13 @@ class RoomController extends Controller
                     $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
                     $p1Available = $p1u ? $avail($p1u) : 0;
                     $p2Available = $p2u ? $avail($p2u) : 0;
+                    // MİNİMUM EFEKTİF BAHİS: sabit bahiste agreedStake, yüzde bahiste her iki oyuncunun
+                    // floor(bakiye×%/100) değeri min_stake altındaysa eşleşme YOK (bedava-para açığı).
+                    $minStake = $this->minStake();
                     if (! $p1u || ! $p2u
-                        || ($agreedStake > 0 && ($p1Available < $reserveAmt || $p2Available < $reserveAmt))
-                        || ($betPct > 0 && ($p1Available < 1 || $p2Available < 1))) {
-                        continue; // biri kullanılabilir bakiyeyle karşılayamıyor -> bu eşleşme yok
+                        || ($agreedStake > 0 && ($agreedStake < $minStake || $p1Available < $reserveAmt || $p2Available < $reserveAmt))
+                        || ($betPct > 0 && ($this->pctStake($p1Available, $betPct) < $minStake || $this->pctStake($p2Available, $betPct) < $minStake))) {
+                        continue; // biri min bahsi/kullanılabilir bakiyeyi karşılayamıyor -> bu eşleşme yok
                     }
                     if ($agreedStake > 0 && Schema::hasColumn('users', 'coins_reserved')) {
                         // Para oyununda en kötü senaryo (stake×48) rezerve edilir -> küp kaça çıkarsa
@@ -1680,8 +1715,11 @@ class RoomController extends Controller
                 $jHost = $room->p1_user_id ? User::find($room->p1_user_id) : null;
                 $jP2 = $joinUserId ? User::find($joinUserId) : null;
                 $jAvail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
-                if (! $jHost || ! $jP2 || $jAvail($jHost) < 1 || $jAvail($jP2) < 1) {
-                    return $this->fail('Bahisli maç için iki oyuncunun da yeterli coin\'i olmalı.', 422);
+                $jMin = $this->minStake();
+                if (! $jHost || ! $jP2
+                    || $this->pctStake($jAvail($jHost), $joinBetPct) < $jMin
+                    || $this->pctStake($jAvail($jP2), $joinBetPct) < $jMin) {
+                    return $this->fail('Bahisli maç için iki oyuncunun da en az '.$jMin.' coin değerinde bahsi olmalı.', 422);
                 }
             }
             // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE) — enter() ile AYNI.
@@ -1920,8 +1958,11 @@ class RoomController extends Controller
                 $hostUser = $room->p1_user_id ? User::find($room->p1_user_id) : null;
                 $p2User = $enterUserId ? User::find($enterUserId) : null;
                 $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
-                if (! $hostUser || ! $p2User || $avail($hostUser) < 1 || $avail($p2User) < 1) {
-                    return $this->fail('Bahisli maç için iki oyuncunun da yeterli coin\'i olmalı.', 422);
+                $eMin = $this->minStake();
+                if (! $hostUser || ! $p2User
+                    || $this->pctStake($avail($hostUser), $enterBetPct) < $eMin
+                    || $this->pctStake($avail($p2User), $enterBetPct) < $eMin) {
+                    return $this->fail('Bahisli maç için iki oyuncunun da en az '.$eMin.' coin değerinde bahsi olmalı.', 422);
                 }
             }
             // DÜELLO SABİT STAKE ÖN-KONTROL: iki oyuncunun da en az stake kadar KULLANILABİLİR
@@ -2301,8 +2342,11 @@ class RoomController extends Controller
                 $p1u = $lk[$locked->p1_user_id] ?? null;
                 $p2u = $lk[$locked->p2_user_id] ?? null;
                 $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
-                if (! $p1u || ! $p2u || $avail($p1u) < 1 || $avail($p2u) < 1) {
-                    throw new \RuntimeException('Yüzde bahis rövanşı için yeterli bakiye yok.');
+                $rMin = $this->minStake();
+                if (! $p1u || ! $p2u
+                    || $this->pctStake($avail($p1u), $rematchBetPct) < $rMin
+                    || $this->pctStake($avail($p2u), $rematchBetPct) < $rMin) {
+                    throw new \RuntimeException('Yüzde bahis rövanşı için en az '.$rMin.' coin değerinde bahis gerekir.');
                 }
                 $pctSnapshot = [
                     (string) $locked->p1_user_id => (int) floor($avail($p1u) * $rematchBetPct / 100),

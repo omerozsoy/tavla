@@ -36,6 +36,11 @@ return [
     // NOT: bu coin bahse yatırılabilir (bedava değer) -> WELCOME_COINS env ile ayarla.
     'welcome_coins' => max(0, (int) env('WELCOME_COINS', 100)),
 
+    // MİNİMUM EFEKTİF BAHİS (coin): bahisli maç kurmak/eşleşmek için EFEKTİF bahis bu kadar olmalı.
+    // Sabit bahiste = stake; yüzde bahiste = floor(kullanılabilir_bakiye × % / 100). Düşük bakiyenin
+    // %'si 0'a yuvarlanıp "bedava para maçı" açtığı açığı kapatır (RoomController tüm giriş noktaları).
+    'min_stake' => max(0, (int) env('MIN_STAKE', 10)),
+
     // DÜELLO bahsi: takımlılar arası düello artık SABİT stake ile oynanır (potsuz DEĞİL).
     // Her oyuncudan bu kadar coin DÜZ escrow'lanır (küp çarpanı YOK -> daima bu tutar); kazanan
     // iki stake'i (komisyon düşülerek) alır. Bakiyesi < stake olan düello gönderemez/kabul edemez.
