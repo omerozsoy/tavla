@@ -5,6 +5,7 @@ import Loading from './Loading'
 import { useEscape } from './useEscape'
 import type { GameState, Player, Step } from '../engine/types'
 import { initialState } from '../engine/game'
+import { parseXgid } from '../engine/xgid'
 import { pipCount } from '../engine/evaluate'
 import { equityFrom } from '../engine/encoding'
 import { moveNotation } from '../engine/notation'
@@ -128,6 +129,8 @@ export default function PositionAnalyzer({
     () => saved0?.off ?? { white: 0, black: 0 },
   )
   const [turn, setTurn] = useState<Player>(() => saved0?.turn ?? 'white')
+  const [xgidInput, setXgidInput] = useState('') // XGID yapistirma -> tahtaya diz
+  const [xgidErr, setXgidErr] = useState(false)
   const [cube, setCube] = useState<{ value: number; owner: Player | null }>(
     () => saved0?.cube ?? { value: 1, owner: null },
   )
@@ -993,6 +996,42 @@ export default function PositionAnalyzer({
               </Button>
             </div>
           </div>
+
+          {/* XGID yapistir -> parseXgid ile tahtaya diz (pts/bar/off/turn). Zar yuklemez (poz analizi). */}
+          <div className="setup-row pa-xgid-row">
+            <input
+              className={`pa-xgid-input${xgidErr ? ' err' : ''}`}
+              value={xgidInput}
+              onChange={(e) => {
+                setXgidInput(e.target.value)
+                setXgidErr(false)
+              }}
+              placeholder={t('pa.xgidPlaceholder')}
+              spellCheck={false}
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
+            <Button
+              variant="default"
+              disabled={!xgidInput.trim()}
+              onClick={() => {
+                const r = parseXgid(xgidInput.trim())
+                if (!r) {
+                  setXgidErr(true)
+                  return
+                }
+                setPts(r.state.points)
+                setBar(r.state.bar)
+                setOff(r.state.off)
+                setTurn(r.state.turn)
+                setResult(null)
+                setXgidErr(false)
+              }}
+            >
+              {t('pa.xgidLoad')}
+            </Button>
+          </div>
+          {xgidErr && <div className="pa-xgid-errmsg">{t('pa.xgidErr')}</div>}
 
           <div className="setup-row">
             <div className="menu-targets">

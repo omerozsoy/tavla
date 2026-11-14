@@ -19095,6 +19095,14 @@ body:has(.spectate-view) .app.lobby {
   width: auto;
   padding: 6px 14px;
 }
+/* XGID yapistirma kutusu: input + Yukle (pozisyonu tahtaya dizer). */
+.pa-xgid-row { display: flex; gap: 8px; align-items: center; }
+.pa-xgid-input { flex: 1; min-width: 0; font-size: var(--fs-sm); font-family: ui-monospace, monospace; padding: 9px 11px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); }
+.pa-xgid-input:focus { outline: none; border-color: var(--accent); }
+.pa-xgid-input.err { border-color: var(--color-error); }
+.pa-xgid-input::placeholder { color: var(--tv-ink-faint); font-family: inherit; }
+.pa-xgid-errmsg { font-size: var(--fs-xs); color: var(--color-error); margin-top: -2px; }
+
 .pa-score {
   display: flex;
   gap: 10px;
