@@ -683,6 +683,7 @@ const REAL_POSITIONS: Famous[] = [
   { gnuPos: '4HPkASjgc+QBKA', gnuMatch: 'cAnzAEAAIAAA', answer: '24/14*', title: 'rgb — early 6-4 24/14*', concept: '6-4 double-run hit beats making bar/2-point' },
   { xgid: 'XGID=-aBCB-BbC----C----acabbba-:0:0:1:33:2:0:0:9:10', answer: '', title: 'Chris Bray 2024 POTW7', concept: '33 tas hamlesi' },
   { xgid: 'XGID=-A-BCCBb----aB-----cBbbcb-:0:0:1:21:0:0:0:0:10', answer: '4/1', title: 'Marc Olsen — Masterclass', concept: '21 nokta yapma; 4/1' },
+  { gnuPos: '8M7BAWDLrMEAJg', gnuMatch: 'QQkbAAAAAAAE', answer: '', title: 'Forum — 6-6 Bar Point', concept: '66 çiftinde bar point kapama tercihi' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
