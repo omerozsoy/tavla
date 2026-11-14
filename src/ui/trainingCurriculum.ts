@@ -689,6 +689,18 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=-bBba-DBB---bC-a-b-cAb---A:0:0:1:54:0:0:3:0:10', answer: '', title: 'Chris Bray — Back Game Planning (USBGF 2026)', concept: 'Arka oyun planlaması 54' },
   { xgid: 'XGID=-aa---E-C---cE-aac-e----AA:0:0:1:52:1:0:0:7:10', answer: '', title: 'Chris Bray — Early Development (USBGF 2026)', concept: 'Erken gelişim 52' },
   { xgid: 'XGID=-a-B--DaB---dEa--c-e----B-:0:0:1:22:0:0:2:0:10', answer: '', title: 'Chris Bray — Washing Day (USBGF 2026)', concept: 'Para oyunu 22 tas hamlesi' },
+  { xgid: 'XGID=-BCbBaF-aB---------bbbbc--:0:0:1:54:0:0:3:0:10', answer: '', title: 'Chris Bray — Pay Me Now, Pay Me Later (USBGF)', concept: 'Para oyunu: kaçış zamanlaması vs güvenlik' },
+  { xgid: 'XGID=--ABBBC-A---a--ccb-dBbB---:1:1:1:42:9:6:0:11:10', answer: '', title: 'Chris Bray — A Difficult Decision (USBGF)', concept: 'Skor 42 hamlesini şekillendirir' },
+  { xgid: 'XGID=-BDBBbC-------b----cBbbbb-:0:0:1:42:7:9:0:11:10', answer: '', title: "Chris Bray — Bray's Principle (USBGF)", concept: 'Arka noktayı doğru boşaltmak' },
+  { xgid: 'XGID=--b---EBB-A-cB-a-cae----BA:0:0:1:21:4:4:0:5:10', answer: '', title: 'Chris Bray — Make the Checkers Work (USBGF)', concept: 'DMP: her taşı üretken kıl' },
+  { xgid: 'XGID=--a---EaB--AdD-a-c-e----BA:0:0:1:21:0:0:3:0:10', answer: '', title: 'Chris Bray — Checker Development (USBGF)', concept: '21 ile erken gelişim' },
+  { xgid: 'XGID=----baDBB----B-AbcbbaAB-bA:0:0:1:41:0:0:0:7:10', answer: '', title: 'Chris Bray — Game Plan Required (USBGF)', concept: 'Hamleden önce oyun planı seç' },
+  { xgid: 'XGID=-b--b-ECD---cB---d-d----A-:0:0:1:44:0:0:3:0:10', answer: '', title: 'Chris Bray — Simple Basics (USBGF)', concept: 'Temel 44 nokta yapımı' },
+  { xgid: 'XGID=--BBCB---a-AA-------bbcDg-:3:-1:1:33:0:0:3:0:10', answer: '', title: 'Chris Bray — Making the Checkers Work (USBGF)', concept: 'Sınırsız: 33 değerini çıkar' },
+  { xgid: 'XGID=-a---BCBC-A-cB----bebb-AA-:0:0:1:32:2:3:0:7:10', answer: '', title: 'Chris Bray — Flawed Strategy (USBGF)', concept: 'Orta oyun 32: hatalı plandan kaçın' },
+  { xgid: 'XGID=aBBaBBB-----dA---b-cbBbAA-:1:-1:1:55:1:4:0:9:10', answer: '', title: 'Chris Bray — A Recurring Theme (USBGF)', concept: '55 ile prime/anchor teması' },
+  { xgid: 'XGID=---aC-C-BC--aA-A---dcdb-B-:1:-1:1:33:5:5:0:7:10', answer: '', title: 'Chris Bray — Ignoring the Obvious (USBGF)', concept: 'DMP 33: bariz olmayan en iyi hamle' },
+  { xgid: 'XGID=-b----E-D---dDa--c-da---AA:0:0:1:21:0:0:3:0:3', answer: '', title: 'Chris Bray — Early Game Skirmish (USBGF)', concept: 'Erken oyun 21 çatışması' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
