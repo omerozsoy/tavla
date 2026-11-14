@@ -18479,12 +18479,14 @@ body:has(.spectate-view) .app.lobby {
    board-h sahne genisligini (100vw - sidebar) /3 ile boyutlar (sahne full-width). */
 .tr-previews { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 10px; justify-content: flex-start; align-items: stretch; }
 .tr-prev-head { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--muted); text-align: center; }
-.tr-prev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; justify-items: center; align-content: start; overflow-y: auto; overflow-x: hidden; min-height: 0; max-height: calc(var(--board-h) + 40px); padding: 2px 4px 8px 2px; }
+/* container-type GRID'de (flex-item'da DEGIL -> flex collapse olmaz): board-h'i GERCEK sahne
+   genisligine (100cqw) gore boyutla -> sidebar/max-width ne olursa olsun 3 board DAIMA sigar. */
+.tr-prev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; justify-items: center; align-content: start; overflow-y: auto; overflow-x: hidden; min-height: 0; max-height: var(--board-h); padding: 2px 4px 8px 2px; container-type: inline-size; }
 /* Mini board: STANDART board oranlari (bearoff dahil) korunur, sadece KUCULTULUR. KRITIK: --cube-size
    (38px clamp FLOOR'u var) + --tray-w/--bar-w mini --checker'dan TUREKETILIR, yoksa bearoff/bar buyuk
    board olcusunde sabit kalip "anlamsiz kalin" gorunur. board-h kok formulunden /3 (aspect ~1.53). */
 .tr-prev { position: relative; appearance: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 6px 6px; cursor: pointer;
-  --board-h: clamp(120px, calc((100vw - 560px) / 3 / 1.55), 300px);
+  --board-h: clamp(110px, calc((100cqw - 72px) / 3 / 1.6), 300px);
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.14);
   --tri-h: calc(var(--board-h) * 0.35);
