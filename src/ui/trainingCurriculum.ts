@@ -179,7 +179,7 @@ const OPENINGS: { dice: [number, number]; intro: string }[] = [
 ]
 
 function openingQuestions(): Question[] {
-  return OPENINGS.map((o) => ({ state: newTurn(initialState(), diceOf(o.dice)), intro: o.intro }))
+  return OPENINGS.map((o) => ({ state: newTurn(initialState(), diceOf(o.dice)), intro: o.intro, title: `${o.dice[0]}-${o.dice[1]} Açılışı` }))
 }
 
 // --- Elle (authored) referans pozisyonu kurucu. Mutlak 1-24 hane (beyaz +, siyah -). ---

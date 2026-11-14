@@ -18536,6 +18536,9 @@ body:has(.spectate-view) .app.lobby {
 .tr-prev:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }
 .tr-prev-no { position: absolute; top: 4px; left: 6px; z-index: 3; font-size: var(--fs-2xs); font-weight: var(--fw-bold); color: var(--tv-ink-faint); background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0 7px; line-height: 1.5; }
 .tr-prev .board { pointer-events: none; } /* tiklamayi butona birak, tasa secim tetikleme */
+/* Pozisyon adi kartin ustunde (numara kosede kalir; uzun ad kesilir, hover'da title ile tam gorunur). */
+.tr-prev { display: flex; flex-direction: column; align-items: center; }
+.tr-prev-name { width: 100%; text-align: left; padding: 0 2px 4px 30px; font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Mini on izlemede hane numaralari (sabit 1rem) devasa kalir -> gizle, 24px bantlari kaldir (board kisalir). */
 .tr-prev .pt-numbers { display: none; }
 .tr-prev .board { grid-template-rows: 0 1fr 0; }

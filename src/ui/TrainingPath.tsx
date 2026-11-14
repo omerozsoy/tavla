@@ -207,6 +207,7 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
           {shown.map((q, i) => (
             <button key={i} className="tr-prev" onClick={() => onPick(pickTarget)} title={q.title ?? ''}>
               <span className="tr-prev-no">{i + 1}</span>
+              {q.title && <span className="tr-prev-name">{q.title}</span>}
               <Board
                 state={q.state}
                 selectableFroms={EMPTY_FROM}
