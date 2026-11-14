@@ -23,6 +23,9 @@ export interface Question {
   title?: string // unlu pozisyon adi (oyun sirasinda gosterilir, or. "UBC 2023 Finali — banana split")
   cube?: 'offer' | 'respond' // KUP karari sorusu: 'offer'=katla/katlama, 'respond'=al/birak. Motor puanlar.
   score?: { my: number; opp: number; to: number } // MAC kupu: skor baglami (varsa mac-equity ile puanlanir)
+  id?: string // STABIL pozisyon kimligi (XGID/GNU id ya da board-key). Pozisyon-bazli ilerleme kaydi icin.
+  src?: string // kaynak/yazar anahtari (euler, bray, mochy...) — kaynak FILTRESI icin (zorluk olcutu DEGIL)
+  srcLabel?: string // kaynagin gosterilecek adi
 }
 
 export interface Lesson {
@@ -271,7 +274,16 @@ function famousToQuestion(f: Famous): Question | null {
   const r = f.gnuPos ? parseGnuId(f.gnuPos, f.gnuMatch ?? '') : f.xgid ? parseXgid(f.xgid) : null
   if (!r || !r.dice) return null
   const mv = f.answer ? matchGnubgMove(r.state, 'white', f.answer) : null
-  return { state: r.state, intro: f.concept, answer: mv ?? undefined, title: f.title }
+  const au = authorOf(f) // kaynak (filtre icin; zorluk olcutu DEGIL). authorOf declaration -> hoist.
+  return {
+    state: r.state,
+    intro: f.concept,
+    answer: mv ?? undefined,
+    title: f.title,
+    id: f.xgid || f.gnuPos, // stabil kimlik (pozisyon-bazli ilerleme)
+    src: au.key,
+    srcLabel: au.title,
+  }
 }
 
 // Gercek/unlu pozisyonlar (forum+kitap kaynakli, XGID birebir), NÖRAL trap-zorluguna gore KOLAY->ZOR sirali.
@@ -866,6 +878,9 @@ export interface LessonPlan {
 }
 // Dersin planini ver: direct (openings/cube) ya da base + aday havuzu (notral siralanacak).
 export function lessonPlan(id: string): LessonPlan {
+  if (id.startsWith('src:')) return { direct: sourceQuestions(id.slice(4)), base: [], pool: [], need: 0, hardness: 0 } // kaynak filtresi oynatma
+  const cl = sectionById(id) // YENI: konu-bazli mufredat bolumu (sabit soru listesi, notral siralama yok)
+  if (cl) return { direct: cl.questions, base: [], pool: [], need: 0, hardness: 0 }
   const s = SPECS.find((x) => x.id === id)
   const rl = REAL_LESSON_MAP[id]
   if (rl) return { direct: rl.questions, base: [], pool: [], need: 0, hardness: 0 }
@@ -902,6 +917,13 @@ export function getQuestions(id: string): Question[] {
 export const LESSONS: Lesson[] = SPECS.map((s) => ({ id: s.id, title: s.title, descKey: 'tr.lesson.desc', count: 10 }))
 
 export function lessonById(id: string): Lesson | undefined {
+  if (id.startsWith('src:')) {
+    const key = id.slice(4)
+    const src = SOURCES.find((s) => s.key === key)
+    return { id, title: src?.label ?? key, descKey: 'tr.lesson.desc', count: src?.count ?? sourceQuestions(key).length }
+  }
+  const cl = sectionById(id) // YENI: konu-bazli bolum basligi
+  if (cl) return { id: cl.id, title: cl.title, descKey: 'tr.lesson.desc', count: cl.count }
   const rl = REAL_LESSON_MAP[id]
   if (rl) return { id: rl.id, title: rl.title, descKey: 'tr.lesson.desc', count: rl.questions.length }
   return LESSONS.find((l) => l.id === id)
@@ -944,3 +966,275 @@ export function dailyQuestion(epochMs: number): Question {
   const n = DAILY_POOL.length
   return DAILY_POOL[(((day % n) + n) % n)]
 }
+
+// ============================================================================
+// KONU-BAZLI EGITIM YOLU (yazar/koleksiyon bazli DEGIL). Her gercek pozisyon,
+// basligi+konusu (title+concept) VE sezgisel zorlugu analiz edilerek bir KONU
+// bolumune ve zorluk seviyesine (tier) atanir. Kaynak (Euler/Bray/Mochy...)
+// ayrica FILTRE icin korunur ama zorluk olcutu DEGILDIR. Guvenilir siniflana-
+// mayanlar "siniflandirma bekliyor" olarak ayrilir (ana yola sokulmaz).
+// Rutke sistemi (Developing/Master...) bu yoldan AYRIDIR (ayri LESSONS/SPECS).
+// ============================================================================
+
+// Pozisyonun stabil kimligi (ilerleme/dedup). XGID/GNU id yoksa board-key.
+export function questionId(q: Question): string {
+  return q.id ?? boardKey(q.state) + '|' + [...q.state.dice].sort().join('-')
+}
+
+// Sezgisel zorluk 0..1 — SADECE equity farki degil: konu/baglam metni de kullanilir
+// (kullanici direktifi). Turnuva/maç-skoru/ileri-teknik isaretleri yukseltir; temel/acilis dusurur.
+function hardnessText(q: Question): number {
+  const s = ((q.title ?? '') + ' ' + (q.intro ?? '')).toLowerCase()
+  let h = 0.4
+  // --- ileri/ince karar sinyalleri (metin tabanli — kullanici: sadece equity degil) ---
+  if (/dmp|gammon-go|gammon go|gammon-save|match|\baway\b|crawford|at the score/.test(s)) h += 0.28
+  if (/bot-?level|xg prefers|near-?equal|\btied\b|style dependent|complicat|subtle|precise|\btiny\b|razor|ugly play|over reflex|fatal|maximise|minimis/.test(s)) h += 0.22
+  if (/back ?game|timing|tempo|prime|duplicat|holding game|containment/.test(s)) h += 0.12
+  if (/tournament|final|championship|usbgf|bgwc|monte ?carlo|masters|world|turnuva|şampiyon|sampiyon/.test(s)) h += 0.15
+  if ((q.intro ?? '').length > 70) h += 0.08
+  // --- temel sinyaller ---
+  if (/beginner|basic|simple|standard|obvious|\beasy\b|lover'?s? leap|opening|temel|basit|açılış|acilis/.test(s)) h -= 0.22
+  if (/checker play|tas hamlesi|taş hamlesi/.test(s)) h -= 0.04 // jenerik orta oyun
+  // --- POZISYON KARMASIKLIGI (board state; metin sinyali zayif olani zorluga gore ayirir) ---
+  // blot (acik pul) + kendi geri bolgesindeki pul + temas + bardaki pul = daha karmasik karar.
+  const st = q.state
+  let blots = 0
+  let back = 0
+  for (let i = 0; i < 24; i++) {
+    const n = st.points[i]
+    if (n === 1 || n === -1) blots++
+    if (n > 0 && i >= 18) back += n // beyazin geri bolgesi (index 18..23 = 19..24 hane)
+  }
+  const stateH = Math.min(1, blots * 0.09 + back * 0.08 + (hasContact(st) ? 0.16 : 0) + st.bar.white * 0.1)
+  return Math.max(0.05, Math.min(0.98, h * 0.6 + stateH * 0.4))
+}
+function tierOf(h: number): number {
+  return h < 0.26 ? 0 : h < 0.46 ? 1 : h < 0.62 ? 2 : h < 0.8 ? 3 : 4
+}
+
+// Pozisyonu TEK bir konu bolumune ata (en uygun). null = siniflandirma bekliyor.
+// Oncelik: en ayirt edici konu once (kup > maç-skoru > geri-oyun > zamanlama > capa > prime > ...).
+function classifySection(q: Question): string | null {
+  const s = ((q.title ?? '') + ' ' + (q.intro ?? '')).toLowerCase()
+  const h = hardnessText(q)
+  const tier = tierOf(h)
+  const scored = /dmp|gammon-go|gammon go|crawford|\baway\b|match score|skor|at the score/.test(s) || !!q.score
+
+  // --- KUP KARARLARI --- (konu en ayirt edici: once)
+  if (/cube|double|redouble|no-?double|\btake\b|\bpass\b|\bdrop\b|beaver|katla|küp|kup/.test(s) || q.cube) {
+    if (scored) return 'm-scorecube' // maç skoruna göre küp (ustalık)
+    if (tier <= 1) return 'd-cube' // temel küp kavramları
+    if (tier === 2) return 'i-cube' // küp verme/kabul
+    return 'a-cube' // ileri küp
+  }
+  // --- MAC SKORUNA GORE HAMLE ---
+  if (scored) return 'm-scoremoves'
+  // --- GERI OYUN ---
+  if (/back ?game|back-game/.test(s)) return 'a-backgame'
+  // --- ZAMANLAMA / TEMPO ---
+  if (/timing|tempo|zamanlama/.test(s)) return tier >= 3 ? 'a-timing' : 'i-nowlater'
+  // --- CAPA ---
+  if (/anchor|çapa|capa/.test(s)) {
+    if (/golden|\b20\b|\b21\b|\bhigh\b|ileri çapa/.test(s)) return 'i-highanchor'
+    if (/deep|\bace\b|1-?point|low anchor|derin/.test(s)) return 'i-deepanchor'
+    return 'i-anchordecide'
+  }
+  // --- PRIME / BLOK / (ileri) BLOK-MU-SALDIRI ---
+  if (/prime|block|blok|contain|hapis|bar ?point|bogaz|boğaz/.test(s)) {
+    if (/attack|blitz|hit|point/.test(s) && tier >= 3) return 'a-primeattack'
+    return 'd-blocks'
+  }
+  // --- SALDIRI / BLITZ / CLOSEOUT / BASKI ---
+  if (/blitz|attack|closeout|close ?out|double-?hit|double hit|pressure|baski|baskı|saldır|saldir/.test(s)) return tier >= 1 ? 'i-attack' : 'b-hitornot'
+  // --- VURMAK --- (hit/hitting/vur)
+  if (/hit|vur/.test(s)) return tier >= 2 ? 'i-attack' : 'b-hitornot'
+  // --- PUL TOPLAMA / CLEARING / BEARING / EV TAHTASI ---
+  if (/bear|clear|shift|wastage|crunch|\bpip\b|home board|ev tahta|toplama|topla/.test(s)) return tier >= 3 ? 'a-bearoff' : 'b-bearoff'
+  // --- YARIS / HOLDING ---
+  if (/\brace|racing|holding game|yarış|yaris/.test(s)) return 'd-race'
+  // --- NOKTA YAPMA / KAPI ALMA ---
+  if (/point|make the|nokta|kapı|kapi/.test(s)) return tier >= 2 ? 'i-attack' : 'b-points'
+  // --- KACIS / GERI PUL (escape/running/split/trapped) ---
+  if (/escap|\brun|split|back checker|rear checker|lover'?s? leap|trapped|kaçır|kacir|kaç|kac/.test(s)) return 'd-escape'
+  // --- GUVENLI / RISK / BOLD ---
+  if (/\bsafe|safety|\bbold|\brisk|güven|guven/.test(s)) return 'd-safe'
+  // --- BUILDER / DAGILIM / ESNEKLIK / BAGLANTI / GELISIM ---
+  if (/builder|\bslot|distribut|flexib|connect|communicat|develop|esnek|gelişim|gelisim/.test(s)) return 'd-blocks'
+  // --- Belirgin konu YOK: zorluga gore GENEL orta-oyun (jenerik "checker play" burada dengeli dagilir).
+  //     Metin gercekten zayifsa (çok kisa) "siniflandirma bekliyor". ---
+  if ((q.intro ?? '').trim().length < 6) return null
+  // Jenerik fallback YALNIZ genel-anlamli orta-oyun bolumlerine (spesifik konu bolumlerini kirletme).
+  if (tier >= 4) return 'm-complex' // Karmaşık Pozisyonlar
+  if (tier === 3) return 'a-midgame' // Zor Orta Oyun Kararları
+  if (tier === 2) return 'a-midgame' // tier-2 jenerik -> zor orta oyun (i-nowlater'i spesifik tut)
+  if (tier === 1) return 'd-midgame' // Temel Orta Oyun
+  return 'b-basics' // Temel Kavramlar
+}
+
+// --- Mufredat iskeleti (kullanici yapisi). tier: 0..4. isTest: seviye testi. ---
+export interface CurriSection { id: string; title: string; tier: number; isTest?: boolean }
+export interface CurriTierDef { key: string; label: string; tier: number }
+const CURRI_TIERS: CurriTierDef[] = [
+  { key: 'basic', label: 'BAŞLANGIÇ', tier: 0 },
+  { key: 'developing', label: 'GELİŞEN OYUNCU', tier: 1 },
+  { key: 'intermediate', label: 'ORTA SEVİYE', tier: 2 },
+  { key: 'advanced', label: 'İLERİ SEVİYE', tier: 3 },
+  { key: 'mastery', label: 'USTALIK', tier: 4 },
+]
+const CURRI_SECTIONS: CurriSection[] = [
+  // BAŞLANGIÇ
+  { id: 'b-basics', title: 'Temel Kavramlar', tier: 0 },
+  { id: 'b-openings', title: 'Açılış Zarları', tier: 0 },
+  { id: 'b-points', title: 'Kapı Alma', tier: 0 },
+  { id: 'b-hitornot', title: 'Vurmak mı, Vurmamak mı?', tier: 0 },
+  { id: 'b-bearoff', title: 'Temel Pul Toplama', tier: 0 },
+  { id: 'b-test', title: 'Başlangıç Seviye Testi', tier: 0, isTest: true },
+  // GELİŞEN
+  { id: 'd-blocks', title: 'Blok Oluşturma', tier: 1 },
+  { id: 'd-safe', title: 'Güvenli Oynama ve Risk Alma', tier: 1 },
+  { id: 'd-escape', title: 'Geri Pulları Kaçırma', tier: 1 },
+  { id: 'd-midgame', title: 'Temel Orta Oyun', tier: 1 },
+  { id: 'd-race', title: 'Yarışa Geçiş', tier: 1 },
+  { id: 'd-cube', title: 'Temel Küp Kavramları', tier: 1 },
+  { id: 'd-test', title: 'Seviye Testi', tier: 1, isTest: true },
+  // ORTA
+  { id: 'i-attack', title: 'Saldırı Oyunu', tier: 2 },
+  { id: 'i-highanchor', title: 'Yüksek Çapa Oyunları', tier: 2 },
+  { id: 'i-deepanchor', title: 'Derin Çapa Oyunları', tier: 2 },
+  { id: 'i-anchordecide', title: 'Çapayı Korumak veya Bırakmak', tier: 2 },
+  { id: 'i-nowlater', title: 'Şimdi mi Risk Almalı, Sonra mı?', tier: 2 },
+  { id: 'i-cube', title: 'Küp Verme ve Kabul Kararları', tier: 2 },
+  { id: 'i-test', title: 'Seviye Testi', tier: 2, isTest: true },
+  // İLERİ
+  { id: 'a-primeattack', title: 'Blok mu, Saldırı mı?', tier: 3 },
+  { id: 'a-timing', title: 'Zamanlama', tier: 3 },
+  { id: 'a-backgame', title: 'Geri Oyun', tier: 3 },
+  { id: 'a-midgame', title: 'Zor Orta Oyun Kararları', tier: 3 },
+  { id: 'a-bearoff', title: 'İleri Pul Toplama', tier: 3 },
+  { id: 'a-cube', title: 'İleri Küp Kararları', tier: 3 },
+  { id: 'a-test', title: 'Seviye Testi', tier: 3, isTest: true },
+  // USTALIK
+  { id: 'm-complex', title: 'Karmaşık Pozisyonlar', tier: 4 },
+  { id: 'm-subtle', title: 'İnce Hamle Farkları', tier: 4 },
+  { id: 'm-scoremoves', title: 'Maç Skoruna Göre Hamleler', tier: 4 },
+  { id: 'm-scorecube', title: 'Maç Skoruna Göre Küp Kararları', tier: 4 },
+  { id: 'm-tournament', title: 'Turnuva Pozisyonları', tier: 4 },
+  { id: 'm-test', title: 'Ustalık Testi', tier: 4, isTest: true },
+]
+
+// Tum gercek/authored pozisyonlar (uretilmis rutke seviyeleri HARIC). Acilislar ayri ele alinir.
+const ALL_REAL: Question[] = (() => {
+  const out: Question[] = []
+  for (const f of [...REAL_POSITIONS, ...FAMOUS_MED, ...FAMOUS_HARD]) {
+    const q = famousToQuestion(f)
+    if (q) out.push(q)
+  }
+  // Authored referanslar (concept yerine TR intro) — id yok, board-key kimligi.
+  for (const q of [...REF_MED, ...REF_HARD]) out.push({ ...q, id: questionId(q) })
+  return out
+})()
+
+const MIN_SECTION = 4 // bir konu bolumunun gorunur olmasi icin en az pozisyon (yetersiz -> gizli)
+
+// Pozisyonlari bolumlere dagit + siniflandirma bekleyenleri ayir.
+const SECTION_Q: Record<string, Question[]> = { 'b-openings': openingQuestions() }
+const UNCLASSIFIED: Question[] = []
+for (const q of ALL_REAL) {
+  const sec = classifySection(q)
+  if (!sec) {
+    UNCLASSIFIED.push(q)
+    continue
+  }
+  ;(SECTION_Q[sec] ??= []).push(q)
+}
+// "Turnuva Pozisyonlari": kaynagi sampiyonluk/turnuva olan ve ustalik zorlugundakiler (m-complex'ten ayir).
+{
+  const complex = SECTION_Q['m-complex'] ?? []
+  const tourney: Question[] = []
+  const rest: Question[] = []
+  for (const q of complex) {
+    const s = ((q.title ?? '') + ' ' + (q.srcLabel ?? '')).toLowerCase()
+    if (/tournament|final|championship|usbgf|bgwc|monte ?carlo|masters|world|turnuva|şampiyon/.test(s)) tourney.push(q)
+    else rest.push(q)
+  }
+  if (tourney.length) SECTION_Q['m-tournament'] = tourney
+  SECTION_Q['m-complex'] = rest
+}
+// Her bolum ic sıralama: KOLAY -> ZOR (sezgisel zorluk).
+for (const k of Object.keys(SECTION_Q)) SECTION_Q[k].sort((a, b) => hardnessText(a) - hardnessText(b))
+
+// Seviye testleri: o tier'in DOLU konu bolumlerinden karma (her bolumden sirayla), authored degil
+// gercek pozisyonlar. Yeterli icerik yoksa (<TEST_MIN) test OLUSTURULMAZ (sahte test gosterilmez).
+const TEST_MIN = 8
+const TEST_MAX = 12
+function buildTest(tier: number): Question[] {
+  const pools = CURRI_SECTIONS.filter((s) => s.tier === tier && !s.isTest)
+    .map((s) => SECTION_Q[s.id] ?? [])
+    .filter((p) => p.length >= MIN_SECTION) // yalniz YETERLI konu bolumleri teste katkida bulunur
+  if (pools.length < 2) return [] // en az 2 dolu konu olmadan test anlamsiz
+  const out: Question[] = []
+  const seen = new Set<string>()
+  let i = 0
+  while (out.length < TEST_MAX) {
+    let added = false
+    for (const p of pools) {
+      const q = p[i]
+      if (q && !seen.has(questionId(q))) {
+        seen.add(questionId(q))
+        out.push(q)
+        added = true
+        if (out.length >= TEST_MAX) break
+      }
+    }
+    if (!added) break
+    i++
+  }
+  return out.length >= TEST_MIN ? out : []
+}
+
+// Nihai mufredat: yalnizca YETERLI icerigi olan bolumler (konu >=MIN_SECTION, test >=TEST_MIN).
+export interface CurriLesson { id: string; title: string; tier: number; isTest?: boolean; count: number; questions: Question[] }
+export interface CurriTier { key: string; label: string; tier: number; lessons: CurriLesson[] }
+export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {
+  const lessons: CurriLesson[] = []
+  for (const sec of CURRI_SECTIONS.filter((s) => s.tier === td.tier)) {
+    const qs = sec.isTest ? buildTest(sec.tier) : SECTION_Q[sec.id] ?? []
+    const min = sec.isTest ? TEST_MIN : MIN_SECTION
+    if (qs.length < min) continue // yetersiz -> gizle (bos/sahte gosterme)
+    lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
+  }
+  return { key: td.key, label: td.label, tier: td.tier, lessons }
+}).filter((t) => t.lessons.length > 0)
+
+// Bir bolumun sorulari (ders ekrani icin). Bilinmeyen id -> bos.
+const CURRI_MAP: Record<string, CurriLesson> = {}
+for (const t of CURRICULUM) for (const l of t.lessons) CURRI_MAP[l.id] = l
+export function sectionQuestions(id: string): Question[] {
+  return CURRI_MAP[id]?.questions ?? []
+}
+export function sectionById(id: string): CurriLesson | undefined {
+  return CURRI_MAP[id]
+}
+
+// Kaynak filtresi (Euler/Bray/Mochy...): ana yolu bolmez, ayri filtre. count = pozisyon sayisi.
+export interface SourceFilter { key: string; label: string; count: number }
+export const SOURCES: SourceFilter[] = (() => {
+  const by = new Map<string, { label: string; n: number }>()
+  for (const q of ALL_REAL) {
+    if (!q.src) continue
+    const e = by.get(q.src) ?? { label: q.srcLabel ?? q.src, n: 0 }
+    e.n++
+    by.set(q.src, e)
+  }
+  return [...by.entries()].map(([key, v]) => ({ key, label: v.label, count: v.n })).sort((a, b) => b.count - a.count)
+})()
+
+// Bir kaynagin pozisyonlari (filtre secilince sag onizleme/oynatma).
+export function sourceQuestions(key: string): Question[] {
+  return ALL_REAL.filter((q) => q.src === key).sort((a, b) => hardnessText(a) - hardnessText(b))
+}
+
+// Siniflandirma bekleyen pozisyon sayisi (yonetim/rapor; kesin siniflanmis gibi gosterilmez).
+export const UNCLASSIFIED_COUNT = UNCLASSIFIED.length
+// Mufredattaki toplam gorunur pozisyon.
+export const CURRICULUM_TOTAL = CURRICULUM.reduce((a, t) => a + t.lessons.reduce((b, l) => b + l.count, 0), 0)

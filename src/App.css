@@ -18460,7 +18460,8 @@ body:has(.spectate-view) .app.lobby {
 .tr-sec-head { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tv-ink-faint); text-align: center; margin: 12px 0 8px; }
 /* "GERCEK POZISYONLAR" ana basligi (Seviyeler'den ayirir) + tier alt basliklari (Baslangic/Orta/Ileri). */
 .tr-sec-head.tr-sec-main { margin-top: 22px; color: var(--accent); font-size: var(--fs-xs); border-top: 1px solid var(--border); padding-top: 14px; }
-.tr-sec-tier { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); text-align: left; padding: 6px 10px; margin: 10px 0 4px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.tr-sec-tier { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); text-align: left; padding: 6px 10px; margin: 10px 0 4px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.tr-tier-count { color: var(--accent); font-weight: var(--fw-bold); letter-spacing: 0; font-size: var(--fs-xs); }
 .tr-lesson { display: flex; align-items: center; gap: 12px; text-align: left; appearance: none; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: var(--radius-md); color: var(--text); position: relative; }
 .tr-lesson:not(.disabled):hover { background: var(--rn-navy-700); }
 .tr-lesson.active { background: color-mix(in srgb, var(--accent) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent); }
@@ -18474,6 +18475,36 @@ body:has(.spectate-view) .app.lobby {
 .tr-lesson-sub { font-size: var(--fs-xs); color: var(--tv-ink-faint); }
 .tr-lesson-stars { margin-left: auto; display: inline-flex; gap: 2px; color: var(--coin-gold); flex: none; }
 .tr-lesson-dot { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
+
+/* === KONU-BAZLI DIKEY EGITIM YOLU (acik tema, ana renk --accent/brick) === */
+/* Dugumleri baglayan ince dikey cizgi (dugum merkezi hizasinda; opak dugumler ortasini orter). */
+.tr-path-track { position: relative; }
+.tr-path-track::before { content: ''; position: absolute; left: 27px; top: 14px; bottom: 14px; width: 2px; background: var(--border); z-index: 0; }
+.tr-path-track .tr-lesson { position: relative; z-index: 1; }
+/* Dugum durumlari — acik tema: baslanmamis (notr) / devam (brick-tint) / tamamlanmis (yesil) / secili (brick). */
+.tr-node { background: var(--input-bg); color: var(--text); }
+.tr-node .tr-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--tv-ink-faint); }
+.tr-node.inprog { background: color-mix(in srgb, var(--accent) 20%, var(--card-bg)); color: var(--accent); }
+.tr-node.done { background: var(--color-success); color: #fff; }
+.tr-node.active { background: var(--accent); color: var(--on-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* Kaynak filtresi — ana egitim yolunu BOLMEZ, ayri filtre (Euler/Bray/Mochy...). */
+.tr-sources { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; flex: none; }
+.tr-sources-lbl { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; color: var(--tv-ink-faint); }
+.tr-sources-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tr-src { appearance: none; cursor: pointer; font-size: var(--fs-2xs); padding: 5px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); display: inline-flex; align-items: center; gap: 5px; }
+.tr-src:hover { border-color: var(--accent); }
+.tr-src.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tr-src-n { opacity: 0.65; font-weight: var(--fw-bold); }
+.tr-src.on .tr-src-n { opacity: 0.9; }
+
+/* Sag onizleme basligi: baslik + pozisyon sayisi + Basla/Devam */
+.tr-prev-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
+.tr-prev-title { font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--text); }
+.tr-prev-sub { color: var(--muted); font-size: var(--fs-sm); }
+.tr-prev-start { flex: none; margin-left: auto; padding: 9px 22px; }
+.tr-prev-more { display: flex; align-items: center; justify-content: center; font-weight: var(--fw-bold); font-size: var(--fs-lg); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px dashed var(--border); border-radius: var(--radius-md); cursor: pointer; min-height: 90px; }
+.tr-prev-more:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .tr-path-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 12px; }
 .tr-foot-title { font-weight: var(--fw-bold); font-size: var(--fs-md); }
 .tr-foot-desc { font-size: var(--fs-sm); color: var(--muted); line-height: 1.4; }
@@ -18512,6 +18543,10 @@ body:has(.spectate-view) .app.lobby {
   .register-overlay.page > .tr-view.bgx { padding: calc(var(--header-h) + 10px) 12px 16px; }
   .tr-view { flex-direction: column; align-items: stretch; --board-h: max(260px, min(58vh, calc((100vw - 120px) / 1.5))); }
   .bgx-side { width: auto; align-self: auto; }
+  /* Mobil: sidebar board boyuyla sinirlanmasin -> dikey egitim yolu TAM gorunur, sayfa akisinda uzar
+     (masaustundeki ic-scroll kisiti mobilde tier listesini sifira eziyordu). */
+  .tr-path .bgx-side { max-height: none; }
+  .tr-tiers-scroll { overflow: visible; flex: none; min-height: 0; }
   .bgx-spacer { display: none; }
   /* On izleme izgara: dar ekranda (sidebar ustte -> sahne tam genislik) 2 kolon. */
   .tr-prev-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: none; }

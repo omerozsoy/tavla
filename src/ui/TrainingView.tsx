@@ -18,8 +18,8 @@ import { NeuralBot, type RankedMove } from '../engine/neuralBot'
 import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
-import TrainingPath, { saveLessonProgress, loadProgress } from './TrainingPath'
-import { dailyQuestion, lessonById, lessonPlan, obviousMoveKey, type Question } from './trainingCurriculum'
+import TrainingPath, { saveLessonProgress, loadProgress, savePosResult } from './TrainingPath'
+import { dailyQuestion, lessonById, lessonPlan, obviousMoveKey, questionId, type Question } from './trainingCurriculum'
 
 // Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
 const QCACHE = new Map<string, Question[]>()
@@ -355,6 +355,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       const ok = userKey === q.answer.resultKey
       setBest({ move: q.answer, equity: 0, probs: [] })
       const firstTryOk = ok && !hinted && !retried
+      if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
       setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setReveal(false) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir
@@ -377,6 +378,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       const ok = mine ? top.equity - mine.equity <= EPS : false
       setBest(top)
       const firstTryOk = ok && !hinted && !retried
+      if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
       setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setReveal(false) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene"
@@ -416,6 +418,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       }
       setCubeMsg(msg)
       const firstTryOk = ok && !hinted
+      if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
       setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setPhase(ok ? 'correct' : 'wrong')
