@@ -131,6 +131,7 @@ export default function PositionAnalyzer({
   const [turn, setTurn] = useState<Player>(() => saved0?.turn ?? 'white')
   const [xgidInput, setXgidInput] = useState('') // XGID yapistirma -> tahtaya diz
   const [xgidErr, setXgidErr] = useState(false)
+  const [autoAnalyze, setAutoAnalyze] = useState(false) // XGID yuklendikten sonra otomatik analiz tetigi
   const [cube, setCube] = useState<{ value: number; owner: Player | null }>(
     () => saved0?.cube ?? { value: 1, owner: null },
   )
@@ -648,6 +649,14 @@ export default function PositionAnalyzer({
     }
   }
 
+  // XGID yuklendikten SONRA (state'ler guncellenince) otomatik analiz — stale state'ten kacinmak icin effect.
+  useEffect(() => {
+    if (!autoAnalyze) return
+    setAutoAnalyze(false)
+    void analyze()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoAnalyze])
+
   const win = result ? (result[0] + result[1] + result[2]) * 100 : 0
   const gammon = result ? (result[1] + result[2]) * 100 : 0
   const bg = result ? result[2] * 100 : 0
@@ -1024,8 +1033,13 @@ export default function PositionAnalyzer({
                 setBar(r.state.bar)
                 setOff(r.state.off)
                 setTurn(r.state.turn)
+                if (r.dice) {
+                  setD1(r.dice[0]) // XGID zarini yukle (yoksa kup pozisyonu -> zar degismez)
+                  setD2(r.dice[1])
+                }
                 setResult(null)
                 setXgidErr(false)
+                setAutoAnalyze(true) // tahtaya dizilince OTOMATIK analize sok
               }}
             >
               {t('pa.xgidLoad')}
