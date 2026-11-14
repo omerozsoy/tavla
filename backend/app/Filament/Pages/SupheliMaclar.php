@@ -202,7 +202,7 @@ class SupheliMaclar extends Page
      * şüphelisi oyuncular — turnuvadan atmak için AYRI bölüm. Kaynak: CheatScan::suspectIds (1 saat
      * cache) ∩ tournaments.players (JSON). Kesin (motor doğrulanmış) üstte.
      *
-     * @return array<int,array{tournament_id:int,tournament_name:string,status:string,user_id:int,nickname:string,flags:int,worst_pr:mixed,certain:bool,url:?string}>
+     * @return array<int,array{tournament_id:int,tournament_name:string,status:string,user_id:int,nickname:string,flags:int,worst_pr:mixed,certain:bool,exact_pct:?int,url:?string}>
      */
     public function tournamentSuspects(): array
     {
@@ -220,6 +220,7 @@ class SupheliMaclar extends Page
                 if ($uid <= 0 || ! isset($ids[$uid])) {
                     continue;
                 }
+                $conf = CheatScan::confirmation($uid);
                 $out[] = [
                     'tournament_id' => (int) $t->id,
                     'tournament_name' => (string) $t->name,
@@ -228,7 +229,8 @@ class SupheliMaclar extends Page
                     'nickname' => $p['name'] ?? ('#'.$uid),
                     'flags' => (int) ($ids[$uid]['flags'] ?? 0),
                     'worst_pr' => $ids[$uid]['worst_pr'] ?? null,
-                    'certain' => CheatScan::confirmation($uid)['certain'] ?? false,
+                    'certain' => $conf['certain'] ?? false,
+                    'exact_pct' => $conf['exact_pct'] ?? null,
                     'url' => self::editUrl($uid),
                 ];
             }

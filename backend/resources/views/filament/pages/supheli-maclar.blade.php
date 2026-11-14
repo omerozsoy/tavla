@@ -98,8 +98,15 @@
                     @foreach ($tsus as $ts)
                         <div class="flex items-center justify-between gap-3 px-4 py-3 flex-wrap">
                             <div class="flex items-center gap-2 flex-wrap">
-                                @if ($ts['certain'])
-                                    <span class="inline-flex items-center rounded-lg bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold uppercase tracking-wide">⚠ KESİN</span>
+                                @if ($ts['exact_pct'] !== null)
+                                    <span class="inline-flex flex-col items-center leading-none rounded-xl px-3 py-1.5 shrink-0 shadow-lg
+                                        {{ $ts['certain'] ? 'bg-red-600 text-white ring-2 ring-red-300 dark:ring-red-400 shadow-red-600/40 animate-pulse'
+                                           : ($ts['exact_pct'] >= 70 ? 'bg-amber-500 text-white shadow-amber-500/30'
+                                              : 'bg-gray-400 dark:bg-gray-600 text-white') }}"
+                                        title="Havuzlanmış hamle-hamle motor eşleşme oranı. İnsan ~%40-60, motor ~%97.">
+                                        <span class="text-3xl sm:text-4xl font-black tracking-tight">%{{ $ts['exact_pct'] }}</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">{{ $ts['certain'] ? '⚠ KESİN motor' : 'motor eşleşmesi' }}</span>
+                                    </span>
                                 @endif
                                 <span class="font-semibold">{{ $ts['nickname'] }}</span>
                                 <span class="text-xs text-gray-400">#{{ $ts['user_id'] }}</span>
@@ -142,6 +149,25 @@
                         <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-red-500/10">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <x-filament::icon icon="heroicon-m-cpu-chip" class="h-5 w-5 text-red-400" />
+                                {{-- BELİRLEYİCİ SAYI: havuzlanmış hamle-hamle motor eşleşme %'si — ismin yanında BÜYÜK.
+                                     insan ~%40-60, gerçek motor ~%97; renk = karar eşiği. --}}
+                                @php $pct = $row['confirmation']['exact_pct'] ?? null; $cert = $row['confirmation']['certain'] ?? false; @endphp
+                                @if ($pct !== null)
+                                    <span class="inline-flex flex-col items-center leading-none rounded-xl px-3 py-1.5 shrink-0 shadow-lg
+                                        {{ $cert ? 'bg-red-600 text-white ring-2 ring-red-300 dark:ring-red-400 shadow-red-600/40 animate-pulse'
+                                           : ($pct >= 70 ? 'bg-amber-500 text-white shadow-amber-500/30'
+                                              : 'bg-gray-400 dark:bg-gray-600 text-white') }}"
+                                        title="Hesabın en düşük-PR maçları havuzlandığında ({{ $row['confirmation']['total'] }} gerçek karar) gnubg'nin #1 hamlesinin oynanma oranı. İnsan ~%40-60, motor ~%97.">
+                                        <span class="text-3xl sm:text-4xl font-black tracking-tight">%{{ $pct }}</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">{{ $cert ? '⚠ KESİN motor' : 'motor eşleşmesi' }}</span>
+                                    </span>
+                                @else
+                                    <span class="inline-flex flex-col items-center leading-none rounded-xl px-3 py-1.5 shrink-0 bg-gray-200 dark:bg-white/10 text-gray-500"
+                                        title="Bu hesabın maçlarında gnubg review'ı yok — hamle-hamle eşleşme hesaplanamadı.">
+                                        <span class="text-3xl sm:text-4xl font-black tracking-tight">—</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">eşleşme yok</span>
+                                    </span>
+                                @endif
                                 <span class="font-semibold">{{ $row['nickname'] }}</span>
                                 <span class="text-xs text-gray-400">#{{ $row['user_id'] }}</span>
                                 @if ($row['rating'])
@@ -153,14 +179,8 @@
                                 <span class="inline-flex items-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-xs font-medium">
                                     medyan PR {{ $row['median'] }} · en kötü {{ $row['worst_pr'] }}
                                 </span>
-                                @if ($row['confirmation']['certain'] ?? false)
-                                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-3 py-1.5 text-sm sm:text-base font-extrabold uppercase tracking-wide shadow-lg shadow-red-600/30 ring-2 ring-red-300 dark:ring-red-400 animate-pulse">
-                                        ⚠ KESİN · motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }}
-                                    </span>
-                                @elseif ($row['confirmation'])
-                                    <span class="inline-flex items-center rounded-full bg-gray-500/15 text-gray-600 dark:text-gray-300 px-2 py-0.5 text-xs">
-                                        motor eşleşmesi %{{ $row['confirmation']['exact_pct'] }} (havuz, {{ $row['confirmation']['total'] }} karar)
-                                    </span>
+                                @if ($pct !== null && ! $cert)
+                                    <span class="text-[11px] text-gray-500">havuz {{ $row['confirmation']['total'] }} karar</span>
                                 @endif
                                 @if ($row['banned'])
                                     <span class="inline-flex items-center rounded-full bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-0.5 text-[11px] font-medium">engelli</span>
