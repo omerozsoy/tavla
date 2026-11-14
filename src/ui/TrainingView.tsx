@@ -234,8 +234,17 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
   )
 
   const faces: DieFace[] = useMemo(() => {
+    const dice = turnStart.dice
+    // Cift zar (4 adim): ana oyundaki faceStates gibi FIZIKSEL 2 zar goster; her hamle caprazi solar
+    // (half), ikinci hamlede tamamen. 4 ayri zar gostermek YANLIS (gorsel "bozuk" sikayeti).
+    if (dice.length === 4) {
+      return [0, 1].map((i) => {
+        const h = Math.min(2, Math.max(0, played.length - i * 2))
+        return { value: dice[0], used: h >= 2, half: h === 1 }
+      })
+    }
     const rem = remainingDice.slice()
-    return turnStart.dice.map((v) => {
+    return dice.map((v) => {
       const i = rem.indexOf(v)
       if (i >= 0) {
         rem.splice(i, 1)
@@ -243,7 +252,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       }
       return { value: v, used: true }
     })
-  }, [turnStart.dice, remainingDice])
+  }, [turnStart.dice, remainingDice, played])
 
   function handleSelectFrom(from: number | 'bar') {
     if (!interactive) return
@@ -690,7 +699,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
                     <Icon name="refresh" size={16} /> {t('tr.retry')}
                   </Button>
                 ) : (
-                  <Button variant="default" onClick={nextQuestion}>{t('tr.next')}</Button>
+                  <Button variant="default" onClick={nextQuestion}>{idx + 1 >= TOTAL ? t('tr.finish') : t('tr.next')}</Button>
                 )
               ) : !q?.cube && turnComplete ? (
                 <Button variant="default" onClick={() => void grade()} disabled={!interactive || checking}>

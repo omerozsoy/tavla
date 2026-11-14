@@ -18338,7 +18338,9 @@ body:has(.spectate-view) .app.lobby {
    Tüm chrome site token'larıyla (--bg/--card-bg/--accent/--border/--text...). */
 /* Koyu arka plani ZORLA: .register-overlay.page > *:not(...) {background:transparent} (0,4,0)
    kuralini yenmek icin .tr-view.bgx (0,4,0, sonra geldigi icin kazanir) + !important guvence. */
-.register-overlay.page > .tr-view.bgx { background: var(--bg) !important; padding: calc(var(--header-h) + 18px) 24px 24px; }
+/* Fixed overlay header'i orttugu icin header-h ust payi gereksizdi (~88px fazladan bant); site
+   standardi ust bosluk --space-5 (20px). Yan/alt 24px (--space-6) korunur. */
+.register-overlay.page > .tr-view.bgx { background: var(--bg) !important; padding: var(--space-5) 24px 24px; }
 .tr-view {
   /* YALNIZ geometri override'ı (renk DEĞİL): --board-h bu layout'a göre, türevler
      :root board oranlarıyla (satır 186-198) birebir yeniden türetilir → board site
