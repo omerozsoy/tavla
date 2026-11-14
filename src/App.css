@@ -18450,6 +18450,8 @@ body:has(.spectate-view) .app.lobby {
 .bgx-daily-name { max-width: calc(var(--board-h) * 1.53); text-align: center; font-weight: var(--fw-semibold); font-size: var(--fs-md); color: var(--text); padding: 4px 8px; }
 
 /* --- Ustalık Yolu (Mastery Path) listesi --- */
+/* Egitim yolu ana rengi: birebir #A83A2B (kullanici istegi). Yalniz bu kapsam -> site geneli --accent degismez. */
+.tr-path { --accent: #a83a2b; --on-accent: #f8f1e7; }
 .tr-path .bgx-side { width: 380px; max-height: var(--board-h); } /* panel board boyunu asmaz -> ic scroll */
 .tr-path-side { gap: 12px; }
 .tr-path-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; flex: 0 1 auto; max-height: calc(var(--board-h) - 120px); padding-right: 4px; }
