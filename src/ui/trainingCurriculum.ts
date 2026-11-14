@@ -701,6 +701,8 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=aBBaBBB-----dA---b-cbBbAA-:1:-1:1:55:1:4:0:9:10', answer: '', title: 'Chris Bray — A Recurring Theme (USBGF)', concept: '55 ile prime/anchor teması' },
   { xgid: 'XGID=---aC-C-BC--aA-A---dcdb-B-:1:-1:1:33:5:5:0:7:10', answer: '', title: 'Chris Bray — Ignoring the Obvious (USBGF)', concept: 'DMP 33: bariz olmayan en iyi hamle' },
   { xgid: 'XGID=-b----E-D---dDa--c-da---AA:0:0:1:21:0:0:3:0:3', answer: '', title: 'Chris Bray — Early Game Skirmish (USBGF)', concept: 'Erken oyun 21 çatışması' },
+  { gnuPos: '27pFAAR1dhgHAA', gnuMatch: 'QYkQAAAAAAAA', answer: '6/2', title: 'Forum — En zor problemler (41)', concept: 'Para 41: ince 6/2 vs 13/12' },
+  { gnuPos: '23gbAAi4m0MIBg', gnuMatch: 'UYkMAAAAAAAA', answer: '4/3*', title: 'Forum — En zor problemler (31)', concept: 'Para 31: vuruş 4/3* vs 12/9' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
