@@ -1008,8 +1008,11 @@ function hardnessText(q: Question): number {
   const stateH = Math.min(1, blots * 0.09 + back * 0.08 + (hasContact(st) ? 0.16 : 0) + st.bar.white * 0.1)
   return Math.max(0.05, Math.min(0.98, h * 0.6 + stateH * 0.4))
 }
+// Tier esikleri: ALL_REAL zorluk dagilimindan QUANTILE ile (asagida) guncellenir -> her tier ~%20
+// pozisyon = HOMOJEN dagitim (sabit esikler jenerik pozisyonlari tek tier'a yigiyordu, 128'lik bolum).
+let TIER_CUT = [0.26, 0.46, 0.62, 0.8]
 function tierOf(h: number): number {
-  return h < 0.26 ? 0 : h < 0.46 ? 1 : h < 0.62 ? 2 : h < 0.8 ? 3 : 4
+  return h < TIER_CUT[0] ? 0 : h < TIER_CUT[1] ? 1 : h < TIER_CUT[2] ? 2 : h < TIER_CUT[3] ? 3 : 4
 }
 
 // Pozisyonu TEK bir konu bolumune ata (en uygun). null = siniflandirma bekliyor.
@@ -1066,7 +1069,7 @@ function classifySection(q: Question): string | null {
   // Jenerik fallback YALNIZ genel-anlamli orta-oyun bolumlerine (spesifik konu bolumlerini kirletme).
   if (tier >= 4) return 'm-complex' // Karmaşık Pozisyonlar
   if (tier === 3) return 'a-midgame' // Zor Orta Oyun Kararları
-  if (tier === 2) return 'a-midgame' // tier-2 jenerik -> zor orta oyun (i-nowlater'i spesifik tut)
+  if (tier === 2) return 'i-nowlater' // tier-2 jenerik orta karar -> Şimdi mi Risk (ORTA'nin genel karar bölümü)
   if (tier === 1) return 'd-midgame' // Temel Orta Oyun
   return 'b-basics' // Temel Kavramlar
 }
@@ -1137,6 +1140,15 @@ const ALL_REAL: Question[] = (() => {
 const MIN_SECTION = 4 // bir konu bolumunun gorunur olmasi icin en az pozisyon (yetersiz -> gizli)
 
 // Pozisyonlari bolumlere dagit + siniflandirma bekleyenleri ayir.
+// HOMOJEN tier dagitimi: tum gercek pozisyonlarin sezgisel zorlugunu QUANTILE ile 5 esit banda bol
+// -> her tier ~%20 pozisyon, jenerik orta-oyun pozisyonlari tek bolume yiğilmaz. (classifySection'dan
+// ONCE calismali: dagitim tierOf -> TIER_CUT okur.)
+{
+  const hs = ALL_REAL.map(hardnessText).sort((a, b) => a - b)
+  const qAt = (f: number) => hs[Math.min(hs.length - 1, Math.max(0, Math.floor(f * (hs.length - 1))))]
+  if (hs.length >= 10) TIER_CUT = [qAt(0.2), qAt(0.4), qAt(0.6), qAt(0.8)]
+}
+
 const SECTION_Q: Record<string, Question[]> = { 'b-openings': openingQuestions() }
 const UNCLASSIFIED: Question[] = []
 for (const q of ALL_REAL) {
