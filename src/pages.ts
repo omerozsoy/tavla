@@ -76,6 +76,8 @@ export const PAGES: PageDef[] = [
   // Tavla Eğitimi: zar atılır, oyuncu hamlesini oynar; en iyi hamleye (sinir ağı) yakınsa geçer,
   // değilse doğru hamle tahtada oklarla gösterilir.
   { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
+  // Günün Pozisyonu: her gün 1 ünlü pozisyon (deterministik), doğru hamle sorulur — motor/XG puanlar.
+  { key: 'dailyPuzzle', slug: 'gunun-pozisyonu', labelKey: 'menu.dailyPuzzle', icon: 'calendar-dots', group: 'lessons', hideInGame: true },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },

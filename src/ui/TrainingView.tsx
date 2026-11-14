@@ -19,7 +19,7 @@ import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress } from './TrainingPath'
-import { lessonById, lessonPlan, obviousMoveKey, type Question } from './trainingCurriculum'
+import { dailyQuestion, lessonById, lessonPlan, obviousMoveKey, type Question } from './trainingCurriculum'
 
 // Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
 const QCACHE = new Map<string, Question[]>()
@@ -82,11 +82,11 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 }
 
 // Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar/kup karari, "Onayla" ile gonderilir.
-function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void }) {
+function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () => void; fixed?: { title: string; questions: Question[] } }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
-  const [questions, setQuestions] = useState<Question[]>(() => QCACHE.get(lessonId) ?? [])
-  const [loadingQ, setLoadingQ] = useState(!QCACHE.has(lessonId))
+  const [questions, setQuestions] = useState<Question[]>(() => fixed?.questions ?? QCACHE.get(lessonId) ?? [])
+  const [loadingQ, setLoadingQ] = useState(!fixed && !QCACHE.has(lessonId))
   const TOTAL = questions.length || 10
 
   const botRef = useRef<NeuralBot | null>(null)
@@ -114,6 +114,14 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
   // Ders sorularini yukle: direct (openings/cube) ya da aday havuzunu NOTRAL equity-gap ile sirala
   // (en iyi ile 2. hamle arasi gercek fark kucuk = zor). Bir kez yapilir + onbellek.
   useEffect(() => {
+    // Sabit (Günün Pozisyonu): soru dışarıdan verilir — havuz yükleme/cache yok.
+    if (fixed) {
+      setQuestions(fixed.questions)
+      setTurnStart(orderedStart(fixed.questions[0]?.state ?? emptyState()))
+      setIdx(0)
+      setLoadingQ(false)
+      return
+    }
     const cached = QCACHE.get(lessonId)
     if (cached) {
       setQuestions(cached)
@@ -535,7 +543,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
           <button className="bgx-back" onClick={onBack} aria-label={t('common.back')}>
             <Icon name="arrow-right" size={22} />
           </button>
-          <span className="bgx-title">{lesson?.title || t('tr.lessonTitle')}</span>
+          <span className="bgx-title">{fixed?.title || lesson?.title || t('tr.lessonTitle')}</span>
           <span className="bgx-score-chip" title={t('tr.scoreLabel')}>
             <Icon name="check" size={14} /> {correctCount}/{TOTAL}
           </span>
@@ -581,7 +589,7 @@ function LessonView({ lessonId, onBack }: { lessonId: string; onBack: () => void
             >
               {t('tr.replay')}
             </button>
-            <button className="bgx-btn green" onClick={onBack}>{t('tr.nextLesson')}</button>
+            <button className="bgx-btn green" onClick={onBack}>{fixed ? t('common.back') : t('tr.nextLesson')}</button>
           </div>
         ) : q?.cube ? (
           <div className="bgx-actions">
@@ -704,4 +712,23 @@ export default function TrainingView({ onClose, titleOverride }: Props) {
     return <TrainingPath onPick={setLessonId} titleOverride={titleOverride} />
   }
   return <LessonView lessonId={lessonId} onBack={() => setLessonId(null)} />
+}
+
+// GÜNÜN POZİSYONU: her gün 1 ünlü pozisyon (deterministik gün indeksi). LessonView'i tek-soruluk
+// "sabit" modda kullanir — ayni tahta/cevap-kontrol mantigi, ders listesi/navigasyon yok.
+export function DailyPuzzle({ onClose, titleOverride }: Props) {
+  useEscape(onClose)
+  const { t } = useT()
+  // Mount aninda gunu sabitle (gece yarisi gecisi tek oturumda soruyu degistirmesin).
+  const { q, dayKey } = useMemo(() => {
+    const now = Date.now()
+    return { q: dailyQuestion(now), dayKey: Math.floor(now / 86_400_000) }
+  }, [])
+  return (
+    <LessonView
+      lessonId={`daily-${dayKey}`}
+      fixed={{ title: titleOverride || t('menu.dailyPuzzle'), questions: [q] }}
+      onBack={onClose}
+    />
+  )
 }

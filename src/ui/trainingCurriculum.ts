@@ -890,3 +890,17 @@ export const MASTERY_TIERS: MasteryTier[] = REAL_TIERS.map((tier, i) => {
   return { label: tier.label, lessons: [...real, ...gen] }
 })
 export const TOTAL_QUESTIONS = MASTERY_TIERS.reduce((a, t) => a + t.lessons.reduce((b, l) => b + l.count, 0), 0)
+
+// GÜNÜN POZİSYONU — her gün 1 ünlü pozisyon, deterministik (gün indeksi). Havuz = tüm gerçek/ünlü
+// pozisyonlar (açılış zarları HARİÇ: onlar "pozisyon" değil). Aynı takvim gününde herkese aynı soru;
+// ertesi gün havuzdaki sonraki pozisyon (UTC gün sınırı). Çoğu otoriter XG cevaplı; değilse motor puanlar.
+const DAILY_POOL: Question[] = REAL_TIERS.flatMap((tier) =>
+  tier.lessons.filter((l) => l.id !== 'rg-open').flatMap((l) => l.questions),
+)
+export const DAILY_POOL_SIZE = DAILY_POOL.length
+
+export function dailyQuestion(epochMs: number): Question {
+  const day = Math.floor(epochMs / 86_400_000)
+  const n = DAILY_POOL.length
+  return DAILY_POOL[(((day % n) + n) % n)]
+}
