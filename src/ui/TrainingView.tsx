@@ -18,7 +18,7 @@ import { NeuralBot, type RankedMove } from '../engine/neuralBot'
 import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
-import TrainingPath, { saveLessonProgress } from './TrainingPath'
+import TrainingPath, { saveLessonProgress, loadProgress } from './TrainingPath'
 import { dailyQuestion, lessonById, lessonPlan, obviousMoveKey, type Question } from './trainingCurriculum'
 
 // Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
@@ -114,29 +114,31 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
   // Ders sorularini yukle: direct (openings/cube) ya da aday havuzunu NOTRAL equity-gap ile sirala
   // (en iyi ile 2. hamle arasi gercek fark kucuk = zor). Bir kez yapilir + onbellek.
   useEffect(() => {
-    // Sabit (Günün Pozisyonu): soru dışarıdan verilir — havuz yükleme/cache yok.
-    if (fixed) {
-      setQuestions(fixed.questions)
-      setTurnStart(orderedStart(fixed.questions[0]?.state ?? emptyState()))
-      setIdx(0)
+    // Sorular yuklenince uygula; kayitli YARIM ilerleme varsa (resume) o sorudan basla.
+    const applyLoaded = (qs: Question[]) => {
+      const saved = fixed ? undefined : loadProgress()[lessonId]
+      const resume =
+        saved && !saved.done && saved.idx != null && saved.idx > 0 && saved.idx < qs.length ? saved.idx : 0
+      setQuestions(qs)
+      setIdx(resume)
+      if (resume > 0 && saved?.results) setResults(saved.results.slice(0, resume))
+      setTurnStart(orderedStart(qs[resume]?.state ?? emptyState()))
       setLoadingQ(false)
+    }
+    // Sabit (Günün Pozisyonu): soru dışarıdan verilir — havuz yükleme/cache/resume yok.
+    if (fixed) {
+      applyLoaded(fixed.questions)
       return
     }
     const cached = QCACHE.get(lessonId)
     if (cached) {
-      setQuestions(cached)
-      setTurnStart(orderedStart(cached[0]?.state ?? emptyState()))
-      setIdx(0)
-      setLoadingQ(false)
+      applyLoaded(cached)
       return
     }
     const plan = lessonPlan(lessonId)
     if (plan.direct) {
       QCACHE.set(lessonId, plan.direct)
-      setQuestions(plan.direct)
-      setTurnStart(orderedStart(plan.direct[0]?.state ?? emptyState()))
-      setIdx(0)
-      setLoadingQ(false)
+      applyLoaded(plan.direct)
       return
     }
     let cancelled = false
@@ -176,10 +178,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
         .slice(0, 10)
       if (cancelled) return
       QCACHE.set(lessonId, final)
-      setQuestions(final)
-      setTurnStart(orderedStart(final[0]?.state ?? emptyState()))
-      setIdx(0)
-      setLoadingQ(false)
+      applyLoaded(final)
     })()
     return () => {
       cancelled = true
@@ -317,8 +316,9 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
 
   const nextQuestion = useCallback(() => {
     if (idx + 1 >= TOTAL) {
-      const acc = Math.round((results.filter(Boolean).length / TOTAL) * 100)
-      saveLessonProgress(lessonId, { done: true, stars: acc === 100 ? 3 : acc >= 80 ? 2 : acc >= 50 ? 1 : 0 })
+      const correct = results.filter(Boolean).length
+      const acc = Math.round((correct / TOTAL) * 100)
+      saveLessonProgress(lessonId, { done: true, stars: acc === 100 ? 3 : acc >= 80 ? 2 : acc >= 50 ? 1 : 0, correct, total: TOTAL })
       setComplete(true)
       return
     }
@@ -432,6 +432,13 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       }
     }
   }, [phase, turnStart, idx, q])
+
+  // RESUME: her soru ilerledikce YARIM ilerlemeyi kaydet (kaldigi soru + sonuclar). Tamamlaninca
+  // (complete) nextQuestion zaten done:true yazdigi icin burada atlanir. Fixed (Günün Pozisyonu) haric.
+  useEffect(() => {
+    if (fixed || loadingQ || complete) return
+    saveLessonProgress(lessonId, { done: false, idx, results, correct: results.filter(Boolean).length, total: TOTAL })
+  }, [fixed, loadingQ, complete, idx, results, lessonId, TOTAL])
 
   // Son oynanan adimi (bir zari) geri al.
   function handleUndo() {

@@ -17,6 +17,10 @@ interface PathLesson {
 export interface LessonProgress {
   done?: boolean
   stars?: number
+  correct?: number // ilk denemede dogru cozulen soru sayisi
+  total?: number // dersin toplam soru sayisi (kayit anindaki)
+  idx?: number // RESUME: kaldigi soru (yarim ders) — done ise yok sayilir
+  results?: boolean[] // RESUME: o ana kadarki soru sonuclari (ilk-deneme dogru mu)
 }
 const STORE = 'tr-progress-v1'
 export function loadProgress(): Record<string, LessonProgress> {
@@ -48,15 +52,28 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
   const allLessons: PathLesson[] = MASTERY_TIERS.flatMap((tr) => tr.lessons)
   const [sel, setSel] = useState<string>(allLessons[0]?.id ?? 'rg-open')
   const selLesson = allLessons.find((l) => l.id === sel) ?? allLessons[0]
-  // Secili dersin TUM pozisyonlari -> sagda mini-board on izleme (3'lu izgara). getQuestions onbellekli.
+  // Secili dersin pozisyonlari -> sagda mini-board on izleme. getQuestions onbellekli.
+  // ponytail: on izleme ILK PREVIEW_MAX ile sinirli — 150+ soruluk derste her soru bir <Board>
+  // (24 nokta + pul + zar DOM) demek, hepsini basmak tarayiciyi donduruyordu. Tumu tek tikla
+  // ayni derse girdigi icin 24 pozisyon fikir vermeye yeter. Daha fazlasi gerekirse artir.
   const preview = useMemo(() => getQuestions(sel), [sel])
+  const PREVIEW_MAX = 24
+  const shownPreview = preview.slice(0, PREVIEW_MAX)
+  const extraPreview = preview.length - shownPreview.length
 
   function starCount(l: PathLesson): number {
     return progress[l.id]?.stars ?? 0
   }
 
   const renderLesson = (l: PathLesson) => {
-    const done = progress[l.id]?.done
+    const prog = progress[l.id]
+    const done = prog?.done
+    const resumeIdx = !done ? (prog?.idx ?? 0) : 0 // yarim ders: kaldigi soru (0 = hic baslanmamis)
+    const sub = done
+      ? `${prog?.correct ?? l.count} / ${prog?.total ?? l.count}` // tamamlandi: dogru / toplam
+      : resumeIdx > 0
+        ? `${resumeIdx} / ${l.count}` // yarim: kaldigi soru / toplam
+        : t('tr.questions', { n: l.count }) // hic baslanmamis
     return (
       <button
         key={l.id}
@@ -65,13 +82,11 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
         onDoubleClick={() => onPick(l.id)}
       >
         <span className={`tr-node ${done ? 'done' : l.id === sel ? 'active' : ''}`}>
-          {done ? <Icon name="star" size={18} /> : <Icon name="dice" size={16} />}
+          {done ? <Icon name="star" size={18} /> : resumeIdx > 0 ? <Icon name="arrow-right" size={16} /> : <Icon name="dice" size={16} />}
         </span>
         <span className="tr-lesson-body">
           <span className="tr-lesson-title">{l.title}</span>
-          <span className="tr-lesson-sub">
-            {done ? `${l.count} / ${l.count}` : t('tr.questions', { n: l.count })}
-          </span>
+          <span className="tr-lesson-sub">{sub}</span>
         </span>
         {starCount(l) > 0 && (
           <span className="tr-lesson-stars">
@@ -123,7 +138,7 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
           {selLesson?.title} · {t('tr.questions', { n: preview.length })}
         </div>
         <div className="tr-prev-grid">
-          {preview.map((q, i) => (
+          {shownPreview.map((q, i) => (
             <button key={i} className="tr-prev" onClick={() => onPick(sel)} title={q.title ?? ''}>
               <span className="tr-prev-no">{i + 1}</span>
               <Board
@@ -149,6 +164,11 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
               />
             </button>
           ))}
+          {extraPreview > 0 && (
+            <button className="tr-prev tr-prev-more" onClick={() => onPick(sel)}>
+              +{extraPreview}
+            </button>
+          )}
         </div>
       </div>
     </div>
