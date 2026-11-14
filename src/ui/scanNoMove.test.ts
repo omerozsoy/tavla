@@ -2,17 +2,24 @@ import { describe, it, expect } from 'vitest'
 import { CURRICULUM, questionId } from './trainingCurriculum'
 import { generateMoves, hasNoMove } from '../engine/moves'
 
-// Regresyon: hicbir mufredat sorusu "hamle yok" (dansli/kapanmis) olmamali — oyle pozisyonlar
-// "en iyi hamleyi bul" dersinde bozuk gorunur (bkz. isPlayableQuestion filtresi). Kup sorulari haric.
-describe('curriculum has no dead (no-move) questions', () => {
-  it('every non-cube question has a legal move', () => {
+// Regresyon: hicbir mufredat sorusu BOZUK olmamali (kup sorulari haric):
+//  (A) hamlesiz/dansli -> "en iyi hamleyi bul" dersinde "hamle yok, gec" gosterir (bkz. isPlayableQuestion).
+//  (B) otoriter cevabi ULASILAMAZ -> grader userKey===answer.resultKey hic eslesemez -> ders cozulemez.
+describe('curriculum has no broken questions', () => {
+  it('every non-cube question is playable and (if authored) solvable', () => {
     const broken: string[] = []
     for (const tier of CURRICULUM) {
       for (const lesson of tier.lessons) {
-        for (const q of lesson.questions) {
+        for (const [i, q] of lesson.questions.entries()) {
           if (q.cube) continue
-          if (q.state.dice.length === 0 || hasNoMove(generateMoves(q.state))) {
-            broken.push(`${lesson.id}: ${q.title ?? q.id ?? questionId(q)}`)
+          const moves = generateMoves(q.state)
+          const where = `${lesson.id} #${i + 1} ${q.title ?? q.id ?? questionId(q)}`
+          if (q.state.dice.length === 0 || hasNoMove(moves)) {
+            broken.push(`NO-MOVE ${where}`)
+            continue
+          }
+          if (q.answer && !moves.some((m) => m.resultKey === q.answer!.resultKey)) {
+            broken.push(`UNREACHABLE-ANSWER ${where}`)
           }
         }
       }
