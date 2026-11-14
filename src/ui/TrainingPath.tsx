@@ -3,9 +3,8 @@ import { Icon } from './Icon'
 import Board from './Board'
 import DiceRow from './Dice'
 import { useT } from '../i18n'
-import { initialState } from '../engine/board'
 import { pipCount } from '../engine/evaluate'
-import { MASTERY_TIERS, TOTAL_QUESTIONS } from './trainingCurriculum'
+import { MASTERY_TIERS, TOTAL_QUESTIONS, getQuestions } from './trainingCurriculum'
 
 // Seviye + tier dersleri icin ortak minimal sekil.
 interface PathLesson {
@@ -45,12 +44,12 @@ interface Props {
 export default function TrainingPath({ onPick, titleOverride }: Props) {
   const { t } = useT()
   const progress = useMemo(() => loadProgress(), [])
-  const board = initialState()
-  const dice = <DiceRow faces={[{ value: 4, used: false }, { value: 2, used: false }]} owner="white" />
   // Birlesik ustalik yolu: tum tier dersleri tek listede (secili dersi bulmak icin).
   const allLessons: PathLesson[] = MASTERY_TIERS.flatMap((tr) => tr.lessons)
   const [sel, setSel] = useState<string>(allLessons[0]?.id ?? 'rg-open')
   const selLesson = allLessons.find((l) => l.id === sel) ?? allLessons[0]
+  // Secili dersin TUM pozisyonlari -> sagda mini-board on izleme (3'lu izgara). getQuestions onbellekli.
+  const preview = useMemo(() => getQuestions(sel), [sel])
 
   function starCount(l: PathLesson): number {
     return progress[l.id]?.stars ?? 0
@@ -118,25 +117,43 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
         )}
       </aside>
 
-      <div className="bgx-stage">
-        <div className="bgx-board">
-          <Board
-            state={board}
-            selectableFroms={new Set()}
-            targets={new Set()}
-            selectedFrom={null}
-            onSelectFrom={() => {}}
-            onSelectTarget={() => {}}
-            onDragFrom={() => {}}
-            pipTop={pipCount(board, 'black')}
-            pipBottom={pipCount(board, 'white')}
-            cube={{ value: 1, owner: null }}
-            numberFrom="white"
-            centerRight={dice}
-            showPip
-          />
+      {/* Sag: secili dersin TUM pozisyonlari, 3'lu mini-board on izleme. Tiklanan -> ders baslar. */}
+      <div className="bgx-stage tr-previews">
+        <div className="tr-prev-head">
+          {selLesson?.title} · {t('tr.questions', { n: preview.length })}
+        </div>
+        <div className="tr-prev-grid">
+          {preview.map((q, i) => (
+            <button key={i} className="tr-prev" onClick={() => onPick(sel)} title={q.title ?? ''}>
+              <span className="tr-prev-no">{i + 1}</span>
+              <Board
+                state={q.state}
+                selectableFroms={EMPTY_FROM}
+                targets={EMPTY_TO}
+                selectedFrom={null}
+                onSelectFrom={NOOP}
+                onSelectTarget={NOOP}
+                onDragFrom={NOOP}
+                pipTop={pipCount(q.state, 'black')}
+                pipBottom={pipCount(q.state, 'white')}
+                cube={{ value: 1, owner: null }}
+                numberFrom="white"
+                showPip={false}
+                showLogo={false}
+                centerRight={
+                  q.state.dice.length ? (
+                    <DiceRow faces={q.state.dice.slice(0, 2).map((v) => ({ value: v, used: false }))} owner="white" />
+                  ) : undefined
+                }
+              />
+            </button>
+          ))}
         </div>
       </div>
     </div>
   )
 }
+
+const EMPTY_FROM: Set<number | 'bar'> = new Set()
+const EMPTY_TO: Set<number | 'off'> = new Set()
+const NOOP = () => {}

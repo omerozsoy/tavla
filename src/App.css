@@ -18475,12 +18475,32 @@ body:has(.spectate-view) .app.lobby {
 .tr-foot-desc { font-size: var(--fs-sm); color: var(--muted); line-height: 1.4; }
 .tr-path-foot .bgx-btn { flex: none; margin-top: 4px; }
 
+/* Sag: secili dersin TUM pozisyonlari, 3'lu mini-board on izleme (tiklanan -> ders baslar). */
+.tr-previews { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 10px; justify-content: flex-start; align-items: stretch; container-type: inline-size; }
+.tr-prev-head { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--muted); text-align: center; }
+.tr-prev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; justify-items: center; align-content: start; overflow-y: auto; min-height: 0; max-height: var(--board-h); padding: 2px 6px 8px 2px; }
+/* Mini board: --board-h kolona gore (container query), turevleri KENDI board-h'undan (yoksa dev/basik). */
+.tr-prev { position: relative; appearance: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 8px 8px; cursor: pointer; --board-h: max(118px, calc((100cqw - 64px) / 3 / 1.6)); --checker: calc(var(--board-h) / 11); --col: calc(var(--checker) * 1.14); --tri-h: calc(var(--board-h) * 0.35); transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s; }
+.tr-prev:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }
+.tr-prev-no { position: absolute; top: 4px; left: 6px; z-index: 3; font-size: var(--fs-2xs); font-weight: var(--fw-bold); color: var(--tv-ink-faint); background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0 7px; line-height: 1.5; }
+.tr-prev .board { pointer-events: none; } /* tiklamayi butona birak, tasa secim tetikleme */
+/* Mini on izlemede hane numaralari (sabit 1rem) devasa kalir -> gizle, 24px bantlari kaldir. */
+.tr-prev .pt-numbers { display: none; }
+.tr-prev .board { grid-template-rows: 0 1fr 0; }
+
 /* Dar ekran: sol panel üste, tahta alta (tek kolon) */
 @media (max-width: 860px) {
   .register-overlay.page > .tr-view.bgx { padding: calc(var(--header-h) + 10px) 12px 16px; }
   .tr-view { flex-direction: column; align-items: stretch; --board-h: max(260px, min(58vh, calc((100vw - 120px) / 1.5))); }
   .bgx-side { width: auto; align-self: auto; }
   .bgx-spacer { display: none; }
+  /* On izleme izgara: dar ekranda 2 kolon, mini board kolona gore. */
+  .tr-prev-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: none; }
+  .tr-prev { --board-h: max(130px, calc((100cqw - 40px) / 2 / 1.6)); }
+}
+@media (max-width: 480px) {
+  .tr-prev-grid { grid-template-columns: 1fr; }
+  .tr-prev { --board-h: max(150px, calc((100cqw - 20px) / 1.6)); }
 }
 /* Kontrol paneli mikro-etiketleri: kucuk, izli buyuk-harf -> net bolum hiyerarsisi.
    Sadece analyzer'a scope'lu (genel .setup-label degismez). */
