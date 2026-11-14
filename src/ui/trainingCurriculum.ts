@@ -1190,15 +1190,26 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'm-test', title: 'Ustalık Testi', tier: 4, isTest: true },
 ]
 
+// "En iyi hamleyi bul" sorusu OYNANABILIR olmali: kup sorusu DEGILse zar olmali + en az 1 yasal hamle.
+// Kapanmis/dansli (hamle yok) pozisyonlar ogretici degil -> havuzdan ele (yoksa ders "hamle yok, gec"
+// gosterip bozuk gorunur). Tek chokepoint: harvest edilen yeni pozisyonlar da otomatik suzulur.
+function isPlayableQuestion(q: Question): boolean {
+  if (q.cube) return true
+  return q.state.dice.length > 0 && !hasNoMove(generateMoves(q.state))
+}
+
 // Tum gercek/authored pozisyonlar (uretilmis rutke seviyeleri HARIC). Acilislar ayri ele alinir.
 const ALL_REAL: Question[] = (() => {
   const out: Question[] = []
   for (const f of [...REAL_POSITIONS, ...FAMOUS_MED, ...FAMOUS_HARD]) {
     const q = famousToQuestion(f)
-    if (q) out.push(q)
+    if (q && isPlayableQuestion(q)) out.push(q)
   }
   // Authored referanslar (concept yerine TR intro) — id yok, board-key kimligi.
-  for (const q of [...REF_MED, ...REF_HARD]) out.push({ ...q, id: questionId(q) })
+  for (const q of [...REF_MED, ...REF_HARD]) {
+    const withId = { ...q, id: questionId(q) }
+    if (isPlayableQuestion(withId)) out.push(withId)
+  }
   return out
 })()
 
