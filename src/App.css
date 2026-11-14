@@ -18450,7 +18450,9 @@ body:has(.spectate-view) .app.lobby {
 .bgx-nav-seg.ok { background: var(--color-success); } /* dogru cozulen */
 .bgx-nav-seg.bad { background: var(--color-error); } /* yanlis */
 .bgx-nav-seg.cur { background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); } /* mevcut pozisyon */
-.bgx-nav-count { flex: none; font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); min-width: 2.6em; text-align: right; }
+.bgx-nav-count { flex: none; display: flex; align-items: baseline; gap: 1px; min-width: 2.8em; justify-content: flex-end; }
+.bgx-nav-count strong { font-weight: var(--fw-bold); font-size: var(--fs-lg); color: var(--accent); } /* kacinci pozisyon (mevcut) */
+.bgx-nav-count span { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); }
 /* Eski ilerleme cubugu stilleri (bgx-progress/meter/seg/fill) artik kullanilmiyor; nav cubugu ile degisti. */
 .bgx-progress { display: flex; flex-direction: row; align-items: center; gap: 10px; width: calc(var(--board-h) * 1.53); max-width: 100%; justify-content: center; }
 .bgx-meter { height: 20px; flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; flex-direction: row; gap: 3px; padding: 4px; }

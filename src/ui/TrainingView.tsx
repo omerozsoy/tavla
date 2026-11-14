@@ -334,7 +334,6 @@ function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string;
   }
 
   const correctCount = results.filter(Boolean).length
-  const solvedCount = results.filter((x) => x !== undefined).length // cevaplanan (serbest dolasimda idx+1 degil)
   const accuracy = Math.round((correctCount / TOTAL) * 100)
 
   const nextQuestion = useCallback(() => {
@@ -689,7 +688,11 @@ function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string;
             >
               <Icon name="arrow-right" size={18} />
             </button>
-            <div className="bgx-nav-count">{solvedCount}/{TOTAL}</div>
+            {/* KACINCI POZISYON: mevcut (idx+1) buyuk, toplam kucuk — gezinince senkron artar. */}
+            <div className="bgx-nav-count" title={t('tr.posWord')}>
+              <strong>{idx + 1}</strong>
+              <span>/{TOTAL}</span>
+            </div>
           </div>
         )}
 
