@@ -1015,6 +1015,50 @@ function tierOf(h: number): number {
   return h < TIER_CUT[0] ? 0 : h < TIER_CUT[1] ? 1 : h < TIER_CUT[2] ? 2 : h < TIER_CUT[3] ? 3 : 4
 }
 
+// MOTOR/BOARD analizi: metin konu vermeyen jenerik pozisyonlarin KONUSUNU board-state'ten cikarir
+// (temas, kendi evi/gucu, capa, prime, geri pullar, toplama). Neural DEGIL (build-time 500 poz donar) —
+// engine heuristikleri (hasContact + nokta sayimi), ucuz ve deterministik. null = state de belirsiz.
+function classifyByState(q: Question, tier: number): string | null {
+  const st = q.state
+  const P = st.points
+  let whiteHome = 0 // beyaz ev tablosu pul (hane 1-6 = index 0-5)
+  let whiteHomePoints = 0 // beyaz ev tablosunda KAPALI (2+) nokta sayisi = ev gucu
+  let whiteTotal = st.bar.white
+  let whiteAnchorCount = 0 // beyazin rakip evinde (index 18-23) 2+ pullu nokta sayisi (capa)
+  let blackBlotsInWhiteHome = 0 // beyaz ev tablosundaki siyah ACIK pul (blot) = saldiri hedefi
+  let maxRun = 0
+  let run = 0
+  for (let i = 0; i < 24; i++) {
+    const n = P[i]
+    if (n > 0) {
+      whiteTotal += n
+      if (i <= 5) {
+        whiteHome += n
+        if (n >= 2) whiteHomePoints++
+      }
+      if (i >= 18 && n >= 2) whiteAnchorCount++
+      run++
+      if (run > maxRun) maxRun = run // ardisik beyaz-yapili nokta (prime/blok)
+    } else {
+      run = 0
+    }
+    if (n === -1 && i <= 5) blackBlotsInWhiteHome++
+  }
+  // YALNIZ NET temalar (belirsiz orta-oyun -> null -> genele). Oncelik: en ayirt edici once.
+  // 1) YARIS — temas yok (iki ordu kesismis).
+  if (!hasContact(st)) return tier >= 3 ? 'b-bearoff' : 'd-race'
+  // 2) PUL TOPLAMA — toplama basladi veya neredeyse tum pullar evde.
+  if (st.off.white > 0 || (whiteTotal >= 10 && whiteHome >= whiteTotal - 1)) return tier >= 3 ? 'a-bearoff' : 'b-bearoff'
+  // 3) GERI OYUN — COKLU capa (2+ anchor rakip evinde) = klasik back game (net, nadir).
+  if (whiteAnchorCount >= 2) return 'a-backgame'
+  // 4) SALDIRI/VURMA — siyah barda + beyaz ev GUCLU (3+ kapali nokta = blitz) ya da ev tablomda 2+ blot.
+  //    Tier dusukse temel "Vurmak mi", yuksekse "Saldiri Oyunu".
+  if ((st.bar.black > 0 && whiteHomePoints >= 3) || blackBlotsInWhiteHome >= 2) return tier <= 1 ? 'b-hitornot' : 'i-attack'
+  // 5) BLOK — 5+ ardisik yapili nokta (guclu prime; 4 cok sik -> 5).
+  if (maxRun >= 5) return 'd-blocks'
+  return null // net tema yok -> zorluk-bantli genel bolum (son care)
+}
+
 // Pozisyonu TEK bir konu bolumune ata (en uygun). null = siniflandirma bekliyor.
 // Oncelik: en ayirt edici konu once (kup > maç-skoru > geri-oyun > zamanlama > capa > prime > ...).
 function classifySection(q: Question): string | null {
@@ -1065,11 +1109,15 @@ function classifySection(q: Question): string | null {
   if (/builder|\bslot|distribut|flexib|connect|communicat|develop|esnek|gelişim|gelisim/.test(s)) return 'd-blocks'
   // --- Belirgin konu YOK: zorluga gore GENEL orta-oyun (jenerik "checker play" burada dengeli dagilir).
   //     Metin gercekten zayifsa (çok kisa) "siniflandirma bekliyor". ---
+  // Metin konu vermedi -> MOTOR (board-state) analizi ile gercek konuyu cikar (yaris/toplama/saldiri/
+  // capa/geri-oyun/blok/kacis). Genel bolumleri kucultur, konu bolumlerine dagitir (homojen).
+  const byState = classifyByState(q, tier)
+  if (byState) return byState
+  // State de net konu vermedi -> zorluk-bantli GENEL orta-oyun (son care, spesifik bolumu kirletme).
   if ((q.intro ?? '').trim().length < 6) return null
-  // Jenerik fallback YALNIZ genel-anlamli orta-oyun bolumlerine (spesifik konu bolumlerini kirletme).
   if (tier >= 4) return 'm-complex' // Karmaşık Pozisyonlar
   if (tier === 3) return 'a-midgame' // Zor Orta Oyun Kararları
-  if (tier === 2) return 'i-nowlater' // tier-2 jenerik orta karar -> Şimdi mi Risk (ORTA'nin genel karar bölümü)
+  if (tier === 2) return 'i-nowlater' // Şimdi mi Risk (ORTA genel karar)
   if (tier === 1) return 'd-midgame' // Temel Orta Oyun
   return 'b-basics' // Temel Kavramlar
 }
