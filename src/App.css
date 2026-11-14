@@ -18492,7 +18492,7 @@ body:has(.spectate-view) .app.lobby {
   --cube-size: var(--checker);          /* 38px FLOOR'u ez -> tray/bar standart orana kuculur */
   --tray-w: calc(var(--checker) * 1.5);
   --bearoff-w: calc(var(--checker) * 1.5);
-  --dice-size: calc(var(--checker) * 0.62);
+  --dice-size: calc(var(--checker) * 0.92);
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s; }
 .tr-prev:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }
 .tr-prev-no { position: absolute; top: 4px; left: 6px; z-index: 3; font-size: var(--fs-2xs); font-weight: var(--fw-bold); color: var(--tv-ink-faint); background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0 7px; line-height: 1.5; }
