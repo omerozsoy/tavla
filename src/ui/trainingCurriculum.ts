@@ -684,6 +684,11 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=-aBCB-BbC----C----acabbba-:0:0:1:33:2:0:0:9:10', answer: '', title: 'Chris Bray 2024 POTW7', concept: '33 tas hamlesi' },
   { xgid: 'XGID=-A-BCCBb----aB-----cBbbcb-:0:0:1:21:0:0:0:0:10', answer: '4/1', title: 'Marc Olsen — Masterclass', concept: '21 nokta yapma; 4/1' },
   { gnuPos: '8M7BAWDLrMEAJg', gnuMatch: 'QQkbAAAAAAAE', answer: '', title: 'Forum — 6-6 Bar Point', concept: '66 çiftinde bar point kapama tercihi' },
+  { xgid: 'XGID=--aBBBBB----cC---bBdab-b--:1:-1:1:32:0:0:0:7:10', answer: '', title: 'Chris Bray — At the Crossroads (USBGF 2026)', concept: '7 maçında 32 tas hamlesi' },
+  { xgid: 'XGID=-----bE-CAA-cC--bc-e----B-:0:0:1:22:0:0:3:0:10', answer: '', title: 'Chris Bray — Priorities (USBGF 2026)', concept: 'Para oyunu 22 tas hamlesi' },
+  { xgid: 'XGID=-bBba-DBB---bC-a-b-cAb---A:0:0:1:54:0:0:3:0:10', answer: '', title: 'Chris Bray — Back Game Planning (USBGF 2026)', concept: 'Arka oyun planlaması 54' },
+  { xgid: 'XGID=-aa---E-C---cE-aac-e----AA:0:0:1:52:1:0:0:7:10', answer: '', title: 'Chris Bray — Early Development (USBGF 2026)', concept: 'Erken gelişim 52' },
+  { xgid: 'XGID=-a-B--DaB---dEa--c-e----B-:0:0:1:22:0:0:2:0:10', answer: '', title: 'Chris Bray — Washing Day (USBGF 2026)', concept: 'Para oyunu 22 tas hamlesi' },
 ]
 
 // "Gercek Pozisyonlar": ISIM/MARKA bazli gruplar (Chris Bray, Mochy, Euler, Chow, Forum...) -> her usta/
