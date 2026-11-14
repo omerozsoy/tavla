@@ -23,4 +23,15 @@ describe('dailyQuestion', () => {
     expect(q.state).toBeTruthy()
     expect(q.state.points.length).toBe(24)
   })
+
+  // Çift zar display'i (TrainingView faces) dice.length===4 dalına dayanır: bir double ASLA 2 zarla
+  // kodlanmamalı (yoksa 4 yerine 2 hamle + "bozuk" görünüm). Tüm havuzu gez.
+  it('encodes every double as 4 dice across the whole pool', () => {
+    for (let i = 0; i < DAILY_POOL_SIZE; i++) {
+      const { dice } = dailyQuestion(i * DAY).state
+      if (dice.length >= 2 && dice.every((d) => d === dice[0])) {
+        expect(dice.length).toBe(4)
+      }
+    }
+  })
 })
