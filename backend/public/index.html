@@ -20,6 +20,9 @@
         var LOG = []
         function renderDiag() {
           if (!INAPP) return
+          // Calisan app'i ASLA ortme: root doluysa React mount oldu -> tani yanlis-alarm, varsa kaldir.
+          var rr = document.getElementById('root')
+          if (rr && rr.children.length > 0) { var ex = document.getElementById('__appdiag'); if (ex && ex.remove) ex.remove(); return }
           var d = document.getElementById('__appdiag')
           if (!d) {
             d = document.createElement('div'); d.id = '__appdiag'
@@ -41,7 +44,14 @@
         window.addEventListener('error', function (e) {
           if (!INAPP) return
           var t = e.target
-          if (t && t.tagName && (t.tagName === 'SCRIPT' || t.tagName === 'LINK' || t.tagName === 'IMG')) { note('KAYNAK YUK HATASI: ' + (t.src || t.href || t.tagName)); return }
+          if (t && t.tagName && (t.tagName === 'SCRIPT' || t.tagName === 'LINK' || t.tagName === 'IMG')) {
+            // Dis-kaynak (CF beacon/analytics vb. FARKLI origin) yuklenemezse app'i ETKILEMEZ -> tani
+            // tetikleme. Yoksa React mount olmadan once patlayan beacon tam-ekran taniyi calisan app'in
+            // ustune pinler (cocuk=0 donar). Yalniz KENDI origin'imizdeki kaynak hatasini bildir.
+            var u = t.src || t.href || ''
+            if (u && u.indexOf(location.origin + '/') !== 0) return
+            note('KAYNAK YUK HATASI: ' + (u || t.tagName)); return
+          }
           note('JS HATASI: ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '') + '\n' + ((e.error && e.error.stack) || ''))
         }, true)
         window.addEventListener('unhandledrejection', function (e) {
@@ -111,7 +121,12 @@
         setInterval(function () {
           var r = document.getElementById('root')
           if (!r) return
-          if (r.children.length > 0) { hadRoot = true; emptyTicks = 0; return }
+          if (r.children.length > 0) {
+            hadRoot = true; emptyTicks = 0
+            // Root dolu ama bayat tani overlay'i duruyorsa (mount-oncesi yanlis-alarm) KALDIR.
+            var dg = document.getElementById('__appdiag'); if (dg && dg.remove) dg.remove()
+            return
+          }
           if (!hadRoot) return // acilis bosu: 12sn kontrolu + recover() ilgilenir
           if (document.getElementById('__loadfail') || document.getElementById('__appdiag')) return
           if (++emptyTicks < 2) return // >~3sn surekli bos (re-render flash'i degil)
@@ -230,7 +245,7 @@
         ]
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-DkFV2xzi.js"></script>
+    <script type="module" crossorigin src="/assets/index-B8Imf7qi.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-aKtaBQYM.js">
     <link rel="modulepreload" crossorigin href="/assets/react-vendor-C0aB8z2Y.js">
     <link rel="modulepreload" crossorigin href="/assets/ui-vendor-OsAJ3zeL.js">
@@ -246,7 +261,7 @@
     <link rel="modulepreload" crossorigin href="/assets/Coins-COAyRgHl.js">
     <link rel="modulepreload" crossorigin href="/assets/SoberFrame-DBjr4rq2.js">
     <link rel="stylesheet" crossorigin href="/assets/SoberFrame-BSPxS0vx.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-B8oi-cV9.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-12jTBQNf.css">
   </head>
   <body>
     <div id="root"></div>
