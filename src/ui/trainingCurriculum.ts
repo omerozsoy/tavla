@@ -955,15 +955,22 @@ export const TOTAL_QUESTIONS = MASTERY_TIERS.reduce((a, t) => a + t.lessons.redu
 
 // GÜNÜN POZİSYONU — her gün 1 ünlü pozisyon, deterministik (gün indeksi). Havuz = tüm gerçek/ünlü
 // pozisyonlar (açılış zarları HARİÇ: onlar "pozisyon" değil). Aynı takvim gününde herkese aynı soru;
-// ertesi gün havuzdaki sonraki pozisyon (UTC gün sınırı). Çoğu otoriter XG cevaplı; değilse motor puanlar.
+// ertesi gün havuzdaki sonraki pozisyon. Çoğu otoriter XG cevaplı; değilse motor puanlar.
 const DAILY_POOL: Question[] = REAL_TIERS.flatMap((tier) =>
   tier.lessons.filter((l) => l.id !== 'rg-open').flatMap((l) => l.questions),
 )
 export const DAILY_POOL_SIZE = DAILY_POOL.length
 
+// Türkiye kalıcı GMT+3 (DST yok). Gün sınırını YEREL gece yarısına hizala (00:00 TR'de değişsin,
+// UTC 03:00'te DEĞİL) — +3sa kaydırıp UTC gün sınırına floor.
+const TR_OFFSET_MS = 3 * 60 * 60 * 1000
+export function dailyDayIndex(epochMs: number): number {
+  return Math.floor((epochMs + TR_OFFSET_MS) / 86_400_000)
+}
+
 export function dailyQuestion(epochMs: number): Question {
-  const day = Math.floor(epochMs / 86_400_000)
   const n = DAILY_POOL.length
+  const day = dailyDayIndex(epochMs)
   return DAILY_POOL[(((day % n) + n) % n)]
 }
 

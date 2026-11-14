@@ -19,7 +19,7 @@ import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress, loadProgress, savePosResult } from './TrainingPath'
-import { dailyQuestion, lessonById, lessonPlan, obviousMoveKey, questionId, type Question } from './trainingCurriculum'
+import { dailyQuestion, dailyDayIndex, lessonById, lessonPlan, obviousMoveKey, questionId, type Question } from './trainingCurriculum'
 
 // Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
 const QCACHE = new Map<string, Question[]>()
@@ -746,7 +746,7 @@ export function DailyPuzzle({ onClose, titleOverride }: Props) {
   // Mount aninda gunu sabitle (gece yarisi gecisi tek oturumda soruyu degistirmesin).
   const { q, dayKey } = useMemo(() => {
     const now = Date.now()
-    return { q: dailyQuestion(now), dayKey: Math.floor(now / 86_400_000) }
+    return { q: dailyQuestion(now), dayKey: dailyDayIndex(now) }
   }, [])
   return (
     <LessonView
