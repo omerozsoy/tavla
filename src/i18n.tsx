@@ -657,7 +657,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   // Dersler ve Eğitim grubu
   'menu.group.lessons': 'DERSLER VE EĞİTİM',
   'menu.training': 'En İyi Hamle',
-  'menu.dailyPuzzle': 'Günün Pozisyonu',
+  'menu.dailyPuzzle': 'Günün Sorusu',
   'menu.liveTournSystem': 'Canlı Turnuva Sistemi',
   'menu.organizerPanel': 'Turnuva Yönetimi',
   'org.none': 'Yönettiğin turnuva yok.',
@@ -748,6 +748,7 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'tr.cube.ansTake': 'Doğru: Al (take).',
   'tr.cube.ansPass': 'Doğru: Bırak (pass).',
   'tr.next': 'Sonraki Soru',
+  'tr.finish': 'Bitir',
   'tr.retry': 'Tekrar Dene',
   'tr.streak': 'Üst üste doğru',
   'tr.scoreLabel': 'Doğru / Toplam',
@@ -3106,7 +3107,7 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   // Lessons & Training group
   'menu.group.lessons': 'LESSONS & TRAINING',
   'menu.training': 'Best Move',
-  'menu.dailyPuzzle': 'Position of the Day',
+  'menu.dailyPuzzle': 'Question of the Day',
   'menu.liveTournSystem': 'Live Tournament System',
   'menu.organizerPanel': 'Tournament Management',
   'org.none': 'You manage no tournaments.',
@@ -3197,6 +3198,7 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   'tr.cube.ansTake': 'Correct: Take.',
   'tr.cube.ansPass': 'Correct: Pass.',
   'tr.next': 'Next Question',
+  'tr.finish': 'Finish',
   'tr.retry': 'Try Again',
   'tr.streak': 'Correct streak',
   'tr.scoreLabel': 'Correct / Total',
