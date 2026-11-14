@@ -82,7 +82,7 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 }
 
 // Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar/kup karari, "Onayla" ile gonderilir.
-function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () => void; fixed?: { title: string; questions: Question[] } }) {
+function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string; onBack: () => void; fixed?: { title: string; questions: Question[] }; startIndex?: number }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
   const [questions, setQuestions] = useState<Question[]>(() => fixed?.questions ?? QCACHE.get(lessonId) ?? [])
@@ -117,8 +117,13 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
     // Sorular yuklenince uygula; kayitli YARIM ilerleme varsa (resume) o sorudan basla.
     const applyLoaded = (qs: Question[]) => {
       const saved = fixed ? undefined : loadProgress()[lessonId]
+      // Oncelik: onizlemeden secilen pozisyon (startIndex) > kayitli yarim ilerleme (resume) > 0.
       const resume =
-        saved && !saved.done && saved.idx != null && saved.idx > 0 && saved.idx < qs.length ? saved.idx : 0
+        startIndex != null && startIndex > 0 && startIndex < qs.length
+          ? startIndex
+          : saved && !saved.done && saved.idx != null && saved.idx > 0 && saved.idx < qs.length
+            ? saved.idx
+            : 0
       setQuestions(qs)
       setIdx(resume)
       if (resume > 0 && saved?.results) setResults(saved.results.slice(0, resume))
@@ -317,10 +322,19 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
     setReveal(false)
     setRetried(false)
     setCubeMsg('')
+    gradedRef.current = -1 // yeniden puanlanabilsin (serbest dolasimda ayni soruya donuste)
     setPhase('playing')
   }
 
+  // SERBEST DOLASIM: herhangi bir pozisyona atla (ilerleme cubugu segmenti / ok). Skor results[idx]'te korunur.
+  function goToQuestion(i: number) {
+    if (i < 0 || i >= TOTAL || i === idx || complete) return
+    setIdx(i)
+    loadQuestion(i)
+  }
+
   const correctCount = results.filter(Boolean).length
+  const solvedCount = results.filter((x) => x !== undefined).length // cevaplanan (serbest dolasimda idx+1 degil)
   const accuracy = Math.round((correctCount / TOTAL) * 100)
 
   const nextQuestion = useCallback(() => {
@@ -356,7 +370,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       setBest({ move: q.answer, equity: 0, probs: [] })
       const firstTryOk = ok && !hinted && !retried
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
-      setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
+      setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setReveal(false) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir
       setPhase(ok ? 'correct' : 'wrong')
@@ -379,7 +393,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       setBest(top)
       const firstTryOk = ok && !hinted && !retried
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
-      setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
+      setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setReveal(false) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene"
       setPhase(ok ? 'correct' : 'wrong')
@@ -419,7 +433,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       setCubeMsg(msg)
       const firstTryOk = ok && !hinted
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
-      setResults((r) => (r.length > idx ? r : [...r, firstTryOk]))
+      setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setPhase(ok ? 'correct' : 'wrong')
       if (ok) Sound.win()
@@ -439,7 +453,7 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
       setPhase('nomove')
       if (gradedRef.current !== idx) {
         gradedRef.current = idx
-        setResults((r) => (r.length > idx ? r : [...r, false]))
+        setResults((r) => { const n = r.slice(); n[idx] = false; return n })
         setStreak(0)
       }
     }
@@ -487,7 +501,6 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
 
   const bestText = best ? moveNotation(best.move, 'white') : ''
   const stars = accuracy === 100 ? 3 : accuracy >= 80 ? 2 : accuracy >= 50 ? 1 : 0
-  const progressShown = complete ? TOTAL : idx + 1
   const mood: 'idle' | 'ok' | 'bad' = phase === 'wrong' ? 'bad' : phase === 'correct' || complete ? 'ok' : 'idle'
   const scoreText = q?.score ? t('tr.cube.matchScore', { to: q.score.to, my: q.score.my, opp: q.score.opp }) : ''
 
@@ -643,18 +656,40 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
           q?.title && <div className="bgx-daily-name">{q.title}</div>
         ) : (
           /* İlerleme çubuğu EN ÜSTTE (yatay) — eski sağ dikey konumdan taşındı. */
-          <div className="bgx-progress">
-            <div className={`bgx-meter${!complete ? ' active' : ''}`}>
-              {TOTAL > 20 ? (
-                // Cok soru (Gercek Pozisyonlar): segment yerine tek dolgu cubugu.
-                <span className="bgx-fill" style={{ width: `${Math.round((progressShown / TOTAL) * 100)}%` }} />
-              ) : (
-                Array.from({ length: TOTAL }).map((_, i) => (
-                  <span key={i} className={`bgx-seg${i < progressShown ? ' on' : ''}`} />
-                ))
-              )}
+          /* NAVIGASYON CUBUGU: her segment bir pozisyon — tikla GIT (serbest dolasim) + ileri/geri ok.
+             dogru=yesil, yanlis=kirmizi, mevcut=brick vurgu, cozulmemis=bos. */
+          <div className="bgx-nav">
+            <button
+              className="bgx-nav-arrow prev"
+              onClick={() => goToQuestion(idx - 1)}
+              disabled={idx <= 0 || complete}
+              aria-label={t('tr.prevQ')}
+              title={t('tr.prevQ')}
+            >
+              <Icon name="arrow-right" size={18} />
+            </button>
+            <div className="bgx-nav-track">
+              {questions.map((_, i) => (
+                <button
+                  key={i}
+                  className={`bgx-nav-seg${i === idx ? ' cur' : ''}${results[i] === true ? ' ok' : results[i] === false ? ' bad' : ''}`}
+                  onClick={() => goToQuestion(i)}
+                  disabled={complete}
+                  aria-label={`${i + 1}`}
+                  title={`${i + 1}`}
+                />
+              ))}
             </div>
-            <div className="bgx-count">{progressShown}/{TOTAL}</div>
+            <button
+              className="bgx-nav-arrow"
+              onClick={() => goToQuestion(idx + 1)}
+              disabled={idx >= TOTAL - 1 || complete}
+              aria-label={t('tr.nextQ')}
+              title={t('tr.nextQ')}
+            >
+              <Icon name="arrow-right" size={18} />
+            </button>
+            <div className="bgx-nav-count">{solvedCount}/{TOTAL}</div>
           </div>
         )}
 
@@ -727,15 +762,16 @@ function LessonView({ lessonId, onBack, fixed }: { lessonId: string; onBack: () 
   )
 }
 
-// Konteyner: varsayilan "Ustalik Yolu" listesi; bir ders secilince o dersin ekrani acilir.
+// Konteyner: varsayilan "Ustalik Yolu" listesi; bir ders/pozisyon secilince o dersin ekrani acilir.
 export default function TrainingView({ onClose, titleOverride }: Props) {
   useEscape(onClose)
-  const [lessonId, setLessonId] = useState<string | null>(null)
+  const [sel, setSel] = useState<{ id: string; start: number } | null>(null)
 
-  if (!lessonId) {
-    return <TrainingPath onPick={setLessonId} titleOverride={titleOverride} />
+  if (!sel) {
+    // onPick(id, index?) — onizlemede belirli pozisyona tiklanirsa o sorudan baslar.
+    return <TrainingPath onPick={(id, start = 0) => setSel({ id, start })} titleOverride={titleOverride} />
   }
-  return <LessonView lessonId={lessonId} onBack={() => setLessonId(null)} />
+  return <LessonView lessonId={sel.id} startIndex={sel.start} onBack={() => setSel(null)} />
 }
 
 // GÜNÜN POZİSYONU: her gün 1 ünlü pozisyon (deterministik gün indeksi). LessonView'i tek-soruluk

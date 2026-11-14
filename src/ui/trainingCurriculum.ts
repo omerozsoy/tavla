@@ -919,7 +919,7 @@ export const LESSONS: Lesson[] = SPECS.map((s) => ({ id: s.id, title: s.title, d
 export function lessonById(id: string): Lesson | undefined {
   if (id.startsWith('src:')) {
     const key = id.slice(4)
-    const src = SOURCES.find((s) => s.key === key)
+    const src = SOURCE_OPTIONS.find((s) => s.key === key)
     return { id, title: src?.label ?? key, descKey: 'tr.lesson.desc', count: src?.count ?? sourceQuestions(key).length }
   }
   const cl = sectionById(id) // YENI: konu-bazli bolum basligi
@@ -1306,9 +1306,20 @@ export const SOURCES: SourceFilter[] = (() => {
   return [...by.entries()].map(([key, v]) => ({ key, label: v.label, count: v.n })).sort((a, b) => b.count - a.count)
 })()
 
-// Bir kaynagin pozisyonlari (filtre secilince sag onizleme/oynatma).
+// Kaynak filtresi SADELESTIRME: buyuk kaynaklar ayri, kucukler (<BIG_SRC_MIN) tek "Diğer Ustalar"
+// altinda (dropdown kalabalik olmasin). 'other' = tum kucuk kaynaklarin birlesimi.
+const BIG_SRC_MIN = 12
+const BIG_SRC_KEYS = new Set(SOURCES.filter((s) => s.count >= BIG_SRC_MIN).map((s) => s.key))
+export const SOURCE_OPTIONS: SourceFilter[] = (() => {
+  const big = SOURCES.filter((s) => s.count >= BIG_SRC_MIN)
+  const smallN = SOURCES.filter((s) => s.count < BIG_SRC_MIN).reduce((a, s) => a + s.count, 0)
+  return smallN > 0 ? [...big, { key: 'other', label: 'Diğer Ustalar', count: smallN }] : big
+})()
+
+// Bir kaynagin (veya 'other' = kucuk kaynaklar birlesimi) pozisyonlari — filtre secilince onizleme/oynatma.
 export function sourceQuestions(key: string): Question[] {
-  return ALL_REAL.filter((q) => q.src === key).sort((a, b) => hardnessText(a) - hardnessText(b))
+  const match = key === 'other' ? (q: Question) => !!q.src && !BIG_SRC_KEYS.has(q.src) : (q: Question) => q.src === key
+  return ALL_REAL.filter(match).sort((a, b) => hardnessText(a) - hardnessText(b))
 }
 
 // Siniflandirma bekleyen pozisyon sayisi (yonetim/rapor; kesin siniflanmis gibi gosterilmez).

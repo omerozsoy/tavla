@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import Board from './Board'
 import DiceRow from './Dice'
@@ -7,7 +7,7 @@ import { pipCount } from '../engine/evaluate'
 import {
   CURRICULUM,
   CURRICULUM_TOTAL,
-  SOURCES,
+  SOURCE_OPTIONS,
   sourceQuestions,
   questionId,
   type CurriLesson,
@@ -67,7 +67,7 @@ export interface SecProgress {
 }
 
 interface Props {
-  onPick: (id: string) => void
+  onPick: (id: string, index?: number) => void // index: onizlemede tiklanan belirli pozisyon (o sorudan baslar)
   titleOverride?: string
 }
 
@@ -76,6 +76,17 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
   const posProg = useMemo(() => loadPosProgress(), [])
   const [sel, setSel] = useState<string>(CURRICULUM[0]?.lessons[0]?.id ?? '')
   const [srcKey, setSrcKey] = useState<string | null>(null) // kaynak filtresi (ana yolu bolmez)
+  const [srcOpen, setSrcOpen] = useState(false) // kaynak dropdown acik mi
+  const ddRef = useRef<HTMLDivElement>(null)
+  // Dropdown disina tiklayinca kapat.
+  useEffect(() => {
+    if (!srcOpen) return
+    const onDoc = (e: MouseEvent) => {
+      if (ddRef.current && !ddRef.current.contains(e.target as Node)) setSrcOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [srcOpen])
 
   // Bir bolumun pozisyon-bazli ilerlemesi.
   const prog = (qs: Question[]): SecProgress => {
@@ -176,26 +187,49 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
           })}
         </div>
 
-        {/* KAYNAK FILTRESI — ana egitim yolunu bolmez, ayri filtre (Euler/Bray/Mochy...). */}
-        <div className="tr-sources">
-          <div className="tr-sources-lbl">{t('tr.sources')}</div>
-          <div className="tr-sources-row">
-            <button className={`tr-src ${!srcKey ? 'on' : ''}`} onClick={() => setSrcKey(null)}>
-              {t('tr.allSources')}
-            </button>
-            {SOURCES.map((s) => (
-              <button key={s.key} className={`tr-src ${srcKey === s.key ? 'on' : ''}`} onClick={() => setSrcKey(s.key)}>
-                {s.label} <span className="tr-src-n">{s.count}</span>
+        {/* KAYNAK FILTRESI — tek acilir menu (chip kalabaligi yerine). Ana yolu bolmez. */}
+        <div className="tr-srcdd" ref={ddRef}>
+          <button className="tr-srcdd-btn" onClick={() => setSrcOpen((o) => !o)} aria-expanded={srcOpen}>
+            <span className="tr-srcdd-lbl">{t('tr.sourceLabel')}</span>
+            <span className="tr-srcdd-cur">
+              {srcKey ? SOURCE_OPTIONS.find((s) => s.key === srcKey)?.label : t('tr.allSources')}
+            </span>
+            <Icon name="chevron" size={14} className={srcOpen ? 'tr-srcdd-chev open' : 'tr-srcdd-chev'} />
+          </button>
+          {srcOpen && (
+            <div className="tr-srcdd-menu">
+              <button
+                className={`tr-srcdd-item${!srcKey ? ' on' : ''}`}
+                onClick={() => {
+                  setSrcKey(null)
+                  setSrcOpen(false)
+                }}
+              >
+                <span>{t('tr.allSources')}</span>
+                <span className="tr-srcdd-n">{CURRICULUM_TOTAL}</span>
               </button>
-            ))}
-          </div>
+              {SOURCE_OPTIONS.map((s) => (
+                <button
+                  key={s.key}
+                  className={`tr-srcdd-item${srcKey === s.key ? ' on' : ''}`}
+                  onClick={() => {
+                    setSrcKey(s.key)
+                    setSrcOpen(false)
+                  }}
+                >
+                  <span>{s.label}</span>
+                  <span className="tr-srcdd-n">{s.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Sag: secili bolumun (veya kaynagin) pozisyonlari — baslik, sayi, basla/devam, onizleme. */}
       <div className="bgx-stage tr-previews">
         <div className="tr-prev-head">
-          <span className="tr-prev-title">{srcKey ? SOURCES.find((s) => s.key === srcKey)?.label : selLesson?.title}</span>
+          <span className="tr-prev-title">{srcKey ? SOURCE_OPTIONS.find((s) => s.key === srcKey)?.label : selLesson?.title}</span>
           <span className="tr-prev-sub">· {t('tr.questions', { n: previewQs.length })}</span>
           {previewQs.length > 0 && (
             <button className="bgx-btn green tr-prev-start" onClick={() => onPick(pickTarget)}>
@@ -205,7 +239,7 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
         </div>
         <div className="tr-prev-grid">
           {shown.map((q, i) => (
-            <button key={i} className="tr-prev" onClick={() => onPick(pickTarget)} title={q.title ?? ''}>
+            <button key={i} className="tr-prev" onClick={() => onPick(pickTarget, i)} title={q.title ?? ''}>
               <span className="tr-prev-no">{i + 1}</span>
               {q.title && <span className="tr-prev-name">{q.title}</span>}
               <Board

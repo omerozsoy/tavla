@@ -18437,7 +18437,21 @@ body:has(.spectate-view) .app.lobby {
 .bgx-score-chip { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-weight: var(--fw-bold); font-size: 0.92rem; white-space: nowrap; }
 .bgx-score-chip svg { opacity: 0.9; }
 
-/* İlerleme çubuğu: EN ÜSTTE yatay (board genişliğinde), eski sağ dikey konumdan taşındı. */
+/* NAVIGASYON CUBUGU: tiklanabilir segmentler (pozisyona GIT) + ileri/geri ok + sayac (serbest dolasim). */
+.bgx-nav { display: flex; flex-direction: row; align-items: center; gap: 8px; width: calc(var(--board-h) * 1.53); max-width: 100%; }
+.bgx-nav-arrow { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); display: grid; place-items: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.bgx-nav-arrow:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)); }
+.bgx-nav-arrow:disabled { opacity: 0.32; cursor: default; }
+.bgx-nav-arrow.prev svg { transform: scaleX(-1); } /* sag oku sola cevir */
+.bgx-nav-track { flex: 1; min-width: 0; display: flex; gap: 2px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px; }
+.bgx-nav-seg { flex: 1 1 0; min-width: 3px; height: 16px; border: none; border-radius: 2px; padding: 0; cursor: pointer; background: color-mix(in srgb, var(--text) 12%, transparent); transition: background 0.12s, transform 0.1s; }
+.bgx-nav-seg:hover:not(:disabled) { transform: scaleY(1.25); }
+.bgx-nav-seg:disabled { cursor: default; }
+.bgx-nav-seg.ok { background: var(--color-success); } /* dogru cozulen */
+.bgx-nav-seg.bad { background: var(--color-error); } /* yanlis */
+.bgx-nav-seg.cur { background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); } /* mevcut pozisyon */
+.bgx-nav-count { flex: none; font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); min-width: 2.6em; text-align: right; }
+/* Eski ilerleme cubugu stilleri (bgx-progress/meter/seg/fill) artik kullanilmiyor; nav cubugu ile degisti. */
 .bgx-progress { display: flex; flex-direction: row; align-items: center; gap: 10px; width: calc(var(--board-h) * 1.53); max-width: 100%; justify-content: center; }
 .bgx-meter { height: 20px; flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; flex-direction: row; gap: 3px; padding: 4px; }
 .bgx-meter.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
@@ -18490,15 +18504,20 @@ body:has(.spectate-view) .app.lobby {
 .tr-node.done { background: var(--color-success); color: #fff; }
 .tr-node.active { background: var(--accent); color: var(--on-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
 
-/* Kaynak filtresi — ana egitim yolunu BOLMEZ, ayri filtre (Euler/Bray/Mochy...). */
-.tr-sources { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; flex: none; }
-.tr-sources-lbl { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.1em; color: var(--tv-ink-faint); }
-.tr-sources-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.tr-src { appearance: none; cursor: pointer; font-size: var(--fs-2xs); padding: 5px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); display: inline-flex; align-items: center; gap: 5px; }
-.tr-src:hover { border-color: var(--accent); }
-.tr-src.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.tr-src-n { opacity: 0.65; font-weight: var(--fw-bold); }
-.tr-src.on .tr-src-n { opacity: 0.9; }
+/* Kaynak filtresi — tek ACILIR MENU (chip kalabaligi yerine). Ana egitim yolunu bolmez. */
+.tr-srcdd { position: relative; flex: none; border-top: 1px solid var(--border); padding-top: 10px; }
+.tr-srcdd-btn { width: 100%; appearance: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: var(--fs-sm); }
+.tr-srcdd-btn:hover { border-color: var(--accent); }
+.tr-srcdd-lbl { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tv-ink-faint); }
+.tr-srcdd-cur { font-weight: var(--fw-semibold); margin-left: 2px; }
+.tr-srcdd-chev { margin-left: auto; color: var(--muted); transition: transform 0.15s; }
+.tr-srcdd-chev.open { transform: rotate(180deg); }
+.tr-srcdd-menu { position: absolute; left: 0; right: 0; bottom: calc(100% - 10px); margin-bottom: 6px; z-index: 30; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18); }
+.tr-srcdd-item { appearance: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; border: none; border-radius: var(--radius-sm); background: none; color: var(--text); font-size: var(--fs-sm); text-align: left; }
+.tr-srcdd-item:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.tr-srcdd-item.on { background: var(--accent); color: var(--on-accent); font-weight: var(--fw-semibold); }
+.tr-srcdd-n { opacity: 0.6; font-weight: var(--fw-bold); font-size: var(--fs-xs); }
+.tr-srcdd-item.on .tr-srcdd-n { opacity: 0.9; }
 
 /* Sag onizleme basligi: baslik + pozisyon sayisi + Basla/Devam */
 .tr-prev-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
