@@ -18526,8 +18526,8 @@ body:has(.spectate-view) .app.lobby {
 .tr-prev-title { font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--text); }
 .tr-prev-sub { color: var(--muted); font-size: var(--fs-sm); }
 .tr-prev-start { flex: none; margin-left: auto; padding: 9px 22px; }
-.tr-prev-more { display: flex; align-items: center; justify-content: center; font-weight: var(--fw-bold); font-size: var(--fs-lg); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px dashed var(--border); border-radius: var(--radius-md); cursor: pointer; min-height: 90px; }
-.tr-prev-more:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+/* LAZY LOAD sentinel: grid tam genislik, gorunmez — kaydirinca sonraki board partisini tetikler. */
+.tr-prev-sentinel { grid-column: 1 / -1; height: 1px; }
 .tr-path-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 12px; }
 .tr-foot-title { font-weight: var(--fw-bold); font-size: var(--fs-md); }
 .tr-foot-desc { font-size: var(--fs-sm); color: var(--muted); line-height: 1.4; }

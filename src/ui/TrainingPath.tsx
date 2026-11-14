@@ -105,11 +105,30 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
   const allLessons = CURRICULUM.flatMap((tr) => tr.lessons)
   const selLesson = allLessons.find((l) => l.id === sel) ?? allLessons[0]
   const previewQs = srcKey ? sourceQuestions(srcKey) : selLesson?.questions ?? []
-  const PREVIEW_MAX = 24
-  const shown = previewQs.slice(0, PREVIEW_MAX)
-  const extra = previewQs.length - shown.length
   const pickTarget = srcKey ? `src:${srcKey}` : sel
   const selProg = selLesson ? prog(selLesson.questions) : null
+
+  // LAZY LOAD: onizleme board'lari asagi indikce 24'er yuklenir (hepsini birden basmak tarayiciyi
+  // donduruyordu). Bolum/kaynak degisince bastan. Sentinel gorunurse bir sonraki parti yuklenir.
+  const PAGE = 24
+  const [visibleCount, setVisibleCount] = useState(PAGE)
+  useEffect(() => setVisibleCount(PAGE), [sel, srcKey])
+  const gridRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || visibleCount >= previewQs.length) return
+    const mobile = window.matchMedia('(max-width: 900px)').matches // mobil: sayfa scroll / masaustu: grid scroll
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setVisibleCount((c) => Math.min(c + PAGE, previewQs.length))
+      },
+      { root: mobile ? null : gridRef.current, rootMargin: '400px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [previewQs.length, visibleCount])
+  const shown = previewQs.slice(0, visibleCount)
 
   const renderLesson = (l: CurriLesson) => {
     const p = prog(l.questions)
@@ -237,7 +256,7 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
             </button>
           )}
         </div>
-        <div className="tr-prev-grid">
+        <div className="tr-prev-grid" ref={gridRef}>
           {shown.map((q, i) => (
             <button key={i} className="tr-prev" onClick={() => onPick(pickTarget, i)} title={q.title ?? ''}>
               <span className="tr-prev-no">{i + 1}</span>
@@ -265,11 +284,8 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
               />
             </button>
           ))}
-          {extra > 0 && (
-            <button className="tr-prev tr-prev-more" onClick={() => onPick(pickTarget)}>
-              +{extra}
-            </button>
-          )}
+          {/* LAZY LOAD tetikleyici: gorununce bir sonraki 24 board yuklenir (buton yok, scroll). */}
+          {visibleCount < previewQs.length && <div ref={sentinelRef} className="tr-prev-sentinel" aria-hidden="true" />}
         </div>
       </div>
     </div>
