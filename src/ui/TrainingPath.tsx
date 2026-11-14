@@ -137,6 +137,7 @@ export default function TrainingPath({ onPick, titleOverride }: Props) {
                 pipTop={pipCount(q.state, 'black')}
                 pipBottom={pipCount(q.state, 'white')}
                 cube={{ value: 1, owner: null }}
+                classic
                 numberFrom="white"
                 showPip={false}
                 showLogo={false}
