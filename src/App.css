@@ -18444,6 +18444,8 @@ body:has(.spectate-view) .app.lobby {
 /* Gercek Pozisyonlar (cok soru): segment yerine tek dolgu cubugu. */
 .bgx-fill { border-radius: 3px; background: var(--color-success); min-width: 0; transition: width 0.25s ease; }
 .bgx-count { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); }
+/* Günün Pozisyonu: ünlü pozisyon adı (ilerleme çubuğu yerine ortada). */
+.bgx-daily-name { max-width: calc(var(--board-h) * 1.53); text-align: center; font-weight: var(--fw-semibold); font-size: var(--fs-md); color: var(--text); padding: 4px 8px; }
 
 /* --- Ustalık Yolu (Mastery Path) listesi --- */
 .tr-path .bgx-side { width: 380px; max-height: var(--board-h); } /* panel board boyunu asmaz -> ic scroll */
