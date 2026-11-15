@@ -91,12 +91,17 @@ const warmAll = async () => {
 
 let stale = await warmAll()
 
-// 3) Stale 404 varsa ve CF creds mevcutsa, o URL'leri purge et -> bir kez daha isit.
+// 3) Stale 404 varsa (+ giris chunk'i HER ZAMAN) ve CF creds mevcutsa, o URL'leri purge et -> yeniden isit.
+//    CF cache POP-BASINA: runner'in POP'u giris chunk'ini 200 gorse bile baska POP (orn. TR) deploy
+//    gap'inde gecici 404'u cache'lemis olabilir -> o POP'tan gelen kullanici BEYAZ EKRAN gorur. Global
+//    purge (purge_cache) TUM POP'lari temizler; runner'in gorebildigi stale'e GUVENME. Giris chunk'i
+//    tek kritik boot asset'i, bu yuzden creds varsa her deploy'da kosulsuz global purge (ucuz, 1 URL).
 //    Creds yoksa: onleme-modunda kal, stale'i hata olarak bildir (elle purge gerekir).
 const { CF_API_TOKEN, CF_ZONE_ID } = process.env
-if (stale.length && CF_API_TOKEN && CF_ZONE_ID) {
-  const files = stale.map((p) => `${ORIGIN}${p}`)
-  console.log(`\n${stale.length} stale asset -> CF purge ediliyor…`)
+const toPurge = [...new Set([...stale, ...(entry ? [entry] : [])])]
+if (toPurge.length && CF_API_TOKEN && CF_ZONE_ID) {
+  const files = toPurge.map((p) => `${ORIGIN}${p}`)
+  console.log(`\n${toPurge.length} asset -> CF global purge ediliyor (giris chunk'i dahil)…`)
   const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${CF_API_TOKEN}`, 'Content-Type': 'application/json' },
