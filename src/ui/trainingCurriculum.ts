@@ -15,7 +15,7 @@ import { evaluatePosition } from '../engine/evaluate'
 import { parseXgid } from '../engine/xgid'
 import { parseGnuId } from '../engine/gnubgId'
 import { matchGnubgMove } from '../engine/gnubgMove'
-import { DIFF_OPENINGS, DIFF_CURATED, DIFF_BANDS, DIFF_BAND_TR } from './difficultyPositions'
+import { DIFF_OPENINGS, DIFF_CURATED, DIFF_BANDS, DIFF_BAND_TR, type DiffBand } from './difficultyPositions'
 
 export interface Question {
   state: GameState // zari atilmis, beyaz oynayacak pozisyon (kup sorularinda zar YOK)
@@ -1183,6 +1183,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   // BAŞLANGIÇ
   { id: 'b-basics', title: 'Temel Kavramlar', tier: 0 },
   { id: 'b-openings', title: 'Açılış Zarları', tier: 0 },
+  { id: 'b-openpool', title: 'Açılış Pratiği — Çok Kolay', tier: 0 },
   { id: 'b-points', title: 'Kapı Alma', tier: 0 },
   { id: 'b-hitornot', title: 'Vurmak mı, Vurmamak mı?', tier: 0 },
   { id: 'b-bearoff', title: 'Temel Pul Toplama', tier: 0 },
@@ -1192,6 +1193,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'd-safe', title: 'Güvenli Oynama ve Risk Alma', tier: 1 },
   { id: 'd-escape', title: 'Geri Pulları Kaçırma', tier: 1 },
   { id: 'd-midgame', title: 'Temel Orta Oyun', tier: 1 },
+  { id: 'd-openpool', title: 'Açılış Pratiği — Kolay', tier: 1 },
   { id: 'd-race', title: 'Yarışa Geçiş', tier: 1 },
   { id: 'd-cube', title: 'Temel Küp Kavramları', tier: 1 },
   { id: 'd-test', title: 'Seviye Testi', tier: 1, isTest: true },
@@ -1202,6 +1204,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'i-deepanchor', title: 'Derin Çapa Oyunları', tier: 2 },
   { id: 'i-anchordecide', title: 'Çapayı Korumak veya Bırakmak', tier: 2 },
   { id: 'i-nowlater', title: 'Şimdi mi Risk Almalı, Sonra mı?', tier: 2 },
+  { id: 'i-openpool', title: 'Açılış Pratiği — Orta', tier: 2 },
   { id: 'i-cube', title: 'Küp Verme ve Kabul Kararları', tier: 2 },
   { id: 'i-test', title: 'Seviye Testi', tier: 2, isTest: true },
   // İLERİ
@@ -1210,12 +1213,14 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'a-timing', title: 'Zamanlama', tier: 3 },
   { id: 'a-backgame', title: 'Geri Oyun', tier: 3 },
   { id: 'a-midgame', title: 'Zor Orta Oyun Kararları', tier: 3 },
+  { id: 'a-openpool', title: 'Açılış Pratiği — Zor', tier: 3 },
   { id: 'a-bearoff', title: 'İleri Pul Toplama', tier: 3 },
   { id: 'a-cube', title: 'İleri Küp Kararları', tier: 3 },
   { id: 'a-test', title: 'Seviye Testi', tier: 3, isTest: true },
   // USTALIK
   { id: 'm-complex', title: 'Karmaşık Pozisyonlar', tier: 4 },
   { id: 'm-subtle', title: 'İnce Hamle Farkları', tier: 4 },
+  { id: 'm-openpool', title: 'Açılış Pratiği — Çok Zor', tier: 4 },
   { id: 'm-scoremoves', title: 'Maç Skoruna Göre Hamleler', tier: 4 },
   { id: 'm-scorecube', title: 'Maç Skoruna Göre Küp Kararları', tier: 4 },
   { id: 'm-tournament', title: 'Turnuva Pozisyonları', tier: 4 },
@@ -1279,6 +1284,24 @@ for (const q of ALL_REAL) {
   }
   if (tourney.length) SECTION_Q['m-tournament'] = tourney
   SECTION_Q['m-complex'] = rest
+}
+// AÇILIŞ HAVUZU: DIFF_OPENINGS (motor-doğrulanmış açılış pozisyonları) konu yoluna banda göre dağıtılır.
+// ALL_REAL'e girmez (üretilmiş) -> burada {b,d,i,a,m}-openpool bölümlerine yerleşir. Mevcut tüm bölümlerle
+// board+zar (questionId) dedup: aynı puzzle iki yerde görünmesin.
+const OPEN_POOL_SECTION: Record<DiffBand, string> = {
+  cok_kolay: 'b-openpool', kolay: 'd-openpool', orta: 'i-openpool', zor: 'a-openpool', cok_zor: 'm-openpool',
+}
+{
+  const seen = new Set<string>()
+  for (const k of Object.keys(SECTION_Q)) for (const q of SECTION_Q[k]) seen.add(questionId(q))
+  for (const p of DIFF_OPENINGS) {
+    const q = famousToQuestion(p)
+    if (!q || !isPlayableQuestion(q)) continue
+    const id = questionId(q)
+    if (seen.has(id)) continue
+    seen.add(id)
+    ;(SECTION_Q[OPEN_POOL_SECTION[p.band]] ??= []).push(q)
+  }
 }
 // Her bolum ic sıralama: KOLAY -> ZOR (sezgisel zorluk).
 for (const k of Object.keys(SECTION_Q)) SECTION_Q[k].sort((a, b) => hardnessText(a) - hardnessText(b))
