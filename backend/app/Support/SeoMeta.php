@@ -314,6 +314,11 @@ final class SeoMeta
             'Tavla puanlama ve PR (Performance Rating) nasıl hesaplanır? Rating ve hata oranı sistemini öğren.',
             'Puanlama ve PR',
         ],
+        'bilgi/pr-nedir' => [
+            'Tavlada PR Nedir? — Performans Değeri | TavlaTv',
+            'Tavlada PR (Performans Değeri) nedir? PR neyi ölçer, nasıl yorumlanır ve maç sonucundan neden farklıdır — sade infografik.',
+            'Tavlada PR Nedir?',
+        ],
         'bilgi/basarilarim' => [
             'Rozetler ve Başarımlar | TavlaTv',
             'TavlaTv rozetleri ve başarımları: oyun içi hedefleri tamamla, rozet kazan.',
@@ -528,6 +533,7 @@ final class SeoMeta
         'bilgi/sozluk' => ['Backgammon Glossary — Terms | GammonTV', 'Backgammon glossary: backgammon terms and their meanings — gammon, backgammon, the doubling cube, pip and more.', 'Backgammon Glossary'],
         'bilgi/rutbeler' => ['Backgammon Ranks | GammonTV', 'The GammonTV rank system: backgammon titles by rating range and how you climb them.', 'Backgammon Ranks'],
         'bilgi/puanlama' => ['Scoring and PR (Performance) | GammonTV', 'How are backgammon scoring and PR (performance rating) calculated? Learn how the rating and error-rate system works.', 'Scoring and PR'],
+        'bilgi/pr-nedir' => ['What Is PR in Backgammon? — Performance Rating | GammonTV', 'What is PR (Performance Rating) in backgammon? What PR measures, how to read it and why it differs from the match result — a simple infographic.', 'What Is PR in Backgammon?'],
         'bilgi/basarilarim' => ['Badges and Achievements | GammonTV', 'GammonTV badges and achievements: complete in-game goals and earn badges.', 'Badges and Achievements'],
         'bilgi/adil-zar' => ['Fair Dice — Provable Randomness | GammonTV', 'How are the dice rolled on GammonTV? An explanation of provably fair randomness and the CSPRNG behind it.', 'Provably Fair Dice'],
     ];
