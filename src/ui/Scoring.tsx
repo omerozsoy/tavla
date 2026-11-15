@@ -128,6 +128,8 @@ export default function Scoring({ currentRating }: { currentRating?: number }) {
         <li>{t('scoring.note.length')}</li>
         <li>{t('scoring.note.rankedOnly')}</li>
         <li>{t('scoring.note.friendly')}</li>
+        <li>{t('scoring.note.tournament')}</li>
+        <li>{t('scoring.note.prBonus')}</li>
         <li>{t('scoring.note.noScoreDiff')}</li>
         <li>{t('scoring.note.floor')}</li>
         <li>{t('scoring.note.pref')}</li>

@@ -525,6 +525,10 @@ Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay 
   'scoring.note.length': 'Maç ne kadar uzunsa (hedef puan) hem kazanç hem kayıp o kadar büyür (C katsayısı).',
   'scoring.note.rankedOnly': 'Puan yalnızca Puanlı maçlarda değişir.',
   'scoring.note.friendly': 'Davet kodlu (arkadaşlık) ve rahat tempolu maçlar puansızdır.',
+  'scoring.note.tournament':
+    'Turnuva ve düello maçlarında puan Elo ile değil SABİT değişir: kazanan +10, kaybeden −10. Maçın uzunluğu ve rakibin puanı bu iki türde fark etmez.',
+  'scoring.note.prBonus':
+    'Daha iyi oynayanı ödüllendiririz: çevrimiçi puanlı bir maçı (turnuva dâhil) kazanan VE performansı (PR) rakibinden daha iyi — yani daha düşük — olan oyuncu, o maçta kazandığı puanın İKİ KATINI alır (×2). Böylece yalnızca kazanmak değil, iyi oynamak da ödüllenir.',
   'scoring.note.noScoreDiff': 'Maçın kaç puanla bittiği (ör. 7–0 veya 7–6) fark etmez; yalnızca kazanma/kaybetme, rakibin puanı ve hedef puan önemlidir.',
   'scoring.note.floor': 'Puanın 100’ün altına düşmez. Bu sınır devreye girerse kaybeden 100’de durur, bu nadir durumda kaybı kazananın kazancından az olabilir.',
   'scoring.note.pref': 'Bu, TavlaTV’nin puanlama tercihidir; resmî veya evrensel bir tavla standardı değildir.',
@@ -2993,6 +2997,10 @@ Only actually played matches affect your TavlaTV rating; walkovers and byes do n
   'scoring.note.length': 'The longer the match (target points), the bigger both the gain and the loss (factor C).',
   'scoring.note.rankedOnly': 'Rating only changes in ranked matches.',
   'scoring.note.friendly': 'Invite-code (friendly) and casual-paced matches are unrated.',
+  'scoring.note.tournament':
+    'In tournament and duel matches the rating changes by a FIXED amount, not by Elo: winner +10, loser −10. Match length and opponent rating do not matter for these two types.',
+  'scoring.note.prBonus':
+    'We reward better play: in an online ranked match (including tournaments), the player who wins AND has a better — i.e. lower — performance rating (PR) than the opponent earns DOUBLE the rating gained in that match (×2). So it pays not just to win, but to play well.',
   'scoring.note.noScoreDiff': 'The final score margin (e.g. 7–0 or 7–6) does not matter; only the win/loss, your opponent’s rating and the target points do.',
   'scoring.note.floor': 'Your rating never drops below 100. When this floor applies, the loser stops at 100, so in that rare case the loss may be smaller than the winner’s gain.',
   'scoring.note.pref': 'This is TavlaTV’s rating preference, not an official or universal backgammon standard.',
