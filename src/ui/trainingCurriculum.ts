@@ -15,6 +15,7 @@ import { evaluatePosition } from '../engine/evaluate'
 import { parseXgid } from '../engine/xgid'
 import { parseGnuId } from '../engine/gnubgId'
 import { matchGnubgMove } from '../engine/gnubgMove'
+import { DIFF_OPENINGS, DIFF_CURATED, DIFF_BANDS, DIFF_BAND_TR } from './difficultyPositions'
 
 export interface Question {
   state: GameState // zari atilmis, beyaz oynayacak pozisyon (kup sorularinda zar YOK)
@@ -239,7 +240,7 @@ const REFS: Record<string, Question[]> = { lvl3: REF_MED, lvl8: REF_HARD }
 
 // --- UNLU / GERCEK POzISYONLAR (forum/XG kaynakli, XGID birebir). Cevabi dogrulanabilenlerde
 // XG cevabina (answer) gore puanlanir; dogrulanmayanlarda motora birakilir. ---
-interface Famous {
+export interface Famous {
   xgid?: string // XGID (ya bu ya da gnuPos)
   gnuPos?: string // GNU Position ID (XGID yoksa; GNU-format forum/timothychow pozisyonlari)
   gnuMatch?: string // GNU Match ID (zar/sira)
@@ -794,6 +795,37 @@ export const REAL_TIERS: RealTier[] = (() => {
   for (const [key, g] of [...byAuthor.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     tiers[AUTHOR_TIER[key] ?? 1].lessons.push({ id: `ra-${key}`, title: g.title, questions: g.qs })
   }
+  // YENİ: ZORLUK-BAZLI HOMOJEN gruplar (toplanan motor-doğrulanmış açılış pozisyonları, 100/band).
+  // Her band ayrı tier; ~20'şerlik derslere bölünür. answer çözülürse otoriter (gnubg), yoksa NeuralBot.
+  // GLOBAL DEDUP: mevcut (base) tier'lar + yeni gruplar arası board+zar tekrarı ELENİR (hiç dup puzzle yok).
+  const LESSON_SIZE = 20
+  const qkey = (q: Question) => boardKey(q.state) + '|' + [...q.state.dice].sort().join('-')
+  const seenKey = new Set<string>()
+  for (const tier of tiers) for (const l of tier.lessons) for (const q of l.questions) seenKey.add(qkey(q))
+  const dedup = (qs: Question[]) =>
+    qs.filter((q) => {
+      const k = qkey(q)
+      if (seenKey.has(k)) return false
+      seenKey.add(k)
+      return true
+    })
+  const toLessons = (qs: Question[], idp: string, titlep: string): RealLesson[] => {
+    const out: RealLesson[] = []
+    for (let i = 0; i < qs.length; i += LESSON_SIZE) {
+      out.push({ id: `${idp}-${i / LESSON_SIZE}`, title: `${titlep} ${i / LESSON_SIZE + 1}`, questions: qs.slice(i, i + LESSON_SIZE) })
+    }
+    return out
+  }
+  for (const band of DIFF_BANDS) {
+    const qs = dedup(
+      DIFF_OPENINGS.filter((p) => p.band === band).map(famousToQuestion).filter((q): q is Question => q !== null),
+    )
+    const lessons = toLessons(qs, `rd-${band}`, DIFF_BAND_TR[band])
+    if (lessons.length) tiers.push({ label: `AÇILIŞ · ${DIFF_BAND_TR[band].toLocaleUpperCase('tr')}`, lessons })
+  }
+  // Toplanan gerçek pozisyonlar (forum/PDF/arşiv, sitede olmayan) — ayrı grup.
+  const curLessons = toLessons(dedup(DIFF_CURATED.map(famousToQuestion).filter((q): q is Question => q !== null)), 'rc', 'Toplanan')
+  if (curLessons.length) tiers.push({ label: 'TOPLANAN POZİSYONLAR', lessons: curLessons })
   return tiers
 })()
 
