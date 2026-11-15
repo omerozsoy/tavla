@@ -112,9 +112,12 @@ class RatingPolicy
     }
 
     /**
-     * Bu oda bir TURNUVA maçı mı? Tespit RoomController ile AYNI sinyal: turnuva maçRoom'u oda koduna
+     * Bu oda sabit-±delta maçı mı? Tespit RoomController ile AYNI sinyal: turnuva maçRoom'u oda koduna
      * roomTargetKey cache'i yazar (2 gün TTL; settlement dakikalar içinde olur -> taze). Böylece
-     * PUANLI maçlarda turnuva (sabit ±delta) ile eşleşme (Elo) ayrılır. Yalnız isRanked=true iken anlamlı.
+     * PUANLI maçlarda sabit-±delta ile eşleşme (Elo) ayrılır. Yalnız isRanked=true iken anlamlı.
+     * ⚠ LİG maçları da AYNI roomTargetKey'i yazar (LeagueRuntime::cacheRoom, §4 "turnuvayla AYNI cache
+     * sözleşmesi") → lig maçları da KASITLI olarak sabit ±10 alır (Elo DEĞİL, kullanıcı direktifi
+     * 2026-11-15). Ligi Elo'ya "geri düzeltme": bilinçli karar, ayrı cache marker'ı gerektirir.
      */
     public static function isTournament(Room $room): bool
     {
