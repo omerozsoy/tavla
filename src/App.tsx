@@ -227,11 +227,11 @@ function InviteTeam({ userId }: { userId?: number }) {
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
   about: 'hakkinda', services: 'hizmetler', glossary: 'sozluk', ranks: 'rutbeler',
-  scoring: 'puanlama', badges: 'basarilarim', fair: 'adil-zar',
+  scoring: 'puanlama', pr: 'pr-nedir', badges: 'basarilarim', fair: 'adil-zar',
 }
 const INFO_URL_TAB: Record<string, InfoTab> = {
   hakkinda: 'about', hizmetler: 'services', sozluk: 'glossary', rutbeler: 'ranks',
-  puanlama: 'scoring', basarilarim: 'badges', 'adil-zar': 'fair',
+  puanlama: 'scoring', 'pr-nedir': 'pr', basarilarim: 'badges', 'adil-zar': 'fair',
 }
 
 // Rota bazli sekme/SEO basligi. Ana sayfa (bos slug) index.html'deki varsayilana doner.
@@ -308,6 +308,7 @@ const SEO_TITLES: Record<string, string> = {
   'bilgi/sozluk': 'Tavla Sözlüğü — Terimler | TavlaTv',
   'bilgi/rutbeler': 'Tavla Rütbeleri | TavlaTv',
   'bilgi/puanlama': 'Puanlama ve PR (Performans) | TavlaTv',
+  'bilgi/pr-nedir': 'Tavlada PR Nedir? — Performans Değeri | TavlaTv',
   'bilgi/basarilarim': 'Rozetler ve Başarımlar | TavlaTv',
   'bilgi/adil-zar': 'Adil Zar — Kanıtlanabilir Rastgelelik | TavlaTv',
 }
@@ -400,6 +401,8 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla rütbeleri ve seviye sistemi: rating aralıkları ve rütbe rozetleri nasıl kazanılır.',
   'bilgi/puanlama':
     'Puanlama ve performans (PR) nasıl hesaplanır? Rating, Elo ve şans-bazlı puan açıklamaları.',
+  'bilgi/pr-nedir':
+    'Tavlada PR (Performans Değeri) nedir? PR neyi ölçer, nasıl yorumlanır ve maç sonucundan neden farklıdır — sade infografik.',
   'bilgi/basarilarim':
     'TavlaTv rozetleri ve başarımları: hangi rozet nasıl açılır, tüm başarımların listesi.',
   'bilgi/adil-zar':
@@ -451,6 +454,7 @@ const SEO_TITLES_EN: Record<string, string> = {
   'bilgi/sozluk': 'Backgammon Glossary — Terms | GammonTV',
   'bilgi/rutbeler': 'Backgammon Ranks | GammonTV',
   'bilgi/puanlama': 'Scoring and PR (Performance) | GammonTV',
+  'bilgi/pr-nedir': 'What Is PR in Backgammon? — Performance Rating | GammonTV',
   'bilgi/basarilarim': 'Badges and Achievements | GammonTV',
   'bilgi/adil-zar': 'Fair Dice — Provable Randomness | GammonTV',
 }
@@ -10392,6 +10396,7 @@ export default function App() {
     'info-glossary': () => openInfoTab('glossary'),
     'info-ranks': () => openInfoTab('ranks'),
     'info-scoring': () => openInfoTab('scoring'),
+    'info-pr': () => openInfoTab('pr'),
     'info-badges': () => openInfoTab('badges'),
     'info-fair': () => openInfoTab('fair'),
   }
@@ -10475,6 +10480,7 @@ export default function App() {
       { key: 'info-about', labelKey: 'info.tab.about', href: '/bilgi/hakkinda', onClick: () => openInfoTab('about') },
       { key: 'info-services', labelKey: 'menu.services', href: '/bilgi/hizmetler', onClick: () => openInfoTab('services') },
       { key: 'info-glossary', labelKey: 'info.tab.glossary', href: '/bilgi/sozluk', onClick: () => openInfoTab('glossary') },
+      { key: 'info-pr', labelKey: 'prinfo.title', href: '/bilgi/pr-nedir', onClick: () => openInfoTab('pr') },
       { key: 'info-ranks', labelKey: 'menu.ranks', href: '/bilgi/rutbeler', onClick: () => openInfoTab('ranks') },
       { key: 'info-scoring', labelKey: 'info.tab.scoring', href: '/bilgi/puanlama', onClick: () => openInfoTab('scoring') },
       { key: 'info-badges', labelKey: 'ach.title', href: '/bilgi/basarilarim', onClick: () => openInfoTab('badges') },

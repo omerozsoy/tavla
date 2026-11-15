@@ -1537,6 +1537,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'friends.inviteExpired': 'Davet artık geçerli değil (davet eden ayrıldı). Tekrar davet iste.',
   'friends.inviteDeclined': '{name} davetini reddetti.',
   'fair.title': 'Adil Zar',
+  'prinfo.title': 'Tavlada PR Nedir?',
   'fair.intro':
     'Zarlar maç başında belirlenen gizli bir tohumdan üretilir. Tohumun özeti (commitment) baştan gösterilir; maç bitince tohum açıklanır. Böylece zarların sonradan değiştirilmediğini kendin doğrulayabilirsin.',
   'fair.commitment': 'Taahhüt (SHA-256 özeti)',
@@ -4007,6 +4008,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'friends.inviteExpired': 'This invite is no longer valid (the inviter left). Ask for a new invite.',
   'friends.inviteDeclined': '{name} declined your invite.',
   'fair.title': 'Fair Dice',
+  'prinfo.title': 'What Is PR in Backgammon?',
   'fair.intro':
     'Dice come from a secret seed fixed at the start of the match. Its hash (commitment) is shown up front; the seed is revealed when the match ends. So you can verify yourself that the dice were not altered afterwards.',
   'fair.commitment': 'Commitment (SHA-256 hash)',

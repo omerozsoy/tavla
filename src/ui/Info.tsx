@@ -18,6 +18,7 @@ import { listInfoPages, type InfoPage, type InfoPageSlug } from '../api'
 import { Lightbox, mediaSrc } from './ContentView'
 import { RankProgression } from './RankProgression'
 import FairDiceInfo from './FairDiceInfo'
+import PrInfo from './PrInfo'
 import Achievements from './Achievements'
 import Scoring from './Scoring'
 import GlossaryView from './GlossaryView'
@@ -32,6 +33,7 @@ const TABS: { slug: InfoTab; labelKey: string }[] = [
   { slug: 'about', labelKey: 'info.tab.about' },
   { slug: 'services', labelKey: 'menu.services' },
   { slug: 'glossary', labelKey: 'info.tab.glossary' },
+  { slug: 'pr', labelKey: 'prinfo.title' },
   { slug: 'ranks', labelKey: 'menu.ranks' },
   { slug: 'scoring', labelKey: 'info.tab.scoring' },
   { slug: 'badges', labelKey: 'ach.title' },
@@ -44,6 +46,7 @@ const TAB_ICONS: Record<InfoTab, import('./Icon').IconName> = {
   glossary: 'books',
   ranks: 'ranking',
   scoring: 'chart-line',
+  pr: 'target',
   badges: 'medal',
   fair: 'dice',
 }
@@ -124,6 +127,12 @@ export default function Info({ onClose, tab, currentRating, loggedIn = false }: 
           <div className="info-tab-pane">
             <p className="ach-howto-intro">{t('ach.howtoIntro')}</p>
             <Achievements embed loggedIn={loggedIn} />
+          </div>
+        )}
+
+        {tab === 'pr' && (
+          <div className="info-tab-pane">
+            <PrInfo />
           </div>
         )}
 

@@ -1955,7 +1955,7 @@ export async function postComment(contentId: number, body: string): Promise<{ st
 // ---- Bilgi sayfalari (/bilgi/<slug> sekmeleri; admin panelden RichEditor ile duzenlenir) ----
 // NOT: /api/info-pages artik SEO icerik sayfalarini da (online-tavla, nasil-oynanir,
 // tavla-rehberi/<yazi>, turnuva-kurallari) dondurur -> slug tipi string'e genisletildi.
-export type InfoPageSlug = 'about' | 'services' | 'glossary' | 'ranks' | 'scoring' | 'badges' | 'fair' | (string & {})
+export type InfoPageSlug = 'about' | 'services' | 'glossary' | 'ranks' | 'scoring' | 'badges' | 'fair' | 'pr' | (string & {})
 export interface InfoPage {
   slug: InfoPageSlug
   title: string
