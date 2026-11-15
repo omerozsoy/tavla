@@ -1338,13 +1338,25 @@ function buildTest(tier: number): Question[] {
 // Nihai mufredat: yalnizca YETERLI icerigi olan bolumler (konu >=MIN_SECTION, test >=TEST_MIN).
 export interface CurriLesson { id: string; title: string; tier: number; isTest?: boolean; count: number; questions: Question[] }
 export interface CurriTier { key: string; label: string; tier: number; lessons: CurriLesson[] }
+// Bir ders/kategori en fazla bu kadar soru icersin: buyuk havuzlar (acilis pratigi ~400) tek dev
+// kategoride yigilmasin -> KOLAY->ZOR sirali (hardnessText) dilimlere bol, numarali alt-kategoriler
+// ("... 1/16"). Kucuk konu bolumleri tek parca kalir (<=LESSON_MAX). Test bolunmez.
+const LESSON_MAX = 25
 export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {
   const lessons: CurriLesson[] = []
   for (const sec of CURRI_SECTIONS.filter((s) => s.tier === td.tier)) {
     const qs = sec.isTest ? buildTest(sec.tier) : SECTION_Q[sec.id] ?? []
     const min = sec.isTest ? TEST_MIN : MIN_SECTION
     if (qs.length < min) continue // yetersiz -> gizle (bos/sahte gosterme)
-    lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
+    if (sec.isTest || qs.length <= LESSON_MAX) {
+      lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
+      continue
+    }
+    const parts = Math.ceil(qs.length / LESSON_MAX)
+    for (let i = 0; i < parts; i++) {
+      const slice = qs.slice(i * LESSON_MAX, (i + 1) * LESSON_MAX)
+      lessons.push({ id: `${sec.id}-${i}`, title: `${sec.title} ${i + 1}/${parts}`, tier: sec.tier, count: slice.length, questions: slice })
+    }
   }
   return { key: td.key, label: td.label, tier: td.tier, lessons }
 }).filter((t) => t.lessons.length > 0)
