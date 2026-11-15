@@ -8,7 +8,6 @@ use App\Services\BotMoveService;
 use App\Services\WalletService;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -105,16 +104,13 @@ class TourneyBots extends Command
         }
     }
 
-    /** CLI php yolu: web SAPI'de PHP_BINARY php-fpm/cgi olabilir -> Plesk CLI yolunu tercih et. */
+    /** CLI php yolu: web SAPI'de PHP_BINARY php-fpm/cgi olabilir -> env override, sonra gerçek CLI binary.
+     *  (Eski Plesk /opt/plesk/php probe'u kaldırıldı — üretim Forge, o yol dekomisyon.) */
     private static function phpCli(): string
     {
         $env = (string) env('TOURNEY_BOTS_PHP', '');
         if ($env !== '') {
             return $env;
-        }
-        $plesk = '/opt/plesk/php/'.PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION.'/bin/php';
-        if (is_file($plesk)) {
-            return $plesk;
         }
         if (PHP_SAPI === 'cli' && PHP_BINARY !== '') {
             return PHP_BINARY;

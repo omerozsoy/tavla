@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\User;
 use App\Support\ChatModeration;
 use App\Support\OfficialMessenger;
+use App\Support\Shield;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -255,6 +256,8 @@ class ChatReportResource extends Resource
         }
         // Kişi o an maçtaysa maç sohbetine kırmızı satır düş.
         ChatModeration::announceMuteInActiveMatch($reported, false);
+        // Moderasyon izi (diğer ban yollarıyla tutarlı tek-tip forensik log).
+        Shield::audit((int) auth()->id(), 'chat_mute', "user=#{$reported->id} dk={$minutes} report=#{$r->id}", 2);
 
         $r->status = 'resolved';
         $stamp = now()->timezone('Europe/Istanbul')->format('d.m.Y H:i');

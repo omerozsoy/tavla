@@ -12,6 +12,7 @@ use App\Support\CheatScan;
 use App\Support\Geo;
 use App\Support\NicknameFilter;
 use App\Support\OfficialMessenger;
+use App\Support\Shield;
 use App\Support\UserEraser;
 use App\Support\WalletBreakdown;
 use Filament\Forms;
@@ -279,6 +280,9 @@ class UserResource extends Resource
             $record->chat_muted_by = $min > 0 ? (int) auth()->id() : null;
         }
         $record->save();
+        // Moderasyon izi: her ban yolu gibi denetim defterine yaz (chat_muted_by aktöre tutuyor ama
+        // olay-logu yoktu -> diğer moderasyon aksiyonlarıyla tutarlı tek-tip forensik iz).
+        Shield::audit((int) auth()->id(), $min > 0 ? 'chat_mute' : 'chat_unmute', "user=#{$record->id} dk={$min}", 2);
         if ($min > 0) {
             $until = $record->chat_muted_until->copy()->tz('Europe/Istanbul')->format('d.m.Y H:i');
             OfficialMessenger::sendTo(
