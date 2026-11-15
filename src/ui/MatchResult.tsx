@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
+import { divisionOf } from '../badges'
 
 type Side = 'white' | 'black'
 
@@ -260,6 +261,23 @@ export default function MatchResult({
     }
     return '—'
   }
+  // Rating'in SON (maç-sonrası) sayısal değeri -> gerçek RATING seviyesi (rütbe) etiketi için.
+  // SEVİYE satırı tek-maç PR bandı; bu ise kalıcı rating rütbesi (divisionOf) — rating'in ALTINA ufak yazılır.
+  const ratingFinal = (winnerSide: boolean): number | null => {
+    if (spectator) return winnerSide ? (winnerRating ?? null) : (loserRating ?? null)
+    if (winnerSide === ratingIsWinner) {
+      if (ratingBefore != null && ratingAfter != null) return Math.round(ratingAfter + ratingBonusVal)
+      return oppRating != null ? Math.round(oppRating) : null
+    }
+    return oppRating != null ? Math.round(oppRating + (oppRatingDelta ?? 0)) : null
+  }
+  // Rating'in ALTINA ince rütbe metni (ör. "Advanced A1") — rütbe renginde, kutu/ikon YOK.
+  const ratingRankEl = (winnerSide: boolean) => {
+    const r = ratingFinal(winnerSide)
+    if (r == null) return null
+    const d = divisionOf(r)
+    return <span className="mr-rank-sub" style={{ color: d.color }}>{t(d.key)}</span>
+  }
   // Tavlai Luck V1: gnubg NATIVE MWC-luck (%) — İKİSİ de hazırsa gösterilir (BAĞIMSIZ per-oyuncu,
   // sıfır-toplam DEĞİL; her oyuncu kendi zarlarından). HAZIR DEĞİLSE ASLA ham/istemci luck'ına
   // DÜŞME: ham değer yetkili gnubg ile TERS işaret verip "şanslıydım ama kaybettim" yanılgısı
@@ -402,10 +420,12 @@ export default function MatchResult({
           <div className="mr-row">
             <span className="mr-a">
               {spectator ? (winnerRating != null ? String(Math.round(winnerRating)) : '—') : ratingText(true)}
+              {ratingRankEl(true)}
             </span>
             <span className="mr-label">{t('mr.rating')}</span>
             <span className="mr-b">
               {spectator ? (loserRating != null ? String(Math.round(loserRating)) : '—') : ratingText(false)}
+              {ratingRankEl(false)}
             </span>
           </div>
           {/* PUANSIZ MAÇ notu: kullanıcı kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu ->
