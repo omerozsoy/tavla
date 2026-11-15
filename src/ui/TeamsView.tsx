@@ -144,8 +144,13 @@ export default function TeamsView(props: Props) {
   const errText = useCallback((e: unknown): string => {
     let code = 'generic'
     if (e instanceof ApiError) {
+      // TeamException kodu üst-seviye {error} içinde (e.data.error); Laravel validation ise
+      // {errors:{...}}. errors.error ASLA dolmaz → gerçek sebep gizlenip hep generic çıkıyordu.
+      const body = e.data as { error?: unknown } | undefined
       const er = e.errors as Record<string, unknown> | undefined
-      code = typeof er?.error === 'string' ? er.error : (e.message || 'generic')
+      code = typeof body?.error === 'string' ? body.error
+        : typeof er?.error === 'string' ? (er.error as string)
+          : (e.message || 'generic')
     }
     const key = 'teams.err.' + code
     return t(key) !== key ? t(key) : t('teams.err.generic')
