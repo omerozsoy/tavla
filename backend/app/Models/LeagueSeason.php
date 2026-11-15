@@ -41,7 +41,7 @@ Maç saatini rakibinle teklif edip onaylayarak belirlersin; saat turun son oynan
 ## Çekilme
 Çekilen oyuncunun topladığı puanlar silinmez; o anki açık maçını rakibi hükmen kazanır. Çekilenin yerine yedek alınmaz.
 ## Rating ve Ödüller
-Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay rating'i değiştirmez. Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları açıklanacak ödülleri, coin ve rozet ödülü kazanır.
+Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen ve bay rating'i DEĞİŞTİRMEZ. Oynanan maçta rating Elo yerine SABİT değişir: kazanan +10, kaybeden −10 (maç uzunluğu ve rakibin puanı fark etmez). Daha iyi oynayanı ayrıca ödüllendiririz: maçı kazanan ve performansı (PR) rakibinden daha iyi olan oyuncu, kazandığı puanın iki katını alır (×2). Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları açıklanacak ödülleri, coin ve rozet ödülü kazanır.
 TR;
 
     protected $fillable = [

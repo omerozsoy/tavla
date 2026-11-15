@@ -78,9 +78,10 @@ class ForfeitLoss
         // DÜELLO: Elo değil ama sabit ±delta "puanlı sayılır" (reportRating/MatchBackstop ile AYNI) ->
         // terk eden düelloda da −delta alır; rated/reason bu birleşik bayrağı izler (XG8FW asimetrisi).
         $duel = $room ? (bool) $room->duel : false;
-        // TURNUVA puanlı maç: Elo yerine sabit ±delta (düello gibi) -> yalnız puanlı (ranked) iken anlamlı.
+        // TURNUVA/LİG: ForfeitLoss HÜKMEN yoludur -> turnuva/lig rating'ine İŞLEMEZ (hükmen rating
+        // değiştirmez, kullanıcı direktifi). Oynanan turnuva maçı ±10'u reportRating/MatchBackstop'tan alır.
         $isTournament = ($ranked && $room) ? RatingPolicy::isTournament($room) : false;
-        $applied = $ranked || $duel;
+        $applied = ($ranked && ! $isTournament) || $duel; // turnuva hükmen -> rating uygulanmaz
         // Puansızsa sebep (bot/unrated/guest/friendly/casual) -> satıra sakla. $room yüklenemezse null
         // (nadir; sebep belirlenemez). Puanlı/düello satırda NULL.
         $reason = (! $applied && $room) ? RatingPolicy::unratedReason($room, $opponentUserId) : null;
@@ -96,13 +97,10 @@ class ForfeitLoss
 
             $ra = (int) ($loser->rating ?? 1500);
             $rb = $oppRating > 0 ? $oppRating : 1500;
-            if ($ranked) {
-                // Terk/timeout = KAYIP (skor 0). TURNUVA -> sabit −delta (düello gibi); EŞLEŞME -> Elo
-                // (K=32, taban 100, C=sqrt(L/3) -> kaybeden rakibin tam kazancı kadar kaybeder). reportRating/
-                // MatchBackstop ile AYNI kural.
-                $newRating = $isTournament
-                    ? RatingPolicy::tournamentNewRating($ra, false)
-                    : RatingPolicy::eloNewRating($ra, $rb, false, max(1, (int) ($matchLength ?? 1)));
+            if ($ranked && ! $isTournament) {
+                // EŞLEŞME terk/timeout = Elo KAYBI (skor 0). K=32, taban 100, C=sqrt(L/3) -> kaybeden
+                // rakibin tam kazancı kadar kaybeder. reportRating/MatchBackstop ile AYNI.
+                $newRating = RatingPolicy::eloNewRating($ra, $rb, false, max(1, (int) ($matchLength ?? 1)));
                 $loser->rating = $newRating;
                 $loser->losses = (int) ($loser->losses ?? 0) + 1;
                 $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
@@ -115,7 +113,10 @@ class ForfeitLoss
                 $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
                 $loser->save();
             } else {
-                // CASUAL (arkadas/kilic): rating+istatistik DEGISMEZ, delta=0 (satir yine yazilir).
+                // TURNUVA/LİG HÜKMEN (walkover/no-show/timeout) + CASUAL (arkadaş/kılıç): rating+istatistik
+                // DEĞİŞMEZ, delta=0 (satır yine yazılır). Turnuva/lig rating'i YALNIZ gerçekten oynanan
+                // maçta ±10 değişir; hükmen rating'e işlemez (kullanıcı direktifi 2026-11-16). Oynanan
+                // turnuva maçı reportRating/MatchBackstop ile ±10 alır; ForfeitLoss hep hükmen yoludur.
                 $newRating = $ra;
             }
 
@@ -144,7 +145,7 @@ class ForfeitLoss
                 $row['opponent_user_id'] = $opponentUserId > 0 ? $opponentUserId : null;
             }
             if (Schema::hasColumn('match_results', 'rated')) {
-                $row['rated'] = $ranked || $duel; // düello da puanlı sayılır (sabit ±delta)
+                $row['rated'] = ($ranked && ! $isTournament) || $duel; // turnuva hükmen puansız; düello sabit ±delta
             }
             if (Schema::hasColumn('match_results', 'rating_reason')) {
                 $row['rating_reason'] = $reason; // puansızsa sebep (bot/unrated/guest/friendly/casual)

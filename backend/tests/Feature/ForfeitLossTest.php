@@ -237,11 +237,12 @@ class ForfeitLossTest extends TestCase
         $this->assertTrue((bool) $row->rated);            // rated=true (düello puanlı sayılır)
     }
 
-    // TURNUVA terk: Elo değil sabit −10 (kullanıcı direktifi 2026-11-15). Turnuva tespiti = roomTargetKey
-    // cache. Puanlı maç (ranked) olduğundan rating hareket eder ama miktar Elo değil sabit.
-    public function test_tournament_forfeit_applies_fixed_delta(): void
+    // TURNUVA/LİG HÜKMEN: terk/timeout/no-show rating'i DEĞİŞTİRMEZ (kullanıcı direktifi 2026-11-16).
+    // Turnuva/lig rating'i yalnız gerçekten oynanan maçta ±10 değişir; ForfeitLoss hep hükmen yoludur.
+    // (Eşleşme terki Elo kaybı, düello terki −10 yazar; turnuva/lig MUAF.)
+    public function test_tournament_forfeit_does_not_change_rating(): void
     {
-        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
+        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince hükmen kaybeder
         $b = $this->user('b');
         $room = $this->rankedRoom('FL5', $a, $b); // mode='ranked' -> puanlı
         Cache::put(
@@ -256,10 +257,11 @@ class ForfeitLossTest extends TestCase
         $this->getJson('/api/rooms/FL5')->assertOk();
 
         $a->refresh();
-        $this->assertSame(1490, (int) $a->rating);        // TURNUVA kaybı: sabit −10 (Elo değil)
-        $this->assertSame(1, (int) $a->losses);
+        $this->assertSame(1500, (int) $a->rating);        // HÜKMEN: rating DEĞİŞMEDİ
+        $this->assertSame(0, (int) $a->losses);           // istatistik de değişmedi
         $row = MatchResult::where('room_code', 'FL5')->where('user_id', $a->id)->first();
-        $this->assertSame(-10, (int) $row->delta);
-        $this->assertTrue((bool) $row->rated);
+        $this->assertNotNull($row);                       // satır yine yazılır (geçmişte görünür)
+        $this->assertSame(0, (int) $row->delta);          // delta=0
+        $this->assertFalse((bool) $row->rated);           // rated=false (hükmen puansız)
     }
 }
