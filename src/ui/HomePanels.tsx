@@ -168,10 +168,15 @@ export function LiveRow({ m, onSpectate }: { m: LiveMatch; onSpectate: (code: st
       <span className="lm-types">
         <span className={`lm-type lm-type-${cat}`}>{t(LIVE_CAT_KEY[cat])}</span>
         {m.classic && <span className="lm-type lm-type-classic">{t('classic.badge')}</span>}
-        {/* Kaç puanlık maç + pot: tip rozetinin YANINDA (üst satır sağı), ortadan taşındı. */}
+        {/* Maç tipi – puanlık – Pot: hepsi SOLDA, tire ile ayrılır. Önce sağa hizalıydı
+            (lm-len margin-left:auto) ve sağ üstteki PR/PUAN ribbon'u pot'un üstünü örtüyordu. */}
+        <span className="lm-sep" aria-hidden="true">–</span>
         <span className="lm-len">{t('resume.point', { n: m.target ?? 1 })}</span>
         {m.pot != null && m.pot > 0 && (
-          <span className="lm-pot">Pot: <Coins amount={m.pot} size={12} /></span>
+          <>
+            <span className="lm-sep" aria-hidden="true">–</span>
+            <span className="lm-pot">Pot: <Coins amount={m.pot} size={12} /></span>
+          </>
         )}
       </span>
       <span className="lm-side lm-p1">

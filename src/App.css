@@ -14548,8 +14548,9 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   white-space: nowrap;
 }
-/* Uzunluk + pot artık üst rozet satırında: tip rozetinin karşısına (sağa) hizalanır. */
-.lm-types .lm-len { margin-left: auto; }
+/* Uzunluk + pot tip rozetinin HEMEN YANINDA (solda), tire ile ayrılır. Sağa hizalıyken
+   (margin-left:auto) sağ üst köşedeki PR/PUAN ribbon'u pot'un üstünü örtüyordu. */
+.lm-sep { color: var(--muted); font-size: 0.72rem; opacity: 0.55; }
 .lm-avatar {
   width: 26px;
   height: 26px;
