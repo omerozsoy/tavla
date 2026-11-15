@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use App\Http\Controllers\TournamentController;
 use App\Models\Room;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * PUANLI (rating + PR) MI? — TEK doğruluk kaynağı. Üç yazım yolu (reportRating, MatchBackstop,
@@ -76,20 +78,48 @@ class RatingPolicy
         return max(self::RATING_FLOOR, $ra + ($won ? $transfer : -$transfer));
     }
 
-    /** Düello sabit rating değişimi (Elo değil): config game.duel_rating_delta, varsayılan 10. */
+    /** Sabit rating deltası varsayılanı (Elo değil): düello/turnuva config'i 0/boşsa bu kullanılır. */
     public const DUEL_DELTA_DEFAULT = 10;
 
+    public const TOURNAMENT_DELTA_DEFAULT = 10;
+
     /**
-     * DÜELLO yeni rating — Elo DEĞİL, maç uzunluğu/rakipten BAĞIMSIZ SABİT ±delta. Taban (100) altına
-     * inmez. reportRating'in düello dalıyla (AuthController) AYNI: üç settlement yolu (reportRating,
-     * MatchBackstop, ForfeitLoss) düelloda TEK kural -> bir taraf sunucudan tamamlansa da ±delta tutar
-     * (yoksa kaybeden −10 alıp kazanan +0 kalıyordu, XG8FW). Galibiyet/oyun istatistiği çağıran tarafta.
+     * Elo DEĞİL SABİT ±delta yeni rating (düello/turnuva ortak) — maç uzunluğu/rakipten BAĞIMSIZ.
+     * Taban (100) altına inmez. Kazanan +delta, kaybeden −delta.
+     */
+    public static function flatNewRating(int $ra, bool $won, int $delta): int
+    {
+        return max(self::RATING_FLOOR, $ra + ($won ? $delta : -$delta));
+    }
+
+    /**
+     * DÜELLO yeni rating — sabit ±game.duel_rating_delta. reportRating/MatchBackstop/ForfeitLoss
+     * TEK kural -> bir taraf sunucudan tamamlansa da ±delta tutar (yoksa kaybeden −10 alıp kazanan +0
+     * kalıyordu, XG8FW). Galibiyet/oyun istatistiği çağıran tarafta.
      */
     public static function duelNewRating(int $ra, bool $won): int
     {
-        $dd = (int) config('game.duel_rating_delta', self::DUEL_DELTA_DEFAULT);
+        return self::flatNewRating($ra, $won, (int) config('game.duel_rating_delta', self::DUEL_DELTA_DEFAULT));
+    }
 
-        return max(self::RATING_FLOOR, $ra + ($won ? $dd : -$dd));
+    /**
+     * TURNUVA yeni rating — sabit ±game.tournament_rating_delta (kullanıcı direktifi 2026-11-15:
+     * turnuva maçları Elo DEĞİL, düello gibi +10/−10). Üç settlement yolunda da uygulanır.
+     */
+    public static function tournamentNewRating(int $ra, bool $won): int
+    {
+        return self::flatNewRating($ra, $won, (int) config('game.tournament_rating_delta', self::TOURNAMENT_DELTA_DEFAULT));
+    }
+
+    /**
+     * Bu oda bir TURNUVA maçı mı? Tespit RoomController ile AYNI sinyal: turnuva maçRoom'u oda koduna
+     * roomTargetKey cache'i yazar (2 gün TTL; settlement dakikalar içinde olur -> taze). Böylece
+     * PUANLI maçlarda turnuva (sabit ±delta) ile eşleşme (Elo) ayrılır. Yalnız isRanked=true iken anlamlı.
+     */
+    public static function isTournament(Room $room): bool
+    {
+        return ! $room->bot
+            && Cache::has(TournamentController::roomTargetKey($room->code));
     }
 
     /**

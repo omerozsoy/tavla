@@ -76,10 +76,12 @@ class MatchBackstop
             // DÜELLO: Elo değil ama sabit ±delta "puanlı sayılır" (reportRating ile AYNI) -> rated/reason
             // bu birleşik bayrağı izler; yoksa sunucudan tamamlanan taraf ±delta'yı kaçırır (XG8FW).
             $duel = (bool) ($room->duel ?? false);
+            // TURNUVA puanlı maç: Elo yerine sabit ±delta (düello gibi) -> yalnız puanlı iken anlamlı.
+            $tournament = $ranked && RatingPolicy::isTournament($room);
             $applied = $ranked || $duel;
             $reason = $applied ? null : RatingPolicy::unratedReason($room, $oppId); // puansızsa sebebi sakla
             $matchLength = $room->target !== null ? (int) $room->target : null;
-            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason, (bool) ($room->classic ?? false), $duel)) {
+            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason, (bool) ($room->classic ?? false), $duel, $tournament)) {
                 $written++;
             }
         }
@@ -147,9 +149,10 @@ class MatchBackstop
         ?string $ratingReason = null,
         bool $classic = false,
         bool $duel = false,
+        bool $tournament = false,
     ): bool {
         try {
-            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason, $classic, $duel) {
+            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason, $classic, $duel, $tournament) {
                 $u = User::lockForUpdate()->find($userId);
                 if (! $u) {
                     return false;
@@ -162,9 +165,11 @@ class MatchBackstop
                 $ra = (int) ($u->rating ?? 1500);
                 $rb = $oppRating > 0 ? $oppRating : 1500;
                 if ($ranked) {
-                    // reportRating/ForfeitLoss ile AYNI merkezi formül: K=32, taban 100,
-                    // uzunluk katsayısı C=sqrt(L/3) (L=hedef puan).
-                    $newRating = RatingPolicy::eloNewRating($ra, $rb, $won, max(1, (int) ($matchLength ?? 1)));
+                    // TURNUVA -> sabit ±delta (düello gibi); EŞLEŞME -> Elo (K=32, taban 100, C=sqrt(L/3)).
+                    // reportRating/ForfeitLoss ile AYNI kural.
+                    $newRating = $tournament
+                        ? RatingPolicy::tournamentNewRating($ra, $won)
+                        : RatingPolicy::eloNewRating($ra, $rb, $won, max(1, (int) ($matchLength ?? 1)));
                     $u->rating = $newRating;
                     $u->games_played = (int) ($u->games_played ?? 0) + 1;
                     if ($won) {

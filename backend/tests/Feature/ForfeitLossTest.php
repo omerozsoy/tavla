@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\TournamentController;
 use App\Models\MatchResult;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\MatchClock;
 use App\Support\ForfeitLoss;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -233,5 +235,31 @@ class ForfeitLossTest extends TestCase
         $this->assertNotNull($row);
         $this->assertSame(-10, (int) $row->delta);        // delta=−10 (sabit)
         $this->assertTrue((bool) $row->rated);            // rated=true (düello puanlı sayılır)
+    }
+
+    // TURNUVA terk: Elo değil sabit −10 (kullanıcı direktifi 2026-11-15). Turnuva tespiti = roomTargetKey
+    // cache. Puanlı maç (ranked) olduğundan rating hareket eder ama miktar Elo değil sabit.
+    public function test_tournament_forfeit_applies_fixed_delta(): void
+    {
+        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
+        $b = $this->user('b');
+        $room = $this->rankedRoom('FL5', $a, $b); // mode='ranked' -> puanlı
+        Cache::put(
+            TournamentController::roomTargetKey('FL5'), 1, now()->addDay()
+        );
+        $this->startClock($room);
+        $room->refresh();
+        $clock = $room->clock;
+        $clock['started_at'] = microtime(true) - 40;
+        $room->clock = $clock;
+        $room->save();
+        $this->getJson('/api/rooms/FL5')->assertOk();
+
+        $a->refresh();
+        $this->assertSame(1490, (int) $a->rating);        // TURNUVA kaybı: sabit −10 (Elo değil)
+        $this->assertSame(1, (int) $a->losses);
+        $row = MatchResult::where('room_code', 'FL5')->where('user_id', $a->id)->first();
+        $this->assertSame(-10, (int) $row->delta);
+        $this->assertTrue((bool) $row->rated);
     }
 }

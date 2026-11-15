@@ -78,11 +78,13 @@ class ForfeitLoss
         // DÜELLO: Elo değil ama sabit ±delta "puanlı sayılır" (reportRating/MatchBackstop ile AYNI) ->
         // terk eden düelloda da −delta alır; rated/reason bu birleşik bayrağı izler (XG8FW asimetrisi).
         $duel = $room ? (bool) $room->duel : false;
+        // TURNUVA puanlı maç: Elo yerine sabit ±delta (düello gibi) -> yalnız puanlı (ranked) iken anlamlı.
+        $isTournament = ($ranked && $room) ? RatingPolicy::isTournament($room) : false;
         $applied = $ranked || $duel;
         // Puansızsa sebep (bot/unrated/guest/friendly/casual) -> satıra sakla. $room yüklenemezse null
         // (nadir; sebep belirlenemez). Puanlı/düello satırda NULL.
         $reason = (! $applied && $room) ? RatingPolicy::unratedReason($room, $opponentUserId) : null;
-        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $duel, $opponentUserId, $selfScore, $oppScore, $roomStake, $reason, $roomClassic) {
+        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $duel, $isTournament, $opponentUserId, $selfScore, $oppScore, $roomStake, $reason, $roomClassic) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
                 return null;
@@ -95,9 +97,12 @@ class ForfeitLoss
             $ra = (int) ($loser->rating ?? 1500);
             $rb = $oppRating > 0 ? $oppRating : 1500;
             if ($ranked) {
-                // Terk/timeout = KAYIP (skor 0). reportRating ile AYNI merkezi formül: K=32, taban 100,
-                // uzunluk katsayısı C=sqrt(L/3) -> kaybeden, rakibin tam kazancı kadar kaybeder (simetri).
-                $newRating = RatingPolicy::eloNewRating($ra, $rb, false, max(1, (int) ($matchLength ?? 1)));
+                // Terk/timeout = KAYIP (skor 0). TURNUVA -> sabit −delta (düello gibi); EŞLEŞME -> Elo
+                // (K=32, taban 100, C=sqrt(L/3) -> kaybeden rakibin tam kazancı kadar kaybeder). reportRating/
+                // MatchBackstop ile AYNI kural.
+                $newRating = $isTournament
+                    ? RatingPolicy::tournamentNewRating($ra, false)
+                    : RatingPolicy::eloNewRating($ra, $rb, false, max(1, (int) ($matchLength ?? 1)));
                 $loser->rating = $newRating;
                 $loser->losses = (int) ($loser->losses ?? 0) + 1;
                 $loser->games_played = (int) ($loser->games_played ?? 0) + 1;

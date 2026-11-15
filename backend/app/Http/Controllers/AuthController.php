@@ -636,9 +636,12 @@ class AuthController extends Controller
         $isDuel = (bool) ($room->duel ?? false);
         $ratingApplied = $ranked || $isDuel;
         if ($ranked) {
-            // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
-            // K=32, taban 100, maç uzunluğu katsayısı C=sqrt(L/3) (L=hedef puan, odadan).
-            $newRating = RatingPolicy::eloNewRating((int) $ra, $rb, $won, max(1, (int) $data['match_length']));
+            // PUANLI: galibiyet/maglubiyet + kulup + rozet/cerceve. RATING: TURNUVA -> sabit ±delta
+            // (kullanıcı direktifi 2026-11-15, düello gibi +10/−10); EŞLEŞME -> Elo (K=32, taban 100,
+            // uzunluk katsayısı C=sqrt(L/3)). İki PUANLI tür arasındaki tek fark rating formülü.
+            $newRating = RatingPolicy::isTournament($room)
+                ? RatingPolicy::tournamentNewRating((int) $ra, $won)
+                : RatingPolicy::eloNewRating((int) $ra, $rb, $won, max(1, (int) $data['match_length']));
 
             $user->rating = $newRating;
             $user->games_played = ($user->games_played ?? 0) + 1;

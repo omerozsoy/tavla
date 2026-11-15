@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\TournamentController;
 use App\Models\MatchResult;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -164,6 +166,32 @@ class MatchBackstopTest extends TestCase
         $b->refresh();
         $this->assertSame(1510, (int) $a->rating);
         $this->assertSame(1490, (int) $b->rating);
+    }
+
+    // TURNUVA: backstop yedeği de Elo yerine sabit ±10 uygular (kullanıcı direktifi 2026-11-15).
+    // Turnuva tespiti = roomTargetKey cache (RoomController ile aynı sinyal).
+    public function test_backstop_tournament_applies_fixed_delta(): void
+    {
+        $a = $this->user('a'); // beyaz/p1 -> kazanan
+        $b = $this->user('b'); // siyah/p2 -> kaybeden
+        $this->completedRoom('BS7', $a, $b); // mode='ranked' (puanlı)
+        Cache::put(
+            TournamentController::roomTargetKey('BS7'), 1, now()->addDay()
+        );
+
+        Artisan::call('matches:backstop-finished');
+
+        $rowA = MatchResult::where('room_code', 'BS7')->where('user_id', $a->id)->first();
+        $rowB = MatchResult::where('room_code', 'BS7')->where('user_id', $b->id)->first();
+        $this->assertSame(10, (int) $rowA->delta);   // turnuva kazananı +10 (Elo değil)
+        $this->assertSame(-10, (int) $rowB->delta);  // turnuva kaybedeni −10
+        $this->assertTrue((bool) $rowA->rated);
+        $a->refresh();
+        $b->refresh();
+        $this->assertSame(1510, (int) $a->rating);
+        $this->assertSame(1490, (int) $b->rating);
+        $this->assertSame(1, (int) $a->wins);
+        $this->assertSame(1, (int) $b->losses);
     }
 
     // GEC gelen istemci raporu: bare yedek satiri log/PR ile ZENGINLESTIRIR (rating'e dokunmadan).

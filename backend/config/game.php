@@ -50,6 +50,10 @@ return [
     // Maç uzunluğu/rakip rating'inden BAĞIMSIZ. 0 = düello rating'i etkilemez (eski puansız davranış).
     'duel_rating_delta' => max(0, (int) env('DUEL_RATING_DELTA', 10)),
 
+    // TURNUVA rating: turnuva maçları da (düello gibi) Elo DEĞİL SABİT ±delta uygular. Kazanan +bu,
+    // kaybeden −bu (maç uzunluğu/rakipten bağımsız). 0 = turnuva rating'i etkilemez.
+    'tournament_rating_delta' => max(0, (int) env('TOURNAMENT_RATING_DELTA', 10)),
+
     // HOŞGELDİN premium'u artık SABİT TARİHLİ (AuthController::grantWelcomePremium): yeni üyeler
     // 2 Ocak 2027'ye kadar ücretsiz Premium; 31 Aralık 2026'dan sonra hediye YOK. Ay-bazlı ayar
     // (welcome_premium_months) KALDIRILDI — tarihler kodda sabit (owner kararı 2026-10-19).
