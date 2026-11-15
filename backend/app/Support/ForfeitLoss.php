@@ -75,10 +75,14 @@ class ForfeitLoss
 
         $roomStake = $room ? (int) $room->stake : 0;
         $roomClassic = $room ? (bool) $room->classic : false;
+        // DÜELLO: Elo değil ama sabit ±delta "puanlı sayılır" (reportRating/MatchBackstop ile AYNI) ->
+        // terk eden düelloda da −delta alır; rated/reason bu birleşik bayrağı izler (XG8FW asimetrisi).
+        $duel = $room ? (bool) $room->duel : false;
+        $applied = $ranked || $duel;
         // Puansızsa sebep (bot/unrated/guest/friendly/casual) -> satıra sakla. $room yüklenemezse null
-        // (nadir; sebep belirlenemez). Puanlı (ranked) satırda NULL.
-        $reason = (! $ranked && $room) ? RatingPolicy::unratedReason($room, $opponentUserId) : null;
-        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId, $selfScore, $oppScore, $roomStake, $reason, $roomClassic) {
+        // (nadir; sebep belirlenemez). Puanlı/düello satırda NULL.
+        $reason = (! $applied && $room) ? RatingPolicy::unratedReason($room, $opponentUserId) : null;
+        $createdId = DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $duel, $opponentUserId, $selfScore, $oppScore, $roomStake, $reason, $roomClassic) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
                 return null;
@@ -94,6 +98,13 @@ class ForfeitLoss
                 // Terk/timeout = KAYIP (skor 0). reportRating ile AYNI merkezi formül: K=32, taban 100,
                 // uzunluk katsayısı C=sqrt(L/3) -> kaybeden, rakibin tam kazancı kadar kaybeder (simetri).
                 $newRating = RatingPolicy::eloNewRating($ra, $rb, false, max(1, (int) ($matchLength ?? 1)));
+                $loser->rating = $newRating;
+                $loser->losses = (int) ($loser->losses ?? 0) + 1;
+                $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
+                $loser->save();
+            } elseif ($duel) {
+                // DÜELLO: Elo değil -> sabit −delta (RatingPolicy tek kural). Maglubiyet/oyun sayılır.
+                $newRating = RatingPolicy::duelNewRating($ra, false);
                 $loser->rating = $newRating;
                 $loser->losses = (int) ($loser->losses ?? 0) + 1;
                 $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
@@ -128,7 +139,7 @@ class ForfeitLoss
                 $row['opponent_user_id'] = $opponentUserId > 0 ? $opponentUserId : null;
             }
             if (Schema::hasColumn('match_results', 'rated')) {
-                $row['rated'] = $ranked;
+                $row['rated'] = $ranked || $duel; // düello da puanlı sayılır (sabit ±delta)
             }
             if (Schema::hasColumn('match_results', 'rating_reason')) {
                 $row['rating_reason'] = $reason; // puansızsa sebep (bot/unrated/guest/friendly/casual)

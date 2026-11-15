@@ -76,6 +76,22 @@ class RatingPolicy
         return max(self::RATING_FLOOR, $ra + ($won ? $transfer : -$transfer));
     }
 
+    /** Düello sabit rating değişimi (Elo değil): config game.duel_rating_delta, varsayılan 10. */
+    public const DUEL_DELTA_DEFAULT = 10;
+
+    /**
+     * DÜELLO yeni rating — Elo DEĞİL, maç uzunluğu/rakipten BAĞIMSIZ SABİT ±delta. Taban (100) altına
+     * inmez. reportRating'in düello dalıyla (AuthController) AYNI: üç settlement yolu (reportRating,
+     * MatchBackstop, ForfeitLoss) düelloda TEK kural -> bir taraf sunucudan tamamlansa da ±delta tutar
+     * (yoksa kaybeden −10 alıp kazanan +0 kalıyordu, XG8FW). Galibiyet/oyun istatistiği çağıran tarafta.
+     */
+    public static function duelNewRating(int $ra, bool $won): int
+    {
+        $dd = (int) config('game.duel_rating_delta', self::DUEL_DELTA_DEFAULT);
+
+        return max(self::RATING_FLOOR, $ra + ($won ? $dd : -$dd));
+    }
+
     /**
      * $ra rating'li oyuncunun $rb'ye karşı $length puanlık maçta kazanırsa/kaybederse rating değişimi.
      *

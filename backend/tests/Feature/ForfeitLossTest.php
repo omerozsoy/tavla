@@ -206,4 +206,32 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(0, (int) $row->delta);          // delta=0 (puansız)
         $this->assertFalse((bool) $row->rated);           // rated=false
     }
+
+    // DÜELLO terk: Elo değil ama sabit −10 (reportRating/backstop ile AYNI). Friendly'den farkı:
+    // düelloda rating hareket eder -> terk eden −10 alır (kazanan backstop'tan +10). (XG8FW asimetrisi.)
+    public function test_duel_forfeit_applies_fixed_delta(): void
+    {
+        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
+        $b = $this->user('b');
+        $room = $this->rankedRoom('FL4', $a, $b);
+        $room->mode = 'friendly';
+        $room->duel = true;
+        $room->unrated = true;
+        $room->save();
+        $this->startClock($room);
+        $room->refresh();
+        $clock = $room->clock;
+        $clock['started_at'] = microtime(true) - 40;
+        $room->clock = $clock;
+        $room->save();
+        $this->getJson('/api/rooms/FL4')->assertOk();
+
+        $a->refresh();
+        $this->assertSame(1490, (int) $a->rating);        // DÜELLO kaybı: sabit −10
+        $this->assertSame(1, (int) $a->losses);           // mağlubiyet sayılır
+        $row = MatchResult::where('room_code', 'FL4')->where('user_id', $a->id)->first();
+        $this->assertNotNull($row);
+        $this->assertSame(-10, (int) $row->delta);        // delta=−10 (sabit)
+        $this->assertTrue((bool) $row->rated);            // rated=true (düello puanlı sayılır)
+    }
 }

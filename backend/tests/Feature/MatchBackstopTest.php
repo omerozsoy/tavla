@@ -142,6 +142,30 @@ class MatchBackstopTest extends TestCase
         $this->assertSame(1500, (int) $a->rating); // rating DEĞİŞMEDİ
     }
 
+    // DÜELLO: backstop yedeği de sabit ±10 uygular. Sunucudan tamamlanan taraf (ör. kazananın istemcisi
+    // raporlamadı) ±10'u kaçırmamalı -> yoksa kaybeden −10 alıp kazanan +0 kalıyordu (XG8FW bug'ı).
+    public function test_backstop_duel_applies_fixed_delta(): void
+    {
+        $a = $this->user('a'); // beyaz/p1 -> kazanan
+        $b = $this->user('b'); // siyah/p2 -> kaybeden
+        $this->completedRoom('BS6', $a, $b, 'friendly');
+        // updated_at'i grace penceresi gerisinde TUT (update NOW'a çekerse sweep eler).
+        Room::where('code', 'BS6')->update(['duel' => true, 'unrated' => true, 'updated_at' => now()->subMinutes(10)]);
+
+        Artisan::call('matches:backstop-finished');
+
+        $rowA = MatchResult::where('room_code', 'BS6')->where('user_id', $a->id)->first();
+        $rowB = MatchResult::where('room_code', 'BS6')->where('user_id', $b->id)->first();
+        $this->assertSame(10, (int) $rowA->delta);   // kazanan +10 (sabit)
+        $this->assertSame(-10, (int) $rowB->delta);  // kaybeden −10 (sabit)
+        $this->assertTrue((bool) $rowA->rated);
+        $this->assertTrue((bool) $rowB->rated);
+        $a->refresh();
+        $b->refresh();
+        $this->assertSame(1510, (int) $a->rating);
+        $this->assertSame(1490, (int) $b->rating);
+    }
+
     // GEC gelen istemci raporu: bare yedek satiri log/PR ile ZENGINLESTIRIR (rating'e dokunmadan).
     public function test_late_client_report_enriches_bare_row(): void
     {

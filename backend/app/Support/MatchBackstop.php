@@ -73,9 +73,13 @@ class MatchBackstop
             $oppName = $room->{$oppSlot.'_name'} ?? null;
             $oppId = (int) ($room->{$oppSlot.'_user_id'} ?? 0);
             $ranked = RatingPolicy::isRanked($room, $uid, $oppId); // per-oyuncu (friendly 24h limiti)
-            $reason = $ranked ? null : RatingPolicy::unratedReason($room, $oppId); // puansızsa sebebi sakla
+            // DÜELLO: Elo değil ama sabit ±delta "puanlı sayılır" (reportRating ile AYNI) -> rated/reason
+            // bu birleşik bayrağı izler; yoksa sunucudan tamamlanan taraf ±delta'yı kaçırır (XG8FW).
+            $duel = (bool) ($room->duel ?? false);
+            $applied = $ranked || $duel;
+            $reason = $applied ? null : RatingPolicy::unratedReason($room, $oppId); // puansızsa sebebi sakla
             $matchLength = $room->target !== null ? (int) $room->target : null;
-            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason, (bool) ($room->classic ?? false))) {
+            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId, (int) $room->stake, $reason, (bool) ($room->classic ?? false), $duel)) {
                 $written++;
             }
         }
@@ -142,9 +146,10 @@ class MatchBackstop
         int $stake = 0,
         ?string $ratingReason = null,
         bool $classic = false,
+        bool $duel = false,
     ): bool {
         try {
-            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason, $classic) {
+            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId, $stake, $ratingReason, $classic, $duel) {
                 $u = User::lockForUpdate()->find($userId);
                 if (! $u) {
                     return false;
@@ -160,6 +165,17 @@ class MatchBackstop
                     // reportRating/ForfeitLoss ile AYNI merkezi formül: K=32, taban 100,
                     // uzunluk katsayısı C=sqrt(L/3) (L=hedef puan).
                     $newRating = RatingPolicy::eloNewRating($ra, $rb, $won, max(1, (int) ($matchLength ?? 1)));
+                    $u->rating = $newRating;
+                    $u->games_played = (int) ($u->games_played ?? 0) + 1;
+                    if ($won) {
+                        $u->wins = (int) ($u->wins ?? 0) + 1;
+                    } else {
+                        $u->losses = (int) ($u->losses ?? 0) + 1;
+                    }
+                    $u->save();
+                } elseif ($duel) {
+                    // DÜELLO: Elo değil -> sabit ±delta (RatingPolicy tek kural). Galibiyet/oyun sayılır.
+                    $newRating = RatingPolicy::duelNewRating($ra, $won);
                     $u->rating = $newRating;
                     $u->games_played = (int) ($u->games_played ?? 0) + 1;
                     if ($won) {
@@ -197,7 +213,7 @@ class MatchBackstop
                     $row['opponent_user_id'] = $opponentUserId > 0 ? $opponentUserId : null;
                 }
                 if (Schema::hasColumn('match_results', 'rated')) {
-                    $row['rated'] = $ranked;
+                    $row['rated'] = $ranked || $duel; // düello da puanlı sayılır (sabit ±delta)
                 }
                 if (Schema::hasColumn('match_results', 'rating_reason')) {
                     $row['rating_reason'] = $ratingReason; // puansızsa sebep (bot/unrated/guest/friendly/casual)
