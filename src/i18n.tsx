@@ -349,8 +349,9 @@ const TR: Dict = {
     '• Rating Ortalaması: takımın üye rating ortalaması.\n\n' +
     'Düello\n' +
     '• Üyeler çevrimiçi başka bir takımlı oyuncuyu bireysel düelloya davet eder (1v1); düello yalnız takımı olanlar arasında oynanır.\n' +
-    '• Coin/bahis yoktur ve maç bireysel rating’i etkilemez. Uzunluk 1, 3 veya 5 puandır (davet eden seçer).\n' +
-    '• Kazanan, maç uzunluğu kadar düello puanı alır: 1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan. Bu puan oyuncuya ve takımına eklenir.\n\n' +
+    '• Her iki oyuncudan sabit 25 coin alınır; kazanan ikisini (komisyon düşülerek) alır. Uzunluk 1, 3 veya 5 puandır (davet eden seçer).\n' +
+    '• Kazanan, maç uzunluğu kadar düello puanı alır: 1 puanlık maç 1, 3 puanlık 3, 5 puanlık 5 puan. Bu puan oyuncuya ve takımına eklenir.\n' +
+    '• Düello bireysel rating’ini de sabit ±10 etkiler: kazanan +10, kaybeden −10 (maç uzunluğu ve rakibin puanı fark etmez). Daha iyi oynayan ayrıca ödüllenir: maçı kazanan ve performansı (PR) rakibinden daha iyi olan oyuncu, kazandığı puanın iki katını alır (×2).\n\n' +
     'Sezon ve ödüller\n' +
     '• Sezonlar 3 aylıktır (Kış: Oca-Mar, İlkbahar: Nis-Haz, Yaz: Tem-Eyl, Sonbahar: Eki-Ara).\n' +
     '• Sezon sonunda en yüksek düello puanına sahip takım ŞAMPİYON olur; takım adı ve puanı kalıcı kaydedilir.\n' +
@@ -446,7 +447,7 @@ Maç saatini rakibinle teklif edip onaylayarak belirlersin; saat turun son oynan
 ## Çekilme
 Çekilen oyuncunun topladığı puanlar silinmez; o anki açık maçını rakibi hükmen kazanır. Çekilenin yerine yedek alınmaz.
 ## Rating ve Ödüller
-Yalnızca gerçekten oynanan maçlar TavlaTV rating'ini etkiler; hükmen ve bay rating'i değiştirmez. Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları açıklanacak ödülleri, coin ve rozet ödülü kazanır.`,
+Lig maçlarında TavlaTV rating'in Elo yerine SABİT değişir: oynanan maçta kazanan +10, kaybeden −10 (maç uzunluğu ve rakibin puanı fark etmez). Daha iyi oynayanı ayrıca ödüllendiririz: maçı kazanan ve performansı (PR) rakibinden daha iyi olan oyuncu, kazandığı puanın iki katını alır (×2). Bay (rakipsiz) geçiş rating'i değiştirmez. Maçlar varsayılan 9 sayıdır. Şampiyon, finalist, yarı finalist, çeyrek finalist ve Son 16 oyuncuları açıklanacak ödülleri, coin ve rozet ödülü kazanır.`,
   'menu.admin': 'Yönetim',
   'menu.more': 'Daha fazla',
   'menu.tools': 'Araçlar',
@@ -2824,8 +2825,9 @@ const EN: Dict = {
     '• Average Rating: the team’s average member rating.\n\n' +
     'Duels\n' +
     '• A member invites another online player who has a team to a 1v1 duel; duels are only played between players who have a team.\n' +
-    '• There is no coin/stake and the match does not affect individual rating. Length is 1, 3 or 5 points (the inviter chooses).\n' +
-    '• The winner earns duel points equal to the match length: a 1-point match 1, a 3-point match 3, a 5-point match 5. These points are added to the player and their team.\n\n' +
+    '• Each player stakes a fixed 25 coins; the winner takes both (minus commission). Length is 1, 3 or 5 points (the inviter chooses).\n' +
+    '• The winner earns duel points equal to the match length: a 1-point match 1, a 3-point match 3, a 5-point match 5. These points are added to the player and their team.\n' +
+    '• A duel also affects individual rating by a fixed ±10: winner +10, loser −10 (match length and opponent rating don’t matter). Better play is also rewarded: the winner whose performance rating (PR) beats their opponent earns double the rating gained (×2).\n\n' +
     'Season and rewards\n' +
     '• Seasons are 3 months long (Winter: Jan-Mar, Spring: Apr-Jun, Summer: Jul-Sep, Autumn: Oct-Dec).\n' +
     '• At the end of a season, the team with the highest duel points becomes CHAMPION; the team name and points are saved permanently.\n' +
@@ -2918,7 +2920,7 @@ You set the match time by proposing and confirming it with your opponent; the ti
 ## Withdrawal
 A player who withdraws keeps the points they earned; their current open match is won by the opponent by walkover. Withdrawn players are not replaced by a reserve.
 ## Rating and Prizes
-Only actually played matches affect your TavlaTV rating; walkovers and byes do not. Matches are 9 points by default. The champion, runner-up, semifinalists, quarterfinalists and Last 16 players win the prizes to be announced, plus coins and badges.`,
+In league matches your TavlaTV rating changes by a FIXED amount instead of Elo: in a played match the winner gets +10 and the loser −10 (match length and opponent rating don’t matter). Better play is also rewarded: the winner whose performance rating (PR) beats their opponent earns double the rating gained (×2). A bye (no opponent) does not change rating. Matches are 9 points by default. The champion, runner-up, semifinalists, quarterfinalists and Last 16 players win the prizes to be announced, plus coins and badges.`,
   'menu.admin': 'Admin',
   'menu.more': 'More',
   'menu.tools': 'Tools',
