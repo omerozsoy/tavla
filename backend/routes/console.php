@@ -30,14 +30,14 @@ Schedule::call(function () {
         ->where('updated_at', '<', now()->subDay())
         ->delete();
     DB::table('game_invites')->where('created_at', '<', now()->subMinutes(10))->delete();
-})->everyFiveMinutes()->name('cleanup-stale-rooms')->withoutOverlapping();
+})->everyFiveMinutes()->name('cleanup-stale-rooms')->withoutOverlapping(10);
 
 // Maç kaydı budama: yüksek hacimli pvb (bota karşı) kayıtları game_logs tablosunu
 // şişirmesin -> 90 günden eski pvb maçlarını her gün sil. Online/yerel maçlar korunur.
 Schedule::command('gamelogs:prune --days=90')
     ->daily()
     ->name('prune-game-logs')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // room_commands budama: idempotency/versiyon defteri yalnız CANLI oyunda gerekir; maç bitince
 // ölü ağırlıktır (211k satıra kadar şişip DB sıcak setini büyütmüştü). Bitmiş+2 günden eski
@@ -45,13 +45,13 @@ Schedule::command('gamelogs:prune --days=90')
 Schedule::command('tavla:prune-room-commands --days=2')
     ->dailyAt('04:20')
     ->name('prune-room-commands')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // Yayındaki haber URL'lerini sitemap'e günlük ekle; taslak/silinmiş haberler otomatik çıkar.
 Schedule::command('seo:sitemap')
     ->dailyAt('02:15')
     ->name('seo-sitemap')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // MOTOR-YARDIMI (HİLE) TARAMASI: maç PR geçmişinde engine-assist imzası taşıyan hesapları işaretle
 // (admin "Şüpheli Maçlar" sayfasına + Shield audit olayına). Read-only tespit; ban elle incelenir.
@@ -59,7 +59,7 @@ Schedule::command('seo:sitemap')
 Schedule::command('security:cheat-scan --flag')
     ->dailyAt('05:10')
     ->name('cheat-scan')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // KÜFÜRLÜ TAKMA AD NÖBETÇİSİ: admin "Küfürlü Takmaisim" sayfasından uyarı gönderip son tarih verdiği
 // hesapları süpürür. Süre dolup takma ad hâlâ uygunsuzsa hesabı kapatır (AccountClosure); takma adını
@@ -67,7 +67,7 @@ Schedule::command('security:cheat-scan --flag')
 Schedule::command('tavla:nickname-enforce')
     ->hourly()
     ->name('nickname-enforce')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // MAKALE/HABER OKUNMASI ORGANİK ARTIŞ: yayındaki makale+haber okunma sayaçları zamanla
 // kendiliğinden büyüsün (yalnız gerçek detay-açılışına bağlı kalmasın). Saatte bir, yaşa göre
@@ -75,7 +75,7 @@ Schedule::command('tavla:nickname-enforce')
 Schedule::command('contents:bump-views')
     ->hourly()
     ->name('bump-content-views')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // SUNUCU-OTORİTER YEDEK: tamamlanmış online maçlarda istemcisi raporlayamamış (sekme kapandı/
 // ağ/başka cihaz) oyuncuların match_results satırını sunucuda tamamla -> maç HER İKİ oyuncunun
@@ -83,7 +83,7 @@ Schedule::command('contents:bump-views')
 Schedule::command('matches:backstop-finished')
     ->everyTwoMinutes() // yedek ağ: anında finalize (reportRating/finalizeDead) kaçarsa yakalar
     ->name('backstop-finished-matches')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // SUNUCU-OTORİTER EKONOMİK SETTLEMENT YEDEĞİ: bahisli (stake/%-bahis) maç bitince coin transferi +
 // settled=1 + kilit açma YALNIZ istemcinin settle çağrısına bağlıydı -> istemci düşerse oda sonsuza
@@ -92,7 +92,7 @@ Schedule::command('matches:backstop-finished')
 Schedule::command('matches:backstop-settle')
     ->everyTwoMinutes() // finalizeDead anında dener; bu ağ istemci-drop sonrası normal-bitişleri yakalar
     ->name('backstop-settle-matches')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // BAYAT "playing" ODA SÜPÜRME: kimsenin poll etmediği (oyuncu+izleyici yok) yarım kalan/terk
 // edilmiş online odaları 'finished' işaretle -> "Devam Eden Maç" hayaleti + izleyici DONMASI
@@ -100,7 +100,7 @@ Schedule::command('matches:backstop-settle')
 Schedule::command('matches:reap-stale')
     ->everyFiveMinutes()
     ->name('reap-stale-rooms')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // BOT MAÇI SAATİNİ İLERLET: bot maçında rakip (bot) HİÇ poll etmez -> tek insan sekmeyi arka
 // plana alınca saati soracak kimse kalmaz ve süre bitse de timeout ilan edilmez (donuk "playing").
@@ -109,7 +109,7 @@ Schedule::command('matches:reap-stale')
 Schedule::command('matches:tick-bots')
     ->everyMinute()
     ->name('tick-bot-clocks')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // ÇALIŞAN TÜM SERVİSLERİ izle: dakikada bir kontrol; düşerse OTOMATİK yeniden başlat, kalıcıysa
 // admin e-posta + WhatsApp (CallMeBot, ayarlıysa) uyarısı. Validator + gnubg + queue + veritabanı.
@@ -117,7 +117,7 @@ Schedule::command('matches:tick-bots')
 Schedule::command('services:watch')
     ->everyMinute()
     ->name('services-watch')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // TURNUVA BAKIM NABZI: süren turnuvalarda hükmen/no-show/ölü-dal çözümü HTTP poll'una (GET
 // /tournaments) bağlı kalmadan dakikada bir koşsun. İki oyuncu da sekmeyi kapatıp kimse poll
@@ -126,21 +126,21 @@ Schedule::command('services:watch')
 Schedule::command('tournaments:tick')
     ->everyMinute()
     ->name('tournaments-tick')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // TÜRKİYE ONLINE TAVLA LİGİ nöbetçisi (§9/§14/§4): oda sonucu yakala, 15dk hükmen, eleme ilerlet,
 // 24s/1s hatırlatma. Idempotent + tekrar-çalıştırılabilir (league_notifications defteri mükerrer engel).
 Schedule::command('league:tick')
     ->everyMinute()
     ->name('league-tick')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // TAKIMLAR LİGİ günlük bakımı (§5/§10): Premium 7g yenileme süresi süpürme, kurucu 60g inaktiflik devri,
 // biten sezonun ödül dağıtımı (düello puanı sıralaması; idempotent — mükerrer kupa/rozet/coin yok).
 Schedule::command('teamleague:maintenance')
     ->dailyAt('00:30')
     ->name('teamleague-maintenance')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // PERİYODİK TURNUVA KURUCU: her gece tam 00:00'da, bugüne denk gelen aktif periyodik turnuva
 // şablonlarından birer turnuva kurar (admin -> "Periyodik Turnuva" menüsü). Kurulan turnuva gün
@@ -149,7 +149,7 @@ Schedule::command('teamleague:maintenance')
 Schedule::command('tournaments:create-scheduled')
     ->dailyAt('00:00')
     ->name('create-scheduled-tournaments')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // CRON NABZI (izleyiciyi izler): schedule:run GERÇEKTEN çalışıyor mu? Her dakika cache'e zaman
 // damgası yaz. Admin "Servis Durumu" panelindeki "Zamanlayıcı (cron)" lambası bunu okur; bayatsa
@@ -166,7 +166,7 @@ Schedule::call(function () {
 Schedule::command('jobs:auto-retry')
     ->everyFifteenMinutes()
     ->name('auto-retry-failed-jobs')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // gnubg PR SELF-HEAL (kalıcı "—" kalkanı): gnubg servisi KISA süre down/yavaş/restart iken analiz
 // edilen maçlar KALICI "—" ile yaralanıyordu (job o an analyze()=null alıp evaluated=0 -> hiçbir kolon
@@ -176,7 +176,7 @@ Schedule::command('jobs:auto-retry')
 Schedule::command('tavla:gnubg-pr-heal')
     ->everyFiveMinutes()
     ->name('gnubg-pr-heal')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // GEÇMİŞ maçların Analiz review'ini BOŞ ZAMANDA önden önbelleğe al (backfill). ADANMIŞ worker
 // (tavla-review-queue, 'reviews' kuyruğu) işlediği için canlı PR/luck ile YARIŞMAZ -> dispatch hızını
@@ -186,7 +186,7 @@ Schedule::command('tavla:gnubg-pr-heal')
 Schedule::command('tavla:review-warmup --limit=15 --days=7')
     ->everyFiveMinutes()
     ->name('review-warmup')
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 // KÜP PR BACKFILL (skor-farkında rescore) — CRON KALDIRILDI 2026-10-20: tek seferlik görev TAMAMLANDI
 // (5736/5736 küp maçı rescore edildi, KALAN=0, cutoff 2026-10-18). everyFiveMinutes() cron'u artık

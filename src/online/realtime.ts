@@ -1,7 +1,9 @@
 // GERÇEK-ZAMANLI PUSH (Faz 2): Reverb WebSocket üzerinden oda güncellemelerini ANINDA al ->
-// 1.2sn polling yükü düşer. Tasarım: push SADECE "hemen poll et" sinyali verir; tüm state-uygulama
-// mantığı App.tsx poll'unda TEK yerde kalır (yeni desync yolu YOK). Push kapalı/bağlanamazsa
-// isRealtimeConnected hep false -> App.tsx saf 1.2sn poll'a düşer (dormant, sıfır risk).
+// 1.2sn polling yükü düşer. ⚠ 2026-10-11'den beri push payload'ı DOĞRUDAN uygular (App.tsx
+// applyPushPayload) — artık yalnız "poll et" sinyali DEĞİL. Desync kalkanı: HER uygulama monotonik
+// server_version kapısından geçer (shouldApplyServerState/appliedServerVersion) -> eski/sırasız frame
+// DÜŞÜRÜLÜR. Bu version-gate'i KALDIRMA (yoksa bayat broadcast taze state'i ezer). Push kapalı/
+// bağlanamazsa isRealtimeConnected hep false -> App.tsx saf 1.2sn poll'a düşer (dormant, sıfır risk).
 //
 // Kanal PUBLIC `room.{code}` (non-bot maçlar zaten herkese izlenebilir) -> broadcasting-auth YOK.
 // Konfig (enabled + public app key) sunucudan çalışma anında çekilir -> build'e gömülmez.

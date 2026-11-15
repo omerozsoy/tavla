@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\User;
+use App\Support\AccountClosure;
 use App\Support\Shield;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -190,8 +191,16 @@ class GuvenlikKalkani extends Page
 
             return;
         }
-        $u->banned_at = now();
-        $u->save();
+        // Ham banned_at yazma YERİNE ortak audit'li yol: Shield denetim izi + AccountBanEvent geçmişi +
+        // Sanctum token iptali (diğer TÜM ban yollarıyla aynı). Eskiden bu sayfadan ban/çözüm forensik
+        // iz bırakmıyordu ve "Kapatma geçmişi" infolist'inde görünmüyordu.
+        try {
+            AccountClosure::close($u, (int) auth()->id(), 'Güvenlik Kalkanı: engellendi');
+        } catch (\Throwable $e) {
+            Notification::make()->title($e->getMessage())->danger()->send();
+
+            return;
+        }
         Notification::make()->title(($u->nickname ?: $u->email).' engellendi.')->success()->send();
     }
 
@@ -201,8 +210,7 @@ class GuvenlikKalkani extends Page
         if (! $u) {
             return;
         }
-        $u->banned_at = null;
-        $u->save();
+        AccountClosure::reopen($u, (int) auth()->id(), 'Güvenlik Kalkanı: engel kaldırıldı');
         Notification::make()->title(($u->nickname ?: $u->email).' engeli kaldırıldı.')->success()->send();
     }
 
