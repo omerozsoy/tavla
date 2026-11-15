@@ -326,6 +326,10 @@ const TR: Dict = {
   'teams.err.tag_taken': 'Bu etiket kullanılıyor.',
   'teams.err.on_cooldown': '24 saatlik bekleme sürüyor.',
   'teams.err.team_full': 'Takım dolu.',
+  'teams.err.team_closed': 'Takım şu an davet gönderemez (henüz yönetim onayında ya da kapalı).',
+  'teams.err.target_in_team': 'Bu oyuncu zaten bir takımda.',
+  'teams.err.already_invited': 'Bu oyuncuya zaten bekleyen bir davet var.',
+  'teams.err.user_not_found': 'Oyuncu bulunamadı.',
   'teams.err.too_many_applications': 'En fazla 3 açık başvuru.',
   'teams.err.rename_cooldown': 'İsim değişimi için 30 gün beklemelisin.',
   'teams.rules.body':
@@ -2793,6 +2797,10 @@ const EN: Dict = {
   'teams.err.tag_taken': 'That tag is taken.',
   'teams.err.on_cooldown': 'A 24-hour cooldown is active.',
   'teams.err.team_full': 'Team is full.',
+  'teams.err.team_closed': 'The team cannot send invites right now (pending approval or closed).',
+  'teams.err.target_in_team': 'That player is already in a team.',
+  'teams.err.already_invited': 'That player already has a pending invite.',
+  'teams.err.user_not_found': 'Player not found.',
   'teams.err.too_many_applications': 'Up to 3 open applications.',
   'teams.err.rename_cooldown': 'You must wait 30 days to rename.',
   'teams.rules.body':
