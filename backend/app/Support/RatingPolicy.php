@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Http\Controllers\TournamentController;
 use App\Models\Room;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * PUANLI (rating + PR) MI? — TEK doğruluk kaynağı. Üç yazım yolu (reportRating, MatchBackstop,
@@ -112,17 +113,28 @@ class RatingPolicy
     }
 
     /**
-     * Bu oda sabit-±delta maçı mı? Tespit RoomController ile AYNI sinyal: turnuva maçRoom'u oda koduna
-     * roomTargetKey cache'i yazar (2 gün TTL; settlement dakikalar içinde olur -> taze). Böylece
-     * PUANLI maçlarda sabit-±delta ile eşleşme (Elo) ayrılır. Yalnız isRanked=true iken anlamlı.
+     * Bu oda sabit-±delta maçı mı? KALICI rooms.flat_rating kolonu (oda enter'da, roomTargetKey cache
+     * tazeyken yazılır — RoomController) birincil kaynak; cache yalnız geçişteki kolonsuz eski odalar
+     * için fallback. Böylece PUANLI maçlarda sabit-±delta ile eşleşme (Elo) ayrılır, ÜSTELİK iki taraf
+     * farklı zamanlarda settle olsa bile (reportRating hemen / backstop 2 gün sonra) aynı kaynağı okur
+     * -> cache-TTL asimetri penceresi KAPALI. Yalnız isRanked=true iken anlamlı.
      * ⚠ LİG maçları da AYNI roomTargetKey'i yazar (LeagueRuntime::cacheRoom, §4 "turnuvayla AYNI cache
      * sözleşmesi") → lig maçları da KASITLI olarak sabit ±10 alır (Elo DEĞİL, kullanıcı direktifi
-     * 2026-11-15). Ligi Elo'ya "geri düzeltme": bilinçli karar, ayrı cache marker'ı gerektirir.
+     * 2026-11-15). Ligi Elo'ya "geri düzeltme": bilinçli karar, ayrı bayrak gerektirir.
      */
     public static function isTournament(Room $room): bool
     {
-        return ! $room->bot
-            && Cache::has(TournamentController::roomTargetKey($room->code));
+        if ($room->bot) {
+            return false;
+        }
+        // KALICI bayrak (oda enter'da cache tazeyken yazıldı) birincil kaynak -> settlement cache
+        // TTL'ine bağlı değil (2-gün sınırında kazanan Elo / kaybeden sabit-±10 asimetrisi kapandı).
+        // Cache fallback yalnız geçişteki kolonsuz eski odalar için (TTL içinde hâlâ doğru).
+        if (Schema::hasColumn('rooms', 'flat_rating') && (bool) ($room->flat_rating ?? false)) {
+            return true;
+        }
+
+        return Cache::has(TournamentController::roomTargetKey($room->code));
     }
 
     /**

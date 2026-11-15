@@ -1892,6 +1892,12 @@ class RoomController extends Controller
         if ($tournMinutes && Schema::hasColumn('rooms', 'clock_bank')) {
             $createAttrs['clock_bank'] = (int) $tournMinutes * 60;
         }
+        // TURNUVA/LİG kalıcı rating bayrağı: roomTargetKey cache'i TAZE iken (oda ilk açılıyor) kolona
+        // yaz -> settlement sabit-±delta'yı cache TTL'inden bağımsız okur (2-gün sınırı asimetrisi kapanır,
+        // RatingPolicy::isTournament). Lig de aynı cache'i yazar -> otomatik kapsanır.
+        if (Schema::hasColumn('rooms', 'flat_rating') && Cache::has(TournamentController::roomTargetKey($code))) {
+            $createAttrs['flat_rating'] = true;
+        }
 
         if ($this->tournamentSeatDenied($code, $authUser?->id)) {
             $existing = Room::where('code', $code)->first();

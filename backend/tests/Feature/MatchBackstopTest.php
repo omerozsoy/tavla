@@ -194,6 +194,31 @@ class MatchBackstopTest extends TestCase
         $this->assertSame(1, (int) $b->losses);
     }
 
+    // TURNUVA TTL-PENCERESI KAPALI: cache roomTargetKey EXPIRE olsa bile (iki taraf farkli zamanlarda
+    // settle -> kazanan 2 gun sonra backstop'la yazilir), KALICI rooms.flat_rating kolonu okunur ->
+    // yine sabit ±10 (Elo DEGIL). Oda enter'da flat_rating yazildi; cache artik gereksiz.
+    public function test_backstop_tournament_uses_persisted_flag_without_cache(): void
+    {
+        $a = $this->user('a'); // beyaz/p1 -> kazanan
+        $b = $this->user('b'); // siyah/p2 -> kaybeden
+        $this->completedRoom('BS8', $a, $b); // mode='ranked'
+        // Oda enter'da yazilmis gibi flat_rating=true + updated_at'i grace gerisine GERI it (save()
+        // tazeledi -> yoksa oda cok taze, sweep atlar).
+        Room::where('code', 'BS8')->update(['flat_rating' => true, 'updated_at' => now()->subMinutes(10)]);
+        Cache::forget(TournamentController::roomTargetKey('BS8')); // cache YOK (TTL doldu senaryosu)
+
+        Artisan::call('matches:backstop-finished');
+
+        $rowA = MatchResult::where('room_code', 'BS8')->where('user_id', $a->id)->first();
+        $rowB = MatchResult::where('room_code', 'BS8')->where('user_id', $b->id)->first();
+        $this->assertSame(10, (int) $rowA->delta);   // kazanan +10 (Elo +9 DEGIL -> flag okundu)
+        $this->assertSame(-10, (int) $rowB->delta);  // kaybeden −10 (simetrik)
+        $a->refresh();
+        $b->refresh();
+        $this->assertSame(1510, (int) $a->rating);
+        $this->assertSame(1490, (int) $b->rating);
+    }
+
     // GEC gelen istemci raporu: bare yedek satiri log/PR ile ZENGINLESTIRIR (rating'e dokunmadan).
     public function test_late_client_report_enriches_bare_row(): void
     {

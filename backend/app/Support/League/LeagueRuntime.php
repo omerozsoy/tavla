@@ -318,19 +318,25 @@ class LeagueRuntime
     {
         $at = Carbon::parse($at);
         self::assertPlayer($m, $byUserId);
-        if ($m->result !== 'pending') {
-            throw new \RuntimeException('Maç sonuçlandı; randevu değiştirilemez.');
-        }
         if ($at->isPast()) {
             throw new \RuntimeException('Geçmiş bir saate randevu verilemez.');
         }
-        if ($m->deadline_at && $at->gt($m->deadline_at)) {
-            throw new \RuntimeException('Randevu, turun son oynanma zamanını aşamaz.');
-        }
-        $appt = is_array($m->appointment) ? $m->appointment : ['confirmed_at' => null, 'proposal' => null, 'history' => []];
-        $appt['proposal'] = ['at' => $at->toIso8601String(), 'by' => $byUserId];
-        $appt['history'][] = ['action' => 'propose', 'by' => $byUserId, 'at' => $at->toIso8601String(), 'ts' => now()->toIso8601String()];
-        $m->update(['appointment' => $appt]);
+        // Randevu JSON'u OKU-DEĞİŞTİR-YAZ: KİLİTLİ satırda yap. Yoksa eşzamanlı teklif+onay
+        // (veya iki teklif) interleave'inde bir güncelleme sessizce kaybolur -> kimsenin kabul
+        // etmediği bir confirmed_at effectiveStartAt'i (15-dk forfeit penceresini) yanlış sürer.
+        DB::transaction(function () use ($m, $byUserId, $at) {
+            $m = LeagueMatch::whereKey($m->id)->lockForUpdate()->firstOrFail();
+            if ($m->result !== 'pending') {
+                throw new \RuntimeException('Maç sonuçlandı; randevu değiştirilemez.');
+            }
+            if ($m->deadline_at && $at->gt($m->deadline_at)) {
+                throw new \RuntimeException('Randevu, turun son oynanma zamanını aşamaz.');
+            }
+            $appt = is_array($m->appointment) ? $m->appointment : ['confirmed_at' => null, 'proposal' => null, 'history' => []];
+            $appt['proposal'] = ['at' => $at->toIso8601String(), 'by' => $byUserId];
+            $appt['history'][] = ['action' => 'propose', 'by' => $byUserId, 'at' => $at->toIso8601String(), 'ts' => now()->toIso8601String()];
+            $m->update(['appointment' => $appt]);
+        });
         // §14: saat teklifi bildirimi (site+push anlık; e-posta cron hatırlatmalarında). Best-effort.
         self::notifySafe($m, 'appt_proposed', $at, 'Lig: saat teklifi', 'Rakibin bir maç saati teklif etti. Lig maç sayfandan onayla.');
     }
@@ -342,22 +348,29 @@ class LeagueRuntime
     public static function confirmAppointment(LeagueMatch $m, int $byUserId): void
     {
         self::assertPlayer($m, $byUserId);
-        $appt = is_array($m->appointment) ? $m->appointment : [];
-        $prop = $appt['proposal'] ?? null;
-        if (! $prop) {
-            throw new \RuntimeException('Onaylanacak bir teklif yok.');
-        }
-        if ((int) $prop['by'] === $byUserId) {
-            throw new \RuntimeException('Kendi teklifini onaylayamazsın; karşı taraf onaylamalı.');
-        }
-        $at = Carbon::parse($prop['at']);
-        if ($m->deadline_at && $at->gt($m->deadline_at)) {
-            throw new \RuntimeException('Randevu son oynanma zamanını aşıyor; yeniden teklif gerekir.');
-        }
-        $appt['confirmed_at'] = $prop['at'];
-        $appt['proposal'] = null;
-        $appt['history'][] = ['action' => 'confirm', 'by' => $byUserId, 'at' => $prop['at'], 'ts' => now()->toIso8601String()];
-        $m->update(['appointment' => $appt]);
+        // Teklifi oku-değiştir-yaz: KİLİTLİ satırda (eşzamanlı teklif değişimiyle yarışı kapat;
+        // bkz proposeAppointment). $at'i kilit içinde çöz -> notify için dışarı döndür.
+        $at = DB::transaction(function () use ($m, $byUserId) {
+            $m = LeagueMatch::whereKey($m->id)->lockForUpdate()->firstOrFail();
+            $appt = is_array($m->appointment) ? $m->appointment : [];
+            $prop = $appt['proposal'] ?? null;
+            if (! $prop) {
+                throw new \RuntimeException('Onaylanacak bir teklif yok.');
+            }
+            if ((int) $prop['by'] === $byUserId) {
+                throw new \RuntimeException('Kendi teklifini onaylayamazsın; karşı taraf onaylamalı.');
+            }
+            $at = Carbon::parse($prop['at']);
+            if ($m->deadline_at && $at->gt($m->deadline_at)) {
+                throw new \RuntimeException('Randevu son oynanma zamanını aşıyor; yeniden teklif gerekir.');
+            }
+            $appt['confirmed_at'] = $prop['at'];
+            $appt['proposal'] = null;
+            $appt['history'][] = ['action' => 'confirm', 'by' => $byUserId, 'at' => $prop['at'], 'ts' => now()->toIso8601String()];
+            $m->update(['appointment' => $appt]);
+
+            return $at;
+        });
         // §14: kesinleşmiş saat bildirimi. Eski (farklı anchor'lı) hatırlatmalar league:tick'te yeni
         // effectiveStartAt'e göre yeniden planlanır -> bayat hatırlatma gönderilmez.
         self::notifySafe($m, 'appt_confirmed', $at, 'Lig: maç saati kesinleşti', 'Maç saatiniz onaylandı: '.$at->format('d.m.Y H:i').'. Saatinde hazır ol.');

@@ -1122,6 +1122,11 @@ class TournamentController extends Controller
                         $old = Room::where('code', $m['room'])->first();
                         if ($old && $old->status === 'finished' && ! $old->hasVerifiedServerResult()) {
                             $m['room'] = null;
+                            // Oda geri dönüştürülüyor: BAYAT ready_at'i de temizle. Yoksa bir sonraki
+                            // stall-sweep (resolveStalledMatches/resolveStalledSwiss) taze odayı ANINDA
+                            // hükmen/çift-no-show çözer -> oyuncular grace penceresi görmeden "oynamadan
+                            // forfeit" olur. Tek kök nokta: iki sweep de bu paylaşılan ready_at'i okur.
+                            unset($bracket[$ri][$mi]['ready_at']);
                         }
                     }
                     if (empty($m['room'])) {

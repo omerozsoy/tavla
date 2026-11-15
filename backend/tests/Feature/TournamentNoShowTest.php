@@ -148,6 +148,41 @@ class TournamentNoShowTest extends TestCase
         $this->assertSame($a->id, $t->bracket[1][0]['p1']['id']); // finale ilerledi
     }
 
+    // ODA GERI DONUSUMU BAYAT ready_at'i TEMIZLER: sonucsuz kapanan oda (ilk hamleden once sure doldu)
+    // yeni kodla acilinca, eski ready_at kalirsa bir sonraki stall-sweep taze odayi ANINDA hukmen eder
+    // (oynamadan forfeit). matchRoom geri donusturmede ready_at'i silmeli.
+    public function test_match_room_recycle_clears_stale_ready_at(): void
+    {
+        $a = $this->user('a');
+        $b = $this->user('b');
+        $c = $this->user('c');
+        $d = $this->user('d');
+        $t = $this->tournament($a, $b, $c, $d);
+
+        Sanctum::actingAs($a);
+        $code1 = $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'm0'])
+            ->assertOk()->json('code');
+
+        // Eski oda SONUCSUZ kapandi (dogrulanmis server sonucu YOK) + bracket'te bayat ready_at var.
+        Room::create([
+            'code' => $code1, 'status' => 'finished', 'mode' => 'ranked', 'target' => 1,
+            'p1_token' => 'tA', 'p1_name' => 'A', 'p2_token' => 'tB', 'p2_name' => 'B',
+        ]);
+        $t->refresh(); // controller room=code1'i yazdi -> stale in-memory bracket'le EZME
+        $br = $t->bracket;
+        $br[0][0]['ready_at'] = now()->subMinutes(10)->toIso8601String();
+        $t->bracket = $br;
+        $t->save();
+
+        // Oyuncu tekrar oda ister -> geri donusum: YENI kod + ready_at SILINMELI.
+        $code2 = $this->postJson("/api/tournaments/{$t->id}/match-room", ['match' => 'm0'])
+            ->assertOk()->json('code');
+
+        $this->assertNotSame($code1, $code2, 'sonucsuz oda yeni kodla acilmali');
+        $t->refresh();
+        $this->assertArrayNotHasKey('ready_at', $t->bracket[0][0], 'bayat ready_at temizlenmeli');
+    }
+
     // TEK taraf odaya girip otekinin gelmemesi: oyuncu "no-show"a basmasa bile sure dolunca
     // sunucu otomatik hukmen verir (giren kazanir, finale ilerler).
     public function test_one_present_auto_walkover_after_deadline(): void

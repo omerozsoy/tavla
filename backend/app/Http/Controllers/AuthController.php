@@ -657,8 +657,8 @@ class AuthController extends Controller
         } elseif ($isDuel) {
             // DÜELLO: Elo DEĞİL -> SABİT ±duel_rating_delta (varsayılan ±10). Maç uzunluğu/rakip
             // rating'inden BAĞIMSIZ. Taban 100'ün altına inmez. Galibiyet/oyun istatistiği sayılır.
-            $dd = (int) config('game.duel_rating_delta', 10);
-            $newRating = max(100, (int) $ra + ($won ? $dd : -$dd));
+            // Tek kaynak: MatchBackstop/ForfeitLoss ile AYNI RatingPolicy helper'ı (formül kopyalanmaz).
+            $newRating = RatingPolicy::duelNewRating((int) $ra, $won);
             $user->rating = $newRating;
             $user->games_played = ($user->games_played ?? 0) + 1;
             if ($won) {
