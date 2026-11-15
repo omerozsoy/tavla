@@ -1352,9 +1352,17 @@ export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {
       lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
       continue
     }
+    // ESIT dagitim: parts=ceil(len/MAX), dilimler base ya da base+1 -> ufak artik dilim OLUSMAZ
+    // (naif i*MAX bolme son dilimi 1-2 soruya dusurup MIN_SECTION guard'ini kirardi). len>MAX
+    // oldugundan base=floor(len/parts) >= MIN_SECTION her zaman saglanir.
     const parts = Math.ceil(qs.length / LESSON_MAX)
+    const base = Math.floor(qs.length / parts)
+    const extra = qs.length % parts // ilk `extra` dilim 1 fazla alir
+    let off = 0
     for (let i = 0; i < parts; i++) {
-      const slice = qs.slice(i * LESSON_MAX, (i + 1) * LESSON_MAX)
+      const size = base + (i < extra ? 1 : 0)
+      const slice = qs.slice(off, off + size)
+      off += size
       lessons.push({ id: `${sec.id}-${i}`, title: `${sec.title} ${i + 1}/${parts}`, tier: sec.tier, count: slice.length, questions: slice })
     }
   }
