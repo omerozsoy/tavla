@@ -10,10 +10,15 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * BIREYSEL DUELLO sonuç kaydı + sıralama. Düello = puansız (unrated) arkadaş-maçı üstüne duel=true
- * bayrağı. Oda bitince (reportRating / MatchBackstop) record() çağrılır: kazanan belirliyse duels
- * tablosuna TEK satır yazılır (room_code UNIQUE -> idempotent, iki yoldan da çağrılsa tek satır).
- * Rating'e DOKUNMAZ (RatingPolicy zaten unrated'i puansız sayar); yalnız düello galibiyeti biriktirir.
+ * BIREYSEL DUELLO sonuç kaydı + sıralama. Düello = friendly+unrated oda üstüne duel=true bayrağı.
+ * Oda bitince (reportRating / MatchBackstop) record() çağrılır: kazanan belirliyse duels tablosuna
+ * TEK satır yazılır (room_code UNIQUE -> idempotent, iki yoldan da çağrılsa tek satır).
+ *
+ * BU SINIF rating'e DOKUNMAZ (yalnız düello galibiyetini biriktirir). ⚠ Ama düello PUANSIZ DEĞİL:
+ * rating'e Elo değil SABİT ±delta uygulanır (RatingPolicy::duelNewRating, varsayılan ±10). Bunu
+ * SETTLEMENT yolları yazar: reportRating + MatchBackstop + ForfeitLoss. Yani düello rating'i ayrı
+ * bir sorumluluktur; burada değil o üç yolda. (Eskiden yalnız reportRating uyguluyordu -> sunucudan
+ * tamamlanan taraf ±delta'yı kaçırıyordu; XG8FW düzeltmesiyle üçü de aynı kuralı izler.)
  */
 class DuelService
 {
