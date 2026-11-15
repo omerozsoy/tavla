@@ -187,7 +187,7 @@ Route::fallback(function (Request $request) {
         'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna', 'maca-davet', 'duello',
         'klasik-tavla', 'klasik-yapay-zeka', 'klasik-arkadasinla-oyna',
         'tavlatv-super-lig', 'takimlar-ligi',
-        'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
+        'online-turnuvalar', 'turnuvalar', 'turnuva-yonetimi', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi', 'kiz-tavlasi',
         'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'makaleler', 'haberler', 'blog', 'tavla-magazin',
         'urunler', 'hizmetler', 'nasil-oynanir', 'tavla-rehberi', 'turnuva-kurallari', 'sikca-sorulan-sorular', 'dersler', 'tavla-egitimi', 'gunun-pozisyonu', 'canli-turnuva-sistemi', 'bulmaca',
