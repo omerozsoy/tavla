@@ -78,6 +78,8 @@ export const PAGES: PageDef[] = [
   { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
   // Günün Pozisyonu: her gün 1 ünlü pozisyon (deterministik), doğru hamle sorulur — motor/XG puanlar.
   { key: 'dailyPuzzle', slug: 'gunun-pozisyonu', labelKey: 'menu.dailyPuzzle', icon: 'calendar-dots', group: 'lessons', hideInGame: true },
+  // Tavlada PR Nedir?: PR kavramını anlatan infografik (Dersler ve Eğitim grubunda).
+  { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'lessons', hideInGame: true },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },
@@ -116,7 +118,6 @@ export const PAGES: PageDef[] = [
   { key: 'info-about', slug: 'bilgi/hakkinda', labelKey: 'info.tab.about', icon: 'info', group: 'info', hideInGame: true },
   { key: 'info-services', slug: 'bilgi/hizmetler', labelKey: 'menu.services', icon: 'briefcase', group: 'info', hideInGame: true },
   { key: 'info-glossary', slug: 'bilgi/sozluk', labelKey: 'info.tab.glossary', icon: 'books', group: 'info', hideInGame: true },
-  { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'info', hideInGame: true },
   { key: 'info-ranks', slug: 'bilgi/rutbeler', labelKey: 'menu.ranks', icon: 'ranking', group: 'info', hideInGame: true },
   { key: 'info-scoring', slug: 'bilgi/puanlama', labelKey: 'info.tab.scoring', icon: 'chart-line', group: 'info', hideInGame: true },
   { key: 'info-badges', slug: 'bilgi/basarilarim', labelKey: 'ach.title', icon: 'medal', group: 'info', hideInGame: true },
