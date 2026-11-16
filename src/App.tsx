@@ -2418,9 +2418,6 @@ export default function App() {
   // Ipucu / Ogrenme modu: mevcut konumdaki en iyi hamle + gerekceleri (ekstra ag cagrisi yok)
   const [curBest, setCurBest] = useState<{ notation: string; equity: number; reasons: Reason[] } | null>(null)
   const [hintShown, setHintShown] = useState(false) // ipucu butonuna basildi mi
-  // Tahta tarafini elle degistir (ust/alt). GORSEL+YEREL: oyun durumu renge gore islenir,
-  // rakibi/hamleleri etkilemez. flipBoard ile XOR'lanir. Sadece o maclik (maç degisince sifirlanir).
-  const [boardSwap, setBoardSwap] = useState(false)
   const [learnMode, setLearnMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tavla.learn') === '1'
@@ -3250,9 +3247,8 @@ export default function App() {
   }, [tournNotices, online, matchOver])
 
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
-  // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta).
-  // boardSwap ile XOR -> kullanici elle ust/alt degistirebilir (gorsel, yerel).
-  const flipBoard = (online && myColor === 'black') !== boardSwap
+  // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
+  const flipBoard = online && myColor === 'black'
   // Saat, kurulumda bir sure secildiyse (kapali degilse) calisir
   const clockOn = true // Galaxy tarzi: her oyunda saat acik (3 preset)
   // Hazırlık gate'i saf isOnlineReady'de (authSync); testli. p2 authoritative bug'ı orada belgeli.
@@ -5046,10 +5042,6 @@ export default function App() {
     setHintShown(false)
     setCurBest(null)
   }, [turnStart])
-  // Taraf degistirme tercihi "sadece o maclik" -> yeni mac (oda) basinca varsayilana don.
-  useEffect(() => {
-    setBoardSwap(false)
-  }, [room?.code])
   // ALT-HAMLE (aynı tur içinde zar oynanınca): ÖĞRENME modunda KAPATMA — analiz effect
   // kalan zar için curBest'i günceller (eskiden played.length'te null'lanıyordu -> "ilk
   // hamleyi yapınca ipucu kapanıyor" bug'ı). Manuel ipucu modunda (learn değil) ise analiz

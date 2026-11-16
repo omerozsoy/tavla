@@ -1,0 +1,156 @@
+/* Soru Maratonu — anlık skor çubuğu (üst overlay), sonraki düğme (alt), game-over kartı + tabela. */
+.qm-wrap {
+  position: relative;
+}
+.qm-scorebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  background: rgba(16, 20, 28, 0.92);
+  color: #f2efe6;
+  font-size: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+.qm-scorebar .qm-score b {
+  font-size: 19px;
+  color: #e9c46a;
+}
+.qm-scorebar .qm-correct {
+  opacity: 0.8;
+}
+.qm-exit {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+}
+.qm-next {
+  position: fixed;
+  bottom: 18px;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.qm-next .bgx-btn {
+  pointer-events: auto;
+  font-size: 17px;
+  padding: 12px 28px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Game over */
+.qm-over {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 13, 20, 0.96);
+  padding: 16px;
+  overflow-y: auto;
+}
+.qm-over .qm-exit {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: #f2efe6;
+  font-size: 22px;
+}
+.qm-over-card {
+  width: min(440px, 100%);
+  text-align: center;
+  color: #f2efe6;
+}
+.qm-over-score {
+  font-size: 64px;
+  font-weight: 800;
+  color: #e9c46a;
+  line-height: 1;
+}
+.qm-over-sub {
+  opacity: 0.8;
+  margin: 6px 0 18px;
+}
+.qm-submit {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.qm-nick {
+  flex: 1;
+  max-width: 220px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #3a4150;
+  background: #11151d;
+  color: #f2efe6;
+  font-size: 15px;
+}
+.qm-rank {
+  margin-bottom: 18px;
+  font-size: 17px;
+}
+.qm-rank b {
+  color: #e9c46a;
+}
+.qm-board {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.qm-board-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.qm-board-empty {
+  opacity: 0.7;
+  padding: 8px 0;
+}
+.qm-board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.qm-board-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px;
+  border-radius: 6px;
+}
+.qm-board-list li.qm-me {
+  background: rgba(233, 196, 106, 0.18);
+}
+.qm-br-rank {
+  width: 26px;
+  text-align: right;
+  opacity: 0.7;
+}
+.qm-br-nick {
+  flex: 1;
+}
+.qm-br-score {
+  font-weight: 700;
+  color: #e9c46a;
+}
+.qm-restart {
+  width: 100%;
+  font-size: 17px;
+  padding: 12px;
+}

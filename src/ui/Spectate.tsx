@@ -98,6 +98,10 @@ export default function Spectate({
   // PR poll tavana (~3dk) ulaşıp authPr hâlâ YOKSA: sonuç kartı sonsuza dek %90 "hesaplanıyor"
   // spinner'ında donmasın (izleyici şikayeti) -> timeout bayrağı ile "—"a düş.
   const [prTimedOut, setPrTimedOut] = useState(false)
+  // İzleyici tahta yönü: varsayılan beyaz altta (flip=false). Buton ile üst/alt değiştirilir
+  // (tamamen görsel/yerel; oynayanları etkilemez). sideOf, bir rengin o anki ekran tarafını verir.
+  const [flip, setFlip] = useState(false)
+  const sideOf = (c: Player): 'top' | 'bottom' => ((c === 'white') !== flip ? 'bottom' : 'top')
   // Yönetici moderasyon: sohbette isme tıklanınca açılan oyuncu profili (oradan konuşma yasağı).
   const [profileId, setProfileId] = useState<number | null>(null)
   // Yönetici "Maçtan At": onay modalı (atılacak oyuncu + opsiyonel sebep). Atılan hükmen kaybeder.
@@ -527,9 +531,9 @@ export default function Spectate({
     }
     return d.slice(0, 2).map((v, i) => ({ value: v, used: used[i] ?? false }))
   })()
-  // Aktif oyuncu ALTTA mı? (beyaz=alt, flip=false). Zarlar gerçek oyundaki gibi onun TARAFINDA:
-  // alt oyuncu -> sağ (centerRight), üst oyuncu -> sol (centerLeft). centerMain (orta) DEĞİL.
-  const activeBottom = displayBoard?.turn === 'white'
+  // Aktif oyuncu ALTTA mı? Zarlar gerçek oyundaki gibi onun TARAFINDA: alt oyuncu -> sağ
+  // (centerRight), üst oyuncu -> sol (centerLeft). centerMain (orta) DEĞİL. flip'e göre sideOf.
+  const activeBottom = displayBoard ? sideOf(displayBoard.turn) === 'bottom' : false
   const diceRow =
     displayBoard && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={displayBoard.turn} /> : null
   // Dance (gele): oynayanla BİREBİR — zar dans edenin KENDİ slotunda silik (nm-dice), ortada yalnız
@@ -610,6 +614,18 @@ export default function Spectate({
       >
         <Icon name={muted ? 'mute' : 'volume'} size={18} />
       </button>
+      {/* Tarafı değiştir (üst/alt) — izleyici tahtayı 180° çevirir. Görsel/yerel, oyunu etkilemez. */}
+      {displayBoard && !matchDone && (
+        <button
+          type="button"
+          className={`spectate-vol-btn spectate-swap${flip ? ' active' : ''}`}
+          onClick={() => setFlip((s) => !s)}
+          aria-label={t('board.swapSide')}
+          title={t('board.swapSide')}
+        >
+          ⇅
+        </button>
+      )}
       <Button
         variant="ghost"
         size="icon"
@@ -631,10 +647,10 @@ export default function Spectate({
         <div className="game-area">
           {displayBoard ? (
             <>
-              {/* p1 = beyaz (altta): 1. oyuncunun gördüğü perspektif. flip=false. */}
+              {/* Varsayılan: beyaz altta (flip=false). İzleyici "Tarafı değiştir" ile flip'ler. */}
               <Sidebar
-                top={mkInfo('black')}
-                bottom={mkInfo('white')}
+                top={mkInfo(flip ? 'white' : 'black')}
+                bottom={mkInfo(flip ? 'black' : 'white')}
                 length={target}
                 stake={eff?.pot ?? eff?.stake ?? 0}
                 crawford={crawford}
@@ -646,9 +662,9 @@ export default function Spectate({
                   white={clkView?.white ?? clock.white}
                   black={clkView?.black ?? clock.black}
                   final={30}
-                  flip={false}
-                  topScore={score.black}
-                  bottomScore={score.white}
+                  flip={flip}
+                  topScore={flip ? score.white : score.black}
+                  bottomScore={flip ? score.black : score.white}
                 />
               )}
               <Board
@@ -665,10 +681,10 @@ export default function Spectate({
                 // Küp teklifi: oyuncunun gördüğü AYNI yanıp sönen küp. Karar VERENİN (teklifi
                 // alanın=rakip) tarafında durur; izleyici flip'siz oturur (beyaz=alt, siyah=üst).
                 cubePendingValue={cubePending ? cubeVal * 2 : null}
-                cubePendingSide={cubePending === 'white' ? 'top' : 'bottom'}
+                cubePendingSide={cubePending ? sideOf(cubePending === 'white' ? 'black' : 'white') : 'bottom'}
                 crawford={crawford}
                 classic={classic}
-                flip={false}
+                flip={flip}
                 showPip
                 centerLeft={!activeBottom ? (danced ? danceDice : diceRow) : null}
                 centerRight={activeBottom ? (danced ? danceDice : diceRow) : null}

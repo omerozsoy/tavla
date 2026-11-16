@@ -16171,6 +16171,32 @@ body:has(.spectate-view) .app.lobby {
   height: 40px;
   padding: 0;
 }
+/* Tarafı değiştir butonu: ses butonuyla aynı cam hap, onun hemen ÜSTÜNDE (sağ alt köşe). */
+.spectate-swap {
+  position: fixed;
+  bottom: calc(66px + env(safe-area-inset-bottom));
+  right: calc(14px + env(safe-area-inset-right));
+  z-index: 120;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 22px;
+  line-height: 1;
+  background: color-mix(in srgb, var(--game-scene, #06090f) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-cream, #f4efe6) 20%, transparent);
+  backdrop-filter: blur(4px);
+}
+.spectate-swap.active {
+  border-color: color-mix(in srgb, var(--tv-cream, #f4efe6) 60%, transparent);
+  color: var(--tv-cream, #f4efe6);
+}
+@media (max-width: 640px) {
+  .spectate-swap {
+    bottom: calc(62px + env(safe-area-inset-bottom));
+    right: calc(12px + env(safe-area-inset-right));
+  }
+}
 .spectate-notfound {
   display: flex;
   flex-direction: column;
