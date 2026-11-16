@@ -1317,6 +1317,22 @@ const BAND_TIER: Record<DiffBand, number> = { cok_kolay: 0, kolay: 1, orta: 2, z
     qs.forEach((q, i) => (SECTION_Q[recv[i % recv.length]] ??= []).push(q))
   }
 }
+// GLOBAL DEDUP (board+zar): aynı tahta+zar iki bölümde GÖRÜNMESİN. questionId XGID-tabanlı
+// (q.id = XGID); aynı dizilim+zar farklı skor/küp alanında farklı XGID -> farklı id -> eski dedup
+// KAÇIRIYORDU -> kullanıcı "çift aynı soru" görüyordu. board+zar TEK görsel kimlik; ilk (authored/
+// classified) kopya tutulur, sonrakiler (dağıtılan açılış kopyaları) atılır. Tek chokepoint.
+{
+  const seenBD = new Set<string>()
+  const bdKey = (q: Question) => boardKey(q.state) + '|' + [...q.state.dice].sort().join('-')
+  for (const k of Object.keys(SECTION_Q)) {
+    SECTION_Q[k] = SECTION_Q[k].filter((q) => {
+      const bk = bdKey(q)
+      if (seenBD.has(bk)) return false
+      seenBD.add(bk)
+      return true
+    })
+  }
+}
 // Her bolum ic sıralama: KOLAY -> ZOR (sezgisel zorluk).
 for (const k of Object.keys(SECTION_Q)) SECTION_Q[k].sort((a, b) => hardnessText(a) - hardnessText(b))
 
