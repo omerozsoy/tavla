@@ -1102,16 +1102,23 @@ class AuthController extends Controller
         // BOT (pvb) gnubg PR: aynı job self ile birlikte doldurur -> $ready (self hazır) iken bot da hazır.
         $hasOppPr = Schema::hasColumn('match_results', 'gnubg_opponent_pr');
 
-        // TEK-KAYNAK PR: bu satırın gnubg_opponent_* kolonları RECONSTRUCTED'dır (rakip hamleleri
-        // BU oyuncunun log'undan kurulur) -> yalnız rakibin KENDİ otoriter satırı YOKSA meşrudur
-        // (pvb bot ya da rakip hiç raporlamadan terk etti). Online'da rakip satırı varsa reconstructed
-        // DEĞER GÖSTERİLMEZ (null döndür); istemci rakip PR'ını /me/match-pr'den rakibin KENDİ
-        // gnubg satırından okur. Böylece iki istemci de AYNI tek otoriter değeri görür (5.93 sızıntısı biter).
-        $oppRowExists = ! empty($match->room_code)
-            && Schema::hasColumn('match_results', 'room_code')
-            && MatchResult::where('room_code', $match->room_code)
-                ->where('user_id', '!=', $match->user_id)->exists();
-        $oppRecon = $ready && $hasOppPr && ! $oppRowExists; // reconstructed rakip PR'ı yalnız burada ver
+        // RAKİP PR — SUNUCU TEK KAYNAK (istemci KARŞI OYUNCUDAN hiçbir şey beklemez). Snowie
+        // (AnalyzeMatchSnowieJob) TEK gnubg analizinden İKİ satırı cross-tutarlı yazar -> bu satırın
+        // reconstructed gnubg_opponent_pr'ı rakibin KENDİ satırının gnubg_pr'ına EŞİTtir. Rakibin KENDİ
+        // (otoriter) satırı varsa onu tercih et; yoksa (pvb/terk) reconstructed değeri ver. HER DURUMDA
+        // değer VARSA döndür -> istemci rakip PR için oda-anahtarlı /me/match-pr poll'u + "rakip raporladı
+        // mı" peer-beklemesi YAPMAZ; sonuç ekranı TEK bu uçtan (self+opponent birlikte) dolar.
+        // (Eski "online'da null döndür" kuralı GEÇERSİZ: 5.93 sızıntısı AnalyzeMatchPrJob'ın AYRI opponent
+        //  hesabındandı; o ikinci motor DRHK8'te kapatıldı -> reconstructed == otoriter.)
+        $oppRow = (! empty($match->room_code) && Schema::hasColumn('match_results', 'room_code'))
+            ? MatchResult::where('room_code', $match->room_code)
+                ->where('user_id', '!=', $match->user_id)->latest('id')->first()
+            : null;
+        $oppCol = fn ($c) => ($oppRow && $oppRow->$c !== null) ? (float) $oppRow->$c : null;
+        $reconCol = fn ($c) => ($hasOppPr && $match->$c !== null) ? (float) $match->$c : null;
+        $oppPrVal = $oppCol('gnubg_pr') ?? $reconCol('gnubg_opponent_pr');
+        $oppCheckerVal = $oppCol('gnubg_checker_pr') ?? $reconCol('gnubg_opponent_checker_pr');
+        $oppCubeVal = $oppCol('gnubg_cube_pr') ?? $reconCol('gnubg_opponent_cube_pr');
         // ŞANS PR'DAN FARKLI: opponent_luck_* RECONSTRUCTED DEĞİL — AnalyzeMatchLuckJob iki satırı da
         // BİRLEŞİK/sunucu .mat'inden OTORİTER yazar (writeOpponent / handlePvb). Dolayısıyla PR'daki gibi
         // "rakip satırı varsa gizle" gerekmez; DEĞER VARSA ver. (Rapor etmeyen taraf sonuç ekranında
@@ -1138,11 +1145,11 @@ class AuthController extends Controller
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
             'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
-            // Rakip gnubg PR — YALNIZ pvb/terk (rakip satırı yok) iken reconstructed değeri ver; online'da
-            // null -> istemci rakibin KENDİ satırındaki otoriter PR'ı /me/match-pr'den okur (tek kaynak).
-            'opponent_pr' => $oppRecon ? $num($match->gnubg_opponent_pr) : null,
-            'opponent_checker_pr' => $oppRecon ? $num($match->gnubg_opponent_checker_pr) : null,
-            'opponent_cube_pr' => $oppRecon ? $num($match->gnubg_opponent_cube_pr) : null,
+            // Rakip gnubg PR — SUNUCU TEK KAYNAK (otoriter opp satırı > reconstructed; yukarı bkz).
+            // Değer hazırsa HER ZAMAN döner -> istemci rakip için peer-raporu BEKLEMEZ.
+            'opponent_pr' => $oppPrVal,
+            'opponent_checker_pr' => $oppCheckerVal,
+            'opponent_cube_pr' => $oppCubeVal,
             'luck_ready' => $luckReady,
             'luck_mwc' => $luckReady ? $num($match->luck_mwc) : null, // insan (satır sahibi)
             'opponent_luck_mwc' => $oppLuckReady ? $num($match->opponent_luck_mwc) : null, // OTORİTER (pvb/terk/online)

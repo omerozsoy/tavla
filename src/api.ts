@@ -2825,9 +2825,10 @@ export async function matchGnubgPr(id: number): Promise<{
   pr: number | null
   checker_pr: number | null
   cube_pr: number | null
-  opponent_pr?: number | null // bot (pvb) gnubg-otoriter PR — online'da null
+  opponent_pr?: number | null // rakip gnubg-otoriter PR (pvb bot + online; sunucu tek kaynak)
   opponent_checker_pr?: number | null
   opponent_cube_pr?: number | null
+  rating_bonus?: number | null // PR ×2 ödülü: bu oyuncu kazandı+PR daha iyiyse ek rating (>0) — else null
   luck_ready: boolean
   luck_mwc: number | null // insan (satır sahibi) gnubg NATIVE şans %
   opponent_luck_mwc: number | null // bot gnubg NATIVE şans %

@@ -642,7 +642,6 @@ import {
   type BankTransferResult,
   type PayMethod,
   messagesUnread,
-  matchPr,
   matchGnubgPr,
   roomResult,
   matchGnubgReview,
@@ -2466,11 +2465,7 @@ export default function App() {
   // PR ilerleme yüzdesi (gerçek per-pozisyon): matchGnubgPr poll'undan gelir (done/total). Hazır
   // değilken sonuç ekranı bununla determinate çubuk gösterir; null -> MatchResult zaman-tahminine düşer.
   const [prProgressPct, setPrProgressPct] = useState<number | null>(null)
-  // RAKİP PR'ı ayrı/geç gelir (kaybeden kendi satırını geç raporlar/gnubg kuyruğu). KENDİ PR'ım hazır
-  // olunca prAnalyzing kapanıp rakip hücresi boş "—" gösteriyordu ("rakibin PR'ı yok" sanılıyordu).
-  // Bu bayrak rakip PR'ı gelene (ya da matchPr poll tavanına) kadar onun hücresinde "…" tutar.
-  const [oppPrPending, setOppPrPending] = useState(false)
-  // PR ×2 ÖDÜLÜ: kazandım + PR'ım rakipten iyi -> sunucu ek rating verdi. matchPr poll'undan gelir;
+  // PR ×2 ÖDÜLÜ: kazandım + PR'ım rakipten iyi -> sunucu ek rating verdi. pollGnubgPr'dan gelir;
   // >0 ise sonuç kartının önünde "X2" tebrik penceresi açılır (yalnız kazanan görür).
   const [ratingBonus, setRatingBonus] = useState<number | null>(null)
   const prPollRef = useRef(0) // aktif poll oturumu (yeni maç/yeni rapor eski poll'u iptal eder)
@@ -3402,7 +3397,7 @@ export default function App() {
     prPollRef.current++ // aktif gnubg PR poll'unu iptal et
     setPrAnalyzing(false)
     setPrProgressPct(null) // yeni mac -> onceki PR ilerleme yuzdesini sifirla
-    setOppPrPending(false)
+    setLuckPending(false) // yeni mac -> onceki sans loader'ini kapat
     setRatingBonus(null) // yeni mac -> onceki X2 odul penceresini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
@@ -5434,7 +5429,6 @@ export default function App() {
       // gösteriyordu. Tüm online maçlar gnubg ile analiz edilir -> iyimser aç; rapor
       // gnubg_authoritative=false derse (aşağıda) ya da rapor tümden başarısızsa KAPAT.
       setPrAnalyzing(true)
-      if (reportRoomCode && !room?.bot) setOppPrPending(true)
       for (let i = 0; i < 30 && pendingAnalysisRef.current > 0; i++) {
         await new Promise((res) => setTimeout(res, 100))
       }
@@ -5531,7 +5525,6 @@ export default function App() {
         // Rapor 12 denemede de gelmedi -> erken açtığımız PR loader'ını KAPAT (sonsuz "hesaplanıyor"
         // takılmasın; kurtarma raporu açılışta tekrar dener).
         setPrAnalyzing(false)
-        setOppPrPending(false)
       } else {
         // Not YALNIZ sunucu AÇIKÇA rated:false derse (eski backend rated göndermez -> undefined ->
         // not gösterme; puanlı maçlar yanlışlıkla "puansız" etiketi almasın).
@@ -5539,13 +5532,10 @@ export default function App() {
         setRatingChange({ before: r.rating_before ?? before, after: r.rating, reason: r.rated === false ? (r.rating_reason ?? 'casual') : null, limit: r.friendly_rating_limit })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
         if (r.achievements?.length) setAchUnlocked(r.achievements)
-        // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
-        const code = room?.code ?? null
-        // SADECE GNUBG (direktif): rapor yanıtındaki pr_self/pr_opponent + pr_cube_*/pr_checker_* hepsi
-        // istemci LOG türevidir (gnubg DEĞİL — "230.25 küp PR" gibi çöp değerlerin kökü). HİÇBİRİ ekrana
-        // basılmaz. Tüm hücreler gnubg gelene kadar NULL (loader); yalnız pollGnubgPr + matchPr poll'u
-        // (ikisi de gnubg-otoriter) doldurur. gnubg hiç gelmezse ~90sn sonra dürüst "—".
-        let oppPr: number | null = null
+        // SADECE GNUBG + SUNUCU TEK KAYNAK (direktif): rapor yanıtındaki istemci-türevi PR değerleri
+        // ekrana BASILMAZ. Tüm hücreler gnubg gelene kadar NULL (loader). pollGnubgPr (matchGnubgPr,
+        // id-anahtarlı) self+opponent PR + şansı BİRLİKTE doldurur -> istemci rakibin raporunu/satırını
+        // BEKLEMEZ (oda-anahtarlı matchPr poll'u KALDIRILDI; Snowie tek analizden iki satırı otoriter yazar).
         setServerPr({
           self: null,
           opp: null,
@@ -5554,27 +5544,12 @@ export default function App() {
           cubeSelf: null,
           cubeOpp: null,
         })
-        // Rakip PR'ı online insan maçında ayrı/geç gelir -> gelene kadar onun hücresinde "…" tut
-        // (boş "—" değil). Bot/terk/forfeit'te rakip satırı olmayabilir; aşağıdaki poll ~90sn'de
-        // gelmezse tavan vurup kapatır (sonsuz loader yok).
-        setOppPrPending(!!code && !room?.bot && oppPr == null)
-        // HAKEM=gnubg (online): kendi PR'ımı da gnubg gelene kadar LOADER göster, gnubg gelince
-        // değiştir (wildbg sayısı gösterilmez). Rakip PR aşağıdaki matchPr poll'undan (o da gnubg).
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
         if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
         else setPrAnalyzing(false) // gnubg yok -> erken açtığımız loader'ı kapat (serverPr zaten dolu)
-        // Tavlai Luck V1: gnubg NATIVE MWC-luck (%) — renge eşle (self->myColor). Async (analyse
-        // match) olduğundan ilkin null; poll ederek doldur. İkisi de gelince BAĞIMSIZ % gösterilir.
-        const setLuckMwcPair = (selfL?: number | null, oppL?: number | null) =>
-          setServerLuckMwc((prev) => {
-            const next = { white: prev?.white ?? null, black: prev?.black ?? null }
-            if (selfL != null) next[myColor] = selfL
-            if (oppL != null) next[opponent(myColor)] = oppL
-            return next
-          })
-        setLuckMwcPair(r.luck_mwc_self, r.luck_mwc_opp)
-        // Maç Özeti: luck cost (emg) + joker — aynı renk eşlemesi (self->myColor).
-        const setColorPair = (
+        // Rapor yanıtı ilk şans değerlerini taşıyabilir -> hemen seed et (renge göre; pollGnubgPr
+        // otoriter değerleri tamamlar). Poll/bekleme YOK.
+        const seedPair = (
           setter: typeof setServerLuckEmg,
           selfV?: number | null,
           oppV?: number | null,
@@ -5585,40 +5560,9 @@ export default function App() {
             if (oppV != null) next[opponent(myColor)] = oppV
             return next
           })
-        setColorPair(setServerLuckEmg, r.luck_emg_self, r.luck_emg_opp)
-        setColorPair(setServerLuckJokers, r.luck_jokers_self, r.luck_jokers_opp)
-        let mwcDone = r.luck_mwc_self != null && r.luck_mwc_opp != null
-        if ((oppPr == null || !mwcDone) && code) {
-          // Rakip PR'ı (kaybedenin KENDİ gnubg satırı) otoriter kaynaktır; gnubg tek-thread/kuyrukta
-          // yavaş olabildiğinden ~90sn poll et (eski 18sn penceresi kısa kalıp "—"da bırakıyordu).
-          // 0 GERÇEK bir değerdir (kusursuz oyun): sunucu hazır değilken NULL döner, hesaplandıysa
-          // gerçek değeri (0 dahil). Bu yüzden yalnız null'da poll'a devam; 0 gelirse 0 yaz (atma).
-          // ŞANS = yalnız gnubg MWC (mwcDone); istemci HAM luck poll'u KALDIRILDI.
-          for (let i = 0; i < 60 && (oppPr == null || !mwcDone); i++) {
-            await new Promise((res) => setTimeout(res, 1500))
-            const pair = await matchPr(code)
-            if (pair.opponent != null) {
-              oppPr = pair.opponent
-              setOppPrPending(false) // rakip PR geldi -> "…" kapan, sayı göster
-              // Rakip raporunu YENI tamamladiysa kirilim da o an gelir; gelmeyen ONCEKI kalir.
-              setServerPr((prev) => ({
-                self: pair.self ?? prev?.self ?? null, // r.pr_self (wildbg) fallback KALDIRILDI (direktif)
-                opp: pair.opponent,
-                checkerSelf: pair.checker_self ?? prev?.checkerSelf ?? null,
-                checkerOpp: pair.checker_opponent ?? prev?.checkerOpp ?? null,
-                cubeSelf: pair.cube_self ?? prev?.cubeSelf ?? null,
-                cubeOpp: pair.cube_opponent ?? prev?.cubeOpp ?? null,
-              }))
-            }
-            if (pair.luck_mwc_self != null || pair.luck_mwc_opp != null) {
-              setLuckMwcPair(pair.luck_mwc_self, pair.luck_mwc_opp)
-              if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) mwcDone = true
-            }
-            setColorPair(setServerLuckEmg, pair.luck_emg_self, pair.luck_emg_opp)
-            setColorPair(setServerLuckJokers, pair.luck_jokers_self, pair.luck_jokers_opp)
-          }
-        }
-        setOppPrPending(false) // poll bitti (geldi ya da ~90sn tavan) -> sonsuz "…" bırakma
+        seedPair(setServerLuckMwc, r.luck_mwc_self, r.luck_mwc_opp)
+        seedPair(setServerLuckEmg, r.luck_emg_self, r.luck_emg_opp)
+        seedPair(setServerLuckJokers, r.luck_jokers_self, r.luck_jokers_opp)
       }
     })()
     // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
@@ -5696,10 +5640,12 @@ export default function App() {
     setPrAnalyzing(true)
     setPrProgressPct(null) // yeni analiz -> önceki yüzdeyi temizle (ilk poll gerçeğini getirir)
     let prDone = false
-    // ŞANS PVB'YE DARALTILDI: online'da luck TEK KAYNAK = matchPr (oda-anahtarlı, DB-otoriter, self+opp
-    // renge doğru) -> aşağıdaki ONLINE ÇİFT SENKRON effect'i doldurur. pvb'nin oda'sı YOK -> şans yalnız
-    // bu id-anahtarlı uçtan gelebilir, orada işlenir. online iken luckDone=true -> döngü PR bitince durur.
-    let luckDone = online
+    // SUNUCU TEK KAYNAK (online + pvb): self+opponent PR + ŞANS hepsi BU id-anahtarlı uçtan gelir
+    // (Snowie tek analizden iki satırı otoriter yazar -> matchGnubgPr self VE opponent'ı birlikte
+    // döndürür). İstemci KARŞI OYUNCUDAN hiçbir rapor/veri BEKLEMEZ. Şans PR'dan geç gelebildiği için
+    // iki hücre de dolana dek loader göster (luckPending).
+    let luckDone = false
+    setLuckPending(true)
     // gnubg hazır olana kadar poll et (~3 dk). wildbg'ye ASLA düşme; hazır değilse LOADER kalır.
     for (let i = 0; i < 90 && !(prDone && luckDone); i++) {
       await new Promise((res) => setTimeout(res, 2000))
@@ -5712,9 +5658,13 @@ export default function App() {
         if (!prDone && !g.ready && g.progress && typeof g.progress.pct === 'number') {
           setPrProgressPct(g.progress.pct)
         }
+        // PR ×2 ödülü (kazandım + PR daha iyi): sunucu Snowie'de ek rating verdi -> >0 gelince
+        // "X2" penceresini aç. Yalnız KAZANAN satırda >0 döner. (matchPr poll'u kaldırıldı -> burada oku.)
+        if (g.rating_bonus != null && g.rating_bonus > 0) setRatingBonus(g.rating_bonus)
         if (!prDone && g.ready) {
-          // pvb: bot (rakip) gnubg PR de aynı job'la geldi -> opp/checkerOpp/cubeOpp doldur (yoksa
-          // önceki değeri koru; online'da null gelir, matchPr poll'u karşı satırdan doldurur).
+          // self VE opponent (gnubg-otoriter) aynı analizden birlikte gelir -> iki hücre BİRLİKTE dolar
+          // (rakip için ayrı poll / peer-raporu beklemesi YOK). opp null ise (nadir çöp/mezar taşı)
+          // dürüst "—"; önceki değeri koru.
           setServerPr((prev) => ({
             self: g.pr,
             opp: g.opponent_pr ?? prev?.opp ?? null,
@@ -5732,10 +5682,10 @@ export default function App() {
           setPrAnalyzing(false)
           prDone = true
         }
-        // ADIM 4 (YALNIZ PVB — online'da luckDone baştan true): gnubg NATIVE şans. pvb'nin oda'sı yok,
-        // matchPr kullanılamaz -> şans bu id-anahtarlı uçtan gelir. RENK-FARKINDA (self->myColor; pvb'de
-        // myColor=beyaz). Merge (prev) ile ezmeden doldur.
-        if (!luckDone && g.luck_ready) {
+        // ŞANS (gnubg NATIVE, SUNUCU TEK KAYNAK — online + pvb): self (luck_mwc) + opponent
+        // (opponent_luck_mwc) İKİSİ de OTORİTER döner (AnalyzeMatchLuckJob iki satırı birleşik .mat'ten
+        // yazar). RENK-FARKINDA (self->myColor). İki hücre de dolana kadar bekle; sonra luckPending kapat.
+        if (!luckDone && (g.luck_ready || g.opponent_luck_mwc != null)) {
           const applyPair = <T,>(
             setter: React.Dispatch<React.SetStateAction<{ white: T | null; black: T | null } | null>>,
             selfV: T | null | undefined,
@@ -5750,7 +5700,10 @@ export default function App() {
           applyPair(setServerLuckMwc, g.luck_mwc, g.opponent_luck_mwc)
           applyPair(setServerLuckEmg, g.luck_emg ?? null, g.opponent_luck_emg ?? null)
           applyPair(setServerLuckJokers, g.luck_jokers ?? null, g.opponent_luck_jokers ?? null)
-          luckDone = true
+          if (g.luck_mwc != null && g.opponent_luck_mwc != null) {
+            luckDone = true
+            setLuckPending(false) // iki şans da geldi -> hücreler değeri gösterir
+          }
         }
       } catch {
         /* geçici hata -> tekrar dene */
@@ -5759,92 +5712,16 @@ export default function App() {
     // TIMEOUT (gnubg ~3dk gelmedi): wildbg SAYISINI GÖSTERME (kullanıcı direktifi: yalnız gnubg PR).
     // AMA loader'ı da SONSUZA dek döndürme -> dürüst "—" (kesin gnubg PR "Maç Analizleri"nde görünür).
     // Güvenlik ağı: settled hiç gelmese bile (ör. job hiç dispatch edilmedi) ~3dk sonra spinner durur.
-    if (prPollRef.current === token && !prDone) setPrAnalyzing(false)
+    if (prPollRef.current === token) {
+      if (!prDone) setPrAnalyzing(false)
+      if (!luckDone) setLuckPending(false) // tavan: şans gelmediyse dürüst "—" (sonsuz loader değil)
+    }
   }
 
-  // ONLINE ÇİFT SENKRON (tek otoriter kaynak = matchPr, ODA-ANAHTARLI): rakip PR + self/opp ŞANS (ve
-  // Maç Özeti maliyet/joker) hepsi DB'den simetrik okunur -> "kim raporladı" ÖNEMSİZ, iki istemci de
-  // AYNI değerleri görür. pollGnubgPr online'da luck'a DOKUNMAZ (pvb'ye daraltıldı) + yalnız self PR /
-  // ilerleme verir; rakip PR (satır-reconstructed gizlendiği için) + şans bu effect'ten gelir. Hem
-  // raporlayan (doReport inline döngüsüne yedek) hem rapor etmeyen taraf için çalışır; matchPr idempotent
-  // + otoriter (opp.luck_mwc her oyuncunun KENDİ satırından) -> çift poll zararsız. PR+şans dolunca durur.
-  const applyLuckFromPair = (pair: Awaited<ReturnType<typeof matchPr>>) => {
-    const put = <T,>(
-      setter: React.Dispatch<React.SetStateAction<{ white: T | null; black: T | null } | null>>,
-      selfV: T | null | undefined,
-      oppV: T | null | undefined,
-    ) =>
-      setter((prev) => {
-        const next = { white: prev?.white ?? null, black: prev?.black ?? null }
-        if (selfV != null) next[myColor] = selfV
-        if (oppV != null) next[opponent(myColor)] = oppV
-        return next
-      })
-    put(setServerLuckMwc, pair.luck_mwc_self, pair.luck_mwc_opp)
-    put(setServerLuckEmg, pair.luck_emg_self, pair.luck_emg_opp)
-    put(setServerLuckJokers, pair.luck_jokers_self, pair.luck_jokers_opp)
-  }
-  useEffect(() => {
-    const code = room?.code
-    if (!online || !matchOver || !mWinner || room?.bot || !code) return
-    let cancelled = false
-    let prDone = serverPr?.opp != null
-    setOppPrPending(!prDone)
-    // Şans PR'dan geç gelir -> poll boyunca loader'ı açık tut (aşağıda ikisi de dolunca kapanır).
-    setLuckPending(true)
-    void (async () => {
-      let luckDone = false
-      for (let i = 0; i < 60 && !cancelled && !(prDone && luckDone); i++) {
-        await new Promise((res) => setTimeout(res, 3000))
-        if (cancelled) return
-        let pair
-        try {
-          pair = await matchPr(code)
-        } catch {
-          continue // geçici hata -> tekrar dene
-        }
-        if (cancelled) return
-        // PR ×2 ödülü (kazandım + PR daha iyi): sunucu Snowie'de ek rating verdi -> >0 gelince
-        // "X2" penceresini aç (sonuç kartının önünde). Yalnız KAZANAN satırda >0 döner.
-        if (pair.rating_bonus != null && pair.rating_bonus > 0) setRatingBonus(pair.rating_bonus)
-        if (!prDone) {
-          if (pair.opponent != null) {
-            setServerPr((prev) => ({
-              self: pair.self ?? prev?.self ?? null,
-              opp: pair.opponent,
-              checkerSelf: pair.checker_self ?? prev?.checkerSelf ?? null,
-              checkerOpp: pair.checker_opponent ?? prev?.checkerOpp ?? null,
-              cubeSelf: pair.cube_self ?? prev?.cubeSelf ?? null,
-              cubeOpp: pair.cube_opponent ?? prev?.cubeOpp ?? null,
-            }))
-            setOppPrPending(false)
-            prDone = true
-          } else if (pair.opponent_settled) {
-            // analiz bitti ama rakip PR yok (çok kısa/forfeit = karar yok -> mezar taşı) -> dürüst "—".
-            setOppPrPending(false)
-            prDone = true
-          }
-        }
-        // ŞANS self+opp (renge göre); ikisi de gelince tamam. Maliyet/joker de aynı eşlemeyle.
-        if (pair.luck_mwc_self != null || pair.luck_mwc_opp != null) {
-          applyLuckFromPair(pair)
-          if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) {
-            luckDone = true
-            setLuckPending(false) // ikisi de geldi -> şans satırı değeri gösterir
-          }
-        }
-      }
-      if (!cancelled) {
-        setOppPrPending(false) // bitti (geldi / ~3dk tavan) -> sonsuz "…" bırakma
-        setLuckPending(false) // tavana ulaştı: luck gelmediyse dürüst "—" (sonsuz loader değil)
-      }
-    })()
-    return () => {
-      cancelled = true
-      setLuckPending(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, matchOver, mWinner, room?.code, room?.bot])
+  // (KALDIRILDI — ONLINE ÇİFT SENKRON / matchPr oda-anahtarlı poll): rakip PR + şans ARTIK TEK kaynaktan
+  // (pollGnubgPr = matchGnubgPr, id-anahtarlı) self ile BİRLİKTE gelir. İstemci rakibin raporunu/satırını
+  // BEKLEMEZ (Snowie tek analizden iki satırı otoriter yazar; backend reconstructed==otoriter döndürür).
+  // Bu, "rakip raporladı mı" peer-beklemesini ve ondan doğan false-tombstone flaşını tümden kaldırır.
 
   // RAPOR ETMEYEN TARAF — SONUÇ TAMAMEN SUNUCUDAN: sonuç ekranı açık ama bu istemci maçı rapor
   // etmediğinden (bitişi POLL ile gördü) rating + match_result_id'si yok -> eskiden "—" + rating
@@ -12570,8 +12447,9 @@ export default function App() {
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
           analyzing={prAnalyzing}
-          oppAnalyzing={oppPrPending}
-          analyzingBoth={botMatch}
+          // SUNUCU TEK KAYNAK: self+opponent PR tek analizden (pollGnubgPr) BİRLİKTE gelir -> iki hücre
+          // de prAnalyzing boyunca loader, birlikte dolar. "rakip ayrı/geç" (oppAnalyzing) KALDIRILDI.
+          analyzingBoth={botMatch || online}
           luckPending={luckPending}
           progressPct={prProgressPct}
           winnerCheckerPr={prCheckerShown(mWinner)}
