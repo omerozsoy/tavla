@@ -1183,7 +1183,6 @@ const CURRI_SECTIONS: CurriSection[] = [
   // BAŞLANGIÇ
   { id: 'b-basics', title: 'Temel Kavramlar', tier: 0 },
   { id: 'b-openings', title: 'Açılış Zarları', tier: 0 },
-  { id: 'b-openpool', title: 'Açılış Pratiği — Çok Kolay', tier: 0 },
   { id: 'b-points', title: 'Kapı Alma', tier: 0 },
   { id: 'b-hitornot', title: 'Vurmak mı, Vurmamak mı?', tier: 0 },
   { id: 'b-bearoff', title: 'Temel Pul Toplama', tier: 0 },
@@ -1193,7 +1192,6 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'd-safe', title: 'Güvenli Oynama ve Risk Alma', tier: 1 },
   { id: 'd-escape', title: 'Geri Pulları Kaçırma', tier: 1 },
   { id: 'd-midgame', title: 'Temel Orta Oyun', tier: 1 },
-  { id: 'd-openpool', title: 'Açılış Pratiği — Kolay', tier: 1 },
   { id: 'd-race', title: 'Yarışa Geçiş', tier: 1 },
   { id: 'd-cube', title: 'Temel Küp Kavramları', tier: 1 },
   { id: 'd-test', title: 'Seviye Testi', tier: 1, isTest: true },
@@ -1204,7 +1202,6 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'i-deepanchor', title: 'Derin Çapa Oyunları', tier: 2 },
   { id: 'i-anchordecide', title: 'Çapayı Korumak veya Bırakmak', tier: 2 },
   { id: 'i-nowlater', title: 'Şimdi mi Risk Almalı, Sonra mı?', tier: 2 },
-  { id: 'i-openpool', title: 'Açılış Pratiği — Orta', tier: 2 },
   { id: 'i-cube', title: 'Küp Verme ve Kabul Kararları', tier: 2 },
   { id: 'i-test', title: 'Seviye Testi', tier: 2, isTest: true },
   // İLERİ
@@ -1213,14 +1210,12 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'a-timing', title: 'Zamanlama', tier: 3 },
   { id: 'a-backgame', title: 'Geri Oyun', tier: 3 },
   { id: 'a-midgame', title: 'Zor Orta Oyun Kararları', tier: 3 },
-  { id: 'a-openpool', title: 'Açılış Pratiği — Zor', tier: 3 },
   { id: 'a-bearoff', title: 'İleri Pul Toplama', tier: 3 },
   { id: 'a-cube', title: 'İleri Küp Kararları', tier: 3 },
   { id: 'a-test', title: 'Seviye Testi', tier: 3, isTest: true },
   // USTALIK
   { id: 'm-complex', title: 'Karmaşık Pozisyonlar', tier: 4 },
   { id: 'm-subtle', title: 'İnce Hamle Farkları', tier: 4 },
-  { id: 'm-openpool', title: 'Açılış Pratiği — Çok Zor', tier: 4 },
   { id: 'm-scoremoves', title: 'Maç Skoruna Göre Hamleler', tier: 4 },
   { id: 'm-scorecube', title: 'Maç Skoruna Göre Küp Kararları', tier: 4 },
   { id: 'm-tournament', title: 'Turnuva Pozisyonları', tier: 4 },
@@ -1285,22 +1280,41 @@ for (const q of ALL_REAL) {
   if (tourney.length) SECTION_Q['m-tournament'] = tourney
   SECTION_Q['m-complex'] = rest
 }
-// AÇILIŞ HAVUZU: DIFF_OPENINGS (motor-doğrulanmış açılış pozisyonları) konu yoluna banda göre dağıtılır.
-// ALL_REAL'e girmez (üretilmiş) -> burada {b,d,i,a,m}-openpool bölümlerine yerleşir. Mevcut tüm bölümlerle
-// board+zar (questionId) dedup: aynı puzzle iki yerde görünmesin.
-const OPEN_POOL_SECTION: Record<DiffBand, string> = {
-  cok_kolay: 'b-openpool', kolay: 'd-openpool', orta: 'i-openpool', zor: 'a-openpool', cok_zor: 'm-openpool',
-}
+// AÇILIŞ HAVUZU: DIFF_OPENINGS (motor-doğrulanmış açılış pozisyonları) ayrı "Açılış Pratiği" bloğu
+// OLARAK DEĞİL, mevcut konu bölümlerine RASGELE-HOMOJEN karıştırılır (kullanıcı: yapay numaralı
+// 25'lik gruplar istenmedi). Banda göre tier (cok_kolay->0 ... cok_zor->4); tier içinde o tier'in
+// checker-play (kup/test HARİÇ) bölümlerine deterministik shuffle + eşit round-robin. Board+zar dedup.
+const BAND_TIER: Record<DiffBand, number> = { cok_kolay: 0, kolay: 1, orta: 2, zor: 3, cok_zor: 4 }
 {
+  const rng = mulberry32(0x0ace17) // deterministik: her build aynı dağıtım
   const seen = new Set<string>()
   for (const k of Object.keys(SECTION_Q)) for (const q of SECTION_Q[k]) seen.add(questionId(q))
+  // tier -> alıcı bölüm id'leri (gerçek konu bölümleri; kup/test değil)
+  const recvByTier = new Map<number, string[]>()
+  for (const s of CURRI_SECTIONS) {
+    if (s.isTest || s.id.endsWith('-cube')) continue
+    recvByTier.set(s.tier, [...(recvByTier.get(s.tier) ?? []), s.id])
+  }
+  // açılışları tier'a göre grupla (playable + dedup)
+  const byTier = new Map<number, Question[]>()
   for (const p of DIFF_OPENINGS) {
     const q = famousToQuestion(p)
     if (!q || !isPlayableQuestion(q)) continue
     const id = questionId(q)
     if (seen.has(id)) continue
     seen.add(id)
-    ;(SECTION_Q[OPEN_POOL_SECTION[p.band]] ??= []).push(q)
+    const t = BAND_TIER[p.band]
+    byTier.set(t, [...(byTier.get(t) ?? []), q])
+  }
+  // her tier: shuffle (Fisher-Yates) -> o tier'in bölümlerine eşit round-robin
+  for (const [tier, qs] of byTier) {
+    const recv = recvByTier.get(tier)
+    if (!recv || !recv.length) continue
+    for (let i = qs.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1))
+      ;[qs[i], qs[j]] = [qs[j], qs[i]]
+    }
+    qs.forEach((q, i) => (SECTION_Q[recv[i % recv.length]] ??= []).push(q))
   }
 }
 // Her bolum ic sıralama: KOLAY -> ZOR (sezgisel zorluk).
@@ -1338,33 +1352,13 @@ function buildTest(tier: number): Question[] {
 // Nihai mufredat: yalnizca YETERLI icerigi olan bolumler (konu >=MIN_SECTION, test >=TEST_MIN).
 export interface CurriLesson { id: string; title: string; tier: number; isTest?: boolean; count: number; questions: Question[] }
 export interface CurriTier { key: string; label: string; tier: number; lessons: CurriLesson[] }
-// Bir ders/kategori en fazla bu kadar soru icersin: buyuk havuzlar (acilis pratigi ~400) tek dev
-// kategoride yigilmasin -> KOLAY->ZOR sirali (hardnessText) dilimlere bol, numarali alt-kategoriler
-// ("... 1/16"). Kucuk konu bolumleri tek parca kalir (<=LESSON_MAX). Test bolunmez.
-const LESSON_MAX = 25
 export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {
   const lessons: CurriLesson[] = []
   for (const sec of CURRI_SECTIONS.filter((s) => s.tier === td.tier)) {
     const qs = sec.isTest ? buildTest(sec.tier) : SECTION_Q[sec.id] ?? []
     const min = sec.isTest ? TEST_MIN : MIN_SECTION
     if (qs.length < min) continue // yetersiz -> gizle (bos/sahte gosterme)
-    if (sec.isTest || qs.length <= LESSON_MAX) {
-      lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
-      continue
-    }
-    // ESIT dagitim: parts=ceil(len/MAX), dilimler base ya da base+1 -> ufak artik dilim OLUSMAZ
-    // (naif i*MAX bolme son dilimi 1-2 soruya dusurup MIN_SECTION guard'ini kirardi). len>MAX
-    // oldugundan base=floor(len/parts) >= MIN_SECTION her zaman saglanir.
-    const parts = Math.ceil(qs.length / LESSON_MAX)
-    const base = Math.floor(qs.length / parts)
-    const extra = qs.length % parts // ilk `extra` dilim 1 fazla alir
-    let off = 0
-    for (let i = 0; i < parts; i++) {
-      const size = base + (i < extra ? 1 : 0)
-      const slice = qs.slice(off, off + size)
-      off += size
-      lessons.push({ id: `${sec.id}-${i}`, title: `${sec.title} ${i + 1}/${parts}`, tier: sec.tier, count: slice.length, questions: slice })
-    }
+    lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
   }
   return { key: td.key, label: td.label, tier: td.tier, lessons }
 }).filter((t) => t.lessons.length > 0)
