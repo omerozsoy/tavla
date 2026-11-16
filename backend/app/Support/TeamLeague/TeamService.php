@@ -537,7 +537,14 @@ class TeamService
                 throw new TeamException('team_full', 409);
             }
             $applicant = User::findOrFail($freshApp->user_id);
-            $this->assertCanJoin($applicant, $lockedTeam->min_apply_rating); // kabul anında yeniden doğrula
+            // Kabul anında yeniden doğrula. Hata BAŞVURANA aittir ama ekranı YÖNETİCİ görür -> "applicant_"
+            // önekiyle dön (eskiden "Zaten bir takımdasın"/"Premium gerekir" yöneticinin kendisi sanılıyordu,
+            // PUL FICTION "kabul ediyorum ama giremiyorlar" teşhis edilemedi).
+            try {
+                $this->assertCanJoin($applicant, $lockedTeam->min_apply_rating);
+            } catch (TeamException $e) {
+                throw new TeamException('applicant_'.$e->errorCode, $e->status);
+            }
             $this->addMember($lockedTeam, $applicant->id, 'member');
             $freshApp->update(['status' => 'accepted', 'decided_by' => $actor->id, 'decided_at' => now()]);
             $this->invalidateOtherPending($applicant->id, $lockedTeam->id);

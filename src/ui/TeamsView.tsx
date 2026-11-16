@@ -153,7 +153,8 @@ export default function TeamsView(props: Props) {
           : (e.message || 'generic')
     }
     const key = 'teams.err.' + code
-    return t(key) !== key ? t(key) : t('teams.err.generic')
+    // Çevirisi olmayan kod: genel mesajın yanına kodu ekle -> sebep ekran görüntüsünden teşhis edilebilsin.
+    return t(key) !== key ? t(key) : code !== 'generic' ? `${t('teams.err.generic')} (${code})` : t('teams.err.generic')
   }, [t])
 
   return (

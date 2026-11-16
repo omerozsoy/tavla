@@ -332,6 +332,18 @@ const TR: Dict = {
   'teams.err.user_not_found': 'Oyuncu bulunamadı.',
   'teams.err.too_many_applications': 'En fazla 3 açık başvuru.',
   'teams.err.rename_cooldown': 'İsim değişimi için 30 gün beklemelisin.',
+  'teams.err.applicant_premium_required': 'Başvuranın Premium üyeliği yok ya da süresi dolmuş.',
+  'teams.err.applicant_not_enough_rated_matches': 'Başvuranın yeterli puanlı maçı yok (en az 20).',
+  'teams.err.applicant_already_in_team': 'Başvuran zaten başka bir takımda.',
+  'teams.err.applicant_rating_too_low': 'Başvuranın rating’i takımın minimum başvuru rating’inin altında.',
+  'teams.err.applicant_on_cooldown': 'Başvuran bekleme süresinde.',
+  'teams.err.application_not_pending': 'Bu başvuru artık beklemede değil (iptal edilmiş ya da sonuçlanmış).',
+  'teams.err.rating_too_low': 'Rating’in bu takımın minimum başvuru rating’inin altında.',
+  'teams.err.applications_closed': 'Bu takım şu an başvuru kabul etmiyor.',
+  'teams.err.already_applied': 'Bu takıma zaten bekleyen bir başvurun var.',
+  'teams.err.invite_not_pending': 'Bu davet artık geçerli değil.',
+  'teams.err.founder_only': 'Bu işlemi yalnızca kurucu yapabilir.',
+  'teams.err.founder_must_transfer_or_close': 'Kurucu takımdan ayrılamaz; önce kuruculuğu devret ya da takımı kapat.',
   'teams.rules.body':
     'Takım kurma\n' +
     '• Premium üyelik + en az 20 tamamlanmış puanlı maç + 10.000 coin gerekir; coin yalnız kuruluş başarılı olursa bir kez kesilir.\n' +
@@ -2811,6 +2823,18 @@ const EN: Dict = {
   'teams.err.user_not_found': 'Player not found.',
   'teams.err.too_many_applications': 'Up to 3 open applications.',
   'teams.err.rename_cooldown': 'You must wait 30 days to rename.',
+  'teams.err.applicant_premium_required': 'The applicant has no active Premium membership.',
+  'teams.err.applicant_not_enough_rated_matches': 'The applicant does not have enough rated matches (min 20).',
+  'teams.err.applicant_already_in_team': 'The applicant is already in another team.',
+  'teams.err.applicant_rating_too_low': 'The applicant’s rating is below this team’s minimum.',
+  'teams.err.applicant_on_cooldown': 'The applicant is on cooldown.',
+  'teams.err.application_not_pending': 'This application is no longer pending (cancelled or already decided).',
+  'teams.err.rating_too_low': 'Your rating is below this team’s minimum.',
+  'teams.err.applications_closed': 'This team is not accepting applications right now.',
+  'teams.err.already_applied': 'You already have a pending application to this team.',
+  'teams.err.invite_not_pending': 'This invite is no longer valid.',
+  'teams.err.founder_only': 'Only the founder can do this.',
+  'teams.err.founder_must_transfer_or_close': 'The founder cannot leave; transfer ownership or close the team first.',
   'teams.rules.body':
     'Creating a team\n' +
     '• Requires Premium + at least 20 completed rated matches + 10,000 coins; coins are charged once, only if creation succeeds.\n' +
