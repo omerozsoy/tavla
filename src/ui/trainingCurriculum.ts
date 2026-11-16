@@ -1422,3 +1422,14 @@ export function sourceQuestions(key: string): Question[] {
 export const UNCLASSIFIED_COUNT = UNCLASSIFIED.length
 // Mufredattaki toplam gorunur pozisyon.
 export const CURRICULUM_TOTAL = CURRICULUM.reduce((a, t) => a + t.lessons.reduce((b, l) => b + l.count, 0), 0)
+
+// --- SORU MARATONU ---
+// Zorluk-bazli puan: tier (0..4) -> carpan ×1/×1/×2/×3/×4, taban 25. (Cok Kolay+Kolay=25, Orta=50,
+// Zor=75, Cok Zor=100.) tierOf+hardnessText dosya-ici; disari questionPoints olarak acilir.
+export function questionPoints(q: Question): number {
+  return 25 * [1, 1, 2, 3, 4][tierOf(hardnessText(q))]
+}
+// Maraton soru havuzu: CURRICULUM'un tum (test HARIC) sorulari — zaten board+zar global dedup'li.
+export const MARATHON_POOL: Question[] = CURRICULUM.flatMap((t) =>
+  t.lessons.filter((l) => !l.isTest).flatMap((l) => l.questions),
+)
