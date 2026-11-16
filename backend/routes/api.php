@@ -35,11 +35,13 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PushController;
+use App\Http\Controllers\QuizScoreController;
 use App\Http\Controllers\RankDivisionController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\RevenueCatController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\ShopierController;
 use App\Http\Controllers\SiteTagController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentAdController;
@@ -104,6 +106,9 @@ Route::get('/leaderboard/pr', [LeaderboardController::class, 'prLeaderboard']); 
 Route::get('/leaderboard/search', [LeaderboardController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
 Route::get('/duels/leaderboard', [LeaderboardController::class, 'duelLeaderboard']); // Bireysel Düello sıralaması (bireysel + takım)
 Route::get('/top-ranks', [LeaderboardController::class, 'topRanks']); // site geneli top-3 rozet haritası (PR madalya + Rating kupa)
+// Soru Maratonu: anonim skor tabelası (giriş YOK). submit throttle'lı (spam), leaderboard 30sn cache.
+Route::post('/quiz-marathon/score', [QuizScoreController::class, 'submit'])->middleware('throttle:20,1');
+Route::get('/quiz-marathon/leaderboard', [QuizScoreController::class, 'leaderboard']);
 Route::get('/roles', [AuthController::class, 'roles']); // site geneli rol haritası (yönetici + destek id'leri -> isim yanı kalkan)
 Route::get('/achievements', [AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
@@ -149,7 +154,7 @@ Route::get('/pay/bank-transfer', [PaymentController::class, 'bankInfo']); // hav
 Route::middleware('throttle:120,1,iap-webhook')->post('/iap/revenuecat/webhook', [RevenueCatController::class, 'webhook']);
 // Shopier ödeme callback'i (server-to-server). CSRF'siz; imza Shopier::verifyCallback ile doğrulanır.
 // Başarılıysa ödeme atomik settle edilir (idempotent). HALKA AÇIK rota. Shopier paneline bu URL girilir.
-Route::middleware('throttle:60,1,shopier-callback')->post('/pay/shopier/callback', [\App\Http\Controllers\ShopierController::class, 'callback'])->name('pay.shopier.callback');
+Route::middleware('throttle:60,1,shopier-callback')->post('/pay/shopier/callback', [ShopierController::class, 'callback'])->name('pay.shopier.callback');
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}', [TournamentController::class, 'show']); // acik poll + autoStartDue -> IP basi sinir
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
 Route::get('/clubs', [ClubController::class, 'index']);
