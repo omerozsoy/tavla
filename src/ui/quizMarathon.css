@@ -188,17 +188,67 @@
   padding: 12px;
 }
 
-/* Sol panel sekmeleri (Oyna / Rekorlar) + Rekorlar listesi (panel içinde kaydırılır). */
+/* Oyna / Rekorlar sekmeleri (oyun panelinde + Rekorlar sayfasında aynı) */
 .qm-tabs {
   margin-bottom: 0;
 }
-.qm-records {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  margin-bottom: 0;
+.qm-wrap[hidden] {
+  display: none;
 }
-.qm-br-cnt {
-  opacity: 0.6;
-  font-size: 13px;
+
+/* Rekorlar sayfası (/gunun-pozisyonu/rekorlar) */
+.qm-records-page h2 {
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qm-records-page .qm-tabs {
+  margin-bottom: 14px;
+}
+.qm-rec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.qm-rec-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 56px 72px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+}
+.qm-rec-row:nth-child(even) {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.qm-rec-head {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.qm-rec-row > :nth-child(3),
+.qm-rec-row > :nth-child(4) {
+  text-align: right;
+}
+.qm-rec-rank {
+  text-align: center;
+  color: var(--muted);
+}
+.qm-rec-row.top .qm-rec-rank {
+  font-size: 1.15rem;
+}
+.qm-rec-nick {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.qm-rec-cnt {
+  color: var(--muted);
+}
+.qm-rec-score {
+  font-weight: 800;
+  color: var(--coin-gold, #e9c46a);
 }

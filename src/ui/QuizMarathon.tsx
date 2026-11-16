@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import './quizMarathon.css'
 import { LessonView } from './TrainingView'
 import { MARATHON_POOL, questionId, questionPoints, type Question } from './trainingCurriculum'
 import { quizLeaderboard, submitQuizScore, type QuizLeaderRow } from '../api'
+import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 
 // Havuzdan seen'de OLMAYAN rastgele soru. Tur içi tekrar yok; havuz tükenince null (tur tamam).
 export function pickNext(pool: Question[], seen: Set<string>): Question | null {
@@ -16,7 +18,17 @@ export function pickNext(pool: Question[], seen: Set<string>): Question | null {
  * anlık skor, İLK YANLIŞTA biter. Game-over: takma-ad + anonim tabelaya yaz + baştan başla.
  * LessonView'i (fixed tek-soru + onAnswered) per-soru remount (key=step) ile sürer.
  */
-export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickname?: string | null }) {
+export function QuizMarathon({
+  onClose,
+  nickname,
+  tab = 'play',
+  onTab,
+}: {
+  onClose: () => void
+  nickname?: string | null
+  tab?: Tab
+  onTab?: (t: Tab) => void
+}) {
   const [phase, setPhase] = useState<'playing' | 'over'>('playing')
   const [score, setScore] = useState(0)
   const [correctCount, setCorrectCount] = useState(0)
@@ -27,7 +39,6 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
   const [answered, setAnswered] = useState<null | 'correct' | 'wrong'>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [gain, setGain] = useState(0) // son cevabın puanı (her cevaptan sonra skor pop-up'ında)
-  const [tab, setTab] = useState<'play' | 'records'>('play')
 
   const reset = () => {
     seenRef.current = new Set()
@@ -70,8 +81,13 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
     setAnswered(null)
   }
 
+  const tabs = <QmTabs tab={tab} onTab={(t) => onTab?.(t)} />
+
   return (
-    <div className="qm-wrap">
+    <>
+    {tab === 'records' && <RecordsPage tabs={tabs} onClose={onClose} />}
+    {/* Oyun Rekorlar sayfasındayken de mount kalır (gizli) → "Oyna"ya dönünce aynı sorudan devam. */}
+    <div className="qm-wrap" hidden={tab === 'records'}>
       {current && (
         <LessonView
           key={step}
@@ -79,17 +95,7 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
           fixed={{ title: 'Soru Maratonu', questions: [current] }}
           onBack={onClose}
           onAnswered={handleAnswered}
-          sideTabs={
-            <div className="rank-tabs qm-tabs" role="tablist">
-              <button role="tab" aria-selected={tab === 'play'} className={tab === 'play' ? 'active' : ''} onClick={() => setTab('play')}>
-                Oyna
-              </button>
-              <button role="tab" aria-selected={tab === 'records'} className={tab === 'records' ? 'active' : ''} onClick={() => setTab('records')}>
-                🏆 Rekorlar
-              </button>
-            </div>
-          }
-          sidePanel={tab === 'records' ? <Records /> : undefined}
+          sideTabs={tabs}
           chip={
             <span className="qm-chip" title={`${correctCount} doğru`}>
               Skor <b>{score}</b>
@@ -125,34 +131,62 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
         />
       )}
     </div>
+    </>
   )
 }
 
-/** Rekorlar sekmesi: tüm zamanların en yüksek maraton skorları (sekme her açılışta tazelenir). */
-function Records() {
+type Tab = 'play' | 'records'
+
+function QmTabs({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
+  return (
+    <div className="rank-tabs qm-tabs">
+      <Button type="button" variant={tab === 'play' ? 'default' : 'ghost'} aria-pressed={tab === 'play'} onClick={() => onTab('play')}>
+        Oyna
+      </Button>
+      <Button type="button" variant={tab === 'records' ? 'default' : 'ghost'} aria-pressed={tab === 'records'} onClick={() => onTab('records')}>
+        <Icon name="trophy" size={15} /> Rekorlar
+      </Button>
+    </div>
+  )
+}
+
+/** Rekorlar SAYFASI (/gunun-pozisyonu/rekorlar): tüm zamanların en yüksek maraton skorları. */
+function RecordsPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }) {
   const [board, setBoard] = useState<QuizLeaderRow[] | null>(null)
   useEffect(() => {
-    quizLeaderboard(50)
+    quizLeaderboard(100)
       .then(setBoard)
       .catch(() => setBoard([]))
   }, [])
+  const medal = (n: number) => (n === 1 ? '🥇' : n === 2 ? '🥈' : n === 3 ? '🥉' : n)
   return (
-    <div className="qm-board qm-records">
+    <div className="register-card leaderboard-card qm-records-page">
+      <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
+        <Icon name="x" size={16} />
+      </Button>
+      <h2><Icon name="trophy" size={20} /> Soru Maratonu Rekorları</h2>
+      {tabs}
       {board == null ? (
         <div className="qm-board-empty">Yükleniyor…</div>
       ) : board.length === 0 ? (
-        <div className="qm-board-empty">Henüz skor yok — ilk sen ol!</div>
+        <div className="qm-board-empty">Henüz rekor yok — ilk sen ol!</div>
       ) : (
-        <ol className="qm-board-list">
+        <div className="qm-rec-list">
+          <div className="qm-rec-row qm-rec-head">
+            <span>#</span>
+            <span>Oyuncu</span>
+            <span>Doğru</span>
+            <span>Skor</span>
+          </div>
           {board.map((r) => (
-            <li key={r.rank}>
-              <span className="qm-br-rank">{r.rank}</span>
-              <span className="qm-br-nick">{r.nickname}</span>
-              <span className="qm-br-cnt" title="Doğru sayısı">{r.correct_count}✓</span>
-              <span className="qm-br-score">{r.score}</span>
-            </li>
+            <div key={r.rank} className={`qm-rec-row${r.rank <= 3 ? ' top' : ''}`}>
+              <span className="qm-rec-rank">{medal(r.rank)}</span>
+              <span className="qm-rec-nick">{r.nickname}</span>
+              <span className="qm-rec-cnt">{r.correct_count}</span>
+              <span className="qm-rec-score">{r.score}</span>
+            </div>
           ))}
-        </ol>
+        </div>
       )}
     </div>
   )
@@ -175,7 +209,6 @@ function GameOver({
   onRestart: () => void
   onClose: () => void
 }) {
-  const [nick, setNick] = useState('')
   const [rank, setRank] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [board, setBoard] = useState<QuizLeaderRow[] | null>(null)
@@ -186,11 +219,21 @@ function GameOver({
       .catch(() => setBoard([]))
   }, [])
 
+  // Oyun bitince skor SORMADAN otomatik tabelaya yazılır (giriş yapmışsa hesap adı, misafir "Oyuncu").
+  // GameOver tur başına bir kez mount olur (Baştan Başla → phase playing → unmount) → tek gönderim.
+  const sentRef = useRef(false)
+  useEffect(() => {
+    if (sentRef.current || score <= 0) return
+    sentRef.current = true
+    void submit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const submit = async () => {
     if (submitting || rank != null) return
     setSubmitting(true)
     try {
-      const res = await submitQuizScore((accountNick || nick).trim(), score, correctCount)
+      const res = await submitQuizScore((accountNick || '').trim(), score, correctCount)
       setRank(res.rank)
       quizLeaderboard(20)
         .then(setBoard)
@@ -211,26 +254,11 @@ function GameOver({
           {correctCount} doğru · en iyi çarpan ×{bestMult}
         </div>
 
-        {rank == null ? (
-          <div className="qm-submit">
-            {accountNick ? (
-              <span className="qm-nick qm-nick-account">{accountNick}</span>
-            ) : (
-              <input
-                className="qm-nick"
-                maxLength={20}
-                placeholder="Takma adın"
-                value={nick}
-                onChange={(e) => setNick(e.target.value)}
-              />
-            )}
-            <button className="bgx-btn green" disabled={submitting} onClick={submit}>
-              {submitting ? '…' : 'Tabelaya Yaz'}
-            </button>
-          </div>
-        ) : (
-          <div className="qm-rank">Tabeladaki sıran: <b>#{rank}</b></div>
-        )}
+        {rank != null ? (
+          <div className="qm-rank">Rekor tabelasındaki sıran: <b>#{rank}</b></div>
+        ) : submitting ? (
+          <div className="qm-rank">Kaydediliyor…</div>
+        ) : null}
 
         <div className="qm-board">
           <div className="qm-board-title">🏆 Skor Tabelası</div>

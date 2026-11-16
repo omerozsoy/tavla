@@ -1157,6 +1157,7 @@ export default function App() {
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [trainingOpen, setTrainingOpen] = useState(false) // Tavla Eğitimi (interaktif trainer)
   const [dailyPuzzleOpen, setDailyPuzzleOpen] = useState(false) // Günün Pozisyonu (günlük tek soru)
+  const [dailyTab, setDailyTab] = useState<'play' | 'records'>('play') // /gunun-pozisyonu/rekorlar = Rekorlar sayfası
   const [liveTournOpen, setLiveTournOpen] = useState(false) // Canlı Turnuva Sistemi (iskelet sayfa)
   const [organizerPanelOpen, setOrganizerPanelOpen] = useState(false) // Organizatör Paneli (salon turnuva yönetimi)
   const [isOrganizer, setIsOrganizer] = useState(false) // ≥1 turnuva yönetiyor mu (menü görünürlüğü)
@@ -1529,7 +1530,9 @@ export default function App() {
                   : trainingOpen
                     ? 'tavla-egitimi'
                   : dailyPuzzleOpen
-                    ? 'gunun-pozisyonu'
+                    ? dailyTab === 'records'
+                      ? 'gunun-pozisyonu/rekorlar'
+                      : 'gunun-pozisyonu'
                   : liveTournOpen
                     ? 'canli-turnuva-sistemi'
                   : organizerPanelOpen
@@ -1891,6 +1894,7 @@ export default function App() {
           setTrainingOpen(true)
           break
         case 'gunun-pozisyonu':
+          setDailyTab(seg[1] === 'rekorlar' ? 'records' : 'play')
           setDailyPuzzleOpen(true)
           break
         case 'canli-turnuva-sistemi':
@@ -10241,7 +10245,11 @@ export default function App() {
     onMatchHistory: () => (premium ? goPage(() => setMatchHistOpen(true)) : setMemOpen(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onTraining: () => goPage(() => setTrainingOpen(true)),
-    onDailyPuzzle: () => goPage(() => setDailyPuzzleOpen(true)),
+    onDailyPuzzle: () =>
+      goPage(() => {
+        setDailyTab('play')
+        setDailyPuzzleOpen(true)
+      }),
     onLiveTournSystem: () => goPage(() => setLiveTournOpen(true)),
     onOrganizerPanel: () => goPage(() => setOrganizerPanelOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
@@ -11001,7 +11009,12 @@ export default function App() {
       {dailyPuzzleOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <Suspense fallback={null}>
-            <QuizMarathon onClose={() => setDailyPuzzleOpen(false)} nickname={user?.nickname} />
+            <QuizMarathon
+              onClose={() => setDailyPuzzleOpen(false)}
+              nickname={user?.nickname}
+              tab={dailyTab}
+              onTab={setDailyTab}
+            />
           </Suspense>
         </div>
       )}
