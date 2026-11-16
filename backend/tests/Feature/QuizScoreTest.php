@@ -67,6 +67,7 @@ class QuizScoreTest extends TestCase
     public function test_invalid_score_rejected(): void
     {
         $this->postJson('/api/quiz-marathon/score', ['nickname' => 'a', 'score' => -5, 'correct_count' => 1])->assertStatus(422);
+        $this->postJson('/api/quiz-marathon/score', ['nickname' => 'a', 'score' => 0, 'correct_count' => 0])->assertStatus(422);
         $this->postJson('/api/quiz-marathon/score', ['nickname' => 'a', 'score' => 'abc', 'correct_count' => 1])->assertStatus(422);
         $this->postJson('/api/quiz-marathon/score', ['nickname' => 'a', 'score' => 999999999, 'correct_count' => 1])->assertStatus(422);
     }

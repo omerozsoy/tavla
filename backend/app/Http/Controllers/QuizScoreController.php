@@ -18,7 +18,7 @@ class QuizScoreController extends Controller
     {
         $data = $request->validate([
             'nickname' => 'nullable|string|max:40',
-            'score' => 'required|integer|min:0|max:100000',
+            'score' => 'required|integer|min:1|max:100000', // 0 puan tabelaya yazilmaz (bos/test kayitlari)
             'correct_count' => 'required|integer|min:0|max:100000',
         ]);
 
