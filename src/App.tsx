@@ -182,7 +182,7 @@ import Friends from './ui/Friends'
 import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
-const DailyPuzzle = lazy(() => import('./ui/TrainingView').then((m) => ({ default: m.DailyPuzzle })))
+const QuizMarathon = lazy(() => import('./ui/QuizMarathon').then((m) => ({ default: m.QuizMarathon }))) // Soru Maratonu (günün-pozisyonu slug'ını yeniden kullanır)
 const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
 const OrganizerPanel = lazy(() => import('./ui/OrganizerPanel'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
@@ -10983,7 +10983,7 @@ export default function App() {
       {dailyPuzzleOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <Suspense fallback={null}>
-            <DailyPuzzle titleOverride={menuTitle('dailyPuzzle')} onClose={() => setDailyPuzzleOpen(false)} />
+            <QuizMarathon onClose={() => setDailyPuzzleOpen(false)} />
           </Suspense>
         </div>
       )}

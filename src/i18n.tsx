@@ -666,7 +666,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   // Dersler ve Eğitim grubu
   'menu.group.lessons': 'DERSLER VE EĞİTİM',
   'menu.training': 'En İyi Hamle',
-  'menu.dailyPuzzle': 'Günün Sorusu',
+  'menu.dailyPuzzle': 'Soru Maratonu',
   'menu.liveTournSystem': 'Canlı Turnuva Sistemi',
   'menu.organizerPanel': 'Turnuva Yönetimi',
   'org.none': 'Yönettiğin turnuva yok.',
@@ -3138,7 +3138,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   // Lessons & Training group
   'menu.group.lessons': 'LESSONS & TRAINING',
   'menu.training': 'Best Move',
-  'menu.dailyPuzzle': 'Question of the Day',
+  'menu.dailyPuzzle': 'Question Marathon',
   'menu.liveTournSystem': 'Live Tournament System',
   'menu.organizerPanel': 'Tournament Management',
   'org.none': 'You manage no tournaments.',
