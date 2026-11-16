@@ -187,3 +187,18 @@
   font-size: 17px;
   padding: 12px;
 }
+
+/* Sol panel sekmeleri (Oyna / Rekorlar) + Rekorlar listesi (panel içinde kaydırılır). */
+.qm-tabs {
+  margin-bottom: 0;
+}
+.qm-records {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-bottom: 0;
+}
+.qm-br-cnt {
+  opacity: 0.6;
+  font-size: 13px;
+}

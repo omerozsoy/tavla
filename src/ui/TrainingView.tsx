@@ -82,7 +82,7 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 }
 
 // Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar/kup karari, "Onayla" ile gonderilir.
-export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, chip, centerAction, centerInfo }: {
+export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, chip, centerAction, centerInfo, sideTabs, sidePanel }: {
   lessonId: string
   onBack: () => void
   fixed?: { title: string; questions: Question[] }
@@ -91,6 +91,8 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
   chip?: ReactNode // Soru Maratonu: dogru/toplam rozeti yerine (maraton skoru)
   centerAction?: { label: string; onClick: () => void } | null // Soru Maratonu: tahta ortasinda (Onayla yerinde) Sonraki Soru / Skorunu Gor
   centerInfo?: ReactNode // Soru Maratonu: tahtanin sol-ortasinda (Geri Al yerinde) cevap sonrasi skor
+  sideTabs?: ReactNode // Soru Maratonu: panel basliginin altinda sekmeler (Oyna / Rekorlar)
+  sidePanel?: ReactNode // verilirse panel govdesi (konusma/aksiyonlar) yerine gosterilir; ders durumu korunur
 }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
@@ -616,6 +618,9 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
           )}
         </div>
 
+        {sideTabs}
+
+        {sidePanel ?? (<>
         <div className="bgx-talk">
           <div className="bgx-avatar"><BotFace mood={mood} /></div>
           <div className={`bgx-bubble${phase === 'correct' || complete ? ' ok' : ''}${phase === 'wrong' ? ' bad' : ''}`}>
@@ -678,6 +683,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
             </button>
           </div>
         )}
+        </>)}
       </aside>
 
       <div className="bgx-stage">

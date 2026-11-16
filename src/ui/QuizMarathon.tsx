@@ -27,6 +27,7 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
   const [answered, setAnswered] = useState<null | 'correct' | 'wrong'>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [gain, setGain] = useState(0) // son cevabın puanı (her cevaptan sonra skor pop-up'ında)
+  const [tab, setTab] = useState<'play' | 'records'>('play')
 
   const reset = () => {
     seenRef.current = new Set()
@@ -78,6 +79,17 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
           fixed={{ title: 'Soru Maratonu', questions: [current] }}
           onBack={onClose}
           onAnswered={handleAnswered}
+          sideTabs={
+            <div className="rank-tabs qm-tabs" role="tablist">
+              <button role="tab" aria-selected={tab === 'play'} className={tab === 'play' ? 'active' : ''} onClick={() => setTab('play')}>
+                Oyna
+              </button>
+              <button role="tab" aria-selected={tab === 'records'} className={tab === 'records' ? 'active' : ''} onClick={() => setTab('records')}>
+                🏆 Rekorlar
+              </button>
+            </div>
+          }
+          sidePanel={tab === 'records' ? <Records /> : undefined}
           chip={
             <span className="qm-chip" title={`${correctCount} doğru`}>
               Skor <b>{score}</b>
@@ -111,6 +123,36 @@ export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickn
           onRestart={reset}
           onClose={() => setModalOpen(false)}
         />
+      )}
+    </div>
+  )
+}
+
+/** Rekorlar sekmesi: tüm zamanların en yüksek maraton skorları (sekme her açılışta tazelenir). */
+function Records() {
+  const [board, setBoard] = useState<QuizLeaderRow[] | null>(null)
+  useEffect(() => {
+    quizLeaderboard(50)
+      .then(setBoard)
+      .catch(() => setBoard([]))
+  }, [])
+  return (
+    <div className="qm-board qm-records">
+      {board == null ? (
+        <div className="qm-board-empty">Yükleniyor…</div>
+      ) : board.length === 0 ? (
+        <div className="qm-board-empty">Henüz skor yok — ilk sen ol!</div>
+      ) : (
+        <ol className="qm-board-list">
+          {board.map((r) => (
+            <li key={r.rank}>
+              <span className="qm-br-rank">{r.rank}</span>
+              <span className="qm-br-nick">{r.nickname}</span>
+              <span className="qm-br-cnt" title="Doğru sayısı">{r.correct_count}✓</span>
+              <span className="qm-br-score">{r.score}</span>
+            </li>
+          ))}
+        </ol>
       )}
     </div>
   )
