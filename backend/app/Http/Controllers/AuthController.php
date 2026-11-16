@@ -1092,8 +1092,15 @@ class AuthController extends Controller
         // gnubg_pr_at İŞARETLENİR. İstemci eskiden yalnız `ready`ye bakıp PR gelmeyince LOADER'ı SONSUZA
         // dek döndürüyordu (ör. #ABBAB 2-hamle hükmen -> kaybeden PR'ı null -> 5 dk spinner). settled ile
         // istemci "analiz bitti, PR yok" durumunda loader'ı durdurup dürüst "—" gösterir. (ready => settled.)
+        // KÖK FIX (2026-11-16 "5-0 maçta 'PR için değerlendirilmedi'"): TEK PR KAYNAĞI'ndan beri
+        // AnalyzeMatchPrJob PR DEĞERİ yazmıyor ama gnubg_pr_at'i HER koşuda damgalıyor -> otoriter Snowie
+        // (ayrı 'reviews' kuyruğu) daha PR yazmadan settled=true dönüyor, istemci loader'ı kesip "çok kısa"
+        // notu gösteriyordu. Artık mezar taşı + Snowie imleci (pr_shield_at) BİRLİKTE gerekir; gerçekten
+        // karar-yok maçta PR job pr_shield_at'i de kendisi damgalar (bkz AnalyzeMatchPrJob).
         $hasAt = Schema::hasColumn('match_results', 'gnubg_pr_at');
-        $settled = $ready || ($hasAt && $match->gnubg_pr_at !== null);
+        $hasShield = Schema::hasColumn('match_results', 'pr_shield_at');
+        $settled = $ready || ($hasAt && $match->gnubg_pr_at !== null
+            && (! $hasShield || $match->pr_shield_at !== null));
 
         // ADIM 4: gnubg NATIVE şans (Luck V1) hazır mı? Ayrı (async) job -> PR'dan farklı zamanda dolar.
         $hasMwc = Schema::hasColumn('match_results', 'luck_mwc');
@@ -1475,7 +1482,9 @@ class AuthController extends Controller
         // emniyet poll'u (istemci oppPrPending) bu bayrağa bakar: rakip analizi bitti ama PR null
         // (çok kısa/forfeit maç = karar yok) ise istemci SONSUZA dek "…" döndürmez -> dürüst "—".
         // Rakip KENDİ satırı varsa onun gnubg_pr_at'i; yoksa (pvb/terk) reconstructed benim satırımın.
-        $prAt = fn ($m) => $m && $has('gnubg_pr_at') && $m->gnubg_pr_at !== null;
+        // Mezar taşı + Snowie imleci birlikte (matchGnubgPr ile aynı kural: PR job tek başına "bitti" demez).
+        $prAt = fn ($m) => $m && $has('gnubg_pr_at') && $m->gnubg_pr_at !== null
+            && (! $has('pr_shield_at') || $m->pr_shield_at !== null);
         $selfSettled = $selfPr !== null || $prAt($mine);
         $oppSettled = $oppPr !== null || ($opp ? $prAt($opp) : $prAt($mine));
 

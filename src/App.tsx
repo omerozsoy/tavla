@@ -2504,6 +2504,10 @@ export default function App() {
   // bu arada false olduğundan şans satırı yanlışlıkla "—" (loader değil) gösteriyordu -> "hesaplanmadı"
   // izlenimi (YSKL2). Bu bayrak sürerken MatchResult şans hücresinde loader kalır.
   const [luckPending, setLuckPending] = useState(false)
+  // PR ANALİZİ KESİN BİTTİ (sunucu settled) ama PR yok -> "değerlendirilmedi" notu YALNIZ bu true iken.
+  // Zaman aşımı / rapor hatası gibi "bilinmiyor" durumlarda false kalır -> MatchResult "henüz hazır
+  // değil" notu gösterir (5-0 maça "çok kısa" demesin).
+  const [prSettled, setPrSettled] = useState(false)
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
@@ -3420,6 +3424,7 @@ export default function App() {
     setPrAnalyzing(false)
     setPrProgressPct(null) // yeni mac -> onceki PR ilerleme yuzdesini sifirla
     setLuckPending(false) // yeni mac -> onceki sans loader'ini kapat
+    setPrSettled(false)
     setRatingBonus(null) // yeni mac -> onceki X2 odul penceresini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
@@ -5661,6 +5666,7 @@ export default function App() {
     const token = ++prPollRef.current
     setPrAnalyzing(true)
     setPrProgressPct(null) // yeni analiz -> önceki yüzdeyi temizle (ilk poll gerçeğini getirir)
+    setPrSettled(false)
     let prDone = false
     // SUNUCU TEK KAYNAK (online + pvb): self+opponent PR + ŞANS hepsi BU id-anahtarlı uçtan gelir
     // (Snowie tek analizden iki satırı otoriter yazar -> matchGnubgPr self VE opponent'ı birlikte
@@ -5696,12 +5702,14 @@ export default function App() {
             cubeOpp: g.opponent_cube_pr ?? prev?.cubeOpp ?? null,
           }))
           setPrAnalyzing(false)
+          setPrSettled(true)
           prDone = true
         } else if (!prDone && g.settled) {
           // ANALİZ BİTTİ AMA PR YOK (forfeit / çok kısa maç = değerlendirilecek karar yok -> sunucu
           // mezar taşı: gnubg_pr null + gnubg_pr_at set). Eskiden `ready` hiç true olmayıp loader
           // SONSUZA dek dönüyordu (#ABBAB 2-hamle hükmen -> 5 dk spinner). Dürüst "—" göster.
           setPrAnalyzing(false)
+          setPrSettled(true)
           prDone = true
         }
         // ŞANS (gnubg NATIVE, SUNUCU TEK KAYNAK — online + pvb): self (luck_mwc) + opponent
@@ -12473,6 +12481,7 @@ export default function App() {
           // de prAnalyzing boyunca loader, birlikte dolar. "rakip ayrı/geç" (oppAnalyzing) KALDIRILDI.
           analyzingBoth={botMatch || online}
           luckPending={luckPending}
+          prSettled={prSettled}
           progressPct={prProgressPct}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}

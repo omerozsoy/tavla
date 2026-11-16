@@ -20,6 +20,7 @@ interface Props {
   analyzing?: boolean // HAKEM=gnubg: insanın PR'ı gnubg ile hesaplanıyor (async) -> sayı yerine "…"
   analyzingBoth?: boolean // pvb: tek gnubg job İKİ tarafı da (insan+bot) hesaplar -> ikisinde de "…"
   oppAnalyzing?: boolean // online: RAKİBİN PR'ı ayrı/geç gelir -> gelene kadar onun hücresinde de "…" (boş — değil)
+  prSettled?: boolean // sunucu "analiz KESİN bitti" dedi -> PR null ise "değerlendirilmedi"; değilse "henüz hazır değil"
   luckPending?: boolean // online: ŞANS PR'dan GEÇ gelir (~9sn) -> poll sürerken şans hücresinde loader (yanlış "—" değil)
   // GERÇEK PR ilerleme yüzdesi (0-100): gnubg'ye giden pozisyonların analiz oranı (matchGnubgPr poll'u).
   // null -> gerçek veri yok (online rakip tarafı / eski maç) -> zaman-tabanlı tahmine düşülür.
@@ -109,6 +110,7 @@ export default function MatchResult({
   analyzingBoth = false,
   oppAnalyzing = false,
   luckPending = false,
+  prSettled = false,
   progressPct = null,
   winnerBand,
   loserBand,
@@ -412,7 +414,10 @@ export default function MatchResult({
                   -> dürüst açıklama göster (loader zaten durdu). */}
               {!analyzingAny && !finishing && (winnerPr == null || loserPr == null) && (
                 <div className="mr-pr-note" role="note">
-                  <Icon name="info" size={14} aria-hidden="true" /> {t('mr.prUnavailable')}
+                  <Icon name="info" size={14} aria-hidden="true" />{' '}
+                  {/* Yalnız sunucu settled dediyse "değerlendirilmedi"; zaman aşımında (Snowie kuyrukta /
+                      gnubg yavaş) yanlış "çok kısa" yerine PR'ın sonra Maç Analizleri'nde çıkacağını söyle. */}
+                  {prSettled ? t('mr.prUnavailable') : t('mr.prLate')}
                 </div>
               )}
             </>

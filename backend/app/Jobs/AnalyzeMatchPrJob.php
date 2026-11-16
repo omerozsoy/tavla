@@ -226,6 +226,13 @@ class AnalyzeMatchPrJob implements ShouldQueue
         if ($totEval === 0 && Schema::hasColumn('match_results', 'gnubg_pr_at')) {
             $upd['gnubg_pr_at'] = now();
         }
+        // KESİN "DEĞERLENDİRİLECEK KARAR YOK" (sayılan karar 0; degrade-run retry'ları yukarıda fırladı):
+        // Snowie de skorlayamaz -> pr_shield_at'i BURADA damgala ki matchGnubgPr settled=true dönsün ve
+        // sonuç ekranı 3dk loader yerine hemen "değerlendirilmedi" notunu göstersin. (settled artık
+        // gnubg_pr_at + pr_shield_at ister; PR'lı maçta shield'i yalnız Snowie basar.)
+        if ($totDec === 0 && Schema::hasColumn('match_results', 'pr_shield_at')) {
+            $upd['pr_shield_at'] = now();
+        }
 
         // RAKİP (opponent) gnubg PR — pvb (AI) maçında HER ZAMAN (karşı satır yok). ONLINE'da ise
         // FALLBACK olarak: rakip kendi raporunu göndermezse (maçtan hızla çıkma / bağlantı kopması /
