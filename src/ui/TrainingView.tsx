@@ -82,7 +82,7 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 }
 
 // Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar/kup karari, "Onayla" ile gonderilir.
-function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string; onBack: () => void; fixed?: { title: string; questions: Question[] }; startIndex?: number }) {
+export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: { lessonId: string; onBack: () => void; fixed?: { title: string; questions: Question[] }; startIndex?: number; onAnswered?: (correct: boolean, q: Question) => void }) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
   const [questions, setQuestions] = useState<Question[]>(() => fixed?.questions ?? QCACHE.get(lessonId) ?? [])
@@ -369,6 +369,7 @@ function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string;
       setBest({ move: q.answer, equity: 0, probs: [] })
       const firstTryOk = ok && !hinted && !retried
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
+      if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setReveal(false) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir
@@ -392,6 +393,7 @@ function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string;
       setBest(top)
       const firstTryOk = ok && !hinted && !retried
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
+      if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setReveal(false) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene"
@@ -432,6 +434,7 @@ function LessonView({ lessonId, onBack, fixed, startIndex }: { lessonId: string;
       setCubeMsg(msg)
       const firstTryOk = ok && !hinted
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
+      if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setPhase(ok ? 'correct' : 'wrong')
