@@ -113,7 +113,9 @@ export function QuizMarathon({
           }
           centerAction={
             phase === 'over'
-              ? { label: 'Skorunu Gör', onClick: () => setModalOpen(true) }
+              ? score > 0
+                ? { label: 'Skorunu Gör', onClick: () => setModalOpen(true) }
+                : { label: 'Tekrar Dene', onClick: reset } // 0 puan: gösterecek skor yok, direkt yeni tur
               : answered === 'correct'
                 ? { label: 'Sonraki Soru →', onClick: next }
                 : null
