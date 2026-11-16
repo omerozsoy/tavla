@@ -147,6 +147,9 @@ Route::get('/pay/bank-transfer', [PaymentController::class, 'bankInfo']); // hav
 // RevenueCat webhook: RC sunucudan yenileme/iptal/süre-dolumu push'u. Auth header paylaşılan sır ile
 // doğrulanır (controller içinde); gövdeye güvenmez, app_user_id'den RC'ye taze sorar. HALKA AÇIK rota.
 Route::middleware('throttle:120,1,iap-webhook')->post('/iap/revenuecat/webhook', [RevenueCatController::class, 'webhook']);
+// Shopier ödeme callback'i (server-to-server). CSRF'siz; imza Shopier::verifyCallback ile doğrulanır.
+// Başarılıysa ödeme atomik settle edilir (idempotent). HALKA AÇIK rota. Shopier paneline bu URL girilir.
+Route::middleware('throttle:60,1,shopier-callback')->post('/pay/shopier/callback', [\App\Http\Controllers\ShopierController::class, 'callback'])->name('pay.shopier.callback');
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}', [TournamentController::class, 'show']); // acik poll + autoStartDue -> IP basi sinir
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments/{tournament}/viewers', [TournamentController::class, 'viewers']); // suren maclarin izleyici sayilari (hafif poll)
 Route::get('/clubs', [ClubController::class, 'index']);

@@ -93,4 +93,14 @@ return [
         ],
     ],
 
+    // Shopier hosted ödeme sayfası (web kart ödemesi). api_key + api_secret Shopier panel >
+    // "Entegrasyon/API" bilgilerinden. İKİSİ DE boşsa kart ödemesi KAPALI -> checkout eski PENDING
+    // (elle-onay) davranışına düşer; site etkilenmez. website_index: Shopier'de birden çok siten
+    // varsa ilgili index (tek site = 1). Callback URL (Shopier paneline girilir): /api/pay/shopier/callback
+    'shopier' => [
+        'api_key' => env('SHOPIER_API_KEY', ''),
+        'api_secret' => env('SHOPIER_API_SECRET', ''),
+        'website_index' => env('SHOPIER_WEBSITE_INDEX', 1),
+    ],
+
 ];

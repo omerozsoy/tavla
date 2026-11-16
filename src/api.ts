@@ -951,15 +951,25 @@ export interface CardCheckoutResult {
   coins?: number
   discount?: number
   code?: string | null
+  // Shopier aktifse: kullanıcıyı buraya yönlendir (hosted ödeme sayfası). Yoksa PENDING kart akışı.
+  shopier?: boolean
+  redirect?: string
 }
 export type CheckoutResult = CardCheckoutResult | BankTransferResult
 export function isBankTransfer(r: CheckoutResult): r is BankTransferResult {
   return (r as BankTransferResult).bankTransfer === true
 }
+// Shopier hosted ödeme yönlendirmesi var mı? Varsa tarayıcı o URL'e gider (CardForm atlanır).
+export function shopierRedirect(r: CheckoutResult): string | null {
+  const url = (r as CardCheckoutResult).redirect
+  return typeof url === 'string' && url ? url : null
+}
 
 // Havale/EFT bilgisi (halka açık). Kapalıysa {enabled:false}.
 export interface BankInfo {
   enabled: boolean
+  // Kart ödemesi Shopier hosted sayfasına mı gidiyor ('shopier') yoksa eski PENDING akışı mı ('manual').
+  card_gateway?: 'shopier' | 'manual'
   iban?: string
   name?: string
   bank?: string

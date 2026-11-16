@@ -151,6 +151,12 @@ Route::get('/pay/result', fn (Request $r) => view('pay.result', [
     'okMsg' => (string) $r->query('ok') === '1' ? 'Ödemen alındı; birkaç saniye içinde hesabına işlenir.' : '',
 ]))->name('pay.result');
 
+// Shopier hosted ödeme: kullanıcı tarayıcısı buraya yönlenir -> imzalı form auto-submit ile Shopier'e.
+// (Callback POST'u CSRF'siz olması için api.php'de /api/pay/shopier/callback.)
+Route::get('/pay/shopier/{order}', [\App\Http\Controllers\ShopierController::class, 'redirect'])
+    ->where('order', '[A-Za-z0-9]+')
+    ->name('pay.shopier');
+
 // TavlaTV Süper Lig: lig URL'i /turkiye-online-tavla-ligi -> /tavlatv-super-lig oldu.
 // Eski URL'leri 301 ile yeniye yonlendir (SEO equity transferi; alt yol = sezon dahil).
 Route::permanentRedirect('/turkiye-online-tavla-ligi', '/tavlatv-super-lig');

@@ -12,6 +12,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Models\UserStat;
 use App\Services\WalletService;
+use App\Support\Shopier;
 use App\Support\TournamentModeration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -44,13 +45,18 @@ class PaymentController extends Controller
     // Kapalıysa {enabled:false} döner (IBAN sızdırmaz).
     public function bankInfo()
     {
+        // card_gateway: kart ödemesi Shopier hosted sayfasına mı gidiyor ('shopier') yoksa eski
+        // PENDING/elle-onay akışı mı ('manual'). Frontend bunu checkout BAŞLAMADAN okur: Shopier'de
+        // CardForm atlanır (kart Shopier'in sayfasında girilir, iki kez girme olmaz).
+        $gateway = Shopier::enabled() ? 'shopier' : 'manual';
         if (! self::bankEnabled()) {
-            return response()->json(['enabled' => false]);
+            return response()->json(['enabled' => false, 'card_gateway' => $gateway]);
         }
         $i = self::bankTransferInfo();
 
         return response()->json([
             'enabled' => true,
+            'card_gateway' => $gateway,
             'iban' => $i['iban'],
             'name' => $i['name'],
             'bank' => $i['bank'],
@@ -86,11 +92,44 @@ class PaymentController extends Controller
             ], $extra));
         }
 
-        return response()->json(array_merge([
+        $card = [
             'card' => true,
             'amount' => (int) $payment->amount,
             'payment_id' => $payment->id,
-        ], $extra));
+        ];
+        // Shopier aktifse: kullanıcı /pay/shopier/<order>'a yönlenir (hosted ödeme sayfası). Kapalıysa
+        // eski PENDING davranışı (card=true, elle-onay) — redirect alanı yok, frontend değişmez.
+        if (Shopier::enabled()) {
+            $card['shopier'] = true;
+            $card['redirect'] = route('pay.shopier', ['order' => $payment->order_id]);
+        }
+
+        return response()->json(array_merge($card, $extra));
+    }
+
+    /**
+     * Bir ödemeyi ATOMİK olarak 'paid' yapıp karşılığını işler (coin/premium/ürün/turnuva fulfill).
+     * İDEMPOTENT: zaten 'paid' ise hiçbir şey yapmaz (çift gateway callback'i coin'i iki kez vermez).
+     * Ödeme satırı lockForUpdate ile kilitlenir; fulfillPayment bu kilidin içinde çağrılır (fulfill'in
+     * beklediği sözleşme). Shopier callback ve ileride diğer gateway'ler için TEK fulfillment noktası.
+     * Döner: bu çağrıda gerçekten settle edildiyse true, zaten işlenmişse false.
+     */
+    public function settle(Payment $payment, ?string $ref = null): bool
+    {
+        return DB::transaction(function () use ($payment, $ref) {
+            $p = Payment::whereKey($payment->id)->lockForUpdate()->first();
+            if (! $p || $p->status === 'paid') {
+                return false;
+            }
+            $p->status = 'paid';
+            if ($ref !== null && $ref !== '') {
+                $p->bank_msg = $ref;
+            }
+            $p->save();
+            $this->fulfillPayment($p);
+
+            return true;
+        });
     }
 
     // SPA: abonelik baslat -> PENDING odeme kaydi olustur, kart (PENDING) / havale bilgisi don.

@@ -639,6 +639,9 @@ import {
   newCommandId,
   cartCheckout,
   isBankTransfer,
+  shopierRedirect,
+  getBankTransferInfo,
+  type CheckoutResult,
   type BankTransferResult,
   type PayMethod,
   messagesUnread,
@@ -1214,6 +1217,14 @@ export default function App() {
   // kart akışı window.location ile o sayfaya YÖNLENDİRİR.
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
+  // Kart ödemesi Shopier hosted sayfasına mı gidiyor? Aktifse checkout'ta CardForm ATLANIR (kart
+  // Shopier'in sayfasında girilir, iki kez girme olmaz). bankInfo config'inden bir kez okunur.
+  const [shopierCard, setShopierCard] = useState(false)
+  useEffect(() => {
+    getBankTransferInfo()
+      .then((i) => setShopierCard(i.card_gateway === 'shopier'))
+      .catch(() => {})
+  }, [])
   // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
   // oluşur (cartCheckout, imzalı URL) -> amount+url burada tutulur; kart gönderilince kullanılır.
   const [cardPay, setCardPay] = useState<{
@@ -1311,13 +1322,22 @@ export default function App() {
       notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
       setMyOrdersOpen(true)
     }
+    // Shopier aktifse backend redirect döner -> tarayıcıyı Shopier hosted ödeme sayfasına gönder.
+    const goShopier = (r: CheckoutResult): boolean => {
+      const url = shopierRedirect(r)
+      if (url) {
+        window.location.href = url
+        return true
+      }
+      return false
+    }
     if (its.some((i) => i.kind === 'membership')) {
       const r = await buyMembership(method)
       setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
       if (isBankTransfer(r)) {
         closeSteps()
         setBankData(r)
-      } else {
+      } else if (!goShopier(r)) {
         cardDone()
       }
       return
@@ -1351,7 +1371,7 @@ export default function App() {
       if (isBankTransfer(r)) {
         closeSteps()
         setBankData(r)
-      } else {
+      } else if (!goShopier(r)) {
         cardDone()
       }
     } else {
@@ -1371,7 +1391,9 @@ export default function App() {
         i.kind === 'coins' ||
         i.kind === undefined,
     )
-    if (method === 'card' && hasMoneyCharge) {
+    // Shopier aktifken CardForm'u ATLA: kart Shopier'in hosted sayfasında girilir (iki kez girme yok).
+    // executeCheckout backend'den redirect alır -> goShopier tarayıcıyı Shopier'e gönderir.
+    if (method === 'card' && hasMoneyCharge && !shopierCard) {
       const amountKurus = Math.round((breakdown?.totalTL ?? 0) * 100)
       setCardPay({ amount: amountKurus, breakdown, pending: { its, code, sel } })
       return
@@ -2396,6 +2418,9 @@ export default function App() {
   // Ipucu / Ogrenme modu: mevcut konumdaki en iyi hamle + gerekceleri (ekstra ag cagrisi yok)
   const [curBest, setCurBest] = useState<{ notation: string; equity: number; reasons: Reason[] } | null>(null)
   const [hintShown, setHintShown] = useState(false) // ipucu butonuna basildi mi
+  // Tahta tarafini elle degistir (ust/alt). GORSEL+YEREL: oyun durumu renge gore islenir,
+  // rakibi/hamleleri etkilemez. flipBoard ile XOR'lanir. Sadece o maclik (maç degisince sifirlanir).
+  const [boardSwap, setBoardSwap] = useState(false)
   const [learnMode, setLearnMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tavla.learn') === '1'
@@ -3225,8 +3250,9 @@ export default function App() {
   }, [tournNotices, online, matchOver])
 
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
-  // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
-  const flipBoard = online && myColor === 'black'
+  // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta).
+  // boardSwap ile XOR -> kullanici elle ust/alt degistirebilir (gorsel, yerel).
+  const flipBoard = (online && myColor === 'black') !== boardSwap
   // Saat, kurulumda bir sure secildiyse (kapali degilse) calisir
   const clockOn = true // Galaxy tarzi: her oyunda saat acik (3 preset)
   // Hazırlık gate'i saf isOnlineReady'de (authSync); testli. p2 authoritative bug'ı orada belgeli.
@@ -5020,6 +5046,10 @@ export default function App() {
     setHintShown(false)
     setCurBest(null)
   }, [turnStart])
+  // Taraf degistirme tercihi "sadece o maclik" -> yeni mac (oda) basinca varsayilana don.
+  useEffect(() => {
+    setBoardSwap(false)
+  }, [room?.code])
   // ALT-HAMLE (aynı tur içinde zar oynanınca): ÖĞRENME modunda KAPATMA — analiz effect
   // kalan zar için curBest'i günceller (eskiden played.length'te null'lanıyordu -> "ilk
   // hamleyi yapınca ipucu kapanıyor" bug'ı). Manuel ipucu modunda (learn değil) ise analiz
