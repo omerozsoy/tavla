@@ -515,6 +515,11 @@ class AuthController extends Controller
         // JOB'UNU HİÇ DISPATCH ETME (boşuna worker/gnubg yükü) + gnubg_authoritative=false (istemci
         // poll etmez, sonuç ekranı zaten !classic ile PR satırlarını gizler). Kaynak: otoriter oda bayrağı.
         $isClassic = (bool) ($room->classic ?? false);
+        // ERKEN DÖNÜŞ dalları (kilit alınamadı / satır ZATEN var) da bu bayrağı DÖNDÜRMELİ: istemci PR+şans
+        // poll'unu YALNIZ bununla başlatır. Satır çoğu kez sunucuda (MatchFinalize) istemci raporundan ÖNCE
+        // yazılıyor -> bayrak eksikti -> poll hiç başlamıyor, ekran "—" + ÖNCEKİ maçın şansı + "değerlendirilmedi"
+        // gösteriyordu (ANXRW 2026-11-16: PR sunucuda 7sn'de hazırdı).
+        $gnubgAuthEarly = (string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! $isClassic;
         $ra = $user->rating ?? 1500;
         $rb = (int) ($room->{$opponentSlot.'_rating'} ?? $ra);
         if ($rb <= 0) {
@@ -562,6 +567,7 @@ class AuthController extends Controller
                     'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
                     // Eş-zamanlı rapor kilidi: mevcut satırın id'sini DÖNDÜR -> "Analiz" doğru maçı çeker.
                     'match_result_id' => $ex?->id,
+                    'gnubg_authoritative' => $gnubgAuthEarly && $ex !== null,
                     'pr_self' => $ex?->pr, 'pr_opponent' => $oppEx?->pr,
                     'luck_mwc_self' => $ex?->luck_mwc, 'luck_mwc_opp' => $oppEx?->luck_mwc,
                     'luck_emg_self' => $ex?->luck_emg, 'luck_emg_opp' => $oppEx?->luck_emg,
@@ -608,6 +614,7 @@ class AuthController extends Controller
                     // Satır zaten var (sunucu yedeği/geç rapor) -> id'yi DÖNDÜR ki istemci maç-sonu
                     // "Analiz"i DOĞRU maçın gnubg incelemesinden çeksin (yoksa önceki maç gösterilirdi).
                     'match_result_id' => $existing->id,
+                    'gnubg_authoritative' => $gnubgAuthEarly,
                     'pr_self' => $existing->pr,
                     'pr_opponent' => $oppExisting?->pr,
                     'luck_mwc_self' => $existing->luck_mwc,

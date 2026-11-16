@@ -5456,6 +5456,14 @@ export default function App() {
       // gösteriyordu. Tüm online maçlar gnubg ile analiz edilir -> iyimser aç; rapor
       // gnubg_authoritative=false derse (aşağıda) ya da rapor tümden başarısızsa KAPAT.
       setPrAnalyzing(true)
+      // ÖNCEKİ MAÇIN şans/PR durumunu temizle: resetGameUi her yeni-maç yolunda koşmuyor (ANXRW: sonuç
+      // ekranı 45dk önceki BK2BU'nun şansını + "değerlendirilmedi" notunu gösterdi). Bu maçın değerleri
+      // aşağıda rapor/poll ile dolar.
+      setServerPr(null)
+      setServerLuckMwc(null)
+      setServerLuckEmg(null)
+      setServerLuckJokers(null)
+      setPrSettled(false)
       for (let i = 0; i < 30 && pendingAnalysisRef.current > 0; i++) {
         await new Promise((res) => setTimeout(res, 100))
       }
@@ -5572,7 +5580,9 @@ export default function App() {
           cubeOpp: null,
         })
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
-        if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
+        // Alan EKSİKSE de poll et (sunucunun erken-dönüş dalları eskiden döndürmüyordu -> poll hiç
+        // başlamıyordu); yalnız AÇIKÇA false (klasik / pr_mode kapalı) atlanır.
+        if (r.gnubg_authoritative !== false && r.match_result_id) void pollGnubgPr(r.match_result_id)
         else setPrAnalyzing(false) // gnubg yok -> erken açtığımız loader'ı kapat (serverPr zaten dolu)
         // Rapor yanıtı ilk şans değerlerini taşıyabilir -> hemen seed et (renge göre; pollGnubgPr
         // otoriter değerleri tamamlar). Poll/bekleme YOK.
@@ -5867,7 +5877,7 @@ export default function App() {
         setServerPr({ self: null, opp: null })
         // HAKEM=gnubg: gösterilen PR gnubg olsun. Job async -> "…" göster, gnubg gelince swap.
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
-        if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
+        if (r.gnubg_authoritative !== false && r.match_result_id) void pollGnubgPr(r.match_result_id)
         else setPrAnalyzing(false)
       }
 
