@@ -252,3 +252,173 @@
   font-weight: 800;
   color: var(--coin-gold, #e9c46a);
 }
+
+
+/* ===== Gösterişli skorlar (büyük + animasyon) ===== */
+.qm-chip {
+  position: relative;
+  padding: 6px 16px;
+  font-size: 15px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(233, 196, 106, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.qm-chip b {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(233, 196, 106, 0.55);
+}
+/* Her puan artışında rozetin üstünden altın parıltı geçer + rozet zıplar. */
+.qm-chip-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 230, 150, 0.75) 50%, transparent 80%);
+  transform: translateX(-110%);
+  animation: qm-shine 0.8s ease-out forwards;
+}
+.qm-chip:has(.qm-chip-flash) {
+  animation: qm-bump 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes qm-shine {
+  to { transform: translateX(110%); }
+}
+@keyframes qm-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Cevap sonrası tahta-ortası skor: büyük, zıplayan, parlayan. */
+.qm-pop {
+  padding: 12px 26px 10px;
+  border-radius: 18px;
+  border: 2px solid rgba(233, 196, 106, 0.5);
+  animation: qm-pop-in 0.55s cubic-bezier(0.2, 1.7, 0.4, 1);
+}
+.qm-pop.correct {
+  box-shadow: 0 0 0 4px rgba(111, 207, 123, 0.18), 0 0 32px rgba(111, 207, 123, 0.45), 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.qm-pop.wrong {
+  border-color: rgba(239, 107, 91, 0.6);
+  box-shadow: 0 0 28px rgba(239, 107, 91, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: qm-pop-in 0.4s ease-out, qm-shake 0.45s 0.15s ease-in-out;
+}
+.qm-pop-gain {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.qm-pop.correct .qm-pop-gain {
+  background: linear-gradient(180deg, #fff6c8 0%, #f2c94c 45%, #d99a1e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(242, 201, 76, 0.6));
+}
+.qm-pop.wrong .qm-pop-gain {
+  font-size: 34px;
+}
+.qm-pop-tag {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #6fcf7b;
+  animation: qm-tag 0.9s 0.2s ease-out both;
+}
+.qm-pop-total {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@keyframes qm-pop-in {
+  0% { opacity: 0; transform: scale(0.3) translateY(20px); }
+  60% { opacity: 1; transform: scale(1.12) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes qm-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes qm-tag {
+  0% { opacity: 0; transform: scale(2); }
+  50% { opacity: 1; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Oyun sonu skoru: dev, parlayan, sayarak gelir. */
+.qm-over-score {
+  font-size: 88px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #fff6c8 0%, #f2c94c 45%, #d99a1e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(242, 201, 76, 0.55));
+  animation: qm-pop-in 0.7s cubic-bezier(0.2, 1.6, 0.4, 1), qm-glow 2.4s 0.7s ease-in-out infinite;
+}
+@keyframes qm-glow {
+  0%, 100% { filter: drop-shadow(0 0 14px rgba(242, 201, 76, 0.45)); }
+  50% { filter: drop-shadow(0 0 28px rgba(242, 201, 76, 0.85)); }
+}
+.qm-rank {
+  font-size: 20px;
+  animation: qm-tag 0.8s 0.9s ease-out both;
+}
+
+/* Rekorlar sayfası: satırlar sırayla kayarak gelir, ilk 3 büyük + madalya rengi. */
+.qm-rec-row:not(.qm-rec-head) {
+  animation: qm-row-in 0.45s ease-out both;
+}
+@keyframes qm-row-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.qm-rec-row {
+  grid-template-columns: 44px 1fr 64px 96px;
+}
+.qm-rec-score {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.qm-rec-row.top {
+  padding: 12px 10px;
+  border: 1px solid transparent;
+}
+.qm-rec-row.top .qm-rec-rank {
+  font-size: 1.7rem;
+}
+.qm-rec-row.top .qm-rec-nick {
+  font-size: 1.1rem;
+}
+.qm-rec-row.top .qm-rec-score {
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+.qm-rec-row.top1 {
+  background: linear-gradient(90deg, rgba(242, 201, 76, 0.28), rgba(242, 201, 76, 0.06)) !important;
+  border-color: rgba(242, 201, 76, 0.55);
+  box-shadow: 0 0 22px rgba(242, 201, 76, 0.25);
+}
+.qm-rec-row.top1 .qm-rec-score {
+  font-size: 2rem;
+  text-shadow: 0 0 14px rgba(242, 201, 76, 0.6);
+}
+.qm-rec-row.top2 {
+  background: linear-gradient(90deg, rgba(192, 200, 212, 0.3), rgba(192, 200, 212, 0.06)) !important;
+  border-color: rgba(192, 200, 212, 0.55);
+}
+.qm-rec-row.top3 {
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.26), rgba(205, 127, 50, 0.05)) !important;
+  border-color: rgba(205, 127, 50, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qm-chip, .qm-chip-flash, .qm-pop, .qm-pop-tag, .qm-over-score, .qm-rank, .qm-rec-row { animation: none !important; }
+}

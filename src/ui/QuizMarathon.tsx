@@ -98,14 +98,16 @@ export function QuizMarathon({
           sideTabs={tabs}
           chip={
             <span className="qm-chip" title={`${correctCount} doğru`}>
-              Skor <b>{score}</b>
+              Skor <b><CountUp value={score} /></b>
+              {score > 0 && <span key={score} className="qm-chip-flash" aria-hidden="true" />}
             </span>
           }
           centerInfo={
             answered && (
               <div key={`${step}-${answered}`} className={`qm-pop ${answered}`} role="status">
                 <span className="qm-pop-gain">{answered === 'correct' ? `+${gain}` : 'Yanlış'}</span>
-                <span className="qm-pop-total">Skor {score}</span>
+                {answered === 'correct' && gain >= 75 && <span className="qm-pop-tag">{gain >= 100 ? 'MÜKEMMEL!' : 'SÜPER!'}</span>}
+                <span className="qm-pop-total">Skor <CountUp value={score} from={score - gain} /></span>
               </div>
             )
           }
@@ -136,6 +138,32 @@ export function QuizMarathon({
 }
 
 type Tab = 'play' | 'records'
+
+/** Sayı önceki değerden yeniye ease-out ile sayar (skor animasyonu). Reduced-motion'da anında. */
+function CountUp({ value, duration = 600, from: start = 0 }: { value: number; duration?: number; from?: number }) {
+  const [shown, setShown] = useState(start)
+  const fromRef = useRef(start)
+  useEffect(() => {
+    const from = fromRef.current
+    fromRef.current = value
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce || from === value) {
+      setShown(value)
+      return
+    }
+    let raf = 0
+    const t0 = performance.now()
+    const tick = (now: number) => {
+      const k = Math.min(1, (now - t0) / duration)
+      const e = 1 - Math.pow(1 - k, 3)
+      setShown(Math.round(from + (value - from) * e))
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value, duration])
+  return <>{shown}</>
+}
 
 function QmTabs({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
   return (
@@ -179,11 +207,15 @@ function RecordsPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }
             <span>Skor</span>
           </div>
           {board.map((r) => (
-            <div key={r.rank} className={`qm-rec-row${r.rank <= 3 ? ' top' : ''}`}>
+            <div
+              key={r.rank}
+              className={`qm-rec-row${r.rank <= 3 ? ` top top${r.rank}` : ''}`}
+              style={{ animationDelay: `${Math.min(r.rank, 25) * 35}ms` }}
+            >
               <span className="qm-rec-rank">{medal(r.rank)}</span>
               <span className="qm-rec-nick">{r.nickname}</span>
               <span className="qm-rec-cnt">{r.correct_count}</span>
-              <span className="qm-rec-score">{r.score}</span>
+              <span className="qm-rec-score"><CountUp value={r.score} /></span>
             </div>
           ))}
         </div>
@@ -249,7 +281,7 @@ function GameOver({
     <div className="qm-over" role="dialog" aria-modal="true" hidden={!open} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="qm-over-card">
         <button className="qm-exit" onClick={onClose} aria-label="Kapat" title="Tahtaya dön">✕</button>
-        <div className="qm-over-score">{score}</div>
+        <div className="qm-over-score"><CountUp value={score} duration={1200} /></div>
         <div className="qm-over-sub">
           {correctCount} doğru · en iyi çarpan ×{bestMult}
         </div>
