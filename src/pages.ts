@@ -116,6 +116,7 @@ export const PAGES: PageDef[] = [
   { key: 'info-about', slug: 'bilgi/hakkinda', labelKey: 'info.tab.about', icon: 'info', group: 'info', hideInGame: true },
   { key: 'info-services', slug: 'bilgi/hizmetler', labelKey: 'menu.services', icon: 'briefcase', group: 'info', hideInGame: true },
   { key: 'info-glossary', slug: 'bilgi/sozluk', labelKey: 'info.tab.glossary', icon: 'books', group: 'info', hideInGame: true },
+  { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'info', hideInGame: true },
   { key: 'info-ranks', slug: 'bilgi/rutbeler', labelKey: 'menu.ranks', icon: 'ranking', group: 'info', hideInGame: true },
   { key: 'info-scoring', slug: 'bilgi/puanlama', labelKey: 'info.tab.scoring', icon: 'chart-line', group: 'info', hideInGame: true },
   { key: 'info-badges', slug: 'bilgi/basarilarim', labelKey: 'ach.title', icon: 'medal', group: 'info', hideInGame: true },
