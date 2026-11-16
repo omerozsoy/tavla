@@ -562,7 +562,10 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
     <p>{q?.intro || t('tr.findBest')}</p>
   )
 
-  const showNext = !complete && (phase === 'correct' || phase === 'wrong' || phase === 'nomove')
+  // Soru Maratonu (onAnswered sağlanmış): ilerlemeyi MARATON yönetir (kendi "Sonraki Soru" düğmesi +
+  // ilk-yanlışta bitiş). LessonView kendi board-içi next/"Bitir" düğmesini GÖSTERMEZ, yoksa iki düğme
+  // çıkar ve "Bitir" tek-soruluk fixed'de tamamlanma ekranına düşürüp maratonu kilitler (çift-UI dead-end).
+  const showNext = !complete && !onAnswered && (phase === 'correct' || phase === 'wrong' || phase === 'nomove')
 
   // Dogru hamlede yesil tik: oynanan hedef hane(ler)in uzerinde goster (board geometrisi).
   const successPoints =
