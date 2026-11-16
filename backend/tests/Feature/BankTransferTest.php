@@ -28,7 +28,8 @@ class BankTransferTest extends TestCase
 
     public function test_bank_info_hidden_when_disabled(): void
     {
-        $this->getJson('/api/pay/bank-transfer')->assertOk()->assertExactJson(['enabled' => false]);
+        // card_gateway: Shopier kapalı (test env) -> 'manual'. Kart ödemesi hosted mı elle-onay mı bilgisi.
+        $this->getJson('/api/pay/bank-transfer')->assertOk()->assertExactJson(['enabled' => false, 'card_gateway' => 'manual']);
     }
 
     public function test_bank_info_public_when_enabled(): void
