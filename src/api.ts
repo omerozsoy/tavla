@@ -1521,6 +1521,11 @@ export interface Tournament {
   prize_desc?: string | null
   /** Siralamaya gore odul tablosu: index 0 = 1.lik. Turnuva bitince otomatik odenir. */
   prizes?: { coins: number; desc?: string | null }[]
+  /** Yuzdeli odul havuzu: giris ucretleri −%10 komisyon, kalan pool_pcts (1./2./3.) ile dagitilir.
+   *  Acikken prizes[0..2] havuz payini (o anki tahmin) ZATEN icerir. */
+  pool_enabled?: boolean
+  pool_pcts?: number[] | null
+  pool_collected?: number
   entry_fee?: number
   entry_fee_try?: number // TL katilim ucreti (KURUS); >0 ise turnuva TL'li (kart/3D ile katilinir, coin yok)
   has_password?: boolean // true = sifreli turnuva; katilmak icin sifre gerekir (sifrenin kendisi sizdirilmaz)

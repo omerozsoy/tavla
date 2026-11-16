@@ -225,9 +225,39 @@ class TournamentResource extends Resource
                     ->disabled(fn ($record) => $record && $record->status === 'finished')
                     ->dehydrated(fn ($record) => ! ($record && $record->status === 'finished'))
                     ->helperText('Otomatik belirlenir; turnuva bitince buradan DEĞİŞTİRİLEMEZ (sıralama/ödülle tutarlı kalır).'),
-                Forms\Components\TextInput::make('prize_coins')
+                // ---- Yüzdeli ödül havuzu (Evet/Hayır). Evet: toplanan giriş ücretlerinin %10'u komisyon,
+                // kalanı 1./2./3.'ye yüzdeyle dağıtılır (bkz App\Support\TournamentPool). Hayır: ücret yakılır.
+                Forms\Components\Radio::make('pool_enabled')
                     ->label('Ödül havuzu (coin)')
-                    ->helperText('Giriş ücretleri burada birikir; turnuva bitince 1.’liğe eklenir. Elle de ekleyebilirsin.')
+                    ->helperText('Evet: oyuncuların ödediği giriş ücretleri havuzda toplanır; %10 komisyon düşülür, kalanı aşağıdaki yüzdelerle 1./2./3.’ye dağıtılır. Hayır: giriş ücreti havuza girmez.')
+                    ->boolean(trueLabel: 'Evet', falseLabel: 'Hayır')
+                    ->inline()
+                    ->default(false)
+                    ->live(),
+                Forms\Components\Fieldset::make('Havuz dağılımı (komisyon sonrası, toplam %100)')
+                    ->statePath('pool_pcts')
+                    ->visible(fn (Forms\Get $get) => (bool) $get('pool_enabled'))
+                    ->columns(3)
+                    ->schema([
+                        Forms\Components\TextInput::make('p1')->label('1. Şampiyon (%)')
+                            ->numeric()->integer()->minValue(0)->maxValue(100)->default(60)->suffix('%')->required()
+                            ->afterStateHydrated(fn ($component, $state) => $state === null || $state === '' ? $component->state(60) : null),
+                        Forms\Components\TextInput::make('p2')->label('2. Finalist (%)')
+                            ->numeric()->integer()->minValue(0)->maxValue(100)->default(25)->suffix('%')->required()
+                            ->afterStateHydrated(fn ($component, $state) => $state === null || $state === '' ? $component->state(25) : null),
+                        Forms\Components\TextInput::make('p3')->label('3. Üçüncü (%)')
+                            ->numeric()->integer()->minValue(0)->maxValue(100)->default(15)->suffix('%')->required()
+                            ->afterStateHydrated(fn ($component, $state) => $state === null || $state === '' ? $component->state(15) : null)
+                            ->rule(fn (Forms\Get $get) => function (string $attr, $value, \Closure $fail) use ($get) {
+                                $sum = (int) $get('p1') + (int) $get('p2') + (int) $value;
+                                if ($sum !== 100) {
+                                    $fail('Yüzdelerin toplamı 100 olmalı (şu an '.$sum.').');
+                                }
+                            }),
+                    ]),
+                Forms\Components\TextInput::make('prize_coins')
+                    ->label('Sabit şampiyon ödülü (coin, opsiyonel)')
+                    ->helperText('Elle yazılan ek coin; turnuva bitince 1.’liğe eklenir. 0 = yok.')
                     ->required()
                     ->numeric()
                     ->minValue(0)
@@ -270,7 +300,7 @@ class TournamentResource extends Resource
                     ->default(true),
                 Forms\Components\TextInput::make('entry_fee')
                     ->label('Giriş ücreti (coin)')
-                    ->helperText('0 = ücretsiz. Toplanan ücretler ödül havuzuna eklenir. NOT: Aşağıya TL ücreti girersen bu coin ücreti YOK SAYILIR (turnuva TL’li olur).')
+                    ->helperText('0 = ücretsiz. Ödül havuzu “Evet” ise ücretler havuzda toplanır (−%10 komisyon), “Hayır” ise yakılır. NOT: Aşağıya TL ücreti girersen bu coin ücreti YOK SAYILIR (turnuva TL’li olur).')
                     ->required()
                     ->numeric()
                     ->minValue(0)

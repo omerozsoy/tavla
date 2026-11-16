@@ -16,7 +16,7 @@ export function pickNext(pool: Question[], seen: Set<string>): Question | null {
  * anlık skor, İLK YANLIŞTA biter. Game-over: takma-ad + anonim tabelaya yaz + baştan başla.
  * LessonView'i (fixed tek-soru + onAnswered) per-soru remount (key=step) ile sürer.
  */
-export function QuizMarathon({ onClose }: { onClose: () => void }) {
+export function QuizMarathon({ onClose, nickname }: { onClose: () => void; nickname?: string | null }) {
   const [phase, setPhase] = useState<'playing' | 'over'>('playing')
   const [score, setScore] = useState(0)
   const [correctCount, setCorrectCount] = useState(0)
@@ -25,6 +25,8 @@ export function QuizMarathon({ onClose }: { onClose: () => void }) {
   const seenRef = useRef<Set<string>>(new Set())
   const [current, setCurrent] = useState<Question | null>(() => pickNext(MARATHON_POOL, new Set()))
   const [answered, setAnswered] = useState<null | 'correct' | 'wrong'>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [gain, setGain] = useState(0) // son cevabın puanı (her cevaptan sonra skor pop-up'ında)
 
   const reset = () => {
     seenRef.current = new Set()
@@ -34,6 +36,7 @@ export function QuizMarathon({ onClose }: { onClose: () => void }) {
     setStep(0)
     setCurrent(pickNext(MARATHON_POOL, new Set()))
     setAnswered(null)
+    setModalOpen(false)
     setPhase('playing')
   }
 
@@ -43,10 +46,12 @@ export function QuizMarathon({ onClose }: { onClose: () => void }) {
       setScore((s) => s + pts)
       setCorrectCount((c) => c + 1)
       setBestMult((m) => Math.max(m, pts / 25))
+      setGain(pts)
       setAnswered('correct')
     } else {
+      setGain(0)
       setAnswered('wrong')
-      setPhase('over') // ilk yanlış = yarışma biter
+      setPhase('over') // ilk yanlış = yarışma biter; tahtada doğru hamle görünür, skor "Skorunu Gör" ile modalda
     }
   }
 
@@ -56,6 +61,7 @@ export function QuizMarathon({ onClose }: { onClose: () => void }) {
     const n = pickNext(MARATHON_POOL, seenRef.current)
     if (!n) {
       setPhase('over') // havuz bitti: tur tamamlandı
+      setModalOpen(true)
       return
     }
     setCurrent(n)
@@ -63,17 +69,8 @@ export function QuizMarathon({ onClose }: { onClose: () => void }) {
     setAnswered(null)
   }
 
-  if (phase === 'over') {
-    return <GameOver score={score} correctCount={correctCount} bestMult={bestMult} onRestart={reset} onClose={onClose} />
-  }
-
   return (
     <div className="qm-wrap">
-      <div className="qm-scorebar">
-        <button className="qm-exit" onClick={onClose} aria-label="Çıkış">✕</button>
-        <span className="qm-score">Skor <b>{score}</b></span>
-        <span className="qm-correct">{correctCount} doğru</span>
-      </div>
       {current && (
         <LessonView
           key={step}
@@ -81,27 +78,58 @@ export function QuizMarathon({ onClose }: { onClose: () => void }) {
           fixed={{ title: 'Soru Maratonu', questions: [current] }}
           onBack={onClose}
           onAnswered={handleAnswered}
+          chip={
+            <span className="qm-chip" title={`${correctCount} doğru`}>
+              Skor <b>{score}</b>
+            </span>
+          }
+          centerInfo={
+            answered && (
+              <div key={`${step}-${answered}`} className={`qm-pop ${answered}`} role="status">
+                <span className="qm-pop-gain">{answered === 'correct' ? `+${gain}` : 'Yanlış'}</span>
+                <span className="qm-pop-total">Skor {score}</span>
+              </div>
+            )
+          }
+          centerAction={
+            phase === 'over'
+              ? { label: 'Skorunu Gör', onClick: () => setModalOpen(true) }
+              : answered === 'correct'
+                ? { label: 'Sonraki Soru →', onClick: next }
+                : null
+          }
         />
       )}
-      {answered === 'correct' && (
-        <div className="qm-next">
-          <button className="bgx-btn green" onClick={next}>Sonraki Soru →</button>
-        </div>
+      {/* Modal kapansa da GameOver mount kalır (gönderilen sıra/durum kaybolmaz → çift gönderim yok). */}
+      {phase === 'over' && (
+        <GameOver
+          open={modalOpen}
+          score={score}
+          correctCount={correctCount}
+          bestMult={bestMult}
+          accountNick={nickname}
+          onRestart={reset}
+          onClose={() => setModalOpen(false)}
+        />
       )}
     </div>
   )
 }
 
 function GameOver({
+  open,
   score,
   correctCount,
   bestMult,
+  accountNick,
   onRestart,
   onClose,
 }: {
+  open: boolean
   score: number
   correctCount: number
   bestMult: number
+  accountNick?: string | null // giriş yapmışsa hesabın takma adı: sorulmaz (sunucu da hesaptakini yazar)
   onRestart: () => void
   onClose: () => void
 }) {
@@ -120,7 +148,7 @@ function GameOver({
     if (submitting || rank != null) return
     setSubmitting(true)
     try {
-      const res = await submitQuizScore(nick.trim(), score, correctCount)
+      const res = await submitQuizScore((accountNick || nick).trim(), score, correctCount)
       setRank(res.rank)
       quizLeaderboard(20)
         .then(setBoard)
@@ -133,9 +161,9 @@ function GameOver({
   }
 
   return (
-    <div className="qm-over">
-      <button className="qm-exit" onClick={onClose} aria-label="Çıkış">✕</button>
+    <div className="qm-over" role="dialog" aria-modal="true" hidden={!open} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="qm-over-card">
+        <button className="qm-exit" onClick={onClose} aria-label="Kapat" title="Tahtaya dön">✕</button>
         <div className="qm-over-score">{score}</div>
         <div className="qm-over-sub">
           {correctCount} doğru · en iyi çarpan ×{bestMult}
@@ -143,13 +171,17 @@ function GameOver({
 
         {rank == null ? (
           <div className="qm-submit">
-            <input
-              className="qm-nick"
-              maxLength={20}
-              placeholder="Takma adın"
-              value={nick}
-              onChange={(e) => setNick(e.target.value)}
-            />
+            {accountNick ? (
+              <span className="qm-nick qm-nick-account">{accountNick}</span>
+            ) : (
+              <input
+                className="qm-nick"
+                maxLength={20}
+                placeholder="Takma adın"
+                value={nick}
+                onChange={(e) => setNick(e.target.value)}
+              />
+            )}
             <button className="bgx-btn green" disabled={submitting} onClick={submit}>
               {submitting ? '…' : 'Tabelaya Yaz'}
             </button>

@@ -1,28 +1,6 @@
-/* Soru Maratonu — anlık skor çubuğu (üst overlay), sonraki düğme (alt), game-over kartı + tabela. */
+/* Soru Maratonu — panel skor rozeti, cevap sonrası tahta-ortası skor, skor modalı (game-over) + tabela. */
 .qm-wrap {
   position: relative;
-}
-.qm-scorebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 14px;
-  background: rgba(16, 20, 28, 0.92);
-  color: #f2efe6;
-  font-size: 15px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-.qm-scorebar .qm-score b {
-  font-size: 19px;
-  color: #e9c46a;
-}
-.qm-scorebar .qm-correct {
-  opacity: 0.8;
 }
 .qm-exit {
   background: none;
@@ -33,21 +11,55 @@
   line-height: 1;
   padding: 2px 6px;
 }
-.qm-next {
-  position: fixed;
-  bottom: 18px;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
+/* Panel başlığındaki skor rozeti (LessonView'in doğru/toplam rozeti yerine). */
+.qm-chip {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #1d2430;
+  color: #f2efe6;
+  font-size: 14px;
+  white-space: nowrap;
 }
-.qm-next .bgx-btn {
-  pointer-events: auto;
+.qm-chip b {
+  color: #e9c46a;
   font-size: 17px;
-  padding: 12px 28px;
+}
+
+/* Her cevaptan sonra skor: tahtanın sol-ortasında (Sonraki Soru düğmesinin karşısında), sonraki soruya kadar kalır. */
+.qm-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 12px;
+  background: rgba(16, 20, 28, 0.9);
+  color: #f2efe6;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  line-height: 1.15;
+  white-space: nowrap;
+  animation: qm-pop 0.35s ease-out;
+}
+.qm-pop-gain {
+  font-size: 22px;
+  font-weight: 800;
+}
+.qm-pop.correct .qm-pop-gain {
+  color: #6fcf7b;
+}
+.qm-pop.wrong .qm-pop-gain {
+  color: #ef6b5b;
+}
+.qm-pop-total {
+  font-size: 14px;
+  color: #e9c46a;
+}
+@keyframes qm-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qm-pop { animation: none; }
 }
 
 /* Game over */
@@ -58,19 +70,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(10, 13, 20, 0.96);
+  background: rgba(10, 13, 20, 0.72);
   padding: 16px;
   overflow-y: auto;
 }
+.qm-over[hidden] {
+  display: none;
+}
 .qm-over .qm-exit {
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: 10px;
+  right: 12px;
   color: #f2efe6;
   font-size: 22px;
 }
+/* Modal kartı: arkada tahta (doğru hamle okları) seçilebilsin diye backdrop yarı saydam. */
 .qm-over-card {
+  position: relative;
   width: min(440px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  margin: auto;
+  padding: 28px 20px 20px;
+  border-radius: 16px;
+  background: #171c26;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   text-align: center;
   color: #f2efe6;
 }
@@ -99,6 +123,15 @@
   background: #11151d;
   color: #f2efe6;
   font-size: 15px;
+}
+.qm-nick-account {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #e9c46a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .qm-rank {
   margin-bottom: 18px;

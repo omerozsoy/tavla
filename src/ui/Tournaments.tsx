@@ -185,6 +185,23 @@ function tournStandings(bracket?: TMatch[][] | null): number[] {
   }
   return Array.from(new Set(out))
 }
+// Yüzdeli ödül havuzu notu: "Ödül havuzu: 1.000 coin toplandı · %10 komisyon · 1. %60 · 2. %25 · 3. %15"
+function PoolNote({ tr }: { tr: Tournament }) {
+  const { t } = useT()
+  if (!tr.pool_enabled) return null
+  const p = tr.pool_pcts ?? [60, 25, 15]
+  return (
+    <div className="tp-note tp-pool-note">
+      {t('tourn.poolNote', {
+        n: (tr.pool_collected ?? 0).toLocaleString('tr-TR'),
+        a: p[0] ?? 0,
+        b: p[1] ?? 0,
+        c: p[2] ?? 0,
+      })}
+    </div>
+  )
+}
+
 // Bir sıranın (0-based) kazandığı coin — backend payPrizes ile AYNI: prizes[i].coins + (i===0 ? havuz : 0);
 // prizes yoksa yalnız şampiyona havuz.
 function rankPrizeCoins(t: Tournament, rank: number): number {
@@ -919,6 +936,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
           {/* Turnuva duyurulari: Swiss'te "Tur Eşleşmeleri" üstünde (aşağıda), diğerlerinde lobi başında.
               Yeni duyuru geldiginde zil calar + yanıp söner (annSeenRef/flashAnnId efekti). */}
+          <PoolNote tr={active} />
           {!swissPairingsShown && announceBox}
 
           {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
@@ -1651,6 +1669,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </div>
             )
           )}
+          <PoolNote tr={tr} />
           {/* Belirgin detay/lobi baglantisi (tum kart zaten tiklanabilir; bu gorsel ipucu). */}
           <span className="tourn-lobby-link">
             {t('tourn.lobby')} <Icon name="arrow-right" size={14} />

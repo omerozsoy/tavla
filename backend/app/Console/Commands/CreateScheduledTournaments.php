@@ -82,6 +82,8 @@ class CreateScheduledTournaments extends Command
             'prize_coins' => $s->prize_coins,
             'prize_desc' => $s->prize_desc,
             'prizes' => $s->prizes,
+            'pool_enabled' => (bool) $s->pool_enabled,
+            'pool_pcts' => $s->pool_pcts,
             'entry_fee' => $s->entry_fee,
             'premium_only' => $s->premium_only,
             'third_place_match' => $s->third_place_match,

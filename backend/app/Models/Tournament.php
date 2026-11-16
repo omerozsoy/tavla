@@ -36,6 +36,7 @@ class Tournament extends Model
     protected $fillable = [
         'name', 'type', 'venue', 'organizer_id', 'size', 'status', 'active', 'register_until', 'creator_id', 'manager_user_id', 'players', 'bracket', 'swiss_state', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
+        'pool_enabled', 'pool_pcts', // yüzdeli ödül havuzu (giriş ücretleri −%10 komisyon -> 1./2./3.); bkz TournamentPool
         'join_password', // opsiyonel katilim sifresi; null/'' = halka acik
         'entry_fee_try', // TL katilim ucreti (KURUS); >0 ise turnuva TL'li (coin entry_fee yok sayilir)
 
@@ -53,6 +54,8 @@ class Tournament extends Model
         'bracket' => 'array',
         'swiss_state' => 'array',
         'prizes' => 'array',
+        'pool_enabled' => 'boolean',
+        'pool_pcts' => 'array',
         'active' => 'boolean',
         'premium_only' => 'boolean',
         'third_place_match' => 'boolean',

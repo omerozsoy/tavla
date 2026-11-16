@@ -17,6 +17,7 @@ use App\Support\PrizeDistribution;
 use App\Support\RoomAccess;
 use App\Support\Swiss\SwissRuntime;
 use App\Support\TournamentModeration;
+use App\Support\TournamentPool;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -1254,7 +1255,10 @@ class TournamentController extends Controller
     // prizes yoksa eski davranis: tek sampiyon odulu (prize_coins).
     private function payPrizes(Tournament $t, array $bracket, int $winnerId): void
     {
-        $prizes = is_array($t->prizes) ? $t->prizes : [];
+        // Yüzdeli havuz açıksa (pool_enabled) giriş ücretleri -%10 komisyon -> 1./2./3. paylar
+        // ödül tablosuna eklenir (TournamentPool). Kapalıysa tablo aynen.
+        $prizes = TournamentPool::effectivePrizes($t);
+        TournamentPool::recordCommission($t, $winnerId);
         $pool = (int) ($t->prize_coins ?? 0); // giris ucretleri burada birikir
 
         if (! empty($prizes)) {
@@ -1720,11 +1724,16 @@ class TournamentController extends Controller
             'prize_desc' => $t->prize_desc,
             // coins int'e zorlanir: JSON'da string kalirsa frontend toplama '+' ile
             // birbirine yapisip "0500025000..." gibi bozuk gosterir.
-            'prizes' => collect(is_array($t->prizes) ? $t->prizes : [])
+            // Yüzdeli havuz açıksa 1./2./3. satırlara (komisyon sonrası) havuz payı EKLİ gelir — payPrizes ile aynı.
+            'prizes' => collect(TournamentPool::effectivePrizes($t))
                 ->map(fn ($p) => ['coins' => (int) ($p['coins'] ?? 0), 'desc' => $p['desc'] ?? null])
                 ->values()
                 ->all(),
             'entry_fee' => $t->entry_fee ?? 0,
+            // Yüzdeli havuz: açıksa toplanan giriş ücreti −%10 komisyon, 1./2./3. paylar (şu anki tahmin).
+            'pool_enabled' => TournamentPool::enabled($t),
+            'pool_pcts' => TournamentPool::enabled($t) ? TournamentPool::pcts($t) : null,
+            'pool_collected' => TournamentPool::enabled($t) ? TournamentPool::collected($t) : 0,
             'entry_fee_try' => (int) ($t->entry_fee_try ?? 0), // TL katilim ucreti (KURUS); >0 ise TL'li turnuva
             'has_password' => ((string) ($t->join_password ?? '')) !== '', // sifreyi SIZDIRMA, yalniz var/yok
             'premium_only' => (bool) ($t->premium_only ?? true), // katilim: true=Premium, false=tum uyeler

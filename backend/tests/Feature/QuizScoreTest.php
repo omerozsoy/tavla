@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\QuizScore;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -23,6 +25,15 @@ class QuizScoreTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $res->json('rank'));
         $this->assertSame(1, QuizScore::count());
         $this->assertSame('Ahmet', QuizScore::first()->nickname);
+    }
+
+    public function test_logged_in_user_nickname_overrides_client_nickname(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['nickname' => 'TavlaUstasi']));
+        $this->postJson('/api/quiz-marathon/score', [
+            'nickname' => 'Sahte', 'score' => 50, 'correct_count' => 2,
+        ])->assertStatus(201);
+        $this->assertSame('TavlaUstasi', QuizScore::first()->nickname);
     }
 
     public function test_leaderboard_orders_by_score_desc(): void

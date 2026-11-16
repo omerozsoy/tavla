@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import Loading from './Loading'
@@ -82,7 +82,16 @@ function BotFace({ mood }: { mood: 'idle' | 'ok' | 'bad' }) {
 }
 
 // Tek ders ekrani: dersin SABIT sorularini sirayla sor. Zar/kup karari, "Onayla" ile gonderilir.
-export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: { lessonId: string; onBack: () => void; fixed?: { title: string; questions: Question[] }; startIndex?: number; onAnswered?: (correct: boolean, q: Question) => void }) {
+export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, chip, centerAction, centerInfo }: {
+  lessonId: string
+  onBack: () => void
+  fixed?: { title: string; questions: Question[] }
+  startIndex?: number
+  onAnswered?: (correct: boolean, q: Question) => void
+  chip?: ReactNode // Soru Maratonu: dogru/toplam rozeti yerine (maraton skoru)
+  centerAction?: { label: string; onClick: () => void } | null // Soru Maratonu: tahta ortasinda (Onayla yerinde) Sonraki Soru / Skorunu Gor
+  centerInfo?: ReactNode // Soru Maratonu: tahtanin sol-ortasinda (Geri Al yerinde) cevap sonrasi skor
+}) {
   const { t } = useT()
   const lesson = lessonById(lessonId)
   const [questions, setQuestions] = useState<Question[]>(() => fixed?.questions ?? QCACHE.get(lessonId) ?? [])
@@ -359,6 +368,16 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
     }
   }
 
+  // Soru Maratonu'nda tekrar deneme yok: yanlista tahtayi basa al + en iyi hamleyi oklarla goster.
+  function revealIfMarathonWrong(ok: boolean) {
+    const show = !!onAnswered && !ok
+    if (show) {
+      setPlayed([])
+      setSelectedFrom(null)
+    }
+    setReveal(show)
+  }
+
   const grade = useCallback(async () => {
     if (checking || gradedRef.current === idx) return
     gradedRef.current = idx
@@ -372,7 +391,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
       if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
-      setReveal(false) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir
+      revealIfMarathonWrong(ok) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir (maraton haric)
       setPhase(ok ? 'correct' : 'wrong')
       if (ok) Sound.win()
       else Sound.lose()
@@ -396,7 +415,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
       if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
-      setReveal(false) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene"
+      revealIfMarathonWrong(ok) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene" (maraton haric)
       setPhase(ok ? 'correct' : 'wrong')
       if (ok) Sound.win()
       else Sound.lose()
@@ -540,7 +559,11 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
     ) : (
       <>
         <h4>{t('tr.wrongTitle')}</h4>
-        <p>{t('tr.wrongRetry')}</p>
+        {onAnswered && bestText ? (
+          <p><b>{t('tr.wrongBestWas', { move: bestText })}</b> {explanation}</p>
+        ) : (
+          <p>{t('tr.wrongRetry')}</p>
+        )}
       </>
     )
   ) : phase === 'nomove' ? (
@@ -581,9 +604,11 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
             <Icon name="arrow-right" size={22} />
           </button>
           <span className="bgx-title">{fixed?.title || lesson?.title || t('tr.lessonTitle')}</span>
-          <span className="bgx-score-chip" title={t('tr.scoreLabel')}>
-            <Icon name="check" size={14} /> {correctCount}/{TOTAL}
-          </span>
+          {chip ?? (
+            <span className="bgx-score-chip" title={t('tr.scoreLabel')}>
+              <Icon name="check" size={14} /> {correctCount}/{TOTAL}
+            </span>
+          )}
           {streak > 1 && (
             <span className="bgx-streak" title={t('tr.streak')}>
               <Icon name="flame" size={16} /> {streak}
@@ -732,14 +757,18 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered }: 
             cube={{ value: 1, owner: null }}
             numberFrom="white"
             centerLeft={
-              !q?.cube && !showNext && played.length ? (
+              centerInfo ? (
+                centerInfo
+              ) : !q?.cube && !showNext && !centerAction && played.length ? (
                 <Button variant="default" onClick={handleUndo} disabled={!interactive}>
                   <Icon name="refresh" size={16} /> {t('tr.undo')}
                 </Button>
               ) : undefined
             }
             centerRight={
-              showNext ? (
+              centerAction ? (
+                <Button variant="default" onClick={centerAction.onClick}>{centerAction.label}</Button>
+              ) : showNext ? (
                 // Yanlista: "Tekrar Dene" (kirmizi) AYNI yerde. Dogru/nomove: "Sonraki Soru".
                 phase === 'wrong' && !q?.cube ? (
                   <Button variant="destructive" onClick={handleRetry}>

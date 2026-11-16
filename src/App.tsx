@@ -11001,7 +11001,7 @@ export default function App() {
       {dailyPuzzleOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <Suspense fallback={null}>
-            <QuizMarathon onClose={() => setDailyPuzzleOpen(false)} />
+            <QuizMarathon onClose={() => setDailyPuzzleOpen(false)} nickname={user?.nickname} />
           </Suspense>
         </div>
       )}

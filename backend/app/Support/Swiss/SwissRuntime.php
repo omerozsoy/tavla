@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\WalletService;
 use App\Support\PrizeDistribution;
 use App\Support\TournamentModeration;
+use App\Support\TournamentPool;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -488,7 +489,9 @@ class SwissRuntime
         if (empty($standings)) {
             return;
         }
-        $prizes = is_array($t->prizes) ? $t->prizes : [];
+        // Yüzdeli havuz (pool_enabled): giriş ücretleri -%10 komisyon -> 1./2./3. paylar tabloya eklenir.
+        $prizes = TournamentPool::effectivePrizes($t);
+        TournamentPool::recordCommission($t, (int) $standings[0]);
         $pool = (int) ($t->prize_coins ?? 0);
         $wallet = app(WalletService::class);
 

@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Soru Maratonu anonim skor tabelası. Giriş GEREKMEZ.
+ * Soru Maratonu skor tabelası. Giriş GEREKMEZ; giriş yapmışsa hesabın takma adı yazılır.
  * - submit: takma-ad + skor doğrula (tip/aralık), kaydet, tabeladaki sırayı döndür.
  * - leaderboard: score DESC, 30sn cache (poll filesort'u önler).
  * Puan istemciden gelir (spoof mümkün) — kasual tabela; sunucu yalnız tip/aralık doğrular + throttle (route).
@@ -22,7 +22,9 @@ class QuizScoreController extends Controller
             'correct_count' => 'required|integer|min:0|max:100000',
         ]);
 
-        $nick = trim(strip_tags((string) ($data['nickname'] ?? '')));
+        // Giriş yapmışsa hesabın takma adı (istemcinin gönderdiği yok sayılır); misafir kendi yazar.
+        $user = $request->user('sanctum');
+        $nick = trim(strip_tags((string) ($user ? ($user->nickname ?: $user->first_name) : ($data['nickname'] ?? ''))));
         $nick = $nick === '' ? 'Oyuncu' : mb_substr($nick, 0, 20);
 
         QuizScore::create([
