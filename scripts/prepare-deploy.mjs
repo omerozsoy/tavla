@@ -1,8 +1,16 @@
 // React'i derleyip Laravel'in public/ klasorune kopyalar (tek-domain deploy).
 // Laravel'in index.php ve .htaccess dosyalarina DOKUNMAZ.
 // Kullanim: node scripts/prepare-deploy.mjs
-import { cpSync, existsSync } from 'node:fs'
+import { cpSync, existsSync, rmSync } from 'node:fs'
 import { execSync } from 'node:child_process'
+
+// rolldown-vite .vite cache'i bazen DEGISEN kaynak modulu stale servis ediyor -> commit'lenen
+// dist eski kod iceriyor, CI kaynaktan temiz derledigi icin YAKALAMAZ, canliya sessizce stale
+// gider (2026-11-16: acilis dagitim degisikligi stale chunk'la deploy edildi). Build ONCESI cache'i
+// temizle -> deploy her zaman guncel kaynagi yansitir. ponytail: ucuz, deploy-butunlugu icin sart.
+console.log('0) vite cache temizleniyor (stale-modul deploy tuzagi onleme)…')
+rmSync('node_modules/.vite', { recursive: true, force: true })
+rmSync('node_modules/.vite-temp', { recursive: true, force: true })
 
 console.log('1) React derleniyor…')
 // Vite/rolldown büyük bundle'da V8 varsayılan heap'ini (~2-4GB) aşıp OOM (exit 134) veriyordu.
