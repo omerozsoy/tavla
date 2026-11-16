@@ -490,10 +490,23 @@ class TeamService
             throw new TeamException('team_full', 409);
         }
 
-        return TeamApplication::create([
+        $app = TeamApplication::create([
             'team_id' => $team->id, 'user_id' => $user->id, 'status' => 'pending',
             'rating_at_apply' => (int) ($user->rating ?? 0),
         ]);
+        // Kurucu + yardımcılara haber ver: eskiden başvuru SESSİZDİ, kurucu ancak "Takımım"ı açıp üye
+        // listesinin altına bakarsa görüyordu (PUL FICTION fatih başvurusu ~1 gün fark edilmedi).
+        // Bildirim hatası başvuruyu ASLA bozmaz.
+        try {
+            foreach (TeamMember::where('team_id', $team->id)->whereIn('role', ['founder', 'assistant'])->pluck('user_id') as $mgrId) {
+                Notification::notify((int) $mgrId, 'Yeni takım başvurusu',
+                    ($user->nickname ?: 'Bir oyuncu').' '.$team->name.' takımına başvurdu. Takımlar → Takımım’dan kabul edebilirsin.', 'team');
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('takim basvuru bildirimi hata (yok sayildi)', ['team' => $team->id, 'err' => $e->getMessage()]);
+        }
+
+        return $app;
     }
 
     public function cancelApplication(User $user, TeamApplication $app): void

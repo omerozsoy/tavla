@@ -657,6 +657,11 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
         <AcceptTransferMaybe teamId={team.id} setNotice={props.setNotice} errText={props.errText} reload={reload} />
       )}
 
+      {/* Başvurular (yönetici) — EN ÜSTTE: eskiden üye listesinin altındaydı, kurucu görmüyordu (PUL FICTION). */}
+      {isManager && me.managed && (
+        <PendingApplications apps={me.managed.applications} busy={busy} act={act} onProfile={props.onProfile} />
+      )}
+
       {/* Üyeler + rol aksiyonları — avatar kartı listesi */}
       <section>
         <SLabel count={detail?.members.length ?? 0}>{t('teams.members')}</SLabel>
@@ -689,25 +694,6 @@ function MyTeam(props: Props & { go: (v: View) => void; setNotice: (s: string) =
           })}
         </div>
       </section>
-
-      {/* Başvurular (yönetici) — gelen bekleyen başvurular (§4). "Cevap bekliyor" = karar senin. */}
-      {isManager && me.managed && me.managed.applications.length > 0 && (
-        <section>
-          <SLabel count={me.managed.applications.length}>{t('teams.applications')}</SLabel>
-          {me.managed.applications.map((a) => (
-            <div key={a.id} style={row}>
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                <button className="teams-member-name" onClick={() => props.onProfile?.(a.user.id)}>{a.user.nickname}</button>
-                <TeamTag userId={a.user.id} size={20} />
-              </span>
-              <span style={microTag}>{t('teams.awaitingReply')}</span>
-              <span style={{ flex: 1 }} />
-              <Button disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, true), t('teams.joined'))}>{t('teams.accept')}</Button>
-              <Button variant="ghost" disabled={busy} onClick={() => act(() => decideTeamApplication(a.id, false))}>{t('teams.decline')}</Button>
-            </div>
-          ))}
-        </section>
-      )}
 
       {/* Davet ettiklerim (yönetici) — gönderilmiş bekleyen davetler: "davet edildi, cevap bekleniyor". */}
       {isManager && me.managed && (me.managed.sent_invites?.length ?? 0) > 0 && (
@@ -966,6 +952,34 @@ function Rules() {
   )
 }
 
+// Bekleyen başvurular (yönetici): Takımım + takımın kendi sayfası ortak kullanır. "Cevap bekliyor" = karar senin.
+function PendingApplications(props: {
+  apps: { id: number; user: { id: number; nickname?: string | null } }[]
+  busy: boolean
+  act: (fn: () => Promise<unknown>, msg?: string) => Promise<void>
+  onProfile?: (id: number) => void
+}) {
+  const { t } = useT()
+  if (props.apps.length === 0) return null
+  return (
+    <section>
+      <SLabel count={props.apps.length}>{t('teams.applications')}</SLabel>
+      {props.apps.map((a) => (
+        <div key={a.id} style={row}>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <button className="teams-member-name" onClick={() => props.onProfile?.(a.user.id)}>{a.user.nickname}</button>
+            <TeamTag userId={a.user.id} size={20} />
+          </span>
+          <span style={microTag}>{t('teams.awaitingReply')}</span>
+          <span style={{ flex: 1 }} />
+          <Button disabled={props.busy} onClick={() => props.act(() => decideTeamApplication(a.id, true), t('teams.appAccepted'))}>{t('teams.accept')}</Button>
+          <Button variant="ghost" disabled={props.busy} onClick={() => props.act(() => decideTeamApplication(a.id, false))}>{t('teams.decline')}</Button>
+        </div>
+      ))}
+    </section>
+  )
+}
+
 // ---- Takım detay (herkese açık) ----------------------------------------------
 function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boolean; back: () => void; onProfile?: (id: number) => void; onDuel?: (p: { id: number; name: string; avatar?: string | null; rating?: number | null }) => void; setNotice: (s: string) => void; errText: (e: unknown) => string }) {
   const { t } = useT()
@@ -975,6 +989,14 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
   const [onlineIds, setOnlineIds] = useState<Set<number>>(new Set())
   const [duelReady, setDuelReady] = useState<Set<number>>(new Set())
   useEffect(() => { getTeam(props.id).then(setD).catch(() => {}) }, [props.id])
+  // Yönetici kendi takımının sayfasındaysa bekleyen başvuruları burada da göster (kurucular "Takımım"
+  // yerine bu sayfaya bakıp başvuruyu hiç göremiyordu).
+  const [myManaged, setMyManaged] = useState<TeamMe['managed']>(null)
+  const loadManaged = useCallback(() => {
+    if (!props.myId) return
+    getMyTeam().then((m) => setMyManaged(m?.managed && m.managed.team_id === props.id ? m.managed : null)).catch(() => {})
+  }, [props.myId, props.id])
+  useEffect(() => { loadManaged() }, [loadManaged])
   useEffect(() => {
     let alive = true
     const load = () => onlinePlayers()
@@ -1004,7 +1026,7 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
   // IdentityBox'ın beklediği act: çalıştır → bildir → takımı yeniden çek (logo/renk anında yansısın).
   const act = async (fn: () => Promise<unknown>, msg?: string) => {
     setBusy(true)
-    try { await fn(); if (msg) props.setNotice(msg); setD(await getTeam(props.id)) }
+    try { await fn(); if (msg) props.setNotice(msg); setD(await getTeam(props.id)); loadManaged() }
     catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
   return (
@@ -1026,6 +1048,8 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
 
       {/* Kurucuysan: logo/renk/ad/açıklama düzenle (Takımım'daki ile aynı editör) */}
       {isFounder && <IdentityBox detail={d} act={act} busy={busy} />}
+
+      {myManaged && <PendingApplications apps={myManaged.applications} busy={busy} act={act} onProfile={props.onProfile} />}
 
       {/* Üyeler — avatar kartı (isimler var(--text), okunur) */}
       <section>
