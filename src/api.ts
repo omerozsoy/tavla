@@ -3746,3 +3746,23 @@ export async function reportBug(input: BugReportInput): Promise<{ ok: boolean; i
     body: JSON.stringify(input),
   })
 }
+
+// --- Soru Maratonu (anonim skor tabelası) ---
+export interface QuizLeaderRow {
+  rank: number
+  nickname: string
+  score: number
+  correct_count: number
+}
+
+export async function submitQuizScore(nickname: string, score: number, correct_count: number): Promise<{ rank: number }> {
+  return req<{ ok: boolean; rank: number }>('/quiz-marathon/score', {
+    method: 'POST',
+    body: JSON.stringify({ nickname, score, correct_count }),
+  })
+}
+
+export async function quizLeaderboard(limit = 20): Promise<QuizLeaderRow[]> {
+  const data = await req<{ players: QuizLeaderRow[] }>(`/quiz-marathon/leaderboard?limit=${limit}`)
+  return data.players ?? []
+}
