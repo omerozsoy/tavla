@@ -34,6 +34,9 @@ export function QuizMarathon({
   const [correctCount, setCorrectCount] = useState(0)
   const [bestMult, setBestMult] = useState(1)
   const [step, setStep] = useState(0)
+  // Tur sayacı: LessonView key'i step+round → ilk soruda elenip "Tekrar Dene" deyince step zaten 0
+  // olduğundan key değişmiyor, LessonView remount olmuyor ve eski pozisyonda takılı kalıyordu.
+  const [round, setRound] = useState(0)
   const seenRef = useRef<Set<string>>(new Set())
   const [current, setCurrent] = useState<Question | null>(() => pickNext(MARATHON_POOL, new Set()))
   const [answered, setAnswered] = useState<null | 'correct' | 'wrong'>(null)
@@ -46,6 +49,7 @@ export function QuizMarathon({
     setCorrectCount(0)
     setBestMult(1)
     setStep(0)
+    setRound((r) => r + 1)
     setCurrent(pickNext(MARATHON_POOL, new Set()))
     setAnswered(null)
     setModalOpen(false)
@@ -90,8 +94,8 @@ export function QuizMarathon({
     <div className="qm-wrap" hidden={tab === 'records'}>
       {current && (
         <LessonView
-          key={step}
-          lessonId={`maraton-${step}`}
+          key={`${round}-${step}`}
+          lessonId={`maraton-${round}-${step}`}
           fixed={{ title: 'Soru Maratonu', questions: [current] }}
           onBack={onClose}
           onAnswered={handleAnswered}
@@ -104,7 +108,7 @@ export function QuizMarathon({
           }
           centerInfo={
             answered && (
-              <div key={`${step}-${answered}`} className={`qm-pop ${answered}`} role="status">
+              <div key={`${round}-${step}-${answered}`} className={`qm-pop ${answered}`} role="status">
                 <span className="qm-pop-gain">{answered === 'correct' ? `+${gain}` : 'Yanlış'}</span>
                 {answered === 'correct' && gain >= 75 && <span className="qm-pop-tag">{gain >= 100 ? 'MÜKEMMEL!' : 'SÜPER!'}</span>}
                 <span className="qm-pop-total">Skor <CountUp value={score} from={score - gain} /></span>
