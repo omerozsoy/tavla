@@ -17,6 +17,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\HtmlString;
 
 /**
  * Takımlar Ligi — ADMIN (§12): takım arama/inceleme, kimlik düzenleme (ad/etiket/renk/açıklama), logo
@@ -146,11 +148,15 @@ class TeamResource extends Resource
                     ->icon('heroicon-o-check')->color('success')
                     ->visible(fn (Team $r) => ! empty($r->logo_pending))
                     ->requiresConfirmation()
+                    ->modalHeading('Bekleyen logoyu onayla')
+                    ->modalContent(fn (Team $r) => self::logoPreview($r))
                     ->action(fn (Team $r) => self::run(fn () => app(TeamService::class)->approveLogo($r, (int) auth()->id()), 'Logo onaylandı.')),
                 Tables\Actions\Action::make('rejectLogo')->label('Logo Reddet')
                     ->icon('heroicon-o-x-mark')->color('danger')
                     ->visible(fn (Team $r) => ! empty($r->logo_pending))
                     ->requiresConfirmation()
+                    ->modalHeading('Bekleyen logoyu reddet')
+                    ->modalContent(fn (Team $r) => self::logoPreview($r))
                     ->action(fn (Team $r) => self::run(fn () => app(TeamService::class)->rejectLogo($r, (int) auth()->id()), 'Logo reddedildi.')),
                 Tables\Actions\Action::make('close')->label('Takımı Kapat')
                     ->icon('heroicon-o-lock-closed')->color('danger')
@@ -177,7 +183,10 @@ class TeamResource extends Resource
                 Infolists\Components\TextEntry::make('rating_avg')->label('Rating ortalaması')->numeric(1),
                 Infolists\Components\ColorEntry::make('color1')->label('Renk 1'),
                 Infolists\Components\ColorEntry::make('color2')->label('Renk 2'),
-                Infolists\Components\ImageEntry::make('logo')->label('Logo')->disk('uploads')->visible(fn (Team $r) => (bool) $r->logo),
+                Infolists\Components\ImageEntry::make('logo')->label('Logo')
+                    ->state(fn (Team $r) => self::logoSrc($r->logo))->visible(fn (Team $r) => (bool) $r->logo),
+                Infolists\Components\ImageEntry::make('logo_pending')->label('Bekleyen logo')
+                    ->state(fn (Team $r) => self::logoSrc($r->logo_pending))->visible(fn (Team $r) => (bool) $r->logo_pending),
                 Infolists\Components\TextEntry::make('description')->label('Açıklama')->placeholder('—')->columnSpanFull(),
             ])->columns(3),
             Infolists\Components\Section::make('Üyeler')->schema([
@@ -208,6 +217,38 @@ class TeamResource extends Resource
             ->map(fn (TeamAudit $a) => ($a->created_at?->format('d.m.Y H:i') ?? '').' — '.$a->action
                 .($a->target_user_id ? ' (hedef #'.$a->target_user_id.')' : ''))
             ->implode("\n") ?: '—';
+    }
+
+    /** Kayıtlı logo değerini (/uploads/.., data:, https://) tarayıcı src'sine çevir. ImageEntry disk('uploads')
+     *  /uploads/.. değerini çift-önekler (/uploads/uploads/..) → logo görünmez; mutlak URL'e çevir. */
+    private static function logoSrc(?string $logo): ?string
+    {
+        if (empty($logo)) {
+            return null;
+        }
+        if (str_starts_with($logo, 'data:') || str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+            return $logo;
+        }
+
+        return url('/'.ltrim($logo, '/'));
+    }
+
+    /** Logo onay/ret modalı: mevcut (onaylı) + bekleyen logoyu yan yana göster. */
+    private static function logoPreview(Team $r): Htmlable
+    {
+        $cell = function (string $title, ?string $logo): string {
+            $src = self::logoSrc($logo);
+            $img = $src
+                ? '<img src="'.e($src).'" alt="" style="width:128px;height:128px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff">'
+                : '<div style="width:128px;height:128px;display:flex;align-items:center;justify-content:center;border:1px dashed #d1d5db;border-radius:8px;color:#9ca3af">—</div>';
+
+            return '<div style="text-align:center"><div style="font-size:12px;color:#6b7280;margin-bottom:6px">'.e($title).'</div>'.$img.'</div>';
+        };
+
+        $html = '<div style="display:flex;gap:24px;justify-content:center;padding:8px 0">'
+            .$cell('Mevcut', $r->logo).$cell('Bekleyen (yeni)', $r->logo_pending).'</div>';
+
+        return new HtmlString($html);
     }
 
     /** Aksiyon sarmalı: TeamException/kural ihlallerini Filament bildirimine çevir. */
