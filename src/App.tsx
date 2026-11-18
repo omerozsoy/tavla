@@ -1157,7 +1157,7 @@ export default function App() {
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [trainingOpen, setTrainingOpen] = useState(false) // Tavla Eğitimi (interaktif trainer)
   const [dailyPuzzleOpen, setDailyPuzzleOpen] = useState(false) // Günün Pozisyonu (günlük tek soru)
-  const [dailyTab, setDailyTab] = useState<'play' | 'records'>('play') // /gunun-pozisyonu/rekorlar = Rekorlar sayfası
+  const [dailyTab, setDailyTab] = useState<'play' | 'records' | 'rules'>('play') // /soru-maratonu/{rekorlar,kurallar} alt sekmeleri
   const [liveTournOpen, setLiveTournOpen] = useState(false) // Canlı Turnuva Sistemi (iskelet sayfa)
   const [organizerPanelOpen, setOrganizerPanelOpen] = useState(false) // Organizatör Paneli (salon turnuva yönetimi)
   const [isOrganizer, setIsOrganizer] = useState(false) // ≥1 turnuva yönetiyor mu (menü görünürlüğü)
@@ -1532,7 +1532,9 @@ export default function App() {
                   : dailyPuzzleOpen
                     ? dailyTab === 'records'
                       ? 'soru-maratonu/rekorlar'
-                      : 'soru-maratonu'
+                      : dailyTab === 'rules'
+                        ? 'soru-maratonu/kurallar'
+                        : 'soru-maratonu'
                   : liveTournOpen
                     ? 'canli-turnuva-sistemi'
                   : organizerPanelOpen
@@ -1895,7 +1897,7 @@ export default function App() {
           break
         case 'gunun-pozisyonu': // eski URL (geriye uyumlu) -> currentSlug /soru-maratonu'ya normalize eder
         case 'soru-maratonu':
-          setDailyTab(seg[1] === 'rekorlar' ? 'records' : 'play')
+          setDailyTab(seg[1] === 'rekorlar' ? 'records' : seg[1] === 'kurallar' ? 'rules' : 'play')
           setDailyPuzzleOpen(true)
           break
         case 'canli-turnuva-sistemi':

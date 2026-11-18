@@ -188,10 +188,57 @@
   padding: 12px;
 }
 
-/* Oyna / Rekorlar sekmeleri (oyun panelinde + Rekorlar sayfasında aynı) */
-.qm-tabs {
-  margin-bottom: 0;
+/* El yazısı font: Soru Maratonu bölümünün tüm tasarım yüzeyleri (Caveat). */
+.qm-tabs,
+.qm-chip,
+.qm-pop,
+.qm-over-card,
+.qm-records-page,
+.qm-rules-page {
+  font-family: 'Caveat', 'Outfit', system-ui, sans-serif;
 }
+
+/* Tek tip, üstte, tam genişlik segmented sekme çubuğu (Oyna / Rekorlar / Puanlama Sistemi). */
+.qm-tabs {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 5px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text, #1d2430) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text, #1d2430) 10%, transparent);
+}
+.qm-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted, #6b7280);
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.qm-tab:hover {
+  color: var(--text, #1d2430);
+}
+.qm-tab.on {
+  background: var(--accent, #a83a2b);
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent, #a83a2b) 40%, transparent);
+}
+.qm-tab:active {
+  transform: translateY(1px);
+}
+
 .qm-wrap[hidden] {
   display: none;
 }
@@ -417,6 +464,96 @@
 .qm-rec-row.top3 {
   background: linear-gradient(90deg, rgba(205, 127, 50, 0.26), rgba(205, 127, 50, 0.05)) !important;
   border-color: rgba(205, 127, 50, 0.5);
+}
+
+/* El yazısı: başlıklar ve rozetler daha iri (Caveat düşük x-yüksekliği). */
+.qm-records-page h2,
+.qm-rules-page h2 {
+  font-family: 'Caveat', 'Outfit', system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+}
+.qm-chip { font-size: 1.3rem; }
+.qm-chip b { font-size: 1.7rem; }
+
+/* ===== Puanlama Sistemi sayfası ===== */
+.qm-rules-page h2 { margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.qm-rules-page .qm-tabs { margin-bottom: 16px; }
+.qm-rules-intro {
+  margin: 0 0 12px;
+  font-size: 1.3rem;
+  color: var(--muted, #6b7280);
+}
+.qm-rules-table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 20px;
+}
+.qm-rules-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md, 10px);
+}
+.qm-rules-row:nth-child(odd) {
+  background: color-mix(in srgb, var(--text, #1d2430) 4%, transparent);
+}
+.qm-rules-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text, #1d2430);
+}
+.qm-rules-dots {
+  flex: 1;
+  border-bottom: 2px dotted color-mix(in srgb, var(--text, #1d2430) 25%, transparent);
+  transform: translateY(-4px);
+}
+.qm-rules-pts {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--accent, #a83a2b);
+  white-space: nowrap;
+}
+.qm-rules-pts small {
+  margin-left: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted, #6b7280);
+}
+
+.qm-rules-bonus {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--accent, #a83a2b) 16%, transparent), color-mix(in srgb, var(--accent, #a83a2b) 4%, transparent));
+  border: 2px dashed color-mix(in srgb, var(--accent, #a83a2b) 45%, transparent);
+}
+.qm-rules-bonus-badge {
+  flex-shrink: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent, #a83a2b);
+  white-space: nowrap;
+}
+.qm-rules-bonus-text {
+  font-size: 1.35rem;
+  line-height: 1.25;
+  color: var(--text, #1d2430);
+}
+.qm-rules-list {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  color: var(--text, #1d2430);
 }
 
 @media (prefers-reduced-motion: reduce) {

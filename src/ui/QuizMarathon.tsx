@@ -101,8 +101,9 @@ export function QuizMarathon({
   return (
     <>
     {tab === 'records' && <RecordsPage tabs={tabs} onClose={onClose} />}
-    {/* Oyun Rekorlar sayfasındayken de mount kalır (gizli) → "Oyna"ya dönünce aynı sorudan devam. */}
-    <div className="qm-wrap" hidden={tab === 'records'}>
+    {tab === 'rules' && <RulesPage tabs={tabs} onClose={onClose} />}
+    {/* Oyun diğer sekmelerdeyken de mount kalır (gizli) → "Oyna"ya dönünce aynı sorudan devam. */}
+    <div className="qm-wrap" hidden={tab !== 'play'}>
       {current && (
         <LessonView
           key={`${round}-${step}`}
@@ -154,7 +155,7 @@ export function QuizMarathon({
   )
 }
 
-type Tab = 'play' | 'records'
+type Tab = 'play' | 'records' | 'rules'
 
 /** Sayı önceki değerden yeniye ease-out ile sayar (skor animasyonu). Reduced-motion'da anında. */
 function CountUp({ value, duration = 600, from: start = 0 }: { value: number; duration?: number; from?: number }) {
@@ -182,15 +183,27 @@ function CountUp({ value, duration = 600, from: start = 0 }: { value: number; du
   return <>{shown}</>
 }
 
+// Tek tip, üstte, tam genişlik segmented sekme çubuğu (Oyna / Rekorlar / Puanlama Sistemi).
 function QmTabs({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
+  const items: { id: Tab; label: string; icon?: 'trophy' | 'target' }[] = [
+    { id: 'play', label: 'Oyna' },
+    { id: 'records', label: 'Rekorlar', icon: 'trophy' },
+    { id: 'rules', label: 'Puanlama Sistemi', icon: 'target' },
+  ]
   return (
-    <div className="rank-tabs qm-tabs">
-      <Button type="button" variant={tab === 'play' ? 'default' : 'ghost'} aria-pressed={tab === 'play'} onClick={() => onTab('play')}>
-        Oyna
-      </Button>
-      <Button type="button" variant={tab === 'records' ? 'default' : 'ghost'} aria-pressed={tab === 'records'} onClick={() => onTab('records')}>
-        <Icon name="trophy" size={15} /> Rekorlar
-      </Button>
+    <div className="qm-tabs" role="tablist">
+      {items.map((it) => (
+        <button
+          key={it.id}
+          type="button"
+          role="tab"
+          aria-selected={tab === it.id}
+          className={`qm-tab${tab === it.id ? ' on' : ''}`}
+          onClick={() => onTab(it.id)}
+        >
+          {it.icon && <Icon name={it.icon} size={15} />} {it.label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -237,6 +250,51 @@ function RecordsPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Puanlama Sistemi SAYFASI (/soru-maratonu/kurallar): puan tablosu + seri bonusu + kurallar. */
+function RulesPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }) {
+  const rows: { name: string; pts: number }[] = [
+    { name: 'Çok Kolay', pts: 10 },
+    { name: 'Kolay', pts: 20 },
+    { name: 'Orta', pts: 25 },
+    { name: 'Zor', pts: 50 },
+    { name: 'Çok Zor', pts: 100 },
+  ]
+  return (
+    <div className="register-card leaderboard-card qm-rules-page">
+      <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
+        <Icon name="x" size={16} />
+      </Button>
+      <h2><Icon name="target" size={20} /> Puanlama Sistemi</h2>
+      {tabs}
+
+      <p className="qm-rules-intro">Her doğru cevap, sorunun zorluğuna göre puan kazandırır:</p>
+      <div className="qm-rules-table">
+        {rows.map((r) => (
+          <div key={r.name} className="qm-rules-row">
+            <span className="qm-rules-name">{r.name}</span>
+            <span className="qm-rules-dots" aria-hidden="true" />
+            <span className="qm-rules-pts">{r.pts}<small>puan</small></span>
+          </div>
+        ))}
+      </div>
+
+      <div className="qm-rules-bonus">
+        <div className="qm-rules-bonus-badge">🔥 2 KAT</div>
+        <div className="qm-rules-bonus-text">
+          <b>Seri bonusu:</b> Arka arkaya her <b>3. doğru cevabında</b> o sorunun puanı <b>2 katına</b> çıkar!
+        </div>
+      </div>
+
+      <ul className="qm-rules-list">
+        <li>Zar atılır, en iyi hamleyi oynarsan soruyu <b>bilirsin</b>.</li>
+        <li><b>İlk yanlışta</b> maraton biter — ne kadar uzarsa skorun o kadar yükselir.</li>
+        <li>Skorun oyun bitince <b>otomatik</b> olarak Rekorlar tabelasına yazılır.</li>
+        <li>Her oyuncu tabelada yalnız <b>en yüksek</b> skoruyla yer alır.</li>
+      </ul>
     </div>
   )
 }
