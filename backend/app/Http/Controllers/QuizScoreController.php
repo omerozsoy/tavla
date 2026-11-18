@@ -44,10 +44,19 @@ class QuizScoreController extends Controller
         $limit = min(100, max(1, (int) $request->query('limit', 20)));
 
         $rows = Cache::remember("quiz_lb:{$limit}", 30, function () use ($limit) {
-            return QuizScore::orderByDesc('score')->orderBy('created_at')
-                ->limit($limit)
+            // Her takma-ad tabelada YALNIZ bir kez: en yüksek skoruyla. score DESC sırada
+            // ilerleyip bir ad'ı ilk görüşte sabitle (o satır = o adın en yüksek rekoru).
+            // ponytail: sabit 500'lük tarama; anonim havuz bunu aşarsa cap'i yükselt.
+            $best = [];
+            QuizScore::orderByDesc('score')->orderBy('created_at')
+                ->limit(500)
                 ->get(['nickname', 'score', 'correct_count'])
-                ->values()
+                ->each(function ($r) use (&$best) {
+                    $best[$r->nickname] ??= $r;
+                });
+
+            return collect(array_values($best))
+                ->take($limit)
                 ->map(fn ($r, $i) => [
                     'rank' => $i + 1,
                     'nickname' => $r->nickname,

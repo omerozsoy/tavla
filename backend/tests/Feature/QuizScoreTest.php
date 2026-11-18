@@ -49,6 +49,21 @@ class QuizScoreTest extends TestCase
         $this->assertSame(100, $players[2]['score']);
     }
 
+    public function test_leaderboard_dedupes_nickname_keeping_highest(): void
+    {
+        // Aynı oyuncu (Ali) 3 kez oynadı; tabelada YALNIZ en yüksek skoruyla (300) 1 kez olmalı.
+        foreach ([120, 300, 90] as $s) {
+            $this->postJson('/api/quiz-marathon/score', ['nickname' => 'Ali', 'score' => $s, 'correct_count' => 1]);
+        }
+        $this->postJson('/api/quiz-marathon/score', ['nickname' => 'Veli', 'score' => 200, 'correct_count' => 1]);
+
+        $players = $this->getJson('/api/quiz-marathon/leaderboard')->assertOk()->json('players');
+        $this->assertCount(2, $players);
+        $this->assertSame('Ali', $players[0]['nickname']);
+        $this->assertSame(300, $players[0]['score']);
+        $this->assertSame('Veli', $players[1]['nickname']);
+    }
+
     public function test_nickname_trimmed_capped_stripped(): void
     {
         $this->postJson('/api/quiz-marathon/score', [
