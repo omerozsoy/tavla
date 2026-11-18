@@ -78,6 +78,8 @@ export const PAGES: PageDef[] = [
   { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
   // Soru Maratonu: zorluk-bazlı puanlı, ilk yanlışta biten quiz + anonim global tabela.
   { key: 'dailyPuzzle', slug: 'soru-maratonu', labelKey: 'menu.dailyPuzzle', icon: 'calendar-dots', group: 'lessons', hideInGame: true },
+  // Açılış Pratiği: ~84k motor-doğrulanmış açılış pozisyonu, DB'den lazy (bundle'a gömülü değil).
+  { key: 'openingPractice', slug: 'acilis-pratigi', labelKey: 'menu.openingPractice', icon: 'graduation', group: 'lessons', hideInGame: true },
   // Tavlada PR Nedir?: PR kavramını anlatan infografik (Dersler ve Eğitim grubunda).
   { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'lessons', hideInGame: true },
 

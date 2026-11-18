@@ -15,7 +15,7 @@ import { evaluatePosition } from '../engine/evaluate'
 import { parseXgid } from '../engine/xgid'
 import { parseGnuId } from '../engine/gnubgId'
 import { matchGnubgMove } from '../engine/gnubgMove'
-import { DIFF_OPENINGS, DIFF_CURATED, DIFF_BANDS, DIFF_BAND_TR, type DiffBand } from './difficultyPositions'
+import { DIFF_OPENINGS, DIFF_CURATED, type DiffBand } from './difficultyPositions'
 
 export interface Question {
   state: GameState // zari atilmis, beyaz oynayacak pozisyon (kup sorularinda zar YOK)
@@ -285,6 +285,12 @@ function famousToQuestion(f: Famous): Question | null {
     src: au.key,
     srcLabel: au.title,
   }
+}
+
+// Açılış Pratiği (lazy DB sayfası): API'den gelen {xgid,answer} -> Question. famousToQuestion yeniden
+// kullanılır (motor parse + otoriter hamle çözümü); başlık/konsept ders başlığından gelir, boş geçilir.
+export function openingToQuestion(o: { xgid: string; answer?: string }): Question | null {
+  return famousToQuestion({ xgid: o.xgid, answer: o.answer ?? '', title: '', concept: '' })
 }
 
 // Gercek/unlu pozisyonlar (forum+kitap kaynakli, XGID birebir), NÖRAL trap-zorluguna gore KOLAY->ZOR sirali.
@@ -816,13 +822,9 @@ export const REAL_TIERS: RealTier[] = (() => {
     }
     return out
   }
-  for (const band of DIFF_BANDS) {
-    const qs = dedup(
-      DIFF_OPENINGS.filter((p) => p.band === band).map(famousToQuestion).filter((q): q is Question => q !== null),
-    )
-    const lessons = toLessons(qs, `rd-${band}`, DIFF_BAND_TR[band])
-    if (lessons.length) tiers.push({ label: `AÇILIŞ · ${DIFF_BAND_TR[band].toLocaleUpperCase('tr')}`, lessons })
-  }
+  // Açılış zorluk-band drill'leri BURADAN KALDIRILDI -> artık tek yerde: lazy "Açılış Pratiği"
+  // sayfası (DB'den ~84k, /acilis-pratigi). DIFF_OPENINGS hâlâ konu-müfredatına örülür (aşağıda,
+  // SECTION_Q dağıtımı) + Maraton/Günün-Poz onu kullanır; burada ayrıca drill tier'ı ÜRETİLMEZ.
   // Toplanan gerçek pozisyonlar (forum/PDF/arşiv, sitede olmayan) — ayrı grup.
   const curLessons = toLessons(dedup(DIFF_CURATED.map(famousToQuestion).filter((q): q is Question => q !== null)), 'rc', 'Toplanan')
   if (curLessons.length) tiers.push({ label: 'TOPLANAN POZİSYONLAR', lessons: curLessons })

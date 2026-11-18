@@ -30,6 +30,7 @@ use App\Http\Controllers\LuckyWheelController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\OpeningPositionController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PresenceController;
@@ -122,6 +123,8 @@ Route::get('/site-tags', [SiteTagController::class, 'index']); // Google Etiketi
 Route::get('/realtime-config', [RoomController::class, 'realtimeConfig']); // Reverb WS push: enabled + public app key (acik; secret DONMEZ)
 Route::get('/board-designs', [ShopController::class, 'designs']); // admin Tavla Tasarımı: grup/fiyat/özel tahtalar (acik)
 Route::get('/rank-divisions', [RankDivisionController::class, 'index']); // rutbe rating esikleri (acik)
+Route::get('/opening-positions/counts', [OpeningPositionController::class, 'counts']); // acilis pratigi: band basi sayi (lazy ders stub'lari)
+Route::get('/opening-positions', [OpeningPositionController::class, 'index'])->middleware('throttle:120,1,openings'); // ?band=&page=&per= sayfali havuz
 Route::middleware('throttle:120,1,tourn-read')->get('/tournaments', [TournamentController::class, 'index']); // acik poll (istemci 8-15sn) + autoStartDue bakim yazmasi -> IP basi 2/sn sinir
 // CANLI TURNUVA SİSTEMİ dernek/grup paneli (/canli-turnuva-sistemi): şifreli (auth YOK, gate=şifre).
 // Brute-force'a karşı sıkı throttle. Şifre admin "Canlı Turnuva Sistemi" menüsünden tanımlanır.

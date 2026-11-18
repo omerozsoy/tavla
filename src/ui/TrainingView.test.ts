@@ -38,8 +38,8 @@ describe('Tavla Egitimi mufredati', () => {
     }
   })
 
-  it('Gercek Pozisyonlar: 9 katman (3 ozgun + 5 zorluk + 1 toplanan), tum dersler dolu + legal + dup-suz', () => {
-    expect(REAL_TIERS.length).toBe(9)
+  it('Gercek Pozisyonlar: 4 katman (3 ozgun + 1 toplanan; acilis band-drill DB lazy sayfaya tasindi), tum dersler dolu + legal + dup-suz', () => {
+    expect(REAL_TIERS.length).toBe(4)
     const seen = new Set<string>()
     for (const tier of REAL_TIERS) {
       expect(tier.lessons.length).toBeGreaterThan(0)
