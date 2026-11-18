@@ -8,6 +8,7 @@ use App\Models\LeagueSeason;
 use App\Models\User;
 use App\Support\League\LeagueEngine;
 use App\Support\League\LeagueRuntime;
+use App\Support\Shield;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -99,8 +100,25 @@ class LeagueSeasonResource extends Resource
                 self::correctAction(),
                 self::postponeAction(),
                 Tables\Actions\EditAction::make(),
+                self::deleteAction(),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    /**
+     * Sezonu sil. Bağlı maç/katılımcı/ödül/bildirim FK cascadeOnDelete ile otomatik gider.
+     * AKTİF sezon (applications/selection/league/knockout) silinemez — önce bitir/çekil (canlı maç/ödül kaybı koruması).
+     * Yalnız draft/finished/cancelled silinebilir; silme Shield'e audit'lenir.
+     */
+    private static function deleteAction(): Tables\Actions\DeleteAction
+    {
+        return Tables\Actions\DeleteAction::make()
+            ->label('Sezonu Sil')
+            ->visible(fn (LeagueSeason $r) => ! $r->isActive())
+            ->modalHeading('Sezonu sil')
+            ->modalDescription(fn (LeagueSeason $r) => '“'.$r->name.'” (#'.$r->id.', '.$r->status.') ve ona bağlı TÜM maçlar, katılımcılar, ödüller ve bildirimler KALICI olarak silinir. Geri alınamaz.')
+            ->successNotificationTitle('Sezon silindi.')
+            ->before(fn (LeagueSeason $r) => Shield::audit(auth()->id(), 'league_season_delete', 'season='.$r->id.' name='.$r->name.' status='.$r->status, 3));
     }
 
     // ---- Yaşam döngüsü aksiyonları (hepsi try/catch -> Filament bildirimi) ----
