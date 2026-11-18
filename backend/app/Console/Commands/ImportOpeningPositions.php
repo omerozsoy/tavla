@@ -40,8 +40,10 @@ class ImportOpeningPositions extends Command
 
         $batch = [];
         $total = 0;
+        // insertOrIgnore: kaynak CSV'de aynı xgid tekrar ederse (dedupe kaçağı) unique kısıt
+        // ilk kaydı tutar, tekrarı sessizce atlar -> deploy migrate'i duplicate-key ile patlamaz.
         $insert = function (array $rows) {
-            DB::table('opening_positions')->insert($rows);
+            DB::table('opening_positions')->insertOrIgnore($rows);
         };
         while (($line = gzgets($fh)) !== false) {
             $line = rtrim($line, "\r\n");
