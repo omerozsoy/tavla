@@ -358,6 +358,19 @@ class AuthController extends Controller
         // -> UI maci baslatmadan ONCE pesin gosterir (otoriter kesinti yine sunucuda).
         $user->bot_match_cost = max(0, Setting::int('bot_match_cost', (int) config('game.bot_match_cost', 10)));
 
+        // MAÇ/GALİBİYET/MAĞLUBİYET = GERCEK maclar (real scope), publicProfile ile AYNI kaynak.
+        // users.games_played/wins/losses sayaclari yalniz PUANLI maci sayar; arkadaslik/duello/casual
+        // maci satir yazar ama sayaci artirmaz -> kendi profilim (36) ile public kart (39) celisiyordu.
+        // real() count ikisini de ayni kumeye esitler (DB kolonlari DEGISMEZ, yalniz yanit override).
+        $agg = MatchResult::where('user_id', $user->id)->real()
+            ->selectRaw('COUNT(*) as g, COALESCE(SUM(won), 0) as w')
+            ->first();
+        $games = (int) ($agg->g ?? 0);
+        $wins = (int) ($agg->w ?? 0);
+        $user->games_played = $games;
+        $user->wins = $wins;
+        $user->losses = max(0, $games - $wins);
+
         return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
     }
 
