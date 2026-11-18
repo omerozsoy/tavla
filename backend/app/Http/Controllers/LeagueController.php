@@ -437,12 +437,20 @@ class LeagueController extends Controller
             return [];
         }
 
-        return User::whereIn('id', $ids)->get(['id', 'nickname', 'first_name', 'last_name', 'avatar', 'rating'])
-            ->keyBy('id')->map(fn ($u) => [
-                'id' => $u->id, 'nickname' => $u->nickname,
-                'name' => trim(($u->first_name ?? '').' '.($u->last_name ?? '')), // seçilen oyuncular listesi gerçek ad-soyadı gösterir
-                'avatar' => $u->avatar, 'rating' => (int) $u->rating,
-            ])->all();
+        return User::whereIn('id', $ids)->get(['id', 'nickname', 'first_name', 'last_name', 'avatar', 'rating', 'banned_at', 'ban_reason'])
+            ->keyBy('id')->map(function ($u) {
+                // Lig maçları oynanmış TARİHSEL veri -> katılımcıyı bracket'tan silemeyiz; ama silinmiş/anonim
+                // (silinmisN) hesabın adı GÖRÜNMESİN -> nötr etiketle maskele (avatar da düşer).
+                $deleted = $u->banned_at !== null || $u->ban_reason === 'account_deleted';
+
+                return [
+                    'id' => $u->id,
+                    'nickname' => $deleted ? 'Silinmiş üye' : $u->nickname,
+                    'name' => $deleted ? 'Silinmiş üye' : trim(($u->first_name ?? '').' '.($u->last_name ?? '')), // seçilen oyuncular listesi gerçek ad-soyadı gösterir
+                    'avatar' => $deleted ? null : $u->avatar,
+                    'rating' => (int) $u->rating,
+                ];
+            })->all();
     }
 
     private function userBrief(int $id): ?array

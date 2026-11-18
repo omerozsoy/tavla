@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -46,15 +47,16 @@ class FriendController extends Controller
     {
         $data = $request->validate([
             'nickname' => ['nullable', 'string', 'max:40'],
-            'user_id'  => ['nullable', 'integer'],
+            'user_id' => ['nullable', 'integer'],
         ]);
         $me = $request->user();
 
         // Once id ile (cevrimici oyuncu paneli gibi), yoksa nickname ile bul.
+        // notDeleted: silinmiş/anonim (silinmisN) hesap arkadaş olarak eklenemez/aranamaz.
         $target = ! empty($data['user_id'])
-            ? User::find($data['user_id'])
+            ? User::notDeleted()->find($data['user_id'])
             : (! empty($data['nickname'])
-                ? User::whereRaw('LOWER(nickname) = ?', [strtolower($data['nickname'])])->first()
+                ? User::notDeleted()->whereRaw('LOWER(nickname) = ?', [strtolower($data['nickname'])])->first()
                 : null);
         if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
@@ -95,8 +97,10 @@ class FriendController extends Controller
                     'status' => 'accepted', 'updated_at' => now(),
                 ]);
                 Notification::notify($target->id, "{$meName} arkadaşlık isteğini kabul etti", null, 'users');
+
                 return response()->json(['status' => 'accepted']);
             }
+
             return response()->json(['status' => $existing->status]);
         }
 
@@ -154,11 +158,11 @@ class FriendController extends Controller
     private function pub($u): array
     {
         // Son 70 sn icinde gorulduyse cevrimici
-        $online = $u->last_seen && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
+        $online = $u->last_seen && Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
         // Premium (suresi gecerli ucretli plan) -> avatar ustunde tac. $u User modeli VEYA
         // DB::table stdClass'i olabilir; accessor yerine INLINE hesap (plan + plan_until).
         $plan = $u->plan ?? 'free';
-        $until = $u->plan_until ? \Illuminate\Support\Carbon::parse($u->plan_until) : null;
+        $until = $u->plan_until ? Carbon::parse($u->plan_until) : null;
         $premium = $plan !== 'free' && $until && $until->isFuture();
 
         return [

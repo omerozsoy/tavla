@@ -106,10 +106,11 @@ class DuelService
         if ($rows->isEmpty()) {
             return [];
         }
-        $users = User::whereIn('id', $rows->pluck('winner_id'))
+        $users = User::whereIn('id', $rows->pluck('winner_id'))->notDeleted()
             ->get(['id', 'nickname', 'first_name', 'avatar', 'rating'])->keyBy('id');
 
-        return $rows->map(function ($r) use ($users) {
+        // Silinmiş/anonimleşmiş kazananlar sıralamada GÖRÜNMESİN -> satırı tamamen ele (placeholder değil).
+        return $rows->filter(fn ($r) => $users->has($r->winner_id))->map(function ($r) use ($users) {
             $u = $users->get($r->winner_id);
 
             return [

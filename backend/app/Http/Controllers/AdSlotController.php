@@ -49,6 +49,9 @@ class AdSlotController extends Controller
         $names = AdClick::where('ad_id', $ad)
             ->whereNotNull('user_id')
             ->join('users', 'users.id', '=', 'ad_clicks.user_id')
+            // Silinmiş/anonimleşmiş (silinmisN) + yasaklı hesaplar listede görünmesin (User::notDeleted ile aynı koşul).
+            ->whereNull('users.banned_at')
+            ->where(fn ($w) => $w->whereNull('users.ban_reason')->orWhere('users.ban_reason', '!=', 'account_deleted'))
             ->orderByDesc('ad_clicks.created_at')
             ->limit(100)
             ->pluck('users.nickname')
