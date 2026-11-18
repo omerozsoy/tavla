@@ -628,7 +628,7 @@ const REAL_POSITIONS: Famous[] = [
   { gnuPos: 'a9tDAASZvc0AAA', gnuMatch: '8AlXAAAACAAA', answer: '', title: 'Chow Challenge #2 — P8', concept: 'Gammon save; safe play' },
   { gnuPos: '294GAAiO3SwhAA', gnuMatch: 'cIk2AAAAAAAA', answer: '', title: 'Chow Challenge #2 — P9', concept: '1pt match; uproot point' },
   { gnuPos: 'aHcDAjJ4nsEBDA', gnuMatch: 'cImoABAAEAAA', answer: '', title: 'Perry/UBK 21 to Play', concept: 'Match to 5, 2-1 down' },
-  { gnuPos: '1a4pwABsd7YAAA', gnuMatch: 'EYERADAAAAAA', answer: '10/6 5/2', title: 'GNU 4-ply position', concept: 'Bearoff/safe; 4-ply top play' },
+  { gnuPos: '1a4pwABsd7YAAA', gnuMatch: 'EYERADAAAAAA', answer: '10/6 5/2', title: 'XG 4-ply position', concept: 'Bearoff/safe; 4-ply top play' },
   { gnuPos: '33sAACjgtm0AYA', gnuMatch: 'cAkXAAAAAAAE', answer: '', title: 'containment', concept: 'Entering from bar; containment' },
   { gnuPos: 'sCMJ2BaDu8FDAA', gnuMatch: 'QYnyAAAAEAAE', answer: '', title: 'backgame double hit', concept: 'Backgame double hit' },
   { gnuPos: 'mM8jBwCMt8EBMA', gnuMatch: 'cAnuACAAEAAE', answer: '', title: 'rec.games.backgammon — Pos 1', concept: 'Make 4pt; race vs blitz' },
