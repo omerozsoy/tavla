@@ -3,13 +3,14 @@ import { questionPoints, MARATHON_POOL } from './trainingCurriculum'
 import { boardKey } from '../engine/moves'
 
 describe('Soru Maratonu havuz + puan', () => {
-  it('questionPoints sadece {25,50,75,100} döner ve dördü de havuzda görünür', () => {
+  it('questionPoints sadece {10,20,25,50,100} döner ve beşi de havuzda görünür', () => {
     const vals = new Set(MARATHON_POOL.map((q) => questionPoints(q)))
-    for (const v of vals) expect([25, 50, 75, 100]).toContain(v)
-    // dağıtım 5 tier'a yayıldığından dört çarpan da temsil edilmeli
+    for (const v of vals) expect([10, 20, 25, 50, 100]).toContain(v)
+    // dağıtım 5 tier'a yayıldığından beş puan değeri de temsil edilmeli
+    expect(vals.has(10)).toBe(true)
+    expect(vals.has(20)).toBe(true)
     expect(vals.has(25)).toBe(true)
     expect(vals.has(50)).toBe(true)
-    expect(vals.has(75)).toBe(true)
     expect(vals.has(100)).toBe(true)
   })
 

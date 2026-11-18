@@ -1424,10 +1424,10 @@ export const UNCLASSIFIED_COUNT = UNCLASSIFIED.length
 export const CURRICULUM_TOTAL = CURRICULUM.reduce((a, t) => a + t.lessons.reduce((b, l) => b + l.count, 0), 0)
 
 // --- SORU MARATONU ---
-// Zorluk-bazli puan: tier (0..4) -> carpan ×1/×1/×2/×3/×4, taban 25. (Cok Kolay+Kolay=25, Orta=50,
-// Zor=75, Cok Zor=100.) tierOf+hardnessText dosya-ici; disari questionPoints olarak acilir.
+// Zorluk-bazli puan: tier (0..4) -> Cok Kolay=10, Kolay=20, Orta=25, Zor=50, Cok Zor=100.
+// tierOf+hardnessText dosya-ici; disari questionPoints olarak acilir.
 export function questionPoints(q: Question): number {
-  return 25 * [1, 1, 2, 3, 4][tierOf(hardnessText(q))]
+  return [10, 20, 25, 50, 100][tierOf(hardnessText(q))]
 }
 // Maraton soru havuzu: CURRICULUM'un tum (test HARIC) sorulari — zaten board+zar global dedup'li.
 export const MARATHON_POOL: Question[] = CURRICULUM.flatMap((t) =>
