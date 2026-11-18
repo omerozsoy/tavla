@@ -6,6 +6,12 @@ import { quizLeaderboard, submitQuizScore, type QuizLeaderRow } from '../api'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 
+// Seri bonusu: her 3. doğru cevap (3, 6, 9…) 2 KAT puan; diğerleri normal.
+// nextCorrect = bu doğru cevaptan SONRAKİ toplam doğru sayısı (ilk yanlış oyunu bitirdiği için = seri).
+export function streakMultiplier(nextCorrect: number): number {
+  return nextCorrect > 0 && nextCorrect % 3 === 0 ? 2 : 1
+}
+
 // Havuzdan seen'de OLMAYAN rastgele soru. Tur içi tekrar yok; havuz tükenince null (tur tamam).
 export function pickNext(pool: Question[], seen: Set<string>): Question | null {
   const avail = pool.filter((q) => !seen.has(questionId(q)))
@@ -14,8 +20,8 @@ export function pickNext(pool: Question[], seen: Set<string>): Question | null {
 }
 
 /**
- * Soru Maratonu: sınırsız streak-quiz. Her doğru cevap zorluğa göre puan (25/50/75/100), üstte
- * anlık skor, İLK YANLIŞTA biter. Game-over: takma-ad + anonim tabelaya yaz + baştan başla.
+ * Soru Maratonu: sınırsız streak-quiz. Her doğru cevap zorluğa göre puan (10/20/25/50/100); her 3.
+ * doğru cevap 2 KAT. Üstte anlık skor, İLK YANLIŞTA biter. Game-over: anonim tabela + baştan başla.
  * LessonView'i (fixed tek-soru + onAnswered) per-soru remount (key=step) ile sürer.
  */
 export function QuizMarathon({
@@ -42,12 +48,14 @@ export function QuizMarathon({
   const [answered, setAnswered] = useState<null | 'correct' | 'wrong'>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [gain, setGain] = useState(0) // son cevabın puanı (her cevaptan sonra skor pop-up'ında)
+  const [lastMult, setLastMult] = useState(1) // son cevabın seri çarpanı (2 = bu cevap 2 kat)
 
   const reset = () => {
     seenRef.current = new Set()
     setScore(0)
     setCorrectCount(0)
     setBestMult(1)
+    setLastMult(1)
     setStep(0)
     setRound((r) => r + 1)
     setCurrent(pickNext(MARATHON_POOL, new Set()))
@@ -58,11 +66,14 @@ export function QuizMarathon({
 
   const handleAnswered = (correct: boolean, q: Question) => {
     if (correct) {
-      const pts = questionPoints(q)
+      const nextCorrect = correctCount + 1
+      const mult = streakMultiplier(nextCorrect) // her 3. doğruda 2 kat
+      const pts = questionPoints(q) * mult
       setScore((s) => s + pts)
-      setCorrectCount((c) => c + 1)
-      setBestMult((m) => Math.max(m, pts / 25))
+      setCorrectCount(nextCorrect)
+      setBestMult((m) => Math.max(m, mult))
       setGain(pts)
+      setLastMult(mult)
       setAnswered('correct')
     } else {
       setGain(0)
@@ -110,7 +121,7 @@ export function QuizMarathon({
             answered && (
               <div key={`${round}-${step}-${answered}`} className={`qm-pop ${answered}`} role="status">
                 <span className="qm-pop-gain">{answered === 'correct' ? `+${gain}` : 'Yanlış'}</span>
-                {answered === 'correct' && gain >= 75 && <span className="qm-pop-tag">{gain >= 100 ? 'MÜKEMMEL!' : 'SÜPER!'}</span>}
+                {answered === 'correct' && lastMult === 2 && <span className="qm-pop-tag">🔥 2 KAT!</span>}
                 <span className="qm-pop-total">Skor <CountUp value={score} from={score - gain} /></span>
               </div>
             )
