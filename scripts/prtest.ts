@@ -114,7 +114,7 @@ async function main() {
   console.log(`   match id A=${mA?.id} B=${mB?.id}`)
 
   // gnubg PR (async) hazır olana kadar poll (~3dk)
-  const pollPr = async (bearer: string, id: number, who: string) => {
+  const pollPr = async (bearer: string, id: number, _who: string) => {
     for (let i = 0; i < 60; i++) {
       const r = await req('GET', `/me/match-pr-tavlatv/${id}`, { token: bearer })
       if (r.json?.ready) return r.json

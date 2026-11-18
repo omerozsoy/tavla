@@ -4,7 +4,6 @@ import path from 'node:path'
 const ROOT = path.resolve(process.cwd())
 const I18N = path.join(ROOT, 'src', 'i18n.tsx')
 const FRAG = path.join(ROOT, 'scripts', 'langfrag')
-const TR = path.join(ROOT, '.claude-tool-results') // unused
 
 const EL_JSON = process.argv[2]
 const RU_JSON = process.argv[3]

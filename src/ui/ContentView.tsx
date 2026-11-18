@@ -673,7 +673,7 @@ export default function ContentView({
                           !c.contacts?.length &&
                           (() => {
                             // Serbest metin: sondaki telefonu ayikla; SADECE numara link olur.
-                            const m = c.contact.match(/([\d(+][\d\s()+\-]{5,})\s*$/)
+                            const m = c.contact.match(/([\d(+][\d\s()+-]{5,})\s*$/)
                             const phone = m ? m[1].trim() : ''
                             const name = m ? c.contact.slice(0, m.index).trim() : c.contact
                             const wa = waLink(phone)
@@ -1314,7 +1314,7 @@ function EventRow({
               (() => {
                 // Serbest metin iletisim: sondaki telefon numarasini ayikla; SADECE numara
                 // link olsun (isim duz metin). Numara bulunmazsa tumu duz metin.
-                const m = ev.contact.match(/([\d(+][\d\s()+\-]{5,})\s*$/)
+                const m = ev.contact.match(/([\d(+][\d\s()+-]{5,})\s*$/)
                 const phone = m ? m[1].trim() : ''
                 const name = m ? ev.contact.slice(0, m.index).trim() : ev.contact
                 const wa = waLink(phone)

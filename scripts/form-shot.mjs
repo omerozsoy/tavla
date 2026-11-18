@@ -31,7 +31,7 @@ let id = 0
 function cdp(ws, method, params = {}, sessionId) {
   return new Promise((resolve, reject) => {
     const mid = ++id; const msg = { id: mid, method, params }; if (sessionId) msg.sessionId = sessionId
-    const onMsg = (ev) => { const d = JSON.parse(ev.data); if (d.id === mid) { ws.removeEventListener('message', onMsg); d.error ? reject(new Error(d.error.message)) : resolve(d.result) } }
+    const onMsg = (ev) => { const d = JSON.parse(ev.data); if (d.id === mid) { ws.removeEventListener('message', onMsg); if (d.error) reject(new Error(d.error.message)); else resolve(d.result) } }
     ws.addEventListener('message', onMsg); ws.send(JSON.stringify(msg))
   })
 }

@@ -4,7 +4,6 @@
 // Boylece "yapay zeka ile mac" GERCEKTEN gnubg ile oynanmis olur.
 //
 //   BASE=https://www.tavlatv.com/api TARGET=7 node scripts/_gnubg-live-match.mjs
-import { initialState } from '../src/engine/board'
 import { generateMoves } from '../src/engine/moves'
 import { newTurn } from '../src/engine/game'
 import type { GameState, Step } from '../src/engine/types'

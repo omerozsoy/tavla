@@ -119,9 +119,9 @@ test('tüm hatalar: gnubg kartları, zarlar, hata sayısı rozeti', async ({ pag
     await r.fulfill({ response: res, json: body })
   })
   // Tek motor gnubg: en iyi hamle /api/analyze-position'dan (gnubg) gelir — burada taklit.
-  let gnubgAsked = 0
+  let _gnubgAsked = 0
   await page.route('**/api/analyze-position', (r) => {
-    gnubgAsked++
+    _gnubgAsked++
     return r.fulfill({ json: { engine: 'tavlatv', moves: [{ notation: '13/8 24/20', equity: 0.1, probs: null }, { notation: playedNotation, equity: -0.174, probs: null }] } })
   })
   await page.addInitScript((tok) => localStorage.setItem('tavla.token', tok), U.token)

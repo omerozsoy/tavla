@@ -148,7 +148,6 @@ test('mobil (Pixel 7): UI ile zar at, taş oyna, onayla; tahta taşmıyor; maç 
     let r = await getRoom(req, s.code, s.white)
     if (!r.server_state) { await call(req, 'POST', `/rooms/${s.code}/roll`, s.white.user!.token, cmd(s.white, r.server_version)); r = await getRoom(req, s.code, s.white) }
     const c = byColor[r.server_state!.turn]
-    const before = r.server_version
     if (!r.server_state!.dice.length) {
       // İstemci zarı ya "Zar At" düğmesiyle ya da (otomatik zar) kendiliğinden atar: hangisi
       // önce olursa. Düğme görünürse dokun; zar sunucuda belirince devam.

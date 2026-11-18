@@ -43,7 +43,7 @@ for (const v of VIEWS) {
   try {
     const btn = page.getByRole('button', { name: /Başla|Basla|Start/i }).first()
     if (await btn.count()) { await btn.click({ timeout: 4000 }); started = true }
-  } catch (e) { /* devam */ }
+  } catch { /* devam */ }
   await page.waitForTimeout(3500) // tahta + ilk zar
   // Tahta var mi?
   const hasBoard = await page.evaluate(() => !!document.querySelector('.board, .bg-board, [class*="board"]'))

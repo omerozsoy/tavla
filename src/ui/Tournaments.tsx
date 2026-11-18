@@ -1463,7 +1463,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                       disabled={busy || (!!active.has_password && !joinPw.trim())}
                       onClick={() => {
                         const pw = active.has_password ? joinPw : undefined
-                        isTl ? payTl(active.id, pw) : join(active.id, pw)
+                        if (isTl) payTl(active.id, pw)
+                        else join(active.id, pw)
                       }}
                     >
                       {isTl ? t('tourn.payAndJoin') : t('tourn.join')}

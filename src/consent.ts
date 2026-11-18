@@ -126,7 +126,8 @@ export function applyConsent(rec: ConsentRecord, cfg: ConsentConfig | null): voi
     if (!w.fbq) {
       const n: any = function () {
         // eslint-disable-next-line prefer-rest-params
-        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+        if (n.callMethod) n.callMethod.apply(n, arguments)
+        else n.queue.push(arguments)
       }
       n.queue = []
       n.loaded = true

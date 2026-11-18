@@ -64,7 +64,8 @@ function cdp(ws, method, params = {}, sessionId) {
       const d = JSON.parse(ev.data)
       if (d.id === mid) {
         ws.removeEventListener('message', onMsg)
-        d.error ? reject(new Error(d.error.message)) : resolve(d.result)
+        if (d.error) reject(new Error(d.error.message))
+        else resolve(d.result)
       }
     }
     ws.addEventListener('message', onMsg)
