@@ -182,7 +182,7 @@ import Friends from './ui/Friends'
 import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
-const QuizMarathon = lazy(() => import('./ui/QuizMarathon').then((m) => ({ default: m.QuizMarathon }))) // Soru Maratonu (günün-pozisyonu slug'ını yeniden kullanır)
+const QuizMarathon = lazy(() => import('./ui/QuizMarathon').then((m) => ({ default: m.QuizMarathon }))) // Soru Maratonu (/soru-maratonu; eski /gunun-pozisyonu alias olarak korunur)
 const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
 const OrganizerPanel = lazy(() => import('./ui/OrganizerPanel'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
@@ -1531,8 +1531,8 @@ export default function App() {
                     ? 'tavla-egitimi'
                   : dailyPuzzleOpen
                     ? dailyTab === 'records'
-                      ? 'gunun-pozisyonu/rekorlar'
-                      : 'gunun-pozisyonu'
+                      ? 'soru-maratonu/rekorlar'
+                      : 'soru-maratonu'
                   : liveTournOpen
                     ? 'canli-turnuva-sistemi'
                   : organizerPanelOpen
@@ -1893,7 +1893,8 @@ export default function App() {
         case 'tavla-egitimi':
           setTrainingOpen(true)
           break
-        case 'gunun-pozisyonu':
+        case 'gunun-pozisyonu': // eski URL (geriye uyumlu) -> currentSlug /soru-maratonu'ya normalize eder
+        case 'soru-maratonu':
           setDailyTab(seg[1] === 'rekorlar' ? 'records' : 'play')
           setDailyPuzzleOpen(true)
           break
