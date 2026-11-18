@@ -284,7 +284,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           <span className="lb-games">{t('lb.games')}</span>
           <span className="lb-wl">{t('lb.winLoss')}</span>
           <span className="lb-wr">{t('lb.winRate')}</span>
-          <span className="lb-rating">
+          <span className="lb-rating" title={by === 'wxp' ? t('an.wxp') : undefined}>
             {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
           </span>
         </>
@@ -326,7 +326,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           <Button variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => changeTab('coins')}>
             <Icon name="coin" size={16} /> {t('lb.byCoins')}
           </Button>
-          <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')}>
+          <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')} title={t('an.wxp')}>
             <Icon name="trophy" size={16} /> {t('lb.byWxp')}
           </Button>
           <Button variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => changeTab('pr')}>
@@ -354,7 +354,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
                 <div className="wxp-bd-row wxp-bd-hrow">
                   <span className="wxp-bd-cat">{t('wxpbd.category')}</span>
                   <span className="wxp-bd-calc">{t('wxpbd.calc')}</span>
-                  <span className="wxp-bd-sum">WXP</span>
+                  <span className="wxp-bd-sum" title={t('an.wxp')}>WXP</span>
                 </div>
                 {wxpInfo.categories.map((c) => (
                   <div key={c.key} className={`wxp-bd-row ${c.wins === 0 ? 'zero' : ''}`}>

@@ -889,7 +889,7 @@ export function RankingPanel({
         <Button type="button" variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => changeTab('coins')}>
           {t('lb.byCoins')}
         </Button>
-        <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')}>
+        <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')} title={t('an.wxp')}>
           {t('lb.byWxp')}
         </Button>
         <Button type="button" variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => changeTab('pr')}>

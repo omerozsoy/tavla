@@ -56,7 +56,7 @@ import { ApiError } from '../api'
 // sıralama), /takimlar-ligi/takimim, /takimlar-ligi/kurallar, /takimlar-ligi/kur. Eski sekme-state
 // yerine tek 'view' hem bölümü hem drill-in'i (takim/mac) tutar -> bookmark + geri-tuşu çalışır.
 type Section = 'overview' | 'champions' | 'create' | 'myteam' | 'rules'
-type View = { kind: Section } | { kind: 'team'; id: number }
+type View = { kind: Section } | { kind: 'team'; id: number; join?: boolean }
 const SECTIONS: readonly Section[] = ['overview', 'champions', 'create', 'myteam', 'rules']
 const isSection = (v: View): v is { kind: Section } => (SECTIONS as readonly string[]).includes(v.kind)
 
@@ -78,7 +78,8 @@ function parsePath(p: string | null): View {
   if (!p) return { kind: 'overview' }
   const seg = p.split('/')
   const id = parseInt(seg[1] ?? '', 10)
-  if (seg[0] === 'takim' && id) return { kind: 'team', id }
+  // takim/{id}/katil → davet linki: açılışta otomatik başvuru (seg[2] === 'katil').
+  if (seg[0] === 'takim' && id) return { kind: 'team', id, join: seg[2] === 'katil' }
   if (seg[0] === 'sampiyonlar') return { kind: 'champions' }
   if (seg[0] === 'takimim') return { kind: 'myteam' }
   if (seg[0] === 'kurallar') return { kind: 'rules' }
@@ -156,6 +157,21 @@ export default function TeamsView(props: Props) {
     // Çevirisi olmayan kod: genel mesajın yanına kodu ekle -> sebep ekran görüntüsünden teşhis edilebilsin.
     return t(key) !== key ? t(key) : code !== 'generic' ? `${t('teams.err.generic')} (${code})` : t('teams.err.generic')
   }, [t])
+
+  // Davet linki (takim/{id}/katil): açılışta otomatik başvuru. Giriş yoksa login → sonra tekrar çalışır.
+  // Başarı/ret ardından `katil` bayrağı URL'den temizlenir (refresh/geri-tuşu tekrar başvurmasın).
+  const joinedRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (view.kind !== 'team' || !view.join || !meLoaded) return
+    if (joinedRef.current === view.id) return // bu takım için zaten denendi
+    if (!props.myId) { props.onRequireLogin(); return } // misafir: giriş iste (girişte effect yeniden çalışır)
+    joinedRef.current = view.id
+    if (hasTeam) { go({ kind: 'team', id: view.id }); return } // zaten takımlı → başvuramaz, sadece sayfayı göster
+    applyTeam(view.id)
+      .then(() => setNotice(t('teams.applySent')))
+      .catch((e) => setNotice(errText(e))) // başvuru kapalı/kapasite/mükerrer → gerçek sebep (backend guard)
+      .finally(() => go({ kind: 'team', id: view.id }))
+  }, [view, meLoaded, hasTeam, props.myId, props.onRequireLogin, go, errText, t])
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -1023,6 +1039,12 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
     setBusy(true)
     try { await applyTeam(props.id); props.setNotice(t('teams.invited')) } catch (e) { props.setNotice(props.errText(e)) } finally { setBusy(false) }
   }
+  // Paylaşılabilir davet linki: tıklayan açılışta otomatik başvurur (TeamsView join effect).
+  const copyInviteLink = async () => {
+    const link = `${location.origin}/takimlar-ligi/takim/${props.id}/katil`
+    try { await navigator.clipboard.writeText(link); props.setNotice(t('teams.linkCopied')) }
+    catch { props.setNotice(link) } // clipboard yoksa (eski tarayıcı/izin) linki metin olarak göster
+  }
   // IdentityBox'ın beklediği act: çalıştır → bildir → takımı yeniden çek (logo/renk anında yansısın).
   const act = async (fn: () => Promise<unknown>, msg?: string) => {
     setBusy(true)
@@ -1039,6 +1061,10 @@ function TeamDetailView(props: { id: number; myId: number | null; hasTeam: boole
         {d.team.is_champion && <span title={t('teams.awards')}>🏆</span>}
         <span style={{ flex: 1 }} />
         <span style={microTag}>{d.team.rating_avg.toFixed(1)} · {d.members.length}</span>
+        {/* Davet linki: başvuru açıkken herkes kopyalayıp arkadaşına yollayabilir (tıklayan otomatik başvurur) */}
+        {d.team.applications_open && (
+          <Button variant="outline" disabled={busy} onClick={copyInviteLink}>{t('teams.inviteLink')}</Button>
+        )}
         {/* Başvur yalnız takımsız kullanıcıya: takımdayken (kendi/başka takım) başvurulamaz */}
         {props.myId && !props.hasTeam && d.team.applications_open && (
           <Button disabled={busy} onClick={apply}>{t('teams.apply')}</Button>
