@@ -87,7 +87,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
   onBack: () => void
   fixed?: { title: string; questions: Question[] }
   startIndex?: number
-  onAnswered?: (correct: boolean, q: Question) => void
+  onAnswered?: (correct: boolean, q: Question, scoreable: boolean) => void // scoreable=false: ipucu/tekrar kullanıldı → puan yok (ama doğruysa devam)
   chip?: ReactNode // Soru Maratonu: dogru/toplam rozeti yerine (maraton skoru)
   centerAction?: { label: string; onClick: () => void } | null // Soru Maratonu: tahta ortasinda (Onayla yerinde) Sonraki Soru / Skorunu Gor
   centerInfo?: ReactNode // Soru Maratonu: tahtanin sol-ortasinda (Geri Al yerinde) cevap sonrasi skor
@@ -389,7 +389,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
       setBest({ move: q.answer, equity: 0, probs: [] })
       const firstTryOk = ok && !hinted && !retried
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
-      if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
+      if (q) onAnswered?.(ok, q, firstTryOk) // Soru Maratonu: ok=devam/bitiş, firstTryOk=puanlanabilir (ipucu/tekrar yoksa)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       revealIfMarathonWrong(ok) // cozumu GOSTERME — yanlista "Tekrar Dene" ile yeniden oynanir (maraton haric)
@@ -413,7 +413,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
       setBest(top)
       const firstTryOk = ok && !hinted && !retried
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
-      if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
+      if (q) onAnswered?.(ok, q, firstTryOk) // Soru Maratonu: ok=devam/bitiş, firstTryOk=puanlanabilir (ipucu/tekrar yoksa)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       revealIfMarathonWrong(ok) // cozumu GOSTERME (dogru/yanlis farketmez) — yanlista "Tekrar Dene" (maraton haric)
@@ -454,7 +454,7 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
       setCubeMsg(msg)
       const firstTryOk = ok && !hinted
       if (q) savePosResult(questionId(q), firstTryOk) // pozisyon-bazli ilerleme (konu bolumleri)
-      if (q) onAnswered?.(firstTryOk, q) // Soru Maratonu: ilk-deneme sonucu (dogru -> puan, yanlis -> bitis)
+      if (q) onAnswered?.(ok, q, firstTryOk) // Soru Maratonu: ok=devam/bitiş, firstTryOk=puanlanabilir (ipucu/tekrar yoksa)
       setResults((r) => { const n = r.slice(); n[idx] = firstTryOk; return n })
       setStreak((s) => (firstTryOk ? s + 1 : 0))
       setPhase(ok ? 'correct' : 'wrong')

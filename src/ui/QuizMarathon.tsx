@@ -64,11 +64,12 @@ export function QuizMarathon({
     setPhase('playing')
   }
 
-  const handleAnswered = (correct: boolean, q: Question) => {
+  const handleAnswered = (correct: boolean, q: Question, scoreable: boolean) => {
     if (correct) {
       const nextCorrect = correctCount + 1
-      const mult = streakMultiplier(nextCorrect) // her 3. doğruda 2 kat
-      const pts = questionPoints(q) * mult
+      // İpucu (veya tekrar) kullanıldıysa puan YOK; ama doğru olduğu için oyun devam eder.
+      const mult = scoreable ? streakMultiplier(nextCorrect) : 1 // her 3. doğruda 2 kat
+      const pts = scoreable ? questionPoints(q) * mult : 0
       setScore((s) => s + pts)
       setCorrectCount(nextCorrect)
       setBestMult((m) => Math.max(m, mult))
@@ -121,7 +122,8 @@ export function QuizMarathon({
           centerInfo={
             answered && (
               <div key={`${round}-${step}-${answered}`} className={`qm-pop ${answered}`} role="status">
-                <span className="qm-pop-gain">{answered === 'correct' ? `+${gain}` : 'Yanlış'}</span>
+                <span className="qm-pop-gain">{answered === 'correct' ? (gain > 0 ? `+${gain}` : 'Doğru') : 'Yanlış'}</span>
+                {answered === 'correct' && gain === 0 && <span className="qm-pop-tag muted">İpucu — puan yok</span>}
                 {answered === 'correct' && lastMult === 2 && <span className="qm-pop-tag">🔥 2 KAT!</span>}
                 <span className="qm-pop-total">Skor <CountUp value={score} from={score - gain} /></span>
               </div>
@@ -292,6 +294,7 @@ function RulesPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }) 
       <ul className="qm-rules-list">
         <li>Zar atılır, en iyi hamleyi oynarsan soruyu <b>bilirsin</b>.</li>
         <li><b>İlk yanlışta</b> maraton biter — ne kadar uzarsa skorun o kadar yükselir.</li>
+        <li><b>İpucu kullanırsan</b> o sorudan <b>puan alamazsın</b> (ama doğruysa oyun devam eder).</li>
         <li>Skorun oyun bitince <b>otomatik</b> olarak Rekorlar tabelasına yazılır.</li>
         <li>Her oyuncu tabelada yalnız <b>en yüksek</b> skoruyla yer alır.</li>
       </ul>
