@@ -250,6 +250,18 @@ export async function getRealtimeConfig(): Promise<{ enabled: boolean; key: stri
   return req('/realtime-config')
 }
 
+// Açılış Pratiği havuzu (public, lazy): band başı sayı + sayfalı pozisyonlar (bundle'a gömülü DEĞİL).
+export async function getOpeningCounts(): Promise<Record<string, number>> {
+  return req('/opening-positions/counts')
+}
+export async function getOpeningPage(
+  band: string,
+  page: number,
+  per = 20,
+): Promise<{ items: { xgid: string; answer: string; dice: string }[] }> {
+  return req(`/opening-positions?band=${encodeURIComponent(band)}&page=${page}&per=${per}`)
+}
+
 export async function register(
   input: Profile & { password: string },
 ): Promise<ServerUser> {
