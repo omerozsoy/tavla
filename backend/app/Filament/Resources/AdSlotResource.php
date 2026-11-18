@@ -77,6 +77,8 @@ class AdSlotResource extends Resource
                 ->helperText('Aynı konumda birden fazla reklam varsa küçük sayı önce gösterilir.'),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true)
                 ->helperText('Yalnızca yayındaki reklamlar ana sayfada gösterilir.'),
+            Forms\Components\Toggle::make('hide_in_app')->label('Mobil uygulamada gizle')->default(false)
+                ->helperText('Açıksa bu reklam Android/iOS uygulamada gösterilmez; web ve mobil tarayıcıda görünür.'),
         ]);
     }
 
@@ -101,6 +103,7 @@ class AdSlotResource extends Resource
                     ->placeholder('—')->limit(40)->url(fn ($state) => $state)->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
+                Tables\Columns\IconColumn::make('hide_in_app')->label('App’te gizli')->boolean(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Düzenle'),

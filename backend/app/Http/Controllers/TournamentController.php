@@ -1787,6 +1787,13 @@ class TournamentController extends Controller
                 ->pluck('id')->map(fn ($id) => (int) $id)->all()
             : [];
 
+        // GÖRÜNÜM için CANLI rating: players[].rating kayıt anı snapshot'ı (eşleştirme/no-show
+        // mantığı ona bağlı, DOKUNMA). Katılımcı kartında güncel rating görünsün diye çıktıda
+        // üzerine bindir — depolanan snapshot değişmez.
+        $liveRatings = $playerIds
+            ? User::whereIn('id', $playerIds)->pluck('rating', 'id')->all()
+            : [];
+
         // Onceki tur PR'lari: bitmis bracket maclarinin room_code'larindan oyuncu PR'lari.
         // match_prs[ROOM_UPPER][userId] = PR (gnubg oncelikli, yoksa client pr). Frontend
         // "Ad skor - Pr: X.XX" gosterir. PR analizi gec gelebilir -> reload'da kesin dolar.
@@ -1810,7 +1817,11 @@ class TournamentController extends Controller
         }
 
         return array_merge($this->summary($t), [
-            'players' => array_values(array_filter($t->players ?? [], fn ($p) => $p !== null)),
+            'players' => array_values(array_map(
+                // ['rating' => canlı] + $p: sol taraf anahtarı korur -> snapshot rating'i çıktıda ezer.
+                fn ($p) => isset($liveRatings[$p['id']]) ? ['rating' => (int) $liveRatings[$p['id']]] + $p : $p,
+                array_filter($t->players ?? [], fn ($p) => $p !== null)
+            )),
             'bracket' => $t->bracket,
             'champion_id' => $t->champion_id,
             'swiss' => SwissRuntime::isSwiss($t) ? SwissRuntime::serialize($t) : null,

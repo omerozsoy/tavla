@@ -1768,6 +1768,7 @@ export interface AdSlot {
   image: string // masaustu gorsel (1120x180)
   image_mobile?: string | null // mobil gorsel (720x300) — opsiyonel
   link?: string | null // tiklaninca acilacak URL — opsiyonel
+  hide_in_app?: boolean // true ise native uygulamada gizlenir (web/mobil tarayici etkilenmez)
 }
 export async function listAdSlots(): Promise<AdSlot[]> {
   const d = await req<{ ads: AdSlot[] }>('/ad-slots')

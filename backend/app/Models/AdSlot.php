@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 class AdSlot extends Model
 {
     protected $fillable = [
-        'slot', 'image', 'image_mobile', 'link', 'sort', 'published',
+        'slot', 'image', 'image_mobile', 'link', 'sort', 'published', 'hide_in_app',
     ];
 
     protected $casts = [
         'published' => 'boolean',
+        'hide_in_app' => 'boolean',
     ];
 
     // Gecerli slot degerleri (ana sayfadaki 3 konum).

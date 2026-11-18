@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { listAdSlots, recordAdClick, adClickers, type AdSlot, type AdSlotPos } from '../api'
+import { IS_NATIVE_APP } from '../appEnv'
 import './adStrip.css'
 import { safeHref } from './safeHref'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,8 @@ function srcOf(img: string): string {
 // Tum reklamlar TEK sefer cekilir (3 slot ayni listeyi paylasir; modul-duzeyi promise cache).
 let adsCache: Promise<AdSlot[]> | null = null
 function loadAds(): Promise<AdSlot[]> {
-  if (!adsCache) adsCache = listAdSlots().catch(() => [])
+  // Native uygulamada (APK WebView) "Mobil uygulamada gizle" isaretli reklamlari ele; web/tarayici hepsini gorur.
+  if (!adsCache) adsCache = listAdSlots().then((a) => (IS_NATIVE_APP ? a.filter((ad) => !ad.hide_in_app) : a)).catch(() => [])
   return adsCache
 }
 

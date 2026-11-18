@@ -24,6 +24,7 @@ class AdSlotController extends Controller
                 'image' => $ad->image,
                 'image_mobile' => $ad->image_mobile,
                 'link' => $ad->link,
+                'hide_in_app' => $ad->hide_in_app,
             ]);
 
         return response()->json(['ads' => $ads]);
