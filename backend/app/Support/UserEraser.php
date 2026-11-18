@@ -7,6 +7,7 @@ use App\Models\ClubMember;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Kullanıcı silme TEK SÖZLEŞMESİ — deleteAccount (KVKK self-sil) + PurgeTestAccounts (CLI) +
@@ -48,6 +49,10 @@ class UserEraser
             if ($myMem && Club::whereKey($myMem->club_id)->exists()) {
                 Club::whereKey($myMem->club_id)->decrement('members_count');
             }
+            // Takım üyeliği: team_members FK CASCADE YOK (düz kolon) -> silinen/anonimleşen oyuncu
+            // takım rosterinde kalır (anonimleşmede 'silinmisN' olarak görünür). Kulüp deseniyle
+            // birebir: kurucuysa en eski DİĞER üyeye nazik devir, başka üye yoksa takımı kapat.
+            self::detachTeam($user->id);
             Notification::where('user_id', $user->id)->delete();
             $user->tokens()->delete();
             if ($user->hasFinancialHistory()) {
@@ -57,6 +62,46 @@ class UserEraser
             }
             $user->delete();
         });
+    }
+
+    /**
+     * Oyuncuyu takımından çıkar ve sayaçları tazele. team_members cascadeOnDelete OLMADIĞI için
+     * hem fiziksel silme hem anonimleştirme yolunda ELLE çağrılır (yoksa roster'da hayalet üye kalır).
+     * Kurucuysa en eski diğer üyeye devreder; üye kalmazsa takımı kapatır (Club sahiplik devriyle aynı).
+     */
+    private static function detachTeam(int $userId): void
+    {
+        if (! Schema::hasTable('team_members')) {
+            return;
+        }
+        $mem = DB::table('team_members')->where('user_id', $userId)->first();
+        if (! $mem) {
+            return;
+        }
+        if ($mem->role === 'founder') {
+            $next = DB::table('team_members')
+                ->where('team_id', $mem->team_id)
+                ->where('user_id', '!=', $userId)
+                ->orderBy('joined_at')->orderBy('id')
+                ->first();
+            if ($next) {
+                DB::table('team_members')->where('id', $next->id)->update(['role' => 'founder']);
+                DB::table('teams')->where('id', $mem->team_id)->update(['founder_id' => $next->user_id]);
+            }
+        }
+        DB::table('team_members')->where('user_id', $userId)->delete();
+        // member_count / rating_avg = canlı üyelerden yeniden hesapla (TeamService::recompute ile aynı).
+        $agg = DB::table('team_members')
+            ->leftJoin('users', 'users.id', '=', 'team_members.user_id')
+            ->where('team_members.team_id', $mem->team_id)
+            ->selectRaw('COUNT(*) as c, COALESCE(AVG(users.rating), 0) as avg')
+            ->first();
+        if ((int) $agg->c === 0) {
+            DB::table('teams')->where('id', $mem->team_id)->delete(); // üye kalmadı -> takım kapanır
+        } else {
+            DB::table('teams')->where('id', $mem->team_id)
+                ->update(['member_count' => (int) $agg->c, 'rating_avg' => (float) $agg->avg]);
+        }
     }
 
     /**
@@ -80,7 +125,7 @@ class UserEraser
             'content_comments' => ['user_id'],
             'active_money_match_claims' => ['user_id'],
         ] as $table => $cols) {
-            if (! \Illuminate\Support\Facades\Schema::hasTable($table)) {
+            if (! Schema::hasTable($table)) {
                 continue;
             }
             DB::table($table)->where(function ($q) use ($cols, $id) {
