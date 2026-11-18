@@ -13019,6 +13019,20 @@ button.acct-row-logout:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.14);
   color: #dc2626;
 }
+.online-search {
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.14));
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-2, rgba(0, 0, 0, 0.03));
+  color: inherit;
+  font-size: 0.9rem;
+}
+.online-search:focus {
+  outline: none;
+  border-color: var(--accent, #a83a2b);
+}
 /* Oyun Arayanlar paneli: diger ana sayfa bolumleriyle (.home-panels/.tts-panel) AYNI
    standart genislik + ortali (tek basina tam-kap genislige TASMASIN -> "cok buyuk"). */
 /* ===== Arkadaş Davet kartı — Swiss / International Typographic Style =====

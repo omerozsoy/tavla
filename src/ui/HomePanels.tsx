@@ -481,6 +481,7 @@ export function OnlinePlayersPanel({
   // Sekmeler yalnız giriş yapınca görünür (arkadaşlık + getFriends auth ister).
   const [tab, setTab] = useState<'all' | 'friends'>('all')
   const [friendIds, setFriendIds] = useState<Set<number> | null>(null)
+  const [query, setQuery] = useState('') // üstteki arama kutusu: isme göre canlı filtre
 
   useEffect(() => {
     let alive = true
@@ -512,13 +513,16 @@ export function OnlinePlayersPanel({
     }
   }, [currentId])
 
-  // Sekme değişince ilk sayfaya dön.
-  useEffect(() => setPage(0), [tab])
+  // Sekme / arama değişince ilk sayfaya dön.
+  useEffect(() => setPage(0), [tab, query])
 
   // Aktif sekmenin listesi: Arkadaşlar -> online oyuncuları arkadaş id'leriyle filtrele (kesişim).
   const baseAll = players ? (tab === 'friends' && friendIds ? players.filter((p) => friendIds.has(p.id)) : players) : null
   // /duello sayfası: yalnız takımı olan oyuncular (düello takımlılar arası).
-  const base = baseAll && duelTeamOnly ? baseAll.filter((p) => p.has_team) : baseAll
+  const baseTeam = baseAll && duelTeamOnly ? baseAll.filter((p) => p.has_team) : baseAll
+  // Üstteki arama kutusu: isme göre canlı filtre (Türkçe küçük harf).
+  const q = query.trim().toLocaleLowerCase('tr')
+  const base = q && baseTeam ? baseTeam.filter((p) => p.name.toLocaleLowerCase('tr').includes(q)) : baseTeam
   // Kendini HER ZAMAN gor: liste rating'e gore siralanir (Cevrimdisi Gorun degilsen
   // listedesin) ama dusuk rating'de 2. sayfaya dusersin -> kendini en uste SABITLE.
   // (Arkadaşlar sekmesinde kendin arkadaşın olmadığından base'de yoksun -> sabitlenmez, dogru.)
@@ -539,6 +543,16 @@ export function OnlinePlayersPanel({
         <Icon name="users" size={17} /> {t('online.title')}
         {ordered && ordered.length > 0 && <span className="online-count">{ordered.length}</span>}
       </div>
+      {players && players.length > 0 && (
+        <input
+          type="search"
+          className="online-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('online.search')}
+          aria-label={t('online.search')}
+        />
+      )}
       {currentId != null && (
         <div className="rank-tabs">
           <Button type="button" variant={tab === 'all' ? 'default' : 'ghost'} aria-pressed={tab === 'all'} onClick={() => setTab('all')}>
