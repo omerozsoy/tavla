@@ -569,8 +569,8 @@ import LuckyWheel from './ui/LuckyWheel'
 import DiceSlot from './ui/DiceSlot'
 import ExcuseMachine from './ui/ExcuseMachine'
 import KizTavlasi from './ui/KizTavlasi'
-import CheckerShop from './ui/CheckerShop'
-import { CHECKER_BY_ID } from './checkers'
+import CheckerShop, { DISCONTINUED as DISCONTINUED_CHECKERS } from './ui/CheckerShop'
+import { CHECKER_BY_ID, CHECKER_FINISHES } from './checkers'
 import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, type CartAddressSel, MEMBERSHIP_ITEM_ID } from './ui/Cart'
@@ -9474,6 +9474,11 @@ export default function App() {
   // Sahip olunan tahtalar (kilitli olmayanlar) + cerceveler (unlocks) — Profil genel bakisi
   const ownedBoards = boardThemeList.filter((b) => b.owned)
   const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
+  // Sahip olunan pul tasarimi sayisi — CheckerShop "Sahip Olduklarim" ile AYNI hesap:
+  // satisi surmeyen (discontinued) HARIC sahip olunan finisler + 1 (herkese acik varsayilan pul).
+  const ownedCheckers = CHECKER_FINISHES.filter(
+    (s) => !DISCONTINUED_CHECKERS.has(s.id) && (user?.unlocks ?? []).includes('checker.' + s.id),
+  ).length + 1
 
   // Bildirim sil (Profilim > Bildirimler): tek (id) veya toplu (id yok). Optimistik.
   function handleDeleteNotification(id: number) {
@@ -9508,6 +9513,7 @@ export default function App() {
         boardTheme={boardTheme}
         ownedBoards={ownedBoards}
         ownedFrames={ownedFrames}
+        ownedCheckers={ownedCheckers}
         onEdit={() => setProfileEditMode(true)}
         onLogout={handleLogout}
         onSelectBoard={setBoardTheme}

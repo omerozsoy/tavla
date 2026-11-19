@@ -20,7 +20,7 @@ const CHECKER_GROUP_ORDER: CheckerRarity[] = ['common', 'rare', 'epic', 'legenda
 
 // Satistan kaldirilan pul tasarimlari: magaza ekraninda HIC gosterilmez (sahip olanlarin
 // oyun-ici gorunumu CHECKER_BY_ID'den korunur — veri silinmez, yalniz listeden cikar).
-const DISCONTINUED = new Set(['finish-wood', 'finish-mother-of-pearl', 'profile-tavlatv-emblem'])
+export const DISCONTINUED = new Set(['finish-wood', 'finish-mother-of-pearl', 'profile-tavlatv-emblem'])
 
 /**
  * PUL TASARIMLARI — Tavla Tasarımları ekranıyla AYNI dil: filtreler (Tümü/Sahip/Alınabilir) +

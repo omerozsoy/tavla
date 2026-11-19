@@ -54,6 +54,7 @@ interface Props {
   boardTheme: string
   ownedBoards: BoardOpt[]
   ownedFrames: AvatarFrameDef[]
+  ownedCheckers: number // sahip olunan pul tasarimi sayisi (sekme rozeti)
   onEdit: () => void
   onLogout?: () => void
   onSelectBoard?: (id: string) => void // profilden tahta rengi değiştir
@@ -101,6 +102,7 @@ export default function ProfileOverview({
   boardTheme,
   ownedBoards,
   ownedFrames,
+  ownedCheckers,
   onEdit,
   onLogout,
   onSelectBoard,
@@ -348,7 +350,7 @@ export default function ProfileOverview({
             className={tab === 'checkers' ? 'active' : ''}
             onClick={() => setTab('checkers')}
           >
-            {t('menu.checkers')}
+            {t('menu.checkers')} <span className="prof-ov-count">{ownedCheckers}</span>
           </button>
           <button
             type="button"
