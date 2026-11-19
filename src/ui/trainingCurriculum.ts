@@ -287,6 +287,19 @@ function famousToQuestion(f: Famous): Question | null {
   }
 }
 
+// XGID'den maç skoru bağlamını çıkar (açılış pozisyonları match-aware: tahtada skor gösterilir,
+// cevap o skora göre gnubg-best). matchLen=0 (money) -> undefined. parseXgid turn=-1'de tahtayı
+// aynaladığından sıradaki (white) oyuncunun skoru turn'e göre eşlenir.
+function scoreFromXgid(xgid: string): { my: number; opp: number; to: number } | undefined {
+  const p = xgid.replace(/^XGID=/i, '').split(':')
+  const to = Number(p[8]) || 0
+  if (to <= 0) return undefined // money oyunu -> skor yok
+  const sX = Number(p[5]) || 0
+  const sO = Number(p[6]) || 0
+  const xOnRoll = p[3] === '1'
+  return { my: xOnRoll ? sX : sO, opp: xOnRoll ? sO : sX, to }
+}
+
 // Açılış Pratiği (lazy DB sayfası): API'den gelen {xgid,answer} -> Question. famousToQuestion yeniden
 // kullanılır (motor parse + otoriter hamle çözümü); başlık/konsept ders başlığından gelir, boş geçilir.
 export function openingToQuestion(o: { xgid: string; answer?: string }): Question | null {
@@ -1315,6 +1328,8 @@ const BAND_TIER: Record<DiffBand, number> = { cok_kolay: 0, kolay: 1, orta: 2, z
   for (const p of DIFF_OPENINGS) {
     const q = famousToQuestion(p)
     if (!q || !isPlayableQuestion(q)) continue
+    const sc = p.xgid ? scoreFromXgid(p.xgid) : undefined // açılışlar match-aware: tahtada skor + cevap match-best
+    if (sc) q.score = sc
     const id = questionId(q)
     if (seen.has(id)) continue
     seen.add(id)
