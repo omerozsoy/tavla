@@ -76,10 +76,10 @@ export const PAGES: PageDef[] = [
   // Tavla Eğitimi: zar atılır, oyuncu hamlesini oynar; en iyi hamleye (sinir ağı) yakınsa geçer,
   // değilse doğru hamle tahtada oklarla gösterilir.
   { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
-  // Soru Maratonu: zorluk-bazlı puanlı, ilk yanlışta biten quiz + anonim global tabela.
+  // Soru Maratonu: zorluk-bazlı puanlı quiz + anonim tabela. "Açılış Maratonu" modu buranın İÇİNDE
+  // (band seç -> 84k DB havuzu). Ayrı /acilis-pratigi sayfası menüden kaldırıldı (çift yüzey olmasın);
+  // route/App wiring parallel-churn bitince tam temizlenecek (şimdilik deep-link zararsız).
   { key: 'dailyPuzzle', slug: 'soru-maratonu', labelKey: 'menu.dailyPuzzle', icon: 'calendar-dots', group: 'lessons', hideInGame: true },
-  // Açılış Pratiği: ~84k motor-doğrulanmış açılış pozisyonu, DB'den lazy (bundle'a gömülü değil).
-  { key: 'openingPractice', slug: 'acilis-pratigi', labelKey: 'menu.openingPractice', icon: 'graduation', group: 'lessons', hideInGame: true },
   // Tavlada PR Nedir?: PR kavramını anlatan infografik (Dersler ve Eğitim grubunda).
   { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'lessons', hideInGame: true },
 
