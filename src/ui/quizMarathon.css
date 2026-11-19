@@ -549,3 +549,23 @@
 @media (prefers-reduced-motion: reduce) {
   .qm-chip, .qm-chip-flash, .qm-pop, .qm-pop-tag, .qm-over-score, .qm-rank, .qm-rec-row { animation: none !important; }
 }
+
+/* Mod seçim ekranı (Karışık / Açılış-band) + açılış havuzu yüklenirken bekleme */
+.qm-mode { max-width: 440px; margin: 0 auto; }
+.qm-mode-opts { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.qm-mode-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; padding: 14px 16px; text-align: left; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--accent, #a83a2b) 35%, transparent);
+  border-radius: 12px; background: color-mix(in srgb, var(--accent, #a83a2b) 6%, transparent);
+  position: relative; transition: background .15s, border-color .15s;
+}
+.qm-mode-btn:hover { background: color-mix(in srgb, var(--accent, #a83a2b) 12%, transparent); border-color: var(--accent, #a83a2b); }
+.qm-mode-btn > svg { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); opacity: .5; }
+.qm-mode-title { font-weight: 700; font-size: 1.02rem; }
+.qm-mode-sub { font-size: .82rem; opacity: .7; }
+.qm-mode-back {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer; opacity: .75; font-size: .9rem; padding: 2px 0;
+}
+.qm-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 50vh; opacity: .85; }

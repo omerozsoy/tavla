@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import './quizMarathon.css'
 import { LessonView } from './TrainingView'
-import { MARATHON_POOL, questionId, questionPoints, type Question } from './trainingCurriculum'
-import { quizLeaderboard, submitQuizScore, type QuizLeaderRow } from '../api'
+import Loading from './Loading'
+import { MARATHON_POOL, questionId, questionPoints, openingToQuestion, type Question } from './trainingCurriculum'
+import { quizLeaderboard, submitQuizScore, getOpeningCounts, getOpeningPage, type QuizLeaderRow } from '../api'
+import { DIFF_BANDS, DIFF_BAND_TR, type DiffBand } from './difficultyPositions'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 
@@ -18,6 +20,12 @@ export function pickNext(pool: Question[], seen: Set<string>): Question | null {
   if (!avail.length) return null
   return avail[Math.floor(Math.random() * avail.length)]
 }
+
+// Maraton modu: Karışık (tüm müfredat, MARATHON_POOL) ya da Açılış-band (84k DB havuzu, lazy batch).
+type Mode = 'mixed' | DiffBand
+// Açılış band -> puan: zorluk tier'ıyla birebir (questionPoints [10,20,25,50,100]).
+const BAND_POINTS: Record<DiffBand, number> = { cok_kolay: 10, kolay: 20, orta: 25, zor: 50, cok_zor: 100 }
+const OPENING_BATCH = 50 // band maratonunda DB'den çekilen rastgele sayfa boyu (84k'yı yüklemeden)
 
 /**
  * Soru Maratonu: sınırsız streak-quiz. Her doğru cevap zorluğa göre puan (10/20/25/50/100); her 3.
@@ -44,24 +52,77 @@ export function QuizMarathon({
   // olduğundan key değişmiyor, LessonView remount olmuyor ve eski pozisyonda takılı kalıyordu.
   const [round, setRound] = useState(0)
   const seenRef = useRef<Set<string>>(new Set())
-  const [current, setCurrent] = useState<Question | null>(() => pickNext(MARATHON_POOL, new Set()))
+  // mode=null -> mod seçim ekranı (Karışık / Açılış-band). Seçilince havuz yüklenir, oyun başlar.
+  const [mode, setMode] = useState<Mode | null>(null)
+  const [loading, setLoading] = useState(false)
+  const openingPoolRef = useRef<Question[]>([]) // açılış modunda büyüyen lazy havuz
+  const countsRef = useRef<Record<string, number> | null>(null) // band -> toplam (bir kez çekilir)
+  const [current, setCurrent] = useState<Question | null>(null)
   const [answered, setAnswered] = useState<null | 'correct' | 'wrong'>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [gain, setGain] = useState(0) // son cevabın puanı (her cevaptan sonra skor pop-up'ında)
   const [lastMult, setLastMult] = useState(1) // son cevabın seri çarpanı (2 = bu cevap 2 kat)
 
+  const activePool = () => (mode && mode !== 'mixed' ? openingPoolRef.current : MARATHON_POOL)
+
+  // Açılış band'inden DB'den rastgele bir sayfa çek, havuza (dedup) ekle. 84k'yı yüklemez.
+  const loadOpeningBatch = async (band: DiffBand) => {
+    if (!countsRef.current) countsRef.current = await getOpeningCounts().catch(() => ({}))
+    const total = countsRef.current?.[band] ?? 0
+    if (!total) return
+    const pages = Math.max(1, Math.ceil(total / OPENING_BATCH))
+    const page = 1 + Math.floor(Math.random() * pages)
+    const res = await getOpeningPage(band, page, OPENING_BATCH).catch(() => ({ items: [] }))
+    const have = new Set(openingPoolRef.current.map((q) => questionId(q)))
+    for (const it of res.items) {
+      const q = openingToQuestion(it)
+      if (q && !have.has(questionId(q))) {
+        openingPoolRef.current.push(q)
+        have.add(questionId(q))
+      }
+    }
+  }
+
+  // reset = mod SEÇİM ekranına dön ("Baştan Başla" / "Tekrar Dene"): kullanıcı modu yeniden seçer.
   const reset = () => {
     seenRef.current = new Set()
+    openingPoolRef.current = []
+    setMode(null)
     setScore(0)
     setCorrectCount(0)
     setBestMult(1)
     setLastMult(1)
     setStep(0)
     setRound((r) => r + 1)
-    setCurrent(pickNext(MARATHON_POOL, new Set()))
+    setCurrent(null)
     setAnswered(null)
     setModalOpen(false)
     setPhase('playing')
+  }
+
+  // Mod seç -> havuzu kur, ilk soruyu çek, oyunu başlat.
+  const startMode = async (m: Mode) => {
+    seenRef.current = new Set()
+    openingPoolRef.current = []
+    setScore(0)
+    setCorrectCount(0)
+    setBestMult(1)
+    setLastMult(1)
+    setStep(0)
+    setRound((r) => r + 1)
+    setAnswered(null)
+    setModalOpen(false)
+    setPhase('playing')
+    if (m === 'mixed') {
+      setMode('mixed')
+      setCurrent(pickNext(MARATHON_POOL, new Set()))
+      return
+    }
+    setLoading(true)
+    await loadOpeningBatch(m)
+    setLoading(false)
+    setMode(m)
+    setCurrent(pickNext(openingPoolRef.current, new Set()))
   }
 
   const handleAnswered = (correct: boolean, q: Question, scoreable: boolean) => {
@@ -69,7 +130,9 @@ export function QuizMarathon({
       const nextCorrect = correctCount + 1
       // İpucu (veya tekrar) kullanıldıysa puan YOK; ama doğru olduğu için oyun devam eder.
       const mult = scoreable ? streakMultiplier(nextCorrect) : 1 // her 3. doğruda 2 kat
-      const pts = scoreable ? questionPoints(q) * mult : 0
+      // Açılış modunda puan band'e göre; karışıkta sorunun board-zorluğundan (questionPoints).
+      const base = mode && mode !== 'mixed' ? BAND_POINTS[mode] : questionPoints(q)
+      const pts = scoreable ? base * mult : 0
       setScore((s) => s + pts)
       setCorrectCount(nextCorrect)
       setBestMult((m) => Math.max(m, mult))
@@ -83,10 +146,15 @@ export function QuizMarathon({
     }
   }
 
-  const next = () => {
+  const next = async () => {
     if (!current) return
     seenRef.current.add(questionId(current))
-    const n = pickNext(MARATHON_POOL, seenRef.current)
+    // Açılış modunda havuz azaldıysa DB'den bir batch daha çek (seri uzarsa tükenmesin).
+    if (mode && mode !== 'mixed') {
+      const unseen = openingPoolRef.current.filter((q) => !seenRef.current.has(questionId(q)))
+      if (unseen.length < 5) await loadOpeningBatch(mode)
+    }
+    const n = pickNext(activePool(), seenRef.current)
     if (!n) {
       setPhase('over') // havuz bitti: tur tamamlandı
       setModalOpen(true)
@@ -105,7 +173,14 @@ export function QuizMarathon({
     {tab === 'rules' && <RulesPage tabs={tabs} onClose={onClose} />}
     {/* Oyun diğer sekmelerdeyken de mount kalır (gizli) → "Oyna"ya dönünce aynı sorudan devam. */}
     <div className="qm-wrap" hidden={tab !== 'play'}>
-      {current && (
+      {mode === null && !loading && <QmModeSelect tabs={tabs} counts={countsRef.current} onPick={(m) => void startMode(m)} onClose={onClose} />}
+      {loading && (
+        <div className="qm-loading" role="status">
+          <Loading size={44} />
+          <span>Açılış havuzu hazırlanıyor…</span>
+        </div>
+      )}
+      {mode !== null && current && (
         <LessonView
           key={`${round}-${step}`}
           lessonId={`maraton-${round}-${step}`}
@@ -135,7 +210,7 @@ export function QuizMarathon({
                 ? { label: 'Skorunu Gör', onClick: () => setModalOpen(true) }
                 : { label: 'Tekrar Dene', onClick: reset } // 0 puan: gösterecek skor yok, direkt yeni tur
               : answered === 'correct'
-                ? { label: 'Sonraki Soru →', onClick: next }
+                ? { label: 'Sonraki Soru →', onClick: () => void next() }
                 : null
           }
         />
@@ -158,6 +233,57 @@ export function QuizMarathon({
 }
 
 type Tab = 'play' | 'records' | 'rules'
+
+/** Mod seçim ekranı: Karışık Maraton (tüm müfredat) ya da Açılış Maratonu (zorluk bandı seç, 84k DB). */
+function QmModeSelect({
+  tabs,
+  counts,
+  onPick,
+  onClose,
+}: {
+  tabs: ReactNode
+  counts: Record<string, number> | null
+  onPick: (m: Mode) => void
+  onClose: () => void
+}) {
+  const [openings, setOpenings] = useState(false)
+  const [cnt, setCnt] = useState<Record<string, number> | null>(counts)
+  useEffect(() => {
+    if (!cnt) getOpeningCounts().then(setCnt).catch(() => setCnt({}))
+  }, [cnt])
+  return (
+    <div className="register-card qm-mode">
+      <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
+        <Icon name="x" size={16} />
+      </Button>
+      <h2><Icon name="target" size={20} /> Soru Maratonu</h2>
+      {tabs}
+      {!openings ? (
+        <div className="qm-mode-opts">
+          <button className="qm-mode-btn" onClick={() => onPick('mixed')}>
+            <span className="qm-mode-title">Karışık Maraton</span>
+            <span className="qm-mode-sub">Tüm konulardan karışık — ilk yanlışta biter</span>
+          </button>
+          <button className="qm-mode-btn" onClick={() => setOpenings(true)}>
+            <span className="qm-mode-title">Açılış Maratonu</span>
+            <span className="qm-mode-sub">Zorluk bandı seç, açılış pozisyonlarıyla koş</span>
+            <Icon name="chevron" size={16} />
+          </button>
+        </div>
+      ) : (
+        <div className="qm-mode-opts">
+          <button className="qm-mode-back" onClick={() => setOpenings(false)}><Icon name="chevron" size={14} /> Geri</button>
+          {DIFF_BANDS.map((b) => (
+            <button key={b} className="qm-mode-btn" onClick={() => onPick(b)}>
+              <span className="qm-mode-title">{DIFF_BAND_TR[b]}</span>
+              <span className="qm-mode-sub">{cnt ? `${(cnt[b] ?? 0).toLocaleString('tr')} pozisyon · ${BAND_POINTS[b]} puan` : `${BAND_POINTS[b]} puan`}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 /** Sayı önceki değerden yeniye ease-out ile sayar (skor animasyonu). Reduced-motion'da anında. */
 function CountUp({ value, duration = 600, from: start = 0 }: { value: number; duration?: number; from?: number }) {
