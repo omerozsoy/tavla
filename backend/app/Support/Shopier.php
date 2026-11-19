@@ -21,13 +21,17 @@ use Illuminate\Support\Facades\Log;
  */
 class Shopier
 {
-    private const BASE = 'https://api.shopier.com/v1';   // VERIFY
+    private const BASE = 'https://api.shopier.com/v1';   // doğrulandı (canlı 2026-11-19)
 
-    private const EP_PRODUCTS = '/products';             // VERIFY: ödeme ürünü oluştur (POST)
+    private const EP_PRODUCTS = '/products';             // doğrulandı: ödeme ürünü oluştur (POST)
 
-    private const EP_ORDER = '/orders/';                 // VERIFY: tek sipariş oku (GET /orders/{id})
+    private const EP_ORDER = '/orders/';                 // VERIFY: tek sipariş oku (GET /orders/{id}) — gerçek ödemeyle teyit edilecek
 
-    private const EP_WEBHOOKS = '/webhooks';             // VERIFY: webhook kaydı (POST)
+    private const EP_WEBHOOKS = '/webhooks';             // doğrulandı: webhook kaydı (POST)
+
+    // Shopier ürün görseli (ZORUNLU, geçerli 200 görsel URL — www DEĞİL, 301 reddedilir). Sadece
+    // Shopier ödeme sayfasındaki küçük görsel; ödeme içeriğini etkilemez.
+    private const PRODUCT_IMAGE = 'https://tavlatv.com/icon-512.png';
 
     /** PAT dolu mu? Boşsa kart ödemesi KAPALI (checkout eski PENDING/elle-onay akışı). */
     public static function enabled(): bool
@@ -57,10 +61,12 @@ class Shopier
             $r = self::http()->post(self::EP_PRODUCTS, [
                 'title' => self::productName($payment).' #'.$payment->order_id,
                 'description' => 'TavlaTV '.$payment->order_id,
-                'type' => 'digital',                                        // VERIFY: dijital ürün (kargo yok)
-                'priceData' => ['currency' => 'TRY', 'price' => $priceTry], // VERIFY: alan adları
+                'type' => 'digital',                                        // dijital ürün (kargo yok)
+                'priceData' => ['currency' => 'TRY', 'price' => $priceTry], // doğrulandı (canlı 2026-11-19)
                 'stockStatus' => 'inStock',
                 'stockQuantity' => 1,
+                'media' => [['type' => 'image', 'url' => self::PRODUCT_IMAGE, 'placement' => 1]], // ZORUNLU
+                'shippingPayer' => 'sellerPays',                            // ZORUNLU (dijital=satıcı öder)
             ]);
         } catch (\Throwable $e) {
             Log::error('shopier createPayment istisna', ['order' => $payment->order_id, 'err' => $e->getMessage()]);
@@ -72,9 +78,9 @@ class Shopier
 
             return null;
         }
-        $d = $r->json('data') ?? $r->json();                               // VERIFY: {data:{...}} mı düz mü
+        $d = $r->json('data') ?? $r->json();                               // doğrulandı: yanıt DÜZ (id+url üst seviye)
         $id = (string) ($d['id'] ?? '');
-        $url = (string) ($d['url'] ?? $d['paymentUrl'] ?? '');             // VERIFY: ödeme linki alanı
+        $url = (string) ($d['url'] ?? $d['paymentUrl'] ?? '');             // doğrulandı: 'url' = https://www.shopier.com/{id}
         if ($id === '' || $url === '') {
             Log::error('shopier createPayment eksik id/url', ['order' => $payment->order_id, 'body' => $r->body()]);
 
@@ -150,13 +156,13 @@ class Shopier
         }
         $r = self::http()->post(self::EP_WEBHOOKS, [
             'url' => $callbackUrl,
-            'events' => ['order.created'],   // VERIFY: olay adı
+            'event' => 'order.created',   // doğrulandı: TEKİL alan + string değer (canlı 2026-11-19)
         ]);
         if (! $r->successful()) {
             return ['error' => $r->status().' '.$r->body()];
         }
 
-        return $r->json('data') ?? $r->json();   // token alanı içinde (VERIFY: 'token'/'signatureKey'/'secret')
+        return $r->json('data') ?? $r->json();   // doğrulandı: yanıt düz, imza token'ı 'token' alanında
     }
 
     private static function productName(Payment $p): string
