@@ -1320,7 +1320,7 @@ const BAND_TIER: Record<DiffBand, number> = { cok_kolay: 0, kolay: 1, orta: 2, z
   // tier -> alıcı bölüm id'leri (gerçek konu bölümleri; kup/test değil)
   const recvByTier = new Map<number, string[]>()
   for (const s of CURRI_SECTIONS) {
-    if (s.isTest || s.id.endsWith('-cube')) continue
+    if (s.isTest || s.id.includes('cube')) continue // küp bölümleri prosedürel (checker açılış girmesin, m-scorecube dahil)
     recvByTier.set(s.tier, [...(recvByTier.get(s.tier) ?? []), s.id])
   }
   // açılışları tier'a göre grupla (playable + dedup)
@@ -1398,10 +1398,30 @@ function buildTest(tier: number): Question[] {
 // Nihai mufredat: yalnizca YETERLI icerigi olan bolumler (konu >=MIN_SECTION, test >=TEST_MIN).
 export interface CurriLesson { id: string; title: string; tier: number; isTest?: boolean; count: number; questions: Question[] }
 export interface CurriTier { key: string; label: string; tier: number; lessons: CurriLesson[] }
+// Küp kararı bölümleri PROSEDÜREL üretilir (famous pozisyon değil): d/i/a-cube = money küp (katla?),
+// m-scorecube = maç-skoru küp. Motor-dereceli (cevap yok), deterministik seed + paylaşılan dedup.
+const CUBE_SEEN = new Set<string>()
+const CUBE_PER_SECTION = 24
+function cubeSeed(id: string): number {
+  let h = 0xc0be
+  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) >>> 0
+  return h
+}
+function cubeSectionQuestions(id: string): Question[] {
+  const seed = cubeSeed(id)
+  return id.includes('score')
+    ? genMatchCubeQuestions(seed, CUBE_PER_SECTION, CUBE_SEEN)
+    : genCubeQuestions(seed, CUBE_PER_SECTION, CUBE_SEEN)
+}
+
 export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {
   const lessons: CurriLesson[] = []
   for (const sec of CURRI_SECTIONS.filter((s) => s.tier === td.tier)) {
-    const qs = sec.isTest ? buildTest(sec.tier) : SECTION_Q[sec.id] ?? []
+    const qs = sec.isTest
+      ? buildTest(sec.tier)
+      : sec.id.includes('cube')
+        ? cubeSectionQuestions(sec.id)
+        : SECTION_Q[sec.id] ?? []
     const min = sec.isTest ? TEST_MIN : MIN_SECTION
     if (qs.length < min) continue // yetersiz -> gizle (bos/sahte gosterme)
     lessons.push({ id: sec.id, title: sec.title, tier: sec.tier, isTest: sec.isTest, count: qs.length, questions: qs })
@@ -1460,6 +1480,7 @@ export function questionPoints(q: Question): number {
   return [10, 20, 25, 50, 100][tierOf(hardnessText(q))]
 }
 // Maraton soru havuzu: CURRICULUM'un tum (test HARIC) sorulari — zaten board+zar global dedup'li.
+// Soru Maratonu = hamle quiz'i (zar + hamle); küp kararları (zarsız) maraton akışına girmez.
 export const MARATHON_POOL: Question[] = CURRICULUM.flatMap((t) =>
-  t.lessons.filter((l) => !l.isTest).flatMap((l) => l.questions),
+  t.lessons.filter((l) => !l.isTest).flatMap((l) => l.questions.filter((q) => !q.cube)),
 )
