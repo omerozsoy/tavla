@@ -643,6 +643,7 @@ import {
   getBankTransferInfo,
   type CheckoutResult,
   type BankTransferResult,
+  type BankInfo,
   type PayMethod,
   messagesUnread,
   matchGnubgPr,
@@ -1218,12 +1219,20 @@ export default function App() {
   // kart akışı window.location ile o sayfaya YÖNLENDİRİR.
   // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
   const [bankData, setBankData] = useState<BankTransferResult | null>(null)
+  // Havale ONAY ÖNCESİ ekranı: kayıt HENÜZ oluşmadı. "Siparişi Onayla" basılınca run() çalışır
+  // (executeCheckout -> pending Payment oluşur, panele O AN düşer, bankData set edilir -> referans
+  // ekranına geçilir). Vazgeçen panele düşmez (kullanıcı direktifi: phantom kayıt olmasın).
+  const [bankDefer, setBankDefer] = useState<{ amount: number; run: () => Promise<void> } | null>(null)
   // Kart ödemesi Shopier hosted sayfasına mı gidiyor? Aktifse checkout'ta CardForm ATLANIR (kart
   // Shopier'in sayfasında girilir, iki kez girme olmaz). bankInfo config'inden bir kez okunur.
   const [shopierCard, setShopierCard] = useState(false)
+  const [bankInfo, setBankInfo] = useState<BankInfo | null>(null) // onay öncesi IBAN gösterimi için
   useEffect(() => {
     getBankTransferInfo()
-      .then((i) => setShopierCard(i.card_gateway === 'shopier'))
+      .then((i) => {
+        setShopierCard(i.card_gateway === 'shopier')
+        setBankInfo(i)
+      })
       .catch(() => {})
   }, [])
   // Kredi/Banka Kartı seçilince açılan uygulama-içi kart ödeme sayfası (CardForm). Payment sunucuda
@@ -1397,6 +1406,15 @@ export default function App() {
     if (method === 'card' && hasMoneyCharge && !shopierCard) {
       const amountKurus = Math.round((breakdown?.totalTL ?? 0) * 100)
       setCardPay({ amount: amountKurus, breakdown, pending: { its, code, sel } })
+      return
+    }
+    // HAVALE: siparişi ŞİMDİ oluşturma. Onay ekranını aç; "Siparişi Onayla" executeCheckout'u
+    // çalıştırır -> pending Payment O AN oluşur (panele düşer) + referans verilir. Vazgeçen düşmez.
+    if (method === 'bank_transfer') {
+      const amountKurus = Math.round((breakdown?.totalTL ?? 0) * 100)
+      setBankDefer({ amount: amountKurus, run: () => executeCheckout(its, code, sel, method) })
+      setDeliveryOpen(false)
+      setCartOpen(false)
       return
     }
     await executeCheckout(its, code, sel, method)
@@ -11111,17 +11129,20 @@ export default function App() {
           stepsSlot={renderCheckoutSteps('delivery')}
         />
       )}
-      {bankData && (
+      {(bankDefer || bankData) && (
         <BankTransfer
-          reference={bankData.reference}
-          amount={bankData.amount}
-          iban={bankData.iban}
-          name={bankData.name}
-          bank={bankData.bank}
-          note={bankData.note}
+          reference={bankData?.reference}
+          amount={bankData?.amount ?? bankDefer?.amount ?? 0}
+          iban={bankData?.iban ?? bankInfo?.iban ?? ''}
+          name={bankData?.name ?? bankInfo?.name ?? ''}
+          bank={bankData?.bank ?? bankInfo?.bank ?? ''}
+          note={bankData?.note ?? bankInfo?.note}
+          onConfirm={!bankData && bankDefer ? bankDefer.run : undefined}
           onDone={() => {
+            const confirmed = !!bankData // onaylandıysa Siparişlerim'e götür; vazgeçildiyse sadece kapat
+            setBankDefer(null)
             setBankData(null)
-            setMyOrdersOpen(true)
+            if (confirmed) setMyOrdersOpen(true)
           }}
         />
       )}

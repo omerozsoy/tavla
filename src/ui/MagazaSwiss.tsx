@@ -58,6 +58,9 @@ type Props = {
 }
 
 type Result =
+  // Onay öncesi havale ekranı: kayıt HENÜZ oluşmadı. "Siparişi Onayla" run()'ı çalıştırır (pending
+  // Payment O AN oluşur + referans verilir -> 'bank' sonucuna geçilir). Vazgeçen panele düşmez.
+  | { kind: 'bank-confirm'; amount: number; info: BankInfo; run: () => Promise<void> }
   | { kind: 'bank'; reference: string; amount: number; iban: string; name: string; bank: string; note?: string }
   | { kind: 'pending'; amount: number }
   | { kind: 'coin'; coins: number }
@@ -740,19 +743,12 @@ function CartSection({
     }
   }
 
-  async function checkout() {
-    if (nothing || busy) return
-    if (!user) return onRequireAuth()
-    if (shippingRequired) {
-      setErr('Lütfen bir teslimat adresi seç (ya da ekle).')
-      return
-    }
+  // Asıl ödeme işlemi — sunucu kaydı (pending Payment) BURADA oluşur. Havale'de bu YALNIZCA onay
+  // ekranındaki "Siparişi Onayla"dan çağrılır (checkout() doğrudan çağırmaz) -> onaylamadan panele düşmez.
+  async function doCheckout(method: PayMethod) {
     setErr('')
     setBusy(true)
     try {
-      const moneyDue = !!memItem || moneyTotalTL > 0
-      const method: PayMethod = moneyDue ? payMethod : 'card'
-
       if (memItem) {
         const r = await buyMembership(method)
         setItems((prev) => prev.filter((i) => i.kind !== 'membership'))
@@ -792,6 +788,28 @@ function CartSection({
     } finally {
       setBusy(false)
     }
+  }
+
+  async function checkout() {
+    if (nothing || busy) return
+    if (!user) return onRequireAuth()
+    if (shippingRequired) {
+      setErr('Lütfen bir teslimat adresi seç (ya da ekle).')
+      return
+    }
+    const moneyDue = !!memItem || moneyTotalTL > 0
+    const method: PayMethod = moneyDue ? payMethod : 'card'
+    // HAVALE: kaydı ŞİMDİ oluşturma. Onay ekranını göster; "Siparişi Onayla" doCheckout'u çalıştırır
+    // -> pending Payment O AN oluşur (panele düşer) + referans verilir. Vazgeçen panele düşmez.
+    if (method === 'bank_transfer' && bankInfo?.enabled) {
+      setErr('')
+      // Onay öncesi tahmini tutar (backend otoriter): fiziksel üründe SABİT 250₺ kargo eklenir
+      // (coin-only'de tam). Onaydan sonra sunucudan dönen kesin tutar referans ekranında gösterilir.
+      const estKurus = Math.round(finalTL * 100) + (moneyProductRows.length ? 25000 : 0)
+      show({ kind: 'bank-confirm', amount: estKurus, info: bankInfo, run: () => doCheckout(method) })
+      return
+    }
+    await doCheckout(method)
   }
 
   const ctaLabel = memItem || moneyTotalTL > 0 ? 'Ödemeye Geç' : 'Siparişi Tamamla'
@@ -1026,6 +1044,44 @@ function CartSection({
       {/* Ödeme sonucu — akış içinde (overlay YOK). Sahte "ödendi" yok. */}
       {result && (
         <div className="mgz-result" ref={resultRef} role="status">
+          {result.kind === 'bank-confirm' && (
+            <>
+              <h3 className="mgz-h3">
+                <Icon name="money" size={18} /> Havale / EFT ile Ödeme
+              </h3>
+              <p className="mgz-result-lead">
+                Aşağıdaki hesaba <b>{fmtTLk(result.amount)}</b> havale göndereceksin. <b>Siparişi Onayla</b>’ya
+                bastığında siparişin oluşturulur ve havale açıklamasına yazacağın <b>referans numaran</b> verilir.
+                Onaylamadan sipariş oluşmaz.
+              </p>
+              <dl className="mgz-bank">
+                <div>
+                  <dt>Tutar</dt>
+                  <dd className="tnum">{fmtTLk(result.amount)}</dd>
+                </div>
+                <div>
+                  <dt>IBAN</dt>
+                  <dd className="mgz-mono">{result.info.iban}</dd>
+                </div>
+                {result.info.name && (
+                  <div>
+                    <dt>Hesap sahibi</dt>
+                    <dd>{result.info.name}</dd>
+                  </div>
+                )}
+                {result.info.bank && (
+                  <div>
+                    <dt>Banka</dt>
+                    <dd>{result.info.bank}</dd>
+                  </div>
+                )}
+              </dl>
+              {result.info.note && <p className="mgz-note">{result.info.note}</p>}
+              <button type="button" className="mgz-btn" disabled={busy} onClick={() => result.run()}>
+                <Icon name="check" size={16} /> {busy ? 'İşleniyor…' : 'Siparişi Onayla'}
+              </button>
+            </>
+          )}
           {result.kind === 'bank' && (
             <>
               <h3 className="mgz-h3">
