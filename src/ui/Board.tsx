@@ -110,10 +110,6 @@ interface BoardProps {
   centerLeft?: ReactNode
   centerRight?: ReactNode
   centerMain?: ReactNode
-  // Açılış atışı: her oyuncunun zarı KENDİ yarısında (üst/alt), kendi renginde. flip-bağımsız:
-  // çağıran topBarPlayer/bottomBarPlayer rengine göre doldurur (bkz. App.tsx opening reveal).
-  openingTop?: ReactNode
-  openingBottom?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
   // Nokta NUMARALARINI hangi oyuncunun perspektifinden yaz. 'white' (varsayilan) = index+1 (mutlak;
   // canli oyun davranisi degismez). 'black' = 24-index (rakibin kendi 1-24'u). TASLARI OYNATMAZ,
@@ -330,8 +326,6 @@ function Board({
   centerLeft,
   centerRight,
   centerMain,
-  openingTop,
-  openingBottom,
   flip = false,
   numberFrom = 'white',
   pointNumberFor,
@@ -870,9 +864,6 @@ function Board({
         {centerLeft && <div className="center-overlay left">{centerLeft}</div>}
         {centerRight && <div className="center-overlay right">{centerRight}</div>}
         {centerMain && <div className="center-overlay main">{centerMain}</div>}
-        {/* Açılış atışı: zarlar oyuncuların KENDİ yarısında (üst/alt), merkez kutusu yok. */}
-        {openingTop && <div className="center-overlay opening-top">{openingTop}</div>}
-        {openingBottom && <div className="center-overlay opening-bottom">{openingBottom}</div>}
       </div>
 
       {/* Alt ucgen numaralari */}
