@@ -246,7 +246,6 @@ function QmModeSelect({
   onPick: (m: Mode) => void
   onClose: () => void
 }) {
-  const [openings, setOpenings] = useState(false)
   const [cnt, setCnt] = useState<Record<string, number> | null>(counts)
   useEffect(() => {
     if (!cnt) getOpeningCounts().then(setCnt).catch(() => setCnt({}))
@@ -258,29 +257,19 @@ function QmModeSelect({
       </Button>
       <h2><Icon name="target" size={20} /> Soru Maratonu</h2>
       {tabs}
-      {!openings ? (
-        <div className="qm-mode-opts">
-          <button className="qm-mode-btn" onClick={() => onPick('mixed')}>
-            <span className="qm-mode-title">Karışık Maraton</span>
-            <span className="qm-mode-sub">Tüm konulardan karışık — ilk yanlışta biter</span>
+      <div className="qm-mode-opts">
+        <button className="qm-mode-btn" onClick={() => onPick('mixed')}>
+          <span className="qm-mode-title">Karışık Maraton</span>
+          <span className="qm-mode-sub">Tüm konulardan karışık — ilk yanlışta biter</span>
+        </button>
+        <div className="qm-mode-sep">Açılış Maratonu — zorluk bandı seç</div>
+        {DIFF_BANDS.map((b) => (
+          <button key={b} className="qm-mode-btn" onClick={() => onPick(b)}>
+            <span className="qm-mode-title">{DIFF_BAND_TR[b]}</span>
+            <span className="qm-mode-sub">{cnt ? `${(cnt[b] ?? 0).toLocaleString('tr')} pozisyon · ${BAND_POINTS[b]} puan` : `${BAND_POINTS[b]} puan`}</span>
           </button>
-          <button className="qm-mode-btn" onClick={() => setOpenings(true)}>
-            <span className="qm-mode-title">Açılış Maratonu</span>
-            <span className="qm-mode-sub">Zorluk bandı seç, açılış pozisyonlarıyla koş</span>
-            <Icon name="chevron" size={16} />
-          </button>
-        </div>
-      ) : (
-        <div className="qm-mode-opts">
-          <button className="qm-mode-back" onClick={() => setOpenings(false)}><Icon name="chevron" size={14} /> Geri</button>
-          {DIFF_BANDS.map((b) => (
-            <button key={b} className="qm-mode-btn" onClick={() => onPick(b)}>
-              <span className="qm-mode-title">{DIFF_BAND_TR[b]}</span>
-              <span className="qm-mode-sub">{cnt ? `${(cnt[b] ?? 0).toLocaleString('tr')} pozisyon · ${BAND_POINTS[b]} puan` : `${BAND_POINTS[b]} puan`}</span>
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   )
 }
