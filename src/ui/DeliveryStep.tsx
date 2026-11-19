@@ -45,7 +45,7 @@ export default function DeliveryStep({
   const [shipId, setShipId] = useState<number | null>(null)
   const [billId, setBillId] = useState<number | null>(null)
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null)
-  const [method] = useState<PayMethod>('bank_transfer') // Kart kapatıldı: tek yöntem Havale/EFT.
+  const [method, setMethod] = useState<PayMethod>('bank_transfer') // Shopier canlıysa kart seçilebilir.
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
@@ -100,12 +100,20 @@ export default function DeliveryStep({
   useEffect(() => {
     let alive = true
     getBankTransferInfo()
-      .then((info) => alive && setBankInfo(info))
+      .then((info) => {
+        if (!alive) return
+        setBankInfo(info)
+        // Shopier (kart) canlıysa varsayılan kart (anlık ödeme); değilse havale. Kullanıcı değiştirebilir.
+        if (info.card_gateway === 'shopier') setMethod('card')
+      })
       .catch(() => {})
     return () => {
       alive = false
     }
   }, [])
+
+  // Kart ödemesi (Shopier hosted) açık mı? Açıksa yöntem olarak kart seçeneği sunulur.
+  const cardOn = bankInfo?.card_gateway === 'shopier'
 
   const shippingRequired = hasProducts && !shipId
 
@@ -189,12 +197,21 @@ export default function DeliveryStep({
           </div>
         </div>
 
-        {/* Ödeme yöntemi: yalnız Havale/EFT (kart kaldırıldı, kullanıcı direktifi) */}
-        {moneyDue && bankInfo?.enabled && (
+        {/* Ödeme yöntemi: kart (Shopier) canlıysa seçilebilir; yoksa yalnız Havale/EFT. */}
+        {moneyDue && (bankInfo?.enabled || cardOn) && (
           <div className="ckw-block">
             <label className="ckw-label">Ödeme yöntemi</label>
-            <div className="ckw-pm on">
-              <Icon name="money" size={16} /> Havale / EFT
+            <div className="ckw-pm-opts">
+              {cardOn && (
+                <button type="button" className={`ckw-pm${method === 'card' ? ' on' : ''}`} onClick={() => setMethod('card')}>
+                  <Icon name="credit-card" size={16} /> Kredi / Banka Kartı
+                </button>
+              )}
+              {bankInfo?.enabled && (
+                <button type="button" className={`ckw-pm${method === 'bank_transfer' ? ' on' : ''}`} onClick={() => setMethod('bank_transfer')}>
+                  <Icon name="money" size={16} /> Havale / EFT
+                </button>
+              )}
             </div>
           </div>
         )}

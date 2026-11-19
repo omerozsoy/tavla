@@ -405,6 +405,16 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+/* Seçilebilir ödeme yöntemi butonları (kart / havale) — dikey liste. */
+.ckw-pm-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+button.ckw-pm {
+  font-family: inherit;
+  cursor: pointer;
+}
 .ckw-err {
   color: var(--accent);
   font-size: 0.86rem;
