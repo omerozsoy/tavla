@@ -47,9 +47,10 @@ class TournamentNoShowTest extends TestCase
         ]);
     }
 
-    // A odaya girer, B hic gelmez, 1dk gecince A hukmen kazanir -> finale ilerler.
+    // A odaya girer, B hic gelmez, VARIS SURESI (eleme=match_stall_minutes) gecince A hukmen kazanir.
     public function test_no_show_awards_walkover_after_deadline(): void
     {
+        config(['tournament.match_stall_minutes' => 3]); // eleme varis penceresi (no-show ile ayni kaynak)
         $a = $this->user('a');
         $b = $this->user('b');
         $c = $this->user('c');
@@ -62,13 +63,21 @@ class TournamentNoShowTest extends TestCase
             ->assertOk()->json('code');
         $this->postJson("/api/rooms/{$code}/enter", ['token' => 'tokA', 'name' => 'A'])->assertOk();
 
-        // Sure DOLMADAN: hukmen reddedilir.
+        // Sure DOLMADAN: hukmen reddedilir (ikinci oyuncu hala gelebilir).
         $this->postJson("/api/tournaments/{$t->id}/no-show", ['match' => 'm0', 'token' => 'tokA'])
             ->assertStatus(422);
 
-        // Odayi 61sn geriye it (1dk gelmeme suresi doldu).
+        // REGRESYON (eserylmz): oda 2 dk once acilmis ama varis penceresi (3 dk) DOLMAMIS -> hukmen YOK.
+        // Eski sabit-60sn kodu burada walkover verip rakibi "oynamadan forfeit" ediyordu.
+        $early = Room::where('code', $code)->first();
+        $early->created_at = now()->subMinutes(2);
+        $early->save();
+        $this->postJson("/api/tournaments/{$t->id}/no-show", ['match' => 'm0', 'token' => 'tokA'])
+            ->assertStatus(422);
+
+        // Odayi varis penceresinin OTESINE it (3 dk doldu).
         $room = Room::where('code', $code)->first();
-        $room->created_at = now()->subSeconds(61);
+        $room->created_at = now()->subMinutes(4);
         $room->save();
 
         // Artik hukmen kazanilir -> A finale (round1[0].p1) tasinir.
@@ -99,8 +108,9 @@ class TournamentNoShowTest extends TestCase
         Sanctum::actingAs($b);
         $this->postJson("/api/rooms/{$code}/enter", ['token' => 'tokB', 'name' => 'B'])->assertOk();
 
+        // Varis penceresi dolsa bile (rakip GIRDIGI icin) hukmen reddedilmeli.
         $room = Room::where('code', $code)->first();
-        $room->created_at = now()->subSeconds(61);
+        $room->created_at = now()->subMinutes(4);
         $room->save();
 
         // Rakip girdigi icin (slot token dolu) hukmen reddedilir.

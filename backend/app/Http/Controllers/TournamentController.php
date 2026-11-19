@@ -1012,9 +1012,16 @@ class TournamentController extends Controller
             if (! $room) {
                 return ['err' => 'Maç odası bulunamadı.', 'code' => 422];
             }
-            // 60sn gelmeme suresi: oda olusturuldugundan (ilk giren) bu yana gecmeli.
-            if ($room->created_at && $room->created_at->gt(now()->subSeconds(60))) {
-                return ['err' => 'Rakip için bekleme süresi (1 dk) dolmadı.', 'code' => 422];
+            // Gelmeme suresi = VARIS SOZLESMESI ile AYNI pencere (Swiss: arrive_minutes=5dk; eleme:
+            // match_stall_minutes=3dk). Eskiden SABIT 60sn idi -> sozlesme 5dk vaat ederken rakip odayi
+            // ilk acip ~60sn sonra hukmen ediyordu; ikinci oyuncu koltuga oturmaya firsat bulamadan
+            // "oynamadan forfeit" oluyordu (eserylmz: rakip p1 olarak acip 66-67sn'de walkover, p2 hic
+            // oturamadi). Artik sunucu stall-sweep (resolveStalledSwiss/Matches) ile AYNI esik -> tek kaynak.
+            $waitSec = (SwissRuntime::isSwiss($t)
+                ? max(1, (int) config('tournament.swiss.arrive_minutes', 5))
+                : max(1, (int) config('tournament.match_stall_minutes', 3))) * 60;
+            if ($room->created_at && $room->created_at->gt(now()->subSeconds($waitSec))) {
+                return ['err' => 'Rakip için bekleme süresi dolmadı.', 'code' => 422];
             }
             // Bracket uyeligi yetmez: odadaki koltuk da ayni hesaba ait olmali.
             $slot = RoomAccess::slot($room, $actor, $data['token']);
