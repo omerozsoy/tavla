@@ -77,8 +77,7 @@ export const PAGES: PageDef[] = [
   // değilse doğru hamle tahtada oklarla gösterilir.
   { key: 'training', slug: 'tavla-egitimi', labelKey: 'menu.training', icon: 'graduation', group: 'lessons', hideInGame: true },
   // Soru Maratonu: zorluk-bazlı puanlı quiz + anonim tabela. "Açılış Maratonu" modu buranın İÇİNDE
-  // (band seç -> 84k DB havuzu). Ayrı /acilis-pratigi sayfası menüden kaldırıldı (çift yüzey olmasın);
-  // route/App wiring parallel-churn bitince tam temizlenecek (şimdilik deep-link zararsız).
+  // (band seç -> 84k DB havuzundan lazy). Eski ayrı /acilis-pratigi sayfası TAMAMEN kaldırıldı.
   { key: 'dailyPuzzle', slug: 'soru-maratonu', labelKey: 'menu.dailyPuzzle', icon: 'calendar-dots', group: 'lessons', hideInGame: true },
   // Tavlada PR Nedir?: PR kavramını anlatan infografik (Dersler ve Eğitim grubunda).
   { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'lessons', hideInGame: true },

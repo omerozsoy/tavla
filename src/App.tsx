@@ -182,7 +182,6 @@ import Friends from './ui/Friends'
 import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
-const OpeningPractice = lazy(() => import('./ui/OpeningPractice')) // Açılış Pratiği (/acilis-pratigi; ~84k pozisyon DB'den lazy)
 const QuizMarathon = lazy(() => import('./ui/QuizMarathon').then((m) => ({ default: m.QuizMarathon }))) // Soru Maratonu (/soru-maratonu; eski /gunun-pozisyonu alias olarak korunur)
 const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
 const OrganizerPanel = lazy(() => import('./ui/OrganizerPanel'))
@@ -1157,7 +1156,6 @@ export default function App() {
   const [dmUnread, setDmUnread] = useState(0) // okunmamis ozel mesaj sayisi (menu rozeti)
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [trainingOpen, setTrainingOpen] = useState(false) // Tavla Eğitimi (interaktif trainer)
-  const [openingPracticeOpen, setOpeningPracticeOpen] = useState(false) // Açılış Pratiği (~84k, DB'den lazy)
   const [dailyPuzzleOpen, setDailyPuzzleOpen] = useState(false) // Günün Pozisyonu (günlük tek soru)
   const [dailyTab, setDailyTab] = useState<'play' | 'records' | 'rules'>('play') // /soru-maratonu/{rekorlar,kurallar} alt sekmeleri
   const [liveTournOpen, setLiveTournOpen] = useState(false) // Canlı Turnuva Sistemi (iskelet sayfa)
@@ -1531,8 +1529,6 @@ export default function App() {
                   ? 'dersler'
                   : trainingOpen
                     ? 'tavla-egitimi'
-                  : openingPracticeOpen
-                    ? 'acilis-pratigi'
                   : dailyPuzzleOpen
                     ? dailyTab === 'records'
                       ? 'soru-maratonu/rekorlar'
@@ -1898,9 +1894,6 @@ export default function App() {
           break
         case 'tavla-egitimi':
           setTrainingOpen(true)
-          break
-        case 'acilis-pratigi':
-          setOpeningPracticeOpen(true)
           break
         case 'gunun-pozisyonu': // eski URL (geriye uyumlu) -> currentSlug /soru-maratonu'ya normalize eder
         case 'soru-maratonu':
@@ -10124,7 +10117,6 @@ export default function App() {
     setFairOpen(false)
     setLessonsOpen(false)
     setTrainingOpen(false)
-    setOpeningPracticeOpen(false)
     setDailyPuzzleOpen(false)
     setLiveTournOpen(false)
     setOrganizerPanelOpen(false)
@@ -10274,7 +10266,6 @@ export default function App() {
     onMatchHistory: () => (premium ? goPage(() => setMatchHistOpen(true)) : setMemOpen(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onTraining: () => goPage(() => setTrainingOpen(true)),
-    onOpeningPractice: () => goPage(() => setOpeningPracticeOpen(true)),
     onDailyPuzzle: () =>
       goPage(() => {
         setDailyTab('play')
@@ -10335,7 +10326,6 @@ export default function App() {
     products: menuProps.onProducts,
     myOrders: menuProps.onMyOrders,
     training: menuProps.onTraining,
-    openingPractice: menuProps.onOpeningPractice,
     dailyPuzzle: menuProps.onDailyPuzzle,
     liveTournSystem: menuProps.onLiveTournSystem,
     // YALNIZ organizatör atanmışsa handler tanımlı -> menüde yalnız ona görünür (başkasına çıkmaz).
@@ -10746,7 +10736,6 @@ export default function App() {
     diceCheckOpen ||
     lessonsOpen ||
     trainingOpen ||
-    openingPracticeOpen ||
     dailyPuzzleOpen ||
     liveTournOpen ||
     soloOpen ||
@@ -10808,8 +10797,6 @@ export default function App() {
                           ? 'lessons'
                           : trainingOpen
                             ? 'training'
-                          : openingPracticeOpen
-                            ? 'openingPractice'
                           : dailyPuzzleOpen
                             ? 'dailyPuzzle'
                           : liveTournOpen
@@ -11037,13 +11024,6 @@ export default function App() {
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <Suspense fallback={null}>
             <TrainingView titleOverride={menuTitle('training')} onClose={() => setTrainingOpen(false)} />
-          </Suspense>
-        </div>
-      )}
-      {openingPracticeOpen && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <Suspense fallback={null}>
-            <OpeningPractice titleOverride={menuTitle('openingPractice')} onClose={() => setOpeningPracticeOpen(false)} />
           </Suspense>
         </div>
       )}
