@@ -56,20 +56,25 @@ function moveKey(move: Move, mover: Player): string {
 }
 
 // gnubg notasyonunu net-yolculuk anahtarına çevir. "13/7*(2) 24/18" -> {13>7 x2, 24>18}.
+// ZİNCİRLİ notasyonu da çözer: gnubg tek pulu çok-zarlı taşırken "23/17*/13" yazar (23>17, 17>13).
 // Anlaşılamayan token -> null (güvenli: eşleşme olmaz, wildbg fallback).
 export function gnubgNotationKey(notation: string): string | null {
   const toks = notation.trim().split(/\s+/).filter(Boolean)
   if (toks.length === 0) return null
   const legs: Leg[] = []
   for (const tok of toks) {
-    // from/to '*' (vuruş, yok say) opsiyonel '(n)'
-    const m = tok.match(/^(bar|\d+)\/(off|\d+)\*?(?:\((\d+)\))?$/i)
-    if (!m) return null
-    const from = m[1].toLowerCase()
-    const to = m[2].toLowerCase()
-    const n = m[3] ? parseInt(m[3], 10) : 1
+    // opsiyonel sondaki '(n)' çarpanı (aynı hamle n pul için)
+    const mult = tok.match(/\((\d+)\)\s*$/)
+    const n = mult ? parseInt(mult[1], 10) : 1
     if (!Number.isFinite(n) || n < 1 || n > 4) return null
-    for (let k = 0; k < n; k++) legs.push({ from, to })
+    const core = mult ? tok.slice(0, mult.index) : tok
+    // zincirli a/b/c... -> ardışık ayaklar; '*' (vuruş) işaretlerini at
+    const segs = core.split('/').map((s) => s.replace(/\*/g, '').toLowerCase())
+    if (segs.length < 2) return null
+    for (const s of segs) if (!(s === 'bar' || s === 'off' || /^\d+$/.test(s))) return null
+    const chain: Leg[] = []
+    for (let i = 0; i + 1 < segs.length; i++) chain.push({ from: segs[i], to: segs[i + 1] })
+    for (let k = 0; k < n; k++) legs.push(...chain.map((l) => ({ ...l })))
   }
   return keyOf(netLegs(legs))
 }

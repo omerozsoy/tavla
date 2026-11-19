@@ -27,6 +27,10 @@ describe('gnubgNotationKey — notasyon -> net anahtar', () => {
     expect(gnubgNotationKey('13/10 10/7')).toBe('13>7')
     expect(gnubgNotationKey('13/7')).toBe('13>7')
   })
+  it('gnubg ZİNCİRLİ notasyon (23/17*/13 = 23/17 17/13 = 23/13)', () => {
+    expect(gnubgNotationKey('23/17*/13')).toBe(gnubgNotationKey('23/17 17/13'))
+    expect(gnubgNotationKey('23/17*/13')).toBe('23>13')
+  })
   it('geçersiz token -> null', () => {
     expect(gnubgNotationKey('abc')).toBeNull()
     expect(gnubgNotationKey('')).toBeNull()
