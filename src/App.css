@@ -8141,15 +8141,17 @@ html[data-board='yilbasi'] .checker.black {
   transform: translate(-50%, -50%);
 }
 /* Açılış atışı: her oyuncunun zarı KENDİ yarısının ortasında (üst ~%27, alt ~%73). */
-.center-overlay.opening-top {
-  left: 50%;
-  top: 27%;
-  transform: translate(-50%, -50%);
-}
+.center-overlay.opening-top,
 .center-overlay.opening-bottom {
   left: 50%;
-  top: 73%;
   transform: translate(-50%, -50%);
+  pointer-events: none; /* oynayan tahtanın üstünde 1.7sn dururken tıklamayı engelleme */
+}
+.center-overlay.opening-top {
+  top: 27%;
+}
+.center-overlay.opening-bottom {
+  top: 73%;
 }
 .opening-die-side {
   display: flex;

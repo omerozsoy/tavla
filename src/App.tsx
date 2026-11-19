@@ -1078,6 +1078,16 @@ export default function App() {
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
   const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
   const [openingResult, setOpeningResult] = useState<OpeningResult | null>(null)
+  // Açılış zarı GÖRSELİ (her oyuncunun yarısında, kendi renginde). opening state makinesinden AYRI:
+  // otoriter (sunucu-bot) yol reveal'i atlar (setOpening(null)) -> görseli buna bağlarsak her yolda
+  // çalışır ve tahta durumunu bozmaz. flashOpening ~1.7sn gösterir, sonra temizler.
+  const [openingShow, setOpeningShow] = useState<{ white: number; black: number; winner: Player } | null>(null)
+  const openingShowTimer = useRef<number | null>(null)
+  const flashOpening = (white: number, black: number) => {
+    setOpeningShow({ white, black, winner: white > black ? 'white' : 'black' })
+    if (openingShowTimer.current) window.clearTimeout(openingShowTimer.current)
+    openingShowTimer.current = window.setTimeout(() => setOpeningShow(null), 1700)
+  }
   // Online oda
   const [room, setRoom] = useState<RoomState | null>(null)
   const [roomBusy, setRoomBusy] = useState(false)
@@ -4225,6 +4235,13 @@ export default function App() {
         appliedServerVersionRef.current = r.version
         if (code) appliedServerRoomRef.current = code
         setOpening(null) // reveal ekranını atla — sunucu başlayanı belirledi
+        // Reveal atlansa da açılış zarını her oyuncunun yarısında göster (görsel, tahtayı bozmaz).
+        // r.dice = başlayanın iki zarı; yüksek = kazananın (başlayan), düşük = rakibin açılış zarı.
+        {
+          const hi = Math.max(r.dice[0], r.dice[1])
+          const lo = Math.min(r.dice[0], r.dice[1])
+          flashOpening(starter === 'white' ? hi : lo, starter === 'white' ? lo : hi)
+        }
         const moves = generateMoves(s)
         setMessage(
           hasNoMove(moves)
@@ -5171,6 +5188,7 @@ export default function App() {
       loserDie: Math.min(w, b),
     })
     setOpening('reveal')
+    flashOpening(w, b)
     setMessage(t('msg.openingResult', { name: pName(winner), a: Math.max(w, b), b: Math.min(w, b) }))
   }
 
@@ -9048,30 +9066,31 @@ export default function App() {
   const jokersOf = (c: Player): number | null => serverLuckJokers?.[c] ?? null
 
   let centerMain: React.ReactNode = null
-  // Açılış atışı: her oyuncunun zarı KENDİ yarısında (üst=rakip, alt=ben), kendi renginde.
+  // Açılış atışı: her oyuncunun zarı KENDİ yarısında (üst/alt), kendi renginde. Üst/alt rengi
+  // Board'ın topBarPlayer/bottomBarPlayer'ıyla aynı (flip-bağımsız). openingShow ~1.7sn dolu kalır.
   let openingTop: React.ReactNode = null
   let openingBottom: React.ReactNode = null
+  if (openingShow) {
+    const topColor: Player = flipBoard ? 'white' : 'black'
+    const bottomColor: Player = flipBoard ? 'black' : 'white'
+    openingTop = (
+      <div className={`opening-die-side${openingShow.winner === topColor ? ' win' : ''}`}>
+        <Die value={openingShow[topColor]} owner={topColor} used={false} />
+      </div>
+    )
+    openingBottom = (
+      <div className={`opening-die-side${openingShow.winner === bottomColor ? ' win' : ''}`}>
+        <Die value={openingShow[bottomColor]} owner={bottomColor} used={false} />
+      </div>
+    )
+  }
   // Küp çekildiğinde YANIT: Backgammon Galaxy gibi -> ortada tek kutu yerine SOLDA Pas, SAĞDA
   // Kabul düğmesi (centerLeft/centerRight slotlarına). Bu iki değişken humanRespond'da doldurulur.
   let respondPas: React.ReactNode = null
   let respondTake: React.ReactNode = null
-  if (opening === 'roll') {
-    // Boş açılış animasyonu KALDIRILDI (kullanıcı direktifi). Zarlar henüz bilinmiyor; merkez
-    // kutusu/placeholder gösterme. Gerçek zarlar 'reveal' fazında her oyuncunun yarısında belirir.
-  } else if (opening === 'reveal' && openingResult) {
-    // Üst/alt yarı rengi Board'ın topBarPlayer/bottomBarPlayer'ıyla aynı (flip-bağımsız).
-    const topColor: Player = flipBoard ? 'white' : 'black'
-    const bottomColor: Player = flipBoard ? 'black' : 'white'
-    openingTop = (
-      <div className={`opening-die-side${openingResult.winner === topColor ? ' win' : ''}`}>
-        <Die value={openingResult[topColor]} owner={topColor} used={false} />
-      </div>
-    )
-    openingBottom = (
-      <div className={`opening-die-side${openingResult.winner === bottomColor ? ' win' : ''}`}>
-        <Die value={openingResult[bottomColor]} owner={bottomColor} used={false} />
-      </div>
-    )
+  if (opening === 'roll' || (opening === 'reveal' && openingResult)) {
+    // Açılış fazı: merkez kutu YOK (boş animasyon kaldırıldı). Zarlar openingShow ile her
+    // oyuncunun yarısında gösterilir (yukarıda). Bu dal yalnız gameEnd kutusunu açılışta gizler.
   } else if (gameEnd && !matchOver) {
     // Oyun bitti ama mac surer -> kucuk kutu (mac bitince tam ekran MatchResult gosterilir)
     const multKey =
