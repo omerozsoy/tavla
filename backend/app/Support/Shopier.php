@@ -22,8 +22,11 @@ use Illuminate\Support\Facades\Log;
 class Shopier
 {
     private const BASE = 'https://api.shopier.com/v1';   // VERIFY
+
     private const EP_PRODUCTS = '/products';             // VERIFY: ödeme ürünü oluştur (POST)
+
     private const EP_ORDER = '/orders/';                 // VERIFY: tek sipariş oku (GET /orders/{id})
+
     private const EP_WEBHOOKS = '/webhooks';             // VERIFY: webhook kaydı (POST)
 
     /** PAT dolu mu? Boşsa kart ödemesi KAPALI (checkout eski PENDING/elle-onay akışı). */
