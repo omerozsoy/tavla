@@ -8140,6 +8140,52 @@ html[data-board='yilbasi'] .checker.black {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+/* Açılış atışı: her oyuncunun zarı KENDİ yarısının ortasında (üst ~%27, alt ~%73). */
+.center-overlay.opening-top {
+  left: 50%;
+  top: 27%;
+  transform: translate(-50%, -50%);
+}
+.center-overlay.opening-bottom {
+  left: 50%;
+  top: 73%;
+  transform: translate(-50%, -50%);
+}
+.opening-die-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 12px;
+  animation: opening-die-pop 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.opening-die-side .die-face {
+  width: 48px;
+  height: 48px;
+}
+/* Kazanan (yüksek atan) zar vurgulu: başlayacak oyuncu belli olsun. */
+.opening-die-side.win {
+  background: color-mix(in srgb, var(--accent, #a83a2b) 20%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent, #a83a2b) 70%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent, #a83a2b) 55%, transparent);
+}
+@keyframes opening-die-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (max-width: 600px) {
+  .main.game-scene .opening-die-side .die-face {
+    width: 34px;
+    height: 34px;
+  }
+}
 /* Oyun-iÃ§i merkez aksiyon butonlarÄ± (Onayla / Geri / Roll / Double) â€” BÃœYÃœK
    (yalnÄ±z oyun tahtasÄ±na Ã¶zel; shadcn Button 42px sabitini burada ezer) */
 .center-overlay [data-slot='button'] {

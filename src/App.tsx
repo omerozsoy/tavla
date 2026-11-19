@@ -9030,44 +9030,28 @@ export default function App() {
   const jokersOf = (c: Player): number | null => serverLuckJokers?.[c] ?? null
 
   let centerMain: React.ReactNode = null
+  // Açılış atışı: her oyuncunun zarı KENDİ yarısında (üst=rakip, alt=ben), kendi renginde.
+  let openingTop: React.ReactNode = null
+  let openingBottom: React.ReactNode = null
   // Küp çekildiğinde YANIT: Backgammon Galaxy gibi -> ortada tek kutu yerine SOLDA Pas, SAĞDA
   // Kabul düğmesi (centerLeft/centerRight slotlarına). Bu iki değişken humanRespond'da doldurulur.
   let respondPas: React.ReactNode = null
   let respondTake: React.ReactNode = null
   if (opening === 'roll') {
-    centerMain = (
-      <div className="result-box">
-        <div className="result-title">{t('opening.title')}</div>
-        <div className="opening-rolling">
-          {/* Dönen zarlar YÜZSÜZ (value=0 -> pip yok): sabit 1/6 "6-1 attı" illüzyonu veriyordu.
-              Gerçek açılış zarı reveal fazında (openingResult) gösterilir. */}
-          <Die value={0} owner="white" used={false} className="rolling" />
-          <Die value={0} owner="black" used={false} className="rolling" />
-        </div>
-        <div className="result-points">{t('opening.rolling')}</div>
+    // Boş açılış animasyonu KALDIRILDI (kullanıcı direktifi). Zarlar henüz bilinmiyor; merkez
+    // kutusu/placeholder gösterme. Gerçek zarlar 'reveal' fazında her oyuncunun yarısında belirir.
+  } else if (opening === 'reveal' && openingResult) {
+    // Üst/alt yarı rengi Board'ın topBarPlayer/bottomBarPlayer'ıyla aynı (flip-bağımsız).
+    const topColor: Player = flipBoard ? 'white' : 'black'
+    const bottomColor: Player = flipBoard ? 'black' : 'white'
+    openingTop = (
+      <div className={`opening-die-side${openingResult.winner === topColor ? ' win' : ''}`}>
+        <Die value={openingResult[topColor]} owner={topColor} used={false} />
       </div>
     )
-  } else if (opening === 'reveal' && openingResult) {
-    centerMain = (
-      <div className="result-box">
-        <div className="result-title">{t('opening.title')}</div>
-        <div className="opening-dice">
-          <div className={`opening-side ${openingResult.winner === 'white' ? 'win' : ''}`}>
-            <Die value={openingResult.white} owner="white" used={false} />
-            <span>{t('player.white')}</span>
-          </div>
-          <div className={`opening-side ${openingResult.winner === 'black' ? 'win' : ''}`}>
-            <Die value={openingResult.black} owner="black" used={false} />
-            <span>{t('player.black')}</span>
-          </div>
-        </div>
-        <div className="result-points">
-          {t('msg.openingResult', {
-            name: pName(openingResult.winner),
-            a: openingResult.winnerDie,
-            b: openingResult.loserDie,
-          })}
-        </div>
+    openingBottom = (
+      <div className={`opening-die-side${openingResult.winner === bottomColor ? ' win' : ''}`}>
+        <Die value={openingResult[bottomColor]} owner={bottomColor} used={false} />
       </div>
     )
   } else if (gameEnd && !matchOver) {
@@ -12432,6 +12416,8 @@ export default function App() {
           centerLeft={centerLeft}
           centerRight={centerRight}
           centerMain={centerMain}
+          openingTop={openingTop}
+          openingBottom={openingBottom}
           flip={flipBoard}
           // GÖRELİ HANE NUMARASI: her oyuncu KENDİ evini 1-6 görür (standart tavla). numberFrom
           // geçilmezse Board varsayılanı 'white' -> siyah kendi evini 19-24 görüyordu (asimetrik,
