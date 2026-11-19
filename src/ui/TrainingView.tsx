@@ -19,7 +19,7 @@ import { offerLoss, takeLoss } from '../engine/cubeEquity'
 import { matchOfferLoss, matchTakeLoss } from '../engine/matchCube'
 import { Sound } from '../sound'
 import TrainingPath, { saveLessonProgress, loadProgress, savePosResult } from './TrainingPath'
-import { dailyQuestion, dailyDayIndex, lessonById, lessonPlan, obviousMoveKey, questionId, type Question } from './trainingCurriculum'
+import { dailyQuestion, dailyDayIndex, lessonById, lessonPlan, obviousMoveKey, positionCode, questionId, type Question } from './trainingCurriculum'
 
 // Ders sorulari onbellegi (ders id -> secilmis 10 soru). Notral siralama bir kez yapilir.
 const QCACHE = new Map<string, Question[]>()
@@ -684,6 +684,11 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
       </aside>
 
       <div className="bgx-stage">
+        {q && (
+          <div className="bgx-pos-code" title="Pozisyon kodu — hatalıysa bu kodu bildir">
+            #{positionCode(q)}
+          </div>
+        )}
         {fixed ? (
           // Tek pozisyon (Günün Pozisyonu): ilerleme çubuğu yok, ünlü pozisyon adını ortada göster.
           q?.title && <div className="bgx-daily-name">{q.title}</div>

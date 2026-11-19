@@ -18514,6 +18514,8 @@ body:has(.spectate-view) .app.lobby {
 .bgx-count { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--muted); }
 /* Günün Pozisyonu: ünlü pozisyon adı (ilerleme çubuğu yerine ortada). */
 .bgx-daily-name { max-width: calc(var(--board-h) * 1.53); text-align: center; font-weight: var(--fw-semibold); font-size: var(--fs-md); color: var(--text); padding: 4px 8px; }
+/* Stabil pozisyon kodu rozeti (hata bildirimi için) — tahta üstünde, hafif. */
+.bgx-pos-code { align-self: center; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); background: color-mix(in srgb, var(--text) 7%, transparent); border-radius: var(--radius-pill, 999px); padding: 2px 9px; user-select: all; }
 
 /* --- Ustalık Yolu (Mastery Path) listesi --- */
 /* Egitim yolu ana rengi: birebir #A83A2B (kullanici istegi). Yalniz bu kapsam -> site geneli --accent degismez. */

@@ -359,7 +359,7 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=---b-BC-D--AcD---c-db---aA:0:0:1:44:0:0:0:0:10', answer: '', title: 'Chow\'s Challenge #3 — P5', concept: 'Enter with 44 and distribute builders.' },
   { xgid: 'XGID=-aaABCBBBb---A-A-cbbb-Ab--:2:-1:1:61:4:4:0:7:10', answer: '', title: 'Son arka tasi kacir (DMP)', concept: 'DMP escape last back checker' },
   { xgid: 'XGID=-CFCA--a-B----a----abcbcb-:0:0:1:63:6:3:1:7:10', answer: '', title: 'How do I choose whether to hit? #2', concept: 'Safety beats the hit here' },
-  { xgid: 'XGID=--BBAABaBB-----A-cbbbbBab-:1:1:1:41:3:5:0:11:10', answer: '8/7* 8/4', title: 'Chris Bray 2023-203', concept: 'Complications favour at the score' },
+  { xgid: 'XGID=--BBAABaBB-----A-cbbbbBab-:1:1:1:41:3:5:0:11:10', answer: '18/14 14/13', title: 'Chris Bray 2023-203', concept: 'Escape the back checker to the midfield.' },
   { xgid: 'XGID=-B-bBBBC---Cc--a--bc-bb-A-:1:-1:1:41:0:0:0:5:10', answer: '', title: 'How can we best escape this checker?', concept: 'Keep an escape even if opp makes 5-point' },
   { xgid: 'XGID=--bbbbG-DB------b--baAb-A-:0:0:1:61:0:0:0:7:10', answer: '', title: 'Chris Bray 2021-25', concept: 'Bot-level choice: 24/17 tied with 24/18 8/7' },
   { xgid: 'XGID=-BBB--BA-Ab-bDb--d-cAb----:0:0:1:22:0:0:0:11:10', answer: '', title: 'Lots of choices for these ducks (JLee)', concept: 'Advance trailing checker and make a point' },
@@ -378,7 +378,7 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=-BB-a-CB----cCBaa-bc-b-bA-:1:1:1:22:2:1:0:5:10', answer: '', title: 'Chris Bray 2021-199', concept: 'Double 2s: hit and make the 5-pt' },
   { xgid: 'XGID=-BabC-CAD--a-----bbcbbAA--:1:1:1:11:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P66', concept: 'Double 1s; small-number point-making.' },
   { xgid: 'XGID=-BaEBCB-A---a-b-cc-e------:1:-1:1:64:0:0:0:0:10', answer: '23/17* 17/13', title: 'It\'s been a while', concept: 'Hit on the 17 and run the back checker (best play).' },
-  { xgid: 'XGID=-A-a-BE-B--adBB--abbbb--A-:1:1:1:65:0:0:0:0:10', answer: '8/2 6/1', title: 'Chow\'s Challenge #3 — P8', concept: 'Bury checkers to clear stacks bearing in.' },
+  { xgid: 'XGID=-A-a-BE-B--adBB--abbbb--A-:1:1:1:65:0:0:0:0:10', answer: '14/8 13/8', title: 'Chow\'s Challenge #3 — P8', concept: 'Bring builders down and make the 8-point.' },
   { xgid: 'XGID=-B-BbBC-A---cC-a-d-e----B-:1:-1:1:61:0:0:3:0:10', answer: '', title: 'Boot Camp blitz 61', concept: 'Advance a back checker aggressively with the 6.' },
   { xgid: 'XGID=-a--B-CBC--AdB-a-c-db---B-:0:0:1:32:0:0:3:0:10', answer: '', title: 'Chris Bray 2022-209', concept: 'Make golden point and slot bar' },
   { xgid: 'XGID=-B-BbBC-A---cC-a-d-e----B-:1:-1:1:41:0:0:3:0:10', answer: '', title: 'Boot Camp blitz 41', concept: 'Activate back checkers while building home board.' },
@@ -391,7 +391,7 @@ const REAL_POSITIONS: Famous[] = [
   { xgid: 'XGID=-aB-CBBB-B--b---bc-c-bbB--:1:-1:1:51:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P3', concept: '51 in a prime-vs-prime money position.' },
   { xgid: 'XGID=--BbB-BAB--BcBb--c-d-B-a--:0:0:1:66:0:0:3:0:10', answer: '', title: 'Euler Everyday Errors — P110', concept: 'Double 6s in a blockade.' },
   { xgid: 'XGID=-aBB-CBBB---b----bcbcB-b--:1:1:1:61:5:5:0:7:10', answer: '8/7 8/2', title: 'Chris Bray 2023-64', concept: 'Keep a broken five-prime rather than hitting loose.' },
-  { xgid: 'XGID=-b--B-D-C---bD-aac-cc--AA-:0:0:1:33:5:2:0:9:10', answer: '8/5(2) 6/3(2)', title: 'Chris Bray 2022-172', concept: 'Build the rack with a big double.' },
+  { xgid: 'XGID=-b--B-D-C---bD-aac-cc--AA-:0:0:1:33:5:2:0:9:10', answer: '5/2(2) 8/5(2)', title: 'Chris Bray 2022-172', concept: 'Make the 5 and 2 points with the double.' },
   { xgid: 'XGID=-b-a-BD-B--AdE--ab-c--b-A-:0:0:1:63:2:1:0:5:10', answer: '24/15', title: 'Chris Bray 2021-194', concept: 'Run the back checker to safety.' },
   { xgid: 'XGID=-a-aC-D-D-A--A---f-c-bB-b-:0:0:1:43:0:0:3:0:10', answer: '', title: 'Chris Bray 2021-160', concept: 'Quiet building beats the loose hit.' },
   { xgid: 'XGID=--aBcaCBCB-A---bbb-bbB----:1:1:1:52:0:0:3:0:10', answer: '', title: 'Chris Bray 2020-198', concept: 'Aggressive double-hit (double tiger).' },
@@ -625,7 +625,7 @@ const REAL_POSITIONS: Famous[] = [
   { gnuPos: '2M7CADKwu8cAEA', gnuMatch: 'cIkGAAAAAAAA', answer: '', title: 'Chow Challenge #1 — P10 Variant', concept: 'Subtle shift reverses play' },
   { gnuPos: 'Zs7CAQbQa/AAMg', gnuMatch: 'cIkJAAAAAAAA', answer: '', title: 'Chow Challenge #2 — P1', concept: 'Anchoring vs advanced anchor' },
   { gnuPos: 'mM/BYQCrtgMNAA', gnuMatch: 'QYmSAAAAAAAA', answer: '', title: 'Chow Challenge #2 — P2', concept: 'Pay now or pay later' },
-  { gnuPos: 'Zs7BYQCrtgMNAA', gnuMatch: 'QYmSAAAAAAAA', answer: '13/4', title: 'Chow Challenge #2 — P2 Variant', concept: 'Stronger board; close top plays' },
+  { gnuPos: 'Zs7BYQCrtgMNAA', gnuMatch: 'QYmSAAAAAAAA', answer: '17/12 17/13', title: 'Chow Challenge #2 — P2 Variant', concept: 'Escape both back checkers to safety.' },
   { gnuPos: 't5sTBABtu0QAAw', gnuMatch: 'UQkJAAAAAAAA', answer: '', title: 'Chow Challenge #2 — P3', concept: 'Hit vs build; gammon losses' },
   { gnuPos: 'tm0FYAgbnoMHAA', gnuMatch: 'cAklAAAAAAAA', answer: '8/6 2/1', title: 'Chow Challenge #2 — P4', concept: '1pt match; defensive' },
   { gnuPos: 'ZpsLA0CbbQ0ADA', gnuMatch: 'QYkOAAAAAAAA', answer: '', title: 'Chow Challenge #2 — P5', concept: 'Slot boldly, diversified cover' },
@@ -1020,6 +1020,19 @@ export function dailyQuestion(epochMs: number): Question {
 // Pozisyonun stabil kimligi (ilerleme/dedup). XGID/GNU id yoksa board-key.
 export function questionId(q: Question): string {
   return q.id ?? boardKey(q.state) + '|' + [...q.state.dice].sort().join('-')
+}
+
+// Her pozisyona STABİL kısa kod (FNV-1a hash -> base36, 5 hane). Pozisyon id'sinden (xgid/gnuPos)
+// türetildiği için ekleme/çıkarmayla DEĞİŞMEZ; kullanıcı "#XXXXX hatalı" diye bildirebilir, biz
+// positionCode ile eşleştirip buluruz. ~1000 pozisyon için 36^5 uzayda çakışma ihmal edilebilir.
+export function positionCode(q: Question): string {
+  const id = questionId(q)
+  let h = 2166136261
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0).toString(36).toUpperCase().padStart(5, '0').slice(-5)
 }
 
 // Sezgisel zorluk 0..1 — SADECE equity farki degil: konu/baglam metni de kullanilir
