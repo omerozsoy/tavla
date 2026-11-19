@@ -9039,8 +9039,10 @@ export default function App() {
       <div className="result-box">
         <div className="result-title">{t('opening.title')}</div>
         <div className="opening-rolling">
-          <Die value={1} owner="white" used={false} className="rolling" />
-          <Die value={6} owner="black" used={false} className="rolling" />
+          {/* Dönen zarlar YÜZSÜZ (value=0 -> pip yok): sabit 1/6 "6-1 attı" illüzyonu veriyordu.
+              Gerçek açılış zarı reveal fazında (openingResult) gösterilir. */}
+          <Die value={0} owner="white" used={false} className="rolling" />
+          <Die value={0} owner="black" used={false} className="rolling" />
         </div>
         <div className="result-points">{t('opening.rolling')}</div>
       </div>
