@@ -17716,6 +17716,16 @@ body:has(.spectate-view) .app.lobby {
   width: 100%;
   margin-bottom: 8px;
 }
+.seek-pick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px 0 12px;
+}
+.seek-pick-grid > * {
+  flex: 1 1 80px;
+}
 .resign-btn {
   color: var(--danger-fg);
 }

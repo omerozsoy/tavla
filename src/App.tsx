@@ -2208,6 +2208,8 @@ export default function App() {
   // "Oyun Arayanlar" para/bahis onayı: native window.confirm yerine uygulama-içi stilli modal
   // (markasız tarayıcı popup'ı yerine). msg = onay metni, run = onaylanınca çalışacak eşleşme.
   const [seekerConfirm, setSeekerConfirm] = useState<{ msg: ReactNode; run: () => void; title?: string } | null>(null)
+  // "Hemen Oyna" -> arayan birden fazla uzunluğa razıysa: hangi uzunlukta oynanacağını SEÇTİR.
+  const [seekerPick, setSeekerPick] = useState<{ targets: number[]; run: (n: number) => void } | null>(null)
   // Hedefli davetle acilan bekleme odasinda rakip adi: doluysa Lobby bekleme ekrani "kod
   // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
   // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
@@ -8187,7 +8189,8 @@ export default function App() {
     }
     const stakeList = (s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]).filter((n) => n > 0)
     const maxStake = stakeList.length > 0 ? Math.max(...stakeList) : 0
-    const proceed = async () => {
+    const allTargets = s.targets && s.targets.length > 0 ? s.targets : [1]
+    const proceed = async (pickedTargets: number[]) => {
       // Zaten bir arama (mm_waiting) varken başka arayana tıklandı -> ESKİ isteği HEMEN öldür
       // (iki açık havuz odası kalmasın); sonra yeni kriterle havuza gir.
       if (awaitingMatchRef.current || room?.status === 'mm_waiting') {
@@ -8202,7 +8205,7 @@ export default function App() {
         setRematch({ mine: null, theirs: null, code: null })
         rematchSentRef.current = null
       }
-      const targets = s.targets && s.targets.length > 0 ? s.targets : [1]
+      const targets = pickedTargets
       targetsRef.current = targets
       onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
       minRatingRef.current = 0
@@ -8219,17 +8222,26 @@ export default function App() {
     }
     // Para/bahis maci: tek tiklamayla coin bagladigini acikca ONAYLAT (footgun degil). Markasiz
     // native window.confirm yerine uygulama-ici stilli modal (seekerConfirm) -> proceed onayla calisir.
-    const msg =
-      s.bet_pct > 0
-        ? t('seekers.confirmPct', { pct: s.bet_pct })
-        : maxStake > 0
-          ? t('seekers.confirmStake', { coins: maxStake })
-          : null
-    if (msg) {
-      setSeekerConfirm({ msg, run: proceed })
+    const confirmThenGo = (targets: number[]) => {
+      const msg =
+        s.bet_pct > 0
+          ? t('seekers.confirmPct', { pct: s.bet_pct })
+          : maxStake > 0
+            ? t('seekers.confirmStake', { coins: maxStake })
+            : null
+      if (msg) {
+        setSeekerConfirm({ msg, run: () => proceed(targets) })
+        return
+      }
+      proceed(targets)
+    }
+    // Arayan birden fazla uzunluğa razıysa (ör. "1·5") HANGISINI oynayacağına SEN karar ver:
+    // önce uzunluk seçtir, backend kesişimden bu tek uzunluğu kullanır (max(common)=senin seçtiğin).
+    if (allTargets.length > 1) {
+      setSeekerPick({ targets: allTargets, run: (n) => confirmThenGo([n]) })
       return
     }
-    proceed()
+    confirmThenGo(allTargets)
   }
   // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
   // kabul edince AYNI ayarla (target/saat) baslar.
@@ -12075,6 +12087,22 @@ export default function App() {
                 }}
                 onCancel={() => setSeekerConfirm(null)}
               />
+            )}
+            {seekerPick && (
+              <div className="register-overlay modal confirm-overlay" role="dialog" aria-modal="true" onClick={() => setSeekerPick(null)}>
+                <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+                  <h2><Icon name="dice" size={20} /> {t('seekers.pickLength')}</h2>
+                  <p className="register-sub">{t('seekers.pickLengthHint')}</p>
+                  <div className="seek-pick-grid">
+                    {seekerPick.targets.map((n) => (
+                      <Button key={n} onClick={() => { const run = seekerPick.run; setSeekerPick(null); run(n) }}>
+                        {n > 1 ? `${n} ${t('seekers.pt')}` : t('live.catSingle')}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button variant="secondary" onClick={() => setSeekerPick(null)} autoFocus>{t('mp.cancel')}</Button>
+                </div>
+              </div>
             )}
             {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">
