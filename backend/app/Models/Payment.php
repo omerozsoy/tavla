@@ -10,6 +10,7 @@ class Payment extends Model
         'user_id', 'kind', 'payment_method', 'order_id', 'plan', 'period', 'amount', 'coins', 'package_id', 'currency', 'status', 'bank_msg',
         'discount_code', 'discount_kurus', 'product_order_id', 'product_order_ids',
         'tournament_id', // kind='tournament_entry' -> hangi turnuva (callback'te kayit icin)
+        'shopier_product_id', 'shopier_url', // Shopier REST API v1 (PAT): tek-seferlik ürün id + ödeme linki
     ];
 
     protected function casts(): array
