@@ -640,6 +640,8 @@ import {
   cartCheckout,
   isBankTransfer,
   shopierRedirect,
+  shopierOrderFromRedirect,
+  paymentStatus,
   getBankTransferInfo,
   type CheckoutResult,
   type BankTransferResult,
@@ -1343,9 +1345,19 @@ export default function App() {
       setMyOrdersOpen(true)
     }
     // Shopier aktifse backend redirect döner -> tarayıcıyı Shopier hosted ödeme sayfasına gönder.
+    // Buyer Shopier'den siteye DÖNMÜYOR (Shopier kısıtı) -> order_id'yi sakla; dönünce boot effect
+    // ödeme durumunu pollar ve settle olunca "yüklendi" bildirir (reconciler ~1dk'da settle eder).
     const goShopier = (r: CheckoutResult): boolean => {
       const url = shopierRedirect(r)
       if (url) {
+        const order = shopierOrderFromRedirect(url)
+        if (order) {
+          try {
+            localStorage.setItem('tavla.shopierPending', JSON.stringify({ order, at: Date.now() }))
+          } catch {
+            /* yoksay */
+          }
+        }
         window.location.href = url
         return true
       }
@@ -2548,6 +2560,83 @@ export default function App() {
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
+
+  // SHOPIER ÖDEME DÖNÜŞÜ: buyer Shopier'den siteye DÖNMÜYOR (Shopier kısıtı). Ödeme öncesi order_id
+  // localStorage'a yazıldı (goShopier); kullanıcı siteye döndüğünde (boot) burada pollarız. Settle
+  // olunca (webhook gelmez -> reconciler ~1dk) bakiye güncellenir + "yüklendi" bildirilir. İdempotent:
+  // settle olmazsa ~2.5dk sonra "birkaç dakikada yansıyacak" der, bayrağı temizler.
+  useEffect(() => {
+    if (!user) return
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem('tavla.shopierPending')
+    } catch {
+      return
+    }
+    if (!raw) return
+    const clear = () => {
+      try {
+        localStorage.removeItem('tavla.shopierPending')
+      } catch {
+        /* yoksay */
+      }
+    }
+    let order = ''
+    try {
+      const parsed = JSON.parse(raw)
+      order = typeof parsed?.order === 'string' ? parsed.order : ''
+      if (parsed?.at && Date.now() - parsed.at > 86_400_000) order = '' // 1 günden eski -> bayat
+    } catch {
+      order = ''
+    }
+    if (!order) {
+      clear()
+      return
+    }
+    let alive = true
+    let tries = 0
+    notify.info('Ödemen kontrol ediliyor…')
+    const tick = async () => {
+      if (!alive) return
+      tries++
+      try {
+        const r = await paymentStatus(order)
+        if (r.status === 'paid') {
+          alive = false
+          clear()
+          if (typeof r.balance === 'number') setUser((u) => (u ? { ...u, coins: r.balance as number } : u))
+          notify.success('Ödemen alındı — hesabına yüklendi! 🎉')
+          return
+        }
+        if (r.status === 'failed') {
+          alive = false
+          clear()
+          notify.error('Ödemen tamamlanamadı.')
+          return
+        }
+      } catch {
+        /* geçici hata -> bir sonraki tick'te tekrar dene */
+      }
+      if (tries >= 30 && alive) {
+        alive = false
+        clear()
+        notify.info('Ödemen birkaç dakika içinde hesabına yansıyacak.')
+      }
+    }
+    const timer = setInterval(() => {
+      if (!alive) {
+        clearInterval(timer)
+        return
+      }
+      void tick()
+    }, 5000)
+    void tick()
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Mac gunlugu (insanin kararlari): rapor/istatistik icin
   const [matchLog, setMatchLog] = useState<MoveLogEntry[]>([])
   // En guncel log (mac-sonu kaydi async analizler bittikten sonra bunu okur)

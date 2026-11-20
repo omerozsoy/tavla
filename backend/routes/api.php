@@ -350,6 +350,9 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     });
     Route::post('/shop/promo/validate', [PaymentController::class, 'promoValidate'])
         ->middleware('throttle:30,1,promo-validate'); // indirim kodu dogrula (sunucu)
+    // SPA: Shopier ödeme sonrası durum yoklama (webhook/reconcile settle edene kadar). Yalniz KENDI
+    // odemesi. Buyer Shopier'den siteye donmuyor -> SPA bu ucu pollar, paid olunca "yuklendi" gosterir.
+    Route::middleware('throttle:90,1,pay-status')->get('/pay/status/{order}', [PaymentController::class, 'paymentStatus']);
 
     Route::get('/friends', [FriendController::class, 'index']);
     Route::post('/friends/request', [FriendController::class, 'request'])

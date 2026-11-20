@@ -977,6 +977,19 @@ export function shopierRedirect(r: CheckoutResult): string | null {
   return typeof url === 'string' && url ? url : null
 }
 
+// Shopier redirect URL'inden ödeme order_id'sini çıkar (/pay/shopier/<order>). Dönüş sonrası
+// durum yoklamak için saklanır.
+export function shopierOrderFromRedirect(url: string): string | null {
+  const m = url.match(/\/pay\/shopier\/([^/?#]+)/)
+  return m ? decodeURIComponent(m[1]) : null
+}
+
+// Shopier ödeme sonrası durum yoklama (buyer Shopier'den siteye DÖNMÜYOR -> SPA bunu pollar).
+// paid olunca balance = kullanıcının güncel coin bakiyesi (yetkili). 404 -> {status:'unknown'}.
+export async function paymentStatus(order: string): Promise<{ status: string; coins: number; balance?: number; kind?: string }> {
+  return req(`/pay/status/${encodeURIComponent(order)}`)
+}
+
 // Havale/EFT bilgisi (halka açık). Kapalıysa {enabled:false}.
 export interface BankInfo {
   enabled: boolean

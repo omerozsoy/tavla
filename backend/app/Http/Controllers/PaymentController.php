@@ -132,6 +132,25 @@ class PaymentController extends Controller
         });
     }
 
+    // GET /pay/status/{order} — SPA Shopier ödeme sonrası durumu yoklar (buyer Shopier'den siteye
+    // dönmüyor; webhook/reconcile settle edene kadar). Yalnız KENDİ ödemesi. Döner: {status, coins}.
+    public function paymentStatus(Request $request, string $order)
+    {
+        $p = Payment::where('order_id', $order)
+            ->where('user_id', $request->user()->id)
+            ->first(['status', 'coins', 'kind']);
+        if (! $p) {
+            return response()->json(['status' => 'unknown'], 404);
+        }
+
+        return response()->json([
+            'status' => $p->status,                      // pending | paid | failed
+            'coins' => (int) ($p->coins ?? 0),           // bu ödemenin coin miktarı (bilgi)
+            'balance' => (int) $request->user()->coins,  // kullanıcının GÜNCEL toplam bakiyesi (yetkili)
+            'kind' => $p->kind,
+        ]);
+    }
+
     // SPA: abonelik baslat -> PENDING odeme kaydi olustur, kart (PENDING) / havale bilgisi don.
     public function subscribe(Request $request)
     {

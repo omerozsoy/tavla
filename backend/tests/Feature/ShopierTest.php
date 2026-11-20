@@ -129,6 +129,20 @@ class ShopierTest extends TestCase
         $this->assertSame(500, (int) $u->fresh()->coins);
     }
 
+    public function test_payment_status_returns_own_and_404_for_others(): void
+    {
+        $u = User::factory()->create(['coins' => 100]);
+        $this->coinPayment($u, 'TC8', 'prod_8');
+
+        $this->actingAs($u)->getJson('/api/pay/status/TC8')
+            ->assertOk()
+            ->assertJson(['status' => 'pending', 'coins' => 500, 'balance' => 100]);
+
+        // Başkasının ödemesi görünmez (404).
+        $other = User::factory()->create();
+        $this->actingAs($other)->getJson('/api/pay/status/TC8')->assertStatus(404);
+    }
+
     public function test_reconcile_settles_paid_order_without_webhook(): void
     {
         $this->enableShopier();
