@@ -1,20 +1,22 @@
-/* Geliştirme uyarısı: SADECE ilgili sayfanın İÇERİK ALANININ en üstünde (sol menünün
-   sağında, kartın olduğu sütun). Overlay static olduğundan relative yapıp bandı ona hapset. */
+/* Geliştirme uyarısı: ilgili sayfanın İÇERİK alanının en üstünde, İÇERİĞİ İTER (örtmez).
+   Overlay flex-row; flex-wrap açıp bandı tam-satır (flex-basis:100%) yaparak normal akışta
+   ilk satıra koy → kart ikinci satıra iner (absolute değil, bindirmez). */
 .register-overlay.page:has(> .dev-banner) {
-  position: relative !important;
+  flex-wrap: wrap !important;
+  align-content: flex-start !important;
 }
 .dev-banner {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 40;
+  flex: 0 0 100% !important;
+  width: 100%;
+  order: -1;
   height: 40px;
+  min-height: 40px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px !important;
+  margin: 0 !important;
+  padding: 0 16px !important; /* register-overlay.page>* büyük padding'ini ez */
   background-color: #c0392b !important;
   color: #fff !important;
   text-align: center;
@@ -22,4 +24,8 @@
   font-size: 14px;
   letter-spacing: 0.2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+/* Bant varken kartın gereksiz büyük üst-padding'ini kısalt (bant zaten üstte duruyor). */
+.register-overlay.page:has(> .dev-banner) > *:not(.register-overlay):not(.dm-zoom-overlay):not(.dev-banner) {
+  padding-top: 16px !important;
 }

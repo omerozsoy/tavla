@@ -6,9 +6,16 @@
   align-items: center;
   width: 100%;
 }
-.arena-intro,
-.arena-judge {
-  max-width: 560px;
+.arena-intro {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+/* Judge kartı: içerik alanının TAM genişliği (ince kart değil).
+   register-card ~600px cap'ini daha spesifik selektörle ez. */
+.register-card.arena-judge {
+  max-width: 1040px;
   width: 100%;
   margin: 0 auto;
   position: relative;
@@ -37,20 +44,32 @@
 .arena-score { font-weight: 600; color: #6b5e54; }
 .arena-score b { color: var(--arena-accent); font-size: 1.1em; }
 
-/* Yargı kartı */
-.arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.arena-judge-board { position: relative; margin: 0 auto 12px; max-width: 460px; }
-.arena-judge-q { text-align: center; font-size: 15px; color: #4a4038; margin: 6px 0 14px; line-height: 1.4; }
+/* Yargı kartı — iki kolon: büyük board | yan panel (soru + butonlar) */
+.arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+/* Tek kolon: büyük board (kart genişliğinde) + altında soru + yan yana iki büyük buton. */
+.arena-judge-grid { display: flex; flex-direction: column; gap: 18px; }
+.arena-judge-board { position: relative; width: 100%; max-width: none; margin: 0 auto; }
+.arena-judge-side { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.arena-judge-q { font-size: 19px; color: #4a4038; line-height: 1.5; text-align: center; }
 .arena-judge-q b { color: var(--arena-accent); }
-.arena-judge-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.arena-judge-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 640px; margin: 0 auto; width: 100%; }
 .arena-choice {
-  padding: 16px 10px; border-radius: 12px; border: 2px solid; font-weight: 700; font-size: 16px; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .1s;
+  padding: 20px 16px; border-radius: 14px; border: 2px solid; font-weight: 700; font-size: 19px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .1s, box-shadow .15s;
 }
+.arena-choice:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
 .arena-choice:active { transform: scale(.97); }
 .arena-choice.yes { background: #e8f5e9; border-color: #43a047; color: #2e7d32; }
 .arena-choice.no { background: #fdecea; border-color: #e53935; color: #c62828; }
-.arena-judge-after { text-align: center; }
+.arena-next { width: 100%; padding: 16px; font-size: 17px; }
+.arena-judge-after { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+/* Dar ekran: tek kolon (board üstte, panel altta) */
+@media (max-width: 900px) {
+  .arena-judge-grid { flex-direction: column; gap: 16px; }
+  .arena-judge-board { width: 100%; }
+  .arena-judge-side { min-width: 0; width: 100%; }
+  .arena-judge-q { text-align: center; }
+}
 
 /* Cevap pop */
 .arena-pop { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; margin: 8px 0; }

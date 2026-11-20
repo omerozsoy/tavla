@@ -284,49 +284,53 @@ function JudgeCard({ item, answered, over, hud, tabs, onClose, gain, lastMult, o
     <div className="register-card arena-judge">
       <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat"><Icon name="x" size={16} /></Button>
       <div className="arena-judge-top">{tabs}{hud}</div>
-      <div className="arena-judge-board">
-        <Board
-          state={s}
-          selectableFroms={EMPTY_FROM}
-          targets={EMPTY_TARGET}
-          selectedFrom={null}
-          onSelectFrom={() => {}}
-          onSelectTarget={() => {}}
-          onDragFrom={() => {}}
-          pipTop={pipCount(s, 'black')}
-          pipBottom={pipCount(s, 'white')}
-          cube={{ value: 1, owner: null }}
-          classic={isMove}
-          numberFrom="white"
-          centerRight={isMove ? <DiceRow faces={faces} owner="white" /> : undefined}
-          showPip
-        />
-        {moveSteps && <MoveArrows steps={moveSteps} dep={item.id} />}
-      </div>
-      <div className="arena-judge-q">{prompt}</div>
-      {answered ? (
-        <div className="arena-judge-after">
-          <div className={`arena-pop ${answered}`}>
-            <span className="arena-pop-gain">{answered === 'correct' ? (gain > 0 ? `+${gain}` : 'Doğru') : 'Yanlış'}</span>
-            {answered === 'correct' && lastMult === 2 && <span className="arena-pop-tag">🔥 2 KAT!</span>}
-          </div>
-          {over ? (
-            <button className="bgx-btn arena-next" onClick={onShowScore}>Skorunu Gör</button>
+      <div className="arena-judge-grid">
+        <div className="arena-judge-board">
+          <Board
+            state={s}
+            selectableFroms={EMPTY_FROM}
+            targets={EMPTY_TARGET}
+            selectedFrom={null}
+            onSelectFrom={() => {}}
+            onSelectTarget={() => {}}
+            onDragFrom={() => {}}
+            pipTop={pipCount(s, 'black')}
+            pipBottom={pipCount(s, 'white')}
+            cube={{ value: 1, owner: null }}
+            classic={isMove}
+            numberFrom="white"
+            centerRight={isMove ? <DiceRow faces={faces} owner="white" /> : undefined}
+            showPip
+          />
+          {moveSteps && <MoveArrows steps={moveSteps} dep={item.id} />}
+        </div>
+        <div className="arena-judge-side">
+          <div className="arena-judge-q">{prompt}</div>
+          {answered ? (
+            <div className="arena-judge-after">
+              <div className={`arena-pop ${answered}`}>
+                <span className="arena-pop-gain">{answered === 'correct' ? (gain > 0 ? `+${gain}` : 'Doğru') : 'Yanlış'}</span>
+                {answered === 'correct' && lastMult === 2 && <span className="arena-pop-tag">🔥 2 KAT!</span>}
+              </div>
+              {over ? (
+                <button className="bgx-btn arena-next" onClick={onShowScore}>Skorunu Gör</button>
+              ) : (
+                <button className="bgx-btn green arena-next" onClick={onNext}>Sonraki →</button>
+              )}
+            </div>
+          ) : item.kind === 'cube' ? (
+            <div className="arena-judge-btns">
+              <button className="arena-choice yes" onClick={() => answer('double')}>Katla</button>
+              <button className="arena-choice no" onClick={() => answer('nodouble')}>Katlama</button>
+            </div>
           ) : (
-            <button className="bgx-btn green arena-next" onClick={onNext}>Sonraki →</button>
+            <div className="arena-judge-btns">
+              <button className="arena-choice yes" onClick={() => answer('best')}><Icon name="check" size={18} /> En İyi Hamle</button>
+              <button className="arena-choice no" onClick={() => answer('blunder')}><Icon name="x" size={18} /> Hatalı Hamle</button>
+            </div>
           )}
         </div>
-      ) : item.kind === 'cube' ? (
-        <div className="arena-judge-btns">
-          <button className="arena-choice yes" onClick={() => answer('double')}>Katla</button>
-          <button className="arena-choice no" onClick={() => answer('nodouble')}>Katlama</button>
-        </div>
-      ) : (
-        <div className="arena-judge-btns">
-          <button className="arena-choice yes" onClick={() => answer('best')}><Icon name="check" size={16} /> En İyi Hamle</button>
-          <button className="arena-choice no" onClick={() => answer('blunder')}><Icon name="x" size={16} /> Hatalı Hamle</button>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
