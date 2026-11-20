@@ -1576,7 +1576,7 @@ export default function App() {
       ? tournDetailId != null
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
         : 'online-turnuvalar'
-      : bankData
+      : bankData || bankDefer
         ? 'havale' // Havale/EFT talimati; dogrudan URL/yenileme -> siparislere duser (referans orada)
       : cardPay
         ? 'kart-odeme' + (cardPay.paymentId != null ? '/' + cardPay.paymentId : '') // GERÇEK sayfa; state sessionStorage'da. pending akışta paymentId yok (sipariş "Öde"de oluşur) -> id'siz /kart-odeme
@@ -10886,6 +10886,7 @@ export default function App() {
     cartOpen ||
     deliveryOpen ||
     !!bankData ||
+    !!bankDefer || // havale onay-öncesi ekranı da gerçek sayfa (page-host) — yoksa "home" sanıp dibe düşer
     !!cardPay || // kart ödeme formu (CardForm) = açık sayfa; yoksa sepet kapanınca "home" sanıp cardPay'i temizliyordu
     frameGalleryOpen ||
     friendsOpen ||

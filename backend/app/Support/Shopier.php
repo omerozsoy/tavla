@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Payment;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -38,6 +39,13 @@ class Shopier
     /** PAT dolu mu? Boşsa kart ödemesi KAPALI (checkout eski PENDING/elle-onay akışı). */
     public static function enabled(): bool
     {
+        // DB kill-switch: Forge deploy panel .env'i (PAT dahil) her deploy'da SSH düzenlememin üstüne
+        // yazdığı için .env'den kapatmak kalıcı değil. shopier_off=1 ise PAT dolu olsa da KAPALI
+        // (admin/tinker ile toggle; deploy'dan etkilenmez). Shopier canlıya hazır olunca '0' yap.
+        if (Setting::get('shopier_off') === '1') {
+            return false;
+        }
+
         return trim((string) config('services.shopier.pat')) !== '';
     }
 
