@@ -1221,6 +1221,7 @@ const CURRI_TIERS: CurriTierDef[] = [
   { key: 'intermediate', label: 'ORTA SEVİYE', tier: 2 },
   { key: 'advanced', label: 'İLERİ SEVİYE', tier: 3 },
   { key: 'mastery', label: 'USTALIK', tier: 4 },
+  { key: 'cube', label: 'KÜP KARARLARI', tier: 5 }, // tüm küp dersleri ayrı grupta (seviyelere dağılmaz)
 ]
 const CURRI_SECTIONS: CurriSection[] = [
   // BAŞLANGIÇ
@@ -1236,7 +1237,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'd-escape', title: 'Geri Pulları Kaçırma', tier: 1 },
   { id: 'd-midgame', title: 'Temel Orta Oyun', tier: 1 },
   { id: 'd-race', title: 'Yarışa Geçiş', tier: 1 },
-  { id: 'd-cube', title: 'Temel Küp Kavramları', tier: 1 },
+  { id: 'd-cube', title: 'Temel Küp Kavramları', tier: 5 },
   { id: 'd-test', title: 'Seviye Testi', tier: 1, isTest: true },
   // ORTA
   { id: 'i-attack', title: 'Saldırı Oyunu', tier: 2 },
@@ -1245,7 +1246,7 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'i-deepanchor', title: 'Derin Çapa Oyunları', tier: 2 },
   { id: 'i-anchordecide', title: 'Çapayı Korumak veya Bırakmak', tier: 2 },
   { id: 'i-nowlater', title: 'Şimdi mi Risk Almalı, Sonra mı?', tier: 2 },
-  { id: 'i-cube', title: 'Küp Verme ve Kabul Kararları', tier: 2 },
+  { id: 'i-cube', title: 'Küp Verme ve Kabul Kararları', tier: 5 },
   { id: 'i-test', title: 'Seviye Testi', tier: 2, isTest: true },
   // İLERİ
   { id: 'a-primeattack', title: 'Blok mu, Saldırı mı?', tier: 3 },
@@ -1254,13 +1255,13 @@ const CURRI_SECTIONS: CurriSection[] = [
   { id: 'a-backgame', title: 'Geri Oyun', tier: 3 },
   { id: 'a-midgame', title: 'Zor Orta Oyun Kararları', tier: 3 },
   { id: 'a-bearoff', title: 'İleri Pul Toplama', tier: 3 },
-  { id: 'a-cube', title: 'İleri Küp Kararları', tier: 3 },
+  { id: 'a-cube', title: 'İleri Küp Kararları', tier: 5 },
   { id: 'a-test', title: 'Seviye Testi', tier: 3, isTest: true },
   // USTALIK
   { id: 'm-complex', title: 'Karmaşık Pozisyonlar', tier: 4 },
   { id: 'm-subtle', title: 'İnce Hamle Farkları', tier: 4 },
   { id: 'm-scoremoves', title: 'Maç Skoruna Göre Hamleler', tier: 4 },
-  { id: 'm-scorecube', title: 'Maç Skoruna Göre Küp Kararları', tier: 4 },
+  { id: 'm-scorecube', title: 'Maç Skoruna Göre Küp Kararları', tier: 5 },
   { id: 'm-tournament', title: 'Turnuva Pozisyonları', tier: 4 },
   { id: 'm-test', title: 'Ustalık Testi', tier: 4, isTest: true },
 ]
