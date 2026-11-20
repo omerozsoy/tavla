@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import './arena.css'
 import Board from './Board'
+import DiceRow, { type DieFace } from './Dice'
 import { LessonView } from './TrainingView'
 import { streakMultiplier } from './QuizMarathon'
 import { MARATHON_POOL, CUBE_POOL, questionId, questionPoints, type Question } from './trainingCurriculum'
 import { buildJudgeMoveItems, type JudgeItem } from './judgePositions'
 import { pipCount } from '../engine/evaluate'
+import { matchGnubgMove } from '../engine/gnubgMove'
+import { MoveArrows } from './MatReview'
 import { submitQuizScore, quizLeaderboard, type QuizLeaderRow, type QuizMode } from '../api'
 import type { DiffBand } from './difficultyPositions'
 import { Icon } from './Icon'
@@ -97,20 +100,22 @@ export function ArenaGame({ arenaKey, nickname, onClose, tab = 'play', onTab }: 
     setPhase('playing')
   }
 
-  // Süre sayacı (yalnız süreli modlar). 0'da oyun biter.
+  const endGame = () => { setPhase('over'); setModalOpen(true) }
+
+  // Süre sayacı (yalnız süreli modlar): her saniye 1 azalt. Bitiş AYRI effect'te (updater içinde
+  // yan-etki = StrictMode/çift-tetik riski → "0'da takılı kalma" bug'ı). Tek interval, temiz cleanup.
   useEffect(() => {
     if (phase !== 'playing' || config.timeLimitSec <= 0) return
-    const iv = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) { clearInterval(iv); endGame(); return 0 }
-        return t - 1
-      })
-    }, 1000)
+    const iv = setInterval(() => setTimeLeft((t) => (t > 0 ? t - 1 : 0)), 1000)
     return () => clearInterval(iv)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, round])
 
-  const endGame = () => { setPhase('over'); setModalOpen(true) }
+  // Süre 0 → oyunu bitir (reload-güvenli: ayrı effect, tek kaynak).
+  useEffect(() => {
+    if (phase === 'playing' && config.timeLimitSec > 0 && timeLeft === 0) endGame()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, phase])
 
   const pointsFor = (x: Question | JudgeItem): number => {
     if ('kind' in x) return (x as JudgeItem).band ? BAND_POINTS[(x as JudgeItem).band!] : 25
@@ -256,9 +261,24 @@ function JudgeCard({ item, answered, over, hud, tabs, onClose, gain, lastMult, o
       : (choice === 'best') === (item.isBlunder === false)
     onAnswer(correct)
   }
-  const prompt = item.kind === 'cube'
-    ? 'Sıra BEYAZDA. Beyaz küpü katlamalı mı?'
-    : <>Beyaz şunu oynadı: <b>{item.move}</b> — en iyi hamle mi, hata mı?</>
+  const isMove = item.kind === 'move'
+  const prompt = isMove
+    ? <>Beyaz <b>{s.dice[0]}-{s.dice[1] ?? s.dice[0]}</b> attı ve <b>{item.move}</b> oynadı — en iyi hamle mi, hata mı?</>
+    : 'Sıra BEYAZDA. Beyaz küpü katlamalı mı?'
+
+  // Oynanan hamleyi tahta üstünde ok olarak göster (gnubg notasyonu -> Move steps).
+  const moveSteps = useMemo(() => {
+    if (!isMove || !item.move) return null
+    try { return matchGnubgMove(s, s.turn, item.move)?.steps ?? null } catch { return null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id])
+
+  // Zar yüzleri (yalnız hamle kartı): çift zar -> 2 fiziksel zar; aksi -> gelen değerler.
+  const faces: DieFace[] = isMove
+    ? (s.dice.length === 4
+        ? [{ value: s.dice[0], used: false, half: false }, { value: s.dice[0], used: false, half: false }]
+        : [...s.dice].slice(0, 2).map((v) => ({ value: v, used: false, half: false })))
+    : []
 
   return (
     <div className="register-card arena-judge">
@@ -276,9 +296,12 @@ function JudgeCard({ item, answered, over, hud, tabs, onClose, gain, lastMult, o
           pipTop={pipCount(s, 'black')}
           pipBottom={pipCount(s, 'white')}
           cube={{ value: 1, owner: null }}
+          classic={isMove}
           numberFrom="white"
+          centerRight={isMove ? <DiceRow faces={faces} owner="white" /> : undefined}
           showPip
         />
+        {moveSteps && <MoveArrows steps={moveSteps} dep={item.id} />}
       </div>
       <div className="arena-judge-q">{prompt}</div>
       {answered ? (

@@ -39,7 +39,7 @@
 
 /* Yargı kartı */
 .arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.arena-judge-board { margin: 0 auto 12px; max-width: 460px; }
+.arena-judge-board { position: relative; margin: 0 auto 12px; max-width: 460px; }
 .arena-judge-q { text-align: center; font-size: 15px; color: #4a4038; margin: 6px 0 14px; line-height: 1.4; }
 .arena-judge-q b { color: var(--arena-accent); }
 .arena-judge-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
