@@ -20,7 +20,7 @@ class QuizScoreController extends Controller
             'nickname' => 'nullable|string|max:40',
             'score' => 'required|integer|min:1|max:100000', // 0 puan tabelaya yazilmaz (bos/test kayitlari)
             'correct_count' => 'required|integer|min:0|max:100000',
-            'mode' => 'nullable|in:checker,cube', // iki ayrı yarışma: pul (checker) / küp (cube)
+            'mode' => 'nullable|in:checker,cube,judge,time,cube3,tekcan', // ayrı tabelalar: pul/küp + 4 eğitim yarışması
         ]);
         $mode = $data['mode'] ?? 'checker';
 
@@ -45,7 +45,7 @@ class QuizScoreController extends Controller
     public function leaderboard(Request $request)
     {
         $limit = min(100, max(1, (int) $request->query('limit', 20)));
-        $mode = $request->query('mode') === 'cube' ? 'cube' : 'checker';
+        $mode = in_array($request->query('mode'), ['cube', 'judge', 'time', 'cube3', 'tekcan'], true) ? $request->query('mode') : 'checker';
 
         $rows = Cache::remember("quiz_lb:{$mode}:{$limit}", 30, function () use ($limit, $mode) {
             // Her takma-ad tabelada YALNIZ bir kez: en yüksek skoruyla. score DESC sırada

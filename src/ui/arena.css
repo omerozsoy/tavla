@@ -1,0 +1,71 @@
+/* Eğitim Yarışmaları (ArenaGame) — site stili (Outfit + terracotta), quizMarathon.css ile uyumlu. */
+.arena-wrap {
+  --arena-accent: #a83a2b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.arena-intro,
+.arena-judge {
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+.arena-intro h2,
+.arena-judge h2 { color: var(--arena-accent); }
+.arena-intro-txt { color: #5a5048; line-height: 1.5; margin: 14px 0; }
+.arena-intro-meta { display: flex; gap: 16px; justify-content: center; font-weight: 600; color: #6b5e54; margin-bottom: 18px; flex-wrap: wrap; }
+.arena-start, .arena-next { margin-top: 8px; }
+
+/* Üst sekme çubuğu */
+.arena-tabs { display: flex; gap: 6px; margin: 10px 0 14px; }
+.arena-tab {
+  flex: 1; padding: 9px 6px; border: 1px solid #e3d8cc; background: #faf6f0; border-radius: 10px;
+  font-weight: 600; color: #7a6c60; cursor: pointer; transition: all .15s; font-size: 14px;
+}
+.arena-tab.on { background: var(--arena-accent); color: #fff; border-color: var(--arena-accent); }
+
+/* HUD: kalpler + süre + skor */
+.arena-hud { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.arena-hearts { letter-spacing: 2px; }
+.arena-heart.gone { opacity: .5; filter: grayscale(1); }
+.arena-timer { font-weight: 700; color: #2b6ca8; font-variant-numeric: tabular-nums; }
+.arena-timer.low { color: #c0392b; animation: arena-pulse .8s infinite; }
+@keyframes arena-pulse { 50% { opacity: .4; } }
+.arena-score { font-weight: 600; color: #6b5e54; }
+.arena-score b { color: var(--arena-accent); font-size: 1.1em; }
+
+/* Yargı kartı */
+.arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.arena-judge-board { margin: 0 auto 12px; max-width: 460px; }
+.arena-judge-q { text-align: center; font-size: 15px; color: #4a4038; margin: 6px 0 14px; line-height: 1.4; }
+.arena-judge-q b { color: var(--arena-accent); }
+.arena-judge-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.arena-choice {
+  padding: 16px 10px; border-radius: 12px; border: 2px solid; font-weight: 700; font-size: 16px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .1s;
+}
+.arena-choice:active { transform: scale(.97); }
+.arena-choice.yes { background: #e8f5e9; border-color: #43a047; color: #2e7d32; }
+.arena-choice.no { background: #fdecea; border-color: #e53935; color: #c62828; }
+.arena-judge-after { text-align: center; }
+
+/* Cevap pop */
+.arena-pop { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; margin: 8px 0; }
+.arena-pop.correct .arena-pop-gain { color: #2e7d32; }
+.arena-pop.wrong .arena-pop-gain { color: #c62828; }
+.arena-pop-gain { font-size: 20px; }
+.arena-pop-tag { background: #fff3e0; color: #e65100; border-radius: 8px; padding: 2px 8px; font-size: 13px; }
+
+/* Rekorlar listesi */
+.arena-empty { text-align: center; color: #8a7d70; padding: 28px 0; }
+.arena-rec-list { display: flex; flex-direction: column; gap: 4px; }
+.arena-rec-row { display: grid; grid-template-columns: 44px 1fr 64px 72px; align-items: center; padding: 8px 10px; border-radius: 8px; background: #faf6f0; }
+.arena-rec-head { font-size: 12px; color: #9a8d80; text-transform: uppercase; background: none; }
+.arena-rec-nick { font-weight: 600; color: #4a4038; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arena-rec-score { font-weight: 700; color: var(--arena-accent); text-align: right; }
+.arena-rec-row.top1 { background: #fff8e1; }
+.arena-rec-row.top2 { background: #f3f3f3; }
+.arena-rec-row.top3 { background: #fbe9e0; }

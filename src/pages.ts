@@ -79,6 +79,11 @@ export const PAGES: PageDef[] = [
   // Soru Maratonu: zorluk-bazlı puanlı quiz + anonim tabela. "Açılış Maratonu" modu buranın İÇİNDE
   // (band seç -> 84k DB havuzundan lazy). Eski ayrı /acilis-pratigi sayfası TAMAMEN kaldırıldı.
   { key: 'dailyPuzzle', slug: 'soru-maratonu', labelKey: 'menu.dailyPuzzle', icon: 'calendar-dots', group: 'lessons', hideInGame: true },
+  // Eğitim Yarışmaları: 4 canlı mod (kalp/süre + ayrı rekor tablosu). ArenaGame config-sürücülü.
+  { key: 'arenaJudge', slug: 'dogru-hamle-mi', labelKey: 'menu.arenaJudge', icon: 'target', group: 'lessons', hideInGame: true },
+  { key: 'arenaTime', slug: 'zamana-karsi', labelKey: 'menu.arenaTime', icon: 'clock', group: 'lessons', hideInGame: true },
+  { key: 'arenaCube', slug: 'kup-karari', labelKey: 'menu.arenaCube', icon: 'dice', group: 'lessons', hideInGame: true },
+  { key: 'arenaTekcan', slug: 'tek-can', labelKey: 'menu.arenaTekcan', icon: 'heart', group: 'lessons', hideInGame: true },
   // Tavlada PR Nedir?: PR kavramını anlatan infografik (Dersler ve Eğitim grubunda).
   { key: 'info-pr', slug: 'bilgi/pr-nedir', labelKey: 'prinfo.title', icon: 'target', group: 'lessons', hideInGame: true },
 

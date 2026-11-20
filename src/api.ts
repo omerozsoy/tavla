@@ -3786,7 +3786,8 @@ export interface QuizLeaderRow {
   correct_count: number
 }
 
-export type QuizMode = 'checker' | 'cube' // iki ayrı yarışma: pul (hamle) / küp
+// Ayrı rekor tabloları: pul/küp (Soru Maratonu) + 4 eğitim yarışması (Doğru Hamle mi? / Zamana Karşı / Küp Kararı / Tek Can).
+export type QuizMode = 'checker' | 'cube' | 'judge' | 'time' | 'cube3' | 'tekcan'
 export async function submitQuizScore(nickname: string, score: number, correct_count: number, mode: QuizMode = 'checker'): Promise<{ rank: number }> {
   return req<{ ok: boolean; rank: number }>('/quiz-marathon/score', {
     method: 'POST',

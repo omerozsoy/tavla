@@ -183,6 +183,11 @@ import Messages from './ui/Messages'
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
 const QuizMarathon = lazy(() => import('./ui/QuizMarathon').then((m) => ({ default: m.QuizMarathon }))) // Soru Maratonu (/soru-maratonu; eski /gunun-pozisyonu alias olarak korunur)
+const ArenaGame = lazy(() => import('./ui/ArenaGame').then((m) => ({ default: m.ArenaGame }))) // 4 eğitim yarışması (Doğru Hamle mi? / Zamana Karşı / Küp Kararı / Tek Can)
+// Arena mod anahtarı <-> SPA slug (deep-link + currentSlug). ArenaGame config'i içeride ARENA_CONFIGS'ten çözer.
+type ArenaKey = 'judge' | 'time' | 'cube3' | 'tekcan'
+const ARENA_SLUGS: Record<ArenaKey, string> = { judge: 'dogru-hamle-mi', time: 'zamana-karsi', cube3: 'kup-karari', tekcan: 'tek-can' }
+const ARENA_BY_SLUG: Record<string, ArenaKey> = { 'dogru-hamle-mi': 'judge', 'zamana-karsi': 'time', 'kup-karari': 'cube3', 'tek-can': 'tekcan' }
 const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
 const OrganizerPanel = lazy(() => import('./ui/OrganizerPanel'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
@@ -1175,6 +1180,8 @@ export default function App() {
   const [trainingOpen, setTrainingOpen] = useState(false) // Tavla Eğitimi (interaktif trainer)
   const [dailyPuzzleOpen, setDailyPuzzleOpen] = useState(false) // Günün Pozisyonu (günlük tek soru)
   const [dailyTab, setDailyTab] = useState<'play' | 'records' | 'rules'>('play') // /soru-maratonu/{rekorlar,kurallar} alt sekmeleri
+  const [arenaKey, setArenaKey] = useState<ArenaKey | null>(null) // açık eğitim yarışması (null = kapalı)
+  const [arenaTab, setArenaTab] = useState<'play' | 'records'>('play') // yarışma alt sekmesi (Oyna / Rekorlar)
   const [liveTournOpen, setLiveTournOpen] = useState(false) // Canlı Turnuva Sistemi (iskelet sayfa)
   const [organizerPanelOpen, setOrganizerPanelOpen] = useState(false) // Organizatör Paneli (salon turnuva yönetimi)
   const [isOrganizer, setIsOrganizer] = useState(false) // ≥1 turnuva yönetiyor mu (menü görünürlüğü)
@@ -1593,6 +1600,8 @@ export default function App() {
                       : dailyTab === 'rules'
                         ? 'soru-maratonu/kurallar'
                         : 'soru-maratonu'
+                  : arenaKey
+                    ? `${ARENA_SLUGS[arenaKey]}${arenaTab === 'records' ? '/rekorlar' : ''}`
                   : liveTournOpen
                     ? 'canli-turnuva-sistemi'
                   : organizerPanelOpen
@@ -1957,6 +1966,13 @@ export default function App() {
         case 'soru-maratonu':
           setDailyTab(seg[1] === 'rekorlar' ? 'records' : seg[1] === 'kurallar' ? 'rules' : 'play')
           setDailyPuzzleOpen(true)
+          break
+        case 'dogru-hamle-mi':
+        case 'zamana-karsi':
+        case 'kup-karari':
+        case 'tek-can':
+          setArenaTab(seg[1] === 'rekorlar' ? 'records' : 'play')
+          setArenaKey(ARENA_BY_SLUG[seg[0]])
           break
         case 'canli-turnuva-sistemi':
           setLiveTournOpen(true)
@@ -10219,6 +10235,7 @@ export default function App() {
     setLessonsOpen(false)
     setTrainingOpen(false)
     setDailyPuzzleOpen(false)
+    setArenaKey(null)
     setLiveTournOpen(false)
     setOrganizerPanelOpen(false)
     setSoloOpen(false)
@@ -10372,6 +10389,10 @@ export default function App() {
         setDailyTab('play')
         setDailyPuzzleOpen(true)
       }),
+    onArenaJudge: () => goPage(() => { setArenaTab('play'); setArenaKey('judge') }),
+    onArenaTime: () => goPage(() => { setArenaTab('play'); setArenaKey('time') }),
+    onArenaCube: () => goPage(() => { setArenaTab('play'); setArenaKey('cube3') }),
+    onArenaTekcan: () => goPage(() => { setArenaTab('play'); setArenaKey('tekcan') }),
     onLiveTournSystem: () => goPage(() => setLiveTournOpen(true)),
     onOrganizerPanel: () => goPage(() => setOrganizerPanelOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
@@ -10428,6 +10449,10 @@ export default function App() {
     myOrders: menuProps.onMyOrders,
     training: menuProps.onTraining,
     dailyPuzzle: menuProps.onDailyPuzzle,
+    arenaJudge: menuProps.onArenaJudge,
+    arenaTime: menuProps.onArenaTime,
+    arenaCube: menuProps.onArenaCube,
+    arenaTekcan: menuProps.onArenaTekcan,
     liveTournSystem: menuProps.onLiveTournSystem,
     // YALNIZ organizatör atanmışsa handler tanımlı -> menüde yalnız ona görünür (başkasına çıkmaz).
     organizerPanel: isOrganizer ? menuProps.onOrganizerPanel : undefined,
@@ -11139,6 +11164,19 @@ export default function App() {
               nickname={user?.nickname}
               tab={dailyTab}
               onTab={setDailyTab}
+            />
+          </Suspense>
+        </div>
+      )}
+      {arenaKey && (
+        <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <Suspense fallback={null}>
+            <ArenaGame
+              arenaKey={arenaKey}
+              onClose={() => setArenaKey(null)}
+              nickname={user?.nickname}
+              tab={arenaTab}
+              onTab={setArenaTab}
             />
           </Suspense>
         </div>
