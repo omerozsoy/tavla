@@ -709,6 +709,11 @@ button.ckw-pm {
 .ckw-step.on button {
   color: var(--ink);
 }
+/* Label span kendi rengini miras alamıyordu (live'da hâlâ silik) -> doğrudan ez. */
+.ckw-step.on .ckw-step-l {
+  color: var(--accent);
+  font-weight: 700;
+}
 .ckw-step.on .ckw-step-ic {
   border-color: var(--accent);
   background: var(--accent);
