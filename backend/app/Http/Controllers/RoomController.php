@@ -157,19 +157,31 @@ class RoomController extends Controller
      * (kendi odasına yeni token'la yeniden bağlanan p1 bloklanmasın). uid null (misafir) -> false;
      * misafirin coin'i yok, hile riski yok.
      */
-    private function userInAnyPlaying(?int $uid, ?int $excludeRoomId = null): bool
+    private function userInAnyPlaying(?int $uid, ?int $excludeRoomId = null, bool $tournamentOnly = false): bool
     {
         if (! $uid) {
             return false;
         }
 
-        return Room::where('status', 'playing')
+        $q = Room::where('status', 'playing')
             ->where('bot', false) // BOT maçı (stake=0, tek oyuncu) online-eşzamanlılık hilesini oluşturmaz
             ->when($excludeRoomId, fn ($q) => $q->where('id', '!=', $excludeRoomId))
             ->where(function ($q) use ($uid) {
                 $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
-            })
-            ->exists();
+            });
+        if (! $tournamentOnly) {
+            return $q->exists();
+        }
+        // TURNUVA ÖNCELİĞİ: turnuva odasına girişte YALNIZ başka bir turnuva odası (roomTargetKey
+        // cache'li) engeller; casual maçlar engellemez (terk edilmiş sayılır). Oynanan oda sayısı
+        // oyuncu başına küçüktür -> kod başına birkaç cache kontrolü ucuzdur.
+        foreach ($q->pluck('code') as $playingCode) {
+            if (Cache::has(TournamentController::roomTargetKey($playingCode))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Kullanici bir maca BAGLANINCA (enter/join p2 ya da matchmaking eslesme) DIGER bekleyen
@@ -1927,9 +1939,16 @@ class RoomController extends Controller
             }
             // EŞZAMANLILIK KALKANI: zaten başka bir maçta oynayan hesap ikinci bir odaya
             // katılamaz (join() ile aynı; hedef oda hariç -> kendi odasına yeniden bağlanma serbest).
+            // TURNUVA ÖNCELİĞİ (kullanıcı direktifi): turnuva maçı committed + süre-kritik (gelmezsen
+            // hükmen) -> casual maçtayken turnuva turu gelince giriş ENGELLENMEZ; casual maç terk edilmiş
+            // sayılır (presence/abandon ile rakibine çözülür). AMA iki TURNUVA maçı aynı anda yine engellenir
+            // ($tournamentOnly: yalnız başka bir turnuva odası bloklar). Casual girişte davranış değişmez.
             $enterUserId = $authUser?->id;
-            if ($this->userInAnyPlaying($enterUserId, $room->id)) {
-                return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            $isTournamentRoom = Cache::has(TournamentController::roomTargetKey($code));
+            if ($this->userInAnyPlaying($enterUserId, $room->id, $isTournamentRoom)) {
+                return $this->fail($isTournamentRoom
+                    ? 'Başka bir turnuva maçın sürüyor. Önce onu bitir, sonra bu maça gir.'
+                    : 'Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
             // HOST TERK KALKANI (58MJ7 kök fix): davet eden / oda sahibi (p1) odayı kurup AYRILDIYSA
             // (browser kapatma -> /leave ve cancelInvite çağrılmaz, davet 2dk askıda kalır), kabul eden
