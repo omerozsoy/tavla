@@ -75,8 +75,9 @@ export default function ShopierWaiting({
             </div>
             <h2 className="ckw-title">Ödemen kontrol ediliyor…</h2>
             <p className="ckw-wait-text">
-              Ödemeni Shopier sayfasında tamamladığında coin'lerin buraya <strong>otomatik</strong>{' '}
-              yüklenecek — bu ekranı kapatmana gerek yok (en geç birkaç dakika).
+              Ödemeni Shopier sayfasında tamamladıktan sonra o sekmeyi <strong>kapatabilirsin</strong>.
+              Coin'lerin buraya <strong>otomatik</strong> yüklenecek (en geç birkaç dakika) — bu ekranı
+              kapatmana gerek yok, siparişini buradan takip edebilirsin.
             </p>
             {url && (
               <a className="ckw-btn ckw-btn-ghost" href={url} target="_blank" rel="noopener noreferrer">
