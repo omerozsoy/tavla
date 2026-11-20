@@ -574,6 +574,7 @@ import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, type CartAddressSel, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import DeliveryStep from './ui/DeliveryStep'
+import ShopierWaiting from './ui/ShopierWaiting'
 import CheckoutSteps, { type CheckoutStep } from './ui/CheckoutSteps'
 import BankTransfer from './ui/BankTransfer'
 import FrameShop from './ui/FrameShop'
@@ -1238,6 +1239,9 @@ export default function App() {
   // Kart ödemesi Shopier hosted sayfasına mı gidiyor? Aktifse checkout'ta CardForm ATLANIR (kart
   // Shopier'in sayfasında girilir, iki kez girme olmaz). bankInfo config'inden bir kez okunur.
   const [shopierCard, setShopierCard] = useState(false)
+  // Shopier yeni-sekme akışı: ödeme Shopier'in AYRI sekmesinde; bu sekmede bekleme ekranı ödeme
+  // durumunu yoklar (buyer Shopier'den siteye dönmüyor -> ekran dönüşün yerini tutar).
+  const [shopierWait, setShopierWait] = useState<{ order: string; url: string } | null>(null)
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null) // onay öncesi IBAN gösterimi için
   useEffect(() => {
     getBankTransferInfo()
@@ -1344,24 +1348,34 @@ export default function App() {
       notify.success('Siparişin alındı. Ödeme onayı bekleniyor.')
       setMyOrdersOpen(true)
     }
-    // Shopier aktifse backend redirect döner -> tarayıcıyı Shopier hosted ödeme sayfasına gönder.
-    // Buyer Shopier'den siteye DÖNMÜYOR (Shopier kısıtı) -> order_id'yi sakla; dönünce boot effect
-    // ödeme durumunu pollar ve settle olunca "yüklendi" bildirir (reconciler ~1dk'da settle eder).
+    // YENİ SEKME: Shopier buyer'ı ödeme sonrası siteye DÖNDÜRMÜYOR (Shopier kısıtı; PAT API'sinde
+    // return URL yok). Çözüm: redirect URL'i GELMEDEN (kullanıcı jesti hâlâ aktif) boş bir sekme aç;
+    // URL gelince ORAYA yönlendir + BU sekmede bekleme ekranı göster (ödeme durumunu yoklar, settle
+    // olunca "yüklendi"). Popup engellenirse payWin=null -> same-tab'e düşer (dönüşte boot algılar).
+    // Yalnız Shopier kart ödemesinde aç (havale/coin-only'de değil).
+    const payWin = method === 'card' && shopierCard ? window.open('', '_blank') : null
     const goShopier = (r: CheckoutResult): boolean => {
       const url = shopierRedirect(r)
-      if (url) {
-        const order = shopierOrderFromRedirect(url)
-        if (order) {
-          try {
-            localStorage.setItem('tavla.shopierPending', JSON.stringify({ order, at: Date.now() }))
-          } catch {
-            /* yoksay */
-          }
-        }
-        window.location.href = url
-        return true
+      if (!url) {
+        if (payWin && !payWin.closed) payWin.close()
+        return false
       }
-      return false
+      const order = shopierOrderFromRedirect(url)
+      if (order) {
+        try {
+          localStorage.setItem('tavla.shopierPending', JSON.stringify({ order, at: Date.now() }))
+        } catch {
+          /* yoksay */
+        }
+      }
+      if (payWin && !payWin.closed) {
+        payWin.location.href = url // Shopier ayrı sekmede açılır
+        closeSteps()
+        if (order) setShopierWait({ order, url }) // bizim sekmede bekleme/yoklama ekranı
+      } else {
+        window.location.href = url // popup engellendi -> same-tab (dönüşte boot effect algılar)
+      }
+      return true
     }
     if (its.some((i) => i.kind === 'membership')) {
       const r = await buyMembership(method)
@@ -11249,6 +11263,16 @@ export default function App() {
           }}
           onPay={(sel, method, bd) => runCheckout(cartItems, null, sel, method, bd)}
           stepsSlot={renderCheckoutSteps('delivery')}
+        />
+      )}
+      {shopierWait && (
+        <ShopierWaiting
+          order={shopierWait.order}
+          url={shopierWait.url}
+          onPaid={(balance) => {
+            if (typeof balance === 'number') setUser((u) => (u ? { ...u, coins: balance } : u))
+          }}
+          onClose={() => setShopierWait(null)}
         />
       )}
       {(bankDefer || bankData) && (

@@ -415,6 +415,56 @@ button.ckw-pm {
   font-family: inherit;
   cursor: pointer;
 }
+
+/* Shopier ödeme bekleme ekranı (yeni-sekme akışı). */
+.ckw-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 2rem 1.25rem;
+  max-width: 440px;
+  margin: 0 auto;
+}
+.ckw-wait .ckw-title {
+  justify-content: center;
+}
+.ckw-wait-text {
+  color: var(--muted, #6b6459);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.ckw-wait-spin .btn-spinner {
+  width: 40px;
+  height: 40px;
+  border-width: 4px;
+}
+.ckw-wait-ok,
+.ckw-wait-fail {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.ckw-wait-ok {
+  background: #2e9e5b;
+}
+.ckw-wait-fail {
+  background: var(--accent, #a83a2b);
+}
+.ckw-wait-cancel {
+  background: none;
+  border: 0;
+  color: var(--muted, #6b6459);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .ckw-err {
   color: var(--accent);
   font-size: 0.86rem;
