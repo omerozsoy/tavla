@@ -1252,6 +1252,8 @@ export default function App() {
   // Shopier yeni-sekme akışı: ödeme Shopier'in AYRI sekmesinde; bu sekmede bekleme ekranı ödeme
   // durumunu yoklar (buyer Shopier'den siteye dönmüyor -> ekran dönüşün yerini tutar).
   const [shopierWait, setShopierWait] = useState<{ order: string; url: string } | null>(null)
+  // Shopier popup (SADECE WEB): pencere kapanınca bekleme ekranı anında durum kontrolü yapsın diye tutulur.
+  const shopierWinRef = useRef<Window | null>(null)
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null) // onay öncesi IBAN gösterimi için
   useEffect(() => {
     getBankTransferInfo()
@@ -1363,7 +1365,13 @@ export default function App() {
     // URL gelince ORAYA yönlendir + BU sekmede bekleme ekranı göster (ödeme durumunu yoklar, settle
     // olunca "yüklendi"). Popup engellenirse payWin=null -> same-tab'e düşer (dönüşte boot algılar).
     // Yalnız Shopier kart ödemesinde aç (havale/coin-only'de değil).
-    const payWin = method === 'card' && shopierCard ? window.open('', '_blank') : null
+    // SADECE WEB: boyutlu popup pencere (masaüstünde yüzen pencere; mobil web yok sayıp sekme/same-tab'e
+    // düşer -> mevcut fallback). Native APK bu yola hiç girmez (ödeme Play Billing/IAP).
+    const payWin =
+      method === 'card' && shopierCard
+        ? window.open('', '_blank', 'width=480,height=720,menubar=no,toolbar=no,location=yes')
+        : null
+    shopierWinRef.current = payWin
     const goShopier = (r: CheckoutResult): boolean => {
       const url = shopierRedirect(r)
       if (!url) {
@@ -11271,6 +11279,7 @@ export default function App() {
         <ShopierWaiting
           order={shopierWait.order}
           url={shopierWait.url}
+          getWin={() => shopierWinRef.current}
           onPaid={(balance) => {
             if (typeof balance === 'number') setUser((u) => (u ? { ...u, coins: balance } : u))
           }}
@@ -11280,6 +11289,7 @@ export default function App() {
             } catch {
               /* yoksay */
             }
+            shopierWinRef.current = null
             setShopierWait(null)
           }}
         />

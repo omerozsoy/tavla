@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { paymentStatus } from '../api'
 import './CheckoutSwiss.css'
@@ -9,61 +9,84 @@ import './CheckoutSwiss.css'
 export default function ShopierWaiting({
   order,
   url,
+  getWin,
   onPaid,
   onClose,
 }: {
   order: string
   url: string
+  // SADECE WEB: ödeme popup'ı (varsa). Kapanınca anında durum kontrolü tetiklenir. Boot/same-tab'de yok.
+  getWin?: () => Window | null
   onPaid: (balance: number | null) => void
   onClose: () => void
 }) {
   const [state, setState] = useState<'waiting' | 'paid' | 'failed'>('waiting')
   const [coins, setCoins] = useState(0)
   const aliveRef = useRef(true)
+  const triesRef = useRef(0)
+
+  // Tek durum kontrolü (hem 5sn interval hem popup-kapandı tetiği buradan geçer).
+  const check = useCallback(async () => {
+    if (!aliveRef.current) return
+    triesRef.current++
+    try {
+      const r = await paymentStatus(order)
+      if (r.status === 'paid') {
+        aliveRef.current = false
+        try {
+          localStorage.removeItem('tavla.shopierPending')
+        } catch {
+          /* yoksay */
+        }
+        setCoins(r.coins || 0)
+        setState('paid')
+        onPaid(typeof r.balance === 'number' ? r.balance : null)
+        return
+      }
+      if (r.status === 'failed') {
+        aliveRef.current = false
+        setState('failed')
+      }
+    } catch {
+      /* geçici hata -> tekrar dene */
+    }
+    // ~5 dk yokla (webhook gelmese bile reconciler dakikada bir settle eder).
+    if (triesRef.current >= 60) aliveRef.current = false
+  }, [order, onPaid])
 
   useEffect(() => {
     aliveRef.current = true
-    let tries = 0
-    const tick = async () => {
-      if (!aliveRef.current) return
-      tries++
-      try {
-        const r = await paymentStatus(order)
-        if (r.status === 'paid') {
-          aliveRef.current = false
-          try {
-            localStorage.removeItem('tavla.shopierPending')
-          } catch {
-            /* yoksay */
-          }
-          setCoins(r.coins || 0)
-          setState('paid')
-          onPaid(typeof r.balance === 'number' ? r.balance : null)
-          return
-        }
-        if (r.status === 'failed') {
-          aliveRef.current = false
-          setState('failed')
-        }
-      } catch {
-        /* geçici hata -> tekrar dene */
-      }
-      // ~5 dk yokla (webhook gelmese bile reconciler dakikada bir settle eder).
-      if (tries >= 60) aliveRef.current = false
-    }
+    triesRef.current = 0
     const timer = setInterval(() => {
       if (!aliveRef.current) {
         clearInterval(timer)
         return
       }
-      void tick()
+      void check()
     }, 5000)
-    void tick()
+    void check()
     return () => {
       aliveRef.current = false
       clearInterval(timer)
     }
-  }, [order, onPaid])
+  }, [check])
+
+  // BONUS (web): popup pencere kapanınca 5sn'yi bekleme — anında kontrol et (ödeme biter bitmez sonuç).
+  useEffect(() => {
+    if (!getWin) return
+    const watch = setInterval(() => {
+      if (!aliveRef.current) {
+        clearInterval(watch)
+        return
+      }
+      const w = getWin()
+      if (w && w.closed) {
+        clearInterval(watch)
+        void check() // kapandı -> hemen yokla (reconciler henüz işlememişse 5sn interval devam eder)
+      }
+    }, 700)
+    return () => clearInterval(watch)
+  }, [getWin, check])
 
   return (
     <div className="register-overlay page">
