@@ -1706,6 +1706,17 @@
   cursor: not-allowed;
 }
 
+/* Sepete eklendikten sonra "Sepete git" CTA — ekle butonundan ayrı accent/dolu görünüm. */
+.mgz-goto {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+  cursor: pointer;
+}
+.mgz-goto:hover {
+  filter: brightness(0.94);
+}
+
 /* --- ÜRÜN DETAY SAYFASI (ayrı sayfa) --- */
 .mgz-pdp {
   padding: clamp(1.5rem, 4vw, 3rem) clamp(1.2rem, 4vw, 4rem) clamp(2.5rem, 6vw, 5rem);

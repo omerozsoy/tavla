@@ -144,7 +144,7 @@ export default function MagazaSwiss({
   const [added, setAdded] = useState<Record<string, number>>({}) // key -> timestamp'siz sayaç
   const flashAdded = (key: string) => {
     setAdded((a) => ({ ...a, [key]: (a[key] ?? 0) + 1 }))
-    window.setTimeout(() => setAdded((a) => ({ ...a, [key]: Math.max(0, (a[key] ?? 1) - 1) })), 2200)
+    window.setTimeout(() => setAdded((a) => ({ ...a, [key]: Math.max(0, (a[key] ?? 1) - 1) })), 4000)
   }
 
   // Native APK (Play Billing var mı): coin paketleri sepet/Garanti yerine Play'den satılır.
@@ -268,7 +268,9 @@ export default function MagazaSwiss({
             <span className="mgz-mem-price tnum">{fmtTL(PREMIUM_YEARLY_TL)}</span>
             <span className="mgz-mem-per">/ yıl</span>
             {added['mem'] ? (
-              <span className="mgz-added" role="status"><Icon name="check" size={14} /> Sepete eklendi</span>
+              <button type="button" className="mgz-btn mgz-btn-lg mgz-mem-btn mgz-goto" onClick={onOpenCart}>
+                <Icon name="check" size={16} /> Sepete git
+              </button>
             ) : (
               <button type="button" className="mgz-btn mgz-btn-lg mgz-mem-btn" onClick={addMembership}>
                 Premium Satın Al <Icon name="arrow-right" size={16} />
@@ -304,9 +306,15 @@ export default function MagazaSwiss({
                     <span className="mgz-jeton-per">jeton başına {per} ₺</span>
                   </div>
                   {added[`coin:${p.id}`] ? (
-                    <span className="mgz-jeton-added" role="status">
-                      <Icon name="check" size={15} /> {nativeIap ? 'Jeton yüklendi' : 'Sepete eklendi'}
-                    </span>
+                    nativeIap ? (
+                      <span className="mgz-jeton-added" role="status">
+                        <Icon name="check" size={15} /> Jeton yüklendi
+                      </span>
+                    ) : (
+                      <button type="button" className="mgz-jeton-btn mgz-goto" onClick={onOpenCart}>
+                        <Icon name="check" size={15} /> Sepete git
+                      </button>
+                    )
                   ) : nativeIap ? (
                     <button
                       type="button"
@@ -414,9 +422,9 @@ export default function MagazaSwiss({
                       {fmtTLk(p.money_price ?? p.coin_price ?? 0)}
                     </span>
                     {added[`p${p.id}`] ? (
-                      <span className="mgz-added" role="status">
-                        <Icon name="check" size={14} /> Eklendi
-                      </span>
+                      <button type="button" className="mgz-card-add mgz-goto" onClick={onOpenCart}>
+                        <Icon name="check" size={13} /> Sepete git
+                      </button>
                     ) : (
                       <button
                         type="button"
