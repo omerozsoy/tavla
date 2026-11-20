@@ -118,7 +118,7 @@ export default function Footer({ columns }: Props) {
           </p>
           <p className="foot-legal">
             TavlaTV, Edda Profesyonel Müzayedecilik Yazılım Ticaret Limited Şirketi tarafından
-            işletilmektedir.
+            yazılım desteği verilmektedir.
           </p>
         </div>
       </footer>
