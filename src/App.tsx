@@ -1344,6 +1344,22 @@ export default function App() {
   }
   const cartCount = cartItems.reduce((s, c) => s + c.qty, 0) // üst bar sepet rozeti + Mağaza
 
+  // Mini-sepet (compact ajax sepet): sepete ekleyince üst bar sepet ikonunun ALTINDA ~5sn beliren
+  // küçük bildirim (kullanıcı isteği; eski "havada duran" fab DEĞİL -> ikona bağlı, oto-kapanır).
+  // Yalnız sayaç ARTINCA (ekleme) göster; çıkarma/sıfırlamada gösterme.
+  const [miniCart, setMiniCart] = useState(false)
+  const prevCartCountRef = useRef(cartCount)
+  useEffect(() => {
+    const prev = prevCartCountRef.current
+    prevCartCountRef.current = cartCount
+    if (cartCount > prev) {
+      setMiniCart(true)
+      const tm = window.setTimeout(() => setMiniCart(false), 5000)
+      return () => window.clearTimeout(tm)
+    }
+    if (cartCount === 0) setMiniCart(false)
+  }, [cartCount])
+
   // Siparişi sunucuda oluştur (pending) -> kart formu (/kart-odeme) veya havale talimatı.
   // DeliveryStep (Teslimat & Ödeme adımı) çağırır: adres/yöntem seçildikten sonra. Üyelik tek
   // başına / coin ürünleri (anında) / para kısmı (kart|havale) aynı eski akış.
@@ -9891,17 +9907,33 @@ export default function App() {
           </Button>
           {/* Alışveriş sepeti: üst barda GİZLİ, sepete ürün eklenince görünür; tıklanınca sepet sayfası açılır */}
           {cartCount > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative [&_svg]:size-[24px]!"
-              onClick={() => goPage(() => setCartOpen(true))}
-              title={t('shop.cart')}
-              aria-label={t('shop.cart')}
-            >
-              <Icon name="cart" size={24} />
-              <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>
-            </Button>
+            <span className="cart-slot">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative [&_svg]:size-[24px]!"
+                onClick={() => goPage(() => setCartOpen(true))}
+                title={t('shop.cart')}
+                aria-label={t('shop.cart')}
+              >
+                <Icon name="cart" size={24} />
+                <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>
+              </Button>
+              {/* Mini-sepet: ekleyince ~5sn beliren compact bildirim. Sepet/ödeme sayfasındayken gösterme. */}
+              {miniCart && !cartOpen && !deliveryOpen && (
+                <div className="mini-cart" role="status">
+                  <div className="mini-cart-top"><Icon name="check" size={14} /> Sepete eklendi</div>
+                  <div className="mini-cart-count">{cartCount} ürün sepette</div>
+                  <button
+                    type="button"
+                    className="mini-cart-go"
+                    onClick={() => { setMiniCart(false); goPage(() => setCartOpen(true)) }}
+                  >
+                    Sepete git <Icon name="arrow-right" size={14} />
+                  </button>
+                </div>
+              )}
+            </span>
           )}
           <span className="account-sep" />
           <Button
