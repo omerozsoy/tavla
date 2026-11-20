@@ -1882,7 +1882,9 @@ export default function App() {
           setCheckerShopOpen(true)
           break
         case 'urunler':
-          setProductsOpen(true)
+          // /urunler KALDIRILDI -> /magaza'ya yönlendir (kullanıcı direktifi: tek mağaza). Deep-link/
+          // refresh gelse de magaza açılır; currentSlug 'magaza' olunca URL /magaza'ya normalize olur.
+          openShop()
           break
         case 'havale': // Havale talimati gecici (sunucu referansi, URL'den kurulamaz) -> siparislere dus
         case 'siparislerim':
@@ -10420,7 +10422,7 @@ export default function App() {
     onOpenNews: (slug: string) => goPage(() => { setContentView('news'); setNewsSlug(slug) }),
     onMakale: () => goPage(() => setContentView('makale')), // Makaleler (haber düzeninde liste+detay)
     onMagazine: () => goPage(() => setContentView('magazine')),
-    onProducts: () => goPage(() => setProductsOpen(true)),
+    onProducts: () => goPage(openShop), // "Ürünler" linkleri de /magaza'ya (tek mağaza)
     onMyOrders: () => (user ? goPage(() => setMyOrdersOpen(true)) : setShowAuth(true)),
     onQuiz: () => goPage(() => setQuizOpen(true)),
   }
