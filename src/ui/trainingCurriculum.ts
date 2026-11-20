@@ -1498,7 +1498,11 @@ export function questionPoints(q: Question): number {
   return [10, 20, 25, 50, 100][tierOf(hardnessText(q))]
 }
 // Maraton soru havuzu: CURRICULUM'un tum (test HARIC) sorulari — zaten board+zar global dedup'li.
-// Soru Maratonu = hamle quiz'i (zar + hamle); küp kararları (zarsız) maraton akışına girmez.
+// Pul (hamle) Maratonu havuzu = zar + hamle soruları; küp kararları AYRI maratonda.
 export const MARATHON_POOL: Question[] = CURRICULUM.flatMap((t) =>
   t.lessons.filter((l) => !l.isTest).flatMap((l) => l.questions.filter((q) => !q.cube)),
+)
+// Küp Maratonu havuzu = tüm küp kararı soruları (gnubg-doğrulanmış sabit pozisyonlar).
+export const CUBE_POOL: Question[] = CURRICULUM.flatMap((t) =>
+  t.lessons.flatMap((l) => l.questions.filter((q) => !!q.cube)),
 )

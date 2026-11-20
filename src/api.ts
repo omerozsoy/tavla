@@ -3786,14 +3786,15 @@ export interface QuizLeaderRow {
   correct_count: number
 }
 
-export async function submitQuizScore(nickname: string, score: number, correct_count: number): Promise<{ rank: number }> {
+export type QuizMode = 'checker' | 'cube' // iki ayrı yarışma: pul (hamle) / küp
+export async function submitQuizScore(nickname: string, score: number, correct_count: number, mode: QuizMode = 'checker'): Promise<{ rank: number }> {
   return req<{ ok: boolean; rank: number }>('/quiz-marathon/score', {
     method: 'POST',
-    body: JSON.stringify({ nickname, score, correct_count }),
+    body: JSON.stringify({ nickname, score, correct_count, mode }),
   })
 }
 
-export async function quizLeaderboard(limit = 20): Promise<QuizLeaderRow[]> {
-  const data = await req<{ players: QuizLeaderRow[] }>(`/quiz-marathon/leaderboard?limit=${limit}`)
+export async function quizLeaderboard(limit = 20, mode: QuizMode = 'checker'): Promise<QuizLeaderRow[]> {
+  const data = await req<{ players: QuizLeaderRow[] }>(`/quiz-marathon/leaderboard?limit=${limit}&mode=${mode}`)
   return data.players ?? []
 }

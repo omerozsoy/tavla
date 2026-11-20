@@ -20,7 +20,9 @@ class QuizScoreController extends Controller
             'nickname' => 'nullable|string|max:40',
             'score' => 'required|integer|min:1|max:100000', // 0 puan tabelaya yazilmaz (bos/test kayitlari)
             'correct_count' => 'required|integer|min:0|max:100000',
+            'mode' => 'nullable|in:checker,cube', // iki ayrı yarışma: pul (checker) / küp (cube)
         ]);
+        $mode = $data['mode'] ?? 'checker';
 
         // Giriş yapmışsa hesabın takma adı (istemcinin gönderdiği yok sayılır); misafir kendi yazar.
         $user = $request->user('sanctum');
@@ -32,9 +34,10 @@ class QuizScoreController extends Controller
             'score' => $data['score'],
             'correct_count' => $data['correct_count'],
             'ip_hash' => hash('sha256', (string) $request->ip()),
+            'mode' => $mode,
         ]);
 
-        $rank = QuizScore::where('score', '>', $data['score'])->count() + 1;
+        $rank = QuizScore::where('mode', $mode)->where('score', '>', $data['score'])->count() + 1;
 
         return response()->json(['ok' => true, 'rank' => $rank], 201);
     }
@@ -42,13 +45,14 @@ class QuizScoreController extends Controller
     public function leaderboard(Request $request)
     {
         $limit = min(100, max(1, (int) $request->query('limit', 20)));
+        $mode = $request->query('mode') === 'cube' ? 'cube' : 'checker';
 
-        $rows = Cache::remember("quiz_lb:{$limit}", 30, function () use ($limit) {
+        $rows = Cache::remember("quiz_lb:{$mode}:{$limit}", 30, function () use ($limit, $mode) {
             // Her takma-ad tabelada YALNIZ bir kez: en yüksek skoruyla. score DESC sırada
             // ilerleyip bir ad'ı ilk görüşte sabitle (o satır = o adın en yüksek rekoru).
             // ponytail: sabit 500'lük tarama; anonim havuz bunu aşarsa cap'i yükselt.
             $best = [];
-            QuizScore::orderByDesc('score')->orderBy('created_at')
+            QuizScore::where('mode', $mode)->orderByDesc('score')->orderBy('created_at')
                 ->limit(500)
                 ->get(['nickname', 'score', 'correct_count'])
                 ->each(function ($r) use (&$best) {

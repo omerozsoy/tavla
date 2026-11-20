@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import './quizMarathon.css'
 import { LessonView } from './TrainingView'
 import Loading from './Loading'
-import { MARATHON_POOL, questionId, questionPoints, openingToQuestion, type Question } from './trainingCurriculum'
+import { MARATHON_POOL, CUBE_POOL, questionId, questionPoints, openingToQuestion, type Question } from './trainingCurriculum'
 import { quizLeaderboard, submitQuizScore, getOpeningCounts, getOpeningPage, type QuizLeaderRow } from '../api'
 import { DIFF_BANDS, DIFF_BAND_TR, type DiffBand } from './difficultyPositions'
 import { Icon } from './Icon'
@@ -21,10 +21,12 @@ export function pickNext(pool: Question[], seen: Set<string>): Question | null {
   return avail[Math.floor(Math.random() * avail.length)]
 }
 
-// Maraton modu: Karışık (tüm müfredat, MARATHON_POOL) ya da Açılış-band (84k DB havuzu, lazy batch).
-type Mode = 'mixed' | DiffBand
+// Maraton modu: Karışık/Açılış-band = PUL (hamle) yarışması; 'cube' = KÜP yarışması (ayrı).
+type Mode = 'mixed' | 'cube' | DiffBand
+const isOpeningMode = (m: Mode | null): m is DiffBand => m != null && m !== 'mixed' && m !== 'cube'
 // Açılış band -> puan: zorluk tier'ıyla birebir (questionPoints [10,20,25,50,100]).
 const BAND_POINTS: Record<DiffBand, number> = { cok_kolay: 10, kolay: 20, orta: 25, zor: 50, cok_zor: 100 }
+const CUBE_POINTS = 25 // küp kararı başına puan
 const OPENING_BATCH = 50 // band maratonunda DB'den çekilen rastgele sayfa boyu (84k'yı yüklemeden)
 
 /**
@@ -63,7 +65,7 @@ export function QuizMarathon({
   const [gain, setGain] = useState(0) // son cevabın puanı (her cevaptan sonra skor pop-up'ında)
   const [lastMult, setLastMult] = useState(1) // son cevabın seri çarpanı (2 = bu cevap 2 kat)
 
-  const activePool = () => (mode && mode !== 'mixed' ? openingPoolRef.current : MARATHON_POOL)
+  const activePool = () => (mode === 'cube' ? CUBE_POOL : isOpeningMode(mode) ? openingPoolRef.current : MARATHON_POOL)
 
   // Açılış band'inden DB'den rastgele bir sayfa çek, havuza (dedup) ekle. 84k'yı yüklemez.
   const loadOpeningBatch = async (band: DiffBand) => {
@@ -118,6 +120,11 @@ export function QuizMarathon({
       setCurrent(pickNext(MARATHON_POOL, new Set()))
       return
     }
+    if (m === 'cube') {
+      setMode('cube')
+      setCurrent(pickNext(CUBE_POOL, new Set()))
+      return
+    }
     setLoading(true)
     await loadOpeningBatch(m)
     setLoading(false)
@@ -130,8 +137,8 @@ export function QuizMarathon({
       const nextCorrect = correctCount + 1
       // İpucu (veya tekrar) kullanıldıysa puan YOK; ama doğru olduğu için oyun devam eder.
       const mult = scoreable ? streakMultiplier(nextCorrect) : 1 // her 3. doğruda 2 kat
-      // Açılış modunda puan band'e göre; karışıkta sorunun board-zorluğundan (questionPoints).
-      const base = mode && mode !== 'mixed' ? BAND_POINTS[mode] : questionPoints(q)
+      // Puan: küp=sabit, açılış=band, karışık=board-zorluğu (questionPoints).
+      const base = mode === 'cube' ? CUBE_POINTS : isOpeningMode(mode) ? BAND_POINTS[mode] : questionPoints(q)
       const pts = scoreable ? base * mult : 0
       setScore((s) => s + pts)
       setCorrectCount(nextCorrect)
@@ -150,7 +157,7 @@ export function QuizMarathon({
     if (!current) return
     seenRef.current.add(questionId(current))
     // Açılış modunda havuz azaldıysa DB'den bir batch daha çek (seri uzarsa tükenmesin).
-    if (mode && mode !== 'mixed') {
+    if (isOpeningMode(mode)) {
       const unseen = openingPoolRef.current.filter((q) => !seenRef.current.has(questionId(q)))
       if (unseen.length < 5) await loadOpeningBatch(mode)
     }
@@ -223,6 +230,7 @@ export function QuizMarathon({
           correctCount={correctCount}
           bestMult={bestMult}
           accountNick={nickname}
+          quizMode={mode === 'cube' ? 'cube' : 'checker'}
           onRestart={reset}
           onClose={() => setModalOpen(false)}
         />
@@ -258,17 +266,23 @@ function QmModeSelect({
       <h2><Icon name="target" size={20} /> Soru Maratonu</h2>
       {tabs}
       <div className="qm-mode-opts">
+        <div className="qm-mode-sep">🎯 Pul (Hamle) Maratonu</div>
         <button className="qm-mode-btn" onClick={() => onPick('mixed')}>
           <span className="qm-mode-title">Karışık Maraton</span>
           <span className="qm-mode-sub">Tüm konulardan karışık — ilk yanlışta biter</span>
         </button>
-        <div className="qm-mode-sep">Açılış Maratonu — zorluk bandı seç</div>
+        <div className="qm-mode-sep qm-mode-sep-sub">Açılış bandı seç (zorluk)</div>
         {DIFF_BANDS.map((b) => (
           <button key={b} className="qm-mode-btn" onClick={() => onPick(b)}>
             <span className="qm-mode-title">{DIFF_BAND_TR[b]}</span>
             <span className="qm-mode-sub">{cnt ? `${(cnt[b] ?? 0).toLocaleString('tr')} pozisyon · ${BAND_POINTS[b]} puan` : `${BAND_POINTS[b]} puan`}</span>
           </button>
         ))}
+        <div className="qm-mode-sep">🎲 Küp Maratonu</div>
+        <button className="qm-mode-btn" onClick={() => onPick('cube')}>
+          <span className="qm-mode-title">Küp Kararları</span>
+          <span className="qm-mode-sub">Katla / Al-Bırak — gnubg doğrulamalı · {CUBE_POINTS} puan</span>
+        </button>
       </div>
     </div>
   )
@@ -327,20 +341,26 @@ function QmTabs({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
 
 /** Rekorlar SAYFASI (/gunun-pozisyonu/rekorlar): tüm zamanların en yüksek maraton skorları. */
 function RecordsPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }) {
+  const [recMode, setRecMode] = useState<'checker' | 'cube'>('checker')
   const [board, setBoard] = useState<QuizLeaderRow[] | null>(null)
   useEffect(() => {
-    quizLeaderboard(100)
+    setBoard(null)
+    quizLeaderboard(100, recMode)
       .then(setBoard)
       .catch(() => setBoard([]))
-  }, [])
+  }, [recMode])
   const medal = (n: number) => (n === 1 ? '🥇' : n === 2 ? '🥈' : n === 3 ? '🥉' : n)
   return (
-    <div className="register-card leaderboard-card qm-records-page">
+    <div className="register-card qm-mode qm-records-page">
       <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
         <Icon name="x" size={16} />
       </Button>
-      <h2><Icon name="trophy" size={20} /> Soru Maratonu Rekorları</h2>
+      <h2><Icon name="target" size={20} /> Soru Maratonu</h2>
       {tabs}
+      <div className="qm-rec-modes">
+        <button type="button" className={`qm-rec-mode${recMode === 'checker' ? ' on' : ''}`} onClick={() => setRecMode('checker')}>🎯 Pul</button>
+        <button type="button" className={`qm-rec-mode${recMode === 'cube' ? ' on' : ''}`} onClick={() => setRecMode('cube')}>🎲 Küp</button>
+      </div>
       {board == null ? (
         <div className="qm-board-empty">Yükleniyor…</div>
       ) : board.length === 0 ? (
@@ -381,11 +401,11 @@ function RulesPage({ tabs, onClose }: { tabs: ReactNode; onClose: () => void }) 
     { name: 'Çok Zor', pts: 100 },
   ]
   return (
-    <div className="register-card leaderboard-card qm-rules-page">
+    <div className="register-card qm-mode qm-rules-page">
       <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
         <Icon name="x" size={16} />
       </Button>
-      <h2><Icon name="target" size={20} /> Puanlama Sistemi</h2>
+      <h2><Icon name="target" size={20} /> Soru Maratonu</h2>
       {tabs}
 
       <p className="qm-rules-intro">Her doğru cevap, sorunun zorluğuna göre puan kazandırır:</p>
@@ -423,6 +443,7 @@ function GameOver({
   correctCount,
   bestMult,
   accountNick,
+  quizMode,
   onRestart,
   onClose,
 }: {
@@ -431,6 +452,7 @@ function GameOver({
   correctCount: number
   bestMult: number
   accountNick?: string | null // giriş yapmışsa hesabın takma adı: sorulmaz (sunucu da hesaptakini yazar)
+  quizMode: 'checker' | 'cube' // pul / küp yarışması (ayrı tabela)
   onRestart: () => void
   onClose: () => void
 }) {
@@ -439,10 +461,10 @@ function GameOver({
   const [board, setBoard] = useState<QuizLeaderRow[] | null>(null)
 
   useEffect(() => {
-    quizLeaderboard(20)
+    quizLeaderboard(20, quizMode)
       .then(setBoard)
       .catch(() => setBoard([]))
-  }, [])
+  }, [quizMode])
 
   // Oyun bitince skor SORMADAN otomatik tabelaya yazılır (giriş yapmışsa hesap adı, misafir "Oyuncu").
   // GameOver tur başına bir kez mount olur (Baştan Başla → phase playing → unmount) → tek gönderim.
@@ -458,9 +480,9 @@ function GameOver({
     if (submitting || rank != null) return
     setSubmitting(true)
     try {
-      const res = await submitQuizScore((accountNick || '').trim(), score, correctCount)
+      const res = await submitQuizScore((accountNick || '').trim(), score, correctCount, quizMode)
       setRank(res.rank)
-      quizLeaderboard(20)
+      quizLeaderboard(20, quizMode)
         .then(setBoard)
         .catch(() => {})
     } catch {
@@ -486,7 +508,7 @@ function GameOver({
         ) : null}
 
         <div className="qm-board">
-          <div className="qm-board-title">🏆 Skor Tabelası</div>
+          <div className="qm-board-title">🏆 {quizMode === 'cube' ? 'Küp' : 'Pul'} Skor Tabelası</div>
           {board == null ? (
             <div className="qm-board-empty">Yükleniyor…</div>
           ) : board.length === 0 ? (

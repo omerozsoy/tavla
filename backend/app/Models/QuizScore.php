@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class QuizScore extends Model
 {
-    protected $fillable = ['nickname', 'score', 'correct_count', 'ip_hash'];
+    protected $fillable = ['nickname', 'score', 'correct_count', 'ip_hash', 'mode'];
 
     protected $casts = [
         'score' => 'integer',

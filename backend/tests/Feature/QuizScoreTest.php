@@ -36,6 +36,19 @@ class QuizScoreTest extends TestCase
         $this->assertSame('TavlaUstasi', QuizScore::first()->nickname);
     }
 
+    public function test_cube_and_checker_leaderboards_are_separate(): void
+    {
+        $this->postJson('/api/quiz-marathon/score', ['nickname' => 'Pulcu', 'score' => 500, 'correct_count' => 5, 'mode' => 'checker']);
+        $this->postJson('/api/quiz-marathon/score', ['nickname' => 'Kupcu', 'score' => 300, 'correct_count' => 3, 'mode' => 'cube']);
+
+        $checker = $this->getJson('/api/quiz-marathon/leaderboard?mode=checker')->json('players');
+        $cube = $this->getJson('/api/quiz-marathon/leaderboard?mode=cube')->json('players');
+        $this->assertCount(1, $checker);
+        $this->assertSame('Pulcu', $checker[0]['nickname']);
+        $this->assertCount(1, $cube);
+        $this->assertSame('Kupcu', $cube[0]['nickname']);
+    }
+
     public function test_leaderboard_orders_by_score_desc(): void
     {
         foreach ([100, 300, 200] as $s) {
