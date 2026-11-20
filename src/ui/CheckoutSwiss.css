@@ -714,6 +714,12 @@ button.ckw-pm {
   color: var(--accent);
   font-weight: 700;
 }
+/* Aktif adım butonu disabled (tıklanamaz=o anki adım) -> global button:disabled
+   opacity:0.5 tüm düğümü (çember+etiket) soluklaştırıyordu. Aktif adımda tam opak. */
+.ckw-step.on button:disabled {
+  opacity: 1;
+  cursor: default;
+}
 .ckw-step.on .ckw-step-ic {
   border-color: var(--accent);
   background: var(--accent);
