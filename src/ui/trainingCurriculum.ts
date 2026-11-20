@@ -16,13 +16,15 @@ import { parseXgid } from '../engine/xgid'
 import { parseGnuId } from '../engine/gnubgId'
 import { matchGnubgMove } from '../engine/gnubgMove'
 import { DIFF_OPENINGS, DIFF_CURATED, type DiffBand } from './difficultyPositions'
+import { CUBE_POSITIONS } from './cubePositions'
 
 export interface Question {
   state: GameState // zari atilmis, beyaz oynayacak pozisyon (kup sorularinda zar YOK)
   intro?: string // opsiyonel authored ipucu (acilislarda). Yoksa aciklama motordan uretilir.
   answer?: Move // OTORITER dogru hamle (unlu pozisyonlarda XG cevabi). Varsa buna gore puanlanir.
   title?: string // unlu pozisyon adi (oyun sirasinda gosterilir, or. "UBC 2023 Finali — banana split")
-  cube?: 'offer' | 'respond' // KUP karari sorusu: 'offer'=katla/katlama, 'respond'=al/birak. Motor puanlar.
+  cube?: 'offer' | 'respond' // KUP karari sorusu: 'offer'=katla/katlama, 'respond'=al/birak.
+  cubeAnswer?: 'double' | 'nodouble' | 'take' | 'pass' // gnubg-dogrulanmis OTORITER kup cevabi (sabit kup pozisyonlari). Varsa buna gore puanlanir; yoksa yerel motor.
   score?: { my: number; opp: number; to: number } // MAC kupu: skor baglami (varsa mac-equity ile puanlanir)
   id?: string // STABIL pozisyon kimligi (XGID/GNU id ya da board-key). Pozisyon-bazli ilerleme kaydi icin.
   src?: string // kaynak/yazar anahtari (euler, bray, mochy...) — kaynak FILTRESI icin (zorluk olcutu DEGIL)
@@ -1411,25 +1413,22 @@ function buildTest(tier: number): Question[] {
 // Nihai mufredat: yalnizca YETERLI icerigi olan bolumler (konu >=MIN_SECTION, test >=TEST_MIN).
 export interface CurriLesson { id: string; title: string; tier: number; isTest?: boolean; count: number; questions: Question[] }
 export interface CurriTier { key: string; label: string; tier: number; lessons: CurriLesson[] }
-// Küp kararı bölümleri PROSEDÜREL üretilir (famous pozisyon değil): d/i/a-cube = money küp (katla?),
-// m-scorecube = maç-skoru küp. Motor-dereceli (cevap yok), deterministik seed + paylaşılan dedup.
-const CUBE_SEEN = new Set<string>()
-const CUBE_PER_SECTION = 24
-function cubeSeed(id: string): number {
-  let h = 0xc0be
-  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) >>> 0
-  return h
-}
+// Küp kararı bölümleri SABİT + gnubg-doğrulanmış (cubePositions.ts). Üretim donduruldu → kodlar stabil,
+// cevap (cubeAnswer) gnubg-doğru. Zorluk/offer-respond/skor harvest sırasında yakalandı.
 function cubeSectionQuestions(id: string): Question[] {
-  const seed = cubeSeed(id)
-  const half = CUBE_PER_SECTION >> 1 // yarı offer (katla?), yarı respond (al/bırak?)
-  const gen = id.includes('score') ? genMatchCubeQuestions : genCubeQuestions
-  // Seviyeye göre küp zorluğu: Temel(d)=kolay · İleri(a)=zor · Orta(i)/Maç(m-score)=orta.
-  const diff: CubeDiff = id.startsWith('d-') ? 'easy' : id.startsWith('a-') ? 'hard' : 'medium'
-  return [
-    ...gen(seed, half, CUBE_SEEN, 'offer', diff),
-    ...gen(seed ^ 0x5a5a, CUBE_PER_SECTION - half, CUBE_SEEN, 'respond', diff),
-  ]
+  return CUBE_POSITIONS.filter((c) => c.sec === id).map((c) => {
+    const whiteOn = c.p.reduce((a, x) => a + (x > 0 ? x : 0), 0) + c.bw
+    const blackOn = c.p.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + c.bb
+    const state: GameState = {
+      points: c.p.slice(),
+      bar: { white: c.bw, black: c.bb },
+      off: { white: 15 - whiteOn, black: 15 - blackOn },
+      turn: 'white',
+      dice: [],
+      diceUsed: [],
+    }
+    return { state, cube: c.c, score: c.s ? { my: c.s[0], opp: c.s[1], to: c.s[2] } : undefined, cubeAnswer: c.a }
+  })
 }
 
 export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {

@@ -432,24 +432,35 @@ export function LessonView({ lessonId, onBack, fixed, startIndex, onAnswered, ch
     gradedRef.current = idx
     setChecking(true)
     try {
-      const probs = await botRef.current!.evalPosition(turnStart, 'white')
-      const sc = q.score
-      const myAway = sc ? sc.to - sc.my : 0
-      const oppAway = sc ? sc.to - sc.opp : 0
       let ok: boolean
       let msg: string
-      if (q.cube === 'respond') {
-        const r = sc
-          ? matchTakeLoss(probs, action === 'take' ? 'take' : 'pass', 2, myAway, oppAway)
-          : takeLoss(probs, action === 'take' ? 'take' : 'pass')
-        ok = r.normalizedEquityLoss <= EPS
-        msg = t(r.bestAction === 'take' ? 'tr.cube.ansTake' : 'tr.cube.ansPass')
+      if (q.cubeAnswer) {
+        // gnubg-dogrulanmis OTORITER cevap (sabit kup pozisyonlari): kullanicinin aksiyonu dogru mu?
+        ok = action === q.cubeAnswer
+        msg = t(
+          q.cubeAnswer === 'double' ? 'tr.cube.ansDouble'
+            : q.cubeAnswer === 'nodouble' ? 'tr.cube.ansNoDouble'
+            : q.cubeAnswer === 'take' ? 'tr.cube.ansTake'
+            : 'tr.cube.ansPass',
+        )
       } else {
-        const r = sc
-          ? matchOfferLoss(probs, action === 'double' ? 'double' : 'no-double', 1, myAway, oppAway)
-          : offerLoss(probs, action === 'double' ? 'double' : 'no-double')
-        ok = r.normalizedEquityLoss <= EPS
-        msg = t(r.bestAction === 'double' ? 'tr.cube.ansDouble' : 'tr.cube.ansNoDouble')
+        const probs = await botRef.current!.evalPosition(turnStart, 'white')
+        const sc = q.score
+        const myAway = sc ? sc.to - sc.my : 0
+        const oppAway = sc ? sc.to - sc.opp : 0
+        if (q.cube === 'respond') {
+          const r = sc
+            ? matchTakeLoss(probs, action === 'take' ? 'take' : 'pass', 2, myAway, oppAway)
+            : takeLoss(probs, action === 'take' ? 'take' : 'pass')
+          ok = r.normalizedEquityLoss <= EPS
+          msg = t(r.bestAction === 'take' ? 'tr.cube.ansTake' : 'tr.cube.ansPass')
+        } else {
+          const r = sc
+            ? matchOfferLoss(probs, action === 'double' ? 'double' : 'no-double', 1, myAway, oppAway)
+            : offerLoss(probs, action === 'double' ? 'double' : 'no-double')
+          ok = r.normalizedEquityLoss <= EPS
+          msg = t(r.bestAction === 'double' ? 'tr.cube.ansDouble' : 'tr.cube.ansNoDouble')
+        }
       }
       setCubeMsg(msg)
       const firstTryOk = ok && !hinted
