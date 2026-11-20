@@ -642,7 +642,6 @@ import {
   isBankTransfer,
   shopierRedirect,
   shopierOrderFromRedirect,
-  paymentStatus,
   getBankTransferInfo,
   type CheckoutResult,
   type BankTransferResult,
@@ -1363,7 +1362,8 @@ export default function App() {
       const order = shopierOrderFromRedirect(url)
       if (order) {
         try {
-          localStorage.setItem('tavla.shopierPending', JSON.stringify({ order, at: Date.now() }))
+          // url'i de sakla -> same-tab'e düşüp kullanıcı dönerse boot bekleme ekranını url ile açar.
+          localStorage.setItem('tavla.shopierPending', JSON.stringify({ order, url, at: Date.now() }))
         } catch {
           /* yoksay */
         }
@@ -2575,10 +2575,10 @@ export default function App() {
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
 
-  // SHOPIER ÖDEME DÖNÜŞÜ: buyer Shopier'den siteye DÖNMÜYOR (Shopier kısıtı). Ödeme öncesi order_id
-  // localStorage'a yazıldı (goShopier); kullanıcı siteye döndüğünde (boot) burada pollarız. Settle
-  // olunca (webhook gelmez -> reconciler ~1dk) bakiye güncellenir + "yüklendi" bildirilir. İdempotent:
-  // settle olmazsa ~2.5dk sonra "birkaç dakikada yansıyacak" der, bayrağı temizler.
+  // SHOPIER ÖDEME DÖNÜŞÜ: buyer Shopier'den siteye DÖNMÜYOR (Shopier kısıtı). Ödeme öncesi {order,url}
+  // localStorage'a yazıldı (goShopier). Kullanıcı siteye döndüğünde (boot) bekleme/yoklama EKRANINI
+  // aç (ShopierWaiting pollar: settle olunca "yüklendi" + bakiye, reconciler ~1dk). Popup engellenip
+  // same-tab'e düşülse bile dönüşte kullanıcı bu ekranı görür (ana sayfa değil).
   useEffect(() => {
     if (!user) return
     let raw: string | null = null
@@ -2588,66 +2588,22 @@ export default function App() {
       return
     }
     if (!raw) return
-    const clear = () => {
+    try {
+      const parsed = JSON.parse(raw)
+      const order = typeof parsed?.order === 'string' ? parsed.order : ''
+      const url = typeof parsed?.url === 'string' ? parsed.url : ''
+      const fresh = !parsed?.at || Date.now() - parsed.at <= 86_400_000
+      if (order && fresh) {
+        setShopierWait({ order, url }) // dönüşte bekleme ekranını göster (yoklamayı ShopierWaiting yapar)
+      } else {
+        localStorage.removeItem('tavla.shopierPending')
+      }
+    } catch {
       try {
         localStorage.removeItem('tavla.shopierPending')
       } catch {
         /* yoksay */
       }
-    }
-    let order = ''
-    try {
-      const parsed = JSON.parse(raw)
-      order = typeof parsed?.order === 'string' ? parsed.order : ''
-      if (parsed?.at && Date.now() - parsed.at > 86_400_000) order = '' // 1 günden eski -> bayat
-    } catch {
-      order = ''
-    }
-    if (!order) {
-      clear()
-      return
-    }
-    let alive = true
-    let tries = 0
-    notify.info('Ödemen kontrol ediliyor…')
-    const tick = async () => {
-      if (!alive) return
-      tries++
-      try {
-        const r = await paymentStatus(order)
-        if (r.status === 'paid') {
-          alive = false
-          clear()
-          if (typeof r.balance === 'number') setUser((u) => (u ? { ...u, coins: r.balance as number } : u))
-          notify.success('Ödemen alındı — hesabına yüklendi! 🎉')
-          return
-        }
-        if (r.status === 'failed') {
-          alive = false
-          clear()
-          notify.error('Ödemen tamamlanamadı.')
-          return
-        }
-      } catch {
-        /* geçici hata -> bir sonraki tick'te tekrar dene */
-      }
-      if (tries >= 30 && alive) {
-        alive = false
-        clear()
-        notify.info('Ödemen birkaç dakika içinde hesabına yansıyacak.')
-      }
-    }
-    const timer = setInterval(() => {
-      if (!alive) {
-        clearInterval(timer)
-        return
-      }
-      void tick()
-    }, 5000)
-    void tick()
-    return () => {
-      alive = false
-      clearInterval(timer)
     }
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -11272,7 +11228,14 @@ export default function App() {
           onPaid={(balance) => {
             if (typeof balance === 'number') setUser((u) => (u ? { ...u, coins: balance } : u))
           }}
-          onClose={() => setShopierWait(null)}
+          onClose={() => {
+            try {
+              localStorage.removeItem('tavla.shopierPending')
+            } catch {
+              /* yoksay */
+            }
+            setShopierWait(null)
+          }}
         />
       )}
       {(bankDefer || bankData) && (

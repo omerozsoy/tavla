@@ -73,14 +73,16 @@ export default function ShopierWaiting({
             <div className="ckw-wait-spin" aria-hidden="true">
               <span className="btn-spinner" />
             </div>
-            <h2 className="ckw-title">Ödemen bekleniyor…</h2>
+            <h2 className="ckw-title">Ödemen kontrol ediliyor…</h2>
             <p className="ckw-wait-text">
-              Ödeme sayfası <strong>yeni sekmede</strong> açıldı. Ödemeni tamamladığında coin'lerin
-              buraya otomatik yüklenecek — bu ekranı kapatmana gerek yok.
+              Ödemeni Shopier sayfasında tamamladığında coin'lerin buraya <strong>otomatik</strong>{' '}
+              yüklenecek — bu ekranı kapatmana gerek yok (en geç birkaç dakika).
             </p>
-            <a className="ckw-btn ckw-btn-ghost" href={url} target="_blank" rel="noopener noreferrer">
-              <Icon name="credit-card" size={16} /> Ödeme sayfasını tekrar aç
-            </a>
+            {url && (
+              <a className="ckw-btn ckw-btn-ghost" href={url} target="_blank" rel="noopener noreferrer">
+                <Icon name="credit-card" size={16} /> Ödeme sayfasını aç
+              </a>
+            )}
             <button type="button" className="ckw-wait-cancel" onClick={onClose}>
               Vazgeç
             </button>
