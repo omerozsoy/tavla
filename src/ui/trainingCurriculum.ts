@@ -118,8 +118,9 @@ function genQuestions(seed: number, minMoves: number, contact: boolean, hardness
   return pool.slice(start, start + count).map((p) => ({ state: p.state }))
 }
 
-// KUP kararlari (money): ara-oyun pozisyonu uret, ZAR ATMADAN "katla mi?" sor (offer).
-function genCubeQuestions(seed: number, count: number, seen = new Set<string>()): Question[] {
+// KUP kararlari (money): ara-oyun pozisyonu uret, ZAR ATMADAN sor. kind='offer' (katla mi?) ya da
+// kind='respond' (rakip katladi -> al mi birak mi?). Ikisi de ayni pozisyon turunden (white perspektifi).
+function genCubeQuestions(seed: number, count: number, seen = new Set<string>(), kind: 'offer' | 'respond' = 'offer'): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
   let guard = 0
@@ -135,13 +136,13 @@ function genCubeQuestions(seed: number, count: number, seen = new Set<string>())
     const k = boardKey(s) // kup: zar yok -> board bazli dedup (tekrar eden kup pozisyonu gelmesin)
     if (seen.has(k)) continue
     seen.add(k)
-    out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer' })
+    out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: kind })
   }
   return out
 }
 
 // MAC kupu: ayni sekilde pozisyon + MAC SKORU baglamı (away 2..6). Degerlendirme matchCube.ts (match-equity).
-function genMatchCubeQuestions(seed: number, count: number, seen = new Set<string>()): Question[] {
+function genMatchCubeQuestions(seed: number, count: number, seen = new Set<string>(), kind: 'offer' | 'respond' = 'offer'): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
   let guard = 0
@@ -160,7 +161,7 @@ function genMatchCubeQuestions(seed: number, count: number, seen = new Set<strin
     const myAway = 2 + Math.floor(rng() * 5)
     const oppAway = 2 + Math.floor(rng() * 5)
     const to = Math.max(myAway, oppAway) + 1 + Math.floor(rng() * 4)
-    out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: 'offer', score: { my: to - myAway, opp: to - oppAway, to } })
+    out.push({ state: { ...s, dice: [], diceUsed: [] }, cube: kind, score: { my: to - myAway, opp: to - oppAway, to } })
   }
   return out
 }
@@ -1409,9 +1410,12 @@ function cubeSeed(id: string): number {
 }
 function cubeSectionQuestions(id: string): Question[] {
   const seed = cubeSeed(id)
-  return id.includes('score')
-    ? genMatchCubeQuestions(seed, CUBE_PER_SECTION, CUBE_SEEN)
-    : genCubeQuestions(seed, CUBE_PER_SECTION, CUBE_SEEN)
+  const half = CUBE_PER_SECTION >> 1 // yarı offer (katla?), yarı respond (al/bırak?)
+  const gen = id.includes('score') ? genMatchCubeQuestions : genCubeQuestions
+  return [
+    ...gen(seed, half, CUBE_SEEN, 'offer'),
+    ...gen(seed ^ 0x5a5a, CUBE_PER_SECTION - half, CUBE_SEEN, 'respond'),
+  ]
 }
 
 export const CURRICULUM: CurriTier[] = CURRI_TIERS.map((td) => {
