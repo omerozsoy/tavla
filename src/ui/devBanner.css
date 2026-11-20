@@ -1,0 +1,25 @@
+/* Geliştirme uyarısı: sayfanın EN ÜSTÜNDE tam-genişlik kırmızı bant.
+   register-overlay flex-row olduğu için fixed ile akıştan çıkar; sabit yükseklik +
+   body:has(.dev-banner) padding-top ile header/içerik aşağı iter (örtmez). */
+.dev-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2147483000;
+  height: 38px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px !important; /* register-overlay.page>* bottom-nav/safe-area padding'ini ez */
+  background-color: #c0392b !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+body:has(.dev-banner) {
+  padding-top: 38px;
+}

@@ -167,6 +167,7 @@ import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
 import { Icon, type IconName } from './ui/Icon'
+import { DevBanner } from './ui/DevBanner'
 import ConfirmModal from './ui/ConfirmModal'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
@@ -11167,6 +11168,7 @@ export default function App() {
       )}
       {trainingOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <DevBanner />
           <Suspense fallback={null}>
             <TrainingView titleOverride={menuTitle('training')} onClose={() => setTrainingOpen(false)} />
           </Suspense>
@@ -11174,6 +11176,7 @@ export default function App() {
       )}
       {dailyPuzzleOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <DevBanner />
           <Suspense fallback={null}>
             <QuizMarathon
               onClose={() => setDailyPuzzleOpen(false)}
@@ -11186,6 +11189,7 @@ export default function App() {
       )}
       {arenaKey && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <DevBanner />
           <Suspense fallback={null}>
             <ArenaGame
               arenaKey={arenaKey}
