@@ -1086,7 +1086,7 @@ export default function App() {
   const flashOpening = (white: number, black: number) => {
     setOpeningShow({ white, black, winner: white > black ? 'white' : 'black' })
     if (openingShowTimer.current) window.clearTimeout(openingShowTimer.current)
-    openingShowTimer.current = window.setTimeout(() => setOpeningShow(null), 1700)
+    openingShowTimer.current = window.setTimeout(() => setOpeningShow(null), 2500)
   }
   // Online oda
   const [room, setRoom] = useState<RoomState | null>(null)
@@ -5230,7 +5230,7 @@ export default function App() {
       setStarter(winner)
       setOpening(null)
       setMessage(t('msg.playing', { name: pName(winner), dice: `${winnerDie}, ${loserDie}` }))
-    }, 1700)
+    }, 2500)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, openingResult])
@@ -7998,8 +7998,15 @@ export default function App() {
         authoritative: res.room.authoritative,
         dice_authority: res.room.dice_authority,
       })
-    } catch {
-      setRoomError(t('mp.connError'))
+    } catch (e) {
+      // Sunucunun ANLAŞILIR sebebini kullanıcıya GÖSTER (eskiden hep generic "bağlantı hatası"ydı →
+      // kullanıcı neden giremediğini bilmiyordu): 409 "başka turnuva maçın sürüyor", 422 "maç bitti",
+      // 403 "bu maçta değilsin", 404 "maç bulunamadı" vb. fail() {message} döndürür -> e.message taşır.
+      // Yalnız 4xx (beklenen) mesajını göster; ağ/5xx geçici hatada generic bağlantı mesajı kalsın.
+      const known = e instanceof ApiErr && e.status >= 400 && e.status < 500 && !!e.message
+      const msg = known ? (e as ApiErr).message : t('mp.connError')
+      setRoomError(msg)
+      notify.error(msg) // toast: kurulum/turnuva ekranında da görünür
       setTournOpen(true)
       enteredNoticeRef.current = '' // giris basarisiz -> ayni mac tekrar denenebilsin (guvenlik timer/banner)
     } finally {

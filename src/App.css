@@ -8353,13 +8353,49 @@ html[data-board='yilbasi'] .checker.black {
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  opacity: 0.5;
+  opacity: 1; /* kaybeden zar SİLİK değil — iki zar da net görünür */
   font-size: 0.78rem;
 }
 .opening-side.win {
-  opacity: 1;
-  font-weight: 400;
+  font-weight: 600;
   color: #ffd54a;
+}
+/* Kazanan zar: pop ile büyüyüp yerleşir + altın halka nabız gibi parlar ("kazandı" hissi). */
+.opening-side.win .die-face {
+  animation:
+    opening-win-pop 820ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    opening-win-glow 1.1s ease-in-out 0.35s infinite;
+}
+@keyframes opening-win-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.24);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+@keyframes opening-win-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 213, 74, 0.85),
+      0 0 10px rgba(255, 213, 74, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(255, 213, 74, 1),
+      0 0 22px rgba(255, 213, 74, 0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opening-side.win .die-face {
+    animation: none;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px rgba(255, 213, 74, 0.9);
+  }
 }
 /* Koyu modal kutusu -> alt yazi ACIK ton olmali (var(--muted) koyu kaliyordu, okunmuyordu) */
 .result-box .err-detail {
