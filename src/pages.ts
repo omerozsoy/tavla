@@ -123,6 +123,8 @@ export const PAGES: PageDef[] = [
   { key: 'info-scoring', slug: 'bilgi/puanlama', labelKey: 'info.tab.scoring', icon: 'chart-line', group: 'info', hideInGame: true },
   { key: 'info-badges', slug: 'bilgi/basarilarim', labelKey: 'ach.title', icon: 'medal', group: 'info', hideInGame: true },
   { key: 'info-fair', slug: 'bilgi/adil-zar', labelKey: 'fair.title', icon: 'dice', group: 'info', hideInGame: true },
+  // Destek: içeriği /iletisim ile birebir aynı (ServiceLanding 'destek' slug'ı). Bilgi grubunda.
+  { key: 'destek', slug: 'destek', labelKey: 'menu.destek', icon: 'chat', group: 'info', hideInGame: true },
 ]
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))

@@ -116,6 +116,10 @@ export default function Footer({ columns }: Props) {
             Tavlatv internet sitesinde yer alan tüm içeriğin her türlü hakkı Tavlatv'ye aittir. İzin
             alınmadan, kaynak gösterilerek dahi alıntı yapılamaz.
           </p>
+          <p className="foot-legal">
+            TavlaTV, Edda Profesyonel Müzayedecilik Yazılım Ticaret Limited Şirketi tarafından
+            işletilmektedir.
+          </p>
         </div>
       </footer>
   )

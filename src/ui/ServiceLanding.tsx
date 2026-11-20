@@ -77,6 +77,15 @@ const META: Record<string, Meta> = {
     subject: 'genel',
     formHeading: 'Bize mesaj gönderin',
   },
+  // Destek: iletisim ile birebir aynı içerik, yalnız başlık "Destek".
+  destek: {
+    eyebrow: 'Bize Ulaşın',
+    h1: 'Destek',
+    heroSub:
+      'Turnuva organizasyonu, iş birliği ve her türlü sorunuz için bize yazın. En kısa sürede size dönüş yapalım.',
+    subject: 'genel',
+    formHeading: 'Bize mesaj gönderin',
+  },
 }
 
 // ---- Hardcoded fallback govdeler (DB body yoksa) --------------------------------
@@ -348,6 +357,7 @@ function fallbackBody(slug: string) {
     case 'avm-tavla-turnuvasi':
       return <AvmBody />
     case 'iletisim':
+    case 'destek':
       return <IletisimBody />
     default:
       return null
@@ -377,7 +387,7 @@ export default function ServiceLanding({ slug, onClose }: Props) {
         <p className="service-landing-sub">{meta.heroSub}</p>
       </header>
       <div className="info-tab-pane seo-landing-body-wrap">
-        {slug === 'iletisim' && <ContactChannels />}
+        {(slug === 'iletisim' || slug === 'destek') && <ContactChannels />}
         <div className="info-rich rich seo-landing-body">
           {/* DB gövdesi galeri-farkında render edilir (<resimgalerisi>/<ad> token'ları
               gerçek galeriye çevrilir — InfoPane; aksi halde token düz metin kalırdı). */}

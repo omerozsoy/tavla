@@ -262,6 +262,7 @@ const SEO_TITLES: Record<string, string> = {
   'belediye-tavla-turnuvasi': 'Belediye Tavla Turnuvası Organizasyonu | TavlaTv',
   'avm-tavla-turnuvasi': 'AVM Tavla Turnuvası Organizasyonu | TavlaTv',
   'iletisim': 'İletişim | TavlaTv',
+  'destek': 'Destek | TavlaTv',
   'tek-oyun': 'Tek Oyun Tavla | TavlaTv',
   'yeni-oyun': 'Online Tavla Maçı Oyna | TavlaTv',
   'yz-ile-oyna': 'Yapay Zekâya Karşı Tavla Oyna | TavlaTv',
@@ -329,6 +330,8 @@ const SEO_DESCS: Record<string, string> = {
     'AVM’ler için ziyaretçi çeken tavla turnuvası organizasyonu: sahne kurulumu, sponsorluk ve canlı skor ekranları. Marka etkileşimi yaratan etkinlik. Teklif alın.',
   'iletisim':
     'TavlaTV ile iletişime geçin: turnuva organizasyonu, sponsorluk, iş birliği ve sorularınız için bize yazın. En kısa sürede size dönüş yapalım.',
+  'destek':
+    'TavlaTV destek: platformla ilgili soru, sorun ve geri bildirimleriniz için bize yazın. En kısa sürede size dönüş yapalım.',
   'tek-oyun':
     'Tek başına tavla oyna: yapay zekâya karşı pratik yap, açılışları ve hamleleri dene. Ücretsiz ve kayıt gerektirmez.',
   'yeni-oyun':
@@ -421,6 +424,7 @@ const SEO_TITLES_EN: Record<string, string> = {
   'belediye-tavla-turnuvasi': 'Municipal Backgammon Tournament Organization | GammonTV',
   'avm-tavla-turnuvasi': 'Shopping Mall Backgammon Tournament Organization | GammonTV',
   'iletisim': 'Contact | GammonTV',
+  'destek': 'Support | GammonTV',
   'tek-oyun': 'Single-Player Backgammon | GammonTV',
   'yeni-oyun': 'Play an Online Backgammon Match | GammonTV',
   'yz-ile-oyna': 'Play Backgammon Against AI | GammonTV',
@@ -2080,6 +2084,7 @@ export default function App() {
         case 'belediye-tavla-turnuvasi':
         case 'avm-tavla-turnuvasi':
         case 'iletisim':
+        case 'destek': // içeriği iletisim ile birebir aynı (ServiceLanding)
           setServicePage(seg[0])
           break
         case 'tavla-rehberi': // Tavla Rehberi blog: hub (/tavla-rehberi) veya yazi (/tavla-rehberi/<slug>)
@@ -10441,6 +10446,8 @@ export default function App() {
     'info-pr': () => openInfoTab('pr'),
     'info-badges': () => openInfoTab('badges'),
     'info-fair': () => openInfoTab('fair'),
+    // Destek: /iletisim ile aynı ServiceLanding içeriği (openService henüz tanımsız -> inline goPage).
+    destek: () => goPage(() => setServicePage('destek')),
   }
   // Admin panelden (menu_items) override'lar: ozel ad (o dilde), gorunurluk, sira.
   const menuLabel = (key: string): string | undefined => menuOverrides[key]?.labels?.[lang]
@@ -10528,6 +10535,7 @@ export default function App() {
       { key: 'info-badges', labelKey: 'ach.title', href: '/bilgi/basarilarim', onClick: () => openInfoTab('badges') },
       { key: 'info-fair', labelKey: 'fair.title', href: '/bilgi/adil-zar', onClick: () => openInfoTab('fair') },
       { key: 'org-iletisim', labelKey: '', label: 'İletişim', href: '/iletisim', onClick: () => openService('iletisim') },
+      { key: 'info-destek', labelKey: '', label: 'Destek', href: '/destek', onClick: () => openService('destek') },
     ],
   })
   // 5. kolon: "Yasal" — hukuki sayfalar (DB'den) + Cerez Tercihleri (banner/modal).

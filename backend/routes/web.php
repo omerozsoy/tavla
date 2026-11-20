@@ -189,7 +189,7 @@ Route::fallback(function (Request $request) {
     static $valid = [
         'online-tavla', 'tavla-oyna', 'backgammon',
         'tavla-turnuvasi-organizasyonu', 'kurumsal-tavla-turnuvasi',
-        'belediye-tavla-turnuvasi', 'avm-tavla-turnuvasi', 'iletisim',
+        'belediye-tavla-turnuvasi', 'avm-tavla-turnuvasi', 'iletisim', 'destek',
         'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna', 'maca-davet', 'duello',
         'klasik-tavla', 'klasik-yapay-zeka', 'klasik-arkadasinla-oyna',
         'tavlatv-super-lig', 'takimlar-ligi',
