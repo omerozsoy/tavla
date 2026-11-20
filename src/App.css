@@ -24437,16 +24437,13 @@ body.has-bottom-nav .register-overlay.page > *:not(.register-overlay):not(.dm-zo
   text-align: center;
   box-shadow: 0 0 0 2px var(--card-bg);
 }
-/* Mini-sepet (compact ajax sepet): üst bar sepet ikonunun altında ~5sn belirir. */
-.cart-slot {
-  position: relative;
-  display: inline-flex;
-}
+/* Mini-sepet (compact ajax sepet): sepete ekleyince üst-sağda ~5sn belirir. position:fixed +
+   yüksek z-index -> header'ın overflow-x:auto kırpmasından ve sayfa overlay'lerinden (z-index 50) kaçar. */
 .mini-cart {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 60;
+  position: fixed;
+  top: calc(var(--header-h, 64px) + 8px);
+  right: clamp(12px, 3vw, 40px);
+  z-index: 1000;
   width: 184px;
   padding: 12px;
   display: flex;

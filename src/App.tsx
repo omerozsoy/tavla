@@ -9905,35 +9905,20 @@ export default function App() {
               <span className="notif-badge">{dmUnread + unreadNotif > 9 ? '9+' : dmUnread + unreadNotif}</span>
             )}
           </Button>
-          {/* Alışveriş sepeti: üst barda GİZLİ, sepete ürün eklenince görünür; tıklanınca sepet sayfası açılır */}
+          {/* Alışveriş sepeti: üst barda GİZLİ, sepete ürün eklenince görünür; tıklanınca sepet sayfası açılır.
+              Mini-sepet AYRI render edilir (top-level, position:fixed) — header overflow-x:auto onu kırpıyordu. */}
           {cartCount > 0 && (
-            <span className="cart-slot">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative [&_svg]:size-[24px]!"
-                onClick={() => goPage(() => setCartOpen(true))}
-                title={t('shop.cart')}
-                aria-label={t('shop.cart')}
-              >
-                <Icon name="cart" size={24} />
-                <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>
-              </Button>
-              {/* Mini-sepet: ekleyince ~5sn beliren compact bildirim. Sepet/ödeme sayfasındayken gösterme. */}
-              {miniCart && !cartOpen && !deliveryOpen && (
-                <div className="mini-cart" role="status">
-                  <div className="mini-cart-top"><Icon name="check" size={14} /> Sepete eklendi</div>
-                  <div className="mini-cart-count">{cartCount} ürün sepette</div>
-                  <button
-                    type="button"
-                    className="mini-cart-go"
-                    onClick={() => { setMiniCart(false); goPage(() => setCartOpen(true)) }}
-                  >
-                    Sepete git <Icon name="arrow-right" size={14} />
-                  </button>
-                </div>
-              )}
-            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative [&_svg]:size-[24px]!"
+              onClick={() => goPage(() => setCartOpen(true))}
+              title={t('shop.cart')}
+              aria-label={t('shop.cart')}
+            >
+              <Icon name="cart" size={24} />
+              <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>
+            </Button>
           )}
           <span className="account-sep" />
           <Button
@@ -11320,6 +11305,21 @@ export default function App() {
           onPay={(sel, method, bd) => runCheckout(cartItems, null, sel, method, bd)}
           stepsSlot={renderCheckoutSteps('delivery')}
         />
+      )}
+      {/* Mini-sepet (compact): sepete ekleyince ~5sn üst-sağda belirir. Top-level + position:fixed —
+          header'ın overflow-x:auto'su dropdown'ı kırpıyordu. Sepet/ödeme sayfasındayken gösterme. */}
+      {miniCart && cartCount > 0 && !cartOpen && !deliveryOpen && (
+        <div className="mini-cart" role="status">
+          <div className="mini-cart-top"><Icon name="check" size={14} /> Sepete eklendi</div>
+          <div className="mini-cart-count">{cartCount} ürün sepette</div>
+          <button
+            type="button"
+            className="mini-cart-go"
+            onClick={() => { setMiniCart(false); goPage(() => setCartOpen(true)) }}
+          >
+            Sepete git <Icon name="arrow-right" size={14} />
+          </button>
+        </div>
       )}
       {shopierWait && (
         <ShopierWaiting
