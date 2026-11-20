@@ -188,6 +188,7 @@ const ArenaGame = lazy(() => import('./ui/ArenaGame').then((m) => ({ default: m.
 type ArenaKey = 'judge' | 'time' | 'cube3' | 'tekcan'
 const ARENA_SLUGS: Record<ArenaKey, string> = { judge: 'dogru-hamle-mi', time: 'zamana-karsi', cube3: 'kup-karari', tekcan: 'tek-can' }
 const ARENA_BY_SLUG: Record<string, ArenaKey> = { 'dogru-hamle-mi': 'judge', 'zamana-karsi': 'time', 'kup-karari': 'cube3', 'tek-can': 'tekcan' }
+const ARENA_PAGEKEY: Record<ArenaKey, string> = { judge: 'arenaJudge', time: 'arenaTime', cube3: 'arenaCube', tekcan: 'arenaTekcan' } // menü vurgusu için
 const LiveTournamentSystem = lazy(() => import('./ui/LiveTournamentSystem'))
 const OrganizerPanel = lazy(() => import('./ui/OrganizerPanel'))
 const Tournaments = lazy(() => import('./ui/Tournaments'))
@@ -10874,6 +10875,7 @@ export default function App() {
     lessonsOpen ||
     trainingOpen ||
     dailyPuzzleOpen ||
+    !!arenaKey ||
     liveTournOpen ||
     soloOpen ||
     !!contentView ||
@@ -10936,6 +10938,8 @@ export default function App() {
                             ? 'training'
                           : dailyPuzzleOpen
                             ? 'dailyPuzzle'
+                          : arenaKey
+                            ? ARENA_PAGEKEY[arenaKey]
                           : liveTournOpen
                             ? 'liveTournSystem'
                           : organizerPanelOpen
