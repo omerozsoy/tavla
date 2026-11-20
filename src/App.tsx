@@ -1088,7 +1088,7 @@ export default function App() {
   const flashOpening = (white: number, black: number) => {
     setOpeningShow({ white, black, winner: white > black ? 'white' : 'black' })
     if (openingShowTimer.current) window.clearTimeout(openingShowTimer.current)
-    openingShowTimer.current = window.setTimeout(() => setOpeningShow(null), 2500)
+    openingShowTimer.current = window.setTimeout(() => setOpeningShow(null), 3000)
   }
   // Online oda
   const [room, setRoom] = useState<RoomState | null>(null)
@@ -5319,7 +5319,7 @@ export default function App() {
       setStarter(winner)
       setOpening(null)
       setMessage(t('msg.playing', { name: pName(winner), dice: `${winnerDie}, ${loserDie}` }))
-    }, 2500)
+    }, 3000)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, openingResult])
