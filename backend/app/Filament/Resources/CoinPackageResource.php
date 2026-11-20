@@ -111,8 +111,8 @@ class CoinPackageResource extends Resource
                     ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
                 Tables\Columns\TextColumn::make('discount')->label('Avantaj')
                     ->formatStateUsing(fn ($state) => (int) $state > 0 ? '%'.(int) $state : '—'),
-                Tables\Columns\IconColumn::make('popular')->label('Popüler')->boolean(),
-                Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
+                Tables\Columns\ToggleColumn::make('popular')->label('Popüler'),
+                Tables\Columns\ToggleColumn::make('published')->label('Yayında'), // satır-içi tıkla-yayınla (detaya girmeden)
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable()->toggleable(),
             ])
             ->filters([
