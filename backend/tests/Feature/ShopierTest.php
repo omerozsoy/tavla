@@ -160,6 +160,32 @@ class ShopierTest extends TestCase
         $this->assertSame(500, (int) $u->fresh()->coins);
     }
 
+    public function test_reconcile_prunes_abandoned_pending_but_keeps_recent_and_bank(): void
+    {
+        $this->enableShopier();
+        Http::fake(['*/orders*' => Http::response([], 200)]); // hiçbir ödeme settle olmaz
+        $u = User::factory()->create(['coins' => 0]);
+
+        // 1) 3 saatlik terk edilmiş Shopier pending -> SİLİNMELİ
+        $old = $this->coinPayment($u, 'TOLD', 'prod_old');
+        Payment::whereKey($old->id)->update(['created_at' => now()->subHours(3)]);
+        // 2) Taze (10dk) Shopier pending -> KALMALI
+        $fresh = $this->coinPayment($u, 'TFRESH', 'prod_fresh');
+        Payment::whereKey($fresh->id)->update(['created_at' => now()->subMinutes(10)]);
+        // 3) Eski havale pending (shopier_product_id YOK) -> KALMALI (kullanıcı saatler sonra yatırabilir)
+        $bank = Payment::create([
+            'user_id' => $u->id, 'kind' => 'coins', 'order_id' => 'TBANK', 'amount' => 10000,
+            'coins' => 100, 'currency' => '949', 'status' => 'pending', 'payment_method' => 'bank_transfer',
+        ]);
+        Payment::whereKey($bank->id)->update(['created_at' => now()->subHours(5)]);
+
+        $this->artisan('shopier:reconcile')->assertSuccessful();
+
+        $this->assertNull($old->fresh(), 'terk edilmiş Shopier pending silinmeli');
+        $this->assertNotNull($fresh->fresh(), 'taze Shopier pending kalmalı');
+        $this->assertNotNull($bank->fresh(), 'havale pending (shopier_product_id yok) kalmalı');
+    }
+
     public function test_webhook_ignores_unpaid_order(): void
     {
         $this->enableShopier();

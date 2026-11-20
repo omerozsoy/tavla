@@ -30,25 +30,38 @@ class ShopierReconcile extends Command
             ->where('created_at', '>=', now()->subDays(3))
             ->get()
             ->keyBy('shopier_product_id');
-        if ($pending->isEmpty()) {
-            return self::SUCCESS;
-        }
-
-        $settled = 0;
-        foreach (Shopier::listOrders(100) as $order) {
-            if (! is_array($order) || ! Shopier::orderPaid($order)) {
-                continue;
-            }
-            foreach (Shopier::orderProductIds($order) as $pid) {
-                $p = $pending[$pid] ?? null;
-                if ($p && app(PaymentController::class)->settle($p, 'shopier:reconcile:'.($order['id'] ?? ''))) {
-                    $settled++;
-                    $pending->forget($pid);
+        // Pending varsa Shopier'den çekip settle et (webhook'tan bağımsız yedek fulfillment).
+        if ($pending->isNotEmpty()) {
+            $settled = 0;
+            foreach (Shopier::listOrders(100) as $order) {
+                if (! is_array($order) || ! Shopier::orderPaid($order)) {
+                    continue;
+                }
+                foreach (Shopier::orderProductIds($order) as $pid) {
+                    $p = $pending[$pid] ?? null;
+                    if ($p && app(PaymentController::class)->settle($p, 'shopier:reconcile:'.($order['id'] ?? ''))) {
+                        $settled++;
+                        $pending->forget($pid);
+                    }
                 }
             }
+            if ($settled > 0) {
+                $this->info("shopier:reconcile: {$settled} ödeme settle edildi.");
+            }
         }
-        if ($settled > 0) {
-            $this->info("shopier:reconcile: {$settled} ödeme settle edildi.");
+
+        // Terk edilen ödememiş Shopier denemelerini temizle (kullanıcı direktifi: "adam ödeme yapmadan
+        // Ödeme Kayıtları'nda satır oluşuyor, bir sürü kişi deniyor, elle temizliyoruz"). Shopier hosted
+        // ödeme için pending Payment ZORUNLU (redirect o satırı bulur) -> oluşmasını engelleyemeyiz, ama
+        // ödenmeyeni otomatik SİLERİZ. 2 saati geçmiş hâlâ pending = terk (ödenen on-demand reconcile +
+        // bu komut dakikada bir settle eder -> 2sa içinde kesin yakalanır). shopier_product_id'li =
+        // Shopier denemesi (havale IBAN'ında yok -> dokunulmaz). Sildiğimizin coin'i hiç verilmemişti.
+        $pruned = Payment::whereNotNull('shopier_product_id')
+            ->where('status', 'pending')
+            ->where('created_at', '<', now()->subHours(2))
+            ->delete();
+        if ($pruned > 0) {
+            $this->info("shopier:reconcile: {$pruned} terk edilmiş pending ödeme silindi.");
         }
 
         return self::SUCCESS;
