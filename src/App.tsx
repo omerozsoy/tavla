@@ -1391,6 +1391,10 @@ export default function App() {
       if (payWin && !payWin.closed) {
         payWin.location.href = url // Shopier ayrı sekmede açılır
         closeSteps()
+        // Arka planı HOME'a düşürme (closeSteps tüm sepet/teslimat sayfalarını kapatınca currentSlug
+        // '' olur -> ana sayfa). Sipariş pending oluştu -> doğal arka plan "Siparişlerim" (bekleme
+        // overlay'i üstünde; kapatınca kullanıcı siparişinde kalır, "buradan takip et" metniyle uyumlu).
+        setMyOrdersOpen(true)
         if (order) setShopierWait({ order, url }) // bizim sekmede bekleme/yoklama ekranı
       } else {
         window.location.href = url // popup engellendi -> same-tab (dönüşte boot effect algılar)
