@@ -16,6 +16,7 @@ use App\Support\Shopier;
 use App\Support\TournamentModeration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -132,15 +133,42 @@ class PaymentController extends Controller
         });
     }
 
+    // Tek bir pending Shopier ödemesini anında Shopier'e sorup settle eder (on-demand reconcile).
+    // ShopierReconcile komutu TÜM pending'leri dakikada bir yapar; bu, kullanıcı beklerken o siparişi
+    // hemen çözer. listOrders'ta product_id eşleşirse settle (idempotent). Çağıran debounce'lamalı.
+    private function reconcileShopierPayment(Payment $p): void
+    {
+        foreach (Shopier::listOrders(100) as $order) {
+            if (! is_array($order) || ! Shopier::orderPaid($order)) {
+                continue;
+            }
+            if (in_array($p->shopier_product_id, Shopier::orderProductIds($order), true)) {
+                $this->settle($p, 'shopier:ondemand:'.($order['id'] ?? ''));
+
+                return;
+            }
+        }
+    }
+
     // GET /pay/status/{order} — SPA Shopier ödeme sonrası durumu yoklar (buyer Shopier'den siteye
     // dönmüyor; webhook/reconcile settle edene kadar). Yalnız KENDİ ödemesi. Döner: {status, coins}.
     public function paymentStatus(Request $request, string $order)
     {
         $p = Payment::where('order_id', $order)
             ->where('user_id', $request->user()->id)
-            ->first(['status', 'coins', 'kind']);
+            ->first();
         if (! $p) {
             return response()->json(['status' => 'unknown'], 404);
+        }
+
+        // Pending + Shopier: zamanlanmış reconcile'ı (~1dk) BEKLEME -> anında Shopier'e sor + settle
+        // (idempotent). Kullanıcı ödeyince 'pending' 30-40sn takılıyordu (kullanıcı şikayeti). 10sn
+        // cache debounce: frontend her 5sn pollasa da Shopier API'sini dövmeyiz.
+        if ($p->status === 'pending' && $p->shopier_product_id && Shopier::enabled()
+            && Cache::add('shopier-ondemand:'.$p->id, 1, 10)) {
+            $this->reconcileShopierPayment($p);
+            $p->refresh();
+            $request->user()->refresh(); // settle coin yüklediyse güncel bakiye dönsün
         }
 
         return response()->json([

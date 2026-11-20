@@ -60,18 +60,17 @@ class ProductController extends Controller
             ->map(fn (ProductOrder $o) => $o->toArray())
             ->all();
 
-        // Coin HAVALE odemeleri de "siparis" olarak gorunsun: kart aninda biter (Garanti callback
-        // -> coin hemen yuklenir) ama havale admin onayi bekler; coin odemesi bir ProductOrder
-        // OLMADIGI icin listede cikmiyordu -> kullanici "siparisim yok" saniyordu.
+        // Coin odemeleri de "siparis" olarak gorunsun: coin odemesi bir ProductOrder OLMADIGI icin
+        // listede cikmiyordu -> kullanici "siparisim yok" saniyordu. HAVALE + KART/SHOPIER HEPSI:
+        // eskiden yalniz bank_transfer listeleniyordu -> Shopier (kart) coin alimi gorunmuyordu
+        // (kullanici sikayeti). Yontem-farkinda etiket: havale=onay bekler, kart=odeme bekler.
         // İKİ YOL: buyCoins (kind='coins') VE sepet coin paketi (kind='cart', coins>0). Sepette
         // fiziksel urun de varsa onun ProductOrder'i AYRICA gorunur; burada yalniz coin kismi.
-        $coinLabel = [
-            'pending' => 'Havale onayı bekleniyor',
-            'paid' => 'Ödendi · coin yüklendi',
-        ];
+        $coinLabel = fn (Payment $p) => $p->status === 'paid'
+            ? 'Ödendi · coin yüklendi'
+            : ($p->payment_method === 'bank_transfer' ? 'Havale onayı bekleniyor' : 'Ödeme bekleniyor');
         $coinOrders = Payment::where('user_id', $userId)
             ->whereIn('kind', ['coins', 'cart'])
-            ->where('payment_method', 'bank_transfer')
             ->where('coins', '>', 0) // fiziksel-only sepet (coins=0) haric; onlar zaten ProductOrder
             ->whereIn('status', ['pending', 'paid'])
             ->orderByDesc('id')
@@ -85,7 +84,7 @@ class ProductController extends Controller
                 'coin_cost' => null,
                 'amount' => $p->amount !== null ? (int) $p->amount : null,
                 'status' => $p->status,
-                'status_label' => $coinLabel[$p->status] ?? $p->status,
+                'status_label' => $coinLabel($p),
                 'tracking' => null,
                 'ship_name' => '',
                 'ship_city' => '',

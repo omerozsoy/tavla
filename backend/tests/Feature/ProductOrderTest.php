@@ -185,24 +185,25 @@ class ProductOrderTest extends TestCase
         $this->assertSame('Ödendi', $orders[0]['status_label']);
     }
 
-    // Coin HAVALE odemeleri "Siparislerim"de bekleyen siparis olarak gorunmeli. İKİ YOL:
-    // buyCoins (kind='coins') VE sepet coin paketi (kind='cart', coins>0). Kart aninda biter -> gizli.
-    public function test_my_orders_includes_pending_coin_bank_transfer(): void
+    // Coin odemeleri "Siparislerim"de gorunmeli — HAVALE (pending) VE KART/SHOPIER (paid) HEPSI.
+    // Eskiden yalniz bank_transfer listeleniyordu -> Shopier kart coin alimi gorunmuyordu (kullanici
+    // sikayeti). İKİ YOL: buyCoins (kind='coins') VE sepet coin paketi (kind='cart', coins>0).
+    public function test_my_orders_includes_coin_payments_card_and_bank(): void
     {
         $u = User::factory()->create(['coins' => 0]);
         Sanctum::actingAs($u);
 
-        // 1) buyCoins havale (kind=coins) -> gorunmeli
+        // 1) buyCoins havale (kind=coins) -> gorunmeli, "Havale onayı bekleniyor"
         Payment::create([
             'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => 'bank_transfer',
             'order_id' => 'TCTEST1', 'amount' => 10000, 'coins' => 100, 'currency' => '949', 'status' => 'pending',
         ]);
-        // 2) SEPET coin paketi havale (kind=cart, coins>0) -> gorunmeli (asil bug buydu)
+        // 2) SEPET coin paketi havale (kind=cart, coins>0) -> gorunmeli
         Payment::create([
             'user_id' => $u->id, 'kind' => 'cart', 'payment_method' => 'bank_transfer',
             'order_id' => 'TKTEST1', 'amount' => 20000, 'coins' => 200, 'currency' => '949', 'status' => 'pending',
         ]);
-        // 3) Kart ile coin (aninda biter) -> GORUNMEMELI
+        // 3) Kart/Shopier ile coin (paid) -> ARTIK GORUNMELI, "Ödendi · coin yüklendi"
         Payment::create([
             'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => null,
             'order_id' => 'TCTEST2', 'amount' => 5000, 'coins' => 50, 'currency' => '949', 'status' => 'paid',
@@ -214,14 +215,15 @@ class ProductOrderTest extends TestCase
         ]);
 
         $orders = $this->getJson('/api/me/orders')->assertOk()->json('orders');
-        $this->assertCount(2, $orders); // buyCoins-havale + sepet-coin-havale
-        $names = array_map(fn ($o) => $o['product_name'], $orders);
-        $this->assertContains('100 Jeton', $names);
-        $this->assertContains('200 Jeton', $names);
+        $this->assertCount(3, $orders); // 2 havale-pending + 1 kart-paid (coins=0 haric)
+        $byName = [];
         foreach ($orders as $o) {
+            $byName[$o['product_name']] = $o;
             $this->assertSame('money', $o['payment_type']);
-            $this->assertSame('pending', $o['status']);
-            $this->assertSame('Havale onayı bekleniyor', $o['status_label']);
         }
+        $this->assertSame('Havale onayı bekleniyor', $byName['100 Jeton']['status_label']);
+        $this->assertSame('Havale onayı bekleniyor', $byName['200 Jeton']['status_label']);
+        $this->assertSame('paid', $byName['50 Jeton']['status']);
+        $this->assertSame('Ödendi · coin yüklendi', $byName['50 Jeton']['status_label']);
     }
 }
