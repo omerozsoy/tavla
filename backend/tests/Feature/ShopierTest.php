@@ -129,6 +129,23 @@ class ShopierTest extends TestCase
         $this->assertSame(500, (int) $u->fresh()->coins);
     }
 
+    public function test_reconcile_settles_paid_order_without_webhook(): void
+    {
+        $this->enableShopier();
+        // Shopier sipariş listesi: ödenmiş sipariş, lineItems.productId pending Payment ile eşleşir.
+        Http::fake(['*/orders*' => Http::response([
+            ['id' => 'ord_r', 'paymentStatus' => 'paid', 'lineItems' => [['productId' => 'prod_r']]],
+            ['id' => 'ord_unpaid', 'paymentStatus' => 'pending', 'lineItems' => [['productId' => 'prod_u']]],
+        ], 200)]);
+        $u = User::factory()->create(['coins' => 0]);
+        $p = $this->coinPayment($u, 'TC7', 'prod_r');
+
+        $this->artisan('shopier:reconcile')->assertSuccessful();
+
+        $this->assertSame('paid', $p->fresh()->status);
+        $this->assertSame(500, (int) $u->fresh()->coins);
+    }
+
     public function test_webhook_ignores_unpaid_order(): void
     {
         $this->enableShopier();

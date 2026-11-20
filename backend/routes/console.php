@@ -135,6 +135,15 @@ Schedule::command('league:tick')
     ->name('league-tick')
     ->withoutOverlapping(10);
 
+// SHOPIER YEDEK FULFILLMENT: Shopier webhook teslimatı güvenilmez (ödeme başarılı olsa da webhook
+// hiç gelmeyebilir -> ödeme PENDING kalır, coin yatmaz). Dakikada bir ödenmiş siparişleri çekip
+// eşleşen pending Payment'ı settle et (idempotent; webhook de gelirse çift coin yok). Shopier
+// kapalıysa (PAT boş) komut hemen döner, maliyetsiz.
+Schedule::command('shopier:reconcile')
+    ->everyMinute()
+    ->name('shopier-reconcile')
+    ->withoutOverlapping(10);
+
 // TAKIMLAR LİGİ günlük bakımı (§5/§10): Premium 7g yenileme süresi süpürme, kurucu 60g inaktiflik devri,
 // biten sezonun ödül dağıtımı (düello puanı sıralaması; idempotent — mükerrer kupa/rozet/coin yok).
 Schedule::command('teamleague:maintenance')

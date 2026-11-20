@@ -25,7 +25,9 @@ class Shopier
 
     private const EP_PRODUCTS = '/products';             // doğrulandı: ödeme ürünü oluştur (POST)
 
-    private const EP_ORDER = '/orders/';                 // VERIFY: tek sipariş oku (GET /orders/{id}) — gerçek ödemeyle teyit edilecek
+    private const EP_ORDER = '/orders/';                 // doğrulandı: tek sipariş oku (GET /orders/{id})
+
+    private const EP_ORDERS = '/orders';                 // doğrulandı: sipariş listesi (GET /orders?limit=N)
 
     private const EP_WEBHOOKS = '/webhooks';             // doğrulandı: webhook kaydı (POST)
 
@@ -108,6 +110,27 @@ class Shopier
         }
 
         return $r->json('data') ?? $r->json();
+    }
+
+    /** Son siparişleri Shopier'den çeker (webhook'tan bağımsız reconcile için). Döner: order dizisi listesi. */
+    public static function listOrders(int $limit = 100): array
+    {
+        if (! self::enabled()) {
+            return [];
+        }
+        try {
+            $r = self::http()->get(self::EP_ORDERS, ['limit' => $limit]);
+        } catch (\Throwable $e) {
+            Log::error('shopier listOrders istisna', ['err' => $e->getMessage()]);
+
+            return [];
+        }
+        if (! $r->successful()) {
+            return [];
+        }
+        $d = $r->json('data') ?? $r->json();
+
+        return is_array($d) ? $d : [];
     }
 
     /**
