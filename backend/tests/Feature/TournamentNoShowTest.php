@@ -226,4 +226,45 @@ class TournamentNoShowTest extends TestCase
         $this->assertSame($a->id, $t->bracket[0][0]['winner']);
         $this->assertSame($a->id, $t->bracket[1][0]['p1']['id']);
     }
+
+    // DIŞARDA (salon) SWISS: maçlar sitede oynanmaz, sonuçları admin girer -> poll OTOMATİK çözmemeli.
+    // isSwiss outdoor'u da kapsadığından, guard olmadan resolveStalledSwiss salon maçını odasız görüp
+    // ready_at damgalar ve arrive_minutes (5 dk) sonra double_loss yazardı (salon maçı oynanmadan forfeit).
+    public function test_outdoor_swiss_match_not_auto_resolved_by_poll(): void
+    {
+        config(['tournament.swiss.arrive_minutes' => 5]);
+        $t = Tournament::create([
+            'name' => 'Salon', 'type' => 'swiss_outdoor', 'size' => 0, 'status' => 'running',
+            'players' => [
+                ['id' => 900000001, 'name' => 'A', 'rating' => 1500, 'offline' => true],
+                ['id' => 900000002, 'name' => 'B', 'rating' => 1500, 'offline' => true],
+            ],
+            'bracket' => [[
+                ['key' => 'r0m0', 'round' => 1, 'p1' => ['id' => 900000001, 'name' => 'A'], 'p2' => ['id' => 900000002, 'name' => 'B'], 'winner' => null, 'target' => 1],
+            ]],
+            'swiss_state' => [
+                'round' => 1, 'seed' => 'x', 'config' => ['match_length' => 1, 'lives' => 3],
+                'participants' => [
+                    ['id' => 900000001, 'name' => 'A', 'seed' => 1, 'rating' => 1500, 'status' => 'active', 'wins' => 0, 'losses' => 0, 'realWins' => 0, 'byes' => 0, 'byeRounds' => [], 'opponents' => [], 'pointsFor' => 0, 'pointsAgainst' => 0, 'lives' => 3, 'lastGroupDelta' => 0],
+                    ['id' => 900000002, 'name' => 'B', 'seed' => 2, 'rating' => 1500, 'status' => 'active', 'wins' => 0, 'losses' => 0, 'realWins' => 0, 'byes' => 0, 'byeRounds' => [], 'opponents' => [], 'pointsFor' => 0, 'pointsAgainst' => 0, 'lives' => 3, 'lastGroupDelta' => 0],
+                ],
+            ],
+        ]);
+
+        Sanctum::actingAs($this->user('viewer')); // poll auth ister; sonuç oyuncu kimliğinden bağımsız
+        // 1. poll: online Swiss olsa ready_at damgalardı -> outdoor'da DOKUNULMAMALI.
+        $this->getJson('/api/tournaments')->assertOk();
+        $t->refresh();
+        $this->assertArrayNotHasKey('ready_at', $t->bracket[0][0]);
+
+        // ready_at varmış gibi 6 dk geriye koysak bile poll salon maçını çözmemeli.
+        $br = $t->bracket;
+        $br[0][0]['ready_at'] = now()->subMinutes(6)->toIso8601String();
+        $t->bracket = $br;
+        $t->save();
+        $this->getJson('/api/tournaments')->assertOk();
+        $t->refresh();
+        $this->assertNull($t->bracket[0][0]['winner']);                 // hükmen galip YOK
+        $this->assertArrayNotHasKey('double_loss', $t->bracket[0][0]);  // çift mağlubiyet YOK
+    }
 }

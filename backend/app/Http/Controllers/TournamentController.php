@@ -807,6 +807,13 @@ class TournamentController extends Controller
 
     private function resolveStalledMatches(Tournament $t): bool
     {
+        // DIŞARDA (salon) SWISS: maçlar sitede OYNANMAZ, sonuçları admin girer -> OTOMATİK no-show/
+        // çift-mağlubiyet çözümü YOK. Aksi halde (isSwiss outdoor'u da kapsar) resolveStalledSwiss salon
+        // maçını odasız görüp ready_at damgalar ve arrive_minutes (5 dk) sonra double_loss yazardı: salon
+        // maçı daha oynanırken/admin sonucu girmeden "oynamadan forfeit". Online Swiss/eleme DEĞİŞMEZ.
+        if (Tournament::isOutdoorType($t->type)) {
+            return false;
+        }
         if (SwissRuntime::isSwiss($t)) {
             return $this->resolveStalledSwiss($t);
         }
