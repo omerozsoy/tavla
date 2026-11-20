@@ -11,7 +11,7 @@ import { initialState, winner, cloneState } from '../engine/board'
 import { generateMoves, hasNoMove, applyStep, boardKey } from '../engine/moves'
 import { applyMove, newTurn } from '../engine/game'
 import { HeuristicBot } from '../engine/engine'
-import { evaluatePosition } from '../engine/evaluate'
+import { evaluatePosition, pipCount } from '../engine/evaluate'
 import { parseXgid } from '../engine/xgid'
 import { parseGnuId } from '../engine/gnubgId'
 import { matchGnubgMove } from '../engine/gnubgMove'
@@ -118,13 +118,23 @@ function genQuestions(seed: number, minMoves: number, contact: boolean, hardness
   return pool.slice(start, start + count).map((p) => ({ state: p.state }))
 }
 
+// Küp zorluğu PROXY (motor build-time'da yok -> senkron): pip-farkı yakınlığı. NET lider/geride =
+// karar AÇIK (kolay); BAŞA-BAŞ = marjinal (zor). Gerçek küp zorluğu temas/gammon de içerir (sınır).
+type CubeDiff = 'easy' | 'medium' | 'hard'
+function cubeDiffOk(s: GameState, d: CubeDiff): boolean {
+  const lead = Math.abs(pipCount(s, 'black') - pipCount(s, 'white'))
+  if (d === 'easy') return lead >= 14 // net lider/geride -> karar açık
+  if (d === 'hard') return lead <= 8 // başa-baş -> marjinal karar
+  return lead >= 6 && lead <= 22 // orta
+}
+
 // KUP kararlari (money): ara-oyun pozisyonu uret, ZAR ATMADAN sor. kind='offer' (katla mi?) ya da
-// kind='respond' (rakip katladi -> al mi birak mi?). Ikisi de ayni pozisyon turunden (white perspektifi).
-function genCubeQuestions(seed: number, count: number, seen = new Set<string>(), kind: 'offer' | 'respond' = 'offer'): Question[] {
+// kind='respond' (rakip katladi -> al mi birak mi?). difficulty pip-farkı bandıyla zorluğu ayrıştırır.
+function genCubeQuestions(seed: number, count: number, seen = new Set<string>(), kind: 'offer' | 'respond' = 'offer', difficulty: CubeDiff = 'medium'): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
   let guard = 0
-  while (out.length < count && guard++ < 6000) {
+  while (out.length < count && guard++ < 14000) {
     let s = initialState()
     const plies = 8 + Math.floor(rng() * 20)
     for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
@@ -133,6 +143,7 @@ function genCubeQuestions(seed: number, count: number, seen = new Set<string>(),
     const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
     if (wp < 4 || bp < 4) continue
+    if (!cubeDiffOk(s, difficulty)) continue // seviyeye göre pip-farkı bandı
     const k = boardKey(s) // kup: zar yok -> board bazli dedup (tekrar eden kup pozisyonu gelmesin)
     if (seen.has(k)) continue
     seen.add(k)
@@ -142,11 +153,11 @@ function genCubeQuestions(seed: number, count: number, seen = new Set<string>(),
 }
 
 // MAC kupu: ayni sekilde pozisyon + MAC SKORU baglamı (away 2..6). Degerlendirme matchCube.ts (match-equity).
-function genMatchCubeQuestions(seed: number, count: number, seen = new Set<string>(), kind: 'offer' | 'respond' = 'offer'): Question[] {
+function genMatchCubeQuestions(seed: number, count: number, seen = new Set<string>(), kind: 'offer' | 'respond' = 'offer', difficulty: CubeDiff = 'medium'): Question[] {
   const rng = mulberry32(seed)
   const out: Question[] = []
   let guard = 0
-  while (out.length < count && guard++ < 6000) {
+  while (out.length < count && guard++ < 14000) {
     let s = initialState()
     const plies = 8 + Math.floor(rng() * 20)
     for (let i = 0; i < plies; i++) s = seededAdvance(s, rng)
@@ -155,6 +166,7 @@ function genMatchCubeQuestions(seed: number, count: number, seen = new Set<strin
     const wp = s.points.reduce((a, x) => a + (x > 0 ? x : 0), 0) + s.bar.white
     const bp = s.points.reduce((a, x) => a + (x < 0 ? -x : 0), 0) + s.bar.black
     if (wp < 4 || bp < 4) continue
+    if (!cubeDiffOk(s, difficulty)) continue // seviyeye göre pip-farkı bandı
     const k = boardKey(s) // board bazli dedup (money-kup ile de cakismasin: paylasilan seen)
     if (seen.has(k)) continue
     seen.add(k)
@@ -1412,9 +1424,11 @@ function cubeSectionQuestions(id: string): Question[] {
   const seed = cubeSeed(id)
   const half = CUBE_PER_SECTION >> 1 // yarı offer (katla?), yarı respond (al/bırak?)
   const gen = id.includes('score') ? genMatchCubeQuestions : genCubeQuestions
+  // Seviyeye göre küp zorluğu: Temel(d)=kolay · İleri(a)=zor · Orta(i)/Maç(m-score)=orta.
+  const diff: CubeDiff = id.startsWith('d-') ? 'easy' : id.startsWith('a-') ? 'hard' : 'medium'
   return [
-    ...gen(seed, half, CUBE_SEEN, 'offer'),
-    ...gen(seed ^ 0x5a5a, CUBE_PER_SECTION - half, CUBE_SEEN, 'respond'),
+    ...gen(seed, half, CUBE_SEEN, 'offer', diff),
+    ...gen(seed ^ 0x5a5a, CUBE_PER_SECTION - half, CUBE_SEEN, 'respond', diff),
   ]
 }
 
