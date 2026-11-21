@@ -5842,7 +5842,12 @@ export default function App() {
     let luckDone = false
     setLuckPending(true)
     // gnubg hazır olana kadar poll et (~3 dk). wildbg'ye ASLA düşme; hazır değilse LOADER kalır.
-    for (let i = 0; i < 90 && !(prDone && luckDone); i++) {
+    // PR ×2: ödül Snowie job'unda PR satırlarından HEMEN SONRA yazılır -> poll tam arada PR+şansı
+    // hazır görüp döngüyü bitirirse ödül hiç okunmazdı. rating_bonus null (henüz değerlendirilmedi /
+    // kaybeden) ise birkaç tur (~6sn) daha bak; kaybeden/puansızda null kalır -> sonra çık.
+    let bonusDone = false
+    let bonusGrace = 3
+    for (let i = 0; i < 90 && !(prDone && luckDone && (bonusDone || bonusGrace-- <= 0)); i++) {
       await new Promise((res) => setTimeout(res, 2000))
       if (prPollRef.current !== token) return // iptal edildi (yeni maç/rapor)
       try {
@@ -5855,7 +5860,10 @@ export default function App() {
         }
         // PR ×2 ödülü (kazandım + PR daha iyi): sunucu Snowie'de ek rating verdi -> >0 gelince
         // "X2" penceresini aç. Yalnız KAZANAN satırda >0 döner. (matchPr poll'u kaldırıldı -> burada oku.)
-        if (g.rating_bonus != null && g.rating_bonus > 0) setRatingBonus(g.rating_bonus)
+        if (g.rating_bonus != null) {
+          bonusDone = true // değerlendirildi (0 = ödül yok, >0 = verildi)
+          if (g.rating_bonus > 0) setRatingBonus(g.rating_bonus)
+        }
         if (!prDone && g.ready) {
           // self VE opponent (gnubg-otoriter) aynı analizden birlikte gelir -> iki hücre BİRLİKTE dolar
           // (rakip için ayrı poll / peer-raporu beklemesi YOK). opp null ise (nadir çöp/mezar taşı)

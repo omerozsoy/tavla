@@ -1185,6 +1185,11 @@ class AuthController extends Controller
             'luck_jokers' => $luckReady ? $match->luck_jokers : null,
             'opponent_luck_emg' => $oppLuckReady ? $num($match->opponent_luck_emg) : null,
             'opponent_luck_jokers' => $oppLuckReady ? $match->opponent_luck_jokers : null,
+            // PR ×2 ÖDÜLÜ (PrRatingBonus, Snowie job'unda PR'dan HEMEN SONRA yazılır): null = henüz
+            // değerlendirilmedi / kaybeden satırı, 0 = ödül yok, >0 = verilen ek rating -> istemci "X2"
+            // penceresini açar. KÖK FIX (XV44Z): dbb0c31be matchPr oda-poll'unu kaldırıp istemciyi bu
+            // uca taşıdı ama alan buraya EKLENMEMİŞTİ -> ödül veriliyor, pencere hiç açılmıyordu.
+            'rating_bonus' => Schema::hasColumn('match_results', 'pr_rating_bonus') ? $match->pr_rating_bonus : null,
         ]);
     }
 
