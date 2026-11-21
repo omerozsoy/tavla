@@ -103,6 +103,30 @@ class DoubleGameGuardTest extends TestCase
             ->assertStatus(422);
     }
 
+    // KAZANANI BELLİ bitmiş ama istemcisi settle'ı kaçırmış bahisli maç yeni eşleşmeyi ENGELLEMEZ:
+    // guard reddetmeden önce sunucuda settle eder (canlıda ~%25 maç cron'u 2-4 dk bekliyordu ->
+    // "Henüz sonuçlanmamış bahisli bir maçın var" şikayet dalgası, 2026-11-22).
+    public function test_decided_unsettled_bet_match_is_settled_inline_and_does_not_block(): void
+    {
+        $me = $this->user('decidedseek');
+        $opp = $this->user('decidedopp');
+        $r = Room::create([
+            'code' => 'DEC1', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $me->id, 'p2_user_id' => $opp->id, 'p1_name' => 'A', 'p2_name' => 'B',
+            'status' => 'finished', 'mode' => 'ranked', 'stake' => 0, 'bet_pct' => 10,
+            'settled' => false, 'authoritative' => true, 'version' => 1, 'server_version' => 0,
+            'server_match' => ['target' => 1, 'done' => true, 'winner' => 'white',
+                'score' => ['white' => 1, 'black' => 0],
+                'pct_stake_snapshot' => [(string) $me->id => 100, (string) $opp->id => 100]],
+        ]);
+
+        Sanctum::actingAs($me);
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'decidedseek', 'bet_pct' => 10])
+            ->assertOk();
+        $this->assertTrue((bool) $r->fresh()->settled);
+        $this->assertGreaterThan(1000, (int) $me->fresh()->coins); // beyaz (p1=me) kazandı
+    }
+
     // FRIENDLY (arkadaşlık) bitmiş-settle-olmamış oda bahisli eşleşmeyi ENGELLEMEZ: coin taşımaz,
     // settleRoom atladığı için kalıcı settled=false kalır -> kullanıcıyı sonsuza dek bloklamamalı.
     public function test_friendly_unsettled_room_does_not_block_bet_matchmaking(): void

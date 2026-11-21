@@ -151,6 +151,31 @@ class RoomController extends Controller
     }
 
     /**
+     * Kullanıcının BİTMİŞ ama settled=0 bahisli odalarını sunucuda hemen kapatmayı dener
+     * (matches:backstop-settle'ın yaptığının aynısı; settleRoom idempotent + server-otoriter).
+     * Best-effort: 409 (snapshot yok / bakiye yetersiz) yutulur -> oda pending kalır, guard bloklar.
+     */
+    private function settleFinishedStakedRooms(int $uid): bool
+    {
+        $rooms = Room::where('status', 'finished')
+            ->where('settled', false)
+            ->where(fn ($q) => $q->where('stake', '>', 0)->orWhere('bet_pct', '>', 0))
+            ->where(fn ($q) => $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid))
+            ->where('updated_at', '>=', now()->subMinutes(self::STALE_UNSETTLED_MIN))
+            ->limit(5)
+            ->get();
+        foreach ($rooms as $room) {
+            try {
+                $this->settleRoom($room);
+            } catch (\Throwable $e) {
+                // pending -> cron tekrar dener; kullanıcıya guard mesajı döner.
+            }
+        }
+
+        return $rooms->isNotEmpty();
+    }
+
+    /**
      * Kullanıcı ŞU AN oynanan (bahisli olsun olmasın) başka bir odada katılımcı mı?
      * "Aynı kullanıcı iki maçta" durumunu ve escrow'u atlayan kod-ile-katılma para-hilesini
      * engellemek için join()/enter() YENİ katılımcı dalında kullanılır. excludeRoomId = hedef oda
@@ -460,6 +485,14 @@ class RoomController extends Controller
         if ($maxStake > 0 || $betPct > 0) {
             if (! $authUser) {
                 return $this->fail('Bahisli oyun için giriş yapmalısın.', 422);
+            }
+            // ANINDA İYİLEŞTİRME (C1 guard'ından ÖNCE, bakiye kontrolünden de ÖNCE): bitmiş ama
+            // istemcisi settle'ı kaçırmış bahisli odayı sunucuda hemen kapat (canlı ölçüm: bahisli
+            // maçların ~%25'i cron'u 2-4 dk bekliyordu -> oyuncu o arada "Henüz sonuçlanmamış bahisli
+            // bir maçın var" alıyordu). Kazanan çözülemezse pending kalır, aşağıdaki guard yine bloklar.
+            // Settle bakiyeyi değiştirir -> authUser tazelenir. Transaction DIŞINDA (kilit sırası güvenli).
+            if ($this->settleFinishedStakedRooms($userId)) {
+                $authUser = $authUser->fresh() ?? $authUser;
             }
             // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Rezerve edilmiş coin yeni
             // bahse sayılmaz (o an başka maçta kilitli). Para oyununda en kötü (×48) karşılanmalı.
