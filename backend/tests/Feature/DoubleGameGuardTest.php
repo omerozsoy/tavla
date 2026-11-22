@@ -127,21 +127,42 @@ class DoubleGameGuardTest extends TestCase
         $this->assertGreaterThan(1000, (int) $me->fresh()->coins); // beyaz (p1=me) kazandı
     }
 
-    // FRIENDLY (arkadaşlık) bitmiş-settle-olmamış oda bahisli eşleşmeyi ENGELLEMEZ: coin taşımaz,
-    // settleRoom atladığı için kalıcı settled=false kalır -> kullanıcıyı sonsuza dek bloklamamalı.
-    public function test_friendly_unsettled_room_does_not_block_bet_matchmaking(): void
+    // KÖK FIX (32f3d219e sonrası): STAKED friendly (davet %-bahis / düello) GERÇEK coin taşır + artık
+    // settle olur -> çözülmemiş-taze olanı yeni bahisli eşleşmeyi ENGELLER (aynı coin'i iki maça
+    // stake'leyen double-stake exploiti kapanır). Eski `mode != friendly` muafiyeti ("coin taşımaz"
+    // varsayımı) KALDIRILDI. 'playing' dalı daima sayılır -> inline-settle karışmaz, temiz blok.
+    public function test_staked_friendly_room_blocks_bet_matchmaking(): void
     {
-        $me = $this->user('friendlyseek');
-        $opp = $this->user('friendlyopp');
+        $me = $this->user('frbetseek');
+        $opp = $this->user('frbetopp');
         Room::create([
-            'code' => 'FRN1', 'p1_token' => 'a', 'p2_token' => 'b',
+            'code' => 'FRB1', 'p1_token' => 'a', 'p2_token' => 'b',
             'p1_user_id' => $me->id, 'p2_user_id' => $opp->id, 'p1_name' => 'A', 'p2_name' => 'B',
-            'status' => 'finished', 'mode' => 'friendly', 'stake' => 0, 'bet_pct' => 20,
+            'status' => 'playing', 'mode' => 'friendly', 'stake' => 0, 'bet_pct' => 20,
             'settled' => false, 'target' => 1, 'version' => 1,
         ]);
 
         Sanctum::actingAs($me);
-        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'friendlyseek', 'bet_pct' => 10])
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'frbetseek', 'bet_pct' => 10])
+            ->assertStatus(422);
+    }
+
+    // BAHİSSİZ friendly (stake=0 && bet_pct=0) bahisli eşleşmeyi ENGELLEMEZ: stake/bet_pct filtresiyle
+    // zaten elenir (gerçek coin yok -> double-stake riski yok). Muafiyet kaldırılınca regresyon olmasın.
+    public function test_unstaked_friendly_room_does_not_block_bet_matchmaking(): void
+    {
+        $me = $this->user('frfreeseek');
+        $opp = $this->user('frfreeopp');
+        Room::create([
+            'code' => 'FRF1', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $me->id, 'p2_user_id' => $opp->id, 'p1_name' => 'A', 'p2_name' => 'B',
+            // 'finished' (playing DEĞİL): C2 "zaten oynuyor" guard'ı değil, yalnız C1 stake filtresi test edilsin.
+            'status' => 'finished', 'mode' => 'friendly', 'stake' => 0, 'bet_pct' => 0,
+            'settled' => false, 'target' => 1, 'version' => 1,
+        ]);
+
+        Sanctum::actingAs($me);
+        $this->postJson('/api/matchmaking', ['token' => 'tok', 'name' => 'frfreeseek', 'bet_pct' => 10])
             ->assertOk();
     }
 

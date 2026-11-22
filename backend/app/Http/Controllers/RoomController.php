@@ -115,7 +115,10 @@ class RoomController extends Controller
      * coin'leri iki maça stake'liyordu -> ilk maç settle olunca ikincisi "underwater" kalıp settlement
      * deadlock'una düşüyordu (yasar1729 vakası). Artık ilk bahisli maç settle olana dek yenisi açılamaz.
      * GÜVENLİ: settle-olmamış odalar backstop + kısmi-settle ile ~2dk'da kapanır -> blok KALICI değil.
-     * friendly/bot (coin taşımaz, settleRoom atlar -> kalıcı settled=false) HARİÇ: yoksa kalıcı bloklar.
+     * STAKED FRIENDLY DAHİL (32f3d219e sonrası): davet %-bahis / düello GERÇEK coin taşır + artık settle
+     * olur -> double-stake exploitini kapatmak için bunlar da SAYILIR (eski `mode != friendly` muafiyeti,
+     * "coin taşımaz" varsayımı artık yanlış, KALDIRILDI). Bahissiz friendly zaten stake/bet_pct filtresiyle
+     * elenir. bot (bot_match_fee peşin; settle yok) HARİÇ: yoksa kalıcı bloklar.
      * ⚠ 'finished' dalı ZAMAN SINIRLI: settle akışı taze (~dk), ama kazananı-belli-olmayan/terk edilmiş
      * ESKİ finished odalar hiç settle olmaz (server_winner NULL) -> settled=0 kalıcı. Zamansız sayarsak
      * o mezarlar katılımcılarını SONSUZA bloklar (124 kullanıcı vakası). Son STALE_UNSETTLED_MIN dk ile
@@ -136,7 +139,6 @@ class RoomController extends Controller
                     ->where('updated_at', '>=', now()->subMinutes(self::STALE_UNSETTLED_MIN)));
         })
             ->where('settled', false)
-            ->where('mode', '!=', 'friendly') // arkadaşlık maçı coin taşımaz -> engellemez
             ->where('bot', false)
             ->whereNotNull('p1_user_id')
             ->whereNotNull('p2_user_id')
