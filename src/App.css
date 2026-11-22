@@ -23416,8 +23416,18 @@ body:has(.spectate-view) .app.lobby {
   border-color: color-mix(in srgb, var(--accent, #2563eb) 40%, var(--border));
   background: color-mix(in srgb, var(--accent, #2563eb) 10%, transparent);
 }
-/* Detay sayfasi tip rozeti satiri (mac uzunluklarinin ustunde). */
+/* Disarda (salon) Swiss: online Swiss'ten (amber) ayirt edici yesil rozet. */
+.tourn-type-outdoor {
+  color: #15803d;
+  border-color: color-mix(in srgb, #22c55e 45%, var(--border));
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+}
+/* Detay sayfasi tip rozeti satiri (mac uzunluklarinin ustunde). Birden cok rozet yan yana. */
 .tourn-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin: 6px 0 2px;
 }
 /* Mac detayi satiri (liste karti): "Maclar: 3 puan · 3 dk". */
@@ -29064,6 +29074,12 @@ input:not([type='range']), select, textarea {
 .swiss-mymatch .tm-play {
   width: auto;
   margin: 0;
+}
+/* Disarda (salon) Swiss: "Oyna" yerine salonda oynanacagi notu. */
+.swiss-mm-note {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #15803d;
 }
 .swiss-bye,
 .swiss-wait {

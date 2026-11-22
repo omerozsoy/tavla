@@ -1523,6 +1523,8 @@ export interface SwissState {
 /** Swiss motoru kullanan tipler: TavlaTV Swiss (online) + Dışarda Swiss (salon). */
 export type TournamentType = 'bracket' | 'swiss_triple' | 'swiss_outdoor'
 export const isSwissType = (t?: string | null): boolean => t === 'swiss_triple' || t === 'swiss_outdoor'
+/** Dışarda (salon) Swiss mi? Online oynanmaz; maçlar salonda oynanıp organizatör/admin sonuç girer. Backend Tournament::isOutdoorType aynası. */
+export const isOutdoorType = (t?: string | null): boolean => t === 'swiss_outdoor'
 
 export interface Tournament {
   id: number

@@ -27,6 +27,7 @@ import {
   tournamentRoundMinutes,
   tournamentRoundTarget,
   isSwissType,
+  isOutdoorType,
   type Tournament,
   type TMatch,
   ApiError,
@@ -803,6 +804,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 ? t('swiss.title', { n: active.swiss?.max_lives ?? active.swiss_lives ?? 3 })
                 : t('tourn.typeBracket')}
             </span>
+            {/* Dışarda (salon) Swiss: online oynanmadığını belli eden ayrı rozet. */}
+            {isOutdoorType(active.type) && (
+              <span className="tourn-type tourn-type-outdoor">
+                <Icon name="building-community" size={14} />
+                {t('tourn.outdoorBadge')}
+              </span>
+            )}
           </div>
 
           {/* Mac uzunluklari: normal turlar + (farkliysa) yari final / final */}
@@ -1047,9 +1055,14 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                       <div className="swiss-mm-opp">
                         <PlayerIdentity userId={opp.id} name={opp.name} rating={opp.rating} avatar={opp.avatar} size={28} premium={opp.premium} />
                       </div>
-                      <Button variant="default" className="tm-play" onClick={() => onPlayMatch(active.id, myMatch, opp.id)}>
-                        <Icon name="play" size={16} /> {t('swiss.play')}
-                      </Button>
+                      {/* Dışarda (salon) Swiss: online oynanmaz -> "Oyna" yerine bilgilendirme. */}
+                      {isOutdoorType(active.type) ? (
+                        <div className="swiss-mm-note">{t('swiss.outdoorPlay')}</div>
+                      ) : (
+                        <Button variant="default" className="tm-play" onClick={() => onPlayMatch(active.id, myMatch, opp.id)}>
+                          <Icon name="play" size={16} /> {t('swiss.play')}
+                        </Button>
+                      )}
                     </div>
                   ) : myBye ? (
                     <div className="swiss-mymatch swiss-bye"><Icon name="check" size={16} /> {t('swiss.bye')}</div>
@@ -1295,7 +1308,8 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                           ? Math.max(0, Math.ceil((new Date(m.opens_at).getTime() - nowTick) / 1000))
                           : 0
                         const finalGated = isFinalMatch && !!tp3 && (!tp3.winner || gateSecs > 0)
-                        const playable = mine && !!m.p1 && !!m.p2 && !m.winner && !finalGated
+                        // Dışarda (salon) Swiss online oynanmaz (backend 422) -> "Oyna" butonu hiç gösterilmez.
+                        const playable = mine && !!m.p1 && !!m.p2 && !m.winner && !finalGated && !isOutdoorType(active.type)
                         // Izlenebilir: oda acilmis (biri "Oyna"ya basmis) ve mac bitmemis. Kendi macimda
                         // "Oyna" var; goz yalniz baskalarinin maclarinda.
                         const watchable = !mine && !!onSpectate && !!m.room && !!m.p1 && !!m.p2 && !m.winner

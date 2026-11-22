@@ -1362,6 +1362,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'tourn.finalOpensIn': 'Final {s} sn sonra başlar',
   'tourn.lengthLabel': 'Maçlar',
   'tourn.typeBracket': 'Eleme Tablosu',
+  'tourn.outdoorBadge': 'Salon',
   'tourn.champion': 'Şampiyon',
   // ---- 3 Haklı Swiss (Swiss Triple Elimination) ----
   'swiss.title': '{n} Haklı Swiss',
@@ -1374,6 +1375,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'swiss.losses': 'Mağlubiyet',
   'swiss.myMatch': 'Senin maçın',
   'swiss.play': 'Maçı Oyna',
+  'swiss.outdoorPlay': 'Bu maç salonda oynanır; sonucu organizatör girer.',
   'swiss.byeBadge': 'Bay',
   'swiss.doubleLossBadge': 'Karşılıklı Mağlubiyet',
   'swiss.pairLive': 'Oynanıyor',
@@ -3861,6 +3863,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'tourn.finalOpensIn': 'Final starts in {s}s',
   'tourn.lengthLabel': 'Matches',
   'tourn.typeBracket': 'Bracket',
+  'tourn.outdoorBadge': 'In-Person',
   'tourn.champion': 'Champion',
   // ---- Swiss Triple Elimination ----
   'swiss.title': 'Swiss ({n} lives)',
@@ -3873,6 +3876,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'swiss.losses': 'Losses',
   'swiss.myMatch': 'Your match',
   'swiss.play': 'Play Match',
+  'swiss.outdoorPlay': 'This match is played in person; the organizer records the result.',
   'swiss.byeBadge': 'Bye',
   'swiss.doubleLossBadge': 'Mutual loss',
   'swiss.pairLive': 'Live',
