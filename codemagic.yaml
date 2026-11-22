@@ -9,8 +9,8 @@ workflows:
       node: 22
       ios_signing:
         distribution_type: app_store
-        # Xcode ve App Store Connect'teki Bundle ID ile değiştirin.
-        bundle_identifier: com.example.tavlatv
+        # Android applicationId + Capacitor appId ile aynı (com.tavlatv.app).
+        bundle_identifier: com.tavlatv.app
       vars:
         XCODE_SCHEME: App
 
@@ -20,6 +20,11 @@ workflows:
 
       - name: Web dosyalarını derle
         script: npm run build --if-present
+
+      - name: Capacitor iOS platformunu ekle (yoksa)
+        script: |
+          set -e
+          [ -d ios ] || npx cap add ios
 
       - name: Capacitor iOS projesini eşitle
         script: npx cap sync ios
