@@ -204,4 +204,63 @@ class TournamentSwissDrawPanelTest extends TestCase
             ->call('startRound', 1);
         $this->assertSame($before, $br->fresh()->bracket, 'bracket startRound\'a dokunmaz');
     }
+
+    public function test_manual_bye_mode_shows_picker_and_applies_admin_choice(): void
+    {
+        // swiss_auto_draw=false (elle) + TEK sayı oyuncu → "Başlat" kura çekmez, bay seçici açılır;
+        // admin listeden seçtiği oyuncu bay geçer (forcedBye uygulanır).
+        $t = $this->swiss(5);
+        $t->swiss_auto_draw = false;
+        $t->save();
+        SwissRuntime::start($t);
+        $t->refresh();
+        $this->assertSame('running', $t->status);
+        $this->assertCount(0, $t->bracket ?? [], 'Başlatınca kura çekilmez');
+
+        $admin = $this->admin();
+
+        // "Başlat" → elle bay modunda tur ÇEKİLMEZ, bay seçici (manualByeRound) açılır.
+        $c = Livewire::actingAs($admin)
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->set('roundTimes', ['1' => '2026-11-05T20:00'])
+            ->call('startRound', 1)
+            ->assertSet('manualByeRound', 1);
+        $this->assertCount(0, $t->fresh()->bracket ?? [], 'Elle bay modunda seçici açılır, kura çekilmez');
+
+        $choices = $c->get('byeChoices');
+        $this->assertNotEmpty($choices, 'Bay seçici uygun oyuncularla dolu');
+
+        // Admin, ilk öneri yerine BİLEREK son oyuncuyu bay seçer → bu seçim uygulanmalı.
+        $pick = (int) $choices[count($choices) - 1]['id'];
+        $c->set('selectedBye', $pick)->call('drawWithManualBye');
+        $t->refresh();
+
+        $this->assertCount(1, $t->bracket, 'Bay seçilince 1. tur çekilir');
+        $round = $t->bracket[0];
+        $byes = array_values(array_filter($round, fn ($m) => ! empty($m['bye'])));
+        $this->assertCount(1, $byes, 'Tek bir bay hücresi');
+        $this->assertSame($pick, (int) $byes[0]['winner'], 'Admin\'in seçtiği oyuncu bay geçti');
+        $this->assertNull($byes[0]['p2']);
+        $this->assertTrue($byes[0]['score']['bye']);
+    }
+
+    public function test_auto_bye_mode_draws_round_without_picker(): void
+    {
+        // swiss_auto_draw=true → "Başlat" seçici açmadan 1. turu hemen çeker, sistem bay'ı kendi seçer.
+        $t = $this->swiss(5);
+        $t->swiss_auto_draw = true;
+        $t->save();
+        SwissRuntime::start($t);
+
+        Livewire::actingAs($this->admin())
+            ->test(ManageTournament::class, ['record' => $t->id])
+            ->set('roundTimes', ['1' => '2026-11-05T20:00'])
+            ->call('startRound', 1)
+            ->assertSet('manualByeRound', null);
+
+        $t->refresh();
+        $this->assertCount(1, $t->bracket, 'Otomatik modda 1. tur hemen çekilir');
+        $byes = array_values(array_filter($t->bracket[0], fn ($m) => ! empty($m['bye'])));
+        $this->assertCount(1, $byes, 'Sistem bir oyuncuyu otomatik bay yaptı');
+    }
 }
