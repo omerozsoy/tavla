@@ -112,12 +112,6 @@ class Room extends Model
         }
         $rooms = static::where('bet_pct', '>', 0)
             ->where('settled', false)
-            // ARKADAŞLIK (davet) maçı coin TAŞIMAZ: settleRoom friendly'yi atlar -> settled=0 kalıcı
-            // kalır. Bu odaları kilitlersek (coin hiç transfer edilmediği halde) harcanabilir bakiye
-            // sonsuza dek düşük kalır -> kullanıcı "yeterli bakiye yok, X coin kilitli" görür ama hiç
-            // aktif maçı yoktur (228/236 orphan kilit; mhmmtolgn 7006 vakası). settleRoom ve
-            // userInUnsettledStakedMatch zaten aynı guard'ı uygular -> kilit de uygulamalı.
-            ->where('mode', '!=', 'friendly')
             ->whereIn('status', ['playing', 'finished'])
             ->where('updated_at', '>', now()->subDays(30))
             ->where(function ($q) use ($uid) {

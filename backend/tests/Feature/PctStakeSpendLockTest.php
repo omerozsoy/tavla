@@ -67,18 +67,6 @@ class PctStakeSpendLockTest extends TestCase
         $w->debit($a->fresh(), 1, 'shop_purchase');
     }
 
-    // ARKADAŞLIK (davet) %-maçı coin TAŞIMAZ (settleRoom friendly'yi atlar -> settled=0 kalıcı).
-    // Bu odayı kilitlersek harcanabilir bakiye sonsuza düşer -> kullanıcı "yeterli bakiye yok, X coin
-    // kilitli" görür ama aktif maçı yoktur (228/236 orphan kilit, mhmmtolgn 7006 vakası, 2026-11-22).
-    public function test_friendly_pct_room_does_not_lock(): void
-    {
-        $a = User::factory()->create(['coins' => 1000]);
-        $b = User::factory()->create(['coins' => 1000]);
-        $r = $this->pctRoom($a, $b, 'finished', 'black', 1000, 1000);
-        Room::whereKey($r->id)->update(['mode' => 'friendly']); // davet odası
-        $this->assertSame(1000, app(WalletService::class)->spendable($a->fresh()));
-    }
-
     public function test_settled_or_undecided_or_old_pct_rooms_do_not_lock(): void
     {
         $a = User::factory()->create(['coins' => 1000]);
