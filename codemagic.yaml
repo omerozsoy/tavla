@@ -16,7 +16,10 @@ workflows:
 
     scripts:
       - name: Npm bağımlılıklarını yükle
-        script: npm ci
+        # npm install (npm ci DEĞİL): lock Windows'ta üretiliyor, mac builder'da
+        # @emnapi/* gibi optional native-wasm dep'leri lock'ta eksik kalıyor ->
+        # npm ci "out of sync" diye patlar. npm install platforma göre çözer.
+        script: npm install
 
       - name: Web dosyalarını derle
         script: npm run build --if-present
