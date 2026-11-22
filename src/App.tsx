@@ -1790,6 +1790,26 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]) // stabil kimlik -> döngü yok (bkz heartbeat-ping-kacak-dongu)
 
+  // Coin bakiyesi SUNUCU-TARAFI settle'larla değişebilir (kaybedilen %-bahis maçı rakip/backstop
+  // raporuyla sunucuda düşülür; istemci kendi match-settle akışını görmediyse bakiyeyi KAÇIRIR ->
+  // bayat "35 coin" gösterip oyun açma/katılmayı sunucu reddedince kullanıcı şaşırır). Sekmeye/
+  // uygulamaya her dönüşte taze bakiyeyi çek (yalnız coin'i yaz: aktif maçtaki diğer optimistik
+  // state'i ezme). me() ucuz; yalnız görünür olunca atar (gizliyken boş istek yok).
+  useEffect(() => {
+    if (!user?.id) return
+    const refreshCoins = () => {
+      if (document.visibilityState === 'hidden') return
+      apiMe().then((fresh) => setUser((u) => (u ? { ...u, coins: fresh.coins ?? u.coins } : u))).catch(() => {})
+    }
+    window.addEventListener('focus', refreshCoins)
+    document.addEventListener('visibilitychange', refreshCoins)
+    return () => {
+      window.removeEventListener('focus', refreshCoins)
+      document.removeEventListener('visibilitychange', refreshCoins)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
   // Çerez banner'ı / hukuki sayfalar: "tavla:open-legal" olayı -> hukuki sayfayı aç
   // (App'e state eklemeden footer/banner bağlantılarından tetiklenir).
   useEffect(() => {
@@ -7942,6 +7962,10 @@ export default function App() {
       // Hata: bayat online durumda TAKILMA (bos board/secim ekrani) -> lobi baglaminda
       // origine don + toast.
       notify.error(msg)
+      // Coin reddi (kaybedilen bahis maçı sunucuda settle oldu ama istemci bakiyesi bayat
+      // kaldıysa kullanıcı "35 coin var ama oyun açamıyorum" görür). Gerçek bakiyeyi çek ki
+      // gösterilen sayı düzelsin ve "yeterli coin yok" mesajı anlam kazansın.
+      apiMe().then((fresh) => setUser((u) => (u ? { ...u, coins: fresh.coins ?? u.coins } : u))).catch(() => {})
       setRoom(null)
       setMode('pvb')
       setHome(true)
