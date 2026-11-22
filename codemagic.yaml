@@ -11,6 +11,14 @@ workflows:
         distribution_type: app_store
         # Android applicationId + Capacitor appId ile aynı (com.tavlatv.app).
         bundle_identifier: com.tavlatv.app
+      # App Store Connect API anahtarı (.p8) — Codemagic panel > Environment variables'ta
+      # "appstore_credentials" grubuna ekle, üçünü de SECURE işaretle:
+      #   APP_STORE_CONNECT_PRIVATE_KEY   = .p8 dosyasının İÇERİĞİ (çok satırlı)
+      #   APP_STORE_CONNECT_KEY_IDENTIFIER = Key ID
+      #   APP_STORE_CONNECT_ISSUER_ID      = Issuer ID
+      # (Takım entegrasyonu "auth: integration" bireysel planda yok -> API anahtarı yolu.)
+      groups:
+        - appstore_credentials
       vars:
         XCODE_SCHEME: App
 
@@ -51,3 +59,13 @@ workflows:
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        # Entegrasyon DEĞİL, API anahtarı (environment variable) ile kimlik doğrulama.
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        # Önce yalnız TestFlight'a yükle (App Store incelemesine otomatik SOKMAZ).
+        # App Store'a otomatik göndermek istediğinde submit_to_app_store: true ekle.
+        submit_to_testflight: true
