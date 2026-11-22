@@ -9231,11 +9231,11 @@ export default function App() {
         <div className="opening-dice">
           <div className={`opening-side ${openingShow.winner === 'white' ? 'win' : ''}`}>
             <Die value={openingShow.white} owner="white" used={false} />
-            <span>{t('player.white')}</span>
+            <span>{pName('white')}</span>
           </div>
           <div className={`opening-side ${openingShow.winner === 'black' ? 'win' : ''}`}>
             <Die value={openingShow.black} owner="black" used={false} />
-            <span>{t('player.black')}</span>
+            <span>{pName('black')}</span>
           </div>
         </div>
         <div className="result-points">
