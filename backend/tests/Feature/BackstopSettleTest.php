@@ -69,6 +69,28 @@ class BackstopSettleTest extends TestCase
         $this->assertSame(1300, app(WalletService::class)->spendable($winner->fresh()));
     }
 
+    // KÖK FIX: %-bahisli DAVET odası (mode='friendly', enter() "potsuz yok min %10") settle EDİLMELİ.
+    // Eskiden settleRoom `mode==='friendly'` görünce skip ediyordu -> oda settled=0 kalıp coini KALICI
+    // kilitliyordu (CANBEY25: 32 orphan davet maçı, 1772 coin kilitli -> mağaza "yetersiz coin").
+    public function test_backstop_settles_staked_friendly_invite_room(): void
+    {
+        Setting::put('commission_pct', '0');
+        $winner = User::factory()->create(['coins' => 1000]);
+        $loser = User::factory()->create(['coins' => 500]);
+        $room = $this->pctRoom($winner, $loser, 'white', 1000, 300);
+        Room::whereKey($room->id)->update(['mode' => 'friendly', 'updated_at' => now()->subMinutes(5)]);
+
+        // settle öncesi: davet maçı da kilitler (bet_pct>0) -> kazananın 300'ü kilitli.
+        $this->assertSame(700, app(WalletService::class)->spendable($winner->fresh()));
+
+        $this->artisan('matches:backstop-settle', ['--minutes' => 2])->assertSuccessful();
+
+        $this->assertTrue((bool) $room->fresh()->settled, 'staked friendly davet odası settle edilmeli');
+        $this->assertSame(1300, (int) $winner->fresh()->coins, 'kazanan min-stake (300) almalı');
+        $this->assertSame(200, (int) $loser->fresh()->coins, 'kaybeden min-stake (300) ödemeli');
+        $this->assertSame(1300, app(WalletService::class)->spendable($winner->fresh()), 'kilit açılmalı');
+    }
+
     // UNDERWATER %-KAYIP: kaybeden bakiyesi stake'in altındaysa (eşzamanlı maç drenajı) settle
     // KALICI 409'da KİLİTLENMEMELİ -> fiilen alınabilen kadar settle et (kaybeden→0, kazanan o kadarını
     // alır), kilit açılır. (Eskiden sonsuz pending -> hesap deadlock; yasar1729 vakası.)

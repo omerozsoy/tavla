@@ -810,10 +810,10 @@ class RoomController extends Controller
         }
         $stake = (int) $room->stake;
         $betPct = (int) $room->bet_pct;
-        // Arkadaslik (davet) odasi = coin transferi YOK (yetkili; stake zaten 0 ama kesinlestir).
-        // İSTİSNA: DÜELLO friendly ama sabit stake'li -> settleRoom'a delege et (transfer + escrow).
-        $isDuelStaked = (bool) ($room->duel ?? false) && $stake > 0;
-        if ((($room->mode === 'friendly' && ! $isDuelStaked) || ($stake <= 0 && $betPct <= 0)) || ! $room->p1_user_id || ! $room->p2_user_id) {
+        // Yalnız GERÇEKTEN bahissiz maç (stake=0 && bet_pct=0) VEYA eksik oyuncu -> coin transferi YOK.
+        // STAKED friendly (düello sabit stake VEYA %-bahisli DAVET odası — enter() "potsuz yok, min %10")
+        // settleRoom'a delege edilmeli; mode='friendly' TEK başına atlama sebebi DEĞİL (bkz settleRoom kökü).
+        if (($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return response()->json(['ok' => false]);
         }
         $callerSlot = $this->slotOf($room, $data['token'], $request);
@@ -866,11 +866,14 @@ class RoomController extends Controller
         $code = $room->code;
         $stake = (int) $room->stake;
         $betPct = (int) $room->bet_pct;
-        // Arkadaslik (davet) / bahissiz / eksik oyuncu -> coin transferi YOK.
-        // İSTİSNA: DÜELLO mode='friendly' AMA sabit stake'li -> transfer + escrow bırakma ŞART
-        // (atlanırsa rezerve 25 coin sonsuza kilitli kalır). Düelloyu guard'dan muaf tut.
-        $isDuelStaked = (bool) ($room->duel ?? false) && $stake > 0;
-        if ((($room->mode === 'friendly' && ! $isDuelStaked) || ($stake <= 0 && $betPct <= 0)) || ! $room->p1_user_id || ! $room->p2_user_id) {
+        // Yalnız GERÇEKTEN bahissiz maç (stake=0 && bet_pct=0) VEYA eksik oyuncu -> coin transferi YOK.
+        // KÖK FIX: STAKED friendly maçlar (düello sabit stake + %-bahisli DAVET odası; enter() :344
+        // "davet kodlu özel oda -> potsuz yok, min %10") coini pctLockedCoins/escrow ile KİLİTLER,
+        // ama eski `mode==='friendly'` skip'i settle'ı atlıyordu -> oda sonsuza settled=0 kalıp coini
+        // KALICI kilitliyordu (orphan). CANBEY25 vakası: 32 bitmiş %-davet maçı -> 1772 coin kilitli ->
+        // mağaza/turnuva "yetersiz coin". Artık stake/bet_pct>0 ise mode fark etmeksizin settle edilir
+        // (düello istisnası genelleşti; her staked friendly maç kilidini açar).
+        if (($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return ['skip' => true];
         }
         // Money settlement never trusts the client `won` field. The winner comes from the
