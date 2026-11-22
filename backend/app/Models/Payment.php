@@ -11,6 +11,7 @@ class Payment extends Model
         'discount_code', 'discount_kurus', 'product_order_id', 'product_order_ids',
         'tournament_id', // kind='tournament_entry' -> hangi turnuva (callback'te kayit icin)
         'shopier_product_id', 'shopier_url', // Shopier REST API v1 (PAT): tek-seferlik ürün id + ödeme linki
+        'channel', // web / android_app / iphone — oluşturma anında UA'dan türetilir (bkz. booted)
     ];
 
     protected function casts(): array
@@ -18,6 +19,40 @@ class Payment extends Model
         return [
             'product_order_ids' => 'array',
         ];
+    }
+
+    // Kanalı TEK noktada damgala (tüm Payment::create çağıranları buradan geçer). google_play (IAP) =
+    // kesin Android uygulaması. Diğerleri HTTP checkout bağlamında oluşur -> cihaz User-Agent'ından türet.
+    // Konsol/kuyruk bağlamında UA yok -> null (bilinmiyor; yanlış 'web' damgalamaktan iyi).
+    protected static function booted(): void
+    {
+        static::creating(function (Payment $p) {
+            if ($p->channel !== null) {
+                return;
+            }
+            if ($p->payment_method === 'google_play') {
+                $p->channel = 'android_app';
+
+                return;
+            }
+            $ua = request()?->userAgent();
+            $p->channel = $ua ? self::channelFromUserAgent($ua) : null;
+        });
+    }
+
+    // appEnv.ts ile AYNI sinyal: kurulu TavlaTV APK = remote-load Android WebView ('; wv)'), Facebook/
+    // Instagram in-app tarayıcıları HARİÇ (onlar bizim app değil). iOS uygulamamız yok -> iPhone = web tarayıcı.
+    public static function channelFromUserAgent(?string $ua): string
+    {
+        $ua = (string) $ua;
+        if (preg_match('/;\s*wv\)/i', $ua) && ! preg_match('/FBAN|FBAV|FB_IAB|Instagram|GSA\//i', $ua)) {
+            return 'android_app';
+        }
+        if (preg_match('/iPhone|iPad|iPod/i', $ua)) {
+            return 'iphone';
+        }
+
+        return 'web';
     }
 
     public function user()

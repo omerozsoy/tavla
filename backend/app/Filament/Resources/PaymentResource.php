@@ -105,6 +105,19 @@ class PaymentResource extends Resource
                 Tables\Columns\TextColumn::make('payment_method')->label('Yöntem')->badge()
                     ->color(fn ($state) => $state === 'bank_transfer' ? 'warning' : 'gray')
                     ->formatStateUsing(fn ($state) => $state === 'bank_transfer' ? 'Havale' : 'Kart'),
+                Tables\Columns\TextColumn::make('channel')->label('Kanal')->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'android_app' => 'success',
+                        'iphone' => 'info',
+                        'web' => 'gray',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'android_app' => 'Android App',
+                        'iphone' => 'iPhone',
+                        'web' => 'Web',
+                        default => '—',
+                    }),
                 Tables\Columns\TextColumn::make('plan')->label('Plan')->badge(),
                 Tables\Columns\TextColumn::make('period')->label('Dönem')
                     ->formatStateUsing(fn ($state) => $state === 'yearly' ? 'Yıllık' : ($state === 'monthly' ? 'Aylık' : '—')),
@@ -145,6 +158,11 @@ class PaymentResource extends Resource
 
                     return $query;
                 }),
+                Tables\Filters\SelectFilter::make('channel')->label('Kanal')->options([
+                    'web' => 'Web',
+                    'android_app' => 'Android App',
+                    'iphone' => 'iPhone',
+                ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Onayla / Düzenle')
