@@ -462,7 +462,8 @@ export default function MatReview({
                   ÖLÇÜLÜR (flip/mirror/tema fark etmez). */}
               <MoveArrows
                 steps={viewSteps}
-                dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+                mover={cur?.player ?? null}
+                dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${cur?.player ?? ''}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
               />
               {/* Küp çekildiyse: küpten alıcıya (rakibe) doğru kibar ok. */}
               {cubeArrowDir && <CubeArrow dir={cubeArrowDir} dep={`${sel}:${boardDir}:${cubeArrowDir}`} />}
@@ -638,7 +639,7 @@ function arrowPath(s: ArrowSeg, r: number): string {
   return `M${aL} Q${cL} ${nL} L${hL} L${tipx},${tipy} L${hR} L${nR} Q${cR} ${aR} Z`
 }
 
-export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
+export function MoveArrows({ steps, dep, mover }: { steps: Step[]; dep: string; mover?: Player | null }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [segs, setSegs] = useState<ArrowSeg[]>([])
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
@@ -659,16 +660,20 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
       const colW = p0 ? p0.getBoundingClientRect().width : 24
       const rad = Math.max(5, colW * 0.43)
       // Hamleyi yapan oyuncunun rengi: bardaki KIRIK TASI ve yigin yonunu dogru secmek icin.
-      // Nokta-kaynakli bir adimin ust tasindan (mover'in tasi) rengi oku (tahta hamleden ONCEKI
-      // konumu gosterir; kaynak hanenin tepesindeki tas = oynatilacak tas).
-      let moverColor: 'white' | 'black' | null = null
-      for (const s of steps) {
-        if (typeof s.from === 'number') {
-          const pe = board.querySelector(`[data-point="${s.from}"]`)
-          const ck = pe?.querySelector('.checker.white, .checker.black') as HTMLElement | null
-          if (ck) {
-            moverColor = ck.classList.contains('white') ? 'white' : 'black'
-            break
+      // OTORITER kaynak = `mover` (cur.player) propu. SAF BAR-GIRISI hamlesinde (bar/16 gibi) hic
+      // numerik `from` YOK -> asagidaki DOM taramasi bos doner, moverColor null kalir, barAnchor
+      // bardaki ILK (ust=siyah) tasi secer -> beyazin girisi "siyah kirilmis gibi" gorunurdu.
+      // Prop verilmezse (eski cagiranlar) nokta-kaynakli adimin ust tasindan rengi oku (yedek).
+      let moverColor: 'white' | 'black' | null = mover ?? null
+      if (!moverColor) {
+        for (const s of steps) {
+          if (typeof s.from === 'number') {
+            const pe = board.querySelector(`[data-point="${s.from}"]`)
+            const ck = pe?.querySelector('.checker.white, .checker.black') as HTMLElement | null
+            if (ck) {
+              moverColor = ck.classList.contains('white') ? 'white' : 'black'
+              break
+            }
           }
         }
       }

@@ -627,7 +627,8 @@ export default function MatchReport({
                       />
                       <MoveArrows
                         steps={viewSteps}
-                        dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+                        mover={cur?.player ?? null}
+                        dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${cur?.player ?? ''}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
                       />
                     </div>
                     {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
