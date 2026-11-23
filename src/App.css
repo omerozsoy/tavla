@@ -6608,10 +6608,13 @@ button[aria-disabled='true'],
 .board.board-3d {
   perspective: 1400px;
   perspective-origin: center 40%;
+  /* Tasma guvenligi: DUZ sarici (preserve-3d yok) -> icerideki 3D'yi bozmadan cerceveye kirp. */
+  overflow: hidden;
 }
 .board.board-3d .board-inner {
-  transform: rotateX(20deg) scale(0.94);
-  transform-origin: center 70%;
+  /* Pivot ALT kenar: tahta masaya oturur gibi geriye yatar, asagi tasma olmaz. scale pay birakir. */
+  transform: rotateX(20deg) scale(0.9);
+  transform-origin: center bottom;
   /* Dugmeleri ters-dondurup dik tutabilmek icin 3D baglam sart; overflow:hidden onu
      "flat"a zorlar -> tilt modunda overflow:visible (statik tahtada tasma ihmal edilebilir). */
   transform-style: preserve-3d;
