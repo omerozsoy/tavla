@@ -78,6 +78,19 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
     const camera = new THREE.PerspectiveCamera(42, w0 / h0, 0.1, 100)
     camera.position.set(0, 20, 16.5)
     camera.lookAt(0, SIZE, 0)
+    // En-boy oranina gore fov ayarla: SABIT dunya-genisligi (VIEW_W) her zaman canvas GENISLIGINE sigar
+    // -> zar, ekran/board oraninda DEGISMEZ (mobil/masaustu tutarli; "devasa" fix'i). DIE=1.8 -> ~%6 genislik.
+    const VIEW_W = 30
+    const camDist = camera.position.distanceTo(new THREE.Vector3(0, SIZE, 0))
+    const fitCamera = (w: number, h: number) => {
+      const aspect = Math.max(0.2, w / h)
+      camera.aspect = aspect
+      // yatay VIEW_W birimi canvas genisligine sigsin: vFov = 2*atan(VIEW_W/(2*dist*aspect)). Clamp 30-58.
+      const fovRad = 2 * Math.atan(VIEW_W / (2 * camDist * aspect))
+      camera.fov = Math.min(58, Math.max(30, (fovRad * 180) / Math.PI))
+      camera.updateProjectionMatrix()
+    }
+    fitCamera(w0, h0)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
@@ -155,44 +168,43 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
     const restPos = [new THREE.Vector3(-1.05, SIZE, 0), new THREE.Vector3(1.05, SIZE, 0)]
 
     let targets = [1, 1]
-    let phase: 'idle' | 'rolling' | 'snapping' = 'idle'
-    let settleTimer = 0
-    let rollFrames = 0 // atistan beri gecen frame -> settle algilanmasa da snap'i ZORLA (deger sabitligi)
-    let snapT = 0
-    const snapQ = dice.map(() => new THREE.Quaternion())
-    const snapFromQ = dice.map(() => new THREE.Quaternion())
-    const snapFromP = dice.map(() => new THREE.Vector3())
+    let phase: 'idle' | 'rolling' = 'idle'
+    let animT = 0
+    const ROLL_DUR = 0.75 // sn
+    const Y = new THREE.Vector3(0, 1, 0)
+    const startYaw = [0, 0]
+    const finalYaw = [0, 0]
+    const startY = [0, 0]
+    const baseQuat = dice.map(() => new THREE.Quaternion())
 
+    // DEGER-KORUYAN SCRIPTLI DUSUS (fizik tumble YOK): zar ILK FRAME'den gercek degeri USTTE tutar,
+    // yalniz DIKEY eksen (yaw) etrafinda donup duser -> ust yuz (= deger) hic degismez. Boylece
+    // "attigim ile oynadigim farkli / gelen zar degisiyor" tamamen biter; ilk atista gercek zar gorunur.
     function rollTo(vals: number[]) {
       targets = [vals[0] ?? 1, vals[1] ?? vals[0] ?? 1]
       phase = 'rolling'
-      settleTimer = 0
-      rollFrames = 0
+      animT = 0
       dice.forEach((d, i) => {
-        d.body.type = CANNON.Body.DYNAMIC
-        d.body.wakeUp()
-        d.body.position.set(-AX + 1.2 + i * 1.4, 4 + Math.random() * 1.2, AZ - 0.8)
-        d.body.quaternion.setFromEuler(Math.random() * 6.28, Math.random() * 6.28, Math.random() * 6.28)
-        d.body.velocity.set(2 + Math.random() * 2, 1.5 + Math.random() * 1.5, -(5 + Math.random() * 2.5))
-        d.body.angularVelocity.set((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20)
+        d.body.type = CANNON.Body.STATIC // fizik kapali
+        finalYaw[i] = (Math.random() - 0.5) * 0.8
+        startYaw[i] = finalYaw[i] + (2 + Math.random() * 1.5) * Math.PI * 2 * (i ? -1 : 1)
+        startY[i] = 5 + Math.random()
+        baseQuat[i].copy(valueUpQuat(targets[i])) // deger DAIMA +Y (ust)
       })
     }
     rollRef.current = rollTo
 
-    function beginSnap() {
-      phase = 'snapping'
-      snapT = 0
-      const Y = new THREE.Vector3(0, 1, 0)
-      dice.forEach((d, i) => {
-        const e = new THREE.Euler().setFromQuaternion(d.mesh.quaternion, 'YXZ')
-        const yawQ = new THREE.Quaternion().setFromAxisAngle(Y, e.y)
-        snapQ[i].copy(yawQ.multiply(valueUpQuat(targets[i]))) // yaw'i koru + deger yukari (DUZ)
-        snapFromQ[i].copy(d.mesh.quaternion)
-        snapFromP[i].copy(d.mesh.position)
-        d.body.type = CANNON.Body.STATIC // fizigi dondur, elle oturt
-        d.body.velocity.setZero()
-        d.body.angularVelocity.setZero()
-      })
+    const easeOutBounce = (x: number) => {
+      const n1 = 7.5625, d1 = 2.75
+      if (x < 1 / d1) return n1 * x * x
+      if (x < 2 / d1) { x -= 1.5 / d1; return n1 * x * x + 0.75 }
+      if (x < 2.5 / d1) { x -= 2.25 / d1; return n1 * x * x + 0.9375 }
+      x -= 2.625 / d1; return n1 * x * x + 0.984375
+    }
+    const setDie = (d: Die, i: number, yaw: number, y: number, s: number) => {
+      d.mesh.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(Y, yaw)).multiply(baseQuat[i])
+      d.mesh.position.set(restPos[i].x, y, restPos[i].z)
+      d.mesh.scale.setScalar(s)
     }
 
     const clock = new THREE.Clock()
@@ -200,30 +212,21 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
     const animate = () => {
       raf = requestAnimationFrame(animate)
       const dt = Math.min(clock.getDelta(), 1 / 30)
-      if (phase !== 'snapping') world.step(1 / 60, dt, 3)
-
       if (phase === 'rolling') {
-        dice.forEach((d) => {
-          d.mesh.position.copy(d.body.position as unknown as THREE.Vector3)
-          d.mesh.quaternion.copy(d.body.quaternion as unknown as THREE.Quaternion)
-        })
-        rollFrames += 1
-        const slow = dice.every((d) => d.body.velocity.length() < 0.35 && d.body.angularVelocity.length() < 0.35)
-        if (slow) {
-          settleTimer += 1
-          if (settleTimer > 10) beginSnap()
-        } else settleTimer = 0
-        // GUVENLIK: ~0.9sn sonra settle algilanmasa da snap'i zorla -> zar DAIMA otoriter degere HIZLI oturur
-        // (uzun tumble sirasinda rastgele yuz gosterip "attigim ile oynadigim farkli" kafa karisikligi).
-        if (rollFrames > 55 && phase === 'rolling') beginSnap()
-      } else if (phase === 'snapping') {
-        snapT += dt / 0.3
-        const t = easeOut(Math.min(snapT, 1))
+        animT += dt / ROLL_DUR
+        const t = Math.min(animT, 1)
+        const spinT = easeOut(t)
+        const dropT = easeOutBounce(Math.min(t * 1.18, 1))
+        const popT = easeOut(Math.min(t * 2, 1))
         dice.forEach((d, i) => {
-          d.mesh.quaternion.copy(snapFromQ[i]).slerp(snapQ[i], t)
-          d.mesh.position.lerpVectors(snapFromP[i], restPos[i], t)
+          const yaw = startYaw[i] + (finalYaw[i] - startYaw[i]) * spinT
+          const y = restPos[i].y + (startY[i] - restPos[i].y) * (1 - dropT)
+          setDie(d, i, yaw, y, 0.7 + 0.3 * popT)
         })
-        if (snapT >= 1) phase = 'idle'
+        if (animT >= 1) {
+          phase = 'idle'
+          dice.forEach((d, i) => setDie(d, i, finalYaw[i], restPos[i].y, 1))
+        }
       }
       renderer.render(scene, camera)
     }
@@ -236,8 +239,7 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
     const ro = new ResizeObserver(() => {
       const w = mount.clientWidth || w0
       const h = mount.clientHeight || h0
-      camera.aspect = w / h
-      camera.updateProjectionMatrix()
+      fitCamera(w, h)
       renderer.setSize(w, h)
     })
     ro.observe(mount)
