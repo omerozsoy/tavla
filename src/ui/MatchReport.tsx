@@ -155,8 +155,8 @@ export default function MatchReport({
   // candIdx === PREMOVE: "Hamle Öncesi" — tahta karar anındaki ham pozisyonu OKSUZ gösterir
   // (hiçbir aday/oynanan ok çizilmez). Liste en üstünde seçilebilir satır.
   const PREMOVE = -2
-  // Aday hamle listesi: varsayilan En Iyi 5; "Tumunu goster" ile hepsi acilir (kullanici istegi).
-  const CAND_LIMIT = 5
+  // Aday hamle listesi: varsayilan En Iyi 3; "Tumunu goster" ile hepsi acilir (kullanici istegi).
+  const CAND_LIMIT = 3
   const [showAllCands, setShowAllCands] = useState(false)
   const [boardDir] = useBoardDir()
   const [swapStones] = useSwapStones()
@@ -685,33 +685,13 @@ export default function MatchReport({
                       >
                         <span className="an-cmove">{t('rep.beforeMove')}</span>
                       </button>
-                      {/* OYNADIĞIN HAMLE: en üstte, NUMARASIZ (kullanıcı isteği) — severity renk noktası
-                          (turuncu/kırmızı = hata) + ne kadar kaybettiğin. Listede ayrıca gösterilmez. */}
-                      {cur.notation && (
-                        <button
-                          className={`an-cand an-cand-you played you ${(playedIdx < 0 ? candIdx < 0 : candIdx === playedIdx) ? 'view' : ''}`}
-                          onClick={() => setCandIdx(playedIdx >= 0 ? playedIdx : -1)}
-                        >
-                          <span className={`aq-dot ${band(prLoss(cur)).cls}`} />
-                          <span className="an-rank" aria-hidden />
-                          <span className="an-cmove">{cur.notation}</span>
-                          <span className="an-eq neg">
-                            {prLoss(cur) >= 0.005 ? `-${prLoss(cur).toFixed(3)}` : '—'}
-                          </span>
-                          <span className="an-tags">
-                            <span className="an-you-tag">
-                              <Icon name="user" size={12} /> {playedLabel}
-                            </span>
-                          </span>
-                        </button>
-                      )}
                       {(showAllCands ? (cur.cands ?? []) : (cur.cands ?? []).slice(0, CAND_LIMIT)).map((c, ci) => {
-                        if (ci === playedIdx) return null // oynanan hamle en üstte gösterildi
                         const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)
+                        const isPlayed = ci === playedIdx // oynadığın hamle ilk 5'te ise YERİNDE işaretle
                         return (
                           <button
                             key={ci}
-                            className={`an-cand ${candIdx === ci ? 'view' : ''}`}
+                            className={`an-cand ${candIdx === ci ? 'view' : ''} ${isPlayed ? 'played you' : ''}`}
                             onClick={() => setCandIdx(ci)}
                           >
                             {/* Severity noktası: best'ten uzaklık (yeşil→sarı→turuncu→kırmızı). */}
@@ -734,10 +714,35 @@ export default function MatchReport({
                                   <Icon name="star" size={13} />
                                 </span>
                               )}
+                              {isPlayed && (
+                                <span className="an-you-tag">
+                                  <Icon name="user" size={12} /> {playedLabel}
+                                </span>
+                              )}
                             </span>
                           </button>
                         )
                       })}
+                      {/* Oynadığın hamle ilk 5'te DEĞİLSE (ya da listede yok): GERÇEK sıra numarasıyla
+                          en alta ekle (kullanıcı isteği). showAll açıkken zaten yerinde görünür. */}
+                      {cur.notation && (playedIdx < 0 || (playedIdx >= CAND_LIMIT && !showAllCands)) && (
+                        <button
+                          className={`an-cand played you ${candIdx === (playedIdx >= 0 ? playedIdx : -1) ? 'view' : ''}`}
+                          onClick={() => setCandIdx(playedIdx >= 0 ? playedIdx : -1)}
+                        >
+                          <span className={`aq-dot ${band(prLoss(cur)).cls}`} />
+                          <span className="an-rank">{playedIdx >= 0 ? playedIdx + 1 : '·'}</span>
+                          <span className="an-cmove">{cur.notation}</span>
+                          <span className="an-eq neg">
+                            {prLoss(cur) >= 0.005 ? `-${prLoss(cur).toFixed(3)}` : '—'}
+                          </span>
+                          <span className="an-tags">
+                            <span className="an-you-tag">
+                              <Icon name="user" size={12} /> {playedLabel}
+                            </span>
+                          </span>
+                        </button>
+                      )}
                       {/* 30'dan fazla aday varsa: en altta tumunu goster / daha az goster */}
                       {(cur.cands?.length ?? 0) > CAND_LIMIT && (
                         <button
