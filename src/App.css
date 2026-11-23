@@ -17413,6 +17413,19 @@ body:has(.spectate-view) .app.lobby {
   .analysis-layout .analysis-rows {
     display: none;
   }
+  /* "Dışa aktar altındaki turuncu çizgi" = YATAY SCROLLBAR (global `*{scrollbar-color:terracotta}`).
+     Full-bleed tahta (negatif margin-inline) report-body'de yatay taşma yaratıp turuncu yatay
+     kaydırma çubuğunu gösteriyordu — kodda border DEĞİL. Full-bleed'i bozmadan scrollbar'ı gizle
+     (dikey scroll touch/wheel ile çalışır). ponytail: semptom fix — kök taşma kullanıcının
+     istediği edge-to-edge tahtadan geliyor, onu koruyoruz. */
+  .report-body,
+  .report-embed {
+    scrollbar-width: none;
+  }
+  .report-body::-webkit-scrollbar,
+  .report-embed::-webkit-scrollbar {
+    display: none;
+  }
   .analysis-layout .an-split-cands {
     flex: none;
     width: 100%;
