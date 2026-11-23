@@ -17145,7 +17145,7 @@ body:has(.spectate-view) .app.lobby {
 }
 .an-cand {
   display: grid;
-  grid-template-columns: 20px 1fr auto auto;
+  grid-template-columns: 14px 20px 1fr auto auto;
   gap: 8px;
   align-items: center;
   padding: 8px 10px;
@@ -17163,6 +17163,9 @@ body:has(.spectate-view) .app.lobby {
 }
 .an-cand.played {
   background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+}
+.an-cand .aq-dot {
+  justify-self: center;
 }
 .an-rank {
   color: var(--muted);
