@@ -17264,15 +17264,26 @@ body:has(.spectate-view) .app.lobby {
 }
 .an-nav-mid {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  min-width: 120px;
+  gap: 2px;
+  min-width: 0;
+}
+/* Ortadaki "Sizin hamleniz" satırı: nokta + notasyon + kayıp + rozet (aday satırının aynısı). */
+.an-nav-you {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  max-width: 100%;
 }
 .an-nav-move {
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   color: var(--text);
+  white-space: nowrap;
 }
 .an-nav-pos {
   text-align: center;
@@ -17392,7 +17403,21 @@ body:has(.spectate-view) .app.lobby {
     display: flex;
     order: 3;
     width: 100%;
+    gap: 8px;
     margin: 2px 0;
+  }
+  /* Ortadaki satır dar viewport'ta sığsın: rozet biraz küçük, buton kompakt. */
+  .an-nav-btn {
+    width: 42px;
+    height: 42px;
+    flex: none;
+  }
+  .an-nav-you {
+    gap: 6px;
+  }
+  .an-nav-you .an-you-tag {
+    font-size: 0.62rem;
+    padding: 2px 6px;
   }
   /* Tahta-üstü skor en tepede; board yoksa (nadir) "hamle seç" board'un yerinde. */
   .an-score {
