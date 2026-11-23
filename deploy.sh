@@ -131,6 +131,13 @@ fi
 # YÜKSEK gösterir. Her deploy'da yeniden kur -> match_results ile tutarlı (chunk'li, ucuz).
 $PHP artisan careerpr:rebuild || echo "UYARI: careerpr:rebuild atlandi."
 
+# SITEMAP (SEO): commit'li public/sitemap.xml yalnizca statik curated URL'lerin TABANIdir; yayindaki
+# haber/makale (/haberler/<slug>, /makaleler/<slug>) + taze lastmod DB'den gelir. Zamanlanmis
+# gorev (02:15) canli dosyayi tazeler AMA her deploy yeni release'i commit'li tabana geri ezerdi
+# -> sitemap gunun cogunda bayat kalirdi. Her deploy'da DB'den yeniden uret (idempotent: komut
+# kendi yonetilen bloklarini soyup yeniden yazar, curated URL'lere dokunmaz). Best-effort.
+$PHP artisan seo:sitemap || echo "UYARI: seo:sitemap atlandi (sitemap commit'li tabanda kalir)."
+
 $PHP artisan optimize:clear || echo "UYARI: optimize:clear atlandi."
 # KOK ONLEM (2026-10-18): optimize:clear bootstrap/cache'i BOSALTIR. Laravel packages.php &
 # services.php'yi eksikse boot'ta KILITSIZ file_put_contents ile yazar -> canli trafikte

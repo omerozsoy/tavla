@@ -173,8 +173,7 @@ import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 const Leaderboard = lazy(() => import('./ui/Leaderboard'))
 const DuelView = lazy(() => import('./ui/DuelView'))
-import { type CardPayData, type CardBreakdown } from './ui/CardForm'
-const CardForm = lazy(() => import('./ui/CardForm'))
+import CardForm, { type CardPayData, type CardBreakdown } from './ui/CardForm'
 import { TeamEmblem } from './ui/TeamEmblem'
 import { useTeamTag } from './teamTags'
 import RankInfo from './ui/RankInfo'
@@ -569,7 +568,7 @@ function setSeoH1(text: string): void {
   }
   if (el.textContent !== text) el.textContent = text
 }
-const Achievements = lazy(() => import('./ui/Achievements'))
+import Achievements from './ui/Achievements'
 const AchievementUnlock = lazy(() => import('./ui/AchievementUnlock'))
 import FriendGameSetup from './ui/FriendGameSetup'
 import { GameHudHeader, GameHudRow, useMobilePortrait } from './ui/GameHud'
@@ -582,8 +581,7 @@ const ExcuseMachine = lazy(() => import('./ui/ExcuseMachine'))
 const KizTavlasi = lazy(() => import('./ui/KizTavlasi'))
 import CheckerShop, { DISCONTINUED as DISCONTINUED_CHECKERS } from './ui/CheckerShop'
 import { CHECKER_BY_ID, CHECKER_FINISHES } from './checkers'
-import { type CartAddLine } from './ui/Products'
-const Products = lazy(() => import('./ui/Products'))
+import Products, { type CartAddLine } from './ui/Products'
 const MyOrders = lazy(() => import('./ui/MyOrders'))
 import Cart, { type CartItem, type CartAddressSel, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import DeliveryStep from './ui/DeliveryStep'
