@@ -12760,7 +12760,10 @@ export default function App() {
           tiltAngle={board3dAngle}
           tiltDepth={board3dDepth}
           physicsDice={
-            board3d && diceFaces.length > 0 ? (
+            // WebGL fizik zarı (three+cannon) GELISTIRME ASAMASINDA: devasa board'u/taslari ortuyor +
+            // rastgele yuz gosterip sonra gercege donuyor. VARSAYILAN KAPALI -> normal CSS 3D zarlari
+            // gorunur, board kullanilir. Test icin: localStorage.setItem('tavla.physicsDice','1').
+            board3d && diceFaces.length > 0 && localStorage.getItem('tavla.physicsDice') === '1' ? (
               <Suspense fallback={null}>
                 <PhysicsDice faces={diceFaces} />
               </Suspense>
