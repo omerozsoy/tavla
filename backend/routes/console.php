@@ -47,6 +47,13 @@ Schedule::command('tavla:prune-room-commands --days=2')
     ->name('prune-room-commands')
     ->withoutOverlapping(10);
 
+// Günlük liderlik "reign" sayacı: o anki #1'in reign_days'ini 1 artır + rozet değerlendir
+// (Taht=7, Hanedan=30 TOPLAM gün). Gün başında bir kez; Setting reign_tick_date çift-sayımı önler.
+Schedule::command('tavla:reign-tick')
+    ->dailyAt('00:10')
+    ->name('reign-tick')
+    ->withoutOverlapping(10);
+
 // Yayındaki haber URL'lerini sitemap'e günlük ekle; taslak/silinmiş haberler otomatik çıkar.
 Schedule::command('seo:sitemap')
     ->dailyAt('02:15')

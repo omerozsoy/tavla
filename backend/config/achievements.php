@@ -209,6 +209,20 @@ $list[] = $ev('lb_top100', 'rating', 'İlk 100', 'Liderlik tablosunda ilk 100’
 $list[] = $ev('lb_top50', 'rating', 'İlk 50', 'Liderlik tablosunda ilk 50’ye gir.', 'crown', 'flag_top_50', 'epic', 750);
 $list[] = $ev('lb_top10', 'rating', 'Elitler Kulübü', 'Liderlik tablosunda ilk 10’a gir.', 'crown', 'flag_top_10', 'legendary', 1500);
 $list[] = $ev('lb_top1', 'rating', 'Zirvede', 'Liderlik tablosunda 1. sıraya çık.', 'crown', 'flag_top_1', 'mythic', 3000);
+// Liderlik tablosunda 1. sırada TOPLAM gün (ardışık olmak zorunda değil). Günlük `tavla:reign-tick`
+// o anki #1'in reign_days'ini artırır. İleri-dönük (geçmiş 1.lik verisi yok → backfill yok).
+$list[] = [
+    'slug' => 'reign_7', 'category' => 'rating', 'name' => 'Taht',
+    'desc' => 'Liderlik tablosunda toplam 7 gün 1. sırada ol.', 'icon' => 'crown',
+    'tier' => 'diamond', 'rarity' => 'legendary', 'reward_coin' => $TIER['diamond']['coin'],
+    'hidden' => false, 'type' => 'threshold', 'metric' => 'reign_days', 'value' => 7,
+];
+$list[] = [
+    'slug' => 'reign_30', 'category' => 'rating', 'name' => 'Hanedan',
+    'desc' => 'Liderlik tablosunda toplam 30 gün 1. sırada ol.', 'icon' => 'crown',
+    'tier' => 'diamond', 'rarity' => 'mythic', 'reward_coin' => $TIER['diamond']['coin'],
+    'hidden' => false, 'type' => 'threshold', 'metric' => 'reign_days', 'value' => 30,
+];
 
 // ============ SOSYAL ============
 $list[] = $ev('social_nemesis', 'social', 'Nemesis', 'Aynı oyuncuyu 10 kez yen.', 'target', 'flag_nemesis', 'rare', 400);

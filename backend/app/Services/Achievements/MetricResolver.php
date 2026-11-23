@@ -33,6 +33,7 @@ final class MetricResolver
             'clean_matches' => (int) $stat->clean_matches,
             'correct_cube_decisions' => (int) $stat->correct_cube_decisions,
             'best_move_streak' => (int) $stat->best_move_streak,
+            'reign_days' => (int) ($stat->reign_days ?? 0),
 
             default => 0,
         };
