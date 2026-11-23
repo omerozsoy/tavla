@@ -143,4 +143,44 @@ class BackstopSettleTest extends TestCase
         $this->assertSame(1000, (int) $a->fresh()->coins, 'void transfer yapmaz');
         $this->assertSame(1000, (int) $b->fresh()->coins, 'void transfer yapmaz');
     }
+
+    private function duelRoom(User $a, User $b): Room
+    {
+        return Room::create([
+            'code' => 'DUE'.random_int(100, 999), 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $a->id, 'p2_user_id' => $b->id, 'p1_name' => 'A', 'p2_name' => 'B',
+            'status' => 'finished', 'mode' => 'friendly', 'stake' => 25, 'bet_pct' => 0,
+            'duel' => true, 'settled' => false,
+            'authoritative' => true, 'version' => 0, 'server_version' => 0,
+            'server_match' => ['target' => 1, 'done' => false, 'winner' => null],
+        ]);
+    }
+
+    // DÜELLO özel void grace (15 dk): yarım kalan düello 20 dk eskiyse VOID edilir (normal oda 60 dk
+    // beklerdi -> coin boşuna kilitli kalırdı). Düello hızlı + anlık-sonuçlu -> kısa grace güvenli.
+    public function test_duel_room_voids_after_short_grace(): void
+    {
+        $a = User::factory()->create(['coins' => 1000]);
+        $b = User::factory()->create(['coins' => 1000]);
+        $room = $this->duelRoom($a, $b);
+        Room::whereKey($room->id)->update(['updated_at' => now()->subMinutes(20)]); // 15<20<60
+
+        $this->artisan('matches:backstop-settle', ['--minutes' => 2])->assertSuccessful();
+
+        $this->assertTrue((bool) $room->refresh()->settled, 'yarım düello 15 dk sonra VOID edilmeli');
+    }
+
+    // Düello OLMAYAN kazanansız oda aynı yaşta (20 dk) hâlâ PENDING: 60 dk grace düelloya özel kısaltma
+    // normal bahisli maçları ETKİLEMEMELİ.
+    public function test_non_duel_room_still_pending_at_short_grace(): void
+    {
+        $a = User::factory()->create(['coins' => 1000]);
+        $b = User::factory()->create(['coins' => 1000]);
+        $room = $this->pctRoom($a, $b, null, 300, 300); // duel=false (default)
+        Room::whereKey($room->id)->update(['updated_at' => now()->subMinutes(20)]); // 20<60 -> pending
+
+        $this->artisan('matches:backstop-settle', ['--minutes' => 2])->assertSuccessful();
+
+        $this->assertFalse((bool) $room->refresh()->settled, 'düello olmayan oda 60 dk grace içinde void EDİLMEMELİ');
+    }
 }

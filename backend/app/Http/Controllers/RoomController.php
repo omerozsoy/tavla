@@ -57,6 +57,10 @@ class RoomController extends Controller
     // biten maç (server_match yazımı ~sn) bu eşiğin altında kalır -> yanlışlıkla void edilmez.
     private const VOID_GRACE_MIN = 60;
 
+    // DÜELLO (sabit stake, duel=true) hızlı + anlık-sonuçlu olduğundan void grace'i kısa: yarım kalan
+    // düello en geç bu kadar dk'da temizlenir (blok penceresi STALE_UNSETTLED_MIN=15 ile hizalı).
+    private const VOID_GRACE_DUEL_MIN = 15;
+
     // POLL YAZIM THROTTLE (anlık yavaşlık / DB yük fix): her poll (~1.2sn) presence _seen için
     // ağır `rooms.clock` JSON'unu yazıyordu (eski 4sn -> turnuvada N oyuncu × ~0.25 yazım/sn).
     // _seen yalnız presence (terk) tespiti için gerekir; eşik MatchClock::PRESENCE_TIMEOUT (45sn).
@@ -888,9 +892,10 @@ class RoomController extends Controller
             // bırak + settled=1 + koltukları aç. Böylece "finished + settled=0 + winner-null" mezarları
             // KAYNAĞINDA kapanır (yoksa sonsuza pending kalıp katılımcıyı C1 guard'ıyla bloklardı; 124
             // kullanıcı vakasının kökü). Canlı yeni biten maça DOKUNMAZ (VOID_GRACE_MIN grace).
+            $voidGrace = ($room->duel ?? false) ? self::VOID_GRACE_DUEL_MIN : self::VOID_GRACE_MIN;
             if ($room->status === 'finished'
                 && $room->updated_at
-                && $room->updated_at->lt(now()->subMinutes(self::VOID_GRACE_MIN))) {
+                && $room->updated_at->lt(now()->subMinutes($voidGrace))) {
                 $this->releaseEscrow($room);
                 $voided = DB::transaction(function () use ($room) {
                     $claimed = Room::where('id', $room->id)->where('settled', false)
