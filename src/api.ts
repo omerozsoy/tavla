@@ -1516,6 +1516,7 @@ export interface SwissState {
   max_lives?: number
   schedule?: Record<string, string> // { "1": "2026-11-05 20:00:00", ... } tur başlangıç tarih/saatleri
   next_at?: string | null // sıradaki (henüz çekilmemiş) turun planlanan tarih/saati
+  next_draw_at?: string | null // otomatik mod: "Kura Geri Sayımı" hedef zamanı (ISO8601)
   next_round?: number // sıradaki tur numarası
   awaiting_draw?: boolean // o anki tur bitti, sıradaki turun kurası yönetim tarafından çekilecek
 }

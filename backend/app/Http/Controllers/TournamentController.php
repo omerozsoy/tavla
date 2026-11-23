@@ -1564,6 +1564,12 @@ class TournamentController extends Controller
                     if ($this->resolveStalledMatches($t)) {
                         $changed = true;
                     }
+                    // OTOMATİK SWISS KURA: online auto-modda 1. turu hemen, sonraki turları "Kura Geri
+                    // Sayımı" (3 dk) sonrası otomatik çek. Manuel-bye/salon modu etkilenmez (metot içinde
+                    // gate). Gözetimsiz/periyodik turnuvanın admin'siz ilerlemesini sağlar.
+                    if (SwissRuntime::autoAdvanceDue($t)) {
+                        $changed = true;
+                    }
 
                     return ($this->resolveDeadByes($t) || $changed) ? $t : null;
                 });

@@ -1411,6 +1411,8 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'swiss.walkover': 'Hükmen',
   'swiss.pairPending': 'Bekliyor',
   'swiss.awaitingDraw': '{n}. tur kurası yönetim tarafından çekilecek',
+  'swiss.awaitingDrawAuto': '{n}. tur kurası otomatik çekiliyor',
+  'swiss.drawCountdown': 'Kura Geri Sayımı',
   'swiss.roundScheduled': 'Planlanan: {at}',
   'swiss.roundNoDate': 'tarih/saat henüz belirlenmedi',
   'swiss.stActive': 'Aktif',

@@ -1019,8 +1019,10 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
                 {sw && active.status === 'running' && sw.awaiting_draw && (
                   <div className="swiss-awaiting">
-                    <Icon name="calendar-dots" size={14} /> {t('swiss.awaitingDraw', { n: sw.next_round ?? (sw.round + 1) })}
-                    {sw.next_at ? ' · ' + t('swiss.roundScheduled', { at: fmtDt(sw.next_at) }) : ' · ' + t('swiss.roundNoDate')}
+                    <Icon name="calendar-dots" size={14} /> {t(sw.next_draw_at ? 'swiss.awaitingDrawAuto' : 'swiss.awaitingDraw', { n: sw.next_round ?? (sw.round + 1) })}
+                    {sw.next_draw_at ? (
+                      <> · {t('swiss.drawCountdown')} <Countdown target={sw.next_draw_at} onExpire={refreshList} className="swiss-cd tnum" /></>
+                    ) : sw.next_at ? ' · ' + t('swiss.roundScheduled', { at: fmtDt(sw.next_at) }) : ' · ' + t('swiss.roundNoDate')}
                   </div>
                 )}
 

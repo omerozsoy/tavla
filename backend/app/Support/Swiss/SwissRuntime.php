@@ -9,6 +9,7 @@ use App\Services\WalletService;
 use App\Support\PrizeDistribution;
 use App\Support\TournamentModeration;
 use App\Support\TournamentPool;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -29,6 +30,9 @@ use Illuminate\Support\Facades\DB;
 class SwissRuntime
 {
     public const RULE_VERSION = 1;
+
+    /** Otomatik kura sayaç süresi (sn): son maç bitince bu kadar "Kura Geri Sayımı" bekleyip çeker. */
+    public const DRAW_COUNTDOWN_SECONDS = 180;
 
     public static function isSwiss(Tournament $t): bool
     {
@@ -246,6 +250,71 @@ class SwissRuntime
         $t->save();
 
         return ['ok' => true, 'reason' => 'ok'];
+    }
+
+    /**
+     * OTOMATİK KURA (yalnız online + swiss_auto_draw=true; outdoor/salon ve manuel-bye HARİÇ).
+     * Mevcut running-sweep'ten (autoStartDue) çağrılır, idempotent. 1. turu (bracket boş) sayaçsız HEMEN
+     * çeker → periyodik/gözetimsiz turnuva da açılır. Sonraki her tur, önceki tur TAMAMLANINCA
+     * DRAW_COUNTDOWN_SECONDS'lik "Kura Geri Sayımı" sonrası otomatik çekilir (next_draw_at damgası).
+     * Çağıran lockForUpdate transaction sağlar.
+     *
+     * @return bool swiss_state değişti mi (sayaç başladı / kura çekildi / stale damga temizlendi)
+     */
+    public static function autoAdvanceDue(Tournament $t): bool
+    {
+        if (! self::isSwiss($t) || Tournament::isOutdoorType($t->type) || ! (bool) $t->swiss_auto_draw) {
+            return false; // yalnız online otomatik mod (manuel-bye + salon admin'e bırakılır)
+        }
+        if ($t->status !== 'running') {
+            return false;
+        }
+        $state = $t->swiss_state;
+        if (! is_array($state) || empty($state['participants']) || SwissEngine::isComplete($state['participants'])) {
+            return false;
+        }
+
+        // 1. tur: başlangıçta sayaçsız HEMEN çek (gözetimsiz turnuvanın açılışı admin'e bağlı kalmasın).
+        if (count(is_array($t->bracket) ? $t->bracket : []) === 0) {
+            $state['next_at'] = now()->toDateTimeString();
+            $t->swiss_state = $state;
+            $t->save();
+
+            return self::drawRound($t)['ok'];
+        }
+
+        // Tur hâlâ oynanıyorsa sayaç olmamalı (stale damga temizle).
+        if (! self::currentRoundComplete($t)) {
+            if (empty($state['next_draw_at'])) {
+                return false;
+            }
+            $state['next_draw_at'] = null;
+            $t->swiss_state = $state;
+            $t->save();
+
+            return true;
+        }
+
+        // Son tur tamam + turnuva bitmemiş: sıradaki tur geri sayım sonrası otomatik çekilir.
+        $now = now();
+        if (empty($state['next_draw_at'])) {
+            $state['next_draw_at'] = $now->copy()->addSeconds(self::DRAW_COUNTDOWN_SECONDS)->toIso8601String();
+            $t->swiss_state = $state;
+            $t->save();
+
+            return true; // sayaç başladı
+        }
+        if ($now->lt(Carbon::parse($state['next_draw_at']))) {
+            return false; // geri sayım sürüyor
+        }
+
+        // Süre doldu: kura çek (bye'ı sistem seçer; drawRound next_at'i kullanır).
+        $state['next_at'] = $now->toDateTimeString();
+        $state['next_draw_at'] = null;
+        $t->swiss_state = $state;
+        $t->save();
+
+        return self::drawRound($t)['ok'];
     }
 
     /**
@@ -637,6 +706,7 @@ class SwissRuntime
             'max_lives' => (int) ($state['config']['lives'] ?? SwissEngine::MAX_LIVES),
             'schedule' => is_array($state['schedule'] ?? null) ? $state['schedule'] : [], // {tur: "Y-m-d H:i:s"}
             'next_at' => $state['next_at'] ?? null,            // sıradaki (çekilmemiş) turun tarih/saati
+            'next_draw_at' => $state['next_draw_at'] ?? null,  // otomatik mod: "Kura Geri Sayımı" hedef zamanı (ISO8601)
             'next_round' => self::nextRoundNo($t),             // sıradaki tur numarası
             'awaiting_draw' => $t->status === 'running' && ! SwissEngine::isComplete($participants) && self::currentRoundComplete($t),
         ];

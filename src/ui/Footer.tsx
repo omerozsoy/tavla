@@ -82,8 +82,10 @@ export default function Footer({ columns }: Props) {
           {columns
             .filter((c) => c.items.length > 0)
             .map((col) => (
-              <div className="foot-col" key={col.titleKey}>
-                <div className="foot-col-title">{col.title ?? t(col.titleKey)}</div>
+              // Akordeon: mobilde katlanır (native <details>; varsayılan kapalı -> yalnız
+              // başlıklar görünür). Masaüstünde CSS içeriği DAİMA açık tutar (eski 7-kolon düzeni).
+              <details className="foot-col" key={col.titleKey}>
+                <summary className="foot-col-title">{col.title ?? t(col.titleKey)}</summary>
                 <ul>
                   {col.items.map((it) => (
                     <li key={it.key}>
@@ -106,7 +108,7 @@ export default function Footer({ columns }: Props) {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </details>
             ))}
         </nav>
         </div>

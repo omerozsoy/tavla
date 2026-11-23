@@ -167,6 +167,28 @@ a.foot-partner:hover {
   color: var(--foot-cream);
   margin-bottom: 9px;
 }
+/* Akordeon <summary>: native disclosure üçgenini kaldır (chevron'u mobilde ekliyoruz). */
+.foot-col-title {
+  list-style: none;
+}
+.foot-col-title::-webkit-details-marker {
+  display: none;
+}
+/* Masaüstü/tablet (≥621px): kolonlar DAİMA açık, toggle YOK -> eski çok-kolon düzeni aynen.
+   <details> varsayılan kapalı olduğundan içeriği zorla göster (yeni Chrome ::details-content +
+   eski tarayıcılarda doğrudan çocuk display override). */
+@media (min-width: 621px) {
+  .foot-col > ul {
+    display: flex !important;
+  }
+  .foot-col::details-content {
+    content-visibility: visible !important;
+  }
+  .foot-col-title {
+    cursor: default;
+    pointer-events: none;
+  }
+}
 /* Baslik onunde kucuk altin "tavla ucu" (yukari ucgen) — board point nişanesi. */
 .foot-col-title::before {
   content: '';
@@ -327,15 +349,44 @@ a.foot-partner:hover {
     flex-basis: 100%;
     min-width: 0;
   }
+  /* AKORDEON: tek kolon, her başlık katlanır satır. Varsayılan kapalı -> yalnız 7 başlık
+     görünür (footer çok kısalır); dokununca o kolon açılır. */
   .foot-cols {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px 14px;
+    grid-template-columns: 1fr;
+    gap: 0;
     flex-basis: 100%;
   }
-  .foot-col-title { font-size: 0.8rem; }
+  .foot-col {
+    border-bottom: 1px solid var(--border);
+  }
+  .foot-col-title {
+    justify-content: space-between; /* başlık solda, chevron sağda */
+    cursor: pointer;
+    margin-bottom: 0;
+    padding: 15px 2px;
+    font-size: 0.8rem;
+  }
+  /* Sağda chevron (aşağı ok); açılınca yukarı döner. */
+  .foot-col-title::after {
+    content: '';
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: rotate(45deg);
+    transition: transform 0.18s ease;
+  }
+  .foot-col[open] .foot-col-title::after {
+    transform: rotate(-135deg);
+  }
+  .foot-col > ul {
+    padding: 2px 2px 12px;
+  }
   .foot-link {
-    min-height: 44px;
-    padding-block: 10px;
+    min-height: 40px;
+    padding-block: 9px;
     font-size: 0.8rem;
   }
 }
