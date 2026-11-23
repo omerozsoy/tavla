@@ -130,6 +130,8 @@ interface BoardProps {
   pointTexts?: Record<number, string>
   // Admin deneysel: tahtayı CSS perspektifiyle 3D eğ (yalnız görsel; sürükleme hassasiyeti bozulabilir).
   tilt3d?: boolean
+  tiltAngle?: number // 3D eğim açısı (derece) — admin kaydırıcısı
+  tiltDepth?: number // 3D perspektif mesafesi (px) — küçük = daha güçlü/yakın
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -341,6 +343,8 @@ function Board({
   showStackCount,
   pointTexts,
   tilt3d = false,
+  tiltAngle = 20,
+  tiltDepth = 1400,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -756,6 +760,11 @@ function Board({
     <div
       className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}${tilt3d ? ' board-3d' : ''}`}
       ref={boardElRef}
+      style={
+        tilt3d
+          ? ({ '--tilt': `${tiltAngle}deg`, '--persp': `${tiltDepth}px` } as CSSProperties)
+          : undefined
+      }
     >
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">

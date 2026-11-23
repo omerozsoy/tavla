@@ -162,8 +162,19 @@ export default function MatchReport({
   // candIdx === PREMOVE: "Hamle Öncesi" — tahta karar anındaki ham pozisyonu OKSUZ gösterir
   // (hiçbir aday/oynanan ok çizilmez). Liste en üstünde seçilebilir satır.
   const PREMOVE = -2
-  // Aday hamle listesi: varsayilan En Iyi 3; "Tumunu goster" ile hepsi acilir (kullanici istegi).
-  const CAND_LIMIT = 3
+  // Aday hamle limiti viewport'a göre: web (>720px) En İyi 10, mobil En İyi 3 (kullanıcı isteği).
+  // "Tümünü göster" ile her ikisinde de tamamı açılır.
+  const [isNarrow, setIsNarrow] = useState(
+    () => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 720px)').matches,
+  )
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(max-width: 720px)')
+    const on = () => setIsNarrow(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  const CAND_LIMIT = isNarrow ? 3 : 10
   const [showAllCands, setShowAllCands] = useState(false)
   const [boardDir] = useBoardDir()
   const [swapStones] = useSwapStones()

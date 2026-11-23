@@ -157,6 +157,8 @@ const TR: Dict = {
   'gm.chatOff': 'Sohbeti Kapat',
   'gm.autoRoll': 'Otomatik Zar',
   'gm.board3d': '3D Tahta (deneysel)',
+  'gm.tiltAngle': 'Eğim açısı',
+  'gm.tiltDepth': 'Perspektif',
   'gm.autoRollWarnTitle': 'Otomatik Zar Uyarısı',
   'gm.autoRollWarnBody':
     'Otomatik zar açıkken, zar atılmadan önceki bazı küp teklif etme fırsatlarını kaçırabilirsiniz. Bu özelliğin kullanımı ve doğurabileceği sonuçlar oyuncunun kendi sorumluluğundadır.',
@@ -2673,6 +2675,8 @@ const EN: Dict = {
   'gm.chatOff': 'Disable chat',
   'gm.autoRoll': 'Auto roll',
   'gm.board3d': '3D board (experimental)',
+  'gm.tiltAngle': 'Tilt angle',
+  'gm.tiltDepth': 'Perspective',
   'gm.autoRollWarnTitle': 'Auto Roll Warning',
   'gm.autoRollWarnBody':
     'When auto roll is on, you may miss some doubling cube offer opportunities before the dice are rolled. Use of this feature and its consequences are the player’s own responsibility.',

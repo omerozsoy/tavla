@@ -2617,6 +2617,21 @@ export default function App() {
   useEffect(() => {
     setPref('tavla.board3d', board3d ? '1' : null)
   }, [board3d])
+  // 3D eğim açısı (derece) + perspektif mesafesi (px) — admin kaydırıcıları, kalıcı.
+  const [board3dAngle, setBoard3dAngle] = useState<number>(() => {
+    const v = Number(localStorage.getItem('tavla.board3dAngle'))
+    return Number.isFinite(v) && v > 0 ? v : 20
+  })
+  const [board3dDepth, setBoard3dDepth] = useState<number>(() => {
+    const v = Number(localStorage.getItem('tavla.board3dDepth'))
+    return Number.isFinite(v) && v > 0 ? v : 1400
+  })
+  useEffect(() => {
+    setPref('tavla.board3dAngle', String(board3dAngle))
+  }, [board3dAngle])
+  useEffect(() => {
+    setPref('tavla.board3dDepth', String(board3dDepth))
+  }, [board3dDepth])
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
   // loss/decisions = STRICT XG (obvious+forced hariç, PR'ın kendisi). cubeLoss/cubeDecisions =
   // yalnız küp (kırılım). allLoss/allDecisions = TÜM kaydedilen kararlar (obvious dahil) -> strict
@@ -12608,6 +12623,10 @@ export default function App() {
         show3dToggle={!!user?.is_admin}
         board3d={board3d}
         toggleBoard3d={() => setBoard3d((v) => !v)}
+        board3dAngle={board3dAngle}
+        setBoard3dAngle={setBoard3dAngle}
+        board3dDepth={board3dDepth}
+        setBoard3dDepth={setBoard3dDepth}
         showChatToggle={online && !!room && !room.bot}
         chatOff={chatOffBy != null}
         toggleChatOff={() => handleToggleChat(chatOffBy == null)}
@@ -12758,6 +12777,8 @@ export default function App() {
           // geçilmezse Board varsayılanı 'white' -> siyah kendi evini 19-24 görüyordu (asimetrik,
           // "1 olması gereken yerde 24" şikayeti). myColor='black' -> numFor 24-i -> siyah evi 1-6.
           tilt3d={board3d}
+          tiltAngle={board3dAngle}
+          tiltDepth={board3dDepth}
           numberFrom={myColor}
           mirror={boardMirror}
           swapStones={swapStones}

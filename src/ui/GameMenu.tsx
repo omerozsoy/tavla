@@ -39,6 +39,11 @@ interface Props {
   show3dToggle?: boolean
   board3d?: boolean
   toggleBoard3d?: () => void
+  /** 3D eğim açısı (derece) + perspektif (px) — yalnız 3D açıkken kaydırıcı. */
+  board3dAngle?: number
+  setBoard3dAngle?: (v: number) => void
+  board3dDepth?: number
+  setBoard3dDepth?: (v: number) => void
   /** "Sohbeti Kapat" satırı gösterilsin mi — yalnız online insan maçında (bot/yerelde sohbet yok). */
   showChatToggle?: boolean
   /** Sohbet kapalı mı (biri kapatmış) — açık/kapalı switch durumu. */
@@ -132,6 +137,39 @@ export default function GameMenu(p: Props) {
             />
             <span className="gm-vol-val">{p.soundVol}</span>
           </div>
+          {/* 3D Tahta ince ayarı (DENEYSEL, yalnız admin + 3D açıkken): eğim açısı + perspektif. */}
+          {p.show3dToggle && p.board3d && (
+            <>
+              <div className="gm-row gm-volrow">
+                <span className="gm-label">{t('gm.tiltAngle')}</span>
+                <input
+                  type="range"
+                  className="gm-vol-slider"
+                  min={0}
+                  max={32}
+                  step={1}
+                  value={p.board3dAngle ?? 20}
+                  onChange={(e) => p.setBoard3dAngle?.(Number(e.target.value))}
+                  aria-label={t('gm.tiltAngle')}
+                />
+                <span className="gm-vol-val">{p.board3dAngle ?? 20}°</span>
+              </div>
+              <div className="gm-row gm-volrow">
+                <span className="gm-label">{t('gm.tiltDepth')}</span>
+                <input
+                  type="range"
+                  className="gm-vol-slider"
+                  min={700}
+                  max={2200}
+                  step={50}
+                  value={p.board3dDepth ?? 1400}
+                  onChange={(e) => p.setBoard3dDepth?.(Number(e.target.value))}
+                  aria-label={t('gm.tiltDepth')}
+                />
+                <span className="gm-vol-val">{p.board3dDepth ?? 1400}</span>
+              </div>
+            </>
+          )}
         </div>
         {/* Turnuvalar/Arkadaşlar/Mağaza KALDIRILDI — oyun sırasında navigasyon yok */}
         <div className="gm-actions">
