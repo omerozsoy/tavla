@@ -428,6 +428,12 @@ export default function Spectate({
     // poll durup kaybeden "—" kalıyordu). 60-deneme tavanı yine korur.
     const hasPr = (s: RoomSummary) =>
       !!s.ready && s.authPr?.white?.pr != null && s.authPr?.black?.pr != null
+    // ŞANS (luck) PR'dan AYRI async job -> PR hazır olunca DURMA, luck'i de bekle. Eskiden poll
+    // hasPr'de duruyordu; luck PR'dan ~1-2sn sonra gelince izleyici onu HİÇ çekmiyor ve kartta "—"
+    // kalıyordu (oyuncu poll'u luckDone'u bekler, izleyici beklemiyordu — kök neden). Cap (60 deneme)
+    // luck hiç gelmezse (klasik/karantina) yine sonsuz poll'ü önler -> dürüst "—".
+    const hasLuck = (s: RoomSummary) =>
+      s.luck?.white?.mwc != null && s.luck?.black?.mwc != null
     let alive = true
     let tries = 0
     let id = 0
@@ -446,7 +452,7 @@ export default function Spectate({
         .then((s) => {
           if (!alive || !s.ready) return
           setSummary(s)
-          if (hasPr(s)) stop()
+          if (hasPr(s) && hasLuck(s)) stop()
         })
         .catch(() => {})
     }
@@ -758,6 +764,10 @@ export default function Spectate({
             loserBand={bandOf(loserColor)}
             winnerLuckPct={summary?.luck?.[winnerColor]?.mwc ?? null}
             loserLuckPct={summary?.luck?.[loserColor]?.mwc ?? null}
+            luckPending={
+              !prTimedOut &&
+              (summary?.luck?.[winnerColor]?.mwc == null || summary?.luck?.[loserColor]?.mwc == null)
+            }
             winnerRating={ratingOf(winnerColor)}
             loserRating={ratingOf(loserColor)}
             coinAmount={null}
