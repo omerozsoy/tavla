@@ -172,7 +172,7 @@ export default function LeagueView(props: Props) {
           <div className="season-banner-row" style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: 8 }}>
             <div className="season-banner-logo-wrap" style={{
               flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: '#fff', padding: '0 20px',
+              background: '#fff',
               border: '1px solid var(--border)', borderTop: '3px solid var(--accent)', borderRight: 'none', borderRadius: 2,
             }}>
               <img className="season-banner-logo" src="/super-lig-logo.png" alt="" width={120} height={120} style={{ display: 'block' }} />

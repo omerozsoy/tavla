@@ -23176,7 +23176,7 @@ body:has(.spectate-view) .app.lobby {
 }
 /* Sezon rozeti (Takimlar Ligi + Super Lig) tek kaynak: iki sayfada da AYNI logo ebadi +
    etraf yuksekligi. align-self:center -> uzun karta yayilmaz, panel logoyu sarar (esit yukseklik). */
-.season-banner-logo-wrap { align-self: center; }
+.season-banner-logo-wrap { align-self: center; padding: 18px 20px; }
 .season-banner-logo { width: 120px; height: 120px; }
 /* Takimlar Ligi sezon rozeti: masaustu solda, mobilde ustte ortada (TeamsView SeasonBanner) */
 @media (max-width: 720px) {
