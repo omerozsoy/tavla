@@ -7,7 +7,7 @@ import * as CANNON from 'cannon-es'
 import type { DieFace } from './Dice'
 
 const FACE_VALUES = [1, 6, 2, 5, 3, 4] // BoxGeometry materyal sirasi: +X,-X,+Y,-Y,+Z,-Z (karsi=7)
-const SIZE = 0.9 // yari-kenar (fizik)
+const SIZE = 0.18 // yari-kenar (5 kat kuculduldu: eski 0.9)
 const DIE = SIZE * 2
 
 function makePipTexture(value: number): THREE.CanvasTexture {
@@ -16,8 +16,8 @@ function makePipTexture(value: number): THREE.CanvasTexture {
   c.width = c.height = S
   const ctx = c.getContext('2d')!
   const g = ctx.createLinearGradient(0, 0, S, S)
-  g.addColorStop(0, '#fffdf6')
-  g.addColorStop(1, '#efe8d6')
+  g.addColorStop(0, '#ffffff')
+  g.addColorStop(1, '#f2f2f2')
   ctx.fillStyle = g
   ctx.fillRect(0, 0, S, S)
   const P: Record<string, [number, number]> = {
@@ -165,31 +165,32 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
       return { mesh, body }
     }
     const dice: Die[] = [makeDie(), makeDie()]
-    const restPos = [new THREE.Vector3(-1.05, SIZE, 0), new THREE.Vector3(1.05, SIZE, 0)]
+    const restPos = [new THREE.Vector3(-0.45, SIZE, 0), new THREE.Vector3(0.45, SIZE, 0)]
 
     let targets = [1, 1]
     let phase: 'idle' | 'rolling' = 'idle'
     let animT = 0
     const ROLL_DUR = 0.75 // sn
     const Y = new THREE.Vector3(0, 1, 0)
-    const startYaw = [0, 0]
-    const finalYaw = [0, 0]
     const startY = [0, 0]
-    const baseQuat = dice.map(() => new THREE.Quaternion())
+    const tumbleAng = [0, 0]
+    const finalQ = dice.map(() => new THREE.Quaternion())
+    const tumbleAxis = dice.map(() => new THREE.Vector3())
 
-    // DEGER-KORUYAN SCRIPTLI DUSUS (fizik tumble YOK): zar ILK FRAME'den gercek degeri USTTE tutar,
-    // yalniz DIKEY eksen (yaw) etrafinda donup duser -> ust yuz (= deger) hic degismez. Boylece
-    // "attigim ile oynadigim farkli / gelen zar degisiyor" tamamen biter; ilk atista gercek zar gorunur.
+    // SCRIPTLI TUMBLE (fizik YOK): zar GORUNUR sekilde takla atar ama DETERMINISTIK olarak tam
+    // dogru degere (valueUpQuat) iner -> hem donme animasyonu var hem "attigim=oynadigim" garanti.
     function rollTo(vals: number[]) {
       targets = [vals[0] ?? 1, vals[1] ?? vals[0] ?? 1]
       phase = 'rolling'
       animT = 0
       dice.forEach((d, i) => {
         d.body.type = CANNON.Body.STATIC // fizik kapali
-        finalYaw[i] = (Math.random() - 0.5) * 0.8
-        startYaw[i] = finalYaw[i] + (2 + Math.random() * 1.5) * Math.PI * 2 * (i ? -1 : 1)
-        startY[i] = 5 + Math.random()
-        baseQuat[i].copy(valueUpQuat(targets[i])) // deger DAIMA +Y (ust)
+        const yaw = (Math.random() - 0.5) * 0.8
+        finalQ[i].setFromAxisAngle(Y, yaw).multiply(valueUpQuat(targets[i])) // dinlenme: deger +Y (ust)
+        const a = Math.random() * Math.PI * 2 // egik tumble ekseni (gorunur takla)
+        tumbleAxis[i].set(Math.cos(a), 0.35, Math.sin(a)).normalize()
+        tumbleAng[i] = (2.3 + Math.random() * 1.4) * Math.PI * 2 * (i ? -1 : 1) // 2-4 tur takla
+        startY[i] = 1.5 + Math.random() * 0.5
       })
     }
     rollRef.current = rollTo
@@ -201,8 +202,10 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
       if (x < 2.5 / d1) { x -= 2.25 / d1; return n1 * x * x + 0.9375 }
       x -= 2.625 / d1; return n1 * x * x + 0.984375
     }
-    const setDie = (d: Die, i: number, yaw: number, y: number, s: number) => {
-      d.mesh.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(Y, yaw)).multiply(baseQuat[i])
+    const tmpQ = new THREE.Quaternion()
+    const setDie = (d: Die, i: number, ang: number, y: number, s: number) => {
+      tmpQ.setFromAxisAngle(tumbleAxis[i], ang) // world-tumble * finalQ -> ang=0'da dogru deger ustte
+      d.mesh.quaternion.copy(tmpQ).multiply(finalQ[i])
       d.mesh.position.set(restPos[i].x, y, restPos[i].z)
       d.mesh.scale.setScalar(s)
     }
@@ -219,13 +222,13 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
         const dropT = easeOutBounce(Math.min(t * 1.18, 1))
         const popT = easeOut(Math.min(t * 2, 1))
         dice.forEach((d, i) => {
-          const yaw = startYaw[i] + (finalYaw[i] - startYaw[i]) * spinT
+          const ang = tumbleAng[i] * (1 - spinT) // takla acisi 0'a dusunce dogru deger ustte
           const y = restPos[i].y + (startY[i] - restPos[i].y) * (1 - dropT)
-          setDie(d, i, yaw, y, 0.7 + 0.3 * popT)
+          setDie(d, i, ang, y, 0.7 + 0.3 * popT)
         })
         if (animT >= 1) {
           phase = 'idle'
-          dice.forEach((d, i) => setDie(d, i, finalYaw[i], restPos[i].y, 1))
+          dice.forEach((d, i) => setDie(d, i, 0, restPos[i].y, 1))
         }
       }
       renderer.render(scene, camera)
