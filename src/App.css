@@ -6612,10 +6612,19 @@ button[aria-disabled='true'],
 .board.board-3d .board-inner {
   transform: rotateX(20deg) scale(0.94);
   transform-origin: center 70%;
+  /* Dugmeleri ters-dondurup dik tutabilmek icin 3D baglam sart; overflow:hidden onu
+     "flat"a zorlar -> tilt modunda overflow:visible (statik tahtada tasma ihmal edilebilir). */
+  transform-style: preserve-3d;
+  overflow: visible;
   box-shadow:
     0 24px 44px rgba(0, 0, 0, 0.6),
     0 2px 0 rgba(255, 255, 255, 0.05) inset;
   transition: transform 220ms ease;
+}
+/* Orta aksiyon dugmeleri/zar (Zar At, Katla, Onayla...) EGILMESIN: tahtanin +20'sini
+   ters +(-20) ile iptal et -> kullaniciya dik bakar (translate ortalamasini koru). */
+.board.board-3d .center-overlay {
+  transform: translate(-50%, -50%) rotateX(-20deg);
 }
 .pt-numbers {
   grid-column: 1;
