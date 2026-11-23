@@ -274,8 +274,6 @@ function SeasonBanner() {
     <div className="season-banner-row" style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: 16 }}>
       <div className="season-banner-logo-wrap" style={{
         flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#fff',
-        border: '1px solid var(--border)', borderTop: `3px solid ${SWISS_ACCENT}`, borderRight: 'none',
       }}>
         <img className="season-banner-logo" src="/takimlar-ligi-logo.png" alt="" width={120} height={120} style={{ display: 'block' }} />
       </div>
