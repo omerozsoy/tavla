@@ -6610,7 +6610,7 @@ button[aria-disabled='true'],
   perspective-origin: center 40%;
 }
 .board.board-3d .board-inner {
-  transform: rotateX(26deg) scale(0.94);
+  transform: rotateX(20deg) scale(0.94);
   transform-origin: center 70%;
   box-shadow:
     0 24px 44px rgba(0, 0, 0, 0.6),
