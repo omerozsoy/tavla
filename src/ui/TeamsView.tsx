@@ -271,8 +271,14 @@ function SeasonBanner() {
   const s = Math.floor((ms % 60000) / 1000)
   const pad = (n: number) => String(n).padStart(2, '0')
   return (
-    <div className="season-banner-row" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-      <img className="season-banner-logo" src="/takimlar-ligi-logo.png" alt="" width={120} height={120} style={{ flex: 'none', display: 'block' }} />
+    <div className="season-banner-row" style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: 16 }}>
+      <div className="season-banner-logo-wrap" style={{
+        flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: '#fff', padding: '0 20px',
+        border: '1px solid var(--border)', borderTop: `3px solid ${SWISS_ACCENT}`, borderRight: 'none',
+      }}>
+        <img className="season-banner-logo" src="/takimlar-ligi-logo.png" alt="" width={120} height={120} style={{ display: 'block' }} />
+      </div>
       <div style={{
         flex: 1, minWidth: 0,
         border: '1px solid var(--border)', borderTop: `3px solid ${SWISS_ACCENT}`, borderRadius: 0,

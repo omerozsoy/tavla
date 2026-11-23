@@ -6885,6 +6885,25 @@ button[aria-disabled='true'],
     animation: die-fade-in 200ms ease both;
   }
 }
+
+/* --- FIZIK WebGL ZAR OVERLAY (admin): tum tahtayi kaplar, pointer gecirir (altindaki taslar
+   suruklenebilir), DOM zarlari gizlenir -> yalniz fizik zarlari gorunur. */
+.board.phys-dice {
+  position: relative;
+}
+.board.phys-dice .board-dice {
+  visibility: hidden; /* DOM zarlari (CSS kup) gizle -> fizik zar bunun yerine */
+}
+.board-phys-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 9; /* taslarin ustunde (zar gorsel olarak ust katta), pointer gecirgen */
+  pointer-events: none;
+}
+.board-phys-layer .phys-dice {
+  width: 100%;
+  height: 100%;
+}
 .pt-numbers {
   grid-column: 1;
   display: flex;
@@ -23157,7 +23176,9 @@ body:has(.spectate-view) .app.lobby {
 }
 /* Takimlar Ligi sezon rozeti: masaustu solda, mobilde ustte ortada (TeamsView SeasonBanner) */
 @media (max-width: 720px) {
-  .season-banner-row { flex-direction: column; align-items: center; }
+  .season-banner-row { flex-direction: column; align-items: stretch; }
+  /* Mobil: logo ustte ortada, beyaz panel karta ustten bitisik (alt kenar yok) */
+  .season-banner-logo-wrap { border-right: 1px solid var(--border); border-bottom: none; padding: 16px 0; }
   .season-banner-logo { width: 140px; height: 140px; }
 }
 /* Kart-ici standings / takim siralama tablosu (Liderlik estetigiyle uyumlu, token-tabanli) */

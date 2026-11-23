@@ -132,6 +132,8 @@ interface BoardProps {
   tilt3d?: boolean
   tiltAngle?: number // 3D eğim açısı (derece) — admin kaydırıcısı
   tiltDepth?: number // 3D perspektif mesafesi (px) — küçük = daha güçlü/yakın
+  // Admin deneysel: fizik WebGL zarı overlay'i (DOM zarları gizlenir, bunun üstüne biner).
+  physicsDice?: ReactNode
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -345,6 +347,7 @@ function Board({
   tilt3d = false,
   tiltAngle = 20,
   tiltDepth = 1400,
+  physicsDice,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -758,7 +761,7 @@ function Board({
 
   return (
     <div
-      className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}${tilt3d ? ' board-3d' : ''}`}
+      className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}${tilt3d ? ' board-3d' : ''}${physicsDice ? ' phys-dice' : ''}`}
       ref={boardElRef}
       style={
         tilt3d
@@ -877,6 +880,10 @@ function Board({
         {centerRight && <div className="center-overlay right">{centerRight}</div>}
         {centerMain && <div className="center-overlay main">{centerMain}</div>}
       </div>
+
+      {/* Fizik WebGL zar overlay'i (admin): board-inner'in DISINDA -> CSS 3D eğimine kapılmaz,
+          kendi 3D kamerası var. Tüm tahtayı kaplar, pointer geçirir. */}
+      {physicsDice && <div className="board-phys-layer">{physicsDice}</div>}
 
       {/* Alt ucgen numaralari */}
       <div className="pt-numbers bottom">

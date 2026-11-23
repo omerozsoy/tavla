@@ -7,6 +7,7 @@ import { LangProvider } from './i18n'
 import { Icon } from './ui/Icon'
 import Board from './ui/Board'
 import DiceRow from './ui/Dice'
+import PhysicsDice from './ui/PhysicsDice'
 import { GameHudHeader, GameHudRow } from './ui/GameHud'
 import { initialState } from './engine/board'
 import type { GameState } from './engine/types'
@@ -58,6 +59,7 @@ function Harness() {
             onSelectFrom={noop} onSelectTarget={noop} onDragFrom={noop}
             pipTop={120} pipBottom={115} cube={{ value: 2, owner: null }} centerMain={dice} flip={false} showPip
             tilt3d tiltAngle={34}
+            physicsDice={<PhysicsDice faces={[{ value: 3, used: false }, { value: 5, used: false }]} />}
           />
           {/* ALT oyuncu (self, beyaz) — kup alinmis: skor yaninda "2" */}
           <GameHudRow score={0} bankSecs={600} moveSecs={12} active low

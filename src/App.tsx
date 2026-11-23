@@ -158,6 +158,7 @@ import ClockStack from './ui/ClockStack'
 import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
+const PhysicsDice = lazy(() => import('./ui/PhysicsDice')) // admin 3D testi: fizik WebGL zarı (three+cannon)
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
@@ -12758,6 +12759,13 @@ export default function App() {
           tilt3d={board3d}
           tiltAngle={board3dAngle}
           tiltDepth={board3dDepth}
+          physicsDice={
+            board3d && diceFaces.length > 0 ? (
+              <Suspense fallback={null}>
+                <PhysicsDice faces={diceFaces} />
+              </Suspense>
+            ) : null
+          }
           numberFrom={myColor}
           mirror={boardMirror}
           swapStones={swapStones}
