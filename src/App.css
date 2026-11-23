@@ -11017,7 +11017,12 @@ html.fs-active .account-bar {
   }
   .side-menu .menu-btn,
   .side-menu [data-slot='button'] {
-    min-height: 32px;
+    /* Base kural sabit height:28px veriyor -> auto ile icerige otur; line-height + kucuk
+       padding-block "altinda bosluk" hissini kaldirir (icerik dikeyde sikisik). */
+    height: auto;
+    min-height: 26px;
+    line-height: 1;
+    padding-block: 3px;
     /* shadcn px-4 (16px) uzun etiketi (~10px) drawer disina tasiriyordu -> kis. */
     padding-inline: 10px;
     justify-content: flex-start;
@@ -23149,6 +23154,11 @@ body:has(.spectate-view) .app.lobby {
 }
 .league-card .register-sub {
   margin-top: -4px;
+}
+/* Takimlar Ligi sezon rozeti: masaustu solda, mobilde ustte ortada (TeamsView SeasonBanner) */
+@media (max-width: 720px) {
+  .season-banner-row { flex-direction: column; align-items: center; }
+  .season-banner-logo { width: 140px; height: 140px; }
 }
 /* Kart-ici standings / takim siralama tablosu (Liderlik estetigiyle uyumlu, token-tabanli) */
 .teams-table {
