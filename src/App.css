@@ -11006,9 +11006,9 @@ html.fs-active .account-bar {
     overflow-y: auto;
     gap: 1px; /* mobil drawer: kompakt dikey ritim (menu cok uzundu -> daha da sik) */
   }
-  /* Mobil drawer: dokunma hedefi 36px (menu dikeyde cok uzundu; 40->36, hala rahat dokunulur) */
+  /* Mobil drawer: ogeler iyice yakin (dokunma hedefi 32px; kullanici "daha yaklastir" dedi) */
   .side-menu .menu-group {
-    gap: 1px;
+    gap: 0;
   }
   /* Grup basliklari (TURNUVALAR/ICERIKLER/ANALIZ) arasi ekstra bosluk kisildi */
   .side-menu .menu-group-title {
@@ -11017,7 +11017,7 @@ html.fs-active .account-bar {
   }
   .side-menu .menu-btn,
   .side-menu [data-slot='button'] {
-    min-height: 36px;
+    min-height: 32px;
     /* shadcn px-4 (16px) uzun etiketi (~10px) drawer disina tasiriyordu -> kis. */
     padding-inline: 10px;
     justify-content: flex-start;

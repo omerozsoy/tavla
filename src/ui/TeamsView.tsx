@@ -277,9 +277,12 @@ function SeasonBanner() {
     }}>
       {/* Üst satır: sezon adı (sola yaslı) | geri sayım (sağ) — katı grid, ortalama YOK */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
-        <div>
-          <div style={SWISS_LABEL}>{t('teams.season.active')}</div>
-          <div style={{ fontSize: 27, fontWeight: 800, lineHeight: 1.02, letterSpacing: -0.6, marginTop: 2 }}>{seasonName}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <img src="/takimlar-ligi-logo.png" alt="" width={64} height={64} style={{ flex: 'none', display: 'block' }} />
+          <div>
+            <div style={SWISS_LABEL}>{t('teams.season.active')}</div>
+            <div style={{ fontSize: 27, fontWeight: 800, lineHeight: 1.02, letterSpacing: -0.6, marginTop: 2 }}>{seasonName}</div>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={SWISS_LABEL}>{t('teams.season.endsIn')}</div>
