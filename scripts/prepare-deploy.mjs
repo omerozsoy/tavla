@@ -71,7 +71,10 @@ for (const item of [
 // yanlis "yeni" gorunur, hic budanmaz. author-date rebase'de KORUNUR = gercek build zamani.
 // Grace penceresi: o tarihten once sekmesi acik kullanici hala eski lazy-chunk'i ister; daha
 // eskisi silinince self-heal reload (index.html) ile kurtulur.
-const GRACE_DAYS = 14
+// 7 gun: bu repo cok sik deploy ediyor (~hafta icinde yuzlerce chunk) -> daha uzun grace boyutu
+// hic sinirlamaz. Ana chunk eski-sekmede zaten bellekte (reload gerekmez); yalniz >7gun acik
+// sekmenin yeni bir lazy-rotaya gitmesi (nadir) self-heal reload ile kurtulur.
+const GRACE_DAYS = 7
 const cutoffSec = Date.now() / 1000 - GRACE_DAYS * 86_400
 console.log(`3) eski orphan asset'ler budaniyor (dist'te yok + git-author >${GRACE_DAYS}gun)…`)
 // Tek git log gecisi: her yol -> onu EN SON ekleyen commit'in author unix zamani.
