@@ -160,7 +160,11 @@ class PresenceController extends Controller
                     if (empty($m['winner']) && $ri > 0 && (($p1 === $me->id && ! $p2) || ($p2 === $me->id && ! $p1))) {
                         $hasPending = true;
                     }
-                    if (empty($m['winner']) && $p1 && $p2 && ($p1 === $me->id || $p2 === $me->id)) {
+                    // double_loss: her iki oyuncu da gelmedi -> maç BİTTİ (winner boş kalır). enter() gate'i
+                    // (TournamentController "Maç bitti." 422) bunu reddeder; notice'tan da DIŞLA, yoksa ping
+                    // oto-giriş deneyip 422 alır, catch tekrar dener -> sonsuz "Maç bitti" toast döngüsü
+                    // (Starck+Karamahmutoğlu T#72 r1m18, 2026-11-23). Gate ile AYNI koşul.
+                    if (empty($m['winner']) && empty($m['double_loss']) && $p1 && $p2 && ($p1 === $me->id || $p2 === $me->id)) {
                         // GATED FINAL: önce 3.'lük oynanır; final ancak 3.'lük bitip opens_at geçince
                         // "hazır" sayılır. Aksi halde finalistlere erken "Maç Hazır" popup'ı çıkar ve
                         // 20sn auto-enter matchRoom gate'ine (422) takılır. 3.'lük çözülünce çıkar.
