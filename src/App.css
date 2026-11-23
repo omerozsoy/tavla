@@ -17402,20 +17402,32 @@ body:has(.spectate-view) .app.lobby {
     width: 100%;
     order: 4;
   }
-  /* Gezinme çubuğu: ÖNCE filtre düğmeleri (order 2), SONRA oklar (kullanıcı isteği).
-     ← [oynadığın hamle (ortada)] → ; oklar hamlenin iki yanında. */
+  /* Gezinme çubuğu EKRANIN EN ALTINDA SABİT (fixed): ← [oynadığın hamle] → .
+     Oklar ortadaki bloğun (kart + k/N) TAM yüksekliğinde (align-items:stretch). */
   .analysis-layout .an-nav {
     display: flex;
-    order: 3;
-    width: 100%;
+    align-items: stretch;
     gap: 8px;
-    margin: 2px 0;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 8px clamp(12px, 3vw, 20px) calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    z-index: 50;
   }
-  /* Ortadaki satır dar viewport'ta sığsın: rozet biraz küçük, buton kompakt. */
+  /* Ortadaki satır dar viewport'ta sığsın: rozet biraz küçük; oklar ortanın yüksekliğinde. */
   .an-nav-btn {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: auto;
+    align-self: stretch;
     flex: none;
+  }
+  /* Fixed nav içeriği örtmesin: rapor gövdesine alttan boşluk. */
+  .report-embed {
+    padding-bottom: 92px;
   }
   .an-nav-you {
     gap: 6px;
