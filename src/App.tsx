@@ -841,6 +841,16 @@ import { NAUTICAL_FLAG_TOP_BY_DP, NAUTICAL_FLAG_BOTTOM_BY_DP } from './nauticalF
 // Admin Tavla/Avatar/Pul Tasarımı ayarlarının son bilinen hali (özel tahta seçili oyuncu açılışta standarda düşmesin).
 applyCachedShopDesigns()
 
+// TEŞHİS: oto-zar/doRoll akışını izle (yalnız localStorage['tavla.rolldiag']='1' iken konsola yazar).
+// Prod'da güvenli: flag yoksa HİÇBİR ŞEY yapmaz. Kök-neden bulunca kaldırılır.
+function rollDiag(tag: string, data?: unknown) {
+  try {
+    if (localStorage.getItem('tavla.rolldiag') === '1') console.log('[rolldiag]', tag, data ?? '')
+  } catch {
+    /* no-op */
+  }
+}
+
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
 const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar okunabilsin)
@@ -4327,12 +4337,12 @@ export default function App() {
   // authoritative oda + online iken doRoll bunu cagirir. CANLIDA TEST EDILMEDEN ACMA.
   async function doRollAuthoritative() {
     const code = room?.code
-    if (!code) return
-    if (Date.now() < rollBackoffUntilRef.current) return // /roll 429 sonrası geri-çekilme (poll'ü ETKİLEMEZ)
+    if (!code) { rollDiag('auth bail: no code'); return }
+    if (Date.now() < rollBackoffUntilRef.current) { rollDiag('auth bail: backoff', rollBackoffUntilRef.current - Date.now()); return } // /roll 429 sonrası geri-çekilme (poll'ü ETKİLEMEZ)
     // MAÇ BİTTİ: sunucu odayı 'finished' işaretlediyse (forfeit/timeout/normal son) ZAR ATMA.
     // Aksi halde biten maçta auto-roll POST /roll 409 "Oyun aktif değil" döngüsüne girer (#KVU8X).
     // Poll'un maç-sonu kesin-uygulama dalı zaten MatchResult'ı getirir; burada yalnız spam'i keseriz.
-    if (room?.status === 'finished') return
+    if (room?.status === 'finished') { rollDiag('auth bail: room finished'); return }
     // SIRA-DEĞİL ZAR ATMA (kök fix, kullanıcı: "rakip sırası-değilken nasıl zar atar"): açılış
     // DIŞINDA, SUNUCUNUN bildiği en taze sıra (srvTurnStartRef) bende DEĞİLSE zar İSTEME. Auto-roll
     // bir an bayat React state'iyle (yerel turnStart) tetiklense bile bu REF kapısı out-of-turn
@@ -4341,12 +4351,14 @@ export default function App() {
     if (openingRef.current !== 'roll') {
       const srvTurn = srvTurnStartRef.current?.turn
       if (srvTurn && srvTurn !== myColor) {
+        rollDiag('auth bail: srvTurn mismatch', { srvTurn, myColor, localTurn: turnStart.turn, opening: openingRef.current })
         appliedServerVersionRef.current = -1 // bayat yerel sıra -> poll otoriter durumu geri getirir
         return
       }
     }
-    if (rollConflictRef.current) return
-    if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
+    if (rollConflictRef.current) { rollDiag('auth bail: rollConflict latched'); return }
+    if (rollInFlightRef.current) { rollDiag('auth bail: inFlight'); return } // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
+    rollDiag('auth -> serverRoll', { myColor, srvTurn: srvTurnStartRef.current?.turn, expectedVersion: appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room?.server_version ?? 0) })
     rollInFlightRef.current = true
     setRollSending(true) // "Atılıyor…" + disabled: zar sunucudan gelene kadar (algı + çift-tık kalkanı)
     try {
@@ -4366,6 +4378,7 @@ export default function App() {
       // bir an bayatken auto-roll tetiklenince olur; SESSİZCE otoriter durumu uygula (konsolda 409
       // spam OLMAZ). Zar gelmedi -> yeni tur kurma, yalnız server_state/match'i yansıt.
       if (r.not_turn) {
+        rollDiag('serverRoll -> not_turn', { version: r.version, serverTurn: (r.state as GameState | undefined)?.turn })
         if (r.state) {
           appliedServerVersionRef.current = r.version ?? appliedServerVersionRef.current
           appliedServerRoomRef.current = code
@@ -4423,7 +4436,8 @@ export default function App() {
       // YANLIŞ turn'de kalır -> "oynayamıyorum". Bunun yerine poll'a bırak: applyServerBoard
       // doğru turn+zar+opened'i getirir. Döngü YOK: açılışta otomatik zar !opening ile gated, normal
       // turda diceRolled ile gated; poll opening overlay'ini kaldırır + rollInFlightRef korur.
-      if (r.reused) return
+      if (r.reused) { rollDiag('serverRoll -> reused', { version: r.version }); return }
+      rollDiag('serverRoll -> OK dice', { dice: r.dice, version: r.version })
       // Normal zar atışında da sunucu sürümü ilerler. Bunu yalnızca opening
       // dalında kaydetmek, sonraki move isteğinin bir sürüm geriden gitmesine
       // ve sunucunun stale-version 409 döndürmesine neden oluyordu.
@@ -4448,6 +4462,7 @@ export default function App() {
     } catch (e) {
       // Açılış/sıra yarışı: başlayan-olmayan taraf 409 alır -> SESSİZ (poll açılışı getirir).
       const err = e as { status?: number; message?: string }
+      rollDiag('serverRoll THREW', { status: err?.status, message: err?.message })
       // 429 = "Too Many Attempts" (rate-limit). KRİTİK: 429'da EK İSTEK ATMA (showRoom bile) —
       // aksi halde flood daha da büyür ve poll bile 429 yer (yaşanan #3ZYS8 kilidi). Onun yerine
       // GERİ ÇEKİL: birkaç saniye roll+poll durur, kova boşalır, sonra normal akış döner. 429'da
@@ -4489,6 +4504,14 @@ export default function App() {
   }
 
   function doRoll() {
+    rollDiag('doRoll', {
+      online,
+      authoritative: authoritativeRef.current,
+      diceAuthority: diceAuthorityRef.current,
+      localTurn: turnStart.turn,
+      myColor,
+      diceRolled,
+    })
     // Sunucu-otoriter oda (tam Faz 2c) VEYA BAGIMSIZ Faz 1 (yalniz zar): zari SUNUCUDAN al
     // (async), lokal zar URETME. Ikisinde de doRollAuthoritative zari serverRoll'dan ceker;
     // fark move tarafinda (Faz 1'de commitTurn LEGACY PUT kullanir, serverMove'a gitmez).
@@ -7523,17 +7546,21 @@ export default function App() {
   // veya ilk el) beklemenin anlami yok -> otomatik at. Teklif mumkunse beklenir ki
   // oyuncu "Zar At"/"Katla" arasinda secim yapabilsin. (Ayar olarak sunulmuyor.)
   useEffect(() => {
-    if (!interactive || diceRolled || opening || cubePending || gameWon) return
-    if (oppReplay) return // §5.2: rakibin hamlesi ekranda oynanırken benim zarımı atma (replay bitince tekrar çalışır)
+    if (!interactive || diceRolled || opening || cubePending || gameWon) {
+      rollDiag('autoroll effect skip', { interactive, diceRolled, opening, cubePending: cubePending !== null, gameWon })
+      return
+    }
+    if (oppReplay) { rollDiag('autoroll effect skip: oppReplay'); return } // §5.2: rakibin hamlesi ekranda oynanırken benim zarımı atma (replay bitince tekrar çalışır)
     // Rakip "Hamle Yok" (dance) overlay'i gösterilirken oto-zar atma: overlay benim zarımı gizler
     // (centerMain -> primary=null) ama doRoll altta playDice() sesini çalardı -> "zar sesi geldi ama
     // zar 2sn sonra göründü" sync bug'ı. oppDance ~1.6sn sonra temizlenince oto-zar tekrar tetiklenir
     // (deps'te oppDance var) -> ses + zar birlikte. Manuel zar zaten !oppDance ile gizli.
-    if (oppDance) return
+    if (oppDance) { rollDiag('autoroll effect skip: oppDance'); return }
     // OTO-ZAR yalnız shouldAutoRoll iken (küp hakkı yok -> seçim yok). Küpü OLAN oyuncu MANUEL atar
     // (shouldAutoRoll=false) ama KURTARMA AĞI ikisinde de kurulur (eskiden burada return edilip manuel
     // atan oyuncu transient mandalda 30sn kilitli kalıyordu — "hemen Zar At'a bastım, zar gelmedi").
     const canAuto = shouldAutoRoll(match, turnStart.turn, turnsPlayed, turnStart, isMoneyGame, autoRoll)
+    rollDiag('autoroll effect run', { canAuto, autoRoll, localTurn: turnStart.turn, myColor, turnsPlayed })
     setAutoRollStuck(false)
     // TEK ATIŞ YETMEZ (olu-kup maçta manuel buton yok): ilk deneme bir transiente yutulursa
     // (409/backoff/uçuş-kilidi/bayat srvTurn) yeniden denenmeli. Poll BENİM zarsız turumda
