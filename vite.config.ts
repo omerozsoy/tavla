@@ -72,7 +72,9 @@ export default defineConfig({
           if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
             return 'react-vendor'
           }
-          if (id.includes('@radix-ui') || id.includes('radix-ui')) return 'ui-vendor'
+          // ui-vendor (radix) kuralı KALDIRILDI: uygulama radix'i doğrudan pek kullanmıyor →
+          // yalnız ~1KB'lik ölü chunk + gereksiz bir modulepreload üretiyordu. Rollup varsayılanı
+          // (undefined dön) bu azıcık kodu ait olduğu yere koysun.
         },
       },
     },

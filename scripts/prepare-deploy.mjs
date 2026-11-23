@@ -1,7 +1,7 @@
 // React'i derleyip Laravel'in public/ klasorune kopyalar (tek-domain deploy).
 // Laravel'in index.php ve .htaccess dosyalarina DOKUNMAZ.
 // Kullanim: node scripts/prepare-deploy.mjs
-import { cpSync, existsSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, rmSync, readdirSync, statSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
 // rolldown-vite .vite cache'i bazen DEGISEN kaynak modulu stale servis ediyor -> commit'lenen
@@ -60,6 +60,33 @@ for (const item of [
 ]) {
   const src = `dist/${item}`
   if (existsSync(src)) cpSync(src, `${dest}/${item}`, { recursive: true })
+}
+
+// 3) RETENTION: additive deploy orphan'lari sinirsiz birikiyordu (577 eski index-*.js, ~1.3GB
+// git'e commit'li -> clone/CI sisiyordu). dist/assets = BU build'in TAM seti (emptyOutDir ile temiz).
+// backend/public'te olup dist'te OLMAYAN = orphan. KRITIK: content-hash + additive'de degismeyen
+// bir chunk eski mtime'li ama HALA referansli -> yalniz mtime'a bakip silmek canli chunk'i siler.
+// Guvenli kural: SADECE (dist'te yok) VE (mtime > GRACE_DAYS) olani sil. Grace penceresi: o tarihten
+// once sekmesi acik kullanici hala eski lazy-chunk'i ister; daha eskisi self-heal reload ile kurtulur.
+const GRACE_DAYS = 14
+const cutoff = Date.now() - GRACE_DAYS * 86_400_000
+console.log(`3) eski orphan asset'ler budaniyor (dist'te yok + >${GRACE_DAYS}gun)…`)
+for (const dir of ['assets', 'models']) {
+  const liveDir = `${dest}/${dir}`
+  if (!existsSync(liveDir)) continue
+  const current = existsSync(`dist/${dir}`) ? new Set(readdirSync(`dist/${dir}`)) : new Set()
+  let pruned = 0
+  let bytes = 0
+  for (const name of readdirSync(liveDir)) {
+    if (current.has(name)) continue // bu build'in cikti seti -> KORU
+    const p = `${liveDir}/${name}`
+    const st = statSync(p)
+    if (!st.isFile() || st.mtimeMs > cutoff) continue // grace penceresi -> KORU
+    bytes += st.size
+    rmSync(p, { force: true })
+    pruned++
+  }
+  if (pruned) console.log(`   budandi ${dir}/: ${pruned} orphan, ${(bytes / 1_048_576).toFixed(0)}MB geri kazanildi`)
 }
 
 console.log('✓ Hazir. backend/ klasorunu Plesk\'e yukleyip document root = backend/public yap.')
