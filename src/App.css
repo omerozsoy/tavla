@@ -17001,7 +17001,7 @@ body:has(.spectate-view) .app.lobby {
    okunabilirlik için küçük taban (9px). */
 .analysis-detail .an-board-stage .pt-numbers {
   font-size: max(9px, calc(var(--checker) * 0.42));
-  font-weight: 300;
+  font-weight: 400;
 }
 .analysis-detail .an-board-stage .pip,
 .ej-detail-board .an-board-stage .pip {
