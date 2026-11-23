@@ -17374,7 +17374,7 @@ body:has(.spectate-view) .app.lobby {
   .analysis-layout .analysis-list {
     flex: none;
     width: 100%;
-    order: 3;
+    order: 2;
   }
   /* Uzun hata listesi mobilde GİZLİ — tek pozisyon + oklarla gezinilir (kullanıcı isteği).
      Filtre butonları (Benim/Rakip · En Kötüler/Sıraya Göre) kalır: sıralamayı seçer, oklar gezer. */
@@ -17386,11 +17386,11 @@ body:has(.spectate-view) .app.lobby {
     width: 100%;
     order: 4;
   }
-  /* Gezinme çubuğu YUKARIDA (board'un hemen altında): ← [oynadığın hamle (ortada)] →.
-     Oklar hamlenin iki yanında; kullanıcı isteği. */
+  /* Gezinme çubuğu: ÖNCE filtre düğmeleri (order 2), SONRA oklar (kullanıcı isteği).
+     ← [oynadığın hamle (ortada)] → ; oklar hamlenin iki yanında. */
   .analysis-layout .an-nav {
     display: flex;
-    order: 2;
+    order: 3;
     width: 100%;
     margin: 2px 0;
   }
