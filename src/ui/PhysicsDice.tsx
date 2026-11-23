@@ -76,7 +76,7 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(42, w0 / h0, 0.1, 100)
-    camera.position.set(0, 6.6, 5.4)
+    camera.position.set(0, 20, 16.5)
     camera.lookAt(0, SIZE, 0)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
