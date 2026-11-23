@@ -64,9 +64,12 @@ export function valueUpQuat(v: number): THREE.Quaternion {
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 
-export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
+export default function PhysicsDice({ faces, nearSide = true }: { faces: DieFace[]; nearSide?: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const rollRef = useRef<((vals: number[]) => void) | null>(null)
+  // Sira kimdeyse onun yarisi: true = viewer/alt (yakin, +z), false = rakip/ust (uzak, -z).
+  const nearRef = useRef(nearSide)
+  nearRef.current = nearSide
 
   useEffect(() => {
     const mount = mountRef.current
@@ -172,7 +175,7 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
     let animT = 0
     const ROLL_DUR = 0.75 // sn
     const Y = new THREE.Vector3(0, 1, 0)
-    const startY = [0, 0]
+    const startPos = dice.map(() => new THREE.Vector3())
     const tumbleAng = [0, 0]
     const finalQ = dice.map(() => new THREE.Quaternion())
     const tumbleAxis = dice.map(() => new THREE.Vector3())
@@ -183,30 +186,28 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
       targets = [vals[0] ?? 1, vals[1] ?? vals[0] ?? 1]
       phase = 'rolling'
       animT = 0
+      // Sira kimdeyse onun yarisinin ORTASINA otur: yakin (viewer) -> +z, uzak (rakip) -> -z.
+      const halfZ = (nearRef.current ? 1 : -1) * 1.25
       dice.forEach((d, i) => {
         d.body.type = CANNON.Body.STATIC // fizik kapali
+        restPos[i].set(i ? 0.55 : -0.55, SIZE, halfZ)
         const yaw = (Math.random() - 0.5) * 0.8
         finalQ[i].setFromAxisAngle(Y, yaw).multiply(valueUpQuat(targets[i])) // dinlenme: deger +Y (ust)
         const a = Math.random() * Math.PI * 2 // egik tumble ekseni (gorunur takla)
         tumbleAxis[i].set(Math.cos(a), 0.35, Math.sin(a)).normalize()
         tumbleAng[i] = (2.3 + Math.random() * 1.4) * Math.PI * 2 * (i ? -1 : 1) // 2-4 tur takla
-        startY[i] = 1.5 + Math.random() * 0.5
+        // ATILMIS his: zar on-sagdan (viewer'a yakin) gelir, yay cizerek tahtanin ORTASINA (restPos) oturur.
+        startPos[i].set(restPos[i].x + 2.4 + Math.random() * 0.6, restPos[i].y, restPos[i].z + 3.2 + Math.random() * 0.6)
       })
     }
     rollRef.current = rollTo
 
-    const easeOutBounce = (x: number) => {
-      const n1 = 7.5625, d1 = 2.75
-      if (x < 1 / d1) return n1 * x * x
-      if (x < 2 / d1) { x -= 1.5 / d1; return n1 * x * x + 0.75 }
-      if (x < 2.5 / d1) { x -= 2.25 / d1; return n1 * x * x + 0.9375 }
-      x -= 2.625 / d1; return n1 * x * x + 0.984375
-    }
     const tmpQ = new THREE.Quaternion()
-    const setDie = (d: Die, i: number, ang: number, y: number, s: number) => {
+    const tmpV = new THREE.Vector3()
+    const setDie = (d: Die, i: number, ang: number, pos: THREE.Vector3, s: number) => {
       tmpQ.setFromAxisAngle(tumbleAxis[i], ang) // world-tumble * finalQ -> ang=0'da dogru deger ustte
       d.mesh.quaternion.copy(tmpQ).multiply(finalQ[i])
-      d.mesh.position.set(restPos[i].x, y, restPos[i].z)
+      d.mesh.position.copy(pos)
       d.mesh.scale.setScalar(s)
     }
 
@@ -219,16 +220,17 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
         animT += dt / ROLL_DUR
         const t = Math.min(animT, 1)
         const spinT = easeOut(t)
-        const dropT = easeOutBounce(Math.min(t * 1.18, 1))
-        const popT = easeOut(Math.min(t * 2, 1))
+        const posT = easeOut(t)
+        const popT = easeOut(Math.min(t * 2.5, 1))
         dice.forEach((d, i) => {
           const ang = tumbleAng[i] * (1 - spinT) // takla acisi 0'a dusunce dogru deger ustte
-          const y = restPos[i].y + (startY[i] - restPos[i].y) * (1 - dropT)
-          setDie(d, i, ang, y, 0.7 + 0.3 * popT)
+          tmpV.lerpVectors(startPos[i], restPos[i], posT) // on-sagdan tahta ortasina (ATIS yolu)
+          tmpV.y += 1.3 * Math.sin(Math.PI * posT) // atilan yay: yukari cikip oturur (duz dusme DEGIL)
+          setDie(d, i, ang, tmpV, 0.7 + 0.3 * popT)
         })
         if (animT >= 1) {
           phase = 'idle'
-          dice.forEach((d, i) => setDie(d, i, 0, restPos[i].y, 1))
+          dice.forEach((d, i) => setDie(d, i, 0, restPos[i], 1))
         }
       }
       renderer.render(scene, camera)

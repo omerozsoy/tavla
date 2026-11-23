@@ -12757,14 +12757,14 @@ export default function App() {
           // geçilmezse Board varsayılanı 'white' -> siyah kendi evini 19-24 görüyordu (asimetrik,
           // "1 olması gereken yerde 24" şikayeti). myColor='black' -> numFor 24-i -> siyah evi 1-6.
           tilt3d={board3d}
-          tiltAngle={50}
-          tiltDepth={1250}
+          tiltAngle={board3dAngle}
+          tiltDepth={board3dDepth}
           physicsDice={
             // WebGL fizik zarı (three+cannon): gerçek 3D zar -> rastgele yuvarlanır, otoriter değere
             // (atılan zar) oturur. 3D tahta modunda DOM zarları gizlenir, bunun yerine fizik zarı biner.
             board3d && diceFaces.length > 0 ? (
               <Suspense fallback={null}>
-                <PhysicsDice faces={diceFaces} />
+                <PhysicsDice faces={diceFaces} nearSide={turnIsMine} />
               </Suspense>
             ) : null
           }
