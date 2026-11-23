@@ -19,6 +19,7 @@
   width: 100%;
   margin: 0 auto;
   position: relative;
+  padding-top: 12px; /* üst band ince: register-card 22px padding fazlaydı */
 }
 .arena-intro h2,
 .arena-judge h2 { color: var(--arena-accent); }
@@ -45,7 +46,10 @@
 .arena-score b { color: var(--arena-accent); font-size: 1.1em; }
 
 /* Yargı kartı — iki kolon: büyük board | yan panel (soru + butonlar) */
-.arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+/* Üst band ince: tabs'ın dikey margin'ını sıfırla + butonları kısalt (judge kartında). */
+.arena-judge-top .arena-tabs { margin: 0; }
+.arena-judge-top .arena-tab { padding: 6px 14px; }
 /* Tek kolon: büyük board (kart genişliğinde) + altında soru + yan yana iki büyük buton. */
 /* Board global --board-h (viewport + kenar çubuğu varsayımlı) kartı taşırıyordu → kolona (cqw)
    göre küçült. --board-h override + .pt-numbers koyu mürekkep App.css .arena-judge-board'da
