@@ -35,6 +35,10 @@ interface Props {
   toggleAutoRoll: () => void
   /** Otomatik Zar uyarısını göster (yalnız KÜPLÜ maçta: oto-zar küp teklif fırsatını kaçırabilir). */
   autoRollWarn: boolean
+  /** 3D Tahta (DENEYSEL) satırı gösterilsin mi — YALNIZ admin. */
+  show3dToggle?: boolean
+  board3d?: boolean
+  toggleBoard3d?: () => void
   /** "Sohbeti Kapat" satırı gösterilsin mi — yalnız online insan maçında (bot/yerelde sohbet yok). */
   showChatToggle?: boolean
   /** Sohbet kapalı mı (biri kapatmış) — açık/kapalı switch durumu. */
@@ -71,6 +75,8 @@ export default function GameMenu(p: Props) {
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
     { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
     { label: t('gm.autoRoll'), on: p.autoRoll, toggle: p.toggleAutoRoll },
+    // 3D Tahta: DENEYSEL, yalnız admin. Beğenilirse herkese açılır.
+    ...(p.show3dToggle ? [{ label: t('gm.board3d'), on: !!p.board3d, toggle: () => p.toggleBoard3d?.() }] : []),
     // Sohbeti Kapat: yalniz online insan macinda. Biri kapatinca iki taraf da yazamaz.
     ...(p.showChatToggle ? [{ label: t('gm.chatOff'), on: !!p.chatOff, toggle: () => p.toggleChatOff?.() }] : []),
     // NOT: "Oyun yönü" (Sağa/Sola) ve "Pul renkleri" (Siyah/Beyaz) buradan KALDIRILDI —

@@ -6601,6 +6601,22 @@ button[aria-disabled='true'],
   grid-template-rows: 24px 1fr 24px;
   gap: 3px;
 }
+/* 3D TAHTA (DENEYSEL, admin toggle): masada otururken bakar gibi tahtayi one eger.
+   Yalniz gorsel — oyun mantigi degismez. ponytail: saf CSS perspektif; gercek WebGL 3D
+   isteniyorsa ayri bir render katmani gerekir. UYARI: rotateX, getBoundingClientRect
+   tabanli surukle-birak koordinatlarini carpitir -> suruklerken parmak/tas hizasi kayabilir. */
+.board.board-3d {
+  perspective: 1400px;
+  perspective-origin: center 40%;
+}
+.board.board-3d .board-inner {
+  transform: rotateX(26deg) scale(0.94);
+  transform-origin: center 70%;
+  box-shadow:
+    0 24px 44px rgba(0, 0, 0, 0.6),
+    0 2px 0 rgba(255, 255, 255, 0.05) inset;
+  transition: transform 220ms ease;
+}
 .pt-numbers {
   grid-column: 1;
   display: flex;

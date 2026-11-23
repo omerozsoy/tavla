@@ -128,6 +128,8 @@ interface BoardProps {
   showStackCount?: boolean // Kız Tavlası: 2+ pulluk stack'te kalan toplamı göster
   // Admin özel tahta: hane no (1..24) -> o hanenin üçgenine basılan opsiyonel metin.
   pointTexts?: Record<number, string>
+  // Admin deneysel: tahtayı CSS perspektifiyle 3D eğ (yalnız görsel; sürükleme hassasiyeti bozulabilir).
+  tilt3d?: boolean
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -338,6 +340,7 @@ function Board({
   openMark,
   showStackCount,
   pointTexts,
+  tilt3d = false,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -751,7 +754,7 @@ function Board({
 
   return (
     <div
-      className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}`}
+      className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}${tilt3d ? ' board-3d' : ''}`}
       ref={boardElRef}
     >
       {/* Ust ucgen numaralari */}

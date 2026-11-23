@@ -2596,6 +2596,17 @@ export default function App() {
   useEffect(() => {
     setPref('tavla.autoRoll', autoRoll === null ? null : autoRoll ? '1' : '0')
   }, [autoRoll])
+  // 3D Tahta (DENEYSEL, yalnız admin menüde görür) — CSS perspektifiyle tahtayı eğer. Kalıcı tercih.
+  const [board3d, setBoard3d] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tavla.board3d') === '1'
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    setPref('tavla.board3d', board3d ? '1' : null)
+  }, [board3d])
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
   // loss/decisions = STRICT XG (obvious+forced hariç, PR'ın kendisi). cubeLoss/cubeDecisions =
   // yalnız küp (kırılım). allLoss/allDecisions = TÜM kaydedilen kararlar (obvious dahil) -> strict
@@ -12567,6 +12578,9 @@ export default function App() {
         autoRoll={autoRollEff}
         toggleAutoRoll={() => setAutoRoll(!autoRollEff)}
         autoRollWarn={cubeInPlay}
+        show3dToggle={!!user?.is_admin}
+        board3d={board3d}
+        toggleBoard3d={() => setBoard3d((v) => !v)}
         showChatToggle={online && !!room && !room.bot}
         chatOff={chatOffBy != null}
         toggleChatOff={() => handleToggleChat(chatOffBy == null)}
@@ -12716,6 +12730,7 @@ export default function App() {
           // GÖRELİ HANE NUMARASI: her oyuncu KENDİ evini 1-6 görür (standart tavla). numberFrom
           // geçilmezse Board varsayılanı 'white' -> siyah kendi evini 19-24 görüyordu (asimetrik,
           // "1 olması gereken yerde 24" şikayeti). myColor='black' -> numFor 24-i -> siyah evi 1-6.
+          tilt3d={board3d}
           numberFrom={myColor}
           mirror={boardMirror}
           swapStones={swapStones}
