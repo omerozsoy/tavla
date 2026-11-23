@@ -769,8 +769,9 @@ export default function MatchReport({
                     >
                       <Icon name="caret-left" size={20} />
                     </button>
-                    <span className="an-nav-pos">
-                      {(rowPos < 0 ? 0 : rowPos) + 1} / {rows.length}
+                    <span className="an-nav-mid">
+                      <span className="an-nav-move">{cur?.notation || '—'}</span>
+                      <span className="an-nav-pos">{(rowPos < 0 ? 0 : rowPos) + 1} / {rows.length}</span>
                     </span>
                     <button
                       type="button"
