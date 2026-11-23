@@ -82,11 +82,14 @@ interface Props {
   myName?: string
   myAvatar?: string | null
   initialMatchId?: number // verilirse acilista bu mac bulunup genisletilir (profilden tiklama)
+  // Artınca açık detay raporunu kapat (liste görünümüne dön). In-app "Maç Analizleri" linki/menüsü
+  // pushState ile gelir -> popstate tetiklenmez -> bu sinyalle report state sıfırlanır.
+  resetSignal?: number
   // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
   titleOverride?: string
 }
 
-export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId, titleOverride }: Props) {
+export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId, resetSignal, titleOverride }: Props) {
   const { t, lang } = useT()
   const notify = useToast()
   useEscape(onClose)
@@ -208,6 +211,15 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
+  // resetSignal arttı = "Maç Analizleri" (liste) linkine/menüsüne basıldı -> açık detay raporunu kapat.
+  // İlk render atlanır (deep-link detay auto-open'ını iptal etmesin; o zaten report null'ken açar).
+  const resetFirst = useRef(true)
+  useEffect(() => {
+    if (resetFirst.current) { resetFirst.current = false; return }
+    setReport(null)
+    setOpenIdx(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal])
 
   // reset=true -> filtre/ilk yukleme (bastan); false -> "Daha fazla goster" (ekle).
   const load = (reset: boolean) => {

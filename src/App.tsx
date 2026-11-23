@@ -1215,6 +1215,10 @@ export default function App() {
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
   const [matchHistInitialId, setMatchHistInitialId] = useState<number | null>(null) // acilista otomatik acilacak mac
+  // "Maç Analizleri"ne (liste) menüden/linkten gidince artar -> MatchAnalytics açık detay raporunu
+  // kapatıp listeye döner. In-app pushState popstate tetiklemediğinden iç report state sıfırlanmıyordu
+  // ("detaydayken Maç Analizleri linkine basınca hiçbir şey olmuyor" bug'ı).
+  const [matchHistReset, setMatchHistReset] = useState(0)
   const [frameAnimOpen, setFrameAnimOpen] = useState(false) // Animasyon secim demosu (/cerceve-anim)
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
@@ -1998,6 +2002,7 @@ export default function App() {
           // MatchAnalytics initialMatchId ile o maci bulup rapor/detayi acar.
           const mid = /^\d+$/.test(seg[1] || '') ? parseInt(seg[1], 10) : null
           setMatchHistInitialId(mid)
+          if (mid == null) setMatchHistReset((n) => n + 1) // düz liste: açık detay raporunu kapat
           setMatchHistOpen(true)
           break
         }
@@ -2009,6 +2014,7 @@ export default function App() {
             setMatchHistInitialId(mid)
             setMatchHistOpen(true)
           } else {
+            setMatchHistReset((n) => n + 1) // çıplak detay -> liste: açık raporu kapat
             setMatchHistOpen(true)
             try { window.history.replaceState(null, '', '/mac-analizleri') } catch { /* no-op */ }
           }
@@ -10461,7 +10467,7 @@ export default function App() {
     onAnalyzer: () => (premium ? goPage(() => setAnalyzerOpen(true)) : setMemOpen(true)),
     onMatAnalyzer: () => (premium ? goPage(() => setMatAnalyzerOpen(true)) : setMemOpen(true)),
     onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
-    onMatchHistory: () => (premium ? goPage(() => setMatchHistOpen(true)) : setMemOpen(true)),
+    onMatchHistory: () => (premium ? goPage(() => { setMatchHistReset((n) => n + 1); setMatchHistInitialId(null); setMatchHistOpen(true) }) : setMemOpen(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onTraining: () => goPage(() => setTrainingOpen(true)),
     onDailyPuzzle: () =>
@@ -11579,6 +11585,7 @@ export default function App() {
           myName={profile.nickname}
           myAvatar={profile.avatar ?? null}
           initialMatchId={matchHistInitialId ?? undefined}
+          resetSignal={matchHistReset}
           onClose={() => {
             setMatchHistOpen(false)
             setMatchHistInitialId(null)

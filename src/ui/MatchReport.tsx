@@ -491,17 +491,18 @@ export default function MatchReport({
                   </div>
                 )}
                 <div className="rep-filter">
-                  <Button
-                    variant={worstFirst ? 'ghost' : 'secondary'}
-                    onClick={() => setWorstFirst(false)}
-                  >
-                    {t('rep.byOrder')}
-                  </Button>
+                  {/* Sıra: "En Kötüler" (varsayılan seçili) SOLDA, "Sıraya Göre" SAĞDA (kullanıcı isteği). */}
                   <Button
                     variant={worstFirst ? 'secondary' : 'ghost'}
                     onClick={() => setWorstFirst(true)}
                   >
                     {t('rep.byWorst', { n: mistakes.length })}
+                  </Button>
+                  <Button
+                    variant={worstFirst ? 'ghost' : 'secondary'}
+                    onClick={() => setWorstFirst(false)}
+                  >
+                    {t('rep.byOrder')}
                   </Button>
                 </div>
                 <div className="analysis-rows">
