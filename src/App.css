@@ -11593,8 +11593,12 @@ button.stat-chip:hover {
   .acct-desktop {
     display: none;
   }
+  /* Mobil: kullanici bilgisi (ad+avatar) logoyla ayni satira sigmayip eziliyordu
+     -> account-bar flex-wrap ile KENDI satirina al (tam genislik, saga yasli). */
   .acct-mobile {
-    display: inline-flex;
+    display: flex;
+    flex: 1 1 100%;
+    justify-content: flex-end;
   }
 }
 /* Tablet/dar laptop (901-1279): inline ust bar (acct-desktop) ~1090px -> toplam ~1257px gerekir,
@@ -12051,7 +12055,7 @@ button.acct-row-logout:hover:not(:disabled) {
     display: inline-flex;
   }
   .ab-wordmark {
-    font-size: 26px !important;
+    font-size: 23px !important;
   }
   /* Mobil bar cok dar -> slogan gizli (masaustunde gorunur). */
   .ab-tag {
@@ -12314,7 +12318,8 @@ button.acct-row-logout:hover:not(:disabled) {
     flex-shrink: 0;
   }
   .acct-mobile {
-    flex: 0 1 auto;
+    flex: 1 1 100%;
+    justify-content: flex-end;
     max-width: 100%;
   }
   .acct-trigger {
@@ -37262,6 +37267,15 @@ body.has-bottom-nav .to-top {
   align-items: center;
   justify-content: center;
   min-height: 360px;
+}
+/* CLS FIX: Arayanlar (seek-panel), Çevrimiçi Oyuncular, Haberler vb. paneller yüklenirken
+   SARILMAMIŞ <Loading> ile çöküp (kısa spinner) veri gelince uzun listeye GENİŞLİYORDU ->
+   altındaki tüm içerik aşağı kayıyordu (saha CrUX mobil CLS 0.21; ölçülen kayan düğüm
+   seek-panel 0.12 + home-panels 0.10). rank-loading/lb-loading gibi yükleme yüksekliğini
+   rezerve et -> liste gelince panel BÜYÜMEZ, alt içerik KAYMAZ. --inline hariç (satır-içi
+   küçük loader) ve boot-loader hariç (.register-overlay içindeki, zaten fixed overlay). */
+.home-panel .app-loading:not(.app-loading--inline) {
+  min-height: 320px;
 }
 .app-loading__dice {
   object-fit: contain;
