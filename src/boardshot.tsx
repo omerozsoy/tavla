@@ -6,6 +6,7 @@ import './App.css'
 import { LangProvider } from './i18n'
 import { Icon } from './ui/Icon'
 import Board from './ui/Board'
+import DiceRow from './ui/Dice'
 import { GameHudHeader, GameHudRow } from './ui/GameHud'
 import { initialState } from './engine/board'
 import type { GameState } from './engine/types'
@@ -24,11 +25,13 @@ const emptyTo = new Set<number | 'off'>()
 
 function Harness() {
   const state = mockState()
+  // 3D kup zar onizlemesi (login gerektirmez) — gercek DiceRow + cube.
   const dice = (
-    <div className="dice-wrap" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-      <div className="die">⚂</div>
-      <div className="die">⚄</div>
-    </div>
+    <DiceRow
+      faces={[{ value: 3, used: false }, { value: 5, used: false }]}
+      owner="white"
+      cube
+    />
   )
   return (
     <div className="app game-view">
@@ -54,6 +57,7 @@ function Harness() {
             state={state} selectableFroms={emptyNum} targets={emptyTo} selectedFrom={null}
             onSelectFrom={noop} onSelectTarget={noop} onDragFrom={noop}
             pipTop={120} pipBottom={115} cube={{ value: 2, owner: null }} centerMain={dice} flip={false} showPip
+            tilt3d tiltAngle={34}
           />
           {/* ALT oyuncu (self, beyaz) — kup alinmis: skor yaninda "2" */}
           <GameHudRow score={0} bankSecs={600} moveSecs={12} active low

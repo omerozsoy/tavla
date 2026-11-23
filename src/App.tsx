@@ -9400,6 +9400,7 @@ export default function App() {
       owner={turnStart.turn}
       swappable={canSwapDice}
       onSwap={handleSwapDice}
+      cube={board3d}
     />
   ) : null
 
@@ -9442,7 +9443,7 @@ export default function App() {
       : danceInfo.color === 'white'
     : false
   const danceDice = danceInfo ? (
-    <DiceRow faces={danceInfo.dice} owner={danceInfo.color} className="nm-dice" />
+    <DiceRow faces={danceInfo.dice} owner={danceInfo.color} className="nm-dice" cube={board3d} />
   ) : null
   // Küp yanıtı: SAĞDA Kabul. Yoksa normal (benim turum -> ana buton sağda).
   const centerRight =
@@ -9456,6 +9457,7 @@ export default function App() {
       <DiceRow
         faces={faceStates(oppReplay.base.dice, oppReplay.steps.slice(0, oppReplay.shown), deadDieValues(oppReplay.base))}
         owner={oppReplay.color}
+        cube={board3d}
       />
     ) : null
   // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12): sıra bana geçince statik koyu zar duruyordu; kaldırıldı.

@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { reviewMat, reviewMatProgress, type MatReview as MatReviewResp } from '../api'
 import type { LogEntry } from './MatchReport'
-import MatchReport from './MatchReport'
 import MatReview, { computeSummary, type MatSummary } from './MatReview'
 import { parseMatScores } from '../analysis/matScores'
 
@@ -51,18 +50,6 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
   const [snowie, setSnowie] = useState<MatSnowie | undefined>(saved0?.snowie) // otoriter Snowie PR
   // Oyun başı maç skorları (.mat başlığından): görüntüleyicide "o oyunda kaç kaç" gösterilir.
   const [gameScores, setGameScores] = useState<GameScore[] | undefined>(saved0?.gameScores)
-  // MOBİL (≤720px): /mac-analizleri-detay ile AYNI sistem (board üstte, hatalar altta, sabit
-  // nav) -> MatchReport. Masaüstü: zengin XG-tarzı MatReview (değişmez). Kullanıcı isteği.
-  const [isNarrow, setIsNarrow] = useState(
-    () => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 720px)').matches,
-  )
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return
-    const mq = window.matchMedia('(max-width: 720px)')
-    const on = () => setIsNarrow(mq.matches)
-    mq.addEventListener('change', on)
-    return () => mq.removeEventListener('change', on)
-  }, [])
 
   function readFile(f: File) {
     if (f.size > 500_000) {
@@ -143,31 +130,9 @@ export default function MatAnalyzer({ onClose, currentName, titleOverride }: { o
     }
   }
 
-  // Analiz sonrası görüntüleyici. MOBİL -> MatchReport (/mac-analizleri-detay ile aynı sistem:
-  // board üstte, hatalar altta, sabit nav). MASAÜSTÜ -> MatReview (zengin XG düzeni, değişmez).
+  // Analiz sonrası: tam-ekran görüntüleyici + açılış özet popup'ı (MatReview — tasarımı ayrıca
+  // mobilde /mac-analizleri-detay düzenine yaklaştırılacak; component SWAP edilmez).
   if (reviewLog) {
-    if (isNarrow) {
-      return (
-        <MatchReport
-          mode="analysis"
-          embedded
-          log={reviewLog}
-          matchLength={matchLength ?? 1}
-          whiteName={names?.[0]}
-          blackName={names?.[1]}
-          luck={luck ? { white: luck.p0, black: luck.p1 } : undefined}
-          authPr={
-            snowie
-              ? {
-                  white: snowie.p0 ? { pr: snowie.p0.pr, checker: snowie.p0.checker_pr, cube: snowie.p0.cube_pr } : null,
-                  black: snowie.p1 ? { pr: snowie.p1.pr, checker: snowie.p1.checker_pr, cube: snowie.p1.cube_pr } : null,
-                }
-              : undefined
-          }
-          onClose={reset}
-        />
-      )
-    }
     return (
       <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} luck={luck} snowie={snowie} gameScores={gameScores} currentName={currentName} onClose={reset} />
     )
