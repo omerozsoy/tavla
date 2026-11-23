@@ -17257,21 +17257,27 @@ body:has(.spectate-view) .app.lobby {
   .an-split {
     display: contents;
   }
-  .an-split-board {
+  /* TAM GENİŞLİK (edge-to-edge): KÖK ENGEL = `.report-embed .an-split-board` (0,2,0)
+     flex:0 0 48% + max-width:48% (masaüstü yan-yana düzen artığı) mobilde board'u YARIYA
+     kısıyordu; düşük specificity'li `.an-split-board` (0,1,0) kuralım ezemiyordu. Çözüm:
+     eşit specificity (.analysis-layout .an-split-board = 0,2,0) + sonra geldiği için kazanır;
+     flex/max-width SIFIRLA, align-self:stretch + negatif margin-inline ile kart padding'ini kır
+     -> query-container tüm viewport, 100cqw kenardan kenara. Yalnız board; listeler padding'li. */
+  .analysis-layout .an-split-board {
     container-type: inline-size;
-    /* TAM GENİŞLİK (edge-to-edge): sayfa kartının yatay padding'ini (clamp 16-48px) negatif
-       margin + align-self:stretch ile kır -> tahtanın query-container'ı TÜM viewport genişliği
-       olur, board 100cqw ile kenardan kenara dolar. Yalnız board; hata/aday listeleri padding'li kalır. */
+    flex: none;
+    max-width: none;
     align-self: stretch;
     margin-inline: calc(-1 * clamp(16px, 3vw, 48px));
     order: 1;
   }
-  .analysis-list {
+  .analysis-layout .analysis-list {
     flex: none;
     width: 100%;
     order: 2;
   }
-  .an-split-cands {
+  .analysis-layout .an-split-cands {
+    flex: none;
     width: 100%;
     order: 3;
   }
