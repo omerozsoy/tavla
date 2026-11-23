@@ -19930,7 +19930,15 @@ body:has(.spectate-view) .app.lobby {
   .rep-filter .menu-btn {
     flex: 1 1 calc(50% - 4px);
     min-width: 0;
+    /* Mobilde kompakt: shadcn sabit yüksekliği bırak, padding/font küçük (kullanıcı: butonları küçült). */
+    height: auto;
+    min-height: 0;
+    padding: 6px 8px;
+    font-size: 0.72rem;
+    line-height: 1.15;
+    letter-spacing: 0.3px;
   }
+  .rep-filter { gap: 6px; }
 }
 /* ---- WXP kirilim paneli (yalniz WXP sekmesi): formul + kendi kategori dagilimi ---- */
 .wxp-bd {
