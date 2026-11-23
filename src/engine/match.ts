@@ -106,7 +106,11 @@ export function shouldAutoRoll(
   // Kup teklifi yok (1 puanlik/Crawford/rakip kupu tutuyor/ilk el) VEYA kullanıcı pref=true: oto-at.
   // BARDA (pozisyon verilmisse): rakip ev bolgesi tamamen kapaliysa hicbir zarla giremem
   // -> kesin dans, oto-at. En az bir giris aciksa (girebilecek duruma geldim) ELLE at -> false.
-  if (pos && pos.bar[turn] > 0) return closedOutOnBar(pos, turn)
+  // AMA pref=true ise KULLANICI HER ZAMAN OTO-AT İSTEDİ (barda bile — barda tek yapabildiğin zaten
+  // zar atmak; küp fırsatını menüdeki uyarıyla waive etti). Bar nüansı YALNIZ akıllı-varsayılan/
+  // kapalı tercih için. (Kök fix: kaybeden pozisyonda sürekli barda kalan oyuncuda "oto-zar hiç
+  // çalışmıyor" raporu — bar guard'ı pref=true'yu eziyordu.)
+  if (pref !== true && pos && pos.bar[turn] > 0) return closedOutOnBar(pos, turn)
   return true
 }
 

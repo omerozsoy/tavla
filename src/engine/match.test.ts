@@ -286,12 +286,20 @@ describe('Otomatik Zar kullanıcı tercihi (pref)', () => {
     expect(shouldAutoRoll(newMatch(7), WHITE, turnsPlayed, undefined, false, null)).toBe(false)
     expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, undefined, false, null)).toBe(true)
   })
-  it('pref=true ama barda bir giriş AÇIK -> yine elle (bar nüansı korunur)', () => {
+  it('pref=true: barda bir giriş AÇIK olsa DA oto-at (kullanıcı HER ZAMAN oto istedi; bar nüansı pref=true yi ezmez)', () => {
     const s = emptyBoard()
     s.bar.white = 1
     for (let i = 18; i <= 23; i++) s.points[i] = -2
     s.points[20] = -1 // bir giriş açık -> girebilirim
-    expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, s, false, true)).toBe(false)
+    // Kök fix: kaybeden pozisyonda sürekli barda kalan oyuncuda "oto-zar hiç çalışmıyor" raporu.
+    expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, s, false, true)).toBe(true)
+  })
+  it('pref=null: barda giriş AÇIK -> elle (bar nüansı varsayılanda korunur)', () => {
+    const s = emptyBoard()
+    s.bar.white = 1
+    for (let i = 18; i <= 23; i++) s.points[i] = -2
+    s.points[20] = -1 // bir giriş açık
+    expect(shouldAutoRoll(newMatch(1), WHITE, turnsPlayed, s, false, null)).toBe(false)
   })
 })
 
