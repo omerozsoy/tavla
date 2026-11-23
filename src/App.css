@@ -23174,15 +23174,15 @@ body:has(.spectate-view) .app.lobby {
 .league-card .register-sub {
   margin-top: -4px;
 }
-/* Sezon rozeti (Takimlar Ligi + Super Lig) tek kaynak: iki sayfada da AYNI logo ebadi +
-   etraf yuksekligi. align-self:center -> uzun karta yayilmaz, panel logoyu sarar (esit yukseklik). */
-.season-banner-logo-wrap { align-self: center; padding: 28px 20px; }
+/* Sezon rozeti (Takimlar Ligi + Super Lig) tek kaynak. Masaustu: panel karta TAM boy (stretch,
+   flush) -> logo dikeyde ortalanir, karttan kisa kalmaz. Logo ebadi iki sayfada ayni (120px). */
+.season-banner-logo-wrap { padding: 28px 20px; }
 .season-banner-logo { width: 120px; height: 120px; }
 /* Takimlar Ligi sezon rozeti: masaustu solda, mobilde ustte ortada (TeamsView SeasonBanner) */
 @media (max-width: 720px) {
   .season-banner-row { flex-direction: column; align-items: stretch; }
-  /* Mobil: logo ustte ortada, beyaz panel karta ustten bitisik (alt kenar yok) */
-  .season-banner-logo-wrap { border-right: 1px solid var(--border); border-bottom: none; padding: 24px 0; }
+  /* Mobil: logo ustte ortada (panel sarar+ortalanir), karta ustten bitisik (alt kenar yok) */
+  .season-banner-logo-wrap { align-self: center; border-right: 1px solid var(--border); border-bottom: none; padding: 24px 0; }
   .season-banner-logo { width: 140px; height: 140px; }
 }
 /* Kart-ici standings / takim siralama tablosu (Liderlik estetigiyle uyumlu, token-tabanli) */
