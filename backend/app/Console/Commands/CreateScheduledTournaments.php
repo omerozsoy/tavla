@@ -72,6 +72,7 @@ class CreateScheduledTournaments extends Command
             'name' => $s->name.' — '.$registerUntil->format('d.m.Y'),
             'type' => $s->type,
             'swiss_lives' => $s->swiss_lives ?? 3, // 3 Haklı Swiss hak sayısı (bracket yok sayar)
+            'swiss_auto_draw' => true, // Periyodik = gözetimsiz online -> bye'ı sistem otomatik çeksin (DB varsayılanı false=elle, salona uygun değil)
             'venue' => $s->venue,
             'organizer_id' => $s->organizer_id,
             'size' => $s->size,

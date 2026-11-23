@@ -44,6 +44,7 @@ class ScheduledTournamentTest extends TestCase
         $this->assertNotNull($t, 'Cuma günü turnuva kurulmalı');
         $this->assertSame('open', $t->status);
         $this->assertSame(2, (int) $t->swiss_lives, 'Şablondaki hak sayısı turnuvaya aktarılmalı');
+        $this->assertTrue((bool) $t->swiss_auto_draw, 'Periyodik Swiss her zaman otomatik bye (gözetimsiz online)');
         $this->assertSame(50, $t->entry_fee);
         $this->assertSame('2026-10-23 20:30', $t->register_until->format('Y-m-d H:i'));
 
