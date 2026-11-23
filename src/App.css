@@ -17231,10 +17231,10 @@ body:has(.spectate-view) .app.lobby {
 .an-view-label.you {
   color: var(--tv-gold);
 }
-/* Hatalar arası ileri/geri gezinme çubuğu (← k / N →). Masaüstünde adayların altında;
-   mobilde uzun liste gizlenip bu çubuk tek-pozisyon gezdirir (aşağıdaki @media). */
+/* Hatalar arası ileri/geri gezinme çubuğu (← k / N →). YALNIZ mobil (≤720px): masaüstünde
+   liste zaten görünür, çubuk gereksiz -> base'de gizli, aşağıdaki @media'da açılır. */
 .an-nav {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   gap: 16px;
@@ -17373,6 +17373,7 @@ body:has(.spectate-view) .app.lobby {
   }
   /* Alt gezinme çubuğu: scroll dibine yapışır, hangi hatada olduğun (k / N) hep görünür. */
   .analysis-layout .an-nav {
+    display: flex;
     order: 4;
     width: 100%;
     position: sticky;
