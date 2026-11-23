@@ -11065,9 +11065,9 @@ html.fs-active .account-bar {
     width: 100%;
     /* SOL: sabit hamburger (52px) ile bindirmesin -> logo onun sagindan baslar
        (drawer padding-left 12px + 46px = 58px > 52px hamburger). */
-    padding: calc(18px + env(safe-area-inset-top)) 6px 12px 46px;
-    margin-bottom: 6px;
-    min-height: 44px;
+    padding: calc(8px + env(safe-area-inset-top)) 6px 6px 46px;
+    margin-bottom: 2px;
+    min-height: 36px;
     border: none;
     /* Yapiskan logo satiri: drawer kaydirilinca menu ogeleri sabit hamburgerin ALTINA
        kayip basliklari kesiyordu ("TURNUVALAR" -> "UVALAR"); artik bu opak satirin altina girer. */
