@@ -34433,7 +34433,7 @@ select:-webkit-autofill {
    esik asilinca cizilir. Renk: sitenin ANA marka rengi (--terracotta / kiremit). */
 .to-top {
   position: fixed;
-  bottom: calc(18px + env(safe-area-inset-bottom));
+  bottom: calc(34px + env(safe-area-inset-bottom));
   right: calc(18px + env(safe-area-inset-right));
   z-index: 120;
   width: 46px;
@@ -34476,14 +34476,14 @@ select:-webkit-autofill {
   .to-top {
     width: 42px;
     height: 42px;
-    bottom: calc(14px + env(safe-area-inset-bottom));
+    bottom: calc(30px + env(safe-area-inset-bottom));
     right: calc(14px + env(safe-area-inset-right));
   }
 }
 /* Alt gezinme çubuğu (mobil) varken yukarı-git düğmesi çubuğun ÜSTÜNDE dursun — üstüne
    binip Profil sekmesini kapatmasın. Çubuk ~56px + safe-area; üzerine ~14px boşluk bırak. */
 body.has-bottom-nav .to-top {
-  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px));
 }
 @media (prefers-reduced-motion: reduce) {
   .to-top {
