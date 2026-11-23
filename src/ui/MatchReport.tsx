@@ -7,7 +7,8 @@ import Board from './Board'
 import DiceRow, { Die } from './Dice'
 import { MoveArrows } from './MatReview'
 import { CubeAnalysis, CubeEstimate } from './CubeAnalysis'
-import { cubeDisplayMoney } from '../engine/cubeEquity'
+import { cubeDisplayMoney, type CubeDisplay } from '../engine/cubeEquity'
+import { matchCubeDisplay } from '../engine/matchCube'
 import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
@@ -222,6 +223,22 @@ export default function MatchReport({
     }
   }, [log, matchLength, gameResults])
   const showScore = matchLength > 1 || gameCount > 1
+
+  // KÜP DURUMU tab'ı: seçili hamlenin (gerçek küp kararı OLMAYAN) küp tahmini. Çok-puanlı maçta
+  // SKOR-FARKINDA (matchCubeDisplay — away'ler oyun-başı skordan), aksi halde para modeli.
+  const cubeEstimateFor = (e?: LogEntry): CubeDisplay | null => {
+    if (!e?.probs || e.probs.length < 6) return null
+    if (matchLength > 1) {
+      const sc = gameScores[e.game ?? 0] ?? { white: 0, black: 0 }
+      const mover = e.player ?? 'white'
+      const myScore = mover === 'white' ? sc.white : sc.black
+      const oppScore = mover === 'white' ? sc.black : sc.white
+      const myAway = Math.max(1, matchLength - myScore)
+      const oppAway = Math.max(1, matchLength - oppScore)
+      return matchCubeDisplay(e.probs, 1, myAway, oppAway)
+    }
+    return cubeDisplayMoney(e.probs)
+  }
 
   // Kup tavsiyesi etiketi (take/drop veya double-* icin dogru anahtar)
   const recLabel = (rec: string) =>
@@ -610,11 +627,14 @@ export default function MatchReport({
                         (sunucu/hassas) veriyi, diğer hamlelerde probs'tan türetilmiş TAHMİNİ göster. */}
                     {cur?.cube ? (
                       <CubeAnalysis cube={cur.cube} />
-                    ) : cur?.probs && cur.probs.length >= 6 ? (
-                      <CubeEstimate d={cubeDisplayMoney(cur.probs)} notation={cur.notation} />
-                    ) : (
-                      <div className="an-cube-none">{t('rep.cubeNoData')}</div>
-                    )}
+                    ) : (() => {
+                      const d = cubeEstimateFor(cur)
+                      return d ? (
+                        <CubeEstimate d={d} notation={cur?.notation} />
+                      ) : (
+                        <div className="an-cube-none">{t('rep.cubeNoData')}</div>
+                      )
+                    })()}
                   </div>
                 )}
               </div>

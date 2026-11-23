@@ -1,3 +1,5 @@
+import type { CubeDisplay } from './cubeEquity'
+
 // MAC-OYUNU kup karari: skor-farkinda (match equity table + 6-sonuc olasiligi) kup aksiyonu.
 //
 // DURUST SINIR: Para-kupu gibi (bkz cubeEquity.ts) bu da YAKLASIMDIR — standart bir MET + "olu kup"
@@ -77,6 +79,28 @@ export function matchOfferLoss(
     bestAction: doubleEq > noDouble ? 'double' : 'no-double',
     normalizedEquityLoss: Math.max(0, best - chosenEq),
   }
+}
+
+// GÖSTERİM (küp durumu tab'ı, MAÇ): üç aksiyonun AYRI equity'si + öneri — SKOR-FARKINDA.
+// matchEquityAtCube MWC (0..1 mac-kazanma) döner; gösterimde para modeliyle TUTARLI olsun diye
+// ±1'e normalize ederiz (eq = 2·MWC−1: −1 kesin kayıp, +1 kesin kazanç). cube = mevcut küp (genelde
+// karar-öncesi 1). takePoint kübsüz olasılıktan YAKLAŞIK (gösterim; gerçek maç TP skora bağlıdır).
+export function matchCubeDisplay(probs: number[], cube: number, myAway: number, oppAway: number): CubeDisplay {
+  const toEq = (mwc: number) => 2 * mwc - 1
+  const noDouble = toEq(matchEquityAtCube(probs, cube, myAway, oppAway))
+  const doubleTake = toEq(matchEquityAtCube(probs, cube * 2, myAway, oppAway))
+  const na = myAway - cube
+  const doublePass = toEq(na <= 0 ? 1 : metWin(na, oppAway))
+  const oppTakes = doubleTake <= doublePass // rakip benim equity'mi küçülteni seçer
+  const doubleEq = oppTakes ? doubleTake : doublePass
+  const recommended: 'double' | 'no-double' = doubleEq > noDouble ? 'double' : 'no-double'
+  const highlight = recommended === 'no-double' ? 'noDouble' : oppTakes ? 'doubleTake' : 'doublePass'
+  const [wn = 0, wg = 0, wb = 0, ln = 0, lg = 0, lb = 0] = probs
+  const p = Math.max(1e-6, Math.min(1 - 1e-6, wn + wg + wb))
+  const W = (wn + 2 * wg + 3 * wb) / p
+  const L = (ln + 2 * lg + 3 * lb) / (1 - p)
+  const takePoint = Math.max(0.02, Math.min(0.5, (L - 0.5) / (W + L)))
+  return { win: p * 100, noDouble, doublePass, doubleTake, highlight, recommended, oppTakes, takePoint }
 }
 
 // YANIT karari (kupe maruz kalan): take vs pass. cube = TEKLIF SONRASI kup degeri (ornek 2).

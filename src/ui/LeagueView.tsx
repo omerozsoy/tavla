@@ -172,10 +172,10 @@ export default function LeagueView(props: Props) {
           <div className="season-banner-row" style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: 8 }}>
             <div className="season-banner-logo-wrap" style={{
               flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: '#fff', padding: '0 16px',
+              background: '#fff', padding: '0 20px',
               border: '1px solid var(--border)', borderTop: '3px solid var(--accent)', borderRight: 'none', borderRadius: 2,
             }}>
-              <img className="season-banner-logo" src="/super-lig-logo.png" alt="" width={96} height={96} style={{ display: 'block' }} />
+              <img className="season-banner-logo" src="/super-lig-logo.png" alt="" width={120} height={120} style={{ display: 'block' }} />
             </div>
             <div style={{ ...cardStyle, flex: 1, minWidth: 0, marginBottom: 0, borderTop: '3px solid var(--accent)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <strong>{season.name}</strong>
