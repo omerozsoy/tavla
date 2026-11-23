@@ -6651,8 +6651,18 @@ button[aria-disabled='true'],
 }
 /* Orta aksiyon dugmeleri/zar (Zar At, Katla, Onayla...) EGILMESIN: tahtanin +tilt'ini
    ters -tilt ile iptal et -> kullaniciya dik bakar (translate ortalamasini koru). */
-.board.board-3d .center-overlay {
-  transform: translate(-50%, -50%) rotateX(calc(-1 * var(--tilt)));
+/* 3D kontrol katmani: board-inner ile AYNI grid hucresi (col1/row2) ama board-inner'in
+   3D transform'u DISINDA -> perspektif/eğime kapilmaz. Icindeki düğmeler düz, dik, normal boyut.
+   .center-overlay base transform'u (translate -50%,-50%) aynen gecerli (rotateX YOK). */
+.board.board-3d .board-ctl-layer {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  z-index: 8; /* board uzeri, fizik zar (z9) alti */
+  pointer-events: none;
+}
+.board.board-3d .board-ctl-layer .center-overlay {
+  pointer-events: auto;
 }
 
 /* --- TAS KALINLIGI (yalniz 3D): istiflenmis box-shadow ile silindir "yan duvar" illuzyonu.

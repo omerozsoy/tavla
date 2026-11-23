@@ -876,10 +876,23 @@ function Board({
         {/* Merkez overlay (Double / Roll / zar / kup / oyun sonu). Yan slotlar (sol/sag zar)
             centerMain ile BİRLİKTE çizilir: dance "Hamle Yok"ta orta kutu metni + dans edenin
             zarı KENDİ slotunda görünsün. Diğer centerMain durumlarında yan slotlar zaten null. */}
-        {centerLeft && <div className="center-overlay left">{centerLeft}</div>}
-        {centerRight && <div className="center-overlay right">{centerRight}</div>}
-        {centerMain && <div className="center-overlay main">{centerMain}</div>}
+        {/* 2D: merkez kontroller board-inner ICINDE. 3D: board-inner DISINDAki duz katmanda
+            (asagida) -> perspektiften etkilenmez, dik ve normal boyut. */}
+        {!tilt3d && centerLeft && <div className="center-overlay left">{centerLeft}</div>}
+        {!tilt3d && centerRight && <div className="center-overlay right">{centerRight}</div>}
+        {!tilt3d && centerMain && <div className="center-overlay main">{centerMain}</div>}
       </div>
+
+      {/* 3D: merkez kontrol düğmeleri (Zar At/Katla/Onayla...) board-inner DISINDA düz katmanda ->
+          CSS 3D perspektif/eğime KAPILMAZ (dik, normal boyut). DOM zarları 3D'de WebGL ile çizildiği
+          için bu katmanda yalnız düğmeler görünür. */}
+      {tilt3d && (centerLeft || centerRight || centerMain) && (
+        <div className="board-ctl-layer">
+          {centerLeft && <div className="center-overlay left">{centerLeft}</div>}
+          {centerRight && <div className="center-overlay right">{centerRight}</div>}
+          {centerMain && <div className="center-overlay main">{centerMain}</div>}
+        </div>
+      )}
 
       {/* Fizik WebGL zar overlay'i (admin): board-inner'in DISINDA -> CSS 3D eğimine kapılmaz,
           kendi 3D kamerası var. Tüm tahtayı kaplar, pointer geçirir. */}
