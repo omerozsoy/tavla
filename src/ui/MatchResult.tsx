@@ -67,6 +67,10 @@ interface Props {
   onTournamentLobby?: () => void
   onAnalysis: () => void
   hasReport: boolean
+  // Ayrı "Analiz" butonu: bu maçın hamle-hamle analiz detay sayfasını (/mac-analizleri-detay/<id>,
+  // MatchAnalytics) açar. "Maç Özeti" (onAnalysis) rapor özetini açar — bu farklı görünüm. undefined
+  // -> gizli (sunucu maç id'si yoksa detay sayfası açılamaz).
+  onMoveAnalysis?: () => void
   // Zar Kontrol (provably-fair): online puanlı/paralı/bot maçında sunucu zarını doğrula. undefined -> gizli.
   onDiceCheck?: () => void
   matchCode?: string | null // online maç kodu (kopyalanabilir; hata bildirimi/destek için)
@@ -135,6 +139,7 @@ export default function MatchResult({
   onTournamentLobby,
   onAnalysis,
   hasReport,
+  onMoveAnalysis,
   onDiceCheck,
   matchCode,
   endReason,
@@ -471,12 +476,18 @@ export default function MatchResult({
           </div>
         </div>
 
-        {(hasReport || onDiceCheck) && (
+        {(hasReport || onMoveAnalysis || onDiceCheck) && (
           <div className="mr-actions mr-report-actions">
             {/* Tek "Maç Özeti" butonu: Analiz + İstatistik aynı raporu açıyordu -> birleştirildi. */}
             {hasReport && (
               <Button variant="outline" onClick={onAnalysis}>
                 <Icon name="chart" /> {t('ms.btn')}
+              </Button>
+            )}
+            {/* Ayrı "Analiz": bu maçın hamle-hamle analiz detay sayfası (Maç Özeti'nden farklı görünüm). */}
+            {onMoveAnalysis && (
+              <Button variant="outline" onClick={onMoveAnalysis}>
+                <Icon name="search" /> {t('mr.analysis')}
               </Button>
             )}
             {/* Zar Kontrol: sunucu zarını (commit-reveal) bağımsız doğrula. */}

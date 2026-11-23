@@ -11029,6 +11029,15 @@ export default function App() {
     const id = matchResultIdRef.current
     try { window.history.pushState(null, '', id ? `/mac-analizleri-detay/${id}` : '/mac-analizleri-detay') } catch { /* no-op */ }
   }
+  // Ayrı "Analiz" butonu: bu maçın hamle-hamle analiz detay sayfasını aç (MatchAnalytics, gerçek
+  // sayfa yolu — "Maç Özeti"nin açtığı rapor özetinden farklı görünüm). Sunucu maç id'si şart.
+  const openMoveAnalysis = () => {
+    const id = matchResultIdRef.current
+    if (id == null) return
+    setMatchHistInitialId(id)
+    setMatchHistOpen(true)
+    try { window.history.pushState(null, '', `/mac-analizleri-detay/${id}`) } catch { /* no-op */ }
+  }
   const closeAnalysisPage = () => {
     const backToGame = analysisPrevHomeRef.current === false
     analysisPrevHomeRef.current = null
@@ -12893,6 +12902,8 @@ export default function App() {
           // (analysisGnubgLog matchResultId ile çekilir). PR non-null = sunucu gerçek hamle analiz etti.
           hasReport={matchLog.length > 0 || (!!matchResultIdRef.current && (prShown(mWinner) != null || prShown(opponent(mWinner)) != null))}
           onAnalysis={openAnalysisPage}
+          // Ayrı "Analiz": sunucu maç id'si varsa hamle-hamle analiz detay sayfasını aç (yoksa gizli).
+          onMoveAnalysis={matchResultIdRef.current ? openMoveAnalysis : undefined}
           // Zar Kontrol: yalnız sunucu zarı olan maçlarda (commit var -> puanlı/paralı/bot).
           onDiceCheck={room?.dice_commit ? () => setDiceCheckOpen(true) : undefined}
           matchCode={online ? (room?.code ?? null) : null}
