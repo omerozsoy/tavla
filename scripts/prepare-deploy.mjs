@@ -65,12 +65,25 @@ for (const item of [
 // 3) RETENTION: additive deploy orphan'lari sinirsiz birikiyordu (577 eski index-*.js, ~1.3GB
 // git'e commit'li -> clone/CI sisiyordu). dist/assets = BU build'in TAM seti (emptyOutDir ile temiz).
 // backend/public'te olup dist'te OLMAYAN = orphan. KRITIK: content-hash + additive'de degismeyen
-// bir chunk eski mtime'li ama HALA referansli -> yalniz mtime'a bakip silmek canli chunk'i siler.
-// Guvenli kural: SADECE (dist'te yok) VE (mtime > GRACE_DAYS) olani sil. Grace penceresi: o tarihten
-// once sekmesi acik kullanici hala eski lazy-chunk'i ister; daha eskisi self-heal reload ile kurtulur.
+// bir chunk HALA referansli olabilir -> ONLY dist'te-yok olani aday al (dist'tekine ASLA dokunma).
+// Yas sinyali = GIT AUTHOR ZAMANI (%at). mtime DEGIL (git checkout tum dosyalara guncel mtime
+// verir -> hep "yeni"). committer-time (%ct) de DEGIL: rebase onu bugune resetler -> tum chunk'lar
+// yanlis "yeni" gorunur, hic budanmaz. author-date rebase'de KORUNUR = gercek build zamani.
+// Grace penceresi: o tarihten once sekmesi acik kullanici hala eski lazy-chunk'i ister; daha
+// eskisi silinince self-heal reload (index.html) ile kurtulur.
 const GRACE_DAYS = 14
-const cutoff = Date.now() - GRACE_DAYS * 86_400_000
-console.log(`3) eski orphan asset'ler budaniyor (dist'te yok + >${GRACE_DAYS}gun)…`)
+const cutoffSec = Date.now() / 1000 - GRACE_DAYS * 86_400
+console.log(`3) eski orphan asset'ler budaniyor (dist'te yok + git-author >${GRACE_DAYS}gun)…`)
+// Tek git log gecisi: her yol -> onu EN SON ekleyen commit'in author unix zamani.
+const lastCommit = {}
+try {
+  const log = execSync('git log --format=%at --name-only -- backend/public/assets backend/public/models', { encoding: 'utf8', maxBuffer: 1 << 28 })
+  let t = 0
+  for (const line of log.split('\n')) {
+    if (/^\d+$/.test(line)) { t = +line; continue }
+    if (line && lastCommit[line] === undefined) lastCommit[line] = t // ilk gorulen = en yeni commit
+  }
+} catch { /* git yoksa budama yapma (guvenli taraf) */ }
 for (const dir of ['assets', 'models']) {
   const liveDir = `${dest}/${dir}`
   if (!existsSync(liveDir)) continue
@@ -79,9 +92,12 @@ for (const dir of ['assets', 'models']) {
   let bytes = 0
   for (const name of readdirSync(liveDir)) {
     if (current.has(name)) continue // bu build'in cikti seti -> KORU
+    const rel = `${dest}/${dir}/${name}`
+    const committed = lastCommit[rel.replace(/\\/g, '/')]
+    if (committed === undefined || committed > cutoffSec) continue // commit'siz ya da grace icinde -> KORU
     const p = `${liveDir}/${name}`
     const st = statSync(p)
-    if (!st.isFile() || st.mtimeMs > cutoff) continue // grace penceresi -> KORU
+    if (!st.isFile()) continue
     bytes += st.size
     rmSync(p, { force: true })
     pruned++

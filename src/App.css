@@ -6792,27 +6792,29 @@ button[aria-disabled='true'],
    render edilmez (duz Die yolu). Duz 'die-throw-3d'yi .die3d .die-face ekstra sinifi + kaynak-sirasi
    ile ezer -> yuzler TEK TEK donmez. perspective board-dice'ta: center-overlay flat'a zorlasa da
    alt-agac kendi 3D baglamini kurar. */
-.board.board-3d .board-dice {
-  perspective: 640px;
-}
 .board.board-3d .die3d {
   position: relative;
   width: var(--dice-size);
   height: var(--dice-size);
   transform-style: preserve-3d;
-  /* Dinlenmede kubu hafif egik tut (--bx/--by) -> ust + yan yuzun INCE dilimi gorunur = DUZ kare
-     degil, gercek zar oturmus hissi. rz = organik in-plane tilt (elle atilmis). */
-  transform: rotateX(calc(var(--rx) + var(--bx))) rotateY(calc(var(--ry) + var(--by)))
-    rotateZ(var(--rz));
+  /* perspective() transform'un ICINDE (ata .board-dice'ta DEGIL): center-overlay flat'a zorlayinca
+     ata-perspektif ulasmiyordu -> kup preserve-3d flatten'lenip dilime cokuyordu (gorunmez). Kendi
+     transform'unda perspektif -> flatten'leyen ata'dan BAGIMSIZ, kup her kosulda 3D projekte olur.
+     ON yuz HER ZAMAN deger (JS) -> container'i BUYUK acida dondurmek YOK (o kubu kenar-ustu getirip
+     dilime cokertiyordu). Dinlenme = SABIT hafif egim --bx/--by -> on yuz net + ust/yan dilimi gorunur
+     (duz kare degil, oturmus zar); --rz organik in-plane tilt. */
+  transform: perspective(600px) rotateX(var(--bx)) rotateY(var(--by)) rotateZ(var(--rz));
   animation: die3d-throw 880ms cubic-bezier(0.2, 0.86, 0.3, 1) both;
-  --rz: -9deg;
-  --bx: 11deg;
-  --by: -15deg;
+  --rz: -8deg;
+  --bx: 17deg;
+  --by: -22deg;
   --tx: 70%;
   --ty: -120%;
 }
 .board.board-3d .die3d:nth-child(2) {
-  --rz: 11deg;
+  /* ikinci zar karsi yone egik + ters yonden gelir -> paralel degil, dagiuniklik */
+  --rz: 10deg;
+  --by: 20deg;
   --tx: -72%;
   --ty: -110%;
   animation-delay: 150ms;
@@ -6850,8 +6852,8 @@ button[aria-disabled='true'],
 }
 @keyframes die3d-throw {
   0% {
-    transform: translate(var(--tx), var(--ty)) rotateX(calc(var(--rx) + 540deg))
-      rotateY(calc(var(--ry) - 680deg)) rotateZ(var(--rz)) scale(0.5);
+    transform: perspective(600px) translate(var(--tx), var(--ty)) rotateX(calc(var(--bx) + 560deg))
+      rotateY(calc(var(--by) - 680deg)) rotateZ(var(--rz)) scale(0.5);
     opacity: 0;
     filter: blur(3px);
   }
@@ -6860,16 +6862,16 @@ button[aria-disabled='true'],
     filter: blur(1.4px);
   }
   64% {
-    transform: translate(0, 0) rotateX(calc(var(--rx) + 12deg)) rotateY(calc(var(--ry) - 8deg))
-      rotateZ(var(--rz)) scale(1.1);
+    transform: perspective(600px) translate(0, 0) rotateX(calc(var(--bx) + 26deg))
+      rotateY(calc(var(--by) - 18deg)) rotateZ(var(--rz)) scale(1.1);
     filter: blur(0);
   }
   84% {
-    transform: translate(0, 0) rotateX(calc(var(--rx) + var(--bx) - 5deg))
-      rotateY(calc(var(--ry) + var(--by))) rotateZ(var(--rz)) scale(0.98);
+    transform: perspective(600px) translate(0, 0) rotateX(calc(var(--bx) - 7deg))
+      rotateY(calc(var(--by) + 6deg)) rotateZ(var(--rz)) scale(0.98);
   }
   100% {
-    transform: translate(0, 0) rotateX(calc(var(--rx) + var(--bx))) rotateY(calc(var(--ry) + var(--by)))
+    transform: perspective(600px) translate(0, 0) rotateX(var(--bx)) rotateY(var(--by))
       rotateZ(var(--rz)) scale(1);
     filter: blur(0);
   }
@@ -36915,21 +36917,29 @@ body.has-bottom-nav .to-top {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-/* Mobil: üç panel dikey yığılır */
+/* Mobil: üç panel dikey yığılır — DETAY-SAYFASI DÜZENİ (kullanıcı isteği):
+   BOARD üstte → ANALİZ (adaylar) ortada → HAMLE LİSTESİ (hatalar) ALTTA.
+   DOM sırası list→board→analysis; görsel sıra `order` ile çevrilir. */
 @media (max-width: 900px) {
   .mrv-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: none; /* otomatik akış; sıra order ile */
     overflow-y: auto;
   }
-  .mrv-list {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    max-height: 30vh;
+  .mrv-board {
+    order: 1;
   }
   .mrv-analysis {
+    order: 2;
     border-left: none;
     border-top: 1px solid var(--border);
+  }
+  .mrv-list {
+    order: 3; /* hatalar en altta */
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    max-height: 42vh; /* altta kendi scroll'u */
   }
 }
 

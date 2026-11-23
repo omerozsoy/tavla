@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react'
 import type { Player } from '../engine/types'
 import { useT } from '../i18n'
 
@@ -30,25 +29,22 @@ function Pips({ value }: { value: number }) {
   )
 }
 
-// Gercek zar kubu (yalniz 3D tahta). Yuzler SABIT (karsi yuzler toplam 7): on=1 arka=6, sag=2 sol=5,
-// ust=3 alt=4. `value` yalniz KUBU dondurur (--rx/--ry) -> istenen yuz one gelir. CSS die3d-throw
-// container'i takla attirip bu duruia oturtur. 2D'de bu yol HIC calismaz (cube=false -> duz Die).
-const CUBE_FACES: { cls: string; v: number }[] = [
-  { cls: 'df-front', v: 1 },
-  { cls: 'df-back', v: 6 },
-  { cls: 'df-right', v: 2 },
-  { cls: 'df-left', v: 5 },
-  { cls: 'df-top', v: 3 },
-  { cls: 'df-bottom', v: 4 },
-]
-// Deger -> kubu hangi [rotateX, rotateY] ile cevirince o yuz one bakar (face sabit acisini iptal eder).
-const CUBE_REST: Record<number, [number, number]> = {
-  1: [0, 0],
-  6: [0, 180],
-  2: [0, -90],
-  5: [0, 90],
-  3: [-90, 0],
-  4: [90, 0],
+// Gercek zar kubu (yalniz 3D tahta). ON YUZ HER ZAMAN `value` -> container'i buyuk acida (±90)
+// dondurmeye gerek YOK (o yontem kubu kenar-ustu getirip perspektifle dilime cokuyordu). Kup hafif
+// SABIT egimde durur (CSS --bx/--by) -> on + ust/yan yuzun dilimi gorunur. Diger 5 yuz gecerli zar
+// duzeni (karsi yuzler toplam 7) -> takla sirasinda doner, dinlenmede yalniz dilim. 2D'de HIC render
+// edilmez (cube=false -> duz Die). Siralama: on, arka, ust, sag, alt, sol (CSS df-* ile eslesir).
+function cubeFaces(value: number): { cls: string; v: number }[] {
+  const back = 7 - value
+  const rest = [1, 2, 3, 4, 5, 6].filter((v) => v !== value && v !== back) // 4 deger
+  return [
+    { cls: 'df-front', v: value },
+    { cls: 'df-back', v: back },
+    { cls: 'df-top', v: rest[0] },
+    { cls: 'df-right', v: rest[1] },
+    { cls: 'df-bottom', v: rest[2] },
+    { cls: 'df-left', v: rest[3] },
+  ]
 }
 
 export function Die({
@@ -67,14 +63,9 @@ export function Die({
   cube?: boolean
 }) {
   if (cube) {
-    const [rx, ry] = CUBE_REST[value] ?? [0, 0]
-    const style = { '--rx': `${rx}deg`, '--ry': `${ry}deg` } as CSSProperties
     return (
-      <div
-        className={`die3d ${owner} ${used ? 'used' : ''} ${half ? 'die-half' : ''} ${className}`}
-        style={style}
-      >
-        {CUBE_FACES.map((f) => (
+      <div className={`die3d ${owner} ${used ? 'used' : ''} ${half ? 'die-half' : ''} ${className}`}>
+        {cubeFaces(value).map((f) => (
           <div key={f.cls} className={`die-face ${owner} ${f.cls}`}>
             <Pips value={f.v} />
           </div>
