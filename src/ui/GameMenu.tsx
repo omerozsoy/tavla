@@ -146,13 +146,13 @@ export default function GameMenu(p: Props) {
                   type="range"
                   className="gm-vol-slider"
                   min={0}
-                  max={48}
+                  max={62}
                   step={1}
-                  value={p.board3dAngle ?? 34}
+                  value={p.board3dAngle ?? 46}
                   onChange={(e) => p.setBoard3dAngle?.(Number(e.target.value))}
                   aria-label={t('gm.tiltAngle')}
                 />
-                <span className="gm-vol-val">{p.board3dAngle ?? 34}°</span>
+                <span className="gm-vol-val">{p.board3dAngle ?? 46}°</span>
               </div>
               <div className="gm-row gm-volrow">
                 <span className="gm-label">{t('gm.tiltDepth')}</span>

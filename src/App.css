@@ -6665,7 +6665,7 @@ button[aria-disabled='true'],
     0 2px 0 color-mix(in srgb, var(--cream) 66%, #000),
     0 3px 0 color-mix(in srgb, var(--cream) 54%, #000),
     0 4px 0 color-mix(in srgb, var(--cream) 44%, #000),
-    0 7px 8px rgba(0, 0, 0, 0.5);
+    0 5px 3px rgba(0, 0, 0, 0.45);
 }
 .board.board-3d .checker.black {
   box-shadow:
@@ -6674,7 +6674,13 @@ button[aria-disabled='true'],
     0 2px 0 color-mix(in srgb, var(--navy) 58%, #000),
     0 3px 0 color-mix(in srgb, var(--navy) 46%, #000),
     0 4px 0 color-mix(in srgb, var(--navy) 36%, #000),
-    0 7px 8px rgba(0, 0, 0, 0.55);
+    0 5px 3px rgba(0, 0, 0, 0.5);
+}
+/* Taslar "ust uste biner gibi" GORUNMESIN ama 3D kalsin: diskler arasina kalinlik kadar
+   (~5px) bosluk -> her tasin silindir "yan duvari" boslukta okunur, alttaki diski ORTMEZ.
+   gap=0'da 4px duvar alttaki tasin tepesine biniyordu. Yalniz 3D; 2D stack gap:0 kalir. */
+.board.board-3d .point .checkers {
+  gap: 5px;
 }
 /* NOT: suruklenen proxy document.body'ye portal -> .board-3d'den CSS ile erisilemez; mevcut
    .drag-layer drop-shadow'u kaldirilmis tas hissini zaten verir (ekstra kalinlik atlandi). */
