@@ -41,8 +41,15 @@ function makePipTexture(value: number): THREE.CanvasTexture {
   return tex
 }
 
+// Yerel yuz normalleri -> deger (materyal sirasiyla ayni: +X,-X,+Y,-Y,+Z,-Z).
+export const FACE_NORMALS: { n: [number, number, number]; v: number }[] = [
+  { n: [1, 0, 0], v: 1 }, { n: [-1, 0, 0], v: 6 },
+  { n: [0, 1, 0], v: 2 }, { n: [0, -1, 0], v: 5 },
+  { n: [0, 0, 1], v: 3 }, { n: [0, 0, -1], v: 4 },
+]
+
 // Deger -> o yuzu +Y'ye (yukari) getiren yerel kuaterniyon (eksene hizali DUZ).
-function valueUpQuat(v: number): THREE.Quaternion {
+export function valueUpQuat(v: number): THREE.Quaternion {
   const q = new THREE.Quaternion()
   const X = new THREE.Vector3(1, 0, 0)
   const Z = new THREE.Vector3(0, 0, 1)

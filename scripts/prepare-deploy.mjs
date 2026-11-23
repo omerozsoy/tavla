@@ -49,6 +49,7 @@ for (const item of [
   'tavlatv-logo.png', // marka logosu — acik tema (gri harf)
   'tavlatv-logo-dishi2.png', // marka logosu — koyu tema disi (beyaz harf, acik logoyla esit boyut)
   'takimlar-ligi-logo.png', // Takimlar Ligi sezon rozeti (TeamsView SeasonBanner)
+  'super-lig-logo.png', // TavlaTV Super Lig sezon rozeti (LeagueView sezon basligi)
   'iyzico-band.svg', // footer "iyzico ile Öde" kabul-kartı bandı
   'iyzico-band.png', // ^ raster yedek
   'pay-visa-mastercard.png', // footer ödeme rozeti: Visa + Mastercard

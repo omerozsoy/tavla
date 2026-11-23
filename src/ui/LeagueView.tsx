@@ -169,17 +169,26 @@ export default function LeagueView(props: Props) {
       {/* Sezon başlığı — yalnız aktif sezon varken (sekme çubuğunun üstünde). */}
       {season && (
         <>
-          <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <strong>{season.name}</strong>
-            <span style={badgeStyle}>{S(season.status)}</span>
-            {season.status === 'league' && (
-              <span style={{ opacity: 0.7 }}>{t('league.round', { n: season.current_round })} / {season.rounds_total}</span>
-            )}
-            {season.champion && (
-              <span style={{ marginLeft: 'auto', fontWeight: 600 }}>
-                🏆 {t('league.champion')}: {season.champion.nickname}
-              </span>
-            )}
+          <div className="season-banner-row" style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: 8 }}>
+            <div className="season-banner-logo-wrap" style={{
+              flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#fff', padding: '0 16px',
+              border: '1px solid var(--border)', borderTop: '3px solid var(--accent)', borderRight: 'none', borderRadius: 2,
+            }}>
+              <img className="season-banner-logo" src="/super-lig-logo.png" alt="" width={96} height={96} style={{ display: 'block' }} />
+            </div>
+            <div style={{ ...cardStyle, flex: 1, minWidth: 0, marginBottom: 0, borderTop: '3px solid var(--accent)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <strong>{season.name}</strong>
+              <span style={badgeStyle}>{S(season.status)}</span>
+              {season.status === 'league' && (
+                <span style={{ opacity: 0.7 }}>{t('league.round', { n: season.current_round })} / {season.rounds_total}</span>
+              )}
+              {season.champion && (
+                <span style={{ marginLeft: 'auto', fontWeight: 600 }}>
+                  🏆 {t('league.champion')}: {season.champion.nickname}
+                </span>
+              )}
+            </div>
           </div>
 
           {season.status === 'applications' && (
