@@ -7,6 +7,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Support\Swiss\SwissRuntime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -242,6 +243,76 @@ class TournamentSwissDrawPanelTest extends TestCase
         $this->assertSame($pick, (int) $byes[0]['winner'], 'Admin\'in seçtiği oyuncu bay geçti');
         $this->assertNull($byes[0]['p2']);
         $this->assertTrue($byes[0]['score']['bye']);
+    }
+
+    public function test_auto_advance_draws_round1_immediately_then_countdown_then_next_round(): void
+    {
+        // OTOMATİK MOD: autoAdvanceDue (cron sweep) 1. turu sayaçsız HEMEN çeker; sonraki tur önceki
+        // tur bitince "Kura Geri Sayımı" (DRAW_COUNTDOWN_SECONDS) sonrası otomatik çekilir.
+        Carbon::setTestNow(Carbon::create(2026, 11, 5, 20, 0, 0));
+        $t = $this->swiss(4);
+        $t->swiss_auto_draw = true;
+        $t->save();
+        SwissRuntime::start($t);
+        $t->refresh();
+        $this->assertCount(0, $t->bracket ?? [], 'başlatınca kura çekilmez');
+
+        // 1. tur: sayaçsız hemen çekilir.
+        $this->assertTrue(SwissRuntime::autoAdvanceDue($t));
+        $t->refresh();
+        $this->assertCount(1, $t->bracket, '1. tur otomatik çekildi');
+        $this->assertNull($t->swiss_state['next_draw_at'] ?? null, '1. turda sayaç yok');
+
+        // Tur hâlâ oynanıyor → no-op.
+        $this->assertFalse(SwissRuntime::autoAdvanceDue($t->fresh()));
+
+        // 1. turun gerçek maçlarını çöz (p1 kazansın) → tur tamamlanır.
+        foreach ($t->fresh()->bracket[0] as $m) {
+            if (! empty($m['winner'])) {
+                continue; // bye zaten çözülü
+            }
+            $t->refresh();
+            SwissRuntime::resolveMatch($t, (string) $m['key'], (int) $m['p1']['id']);
+        }
+
+        // Tur tamam → sayaç başlar, yeni tur henüz yok.
+        $this->assertTrue(SwissRuntime::autoAdvanceDue($t->fresh()));
+        $t->refresh();
+        $this->assertCount(1, $t->bracket, 'sayaç sırasında yeni tur çekilmez');
+        $this->assertNotNull($t->swiss_state['next_draw_at'] ?? null, 'Kura Geri Sayımı damgası kondu');
+
+        // Sayaç sürerken → no-op (yeni tur yok).
+        $this->assertFalse(SwissRuntime::autoAdvanceDue($t->fresh()));
+        $this->assertCount(1, $t->fresh()->bracket);
+
+        // Zaman geri sayımı geçsin → 2. tur otomatik çekilir.
+        Carbon::setTestNow(Carbon::now()->addSeconds(SwissRuntime::DRAW_COUNTDOWN_SECONDS + 5));
+        $this->assertTrue(SwissRuntime::autoAdvanceDue($t->fresh()));
+        $t->refresh();
+        $this->assertCount(2, $t->bracket, 'sayaç dolunca 2. tur çekildi');
+        $this->assertNull($t->swiss_state['next_draw_at'] ?? null, 'çekilince damga temizlendi');
+
+        Carbon::setTestNow();
+    }
+
+    public function test_auto_advance_noop_in_manual_and_outdoor_modes(): void
+    {
+        // Elle-bye modu: otomatik ilerletme YOK (admin çeker).
+        $t = $this->swiss(4);
+        $t->swiss_auto_draw = false;
+        $t->save();
+        SwissRuntime::start($t);
+        $this->assertFalse(SwissRuntime::autoAdvanceDue($t->fresh()));
+        $this->assertCount(0, $t->fresh()->bracket ?? [], 'manuel modda 1. tur otomatik çekilmez');
+
+        // Salon (outdoor) Swiss: auto_draw açık olsa bile otomatik ilerletme YOK.
+        $o = $this->swiss(4);
+        $o->type = 'swiss_outdoor';
+        $o->swiss_auto_draw = true;
+        $o->save();
+        SwissRuntime::start($o);
+        $this->assertFalse(SwissRuntime::autoAdvanceDue($o->fresh()));
+        $this->assertCount(0, $o->fresh()->bracket ?? [], 'salon Swiss otomatik çekilmez');
     }
 
     public function test_auto_bye_mode_draws_round_without_picker(): void

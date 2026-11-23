@@ -3920,6 +3920,8 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'swiss.walkover': 'Walkover',
   'swiss.pairPending': 'Pending',
   'swiss.awaitingDraw': 'Round {n} draw will be made by the organizers',
+  'swiss.awaitingDrawAuto': 'Round {n} is being drawn automatically',
+  'swiss.drawCountdown': 'Draw Countdown',
   'swiss.roundScheduled': 'Scheduled: {at}',
   'swiss.roundNoDate': 'date/time not set yet',
   'swiss.stActive': 'Active',
