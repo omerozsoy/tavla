@@ -16996,6 +16996,13 @@ body:has(.spectate-view) .app.lobby {
 .ej-detail-board .an-board-stage .pt-numbers {
   font-size: calc(var(--checker) * 0.5);
 }
+/* Hamle Analizi detay sayfası (kullanıcı): hane numaraları İNCE (bold değil) + biraz daha küçük.
+   Yalnız analiz board'u (Hata Günlüğü .ej-detail-board'a dokunma). Sonra geldiği için 0.5 boyutu ezer;
+   okunabilirlik için küçük taban (9px). */
+.analysis-detail .an-board-stage .pt-numbers {
+  font-size: max(9px, calc(var(--checker) * 0.42));
+  font-weight: 300;
+}
 .analysis-detail .an-board-stage .pip,
 .ej-detail-board .an-board-stage .pip {
   font-size: calc(var(--checker) * 0.66);
