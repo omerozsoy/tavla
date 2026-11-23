@@ -12311,14 +12311,15 @@ button.acct-row-logout:hover:not(:disabled) {
   display: none !important;
 }
 @media (max-width: 720px) {
-  /* Bar TAM GENISLIK; kontroller SAGA SIGSIN (tasma/wrap yok) -> kompaktla. */
+  /* Bar TAM GENISLIK; logo satir 1, kullanici bilgisi (acct-mobile flex-basis:100%) satir 2'ye
+     sarsin -> ad/simgeler logoyla sigismayip ezilmesin. (Guest login/theme/lang az -> sarmaz.) */
   .account-bar {
     min-height: 48px;
     gap: 4px;
     /* SOL: sabit hamburger (52px) icin pay birak -> logo hamburger'in sagindan baslar
        (Boyner tarzi). Sag normal; hesap kontrolleri saga yaslanir. */
     padding: max(4px, env(safe-area-inset-top)) 10px 4px calc(64px + env(safe-area-inset-left));
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
   /* Avatar koşeye TAŞMASIN: sabit sayı yerine gerçek flex-shrink. Logo tam kalır
      (flex-shrink:0), açıkta kalan payı YALNIZ ad büzülerek yer; avatar/rozet/taç/chevron
