@@ -111,6 +111,9 @@ export default function PublicProfile({
   return (
     <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="register-card pp-card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <Icon name="x" size={18} />
+        </button>
         {error && <div className="lb-empty">{t('lb.error')}</div>}
         {!error && !p && <Loading />}
 
