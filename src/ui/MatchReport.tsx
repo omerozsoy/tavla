@@ -155,8 +155,8 @@ export default function MatchReport({
   // candIdx === PREMOVE: "Hamle Öncesi" — tahta karar anındaki ham pozisyonu OKSUZ gösterir
   // (hiçbir aday/oynanan ok çizilmez). Liste en üstünde seçilebilir satır.
   const PREMOVE = -2
-  // Aday hamle listesi: varsayilan En Iyi 30; "Tumunu goster" ile hepsi acilir.
-  const CAND_LIMIT = 30
+  // Aday hamle listesi: varsayilan En Iyi 5; "Tumunu goster" ile hepsi acilir (kullanici istegi).
+  const CAND_LIMIT = 5
   const [showAllCands, setShowAllCands] = useState(false)
   const [boardDir] = useBoardDir()
   const [swapStones] = useSwapStones()
