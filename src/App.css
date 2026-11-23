@@ -34525,6 +34525,13 @@ select:-webkit-autofill {
 body.has-bottom-nav .to-top {
   bottom: calc(86px + env(safe-area-inset-bottom, 0px));
 }
+/* Analiz detay sayfasında ekranın en altında SABİT hamle-nav çubuğu (.an-nav, yalnız ≤720px)
+   var -> "En Üste Git" düğmesi onun ÜSTÜNDE dursun (çubuk ~92px rezerv), üstüne binmesin. */
+@media (max-width: 720px) {
+  body.has-an-nav .to-top {
+    bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .to-top {
     animation: none;

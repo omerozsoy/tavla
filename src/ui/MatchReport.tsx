@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
@@ -114,6 +114,13 @@ export default function MatchReport({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  // Analiz modunda ekranın en altında SABİT hamle-nav çubuğu (.an-nav, ≤720px) var. Body'ye
+  // `has-an-nav` ekle -> "En Üste Git" düğmesi CSS'te bu çubuğun ÜSTÜNE çıksın (üstüne binmesin).
+  useEffect(() => {
+    if (mode !== 'analysis') return
+    document.body.classList.add('has-an-nav')
+    return () => document.body.classList.remove('has-an-nav')
+  }, [mode])
   // OYUN AYRACI: canlı maç-sonu logu (gnubg review / matchLog) `game` taşımaz -> seq'ten türet
   // (zaten varsa dokunmaz). Böylece sıralı listede "— OYUN N —" ayracı + rozet her yerde görünür.
   const log = useMemo(() => withGameIndex(rawLog), [rawLog])
