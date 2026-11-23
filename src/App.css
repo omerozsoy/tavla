@@ -3167,13 +3167,20 @@ button[aria-disabled='true'],
 /* Hane numaraları + pip: board'a (--checker) göre ölçekle (sabit rem'ler küçük board'da devleşir).
    ÖNEMLI: global .pt-numbers rengi (rgba beyazımsı) KOYU oyun tahtası içindir; makale açık
    krem kart üstünde OKUNMAZ -> koyu okunur mürekkebe çevir + kalınlaştır (kapı numaraları net). */
-.article-board-stage .pt-numbers,
-.arena-judge-board .pt-numbers {
+.article-board-stage .pt-numbers {
   font-size: calc(var(--checker) * 0.52);
   color: var(--muted);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+}
+/* Arena judge (Doğru Hamle mi? / Tek Can): board kolona kısaldı → checker küçük.
+   Hane no küçük + normal ağırlık (kullanıcı: büyük+bold istemiyor). */
+.arena-judge-board .pt-numbers {
+  font-size: calc(var(--checker) * 0.34);
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 .article-board-stage .pip,
 .arena-judge-board .pip {
@@ -18479,7 +18486,7 @@ body:has(.spectate-view) .app.lobby {
   color: var(--text);
 }
 .tr-view .bgx-board .board { width: fit-content; max-width: 100%; margin: 0; }
-.tr-view .pt-numbers { color: color-mix(in srgb, var(--text) 62%, transparent); font-weight: 500; }
+.tr-view .pt-numbers { color: color-mix(in srgb, var(--text) 62%, transparent); font-weight: 400; font-size: 0.8rem; }
 .tr-view .pip { color: var(--cream); font-weight: 600; }
 
 /* --- Sol panel (kart yüzey) --- */
