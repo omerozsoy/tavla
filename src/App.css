@@ -6617,7 +6617,7 @@ button[aria-disabled='true'],
 }
 .board.board-3d .board-inner {
   /* Pivot ALT kenar: tahta masaya oturur gibi geriye yatar, asagi tasma olmaz. scale pay birakir. */
-  transform: rotateX(var(--tilt)) scale(0.85);
+  transform: rotateX(var(--tilt)) scale(0.8);
   transform-origin: center bottom;
   /* Dugmeleri ters-dondurup dik tutabilmek icin 3D baglam sart; overflow:hidden onu
      "flat"a zorlar -> tilt modunda overflow:visible (statik tahtada tasma ihmal edilebilir). */
@@ -16952,7 +16952,14 @@ body:has(.spectate-view) .app.lobby {
    sol köşesine biniyordu (ekran görüntüsündeki taşma). */
 .rep-filter > [data-slot='button'] {
   flex: 1 1 auto;
-  padding-inline: 10px;
+  /* Masaüstü: shadcn varsayılan buton yüksekliği/fontu bu filtre sekmeleri için fazla iri
+     (kullanıcı: "web'de bu düğmeleri küçült"). Kompakt yükseklik + daha küçük font. Mobil
+     kendi (daha küçük) override'ını korur. */
+  height: auto;
+  min-height: 0;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 /* SWISS: filtre sekmeleri (Liderlik / raporlar vb.) uppercase, keskin köşe, 500. */
 .rep-filter [data-slot='button'],
