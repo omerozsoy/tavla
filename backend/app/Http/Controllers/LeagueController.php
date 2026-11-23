@@ -54,8 +54,10 @@ class LeagueController extends Controller
         $rows = LeagueParticipant::where('season_id', $season->id)
             ->whereIn('status', ['accepted', 'reserve'])->orderBy('reserve_order')->orderBy('seed')->get();
         $users = $this->userMap($rows->pluck('user_id')->all());
+        // Kadro/yedek listesi GÜNCEL roster (tarihsel maç değil) -> silinmiş hesap hiç görünmesin (oynayamaz).
         $map = fn (string $st) => $rows->where('status', $st)
-            ->map(fn ($r) => $users[(int) $r->user_id] ?? null)->filter()->values()->all();
+            ->map(fn ($r) => $users[(int) $r->user_id] ?? null)->filter()
+            ->reject(fn ($u) => $u['deleted'] ?? false)->values()->all();
 
         return ['accepted' => $map('accepted'), 'reserve' => $map('reserve')];
     }
@@ -445,6 +447,7 @@ class LeagueController extends Controller
 
                 return [
                     'id' => $u->id,
+                    'deleted' => $deleted, // participantsPayload roster'dan eler; tarihsel payload'lar maskeli bırakır
                     'nickname' => $deleted ? 'Silinmiş üye' : $u->nickname,
                     'name' => $deleted ? 'Silinmiş üye' : trim(($u->first_name ?? '').' '.($u->last_name ?? '')), // seçilen oyuncular listesi gerçek ad-soyadı gösterir
                     'avatar' => $deleted ? null : $u->avatar,
