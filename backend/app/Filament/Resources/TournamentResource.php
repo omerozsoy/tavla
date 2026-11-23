@@ -351,6 +351,12 @@ class TournamentResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('register_until')
+                    ->label('Saat')
+                    ->dateTime('d.m.Y H:i')
+                    ->placeholder('—')
+                    ->tooltip('Son katılım = turnuva açılış saati (gerçek başlangıç +1 dk)')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('type')
                     ->label('Tip')
                     ->formatStateUsing(fn (?string $state): string => Tournament::TYPES[$state] ?? ($state ?? 'Bracket System'))
@@ -378,11 +384,6 @@ class TournamentResource extends Resource
                 Tables\Columns\ToggleColumn::make('active')
                     ->label('Aktif')
                     ->tooltip('Kapatınca sitede gösterilmez (pasif); silmez.'),
-                Tables\Columns\TextColumn::make('register_until')
-                    ->label('Son katılım')
-                    ->dateTime('d.m.Y H:i')
-                    ->placeholder('—')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('creator.nickname')
                     ->label('Oluşturan')
                     ->placeholder('—')
