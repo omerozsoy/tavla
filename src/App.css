@@ -17241,12 +17241,15 @@ body:has(.spectate-view) .app.lobby {
   .analysis-list {
     flex: none;
     width: 100%;
+    /* Dar ekranda TAHTA EN ÜSTTE (kullanıcı isteği): detail'i öne al, hamle listesi altına. */
+    order: 2;
   }
   /* Kolon (column) yön + base align-items:flex-start -> detail'e width verilmezse içeriğe
      büzülüp 0 genişlik olur (container-type 100cqw bozulur, tam-board TAŞAR). Tam genişlik ver. */
   .analysis-detail {
     flex: none;
     width: 100%;
+    order: 1;
   }
   .analysis-rows {
     max-height: 30vh;
