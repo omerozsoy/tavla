@@ -139,7 +139,6 @@ export default function MatchResult({
   onTournamentLobby,
   onAnalysis,
   hasReport,
-  onMoveAnalysis,
   onDiceCheck,
   matchCode,
   endReason,
@@ -476,19 +475,13 @@ export default function MatchResult({
           </div>
         </div>
 
-        {(hasReport || onMoveAnalysis || onDiceCheck) && (
+        {(hasReport || onDiceCheck) && (
           <div className="mr-actions mr-report-actions">
-            {/* "Maç Analizi": bu maçın hamle-hamle analiz sayfasını (/mac-analizleri-detay/<id>) açar.
-                Eskiden "Maç Özeti" etiketliydi ama içerik analiz -> kullanıcı isteğiyle yeniden adlandırıldı. */}
+            {/* "Maç Analizi": bu maçın hamle-hamle analiz detay sayfasını (/mac-analizleri-detay/<id>)
+                açar. Ayrı "Analiz" butonu kaldırıldı (kullanıcı isteği) -> tek giriş. */}
             {hasReport && (
               <Button variant="outline" onClick={onAnalysis}>
                 <Icon name="search" /> {t('mr.matchAnalysis')}
-              </Button>
-            )}
-            {/* Ayrı "Analiz": bu maçın hamle-hamle analiz detay sayfası (Maç Özeti'nden farklı görünüm). */}
-            {onMoveAnalysis && (
-              <Button variant="outline" onClick={onMoveAnalysis}>
-                <Icon name="search" /> {t('mr.analysis')}
               </Button>
             )}
             {/* Zar Kontrol: sunucu zarını (commit-reveal) bağımsız doğrula. */}

@@ -1,0 +1,1 @@
+import{i as e}from"./rolldown-runtime-aKtaBQYM.js";import{i as t}from"./react-vendor-C0aB8z2Y.js";var n=e(t(),1);function r(e){let t=(0,n.useRef)(e);t.current=e,(0,n.useEffect)(()=>{let e=()=>t.current();return window.addEventListener(`online`,e),()=>window.removeEventListener(`online`,e)},[])}export{r as t};

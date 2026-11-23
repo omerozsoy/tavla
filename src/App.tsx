@@ -171,16 +171,17 @@ import { DevBanner } from './ui/DevBanner'
 import ConfirmModal from './ui/ConfirmModal'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
-import Leaderboard from './ui/Leaderboard'
-import DuelView from './ui/DuelView'
-import CardForm, { type CardPayData, type CardBreakdown } from './ui/CardForm'
+const Leaderboard = lazy(() => import('./ui/Leaderboard'))
+const DuelView = lazy(() => import('./ui/DuelView'))
+import { type CardPayData, type CardBreakdown } from './ui/CardForm'
+const CardForm = lazy(() => import('./ui/CardForm'))
 import { TeamEmblem } from './ui/TeamEmblem'
 import { useTeamTag } from './teamTags'
 import RankInfo from './ui/RankInfo'
 import FairnessModal from './ui/FairnessModal'
 import DiceCheck from './ui/DiceCheck'
-import Friends from './ui/Friends'
-import Messages from './ui/Messages'
+const Friends = lazy(() => import('./ui/Friends'))
+const Messages = lazy(() => import('./ui/Messages'))
 const Lessons = lazy(() => import('./ui/Lessons'))
 const TrainingView = lazy(() => import('./ui/TrainingView'))
 const QuizMarathon = lazy(() => import('./ui/QuizMarathon').then((m) => ({ default: m.QuizMarathon }))) // Soru Maratonu (/soru-maratonu; eski /gunun-pozisyonu alias olarak korunur)
@@ -200,12 +201,12 @@ import { AdStrip } from './ui/AdStrip'
 import { EntryPopupModal } from './ui/EntryPopupModal'
 import { CookieConsent, OPEN_LEGAL, OPEN_COOKIE_PREFS } from './ui/CookieConsent'
 import { LegalView } from './ui/LegalView'
-import SoloStakes from './ui/SoloStakes'
+const SoloStakes = lazy(() => import('./ui/SoloStakes'))
 const ErrorJournal = lazy(() => import('./ui/ErrorJournal'))
 const MatchAnalytics = lazy(() => import('./ui/MatchAnalytics'))
 const GamePreview = lazy(() => import('./ui/GamePreview'))
 const ContentView = lazy(() => import('./ui/ContentView'))
-import QuizPlay from './ui/QuizPlay'
+const QuizPlay = lazy(() => import('./ui/QuizPlay'))
 const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
 import SeoContent from './ui/SeoContent'
@@ -568,14 +569,14 @@ function setSeoH1(text: string): void {
   }
   if (el.textContent !== text) el.textContent = text
 }
-import Achievements from './ui/Achievements'
-import AchievementUnlock from './ui/AchievementUnlock'
+const Achievements = lazy(() => import('./ui/Achievements'))
+const AchievementUnlock = lazy(() => import('./ui/AchievementUnlock'))
 import FriendGameSetup from './ui/FriendGameSetup'
 import { GameHudHeader, GameHudRow, useMobilePortrait } from './ui/GameHud'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
-import MagazaSwiss from './ui/MagazaSwiss'
-import LuckyWheel from './ui/LuckyWheel'
+const MagazaSwiss = lazy(() => import('./ui/MagazaSwiss'))
+const LuckyWheel = lazy(() => import('./ui/LuckyWheel'))
 import DiceSlot from './ui/DiceSlot'
 import ExcuseMachine from './ui/ExcuseMachine'
 import KizTavlasi from './ui/KizTavlasi'
@@ -11155,7 +11156,10 @@ export default function App() {
   ) : null
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
+  // Suspense: icerideki agir bilesenlerin cogu lazy() -> ana chunk'tan ayri yuklenir.
+  // Hepsi kosul arkasinda (ilk boyamada render EDILMEZ) -> null fallback asla parlamaz.
   const menuPages = (
+    <Suspense fallback={null}>
     <>
       {achUnlocked.length > 0 && (
         <AchievementUnlock
@@ -11731,6 +11735,7 @@ export default function App() {
         </div>
       )}
     </>
+    </Suspense>
   )
 
   // Ortalanmis modallar / yuzen katmanlar (her zaman overlay).

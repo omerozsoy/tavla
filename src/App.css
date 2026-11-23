@@ -6617,7 +6617,7 @@ button[aria-disabled='true'],
 }
 .board.board-3d .board-inner {
   /* Pivot ALT kenar: tahta masaya oturur gibi geriye yatar, asagi tasma olmaz. scale pay birakir. */
-  transform: rotateX(var(--tilt)) scale(0.9);
+  transform: rotateX(var(--tilt)) scale(0.85);
   transform-origin: center bottom;
   /* Dugmeleri ters-dondurup dik tutabilmek icin 3D baglam sart; overflow:hidden onu
      "flat"a zorlar -> tilt modunda overflow:visible (statik tahtada tasma ihmal edilebilir). */
