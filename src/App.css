@@ -3146,7 +3146,8 @@ button[aria-disabled='true'],
      göre küçült (analysis-detail ile aynı sistem). */
   container-type: inline-size;
 }
-.article-board-stage {
+.article-board-stage,
+.arena-judge-board {
   position: relative;
   width: 100%;
   /* Kolona göre board yüksekliği + TÜM türev geometri yeniden türetilir (line 179-189
@@ -3166,14 +3167,16 @@ button[aria-disabled='true'],
 /* Hane numaraları + pip: board'a (--checker) göre ölçekle (sabit rem'ler küçük board'da devleşir).
    ÖNEMLI: global .pt-numbers rengi (rgba beyazımsı) KOYU oyun tahtası içindir; makale açık
    krem kart üstünde OKUNMAZ -> koyu okunur mürekkebe çevir + kalınlaştır (kapı numaraları net). */
-.article-board-stage .pt-numbers {
+.article-board-stage .pt-numbers,
+.arena-judge-board .pt-numbers {
   font-size: calc(var(--checker) * 0.52);
   color: var(--muted);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
 }
-.article-board-stage .pip {
+.article-board-stage .pip,
+.arena-judge-board .pip {
   font-size: calc(var(--checker) * 0.66);
 }
 .article-board-caption {
@@ -11964,11 +11967,28 @@ button.acct-row-logout:hover:not(:disabled) {
     padding: max(4px, env(safe-area-inset-top)) 10px 4px calc(64px + env(safe-area-inset-left));
     flex-wrap: nowrap;
   }
-  /* Dar telefon: ad kisalsin (logo ile bindirmesin; 360px'te avatar ekran disina tasiyordu).
-     260 -> 284: 360-384px'te ust bar ~4-14px tasiyordu (olcum: measure-topbar.mjs) -> ad biraz
-     daha erken kisalsin, bar TAM otursun. */
+  /* Avatar koşeye TAŞMASIN: sabit sayı yerine gerçek flex-shrink. Logo tam kalır
+     (flex-shrink:0), açıkta kalan payı YALNIZ ad büzülerek yer; avatar/rozet/taç/chevron
+     sabit (flex:none). Önceki `100vw - 284px` sabiti premium tacını saymıyordu -> ÖmerÖzsoy
+     gibi premium adlarda avatar ekran dışına taşıyordu. */
+  .ab-brand {
+    flex-shrink: 0;
+  }
+  .acct-mobile {
+    flex: 0 1 auto;
+    max-width: 100%;
+  }
+  .acct-trigger {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .acct-trigger > :not(.acct-trigger-name) {
+    flex: none;
+  }
   .acct-trigger-name {
-    max-width: min(32vw, calc(100vw - 284px));
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: none;
   }
   /* Dar telefonda bant ~52px -> hamburger yuksekligini bantla esitle (dikey ortala). */
   .hamburger {

@@ -47,8 +47,11 @@
 /* Yargı kartı — iki kolon: büyük board | yan panel (soru + butonlar) */
 .arena-judge-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 /* Tek kolon: büyük board (kart genişliğinde) + altında soru + yan yana iki büyük buton. */
-.arena-judge-grid { display: flex; flex-direction: column; gap: 18px; }
-.arena-judge-board { position: relative; width: 100%; max-width: none; margin: 0 auto; }
+/* Board global --board-h (viewport + kenar çubuğu varsayımlı) kartı taşırıyordu → kolona (cqw)
+   göre küçült. --board-h override + .pt-numbers koyu mürekkep App.css .arena-judge-board'da
+   (.article-board-stage ile ortak reçete). */
+.arena-judge-grid { display: flex; flex-direction: column; gap: 18px; container-type: inline-size; }
+.arena-judge-board { max-width: none; margin: 0 auto; }
 .arena-judge-side { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 .arena-judge-q { font-size: 19px; color: #4a4038; line-height: 1.5; text-align: center; }
 .arena-judge-q b { color: var(--arena-accent); }
