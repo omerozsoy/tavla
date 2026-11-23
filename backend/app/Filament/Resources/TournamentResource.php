@@ -353,7 +353,7 @@ class TournamentResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('register_until')
                     ->label('Saat')
-                    ->dateTime('d.m.Y H:i')
+                    ->dateTime('H:i')
                     ->placeholder('—')
                     ->tooltip('Son katılım = turnuva açılış saati (gerçek başlangıç +1 dk)')
                     ->sortable(),
