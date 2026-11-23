@@ -155,8 +155,8 @@ export default function MatchReport({
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
   const [sel, setSel] = useState(firstMistake)
-  // Sol panel sekmesi: 'moves' = hamle listesi (En İyi N), 'cube' = o an seçili hamlenin küp durumu.
-  const [leftTab, setLeftTab] = useState<'moves' | 'cube'>('moves')
+  // Sağ panel (aday/detay) sekmesi: 'cands' = En İyi N Hamle, 'cube' = Küp Durumu (seçili hamle).
+  const [candTab, setCandTab] = useState<'cands' | 'cube'>('cands')
   // Aday listesinde OYNANAN adayin indexi; -1 = oynanan hamle top listede yok (blunder)
   // -1 durumunda tahtada gercek oynanan adimlar (playedSteps) gosterilir.
   const playedCandIdx = (e?: LogEntry) => e?.cands?.findIndex((c) => c.notation === e.notation) ?? -1
@@ -515,23 +515,6 @@ export default function MatchReport({
             <div className="analysis-layout">
               {/* Sol: hamle listesi */}
               <div className="analysis-list">
-                {/* Sol panel sekmeleri: Hamle listesi | Küp Durumu (o an seçili hamle) */}
-                <div className="an-lefttabs">
-                  <button
-                    className={`an-lefttab ${leftTab === 'moves' ? 'on' : ''}`}
-                    onClick={() => setLeftTab('moves')}
-                  >
-                    {t('rep.tabMoves', { n: mistakes.length })}
-                  </button>
-                  <button
-                    className={`an-lefttab ${leftTab === 'cube' ? 'on' : ''}`}
-                    onClick={() => setLeftTab('cube')}
-                  >
-                    {t('rep.tabCube')}
-                  </button>
-                </div>
-                {leftTab === 'moves' && (
-                  <>
                 {humanColor && (
                   <div className="rep-filter">
                     <Button
@@ -619,24 +602,6 @@ export default function MatchReport({
                     )
                   })}
                 </div>
-                  </>
-                )}
-                {leftTab === 'cube' && (
-                  <div className="an-cube-tab">
-                    {/* O an seçili hamlenin (cur) küp durumu. Gerçek küp kararı turunda saklı
-                        (sunucu/hassas) veriyi, diğer hamlelerde probs'tan türetilmiş TAHMİNİ göster. */}
-                    {cur?.cube ? (
-                      <CubeAnalysis cube={cur.cube} />
-                    ) : (() => {
-                      const d = cubeEstimateFor(cur)
-                      return d ? (
-                        <CubeEstimate d={d} notation={cur?.notation} />
-                      ) : (
-                        <div className="an-cube-none">{t('rep.cubeNoData')}</div>
-                      )
-                    })()}
-                  </div>
-                )}
               </div>
 
               {/* Sag: secili kararin tahtasi + (pul) siralı adaylar VEYA (küp) XG-stili küp analizi */}
@@ -745,11 +710,22 @@ export default function MatchReport({
                     })()}
                     </div>
                     <div className="an-split-cands">
-                    <div className="an-cands-title">
-                      {t('rep.bestN', {
-                        n: Math.min(CAND_LIMIT, (cur.cands ?? []).length),
-                      })}
+                    {/* Sağ panel sekmeleri: En İyi N Hamle | Küp Durumu (o an seçili hamle). */}
+                    <div className="an-dtabs">
+                      <button
+                        className={`an-dtab ${candTab === 'cands' ? 'on' : ''}`}
+                        onClick={() => setCandTab('cands')}
+                      >
+                        {t('rep.bestN', { n: Math.min(CAND_LIMIT, (cur.cands ?? []).length) })}
+                      </button>
+                      <button
+                        className={`an-dtab ${candTab === 'cube' ? 'on' : ''}`}
+                        onClick={() => setCandTab('cube')}
+                      >
+                        {t('rep.tabCube')}
+                      </button>
                     </div>
+                    {candTab === 'cands' ? (
                     <div className="an-cands">
                       {/* EN ÜSTTE: "Hamle Öncesi" — tahtayı oksuz (ham pozisyon) göster. */}
                       <button
@@ -829,6 +805,22 @@ export default function MatchReport({
                         </button>
                       )}
                     </div>
+                    ) : (
+                      <div className="an-cube-tab">
+                        {/* O an seçili hamlenin küp durumu: gerçek küp kararı turunda saklı
+                            (hassas) veri, diğer hamlelerde probs'tan türetilmiş TAHMİNİ. */}
+                        {cur?.cube ? (
+                          <CubeAnalysis cube={cur.cube} />
+                        ) : (() => {
+                          const d = cubeEstimateFor(cur)
+                          return d ? (
+                            <CubeEstimate d={d} notation={cur?.notation} />
+                          ) : (
+                            <div className="an-cube-none">{t('rep.cubeNoData')}</div>
+                          )
+                        })()}
+                      </div>
+                    )}
                     </div>
                   </div>
                 ) : (

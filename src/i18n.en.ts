@@ -2240,7 +2240,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'rep.marsLoss': 'Gammon loss',
   'rep.selectMove': 'Select a move',
   'rep.yourMove': 'Your move',
-  'rep.beforeMove': 'Before move',
+  'rep.beforeMove': 'Remove arrows',
   'rep.prevMove': 'Previous',
   'rep.nextMove': 'Next',
   'rep.bestN': 'Best {n} Moves',

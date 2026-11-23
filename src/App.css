@@ -17218,13 +17218,13 @@ body:has(.spectate-view) .app.lobby {
   flex: 0 0 300px;
   min-width: 0;
 }
-/* Sol panel sekmeleri: Hamle listesi (En İyi N) | Küp Durumu (o an seçili hamle). */
-.an-lefttabs {
+/* Sağ detay paneli sekmeleri: En İyi N Hamle | Küp Durumu (o an seçili hamle). */
+.an-dtabs {
   display: flex;
   gap: 4px;
   margin-bottom: 8px;
 }
-.an-lefttab {
+.an-dtab {
   flex: 1 1 0;
   min-width: 0;
   padding: 7px 8px;
@@ -17240,10 +17240,10 @@ body:has(.spectate-view) .app.lobby {
   cursor: pointer;
   transition: background 120ms var(--ease-out), color 120ms var(--ease-out), border-color 120ms var(--ease-out);
 }
-.an-lefttab:hover {
+.an-dtab:hover {
   color: var(--text);
 }
-.an-lefttab.on {
+.an-dtab.on {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);

@@ -2291,7 +2291,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'rep.marsLoss': 'Mars kaybı',
   'rep.selectMove': 'Bir hamle seç',
   'rep.yourMove': 'Sizin hamleniz',
-  'rep.beforeMove': 'Hamle Öncesi',
+  'rep.beforeMove': 'Okları Kaldır',
   'rep.prevMove': 'Önceki',
   'rep.nextMove': 'Sonraki',
   'rep.bestN': 'En İyi {n} Hamle',
