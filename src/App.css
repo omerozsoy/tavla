@@ -17245,17 +17245,38 @@ body:has(.spectate-view) .app.lobby {
   .analysis-layout {
     flex-direction: column;
   }
+  /* MOBİL (app + mobil web; masaüstü web'e DOKUNMA — bu blok yalnız ≤720px): dikey sıra
+     TAHTA → HATALAR → EN İYİ HAMLELER. Board (.an-split-board) ile adaylar (.an-split-cands)
+     iç içe (.analysis-detail > .an-split) olduğundan araya hata listesini koyabilmek için
+     detail + split'i display:contents ile DÜZLEŞTİR -> üç blok da .analysis-layout'un doğrudan
+     flex çocuğu olur, order ile sıralanır. Board'un 100cqw ölçümü için query-container
+     .an-split-board'a TAŞINIR (detail artık kutu üretmiyor). */
+  .analysis-detail {
+    display: contents;
+  }
+  .an-split {
+    display: contents;
+  }
+  .an-split-board {
+    container-type: inline-size;
+    width: 100%;
+    order: 1;
+  }
   .analysis-list {
     flex: none;
     width: 100%;
-    /* Dar ekranda TAHTA EN ÜSTTE (kullanıcı isteği): detail'i öne al, hamle listesi altına. */
     order: 2;
   }
-  /* Kolon (column) yön + base align-items:flex-start -> detail'e width verilmezse içeriğe
-     büzülüp 0 genişlik olur (container-type 100cqw bozulur, tam-board TAŞAR). Tam genişlik ver. */
-  .analysis-detail {
-    flex: none;
+  .an-split-cands {
     width: 100%;
+    order: 3;
+  }
+  /* Tahta-üstü skor en tepede; board yoksa (nadir) "hamle seç" board'un yerinde. */
+  .an-score {
+    order: 0;
+    width: 100%;
+  }
+  .analysis-detail .register-sub.small {
     order: 1;
   }
   .analysis-rows {
