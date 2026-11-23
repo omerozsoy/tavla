@@ -146,8 +146,8 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
         shape: new CANNON.Box(new CANNON.Vec3(SIZE, SIZE, SIZE)),
         sleepSpeedLimit: 0.15, sleepTimeLimit: 0.2,
       })
-      body.linearDamping = 0.06
-      body.angularDamping = 0.08
+      body.linearDamping = 0.14
+      body.angularDamping = 0.22
       world.addBody(body)
       return { mesh, body }
     }
@@ -157,6 +157,7 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
     let targets = [1, 1]
     let phase: 'idle' | 'rolling' | 'snapping' = 'idle'
     let settleTimer = 0
+    let rollFrames = 0 // atistan beri gecen frame -> settle algilanmasa da snap'i ZORLA (deger sabitligi)
     let snapT = 0
     const snapQ = dice.map(() => new THREE.Quaternion())
     const snapFromQ = dice.map(() => new THREE.Quaternion())
@@ -166,6 +167,7 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
       targets = [vals[0] ?? 1, vals[1] ?? vals[0] ?? 1]
       phase = 'rolling'
       settleTimer = 0
+      rollFrames = 0
       dice.forEach((d, i) => {
         d.body.type = CANNON.Body.DYNAMIC
         d.body.wakeUp()
@@ -205,11 +207,15 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
           d.mesh.position.copy(d.body.position as unknown as THREE.Vector3)
           d.mesh.quaternion.copy(d.body.quaternion as unknown as THREE.Quaternion)
         })
-        const slow = dice.every((d) => d.body.velocity.length() < 0.2 && d.body.angularVelocity.length() < 0.2)
+        rollFrames += 1
+        const slow = dice.every((d) => d.body.velocity.length() < 0.35 && d.body.angularVelocity.length() < 0.35)
         if (slow) {
           settleTimer += 1
-          if (settleTimer > 22) beginSnap()
+          if (settleTimer > 10) beginSnap()
         } else settleTimer = 0
+        // GUVENLIK: ~0.9sn sonra settle algilanmasa da snap'i zorla -> zar DAIMA otoriter degere HIZLI oturur
+        // (uzun tumble sirasinda rastgele yuz gosterip "attigim ile oynadigim farkli" kafa karisikligi).
+        if (rollFrames > 55 && phase === 'rolling') beginSnap()
       } else if (phase === 'snapping') {
         snapT += dt / 0.3
         const t = easeOut(Math.min(snapT, 1))
