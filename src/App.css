@@ -19920,25 +19920,26 @@ body:has(.spectate-view) .app.lobby {
   .lb-name .player-id-name-text {
     font-size: 0.82rem;
   }
-  /* Filtre butonlari (Puan/Jeton/WXP/PR) yan yana min-content ~360px -> lobby
-     grid kolonunu 320'nin uzerine itip icerigi kirpiyordu. 2x2 sararak coz. */
+  /* Scope (Benim Hatalarım/Rakip/Tümü) + sort satırları TEK SIRA: nowrap + flex:1 1 0. */
   .rep-filter {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 6px;
   }
   .rep-filter > [data-slot='button'],
   .rep-filter > button,
   .rep-filter .menu-btn {
-    flex: 1 1 calc(50% - 4px);
+    /* flex:1 1 0 -> satırdaki tüm butonlar eşit paylaşır, TEK SIRA (3 scope butonu da sığar;
+       50% basis 2+1'e sarıyordu). min-width:0 ile metin gerekiyorsa içeride sarar/kısalır. */
+    flex: 1 1 0;
     min-width: 0;
     /* Mobilde kompakt: shadcn sabit yüksekliği bırak, padding/font küçük (kullanıcı: butonları küçült). */
     height: auto;
     min-height: 0;
-    padding: 6px 8px;
-    font-size: 0.72rem;
+    padding: 6px 6px;
+    font-size: 0.7rem;
     line-height: 1.15;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.2px;
   }
-  .rep-filter { gap: 6px; }
 }
 /* ---- WXP kirilim paneli (yalniz WXP sekmesi): formul + kendi kategori dagilimi ---- */
 .wxp-bd {
