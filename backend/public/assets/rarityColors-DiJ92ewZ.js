@@ -1,0 +1,1 @@
+var e={common:`#9da7b3`,rare:`#6e8db8`,epic:`#a17fb5`,legendary:`#c2a15f`,mythic:`#c0616b`,club:`#4e9e75`,country:`#c0724a`,tavlatv:`#c98a3c`,prestige:`#d2b36e`,tavla:`#4e9e9e`,achievement:`#e0c57a`};export{e as t};

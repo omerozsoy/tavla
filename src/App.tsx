@@ -577,13 +577,14 @@ import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 const MagazaSwiss = lazy(() => import('./ui/MagazaSwiss'))
 const LuckyWheel = lazy(() => import('./ui/LuckyWheel'))
-import DiceSlot from './ui/DiceSlot'
-import ExcuseMachine from './ui/ExcuseMachine'
-import KizTavlasi from './ui/KizTavlasi'
+const DiceSlot = lazy(() => import('./ui/DiceSlot'))
+const ExcuseMachine = lazy(() => import('./ui/ExcuseMachine'))
+const KizTavlasi = lazy(() => import('./ui/KizTavlasi'))
 import CheckerShop, { DISCONTINUED as DISCONTINUED_CHECKERS } from './ui/CheckerShop'
 import { CHECKER_BY_ID, CHECKER_FINISHES } from './checkers'
-import Products, { type CartAddLine } from './ui/Products'
-import MyOrders from './ui/MyOrders'
+import { type CartAddLine } from './ui/Products'
+const Products = lazy(() => import('./ui/Products'))
+const MyOrders = lazy(() => import('./ui/MyOrders'))
 import Cart, { type CartItem, type CartAddressSel, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import DeliveryStep from './ui/DeliveryStep'
 import ShopierWaiting from './ui/ShopierWaiting'
@@ -2621,7 +2622,7 @@ export default function App() {
   // 3D eğim açısı (derece) + perspektif mesafesi (px) — admin kaydırıcıları, kalıcı.
   const [board3dAngle, setBoard3dAngle] = useState<number>(() => {
     const v = Number(localStorage.getItem('tavla.board3dAngle'))
-    return Number.isFinite(v) && v > 0 ? v : 20
+    return Number.isFinite(v) && v > 0 ? v : 34
   })
   const [board3dDepth, setBoard3dDepth] = useState<number>(() => {
     const v = Number(localStorage.getItem('tavla.board3dDepth'))

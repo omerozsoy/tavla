@@ -16982,10 +16982,10 @@ body:has(.spectate-view) .app.lobby {
 .report-embed .report-head {
   background: transparent;
   border-radius: 0;
-  padding: 0 0 12px;
+  padding: 0 0 8px;
 }
 .report-embed .report-body {
-  padding: 14px 0 0;
+  padding: 8px 0 0;
 }
 .report-embed .analysis-rows {
   max-height: calc(100vh - 300px);
@@ -17082,7 +17082,7 @@ body:has(.spectate-view) .app.lobby {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   /* Tam-tahta (MatReview sistemi) analiz kolonuna göre ölçülsün diye query-container. */
   container-type: inline-size;
 }
@@ -17134,7 +17134,7 @@ body:has(.spectate-view) .app.lobby {
 .an-split-cands {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 .report-embed .an-split {
