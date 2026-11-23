@@ -17231,6 +17231,41 @@ body:has(.spectate-view) .app.lobby {
 .an-view-label.you {
   color: var(--tv-gold);
 }
+/* Hatalar arası ileri/geri gezinme çubuğu (← k / N →). Masaüstünde adayların altında;
+   mobilde uzun liste gizlenip bu çubuk tek-pozisyon gezdirir (aşağıdaki @media). */
+.an-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+.an-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.an-nav-btn:not(:disabled):hover {
+  border-color: var(--accent);
+}
+.an-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.an-nav-pos {
+  min-width: 60px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
 /* Tahta üstü maç skoru ("oyun kaç kaç"): adlar + puanlar, ortalı, tahtadan hemen önce. */
 .an-score {
   display: flex;
@@ -17326,10 +17361,27 @@ body:has(.spectate-view) .app.lobby {
     width: 100%;
     order: 2;
   }
+  /* Uzun hata listesi mobilde GİZLİ — tek pozisyon + alttaki oklarla gezinilir (kullanıcı isteği).
+     Filtre butonları (Benim/Rakip · En Kötüler/Sıraya Göre) kalır: sıralamayı seçer, oklar gezer. */
+  .analysis-layout .analysis-rows {
+    display: none;
+  }
   .analysis-layout .an-split-cands {
     flex: none;
     width: 100%;
     order: 3;
+  }
+  /* Alt gezinme çubuğu: scroll dibine yapışır, hangi hatada olduğun (k / N) hep görünür. */
+  .analysis-layout .an-nav {
+    order: 4;
+    width: 100%;
+    position: sticky;
+    bottom: 0;
+    margin-top: 2px;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    z-index: 2;
   }
   /* Tahta-üstü skor en tepede; board yoksa (nadir) "hamle seç" board'un yerinde. */
   .an-score {

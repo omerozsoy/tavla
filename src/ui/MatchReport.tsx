@@ -270,6 +270,15 @@ export default function MatchReport({
     setCandIdx(playedCandIdx(log[i])) // acilista senin oynadigin hamle gosterilir
   }
 
+  // İleri/geri gezinme: aktif sıralamadaki (rows) hatalar arası tek-tek. worstFirst'te rows
+  // en-kötü→en-iyi; "Sonraki" bir sonraki kötü hataya geçer. sel log index'i, rows {e,i}[].
+  // Mobilde uzun liste gizlenip bu oklar tek-pozisyon gezdirir (kullanıcı isteği).
+  const rowPos = rows.findIndex((r) => r.i === sel)
+  const goRel = (d: number) => {
+    const np = (rowPos < 0 ? 0 : rowPos) + d
+    if (np >= 0 && np < rows.length) selectMove(rows[np].i)
+  }
+
   // Bir metni .mat dosyası olarak indir.
   function saveFile(text: string, name: string) {
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
@@ -704,7 +713,9 @@ export default function MatchReport({
                                 </span>
                               )}
                               {isPlayed && (
-                                <span className="an-you-tag">{playedLabel}</span>
+                                <span className="an-you-tag">
+                                  <Icon name="user" size={12} /> {playedLabel}
+                                </span>
                               )}
                             </span>
                           </button>
@@ -722,7 +733,9 @@ export default function MatchReport({
                             {cur.loss >= 0.005 ? `-${cur.loss.toFixed(3)}` : ''}
                           </span>
                           <span className="an-tags">
-                            <span className="an-you-tag">{playedLabel}</span>
+                            <span className="an-you-tag">
+                              <Icon name="user" size={12} /> {playedLabel}
+                            </span>
                           </span>
                         </button>
                       )}
@@ -743,6 +756,33 @@ export default function MatchReport({
                   </div>
                 ) : (
                   <p className="register-sub small">{t('rep.selectMove')}</p>
+                )}
+                {/* İleri/geri gezinme (altta): aktif sıralamadaki hatalar arası tek-tek + konum
+                    (k / N). Mobilde uzun liste gizli -> bu oklar tek-pozisyon gezdirir. */}
+                {rows.length > 0 && (
+                  <div className="an-nav">
+                    <button
+                      type="button"
+                      className="an-nav-btn"
+                      onClick={() => goRel(-1)}
+                      disabled={rowPos <= 0}
+                      aria-label={t('rep.prevMove')}
+                    >
+                      <Icon name="caret-left" size={20} />
+                    </button>
+                    <span className="an-nav-pos">
+                      {(rowPos < 0 ? 0 : rowPos) + 1} / {rows.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="an-nav-btn"
+                      onClick={() => goRel(1)}
+                      disabled={rowPos < 0 || rowPos >= rows.length - 1}
+                      aria-label={t('rep.nextMove')}
+                    >
+                      <Icon name="caret-right" size={20} />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
