@@ -17278,7 +17278,7 @@ body:has(.spectate-view) .app.lobby {
   justify-content: center;
   gap: 8px;
   flex-wrap: nowrap;
-  max-width: 100%;
+  width: 100%;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
