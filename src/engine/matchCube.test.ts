@@ -27,4 +27,20 @@ describe('matchCubeDisplay — skor-farkında küp durumu (tab gösterimi)', () 
     const d = matchCubeDisplay(gl(0.75), 1, 1, 5)
     expect(d.recommended).toBe('no-double')
   })
+
+  it('take point SKORA göre: [0,1] aralığında, uzak-simetrik ~%25, away ile değişir', () => {
+    const far = matchCubeDisplay(gl(0.6), 1, 7, 7)
+    expect(far.takePoint).toBeGreaterThanOrEqual(0)
+    expect(far.takePoint).toBeLessThanOrEqual(1)
+    expect(far.takePoint).toBeGreaterThan(0.2) // ölü-küp take point'ine yakın
+    expect(far.takePoint).toBeLessThan(0.35)
+    const near = matchCubeDisplay(gl(0.6), 1, 2, 2)
+    expect(near.takePoint).not.toBeCloseTo(far.takePoint, 3) // skor take point'i değiştirir
+  })
+
+  it('double match point (1-away/1-away): rakip HER şansta alır -> take point ~0', () => {
+    // Küp ölü; pas = maçı vermek. Rakip herhangi bir kazanma şansıyla take eder.
+    const d = matchCubeDisplay(gl(0.6), 1, 1, 1)
+    expect(d.takePoint).toBeCloseTo(0, 6)
+  })
 })

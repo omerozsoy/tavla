@@ -95,11 +95,17 @@ export function matchCubeDisplay(probs: number[], cube: number, myAway: number, 
   const doubleEq = oppTakes ? doubleTake : doublePass
   const recommended: 'double' | 'no-double' = doubleEq > noDouble ? 'double' : 'no-double'
   const highlight = recommended === 'no-double' ? 'noDouble' : oppTakes ? 'doubleTake' : 'doublePass'
-  const [wn = 0, wg = 0, wb = 0, ln = 0, lg = 0, lb = 0] = probs
+  const [wn = 0, wg = 0, wb = 0] = probs
   const p = Math.max(1e-6, Math.min(1 - 1e-6, wn + wg + wb))
-  const W = (wn + 2 * wg + 3 * wb) / p
-  const L = (ln + 2 * lg + 3 * lb) / (1 - p)
-  const takePoint = Math.max(0.02, Math.min(0.5, (L - 0.5) / (W + L)))
+  // SKOR-FARKINDA kabul sınırı (take point): RAKİP (responder) kaç kazanma%'sinde take ile pass
+  // arasında KAYITSIZ kalır? Teklif edilen küp 2·cube; gammonsuz lineer MWC -> q* = (pass−lose)/
+  // (win−lose), rakibin perspektifinden (away'ler: rakip=oppAway, teklif eden=myAway). Örn. double
+  // match point'te 0 (rakip her şansta alır), ileride para take point'ine (~%25) yaklaşır.
+  const passResp = myAway - cube <= 0 ? 0 : metWin(oppAway, myAway - cube) // rakip pas -> teklif eden cube puan alır
+  const winResp = oppAway - 2 * cube <= 0 ? 1 : metWin(oppAway - 2 * cube, myAway) // rakip alır ve KAZANIR (2·cube)
+  const loseResp = myAway - 2 * cube <= 0 ? 0 : metWin(oppAway, myAway - 2 * cube) // rakip alır ve KAYBEDER (2·cube)
+  const denom = winResp - loseResp
+  const takePoint = Math.abs(denom) < 1e-9 ? 0.25 : Math.max(0, Math.min(1, (passResp - loseResp) / denom))
   return { win: p * 100, noDouble, doublePass, doubleTake, highlight, recommended, oppTakes, takePoint }
 }
 
