@@ -478,10 +478,11 @@ export default function MatchResult({
 
         {(hasReport || onMoveAnalysis || onDiceCheck) && (
           <div className="mr-actions mr-report-actions">
-            {/* Tek "Maç Özeti" butonu: Analiz + İstatistik aynı raporu açıyordu -> birleştirildi. */}
+            {/* "Maç Analizi": bu maçın hamle-hamle analiz sayfasını (/mac-analizleri-detay/<id>) açar.
+                Eskiden "Maç Özeti" etiketliydi ama içerik analiz -> kullanıcı isteğiyle yeniden adlandırıldı. */}
             {hasReport && (
               <Button variant="outline" onClick={onAnalysis}>
-                <Icon name="chart" /> {t('ms.btn')}
+                <Icon name="search" /> {t('mr.matchAnalysis')}
               </Button>
             )}
             {/* Ayrı "Analiz": bu maçın hamle-hamle analiz detay sayfası (Maç Özeti'nden farklı görünüm). */}
