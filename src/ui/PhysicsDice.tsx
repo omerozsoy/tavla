@@ -7,7 +7,7 @@ import * as CANNON from 'cannon-es'
 import type { DieFace } from './Dice'
 
 const FACE_VALUES = [1, 6, 2, 5, 3, 4] // BoxGeometry materyal sirasi: +X,-X,+Y,-Y,+Z,-Z (karsi=7)
-const SIZE = 0.18 // yari-kenar (5 kat kuculduldu: eski 0.9)
+const SIZE = 0.32 // yari-kenar (kullanici "biraz buyut": 0.18 -> 0.32; eski 0.9'dan hala kucuk)
 const DIE = SIZE * 2
 
 function makePipTexture(value: number): THREE.CanvasTexture {
@@ -165,7 +165,7 @@ export default function PhysicsDice({ faces }: { faces: DieFace[] }) {
       return { mesh, body }
     }
     const dice: Die[] = [makeDie(), makeDie()]
-    const restPos = [new THREE.Vector3(-0.45, SIZE, 0), new THREE.Vector3(0.45, SIZE, 0)]
+    const restPos = [new THREE.Vector3(-0.62, SIZE, 0), new THREE.Vector3(0.62, SIZE, 0)]
 
     let targets = [1, 1]
     let phase: 'idle' | 'rolling' = 'idle'
