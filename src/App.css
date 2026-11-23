@@ -6697,6 +6697,88 @@ button[aria-disabled='true'],
     0 4px 7px rgba(0, 0, 0, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
+
+/* --- 3D ZAR ATIŞI (yalniz 3D): Galaxy tarzi GERCEK 3D takla -> motion-blur -> organik YATIK
+   durus (eksene hizali DEGIL) + iki zar farkli acidan gelip farkli acida dinlenir (paralel degil,
+   "elle atilmis" dagiuniklik). 2D board DOKUNULMAZ. perspective() transform'un ICINDE: center-overlay
+   ters-dondurulup flat'a zorlanir, bu yuzden ata 3D baglamina guvenmek yerine zar kendi perspektifini
+   tasir -> rotateX/Y on-kisalmasi her kosulda projekte olur. Eski duz 'die-roll-in'i ezer (specificity). */
+.board.board-3d .die-face {
+  animation: die-throw-3d-a 820ms cubic-bezier(0.18, 0.9, 0.26, 1) both;
+  transform-origin: 50% 55%;
+}
+.board.board-3d .die-face:nth-child(2) {
+  animation-name: die-throw-3d-b;
+  animation-delay: 150ms;
+}
+.board.board-3d .die-face:nth-child(3) {
+  animation-name: die-throw-3d-a;
+  animation-delay: 300ms;
+}
+.board.board-3d .die-face:nth-child(4) {
+  animation-name: die-throw-3d-b;
+  animation-delay: 450ms;
+}
+@keyframes die-throw-3d-a {
+  0% {
+    transform: translate(70%, -120%) perspective(620px) rotateX(-210deg) rotateY(170deg) rotateZ(-70deg) scale(0.5);
+    opacity: 0;
+    filter: blur(3px);
+  }
+  38% {
+    opacity: 1;
+    filter: blur(1.4px);
+  }
+  62% {
+    transform: translate(0, 0) perspective(620px) rotateX(22deg) rotateY(-12deg) rotateZ(12deg) scale(1.12);
+    filter: blur(0);
+  }
+  82% {
+    transform: translate(0, 0) perspective(620px) rotateX(-7deg) rotateZ(-5deg) scale(0.97);
+  }
+  100% {
+    transform: translate(0, 0) perspective(620px) rotateX(0deg) rotateZ(-9deg) scale(1);
+    filter: blur(0);
+  }
+}
+/* Ikinci zar: karsi yondan gelir, TERS acida dinlenir -> iki zar paralel durmaz. */
+@keyframes die-throw-3d-b {
+  0% {
+    transform: translate(-72%, -110%) perspective(620px) rotateX(-190deg) rotateY(-160deg) rotateZ(80deg) scale(0.5);
+    opacity: 0;
+    filter: blur(3px);
+  }
+  38% {
+    opacity: 1;
+    filter: blur(1.4px);
+  }
+  62% {
+    transform: translate(0, 0) perspective(620px) rotateX(18deg) rotateY(14deg) rotateZ(-14deg) scale(1.12);
+    filter: blur(0);
+  }
+  82% {
+    transform: translate(0, 0) perspective(620px) rotateX(-6deg) rotateZ(7deg) scale(0.97);
+  }
+  100% {
+    transform: translate(0, 0) perspective(620px) rotateX(0deg) rotateZ(11deg) scale(1);
+    filter: blur(0);
+  }
+}
+/* anim kapali: 3D takla yok, duz dursun (specificity [data-anim] + 3 sinif > 3 sinif). */
+[data-anim='off'] .board.board-3d .die-face {
+  animation: none;
+  transform: rotateZ(0deg);
+}
+/* reduced-motion sozlesmesi: takla/tilt yok -> yalniz yumusak belirme (kaynakta SONRA = tie kazanir). */
+@media (prefers-reduced-motion: reduce) {
+  .board.board-3d .die-face,
+  .board.board-3d .die-face:nth-child(2),
+  .board.board-3d .die-face:nth-child(3),
+  .board.board-3d .die-face:nth-child(4) {
+    animation: die-fade-in 200ms ease both;
+    transform: none;
+  }
+}
 .pt-numbers {
   grid-column: 1;
   display: flex;
