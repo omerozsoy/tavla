@@ -329,6 +329,7 @@ class TournamentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('id', 'desc')
             ->headerActions([
                 // 3 günden eski turnuvaları TOPLU arşivle: listede gizlenir (sitede gösterim 'active'
                 // ile ayrı — arşiv canlıyı DEĞİŞTİRMEZ). Görmek için "Arşiv" filtresi.

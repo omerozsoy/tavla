@@ -167,6 +167,16 @@ Schedule::command('tournaments:create-scheduled')
     ->name('create-scheduled-tournaments')
     ->withoutOverlapping(10);
 
+// OTOMATİK TURNUVA ARŞİVİ: 3 günden eski (oluşturulma) turnuvaları her gece arşivle — admin
+// "3 Günden Eskileri Arşivle" düğmesinin otomatiği. Sadece admin listesinde gizler (silmez,
+// sitedeki 'active' yayın durumunu ETKİLEMEZ). Idempotent: zaten arşivli olana dokunmaz.
+Schedule::call(function () {
+    DB::table('tournaments')
+        ->whereNull('archived_at')
+        ->where('created_at', '<', now()->subDays(3))
+        ->update(['archived_at' => now()]);
+})->dailyAt('03:30')->name('archive-old-tournaments')->withoutOverlapping(10);
+
 // CRON NABZI (izleyiciyi izler): schedule:run GERÇEKTEN çalışıyor mu? Her dakika cache'e zaman
 // damgası yaz. Admin "Servis Durumu" panelindeki "Zamanlayıcı (cron)" lambası bunu okur; bayatsa
 // (>~2.5dk) cron DURMUŞ demektir -> services:watch dahil TÜM izleme/otomatik-restart/alarm sessizce
