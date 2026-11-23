@@ -54,9 +54,13 @@ Schedule::command('tavla:reign-tick')
     ->name('reign-tick')
     ->withoutOverlapping(10);
 
-// Yayındaki haber URL'lerini sitemap'e günlük ekle; taslak/silinmiş haberler otomatik çıkar.
+// Yayındaki haber/makale URL'lerini sitemap'e ekle; taslak/silinmiş içerik otomatik çıkar.
+// SAATLİK (günlük değil): commit'li public/sitemap.xml yalnız curated statik URL TABANIdır
+// (DB-bağımlı /haberler, /makaleler URL'leri çürümesin diye repoya KONMAZ). Her deploy canlı
+// dosyayı bu tabana geri ezer → saatlik koşu, deploy sonrası sitemap'i en geç 1 saatte yeniden
+// doldurur (günlükte ~24 saate kadar bayat kalabiliyordu). Ucuz: tek Content sorgusu + dosya yazımı.
 Schedule::command('seo:sitemap')
-    ->dailyAt('02:15')
+    ->hourly()
     ->name('seo-sitemap')
     ->withoutOverlapping(10);
 
