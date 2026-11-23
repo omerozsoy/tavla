@@ -90,6 +90,10 @@ class OrganizerController extends Controller
                 'offline' => ! empty($p['offline']),
             ], $t->players ?? [])),
             'pending' => $this->pendingMatches($t),
+            // Bitmiş turnuvada sonuç (final sıralama + şampiyon) organizatör panelinde gösterilsin.
+            // serialize() final'i yalnız status='finished' iken doldurur; aksi halde null.
+            'swiss' => Tournament::isSwissType($t->type) ? SwissRuntime::serialize($t) : null,
+            'champion_id' => (int) ($t->champion_id ?? 0),
         ]);
     }
 

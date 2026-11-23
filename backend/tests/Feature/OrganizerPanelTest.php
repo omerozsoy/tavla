@@ -109,4 +109,37 @@ class OrganizerPanelTest extends TestCase
         $this->assertNotNull($byeCell);
         $this->assertSame((int) $byeId, (int) $byeCell['winner']);
     }
+
+    public function test_show_returns_final_standings_and_champion_when_finished(): void
+    {
+        $mgr = $this->user('org4');
+        $p = fn (int $id, string $n, array $x) => array_merge([
+            'id' => $id, 'name' => $n, 'seed' => $id - 900000000, 'rating' => 1500, 'status' => 'active',
+            'wins' => 0, 'losses' => 0, 'realWins' => 0, 'byes' => 0, 'byeRounds' => [], 'opponents' => [],
+            'pointsFor' => 0, 'pointsAgainst' => 0, 'lives' => 3, 'lastGroupDelta' => 0, 'eliminatedRound' => 0,
+        ], $x);
+        $t = Tournament::create([
+            'name' => 'Salon Final', 'type' => 'swiss_outdoor', 'size' => 0, 'status' => 'finished',
+            'manager_user_id' => $mgr->id, 'champion_id' => 900000001,
+            'players' => [
+                ['id' => 900000001, 'name' => 'Şampiyon', 'rating' => 1500, 'offline' => true],
+                ['id' => 900000002, 'name' => 'İkinci', 'rating' => 1500, 'offline' => true],
+            ],
+            'swiss_state' => [
+                'round' => 2, 'seed' => 'x', 'config' => ['match_length' => 1, 'lives' => 3], 'reports' => [],
+                'participants' => [
+                    $p(900000001, 'Şampiyon', ['wins' => 3, 'realWins' => 3, 'lives' => 2]),
+                    $p(900000002, 'İkinci', ['status' => 'eliminated', 'losses' => 3, 'lives' => 0, 'eliminatedRound' => 2]),
+                ],
+            ],
+        ]);
+
+        $res = $this->actingAs($mgr)->getJson("/api/organizer/tournaments/{$t->id}")->assertOk()->json();
+
+        $this->assertSame(900000001, $res['champion_id']);
+        $this->assertNotEmpty($res['swiss']['final'], 'Bitmiş turnuvada final sıralama dönmeli');
+        // Şampiyon ilk sırada (rank 1).
+        $this->assertSame(1, (int) $res['swiss']['final'][0]['rank']);
+        $this->assertSame(900000001, (int) $res['swiss']['final'][0]['id']);
+    }
 }

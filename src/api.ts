@@ -2282,6 +2282,10 @@ export interface OrganizerDetail {
   round: number
   players: { id: number; name: string; offline: boolean }[]
   pending: { key: string; round: number | null; p1: { id: number; name: string }; p2: { id: number; name: string } }[]
+  /** Swiss durumu; bitmiş turnuvada swiss.final = sonuç sıralaması (aksi halde final null). */
+  swiss?: SwissState | null
+  /** Şampiyon oyuncu id'si (bitmemişse 0). */
+  champion_id?: number
 }
 export interface OrganizerByeEligible { id: number; name: string }
 

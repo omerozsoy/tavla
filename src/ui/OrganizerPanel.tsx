@@ -263,6 +263,25 @@ export default function OrganizerPanel({ onClose, titleOverride }: Props) {
               </section>
             )}
 
+            {/* Turnuva bitince sonuç: final sıralama + şampiyon (serialize final yalnız finished'ta dolu) */}
+            {sel.swiss?.final && sel.swiss.final.length > 0 && (
+              <section className="org-sec">
+                <h4 className="org-sec-h"><Icon name="trophy" size={16} /> {t('org.results')}</h4>
+                <ol className="org-standings">
+                  {sel.swiss.final.map((s) => (
+                    <li key={s.id} className={`org-stand${s.rank === 1 ? ' org-champ' : ''}`}>
+                      <span className="org-stand-rank">{s.rank ?? '–'}</span>
+                      <span className="org-stand-name">
+                        {s.name}
+                        {s.rank === 1 && <Icon name="crown" size={14} />}
+                      </span>
+                      <span className="org-stand-wl">{t('org.winLoss', { w: s.wins, l: s.losses })}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
             {err && <p className="org-err">{err}</p>}
           </div>
         )}
