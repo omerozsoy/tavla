@@ -855,7 +855,11 @@ const BOT_CUBE_RAND = 1400 // + 0..bu kadar rastgele -> ~1.1-2.5sn dogal "dusunu
 // Zar yüzleri: oynanan zarları soluk (used) yap; çift zarda her hamle zarın çapraz yarısını solar
 // (half). Kendi turum (played), rakip canlı (oppLive) VE rakip replay (oppReplay adımları) ortak
 // kullanır -> rakip zarı da tıpkı bottaki gibi oynandıkça adım adım solar.
-function faceStates(dice: number[], steps: { die: number }[]): { value: number; used: boolean; half?: boolean }[] {
+function faceStates(
+  dice: number[],
+  steps: { die: number }[],
+  dead?: number[],
+): { value: number; used: boolean; half?: boolean }[] {
   if (!dice || dice.length === 0) return [] // GÜVENLİK: malformed server state'te dice undefined -> çökme yok
   if (dice.length === 4) {
     return [0, 1].map((i) => {
@@ -872,7 +876,18 @@ function faceStates(dice: number[], steps: { die: number }[]): { value: number; 
       }
     }
   }
-  return dice.map((v, i) => ({ value: v, used: used[i] }))
+  // Bloke -> hiç oynanamayan zar (ör. 6-5'te 6 kapalı) oynanmış gibi soluk gösterilir.
+  return dice.map((v, i) => ({ value: v, used: used[i] || !!dead?.includes(v) }))
+}
+
+// Bu turda HİÇBİR maksimal hamlede yer almayan zarı (bloke -> ölü) bul. generateMoves zaten
+// büyük-zar zorunluluğu dahil yalnız oynanabilir dizileri döndürür; union'da olmayan zar ölüdür.
+// Yalnız iki FARKLI zar (non-double); çift zar DiceRow'da ayrı render edilir.
+function deadDieValues(state: GameState): number[] {
+  if (state.dice.length !== 2 || state.dice[0] === state.dice[1]) return []
+  const playable = new Set<number>()
+  for (const m of generateMoves(state)) for (const st of m.steps) playable.add(st.die)
+  return state.dice.filter((d) => !playable.has(d))
 }
 
 interface BotAnim {
@@ -9168,7 +9183,7 @@ export default function App() {
   // pvp'de rakibin canlı adımları oppLive'da, bota karşı bot adımları played'de (botAnim) gelir.
   // Kendi turumda: played. Böylece hem kendi hem rakip zarları oynandıkça solar.
   const fadeSteps = online && !myTurn && oppLive.length > 0 ? oppLive : played
-  const diceFaces = faceStates(turnStart.dice, fadeSteps)
+  const diceFaces = faceStates(turnStart.dice, fadeSteps, diceRolled ? deadDieValues(turnStart) : undefined)
   const pipTop = pipCount(boardDisplay, 'black')
   const pipBottom = pipCount(boardDisplay, 'white')
 
@@ -9407,7 +9422,7 @@ export default function App() {
   const oppReplayDice =
     oppReplay && !gameEnd && !matchOver ? (
       <DiceRow
-        faces={faceStates(oppReplay.base.dice, oppReplay.steps.slice(0, oppReplay.shown))}
+        faces={faceStates(oppReplay.base.dice, oppReplay.steps.slice(0, oppReplay.shown), deadDieValues(oppReplay.base))}
         owner={oppReplay.color}
       />
     ) : null
