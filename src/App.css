@@ -17270,7 +17270,8 @@ body:has(.spectate-view) .app.lobby {
   gap: 2px;
   min-width: 0;
 }
-/* Ortadaki "Sizin hamleniz" satırı: nokta + notasyon + kayıp + rozet (aday satırının aynısı). */
+/* Ortadaki "Sizin hamleniz" satırı: listedeki aday kartının aynısı — beyaz (card-bg) zemin,
+   border, köşe, padding. İçerik: nokta + notasyon + kayıp + rozet. */
 .an-nav-you {
   display: flex;
   align-items: center;
@@ -17278,6 +17279,10 @@ body:has(.spectate-view) .app.lobby {
   gap: 8px;
   flex-wrap: nowrap;
   max-width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 7px 12px;
 }
 .an-nav-move {
   font-weight: 700;
