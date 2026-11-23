@@ -17259,7 +17259,11 @@ body:has(.spectate-view) .app.lobby {
   }
   .an-split-board {
     container-type: inline-size;
-    width: 100%;
+    /* TAM GENİŞLİK (edge-to-edge): sayfa kartının yatay padding'ini (clamp 16-48px) negatif
+       margin + align-self:stretch ile kır -> tahtanın query-container'ı TÜM viewport genişliği
+       olur, board 100cqw ile kenardan kenara dolar. Yalnız board; hata/aday listeleri padding'li kalır. */
+    align-self: stretch;
+    margin-inline: calc(-1 * clamp(16px, 3vw, 48px));
     order: 1;
   }
   .analysis-list {
