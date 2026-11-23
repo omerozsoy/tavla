@@ -40,6 +40,16 @@ workflows:
       - name: Capacitor iOS projesini eşitle
         script: npx cap sync ios
 
+      - name: Şifreleme muafiyetini işaretle (ITSAppUsesNonExemptEncryption)
+        # App Store Connect her build'de "ihracat uyumluluğu / şifreleme" sorusunu
+        # sormasın diye Info.plist'e kalıcı olarak ekle. Proje CI'da üretildiği için
+        # (npx cap add ios) repoda Info.plist yok -> sync sonrası enjekte ediyoruz.
+        script: |
+          set -e
+          PLIST=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PLIST"
+
       - name: iOS imzalama profillerini uygula
         script: |
           set -e
