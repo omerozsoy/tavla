@@ -36941,6 +36941,18 @@ body.has-bottom-nav .to-top {
     border-bottom: none;
     max-height: 42vh; /* altta kendi scroll'u */
   }
+  /* BOARD TAM OTURSUN: doğal genişliği (~1.65×board-h) dar telefonu aşıp sağdan kesiliyordu.
+     --board-h'yi viewport genişliğine bağla (board ~1.65 en/boy) -> kenara sığar. Türev
+     geometri (.mrv-board kuralında) bundan yeniden hesaplanır. */
+  .mrv-board {
+    --board-h: max(160px, min(calc(100vh - 240px), calc((100vw - 20px) / 1.65)));
+    padding: 8px 6px;
+  }
+  /* ÜSTTEKİ sıkışık XG özet tablosu mobilde okunamıyordu -> gizle; aynı veri "Maç Özeti"
+     butonundan (SummaryPopup) açılır. */
+  .mrv-xgbar {
+    display: none;
+  }
 }
 
 /* ---- Mat İnceleme: açılış özet popup'ı ("Analiz Tamamlandı") ---- */

@@ -271,30 +271,31 @@ function SeasonBanner() {
   const s = Math.floor((ms % 60000) / 1000)
   const pad = (n: number) => String(n).padStart(2, '0')
   return (
-    <div style={{
-      border: '1px solid var(--border)', borderTop: `3px solid ${SWISS_ACCENT}`, borderRadius: 0,
-      padding: '18px 20px', marginBottom: 16, background: 'var(--card-bg)',
-    }}>
-      {/* Üst satır: sezon adı (sola yaslı) | geri sayım (sağ) — katı grid, ortalama YOK */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <img src="/takimlar-ligi-logo.png" alt="" width={64} height={64} style={{ flex: 'none', display: 'block' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+      <img src="/takimlar-ligi-logo.png" alt="" width={96} height={96} style={{ flex: 'none', display: 'block' }} />
+      <div style={{
+        flex: 1, minWidth: 0,
+        border: '1px solid var(--border)', borderTop: `3px solid ${SWISS_ACCENT}`, borderRadius: 0,
+        padding: '18px 20px', background: 'var(--card-bg)',
+      }}>
+        {/* Üst satır: sezon adı (sola yaslı) | geri sayım (sağ) — katı grid, ortalama YOK */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
           <div>
             <div style={SWISS_LABEL}>{t('teams.season.active')}</div>
             <div style={{ fontSize: 27, fontWeight: 800, lineHeight: 1.02, letterSpacing: -0.6, marginTop: 2 }}>{seasonName}</div>
           </div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={SWISS_LABEL}>{t('teams.season.endsIn')}</div>
-          <div style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: -0.5, marginTop: 2 }}>
-            {d > 0 ? `${d} ${t('teams.season.days')} ` : ''}{pad(h)}:{pad(m)}:{pad(s)}
+          <div style={{ textAlign: 'right' }}>
+            <div style={SWISS_LABEL}>{t('teams.season.endsIn')}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: -0.5, marginTop: 2 }}>
+              {d > 0 ? `${d} ${t('teams.season.days')} ` : ''}{pad(h)}:{pad(m)}:{pad(s)}
+            </div>
           </div>
         </div>
+        <div style={{ fontSize: 12.5, opacity: 0.7, maxWidth: 560, marginTop: 14 }}>
+          {t('teams.season.champNote')}
+        </div>
+        <SeasonRewards />
       </div>
-      <div style={{ fontSize: 12.5, opacity: 0.7, maxWidth: 560, marginTop: 14 }}>
-        {t('teams.season.champNote')}
-      </div>
-      <SeasonRewards />
     </div>
   )
 }
