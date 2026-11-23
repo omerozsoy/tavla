@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cubeActionEquities, offerLoss, takeLoss } from './cubeEquity'
+import { cubeActionEquities, cubeDisplayMoney, offerLoss, takeLoss } from './cubeEquity'
 
 // Gammonsuz olasılık vektörü: p kazanma, 1−p kaybetme (gammon/backgammon yok).
 const gl = (p: number): number[] => [p, 0, 0, 1 - p, 0, 0]
@@ -93,5 +93,31 @@ describe('cubeEquity — katlama/nakit/take noktaları (referans değerler)', ()
     // için kaybeder -> double equity, no-double'ın ALTINDA kalmalı.
     const e = cubeActionEquities(gl(0.5))
     expect(e.double).toBeLessThan(e.noDouble)
+  })
+})
+
+// ---- Küp Durumu tab gösterimi (cubeDisplayMoney): 3 aksiyonun AYRI equity'si + öneri ----
+describe('cubeDisplayMoney — küp durumu tab (3 aksiyon gösterimi)', () => {
+  it('%50: öneri no-double, vurgulanan satır noDouble, doublePass=+1', () => {
+    const d = cubeDisplayMoney(gl(0.5))
+    expect(d.recommended).toBe('no-double')
+    expect(d.highlight).toBe('noDouble')
+    expect(d.win).toBeCloseTo(50, 6)
+    expect(d.doublePass).toBeCloseTo(1, 6) // teklif + rakip pas = mevcut küpü kazan
+  })
+
+  it('%78: öneri double; vurgulanan satır noDouble DEĞİL ve en yüksek equity', () => {
+    const d = cubeDisplayMoney(gl(0.78))
+    expect(d.recommended).toBe('double')
+    expect(d.highlight).not.toBe('noDouble')
+    const hv = d.highlight === 'doublePass' ? d.doublePass : d.doubleTake
+    expect(hv).toBeGreaterThanOrEqual(d.noDouble)
+  })
+
+  it('take point makul aralıkta (0.02..0.5), win = p×100', () => {
+    const d = cubeDisplayMoney(gl(0.6))
+    expect(d.takePoint).toBeGreaterThan(0.02)
+    expect(d.takePoint).toBeLessThan(0.5)
+    expect(d.win).toBeCloseTo(60, 6)
   })
 })

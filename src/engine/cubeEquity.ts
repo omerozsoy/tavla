@@ -71,6 +71,38 @@ export function cubeActionEquities(probs: number[], x = CUBE_EFFICIENCY): CubeAc
   return { noDouble, double, cashPoint, tp, x }
 }
 
+// GÖSTERİM: her hamlenin "küp durumu" tab'ı için ÜÇ aksiyonun ayrı equity'si (noDouble / doublePass
+// / doubleTake) + öneri. cubeActionEquities `double`'ı tek değere (rakip optimal yanıt) indirir;
+// burada pas ve kabul ikisini de AYRI döneriz ki tabloda üçü de gösterilsin. Para/ölü-küp modeli
+// (skor-bağımsız TAHMİN); gerçek küp kararı turunda saklı (sunucu) veri tercih edilir.
+export interface CubeDisplay {
+  win: number // 0..100 mover kazanma%
+  noDouble: number
+  doublePass: number
+  doubleTake: number
+  highlight: 'noDouble' | 'doublePass' | 'doubleTake' // en iyi satır (öneri)
+  recommended: 'double' | 'no-double'
+  oppTakes: boolean // teklif edilirse rakip kabul mü eder
+  takePoint: number // 0..1
+}
+
+export function cubeDisplayMoney(probs: number[], x = CUBE_EFFICIENCY): CubeDisplay {
+  const { p, W, L, ecl } = wlp(probs)
+  const tp = clamp((L - 0.5) / (W + L), 0.02, 0.5)
+  const tpOpp = clamp((W - 0.5) / (W + L), 0.02, 0.5)
+  const cashPoint = clamp(1 - tpOpp, 0.5, 0.98)
+  const dead = clamp(ecl, -3, 3)
+  const blend = (live: number) => (1 - x) * dead + x * live
+  const noDouble = blend(liveLine(tp, cashPoint, p))
+  const doubleTake = 2 * blend(liveLine(tp, 1, p)) // teklif + rakip KABUL: küp 2×, sahiplik rakipte
+  const doublePass = 1 // teklif + rakip PAS: mevcut küpü kazanırım (+1)
+  const oppTakes = doubleTake <= doublePass // rakip benim equity'mi küçülteni seçer
+  const doubleEq = oppTakes ? doubleTake : doublePass
+  const recommended: 'double' | 'no-double' = doubleEq > noDouble ? 'double' : 'no-double'
+  const highlight = recommended === 'no-double' ? 'noDouble' : oppTakes ? 'doubleTake' : 'doublePass'
+  return { win: p * 100, noDouble, doublePass, doubleTake, highlight, recommended, oppTakes, takePoint: tp }
+}
+
 // TAKE eden tarafın equity'si: küp 2× ve SAHİPLİK SENDE -> rakip seni nakit edemez, aşağı ucun
 // 0'a kadar iner: (0, −1) ... (kendi nakit noktan, +1). probs = ALAN tarafın perspektifi.
 function takerEquity(probs: number[], x: number): number {
