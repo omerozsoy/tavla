@@ -14660,6 +14660,13 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-content: center;
   padding: 16px;
 }
+/* KRİTİK: `.register-overlay.modal:not(.page)` (specificity 0,3,0) z-index:var(--z-modal)=2500,
+   yukarıdaki `.ms-overlay` (0,1,0) 5200'ü EZİYORDU -> Maç Özeti modalı MatReview overlay'inin
+   (z-index:2600) ARKASINDA kalıp "buton çalışmıyor" sanılıyordu (/mat-analiz). Eşit specificity
+   (0,3,0) + sonra gelme ile 5200'ü geri kazan. */
+.register-overlay.modal.ms-overlay {
+  z-index: 5200;
+}
 .ms-card {
   position: relative; /* modal-close (position:absolute) kart köşesine otursun, viewport'a kaçmasın */
   width: min(760px, 100%);
@@ -37087,8 +37094,8 @@ body.has-bottom-nav .to-top {
     border-top: 1px solid var(--border);
     border-bottom: none;
     max-height: none;
-    margin-top: 12px; /* board ile filtre düğmeleri arasına nefes (kullanıcı isteği) */
-    padding-top: 10px;
+    margin-top: 22px; /* board'a yapışmasın; filtre düğmeleri board'un altından net ayrılsın */
+    padding-top: 12px;
   }
   .mrv-rows {
     display: none;

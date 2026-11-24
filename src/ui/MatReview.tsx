@@ -501,7 +501,6 @@ export default function MatReview({
 
         {/* ---- SAĞ: analiz (küp kararında küp analizi, aksi halde hamle analizi) ---- */}
         <aside className="mrv-analysis">
-          <div className="mrv-ply">{t('mrv.ply', { n: 2 })}</div>
           {cur?.cube ? (
             <CubeAnalysis cube={cur.cube} />
           ) : (
