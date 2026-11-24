@@ -11509,7 +11509,7 @@ export default function App() {
           onRequireLogin={() => setShowAuth(true)}
           onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
-          onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+          onSpectate={(code, p1, p2) => startTransition(() => setSpectate({ code, p1, p2 }))}
           onProfile={(id) => setHomeProfileId(id)}
           onCardCheckout={(d) => setCardPay({ amount: d.amount, paymentId: d.paymentId })}
           detailId={tournDetailId}
@@ -12436,7 +12436,7 @@ export default function App() {
                 onDuel={user ? (p) => { setDuelPreselect(p); goPage(() => setDuelOpen(true)) } : undefined}
               />
               <LiveMatchesPanel
-                onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+                onSpectate={(code, p1, p2) => startTransition(() => setSpectate({ code, p1, p2 }))}
               />
             </div>
             {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA */}
