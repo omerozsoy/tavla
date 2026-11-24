@@ -166,9 +166,12 @@ export default function Board3D({
   // bar modül uzayı: w = izleyicinin (altta), b = rakip (üstte). flip'te renkler yer değişir.
   const barW = flip ? state.bar.black : state.bar.white
   const barB = flip ? state.bar.white : state.bar.black
-  const posKey = state.points.join(',') + '|' + (flip ? 1 : 0) + '|' + barW + ',' + barB
+  const offW = flip ? state.off.black : state.off.white
+  const offB = flip ? state.off.white : state.off.black
+  const posKey =
+    state.points.join(',') + '|' + (flip ? 1 : 0) + '|' + barW + ',' + barB + '|' + offW + ',' + offB
   useEffect(() => {
-    tavlaRef.current?.setPosition(toModuleArray(state.points, flip), { w: barW, b: barB })
+    tavlaRef.current?.setPosition(toModuleArray(state.points, flip), { w: barW, b: barB }, { w: offW, b: offB })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posKey])
 

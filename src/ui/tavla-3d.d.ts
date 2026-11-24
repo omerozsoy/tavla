@@ -24,7 +24,7 @@ export interface Tavla3DInstance {
   pointAtScreen(clientX: number, clientY: number): Tavla3DPoint | null
   roll(values?: number[]): Promise<number[]>
   show(values: number[]): void
-  setPosition(pos: number[], bar?: { w: number; b: number }): void
+  setPosition(pos: number[], bar?: { w: number; b: number }, off?: { w: number; b: number }): void
   markUsed(i: number, used?: boolean): void
   reset(): void
   readonly values: number[]

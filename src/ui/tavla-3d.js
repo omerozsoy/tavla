@@ -205,17 +205,20 @@ export function mount(container, opts = {}) {
   const frameMat = new THREE.MeshPhysicalMaterial({ map: woodTexture(), roughness: 0.6, clearcoat: 0.25, clearcoatRoughness: 0.5 });
   const fieldMat = new THREE.MeshStandardMaterial({ color: o.colors.field, roughness: 0.85 });
   const OX = B / 2 + HW + F, OZ = D / 2 + F;
+  const TW = 2.7 * CR, RX = OX + TW; // bear-off (taş toplama) tepsisi (SAĞ dış); RX = tepsi dahil dış kenar
+  const TRAYX = OX + (TW - F) / 2;   // tepsi iç ortası (off taşları + küp burada)
   const box = (w, h, d, x, y, z, m) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
     mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true;
     boardGroup.add(mesh); return mesh;
   };
-  box(2 * OX, 0.6, 2 * OZ, 0, -0.3, 0, frameMat);                 // taban
-  box(F, R, 2 * OZ, -OX + F / 2, R / 2, 0, frameMat);              // sol kenar
-  box(F, R, 2 * OZ, OX - F / 2, R / 2, 0, frameMat);               // sağ kenar
-  box(2 * OX - 2 * F, R, F, 0, R / 2, -OZ + F / 2, frameMat);      // üst kenar
-  box(2 * OX - 2 * F, R, F, 0, R / 2, OZ - F / 2, frameMat);       // alt kenar
-  box(B, R, D, 0, R / 2, 0, frameMat);                             // bar
+  box(2 * OX + TW, 0.6, 2 * OZ, TW / 2, -0.3, 0, frameMat);             // taban (tepsi dahil)
+  box(F, R, 2 * OZ, -OX + F / 2, R / 2, 0, frameMat);                   // sol kenar
+  box(F, R, 2 * OZ, OX - F / 2, R / 2, 0, frameMat);                    // oyun/tepsi ayırıcı (eski sağ kenar)
+  box(F, R, 2 * OZ, RX - F / 2, R / 2, 0, frameMat);                    // SAĞ dış kenar (tepsi dışı)
+  box(2 * OX - 2 * F + TW, R, F, TW / 2, R / 2, -OZ + F / 2, frameMat); // üst kenar (tepsi dahil)
+  box(2 * OX - 2 * F + TW, R, F, TW / 2, R / 2, OZ - F / 2, frameMat);  // alt kenar (tepsi dahil)
+  box(B, R, D, 0, R / 2, 0, frameMat);                                 // bar
   // TavlaTV logosu — bar'ın üstünde, uzunluğu boyunca (soluk krem marka).
   (function () {
     const c = document.createElement('canvas'); c.width = 512; c.height = 110;
@@ -242,7 +245,7 @@ export function mount(container, opts = {}) {
   const CUBE = 1.3;
   const cubeSideMat = new THREE.MeshPhysicalMaterial({ color: '#EDE6D8', roughness: 0.4, clearcoat: 0.5 });
   const cubeMesh = new THREE.Mesh(new RoundedBoxGeometry(CUBE, CUBE, CUBE, 4, 0.12), cubeSideMat);
-  cubeMesh.position.set(0, R + CUBE / 2, -D / 2 + CUBE + 0.3);
+  cubeMesh.position.set(TRAYX, CUBE / 2, 0); // SAĞ bear-off tepsisinin ortasında
   cubeMesh.castShadow = true; cubeMesh.visible = false;
   boardGroup.add(cubeMesh);
   function setCube(value) {
@@ -282,8 +285,8 @@ export function mount(container, opts = {}) {
   scene.add(checkersGroup);
   let checkerSpots = []; // {x, z, y}
 
-  // bar = { w, b } (modül uzayı: w=altta duran/izleyici, b=üstteki). Kırık/bardaki taşları bar üstüne dizer.
-  function setPosition(pos, bar) {
+  // bar = { w, b } kırık taşlar (bar üstü). off = { w, b } toplanan taşlar (SAĞ bear-off tepsisi).
+  function setPosition(pos, bar, off) {
     checkersGroup.clear();
     checkerSpots = [];
     pos.forEach((n, i) => {
@@ -314,6 +317,22 @@ export function mount(container, opts = {}) {
       };
       placeBar(bar.w, true);
       placeBar(bar.b, false);
+    }
+    // Toplanan taşlar: SAĞ bear-off tepsisinde (x=TRAYX). w (izleyici) alt yarıda, b üst yarıda; dik istif.
+    if (off) {
+      const placeOff = (count, isWhite) => {
+        const mat = isWhite ? checkerMats.w : checkerMats.b, dir = isWhite ? 1 : -1;
+        for (let k = 0; k < (count || 0); k++) {
+          const layer = Math.floor(k / 5), slot = k % 5;
+          const d = CR + 0.15 + slot * 2 * CR + layer * CR;
+          const m = new THREE.Mesh(checkerGeo, mat);
+          m.position.set(TRAYX, layer * CH, dir * (D / 2 - d));
+          m.castShadow = true; m.receiveShadow = true;
+          checkersGroup.add(m);
+        }
+      };
+      placeOff(off.w, true);
+      placeOff(off.b, false);
     }
     dirty = true;
   }
@@ -350,9 +369,10 @@ export function mount(container, opts = {}) {
     camera.clearViewOffset();
     const th = THREE.MathUtils.degToRad(o.tilt);
     const dir = new THREE.Vector3(0, Math.cos(th), Math.sin(th));
-    const target = new THREE.Vector3(0, 0, 0);
+    // Tepsi SAĞ'a eklendi -> board merkezi x=TW/2'ye kaydı; hedefi oraya al (yatay ortala) + sağ kenar RX.
+    const target = new THREE.Vector3(TW / 2, 0, 0);
     const corners = [];
-    for (const x of [-OX, OX]) for (const z of [-OZ, OZ]) for (const y of [0, R]) corners.push(new THREE.Vector3(x, y, z));
+    for (const x of [-OX, RX]) for (const z of [-OZ, OZ]) for (const y of [0, R]) corners.push(new THREE.Vector3(x, y, z));
     const fits = (dist) => {
       camera.position.copy(dir).multiplyScalar(dist).add(target);
       camera.lookAt(target); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
