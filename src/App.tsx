@@ -7642,14 +7642,15 @@ export default function App() {
   // satirlarinda, board tam genislik). Masaustu/yatay klasik Sidebar + ClockStack kullanir.
   const mobilePortrait = useMobilePortrait()
 
-  // NATIVE (Capacitor app): OYUNDA (home=false -> board/mac ekrani) yon kilidi ACIK -> isteyen
-  // telefonu DIK tutup oynar, YAN cevirince aninda yatay duzene gecer (web/CSS her iki yonu de
-  // destekler). Oyun DISINDA (lobi/menu/sayfalar) DIKEY kilit (mobil tasarim dikey). Tarayici/PWA'da
-  // no-op (orientation.ts isNativePlatform guard) -> sitede responsive davranis AYNEN korunur.
+  // NATIVE (Capacitor app): OYUNDA (home=false -> board/mac ekrani) VEYA MAC IZLERKEN (spectate) yon
+  // kilidi ACIK -> isteyen telefonu DIK tutup izler/oynar, YAN cevirince aninda yatay duzene gecer
+  // (web/CSS her iki yonu de destekler). Oyun/izleme DISINDA (lobi/menu/sayfalar) DIKEY kilit. Izleme
+  // (/izle/<kod>) home'u false YAPMAZ (home'a bagli board etkilesim/fullscreen yan etkileri acilmasin)
+  // -> orientation'i AYRICA spectate ile serbest birak. Tarayici/PWA'da no-op (isNativePlatform guard).
   useEffect(() => {
-    if (home) lockPortrait()
+    if (home && !spectate) lockPortrait()
     else unlockOrientation()
-  }, [home])
+  }, [home, spectate])
 
   // Tam ekran (browser Fullscreen API) — oyun ekraninda ac/kapa butonu.
   const [isFullscreen, setIsFullscreen] = useState(false)
