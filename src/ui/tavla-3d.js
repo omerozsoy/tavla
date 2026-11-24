@@ -128,6 +128,7 @@ function pointGeom(p) { // p: 1..24
 export function mount(container, opts = {}) {
   const o = Object.assign({
     tilt: 60,              // kameranın dikeyle yaptığı açı (0 = tepeden, 90 = yandan)
+    zoom: 1,               // kamera yakınlaştırma (>1 = board canvas içinde daha büyük görünür)
     half: 'right',         // zarların düştüğü yarı: 'right' | 'left'
     from: 'bottom',        // atan taraf: 'bottom' (oyuncu) | 'top' (rakip)
     position: OPENING,
@@ -280,8 +281,9 @@ export function mount(container, opts = {}) {
     };
     let lo = 5, hi = 400;
     for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
-    // Tahtayı dikeyde ortala
-    fits(hi);
+    // Tahtayı dikeyde ortala. zoom>1 -> kamerayı yaklaştır (dist küçült) -> board daha büyük görünür
+    // (kenarlar foreshorten boşluğunu doldurur; dış çerçeve hafif taşabilir, oyun alanı kırpılmaz).
+    fits(hi / (o.zoom || 1));
     const ys = corners.map((c) => c.clone().project(camera).y);
     const mid = (Math.max(...ys) + Math.min(...ys)) / 2;
     camera.setViewOffset(width, height, 0, (-mid * height) / 2, width, height);

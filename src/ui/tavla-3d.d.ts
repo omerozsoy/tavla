@@ -3,6 +3,7 @@ export type Tavla3DPoint = number | 'bar'
 
 export interface Tavla3DOptions {
   tilt?: number
+  zoom?: number
   half?: 'right' | 'left'
   from?: 'bottom' | 'top'
   position?: number[]
