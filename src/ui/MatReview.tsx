@@ -177,6 +177,14 @@ export default function MatReview({
     setCandIdx(pi >= 0 ? pi : 0)
   }
 
+  // Mobil sabit alt-nav: aktif filtredeki (rows) hamleler arasında ok ile tek-tek gezin
+  // (hamle analizi/MatchReport ile aynı desen). Liste mobilde gizli -> gezinme bu oklarla.
+  const rowPos = rows.findIndex((r) => r.i === sel)
+  const goRel = (d: number) => {
+    const np = (rowPos < 0 ? 0 : rowPos) + d
+    if (np >= 0 && np < rows.length) select(rows[np].i)
+  }
+
   // Sağ panel olasılıkları: seçili adayın (yoksa oynanan) 6'lı [wn,wg,wb,ln,lg,lb].
   const probs = (candIdx >= 0 && cur?.cands?.[candIdx]?.probs) || cur?.probs || null
   const win = probs ? probs[0] + probs[1] + probs[2] : null
@@ -573,6 +581,41 @@ export default function MatReview({
           )}
         </aside>
       </div>
+
+      {/* Mobil SABİT alt-nav (hamle analizi/MatchReport ile aynı): ← [hamle · kayıp · k/N] → .
+          Yalnız mobilde görünür (CSS .mrv-overlay .an-nav); masaüstünde liste ile gezinilir. */}
+      {rows.length > 0 && (
+        <div className="an-nav mrv-nav">
+          <button
+            type="button"
+            className="an-nav-btn"
+            onClick={() => goRel(-1)}
+            disabled={rowPos <= 0}
+            aria-label={t('rep.prevMove')}
+          >
+            <Icon name="caret-left" size={20} />
+          </button>
+          <span className="an-nav-mid">
+            <span className="an-nav-you">
+              <span className={`mrv-dot ${band(cur ? entryLoss(cur) : 0)}`} />
+              <span className="an-nav-move">{cur?.notation || '—'}</span>
+              <span className="an-eq neg">
+                {cur && entryLoss(cur) >= 0.005 ? `−${entryLoss(cur).toFixed(3)}` : '—'}
+              </span>
+            </span>
+            <span className="an-nav-pos">{(rowPos < 0 ? 0 : rowPos) + 1} / {rows.length}</span>
+          </span>
+          <button
+            type="button"
+            className="an-nav-btn"
+            onClick={() => goRel(1)}
+            disabled={rowPos < 0 || rowPos >= rows.length - 1}
+            aria-label={t('rep.nextMove')}
+          >
+            <Icon name="caret-right" size={20} />
+          </button>
+        </div>
+      )}
 
       {/* ---- Açılış özet popup'ı ("Analiz Tamamlandı") ---- */}
       {summary && showSum && <SummaryPopup summary={summary} names={names} snowie={snowie} onClose={() => setShowSum(false)} />}
