@@ -186,18 +186,21 @@ export default function PhysicsDice({ faces, nearSide = true }: { faces: DieFace
       targets = [vals[0] ?? 1, vals[1] ?? vals[0] ?? 1]
       phase = 'rolling'
       animT = 0
-      // Sira kimdeyse onun yarisinin ORTASINA otur: yakin (viewer) -> +z, uzak (rakip) -> -z.
-      const halfZ = (nearRef.current ? 1 : -1) * 1.25
+      // Zar, siradaki oyuncunun yarisindaki ACIK ALANA (filigran bandi, ceyrekler arasi) RASTGELE dusar
+      // -> pullarin/barin ustune DEGIL. side = hangi yari (x isareti). Her atista rastgele konum.
+      const side = nearRef.current ? 1 : -1
+      const cx = side * (1.5 + Math.random() * 1.1) // yarinin acik merkezi (bar'dan uzak): |x| 1.5..2.6
+      const cz = (Math.random() - 0.5) * 1.5 // ust/alt ceyrek arasi acik bant: z -0.75..0.75
       dice.forEach((d, i) => {
         d.body.type = CANNON.Body.STATIC // fizik kapali
-        restPos[i].set(i ? 0.55 : -0.55, SIZE, halfZ)
+        restPos[i].set(cx + (i ? 0.5 : -0.5), SIZE, cz + (i ? 0.22 : -0.22)) // iki zar yan yana
         const yaw = (Math.random() - 0.5) * 0.8
         finalQ[i].setFromAxisAngle(Y, yaw).multiply(valueUpQuat(targets[i])) // dinlenme: deger +Y (ust)
         const a = Math.random() * Math.PI * 2 // egik tumble ekseni (gorunur takla)
         tumbleAxis[i].set(Math.cos(a), 0.35, Math.sin(a)).normalize()
         tumbleAng[i] = (2.3 + Math.random() * 1.4) * Math.PI * 2 * (i ? -1 : 1) // 2-4 tur takla
-        // ATILMIS his: zar on-sagdan (viewer'a yakin) gelir, yay cizerek tahtanin ORTASINA (restPos) oturur.
-        startPos[i].set(restPos[i].x + 2.4 + Math.random() * 0.6, restPos[i].y, restPos[i].z + 3.2 + Math.random() * 0.6)
+        // ATILMIS his: zar ic-ondan (bara yakin + viewer'a dogru) savrulup acik alana yay cizerek oturur.
+        startPos[i].set(restPos[i].x - side * (1.6 + Math.random() * 0.5), restPos[i].y, restPos[i].z + 3.3 + Math.random() * 0.5)
       })
     }
     rollRef.current = rollTo
