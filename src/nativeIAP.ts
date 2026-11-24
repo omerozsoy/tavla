@@ -14,9 +14,8 @@ import { isNativeApp } from './nativeGoogle'
 // güncellenir, yeni APK/IPA gerekmez. Public key, paylaşımı güvenli.
 // Android: RC panel > Project > API keys > TavlaTV Android ('goog_...').
 const RC_ANDROID_KEY = 'goog_QsEcmrzVzYhdINaNbMfhiVXJNLo'
-// iOS: RC panelde App Store app'i eklenince verilen public key ('appl_...'). TODO: RC panelden al, doldur.
-// Boş kaldığı sürece iOS'ta iapIdentify guard'ı configure'u ATLAR (iOS satın alma kapalı; Android/web etkilenmez).
-const RC_IOS_KEY = ''
+// iOS: RC panel > API keys > App Store public key ('appl_...'). Public, paylaşımı güvenli.
+const RC_IOS_KEY = 'appl_SffLFgIxazVlHwybzywuxepOsfq'
 // Premium = bu entitlement aktifse. RC panelinde lifetime/yearly/monthly ürünleri buna bağlı.
 export const RC_PREMIUM_ENTITLEMENT = 'tavlatv_premium'
 
