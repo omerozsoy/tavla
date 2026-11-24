@@ -37378,14 +37378,12 @@ body.has-bottom-nav .to-top {
 .home-panel .app-loading:not(.app-loading--inline) {
   min-height: 320px;
 }
-/* CLS 2. iterasyon: residual kayan seek-panel. Yüklü liste (header+10 satır+pager) uzun ->
-   içerik gelince panel büyüyordu. Yükleme ve DOLU liste TEK sabit yükseklikte tut -> panel
-   büyümez, alt içerik kaymaz. BOŞ durum (.seek-empty) HARİÇ: arayan yokken 500px boş beyaz
-   alan "çok büyük" görünüyordu -> doğal (küçük) yükseklikte bırak. CLS yalnız boş->yükleme
-   geçişinde kalır (kabul; ekip deseni .online-panel:has(.home-panel-empty) ile aynı). */
-.seek-panel .app-loading:not(.app-loading--inline),
-.seek-panel .rank-list {
-  min-height: 500px;
+/* CLS 3. iterasyon: 500px sabit rezerve "1 arayan varken dev gibi" yapıyordu (kullanıcı
+   2026-11-24) — tek satır + ~444px boş alan. Yüklü liste artık İÇERİK boyunda (min-height YOK)
+   -> az arayanda kompakt. Yükleme yalnız ufak bir rezerve tutar (büyük beyaz kutu yerine);
+   kalan CLS yük->içerik geçişinde küçük (kabul; .seek-empty zaten doğal boyda). */
+.seek-panel .app-loading:not(.app-loading--inline) {
+  min-height: 160px;
 }
 /* Turnuva carousel: boş->dolu (turnuva verisi gelince) + slide yükseklik farkı kayıyordu.
    Viewport'a sabit yükseklik rezerve (overflow:hidden zaten var -> taşarsa kırpar, kaymaz). */
