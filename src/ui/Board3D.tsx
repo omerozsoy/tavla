@@ -42,6 +42,8 @@ export default function Board3D({
   flipRef.current = flip
   const selRef = useRef(selectedFrom)
   selRef.current = selectedFrom
+  const nearRef = useRef(nearSide)
+  nearRef.current = nearSide
   const fromRef = useRef(onSelectFrom)
   fromRef.current = onSelectFrom
   const targetRef = useRef(onSelectTarget)
@@ -50,7 +52,9 @@ export default function Board3D({
   useEffect(() => {
     const el = mountRef.current
     if (!el) return
-    const tavla = mount(el, { tilt: 60, from: nearSide ? 'bottom' : 'top', sound: false })
+    // Mount BİR KEZ (deps []). Atış tarafı/yönü her roll'da setThrow ile ayarlanır -> sıra
+    // değişiminde sahneyi remount etme (flaş/israf). from burada sadece ilk varsayılan.
+    const tavla = mount(el, { tilt: 60, from: 'top', sound: false })
     tavlaRef.current = tavla
     const canvas = tavla.canvas
     canvas.style.pointerEvents = 'auto'
@@ -83,7 +87,7 @@ export default function Board3D({
       tavlaRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearSide])
+  }, [])
 
   // Tas dizilisi: durum (points) ya da flip degisince.
   const posKey = state.points.join(',') + '|' + (flip ? 1 : 0)
@@ -98,6 +102,11 @@ export default function Board3D({
     const t = tavlaRef.current
     const vals = diceFaces.slice(0, 2).map((f) => f.value)
     if (!t || vals.length < 2) return
+    // Her oyuncu zarı KENDİ tarafına atar: ben (sıra bende) sağ-ALT, rakip sol-ÜST.
+    // from = atışın GELDİĞİ kenar; zarlar KARŞI (uzak) duvara yaslanır -> kendi yanımızda
+    // dursun diye from'u ters veriyoruz: ben from='top' (uzak duvar=alt), rakip from='bottom'.
+    const mine = nearRef.current
+    t.setThrow(mine ? 'right' : 'left', mine ? 'top' : 'bottom')
     t.roll(vals).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valKey])

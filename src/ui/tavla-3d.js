@@ -31,6 +31,8 @@ const R = 1.0 * K;        // kenar yüksekliği
 const CR = 0.98 * K;       // taş yarıçapı
 const CH = 0.42 * K;       // taş kalınlığı
 const PL = 10.6 * K;       // hane (üçgen) uzunluğu
+const DIE = 1.15;          // zar kenar uzunluğu (büyütmek için artır; geo+fizik+dinlenme birlikte ölçeklenir)
+const DH = DIE / 2;        // zar yarı-kenarı (dinlenirken merkez yüksekliği)
 
 export const OPENING = (() => {
   const p = new Array(24).fill(0);
@@ -239,7 +241,7 @@ export function mount(container, opts = {}) {
   }
 
   // ---- Zarlar ----
-  const dieGeo = new RoundedBoxGeometry(1, 1, 1, 5, 0.12);
+  const dieGeo = new RoundedBoxGeometry(DIE, DIE, DIE, 5, 0.12 * DIE);
   const tex = {}, bump = {};
   for (let v = 1; v <= 6; v++) { tex[v] = faceTexture(v, o.colors, false); bump[v] = faceTexture(v, o.colors, true); }
   const dice = [0, 1].map(() => {
@@ -348,7 +350,7 @@ export function mount(container, opts = {}) {
     const free = (x, z, r) => !stacks.some((s) => x + r > s.minX && x - r < s.maxX && z + r > s.minZ && z - r < s.maxZ);
     function slideOff(b) {
       const s = over(b.position.x, b.position.z);
-      if (!s || b.position.y < 0.5 + CH * 0.6) return false;
+      if (!s || b.position.y < DH + CH * 0.6) return false;
       if (b.velocity.length() > 2.2) return true;
       const cand = [[-1, 0, b.position.x - s.minX], [1, 0, s.maxX - b.position.x], [0, -1, b.position.z - s.minZ], [0, 1, s.maxZ - b.position.z]]
         .filter(([dx, dz]) => {
@@ -372,7 +374,7 @@ export function mount(container, opts = {}) {
     let frame = 0;
     const bodies = [0, 1].map((i) => {
       const b = new CANNON.Body({
-        mass: 1, material: mDie, shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)),
+        mass: 1, material: mDie, shape: new CANNON.Box(new CANNON.Vec3(DH, DH, DH)),
         linearDamping: 0.04, angularDamping: 0.05, sleepSpeedLimit: 0.1, sleepTimeLimit: 0.3
       });
       b.quaternion.setFromEuler(rnd(0, 6.28), rnd(0, 6.28), rnd(0, 6.28));
@@ -393,7 +395,7 @@ export function mount(container, opts = {}) {
     let still = 0;
     while (frame < FPS * 6) {
       for (let k = 0; k < SUBSTEPS; k++) world.step(1 / (FPS * SUBSTEPS));
-      const onTop = bodies.map((b) => (frame % 6 === 0 ? slideOff(b) : !!over(b.position.x, b.position.z) && b.position.y > 0.5 + CH * 0.6));
+      const onTop = bodies.map((b) => (frame % 6 === 0 ? slideOff(b) : !!over(b.position.x, b.position.z) && b.position.y > DH + CH * 0.6));
       frames.push(bodies.map((b) => [b.position.x, b.position.y, b.position.z, b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w]));
       frame++;
       const asleep = bodies.every((b) => b.sleepState === CANNON.Body.SLEEPING || (b.velocity.length() < 0.05 && b.angularVelocity.length() < 0.05));
@@ -402,7 +404,7 @@ export function mount(container, opts = {}) {
     }
     const last = frames[frames.length - 1];
     const ups = last.map((f) => upFace(new THREE.Quaternion(f[3], f[4], f[5], f[6])));
-    const flat = last.every((f) => Math.abs(f[1] - 0.5) < 0.06);
+    const flat = last.every((f) => Math.abs(f[1] - DH) < 0.07);
     const clear = last.every((f) => free(f[0], f[2], 0.45));
     const spread = Math.hypot(last[0][0] - last[1][0], last[0][2] - last[1][2]);
     const farDist = (f) => (s < 0 ? f[2] - a.zMin : a.zMax - f[2]);
