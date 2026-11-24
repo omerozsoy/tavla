@@ -85,6 +85,36 @@ workflows:
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NO" "$PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $BUILD_NO" "$PLIST"
 
+      - name: Apple ile Giriş entitlement'i ekle ve projeye bağla
+        # Apple Sign-In icin App.entitlements'ta com.apple.developer.applesignin GEREKIR + App target
+        # CODE_SIGN_ENTITLEMENTS bu dosyaya isaret etmeli; yoksa imzalama provisioning ile eslesmez
+        # (Apple Developer'da App ID'ye "Sign in with Apple" capability EKLENMIS olmali). Proje CI'da
+        # sifirdan uretildigi icin (npx cap add ios) entitlements yok -> olustur + xcodeproj ile bagla.
+        # xcode-project use-profiles'dan ONCE calismali (imzalama entitlements'i okur).
+        script: |
+          set -e
+          cat > ios/App/App/App.entitlements <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.developer.applesignin</key>
+            <array><string>Default</string></array>
+          </dict>
+          </plist>
+          PLIST
+          gem list -i xcodeproj >/dev/null 2>&1 || gem install xcodeproj --no-document
+          ruby <<'RUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('ios/App/App.xcodeproj')
+          target = project.targets.find { |t| t.name == 'App' }
+          target.build_configurations.each do |c|
+            c.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'App/App.entitlements'
+          end
+          project.save
+          puts "CODE_SIGN_ENTITLEMENTS baglandi: App/App.entitlements"
+          RUBY
+
       - name: iOS imzalama profillerini uygula
         script: |
           set -e

@@ -62,6 +62,13 @@ return [
         ),
     ],
 
+    // Apple ile Giriş (YALNIZ iOS native). Native Apple idToken'in aud'si uygulamanin bundle ID'sidir
+    // (web Apple'daki "Service ID" DEGIL). Dogrulama: AuthController::finishAppleLogin, Apple JWKS imzasi +
+    // aud=bundle + iss=appleid.apple.com. Gizli degil; Forge .env ezme tuzagindan kacmak icin sabit default.
+    'apple' => [
+        'client_id' => env('APPLE_CLIENT_ID', 'com.tavlatv.app'),
+    ],
+
     // Yonetici e-postalari (virgulle ayrilabilir). Bu hesaplar admin sayilir.
     // GUVENLIK: kaynak koda gomulu e-posta YOK. Uretimde .env'de ADMIN_EMAILS
     // tanimlanmalidir (bkz. .env.example), aksi halde config-admin listesi bostur.

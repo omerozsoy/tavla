@@ -4,7 +4,7 @@
 // - iOS (Capacitor): UA'da 'wv' YOK, gerçek Safari'den UA ile ayrışmaz. Ama iOS native köprü
 //   (window.Capacitor) document-start'ta enjekte edilir (Android'in aksine güvenilir/erken) -> getPlatform==='ios'.
 // Tarayıcı/masaüstü/PWA = false. Kullanım: BottomNav GÖSTER, footer + SEO + hide_in_app reklam GİZLE (app sadeleştirme).
-function isIOSNativeApp(): boolean {
+export function isIOSNativeApp(): boolean {
   try {
     const c = (globalThis as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor
     return c?.getPlatform?.() === 'ios'

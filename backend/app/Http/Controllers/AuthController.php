@@ -36,6 +36,8 @@ use App\Support\Sms;
 use App\Support\StatsConfig;
 use App\Support\UserEraser;
 use App\Support\UserProfileReset;
+use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -182,6 +184,16 @@ class AuthController extends Controller
         return $this->finishGoogleLogin($data['credential'], $request);
     }
 
+    // Apple ile giris/kayit (YALNIZ iOS native; capacitor-social-login Apple provider'in idToken'i)
+    public function appleLogin(Request $request)
+    {
+        $data = $request->validate([
+            'identity_token' => ['required', 'string'],
+        ]);
+
+        return $this->finishAppleLogin($data['identity_token'], $request);
+    }
+
     // Android APK (remote-load: native köprü enjekte OLMAZ -> gömülü WebView Google GIS'i ENGELLER,
     // beyaz ekran). ÇÖZÜM: OAuth 2.0 AUTHORIZATION CODE akışı. App, Google'ı SİSTEM tarayıcısında açar;
     // Google 'code'u App-Link (https://www.tavlatv.com/auth/google/app-return) ile app'e geri gönderir;
@@ -316,6 +328,118 @@ class AuthController extends Controller
         $user->refresh(); // grantWelcomePremium query-builder ile yazdı -> plan_active güncel dönsün
 
         $token = $user->createToken('google', ['*'], User::tokenExpiresAt())->plainTextToken;
+
+        return response()->json(['user' => $user, 'token' => $token, 'isNew' => $isNew]);
+    }
+
+    // Apple idToken -> kullanici bul/olustur + Sanctum oturumu. Google'dan FARKLAR:
+    //  - Apple'in hazir "tokeninfo" endpoint'i YOK -> imzayi Apple JWKS ile KENDIMIZ dogrulariz (php-jwt).
+    //  - Apple e-postayi YALNIZ ilk giriste verir -> eslestirme 'sub' (apple_user_id) ile, e-posta ile DEGIL.
+    //  - "E-postami Gizle" -> is_private_email=true, ...@privaterelay.appleid.com (gercek e-posta degil).
+    private function finishAppleLogin(string $idToken, Request $request)
+    {
+        // Apple genel anahtarlari (JWKS) ile imza + sona erme dogrulamasi. 1 saat cache (nadir rotasyon).
+        try {
+            $jwks = Cache::remember('apple_jwks', 3600, function () {
+                $r = Http::timeout(10)->get('https://appleid.apple.com/auth/keys');
+
+                return $r->ok() ? $r->json() : null;
+            });
+            if (! $jwks) {
+                Cache::forget('apple_jwks');
+
+                return $this->fail('Apple doğrulaması başarısız.', 401);
+            }
+            $decoded = (array) JWT::decode($idToken, JWK::parseKeySet($jwks));
+        } catch (\Throwable $e) {
+            return $this->fail('Apple doğrulaması başarısız.', 401);
+        }
+
+        // Guvenlik: token bizim uygulamamiz icin mi (aud=bundle) + Apple mi verdi (iss)?
+        if (($decoded['aud'] ?? null) !== config('services.apple.client_id')) {
+            return $this->fail('Geçersiz istemci.', 401);
+        }
+        if (($decoded['iss'] ?? '') !== 'https://appleid.apple.com') {
+            return $this->fail('Geçersiz sağlayıcı.', 401);
+        }
+        $sub = $decoded['sub'] ?? null;
+        if (! $sub) {
+            return $this->fail('Apple doğrulaması başarısız.', 401);
+        }
+        $email = $decoded['email'] ?? null;
+        $emailVerified = ($decoded['email_verified'] ?? false);
+        $emailVerified = ($emailVerified === true || $emailVerified === 'true');
+        $isRelay = ($decoded['is_private_email'] ?? false);
+        $isRelay = ($isRelay === true || $isRelay === 'true');
+
+        // 1) Apple kimligi (sub) zaten bir hesaba bagli mi? -> dogrudan giris.
+        $user = User::where('apple_user_id', $sub)->first();
+        $isNew = false;
+
+        // 2) Degilse + Apple GERCEK (relay degil) dogrulanmis e-posta verdi + o e-postada hesap var -> BAGLA.
+        if (! $user && $email && $emailVerified && ! $isRelay) {
+            $existing = User::where('email', $email)->first();
+            if ($existing) {
+                // A-11 (hesap on-ele gecirme): e-posta onceden DOGRULANMAMISSA, hesabi acan kisi sahibi
+                // olmayabilir. Apple sahipligi kanitladi -> onceki sifre + TUM oturumlar gecersiz.
+                if (! $existing->hasVerifiedEmail()) {
+                    $existing->password = Hash::make(Str::random(40));
+                    $existing->tokens()->delete();
+                    $existing->markEmailAsVerified();
+                }
+                $existing->apple_user_id = $sub;
+                $existing->save();
+                $user = $existing;
+            }
+        }
+
+        // 3) Hala yok -> yeni hesap. (Apple ilk giriste e-posta verir; relay/eksikse placeholder uret.)
+        if (! $user) {
+            $isNew = true;
+            $base = $email ? Str::slug(explode('@', $email)[0], '') : '';
+            if ($base === '') {
+                $base = 'oyuncu';
+            }
+            $base = substr($base, 0, 15); // takma ad siniri = 15
+            $nick = $base;
+            $i = 0;
+            while (User::where('nickname', $nick)->exists()) {
+                $i++;
+                $nick = substr($base, 0, max(1, 15 - strlen((string) $i))).$i;
+            }
+            $user = User::create([
+                'first_name' => '',
+                'last_name' => '',
+                'country' => '', // sonradan profilden secilir (Google ile ayni)
+                'nickname' => $nick,
+                // email unique+not null (sema) -> relay/eksik durumda benzersiz placeholder (sub bazli).
+                'email' => $email ?: ('apple_'.$sub.'@users.tavlatv.com'),
+                'password' => Hash::make(Str::random(40)), // Apple kullanicisi sifre kullanmaz
+            ]);
+            $user->apple_user_id = $sub; // $fillable disi -> mass-assign DEGIL, acikca ata
+            $user->rating = Setting::int('starting_rating', 1400);
+            $user->save();
+            Referral::link($user, $request->input('referral_code'));
+        }
+
+        // Apple hesabi dogrulanmis sayilir -> hosgeldin coin (idempotent). Yeni -> premium (bir kez).
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            app(WelcomeGrant::class)->coins($user->id);
+        }
+        if ($isNew) {
+            app(WelcomeGrant::class)->premium($user->id);
+        }
+
+        if ($user->isBanned()) {
+            return $this->fail('Hesabınız kapatılmıştır.', 403);
+        }
+
+        $user->last_login_at = now();
+        $user->save();
+        $user->refresh();
+
+        $token = $user->createToken('apple', ['*'], User::tokenExpiresAt())->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token, 'isNew' => $isNew]);
     }

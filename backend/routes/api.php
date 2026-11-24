@@ -67,6 +67,7 @@ Route::middleware('throttle:20,1,auth-register')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/auth/google', [AuthController::class, 'googleLogin']);
     Route::post('/auth/google/code', [AuthController::class, 'googleCode']); // Android sistem-tarayıcı OAuth code akışı
+    Route::post('/auth/apple', [AuthController::class, 'appleLogin']); // iOS native Apple ile Giriş
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 });
 // Kullanici numaralama (enumeration) yavaslatma: halka acik + hiz sinirli

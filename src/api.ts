@@ -311,6 +311,19 @@ export async function googleLogin(
   return { user: data.user, isNew: data.isNew }
 }
 
+// Apple identity token (iOS native) ile giris/kayit. isNew=true ise takma isim secmesi istenir.
+export async function appleLogin(
+  identityToken: string,
+): Promise<{ user: ServerUser; isNew: boolean }> {
+  const data = await req<{ user: ServerUser; token: string; isNew: boolean }>('/auth/apple', {
+    method: 'POST',
+    body: JSON.stringify({ identity_token: identityToken, referral_code: refCode() }),
+  })
+  setToken(data.token)
+  if (data.isNew) clearRef()
+  return { user: data.user, isNew: data.isNew }
+}
+
 // Android APK (native köprü enjekte olmayan WebView: GIS engelli, beyaz ekran) için SİSTEM-TARAYICI
 // OAuth code akışı. Dönüş adresi App-Link (AndroidManifest + /.well-known/assetlinks.json ile eşleşir).
 // KANONİK host www'SUZ: www.tavlatv.com -> 301 -> tavlatv.com. App-Link/redirect redirect'i KABUL ETMEZ

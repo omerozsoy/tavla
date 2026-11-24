@@ -102,3 +102,25 @@ export async function nativeGoogleSignIn(webClientId: string, iosClientId: strin
   if (!idToken) throw new Error('Google ID-token alinamadi')
   return idToken
 }
+
+/**
+ * Native Apple ile Giriş (YALNIZ iOS). Apple'in yerleşik ASAuthorization ekranini acar, idToken
+ * (identity token JWT) dondurur. initialize GEREKMEZ (Google'dan farkli): Apple provider capacitor
+ * .config'de providers.apple=false DEGILSE varsayilan ENABLED, login dogrudan calisir. Ozel scope
+ * gondermiyoruz -> iOS default [.fullName, .email]. Backend /auth/apple idToken'i Apple JWKS ile
+ * dogrular (aud=bundle com.tavlatv.app). Web/Android'de CAGIRMA (buton yalniz iOS'ta gosterilir).
+ */
+export async function nativeAppleSignIn(): Promise<string> {
+  const c = cap()
+  if (!c?.nativePromise) throw new Error('SocialLogin not implemented (native bridge yok)')
+
+  const res = await c.nativePromise('SocialLogin', 'login', {
+    provider: 'apple',
+    options: {},
+  })
+  // Native resolve: { provider:'apple', result:{ idToken, ... } } (AppleProvider.swift).
+  const result = (res as { result?: { idToken?: string | null } })?.result
+  const idToken = result?.idToken
+  if (!idToken) throw new Error('Apple ID-token alinamadi')
+  return idToken
+}

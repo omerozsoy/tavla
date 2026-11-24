@@ -12559,6 +12559,30 @@ button.acct-row-logout:hover:not(:disabled) {
   opacity: 0.6;
   cursor: default;
 }
+/* Apple ile Giriş (yalnız iOS). Apple yönergesi: siyah zemin + beyaz logo/yazı. Google butonuyla
+   aynı boyut/şekil; hemen altında durur (üstte Google, altta Apple). */
+.native-apple-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 300px;
+  max-width: 100%;
+  min-height: 40px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 1px solid #000;
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.native-apple-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 /* Eski APK: native Google eklentisi yok -> buton yerine "uygulamayi guncelle" notu */
 .auth-update-note {
   width: 300px;

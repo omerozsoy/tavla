@@ -2170,6 +2170,8 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'auth.offline': 'Sunucuya ulaşılamadı.',
   'auth.or': 'veya',
   'auth.googleFail': 'Google ile giriş başarısız.',
+  'auth.appleBtn': 'Apple',
+  'auth.appleFail': 'Apple ile giriş başarısız.',
   'auth.googleUpdateApp': 'Google ile giriş için uygulamayı güncelleyin.',
   'auth.forgot': 'Şifremi unuttum?',
   'auth.showPw': 'Şifreyi göster',

@@ -12,7 +12,8 @@ import PhoneField, { isValidPhone } from './PhoneField'
 import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
-import { isNativeApp, isNativeGoogleAvailable, nativeGoogleSignIn } from '../nativeGoogle'
+import { isNativeApp, isNativeGoogleAvailable, nativeGoogleSignIn, nativeAppleSignIn } from '../nativeGoogle'
+import { isIOSNativeApp } from '../appEnv'
 import AvatarCropper from './AvatarCropper'
 import { useToast } from './Toast'
 import { Button } from '@/components/ui/button'
@@ -430,6 +431,22 @@ export default function Auth({
         } else {
           setError(t('auth.googleFail') + (detail ? ' [' + detail.slice(0, 140) + ']' : ''))
         }
+      })
+      .finally(() => setBusy(false))
+  }
+  // Apple ile Giriş (YALNIZ iOS). Kullanıcı Apple ekranını iptal ederse (ASAuthorizationError 1001)
+  // SESSİZ geç — hata gösterme (normal davranış, "başarısız" sanılmasın).
+  const doNativeApple = () => {
+    setBusy(true)
+    setError('')
+    nativeAppleSignIn()
+      .then((idToken) => api.appleLogin(idToken))
+      .then(({ user, isNew }) => onAuthedRef.current(user, isNew))
+      .catch((e: unknown) => {
+        const detail = (e as { message?: string; code?: string | number })?.message
+          || String((e as { code?: string | number })?.code ?? e ?? '')
+        if (/cancel|1001|the user canceled|AuthorizationError/i.test(detail)) return
+        setError(t('auth.appleFail') + (detail ? ' [' + detail.slice(0, 140) + ']' : ''))
       })
       .finally(() => setBusy(false))
   }
@@ -981,6 +998,14 @@ export default function Auth({
                       </svg>
                       <span>Google</span>
                     </button>
+                    {isIOSNativeApp() && (
+                      <button type="button" className="native-apple-btn" onClick={doNativeApple} disabled={busy}>
+                        <svg width="16" height="18" viewBox="0 0 170 170" aria-hidden="true" fill="currentColor">
+                          <path d="M150.4 130.3c-2.5 5.8-5.5 11.1-9 16-4.8 6.7-8.7 11.3-11.7 13.9-4.7 4.3-9.7 6.5-15.1 6.6-3.9 0-8.5-1.1-14-3.3-5.5-2.2-10.5-3.3-15.1-3.3-4.8 0-10 1.1-15.6 3.3-5.6 2.2-10.1 3.4-13.6 3.5-5.2.2-10.4-2.1-15.5-6.8-3.2-2.9-7.3-7.6-12.2-14.3-5.3-7.1-9.6-15.3-13-24.7C6.4 121 4.6 111.1 4.6 101.5c0-11 2.4-20.5 7.1-28.4 3.7-6.4 8.7-11.4 14.9-15.1 6.2-3.7 12.9-5.6 20.1-5.7 4.1 0 9.5 1.3 16.3 3.8 6.8 2.5 11.1 3.8 13 3.8 1.4 0 6.3-1.5 14.5-4.5 7.8-2.8 14.3-3.9 19.7-3.5 14.6 1.2 25.5 6.9 32.8 17.3-13 7.9-19.5 19-19.3 33.2.1 11.1 4.2 20.3 12.1 27.6 3.6 3.4 7.6 6 12 7.9-1 2.8-2 5.4-3.2 7.9zM119.1 7.1c0 8.2-3 15.9-9 23-7.2 8.4-16 13.3-25.5 12.5-.1-1-.2-2.1-.2-3.2 0-7.9 3.4-16.3 9.6-23.2 3.1-3.5 7-6.4 11.7-8.7 4.7-2.3 9.2-3.5 13.4-3.7.1 1.1.2 2.2.2 3.3z"/>
+                        </svg>
+                        <span>{t('auth.appleBtn')}</span>
+                      </button>
+                    )}
                     <div className="auth-divider">{t('auth.or')}</div>
                   </div>
                 ) : (
