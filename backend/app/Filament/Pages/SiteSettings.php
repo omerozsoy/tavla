@@ -49,6 +49,26 @@ class SiteSettings extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            // Açık tüm istemcilere "yeni sürüm var, güncelle" banner'ı gösterir (otomatik DEĞİL).
+            // update_nonce'u artırır; istemci (autoUpdate) realtime-config'ten görüp banner açar,
+            // kullanıcı "Güncelle"ye basınca taze bundle yüklenir. Yeni frontend'i deploy ETTİKTEN
+            // SONRA bas (önce dist canlıya çıksın, sonra kullanıcılar yenilesin).
+            Action::make('notifyUpdate')
+                ->label('Güncelleme Bildir')
+                ->icon('heroicon-o-arrow-path')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Kullanıcılara güncelleme bildirilsin mi?')
+                ->modalDescription('Açık olan tüm kullanıcılar birkaç dakika içinde "yeni sürüm var" banner’ı görür ve "Güncelle"ye basınca sayfa yenilenir. Yeni sürümü (dist) ÖNCE yayına almış olmalısın.')
+                ->modalSubmitActionLabel('Bildir')
+                ->action(function (): void {
+                    Setting::put('update_nonce', Setting::int('update_nonce', 0) + 1);
+                    Notification::make()
+                        ->title('Güncelleme bildirildi')
+                        ->body('Açık kullanıcılar birkaç dakika içinde güncelleme istemini görecek.')
+                        ->success()
+                        ->send();
+                }),
             Action::make('regenerateSitemap')
                 ->label('Sitemap Güncelle')
                 ->icon('heroicon-o-map')

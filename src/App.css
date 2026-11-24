@@ -37310,12 +37310,12 @@ body.has-bottom-nav .to-top {
 .home-panel .app-loading:not(.app-loading--inline) {
   min-height: 320px;
 }
-/* CLS 2. iterasyon (kullanıcı boşluğu kabul etti): residual kayanlar seek-panel (0.14) +
-   tourn-carousel (0.12). seek-panel yüklü liste (header+10 satır+pager) 320px'den UZUN ->
-   içerik gelince panel büyüyordu. Üç durumu da (yükleme/boş/liste) TEK sabit yükseklikte
-   tut -> panel hiç büyümez/küçülmez, alt içerik kaymaz. Az seeker'da boşluk (kabul). */
+/* CLS 2. iterasyon: residual kayan seek-panel. Yüklü liste (header+10 satır+pager) uzun ->
+   içerik gelince panel büyüyordu. Yükleme ve DOLU liste TEK sabit yükseklikte tut -> panel
+   büyümez, alt içerik kaymaz. BOŞ durum (.seek-empty) HARİÇ: arayan yokken 500px boş beyaz
+   alan "çok büyük" görünüyordu -> doğal (küçük) yükseklikte bırak. CLS yalnız boş->yükleme
+   geçişinde kalır (kabul; ekip deseni .online-panel:has(.home-panel-empty) ile aynı). */
 .seek-panel .app-loading:not(.app-loading--inline),
-.seek-panel .seek-empty,
 .seek-panel .rank-list {
   min-height: 500px;
 }

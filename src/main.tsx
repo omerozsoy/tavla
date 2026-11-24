@@ -82,7 +82,8 @@ createRoot(document.getElementById('root')!, {
               <GatePrompt />
               {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
               <PullToRefresh />
-              {/* Yeni sürüm algılanınca "güncelleyin" istemi (kendiliğinden reload YOK) */}
+              {/* Güncelleme istemi: OTOMATİK değil — admin panelden "Güncelleme Bildir"e basınca
+                  (update_nonce artınca) görünür. Kendiliğinden reload YOK; kullanıcı "Güncelle"ye basar. */}
               <UpdateBanner />
               {/* "TavlaTv'yi yükle" (PWA): standalone/maç/yakın-zamanda-kapatıldıysa görünmez */}
               <InstallPrompt />

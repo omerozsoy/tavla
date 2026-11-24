@@ -3033,6 +3033,9 @@ class RoomController extends Controller
         return response()->json([
             'enabled' => config('broadcasting.default') === 'reverb',
             'key' => (string) config('broadcasting.connections.reverb.key', ''),
+            // Admin-tetikli güncelleme sinyali: panelden "Güncelleme Bildir"e basınca artar.
+            // İstemci (autoUpdate) boot'taki değeri baz alır; artınca güncelleme banner'ı gösterir.
+            'updateNonce' => Setting::int('update_nonce', 0),
         ]);
     }
 
