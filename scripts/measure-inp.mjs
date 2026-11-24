@@ -17,7 +17,12 @@ await p.addInitScript(() => {
   window.__ev = []
   new PerformanceObserver((l) => {
     for (const e of l.getEntries()) {
-      if (e.interactionId) window.__ev.push({ name: e.name, dur: Math.round(e.duration), proc: Math.round(e.processingEnd - e.processingStart) })
+      if (!e.interactionId) continue
+      const n = e.target
+      const tgt = n && n.nodeType === 1
+        ? `${n.tagName.toLowerCase()}${n.className && typeof n.className === 'string' ? '.' + n.className.trim().split(/\s+/).slice(0, 3).join('.') : ''}${n.textContent ? ' «' + n.textContent.trim().slice(0, 24) + '»' : ''}`
+        : '(hedef yok)'
+      window.__ev.push({ name: e.name, dur: Math.round(e.duration), proc: Math.round(e.processingEnd - e.processingStart), tgt: tgt.slice(0, 80) })
     }
   }).observe({ type: 'event', durationThreshold: 16, buffered: true })
 })
@@ -48,7 +53,7 @@ if (ev.length) {
   const sorted = ev.sort((a, b) => b.dur - a.dur)
   const p75 = sorted[Math.floor(sorted.length * 0.25)]?.dur ?? 0
   console.log(`\nINP (en kötü): ${sorted[0].dur}ms   p75: ${p75}ms`)
-  console.log(`\nEn yavaş 8 etkileşim (toplam ms | işleme ms | olay):`)
-  for (const e of sorted.slice(0, 8)) console.log(`  ${String(e.dur).padStart(4)}ms | proc ${String(e.proc).padStart(4)}ms | ${e.name}`)
+  console.log(`\nEn yavaş 10 etkileşim (toplam | işleme | olay → HEDEF):`)
+  for (const e of sorted.slice(0, 10)) console.log(`  ${String(e.dur).padStart(4)}ms | proc ${String(e.proc).padStart(4)}ms | ${e.name.padEnd(12)} → ${e.tgt}`)
 }
 await b.close()
