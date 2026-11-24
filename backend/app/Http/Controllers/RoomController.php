@@ -2047,6 +2047,25 @@ class RoomController extends Controller
                     return $this->fail('Düello için iki oyuncunun da yeterli coin\'i olmalı.', 422);
                 }
             }
+            // C1 (davet/özel-oda yolu): matchmaking'deki (:500-519) eşzamanlı-çift-bahis kalkanının
+            // karşılığı. enter() şimdiye dek yalnız claimMatchSeat'e (koltuk maç BİTİNCE bırakılır)
+            // güveniyordu -> "bitmiş-ama-henüz-settle-olmamış" (~2-4dk) bahisli maç penceresinde oyuncu
+            // İKİNCİ bir bahisli özel maça girip aynı (settle-olmamış, dolayısıyla hâlâ yüksek) bakiyeden
+            // tekrar %-stake snapshot'ı alıyordu (serkankara vakası: 13029'dan iki kez 6514 -> ~%100
+            // riske; 6515'in %50'si = 3257 olmalıydı). HEM host (p1) HEM giren (p2) için: önce biten
+            // bahisli odaları hemen settle etmeyi dene (bakiye tazelenir -> seedPctStakeSnapshot doğru
+            // hesaplar); hâlâ sonuçlanmamışı olan taraf varsa maça SOKMA. stake=0 turnuva/arkadaş
+            // odaları etkilenmez (kapı bet_pct/stake>0). STALE_UNSETTLED_MIN penceresiyle sınırlı ->
+            // eski terk-mezar odalar kalıcı bloklamaz (matchmaking ile aynı semantik).
+            if ($enterBetPct > 0 || $enterStake > 0) {
+                foreach (array_values(array_unique(array_filter([(int) $room->p1_user_id, (int) $enterUserId]))) as $stakedUid) {
+                    $this->settleFinishedStakedRooms($stakedUid);
+                }
+                if ($this->userInUnsettledStakedMatch((int) $room->p1_user_id, $room->id)
+                    || $this->userInUnsettledStakedMatch((int) $enterUserId, $room->id)) {
+                    return $this->fail('Henüz sonuçlanmamış bahisli bir maçın var. Önce onun bitip hesaplanmasını bekle.', 422);
+                }
+            }
             // HARD GARANTİ: iki oyuncu için ATOMİK maç koltuğu (DB UNIQUE). userInAnyPlaying yarışı
             // kaçırsa bile (sub-sn eşzamanlı match+accept) bu kesin engeller. p2 kapmadan ÖNCE kilitle;
             // oda kapılamazsa (başkası aldı) kendi koltuğumu geri bırak (host'unki kazananındır).

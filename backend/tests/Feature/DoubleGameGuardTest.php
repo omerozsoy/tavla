@@ -207,6 +207,41 @@ class DoubleGameGuardTest extends TestCase
         $this->assertSame('pending', DB::table('game_invites')->where('id', $id)->value('status'));
     }
 
+    // DAVET/ÖZEL-ODA YOLU (serkankara vakası): host'un bitmiş-ama-settle-olmamış (~2-4dk) bahisli
+    // maçı varken İKİNCİ bir bahisli özel maça giriş REDDEDİLİR. enter() eskiden yalnız claimMatchSeat'e
+    // (koltuk maç BİTİNCE bırakılır) güveniyordu -> settle penceresinde aynı (settle-olmamış, hâlâ
+    // yüksek) bakiyeden ikinci kez %-stake snapshot alınıp ~%100 riske ediliyordu. Artık matchmaking
+    // (:517) ile aynı C1 guard enter'da da çalışır.
+    public function test_entering_bet_room_rejected_while_host_has_unsettled_bet(): void
+    {
+        $host = $this->user('serkanlike');
+        $opp = $this->user('mehmetlike');
+        // Host'un bitmiş ama settle-olmamış (kazananı çözülemeyen -> inline settle kapatamaz) bahisli maçı.
+        Room::create([
+            'code' => 'UNSH', 'p1_token' => 'a', 'p2_token' => 'b',
+            'p1_user_id' => $host->id, 'p2_user_id' => $opp->id, 'p1_name' => 'H', 'p2_name' => 'O',
+            'status' => 'finished', 'mode' => 'ranked', 'stake' => 0, 'bet_pct' => 50,
+            'settled' => false, 'target' => 7, 'version' => 1,
+        ]);
+        // Host'un ikinci bahisli özel odası (bekliyor); davetli bir oyuncu girmeye çalışır.
+        Room::create([
+            'code' => 'ROOM2', 'p1_token' => 'host', 'p1_user_id' => $host->id, 'p1_name' => 'H',
+            'status' => 'waiting', 'mode' => 'ranked', 'stake' => 0, 'bet_pct' => 50, 'target' => 7, 'version' => 0,
+        ]);
+        $joiner = $this->user('joinerlike');
+        DB::table('game_invites')->insert([
+            'from_user_id' => $host->id, 'to_user_id' => $joiner->id, 'room_code' => 'ROOM2',
+            'status' => 'pending', 'target' => 7, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        Sanctum::actingAs($joiner);
+        $this->postJson('/api/rooms/ROOM2/enter', ['token' => 'jtok', 'name' => 'joinerlike'])
+            ->assertStatus(422);
+
+        // İkinci oda PLAYING'e geçmedi (host hâlâ settle bekliyor).
+        $this->assertSame('waiting', Room::where('code', 'ROOM2')->value('status'));
+    }
+
     // HARD GARANTİ primitifi: atomik koltuk UNIQUE'tir (ikinci maç reddedilir) + self-healing
     // (ilk maç bitince ikinciye koltuk açılır -> sonsuza dek kilitli kalmaz).
     public function test_match_seat_is_unique_and_self_heals(): void
