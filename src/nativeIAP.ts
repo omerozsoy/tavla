@@ -10,11 +10,20 @@
 // Plugin kayıt adları (node_modules'tan teyit): registerPlugin('Purchases') + registerPlugin('RevenueCatUI').
 import { isNativeApp } from './nativeGoogle'
 
-// RevenueCat Android public SDK anahtarı. Frontend'de (dist) yaşar -> deploy ile güncellenir, yeni
-// APK gerekmez. RC panel > Project > API keys > TavlaTV Android ('goog_...'). Public key, paylaşımı güvenli.
+// RevenueCat public SDK anahtarları (platform başına AYRI). Frontend'de (dist) yaşar -> deploy ile
+// güncellenir, yeni APK/IPA gerekmez. Public key, paylaşımı güvenli.
+// Android: RC panel > Project > API keys > TavlaTV Android ('goog_...').
 const RC_ANDROID_KEY = 'goog_QsEcmrzVzYhdINaNbMfhiVXJNLo'
+// iOS: RC panelde App Store app'i eklenince verilen public key ('appl_...'). TODO: RC panelden al, doldur.
+// Boş kaldığı sürece iOS'ta iapIdentify guard'ı configure'u ATLAR (iOS satın alma kapalı; Android/web etkilenmez).
+const RC_IOS_KEY = ''
 // Premium = bu entitlement aktifse. RC panelinde lifetime/yearly/monthly ürünleri buna bağlı.
 export const RC_PREMIUM_ENTITLEMENT = 'tavlatv_premium'
+
+// Aktif platforma uygun RC public anahtarı. iOS appl_ anahtarı henüz girilmemişse '' döner.
+function rcApiKey(): string {
+  return cap()?.getPlatform?.() === 'ios' ? RC_IOS_KEY : RC_ANDROID_KEY
+}
 
 type PaywallResult = 'PURCHASED' | 'RESTORED' | 'CANCELLED' | 'ERROR' | 'NOT_PRESENTED'
 
@@ -41,6 +50,7 @@ function call<T>(plugin: string, method: string, opts?: unknown): Promise<T> {
 export function iapAvailable(): boolean {
   try {
     if (!isNativeApp()) return false
+    if (!rcApiKey()) return false // bu platform için RC anahtarı yok (iOS appl_ henüz girilmemiş) -> IAP kapalı
     const headers = cap()?.PluginHeaders
     if (Array.isArray(headers) && headers.length > 0) {
       return headers.some((h) => h?.name === 'Purchases')
@@ -61,8 +71,10 @@ let configuredFor: string | null = null
 export async function iapIdentify(userId: number | string): Promise<void> {
   const uid = String(userId)
   if (configuredFor === uid) return
+  const key = rcApiKey()
+  if (!key) return // iOS appl_ anahtarı henüz yok -> configure etme (iapAvailable zaten false, buton gizli)
   if (configuredFor === null) {
-    await call<void>('Purchases', 'configure', { apiKey: RC_ANDROID_KEY, appUserID: uid })
+    await call<void>('Purchases', 'configure', { apiKey: key, appUserID: uid })
   } else {
     // Zaten yapılandırıldı ama farklı/anonim kullanıcı -> yeniden tanıt.
     await call<void>('Purchases', 'logIn', { appUserID: uid })
