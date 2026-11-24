@@ -129,6 +129,7 @@ export function mount(container, opts = {}) {
   const o = Object.assign({
     tilt: 60,              // kameranın dikeyle yaptığı açı (0 = tepeden, 90 = yandan)
     zoom: 1,               // kamera yakınlaştırma (>1 = board canvas içinde daha büyük görünür)
+    vshift: 0,             // dikey kaydırma (yük. oranı; >0 = board aşağı/izleyiciye yakın, boşluk üstte)
     half: 'right',         // zarların düştüğü yarı: 'right' | 'left'
     from: 'bottom',        // atan taraf: 'bottom' (oyuncu) | 'top' (rakip)
     position: OPENING,
@@ -289,7 +290,8 @@ export function mount(container, opts = {}) {
     fits(hi / (o.zoom || 1));
     const ys = corners.map((c) => c.clone().project(camera).y);
     const mid = (Math.max(...ys) + Math.min(...ys)) / 2;
-    camera.setViewOffset(width, height, 0, (-mid * height) / 2, width, height);
+    // vshift>0 -> board'u aşağı kaydır (yakın kenar alta, boşluk üstte); izleyiciye yaklaşmış hissi.
+    camera.setViewOffset(width, height, 0, (-mid * height) / 2 - (o.vshift || 0) * height, width, height);
     camera.updateProjectionMatrix();
     dirty = true;
   }

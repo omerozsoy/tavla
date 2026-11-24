@@ -87,7 +87,7 @@ export default function Board3D({
     if (!el) return
     // Mount BİR KEZ (deps []). Atış tarafı/yönü her roll'da setThrow ile ayarlanır -> sıra
     // değişiminde sahneyi remount etme (flaş/israf). from burada sadece ilk varsayılan.
-    const tavla = mount(el, { tilt: tiltRef.current, zoom: zoomRef.current, from: 'top', sound: false })
+    const tavla = mount(el, { tilt: tiltRef.current, zoom: zoomRef.current, vshift: 0.15, from: 'top', sound: false })
     tavlaRef.current = tavla
     const canvas = tavla.canvas
     canvas.style.pointerEvents = 'auto'
