@@ -20564,16 +20564,22 @@ body:has(.spectate-view) .app.lobby {
   }
   .rep-filter > [data-slot='button'],
   .rep-filter > button,
-  .rep-filter .menu-btn {
+  .rep-filter .menu-btn,
+  .an-dtab {
     /* flex:1 1 0 -> satırdaki tüm butonlar eşit paylaşır, TEK SIRA (3 scope butonu da sığar;
        50% basis 2+1'e sarıyordu). min-width:0 ile metin gerekiyorsa içeride sarar/kısalır. */
     flex: 1 1 0;
     min-width: 0;
-    /* Mobilde kompakt: shadcn sabit yüksekliği bırak, padding/font küçük (kullanıcı: butonları küçült). */
+    /* TÜM analiz filtre (Benim/Rakip/Tümü · En Kötüler/Sıraya Göre) + sekme (En İyi N · Küp Durumu)
+       düğmeleri AYNI YÜKSEKLİKTE (kullanıcı isteği): sabit min-height + flex-ortalama -> farklı
+       font/padding yüksekliği bozmaz; shadcn sabit yüksekliği bırakılır. */
     height: auto;
-    min-height: 0;
-    padding: 6px 6px;
-    font-size: 0.7rem;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.72rem;
     line-height: 1.15;
     letter-spacing: 0.2px;
   }
@@ -37132,7 +37138,7 @@ body.has-bottom-nav .to-top {
     border-top: 1px solid var(--border);
     border-bottom: none;
     max-height: none;
-    margin-top: 22px; /* board'a yapışmasın; filtre düğmeleri board'un altından net ayrılsın */
+    margin-top: 40px; /* board'dan NET ayrı (kullanıcı: çok daha fazla boşluk) */
     padding-top: 12px;
   }
   .mrv-rows {
