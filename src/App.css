@@ -6935,13 +6935,15 @@ button[aria-disabled='true'],
   z-index: 9; /* taslarin ustunde (zar gorsel olarak ust katta), pointer gecirgen */
   pointer-events: none;
 }
-/* 3D: zar WebGL katmanini board-inner'in HUCRESINE (col1/row2) sigdir -> zarlar bearoff/margin
-   degil YALNIZ OYUN YUZEYI icinde yuvarlanir ("zarlari board'un icine at"). */
+/* 3D: zar canvas'ini board-inner'in HUCRESINE koy + AYNI egim transform'unu uygula -> modulun
+   (tepeden) zar render'i board ile BERABER egilir, zarlar egik yuzeyin ustunde durur (yuzmez). */
 .board.board-3d .board-phys-layer {
   position: relative;
   inset: auto;
   grid-column: 1;
   grid-row: 2;
+  transform: rotateX(var(--tilt)) scale(0.8);
+  transform-origin: center bottom;
 }
 .board-phys-layer .phys-dice {
   width: 100%;
