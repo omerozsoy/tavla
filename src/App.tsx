@@ -2617,7 +2617,7 @@ export default function App() {
   // 3D eğim açısı (derece) + perspektif mesafesi (px) — admin kaydırıcıları, kalıcı.
   const [board3dAngle, setBoard3dAngle] = useState<number>(() => {
     const v = Number(localStorage.getItem('tavla.board3dAngle'))
-    return Number.isFinite(v) && v > 0 ? v : 46
+    return Number.isFinite(v) && v > 0 ? v : 50
   })
   const [board3dDepth, setBoard3dDepth] = useState<number>(() => {
     const v = Number(localStorage.getItem('tavla.board3dDepth'))

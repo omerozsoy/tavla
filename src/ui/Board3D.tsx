@@ -152,10 +152,13 @@ export default function Board3D({
     tavlaRef.current?.setTilt(tilt)
   }, [tilt])
 
-  // Tas dizilisi: durum (points) ya da flip degisince.
-  const posKey = state.points.join(',') + '|' + (flip ? 1 : 0)
+  // Tas dizilisi + KIRIK/BAR taslari: durum ya da flip degisince.
+  // bar modül uzayı: w = izleyicinin (altta), b = rakip (üstte). flip'te renkler yer değişir.
+  const barW = flip ? state.bar.black : state.bar.white
+  const barB = flip ? state.bar.white : state.bar.black
+  const posKey = state.points.join(',') + '|' + (flip ? 1 : 0) + '|' + barW + ',' + barB
   useEffect(() => {
-    tavlaRef.current?.setPosition(toModuleArray(state.points, flip))
+    tavlaRef.current?.setPosition(toModuleArray(state.points, flip), { w: barW, b: barB })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posKey])
 

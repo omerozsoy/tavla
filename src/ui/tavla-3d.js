@@ -178,7 +178,31 @@ export function mount(container, opts = {}) {
   // ---- Tahta ----
   const boardGroup = new THREE.Group();
   scene.add(boardGroup);
-  const frameMat = new THREE.MeshPhysicalMaterial({ color: o.colors.frame, roughness: 0.55, clearcoat: 0.3, clearcoatRoughness: 0.5 });
+  // Ağaç dokusu (prosedürel canvas): sıcak kahve taban + dikey damar çizgileri -> çerçeve ahşap görünür.
+  function woodTexture() {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+    const g = c.getContext('2d');
+    const grd = g.createLinearGradient(0, 0, 512, 0);
+    grd.addColorStop(0, '#5b3a22'); grd.addColorStop(0.5, '#6f4a2d'); grd.addColorStop(1, '#58381f');
+    g.fillStyle = grd; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 90; i++) {
+      const x = Math.random() * 512;
+      const w = 0.5 + Math.random() * 2.2;
+      const dark = Math.random() < 0.5;
+      g.strokeStyle = dark ? 'rgba(40,24,12,0.28)' : 'rgba(150,110,70,0.20)';
+      g.lineWidth = w;
+      g.beginPath();
+      let y = 0, xx = x;
+      g.moveTo(xx, y);
+      for (; y < 512; y += 16) { xx += (Math.random() - 0.5) * 6; g.lineTo(xx, y); }
+      g.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+  const frameMat = new THREE.MeshPhysicalMaterial({ map: woodTexture(), roughness: 0.6, clearcoat: 0.25, clearcoatRoughness: 0.5 });
   const fieldMat = new THREE.MeshStandardMaterial({ color: o.colors.field, roughness: 0.85 });
   const OX = B / 2 + HW + F, OZ = D / 2 + F;
   const box = (w, h, d, x, y, z, m) => {
@@ -223,7 +247,8 @@ export function mount(container, opts = {}) {
   scene.add(checkersGroup);
   let checkerSpots = []; // {x, z, y}
 
-  function setPosition(pos) {
+  // bar = { w, b } (modül uzayı: w=altta duran/izleyici, b=üstteki). Kırık/bardaki taşları bar üstüne dizer.
+  function setPosition(pos, bar) {
     checkersGroup.clear();
     checkerSpots = [];
     pos.forEach((n, i) => {
@@ -240,6 +265,21 @@ export function mount(container, opts = {}) {
         checkerSpots.push({ x: g.x, z, y });
       }
     });
+    // Kırık taşlar: bar'ın ÜSTÜNE (x=0, raised R). w (izleyici) alt yarıda +z, b üst yarıda -z.
+    if (bar) {
+      const placeBar = (count, isWhite) => {
+        const mat = isWhite ? checkerMats.w : checkerMats.b, dir = isWhite ? 1 : -1;
+        for (let k = 0; k < (count || 0); k++) {
+          const off = CR + 0.3 + (k % 5) * 2 * CR;
+          const m = new THREE.Mesh(checkerGeo, mat);
+          m.position.set(0, R + CH / 2 + Math.floor(k / 5) * CH, dir * off);
+          m.castShadow = true; m.receiveShadow = true;
+          checkersGroup.add(m);
+        }
+      };
+      placeBar(bar.w, true);
+      placeBar(bar.b, false);
+    }
     dirty = true;
   }
 
