@@ -851,6 +851,8 @@ const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar 
 const BOT_STEP_DELAY = 500 // her tas arasi (izlenebilir ama snappy; sunucu-bot tur devri hizlansin)
 const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn tur-devri gecikmesi cok uzundu)
 const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullanici "gele attigini goremedim" -> zar okunsun)
+const BOT_REVEAL_DELAY_3D = 3000 // 3D tahtada zar FIZIK animasyonu ~3.3sn surer -> bot, zar oturup okunana kadar oynamasin
+                                 // (BOT_MOVE_DELAY 900 + bu = ~3.9sn > animasyon). 2D'de BOT_REVEAL_DELAY aynen.
 const BOT_FINAL_DELAY = 1400 // botun MAÇI BİTİREN hamlesinden sonra: son pozisyon görünsün, sonra sonuç ekranı
 const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
 const BOT_CUBE_MIN = 1100 // insan kup verince botun take/drop cevabi: en az dusunme (aninda=sahte)
@@ -5017,7 +5019,7 @@ export default function App() {
     }
     // Sonraki tasi oyna. ILK adimdan once daha uzun bekle (BOT_REVEAL_DELAY) -> bot zari net okunsun;
     // sonraki adimlar snappy (BOT_STEP_DELAY). Tur-devri hizini (BOT_END_DELAY) etkilemez.
-    const stepDelay = botAnim.index === 0 ? BOT_REVEAL_DELAY : BOT_STEP_DELAY
+    const stepDelay = botAnim.index === 0 ? (board3d ? BOT_REVEAL_DELAY_3D : BOT_REVEAL_DELAY) : BOT_STEP_DELAY
     const t = window.setTimeout(() => {
       setPlayed(botAnim.steps.slice(0, botAnim.index + 1))
       // serverFinal KORUNMALI: eskiden ilk taştan sonra düşüyordu -> animasyon sonunda otoriter durum

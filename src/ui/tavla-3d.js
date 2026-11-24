@@ -33,6 +33,7 @@ const CH = 0.42 * K;       // taş kalınlığı
 const PL = 10.6 * K;       // hane (üçgen) uzunluğu
 const DIE = 1.15;          // zar kenar uzunluğu (büyütmek için artır; geo+fizik+dinlenme birlikte ölçeklenir)
 const DH = DIE / 2;        // zar yarı-kenarı (dinlenirken merkez yüksekliği)
+const DCL = DH + 0.08;     // zar temizlik yarıçapı (pul üstüne gelmesin diye; zar boyutuyla ölçekli)
 
 export const OPENING = (() => {
   const p = new Array(24).fill(0);
@@ -346,7 +347,7 @@ export function mount(container, opts = {}) {
       world.addBody(b);
     }
     const stacks = stackBoxes();
-    const over = (x, z, r = 0.35) => stacks.find((s) => x + r > s.minX && x - r < s.maxX && z + r > s.minZ && z - r < s.maxZ);
+    const over = (x, z, r = DH) => stacks.find((s) => x + r > s.minX && x - r < s.maxX && z + r > s.minZ && z - r < s.maxZ);
     const free = (x, z, r) => !stacks.some((s) => x + r > s.minX && x - r < s.maxX && z + r > s.minZ && z - r < s.maxZ);
     function slideOff(b) {
       const s = over(b.position.x, b.position.z);
@@ -356,7 +357,7 @@ export function mount(container, opts = {}) {
         .filter(([dx, dz]) => {
           const tx = dx < 0 ? s.minX - 0.7 : dx > 0 ? s.maxX + 0.7 : b.position.x;
           const tz = dz < 0 ? s.minZ - 0.7 : dz > 0 ? s.maxZ + 0.7 : b.position.z;
-          return tx > a.xMin + 0.5 && tx < a.xMax - 0.5 && tz > a.zMin + 0.5 && tz < a.zMax - 0.5 && free(tx, tz, 0.4);
+          return tx > a.xMin + 0.5 && tx < a.xMax - 0.5 && tz > a.zMin + 0.5 && tz < a.zMax - 0.5 && free(tx, tz, DCL);
         }).sort((p, q) => p[2] - q[2]);
       const [dx, dz] = cand[0] || [0, b.position.z > 0 ? -1 : 1];
       b.wakeUp();
@@ -405,7 +406,7 @@ export function mount(container, opts = {}) {
     const last = frames[frames.length - 1];
     const ups = last.map((f) => upFace(new THREE.Quaternion(f[3], f[4], f[5], f[6])));
     const flat = last.every((f) => Math.abs(f[1] - DH) < 0.07);
-    const clear = last.every((f) => free(f[0], f[2], 0.45));
+    const clear = last.every((f) => free(f[0], f[2], DCL));
     const spread = Math.hypot(last[0][0] - last[1][0], last[0][2] - last[1][2]);
     const farDist = (f) => (s < 0 ? f[2] - a.zMin : a.zMax - f[2]);
     const backOff = !o.wallHit || last.every((f) => farDist(f) > 1.5);
@@ -428,6 +429,26 @@ export function mount(container, opts = {}) {
     let sim, best = null, tries = 0;
     do { sim = simulate(); if (!best || sim.score > best.score) best = sim; } while (!sim.ok && ++tries < 60);
     sim = best;
+    // GARANTİ (kullanıcı direktifi: zar pul üstünde DURAMAZ): best sim'de hâlâ pula denk gelen
+    // zarı en yakın BOŞ noktaya düz otur. x/z taşınır + y=DH (üst yüz korunur -> değer değişmez),
+    // iki zar da üst üste gelmez. Clearance düzeltmesi çoğu atışı zaten temiz yaptığından nadir.
+    {
+      const stk = stackBoxes(), ar = area(), last = sim.frames[sim.frames.length - 1], placed = [];
+      const spotFree = (x, z) =>
+        !stk.some((s) => x + DCL > s.minX && x - DCL < s.maxX && z + DCL > s.minZ && z - DCL < s.maxZ) &&
+        placed.every((p) => Math.hypot(p[0] - x, p[1] - z) > DIE + 0.08);
+      for (const f of last) {
+        if (spotFree(f[0], f[2])) { placed.push([f[0], f[2]]); continue; }
+        let bx = f[0], bz = f[2], bd = Infinity;
+        for (let gx = ar.xMin + DH + 0.1; gx <= ar.xMax - DH - 0.1; gx += 0.3)
+          for (let gz = ar.zMin + DH + 0.1; gz <= ar.zMax - DH - 0.1; gz += 0.3) {
+            if (!spotFree(gx, gz)) continue;
+            const d2 = (gx - f[0]) ** 2 + (gz - f[2]) ** 2;
+            if (d2 < bd) { bd = d2; bx = gx; bz = gz; }
+          }
+        f[0] = bx; f[1] = DH; f[2] = bz; placed.push([bx, bz]);
+      }
+    }
     dice.forEach((d, i) => setFaces(d, remap(sim.ups[i], vals[i])));
     emit('roll', { values: vals });
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) sim.frames = sim.frames.slice(-1);
