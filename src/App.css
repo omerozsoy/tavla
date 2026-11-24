@@ -37966,12 +37966,13 @@ body:has(.register-overlay) .chat-panel.closed {
   }
 }
 
-/* 3D tavla modülü (Board3D) sarıcısı: modül kendi canvas'ını içine koyar; boyut gerekir. */
+/* 3D tavla modülü (Board3D) sarıcısı: modül kendi canvas'ını içine koyar; boyut gerekir.
+   KRİTİK: flex:none (eski .board gibi) -> dikey flex sahnede KÜÇÜLMESİN (yoksa 0'a çöker,
+   board görünmez). Boyut gerçek board ayak izi: yükseklik --board-h, genişlik ~1.53 oranı. */
 .board3d-wrap {
-  width: 100%;
-  max-width: 920px;
-  aspect-ratio: 14 / 10;
-  max-height: 74vh;
+  flex: none;
+  width: min(100%, calc(var(--board-h) * 1.53));
+  height: var(--board-h);
   margin: 0 auto;
   position: relative;
 }
