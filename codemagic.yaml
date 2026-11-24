@@ -40,6 +40,13 @@ workflows:
       - name: Capacitor iOS projesini eşitle
         script: npx cap sync ios
 
+      - name: iOS uygulama ikonunu üret (assets/icon.png -> AppIcon)
+        # Proje CI'da sifirdan uretiliyor (npx cap add ios) -> iOS AppIcon Capacitor VARSAYILAN (mavi
+        # placeholder) kalir -> App Store 2.3.8 (generic icon) REDDEDER. @capacitor/assets ile assets/
+        # kaynak ikonlardan (icon.png 1024x1024) gercek TavlaTV ikonunu uret. Android bunu lokal yapip
+        # commit'lemis; iOS proje CI'da dogdugu icin burada uretmek sart. iOS AppIcon alpha'siz olur.
+        script: npx capacitor-assets generate --ios
+
       - name: Şifreleme muafiyetini işaretle (ITSAppUsesNonExemptEncryption)
         # App Store Connect her build'de "ihracat uyumluluğu / şifreleme" sorusunu
         # sormasın diye Info.plist'e kalıcı olarak ekle. Proje CI'da üretildiği için
