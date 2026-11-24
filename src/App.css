@@ -37087,6 +37087,8 @@ body.has-bottom-nav .to-top {
     border-top: 1px solid var(--border);
     border-bottom: none;
     max-height: none;
+    margin-top: 12px; /* board ile filtre düğmeleri arasına nefes (kullanıcı isteği) */
+    padding-top: 10px;
   }
   .mrv-rows {
     display: none;
