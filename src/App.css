@@ -11154,6 +11154,15 @@ html.fs-active .account-bar {
     top: 0;
     z-index: 105;
   }
+  /* ÜST BAR MOBİLDE SABİT (kullanıcı: "top menü bar sticky olsun"). account-bar'ın kendi sticky'si
+     parent .topbar-stack (bar kadar kısa) içinde pinlenecek yer bulamadığı için TEK BAŞINA ETKİSİZDİ;
+     scroll kabı .app.lobby'ye göre TOPBAR-STACK'i (hamburger + hesap barı) sticky yap -> tüm bar
+     ekranın üstünde pinlenir. (Önceki "sticky kaldır" tercihi bu istekle tersine çevrildi.) */
+  .app.lobby > .topbar-stack {
+    position: sticky;
+    top: 0;
+    z-index: 106;
+  }
   /* Hamburger en SOLDA -> logo hemen sagina yaslansin. */
   .ab-brand {
     margin-left: 0;
@@ -34998,6 +35007,17 @@ body.has-bottom-nav .to-top {
 @media (max-width: 720px) {
   body.has-an-nav .to-top {
     bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+  /* APK alt menüsü (.bottom-nav, fixed bottom:0 z-index:60) hamle-nav çubuğunu (.an-nav, fixed
+     bottom:0 z-index:50) ÖRTÜYORDU -> ← → okları iPhone/Android alt menüsünün ARKASINDA kalıyordu.
+     an-nav'ı alt menünün ÜSTÜNE al (menü ~54px + safe-area; safe-area artık bottom'da -> padding'den çıkar). */
+  body.has-bottom-nav .analysis-layout .an-nav {
+    bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 8px;
+  }
+  /* APK + analiz birlikte: "En Üste Git" hem alt menünün hem an-nav'ın ÜSTÜNDE dursun. */
+  body.has-bottom-nav.has-an-nav .to-top {
+    bottom: calc(158px + env(safe-area-inset-bottom, 0px));
   }
 }
 @media (prefers-reduced-motion: reduce) {
