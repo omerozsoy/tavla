@@ -37965,3 +37965,13 @@ body:has(.register-overlay) .chat-panel.closed {
     display: none;
   }
 }
+
+/* 3D tavla modülü (Board3D) sarıcısı: modül kendi canvas'ını içine koyar; boyut gerekir. */
+.board3d-wrap {
+  width: 100%;
+  max-width: 920px;
+  aspect-ratio: 14 / 10;
+  max-height: 74vh;
+  margin: 0 auto;
+  position: relative;
+}

@@ -159,6 +159,9 @@ import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 const PhysicsDice = lazy(() => import('./ui/PhysicsDice')) // admin 3D testi: fizik WebGL zarı (three+cannon)
+const Board3D = lazy(() => import('./ui/Board3D')) // admin 3D testi (SADE): hazır 3D tavla modülü (three+cannon)
+// Bayrak: hazır 3D tavla modülünü (Board3D) admin 3D toggle açıkken göster. false -> eski tahta aynen.
+const USE_3D_BOARD = true
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
@@ -12730,6 +12733,23 @@ export default function App() {
             )}
           </>
         )}
+        {USE_3D_BOARD && board3d ? (
+          // SADE admin 3D testi: hazır modül tahtayı+zarı çizer, hamle mevcut handler'lara gider.
+          // Bar/off/bear-off/küp/butonlar bu sürümde yok (eski tahta bayrak kapanınca aynen çalışır).
+          <div className="board3d-wrap">
+            <Suspense fallback={null}>
+              <Board3D
+                state={boardDisplay}
+                diceFaces={diceFaces}
+                flip={flipBoard}
+                nearSide={turnIsMine}
+                selectedFrom={selectedFrom}
+                onSelectFrom={handleSelectFrom}
+                onSelectTarget={handleSelectTarget}
+              />
+            </Suspense>
+          </div>
+        ) : (
         <Board
           state={boardDisplay}
           cubePendingValue={humanRespond || cubeWaiting || botCubeDeciding ? match.cube.value * 2 : null}
@@ -12779,6 +12799,7 @@ export default function App() {
           }
           pointTexts={ALL_THEMES.find((x) => x.id === boardTheme)?.pointTexts}
         />
+        )}
         {/* MOBIL PORTRAIT: board'un ALTINA alt-oyuncu (self) satiri: skor+kup | saat | tepsi */}
         {mobilePortrait && clockOn && (() => {
           const selfCard = flipBoard ? topInfo : bottomInfo
