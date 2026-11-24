@@ -17198,6 +17198,21 @@ body:has(.spectate-view) .app.lobby {
   font-weight: 500;
   border-radius: 2px;
 }
+/* SEÇİLİ analiz filtre sekmesi NET görünsün (web + mobil): secondary(warm-sand) ile ghost(şeffaf)
+   krem zeminde ayırt edilemiyordu -> kullanıcı hangi düğme seçili göremiyordu. Aktif
+   (aria-pressed=true) = dolu kiremit (--accent) + açık metin + 600. YALNIZ analiz listesi
+   (.analysis-list) — Leaderboard'ın rep-filter'ı zaten 'default'=mavi dolu, ona dokunma. */
+.analysis-list .rep-filter [aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ivory);
+  font-weight: 600;
+}
+.analysis-list .rep-filter [aria-pressed='true']:hover {
+  background: var(--terracotta-hover);
+  border-color: var(--terracotta-hover);
+  color: var(--ivory);
+}
 .report-list {
   display: flex;
   flex-direction: column;

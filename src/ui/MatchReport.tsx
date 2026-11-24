@@ -153,8 +153,15 @@ export default function MatchReport({
     .filter(({ e }) => lossOf(e) >= 0.02 && inScope(e))
   const firstAnalyzable = log.findIndex((e) => e.pos && !e.cube)
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
+  // Detaya girince listenin 1. SATIRINDAN başla. Varsayılan sıralama "En Kötüler" (worstFirst)
+  // olduğundan 1. satır = en ağır hata; sel'i buna eşitle ki tahta + vurgulanan satır + liste tepesi
+  // UYUŞSUN (önceden sel=kronolojik-ilk hata -> worst-first listede 1. satır olmayıp detaya girince
+  // seçili satır görünmüyordu — kullanıcı "beni 1. hatadan başlat" dedi).
+  const firstRow = mistakes.length
+    ? mistakes.reduce((best, m) => (lossOf(m.e) > lossOf(best.e) ? m : best)).i
+    : firstMistake
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
-  const [sel, setSel] = useState(firstMistake)
+  const [sel, setSel] = useState(firstRow)
   // Sağ panel (aday/detay) sekmesi: 'cands' = En İyi N Hamle, 'cube' = Küp Durumu (seçili hamle).
   const [candTab, setCandTab] = useState<'cands' | 'cube'>('cands')
   // Aday listesinde OYNANAN adayin indexi; -1 = oynanan hamle top listede yok (blunder)
@@ -162,7 +169,7 @@ export default function MatchReport({
   const playedCandIdx = (e?: LogEntry) => e?.cands?.findIndex((c) => c.notation === e.notation) ?? -1
   // Tahtada gosterilen aday: acilis + secimde OYNANAN hamle (senin oynadigin). Adaylardan
   // (1-5) tiklayarak diger olasiliklarin oklarini gorursun.
-  const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
+  const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstRow]))
   // candIdx === PREMOVE: "Hamle Öncesi" — tahta karar anındaki ham pozisyonu OKSUZ gösterir
   // (hiçbir aday/oynanan ok çizilmez). Liste en üstünde seçilebilir satır.
   const PREMOVE = -2
@@ -519,18 +526,21 @@ export default function MatchReport({
                   <div className="rep-filter">
                     <Button
                       variant={scope === 'mine' ? 'secondary' : 'ghost'}
+                      aria-pressed={scope === 'mine'}
                       onClick={() => setScope('mine')}
                     >
                       {t('rep.scopeMine')}
                     </Button>
                     <Button
                       variant={scope === 'opp' ? 'secondary' : 'ghost'}
+                      aria-pressed={scope === 'opp'}
                       onClick={() => setScope('opp')}
                     >
                       {t('rep.scopeOpp')}
                     </Button>
                     <Button
                       variant={scope === 'all' ? 'secondary' : 'ghost'}
+                      aria-pressed={scope === 'all'}
                       onClick={() => setScope('all')}
                     >
                       {t('rep.scopeAll')}
@@ -541,12 +551,14 @@ export default function MatchReport({
                   {/* Sıra: "En Kötüler" (varsayılan seçili) SOLDA, "Sıraya Göre" SAĞDA (kullanıcı isteği). */}
                   <Button
                     variant={worstFirst ? 'secondary' : 'ghost'}
+                    aria-pressed={worstFirst}
                     onClick={() => setWorstFirst(true)}
                   >
                     {t('rep.byWorst', { n: mistakes.length })}
                   </Button>
                   <Button
                     variant={worstFirst ? 'ghost' : 'secondary'}
+                    aria-pressed={!worstFirst}
                     onClick={() => setWorstFirst(false)}
                   >
                     {t('rep.byOrder')}
