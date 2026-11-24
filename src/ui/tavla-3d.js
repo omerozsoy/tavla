@@ -419,7 +419,9 @@ export function mount(container, opts = {}) {
       top: plane([0, 0, a.zMin], [0, 1, 0], 0, mWall),
       bottom: plane([0, 0, a.zMax], [0, 1, 0], Math.PI, mWall)
     };
-    const farWall = o.from === 'top' ? walls.bottom : walls.top;
+    // X-yönlü atış: oyuncunun DIŞ kenarından bar'a doğru. Far wall = bar tarafı x-duvarı.
+    const sx = o.half === 'left' ? 1 : -1; // left: +x (soldan içeri), right: -x (sağdan içeri)
+    const farWall = sx < 0 ? walls.left : walls.right;
     let farHit = false;
 
     for (const c of checkerSpots) {
@@ -448,10 +450,12 @@ export function mount(container, opts = {}) {
       return true;
     }
 
-    const W = 30 * o.spin, s = o.from === 'top' ? 1 : -1;
-    const depth = a.zMax - a.zMin, xc = (a.xMin + a.xMax) / 2, hwid = (a.xMax - a.xMin) / 2;
-    const hx = xc + rnd(-0.15, 0.15) * hwid, hz = s < 0 ? a.zMax - 0.9 : a.zMin + 0.9;
-    const vz = s * depth * rnd(0.64, 0.84) * Math.sqrt(o.slide), vx = rnd(-0.08, 0.08) * hwid;
+    const W = 30 * o.spin;
+    // X-yönlü: dış kenardan (benim sağ, rakip sol) bar'a doğru fırlar; derinlik (z) ortasında.
+    const width = a.xMax - a.xMin, hdep = (a.zMax - a.zMin) / 2;
+    const hx = sx < 0 ? a.xMax - 0.9 : a.xMin + 0.9;     // dış kenardan başla
+    const hz = rnd(-0.15, 0.15) * hdep;                   // derinlik ortasına yakın
+    const vx = sx * width * rnd(0.64, 0.84) * Math.sqrt(o.slide), vz = rnd(-0.08, 0.08) * hdep;
     const power = o.wallHit ? rnd(1.65, 1.95) : 1;
     const events = [];
     let frame = 0;
@@ -461,9 +465,9 @@ export function mount(container, opts = {}) {
         linearDamping: 0.04, angularDamping: 0.05, sleepSpeedLimit: 0.1, sleepTimeLimit: 0.3
       });
       b.quaternion.setFromEuler(rnd(0, 6.28), rnd(0, 6.28), rnd(0, 6.28));
-      b.position.set(Math.max(a.xMin + 0.7, Math.min(a.xMax - 0.7, hx + (i ? 0.6 : -0.6))), rnd(2.6, 3.4), hz + rnd(-0.25, 0.25));
-      b.velocity.set(vx + (i ? 1 : -1) * rnd(0, 0.4), rnd(1.5, 3.5), vz * power * rnd(0.92, 1.08));
-      b.angularVelocity.set(s * -rnd(W * 0.6, W), rnd(-W * 0.6, W * 0.6), rnd(-W * 0.5, W * 0.5));
+      b.position.set(hx + rnd(-0.25, 0.25), rnd(2.6, 3.4), Math.max(a.zMin + 0.7, Math.min(a.zMax - 0.7, hz + (i ? 0.6 : -0.6))));
+      b.velocity.set(vx * power * rnd(0.92, 1.08), rnd(1.5, 3.5), vz + (i ? 1 : -1) * rnd(0, 0.4));
+      b.angularVelocity.set(rnd(-W * 0.5, W * 0.5), rnd(-W * 0.6, W * 0.6), sx * -rnd(W * 0.6, W));
       b.lastHit = -10;
       b.addEventListener('collide', (e) => {
         const v = Math.abs(e.contact.getImpactVelocityAlongNormal());
@@ -490,7 +494,7 @@ export function mount(container, opts = {}) {
     const flat = last.every((f) => Math.abs(f[1] - DH) < 0.07);
     const clear = last.every((f) => free(f[0], f[2], DCL));
     const spread = Math.hypot(last[0][0] - last[1][0], last[0][2] - last[1][2]);
-    const farDist = (f) => (s < 0 ? f[2] - a.zMin : a.zMax - f[2]);
+    const farDist = (f) => (sx < 0 ? f[0] - a.xMin : a.xMax - f[0]);
     const backOff = !o.wallHit || last.every((f) => farDist(f) > 1.5);
     const must = flat && clear;
     const score = must ? 1 + (!o.wallHit || farHit ? 4 : 0) + (spread >= o.minSpread && spread <= o.maxSpread ? 2 : 0) + (backOff ? 1 : 0) : 0;
@@ -514,21 +518,18 @@ export function mount(container, opts = {}) {
     // GARANTİ (kullanıcı direktifi: zar pul üstünde DURAMAZ): best sim'de hâlâ pula denk gelen
     // zarı en yakın BOŞ noktaya düz otur. x/z taşınır + y=DH (üst yüz korunur -> değer değişmez),
     // iki zar da üst üste gelmez. Clearance düzeltmesi çoğu atışı zaten temiz yaptığından nadir.
-    // Zarlar SADECE orta temiz bantta dursun (pullar uçlarda, orta boş): bant dışına (pul bölgesine)
-    // ya da pul üstüne denk gelen zar, bant içindeki en yakın boş noktaya oturur. Atış animasyonu
-    // tam kalır (duvara çarpar), yalnız son dinlenme orta banda çekilir -> kötü "pul üstü" animasyonu yok.
+    // Zarlar ATILDIĞI YERDE kalır (otomatik ortaya ALMA — kullanıcı direktifi). Yalnız pul ÜSTÜNE
+    // denk gelen zar, en yakın boş noktaya oturur (kötü "pul üstü" animasyonu olmasın); temizse dokunma.
     {
       const stk = stackBoxes(), ar = area(), last = sim.frames[sim.frames.length - 1], placed = [];
-      const zBand = D / 2 - PL - DH; // orta bant yarı-derinliği (zar tamamen üçgen uçlarının içinde)
       const spotFree = (x, z) =>
-        Math.abs(z) <= zBand &&
         !stk.some((s) => x + DCL > s.minX && x - DCL < s.maxX && z + DCL > s.minZ && z - DCL < s.maxZ) &&
         placed.every((p) => Math.hypot(p[0] - x, p[1] - z) > DIE + 0.08);
       for (const f of last) {
         if (spotFree(f[0], f[2])) { placed.push([f[0], f[2]]); continue; }
-        let bx = f[0], bz = Math.max(-zBand, Math.min(zBand, f[2])), bd = Infinity;
+        let bx = f[0], bz = f[2], bd = Infinity;
         for (let gx = ar.xMin + DH + 0.1; gx <= ar.xMax - DH - 0.1; gx += 0.3)
-          for (let gz = -zBand; gz <= zBand; gz += 0.3) {
+          for (let gz = ar.zMin + DH + 0.1; gz <= ar.zMax - DH - 0.1; gz += 0.3) {
             if (!spotFree(gx, gz)) continue;
             const d2 = (gx - f[0]) ** 2 + (gz - f[2]) ** 2;
             if (d2 < bd) { bd = d2; bx = gx; bz = gz; }
