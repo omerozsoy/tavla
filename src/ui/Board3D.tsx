@@ -1,8 +1,8 @@
 // 3D TAHTA (yalniz admin 3D testi). Tavla3D modulunu (three + cannon-es) saran React bileseni.
-// SADE surum: tas dizilisi + zar + normal hamle (surukle/tap). OYUN MANTIGINA DOKUNMAZ:
-// diziliş/zar degerleri App'ten gelir; hamleler mevcut handleSelectFrom/Target'a yonlendirilir
-// (fonksiyon icleri DEGISMEZ). Bar/off/bear-off/kup/butonlar bu surumde YOK (sonra eklenecek).
-import { useEffect, useRef } from 'react'
+// tas dizilisi + zar + hamle (surukle/tap) + KONTROL DUGMELERI (Zar At/Oyna/Onayla/Cift/Geri/kup).
+// OYUN MANTIGINA DOKUNMAZ: diziliş/zar App'ten gelir; hamleler mevcut handleSelectFrom/Target'a;
+// dugmeler 2D Board ile AYNI centerMain/Left/Right node'lari (canvas ustune duz overlay).
+import { useEffect, useRef, type ReactNode } from 'react'
 import { mount, type Tavla3DInstance } from './tavla-3d'
 import type { GameState } from '../engine/types'
 import type { DieFace } from './Dice'
@@ -26,6 +26,9 @@ export default function Board3D({
   selectedFrom,
   onSelectFrom,
   onSelectTarget,
+  centerMain,
+  centerLeft,
+  centerRight,
 }: {
   state: GameState
   diceFaces: DieFace[]
@@ -34,6 +37,10 @@ export default function Board3D({
   selectedFrom: number | 'bar' | null
   onSelectFrom: (from: number | 'bar') => void
   onSelectTarget: (to: number | 'off') => void
+  // Oyun kontrol slotları (2D Board ile AYNI node'lar): Zar At/Oyna/Onayla/Çift/Geri + küp pas/al.
+  centerMain?: ReactNode
+  centerLeft?: ReactNode
+  centerRight?: ReactNode
 }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const tavlaRef = useRef<Tavla3DInstance | null>(null)
@@ -120,5 +127,18 @@ export default function Board3D({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usedKey])
 
-  return <div ref={mountRef} className="board3d-mount" style={{ width: '100%', height: '100%', minHeight: '320px' }} />
+  // mount div'i modül sahiplenir (canvas'ı oraya ekler) -> React cocugu KOYMA. Kontrol katmanı
+  // KARDEŞ olarak canvas üstüne gelir (2D Board'un center-overlay sınıfları yeniden kullanılır).
+  return (
+    <div className="board3d-stage" style={{ position: 'relative', width: '100%', height: '100%', minHeight: '320px' }}>
+      <div ref={mountRef} className="board3d-mount" style={{ width: '100%', height: '100%' }} />
+      {(centerMain || centerLeft || centerRight) && (
+        <div className="board3d-ctl">
+          {centerLeft && <div className="center-overlay left">{centerLeft}</div>}
+          {centerRight && <div className="center-overlay right">{centerRight}</div>}
+          {centerMain && <div className="center-overlay main">{centerMain}</div>}
+        </div>
+      )}
+    </div>
+  )
 }

@@ -9402,13 +9402,15 @@ export default function App() {
       </Button>
     )
   ) : diceRolled && diceFaces.length > 0 ? (
-    <DiceRow
-      faces={diceFaces}
-      owner={turnStart.turn}
-      swappable={canSwapDice}
-      onSwap={handleSwapDice}
-      cube={board3d && localStorage.getItem('tavla.diceCube') === '1'}
-    />
+    // 3D'de zarları WebGL modülü çizer -> DOM zar satırını GÖSTERME (çift zar olmasın). 2D aynen.
+    board3d ? null : (
+      <DiceRow
+        faces={diceFaces}
+        owner={turnStart.turn}
+        swappable={canSwapDice}
+        onSwap={handleSwapDice}
+      />
+    )
   ) : null
 
   // Yan slot: Double / Geri
@@ -9449,8 +9451,9 @@ export default function App() {
       ? danceInfo.color === 'black'
       : danceInfo.color === 'white'
     : false
-  const danceDice = danceInfo ? (
-    <DiceRow faces={danceInfo.dice} owner={danceInfo.color} className="nm-dice" cube={board3d && localStorage.getItem('tavla.diceCube') === '1'} />
+  const danceDice = danceInfo && !board3d ? (
+    // 3D'de WebGL zarları gösterir -> DOM dance zarını gizle (çift olmasın). "Hamle Yok" metni kalır.
+    <DiceRow faces={danceInfo.dice} owner={danceInfo.color} className="nm-dice" />
   ) : null
   // Küp yanıtı: SAĞDA Kabul. Yoksa normal (benim turum -> ana buton sağda).
   const centerRight =
@@ -9460,11 +9463,11 @@ export default function App() {
   // rakibin tur-başı tahtasıdır (zarlı); shown adımlarıyla faceStates zarı adım adım soldurur ->
   // rakibin hangi zarı oynadığı/kaldığı tıpkı bottaki gibi net. Rakip zarı DAİMA SOLDA.
   const oppReplayDice =
-    oppReplay && !gameEnd && !matchOver ? (
+    oppReplay && !gameEnd && !matchOver && !board3d ? (
+      // 3D'de WebGL zarları gösterir -> DOM replay zarını gizle (çift olmasın).
       <DiceRow
         faces={faceStates(oppReplay.base.dice, oppReplay.steps.slice(0, oppReplay.shown), deadDieValues(oppReplay.base))}
         owner={oppReplay.color}
-        cube={board3d && localStorage.getItem('tavla.diceCube') === '1'}
       />
     ) : null
   // RAKİP ZAR ECHO'SU KALDIRILDI (2026-10-12): sıra bana geçince statik koyu zar duruyordu; kaldırıldı.
@@ -12743,8 +12746,9 @@ export default function App() {
           </>
         )}
         {USE_3D_BOARD && board3d ? (
-          // SADE admin 3D testi: hazır modül tahtayı+zarı çizer, hamle mevcut handler'lara gider.
-          // Bar/off/bear-off/küp/butonlar bu sürümde yok (eski tahta bayrak kapanınca aynen çalışır).
+          // Admin 3D: hazır modül tahtayı+zarı çizer, hamle mevcut handler'lara gider, kontrol
+          // düğmeleri (centerMain/Left/Right) 2D ile AYNI node'lar canvas üstüne overlay'lenir.
+          // Bar/off/bear-off bu sürümde yok (eski tahta bayrak kapanınca aynen çalışır).
           <div className="board3d-wrap">
             <Suspense fallback={null}>
               <Board3D
@@ -12755,6 +12759,9 @@ export default function App() {
                 selectedFrom={selectedFrom}
                 onSelectFrom={handleSelectFrom}
                 onSelectTarget={handleSelectTarget}
+                centerMain={centerMain}
+                centerLeft={centerLeft}
+                centerRight={centerRight}
               />
             </Suspense>
           </div>

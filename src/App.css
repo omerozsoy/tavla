@@ -37996,3 +37996,16 @@ body:has(.register-overlay) .chat-panel.closed {
   margin: 0 auto;
   position: relative;
 }
+/* 3D tahta kontrol katmanı (Zar At/Oyna/Onayla/Çift/Geri/küp): WebGL canvas ÜSTÜNE düz overlay.
+   .center-overlay sınıfları (left 26% / right 74% / main 50%) yeniden kullanılır. Eğik board
+   görsel olarak alt ~2/3'te durduğundan düğmeleri o banda indir (top 50%->62%). */
+.board3d-ctl {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+.board3d-ctl .center-overlay {
+  pointer-events: auto;
+  top: 62%;
+}
