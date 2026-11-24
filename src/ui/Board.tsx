@@ -781,6 +781,22 @@ function Board({
       </div>
 
       <div className="board-inner">
+        {/* 3D: hane numaralari board-inner ICINDE (kenarlarda) -> eğik düzlemle beraber döner,
+            hanelerle HIZALANIR. 2D'de disardaki (grid satiri) numaralar kullanilir. */}
+        {tilt3d && (
+          <>
+            <div className="pt-numbers top b3d" aria-hidden="true">
+              {L.TL.map((i) => <span key={i}>{pointNumber(i)}</span>)}
+              <span className="num-gap" />
+              {L.TR.map((i) => <span key={i}>{pointNumber(i)}</span>)}
+            </div>
+            <div className="pt-numbers bottom b3d" aria-hidden="true">
+              {L.BL.map((i) => <span key={i}>{pointNumber(i)}</span>)}
+              <span className="num-gap" />
+              {L.BR.map((i) => <span key={i}>{pointNumber(i)}</span>)}
+            </div>
+          </>
+        )}
         {/* TavlaTV watermark: her yarinin merkezinde, taslarin/zarin/kupun ALTINDA,
             pointlerin USTUNDE. Logo/arma DEGIL; sadece yazi. Kulup temasinda takim adi. */}
         <div className={`board-watermark${showLogo ? '' : ' wm-text-only'}`} aria-hidden="true">
