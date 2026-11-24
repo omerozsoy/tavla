@@ -25,6 +25,7 @@ export default function Board3D({
   nearSide = true,
   zoom = 1.25,
   tilt = 60,
+  cubeValue = 1,
   selectedFrom,
   selectableFroms,
   targets,
@@ -43,6 +44,7 @@ export default function Board3D({
   nearSide?: boolean
   zoom?: number
   tilt?: number
+  cubeValue?: number
   selectedFrom: number | 'bar' | null
   // Hane durum setleri (motor-index uzayı) — 2D Board ile AYNI öncelik (hedef>kaynak>kapı) için.
   selectableFroms: Set<number | 'bar'>
@@ -78,6 +80,9 @@ export default function Board3D({
   makeRef.current = onMakePoint
   const dragFromRef = useRef(onDragFrom)
   dragFromRef.current = onDragFrom
+  // Güncel "kullanıldı" bayrakları — roll animasyonu bitince uygulamak için (atış sırasında solmasın).
+  const usedRef = useRef<boolean[]>([])
+  usedRef.current = diceFaces.slice(0, 2).map((f) => !!f.used)
   // Hane durum setleri (güncel) — drag/tap handler effect [] içinden okur.
   const setsRef = useRef({ selectableFroms, targets, makePoints })
   setsRef.current = { selectableFroms, targets, makePoints }
@@ -152,6 +157,11 @@ export default function Board3D({
     tavlaRef.current?.setTilt(tilt)
   }, [tilt])
 
+  // Katlama küpü değeri değişince güncelle (>1 iken görünür).
+  useEffect(() => {
+    tavlaRef.current?.setCube(cubeValue)
+  }, [cubeValue])
+
   // Tas dizilisi + KIRIK/BAR taslari: durum ya da flip degisince.
   // bar modül uzayı: w = izleyicinin (altta), b = rakip (üstte). flip'te renkler yer değişir.
   const barW = flip ? state.bar.black : state.bar.white
@@ -173,15 +183,19 @@ export default function Board3D({
     // (Kullanıcı: "zarlar bana doğru geliyordu, benden ileri gitmeli" -> from ters çevrildi.)
     const mine = nearRef.current
     t.setThrow(mine ? 'right' : 'left', mine ? 'bottom' : 'top')
-    t.roll(vals).catch(() => {})
+    // roll SIRASINDA zarlar PARLAK tumble etsin (solmasın) -> markUsed'u roll BİTİNCE uygula.
+    t.roll(vals).then(() => {
+      usedRef.current.forEach((u, i) => t.markUsed(i, u))
+    }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valKey])
 
-  // Kullanilan zar solsun.
+  // Kullanilan/ölü zar solsun. Roll animasyonu sürerken DOKUNMA (yukarıdaki .then uygular) -> atılan
+  // zar atış boyunca parlak kalır, yalnız oturduktan sonra (oynanınca/ölüyse) solar.
   const usedKey = diceFaces.slice(0, 2).map((f) => (f.used ? '1' : '0')).join('')
   useEffect(() => {
     const t = tavlaRef.current
-    if (!t) return
+    if (!t || t.isRolling) return
     diceFaces.slice(0, 2).forEach((f, i) => t.markUsed(i, !!f.used))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usedKey])

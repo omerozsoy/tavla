@@ -12770,6 +12770,7 @@ export default function App() {
                 nearSide={turnIsMine}
                 zoom={board3dZoom}
                 tilt={board3dAngle}
+                cubeValue={match.cube.value}
                 selectedFrom={selectedFrom}
                 selectableFroms={selectableFroms}
                 targets={targets}

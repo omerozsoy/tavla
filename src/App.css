@@ -38065,5 +38065,5 @@ body:has(.register-overlay) .chat-panel.closed {
 }
 .board3d-ctl .center-overlay {
   pointer-events: auto;
-  top: 62%;
+  top: 52%;
 }

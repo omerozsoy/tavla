@@ -32,6 +32,7 @@ export interface Tavla3DInstance {
   setSound(v: boolean): void
   setTilt(deg: number): void
   setZoom(z: number): void
+  setCube(value: number): void
   setThrow(half: 'right' | 'left' | null, from: 'bottom' | 'top' | null): void
   on(name: string, fn: (d: unknown) => void): Tavla3DInstance
   off(name: string, fn: (d: unknown) => void): Tavla3DInstance

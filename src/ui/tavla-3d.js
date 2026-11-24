@@ -216,6 +216,41 @@ export function mount(container, opts = {}) {
   box(2 * OX - 2 * F, R, F, 0, R / 2, -OZ + F / 2, frameMat);      // üst kenar
   box(2 * OX - 2 * F, R, F, 0, R / 2, OZ - F / 2, frameMat);       // alt kenar
   box(B, R, D, 0, R / 2, 0, frameMat);                             // bar
+  // TavlaTV logosu — bar'ın üstünde, uzunluğu boyunca (soluk krem marka).
+  (function () {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 110;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(244,240,234,0.42)';
+    g.font = 'bold 66px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('TavlaTV', 256, 60);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(B * 3.6, B * 0.78),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    logo.rotation.x = -Math.PI / 2; logo.rotation.z = -Math.PI / 2; // bar boyunca (z) oku
+    logo.position.set(0, R + 0.02, 0);
+    boardGroup.add(logo);
+  })();
+  // Katlama küpü — değer>1 iken bar üst ucunda görünür (setCube ile güncellenir).
+  const cubeNumTex = (v) => {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#F4F0EA'; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = '#231F20'; g.font = 'bold 72px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(v), 64, 70);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  };
+  const CUBE = 1.3;
+  const cubeSideMat = new THREE.MeshPhysicalMaterial({ color: '#EDE6D8', roughness: 0.4, clearcoat: 0.5 });
+  const cubeMesh = new THREE.Mesh(new RoundedBoxGeometry(CUBE, CUBE, CUBE, 4, 0.12), cubeSideMat);
+  cubeMesh.position.set(0, R + CUBE / 2, -D / 2 + CUBE + 0.3);
+  cubeMesh.castShadow = true; cubeMesh.visible = false;
+  boardGroup.add(cubeMesh);
+  function setCube(value) {
+    if (!value || value <= 1) { cubeMesh.visible = false; dirty = true; return; }
+    const top = new THREE.MeshPhysicalMaterial({ map: cubeNumTex(value), roughness: 0.4, clearcoat: 0.5 });
+    cubeMesh.material = [cubeSideMat, cubeSideMat, top, cubeSideMat, cubeSideMat, cubeSideMat]; // +y yüz = top
+    cubeMesh.visible = true; dirty = true;
+  }
   for (const s of [-1, 1]) {
     const f = new THREE.Mesh(new THREE.PlaneGeometry(HW, D), fieldMat);
     f.rotation.x = -Math.PI / 2; f.position.set(s * (B / 2 + HW / 2), 0.001, 0); f.receiveShadow = true;
@@ -582,6 +617,7 @@ export function mount(container, opts = {}) {
     setSound(v) { o.sound = !!v; },
     setTilt(deg) { o.tilt = deg; layout(); },
     setZoom(z) { o.zoom = z > 0 ? z : 1; layout(); },
+    setCube(value) { setCube(value); },
     setThrow(half, from) { if (half) o.half = half; if (from) o.from = from; },
     on(n, fn) { (listeners[n] = listeners[n] || []).push(fn); return this; },
     off(n, fn) { listeners[n] = (listeners[n] || []).filter((f) => f !== fn); return this; },
