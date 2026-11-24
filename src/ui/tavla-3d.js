@@ -479,16 +479,21 @@ export function mount(container, opts = {}) {
     // GARANTİ (kullanıcı direktifi: zar pul üstünde DURAMAZ): best sim'de hâlâ pula denk gelen
     // zarı en yakın BOŞ noktaya düz otur. x/z taşınır + y=DH (üst yüz korunur -> değer değişmez),
     // iki zar da üst üste gelmez. Clearance düzeltmesi çoğu atışı zaten temiz yaptığından nadir.
+    // Zarlar SADECE orta temiz bantta dursun (pullar uçlarda, orta boş): bant dışına (pul bölgesine)
+    // ya da pul üstüne denk gelen zar, bant içindeki en yakın boş noktaya oturur. Atış animasyonu
+    // tam kalır (duvara çarpar), yalnız son dinlenme orta banda çekilir -> kötü "pul üstü" animasyonu yok.
     {
       const stk = stackBoxes(), ar = area(), last = sim.frames[sim.frames.length - 1], placed = [];
+      const zBand = D / 2 - PL - DH; // orta bant yarı-derinliği (zar tamamen üçgen uçlarının içinde)
       const spotFree = (x, z) =>
+        Math.abs(z) <= zBand &&
         !stk.some((s) => x + DCL > s.minX && x - DCL < s.maxX && z + DCL > s.minZ && z - DCL < s.maxZ) &&
         placed.every((p) => Math.hypot(p[0] - x, p[1] - z) > DIE + 0.08);
       for (const f of last) {
         if (spotFree(f[0], f[2])) { placed.push([f[0], f[2]]); continue; }
-        let bx = f[0], bz = f[2], bd = Infinity;
+        let bx = f[0], bz = Math.max(-zBand, Math.min(zBand, f[2])), bd = Infinity;
         for (let gx = ar.xMin + DH + 0.1; gx <= ar.xMax - DH - 0.1; gx += 0.3)
-          for (let gz = ar.zMin + DH + 0.1; gz <= ar.zMax - DH - 0.1; gz += 0.3) {
+          for (let gz = -zBand; gz <= zBand; gz += 0.3) {
             if (!spotFree(gx, gz)) continue;
             const d2 = (gx - f[0]) ** 2 + (gz - f[2]) ** 2;
             if (d2 < bd) { bd = d2; bx = gx; bz = gz; }

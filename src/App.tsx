@@ -2615,8 +2615,10 @@ export default function App() {
     setPref('tavla.board3d', board3d ? '1' : null)
   }, [board3d])
   // 3D eğim açısı (derece) + perspektif mesafesi (px) — admin kaydırıcıları, kalıcı.
+  // Anahtar v2: eski 'tavla.board3dAngle' (45/46) değerini YOKSAY -> herkes taze 50 varsayılan alır
+  // (kullanıcı "açı 50 olsun"). Sonraki değişiklikler v2 altında kalıcı.
   const [board3dAngle, setBoard3dAngle] = useState<number>(() => {
-    const v = Number(localStorage.getItem('tavla.board3dAngle'))
+    const v = Number(localStorage.getItem('tavla.board3dAngle2'))
     return Number.isFinite(v) && v > 0 ? v : 50
   })
   const [board3dDepth, setBoard3dDepth] = useState<number>(() => {
@@ -2629,7 +2631,7 @@ export default function App() {
     return Number.isFinite(v) && v > 0 ? v : 1.25
   })
   useEffect(() => {
-    setPref('tavla.board3dAngle', String(board3dAngle))
+    setPref('tavla.board3dAngle2', String(board3dAngle))
   }, [board3dAngle])
   useEffect(() => {
     setPref('tavla.board3dDepth', String(board3dDepth))
