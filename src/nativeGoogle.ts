@@ -68,14 +68,22 @@ export function isNativeGoogleAvailable(): boolean {
 
 let initialized = false
 
-/** Native Google hesap secicisini ac, ID-token (JWT credential) dondur. Web'de CAGIRMA. */
-export async function nativeGoogleSignIn(webClientId: string): Promise<string> {
+/**
+ * Native Google hesap secicisini ac, ID-token (JWT credential) dondur. Web'de CAGIRMA.
+ * iosClientId: iOS OAuth client ID (bundle com.tavlatv.app). iOS tarafi (SocialLoginPlugin.swift)
+ * Google provider'i YALNIZ `iOSClientId` ile kurar — webClientId gelmezse "No provider was
+ * initialized" atar. Android ise `webClientId`'yi (serverClientId) kullanir. Ikisini de yolla,
+ * platform kendine ait olani okur. ⚠ iOS'tan donen idToken'in aud'si iOS client ID olur
+ * (GoogleSignIn-iOS davranisi) -> backend aud kontrolu iOS client ID'yi de kabul etmeli.
+ */
+export async function nativeGoogleSignIn(webClientId: string, iosClientId: string): Promise<string> {
   const c = cap()
   if (!c?.nativePromise) throw new Error('SocialLogin not implemented (native bridge yok)')
 
   if (!initialized) {
-    // Native SocialLoginPlugin.initialize({ google: { webClientId } }) -> google provider'i kaydeder.
-    await c.nativePromise('SocialLogin', 'initialize', { google: { webClientId } })
+    await c.nativePromise('SocialLogin', 'initialize', {
+      google: { webClientId, iOSClientId: iosClientId },
+    })
     initialized = true
   }
 

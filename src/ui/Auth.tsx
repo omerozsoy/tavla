@@ -417,7 +417,7 @@ export default function Auth({
   const doNativeGoogle = () => {
     setBusy(true)
     setError('')
-    nativeGoogleSignIn(api.GOOGLE_CLIENT_ID)
+    nativeGoogleSignIn(api.GOOGLE_CLIENT_ID, api.GOOGLE_IOS_CLIENT_ID)
       .then((idToken) => api.googleLogin(idToken))
       .then(({ user, isNew }) => onAuthedRef.current(user, isNew))
       .catch((e: unknown) => {

@@ -228,9 +228,14 @@ class AuthController extends Controller
         $p = $resp->json();
 
         // Guvenlik: token bizim uygulamamiz icin mi + Google mi verdi?
-        $clientId = config('services.google.client_id');
+        // aud = Web/Android (GIS, sistem-tarayici, Android native hepsi web client ID) VEYA iOS native
+        // (GoogleSignIn-iOS idToken aud'sini iOS client ID yapar). Ikisi de AYNI proje 164766354103.
+        $allowedAud = array_filter([
+            config('services.google.client_id'),
+            config('services.google.ios_client_id'),
+        ]);
         $iss = $p['iss'] ?? '';
-        if (($p['aud'] ?? null) !== $clientId) {
+        if (! in_array($p['aud'] ?? null, $allowedAud, true)) {
             return $this->fail('Geçersiz istemci.', 401);
         }
         if ($iss !== 'accounts.google.com' && $iss !== 'https://accounts.google.com') {

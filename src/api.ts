@@ -291,6 +291,13 @@ export async function register(
 export const GOOGLE_CLIENT_ID =
   '164766354103-tnibk42t91nng26tehvbpjejks3mt5v5.apps.googleusercontent.com'
 
+// iOS native Google Sign-In istemci kimligi (AYNI proje 164766354103 — serverClientId olarak
+// GOOGLE_CLIENT_ID kullanilir, backend onu dogrular). iOS OAuth client bundle=com.tavlatv.app.
+// Reversed hali (URL scheme) codemagic.yaml'da Info.plist'e enjekte edilir. Android webClientId
+// kullanir, bu yalniz iOS icindir.
+export const GOOGLE_IOS_CLIENT_ID =
+  '164766354103-h8g304p9for1hvid2prbkbe07hvvfvif.apps.googleusercontent.com'
+
 // Google ID token'i ile giris/kayit. isNew=true ise takma isim secmesi istenir.
 export async function googleLogin(
   credential: string,

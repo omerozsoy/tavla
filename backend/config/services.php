@@ -53,6 +53,13 @@ return [
         // Android sistem-tarayıcı OAuth CODE akışı için GEREKİR (web istemcisinin secret'ı).
         // .env'de GOOGLE_CLIENT_SECRET tanımla; yoksa /auth/google/code 500 döner (GIS/idToken etkilenmez).
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        // iOS native Google Sign-In (bundle com.tavlatv.app, AYNI proje 164766354103). GoogleSignIn-iOS
+        // idToken'in aud'sini iOS client ID yapar (web DEĞİL) -> finishGoogleLogin aud kontrolü bunu da
+        // kabul etmeli. Gizli değil; Forge .env ezme tuzağından kaçmak için sabit default (bkz kök CLAUDE.md).
+        'ios_client_id' => env(
+            'GOOGLE_IOS_CLIENT_ID',
+            '164766354103-h8g304p9for1hvid2prbkbe07hvvfvif.apps.googleusercontent.com',
+        ),
     ],
 
     // Yonetici e-postalari (virgulle ayrilabilir). Bu hesaplar admin sayilir.
