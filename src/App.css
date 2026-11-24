@@ -38015,7 +38015,11 @@ body:has(.register-overlay) .chat-panel.closed {
    board görünmez). Boyut gerçek board ayak izi: yükseklik --board-h, genişlik ~1.53 oranı. */
 .board3d-wrap {
   flex: none;
-  width: min(100%, calc(var(--board-h) * 1.53));
+  /* KESİN genişlik (100% DEĞİL): .game-area flex-column'da align-items:center ile içeriğe göre
+     küçülür -> 100% dairesel olup ~390px'e çökerdi (board küçücük). 2D board gibi intrinsic en
+     ver (board-h×1.53) -> game-area bu kesin ene göre açılır. max-width = dar ekran taşma güvenliği. */
+  width: calc(var(--board-h) * 1.53);
+  max-width: 94vw;
   height: var(--board-h);
   margin: 0 auto;
   position: relative;
