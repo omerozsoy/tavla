@@ -51,21 +51,27 @@ workflows:
             || /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PLIST"
 
       - name: Google Sign-In URL scheme (reversed iOS client ID) enjekte et
-        # GoogleSignIn-iOS, login callback'ini bu CUSTOM URL SCHEME ile WebView/app'e geri yollar.
-        # Olmadan hesap secici acilir ama idToken geri DONMEZ. Scheme = iOS OAuth client ID'nin ters hali
-        # (com.googleusercontent.apps.<client-id-govdesi>). Proje CI'da sifirdan uretildigi (npx cap add
-        # ios) icin Info.plist repoda yok -> encryption flag'i gibi burada enjekte ediyoruz. cap sync
-        # Capacitor'in kendi scheme'ini (CFBundleURLTypes:0) koyabilir -> Google'i AYRI girdi olarak ekle.
+        # GoogleSignIn-iOS, signIn(withPresenting:) cagrisinda Info.plist'te bu CUSTOM URL SCHEME'i ARAR;
+        # YOKSA yakalanmamis exception firlatir -> uygulama butona basar basmaz COKER. Scheme = iOS OAuth
+        # client ID'nin ters hali (com.googleusercontent.apps.<client-id-govdesi>). Proje CI'da sifirdan
+        # uretildigi (npx cap add ios) icin Info.plist repoda yok -> encryption flag'i gibi enjekte ediyoruz.
+        # plistlib: dogru parse/yaz, index hesaplama yok, idempotent, mevcut Capacitor scheme'ine dokunmaz.
         script: |
           set -e
           PLIST=ios/App/App/Info.plist
           SCHEME=com.googleusercontent.apps.164766354103-h8g304p9for1hvid2prbkbe07hvvfvif
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
-          # Yeni bir URL type girdisi ekle (mevcutlarin sonuna). Index'i mevcut sayidan turet.
-          IDX=$(/usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$PLIST" 2>/dev/null | grep -c "Dict {" || echo 0)
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:$IDX dict" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:$IDX:CFBundleURLSchemes array" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:$IDX:CFBundleURLSchemes:0 string $SCHEME" "$PLIST"
+          python3 - "$PLIST" "$SCHEME" <<'PY'
+          import sys, plistlib
+          path, scheme = sys.argv[1], sys.argv[2]
+          with open(path, 'rb') as f:
+              p = plistlib.load(f)
+          types = p.setdefault('CFBundleURLTypes', [])
+          if not any(scheme in d.get('CFBundleURLSchemes', []) for d in types):
+              types.append({'CFBundleURLSchemes': [scheme]})
+          with open(path, 'wb') as f:
+              plistlib.dump(p, f)
+          print('CFBundleURLTypes ->', p['CFBundleURLTypes'])
+          PY
 
       - name: Build numarasini benzersiz yap (CFBundleVersion)
         # cap add ios Info.plist'i her build'de SIFIRDAN uretir -> CFBundleVersion hep "1" kalir ->
