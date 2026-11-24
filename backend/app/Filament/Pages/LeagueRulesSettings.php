@@ -4,8 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Models\LeagueSeason;
 use App\Models\Setting;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -38,7 +38,8 @@ class LeagueRulesSettings extends Page implements HasForms
     public function mount(): void
     {
         // Boşsa varsayılan metinle ön-doldur (admin sıfırdan yazmasın, baz metin üstünden düzenlesin).
-        $this->form->fill(['league_rules' => Setting::get('league_rules', LeagueSeason::DEFAULT_RULES)]);
+        // Eski düz-metin ("## başlık") kayıtları RichEditor için HTML'e çevrilir (ilk kayıtta HTML kalıcı olur).
+        $this->form->fill(['league_rules' => self::toHtml(Setting::get('league_rules', LeagueSeason::DEFAULT_RULES))]);
     }
 
     public function form(Form $form): Form
@@ -46,13 +47,34 @@ class LeagueRulesSettings extends Page implements HasForms
         return $form
             ->schema([
                 Section::make('Kurallar metni')
-                    ->description('Lig ekranındaki "Kurallar" sekmesinde gösterilir — TEK metin, tüm sezonlara uygulanır. "## " ile başlayan satır başlık, diğer satırlar paragraf olur. Ödüller aktif sezonun ödüllerinden otomatik eklenir; buraya yazma.')
+                    ->description('Lig ekranındaki "Kurallar" sekmesinde gösterilir — TEK metin, tüm sezonlara uygulanır. Başlık/kalın/liste için araç çubuğunu kullan. Ödüller aktif sezonun ödüllerinden otomatik eklenir; buraya yazma.')
                     ->schema([
-                        Textarea::make('league_rules')->label('Kurallar')
-                            ->rows(20)->required()->maxLength(20000),
+                        RichEditor::make('league_rules')->label('Kurallar')
+                            ->required()->maxLength(60000)
+                            ->toolbarButtons(['bold', 'italic', 'h2', 'h3', 'bulletList', 'orderedList', 'link', 'blockquote', 'undo', 'redo']),
                     ])->columns(1),
             ])
             ->statePath('data');
+    }
+
+    /** Eski düz-metin kural formatını ("## başlık" + satır-paragraf) RichEditor HTML'ine çevirir; zaten HTML ise dokunmaz. */
+    private static function toHtml(string $text): string
+    {
+        if (str_contains($text, '<')) {
+            return $text; // zaten HTML (RichEditor çıktısı)
+        }
+        $html = '';
+        foreach (preg_split('/\r?\n/', $text) as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            $html .= str_starts_with($line, '## ')
+                ? '<h2>'.e(substr($line, 3)).'</h2>'
+                : '<p>'.e($line).'</p>';
+        }
+
+        return $html;
     }
 
     public function save(): void

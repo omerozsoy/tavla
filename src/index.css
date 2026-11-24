@@ -16,3 +16,27 @@ textarea {
 #root {
   min-height: 100svh;
 }
+
+/* Lig kuralları (admin RichEditor HTML'i): başlıklar kart estetiğine uysun, dev olmasın */
+.league-rules-html {
+  line-height: 1.6;
+}
+.league-rules-html h2 {
+  font-size: 1.05rem;
+  margin: 14px 0 4px;
+}
+.league-rules-html h2:first-child {
+  margin-top: 0;
+}
+.league-rules-html h3 {
+  font-size: 0.95rem;
+  margin: 12px 0 4px;
+}
+.league-rules-html p {
+  margin: 0 0 8px;
+}
+.league-rules-html ul,
+.league-rules-html ol {
+  margin: 0 0 8px;
+  padding-left: 1.3em;
+}

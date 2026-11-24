@@ -435,15 +435,21 @@ function MyMatch(p: {
 function Rules({ prizes, rules }: { prizes: Array<{ key: string; coins?: number; badge?: string; desc?: string }>; rules?: string | null }) {
   const { t } = useT()
   // Admin panelden girilen sezon kuralları varsa onu, yoksa sitedeki varsayılan i18n metnini göster.
-  const lines = (rules?.trim() || t('league.rulesText')).split('\n').map((l) => l.trim()).filter(Boolean)
+  const raw = rules?.trim() || t('league.rulesText')
+  // Admin RichEditor HTML saklar; eski düz-metin ("## başlık") kayıtları ve i18n default'u için satır-parse fallback.
+  const isHtml = /<\/?[a-z][\s\S]*>/i.test(raw)
   return (
     <div style={cardStyle}>
-      {lines.map((ln, i) =>
-        ln.startsWith('## ') ? (
-          <h4 key={i} style={{ margin: i === 0 ? '0 0 4px' : '14px 0 4px' }}>{ln.slice(3)}</h4>
-        ) : (
-          <p key={i} style={{ margin: '0 0 8px', lineHeight: 1.6 }}>{ln}</p>
-        ),
+      {isHtml ? (
+        <div className="league-rules-html" dangerouslySetInnerHTML={{ __html: raw }} />
+      ) : (
+        raw.split('\n').map((l) => l.trim()).filter(Boolean).map((ln, i) =>
+          ln.startsWith('## ') ? (
+            <h4 key={i} style={{ margin: i === 0 ? '0 0 4px' : '14px 0 4px' }}>{ln.slice(3)}</h4>
+          ) : (
+            <p key={i} style={{ margin: '0 0 8px', lineHeight: 1.6 }}>{ln}</p>
+          ),
+        )
       )}
       {prizes.length > 0 && (
         <>
