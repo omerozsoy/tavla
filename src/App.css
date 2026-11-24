@@ -11154,15 +11154,6 @@ html.fs-active .account-bar {
     top: 0;
     z-index: 105;
   }
-  /* ÜST BAR MOBİLDE SABİT (kullanıcı: "top menü bar sticky olsun"). account-bar'ın kendi sticky'si
-     parent .topbar-stack (bar kadar kısa) içinde pinlenecek yer bulamadığı için TEK BAŞINA ETKİSİZDİ;
-     scroll kabı .app.lobby'ye göre TOPBAR-STACK'i (hamburger + hesap barı) sticky yap -> tüm bar
-     ekranın üstünde pinlenir. (Önceki "sticky kaldır" tercihi bu istekle tersine çevrildi.) */
-  .app.lobby > .topbar-stack {
-    position: sticky;
-    top: 0;
-    z-index: 106;
-  }
   /* Hamburger en SOLDA -> logo hemen sagina yaslansin. */
   .ab-brand {
     margin-left: 0;
@@ -11923,6 +11914,18 @@ button.acct-row-logout:hover:not(:disabled) {
      relative (static DEGIL): icindeki absolute .hamburger'a offset parent olur -> hamburger
      barla birlikte kayar (sticky degil, scroll akisinda kalir). */
   position: relative;
+}
+/* ÜST BAR MOBİLDE SABİT (kullanıcı: "top menü bar sticky olsun"). KRİTİK: bu kural yukarıdaki base
+   `.app.lobby > .topbar-stack { position: relative }`'ten SONRA gelmeli — eşit specificity (0,2,0),
+   media query specificity EKLEMEZ, kaynak-sırası kazanır. (Önceki denemem base'in ÖNCESindeydi,
+   base onu eziyordu -> sabit kalmıyordu.) sticky absolute hamburger'a offset-parent olur; mobilde
+   .app.lobby overflow-y:auto scroll kabı -> tüm bar (hamburger + hesap barı) üstte pinlenir. */
+@media (max-width: 900px) {
+  .app.lobby > .topbar-stack {
+    position: sticky;
+    top: 0;
+    z-index: 106;
+  }
 }
 .app.lobby > .side-menu {
   grid-area: menu;
