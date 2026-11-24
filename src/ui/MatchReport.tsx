@@ -185,7 +185,7 @@ export default function MatchReport({
     mq.addEventListener('change', on)
     return () => mq.removeEventListener('change', on)
   }, [])
-  const CAND_LIMIT = isNarrow ? 3 : 10
+  const CAND_LIMIT = isNarrow ? 2 : 10 // mobil: sadece en iyi 2 hamle (kullanıcı); masaüstü 10
   const [showAllCands, setShowAllCands] = useState(false)
   const [boardDir] = useBoardDir()
   const [swapStones] = useSwapStones()
