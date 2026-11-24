@@ -6623,11 +6623,14 @@ button[aria-disabled='true'],
      "flat"a zorlar -> tilt modunda overflow:visible (statik tahtada tasma ihmal edilebilir). */
   transform-style: preserve-3d;
   overflow: visible;
-  /* ORTAM: tahta altinda yumusak temas golgesi + ustten tek yonlu hafif isik (ic gradyan). */
+  /* ORTAM: tahta altinda yumusak temas golgesi + YUKSELTI kenar (ahsap duvar cercevesi): inset solid
+     ring = cevre duvar, ust ince isik = duvarin yukseltisi, ic golge = oyun yuzeyi derinligi (tepsi). */
   box-shadow:
     0 30px 54px rgba(0, 0, 0, 0.62),
     0 10px 20px rgba(0, 0, 0, 0.4),
-    0 2px 0 rgba(255, 255, 255, 0.06) inset;
+    inset 0 0 0 calc(var(--checker) * 0.26) #4a3828,
+    inset 0 calc(var(--checker) * 0.1) calc(var(--checker) * 0.05) rgba(255, 255, 255, 0.28),
+    inset 0 calc(var(--checker) * -0.16) calc(var(--checker) * 0.18) rgba(0, 0, 0, 0.5);
   transition: transform 200ms ease;
 }
 /* Ustten isik: board-inner'in en ustune cok hafif beyaz->seffaf gradyan (taslarin ALTINDA kalsin
@@ -6931,6 +6934,14 @@ button[aria-disabled='true'],
   inset: 0;
   z-index: 9; /* taslarin ustunde (zar gorsel olarak ust katta), pointer gecirgen */
   pointer-events: none;
+}
+/* 3D: zar WebGL katmanini board-inner'in HUCRESINE (col1/row2) sigdir -> zarlar bearoff/margin
+   degil YALNIZ OYUN YUZEYI icinde yuvarlanir ("zarlari board'un icine at"). */
+.board.board-3d .board-phys-layer {
+  position: relative;
+  inset: auto;
+  grid-column: 1;
+  grid-row: 2;
 }
 .board-phys-layer .phys-dice {
   width: 100%;
@@ -12088,6 +12099,9 @@ button.acct-row-logout:hover:not(:disabled) {
   }
   .ab-wordmark {
     font-size: 23px !important;
+    /* Gercek logo <img> -> boyut height ile (font-size img'e etki etmez). Kucuk tut ki TEK satir. */
+    height: 24px !important;
+    width: auto !important;
   }
   /* Mobil bar cok dar -> slogan gizli (masaustunde gorunur). */
   .ab-tag {
@@ -12116,6 +12130,9 @@ button.acct-row-logout:hover:not(:disabled) {
      `.ab-wordmark{font-size:20px!important}` kaynak-sirasi geregi bunu eziyordu. */
   .account-bar .ab-wordmark {
     font-size: 16px !important;
+    /* Dar telefon: logo <img> daha da kucuk -> ad+avatar tek satira rahat sigsin. */
+    height: 22px !important;
+    width: auto !important;
   }
   .ab-login {
     padding-left: 10px;
@@ -12333,15 +12350,14 @@ button.acct-row-logout:hover:not(:disabled) {
   display: none !important;
 }
 @media (max-width: 720px) {
-  /* Bar TAM GENISLIK; logo satir 1, kullanici bilgisi (acct-mobile flex-basis:100%) satir 2'ye
-     sarsin -> ad/simgeler logoyla sigismayip ezilmesin. (Guest login/theme/lang az -> sarmaz.) */
+  /* Bar TEK SATIR; logo kucuk tutuldugu (ab-wordmark height) icin ad+avatar yanina sigar. */
   .account-bar {
     min-height: 48px;
     gap: 4px;
     /* SOL: sabit hamburger (52px) icin pay birak -> logo hamburger'in sagindan baslar
        (Boyner tarzi). Sag normal; hesap kontrolleri saga yaslanir. */
     padding: max(4px, env(safe-area-inset-top)) 10px 4px calc(64px + env(safe-area-inset-left));
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
   /* Avatar koşeye TAŞMASIN: sabit sayı yerine gerçek flex-shrink. Logo tam kalır
      (flex-shrink:0), açıkta kalan payı YALNIZ ad büzülerek yer; avatar/rozet/taç/chevron
@@ -12351,7 +12367,7 @@ button.acct-row-logout:hover:not(:disabled) {
     flex-shrink: 0;
   }
   .acct-mobile {
-    flex: 1 1 100%;
+    flex: 0 1 auto;
     justify-content: flex-end;
     max-width: 100%;
   }
@@ -37006,21 +37022,51 @@ body.has-bottom-nav .to-top {
     grid-template-columns: 1fr;
     grid-template-rows: none; /* otomatik akış; sıra order ile */
     overflow-y: auto;
+    padding-bottom: 96px; /* ekran dibindeki sabit ok-nav (.mrv-nav) içeriği örtmesin */
   }
   .mrv-board {
     order: 1;
   }
   .mrv-analysis {
-    order: 2;
+    order: 3; /* adaylar/analiz: filtrelerin ALTINDA (kullanıcı: düğmeler board'un altında) */
     border-left: none;
     border-top: 1px solid var(--border);
   }
+  /* Filtreler (oyuncu + Tümü/Hatalar/Büyük hatalar) BOARD'UN HEMEN ALTINDA (order 2). Uzun hamle
+     listesi (.mrv-rows) mobilde GİZLİ -> gezinme ekran dibindeki sabit oklarla (.mrv-nav), tıpkı
+     hamle analizi (MatchReport) gibi. */
   .mrv-list {
-    order: 3; /* hatalar en altta */
+    order: 2;
     border-right: none;
     border-top: 1px solid var(--border);
     border-bottom: none;
-    max-height: 42vh; /* altta kendi scroll'u */
+    max-height: none;
+  }
+  .mrv-rows {
+    display: none;
+  }
+  .mrv-list-lbl {
+    display: none; /* "Hamleler" etiketi liste olmayınca anlamsız */
+  }
+  /* Ekran dibinde SABİT ok nav'ı: ← [hamle · kayıp · k/N] → . .an-nav base display:none -> burada aç. */
+  .mrv-nav {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 8px clamp(12px, 3vw, 20px) calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+    z-index: 4; /* içeriğin üstünde ama "Analiz Tamamlandı" özet modalının (z-index 5) ALTINDA */
+  }
+  .mrv-nav .an-nav-btn {
+    width: 46px;
+    height: auto;
+    align-self: stretch;
+    flex: none;
   }
   /* BOARD TAM OTURSUN: doğal genişliği (~1.65×board-h) dar telefonu aşıp sağdan kesiliyordu.
      --board-h'yi viewport genişliğine bağla (board ~1.65 en/boy) -> kenara sığar. Türev
