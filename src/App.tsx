@@ -2623,12 +2623,20 @@ export default function App() {
     const v = Number(localStorage.getItem('tavla.board3dDepth'))
     return Number.isFinite(v) && v > 0 ? v : 1400
   })
+  // 3D board yakınlaştırma (WebGL kamera zoom) — menü kaydırıcısı, kalıcı. >1 = board daha büyük.
+  const [board3dZoom, setBoard3dZoom] = useState<number>(() => {
+    const v = Number(localStorage.getItem('tavla.board3dZoom'))
+    return Number.isFinite(v) && v > 0 ? v : 1.25
+  })
   useEffect(() => {
     setPref('tavla.board3dAngle', String(board3dAngle))
   }, [board3dAngle])
   useEffect(() => {
     setPref('tavla.board3dDepth', String(board3dDepth))
   }, [board3dDepth])
+  useEffect(() => {
+    setPref('tavla.board3dZoom', String(board3dZoom))
+  }, [board3dZoom])
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
   // loss/decisions = STRICT XG (obvious+forced hariç, PR'ın kendisi). cubeLoss/cubeDecisions =
   // yalnız küp (kırılım). allLoss/allDecisions = TÜM kaydedilen kararlar (obvious dahil) -> strict
@@ -12622,6 +12630,8 @@ export default function App() {
         setBoard3dAngle={setBoard3dAngle}
         board3dDepth={board3dDepth}
         setBoard3dDepth={setBoard3dDepth}
+        board3dZoom={board3dZoom}
+        setBoard3dZoom={setBoard3dZoom}
         showChatToggle={online && !!room && !room.bot}
         chatOff={chatOffBy != null}
         toggleChatOff={() => handleToggleChat(chatOffBy == null)}
@@ -12756,6 +12766,7 @@ export default function App() {
                 diceFaces={diceFaces}
                 flip={flipBoard}
                 nearSide={turnIsMine}
+                zoom={board3dZoom}
                 selectedFrom={selectedFrom}
                 onSelectFrom={handleSelectFrom}
                 onSelectTarget={handleSelectTarget}

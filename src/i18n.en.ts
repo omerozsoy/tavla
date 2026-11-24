@@ -144,6 +144,7 @@ export const EN: Dict = {
   'gm.board3d': '3D board (experimental)',
   'gm.tiltAngle': 'Tilt angle',
   'gm.tiltDepth': 'Perspective',
+  'gm.zoom': 'Zoom',
   'gm.autoRollWarnTitle': 'Auto Roll Warning',
   'gm.autoRollWarnBody':
     'When auto roll is on, you may miss some doubling cube offer opportunities before the dice are rolled. Use of this feature and its consequences are the player’s own responsibility.',

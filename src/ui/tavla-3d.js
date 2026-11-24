@@ -269,6 +269,9 @@ export function mount(container, opts = {}) {
     if (!width || !height) return;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
+    // Önceki çağrının view-offset'ini TEMİZLE: yoksa tekrar layout()'ta (setZoom/setTilt/resize)
+    // eski offset binary-search fit'ini bozar -> zoom/tilt canlı değişmez (sadece ilk mount doğru).
+    camera.clearViewOffset();
     const th = THREE.MathUtils.degToRad(o.tilt);
     const dir = new THREE.Vector3(0, Math.cos(th), Math.sin(th));
     const target = new THREE.Vector3(0, 0, 0);
@@ -531,6 +534,7 @@ export function mount(container, opts = {}) {
     get isRolling() { return !!anim; },
     setSound(v) { o.sound = !!v; },
     setTilt(deg) { o.tilt = deg; layout(); },
+    setZoom(z) { o.zoom = z > 0 ? z : 1; layout(); },
     setThrow(half, from) { if (half) o.half = half; if (from) o.from = from; },
     on(n, fn) { (listeners[n] = listeners[n] || []).push(fn); return this; },
     off(n, fn) { listeners[n] = (listeners[n] || []).filter((f) => f !== fn); return this; },

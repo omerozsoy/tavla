@@ -44,6 +44,9 @@ interface Props {
   setBoard3dAngle?: (v: number) => void
   board3dDepth?: number
   setBoard3dDepth?: (v: number) => void
+  /** 3D board yakınlaştırma (WebGL kamera zoom) — yalnız 3D açıkken kaydırıcı. >1 = daha büyük. */
+  board3dZoom?: number
+  setBoard3dZoom?: (v: number) => void
   /** "Sohbeti Kapat" satırı gösterilsin mi — yalnız online insan maçında (bot/yerelde sohbet yok). */
   showChatToggle?: boolean
   /** Sohbet kapalı mı (biri kapatmış) — açık/kapalı switch durumu. */
@@ -167,6 +170,20 @@ export default function GameMenu(p: Props) {
                   aria-label={t('gm.tiltDepth')}
                 />
                 <span className="gm-vol-val">{p.board3dDepth ?? 1400}</span>
+              </div>
+              <div className="gm-row gm-volrow">
+                <span className="gm-label">{t('gm.zoom')}</span>
+                <input
+                  type="range"
+                  className="gm-vol-slider"
+                  min={0.8}
+                  max={1.9}
+                  step={0.05}
+                  value={p.board3dZoom ?? 1.25}
+                  onChange={(e) => p.setBoard3dZoom?.(Number(e.target.value))}
+                  aria-label={t('gm.zoom')}
+                />
+                <span className="gm-vol-val">{(p.board3dZoom ?? 1.25).toFixed(2)}×</span>
               </div>
             </>
           )}

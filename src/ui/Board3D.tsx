@@ -23,6 +23,7 @@ export default function Board3D({
   diceFaces,
   flip = false,
   nearSide = true,
+  zoom = 1.25,
   selectedFrom,
   onSelectFrom,
   onSelectTarget,
@@ -34,6 +35,7 @@ export default function Board3D({
   diceFaces: DieFace[]
   flip?: boolean
   nearSide?: boolean
+  zoom?: number
   selectedFrom: number | 'bar' | null
   onSelectFrom: (from: number | 'bar') => void
   onSelectTarget: (to: number | 'off') => void
@@ -51,6 +53,8 @@ export default function Board3D({
   selRef.current = selectedFrom
   const nearRef = useRef(nearSide)
   nearRef.current = nearSide
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
   const fromRef = useRef(onSelectFrom)
   fromRef.current = onSelectFrom
   const targetRef = useRef(onSelectTarget)
@@ -61,7 +65,7 @@ export default function Board3D({
     if (!el) return
     // Mount BİR KEZ (deps []). Atış tarafı/yönü her roll'da setThrow ile ayarlanır -> sıra
     // değişiminde sahneyi remount etme (flaş/israf). from burada sadece ilk varsayılan.
-    const tavla = mount(el, { tilt: 60, zoom: 1.25, from: 'top', sound: false })
+    const tavla = mount(el, { tilt: 60, zoom: zoomRef.current, from: 'top', sound: false })
     tavlaRef.current = tavla
     const canvas = tavla.canvas
     canvas.style.pointerEvents = 'auto'
@@ -95,6 +99,11 @@ export default function Board3D({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Zoom kaydırıcısı değişince kamerayı canlı güncelle (remount gerekmez).
+  useEffect(() => {
+    tavlaRef.current?.setZoom(zoom)
+  }, [zoom])
 
   // Tas dizilisi: durum (points) ya da flip degisince.
   const posKey = state.points.join(',') + '|' + (flip ? 1 : 0)

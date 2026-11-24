@@ -159,6 +159,7 @@ const TR: Dict = {
   'gm.board3d': '3D Tahta (deneysel)',
   'gm.tiltAngle': 'Eğim açısı',
   'gm.tiltDepth': 'Perspektif',
+  'gm.zoom': 'Yakınlaştırma',
   'gm.autoRollWarnTitle': 'Otomatik Zar Uyarısı',
   'gm.autoRollWarnBody':
     'Otomatik zar açıkken, zar atılmadan önceki bazı küp teklif etme fırsatlarını kaçırabilirsiniz. Bu özelliğin kullanımı ve doğurabileceği sonuçlar oyuncunun kendi sorumluluğundadır.',
