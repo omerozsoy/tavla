@@ -165,11 +165,11 @@ export default function Board3D({
     const t = tavlaRef.current
     const vals = diceFaces.slice(0, 2).map((f) => f.value)
     if (!t || vals.length < 2) return
-    // Her oyuncu zarı KENDİ tarafına atar: ben (sıra bende) sağ-ALT, rakip sol-ÜST.
-    // from = atışın GELDİĞİ kenar; zarlar KARŞI (uzak) duvara yaslanır -> kendi yanımızda
-    // dursun diye from'u ters veriyoruz: ben from='top' (uzak duvar=alt), rakip from='bottom'.
+    // Her oyuncu zarı KENDİ tarafına (yarı) atar: ben sağ, rakip sol. YÖN: zar İLERİ/ÖNE fırlar
+    // (gerçek atış gibi) -> ben from='bottom' (yakın kenardan yukarı/uzağa), rakip from='top'.
+    // (Kullanıcı: "zarlar bana doğru geliyordu, benden ileri gitmeli" -> from ters çevrildi.)
     const mine = nearRef.current
-    t.setThrow(mine ? 'right' : 'left', mine ? 'top' : 'bottom')
+    t.setThrow(mine ? 'right' : 'left', mine ? 'bottom' : 'top')
     t.roll(vals).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valKey])
