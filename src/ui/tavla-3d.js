@@ -31,7 +31,7 @@ const R = 1.0 * K;        // kenar yüksekliği
 const CR = 0.98 * K;       // taş yarıçapı
 const CH = 0.42 * K;       // taş kalınlığı
 const PL = 10.6 * K;       // hane (üçgen) uzunluğu
-const DIE = 1.15;          // zar kenar uzunluğu (büyütmek için artır; geo+fizik+dinlenme birlikte ölçeklenir)
+const DIE = 0.6;           // zar kenar uzunluğu (büyütmek için artır; geo+fizik+dinlenme birlikte ölçeklenir)
 const DH = DIE / 2;        // zar yarı-kenarı (dinlenirken merkez yüksekliği)
 const DCL = DH + 0.08;     // zar temizlik yarıçapı (pul üstüne gelmesin diye; zar boyutuyla ölçekli)
 

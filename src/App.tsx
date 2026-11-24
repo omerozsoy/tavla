@@ -12767,9 +12767,15 @@ export default function App() {
                 flip={flipBoard}
                 nearSide={turnIsMine}
                 zoom={board3dZoom}
+                tilt={board3dAngle}
                 selectedFrom={selectedFrom}
+                selectableFroms={selectableFroms}
+                targets={targets}
+                makePoints={makePointSet}
                 onSelectFrom={handleSelectFrom}
                 onSelectTarget={handleSelectTarget}
+                onMakePoint={handleMakePoint}
+                onDragFrom={handleDragFrom}
                 centerMain={centerMain}
                 centerLeft={centerLeft}
                 centerRight={centerRight}

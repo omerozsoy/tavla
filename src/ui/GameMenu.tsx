@@ -157,20 +157,8 @@ export default function GameMenu(p: Props) {
                 />
                 <span className="gm-vol-val">{p.board3dAngle ?? 46}°</span>
               </div>
-              <div className="gm-row gm-volrow">
-                <span className="gm-label">{t('gm.tiltDepth')}</span>
-                <input
-                  type="range"
-                  className="gm-vol-slider"
-                  min={700}
-                  max={2200}
-                  step={50}
-                  value={p.board3dDepth ?? 1400}
-                  onChange={(e) => p.setBoard3dDepth?.(Number(e.target.value))}
-                  aria-label={t('gm.tiltDepth')}
-                />
-                <span className="gm-vol-val">{p.board3dDepth ?? 1400}</span>
-              </div>
+              {/* Perspektif kaydırıcısı GİZLENDİ: WebGL 3D board'da CSS-perspektif kavramı yok
+                  (board3dDepth yalnız eski CSS board içindi). Yerine Eğim + Yakınlaştırma kullanılır. */}
               <div className="gm-row gm-volrow">
                 <span className="gm-label">{t('gm.zoom')}</span>
                 <input

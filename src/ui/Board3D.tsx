@@ -24,9 +24,15 @@ export default function Board3D({
   flip = false,
   nearSide = true,
   zoom = 1.25,
+  tilt = 60,
   selectedFrom,
+  selectableFroms,
+  targets,
+  makePoints,
   onSelectFrom,
   onSelectTarget,
+  onMakePoint,
+  onDragFrom,
   centerMain,
   centerLeft,
   centerRight,
@@ -36,9 +42,16 @@ export default function Board3D({
   flip?: boolean
   nearSide?: boolean
   zoom?: number
+  tilt?: number
   selectedFrom: number | 'bar' | null
+  // Hane durum setleri (motor-index uzayı) — 2D Board ile AYNI öncelik (hedef>kaynak>kapı) için.
+  selectableFroms: Set<number | 'bar'>
+  targets: Set<number | 'off'>
+  makePoints: Set<number>
   onSelectFrom: (from: number | 'bar') => void
   onSelectTarget: (to: number | 'off') => void
+  onMakePoint: (to: number) => void
+  onDragFrom: (from: number | 'bar') => void
   // Oyun kontrol slotları (2D Board ile AYNI node'lar): Zar At/Oyna/Onayla/Çift/Geri + küp pas/al.
   centerMain?: ReactNode
   centerLeft?: ReactNode
@@ -55,45 +68,74 @@ export default function Board3D({
   nearRef.current = nearSide
   const zoomRef = useRef(zoom)
   zoomRef.current = zoom
+  const tiltRef = useRef(tilt)
+  tiltRef.current = tilt
   const fromRef = useRef(onSelectFrom)
   fromRef.current = onSelectFrom
   const targetRef = useRef(onSelectTarget)
   targetRef.current = onSelectTarget
+  const makeRef = useRef(onMakePoint)
+  makeRef.current = onMakePoint
+  const dragFromRef = useRef(onDragFrom)
+  dragFromRef.current = onDragFrom
+  // Hane durum setleri (güncel) — drag/tap handler effect [] içinden okur.
+  const setsRef = useRef({ selectableFroms, targets, makePoints })
+  setsRef.current = { selectableFroms, targets, makePoints }
 
   useEffect(() => {
     const el = mountRef.current
     if (!el) return
     // Mount BİR KEZ (deps []). Atış tarafı/yönü her roll'da setThrow ile ayarlanır -> sıra
     // değişiminde sahneyi remount etme (flaş/israf). from burada sadece ilk varsayılan.
-    const tavla = mount(el, { tilt: 60, zoom: zoomRef.current, from: 'top', sound: false })
+    const tavla = mount(el, { tilt: tiltRef.current, zoom: zoomRef.current, from: 'top', sound: false })
     tavlaRef.current = tavla
     const canvas = tavla.canvas
     canvas.style.pointerEvents = 'auto'
-    // Surukle / tap-to-move: basinca kaynak, birakinca hedef. pointAtScreen (modul salt-okunur ek).
-    let down: number | 'bar' | null = null
-    const onDown = (ev: PointerEvent) => { down = tavla.pointAtScreen(ev.clientX, ev.clientY) }
+    // Hamle etkileşimi 2D Board ile AYNI mantık:
+    //  - TAP (sürükleme yok): öncelik HEDEF > KAYNAK > KAPI (targets/selectableFroms/makePoints setleri).
+    //    Kaynağa tek-tık DİREK oynar (handleSelectFrom), boş kapıya tık iki taşı oynar (handleMakePoint).
+    //  - SÜRÜKLEME: ilk harekette onDragFrom(kaynak) -> selectedFrom set + yeşil hedefler (dragTargets
+    //    React re-render'da dolar); bırakınca onSelectTarget(hedef). (Eşzamanlı from+target çağırmak
+    //    React state async'liği yüzünden hedefi düşürüyordu -> "hamle olmuyor" buydu.)
+    let downPt: number | 'bar' | null = null
+    let downX = 0, downY = 0, active = false, dragging = false
+    const toEng = (pt: number | 'bar'): number | 'bar' => (pt === 'bar' ? 'bar' : moduleToEngine(pt, flipRef.current))
+    const onDown = (ev: PointerEvent) => {
+      downPt = tavla.pointAtScreen(ev.clientX, ev.clientY)
+      downX = ev.clientX; downY = ev.clientY; active = downPt != null; dragging = false
+    }
+    const onMove = (ev: PointerEvent) => {
+      if (!active || dragging || downPt == null) return
+      if (Math.hypot(ev.clientX - downX, ev.clientY - downY) < 6) return
+      const e = toEng(downPt)
+      if (setsRef.current.selectableFroms.has(e)) { dragFromRef.current(e); dragging = true }
+    }
     const onUp = (ev: PointerEvent) => {
-      const dp = down
-      down = null
+      if (!active) return
+      active = false
+      const dp = downPt; downPt = null
       if (dp == null) return
-      const up = tavla.pointAtScreen(ev.clientX, ev.clientY)
       const flipNow = flipRef.current
-      const fromEng: number | 'bar' = dp === 'bar' ? 'bar' : moduleToEngine(dp, flipNow)
-      if (up != null && up !== dp && up !== 'bar') {
-        // SURUKLEME: kaynak -> hedef (hedef hane olmali)
-        fromRef.current(fromEng)
-        targetRef.current(moduleToEngine(up, flipNow))
-      } else {
-        // TAP: secili kaynak yoksa sec, varsa hedef (ayni hane -> hedef say)
-        if (selRef.current == null) fromRef.current(fromEng)
-        else if (dp !== 'bar') targetRef.current(moduleToEngine(dp, flipNow))
+      if (dragging) {
+        dragging = false
+        const up = tavla.pointAtScreen(ev.clientX, ev.clientY)
+        if (up != null && up !== 'bar') targetRef.current(moduleToEngine(up, flipNow))
+        return
       }
+      // TAP: 2D öncelik (hedef > kaynak > kapı)
+      const e = dp === 'bar' ? 'bar' : moduleToEngine(dp, flipNow)
+      const sets = setsRef.current
+      if (e !== 'bar' && sets.targets.has(e)) targetRef.current(e)
+      else if (sets.selectableFroms.has(e)) fromRef.current(e)
+      else if (e !== 'bar' && sets.makePoints.has(e)) makeRef.current(e)
     }
     canvas.addEventListener('pointerdown', onDown)
-    canvas.addEventListener('pointerup', onUp)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
     return () => {
       canvas.removeEventListener('pointerdown', onDown)
-      canvas.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
       tavla.destroy()
       tavlaRef.current = null
     }
@@ -104,6 +146,11 @@ export default function Board3D({
   useEffect(() => {
     tavlaRef.current?.setZoom(zoom)
   }, [zoom])
+
+  // Eğim açısı kaydırıcısı değişince WebGL kamera eğimini canlı güncelle.
+  useEffect(() => {
+    tavlaRef.current?.setTilt(tilt)
+  }, [tilt])
 
   // Tas dizilisi: durum (points) ya da flip degisince.
   const posKey = state.points.join(',') + '|' + (flip ? 1 : 0)
