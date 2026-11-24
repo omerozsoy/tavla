@@ -18,21 +18,32 @@ import { useT } from '../i18n'
 const K = 32 // backend RatingPolicy::ELO_K ile birebir
 const LENGTHS = [1, 3, 5, 7, 9, 11, 13] // örnek/seçilebilir hedef puanlar (sistem 1–13 destekler)
 
+// Yüksek puanda azalan KAZANÇ çarpanı — backend RatingPolicy::gainMultiplier ile BİREBİR.
+// 2000 üstünde galibiyet kazancı lineer azalır (GM/SGM için kazanmak zor); KAYIP tam kalır.
+const GAIN_TAPER_START = 2000
+const GAIN_TAPER_SPAN = 1000
+const GAIN_MULT_FLOOR = 0.2
+export function gainMultiplier(rating: number) {
+  if (rating <= GAIN_TAPER_START) return 1
+  return Math.max(GAIN_MULT_FLOOR, 1 - (rating - GAIN_TAPER_START) / GAIN_TAPER_SPAN)
+}
+
 function expected(ra: number, rb: number) {
   return 1 / (1 + Math.pow(10, (rb - ra) / 400))
 }
 function lengthFactor(l: number) {
   return Math.sqrt(Math.max(1, l) / 3)
 }
-// Pozitif transfer (kazananın kazancı) — kaybeden bunun eksisini alır (simetri).
+// Pozitif transfer (kazananın ham Elo kazancı) — kaybeden bunun eksisini TAM alır.
 function transfer(winnerR: number, loserR: number, l: number) {
   return Math.round(K * lengthFactor(l) * (1 - expected(winnerR, loserR)))
 }
 export function winDelta(ra: number, rb: number, l: number) {
-  return transfer(ra, rb, l) // self = kazanan
+  // self = kazanan: ham transfer × yüksek-puan azalma çarpanı (kazananın kendi rating'i).
+  return Math.round(transfer(ra, rb, l) * gainMultiplier(ra))
 }
 export function lossDelta(ra: number, rb: number, l: number) {
-  return -transfer(rb, ra, l) // self = kaybeden -> rakip kazanan, eksi uygula
+  return -transfer(rb, ra, l) // self = kaybeden -> rakip kazanan; KAYIP tam (taper yok)
 }
 
 export default function Scoring({ currentRating }: { currentRating?: number }) {
@@ -64,11 +75,12 @@ export default function Scoring({ currentRating }: { currentRating?: number }) {
         <tbody>
           {LENGTHS.map((l) => {
             const w = winDelta(ra, ra, l)
+            const lo = Math.abs(lossDelta(ra, ra, l)) // yüksek puanda kazançtan büyük olabilir
             return (
               <tr key={l} className={l === len ? 'is-equal' : ''}>
                 <td>{t('scoring.example.pts', { n: l })}</td>
                 <td className="scoring-win">+{w}</td>
-                <td className="scoring-loss">−{w}</td>
+                <td className="scoring-loss">−{lo}</td>
               </tr>
             )
           })}
@@ -123,6 +135,32 @@ export default function Scoring({ currentRating }: { currentRating?: number }) {
           })}
         </tbody>
       </table>
+
+      {/* Yüksek puanda azalan kazanç — GM/SGM için "kazanmak zor" (kullanıcı direktifi). */}
+      <div className="scoring-taper">
+        <p className="scoring-hint">{t('scoring.taper.title')}</p>
+        <p className="scoring-taper-expl">{t('scoring.taper.expl')}</p>
+        <table className="scoring-table scoring-table-taper">
+          <thead>
+            <tr>
+              <th>{t('scoring.taper.rating')}</th>
+              <th>{t('scoring.taper.mult')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[2000, 2150, 2300, 2400, 2500].map((r) => (
+              <tr key={r} className={ra >= r && ra < r + 100 ? 'is-equal' : ''}>
+                <td>
+                  {r}
+                  {r === 2150 ? ' · GM' : r === 2400 ? ' · Süper GM' : r === 2500 ? ` · ${t('scoring.taper.apex')}` : ''}
+                </td>
+                <td>×{gainMultiplier(r).toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="scoring-taper-note">{t('scoring.taper.loss')}</p>
+      </div>
 
       <ul className="scoring-notes">
         <li>{t('scoring.note.length')}</li>

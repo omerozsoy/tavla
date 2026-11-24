@@ -528,12 +528,20 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'scoring.note.rankedOnly': 'Rating only changes in ranked matches.',
   'scoring.note.friendly': 'Invite-code (friendly) and casual-paced matches are unrated.',
   'scoring.note.tournament':
-    'In tournament and duel matches the rating changes by a FIXED amount, not by Elo: winner +10, loser −10. Match length and opponent rating do not matter for these two types.',
+    'In tournament and duel matches the rating changes by a FIXED amount, not by Elo: winner +10, loser −10. Match length and opponent rating do not matter for these two types. (At high ratings the gain is reduced — see below.)',
   'scoring.note.prBonus':
-    'We reward better play: in an online ranked match (including tournaments), the player who wins AND has a better — i.e. lower — performance rating (PR) than the opponent earns DOUBLE the rating gained in that match (×2). So it pays not just to win, but to play well.',
+    'We reward better play: in an online ranked match (including tournaments), the player who wins AND has a better — i.e. lower — performance rating (PR) than the opponent earns DOUBLE the rating gained in that match (×2). So it pays not just to win, but to play well. (At high ratings this reward is also reduced gradually.)',
   'scoring.note.noScoreDiff': 'The final score margin (e.g. 7–0 or 7–6) does not matter; only the win/loss, your opponent’s rating and the target points do.',
   'scoring.note.floor': 'Your rating never drops below 100. When this floor applies, the loser stops at 100, so in that rare case the loss may be smaller than the winner’s gain.',
   'scoring.note.pref': 'This is TavlaTV’s rating preference, not an official or universal backgammon standard.',
+  'scoring.taper.title': 'Gains shrink at high ratings (the top is hard):',
+  'scoring.taper.expl':
+    'Above 2000, the rating you earn from a win is reduced gradually — so that climbing to and staying at Grandmaster (GM) and Super Grandmaster is genuinely hard. This reduction is independent of your opponent (it depends on your own rating) and applies to ALL gains: Elo matchmaking, fixed tournament/duel points, and the ×2 performance bonus.',
+  'scoring.taper.rating': 'Rating',
+  'scoring.taper.mult': 'Gain multiplier',
+  'scoring.taper.apex': 'apex',
+  'scoring.taper.loss':
+    'Losses are NOT reduced — they stay full. So above 2000 a loss hurts more than a win helps; a high-rated player who cannot keep winning will drift back down. If a weaker player beats a stronger one (an upset), they earn the full gain.',
   'menu.rules': 'How to Play',
   'reward.in': 'Next reward',
   'reward.bonus': 'Bonus',

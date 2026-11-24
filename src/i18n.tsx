@@ -547,12 +547,20 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'scoring.note.rankedOnly': 'Puan yalnızca Puanlı maçlarda değişir.',
   'scoring.note.friendly': 'Davet kodlu (arkadaşlık) ve rahat tempolu maçlar puansızdır.',
   'scoring.note.tournament':
-    'Turnuva ve düello maçlarında puan Elo ile değil SABİT değişir: kazanan +10, kaybeden −10. Maçın uzunluğu ve rakibin puanı bu iki türde fark etmez.',
+    'Turnuva ve düello maçlarında puan Elo ile değil SABİT değişir: kazanan +10, kaybeden −10. Maçın uzunluğu ve rakibin puanı bu iki türde fark etmez. (Yüksek puanda kazanç azalır — aşağıya bakın.)',
   'scoring.note.prBonus':
-    'Daha iyi oynayanı ödüllendiririz: çevrimiçi puanlı bir maçı (turnuva dâhil) kazanan VE performansı (PR) rakibinden daha iyi — yani daha düşük — olan oyuncu, o maçta kazandığı puanın İKİ KATINI alır (×2). Böylece yalnızca kazanmak değil, iyi oynamak da ödüllenir.',
+    'Daha iyi oynayanı ödüllendiririz: çevrimiçi puanlı bir maçı (turnuva dâhil) kazanan VE performansı (PR) rakibinden daha iyi — yani daha düşük — olan oyuncu, o maçta kazandığı puanın İKİ KATINI alır (×2). Böylece yalnızca kazanmak değil, iyi oynamak da ödüllenir. (Yüksek puanda bu ödül de kademeli azalır.)',
   'scoring.note.noScoreDiff': 'Maçın kaç puanla bittiği (ör. 7–0 veya 7–6) fark etmez; yalnızca kazanma/kaybetme, rakibin puanı ve hedef puan önemlidir.',
   'scoring.note.floor': 'Puanın 100’ün altına düşmez. Bu sınır devreye girerse kaybeden 100’de durur, bu nadir durumda kaybı kazananın kazancından az olabilir.',
   'scoring.note.pref': 'Bu, TavlaTV’nin puanlama tercihidir; resmî veya evrensel bir tavla standardı değildir.',
+  'scoring.taper.title': 'Yüksek puanda kazanç azalır (zirve zordur):',
+  'scoring.taper.expl':
+    '2000 puanın üstünde bir galibiyetten kazandığın puan kademeli olarak azalır — Büyük Usta (GM) ve Süper Büyük Usta seviyesine çıkmak ve orada kalmak gerçekten zor olsun diye. Bu azalma rakibinden bağımsızdır (kendi puanına bağlıdır) ve Elo eşleşme, turnuva/düello sabit puanı ile ×2 performans ödülü dâhil TÜM kazançlara uygulanır.',
+  'scoring.taper.rating': 'Puan',
+  'scoring.taper.mult': 'Kazanç çarpanı',
+  'scoring.taper.apex': 'zirve',
+  'scoring.taper.loss':
+    'KAYIP azalmaz — tam kalır. Bu yüzden 2000 üstünde kaybetmek kazanmaktan daha çok etkiler; düzenli kazanamayan yüksek puanlı oyuncu zamanla iner. Zayıf bir oyuncu güçlü rakibi yenerse (sürpriz) kazancı tam alır.',
   'menu.rules': 'Nasıl Oynanır',
   'reward.in': 'Sonraki Ödül',
   'reward.bonus': 'Bonus',

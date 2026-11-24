@@ -41,6 +41,34 @@ class RatingPolicy
         return sqrt(max(1, $length) / self::LENGTH_REF);
     }
 
+    /** Kazanç azalma eşiği: bu rating'in ÜSTÜNDE galibiyet kazancı kademeli küçülür. */
+    public const GAIN_TAPER_START = 2000;
+
+    /** Azalma aralığı: eşikten +bu kadar puan sonra çarpan tabana iner (lineer). */
+    public const GAIN_TAPER_SPAN = 1000;
+
+    /** Çarpan tabanı: kazanç en fazla bu orana kadar düşer (zirvede %20'ye). */
+    public const GAIN_MULT_FLOOR = 0.2;
+
+    /**
+     * YÜKSEK PUANDA AZALAN KAZANÇ ÇARPANI (kullanıcı direktifi 2026-11-24): GM/Süper GM'nin puan
+     * KAZANMASI zorlaşsın — tepede kıtlık. YALNIZ galibiyet kazancına uygulanır; KAYIP tam kalır
+     * (losses full) → 50/50 oynayan tepe oyuncu yavaşça aşağı süzülür. Rakipten BAĞIMSIZ: çarpan
+     * kazananın KENDİ rating'ine bağlı (upset'te düşük rating'li kazanan tam alır, yüksek kaybeden
+     * tam kaybeder). Elo + sabit ±delta + PR×2 bonusu (bonus = scaled delta kopyası) hepsi otomatik
+     * bu çarpanı miras alır → TEK knob. Lineer: 2000=1.0, 2150(GM)≈0.85, 2350(SGM)≈0.65, 2500≈0.5.
+     */
+    public static function gainMultiplier(int $rating): float
+    {
+        if ($rating <= self::GAIN_TAPER_START) {
+            return 1.0;
+        }
+
+        $m = 1.0 - ($rating - self::GAIN_TAPER_START) / self::GAIN_TAPER_SPAN;
+
+        return max(self::GAIN_MULT_FLOOR, $m);
+    }
+
     /**
      * Kazanandan kaybedene aktarılacak rating miktarı — POZİTİF, yuvarlanmış, SİMETRİ GARANTİLİ.
      * Hem kazanan hem kaybeden bu TEK değeri kullanır: kazanan +transfer, kaybeden −transfer.
@@ -66,17 +94,24 @@ class RatingPolicy
      * Transfer DAİMA kazanan perspektifinden hesaplanır (simetri): $won ise self=kazanan, değilse
      * self=kaybeden. Yeni rating = eski ± transfer, sonra tabana (100) kırpılır.
      *
-     * TABAN & SİMETRİ: Kaybeden tabana dayanırsa (ör. 105 -> −12 istenir ama taban 100) kaybeden
-     * yalnız −5 kaybeder; kazanan yine tam +transfer kazanır. Bu bilinçli: taban korunur, fiyatı da
-     * o nadir sınır durumunda kazanç>kayıp eşitsizliğidir (mevcut taban davranışı KORUNDU).
+     * TABAN: Kaybeden tabana dayanırsa (ör. 105 -> −12 istenir ama taban 100) yalnız −5 kaybeder.
+     *
+     * ASİMETRİ (2026-11-24): Galibiyet kazancı yüksek puanda gainMultiplier ile AZALIR; kayıp TAM
+     * kalır. Yani 2000 üstünde kazanan<kaybeden mutlak değer -> Elo sıfır-toplamı tepede kasıtlı
+     * bozulur (GM/SGM için "kazanmak zor"). 2000 altında çarpan=1 -> klasik simetrik Elo.
      */
     public static function eloNewRating(int $ra, int $rb, bool $won, int $length): int
     {
-        $transfer = $won
-            ? self::ratingTransfer($ra, $rb, $length)   // self kazandı: self=kazanan, rakip=kaybeden
-            : self::ratingTransfer($rb, $ra, $length);  // self kaybetti: rakip=kazanan, self=kaybeden
+        if ($won) {
+            // Kazanç yüksek puanda azalır (gainMultiplier). KAYIP tam kalır (aşağıda) → asimetri kasıtlı.
+            $gain = (int) round(self::ratingTransfer($ra, $rb, $length) * self::gainMultiplier($ra));
 
-        return max(self::RATING_FLOOR, $ra + ($won ? $transfer : -$transfer));
+            return max(self::RATING_FLOOR, $ra + $gain);
+        }
+
+        $transfer = self::ratingTransfer($rb, $ra, $length); // self kaybetti: rakip=kazanan, self=kaybeden
+
+        return max(self::RATING_FLOOR, $ra - $transfer);
     }
 
     /** Sabit rating deltası varsayılanı (Elo değil): düello/turnuva config'i 0/boşsa bu kullanılır. */
@@ -90,7 +125,14 @@ class RatingPolicy
      */
     public static function flatNewRating(int $ra, bool $won, int $delta): int
     {
-        return max(self::RATING_FLOOR, $ra + ($won ? $delta : -$delta));
+        if ($won) {
+            // Sabit kazanç da yüksek puanda azalır (gainMultiplier); KAYIP tam kalır.
+            $gain = (int) round($delta * self::gainMultiplier($ra));
+
+            return max(self::RATING_FLOOR, $ra + $gain);
+        }
+
+        return max(self::RATING_FLOOR, $ra - $delta);
     }
 
     /**
