@@ -53,6 +53,24 @@ class MatchMove extends Model
             ->exists();
     }
 
+    /**
+     * Verilen renk bu odada EN AZ BİR OYUN KAZANDI mı? ('end' satırı winner=renk, points>0).
+     * colorPlayed 'end'i saymaz ama oyun KAZANMAK gerçek katılım kanıtıdır: rakibin küp-drop/pes
+     * ile kaybettiği oyunda kazananın 'move' satırı HİÇ olmayabilir (R9QRA: black 0-3 öndeyken
+     * white maçı terk etti -> colorPlayed(black)=false sanıp ghost-win kalkanı haksız void ediyordu).
+     */
+    public static function colorWonGame(string $roomCode, string $color): bool
+    {
+        if (! Schema::hasTable('match_moves')) {
+            return false;
+        }
+
+        return static::where('room_code', strtoupper($roomCode))
+            ->where('kind', 'end')
+            ->where('winner', $color)
+            ->exists();
+    }
+
     /** Kanonik sıra (oyun -> tur -> aynı-tur-ord -> ekleme sırası). */
     private static function orderedForRoom(string $roomCode)
     {

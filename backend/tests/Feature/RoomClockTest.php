@@ -376,6 +376,36 @@ class RoomClockTest extends TestCase
         $this->assertDatabaseMissing('match_results', ['user_id' => $this->p2->id, 'room_code' => 'GHST']);
     }
 
+    // ---- REGRESYON (R9QRA): bir OYUN KAZANMIŞ kazanan, 'move' satırı olmasa da GHOST değildir ----
+    // Vaka: black (p2) 0-3 öndeydi (game 1'i küp-drop/pes ile kazandı -> black'in 'move' satırı YOK,
+    // yalnız 'end' satırı var), white (p1) game 2'de maçı terk etti. Ghost-win kalkanı colorPlayed'e
+    // bakıp black'i "hiç oynamadı" sanıp maçı haksız no-contest void ediyordu -> kazanan coinini hem
+    // alamıyor hem 15dk "sonuçlanmamış bahisli maç" ile bloke oluyordu. Artık oyun kazanmak katılım kanıtı.
+    public function test_leave_awards_win_when_winner_won_a_game_without_move_rows(): void
+    {
+        $room = $this->playingRoom('GWON', 'normal', 3);
+        $this->putJson('/api/rooms/GWON', ['token' => 't1', 'state' => $this->state(3)])->assertOk();
+        // white (p1 = terk edecek olan) oynadı; black (p2) game 1'i KAZANDI ama 'move' satırı YOK (yalnız 'end').
+        MatchMove::create([
+            'room_id' => $room->id, 'room_code' => 'GWON', 'game_no' => 1, 'seq' => 0, 'ord' => 0,
+            'player' => 'white', 'kind' => 'move', 'dice' => [3, 1], 'notation' => '8/5 6/5',
+        ]);
+        MatchMove::create([
+            'room_id' => $room->id, 'room_code' => 'GWON', 'game_no' => 1, 'seq' => 0, 'ord' => 9,
+            'player' => 'black', 'kind' => 'end', 'winner' => 'black', 'points' => 3,
+        ]);
+
+        Sanctum::actingAs($this->p1);
+        $this->postJson('/api/rooms/GWON/leave', ['token' => 't1'])->assertOk(); // oynayan p1 terk eder
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        // NO-CONTEST DEĞİL: oyun kazanmış black (p2) terk ile KAZANIR, white (p1) kaybeder.
+        $this->assertSame('lost', $room->p1_result);
+        $this->assertSame('won', $room->p2_result);
+    }
+
     // ---- KORUMA: maç ZATEN sonuçlandıysa geç terk KAZANANI ters çevirmesin (DrBakır bug'ı) ----
     public function test_leave_does_not_overturn_decided_match(): void
     {
@@ -476,6 +506,38 @@ class RoomClockTest extends TestCase
         $this->assertNull($room->p2_result);
         // Surum ARTMALI -> izleyicinin surum-kapili poll'u 'finished'i yakalayip donmaktan cikar
         $this->assertGreaterThan($verBefore, (int) $room->version);
+    }
+
+    // ---- STAKED no-contest ANINDA VOID: settled=1 hemen -> "sonuçlanmamış bahisli maç" 15dk bloğu yok ----
+    // Kök: bahisli maç kazanansız bitince (no-contest) settled=0 kalıyor, settleRoom void'i
+    // VOID_GRACE_MIN (60dk/düello 15dk) bekliyordu -> o pencerede C1 guard yeni bahisli maçı 15dk
+    // blokluyordu (ardasahan2004 vakası). Artık finalize anında void (transfer yok, yalnız kilit açılır).
+    public function test_staked_no_contest_voids_immediately_settled(): void
+    {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $room = Room::create([
+            'code' => 'GNCV',
+            'p1_token' => 't1', 'p1_user_id' => $p1->id, 'p1_name' => 'P1',
+            'p2_token' => 't2', 'p2_user_id' => $p2->id, 'p2_name' => 'P2',
+            'status' => 'playing', 'mode' => 'ranked', 'bet_pct' => 10,
+            'time_control' => 'normal', 'target' => 3, 'version' => 1,
+        ]);
+        // white (p1 = terk edecek) oynadı; black (p2) HİÇ + oyun kazanmadı -> ghost-win no-contest.
+        MatchMove::create([
+            'room_id' => $room->id, 'room_code' => 'GNCV', 'game_no' => 1, 'seq' => 0, 'ord' => 0,
+            'player' => 'white', 'kind' => 'move', 'dice' => [3, 1], 'notation' => '8/5 6/5',
+        ]);
+
+        Sanctum::actingAs($p1);
+        $this->postJson('/api/rooms/GNCV/leave', ['token' => 't1'])->assertOk();
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertNull($room->p1_result);
+        $this->assertNull($room->p2_result);
+        // ANINDA void: settled=1 -> userInUnsettledStakedMatch artık saymaz (15dk blok YOK).
+        $this->assertTrue((bool) $room->settled, 'staked no-contest finalize anında settled=1 olmalı');
     }
 
     // ---- Zamanlanmis supurme: kimsenin poll etmedigi bayat 'playing' oda -> finalize ----

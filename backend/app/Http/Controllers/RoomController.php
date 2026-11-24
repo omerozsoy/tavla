@@ -3146,7 +3146,11 @@ class RoomController extends Controller
         if (! $force && $winnerSlot !== null && $decidedColor === null && MatchMove::existsForRoom($room->code)) {
             $wColor = $winnerSlot === 'p1' ? 'white' : 'black';
             $lColor = $winnerSlot === 'p1' ? 'black' : 'white';
+            // "Oynadı" = hamle/küp aksiyonu VEYA bir oyun kazanmış olmak. Küp-drop/pes ile kazanılan
+            // oyunda kazananın 'move' satırı yoktur ama 'end' galibiyeti gerçek katılım kanıtıdır
+            // (R9QRA: black 0-3 öndeyken white terk etti -> kazanç haksız yere void ediliyordu).
             if (! MatchMove::colorPlayed($room->code, $wColor)
+                && ! MatchMove::colorWonGame($room->code, $wColor)
                 && MatchMove::colorPlayed($room->code, $lColor)) {
                 $winnerSlot = null;
             }
@@ -3185,6 +3189,20 @@ class RoomController extends Controller
                 $room->end_reason = $reason ?? 'ABANDON';
             }
             $room->version = $room->version + 1;
+            // STAKED no-contest -> ANINDA VOID. Kazanan KESİN yok (bu otoriter finalize anı; decidedColor
+            // null olduğundan settleRoom::resolveWinnerSlot de null döner -> meşru settle engellenmez).
+            // settled=0 bırakmak katılımcıları C1 guard'ıyla (userInUnsettledStakedMatch) 15dk
+            // "sonuçlanmamış bahisli maçın var" ile bloklar; settleRoom'un void'i VOID_GRACE_MIN
+            // (normal 60dk / düello 15dk) bekler. Burada transfer YOK (kazanan yok), yalnız kilidi aç:
+            // settled=1 + koltuk/claim bırak -> blok ~0'a iner, backstop bir daha dokunmaz.
+            // status zaten 'finished' (terminal) + settled=1 tek save'de yazılır -> CHECK constraint OK.
+            if (((int) $room->stake > 0 || (int) $room->bet_pct > 0) && ! $room->settled) {
+                $room->settled = true;
+                if (Schema::hasTable('active_money_match_claims')) {
+                    Room::releaseActiveMoneyClaims((int) $room->id);
+                }
+                Room::releaseMatchSeats((int) $room->id);
+            }
 
             return;
         }
