@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -135,14 +135,17 @@ export default function MatReview({
   const nameW = names?.[0] || t('mrv.white') // white = gnubg player0
   const nameB = names?.[1] || t('mrv.black')
 
-  const [filter, setFilter] = useState<'all' | 'errors' | 'blunders'>('all')
+  const [filter, setFilter] = useState<'all' | 'errors' | 'blunders'>('errors')
   const [who, setWho] = useState<'both' | 'white' | 'black'>('both')
   // Kullanıcının board yönü + taş rengi tercihleri (gerçek Board ile birebir aynı görünüm)
   const [boardDir] = useBoardDir()
   const [swapStones] = useSwapStones()
 
-  // İlk analiz edilebilir (pos'lu) hamle seçili gelsin.
-  const firstIdx = useMemo(() => log.findIndex((e) => e.pos && !e.cube), [log])
+  // İlk HATA seçili gelsin (varsayılan filtre = Hatalar); hata yoksa ilk analiz edilebilir hamle.
+  const firstIdx = useMemo(() => {
+    const err = log.findIndex((e) => entryLoss(e) >= 0.02)
+    return err >= 0 ? err : log.findIndex((e) => e.pos && !e.cube)
+  }, [log])
   const [sel, setSel] = useState(firstIdx >= 0 ? firstIdx : 0)
   const [candIdx, setCandIdx] = useState(0)
   const PREMOVE = -2 // "Hamle Öncesi": tahta karar anındaki ham pozisyonu OKSUZ gösterir
@@ -184,6 +187,13 @@ export default function MatReview({
     const np = (rowPos < 0 ? 0 : rowPos) + d
     if (np >= 0 && np < rows.length) select(rows[np].i)
   }
+  // Filtre/oyuncu değişince seçili hamle yeni listenin DIŞINDA kalabilir -> alt-nav okları
+  // kilitlenir (rowPos=-1 => ikisi de disabled) ve kullanıcı "seçtiğim değişmiyor" sanır. Seçimi
+  // yeni listenin İLK öğesine taşı ki oklar HEP çalışsın ve nav seçili filtreyi yansıtsın.
+  useEffect(() => {
+    if (rows.length > 0 && !rows.some((r) => r.i === sel)) select(rows[0].i)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows])
 
   // Sağ panel olasılıkları: seçili adayın (yoksa oynanan) 6'lı [wn,wg,wb,ln,lg,lb].
   const probs = (candIdx >= 0 && cur?.cands?.[candIdx]?.probs) || cur?.probs || null
