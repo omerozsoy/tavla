@@ -11510,7 +11510,7 @@ export default function App() {
           onRequirePremium={() => setMemOpen(true)}
           onPlayMatch={handlePlayTournamentMatch}
           onSpectate={(code, p1, p2) => startTransition(() => setSpectate({ code, p1, p2 }))}
-          onProfile={(id) => setHomeProfileId(id)}
+          onProfile={(id) => startTransition(() => setHomeProfileId(id))}
           onCardCheckout={(d) => setCardPay({ amount: d.amount, paymentId: d.paymentId })}
           detailId={tournDetailId}
           onOpenDetail={(id, slug) => {
@@ -11534,7 +11534,7 @@ export default function App() {
             onRequireLogin={() => setShowAuth(true)}
             onRequirePremium={() => setMemOpen(true)}
             onEnterRoom={handleEnterLeagueRoom}
-            onProfile={(id) => setHomeProfileId(id)}
+            onProfile={(id) => startTransition(() => setHomeProfileId(id))}
             onOpenSeason={(id) => setLeagueSeasonId(id)}
             onClose={() => {
               setLeagueOpen(false)
@@ -11552,7 +11552,7 @@ export default function App() {
             onRequireLogin={() => setShowAuth(true)}
             onRequirePremium={() => setMemOpen(true)}
             onEnterRoom={(code, target) => handleEnterLeagueRoom(code, target, () => setTeamsOpen(true))}
-            onProfile={(id) => setHomeProfileId(id)}
+            onProfile={(id) => startTransition(() => setHomeProfileId(id))}
             onDuel={user ? (p) => { setDuelPreselect(p); goPage(() => setDuelOpen(true)) } : undefined}
             onPathChange={(p) => setTeamsArg(p)}
             onClose={() => {
@@ -12354,7 +12354,7 @@ export default function App() {
             <SeekersPanel
               currentId={user?.id}
               myCoins={user?.coins}
-              onProfile={(id) => setHomeProfileId(id)}
+              onProfile={(id) => startTransition(() => setHomeProfileId(id))}
               onJoin={handleJoinSeeker}
               onInvite={user ? handleInviteFriend : undefined}
               // Kendi aktif havuz aramam (varsa): listenin en üstünde "Rakip Bekleniyor…" + İptal
@@ -12429,7 +12429,7 @@ export default function App() {
               <OnlinePlayersPanel
                 currentName={profile.nickname}
                 currentId={user?.id}
-                onProfile={(id) => setHomeProfileId(id)}
+                onProfile={(id) => startTransition(() => setHomeProfileId(id))}
                 // Play tuşu = PUANLI maç daveti (handleInviteFriend varsayılan ranked=true).
                 onInvite={user ? handleInviteFriend : undefined}
                 // IconSwords (düello) = /duello sayfasına git (oyun kurma + gönderim orada; kullanıcı direktifi).
@@ -12440,7 +12440,7 @@ export default function App() {
               />
             </div>
             {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA */}
-            <TopThreeShowcase onProfile={(id) => setHomeProfileId(id)} />
+            <TopThreeShowcase onProfile={(id) => startTransition(() => setHomeProfileId(id))} />
             <AdStrip slot="middle" />
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
@@ -12454,7 +12454,7 @@ export default function App() {
               <div className="home-cal-side">
                 <RankingPanel
                   currentName={profile.nickname}
-                  onProfile={(id) => setHomeProfileId(id)}
+                  onProfile={(id) => startTransition(() => setHomeProfileId(id))}
                   onOpen={menuProps.onLeaderboard}
                 />
               </div>
