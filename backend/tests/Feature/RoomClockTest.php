@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\TournamentController;
 use App\Models\MatchMove;
 use App\Models\Room;
 use App\Models\Tournament;
@@ -9,6 +10,7 @@ use App\Models\User;
 use App\Services\MatchClock;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -348,6 +350,30 @@ class RoomClockTest extends TestCase
         $this->assertSame('lost', $room->p1_result); // terk eden
         $this->assertSame('won', $room->p2_result);  // rakip kazanir
         $this->assertSame('black', $room->state['gameEnd']['winner']);
+    }
+
+    // ---- KÖK FIX (R7G8Q / ardasahan2004, 2026-11-24): leave(tournament=true) oyuncunun KENDİ canlı
+    // turnuva maçında forfeit ETMEZ. Bayat tournMatchRef'li oto-geçiş efekti (App.tsx tournNotices)
+    // oyuncuyu zaten içinde olduğu turnuva maçına "geç" dedirtince bırakılan oda = turnuva odası
+    // oluyordu -> no-contest doğrulanamıyor, winner=rakip forfeit yazılıp oyuncu 0-3 ELENİYORDU.
+    // Artık turnuva odasında leave(tournament) NO-OP (maç canlı kalır). ----
+    public function test_leave_tournament_on_own_tournament_room_is_noop_not_forfeit(): void
+    {
+        $room = $this->playingRoom('TRNL', 'normal', 3);
+        $this->putJson('/api/rooms/TRNL', ['token' => 't1', 'state' => $this->state(3)])->assertOk();
+        // Oda GERÇEKTEN bir turnuva maç odası (roomTargetKey cache'te 2 gün yaşar -> Cache::has true).
+        Cache::put(TournamentController::roomTargetKey('TRNL'), 3, now()->addDays(2));
+
+        // Oto-geçiş efekti: KENDİ turnuva odasında leave(tournament=true).
+        $this->postJson('/api/rooms/TRNL/leave', ['token' => 't1', 'tournament' => true])->assertOk();
+
+        $room->refresh();
+        // FORFEIT YOK: maç canlı kalır, kimse elenmez, sonuç yazılmaz.
+        $this->assertSame('playing', $room->status);
+        $this->assertNull($room->end_reason);
+        $this->assertNull($room->p1_result);
+        $this->assertNull($room->p2_result);
+        $this->assertDatabaseMissing('match_results', ['room_code' => 'TRNL']);
     }
 
     // ---- GHOST-WIN KALKANI: hiç oynamayan (çekmeyen) oyuncu, rakip terk edince KAZANMAZ (no-contest) ----

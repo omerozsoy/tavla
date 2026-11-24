@@ -2546,12 +2546,24 @@ class RoomController extends Controller
             // ile kazanan ters çevriliyor, kazanan "terk edip kaybetti" gibi yazılıyordu (DrBakır bug'ı).
             $decided = $this->decidedWinnerColor($room) !== null;
             if ($room->status === 'playing' && ! $ended && ! $decided) {
+                $wantsTourn = $request->boolean('tournament');
+                $isTournRoom = Cache::has(TournamentController::roomTargetKey($room->code));
+                // KÖK FIX (R7G8Q / ardasahan2004, 2026-11-24): leave(tournament=true) YALNIZCA "başka
+                // casual maçtan turnuva maçıma geç -> mevcut maçı no-contest kapat" amaçlıdır. Bayat
+                // tournMatchRef'li oto-geçiş efekti (App.tsx tournNotices) oyuncuyu KENDİ canlı turnuva
+                // maçına "geç" dedirtince bırakılan oda ZATEN turnuva odası oluyor -> no-contest
+                // doğrulanamıyor ve ESKİDEN winner=rakip forfeit yazılıp oyuncu kendi maçından 0-3
+                // ELENİYORDU ("oyun devam ederken lobiye attı"). Turnuva odasında leave(tournament)
+                // ASLA forfeit DEĞİL -> NO-OP: oyuncu oynamaya devam etsin (gerçek terk zaten
+                // presence/stall süpürmesiyle grace'li ele alınır).
+                if ($wantsTourn && $isTournRoom) {
+                    return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
+                }
                 // NO-CONTEST (turnuva maçına geçiş): oyuncu başka bir (turnuva dışı) maçtayken turnuva
                 // maçına çekiliyor -> mevcut maç kazananSIZ kapanır. Sunucu, oyuncunun GERÇEKTEN hazır bir
                 // turnuva maçı olduğunu doğrular; aksi halde normal ABANDON (rakip kazanır).
-                $noContest = $request->boolean('tournament')
-                    && ! Cache::has(TournamentController::roomTargetKey($room->code)) // bırakılan oda turnuva odası DEĞİL
-                    && $this->hasReadyTournamentMatch($request->user()?->id);
+                // (Buraya geldiysek isTournRoom=false -> eski `! Cache::has(...)` guard'ı korunur.)
+                $noContest = $wantsTourn && $this->hasReadyTournamentMatch($request->user()?->id);
                 $clock['end'] = ['reason' => 'ABANDON', 'winner' => $noContest ? null : MatchClock::other($slot)];
                 $this->applyClockEnd($room, $clock);
                 $room->clock = $clock;
