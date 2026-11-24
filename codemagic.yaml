@@ -67,6 +67,18 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:$IDX:CFBundleURLSchemes array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:$IDX:CFBundleURLSchemes:0 string $SCHEME" "$PLIST"
 
+      - name: Build numarasini benzersiz yap (CFBundleVersion)
+        # cap add ios Info.plist'i her build'de SIFIRDAN uretir -> CFBundleVersion hep "1" kalir ->
+        # App Store Connect ikinci yuklemede "bundle version must be higher than 1" (409) ile REDDEDER.
+        # Epoch saniye = her build'de artan, onceki yuklemeden kesin buyuk, APPLE_ID/ag CLI gerekmez.
+        # (Kullaniciya gorunen surum CFBundleShortVersionString=1.0 degismez; bu yalniz ic build no.)
+        script: |
+          set -e
+          PLIST=ios/App/App/Info.plist
+          BUILD_NO=$(date +%s)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NO" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $BUILD_NO" "$PLIST"
+
       - name: iOS imzalama profillerini uygula
         script: |
           set -e
