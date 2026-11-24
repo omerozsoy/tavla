@@ -20571,16 +20571,16 @@ body:has(.spectate-view) .app.lobby {
     flex: 1 1 0;
     min-width: 0;
     /* TÜM analiz filtre (Benim/Rakip/Tümü · En Kötüler/Sıraya Göre) + sekme (En İyi N · Küp Durumu)
-       düğmeleri AYNI YÜKSEKLİKTE (kullanıcı isteği): sabit min-height + flex-ortalama -> farklı
-       font/padding yüksekliği bozmaz; shadcn sabit yüksekliği bırakılır. */
+       düğmeleri İNCE + AYNI YÜKSEKLİKTE (kullanıcı: "ince olsun, daha az yer kaplasın"). Sabit
+       (küçük) min-height + flex-ortalama -> hepsi 28px, kompakt; shadcn sabit yüksekliği bırakılır. */
     height: auto;
-    min-height: 38px;
+    min-height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 8px;
-    font-size: 0.72rem;
-    line-height: 1.15;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    line-height: 1.1;
     letter-spacing: 0.2px;
   }
 }
