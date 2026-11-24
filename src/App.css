@@ -6663,6 +6663,28 @@ button[aria-disabled='true'],
 }
 .board.board-3d .board-ctl-layer .center-overlay {
   pointer-events: auto;
+  /* Eğik board görsel olarak alt ~2/3'te (pivot alt, foreshorten) -> düz katmanda düğmeleri
+     filigran bandına indir (top 50%->64%). Yarı-ortaları (left 26%/74%) base'den gelir. */
+  top: 64%;
+}
+
+/* 3D HANE NUMARALARI: dış grid-satırı numaralarını gizle; board-inner İÇİNDEKİLER (b3d) kenarlarda
+   -> eğik düzlemle döner, hanelerle hizalanır. */
+.board.board-3d > .pt-numbers {
+  display: none;
+}
+.board.board-3d .board-inner .pt-numbers.b3d {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.board.board-3d .board-inner .pt-numbers.b3d.top {
+  top: calc(var(--checker) * -0.82);
+}
+.board.board-3d .board-inner .pt-numbers.b3d.bottom {
+  bottom: calc(var(--checker) * -0.82);
 }
 
 /* --- TAS KALINLIGI (yalniz 3D): istiflenmis box-shadow ile silindir "yan duvar" illuzyonu.
@@ -37287,6 +37309,20 @@ body.has-bottom-nav .to-top {
    küçük loader) ve boot-loader hariç (.register-overlay içindeki, zaten fixed overlay). */
 .home-panel .app-loading:not(.app-loading--inline) {
   min-height: 320px;
+}
+/* CLS 2. iterasyon (kullanıcı boşluğu kabul etti): residual kayanlar seek-panel (0.14) +
+   tourn-carousel (0.12). seek-panel yüklü liste (header+10 satır+pager) 320px'den UZUN ->
+   içerik gelince panel büyüyordu. Üç durumu da (yükleme/boş/liste) TEK sabit yükseklikte
+   tut -> panel hiç büyümez/küçülmez, alt içerik kaymaz. Az seeker'da boşluk (kabul). */
+.seek-panel .app-loading:not(.app-loading--inline),
+.seek-panel .seek-empty,
+.seek-panel .rank-list {
+  min-height: 500px;
+}
+/* Turnuva carousel: boş->dolu (turnuva verisi gelince) + slide yükseklik farkı kayıyordu.
+   Viewport'a sabit yükseklik rezerve (overflow:hidden zaten var -> taşarsa kırpar, kaymaz). */
+.swiss-panel.tourn-panel .tourn-viewport {
+  min-height: 140px;
 }
 .app-loading__dice {
   object-fit: contain;
