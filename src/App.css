@@ -17701,6 +17701,11 @@ body:has(.spectate-view) .app.lobby {
   color: var(--muted);
   font-weight: 500;
 }
+/* "Okları gösterme" (ham pozisyon) MİNİK ikon düğmesi — YALNIZ mobilde, Kazanma/Mars barlarının
+   altında en solda görünür. Masaüstünde aday listesindeki .an-cand-pre kullanılır -> base'de gizli. */
+.an-premove-mini {
+  display: none;
+}
 /* Tahta alti: su an gosterilen hamlenin etiketi (senin hamlen / aday #n) */
 .an-view-label {
   text-align: center;
@@ -17865,15 +17870,37 @@ body:has(.spectate-view) .app.lobby {
   .analysis-layout .an-split-board .an-board-stage {
     --board-h: max(140px, min(calc((100cqw - 20px) / 1.6), calc(100vh - 180px)));
   }
+  /* Mobilde TÜM sol panel GİZLİ (kullanıcı isteği): hem uzun hata listesi hem filtre butonları
+     (Benim/Rakip · En Kötüler/Sıraya Göre). Varsayılan scope='mine' + worstFirst zaten "benim en
+     kötü hamlelerim"i gösterir; alttaki sabit oklar gezer. Masaüstünde panel aynen görünür. */
   .analysis-layout .analysis-list {
-    flex: none;
-    width: 100%;
-    order: 2;
-  }
-  /* Uzun hata listesi mobilde GİZLİ — tek pozisyon + oklarla gezinilir (kullanıcı isteği).
-     Filtre butonları (Benim/Rakip · En Kötüler/Sıraya Göre) kalır: sıralamayı seçer, oklar gezer. */
-  .analysis-layout .analysis-rows {
     display: none;
+  }
+  /* Aday listesindeki tam-genişlik "Okları Kaldır" satırı mobilde gizli — yerine aşağıdaki
+     minik ikon düğmesi (barların altında, en solda) kullanılır. */
+  .an-split-cands .an-cand.an-cand-pre {
+    display: none;
+  }
+  /* Minik "okları gösterme" ikon düğmesi: Kazanma/Mars barlarının bittiği yerde, en solda. */
+  .an-premove-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    width: 30px;
+    height: 30px;
+    margin-top: 4px;
+    padding: 0;
+    border: 1px solid var(--line, rgba(0, 0, 0, 0.14));
+    border-radius: 8px;
+    background: var(--card, #fff);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .an-premove-mini.on {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
   }
   /* "Dışa aktar altındaki turuncu çizgi" = YATAY SCROLLBAR (global `*{scrollbar-color:terracotta}`).
      Full-bleed tahta (negatif margin-inline) report-body'de yatay taşma yaratıp turuncu yatay

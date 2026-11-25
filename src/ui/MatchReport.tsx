@@ -720,6 +720,18 @@ export default function MatchReport({
                         </div>
                       ) : null
                     })()}
+                    {/* Mobil: "okları gösterme" (ham pozisyon) MİNİK ikon düğmesi — Kazanma/Mars
+                        barlarının altında, en solda. Masaüstünde aday listesindeki buton kullanılır
+                        (bu yalnız ≤720px CSS ile görünür; aday listesindeki ise mobilde gizlenir). */}
+                    <button
+                      type="button"
+                      className={`an-premove-mini ${candIdx === PREMOVE ? 'on' : ''}`}
+                      onClick={() => setCandIdx(candIdx === PREMOVE ? (playedIdx >= 0 ? playedIdx : -1) : PREMOVE)}
+                      title={t('rep.beforeMove')}
+                      aria-label={t('rep.beforeMove')}
+                    >
+                      <Icon name="navigation-off" size={15} />
+                    </button>
                     </div>
                     <div className="an-split-cands">
                     {/* Sağ panel sekmeleri: En İyi N Hamle | Küp Durumu (o an seçili hamle). */}
