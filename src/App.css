@@ -17759,14 +17759,19 @@ body:has(.spectate-view) .app.lobby {
 .an-nav-you {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: flex-start; /* nokta+hamle SOLDA, kayıp değeri sağa dayalı (.an-eq margin-left:auto) */
+  gap: 6px;
   flex-wrap: nowrap;
   width: 100%;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 7px 12px;
+}
+/* Kayıp değeri (−0.097) hamle-nav kutusunda EN SAĞA dayalı. */
+.an-nav-you .an-eq {
+  margin-left: auto;
+  white-space: nowrap;
 }
 .an-nav-move {
   font-weight: 700;

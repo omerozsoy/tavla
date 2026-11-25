@@ -868,11 +868,11 @@ export default function MatchReport({
                       <span className="an-nav-you">
                         <span className={`aq-dot ${band(prLoss(cur)).cls}`} />
                         <span className="an-nav-move">{cur?.notation || '—'}</span>
-                        <span className="an-eq neg">
-                          {prLoss(cur) >= 0.005 ? `-${prLoss(cur).toFixed(3)}` : '—'}
-                        </span>
                         <span className="an-you-tag">
                           <Icon name="user" size={11} /> {playedLabel}
+                        </span>
+                        <span className="an-eq neg">
+                          {prLoss(cur) >= 0.005 ? `-${prLoss(cur).toFixed(3)}` : '—'}
                         </span>
                       </span>
                       <span className="an-nav-pos">{(rowPos < 0 ? 0 : rowPos) + 1} / {rows.length}</span>
