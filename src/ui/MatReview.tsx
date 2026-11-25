@@ -34,7 +34,7 @@ function band(loss: number): 'good' | 'ok' | 'bad' | 'blunder' {
 // -> kaçırılan double / yanlış take-pass da checker hataları gibi KIRMIZI + işaretli + süzülebilir.
 const entryLoss = (e: LogEntry): number =>
   e.cube ? Math.min(3, Math.max(0, e.cube.loss ?? e.loss ?? 0)) : prLoss(e)
-const pct = (v: number) => (v * 100).toFixed(1)
+const pct = (v: number) => '%' + (v * 100).toFixed(1)
 // "Pul Oyunu (PR)" -> "Pul Oyunu": mini bileşen etiketleri için parantezli eki at (tüm dillerde).
 const shortLbl = (s: string) => s.replace(/\s*\([^)]*\)\s*$/, '')
 
