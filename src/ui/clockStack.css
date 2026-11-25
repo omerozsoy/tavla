@@ -86,7 +86,7 @@
    (14pro'da board top~566, bottom fold-altinda). Yatay KOMPAKT seride topla -> saat ~350px
    yerine ~56px olur, board yukari gelip ekrana tam sigar. YALNIZ PORTRE: yatayda (landscape)
    saat board yaninda dar dikey kolon olarak DOGRU kalir. Ozgulluk icin .game-area ile sar. --- */
-@media (max-width: 900px) and (orientation: portrait) {
+@media (max-width: 1024px) and (orientation: portrait) {
   .game-area .clock-stack {
     flex-direction: row;
     justify-content: center;

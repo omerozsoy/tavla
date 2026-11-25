@@ -4719,7 +4719,7 @@ button[aria-disabled='true'],
 }
 /* Mobilde sol menu drawer'a doner -> sayfayi kapatmak icin X geri gelir
    (kartin sag-ust kosesi; standart .register-overlay.page mobil davranisiyla ayni). */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .seo-landing-card .modal-close {
     display: flex;
   }
@@ -5868,7 +5868,7 @@ button[aria-disabled='true'],
   display: flex;
 }
 /* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .register-overlay.page {
     top: 0;
     right: 0;
@@ -5926,7 +5926,7 @@ button[aria-disabled='true'],
 .page-host .register-overlay.page > .tourn-card {
   overflow: visible;
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .page-host .register-overlay.page > *:not(.register-overlay) {
     padding: 16px 14px 40px;
   }
@@ -5938,7 +5938,7 @@ button[aria-disabled='true'],
 .register-overlay.page > *:not(.register-overlay) .analyzer-close {
   display: none;
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .register-overlay.page > *:not(.register-overlay) .analyzer-close {
     display: inline-flex;
     position: fixed;
@@ -6337,7 +6337,7 @@ button[aria-disabled='true'],
 /* Oyun ekraninda ust hesap bari GIZLI (.game-view .account-bar { display:none }) oldugundan
    .main'in header-h kadar ust boslugu bos yer birakiyordu -> board'u YUKARI cek (masaustu).
    Mobil (<=900) ve fiziksel yatay kendi tuned padding'lerini korur. */
-@media (min-width: 901px) {
+@media (min-width: 1025px) {
   .main.game-scene {
     padding-top: 4px; /* board'u birazcık yukarı: alttaki hane numaraları kesilmesin */
     /* Oyun sahnesi masaüstünde viewport'a SIĞACAK şekilde boyutlanır (board-h = min(100dvh-92, ...)).
@@ -6351,7 +6351,7 @@ button[aria-disabled='true'],
    yuksekligi artik header payini (--header-h) DUSMEZ; sadece gercek chrome (ust pay +
    nokta seritleri + app padding ~92px) dusulur. Genislik kisiti hala kapak (tasma yok).
    Sadece masaustu-uzun ekran; fiziksel yatay (max-height:560) kendi tuned board-h'ini korur. */
-@media (min-width: 901px) and (min-height: 561px) {
+@media (min-width: 1025px) and (min-height: 561px) {
   .app.game-view {
     /* 92 -> 106: board + alt/üst hane numara şeritlerine pay (alt rakamlar kesilmesin).
        106 -> 98: alt anlatım satırı kaldırıldı, boşalan dikey alanı board'a ver (>92: numara kesilmez).
@@ -8513,7 +8513,7 @@ html[data-board='yilbasi'] .checker.black {
 }
 /* Mobil: oyun-ici merkez butonlari (Zar At / Katla / Onayla) kucult -> board'dan rol calmasin.
    Yukseklik 44px: dokunma hedefi alt siniri (Apple HIG / WCAG 2.5.5); 40px'te Onayla iska oluyordu. */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .center-overlay [data-slot='button'] {
     height: 44px;
     min-height: 44px;
@@ -8803,7 +8803,7 @@ html[data-board='yilbasi'] .checker.black {
 /* İZLEYİCİ (misafir) küp bildirimi: salt-okunur metin kutusu, buton yok -> mobilde
    board'u az kapasın. Ekrana göre ölç (vw cap) + küçük font; okunur kalsın yeter.
    Oyuncunun kendi küp kutusu (take/drop butonlu) ETKİLENMEZ (.spectate-view kapsamı). */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .spectate-view .result-box {
     padding: 9px 12px;
     max-width: min(210px, 62vw);
@@ -9320,7 +9320,7 @@ button.move-row:focus-visible {
 }
 /* Mobil: kapat (X) kartla birlikte scroll olup kaybolmasın -> güvenli-alanlı SABİT üst-sağ.
    (overlay backdrop-filter'lı olduğundan fixed = overlay'e göre = tam ekrana göre.) */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .register-overlay.modal:not(.page) .modal-close {
     position: fixed;
     top: calc(10px + env(safe-area-inset-top));
@@ -9983,7 +9983,7 @@ button.move-row:focus-visible {
   color: var(--muted);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   /* Dikey/tablet mobil: sol menu 900px'te drawer'a donup akistan cikinca board'a
      tam yer acilir; board'u da ayni esikte EKRAN GENISLIGINE gore olcekle. Aksi halde
      720-900px "olu bolge"de board (100vw-560px)/1.4 ile ~143px'e dusuyordu.
@@ -10052,7 +10052,7 @@ button.move-row:focus-visible {
    ALTINDA buyuk bir bosluk kaliyor ve "tam oturmuyor" gibi duruyordu. Oyun icerigini
    dikeyde ORTALA ki board bosluga dengeli otursun (board boyutu ayni, sadece konum).
    Yalniz oyun-view'i etkiler; lobi/menu akisina dokunmaz. */
-@media (max-width: 900px) and (orientation: portrait) {
+@media (max-width: 1024px) and (orientation: portrait) {
   .game-view .main {
     justify-content: center;
     padding-top: 0;
@@ -10467,7 +10467,7 @@ html.fs-active .account-bar {
     transform 0.18s ease;
 }
 /* Mobilde (game-area kolon olabilir) hamburger board altina yigilmasin -> fixed + daha kucuk */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .game-ham {
     position: fixed;
     right: calc(6px + env(safe-area-inset-right));
@@ -10482,7 +10482,7 @@ html.fs-active .account-bar {
    yanlis dokunma) -> EN SAG UST KOSE (kullanici istegi). Tam ekran dugmesi (varsa) soluna kayar;
    iOS'ta tam ekran API yok -> dugme hic cizilmez, menu kosede yalniz kalir (eski 58px'te saga bosluk
    kaliyordu). */
-@media (max-width: 900px) and (orientation: portrait) {
+@media (max-width: 1024px) and (orientation: portrait) {
   .game-ham {
     top: calc(12px + env(safe-area-inset-top));
     right: calc(12px + env(safe-area-inset-right));
@@ -10500,7 +10500,7 @@ html.fs-active .account-bar {
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .game-ham:hover {
     transform: translateY(-50%);
   }
@@ -11019,7 +11019,7 @@ html.fs-active .account-bar {
 }
 
 /* ---- Mobil / kucuk ekran duzeni ---- */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .app {
     padding: 4px 5px;
     gap: 6px;
@@ -11634,7 +11634,7 @@ button.stat-chip:hover {
 .acct-mobile {
   display: none;
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .acct-desktop {
     display: none;
   }
@@ -11650,7 +11650,7 @@ button.stat-chip:hover {
    1280 altinda sol panele/menuye tasiyordu (iPad yatay 1133-1194; olcum: measure-topbar.mjs).
    Durum pili SADECE renkli nokta (uzun "Oyun Kabul Etmiyor" metni gizli) + sik gap -> bar oturur.
    1280+ tam metinli bar aynen kalir. */
-@media (min-width: 901px) and (max-width: 1279px) {
+@media (min-width: 1025px) and (max-width: 1279px) {
   .acct-desktop {
     gap: 8px;
   }
@@ -11920,7 +11920,7 @@ button.acct-row-logout:hover:not(:disabled) {
    media query specificity EKLEMEZ, kaynak-sırası kazanır. (Önceki denemem base'in ÖNCESindeydi,
    base onu eziyordu -> sabit kalmıyordu.) sticky absolute hamburger'a offset-parent olur; mobilde
    .app.lobby overflow-y:auto scroll kabı -> tüm bar (hamburger + hesap barı) üstte pinlenir. */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .app.lobby > .topbar-stack {
     position: sticky;
     top: 0;
@@ -11938,7 +11938,7 @@ button.acct-row-logout:hover:not(:disabled) {
 /* Desktop yan menu: STICKY DEGIL -> sayfayla birlikte kayar (kullanici tercihi).
    Boylece tam-genislik footer ile HIC cakismaz; menu icerikle akar, footer altta kalir.
    (Mobilde .side-menu position:fixed drawer; bu kural yalniz desktop min-width ile.) */
-@media (min-width: 901px) {
+@media (min-width: 1025px) {
   .app.lobby > .side-menu {
     position: static;
     align-self: start;
@@ -11988,7 +11988,7 @@ button.acct-row-logout:hover:not(:disabled) {
    tasarsa yatay kaydirilir (overflow-x:auto emniyet agi, sigarsa cubuk cikmaz). Mobil
    (<=900) kendi sarma duzeni. Tablet (901-1300) ESKIDEN wrap idi (iki satir); kullanici
    istegiyle tek satira alindi + logo o bantta kucultuldu (asagida) -> kontroller sigar. */
-@media (min-width: 901px) {
+@media (min-width: 1025px) {
   .account-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -11997,7 +11997,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Tablet bandi (901-1300): tek satira sigmasi icin logoyu + bosluk/padding'i kucult.
    Dogrulandi (1280px WebView): bu degerlerle bar tek satir, yatay tasma 0 (scroll yok). */
-@media (min-width: 901px) and (max-width: 1300px) {
+@media (min-width: 1025px) and (max-width: 1300px) {
   .account-bar {
     padding-left: 18px;
     padding-right: 18px;
@@ -12011,54 +12011,6 @@ button.acct-row-logout:hover:not(:disabled) {
   }
   .ab-tag {
     font-size: 11px;
-  }
-}
-/* iPad Pro 13" PORTRAIT (1024px) + dar tabletler: 901-1300 bandi 1280px'te dogrulanmisti ama
-   1024px DAHA DAR -> girisli ust bar (logo+slogan + avatar/isim + 2 cip + odul sayaci + 5-6 ikon)
-   tasip YATAY SCROLL yapiyordu. Bu alt-bant daha agresif kuculur (slogan gizli, logo/cip/odul/
-   ikon/bosluk kompakt) -> tek satira sigar, scroll kaybolur. 901-1300'den SONRA (kaynak-sirasi
-   esit ozgullukte kazanir). overflow-x:auto emniyet agi yine de korunur. */
-@media (min-width: 901px) and (max-width: 1100px) {
-  .account-bar {
-    padding-left: 10px;
-    padding-right: 10px;
-    gap: 5px;
-  }
-  .acct-desktop,
-  .account-id {
-    gap: 5px;
-  }
-  .ab-wordmark {
-    font-size: 21px !important;
-  }
-  .ab-tag {
-    display: none; /* "Tavla Portali" slogani gizle -> ciddi yatay yer acar */
-  }
-  .account-name {
-    font-size: 0.82rem;
-  }
-  .account-bar .stat-chip {
-    padding: 3px 6px;
-  }
-  .account-bar .stat-chip-val {
-    font-size: 0.8rem;
-  }
-  .rb-main {
-    font-size: 0.78rem;
-  }
-  .rb-sub {
-    font-size: 0.5rem;
-  }
-  .account-bar .btn-reward:not([data-slot]) {
-    padding: 3px 6px;
-  }
-  /* Sag ikon butonlari: kutu + svg kucult (tailwind size-[24px]! override'ini (0,2,1)+!important ile ez). */
-  .account-bar [data-slot='button'] {
-    padding: 4px;
-  }
-  .account-bar [data-slot='button'] svg {
-    width: 20px !important;
-    height: 20px !important;
   }
 }
 /* TavlaTv PNG logosu (tone="auto"): acik temada gri, koyu temada disi (beyaz) varyant.
@@ -12101,7 +12053,7 @@ button.acct-row-logout:hover:not(:disabled) {
    baslasin. Bu kural base .account-bar/.ab-brand'den SONRA gelmeli (kaynak sirasi): eski
    <=900px kurali base tarafindan eziliyordu ve 721-900px'te (tablet, yatay telefon)
    hamburger logonun ilk harfini kapatiyordu. Yatay PWA'da sol/sag centik payi da eklenir. */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .account-bar {
     padding-left: calc(60px + env(safe-area-inset-left));
     padding-right: max(12px, env(safe-area-inset-right));
@@ -12140,7 +12092,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 /* Mobil (â‰¤900px): base .app.lobby grid'inden SONRA gelmeli ki onu ezebilsin.
    Tek kolon (menu drawer), kompakt logo, hamburger'a yer. */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .app.lobby {
     /* minmax(0,1fr): '1fr' = minmax(auto,1fr) -> kolon EN GENIS cocugun
        (nowrap account-bar ~361px) min-content'ine buyuyup 320px viewport'u
@@ -12686,7 +12638,7 @@ button.acct-row-logout:hover:not(:disabled) {
   padding-left: max(clamp(12px, 3vw, 40px), calc(env(safe-area-inset-left) + 8px));
   padding-right: max(clamp(12px, 3vw, 40px), calc(env(safe-area-inset-right) + 8px));
 }
-@media (min-width: 901px) {
+@media (min-width: 1025px) {
   .lobby-main {
     padding-right: max(clamp(12px, 3vw, 40px), 52px, calc(env(safe-area-inset-right) + 8px));
   }
@@ -12695,7 +12647,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .side-menu-bug {
   display: none;
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .side-menu-bug {
     display: flex;
     margin-top: auto;
@@ -16471,7 +16423,7 @@ button.acct-row-logout:hover:not(:disabled) {
     grid-template-columns: 1fr;
   }
 }
-@media (min-width: 721px) and (max-width: 900px) {
+@media (min-width: 721px) and (max-width: 1024px) {
   .hf-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -16944,7 +16896,7 @@ body:has(.spectate-view) .app.lobby {
   width: min(240px, 40vw);
 }
 /* Mobil (yatay oyun): paneli daralt, board'u ezmesin */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .spectate-side {
     width: min(210px, 46vw);
   }
@@ -18865,7 +18817,7 @@ body:has(.spectate-view) .app.lobby {
    Solo overlay .app.lobby DISINDA (fixed modal) -> burada acikca kareler.
    Daire avatar/nokta (--radius-circle / 50%) KORUNUR.
    ============================================================ */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .setup-split {
     /* minmax(0,1fr): 1fr'nin min-content tabani kurulum kartini 360px'te viewport'tan ~9px
        genis yapiyordu (Sure satirinin son kutusu ve "Katil" dugmesi kesiliyordu). */
@@ -20138,7 +20090,7 @@ body:has(.spectate-view) .app.lobby {
   }
 }
 /* Mobil (<=900: sol menu drawer'a doner, icerik tam genislik): hepsi alt alta */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .analyzer {
     /* board-h GENISLIGE gore (320px'de tasmasin): eski `max(240px, ...)` tabani dar telefonda
        genislik-sigmasini (320px'de ~195px ister) EZIP board'u 357px'e zorluyordu -> tahta her
@@ -20670,7 +20622,7 @@ body:has(.spectate-view) .app.lobby {
    HARDCODED. Analiz filtre (Benim/Rakip/Tümü · En Kötüler/Sıraya Göre) + sekme (En İyi N · Küp
    Durumu) düğmelerini TÜM mobilde (≤900px — cihaz ≤560'ı kaçırsa bile) SABİT ince height ile zorla
    ez -> hepsi 28px, eşit + ince. Kaynak-sırası geç -> kazanır; flex-ortalama metni ortalar. */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .rep-filter > [data-slot='button'],
   .rep-filter > button,
   .rep-filter .menu-btn,
@@ -22151,7 +22103,7 @@ body:has(.spectate-view) .app.lobby {
   .lts-feats { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .info-card {
     padding: 6px clamp(12px, 4vw, 20px) 32px;
   }
@@ -35231,7 +35183,7 @@ select:-webkit-autofill {
     transform: none;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .to-top {
     width: 42px;
     height: 42px;
@@ -37301,7 +37253,7 @@ body.has-bottom-nav .to-top {
 /* Mobil: üç panel dikey yığılır — DETAY-SAYFASI DÜZENİ (kullanıcı isteği):
    BOARD üstte → ANALİZ (adaylar) ortada → HAMLE LİSTESİ (hatalar) ALTTA.
    DOM sırası list→board→analysis; görsel sıra `order` ile çevrilir. */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .mrv-grid {
     grid-template-columns: 1fr;
     grid-template-rows: none; /* otomatik akış; sıra order ile */

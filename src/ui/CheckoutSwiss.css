@@ -790,7 +790,7 @@ button.ckw-pm {
 }
 
 /* ===================== RESPONSIVE ===================== */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .ckw-grid {
     grid-template-columns: 1fr;
   }

@@ -58,7 +58,7 @@
 /* Mobil/tablet (<=900px): sabit sekme GIZLI. Dar ekranda mesaj Gonder dugmesinin, lider
    tablosu puan sutununun ve form alanlarinin ustune biniyordu. Bu genisliklerde
    "Hata Bildir" hamburger cekmecesinin en altinda (SideMenu .side-menu-bug). */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .bug-fab {
     display: none;
   }
