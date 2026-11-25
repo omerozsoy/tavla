@@ -11646,6 +11646,15 @@ button.stat-chip:hover {
     justify-content: flex-end;
   }
 }
+/* GENIS mobil/tablet (iPad portrait 1032 dahil, yatay telefon): logo + hesap AYNI satira
+   rahat sigar -> hesabi tam-genislik alt-satira atma; saga yasla (tek satir). Dar telefonun
+   (<600px) 2-satir duzeni (yukaridaki flex:1 1 100%) yalniz orada kalir. */
+@media (min-width: 600px) and (max-width: 1080px) {
+  .acct-mobile {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
 /* Tablet/dar laptop (901-1279): inline ust bar (acct-desktop) ~1090px -> toplam ~1257px gerekir,
    1280 altinda sol panele/menuye tasiyordu (iPad yatay 1133-1194; olcum: measure-topbar.mjs).
    Durum pili SADECE renkli nokta (uzun "Oyun Kabul Etmiyor" metni gizli) + sik gap -> bar oturur.
