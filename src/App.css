@@ -33628,6 +33628,48 @@ input:not([type='range']), select, textarea {
   max-width: min(92vw, 420px);
   pointer-events: none; /* boÅŸluklar alttaki tÄ±klamayÄ± engellemesin */
 }
+/* Giris/Uyelik KAPISI uyarisi: ekran ORTASINDA, buyuk + belirgin (kirmizi). */
+.toastr-viewport--center {
+  top: 50%;
+  right: auto;
+  left: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  align-items: center;
+  max-width: min(92vw, 460px);
+}
+.toastr-viewport--center .toastr {
+  padding: 18px 22px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-width: 2px;
+  border-left-width: 5px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+  animation: toastr-pop 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toastr-viewport--center .toastr--error {
+  background: var(--danger-fg);
+  border-color: var(--danger-fg);
+  color: #fff;
+}
+.toastr-viewport--center .toastr--error .toastr__icon {
+  color: #fff;
+}
+@keyframes toastr-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toastr-viewport--center .toastr {
+    animation: none;
+  }
+}
 .toastr {
   pointer-events: auto;
   display: flex;
@@ -37270,6 +37312,13 @@ body.has-bottom-nav .to-top {
      board'unda küp boyutunu düşür (kullanıcı). */
   .mrv-board-stage .board {
     --cube-size: clamp(20px, calc(var(--bar-w) * 0.6), 36px);
+  }
+  /* Pip sayıları (134/120) mobilde board'a oranla ÇOK BÜYÜKtü: MatReview .mrv-board base .pip'i
+     (1.05rem) kullanır, Pozisyon Analizi'nin .analyzer-board küçültme override'ı BURAYA uygulanmaz
+     -> mat-analiz board'una scope'lu küçült (oyun/analyzer ekranı değişmez, kullanıcı). */
+  .mrv-board-stage .pip {
+    font-size: 0.78rem;
+    transform: translateY(-2px);
   }
   .mrv-board {
     min-height: auto; /* flex-column'un içeriğinin altına çökmesini (board taşması) engelle */
