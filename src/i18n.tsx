@@ -1553,7 +1553,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'dm.convDeleteConfirm': 'Bu sohbeti silmek istiyor musun? Yalnızca senden silinir.',
   'dm.convDeleted': 'Sohbet silindi.',
   'dm.bulkSelect': 'Topluca sil',
-  'dm.bulkAll': 'Tümünü seç',
+  'dm.bulkAll': 'Hepsini seç',
   'dm.bulkNone': 'Seçimi kaldır',
   'dm.bulkDeleteN': 'Sil ({n})',
   'dm.bulkDelete': 'Sohbetleri sil',

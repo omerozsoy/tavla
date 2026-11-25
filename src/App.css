@@ -27358,6 +27358,11 @@ body.has-bottom-nav .register-overlay.page > *:not(.register-overlay):not(.dm-zo
   background: var(--danger, #c0392b);
   color: #fff;
 }
+.messages-bulk-btn.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
 .messages-bulk-btn:disabled {
   opacity: 0.45;
   cursor: default;

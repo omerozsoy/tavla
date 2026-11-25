@@ -679,10 +679,10 @@ export default function Messages({
                   <>
                     <button
                       type="button"
-                      className="messages-bulk-link"
+                      className={`messages-bulk-btn ${selectedIds.size === chatThreads.length ? 'on' : ''}`}
                       onClick={() => setSelectedIds((prev) => prev.size === chatThreads.length ? new Set() : new Set(chatThreads.map((th) => th.user.id)))}
                     >
-                      {selectedIds.size === chatThreads.length ? t('dm.bulkNone') : t('dm.bulkAll')}
+                      <Icon name="check" size={15} /> {selectedIds.size === chatThreads.length ? t('dm.bulkNone') : t('dm.bulkAll')}
                     </button>
                     <span className="messages-bulk-spacer" />
                     <button type="button" className="messages-bulk-link" onClick={exitSelectMode}>
