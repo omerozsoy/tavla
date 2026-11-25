@@ -2897,6 +2897,12 @@ export async function matchGnubgPr(id: number): Promise<{
   opponent_checker_pr?: number | null
   opponent_cube_pr?: number | null
   rating_bonus?: number | null // PR ×2 ödülü: bu oyuncu kazandı+PR daha iyiyse ek rating (>0) — else null
+  // OTORİTER rating değişimi (self + rakip) — PR ×2 bonusu DAHİL. Sonuç ekranı tahmin yerine bunu
+  // gösterir (sıfır-toplam varsayımı PR bonusu/asimetri ile bozuluyordu). Puansızsa null.
+  rating_delta?: number | null
+  rating_after?: number | null
+  opponent_rating_delta?: number | null
+  opponent_rating_after?: number | null
   luck_ready: boolean
   luck_mwc: number | null // insan (satır sahibi) gnubg NATIVE şans %
   opponent_luck_mwc: number | null // bot gnubg NATIVE şans %

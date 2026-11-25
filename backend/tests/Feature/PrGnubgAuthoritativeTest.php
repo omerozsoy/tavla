@@ -180,6 +180,23 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->actingAs($other)->getJson("/api/me/match-pr-gnubg/{$mr->id}")->assertStatus(403);
     }
 
+    /**
+     * OTORİTER rating çifti: endpoint iki satırın GERÇEK delta/rating_after'ını döndürür (sonuç ekranı
+     * "−(kendi delta)" TAHMİN etmez). Kazanan +16 görür, rakip −16 — sıfır-toplam bozulsa bile (PR ×2)
+     * değerler kolondan geldiği için iki tarafta da tutarlı. (KSDBH: kazanan −15/kaybeden +40 sahtesiydi.)
+     */
+    public function test_match_pr_gnubg_returns_authoritative_rating_pair(): void
+    {
+        [$w, $b] = $this->onlineMatchRows('RATEPAIR');
+        $wu = User::find($w->user_id);
+
+        $this->actingAs($wu)->getJson("/api/me/match-pr-gnubg/{$w->id}")
+            ->assertOk()->assertJson([
+                'rating_delta' => 16, 'rating_after' => 1516,
+                'opponent_rating_delta' => -16, 'opponent_rating_after' => 1484,
+            ]);
+    }
+
     /** gnubg HİÇBİR pozisyon değerlendiremeyen (evaluated=0) sahte orkestrator -> pr 0.0 fallback. */
     private function emptyOrch(): AnalysisOrchestrator
     {

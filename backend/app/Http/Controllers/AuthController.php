@@ -1319,6 +1319,15 @@ class AuthController extends Controller
             // penceresini açar. KÖK FIX (XV44Z): dbb0c31be matchPr oda-poll'unu kaldırıp istemciyi bu
             // uca taşıdı ama alan buraya EKLENMEMİŞTİ -> ödül veriliyor, pencere hiç açılmıyordu.
             'rating_bonus' => Schema::hasColumn('match_results', 'pr_rating_bonus') ? $match->pr_rating_bonus : null,
+            // OTORİTER rating değişimi (self + rakip) — sonuç ekranı BUNU gösterir, tahmin ETMEZ.
+            // delta/rating_after PR ×2 bonusu DAHİL (PrRatingBonus bu kolonları günceller) -> kazanan
+            // +20 / kaybeden −10 gibi SIFIR-TOPLAM-DIŞI değerler doğru görünür. Eski istemci "rakip
+            // delta = −(kendi delta)" tahmini bonus/yüksek-puan asimetrisinde yanlıştı (KSDBH: kazanan
+            // ekranda −15, kaybeden +40 görünüyordu). Puansızsa null -> istemci fallback.
+            'rating_delta' => ($match->rated ?? true) ? (int) $match->delta : null,
+            'rating_after' => ($match->rated ?? true) ? (int) $match->rating_after : null,
+            'opponent_rating_delta' => ($oppRow && ($oppRow->rated ?? true)) ? (int) $oppRow->delta : null,
+            'opponent_rating_after' => ($oppRow && ($oppRow->rated ?? true)) ? (int) $oppRow->rating_after : null,
         ]);
     }
 

@@ -2701,6 +2701,12 @@ export default function App() {
   // PR ×2 ÖDÜLÜ: kazandım + PR'ım rakipten iyi -> sunucu ek rating verdi. pollGnubgPr'dan gelir;
   // >0 ise sonuç kartının önünde "X2" tebrik penceresi açılır (yalnız kazanan görür).
   const [ratingBonus, setRatingBonus] = useState<number | null>(null)
+  // OTORİTER rating değişimi (self + rakip), PR analizi bitince pollGnubgPr'dan gelir. PR ×2 bonusu
+  // DAHİL -> sonuç ekranı rakip delta'yı "−(kendi delta)" tahminiyle DEĞİL bununla gösterir (bonus/
+  // yüksek-puan asimetrisinde tahmin yanlıştı: KSDBH kazanan −15 / kaybeden +40 görünüyordu). null -> tahmin.
+  const [ratingPair, setRatingPair] = useState<{
+    selfAfter: number; selfDelta: number; oppAfter: number; oppDelta: number
+  } | null>(null)
   const prPollRef = useRef(0) // aktif poll oturumu (yeni maç/yeni rapor eski poll'u iptal eder)
   // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
@@ -3670,6 +3676,7 @@ export default function App() {
     setLuckPending(false) // yeni mac -> onceki sans loader'ini kapat
     setPrSettled(false)
     setRatingBonus(null) // yeni mac -> onceki X2 odul penceresini gosterme
+    setRatingPair(null) // yeni mac -> onceki otoriter rating ciftini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
     setServerLuckEmg(null)
     setServerLuckJokers(null)
@@ -5958,6 +5965,15 @@ export default function App() {
         if (g.rating_bonus != null) {
           bonusDone = true // değerlendirildi (0 = ödül yok, >0 = verildi)
           if (g.rating_bonus > 0) setRatingBonus(g.rating_bonus)
+        }
+        // OTORİTER rating çifti (self + rakip, bonus DAHİL): geldiğinde sonuç ekranı tahmin yerine
+        // bunu gösterir -> kazanan +20 / kaybeden −10 gibi değerler iki tarafta da doğru görünür.
+        if (g.rating_after != null && g.rating_delta != null
+          && g.opponent_rating_after != null && g.opponent_rating_delta != null) {
+          setRatingPair({
+            selfAfter: g.rating_after, selfDelta: g.rating_delta,
+            oppAfter: g.opponent_rating_after, oppDelta: g.opponent_rating_delta,
+          })
         }
         if (!prDone && g.ready) {
           // self VE opponent (gnubg-otoriter) aynı analizden birlikte gelir -> iki hücre BİRLİKTE dolar
@@ -12999,6 +13015,13 @@ export default function App() {
               ? -Math.round(ratingChange.after - ratingChange.before)
               : null
           }
+          // OTORİTER rating (PR analizi bitince): PR ×2 bonusu DAHİL iki tarafın GERÇEK değeri ->
+          // "−(kendi delta)" tahmini + bayat room.oppRating yerine bunlar gösterilir (null -> tahmin).
+          // ratingIsWinner=prHumanColor===mWinner: self kazanan mı -> self/opp'u kazanan/kaybedene eşle.
+          winnerRatingFinal={ratingPair ? (prHumanColor === mWinner ? ratingPair.selfAfter : ratingPair.oppAfter) : null}
+          winnerRatingDelta={ratingPair ? (prHumanColor === mWinner ? ratingPair.selfDelta : ratingPair.oppDelta) : null}
+          loserRatingFinal={ratingPair ? (prHumanColor === mWinner ? ratingPair.oppAfter : ratingPair.selfAfter) : null}
+          loserRatingDelta={ratingPair ? (prHumanColor === mWinner ? ratingPair.oppDelta : ratingPair.selfDelta) : null}
           // BOT ODASI: rövanş consensus'ü (mine/theirs 'yes') İNSAN-İNSAN içindir; bot hiç 'yes'
           // demez -> "Rakip bekleniyor…" sonsuza dek takılır. Bot maçında null geçip basit "Rövanş"
           // butonunu göster (idle) -> onRematch anında yeni bot odası açar (bot her zaman kabul).

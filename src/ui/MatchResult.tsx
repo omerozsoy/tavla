@@ -54,6 +54,12 @@ interface Props {
   // Rakip rating değişimi (online puanlı maçta). Elo sıfır-toplamlı -> = -(kendi delta). null ->
   // gösterme (pvb/AI kalıcı rating yok, veya puansız). Her iki ekranda TUTARLI (deterministik).
   oppRatingDelta?: number | null
+  // OTORİTER rating (PR analizi bitince, PR ×2 bonusu DAHİL): doluysa rating satırı TAHMİN yerine
+  // bunları gösterir (winner/loser perspektifli, iki taraf da gerçek değer). null -> eski tahmin yolu.
+  winnerRatingFinal?: number | null
+  winnerRatingDelta?: number | null
+  loserRatingFinal?: number | null
+  loserRatingDelta?: number | null
   // Puansız maç açıklaması: neden rating/PR değişmedi. null -> puanlı (not gösterilmez).
   ratingReason?: 'bot' | 'unrated' | 'guest' | 'friendly_cap' | 'friendly' | 'casual' | null
   friendlyLimit?: number | null // 'friendly_cap' metninde "limit (N)" göstermek için
@@ -129,6 +135,10 @@ export default function MatchResult({
   ratingBonus = null,
   oppRating,
   oppRatingDelta,
+  winnerRatingFinal = null,
+  winnerRatingDelta = null,
+  loserRatingFinal = null,
+  loserRatingDelta = null,
   ratingReason,
   friendlyLimit,
   onNewMatch,
@@ -247,7 +257,16 @@ export default function MatchResult({
   // PR ×2 ödülü: sunucu kazanca eşit ek rating verdi -> kendi tarafın rating satırında da ×2 göster
   // (after + bonus; delta iki katına çıkar). Yalnız kazanana >0 gelir.
   const ratingBonusVal = ratingBonus && ratingBonus > 0 ? ratingBonus : 0
+  // OTORİTER çift (PR analizi bitince): doluysa iki tarafın GERÇEK değeri (PR ×2 bonusu DAHİL) ->
+  // tahmin/bonus-ekleme YOK. Böylece kazanan +20 / kaybeden −10 iki ekranda da tutarlı görünür.
+  const authFinal = (winnerSide: boolean) => (winnerSide ? winnerRatingFinal : loserRatingFinal)
+  const authDelta = (winnerSide: boolean) => (winnerSide ? winnerRatingDelta : loserRatingDelta)
   const ratingText = (winnerSide: boolean) => {
+    const af = authFinal(winnerSide)
+    if (af != null) {
+      const d = authDelta(winnerSide) ?? 0
+      return d !== 0 ? `${af} (${d >= 0 ? '+' : ''}${d})` : String(af)
+    }
     // KENDİ tarafı: sunucudan gelen before/after (+ varsa X2 bonusu).
     if (winnerSide === ratingIsWinner) {
       if (ratingBefore != null && ratingAfter != null) {
@@ -271,6 +290,8 @@ export default function MatchResult({
   // SEVİYE satırı tek-maç PR bandı; bu ise kalıcı rating rütbesi (divisionOf) — rating'in ALTINA ufak yazılır.
   const ratingFinal = (winnerSide: boolean): number | null => {
     if (spectator) return winnerSide ? (winnerRating ?? null) : (loserRating ?? null)
+    const af = authFinal(winnerSide)
+    if (af != null) return af
     if (winnerSide === ratingIsWinner) {
       if (ratingBefore != null && ratingAfter != null) return Math.round(ratingAfter + ratingBonusVal)
       return oppRating != null ? Math.round(oppRating) : null
