@@ -449,11 +449,11 @@ export default function MatReview({
             </div>
           </div>
           <div className="mrv-player mrv-player-top">
-            <span className="mrv-score">{matchLength ? `${gameScores?.[cur?.game ?? 0]?.black ?? 0}/${matchLength}` : ''}</span>
             <span className={`mrv-pname ${cur?.player === 'black' ? 'turn' : ''}`}>
               {cur?.player === 'black' && <span className="mrv-turn">▶</span>}
               {nameB}
             </span>
+            <span className="mrv-score">{matchLength ? `${gameScores?.[cur?.game ?? 0]?.black ?? 0}/${matchLength}` : ''}</span>
           </div>
 
           {boardState ? (
@@ -491,11 +491,11 @@ export default function MatReview({
           )}
 
           <div className="mrv-player mrv-player-bot">
-            <span className="mrv-score">{matchLength ? `${gameScores?.[cur?.game ?? 0]?.white ?? 0}/${matchLength}` : ''}</span>
             <span className={`mrv-pname ${cur?.player === 'white' ? 'turn' : ''}`}>
               {cur?.player === 'white' && <span className="mrv-turn">▶</span>}
               {nameW}
             </span>
+            <span className="mrv-score">{matchLength ? `${gameScores?.[cur?.game ?? 0]?.white ?? 0}/${matchLength}` : ''}</span>
           </div>
         </main>
 
