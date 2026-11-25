@@ -404,7 +404,10 @@ export default function MatReview({
                           className={`mrv-mark ${cls}${e.cube ? ' cube' : ''}`}
                           title={cubeKey ? t(cubeKey) : undefined}
                         >
-                          {l >= 0.08 ? '⁉' : '?'}
+                          {/* '⁉' (U+2049) tarayıcıda EMOJİ olarak render olup bozuk/kayık
+                              görünüyordu (yanındaki '?' ASCII net); aynı anlamı veren ASCII '!?'
+                              -> '?' gibi net metin, emoji değil. */}
+                          {l >= 0.08 ? '!?' : '?'}
                         </span>
                       )
                     })()}
