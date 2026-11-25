@@ -2547,7 +2547,6 @@ class RoomController extends Controller
             $decided = $this->decidedWinnerColor($room) !== null;
             if ($room->status === 'playing' && ! $ended && ! $decided) {
                 $wantsTourn = $request->boolean('tournament');
-                $isTournRoom = Cache::has(TournamentController::roomTargetKey($room->code));
                 // KÖK FIX (R7G8Q / ardasahan2004, 2026-11-24): leave(tournament=true) YALNIZCA "başka
                 // casual maçtan turnuva maçıma geç -> mevcut maçı no-contest kapat" amaçlıdır. Bayat
                 // tournMatchRef'li oto-geçiş efekti (App.tsx tournNotices) oyuncuyu KENDİ canlı turnuva
@@ -2556,13 +2555,19 @@ class RoomController extends Controller
                 // ELENİYORDU ("oyun devam ederken lobiye attı"). Turnuva odasında leave(tournament)
                 // ASLA forfeit DEĞİL -> NO-OP: oyuncu oynamaya devam etsin (gerçek terk zaten
                 // presence/stall süpürmesiyle grace'li ele alınır).
-                if ($wantsTourn && $isTournRoom) {
+                // Oda-turnuva tespiti iki katmanlı: önce ucuz cache (roomTargetKey, 2 gün TTL),
+                // cache düşmüşse (bellek baskısı) bracket DB'den doğrula -> koruma cache'e bağımlı
+                // değil. && kısa-devre: bracket taraması YALNIZ tournament=true + cache-miss'te çalışır
+                // (casual sekme-kapama leave'inde HİÇ çalışmaz).
+                if ($wantsTourn
+                    && (Cache::has(TournamentController::roomTargetKey($room->code))
+                        || $this->isLiveTournamentRoomFor($request->user()?->id, $room->code))) {
                     return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
                 }
                 // NO-CONTEST (turnuva maçına geçiş): oyuncu başka bir (turnuva dışı) maçtayken turnuva
                 // maçına çekiliyor -> mevcut maç kazananSIZ kapanır. Sunucu, oyuncunun GERÇEKTEN hazır bir
                 // turnuva maçı olduğunu doğrular; aksi halde normal ABANDON (rakip kazanır).
-                // (Buraya geldiysek isTournRoom=false -> eski `! Cache::has(...)` guard'ı korunur.)
+                // (Buraya geldiysek oda turnuva odası DEĞİL -> eski `! Cache::has(...)` guard'ı korunur.)
                 $noContest = $wantsTourn && $this->hasReadyTournamentMatch($request->user()?->id);
                 $clock['end'] = ['reason' => 'ABANDON', 'winner' => $noContest ? null : MatchClock::other($slot)];
                 $this->applyClockEnd($room, $clock);
@@ -2572,6 +2577,28 @@ class RoomController extends Controller
 
             return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
         });
+    }
+
+    /** Bu oda, oyuncunun ŞU AN oynanan (kazananı belirsiz) bir turnuva maçının odası mı? leave()
+     *  forfeit-koruması bunu roomTargetKey cache'ine EK olarak kullanır: cache düşse bile (bellek
+     *  baskısı / 2 gün sonrası) turnuva oyuncusu kendi canlı maçından leave ile ELENMESİN. */
+    private function isLiveTournamentRoomFor(?int $userId, string $code): bool
+    {
+        if (! $userId) {
+            return false;
+        }
+        foreach (Tournament::where('status', 'running')->get(['id', 'bracket']) as $tr) {
+            foreach (($tr->bracket ?? []) as $round) {
+                foreach ($round as $m) {
+                    if (($m['room'] ?? null) === $code && empty($m['winner'])
+                        && (($m['p1']['id'] ?? null) === $userId || ($m['p2']['id'] ?? null) === $userId)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Oyuncunun ŞU AN oynanmayı bekleyen (kazananı belirsiz) bir turnuva maçı var mı? No-contest

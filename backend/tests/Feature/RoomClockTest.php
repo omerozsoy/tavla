@@ -376,6 +376,31 @@ class RoomClockTest extends TestCase
         $this->assertDatabaseMissing('match_results', ['room_code' => 'TRNL']);
     }
 
+    // ---- DEFENSE-IN-DEPTH: roomTargetKey cache DÜŞSE bile (bellek baskısı) leave(tournament) kendi
+    // canlı turnuva maçında forfeit ETMEZ -> koruma bracket DB'den de doğrular. ----
+    public function test_leave_tournament_noop_via_bracket_when_cache_missing(): void
+    {
+        $room = $this->playingRoom('TRNB', 'normal', 3);
+        $this->putJson('/api/rooms/TRNB', ['token' => 't1', 'state' => $this->state(3)])->assertOk();
+        // Cache YOK (hiç yazılmadı/düştü) ama oda, çalışan bir turnuvanın bracket'ında p1'in canlı maçı.
+        Tournament::create([
+            'name' => 'Bracket Cache-Miss Test', 'type' => 'bracket', 'status' => 'running', 'size' => 2,
+            'bracket' => [[
+                ['key' => 'r0m0', 'room' => 'TRNB', 'winner' => null,
+                    'p1' => ['id' => $this->p1->id, 'name' => 'P1'],
+                    'p2' => ['id' => $this->p2->id, 'name' => 'P2']],
+            ]],
+        ]);
+
+        $this->postJson('/api/rooms/TRNB/leave', ['token' => 't1', 'tournament' => true])->assertOk();
+
+        $room->refresh();
+        $this->assertSame('playing', $room->status);
+        $this->assertNull($room->end_reason);
+        $this->assertNull($room->p1_result);
+        $this->assertDatabaseMissing('match_results', ['room_code' => 'TRNB']);
+    }
+
     // ---- GHOST-WIN KALKANI: hiç oynamayan (çekmeyen) oyuncu, rakip terk edince KAZANMAZ (no-contest) ----
     // Vaka: Omer tahtaya girip oynadı (match_moves'ta white hamlesi), Caner tahtayı HİÇ yükleyemedi
     // (match_moves'ta black satırı YOK). Omer bekleyip terk etti -> eskiden Caner haksız 3-0 (PR 0.00)
