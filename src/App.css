@@ -37188,15 +37188,16 @@ body.has-bottom-nav .to-top {
     margin-top: 40px; /* board'dan NET ayrı (kullanıcı: çok daha fazla boşluk) */
     padding-top: 12px;
   }
-  /* KÖK FIX (kullanıcı: "üstüne tahta gelmesin" / "boardun altı kesilmiş"): yapısal taşma YOK —
-     grid liste'yi board'un ALTINA koyar. Taşma, board SAHNESİNDEKİ mutlak-konumlu hamle-oku
-     overlay'inden (.mrv-arrows: inset:0 + overflow:visible + z-index) geliyor; alttaki hanelere
-     giden oklar sahne kutusunun DIŞINA sarkıp aşağıdaki düğmelerin üstüne biniyordu. ÖNCEKİ deneme
-     (düğmeye z-index) yanlıştı: düğmeyi öne alınca bu sefer board'un altını KESTİ. Doğrusu: sahneyi
-     kendi kutusuna kırp -> ok kuyruğu düğme alanına giremez, gerçek board içeriği + ok gövdesi kutu
-     içinde kalır (board kesilmez). */
+  /* KÖK FIX (kullanıcı: "üstüne tahta gelmesin" / "boardun altı/üstü kesildi"): board SAHNESİ
+     (.mrv-board-stage) flex-column içinde KÜÇÜLÜYOR -> board (sabit --board-h, flex:none) ortalanıp
+     sahneden iki uçtan TAŞIYOR; bu taşma aşağıdaki düğmelerin üstüne biniyordu (önce), overflow:hidden
+     denemesi de board'u iki uçtan KESTİ (sonra). Doğrusu: sahne board'un tam boyunu alsın (shrink YOK)
+     -> .mrv-board büyür, grid satırı içeriğe göre uzar, düğmeler tam board'un altına temiz oturur. */
   .mrv-board-stage {
-    overflow: hidden;
+    flex: none;
+  }
+  .mrv-board {
+    min-height: auto; /* flex-column'un içeriğinin altına çökmesini (board taşması) engelle */
   }
   .mrv-rows {
     display: none;
