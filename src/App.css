@@ -17207,7 +17207,15 @@ body:has(.spectate-view) .app.lobby {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--ivory);
-  font-weight: 600;
+  font-weight: 400;
+}
+/* Analiz/mat-analiz filtre düğmeleri bold OLMASIN (kullanıcı) — base 500'ü de bu listelerde 400'e çek
+   (Leaderboard'ın rep-filter'ına dokunma: ayrı 'default' stil). */
+.analysis-list .rep-filter [data-slot='button'],
+.analysis-list .rep-filter .menu-btn,
+.mrv-list .rep-filter [data-slot='button'],
+.mrv-list .rep-filter .menu-btn {
+  font-weight: 400;
 }
 .analysis-list .rep-filter [aria-pressed='true']:hover,
 .mrv-list .rep-filter [aria-pressed='true']:hover {
