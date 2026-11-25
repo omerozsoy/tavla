@@ -17250,13 +17250,15 @@ body:has(.spectate-view) .app.lobby {
    krem zeminde ayırt edilemiyordu -> kullanıcı hangi düğme seçili göremiyordu. Aktif
    (aria-pressed=true) = dolu kiremit (--accent) + açık metin + 600. YALNIZ analiz listesi
    (.analysis-list) — Leaderboard'ın rep-filter'ı zaten 'default'=mavi dolu, ona dokunma. */
-.analysis-list .rep-filter [aria-pressed='true'] {
+.analysis-list .rep-filter [aria-pressed='true'],
+.mrv-list .rep-filter [aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--ivory);
   font-weight: 600;
 }
-.analysis-list .rep-filter [aria-pressed='true']:hover {
+.analysis-list .rep-filter [aria-pressed='true']:hover,
+.mrv-list .rep-filter [aria-pressed='true']:hover {
   background: var(--terracotta-hover);
   border-color: var(--terracotta-hover);
   color: var(--ivory);
@@ -36720,40 +36722,14 @@ body.has-bottom-nav .to-top {
   font-size: 0.95rem;
   color: var(--muted);
 }
-.mrv-seg {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill, 999px);
-  overflow: hidden;
+/* mat-analiz filtre satırları hamle analizi (.rep-filter) tarzını kullanır; yalnız dar .mrv-list
+   kolonuna oturtmak için kenar boşlukları ayarlanır (buton tarzı/ölçüsü .rep-filter'dan gelir). */
+.mrv-list-head .mrv-filter {
+  margin: 0; /* oyuncu filtresi: head zaten padding'li */
 }
-.mrv-seg button {
-  flex: 1 1 0;
-  min-width: 0; /* flex içinde ellipsis çalışsın */
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  padding: 4px 10px;
-  font-size: 0.78rem;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mrv-seg button.on {
-  background: var(--accent);
-  color: var(--on-accent, #fff);
-}
-.mrv-seg-filter {
-  margin: 0 12px 8px;
-  /* align-self:flex-start iken segment içerik-genişliğinde kalıp uzun etiketlerde (Tümü/
-     Hatalar/Blunder) kenar çubuğundan taşıp KIRPILIYORDU. Üstteki oyuncu-filtre satırı gibi
-     tam genişliğe yay -> butonlar eşit paylaşır + gerekirse ellipsis; taşma/kırpma olmaz. */
-  align-self: stretch;
-  max-width: 100%;
-  /* `.mrv-seg { overflow:hidden }` bu satırı flex'te ~0'a KÜÇÜLTÜLEBİLİR yapıyordu; yükseklik
-     baskısında (mobil max-height:30vh) 24px pill 8-10px'e çöküp Tümü/Hatalar/Blunderlar
-     KIRPILIYORDU. Küçülme yasak -> segment her zaman tam yükseklik. */
-  flex: 0 0 auto;
+.mrv-filter-sev {
+  margin: 0 12px 8px; /* şiddet filtresi: kolon içine inset (board'a taşmasın) */
+  flex: 0 0 auto; /* yükseklik baskısında (mobil) küçülüp kırpılmasın */
 }
 .mrv-rows {
   flex: 1 1 auto;

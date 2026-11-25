@@ -332,28 +332,30 @@ export default function MatReview({
         <aside className="mrv-list">
           <div className="mrv-list-head">
             <span className="mrv-list-lbl">{t('mrv.moves')}</span>
-            <div className="mrv-seg">
-              <button className={who === 'white' ? 'on' : ''} onClick={() => setWho('white')} title={nameW}>
+            {/* Filtre butonları hamle analizi (MatchReport .rep-filter) ile AYNI tarz/ölçü:
+                shared Button (secondary=aktif / ghost=pasif) + aria-pressed. */}
+            <div className="rep-filter mrv-filter">
+              <Button variant={who === 'white' ? 'secondary' : 'ghost'} aria-pressed={who === 'white'} onClick={() => setWho('white')} title={nameW}>
                 {nameW}
-              </button>
-              <button className={who === 'both' ? 'on' : ''} onClick={() => setWho('both')}>
+              </Button>
+              <Button variant={who === 'both' ? 'secondary' : 'ghost'} aria-pressed={who === 'both'} onClick={() => setWho('both')}>
                 {t('mrv.both')}
-              </button>
-              <button className={who === 'black' ? 'on' : ''} onClick={() => setWho('black')} title={nameB}>
+              </Button>
+              <Button variant={who === 'black' ? 'secondary' : 'ghost'} aria-pressed={who === 'black'} onClick={() => setWho('black')} title={nameB}>
                 {nameB}
-              </button>
+              </Button>
             </div>
           </div>
-          <div className="mrv-seg mrv-seg-filter">
-            <button className={filter === 'all' ? 'on' : ''} onClick={() => setFilter('all')}>
+          <div className="rep-filter mrv-filter mrv-filter-sev">
+            <Button variant={filter === 'all' ? 'secondary' : 'ghost'} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
               {t('mrv.all')}
-            </button>
-            <button className={filter === 'errors' ? 'on' : ''} onClick={() => setFilter('errors')}>
+            </Button>
+            <Button variant={filter === 'errors' ? 'secondary' : 'ghost'} aria-pressed={filter === 'errors'} onClick={() => setFilter('errors')}>
               {t('mrv.errors')}
-            </button>
-            <button className={filter === 'blunders' ? 'on' : ''} onClick={() => setFilter('blunders')}>
+            </Button>
+            <Button variant={filter === 'blunders' ? 'secondary' : 'ghost'} aria-pressed={filter === 'blunders'} onClick={() => setFilter('blunders')}>
               {t('mrv.blunders')}
-            </button>
+            </Button>
           </div>
           <div className="mrv-rows">
             {rows.map(({ e, i }, ri) => {
