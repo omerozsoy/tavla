@@ -1755,6 +1755,8 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'mrv.selectMove': 'Select a move',
   'mrv.none': 'No moves in this filter.',
   'mrv.noCands': 'No candidate moves.',
+  'mrv.showAll': 'Show all',
+  'mrv.showLess': 'Show less',
   'mrv.ply': '{n}-ply',
   'mrv.win': 'Win',
   'mrv.wg': 'Win gammon',

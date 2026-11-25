@@ -1806,6 +1806,8 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'mrv.selectMove': 'Bir hamle seç',
   'mrv.none': 'Bu filtrede hamle yok.',
   'mrv.noCands': 'Aday hamle yok.',
+  'mrv.showAll': 'Hepsini göster',
+  'mrv.showLess': 'Daha az göster',
   'mrv.ply': '{n}-ply',
   'mrv.win': 'Kazanma',
   'mrv.wg': 'Kazanma gammon',

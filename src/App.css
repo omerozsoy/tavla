@@ -37012,6 +37012,33 @@ body.has-bottom-nav .to-top {
   flex: 1 1 auto;
   min-height: 0;
 }
+/* "Hepsini göster" düğmesi YALNIZ mobilde (masaüstü tüm adayları gösterir). */
+.mrv-cands-toggle {
+  display: none;
+}
+@media (max-width: 900px) {
+  /* Kısık modda yalnız İLK 3 aday görünür: pre-satır (1) + 3 aday (2-4) kalır, 5. ve sonrası
+     gizlenir. "Oynanan hamle" ekstra satırı (.mrv-cand-extra) gizlenmez -> ne oynandığı hep görünür. */
+  .mrv-cands-collapsed > .mrv-cand:nth-child(n + 5):not(.mrv-cand-extra) {
+    display: none;
+  }
+  .mrv-cands-toggle {
+    display: block;
+    width: calc(100% - 16px);
+    margin: 6px 8px 4px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .mrv-cands-toggle:active {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+}
 .mrv-cands-head,
 .mrv-cand {
   display: grid;

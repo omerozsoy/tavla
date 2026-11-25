@@ -148,6 +148,8 @@ export default function MatReview({
   }, [log])
   const [sel, setSel] = useState(firstIdx >= 0 ? firstIdx : 0)
   const [candIdx, setCandIdx] = useState(0)
+  // Mobilde aday listesi varsayılan İLK 3 ile kısık; "Hepsini göster" açar (masaüstü hep tam).
+  const [candsExpanded, setCandsExpanded] = useState(false)
   const PREMOVE = -2 // "Hamle Öncesi": tahta karar anındaki ham pozisyonu OKSUZ gösterir
 
   // Listelenecek satırlar: küp/no-move dahil TÜMÜ (HedgeHog gibi), filtre uygulanır.
@@ -539,7 +541,7 @@ export default function MatReview({
             <span className="mrv-ch-eq">{t('mrv.equity')}</span>
             <span className="mrv-ch-loss">{t('mrv.loss')}</span>
           </div>
-          <div className="mrv-cands">
+          <div className={`mrv-cands ${candsExpanded ? '' : 'mrv-cands-collapsed'}`}>
             {/* EN ÜSTTE: "Hamle Öncesi" — tahtayı oksuz (ham pozisyon) göster. */}
             <button
               className={`mrv-cand mrv-cand-pre ${candIdx === PREMOVE ? 'sel' : ''}`}
@@ -591,6 +593,17 @@ export default function MatReview({
               <div className="mrv-empty">{t('mrv.noCands')}</div>
             )}
           </div>
+          {/* MOBİL: aday listesi İLK 3 ile kısık gelir; bu düğme hepsini açar/kapatır. Yalnız
+              mobilde + 3'ten fazla aday varsa görünür (CSS .mrv-cands-toggle). */}
+          {(cur?.cands?.length ?? 0) > 3 && (
+            <button
+              className="mrv-cands-toggle"
+              onClick={() => setCandsExpanded((v) => !v)}
+              aria-expanded={candsExpanded}
+            >
+              {candsExpanded ? t('mrv.showLess') : t('mrv.showAll')}
+            </button>
+          )}
           </>
           )}
         </aside>
