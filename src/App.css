@@ -36843,7 +36843,11 @@ body.has-bottom-nav .to-top {
 /* GERÇEK site tahtası: --board-h'yi inceleme merkez alanına göre ayarla (türev
    --checker/--dice-size/--tri-h otomatik ölçeklenir; zarlar da gerçek boyutta). */
 .mrv-board {
-  --board-h: max(280px, min(calc(100vh - 250px), calc((100vw - 720px) / 1.32)));
+  /* Board footprint genişliği ≈ --board-h × 1.52. Eski bölen 1.32 board'u kolonundan (3 sütun
+     grid: 288 + 1fr + 380) BÜYÜK yapıyordu -> ekran daralınca board sola taşıp liste işaretlerinin
+     üstüne biniyordu (kullanıcı: "kenarlardan taşıyor"). Bölen 1.53 + offset 700 + floor 150 ->
+     board her desktop genişliğinde kolona SIĞAR, taşmaz. */
+  --board-h: max(150px, min(calc(100vh - 250px), calc((100vw - 700px) / 1.53)));
   /* Türev geometri (--checker/--col/--tri-h...) :root'ta GLOBAL --board-h (oyun sahnesi,
      ~808px) ile hesaplanıp DONAR. Burada salt --board-h'yi (~700px) override etmek yetmez:
      donmuş büyük --checker ile 5'li yığın (5×--checker) mrv quadrant'ından (--board-h/2)

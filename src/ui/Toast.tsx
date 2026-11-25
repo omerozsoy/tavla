@@ -23,10 +23,11 @@ interface ToastItem {
   id: number
   kind: ToastKind
   msg: string
+  center?: boolean // true -> ekran ORTASINDA buyuk/belirgin goster (giris/uyelik kapisi uyarilari)
 }
 
 interface ToastApi {
-  show: (msg: string, kind?: ToastKind) => void
+  show: (msg: string, kind?: ToastKind, center?: boolean) => void
   success: (msg: string) => void
   error: (msg: string) => void
   info: (msg: string) => void
@@ -109,11 +110,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [dismiss])
 
   const show = useCallback(
-    (msg: string, kind: ToastKind = 'info') => {
+    (msg: string, kind: ToastKind = 'info', center = false) => {
       if (!msg) return
       const id = ++seqRef.current
       setItems((list) => {
-        const next = [...list, { id, kind, msg }]
+        const next = [...list, { id, kind, msg, center }]
         // Yigin tavani: en eskiyi dusur (timer'ini da temizle).
         while (next.length > MAX_STACK) {
           const dropped = next.shift()
@@ -150,7 +151,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   // Sabit referansli API (her render'da yeni obje ureterek tuketicileri
   // gereksiz yenilemesin diye stabil bir sarma dondur).
   const stableRef = useRef<ToastApi>({
-    show: (m, k) => api.current.show(m, k),
+    show: (m, k, c) => api.current.show(m, k, c),
     success: (m) => api.current.success(m),
     error: (m) => api.current.error(m),
     info: (m) => api.current.info(m),
@@ -187,38 +188,49 @@ function ToastViewport({
 }) {
   const { t } = useT()
   if (typeof document === 'undefined') return null
+  const renderItem = (it: ToastItem) => (
+    <div
+      key={it.id}
+      className={`toastr toastr--${it.kind}`}
+      role={it.kind === 'error' ? 'alert' : 'status'}
+      aria-live={it.kind === 'error' ? 'assertive' : 'polite'}
+      onMouseEnter={onPause}
+      onMouseLeave={onResume}
+      onFocus={onPause}
+      onBlur={onResume}
+      onTouchStart={onPause}
+      onTouchEnd={onResume}
+    >
+      <span className="toastr__icon" aria-hidden="true">
+        <Icon name={ICON[it.kind]} size={18} />
+      </span>
+      <span className="toastr__msg">{it.msg}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        className="shrink-0"
+        onClick={() => onDismiss(it.id)}
+        aria-label={t('common.close')}
+      >
+        <Icon name="x" size={15} />
+      </Button>
+    </div>
+  )
+  // Ortadaki (kapi) uyarilar ile normal (sag-ust) yigin AYRI konteynerlerde.
+  const normal = items.filter((it) => !it.center)
+  const centered = items.filter((it) => it.center)
   return createPortal(
-    <div className="toastr-viewport" role="region" aria-label={t('toast.region')}>
-      {items.map((it) => (
-        <div
-          key={it.id}
-          className={`toastr toastr--${it.kind}`}
-          role={it.kind === 'error' ? 'alert' : 'status'}
-          aria-live={it.kind === 'error' ? 'assertive' : 'polite'}
-          onMouseEnter={onPause}
-          onMouseLeave={onResume}
-          onFocus={onPause}
-          onBlur={onResume}
-          onTouchStart={onPause}
-          onTouchEnd={onResume}
-        >
-          <span className="toastr__icon" aria-hidden="true">
-            <Icon name={ICON[it.kind]} size={18} />
-          </span>
-          <span className="toastr__msg">{it.msg}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            className="shrink-0"
-            onClick={() => onDismiss(it.id)}
-            aria-label={t('common.close')}
-          >
-            <Icon name="x" size={15} />
-          </Button>
+    <>
+      <div className="toastr-viewport" role="region" aria-label={t('toast.region')}>
+        {normal.map(renderItem)}
+      </div>
+      {centered.length > 0 && (
+        <div className="toastr-viewport toastr-viewport--center" role="region" aria-label={t('toast.region')}>
+          {centered.map(renderItem)}
         </div>
-      ))}
-    </div>,
+      )}
+    </>,
     document.body,
   )
 }

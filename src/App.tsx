@@ -1879,6 +1879,7 @@ export default function App() {
           setLeaderboardOpen(true)
           break
         case 'duello':
+          if (!getToken()) { requireLogin(); break } // misafir duello yapamaz
           setDuelPreselect(null)
           setDuelOpen(true)
           break
@@ -1941,6 +1942,7 @@ export default function App() {
           setKizOpen(true)
           break
         case 'pul-tasarimlari':
+          if (!getToken()) { requireLogin(); break } // giris gerekli
           setCheckerShopOpen(true)
           break
         case 'urunler':
@@ -1950,6 +1952,7 @@ export default function App() {
           break
         case 'havale': // Havale talimati gecici (sunucu referansi, URL'den kurulamaz) -> siparislere dus
         case 'siparislerim':
+          if (!getToken()) { requireLogin(); break } // giris gerekli
           setMyOrdersOpen(true)
           break
         case 'uyelik':
@@ -1996,15 +1999,19 @@ export default function App() {
           setEditProfile(true)
           break
         case 'arkadaslar':
+          if (!getToken()) { requireLogin(); break } // giris gerekli
           setFriendsOpen(true)
           break
         case 'mesajlar':
+          if (!getToken()) { requireLogin(); break } // giris gerekli
           setMessagesOpen(true)
           break
         case 'hata-gunlugu':
+          if (!getToken()) { requireLogin(); break } // premium arac: once giris (premium kontrolu effect'te)
           setBlunderOpen(true)
           break
         case 'mac-analizleri': {
+          if (!getToken()) { requireLogin(); break } // premium arac: once giris (premium kontrolu effect'te)
           // /mac-analizleri/<id> -> o macin raporunu otomatik ac (paylasilabilir link).
           // MatchAnalytics initialMatchId ile o maci bulup rapor/detayi acar.
           const mid = /^\d+$/.test(seg[1] || '') ? parseInt(seg[1], 10) : null
@@ -2014,6 +2021,7 @@ export default function App() {
           break
         }
         case 'mac-analizleri-detay': {
+          if (!getToken()) { requireLogin(); break } // premium arac: once giris (premium kontrolu effect'te)
           // GERÇEK sayfa: /mac-analizleri-detay/<id> -> o maçı initialMatchId ile aç (MatchAnalytics
           // log varsa raporu otomatik açar). id yoksa (çıplak) -> liste + URL'i düzelt.
           const mid = /^\d+$/.test(seg[1] || '') ? parseInt(seg[1], 10) : null
@@ -2058,6 +2066,7 @@ export default function App() {
           setLiveTournOpen(true)
           break
         case 'turnuva-yonetimi':
+          if (!getToken()) { requireLogin(); break } // organizator paneli: giris gerekli
           setOrganizerPanelOpen(true)
           break
         case 'tek-oyun':
@@ -2107,9 +2116,11 @@ export default function App() {
           setRulesOpen(true)
           break
         case 'pozisyon-analizi':
+          if (!getToken()) { requireLogin(); break } // premium arac: once giris (premium kontrolu effect'te)
           setAnalyzerOpen(true)
           break
         case 'mat-analiz':
+          if (!getToken()) { requireLogin(); break } // premium arac: once giris (premium kontrolu effect'te)
           setMatAnalyzerOpen(true)
           break
         case 'basarimlar':
@@ -7889,9 +7900,33 @@ export default function App() {
     setSoloOpen(false)
     setSetup(null)
     setHome(true)
-    notify.info(t('mp.loginRequired'))
+    notify.show(t('mp.loginRequired'), 'error', true) // ekran ortasinda kirmizi kapi uyarisi
     setShowAuth(true)
   }
+
+  // Premium KAPISI: girisli ama uye-olmayan kullanici premium bolume (analiz araclari vb.)
+  // girmeye calisinca -> once belirgin uyari, sonra uyelik ekrani. requireLogin ile ayni desen.
+  function requireMembership() {
+    notify.show(t('mp.membershipRequired'), 'error', true)
+    setMemOpen(true)
+  }
+
+  // PREMIUM KAPISI (deep-link / dogrudan state): giris yapmis ama UYE OLMAYAN kullanici bir premium
+  // araca (analiz/mat-analiz/hata-gunlugu/mac-analizleri) ulasirsa render guard'lari (&& premium)
+  // sayfayi SESSIZCE bos birakiyordu. Burada belirgin uyelik uyarisi + uyelik ekrani gosterilir.
+  // user truthy sart -> mount'ta profil yuklenene kadar beklenir (misafiri deep-link guard'i yakalar).
+  useEffect(() => {
+    const isPremium = user?.plan_active === 'premium'
+    if (!user || isPremium) return
+    if (analyzerOpen || matAnalyzerOpen || blunderOpen || matchHistOpen) {
+      setAnalyzerOpen(false)
+      setMatAnalyzerOpen(false)
+      setBlunderOpen(false)
+      setMatchHistOpen(false)
+      requireMembership()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, analyzerOpen, matAnalyzerOpen, blunderOpen, matchHistOpen])
 
   // Tek Oyun: bir veya BIRDEN COK bahis sec -> kesisen tutarli rakiple eslesir (tek oyun).
   // Anlasilan tutar sunucuda kesinlesir (ortak tutarlardan en yuksegi); stakeRef gecici max.
@@ -7906,7 +7941,7 @@ export default function App() {
       // acilir. Aksi halde soloOpen acik kalip auth ile ALT ALTA yigiliyordu ("sayfa en altta").
       setSoloOpen(false)
       setHome(true)
-      notify.info(t('mp.loginRequired'))
+      notify.show(t('mp.loginRequired'), 'error', true)
       setShowAuth(true)
       return
     }
@@ -10467,7 +10502,7 @@ export default function App() {
       setFriendClassic(false) // Modern arkadas maci (klasik degil)
       setFriendSetupOpen(true)
     },
-    onDuel: () => { setDuelPreselect(null); goPage(() => setDuelOpen(true)) },
+    onDuel: () => { if (!user) { requireLogin(); return } setDuelPreselect(null); goPage(() => setDuelOpen(true)) },
     onResume: () => {
       closeAllPages() // acik menu sayfasi (turnuvalar vb.) kalmasin, oyuna don
       setHome(false)
@@ -10504,7 +10539,7 @@ export default function App() {
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
     onExcuses: () => goPage(() => setExcusesOpen(true)),
     onKiz: () => goPage(() => setKizOpen(true)),
-    onCheckers: () => goPage(() => setCheckerShopOpen(true)),
+    onCheckers: () => (!user ? requireLogin() : goPage(() => setCheckerShopOpen(true))),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
     onMembership: premium ? undefined : () => setMemOpen(true),
@@ -10516,13 +10551,14 @@ export default function App() {
             setEditProfile(true)
           })
         : setShowAuth(true),
-    onFriends: () => goPage(() => setFriendsOpen(true)),
-    onMessages: () => goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) }),
+    onFriends: () => (!user ? requireLogin() : goPage(() => setFriendsOpen(true))),
+    onMessages: () => (!user ? requireLogin() : goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) })),
     // Premium araclar: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir.
-    onAnalyzer: () => (premium ? goPage(() => setAnalyzerOpen(true)) : setMemOpen(true)),
-    onMatAnalyzer: () => (premium ? goPage(() => setMatAnalyzerOpen(true)) : setMemOpen(true)),
-    onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
-    onMatchHistory: () => (premium ? goPage(() => { setMatchHistReset((n) => n + 1); setMatchHistInitialId(null); setMatchHistOpen(true) }) : setMemOpen(true)),
+    // Premium araclar: ONCE login (misafir), SONRA uyelik (giris yapmis ama premium degil).
+    onAnalyzer: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => setAnalyzerOpen(true))),
+    onMatAnalyzer: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => setMatAnalyzerOpen(true))),
+    onBlunders: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => setBlunderOpen(true))),
+    onMatchHistory: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => { setMatchHistReset((n) => n + 1); setMatchHistInitialId(null); setMatchHistOpen(true) })),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onTraining: () => goPage(() => setTrainingOpen(true)),
     onDailyPuzzle: () =>
