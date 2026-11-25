@@ -36912,7 +36912,7 @@ body.has-bottom-nav .to-top {
 }
 .mrv-turn {
   color: var(--accent-text);
-  font-size: 1.55rem;
+  font-size: 1.1rem; /* Siyah/Beyaz yanındaki sıra oku biraz küçültüldü (kullanıcı) */
   line-height: 1;
 }
 .mrv-pip {
