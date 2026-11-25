@@ -36903,11 +36903,12 @@ body.has-bottom-nav .to-top {
   align-items: center;
   gap: 7px;
   font-size: 1.3rem;
+  font-weight: 400; /* Siyah/Beyaz yazısı bold olmasın (kullanıcı) */
 }
-/* Sırası gelen oyuncu: ismi accent renk + bold + büyük ok -> kimin sırası olduğu NET belli. */
+/* Sırası gelen oyuncu: ismi accent renk + büyük ok -> kimin sırası olduğu NET belli (bold DEĞİL). */
 .mrv-pname.turn {
   color: var(--accent-text);
-  font-weight: 700;
+  font-weight: 400;
 }
 .mrv-turn {
   color: var(--accent-text);
@@ -37259,8 +37260,8 @@ body.has-bottom-nav .to-top {
     border-top: 1px solid var(--border);
     border-bottom: none;
     max-height: none;
-    margin-top: 40px; /* board'dan NET ayrı (kullanıcı: çok daha fazla boşluk) */
-    padding-top: 12px;
+    margin-top: 8px; /* board/oyuncu etiketi ile filtre butonları arası boşluk kapatıldı (kullanıcı) */
+    padding-top: 8px;
   }
   /* KÖK FIX (kullanıcı: "üstüne tahta gelmesin" / "boardun altı/üstü kesildi"): board SAHNESİ
      (.mrv-board-stage) flex-column içinde KÜÇÜLÜYOR -> board (sabit --board-h, flex:none) ortalanıp
@@ -37269,6 +37270,11 @@ body.has-bottom-nav .to-top {
      -> .mrv-board büyür, grid satırı içeriğe göre uzar, düğmeler tam board'un altına temiz oturur. */
   .mrv-board-stage {
     flex: none;
+  }
+  /* Küp mobilde ÇOK BÜYÜK görünüyordu (base min 38px dar board'da devleşir) -> mat-analiz
+     board'unda küp boyutunu düşür (kullanıcı). */
+  .mrv-board-stage .board {
+    --cube-size: clamp(20px, calc(var(--bar-w) * 0.6), 36px);
   }
   .mrv-board {
     min-height: auto; /* flex-column'un içeriğinin altına çökmesini (board taşması) engelle */
