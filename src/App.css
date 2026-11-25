@@ -36809,7 +36809,11 @@ body.has-bottom-nav .to-top {
   min-width: 54px;
 }
 .mrv-move {
-  flex: 1 1 auto;
+  /* flex:0 -> hamle metni BÜYÜMEZ; küp/çeker işareti (.mrv-mark) hamlenin HEMEN YANINDA kalır,
+     satırın sağ ucuna (liste sağ kenarı = tahta sınırı) İTİLMEZ -> işaretler hep listenin solunda,
+     tahtadan uzak (kullanıcı: "küp hamlelerinin yanında olsun"). shrink:1 + ellipsis uzun hamleyi kırpar. */
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
