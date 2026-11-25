@@ -182,6 +182,8 @@ export default function Messages({
   const [teamInvites, setTeamInvites] = useState<Array<{ id: number; team: TeamBrief | null }>>([])
   const [inviteBusy, setInviteBusy] = useState(false)
   const [menuFor, setMenuFor] = useState<number | null>(null) // kebab menüsü açık olan sohbet (user.id)
+  const [selectMode, setSelectMode] = useState(false) // Sohbetler: toplu silme için çoklu seçim modu
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set()) // seçili sohbetler (user.id)
   const [headMenu, setHeadMenu] = useState(false) // aktif sohbet başlığındaki üç-nokta menüsü (Şikayet / Blokla)
   // Uygulama-içi onay penceresi (native window.confirm yerine): onaylanınca run() çalışır.
   const [confirmBox, setConfirmBox] = useState<null | {
@@ -198,6 +200,11 @@ export default function Messages({
   const prevActiveIdRef = useRef<number | null>(null) // konuşma değişimini yeni-mesajdan ayırt et
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingSentRef = useRef(0) // son "yaziyor" nabzinin zamani (throttle)
+
+  // Sohbetler sekmesinden ayrılınca çoklu seçim modunu kapat (seçim başka sekmede anlamsız).
+  useEffect(() => {
+    if (pane !== 'chats') { setSelectMode(false); setSelectedIds(new Set()) }
+  }, [pane])
 
   const refreshThreads = useCallback(async () => {
     try {
@@ -224,6 +231,42 @@ export default function Messages({
           if (activeId === id) { setActiveId(null); setMessages([]) }
           refreshThreads()
           toast.success(t('dm.convDeleted'))
+        } catch (err) {
+          toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
+        }
+      },
+    })
+  }
+
+  // Toplu silme: çoklu seçim modunda bir sohbeti seç/bırak.
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  }
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }
+  // Seçili sohbetleri topluca sil (her biri bana özel gizleme — mevcut deleteConversation).
+  function handleDeleteSelected() {
+    if (selectedIds.size === 0) return
+    const ids = [...selectedIds]
+    setConfirmBox({
+      title: t('dm.bulkDelete'),
+      message: t('dm.bulkDeleteConfirm', { n: ids.length }),
+      icon: 'trash',
+      destructive: true,
+      run: async () => {
+        try {
+          await Promise.all(ids.map((id) => deleteConversation(id)))
+          if (activeId != null && selectedIds.has(activeId)) { setActiveId(null); setMessages([]) }
+          exitSelectMode()
+          refreshThreads()
+          toast.success(t('dm.bulkDeleted', { n: ids.length }))
         } catch (err) {
           toast.error(err instanceof ApiError && err.message ? err.message : t('dm.actionFail'))
         }
@@ -625,6 +668,38 @@ export default function Messages({
                 {blockedCount > 0 && <span className="messages-pane-badge">{blockedCount > 9 ? '9+' : blockedCount}</span>}
               </button>
             </div>
+            {/* SOHBETLER: toplu silme araç çubuğu — çoklu seçim + Seçilenleri Sil (çok mesaj gelenler için). */}
+            {pane === 'chats' && chatThreads.length > 0 && (
+              <div className="messages-bulkbar">
+                {!selectMode ? (
+                  <button type="button" className="messages-bulk-btn" onClick={() => setSelectMode(true)}>
+                    <Icon name="trash" size={15} /> {t('dm.bulkSelect')}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="messages-bulk-link"
+                      onClick={() => setSelectedIds((prev) => prev.size === chatThreads.length ? new Set() : new Set(chatThreads.map((th) => th.user.id)))}
+                    >
+                      {selectedIds.size === chatThreads.length ? t('dm.bulkNone') : t('dm.bulkAll')}
+                    </button>
+                    <span className="messages-bulk-spacer" />
+                    <button type="button" className="messages-bulk-link" onClick={exitSelectMode}>
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      className="messages-bulk-btn danger"
+                      disabled={selectedIds.size === 0}
+                      onClick={handleDeleteSelected}
+                    >
+                      <Icon name="trash" size={15} /> {t('dm.bulkDeleteN', { n: selectedIds.size })}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             <div className="messages-thread-scroll">
               {/* Kebab menüsü açıkken dışarı tıklama menüyü kapatır */}
               {menuFor != null && <div className="messages-menu-backdrop" onClick={() => setMenuFor(null)} />}
@@ -699,12 +774,17 @@ export default function Messages({
                   // atmışsa (okunmamış var) soluklaştırma, dikkat çeksin. Durum yazısı yine offline.
                   const dimmed = !online && th.unread === 0
                   return (
-                  <div key={th.user.id} className="messages-thread-row">
+                  <div key={th.user.id} className={`messages-thread-row ${selectMode ? 'select-mode' : ''}`}>
                   <button
                     type="button"
-                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''} ${dimmed ? 'messages-thread-off' : ''} ${th.blocked ? 'messages-thread-blocked' : ''}`}
-                    onClick={() => setActiveId(th.user.id)}
+                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''} ${dimmed ? 'messages-thread-off' : ''} ${th.blocked ? 'messages-thread-blocked' : ''} ${selectMode && selectedIds.has(th.user.id) ? 'selected' : ''}`}
+                    onClick={() => (selectMode ? toggleSelect(th.user.id) : setActiveId(th.user.id))}
                   >
+                    {selectMode && (
+                      <span className={`messages-thread-check ${selectedIds.has(th.user.id) ? 'on' : ''}`} aria-hidden="true">
+                        {selectedIds.has(th.user.id) && <Icon name="check" size={14} />}
+                      </span>
+                    )}
                     <span className="messages-thread-ava">
                       <AvatarFrame src={th.user.avatar} frame={th.user.frame} size={44} name={th.user.name} />
                       <span
@@ -729,7 +809,8 @@ export default function Messages({
                     </span>
                     {th.unread > 0 && <span className="messages-badge">{th.unread > 9 ? '9+' : th.unread}</span>}
                   </button>
-                  {/* Kebab: sohbeti sil / blokla-blok kaldır */}
+                  {/* Kebab: sohbeti sil / blokla-blok kaldır (çoklu seçim modunda gizli) */}
+                  {!selectMode && (
                   <button
                     type="button"
                     className="messages-thread-kebab"
@@ -740,7 +821,8 @@ export default function Messages({
                   >
                     <Icon name="dots-vertical" size={18} />
                   </button>
-                  {menuFor === th.user.id && (
+                  )}
+                  {!selectMode && menuFor === th.user.id && (
                     <div className="messages-thread-menu" role="menu">
                       <button type="button" role="menuitem" onClick={() => handleDeleteConversation(th.user.id)}>
                         <Icon name="trash" size={15} /> {t('dm.convDelete')}

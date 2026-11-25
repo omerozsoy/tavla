@@ -27325,6 +27325,75 @@ body.has-bottom-nav .register-overlay.page > *:not(.register-overlay):not(.dm-zo
 .messages-thread-row {
   position: relative;
 }
+/* Toplu silme araç çubuğu (Sohbetler sekmesi, sekme başlıkları ile liste arası) */
+.messages-bulkbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.messages-bulk-spacer {
+  flex: 1 1 auto;
+}
+.messages-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.messages-bulk-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.messages-bulk-btn.danger:not(:disabled) {
+  border-color: var(--danger, #c0392b);
+  background: var(--danger, #c0392b);
+  color: #fff;
+}
+.messages-bulk-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.messages-bulk-link {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.messages-bulk-link:hover {
+  color: var(--accent);
+}
+/* Çoklu seçim: sol onay kutusu (satır başında) */
+.messages-thread-check {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  border: 1.5px solid var(--line);
+  border-radius: 5px;
+  color: #fff;
+}
+.messages-thread-check.on {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.messages-thread.selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 /* Kebab (dikey üç nokta): satır sağında, hover'da / menü açıkken görünür */
 .messages-thread-kebab {
   position: absolute;
