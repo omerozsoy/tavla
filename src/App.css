@@ -12013,6 +12013,54 @@ button.acct-row-logout:hover:not(:disabled) {
     font-size: 11px;
   }
 }
+/* iPad Pro 13" PORTRAIT (1024px) + dar tabletler: 901-1300 bandi 1280px'te dogrulanmisti ama
+   1024px DAHA DAR -> girisli ust bar (logo+slogan + avatar/isim + 2 cip + odul sayaci + 5-6 ikon)
+   tasip YATAY SCROLL yapiyordu. Bu alt-bant daha agresif kuculur (slogan gizli, logo/cip/odul/
+   ikon/bosluk kompakt) -> tek satira sigar, scroll kaybolur. 901-1300'den SONRA (kaynak-sirasi
+   esit ozgullukte kazanir). overflow-x:auto emniyet agi yine de korunur. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .account-bar {
+    padding-left: 10px;
+    padding-right: 10px;
+    gap: 5px;
+  }
+  .acct-desktop,
+  .account-id {
+    gap: 5px;
+  }
+  .ab-wordmark {
+    font-size: 21px !important;
+  }
+  .ab-tag {
+    display: none; /* "Tavla Portali" slogani gizle -> ciddi yatay yer acar */
+  }
+  .account-name {
+    font-size: 0.82rem;
+  }
+  .account-bar .stat-chip {
+    padding: 3px 6px;
+  }
+  .account-bar .stat-chip-val {
+    font-size: 0.8rem;
+  }
+  .rb-main {
+    font-size: 0.78rem;
+  }
+  .rb-sub {
+    font-size: 0.5rem;
+  }
+  .account-bar .btn-reward:not([data-slot]) {
+    padding: 3px 6px;
+  }
+  /* Sag ikon butonlari: kutu + svg kucult (tailwind size-[24px]! override'ini (0,2,1)+!important ile ez). */
+  .account-bar [data-slot='button'] {
+    padding: 4px;
+  }
+  .account-bar [data-slot='button'] svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
 /* TavlaTv PNG logosu (tone="auto"): acik temada gri, koyu temada disi (beyaz) varyant.
    Her iki kural da :root[data-theme] prefix'li (ozgulluk 0,2,0) -> .foot-logo gibi tekil
    className'ler (0,1,0) toggle'i EZEMEZ (aksi halde iki logo ust uste binerdi). */
