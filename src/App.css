@@ -36973,7 +36973,11 @@ body.has-bottom-nav .to-top {
   gap: 2px;
 }
 .mrv-prob-lbl {
-  font-size: 0.68rem;
+  /* Etiketler açık yazıldı (Kazanma gammon / Mağlubiyet backgammon) -> dar 1/5 hücrede
+     ortalanıp temiz sarsın (eski kısa "K bg" kırpılmıyordu, tam sözcükler sarmalı). */
+  font-size: 0.6rem;
+  line-height: 1.15;
+  text-align: center;
   color: var(--muted);
 }
 .mrv-prob-val {
