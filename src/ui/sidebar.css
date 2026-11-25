@@ -47,7 +47,7 @@
    -> iki taraf dikeyde TERS, avatarlar/yazilar farkli hizada "garip" duruyordu.
    Cozum: portre'de HER IKI karti da AYNI sira yap (AVATAR ustte, isim+PR altta) ve ustten
    hizala -> iki tarafin avatari ayni satirda, tum yazilari karsilikli AYNI yerde. */
-@media (max-width: 1024px) {
+@media (max-width: 1080px) {
   .sidebar {
     align-items: flex-start;
   }

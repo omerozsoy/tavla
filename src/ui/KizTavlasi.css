@@ -118,7 +118,7 @@
   min-height: 0;
   background: transparent;
 }
-@media (min-width: 1025px) {
+@media (min-width: 1081px) {
   .kiz-view .game-scene { justify-content: center; } /* masaüstünde tahta yüksekliği neredeyse dolu -> ortala */
 }
 .kiz-view .game-area { width: auto; max-width: 100%; }
@@ -164,7 +164,7 @@
   background: rgba(216, 178, 90, .18);
   transform: translateX(2px);
 }
-@media (max-width: 1024px) {
+@media (max-width: 1080px) {
   .kiz-board-layout { flex-direction: column; gap: 10px; }
   .kiz-bored-panel {
     flex: none;
@@ -393,7 +393,7 @@
 
 /* Masaüstü okunabilirlik: skor şeridi (0.76-0.8rem) ve "Çok Sıkıldım" paneli (148px, 0.82rem)
    büyük tahtanın yanında çok küçük kalıyordu. Geniş ekranda büyüt; mobil düzen değişmez. */
-@media (min-width: 1025px) {
+@media (min-width: 1081px) {
   .kiz-scorebar {
     max-width: 880px;
     gap: 14px;

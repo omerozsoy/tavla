@@ -58,7 +58,7 @@
 /* Sticky account-bar (z-index:105) drawer'i (z-index:100) altinda birakiyordu.
    Landscape'te drawer BARIN ALTINDAN baslasin (bar ustte gorunur kalir, tum menu gorunur);
    portrede ise drawer barin USTUNE ciksin (kendi logosuyla -> z-index yeter). */
-@media (max-width: 1024px) {
+@media (max-width: 1080px) {
   .side-menu {
     z-index: 106;
   }

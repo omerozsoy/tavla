@@ -71,7 +71,7 @@
 .arena-next { width: 100%; padding: 16px; font-size: 17px; }
 .arena-judge-after { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 /* Dar ekran: tek kolon (board üstte, panel altta) */
-@media (max-width: 1024px) {
+@media (max-width: 1080px) {
   .arena-judge-grid { flex-direction: column; gap: 16px; }
   .arena-judge-board { width: 100%; }
   .arena-judge-side { min-width: 0; width: 100%; }
