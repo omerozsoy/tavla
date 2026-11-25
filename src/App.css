@@ -36907,8 +36907,8 @@ body.has-bottom-nav .to-top {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 1.3rem;
-  font-weight: 400; /* Siyah/Beyaz yazısı bold olmasın (kullanıcı) */
+  font-size: 1.05rem; /* Siyah/Beyaz yazısı biraz küçültüldü (kullanıcı) */
+  font-weight: 400; /* bold olmasın (kullanıcı) */
 }
 /* Sırası gelen oyuncu: ismi accent renk + büyük ok -> kimin sırası olduğu NET belli (bold DEĞİL). */
 .mrv-pname.turn {
