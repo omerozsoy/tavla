@@ -743,8 +743,10 @@ export default function MatchReport({
                       <button
                         className={`an-cand an-cand-pre ${candIdx === PREMOVE ? 'view' : ''}`}
                         onClick={() => setCandIdx(PREMOVE)}
+                        title={t('rep.beforeMove')}
+                        aria-label={t('rep.beforeMove')}
                       >
-                        <span className="an-cmove">{t('rep.beforeMove')}</span>
+                        <Icon name="navigation-off" size={16} />
                       </button>
                       {(showAllCands ? (cur.cands ?? []) : (cur.cands ?? []).slice(0, CAND_LIMIT)).map((c, ci) => {
                         const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)

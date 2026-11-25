@@ -20584,6 +20584,26 @@ body:has(.spectate-view) .app.lobby {
     letter-spacing: 0.2px;
   }
 }
+/* BULLETPROOF (kullanıcı: "düğmeler hâlâ kalın"): shadcn Button class'ı `h-[42px] min-h-[42px]`
+   HARDCODED. Analiz filtre (Benim/Rakip/Tümü · En Kötüler/Sıraya Göre) + sekme (En İyi N · Küp
+   Durumu) düğmelerini TÜM mobilde (≤900px — cihaz ≤560'ı kaçırsa bile) SABİT ince height ile zorla
+   ez -> hepsi 28px, eşit + ince. Kaynak-sırası geç -> kazanır; flex-ortalama metni ortalar. */
+@media (max-width: 900px) {
+  .rep-filter > [data-slot='button'],
+  .rep-filter > button,
+  .rep-filter .menu-btn,
+  .an-dtab {
+    height: 28px;
+    min-height: 28px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    font-size: 0.7rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
 /* ---- WXP kirilim paneli (yalniz WXP sekmesi): formul + kendi kategori dagilimi ---- */
 .wxp-bd {
   margin: 4px 0 12px;

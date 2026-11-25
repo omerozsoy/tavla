@@ -66,6 +66,7 @@ import {
   IconChevronRight,
   IconArrowRight,
   IconArrowGuide,
+  IconNavigationOff,
   IconArrowUp,
   IconCalendar,
   IconCalendarEvent,
@@ -189,6 +190,7 @@ export type IconName =
   | 'caret-right'
   | 'arrow-right'
   | 'arrow-guide'
+  | 'navigation-off'
   | 'arrow-up'
   | 'calendar'
   | 'pin'
@@ -309,6 +311,7 @@ const MAP: Record<IconName, TablerIcon> = {
   'caret-right': IconChevronRight,
   'arrow-right': IconArrowRight,
   'arrow-guide': IconArrowGuide,
+  'navigation-off': IconNavigationOff,
   'arrow-up': IconArrowUp,
   calendar: IconCalendar,
   pin: IconMapPin,
