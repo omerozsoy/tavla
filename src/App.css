@@ -17701,8 +17701,9 @@ body:has(.spectate-view) .app.lobby {
   color: var(--muted);
   font-weight: 500;
 }
-/* "Okları gösterme" (ham pozisyon) MİNİK ikon düğmesi — YALNIZ mobilde, Kazanma/Mars barlarının
-   altında en solda görünür. Masaüstünde aday listesindeki .an-cand-pre kullanılır -> base'de gizli. */
+/* "Okları gösterme" (ham pozisyon) MİNİK ikon düğmesi — YALNIZ mobilde, sekme satırında
+   "En İyi N Hamle" ile "Küp Durumu" arasında. Masaüstünde aday listesindeki .an-cand-pre
+   kullanılır -> base'de gizli. */
 .an-premove-mini {
   display: none;
 }
@@ -17883,24 +17884,23 @@ body:has(.spectate-view) .app.lobby {
   }
   /* Minik "okları gösterme" ikon düğmesi: Kazanma/Mars barlarının bittiği yerde, en solda. */
   .an-premove-mini {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    align-self: flex-start;
-    width: 30px;
-    height: 30px;
-    margin-top: 4px;
+    width: 34px;
+    height: 28px;
     padding: 0;
-    border: 1px solid var(--line, rgba(0, 0, 0, 0.14));
-    border-radius: 8px;
-    background: var(--card, #fff);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
     color: var(--muted);
     cursor: pointer;
   }
   .an-premove-mini.on {
     border-color: var(--accent);
-    color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: var(--accent);
+    color: var(--on-accent);
   }
   /* "Dışa aktar altındaki turuncu çizgi" = YATAY SCROLLBAR (global `*{scrollbar-color:terracotta}`).
      Full-bleed tahta (negatif margin-inline) report-body'de yatay taşma yaratıp turuncu yatay
