@@ -37187,12 +37187,16 @@ body.has-bottom-nav .to-top {
     max-height: none;
     margin-top: 40px; /* board'dan NET ayrı (kullanıcı: çok daha fazla boşluk) */
     padding-top: 12px;
-    /* KÖK FIX (kullanıcı: "üstüne tahta gelmesin"): `order` görsel sırayı çevirir ama BOYAMA
-       sırasını değiştirmez — tahta (.mrv-board) DOM'da düğmelerden SONRA olduğu için, alt kenarı
-       (hane numaraları) taşınca düğmelerin ÜSTÜNE boyanıyordu. Düğme kutusunu kendi katmanına al
-       (position+z-index) + opak arka plan zaten var -> tahta artık düğmelerin üstüne gelmez. */
-    position: relative;
-    z-index: 1;
+  }
+  /* KÖK FIX (kullanıcı: "üstüne tahta gelmesin" / "boardun altı kesilmiş"): yapısal taşma YOK —
+     grid liste'yi board'un ALTINA koyar. Taşma, board SAHNESİNDEKİ mutlak-konumlu hamle-oku
+     overlay'inden (.mrv-arrows: inset:0 + overflow:visible + z-index) geliyor; alttaki hanelere
+     giden oklar sahne kutusunun DIŞINA sarkıp aşağıdaki düğmelerin üstüne biniyordu. ÖNCEKİ deneme
+     (düğmeye z-index) yanlıştı: düğmeyi öne alınca bu sefer board'un altını KESTİ. Doğrusu: sahneyi
+     kendi kutusuna kırp -> ok kuyruğu düğme alanına giremez, gerçek board içeriği + ok gövdesi kutu
+     içinde kalır (board kesilmez). */
+  .mrv-board-stage {
+    overflow: hidden;
   }
   .mrv-rows {
     display: none;
