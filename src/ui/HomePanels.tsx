@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import './homeCalendar.css'
 import { useT } from '../i18n'
@@ -1002,6 +1002,28 @@ export function TournamentsPanel({
   )
   const pages = Math.max(1, Math.ceil(ordered.length / per))
   const cur = Math.min(idx, pages - 1) // liste/per değişince taşmayı önle
+  // Parmakla yatay kaydırma (BannerSlider ile AYNI Pointer Events deseni): eşiği aşan sürükleme
+  // bir sonraki/önceki sayfaya geçer; draggedRef sürükleme sonrası kart/KATIL tıklamasını bastırır
+  // (kaydırırken kart kazara açılmasın). Dikey sürükleme .tourn-carousel'in touch-action:pan-y'si
+  // ile sayfayı kaydırmaya devam eder. Döngülü: sondan ileri -> başa (ok/nokta ile aynı mantık).
+  const dragX = useRef<number | null>(null)
+  const draggedRef = useRef(false)
+  const SWIPE_MIN = 40
+  const onPointerDown = (e: PointerEvent) => {
+    if (pages <= 1) return
+    dragX.current = e.clientX
+    draggedRef.current = false
+  }
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragX.current == null) return
+    if (Math.abs(e.clientX - dragX.current) > 8) draggedRef.current = true
+  }
+  const onPointerUp = (e: PointerEvent) => {
+    if (dragX.current == null) return
+    const dx = e.clientX - dragX.current
+    dragX.current = null
+    if (Math.abs(dx) >= SWIPE_MIN) setIdx(dx < 0 ? (cur + 1) % pages : (cur - 1 + pages) % pages)
+  }
   const act = async (id: number, fn?: (id: number) => Promise<void> | void) => {
     if (!fn || busy) return
     setBusy(id)
@@ -1021,7 +1043,13 @@ export function TournamentsPanel({
       {tourns.length === 0 ? (
         <div className="tourn-empty">{t('tourn.empty')}</div>
       ) : (
-      <div className="tourn-carousel">
+      <div
+        className="tourn-carousel"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => (dragX.current = null)}
+      >
       <div className="tourn-viewport">
       <div className="tourn-track" style={{ transform: `translateX(-${cur * 100}%)` }}>
         {ordered.map((tr) => {
@@ -1051,7 +1079,13 @@ export function TournamentsPanel({
               className="tourn-row"
               role="button"
               tabIndex={0}
-              onClick={onOpen}
+              onClick={() => {
+                if (draggedRef.current) {
+                  draggedRef.current = false
+                  return // sürükleme oldu -> tıklamayı yut (kart kazara açılmasın)
+                }
+                onOpen()
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
@@ -1104,6 +1138,10 @@ export function TournamentsPanel({
                       disabled={busy === tr.id || (!tr.joined && full)}
                       onClick={(e) => {
                         e.stopPropagation()
+                        if (draggedRef.current) {
+                          draggedRef.current = false
+                          return // sürükleme sonrası kazara katıl/ayrıl tetiklenmesin
+                        }
                         if (!loggedIn) {
                           onLogin?.()
                         } else if (tr.joined) {
