@@ -107,6 +107,9 @@ class TournamentScheduleResource extends Resource
                     ->options(Tournament::TYPES)
                     ->required()
                     ->live()
+                    // Tür değişince havuz payları otomatik o türün modeline geçer (Bracket vs Swiss).
+                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('pool_pcts',
+                        array_map(fn ($p) => ['pct' => $p], TournamentPool::defaultPcts($state))))
                     ->default('bracket'),
                 // 3 Haklı Swiss "hak sayısı" (1/2/3). Zorunlu; yalnız Swiss tipinde gösterilir
                 // (bracket bu değeri yok sayar). Kurulan turnuvaya CreateScheduledTournaments aktarır.

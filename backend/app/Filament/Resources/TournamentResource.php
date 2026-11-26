@@ -88,6 +88,9 @@ class TournamentResource extends Resource
                     ->options(Tournament::TYPES)
                     ->required()
                     ->live()
+                    // Tür değişince havuz payları otomatik o türün modeline geçer (Bracket vs Swiss).
+                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('pool_pcts',
+                        array_map(fn ($p) => ['pct' => $p], TournamentPool::defaultPcts($state))))
                     ->default('bracket'),
                 Forms\Components\TextInput::make('venue')
                     ->label('Düzenlenme yeri / Otel')
