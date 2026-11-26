@@ -491,6 +491,10 @@ export default function MatReview({
                 pipTop={pipCount(boardState, 'black')}
                 pipBottom={pipCount(boardState, 'white')}
                 cube={cubeForBoard}
+                /* KÜP KARARI: zar yok -> merkez boştu. Oyun/izle gibi TEKLİF EDİLEN küpü (mevcut
+                   değer ×2) karar veren oyuncunun tarafında göster -> küp kararında merkez boş kalmaz. */
+                cubePendingValue={cur?.cube ? cubeForBoard.value * 2 : null}
+                cubePendingSide={cur?.player === 'black' ? 'top' : 'bottom'}
                 flip={false}
                 numberFrom={cur?.player ?? 'white'}
                 mirror={boardDir === 'left'}
