@@ -173,7 +173,7 @@ class TournamentScheduleResource extends Resource
                     ->helperText('Evet: oyuncuların ödediği giriş ücretleri havuzda toplanır; %10 komisyon düşülür, kalanı aşağıdaki sıra paylarına göre otomatik dağıtılır (varsayılan türe göre gelir, elle değiştirebilirsin). Hayır: giriş ücreti havuza girmez.')
                     ->boolean(trueLabel: 'Evet', falseLabel: 'Hayır')
                     ->inline()
-                    ->default(false)
+                    ->default(true) // standart: Otomatik Ödül Havuzu varsayılan AÇIK (ücret 0 ise zaten etkisiz)
                     ->live(),
                 Forms\Components\Repeater::make('pool_pcts')
                     ->label('Havuz dağılımı (düzenlenebilir sıra payları %)')
