@@ -16563,6 +16563,12 @@ button.acct-row-logout:hover:not(:disabled) {
   letter-spacing: 0.01em;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
   max-width: none;
+  /* Uzun yazı ("Yapay Zeka ile Oyna") EN FAZLA 2 satıra sarar; düzeni bozmaz/taşmaz. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 /* En sağdaki "git" oku (tek satır düzen) */
 .hqp-go {
