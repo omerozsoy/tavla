@@ -16478,11 +16478,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .hqp-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* web/tablet: 4 düğme yan yana (tek satır) */
+  grid-template-columns: 1fr; /* her düğme site genişliğinde, tek satır bar; dikey liste */
   gap: 10px;
-}
-@media (max-width: 640px) {
-  .hqp-grid { grid-template-columns: 1fr 1fr; } /* telefon: 2 + 2 (2x2) */
 }
 /* Grafikli oyun-tarzı düğme: tam renkli gradyan + watermark ikon + parlak shine + derinlik. */
 .hqp-btn {
@@ -16490,12 +16487,12 @@ button.acct-row-logout:hover:not(:disabled) {
   overflow: hidden;
   isolation: isolate;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 106px;
-  padding: 11px 13px 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 13px;
+  min-height: 0;
+  padding: 14px 18px;
   border: 0;
   border-radius: 16px;
   color: #fff;
@@ -16555,18 +16552,18 @@ button.acct-row-logout:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 .hqp-label {
-  font-size: 0.92rem;
+  flex: 1; /* yazı ikonun sağında, kalan genişliği doldurur -> oku en sağa iter */
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.18;
   letter-spacing: 0.01em;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
-  max-width: calc(100% - 18px);
+  max-width: none;
 }
-/* Köşedeki "git" oku */
+/* En sağdaki "git" oku (tek satır düzen) */
 .hqp-go {
-  position: absolute;
-  right: 11px;
-  bottom: 11px;
+  flex: none;
+  margin-left: auto;
   color: rgba(255, 255, 255, 0.85);
   transition: transform 0.14s ease;
 }
