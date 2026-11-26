@@ -186,18 +186,105 @@ function tournStandings(bracket?: TMatch[][] | null): number[] {
   }
   return Array.from(new Set(out))
 }
-// Otomatik Ödül Havuzu notu: "Ödül havuzu: ... toplandı · 1. %40 · 2. %20 · … · %10 komisyon"
-function PoolNote({ tr }: { tr: Tournament }) {
+// Ödül Dağıtımı: havuz modelini (sıra payları %) + toplanan + %10 komisyon + kişi başı tutarı
+// modal tablo olarak gösterir. Satır-içi uzun yazı yerine "Ödül Dağıtımı" düğmesi (lobide solda).
+// Eşit paylı ardışık sıralar gruplanır (ör. iki yarı finalist, Swiss 4.-5. / 6.-8.).
+function groupPcts(pcts: number[]): { from: number; to: number; pct: number }[] {
+  const out: { from: number; to: number; pct: number }[] = []
+  pcts.forEach((raw, i) => {
+    const pct = raw || 0
+    const last = out[out.length - 1]
+    if (last && last.pct === pct && last.to === i - 1) last.to = i
+    else out.push({ from: i, to: i, pct })
+  })
+  return out
+}
+
+function prizeRankLabel(from: number, to: number): string {
+  if (from === to) return `${from + 1}.`
+  if (to === from + 1) return `${from + 1}. ve ${to + 1}.`
+  return `${from + 1}. – ${to + 1}.`
+}
+
+const prizeCell = { padding: '7px 6px' } as const
+const prizeNum = { padding: '7px 6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' } as const
+
+function PrizeModal({ tr, onClose }: { tr: Tournament; onClose: () => void }) {
   const { t } = useT()
-  if (!tr.pool_enabled) return null
-  const p = tr.pool_pcts && tr.pool_pcts.length ? tr.pool_pcts : [40, 20, 15, 15]
-  const places = p.map((v, i) => `${i + 1}. %${v ?? 0}`).join(' · ')
+  const pcts = (tr.pool_pcts && tr.pool_pcts.length ? tr.pool_pcts : []).map((p) => p || 0)
+  const collected = tr.pool_collected ?? 0
+  const commission = Math.floor((collected * 10) / 100)
+  const net = collected - commission
+  const totalPct = pcts.reduce((a, b) => a + b, 0) || 1
+  // Kişi başı pay = net'in (pct/Σpct) oranı; yuvarlama artığı şampiyona (backend shares ile aynı).
+  const shares = pcts.map((p) => Math.floor((net * p) / totalPct))
+  if (shares.length) shares[0] += net - shares.reduce((a, b) => a + b, 0)
+  const groups = groupPcts(pcts)
+  const bonus = tr.prize_coins ?? 0
+  const tl = (n: number) => n.toLocaleString('tr-TR')
+  const line = '1px solid color-mix(in srgb, currentColor 14%, transparent)'
   return (
-    <div className="tp-note tp-pool-note">
-      {t('tourn.poolNote', {
-        n: (tr.pool_collected ?? 0).toLocaleString('tr-TR'),
-        places,
-      })}
+    <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose} style={{ zIndex: 70 }}>
+      <div className="register-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440, width: '92%' }}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <Icon name="x" size={16} />
+        </Button>
+        <h3 style={{ margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="medal" size={18} /> Ödül Dağıtımı
+        </h3>
+        <div style={{ opacity: 0.75, fontSize: 13, marginBottom: 12 }}>
+          Giriş ücretlerinden toplanan: <b>{tl(collected)}</b> coin
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <thead>
+            <tr style={{ opacity: 0.6, fontSize: 12 }}>
+              <th style={prizeCell}>Derece</th>
+              <th style={prizeNum}>Pay</th>
+              <th style={prizeNum}>Kişi başı</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((g) => (
+              <tr key={g.from} style={{ borderTop: line }}>
+                <td style={prizeCell}>{prizeRankLabel(g.from, g.to)}</td>
+                <td style={prizeNum}>%{g.pct}</td>
+                <td style={prizeNum}>{tl(shares[g.from] ?? 0)}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: line, opacity: 0.8 }}>
+              <td style={prizeCell}>TavlaTV komisyonu</td>
+              <td style={prizeNum}>%10</td>
+              <td style={prizeNum}>{tl(commission)}</td>
+            </tr>
+            <tr style={{ borderTop: '2px solid color-mix(in srgb, currentColor 26%, transparent)', fontWeight: 700 }}>
+              <td style={prizeCell}>Toplam</td>
+              <td style={prizeNum}>%100</td>
+              <td style={prizeNum}>{tl(collected)}</td>
+            </tr>
+          </tbody>
+        </table>
+        {bonus > 0 && (
+          <div style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
+            + Sabit şampiyon ödülü: <b>{tl(bonus)}</b> coin (1.’liğe eklenir)
+          </div>
+        )}
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.6 }}>
+          Oyunculara toplam {tl(net)} coin dağıtılır{bonus > 0 ? ` (+ ${tl(bonus)} sabit ödül)` : ''}.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PrizeButton({ tr }: { tr: Tournament }) {
+  const [open, setOpen] = useState(false)
+  if (!tr.pool_enabled) return null
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-start', margin: '8px 0' }}>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <Icon name="medal" size={16} /> Ödül Dağıtımı
+      </Button>
+      {open && <PrizeModal tr={tr} onClose={() => setOpen(false)} />}
     </div>
   )
 }
@@ -943,7 +1030,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
           {/* Turnuva duyurulari: Swiss'te "Tur Eşleşmeleri" üstünde (aşağıda), diğerlerinde lobi başında.
               Yeni duyuru geldiginde zil calar + yanıp söner (annSeenRef/flashAnnId efekti). */}
-          <PoolNote tr={active} />
+          <PrizeButton tr={active} />
           {!swissPairingsShown && announceBox}
 
           {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
@@ -1685,7 +1772,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </div>
             )
           )}
-          <PoolNote tr={tr} />
+          {/* Kart bir <button> (içine buton konmaz); ödül dağıtımı düğmesi LOBİDE. */}
           {/* Belirgin detay/lobi baglantisi (tum kart zaten tiklanabilir; bu gorsel ipucu). */}
           <span className="tourn-lobby-link">
             {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
