@@ -202,8 +202,11 @@ function groupPcts(pcts: number[]): { from: number; to: number; pct: number }[] 
 
 function prizeRankLabel(from: number, to: number): string {
   if (from === to) return `${from + 1}.`
-  if (to === from + 1) return `${from + 1}. ve ${to + 1}.`
-  return `${from + 1}. – ${to + 1}.`
+  // Aralığı tek tek yaz, sonuncudan önce "ve": "4. ve 5." / "6., 7. ve 8."
+  const nums: string[] = []
+  for (let i = from; i <= to; i++) nums.push(`${i + 1}.`)
+  const last = nums.pop()
+  return `${nums.join(', ')} ve ${last}`
 }
 
 
@@ -1630,11 +1633,22 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     const prizeCount = tr.prizes?.length ?? 0
     const start = tr.starts_at ? new Date(tr.starts_at) : null
     const logo = orgLogoSrc(tr.organizer?.logo)
+    const openDetail = () => onOpenDetail?.(tr.id, tournUrlSlug(tr))
     return (
-      <button
+      // Kart <button> DEĞİL <div role=button>: havuzlu turnuvada içine ödül dağıtımı
+      // kartı (table) güvenle girsin (button içinde table geçersiz). Klavye: onKeyDown.
+      <div
         key={tr.id}
+        role="button"
+        tabIndex={0}
         className={`event-row tourn-row ${tr.status === 'finished' ? 'past' : ''} ${logo ? 'has-logo' : ''}`}
-        onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}
+        onClick={openDetail}
+        onKeyDown={(e) => {
+          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault()
+            openDetail()
+          }
+        }}
       >
         {/* Sag ust kose flamasi: turnuva-takvimindeki bayrak gibi -> icinde TavlaTV logosu
             (wordmark), bayrak gibi 90 derece dondurulup dik flamayi doldurur. */}
@@ -1729,9 +1743,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               <TavlaTvLogo size={30} tone="auto" className="event-runby-logo" />
             </span>
           </div>
-          {/* Odul dagilimi: 1., 2., 3. ... her sira ne kazanir -> NET liste.
-              prizes[] varsa sira-sira; yoksa tek toplam odul (fallback). */}
-          {tr.prizes && tr.prizes.length > 0 ? (
+          {/* Odul dagilimi. Havuzlu (pool_enabled) turnuvada detay sayfasiyla AYNI sik
+              satir-ici kart (hero + tablo). Degilse: prizes[] liste / tek toplam odul. */}
+          {tr.pool_enabled ? (
+            <PrizeBreakdown tr={tr} />
+          ) : tr.prizes && tr.prizes.length > 0 ? (
             <div className="tourn-prizes tourn-row-prizes">
               <div className="tp-head">
                 <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}
@@ -1773,7 +1789,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
           </span>
         </div>
-      </button>
+      </div>
     )
   }
 
