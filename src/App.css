@@ -10476,7 +10476,9 @@ html.fs-active .account-bar {
      satiriyla hizali). ONCE top=inset VE height=56+inset idi -> inset CIFT sayiliyordu: standalone'da
      (inset~59px) buton 56+59px olup 48px bar'in ~63px ALTINA tasiyordu (PWA'da bozuk gorunum). */
   top: 0;
-  left: env(safe-area-inset-left);
+  /* Yatay: SAĞ köşe (kullanıcı isteği -> logo solda, hamburger en sağda). */
+  left: auto;
+  right: env(safe-area-inset-right);
   width: 52px;
   height: calc(56px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
@@ -11199,8 +11201,8 @@ html.fs-active .account-bar {
     z-index: 105; /* hamburger 110 -> ustte kalir; icerik altta */
     min-height: 48px;
     gap: 6px;
-    /* SOL: sabit hamburger (52px) icin pay birak -> logo hamburger'in sagindan baslar. */
-    padding: 6px 12px 6px 60px;
+    /* SAĞ: sabit hamburger (52px) icin pay birak -> logo SOLDA, hamburger sağda. */
+    padding: 6px 60px 6px 12px;
   }
   /* KRITIK: base `.account-bar { position: static }` (asagida, top-level) kaynak-sirasi
      geregi yukaridaki sticky'yi EZIYORDU (media query ozgulluk eklemez). Lobiye ozgu
@@ -11211,7 +11213,7 @@ html.fs-active .account-bar {
     top: 0;
     z-index: 105;
   }
-  /* Hamburger en SOLDA -> logo hemen sagina yaslansin. */
+  /* Logo en SOLDA (hamburger sağa taşındı) -> sol kenara yaslansın. */
   .ab-brand {
     margin-left: 0;
   }
@@ -12121,8 +12123,8 @@ button.acct-row-logout:hover:not(:disabled) {
    hamburger logonun ilk harfini kapatiyordu. Yatay PWA'da sol/sag centik payi da eklenir. */
 @media (max-width: 1080px) {
   .account-bar {
-    padding-left: calc(60px + env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: calc(60px + env(safe-area-inset-right));
   }
   .ab-brand {
     margin-left: 0;
@@ -12202,8 +12204,8 @@ button.acct-row-logout:hover:not(:disabled) {
   /* .account-bar.account-bar: (0,2,0) ozgulluk -> asagidaki <=720px `.account-bar` padding
      kisayolunu yener. (Eski `.app.lobby > .account-bar` hic eslesmiyordu: bar .topbar-stack icinde.) */
   .account-bar.account-bar {
-    padding-left: calc(52px + env(safe-area-inset-left));
-    padding-right: 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: calc(52px + env(safe-area-inset-right));
     gap: 4px;
   }
   /* .account-bar ile ozgullugu artir: asagidaki @media(max-width:720px) icindeki
