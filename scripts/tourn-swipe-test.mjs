@@ -6,7 +6,7 @@
 import { chromium } from 'playwright'
 
 const PORT = process.env.PORT || 5178
-const base = `http://localhost:${PORT}`
+const base = process.env.BASE || `http://localhost:${PORT}`
 const assert = (c, msg) => { if (!c) { console.error('FAIL: ' + msg); process.exitCode = 1; throw new Error(msg) } }
 
 // 3 açık turnuva -> mobilde per=1 => 3 sayfa => noktalar + swipe aktif.
