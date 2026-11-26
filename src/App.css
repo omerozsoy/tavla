@@ -24155,10 +24155,10 @@ body:has(.spectate-view) .app.lobby {
   width: 100%;
   margin: 2px 0 8px;
   border: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
-  border-radius: 12px;
+  border-top: 3px solid var(--accent); /* düz üst çizgi (kare köşe ile uçları düzleşir) */
+  border-radius: 0; /* ana sayfa kartları gibi ama köşeler kare */
   background: var(--card-bg);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--text) 7%, transparent);
+  /* ana sayfa .home-panel gibi düz: belirgin gölge yok */
 }
 .tourn-lobby-link {
   display: flex;
