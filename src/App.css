@@ -36991,6 +36991,8 @@ body.has-bottom-nav .to-top {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end; /* içeriği ALTA yasla -> 1/2 satırlık etiketlerde rakamlar + etiket
+     altları AYNI hizada (biri altta biri üstte olmasın); grid hücreleri zaten eşit boyda streç. */
   gap: 2px;
 }
 .mrv-prob-lbl {
