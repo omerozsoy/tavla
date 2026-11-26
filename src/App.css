@@ -37363,7 +37363,11 @@ body.has-bottom-nav .to-top {
     order: 3; /* adaylar/analiz: filtrelerin ALTINDA (kullanıcı: düğmeler board'un altında) */
     border-left: none;
     border-top: 1px solid var(--border);
-    flex: 1 1 auto; /* kalan yüksekliği doldur -> alt nav ile boşluk kalmaz */
+    /* flex-shrink 0 (önce 1): shrink:1 panel içeriğini (Cevap Kararı/aday listesi) kalan alana
+       SIKIŞTIRIP kendi içeriğini eziyordu -> grid scrollH=clientH (taşma yok) -> scroll HİÇ gelmiyordu
+       ([852,852,852] teşhisi). shrink:0 + grow:1: az içerikte boşluğu doldurur, çok içerikte
+       küçülmeyip TAŞAR -> grid overflow-y:auto devreye girer, sayfa kayar. */
+    flex: 1 0 auto;
     overflow: visible; /* iç scroll yok; kaydırma grid'de (base overflow:hidden'ı ez) */
   }
   /* Filtreler (oyuncu + Tümü/Hatalar/Büyük hatalar) BOARD'UN HEMEN ALTINDA (order 2). Uzun hamle
