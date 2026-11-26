@@ -12271,6 +12271,31 @@ export default function App() {
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
+            {/* Hemen Oyna: YALNIZ kurulu uygulamada (APP_UI) banner altında 2x2 hızlı-başlat.
+                Etiketler menü anahtarlarından (çok dilli). Web/masaüstünde gösterilmez. */}
+            {APP_UI && (
+              <section className="home-quickplay" aria-label={t('home.startCta')}>
+                <h2 className="hqp-title">{t('home.startCta')}</h2>
+                <div className="hqp-grid">
+                  <button type="button" className="hqp-btn" onClick={menuProps.onSolo}>
+                    <span className="hqp-ic hqp-ic-navy"><Icon name="dice" size={24} /></span>
+                    <span className="hqp-label">{t('menu.solo')}</span>
+                  </button>
+                  <button type="button" className="hqp-btn" onClick={menuProps.onNewGame}>
+                    <span className="hqp-ic hqp-ic-coral"><Icon name="swords" size={24} /></span>
+                    <span className="hqp-label">{t('menu.match')}</span>
+                  </button>
+                  <button type="button" className="hqp-btn" onClick={menuProps.onAiGame}>
+                    <span className="hqp-ic hqp-ic-orange"><Icon name="robot-face" size={24} /></span>
+                    <span className="hqp-label">{t('menu.aiGame')}</span>
+                  </button>
+                  <button type="button" className="hqp-btn" onClick={menuProps.onPlayFriend}>
+                    <span className="hqp-ic hqp-ic-green"><Icon name="users" size={24} /></span>
+                    <span className="hqp-label">{t('menu.playFriend')}</span>
+                  </button>
+                </div>
+              </section>
+            )}
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
                 {activeRooms.map((r) => {
