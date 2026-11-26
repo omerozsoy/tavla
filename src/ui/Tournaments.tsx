@@ -207,8 +207,10 @@ function prizeRankLabel(from: number, to: number): string {
 }
 
 
-function PrizeModal({ tr, onClose }: { tr: Tournament; onClose: () => void }) {
-  const { t } = useT()
+// Havuzlu turnuva ödül dağıtımı kartı — LOBİDE satır-içi (modal değil, kullanıcı isteği):
+// hero (toplanan havuz) + derece/pay/kişi-başı tablosu + komisyon/toplam + sabit şampiyon bonusu.
+// Yalnız pool_enabled turnuvada gösterilir.
+function PrizeBreakdown({ tr }: { tr: Tournament }) {
   const pcts = (tr.pool_pcts && tr.pool_pcts.length ? tr.pool_pcts : []).map((p) => p || 0)
   const collected = tr.pool_collected ?? 0
   const commission = Math.floor((collected * 10) / 100)
@@ -221,81 +223,62 @@ function PrizeModal({ tr, onClose }: { tr: Tournament; onClose: () => void }) {
   const bonus = tr.prize_coins ?? 0
   const tl = (n: number) => n.toLocaleString('tr-TR')
   return (
-    <div className="register-overlay modal prize-overlay" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="register-card prize-card" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={16} />
-        </Button>
-        <div className="prize-hero">
-          <span className="prize-hero-badge"><Icon name="medal" size={22} /></span>
-          <div className="prize-hero-txt">
-            <h3>Ödül Dağıtımı</h3>
-            <span className="prize-hero-sub">Giriş ücretlerinden toplanan havuz</span>
-          </div>
-          <span className="prize-hero-amt"><Coins amount={collected} pill size={18} /></span>
+    <div className="prize-card prize-card-inline">
+      <div className="prize-hero">
+        <span className="prize-hero-badge"><Icon name="medal" size={22} /></span>
+        <div className="prize-hero-txt">
+          <h3>Ödül Dağıtımı</h3>
+          <span className="prize-hero-sub">Giriş ücretlerinden toplanan havuz</span>
         </div>
-        <table className="prize-table">
-          <thead>
-            <tr>
-              <th>Derece</th>
-              <th className="pt-num">Pay</th>
-              <th className="pt-num">Kişi başı</th>
+        <span className="prize-hero-amt"><Coins amount={collected} pill size={18} /></span>
+      </div>
+      <table className="prize-table">
+        <thead>
+          <tr>
+            <th>Derece</th>
+            <th className="pt-num">Pay</th>
+            <th className="pt-num">Kişi başı</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((g) => (
+            <tr key={g.from} className={g.from < 3 ? 'pt-rank-' + (g.from + 1) : ''}>
+              <td>
+                <span className="pt-rank-cell">
+                  <span className="pt-medal" aria-hidden="true" />
+                  {prizeRankLabel(g.from, g.to)}
+                </span>
+              </td>
+              <td className="pt-num pt-pct">%{g.pct}</td>
+              <td className="pt-num">
+                <Coins amount={shares[g.from] ?? 0} gain size={16} />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {groups.map((g) => (
-              <tr key={g.from} className={g.from < 3 ? 'pt-rank-' + (g.from + 1) : ''}>
-                <td>
-                  <span className="pt-rank-cell">
-                    <span className="pt-medal" aria-hidden="true" />
-                    {prizeRankLabel(g.from, g.to)}
-                  </span>
-                </td>
-                <td className="pt-num pt-pct">%{g.pct}</td>
-                <td className="pt-num">
-                  <Coins amount={shares[g.from] ?? 0} gain size={16} />
-                </td>
-              </tr>
-            ))}
-            <tr className="pt-fee">
-              <td>TavlaTV komisyonu</td>
-              <td className="pt-num pt-pct">%10</td>
-              <td className="pt-num">−{tl(commission)}</td>
-            </tr>
-            <tr className="pt-total">
-              <td>Toplam havuz</td>
-              <td className="pt-num pt-pct">%100</td>
-              <td className="pt-num">{tl(collected)}</td>
-            </tr>
-          </tbody>
-        </table>
-        {bonus > 0 && (
-          <div className="prize-bonus">
-            <Icon name="crown" size={16} />
-            <span>Sabit şampiyon ödülü</span>
-            <Coins amount={bonus} gain size={16} />
-            <small>1.’liğe eklenir</small>
-          </div>
-        )}
-        <div className="prize-note">
-          Oyunculara toplam {tl(net)} coin dağıtılır{bonus > 0 ? ` (+ ${tl(bonus)} sabit ödül)` : ''}.
+          ))}
+          <tr className="pt-fee">
+            <td>TavlaTV komisyonu</td>
+            <td className="pt-num pt-pct">%10</td>
+            <td className="pt-num">−{tl(commission)}</td>
+          </tr>
+          <tr className="pt-total">
+            <td>Toplam havuz</td>
+            <td className="pt-num pt-pct">%100</td>
+            <td className="pt-num">{tl(collected)}</td>
+          </tr>
+        </tbody>
+      </table>
+      {bonus > 0 && (
+        <div className="prize-bonus">
+          <Icon name="crown" size={16} />
+          <span>Sabit şampiyon ödülü</span>
+          <Coins amount={bonus} gain size={16} />
+          <small>1.’liğe eklenir</small>
         </div>
+      )}
+      <div className="prize-note">
+        Oyunculara toplam {tl(net)} coin dağıtılır{bonus > 0 ? ` (+ ${tl(bonus)} sabit ödül)` : ''}.
       </div>
     </div>
-  )
-}
-
-function PrizeButton({ tr }: { tr: Tournament }) {
-  const [open, setOpen] = useState(false)
-  if (!tr.pool_enabled) return null
-  // Fragment: tourn-actions-hero flex satırında Katıl/Kaydı İptal'in yanına hizalansın.
-  return (
-    <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <Icon name="medal" size={16} /> Ödül Dağıtımı
-      </Button>
-      {open && <PrizeModal tr={tr} onClose={() => setOpen(false)} />}
-    </>
   )
 }
 
@@ -936,9 +919,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             )}
           </div>
 
-          {/* Birincil aksiyon: Katil / Kaydi iptal + Ödül Dağıtımı (hero'nun hemen altinda, belirgin).
-              pool_enabled de koşulda: havuzlu turnuvada düğme open olmayan durumda da görünsün. */}
-          {(canJoin || (joined && active.status === 'open') || active.pool_enabled) && (
+          {/* Birincil aksiyon: Katil / Kaydi iptal (hero'nun hemen altinda, belirgin).
+              Ödül dağıtımı artık satır-içi kart (aşağıda PrizeBreakdown), ayrı düğme YOK. */}
+          {(canJoin || (joined && active.status === 'open')) && (
             <div className="tourn-actions tourn-actions-hero">
               {canJoin && (
                 <Button variant="default" className="tourn-join-btn" disabled={busy} onClick={onJoinClick}>
@@ -958,7 +941,6 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   <Icon name="x" size={16} /> {t('tourn.leave')}
                 </Button>
               )}
-              <PrizeButton tr={active} />
             </div>
           )}
 
@@ -1013,8 +995,11 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               })()
             : null}
 
-          {/* Odul dagilimi (siralamaya gore) — yalniz odul listesi, isim YOK (kazananlar podyumda) */}
-          {active.prizes && active.prizes.length > 0 ? (
+          {/* Ödül dağıtımı. Havuzlu (pool_enabled) turnuvada ŞIK satır-içi kart (hero + tablo).
+              Havuzsuz sabit ödüllüde eski liste; hiçbiri yoksa prize_desc metni. */}
+          {active.pool_enabled ? (
+            <PrizeBreakdown tr={active} />
+          ) : active.prizes && active.prizes.length > 0 ? (
             <div className="tourn-prizes">
               <div className="tp-head">
                 <Icon name="medal" size={16} /> {t('tourn.breakdown')}

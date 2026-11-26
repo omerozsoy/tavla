@@ -24058,14 +24058,10 @@ body:has(.spectate-view) .app.lobby {
 /* Standart (primary) dugme gorunumu, SAGA yasli. Kart zaten buton; bu gorsel CTA. */
 
 /* ---- Ödül Dağıtımı modalı (şık) ---- */
-.prize-overlay { z-index: 70; }
 .prize-card {
-  max-width: 460px;
-  width: 92%;
   padding: 0;
   overflow: hidden;
 }
-.prize-card .modal-close { z-index: 2; }
 .prize-hero {
   display: flex;
   align-items: center;
@@ -24152,6 +24148,17 @@ body:has(.spectate-view) .app.lobby {
   margin: 12px 22px 20px;
   font-size: 12px;
   color: var(--muted);
+}
+/* Lobide satır-içi varyant (modal değil): kendi kartı — accent üst şerit + çerçeve. */
+.prize-card-inline {
+  max-width: 560px;
+  width: 100%;
+  margin: 2px 0 8px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--text) 7%, transparent);
 }
 .tourn-lobby-link {
   display: flex;
