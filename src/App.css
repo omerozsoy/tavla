@@ -16457,7 +16457,9 @@ button.acct-row-logout:hover:not(:disabled) {
    HEMEN OYNA — mobil uygulama ana sayfa hızlı-başlat (banner altı 2x2).
    Yalnız APP_UI (kurulu uygulama) render edilir (bkz App.tsx). TavlaTV paleti.
    ========================================================================== */
-.home-quickplay { margin: 14px 0 20px; }
+/* .main flex-column align-items:center -> çocuklar içeriğe göre boyutlanır; kardeşler gibi
+   width:100%+max-width:lobby-w ile sabitle, yoksa grid max-content'e şişip sayfayı taşırır. */
+.home-quickplay { width: 100%; max-width: var(--lobby-w); margin: 14px auto 20px; }
 .hqp-title {
   display: flex;
   align-items: center;
