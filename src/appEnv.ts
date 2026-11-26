@@ -18,3 +18,9 @@ export const IS_NATIVE_APP =
     /;\s*wv\)/i.test(navigator.userAgent) &&
     !/FBAN|FBAV|FB_IAB|Instagram|GSA\//i.test(navigator.userAgent)) ||
   isIOSNativeApp()
+
+// App-sadeleştirilmiş arayüz (5'erli listeler + toplist/liderlik/SEO gizleme). Kurulu uygulamada
+// AKTİF; tarayıcıda ÖNİZLEME için `?appui=1` ile zorlanabilir (DevTools'ta doğrulama). Üretimde
+// Googlebot/normal ziyaretçi bu param'ı eklemez -> IS_NATIVE_APP'e eşittir (davranış + SEO korunur).
+export const APP_UI =
+  IS_NATIVE_APP || (typeof location !== 'undefined' && /[?&]appui=1\b/.test(location.search))

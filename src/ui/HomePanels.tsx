@@ -16,6 +16,7 @@ import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
 import playerPlayIcon from '../assets/player-play.svg'
 import diceSpinIcon from '../assets/dice-spin.gif'
+import { APP_UI } from '../appEnv'
 
 // Canli mac tipi: Turnuva | Arkadaslik | Puan Maci (N-puan) | Tek Mac (1 oyun)
 type LiveCat = 'single' | 'match' | 'friendly' | 'duel' | 'tournament'
@@ -272,8 +273,8 @@ export function LiveMatchesPanel({
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
   const [tab, setTab] = useState<'all' | LiveCat>('all')
-  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 8 mac
-  const PAGE_SIZE = 8
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 8 mac (kurulu uygulamada 5)
+  const PAGE_SIZE = APP_UI ? 5 : 8
   const MAX_PAGES = 20 // en fazla 160 mac
 
   useEffect(() => {
@@ -473,8 +474,8 @@ export function OnlinePlayersPanel({
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
-  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (Liderlik Tablosu gibi)
-  const PAGE_SIZE = 10
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (kurulu uygulamada 5)
+  const PAGE_SIZE = APP_UI ? 5 : 10
   const MAX_PAGES = 10 // en fazla 100 kisi
   // Çevrimiçi / Arkadaşlar sekmesi: Arkadaşlar sekmesi online listeyi arkadaş id'leriyle FİLTRELER
   // (backend değişmez; offline arkadaşlar zaten online listesinde gelmez -> online arkadaş = kesişim).

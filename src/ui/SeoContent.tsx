@@ -12,7 +12,7 @@
  */
 
 import { Icon } from './Icon'
-import { IS_NATIVE_APP } from '../appEnv'
+import { APP_UI } from '../appEnv'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { useInfoPageBody } from './useInfoPage'
@@ -584,7 +584,7 @@ export default function SeoContent({ variant, onClose }: Props) {
 
   // Kurulu APK'da SEO içeriğini ASLA gösterme (arama motoru için; app kullanıcısına gereksiz).
   // Hook'lardan SONRA (hook sırası bozulmasın).
-  if (IS_NATIVE_APP) return null
+  if (APP_UI) return null
 
   if (variant === 'home') {
     return <HomeContent />

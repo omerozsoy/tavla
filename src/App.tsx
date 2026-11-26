@@ -166,7 +166,7 @@ const USE_3D_BOARD = true
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
-import { IS_NATIVE_APP } from './appEnv'
+import { IS_NATIVE_APP, APP_UI } from './appEnv'
 import { setPref, writePrefsToStorage } from './prefs'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
@@ -12492,8 +12492,9 @@ export default function App() {
                 onSpectate={(code, p1, p2) => startTransition(() => setSpectate({ code, p1, p2 }))}
               />
             </div>
-            {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA */}
-            <TopThreeShowcase onProfile={(id) => startTransition(() => setHomeProfileId(id))} />
+            {/* Öne çıkan Şampiyonlar (Top List): PR + Puan İlk 3 — çevrimiçi/canlı panellerin ALTINDA.
+                Kurulu uygulamada (APP_UI) GİZLİ (sadeleştirme, kullanıcı direktifi). */}
+            {!APP_UI && <TopThreeShowcase onProfile={(id) => startTransition(() => setHomeProfileId(id))} />}
             <AdStrip slot="middle" />
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
@@ -12503,14 +12504,16 @@ export default function App() {
                 <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
                 <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} title={menuLabel('calendar') ?? t('menu.calendar')} />
               </div>
-              {/* SAG kolon: Liderlik Tablosu */}
-              <div className="home-cal-side">
-                <RankingPanel
-                  currentName={profile.nickname}
-                  onProfile={(id) => startTransition(() => setHomeProfileId(id))}
-                  onOpen={menuProps.onLeaderboard}
-                />
-              </div>
+              {/* SAG kolon: Liderlik Tablosu. Kurulu uygulamada (APP_UI) GİZLİ (sadeleştirme). */}
+              {!APP_UI && (
+                <div className="home-cal-side">
+                  <RankingPanel
+                    currentName={profile.nickname}
+                    onProfile={(id) => startTransition(() => setHomeProfileId(id))}
+                    onOpen={menuProps.onLeaderboard}
+                  />
+                </div>
+              )}
             </div>
             <AdStrip slot="bottom" />
             {/* Taranabilir SEO icerik blogu (ana sayfa alti) — "online tavla"/"tavla oyna" */}
