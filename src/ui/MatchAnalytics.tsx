@@ -128,6 +128,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   // Bir macin tam analizini (log) cek -> v='report' ise MatchReport, v='summary' ise Maç Özeti ac.
   // İki ekran AYNI ağır gnubg review'ini (per-karar loss) kullanır; ayrım yalnız hangi görünüm.
   async function openReport(m: MyMatch, v: 'report' | 'summary' = 'report') {
+    // Rapora GİRMEDEN ÖNCE liste scroll konumunu kaydet -> geri dönünce aynı yere dön (en üste atma).
+    const sc = findScroller()
+    if (sc) listScrollRef.current = { el: sc, top: sc.scrollTop }
     setView(v)
     setReportBusy(true)
     try {
@@ -277,27 +280,39 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
 
   // Profilden bir mac id'siyle gelindiyse: o maci bul, genislet, ortala. Ilk sayfada yoksa
   // (eski mac) bulana kadar "Daha fazla" ile sayfalari otomatik cek.
-  // Rapor/özet açılınca liste kaydırma konumunda kalma -> board'u göstermek için EN ÜSTE dön.
-  // İki düzen: page-host'ta (app/mobil ana sayfa) WINDOW kayar (position:static), masaüstünde
-  // .register-overlay.page KONTEYNERİ kayar (position:fixed). İkisini de sıfırla.
+  // GERÇEK scroller'ı bul: body overflow:hidden -> window kaymaz; app'te .app.lobby, masaüstü
+  // fixed modda .register-overlay.page kayar. Rapor kabından YUKARI çıkıp ilk gerçekten
+  // kaydırılabilir (overflow auto/scroll + taşan) atayı döndür.
   const rootRef = useRef<HTMLDivElement>(null)
+  const findScroller = (): HTMLElement | null => {
+    let el: HTMLElement | null = rootRef.current
+    while (el) {
+      const oy = getComputedStyle(el).overflowY
+      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 4) return el
+      el = el.parentElement
+    }
+    return null
+  }
+  // Rapor açılmadan ÖNCEki liste scroll konumu (openReport'ta yazılır) -> geri dönünce restore.
+  const listScrollRef = useRef<{ el: HTMLElement; top: number } | null>(null)
   useEffect(() => {
-    if (!report) return
-    requestAnimationFrame(() => {
-      // GERÇEK scroller'ı bul: body overflow:hidden -> window kaymaz; app'te .app.lobby,
-      // masaüstü fixed modda .register-overlay.page kayar. Rapor kabından YUKARI çık,
-      // ilk gerçekten kaydırılabilir (overflow auto/scroll + taşan) atayı en üste al.
-      let el: HTMLElement | null = rootRef.current
-      while (el) {
-        if (el.scrollTop > 0) {
-          const oy = getComputedStyle(el).overflowY
-          if (oy === 'auto' || oy === 'scroll') el.scrollTop = 0
-        }
-        el = el.parentElement
-      }
-      try { window.scrollTo({ top: 0 }) } catch { /* no-op */ }
-    })
-  }, [report, view])
+    if (report) {
+      // Rapor/özet açık: board görünsün diye en üste. (App-level slug efekti de sıfırlar; burada
+      // rAF ile garanti + masaüstü fixed konteyner.)
+      requestAnimationFrame(() => {
+        const sc = findScroller()
+        if (sc) sc.scrollTop = 0
+        try { window.scrollTo({ top: 0 }) } catch { /* no-op */ }
+      })
+    } else if (listScrollRef.current) {
+      // Listeye dönüldü: raporu açmadan önce kaydedilen konuma dön (en üste ATMA). rAF, App'in
+      // slug-değişimi EN-ÜSTE-kaydır efektinden (senkron) SONRA çalışır -> onu ezer.
+      const saved = listScrollRef.current
+      listScrollRef.current = null
+      requestAnimationFrame(() => { saved.el.scrollTop = saved.top })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report])
 
   const didAutoOpen = useRef(false)
   useEffect(() => {
