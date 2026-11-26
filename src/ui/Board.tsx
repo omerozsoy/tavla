@@ -10,7 +10,6 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import type { GameState, Player } from '../engine/types'
-import { TavlaTvLogo } from './TavlaTvLogo'
 import { useT } from '../i18n'
 import CheckerSkin from './CheckerSkin'
 import type { CheckerSkin as CheckerSkinDef } from '../checkers'
@@ -304,6 +303,32 @@ function Point({
         </span>
       )}
     </div>
+  )
+}
+
+/**
+ * Tahta ortasi filigrani: TavlaTV wordmark'inin RESMI SVG cizimi (ozel geometrik
+ * harfler + ucgen A/V). Filigran tek-renk/soluk olmali -> tum path'ler currentColor
+ * (var(--wm-color)); iki-renkli marka varyanti DEGIL. Boyut TavlaTvLogo ile birebir
+ * (gorsel yukseklik ~0.46*col). Tasarim degismez; yalniz harf gorunumu guncel logo.
+ */
+function BoardWordmark() {
+  return (
+    <svg
+      className="wm-logo"
+      viewBox="0 0 540.6 96.9"
+      aria-hidden="true"
+      fill="currentColor"
+      style={{ height: 'calc(var(--col) * 0.46)', width: 'auto', color: 'var(--wm-color)', display: 'block' }}
+    >
+      <path d="M0 0 L83.1 0 L83.1 19.4 L53.1 19.4 L53.1 96.9 L30 96.9 L30 19.4 L0 19.4Z" />
+      <path d="M108 0 L144.5 96.9 L71.5 96.9Z" />
+      <path d="M137.5 0 L210.5 0 L174 96.9Z" />
+      <path d="M226.3 0 L248.4 0 L248.4 78.5 L290.9 78.5 L290.9 96.9 L226.3 96.9Z" />
+      <path d="M341.2 0 L377.7 96.9 L304.7 96.9Z" />
+      <path d="M367 0 L450.1 0 L450.1 19.4 L420.1 19.4 L420.1 96.9 L397 96.9 L397 19.4 L367 19.4Z" />
+      <path d="M467.7 0 L540.6 0 L504.1 96.9Z" />
+    </svg>
   )
 }
 
@@ -801,15 +826,11 @@ function Board({
             pointlerin USTUNDE. Logo/arma DEGIL; sadece yazi. Kulup temasinda takim adi. */}
         <div className={`board-watermark${showLogo ? '' : ' wm-text-only'}`} aria-hidden="true">
           <div className="wm-cell">
-            {showLogo && (
-              <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
-            )}
+            {showLogo && <BoardWordmark />}
             {watermark && <span className="wm-team">{watermark}</span>}
           </div>
           <div className="wm-cell">
-            {showLogo && (
-              <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
-            )}
+            {showLogo && <BoardWordmark />}
             {watermark && <span className="wm-team">{watermark}</span>}
           </div>
         </div>

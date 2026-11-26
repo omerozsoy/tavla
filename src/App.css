@@ -16457,11 +16457,7 @@ button.acct-row-logout:hover:not(:disabled) {
    HEMEN OYNA — mobil uygulama ana sayfa hızlı-başlat (banner altı 2x2).
    Yalnız APP_UI (kurulu uygulama) render edilir (bkz App.tsx). TavlaTV paleti.
    ========================================================================== */
-/* .main flex-column align-items:center -> çocuklar içeriğe göre boyutlanır; kardeşler gibi
-   width:100%+max-width:lobby-w ile sabitle, yoksa grid max-content'e şişip sayfayı taşırır. */
-.home-quickplay { width: 100%; max-width: var(--lobby-w); margin: 14px auto 20px; }
-/* Düğme üstü (başlık hairline-altı) boşluğu, düğme altı (panel padding-bottom 14px) ile eşit. */
-.home-quickplay .home-panel-head { margin-bottom: 14px; }
+.home-quickplay { margin: 14px 0 20px; }
 .hqp-title {
   display: flex;
   align-items: center;
@@ -30551,17 +30547,19 @@ input:not([type='range']), select, textarea {
   font-variant-numeric: tabular-nums;
   text-shadow: 0 2px 18px color-mix(in srgb, var(--accent) 35%, transparent);
 }
+.swiss-draw-cd__time {
+  gap: 0.22em;
+}
 .swiss-draw-cd__time svg {
-  display: none;
+  width: 0.78em;
+  height: 0.78em;
+  flex: none;
+  opacity: 0.9;
 }
 .swiss-draw-cd__time.starting {
   font-size: 1.4rem;
-  gap: 7px;
   color: var(--accent);
   animation: swissDrawPulse 1s ease-in-out infinite;
-}
-.swiss-draw-cd__time.starting svg {
-  display: inline-block;
 }
 .swiss-draw-cd__label {
   position: relative;
