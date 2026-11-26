@@ -252,6 +252,7 @@ class TournamentResource extends Resource
                         }
                     })
                     ->reorderable()
+                    ->grid(4) // kutuları yan yana diz (8 sıralı Swiss alt alta çok uzundu)
                     ->addActionLabel('Sıra ekle')
                     ->itemLabel(fn (array $state): ?string => isset($state['pct']) ? ('%'.$state['pct']) : null)
                     ->columnSpanFull(),
