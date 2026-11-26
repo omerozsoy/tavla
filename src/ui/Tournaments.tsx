@@ -289,6 +289,29 @@ function PrizeButton({ tr }: { tr: Tournament }) {
   )
 }
 
+// Liste kartı içinde (lobi bağlantısının solunda) ödül dağıtımı düğmesi. Kart artık
+// <div role=button> olduğu için gerçek <button> güvenle iç içe girer; stopPropagation
+// kart tıklamasının (detaya git) tetiklenmesini engeller.
+function PrizeRowButton({ tr }: { tr: Tournament }) {
+  const [open, setOpen] = useState(false)
+  if (!tr.pool_enabled) return null
+  return (
+    <>
+      <Button
+        variant="outline"
+        className="tourn-prize-btn"
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen(true)
+        }}
+      >
+        <Icon name="medal" size={15} /> Ödül Dağıtımı
+      </Button>
+      {open && <PrizeModal tr={tr} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
 // Bir sıranın (0-based) kazandığı coin — backend payPrizes ile AYNI: prizes[i].coins + (i===0 ? havuz : 0);
 // prizes yoksa yalnız şampiyona havuz.
 function rankPrizeCoins(t: Tournament, rank: number): number {
@@ -1635,11 +1658,22 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     const prizeCount = tr.prizes?.length ?? 0
     const start = tr.starts_at ? new Date(tr.starts_at) : null
     const logo = orgLogoSrc(tr.organizer?.logo)
+    const openDetail = () => onOpenDetail?.(tr.id, tournUrlSlug(tr))
     return (
-      <button
+      // Kart <button> DEĞİL <div role=button>: içine gerçek "Ödül Dağıtımı" düğmesi
+      // (button-in-button yasağı) girebilsin. Klavye erişimi onKeyDown ile korunur.
+      <div
         key={tr.id}
+        role="button"
+        tabIndex={0}
         className={`event-row tourn-row ${tr.status === 'finished' ? 'past' : ''} ${logo ? 'has-logo' : ''}`}
-        onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}
+        onClick={openDetail}
+        onKeyDown={(e) => {
+          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault()
+            openDetail()
+          }
+        }}
       >
         {/* Sag ust kose flamasi: turnuva-takvimindeki bayrak gibi -> icinde TavlaTV logosu
             (wordmark), bayrak gibi 90 derece dondurulup dik flamayi doldurur. */}
@@ -1772,13 +1806,16 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </div>
             )
           )}
-          {/* Kart bir <button> (içine buton konmaz); ödül dağıtımı düğmesi LOBİDE. */}
-          {/* Belirgin detay/lobi baglantisi (tum kart zaten tiklanabilir; bu gorsel ipucu). */}
-          <span className="tourn-lobby-link">
-            {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
-          </span>
+          {/* Alt satır: SOLDA ödül dağıtımı düğmesi (varsa) + SAĞDA lobi bağlantısı.
+              Lobi span'i tıklanabilir değil (tüm kart zaten detaya götürür); görsel ipucu. */}
+          <div className="tourn-foot">
+            <PrizeRowButton tr={tr} />
+            <span className="tourn-lobby-link">
+              {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
+            </span>
+          </div>
         </div>
-      </button>
+      </div>
     )
   }
 
