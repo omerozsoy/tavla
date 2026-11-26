@@ -12275,9 +12275,9 @@ export default function App() {
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
-            {/* Hemen Oyna: uygulama + MOBİL tarayıcıda (MOBILE_UI) banner altında 2x2 hızlı-başlat.
-                Etiketler menü anahtarlarından (çok dilli). Masaüstünde gösterilmez. */}
-            {MOBILE_UI && (
+            {/* Hemen Oyna: banner altında hızlı-başlat — HER YERDE (kullanıcı direktifi). Telefonda
+                2x2, web/tablet'te 4 yan yana (CSS .hqp-grid). Etiketler menü anahtarlarından (çok dilli). */}
+            {(
               <section className="home-quickplay" aria-label={t('home.startCta')}>
                 <h2 className="hqp-title">{t('home.startCta')}</h2>
                 <div className="hqp-grid">

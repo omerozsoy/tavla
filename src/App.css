@@ -16478,8 +16478,11 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .hqp-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr); /* web/tablet: 4 düğme yan yana (tek satır) */
   gap: 10px;
+}
+@media (max-width: 640px) {
+  .hqp-grid { grid-template-columns: 1fr 1fr; } /* telefon: 2 + 2 (2x2) */
 }
 /* Grafikli oyun-tarzı düğme: tam renkli gradyan + watermark ikon + parlak shine + derinlik. */
 .hqp-btn {
