@@ -12277,21 +12277,29 @@ export default function App() {
               <section className="home-quickplay" aria-label={t('home.startCta')}>
                 <h2 className="hqp-title">{t('home.startCta')}</h2>
                 <div className="hqp-grid">
-                  <button type="button" className="hqp-btn" onClick={menuProps.onSolo}>
-                    <span className="hqp-ic hqp-ic-navy"><Icon name="dice" size={24} /></span>
+                  <button type="button" className="hqp-btn hqp-navy" onClick={menuProps.onSolo}>
+                    <span className="hqp-wm" aria-hidden="true"><Icon name="dice" size={84} weight="fill" /></span>
+                    <span className="hqp-ic"><Icon name="dice" size={26} weight="fill" /></span>
                     <span className="hqp-label">{t('menu.solo')}</span>
+                    <span className="hqp-go" aria-hidden="true"><Icon name="arrow-right" size={16} weight="bold" /></span>
                   </button>
-                  <button type="button" className="hqp-btn" onClick={menuProps.onNewGame}>
-                    <span className="hqp-ic hqp-ic-coral"><Icon name="swords" size={24} /></span>
+                  <button type="button" className="hqp-btn hqp-coral" onClick={menuProps.onNewGame}>
+                    <span className="hqp-wm" aria-hidden="true"><Icon name="swords" size={84} weight="fill" /></span>
+                    <span className="hqp-ic"><Icon name="swords" size={26} weight="fill" /></span>
                     <span className="hqp-label">{t('menu.match')}</span>
+                    <span className="hqp-go" aria-hidden="true"><Icon name="arrow-right" size={16} weight="bold" /></span>
                   </button>
-                  <button type="button" className="hqp-btn" onClick={menuProps.onAiGame}>
-                    <span className="hqp-ic hqp-ic-orange"><Icon name="robot-face" size={24} /></span>
+                  <button type="button" className="hqp-btn hqp-orange" onClick={menuProps.onAiGame}>
+                    <span className="hqp-wm" aria-hidden="true"><Icon name="robot-face" size={84} weight="fill" /></span>
+                    <span className="hqp-ic"><Icon name="robot-face" size={26} weight="fill" /></span>
                     <span className="hqp-label">{t('menu.aiGame')}</span>
+                    <span className="hqp-go" aria-hidden="true"><Icon name="arrow-right" size={16} weight="bold" /></span>
                   </button>
-                  <button type="button" className="hqp-btn" onClick={menuProps.onPlayFriend}>
-                    <span className="hqp-ic hqp-ic-green"><Icon name="users" size={24} /></span>
+                  <button type="button" className="hqp-btn hqp-green" onClick={menuProps.onPlayFriend}>
+                    <span className="hqp-wm" aria-hidden="true"><Icon name="users" size={84} weight="fill" /></span>
+                    <span className="hqp-ic"><Icon name="users" size={26} weight="fill" /></span>
                     <span className="hqp-label">{t('menu.playFriend')}</span>
+                    <span className="hqp-go" aria-hidden="true"><Icon name="arrow-right" size={16} weight="bold" /></span>
                   </button>
                 </div>
               </section>

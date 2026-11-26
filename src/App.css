@@ -16453,68 +16453,123 @@ button.acct-row-logout:hover:not(:disabled) {
    HEMEN OYNA — mobil uygulama ana sayfa hızlı-başlat (banner altı 2x2).
    Yalnız APP_UI (kurulu uygulama) render edilir (bkz App.tsx). TavlaTV paleti.
    ========================================================================== */
-.home-quickplay { margin: 14px 0 18px; }
+.home-quickplay { margin: 14px 0 20px; }
 .hqp-title {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 0 0 11px;
+  margin: 0 0 12px;
   font-family: var(--tv-font-display, inherit);
-  font-size: 1.22rem;
-  font-weight: 500;
+  font-size: 1.28rem;
+  font-weight: 600;
   color: var(--text);
 }
 .hqp-title::before {
   content: '';
-  width: 4px;
+  width: 5px;
   align-self: stretch;
   min-height: 1.05em;
-  border-radius: 2px;
-  background: var(--accent);
+  border-radius: 3px;
+  background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 60%, var(--orange, #e08a2a)));
 }
 .hqp-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 11px;
+  gap: 12px;
 }
+/* Grafikli oyun-tarzı düğme: tam renkli gradyan + watermark ikon + parlak shine + derinlik. */
 .hqp-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  min-height: 104px;
-  padding: 15px 15px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 14px);
-  background: var(--card-bg);
-  color: var(--text);
+  gap: 16px;
+  min-height: 120px;
+  padding: 15px 16px 16px;
+  border: 0;
+  border-radius: 18px;
+  color: #fff;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 7px 18px -6px var(--hqp-sh, rgba(0, 0, 0, 0.3)), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.hqp-btn:active { transform: scale(0.97); }
-@media (hover: hover) and (pointer: fine) {
-  .hqp-btn:hover {
-    border-color: var(--accent);
-    box-shadow: 0 2px 10px color-mix(in srgb, var(--text) 8%, transparent);
-  }
+/* Mod renkleri: dikeye yakın gradyan (alt koyu -> beyaz etiket her zaman okunur) */
+.hqp-navy {
+  background: linear-gradient(158deg, color-mix(in srgb, var(--navy-brand) 82%, #fff) 0%, var(--navy-brand) 48%, color-mix(in srgb, var(--navy-brand) 68%, #000) 100%);
+  --hqp-sh: color-mix(in srgb, var(--navy-brand) 48%, transparent);
 }
+.hqp-coral {
+  background: linear-gradient(158deg, color-mix(in srgb, var(--coral) 86%, #fff) 0%, var(--coral) 48%, color-mix(in srgb, var(--coral) 68%, #000) 100%);
+  --hqp-sh: color-mix(in srgb, var(--coral) 48%, transparent);
+}
+.hqp-orange {
+  background: linear-gradient(158deg, color-mix(in srgb, var(--orange) 88%, #fff) 0%, var(--orange) 46%, color-mix(in srgb, var(--orange) 64%, #000) 100%);
+  --hqp-sh: color-mix(in srgb, var(--orange) 48%, transparent);
+}
+.hqp-green {
+  background: linear-gradient(158deg, color-mix(in srgb, var(--tv-green, #3f9e6a) 84%, #fff) 0%, var(--tv-green, #3f9e6a) 48%, color-mix(in srgb, var(--tv-green, #3f9e6a) 66%, #000) 100%);
+  --hqp-sh: color-mix(in srgb, var(--tv-green, #3f9e6a) 46%, transparent);
+}
+/* Diyagonal parlak shine (üst-sol) */
+.hqp-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 46%);
+}
+/* Büyük yarı-saydam watermark ikon (grafik derinlik, köşeden taşar) */
+.hqp-wm {
+  position: absolute;
+  right: -14px;
+  bottom: -16px;
+  z-index: -1;
+  color: rgba(255, 255, 255, 0.16);
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+/* Ön plan ikon: buzlu cam çip */
 .hqp-ic {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   flex: none;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.12);
 }
-.hqp-ic-navy { color: var(--navy-brand); background: color-mix(in srgb, var(--navy-brand) 14%, transparent); }
-.hqp-ic-coral { color: var(--accent-text); background: color-mix(in srgb, var(--coral) 16%, transparent); }
-.hqp-ic-orange { color: var(--orange); background: color-mix(in srgb, var(--orange) 18%, transparent); }
-.hqp-ic-green { color: var(--tv-green, #3f9e6a); background: color-mix(in srgb, var(--tv-green, #3f9e6a) 16%, transparent); }
-.hqp-label { font-size: 1rem; font-weight: 500; line-height: 1.2; }
+.hqp-label {
+  font-size: 1.06rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  max-width: calc(100% - 22px);
+}
+/* Köşedeki "git" oku */
+.hqp-go {
+  position: absolute;
+  right: 12px;
+  bottom: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  transition: transform 0.14s ease;
+}
+.hqp-btn:active { transform: scale(0.96); box-shadow: 0 3px 10px -4px var(--hqp-sh), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+@media (hover: hover) and (pointer: fine) {
+  .hqp-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 12px 24px -7px var(--hqp-sh), inset 0 1px 0 rgba(255, 255, 255, 0.24); }
+  .hqp-btn:hover .hqp-go { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hqp-btn, .hqp-go { transition: none; }
+}
 .hf-card-title {
   font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
