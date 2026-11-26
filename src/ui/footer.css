@@ -411,7 +411,7 @@ a.foot-partner:hover {
   --foot-amber: var(--accent);
   background: var(--card-bg);
   border-top: 1px solid var(--text); /* ince ink kural çizgisi (kullanıcı "incelt") */
-  margin-top: 48px;
+  margin-top: 16px;
 }
 .site-footer::before { display: none; } /* bordo+altın şerit YOK; üst 2px ink kural çizgisi tek aksan */
 .foot-tag { color: var(--muted); letter-spacing: 0.04em; }

@@ -12697,7 +12697,7 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: stretch;
   overflow-y: auto;
   /* Ust band akista (.lobby-main ilk cocugu) -> ust padding YOK; band kendisi en ustte. */
-  padding: 0 clamp(12px, 3vw, 40px) 40px;
+  padding: 0 clamp(12px, 3vw, 40px) 16px;
 }
 /* Masaustu: sagdaki sabit "Hata Bildir" sekmesi (~40px) icerigin sag kenarina binmesin
    (1280/1366px'te kart ve tablo kenarlarini ortuyordu) -> sag padding sekme + pay. */
