@@ -37364,6 +37364,15 @@ body.has-bottom-nav .to-top {
   .mrv-board-stage .board {
     --cube-size: clamp(20px, calc(var(--bar-w) * 0.6), 36px);
   }
+  /* SCROLL FIX (kullanıcı: "parmakla aşağı kaydırılamıyor"): global `.checker{touch-action:none}`
+     (oyunda sürükleme için) MatReview board'unda da geçerli -> board ekranın çoğunu kaplayınca
+     taşların/küpün üstünden parmakla kaydırma scroll yerine iptal ediliyordu. MatReview'de sürükleme
+     YOK (no-op) -> pan-y ile dikey kaydırmaya izin ver (oyun/.analyzer-board drag'i etkilenmez). */
+  .mrv-board-stage .checker,
+  .mrv-board-stage .cube,
+  .mrv-board-stage .point {
+    touch-action: pan-y;
+  }
   /* Pip sayıları (134/120) mobilde board'a oranla ÇOK BÜYÜKtü: MatReview .mrv-board base .pip'i
      (1.05rem) kullanır, Pozisyon Analizi'nin .analyzer-board küçültme override'ı BURAYA uygulanmaz
      -> mat-analiz board'una scope'lu küçült (oyun/analyzer ekranı değişmez, kullanıcı). */
