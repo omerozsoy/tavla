@@ -16478,11 +16478,11 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .hqp-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* web: 4 yan yana (tek satır bar düğmeler) */
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* web: 4 yan yana; minmax(0,..) taşmayı önler */
   gap: 10px;
 }
 @media (max-width: 640px) {
-  .hqp-grid { grid-template-columns: 1fr 1fr; } /* mobil web + uygulamalar: 2 yan yana, 2 sıra */
+  .hqp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } /* mobil web + uygulamalar: 2x2 */
 }
 /* Grafikli oyun-tarzı düğme: tam renkli gradyan + watermark ikon + parlak shine + derinlik. */
 .hqp-btn {
@@ -16556,6 +16556,7 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .hqp-label {
   flex: 1; /* yazı ikonun sağında, kalan genişliği doldurur -> oku en sağa iter */
+  min-width: 0; /* dar hücrede küçülüp satır kayabilsin (taşma önlenir) */
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.18;
