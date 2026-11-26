@@ -107,9 +107,11 @@ class TournamentScheduleResource extends Resource
                     ->options(Tournament::TYPES)
                     ->required()
                     ->live()
-                    // Tür değişince havuz payları otomatik o türün modeline geçer (Bracket vs Swiss).
-                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('pool_pcts',
-                        array_map(fn ($p) => ['pct' => $p], TournamentPool::defaultPcts($state))))
+                    // Tür değişince havuz payları o türün modeline + sabit şampiyon ödülü standarda geçer.
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        $set('pool_pcts', array_map(fn ($p) => ['pct' => $p], TournamentPool::defaultPcts($state)));
+                        $set('prize_coins', $state === 'swiss_outdoor' ? 0 : 1000); // Dışarda Swiss hariç standart 1000
+                    })
                     ->default('bracket'),
                 // 3 Haklı Swiss "hak sayısı" (1/2/3). Zorunlu; yalnız Swiss tipinde gösterilir
                 // (bracket bu değeri yok sayar). Kurulan turnuvaya CreateScheduledTournaments aktarır.
@@ -196,8 +198,8 @@ class TournamentScheduleResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('prize_coins')
                     ->label('Sabit şampiyon ödülü (coin, opsiyonel)')
-                    ->helperText('Elle yazılan ek coin; turnuva bitince 1.’liğe eklenir. 0 = yok.')
-                    ->required()->numeric()->minValue(0)->default(0),
+                    ->helperText('Elle yazılan ek coin; turnuva bitince 1.’liğe eklenir. Standart 1000 (Dışarda Swiss hariç); 0 = yok.')
+                    ->required()->numeric()->minValue(0)->default(1000),
                 Forms\Components\Repeater::make('prizes')
                     ->label('Ödül tablosu (sıraya göre)')
                     ->helperText('Her satır bir sıralamadır: 1. satır = 1.’lik … Turnuva bitince coin otomatik dağıtılır.')
