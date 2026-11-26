@@ -186,18 +186,17 @@ function tournStandings(bracket?: TMatch[][] | null): number[] {
   }
   return Array.from(new Set(out))
 }
-// Yüzdeli ödül havuzu notu: "Ödül havuzu: 1.000 coin toplandı · %10 komisyon · 1. %60 · 2. %25 · 3. %15"
+// Otomatik Ödül Havuzu notu: "Ödül havuzu: ... toplandı · 1. %40 · 2. %20 · … · %10 komisyon"
 function PoolNote({ tr }: { tr: Tournament }) {
   const { t } = useT()
   if (!tr.pool_enabled) return null
-  const p = tr.pool_pcts ?? [60, 25, 15]
+  const p = tr.pool_pcts && tr.pool_pcts.length ? tr.pool_pcts : [40, 20, 15, 15]
+  const places = p.map((v, i) => `${i + 1}. %${v ?? 0}`).join(' · ')
   return (
     <div className="tp-note tp-pool-note">
       {t('tourn.poolNote', {
         n: (tr.pool_collected ?? 0).toLocaleString('tr-TR'),
-        a: p[0] ?? 0,
-        b: p[1] ?? 0,
-        c: p[2] ?? 0,
+        places,
       })}
     </div>
   )

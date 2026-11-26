@@ -1439,7 +1439,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'stats.coins': 'Coins',
   'tourn.status.open': 'Registration open',
   'tourn.prizePool': 'Total Prize',
-  'tourn.poolNote': 'Prize pool: {n} coins collected from entry fees · 10% commission · rest 1st {a}% · 2nd {b}% · 3rd {c}%',
+  'tourn.poolNote': 'Prize pool: {n} coins collected from entry fees · {places} · 10% commission',
   'tourn.free': 'Free',
   'tourn.premiumOnly': 'Premium',
   'tourn.premiumOnlyHint': 'Only Premium members can join this tournament.',

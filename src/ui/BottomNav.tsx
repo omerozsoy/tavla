@@ -24,7 +24,9 @@ export default function BottomNav({ items, active }: { items: BottomNavItem[]; a
           aria-current={active === it.key ? 'page' : undefined}
           onClick={it.onClick}
         >
-          <Icon name={it.icon} size={22} weight={active === it.key ? 'fill' : 'regular'} />
+          <span className="bottom-nav__ic">
+            <Icon name={it.icon} size={22} weight={active === it.key ? 'fill' : 'regular'} />
+          </span>
           <span className="bottom-nav__label">{it.label}</span>
         </button>
       ))}

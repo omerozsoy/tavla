@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TournamentResource\Pages;
 use App\Models\Tournament;
 use App\Support\TournamentModeration;
+use App\Support\TournamentPool;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -225,36 +226,35 @@ class TournamentResource extends Resource
                     ->disabled(fn ($record) => $record && $record->status === 'finished')
                     ->dehydrated(fn ($record) => ! ($record && $record->status === 'finished'))
                     ->helperText('Otomatik belirlenir; turnuva bitince buradan DEĞİŞTİRİLEMEZ (sıralama/ödülle tutarlı kalır).'),
-                // ---- Yüzdeli ödül havuzu (Evet/Hayır). Evet: toplanan giriş ücretlerinin %10'u komisyon,
-                // kalanı 1./2./3.'ye yüzdeyle dağıtılır (bkz App\Support\TournamentPool). Hayır: ücret yakılır.
+                // ---- Otomatik Ödül Havuzu (Evet/Hayır). Evet: toplanan giriş ücretlerinin %10'u komisyon,
+                // kalanı tür modeline göre sıralara oranla dağıtılır (bkz App\Support\TournamentPool). Hayır: ücret yakılır.
                 Forms\Components\Radio::make('pool_enabled')
-                    ->label('Ödül havuzu (coin)')
-                    ->helperText('Evet: oyuncuların ödediği giriş ücretleri havuzda toplanır; %10 komisyon düşülür, kalanı aşağıdaki yüzdelerle 1./2./3.’ye dağıtılır. Hayır: giriş ücreti havuza girmez.')
+                    ->label('Otomatik Ödül Havuzu')
+                    ->helperText('Evet: oyuncuların ödediği giriş ücretleri havuzda toplanır; %10 komisyon düşülür, kalanı aşağıdaki sıra paylarına göre otomatik dağıtılır (varsayılan türe göre gelir, elle değiştirebilirsin). Hayır: giriş ücreti havuza girmez.')
                     ->boolean(trueLabel: 'Evet', falseLabel: 'Hayır')
                     ->inline()
                     ->default(false)
                     ->live(),
-                Forms\Components\Fieldset::make('Havuz dağılımı (komisyon sonrası, toplam %100)')
-                    ->statePath('pool_pcts')
+                // Düzenlenebilir sıra payları. Varsayılan türe göre gelir (Bracket: 40/20/15/15,
+                // Swiss: 30/18/11/8/8/5/5/5); boşsa afterStateHydrated doldurur. Komisyon %10 ayrı.
+                Forms\Components\Repeater::make('pool_pcts')
+                    ->label('Havuz dağılımı (düzenlenebilir sıra payları %)')
+                    ->helperText('Her satır bir sıralamanın payıdır (sırayla 1., 2., …). Paylar net havuza (komisyon sonrası) ORANLA uygulanır; varsayılanlar toplam %90 + %10 komisyon = %100. Eşit paylı ardışık sıralar aynı dereceyi paylaşır (ör. iki yarı finalist, Swiss’te 4.-5. / 6.-8.).')
                     ->visible(fn (Forms\Get $get) => (bool) $get('pool_enabled'))
-                    ->columns(3)
                     ->schema([
-                        Forms\Components\TextInput::make('p1')->label('1. Şampiyon (%)')
-                            ->numeric()->integer()->minValue(0)->maxValue(100)->default(60)->suffix('%')->required()
-                            ->afterStateHydrated(fn ($component, $state) => $state === null || $state === '' ? $component->state(60) : null),
-                        Forms\Components\TextInput::make('p2')->label('2. Finalist (%)')
-                            ->numeric()->integer()->minValue(0)->maxValue(100)->default(25)->suffix('%')->required()
-                            ->afterStateHydrated(fn ($component, $state) => $state === null || $state === '' ? $component->state(25) : null),
-                        Forms\Components\TextInput::make('p3')->label('3. Üçüncü (%)')
-                            ->numeric()->integer()->minValue(0)->maxValue(100)->default(15)->suffix('%')->required()
-                            ->afterStateHydrated(fn ($component, $state) => $state === null || $state === '' ? $component->state(15) : null)
-                            ->rule(fn (Forms\Get $get) => function (string $attr, $value, \Closure $fail) use ($get) {
-                                $sum = (int) $get('p1') + (int) $get('p2') + (int) $value;
-                                if ($sum !== 100) {
-                                    $fail('Yüzdelerin toplamı 100 olmalı (şu an '.$sum.').');
-                                }
-                            }),
-                    ]),
+                        Forms\Components\TextInput::make('pct')->label('Pay')
+                            ->numeric()->integer()->minValue(0)->maxValue(100)->suffix('%')->required(),
+                    ])
+                    ->afterStateHydrated(function ($component, $state, Forms\Get $get) {
+                        if (empty($state)) {
+                            $def = TournamentPool::defaultPcts($get('type'));
+                            $component->state(array_map(fn ($p) => ['pct' => $p], $def));
+                        }
+                    })
+                    ->reorderable()
+                    ->addActionLabel('Sıra ekle')
+                    ->itemLabel(fn (array $state): ?string => isset($state['pct']) ? ('%'.$state['pct']) : null)
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('prize_coins')
                     ->label('Sabit şampiyon ödülü (coin, opsiyonel)')
                     ->helperText('Elle yazılan ek coin; turnuva bitince 1.’liğe eklenir. 0 = yok.')

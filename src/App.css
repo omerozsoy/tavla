@@ -24980,6 +24980,37 @@ body:has(.spectate-view) .app.lobby {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Grafikli/renkli ikonlar: her sekmeye kendi marka tonu (Hemen Oyna paleti). İkon tonlu çip
+   içinde; aktifte çip koyulaşır + hafif yükselir, etiket tam ton + kalın. (kullanıcı direktifi) */
+.bottom-nav__ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 27px;
+  border-radius: 10px;
+  color: var(--bn, var(--accent));
+  background: color-mix(in srgb, var(--bn, var(--accent)) 13%, transparent);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.bottom-nav__item.is-active .bottom-nav__ic {
+  background: color-mix(in srgb, var(--bn, var(--accent)) 24%, transparent);
+  transform: translateY(-1px);
+}
+.bottom-nav__item .bottom-nav__label {
+  color: color-mix(in srgb, var(--bn, var(--accent)) 68%, var(--text));
+  font-weight: 600;
+}
+.bottom-nav__item.is-active .bottom-nav__label {
+  color: color-mix(in srgb, var(--bn, var(--accent)) 92%, var(--text));
+  font-weight: 700;
+}
+.bottom-nav__item:nth-child(1) { --bn: var(--accent); }            /* Ana Sayfa — terracotta */
+.bottom-nav__item:nth-child(2) { --bn: var(--tv-green, #3f9e6a); } /* Oyna — yeşil */
+.bottom-nav__item:nth-child(3) { --bn: var(--orange, #e08a2a); }   /* Turnuvalar — turuncu */
+.bottom-nav__item:nth-child(4) { --bn: #2f78c4; }                 /* Mağaza — mavi */
+.bottom-nav__item:nth-child(5) { --bn: #d8569a; }                 /* Profil — pembe */
+.bottom-nav__item:nth-child(6) { --bn: #7c5cbf; }                  /* Menü — mor */
 /* İçerik çubuğun altında kalmasın: body'ye alt boşluk (çubuk yüksekliği + güvenli alan). */
 body.has-bottom-nav {
   padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));

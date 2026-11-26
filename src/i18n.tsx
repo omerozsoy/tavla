@@ -1461,7 +1461,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'stats.coins': 'Coin',
   'tourn.status.open': 'Kayıt açık',
   'tourn.prizePool': 'Toplam Ödül',
-  'tourn.poolNote': 'Ödül havuzu: giriş ücretlerinden {n} coin toplandı · %10 komisyon · kalan 1. %{a} · 2. %{b} · 3. %{c}',
+  'tourn.poolNote': 'Ödül havuzu: giriş ücretlerinden {n} coin toplandı · {places} · %10 komisyon',
   'tourn.free': 'Ücretsiz',
   'tourn.premiumOnly': 'Premium',
   'tourn.premiumOnlyHint': 'Bu turnuvaya yalnız Premium üyeler katılabilir.',

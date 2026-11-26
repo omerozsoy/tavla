@@ -6,36 +6,61 @@ use App\Models\Commission;
 use App\Models\Tournament;
 
 /**
- * Yüzdeli ödül havuzu (turnuva kurulurken "Ödül havuzu: Evet").
+ * Otomatik Ödül Havuzu (turnuva kurulurken "Otomatik Ödül Havuzu: Evet").
  * Havuz = kayıtlı oyuncuların GERÇEKTEN ödediği giriş ücretleri (players[].fee_paid; kayıt açıkken
- * çekilen/iptal edilen zaten listeden çıkıp iade alır). Havuzun %COMMISSION_PCT'si komisyon, kalanı
- * pool_pcts (1./2./3.) yüzdeleriyle dağıtılır; yuvarlama artığı şampiyona. Pay, ödül tablosundaki
- * (prizes) aynı sıranın coin'ine EKLENİR -> tie-farkında dağıtım PrizeDistribution'dan geçer.
+ * çekilen/iptal edilen zaten listeden çıkıp iade alır). Havuzun %COMMISSION_PCT'si komisyon, KALANI
+ * (net) sıra paylarına ORANLA (pct/Σpct) bölünür; yuvarlama artığı şampiyona.
+ *
+ * Varsayılan modeller (tür'e göre, düzenlenebilir):
+ *  - Bracket: Şampiyon %40 · Finalist %20 · Yarı finalist %15 · Yarı finalist %15.
+ *  - Swiss  : 1.%30 · 2.%18 · 3.%11 · 4.-5. %8 · 6.-8. %5 (kişi başı).
+ * Komisyon %10 ile toplam %100. Eşit paylı ardışık sıralar (iki yarı finalist / 4.-5. / 6.-8.) aynı
+ * dereceyi paylaşır -> PrizeDistribution tie grubunda eşit bölüşür (oran zaten eşit olduğundan tutar).
  */
 class TournamentPool
 {
     public const COMMISSION_PCT = 10;
 
-    public const DEFAULT_PCTS = [60, 25, 15];
+    // Varsayılan sıra payları (net havuzun ORANI; komisyon %10 ayrı). Toplam pay + komisyon = %100.
+    public const PCTS_BRACKET = [40, 20, 15, 15];
+
+    public const PCTS_SWISS = [30, 18, 11, 8, 8, 5, 5, 5];
 
     public static function enabled(Tournament $t): bool
     {
         return (bool) ($t->pool_enabled ?? false);
     }
 
-    /** Geçerli yüzdeler (3 eleman, int). Bozuk/eksikse varsayılan. */
+    /** Turnuva tipine göre varsayılan model (admin override etmezse bu kullanılır). */
+    public static function defaultPcts(?string $type): array
+    {
+        return Tournament::isSwissType($type) ? self::PCTS_SWISS : self::PCTS_BRACKET;
+    }
+
+    /** Geçerli sıra payları: admin'in düzenlediği (pool_pcts) varsa o, yoksa tür varsayılanı. */
     public static function pcts(Tournament $t): array
     {
-        $raw = is_array($t->pool_pcts) ? $t->pool_pcts : [];
-        // Filament formu {p1,p2,p3} yazar; liste [60,25,15] de kabul.
-        $p = isset($raw['p1']) || isset($raw['p2']) || isset($raw['p3'])
-            ? [$raw['p1'] ?? 0, $raw['p2'] ?? 0, $raw['p3'] ?? 0]
-            : array_values($raw);
-        if (count($p) !== 3) {
-            return self::DEFAULT_PCTS;
+        $override = self::normalizePcts(is_array($t->pool_pcts) ? $t->pool_pcts : []);
+        if ($override !== [] && array_sum($override) > 0) {
+            return $override;
         }
 
-        return array_map(fn ($v) => max(0, (int) $v), $p);
+        return self::defaultPcts($t->type);
+    }
+
+    /** Form/DB'den gelen payları düz int listesine çevir: [{pct:40}], [40,..] veya eski {p1,p2,p3}. */
+    private static function normalizePcts(array $raw): array
+    {
+        if (isset($raw['p1']) || isset($raw['p2']) || isset($raw['p3'])) {
+            $raw = [$raw['p1'] ?? 0, $raw['p2'] ?? 0, $raw['p3'] ?? 0];
+        }
+        $out = [];
+        foreach ($raw as $v) {
+            $n = is_array($v) ? ($v['pct'] ?? 0) : $v; // Filament Repeater item'i {pct:N}
+            $out[] = max(0, (int) $n);
+        }
+
+        return $out;
     }
 
     /** Toplanan giriş ücreti (coin). */
@@ -56,25 +81,25 @@ class TournamentPool
         return intdiv($collected * self::COMMISSION_PCT, 100);
     }
 
-    /** Sıra başına havuz payı [1., 2., 3.] (komisyon düşülmüş; artık şampiyona). */
+    /** Sıra başına havuz payı: net (collected − komisyon) paylara ORANLA bölünür, artık şampiyona. */
     public static function shares(Tournament $t): array
     {
         if (! self::enabled($t)) {
             return [];
         }
+        $pcts = self::pcts($t);
+        $totalPct = array_sum($pcts);
         $collected = self::collected($t);
-        $net = $collected - self::commission($collected);
-        if ($net <= 0) {
-            return [0, 0, 0];
+        if ($collected <= 0 || $totalPct <= 0) {
+            return array_fill(0, count($pcts), 0);
         }
+        $net = $collected - self::commission($collected); // oyunculara kalan
         $shares = [];
-        foreach (self::pcts($t) as $pct) {
-            $shares[] = intdiv($net * $pct, 100);
+        foreach ($pcts as $pct) {
+            $shares[] = intdiv($net * $pct, $totalPct); // pay = net'in (pct/Σpct) oranı
         }
-        // Yüzdeler toplamı 100 ise yuvarlama artığı şampiyona (fazladan basma yok: sum <= net).
-        if (array_sum(self::pcts($t)) === 100) {
-            $shares[0] += $net - array_sum($shares);
-        }
+        // Yuvarlama artığı şampiyona (korunum: Σpay == net, ne fazla ne eksik basar).
+        $shares[0] += $net - array_sum($shares);
 
         return $shares;
     }
@@ -88,7 +113,7 @@ class TournamentPool
             return $prizes;
         }
         foreach ($shares as $i => $coins) {
-            // 3 sıranın satırı HER ZAMAN oluşur (0 paylı ara sıra boşluk bırakıp kaydırmasın).
+            // Model sıralarının satırı HER ZAMAN oluşur (0 paylı ara sıra boşluk bırakıp kaydırmasın).
             $row = $prizes[$i] ?? ['coins' => 0, 'desc' => null];
             $row['coins'] = (int) ($row['coins'] ?? 0) + $coins;
             $prizes[$i] = $row;
