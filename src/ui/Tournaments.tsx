@@ -725,7 +725,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
       myId == null ? onRequireLogin?.() : premiumLocked ? onRequirePremium?.() : setConfirm('join')
     // Hero ozet: toplam odul havuzu + katilim doluluk yuzdesi
     const totalPrize = active.prizes && active.prizes.length
-      ? active.prizes.reduce((s, pr) => s + (pr.coins || 0), 0)
+      ? active.prizes.reduce((s, pr) => s + (pr.coins || 0), 0) + (active.prize_coins || 0)
       : (active.prize_coins || 0)
     const fillPct = active.size ? Math.min(100, Math.round((active.count / active.size) * 100)) : 0
     // Online/offline (son 90sn last_seen) + onceki tur PR'lari (bitmis maclar). Backend: online_ids, match_prs.
@@ -1045,7 +1045,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Coins amount={pr.coins} gain suffix="coin" size={28} />
+                      <Coins amount={rankPrizeCoins(active, i)} gain suffix="coin" size={28} />
                     </span>
                   </li>
                 ))}
@@ -1662,27 +1662,16 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
     const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
     const pool =
       tr.prizes && tr.prizes.length > 0
-        ? tr.prizes.reduce((s, p) => s + (p.coins || 0), 0)
+        ? tr.prizes.reduce((s, p) => s + (p.coins || 0), 0) + (tr.prize_coins ?? 0)
         : tr.prize_coins ?? 0
     const prizeCount = tr.prizes?.length ?? 0
     const start = tr.starts_at ? new Date(tr.starts_at) : null
     const logo = orgLogoSrc(tr.organizer?.logo)
-    const openDetail = () => onOpenDetail?.(tr.id, tournUrlSlug(tr))
     return (
-      // Kart <button> DEĞİL <div role=button>: içine gerçek "Ödül Dağıtımı" düğmesi
-      // (button-in-button yasağı) girebilsin. Klavye erişimi onKeyDown ile korunur.
-      <div
+      <button
         key={tr.id}
-        role="button"
-        tabIndex={0}
         className={`event-row tourn-row ${tr.status === 'finished' ? 'past' : ''} ${logo ? 'has-logo' : ''}`}
-        onClick={openDetail}
-        onKeyDown={(e) => {
-          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault()
-            openDetail()
-          }
-        }}
+        onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}
       >
         {/* Sag ust kose flamasi: turnuva-takvimindeki bayrak gibi -> icinde TavlaTV logosu
             (wordmark), bayrak gibi 90 derece dondurulup dik flamayi doldurur. */}
@@ -1791,7 +1780,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Coins amount={pr.coins} gain suffix="coin" size={28} />
+                      <Coins amount={rankPrizeCoins(tr, i)} gain suffix="coin" size={28} />
                     </span>
                   </li>
                 ))}
@@ -1815,16 +1804,13 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               </div>
             )
           )}
-          {/* Alt satır: SOLDA ödül dağıtımı düğmesi (varsa) + SAĞDA lobi bağlantısı.
-              Lobi span'i tıklanabilir değil (tüm kart zaten detaya götürür); görsel ipucu. */}
-          <div className="tourn-foot">
-            <PrizeRowButton tr={tr} />
-            <span className="tourn-lobby-link">
-              {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
-            </span>
-          </div>
+          {/* Belirgin detay/lobi baglantisi (tum kart zaten tiklanabilir; bu gorsel ipucu).
+              Ödül dağıtımı düğmesi LOBİDE (liste kartında gösterilmez — kullanıcı isteği). */}
+          <span className="tourn-lobby-link">
+            {t('tourn.lobby')} <Icon name="arrow-right" size={14} />
+          </span>
         </div>
-      </div>
+      </button>
     )
   }
 
