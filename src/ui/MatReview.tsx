@@ -403,7 +403,10 @@ export default function MatReview({
                         : null
                       return (
                         <span
-                          className={`mrv-mark ${cls}${e.cube ? ' cube' : ''}`}
+                          /* 'cube' class EKLENMEZ: global .cube (position:absolute turuncu kare =
+                             doubling cube) bu liste işaretini DEVRALIP tahta ortasına taşıyordu
+                             ("?" küp kutusu bug'ı). Küp hata türü zaten title'da; ayrı class gereksiz. */
+                          className={`mrv-mark ${cls}`}
                           title={cubeKey ? t(cubeKey) : undefined}
                         >
                           {/* '⁉' (U+2049) tarayıcıda EMOJİ olarak render olup bozuk/kayık
