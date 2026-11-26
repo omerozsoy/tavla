@@ -358,6 +358,18 @@ export default function MatReview({
             <Button variant={filter === 'blunders' ? 'secondary' : 'ghost'} aria-pressed={filter === 'blunders'} onClick={() => setFilter('blunders')}>
               {t('mrv.blunders')}
             </Button>
+            {/* Okları Kaldır: hamle analizindeki (MatchReport) gibi İKON toggle, filtrenin 4. düğmesi.
+                Aktif (PREMOVE) iken tahta oksuz (ham pozisyon); tekrar basınca oynanan hamleye döner. */}
+            <Button
+              className="mrv-arrows-off"
+              variant={candIdx === PREMOVE ? 'secondary' : 'ghost'}
+              aria-pressed={candIdx === PREMOVE}
+              onClick={() => setCandIdx(candIdx === PREMOVE ? (playedIdx >= 0 ? playedIdx : 0) : PREMOVE)}
+              title={t('rep.beforeMove')}
+              aria-label={t('rep.beforeMove')}
+            >
+              <Icon name="navigation-off" size={16} />
+            </Button>
           </div>
           <div className="mrv-rows">
             {rows.map(({ e, i }, ri) => {
@@ -545,13 +557,7 @@ export default function MatReview({
             <span className="mrv-ch-loss">{t('mrv.loss')}</span>
           </div>
           <div className={`mrv-cands ${candsExpanded ? '' : 'mrv-cands-collapsed'}`}>
-            {/* EN ÜSTTE: "Hamle Öncesi" — tahtayı oksuz (ham pozisyon) göster. */}
-            <button
-              className={`mrv-cand mrv-cand-pre ${candIdx === PREMOVE ? 'sel' : ''}`}
-              onClick={() => setCandIdx(PREMOVE)}
-            >
-              <span className="mrv-c-move">{t('rep.beforeMove')}</span>
-            </button>
+            {/* "Okları Kaldır" artık filtre satırında ikon düğme (yukarı taşındı). */}
             {(cur?.cands ?? []).map((c, ci) => {
               const diff = c.equity - (cur!.cands![0]?.equity ?? c.equity)
               const isPlayed = ci === playedIdx
