@@ -1760,6 +1760,18 @@ function WeekCalendar({ list, lang, onOpen }: {
 }) {
   const { t } = useT()
   const [offset, setOffset] = useState(0)
+  const gridRef = useRef<HTMLDivElement>(null)
+  // Mobil: takvim yatay-kaydırmalı şerit, hafta başından (Pzt) başlar -> kullanıcı bugünü değil
+  // hafta başını görüyordu. Bu haftadaysak (offset 0) BUGÜN sütununu görünür alana kaydır.
+  // Masaüstünde 7 sütun sığar (overflow yok) -> no-op (dokunma). list değişince layout oturunca tekrar.
+  useEffect(() => {
+    if (offset !== 0) return
+    const grid = gridRef.current
+    if (!grid || grid.scrollWidth <= grid.clientWidth + 2) return
+    const todayEl = grid.querySelector('.is-today') as HTMLElement | null
+    if (!todayEl) return
+    grid.scrollLeft += todayEl.getBoundingClientRect().left - grid.getBoundingClientRect().left - 8
+  }, [offset, list])
   const weekStart = startOfWeekMonday(new Date())
   weekStart.setDate(weekStart.getDate() + offset * 7)
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -1795,7 +1807,7 @@ function WeekCalendar({ list, lang, onOpen }: {
           <Icon name="caret-right" size={18} />
         </Button>
       </div>
-      <div className="tourn-week-grid">
+      <div className="tourn-week-grid" ref={gridRef}>
         {days.map((d, i) => {
           const items = byDay(d)
           return (
