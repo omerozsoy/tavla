@@ -1796,7 +1796,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   // ---- Mat İnceleme (Faz 2 görüntüleyici) — mrv.* (mr.* MatchResult'a ait) ----
   'mrv.title': 'Hamle İnceleme',
   'mrv.moves': 'Hamleler',
-  'mrv.both': 'Her ikisi',
+  'mrv.both': 'Hepsini Gör',
   'mrv.all': 'Tümü',
   'mrv.errors': 'Hatalar',
   'mrv.blunders': 'Blunderlar',

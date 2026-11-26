@@ -344,17 +344,19 @@ export default function MatReview({
         <aside className="mrv-list">
           <div className="mrv-list-head">
             <span className="mrv-list-lbl">{t('mrv.moves')}</span>
-            {/* Filtre butonları hamle analizi (MatchReport .rep-filter) ile AYNI tarz/ölçü:
-                shared Button (secondary=aktif / ghost=pasif) + aria-pressed. */}
+            {/* Filtre butonları hamle analizi (MatchReport .rep-filter) ile AYNI tarz/ölçü.
+                İKİ oyuncu adı YAN YANA; altında "Hepsini Gör" (her iki oyuncu) tam genişlik. */}
             <div className="rep-filter mrv-filter">
               <Button variant={who === 'white' ? 'secondary' : 'ghost'} aria-pressed={who === 'white'} onClick={() => setWho('white')} title={nameW}>
                 {nameW}
               </Button>
-              <Button variant={who === 'both' ? 'secondary' : 'ghost'} aria-pressed={who === 'both'} onClick={() => setWho('both')}>
-                {t('mrv.both')}
-              </Button>
               <Button variant={who === 'black' ? 'secondary' : 'ghost'} aria-pressed={who === 'black'} onClick={() => setWho('black')} title={nameB}>
                 {nameB}
+              </Button>
+            </div>
+            <div className="rep-filter mrv-filter">
+              <Button variant={who === 'both' ? 'secondary' : 'ghost'} aria-pressed={who === 'both'} onClick={() => setWho('both')}>
+                {t('mrv.both')}
               </Button>
             </div>
           </div>
