@@ -24984,6 +24984,13 @@ body:has(.spectate-view) .app.lobby {
 body.has-bottom-nav {
   padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
 }
+/* Alt menü aktifken (mobil) üst hamburger KALDIRILDI -> hesap barında hamburger payı gereksiz.
+   Logo solda, kontroller sağda, normal boşlukla (sağda 52-60px boşluk kalmasın). (0,3,0 özgüllük
+   -> ≤430/≤1080 padding kurallarını yener.) */
+body.has-bottom-nav .account-bar.account-bar {
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
+}
 /* .register-overlay.page = position:fixed, KENDI ic scroll'u (overflow-y:auto); body padding'i
    ONA etki ETMEZ -> alt menu (bottom-nav) son ogeleri orter (friend-join / Oda Kodu kutusu vb).
    KOK FIX: nav acikken bu sayfalarin ic icerigine nav yuksekligi + guvenli alan kadar EK alt

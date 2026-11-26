@@ -11932,7 +11932,9 @@ export default function App() {
     mobileNav,
     topbar: (
       <div className="topbar-stack">
-        {hamburgerBtn}
+        {/* Üst hamburger YALNIZ masaüstünde (zaten CSS'te gizli) -> mobilde alt menüdeki 'Menü'
+            onu karşılar (kullanıcı direktifi: mobilde üst hamburger kaldırıldı). */}
+        {!MOBILE_UI && hamburgerBtn}
         {accountBar}
         {/* TURLAR ARASI GLOBAL BANT: turnuvada sıranı beklerken (hazır maç yok) her sayfanın
             üstünde görünür; turnuva sayfasındayken gizli (orada zaten detaylı not var) ve hazır
@@ -11983,7 +11985,7 @@ export default function App() {
   // portal'landığından TÜM lobi trailing'lerine koyulabilir (home/online/alt-sayfa). Oyun görünümünde
   // home=false -> gizli. Profil = kendi profilim (onMyStats). TEK yerde tanımlanıp her trailing'de kullanılır.
   const bottomNavEl =
-    IS_NATIVE_APP && home ? (
+    MOBILE_UI && home ? (
       <BottomNav
         active={
           activeKey === 'tournaments'
