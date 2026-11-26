@@ -24,3 +24,11 @@ export const IS_NATIVE_APP =
 // Googlebot/normal ziyaretçi bu param'ı eklemez -> IS_NATIVE_APP'e eşittir (davranış + SEO korunur).
 export const APP_UI =
   IS_NATIVE_APP || (typeof location !== 'undefined' && /[?&]appui=1\b/.test(location.search))
+
+// Sadeleştirilmiş görünümü MOBİL TARAYICIYA da uygula (kullanıcı direktifi): Hemen Oyna paneli,
+// 5'erli listeler, toplist/liderlik gizleme -> uygulama VEYA mobil ekran (≤1024px). AMA SEO metni
+// (SeoContent) buna DAHİL DEĞİL -> o APP_UI'de kalır (yalnız uygulamada gizli). Çünkü Google
+// mobil-öncelikli indeksler; SEO metnini mobil webde gizlemek sıralamayı düşürür. Yük anında
+// ölçülür (cihaz genişliği sabit -> yeniden-değerlendirme gerekmez; masaüstü dar-pencere nadir).
+export const MOBILE_UI =
+  APP_UI || (typeof matchMedia !== 'undefined' && matchMedia('(max-width: 1024px)').matches)
