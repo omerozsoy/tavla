@@ -25066,6 +25066,33 @@ body:has(.spectate-view) .app.lobby {
 }
 
 /* Alt gezinme çubuğu (BottomNav) — YALNIZ kurulu APK'da, maç dışı. body'ye portal'lanır. */
+/* Global "geri" tuşu (app-only): sayfa içeriğinin EN ÜSTÜNDE, başlığın üstünde AKIŞ-İÇİ pill.
+   Tarayıcı back'i gibi önceki görünüme döner (history.back). İçerik sol-hizasıyla aynı girinti. */
+.app-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 -4px clamp(16px, 3vw, 44px);
+  padding: 7px 14px 7px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-back-btn:active {
+  transform: scale(0.96);
+}
+/* Dar/mobil: içerik girintisiyle hizalı (page-host mobil padding 14px). */
+@media (max-width: 1080px) {
+  .app-back-btn {
+    margin-left: 14px;
+  }
+}
 .bottom-nav {
   position: fixed;
   left: 0;

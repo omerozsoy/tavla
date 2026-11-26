@@ -12,6 +12,8 @@ import { SponsorsStrip, type FooterSponsor } from './Footer'
 // dala göre değişir (home dinamik has-page + özel trailing; online lobi has-page'siz).
 export interface LobbyLayoutProps {
   mobileNav?: ReactNode
+  /** Sayfa içeriğinin EN ÜSTÜNDE (başlıktan önce) akış-içi "geri" tuşu. App'te + sayfa açıkken dolu. */
+  backButton?: ReactNode
   topbar: ReactNode
   sideMenu: ReactNode
   footer: ReactNode
@@ -27,6 +29,7 @@ export interface LobbyLayoutProps {
 
 export default function LobbyLayout({
   mobileNav,
+  backButton,
   topbar,
   sideMenu,
   footer,
@@ -42,6 +45,7 @@ export default function LobbyLayout({
         {topbar}
         {sideMenu}
         <main className={mainClassName}>
+          {backButton}
           {children}
           {/* Sponsorlar: içeriğin en altında, footer'dan ÖNCE -> sayfa content'iyle aynı kolonda/ortalı. */}
           {sponsors && sponsors.length > 0 && <SponsorsStrip sponsors={sponsors} />}

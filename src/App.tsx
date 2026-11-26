@@ -166,7 +166,8 @@ const USE_3D_BOARD = true
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
-import { IS_NATIVE_APP, MOBILE_UI } from './appEnv'
+import { IS_NATIVE_APP, MOBILE_UI, APP_UI } from './appEnv'
+import { registerNativeBack } from './nativeBack'
 import { setPref, writePrefsToStorage } from './prefs'
 import Footer, { type FooterItem } from './ui/Footer'
 import LobbyLayout from './ui/LobbyLayout'
@@ -2275,6 +2276,20 @@ export default function App() {
     applyFromPath()
     window.addEventListener('popstate', applyFromPath)
     return () => window.removeEventListener('popstate', applyFromPath)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Android donanım "geri" tuşu -> görünür geri butonuyla AYNI: sayfa açıksa history.back()
+  // (popstate -> applyFromPath önceki görünümü kurar), ana sayfadaysa uygulamayı arka plana al.
+  // anyPageOpen render-scope -> ref ile güncel değeri tek seferlik listener'a taşı.
+  const anyPageOpenRef = useRef(false)
+  useEffect(() => {
+    registerNativeBack(() => {
+      if (!anyPageOpenRef.current) return false // ana sayfa -> native minimize
+      if (window.history.length > 1) window.history.back()
+      else closeAllPages()
+      return true
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -11079,6 +11094,7 @@ export default function App() {
     // sayfalari gibi page-host icinde acilsin -> ust hesap bari (header) gorunur kalir (aksi
     // halde standalone .register-overlay.page fixed overlay header'i orterdi).
     showAuth
+  anyPageOpenRef.current = anyPageOpen // donanım-geri listener'ı güncel değeri okusun
 
   // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
   const activeKey = infoOpen
@@ -11925,10 +11941,29 @@ export default function App() {
   // Mağaza (shopOpen) ve Sepet (cartOpen) modalleri açıkken sabit FAB'ı gizle (kullanıcı isteği).
   const bugReport = <BugReport currentPage={activeKey ? menuLabel(activeKey) : undefined} loggedIn={!!user} hideFab={shopOpen || cartOpen} />
 
+  // Global "geri" tuşu (tarayıcı back'i gibi): YALNIZ app'te (APP_UI = APK + ?appui önizleme) +
+  // bir sayfa açıkken (anyPageOpen). LobbyLayout <main> içinde AKIŞ-İÇİ (başlığın ÜSTÜNDE) render
+  // edilir -> tüm sayfa dallarını tek yerden kapsar, başlıkla çakışmaz. history.back() -> popstate
+  // -> applyFromPath önceki görünümü kurar; geçmiş yoksa ana sayfaya düş.
+  const backBtnEl =
+    APP_UI && anyPageOpen ? (
+      <button
+        type="button"
+        className="app-back-btn"
+        onClick={() => {
+          if (window.history.length > 1) window.history.back()
+          else closeAllPages()
+        }}
+      >
+        <Icon name="caret-left" size={18} /> {t('common.back')}
+      </button>
+    ) : null
+
   // LOBİ İSKELETİ (TEK KAYNAK): tüm "app lobby" sayfaları LobbyLayout kullanır -> footer + kabuk
   // tek yerden gelir (footer'sız sayfa kök sebebi kapandı). chrome closure'lu bileşenleri bir kez
   // kurar; sayfa dalı yalnız içerik + mainClassName + trailing verir.
   const lobbyChrome = {
+    backButton: backBtnEl,
     mobileNav,
     topbar: (
       <div className="topbar-stack">
