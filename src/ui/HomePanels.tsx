@@ -47,6 +47,39 @@ const FEATURES: { icon: IconName; t: string; d: string }[] = [
 
 // ---- Uye panosu (giris yapmis kullaniciya): tek bakista durum + hizli erisim ----
 // 3 hizli stat karti: Puan · Coin · Performans (kazanma % buyuk + Mac/Galibiyet)
+// Telefonda sayfalı liste içinde PARMAKLA sayfa değiştirme (ok/numaraya basmak yerine).
+// Sola kaydır -> sonraki sayfa, sağa -> önceki. draggedRef sürükleme sonrası satır tıklamasını
+// bastırır (profil kazara açılmasın). Liste kabına touch-action:pan-y verilir -> dikey scroll serbest.
+function useSwipePage(curPage: number, pageCount: number, setPage: (p: number) => void) {
+  const dragX = useRef<number | null>(null)
+  const dragged = useRef(false)
+  const onPointerDown = (e: PointerEvent) => {
+    if (pageCount <= 1) return
+    dragX.current = e.clientX
+    dragged.current = false
+  }
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragX.current == null) return
+    if (Math.abs(e.clientX - dragX.current) > 8) dragged.current = true
+  }
+  const onPointerUp = (e: PointerEvent) => {
+    if (dragX.current == null) return
+    const dx = e.clientX - dragX.current
+    dragX.current = null
+    if (Math.abs(dx) >= 45) setPage(dx < 0 ? Math.min(pageCount - 1, curPage + 1) : Math.max(0, curPage - 1))
+  }
+  const onPointerCancel = () => (dragX.current = null)
+  // Satır onClick'inde çağır: sürükleme olduysa true döner -> tıklamayı yut.
+  const consumeDrag = () => {
+    if (dragged.current) {
+      dragged.current = false
+      return true
+    }
+    return false
+  }
+  return { handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel }, consumeDrag }
+}
+
 export function StatCards(p: { rating: number; coins: number; wins: number; games: number }) {
   const { t } = useT()
   const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : 0
@@ -536,6 +569,7 @@ export function OnlinePlayersPanel({
   // Liste kucuudubunde (oyuncu cikinca) mevcut sayfa asilirsa son sayfaya sabitle.
   const pageCount = ordered ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(ordered.length / PAGE_SIZE))) : 1
   const curPage = Math.min(page, pageCount - 1)
+  const swipe = useSwipePage(curPage, pageCount, setPage) // telefonda parmakla sayfa değiştir
 
   return (
     <div className="home-panel online-panel swiss-panel">
@@ -570,7 +604,7 @@ export function OnlinePlayersPanel({
         <div className="home-panel-empty">{t(tab === 'friends' ? 'online.friendsEmpty' : 'online.empty')}</div>
       ) : (
         <>
-          <div className="rank-list">
+          <div className="rank-list" {...swipe.handlers} style={{ touchAction: 'pan-y' }}>
             {ordered.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((p) => {
               const self = (currentId != null && p.id === currentId) || (!!currentName && p.name === currentName)
               return (
@@ -583,6 +617,7 @@ export function OnlinePlayersPanel({
                   key={p.id}
                   className={`rank-row online-row ${self ? 'mine' : ''}`}
                   onClick={(e) => {
+                    if (swipe.consumeDrag()) return
                     if ((e.target as HTMLElement).closest('.online-actions')) return
                     onProfile(p.id)
                   }}
