@@ -24054,6 +24054,13 @@ body:has(.spectate-view) .app.lobby {
   border: 1px solid var(--border);
   background: var(--card-bg);
 }
+/* Başlık sonunda başlangıç saati — başlığın parçası ama bir tık soluk/ince. */
+.tourn-title-time {
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 /* Kart alt kosesinde "Turnuva Lobisi ->" ipucu baglantisi (kart zaten buton). */
 /* Standart (primary) dugme gorunumu, SAGA yasli. Kart zaten buton; bu gorsel CTA. */
 

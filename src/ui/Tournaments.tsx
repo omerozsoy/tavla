@@ -798,6 +798,12 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
               <TavlaTvLogo size={60} tone="auto" className="tourn-title-mark" />
             )}
             <Icon name="trophy" size={20} /> {active.name}
+            {active.starts_at && (
+              <span className="tourn-title-time">
+                {' · '}
+                {new Date(active.starts_at).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </h2>
 
           {/* Editoryal alt-satir: durum rozeti + duzenleyen/mekan (tek satirda toplandi) */}
