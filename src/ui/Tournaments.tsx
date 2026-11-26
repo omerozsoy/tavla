@@ -1760,17 +1760,37 @@ function WeekCalendar({ list, lang, onOpen }: {
   const { t } = useT()
   const [offset, setOffset] = useState(0)
   const gridRef = useRef<HTMLDivElement>(null)
-  // Mobil: takvim yatay-kaydırmalı şerit, hafta başından (Pzt) başlar -> kullanıcı bugünü değil
-  // hafta başını görüyordu. Bu haftadaysak (offset 0) BUGÜN sütununu görünür alana kaydır.
-  // Masaüstünde 7 sütun sığar (overflow yok) -> no-op (dokunma). list değişince layout oturunca tekrar.
+  // Mobilde ok navigasyonu GÜN GÜN -> hafta değişince şeridin hangi ucuna kayılacağını işaretler.
+  const pendingScroll = useRef<'start' | 'end' | null>(null)
+  // Takvim mobilde tek-gün şerit. offset 0'da BUGÜNE kaydır; ok ile komşu haftaya geçildiyse
+  // ilgili uca (ilk/son gün) otur. Masaüstünde 7 sütun sığar (overflow yok) -> no-op.
   useEffect(() => {
-    if (offset !== 0) return
     const grid = gridRef.current
     if (!grid || grid.scrollWidth <= grid.clientWidth + 2) return
+    if (pendingScroll.current === 'start') { grid.scrollLeft = 0; pendingScroll.current = null; return }
+    if (pendingScroll.current === 'end') { grid.scrollLeft = grid.scrollWidth; pendingScroll.current = null; return }
+    if (offset !== 0) return
     const todayEl = grid.querySelector('.is-today') as HTMLElement | null
-    if (!todayEl) return
-    grid.scrollLeft += todayEl.getBoundingClientRect().left - grid.getBoundingClientRect().left - 8
+    if (todayEl) grid.scrollLeft += todayEl.getBoundingClientRect().left - grid.getBoundingClientRect().left - 8
   }, [offset, list])
+  // Mobilde (tek-gün şerit) ok = GÜN: şeridi bir gün kaydır; hafta sınırındaysa komşu haftaya
+  // geç + o haftanın ilk/son gününe otur. Masaüstünde (overflow yok) ok = HAFTA (offset ±1).
+  const goNext = () => {
+    const g = gridRef.current
+    if (g && g.scrollWidth > g.clientWidth + 2) {
+      if (g.scrollLeft + g.clientWidth < g.scrollWidth - 2) { g.scrollBy({ left: g.clientWidth, behavior: 'smooth' }); return }
+      pendingScroll.current = 'start'
+    }
+    setOffset((o) => o + 1)
+  }
+  const goPrev = () => {
+    const g = gridRef.current
+    if (g && g.scrollWidth > g.clientWidth + 2) {
+      if (g.scrollLeft > 2) { g.scrollBy({ left: -g.clientWidth, behavior: 'smooth' }); return }
+      pendingScroll.current = 'end'
+    }
+    setOffset((o) => o - 1)
+  }
   const weekStart = startOfWeekMonday(new Date())
   weekStart.setDate(weekStart.getDate() + offset * 7)
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -1792,7 +1812,7 @@ function WeekCalendar({ list, lang, onOpen }: {
   return (
     <div className="tourn-week">
       <div className="tourn-week-head">
-        <Button variant="ghost" size="icon" className="tourn-week-nav" onClick={() => setOffset((o) => o - 1)} aria-label="‹">
+        <Button variant="ghost" size="icon" className="tourn-week-nav" onClick={goPrev} aria-label="‹">
           <Icon name="caret-left" size={18} />
         </Button>
         <div className="tourn-week-range">
@@ -1802,7 +1822,7 @@ function WeekCalendar({ list, lang, onOpen }: {
             <button type="button" className="tourn-week-today" onClick={() => setOffset(0)}>{t('tourn.week.this')}</button>
           )}
         </div>
-        <Button variant="ghost" size="icon" className="tourn-week-nav" onClick={() => setOffset((o) => o + 1)} aria-label="›">
+        <Button variant="ghost" size="icon" className="tourn-week-nav" onClick={goNext} aria-label="›">
           <Icon name="caret-right" size={18} />
         </Button>
       </div>
