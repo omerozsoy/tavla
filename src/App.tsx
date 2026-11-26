@@ -11988,15 +11988,17 @@ export default function App() {
     MOBILE_UI && home ? (
       <BottomNav
         active={
-          activeKey === 'tournaments'
-            ? 'turnuvalar'
-            : activeKey === 'shop'
-              ? 'magaza'
-              : editProfile
-                ? 'profil'
-                : activeKey === ''
-                  ? 'ana'
-                  : undefined
+          activeKey === 'match'
+            ? 'oyna'
+            : activeKey === 'tournaments'
+              ? 'turnuvalar'
+              : activeKey === 'shop'
+                ? 'magaza'
+                : editProfile
+                  ? 'profil'
+                  : activeKey === ''
+                    ? 'ana'
+                    : undefined
         }
         items={[
           { key: 'ana', label: 'Ana Sayfa', icon: 'home', onClick: menuProps.onHome },
