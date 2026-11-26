@@ -288,13 +288,14 @@ function PrizeModal({ tr, onClose }: { tr: Tournament; onClose: () => void }) {
 function PrizeButton({ tr }: { tr: Tournament }) {
   const [open, setOpen] = useState(false)
   if (!tr.pool_enabled) return null
+  // Fragment: tourn-actions-hero flex satırında Katıl/Kaydı İptal'in yanına hizalansın.
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-start', margin: '8px 0' }}>
+    <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         <Icon name="medal" size={16} /> Ödül Dağıtımı
       </Button>
       {open && <PrizeModal tr={tr} onClose={() => setOpen(false)} />}
-    </div>
+    </>
   )
 }
 
@@ -935,8 +936,9 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
             )}
           </div>
 
-          {/* Birincil aksiyon: Katil / Kaydi iptal (hero'nun hemen altinda, belirgin) */}
-          {(canJoin || (joined && active.status === 'open')) && (
+          {/* Birincil aksiyon: Katil / Kaydi iptal + Ödül Dağıtımı (hero'nun hemen altinda, belirgin).
+              pool_enabled de koşulda: havuzlu turnuvada düğme open olmayan durumda da görünsün. */}
+          {(canJoin || (joined && active.status === 'open') || active.pool_enabled) && (
             <div className="tourn-actions tourn-actions-hero">
               {canJoin && (
                 <Button variant="default" className="tourn-join-btn" disabled={busy} onClick={onJoinClick}>
@@ -956,6 +958,7 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   <Icon name="x" size={16} /> {t('tourn.leave')}
                 </Button>
               )}
+              <PrizeButton tr={active} />
             </div>
           )}
 
@@ -1027,7 +1030,6 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                   </li>
                 ))}
               </ol>
-              {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
             </div>
           ) : (
             active.prize_desc && (
@@ -1039,7 +1041,6 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
 
           {/* Turnuva duyurulari: Swiss'te "Tur Eşleşmeleri" üstünde (aşağıda), diğerlerinde lobi başında.
               Yeni duyuru geldiginde zil calar + yanıp söner (annSeenRef/flashAnnId efekti). */}
-          <PrizeButton tr={active} />
           {!swissPairingsShown && announceBox}
 
           {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
