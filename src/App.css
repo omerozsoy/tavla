@@ -24055,15 +24055,6 @@ body:has(.spectate-view) .app.lobby {
 }
 /* Kart alt kosesinde "Turnuva Lobisi ->" ipucu baglantisi (kart zaten buton). */
 /* Standart (primary) dugme gorunumu, SAGA yasli. Kart zaten buton; bu gorsel CTA. */
-/* Kart alt satiri: ödül dağıtımı düğmesi (sol) + lobi bağlantısı (sağ, margin-left:auto ile). */
-.tourn-foot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-.tourn-list .tourn-row .tourn-foot .tourn-lobby-link { margin-top: 0; }
-.tourn-prize-btn { flex: 0 0 auto; }
 
 /* ---- Ödül Dağıtımı modalı (şık) ---- */
 .prize-overlay { z-index: 70; }

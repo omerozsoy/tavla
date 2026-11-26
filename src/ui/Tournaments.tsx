@@ -298,29 +298,6 @@ function PrizeButton({ tr }: { tr: Tournament }) {
   )
 }
 
-// Liste kartı içinde (lobi bağlantısının solunda) ödül dağıtımı düğmesi. Kart artık
-// <div role=button> olduğu için gerçek <button> güvenle iç içe girer; stopPropagation
-// kart tıklamasının (detaya git) tetiklenmesini engeller.
-function PrizeRowButton({ tr }: { tr: Tournament }) {
-  const [open, setOpen] = useState(false)
-  if (!tr.pool_enabled) return null
-  return (
-    <>
-      <Button
-        variant="outline"
-        className="tourn-prize-btn"
-        onClick={(e) => {
-          e.stopPropagation()
-          setOpen(true)
-        }}
-      >
-        <Icon name="medal" size={15} /> Ödül Dağıtımı
-      </Button>
-      {open && <PrizeModal tr={tr} onClose={() => setOpen(false)} />}
-    </>
-  )
-}
-
 // Bir sıranın (0-based) kazandığı coin — backend payPrizes ile AYNI: prizes[i].coins + (i===0 ? havuz : 0);
 // prizes yoksa yalnız şampiyona havuz.
 function rankPrizeCoins(t: Tournament, rank: number): number {
