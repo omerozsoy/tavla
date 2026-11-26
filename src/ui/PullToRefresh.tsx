@@ -61,6 +61,14 @@ export default function PullToRefresh() {
         setPull(0)
         return
       }
+      // Tarayici kaydirmaya coktan baslamissa touchmove iptal EDILEMEZ (cancelable=false) ->
+      // preventDefault cagrisi yok sayilir + "[Intervention] Ignored attempt to cancel a
+      // touchmove..." konsol uyarisi cikar. Bu durumda pull'u iptal et, native kaydirmaya birak.
+      if (!e.cancelable) {
+        st.current.active = false
+        setPull(0)
+        return
+      }
       e.preventDefault() // sayfayi kaydirma; pull gostergesini goster
       setPull(Math.min(MAX, dy * 0.5))
     }
