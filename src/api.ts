@@ -3,6 +3,7 @@ import type { Profile } from './storage'
 import type { GameState, Player, Step } from './engine/types'
 import { normalizeCountry } from './countries'
 import { COIN_PACKAGES, type CoinPackage } from './coinPackages'
+import { turnStarted, consumeBlur } from './secondScreen'
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
@@ -3417,6 +3418,8 @@ export async function serverRoll(
   clientSeed?: string,
   expectedVersion?: number,
 ): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState; match?: ServerMatch }> {
+  // İkinci-ekran sinyali: oyuncunun turu (karar penceresi) başladı → birikmiş blur'u sıfırla.
+  turnStarted()
   return roomCommand(code, 'roll', { client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null })
 }
 
@@ -3428,7 +3431,9 @@ export async function serverMove(
   steps: Step[],
   expectedVersion?: number,
 ): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean; bot?: BotTurn[]; bot_status?: BotStatus }> {
-  return roomCommand(code, 'move', { steps, expected_version: expectedVersion ?? null })
+  // İkinci-ekran sinyali: bu turda (zar-sonrası) pencere gizlendi/odak kaybedildi mi? Sunucu
+  // match_moves.blurred'a yazar (CheatScan::focusSignal). Destekleyici — kanıt değil.
+  return roomCommand(code, 'move', { steps, expected_version: expectedVersion ?? null, blurred: consumeBlur() })
 }
 
 // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncu her adım/geri-almada o anki tam-tur step

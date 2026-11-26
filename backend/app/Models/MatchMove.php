@@ -23,6 +23,7 @@ class MatchMove extends Model
         'steps' => 'array',
         'pos' => 'array',
         'mctx' => 'array',
+        'blurred' => 'boolean', // ikinci-ekran sinyali (bkz CheatScan::focusSignal)
     ];
 
     /** Bu room için sunucu-kaydı VAR mı? (yeni maçlar; eski maçlar client-log fallback'ine düşer.) */

@@ -179,6 +179,17 @@
                                 <span class="inline-flex items-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-xs font-medium">
                                     medyan PR {{ $row['median'] }} · en kötü {{ $row['worst_pr'] }}
                                 </span>
+                                {{-- İKİNCİ-EKRAN (blur) destekleyici sinyali: hamle gönderirken pencere gizlendi oranı.
+                                     Yüksek oran (yeterli örneklemde) motor-uygulamasına geçiş şüphesini güçlendirir;
+                                     DÜŞÜK oran masumiyet kanıtı DEĞİL (ikinci cihaz blur yaratmaz). --}}
+                                @php $fc = $row['focus'] ?? null; @endphp
+                                @if ($fc && $fc['reported'] >= 20)
+                                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium
+                                        {{ $fc['pct'] >= 40 ? 'bg-red-500/15 text-red-600 dark:text-red-400' : ($fc['pct'] >= 15 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' : 'bg-gray-500/10 text-gray-500') }}"
+                                        title="İkinci-ekran sinyali (destekleyici, kanıt değil): hamlesini gönderirken pencereyi gizlemiş/odağı kaybetmiş oranı — motor uygulamasına geçiş şüphesi. {{ $fc['blurred'] }}/{{ $fc['reported'] }} raporlı hamle. İkinci FİZİKSEL cihazla delinir (düşük oran masumiyet değil).">
+                                        📵 ikinci-ekran %{{ $fc['pct'] }} <span class="opacity-70">({{ $fc['reported'] }} hamle)</span>
+                                    </span>
+                                @endif
                                 @if ($pct !== null && ! $cert)
                                     <span class="text-[11px] text-gray-500">havuz {{ $row['confirmation']['total'] }} karar</span>
                                 @endif

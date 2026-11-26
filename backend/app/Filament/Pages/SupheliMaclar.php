@@ -75,6 +75,7 @@ class SupheliMaclar extends Page
         foreach ($suspects as &$s) {
             $s['matches'] = CheatScan::flaggedMatches($s['user_id']);
             $s['profile'] = CheatScan::profile($s['user_id']); // grafik + neden (kullanıcı-bazlı dağılım)
+            $s['focus'] = CheatScan::focusSignal($s['user_id']); // ikinci-ekran (blur) destekleyici sinyal
             $s['url'] = self::editUrl($s['user_id']);
         }
         unset($s);

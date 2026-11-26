@@ -4407,6 +4407,9 @@ class RoomController extends Controller
             'steps.*.die' => ['required', 'integer', 'min:1', 'max:6'],
             'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
+            // İKİNCİ-EKRAN sinyali: bu turda pencere gizlendi/odak kaybedildi mi (motor uygulamasına
+            // geçiş şüphesi). Yok = raporlamayan/eski istemci -> null. Bkz CheatScan::focusSignal.
+            'blurred' => ['nullable', 'boolean'],
         ]);
 
         // IN-FLIGHT KALKANI: AGIR validate/lock ONCESI "oynuyorum" damgasini yaz -> hamle yolda
@@ -4536,6 +4539,8 @@ class RoomController extends Controller
                 'notation' => MoveNotation::render(array_values($data['steps']), $moverColor),
                 'pos' => $state, 'mctx' => $this->moveMctx($room),
                 'cube_value' => (int) $this->cubeOf($room)['value'],
+                // İkinci-ekran sinyali (istemci raporlar). Yoksa null (raporlamayan/eski istemci).
+                'blurred' => $request->has('blurred') ? $request->boolean('blurred') : null,
             ]);
 
             // TUR SAYACI: geçerli hamle sırayı devretti -> bu oyunda bir tur daha tamamlandı.

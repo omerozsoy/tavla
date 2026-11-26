@@ -498,6 +498,46 @@ class CheatScan
     }
 
     /**
+     * İKİNCİ-EKRAN sinyali (DESTEKLEYİCİ): oyuncu hamlesini gönderirken o turda pencereyi gizlemiş/
+     * odağı kaybetmiş miydi (motor uygulamasına geçiş şüphesi). Kaynak: match_moves.blurred (istemci
+     * her /move POST'unda raporlar). Renk eşlemesi rooms p1=white/p2=black (moveMatch ile AYNI).
+     * Oran = blur'lü hamle / raporlanan hamle.
+     *
+     * ⚠ SİNYAL + DESTEKLEYİCİ, KANIT DEĞİL: ikinci FİZİKSEL cihaz blur yaratmaz, dikkatli hileci
+     * bayrağı göndermez → DÜŞÜK oran masumiyet kanıtı DEĞİL; YÜKSEK oran (yeterli örneklemde) PR
+     * flag'ini güçlendiren ek bir davranış sinyalidir. Tek başına ban sebebi değildir.
+     *
+     * @return array{reported:int,blurred:int,pct:int}|null null = hiç raporlı hamle yok (sinyal yok)
+     */
+    public static function focusSignal(int $userId): ?array
+    {
+        if (! Schema::hasTable('match_moves') || ! Schema::hasColumn('match_moves', 'blurred')) {
+            return null;
+        }
+
+        return Cache::remember("cheatscan:focus:$userId", self::CACHE_TTL, function () use ($userId) {
+            $row = DB::table('match_moves as mm')
+                ->join('rooms as r', 'r.code', '=', 'mm.room_code')
+                ->where('mm.kind', 'move')
+                ->whereNotNull('mm.blurred')
+                ->where(function ($q) use ($userId) {
+                    $q->where(fn ($w) => $w->where('r.p1_user_id', $userId)->where('mm.player', 'white'))
+                        ->orWhere(fn ($w) => $w->where('r.p2_user_id', $userId)->where('mm.player', 'black'));
+                })
+                ->selectRaw('COUNT(*) as reported, COALESCE(SUM(mm.blurred), 0) as blurred')
+                ->first();
+
+            $reported = (int) ($row->reported ?? 0);
+            if ($reported === 0) {
+                return null;
+            }
+            $blurred = (int) ($row->blurred ?? 0);
+
+            return ['reported' => $reported, 'blurred' => $blurred, 'pct' => (int) round(100 * $blurred / $reported)];
+        });
+    }
+
+    /**
      * Verilen uid'lerden hesabı ŞU AN KAPALI olanlar (en son account_ban_events olayı 'closed').
      * block() bu tabloya yazmaz → yalnız "Hesabı Kapat" akışı buraya düşer. reopen 'reopened' yazar.
      *
