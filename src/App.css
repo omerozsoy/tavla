@@ -37309,10 +37309,22 @@ body.has-bottom-nav .to-top {
    DOM sırası list→board→analysis; görsel sıra `order` ile çevrilir. */
 @media (max-width: 1080px) {
   .mrv-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: none; /* otomatik akış; sıra order ile */
+    /* Mobilde grid YERİNE flex-column: analiz paneli (son, order 3) kalan yüksekliği doldursun ->
+       aday listesi KISIK (ilk 3) iken ekran dibindeki sabit nav ile arada BOŞLUK kalmaz. Sıra yine
+       `order` ile; tüm sütun grid'in overflow-y'siyle kayar (panel iç scroll'u yok). */
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
-    padding-bottom: 96px; /* ekran dibindeki sabit ok-nav (.mrv-nav) içeriği örtmesin */
+    /* sabit ok-nav yüksekliği kadar (içerik örtünmesin) — fazlası fill ile boşluk bırakırdı. */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+  .mrv-board,
+  .mrv-list {
+    flex: 0 0 auto; /* flex-column'da içerik boyunda kalsın (sıkışmasın) */
+  }
+  .mrv-cands {
+    flex: 0 0 auto; /* içerik boyu -> "Hepsini göster" düğmesi listenin HEMEN altında; grid kaydırır */
+    overflow: visible;
   }
   .mrv-board {
     order: 1;
@@ -37321,6 +37333,8 @@ body.has-bottom-nav .to-top {
     order: 3; /* adaylar/analiz: filtrelerin ALTINDA (kullanıcı: düğmeler board'un altında) */
     border-left: none;
     border-top: 1px solid var(--border);
+    flex: 1 1 auto; /* kalan yüksekliği doldur -> alt nav ile boşluk kalmaz */
+    overflow: visible; /* iç scroll yok; kaydırma grid'de (base overflow:hidden'ı ez) */
   }
   /* Filtreler (oyuncu + Tümü/Hatalar/Büyük hatalar) BOARD'UN HEMEN ALTINDA (order 2). Uzun hamle
      listesi (.mrv-rows) mobilde GİZLİ -> gezinme ekran dibindeki sabit oklarla (.mrv-nav), tıpkı
