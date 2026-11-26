@@ -37368,10 +37368,9 @@ body.has-bottom-nav .to-top {
      (oyunda sürükleme için) MatReview board'unda da geçerli -> board ekranın çoğunu kaplayınca
      taşların/küpün üstünden parmakla kaydırma scroll yerine iptal ediliyordu. MatReview'de sürükleme
      YOK (no-op) -> pan-y ile dikey kaydırmaya izin ver (oyun/.analyzer-board drag'i etkilenmez). */
-  .mrv-board-stage .checker,
-  .mrv-board-stage .cube,
-  .mrv-board-stage .point {
-    touch-action: pan-y;
+  .mrv-board-stage,
+  .mrv-board-stage * {
+    touch-action: pan-y !important;
   }
   /* Pip sayıları (134/120) mobilde board'a oranla ÇOK BÜYÜKtü: MatReview .mrv-board base .pip'i
      (1.05rem) kullanır, Pozisyon Analizi'nin .analyzer-board küçültme override'ı BURAYA uygulanmaz
