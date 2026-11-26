@@ -284,7 +284,17 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   useEffect(() => {
     if (!report) return
     requestAnimationFrame(() => {
-      rootRef.current?.scrollTo?.({ top: 0 })
+      // GERÇEK scroller'ı bul: body overflow:hidden -> window kaymaz; app'te .app.lobby,
+      // masaüstü fixed modda .register-overlay.page kayar. Rapor kabından YUKARI çık,
+      // ilk gerçekten kaydırılabilir (overflow auto/scroll + taşan) atayı en üste al.
+      let el: HTMLElement | null = rootRef.current
+      while (el) {
+        if (el.scrollTop > 0) {
+          const oy = getComputedStyle(el).overflowY
+          if (oy === 'auto' || oy === 'scroll') el.scrollTop = 0
+        }
+        el = el.parentElement
+      }
       try { window.scrollTo({ top: 0 }) } catch { /* no-op */ }
     })
   }, [report, view])
