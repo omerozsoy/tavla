@@ -24058,6 +24058,103 @@ body:has(.spectate-view) .app.lobby {
 }
 .tourn-list .tourn-row .tourn-foot .tourn-lobby-link { margin-top: 0; }
 .tourn-prize-btn { flex: 0 0 auto; }
+
+/* ---- Ödül Dağıtımı modalı (şık) ---- */
+.prize-overlay { z-index: 70; }
+.prize-card {
+  max-width: 460px;
+  width: 92%;
+  padding: 0;
+  overflow: hidden;
+}
+.prize-card .modal-close { z-index: 2; }
+.prize-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  background:
+    radial-gradient(130% 150% at 0% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
+    color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+  border-bottom: 1px solid var(--border);
+}
+.prize-hero-badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, #f3cf5a, #d99a1c);
+  box-shadow: 0 4px 12px color-mix(in srgb, #d99a1c 42%, transparent);
+}
+.prize-hero-txt { flex: 1 1 auto; min-width: 0; }
+.prize-hero-txt h3 { margin: 0; font-size: 1.05rem; }
+.prize-hero-sub { font-size: 12px; color: var(--muted); }
+.prize-hero-amt { flex: 0 0 auto; }
+
+.prize-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.prize-table th,
+.prize-table td { padding: 9px 22px; }
+.prize-table thead th {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  text-align: left;
+  padding-top: 12px;
+  padding-bottom: 6px;
+}
+.prize-table .pt-num { text-align: right; font-variant-numeric: tabular-nums; }
+.prize-table tbody tr { border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+.prize-table tbody tr:not(.pt-fee):not(.pt-total):hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.pt-rank-cell { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; }
+.pt-medal {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--text) 18%, transparent);
+}
+.pt-rank-1 .pt-medal { background: linear-gradient(145deg, #f3cf5a, #d99a1c); box-shadow: 0 0 0 2px color-mix(in srgb, #d99a1c 25%, transparent); }
+.pt-rank-2 .pt-medal { background: linear-gradient(145deg, #dfe3ea, #aab0bd); }
+.pt-rank-3 .pt-medal { background: linear-gradient(145deg, #e0a46a, #b5712f); }
+.prize-table .pt-pct { color: var(--muted); }
+.prize-table .pt-fee td { color: var(--muted); font-weight: 500; }
+.prize-table .pt-total td {
+  border-top: 2px solid color-mix(in srgb, var(--text) 24%, transparent);
+  font-weight: 700;
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+.prize-bonus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 22px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.prize-bonus > svg { color: var(--accent); }
+.prize-bonus small { color: var(--muted); }
+.prize-note {
+  margin: 12px 22px 20px;
+  font-size: 12px;
+  color: var(--muted);
+}
 .tourn-lobby-link {
   display: flex;
   width: fit-content;

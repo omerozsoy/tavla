@@ -206,8 +206,6 @@ function prizeRankLabel(from: number, to: number): string {
   return `${from + 1}. – ${to + 1}.`
 }
 
-const prizeCell = { padding: '7px 6px' } as const
-const prizeNum = { padding: '7px 6px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' } as const
 
 function PrizeModal({ tr, onClose }: { tr: Tournament; onClose: () => void }) {
   const { t } = useT()
@@ -222,53 +220,64 @@ function PrizeModal({ tr, onClose }: { tr: Tournament; onClose: () => void }) {
   const groups = groupPcts(pcts)
   const bonus = tr.prize_coins ?? 0
   const tl = (n: number) => n.toLocaleString('tr-TR')
-  const line = '1px solid color-mix(in srgb, currentColor 14%, transparent)'
   return (
-    <div className="register-overlay modal" role="dialog" aria-modal="true" onClick={onClose} style={{ zIndex: 70 }}>
-      <div className="register-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440, width: '92%' }}>
+    <div className="register-overlay modal prize-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="register-card prize-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h3 style={{ margin: '0 0 2px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Icon name="medal" size={18} /> Ödül Dağıtımı
-        </h3>
-        <div style={{ opacity: 0.75, fontSize: 13, marginBottom: 12 }}>
-          Giriş ücretlerinden toplanan: <b>{tl(collected)}</b> coin
+        <div className="prize-hero">
+          <span className="prize-hero-badge"><Icon name="medal" size={22} /></span>
+          <div className="prize-hero-txt">
+            <h3>Ödül Dağıtımı</h3>
+            <span className="prize-hero-sub">Giriş ücretlerinden toplanan havuz</span>
+          </div>
+          <span className="prize-hero-amt"><Coins amount={collected} pill size={18} /></span>
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <table className="prize-table">
           <thead>
-            <tr style={{ opacity: 0.6, fontSize: 12 }}>
-              <th style={prizeCell}>Derece</th>
-              <th style={prizeNum}>Pay</th>
-              <th style={prizeNum}>Kişi başı</th>
+            <tr>
+              <th>Derece</th>
+              <th className="pt-num">Pay</th>
+              <th className="pt-num">Kişi başı</th>
             </tr>
           </thead>
           <tbody>
             {groups.map((g) => (
-              <tr key={g.from} style={{ borderTop: line }}>
-                <td style={prizeCell}>{prizeRankLabel(g.from, g.to)}</td>
-                <td style={prizeNum}>%{g.pct}</td>
-                <td style={prizeNum}>{tl(shares[g.from] ?? 0)}</td>
+              <tr key={g.from} className={g.from < 3 ? 'pt-rank-' + (g.from + 1) : ''}>
+                <td>
+                  <span className="pt-rank-cell">
+                    <span className="pt-medal" aria-hidden="true" />
+                    {prizeRankLabel(g.from, g.to)}
+                  </span>
+                </td>
+                <td className="pt-num pt-pct">%{g.pct}</td>
+                <td className="pt-num">
+                  <Coins amount={shares[g.from] ?? 0} gain size={16} />
+                </td>
               </tr>
             ))}
-            <tr style={{ borderTop: line, opacity: 0.8 }}>
-              <td style={prizeCell}>TavlaTV komisyonu</td>
-              <td style={prizeNum}>%10</td>
-              <td style={prizeNum}>{tl(commission)}</td>
+            <tr className="pt-fee">
+              <td>TavlaTV komisyonu</td>
+              <td className="pt-num pt-pct">%10</td>
+              <td className="pt-num">−{tl(commission)}</td>
             </tr>
-            <tr style={{ borderTop: '2px solid color-mix(in srgb, currentColor 26%, transparent)', fontWeight: 700 }}>
-              <td style={prizeCell}>Toplam</td>
-              <td style={prizeNum}>%100</td>
-              <td style={prizeNum}>{tl(collected)}</td>
+            <tr className="pt-total">
+              <td>Toplam havuz</td>
+              <td className="pt-num pt-pct">%100</td>
+              <td className="pt-num">{tl(collected)}</td>
             </tr>
           </tbody>
         </table>
         {bonus > 0 && (
-          <div style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
-            + Sabit şampiyon ödülü: <b>{tl(bonus)}</b> coin (1.’liğe eklenir)
+          <div className="prize-bonus">
+            <Icon name="crown" size={16} />
+            <span>Sabit şampiyon ödülü</span>
+            <Coins amount={bonus} gain size={16} />
+            <small>1.’liğe eklenir</small>
           </div>
         )}
-        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.6 }}>
+        <div className="prize-note">
           Oyunculara toplam {tl(net)} coin dağıtılır{bonus > 0 ? ` (+ ${tl(bonus)} sabit ödül)` : ''}.
         </div>
       </div>
