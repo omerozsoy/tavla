@@ -16489,6 +16489,7 @@ button.acct-row-logout:hover:not(:disabled) {
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  min-width: 0; /* grid öğesi içeriğe göre şişmesin -> track'i/paneli taşırmaz */
   display: flex;
   flex-direction: row;
   align-items: center;
