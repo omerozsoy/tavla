@@ -36646,6 +36646,10 @@ body.has-bottom-nav .to-top {
   display: flex;
   flex-direction: column;
   color: var(--text);
+  /* İçeriği (özellikle mobilde) .mrv-grid'e HAPSET: overflow:hidden olmadan taşan içerik
+     overlay'den dışarı akıp grid'in overflow-y:auto'sunu devre dışı bırakıyordu -> sayfa
+     kaymıyordu (grid_scrollH>clientH ama scroll yok). overflow:hidden grid'i scroll'a zorlar. */
+  overflow: hidden;
   /* APK/PWA (tam-ekran): üst çubuk (Maç Özeti/×) STATUS BAR'ın altında kalıp dokunuşları
      OS yutuyordu ("Maç Özeti çalışmıyor"). Safe-area kadar aşağı it (desktop'ta 0, etkisiz). */
   padding-top: env(safe-area-inset-top, 0px);
@@ -37334,7 +37338,13 @@ body.has-bottom-nav .to-top {
        `order` ile; tüm sütun grid'in overflow-y'siyle kayar (panel iç scroll'u yok). */
     display: flex;
     flex-direction: column;
+    /* KRİTİK: flex-basis 0 (base'deki `1 1 auto` DEĞİL). auto -> grid içeriğe göre şişip
+       overlay'den taşıyordu, overflow-y:auto devre dışı kalıyordu (scrollH>clientH ama scroll yok).
+       `1 1 0` + min-height:0 -> grid overlay'in kalan yüksekliğini SABİT alır, içerik taşınca KAYAR. */
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     /* sabit ok-nav yüksekliği kadar (içerik örtünmesin) — fazlası fill ile boşluk bırakırdı. */
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
