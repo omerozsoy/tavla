@@ -24057,7 +24057,7 @@ body:has(.spectate-view) .app.lobby {
 /* Başlık sonunda başlangıç saati — başlığın parçası ama bir tık soluk/ince. */
 .tourn-title-time {
   font-weight: 600;
-  color: var(--muted);
+  color: inherit;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
