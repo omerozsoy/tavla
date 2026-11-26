@@ -16478,8 +16478,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .hqp-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 9px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 /* Grafikli oyun-tarzı düğme: tam renkli gradyan + watermark ikon + parlak shine + derinlik. */
 .hqp-btn {
@@ -16487,13 +16487,14 @@ button.acct-row-logout:hover:not(:disabled) {
   overflow: hidden;
   isolation: isolate;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 11px;
-  padding: 8px 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 106px;
+  padding: 11px 13px 12px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 16px;
   color: #fff;
   text-align: left;
   cursor: pointer;
@@ -16533,7 +16534,7 @@ button.acct-row-logout:hover:not(:disabled) {
   bottom: -12px;
   z-index: -1;
   color: rgba(255, 255, 255, 0.15);
-  transform: scale(0.55) rotate(-8deg);
+  transform: scale(0.68) rotate(-8deg);
   transform-origin: bottom right;
   pointer-events: none;
 }
@@ -16544,27 +16545,25 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 11px;
+  border-radius: 12px;
   flex: none;
   color: #fff;
   background: rgba(255, 255, 255, 0.22);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 .hqp-label {
-  flex: 1;
-  min-width: 0;
   font-size: 0.92rem;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.18;
   letter-spacing: 0.01em;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: calc(100% - 18px);
 }
 /* Köşedeki "git" oku */
 .hqp-go {
-  flex: none;
+  position: absolute;
+  right: 11px;
+  bottom: 11px;
   color: rgba(255, 255, 255, 0.85);
   transition: transform 0.14s ease;
 }

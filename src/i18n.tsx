@@ -1060,7 +1060,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'quiz.wrong': 'Yanlış',
   'quiz.next': 'Sonraki',
   'menu.match': 'Maç Oyunu',
-  'menu.aiGame': 'YZ ile Oyna',
+  'menu.aiGame': 'Yapay Zeka ile Oyna',
   'menu.playFriend': 'Arkadaşınla Oyna',
   'menu.duel': 'Takım Düello',
   'duel.title': 'Takım Düello',
