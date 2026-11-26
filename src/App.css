@@ -30501,6 +30501,85 @@ input:not([type='range']), select, textarea {
   font-size: 0.82rem;
   color: var(--text);
 }
+/* Belirgin kura geri sayımı kartı (Swiss otomatik kura) */
+.swiss-draw-cd {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin: 14px 0;
+  padding: 18px 16px 15px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(130% 150% at 50% -30%, color-mix(in srgb, var(--accent) 20%, var(--card-bg)) 0%, var(--card-bg) 72%);
+  box-shadow: 0 8px 26px -14px color-mix(in srgb, var(--accent) 65%, transparent);
+  text-align: center;
+}
+.swiss-draw-cd__glow {
+  position: absolute;
+  inset: -45% -10% auto -10%;
+  height: 140px;
+  pointer-events: none;
+  background: radial-gradient(60% 100% at 50% 0%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%);
+  animation: swissDrawGlow 2.6s ease-in-out infinite;
+}
+.swiss-draw-cd__eyebrow {
+  position: relative;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: color-mix(in srgb, var(--accent) 75%, var(--muted));
+}
+.swiss-draw-cd__time {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(2.2rem, 10vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.swiss-draw-cd__time svg {
+  display: none;
+}
+.swiss-draw-cd__time.starting {
+  font-size: 1.4rem;
+  gap: 7px;
+  color: var(--accent);
+  animation: swissDrawPulse 1s ease-in-out infinite;
+}
+.swiss-draw-cd__time.starting svg {
+  display: inline-block;
+}
+.swiss-draw-cd__label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+}
+@keyframes swissDrawGlow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes swissDrawPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swiss-draw-cd__glow,
+  .swiss-draw-cd__time.starting { animation: none; }
+}
 .swiss-round-date {
   margin-left: 10px;
   font-weight: 500;

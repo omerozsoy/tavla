@@ -1102,12 +1102,21 @@ export default function Tournaments({ myId, isAdmin = false, onPlayMatch, onClos
                 <div className="swiss-rules">{t('swiss.rulesShort', { n: maxLives })}</div>
 
                 {sw && active.status === 'running' && sw.awaiting_draw && (
-                  <div className="swiss-awaiting">
-                    <Icon name="calendar-dots" size={14} /> {t(sw.next_draw_at ? 'swiss.awaitingDrawAuto' : 'swiss.awaitingDraw', { n: sw.next_round ?? (sw.round + 1) })}
-                    {sw.next_draw_at ? (
-                      <> · {t('swiss.drawCountdown')} <Countdown target={sw.next_draw_at} onExpire={refreshList} className="swiss-cd tnum" /></>
-                    ) : sw.next_at ? ' · ' + t('swiss.roundScheduled', { at: fmtDt(sw.next_at) }) : ' · ' + t('swiss.roundNoDate')}
-                  </div>
+                  sw.next_draw_at ? (
+                    <div className="swiss-draw-cd" role="timer" aria-label={t('swiss.drawCountdown')}>
+                      <span className="swiss-draw-cd__glow" aria-hidden="true" />
+                      <span className="swiss-draw-cd__eyebrow">{t('swiss.drawCountdown')}</span>
+                      <Countdown target={sw.next_draw_at} onExpire={refreshList} className="swiss-draw-cd__time tnum" />
+                      <span className="swiss-draw-cd__label">
+                        <Icon name="calendar-dots" size={14} /> {t('swiss.awaitingDrawAuto', { n: sw.next_round ?? (sw.round + 1) })}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="swiss-awaiting">
+                      <Icon name="calendar-dots" size={14} /> {t('swiss.awaitingDraw', { n: sw.next_round ?? (sw.round + 1) })}
+                      {sw.next_at ? ' · ' + t('swiss.roundScheduled', { at: fmtDt(sw.next_at) }) : ' · ' + t('swiss.roundNoDate')}
+                    </div>
+                  )
                 )}
 
                 {myRow && active.status === 'running' && (
