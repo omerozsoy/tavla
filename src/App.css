@@ -14364,15 +14364,18 @@ button.acct-row-logout:hover:not(:disabled) {
    Yalnız ana sayfa .swiss-panel.tourn-panel (liste sayfası AYRI bileşen, o da mini).
    ========================================================================== */
 @media (max-width: 1024px) {
-  .swiss-panel.tourn-panel .tourn-row { padding: 12px 14px; gap: 6px; }
-  /* Dev geri sayım -> prominent ama baskın değil */
-  .swiss-panel.tourn-panel .tr-cd { font-size: 1.7rem; }
-  .swiss-panel.tourn-panel .tr-cd.starting { font-size: 1rem; }
-  .swiss-panel.tourn-panel .tr-clock { gap: 2px; margin-bottom: 0; }
-  .swiss-panel.tourn-panel .tr-name { font-size: 0.95rem; }
-  .swiss-panel.tourn-panel .tr-stats { font-size: 0.64rem; }
-  .swiss-panel.tourn-panel .tr-foot { margin-top: 8px; padding-top: 8px; }
-  .swiss-panel.tourn-panel .tr-act { padding: 7px 20px; }
+  .swiss-panel.tourn-panel .tourn-row { padding: 10px 13px; gap: 4px; }
+  /* Dev geri sayım belirgin KÜÇÜLTÜLDÜ (baskın değil) */
+  .swiss-panel.tourn-panel .tr-cd { font-size: 1.4rem; }
+  .swiss-panel.tourn-panel .tr-cd.starting { font-size: 0.95rem; }
+  .swiss-panel.tourn-panel .tr-clock { gap: 1px; margin-bottom: 0; }
+  .swiss-panel.tourn-panel .tr-clock-lbl { font-size: 0.5rem; }
+  .swiss-panel.tourn-panel .tr-name { font-size: 0.9rem; line-height: 1.2; }
+  .swiss-panel.tourn-panel .tr-status { font-size: 0.58rem; }
+  .swiss-panel.tourn-panel .tr-stats { font-size: 0.62rem; }
+  .swiss-panel.tourn-panel .tr-foot { margin-top: 6px; padding-top: 7px; }
+  .swiss-panel.tourn-panel .tr-prizes { font-size: 0.72rem; }
+  .swiss-panel.tourn-panel .tr-act { padding: 6px 16px; font-size: 10px; }
 }
 .swiss-panel.tourn-panel .tr-act-arrow { flex: none; }
 
