@@ -123,12 +123,13 @@ export function HomeDashboard(p: {
   showStats?: boolean
 }) {
   const { t } = useT()
+  // İçerik = yalnız StatCards (günlük ödül satırı kaldırıldı; üst bardaki ödül butonu yeterli).
+  // showStats=false iken section BOŞ kalıyordu ama margin + flex gap'leriyle "Hemen Oyna" ile
+  // altındaki reklam/banner arasında ölü boşluk yaratıyordu -> boşsa hiç render etme.
+  if (p.showStats === false) return null
   return (
     <section className="home-dash" aria-label={t('menu.myStats')}>
-      {p.showStats !== false && (
-        <StatCards rating={p.rating} coins={p.coins} wins={p.wins} games={p.games} />
-      )}
-      {/* Günlük ödül satırı KALDIRILDI (üst bardaki ödül butonu yeterli). */}
+      <StatCards rating={p.rating} coins={p.coins} wins={p.wins} games={p.games} />
     </section>
   )
 }

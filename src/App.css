@@ -16457,7 +16457,11 @@ button.acct-row-logout:hover:not(:disabled) {
    HEMEN OYNA — mobil uygulama ana sayfa hızlı-başlat (banner altı 2x2).
    Yalnız APP_UI (kurulu uygulama) render edilir (bkz App.tsx). TavlaTV paleti.
    ========================================================================== */
-.home-quickplay { margin: 14px 0 20px; }
+/* .main flex-column align-items:center -> çocuklar içeriğe göre boyutlanır; kardeşler gibi
+   width:100%+max-width:lobby-w ile sabitle, yoksa grid max-content'e şişip sayfayı taşırır. */
+.home-quickplay { width: 100%; max-width: var(--lobby-w); margin: 14px auto 20px; }
+/* Düğme üstü (başlık hairline-altı) boşluğu, düğme altı (panel padding-bottom 14px) ile eşit. */
+.home-quickplay .home-panel-head { margin-bottom: 14px; }
 .hqp-title {
   display: flex;
   align-items: center;
@@ -25105,8 +25109,9 @@ body:has(.spectate-view) .app.lobby {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Grafikli/renkli ikonlar: her sekmeye kendi marka tonu (Hemen Oyna paleti). İkon tonlu çip
-   içinde; aktifte çip koyulaşır + hafif yükselir, etiket tam ton + kalın. (kullanıcı direktifi) */
+/* Aktif sekme NET belli olsun: yalnız aktifin çipi tam renk DOLGU + beyaz ikon (hafif yükselir
+   + renkli gölge); pasifler soluk gri, çipsiz. Her sekmenin dolgu tonu kendi marka rengi (--bn,
+   Hemen Oyna paleti). (kullanıcı direktifi: aktif belirgin, pasif geri çekilsin) */
 .bottom-nav__ic {
   display: inline-flex;
   align-items: center;
@@ -25114,16 +25119,18 @@ body:has(.spectate-view) .app.lobby {
   width: 40px;
   height: 27px;
   border-radius: 10px;
-  color: var(--bn, var(--accent));
-  background: color-mix(in srgb, var(--bn, var(--accent)) 13%, transparent);
-  transition: background 0.15s ease, transform 0.15s ease;
+  color: color-mix(in srgb, var(--text, #333) 48%, transparent);
+  background: transparent;
+  transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
 }
 .bottom-nav__item.is-active .bottom-nav__ic {
-  background: color-mix(in srgb, var(--bn, var(--accent)) 24%, transparent);
+  color: #fff;
+  background: var(--bn, var(--accent));
   transform: translateY(-1px);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--bn, var(--accent)) 40%, transparent);
 }
 .bottom-nav__item .bottom-nav__label {
-  color: color-mix(in srgb, var(--bn, var(--accent)) 68%, var(--text));
+  color: color-mix(in srgb, var(--text, #333) 50%, transparent);
   font-weight: 600;
 }
 .bottom-nav__item.is-active .bottom-nav__label {
