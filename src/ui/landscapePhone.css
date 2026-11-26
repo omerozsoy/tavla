@@ -55,9 +55,11 @@
 }
 
 /* Yan menü -> soldan kayan drawer (grid akışından çıkar) */
-/* Sticky account-bar (z-index:105) drawer'i (z-index:100) altinda birakiyordu.
-   Landscape'te drawer BARIN ALTINDAN baslasin (bar ustte gorunur kalir, tum menu gorunur);
-   portrede ise drawer barin USTUNE ciksin (kendi logosuyla -> z-index yeter). */
+/* Drawer PORTRE gibi TAM BOY (top:0) + kendi logosunu tasir. Eskiden top:51px ile barin
+   ALTINDAN baslayip drawer logosunu gizliyordu ("bar logosu zaten ustte") -> iOS Safari'de
+   sticky bar kaybolunca HICBIR yerde logo kalmiyordu (kullanici: "yatayda menu acinca ust
+   logo gozukmuyor"). Tam boy + z-index:106 (sticky bar z105 ustunde) + brand goster -> menu
+   kendi kendine yeter, logo garanti; ayrica reserve 51px'i geri kazanip menuye yer acar. */
 @media (max-width: 1080px) {
   .side-menu {
     z-index: 106;
@@ -66,14 +68,15 @@
 #root.lsphone .side-menu {
   position: fixed;
   left: 0;
-  top: 51px; /* ince bar yuksekligi -> drawer barin ALTINDA, tepesi kirpilmaz */
-  height: calc(100% - 51px);
+  top: 0;
+  height: 100%;
   width: 248px;
   max-width: 86vw;
   z-index: 106;
   background: var(--card-bg);
-  /* Yatay PWA: sol centik payi (safe-area) -> menu ogeleri centigin altinda kalmasin. */
-  padding: 10px 12px max(12px, env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  /* Ust padding yok: .side-menu-brand (sticky logo satiri) tepeyi + safe-area'yi kendisi tasir.
+     Sol: yatay PWA centigi (safe-area-inset-left) -> menu ogeleri centigin altinda kalmasin. */
+  padding: 0 12px max(12px, env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
   width: calc(248px + env(safe-area-inset-left));
   /* Kapaliyken golge + odak yok (bkz. App.css <=900px drawer). */
   box-shadow: none;
@@ -90,11 +93,6 @@
   box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
   transition: transform 0.25s ease;
 }
-/* Bar logosu zaten ustte gorunur -> drawer'da tekrar logo gosterme */
-#root.lsphone .side-menu-brand {
-  display: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   #root.lsphone .side-menu {
     transition: none;
