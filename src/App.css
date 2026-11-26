@@ -15766,14 +15766,16 @@ button.acct-row-logout:hover:not(:disabled) {
 .tourn-week-cta > span { flex: 1; }
 .tourn-week-cta svg:first-child { color: var(--accent); flex: 0 0 auto; }
 .tourn-week-cta svg:last-child { color: var(--muted); flex: 0 0 auto; }
-/* Dar ekran: 7 sutun sigmazsa yatay kaydir (gun sutunlari genis). */
-@media (max-width: 640px) {
+/* Mobil/tablet (≤1024): takvim TEK GÜN tam genişlik (kullanıcı: "sadece güncel gün, 1 günün
+   genişliği o günü göstersin -> daha yatay"). scroll-snap mandatory -> bir güne oturur; JS
+   mount'ta BUGÜNE kaydırır (WeekCalendar useEffect). Yana kaydırınca diğer günler. */
+@media (max-width: 1024px) {
   .tourn-week-grid {
     grid-auto-flow: column;
     grid-template-columns: none;
-    grid-auto-columns: 44%;
+    grid-auto-columns: 100%;
     overflow-x: auto;
-    scroll-snap-type: x proximity;
+    scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 4px;
   }

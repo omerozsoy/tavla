@@ -344,6 +344,7 @@ export function LiveMatchesPanel({
   // Liste kuculunce (mac bitince) mevcut sayfa asilirsa son sayfaya sabitle.
   const pageCount = shown ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(shown.length / PAGE_SIZE))) : 1
   const curPage = Math.min(page, pageCount - 1)
+  const swipe = useSwipePage(curPage, pageCount, setPage) // telefonda parmakla sayfa değiştir
 
   return (
     <div className="home-panel live-panel swiss-panel">
@@ -375,9 +376,9 @@ export function LiveMatchesPanel({
         <div className="home-panel-empty">{t('live.empty')}</div>
       ) : (
         <>
-        <div className="live-list">
+        <div className="live-list" {...swipe.handlers} style={{ touchAction: 'pan-y' }}>
           {shown.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((m) => (
-            <LiveRow key={m.code} m={m} onSpectate={onSpectate} />
+            <LiveRow key={m.code} m={m} onSpectate={(c, a, bb) => { if (swipe.consumeDrag()) return; onSpectate(c, a, bb) }} />
           ))}
         </div>
         <Pager page={curPage} total={shown.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
@@ -741,6 +742,7 @@ export function SeekersPanel({
   const list = mySeek ? [mySeek, ...(rows ?? [])] : rows
   const pageCount = list ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(list.length / PAGE_SIZE))) : 1
   const curPage = Math.min(page, pageCount - 1)
+  const swipe = useSwipePage(curPage, pageCount, setPage) // telefonda parmakla sayfa değiştir
 
   return (
     <div className="home-panel seek-panel swiss-panel">
@@ -755,7 +757,7 @@ export function SeekersPanel({
         <div className="seek-empty">{t('seekers.empty')}</div>
       ) : (
         <>
-          <div className="rank-list">
+          <div className="rank-list" {...swipe.handlers} style={{ touchAction: 'pan-y' }}>
             {list.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((s) => {
               const self = currentId != null && s.id === currentId
               const stakeList = s.stakes && s.stakes.length > 0 ? s.stakes : [s.stake]
@@ -773,6 +775,7 @@ export function SeekersPanel({
                   key={`${s.kind}-${s.id}`}
                   className={`rank-row online-row ${self ? 'mine' : ''}`}
                   onClick={(e) => {
+                    if (swipe.consumeDrag()) return
                     if ((e.target as HTMLElement).closest('.online-actions')) return
                     onProfile(s.id)
                   }}
@@ -871,6 +874,10 @@ export function RankingPanel({
 
   const PAGE_SIZE = 10
   const MAX_PAGES = 10 // en fazla 100 kisi
+  // Telefonda parmakla sayfa değiştir (aktif sekmenin satır sayısına göre sayfa adedi).
+  const activeTotal = by === 'pr' ? (prRows?.length ?? 0) : (rows?.length ?? 0)
+  const rankPageCount = Math.min(MAX_PAGES, Math.max(1, Math.ceil(activeTotal / PAGE_SIZE)))
+  const swipe = useSwipePage(page, rankPageCount, setPage)
 
   useEffect(() => {
     let alive = true
@@ -939,12 +946,12 @@ export function RankingPanel({
           <div className="home-panel-empty">{t('lb.prEmpty')}</div>
         ) : (
           <>
-          <div className="rank-list">
+          <div className="rank-list" {...swipe.handlers} style={{ touchAction: 'pan-y' }}>
             {prRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((r) => (
               <button
                 key={r.rank}
                 className={`rank-row ${currentName && r.name === currentName ? 'mine' : ''}`}
-                onClick={() => r.id && onProfile(r.id)}
+                onClick={() => { if (swipe.consumeDrag()) return; if (r.id) onProfile(r.id) }}
               >
                 <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>{r.rank}</span>
                 <span className="rank-name">
@@ -967,12 +974,12 @@ export function RankingPanel({
         <div className="home-panel-empty">{t('lb.empty')}</div>
       ) : (
         <>
-        <div className="rank-list">
+        <div className="rank-list" {...swipe.handlers} style={{ touchAction: 'pan-y' }}>
           {rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((r) => (
             <button
               key={r.rank}
               className={`rank-row ${currentName && r.name === currentName ? 'mine' : ''}`}
-              onClick={() => r.id && onProfile(r.id)}
+              onClick={() => { if (swipe.consumeDrag()) return; if (r.id) onProfile(r.id) }}
             >
               <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>
                 {r.rank}
