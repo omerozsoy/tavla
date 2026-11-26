@@ -174,6 +174,16 @@ export default function MatReview({
     return cur.playedSteps ?? cur.steps ?? []
   })()
   const playedIdx = cur?.cands?.findIndex((c) => c.notation === cur.notation) ?? -1
+  // Küp kararı satırının (listede) küp değeri = o oyundaki önceki 'take'ler ×2, sonra ×2 (karar/teklif
+  // edilen değer). İlk küp kararı -> 2. Zar yerine turuncu küp olarak gösterilir.
+  const cubeVal = (idx: number): number => {
+    const g = log[idx]?.game
+    let v = 1
+    for (let j = 0; j < idx; j++) {
+      if (log[j].game === g && log[j].cube?.chosen === 'take') v *= 2
+    }
+    return v * 2
+  }
 
   function select(i: number) {
     setSel(i)
@@ -388,7 +398,12 @@ export default function MatReview({
                   >
                     <span className={`mrv-dot ${b}`} />
                     <span className="mrv-no">{i + 1}.</span>
-                    {e.dice && e.dice.length >= 2 && e.player ? (
+                    {e.cube ? (
+                      // Küp kararı: zar yok -> zar yerinde TURUNCU küp (karar/teklif değeri).
+                      <span className="mrv-dice">
+                        <span className="mrv-list-cube">{cubeVal(i)}</span>
+                      </span>
+                    ) : e.dice && e.dice.length >= 2 && e.player ? (
                       // Oyuncuya göre RENKLİ zar (beyaz oyuncu=açık, siyah oyuncu=koyu) ->
                       // benim hamlelerim ile rakibinki AYNI renk olmaz. Board'daki Die ile aynı.
                       <span className="mrv-dice">
