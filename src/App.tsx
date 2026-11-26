@@ -12278,8 +12278,8 @@ export default function App() {
             {/* Hemen Oyna: banner altında hızlı-başlat — HER YERDE (kullanıcı direktifi). Telefonda
                 2x2, web/tablet'te 4 yan yana (CSS .hqp-grid). Etiketler menü anahtarlarından (çok dilli). */}
             {(
-              <section className="home-quickplay" aria-label={t('home.startCta')}>
-                <h2 className="hqp-title">{t('home.startCta')}</h2>
+              <section className="home-quickplay home-panel swiss-panel" aria-label={t('home.startCta')}>
+                <h2 className="home-panel-head"><Icon name="dice" size={16} />{t('home.startCta')}</h2>
                 <div className="hqp-grid">
                   <button type="button" className="hqp-btn hqp-navy" onClick={menuProps.onSolo}>
                     <span className="hqp-wm" aria-hidden="true"><Icon name="dice" size={84} weight="fill" /></span>
