@@ -404,12 +404,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                   className={`mh-item ${m.won ? 'win' : 'loss'} ${open ? 'open' : ''}`}
                   style={{ ['--i']: i } as CSSProperties}
                 >
-                  <button
-                    type="button"
-                    className="mh-row"
-                    onClick={() => setOpenIdx(open ? null : i)}
-                    aria-expanded={open}
-                  >
+                  <div className="mh-row">
                     {/* Skorbord: rakip | skor | ben — en onemli bilgi hemen gorunur */}
                     <div className="mh-board">
                       {/* Rakip (sol) */}
@@ -498,11 +493,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                         {m.won ? t('mh.win') : t('mh.loss')}
                       </span>
                       <span className="mh-date">{fmtDate(m.created_at, lang)}</span>
-                      <Icon name="chevron" size={16} className={`mh-chev mh-chev-end ${open ? 'chev-open' : ''}`} />
                     </div>
-                  </button>
-                  {open && (
-                    <div className="mh-detail">
+                  </div>
+                  <div className="mh-detail">
                       <div className="mh-stat">
                         <span className="mh-stat-k">{t('mh.dRating')}</span>
                         <span className="mh-stat-v">
@@ -542,7 +535,6 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                         <div className="mh-no-analysis">{t('mh.noAnalysis')}</div>
                       )}
                     </div>
-                  )}
                 </div>
               )
             })}

@@ -1895,7 +1895,6 @@ button[aria-disabled='true'],
   background: none;
   border: none;
   color: inherit;
-  cursor: pointer;
   text-align: left;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1916,7 +1915,6 @@ button[aria-disabled='true'],
   background: none;
   border: none;
   color: inherit;
-  cursor: pointer;
   text-align: left;
 }
 .mh-row .chev-open {
@@ -1955,6 +1953,7 @@ button[aria-disabled='true'],
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
 }
