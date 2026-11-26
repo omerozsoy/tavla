@@ -14357,6 +14357,23 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 9px 30px;
   font-weight: 500;
 }
+/* ============================================================================
+   MOBİL "MİNİ" ANA SAYFA TURNUVA PANELİ — ≤640px (telefon)
+   Ev panelindeki dev geri sayım (2.4rem) + 16px padding + 8px gap kartı
+   büyütüyordu (~235px). Telefonda geri sayım/padding/gap küçülür → kart ~175px.
+   Yalnız ana sayfa .swiss-panel.tourn-panel (liste sayfası AYRI bileşen, o da mini).
+   ========================================================================== */
+@media (max-width: 640px) {
+  .swiss-panel.tourn-panel .tourn-row { padding: 12px 14px; gap: 6px; }
+  /* Dev geri sayım -> prominent ama baskın değil */
+  .swiss-panel.tourn-panel .tr-cd { font-size: 1.7rem; }
+  .swiss-panel.tourn-panel .tr-cd.starting { font-size: 1rem; }
+  .swiss-panel.tourn-panel .tr-clock { gap: 2px; margin-bottom: 0; }
+  .swiss-panel.tourn-panel .tr-name { font-size: 0.95rem; }
+  .swiss-panel.tourn-panel .tr-stats { font-size: 0.64rem; }
+  .swiss-panel.tourn-panel .tr-foot { margin-top: 8px; padding-top: 8px; }
+  .swiss-panel.tourn-panel .tr-act { padding: 7px 20px; }
+}
 .swiss-panel.tourn-panel .tr-act-arrow { flex: none; }
 
 /* --- Canlı Maçlar'a ÖZEL Swiss (ortak .swiss-panel'e ek). Satır = p1│skor│p2 kartı. --- */
