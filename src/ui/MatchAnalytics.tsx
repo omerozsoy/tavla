@@ -277,6 +277,18 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
 
   // Profilden bir mac id'siyle gelindiyse: o maci bul, genislet, ortala. Ilk sayfada yoksa
   // (eski mac) bulana kadar "Daha fazla" ile sayfalari otomatik cek.
+  // Rapor/özet açılınca liste kaydırma konumunda kalma -> board'u göstermek için EN ÜSTE dön.
+  // İki düzen: page-host'ta (app/mobil ana sayfa) WINDOW kayar (position:static), masaüstünde
+  // .register-overlay.page KONTEYNERİ kayar (position:fixed). İkisini de sıfırla.
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!report) return
+    requestAnimationFrame(() => {
+      rootRef.current?.scrollTo?.({ top: 0 })
+      try { window.scrollTo({ top: 0 }) } catch { /* no-op */ }
+    })
+  }, [report, view])
+
   const didAutoOpen = useRef(false)
   useEffect(() => {
     if (initialMatchId == null || didAutoOpen.current) return
@@ -301,7 +313,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   }, [rows, hasMore, loading, loadingMore, initialMatchId])
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+    <div ref={rootRef} className="register-overlay modal page" role="dialog" aria-modal="true">
       {/* Detay (Hamle Analizi) açıkken Maç Analizleri LİSTESİNİ tamamen gizle -> yalnız analiz kalsın.
           inline display:none kesin (hidden attribute'u .register-overlay.page flex kuralı eziyordu). */}
       <div className="register-card mh-card" style={report != null && view === 'report' ? { display: 'none' } : undefined}>
