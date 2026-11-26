@@ -474,8 +474,8 @@ export function OnlinePlayersPanel({
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
-  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (mobilde/uygulamada 5)
-  const PAGE_SIZE = MOBILE_UI ? 5 : 10
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (mobil dahil, kullanıcı direktifi)
+  const PAGE_SIZE = 10
   const MAX_PAGES = 10 // en fazla 100 kisi
   // Çevrimiçi / Arkadaşlar sekmesi: Arkadaşlar sekmesi online listeyi arkadaş id'leriyle FİLTRELER
   // (backend değişmez; offline arkadaşlar zaten online listesinde gelmez -> online arkadaş = kesişim).
