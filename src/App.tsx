@@ -12002,6 +12002,8 @@ export default function App() {
           { key: 'turnuvalar', label: 'Turnuvalar', icon: 'trophy', onClick: menuProps.onTournaments },
           { key: 'magaza', label: 'Mağaza', icon: 'shop', onClick: menuProps.onShop },
           { key: 'profil', label: 'Profil', icon: 'user', onClick: menuProps.onMyStats },
+          // Sağ üstteki hamburger menü alt çubuğun EN SAĞINDA da (kullanıcı direktifi) -> yan menüyü açar.
+          { key: 'menu', label: 'Menü', icon: 'menu', onClick: () => setMenuOpen(true) },
         ]}
       />
     ) : null
