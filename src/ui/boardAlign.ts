@@ -99,18 +99,19 @@ function bestCol(g: Gray, xc: number, band: number, y0: number, y1: number): num
 
 /**
  * barVertical: bar cizgisi cercevede DIKEY mi (yatay ekran) yoksa YATAY mi (dik ekran, tahta donuk).
- * Kenar bantlari: cerceve boyutunun %7'si (kullanici tam cizgiye degil, yakinina oturtur).
+ * Kenar bantlari: cerceve boyutunun %10'u (kullanici tam cizgiye degil, yakinina oturtur; saha: %7
+ * dar geldi, hizalamak uzun suruyordu).
  * Kenar boyunca uclarin %12'si atlanir (koseler/menteseler gurultusu).
  */
 export function measureAlign(g: Gray, r: Rect, barVertical: boolean): Align {
-  const band = Math.max(2, 0.07 * Math.min(r.w, r.h))
+  const band = Math.max(2, 0.1 * Math.min(r.w, r.h))
   const mx = r.w * 0.12
   const my = r.h * 0.12
   const top = bestRow(g, r.y, band, r.x + mx, r.x + r.w - mx)
   const bottom = bestRow(g, r.y + r.h, band, r.x + mx, r.x + r.w - mx)
   const left = bestCol(g, r.x, band, r.y + my, r.y + r.h - my)
   const right = bestCol(g, r.x + r.w, band, r.y + my, r.y + r.h - my)
-  const bband = Math.max(2, 0.06 * (barVertical ? r.w : r.h))
+  const bband = Math.max(2, 0.08 * (barVertical ? r.w : r.h))
   const bar = barVertical
     ? bestCol(g, r.x + r.w / 2, bband, r.y + my, r.y + r.h - my)
     : bestRow(g, r.y + r.h / 2, bband, r.x + mx, r.x + r.w - mx)

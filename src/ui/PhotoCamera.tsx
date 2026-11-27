@@ -21,9 +21,13 @@ import { toGray, measureAlign, frameDiff, type Gray } from './boardAlign'
  * (telefon sabit mi). ~1sn kesintisiz hizali+sabit -> cek. Deklansor her zaman yedek.
  */
 const BOARD_ASPECT = 1.3 // acik tavla tahtasi ~ genislik/yukseklik (olcum: 1080x850 ~ 1.27)
-const SAMPLE_MS = 200
-const STREAK_N = 5 // ~1sn hizali + sabit
-const STABLE_DIFF = 7 // ardisik ornek ortalama mutlak fark (0..255); el titremesi ~2-5
+// Saha geri bildirimi (2026-11-27): 1sn + diff<7 cok gec tetikliyordu (yuksege kaldirilan telefonda el
+// titremesi esigi surekli asiyor) -> ~0.45sn + daha toleransli sabitlik.
+const SAMPLE_MS = 150
+const STREAK_N = 3 // ~0.45sn hizali + sabit
+const STABLE_DIFF = 12 // ardisik ornek ortalama mutlak fark (0..255)
+// Cerceve, GORUNEN video alaninin bu orani (kenarda ~%5 bosluk: seg koseyi goruntu kenarinda bulmasin)
+const FILL = 0.9
 const SAMPLE_LONG = 160 // ornek goruntunun uzun kenari (px)
 const AUTO_KEY = 'photoAutoShot'
 
@@ -41,6 +45,7 @@ export default function PhotoCamera({
   const boxRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
   const [box, setBox] = useState({ w: 0, h: 0 })
+  const [vd, setVd] = useState({ w: 0, h: 0 }) // video akisinin gercek boyutu
   const [auto, setAuto] = useState(() => {
     try {
       return localStorage.getItem(AUTO_KEY) !== '0'
@@ -63,7 +68,14 @@ export default function PhotoCamera({
     }
     md.getUserMedia({
       audio: false,
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      // 4:3 = telefon sensorunun dogal orani. 16:9 sensoru kirpar (~%25 gorus alani kaybi) ->
+      // kullanici telefonu cok yuksege kaldirmak zorunda kaliyordu. Tahta orani ~1.3 ~ 4:3.
+      video: {
+        facingMode: { ideal: 'environment' },
+        aspectRatio: { ideal: 4 / 3 },
+        width: { ideal: 1920 },
+        height: { ideal: 1440 },
+      },
     })
       .then((s) => {
         if (cancelled) {
@@ -98,20 +110,26 @@ export default function PhotoCamera({
   }, [])
 
   const portrait = box.h > box.w
-  // Cerceve: dik ekranda tahta 90 derece donuk (uzun kenar dikey). Kenarlarda bosluk birak.
+  // Video KIRPILMADAN gosterilir (object-fit: contain): kullanici kameranin gordugu karenin TAMAMINI
+  // gorur, cerceve bu alana gore cizilir. (cover ekrani doldurmak icin kareyi kirpiyordu -> cerceve
+  // kameranin ~%66'si kaliyor, telefon gereksiz yuksege kaldiriliyordu.)
+  const dsc = vd.w && box.w ? Math.min(box.w / vd.w, box.h / vd.h) : 1
+  const dw = vd.w && box.w ? vd.w * dsc : box.w
+  const dh = vd.w && box.w ? vd.h * dsc : box.h
+  // Cerceve: dik ekranda tahta 90 derece donuk (uzun kenar dikey).
   let fw: number, fh: number
   if (portrait) {
-    fw = box.w * 0.8
+    fw = dw * FILL
     fh = fw * BOARD_ASPECT
-    if (fh > box.h * 0.72) {
-      fh = box.h * 0.72
+    if (fh > dh * FILL) {
+      fh = dh * FILL
       fw = fh / BOARD_ASPECT
     }
   } else {
-    fh = box.h * 0.72
+    fh = dh * FILL
     fw = fh * BOARD_ASPECT
-    if (fw > box.w * 0.8) {
-      fw = box.w * 0.8
+    if (fw > dw * FILL) {
+      fw = dw * FILL
       fh = fw / BOARD_ASPECT
     }
   }
@@ -138,8 +156,8 @@ export default function PhotoCamera({
       if (!v || !v.videoWidth || !gm.bw || shotRef.current) return
       const vw = v.videoWidth
       const vh = v.videoHeight
-      // ekran (object-fit: cover) -> video pikseli
-      const sc = Math.max(gm.bw / vw, gm.bh / vh)
+      // ekran (object-fit: contain) -> video pikseli
+      const sc = Math.min(gm.bw / vw, gm.bh / vh)
       const ox = (gm.bw - vw * sc) / 2
       const oy = (gm.bh - vh * sc) / 2
       const k = SAMPLE_LONG / Math.max(vw, vh)
@@ -219,7 +237,11 @@ export default function PhotoCamera({
         playsInline
         muted
         autoPlay
-        onLoadedMetadata={() => setReady(true)}
+        onLoadedMetadata={(e) => {
+          setVd({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })
+          setReady(true)
+        }}
+        onResize={(e) => setVd({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
       />
       {box.w > 0 && (
         <svg className="photo-cam-guide" width={box.w} height={box.h} aria-hidden="true">
@@ -291,7 +313,7 @@ export default function PhotoCamera({
             <Icon name="refresh" size={16} /> {t('photo.camRotate')}
           </div>
           {/* telefon yatirilinca okunacak yonde (90 derece saat yonu) ipucu */}
-          <div className="photo-cam-tip photo-cam-tip-side" style={{ left: fx + fw + fx / 2 }}>
+          <div className="photo-cam-tip photo-cam-tip-side" style={{ left: box.w - 24 }}>
             {aligned && auto ? t('photo.camHold') : t('photo.camGuide')}
           </div>
         </>
