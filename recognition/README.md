@@ -44,7 +44,9 @@ Foto upload → kuyruk → tanıma → gnubg zinciri `backend/`'de bağlı:
 1. `php artisan migrate --force` (photo_analyses tablosu — deploy.sh zaten çalıştırır)
 2. backend `.env`: `RECOG_URL=http://127.0.0.1:8120` + `RECOG_SECRET=<servis ile AYNI>`
 3. **`photo` kuyruğu worker'ı** (Forge Daemon; CLAUDE.md: her kuyruk ayrı worker, starvation):
-   `php artisan queue:work database --queue=photo --sleep=3 --tries=3 --timeout=120 --max-time=3600`
+   `php artisan queue:work --queue=photo --sleep=2 --tries=3 --timeout=120 --max-time=3600`
+   (bağlantı BELİRTME → varsayılan kullanılır; üretimde QUEUE_CONNECTION=**redis**. `queue:work
+   database` YAZMA — dispatch varsayılana gider, database worker redis kuyruğunu görmez → işlenmez.)
    (Forge panel > Daemons; User=tavla, Directory=.../current/backend). Worker yoksa işler kuyrukta bekler.
 
 ## ⚠ Açık uçlar (Faz 2 kalan)
