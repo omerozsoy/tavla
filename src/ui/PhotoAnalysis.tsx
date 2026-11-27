@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { uploadPhotoAnalysis, getPhotoAnalysis, type PhotoAnalysisResult } from '../api'
+import PhotoCamera from './PhotoCamera'
 import './PhotoAnalysis.css'
 
 // Taninan konumu (points[24], beyaz +, siyah -) hafif SVG tahtaya cizer — kullanici tanimanin
@@ -56,12 +57,17 @@ function PositionBoard({ points }: { points: number[] }) {
 /**
  * Fotograftan Pozisyon Analizi: kullanici tahta fotografi ceker/secer -> sunucu tanima (foto->
  * yapisal konum) + gnubg -> en iyi hamle. Tanima tahtayi OTOMATIK bulup duzeltir (manuel kose YOK).
- * Web+mobil tek kod: <input capture="environment"> webview'de kamerayi, masaustunde dosya secici acar.
+ * Cekim: KILAVUZ CERCEVELI uygulama-ici kamera (PhotoCamera; tahta yatay + kenarda bosluk + bar orta
+ * cizgide). getUserMedia yok/izin reddi -> eski yol: <input capture="environment"> (telefonun kamerasi).
+ * Galeriden secim ayrica (capture'siz input).
  */
 export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () => void; titleOverride?: string }) {
   const { t } = useT()
   const notify = useToast()
-  const fileRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null) // galeri (capture yok)
+  const captureRef = useRef<HTMLInputElement>(null) // kamera fallback (uygulama-ici kamera acilamazsa)
+  const [camOpen, setCamOpen] = useState(false)
+  const [camFailed, setCamFailed] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState('')
   const [busy, setBusy] = useState(false)
@@ -71,6 +77,11 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     setFile(f)
     setResult(null)
     setPreview(URL.createObjectURL(f))
+  }
+
+  function openCamera() {
+    if (camFailed) captureRef.current?.click()
+    else setCamOpen(true)
   }
 
   // Telefon fotograflari buyuk (10MB+) + EXIF donuk olabilir -> upload once kucult + EXIF duzelt.
@@ -131,29 +142,65 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           ref={fileRef}
           type="file"
           accept="image/*"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) pick(f)
+            e.target.value = ''
+          }}
+        />
+        <input
+          ref={captureRef}
+          type="file"
+          accept="image/*"
           capture="environment"
           hidden
           onChange={(e) => {
             const f = e.target.files?.[0]
             if (f) pick(f)
+            e.target.value = ''
           }}
         />
         {preview ? (
           // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-          <img src={preview} className="photo-preview" alt="" onClick={() => fileRef.current?.click()} />
+          <img src={preview} className="photo-preview" alt="" onClick={openCamera} />
         ) : (
-          <button className="photo-drop" onClick={() => fileRef.current?.click()} type="button">
+          <button className="photo-drop" onClick={openCamera} type="button">
             <Icon name="camera" size={40} />
             <div className="photo-drop-title">{t('photo.pick')}</div>
             <div className="photo-drop-hint">{t('photo.pickHint')}</div>
           </button>
         )}
 
+        <div className="photo-pick-row">
+          <Button variant="outline" onClick={openCamera} type="button">
+            <Icon name="camera" size={16} /> {preview ? t('photo.retake') : t('photo.camOpen')}
+          </Button>
+          <Button variant="outline" onClick={() => fileRef.current?.click()} type="button">
+            {t('photo.gallery')}
+          </Button>
+        </div>
+
         <Button className="photo-analyze-btn" onClick={analyze} disabled={busy || !file}>
           {busy ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="search" size={16} />}
           {busy ? t('photo.analyzing') : t('photo.analyze')}
         </Button>
       </div>
+
+      {camOpen && (
+        <PhotoCamera
+          onClose={() => setCamOpen(false)}
+          onCapture={(f) => {
+            setCamOpen(false)
+            pick(f)
+          }}
+          onError={() => {
+            setCamOpen(false)
+            setCamFailed(true)
+            notify.error(t('photo.camErr'))
+          }}
+        />
+      )}
 
       {result && (
         <div className="photo-result">

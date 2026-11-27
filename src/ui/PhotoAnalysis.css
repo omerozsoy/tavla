@@ -81,6 +81,105 @@
   cursor: pointer;
   background: #000;
 }
+.photo-pick-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.photo-pick-row button {
+  gap: 8px;
+}
+
+/* Kilavuz cerceveli kamera (tam ekran) */
+.photo-cam {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #000;
+  overflow: hidden;
+  color: #fff;
+}
+.photo-cam-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-cam-guide {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.photo-cam-x {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+}
+.photo-cam-tip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.photo-cam-tip-top {
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 80px);
+  white-space: normal;
+  text-align: center;
+}
+/* Telefon SOLA yatirilinca dogru okunur (saat yonu 90) */
+.photo-cam-tip-side {
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.photo-cam-shutter {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+.photo-cam-shutter:active {
+  background: rgba(255, 255, 255, 0.8);
+}
+.photo-cam-shutter:disabled {
+  opacity: 0.4;
+}
+@media (orientation: landscape) {
+  .photo-cam-shutter {
+    left: auto;
+    right: calc(env(safe-area-inset-right, 0px) + 22px);
+    bottom: 50%;
+    transform: translateY(50%);
+  }
+}
+
 .photo-analyze-btn {
   min-width: 190px;
   gap: 8px;

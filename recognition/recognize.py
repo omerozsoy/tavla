@@ -51,8 +51,55 @@ def _run(name, bgr, in_hw, stretch=False):
     return outs, r, (px, py)
 
 
-def _warp(bgr):
-    """Board_v1 seg -> en guvenli tahta -> perspektif warp (Wd x Hd). STRETCH preprocessing sart."""
+def _quad_corners(cnt):
+    """Seg konturunun GERCEK 4 kosesi (perspektif/yamukluk icin). minAreaRect donuk DIKDORTGEN verir:
+    acili cekimde uzak (ust) sira sikisik kalir -> hane numaralari kayar. Konveks govdeyi 4 kose
+    kalana kadar sadelestir; makul degilse None (cagiran minAreaRect'e duser)."""
+    hull = cv2.convexHull(cnt)
+    peri = cv2.arcLength(hull, True)
+    for eps in (0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.07):
+        ap = cv2.approxPolyDP(hull, eps * peri, True)
+        if len(ap) == 4:
+            q = ap.reshape(4, 2).astype(np.float32)
+            # kenarin buyuk kismini kapsamali (yanlis kose -> tahtanin bir parcasini kesmesin)
+            if cv2.isContourConvex(ap) and cv2.contourArea(q) >= 0.9 * cv2.contourArea(hull):
+                return q
+            return None
+        if len(ap) < 4:
+            return None
+    return None
+
+
+def _order(src):
+    s_ = src.sum(1); d_ = np.diff(src, 1).ravel()
+    return np.array([src[np.argmin(s_)], src[np.argmin(d_)], src[np.argmax(s_)], src[np.argmax(d_)]], np.float32)
+
+
+def _board_quads(bgr):
+    """Board_v1 seg -> aday kose dortluleri [tl,tr,br,bl]: (gercek-4-kose [perspektif], donuk-dikdortgen).
+    Gercek kose acili cekimi duzeltir ama kadrajdan tasan tahtada yanlis kose bulabilir; dikdortgen tersi.
+    Hangisinin iyi oldugunu izgara uyumu belirler (recognize)."""
+    H, W = bgr.shape[:2]
+    outs, _, _ = _run("Board_v1.tflite", bgr, (640, 640), stretch=True)
+    det, protos = outs[0][0], outs[1][0]       # [37,8400], [160,160,32]
+    a = int(det[4].argmax()); conf = float(det[4, a])
+    m = (1 / (1 + np.exp(-(protos.reshape(-1, 32) @ det[5:37, a])))).reshape(160, 160)
+    binm = (cv2.resize(m, (W, H)) > 0.5).astype(np.uint8) * 255
+    cnts, _ = cv2.findContours(binm, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not cnts:
+        return [], conf
+    cnt = max(cnts, key=cv2.contourArea)
+    quads = []
+    poly = _quad_corners(cnt)
+    if poly is not None:
+        quads.append(("poly", _order(poly)))
+    quads.append(("rect", _order(cv2.boxPoints(cv2.minAreaRect(cnt)).astype(np.float32))))
+    return quads, conf
+
+
+def _board_quad(bgr):
+    """Board_v1 seg -> en guvenli tahtanin kose dortlusu [tl,tr,br,bl] (goruntu yonunde). STRETCH sart.
+    (Geriye-uyum: diag script'leri. recognize() _board_quads kullanir.)"""
     H, W = bgr.shape[:2]
     outs, _, _ = _run("Board_v1.tflite", bgr, (640, 640), stretch=True)
     det, protos = outs[0][0], outs[1][0]       # [37,8400], [160,160,32]
@@ -62,12 +109,21 @@ def _warp(bgr):
     cnts, _ = cv2.findContours(binm, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not cnts:
         return None, conf
-    rect = cv2.minAreaRect(max(cnts, key=cv2.contourArea))
-    src = cv2.boxPoints(rect).astype(np.float32)
-    s_ = src.sum(1); d_ = np.diff(src, 1).ravel()
-    ordered = np.array([src[np.argmin(s_)], src[np.argmin(d_)], src[np.argmax(s_)], src[np.argmax(d_)]], np.float32)
-    Mw = cv2.getPerspectiveTransform(ordered, np.array([[0, 0], [Wd, 0], [Wd, Hd], [0, Hd]], np.float32))
-    return cv2.warpPerspective(bgr, Mw, (Wd, Hd)), conf
+    return _order(cv2.boxPoints(cv2.minAreaRect(max(cnts, key=cv2.contourArea))).astype(np.float32)), conf
+
+
+def _warp_quad(bgr, quad, rot=False):
+    """quad -> Wd x Hd warp. rot=True: tahta 90 derece donuk cekilmis (bar YATAY) -> goruntunun sol
+    kenari warp'in ustu olur (saat yonu). 180 derece belirsizligi ayri (flip/konvansiyon acik ucu)."""
+    q = np.roll(quad, 1, axis=0) if rot else quad
+    Mw = cv2.getPerspectiveTransform(q, np.array([[0, 0], [Wd, 0], [Wd, Hd], [0, Hd]], np.float32))
+    return cv2.warpPerspective(bgr, Mw, (Wd, Hd))
+
+
+def _warp(bgr, rot=False):
+    """Geriye-uyum (diag script'leri): seg + warp tek adim."""
+    quad, conf = _board_quad(bgr)
+    return (None, conf) if quad is None else (_warp_quad(bgr, quad, rot), conf)
 
 
 def _detect_checkerdice(warp):
@@ -144,6 +200,48 @@ def _number(row, x, barcenter, bar_half, spacing):
     return (19 + j) if row == "T" else (6 - j)
 
 
+def _fit_lattice(pts):
+    """Hane izgarasini TUM kumelere birlikte uydur: (barcenter, spacing, bar_half=k*spacing).
+    Eski yontem (dolu haneler arasi en buyuk bosluk ortasi) bara bitisik haneler bossa bari kaydiriyor,
+    bir yari tumuyle 1 hane kayip uc gruplar ayni haneye clamp'leniyor, zit renkler birbirini SILIYORDU
+    (placed 30->26). Burada: her kume en yakin hane yuvasina; maliyet = piksel kalinti^2 + 0..5 disi
+    tasma + ayni-yuva carpismasi cezasi + zayif oncel (bar ~ ortada, k ~ 1.07).
+    -> (slot listesi [(row, side, j)], barcenter, spacing, k, fit_rms) ; side: 'L'/'R', j: bardan uzaklik 0..5."""
+    if not pts:
+        return [], Wd / 2, 66.0, 1.0, 9.0
+    x = np.array([p["x"] for p in pts], np.float32)
+    row = np.array([0 if p["row"] == "T" else 1 for p in pts])
+    BC = np.arange(0.2 * Wd, 0.8 * Wd + 1, 2, dtype=np.float32)[:, None, None, None]
+    S = np.arange(45, 121, 1, dtype=np.float32)[None, :, None, None]
+    K = np.arange(0.9, 1.41, 0.05, dtype=np.float32)[None, None, :, None]
+    left = x[None, None, None, :] < BC
+    u = np.where(left, (BC - K * S - x) / S, (x - BC - K * S) / S)
+    jc = np.clip(np.rint(u), 0, 5)
+    cost = (((u - jc) * S) ** 2).sum(-1)
+    # carpisma: ayni satir + ayni yari + ayni j'de iki kume = imkansiz (zit renk silinir / sayi bozulur)
+    slot = row * 12 + np.where(left, 0, 6) + jc
+    ss = np.sort(slot, axis=-1)
+    cost = cost + (ss[..., 1:] == ss[..., :-1]).sum(-1) * 4 * 35.0 ** 2
+    cost = cost + 0.002 * (BC[..., 0] - Wd / 2) ** 2 + 200 * (K[..., 0] - 1.07) ** 2
+    i = np.unravel_index(int(np.argmin(cost)), cost.shape)
+    bc, s, k = float(BC[i[0], 0, 0, 0]), float(S[0, i[1], 0, 0]), float(K[0, 0, i[2], 0])
+    fit = float(np.sqrt(((u - jc) ** 2)[i].mean()))   # RMS kalinti (hane biriminde): warp kalitesi olcusu
+    slots = []
+    for p in pts:
+        if p["x"] < bc:
+            slots.append((p["row"], "L", int(np.clip(round((bc - k * s - p["x"]) / s), 0, 5))))
+        else:
+            slots.append((p["row"], "R", int(np.clip(round((p["x"] - bc - k * s) / s), 0, 5))))
+    return slots, bc, s, k, fit
+
+
+def _slot_number(row, side, j):
+    """Standart numaralama (_number ile ayni): ust-sol 18..13, ust-sag 19..24, alt-sol 7..12, alt-sag 6..1."""
+    if side == "L":
+        return (18 - j) if row == "T" else (7 + j)
+    return (19 + j) if row == "T" else (6 - j)
+
+
 def _classify(name, warp, box, pad=0.15):
     x1, y1, x2, y2 = box; w, h = x2 - x1, y2 - y1
     cx1 = int(max(0, x1 - w * pad)); cy1 = int(max(0, y1 - h * pad))
@@ -156,57 +254,69 @@ def _classify(name, warp, box, pad=0.15):
     return int(out.argmax()), float(out.max())
 
 
+def _recognize_warp(warp, board_conf, flip):
+    checkers, dice = _detect_checkerdice(warp)
+    cols = _colors([_feat(warp, b) for b in checkers])
+    items = [((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, cols[i], b) for i, b in enumerate(checkers)]
+    pts = _cluster(items)
+    slots, barcenter, spacing, k, fit = _fit_lattice(pts)
+
+    points = [0] * 24
+    for p, sl in zip(pts, slots):
+        n = _slot_number(*sl)
+        if flip:
+            n = 25 - n
+        points[n - 1] += (1 if p["color"] == WHITE_COLOR else -1) * p["count"]
+
+    white = sum(v for v in points if v > 0); black = -sum(v for v in points if v < 0)
+    placed = sum(abs(v) for v in points)
+    mixed = sum(1 for p in pts if p["mixed"])
+    collisions = len(slots) - len(set(slots))
+    # oz-denetim degismezleri (gnubg'ye coP gondermemek icin trust-boundary guard'i):
+    #   board_conf>=0.5 (gercek tahta; 0.98 iyi vs 0.16/0.001 kadraj-disi), placed==checkers
+    #   (hic iptal/cakisma yok), renk<=15, karisik-hane=0, tas 10..30 (bos/sahte degil)
+    valid = (board_conf >= 0.5 and placed == len(checkers) and collisions == 0
+             and 10 <= len(checkers) <= 30 and white <= 15 and black <= 15 and mixed == 0)
+    return {
+        "points": points, "dice_boxes": dice,
+        "debug": {
+            "board_conf": round(board_conf, 3),
+            "checkers": len(checkers), "placed": placed, "white": white, "black": black,
+            "mixed_points": mixed, "collisions": collisions, "dice_detected": len(dice),
+            "barcenter": round(barcenter), "spacing": round(spacing, 1), "bar_k": round(k, 2),
+            "fit": round(fit, 3), "valid": valid,
+        },
+    }
+
+
 def recognize(bgr, flip=False):
     with _LOCK:
-        warp, board_conf = _warp(bgr)
-        if warp is None:
+        quads, board_conf = _board_quads(bgr)
+        if not quads:
             return {"ok": False, "error": "board_not_found", "board_conf": board_conf}
-        checkers, dice = _detect_checkerdice(warp)
-        cols = _colors([_feat(warp, b) for b in checkers])
-        items = [((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, cols[i], b) for i, b in enumerate(checkers)]
-        pts = _cluster(items)
-
-        # SPACING: SATIR-ICI ardisik farklardan (ust+alt karistirmak spacing'i bozar -> clamp cakismasi).
-        row_diffs = []
-        for rw in ("T", "B"):
-            rx = sorted(p["x"] for p in pts if p["row"] == rw)
-            row_diffs += [b - a for a, b in zip(rx, rx[1:]) if 45 < b - a < 95]
-        spacing = float(np.median(row_diffs)) if row_diffs else 66.0
-        # BAR: merkeze yakin GERCEK bosluk (>1.4x spacing); sahte/yok ise Wd/2 (warp tahtayi ortalar).
-        xs = sorted(p["x"] for p in pts)
-        cand = [(b - a, (a + b) / 2) for a, b in zip(xs, xs[1:])
-                if b - a > 1.4 * spacing and 0.33 * Wd < (a + b) / 2 < 0.67 * Wd]
-        barcenter = max(cand)[1] if cand else Wd / 2
-        bar_half = spacing
-
-        points = [0] * 24
-        for p in pts:
-            n = _number(p["row"], p["x"], barcenter, bar_half, spacing)
-            if flip:
-                n = 25 - n
-            points[n - 1] += (1 if p["color"] == WHITE_COLOR else -1) * p["count"]
+        # Aday warp'lar: (gercek-kose | dikdortgen) x (normal | 90 derece donuk). Gecerliler icinden
+        # izgaraya EN IYI oturan (en dusuk RMS kalinti) secilir: yanlis warp hane izgarasina oturmaz.
+        # Donuk deneme yalniz normal yonde hic gecerli yoksa (yatay cekim = normal yol, ek maliyet yok).
+        cands = []
+        for rot in (False, True):
+            for kind, q in quads:
+                w = _warp_quad(bgr, q, rot)
+                r = _recognize_warp(w, board_conf, flip)
+                r["debug"]["rotated"] = rot; r["debug"]["warp"] = kind
+                cands.append((r, w))
+            if any(r["debug"]["valid"] for r, _ in cands):
+                break
+        good = [c for c in cands if c[0]["debug"]["valid"]]
+        res, warp = min(good, key=lambda c: c[0]["debug"]["fit"]) if good else cands[0]
 
         faces = []
-        for b in dice:
+        for b in res["dice_boxes"]:
             f, c = _classify("DieClassify_v2.tflite", warp, b)
             if f is not None and c >= 0.6:
                 faces.append(f + 1)
-
-        white = sum(v for v in points if v > 0); black = -sum(v for v in points if v < 0)
-        placed = sum(abs(v) for v in points)
-        mixed = sum(1 for p in pts if p["mixed"])
-        # oz-denetim degismezleri (gnubg'ye coP gondermemek icin trust-boundary guard'i):
-        #   board_conf>=0.5 (gercek tahta; 0.98 iyi vs 0.16/0.001 kadraj-disi), placed==checkers
-        #   (hic iptal/cakisma yok), renk<=15, karisik-hane=0, tas 10..30 (bos/sahte degil)
-        valid = (board_conf >= 0.5 and placed == len(checkers)
-                 and 10 <= len(checkers) <= 30 and white <= 15 and black <= 15 and mixed == 0)
         return {
             "ok": True,
-            "position": {"points": points, "bar": {"white": 0, "black": 0},
+            "position": {"points": res["points"], "bar": {"white": 0, "black": 0},
                          "turn": "white", "dice": faces, "cube": {"value": 1, "owner": None}},
-            "debug": {
-                "board_conf": round(board_conf, 3),
-                "checkers": len(checkers), "placed": placed, "white": white, "black": black,
-                "mixed_points": mixed, "dice_detected": len(dice), "valid": valid,
-            },
+            "debug": res["debug"],
         }
