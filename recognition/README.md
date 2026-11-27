@@ -19,8 +19,8 @@ foto → Board_v1 seg maske → perspektif warp (STRETCH) → CheckerDice tespit
 ## Yerel çalıştırma/test
 ```bash
 python -m venv .venv && .venv/bin/pip install ai-edge-litert opencv-python numpy
-RECOG_SECRET=test RECOG_PORT=8095 .venv/bin/python recognition/service.py
-curl -s -H "x-recog-secret: test" --data-binary @foto.jpeg http://127.0.0.1:8095/recognize
+RECOG_SECRET=test RECOG_PORT=8120 .venv/bin/python recognition/service.py
+curl -s -H "x-recog-secret: test" --data-binary @foto.jpeg http://127.0.0.1:8120/recognize
 ```
 
 ## Sunucu deploy (Forge — KULLANICI tetikler)
@@ -30,7 +30,7 @@ curl -s -H "x-recog-secret: test" --data-binary @foto.jpeg http://127.0.0.1:8095
    `/home/tavla/tavlatv.com/shared/recognition/tensor-models/` (scp/rsync).
 3. **Daemon:** Forge panel > Daemons (bkz `recognition.service` şablonu). `RECOG_SECRET`'i
    backend `.env`'teki `RECOG_SECRET` ile AYNI yap.
-4. **Doğrula:** `curl 127.0.0.1:8095/health` + bir test fotoğrafı POST.
+4. **Doğrula:** `curl 127.0.0.1:8120/health` + bir test fotoğrafı POST.
 
 ## Backend bağlama (Faz 3 — Laravel)
 Foto upload → kuyruk → tanıma → gnubg zinciri `backend/`'de bağlı:
@@ -42,7 +42,7 @@ Foto upload → kuyruk → tanıma → gnubg zinciri `backend/`'de bağlı:
 
 **Deploy (KULLANICI):**
 1. `php artisan migrate --force` (photo_analyses tablosu — deploy.sh zaten çalıştırır)
-2. backend `.env`: `RECOG_URL=http://127.0.0.1:8095` + `RECOG_SECRET=<servis ile AYNI>`
+2. backend `.env`: `RECOG_URL=http://127.0.0.1:8120` + `RECOG_SECRET=<servis ile AYNI>`
 3. **`photo` kuyruğu worker'ı** (Forge Daemon; CLAUDE.md: her kuyruk ayrı worker, starvation):
    `php artisan queue:work database --queue=photo --sleep=3 --tries=3 --timeout=120 --max-time=3600`
    (Forge panel > Daemons; User=tavla, Directory=.../current/backend). Worker yoksa işler kuyrukta bekler.

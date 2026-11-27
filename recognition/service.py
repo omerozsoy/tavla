@@ -2,8 +2,9 @@
 gnubg analizi AYRI (mevcut gnubg-service yapisal konumu alip hint doner).
 
 GUVENLIK: yalniz 127.0.0.1 + RECOG_SECRET basligi (backend disina kapali). ASLA halka acma.
-Calistirma: RECOG_PORT=8095 RECOG_SECRET=<uzun-rastgele> RECOG_MODELS_DIR=/path/tensor-models \
+Calistirma: RECOG_PORT=8120 RECOG_SECRET=<uzun-rastgele> RECOG_MODELS_DIR=/path/tensor-models \
             python recognition/service.py
+PORT NOTU: gnubg havuzu 8090-8109'u KULLANIR -> cakismamak icin 8120 varsayilan (serbest bolge).
 
 Uclar:
   GET  /health                 -> {"ok":true}            (secret'siz)
@@ -19,7 +20,7 @@ from http.server import HTTPServer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import recognize as R   # noqa: E402
 
-PORT = int(os.environ.get("RECOG_PORT", "8095"))
+PORT = int(os.environ.get("RECOG_PORT", "8120"))  # 8090-8109 gnubg havuzu -> 8120 serbest
 SECRET = os.environ.get("RECOG_SECRET", "")
 MAX_BYTES = 12 * 1024 * 1024   # 12MB foto ust siniri
 

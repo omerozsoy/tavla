@@ -7,7 +7,7 @@ StartLimitBurst=20
 [Service]
 Type=simple
 # RECOG_SECRET'i UZUN-RASTGELE bir degerle degistir (backend .env RECOG_SECRET ile AYNI olacak).
-Environment=RECOG_PORT=8095
+Environment=RECOG_PORT=8120
 Environment=RECOG_SECRET=CHANGE_ME_UZUN_RASTGELE
 # Modeller shared/ altinda (deploy'da silinmez) -> oraya yuklenmeli (gitignore, ~43MB).
 Environment=RECOG_MODELS_DIR=/home/tavla/tavlatv.com/shared/recognition/tensor-models

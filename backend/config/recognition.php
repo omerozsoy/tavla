@@ -4,7 +4,7 @@
 // yalniz-ic; RECOG_SECRET systemd/Forge-daemon unit ile AYNI olmali. Bkz recognition/README.md.
 // gnubg-service'ten AYRI: tanima yalniz foto->yapisal konum; gnubg analizi GnuBgClient ile.
 return [
-    'url' => env('RECOG_URL', 'http://127.0.0.1:8095'),
+    'url' => env('RECOG_URL', 'http://127.0.0.1:8120'),  // 8090-8109 gnubg havuzu -> 8120 serbest
     'secret' => env('RECOG_SECRET', ''),
     'timeout' => (int) env('RECOG_TIMEOUT', 30),  // tflite cikarim ~1-3sn + aktarim
 ];
