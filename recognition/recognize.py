@@ -13,6 +13,7 @@ import cv2
 from ai_edge_litert.interpreter import Interpreter
 import cube as _cube
 from params import PARAMS  # Faz 3: kalibre edilebilir geometri sabitleri (params.json varsa override)
+import orient_model as OM  # Faz 1: yonelim siniflandiricisi (orient_model.json varsa override, yoksa min-pip)
 
 MODELS = os.environ.get("RECOG_MODELS_DIR", "tensor-models")
 Wd, Hd = 1000, 800
@@ -288,7 +289,7 @@ def _recognize_warp(warp, board_conf, flip):
             "checkers": len(checkers), "placed": placed, "white": white, "black": black,
             "mixed_points": mixed, "collisions": collisions, "dice_detected": len(dice),
             "barcenter": round(barcenter), "spacing": round(spacing, 1), "bar_k": round(k, 2),
-            "fit": round(fit, 3), "valid": valid,
+            "fit": round(fit, 3), "valid": valid, "raw_points": list(points),  # yonelim ONCESI (acik=+); harness okur
         },
     }
 
@@ -357,7 +358,7 @@ def recognize(bgr, flip=False):
         else:
             cube_pos = {"value": 1, "owner": None}
 
-        points, photographer, margin = _orient_to_photographer(res["points"])
+        points, photographer, margin = _orient(res["points"])
         # SIRA (kullanici kurali): zar bar'in SAGINDA -> fotografi ceken atacak; SOLUNDA -> rakip.
         # Zar yok / esit -> fotografi ceken (en olasi: kendi hamlesini soruyor).
         turn = "black" if left > right else "white"
@@ -374,6 +375,16 @@ def recognize(bgr, flip=False):
                          "recognized": recognized},
             "debug": dbg,
         }
+
+
+def _orient(points):
+    """Fotografi cekenin rengini (acik/koyu) sec: orient_model.json VARSA siniflandirici, YOKSA min-pip
+    (_orient_to_photographer). Model yok -> base ile BIREBIR (yayinlanabilir). margin min-pip gostergesi kalir."""
+    base_pts, base_label, margin = _orient_to_photographer(points)
+    if OM.ORIENT_MODEL is None:
+        return base_pts, base_label, margin
+    label = OM.predict(OM.orient_features(points), OM.ORIENT_MODEL)
+    return ([-v for v in points] if label == "dark" else list(points)), label, margin
 
 
 def _orient_to_photographer(points):
