@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,18 @@ import {
   reportPhotoAnalysis,
   type PhotoAnalysisResult,
 } from '../api'
+import Board from './Board'
+import { MoveArrows } from './MatReview'
+import { pipCount } from '../engine/evaluate'
+import type { GameState, Player } from '../engine/types'
+import { moveToSteps } from './photoMoveSteps'
 import PhotoCamera from './PhotoCamera'
 import './PhotoAnalysis.css'
+
+// Temalı Board'u salt-görsel çizmek için (ArticleBoard ile aynı desen): etkileşim yok.
+const EMPTY_FROMS: Set<number | 'bar'> = new Set()
+const EMPTY_TARGETS: Set<number | 'off'> = new Set()
+const noop = () => {}
 
 // Taninan konumu (points[24], fotografi ceken +, rakip -) hafif SVG tahtaya cizer — kullanici tanimanin
 // dogrulugunu GORSEL dogrulasin (oyunun Board bileseni oyun-durumuna bagli; burada gerekmez).
@@ -239,6 +249,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<PhotoAnalysisResult | null>(null)
   const [reported, setReported] = useState(false) // bu sonuc icin "hatali tarama" bildirildi mi
+  const [selectedCand, setSelectedCand] = useState(0) // tahtada oku gosterilen aday (0 = en iyi)
   const [cubeBusy, setCubeBusy] = useState(false)
   const [match, setMatch] = useState<MatchSet>(loadMatch)
   // Kup DEGERI ve SKOR tahtadan OKUNAMIYOR (model yok) -> analiz varsayimla yapilir. Kullanici bunlari
@@ -399,6 +410,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   }
 
   const cands = result?.hint?.result?.hint?.slice(0, 3) ?? []
+  // Yeni sonuç/yeniden-analiz -> seçili adayı en iyiye (0) sıfırla.
+  useEffect(() => setSelectedCand(0), [result])
+  const sel = Math.min(selectedCand, Math.max(0, cands.length - 1))
   // Zar YOK (zar atilmadan once) -> gnubg hamle degil KUP KARARI doner. Eskiden bu "basarisiz"
   // gorunuyordu (yalniz hamle listesi bekleniyordu).
   const cube = cands.length === 0 ? result?.hint?.cube : undefined
@@ -514,25 +528,74 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   const [pm, po] = pips(result!.position!.points, result!.position!.bar)
                   const d = pm - po
                   const mineDark = result!.debug?.photographer === 'dark'
+                  // Hamle varsa (zar atılmış) -> kullanıcının DEFAULT temalı tahtası + hamle okları
+                  // (aynı hamle analizi gibi). Kup kararında (zar yok, ok yok) basit doğrulama SVG'si kalır.
+                  const hasMove = cands.length > 0
+                  // Temalı tahta fotoğrafı çekeni her zaman BEYAZ (alt) çizer -> pip nokta renkleri de ona göre.
+                  const youDark = hasMove ? false : mineDark
                   const tag = (who: string, n: number, dark: boolean) => (
                     <div className="photo-pip-tag">
                       <span className={`photo-pip-dot${dark ? ' dark' : ''}`} />
                       {who}: <b>{n}</b> {t('photo.pipUnit')}
                     </div>
                   )
+                  const turn: Player = result!.position!.turn === 'black' ? 'black' : 'white'
+                  const bstate: GameState = {
+                    points: result!.position!.points,
+                    bar: { white: result!.position!.bar?.white || 0, black: result!.position!.bar?.black || 0 },
+                    off: { white: 0, black: 0 },
+                    turn,
+                    dice: (result!.position!.dice ?? []).filter((x) => x >= 1 && x <= 6),
+                    diceUsed: [],
+                  }
+                  const steps = hasMove ? (cands[sel]?.steps ?? moveToSteps(turn, cands[sel]?.move)) : []
+                  const rawOwner = result!.position!.cube?.owner
+                  const bcube = {
+                    value: result!.position!.cube?.value ?? 1,
+                    owner: (rawOwner === 'white' || rawOwner === 'black' ? rawOwner : null) as Player | null,
+                  }
                   return (
                     <>
-                      {tag(t('photo.opp'), po, !mineDark)}
-                      <PositionBoard
-                        points={result!.position!.points}
-                        mineDark={mineDark}
-                        dice={result!.position!.dice ?? []}
-                        diceRight={result!.debug?.dice_side !== 'left'}
-                        homeLeft={homeLeft}
-                        cube={result!.position!.cube}
-                        offer={result!.position!.cube_offer ?? null}
-                      />
-                      {tag(t('photo.you'), pm, mineDark)}
+                      {tag(t('photo.opp'), po, !youDark)}
+                      {hasMove ? (
+                        <div className="photo-board-wrap">
+                          <div className="photo-board-stage">
+                            <Board
+                              state={bstate}
+                              selectableFroms={EMPTY_FROMS}
+                              targets={EMPTY_TARGETS}
+                              selectedFrom={null}
+                              onSelectFrom={noop}
+                              onSelectTarget={noop}
+                              onDragFrom={noop}
+                              pipTop={pipCount(bstate, 'black')}
+                              pipBottom={pipCount(bstate, 'white')}
+                              cube={bcube}
+                              mirror={homeLeft}
+                              numberFrom="white"
+                              showPip={false}
+                            />
+                            {steps.length > 0 && (
+                              <MoveArrows
+                                steps={steps}
+                                dep={`${sel}:${homeLeft ? 'L' : 'R'}:${steps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+                                mover={turn}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <PositionBoard
+                          points={result!.position!.points}
+                          mineDark={mineDark}
+                          dice={result!.position!.dice ?? []}
+                          diceRight={result!.debug?.dice_side !== 'left'}
+                          homeLeft={homeLeft}
+                          cube={result!.position!.cube}
+                          offer={result!.position!.cube_offer ?? null}
+                        />
+                      )}
+                      {tag(t('photo.you'), pm, youDark)}
                       <div className="photo-pips">
                         {d === 0 ? (
                           <b>{t('photo.pipEven')}</b>
@@ -766,13 +829,20 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 </div>
               )}
               {cands.length > 1 && (
-                <ul className="photo-cands">
+                <ul className="photo-cands photo-cands-pick">
                   {cands.map((c, i) => (
                     <li key={i}>
-                      <span className="photo-cand-move">{c.move}</span>
-                      {typeof c.equity === 'number' && (
-                        <span className="photo-cand-eq">{c.equity.toFixed(3)}</span>
-                      )}
+                      <button
+                        type="button"
+                        className={`photo-cand-btn${i === sel ? ' on' : ''}`}
+                        onClick={() => setSelectedCand(i)}
+                        aria-pressed={i === sel}
+                      >
+                        <span className="photo-cand-move">{c.move}</span>
+                        {typeof c.equity === 'number' && (
+                          <span className="photo-cand-eq">{c.equity.toFixed(3)}</span>
+                        )}
+                      </button>
                     </li>
                   ))}
                 </ul>

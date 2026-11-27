@@ -262,6 +262,34 @@
   margin: 0 auto 12px;
   border-radius: 8px;
 }
+/* Hamle sonucu: kullanıcının default temalı Board'u + hamle okları (MoveArrows). Board'un global
+   --board-h (viewport) dar foto kolonunda taşardı -> kolona (cqw) göre küçült + TÜM türev geometriyi
+   yeniden türet (App.css :root 179-189 / .article-board-stage ile birebir oranlar). */
+.photo-board-wrap {
+  container-type: inline-size;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 12px;
+}
+.photo-board-stage {
+  position: relative;
+  width: 100%;
+  --board-h: max(150px, min(calc((100cqw - 12px) / 1.52), calc(100vh - 220px)));
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.14);
+  --point-w: var(--col);
+  --bar-w: calc(var(--checker) * 1.4);
+  --tri-h: calc(var(--board-h) * 0.35);
+  --point-h: var(--tri-h);
+  --dice-size: calc(var(--checker) * 0.76);
+  --tray-w: calc(var(--checker) * 1.5);
+  --bearoff-w: var(--tray-w);
+  --cube-size: clamp(16px, calc(var(--bar-w) * 0.62), 40px);
+}
+.photo-board-stage .pt-numbers {
+  font-size: calc(var(--checker) * 0.5);
+  font-variant-numeric: tabular-nums;
+}
 .photo-dice {
   font-size: 0.95rem;
   opacity: 0.8;
@@ -440,6 +468,34 @@
 }
 .photo-cand-eq {
   opacity: 0.6;
+}
+/* Tıklanabilir aday: seçilince tahtadaki oklar o hamleye döner (en iyi = ilk/varsayılan). */
+.photo-cands-pick li {
+  padding: 0;
+  background: none;
+}
+.photo-cand-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.photo-cand-btn:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.photo-cand-btn.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 .photo-invalid {
   opacity: 0.85;
