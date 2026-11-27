@@ -6,6 +6,53 @@ import { useToast } from './Toast'
 import { uploadPhotoAnalysis, getPhotoAnalysis, type PhotoAnalysisResult } from '../api'
 import './PhotoAnalysis.css'
 
+// Taninan konumu (points[24], beyaz +, siyah -) hafif SVG tahtaya cizer — kullanici tanimanin
+// dogrulugunu GORSEL dogrulasin (oyunun Board bileseni oyun-durumuna bagli; burada gerekmez).
+// Standart numaralama: ust 13-18|19-24 (sol->sag), alt 12-7|6-1 (sol->sag), orta bar.
+function PositionBoard({ points }: { points: number[] }) {
+  const W = 360, H = 240, m = 6, barW = 20
+  const fieldW = (W - 2 * m - barW) / 2
+  const pw = fieldW / 6
+  const r = Math.min(pw / 2 - 1.5, 12)
+  const colX = (c: number) => (c < 6 ? m + (c + 0.5) * pw : m + fieldW + barW + (c - 6 + 0.5) * pw)
+  const topPoint = (c: number) => (c < 6 ? 13 + c : 19 + (c - 6))
+  const botPoint = (c: number) => (c < 6 ? 12 - c : 6 - (c - 6))
+
+  const tri = (c: number, top: boolean, dark: boolean) => {
+    const x = colX(c), hw = pw / 2 - 1
+    const baseY = top ? m : H - m
+    const apexY = top ? H / 2 - 14 : H / 2 + 14
+    return <polygon key={`t${top ? 'T' : 'B'}${c}`} points={`${x - hw},${baseY} ${x + hw},${baseY} ${x},${apexY}`} fill={dark ? '#2f4150' : '#d8cfc0'} opacity={0.55} />
+  }
+  const stack = (c: number, top: boolean, n: number) => {
+    if (!n) return null
+    const x = colX(c), count = Math.abs(n), white = n > 0, vis = Math.min(count, 5)
+    const dy = 2 * r - 2
+    const cy = (i: number) => (top ? m + r + i * dy : H - m - r - i * dy)
+    return (
+      <g key={`s${top ? 'T' : 'B'}${c}`}>
+        {Array.from({ length: vis }, (_, i) => (
+          <circle key={i} cx={x} cy={cy(i)} r={r} fill={white ? '#f3eee1' : '#b5423a'} stroke="rgba(0,0,0,.35)" strokeWidth={1} />
+        ))}
+        {count > 5 && (
+          <text x={x} y={cy(4) + 3.5} fontSize={10} textAnchor="middle" fontWeight="700" fill={white ? '#333' : '#fff'}>{count}</text>
+        )}
+      </g>
+    )
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="photo-board" role="img" aria-label="board">
+      <rect x={0} y={0} width={W} height={H} rx={8} fill="#1b2730" />
+      <rect x={W / 2 - barW / 2} y={0} width={barW} height={H} fill="#0f1720" />
+      {Array.from({ length: 12 }, (_, c) => tri(c, true, c % 2 === 0))}
+      {Array.from({ length: 12 }, (_, c) => tri(c, false, c % 2 === 1))}
+      {Array.from({ length: 12 }, (_, c) => stack(c, true, points[topPoint(c) - 1] || 0))}
+      {Array.from({ length: 12 }, (_, c) => stack(c, false, points[botPoint(c) - 1] || 0))}
+    </svg>
+  )
+}
+
 /**
  * Fotograftan Pozisyon Analizi: kullanici tahta fotografi ceker/secer -> sunucu tanima (foto->
  * yapisal konum) + gnubg -> en iyi hamle. Tanima tahtayi OTOMATIK bulup duzeltir (manuel kose YOK).
@@ -112,6 +159,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
         <div className="photo-result">
           {done ? (
             <>
+              {result!.position?.points && <PositionBoard points={result!.position.points} />}
               <div className="photo-dice">
                 {t('photo.dice')}: <b>{result!.position?.dice?.join('-') || '—'}</b>
               </div>

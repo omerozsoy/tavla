@@ -93,6 +93,13 @@
   background: color-mix(in srgb, currentColor 5%, transparent);
   text-align: center;
 }
+.photo-board {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 12px;
+  border-radius: 8px;
+}
 .photo-dice {
   font-size: 0.95rem;
   opacity: 0.8;
