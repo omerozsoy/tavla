@@ -45,14 +45,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Fotograftan Pozisyon Analizi (/foto-analiz): WebView <input capture> ile kameradan foto cek /
-         galeriden sec. Kamera = capture; galeri = Android 13+ READ_MEDIA_IMAGES, <=12 READ_EXTERNAL_STORAGE.
-         Temp capture dosyasi yukaridaki FileProvider ile paylasilir (depolama yazma izni gerekmez). -->
+    <!-- Fotograftan Pozisyon Analizi (/foto-analiz): WebView <input> ile kameradan foto cek / galeriden sec.
+         - Kamera capture: CAMERA izni (temp dosya yukaridaki FileProvider ile; depolama izni gerekmez).
+         - Galeri secimi: ACTION_GET_CONTENT / Android foto secici -> IZIN GEREKTIRMEZ. Bu yuzden
+           READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE EKLENMEDI (Play "Foto/Video Izinleri" beyanindan
+           kacinmak + gizlilik; tek-seferlik secim icin sistem seciciyi kullaniyoruz). -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- Kamera donanimi ZORUNLU DEGIL (galeri-only / kamerasiz cihazlar app'i yukleyebilsin) -->
+    <!-- Kamera donanimi ZORUNLU DEGIL (kamerasiz cihazlar da app'i yukleyebilsin; galeriden secebilir) -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>
