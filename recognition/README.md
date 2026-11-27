@@ -62,8 +62,18 @@ editörle doğru konumu işaretler (`ground_truth`). Bu etiketler tanımayı **�
    Birincil metrik `points[24]`+`bar`; `dice`/`turn` ikincil; `cube` kıyaslanmaz (model okumaz).
 3. **İyileştir:** geometri (`_fit_lattice`/yönelim/barcenter) değiştir → `eval.py`'ı tekrar koş: gerileme
    yok + düzeldi mi bak. Böylece her düzeltilen foto bir regresyon testi olur.
+4. **Otokalibre (Faz 3):** `python calibrate.py eval-data` → geometri sabitlerini (params.py: `k_center`,
+   `k_prior_w`, `collision_w`...) küçük joint ızgarada **k-fold CV** ile tarar. Yeni set YALNIZCA ortalama
+   exact-match +%5 İYİ **ve hiçbir fold gerilemiyorsa** `params.json`'a yazılır (az-veri overfit kalkanı);
+   aksi halde dosyaya DOKUNMAZ. Üretime almak: `params.json` → `shared/recognition/` + daemon restart.
+   `params.json` YOKKEN davranış bugünküyle BİREBİR (varsayılanlar eski sabitler).
+5. **Teşhis:** `eval.py` çıktısındaki `basarisizlik modu -> yonelim:N sayi:N bar:N diger:N` satırı, **Faz 1**'in
+   (yönelim sınıflandırıcısı) ne zaman gerektiğini gösterir — "yönelim" baskınsa ayrı plan turu açılır.
+   (Faz 3 yalnız ızgara/kümeleme sabitlerini ayarlar; yönelim kodda ayarlanabilir eşik değil → Faz 1.)
 
-`compare_position()` saf (modelsiz) → `test_eval.py` birim-test eder (`python -m pytest test_eval.py`).
+Saf fonksiyonlar (`params`, `compare_position`, `kfold_split`, `accept_params`, `classify_failure`) modelsiz
+→ `python -m pytest test_params.py test_calibrate.py test_eval.py`. `recognize` importu gereken davranış
+testi (`test_recognize_params.py`) venv'de koşar.
 
 ## ⚠ Açık uçlar (Faz 2 kalan)
 - **gnubg round-trip doğrulama:** yapısal konum → `gnubg-service` `structured_to_gnubgid` → hint.
