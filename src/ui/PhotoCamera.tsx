@@ -23,9 +23,11 @@ import { toGray, measureAlign, frameDiff, type Gray } from './boardAlign'
 const BOARD_ASPECT = 1.3 // acik tavla tahtasi ~ genislik/yukseklik (olcum: 1080x850 ~ 1.27)
 // Saha geri bildirimi (2026-11-27): 1sn + diff<7 cok gec tetikliyordu (yuksege kaldirilan telefonda el
 // titremesi esigi surekli asiyor) -> ~0.45sn + daha toleransli sabitlik.
-const SAMPLE_MS = 150
-const STREAK_N = 3 // ~0.45sn hizali + sabit
-const STABLE_DIFF = 12 // ardisik ornek ortalama mutlak fark (0..255)
+// 2. geri bildirim: "daha hizli cekmeli" -> 2 x 120ms (~0.25sn), sabitlik yalniz belirgin hareketi
+// (bulaniklik) eler.
+const SAMPLE_MS = 120
+const STREAK_N = 2 // ~0.25sn hizali + sabit
+const STABLE_DIFF = 18 // ardisik ornek ortalama mutlak fark (0..255)
 // Cerceve, GORUNEN video alaninin bu orani (kenarda ~%5 bosluk: seg koseyi goruntu kenarinda bulmasin)
 const FILL = 0.9
 const SAMPLE_LONG = 160 // ornek goruntunun uzun kenari (px)

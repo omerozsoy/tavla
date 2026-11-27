@@ -310,13 +310,41 @@ def recognize(bgr, flip=False):
         res, warp = min(good, key=lambda c: c[0]["debug"]["fit"]) if good else cands[0]
 
         faces = []
+        right = left = 0
+        bc = res["debug"]["barcenter"]
         for b in res["dice_boxes"]:
             f, c = _classify("DieClassify_v2.tflite", warp, b)
             if f is not None and c >= 0.6:
                 faces.append(f + 1)
+                if (b[0] + b[2]) / 2 >= bc:
+                    right += 1
+                else:
+                    left += 1
+
+        points, photographer, margin = _orient_to_photographer(res["points"])
+        # SIRA (kullanici kurali): zar bar'in SAGINDA -> fotografi ceken atacak; SOLUNDA -> rakip.
+        # Zar yok / esit -> fotografi ceken (en olasi: kendi hamlesini soruyor).
+        turn = "black" if left > right else "white"
+        dbg = res["debug"]
+        dbg.update({"photographer": photographer, "pip_margin": margin,
+                    "dice_side": "left" if left > right else ("right" if right else "none")})
         return {
             "ok": True,
-            "position": {"points": res["points"], "bar": {"white": 0, "black": 0},
-                         "turn": "white", "dice": faces, "cube": {"value": 1, "owner": None}},
-            "debug": res["debug"],
+            "position": {"points": points, "bar": {"white": 0, "black": 0},
+                         "turn": turn, "dice": faces, "cube": {"value": 1, "owner": None}},
+            "debug": dbg,
         }
+
+
+def _orient_to_photographer(points):
+    """gnubg konvansiyonu: POZITIF = "white" = evi hane 1-6 olan oyuncu. Numaralamamizda 1-6 fotonun
+    SAG-ALTI = fotografi cekenin tarafi -> pozitif fotografi ceken OLMALI. Ham tanima ise ACIK renk
+    tasi pozitif yaziyordu (koyu oynayan kullanicida gnubg RAKIBIN taslarini analiz ederdi).
+    Renk -> oyuncu: taslar evine dogru ilerler; dogru atamada toplam pip KUCUK. Iki atamanin toplami
+    sabit (tahtadaki her tas icin n + (25-n) = 25) -> kucuk olan secilir.
+    -> (points [fotografi ceken pozitif], 'light'|'dark', pip farki [guven olcusu])"""
+    as_light = sum(v * (i + 1) if v > 0 else -v * (24 - i) for i, v in enumerate(points))
+    as_dark = sum(-v * (i + 1) if v < 0 else v * (24 - i) for i, v in enumerate(points))
+    if as_dark < as_light:
+        return [-v for v in points], "dark", as_light - as_dark
+    return list(points), "light", as_dark - as_light

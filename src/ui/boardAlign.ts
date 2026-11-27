@@ -27,9 +27,9 @@ export interface Align {
   ok: boolean
 }
 
-export const EDGE_MIN = 0.5
+export const EDGE_MIN = 0.42 // saha: 0.5 gercek tahtada gec/hic tutmuyordu
 export const BAR_MIN = 0.35
-export const TRI_MIN = 26 // olcum (canli fotolar): tam tahta 40-51; yarim tahta (her yarinin kendi cercevesi) ~18
+export const TRI_MIN = 22 // (yarim tahta ~18'in ustunde kalir) olcum (canli fotolar): tam tahta 40-51; yarim tahta (her yarinin kendi cercevesi) ~18
 const GRAD_T = 22 // guclu gecis esigi (0..255 farki)
 
 /** RGBA ImageData -> gri (luma). */

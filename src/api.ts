@@ -275,7 +275,17 @@ export interface PhotoAnalysisResult {
   valid: boolean
   position: { points: number[]; bar: { white: number; black: number }; turn: string; dice: number[]; cube: { value: number; owner: string | null } } | null
   hint: { gnubgid?: string; result?: { hint?: PhotoHintCandidate[] } } | null
-  debug: { board_conf?: number; checkers?: number; white?: number; black?: number; dice_detected?: number; valid?: boolean } | null
+  debug: {
+    board_conf?: number
+    checkers?: number
+    white?: number
+    black?: number
+    dice_detected?: number
+    valid?: boolean
+    /** fotografi cekenin tas rengi; position.points'te POZITIF = fotografi ceken */
+    photographer?: 'light' | 'dark'
+    dice_side?: 'left' | 'right' | 'none'
+  } | null
   error: string | null
 }
 

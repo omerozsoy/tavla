@@ -1735,6 +1735,8 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'photo.camAutoOn': 'Auto: On',
   'photo.camAutoOff': 'Auto: Off',
   'photo.camHold': 'Hold still…',
+  'photo.turnMe': 'Your turn',
+  'photo.turnOpp': "Opponent's turn",
   'photo.camShoot': 'Shoot',
   'photo.camErr': 'Could not open the camera. Use your phone camera or choose from the gallery.',
   'photo.analyze': 'Analyse',

@@ -1787,6 +1787,8 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'photo.camAutoOn': 'Otomatik: Açık',
   'photo.camAutoOff': 'Otomatik: Kapalı',
   'photo.camHold': 'Sabit tut…',
+  'photo.turnMe': 'Sıra sende',
+  'photo.turnOpp': 'Sıra rakipte',
   'photo.camShoot': 'Çek',
   'photo.camErr': 'Kamera açılamadı. Telefonun kamerasıyla çekebilir veya galeriden seçebilirsin.',
   'photo.analyze': 'Analiz Et',

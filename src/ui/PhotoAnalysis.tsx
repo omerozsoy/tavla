@@ -7,10 +7,30 @@ import { uploadPhotoAnalysis, getPhotoAnalysis, type PhotoAnalysisResult } from 
 import PhotoCamera from './PhotoCamera'
 import './PhotoAnalysis.css'
 
-// Taninan konumu (points[24], beyaz +, siyah -) hafif SVG tahtaya cizer — kullanici tanimanin
+// Taninan konumu (points[24], fotografi ceken +, rakip -) hafif SVG tahtaya cizer — kullanici tanimanin
 // dogrulugunu GORSEL dogrulasin (oyunun Board bileseni oyun-durumuna bagli; burada gerekmez).
 // Standart numaralama: ust 13-18|19-24 (sol->sag), alt 12-7|6-1 (sol->sag), orta bar.
-function PositionBoard({ points }: { points: number[] }) {
+// mineDark: fotografi ceken KOYU taslarla oynuyor -> pozitifler koyu cizilir (fotodaki gercek renk).
+// dice + diceRight: okunan zarlar fotodaki TARAFINDA cizilir (sag = fotografi ceken atti, sol = rakip).
+const PIPS: Record<number, [number, number][]> = {
+  1: [[0, 0]],
+  2: [[-1, -1], [1, 1]],
+  3: [[-1, -1], [0, 0], [1, 1]],
+  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+  5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+  6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
+}
+export function PositionBoard({
+  points,
+  mineDark,
+  dice,
+  diceRight,
+}: {
+  points: number[]
+  mineDark: boolean
+  dice: number[]
+  diceRight: boolean
+}) {
   const W = 360, H = 240, m = 6, barW = 20
   const fieldW = (W - 2 * m - barW) / 2
   const pw = fieldW / 6
@@ -27,7 +47,7 @@ function PositionBoard({ points }: { points: number[] }) {
   }
   const stack = (c: number, top: boolean, n: number) => {
     if (!n) return null
-    const x = colX(c), count = Math.abs(n), white = n > 0, vis = Math.min(count, 5)
+    const x = colX(c), count = Math.abs(n), white = n > 0 !== mineDark, vis = Math.min(count, 5)
     const dy = 2 * r - 2
     const cy = (i: number) => (top ? m + r + i * dy : H - m - r - i * dy)
     return (
@@ -42,6 +62,23 @@ function PositionBoard({ points }: { points: number[] }) {
     )
   }
 
+  // Zarlar: ilgili yarinin ortasinda yan yana (en fazla 2 cizilir; cift zar bile 2 zar olarak atilir)
+  const ds = 24
+  const shown = dice.filter((d) => d >= 1 && d <= 6).slice(0, 2)
+  const halfCx = diceRight ? m + fieldW + barW + fieldW / 2 : m + fieldW / 2
+  const die = (v: number, i: number) => {
+    const cx = halfCx + (i - (shown.length - 1) / 2) * (ds + 8)
+    const cy = H / 2
+    return (
+      <g key={`d${i}`}>
+        <rect x={cx - ds / 2} y={cy - ds / 2} width={ds} height={ds} rx={5} fill="#fbf8f1" stroke="rgba(0,0,0,.45)" strokeWidth={1} />
+        {PIPS[v].map(([px, py], k) => (
+          <circle key={k} cx={cx + px * ds * 0.27} cy={cy + py * ds * 0.27} r={2.4} fill="#1b2730" />
+        ))}
+      </g>
+    )
+  }
+
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="photo-board" role="img" aria-label="board">
       <rect x={0} y={0} width={W} height={H} rx={8} fill="#1b2730" />
@@ -50,6 +87,7 @@ function PositionBoard({ points }: { points: number[] }) {
       {Array.from({ length: 12 }, (_, c) => tri(c, false, c % 2 === 1))}
       {Array.from({ length: 12 }, (_, c) => stack(c, true, points[topPoint(c) - 1] || 0))}
       {Array.from({ length: 12 }, (_, c) => stack(c, false, points[botPoint(c) - 1] || 0))}
+      {shown.map(die)}
     </svg>
   )
 }
@@ -107,9 +145,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     try {
       const blob = await downscale(f)
       const { id } = await uploadPhotoAnalysis(blob)
-      // poll: pending -> done/invalid/failed (~1.5sn aralik, <=60sn)
-      for (let i = 0; i < 40; i++) {
-        await new Promise((r) => setTimeout(r, 1500))
+      // poll: pending -> done/invalid/failed (~0.7sn aralik, <=60sn; tanima+gnubg tipik 1-2sn)
+      for (let i = 0; i < 85; i++) {
+        await new Promise((r) => setTimeout(r, 700))
         const r = await getPhotoAnalysis(id)
         if (r.status !== 'pending') {
           setResult(r)
@@ -208,9 +246,19 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
         <div className="photo-result">
           {done ? (
             <>
-              {result!.position?.points && <PositionBoard points={result!.position.points} />}
+              {result!.position?.points && (
+                <PositionBoard
+                  points={result!.position.points}
+                  mineDark={result!.debug?.photographer === 'dark'}
+                  dice={result!.position.dice ?? []}
+                  diceRight={result!.position.turn !== 'black'}
+                />
+              )}
               <div className="photo-dice">
                 {t('photo.dice')}: <b>{result!.position?.dice?.join('-') || '—'}</b>
+                {' · '}
+                {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip */}
+                <b>{result!.position?.turn === 'black' ? t('photo.turnOpp') : t('photo.turnMe')}</b>
               </div>
               <div className="photo-best">
                 {t('photo.best')}: <b>{cands[0].move}</b>
