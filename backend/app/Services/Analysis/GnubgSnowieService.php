@@ -19,6 +19,9 @@ class GnubgSnowieService
 {
     public const PLIES = 2; // XG'ye 2-ply yeter (3/4-ply ~0.2 fark, 75x yavaş); SABİT.
 
+    /** Kusursuz oyun (0 hata) PR 0.00 sayılması için gereken EN AZ serbest karar (unforced + yakın küp). */
+    public const MIN_PERFECT_DECISIONS = 5;
+
     /** gnubg CLI yolu (local Windows default; prod'da env GNUBG_CLI). */
     public function cliPath(): string
     {
@@ -154,7 +157,9 @@ class GnubgSnowieService
             // okunduysa (null DEĞİL = analiz çıktısı var) + tam 0 ise + değerlendirilecek gerçek karar varsa
             // (serbest hamle/yakın küp > 0) -> 0.00 yaz. Sahte-0 koruması korunur: overall satırı parse
             // EDİLEMEYEN (boş/degrade çıktı) ya da hiç serbest kararı olmayan (tamamı zorunlu) taraf null kalır.
-            if ($ov !== null && round($ov, 3) == 0.0 && $emgDec > 0 && ($snowieTxt[$i] === null || $snowieTxt[$i] == 0.0)) {
+            // ALT SINIR (kullanıcı kararı 2026-11-27): en az MIN_PERFECT_DECISIONS serbest karar (unforced +
+            // yakın küp). 1-3 kararlık (erken terk/hükmen) maçta "0 hata" kusursuzluk kanıtı DEĞİL -> null.
+            if ($ov !== null && round($ov, 3) == 0.0 && $emgDec >= self::MIN_PERFECT_DECISIONS && ($snowieTxt[$i] === null || $snowieTxt[$i] == 0.0)) {
                 $out[$i] = [
                     'pr' => 0.0,
                     'checker_pr' => $chkErr[$i] !== null ? 0.0 : null,

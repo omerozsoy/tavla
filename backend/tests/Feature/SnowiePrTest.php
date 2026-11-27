@@ -135,6 +135,13 @@ TXT;
         $forced = str_replace('Unforced moves                            22', 'Unforced moves                             0', $raw);
         $o2 = $svc->snowieFromAnalyze(['ok' => true, 'players' => [[], []], 'statistics_match' => $forced], 1);
         $this->assertNull($o2[0]);
+
+        // ALT SINIR = 5 serbest karar: 4 kararda 0 hata kusursuzluk sayılmaz (erken terk), 5'te 0.00.
+        $four = str_replace('Unforced moves                            22', 'Unforced moves                             4', $raw);
+        $this->assertNull($svc->snowieFromAnalyze(['ok' => true, 'players' => [[], []], 'statistics_match' => $four], 1)[0]);
+        $five = str_replace('Unforced moves                            22', 'Unforced moves                             5', $raw);
+        $o5 = $svc->snowieFromAnalyze(['ok' => true, 'players' => [[], []], 'statistics_match' => $five], 1);
+        $this->assertSame(0.0, $o5[0]['pr']);
     }
 
     public function test_cube_pr_shown_with_few_decisions_xg(): void
