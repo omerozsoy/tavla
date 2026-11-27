@@ -82,15 +82,39 @@ def _detect_checkerdice(warp):
     idx = np.array(cv2.dnn.NMSBoxes([[float(a), float(bb), float(cc - a), float(dd - bb)] for a, bb, cc, dd in xy], s.tolist(), 0.3, 0.4)).flatten()
     checkers = [xy[i] for i in idx if cls[i] == 0]
     dice = [xy[i] for i in idx if cls[i] == 1]
+    # BOYUT FILTRESI: gercek taslar ~tek capta; medyandan cok sapan kutu = false-positive
+    # (tepsi/cerceve artigi, bolunmus kutu). Aralik genis -> iyi taslari atmaz, uc-aykiriyi eler.
+    if len(checkers) >= 6:
+        med = float(np.median([b[2] - b[0] for b in checkers]))
+        checkers = [b for b in checkers if 0.5 * med <= (b[2] - b[0]) <= 1.7 * med]
     return checkers, dice
 
 
-def _color(warp, box):
+def _feat(warp, box):
+    """Tas kutu-merkez patch'inin (S, V) medyani — renk kumeleme ozniteligi."""
     x1, y1, x2, y2 = [int(v) for v in box]; cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
     rad = max(3, (x2 - x1) // 4)
     patch = warp[max(0, cy - rad):cy + rad, max(0, cx - rad):cx + rad]
-    s_med = np.median(cv2.cvtColor(patch, cv2.COLOR_BGR2HSV).reshape(-1, 3)[:, 1])
-    return "W" if s_med < COLOR_S_THRESH else "R"
+    hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV).reshape(-1, 3)
+    return float(np.median(hsv[:, 1])), float(np.median(hsv[:, 2]))
+
+
+def _colors(feats):
+    """VERI-SURUCU renk ayrimi: taslarin (S,V)'sini 2 kumeye bol (tahtaya gore adaptif; sabit
+    esik farkli taş rengi/isikta coker, or. 02.57.00 hepsini beyaz sanar). Beyaz = yuksek-V kume.
+    Dejenerasyon (<2 tas / ayrismiyor) -> sabit S esigine dus."""
+    n = len(feats)
+    if n < 2:
+        return ["W" if s < COLOR_S_THRESH else "R" for s, _ in feats]
+    f = np.array(feats, np.float32)
+    crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
+    _, labels, centers = cv2.kmeans(f, 2, None, crit, 5, cv2.KMEANS_PP_CENTERS)
+    labels = labels.ravel()
+    # iki kume ayrismiyor mu (ayni renk) -> sabit esige dus
+    if abs(centers[0][0] - centers[1][0]) < 35 and abs(centers[0][1] - centers[1][1]) < 35:
+        return ["W" if s < COLOR_S_THRESH else "R" for s, _ in feats]
+    white = int(np.argmax(centers[:, 1]))  # daha parlak (yuksek V) kume = beyaz/sedef
+    return ["W" if lb == white else "R" for lb in labels]
 
 
 def _cluster(items):
@@ -138,15 +162,21 @@ def recognize(bgr, flip=False):
         if warp is None:
             return {"ok": False, "error": "board_not_found", "board_conf": board_conf}
         checkers, dice = _detect_checkerdice(warp)
-        items = [((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, _color(warp, b), b) for b in checkers]
+        cols = _colors([_feat(warp, b) for b in checkers])
+        items = [((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, cols[i], b) for i, b in enumerate(checkers)]
         pts = _cluster(items)
 
+        # SPACING: SATIR-ICI ardisik farklardan (ust+alt karistirmak spacing'i bozar -> clamp cakismasi).
+        row_diffs = []
+        for rw in ("T", "B"):
+            rx = sorted(p["x"] for p in pts if p["row"] == rw)
+            row_diffs += [b - a for a, b in zip(rx, rx[1:]) if 45 < b - a < 95]
+        spacing = float(np.median(row_diffs)) if row_diffs else 66.0
+        # BAR: merkeze yakin GERCEK bosluk (>1.4x spacing); sahte/yok ise Wd/2 (warp tahtayi ortalar).
         xs = sorted(p["x"] for p in pts)
-        diffs = [b - a for a, b in zip(xs, xs[1:])]
-        sp = [d for d in diffs if 45 < d < 95]
-        spacing = float(np.median(sp)) if sp else 66.0
-        gaps = [(b - a, (a + b) / 2) for a, b in zip(xs, xs[1:]) if 380 < (a + b) / 2 < 620]
-        barcenter = max(gaps)[1] if gaps else Wd / 2
+        cand = [(b - a, (a + b) / 2) for a, b in zip(xs, xs[1:])
+                if b - a > 1.4 * spacing and 0.33 * Wd < (a + b) / 2 < 0.67 * Wd]
+        barcenter = max(cand)[1] if cand else Wd / 2
         bar_half = spacing
 
         points = [0] * 24
