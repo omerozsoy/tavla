@@ -131,6 +131,8 @@ backend/heal_referral_*.php
 /example-images/
 # Fotograftan Pozisyon Analizi: ~43MB TFLite gorus modelleri (yerel, repoya girmez; deploy'da ayri tasinir)
 /tensor-models/
+# Fotograftan Pozisyon Analizi: etiket/eval seti (export edilen kullanici gorselleri, repoya girmez)
+/recognition/eval-data/
 
 # android/app koku: elle birakilan scratch gorsel/veri (res/ icindeki gercek varliklar etkilenmez)
 android/app/*.jpg
