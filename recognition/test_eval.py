@@ -32,3 +32,35 @@ def test_short_points_array_does_not_crash():
 def test_turn_mismatch_secondary():
     r = compare_position(_pos(turn='black'), _pos(turn='white'))
     assert r['turn_match'] is False and r['exact'] is True  # turn ikincil, exact'i bozmaz
+
+
+# --- Faz 3 teşhis: başarısızlık-modu sınıflaması ---
+from eval import classify_failure
+
+
+def _p(points=None, bar=None):
+    return {'points': points or [0] * 24, 'bar': bar or {'white': 0, 'black': 0}}
+
+
+def test_orientation_family_detected_via_color_swap():
+    p = [0] * 24
+    t = [0] * 24
+    p[0] = 3
+    t[0] = -3  # renk ters
+    assert classify_failure(_p(points=p), _p(points=t)) == 'orientation_family'
+
+
+def test_point_count_off_detected():
+    p = [0] * 24
+    t = [0] * 24
+    p[5] = 2
+    t[5] = 5  # aynı işaret, sayı farklı; ayna/swap yardım etmez
+    assert classify_failure(_p(points=p), _p(points=t)) == 'point_count_off'
+
+
+def test_exact_or_unknown_returns_other():
+    assert classify_failure(_p(), _p()) == 'other'
+
+
+def test_classify_short_arrays_no_crash():
+    assert classify_failure({'points': [1]}, _p()) in {'orientation_family', 'point_count_off', 'bar_shift', 'other'}
