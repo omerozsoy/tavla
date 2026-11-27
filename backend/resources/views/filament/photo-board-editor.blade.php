@@ -34,6 +34,8 @@
             this.sync()
         },
         fill(i) { const n = this.pos.points?.[i] || 0; return (n > 0) !== this.mineDark ? '#f3eee1' : '#b5423a' },
+        // Tahtayı tamamen boşalt (tüm noktalar + bar 0) — tanıma çok yanlışsa sıfırdan işaretle.
+        clearBoard() { this.pos.points = Array(24).fill(0); this.pos.bar = { white: 0, black: 0 }; this.sync() },
         barV(k) { return this.pos.bar?.[k] || 0 },
         bar(k, d) { if (!this.pos.bar) this.pos.bar = { white: 0, black: 0 }; this.pos.bar[k] = Math.max(0, Math.min(15, this.barV(k) + d)); this.sync() },
         dieV(i) { return this.pos.dice?.[i] || 0 },
@@ -54,6 +56,8 @@
             style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #d1d5db;font-size:13px;font-weight:600">● Rakip</button>
         <button type="button" @click="brush='erase'" :style="{ background: brush==='erase' ? '#6b7280':'#fff', color: brush==='erase' ? '#fff':'#111827', outline: brush==='erase' ? '2px solid #6b7280':'none' }"
             style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #d1d5db;font-size:13px;font-weight:600">✕ Sil</button>
+        <button type="button" @click="clearBoard()"
+            style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #e0b4b4;background:#fff;color:#b5423a;font-size:13px;font-weight:600">🗑 Tahtayı temizle</button>
         <span style="font-size:12px;color:#6b7280">Noktaya tıkla → taş ekle/çıkar</span>
     </div>
 
